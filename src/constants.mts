@@ -399,6 +399,7 @@ export type Constants = Remap<
     readonly shadowBinPath: string
     readonly shadowNpmBinPath: string
     readonly shadowNpmInjectPath: string
+    readonly shadowNpxBinPath: string
     readonly shadowPnpmBinPath: string
     readonly shadowYarnBinPath: string
     readonly socketAppDataPath: string
@@ -781,6 +782,9 @@ const lazyShadowNpmBinPath = () =>
 const lazyShadowNpmInjectPath = () =>
   path.join(constants.distPath, 'shadow-npm-inject.js')
 
+const lazyShadowNpxBinPath = () =>
+  path.join(constants.distPath, 'shadow-npx-bin.js')
+
 const lazyShadowPnpmBinPath = () =>
   path.join(constants.distPath, 'shadow-pnpm-bin.js')
 
@@ -985,6 +989,7 @@ const constants: Constants = createConstantsObject(
       shadowBinPath: lazyShadowBinPath,
       shadowNpmBinPath: lazyShadowNpmBinPath,
       shadowNpmInjectPath: lazyShadowNpmInjectPath,
+      shadowNpxBinPath: lazyShadowNpxBinPath,
       shadowPnpmBinPath: lazyShadowPnpmBinPath,
       shadowYarnBinPath: lazyShadowYarnBinPath,
       socketAppDataPath: lazySocketAppDataPath,

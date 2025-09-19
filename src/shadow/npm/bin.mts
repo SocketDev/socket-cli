@@ -8,6 +8,7 @@ import { isDebug } from '@socketsecurity/registry/lib/debug'
 import { getOwn } from '@socketsecurity/registry/lib/objects'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
+import { ensureIpcInStdio } from '../stdio-ipc.mts'
 import { installLinks } from './link.mts'
 import constants, { NODE_MODULES, NPM, NPX } from '../../constants.mts'
 import { cmdFlagsToString } from '../../utils/cmd.mts'
@@ -78,16 +79,7 @@ export default async function shadowNpmBin(
       ? []
       : ['--no-audit']
 
-  let stdio = getOwn(spawnOpts, 'stdio')
-  if (typeof stdio === 'string') {
-    stdio = [stdio, stdio, stdio, 'ipc']
-  } else if (Array.isArray(stdio)) {
-    if (!stdio.includes('ipc')) {
-      stdio = stdio.concat('ipc')
-    }
-  } else {
-    stdio = ['pipe', 'pipe', 'pipe', 'ipc']
-  }
+  const stdio = ensureIpcInStdio(getOwn(spawnOpts, 'stdio'))
 
   const realBinPath = await installLinks(constants.shadowBinPath, binName)
 

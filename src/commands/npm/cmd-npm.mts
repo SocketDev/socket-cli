@@ -47,10 +47,10 @@ async function run(
     API Token Requirements
       ${getFlagApiRequirementsOutput(`${parentName}:${CMD_NAME}`)}
 
-    Note: Everything after "npm" is passed to the npm command.
+    Note: Everything after "${NPM}" is passed to the ${NPM} command.
           Only the \`--dry-run\` and \`--help\` flags are caught here.
 
-    Use \`socket wrapper on\` to alias this command as \`npm\`.
+    Use \`socket wrapper on\` to alias this command as \`${NPM}\`.
 
     Examples
       $ ${command}
@@ -81,7 +81,7 @@ async function run(
   const argsToForward = filterFlags(argv, { ...commonFlags, ...outputFlags }, [
     FLAG_JSON,
   ])
-  const { spawnPromise } = await shadowNpmBin(NPM, argsToForward, {
+  const { spawnPromise } = await shadowNpmBin(argsToForward, {
     stdio: 'inherit',
   })
 

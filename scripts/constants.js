@@ -29,6 +29,7 @@ const INSTRUMENT_WITH_SENTRY = 'instrument-with-sentry'
 const ROLLUP_EXTERNAL_SUFFIX = '?commonjs-external'
 const SHADOW_NPM_BIN = 'shadow-npm-bin'
 const SHADOW_NPM_INJECT = 'shadow-npm-inject'
+const SHADOW_NPX_BIN = 'shadow-npx-bin'
 const SHADOW_PNPM_BIN = 'shadow-pnpm-bin'
 const SHADOW_YARN_BIN = 'shadow-yarn-bin'
 const SLASH_NODE_MODULES_SLASH = '/node_modules/'
@@ -112,6 +113,7 @@ const constants = createConstantsObject(
     ROLLUP_EXTERNAL_SUFFIX,
     SHADOW_NPM_BIN,
     SHADOW_NPM_INJECT,
+    SHADOW_NPX_BIN,
     SHADOW_PNPM_BIN,
     SHADOW_YARN_BIN,
     SLASH_NODE_MODULES_SLASH,

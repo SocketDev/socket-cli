@@ -2,9 +2,11 @@ import { debugFn } from '@socketsecurity/registry/lib/debug'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import { scanPackagesAndLogAlerts } from '../common.mts'
+import { ensureIpcInStdio } from '../stdio-ipc.mts'
 import { installLinks } from './link.mts'
 import constants, { YARN } from '../../constants.mts'
 import { cmdFlagsToString } from '../../utils/cmd.mts'
+import { getPublicApiToken } from '../../utils/sdk.mts'
 
 import type { IpcObject } from '../../constants.mts'
 import type {
@@ -84,13 +86,31 @@ export default async function shadowYarnBin(
     spinner?.start()
   }
 
-  const spawnPromise = spawn(realYarnPath, suffixArgs, {
-    ...spawnOpts,
-    env: {
-      ...process.env,
-      ...spawnEnv,
+  // Set up stdio with IPC channel.
+  const stdio = ensureIpcInStdio(spawnOpts.stdio)
+
+  const spawnPromise = spawn(
+    realYarnPath,
+    suffixArgs,
+    {
+      ...spawnOpts,
+      env: {
+        ...process.env,
+        ...spawnEnv,
+      },
+      stdio,
     },
     extra,
+  )
+
+  // Send IPC handshake.
+  spawnPromise.process.send({
+    [constants.SOCKET_IPC_HANDSHAKE]: {
+      [constants.SOCKET_CLI_SHADOW_API_TOKEN]: getPublicApiToken(),
+      [constants.SOCKET_CLI_SHADOW_BIN]: YARN,
+      [constants.SOCKET_CLI_SHADOW_PROGRESS]: true,
+      ...ipc,
+    },
   })
 
   return { spawnPromise }
