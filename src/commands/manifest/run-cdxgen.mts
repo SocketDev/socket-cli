@@ -5,7 +5,7 @@ import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import constants, { NPM, PNPM, YARN } from '../../constants.mts'
+import constants, { FLAG_HELP, NPM, PNPM, YARN } from '../../constants.mts'
 import { spawnCdxgenDlx, spawnSynpDlx } from '../../utils/dlx.mts'
 import { findUp } from '../../utils/fs.mts'
 import { isYarnBerry } from '../../utils/yarn-version.mts'
@@ -32,7 +32,7 @@ export type ArgvObject = {
 
 function argvToArray(argvObj: ArgvObject): string[] {
   if (argvObj['help']) {
-    return ['--help']
+    return [FLAG_HELP]
   }
   const result = []
   for (const { 0: key, 1: value } of Object.entries(argvObj)) {

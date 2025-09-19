@@ -1,13 +1,17 @@
 import { describe, expect } from 'vitest'
 
-import constants from '../../../src/constants.mts'
+import constants, {
+  FLAG_CONFIG,
+  FLAG_DRY_RUN,
+  FLAG_HELP,
+} from '../../../src/constants.mts'
 import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
 
 describe('socket manifest setup', async () => {
   const { binCliPath } = constants
 
   cmdit(
-    ['manifest', 'setup', '--help', '--config', '{}'],
+    ['manifest', 'setup', FLAG_HELP, FLAG_CONFIG, '{}'],
     'should support --help',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -61,7 +65,7 @@ describe('socket manifest setup', async () => {
   )
 
   cmdit(
-    ['manifest', 'setup', '--dry-run', '--config', '{}'],
+    ['manifest', 'setup', FLAG_DRY_RUN, FLAG_CONFIG, '{}'],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)

@@ -12,7 +12,11 @@ import {
 } from './env-helpers.mts'
 import { getSocketFixBranchName, getSocketFixCommitMessage } from './git.mts'
 import { getSocketFixPrs, openSocketFixPr } from './pull-request.mts'
-import { GQL_PR_STATE_OPEN, UNKNOWN_ERROR } from '../../constants.mts'
+import {
+  FLAG_DRY_RUN,
+  GQL_PR_STATE_OPEN,
+  UNKNOWN_ERROR,
+} from '../../constants.mts'
 import { handleApiCall } from '../../utils/api.mts'
 import { cmdFlagValueToArray } from '../../utils/cmd.mts'
 import { spawnCoanaDlx } from '../../utils/dlx.mts'
@@ -142,7 +146,7 @@ export async function coanaFix(
           ? ['--range-style', fixConfig.rangeStyle]
           : []),
         ...(glob ? ['--glob', glob] : []),
-        ...(onlyCompute ? ['--dry-run'] : []),
+        ...(onlyCompute ? [FLAG_DRY_RUN] : []),
         ...(outputFile ? ['--output-file', outputFile] : []),
         ...fixConfig.unknownFlags,
       ],

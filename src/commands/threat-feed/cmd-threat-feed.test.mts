@@ -1,13 +1,18 @@
 import { describe, expect } from 'vitest'
 
-import constants from '../../../src/constants.mts'
+import constants, {
+  FLAG_CONFIG,
+  FLAG_DRY_RUN,
+  FLAG_HELP,
+  FLAG_ORG,
+} from '../../../src/constants.mts'
 import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
 
 describe('socket threat-feed', async () => {
   const { binCliPath } = constants
 
   cmdit(
-    ['threat-feed', '--help', '--config', '{}'],
+    ['threat-feed', FLAG_HELP, FLAG_CONFIG, '{}'],
     'should support --help',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -99,7 +104,7 @@ describe('socket threat-feed', async () => {
   )
 
   cmdit(
-    ['threat-feed', '--dry-run', '--config', '{}'],
+    ['threat-feed', FLAG_DRY_RUN, FLAG_CONFIG, '{}'],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -129,10 +134,10 @@ describe('socket threat-feed', async () => {
   cmdit(
     [
       'threat-feed',
-      '--org',
+      FLAG_ORG,
       'boo',
-      '--dry-run',
-      '--config',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
     ],
     'should require args with just dry-run',
@@ -152,7 +157,7 @@ describe('socket threat-feed', async () => {
   )
 
   cmdit(
-    ['threat-feed', '--dry-run', '--config', '{"apiToken":"fakeToken"}'],
+    ['threat-feed', FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fakeToken"}'],
     'should report missing org name',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -181,8 +186,8 @@ describe('socket threat-feed', async () => {
   cmdit(
     [
       'threat-feed',
-      '--dry-run',
-      '--config',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
       '{"apiToken":"fakeToken", "defaultOrg": "fakeOrg"}',
     ],
     'should accept default org',
@@ -204,10 +209,10 @@ describe('socket threat-feed', async () => {
   cmdit(
     [
       'threat-feed',
-      '--org',
+      FLAG_ORG,
       'forcedorg',
-      '--dry-run',
-      '--config',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
     ],
     'should accept --org flag',

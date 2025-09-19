@@ -3,6 +3,9 @@ import { describe, expect } from 'vitest'
 import constants, {
   ENVIRONMENT_YAML,
   ENVIRONMENT_YML,
+  FLAG_CONFIG,
+  FLAG_DRY_RUN,
+  FLAG_HELP,
   REQUIREMENTS_TXT,
 } from '../../../src/constants.mts'
 import {
@@ -16,7 +19,7 @@ describe('socket manifest conda', async () => {
   const { binCliPath } = constants
 
   cmdit(
-    ['manifest', 'conda', '--help', '--config', '{}'],
+    ['manifest', 'conda', FLAG_HELP, FLAG_CONFIG, '{}'],
     'should support --help',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
@@ -69,7 +72,7 @@ describe('socket manifest conda', async () => {
   )
 
   cmdit(
-    ['manifest', 'conda', '--dry-run', '--config', '{}'],
+    ['manifest', 'conda', FLAG_DRY_RUN, FLAG_CONFIG, '{}'],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
@@ -97,7 +100,7 @@ describe('socket manifest conda', async () => {
         'conda',
         'fixtures/commands/manifest/conda',
         '--stdout',
-        '--config',
+        FLAG_CONFIG,
         '{}',
       ],
       'should print raw text without flags',
@@ -130,7 +133,7 @@ describe('socket manifest conda', async () => {
         'fixtures/commands/manifest/conda',
         '--json',
         '--stdout',
-        '--config',
+        FLAG_CONFIG,
         '{}',
       ],
       'should print a json blurb with --json flag',
@@ -161,7 +164,7 @@ describe('socket manifest conda', async () => {
         'fixtures/commands/manifest/conda',
         '--markdown',
         '--stdout',
-        '--config',
+        FLAG_CONFIG,
         '{}',
       ],
       'should print a markdown blurb with --markdown flag',

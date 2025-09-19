@@ -1,13 +1,17 @@
 import { describe, expect } from 'vitest'
 
-import constants from '../../../src/constants.mts'
+import constants, {
+  FLAG_CONFIG,
+  FLAG_DRY_RUN,
+  FLAG_HELP,
+} from '../../../src/constants.mts'
 import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
 
 describe('socket config', async () => {
   const { binCliPath } = constants
 
   cmdit(
-    ['config', '--help', '--config', '{}'],
+    ['config', FLAG_HELP, FLAG_CONFIG, '{}'],
     'should support --help',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -47,7 +51,7 @@ describe('socket config', async () => {
   )
 
   cmdit(
-    ['config', '--dry-run', '--config', '{"apiToken":"fakeToken"}'],
+    ['config', FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fakeToken"}'],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -92,7 +96,7 @@ describe('socket config', async () => {
     )
 
     cmdit(
-      ['config', 'get', 'apiToken', '--config', '{apiToken:invalidjson}'],
+      ['config', 'get', 'apiToken', FLAG_CONFIG, '{apiToken:invalidjson}'],
       'should print nice error when flag config override cannot be parsed',
       async cmd => {
         const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)

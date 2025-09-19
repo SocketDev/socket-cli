@@ -2,14 +2,19 @@ import path from 'node:path'
 
 import { describe, expect } from 'vitest'
 
-import constants from '../../../src/constants.mts'
+import constants, {
+  FLAG_CONFIG,
+  FLAG_DRY_RUN,
+  FLAG_HELP,
+  FLAG_ORG,
+} from '../../../src/constants.mts'
 import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
 
 describe('socket organization policy security', async () => {
   const { binCliPath } = constants
 
   cmdit(
-    ['organization', 'policy', 'security', '--help', '--config', '{}'],
+    ['organization', 'policy', 'security', FLAG_HELP, FLAG_CONFIG, '{}'],
     'should support --help',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -54,7 +59,7 @@ describe('socket organization policy security', async () => {
   )
 
   cmdit(
-    ['organization', 'policy', 'security', '--dry-run', '--config', '{}'],
+    ['organization', 'policy', 'security', FLAG_DRY_RUN, FLAG_CONFIG, '{}'],
     'should reject dry run without proper args',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -85,8 +90,8 @@ describe('socket organization policy security', async () => {
       'organization',
       'policy',
       'security',
-      '--dry-run',
-      '--config',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
       '{"isTestingV1": true, "apiToken":"fakeToken", "defaultOrg": "fakeOrg"}',
     ],
     'should accept default org in v1',
@@ -110,10 +115,10 @@ describe('socket organization policy security', async () => {
       'organization',
       'policy',
       'security',
-      '--org',
+      FLAG_ORG,
       'forcedorg',
-      '--dry-run',
-      '--config',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
       '{"isTestingV1": true, "apiToken":"fakeToken"}',
     ],
     'should accept --org flag in v1',
