@@ -5,6 +5,7 @@ import constants, {
   FLAG_DRY_RUN,
   FLAG_HELP,
   FLAG_QUIET,
+  YARN,
 } from '../../../src/constants.mts'
 import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
 
@@ -12,7 +13,7 @@ describe.skipIf(constants.WIN32)('socket yarn', async () => {
   const { binCliPath } = constants
 
   cmdit(
-    ['yarn', FLAG_HELP, FLAG_CONFIG, '{}'],
+    [YARN, FLAG_HELP, FLAG_CONFIG, '{}'],
     `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -52,7 +53,7 @@ describe.skipIf(constants.WIN32)('socket yarn', async () => {
   )
 
   cmdit(
-    ['yarn', FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fakeToken"}'],
+    [YARN, FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fakeToken"}'],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
@@ -106,7 +107,7 @@ describe.skipIf(constants.WIN32)('socket yarn', async () => {
   )
 
   cmdit(
-    ['yarn', 'install', FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fakeToken"}'],
+    [YARN, 'install', FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fakeToken"}'],
     'should handle install with --dry-run flag',
     async cmd => {
       const { code } = await spawnSocketCli(binCliPath, cmd, {
@@ -133,6 +134,98 @@ describe.skipIf(constants.WIN32)('socket yarn', async () => {
       })
 
       expect(code, 'dry-run add scoped package should exit with code 0').toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'yarn',
+      'exec',
+      '-c',
+      '{"issueRules":{"malware":true}}',
+      'cowsay@^1.6.0',
+      'hello',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
+      '{"apiToken":"fakeToken"}',
+    ],
+    'should handle exec with -c flag and issueRules for malware',
+    async cmd => {
+      const { code, stdout } = await spawnSocketCli(binCliPath, cmd, {
+        timeout: 30_000,
+      })
+
+      expect(stdout).toMatchInlineSnapshot('"[DryRun]: Bailing now"')
+      expect(code, 'dry-run exec with -c should exit with code 0').toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'yarn',
+      'exec',
+      FLAG_CONFIG,
+      '{"issueRules":{"malware":true}}',
+      'cowsay@^1.6.0',
+      'hello',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
+      '{"apiToken":"fakeToken"}',
+    ],
+    'should handle exec with --config flag and issueRules for malware',
+    async cmd => {
+      const { code, stdout } = await spawnSocketCli(binCliPath, cmd, {
+        timeout: 30_000,
+      })
+
+      expect(stdout).toMatchInlineSnapshot('"[DryRun]: Bailing now"')
+      expect(code, 'dry-run exec with --config should exit with code 0').toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'yarn',
+      'exec',
+      '-c',
+      '{"issueRules":{"malware":true,"gptMalware":true}}',
+      'cowsay@^1.6.0',
+      'hello',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
+      '{"apiToken":"fakeToken"}',
+    ],
+    'should handle exec with -c flag and multiple issueRules (malware and gptMalware)',
+    async cmd => {
+      const { code, stdout } = await spawnSocketCli(binCliPath, cmd, {
+        timeout: 30_000,
+      })
+
+      expect(stdout).toMatchInlineSnapshot('"[DryRun]: Bailing now"')
+      expect(code, 'dry-run exec with multiple issueRules should exit with code 0').toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'yarn',
+      'exec',
+      FLAG_CONFIG,
+      '{"issueRules":{"malware":true,"gptMalware":true}}',
+      'cowsay@^1.6.0',
+      'hello',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
+      '{"apiToken":"fakeToken"}',
+    ],
+    'should handle exec with --config flag and multiple issueRules (malware and gptMalware)',
+    async cmd => {
+      const { code, stdout } = await spawnSocketCli(binCliPath, cmd, {
+        timeout: 30_000,
+      })
+
+      expect(stdout).toMatchInlineSnapshot('"[DryRun]: Bailing now"')
+      expect(code, 'dry-run exec with --config and multiple issueRules should exit with code 0').toBe(0)
     },
   )
 })
