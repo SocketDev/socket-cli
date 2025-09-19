@@ -6,6 +6,8 @@ import { handleManifestConda } from './handle-manifest-conda.mts'
 import constants, {
   ENVIRONMENT_YAML,
   ENVIRONMENT_YML,
+  FLAG_JSON,
+  FLAG_MARKDOWN,
   REQUIREMENTS_TXT,
   SOCKET_JSON,
 } from '../../constants.mts'
@@ -186,8 +188,7 @@ async function run(
     {
       nook: true,
       test: !json || !markdown,
-      message:
-        'The `--json` and `--markdown` flags can not be used at the same time',
+      message: `The \`${FLAG_JSON}\` and \`${FLAG_MARKDOWN}\` flags can not be used at the same time`,
       fail: 'bad',
     },
   )
