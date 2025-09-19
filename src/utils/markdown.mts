@@ -1,3 +1,21 @@
+/**
+ * Markdown utilities for Socket CLI.
+ * Generates formatted markdown output for reports and documentation.
+ *
+ * Key Functions:
+ * - mdTableStringNumber: Create markdown table with string keys and number values
+ *
+ * Table Features:
+ * - Auto-sizing columns based on content
+ * - Proper alignment for headers and data
+ * - Clean markdown-compliant formatting
+ *
+ * Usage:
+ * - Analytics reports
+ * - Scan result tables
+ * - Statistical summaries
+ */
+
 export function mdTableStringNumber(
   title1: string,
   title2: string,

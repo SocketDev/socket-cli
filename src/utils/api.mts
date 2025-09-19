@@ -1,3 +1,24 @@
+/**
+ * API utilities for Socket CLI.
+ * Provides consistent API communication with error handling and permissions management.
+ *
+ * Key Functions:
+ * - getDefaultApiBaseUrl: Get configured API endpoint
+ * - getErrorMessageForHttpStatusCode: User-friendly HTTP error messages
+ * - handleApiCall: Execute Socket SDK API calls with error handling
+ * - handleApiCallNoSpinner: Execute API calls without UI spinner
+ * - queryApi: Execute raw API queries with text response
+ *
+ * Error Handling:
+ * - Automatic permission requirement logging for 403 errors
+ * - Detailed error messages for common HTTP status codes
+ * - Integration with debug helpers for API response logging
+ *
+ * Configuration:
+ * - Respects SOCKET_CLI_API_BASE_URL environment variable
+ * - Falls back to configured apiBaseUrl or default API_V0_URL
+ */
+
 import { messageWithCauses } from 'pony-cause'
 
 import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'

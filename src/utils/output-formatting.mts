@@ -1,3 +1,24 @@
+/**
+ * Output formatting utilities for Socket CLI.
+ * Provides consistent formatting for help text and command output.
+ *
+ * Key Functions:
+ * - getFlagApiRequirementsOutput: Format API requirements for flags
+ * - getHelpListOutput: Format help text lists with descriptions
+ * - getFlagsHelpOutput: Generate formatted help for command flags
+ *
+ * Formatting Features:
+ * - Automatic indentation and alignment
+ * - Flag description formatting
+ * - Requirements and permissions display
+ * - Hidden flag filtering
+ *
+ * Usage:
+ * - Used by command help systems
+ * - Provides consistent terminal output formatting
+ * - Handles kebab-case conversion for flags
+ */
+
 import { joinAnd } from '@socketsecurity/registry/lib/arrays'
 import { isObject } from '@socketsecurity/registry/lib/objects'
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'

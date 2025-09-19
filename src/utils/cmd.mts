@@ -1,3 +1,24 @@
+/**
+ * Command-line utilities for Socket CLI.
+ * Handles argument parsing, flag processing, and command formatting.
+ *
+ * Argument Handling:
+ * - Handles both long (--flag) and short (-f) formats
+ * - Preserves special characters and escaping
+ * - Properly quotes arguments containing spaces
+ *
+ * Command Names:
+ * - commandNameFromCamel: Convert camelCase to kebab-case command names
+ * - commandNameFromKebab: Convert kebab-case to camelCase
+ *
+ * Flag Processing:
+ * - cmdFlagsToString: Format arguments for display with proper escaping
+ * - cmdPrefixMessage: Generate command prefix message
+ * - stripConfigFlags: Remove --config flags from argument list
+ * - stripDebugFlags: Remove debug-related flags
+ * - stripHelpFlags: Remove help flags (-h, --help)
+ */
+
 import { FLAG_CONFIG, FLAG_HELP } from '../constants.mts'
 import { camelToKebab } from './strings.mts'
 
