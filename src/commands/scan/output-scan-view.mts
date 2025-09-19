@@ -6,6 +6,7 @@ import constants from '../../constants.mts'
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
 import { mdTable } from '../../utils/markdown.mts'
 import { serializeResultJson } from '../../utils/serialize-result-json.mts'
+import { fileLink } from '../../utils/terminal-link.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketArtifact } from '../../utils/alert/artifact.mts'
@@ -40,7 +41,7 @@ export async function outputScanView(
       logger.info('Writing json results to', filePath)
       try {
         await fs.writeFile(filePath, json, 'utf8')
-        logger.info(`Data successfully written to ${filePath}`)
+        logger.info(`Data successfully written to ${fileLink(filePath)}`)
       } catch (e) {
         process.exitCode = 1
         logger.fail('There was an error trying to write the markdown to disk')
@@ -97,7 +98,7 @@ View this report at: ${constants.SOCKET_WEBSITE_URL}/dashboard/org/${orgSlug}/sb
   if (filePath && filePath !== '-') {
     try {
       await fs.writeFile(filePath, report, 'utf8')
-      logger.log(`Data successfully written to ${filePath}`)
+      logger.log(`Data successfully written to ${fileLink(filePath)}`)
     } catch (e) {
       process.exitCode = 1
       logger.fail('There was an error trying to write the markdown to disk')
