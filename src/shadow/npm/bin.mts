@@ -29,7 +29,7 @@ export type ShadowBinResult = {
   spawnPromise: SpawnResult<string, SpawnExtra | undefined>
 }
 
-export default async function shadowBin(
+export default async function shadowNpmBin(
   binName: typeof NPM | typeof NPX,
   args: string[] | readonly string[] = process.argv.slice(2),
   options?: ShadowBinOptions | undefined,
