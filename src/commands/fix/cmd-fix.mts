@@ -108,7 +108,7 @@ const hiddenFlags: MeowFlags = {
   glob: {
     type: 'string',
     default: '',
-    description: 'Glob pattern to pass to coana for filtering files',
+    description: 'Glob pattern to filter workspaces by',
     hidden: true,
   },
   maxSatisfying: {
