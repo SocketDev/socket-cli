@@ -722,6 +722,8 @@ export function meowOrExit({
     console.error('Unknown flag\n--version')
     // eslint-disable-next-line n/no-process-exit
     process.exit(2)
+    // This line is never reached in production, but helps tests.
+    throw new Error('process.exit called')
   }
 
   // Now test for help state. Run Meow again. If it exits now, it must be due

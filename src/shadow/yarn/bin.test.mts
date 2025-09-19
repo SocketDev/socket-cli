@@ -7,7 +7,7 @@ import { FLAG_DRY_RUN } from '../../constants.mts'
 
 // Mock fs module
 vi.mock('node:fs', async importOriginal => {
-  const actual = await importOriginal()
+  const actual = (await importOriginal()) as Record<string, any>
   return {
     ...actual,
     promises: {
@@ -40,16 +40,26 @@ vi.mock('@socketsecurity/registry/lib/spawn', () => ({
 }))
 
 vi.mock('../../constants.mts', async importOriginal => {
-  const actual = await importOriginal()
+  const actual = (await importOriginal()) as Record<string, any>
   return {
     ...actual,
     default: {
-      ...actual.default,
+      ...actual?.default,
       shadowBinPath: '/mock/shadow-bin',
-      ENV: {
-        SOCKET_CLI_ACCEPT_RISKS: '',
-        SOCKET_CLI_VIEW_ALL_RISKS: '',
-      },
+      ENV: new Proxy(
+        {},
+        {
+          get(_target, prop) {
+            if (prop === 'SOCKET_CLI_ACCEPT_RISKS') {
+              return process.env.SOCKET_CLI_ACCEPT_RISKS || ''
+            }
+            if (prop === 'SOCKET_CLI_VIEW_ALL_RISKS') {
+              return process.env.SOCKET_CLI_VIEW_ALL_RISKS || ''
+            }
+            return ''
+          },
+        },
+      ),
     },
   }
 })

@@ -73,7 +73,7 @@ async function run(
     return
   }
 
-  const shadowBin = /*@__PURE__*/ require(constants.shadowNpmBinPath)
+  const shadowNpmBin = /*@__PURE__*/ require(constants.shadowNpmBinPath)
 
   process.exitCode = 1
 
@@ -81,7 +81,7 @@ async function run(
   const argsToForward = filterFlags(argv, { ...commonFlags, ...outputFlags }, [
     FLAG_JSON,
   ])
-  const { spawnPromise } = await shadowBin(NPM, argsToForward, {
+  const { spawnPromise } = await shadowNpmBin(NPM, argsToForward, {
     stdio: 'inherit',
   })
 

@@ -1,15 +1,10 @@
-import { promises as fs } from 'node:fs'
-
-import { debugDir, debugFn, isDebug } from '@socketsecurity/registry/lib/debug'
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { debugFn, isDebug } from '@socketsecurity/registry/lib/debug'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
+import { scanPackagesAndLogAlerts } from '../common.mts'
 import { installLinks } from './link.mts'
-import constants, { FLAG_DRY_RUN } from '../../constants.mts'
-import { getAlertsMapFromPurls } from '../../utils/alerts-map.mts'
+import constants, { YARN } from '../../constants.mts'
 import { cmdFlagsToString } from '../../utils/cmd.mts'
-import { logAlertsMap } from '../../utils/socket-package-alert.mts'
-import { idToNpmPurl } from '../../utils/spec.mts'
 
 import type { IpcObject } from '../../constants.mts'
 import type {
@@ -26,6 +21,8 @@ export type ShadowYarnResult = {
   spawnPromise: SpawnResult<string, SpawnExtra | undefined>
 }
 
+const DLX_COMMANDS = new Set(['dlx'])
+
 const INSTALL_COMMANDS = new Set([
   'add',
   'install',
@@ -34,197 +31,64 @@ const INSTALL_COMMANDS = new Set([
   'upgrade-interactive',
 ])
 
-const DLX_COMMANDS = new Set(['dlx'])
-
-export default async function shadowYarn(
+export default async function shadowYarnBin(
   args: string[] | readonly string[] = process.argv.slice(2),
   options?: ShadowYarnOptions | undefined,
   extra?: SpawnExtra | undefined,
 ): Promise<ShadowYarnResult> {
-  const {
-    env: spawnEnv,
-    ipc,
-    ...spawnOpts
-  } = { __proto__: null, ...options } as ShadowYarnOptions
+  const opts = { __proto__: null, ...options } as ShadowYarnOptions
+  const { env: spawnEnv, ipc, ...spawnOpts } = opts
+  const { spinner } = opts
+
+  const wasSpinning = !!spinner?.isSpinning
+
+  spinner?.start()
+
   const terminatorPos = args.indexOf('--')
   const rawYarnArgs = terminatorPos === -1 ? args : args.slice(0, terminatorPos)
   const otherArgs = terminatorPos === -1 ? [] : args.slice(terminatorPos)
 
-  // Check if this is a command that needs security scanning
+  // Check for package scanning.
   const command = rawYarnArgs[0]
-  const needsScanning =
-    command && (INSTALL_COMMANDS.has(command) || DLX_COMMANDS.has(command))
+  const scanResult = await scanPackagesAndLogAlerts({
+    acceptRisks: !!constants.ENV.SOCKET_CLI_ACCEPT_RISKS,
+    command,
+    cwd: process.cwd(),
+    dlxCommands: DLX_COMMANDS,
+    installCommands: INSTALL_COMMANDS,
+    managerName: 'yarn',
+    rawArgs: rawYarnArgs,
+    spinner,
+    viewAllRisks: !!constants.ENV.SOCKET_CLI_VIEW_ALL_RISKS,
+  })
 
-  // Get yarn path
-  const realYarnPath = await installLinks(constants.shadowBinPath, 'yarn')
-
-  const permArgs: string[] = []
-
-  const prefixArgs: string[] = []
-  const suffixArgs = [...rawYarnArgs, ...permArgs, ...otherArgs]
-
-  if (needsScanning && !rawYarnArgs.includes(FLAG_DRY_RUN)) {
-    const acceptRisks = Boolean(process.env['SOCKET_CLI_ACCEPT_RISKS'])
-    const viewAllRisks = Boolean(process.env['SOCKET_CLI_VIEW_ALL_RISKS'])
-
-    // Extract package names from command arguments before any downloads
-    const packagePurls: string[] = []
-
-    if (command === 'add' || command === 'dlx') {
-      // For 'yarn add package1 package2@version' or 'yarn dlx package'
-      const packageArgs = rawYarnArgs
-        .slice(1)
-        .filter(arg => !arg.startsWith('-') && arg !== '--')
-
-      for (const pkgSpec of packageArgs) {
-        // Handle package specs like 'lodash', 'lodash@4.17.21', '@types/node@^20.0.0'
-        let name: string
-        let version: string | undefined
-
-        if (pkgSpec.startsWith('@')) {
-          // Scoped package: @scope/name or @scope/name@version
-          const parts = pkgSpec.split('@')
-          if (parts.length === 2) {
-            // @scope/name (no version)
-            name = pkgSpec
-          } else {
-            // @scope/name@version
-            name = `@${parts[1]}`
-            version = parts[2]
-          }
-        } else {
-          // Regular package: name or name@version
-          const atIndex = pkgSpec.indexOf('@')
-          if (atIndex === -1) {
-            name = pkgSpec
-          } else {
-            name = pkgSpec.slice(0, atIndex)
-            version = pkgSpec.slice(atIndex + 1)
-          }
-        }
-
-        if (name) {
-          packagePurls.push(
-            version ? idToNpmPurl(`${name}@${version}`) : idToNpmPurl(name),
-          )
-        }
-      }
-    } else if (
-      ['install', 'up', 'upgrade', 'upgrade-interactive'].includes(command)
-    ) {
-      // For install/upgrade, scan all dependencies from package.json
-      // Note: This scans direct dependencies only. For full transitive dependency
-      // scanning, yarn.lock parsing would be needed (not yet implemented)
-      try {
-        const packageJsonContent = await fs.readFile('package.json', 'utf8')
-        const packageJson = JSON.parse(packageJsonContent)
-
-        const allDeps = {
-          ...packageJson.dependencies,
-          ...packageJson.devDependencies,
-          ...packageJson.optionalDependencies,
-          ...packageJson.peerDependencies,
-        }
-
-        for (const [name, version] of Object.entries(allDeps)) {
-          if (typeof version === 'string') {
-            packagePurls.push(idToNpmPurl(`${name}@${version}`))
-          } else {
-            packagePurls.push(idToNpmPurl(name))
-          }
-        }
-
-        if (isDebug()) {
-          debugFn(
-            'notice',
-            `scanning: ${packagePurls.length} direct dependencies from package.json`,
-          )
-          debugFn(
-            'notice',
-            'note: transitive dependencies not scanned (yarn.lock parsing not implemented)',
-          )
-        }
-      } catch (e) {
-        if (isDebug()) {
-          debugFn(
-            'error',
-            'caught: package.json read error during dependency scanning',
-          )
-          debugDir('inspect', { error: e })
-        }
-      }
-    }
-
-    if (packagePurls.length > 0) {
-      if (isDebug()) {
-        debugFn('notice', 'scanning: packages before download')
-        debugDir('inspect', { packagePurls })
-      }
-
-      try {
-        const alertsMap = await getAlertsMapFromPurls(packagePurls, {
-          nothrow: true,
-          filter: acceptRisks
-            ? { actions: ['error'], blocked: true }
-            : { actions: ['error', 'monitor', 'warn'] },
-        })
-
-        if (alertsMap.size) {
-          process.exitCode = 1
-          logAlertsMap(alertsMap, {
-            hideAt: viewAllRisks ? 'none' : 'middle',
-            output: process.stderr,
-          })
-
-          const errorMessage = `
-Socket yarn exiting due to risks.${
-            viewAllRisks
-              ? ''
-              : `\nView all risks - Rerun with environment variable ${constants.SOCKET_CLI_VIEW_ALL_RISKS}=1.`
-          }${
-            acceptRisks
-              ? ''
-              : `\nAccept risks - Rerun with environment variable ${constants.SOCKET_CLI_ACCEPT_RISKS}=1.`
-          }`.trim()
-
-          logger.error(errorMessage)
-          // eslint-disable-next-line n/no-process-exit
-          process.exit(1)
-          // This line is never reached in production, but helps tests.
-          throw new Error('process.exit called')
-        }
-      } catch (e) {
-        // Re-throw process.exit errors from tests.
-        if (e instanceof Error && e.message === 'process.exit called') {
-          throw e
-        }
-        if (isDebug()) {
-          debugFn('error', 'caught: package scanning error')
-          debugDir('inspect', { error: e })
-        }
-        // Continue with installation if scanning fails
-      }
-    }
-
-    if (isDebug()) {
-      debugFn('notice', 'complete: scanning, proceeding with install')
-      debugDir('inspect', { args: rawYarnArgs.slice(1) })
-    }
+  if (scanResult.shouldExit) {
+    // eslint-disable-next-line n/no-process-exit
+    process.exit(1)
+    // This line is never reached in production, but helps tests.
+    throw new Error('process.exit called')
   }
 
-  const argsToString = cmdFlagsToString([...prefixArgs, ...suffixArgs])
-  const env = {
-    ...process.env,
-    ...spawnEnv,
-  } as Record<string, string>
+  const realYarnPath = await installLinks(constants.shadowBinPath, YARN)
+
+  spinner?.stop()
+
+  const suffixArgs = [...rawYarnArgs, ...otherArgs]
 
   if (isDebug()) {
-    debugFn('notice', `spawn: yarn shadow bin ${realYarnPath} ${argsToString}`)
+    debugFn('notice', `spawn: ${YARN} shadow bin ${realYarnPath} ${cmdFlagsToString(suffixArgs)}`)
   }
 
-  const spawnPromise = spawn(realYarnPath, [...prefixArgs, ...suffixArgs], {
+  if (wasSpinning) {
+    spinner?.start()
+  }
+
+  const spawnPromise = spawn(realYarnPath, suffixArgs, {
     ...spawnOpts,
-    env,
+    env: {
+      ...process.env,
+      ...spawnEnv,
+    },
     extra,
   })
 

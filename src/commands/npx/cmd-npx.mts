@@ -70,11 +70,11 @@ async function run(
     return
   }
 
-  const shadowBin = /*@__PURE__*/ require(constants.shadowNpmBinPath)
+  const shadowNpmBin = /*@__PURE__*/ require(constants.shadowNpmBinPath)
 
   process.exitCode = 1
 
-  const { spawnPromise } = await shadowBin(NPX, argv, { stdio: 'inherit' })
+  const { spawnPromise } = await shadowNpmBin(NPX, argv, { stdio: 'inherit' })
 
   // See https://nodejs.org/api/child_process.html#event-exit.
   spawnPromise.process.on(

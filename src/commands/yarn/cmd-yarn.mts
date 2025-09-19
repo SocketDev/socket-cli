@@ -74,14 +74,16 @@ async function run(
     return
   }
 
-  const shadowBin = /*@__PURE__*/ require(constants.shadowYarnBinPath)
+  const shadowYarnBin = /*@__PURE__*/ require(constants.shadowYarnBinPath)
 
   process.exitCode = 1
 
   // Filter Socket flags from argv.
   const filteredArgv = filterFlags(argv, config.flags)
 
-  const { spawnPromise } = await shadowBin(filteredArgv)
+  const { spawnPromise } = await shadowYarnBin(filteredArgv, {
+    stdio: 'inherit',
+  })
 
   await spawnPromise
   process.exitCode = 0
