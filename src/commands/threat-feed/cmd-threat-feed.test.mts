@@ -29,7 +29,7 @@ describe('socket threat-feed', async () => {
             - Special access
 
           This feature requires a Threat Feed license. Please contact
-          sales@socket.dev if you are interested in purchasing this access.
+          sales@socket.dev (mailto:sales@socket.dev) if you are interested in purchasing this access.
 
           Options
             --direction         Order asc or desc by the createdAt attribute
