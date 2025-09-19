@@ -2,7 +2,7 @@ import { createRequire } from 'node:module'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import constants, { PNPM } from '../../constants.mts'
+import constants, { FLAG_DRY_RUN, FLAG_HELP, PNPM } from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
 import { filterFlags } from '../../utils/cmd.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
@@ -48,7 +48,7 @@ async function run(
       ${getFlagApiRequirementsOutput(`${parentName}:${CMD_NAME}`)}
 
     Note: Everything after "${PNPM}" is passed to the ${PNPM} command.
-          Only the \`--dry-run\` and \`--help\` flags are caught here.
+          Only the \`${FLAG_DRY_RUN}\` and \`${FLAG_HELP}\` flags are caught here.
 
     Use \`socket wrapper on\` to alias this command as \`${PNPM}\`.
 
