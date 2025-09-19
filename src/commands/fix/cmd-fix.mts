@@ -6,7 +6,10 @@ import { arrayUnique, joinOr } from '@socketsecurity/registry/lib/arrays'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleFix } from './handle-fix.mts'
-import constants, { ERROR_UNABLE_RESOLVE_ORG, FLAG_ID } from '../../constants.mts'
+import constants, {
+  ERROR_UNABLE_RESOLVE_ORG,
+  FLAG_ID,
+} from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import { cmdFlagValueToArray } from '../../utils/cmd.mts'
