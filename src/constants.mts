@@ -20,9 +20,13 @@ const __dirname = path.dirname(__filename)
 const {
   AT_LATEST,
   BIOME_JSON,
+  BUN,
   CI,
   COLUMN_LIMIT,
+  DOT_GIT_DIR,
+  DOT_SOCKET_DIR,
   EMPTY_FILE,
+  EMPTY_VALUE,
   ESLINT_CONFIG_JS,
   ESNEXT,
   EXT_CJS,
@@ -37,10 +41,12 @@ const {
   EXT_MJS,
   EXT_MTS,
   EXT_PS1,
+  EXT_YAML,
+  EXT_YML,
   EXTENSIONS,
   EXTENSIONS_JSON,
   GITIGNORE,
-  HIDDEN_PACKAGE_LOCK_JSON,
+  DOT_PACKAGE_LOCK_JSON,
   LATEST,
   LICENSE,
   LICENSE_GLOB,
@@ -62,6 +68,7 @@ const {
   PACKAGE_JSON,
   PACKAGE_LOCK_JSON,
   PNPM,
+  PNPM_LOCK_YAML,
   PRE_COMMIT,
   README_GLOB,
   README_GLOB_RECURSIVE,
@@ -79,10 +86,16 @@ const {
   SOCKET_REGISTRY_SCOPE,
   SOCKET_SECURITY_SCOPE,
   TSCONFIG_JSON,
+  UNKNOWN_ERROR,
+  UNKNOWN_VALUE,
   UNLICENCED,
   UNLICENSED,
   UTF8,
   VITEST,
+  VLT,
+  YARN,
+  YARN_BERRY,
+  YARN_CLASSIC,
   YARN_LOCK,
   kInternalsSymbol,
   [kInternalsSymbol as unknown as 'Symbol(kInternalsSymbol)']: {
@@ -170,25 +183,22 @@ export type ProcessEnv = {
   [K in keyof ENV]?: string | undefined
 }
 
+// Socket CLI specific constants that are not in socket-registry.
 const ALERT_TYPE_CRITICAL_CVE = 'criticalCVE'
 const ALERT_TYPE_CVE = 'cve'
 const ALERT_TYPE_MEDIUM_CVE = 'mediumCVE'
 const ALERT_TYPE_MILD_CVE = 'mildCVE'
 const API_V0_URL = 'https://api.socket.dev/v0/'
-const BUN = 'bun'
 const CONFIG_KEY_API_BASE_URL = 'apiBaseUrl'
 const CONFIG_KEY_API_PROXY = 'apiProxy'
 const CONFIG_KEY_API_TOKEN = 'apiToken'
 const CONFIG_KEY_DEFAULT_ORG = 'defaultOrg'
 const CONFIG_KEY_ENFORCED_ORGS = 'enforcedOrgs'
 const CONFIG_KEY_ORG = 'org'
-const DOT_GIT = '.git'
-const DOT_SOCKET = '.socket'
-const DOT_SOCKET_DOT_FACTS_JSON = `${DOT_SOCKET}.facts.json`
+const DOT_SOCKET_DOT_FACTS_JSON = `${DOT_SOCKET_DIR}.facts.json`
 const DRY_RUN_LABEL = '[DryRun]'
 const DRY_RUN_BAILING_NOW = `${DRY_RUN_LABEL}: Bailing now`
 const DRY_RUN_NOT_SAVING = `${DRY_RUN_LABEL}: Not saving`
-const EMPTY_VALUE = '<empty>'
 const ENVIRONMENT_YAML = 'environment.yaml'
 const ENVIRONMENT_YML = 'environment.yml'
 const ERROR_NO_MANIFEST_FILES = 'No manifest files found'
@@ -197,11 +207,10 @@ const ERROR_NO_REPO_FOUND = 'No repo found'
 const ERROR_NO_SOCKET_DIR = 'No .socket directory found'
 const ERROR_UNABLE_RESOLVE_ORG =
   'Unable to resolve a Socket account organization'
-const EXT_YAML = '.yaml'
-const EXT_YML = '.yml'
 const FLAG_CONFIG = '--config'
 const FLAG_DRY_RUN = '--dry-run'
 const FLAG_HELP = '--help'
+const FLAG_ID = '--id'
 const FLAG_JSON = '--json'
 const FLAG_MARKDOWN = '--markdown'
 const FLAG_ORG = '--org'
@@ -211,6 +220,7 @@ const FLAG_QUIET = '--quiet'
 const FLAG_SILENT = '--silent'
 const FLAG_TEXT = '--text'
 const FLAG_VERBOSE = '--verbose'
+const FLAG_VERSION = '--version'
 const FOLD_SETTING_FILE = 'file'
 const FOLD_SETTING_NONE = 'none'
 const FOLD_SETTING_PKG = 'pkg'
@@ -224,13 +234,11 @@ const HTTP_STATUS_FORBIDDEN = 403
 const HTTP_STATUS_INTERNAL_SERVER_ERROR = 500
 const HTTP_STATUS_NOT_FOUND = 404
 const HTTP_STATUS_UNAUTHORIZED = 401
-const LOCALAPPDATA = 'LOCALAPPDATA'
 const NPM_BUGGY_OVERRIDES_PATCHED_VERSION = '11.2.0'
 const NPM_REGISTRY_URL = 'https://registry.npmjs.org'
 const OUTPUT_JSON = 'json'
 const OUTPUT_MARKDOWN = 'markdown'
 const OUTPUT_TEXT = 'text'
-const PNPM_LOCK_YAML = 'pnpm-lock.yaml'
 const PNPM_WORKSPACE_YAML = 'pnpm-workspace.yaml'
 const REDACTED = '<redacted>'
 const REPORT_LEVEL_DEFER = 'defer'
@@ -254,13 +262,7 @@ const SOCKET_JSON = 'socket.json'
 const SOCKET_WEBSITE_URL = 'https://socket.dev'
 const SOCKET_YAML = 'socket.yaml'
 const SOCKET_YML = 'socket.yml'
-const UNKNOWN_ERROR = 'Unknown error'
-const UNKNOWN_VALUE = '<unknown>'
 const V1_MIGRATION_GUIDE_URL = 'https://docs.socket.dev/docs/v1-migration-guide'
-const VLT = 'vlt'
-const YARN = 'yarn'
-const YARN_BERRY = 'yarn/berry'
-const YARN_CLASSIC = 'yarn/classic'
 
 export type Constants = Remap<
   Omit<
@@ -280,8 +282,8 @@ export type Constants = Remap<
     readonly CONFIG_KEY_DEFAULT_ORG: typeof CONFIG_KEY_DEFAULT_ORG
     readonly CONFIG_KEY_ENFORCED_ORGS: typeof CONFIG_KEY_ENFORCED_ORGS
     readonly CONFIG_KEY_ORG: typeof CONFIG_KEY_ORG
-    readonly DOT_GIT: typeof DOT_GIT
-    readonly DOT_SOCKET: typeof DOT_SOCKET
+    readonly DOT_GIT_DIR: typeof DOT_GIT_DIR
+    readonly DOT_SOCKET_DIR: typeof DOT_SOCKET_DIR
     readonly DOT_SOCKET_DOT_FACTS_JSON: typeof DOT_SOCKET_DOT_FACTS_JSON
     readonly DRY_RUN_BAILING_NOW: typeof DRY_RUN_BAILING_NOW
     readonly DRY_RUN_LABEL: typeof DRY_RUN_LABEL
@@ -300,6 +302,7 @@ export type Constants = Remap<
     readonly FLAG_CONFIG: typeof FLAG_CONFIG
     readonly FLAG_DRY_RUN: typeof FLAG_DRY_RUN
     readonly FLAG_HELP: typeof FLAG_HELP
+    readonly FLAG_ID: typeof FLAG_ID
     readonly FLAG_JSON: typeof FLAG_JSON
     readonly FLAG_MARKDOWN: typeof FLAG_MARKDOWN
     readonly FLAG_ORG: typeof FLAG_ORG
@@ -309,6 +312,7 @@ export type Constants = Remap<
     readonly FLAG_SILENT: typeof FLAG_SILENT
     readonly FLAG_TEXT: typeof FLAG_TEXT
     readonly FLAG_VERBOSE: typeof FLAG_VERBOSE
+    readonly FLAG_VERSION: typeof FLAG_VERSION
     readonly FOLD_SETTING_FILE: typeof FOLD_SETTING_FILE
     readonly FOLD_SETTING_NONE: typeof FOLD_SETTING_NONE
     readonly FOLD_SETTING_PKG: typeof FOLD_SETTING_PKG
@@ -518,10 +522,6 @@ const LAZY_ENV = () => {
     INLINED_SOCKET_CLI_VERSION_HASH: envAsString(
       process.env['INLINED_SOCKET_CLI_VERSION_HASH'],
     ),
-    // The absolute location of the %localappdata% folder on Windows used to store
-    // user-specific, non-roaming application data, like temporary files, cached
-    // data, and program settings, that are specific to the current machine and user.
-    LOCALAPPDATA: envAsString(env[LOCALAPPDATA]),
     // Enable the module compile cache for the Node.js instance.
     // https://nodejs.org/api/cli.html#node_compile_cachedir
     NODE_COMPILE_CACHE: constants.SUPPORTS_NODE_COMPILE_CACHE_ENV_VAR
@@ -621,9 +621,6 @@ const LAZY_ENV = () => {
     SOCKET_CLI_VIEW_ALL_RISKS: envAsBoolean(env[SOCKET_CLI_VIEW_ALL_RISKS]),
     // Specifies the type of terminal or terminal emulator being used by the process.
     TERM: envAsString(env['TERM']),
-    // The location of the base directory on Linux and MacOS used to store
-    // user-specific data files, defaulting to $HOME/.local/share if not set or empty.
-    XDG_DATA_HOME: envAsString(env['XDG_DATA_HOME']),
   })
 }
 
@@ -809,7 +806,7 @@ const lazySocketAppDataPath = (): string | undefined => {
   if (!dataHome) {
     if (WIN32) {
       const logger = /*@__PURE__*/ require('@socketsecurity/registry/lib/logger')
-      logger.warn(`Missing %${LOCALAPPDATA}%.`)
+      logger.warn(`Missing %LOCALAPPDATA%.`)
     } else {
       dataHome = path.join(
         constants.homePath,
@@ -842,13 +839,12 @@ const constants: Constants = createConstantsObject(
     CONFIG_KEY_DEFAULT_ORG,
     CONFIG_KEY_ENFORCED_ORGS,
     CONFIG_KEY_ORG,
-    DOT_GIT,
-    DOT_SOCKET,
+    DOT_GIT_DIR,
+    DOT_SOCKET_DIR,
     DOT_SOCKET_DOT_FACTS_JSON,
     DRY_RUN_BAILING_NOW,
     DRY_RUN_LABEL,
     DRY_RUN_NOT_SAVING,
-    EMPTY_VALUE,
     ENV: undefined,
     ENVIRONMENT_YAML,
     ENVIRONMENT_YML,
@@ -862,6 +858,7 @@ const constants: Constants = createConstantsObject(
     FLAG_CONFIG,
     FLAG_DRY_RUN,
     FLAG_HELP,
+    FLAG_ID,
     FLAG_JSON,
     FLAG_MARKDOWN,
     FLAG_ORG,
@@ -871,6 +868,7 @@ const constants: Constants = createConstantsObject(
     FLAG_SILENT,
     FLAG_TEXT,
     FLAG_VERBOSE,
+    FLAG_VERSION,
     FOLD_SETTING_FILE,
     FOLD_SETTING_NONE,
     FOLD_SETTING_PKG,
@@ -1012,37 +1010,17 @@ const constants: Constants = createConstantsObject(
 ) as Constants
 
 export {
-  ALERT_TYPE_CRITICAL_CVE,
-  ALERT_TYPE_CVE,
-  ALERT_TYPE_MEDIUM_CVE,
-  ALERT_TYPE_MILD_CVE,
-  API_V0_URL,
+  // Re-exported from socket-registry.
   AT_LATEST,
   BIOME_JSON,
   BUN,
   CI,
   COLUMN_LIMIT,
-  CONFIG_KEY_API_BASE_URL,
-  CONFIG_KEY_API_PROXY,
-  CONFIG_KEY_API_TOKEN,
-  CONFIG_KEY_DEFAULT_ORG,
-  CONFIG_KEY_ENFORCED_ORGS,
-  CONFIG_KEY_ORG,
-  DOT_GIT,
-  DOT_SOCKET,
-  DOT_SOCKET_DOT_FACTS_JSON,
-  DRY_RUN_BAILING_NOW,
-  DRY_RUN_LABEL,
-  DRY_RUN_NOT_SAVING,
+  DOT_GIT_DIR,
+  DOT_PACKAGE_LOCK_JSON,
+  DOT_SOCKET_DIR,
   EMPTY_FILE,
   EMPTY_VALUE,
-  ENVIRONMENT_YAML,
-  ENVIRONMENT_YML,
-  ERROR_NO_MANIFEST_FILES,
-  ERROR_NO_PACKAGE_JSON,
-  ERROR_NO_REPO_FOUND,
-  ERROR_NO_SOCKET_DIR,
-  ERROR_UNABLE_RESOLVE_ORG,
   ESLINT_CONFIG_JS,
   ESNEXT,
   EXTENSIONS,
@@ -1061,9 +1039,84 @@ export {
   EXT_PS1,
   EXT_YAML,
   EXT_YML,
+  GITIGNORE,
+  LATEST,
+  LICENSE,
+  LICENSE_GLOB,
+  LICENSE_GLOB_RECURSIVE,
+  LICENSE_ORIGINAL,
+  LICENSE_ORIGINAL_GLOB,
+  LICENSE_ORIGINAL_GLOB_RECURSIVE,
+  LOOP_SENTINEL,
+  MANIFEST_JSON,
+  MIT,
+  NODE_AUTH_TOKEN,
+  NODE_ENV,
+  NODE_MODULES,
+  NODE_MODULES_GLOB_RECURSIVE,
+  NPM,
+  NPX,
+  OVERRIDES,
+  PACKAGE_DEFAULT_VERSION,
+  PACKAGE_JSON,
+  PACKAGE_LOCK_JSON,
+  PNPM,
+  PNPM_LOCK_YAML,
+  PRE_COMMIT,
+  README_GLOB,
+  README_GLOB_RECURSIVE,
+  README_MD,
+  REGISTRY,
+  REGISTRY_SCOPE_DELIMITER,
+  RESOLUTIONS,
+  SOCKET_GITHUB_ORG,
+  SOCKET_IPC_HANDSHAKE,
+  SOCKET_OVERRIDE_SCOPE,
+  SOCKET_PUBLIC_API_TOKEN,
+  SOCKET_REGISTRY_NPM_ORG,
+  SOCKET_REGISTRY_PACKAGE_NAME,
+  SOCKET_REGISTRY_REPO_NAME,
+  SOCKET_REGISTRY_SCOPE,
+  SOCKET_SECURITY_SCOPE,
+  TSCONFIG_JSON,
+  UNKNOWN_ERROR,
+  UNKNOWN_VALUE,
+  UNLICENCED,
+  UNLICENSED,
+  UTF8,
+  VITEST,
+  VLT,
+  YARN,
+  YARN_BERRY,
+  YARN_CLASSIC,
+  YARN_LOCK,
+  // Socket CLI specific constants.
+  ALERT_TYPE_CRITICAL_CVE,
+  ALERT_TYPE_CVE,
+  ALERT_TYPE_MEDIUM_CVE,
+  ALERT_TYPE_MILD_CVE,
+  API_V0_URL,
+  CONFIG_KEY_API_BASE_URL,
+  CONFIG_KEY_API_PROXY,
+  CONFIG_KEY_API_TOKEN,
+  CONFIG_KEY_DEFAULT_ORG,
+  CONFIG_KEY_ENFORCED_ORGS,
+  CONFIG_KEY_ORG,
+  DOT_SOCKET_DOT_FACTS_JSON,
+  DRY_RUN_BAILING_NOW,
+  DRY_RUN_LABEL,
+  DRY_RUN_NOT_SAVING,
+  ENVIRONMENT_YAML,
+  ENVIRONMENT_YML,
+  ERROR_NO_MANIFEST_FILES,
+  ERROR_NO_PACKAGE_JSON,
+  ERROR_NO_REPO_FOUND,
+  ERROR_NO_SOCKET_DIR,
+  ERROR_UNABLE_RESOLVE_ORG,
   FLAG_CONFIG,
   FLAG_DRY_RUN,
   FLAG_HELP,
+  FLAG_ID,
   FLAG_JSON,
   FLAG_MARKDOWN,
   FLAG_ORG,
@@ -1073,64 +1126,33 @@ export {
   FLAG_SILENT,
   FLAG_TEXT,
   FLAG_VERBOSE,
+  FLAG_VERSION,
   FOLD_SETTING_FILE,
   FOLD_SETTING_NONE,
   FOLD_SETTING_PKG,
   FOLD_SETTING_VERSION,
-  GITIGNORE,
   GQL_PAGE_SENTINEL,
   GQL_PR_STATE_CLOSED,
   GQL_PR_STATE_MERGED,
   GQL_PR_STATE_OPEN,
-  HIDDEN_PACKAGE_LOCK_JSON,
   HTTP_STATUS_BAD_REQUEST,
   HTTP_STATUS_FORBIDDEN,
   HTTP_STATUS_INTERNAL_SERVER_ERROR,
   HTTP_STATUS_NOT_FOUND,
   HTTP_STATUS_UNAUTHORIZED,
-  LATEST,
-  LICENSE,
-  LICENSE_GLOB,
-  LICENSE_GLOB_RECURSIVE,
-  LICENSE_ORIGINAL,
-  LICENSE_ORIGINAL_GLOB,
-  LICENSE_ORIGINAL_GLOB_RECURSIVE,
-  LOCALAPPDATA,
-  LOOP_SENTINEL,
-  MANIFEST_JSON,
-  MIT,
-  NODE_AUTH_TOKEN,
-  NODE_ENV,
-  NODE_MODULES,
-  NODE_MODULES_GLOB_RECURSIVE,
-  NPM,
   NPM_BUGGY_OVERRIDES_PATCHED_VERSION,
   NPM_REGISTRY_URL,
-  NPX,
   OUTPUT_JSON,
   OUTPUT_MARKDOWN,
   OUTPUT_TEXT,
-  OVERRIDES,
-  PACKAGE_DEFAULT_VERSION,
-  PACKAGE_JSON,
-  PACKAGE_LOCK_JSON,
-  PNPM,
-  PNPM_LOCK_YAML,
   PNPM_WORKSPACE_YAML,
-  PRE_COMMIT,
-  README_GLOB,
-  README_GLOB_RECURSIVE,
-  README_MD,
   REDACTED,
-  REGISTRY,
-  REGISTRY_SCOPE_DELIMITER,
   REPORT_LEVEL_DEFER,
   REPORT_LEVEL_ERROR,
   REPORT_LEVEL_IGNORE,
   REPORT_LEVEL_MONITOR,
   REPORT_LEVEL_WARN,
   REQUIREMENTS_TXT,
-  RESOLUTIONS,
   SOCKET_CLI_ACCEPT_RISKS,
   SOCKET_CLI_BIN_NAME,
   SOCKET_CLI_ISSUES_URL,
@@ -1142,32 +1164,11 @@ export {
   SOCKET_CLI_VIEW_ALL_RISKS,
   SOCKET_DEFAULT_BRANCH,
   SOCKET_DEFAULT_REPOSITORY,
-  SOCKET_GITHUB_ORG,
   SOCKET_JSON,
-  SOCKET_IPC_HANDSHAKE,
-  SOCKET_OVERRIDE_SCOPE,
-  SOCKET_PUBLIC_API_TOKEN,
-  SOCKET_REGISTRY_NPM_ORG,
-  SOCKET_REGISTRY_PACKAGE_NAME,
-  SOCKET_REGISTRY_REPO_NAME,
-  SOCKET_REGISTRY_SCOPE,
-  SOCKET_SECURITY_SCOPE,
   SOCKET_WEBSITE_URL,
   SOCKET_YAML,
   SOCKET_YML,
-  TSCONFIG_JSON,
-  UNKNOWN_ERROR,
-  UNKNOWN_VALUE,
-  UNLICENCED,
-  UNLICENSED,
-  UTF8,
   V1_MIGRATION_GUIDE_URL,
-  VITEST,
-  VLT,
-  YARN,
-  YARN_BERRY,
-  YARN_CLASSIC,
-  YARN_LOCK,
 }
 
 export default constants

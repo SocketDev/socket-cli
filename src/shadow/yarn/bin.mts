@@ -5,7 +5,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import { installLinks } from './link.mts'
-import constants from '../../constants.mts'
+import constants, { FLAG_DRY_RUN } from '../../constants.mts'
 import { getAlertsMapFromPurls } from '../../utils/alerts-map.mts'
 import { cmdFlagsToString } from '../../utils/cmd.mts'
 import { logAlertsMap } from '../../utils/socket-package-alert.mts'
@@ -63,7 +63,7 @@ export default async function shadowYarn(
   const prefixArgs: string[] = []
   const suffixArgs = [...rawYarnArgs, ...permArgs, ...otherArgs]
 
-  if (needsScanning && !rawYarnArgs.includes('--dry-run')) {
+  if (needsScanning && !rawYarnArgs.includes(FLAG_DRY_RUN)) {
     const acceptRisks = Boolean(process.env['SOCKET_CLI_ACCEPT_RISKS'])
     const viewAllRisks = Boolean(process.env['SOCKET_CLI_VIEW_ALL_RISKS'])
 

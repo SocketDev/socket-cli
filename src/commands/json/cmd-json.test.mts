@@ -2,14 +2,18 @@ import path from 'node:path'
 
 import { describe, expect } from 'vitest'
 
-import constants from '../../../src/constants.mts'
+import constants, {
+  FLAG_CONFIG,
+  FLAG_DRY_RUN,
+  FLAG_HELP,
+} from '../../../src/constants.mts'
 import { cmdit, spawnSocketCli, testPath } from '../../../test/utils.mts'
 
 describe('socket json', async () => {
   const { binCliPath } = constants
 
   cmdit(
-    ['json', '--help', '--config', '{}'],
+    ['json', FLAG_HELP, FLAG_CONFIG, '{}'],
     'should support --help',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -41,7 +45,7 @@ describe('socket json', async () => {
   )
 
   cmdit(
-    ['json', '--dry-run', '--config', '{"apiToken":"fakeToken"}'],
+    ['json', FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fakeToken"}'],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -62,7 +66,7 @@ describe('socket json', async () => {
   )
 
   cmdit(
-    ['json', '.', '--dry-run', '--config', '{"apiToken":"fakeToken"}'],
+    ['json', '.', FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fakeToken"}'],
     'should print error when file does not exist in folder',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -86,8 +90,8 @@ describe('socket json', async () => {
     [
       'json',
       './doesnotexist',
-      '--dry-run',
-      '--config',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
     ],
     'should print an error when the path to file does not exist',
@@ -110,7 +114,7 @@ describe('socket json', async () => {
   )
 
   cmdit(
-    ['json', '.', '--dry-run', '--config', '{"apiToken":"fakeToken"}'],
+    ['json', '.', FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fakeToken"}'],
     'should print a socket.json when found',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {

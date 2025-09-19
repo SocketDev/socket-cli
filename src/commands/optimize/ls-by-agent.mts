@@ -1,6 +1,6 @@
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
-import constants from '../../constants.mts'
+import constants, { FLAG_PROD } from '../../constants.mts'
 
 import type { EnvDetails } from '../../utils/package-environment.mts'
 
@@ -110,7 +110,7 @@ export async function lsPnpm(
         pkgEnvDetails.agentExecPath,
         // Pnpm uses the alternative spelling of parsable.
         // https://en.wiktionary.org/wiki/parsable
-        ['ls', '--parseable', '--prod', '--depth', 'Infinity'],
+        ['ls', '--parseable', FLAG_PROD, '--depth', 'Infinity'],
         {
           cwd,
           shell: constants.WIN32,
@@ -185,7 +185,7 @@ export async function lsYarnClassic(
     // > Fix: Excludes dev dependencies from the yarn list output when the
     //   environment is production
     return (
-      await spawn(pkgEnvDetails.agentExecPath, ['list', '--prod'], {
+      await spawn(pkgEnvDetails.agentExecPath, ['list', FLAG_PROD], {
         cwd,
         shell: constants.WIN32,
       })

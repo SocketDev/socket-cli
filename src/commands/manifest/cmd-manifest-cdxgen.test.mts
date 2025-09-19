@@ -11,7 +11,7 @@ import {
   spawnSocketCli,
   testPath,
 } from '../../../test/utils.mts'
-import constants from '../../constants.mts'
+import constants, { FLAG_HELP } from '../../constants.mts'
 
 type PromiseSpawnOptions = Exclude<Parameters<typeof spawn>[2], undefined> & {
   encoding?: BufferEncoding | undefined
@@ -51,7 +51,7 @@ describe('socket manifest cdxgen', async () => {
   // TODO: Revisit after socket-registry dep is updated.
   describe.skip('command forwarding', async () => {
     cmdit(
-      ['manifest', 'cdxgen', '--help'],
+      ['manifest', 'cdxgen', FLAG_HELP],
       'should support --help',
       async cmd => {
         const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
@@ -148,7 +148,7 @@ describe('socket manifest cdxgen', async () => {
         timeout: 60_000,
       },
       async () => {
-        for (const command of ['-h', '--help']) {
+        for (const command of ['-h', FLAG_HELP]) {
           // eslint-disable-next-line no-await-in-loop
           await expect(
             spawn(

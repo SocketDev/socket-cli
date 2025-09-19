@@ -1,13 +1,18 @@
 import { describe, expect } from 'vitest'
 
-import constants from '../../../src/constants.mts'
+import constants, {
+  FLAG_CONFIG,
+  FLAG_DRY_RUN,
+  FLAG_HELP,
+  FLAG_ORG,
+} from '../../../src/constants.mts'
 import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
 
 describe('socket audit-log', async () => {
   const { binCliPath } = constants
 
   cmdit(
-    ['audit-log', '--help', '--config', '{}'],
+    ['audit-log', FLAG_HELP, FLAG_CONFIG, '{}'],
     'should support --help',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -67,7 +72,7 @@ describe('socket audit-log', async () => {
   )
 
   cmdit(
-    ['audit-log', '--dry-run', '--config', '{"apiToken":"fakeToken"}'],
+    ['audit-log', FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fakeToken"}'],
     'should report missing org name',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -98,8 +103,8 @@ describe('socket audit-log', async () => {
       'audit-log',
       '--type',
       'xyz',
-      '--dry-run',
-      '--config',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
       '{"apiToken":"fakeToken", "defaultOrg": "fakeOrg"}',
     ],
     'should report legacy flag',
@@ -125,8 +130,8 @@ describe('socket audit-log', async () => {
   cmdit(
     [
       'audit-log',
-      '--dry-run',
-      '--config',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
       '{"apiToken":"fakeToken", "defaultOrg": "fakeOrg"}',
     ],
     'should accept default org',
@@ -148,10 +153,10 @@ describe('socket audit-log', async () => {
   cmdit(
     [
       'audit-log',
-      '--org',
+      FLAG_ORG,
       'forcedorg',
-      '--dry-run',
-      '--config',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
     ],
     'should accept --org flag in v1',

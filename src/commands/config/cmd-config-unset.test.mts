@@ -2,14 +2,18 @@ import path from 'node:path'
 
 import { describe, expect } from 'vitest'
 
-import constants from '../../../src/constants.mts'
+import constants, {
+  FLAG_CONFIG,
+  FLAG_DRY_RUN,
+  FLAG_HELP,
+} from '../../../src/constants.mts'
 import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
 
 describe('socket config unset', async () => {
   const { binCliPath } = constants
 
   cmdit(
-    ['config', 'unset', '--help', '--config', '{}'],
+    ['config', 'unset', FLAG_HELP, FLAG_CONFIG, '{}'],
     'should support --help',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -57,7 +61,7 @@ describe('socket config unset', async () => {
   )
 
   cmdit(
-    ['config', 'unset', '--dry-run', '--config', '{}'],
+    ['config', 'unset', FLAG_DRY_RUN, FLAG_CONFIG, '{}'],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -83,8 +87,8 @@ describe('socket config unset', async () => {
       'config',
       'unset',
       'test',
-      '--dry-run',
-      '--config',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
     ],
     'should require args with just dry-run',

@@ -3,7 +3,14 @@ import { createRequire } from 'node:module'
 import { getOwn } from '@socketsecurity/registry/lib/objects'
 
 import { getDefaultOrgSlug } from '../commands/ci/fetch-default-org-slug.mts'
-import constants, { NPM, PNPM, UNKNOWN_ERROR, YARN } from '../constants.mts'
+import constants, {
+  FLAG_QUIET,
+  FLAG_SILENT,
+  NPM,
+  PNPM,
+  UNKNOWN_ERROR,
+  YARN,
+} from '../constants.mts'
 import { findUp } from './fs.mts'
 import { getDefaultApiToken, getDefaultProxyUrl } from './sdk.mts'
 import { isYarnBerry } from './yarn-version.mts'
@@ -110,7 +117,7 @@ export async function spawnDlx(
       spawnArgs.push('--ignore-scripts')
     }
     if (silent) {
-      spawnArgs.push('--silent')
+      spawnArgs.push(FLAG_SILENT)
     }
     spawnArgs.push(packageString, ...args)
 
@@ -121,7 +128,7 @@ export async function spawnDlx(
     spawnArgs = ['dlx']
     // Yarn dlx runs in a temporary environment by design and should always fetch fresh.
     if (silent) {
-      spawnArgs.push('--quiet')
+      spawnArgs.push(FLAG_QUIET)
     }
     spawnArgs.push(packageString, ...args)
 
@@ -137,7 +144,7 @@ export async function spawnDlx(
       spawnArgs.push('--force')
     }
     if (silent) {
-      spawnArgs.push('--silent')
+      spawnArgs.push(FLAG_SILENT)
     }
     spawnArgs.push(packageString, ...args)
 
