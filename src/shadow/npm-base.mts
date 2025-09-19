@@ -8,7 +8,7 @@ import { isDebug } from '@socketsecurity/registry/lib/debug'
 import { getOwn } from '@socketsecurity/registry/lib/objects'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
-import { installLinks } from './npm/link.mts'
+import { installNpmLinks, installNpxLinks } from '../utils/shadow-links.mts'
 import { ensureIpcInStdio } from './stdio-ipc.mts'
 import constants, { NODE_MODULES, NPM, NPX } from '../constants.mts'
 import { cmdFlagsToString } from '../utils/cmd.mts'
@@ -81,7 +81,9 @@ export default async function shadowNpmBase(
 
   const stdio = ensureIpcInStdio(getOwn(spawnOpts, 'stdio'))
 
-  const realBinPath = await installLinks(constants.shadowBinPath, binName)
+  const realBinPath = isShadowNpm
+    ? await installNpmLinks(constants.shadowBinPath)
+    : await installNpxLinks(constants.shadowBinPath)
 
   const spawnPromise = spawn(
     constants.execPath,

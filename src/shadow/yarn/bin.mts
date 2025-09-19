@@ -3,7 +3,7 @@ import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import { scanPackagesAndLogAlerts } from '../common.mts'
 import { ensureIpcInStdio } from '../stdio-ipc.mts'
-import { installLinks } from './link.mts'
+import { installYarnLinks } from '../../utils/shadow-links.mts'
 import constants, { YARN } from '../../constants.mts'
 import { cmdFlagsToString } from '../../utils/cmd.mts'
 import { getPublicApiToken } from '../../utils/sdk.mts'
@@ -71,7 +71,7 @@ export default async function shadowYarnBin(
     throw new Error('process.exit called')
   }
 
-  const realYarnPath = await installLinks(constants.shadowBinPath, YARN)
+  const realYarnPath = await installYarnLinks(constants.shadowBinPath)
 
   spinner?.stop()
 

@@ -8,7 +8,7 @@ import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import { scanPackagesAndLogAlerts } from '../common.mts'
 import { ensureIpcInStdio } from '../stdio-ipc.mts'
-import { installLinks } from './link.mts'
+import { installPnpmLinks } from '../../utils/shadow-links.mts'
 import constants, {
   FLAG_DRY_RUN,
   PNPM,
@@ -169,7 +169,7 @@ export default async function shadowPnpmBin(
     debugFn('notice', 'complete: scanning, proceeding with install')
   }
 
-  const realPnpmPath = await installLinks(constants.shadowBinPath, PNPM)
+  const realPnpmPath = await installPnpmLinks(constants.shadowBinPath)
 
   spinner?.stop()
 
