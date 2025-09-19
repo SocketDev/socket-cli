@@ -8,6 +8,7 @@ import { debugFileOp } from '../../utils/debug.mts'
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
 import { mdTableStringNumber } from '../../utils/markdown.mts'
 import { serializeResultJson } from '../../utils/serialize-result-json.mts'
+import { fileLink } from '../../utils/terminal-link.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
@@ -82,7 +83,7 @@ export async function outputAnalytics(
       try {
         await fs.writeFile(filepath, serialized, 'utf8')
         debugFileOp('write', filepath)
-        logger.success(`Data successfully written to ${filepath}`)
+        logger.success(`Data successfully written to ${fileLink(filepath)}`)
       } catch (e) {
         debugFileOp('write', filepath, e)
         process.exitCode = 1
@@ -112,7 +113,7 @@ export async function outputAnalytics(
       try {
         await fs.writeFile(filepath, serialized, 'utf8')
         debugFileOp('write', filepath)
-        logger.success(`Data successfully written to ${filepath}`)
+        logger.success(`Data successfully written to ${fileLink(filepath)}`)
       } catch (e) {
         debugFileOp('write', filepath, e)
         logger.error(e)
