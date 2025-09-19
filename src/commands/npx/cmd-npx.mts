@@ -45,10 +45,10 @@ async function run(
     API Token Requirements
       ${getFlagApiRequirementsOutput(`${parentName}:${CMD_NAME}`)}
 
-    Note: Everything after "npx" is passed to the npx command.
+    Note: Everything after "${NPX}" is passed to the ${NPX} command.
           Only the \`--dry-run\` and \`--help\` flags are caught here.
 
-    Use \`socket wrapper on\` to alias this command as \`npx\`.
+    Use \`socket wrapper on\` to alias this command as \`${NPX}\`.
 
     Examples
       $ ${command} cowsay
@@ -70,11 +70,11 @@ async function run(
     return
   }
 
-  const shadowNpmBin = /*@__PURE__*/ require(constants.shadowNpmBinPath)
+  const shadowNpxBin = /*@__PURE__*/ require(constants.shadowNpxBinPath)
 
   process.exitCode = 1
 
-  const { spawnPromise } = await shadowNpmBin(NPX, argv, { stdio: 'inherit' })
+  const { spawnPromise } = await shadowNpxBin(argv, { stdio: 'inherit' })
 
   // See https://nodejs.org/api/child_process.html#event-exit.
   spawnPromise.process.on(
