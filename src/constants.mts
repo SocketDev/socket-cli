@@ -198,6 +198,7 @@ const CONFIG_KEY_DEFAULT_ORG = 'defaultOrg'
 const CONFIG_KEY_ENFORCED_ORGS = 'enforcedOrgs'
 const CONFIG_KEY_ORG = 'org'
 const DOT_SOCKET_DOT_FACTS_JSON = `${DOT_SOCKET_DIR}.facts.json`
+const DLX_BINARY_CACHE_TTL = 7 * 24 * 60 * 60 * 1_000 // 7 days in milliseconds.
 const DRY_RUN_LABEL = '[DryRun]'
 const DRY_RUN_BAILING_NOW = `${DRY_RUN_LABEL}: Bailing now`
 const DRY_RUN_NOT_SAVING = `${DRY_RUN_LABEL}: Not saving`
@@ -286,6 +287,7 @@ export type Constants = Remap<
     readonly CONFIG_KEY_ORG: typeof CONFIG_KEY_ORG
     readonly DOT_GIT_DIR: typeof DOT_GIT_DIR
     readonly DOT_SOCKET_DIR: typeof DOT_SOCKET_DIR
+    readonly DLX_BINARY_CACHE_TTL: typeof DLX_BINARY_CACHE_TTL
     readonly DOT_SOCKET_DOT_FACTS_JSON: typeof DOT_SOCKET_DOT_FACTS_JSON
     readonly DRY_RUN_BAILING_NOW: typeof DRY_RUN_BAILING_NOW
     readonly DRY_RUN_LABEL: typeof DRY_RUN_LABEL
@@ -1125,6 +1127,7 @@ export {
   CONFIG_KEY_DEFAULT_ORG,
   CONFIG_KEY_ENFORCED_ORGS,
   CONFIG_KEY_ORG,
+  DLX_BINARY_CACHE_TTL,
   DOT_SOCKET_DOT_FACTS_JSON,
   DRY_RUN_BAILING_NOW,
   DRY_RUN_LABEL,
