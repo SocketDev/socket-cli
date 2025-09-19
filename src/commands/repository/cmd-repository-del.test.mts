@@ -13,7 +13,7 @@ describe('socket repository del', async () => {
 
   cmdit(
     ['repository', 'del', FLAG_HELP, FLAG_CONFIG, '{}'],
-    'should support --help',
+    `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(

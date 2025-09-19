@@ -13,7 +13,7 @@ describe('socket threat-feed', async () => {
 
   cmdit(
     ['threat-feed', FLAG_HELP, FLAG_CONFIG, '{}'],
-    'should support --help',
+    `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
@@ -215,7 +215,7 @@ describe('socket threat-feed', async () => {
       FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
     ],
-    'should accept --org flag',
+    `should accept ${FLAG_ORG} flag`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)

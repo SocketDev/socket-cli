@@ -52,7 +52,7 @@ describe('socket manifest cdxgen', async () => {
   describe.skip('command forwarding', async () => {
     cmdit(
       ['manifest', 'cdxgen', FLAG_HELP],
-      'should support --help',
+      `should support ${FLAG_HELP}`,
       async cmd => {
         const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
           // Need to pass it on as env because --config will break cdxgen.
