@@ -10,7 +10,11 @@ export type {
   URLResult,
 } from 'npm-package-arg'
 
-export function npa(
+/**
+ * Safe wrapper for npm-package-arg that doesn't throw.
+ * Returns undefined if parsing fails.
+ */
+export function safeNpa(
   ...args: Parameters<typeof npmPackageArg>
 ): ReturnType<typeof npmPackageArg> | undefined {
   try {
