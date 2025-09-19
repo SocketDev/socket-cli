@@ -32,14 +32,8 @@ import {
   isNpmBinPathShadowed,
   isNpxBinPathShadowed,
 } from './npm-paths.mts'
-import {
-  getPnpmBinPath,
-  isPnpmBinPathShadowed,
-} from './pnpm-paths.mts'
-import {
-  getYarnBinPath,
-  isYarnBinPathShadowed,
-} from './yarn-paths.mts'
+import { getPnpmBinPath, isPnpmBinPathShadowed } from './pnpm-paths.mts'
+import { getYarnBinPath, isYarnBinPathShadowed } from './yarn-paths.mts'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)

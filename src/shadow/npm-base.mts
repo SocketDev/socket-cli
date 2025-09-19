@@ -8,12 +8,12 @@ import { isDebug } from '@socketsecurity/registry/lib/debug'
 import { getOwn } from '@socketsecurity/registry/lib/objects'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
-import { installNpmLinks, installNpxLinks } from '../utils/shadow-links.mts'
 import { ensureIpcInStdio } from './stdio-ipc.mts'
 import constants, { NODE_MODULES, NPM, NPX } from '../constants.mts'
 import { cmdFlagsToString } from '../utils/cmd.mts'
 import { findUp } from '../utils/fs.mts'
 import { getPublicApiToken } from '../utils/sdk.mts'
+import { installNpmLinks, installNpxLinks } from '../utils/shadow-links.mts'
 
 import type { IpcObject } from '../constants.mts'
 import type {
