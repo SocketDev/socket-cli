@@ -3,7 +3,7 @@
  * Provides test doubles for authentication-related functionality.
  */
 
-import { vi } from 'vitest'
+import { expect, vi } from 'vitest'
 
 export const MOCK_API_TOKEN = 'mock_socket_api_token_1234567890'
 export const MOCK_ORG_NAME = 'test-org'
@@ -101,7 +101,7 @@ export function mockOAuthPoller(options?: {
   shouldSucceed?: boolean
   pollCount?: number
 }) {
-  const { shouldSucceed = true, pollCount = 3 } = options || {}
+  const { pollCount = 3, shouldSucceed = true } = options || {}
   let currentPoll = 0
 
   return vi.fn().mockImplementation(async () => {
