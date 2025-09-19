@@ -120,7 +120,7 @@ describe('socket npm', async () => {
       FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
     ],
-    'should handle exec with --config flag and issueRules for malware',
+    'should handle npm exec with --config flag and issueRules for malware',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot('"[DryRun]: Bailing now"')
@@ -140,7 +140,7 @@ describe('socket npm', async () => {
       FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
     ],
-    'should handle exec with -c flag and multiple issueRules (malware and gptMalware)',
+    'should handle npm exec with -c flag and multiple issueRules (malware and gptMalware)',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot('"[DryRun]: Bailing now"')
@@ -163,7 +163,7 @@ describe('socket npm', async () => {
       FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
     ],
-    'should handle exec with --config flag and multiple issueRules (malware and gptMalware)',
+    'should handle npm exec with --config flag and multiple issueRules (malware and gptMalware)',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot('"[DryRun]: Bailing now"')
