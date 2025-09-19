@@ -150,6 +150,8 @@ export type ENV = Remap<
       LOCALAPPDATA: string
       NODE_COMPILE_CACHE: string
       NODE_EXTRA_CA_CERTS: string
+      npm_config_cache: string
+      npm_config_user_agent: string
       PATH: string
       SOCKET_CLI_ACCEPT_RISKS: boolean
       SOCKET_CLI_API_BASE_URL: string
@@ -548,6 +550,19 @@ const LAZY_ENV = () => {
       // Commonly used environment variable to specify the path to a single
       // PEM-encoded certificate file.
       envAsString(env['SSL_CERT_FILE']),
+    // npm cache directory path. Used to detect if running from npm's npx cache
+    // for temporary execution contexts.
+    npm_config_cache: envAsString(env['npm_config_cache']),
+    // Package manager user agent string that identifies which package manager
+    // is executing commands. Used to detect temporary execution contexts like
+    // npx, pnpm dlx, or yarn dlx.
+    // Expected values:
+    // - npm: 'npm/version node/version os arch' (e.g., 'npm/10.0.0 node/v20.0.0 darwin x64')
+    // - npx: Similar to npm but may include 'npx' or 'exec' in the string
+    // - yarn: 'yarn/version npm/? node/version os arch' (e.g., 'yarn/1.22.0 npm/? node/v20.0.0 darwin x64')
+    // - pnpm: 'pnpm/version node/version os arch' (Note: Not set for pnpm dlx/create/init)
+    // - When running via exec/npx/dlx, the string may contain 'exec', 'npx', or 'dlx'
+    npm_config_user_agent: envAsString(env['npm_config_user_agent']),
     // PATH is an environment variable that lists directories where executable
     // programs are located. When a command is run, the system searches these
     // directories to find the executable.
