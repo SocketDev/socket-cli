@@ -212,7 +212,10 @@ describe.skip('socket pnpm', async () => {
       })
 
       expect(stdout).toMatchInlineSnapshot('"[DryRun]: Bailing now"')
-      expect(code, 'dry-run exec with multiple issueRules should exit with code 0').toBe(0)
+      expect(
+        code,
+        'dry-run exec with multiple issueRules should exit with code 0',
+      ).toBe(0)
     },
   )
 
@@ -235,7 +238,10 @@ describe.skip('socket pnpm', async () => {
       })
 
       expect(stdout).toMatchInlineSnapshot('"[DryRun]: Bailing now"')
-      expect(code, 'dry-run exec with --config and multiple issueRules should exit with code 0').toBe(0)
+      expect(
+        code,
+        'dry-run exec with --config and multiple issueRules should exit with code 0',
+      ).toBe(0)
     },
   )
 
@@ -277,7 +283,10 @@ describe.skip('socket pnpm', async () => {
       })
 
       expect(stdout).toMatchInlineSnapshot('"[DryRun]: Bailing now"')
-      expect(code, 'dry-run install with --config should exit with code 0').toBe(0)
+      expect(
+        code,
+        'dry-run install with --config should exit with code 0',
+      ).toBe(0)
     },
   )
 
@@ -298,7 +307,10 @@ describe.skip('socket pnpm', async () => {
       })
 
       expect(stdout).toMatchInlineSnapshot('"[DryRun]: Bailing now"')
-      expect(code, 'dry-run install with multiple issueRules should exit with code 0').toBe(0)
+      expect(
+        code,
+        'dry-run install with multiple issueRules should exit with code 0',
+      ).toBe(0)
     },
   )
 
@@ -319,7 +331,10 @@ describe.skip('socket pnpm', async () => {
       })
 
       expect(stdout).toMatchInlineSnapshot('"[DryRun]: Bailing now"')
-      expect(code, 'dry-run install with --config and multiple issueRules should exit with code 0').toBe(0)
+      expect(
+        code,
+        'dry-run install with --config and multiple issueRules should exit with code 0',
+      ).toBe(0)
     },
   )
 

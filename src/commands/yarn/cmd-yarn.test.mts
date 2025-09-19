@@ -202,7 +202,10 @@ describe.skipIf(constants.WIN32)('socket yarn', async () => {
       })
 
       expect(stdout).toMatchInlineSnapshot('"[DryRun]: Bailing now"')
-      expect(code, 'dry-run exec with multiple issueRules should exit with code 0').toBe(0)
+      expect(
+        code,
+        'dry-run exec with multiple issueRules should exit with code 0',
+      ).toBe(0)
     },
   )
 
@@ -225,7 +228,10 @@ describe.skipIf(constants.WIN32)('socket yarn', async () => {
       })
 
       expect(stdout).toMatchInlineSnapshot('"[DryRun]: Bailing now"')
-      expect(code, 'dry-run exec with --config and multiple issueRules should exit with code 0').toBe(0)
+      expect(
+        code,
+        'dry-run exec with --config and multiple issueRules should exit with code 0',
+      ).toBe(0)
     },
   )
 })
