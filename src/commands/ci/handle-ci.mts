@@ -30,7 +30,10 @@ export async function handleCi(autoManifest: boolean): Promise<void> {
   const branchName = (await gitBranch(cwd)) || (await detectDefaultBranch(cwd))
   const repoName = await getRepoName(cwd)
 
-  debugFn('notice', `CI scan for ${orgSlug}/${repoName} on branch ${branchName}`)
+  debugFn(
+    'notice',
+    `CI scan for ${orgSlug}/${repoName} on branch ${branchName}`,
+  )
   debugDir('inspect', { orgSlug, cwd, branchName, repoName })
 
   await handleCreateNewScan({

@@ -114,7 +114,10 @@ export async function handleCreateNewScan({
     })
     return
   }
-  debugFn('notice', `Fetched ${supportedFilesCResult.data.size} supported file types`)
+  debugFn(
+    'notice',
+    `Fetched ${supportedFilesCResult.data.size} supported file types`,
+  )
 
   spinner.start('Searching for local files to include in scan...')
 

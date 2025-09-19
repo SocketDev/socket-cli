@@ -52,7 +52,10 @@ export async function handleOptimize({
     return
   }
 
-  debugFn('notice', `Detected package manager: ${pkgEnvDetails.agent} v${pkgEnvDetails.agentVersion}`)
+  debugFn(
+    'notice',
+    `Detected package manager: ${pkgEnvDetails.agent} v${pkgEnvDetails.agentVersion}`,
+  )
   debugDir('inspect', { pkgEnvDetails })
 
   const { agent, agentVersion } = pkgEnvDetails
@@ -75,8 +78,14 @@ export async function handleOptimize({
   logger.info(`Optimizing packages for ${agent} v${agentVersion}.\n`)
 
   debugFn('notice', 'Applying optimization')
-  const optimizationResult = await applyOptimization(pkgEnvDetails, { pin, prod })
-  debugFn('notice', `Optimization ${optimizationResult.ok ? 'succeeded' : 'failed'}`)
+  const optimizationResult = await applyOptimization(pkgEnvDetails, {
+    pin,
+    prod,
+  })
+  debugFn(
+    'notice',
+    `Optimization ${optimizationResult.ok ? 'succeeded' : 'failed'}`,
+  )
   debugDir('inspect', { optimizationResult })
 
   await outputOptimizeResult(optimizationResult, outputKind)
