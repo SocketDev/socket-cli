@@ -236,11 +236,9 @@ export async function cleanDlxCache(
           // Remove empty directory.
           // eslint-disable-next-line no-await-in-loop
           await fs.rmdir(entryPath)
-          cleaned++
+          cleaned += 1
         }
-      } catch {
-        // Ignore errors.
-      }
+      } catch {}
     }
   }
 
