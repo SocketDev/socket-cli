@@ -42,6 +42,8 @@ async function revertFixtureChanges() {
 
 describe('socket fix', async () => {
   const { binCliPath } = constants
+  // Increase timeout for CI environments and Windows where operations can be slower.
+  const testTimeout = constants.ENV.CI || constants.WIN32 ? 60_000 : 30_000
 
   beforeAll(async () => {
     // Ensure fixtures are in clean state before tests.
@@ -405,6 +407,7 @@ describe('socket fix', async () => {
       )
       expect(code, 'should exit with non-zero code').not.toBe(0)
     },
+    { timeout: testTimeout },
   )
 
   cmdit(
@@ -420,6 +423,7 @@ describe('socket fix', async () => {
       )
       expect(code, 'should exit with non-zero code').not.toBe(0)
     },
+    { timeout: testTimeout },
   )
 
   cmdit(
@@ -729,6 +733,7 @@ describe('socket fix', async () => {
         )
         expect(code).toBeGreaterThan(0)
       },
+      { timeout: testTimeout },
     )
 
     cmdit(
@@ -742,6 +747,7 @@ describe('socket fix', async () => {
         )
         expect(code).toBeGreaterThan(0)
       },
+      { timeout: testTimeout },
     )
 
     cmdit(
