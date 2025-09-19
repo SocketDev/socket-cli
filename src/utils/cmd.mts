@@ -18,12 +18,15 @@ export function cmdFlagsToString(args: string[] | readonly string[]): string {
     if (arg.startsWith('--')) {
       const nextArg = i + 1 < length ? args[i + 1]!.trim() : undefined
       // Check if the next item exists and is NOT another flag.
-      if (nextArg && !nextArg.startsWith('--')) {
+      if (nextArg && !nextArg.startsWith('--') && !nextArg.startsWith('-')) {
         result.push(`${arg}=${nextArg}`)
         i += 1
       } else {
         result.push(arg)
       }
+    } else {
+      // Include non-flag arguments (commands, package names, etc.).
+      result.push(arg)
     }
   }
   return result.join(' ')
