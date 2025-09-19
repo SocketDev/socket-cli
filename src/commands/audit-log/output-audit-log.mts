@@ -3,7 +3,11 @@ import { createRequire } from 'node:module'
 import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import constants, { FLAG_JSON, OUTPUT_JSON, OUTPUT_MARKDOWN } from '../../constants.mts'
+import constants, {
+  FLAG_JSON,
+  OUTPUT_JSON,
+  OUTPUT_MARKDOWN,
+} from '../../constants.mts'
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
 import { mdTable } from '../../utils/markdown.mts'
 import { msAtHome } from '../../utils/ms-at-home.mts'
