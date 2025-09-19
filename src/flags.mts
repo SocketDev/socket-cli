@@ -160,6 +160,7 @@ export const commonFlags: MeowFlags = {
     type: 'string',
     default: '',
     description: 'Override the local config with this JSON',
+    shortFlag: 'c',
     hidden: true,
   },
   dryRun: {
@@ -173,8 +174,8 @@ export const commonFlags: MeowFlags = {
   help: {
     type: 'boolean',
     default: false,
-    shortFlag: 'h',
     description: 'Print this help',
+    shortFlag: 'h',
     hidden: true,
   },
   maxOldSpaceSize: {
