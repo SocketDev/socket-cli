@@ -112,7 +112,7 @@ describe('socket analytics', async () => {
 
         \\xd7  Input error:  Please review the input requirements and try again
 
-          \\xd7 Legacy flags are no longer supported. See v1 migration guide (https://docs.socket.dev/docs/v1-migration-guide). (received legacy flags)
+          \\xd7 Legacy flags are no longer supported. See the v1 migration guide (https://docs.socket.dev/docs/v1-migration-guide). (received legacy flags)
           \\u221a The time filter must either be 7, 30 or 90"
       `)
 
@@ -287,7 +287,7 @@ describe('socket analytics', async () => {
 
         \\xd7  Input error:  Please review the input requirements and try again
 
-          \\xd7 Legacy flags are no longer supported. See v1 migration guide (https://docs.socket.dev/docs/v1-migration-guide). (received legacy flags)
+          \\xd7 Legacy flags are no longer supported. See the v1 migration guide (https://docs.socket.dev/docs/v1-migration-guide). (received legacy flags)
           \\u221a The time filter must either be 7, 30 or 90"
       `)
 

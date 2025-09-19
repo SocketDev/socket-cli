@@ -28,7 +28,7 @@ describe('socket audit-log', async () => {
             - Permissions: audit-log:list
 
           This feature requires an Enterprise Plan. To learn more about getting access
-          to this feature and many more, please visit https://socket.dev/pricing
+          to this feature and many more, please visit the Socket pricing page (https://socket.dev/pricing).
 
           The type FILTER arg is an enum. Defaults to any. It should be one of these:
             associateLabel, cancelInvitation, changeMemberRole, changePlanSubscriptionSeats,
@@ -120,7 +120,7 @@ describe('socket audit-log', async () => {
 
         \\xd7  Input error:  Please review the input requirements and try again
 
-          \\xd7 Legacy flags are no longer supported. See v1 migration guide (https://docs.socket.dev/docs/v1-migration-guide). (received legacy flags)"
+          \\xd7 Legacy flags are no longer supported. See the v1 migration guide (https://docs.socket.dev/docs/v1-migration-guide). (received legacy flags)"
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
