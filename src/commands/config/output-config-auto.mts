@@ -1,7 +1,7 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { select } from '@socketsecurity/registry/lib/prompts'
 
-import { isReadOnlyConfig, updateConfigValue } from '../../utils/config.mts'
+import { isConfigFromFlag, updateConfigValue } from '../../utils/config.mts'
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
 import { serializeResultJson } from '../../utils/serialize-result-json.mts'
 
@@ -49,7 +49,7 @@ export async function outputConfigAuto(
     logger.log(`- ${key}: ${result.data}`)
     logger.log('')
 
-    if (isReadOnlyConfig()) {
+    if (isConfigFromFlag()) {
       logger.log(
         '(Unable to persist this value because the config is in read-only mode, meaning it was overridden through env or flag.)',
       )

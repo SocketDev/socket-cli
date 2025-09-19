@@ -76,7 +76,7 @@ function getSocketCliVersionHash() {
     // Mostly for development: confirms the build refreshed. For prod builds
     // the git hash should suffice to identify the build.
     _socketVersionHash = `${version}:${gitHash}:${randUuidSegment}${
-      constants.ENV[INLINED_SOCKET_CLI_PUBLISHED_BUILD] ? ':pub' : ':dev'
+      constants.ENV[INLINED_SOCKET_CLI_PUBLISHED_BUILD] ? '' : ':dev'
     }`
   }
   return _socketVersionHash
