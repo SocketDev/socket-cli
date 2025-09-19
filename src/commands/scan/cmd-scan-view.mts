@@ -2,7 +2,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleScanView } from './handle-scan-view.mts'
 import { streamScan } from './stream-scan.mts'
-import constants from '../../constants.mts'
+import constants, { FLAG_JSON, FLAG_MARKDOWN } from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
@@ -122,7 +122,7 @@ async function run(
       nook: true,
       test: !json || !markdown,
       message:
-        'The `--json` and `--markdown` flags can not be used at the same time',
+        `The \`${FLAG_JSON}\` and \`${FLAG_MARKDOWN}\` flags can not be used at the same time`,
       fail: 'bad',
     },
     {
