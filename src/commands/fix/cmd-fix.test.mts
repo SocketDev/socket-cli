@@ -19,15 +19,15 @@ const fixtureBaseDir = path.join(testPath, 'fixtures/commands/fix')
 const pnpmFixtureDir = path.join(fixtureBaseDir, 'pnpm')
 
 async function revertFixtureChanges() {
-  // Reset only the lock files that fix command might modify.
+  // Reset only the lockfiles that fix command might modify.
   try {
     await spawn('git', ['checkout', 'HEAD', '--', 'monorepo/pnpm-lock.yaml'], {
       cwd: pnpmFixtureDir,
       stdio: 'ignore',
     })
   } catch (e) {
-    // Log warning but continue - lock file might not exist or have no changes.
-    logger.warn('Failed to revert lock file:', e)
+    // Log warning but continue - lockfile might not exist or have no changes.
+    logger.warn('Failed to revert lockfile:', e)
   }
   // Clean up any untracked files (node_modules, etc.).
   try {

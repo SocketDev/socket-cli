@@ -220,7 +220,7 @@ describe('Path Resolve', () => {
       expect(actual.map(normalizePath)).toEqual([])
     })
 
-    it('should resolve package and lock file', async () => {
+    it('should resolve package and lockfile', async () => {
       mockTestFs({
         [`${mockFixturePath}/package-lock.json`]: '{}',
         [`${mockFixturePath}/package.json`]: '{}',
@@ -237,7 +237,7 @@ describe('Path Resolve', () => {
       ])
     })
 
-    it('should resolve package without lock file', async () => {
+    it('should resolve package without lockfile', async () => {
       mockTestFs({
         [`${mockFixturePath}/package.json`]: '{}',
       })
@@ -252,7 +252,7 @@ describe('Path Resolve', () => {
       ])
     })
 
-    it('should support alternative lock files', async () => {
+    it('should support alternative lockfiles', async () => {
       mockTestFs({
         [`${mockFixturePath}/yarn.lock`]: '{}',
         [`${mockFixturePath}/package.json`]: '{}',

@@ -75,7 +75,7 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
     stdio: 'inherit',
   }
 
-  // Detect package manager based on lockfiles
+  // Detect package manager based on lockfiles.
   const pnpmLockPath = await findUp(PNPM_LOCK_YAML, { onlyFiles: true })
 
   const npmLockPath = pnpmLockPath

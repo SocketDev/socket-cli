@@ -261,7 +261,7 @@ async function updatePackageLockFile() {
       },
     )
   } catch (e) {
-    console.warn('Failed to update pnpm lock file:', e?.message)
+    console.warn('Failed to update pnpm lockfile:', e?.message)
   }
 }
 
