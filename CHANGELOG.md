@@ -10,6 +10,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Testing infrastructure for malware detection with mock fixtures and API response utilities
 - Test fixtures for packages flagged with both `malware` and `gptMalware` alerts
 
+### Fixed
+- Resolved Windows spawn errors for package managers by enabling shell execution for .cmd files
+
 ## [1.1.18](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.18) - 2025-09-18
 
 ### Fixed
