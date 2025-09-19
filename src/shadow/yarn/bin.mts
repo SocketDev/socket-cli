@@ -1,4 +1,4 @@
-import { debugFn, isDebug } from '@socketsecurity/registry/lib/debug'
+import { debugFn } from '@socketsecurity/registry/lib/debug'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import { scanPackagesAndLogAlerts } from '../common.mts'

@@ -1,7 +1,7 @@
 import { promises as fs } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
-import { debugDir, debugFn, isDebug } from '@socketsecurity/registry/lib/debug'
+import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants, { FLAG_DRY_RUN } from '../constants.mts'
@@ -46,7 +46,6 @@ export function extractPackagePurlsFromArgs(
  */
 export async function extractPackagePurlsFromPackageJson(
   cwd: string,
-  spinner?: Spinner,
 ): Promise<string[]> {
   const packagePurls: string[] = []
 
@@ -140,7 +139,7 @@ export async function scanPackagesAndLogAlerts(
   } else if (isInstallCommand) {
     // For install/update, scan dependencies from package.json.
     // Note: This scans direct dependencies only.
-    packagePurls = await extractPackagePurlsFromPackageJson(cwd, spinner)
+    packagePurls = await extractPackagePurlsFromPackageJson(cwd)
   }
 
   if (!packagePurls.length) {

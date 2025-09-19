@@ -12,8 +12,6 @@ import {
 import { normalizePath } from '@socketsecurity/registry/lib/path'
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
 import { getCliSpinners } from '@socketsecurity/registry/lib/spinner'
-
-import { isDebug } from './debug.mts'
 import {
   indentString,
   trimNewlines,
@@ -25,6 +23,7 @@ import {
   overrideCachedConfig,
   overrideConfigApiToken,
 } from './config.mts'
+import { isDebug } from './debug.mts'
 import { getFlagListOutput, getHelpListOutput } from './output-formatting.mts'
 import constants, {
   API_V0_URL,
