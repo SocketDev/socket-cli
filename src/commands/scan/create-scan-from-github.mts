@@ -1,4 +1,9 @@
-import fs from 'node:fs'
+import {
+  createWriteStream,
+  existsSync,
+  promises as fs,
+  mkdirSync,
+} from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { pipeline } from 'node:stream/promises'
@@ -10,6 +15,7 @@ import { confirm, select } from '@socketsecurity/registry/lib/prompts'
 import { fetchSupportedScanFileNames } from './fetch-supported-scan-file-names.mts'
 import { handleCreateNewScan } from './handle-create-new-scan.mts'
 import constants from '../../constants.mts'
+import { formatErrorWithDetail } from '../../utils/errors.mts'
 import { isReportSupportedFile } from '../../utils/glob.mts'
 import { fetchListAllRepos } from '../repository/fetch-list-all-repos.mts'
 
@@ -463,11 +469,11 @@ async function streamDownloadWithFetch(
     // Make sure the dir exists. It may be nested and we need to construct that
     // before starting the download.
     const dir = path.dirname(localPath)
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true })
+    if (!existsSync(dir)) {
+      mkdirSync(dir, { recursive: true })
     }
 
-    const fileStream = fs.createWriteStream(localPath)
+    const fileStream = createWriteStream(localPath)
 
     // Using stream.pipeline for better error handling and cleanup
 
@@ -483,16 +489,16 @@ async function streamDownloadWithFetch(
     debugDir('inspect', { error: e })
 
     // If an error occurs and fileStream was created, attempt to clean up.
-    if (fs.existsSync(localPath)) {
+    if (existsSync(localPath)) {
       // Check if fileStream was even opened before trying to delete
       // This check might be too simplistic depending on when error occurs
-      fs.unlink(localPath, unlinkErr => {
-        if (unlinkErr) {
-          logger.fail(
-            `Error deleting partial file ${localPath}: ${unlinkErr.message}`,
-          )
-        }
-      })
+      try {
+        await fs.unlink(localPath)
+      } catch (e) {
+        logger.fail(
+          formatErrorWithDetail(`Error deleting partial file ${localPath}`, e),
+        )
+      }
     }
     // Construct a more informative error message
     let detailedError = `Error during download of ${downloadUrl}: ${(e as { message: string }).message}`
