@@ -21,7 +21,9 @@ export type SocketJsonError = {
   code?: number
 }
 
-export type SocketJsonResponse<T = unknown> = SocketJsonSuccess<T> | SocketJsonError
+export type SocketJsonResponse<T = unknown> =
+  | SocketJsonSuccess<T>
+  | SocketJsonError
 
 /**
  * Validates that a string contains valid JSON matching Socket CLI response format.
@@ -31,7 +33,7 @@ export type SocketJsonResponse<T = unknown> = SocketJsonSuccess<T> | SocketJsonE
  */
 export function validateSocketJson<T = unknown>(
   jsonString: string,
-  expectedExitCode: number
+  expectedExitCode: number,
 ): SocketJsonResponse<T> {
   let parsed: any
 
@@ -44,29 +46,41 @@ export function validateSocketJson<T = unknown>(
 
   // Check for required ok field.
   if (typeof parsed.ok !== 'boolean') {
-    throw new Error(`JSON output missing required 'ok' boolean field: ${jsonString}`)
+    throw new Error(
+      `JSON output missing required 'ok' boolean field: ${jsonString}`,
+    )
   }
 
   // Validate based on exit code expectation.
   if (expectedExitCode === 0) {
     if (parsed.ok !== true) {
-      throw new Error(`JSON output 'ok' should be true when exit code is 0: ${jsonString}`)
+      throw new Error(
+        `JSON output 'ok' should be true when exit code is 0: ${jsonString}`,
+      )
     }
     // Success response must have data field.
     if (parsed.data === undefined || parsed.data === null) {
-      throw new Error(`JSON output missing required 'data' field when ok is true: ${jsonString}`)
+      throw new Error(
+        `JSON output missing required 'data' field when ok is true: ${jsonString}`,
+      )
     }
   } else {
     if (parsed.ok !== false) {
-      throw new Error(`JSON output 'ok' should be false when exit code is non-zero: ${jsonString}`)
+      throw new Error(
+        `JSON output 'ok' should be false when exit code is non-zero: ${jsonString}`,
+      )
     }
     // Error response must have message field.
     if (typeof parsed.message !== 'string' || parsed.message.length === 0) {
-      throw new Error(`JSON output missing required 'message' field when ok is false: ${jsonString}`)
+      throw new Error(
+        `JSON output missing required 'message' field when ok is false: ${jsonString}`,
+      )
     }
     // If code exists, it must be a number.
     if (parsed.code !== undefined && typeof parsed.code !== 'number') {
-      throw new Error(`JSON output 'code' field must be a number: ${jsonString}`)
+      throw new Error(
+        `JSON output 'code' field must be a number: ${jsonString}`,
+      )
     }
   }
 
@@ -77,7 +91,7 @@ export function validateSocketJson<T = unknown>(
  * Helper to check if response is a success response.
  */
 export function isSocketJsonSuccess<T = unknown>(
-  response: SocketJsonResponse<T>
+  response: SocketJsonResponse<T>,
 ): response is SocketJsonSuccess<T> {
   return response.ok === true
 }
@@ -86,7 +100,7 @@ export function isSocketJsonSuccess<T = unknown>(
  * Helper to check if response is an error response.
  */
 export function isSocketJsonError<T = unknown>(
-  response: SocketJsonResponse<T>
+  response: SocketJsonResponse<T>,
 ): response is SocketJsonError {
   return response.ok === false
 }
