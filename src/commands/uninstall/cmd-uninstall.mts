@@ -11,14 +11,14 @@ export const cmdUninstall: CliSubcommand = {
   async run(argv, importMeta, { parentName }) {
     await meowWithSubcommands(
       {
-        completion: cmdUninstallCompletion,
-      },
-      {
         argv,
-        description,
-        importMeta,
         name: `${parentName} uninstall`,
+        importMeta,
+        subcommands: {
+          completion: cmdUninstallCompletion,
+        },
       },
+      { description }
     )
   },
 }

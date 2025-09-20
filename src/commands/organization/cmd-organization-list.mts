@@ -58,12 +58,14 @@ async function run(
   `,
   }
 
-  const cli = meowOrExit({
-    argv,
-    config,
-    importMeta,
-    parentName,
-  })
+  const cli = meowOrExit(
+    {
+      argv,
+      config,
+      parentName,
+      importMeta,
+    }
+  )
 
   const { json, markdown } = cli.flags
 

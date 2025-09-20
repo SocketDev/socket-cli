@@ -16,16 +16,18 @@ export const cmdOrganizationPolicy: CliSubcommand = {
   async run(argv, importMeta, { parentName }) {
     await meowWithSubcommands(
       {
-        security: cmdOrganizationPolicySecurity,
-        license: cmdOrganizationPolicyLicense,
+        argv,
+        name: `${parentName} policy`,
+        importMeta,
+        subcommands: {
+          security: cmdOrganizationPolicySecurity,
+          license: cmdOrganizationPolicyLicense,
+        },
       },
       {
-        argv,
         description,
         defaultSub: 'list', // Backwards compat
-        importMeta,
-        name: `${parentName} policy`,
-      },
+      }
     )
   },
 }
