@@ -32,29 +32,29 @@ const pnpmFixtureDir = path.join(fixtureBaseDir, PNPM)
 
 async function revertFixtureChanges() {
   // Reset only the package.json and pnpm-lock.yaml files that tests modify.
+  const cwd = process.cwd()
+  // Git needs the paths relative to the repository root.
+  const relativePackageJson = path.relative(
+    cwd,
+    path.join(pnpmFixtureDir, PACKAGE_JSON),
+  )
+  const relativePnpmLock = path.relative(
+    cwd,
+    path.join(pnpmFixtureDir, PNPM_LOCK_YAML),
+  )
+  // Silently ignore errors. Files may not be tracked by git, may already be
+  // reverted, or may not have been modified yet. This is expected behavior
+  // in CI environments and during initial test runs.
   try {
-    // Git needs the paths relative to the repository root.
-    const relativePackageJson = path.relative(
-      process.cwd(),
-      path.join(pnpmFixtureDir, PACKAGE_JSON),
-    )
-    const relativePnpmLock = path.relative(
-      process.cwd(),
-      path.join(pnpmFixtureDir, PNPM_LOCK_YAML),
-    )
-
     await spawn(
       'git',
       ['checkout', 'HEAD', '--', relativePackageJson, relativePnpmLock],
       {
-        cwd: process.cwd(),
+        cwd,
         stdio: 'ignore',
       },
     )
-  } catch (e) {
-    // Log warning but continue - files may already be reverted or not modified.
-    logger.warn('Failed to revert fixture changes:', e)
-  }
+  } catch {}
 }
 
 async function createTempFixture(sourceDir: string): Promise<string> {
