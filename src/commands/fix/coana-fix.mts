@@ -5,6 +5,13 @@ import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { pluralize } from '@socketsecurity/registry/lib/words'
 
+import {
+  checkCiEnvVars,
+  getCiEnvInstructions,
+  getFixEnv,
+} from './env-helpers.mts'
+import { getSocketFixBranchName, getSocketFixCommitMessage } from './git.mts'
+import { getSocketFixPrs, openSocketFixPr } from './pull-request.mts'
 import { FLAG_DRY_RUN, GQL_PR_STATE_OPEN } from '../../constants.mts'
 import { handleApiCall } from '../../utils/api.mts'
 import { cmdFlagValueToArray } from '../../utils/cmd.mts'
@@ -28,13 +35,6 @@ import {
 import { getPackageFilesForScan } from '../../utils/path-resolve.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 import { fetchSupportedScanFileNames } from '../scan/fetch-supported-scan-file-names.mts'
-import {
-  checkCiEnvVars,
-  getCiEnvInstructions,
-  getFixEnv,
-} from './env-helpers.mts'
-import { getSocketFixBranchName, getSocketFixCommitMessage } from './git.mts'
-import { getSocketFixPrs, openSocketFixPr } from './pull-request.mts'
 
 import type { FixConfig } from './types.mts'
 import type { CResult } from '../../types.mts'
@@ -44,8 +44,8 @@ export async function coanaFix(
 ): Promise<CResult<{ fixed: boolean }>> {
   const {
     autopilot,
-    dontApplyFixes,
     cwd,
+    dontApplyFixes,
     ghsas,
     glob,
     limit,

@@ -99,8 +99,8 @@ export async function convertIdsToGhsas(ids: string[]): Promise<string[]> {
 
 export async function handleFix({
   autopilot,
-  dontApplyFixes,
   cwd,
+  dontApplyFixes,
   ghsas,
   glob,
   limit,
@@ -121,7 +121,7 @@ export async function handleFix({
     glob,
     limit,
     minSatisfying,
-    onlyCompute,
+    dontApplyFixes,
     outputFile,
     outputKind,
     prCheck,
