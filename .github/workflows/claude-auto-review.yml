@@ -1,37 +1,14 @@
-name: Claude Auto Review
+name: ⚙️ Claude Auto Review
 
 on:
   pull_request:
     types: [opened]
+  workflow_dispatch:
 
 jobs:
   auto-review:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: read
-      id-token: write
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-        with:
-          fetch-depth: 1
-
-      - name: Automatic PR Review
-        uses: anthropics/claude-code-action@28f83620103c48a57093dcc2837eec89e036bb9f # beta
-        with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          timeout_minutes: "60"
-          direct_prompt: |
-            Please review this pull request and provide actionable feedback.
-
-            Focus on:
-            - Code quality and best practices
-            - Potential bugs or issues
-            - Performance considerations
-            - Security implications
-            - Overall architecture and design decisions
-
-            Provide constructive feedback with specific suggestions for improvement.
-            Use inline comments to highlight specific areas of concern. Be concise and clear in your feedback.
-          allowed_tools: "mcp__github__create_pending_pull_request_review,mcp__github__add_pull_request_review_comment_to_pending_review,mcp__github__submit_pending_pull_request_review,mcp__github__get_pull_request_diff"
+    uses: SocketDev/socket-registry/.github/workflows/claude-auto-review.yml@main
+    secrets:
+      anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+    with:
+      timeout_minutes: '60'
