@@ -91,8 +91,8 @@ describe('socket threat-feed', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
+          |   __|___ ___| |_ ___| |_      | Socket.dev CLI v<redacted>
+          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket threat-feed\`, cwd: <redacted>"
       `)
 
@@ -112,8 +112,8 @@ describe('socket threat-feed', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
+          |   __|___ ___| |_ ___| |_      | Socket.dev CLI v<redacted>
+          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket threat-feed\`, cwd: <redacted>
 
         \\u203c Unable to determine the target org. Trying to auto-discover it now...
@@ -147,8 +147,8 @@ describe('socket threat-feed', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, --org: boo
+          |   __|___ ___| |_ ___| |_      | Socket.dev CLI v<redacted>
+          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket threat-feed\`, cwd: <redacted>"
       `)
 
@@ -165,8 +165,8 @@ describe('socket threat-feed', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
+          |   __|___ ___| |_ ___| |_      | Socket.dev CLI v<redacted>
+          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket threat-feed\`, cwd: <redacted>
 
         \\u203c Unable to determine the target org. Trying to auto-discover it now...
@@ -197,8 +197,8 @@ describe('socket threat-feed', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
+          |   __|___ ___| |_ ___| |_      | Socket.dev CLI v<redacted>
+          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket threat-feed\`, cwd: <redacted>"
       `)
 
@@ -222,8 +222,8 @@ describe('socket threat-feed', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, --org: forcedorg
+          |   __|___ ___| |_ ___| |_      | Socket.dev CLI v<redacted>
+          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket threat-feed\`, cwd: <redacted>"
       `)
 

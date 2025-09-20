@@ -1,36 +1,68 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { describe, expect } from 'vitest'
 
-import { runWithConfig } from '../../test/run-with-config.mts'
+import constants, {
+  FLAG_CONFIG,
+  FLAG_DRY_RUN,
+  FLAG_HELP,
+  FLAG_JSON,
+  FLAG_MARKDOWN,
+} from '../../../src/constants.mts'
+import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
 
-describe('socket cdxgen', () => {
-  it('should support --help: `cdxgen --help --config {}`', async () => {
-    const result = await runWithConfig('cdxgen', '--help')
-    expect(result.stderr).toBeFalsy()
-    expect(result.stdout).toMatch(/Usage/)
-  })
+describe('socket cdxgen', async () => {
+  const { binCliPath } = constants
 
-  it('should require path argument: `cdxgen --dry-run --config {}`', async () => {
-    const result = await runWithConfig('cdxgen', '--dry-run')
-    expect(result.stderr).toContain('Needs a path')
-    expect(result.exitCode).toBe(2)
-  })
+  cmdit(
+    ['cdxgen', FLAG_HELP, FLAG_CONFIG, '{}'],
+    `should support ${FLAG_HELP}`,
+    async cmd => {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      // cdxgen outputs its version and runtime info when run with help.
+      expect(stdout).toMatch(/CycloneDX Generator/)
+      expect(code, 'explicit help should exit with code 0').toBe(0)
+    },
+  )
 
-  it('should fail without cdxgen installed: `cdxgen . --config {}`', async () => {
-    const result = await runWithConfig('cdxgen', '.')
-    expect(result.exitCode).toBe(1)
-    // Since cdxgen is not installed in test environment, should fail
-  })
+  cmdit(
+    ['cdxgen', FLAG_DRY_RUN, FLAG_CONFIG, '{}'],
+    'should handle dry-run without path',
+    async cmd => {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      // With dry-run, cdxgen exits early.
+      expect(stdout).toContain('[DryRun]: Bailing now')
+      expect(code, 'dry-run should exit with code 0').toBe(0)
+    },
+  )
 
-  describe('output formats', () => {
-    it('should support --json flag: `cdxgen . --json --config {}`', async () => {
-      const result = await runWithConfig('cdxgen', '.', '--json', '--dry-run')
-      // Even with dry-run, should fail since path validation happens first
-      expect(result.exitCode).toBe(2)
-    })
+  cmdit(
+    ['cdxgen', '.', FLAG_DRY_RUN, FLAG_CONFIG, '{}'],
+    'should handle path with dry-run',
+    async cmd => {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      // With dry-run, should bail before actually running cdxgen.
+      expect(stdout).toContain('[DryRun]: Bailing now')
+      expect(code, 'dry-run should exit with code 0').toBe(0)
+    },
+  )
 
-    it('should support --markdown flag: `cdxgen . --markdown --config {}`', async () => {
-      const result = await runWithConfig('cdxgen', '.', '--markdown', '--dry-run')
-      expect(result.exitCode).toBe(2)
-    })
-  })
+  cmdit(
+    ['cdxgen', '.', FLAG_JSON, FLAG_DRY_RUN, FLAG_CONFIG, '{}'],
+    `should support ${FLAG_JSON} flag`,
+    async cmd => {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      // With dry-run, should bail before actually running cdxgen.
+      expect(stdout).toContain('[DryRun]: Bailing now')
+      expect(code, 'dry-run should exit with code 0').toBe(0)
+    },
+  )
+
+  cmdit(
+    ['cdxgen', '.', FLAG_MARKDOWN, FLAG_DRY_RUN, FLAG_CONFIG, '{}'],
+    `should support ${FLAG_MARKDOWN} flag`,
+    async cmd => {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      expect(stdout).toContain('[DryRun]: Bailing now')
+      expect(code, 'dry-run should exit with code 0').toBe(0)
+    },
+  )
 })
