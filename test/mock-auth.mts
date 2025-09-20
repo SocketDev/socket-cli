@@ -21,7 +21,7 @@
  * - E2E testing with controlled responses
  */
 
-import type { CResult } from '../types.mts'
+import type { CResult } from '../src/types.mts'
 
 export interface MockAuthOptions {
   /** Whether the operation should succeed. */
