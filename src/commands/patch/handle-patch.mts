@@ -323,7 +323,24 @@ async function processFilePatch(
   let result = true
   try {
     await fs.copyFile(blobPath, filepath)
-    logger.success(`Patch applied successfully`)
+
+    // Verify the hash after copying to ensure file integrity.
+    const verifyHashResult = await computeSHA256(filepath)
+    if (!verifyHashResult.ok) {
+      logger.error(
+        `Failed to verify hash after patch: ${verifyHashResult.cause || verifyHashResult.message}`,
+      )
+      result = false
+    } else if (verifyHashResult.data !== fileInfo.afterHash) {
+      logger.error(`Hash verification failed after patch`)
+      logger.group()
+      logger.log(`Expected: ${fileInfo.afterHash}`)
+      logger.log(`Got:      ${verifyHashResult.data}`)
+      logger.groupEnd()
+      result = false
+    } else {
+      logger.success(`Patch applied successfully`)
+    }
   } catch (e) {
     logger.error('Error applying patch')
     debugDir('error', e)
