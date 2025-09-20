@@ -645,7 +645,9 @@ const LAZY_ENV = () => {
     TERM: envAsString(env['TERM']),
     // Redefine registryConstants.ENV.VITEST to account for the
     // INLINED_SOCKET_CLI_PUBLISHED_BUILD environment variable.
-    VITEST: INLINED_SOCKET_CLI_PUBLISHED_BUILD ? false : envAsBoolean(process.env[VITEST]),
+    VITEST: INLINED_SOCKET_CLI_PUBLISHED_BUILD
+      ? false
+      : envAsBoolean(process.env[VITEST]),
   })
 }
 
