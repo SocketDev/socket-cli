@@ -33,11 +33,21 @@ const pnpmFixtureDir = path.join(fixtureBaseDir, PNPM)
 async function revertFixtureChanges() {
   // Reset only the package.json and pnpm-lock.yaml files that tests modify.
   try {
+    // Git needs the paths relative to the repository root.
+    const relativePackageJson = path.relative(
+      process.cwd(),
+      path.join(pnpmFixtureDir, PACKAGE_JSON),
+    )
+    const relativePnpmLock = path.relative(
+      process.cwd(),
+      path.join(pnpmFixtureDir, PNPM_LOCK_YAML),
+    )
+
     await spawn(
       'git',
-      ['checkout', 'HEAD', '--', PACKAGE_JSON, PNPM_LOCK_YAML],
+      ['checkout', 'HEAD', '--', relativePackageJson, relativePnpmLock],
       {
-        cwd: pnpmFixtureDir,
+        cwd: process.cwd(),
         stdio: 'ignore',
       },
     )

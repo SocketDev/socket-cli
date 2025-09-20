@@ -70,7 +70,9 @@ export function mockConfigStorage() {
 /**
  * Mock API client with authentication.
  */
-export function mockAuthenticatedApiClient(options?: { isAuthenticated?: boolean }) {
+export function mockAuthenticatedApiClient(options?: {
+  isAuthenticated?: boolean
+}) {
   const { isAuthenticated = true } = options || {}
 
   return {
@@ -79,11 +81,11 @@ export function mockAuthenticatedApiClient(options?: { isAuthenticated?: boolean
     setToken: vi.fn(),
     clearToken: vi.fn(),
     validateToken: vi.fn().mockResolvedValue(isAuthenticated),
-    getOrganizations: vi.fn().mockResolvedValue(
-      isAuthenticated
-        ? [{ id: MOCK_ORG_ID, name: MOCK_ORG_NAME }]
-        : []
-    ),
+    getOrganizations: vi
+      .fn()
+      .mockResolvedValue(
+        isAuthenticated ? [{ id: MOCK_ORG_ID, name: MOCK_ORG_NAME }] : [],
+      ),
   }
 }
 
@@ -132,9 +134,13 @@ export function setupLoginMocks(options?: {
   const { authenticated = false, loginShouldSucceed = true } = options || {}
 
   const configMock = mockConfigStorage()
-  const apiClientMock = mockAuthenticatedApiClient({ isAuthenticated: authenticated })
+  const apiClientMock = mockAuthenticatedApiClient({
+    isAuthenticated: authenticated,
+  })
   const browserMock = mockBrowserOpener()
-  const authFlowMock = mockInteractiveLogin({ shouldSucceed: loginShouldSucceed })
+  const authFlowMock = mockInteractiveLogin({
+    shouldSucceed: loginShouldSucceed,
+  })
 
   // Pre-populate config if authenticated.
   if (authenticated) {
