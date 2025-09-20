@@ -1,15 +1,7 @@
-import { existsSync, promises as fs } from 'node:fs'
+import { existsSync } from 'node:fs'
 import path from 'node:path'
 
-import {
-  afterAll,
-  afterEach,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-} from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { readPackageJson } from '@socketsecurity/registry/lib/packages'
 import { spawnSync } from '@socketsecurity/registry/lib/spawn'

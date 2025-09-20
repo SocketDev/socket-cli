@@ -45,10 +45,10 @@ export async function coanaFix(
   const {
     autopilot,
     cwd,
+    dontApplyFixes,
     ghsas,
     glob,
     limit,
-    onlyCompute,
     orgSlug,
     outputFile,
     spinner,
@@ -106,7 +106,7 @@ export async function coanaFix(
 
   if (!shouldOpenPrs) {
     // Inform user about local mode when fixes will be applied.
-    if (!onlyCompute && ghsas.length) {
+    if (!dontApplyFixes && ghsas.length) {
       const envCheck = checkCiEnvVars()
       if (envCheck.present.length) {
         // Some CI vars are set but not all - show what's missing.
@@ -143,7 +143,7 @@ export async function coanaFix(
           ? ['--range-style', fixConfig.rangeStyle]
           : []),
         ...(glob ? ['--glob', glob] : []),
-        ...(onlyCompute ? [FLAG_DRY_RUN] : []),
+        ...(dontApplyFixes ? [FLAG_DRY_RUN] : []),
         ...(outputFile ? ['--output-file', outputFile] : []),
         ...fixConfig.unknownFlags,
       ],
