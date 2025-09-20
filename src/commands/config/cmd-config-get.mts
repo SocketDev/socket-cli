@@ -1,7 +1,7 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleConfigGet } from './handle-config-get.mts'
-import constants from '../../constants.mts'
+import constants, { FLAG_JSON, FLAG_MARKDOWN } from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import {
@@ -83,8 +83,7 @@ async function run(
     {
       nook: true,
       test: !json || !markdown,
-      message:
-        'The `--json` and `--markdown` flags can not be used at the same time',
+      message: `The \`${FLAG_JSON}\` and \`${FLAG_MARKDOWN}\` flags can not be used at the same time`,
       fail: 'bad',
     },
   )

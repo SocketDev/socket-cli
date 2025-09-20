@@ -49,8 +49,8 @@ async function run(
   const cli = meowOrExit({
     argv,
     config,
-    importMeta,
     parentName,
+    importMeta,
   })
 
   const dryRun = !!cli.flags['dryRun']

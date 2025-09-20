@@ -6,7 +6,10 @@ import { arrayUnique, joinOr } from '@socketsecurity/registry/lib/arrays'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleFix } from './handle-fix.mts'
-import constants, { ERROR_UNABLE_RESOLVE_ORG } from '../../constants.mts'
+import constants, {
+  ERROR_UNABLE_RESOLVE_ORG,
+  FLAG_ID,
+} from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import { cmdFlagValueToArray } from '../../utils/cmd.mts'
@@ -109,7 +112,7 @@ const hiddenFlags: MeowFlags = {
   glob: {
     type: 'string',
     default: '',
-    description: 'Glob pattern to pass to coana for filtering files',
+    description: 'Glob pattern to filter workspaces by',
     hidden: true,
   },
   maxSatisfying: {
@@ -189,18 +192,20 @@ async function run(
 
     Examples
       $ ${command}
-      $ ${command} --id CVE-2021-23337
+      $ ${command} ${FLAG_ID} CVE-2021-23337
       $ ${command} ./path/to/project --range-style pin
     `,
   }
 
-  const cli = meowOrExit({
-    allowUnknownFlags: false,
-    argv,
-    config,
-    importMeta,
-    parentName,
-  })
+  const cli = meowOrExit(
+    {
+      argv,
+      config,
+      parentName,
+      importMeta,
+    },
+    { allowUnknownFlags: false },
+  )
 
   const {
     autopilot,

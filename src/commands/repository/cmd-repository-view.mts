@@ -1,9 +1,11 @@
-import terminalLink from 'terminal-link'
-
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleViewRepo } from './handle-view-repo.mts'
-import constants, { V1_MIGRATION_GUIDE_URL } from '../../constants.mts'
+import constants, {
+  FLAG_JSON,
+  FLAG_MARKDOWN,
+  V1_MIGRATION_GUIDE_URL,
+} from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
@@ -14,6 +16,7 @@ import {
   getFlagListOutput,
 } from '../../utils/output-formatting.mts'
 import { hasDefaultApiToken } from '../../utils/sdk.mts'
+import { webLink } from '../../utils/terminal-link.mts'
 
 import type {
   CliCommandConfig,
@@ -75,8 +78,8 @@ async function run(
   const cli = meowOrExit({
     argv,
     config,
-    importMeta,
     parentName,
+    importMeta,
   })
 
   const { json, markdown, org: orgFlag } = cli.flags
@@ -104,7 +107,7 @@ async function run(
     {
       nook: true,
       test: noLegacy,
-      message: `Legacy flags are no longer supported. See ${terminalLink('v1 migration guide', V1_MIGRATION_GUIDE_URL)}.`,
+      message: `Legacy flags are no longer supported. See the ${webLink(V1_MIGRATION_GUIDE_URL, 'v1 migration guide')}.`,
       fail: `received legacy flags`,
     },
     {
@@ -121,8 +124,7 @@ async function run(
     {
       nook: true,
       test: !json || !markdown,
-      message:
-        'The `--json` and `--markdown` flags can not be used at the same time',
+      message: `The \`${FLAG_JSON}\` and \`${FLAG_MARKDOWN}\` flags can not be used at the same time`,
       fail: 'bad',
     },
     {

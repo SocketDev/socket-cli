@@ -1,3 +1,29 @@
+/**
+ * GitHub utilities for Socket CLI.
+ * Provides GitHub API integration for repository operations and GHSA vulnerability data.
+ *
+ * Authentication:
+ * - getGitHubToken: Retrieve GitHub token from env/git config
+ * - getOctokit: Get authenticated Octokit instance
+ * - getOctokitGraphql: Get authenticated GraphQL client
+ *
+ * Caching:
+ * - 5-minute TTL for API responses
+ * - Automatic cache invalidation
+ * - Persistent cache in node_modules/.cache
+ *
+ * GHSA Operations:
+ * - cacheFetch: Cache API responses with TTL
+ * - fetchGhsaDetails: Fetch GitHub Security Advisory details
+ * - getGhsaUrl: Generate GHSA advisory URL
+ * - readCache/writeCache: Persistent cache operations
+ *
+ * Repository Operations:
+ * - GraphQL queries for complex operations
+ * - Integration with Octokit REST API
+ * - Support for GitHub Actions environment variables
+ */
+
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 
@@ -16,6 +42,7 @@ import {
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 import { parseUrl } from '@socketsecurity/registry/lib/url'
 
+import { formatErrorWithDetail } from './errors.mts'
 import constants from '../constants.mts'
 
 import type { components } from '@octokit/openapi-types'
@@ -143,9 +170,8 @@ export async function fetchGhsaDetails(
       }
     }
   } catch (e) {
-    const cause = (e as Error)?.message
-    debugFn('error', `Failed to fetch GHSA details${cause ? `: ${cause}` : ''}`)
-    debugDir('inspect', { error: e })
+    debugFn('error', formatErrorWithDetail('Failed to fetch GHSA details', e))
+    debugDir('error', e)
   }
 
   return results
@@ -270,8 +296,9 @@ export async function setGitRemoteGithubRepoUrl(
     await spawn('git', ['remote', 'set-url', 'origin', url], stdioIgnoreOptions)
     return true
   } catch (e) {
-    debugFn('error', `caught: ${quotedCmd} failed`)
-    debugDir('inspect', { error: e })
+    debugFn('error', `Git command failed: ${quotedCmd}`)
+    debugDir('inspect', { cmd: quotedCmd })
+    debugDir('error', e)
   }
   return false
 }

@@ -1,10 +1,11 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 
-import which from 'which'
-
+import {
+  resolveBinPathSync,
+  whichBinSync,
+} from '@socketsecurity/registry/lib/bin'
 import { isDirSync } from '@socketsecurity/registry/lib/fs'
-import { resolveBinPathSync } from '@socketsecurity/registry/lib/npm'
 
 import constants, { NODE_MODULES, NPM } from '../constants.mts'
 import {
@@ -21,11 +22,18 @@ export function findBinPathDetailsSync(binName: string): {
   path: string | undefined
   shadowed: boolean
 } {
-  const binPaths =
-    which.sync(binName, {
+  const rawBinPaths =
+    whichBinSync(binName, {
       all: true,
       nothrow: true,
     }) ?? []
+  // whichBinSync may return a string when only one result is found, even with all: true.
+  // This handles both the current published version and future versions.
+  const binPaths = Array.isArray(rawBinPaths)
+    ? rawBinPaths
+    : typeof rawBinPaths === 'string'
+      ? [rawBinPaths]
+      : []
   const { shadowBinPath } = constants
   let shadowIndex = -1
   let theBinPath: string | undefined

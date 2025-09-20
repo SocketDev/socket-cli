@@ -1,7 +1,11 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { CONFIG_KEY_DEFAULT_ORG } from '../constants.mts'
+import {
+  CONFIG_KEY_DEFAULT_ORG,
+  V1_MIGRATION_GUIDE_URL,
+} from '../constants.mts'
 import { getConfigValueOrUndef } from './config.mts'
+import { webLink } from './terminal-link.mts'
 import { suggestOrgSlug } from '../commands/scan/suggest-org-slug.mts'
 import { suggestToPersistOrgSlug } from '../commands/scan/suggest-to-persist-orgslug.mts'
 
@@ -36,7 +40,7 @@ export async function determineOrgSlug(
       )
       logger.warn('')
       logger.warn(
-        'For details, see: https://docs.socket.dev/docs/v1-migration-guide',
+        `For details, see the ${webLink(V1_MIGRATION_GUIDE_URL, 'v1 migration guide')}`,
       )
       logger.warn('')
       logger.warn(

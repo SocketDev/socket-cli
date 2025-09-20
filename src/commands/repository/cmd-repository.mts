@@ -14,18 +14,18 @@ export const cmdRepository: CliSubcommand = {
   async run(argv, importMeta, { parentName }) {
     await meowWithSubcommands(
       {
-        create: cmdRepositoryCreate,
-        view: cmdRepositoryView,
-        list: cmdRepositoryList,
-        del: cmdRepositoryDel,
-        update: cmdRepositoryUpdate,
-      },
-      {
         argv,
-        description,
-        importMeta,
         name: `${parentName} repository`,
+        importMeta,
+        subcommands: {
+          create: cmdRepositoryCreate,
+          view: cmdRepositoryView,
+          list: cmdRepositoryList,
+          del: cmdRepositoryDel,
+          update: cmdRepositoryUpdate,
+        },
       },
+      { description },
     )
   },
 }

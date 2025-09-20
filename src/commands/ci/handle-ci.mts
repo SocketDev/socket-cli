@@ -1,3 +1,4 @@
+import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { getDefaultOrgSlug } from './fetch-default-org-slug.mts'
@@ -11,8 +12,13 @@ import { serializeResultJson } from '../../utils/serialize-result-json.mts'
 import { handleCreateNewScan } from '../scan/handle-create-new-scan.mts'
 
 export async function handleCi(autoManifest: boolean): Promise<void> {
+  debugFn('notice', 'Starting CI scan')
+  debugDir('inspect', { autoManifest })
+
   const orgSlugCResult = await getDefaultOrgSlug()
   if (!orgSlugCResult.ok) {
+    debugFn('warn', 'Failed to get default org slug')
+    debugDir('inspect', { orgSlugCResult })
     process.exitCode = orgSlugCResult.code ?? 1
     // Always assume json mode.
     logger.log(serializeResultJson(orgSlugCResult))
@@ -23,6 +29,12 @@ export async function handleCi(autoManifest: boolean): Promise<void> {
   const cwd = process.cwd()
   const branchName = (await gitBranch(cwd)) || (await detectDefaultBranch(cwd))
   const repoName = await getRepoName(cwd)
+
+  debugFn(
+    'notice',
+    `CI scan for ${orgSlug}/${repoName} on branch ${branchName}`,
+  )
+  debugDir('inspect', { orgSlug, cwd, branchName, repoName })
 
   await handleCreateNewScan({
     autoManifest,

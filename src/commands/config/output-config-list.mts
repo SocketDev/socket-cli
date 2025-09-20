@@ -3,7 +3,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import {
   getConfigValue,
   getSupportedConfigKeys,
-  isReadOnlyConfig,
+  isConfigFromFlag,
   isSensitiveConfigKey,
 } from '../../utils/config.mts'
 import { serializeResultJson } from '../../utils/serialize-result-json.mts'
@@ -17,7 +17,7 @@ export async function outputConfigList({
   full: boolean
   outputKind: OutputKind
 }) {
-  const readOnly = isReadOnlyConfig()
+  const readOnly = isConfigFromFlag()
   const supportedConfigKeys = getSupportedConfigKeys()
   if (outputKind === 'json') {
     let failed = false

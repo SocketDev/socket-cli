@@ -7,7 +7,7 @@ import { isPath } from '@socketsecurity/registry/lib/path'
 import { pluralize } from '@socketsecurity/registry/lib/words'
 
 import { runCdxgen } from './run-cdxgen.mts'
-import constants from '../../constants.mts'
+import constants, { FLAG_HELP } from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { filterFlags, isHelpFlag } from '../../utils/cmd.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
@@ -256,7 +256,7 @@ async function run(
   // Filter Socket flags from argv but keep --no-banner and --help for cdxgen.
   const argsToProcess = filterFlags(argv, { ...commonFlags, ...outputFlags }, [
     '--no-banner',
-    '--help',
+    FLAG_HELP,
     '-h',
   ])
   const yargv = {

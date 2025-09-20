@@ -3,10 +3,11 @@ import { promises as fs } from 'node:fs'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import shadowYarn from './bin.mts'
+import { FLAG_DRY_RUN } from '../../constants.mts'
 
 // Mock fs module
 vi.mock('node:fs', async importOriginal => {
-  const actual = await importOriginal()
+  const actual = (await importOriginal()) as Record<string, any>
   return {
     ...actual,
     promises: {
@@ -16,7 +17,7 @@ vi.mock('node:fs', async importOriginal => {
 })
 
 // Mock all dependencies with vi.hoisted for better type safety
-const mockInstallLinks = vi.hoisted(() => vi.fn())
+const mockInstallYarnLinks = vi.hoisted(() => vi.fn())
 const mockSpawn = vi.hoisted(() => vi.fn())
 const mockGetAlertsMapFromPurls = vi.hoisted(() => vi.fn())
 const mockLogAlertsMap = vi.hoisted(() => vi.fn())
@@ -30,8 +31,8 @@ vi.mock('../../utils/socket-package-alert.mts', () => ({
   logAlertsMap: mockLogAlertsMap,
 }))
 
-vi.mock('./link.mts', () => ({
-  installLinks: mockInstallLinks,
+vi.mock('../../utils/shadow-links.mts', () => ({
+  installYarnLinks: mockInstallYarnLinks,
 }))
 
 vi.mock('@socketsecurity/registry/lib/spawn', () => ({
@@ -39,16 +40,26 @@ vi.mock('@socketsecurity/registry/lib/spawn', () => ({
 }))
 
 vi.mock('../../constants.mts', async importOriginal => {
-  const actual = await importOriginal()
+  const actual = (await importOriginal()) as Record<string, any>
   return {
     ...actual,
     default: {
-      ...actual.default,
+      ...actual?.default,
       shadowBinPath: '/mock/shadow-bin',
-      ENV: {
-        SOCKET_CLI_ACCEPT_RISKS: '',
-        SOCKET_CLI_VIEW_ALL_RISKS: '',
-      },
+      ENV: new Proxy(
+        {},
+        {
+          get(_target, prop) {
+            if (prop === 'SOCKET_CLI_ACCEPT_RISKS') {
+              return process.env.SOCKET_CLI_ACCEPT_RISKS || ''
+            }
+            if (prop === 'SOCKET_CLI_VIEW_ALL_RISKS') {
+              return process.env.SOCKET_CLI_VIEW_ALL_RISKS || ''
+            }
+            return ''
+          },
+        },
+      ),
     },
   }
 })
@@ -58,12 +69,20 @@ describe('shadowYarn', () => {
     vi.clearAllMocks()
 
     // Default mock implementations
-    mockInstallLinks.mockResolvedValue('/usr/bin/yarn')
-    mockSpawn.mockResolvedValue({
-      success: true,
-      code: 0,
-      stdout: '',
-      stderr: '',
+    mockInstallYarnLinks.mockResolvedValue('/usr/bin/yarn')
+    mockSpawn.mockReturnValue({
+      process: {
+        send: vi.fn(),
+        on: vi.fn(),
+      },
+      then: vi.fn().mockImplementation(cb =>
+        cb({
+          success: true,
+          code: 0,
+          stdout: '',
+          stderr: '',
+        }),
+      ),
     })
     mockGetAlertsMapFromPurls.mockResolvedValue(new Map())
     mockFsReadFile.mockResolvedValue('{"dependencies": {}}')
@@ -81,7 +100,7 @@ describe('shadowYarn', () => {
   it('should handle yarn add with single package', async () => {
     const result = await shadowYarn(['add', 'lodash'])
 
-    expect(mockInstallLinks).toHaveBeenCalledWith(expect.any(String), 'yarn')
+    expect(mockInstallYarnLinks).toHaveBeenCalledWith(expect.any(String))
     expect(mockGetAlertsMapFromPurls).toHaveBeenCalledWith(
       ['pkg:npm/lodash'],
       expect.objectContaining({
@@ -164,7 +183,7 @@ describe('shadowYarn', () => {
 
     expect(mockGetAlertsMapFromPurls).toHaveBeenCalledWith(
       [
-        'pkg:npm/lodash@^4.17.21',
+        'pkg:npm/lodash@%5E4.17.21',
         'pkg:npm/axios@~1.0.0',
         'pkg:npm/@types/node@^20.0.0',
       ],
@@ -210,7 +229,7 @@ describe('shadowYarn', () => {
   })
 
   it('should handle dry-run flag by skipping scanning', async () => {
-    await shadowYarn(['add', 'lodash', '--dry-run'])
+    await shadowYarn(['add', 'lodash', FLAG_DRY_RUN])
 
     expect(mockGetAlertsMapFromPurls).not.toHaveBeenCalled()
   })
@@ -244,7 +263,7 @@ describe('shadowYarn', () => {
     await shadowYarn(['upgrade'])
 
     expect(mockGetAlertsMapFromPurls).toHaveBeenCalledWith(
-      ['pkg:npm/react@^18.0.0'],
+      ['pkg:npm/react@%5E18.0.0'],
       expect.objectContaining({
         nothrow: true,
       }),

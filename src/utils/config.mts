@@ -1,3 +1,26 @@
+/**
+ * Configuration utilities for Socket CLI.
+ * Manages CLI configuration including API tokens, org settings, and preferences.
+ *
+ * Configuration Hierarchy (highest priority first):
+ * 1. Environment variables (SOCKET_CLI_*)
+ * 2. Command-line --config flag
+ * 3. Persisted config file (base64 encoded JSON)
+ *
+ * Supported Config Keys:
+ * - apiBaseUrl: Socket API endpoint URL
+ * - apiProxy: Proxy for API requests
+ * - apiToken: Authentication token for Socket API
+ * - defaultOrg/org: Default organization slug
+ * - enforcedOrgs: Organizations with enforced security policies
+ *
+ * Key Functions:
+ * - findSocketYmlSync: Locate socket.yml configuration file
+ * - getConfigValue: Retrieve configuration value by key
+ * - overrideCachedConfig: Apply temporary config overrides
+ * - updateConfigValue: Persist configuration changes
+ */
+
 import { mkdirSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 
@@ -7,6 +30,7 @@ import { safeReadFileSync } from '@socketsecurity/registry/lib/fs'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
 
+import { debugConfig } from './debug.mts'
 import constants, {
   CONFIG_KEY_API_BASE_URL,
   CONFIG_KEY_API_PROXY,
@@ -17,6 +41,7 @@ import constants, {
   SOCKET_YAML,
   SOCKET_YML,
 } from '../constants.mts'
+import { getErrorCause } from './errors.mts'
 
 import type { CResult } from '../types.mts'
 import type { SocketYml } from '@socketsecurity/config'
@@ -80,8 +105,10 @@ function getConfigValues(): LocalConfig {
             _cachedConfig,
             JSON.parse(Buffer.from(raw, 'base64').toString()),
           )
-        } catch {
+          debugConfig(socketAppDataPath, true)
+        } catch (e) {
           logger.warn(`Failed to parse config at ${socketAppDataPath}`)
+          debugConfig(socketAppDataPath, false, e)
         }
         // Normalize apiKey to apiToken and persist it.
         // This is a one time migration per user.
@@ -146,11 +173,12 @@ export function findSocketYmlSync(
           },
         }
       } catch (e) {
-        debugDir('inspect', { error: e })
+        debugFn('error', `Failed to parse config file: ${ymlPath}`)
+        debugDir('error', e)
         return {
           ok: false,
           message: `Found file but was unable to parse ${ymlPath}`,
-          cause: e instanceof Error ? e.message : String(e),
+          cause: getErrorCause(e),
         }
       }
     }
@@ -199,8 +227,8 @@ export function getSupportedConfigKeys() {
   return [...supportedConfigKeys]
 }
 
-export function isReadOnlyConfig() {
-  return _readOnlyConfig
+export function isConfigFromFlag() {
+  return _configFromFlag
 }
 
 export function isSensitiveConfigKey(key: string): key is keyof LocalConfig {
@@ -213,7 +241,7 @@ export function isSupportedConfigKey(key: string): key is keyof LocalConfig {
 
 let _cachedConfig: LocalConfig | undefined
 // When using --config or SOCKET_CLI_CONFIG, do not persist the config.
-let _readOnlyConfig = false
+let _configFromFlag = false
 
 export function overrideCachedConfig(jsonConfig: unknown): CResult<undefined> {
   debugFn('notice', 'override: full config (not stored)')
@@ -234,7 +262,7 @@ export function overrideCachedConfig(jsonConfig: unknown): CResult<undefined> {
   } catch {
     // Force set an empty config to prevent accidentally using system settings.
     _cachedConfig = {} as LocalConfig
-    _readOnlyConfig = true
+    _configFromFlag = true
 
     return {
       ok: false,
@@ -246,7 +274,7 @@ export function overrideCachedConfig(jsonConfig: unknown): CResult<undefined> {
 
   // @ts-ignore Override an illegal object.
   _cachedConfig = config as LocalConfig
-  _readOnlyConfig = true
+  _configFromFlag = true
 
   // Normalize apiKey to apiToken.
   if (_cachedConfig['apiKey']) {
@@ -269,7 +297,7 @@ export function overrideConfigApiToken(apiToken: unknown) {
     ...config,
     ...(apiToken === undefined ? {} : { apiToken: String(apiToken) }),
   } as LocalConfig
-  _readOnlyConfig = true
+  _configFromFlag = true
 }
 
 let _pendingSave = false
@@ -300,7 +328,7 @@ export function updateConfigValue<Key extends keyof LocalConfig>(
     }
     localConfig[key] = value
   }
-  if (_readOnlyConfig) {
+  if (_configFromFlag) {
     return {
       ok: true,
       message: `Config key '${key}' was ${wasDeleted ? 'deleted' : `updated`}`,

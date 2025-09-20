@@ -28,8 +28,8 @@ export async function fetchScan(
       return JSON.parse(line)
     } catch (e) {
       ok = false
-      debugFn('error', 'caught: JSON.parse error')
-      debugDir('inspect', { error: e, line })
+      debugFn('error', 'Failed to parse scan result line as JSON')
+      debugDir('error', { error: e, line })
       return undefined
     }
   }) as unknown as SocketArtifact[]

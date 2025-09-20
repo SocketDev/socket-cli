@@ -3,6 +3,9 @@ import { describe, expect } from 'vitest'
 import constants, {
   ENVIRONMENT_YAML,
   ENVIRONMENT_YML,
+  FLAG_CONFIG,
+  FLAG_DRY_RUN,
+  FLAG_HELP,
   REQUIREMENTS_TXT,
 } from '../../../src/constants.mts'
 import {
@@ -16,8 +19,8 @@ describe('socket manifest conda', async () => {
   const { binCliPath } = constants
 
   cmdit(
-    ['manifest', 'conda', '--help', '--config', '{}'],
-    'should support --help',
+    ['manifest', 'conda', FLAG_HELP, FLAG_CONFIG, '{}'],
+    `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
         cwd: testPath,
@@ -56,8 +59,8 @@ describe('socket manifest conda', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
+          |   __|___ ___| |_ ___| |_      | Socket.dev (https://socket.dev) CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest conda\`, cwd: <redacted>"
       `)
 
@@ -69,7 +72,7 @@ describe('socket manifest conda', async () => {
   )
 
   cmdit(
-    ['manifest', 'conda', '--dry-run', '--config', '{}'],
+    ['manifest', 'conda', FLAG_DRY_RUN, FLAG_CONFIG, '{}'],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
@@ -79,8 +82,8 @@ describe('socket manifest conda', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
+          |   __|___ ___| |_ ___| |_      | Socket.dev (https://socket.dev) CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest conda\`, cwd: <redacted>
 
         \\u203c Warning: This will approximate your Conda dependencies using PyPI. We do not yet officially support Conda. Use at your own risk."
@@ -97,7 +100,7 @@ describe('socket manifest conda', async () => {
         'conda',
         'fixtures/commands/manifest/conda',
         '--stdout',
-        '--config',
+        FLAG_CONFIG,
         '{}',
       ],
       'should print raw text without flags',
@@ -114,8 +117,8 @@ describe('socket manifest conda', async () => {
         expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
           "
              _____         _       _        /---------------
-            |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-            |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
+            |   __|___ ___| |_ ___| |_      | Socket.dev (https://socket.dev) CLI: <redacted>
+            |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
             |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest conda\`, cwd: <redacted>
 
           \\u203c Warning: This will approximate your Conda dependencies using PyPI. We do not yet officially support Conda. Use at your own risk."
@@ -130,7 +133,7 @@ describe('socket manifest conda', async () => {
         'fixtures/commands/manifest/conda',
         '--json',
         '--stdout',
-        '--config',
+        FLAG_CONFIG,
         '{}',
       ],
       'should print a json blurb with --json flag',
@@ -161,7 +164,7 @@ describe('socket manifest conda', async () => {
         'fixtures/commands/manifest/conda',
         '--markdown',
         '--stdout',
-        '--config',
+        FLAG_CONFIG,
         '{}',
       ],
       'should print a markdown blurb with --markdown flag',

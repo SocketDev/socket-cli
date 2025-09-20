@@ -1,13 +1,12 @@
 import path from 'node:path'
 
-import terminalLink from 'terminal-link'
-
-import constants, { SOCKET_WEBSITE_URL } from '../../constants.mts'
+import constants from '../../constants.mts'
 import { handleApiCall } from '../../utils/api.mts'
 import { extractTier1ReachabilityScanId } from '../../utils/coana.mts'
 import { spawnCoanaDlx } from '../../utils/dlx.mts'
 import { hasEnterpriseOrgPlan } from '../../utils/organization.mts'
 import { setupSdk } from '../../utils/sdk.mts'
+import { socketDevLink } from '../../utils/terminal-link.mts'
 import { fetchOrganization } from '../organization/fetch-organization-list.mts'
 
 import type { CResult } from '../../types.mts'
@@ -70,7 +69,7 @@ export async function performReachabilityAnalysis(
     return {
       ok: false,
       message: 'Tier 1 Reachability analysis requires an enterprise plan',
-      cause: `Please ${terminalLink('upgrade your plan', `${SOCKET_WEBSITE_URL}/pricing`)}. This feature is only available for organizations with an enterprise plan.`,
+      cause: `Please ${socketDevLink('upgrade your plan', '/pricing')}. This feature is only available for organizations with an enterprise plan.`,
     }
   }
 

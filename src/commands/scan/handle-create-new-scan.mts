@@ -1,8 +1,6 @@
 import path from 'node:path'
 
-import terminalLink from 'terminal-link'
-
-import { debugDir } from '@socketsecurity/registry/lib/debug'
+import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { pluralize } from '@socketsecurity/registry/lib/words'
 
@@ -16,6 +14,7 @@ import constants from '../../constants.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import { getPackageFilesForScan } from '../../utils/path-resolve.mts'
 import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
+import { socketDocsLink } from '../../utils/terminal-link.mts'
 import { detectManifestActions } from '../manifest/detect-manifest-actions.mts'
 import { generateAutoManifest } from '../manifest/generate_auto_manifest.mts'
 
@@ -71,10 +70,28 @@ export async function handleCreateNewScan({
   targets,
   tmp,
 }: HandleCreateNewScanConfig): Promise<void> {
+  debugFn('notice', `Creating new scan for ${orgSlug}/${repoName}`)
+  debugDir('inspect', {
+    autoManifest,
+    branchName,
+    commitHash,
+    defaultBranch,
+    interactive,
+    pendingHead,
+    pullRequest,
+    readOnly,
+    report,
+    reportLevel,
+    targets,
+    tmp,
+  })
+
   if (autoManifest) {
     logger.info('Auto-generating manifest files ...')
+    debugFn('notice', 'Auto-manifest mode enabled')
     const sockJson = readOrDefaultSocketJson(cwd)
     const detected = await detectManifestActions(sockJson, cwd)
+    debugDir('inspect', { detected })
     await generateAutoManifest({
       detected,
       cwd,
@@ -88,12 +105,18 @@ export async function handleCreateNewScan({
 
   const supportedFilesCResult = await fetchSupportedScanFileNames({ spinner })
   if (!supportedFilesCResult.ok) {
+    debugFn('warn', 'Failed to fetch supported scan file names')
+    debugDir('inspect', { supportedFilesCResult })
     await outputCreateNewScan(supportedFilesCResult, {
       interactive,
       outputKind,
     })
     return
   }
+  debugFn(
+    'notice',
+    `Fetched ${supportedFilesCResult.data['size']} supported file types`,
+  )
 
   spinner.start('Searching for local files to include in scan...')
 
@@ -109,11 +132,12 @@ export async function handleCreateNewScan({
   const wasValidInput = checkCommandInput(outputKind, {
     nook: true,
     test: packagePaths.length > 0,
-    fail: `found no eligible files to scan. See supported manifest files at ${terminalLink('docs.socket.dev', 'https://docs.socket.dev/docs/manifest-file-detection-in-socket')}`,
+    fail: `found no eligible files to scan. See supported manifest files at ${socketDocsLink('/docs/manifest-file-detection-in-socket', 'docs.socket.dev')}`,
     message:
       'TARGET (file/dir) must contain matching / supported file types for a scan',
   })
   if (!wasValidInput) {
+    debugFn('warn', 'No eligible files found to scan')
     return
   }
 
@@ -125,6 +149,7 @@ export async function handleCreateNewScan({
 
   if (readOnly) {
     logger.log('[ReadOnly] Bailing now')
+    debugFn('notice', 'Read-only mode, exiting early')
     return
   }
 
@@ -135,6 +160,8 @@ export async function handleCreateNewScan({
   if (reach.runReachabilityAnalysis) {
     logger.error('')
     logger.info('Starting reachability analysis...')
+    debugFn('notice', 'Reachability analysis enabled')
+    debugDir('inspect', { reachabilityOptions: reach })
 
     spinner.start()
 

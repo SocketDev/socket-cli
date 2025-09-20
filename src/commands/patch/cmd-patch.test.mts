@@ -4,7 +4,7 @@ import trash from 'trash'
 import { afterEach, describe, expect } from 'vitest'
 
 import { cmdit, spawnSocketCli, testPath } from '../../../test/utils.mts'
-import constants from '../../constants.mts'
+import constants, { FLAG_CONFIG, FLAG_HELP } from '../../constants.mts'
 
 const fixtureBaseDir = path.join(testPath, 'fixtures/commands/patch')
 const pnpmFixtureDir = path.join(fixtureBaseDir, 'pnpm')
@@ -24,8 +24,8 @@ describe('socket patch', async () => {
   })
 
   cmdit(
-    ['patch', '--help', '--config', '{}'],
-    'should support --help',
+    ['patch', FLAG_HELP, FLAG_CONFIG, '{}'],
+    `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toContain('Apply CVE patches to dependencies')
@@ -38,7 +38,7 @@ describe('socket patch', async () => {
     [
       'patch',
       path.join(fixtureBaseDir, 'nonexistent'),
-      '--config',
+      FLAG_CONFIG,
       '{"apiToken":"fake-token"}',
     ],
     'should show error when no .socket directory found',
@@ -51,7 +51,7 @@ describe('socket patch', async () => {
   )
 
   cmdit(
-    ['patch', '.', '--config', '{"apiToken":"fake-token"}'],
+    ['patch', '.', FLAG_CONFIG, '{"apiToken":"fake-token"}'],
     'should scan for available patches when no node_modules found',
     async cmd => {
       const { code } = await spawnSocketCli(binCliPath, cmd, {
@@ -62,7 +62,7 @@ describe('socket patch', async () => {
   )
 
   cmdit(
-    ['patch', '.', '--json', '--config', '{"apiToken":"fake-token"}'],
+    ['patch', '.', '--json', FLAG_CONFIG, '{"apiToken":"fake-token"}'],
     'should output results in JSON format',
     async cmd => {
       const { code } = await spawnSocketCli(binCliPath, cmd, {
@@ -73,7 +73,7 @@ describe('socket patch', async () => {
   )
 
   cmdit(
-    ['patch', '.', '--markdown', '--config', '{"apiToken":"fake-token"}'],
+    ['patch', '.', '--markdown', FLAG_CONFIG, '{"apiToken":"fake-token"}'],
     'should output results in markdown format',
     async cmd => {
       const { code } = await spawnSocketCli(binCliPath, cmd, {
@@ -89,7 +89,7 @@ describe('socket patch', async () => {
       '.',
       '--json',
       '--markdown',
-      '--config',
+      FLAG_CONFIG,
       '{"apiToken":"fake-token"}',
     ],
     'should fail when both json and markdown flags are used',
@@ -109,7 +109,7 @@ describe('socket patch', async () => {
       '.',
       '-p',
       'pkg:npm/on-headers@1.0.2',
-      '--config',
+      FLAG_CONFIG,
       '{"apiToken":"fake-token"}',
     ],
     'should accept short flag -p for purl',
@@ -129,7 +129,7 @@ describe('socket patch', async () => {
         '--purl',
         'pkg:npm/on-headers@1.0.2',
         '--json',
-        '--config',
+        FLAG_CONFIG,
         '{"apiToken":"fake-token"}',
       ],
       'should handle specific PURL with JSON output',
@@ -149,7 +149,7 @@ describe('socket patch', async () => {
         '--purl',
         'pkg:npm/on-headers@1.0.2',
         '--markdown',
-        '--config',
+        FLAG_CONFIG,
         '{"apiToken":"fake-token"}',
       ],
       'should handle specific PURL with markdown output',
@@ -163,7 +163,7 @@ describe('socket patch', async () => {
     )
 
     cmdit(
-      ['patch', '.', '--config', '{"apiToken":"fake-token"}'],
+      ['patch', '.', FLAG_CONFIG, '{"apiToken":"fake-token"}'],
       'should scan all packages in manifest when no specific PURL given',
       async cmd => {
         const { code, stdout } = await spawnSocketCli(binCliPath, cmd, {
@@ -180,7 +180,7 @@ describe('socket patch', async () => {
         '.',
         '--purl',
         'pkg:npm/nonexistent@1.0.0',
-        '--config',
+        FLAG_CONFIG,
         '{"apiToken":"fake-token"}',
       ],
       'should handle non-existent packages gracefully',
@@ -197,7 +197,7 @@ describe('socket patch', async () => {
 
   describe('error handling and usability tests', () => {
     cmdit(
-      ['patch', '/nonexistent/path', '--config', '{"apiToken":"fake-token"}'],
+      ['patch', '/nonexistent/path', FLAG_CONFIG, '{"apiToken":"fake-token"}'],
       'should show clear error for non-existent directory',
       async cmd => {
         const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -208,7 +208,7 @@ describe('socket patch', async () => {
     )
 
     cmdit(
-      ['patch', '--config', '{}'],
+      ['patch', FLAG_CONFIG, '{}'],
       'should show clear error when API token is missing',
       async cmd => {
         const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -224,7 +224,7 @@ describe('socket patch', async () => {
         '.',
         '--purl',
         'invalid-purl-format',
-        '--config',
+        FLAG_CONFIG,
         '{"apiToken":"fake-token"}',
       ],
       'should handle invalid PURL formats gracefully',
@@ -244,7 +244,7 @@ describe('socket patch', async () => {
         '.',
         '--purl',
         'pkg:npm/nonexistent-package@999.999.999',
-        '--config',
+        FLAG_CONFIG,
         '{"apiToken":"fake-token"}',
       ],
       'should handle PURLs for packages not in manifest',
@@ -265,7 +265,7 @@ describe('socket patch', async () => {
         '.',
         '--purl',
         'pkg:npm/@scoped/package@1.0.0',
-        '--config',
+        FLAG_CONFIG,
         '{"apiToken":"fake-token"}',
       ],
       'should handle scoped package PURLs correctly',
@@ -278,7 +278,7 @@ describe('socket patch', async () => {
     )
 
     cmdit(
-      ['patch', '--help', '--purl', 'pkg:npm/test@1.0.0', '--config', '{}'],
+      ['patch', FLAG_HELP, '--purl', 'pkg:npm/test@1.0.0', FLAG_CONFIG, '{}'],
       'should prioritize help over other flags',
       async cmd => {
         const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -295,7 +295,7 @@ describe('socket patch', async () => {
         'pkg:npm/on-headers@1.0.2',
         '--purl',
         'pkg:npm/another-package@2.0.0',
-        '--config',
+        FLAG_CONFIG,
         '{"apiToken":"fake-token"}',
       ],
       'should handle multiple PURL flags',
@@ -308,7 +308,7 @@ describe('socket patch', async () => {
     )
 
     cmdit(
-      ['patch', '.', '--config', '{"apiToken":"invalid-format-token"}'],
+      ['patch', '.', FLAG_CONFIG, '{"apiToken":"invalid-format-token"}'],
       'should handle invalid API tokens gracefully',
       async cmd => {
         const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
@@ -326,7 +326,7 @@ describe('socket patch', async () => {
         '.',
         '--purl',
         'pkg:pypi/python-package@1.0.0',
-        '--config',
+        FLAG_CONFIG,
         '{"apiToken":"fake-token"}',
       ],
       'should handle non-npm ecosystem PURLs appropriately',
@@ -344,7 +344,7 @@ describe('socket patch', async () => {
         '.',
         '--purl',
         'pkg:npm/test@',
-        '--config',
+        FLAG_CONFIG,
         '{"apiToken":"fake-token"}',
       ],
       'should handle PURLs with missing versions',

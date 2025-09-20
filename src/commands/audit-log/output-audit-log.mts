@@ -3,7 +3,11 @@ import { createRequire } from 'node:module'
 import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import constants, { OUTPUT_JSON, OUTPUT_MARKDOWN } from '../../constants.mts'
+import constants, {
+  FLAG_JSON,
+  OUTPUT_JSON,
+  OUTPUT_MARKDOWN,
+} from '../../constants.mts'
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
 import { mdTable } from '../../utils/markdown.mts'
 import { msAtHome } from '../../utils/ms-at-home.mts'
@@ -179,10 +183,10 @@ ${table}
   } catch (e) {
     process.exitCode = 1
     logger.fail(
-      'There was a problem converting the logs to Markdown, please try the `--json` flag',
+      `There was a problem converting the logs to Markdown, please try the \`${FLAG_JSON}\` flag`,
     )
-    debugFn('error', 'caught: markdown conversion error')
-    debugDir('inspect', { error: e })
+    debugFn('error', 'Markdown conversion failed')
+    debugDir('error', e)
     return 'Failed to generate the markdown report'
   }
 }

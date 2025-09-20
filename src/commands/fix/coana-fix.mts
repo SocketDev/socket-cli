@@ -5,17 +5,11 @@ import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { pluralize } from '@socketsecurity/registry/lib/words'
 
-import {
-  checkCiEnvVars,
-  getCiEnvInstructions,
-  getFixEnv,
-} from './env-helpers.mts'
-import { getSocketFixBranchName, getSocketFixCommitMessage } from './git.mts'
-import { getSocketFixPrs, openSocketFixPr } from './pull-request.mts'
-import { GQL_PR_STATE_OPEN, UNKNOWN_ERROR } from '../../constants.mts'
+import { FLAG_DRY_RUN, GQL_PR_STATE_OPEN } from '../../constants.mts'
 import { handleApiCall } from '../../utils/api.mts'
 import { cmdFlagValueToArray } from '../../utils/cmd.mts'
 import { spawnCoanaDlx } from '../../utils/dlx.mts'
+import { getErrorCause } from '../../utils/errors.mts'
 import {
   gitCheckoutBranch,
   gitCommit,
@@ -34,6 +28,13 @@ import {
 import { getPackageFilesForScan } from '../../utils/path-resolve.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 import { fetchSupportedScanFileNames } from '../scan/fetch-supported-scan-file-names.mts'
+import {
+  checkCiEnvVars,
+  getCiEnvInstructions,
+  getFixEnv,
+} from './env-helpers.mts'
+import { getSocketFixBranchName, getSocketFixCommitMessage } from './git.mts'
+import { getSocketFixPrs, openSocketFixPr } from './pull-request.mts'
 
 import type { FixConfig } from './types.mts'
 import type { CResult } from '../../types.mts'
@@ -142,7 +143,7 @@ export async function coanaFix(
           ? ['--range-style', fixConfig.rangeStyle]
           : []),
         ...(glob ? ['--glob', glob] : []),
-        ...(dontApplyFixes ? ['--dry-run'] : []),
+        ...(dontApplyFixes ? [FLAG_DRY_RUN] : []),
         ...(outputFile ? ['--output-file', outputFile] : []),
         ...fixConfig.unknownFlags,
       ],
@@ -175,7 +176,7 @@ export async function coanaFix(
       }
     } catch (e) {
       debugFn('warn', 'Failed to count open PRs, using original limit')
-      debugDir('inspect', { error: e })
+      debugDir('error', e)
     }
   }
 
@@ -258,9 +259,7 @@ export async function coanaFix(
     )
 
     if (!fixCResult.ok) {
-      logger.error(
-        `Update failed for ${ghsaId}: ${fixCResult.message || UNKNOWN_ERROR}`,
-      )
+      logger.error(`Update failed for ${ghsaId}: ${getErrorCause(fixCResult)}`)
       continue ghsaLoop
     }
 
@@ -396,7 +395,7 @@ export async function coanaFix(
       logger.warn(
         `Unexpected condition: Push failed for ${ghsaId}, skipping PR creation.`,
       )
-      debugDir('inspect', { error: e })
+      debugDir('error', e)
       // eslint-disable-next-line no-await-in-loop
       await gitResetAndClean(fixEnv.baseBranch, cwd)
       // eslint-disable-next-line no-await-in-loop

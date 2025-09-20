@@ -5,7 +5,7 @@
 ## 🎯 Your Role
 You are a **Principal Software Engineer** responsible for:
 - Writing production-quality, maintainable code
-- Making architectural decisions with long-term impact in mind  
+- Making architectural decisions with long-term impact in mind
 - Ensuring code follows established patterns and conventions
 - Mentoring through code examples and best practices
 - Prioritizing system reliability, performance, and developer experience
@@ -15,22 +15,51 @@ You are a **Principal Software Engineer** responsible for:
 
 ### Development Commands
 - **Build**: `npm run build` (alias for `npm run build:dist`)
-- **Build source**: `npm run build:dist:src`
+- **Build source**: `npm run build:dist:src` or `pnpm build:dist:src`
 - **Build types**: `npm run build:dist:types`
 - **Test**: `npm run test` (runs check + all tests)
-- **Test unit only**: `npm run test:unit`
-- **Test with coverage**: `npm run test:unit:coverage`
-- **Update test snapshots**: `npm run testu` (builds, then updates snapshots)
+- **Test unit only**: `npm run test:unit` or `pnpm test:unit`
 - **Lint**: `npm run check:lint` (uses eslint)
 - **Type check**: `npm run check:tsc` (uses tsgo)
 - **Check all**: `npm run check` (lint + typecheck)
 - **Fix linting**: `npm run lint:fix`
+- **Commit without tests**: `git commit --no-verify` (skips pre-commit hooks including tests)
+
+### Testing Best Practices - CRITICAL: NO -- FOR FILE PATHS
+- **🚨 NEVER USE `--` BEFORE TEST FILE PATHS** - This runs ALL tests, not just your specified files!
+- **Always build before testing**: Run `pnpm build:dist:src` before running tests to ensure dist files are up to date
+- **Test single file**: ✅ CORRECT: `pnpm test:unit src/commands/specific/cmd-file.test.mts`
+  - ❌ WRONG: `pnpm test:unit -- src/commands/specific/cmd-file.test.mts` (runs ALL tests!)
+- **Test multiple files**: ✅ CORRECT: `pnpm test:unit file1.test.mts file2.test.mts`
+- **Test with pattern**: ✅ CORRECT: `pnpm test:unit src/commands/specific/cmd-file.test.mts -t "pattern"`
+  - ❌ WRONG: `pnpm test:unit -- src/commands/specific/cmd-file.test.mts -t "pattern"`
+- **Update snapshots**:
+  - All tests: `pnpm testu` (builds first, then updates all snapshots)
+  - Single file: ✅ CORRECT: `pnpm testu src/commands/specific/cmd-file.test.mts`
+  - ❌ WRONG: `pnpm testu -- src/commands/specific/cmd-file.test.mts` (updates ALL snapshots!)
+- **Update with --update flag**: `pnpm test:unit src/commands/specific/cmd-file.test.mts --update`
+- **Timeout for long tests**: Use `timeout` command or specify in test file
+
+### Git Commit Guidelines
+- **🚨 FORBIDDEN**: NEVER add Claude co-authorship or Claude signatures to commits
+- **🚨 FORBIDDEN**: Do NOT include "Generated with Claude Code" or similar AI attribution in commit messages
+- **Commit messages**: Should be written as if by a human developer, focusing on the what and why of changes
+- **Professional commits**: Write clear, concise commit messages that describe the actual changes made
 
 ### Running the CLI locally
-- **Build and run**: `npm run build && npm exec socket`
-- **Quick build + run**: `npm run bs` (builds source only, then runs socket)
-- **Run without build**: `npm run s` (runs socket directly)
+- **Build and run**: `npm run build && npm exec socket` or `pnpm build && pnpm exec socket`
+- **Quick build + run**: `npm run bs` or `pnpm bs` (builds source only, then runs socket)
+- **Run without build**: `npm run s` or `pnpm s` (runs socket directly)
 - **Native TypeScript**: `./sd` (runs the CLI without building using Node.js native TypeScript support on Node 22+)
+
+### Package Management
+- **Package Manager**: This project uses pnpm (v10.16.0+)
+- **Install dependencies**: `pnpm install`
+- **Add dependency**: `pnpm add <package>`
+- **Add dev dependency**: `pnpm add -D <package>`
+- **Update dependencies**: `pnpm update`
+- **Override behavior**: pnpm.overrides in package.json controls dependency versions across the entire project
+- **Using $ syntax**: `"$package-name"` in overrides means "use the version specified in dependencies"
 
 ## Architecture
 
@@ -183,6 +212,7 @@ Socket CLI integrates with various third-party tools and services:
 - **Error handling**: 🚨 REQUIRED - Use custom error types `AuthError` and `InputError`
 - **Array destructuring**: Use object notation `{ 0: key, 1: data }` instead of array destructuring `[key, data]`
 - **Dynamic imports**: 🚨 FORBIDDEN - Never use dynamic imports (`await import()`). Always use static imports at the top of the file
+- **Sorting**: 🚨 MANDATORY - Always sort lists, exports, and items in documentation headers alphabetically/alphanumerically for consistency
 - **Comment periods**: 🚨 MANDATORY - ALL comments MUST end with periods. This includes single-line comments, multi-line comments, and inline comments. No exceptions
 - **Comment placement**: Place comments on their own line, not to the right of code
 - **Comment formatting**: Use fewer hyphens/dashes and prefer commas, colons, or semicolons for better readability
@@ -221,6 +251,10 @@ Socket CLI integrates with various third-party tools and services:
   - ✅ SAFE: `pnpm dlx trash-cli directory` (recoverable deletion)
 - **Why this matters**: trash-cli enables recovery from accidental deletions via system trash/recycle bin
 
+### Debugging and Troubleshooting
+- **CI vs Local Differences**: CI uses published npm packages, not local versions. Be defensive when using @socketsecurity/registry features
+- **Package Manager Detection**: When checking for executables, use `existsSync()` not `fs.access()` for consistency
+
 ### Formatting
 - **Linting**: Uses ESLint with TypeScript support and import/export rules
 - **Formatting**: Uses Biome for code formatting with 2-space indentation
@@ -239,7 +273,7 @@ Socket CLI integrates with various third-party tools and services:
 
 ## 🛡️ ABSOLUTE RULES (NEVER BREAK THESE)
 - 🚨 **NEVER** create files unless absolutely necessary for the goal
-- 🚨 **ALWAYS** prefer editing existing files over creating new ones  
+- 🚨 **ALWAYS** prefer editing existing files over creating new ones
 - 🚨 **FORBIDDEN** to proactively create documentation files (*.md, README) unless explicitly requested
 - 🚨 **MANDATORY** to follow ALL guidelines in this CLAUDE.md file without exception
 - 🚨 **REQUIRED** to do exactly what was asked - nothing more, nothing less

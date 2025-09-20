@@ -1,6 +1,6 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { isReadOnlyConfig } from '../../utils/config.mts'
+import { isConfigFromFlag } from '../../utils/config.mts'
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
 import { serializeResultJson } from '../../utils/serialize-result-json.mts'
 
@@ -25,7 +25,7 @@ export async function outputConfigGet(
     return
   }
 
-  const readOnly = isReadOnlyConfig()
+  const readOnly = isConfigFromFlag()
 
   if (outputKind === 'markdown') {
     logger.log(`# Config Value`)

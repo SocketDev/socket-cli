@@ -149,17 +149,26 @@ if (typeof exports === 'object' && exports !== null) {
 }
 
 export const commonFlags: MeowFlags = {
-  // Hidden to allow custom documenting of the negated `--no-banner` variant.
   banner: {
     type: 'boolean',
     default: true,
     description: 'Hide the Socket banner',
+    // Hidden to allow custom documenting of the negated `--no-banner` variant.
+    hidden: true,
+  },
+  compactHeader: {
+    type: 'boolean',
+    default: false,
+    description: 'Use compact single-line header format (auto-enabled in CI)',
+    // Only show in root command.
     hidden: true,
   },
   config: {
     type: 'string',
     default: '',
     description: 'Override the local config with this JSON',
+    shortFlag: 'c',
+    // Only show in root command.
     hidden: true,
   },
   dryRun: {
@@ -173,8 +182,16 @@ export const commonFlags: MeowFlags = {
   help: {
     type: 'boolean',
     default: false,
-    shortFlag: 'h',
     description: 'Print this help',
+    shortFlag: 'h',
+    // Only show in root command.
+    hidden: true,
+  },
+  helpFull: {
+    type: 'boolean',
+    default: false,
+    description: 'Print full help including environment variables',
+    // Only show in root command.
     hidden: true,
   },
   maxOldSpaceSize: {
@@ -183,6 +200,7 @@ export const commonFlags: MeowFlags = {
       return getMaxOldSpaceSizeFlag()
     },
     description: `Set Node's V8 ${terminalLink('--max-old-space-size', 'https://nodejs.org/api/cli.html#--max-old-space-sizesize-in-mib')} option`,
+    // Only show in root command in debug mode.
     hidden: true,
   },
   maxSemiSpaceSize: {
@@ -191,13 +209,14 @@ export const commonFlags: MeowFlags = {
       return getMaxSemiSpaceSizeFlag()
     },
     description: `Set Node's V8 ${terminalLink('--max-semi-space-size', 'https://nodejs.org/api/cli.html#--max-semi-space-sizesize-in-mib')} option`,
+    // Only show in root command in debug mode.
     hidden: true,
   },
-  // Hidden to allow custom documenting of the negated `--no-spinner` variant.
   spinner: {
     type: 'boolean',
     default: true,
     description: 'Hide the console spinner',
+    // Hidden to allow custom documenting of the negated `--no-spinner` variant.
     hidden: true,
   },
 }

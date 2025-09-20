@@ -1,15 +1,41 @@
+/**
+ * DLX execution utilities for Socket CLI.
+ * Manages package execution via npx/pnpm dlx/yarn dlx commands.
+ *
+ * Key Functions:
+ * - spawnCdxgenDlx: Execute CycloneDX generator via dlx
+ * - spawnCoanaDlx: Execute Coana CLI tool via dlx
+ * - spawnDlx: Execute packages using dlx-style commands
+ * - spawnSynpDlx: Execute Synp converter via dlx
+ *
+ * Package Manager Detection:
+ * - Auto-detects npm, pnpm, or yarn based on lockfiles
+ * - Supports force-refresh and silent execution modes
+ *
+ * Integration:
+ * - Works with shadow binaries for security scanning
+ * - Handles version pinning and cache management
+ * - Configures environment for third-party tools
+ */
+
 import { createRequire } from 'node:module'
 
 import { getOwn } from '@socketsecurity/registry/lib/objects'
 
 import { getDefaultOrgSlug } from '../commands/ci/fetch-default-org-slug.mts'
-import constants, { NPM, PNPM, UNKNOWN_ERROR, YARN } from '../constants.mts'
+import constants, {
+  FLAG_QUIET,
+  FLAG_SILENT,
+  NPM,
+  PNPM,
+  YARN,
+} from '../constants.mts'
+import { getErrorCause } from './errors.mts'
 import { findUp } from './fs.mts'
 import { getDefaultApiToken, getDefaultProxyUrl } from './sdk.mts'
 import { isYarnBerry } from './yarn-version.mts'
-import shadowBin from '../shadow/npm/bin.mts'
 
-import type { ShadowBinOptions, ShadowBinResult } from '../shadow/npm/bin.mts'
+import type { ShadowBinOptions, ShadowBinResult } from '../shadow/npm-base.mts'
 import type { CResult } from '../types.mts'
 import type { SpawnExtra } from '@socketsecurity/registry/lib/spawn'
 
@@ -85,11 +111,9 @@ export async function spawnDlx(
   const packageString = `${packageSpec.name}@${packageSpec.version}`
 
   // Build command args based on package manager.
-  let binName: string
   let spawnArgs: string[]
 
   if (pm === PNPM) {
-    binName = PNPM
     spawnArgs = ['dlx']
     if (force) {
       // For pnpm, set dlx-cache-max-age to 0 via env to force fresh download.
@@ -110,18 +134,17 @@ export async function spawnDlx(
       spawnArgs.push('--ignore-scripts')
     }
     if (silent) {
-      spawnArgs.push('--silent')
+      spawnArgs.push(FLAG_SILENT)
     }
     spawnArgs.push(packageString, ...args)
 
     const shadowPnpmBin = /*@__PURE__*/ require(constants.shadowPnpmBinPath)
     return await shadowPnpmBin(spawnArgs, finalShadowOptions, spawnExtra)
   } else if (pm === YARN && isYarnBerry()) {
-    binName = YARN
     spawnArgs = ['dlx']
     // Yarn dlx runs in a temporary environment by design and should always fetch fresh.
     if (silent) {
-      spawnArgs.push('--quiet')
+      spawnArgs.push(FLAG_QUIET)
     }
     spawnArgs.push(packageString, ...args)
 
@@ -130,23 +153,18 @@ export async function spawnDlx(
   } else {
     // Use npm exec/npx.
     // For consistency, we'll use npx which is more commonly used for one-off execution.
-    binName = 'npx'
     spawnArgs = ['--yes']
     if (force) {
       // Use --force to bypass cache and get latest within range.
       spawnArgs.push('--force')
     }
     if (silent) {
-      spawnArgs.push('--silent')
+      spawnArgs.push(FLAG_SILENT)
     }
     spawnArgs.push(packageString, ...args)
 
-    return await shadowBin(
-      binName as 'npm' | 'npx',
-      spawnArgs,
-      finalShadowOptions,
-      spawnExtra,
-    )
+    const shadowNpxBin = /*@__PURE__*/ require(constants.shadowNpxBinPath)
+    return await shadowNpxBin(spawnArgs, finalShadowOptions, spawnExtra)
   }
 }
 
@@ -223,8 +241,8 @@ export async function spawnCoanaDlx(
     return { ok: true, data: output.stdout }
   } catch (e) {
     const stderr = (e as any)?.stderr
-    const cause = (e as Error)?.message || UNKNOWN_ERROR
-    const message = stderr ? stderr : cause
+    const cause = getErrorCause(e)
+    const message = stderr || cause
     return {
       ok: false,
       data: e,

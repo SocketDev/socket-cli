@@ -2,33 +2,48 @@ import path from 'node:path'
 
 import { afterAll, afterEach, beforeAll, describe, expect } from 'vitest'
 
+import { logger } from '@socketsecurity/registry/lib/logger'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
-import constants from '../../../src/constants.mts'
+import constants, {
+  FLAG_CONFIG,
+  FLAG_DRY_RUN,
+  FLAG_HELP,
+  FLAG_ID,
+  FLAG_JSON,
+  FLAG_MARKDOWN,
+} from '../../../src/constants.mts'
 import { cmdit, spawnSocketCli, testPath } from '../../../test/utils.mts'
 
 const fixtureBaseDir = path.join(testPath, 'fixtures/commands/fix')
 const pnpmFixtureDir = path.join(fixtureBaseDir, 'pnpm')
 
 async function revertFixtureChanges() {
-  // Reset only the lock files that fix command might modify.
+  // Reset only the lockfiles that fix command might modify.
   try {
     await spawn('git', ['checkout', 'HEAD', '--', 'monorepo/pnpm-lock.yaml'], {
       cwd: pnpmFixtureDir,
       stdio: 'ignore',
     })
-  } catch {
-    // Ignore errors if lock file doesn't exist or has no changes.
+  } catch (e) {
+    // Log warning but continue - lockfile might not exist or have no changes.
+    logger.warn('Failed to revert lockfile:', e)
   }
   // Clean up any untracked files (node_modules, etc.).
-  await spawn('git', ['clean', '-fd', '.'], {
-    cwd: pnpmFixtureDir,
-    stdio: 'ignore',
-  })
+  try {
+    await spawn('git', ['clean', '-fd', '.'], {
+      cwd: pnpmFixtureDir,
+      stdio: 'ignore',
+    })
+  } catch (e) {
+    logger.warn('Failed to clean untracked files:', e)
+  }
 }
 
 describe('socket fix', async () => {
   const { binCliPath } = constants
+  // Increase timeout for CI environments and Windows where operations can be slower.
+  const testTimeout = constants.ENV.CI || constants.WIN32 ? 60_000 : 30_000
 
   beforeAll(async () => {
     // Ensure fixtures are in clean state before tests.
@@ -53,7 +68,7 @@ describe('socket fix', async () => {
     // The implementation is still correct and will show warnings in real usage.
 
     cmdit(
-      ['fix', '--dry-run', '--config', '{"apiToken":"fake-token"}'],
+      ['fix', FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fake-token"}'],
       'should not show env var names when all CI env vars are present',
       async cmd => {
         const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
@@ -77,7 +92,7 @@ describe('socket fix', async () => {
     )
 
     cmdit(
-      ['fix', '--dry-run', '--config', '{"apiToken":"fake-token"}'],
+      ['fix', FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fake-token"}'],
       'should not show env var names when CI is not set',
       async cmd => {
         const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
@@ -101,7 +116,7 @@ describe('socket fix', async () => {
     )
 
     cmdit(
-      ['fix', '--dry-run', '--config', '{"apiToken":"fake-token"}'],
+      ['fix', FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fake-token"}'],
       'should not show env var names when CI is not set but some vars are present',
       async cmd => {
         const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
@@ -126,7 +141,7 @@ describe('socket fix', async () => {
     )
 
     cmdit(
-      ['fix', '--help', '--config', '{}'],
+      ['fix', FLAG_HELP, FLAG_CONFIG, '{}'],
       'should show exact env var names in help text',
       async cmd => {
         const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -139,8 +154,8 @@ describe('socket fix', async () => {
   })
 
   cmdit(
-    ['fix', '--help', '--config', '{}'],
-    'should support --help',
+    ['fix', FLAG_HELP, FLAG_CONFIG, '{}'],
+    `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
@@ -187,8 +202,8 @@ describe('socket fix', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
+          |   __|___ ___| |_ ___| |_      | Socket.dev (https://socket.dev) CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket fix\`, cwd: <redacted>"
       `)
 
@@ -198,15 +213,15 @@ describe('socket fix', async () => {
   )
 
   cmdit(
-    ['fix', '--dry-run', '--config', '{"apiToken":"fakeToken"}'],
+    ['fix', FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fakeToken"}'],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
+          |   __|___ ___| |_ ___| |_      | Socket.dev (https://socket.dev) CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket fix\`, cwd: <redacted>"
       `)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
@@ -215,7 +230,13 @@ describe('socket fix', async () => {
   )
 
   cmdit(
-    ['fix', '--dry-run', '--autopilot', '--config', '{"apiToken":"fakeToken"}'],
+    [
+      'fix',
+      FLAG_DRY_RUN,
+      '--autopilot',
+      FLAG_CONFIG,
+      '{"apiToken":"fakeToken"}',
+    ],
     'should accept --autopilot flag',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -226,9 +247,9 @@ describe('socket fix', async () => {
   cmdit(
     [
       'fix',
-      '--dry-run',
+      FLAG_DRY_RUN,
       '--auto-merge',
-      '--config',
+      FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
     ],
     'should accept --auto-merge alias',
@@ -240,7 +261,7 @@ describe('socket fix', async () => {
   )
 
   cmdit(
-    ['fix', '--dry-run', '--test', '--config', '{"apiToken":"fakeToken"}'],
+    ['fix', FLAG_DRY_RUN, '--test', FLAG_CONFIG, '{"apiToken":"fakeToken"}'],
     'should ignore --test flag',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -252,10 +273,10 @@ describe('socket fix', async () => {
   cmdit(
     [
       'fix',
-      '--dry-run',
+      FLAG_DRY_RUN,
       '--test-script',
       'custom-test',
-      '--config',
+      FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
     ],
     'should ignore --test-script flag',
@@ -269,10 +290,10 @@ describe('socket fix', async () => {
   cmdit(
     [
       'fix',
-      '--dry-run',
+      FLAG_DRY_RUN,
       '--limit',
       '5',
-      '--config',
+      FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
     ],
     'should accept --limit flag with custom value',
@@ -286,9 +307,9 @@ describe('socket fix', async () => {
   cmdit(
     [
       'fix',
-      '--dry-run',
+      FLAG_DRY_RUN,
       '--min-satisfying',
-      '--config',
+      FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
     ],
     'should accept --min-satisfying flag',
@@ -304,7 +325,7 @@ describe('socket fix', async () => {
       'fix',
       '--range-style',
       'invalid-style',
-      '--config',
+      FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
     ],
     'should fail with invalid range style',
@@ -319,10 +340,10 @@ describe('socket fix', async () => {
   cmdit(
     [
       'fix',
-      '--dry-run',
+      FLAG_DRY_RUN,
       '--range-style',
       'pin',
-      '--config',
+      FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
     ],
     'should accept range style pin',
@@ -336,7 +357,7 @@ describe('socket fix', async () => {
   cmdit(
     [
       'fix',
-      '--dry-run',
+      FLAG_DRY_RUN,
       '--auto-merge',
       '--test',
       '--limit',
@@ -344,7 +365,7 @@ describe('socket fix', async () => {
       '--range-style',
       'preserve',
       '--min-satisfying',
-      '--config',
+      FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
     ],
     'should accept comprehensive flag combination',
@@ -359,7 +380,7 @@ describe('socket fix', async () => {
     [
       'fix',
       path.join(fixtureBaseDir, 'nonexistent'),
-      '--config',
+      FLAG_CONFIG,
       '{"apiToken":"fake-token"}',
     ],
     'should show helpful error when no package.json found',
@@ -374,7 +395,7 @@ describe('socket fix', async () => {
   )
 
   cmdit(
-    ['fix', '.', '--config', '{"apiToken":"fake-token"}'],
+    ['fix', '.', FLAG_CONFIG, '{"apiToken":"fake-token"}'],
     'should handle vulnerable dependencies fixture project',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
@@ -386,10 +407,11 @@ describe('socket fix', async () => {
       )
       expect(code, 'should exit with non-zero code').not.toBe(0)
     },
+    { timeout: testTimeout },
   )
 
   cmdit(
-    ['fix', '.', '--config', '{"apiToken":"fake-token"}'],
+    ['fix', '.', FLAG_CONFIG, '{"apiToken":"fake-token"}'],
     'should handle monorepo fixture project',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
@@ -401,16 +423,17 @@ describe('socket fix', async () => {
       )
       expect(code, 'should exit with non-zero code').not.toBe(0)
     },
+    { timeout: testTimeout },
   )
 
   cmdit(
     [
       'fix',
-      '--dry-run',
+      FLAG_DRY_RUN,
       '--autopilot',
       '--limit',
       '1',
-      '--config',
+      FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
     ],
     'should handle autopilot mode with custom limit',
@@ -424,9 +447,9 @@ describe('socket fix', async () => {
   cmdit(
     [
       'fix',
-      '--id',
+      FLAG_ID,
       'GHSA-35jh-r3h4-6jhm',
-      '--config',
+      FLAG_CONFIG,
       '{"apiToken":"fake-token"}',
     ],
     'should handle specific GHSA ID for lodash vulnerability',
@@ -441,7 +464,7 @@ describe('socket fix', async () => {
   )
 
   cmdit(
-    ['fix', '--id', 'CVE-2021-23337', '--config', '{"apiToken":"fake-token"}'],
+    ['fix', '--id', 'CVE-2021-23337', FLAG_CONFIG, '{"apiToken":"fake-token"}'],
     'should handle CVE ID conversion for lodash vulnerability',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -454,7 +477,7 @@ describe('socket fix', async () => {
   )
 
   cmdit(
-    ['fix', '--limit', '1', '--config', '{"apiToken":"fake-token"}'],
+    ['fix', '--limit', '1', FLAG_CONFIG, '{"apiToken":"fake-token"}'],
     'should respect fix limit parameter',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -472,7 +495,7 @@ describe('socket fix', async () => {
       '--range-style',
       'preserve',
       '--autopilot',
-      '--config',
+      FLAG_CONFIG,
       '{"apiToken":"fake-token"}',
     ],
     'should handle autopilot mode with preserve range style',
@@ -487,7 +510,7 @@ describe('socket fix', async () => {
   )
 
   cmdit(
-    ['fix', '--range-style', 'pin', '--config', '{"apiToken":"fake-token"}'],
+    ['fix', '--range-style', 'pin', FLAG_CONFIG, '{"apiToken":"fake-token"}'],
     'should handle pin range style for exact versions',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -500,7 +523,7 @@ describe('socket fix', async () => {
   )
 
   cmdit(
-    ['fix', '--json', '--config', '{"apiToken":"fake-token"}'],
+    ['fix', '--json', FLAG_CONFIG, '{"apiToken":"fake-token"}'],
     'should output results in JSON format',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -513,7 +536,7 @@ describe('socket fix', async () => {
   )
 
   cmdit(
-    ['fix', '--markdown', '--config', '{"apiToken":"fake-token"}'],
+    ['fix', '--markdown', FLAG_CONFIG, '{"apiToken":"fake-token"}'],
     'should output results in markdown format',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -529,10 +552,10 @@ describe('socket fix', async () => {
     cmdit(
       [
         'fix',
-        '--id',
+        FLAG_ID,
         'pkg:npm/lodash@4.17.20',
         '.',
-        '--config',
+        FLAG_CONFIG,
         '{"apiToken":"fake-token"}',
       ],
       'should handle PURL-based vulnerability identification',
@@ -551,10 +574,10 @@ describe('socket fix', async () => {
     cmdit(
       [
         'fix',
-        '--id',
+        FLAG_ID,
         'GHSA-35jh-r3h4-6jhm,CVE-2021-23337',
         '.',
-        '--config',
+        FLAG_CONFIG,
         '{"apiToken":"fake-token"}',
       ],
       'should handle multiple vulnerability IDs in comma-separated format',
@@ -573,12 +596,12 @@ describe('socket fix', async () => {
     cmdit(
       [
         'fix',
-        '--id',
+        FLAG_ID,
         'GHSA-35jh-r3h4-6jhm',
-        '--id',
+        FLAG_ID,
         'CVE-2021-23337',
         '.',
-        '--config',
+        FLAG_CONFIG,
         '{"apiToken":"fake-token"}',
       ],
       'should handle multiple vulnerability IDs as separate flags',
@@ -602,9 +625,9 @@ describe('socket fix', async () => {
         '--limit',
         '1',
         '--autopilot',
-        '--json',
+        FLAG_JSON,
         '.',
-        '--config',
+        FLAG_CONFIG,
         '{"apiToken":"fake-token"}',
       ],
       'should handle autopilot mode with JSON output and custom limit',
@@ -627,9 +650,9 @@ describe('socket fix', async () => {
         'fix',
         '--range-style',
         'pin',
-        '--markdown',
+        FLAG_MARKDOWN,
         '.',
-        '--config',
+        FLAG_CONFIG,
         '{"apiToken":"fake-token"}',
       ],
       'should handle monorepo with pin style and markdown output',
@@ -651,7 +674,7 @@ describe('socket fix', async () => {
       [
         'fix',
         '/nonexistent/directory',
-        '--config',
+        FLAG_CONFIG,
         '{"apiToken":"fake-token"}',
       ],
       'should show clear error for non-existent project directory',
@@ -666,7 +689,7 @@ describe('socket fix', async () => {
     )
 
     cmdit(
-      ['fix', '--config', '{}'],
+      ['fix', FLAG_CONFIG, '{}'],
       'should show clear error when API token is missing',
       async cmd => {
         const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -679,9 +702,9 @@ describe('socket fix', async () => {
     cmdit(
       [
         'fix',
-        '--id',
+        FLAG_ID,
         'invalid-id-format',
-        '--config',
+        FLAG_CONFIG,
         '{"apiToken":"fake-token"}',
       ],
       'should handle invalid vulnerability ID formats gracefully',
@@ -698,7 +721,7 @@ describe('socket fix', async () => {
         'fix',
         '--limit',
         'not-a-number',
-        '--config',
+        FLAG_CONFIG,
         '{"apiToken":"fake-token"}',
       ],
       'should show clear error for invalid limit parameter',
@@ -710,10 +733,11 @@ describe('socket fix', async () => {
         )
         expect(code).toBeGreaterThan(0)
       },
+      { timeout: testTimeout },
     )
 
     cmdit(
-      ['fix', '--limit', '-5', '--config', '{"apiToken":"fake-token"}'],
+      ['fix', '--limit', '-5', FLAG_CONFIG, '{"apiToken":"fake-token"}'],
       'should show clear error for negative limit',
       async cmd => {
         const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -723,15 +747,16 @@ describe('socket fix', async () => {
         )
         expect(code).toBeGreaterThan(0)
       },
+      { timeout: testTimeout },
     )
 
     cmdit(
       [
         'fix',
-        '--id',
+        FLAG_ID,
         'GHSA-xxxx-xxxx-xxxx',
         '.',
-        '--config',
+        FLAG_CONFIG,
         '{"apiToken":"fake-token"}',
       ],
       'should handle non-existent GHSA IDs gracefully',
@@ -748,10 +773,10 @@ describe('socket fix', async () => {
     cmdit(
       [
         'fix',
-        '--json',
-        '--markdown',
+        FLAG_JSON,
+        FLAG_MARKDOWN,
         '.',
-        '--config',
+        FLAG_CONFIG,
         '{"apiToken":"fake-token"}',
       ],
       'should show clear error when both json and markdown flags are used',
@@ -766,7 +791,7 @@ describe('socket fix', async () => {
     )
 
     cmdit(
-      ['fix', '--autopilot', '--config', '{}'],
+      ['fix', '--autopilot', FLAG_CONFIG, '{}'],
       'should show helpful error when using autopilot without proper auth',
       async cmd => {
         const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -779,10 +804,10 @@ describe('socket fix', async () => {
     cmdit(
       [
         'fix',
-        '--id',
+        FLAG_ID,
         'CVE-1234-invalid',
         '.',
-        '--config',
+        FLAG_CONFIG,
         '{"apiToken":"fake-token"}',
       ],
       'should handle malformed CVE IDs gracefully',
@@ -797,7 +822,7 @@ describe('socket fix', async () => {
     )
 
     cmdit(
-      ['fix', '--help', '--autopilot', '--limit', '5', '--config', '{}'],
+      ['fix', FLAG_HELP, '--autopilot', '--limit', '5', FLAG_CONFIG, '{}'],
       'should prioritize help over other flags',
       async cmd => {
         const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -812,7 +837,7 @@ describe('socket fix', async () => {
       [
         'fix',
         '.',
-        '--config',
+        FLAG_CONFIG,
         '{"apiToken":"extremely-long-invalid-token-that-exceeds-normal-token-length-and-should-be-handled-gracefully"}',
       ],
       'should handle unusually long tokens gracefully',
@@ -829,10 +854,10 @@ describe('socket fix', async () => {
     cmdit(
       [
         'fix',
-        '--id',
+        FLAG_ID,
         'GHSA-1234-5678-9abc,CVE-2023-1234,pkg:npm/lodash@4.17.20,invalid-format',
         '.',
-        '--config',
+        FLAG_CONFIG,
         '{"apiToken":"fake-token"}',
       ],
       'should handle mixed valid and invalid vulnerability IDs',

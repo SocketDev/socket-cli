@@ -1,3 +1,25 @@
+/**
+ * Socket package alert utilities for Socket CLI.
+ * Handles security alerts, vulnerabilities, and package risk assessment.
+ *
+ * Key Functions:
+ * - addArtifactToAlertsMap: Add security alert to package map
+ * - logAlertsMap: Display alerts in formatted output
+ * - shouldSkipPackageAlert: Filter alerts based on criteria
+ *
+ * Alert Types:
+ * - CVE: Common Vulnerabilities and Exposures
+ * - GHSA: GitHub Security Advisories
+ * - Package quality issues
+ * - Supply chain risks
+ *
+ * Features:
+ * - Alert severity classification (critical/high/medium/low)
+ * - Fix type detection (major/minor/patch/none)
+ * - Alert filtering and suppression
+ * - Colorized terminal output
+ */
+
 import semver from 'semver'
 import colors from 'yoctocolors-cjs'
 
@@ -407,7 +429,8 @@ export function getCveInfoFromAlertsMap(
           }
         }
         debugFn('error', 'fail: invalid SocketPackageAlert')
-        debugDir('inspect', { alert, error })
+        debugDir('inspect', { alert })
+        debugDir('error', error)
       }
     }
   }

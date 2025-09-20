@@ -1,14 +1,18 @@
 import { describe, expect } from 'vitest'
 
-import constants from '../../../src/constants.mts'
+import constants, {
+  FLAG_CONFIG,
+  FLAG_DRY_RUN,
+  FLAG_HELP,
+} from '../../../src/constants.mts'
 import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
 
 describe('socket scan github', async () => {
   const { binCliPath } = constants
 
   cmdit(
-    ['scan', 'github', '--help', '--config', '{}'],
-    'should support --help',
+    ['scan', 'github', FLAG_HELP, FLAG_CONFIG, '{}'],
+    `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
@@ -54,8 +58,8 @@ describe('socket scan github', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
+          |   __|___ ___| |_ ___| |_      | Socket.dev (https://socket.dev) CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan github\`, cwd: <redacted>"
       `)
 
@@ -67,7 +71,7 @@ describe('socket scan github', async () => {
   )
 
   cmdit(
-    ['scan', 'github', '--dry-run', '--config', '{}'],
+    ['scan', 'github', FLAG_DRY_RUN, FLAG_CONFIG, '{}'],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -75,8 +79,8 @@ describe('socket scan github', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
+          |   __|___ ___| |_ ___| |_      | Socket.dev (https://socket.dev) CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan github\`, cwd: <redacted>
 
         \\u203c Unable to determine the target org. Trying to auto-discover it now...
@@ -99,10 +103,10 @@ describe('socket scan github', async () => {
       'scan',
       'github',
       'fakeOrg',
-      '--dry-run',
+      FLAG_DRY_RUN,
       '--github-token',
       'fake',
-      '--config',
+      FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
       'x',
       'y',
@@ -114,8 +118,8 @@ describe('socket scan github', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
+          |   __|___ ___| |_ ___| |_      | Socket.dev (https://socket.dev) CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan github\`, cwd: <redacted>
 
         \\u203c Unable to determine the target org. Trying to auto-discover it now...

@@ -1,6 +1,6 @@
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
-import constants from '../../constants.mts'
+import constants, { FLAG_PROD } from '../../constants.mts'
 
 import type { EnvDetails } from '../../utils/package-environment.mts'
 
@@ -50,6 +50,9 @@ async function npmQuery(npmExecPath: string, cwd: string): Promise<string> {
     stdout = (
       await spawn(npmExecPath, ['query', ':not(.dev)'], {
         cwd,
+        // On Windows, npm is often a .cmd file that requires shell execution.
+        // The spawn function from @socketsecurity/registry will handle this properly
+        // when shell is true.
         shell: constants.WIN32,
       })
     ).stdout
@@ -71,6 +74,9 @@ export async function lsBun(
     return (
       await spawn(pkgEnvDetails.agentExecPath, ['pm', 'ls', '--all'], {
         cwd,
+        // On Windows, bun is often a .cmd file that requires shell execution.
+        // The spawn function from @socketsecurity/registry will handle this properly
+        // when shell is true.
         shell: constants.WIN32,
       })
     ).stdout
@@ -110,9 +116,12 @@ export async function lsPnpm(
         pkgEnvDetails.agentExecPath,
         // Pnpm uses the alternative spelling of parsable.
         // https://en.wiktionary.org/wiki/parsable
-        ['ls', '--parseable', '--prod', '--depth', 'Infinity'],
+        ['ls', '--parseable', FLAG_PROD, '--depth', 'Infinity'],
         {
           cwd,
+          // On Windows, pnpm is often a .cmd file that requires shell execution.
+          // The spawn function from @socketsecurity/registry will handle this properly
+          // when shell is true.
           shell: constants.WIN32,
         },
       )
@@ -138,6 +147,9 @@ export async function lsVlt(
         ['ls', '--view', 'human', ':not(.dev)'],
         {
           cwd,
+          // On Windows, pnpm is often a .cmd file that requires shell execution.
+          // The spawn function from @socketsecurity/registry will handle this properly
+          // when shell is true.
           shell: constants.WIN32,
         },
       )
@@ -163,6 +175,9 @@ export async function lsYarnBerry(
         ['info', '--recursive', '--name-only'],
         {
           cwd,
+          // On Windows, yarn is often a .cmd file that requires shell execution.
+          // The spawn function from @socketsecurity/registry will handle this properly
+          // when shell is true.
           shell: constants.WIN32,
         },
       )
@@ -185,8 +200,11 @@ export async function lsYarnClassic(
     // > Fix: Excludes dev dependencies from the yarn list output when the
     //   environment is production
     return (
-      await spawn(pkgEnvDetails.agentExecPath, ['list', '--prod'], {
+      await spawn(pkgEnvDetails.agentExecPath, ['list', FLAG_PROD], {
         cwd,
+        // On Windows, yarn is often a .cmd file that requires shell execution.
+        // The spawn function from @socketsecurity/registry will handle this properly
+        // when shell is true.
         shell: constants.WIN32,
       })
     ).stdout

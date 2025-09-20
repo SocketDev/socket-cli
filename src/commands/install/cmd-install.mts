@@ -11,14 +11,14 @@ export const cmdInstall: CliSubcommand = {
   async run(argv, importMeta, { parentName }) {
     await meowWithSubcommands(
       {
-        completion: cmdInstallCompletion,
-      },
-      {
         argv,
-        description,
-        importMeta,
         name: `${parentName} install`,
+        importMeta,
+        subcommands: {
+          completion: cmdInstallCompletion,
+        },
       },
+      { description },
     )
   },
 }

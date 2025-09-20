@@ -22,7 +22,7 @@ import { updateManifest } from './update-manifest-by-agent.mts'
 import { NPM, PNPM } from '../../constants.mts'
 import { cmdPrefixMessage } from '../../utils/cmd.mts'
 import { globWorkspace } from '../../utils/glob.mts'
-import { npa } from '../../utils/npm-package-arg.mts'
+import { safeNpa } from '../../utils/npm-package-arg.mts'
 import { getMajor } from '../../utils/semver.mts'
 
 import type { GetOverridesResult } from './get-overrides-by-agent.mts'
@@ -148,9 +148,9 @@ export async function addOverrides(
             // ...if the spec doesn't start with a valid Socket override.
             !(
               thisSpec.startsWith(sockOverridePrefix) &&
-              // Check the validity of the spec by passing it through npa and
-              // seeing if it will coerce to a version.
-              semver.coerce((npa(thisSpec) as AliasResult).subSpec.rawSpec)
+              // Check the validity of the spec by parsing it with npm-package-arg
+              // and seeing if it will coerce to a version.
+              semver.coerce((safeNpa(thisSpec) as AliasResult).subSpec.rawSpec)
                 ?.version
             )
           ) {
@@ -212,13 +212,13 @@ export async function addOverrides(
                   if (
                     pin &&
                     getMajor(
-                      // Check the validity of the spec by passing it through npa
+                      // Check the validity of the spec by parsing it with npm-package-arg
                       // and seeing if it will coerce to a version. semver.coerce
                       // will strip leading v's, carets (^), comparators (<,<=,>,>=,=),
                       // and tildes (~). If not coerced to a valid version then
                       // default to the manifest entry version.
                       semver.coerce(
-                        (npa(thisSpec) as AliasResult).subSpec.rawSpec,
+                        (safeNpa(thisSpec) as AliasResult).subSpec.rawSpec,
                       )?.version ?? version,
                     ) !== major
                   ) {

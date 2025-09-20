@@ -1,20 +1,15 @@
-import { existsSync, promises as fs } from 'node:fs'
+import { existsSync } from 'node:fs'
 import path from 'node:path'
-
-import {
-  afterAll,
-  afterEach,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-} from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { readPackageJson } from '@socketsecurity/registry/lib/packages'
 import { spawnSync } from '@socketsecurity/registry/lib/spawn'
 
-import constants, { PNPM_LOCK_YAML } from '../../../src/constants.mts'
+import constants, {
+  FLAG_CONFIG,
+  FLAG_SILENT,
+  PNPM_LOCK_YAML,
+} from '../../../src/constants.mts'
 import { spawnSocketCli, testPath } from '../../../test/utils.mts'
 
 const fixtureBaseDir = path.join(testPath, 'fixtures/commands/optimize')
@@ -33,7 +28,7 @@ describe.skip(
 
       beforeEach(async () => {
         // Ensure pnpm v8 is installed in the fixture
-        spawnSync('npm', ['install', '--silent'], {
+        spawnSync('npm', ['install', FLAG_SILENT], {
           cwd: pnpm8FixtureDir,
           stdio: 'ignore',
         })
@@ -71,7 +66,7 @@ describe.skip(
 
           const { code, stderr, stdout } = await spawnSocketCli(
             binCliPath,
-            ['optimize', pnpm8FixtureDir, '--config', '{}'],
+            ['optimize', pnpm8FixtureDir, FLAG_CONFIG, '{}'],
             {
               cwd: pnpm8FixtureDir,
               env: {
@@ -109,7 +104,7 @@ describe.skip(
 
           const { code, stderr, stdout } = await spawnSocketCli(
             binCliPath,
-            ['optimize', pnpm8FixtureDir, '--prod', '--config', '{}'],
+            ['optimize', pnpm8FixtureDir, '--prod', FLAG_CONFIG, '{}'],
             {
               cwd: pnpm8FixtureDir,
               env: {
@@ -137,7 +132,7 @@ describe.skip(
 
       beforeEach(async () => {
         // Ensure pnpm v9 is installed in the fixture
-        spawnSync('npm', ['install', '--silent'], {
+        spawnSync('npm', ['install', FLAG_SILENT], {
           cwd: pnpm9FixtureDir,
           stdio: 'ignore',
         })
@@ -175,7 +170,7 @@ describe.skip(
 
           const { code, stderr, stdout } = await spawnSocketCli(
             binCliPath,
-            ['optimize', pnpm9FixtureDir, '--config', '{}'],
+            ['optimize', pnpm9FixtureDir, FLAG_CONFIG, '{}'],
             {
               cwd: pnpm9FixtureDir,
               env: {
@@ -213,7 +208,7 @@ describe.skip(
 
           const { code, stderr, stdout } = await spawnSocketCli(
             binCliPath,
-            ['optimize', pnpm9FixtureDir, '--pin', '--config', '{}'],
+            ['optimize', pnpm9FixtureDir, '--pin', FLAG_CONFIG, '{}'],
             {
               cwd: pnpm9FixtureDir,
               env: {

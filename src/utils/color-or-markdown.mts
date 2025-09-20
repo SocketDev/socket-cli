@@ -1,3 +1,27 @@
+/**
+ * Color and markdown formatting utilities for Socket CLI.
+ * Provides dual-mode formatting for terminal colors or markdown output.
+ *
+ * Key Class:
+ * - ColorOrMarkdown: Dual-mode formatter for terminal/markdown output
+ *
+ * Formatting Methods:
+ * - bold: Bold text formatting
+ * - codeBlock: Code block formatting
+ * - codeInline: Inline code formatting
+ * - header: Section headers
+ * - hyperlink: Clickable links
+ * - indent: Text indentation
+ * - italic: Italic text formatting
+ * - list: Bullet list formatting
+ * - table: Table formatting
+ *
+ * Usage:
+ * - Switches between terminal colors and markdown based on output format
+ * - Supports both interactive terminal and report generation
+ * - Handles hyperlink fallbacks for terminals without link support
+ */
+
 import terminalLink from 'terminal-link'
 import colors from 'yoctocolors-cjs'
 

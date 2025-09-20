@@ -1,3 +1,20 @@
+/**
+ * PNPM path resolution utilities for Socket CLI.
+ * Locates and caches PNPM binary paths.
+ *
+ * Key Functions:
+ * - getPnpmBinPath: Get cached PNPM binary path
+ * - getPnpmBinPathDetails: Get detailed PNPM path information
+ *
+ * Error Handling:
+ * - Exits with code 127 if PNPM not found
+ * - Provides clear error messages for missing binaries
+ *
+ * Caching:
+ * - Caches binary path lookups for performance
+ * - Prevents repeated PATH searches
+ */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { findBinPathDetailsSync } from './path-resolve.mts'
@@ -10,6 +27,8 @@ function exitWithBinPathError(binName: string): never {
   // could not be found.
   // eslint-disable-next-line n/no-process-exit
   process.exit(127)
+  // This line is never reached in production, but helps tests.
+  throw new Error('process.exit called')
 }
 
 let _pnpmBinPath: string | undefined

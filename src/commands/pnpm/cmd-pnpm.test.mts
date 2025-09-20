@@ -1,12 +1,18 @@
 import { existsSync, promises as fs } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
-
+import trash from 'trash'
 import { describe, expect, it } from 'vitest'
 
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
-import constants from '../../../src/constants.mts'
+import constants, {
+  FLAG_CONFIG,
+  FLAG_DRY_RUN,
+  FLAG_HELP,
+  FLAG_SILENT,
+  PNPM,
+} from '../../../src/constants.mts'
 import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
 
 // TODO: Revisit after socket-registry dep is updated.
@@ -14,8 +20,8 @@ describe.skip('socket pnpm', async () => {
   const { binCliPath } = constants
 
   cmdit(
-    ['pnpm', '--help', '--config', '{}'],
-    'should support --help',
+    [PNPM, FLAG_HELP, FLAG_CONFIG, '{}'],
+    `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
@@ -54,7 +60,7 @@ describe.skip('socket pnpm', async () => {
   )
 
   cmdit(
-    ['pnpm', '--dry-run', '--config', '{"apiToken":"fakeToken"}'],
+    [PNPM, FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fakeToken"}'],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
@@ -72,8 +78,8 @@ describe.skip('socket pnpm', async () => {
       'pnpm',
       'add',
       'lodash',
-      '--dry-run',
-      '--config',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
     ],
     'should handle add with --dry-run flag',
@@ -88,7 +94,7 @@ describe.skip('socket pnpm', async () => {
   )
 
   cmdit(
-    ['pnpm', 'install', '--dry-run', '--config', '{"apiToken":"fakeToken"}'],
+    [PNPM, 'install', FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fakeToken"}'],
     'should handle install with --dry-run flag',
     async cmd => {
       const { code } = await spawnSocketCli(binCliPath, cmd, {
@@ -104,8 +110,8 @@ describe.skip('socket pnpm', async () => {
       'pnpm',
       'add',
       '@types/node@^20.0.0',
-      '--dry-run',
-      '--config',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
     ],
     'should handle scoped packages with version',
@@ -123,11 +129,11 @@ describe.skip('socket pnpm', async () => {
     [
       'pnpm',
       'dlx',
-      '--silent',
+      FLAG_SILENT,
       'cowsay@^1.6.0',
       'hello',
-      '--dry-run',
-      '--config',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
     ],
     'should handle dlx with version',
@@ -137,6 +143,197 @@ describe.skip('socket pnpm', async () => {
       })
 
       expect(code, 'dry-run dlx should exit with code 0').toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'pnpm',
+      'exec',
+      '-c',
+      '{"issueRules":{"malware":true}}',
+      'cowsay@^1.6.0',
+      'hello',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
+      '{"apiToken":"fakeToken"}',
+    ],
+    'should handle exec with -c flag and issueRules for malware',
+    async cmd => {
+      const { code, stdout } = await spawnSocketCli(binCliPath, cmd, {
+        timeout: 30_000,
+      })
+
+      expect(stdout).toMatchInlineSnapshot('"[DryRun]: Bailing now"')
+      expect(code, 'dry-run exec with -c should exit with code 0').toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'pnpm',
+      'exec',
+      FLAG_CONFIG,
+      '{"issueRules":{"malware":true}}',
+      'cowsay@^1.6.0',
+      'hello',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
+      '{"apiToken":"fakeToken"}',
+    ],
+    'should handle exec with --config flag and issueRules for malware',
+    async cmd => {
+      const { code, stdout } = await spawnSocketCli(binCliPath, cmd, {
+        timeout: 30_000,
+      })
+
+      expect(stdout).toMatchInlineSnapshot('"[DryRun]: Bailing now"')
+      expect(code, 'dry-run exec with --config should exit with code 0').toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'pnpm',
+      'exec',
+      '-c',
+      '{"issueRules":{"malware":true,"gptMalware":true}}',
+      'cowsay@^1.6.0',
+      'hello',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
+      '{"apiToken":"fakeToken"}',
+    ],
+    'should handle exec with -c flag and multiple issueRules (malware and gptMalware)',
+    async cmd => {
+      const { code, stdout } = await spawnSocketCli(binCliPath, cmd, {
+        timeout: 30_000,
+      })
+
+      expect(stdout).toMatchInlineSnapshot('"[DryRun]: Bailing now"')
+      expect(
+        code,
+        'dry-run exec with multiple issueRules should exit with code 0',
+      ).toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'pnpm',
+      'exec',
+      FLAG_CONFIG,
+      '{"issueRules":{"malware":true,"gptMalware":true}}',
+      'cowsay@^1.6.0',
+      'hello',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
+      '{"apiToken":"fakeToken"}',
+    ],
+    'should handle exec with --config flag and multiple issueRules (malware and gptMalware)',
+    async cmd => {
+      const { code, stdout } = await spawnSocketCli(binCliPath, cmd, {
+        timeout: 30_000,
+      })
+
+      expect(stdout).toMatchInlineSnapshot('"[DryRun]: Bailing now"')
+      expect(
+        code,
+        'dry-run exec with --config and multiple issueRules should exit with code 0',
+      ).toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'pnpm',
+      'install',
+      '-c',
+      '{"issueRules":{"malware":true}}',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
+      '{"apiToken":"fakeToken"}',
+    ],
+    'should handle install with -c flag and issueRules for malware',
+    async cmd => {
+      const { code, stdout } = await spawnSocketCli(binCliPath, cmd, {
+        timeout: 30_000,
+      })
+
+      expect(stdout).toMatchInlineSnapshot('"[DryRun]: Bailing now"')
+      expect(code, 'dry-run install with -c should exit with code 0').toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'pnpm',
+      'install',
+      FLAG_CONFIG,
+      '{"issueRules":{"malware":true}}',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
+      '{"apiToken":"fakeToken"}',
+    ],
+    'should handle install with --config flag and issueRules for malware',
+    async cmd => {
+      const { code, stdout } = await spawnSocketCli(binCliPath, cmd, {
+        timeout: 30_000,
+      })
+
+      expect(stdout).toMatchInlineSnapshot('"[DryRun]: Bailing now"')
+      expect(
+        code,
+        'dry-run install with --config should exit with code 0',
+      ).toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'pnpm',
+      'install',
+      '-c',
+      '{"issueRules":{"malware":true,"gptMalware":true}}',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
+      '{"apiToken":"fakeToken"}',
+    ],
+    'should handle install with -c flag and multiple issueRules (malware and gptMalware)',
+    async cmd => {
+      const { code, stdout } = await spawnSocketCli(binCliPath, cmd, {
+        timeout: 30_000,
+      })
+
+      expect(stdout).toMatchInlineSnapshot('"[DryRun]: Bailing now"')
+      expect(
+        code,
+        'dry-run install with multiple issueRules should exit with code 0',
+      ).toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'pnpm',
+      'install',
+      FLAG_CONFIG,
+      '{"issueRules":{"malware":true,"gptMalware":true}}',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
+      '{"apiToken":"fakeToken"}',
+    ],
+    'should handle install with --config flag and multiple issueRules (malware and gptMalware)',
+    async cmd => {
+      const { code, stdout } = await spawnSocketCli(binCliPath, cmd, {
+        timeout: 30_000,
+      })
+
+      expect(stdout).toMatchInlineSnapshot('"[DryRun]: Bailing now"')
+      expect(
+        code,
+        'dry-run install with --config and multiple issueRules should exit with code 0',
+      ).toBe(0)
     },
   )
 
@@ -163,7 +360,7 @@ describe.skip('socket pnpm', async () => {
             '@socketsecurity/cli@latest',
             'pnpm',
             'install',
-            '--config',
+            FLAG_CONFIG,
             '{"apiToken":"fakeToken"}',
           ],
           {
@@ -187,7 +384,7 @@ describe.skip('socket pnpm', async () => {
         ).toBe(true)
       } finally {
         // Clean up the temporary directory.
-        await fs.rm(tmpDir, { recursive: true, force: true })
+        await trash(tmpDir)
       }
     },
   )

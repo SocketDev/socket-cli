@@ -1,15 +1,19 @@
 import semver from 'semver'
 import { describe, expect } from 'vitest'
 
-import constants from '../../../src/constants.mts'
+import constants, {
+  FLAG_CONFIG,
+  FLAG_DRY_RUN,
+  FLAG_HELP,
+} from '../../../src/constants.mts'
 import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
 
 describe('socket config get', async () => {
   const { binCliPath } = constants
 
   cmdit(
-    ['config', 'get', '--help', '--config', '{}'],
-    'should support --help',
+    ['config', 'get', FLAG_HELP, FLAG_CONFIG, '{}'],
+    `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
@@ -48,8 +52,8 @@ describe('socket config get', async () => {
         expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
           "
              _____         _       _        /---------------
-            |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-            |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
+            |   __|___ ___| |_ ___| |_      | Socket.dev (https://socket.dev) CLI: <redacted>
+            |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
             |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>"
         `)
         expect(code, 'explicit help should exit with code 0').toBe(0)
@@ -62,7 +66,7 @@ describe('socket config get', async () => {
   )
 
   cmdit(
-    ['config', 'get', '--dry-run', '--config', '{}'],
+    ['config', 'get', FLAG_DRY_RUN, FLAG_CONFIG, '{}'],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -70,8 +74,8 @@ describe('socket config get', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
+          |   __|___ ___| |_ ___| |_      | Socket.dev (https://socket.dev) CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>
 
         \\xd7  Input error:  Please review the input requirements and try again
@@ -88,8 +92,8 @@ describe('socket config get', async () => {
       'config',
       'test',
       'test',
-      '--dry-run',
-      '--config',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
     ],
     'should require args with just dry-run',
@@ -101,8 +105,8 @@ describe('socket config get', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
+          |   __|___ ___| |_ ___| |_      | Socket.dev (https://socket.dev) CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket config\`, cwd: <redacted>"
       `)
 
@@ -113,7 +117,7 @@ describe('socket config get', async () => {
   describe('env vars', () => {
     describe('token', () => {
       cmdit(
-        ['config', 'get', 'apiToken', '--config', '{"apiToken":null}'],
+        ['config', 'get', 'apiToken', FLAG_CONFIG, '{"apiToken":null}'],
         'should return undefined when token not set in config',
         async cmd => {
           const { stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -127,8 +131,8 @@ describe('socket config get', async () => {
           expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
             "
                _____         _       _        /---------------
-              |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-              |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
+              |   __|___ ___| |_ ___| |_      | Socket.dev (https://socket.dev) CLI: <redacted>
+              |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
               |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>"
           `)
 
@@ -137,7 +141,7 @@ describe('socket config get', async () => {
       )
 
       cmdit(
-        ['config', 'get', 'apiToken', '--config', '{"apiToken":null}'],
+        ['config', 'get', 'apiToken', FLAG_CONFIG, '{"apiToken":null}'],
         'should return the env var token when set',
         async cmd => {
           const { stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
@@ -153,8 +157,8 @@ describe('socket config get', async () => {
           expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
             "
                _____         _       _        /---------------
-              |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-              |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
+              |   __|___ ___| |_ ___| |_      | Socket.dev (https://socket.dev) CLI: <redacted>
+              |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
               |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>"
           `)
 
@@ -164,7 +168,7 @@ describe('socket config get', async () => {
 
       // Migrate this away...?
       cmdit(
-        ['config', 'get', 'apiToken', '--config', '{"apiToken":null}'],
+        ['config', 'get', 'apiToken', FLAG_CONFIG, '{"apiToken":null}'],
         'should back compat support for API token as well env var',
         async cmd => {
           const { stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
@@ -180,8 +184,8 @@ describe('socket config get', async () => {
           expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
             "
                _____         _       _        /---------------
-              |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-              |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
+              |   __|___ ___| |_ ___| |_      | Socket.dev (https://socket.dev) CLI: <redacted>
+              |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
               |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>"
           `)
 
@@ -190,7 +194,7 @@ describe('socket config get', async () => {
       )
 
       cmdit(
-        ['config', 'get', 'apiToken', '--config', '{"apiToken":null}'],
+        ['config', 'get', 'apiToken', FLAG_CONFIG, '{"apiToken":null}'],
         'should be nice and support cli prefixed env var for token as well',
         async cmd => {
           const { stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
@@ -206,8 +210,8 @@ describe('socket config get', async () => {
           expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
             "
                _____         _       _        /---------------
-              |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-              |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
+              |   __|___ ___| |_ ___| |_      | Socket.dev (https://socket.dev) CLI: <redacted>
+              |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
               |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>"
           `)
 
@@ -217,7 +221,7 @@ describe('socket config get', async () => {
 
       // Migrate this away...?
       cmdit(
-        ['config', 'get', 'apiToken', '--config', '{"apiToken":null}'],
+        ['config', 'get', 'apiToken', FLAG_CONFIG, '{"apiToken":null}'],
         'should be very nice and support cli prefixed env var for key as well since it is an easy mistake to make',
         async cmd => {
           const { stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
@@ -233,8 +237,8 @@ describe('socket config get', async () => {
           expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
             "
                _____         _       _        /---------------
-              |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-              |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
+              |   __|___ ___| |_ ___| |_      | Socket.dev (https://socket.dev) CLI: <redacted>
+              |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
               |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>"
           `)
 
@@ -247,7 +251,7 @@ describe('socket config get', async () => {
           'config',
           'get',
           'apiToken',
-          '--config',
+          FLAG_CONFIG,
           '{"apiToken":"ignoremebecausetheenvvarshouldbemoreimportant"}',
         ],
         'should use the env var token when the config override also has a token set',
@@ -265,8 +269,8 @@ describe('socket config get', async () => {
           expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
             "
                _____         _       _        /---------------
-              |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-              |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
+              |   __|___ ___| |_ ___| |_      | Socket.dev (https://socket.dev) CLI: <redacted>
+              |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
               |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>"
           `)
 
@@ -279,7 +283,7 @@ describe('socket config get', async () => {
           'config',
           'get',
           'apiToken',
-          '--config',
+          FLAG_CONFIG,
           '{"apiToken":"pickmepickme"}',
         ],
         'should use the config override when there is no env var',
@@ -295,8 +299,8 @@ describe('socket config get', async () => {
           expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
             "
                _____         _       _        /---------------
-              |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-              |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
+              |   __|___ ___| |_ ___| |_      | Socket.dev (https://socket.dev) CLI: <redacted>
+              |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
               |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>"
           `)
 
@@ -305,7 +309,7 @@ describe('socket config get', async () => {
       )
 
       cmdit(
-        ['config', 'get', 'apiToken', '--config', '{}'],
+        ['config', 'get', 'apiToken', FLAG_CONFIG, '{}'],
         'should yield no token when override has none',
         async cmd => {
           const { stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -319,8 +323,8 @@ describe('socket config get', async () => {
           expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
             "
                _____         _       _        /---------------
-              |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-              |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
+              |   __|___ ___| |_ ___| |_      | Socket.dev (https://socket.dev) CLI: <redacted>
+              |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
               |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>"
           `)
 

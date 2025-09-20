@@ -46,6 +46,7 @@ export async function applyOptimization(
       logger,
       spinner,
     })
+
     if (!result.ok) {
       spinner.stop()
       return result

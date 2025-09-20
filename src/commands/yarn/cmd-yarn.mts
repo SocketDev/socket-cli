@@ -2,7 +2,7 @@ import { createRequire } from 'node:module'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import constants, { YARN } from '../../constants.mts'
+import constants, { FLAG_DRY_RUN, FLAG_HELP, YARN } from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
 import { filterFlags } from '../../utils/cmd.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
@@ -47,10 +47,10 @@ async function run(
     API Token Requirements
       ${getFlagApiRequirementsOutput(`${parentName}:${CMD_NAME}`)}
 
-    Note: Everything after "yarn" is passed to the yarn command.
-          Only the \`--dry-run\` and \`--help\` flags are caught here.
+    Note: Everything after "${YARN}" is passed to the ${YARN} command.
+          Only the \`${FLAG_DRY_RUN}\` and \`${FLAG_HELP}\` flags are caught here.
 
-    Use \`socket wrapper on\` to alias this command as \`yarn\`.
+    Use \`socket wrapper on\` to alias this command as \`${YARN}\`.
 
     Examples
       $ ${command}
@@ -74,14 +74,16 @@ async function run(
     return
   }
 
-  const shadowBin = /*@__PURE__*/ require(constants.shadowYarnBinPath)
+  const shadowYarnBin = /*@__PURE__*/ require(constants.shadowYarnBinPath)
 
   process.exitCode = 1
 
   // Filter Socket flags from argv.
   const filteredArgv = filterFlags(argv, config.flags)
 
-  const { spawnPromise } = await shadowBin(filteredArgv)
+  const { spawnPromise } = await shadowYarnBin(filteredArgv, {
+    stdio: 'inherit',
+  })
 
   await spawnPromise
   process.exitCode = 0

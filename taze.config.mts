@@ -2,7 +2,7 @@ import { defineConfig } from 'taze'
 
 export default defineConfig({
   // Exclude these packages (migrated from .ncurc.json reject list).
-  exclude: ['eslint-plugin-unicorn', 'terminal-link'],
+  exclude: ['eslint-plugin-unicorn', 'terminal-link', 'yargs-parser'],
   // Interactive mode disabled for automation.
   interactive: false,
   // Use minimal logging similar to ncu loglevel.

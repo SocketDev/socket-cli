@@ -1,3 +1,4 @@
+import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { applyOptimization } from './apply-optimization.mts'
@@ -22,18 +23,26 @@ export async function handleOptimize({
   pin: boolean
   prod: boolean
 }) {
+  debugFn('notice', `Starting optimization for ${cwd}`)
+  debugDir('inspect', { cwd, outputKind, pin, prod })
+
   const pkgEnvCResult = await detectAndValidatePackageEnvironment(cwd, {
     cmdName: CMD_NAME,
     logger,
     prod,
   })
   if (!pkgEnvCResult.ok) {
+    process.exitCode = pkgEnvCResult.code ?? 1
+    debugFn('warn', 'Package environment validation failed')
+    debugDir('inspect', { pkgEnvCResult })
     await outputOptimizeResult(pkgEnvCResult, outputKind)
     return
   }
 
   const pkgEnvDetails = pkgEnvCResult.data
   if (!pkgEnvDetails) {
+    process.exitCode = 1
+    debugFn('warn', 'No package environment details found')
     await outputOptimizeResult(
       {
         ok: false,
@@ -45,8 +54,16 @@ export async function handleOptimize({
     return
   }
 
+  debugFn(
+    'notice',
+    `Detected package manager: ${pkgEnvDetails.agent} v${pkgEnvDetails.agentVersion}`,
+  )
+  debugDir('inspect', { pkgEnvDetails })
+
   const { agent, agentVersion } = pkgEnvDetails
   if (agent === VLT) {
+    process.exitCode = 1
+    debugFn('warn', `${agent} does not support overrides`)
     await outputOptimizeResult(
       {
         ok: false,
@@ -63,8 +80,19 @@ export async function handleOptimize({
 
   logger.info(`Optimizing packages for ${agent} v${agentVersion}.\n`)
 
-  await outputOptimizeResult(
-    await applyOptimization(pkgEnvDetails, { pin, prod }),
-    outputKind,
+  debugFn('notice', 'Applying optimization')
+  const optimizationResult = await applyOptimization(pkgEnvDetails, {
+    pin,
+    prod,
+  })
+
+  if (!optimizationResult.ok) {
+    process.exitCode = optimizationResult.code ?? 1
+  }
+  debugFn(
+    'notice',
+    `Optimization ${optimizationResult.ok ? 'succeeded' : 'failed'}`,
   )
+  debugDir('inspect', { optimizationResult })
+  await outputOptimizeResult(optimizationResult, outputKind)
 }

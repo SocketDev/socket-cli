@@ -43,8 +43,8 @@ async function run(
   const cli = meowOrExit({
     argv,
     config,
-    importMeta,
     parentName,
+    importMeta,
   })
 
   let [cwd = '.'] = cli.input

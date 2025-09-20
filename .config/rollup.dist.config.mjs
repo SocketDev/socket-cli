@@ -41,6 +41,7 @@ const {
   ROLLUP_EXTERNAL_SUFFIX,
   SHADOW_NPM_BIN,
   SHADOW_NPM_INJECT,
+  SHADOW_NPX_BIN,
   SHADOW_PNPM_BIN,
   SHADOW_YARN_BIN,
   SLASH_NODE_MODULES_SLASH,
@@ -260,7 +261,7 @@ async function updatePackageLockFile() {
       },
     )
   } catch (e) {
-    console.warn('Failed to update pnpm lock file:', e?.message)
+    console.warn('Failed to update pnpm lockfile:', e?.message)
   }
 }
 
@@ -357,6 +358,9 @@ export default async () => {
   const shadowNpmInjectSrcPath = normalizePath(
     path.join(srcPath, 'shadow/npm/inject.mts'),
   )
+  const shadowNpxBinSrcPath = normalizePath(
+    path.join(srcPath, 'shadow/npx/bin.mts'),
+  )
   const shadowPnpmBinSrcPath = normalizePath(
     path.join(srcPath, 'shadow/pnpm/bin.mts'),
   )
@@ -377,6 +381,7 @@ export default async () => {
         [CONSTANTS]: `${srcPath}/constants.mts`,
         [SHADOW_NPM_BIN]: `${srcPath}/shadow/npm/bin.mts`,
         [SHADOW_NPM_INJECT]: `${srcPath}/shadow/npm/inject.mts`,
+        [SHADOW_NPX_BIN]: `${srcPath}/shadow/npx/bin.mts`,
         [SHADOW_PNPM_BIN]: `${srcPath}/shadow/pnpm/bin.mts`,
         [SHADOW_YARN_BIN]: `${srcPath}/shadow/yarn/bin.mts`,
         ...(constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD]
@@ -404,6 +409,8 @@ export default async () => {
                 return SHADOW_NPM_BIN
               case shadowNpmInjectSrcPath:
                 return SHADOW_NPM_INJECT
+              case shadowNpxBinSrcPath:
+                return SHADOW_NPX_BIN
               case shadowPnpmBinSrcPath:
                 return SHADOW_PNPM_BIN
               case shadowYarnBinSrcPath:

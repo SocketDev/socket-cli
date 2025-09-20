@@ -3,10 +3,11 @@ import { promises as fs } from 'node:fs'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import shadowPnpm from './bin.mts'
+import { FLAG_DRY_RUN } from '../../constants.mts'
 
 // Mock fs module
 vi.mock('node:fs', async importOriginal => {
-  const actual = await importOriginal()
+  const actual = (await importOriginal()) as Record<string, any>
   return {
     ...actual,
     existsSync: vi.fn(),
@@ -17,7 +18,7 @@ vi.mock('node:fs', async importOriginal => {
 })
 
 // Mock all dependencies with vi.hoisted for better type safety
-const mockInstallLinks = vi.hoisted(() => vi.fn())
+const mockInstallPnpmLinks = vi.hoisted(() => vi.fn())
 const mockSpawn = vi.hoisted(() => vi.fn())
 const mockGetAlertsMapFromPurls = vi.hoisted(() => vi.fn())
 const mockGetAlertsMapFromPnpmLockfile = vi.hoisted(() => vi.fn())
@@ -40,8 +41,8 @@ vi.mock('../../utils/socket-package-alert.mts', () => ({
   logAlertsMap: mockLogAlertsMap,
 }))
 
-vi.mock('./link.mts', () => ({
-  installLinks: mockInstallLinks,
+vi.mock('../../utils/shadow-links.mts', () => ({
+  installPnpmLinks: mockInstallPnpmLinks,
 }))
 
 vi.mock('@socketsecurity/registry/lib/spawn', () => ({
@@ -49,16 +50,26 @@ vi.mock('@socketsecurity/registry/lib/spawn', () => ({
 }))
 
 vi.mock('../../constants.mts', async importOriginal => {
-  const actual = await importOriginal()
+  const actual = (await importOriginal()) as Record<string, any>
   return {
     ...actual,
     default: {
-      ...actual.default,
+      ...actual?.default,
       shadowBinPath: '/mock/shadow-bin',
-      ENV: {
-        SOCKET_CLI_ACCEPT_RISKS: '',
-        SOCKET_CLI_VIEW_ALL_RISKS: '',
-      },
+      ENV: new Proxy(
+        {},
+        {
+          get(_target, prop) {
+            if (prop === 'SOCKET_CLI_ACCEPT_RISKS') {
+              return process.env.SOCKET_CLI_ACCEPT_RISKS || ''
+            }
+            if (prop === 'SOCKET_CLI_VIEW_ALL_RISKS') {
+              return process.env.SOCKET_CLI_VIEW_ALL_RISKS || ''
+            }
+            return ''
+          },
+        },
+      ),
     },
   }
 })
@@ -68,12 +79,20 @@ describe('shadowPnpm', () => {
     vi.clearAllMocks()
 
     // Default mock implementations
-    mockInstallLinks.mockResolvedValue('/usr/bin/pnpm')
-    mockSpawn.mockResolvedValue({
-      success: true,
-      code: 0,
-      stdout: '',
-      stderr: '',
+    mockInstallPnpmLinks.mockResolvedValue('/usr/bin/pnpm')
+    mockSpawn.mockReturnValue({
+      process: {
+        send: vi.fn(),
+        on: vi.fn(),
+      },
+      then: vi.fn().mockImplementation(cb =>
+        cb({
+          success: true,
+          code: 0,
+          stdout: '',
+          stderr: '',
+        }),
+      ),
     })
     mockGetAlertsMapFromPurls.mockResolvedValue(new Map())
     mockExistsSync.mockReturnValue(false)
@@ -91,7 +110,7 @@ describe('shadowPnpm', () => {
   it('should handle pnpm add with single package', async () => {
     const result = await shadowPnpm(['add', 'lodash'])
 
-    expect(mockInstallLinks).toHaveBeenCalledWith(expect.any(String), 'pnpm')
+    expect(mockInstallPnpmLinks).toHaveBeenCalledWith(expect.any(String))
     expect(mockGetAlertsMapFromPurls).toHaveBeenCalledWith(
       ['pkg:npm/lodash'],
       expect.objectContaining({
@@ -190,7 +209,7 @@ describe('shadowPnpm', () => {
   })
 
   it('should handle dry-run flag by skipping scanning', async () => {
-    await shadowPnpm(['add', 'lodash', '--dry-run'])
+    await shadowPnpm(['add', 'lodash', FLAG_DRY_RUN])
 
     expect(mockGetAlertsMapFromPurls).not.toHaveBeenCalled()
   })

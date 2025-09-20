@@ -1,7 +1,7 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { runRawNpm } from './run-raw-npm.mts'
-import constants from '../../constants.mts'
+import constants, { FLAG_DRY_RUN, FLAG_HELP } from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 
@@ -26,7 +26,7 @@ const config: CliCommandConfig = {
     the Socket wrapper. Use at your own risk.
 
     Note: Everything after "raw-npm" is passed to the npm command.
-          Only the \`--dry-run\` and \`--help\` flags are caught here.
+          Only the \`${FLAG_DRY_RUN}\` and \`${FLAG_HELP}\` flags are caught here.
 
     Examples
       $ ${command} install -g cowsay
@@ -47,8 +47,8 @@ async function run(
   const cli = meowOrExit({
     argv,
     config,
-    importMeta,
     parentName,
+    importMeta,
   })
 
   const dryRun = !!cli.flags['dryRun']

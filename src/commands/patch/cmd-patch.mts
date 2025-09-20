@@ -4,7 +4,7 @@ import path from 'node:path'
 import { arrayUnique } from '@socketsecurity/registry/lib/arrays'
 
 import { handlePatch } from './handle-patch.mts'
-import constants, { DOT_SOCKET, MANIFEST_JSON } from '../../constants.mts'
+import constants, { DOT_SOCKET_DIR, MANIFEST_JSON } from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import { cmdFlagValueToArray } from '../../utils/cmd.mts'
@@ -74,13 +74,15 @@ async function run(
     `,
   }
 
-  const cli = meowOrExit({
-    allowUnknownFlags: false,
-    argv,
-    config,
-    importMeta,
-    parentName,
-  })
+  const cli = meowOrExit(
+    {
+      argv,
+      config,
+      parentName,
+      importMeta,
+    },
+    { allowUnknownFlags: false },
+  )
 
   const { dryRun, json, markdown } = cli.flags as {
     dryRun: boolean
@@ -105,16 +107,18 @@ async function run(
   // If given path is absolute then cwd should not affect it.
   cwd = path.resolve(process.cwd(), cwd)
 
-  const dotSocketDirPath = path.join(cwd, DOT_SOCKET)
+  const dotSocketDirPath = path.join(cwd, DOT_SOCKET_DIR)
   if (!existsSync(dotSocketDirPath)) {
     throw new InputError(
-      `No ${DOT_SOCKET} directory found in current directory`,
+      `No ${DOT_SOCKET_DIR} directory found in current directory`,
     )
   }
 
   const manifestPath = path.join(dotSocketDirPath, MANIFEST_JSON)
   if (!existsSync(manifestPath)) {
-    throw new InputError(`No ${MANIFEST_JSON} found in ${DOT_SOCKET} directory`)
+    throw new InputError(
+      `No ${MANIFEST_JSON} found in ${DOT_SOCKET_DIR} directory`,
+    )
   }
 
   const { spinner } = constants

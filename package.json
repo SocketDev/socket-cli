@@ -1,6 +1,6 @@
 {
   "name": "socket",
-  "version": "1.1.16",
+  "version": "1.1.22",
   "description": "CLI for Socket.dev",
   "homepage": "https://github.com/SocketDev/socket-cli",
   "license": "MIT AND OFL-1.1",
@@ -72,14 +72,16 @@
     "s": "dotenvx -q run -f .env.local -- pnpm exec socket --",
     "test": "run-s check test:*",
     "test:prepare": "dotenvx -q run -f .env.test -- pnpm build && del-cli 'test/**/node_modules'",
-    "test:unit": "dotenvx -q run -f .env.test -- vitest --run",
-    "test:unit:update": "dotenvx -q run -f .env.test -- vitest --run --update",
+    "test:unit": "dotenvx -q run -f .env.test -- vitest run",
+    "test:unit:update": "dotenvx -q run -f .env.test -- vitest run --update",
     "test:unit:coverage": "dotenvx -q run -f .env.test -- vitest run --coverage",
     "test-ci": "run-s test:*",
+    "test-pre-commit": "dotenvx -q run -f .env.precommit -- pnpm test",
     "testu": "dotenvx -q run -f .env.testu -- run-s test:prepare; pnpm test:unit:update --",
     "testuf": "dotenvx -q run -f .env.testu -- pnpm test:unit:update --",
     "update": "run-p --aggregate-output update:**",
-    "update:deps": "taze"
+    "update:deps": "taze",
+    "update:socket": "pnpm update '@socketsecurity/*' '@socketregistry/*' --latest"
   },
   "devDependencies": {
     "@babel/core": "7.28.4",
@@ -116,7 +118,7 @@
     "@socketregistry/is-interactive": "1.0.6",
     "@socketregistry/packageurl-js": "1.0.9",
     "@socketsecurity/config": "3.0.1",
-    "@socketsecurity/registry": "1.1.8",
+    "@socketsecurity/registry": "1.1.17",
     "@socketsecurity/sdk": "1.4.93",
     "@types/blessed": "0.1.25",
     "@types/cmd-shim": "5.0.2",
@@ -178,9 +180,8 @@
     "typescript-eslint": "8.43.0",
     "unplugin-purge-polyfills": "0.1.0",
     "vitest": "3.2.4",
-    "which": "5.0.0",
     "yaml": "2.8.1",
-    "yargs-parser": "22.0.0",
+    "yargs-parser": "21.1.1",
     "yoctocolors-cjs": "2.1.3",
     "zod": "4.1.8"
   },

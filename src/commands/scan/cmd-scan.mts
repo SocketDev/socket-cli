@@ -19,16 +19,21 @@ export const cmdScan: CliSubcommand = {
   async run(argv, importMeta, { parentName }) {
     await meowWithSubcommands(
       {
-        create: cmdScanCreate,
-        del: cmdScanDel,
-        diff: cmdScanDiff,
-        github: cmdScanGithub,
-        list: cmdScanList,
-        metadata: cmdScanMetadata,
-        reach: cmdScanReach,
-        report: cmdScanReport,
-        setup: cmdScanSetup,
-        view: cmdScanView,
+        argv,
+        name: `${parentName} scan`,
+        importMeta,
+        subcommands: {
+          create: cmdScanCreate,
+          del: cmdScanDel,
+          diff: cmdScanDiff,
+          github: cmdScanGithub,
+          list: cmdScanList,
+          metadata: cmdScanMetadata,
+          reach: cmdScanReach,
+          report: cmdScanReport,
+          setup: cmdScanSetup,
+          view: cmdScanView,
+        },
       },
       {
         aliases: {
@@ -43,10 +48,7 @@ export const cmdScan: CliSubcommand = {
             argv: ['reach'],
           },
         },
-        argv,
         description,
-        importMeta,
-        name: `${parentName} scan`,
       },
     )
   },

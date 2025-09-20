@@ -5,7 +5,6 @@ import path from 'node:path'
 import fastGlob from 'fast-glob'
 
 import { joinAnd } from '@socketsecurity/registry/lib/arrays'
-import { MANIFEST_JSON } from '@socketsecurity/registry/lib/constants'
 import { debugDir } from '@socketsecurity/registry/lib/debug'
 import { readDirNames } from '@socketsecurity/registry/lib/fs'
 import { logger } from '@socketsecurity/registry/lib/logger'
@@ -16,11 +15,13 @@ import { pluralize } from '@socketsecurity/registry/lib/words'
 import { PatchManifestSchema } from './manifest-schema.mts'
 import { outputPatchResult } from './output-patch-result.mts'
 import {
-  DOT_SOCKET,
+  DOT_SOCKET_DIR,
+  MANIFEST_JSON,
   NODE_MODULES,
   NPM,
-  UNKNOWN_ERROR,
+  UTF8,
 } from '../../constants.mts'
+import { getErrorCause } from '../../utils/errors.mts'
 import { findUp } from '../../utils/fs.mts'
 import { getPurlObject, normalizePurl } from '../../utils/purl.mts'
 
@@ -206,7 +207,7 @@ async function computeSHA256(filepath: string): Promise<CResult<string>> {
     return {
       ok: false,
       message: 'Failed to compute file hash',
-      cause: `Unable to read file ${filepath}: ${e instanceof Error ? e.message : 'Unknown error'}`,
+      cause: `Unable to read file ${filepath}: ${getErrorCause(e)}`,
     }
   }
 }
@@ -322,10 +323,27 @@ async function processFilePatch(
   let result = true
   try {
     await fs.copyFile(blobPath, filepath)
-    logger.success(`Patch applied successfully`)
+
+    // Verify the hash after copying to ensure file integrity.
+    const verifyHashResult = await computeSHA256(filepath)
+    if (!verifyHashResult.ok) {
+      logger.error(
+        `Failed to verify hash after patch: ${verifyHashResult.cause || verifyHashResult.message}`,
+      )
+      result = false
+    } else if (verifyHashResult.data !== fileInfo.afterHash) {
+      logger.error(`Hash verification failed after patch`)
+      logger.group()
+      logger.log(`Expected: ${fileInfo.afterHash}`)
+      logger.log(`Got:      ${verifyHashResult.data}`)
+      logger.groupEnd()
+      result = false
+    } else {
+      logger.success(`Patch applied successfully`)
+    }
   } catch (e) {
     logger.error('Error applying patch')
-    debugDir('inspect', { error: e })
+    debugDir('error', e)
     result = false
   }
   logger.groupEnd()
@@ -355,9 +373,9 @@ export async function handlePatch({
   spinner,
 }: HandlePatchConfig): Promise<void> {
   try {
-    const dotSocketDirPath = path.join(cwd, DOT_SOCKET)
-    const manifestPath = path.join(dotSocketDirPath, 'manifest.json')
-    const manifestContent = await fs.readFile(manifestPath, 'utf-8')
+    const dotSocketDirPath = path.join(cwd, DOT_SOCKET_DIR)
+    const manifestPath = path.join(dotSocketDirPath, MANIFEST_JSON)
+    const manifestContent = await fs.readFile(manifestPath, UTF8)
     const manifestData = JSON.parse(manifestContent)
     const purls = purlObjs.map(String)
     const validated = PatchManifestSchema.parse(manifestData)
@@ -424,7 +442,7 @@ export async function handlePatch({
     spinner.stop()
 
     let message = 'Failed to apply patches'
-    let cause = (e as Error)?.message || UNKNOWN_ERROR
+    let cause = getErrorCause(e)
 
     if (e instanceof SyntaxError) {
       message = `Invalid JSON in ${MANIFEST_JSON}`

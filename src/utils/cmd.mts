@@ -1,12 +1,33 @@
+/**
+ * Command-line utilities for Socket CLI.
+ * Handles argument parsing, flag processing, and command formatting.
+ *
+ * Argument Handling:
+ * - Handles both long (--flag) and short (-f) formats
+ * - Preserves special characters and escaping
+ * - Properly quotes arguments containing spaces
+ *
+ * Command Names:
+ * - commandNameFromCamel: Convert camelCase to kebab-case command names
+ * - commandNameFromKebab: Convert kebab-case to camelCase
+ *
+ * Flag Processing:
+ * - cmdFlagsToString: Format arguments for display with proper escaping
+ * - cmdPrefixMessage: Generate command prefix message
+ * - stripConfigFlags: Remove --config flags from argument list
+ * - stripDebugFlags: Remove debug-related flags
+ * - stripHelpFlags: Remove help flags (-h, --help)
+ */
+
+import { FLAG_CONFIG, FLAG_HELP } from '../constants.mts'
 import { camelToKebab } from './strings.mts'
 
-const CONFIG_FLAG_NAME = 'config'
-const CONFIG_FLAG_LONG_NAME = `--${CONFIG_FLAG_NAME}`
+const CONFIG_FLAG_LONG_NAME = FLAG_CONFIG
 const CONFIG_FLAG_ASSIGNMENT = `${CONFIG_FLAG_LONG_NAME}=`
 const CONFIG_FLAG_ASSIGNMENT_LENGTH = CONFIG_FLAG_ASSIGNMENT.length
 
-const configFlags = new Set(['--config'])
-const helpFlags = new Set(['--help', '-h'])
+const configFlags = new Set([FLAG_CONFIG])
+const helpFlags = new Set([FLAG_HELP, '-h'])
 
 /**
  * Convert command arguments to a properly formatted string representation.
@@ -18,12 +39,15 @@ export function cmdFlagsToString(args: string[] | readonly string[]): string {
     if (arg.startsWith('--')) {
       const nextArg = i + 1 < length ? args[i + 1]!.trim() : undefined
       // Check if the next item exists and is NOT another flag.
-      if (nextArg && !nextArg.startsWith('--')) {
+      if (nextArg && !nextArg.startsWith('--') && !nextArg.startsWith('-')) {
         result.push(`${arg}=${nextArg}`)
         i += 1
       } else {
         result.push(arg)
       }
+    } else {
+      // Include non-flag arguments (commands, package names, etc.).
+      result.push(arg)
     }
   }
   return result.join(' ')

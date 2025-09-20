@@ -8,6 +8,7 @@ import { addSocketWrapper } from './add-socket-wrapper.mts'
 import { checkSocketWrapperSetup } from './check-socket-wrapper-setup.mts'
 import constants from '../../constants.mts'
 import { getBashrcDetails } from '../../utils/completion.mts'
+import { getErrorCause } from '../../utils/errors.mts'
 import { updateInstalledTabCompletionScript } from '../install/setup-tab-completion.mts'
 
 export async function postinstallWrapper() {
@@ -47,8 +48,8 @@ Do you want to install the Socket npm wrapper (this will create an alias to the 
       }
     }
   } catch (e) {
-    debugFn('error', 'caught: tab completion setup error')
-    debugDir('inspect', { error: e })
+    debugFn('warn', 'Tab completion setup failed (non-fatal)')
+    debugDir('warn', e)
     // Ignore. Skip tab completion setup.
   }
   if (!updatedTabCompletion) {
@@ -82,7 +83,7 @@ async function setupShadowNpm(query: string): Promise<void> {
       }
     } catch (e) {
       throw new Error(
-        `There was an issue setting up the alias: ${(e as any)?.['message']}`,
+        `There was an issue setting up the alias: ${getErrorCause(e)}`,
       )
     }
   }

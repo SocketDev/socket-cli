@@ -2,7 +2,12 @@ import { createRequire } from 'node:module'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import constants, { FLAG_JSON, NPM } from '../../constants.mts'
+import constants, {
+  FLAG_DRY_RUN,
+  FLAG_HELP,
+  FLAG_JSON,
+  NPM,
+} from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { filterFlags } from '../../utils/cmd.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
@@ -47,10 +52,10 @@ async function run(
     API Token Requirements
       ${getFlagApiRequirementsOutput(`${parentName}:${CMD_NAME}`)}
 
-    Note: Everything after "npm" is passed to the npm command.
-          Only the \`--dry-run\` and \`--help\` flags are caught here.
+    Note: Everything after "${NPM}" is passed to the ${NPM} command.
+          Only the \`${FLAG_DRY_RUN}\` and \`${FLAG_HELP}\` flags are caught here.
 
-    Use \`socket wrapper on\` to alias this command as \`npm\`.
+    Use \`socket wrapper on\` to alias this command as \`${NPM}\`.
 
     Examples
       $ ${command}
@@ -73,7 +78,7 @@ async function run(
     return
   }
 
-  const shadowBin = /*@__PURE__*/ require(constants.shadowNpmBinPath)
+  const shadowNpmBin = /*@__PURE__*/ require(constants.shadowNpmBinPath)
 
   process.exitCode = 1
 
@@ -81,7 +86,7 @@ async function run(
   const argsToForward = filterFlags(argv, { ...commonFlags, ...outputFlags }, [
     FLAG_JSON,
   ])
-  const { spawnPromise } = await shadowBin(NPM, argsToForward, {
+  const { spawnPromise } = await shadowNpmBin(argsToForward, {
     stdio: 'inherit',
   })
 

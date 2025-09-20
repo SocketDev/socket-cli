@@ -1,11 +1,37 @@
+/**
+ * Package environment detection utilities for Socket CLI.
+ * Analyzes project environment and package manager configuration.
+ *
+ * Key Functions:
+ * - getPackageEnvironment: Detect package manager and project details
+ * - makeConcurrentExecLimit: Calculate concurrent execution limits
+ *
+ * Environment Detection:
+ * - Detects npm, pnpm, yarn, bun package managers
+ * - Analyzes lockfiles for version information
+ * - Determines Node.js and engine requirements
+ * - Identifies workspace configurations
+ *
+ * Features:
+ * - Browser target detection via browserslist
+ * - Engine compatibility checking
+ * - Package manager version detection
+ * - Workspace and monorepo support
+ *
+ * Usage:
+ * - Auto-detecting appropriate package manager
+ * - Validating environment compatibility
+ * - Configuring concurrent execution limits
+ */
+
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 
 import browserslist from 'browserslist'
 import semver from 'semver'
-import which from 'which'
 
 import { parse as parseBunLockb } from '@socketregistry/hyrious__bun.lockb/index.cjs'
+import { whichBin } from '@socketsecurity/registry/lib/bin'
 import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { readFileBinary, readFileUtf8 } from '@socketsecurity/registry/lib/fs'
 import { Logger } from '@socketsecurity/registry/lib/logger'
@@ -17,6 +43,7 @@ import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 import { cmdPrefixMessage } from './cmd.mts'
 import { findUp } from './fs.mts'
 import constants, {
+  FLAG_VERSION,
   PACKAGE_LOCK_JSON,
   PNPM_LOCK_YAML,
   YARN_LOCK,
@@ -29,15 +56,19 @@ import type { SemVer } from 'semver'
 
 const {
   BUN,
+  BUN_LOCK,
+  BUN_LOCKB,
+  DOT_PACKAGE_LOCK_JSON,
   EXT_LOCK,
   EXT_LOCKB,
-  HIDDEN_PACKAGE_LOCK_JSON,
   NODE_MODULES,
   NPM,
   NPM_BUGGY_OVERRIDES_PATCHED_VERSION,
+  NPM_SHRINKWRAP_JSON,
   PACKAGE_JSON,
   PNPM,
   VLT,
+  VLT_LOCK_JSON,
   YARN,
   YARN_BERRY,
   YARN_CLASSIC,
@@ -168,6 +199,9 @@ const readLockFileByAgent: Map<Agent, ReadLockFile> = (() => {
             return (
               await spawn(agentExecPath, [lockPath], {
                 cwd,
+                // On Windows, bun is often a .cmd file that requires shell execution.
+                // The spawn function from @socketsecurity/registry will handle this properly
+                // when shell is true.
                 shell: constants.WIN32,
               })
             ).stdout
@@ -186,31 +220,53 @@ const readLockFileByAgent: Map<Agent, ReadLockFile> = (() => {
 
 // The order of LOCKS properties IS significant as it affects iteration order.
 const LOCKS: Record<string, Agent> = {
-  [`bun${EXT_LOCK}`]: BUN,
-  [`bun${EXT_LOCKB}`]: BUN,
+  [BUN_LOCK]: BUN,
+  [BUN_LOCKB]: BUN,
   // If both package-lock.json and npm-shrinkwrap.json are present in the root
   // of a project, npm-shrinkwrap.json will take precedence and package-lock.json
   // will be ignored.
   // https://docs.npmjs.com/cli/v10/configuring-npm/package-lock-json#package-lockjson-vs-npm-shrinkwrapjson
-  'npm-shrinkwrap.json': NPM,
+  [NPM_SHRINKWRAP_JSON]: NPM,
   [PACKAGE_LOCK_JSON]: NPM,
   [PNPM_LOCK_YAML]: PNPM,
   [YARN_LOCK]: YARN_CLASSIC,
-  'vlt-lock.json': VLT,
-  // Lastly, look for a hidden lock file which is present if .npmrc has package-lock=false:
+  [VLT_LOCK_JSON]: VLT,
+  // Lastly, look for a hidden lockfile which is present if .npmrc has package-lock=false:
   // https://docs.npmjs.com/cli/v10/configuring-npm/package-lock-json#hidden-lockfiles
   //
   // Unlike the other LOCKS keys this key contains a directory AND filename so
   // it has to be handled differently.
-  [`${NODE_MODULES}/.package-lock.json`]: NPM,
+  [`${NODE_MODULES}/${DOT_PACKAGE_LOCK_JSON}`]: NPM,
 }
 
 async function getAgentExecPath(agent: Agent): Promise<string> {
   const binName = binByAgent.get(agent)!
   if (binName === NPM) {
-    return constants.npmExecPath
+    // Try to use constants.npmExecPath first, but verify it exists.
+    const npmPath = constants.npmExecPath
+    if (existsSync(npmPath)) {
+      return npmPath
+    }
+    // If npmExecPath doesn't exist, try common locations.
+    // Check npm in the same directory as node.
+    const nodeDir = path.dirname(process.execPath)
+    const npmInNodeDir = path.join(nodeDir, NPM)
+    if (existsSync(npmInNodeDir)) {
+      return npmInNodeDir
+    }
+    // Fall back to whichBin.
+    return (await whichBin(binName, { nothrow: true })) ?? binName
   }
-  return (await which(binName, { nothrow: true })) ?? binName
+  if (binName === PNPM) {
+    // Try to use constants.pnpmExecPath first, but verify it exists.
+    const pnpmPath = constants.pnpmExecPath
+    if (existsSync(pnpmPath)) {
+      return pnpmPath
+    }
+    // Fall back to whichBin.
+    return (await whichBin(binName, { nothrow: true })) ?? binName
+  }
+  return (await whichBin(binName, { nothrow: true })) ?? binName
 }
 
 async function getAgentVersion(
@@ -219,7 +275,7 @@ async function getAgentVersion(
   cwd: string,
 ): Promise<SemVer | undefined> {
   let result
-  const quotedCmd = `\`${agent} --version\``
+  const quotedCmd = `\`${agent} ${FLAG_VERSION}\``
   debugFn('stdio', `spawn: ${quotedCmd}`)
   try {
     result =
@@ -229,15 +285,19 @@ async function getAgentVersion(
       semver.coerce(
         // All package managers support the "--version" flag.
         (
-          await spawn(agentExecPath, ['--version'], {
+          await spawn(agentExecPath, [FLAG_VERSION], {
             cwd,
+            // On Windows, package managers are often .cmd files that require shell execution.
+            // The spawn function from @socketsecurity/registry will handle this properly
+            // when shell is true.
             shell: constants.WIN32,
           })
         ).stdout,
       ) ?? undefined
   } catch (e) {
-    debugFn('error', `caught: ${quotedCmd} failed`)
-    debugDir('inspect', { error: e })
+    debugFn('error', `Package manager command failed: ${quotedCmd}`)
+    debugDir('inspect', { cmd: quotedCmd })
+    debugDir('error', e)
   }
   return result
 }
@@ -248,7 +308,7 @@ export async function detectPackageEnvironment({
 }: DetectOptions = {}): Promise<EnvDetails | PartialEnvDetails> {
   let lockPath = await findUp(Object.keys(LOCKS), { cwd })
   let lockName = lockPath ? path.basename(lockPath) : undefined
-  const isHiddenLockFile = lockName === HIDDEN_PACKAGE_LOCK_JSON
+  const isHiddenLockFile = lockName === DOT_PACKAGE_LOCK_JSON
   const pkgJsonPath = lockPath
     ? path.resolve(
         lockPath,
@@ -421,7 +481,7 @@ export async function detectAndValidatePackageEnvironment(
       logger?.warn(
         cmdPrefixMessage(
           cmdName,
-          `Unknown package manager${pkgManager ? ` ${pkgManager}` : ''}, defaulting to npm`,
+          `Unknown package manager${pkgManager ? ` ${pkgManager}` : ''}, defaulting to ${NPM}`,
         ),
       )
     },
@@ -470,7 +530,7 @@ export async function detectAndValidatePackageEnvironment(
       ),
     }
   }
-  const lockName = details.lockName ?? 'lock file'
+  const lockName = details.lockName ?? 'lockfile'
   if (details.lockName === undefined || details.lockSrc === undefined) {
     return {
       ok: false,

@@ -1,14 +1,19 @@
 import { describe, expect } from 'vitest'
 
-import constants from '../../../src/constants.mts'
+import constants, {
+  FLAG_CONFIG,
+  FLAG_DRY_RUN,
+  FLAG_HELP,
+  FLAG_ORG,
+} from '../../../src/constants.mts'
 import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
 
 describe('socket audit-log', async () => {
   const { binCliPath } = constants
 
   cmdit(
-    ['audit-log', '--help', '--config', '{}'],
-    'should support --help',
+    ['audit-log', FLAG_HELP, FLAG_CONFIG, '{}'],
+    `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
@@ -23,7 +28,7 @@ describe('socket audit-log', async () => {
             - Permissions: audit-log:list
 
           This feature requires an Enterprise Plan. To learn more about getting access
-          to this feature and many more, please visit https://socket.dev/pricing
+          to this feature and many more, please visit the Socket pricing page (https://socket.dev/pricing).
 
           The type FILTER arg is an enum. Defaults to any. It should be one of these:
             associateLabel, cancelInvitation, changeMemberRole, changePlanSubscriptionSeats,
@@ -54,8 +59,8 @@ describe('socket audit-log', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
+          |   __|___ ___| |_ ___| |_      | Socket.dev (https://socket.dev) CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket audit-log\`, cwd: <redacted>"
       `)
 
@@ -67,7 +72,7 @@ describe('socket audit-log', async () => {
   )
 
   cmdit(
-    ['audit-log', '--dry-run', '--config', '{"apiToken":"fakeToken"}'],
+    ['audit-log', FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fakeToken"}'],
     'should report missing org name',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -75,8 +80,8 @@ describe('socket audit-log', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
+          |   __|___ ___| |_ ___| |_      | Socket.dev (https://socket.dev) CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket audit-log\`, cwd: <redacted>
 
         \\u203c Unable to determine the target org. Trying to auto-discover it now...
@@ -98,8 +103,8 @@ describe('socket audit-log', async () => {
       'audit-log',
       '--type',
       'xyz',
-      '--dry-run',
-      '--config',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
       '{"apiToken":"fakeToken", "defaultOrg": "fakeOrg"}',
     ],
     'should report legacy flag',
@@ -109,13 +114,13 @@ describe('socket audit-log', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
+          |   __|___ ___| |_ ___| |_      | Socket.dev (https://socket.dev) CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket audit-log\`, cwd: <redacted>
 
         \\xd7  Input error:  Please review the input requirements and try again
 
-          \\xd7 Legacy flags are no longer supported. See v1 migration guide (https://docs.socket.dev/docs/v1-migration-guide). (received legacy flags)"
+          \\xd7 Legacy flags are no longer supported. See the v1 migration guide (https://docs.socket.dev/docs/v1-migration-guide). (received legacy flags)"
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
@@ -125,8 +130,8 @@ describe('socket audit-log', async () => {
   cmdit(
     [
       'audit-log',
-      '--dry-run',
-      '--config',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
       '{"apiToken":"fakeToken", "defaultOrg": "fakeOrg"}',
     ],
     'should accept default org',
@@ -136,8 +141,8 @@ describe('socket audit-log', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
+          |   __|___ ___| |_ ___| |_      | Socket.dev (https://socket.dev) CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket audit-log\`, cwd: <redacted>"
       `)
 
@@ -148,10 +153,10 @@ describe('socket audit-log', async () => {
   cmdit(
     [
       'audit-log',
-      '--org',
+      FLAG_ORG,
       'forcedorg',
-      '--dry-run',
-      '--config',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
     ],
     'should accept --org flag in v1',
@@ -161,8 +166,8 @@ describe('socket audit-log', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, --org: forcedorg
+          |   __|___ ___| |_ ___| |_      | Socket.dev (https://socket.dev) CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket audit-log\`, cwd: <redacted>"
       `)
 

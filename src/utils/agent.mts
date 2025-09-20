@@ -1,3 +1,21 @@
+/**
+ * Package manager agent utilities for Socket CLI.
+ * Manages package installation via different package managers.
+ *
+ * Key Functions:
+ * - runAgentInstall: Execute package installation with detected agent
+ *
+ * Supported Agents:
+ * - npm: Node Package Manager
+ * - pnpm: Fast, disk space efficient package manager
+ * - yarn: Alternative package manager
+ *
+ * Features:
+ * - Automatic agent detection
+ * - Shadow installation for security scanning
+ * - Spinner support for progress indication
+ */
+
 import { getOwn } from '@socketsecurity/registry/lib/objects'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
@@ -38,8 +56,19 @@ export function runAgentInstall(
     ...spawnOpts
   } = { __proto__: null, ...options } as AgentInstallOptions
   const skipNodeHardenFlags = isPnpm && pkgEnvDetails.agentVersion.major < 11
-  return spawn(agentExecPath, ['install', ...args], {
+  // In CI mode, pnpm uses --frozen-lockfile by default, which prevents lockfile updates.
+  // We need to explicitly disable it when updating the lockfile with overrides.
+  const isCi = constants.ENV['CI']
+  const installArgs =
+    isPnpm && isCi
+      ? ['install', '--no-frozen-lockfile', ...args]
+      : ['install', ...args]
+
+  return spawn(agentExecPath, installArgs, {
     cwd: pkgPath,
+    // On Windows, package managers are often .cmd files that require shell execution.
+    // The spawn function from @socketsecurity/registry will handle this properly
+    // when shell is true.
     shell: constants.WIN32,
     spinner,
     stdio: 'inherit',

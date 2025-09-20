@@ -28,7 +28,7 @@ jobs:
         os: [ubuntu-latest, windows-latest]
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-      - uses: SocketDev/socket-cli/.github/actions/setup@92abef4a206889e8b71520fd494f7727d20186cb
+      - uses: SocketDev/socket-cli/.github/actions/setup@6f2ee2a68551ced5ffab8ae144bdd74067b62529
         with:
           node-version: ${{ matrix.node-version }}
 

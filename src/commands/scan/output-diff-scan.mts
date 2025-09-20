@@ -8,6 +8,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import constants from '../../constants.mts'
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
 import { serializeResultJson } from '../../utils/serialize-result-json.mts'
+import { fileLink } from '../../utils/terminal-link.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
@@ -87,7 +88,7 @@ async function handleJson(
         logger.fail(`Writing to \`${file}\` failed...`)
         logger.error(err)
       } else {
-        logger.success(`Data successfully written to \`${file}\``)
+        logger.success(`Data successfully written to \`${fileLink(file)}\``)
       }
       logger.error(dashboardMessage)
     })

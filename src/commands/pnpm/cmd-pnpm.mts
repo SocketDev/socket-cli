@@ -2,7 +2,7 @@ import { createRequire } from 'node:module'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import constants, { PNPM } from '../../constants.mts'
+import constants, { FLAG_DRY_RUN, FLAG_HELP, PNPM } from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
 import { filterFlags } from '../../utils/cmd.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
@@ -47,10 +47,10 @@ async function run(
     API Token Requirements
       ${getFlagApiRequirementsOutput(`${parentName}:${CMD_NAME}`)}
 
-    Note: Everything after "pnpm" is passed to the pnpm command.
-          Only the \`--dry-run\` and \`--help\` flags are caught here.
+    Note: Everything after "${PNPM}" is passed to the ${PNPM} command.
+          Only the \`${FLAG_DRY_RUN}\` and \`${FLAG_HELP}\` flags are caught here.
 
-    Use \`socket wrapper on\` to alias this command as \`pnpm\`.
+    Use \`socket wrapper on\` to alias this command as \`${PNPM}\`.
 
     Examples
       $ ${command}
@@ -63,8 +63,8 @@ async function run(
   const cli = meowOrExit({
     argv,
     config,
-    importMeta,
     parentName,
+    importMeta,
   })
 
   const dryRun = !!cli.flags['dryRun']
@@ -74,14 +74,16 @@ async function run(
     return
   }
 
-  const shadowBin = /*@__PURE__*/ require(constants.shadowPnpmBinPath)
+  const shadowPnpmBin = /*@__PURE__*/ require(constants.shadowPnpmBinPath)
 
   process.exitCode = 1
 
   // Filter Socket flags from argv.
   const filteredArgv = filterFlags(argv, config.flags)
 
-  const { spawnPromise } = await shadowBin(filteredArgv)
+  const { spawnPromise } = await shadowPnpmBin(filteredArgv, {
+    stdio: 'inherit',
+  })
 
   await spawnPromise
   process.exitCode = 0

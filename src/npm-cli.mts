@@ -1,12 +1,11 @@
 #!/usr/bin/env node
 
-import { NPM } from './constants.mts'
 import shadowNpmBin from './shadow/npm/bin.mts'
 
 void (async () => {
   process.exitCode = 1
 
-  const { spawnPromise } = await shadowNpmBin(NPM, process.argv.slice(2), {
+  const { spawnPromise } = await shadowNpmBin(process.argv.slice(2), {
     stdio: 'inherit',
   })
 

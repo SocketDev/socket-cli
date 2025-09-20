@@ -1,6 +1,6 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import constants from '../constants.mts'
+import { YARN } from '../constants.mts'
 import { findBinPathDetailsSync } from './path-resolve.mts'
 
 function exitWithBinPathError(binName: string): never {
@@ -11,6 +11,8 @@ function exitWithBinPathError(binName: string): never {
   // could not be found.
   // eslint-disable-next-line n/no-process-exit
   process.exit(127)
+  // This line is never reached in production, but helps tests.
+  throw new Error('process.exit called')
 }
 
 let _yarnBinPath: string | undefined
@@ -18,7 +20,7 @@ export function getYarnBinPath(): string {
   if (_yarnBinPath === undefined) {
     _yarnBinPath = getYarnBinPathDetails().path
     if (!_yarnBinPath) {
-      exitWithBinPathError(constants.YARN)
+      exitWithBinPathError(YARN)
     }
   }
   return _yarnBinPath
@@ -29,7 +31,7 @@ export function getYarnBinPathDetails(): ReturnType<
   typeof findBinPathDetailsSync
 > {
   if (_yarnBinPathDetails === undefined) {
-    _yarnBinPathDetails = findBinPathDetailsSync(constants.YARN)
+    _yarnBinPathDetails = findBinPathDetailsSync(YARN)
   }
   return _yarnBinPathDetails
 }

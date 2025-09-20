@@ -8,7 +8,7 @@ overrides:
   '@octokit/graphql': 9.0.1
   '@octokit/request-error': 7.0.0
   '@rollup/plugin-commonjs': 28.0.6
-  '@socketsecurity/registry': 1.1.8
+  '@socketsecurity/registry': 1.1.17
   aggregate-error: npm:@socketregistry/aggregate-error@^1.0.14
   ansi-regex: 6.1.0
   ansi-term: 0.0.2
@@ -52,7 +52,7 @@ overrides:
   vite: 7.1.5
   xml2js: 0.6.2
   yaml: 2.8.1
-  yargs-parser: 22.0.0
+  yargs-parser: 21.1.1
 
 patchedDependencies:
   '@rollup/plugin-commonjs@28.0.6':
@@ -205,8 +205,8 @@ importers:
         specifier: 3.0.1
         version: 3.0.1
       '@socketsecurity/registry':
-        specifier: 1.1.8
-        version: 1.1.8
+        specifier: 1.1.17
+        version: 1.1.17
       '@socketsecurity/sdk':
         specifier: 1.4.93
         version: 1.4.93
@@ -390,15 +390,12 @@ importers:
       vitest:
         specifier: 3.2.4
         version: 3.2.4(@types/debug@4.1.12)(@types/node@24.3.1)(jiti@2.5.1)(yaml@2.8.1)
-      which:
-        specifier: 5.0.0
-        version: 5.0.0
       yaml:
         specifier: 2.8.1
         version: 2.8.1
       yargs-parser:
-        specifier: 22.0.0
-        version: 22.0.0
+        specifier: 21.1.1
+        version: 21.1.1
       yoctocolors-cjs:
         specifier: 2.1.3
         version: 2.1.3
@@ -1671,8 +1668,8 @@ packages:
     resolution: {integrity: sha512-kLKdSqi4W7SDSm5z+wYnfVRnZCVhxzbzuKcdOZSrcHoEGOT4Gl844uzoaML+f5eiQMxY+nISiETwRph/aXrIaQ==}
     engines: {node: 18.20.7 || ^20.18.3 || >=22.14.0}
 
-  '@socketsecurity/registry@1.1.8':
-    resolution: {integrity: sha512-7Omgtj/K5dbz7mJT23EchIGTdom22mWpXMJ1jFm4M2hO3x9T++2gYhQ6DjJaAUY94jiAU2bHhbI1N/XCpneaKA==}
+  '@socketsecurity/registry@1.1.17':
+    resolution: {integrity: sha512-5j0eH6JaBZlcvnbdu+58Sw8c99AK25PTp0Z/lwP7HknHdJ0TMMoTzNIBbp7WCTZKoGrPgBWchi0udN1ObZ53VQ==}
     engines: {node: '>=18'}
 
   '@socketsecurity/sdk@1.4.93':
@@ -2507,8 +2504,8 @@ packages:
   destr@2.0.5:
     resolution: {integrity: sha512-ugFTXCtDZunbzasqBxrK93Ik/DRYsO6S/fedkWEMKqt04xZ4csmnmwGDBAb07QWNaGMAmnTIemsYZCksjATwsA==}
 
-  detect-libc@2.0.4:
-    resolution: {integrity: sha512-3UDv+G9CsCKO1WKMGw9fwq/SWJYbI0c5Y7LU1AXYoDdbhE2AHQ6N6Nb34sG8Fj7T5APy8qXDCKuuIHd1BR0tVA==}
+  detect-libc@2.1.0:
+    resolution: {integrity: sha512-vEtk+OcP7VBRtQZ1EJ3bdgzSfBjgnEalLTp5zjJrS+2Z1w2KZly4SBdac/WDU3hhsNAZ9E8SC96ME4Ey8MZ7cg==}
     engines: {node: '>=8'}
 
   detect-node@2.1.0:
@@ -4352,8 +4349,8 @@ packages:
     resolution: {integrity: sha512-ZL6DDuAlRlLGghwcfmSn9sK3Hr6ArtyudlSAiCqQ6IfE+b+HHbydbYDIG15IfS5do+7XQQBdBiubF/cV2dnDzg==}
     engines: {node: '>=6'}
 
-  tar-fs@2.1.3:
-    resolution: {integrity: sha512-090nwYJDmlhwFwEW3QQl+vaNnxsO2yVsd45eTKRBzSzu+hlb1w2K9inVq5b0ngXuLVqQ4ApvsUHHnu/zQNkWAg==}
+  tar-fs@2.1.4:
+    resolution: {integrity: sha512-mDAjwmZdh7LTT6pNleZ05Yt65HC3E+NiQzl672vQG38jIrehtJk/J3mNwIg+vShQPcLF/LV7CMnDW6vjj6sfYQ==}
 
   tar-stream@2.2.0:
     resolution: {integrity: sha512-ujeqbceABgwMZxEJnk2HDY2DlnUZ+9oEcb1KzTVfYHio0UE6dG71n60d8D2I4qNvleWrrXpmjpt7vZeF1LnMZQ==}
@@ -4787,9 +4784,9 @@ packages:
     engines: {node: '>= 14.6'}
     hasBin: true
 
-  yargs-parser@22.0.0:
-    resolution: {integrity: sha512-rwu/ClNdSMpkSrUb+d6BRsSkLUq1fmfsY6TOpYzTwvwkg1/NRG85KBy3kq++A8LKQwX6lsu+aWad+2khvuXrqw==}
-    engines: {node: ^20.19.0 || ^22.12.0 || >=23}
+  yargs-parser@21.1.1:
+    resolution: {integrity: sha512-tVpsJW7DdjecAiFpbIB1e3qxIQsE6NoPc5/eTdrbbIC4h0LVsWhnoa3g+m2HclBIujHzsxZ4VJVA+GUuc2/LBw==}
+    engines: {node: '>=12'}
 
   yargs@17.7.2:
     resolution: {integrity: sha512-7dSzzRQ++CKnNI/krKnYRV7JKKPUXMEh61soaHKg9mrWEhzFWhFnxPxGl+69cD1Ou63C13NUPCnmIcrvqCuM6w==}
@@ -6107,11 +6104,11 @@ snapshots:
       pony-cause: 2.1.11
       yaml: 2.8.1
 
-  '@socketsecurity/registry@1.1.8': {}
+  '@socketsecurity/registry@1.1.17': {}
 
   '@socketsecurity/sdk@1.4.93':
     dependencies:
-      '@socketsecurity/registry': 1.1.8
+      '@socketsecurity/registry': 1.1.17
 
   '@stroncium/procfs@1.2.1': {}
 
@@ -7006,7 +7003,7 @@ snapshots:
 
   destr@2.0.5: {}
 
-  detect-libc@2.0.4:
+  detect-libc@2.1.0:
     optional: true
 
   detect-node@2.1.0: {}
@@ -8528,7 +8525,7 @@ snapshots:
 
   prebuild-install@7.1.3:
     dependencies:
-      detect-libc: 2.0.4
+      detect-libc: 2.1.0
       expand-template: 2.0.3
       github-from-package: 0.0.0
       minimist: 1.2.8
@@ -8538,7 +8535,7 @@ snapshots:
       pump: 3.0.3
       rc: 1.2.8
       simple-get: 4.0.1
-      tar-fs: 2.1.3
+      tar-fs: 2.1.4
       tunnel-agent: 0.6.0
     optional: true
 
@@ -8996,7 +8993,7 @@ snapshots:
 
   tapable@2.2.3: {}
 
-  tar-fs@2.1.3:
+  tar-fs@2.1.4:
     dependencies:
       chownr: 1.1.4
       mkdirp-classic: 0.5.3
@@ -9467,7 +9464,7 @@ snapshots:
 
   yaml@2.8.1: {}
 
-  yargs-parser@22.0.0: {}
+  yargs-parser@21.1.1: {}
 
   yargs@17.7.2:
     dependencies:
@@ -9477,7 +9474,7 @@ snapshots:
       require-directory: 2.1.1
       string-width: 4.2.3
       y18n: 5.0.8
-      yargs-parser: 22.0.0
+      yargs-parser: 21.1.1
 
   yocto-queue@0.1.0: {}
 

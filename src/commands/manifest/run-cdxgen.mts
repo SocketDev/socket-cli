@@ -5,7 +5,7 @@ import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import constants, { NPM, PNPM, YARN } from '../../constants.mts'
+import constants, { FLAG_HELP, NPM, PNPM, YARN } from '../../constants.mts'
 import { spawnCdxgenDlx, spawnSynpDlx } from '../../utils/dlx.mts'
 import { findUp } from '../../utils/fs.mts'
 import { isYarnBerry } from '../../utils/yarn-version.mts'
@@ -30,9 +30,9 @@ export type ArgvObject = {
   [key: string]: boolean | null | number | string | Array<string | number>
 }
 
-function argvToArray(argvObj: ArgvObject): string[] {
+function argvObjectToArray(argvObj: ArgvObject): string[] {
   if (argvObj['help']) {
-    return ['--help']
+    return [FLAG_HELP]
   }
   const result = []
   for (const { 0: key, 1: value } of Object.entries(argvObj)) {
@@ -75,7 +75,7 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
     stdio: 'inherit',
   }
 
-  // Detect package manager based on lockfiles
+  // Detect package manager based on lockfiles.
   const pnpmLockPath = await findUp(PNPM_LOCK_YAML, { onlyFiles: true })
 
   const npmLockPath = pnpmLockPath
@@ -91,9 +91,9 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
 
   let cleanupPackageLock = false
   if (
+    yarnLockPath &&
     argvMutable['type'] !== YARN &&
-    nodejsPlatformTypes.has(argvMutable['type'] as string) &&
-    yarnLockPath
+    nodejsPlatformTypes.has(argvMutable['type'] as string)
   ) {
     if (npmLockPath) {
       argvMutable['type'] = NPM
@@ -115,8 +115,8 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
     }
   }
 
-  // Use appropriate package manager for cdxgen
-  const shadowResult = await spawnCdxgenDlx(argvToArray(argvMutable), {
+  // Use appropriate package manager for cdxgen.
+  const shadowResult = await spawnCdxgenDlx(argvObjectToArray(argvMutable), {
     ...shadowOpts,
     agent,
   })

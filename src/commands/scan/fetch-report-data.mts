@@ -3,6 +3,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants from '../../constants.mts'
 import { handleApiCallNoSpinner, queryApiSafeText } from '../../utils/api.mts'
+import { formatErrorWithDetail } from '../../utils/errors.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 
 import type { CResult } from '../../types.mts'
@@ -89,8 +90,8 @@ export async function fetchScanData(
         return JSON.parse(line)
       } catch (e) {
         ok = false
-        debugFn('error', 'caught: JSON.parse error')
-        debugDir('inspect', { error: e, line })
+        debugFn('error', 'Failed to parse report data line as JSON')
+        debugDir('error', { error: e, line })
         return
       }
     }) as unknown as SocketArtifact[]
@@ -134,7 +135,9 @@ export async function fetchScanData(
       return {
         ok: false as const,
         message: 'Socket API error',
-        cause: `Error requesting scan: ${e?.message || '(no error message found)'}${e?.cause ? ` (cause: ${e.cause})` : ''}`,
+        cause:
+          formatErrorWithDetail('Error requesting scan', e) ||
+          'Error requesting scan: (no error message found)',
       }
     }),
     fetchSecurityPolicy().catch(e => {
@@ -142,7 +145,9 @@ export async function fetchScanData(
       return {
         ok: false as const,
         message: 'Socket API error',
-        cause: `Error requesting policy: ${e?.message || '(no error message found)'}${e?.cause ? ` (cause: ${e.cause})` : ''}`,
+        cause:
+          formatErrorWithDetail('Error requesting policy', e) ||
+          'Error requesting policy: (no error message found)',
       }
     }),
   ]).finally(() => {

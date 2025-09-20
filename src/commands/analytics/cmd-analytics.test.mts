@@ -1,15 +1,19 @@
 import semver from 'semver'
 import { describe, expect } from 'vitest'
 
-import constants from '../../../src/constants.mts'
+import constants, {
+  FLAG_CONFIG,
+  FLAG_DRY_RUN,
+  FLAG_HELP,
+} from '../../../src/constants.mts'
 import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
 
 describe('socket analytics', async () => {
   const { binCliPath } = constants
 
   cmdit(
-    ['analytics', '--help', '--config', '{}'],
-    'should support --help',
+    ['analytics', FLAG_HELP, FLAG_CONFIG, '{}'],
+    `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
@@ -48,8 +52,8 @@ describe('socket analytics', async () => {
         expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
           "
              _____         _       _        /---------------
-            |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-            |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
+            |   __|___ ___| |_ ___| |_      | Socket.dev (https://socket.dev) CLI: <redacted>
+            |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
             |_____|___|___|_,_|___|_|.dev   | Command: \`socket analytics\`, cwd: <redacted>"
         `)
         expect(code, 'explicit help should exit with code 0').toBe(0)
@@ -62,7 +66,7 @@ describe('socket analytics', async () => {
   )
 
   cmdit(
-    ['analytics', '--dry-run', '--config', '{}'],
+    ['analytics', FLAG_DRY_RUN, FLAG_CONFIG, '{}'],
     'should report missing token with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -70,8 +74,8 @@ describe('socket analytics', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
+          |   __|___ ___| |_ ___| |_      | Socket.dev (https://socket.dev) CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket analytics\`, cwd: <redacted>
 
         \\xd7  Input error:  Please review the input requirements and try again
@@ -91,8 +95,8 @@ describe('socket analytics', async () => {
       'org',
       '--repo',
       'bar',
-      '--dry-run',
-      '--config',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
     ],
     'should reject legacy flags',
@@ -102,13 +106,13 @@ describe('socket analytics', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
+          |   __|___ ___| |_ ___| |_      | Socket.dev (https://socket.dev) CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket analytics\`, cwd: <redacted>
 
         \\xd7  Input error:  Please review the input requirements and try again
 
-          \\xd7 Legacy flags are no longer supported. See v1 migration guide (https://docs.socket.dev/docs/v1-migration-guide). (received legacy flags)
+          \\xd7 Legacy flags are no longer supported. See the v1 migration guide (https://docs.socket.dev/docs/v1-migration-guide). (received legacy flags)
           \\u221a The time filter must either be 7, 30 or 90"
       `)
 
@@ -117,7 +121,7 @@ describe('socket analytics', async () => {
   )
 
   cmdit(
-    ['analytics', '--dry-run', '--config', '{"apiToken":"fakeToken"}'],
+    ['analytics', FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fakeToken"}'],
     'should run to dryrun without args',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -125,8 +129,8 @@ describe('socket analytics', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
+          |   __|___ ___| |_ ___| |_      | Socket.dev (https://socket.dev) CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket analytics\`, cwd: <redacted>"
       `)
 
@@ -135,7 +139,7 @@ describe('socket analytics', async () => {
   )
 
   cmdit(
-    ['analytics', 'org', '--dry-run', '--config', '{"apiToken":"fakeToken"}'],
+    ['analytics', 'org', FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fakeToken"}'],
     'should accept org arg',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -143,8 +147,8 @@ describe('socket analytics', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
+          |   __|___ ___| |_ ___| |_      | Socket.dev (https://socket.dev) CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket analytics\`, cwd: <redacted>"
       `)
 
@@ -153,7 +157,13 @@ describe('socket analytics', async () => {
   )
 
   cmdit(
-    ['analytics', 'repo', '--dry-run', '--config', '{"apiToken":"fakeToken"}'],
+    [
+      'analytics',
+      'repo',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
+      '{"apiToken":"fakeToken"}',
+    ],
     'should ask for repo name with repo arg',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -161,8 +171,8 @@ describe('socket analytics', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
+          |   __|___ ___| |_ ___| |_      | Socket.dev (https://socket.dev) CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket analytics\`, cwd: <redacted>
 
         \\xd7  Input error:  Please review the input requirements and try again
@@ -180,8 +190,8 @@ describe('socket analytics', async () => {
       'analytics',
       'repo',
       'daname',
-      '--dry-run',
-      '--config',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
     ],
     'should accept repo with arg',
@@ -191,8 +201,8 @@ describe('socket analytics', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
+          |   __|___ ___| |_ ___| |_      | Socket.dev (https://socket.dev) CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket analytics\`, cwd: <redacted>"
       `)
 
@@ -201,7 +211,7 @@ describe('socket analytics', async () => {
   )
 
   cmdit(
-    ['analytics', '7', '--dry-run', '--config', '{"apiToken":"fakeToken"}'],
+    ['analytics', '7', FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fakeToken"}'],
     'should accept time 7 arg',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -209,8 +219,8 @@ describe('socket analytics', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
+          |   __|___ ___| |_ ___| |_      | Socket.dev (https://socket.dev) CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket analytics\`, cwd: <redacted>"
       `)
 
@@ -219,7 +229,7 @@ describe('socket analytics', async () => {
   )
 
   cmdit(
-    ['analytics', '30', '--dry-run', '--config', '{"apiToken":"fakeToken"}'],
+    ['analytics', '30', FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fakeToken"}'],
     'should accept time 30 arg',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -227,8 +237,8 @@ describe('socket analytics', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
+          |   __|___ ___| |_ ___| |_      | Socket.dev (https://socket.dev) CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket analytics\`, cwd: <redacted>"
       `)
 
@@ -237,7 +247,7 @@ describe('socket analytics', async () => {
   )
 
   cmdit(
-    ['analytics', '90', '--dry-run', '--config', '{"apiToken":"fakeToken"}'],
+    ['analytics', '90', FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fakeToken"}'],
     'should accept time 90 arg',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -245,8 +255,8 @@ describe('socket analytics', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
+          |   __|___ ___| |_ ___| |_      | Socket.dev (https://socket.dev) CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket analytics\`, cwd: <redacted>"
       `)
 
@@ -260,8 +270,8 @@ describe('socket analytics', async () => {
       'org',
       '--time',
       '7',
-      '--dry-run',
-      '--config',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
     ],
     'should report legacy flag',
@@ -271,13 +281,13 @@ describe('socket analytics', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
+          |   __|___ ___| |_ ___| |_      | Socket.dev (https://socket.dev) CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket analytics\`, cwd: <redacted>
 
         \\xd7  Input error:  Please review the input requirements and try again
 
-          \\xd7 Legacy flags are no longer supported. See v1 migration guide (https://docs.socket.dev/docs/v1-migration-guide). (received legacy flags)
+          \\xd7 Legacy flags are no longer supported. See the v1 migration guide (https://docs.socket.dev/docs/v1-migration-guide). (received legacy flags)
           \\u221a The time filter must either be 7, 30 or 90"
       `)
 
@@ -290,8 +300,8 @@ describe('socket analytics', async () => {
       'analytics',
       'org',
       '7',
-      '--dry-run',
-      '--config',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
     ],
     'should accept org and time arg',
@@ -301,8 +311,8 @@ describe('socket analytics', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
+          |   __|___ ___| |_ ___| |_      | Socket.dev (https://socket.dev) CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket analytics\`, cwd: <redacted>"
       `)
 
@@ -316,8 +326,8 @@ describe('socket analytics', async () => {
       'repo',
       'slowpo',
       '30',
-      '--dry-run',
-      '--config',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
     ],
     'should accept repo and time arg',
@@ -327,8 +337,8 @@ describe('socket analytics', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
+          |   __|___ ___| |_ ___| |_      | Socket.dev (https://socket.dev) CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket analytics\`, cwd: <redacted>"
       `)
 
