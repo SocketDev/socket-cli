@@ -202,8 +202,8 @@ describe('socket fix', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | Socket.dev CLI v<redacted>
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, token: <redacted>, org: <redacted>
+          |   __|___ ___| |_ ___| |_      | Socket.dev (https://socket.dev) CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket fix\`, cwd: <redacted>"
       `)
 
@@ -220,8 +220,8 @@ describe('socket fix', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | Socket.dev CLI v<redacted>
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, token: <redacted>, org: <redacted>
+          |   __|___ ___| |_ ___| |_      | Socket.dev (https://socket.dev) CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket fix\`, cwd: <redacted>"
       `)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
