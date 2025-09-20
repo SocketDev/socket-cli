@@ -25,14 +25,17 @@ import {
 } from './config.mts'
 import { isDebug } from './debug.mts'
 import { getFlagListOutput, getHelpListOutput } from './output-formatting.mts'
+import { socketDevLink, socketPackageLink } from './terminal-link.mts'
 import constants, {
   API_V0_URL,
   CONFIG_KEY_API_TOKEN,
   CONFIG_KEY_DEFAULT_ORG,
+  FLAG_HELP_FULL,
+  FLAG_JSON,
+  FLAG_MARKDOWN,
   NPM,
   NPX,
   // PNPM,
-  SOCKET_WEBSITE_URL,
   // YARN,
 } from '../constants.mts'
 import { commonFlags } from '../flags.mts'
@@ -80,7 +83,7 @@ export interface CliCommandContext {
 
 export interface MeowOptions extends Options<any> {
   aliases?: CliAliases | undefined
-  argv: readonly string[]
+  argv: string[] | readonly string[]
   name: string
   // When no sub-command is given, default to this sub-command.
   defaultSub?: string | undefined
@@ -146,7 +149,11 @@ function getTokenOrigin(): string {
 /**
  * Generate the ASCII banner header for Socket CLI commands.
  */
-function getAsciiHeader(command: string, orgFlag: string | undefined, compactMode: boolean = false) {
+function getAsciiHeader(
+  command: string,
+  orgFlag: string | undefined,
+  compactMode: boolean = false,
+) {
   // Note: In tests we return <redacted> because otherwise snapshots will fail.
   const { REDACTED } = constants
   const redacting = constants.ENV.VITEST
@@ -158,9 +165,10 @@ function getAsciiHeader(command: string, orgFlag: string | undefined, compactMod
     ? REDACTED
     : isDebug()
       ? versionHash
-      : fullVersion
+      : `v${fullVersion}`
 
   const nodeVersion = redacting ? REDACTED : process.version
+  const showNodeVersion = isDebug()
   const defaultOrg = getConfigValueOrUndef(CONFIG_KEY_DEFAULT_ORG)
   const readOnlyConfig = isConfigFromFlag() ? '*' : '.'
 
@@ -194,16 +202,18 @@ function getAsciiHeader(command: string, orgFlag: string | undefined, compactMod
       : tokenPrefix
         ? `${tokenPrefix}***${tokenOrigin ? ` ${tokenOrigin}` : ''}`
         : '(not set)'
-    const compactOrg = orgFlag || (defaultOrg && defaultOrg !== 'null' ? defaultOrg : '(not set)')
-    return `Socket CLI v${cliVersion} | cmd: ${command} | org: ${compactOrg} | token: ${compactToken}`
+    const compactOrg =
+      orgFlag ||
+      (defaultOrg && defaultOrg !== 'null' ? defaultOrg : '(not set)')
+    return `CLI: ${cliVersion} | cmd: ${command} | org: ${compactOrg} | token: ${compactToken}`
   }
 
   // Note: We could draw these with ascii box art instead but I worry about
   //       portability and paste-ability. "simple" ascii chars just work.
   const body = `
    _____         _       _        /---------------
-  |   __|___ ___| |_ ___| |_      | Socket.dev CLI v${cliVersion}
-  |__   | ${readOnlyConfig} |  _| '_| -_|  _|     | Node: ${nodeVersion}, token: ${shownToken}, ${orgPart}
+  |   __|___ ___| |_ ___| |_      | ${socketDevLink()} CLI: ${cliVersion}
+  |__   | ${readOnlyConfig} |  _| '_| -_|  _|     | ${showNodeVersion ? `Node: ${nodeVersion}, ` : ''}token: ${shownToken}, ${orgPart}
   |_____|___|___|_,_|___|_|.dev   | Command: \`${command}\`, cwd: ${relCwd}
   `.trim()
   // Note: logger will auto-append a newline.
@@ -251,7 +261,11 @@ function shouldSuppressBanner(flags: Record<string, unknown>): boolean {
 /**
  * Emit the Socket CLI banner to stderr for branding and debugging.
  */
-export function emitBanner(name: string, orgFlag: string | undefined, compactMode: boolean = false) {
+export function emitBanner(
+  name: string,
+  orgFlag: string | undefined,
+  compactMode: boolean = false,
+) {
   // Print a banner at the top of each command.
   // This helps with brand recognition and marketing.
   // It also helps with debugging since it contains version and command details.
@@ -336,8 +350,10 @@ export async function meowWithSubcommands(
   }
 
   if (isRootCommand) {
-    flags['help'] = {
-      ...flags['help'],
+    const hiddenDebugFlag = !isDebug()
+
+    flags['compactHeader'] = {
+      ...flags['compactHeader'],
       hidden: false,
     } as MeowFlag
 
@@ -351,14 +367,24 @@ export async function meowWithSubcommands(
       hidden: false,
     } as MeowFlag
 
+    flags['help'] = {
+      ...flags['help'],
+      hidden: false,
+    } as MeowFlag
+
+    flags['helpFull'] = {
+      ...flags['helpFull'],
+      hidden: false,
+    } as MeowFlag
+
     flags['maxOldSpaceSize'] = {
       ...flags['maxOldSpaceSize'],
-      hidden: false,
+      hidden: hiddenDebugFlag,
     } as MeowFlag
 
     flags['maxSemiSpaceSize'] = {
       ...flags['maxSemiSpaceSize'],
-      hidden: false,
+      hidden: hiddenDebugFlag,
     } as MeowFlag
 
     flags['version'] = {
@@ -370,6 +396,7 @@ export async function meowWithSubcommands(
     delete flags['markdown']
   } else {
     delete flags['help']
+    delete flags['helpFull']
     delete flags['version']
   }
 
@@ -401,6 +428,7 @@ export async function meowWithSubcommands(
     spinner: boolean
   }
 
+  const compactMode = compactHeaderFlag || constants.ENV.CI
   const noSpinner = spinnerFlag === false || isDebug()
 
   // Use CI spinner style when --no-spinner is passed or debug mode is enabled.
@@ -433,7 +461,6 @@ export async function meowWithSubcommands(
 
   if (configOverrideResult?.ok === false) {
     if (!shouldSuppressBanner(cli1.flags)) {
-      const compactMode = Boolean(compactHeaderFlag || constants.ENV.CI)
       emitBanner(name, orgFlag, compactMode)
       // Add newline in stderr.
       logger.error('')
@@ -477,8 +504,8 @@ export async function meowWithSubcommands(
   const lines = ['', 'Usage', `  $ ${name} <command>`]
   if (isRootCommand) {
     lines.push(
-      `  $ ${name} scan create --json`,
-      `  $ ${name} package score npm lodash --markdown`,
+      `  $ ${name} scan create${FLAG_JSON}`,
+      `  $ ${name} package score ${NPM} lodash ${FLAG_MARKDOWN}`,
     )
   }
   lines.push('')
@@ -628,36 +655,49 @@ export async function meowWithSubcommands(
     )}`,
   )
   if (isRootCommand) {
-    lines.push(
-      '',
-      'Environment variables',
-      '  SOCKET_CLI_API_TOKEN        Set the Socket API token',
-      '  SOCKET_CLI_CONFIG           A JSON stringified Socket configuration object',
-      '  SOCKET_CLI_GITHUB_API_URL   Change the base URL for GitHub REST API calls',
-      '  SOCKET_CLI_GIT_USER_EMAIL   The git config `user.email` used by Socket CLI',
-      `                              ${colors.italic('Defaults:')} github-actions[bot]@users.noreply.github.com`,
-      '  SOCKET_CLI_GIT_USER_NAME    The git config `user.name` used by Socket CLI',
-      `                              ${colors.italic('Defaults:')} github-actions[bot]`,
-      `  SOCKET_CLI_GITHUB_TOKEN     A classic or fine-grained ${terminalLink('GitHub personal access token', 'https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens')}`,
-      `                              ${colors.italic('Aliases:')} GITHUB_TOKEN`,
-      '  SOCKET_CLI_NO_API_TOKEN     Make the default API token `undefined`',
-      '  SOCKET_CLI_NPM_PATH         The absolute location of the npm directory',
-      '  SOCKET_CLI_ORG_SLUG         Specify the Socket organization slug',
-      '',
-      '  SOCKET_CLI_ACCEPT_RISKS     Accept risks of a Socket wrapped npm/npx run',
-      '  SOCKET_CLI_VIEW_ALL_RISKS   View all risks of a Socket wrapped npm/npx run',
-      '',
-      'Environment variables for development',
-      '  SOCKET_CLI_API_BASE_URL     Change the base URL for Socket API calls',
-      `                              ${colors.italic('Defaults:')} The "apiBaseUrl" value of socket/settings local app data`,
-      `                              if present, else ${API_V0_URL}`,
-      '  SOCKET_CLI_API_PROXY        Set the proxy Socket API requests are routed through, e.g. if set to',
-      `                              ${terminalLink('http://127.0.0.1:9090', 'https://docs.proxyman.io/troubleshooting/couldnt-see-any-requests-from-3rd-party-network-libraries')} then all request are passed through that proxy`,
-      `                              ${colors.italic('Aliases:')} HTTPS_PROXY, https_proxy, HTTP_PROXY, and http_proxy`,
-      '  SOCKET_CLI_API_TIMEOUT      Set the timeout in milliseconds for Socket API requests',
-      '  SOCKET_CLI_DEBUG            Enable debug logging in Socket CLI',
-      `  DEBUG                       Enable debug logging based on the ${terminalLink('debug', `${SOCKET_WEBSITE_URL}/npm/package/debug`)} package`,
-    )
+    // Check if we should show full help with environment variables.
+    const showFullHelp = argv.includes(FLAG_HELP_FULL)
+
+    if (showFullHelp) {
+      // Show full help with environment variables.
+      lines.push(
+        '',
+        'Environment variables',
+        '  SOCKET_CLI_API_TOKEN        Set the Socket API token',
+        '  SOCKET_CLI_CONFIG           A JSON stringified Socket configuration object',
+        '  SOCKET_CLI_GITHUB_API_URL   Change the base URL for GitHub REST API calls',
+        '  SOCKET_CLI_GIT_USER_EMAIL   The git config `user.email` used by Socket CLI',
+        `                              ${colors.italic('Defaults:')} github-actions[bot]@users.noreply.github.com`,
+        '  SOCKET_CLI_GIT_USER_NAME    The git config `user.name` used by Socket CLI',
+        `                              ${colors.italic('Defaults:')} github-actions[bot]`,
+        `  SOCKET_CLI_GITHUB_TOKEN     A classic or fine-grained ${terminalLink('GitHub personal access token', 'https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens')}`,
+        `                              ${colors.italic('Aliases:')} GITHUB_TOKEN`,
+        '  SOCKET_CLI_NO_API_TOKEN     Make the default API token `undefined`',
+        '  SOCKET_CLI_NPM_PATH         The absolute location of the npm directory',
+        '  SOCKET_CLI_ORG_SLUG         Specify the Socket organization slug',
+        '',
+        '  SOCKET_CLI_ACCEPT_RISKS     Accept risks of a Socket wrapped npm/npx run',
+        '  SOCKET_CLI_VIEW_ALL_RISKS   View all risks of a Socket wrapped npm/npx run',
+        '',
+        'Environment variables for development',
+        '  SOCKET_CLI_API_BASE_URL     Change the base URL for Socket API calls',
+        `                              ${colors.italic('Defaults:')} The "apiBaseUrl" value of socket/settings local app data`,
+        `                              if present, else ${API_V0_URL}`,
+        '  SOCKET_CLI_API_PROXY        Set the proxy Socket API requests are routed through, e.g. if set to',
+        `                              ${terminalLink('http://127.0.0.1:9090', 'https://docs.proxyman.io/troubleshooting/couldnt-see-any-requests-from-3rd-party-network-libraries')} then all request are passed through that proxy`,
+        `                              ${colors.italic('Aliases:')} HTTPS_PROXY, https_proxy, HTTP_PROXY, and http_proxy`,
+        '  SOCKET_CLI_API_TIMEOUT      Set the timeout in milliseconds for Socket API requests',
+        '  SOCKET_CLI_DEBUG            Enable debug logging in Socket CLI',
+        `  DEBUG                       Enable debug logging based on the ${socketPackageLink('npm', 'debug', undefined, 'debug')} package`,
+      )
+    } else {
+      // Show condensed help with hint about --help-full.
+      lines.push(
+        '',
+        'Environment variables [more...]',
+        `  Use ${colors.bold(FLAG_HELP_FULL)} to view all environment variables`,
+      )
+    }
   }
 
   // Parse it again. Config overrides should now be applied (may affect help).
@@ -679,20 +719,35 @@ export async function meowWithSubcommands(
     help: lines.map(l => indentString(l, HELP_INDENT)).join('\n'),
   })
 
+  const {
+    dryRun,
+    help: helpFlag,
+  } = cli2.flags as {
+    dryRun: boolean,
+    help: boolean
+  }
+
   // ...else we provide basic instructions and help.
   if (!shouldSuppressBanner(cli2.flags)) {
-    const compactMode = Boolean(cli2.flags['compactHeader'] || constants.ENV.CI)
     emitBanner(name, orgFlag, compactMode)
     // Meow will add newline so don't add stderr spacing here.
   }
-  if (!cli2.flags['help'] && cli2.flags['dryRun']) {
+  if (!helpFlag && dryRun) {
     process.exitCode = 0
     logger.log(`${constants.DRY_RUN_LABEL}: No-op, call a sub-command; ok`)
   } else {
     // When you explicitly request --help, the command should be successful
     // so we exit(0). If we do it because we need more input, we exit(2).
-    cli2.showHelp(cli2.flags['help'] ? 0 : 2)
+    cli2.showHelp(helpFlag ? 0 : 2)
   }
+}
+
+export type MeowOrExitOptions = {
+  allowUnknownFlags?: boolean | undefined
+  argv: string[] | readonly string[]
+  config: CliCommandConfig
+  parentName: string
+  importMeta: ImportMeta
 }
 
 /**
@@ -705,13 +760,7 @@ export function meowOrExit({
   config,
   importMeta,
   parentName,
-}: {
-  allowUnknownFlags?: boolean | undefined
-  argv: readonly string[]
-  config: CliCommandConfig
-  parentName: string
-  importMeta: ImportMeta
-}): Result<MeowFlags> {
+}: MeowOrExitOptions): Result<MeowFlags> {
   const command = `${parentName} ${config.commandName}`
   lastSeenCommand = command
 
@@ -744,6 +793,7 @@ export function meowOrExit({
     version: boolean | undefined
   }
 
+  const compactMode = compactHeaderFlag || constants.ENV.CI
   const noSpinner = spinnerFlag === false || isDebug()
 
   // Use CI spinner style when --no-spinner is passed.
@@ -753,7 +803,6 @@ export function meowOrExit({
   }
 
   if (!shouldSuppressBanner(cli.flags)) {
-    const compactMode = Boolean(compactHeaderFlag || constants.ENV.CI)
     emitBanner(command, orgFlag, compactMode)
     // Add newline in stderr.
     // Meow help adds a newline too so we do it here.

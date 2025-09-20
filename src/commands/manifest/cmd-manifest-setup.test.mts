@@ -52,8 +52,8 @@ describe('socket manifest setup', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
+          |   __|___ ___| |_ ___| |_      | Socket.dev CLI v<redacted>
+          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest setup\`, cwd: <redacted>"
       `)
 
@@ -73,8 +73,8 @@ describe('socket manifest setup', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
+          |   __|___ ___| |_ ___| |_      | Socket.dev CLI v<redacted>
+          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest setup\`, cwd: <redacted>"
       `)
 

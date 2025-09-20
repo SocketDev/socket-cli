@@ -213,6 +213,7 @@ const ERROR_UNABLE_RESOLVE_ORG =
 const FLAG_CONFIG = '--config'
 const FLAG_DRY_RUN = '--dry-run'
 const FLAG_HELP = '--help'
+const FLAG_HELP_FULL = '--help-full'
 const FLAG_ID = '--id'
 const FLAG_JSON = '--json'
 const FLAG_MARKDOWN = '--markdown'
@@ -882,6 +883,7 @@ const constants: Constants = createConstantsObject(
     FLAG_CONFIG,
     FLAG_DRY_RUN,
     FLAG_HELP,
+    FLAG_HELP_FULL,
     FLAG_ID,
     FLAG_JSON,
     FLAG_MARKDOWN,
@@ -1142,6 +1144,7 @@ export {
   FLAG_CONFIG,
   FLAG_DRY_RUN,
   FLAG_HELP,
+  FLAG_HELP_FULL,
   FLAG_ID,
   FLAG_JSON,
   FLAG_MARKDOWN,
