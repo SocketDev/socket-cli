@@ -25,46 +25,52 @@ import type { CResult } from '../src/types.mts'
 
 export interface MockAuthOptions {
   /** Whether the operation should succeed. */
-  shouldSucceed?: boolean
+  shouldSucceed?: boolean | undefined
   /** Custom delay in milliseconds to simulate network latency. */
-  delay?: number
+  delay?: number | undefined
   /** Custom error message for failure scenarios. */
-  errorMessage?: string
+  errorMessage?: string | undefined
   /** Custom response data for success scenarios. */
-  responseData?: any
+  responseData?: any | undefined
 }
 
 export interface MockLoginOptions extends MockAuthOptions {
   /** Mock email address for login. */
-  email?: string
+  email?: string | undefined
   /** Mock organization slug. */
-  orgSlug?: string
+  orgSlug?: string | undefined
   /** Mock API token to return. */
-  apiToken?: string
+  apiToken?: string | undefined
   /** Whether to simulate MFA requirement. */
-  requireMfa?: boolean
+  requireMfa?: boolean | undefined
 }
 
 export interface MockTokenOptions extends MockAuthOptions {
   /** The token to validate. */
-  token?: string
+  token?: string | undefined
   /** Token permissions/scopes. */
-  scopes?: string[]
+  scopes?: string[] | readonly string[] | undefined
   /** Token expiration time. */
-  expiresAt?: Date
+  expiresAt?: Date | undefined
 }
 
 export interface MockOrgOptions extends MockAuthOptions {
   /** List of organizations to return. */
-  organizations?: Array<{
-    id: string
-    slug: string
-    name: string
-    role: string
-  }>
+  organizations?:
+    | Array<{
+        id: string
+        slug: string
+        name: string
+        role: string
+      }>
+    | undefined
   /** Selected organization index. */
-  selectedIndex?: number
+  selectedIndex?: number | undefined
 }
+
+const MILLISECONDS_1_DAY = Date.now() + 24 * 60 * 60 * 1000
+
+const MILLISECONDS_30_DAYS = Date.now() + 30 * 24 * 60 * 60 * 1000
 
 /**
  * Simulate a delay for realistic async behavior.
@@ -77,7 +83,7 @@ function simulateDelay(ms: number): Promise<void> {
  * Mock interactive login flow.
  */
 export async function mockInteractiveLogin(
-  options?: MockLoginOptions,
+  options?: MockLoginOptions | undefined,
 ): Promise<CResult<{ apiToken: string; orgSlug: string }>> {
   const {
     apiToken = 'test-token-123',
@@ -124,7 +130,7 @@ export async function mockApiTokenAuth(
   const {
     delay = 50,
     errorMessage = 'Invalid token',
-    expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days.
+    expiresAt = new Date(MILLISECONDS_30_DAYS),
     scopes = ['read', 'write'],
     shouldSucceed = true,
     token = 'test-token',
@@ -464,9 +470,7 @@ export async function mockValidateSession(
     ok: true,
     data: {
       valid: isValid,
-      expiresAt: isValid
-        ? new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours.
-        : undefined,
+      expiresAt: isValid ? new Date(MILLISECONDS_1_DAY) : undefined,
     },
   }
 }
