@@ -18,7 +18,7 @@ export const cmdInstall: CliSubcommand = {
           completion: cmdInstallCompletion,
         },
       },
-      { description }
+      { description },
     )
   },
 }

@@ -86,6 +86,6 @@ async function run(
       },
       description: config.description,
       flags: config.flags,
-    }
+    },
   )
 }

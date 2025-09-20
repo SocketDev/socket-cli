@@ -26,7 +26,7 @@ export const cmdConfig: CliSubcommand = {
           unset: cmdConfigUnset,
         },
       },
-      { description }
+      { description },
     )
   },
 }

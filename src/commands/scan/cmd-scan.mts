@@ -49,7 +49,7 @@ export const cmdScan: CliSubcommand = {
           },
         },
         description,
-      }
+      },
     )
   },
 }
