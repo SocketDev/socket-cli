@@ -63,16 +63,20 @@ async function run(
 ): Promise<void> {
   await meowWithSubcommands(
     {
-      auto: cmdManifestAuto,
-      cdxgen: cmdManifestCdxgen,
-      conda: cmdManifestConda,
-      gradle: cmdManifestGradle,
-      kotlin: cmdManifestKotlin,
-      scala: cmdManifestScala,
-      setup: cmdManifestSetup,
+      argv,
+      name: `${parentName} ${config.commandName}`,
+      importMeta,
+      subcommands: {
+        auto: cmdManifestAuto,
+        cdxgen: cmdManifestCdxgen,
+        conda: cmdManifestConda,
+        gradle: cmdManifestGradle,
+        kotlin: cmdManifestKotlin,
+        scala: cmdManifestScala,
+        setup: cmdManifestSetup,
+      },
     },
     {
-      argv,
       aliases: {
         yolo: {
           description: config.description,
@@ -81,9 +85,7 @@ async function run(
         },
       },
       description: config.description,
-      importMeta,
       flags: config.flags,
-      name: `${parentName} ${config.commandName}`,
-    },
+    }
   )
 }

@@ -12,8 +12,13 @@ export const cmdPackage: CliSubcommand = {
   async run(argv, importMeta, { parentName }) {
     await meowWithSubcommands(
       {
-        score: cmdPackageScore,
-        shallow: cmdPackageShallow,
+        argv,
+        name: `${parentName} package`,
+        importMeta,
+        subcommands: {
+          score: cmdPackageScore,
+          shallow: cmdPackageShallow,
+        },
       },
       {
         aliases: {
@@ -23,11 +28,8 @@ export const cmdPackage: CliSubcommand = {
             argv: ['score'],
           },
         },
-        argv,
         description,
-        importMeta,
-        name: `${parentName} package`,
-      },
+      }
     )
   },
 }
