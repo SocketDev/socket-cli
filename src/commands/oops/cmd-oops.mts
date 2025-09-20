@@ -44,14 +44,12 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: CliCommandContext,
 ): Promise<void> {
-  const cli = meowOrExit(
-    {
-      argv,
-      config,
-      parentName,
-      importMeta,
-    }
-  )
+  const cli = meowOrExit({
+    argv,
+    config,
+    parentName,
+    importMeta,
+  })
 
   const { json, markdown, throw: justThrow } = cli.flags
 

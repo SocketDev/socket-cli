@@ -51,14 +51,12 @@ export async function run(
   importMeta: ImportMeta,
   { parentName }: CliCommandContext,
 ): Promise<void> {
-  const cli = meowOrExit(
-    {
-      argv,
-      config,
-      parentName,
-      importMeta,
-    }
-  )
+  const cli = meowOrExit({
+    argv,
+    config,
+    parentName,
+    importMeta,
+  })
   const dryRun = !!cli.flags['dryRun']
 
   if (dryRun) {

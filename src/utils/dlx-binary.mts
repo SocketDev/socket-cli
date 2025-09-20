@@ -33,7 +33,10 @@ import { spawn } from '@socketsecurity/registry/lib/spawn'
 import constants from '../constants.mts'
 import { InputError } from './errors.mts'
 
-import type { SpawnExtra, SpawnOptions } from '@socketsecurity/registry/lib/spawn'
+import type {
+  SpawnExtra,
+  SpawnOptions,
+} from '@socketsecurity/registry/lib/spawn'
 
 export interface DlxBinaryOptions {
   /** URL to download the binary from. */
@@ -269,14 +272,19 @@ export async function dlxBinary(
   const cacheKey = generateCacheKey(url)
   const cacheEntryDir = path.join(cacheDir, cacheKey)
   const platformKey = `${platform}-${arch}`
-  const binaryName = name || `binary-${platformKey}${platform === 'win32' ? '.exe' : ''}`
+  const binaryName =
+    name || `binary-${platformKey}${platform === 'win32' ? '.exe' : ''}`
   const binaryPath = path.join(cacheEntryDir, binaryName)
 
   let downloaded = false
   let computedChecksum = checksum
 
   // Check if we need to download.
-  if (!force && existsSync(cacheEntryDir) && (await isCacheValid(cacheEntryDir, cacheTtl))) {
+  if (
+    !force &&
+    existsSync(cacheEntryDir) &&
+    (await isCacheValid(cacheEntryDir, cacheTtl))
+  ) {
     // Binary is cached and valid, read the checksum from metadata.
     try {
       const metaPath = getMetadataPath(cacheEntryDir)

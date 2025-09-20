@@ -18,7 +18,7 @@ export const cmdUninstall: CliSubcommand = {
           completion: cmdUninstallCompletion,
         },
       },
-      { description }
+      { description },
     )
   },
 }

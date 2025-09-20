@@ -27,7 +27,7 @@ export const cmdOrganizationPolicy: CliSubcommand = {
       {
         description,
         defaultSub: 'list', // Backwards compat
-      }
+      },
     )
   },
 }

@@ -25,7 +25,7 @@ export const cmdRepository: CliSubcommand = {
           update: cmdRepositoryUpdate,
         },
       },
-      { description }
+      { description },
     )
   },
 }

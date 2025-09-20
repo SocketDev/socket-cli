@@ -307,7 +307,10 @@ export async function meowWithSubcommands(
   config: MeowConfig,
   options?: MeowOptions | undefined,
 ): Promise<void> {
-  const { name, argv, importMeta, subcommands } = { __proto__: null, ...config } as MeowConfig
+  const { argv, importMeta, name, subcommands } = {
+    __proto__: null,
+    ...config,
+  } as MeowConfig
   const {
     aliases = {},
     defaultSub,
@@ -348,7 +351,17 @@ export async function meowWithSubcommands(
     if (/^[a-z]+\//.test(commandOrAliasName || '')) {
       logger.info('Invoking `socket package score`.')
       return await meowWithSubcommands(
-        { name, argv: ['package', 'deep', `pkg:${commandOrAliasName}`, ...rawCommandArgv], importMeta, subcommands },
+        {
+          name,
+          argv: [
+            'package',
+            'deep',
+            `pkg:${commandOrAliasName}`,
+            ...rawCommandArgv,
+          ],
+          importMeta,
+          subcommands,
+        },
         options,
       )
     }
@@ -724,11 +737,8 @@ export async function meowWithSubcommands(
     help: lines.map(l => indentString(l, HELP_INDENT)).join('\n'),
   })
 
-  const {
-    dryRun,
-    help: helpFlag,
-  } = cli2.flags as {
-    dryRun: boolean,
+  const { dryRun, help: helpFlag } = cli2.flags as {
+    dryRun: boolean
     help: boolean
   }
 
@@ -773,8 +783,16 @@ export function meowOrExit(
   config: MeowOrExitConfig,
   options?: MeowOrExitOptions | undefined,
 ): Result<MeowFlags> {
-  const { argv, config: cliConfig, importMeta, parentName } = { __proto__: null, ...config } as MeowOrExitConfig
-  const { allowUnknownFlags = true } = { __proto__: null, ...options } as MeowOrExitOptions
+  const {
+    argv,
+    config: cliConfig,
+    importMeta,
+    parentName,
+  } = { __proto__: null, ...config } as MeowOrExitConfig
+  const { allowUnknownFlags = true } = {
+    __proto__: null,
+    ...options,
+  } as MeowOrExitOptions
   const command = `${parentName} ${cliConfig.commandName}`
   lastSeenCommand = command
 

@@ -48,7 +48,7 @@ void (async () => {
         importMeta: { url: `${pathToFileURL(__filename)}` } as ImportMeta,
         subcommands: rootCommands,
       },
-      { aliases: rootAliases }
+      { aliases: rootAliases },
     )
   } catch (e) {
     process.exitCode = 1
