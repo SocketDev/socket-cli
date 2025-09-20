@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { validateSocketJson } from '../../test/json-output-validation.mts'
-import { runWithConfig } from '../../test/run-with-config.mts'
+import { validateSocketJson } from '../../../test/json-output-validation.mts'
+import { runWithConfig } from '../../../test/run-with-config.mts'
 
 describe('socket repos - smoke test scenarios', () => {
   describe('no-interactive mode', () => {
@@ -103,7 +103,7 @@ describe('socket repos - smoke test scenarios', () => {
         '--config',
         fakeOrgConfig,
       )
-      expect(result.exitCode).toBe(1)
+      expect(result.exitCode).toBe(2)
 
       const jsonResponse = validateSocketJson(result.stdout, result.exitCode)
       expect(jsonResponse.ok).toBe(false)
@@ -118,7 +118,7 @@ describe('socket repos - smoke test scenarios', () => {
         '--config',
         fakeOrgConfig,
       )
-      expect(result.exitCode).toBe(1)
+      expect(result.exitCode).toBe(2)
 
       const jsonResponse = validateSocketJson(result.stdout, result.exitCode)
       expect(jsonResponse.ok).toBe(false)
@@ -133,7 +133,7 @@ describe('socket repos - smoke test scenarios', () => {
         '--config',
         fakeOrgConfig,
       )
-      expect(result.exitCode).toBe(1)
+      expect(result.exitCode).toBe(2)
 
       const jsonResponse = validateSocketJson(result.stdout, result.exitCode)
       expect(jsonResponse.ok).toBe(false)
@@ -147,7 +147,7 @@ describe('socket repos - smoke test scenarios', () => {
         '--config',
         fakeOrgConfig,
       )
-      expect(result.exitCode).toBe(1)
+      expect(result.exitCode).toBe(2)
 
       const jsonResponse = validateSocketJson(result.stdout, result.exitCode)
       expect(jsonResponse.ok).toBe(false)
@@ -164,7 +164,7 @@ describe('socket repos - smoke test scenarios', () => {
         '--config',
         fakeOrgConfig,
       )
-      expect(result.exitCode).toBe(1)
+      expect(result.exitCode).toBe(2)
 
       const jsonResponse = validateSocketJson(result.stdout, result.exitCode)
       expect(jsonResponse.ok).toBe(false)
@@ -174,12 +174,12 @@ describe('socket repos - smoke test scenarios', () => {
   describe('invalid repository names', () => {
     it('should fail create with invalid name: `repos create "%$#"`', async () => {
       const result = await runWithConfig('repos', 'create', '%$#')
-      expect(result.exitCode).toBe(1)
+      expect(result.exitCode).toBe(2)
     })
 
     it('should fail create with invalid name and json: `repos create "%$#" --json`', async () => {
       const result = await runWithConfig('repos', 'create', '%$#', '--json')
-      expect(result.exitCode).toBe(1)
+      expect(result.exitCode).toBe(2)
 
       const jsonResponse = validateSocketJson(result.stdout, result.exitCode)
       expect(jsonResponse.ok).toBe(false)
