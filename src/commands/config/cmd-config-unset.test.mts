@@ -48,8 +48,8 @@ describe('socket config unset', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | Socket.dev CLI v<redacted>
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, token: <redacted>, org: <redacted>
+          |   __|___ ___| |_ ___| |_      | Socket.dev (https://socket.dev) CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket config unset\`, cwd: <redacted>"
       `)
 
@@ -69,8 +69,8 @@ describe('socket config unset', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | Socket.dev CLI v<redacted>
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, token: <redacted>, org: <redacted>
+          |   __|___ ___| |_ ___| |_      | Socket.dev (https://socket.dev) CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket config unset\`, cwd: <redacted>
 
         \\xd7  Input error:  Please review the input requirements and try again
@@ -98,8 +98,8 @@ describe('socket config unset', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | Socket.dev CLI v<redacted>
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, token: <redacted>, org: <redacted>
+          |   __|___ ___| |_ ___| |_      | Socket.dev (https://socket.dev) CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket config unset\`, cwd: <redacted>"
       `)
 
