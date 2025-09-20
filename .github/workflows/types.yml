@@ -1,4 +1,4 @@
-name: Type Checks
+name: ⚙️ Types
 
 on:
   push:
@@ -9,18 +9,15 @@ on:
   pull_request:
     branches:
       - main
+  workflow_dispatch:
 
 permissions:
   contents: read
 
-jobs:
-  type-check:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-      - uses: SocketDev/socket-cli/.github/actions/setup@6f2ee2a68551ced5ffab8ae144bdd74067b62529
-        with:
-          node-version: '22'
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
 
-      - name: Run type check
-        run: pnpm run check:tsc
+jobs:
+  types:
+    uses: SocketDev/socket-registry/.github/workflows/types.yml@main
