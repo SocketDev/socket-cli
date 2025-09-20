@@ -1,4 +1,4 @@
-name: ⚙️ Provenance
+name: Provenance
 
 on:
   workflow_dispatch:
@@ -23,8 +23,6 @@ jobs:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       - uses: SocketDev/socket-registry/.github/actions/setup@main
         with:
-          node-version: '22'
-          registry-url: 'https://registry.npmjs.org'
           scope: '@socketsecurity'
       - run: pnpm install
       - run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 pnpm run build:dist
