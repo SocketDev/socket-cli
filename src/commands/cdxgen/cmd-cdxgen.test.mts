@@ -17,8 +17,13 @@ describe('socket cdxgen', async () => {
     `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      // cdxgen outputs its version and runtime info when run with help.
-      expect(stdout).toMatch(/CycloneDX Generator/)
+      // Note: cdxgen may output version info to stdout or stderr depending on environment.
+      // In CI environments, stdout might be empty while help text is in stderr.
+      const hasVersionInStdout = stdout.includes('CycloneDX Generator')
+      const hasHelpInStderr = stderr.includes('cdxgen [command]')
+
+      // The test should pass if we get either the version in stdout OR help in stderr.
+      expect(hasVersionInStdout || hasHelpInStderr).toBe(true)
       expect(code, 'explicit help should exit with code 0').toBe(0)
     },
   )
