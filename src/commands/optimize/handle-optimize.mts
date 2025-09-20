@@ -32,6 +32,7 @@ export async function handleOptimize({
     prod,
   })
   if (!pkgEnvCResult.ok) {
+    process.exitCode = pkgEnvCResult.code ?? 1
     debugFn('warn', 'Package environment validation failed')
     debugDir('inspect', { pkgEnvCResult })
     await outputOptimizeResult(pkgEnvCResult, outputKind)
@@ -40,6 +41,7 @@ export async function handleOptimize({
 
   const pkgEnvDetails = pkgEnvCResult.data
   if (!pkgEnvDetails) {
+    process.exitCode = 1
     debugFn('warn', 'No package environment details found')
     await outputOptimizeResult(
       {
@@ -60,6 +62,7 @@ export async function handleOptimize({
 
   const { agent, agentVersion } = pkgEnvDetails
   if (agent === VLT) {
+    process.exitCode = 1
     debugFn('warn', `${agent} does not support overrides`)
     await outputOptimizeResult(
       {
@@ -82,11 +85,14 @@ export async function handleOptimize({
     pin,
     prod,
   })
+
+  if (!optimizationResult.ok) {
+    process.exitCode = optimizationResult.code ?? 1
+  }
   debugFn(
     'notice',
     `Optimization ${optimizationResult.ok ? 'succeeded' : 'failed'}`,
   )
   debugDir('inspect', { optimizationResult })
-
   await outputOptimizeResult(optimizationResult, outputKind)
 }
