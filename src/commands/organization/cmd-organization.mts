@@ -16,10 +16,15 @@ export const cmdOrganization: CliSubcommand = {
   async run(argv, importMeta, { parentName }) {
     await meowWithSubcommands(
       {
-        dependencies: cmdOrganizationDependencies,
-        list: cmdOrganizationList,
-        quota: cmdOrganizationQuota,
-        policy: cmdOrganizationPolicy,
+        argv,
+        name: `${parentName} organization`,
+        importMeta,
+        subcommands: {
+          dependencies: cmdOrganizationDependencies,
+          list: cmdOrganizationList,
+          quota: cmdOrganizationQuota,
+          policy: cmdOrganizationPolicy,
+        },
       },
       {
         aliases: {
@@ -39,11 +44,8 @@ export const cmdOrganization: CliSubcommand = {
             argv: ['policy', 'security'],
           },
         },
-        argv,
         description,
-        importMeta,
-        name: `${parentName} organization`,
-      },
+      }
     )
   },
 }

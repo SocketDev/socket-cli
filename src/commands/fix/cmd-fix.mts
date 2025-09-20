@@ -196,13 +196,15 @@ async function run(
     `,
   }
 
-  const cli = meowOrExit({
-    allowUnknownFlags: false,
-    argv,
-    config,
-    importMeta,
-    parentName,
-  })
+  const cli = meowOrExit(
+    {
+      argv,
+      config,
+      parentName,
+      importMeta,
+    },
+    { allowUnknownFlags: false }
+  )
 
   const {
     autopilot,

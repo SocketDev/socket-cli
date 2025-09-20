@@ -81,10 +81,15 @@ export interface CliCommandContext {
   rawArgv?: string[] | readonly string[]
 }
 
-export interface MeowOptions extends Options<any> {
-  aliases?: CliAliases | undefined
-  argv: string[] | readonly string[]
+export interface MeowConfig {
   name: string
+  argv: string[] | readonly string[]
+  importMeta: ImportMeta
+  subcommands: Record<string, CliSubcommand>
+}
+
+export interface MeowOptions extends Omit<Options<any>, 'argv' | 'importMeta'> {
+  aliases?: CliAliases | undefined
   // When no sub-command is given, default to this sub-command.
   defaultSub?: string | undefined
 }
@@ -290,19 +295,24 @@ export function getLastSeenCommand(): string {
 
 /**
  * Main function for handling CLI with subcommands using meow.
+ * @param config Configuration object with name, argv, importMeta, and subcommands.
+ * @param options Optional settings like aliases and defaultSub.
+ * @example
+ * meowWithSubcommands(
+ *   { name, argv, importMeta, subcommands },
+ *   { aliases, defaultSub }
+ * )
  */
 export async function meowWithSubcommands(
-  subcommands: Record<string, CliSubcommand>,
-  options: MeowOptions,
+  config: MeowConfig,
+  options?: MeowOptions | undefined,
 ): Promise<void> {
+  const { name, argv, importMeta, subcommands } = { __proto__: null, ...config } as MeowConfig
   const {
     aliases = {},
-    argv,
     defaultSub,
-    importMeta,
-    name,
     ...additionalOptions
-  } = { __proto__: null, ...options }
+  } = { __proto__: null, ...options } as MeowOptions
   const flags: MeowFlags = {
     ...commonFlags,
     version: {
@@ -328,24 +338,19 @@ export async function meowWithSubcommands(
   if (!isRootCommand) {
     if (commandOrAliasName?.startsWith('pkg:')) {
       logger.info('Invoking `socket package score`.')
-      return await meowWithSubcommands(subcommands, {
-        ...options,
-        argv: ['package', 'deep', ...argv],
-      })
+      return await meowWithSubcommands(
+        { name, argv: ['package', 'deep', ...argv], importMeta, subcommands },
+        options,
+      )
     }
     // Support `socket npm/lodash` or whatever as a shorthand, too.
     // Accept any ecosystem and let the remote sort it out.
     if (/^[a-z]+\//.test(commandOrAliasName || '')) {
       logger.info('Invoking `socket package score`.')
-      return await meowWithSubcommands(subcommands, {
-        ...options,
-        argv: [
-          'package',
-          'deep',
-          `pkg:${commandOrAliasName}`,
-          ...rawCommandArgv,
-        ],
-      })
+      return await meowWithSubcommands(
+        { name, argv: ['package', 'deep', `pkg:${commandOrAliasName}`, ...rawCommandArgv], importMeta, subcommands },
+        options,
+      )
     }
   }
 
@@ -742,26 +747,35 @@ export async function meowWithSubcommands(
   }
 }
 
-export type MeowOrExitOptions = {
-  allowUnknownFlags?: boolean | undefined
+export interface MeowOrExitConfig {
   argv: string[] | readonly string[]
   config: CliCommandConfig
   parentName: string
   importMeta: ImportMeta
 }
 
+export type MeowOrExitOptions = {
+  allowUnknownFlags?: boolean | undefined
+}
+
 /**
  * Create meow CLI instance or exit with help/error (meow will exit immediately
  * if it calls .showHelp()).
+ * @param config Configuration object with argv, config, parentName, and importMeta.
+ * @param options Optional settings like allowUnknownFlags.
+ * @example
+ * meowOrExit(
+ *   { argv, config, parentName, importMeta },
+ *   { allowUnknownFlags: false }
+ * )
  */
-export function meowOrExit({
-  allowUnknownFlags = true,
-  argv,
-  config,
-  importMeta,
-  parentName,
-}: MeowOrExitOptions): Result<MeowFlags> {
-  const command = `${parentName} ${config.commandName}`
+export function meowOrExit(
+  config: MeowOrExitConfig,
+  options?: MeowOrExitOptions | undefined,
+): Result<MeowFlags> {
+  const { argv, config: cliConfig, importMeta, parentName } = { __proto__: null, ...config } as MeowOrExitConfig
+  const { allowUnknownFlags = true } = { __proto__: null, ...options } as MeowOrExitOptions
+  const command = `${parentName} ${cliConfig.commandName}`
   lastSeenCommand = command
 
   // This exits if .printHelp() is called either by meow itself or by us.
@@ -773,9 +787,9 @@ export function meowOrExit({
     // We want to detect whether a bool flag is given at all.
     booleanDefault: undefined,
     collectUnknownFlags: true,
-    description: config.description,
-    flags: config.flags,
-    help: trimNewlines(config.help(command, config)),
+    description: cliConfig.description,
+    flags: cliConfig.flags,
+    help: trimNewlines(cliConfig.help(command, cliConfig)),
     importMeta,
   })
 
@@ -832,7 +846,7 @@ export function meowOrExit({
   }
 
   // Meow doesn't detect 'version' as an unknown flag, so we do the leg work here.
-  if (versionFlag && !hasOwn(config.flags, 'version')) {
+  if (versionFlag && !hasOwn(cliConfig.flags, 'version')) {
     // Use `console.error` here instead of `logger.error` to match Meow behavior.
     console.error('Unknown flag\n--version')
     // eslint-disable-next-line n/no-process-exit
@@ -853,10 +867,10 @@ export function meowOrExit({
     // Prevent meow from potentially exiting early.
     autoHelp: false,
     autoVersion: false,
-    description: config.description,
-    help: trimNewlines(config.help(command, config)),
+    description: cliConfig.description,
+    help: trimNewlines(cliConfig.help(command, cliConfig)),
     importMeta,
-    flags: config.flags,
+    flags: cliConfig.flags,
   })
   // Ok, no help, reset to default.
   process.exitCode = 0

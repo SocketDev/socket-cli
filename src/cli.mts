@@ -41,12 +41,15 @@ void (async () => {
   })
 
   try {
-    await meowWithSubcommands(rootCommands, {
-      aliases: rootAliases,
-      argv: process.argv.slice(2),
-      name: constants.SOCKET_CLI_BIN_NAME,
-      importMeta: { url: `${pathToFileURL(__filename)}` } as ImportMeta,
-    })
+    await meowWithSubcommands(
+      {
+        name: constants.SOCKET_CLI_BIN_NAME,
+        argv: process.argv.slice(2),
+        importMeta: { url: `${pathToFileURL(__filename)}` } as ImportMeta,
+        subcommands: rootCommands,
+      },
+      { aliases: rootAliases }
+    )
   } catch (e) {
     process.exitCode = 1
     debugFn('error', 'CLI uncaught error')
