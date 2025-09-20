@@ -643,6 +643,9 @@ const LAZY_ENV = () => {
     SOCKET_CLI_VIEW_ALL_RISKS: envAsBoolean(env[SOCKET_CLI_VIEW_ALL_RISKS]),
     // Specifies the type of terminal or terminal emulator being used by the process.
     TERM: envAsString(env['TERM']),
+    // Redefine registryConstants.ENV.VITEST to account for the
+    // INLINED_SOCKET_CLI_PUBLISHED_BUILD environment variable.
+    VITEST: INLINED_SOCKET_CLI_PUBLISHED_BUILD ? false : envAsBoolean(process.env[VITEST]),
   })
 }
 

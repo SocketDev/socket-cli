@@ -33,6 +33,7 @@ import constants, {
   FLAG_HELP_FULL,
   FLAG_JSON,
   FLAG_MARKDOWN,
+  FLAG_ORG,
   NPM,
   NPX,
   // PNPM,
@@ -193,9 +194,9 @@ function getAsciiHeader(
 
   // Consolidated org display format.
   const orgPart = redacting
-    ? 'org: <redacted>'
+    ? `org: ${REDACTED}`
     : orgFlag
-      ? `org: ${colors.cyan(orgFlag)} (--org flag)`
+      ? `org: ${colors.cyan(orgFlag)} (${FLAG_ORG} flag)`
       : defaultOrg && defaultOrg !== 'null'
         ? `org: ${colors.cyan(defaultOrg)} (config)`
         : colors.yellow('org: (not set)')
@@ -446,7 +447,8 @@ export async function meowWithSubcommands(
     spinner: boolean
   }
 
-  const compactMode = compactHeaderFlag || constants.ENV.CI
+  const compactMode =
+    compactHeaderFlag || (constants.ENV.CI && !constants.ENV.VITEST)
   const noSpinner = spinnerFlag === false || isDebug()
 
   // Use CI spinner style when --no-spinner is passed or debug mode is enabled.
@@ -825,7 +827,8 @@ export function meowOrExit(
     version: boolean | undefined
   }
 
-  const compactMode = compactHeaderFlag || constants.ENV.CI
+  const compactMode =
+    compactHeaderFlag || (constants.ENV.CI && !constants.ENV.VITEST)
   const noSpinner = spinnerFlag === false || isDebug()
 
   // Use CI spinner style when --no-spinner is passed.
