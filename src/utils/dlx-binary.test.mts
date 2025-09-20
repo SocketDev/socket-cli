@@ -3,10 +3,7 @@ import path from 'node:path'
 
 import { describe, expect, it, vi } from 'vitest'
 
-import {
-  getDlxCachePath,
-  getSocketHomePath,
-} from './dlx-binary.mts'
+import { getDlxCachePath, getSocketHomePath } from './dlx-binary.mts'
 import { InputError } from './errors.mts'
 
 describe('dlx-binary simple tests', () => {

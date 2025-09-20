@@ -45,7 +45,7 @@ export const cmdOrganization: CliSubcommand = {
           },
         },
         description,
-      }
+      },
     )
   },
 }

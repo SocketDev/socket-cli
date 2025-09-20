@@ -40,14 +40,12 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: CliCommandContext,
 ): Promise<void> {
-  const cli = meowOrExit(
-    {
-      argv,
-      config,
-      parentName,
-      importMeta,
-    }
-  )
+  const cli = meowOrExit({
+    argv,
+    config,
+    parentName,
+    importMeta,
+  })
 
   let [cwd = '.'] = cli.input
   // Note: path.resolve vs .join:
