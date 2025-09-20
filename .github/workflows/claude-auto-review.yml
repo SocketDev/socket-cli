@@ -5,6 +5,11 @@ on:
     types: [opened]
   workflow_dispatch:
 
+permissions:
+  contents: read
+  id-token: write
+  pull-requests: read
+
 jobs:
   auto-review:
     uses: SocketDev/socket-registry/.github/workflows/claude-auto-review.yml@main
