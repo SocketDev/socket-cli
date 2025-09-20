@@ -4,43 +4,58 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## Unreleased
+## [1.1.21](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.22) - 2025-09-20
 
 ### Added
-- Testing infrastructure for malware detection with mock fixtures and API response utilities
-- Test fixtures for packages flagged with both `malware` and `gptMalware` alerts
+- New `--compact-header` flag for streamlined CLI output display
+
+### Changed
+- Enhanced package manager interception for improved security scanning
+- Improved detection of temporary package execution environments
 
 ### Fixed
-- Resolved Windows spawn errors for package managers by enabling shell execution for .cmd files
+- Enhanced error handling in `socket optimize` with proper exit codes
+
+## [1.1.20](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.20) - 2025-09-19
+
+### Added
+- Terminal link support for enhanced command output formatting
+
+### Fixed
+- Resolved Windows compatibility issues with package manager execution
+
+## [1.1.19](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.19) - 2025-09-19
+
+### Added
+- Enhanced testing capabilities for malware detection features
 
 ## [1.1.18](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.18) - 2025-09-18
 
 ### Fixed
-- Enhanced Node.js version compatibility by downgrading yargs-parser for Node versions below 20
+- Enhanced compatibility with older Node.js versions
 
 ## [1.1.17](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.17) - 2025-09-18
 
 ### Fixed
-- Enhanced Windows compatibility for package manager detection and execution
+- Enhanced Windows compatibility for package manager operations
 
 ## [1.1.16](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.16) - 2025-09-16
 
 ### Fixed
-- Enhanced pnpm wrapper compatibility with dlx commands for better package execution support
+- Enhanced pnpm wrapper compatibility with dlx commands
 
 ## [1.1.15](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.15) - 2025-09-16
 
 ### Changed
-- Improved `socket fix` environment variable detection with clearer error messages when required variables are missing
+- Improved `socket fix` error messages for missing environment variables
 
 ### Fixed
 - Resolved path handling issue in `socket optimize` command
-- Command flag parsing now correctly detects subsequent arguments
 
 ## [1.1.14](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.14) - 2025-09-17
 
 ### Changed
-- Enhanced 3rd-party on-demand download and execution
+- Enhanced third-party tool integration
 
 ## [1.1.13](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.13) - 2025-09-16
 
