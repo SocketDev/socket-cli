@@ -477,8 +477,9 @@ describe('socket scan reach', async () => {
     },
   )
 
-  it.skipIf(constants.WIN32)(
+  it(
     'should accept comprehensive reachability configuration in dry-run: `scan reach --dry-run --reach-analysis-memory-limit 16384 --reach-analysis-timeout 7200 --reach-ecosystems npm --reach-exclude-paths node_modules --org fakeOrg --config {"apiToken":"fakeToken"}`',
+    { timeout: 30_000 },
     async () => {
       const cmd = [
         'scan',
@@ -501,7 +502,6 @@ describe('socket scan reach', async () => {
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
-    { timeout: 30_000 },
   )
 
   describe('non dry-run tests', () => {

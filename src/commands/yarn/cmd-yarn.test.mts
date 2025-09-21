@@ -9,7 +9,7 @@ import constants, {
 } from '../../../src/constants.mts'
 import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
 
-describe.skipIf(constants.WIN32)('socket yarn', async () => {
+describe('socket yarn', async () => {
   const { binCliPath } = constants
 
   cmdit(
