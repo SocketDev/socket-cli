@@ -48,8 +48,7 @@ describe('socket manifest cdxgen', async () => {
     },
   }
 
-  // TODO: Revisit after socket-registry dep is updated.
-  describe.skip('command forwarding', async () => {
+  describe('command forwarding', async () => {
     cmdit(
       ['manifest', 'cdxgen', FLAG_HELP],
       `should support ${FLAG_HELP}`,
@@ -63,52 +62,21 @@ describe('socket manifest cdxgen', async () => {
           .replace(/(?<=CycloneDX\s+Generator\s+)[\d.]+/, '<redacted>')
           .replace(/(?<=Node\.js,\s+Version:\s+)[\d.]+/, '<redacted>')
 
+        const redactedStderr = stderr
+          .replace(/CLI:\s+v[\d.]+/, 'CLI: <redacted>')
+          .replace(/token:\s+[^,]+/, 'token: <redacted>')
+          .replace(/org:\s+[^)]+/, 'org: <redacted>')
+          .replace(/cwd:\s+[^\n]+/, 'cwd: <redacted>')
+
         expect(redactedStdout).toMatchInlineSnapshot(`
           "CycloneDX Generator <redacted>
           Runtime: Node.js, Version: <redacted>"
         `)
-        expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
+        expect(`\n   ${redactedStderr}`).toMatchInlineSnapshot(`
           "
              _____         _       _        /---------------
-            |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-            |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest cdxgen\`, cwd: <redacted>
-
-          cdxgen [command]
-
-          Commands:
-            cdxgen completion  Generate bash/zsh completion
-
-          Options:
-            -o, --output                    Output file. Default bom.json  [default: "bom.json"]
-            -t, --type                      Project type. Please refer to https://cyclonedx.github.io/cdxgen/#/PROJECT_TYPES for supported languages/platforms.  [array]
-                --exclude-type              Project types to exclude. Please refer to https://cyclonedx.github.io/cdxgen/#/PROJECT_TYPES for supported languages/platforms.
-            -r, --recurse                   Recurse mode suitable for mono-repos. Defaults to true. Pass --no-recurse to disable.  [boolean] [default: true]
-            -p, --print                     Print the SBOM as a table with tree.  [boolean]
-            -c, --resolve-class             Resolve class names for packages. jars only for now.  [boolean]
-                --deep                      Perform deep searches for components. Useful while scanning C/C++ apps, live OS and oci images.  [boolean]
-                --server-url                Dependency track url. Eg: https://deptrack.cyclonedx.io
-                --skip-dt-tls-check         Skip TLS certificate check when calling Dependency-Track.  [boolean] [default: false]
-                --api-key                   Dependency track api key
-                --project-group             Dependency track project group
-                --project-name              Dependency track project name. Default use the directory name
-                --project-version           Dependency track project version  [string] [default: ""]
-                --project-id                Dependency track project id. Either provide the id or the project name and version together  [string]
-                --parent-project-id         Dependency track parent project id  [string]
-                --required-only             Include only the packages with required scope on the SBOM. Would set compositions.aggregate to incomplete unless --no-auto-compositions is passed.  [boolean]
-                --fail-on-error             Fail if any dependency extractor fails.  [boolean] [default: true]
-                --no-babel                  Do not use babel to perform usage analysis for JavaScript/TypeScript projects.  [boolean]
-                --generate-key-and-sign     Generate an RSA public/private key pair and then sign the generated SBOM using JSON Web Signatures.  [boolean]
-                --server                    Run cdxgen as a server  [boolean]
-                --server-host               Listen address  [default: "127.0.0.1"]
-                --server-port               Listen port  [default: "9090"]
-                --install-deps              Install dependencies automatically for some projects. Defaults to true but disabled for containers and oci scans. Use --no-install-deps to disable this feature.  [boolean] [default: false]
-                --validate                  Validate the generated SBOM using json schema. Defaults to true. Pass --no-validate to disable.  [boolean] [default: true]
-                --evidence                  Generate SBOM with evidence for supported languages.  [boolean] [default: false]
-                --spec-version              CycloneDX Specification version to use. Defaults to 1.6  [number] [choices: 1.4, 1.5, 1.6, 1.7] [default: 1.6]
-                --filter                    Filter components containing this word in purl or component.properties.value. Multiple values allowed.  [array]
-                --only                      Include components only containing this word in purl. Useful to generate BOM with first party components alone. Multiple values allowed.  [array]
-                --author                    The person(s) who created the BOM. Set this value if you're intending the modify the BOM and claim authorship.  [array] [default: "OWASP Foundation"]
+            |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+            |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>) who created the BOM. Set this value if you're intending the modify the BOM and claim authorship.  [array] [default: "OWASP Foundation"]
                 --profile                   BOM profile to use for generation. Default generic.  [choices: "appsec", "research", "operational", "threat-modeling", "license-compliance", "generic", "machine-learning", "ml", "deep-learning", "ml-deep", "ml-tiny"] [default: "generic"]
                 --include-regex             glob pattern to include. This overrides the default pattern used during auto-detection.  [string]
                 --exclude, --exclude-regex  Additional glob pattern(s) to ignore  [array]
