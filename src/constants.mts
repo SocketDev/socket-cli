@@ -216,6 +216,7 @@ const FLAG_HELP = '--help'
 const FLAG_HELP_FULL = '--help-full'
 const FLAG_ID = '--id'
 const FLAG_JSON = '--json'
+const FLAG_LOGLEVEL = '--loglevel'
 const FLAG_MARKDOWN = '--markdown'
 const FLAG_ORG = '--org'
 const FLAG_PIN = '--pin'
@@ -309,6 +310,7 @@ export type Constants = Remap<
     readonly FLAG_HELP: typeof FLAG_HELP
     readonly FLAG_ID: typeof FLAG_ID
     readonly FLAG_JSON: typeof FLAG_JSON
+    readonly FLAG_LOGLEVEL: typeof FLAG_LOGLEVEL
     readonly FLAG_MARKDOWN: typeof FLAG_MARKDOWN
     readonly FLAG_ORG: typeof FLAG_ORG
     readonly FLAG_PIN: typeof FLAG_PIN
@@ -891,6 +893,7 @@ const constants: Constants = createConstantsObject(
     FLAG_HELP_FULL,
     FLAG_ID,
     FLAG_JSON,
+    FLAG_LOGLEVEL,
     FLAG_MARKDOWN,
     FLAG_ORG,
     FLAG_PIN,
@@ -1152,6 +1155,7 @@ export {
   FLAG_HELP_FULL,
   FLAG_ID,
   FLAG_JSON,
+  FLAG_LOGLEVEL,
   FLAG_MARKDOWN,
   FLAG_ORG,
   FLAG_PIN,

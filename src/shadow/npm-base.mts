@@ -1,3 +1,5 @@
+import { fileURLToPath } from 'node:url'
+
 import {
   isNpmAuditFlag,
   isNpmLoglevelFlag,
@@ -9,7 +11,12 @@ import { getOwn } from '@socketsecurity/registry/lib/objects'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import { ensureIpcInStdio } from './stdio-ipc.mts'
-import constants, { NODE_MODULES, NPM, NPX } from '../constants.mts'
+import constants, {
+  FLAG_LOGLEVEL,
+  NODE_MODULES,
+  NPM,
+  NPX,
+} from '../constants.mts'
 import { cmdFlagsToString } from '../utils/cmd.mts'
 import { findUp } from '../utils/fs.mts'
 import { getPublicApiToken } from '../utils/sdk.mts'
@@ -41,7 +48,12 @@ export default async function shadowNpmBase(
     ipc,
     ...spawnOpts
   } = { __proto__: null, ...options } as ShadowBinOptions
-  const cwd = getOwn(spawnOpts, 'cwd') ?? process.cwd()
+
+  let cwd = getOwn(spawnOpts, 'cwd') ?? process.cwd()
+  if (cwd instanceof URL) {
+    cwd = fileURLToPath(cwd)
+  }
+
   const isShadowNpm = binName === NPM
   const terminatorPos = args.indexOf('--')
   const rawBinArgs = terminatorPos === -1 ? args : args.slice(0, terminatorPos)
@@ -73,7 +85,7 @@ export default async function shadowNpmBase(
   const isSilent = !useDebug && !binArgs.some(isNpmLoglevelFlag)
   // The default value of loglevel is "notice". We default to "error" which is
   // two levels quieter.
-  const logLevelArgs = isSilent ? ['--loglevel', 'error'] : []
+  const logLevelArgs = isSilent ? [FLAG_LOGLEVEL, 'error'] : []
   const noAuditArgs =
     useAudit || !(await findUp(NODE_MODULES, { cwd, onlyDirectories: true }))
       ? []

@@ -1,11 +1,12 @@
-import { promises as fs } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
 import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
+import { readPackageJson } from '@socketsecurity/registry/lib/packages'
 
-import constants, { FLAG_DRY_RUN } from '../constants.mts'
+import constants, { FLAG_DRY_RUN, PACKAGE_JSON } from '../constants.mts'
 import { getAlertsMapFromPurls } from '../utils/alerts-map.mts'
+import { isAddCommand } from '../utils/cmd.mts'
 import { debugScan } from '../utils/debug.mts'
 import { safeNpmSpecToPurl } from '../utils/npm-spec.mts'
 import { logAlertsMap } from '../utils/socket-package-alert.mts'
@@ -14,27 +15,24 @@ import type { AlertsByPurl } from '../utils/socket-package-alert.mts'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 /**
- * Extract package PURLs from add/dlx command arguments.
+ * Extract package PURLs from command arguments for add/dlx commands where
+ * packages are specified as arguments.
+ * Used by: pnpm, yarn.
  */
-export function extractPackagePurlsFromArgs(
-  command: string,
+function extractPackagePurlsFromCommandArgs(
   rawArgs: string[] | readonly string[],
-  dlxCommands?: Set<string>,
 ): string[] {
   const packagePurls: string[] = []
-  const isDlxCommand = dlxCommands?.has(command)
 
-  if (command === 'add' || isDlxCommand) {
-    // For 'add package1 package2@version' or 'dlx package', get packages from args.
-    const packageArgs = rawArgs
-      .slice(1)
-      .filter(arg => !arg.startsWith('-') && arg !== '--')
+  // For 'add package1 package2@version' or 'dlx package', get packages from args.
+  const packageArgs = rawArgs
+    .slice(1)
+    .filter(a => !a.startsWith('-') && a !== '--')
 
-    for (const pkgSpec of packageArgs) {
-      const purl = safeNpmSpecToPurl(pkgSpec)
-      if (purl) {
-        packagePurls.push(purl)
-      }
+  for (const pkgSpec of packageArgs) {
+    const purl = safeNpmSpecToPurl(pkgSpec)
+    if (purl) {
+      packagePurls.push(purl)
     }
   }
 
@@ -43,24 +41,24 @@ export function extractPackagePurlsFromArgs(
 
 /**
  * Extract package PURLs from package.json for install/update commands.
+ * Used by: pnpm, yarn.
  */
-export async function extractPackagePurlsFromPackageJson(
-  cwd: string,
+async function extractPackagePurlsFromPackageJson(
+  cwd = process.cwd(),
 ): Promise<string[]> {
   const packagePurls: string[] = []
 
   try {
-    const packageJsonContent = await fs.readFile(`${cwd}/package.json`, 'utf8')
-    const packageJson = JSON.parse(packageJsonContent)
+    const pkgJson = await readPackageJson(cwd)
 
     const allDeps = {
-      ...packageJson.dependencies,
-      ...packageJson.devDependencies,
-      ...packageJson.optionalDependencies,
-      ...packageJson.peerDependencies,
+      ...pkgJson.dependencies,
+      ...pkgJson.devDependencies,
+      ...pkgJson.optionalDependencies,
+      ...pkgJson.peerDependencies,
     }
 
-    for (const [name, version] of Object.entries(allDeps)) {
+    for (const { 0: name, 1: version } of Object.entries(allDeps)) {
       const purl = safeNpmSpecToPurl(
         typeof version === 'string' ? `${name}@${version}` : name,
       )
@@ -73,7 +71,7 @@ export async function extractPackagePurlsFromPackageJson(
   } catch (e) {
     debugFn(
       'warn',
-      'Package.json not found or invalid during dependency scanning',
+      `${PACKAGE_JSON} not found or invalid during dependency scanning`,
     )
     debugDir('error', e)
   }
@@ -134,8 +132,8 @@ export async function scanPackagesAndLogAlerts(
   // Extract package names from command arguments before any downloads.
   let packagePurls: string[] = []
 
-  if (command === 'add' || isDlxCommand) {
-    packagePurls = extractPackagePurlsFromArgs(command, rawArgs, dlxCommands)
+  if (isDlxCommand || isAddCommand(command)) {
+    packagePurls = extractPackagePurlsFromCommandArgs(rawArgs)
   } else if (isInstallCommand) {
     // For install/update, scan dependencies from package.json.
     // Note: This scans direct dependencies only.

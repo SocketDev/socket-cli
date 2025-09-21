@@ -7,6 +7,8 @@ void (async () => {
 
   const { spawnPromise } = await shadowYarnBin(process.argv.slice(2), {
     stdio: 'inherit',
+    cwd: process.cwd(),
+    env: { ...process.env },
   })
 
   // See https://nodejs.org/api/child_process.html#event-exit.
