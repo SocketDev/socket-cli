@@ -35,6 +35,7 @@ const {
   INLINED_SOCKET_CLI_VERSION_HASH,
   NODE_MODULES,
   ROLLUP_EXTERNAL_SUFFIX,
+  UTF8,
   VITEST,
 } = constants
 
@@ -68,7 +69,7 @@ function getSocketCliVersionHash() {
     try {
       gitHash = stripAnsi(
         spawnSync('git', ['rev-parse', '--short', 'HEAD'], {
-          encoding: 'utf8',
+          encoding: UTF8,
         }).stdout.trim(),
       )
     } catch {}
