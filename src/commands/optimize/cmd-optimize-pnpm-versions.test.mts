@@ -17,7 +17,7 @@ const fixtureBaseDir = path.join(testPath, 'fixtures/commands/optimize')
 const pnpm8FixtureDir = path.join(fixtureBaseDir, 'pnpm8')
 const pnpm9FixtureDir = path.join(fixtureBaseDir, 'pnpm9')
 
-// TODO: Revisit after socket-registry dep is updated.
+// TODO: These tests need proper pnpm version setup in fixtures.
 describe.skip(
   'socket optimize - pnpm versions',
   { timeout: 60_000 },
