@@ -11,7 +11,6 @@ import constants, {
   FLAG_CONFIG,
   FLAG_DRY_RUN,
   FLAG_SILENT,
-  FLAG_VERSION,
   PNPM,
   PNPM_LOCK_YAML,
 } from '../../../src/constants.mts'
@@ -25,7 +24,7 @@ describe('socket optimize - pnpm versions', { timeout: 60_000 }, async () => {
   const { binCliPath } = constants
 
   describe('pnpm v8', () => {
-    const pnpm8BinPath = path.join(pnpm8FixtureDir, 'node_modules/.bin')
+    const pnpm8BinPath = path.join(pnpm8FixtureDir, 'node_modules', '.bin')
 
     beforeEach(async () => {
       // Reset fixtures to their committed state (package.json and pnpm-lock.yaml).
@@ -34,19 +33,22 @@ describe('socket optimize - pnpm versions', { timeout: 60_000 }, async () => {
         stdio: 'ignore',
       })
       // Ensure pnpm v8 is installed in the fixture.
-      await spawn(
-        PNPM,
-        [
-          'install',
-          FLAG_SILENT,
-          '--config.confirmModulesPurge=false',
-          '--no-frozen-lockfile',
-        ],
-        {
-          cwd: pnpm8FixtureDir,
-          stdio: 'ignore',
-        },
-      )
+      // Skip if pnpm is not available globally (e.g., Windows CI).
+      try {
+        await spawn(
+          PNPM,
+          [
+            'install',
+            FLAG_SILENT,
+            '--config.confirmModulesPurge=false',
+            '--no-frozen-lockfile',
+          ],
+          {
+            cwd: pnpm8FixtureDir,
+            stdio: 'ignore',
+          },
+        )
+      } catch {}
     })
 
     afterEach(async () => {
@@ -152,7 +154,7 @@ describe('socket optimize - pnpm versions', { timeout: 60_000 }, async () => {
   })
 
   describe('pnpm v9', () => {
-    const pnpm9BinPath = path.join(pnpm9FixtureDir, 'node_modules/.bin')
+    const pnpm9BinPath = path.join(pnpm9FixtureDir, 'node_modules', '.bin')
 
     beforeEach(async () => {
       // Reset fixtures to their committed state (package.json and pnpm-lock.yaml).
@@ -161,19 +163,22 @@ describe('socket optimize - pnpm versions', { timeout: 60_000 }, async () => {
         stdio: 'ignore',
       })
       // Ensure pnpm v9 is installed in the fixture.
-      await spawn(
-        PNPM,
-        [
-          'install',
-          FLAG_SILENT,
-          '--config.confirmModulesPurge=false',
-          '--no-frozen-lockfile',
-        ],
-        {
-          cwd: pnpm9FixtureDir,
-          stdio: 'ignore',
-        },
-      )
+      // Skip if pnpm is not available globally (e.g., Windows CI).
+      try {
+        await spawn(
+          PNPM,
+          [
+            'install',
+            FLAG_SILENT,
+            '--config.confirmModulesPurge=false',
+            '--no-frozen-lockfile',
+          ],
+          {
+            cwd: pnpm9FixtureDir,
+            stdio: 'ignore',
+          },
+        )
+      } catch {}
     })
 
     afterEach(async () => {
