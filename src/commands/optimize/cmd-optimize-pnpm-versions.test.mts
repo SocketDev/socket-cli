@@ -28,10 +28,12 @@ describe('socket optimize - pnpm versions', { timeout: 60_000 }, async () => {
 
     beforeEach(async () => {
       // Reset fixtures to their committed state (package.json and pnpm-lock.yaml).
-      await spawn('git', ['checkout', 'HEAD', '--', '.'], {
-        cwd: pnpm8FixtureDir,
-        stdio: 'ignore',
-      })
+      try {
+        await spawn('git', ['checkout', 'HEAD', '--', '.'], {
+          cwd: pnpm8FixtureDir,
+          stdio: 'ignore',
+        })
+      } catch {}
       // Ensure pnpm v8 is installed in the fixture.
       // Skip if pnpm is not available globally (e.g., Windows CI).
       try {
@@ -53,10 +55,12 @@ describe('socket optimize - pnpm versions', { timeout: 60_000 }, async () => {
 
     afterEach(async () => {
       // Reset fixtures to their committed state after each test.
-      await spawn('git', ['checkout', 'HEAD', '--', '.'], {
-        cwd: pnpm8FixtureDir,
-        stdio: 'ignore',
-      })
+      try {
+        await spawn('git', ['checkout', 'HEAD', '--', '.'], {
+          cwd: pnpm8FixtureDir,
+          stdio: 'ignore',
+        })
+      } catch {}
     })
 
     it(
@@ -158,10 +162,12 @@ describe('socket optimize - pnpm versions', { timeout: 60_000 }, async () => {
 
     beforeEach(async () => {
       // Reset fixtures to their committed state (package.json and pnpm-lock.yaml).
-      await spawn('git', ['checkout', 'HEAD', '--', '.'], {
-        cwd: pnpm9FixtureDir,
-        stdio: 'ignore',
-      })
+      try {
+        await spawn('git', ['checkout', 'HEAD', '--', '.'], {
+          cwd: pnpm9FixtureDir,
+          stdio: 'ignore',
+        })
+      } catch {}
       // Ensure pnpm v9 is installed in the fixture.
       // Skip if pnpm is not available globally (e.g., Windows CI).
       try {
@@ -183,10 +189,12 @@ describe('socket optimize - pnpm versions', { timeout: 60_000 }, async () => {
 
     afterEach(async () => {
       // Reset fixtures to their committed state after each test.
-      await spawn('git', ['checkout', 'HEAD', '--', '.'], {
-        cwd: pnpm9FixtureDir,
-        stdio: 'ignore',
-      })
+      try {
+        await spawn('git', ['checkout', 'HEAD', '--', '.'], {
+          cwd: pnpm9FixtureDir,
+          stdio: 'ignore',
+        })
+      } catch {}
     })
 
     it(
