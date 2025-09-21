@@ -15,6 +15,10 @@ on:
           - '0'
           - '1'
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   fix:
     uses: SocketDev/socket-registry/.github/workflows/socket-auto-pr.yml@main
