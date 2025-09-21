@@ -179,7 +179,7 @@ describe('socket fix', async () => {
                                     Can be provided as comma separated values or as multiple flags
             --json              Output as JSON
             --limit             The number of fixes to attempt at a time (default 10)
-            --markdown          Output as markdown
+            --markdown          Output as Markdown
             --no-apply-fixes    Compute fixes only, do not apply them. Logs what upgrades would be applied. If combined with --output-file, the output file will contain the upgrades that would be applied.
             --output-file       Path to store upgrades as a JSON file at this path.
             --range-style       Define how dependency version ranges are updated in package.json (default 'preserve').
