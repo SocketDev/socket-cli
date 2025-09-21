@@ -17,7 +17,7 @@ const require = createRequire(import.meta.url)
 
 export const CMD_NAME = YARN
 
-const description = 'Run yarn with the Socket wrapper'
+const description = 'Wraps yarn with Socket security scanning'
 
 const hidden = true
 

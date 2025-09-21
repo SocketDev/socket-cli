@@ -27,13 +27,13 @@ describe('socket manifest conda', async () => {
       })
       expect(stdout).toMatchInlineSnapshot(
         `
-        "[beta] Convert a Conda ${ENVIRONMENT_YML} file to a python ${REQUIREMENTS_TXT}
+        "[beta] Convert a Conda environment.yml file to a python requirements.txt
 
           Usage
             $ socket manifest conda [options] [CWD=.]
 
           Warning: While we don't support Conda necessarily, this tool extracts the pip
-                   block from an ${ENVIRONMENT_YML} and outputs it as a ${REQUIREMENTS_TXT}
+                   block from an environment.yml and outputs it as a requirements.txt
                    which you can scan as if it were a PyPI package.
 
           USE AT YOUR OWN RISK
@@ -42,18 +42,18 @@ describe('socket manifest conda', async () => {
                 contents of a file to have it processed.
 
           Options
-            --file              Input file name (by default for Conda this is "${ENVIRONMENT_YML}"), relative to cwd
-            --json              Output result as json
-            --markdown          Output result as markdown
+            --file              Input file name (by default for Conda this is "environment.yml"), relative to cwd
+            --json              Output as JSON
+            --markdown          Output as Markdown
             --out               Output path (relative to cwd)
             --stdin             Read the input from stdin (supersedes --file)
-            --stdout            Print resulting ${REQUIREMENTS_TXT} to stdout (supersedes --out)
+            --stdout            Print resulting requirements.txt to stdout (supersedes --out)
             --verbose           Print debug messages
 
           Examples
 
             $ socket manifest conda
-            $ socket manifest conda ./project/foo --file ${ENVIRONMENT_YAML}"
+            $ socket manifest conda ./project/foo --file environment.yaml"
       `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`

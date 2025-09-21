@@ -41,8 +41,8 @@ describe('socket scan create', async () => {
             --cwd               working directory, defaults to process.cwd()
             --default-branch    Set the default branch of the repository to the branch of this full-scan. Should only need to be done once, for example for the "main" or "master" branch.
             --interactive       Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.
-            --json              Output result as json
-            --markdown          Output result as markdown
+            --json              Output as JSON
+            --markdown          Output as Markdown
             --org               Force override the organization slug, overrides the default org from config
             --pull-request      Pull request number
             --reach             Run tier 1 full application reachability analysis

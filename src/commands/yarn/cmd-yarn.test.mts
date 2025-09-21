@@ -19,7 +19,7 @@ describe('socket yarn', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-        "Run yarn with the Socket wrapper
+        "Wraps yarn with Socket security scanning
 
           Usage
             $ socket yarn ...

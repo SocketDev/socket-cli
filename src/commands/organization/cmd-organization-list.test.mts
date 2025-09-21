@@ -28,8 +28,8 @@ describe('socket organization list', async () => {
             - Quota: 1 unit
 
           Options
-            --json              Output result as json
-            --markdown          Output result as markdown
+            --json              Output as JSON
+            --markdown          Output as Markdown
 
           Examples
             $ socket organization list

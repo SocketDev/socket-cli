@@ -30,7 +30,10 @@ describe('socket root command', async () => {
             socket login                Setup Socket CLI with an API token and defaults
             socket scan create          Create a new Socket scan and report
             socket npm/lodash@4.17.21   Request the Socket score of a package
-            socket ci                   Shorthand for \`socket scan create --report --no-interactive\`
+            socket fix                  Fix CVEs in dependencies
+            socket optimize             Optimize dependencies with @socketregistry overrides
+            socket cdxgen               Run cdxgen for SBOM generation
+            socket ci                   Alias for \`socket scan create --report\` (creates report and exits with error if unhealthy)
 
           Socket API
             analytics                   Look up analytics data
@@ -42,11 +45,9 @@ describe('socket root command', async () => {
             threat-feed                 [Beta] View the threat-feed
 
           Local tools
-            fix                         Update dependencies with "fixable" Socket alerts
             manifest                    Generate a dependency manifest for certain ecosystems
-            npm                         Run npm with the Socket wrapper
-            npx                         Run npx with the Socket wrapper
-            optimize                    Optimize dependencies with @socketregistry overrides
+            npm                         Wraps npm with Socket security scanning
+            npx                         Wraps npx with Socket security scanning
             raw-npm                     Run npm without the Socket wrapper
             raw-npx                     Run npx without the Socket wrapper
 
@@ -63,9 +64,9 @@ describe('socket root command', async () => {
 
             --compact-header            Use compact single-line header format (auto-enabled in CI)
             --config                    Override the local config with this JSON
-            --dry-run                   Do input validation for a command and exit 0 when input is ok
-            --help                      Print this help
-            --help-full                 Print full help including environment variables
+            --dry-run                   Run without uploading
+            --help                      Show help
+            --help-full                 Show full help including environment variables
             --no-banner                 Hide the Socket banner
             --no-spinner                Hide the console spinner
             --version                   Print the app version
