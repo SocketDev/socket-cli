@@ -12,5 +12,5 @@ permissions:
   contents: read
 
 jobs:
-  lint:
+  lint-check:
     uses: SocketDev/socket-registry/.github/workflows/lint.yml@main
