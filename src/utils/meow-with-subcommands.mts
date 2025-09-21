@@ -174,9 +174,9 @@ function getAsciiHeader(
       : `v${fullVersion}`
 
   const nodeVersion = redacting ? REDACTED : process.version
-  const showNodeVersion = isDebug()
+  const showNodeVersion = !redacting && isDebug()
   const defaultOrg = getConfigValueOrUndef(CONFIG_KEY_DEFAULT_ORG)
-  const readOnlyConfig = isConfigFromFlag() ? '*' : '.'
+  const configFromFlagDot = isConfigFromFlag() ? '*' : '.'
 
   // Token display with origin indicator.
   const tokenPrefix = getVisibleTokenPrefix()
@@ -218,8 +218,8 @@ function getAsciiHeader(
   //       portability and paste-ability. "simple" ascii chars just work.
   const body = `
    _____         _       _        /---------------
-  |   __|___ ___| |_ ___| |_      | ${socketDevLink()} CLI: ${cliVersion}
-  |__   | ${readOnlyConfig} |  _| '_| -_|  _|     | ${showNodeVersion ? `Node: ${nodeVersion}, ` : ''}token: ${shownToken}, ${orgPart}
+  |   __|___ ___| |_ ___| |_      | CLI: ${cliVersion}
+  |__   | ${configFromFlagDot} |  _| '_| -_|  _|     | ${showNodeVersion ? `Node: ${nodeVersion}, ` : ''}token: ${shownToken}, ${orgPart}
   |_____|___|___|_,_|___|_|.dev   | Command: \`${command}\`, cwd: ${relCwd}
   `.trim()
   // Note: logger will auto-append a newline.
