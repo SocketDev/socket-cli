@@ -58,11 +58,15 @@ export function runAgentInstall(
   const skipNodeHardenFlags = isPnpm && pkgEnvDetails.agentVersion.major < 11
   // In CI mode, pnpm uses --frozen-lockfile by default, which prevents lockfile updates.
   // We need to explicitly disable it when updating the lockfile with overrides.
-  const isCi = constants.ENV['CI']
-  const installArgs =
-    isPnpm && isCi
-      ? ['install', '--no-frozen-lockfile', ...args]
-      : ['install', ...args]
+  // Also add --config.confirmModulesPurge=false to avoid interactive prompts.
+  const installArgs = isPnpm
+    ? [
+        'install',
+        '--config.confirmModulesPurge=false',
+        '--no-frozen-lockfile',
+        ...args,
+      ]
+    : ['install', ...args]
 
   return spawn(agentExecPath, installArgs, {
     cwd: pkgPath,
@@ -76,6 +80,8 @@ export function runAgentInstall(
     env: {
       ...process.env,
       ...constants.processEnv,
+      // Set CI for pnpm to ensure non-interactive mode and consistent behavior.
+      ...(isPnpm ? { CI: '1' } : {}),
       NODE_OPTIONS: cmdFlagsToString([
         ...(skipNodeHardenFlags ? [] : constants.nodeHardenFlags),
         ...constants.nodeNoWarningsFlags,
