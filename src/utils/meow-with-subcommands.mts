@@ -25,7 +25,7 @@ import {
 } from './config.mts'
 import { isDebug } from './debug.mts'
 import { getFlagListOutput, getHelpListOutput } from './output-formatting.mts'
-import { socketDevLink, socketPackageLink } from './terminal-link.mts'
+import { socketPackageLink } from './terminal-link.mts'
 import constants, {
   API_V0_URL,
   CONFIG_KEY_API_TOKEN,

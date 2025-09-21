@@ -4,7 +4,7 @@
   "description": "Test fixture for optimize command with pnpm v8",
   "main": "index.js",
   "dependencies": {
-    "lodash": "4.17.20",
+    "abab": "2.0.6",
     "pnpm": "^8.15.9"
   },
   "devDependencies": {

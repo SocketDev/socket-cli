@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 
 import { isDebug } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
-import { spawn, spawnSync } from '@socketsecurity/registry/lib/spawn'
+import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import { testPath } from '../../../test/utils.mts'
 import constants, {
@@ -50,7 +50,7 @@ if (!npmDirs.length) {
         },
         async () => {
           // Ensure npm is installed in the fixture.
-          spawnSync('npm', ['install', ...(useDebug ? [] : [FLAG_SILENT])], {
+          await spawn('npm', ['install', ...(useDebug ? [] : [FLAG_SILENT])], {
             cwd: npmPath,
             stdio: useDebug ? 'inherit' : 'ignore',
           })
