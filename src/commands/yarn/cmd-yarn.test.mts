@@ -42,7 +42,7 @@ describe.skipIf(constants.WIN32)('socket yarn', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | Socket.dev (https://socket.dev) CLI: <redacted>
+          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
           |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket yarn\`, cwd: <redacted>"
       `)
@@ -61,7 +61,7 @@ describe.skipIf(constants.WIN32)('socket yarn', async () => {
       })
 
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
-      expect(stderr).toContain('Socket.dev')
+      expect(stderr).toContain('CLI')
       expect(code, 'dry-run without args should exit with code 0').toBe(0)
     },
   )

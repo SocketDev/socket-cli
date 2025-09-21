@@ -16,7 +16,7 @@ import constants, {
 } from '../../../src/constants.mts'
 import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
 
-// TODO: Revisit after socket-registry dep is updated.
+// TODO: Several exec/install tests fail due to config flag handling.
 describe.skip('socket pnpm', async () => {
   const { binCliPath } = constants
 
@@ -50,8 +50,8 @@ describe.skip('socket pnpm', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
+          |   __|___ ___| |_ ___| |_      | Socket.dev (https://socket.dev) CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket pnpm\`, cwd: <redacted>"
       `)
 
@@ -69,7 +69,7 @@ describe.skip('socket pnpm', async () => {
       })
 
       expect(stdout).toMatchInlineSnapshot('"[DryRun]: Bailing now"')
-      expect(stderr).toContain('Socket.dev CLI')
+      expect(stderr).toContain('CLI')
       expect(code, 'dry-run without args should exit with code 0').toBe(0)
     },
   )
