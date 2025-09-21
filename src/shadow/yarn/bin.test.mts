@@ -5,14 +5,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import shadowYarn from './bin.mts'
 import { FLAG_DRY_RUN } from '../../constants.mts'
 
-// Mock fs module
-vi.mock('node:fs', async importOriginal => {
+// Mock readPackageJson from registry
+const mockReadPackageJson = vi.hoisted(() => vi.fn())
+
+vi.mock('@socketsecurity/registry/lib/packages', async importOriginal => {
   const actual = (await importOriginal()) as Record<string, any>
   return {
     ...actual,
-    promises: {
-      readFile: mockFsReadFile,
-    },
+    readPackageJson: mockReadPackageJson,
   }
 })
 
@@ -21,7 +21,6 @@ const mockInstallYarnLinks = vi.hoisted(() => vi.fn())
 const mockSpawn = vi.hoisted(() => vi.fn())
 const mockGetAlertsMapFromPurls = vi.hoisted(() => vi.fn())
 const mockLogAlertsMap = vi.hoisted(() => vi.fn())
-const mockFsReadFile = vi.hoisted(() => vi.fn())
 
 vi.mock('../../utils/alerts-map.mts', () => ({
   getAlertsMapFromPurls: mockGetAlertsMapFromPurls,
@@ -85,7 +84,7 @@ describe('shadowYarn', () => {
       ),
     })
     mockGetAlertsMapFromPurls.mockResolvedValue(new Map())
-    mockFsReadFile.mockResolvedValue('{"dependencies": {}}')
+    mockReadPackageJson.mockResolvedValue({ dependencies: {} })
 
     // Mock process.env
     process.env.SOCKET_CLI_ACCEPT_RISKS = ''
@@ -167,17 +166,15 @@ describe('shadowYarn', () => {
   })
 
   it('should scan dependencies from package.json for install command', async () => {
-    mockFsReadFile.mockResolvedValue(
-      JSON.stringify({
-        dependencies: {
-          lodash: '^4.17.21',
-          axios: '~1.0.0',
-        },
-        devDependencies: {
-          '@types/node': '^20.0.0',
-        },
-      }),
-    )
+    mockReadPackageJson.mockResolvedValue({
+      dependencies: {
+        lodash: '^4.17.21',
+        axios: '~1.0.0',
+      },
+      devDependencies: {
+        '@types/node': '^20.0.0',
+      },
+    })
 
     await shadowYarn(['install'])
 
@@ -252,13 +249,11 @@ describe('shadowYarn', () => {
   })
 
   it('should handle upgrade command by scanning package.json', async () => {
-    mockFsReadFile.mockResolvedValue(
-      JSON.stringify({
-        dependencies: {
-          react: '^18.0.0',
-        },
-      }),
-    )
+    mockReadPackageJson.mockResolvedValue({
+      dependencies: {
+        react: '^18.0.0',
+      },
+    })
 
     await shadowYarn(['upgrade'])
 
@@ -271,7 +266,7 @@ describe('shadowYarn', () => {
   })
 
   it('should continue on package.json read error', async () => {
-    mockFsReadFile.mockRejectedValue(new Error('File not found'))
+    mockReadPackageJson.mockRejectedValue(new Error('File not found'))
 
     await shadowYarn(['install'])
 
