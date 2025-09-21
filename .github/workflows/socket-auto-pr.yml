@@ -1,4 +1,4 @@
-name: Socket Fix
+name: Socket Fix Auto Pull Request
 
 on:
   schedule:
