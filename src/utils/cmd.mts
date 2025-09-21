@@ -30,6 +30,19 @@ const configFlags = new Set([FLAG_CONFIG])
 const helpFlags = new Set([FLAG_HELP, '-h'])
 
 /**
+ * Convert flag values to array format for processing.
+ */
+export function cmdFlagValueToArray(value: any): string[] {
+  if (typeof value === 'string') {
+    return value.trim().split(/, */).filter(Boolean)
+  }
+  if (Array.isArray(value)) {
+    return value.flatMap(cmdFlagValueToArray)
+  }
+  return []
+}
+
+/**
  * Convert command arguments to a properly formatted string representation.
  */
 export function cmdFlagsToString(args: string[] | readonly string[]): string {
@@ -51,19 +64,6 @@ export function cmdFlagsToString(args: string[] | readonly string[]): string {
     }
   }
   return result.join(' ')
-}
-
-/**
- * Convert flag values to array format for processing.
- */
-export function cmdFlagValueToArray(value: any): string[] {
-  if (typeof value === 'string') {
-    return value.trim().split(/, */).filter(Boolean)
-  }
-  if (Array.isArray(value)) {
-    return value.flatMap(cmdFlagValueToArray)
-  }
-  return []
 }
 
 /**
@@ -165,6 +165,15 @@ export function getConfigFlag(
 }
 
 /**
+ * Check if command is an add command (adds new dependencies).
+ * Supported by: pnpm, yarn.
+ * Note: npm uses 'install' with package names instead of 'add'.
+ */
+export function isAddCommand(command: string): boolean {
+  return command === 'add'
+}
+
+/**
  * Check if argument is a config flag.
  */
 export function isConfigFlag(cmdArg: string): boolean {
@@ -176,4 +185,38 @@ export function isConfigFlag(cmdArg: string): boolean {
  */
 export function isHelpFlag(cmdArg: string): boolean {
   return helpFlags.has(cmdArg)
+}
+
+/**
+ * Check if npm command requires lockfile scanning.
+ * npm uses: install, i, update
+ */
+export function isNpmLockfileScanCommand(command: string): boolean {
+  return command === 'install' || command === 'i' || command === 'update'
+}
+
+/**
+ * Check if pnpm command requires lockfile scanning.
+ * pnpm uses: install, i, update, up
+ */
+export function isPnpmLockfileScanCommand(command: string): boolean {
+  return (
+    command === 'install' ||
+    command === 'i' ||
+    command === 'update' ||
+    command === 'up'
+  )
+}
+
+/**
+ * Check if yarn command requires lockfile scanning.
+ * yarn uses: install, up, upgrade, upgrade-interactive
+ */
+export function isYarnLockfileScanCommand(command: string): boolean {
+  return (
+    command === 'install' ||
+    command === 'up' ||
+    command === 'upgrade' ||
+    command === 'upgrade-interactive'
+  )
 }

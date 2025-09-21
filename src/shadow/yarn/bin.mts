@@ -1,3 +1,5 @@
+import { fileURLToPath } from 'node:url'
+
 import { debugFn } from '@socketsecurity/registry/lib/debug'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
@@ -40,25 +42,29 @@ export default async function shadowYarnBin(
 ): Promise<ShadowYarnResult> {
   const opts = { __proto__: null, ...options } as ShadowYarnOptions
   const { env: spawnEnv, ipc, ...spawnOpts } = opts
-  const { spinner } = opts
 
-  const wasSpinning = !!spinner?.isSpinning
-
-  spinner?.start()
+  let { cwd = process.cwd() } = opts
+  if (cwd instanceof URL) {
+    cwd = fileURLToPath(cwd)
+  }
 
   const terminatorPos = args.indexOf('--')
   const rawYarnArgs = terminatorPos === -1 ? args : args.slice(0, terminatorPos)
-  const otherArgs = terminatorPos === -1 ? [] : args.slice(terminatorPos)
+
+  const { spinner } = opts
+  const wasSpinning = !!spinner?.isSpinning
+
+  spinner?.start()
 
   // Check for package scanning.
   const command = rawYarnArgs[0]
   const scanResult = await scanPackagesAndLogAlerts({
     acceptRisks: !!constants.ENV.SOCKET_CLI_ACCEPT_RISKS,
     command,
-    cwd: process.cwd(),
+    cwd,
     dlxCommands: DLX_COMMANDS,
     installCommands: INSTALL_COMMANDS,
-    managerName: 'yarn',
+    managerName: YARN,
     rawArgs: rawYarnArgs,
     spinner,
     viewAllRisks: !!constants.ENV.SOCKET_CLI_VIEW_ALL_RISKS,
@@ -73,8 +79,7 @@ export default async function shadowYarnBin(
 
   const realYarnPath = await installYarnLinks(constants.shadowBinPath)
 
-  spinner?.stop()
-
+  const otherArgs = terminatorPos === -1 ? [] : args.slice(terminatorPos)
   const suffixArgs = [...rawYarnArgs, ...otherArgs]
 
   debugFn(
@@ -94,6 +99,7 @@ export default async function shadowYarnBin(
     suffixArgs,
     {
       ...spawnOpts,
+      cwd,
       env: {
         ...process.env,
         ...spawnEnv,
