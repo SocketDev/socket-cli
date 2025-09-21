@@ -27,8 +27,8 @@ describe('socket package shallow', async () => {
             - Permissions: packages:list
 
           Options
-            --json              Output result as json
-            --markdown          Output result as markdown
+            --json              Output as JSON
+            --markdown          Output as Markdown
 
           Show scoring details for one or more packages purely based on their own package.
           This means that any dependency scores are not reflected by the score. You can

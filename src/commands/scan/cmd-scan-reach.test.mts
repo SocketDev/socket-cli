@@ -31,8 +31,8 @@ describe('socket scan reach', async () => {
 
           Options
             --cwd               working directory, defaults to process.cwd()
-            --json              Output result as json
-            --markdown          Output result as markdown
+            --json              Output as JSON
+            --markdown          Output as Markdown
             --org               Force override the organization slug, overrides the default org from config
 
           Reachability Options

@@ -35,8 +35,8 @@ describe('socket analytics', async () => {
 
           Options
             --file              Path to store result, only valid with --json/--markdown
-            --json              Output result as json
-            --markdown          Output result as markdown
+            --json              Output as JSON
+            --markdown          Output as Markdown
 
           Examples
             $ socket analytics org 7

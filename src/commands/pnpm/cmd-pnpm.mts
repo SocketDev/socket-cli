@@ -17,7 +17,7 @@ const require = createRequire(import.meta.url)
 
 export const CMD_NAME = PNPM
 
-const description = 'Run pnpm with the Socket wrapper'
+const description = 'Wraps pnpm with Socket security scanning'
 
 const hidden = true
 

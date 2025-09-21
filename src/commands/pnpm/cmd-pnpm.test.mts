@@ -30,7 +30,7 @@ describe('socket pnpm', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-        "Run pnpm with the Socket wrapper
+        "Wraps pnpm with Socket security scanning
 
           Usage
             $ socket pnpm ...
