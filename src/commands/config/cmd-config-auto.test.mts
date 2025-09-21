@@ -23,8 +23,8 @@ describe('socket config auto', async () => {
             $ socket config auto [options] KEY
 
           Options
-            --json              Output result as json
-            --markdown          Output result as markdown
+            --json              Output as JSON
+            --markdown          Output as Markdown
 
           Attempt to automatically discover the correct value for a given config KEY.
 

@@ -16,7 +16,7 @@ const require = createRequire(import.meta.url)
 
 const CMD_NAME = NPX
 
-const description = 'Run npx with the Socket wrapper'
+const description = 'Wraps npx with Socket security scanning'
 
 const hidden = false
 

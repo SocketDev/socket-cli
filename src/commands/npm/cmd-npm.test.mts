@@ -19,7 +19,7 @@ describe('socket npm', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-        "Run npm with the Socket wrapper
+        "Wraps npm with Socket security scanning
 
           Usage
             $ socket npm ...

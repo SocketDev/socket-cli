@@ -17,7 +17,7 @@ describe('socket ci', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-        "Shorthand for \`socket scan create --report --no-interactive\`
+        "Alias for \`socket scan create --report\` (creates report and exits with error if unhealthy)
 
           Usage
             $ socket ci [options]

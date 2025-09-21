@@ -160,7 +160,7 @@ describe('socket fix', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-        "Update dependencies with "fixable" Socket alerts
+        "Fix CVEs in dependencies
 
           Usage
             $ socket fix [options] [CWD=.]
@@ -177,9 +177,9 @@ describe('socket fix', async () => {
                                     - CVE IDs (https://cve.mitre.org/cve/identifiers/) (e.g., CVE-2025-1234) - automatically converted to GHSA
                                     - PURLs (https://github.com/package-url/purl-spec) (e.g., pkg:npm/package@1.0.0) - automatically converted to GHSA
                                     Can be provided as comma separated values or as multiple flags
-            --json              Output result as json
+            --json              Output as JSON
             --limit             The number of fixes to attempt at a time (default 10)
-            --markdown          Output result as markdown
+            --markdown          Output as markdown
             --no-apply-fixes    Compute fixes only, do not apply them. Logs what upgrades would be applied. If combined with --output-file, the output file will contain the upgrades that would be applied.
             --output-file       Path to store upgrades as a JSON file at this path.
             --range-style       Define how dependency version ranges are updated in package.json (default 'preserve').
@@ -826,9 +826,7 @@ describe('socket fix', async () => {
       'should prioritize help over other flags',
       async cmd => {
         const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-        expect(stdout).toContain(
-          'Update dependencies with "fixable" Socket alerts',
-        )
+        expect(stdout).toContain('Fix CVEs in dependencies')
         expect(code).toBe(0)
       },
     )

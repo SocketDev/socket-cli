@@ -220,7 +220,7 @@ const yargsConfig = {
 
 const config: CliCommandConfig = {
   commandName: 'cdxgen',
-  description: 'Create an SBOM with CycloneDX generator (cdxgen)',
+  description: 'Run cdxgen for SBOM generation',
   hidden: false,
   // Stub out flags and help.
   // TODO: Convert yargs to meow.

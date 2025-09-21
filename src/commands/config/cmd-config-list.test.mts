@@ -26,8 +26,8 @@ describe('socket config get', async () => {
 
           Options
             --full              Show full tokens in plaintext (unsafe)
-            --json              Output result as json
-            --markdown          Output result as markdown
+            --json              Output as JSON
+            --markdown          Output as Markdown
 
           Examples
             $ socket config list"

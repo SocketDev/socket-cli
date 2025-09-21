@@ -22,7 +22,7 @@ const require = createRequire(import.meta.url)
 
 export const CMD_NAME = NPM
 
-const description = 'Run npm with the Socket wrapper'
+const description = 'Wraps npm with Socket security scanning'
 
 const hidden = false
 

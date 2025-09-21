@@ -33,8 +33,8 @@ describe('socket repository list', async () => {
             --all               By default view shows the last n repos. This flag allows you to fetch the entire list. Will ignore --page and --per-page.
             --direction         Direction option
             --interactive       Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.
-            --json              Output result as json
-            --markdown          Output result as markdown
+            --json              Output as JSON
+            --markdown          Output as Markdown
             --org               Force override the organization slug, overrides the default org from config
             --page              Page number
             --per-page          Number of results per page

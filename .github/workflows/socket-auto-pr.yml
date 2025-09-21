@@ -1,4 +1,4 @@
-name: Socket Fix
+name: Socket Fix Auto Pull Request
 
 on:
   schedule:
@@ -15,8 +15,12 @@ on:
           - '0'
           - '1'
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
-  fix:
+  socket-auto-pr:
     uses: SocketDev/socket-registry/.github/workflows/socket-auto-pr.yml@main
     with:
       debug: ${{ inputs.debug }}
