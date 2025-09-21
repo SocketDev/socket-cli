@@ -72,7 +72,9 @@ describe('socket manifest cdxgen', async () => {
           // Check that help output contains expected cdxgen header.
           // This validates that cdxgen is properly forwarding the --help flag.
           expect(cdxgenOutput).toContain('CycloneDX Generator <redacted>')
-          expect(cdxgenOutput).toContain('Runtime: Node.js, Version: <redacted>')
+          expect(cdxgenOutput).toContain(
+            'Runtime: Node.js, Version: <redacted>',
+          )
         }
 
         // Note: Socket CLI banner may appear in stderr while cdxgen output is in stdout.
