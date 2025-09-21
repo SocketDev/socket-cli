@@ -20,7 +20,7 @@ permissions:
   pull-requests: write
 
 jobs:
-  fix:
+  socket-auto-pr:
     uses: SocketDev/socket-registry/.github/workflows/socket-auto-pr.yml@main
     with:
       debug: ${{ inputs.debug }}
