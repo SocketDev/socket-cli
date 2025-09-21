@@ -9,7 +9,7 @@ import { isDebug } from '@socketsecurity/registry/lib/debug'
 import { getOwn, isObject } from '@socketsecurity/registry/lib/objects'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
-import constants, { NPM } from '../../constants.mts'
+import constants, { FLAG_LOGLEVEL, NPM } from '../../constants.mts'
 import { getNpmBinPath } from '../../utils/npm-paths.mts'
 
 import type { SpawnResult } from '@socketsecurity/registry/lib/spawn'
@@ -43,7 +43,7 @@ export function shadowNpmInstall(
   const otherArgs = terminatorPos === -1 ? [] : args.slice(terminatorPos)
   const progressArg = rawBinArgs.findLast(isNpmProgressFlag) !== '--no-progress'
   const isSilent = !useDebug && !binArgs.some(isNpmLoglevelFlag)
-  const logLevelArgs = isSilent ? ['--loglevel', 'silent'] : []
+  const logLevelArgs = isSilent ? [FLAG_LOGLEVEL, 'silent'] : []
   const useIpc = isObject(ipc)
 
   // Include 'ipc' in the spawnOpts.stdio when an options.ipc object is provided.
@@ -79,7 +79,7 @@ export function shadowNpmInstall(
       '--no-fund',
       // Add '--no-progress' to fix input being swallowed by the npm spinner.
       '--no-progress',
-      // Add '--loglevel=silent' if a loglevel flag is not provided and the
+      // Add 'FLAG_LOGLEVEL silent' if a loglevel flag is not provided and the
       // SOCKET_CLI_DEBUG environment variable is not truthy.
       ...logLevelArgs,
       ...binArgs,

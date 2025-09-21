@@ -12,7 +12,11 @@ import constants, {
   PNPM_LOCK_YAML,
 } from '../../constants.mts'
 import { getAlertsMapFromPnpmLockfile } from '../../utils/alerts-map.mts'
-import { cmdFlagsToString } from '../../utils/cmd.mts'
+import {
+  cmdFlagsToString,
+  isAddCommand,
+  isPnpmLockfileScanCommand,
+} from '../../utils/cmd.mts'
 import { parsePnpmLockfile, readPnpmLockfile } from '../../utils/pnpm.mts'
 import { getPublicApiToken } from '../../utils/sdk.mts'
 import { installPnpmLinks } from '../../utils/shadow-links.mts'
@@ -54,11 +58,6 @@ export default async function shadowPnpmBin(
 ): Promise<ShadowPnpmResult> {
   const opts = { __proto__: null, ...options } as ShadowPnpmOptions
   const { env: spawnEnv, ipc, ...spawnOpts } = opts
-  const { spinner } = opts
-
-  const wasSpinning = !!spinner?.isSpinning
-
-  spinner?.start()
 
   let { cwd = process.cwd() } = opts
   if (cwd instanceof URL) {
@@ -67,7 +66,9 @@ export default async function shadowPnpmBin(
 
   const terminatorPos = args.indexOf('--')
   const rawPnpmArgs = terminatorPos === -1 ? args : args.slice(0, terminatorPos)
-  const otherArgs = terminatorPos === -1 ? [] : args.slice(terminatorPos)
+
+  const { spinner } = opts
+  const wasSpinning = !!spinner?.isSpinning
 
   // Check if this is a command that needs security scanning.
   const command = rawPnpmArgs[0]
@@ -75,19 +76,21 @@ export default async function shadowPnpmBin(
   const isInstallCommand = command && INSTALL_COMMANDS.has(command)
   const needsScanning = isDlxCommand || isInstallCommand
 
+  spinner?.start()
+
   if (needsScanning && !rawPnpmArgs.includes(FLAG_DRY_RUN)) {
     const acceptRisks = !!constants.ENV.SOCKET_CLI_ACCEPT_RISKS
     const viewAllRisks = !!constants.ENV.SOCKET_CLI_VIEW_ALL_RISKS
 
     // Handle add and dlx commands with shared utility.
-    if (command === 'add' || isDlxCommand) {
+    if (isDlxCommand || isAddCommand(command)) {
       const scanResult = await scanPackagesAndLogAlerts({
         acceptRisks,
         command,
         cwd,
         dlxCommands: DLX_COMMANDS,
         installCommands: INSTALL_COMMANDS,
-        managerName: 'pnpm',
+        managerName: PNPM,
         rawArgs: rawPnpmArgs,
         spinner,
         viewAllRisks,
@@ -99,7 +102,7 @@ export default async function shadowPnpmBin(
         // This line is never reached in production, but helps tests.
         throw new Error('process.exit called')
       }
-    } else if (['install', 'i', 'update', 'up'].includes(command)) {
+    } else if (isPnpmLockfileScanCommand(command)) {
       // For install/update, scan all dependencies from pnpm-lock.yaml
       const pnpmLockPath = path.join(cwd, PNPM_LOCK_YAML)
       if (existsSync(pnpmLockPath)) {
@@ -130,7 +133,7 @@ export default async function shadowPnpmBin(
                   output: process.stderr,
                 })
 
-                const errorMessage = `Socket pnpm exiting due to risks.${
+                const errorMessage = `Socket ${PNPM} exiting due to risks.${
                   viewAllRisks
                     ? ''
                     : `\nView all risks - Rerun with environment variable ${constants.SOCKET_CLI_VIEW_ALL_RISKS}=1.`
@@ -155,13 +158,13 @@ export default async function shadowPnpmBin(
             }
           }
         } catch (e) {
-          debugFn('error', 'PNPM lockfile scanning failed')
+          debugFn('error', `${PNPM} lockfile scanning failed`)
           debugDir('error', e)
         }
       } else {
         debugFn(
           'notice',
-          'skip: no pnpm-lock.yaml found, skipping bulk install scanning',
+          `skip: no ${PNPM_LOCK_YAML} found, skipping bulk install scanning`,
         )
       }
     }
@@ -171,8 +174,7 @@ export default async function shadowPnpmBin(
 
   const realPnpmPath = await installPnpmLinks(constants.shadowBinPath)
 
-  spinner?.stop()
-
+  const otherArgs = terminatorPos === -1 ? [] : args.slice(terminatorPos)
   const suffixArgs = [...rawPnpmArgs, ...otherArgs]
 
   debugFn(
@@ -192,6 +194,7 @@ export default async function shadowPnpmBin(
     suffixArgs,
     {
       ...spawnOpts,
+      cwd,
       env: {
         ...process.env,
         ...spawnEnv,
