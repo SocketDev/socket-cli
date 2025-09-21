@@ -43,12 +43,12 @@ async function run(
       pin: {
         type: 'boolean',
         default: false,
-        description: 'Pin overrides to their latest version',
+        description: 'Pin overrides to latest version',
       },
       prod: {
         type: 'boolean',
         default: false,
-        description: 'Only add overrides for production dependencies',
+        description: 'Add overrides for production dependencies only',
       },
     },
     help: (command, config) => `

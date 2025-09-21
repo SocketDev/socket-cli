@@ -31,8 +31,8 @@ describe('socket organization policy license', async () => {
 
           Options
             --interactive       Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.
-            --json              Output result as json
-            --markdown          Output result as markdown
+            --json              Output as JSON
+            --markdown          Output as Markdown
             --org               Force override the organization slug, overrides the default org from config
 
           Your API token will need the \`license-policy:read\` permission otherwise

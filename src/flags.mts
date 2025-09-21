@@ -1,7 +1,6 @@
 import os from 'node:os'
 
 import meow from 'meow'
-import terminalLink from 'terminal-link'
 
 import constants from './constants.mts'
 
@@ -174,15 +173,14 @@ export const commonFlags: MeowFlags = {
   dryRun: {
     type: 'boolean',
     default: false,
-    description:
-      'Do input validation for a command and exit 0 when input is ok',
+    description: 'Run without uploading',
     // Only show in root command.
     hidden: true,
   },
   help: {
     type: 'boolean',
     default: false,
-    description: 'Print this help',
+    description: 'Show help',
     shortFlag: 'h',
     // Only show in root command.
     hidden: true,
@@ -190,7 +188,7 @@ export const commonFlags: MeowFlags = {
   helpFull: {
     type: 'boolean',
     default: false,
-    description: 'Print full help including environment variables',
+    description: 'Show full help including environment variables',
     // Only show in root command.
     hidden: true,
   },
@@ -199,7 +197,7 @@ export const commonFlags: MeowFlags = {
     get default() {
       return getMaxOldSpaceSizeFlag()
     },
-    description: `Set Node's V8 ${terminalLink('--max-old-space-size', 'https://nodejs.org/api/cli.html#--max-old-space-sizesize-in-mib')} option`,
+    description: 'Set Node.js memory limit',
     // Only show in root command in debug mode.
     hidden: true,
   },
@@ -208,7 +206,7 @@ export const commonFlags: MeowFlags = {
     get default() {
       return getMaxSemiSpaceSizeFlag()
     },
-    description: `Set Node's V8 ${terminalLink('--max-semi-space-size', 'https://nodejs.org/api/cli.html#--max-semi-space-sizesize-in-mib')} option`,
+    description: 'Set Node.js heap size',
     // Only show in root command in debug mode.
     hidden: true,
   },
@@ -225,13 +223,13 @@ export const outputFlags: MeowFlags = {
   json: {
     type: 'boolean',
     default: false,
-    description: 'Output result as json',
+    description: 'Output as JSON',
     shortFlag: 'j',
   },
   markdown: {
     type: 'boolean',
     default: false,
-    description: 'Output result as markdown',
+    description: 'Output as Markdown',
     shortFlag: 'm',
   },
 }

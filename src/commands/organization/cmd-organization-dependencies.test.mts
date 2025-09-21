@@ -26,9 +26,9 @@ describe('socket organization dependencies', async () => {
             - Quota: 1 unit
 
           Options
-            --json              Output result as json
+            --json              Output as JSON
             --limit             Maximum number of dependencies returned
-            --markdown          Output result as markdown
+            --markdown          Output as Markdown
             --offset            Page number
 
           Examples

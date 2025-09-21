@@ -27,8 +27,8 @@ describe('socket config get', async () => {
           config then the value will come from that override.
 
           Options
-            --json              Output result as json
-            --markdown          Output result as markdown
+            --json              Output as JSON
+            --markdown          Output as Markdown
 
           KEY is an enum. Valid keys:
 

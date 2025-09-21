@@ -124,8 +124,8 @@ describe('socket optimize', async () => {
             - Permissions: packages:list
 
           Options
-            --pin               Pin overrides to their latest version
-            --prod              Only add overrides for production dependencies
+            --pin               Pin overrides to latest version
+            --prod              Add overrides for production dependencies only
 
           Examples
             $ socket optimize
