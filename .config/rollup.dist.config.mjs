@@ -200,69 +200,48 @@ async function getSentryManifest() {
   return _sentryManifest
 }
 
-async function updatePackageJson() {
-  const editablePkgJson = await readPackageJson(constants.rootPath, {
-    editable: true,
-    normalize: true,
-  })
-  const bin = resetBin(editablePkgJson.content.bin)
-  const dependencies = resetDependencies(editablePkgJson.content.dependencies)
-  editablePkgJson.update({
-    name: SOCKET_CLI_PACKAGE_NAME,
-    description: SOCKET_DESCRIPTION,
-    bin,
-    dependencies: hasKeys(dependencies) ? dependencies : undefined,
-  })
+async function copyPublishFiles() {
+  // Determine which package.json to use based on build variant.
+  let packageJsonSource
   if (constants.ENV[INLINED_SOCKET_CLI_LEGACY_BUILD]) {
-    editablePkgJson.update({
-      name: SOCKET_CLI_LEGACY_PACKAGE_NAME,
-      bin: {
-        [SOCKET_CLI_BIN_NAME_ALIAS]: bin[SOCKET_CLI_BIN_NAME],
-        ...bin,
-      },
-    })
+    packageJsonSource = path.join(constants.rootPath, '.config/packages/package.cli-legacy.json')
   } else if (constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD]) {
-    editablePkgJson.update({
-      name: SOCKET_CLI_SENTRY_PACKAGE_NAME,
-      description: SOCKET_DESCRIPTION_WITH_SENTRY,
-      bin: {
-        [SOCKET_CLI_SENTRY_BIN_NAME_ALIAS]: bin[SOCKET_CLI_BIN_NAME],
-        [SOCKET_CLI_SENTRY_BIN_NAME]: bin[SOCKET_CLI_BIN_NAME],
-        [SOCKET_CLI_SENTRY_NPM_BIN_NAME]: bin[SOCKET_CLI_NPM_BIN_NAME],
-        [SOCKET_CLI_SENTRY_NPX_BIN_NAME]: bin[SOCKET_CLI_NPX_BIN_NAME],
-        [SOCKET_CLI_SENTRY_PNPM_BIN_NAME]: bin[SOCKET_CLI_PNPM_BIN_NAME],
-        [SOCKET_CLI_SENTRY_YARN_BIN_NAME]: bin[SOCKET_CLI_YARN_BIN_NAME],
-      },
-      dependencies: {
-        ...dependencies,
-        [SENTRY_NODE]: (await getSentryManifest()).version,
-      },
-    })
+    packageJsonSource = path.join(constants.rootPath, '.config/packages/package.cli-with-sentry.json')
+  } else {
+    packageJsonSource = path.join(constants.rootPath, '.config/packages/package.cli.json')
   }
-  await editablePkgJson.save()
-}
 
-async function updatePackageLockFile() {
-  const { rootPackageLockPath } = constants
-  if (!existsSync(rootPackageLockPath)) {
-    return
+  // Read the source package.json directly as JSON.
+  const sourcePkgJson = JSON.parse(await fs.readFile(packageJsonSource, 'utf8'))
+
+  // Write package.json to dist (version already set in package variant files).
+  const distPackageJsonPath = path.join(constants.distPath, 'package.json')
+  const distPkgJson = {
+    ...sourcePkgJson,
   }
-  try {
-    await spawn(
-      'pnpm',
-      [
-        'install',
-        '--frozen-lockfile=false',
-        '--config.confirmModulesPurge=false',
-      ],
-      {
-        cwd: constants.rootPath,
-        stdio: 'inherit',
-      },
-    )
-  } catch (e) {
-    console.warn('Failed to update pnpm lockfile:', e?.message)
-  }
+  await fs.writeFile(distPackageJsonPath, JSON.stringify(distPkgJson, null, 2) + '\n')
+
+  // Copy requirements.json and translations.json to dist.
+  const filesToCopy = ['requirements.json', 'translations.json']
+  await Promise.all(
+    filesToCopy.map(file =>
+      fs.copyFile(
+        path.join(constants.rootPath, file),
+        path.join(constants.distPath, file),
+      ),
+    ),
+  )
+
+  // Copy bin directory to dist.
+  const binDir = path.join(constants.rootPath, 'bin')
+  const distBinDir = path.join(constants.distPath, 'bin')
+  await fs.mkdir(distBinDir, { recursive: true })
+  const binFiles = await fs.readdir(binDir)
+  await Promise.all(
+    binFiles.map(file =>
+      fs.copyFile(path.join(binDir, file), path.join(distBinDir, file)),
+    ),
+  )
 }
 
 async function removeEmptyDirs(thePath) {
@@ -459,14 +438,12 @@ export default async () => {
             await Promise.all([
               copyInitGradle(),
               copyBashCompletion(),
-              updatePackageJson(),
+              copyPublishFiles(),
               // Remove dist/vendor.js.map file.
               trash([path.join(distPath, `${VENDOR}.js.map`)]),
             ])
             // Copy external packages AFTER other operations to avoid conflicts.
             await copyExternalPackages()
-            // Update package-lock.json AFTER package.json.
-            await updatePackageLockFile()
           },
         },
       ],
