@@ -524,7 +524,7 @@ export async function meowWithSubcommands(
   const lines = ['', 'Usage', `  $ ${name} <command>`]
   if (isRootCommand) {
     lines.push(
-      `  $ ${name} scan create${FLAG_JSON}`,
+      `  $ ${name} scan create ${FLAG_JSON}`,
       `  $ ${name} package score ${NPM} lodash ${FLAG_MARKDOWN}`,
     )
   }
