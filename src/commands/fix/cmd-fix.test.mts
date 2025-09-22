@@ -181,7 +181,7 @@ describe('socket fix', async () => {
             --json              Output result as json
             --limit             The number of fixes to attempt at a time (default 10)
             --markdown          Output result as markdown
-            --minimum-release-age  Minimum age required for package releases (e.g., 1h, 2d, 3w).
+            --minimum-release-age  Minimum age required for suggested upgrades (e.g., 1h, 2d, 3w).
             --output-file       Path to store upgrades as a JSON file at this path.
             --range-style       Define how dependency version ranges are updated in package.json (default 'preserve').
                                 Available styles:

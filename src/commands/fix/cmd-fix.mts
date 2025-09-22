@@ -102,7 +102,7 @@ Available styles:
     type: 'string',
     default: '',
     description:
-      'Minimum age required for package releases (e.g., 1h, 2d, 3w).',
+      'Minimum age required for suggested upgrades (e.g., 1h, 2d, 3w).',
   },
 }
 
