@@ -27,6 +27,25 @@ import colors from 'yoctocolors-cjs'
 
 import indentString from '@socketregistry/indent-string/index.cjs'
 
+// Helper function for testing compatibility.
+export function colorOrMarkdown(
+  format: string,
+  plainText: string,
+  coloredText?: string,
+  markdownText?: string,
+): string {
+  if (format === 'text') {
+    return plainText
+  }
+  if (format === 'markdown' && markdownText) {
+    return markdownText
+  }
+  if (coloredText) {
+    return coloredText
+  }
+  return plainText
+}
+
 export class ColorOrMarkdown {
   public useMarkdown: boolean
 

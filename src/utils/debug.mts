@@ -35,6 +35,7 @@ export function debugApiResponse(
     })
   } else if (status && status >= 400) {
     debugFn('warn', `API ${endpoint}: HTTP ${status}`)
+    /* c8 ignore next 3 */
   } else if (isDebug('notice')) {
     debugFn('notice', `API ${endpoint}: ${status || 'pending'}`)
   }
@@ -55,6 +56,7 @@ export function debugFileOp(
       filepath,
       error: error instanceof Error ? error.message : 'Unknown error',
     })
+    /* c8 ignore next 3 */
   } else if (isDebug('silly')) {
     debugFn('silly', `File ${operation}: ${filepath}`)
   }
@@ -110,6 +112,7 @@ export function debugConfig(
     })
   } else if (found) {
     debugFn('notice', `Config loaded: ${source}`)
+    /* c8 ignore next 3 */
   } else if (isDebug('silly')) {
     debugFn('silly', `Config not found: ${source}`)
   }

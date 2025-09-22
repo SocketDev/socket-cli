@@ -1,120 +1,135 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
-import constants from '../constants.mts'
 import { extractName, extractOwner } from './extract-names.mts'
 
-describe('extractName', () => {
-  it('should return valid names unchanged', () => {
-    expect(extractName('myrepo')).toBe('myrepo')
-    expect(extractName('My-Repo_123')).toBe('My-Repo_123')
-    expect(extractName('repo.with.dots')).toBe('repo.with.dots')
-    expect(extractName('a1b2c3')).toBe('a1b2c3')
+// Mock constants.
+vi.mock('../constants.mts', () => ({
+  default: {
+    SOCKET_DEFAULT_REPOSITORY: 'default-repo',
+  },
+}))
+
+describe('extract-names utilities', () => {
+  describe('extractName', () => {
+    it('returns valid names unchanged', () => {
+      expect(extractName('valid-name')).toBe('valid-name')
+      expect(extractName('valid_name')).toBe('valid_name')
+      expect(extractName('valid.name')).toBe('valid.name')
+      expect(extractName('ValidName123')).toBe('ValidName123')
+    })
+
+    it('replaces illegal characters with underscores', () => {
+      expect(extractName('name@with#special$chars')).toBe('name_with_special_chars')
+      expect(extractName('name with spaces')).toBe('name_with_spaces')
+      expect(extractName('name/with/slashes')).toBe('name_with_slashes')
+      expect(extractName('name\\with\\backslashes')).toBe('name_with_backslashes')
+    })
+
+    it('replaces multiple consecutive special chars with single underscore', () => {
+      expect(extractName('name...test')).toBe('name_test')
+      expect(extractName('name___test')).toBe('name_test')
+      expect(extractName('name---test')).toBe('name_test')
+      expect(extractName('name.-.test')).toBe('name_test')
+    })
+
+    it('removes leading special characters', () => {
+      expect(extractName('.leading-dot')).toBe('leading-dot')
+      expect(extractName('-leading-dash')).toBe('leading-dash')
+      expect(extractName('_leading-underscore')).toBe('leading-underscore')
+      expect(extractName('...leading-dots')).toBe('leading-dots')
+    })
+
+    it('removes trailing special characters', () => {
+      expect(extractName('trailing-dot.')).toBe('trailing-dot')
+      expect(extractName('trailing-dash-')).toBe('trailing-dash')
+      expect(extractName('trailing-underscore_')).toBe('trailing-underscore')
+      expect(extractName('trailing-dots...')).toBe('trailing-dots')
+    })
+
+    it('truncates names longer than 100 characters', () => {
+      const longName = 'a'.repeat(150)
+      const result = extractName(longName)
+      expect(result).toBe('a'.repeat(100))
+      expect(result.length).toBe(100)
+    })
+
+    it('handles complex sanitization scenarios', () => {
+      expect(extractName('@scope/package-name')).toBe('scope_package-name')
+      expect(extractName('!!!special!!!name!!!')).toBe('special_name')
+      expect(extractName('...---___test___---...')).toBe('test')
+    })
+
+    it('returns default repository for empty string', () => {
+      expect(extractName('')).toBe('default-repo')
+    })
+
+    it('returns default repository when sanitization results in empty string', () => {
+      expect(extractName('...')).toBe('default-repo')
+      expect(extractName('---')).toBe('default-repo')
+      expect(extractName('___')).toBe('default-repo')
+      expect(extractName('!@#$%^&*()')).toBe('default-repo')
+    })
+
+    it('handles Unicode characters', () => {
+      expect(extractName('emoji-🚀-name')).toBe('emoji_name')
+      expect(extractName('中文名称')).toBe('default-repo')
+      expect(extractName('name-with-émojis')).toBe('name-with_mojis')
+    })
+
+    it('preserves case', () => {
+      expect(extractName('CamelCase')).toBe('CamelCase')
+      expect(extractName('UPPERCASE')).toBe('UPPERCASE')
+      expect(extractName('lowercase')).toBe('lowercase')
+      expect(extractName('MiXeD-CaSe')).toBe('MiXeD-CaSe')
+    })
   })
 
-  it('should replace sequences of illegal characters with underscore', () => {
-    expect(extractName('repo@#$%name')).toBe('repo_name')
-    expect(extractName('repo   name')).toBe('repo_name')
-    expect(extractName('repo!!!name')).toBe('repo_name')
-    expect(extractName('repo/\\|name')).toBe('repo_name')
-  })
+  describe('extractOwner', () => {
+    it('returns valid owner names', () => {
+      expect(extractOwner('valid-owner')).toBe('valid-owner')
+      expect(extractOwner('valid_owner')).toBe('valid_owner')
+      expect(extractOwner('valid.owner')).toBe('valid.owner')
+      expect(extractOwner('ValidOwner123')).toBe('ValidOwner123')
+    })
 
-  it('should replace sequences of multiple allowed special chars with single underscore', () => {
-    expect(extractName('repo...name')).toBe('repo_name')
-    expect(extractName('repo---name')).toBe('repo_name')
-    expect(extractName('repo___name')).toBe('repo_name')
-    expect(extractName('repo.-_name')).toBe('repo_name')
-  })
+    it('sanitizes owner names like extractName', () => {
+      expect(extractOwner('owner@with#special')).toBe('owner_with_special')
+      expect(extractOwner('owner with spaces')).toBe('owner_with_spaces')
+      expect(extractOwner('.leading-dot')).toBe('leading-dot')
+      expect(extractOwner('trailing-dot.')).toBe('trailing-dot')
+    })
 
-  it('should remove leading special characters', () => {
-    expect(extractName('...repo')).toBe('repo')
-    expect(extractName('---repo')).toBe('repo')
-    expect(extractName('___repo')).toBe('repo')
-    expect(extractName('.-_repo')).toBe('repo')
-  })
+    it('returns undefined for empty input', () => {
+      expect(extractOwner('')).toBeUndefined()
+    })
 
-  it('should remove trailing special characters', () => {
-    expect(extractName('repo...')).toBe('repo')
-    expect(extractName('repo---')).toBe('repo')
-    expect(extractName('repo___')).toBe('repo')
-    expect(extractName('repo.-_')).toBe('repo')
-  })
+    it('returns undefined when sanitization results in empty string', () => {
+      expect(extractOwner('...')).toBeUndefined()
+      expect(extractOwner('---')).toBeUndefined()
+      expect(extractOwner('___')).toBeUndefined()
+      expect(extractOwner('!@#$%^&*()')).toBeUndefined()
+    })
 
-  it('should truncate names longer than 100 characters', () => {
-    const longName = 'a'.repeat(150)
-    expect(extractName(longName)).toBe('a'.repeat(100))
-  })
+    it('truncates owner names longer than 100 characters', () => {
+      const longOwner = 'o'.repeat(150)
+      const result = extractOwner(longOwner)
+      expect(result).toBe('o'.repeat(100))
+      expect(result?.length).toBe(100)
+    })
 
-  it('should handle combined transformations', () => {
-    expect(extractName('---repo@#$name...')).toBe('repo_name')
-    expect(extractName('  ...my/repo\\name___  ')).toBe('my_repo_name')
-  })
+    it('handles organization names from npm scopes', () => {
+      expect(extractOwner('@organization')).toBe('organization')
+      expect(extractOwner('@my-org/package')).toBe('my-org_package')
+    })
 
-  it('should return default repository name for empty or invalid inputs', () => {
-    expect(extractName('')).toBe(constants.SOCKET_DEFAULT_REPOSITORY)
-    expect(extractName('...')).toBe(constants.SOCKET_DEFAULT_REPOSITORY)
-    expect(extractName('___')).toBe(constants.SOCKET_DEFAULT_REPOSITORY)
-    expect(extractName('---')).toBe(constants.SOCKET_DEFAULT_REPOSITORY)
-    expect(extractName('@#$%')).toBe(constants.SOCKET_DEFAULT_REPOSITORY)
-  })
-})
+    it('handles GitHub-style owner names', () => {
+      expect(extractOwner('github-user')).toBe('github-user')
+      expect(extractOwner('org-name-123')).toBe('org-name-123')
+    })
 
-describe('extractOwner', () => {
-  it('should return valid owner names unchanged', () => {
-    expect(extractOwner('myowner')).toBe('myowner')
-    expect(extractOwner('My-Owner_123')).toBe('My-Owner_123')
-    expect(extractOwner('owner.with.dots')).toBe('owner.with.dots')
-    expect(extractOwner('a1b2c3')).toBe('a1b2c3')
-  })
-
-  it('should replace sequences of illegal characters with underscore', () => {
-    expect(extractOwner('owner@#$%name')).toBe('owner_name')
-    expect(extractOwner('owner   name')).toBe('owner_name')
-    expect(extractOwner('owner!!!name')).toBe('owner_name')
-    expect(extractOwner('owner/\\|name')).toBe('owner_name')
-  })
-
-  it('should replace sequences of multiple allowed special chars with single underscore', () => {
-    expect(extractOwner('owner...name')).toBe('owner_name')
-    expect(extractOwner('owner---name')).toBe('owner_name')
-    expect(extractOwner('owner___name')).toBe('owner_name')
-    expect(extractOwner('owner.-_name')).toBe('owner_name')
-  })
-
-  it('should remove leading special characters', () => {
-    expect(extractOwner('...owner')).toBe('owner')
-    expect(extractOwner('---owner')).toBe('owner')
-    expect(extractOwner('___owner')).toBe('owner')
-    expect(extractOwner('.-_owner')).toBe('owner')
-  })
-
-  it('should remove trailing special characters', () => {
-    expect(extractOwner('owner...')).toBe('owner')
-    expect(extractOwner('owner---')).toBe('owner')
-    expect(extractOwner('owner___')).toBe('owner')
-    expect(extractOwner('owner.-_')).toBe('owner')
-  })
-
-  it('should truncate names longer than 100 characters', () => {
-    const longName = 'a'.repeat(150)
-    expect(extractOwner(longName)).toBe('a'.repeat(100))
-  })
-
-  it('should handle combined transformations', () => {
-    expect(extractOwner('---owner@#$name...')).toBe('owner_name')
-    expect(extractOwner('  ...my/owner\\name___  ')).toBe('my_owner_name')
-  })
-
-  it('should return undefined for empty or invalid inputs', () => {
-    expect(extractOwner('')).toBeUndefined()
-    expect(extractOwner('...')).toBeUndefined()
-    expect(extractOwner('___')).toBeUndefined()
-    expect(extractOwner('---')).toBeUndefined()
-    expect(extractOwner('@#$%')).toBeUndefined()
-  })
-
-  it('should handle edge cases with mixed valid and invalid characters', () => {
-    expect(extractOwner('a@b#c$d')).toBe('a_b_c_d')
-    expect(extractOwner('123...456')).toBe('123_456')
-    expect(extractOwner('---a---')).toBe('a')
+    it('does not use default repository for owners', () => {
+      // Unlike extractName, extractOwner returns undefined instead of default.
+      expect(extractOwner('!!!')).toBeUndefined()
+    })
   })
 })
