@@ -2,7 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import mockFs from 'mock-fs'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { normalizePath } from '@socketsecurity/registry/lib/path'
 
@@ -13,9 +13,31 @@ import {
   PNPM_LOCK_YAML,
   YARN_LOCK,
 } from '../constants.mjs'
-import { getPackageFilesForScan } from './path-resolve.mts'
+import {
+  findBinPathDetailsSync,
+  findNpmDirPathSync,
+  getPackageFilesForScan,
+} from './path-resolve.mts'
 
 import type FileSystem from 'mock-fs/lib/filesystem'
+
+// Mock dependencies for new tests.
+vi.mock('@socketsecurity/registry/lib/bin', async () => {
+  const actual = await vi.importActual<typeof import('@socketsecurity/registry/lib/bin')>('@socketsecurity/registry/lib/bin')
+  return {
+    ...actual,
+    resolveBinPathSync: vi.fn((p) => p),
+    whichBinSync: vi.fn(),
+  }
+})
+
+vi.mock('@socketsecurity/registry/lib/fs', async () => {
+  const actual = await vi.importActual<typeof import('@socketsecurity/registry/lib/fs')>('@socketsecurity/registry/lib/fs')
+  return {
+    ...actual,
+    isDirSync: vi.fn(),
+  }
+})
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -294,6 +316,180 @@ describe('Path Resolve', () => {
         `${mockFixturePath}/package-lock.json`,
         `${mockFixturePath}/package.json`,
       ])
+    })
+  })
+
+  describe('findBinPathDetailsSync', () => {
+    beforeEach(() => {
+      vi.clearAllMocks()
+    })
+
+    it('finds bin path when available', async () => {
+      const { whichBinSync } = vi.mocked(await import('@socketsecurity/registry/lib/bin'))
+      whichBinSync.mockReturnValue(['/usr/local/bin/npm'])
+
+      const result = findBinPathDetailsSync('npm')
+
+      expect(result).toEqual({
+        name: 'npm',
+        path: '/usr/local/bin/npm',
+        shadowed: false,
+      })
+    })
+
+    it('handles shadowed bin paths', async () => {
+      const constants = await import('../constants.mts')
+      const shadowBinPath = constants.default.shadowBinPath
+      const { whichBinSync } = vi.mocked(await import('@socketsecurity/registry/lib/bin'))
+      whichBinSync.mockReturnValue([`${shadowBinPath}/npm`, '/usr/local/bin/npm'])
+
+      const result = findBinPathDetailsSync('npm')
+
+      expect(result).toEqual({
+        name: 'npm',
+        path: '/usr/local/bin/npm',
+        shadowed: true,
+      })
+    })
+
+    it('handles no bin path found', async () => {
+      const { whichBinSync } = vi.mocked(await import('@socketsecurity/registry/lib/bin'))
+      whichBinSync.mockReturnValue(null)
+
+      const result = findBinPathDetailsSync('nonexistent')
+
+      expect(result).toEqual({
+        name: 'nonexistent',
+        path: undefined,
+        shadowed: false,
+      })
+    })
+
+    it('handles empty array result', async () => {
+      const { whichBinSync } = vi.mocked(await import('@socketsecurity/registry/lib/bin'))
+      whichBinSync.mockReturnValue([])
+
+      const result = findBinPathDetailsSync('npm')
+
+      expect(result).toEqual({
+        name: 'npm',
+        path: undefined,
+        shadowed: false,
+      })
+    })
+
+    it('handles single string result', async () => {
+      const { whichBinSync } = vi.mocked(await import('@socketsecurity/registry/lib/bin'))
+      whichBinSync.mockReturnValue('/usr/local/bin/npm' as any)
+
+      const result = findBinPathDetailsSync('npm')
+
+      expect(result).toEqual({
+        name: 'npm',
+        path: '/usr/local/bin/npm',
+        shadowed: false,
+      })
+    })
+
+    it('handles only shadow bin in path', async () => {
+      const constants = await import('../constants.mts')
+      const shadowBinPath = constants.default.shadowBinPath
+      const { whichBinSync } = vi.mocked(await import('@socketsecurity/registry/lib/bin'))
+      whichBinSync.mockReturnValue([`${shadowBinPath}/npm`])
+
+      const result = findBinPathDetailsSync('npm')
+
+      expect(result).toEqual({
+        name: 'npm',
+        path: undefined,
+        shadowed: true,
+      })
+    })
+  })
+
+  describe('findNpmDirPathSync', () => {
+    beforeEach(() => {
+      vi.clearAllMocks()
+    })
+
+    it('finds npm directory in lib/node_modules structure', async () => {
+      const { isDirSync } = vi.mocked(await import('@socketsecurity/registry/lib/fs'))
+
+      isDirSync.mockImplementation((p) => {
+        const pathStr = String(p)
+        if (pathStr.includes('lib/node_modules/npm')) {
+          return true
+        }
+        if (pathStr.endsWith('/node_modules')) {
+          return true
+        }
+        return false
+      })
+
+      const result = findNpmDirPathSync('/usr/local/bin/npm')
+
+      expect(result).toBe('/usr/local/bin/npm/lib/node_modules/npm')
+    })
+
+    it('finds npm directory with node_modules in current path', async () => {
+      const { isDirSync } = vi.mocked(await import('@socketsecurity/registry/lib/fs'))
+
+      isDirSync.mockImplementation((p) => {
+        const pathStr = String(p)
+        if (pathStr === '/usr/local/npm/node_modules') {
+          return true
+        }
+        return false
+      })
+
+      const result = findNpmDirPathSync('/usr/local/npm')
+
+      expect(result).toBe('/usr/local/npm')
+    })
+
+    it('finds npm directory with node_modules in parent path', async () => {
+      const { isDirSync } = vi.mocked(await import('@socketsecurity/registry/lib/fs'))
+
+      isDirSync.mockImplementation((p) => {
+        const pathStr = String(p)
+        if (pathStr === '/usr/local/npm/node_modules') {
+          return false
+        }
+        if (pathStr === '/usr/local/node_modules') {
+          return true
+        }
+        return false
+      })
+
+      const result = findNpmDirPathSync('/usr/local/npm')
+
+      expect(result).toBe('/usr/local')
+    })
+
+    it('returns undefined when no npm directory found', async () => {
+      const { isDirSync } = vi.mocked(await import('@socketsecurity/registry/lib/fs'))
+
+      isDirSync.mockReturnValue(false)
+
+      const result = findNpmDirPathSync('/random/path')
+
+      expect(result).toBeUndefined()
+    })
+
+    it('handles nvm directory structure', async () => {
+      const { isDirSync } = vi.mocked(await import('@socketsecurity/registry/lib/fs'))
+
+      isDirSync.mockImplementation((p) => {
+        const pathStr = String(p)
+        if (pathStr.includes('.nvm') && pathStr.endsWith('/node_modules')) {
+          return true
+        }
+        return false
+      })
+
+      const result = findNpmDirPathSync('/Users/user/.nvm/versions/node/v18.0.0/bin/npm')
+
+      expect(result).toBe('/Users/user/.nvm/versions/node/v18.0.0/bin/npm')
     })
   })
 })

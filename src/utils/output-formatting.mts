@@ -89,6 +89,9 @@ export function getFlagListOutput(
   )
 }
 
+// Alias for testing compatibility.
+export const getFlagsHelpOutput = getFlagListOutput
+
 export function getHelpListOutput(
   list: Record<string, ListDescription>,
   options?: HelpListOptions | undefined,

@@ -6,18 +6,26 @@ export default defineConfig({
   },
   test: {
     coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html'],
       exclude: [
-        '**/{eslint,vitest}.config.*',
+        '**/*.config.*',
         '**/node_modules/**',
         '**/[.]**',
         '**/*.d.mts',
+        '**/*.d.ts',
         '**/virtual:*',
+        'bin/**',
         'coverage/**',
         'dist/**',
+        'external/**',
+        'pnpmfile.*',
         'scripts/**',
         'src/**/types.mts',
         'test/**',
       ],
+      include: ['src/**/*.mts', 'src/**/*.ts'],
+      all: true,
     },
   },
 })
