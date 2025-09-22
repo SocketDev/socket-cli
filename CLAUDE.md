@@ -2,7 +2,9 @@
 
 🚨 **CRITICAL**: This file contains MANDATORY guidelines for Claude Code (claude.ai/code). You MUST follow these guidelines EXACTLY as specified. Act as a principal-level software engineer with deep expertise in TypeScript, Node.js, and CLI development.
 
-## 📚 Self-Learning Protocol
+## 📚 Learning & Knowledge Sharing
+
+### Self-Learning Protocol
 Claude Code should periodically scan and learn from CLAUDE.md files across Socket repositories:
 - `socket-cli/CLAUDE.md`
 - `socket-packageurl-js/CLAUDE.md`
@@ -10,6 +12,11 @@ Claude Code should periodically scan and learn from CLAUDE.md files across Socke
 - `socket-sdk-js/CLAUDE.md`
 
 When working in any Socket repository, check for updates and patterns in other claude.md files to ensure consistency across the ecosystem.
+
+### Cross-Project Learning
+- When discovering generally applicable patterns or guidelines, update CLAUDE.md files in other socket- projects
+- Examples: c8 comment formatting, error handling patterns, code style rules
+- This ensures consistency across the Socket ecosystem
 
 ## 🎯 Your Role
 You are a **Principal Software Engineer** responsible for:
@@ -268,6 +275,13 @@ Socket CLI integrates with various third-party tools and services:
 - **Linting**: Uses ESLint with TypeScript support and import/export rules
 - **Formatting**: Uses Biome for code formatting with 2-space indentation
 - **Line length**: Target 80 character line width where practical
+
+### Test Coverage
+- All `c8 ignore` comments MUST include a reason why the code is being ignored
+- All c8 ignore comments MUST end with periods for consistency
+- Format: `// c8 ignore start - Reason for ignoring.`
+- Example: `// c8 ignore start - Internal helper functions not exported.`
+- This helps maintain clarity about why certain code paths aren't tested
 
 ---
 
