@@ -43,9 +43,9 @@ export async function coanaFix(
   fixConfig: FixConfig,
 ): Promise<CResult<{ fixed: boolean }>> {
   const {
+    applyFixes,
     autopilot,
     cwd,
-    dontApplyFixes,
     ghsas,
     glob,
     limit,
@@ -107,7 +107,7 @@ export async function coanaFix(
 
   if (!shouldOpenPrs) {
     // Inform user about local mode when fixes will be applied.
-    if (!dontApplyFixes && ghsas.length) {
+    if (applyFixes && ghsas.length) {
       const envCheck = checkCiEnvVars()
       if (envCheck.present.length) {
         // Some CI vars are set but not all - show what's missing.
@@ -147,7 +147,7 @@ export async function coanaFix(
           ? ['--minimum-release-age', minimumReleaseAge]
           : []),
         ...(glob ? ['--glob', glob] : []),
-        ...(dontApplyFixes ? [FLAG_DRY_RUN] : []),
+        ...(!applyFixes ? [FLAG_DRY_RUN] : []),
         ...(outputFile ? ['--output-file', outputFile] : []),
         ...fixConfig.unknownFlags,
       ],

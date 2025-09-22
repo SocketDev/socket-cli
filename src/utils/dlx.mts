@@ -129,10 +129,6 @@ export async function spawnDlx(
           npm_config_dlx_cache_max_age: '0',
         },
       }
-      // Add --ignore-scripts for extra security.
-      // While pnpm dlx allows the executed package's scripts by default,
-      // we disable them since coana/cdxgen/synp don't need postinstall scripts.
-      spawnArgs.push('--ignore-scripts')
     }
     if (silent) {
       spawnArgs.push(FLAG_SILENT)

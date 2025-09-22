@@ -52,12 +52,14 @@ const generalFlags: MeowFlags = {
       'https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-auto-merge-for-pull-requests-in-your-repository',
     )} for managing auto-merge for pull requests in your repository.`,
   },
-  dontApplyFixes: {
+  applyFixes: {
     aliases: ['onlyCompute'],
     type: 'boolean',
-    default: false,
+    default: true,
     description:
       'Compute fixes only, do not apply them. Logs what upgrades would be applied. If combined with --output-file, the output file will contain the upgrades that would be applied.',
+    // Hidden to allow custom documenting of the negated `--no-apply-fixes` variant.
+    hidden: true,
   },
   id: {
     type: 'string',
@@ -188,7 +190,14 @@ async function run(
       ${getFlagApiRequirementsOutput(`${parentName}:${CMD_NAME}`)}
 
     Options
-      ${getFlagListOutput(config.flags)}
+      ${getFlagListOutput({
+        ...config.flags,
+        // Explicitly document the negated --no-apply-fixes variant.
+        noApplyFixes: {
+          ...config.flags['applyFixes'],
+          hidden: false,
+        } as MeowFlag,
+      })}
 
     Environment Variables (for CI/PR mode)
       CI                          Set to enable CI mode
@@ -214,8 +223,8 @@ async function run(
   )
 
   const {
+    applyFixes,
     autopilot,
-    dontApplyFixes,
     glob,
     json,
     limit,
@@ -230,7 +239,7 @@ async function run(
     unknownFlags = [],
   } = cli.flags as {
     autopilot: boolean
-    dontApplyFixes: boolean
+    applyFixes: boolean
     glob: string
     limit: number
     json: boolean
@@ -300,7 +309,7 @@ async function run(
 
   await handleFix({
     autopilot,
-    dontApplyFixes,
+    applyFixes,
     cwd,
     ghsas,
     glob,
