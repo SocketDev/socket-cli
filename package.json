@@ -44,7 +44,7 @@
     "check-ci": "pnpm check:lint",
     "coverage": "run-s coverage:*",
     "coverage:test": "run-s test:prepare test:unit:coverage",
-    "coverage:percent": "node scripts/get-coverage-percentage.js",
+    "coverage:percent": "node scripts/get-coverage-percentage.mjs",
     "coverage:type": "dotenvx -q run -f .env.local -- type-coverage --detail",
     "clean": "run-p -c --aggregate-output clean:*",
     "clean:cache": "del-cli '**/.cache'",
