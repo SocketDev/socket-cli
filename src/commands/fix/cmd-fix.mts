@@ -100,6 +100,12 @@ Available styles:
     default: '',
     description: 'Path to store upgrades as a JSON file at this path.',
   },
+  minimumReleaseAge: {
+    type: 'string',
+    default: '',
+    description:
+      'Set a minimum age requirement for suggested upgrade versions (e.g., 1h, 2d, 3w). A higher age requirement reduces the risk of upgrading to malicious versions. For example, setting the value to 1 week (1w) gives ecosystem maintainers one week to remove potentially malicious versions.',
+  },
 }
 
 const hiddenFlags: MeowFlags = {
@@ -224,6 +230,7 @@ async function run(
     limit,
     markdown,
     maxSatisfying,
+    minimumReleaseAge,
     outputFile,
     prCheck,
     rangeStyle,
@@ -243,6 +250,7 @@ async function run(
     rangeStyle: RangeStyle
     unknownFlags?: string[]
     outputFile: string
+    minimumReleaseAge: string
   }
 
   const dryRun = !!cli.flags['dryRun']
@@ -306,6 +314,7 @@ async function run(
     ghsas,
     glob,
     limit,
+    minimumReleaseAge,
     minSatisfying,
     prCheck,
     orgSlug,

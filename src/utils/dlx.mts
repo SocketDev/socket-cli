@@ -21,6 +21,7 @@
 import { createRequire } from 'node:module'
 
 import { getOwn } from '@socketsecurity/registry/lib/objects'
+import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import { getDefaultOrgSlug } from '../commands/ci/fetch-default-org-slug.mts'
 import constants, {
@@ -168,6 +169,9 @@ export async function spawnDlx(
  * Helper to spawn coana with dlx.
  * Automatically uses force and silent when version is not pinned exactly.
  * Returns a CResult with stdout extraction for backward compatibility.
+ *
+ * If SOCKET_CLI_COANA_LOCAL_PATH environment variable is set, uses the local
+ * Coana CLI at that path instead of downloading from npm.
  */
 export async function spawnCoanaDlx(
   args: string[] | readonly string[],
@@ -207,6 +211,25 @@ export async function spawnCoanaDlx(
   }
 
   try {
+    const localCoanaPath = process.env['SOCKET_CLI_COANA_LOCAL_PATH']
+    // Use local Coana CLI if path is provided.
+    if (localCoanaPath) {
+      const finalEnv = {
+        ...process.env,
+        ...constants.processEnv,
+        ...mixinsEnv,
+        ...spawnEnv,
+      }
+      const spawnResult = await spawn('node', [localCoanaPath, ...args], {
+        cwd: dlxOptions.cwd,
+        env: finalEnv,
+        stdio: spawnExtra?.['stdio'] || 'inherit',
+      })
+
+      return { ok: true, data: spawnResult.stdout }
+    }
+
+    // Use npm/dlx version.
     const result = await spawnDlx(
       {
         name: '@coana-tech/cli',
