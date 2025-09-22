@@ -21,7 +21,7 @@ describe('socket root command', async () => {
 
           Usage
             $ socket <command>
-            $ socket scan create--json
+            $ socket scan create --json
             $ socket package score npm lodash --markdown
 
           Note: All commands have their own --help
