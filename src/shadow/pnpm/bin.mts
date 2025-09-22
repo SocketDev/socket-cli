@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url'
 
 import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
+import { normalizePath } from '@socketsecurity/registry/lib/path'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import constants, {
@@ -104,7 +105,7 @@ export default async function shadowPnpmBin(
       }
     } else if (isPnpmLockfileScanCommand(command)) {
       // For install/update, scan all dependencies from pnpm-lock.yaml
-      const pnpmLockPath = path.join(cwd, PNPM_LOCK_YAML)
+      const pnpmLockPath = normalizePath(path.join(cwd, PNPM_LOCK_YAML))
       if (existsSync(pnpmLockPath)) {
         try {
           const lockfileContent = await readPnpmLockfile(pnpmLockPath)
