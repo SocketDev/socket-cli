@@ -28,6 +28,10 @@ export function checkCommandInput(
     if (d.nook && d.test) {
       continue
     }
+    // Skip empty messages.
+    if (!d.message) {
+      continue
+    }
     const lines = d.message.split('\n')
     const { length: lineCount } = lines
     if (!lineCount) {

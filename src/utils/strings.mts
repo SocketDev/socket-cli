@@ -14,3 +14,16 @@
 export function camelToKebab(str: string): string {
   return str === '' ? '' : str.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase()
 }
+
+// Added for testing.
+export function kebabToCamel(str: string): string {
+  return str.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase())
+}
+
+// Added for testing.
+export function pluralize(word: string, count: number, plural?: string): string {
+  if (count === 1) {
+    return word
+  }
+  return plural || word + 's'
+}
