@@ -49,6 +49,7 @@ export async function coanaFix(
     ghsas,
     glob,
     limit,
+    minimumReleaseAge,
     orgSlug,
     outputFile,
     spinner,
@@ -142,6 +143,9 @@ export async function coanaFix(
         ...(fixConfig.rangeStyle
           ? ['--range-style', fixConfig.rangeStyle]
           : []),
+        ...(minimumReleaseAge
+          ? ['--minimum-release-age', minimumReleaseAge]
+          : []),
         ...(glob ? ['--glob', glob] : []),
         ...(!applyFixes ? [FLAG_DRY_RUN] : []),
         ...(outputFile ? ['--output-file', outputFile] : []),
@@ -193,6 +197,9 @@ export async function coanaFix(
         tarHash,
         ...(fixConfig.rangeStyle
           ? ['--range-style', fixConfig.rangeStyle]
+          : []),
+        ...(minimumReleaseAge
+          ? ['--minimum-release-age', minimumReleaseAge]
           : []),
         ...(glob ? ['--glob', glob] : []),
         ...fixConfig.unknownFlags,
@@ -250,6 +257,9 @@ export async function coanaFix(
         ghsaId,
         ...(fixConfig.rangeStyle
           ? ['--range-style', fixConfig.rangeStyle]
+          : []),
+        ...(minimumReleaseAge
+          ? ['--minimum-release-age', minimumReleaseAge]
           : []),
         ...(glob ? ['--glob', glob] : []),
         ...fixConfig.unknownFlags,
