@@ -104,7 +104,7 @@ Available styles:
     type: 'string',
     default: '',
     description:
-      'Minimum age required for suggested upgrades (e.g., 1h, 2d, 3w).',
+      'Set a minimum age requirement for suggested upgrade versions (e.g., 1h, 2d, 3w). A higher age requirement reduces the risk of upgrading to malicious versions. For example, setting the value to 1 week (1w) gives ecosystem maintainers one week to remove potentially malicious versions.',
   },
 }
 
