@@ -23,6 +23,7 @@ export type HandleFixConfig = Remap<
     outputKind: OutputKind
     unknownFlags: string[]
     outputFile: string
+    minimumReleaseAge: string
   }
 >
 
@@ -105,6 +106,7 @@ export async function handleFix({
   glob,
   limit,
   minSatisfying,
+  minimumReleaseAge,
   orgSlug,
   outputFile,
   outputKind,
@@ -138,6 +140,7 @@ export async function handleFix({
       ghsas: await convertIdsToGhsas(ghsas),
       glob,
       limit,
+      minimumReleaseAge,
       minSatisfying,
       orgSlug,
       prCheck,

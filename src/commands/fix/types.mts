@@ -8,6 +8,7 @@ export type FixConfig = {
   ghsas: string[]
   glob: string
   limit: number
+  minimumReleaseAge: string
   minSatisfying: boolean
   orgSlug: string
   prCheck: boolean

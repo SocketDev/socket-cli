@@ -98,6 +98,12 @@ Available styles:
     default: '',
     description: 'Path to store upgrades as a JSON file at this path.',
   },
+  minimumReleaseAge: {
+    type: 'string',
+    default: '',
+    description:
+      'Minimum age required for package releases (e.g., 1h, 2d, 3w).',
+  },
 }
 
 const hiddenFlags: MeowFlags = {
@@ -215,6 +221,7 @@ async function run(
     limit,
     markdown,
     maxSatisfying,
+    minimumReleaseAge,
     outputFile,
     prCheck,
     rangeStyle,
@@ -234,6 +241,7 @@ async function run(
     rangeStyle: RangeStyle
     unknownFlags?: string[]
     outputFile: string
+    minimumReleaseAge: string
   }
 
   const dryRun = !!cli.flags['dryRun']
@@ -297,6 +305,7 @@ async function run(
     ghsas,
     glob,
     limit,
+    minimumReleaseAge,
     minSatisfying,
     prCheck,
     orgSlug,
