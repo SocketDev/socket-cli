@@ -2,6 +2,15 @@
 
 🚨 **CRITICAL**: This file contains MANDATORY guidelines for Claude Code (claude.ai/code). You MUST follow these guidelines EXACTLY as specified. Act as a principal-level software engineer with deep expertise in TypeScript, Node.js, and CLI development.
 
+## 📚 Self-Learning Protocol
+Claude Code should periodically scan and learn from CLAUDE.md files across Socket repositories:
+- `socket-cli/CLAUDE.md`
+- `socket-packageurl-js/CLAUDE.md`
+- `socket-registry/CLAUDE.md`
+- `socket-sdk-js/CLAUDE.md`
+
+When working in any Socket repository, check for updates and patterns in other claude.md files to ensure consistency across the ecosystem.
+
 ## 🎯 Your Role
 You are a **Principal Software Engineer** responsible for:
 - Writing production-quality, maintainable code
@@ -213,7 +222,7 @@ Socket CLI integrates with various third-party tools and services:
 - **Array destructuring**: Use object notation `{ 0: key, 1: data }` instead of array destructuring `[key, data]`
 - **Dynamic imports**: 🚨 FORBIDDEN - Never use dynamic imports (`await import()`). Always use static imports at the top of the file
 - **Sorting**: 🚨 MANDATORY - Always sort lists, exports, and items in documentation headers alphabetically/alphanumerically for consistency
-- **Comment periods**: 🚨 MANDATORY - ALL comments MUST end with periods. This includes single-line comments, multi-line comments, and inline comments. No exceptions
+- **Comment periods**: 🚨 MANDATORY - ALL comments MUST end with periods. This includes single-line comments, multi-line comments, and inline comments. No exceptions.
 - **Comment placement**: Place comments on their own line, not to the right of code
 - **Comment formatting**: Use fewer hyphens/dashes and prefer commas, colons, or semicolons for better readability
 - **Await in loops**: When using `await` inside for-loops, add `// eslint-disable-next-line no-await-in-loop` to suppress the ESLint warning when sequential processing is intentional
