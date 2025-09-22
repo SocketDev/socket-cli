@@ -44,8 +44,8 @@ describe('socket scan github', async () => {
             --github-token      Required GitHub token for authentication.
                                 May set environment variable GITHUB_TOKEN or SOCKET_CLI_GITHUB_TOKEN instead.
             --interactive       Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.
-            --json              Output result as json
-            --markdown          Output result as markdown
+            --json              Output as JSON
+            --markdown          Output as Markdown
             --org               Force override the organization slug, overrides the default org from config
             --org-github        Alternate GitHub Org if the name is different than the Socket Org
             --repos             List of repos to target in a comma-separated format (e.g., repo1,repo2). If not specified, the script will pull the list from Socket and ask you to pick one. Use --all to use them all.

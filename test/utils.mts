@@ -6,7 +6,7 @@ import { it } from 'vitest'
 import { SpawnOptions, spawn } from '@socketsecurity/registry/lib/spawn'
 import { stripAnsi } from '@socketsecurity/registry/lib/strings'
 
-import constants from '../src/constants.mts'
+import constants, { FLAG_HELP, FLAG_VERSION } from '../src/constants.mts'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -61,6 +61,37 @@ export function cleanOutput(output: string): string {
       normalizeNewlines(stripZeroWidthSpace(stripAnsi(output.trim()))),
     ),
   )
+}
+
+/**
+ * Check if output contains cdxgen help content.
+ * Used to verify cdxgen command executed with help flag.
+ */
+export function hasCdxgenHelpContent(output: string): boolean {
+  // Check for various cdxgen help indicators.
+  // Must have cdxgen or CycloneDX AND at least one help flag indicator.
+  const hasCdxgenMention =
+    output.includes('CycloneDX') || output.includes('cdxgen')
+  const hasHelpFlags =
+    output.includes(FLAG_HELP) ||
+    output.includes(FLAG_VERSION) ||
+    // cdxgen-specific flags.
+    output.includes('--output') ||
+    output.includes('--type')
+
+  return hasCdxgenMention && hasHelpFlags
+}
+
+/**
+ * Check if output contains the Socket CLI banner.
+ * The banner appears as ASCII art in the stderr output.
+ * Note: The banner contains either '*' (when --config is used) or '.' (when no config is used).
+ */
+export function hasSocketBanner(output: string): boolean {
+  // Check for Socket banner ASCII art lines.
+  // The banner is always printed as a complete block, never partial.
+  // Just check for the most distinctive first line.
+  return output.includes('_____         _       _')
 }
 
 export type TestCollectorOptions = Exclude<Parameters<typeof it>[1], undefined>

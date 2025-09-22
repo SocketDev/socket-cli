@@ -25,8 +25,8 @@ describe('socket config unset', async () => {
             $ socket config unset [options] <KEY> <VALUE>
 
           Options
-            --json              Output result as json
-            --markdown          Output result as markdown
+            --json              Output as JSON
+            --markdown          Output as Markdown
 
           Removes a value from a config key, allowing the default value to be used
           for it instead.

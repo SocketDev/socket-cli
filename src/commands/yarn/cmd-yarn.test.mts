@@ -9,7 +9,7 @@ import constants, {
 } from '../../../src/constants.mts'
 import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
 
-describe.skipIf(constants.WIN32)('socket yarn', async () => {
+describe('socket yarn', async () => {
   const { binCliPath } = constants
 
   cmdit(
@@ -19,7 +19,7 @@ describe.skipIf(constants.WIN32)('socket yarn', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-        "Run yarn with the Socket wrapper
+        "Wraps yarn with Socket security scanning
 
           Usage
             $ socket yarn ...

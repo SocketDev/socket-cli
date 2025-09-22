@@ -13,7 +13,8 @@ import type {
 
 const config: CliCommandConfig = {
   commandName: 'ci',
-  description: 'Shorthand for `socket scan create --report --no-interactive`',
+  description:
+    'Alias for `socket scan create --report` (creates report and exits with error if unhealthy)',
   hidden: false,
   flags: {
     ...commonFlags,

@@ -32,9 +32,9 @@ describe('socket scan report', async () => {
           Options
             --fold              Fold reported alerts to some degree (default 'none')
             --interactive       Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.
-            --json              Output result as json
+            --json              Output as JSON
             --license           Also report the license policy status. Default: false
-            --markdown          Output result as markdown
+            --markdown          Output as Markdown
             --org               Force override the organization slug, overrides the default org from config
             --report-level      Which policy level alerts should be reported (default 'warn')
             --short             Report only the healthy status

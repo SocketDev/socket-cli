@@ -15,7 +15,7 @@ export async function outputCmdJson(cwd: string) {
 
   const sockJsonPath = path.join(cwd, SOCKET_JSON)
   const tildeSockJsonPath = constants.ENV.VITEST
-    ? '<redacted>'
+    ? REDACTED
     : tildify(sockJsonPath)
 
   if (!existsSync(sockJsonPath)) {

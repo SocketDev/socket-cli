@@ -33,7 +33,7 @@ export const CMD_NAME = 'fix'
 
 const DEFAULT_LIMIT = 10
 
-const description = 'Update dependencies with "fixable" Socket alerts'
+const description = 'Fix CVEs in dependencies'
 
 const hidden = false
 

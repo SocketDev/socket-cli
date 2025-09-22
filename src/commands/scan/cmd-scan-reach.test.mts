@@ -31,8 +31,8 @@ describe('socket scan reach', async () => {
 
           Options
             --cwd               working directory, defaults to process.cwd()
-            --json              Output result as json
-            --markdown          Output result as markdown
+            --json              Output as JSON
+            --markdown          Output as Markdown
             --org               Force override the organization slug, overrides the default org from config
 
           Reachability Options
@@ -477,8 +477,9 @@ describe('socket scan reach', async () => {
     },
   )
 
-  it.skipIf(constants.WIN32)(
+  it(
     'should accept comprehensive reachability configuration in dry-run: `scan reach --dry-run --reach-analysis-memory-limit 16384 --reach-analysis-timeout 7200 --reach-ecosystems npm --reach-exclude-paths node_modules --org fakeOrg --config {"apiToken":"fakeToken"}`',
+    { timeout: 30_000 },
     async () => {
       const cmd = [
         'scan',
@@ -501,7 +502,6 @@ describe('socket scan reach', async () => {
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
-    { timeout: 30_000 },
   )
 
   describe('non dry-run tests', () => {

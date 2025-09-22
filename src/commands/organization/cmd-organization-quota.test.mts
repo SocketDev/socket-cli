@@ -25,8 +25,8 @@ describe('socket organization quota', async () => {
             $ socket organization quota [options]
 
           Options
-            --json              Output result as json
-            --markdown          Output result as markdown
+            --json              Output as JSON
+            --markdown          Output as Markdown
 
           Examples
             $ socket organization quota
