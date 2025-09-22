@@ -71,9 +71,10 @@ You are a **Principal Software Engineer** responsible for:
 ### Package Management
 - **Package Manager**: This project uses pnpm (v10.16.0+)
 - **Install dependencies**: `pnpm install`
-- **Add dependency**: `pnpm add <package>`
-- **Add dev dependency**: `pnpm add -D <package>`
+- **Add dependency**: `pnpm add <package> --save-exact`
+- **Add dev dependency**: `pnpm add -D <package> --save-exact`
 - **Update dependencies**: `pnpm update`
+- **🚨 MANDATORY**: Always add dependencies with exact versions using `--save-exact` flag to ensure reproducible builds
 - **Override behavior**: pnpm.overrides in package.json controls dependency versions across the entire project
 - **Using $ syntax**: `"$package-name"` in overrides means "use the version specified in dependencies"
 
