@@ -422,7 +422,7 @@ describe('socket fix', async () => {
     'should handle vulnerable dependencies fixture project',
     async cmd => {
       const { tempDir, cleanup } = await withTempFixture(
-        path.join(fixtureBaseDir, 'pnpm/vulnerable-deps')
+        path.join(fixtureBaseDir, 'pnpm/vulnerable-deps'),
       )
       cleanupFunctions.push(cleanup)
 
@@ -443,7 +443,7 @@ describe('socket fix', async () => {
     'should handle monorepo fixture project',
     async cmd => {
       const { tempDir, cleanup } = await withTempFixture(
-        path.join(fixtureBaseDir, 'pnpm/monorepo')
+        path.join(fixtureBaseDir, 'pnpm/monorepo'),
       )
       cleanupFunctions.push(cleanup)
 
@@ -594,7 +594,7 @@ describe('socket fix', async () => {
       'should handle PURL-based vulnerability identification',
       async cmd => {
         const { tempDir, cleanup } = await withTempFixture(
-          path.join(fixtureBaseDir, 'pnpm/vulnerable-deps')
+          path.join(fixtureBaseDir, 'pnpm/vulnerable-deps'),
         )
         cleanupFunctions.push(cleanup)
 
@@ -621,7 +621,7 @@ describe('socket fix', async () => {
       'should handle multiple vulnerability IDs in comma-separated format',
       async cmd => {
         const { tempDir, cleanup } = await withTempFixture(
-          path.join(fixtureBaseDir, 'pnpm/vulnerable-deps')
+          path.join(fixtureBaseDir, 'pnpm/vulnerable-deps'),
         )
         cleanupFunctions.push(cleanup)
 
@@ -650,7 +650,7 @@ describe('socket fix', async () => {
       'should handle multiple vulnerability IDs as separate flags',
       async cmd => {
         const { tempDir, cleanup } = await withTempFixture(
-          path.join(fixtureBaseDir, 'pnpm/vulnerable-deps')
+          path.join(fixtureBaseDir, 'pnpm/vulnerable-deps'),
         )
         cleanupFunctions.push(cleanup)
 
@@ -681,7 +681,7 @@ describe('socket fix', async () => {
       'should handle autopilot mode with JSON output and custom limit',
       async cmd => {
         const { tempDir, cleanup } = await withTempFixture(
-          path.join(fixtureBaseDir, 'pnpm/vulnerable-deps')
+          path.join(fixtureBaseDir, 'pnpm/vulnerable-deps'),
         )
         cleanupFunctions.push(cleanup)
 
@@ -711,7 +711,7 @@ describe('socket fix', async () => {
       'should handle monorepo with pin style and markdown output',
       async cmd => {
         const { tempDir, cleanup } = await withTempFixture(
-          path.join(fixtureBaseDir, 'pnpm/monorepo')
+          path.join(fixtureBaseDir, 'pnpm/monorepo'),
         )
         cleanupFunctions.push(cleanup)
 
@@ -820,7 +820,7 @@ describe('socket fix', async () => {
       'should handle non-existent GHSA IDs gracefully',
       async cmd => {
         const { tempDir, cleanup } = await withTempFixture(
-          path.join(fixtureBaseDir, 'pnpm/vulnerable-deps')
+          path.join(fixtureBaseDir, 'pnpm/vulnerable-deps'),
         )
         cleanupFunctions.push(cleanup)
 
@@ -845,7 +845,7 @@ describe('socket fix', async () => {
       'should show clear error when both json and markdown flags are used',
       async cmd => {
         const { tempDir, cleanup } = await withTempFixture(
-          path.join(fixtureBaseDir, 'pnpm/vulnerable-deps')
+          path.join(fixtureBaseDir, 'pnpm/vulnerable-deps'),
         )
         cleanupFunctions.push(cleanup)
 
@@ -881,7 +881,7 @@ describe('socket fix', async () => {
       'should handle malformed CVE IDs gracefully',
       async cmd => {
         const { tempDir, cleanup } = await withTempFixture(
-          path.join(fixtureBaseDir, 'pnpm/vulnerable-deps')
+          path.join(fixtureBaseDir, 'pnpm/vulnerable-deps'),
         )
         cleanupFunctions.push(cleanup)
 
@@ -914,7 +914,7 @@ describe('socket fix', async () => {
       'should handle unusually long tokens gracefully',
       async cmd => {
         const { tempDir, cleanup } = await withTempFixture(
-          path.join(fixtureBaseDir, 'pnpm/vulnerable-deps')
+          path.join(fixtureBaseDir, 'pnpm/vulnerable-deps'),
         )
         cleanupFunctions.push(cleanup)
 
@@ -939,7 +939,7 @@ describe('socket fix', async () => {
       'should handle mixed valid and invalid vulnerability IDs',
       async cmd => {
         const { tempDir, cleanup } = await withTempFixture(
-          path.join(fixtureBaseDir, 'pnpm/vulnerable-deps')
+          path.join(fixtureBaseDir, 'pnpm/vulnerable-deps'),
         )
         cleanupFunctions.push(cleanup)
 
