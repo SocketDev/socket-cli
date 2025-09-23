@@ -739,15 +739,17 @@ const lazyNodeHardenFlags = () =>
   )
 
 const lazyNodeMemoryFlags = () => {
-  const flags = /*@__PURE__*/ require(
-    path.join(constants.rootPath, 'dist/flags.js'),
-  )
-  const getMaxOldSpaceSizeFlag = flags.getMaxOldSpaceSizeFlag
-  const getMaxSemiSpaceSizeFlag = flags.getMaxSemiSpaceSizeFlag
-  return Object.freeze([
-    `--max-old-space-size=${getMaxOldSpaceSizeFlag()}`,
-    `--max-semi-space-size=${getMaxSemiSpaceSizeFlag()}`,
-  ])
+  // Memory limit flags commented out - no defaults applied
+  // const flags = /*@__PURE__*/ require(
+  //   path.join(constants.rootPath, 'dist/flags.js'),
+  // )
+  // const getMaxOldSpaceSizeFlag = flags.getMaxOldSpaceSizeFlag
+  // const getMaxSemiSpaceSizeFlag = flags.getMaxSemiSpaceSizeFlag
+  // return Object.freeze([
+  //   `--max-old-space-size=${getMaxOldSpaceSizeFlag()}`,
+  //   `--max-semi-space-size=${getMaxSemiSpaceSizeFlag()}`,
+  // ])
+  return Object.freeze([]) // Return empty array - no memory flags
 }
 
 const lazyNpmCachePath = () => {
