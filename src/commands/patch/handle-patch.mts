@@ -9,6 +9,7 @@ import { debugDir } from '@socketsecurity/registry/lib/debug'
 import { readDirNames } from '@socketsecurity/registry/lib/fs'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { readPackageJson } from '@socketsecurity/registry/lib/packages'
+import { normalizePath } from '@socketsecurity/registry/lib/path'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 import { pluralize } from '@socketsecurity/registry/lib/words'
 
@@ -97,7 +98,7 @@ async function applyNpmPatches(
     const dirNames = await readDirNames(nmPath)
     for (const dirName of dirNames) {
       const isScoped = dirName.startsWith('@')
-      const pkgPath = path.join(nmPath, dirName)
+      const pkgPath = normalizePath(path.join(nmPath, dirName))
       const pkgSubNames = isScoped
         ? // eslint-disable-next-line no-await-in-loop
           await readDirNames(pkgPath)
@@ -105,7 +106,7 @@ async function applyNpmPatches(
 
       for (const pkgSubName of pkgSubNames) {
         const dirFullName = isScoped ? `${dirName}/${pkgSubName}` : pkgSubName
-        const pkgPath = path.join(nmPath, dirFullName)
+        const pkgPath = normalizePath(path.join(nmPath, dirFullName))
         // eslint-disable-next-line no-await-in-loop
         const pkgJson = await readPackageJson(pkgPath, { throws: false })
         if (
@@ -247,7 +248,7 @@ async function processFilePatch(
 
   spinner?.stop()
 
-  const filepath = path.join(pkgPath, fileName)
+  const filepath = normalizePath(path.join(pkgPath, fileName))
   if (!existsSync(filepath)) {
     logger.log(`File not found: ${fileName}`)
     if (wasSpinning) {
@@ -307,7 +308,9 @@ async function processFilePatch(
     return false
   }
 
-  const blobPath = path.join(socketDir, 'blobs', fileInfo.afterHash)
+  const blobPath = normalizePath(
+    path.join(socketDir, 'blobs', fileInfo.afterHash),
+  )
   if (!existsSync(blobPath)) {
     logger.fail(`Error: Patch file not found at ${blobPath}`)
     logger.groupEnd()
@@ -373,8 +376,10 @@ export async function handlePatch({
   spinner,
 }: HandlePatchConfig): Promise<void> {
   try {
-    const dotSocketDirPath = path.join(cwd, DOT_SOCKET_DIR)
-    const manifestPath = path.join(dotSocketDirPath, MANIFEST_JSON)
+    const dotSocketDirPath = normalizePath(path.join(cwd, DOT_SOCKET_DIR))
+    const manifestPath = normalizePath(
+      path.join(dotSocketDirPath, MANIFEST_JSON),
+    )
     const manifestContent = await fs.readFile(manifestPath, UTF8)
     const manifestData = JSON.parse(manifestContent)
     const purls = purlObjs.map(String)
