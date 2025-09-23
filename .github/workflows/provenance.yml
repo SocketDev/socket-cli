@@ -26,24 +26,40 @@ jobs:
           scope: '@socketsecurity'
       - run: npm install -g npm@latest
       - run: pnpm install
-      - run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 pnpm run build:dist
-      - run: npm publish --provenance --access public --no-git-checks
+
+      # Build and publish 'socket' package (default).
+      - name: Build socket package
+        run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 pnpm run build:dist
+      - name: Publish socket package
+        run: cd dist && npm publish --provenance --access public --no-git-checks
         continue-on-error: true
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
-      - run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 INLINED_SOCKET_CLI_LEGACY_BUILD=1 pnpm run build:dist
+
+      # Build and publish '@socketsecurity/cli' package (legacy).
+      - name: Build @socketsecurity/cli package
+        run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 INLINED_SOCKET_CLI_LEGACY_BUILD=1 pnpm run build:dist
         env:
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
-      - run: npm publish --provenance --access public --no-git-checks
+      - name: Publish @socketsecurity/cli package
+        run: cd dist && npm publish --provenance --access public --no-git-checks
         continue-on-error: true
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
-      - run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 INLINED_SOCKET_CLI_SENTRY_BUILD=1 pnpm run build:dist
+
+      # Build and publish '@socketsecurity/cli-with-sentry' package.
+      - name: Build @socketsecurity/cli-with-sentry package
+        run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 INLINED_SOCKET_CLI_SENTRY_BUILD=1 pnpm run build:dist
         env:
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
+<<<<<<< HEAD
       - run: npm publish --provenance --access public --no-git-checks
+=======
+      - name: Publish @socketsecurity/cli-with-sentry package
+        run: cd dist && npm publish --provenance --access public --no-git-checks
+>>>>>>> 41c75fb6 (Update actions)
         continue-on-error: true
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
