@@ -5,7 +5,9 @@ import { failMsgWithBadge } from './fail-msg-with-badge.mts'
 // Mock yoctocolors-cjs.
 vi.mock('yoctocolors-cjs', () => ({
   default: {
-    bgRedBright: vi.fn((str: string) => `[BG_RED_BRIGHT]${str}[/BG_RED_BRIGHT]`),
+    bgRedBright: vi.fn(
+      (str: string) => `[BG_RED_BRIGHT]${str}[/BG_RED_BRIGHT]`,
+    ),
     bold: vi.fn((str: string) => `[BOLD]${str}[/BOLD]`),
     red: vi.fn((str: string) => `[RED]${str}[/RED]`),
   },
@@ -25,7 +27,10 @@ describe('failMsgWithBadge', () => {
     })
 
     it('handles long badge text', () => {
-      const result = failMsgWithBadge('CATASTROPHIC_SYSTEM_FAILURE', 'Error message')
+      const result = failMsgWithBadge(
+        'CATASTROPHIC_SYSTEM_FAILURE',
+        'Error message',
+      )
       expect(result).toContain('CATASTROPHIC_SYSTEM_FAILURE: ')
       expect(result).toContain('[BOLD]Error message[/BOLD]')
     })
@@ -62,7 +67,7 @@ describe('failMsgWithBadge', () => {
     it('handles message with only spaces', () => {
       const result = failMsgWithBadge('ERROR', '   ')
       expect(result).toBe(
-        '[BG_RED_BRIGHT][BOLD][RED] ERROR: [/RED][/BOLD][/BG_RED_BRIGHT] [BOLD]   [/BOLD]'
+        '[BG_RED_BRIGHT][BOLD][RED] ERROR: [/RED][/BOLD][/BG_RED_BRIGHT] [BOLD]   [/BOLD]',
       )
     })
 
@@ -80,29 +85,39 @@ describe('failMsgWithBadge', () => {
   describe('without message', () => {
     it('formats badge without message', () => {
       const result = failMsgWithBadge('FAIL', undefined)
-      expect(result).toBe('[BG_RED_BRIGHT][BOLD][RED] FAIL[/RED][/BOLD][/BG_RED_BRIGHT]')
+      expect(result).toBe(
+        '[BG_RED_BRIGHT][BOLD][RED] FAIL[/RED][/BOLD][/BG_RED_BRIGHT]',
+      )
     })
 
     it('handles empty badge without message', () => {
       const result = failMsgWithBadge('', undefined)
-      expect(result).toBe('[BG_RED_BRIGHT][BOLD][RED] [/RED][/BOLD][/BG_RED_BRIGHT]')
+      expect(result).toBe(
+        '[BG_RED_BRIGHT][BOLD][RED] [/RED][/BOLD][/BG_RED_BRIGHT]',
+      )
     })
 
     it('handles badge with only spaces without message', () => {
       const result = failMsgWithBadge('   ', undefined)
-      expect(result).toBe('[BG_RED_BRIGHT][BOLD][RED]    [/RED][/BOLD][/BG_RED_BRIGHT]')
+      expect(result).toBe(
+        '[BG_RED_BRIGHT][BOLD][RED]    [/RED][/BOLD][/BG_RED_BRIGHT]',
+      )
     })
   })
 
   describe('edge cases with empty string message', () => {
     it('treats empty string message as no message', () => {
       const result = failMsgWithBadge('WARN', '')
-      expect(result).toBe('[BG_RED_BRIGHT][BOLD][RED] WARN[/RED][/BOLD][/BG_RED_BRIGHT]')
+      expect(result).toBe(
+        '[BG_RED_BRIGHT][BOLD][RED] WARN[/RED][/BOLD][/BG_RED_BRIGHT]',
+      )
     })
 
     it('handles empty badge with empty message', () => {
       const result = failMsgWithBadge('', '')
-      expect(result).toBe('[BG_RED_BRIGHT][BOLD][RED] [/RED][/BOLD][/BG_RED_BRIGHT]')
+      expect(result).toBe(
+        '[BG_RED_BRIGHT][BOLD][RED] [/RED][/BOLD][/BG_RED_BRIGHT]',
+      )
     })
   })
 
@@ -110,7 +125,9 @@ describe('failMsgWithBadge', () => {
     it('handles null as message', () => {
       // @ts-expect-error Testing runtime behavior with null.
       const result = failMsgWithBadge('ERROR', null)
-      expect(result).toBe('[BG_RED_BRIGHT][BOLD][RED] ERROR[/RED][/BOLD][/BG_RED_BRIGHT]')
+      expect(result).toBe(
+        '[BG_RED_BRIGHT][BOLD][RED] ERROR[/RED][/BOLD][/BG_RED_BRIGHT]',
+      )
     })
 
     it('handles number 0 as string message', () => {
@@ -127,35 +144,45 @@ describe('failMsgWithBadge', () => {
       // @ts-expect-error Testing runtime behavior.
       const result = failMsgWithBadge('ERROR', false)
       // false is falsy, should behave like undefined.
-      expect(result).toBe('[BG_RED_BRIGHT][BOLD][RED] ERROR[/RED][/BOLD][/BG_RED_BRIGHT]')
+      expect(result).toBe(
+        '[BG_RED_BRIGHT][BOLD][RED] ERROR[/RED][/BOLD][/BG_RED_BRIGHT]',
+      )
     })
 
     it('handles boolean true as message (type coercion)', () => {
       // @ts-expect-error Testing runtime behavior.
       const result = failMsgWithBadge('ERROR', true)
       // true is truthy, should add colon and format the message.
-      expect(result).toBe('[BG_RED_BRIGHT][BOLD][RED] ERROR: [/RED][/BOLD][/BG_RED_BRIGHT] [BOLD]true[/BOLD]')
+      expect(result).toBe(
+        '[BG_RED_BRIGHT][BOLD][RED] ERROR: [/RED][/BOLD][/BG_RED_BRIGHT] [BOLD]true[/BOLD]',
+      )
     })
 
     it('handles number as message (type coercion)', () => {
       // @ts-expect-error Testing runtime behavior.
       const result = failMsgWithBadge('ERROR', 42)
       // Number is truthy, should add colon and format the message.
-      expect(result).toBe('[BG_RED_BRIGHT][BOLD][RED] ERROR: [/RED][/BOLD][/BG_RED_BRIGHT] [BOLD]42[/BOLD]')
+      expect(result).toBe(
+        '[BG_RED_BRIGHT][BOLD][RED] ERROR: [/RED][/BOLD][/BG_RED_BRIGHT] [BOLD]42[/BOLD]',
+      )
     })
 
     it('handles object as message (type coercion)', () => {
       // @ts-expect-error Testing runtime behavior.
       const result = failMsgWithBadge('ERROR', { error: 'details' })
       // Object is truthy, should add colon and format the message.
-      expect(result).toBe('[BG_RED_BRIGHT][BOLD][RED] ERROR: [/RED][/BOLD][/BG_RED_BRIGHT] [BOLD][object Object][/BOLD]')
+      expect(result).toBe(
+        '[BG_RED_BRIGHT][BOLD][RED] ERROR: [/RED][/BOLD][/BG_RED_BRIGHT] [BOLD][object Object][/BOLD]',
+      )
     })
 
     it('handles array as message (type coercion)', () => {
       // @ts-expect-error Testing runtime behavior.
       const result = failMsgWithBadge('ERROR', ['item1', 'item2'])
       // Array is truthy, should add colon and format the message.
-      expect(result).toBe('[BG_RED_BRIGHT][BOLD][RED] ERROR: [/RED][/BOLD][/BG_RED_BRIGHT] [BOLD]item1,item2[/BOLD]')
+      expect(result).toBe(
+        '[BG_RED_BRIGHT][BOLD][RED] ERROR: [/RED][/BOLD][/BG_RED_BRIGHT] [BOLD]item1,item2[/BOLD]',
+      )
     })
   })
 
@@ -208,7 +235,9 @@ describe('failMsgWithBadge', () => {
 
       expect(colors.red).toHaveBeenCalledWith(' ERROR: ')
       expect(colors.bold).toHaveBeenNthCalledWith(1, '[RED] ERROR: [/RED]')
-      expect(colors.bgRedBright).toHaveBeenCalledWith('[BOLD][RED] ERROR: [/RED][/BOLD]')
+      expect(colors.bgRedBright).toHaveBeenCalledWith(
+        '[BOLD][RED] ERROR: [/RED][/BOLD]',
+      )
       expect(colors.bold).toHaveBeenNthCalledWith(2, 'Test')
     })
 
@@ -220,7 +249,9 @@ describe('failMsgWithBadge', () => {
 
       expect(colors.red).toHaveBeenCalledWith(' ERROR')
       expect(colors.bold).toHaveBeenCalledWith('[RED] ERROR[/RED]')
-      expect(colors.bgRedBright).toHaveBeenCalledWith('[BOLD][RED] ERROR[/RED][/BOLD]')
+      expect(colors.bgRedBright).toHaveBeenCalledWith(
+        '[BOLD][RED] ERROR[/RED][/BOLD]',
+      )
       expect(colors.bold).toHaveBeenCalledTimes(1) // Only called once for the badge.
     })
   })

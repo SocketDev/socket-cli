@@ -11,7 +11,9 @@ vi.mock('../../utils/sdk.mts', () => ({
 
 describe('fetchSupportedScanFileNames', () => {
   it('fetches supported scan file names successfully', async () => {
-    const { fetchSupportedScanFileNames } = await import('./fetch-supported-scan-file-names.mts')
+    const { fetchSupportedScanFileNames } = await import(
+      './fetch-supported-scan-file-names.mts'
+    )
     const { handleApiCall } = await import('../../utils/api.mts')
     const { setupSdk } = await import('../../utils/sdk.mts')
     const mockHandleApi = vi.mocked(handleApiCall)
@@ -36,13 +38,7 @@ describe('fetchSupportedScanFileNames', () => {
             'go.mod',
             'go.sum',
           ],
-          ecosystems: [
-            'npm',
-            'composer',
-            'ruby',
-            'python',
-            'go',
-          ],
+          ecosystems: ['npm', 'composer', 'ruby', 'python', 'go'],
         },
       }),
     }
@@ -51,27 +47,24 @@ describe('fetchSupportedScanFileNames', () => {
     mockHandleApi.mockResolvedValue({
       ok: true,
       data: {
-        supportedFiles: [
-          'package.json',
-          'yarn.lock',
-          'composer.json',
-        ],
+        supportedFiles: ['package.json', 'yarn.lock', 'composer.json'],
       },
     })
 
     const result = await fetchSupportedScanFileNames()
 
     expect(mockSdk.getSupportedScanFiles).toHaveBeenCalledWith()
-    expect(mockHandleApi).toHaveBeenCalledWith(
-      expect.any(Promise),
-      { description: 'supported scan file types' },
-    )
+    expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
+      description: 'supported scan file types',
+    })
     expect(result.ok).toBe(true)
     expect(result.data?.supportedFiles).toContain('package.json')
   })
 
   it('handles SDK setup failure', async () => {
-    const { fetchSupportedScanFileNames } = await import('./fetch-supported-scan-file-names.mts')
+    const { fetchSupportedScanFileNames } = await import(
+      './fetch-supported-scan-file-names.mts'
+    )
     const { setupSdk } = await import('../../utils/sdk.mts')
     const mockSetupSdk = vi.mocked(setupSdk)
 
@@ -89,7 +82,9 @@ describe('fetchSupportedScanFileNames', () => {
   })
 
   it('handles API call failure', async () => {
-    const { fetchSupportedScanFileNames } = await import('./fetch-supported-scan-file-names.mts')
+    const { fetchSupportedScanFileNames } = await import(
+      './fetch-supported-scan-file-names.mts'
+    )
     const { handleApiCall } = await import('../../utils/api.mts')
     const { setupSdk } = await import('../../utils/sdk.mts')
     const mockHandleApi = vi.mocked(handleApiCall)
@@ -113,7 +108,9 @@ describe('fetchSupportedScanFileNames', () => {
   })
 
   it('passes custom SDK options', async () => {
-    const { fetchSupportedScanFileNames } = await import('./fetch-supported-scan-file-names.mts')
+    const { fetchSupportedScanFileNames } = await import(
+      './fetch-supported-scan-file-names.mts'
+    )
     const { setupSdk } = await import('../../utils/sdk.mts')
     const { handleApiCall } = await import('../../utils/api.mts')
     const mockSetupSdk = vi.mocked(setupSdk)
@@ -140,7 +137,9 @@ describe('fetchSupportedScanFileNames', () => {
   })
 
   it('passes custom spinner', async () => {
-    const { fetchSupportedScanFileNames } = await import('./fetch-supported-scan-file-names.mts')
+    const { fetchSupportedScanFileNames } = await import(
+      './fetch-supported-scan-file-names.mts'
+    )
     const { setupSdk } = await import('../../utils/sdk.mts')
     const { handleApiCall } = await import('../../utils/api.mts')
     const mockSetupSdk = vi.mocked(setupSdk)
@@ -166,14 +165,16 @@ describe('fetchSupportedScanFileNames', () => {
 
     await fetchSupportedScanFileNames(options)
 
-    expect(mockHandleApi).toHaveBeenCalledWith(
-      expect.any(Promise),
-      { description: 'supported scan file types', spinner: mockSpinner },
-    )
+    expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
+      description: 'supported scan file types',
+      spinner: mockSpinner,
+    })
   })
 
   it('handles empty supported files response', async () => {
-    const { fetchSupportedScanFileNames } = await import('./fetch-supported-scan-file-names.mts')
+    const { fetchSupportedScanFileNames } = await import(
+      './fetch-supported-scan-file-names.mts'
+    )
     const { setupSdk } = await import('../../utils/sdk.mts')
     const { handleApiCall } = await import('../../utils/api.mts')
     const mockSetupSdk = vi.mocked(setupSdk)
@@ -206,7 +207,9 @@ describe('fetchSupportedScanFileNames', () => {
   })
 
   it('handles comprehensive file types', async () => {
-    const { fetchSupportedScanFileNames } = await import('./fetch-supported-scan-file-names.mts')
+    const { fetchSupportedScanFileNames } = await import(
+      './fetch-supported-scan-file-names.mts'
+    )
     const { setupSdk } = await import('../../utils/sdk.mts')
     const { handleApiCall } = await import('../../utils/api.mts')
     const mockSetupSdk = vi.mocked(setupSdk)
@@ -268,7 +271,9 @@ describe('fetchSupportedScanFileNames', () => {
   })
 
   it('works without options parameter', async () => {
-    const { fetchSupportedScanFileNames } = await import('./fetch-supported-scan-file-names.mts')
+    const { fetchSupportedScanFileNames } = await import(
+      './fetch-supported-scan-file-names.mts'
+    )
     const { setupSdk } = await import('../../utils/sdk.mts')
     const { handleApiCall } = await import('../../utils/api.mts')
     const mockSetupSdk = vi.mocked(setupSdk)
@@ -290,15 +295,17 @@ describe('fetchSupportedScanFileNames', () => {
     const result = await fetchSupportedScanFileNames()
 
     expect(mockSetupSdk).toHaveBeenCalledWith(undefined)
-    expect(mockHandleApi).toHaveBeenCalledWith(
-      expect.any(Promise),
-      { description: 'supported scan file types', spinner: undefined },
-    )
+    expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
+      description: 'supported scan file types',
+      spinner: undefined,
+    })
     expect(result.ok).toBe(true)
   })
 
   it('uses null prototype for options', async () => {
-    const { fetchSupportedScanFileNames } = await import('./fetch-supported-scan-file-names.mts')
+    const { fetchSupportedScanFileNames } = await import(
+      './fetch-supported-scan-file-names.mts'
+    )
     const { setupSdk } = await import('../../utils/sdk.mts')
     const { handleApiCall } = await import('../../utils/api.mts')
     const mockSetupSdk = vi.mocked(setupSdk)

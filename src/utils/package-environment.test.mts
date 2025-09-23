@@ -3,8 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { AGENTS, detectPackageEnvironment } from './package-environment.mts'
 
 // Mock the dependencies.
-vi.mock('node:fs', async (importOriginal) => {
-  const actual = await importOriginal() as any
+vi.mock('node:fs', async importOriginal => {
+  const actual = (await importOriginal()) as any
   return {
     ...actual,
     existsSync: vi.fn(),
@@ -36,8 +36,8 @@ vi.mock('./fs.mts', () => ({
   findUp: vi.fn(),
 }))
 
-vi.mock('../constants.mts', async (importOriginal) => {
-  const actual = await importOriginal() as any
+vi.mock('../constants.mts', async importOriginal => {
+  const actual = (await importOriginal()) as any
   const kInternalsSymbol = Symbol.for('kInternalsSymbol')
   return {
     ...actual,
@@ -69,7 +69,9 @@ describe('package-environment', () => {
   describe('detectPackageEnvironment', () => {
     it('detects npm environment with package-lock.json', async () => {
       const { existsSync } = await import('node:fs')
-      const { readPackageJson } = await import('@socketsecurity/registry/lib/packages')
+      const { readPackageJson } = await import(
+        '@socketsecurity/registry/lib/packages'
+      )
       const { findUp } = await import('./fs.mts')
       const { whichBin } = await import('@socketsecurity/registry/lib/bin')
       const mockExistsSync = vi.mocked(existsSync)
@@ -78,8 +80,10 @@ describe('package-environment', () => {
       const mockWhichBin = vi.mocked(whichBin)
 
       mockFindUp.mockResolvedValue('/project/package.json')
-      mockExistsSync.mockImplementation((path) => {
-        if (String(path).includes('package-lock.json')) return true
+      mockExistsSync.mockImplementation(path => {
+        if (String(path).includes('package-lock.json')) {
+          return true
+        }
         return false
       })
       mockReadPackageJson.mockResolvedValue({
@@ -99,7 +103,9 @@ describe('package-environment', () => {
 
     it('detects pnpm environment with pnpm-lock.yaml', async () => {
       const { existsSync } = await import('node:fs')
-      const { readPackageJson } = await import('@socketsecurity/registry/lib/packages')
+      const { readPackageJson } = await import(
+        '@socketsecurity/registry/lib/packages'
+      )
       const { findUp } = await import('./fs.mts')
       const { whichBin } = await import('@socketsecurity/registry/lib/bin')
       const mockExistsSync = vi.mocked(existsSync)
@@ -108,8 +114,10 @@ describe('package-environment', () => {
       const mockWhichBin = vi.mocked(whichBin)
 
       mockFindUp.mockResolvedValue('/project/package.json')
-      mockExistsSync.mockImplementation((path) => {
-        if (String(path).includes('pnpm-lock.yaml')) return true
+      mockExistsSync.mockImplementation(path => {
+        if (String(path).includes('pnpm-lock.yaml')) {
+          return true
+        }
         return false
       })
       mockReadPackageJson.mockResolvedValue({
@@ -129,7 +137,9 @@ describe('package-environment', () => {
 
     it('detects yarn environment with yarn.lock', async () => {
       const { existsSync } = await import('node:fs')
-      const { readPackageJson } = await import('@socketsecurity/registry/lib/packages')
+      const { readPackageJson } = await import(
+        '@socketsecurity/registry/lib/packages'
+      )
       const { findUp } = await import('./fs.mts')
       const { whichBin } = await import('@socketsecurity/registry/lib/bin')
       const mockExistsSync = vi.mocked(existsSync)
@@ -138,8 +148,10 @@ describe('package-environment', () => {
       const mockWhichBin = vi.mocked(whichBin)
 
       mockFindUp.mockResolvedValue('/project/package.json')
-      mockExistsSync.mockImplementation((path) => {
-        if (String(path).includes('yarn.lock')) return true
+      mockExistsSync.mockImplementation(path => {
+        if (String(path).includes('yarn.lock')) {
+          return true
+        }
         return false
       })
       mockReadPackageJson.mockResolvedValue({
@@ -159,7 +171,9 @@ describe('package-environment', () => {
 
     it('detects bun environment with bun.lockb', async () => {
       const { existsSync } = await import('node:fs')
-      const { readPackageJson } = await import('@socketsecurity/registry/lib/packages')
+      const { readPackageJson } = await import(
+        '@socketsecurity/registry/lib/packages'
+      )
       const { findUp } = await import('./fs.mts')
       const { whichBin } = await import('@socketsecurity/registry/lib/bin')
       const mockExistsSync = vi.mocked(existsSync)
@@ -168,8 +182,10 @@ describe('package-environment', () => {
       const mockWhichBin = vi.mocked(whichBin)
 
       mockFindUp.mockResolvedValue('/project/package.json')
-      mockExistsSync.mockImplementation((path) => {
-        if (String(path).includes('bun.lockb')) return true
+      mockExistsSync.mockImplementation(path => {
+        if (String(path).includes('bun.lockb')) {
+          return true
+        }
         return false
       })
       mockReadPackageJson.mockResolvedValue({
@@ -203,7 +219,9 @@ describe('package-environment', () => {
 
     it('handles workspaces configuration', async () => {
       const { existsSync } = await import('node:fs')
-      const { readPackageJson } = await import('@socketsecurity/registry/lib/packages')
+      const { readPackageJson } = await import(
+        '@socketsecurity/registry/lib/packages'
+      )
       const { findUp } = await import('./fs.mts')
       const mockExistsSync = vi.mocked(existsSync)
       const mockReadPackageJson = vi.mocked(readPackageJson)
@@ -227,7 +245,9 @@ describe('package-environment', () => {
 
     it('detects browserslist configuration', async () => {
       const { existsSync } = await import('node:fs')
-      const { readPackageJson } = await import('@socketsecurity/registry/lib/packages')
+      const { readPackageJson } = await import(
+        '@socketsecurity/registry/lib/packages'
+      )
       const { findUp } = await import('./fs.mts')
       const browserslist = await import('browserslist')
       const mockExistsSync = vi.mocked(existsSync)

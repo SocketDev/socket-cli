@@ -13,7 +13,7 @@ vi.mock('./purl.mts', () => ({
 }))
 
 vi.mock('./errors.mts', () => ({
-  getErrorCause: vi.fn((e) => e?.message || String(e)),
+  getErrorCause: vi.fn(e => e?.message || String(e)),
 }))
 
 describe('convertPurlToGhsas', () => {
@@ -41,7 +41,9 @@ describe('convertPurlToGhsas', () => {
       version: '1.0.0',
     } as any)
 
-    const result = await convertPurlToGhsas('pkg:unsupported/some-package@1.0.0')
+    const result = await convertPurlToGhsas(
+      'pkg:unsupported/some-package@1.0.0',
+    )
 
     expect(result).toEqual({
       ok: false,
@@ -122,7 +124,9 @@ describe('convertPurlToGhsas', () => {
 
     await convertPurlToGhsas('pkg:pypi/requests@2.31.0')
 
-    expect(mockOctokit.rest.securityAdvisories.listGlobalAdvisories).toHaveBeenCalledWith({
+    expect(
+      mockOctokit.rest.securityAdvisories.listGlobalAdvisories,
+    ).toHaveBeenCalledWith({
       ecosystem: 'pip',
       affects: 'requests@2.31.0',
     })
@@ -157,7 +161,9 @@ describe('convertPurlToGhsas', () => {
 
     await convertPurlToGhsas('pkg:npm/express')
 
-    expect(mockOctokit.rest.securityAdvisories.listGlobalAdvisories).toHaveBeenCalledWith({
+    expect(
+      mockOctokit.rest.securityAdvisories.listGlobalAdvisories,
+    ).toHaveBeenCalledWith({
       ecosystem: 'npm',
       affects: 'express',
     })
@@ -196,7 +202,9 @@ describe('convertPurlToGhsas', () => {
 
     await convertPurlToGhsas('pkg:cargo/tokio@1.0.0')
 
-    expect(mockOctokit.rest.securityAdvisories.listGlobalAdvisories).toHaveBeenCalledWith({
+    expect(
+      mockOctokit.rest.securityAdvisories.listGlobalAdvisories,
+    ).toHaveBeenCalledWith({
       ecosystem: 'rust',
       affects: 'tokio@1.0.0',
     })
@@ -231,7 +239,9 @@ describe('convertPurlToGhsas', () => {
 
     await convertPurlToGhsas('pkg:gem/rails@7.0.0')
 
-    expect(mockOctokit.rest.securityAdvisories.listGlobalAdvisories).toHaveBeenCalledWith({
+    expect(
+      mockOctokit.rest.securityAdvisories.listGlobalAdvisories,
+    ).toHaveBeenCalledWith({
       ecosystem: 'rubygems',
       affects: 'rails@7.0.0',
     })
@@ -323,7 +333,9 @@ describe('convertPurlToGhsas', () => {
       // eslint-disable-next-line no-await-in-loop
       await convertPurlToGhsas(`pkg:${purl}/test-package@1.0.0`)
 
-      expect(mockOctokit.rest.securityAdvisories.listGlobalAdvisories).toHaveBeenCalledWith({
+      expect(
+        mockOctokit.rest.securityAdvisories.listGlobalAdvisories,
+      ).toHaveBeenCalledWith({
         ecosystem: github,
         affects: 'test-package@1.0.0',
       })

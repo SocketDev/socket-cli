@@ -102,7 +102,9 @@ describe('handleManifestSetup', () => {
 
     vi.mocked(setupManifestConfig).mockRejectedValue(new Error('Async error'))
 
-    await expect(handleManifestSetup('/test', false)).rejects.toThrow('Async error')
+    await expect(handleManifestSetup('/test', false)).rejects.toThrow(
+      'Async error',
+    )
   })
 
   it('handles current directory path', async () => {

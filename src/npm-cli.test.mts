@@ -1,7 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock process methods.
-const mockProcessExit = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never)
+const mockProcessExit = vi
+  .spyOn(process, 'exit')
+  .mockImplementation(() => undefined as never)
 const mockProcessKill = vi.spyOn(process, 'kill').mockImplementation(() => true)
 
 // Mock shadowNpmBin.
@@ -59,14 +61,11 @@ describe('npm-cli', () => {
     try {
       await import('./npm-cli.mts')
 
-      expect(mockShadowNpmBin).toHaveBeenCalledWith(
-        ['install', 'lodash'],
-        {
-          stdio: 'inherit',
-          cwd: process.cwd(),
-          env: { ...process.env },
-        }
-      )
+      expect(mockShadowNpmBin).toHaveBeenCalledWith(['install', 'lodash'], {
+        stdio: 'inherit',
+        cwd: process.cwd(),
+        env: { ...process.env },
+      })
     } finally {
       process.argv = originalArgv
     }
@@ -119,14 +118,11 @@ describe('npm-cli', () => {
     try {
       await import('./npm-cli.mts')
 
-      expect(mockShadowNpmBin).toHaveBeenCalledWith(
-        [],
-        {
-          stdio: 'inherit',
-          cwd: process.cwd(),
-          env: { ...process.env },
-        }
-      )
+      expect(mockShadowNpmBin).toHaveBeenCalledWith([], {
+        stdio: 'inherit',
+        cwd: process.cwd(),
+        env: { ...process.env },
+      })
     } finally {
       process.argv = originalArgv
     }
@@ -141,14 +137,11 @@ describe('npm-cli', () => {
     try {
       await import('./npm-cli.mts')
 
-      expect(mockShadowNpmBin).toHaveBeenCalledWith(
-        ['run', 'build'],
-        {
-          stdio: 'inherit',
-          cwd: process.cwd(),
-          env: expect.objectContaining({ CUSTOM_VAR: 'test-value' }),
-        }
-      )
+      expect(mockShadowNpmBin).toHaveBeenCalledWith(['run', 'build'], {
+        stdio: 'inherit',
+        cwd: process.cwd(),
+        env: expect.objectContaining({ CUSTOM_VAR: 'test-value' }),
+      })
     } finally {
       process.argv = originalArgv
       process.env = originalEnv

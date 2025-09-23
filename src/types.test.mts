@@ -5,7 +5,7 @@ import type {
   InvalidResult,
   SocketCliConfigObject,
   SocketconfigAny,
-  ValidResult
+  ValidResult,
 } from './types.mts'
 
 describe('types', () => {
@@ -13,7 +13,7 @@ describe('types', () => {
     it('can represent a valid result', () => {
       const validResult: ValidResult<string> = {
         ok: true,
-        value: 'success'
+        value: 'success',
       }
 
       expect(validResult.ok).toBe(true)
@@ -23,7 +23,7 @@ describe('types', () => {
     it('can represent an invalid result', () => {
       const invalidResult: InvalidResult = {
         ok: false,
-        error: new Error('Something went wrong')
+        error: new Error('Something went wrong'),
       }
 
       expect(invalidResult.ok).toBe(false)
@@ -68,23 +68,23 @@ describe('types', () => {
         reportProvider: 'custom-provider',
         token: 'test-token',
         outputDefault: {
-          format: ['text']
+          format: ['text'],
         },
         outputStderr: false,
         issueRules: {
           'high-severity': {
-            action: 'error'
-          }
+            action: 'error',
+          },
         },
         projectIgnorePaths: ['node_modules', 'dist'],
         manifestFiles: {
-          package: ['package.json']
+          package: ['package.json'],
         },
         enforcedOrgs: {
           'org-name': {
-            type: ['prod']
-          }
-        }
+            type: ['prod'],
+          },
+        },
       }
 
       expect(config.baseURL).toBe('https://api.example.com')
@@ -98,7 +98,7 @@ describe('types', () => {
         { outputDefault: { format: ['text'] } },
         { outputDefault: { format: ['json'] } },
         { outputDefault: { format: ['markdown'] } },
-        { outputDefault: { format: ['text', 'json'] } }
+        { outputDefault: { format: ['text', 'json'] } },
       ]
 
       for (const config of configs) {
@@ -112,7 +112,7 @@ describe('types', () => {
     it('can represent string or object config', () => {
       const stringConfig: SocketconfigAny = 'simple-string-config'
       const objectConfig: SocketconfigAny = {
-        baseURL: 'https://api.example.com'
+        baseURL: 'https://api.example.com',
       }
 
       expect(typeof stringConfig).toBe('string')

@@ -150,9 +150,7 @@ describe('handleScanReport', () => {
       ok: true,
       data: {
         scan: { id: 'scan-abc' },
-        issues: [
-          { severity: 'high', package: 'vulnerable-pkg' },
-        ],
+        issues: [{ severity: 'high', package: 'vulnerable-pkg' }],
       },
     })
 

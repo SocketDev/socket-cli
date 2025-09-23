@@ -51,10 +51,9 @@ describe('fetchListAllRepos', () => {
       per_page: '100',
       page: '0',
     })
-    expect(mockHandleApi).toHaveBeenCalledWith(
-      expect.any(Promise),
-      { description: 'list of repositories' },
-    )
+    expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
+      description: 'list of repositories',
+    })
     expect(result.ok).toBe(true)
   })
 

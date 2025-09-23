@@ -20,7 +20,9 @@ describe('terminal-link utilities', () => {
   describe('fileLink', () => {
     it('creates link to absolute file path', () => {
       const result = fileLink('/absolute/path/to/file.txt')
-      expect(result).toBe('[/absolute/path/to/file.txt](file:///absolute/path/to/file.txt)')
+      expect(result).toBe(
+        '[/absolute/path/to/file.txt](file:///absolute/path/to/file.txt)',
+      )
     })
 
     it('creates link to relative file path', () => {
@@ -51,12 +53,16 @@ describe('terminal-link utilities', () => {
   describe('socketDashboardLink', () => {
     it('creates dashboard link with leading slash', () => {
       const result = socketDashboardLink('/org/YOURORG/alerts')
-      expect(result).toBe('[https://socket.dev/dashboard/org/YOURORG/alerts](https://socket.dev/dashboard/org/YOURORG/alerts)')
+      expect(result).toBe(
+        '[https://socket.dev/dashboard/org/YOURORG/alerts](https://socket.dev/dashboard/org/YOURORG/alerts)',
+      )
     })
 
     it('creates dashboard link without leading slash', () => {
       const result = socketDashboardLink('org/YOURORG/settings')
-      expect(result).toBe('[https://socket.dev/dashboard/org/YOURORG/settings](https://socket.dev/dashboard/org/YOURORG/settings)')
+      expect(result).toBe(
+        '[https://socket.dev/dashboard/org/YOURORG/settings](https://socket.dev/dashboard/org/YOURORG/settings)',
+      )
     })
 
     it('uses custom text when provided', () => {
@@ -90,44 +96,69 @@ describe('terminal-link utilities', () => {
   describe('socketDocsLink', () => {
     it('creates docs link with leading slash', () => {
       const result = socketDocsLink('/docs/api-keys')
-      expect(result).toBe('[https://docs.socket.dev/docs/api-keys](https://docs.socket.dev/docs/api-keys)')
+      expect(result).toBe(
+        '[https://docs.socket.dev/docs/api-keys](https://docs.socket.dev/docs/api-keys)',
+      )
     })
 
     it('creates docs link without leading slash', () => {
       const result = socketDocsLink('docs/cli-reference')
-      expect(result).toBe('[https://docs.socket.dev/docs/cli-reference](https://docs.socket.dev/docs/cli-reference)')
+      expect(result).toBe(
+        '[https://docs.socket.dev/docs/cli-reference](https://docs.socket.dev/docs/cli-reference)',
+      )
     })
 
     it('uses custom text when provided', () => {
       const result = socketDocsLink('/docs/getting-started', 'Get Started')
-      expect(result).toBe('[Get Started](https://docs.socket.dev/docs/getting-started)')
+      expect(result).toBe(
+        '[Get Started](https://docs.socket.dev/docs/getting-started)',
+      )
     })
   })
 
   describe('socketPackageLink', () => {
     it('creates basic package link', () => {
       const result = socketPackageLink('npm', 'express')
-      expect(result).toBe('[https://socket.dev/npm/package/express](https://socket.dev/npm/package/express)')
+      expect(result).toBe(
+        '[https://socket.dev/npm/package/express](https://socket.dev/npm/package/express)',
+      )
     })
 
     it('creates package link with version', () => {
       const result = socketPackageLink('npm', 'express', '4.18.0')
-      expect(result).toBe('[https://socket.dev/npm/package/express/overview/4.18.0](https://socket.dev/npm/package/express/overview/4.18.0)')
+      expect(result).toBe(
+        '[https://socket.dev/npm/package/express/overview/4.18.0](https://socket.dev/npm/package/express/overview/4.18.0)',
+      )
     })
 
     it('creates package link with path in version', () => {
-      const result = socketPackageLink('npm', 'express', 'files/4.18.0/CHANGELOG.md')
-      expect(result).toBe('[https://socket.dev/npm/package/express/files/4.18.0/CHANGELOG.md](https://socket.dev/npm/package/express/files/4.18.0/CHANGELOG.md)')
+      const result = socketPackageLink(
+        'npm',
+        'express',
+        'files/4.18.0/CHANGELOG.md',
+      )
+      expect(result).toBe(
+        '[https://socket.dev/npm/package/express/files/4.18.0/CHANGELOG.md](https://socket.dev/npm/package/express/files/4.18.0/CHANGELOG.md)',
+      )
     })
 
     it('uses custom text when provided', () => {
-      const result = socketPackageLink('npm', 'lodash', '4.17.21', 'View Lodash')
-      expect(result).toBe('[View Lodash](https://socket.dev/npm/package/lodash/overview/4.17.21)')
+      const result = socketPackageLink(
+        'npm',
+        'lodash',
+        '4.17.21',
+        'View Lodash',
+      )
+      expect(result).toBe(
+        '[View Lodash](https://socket.dev/npm/package/lodash/overview/4.17.21)',
+      )
     })
 
     it('handles scoped packages', () => {
       const result = socketPackageLink('npm', '@babel/core')
-      expect(result).toBe('[https://socket.dev/npm/package/@babel/core](https://socket.dev/npm/package/@babel/core)')
+      expect(result).toBe(
+        '[https://socket.dev/npm/package/@babel/core](https://socket.dev/npm/package/@babel/core)',
+      )
     })
   })
 

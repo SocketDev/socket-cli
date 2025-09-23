@@ -43,19 +43,23 @@ describe('translations utilities', () => {
   describe('getTranslations', () => {
     it('loads translations from the correct path', async () => {
       // Re-import to get fresh module with reset cache.
-      const { getTranslations: getTranslationsFresh } = await import('./translations.mts')
+      const { getTranslations: getTranslationsFresh } = await import(
+        './translations.mts'
+      )
 
       const result = getTranslationsFresh()
 
       expect(mockRequire).toHaveBeenCalledWith(
-        path.join('/mock/root/path', 'translations.json')
+        path.join('/mock/root/path', 'translations.json'),
       )
       expect(result).toBe(mockTranslations)
     })
 
     it('caches translations after first load', async () => {
       // Re-import to get fresh module with reset cache.
-      const { getTranslations: getTranslationsFresh } = await import('./translations.mts')
+      const { getTranslations: getTranslationsFresh } = await import(
+        './translations.mts'
+      )
 
       const result1 = getTranslationsFresh()
       const result2 = getTranslationsFresh()
@@ -71,7 +75,9 @@ describe('translations utilities', () => {
 
     it('returns the translations object', async () => {
       // Re-import to get fresh module with reset cache.
-      const { getTranslations: getTranslationsFresh } = await import('./translations.mts')
+      const { getTranslations: getTranslationsFresh } = await import(
+        './translations.mts'
+      )
 
       const result = getTranslationsFresh()
 
@@ -83,11 +89,15 @@ describe('translations utilities', () => {
 
     it('uses createRequire with import.meta.url', async () => {
       // Re-import to get fresh module with reset cache.
-      const { getTranslations: getTranslationsFresh } = await import('./translations.mts')
+      const { getTranslations: getTranslationsFresh } = await import(
+        './translations.mts'
+      )
 
       getTranslationsFresh()
 
-      expect(createRequire).toHaveBeenCalledWith(expect.stringContaining('.mts'))
+      expect(createRequire).toHaveBeenCalledWith(
+        expect.stringContaining('.mts'),
+      )
     })
 
     it('handles empty translations object', async () => {
@@ -96,7 +106,9 @@ describe('translations utilities', () => {
       vi.mocked(createRequire).mockReturnValue(mockRequire)
 
       // Re-import to get fresh module with reset cache.
-      const { getTranslations: getTranslationsFresh } = await import('./translations.mts')
+      const { getTranslations: getTranslationsFresh } = await import(
+        './translations.mts'
+      )
 
       const result = getTranslationsFresh()
 
@@ -112,16 +124,15 @@ describe('translations utilities', () => {
             },
           },
         },
-        arrays: [
-          'item1',
-          'item2',
-        ],
+        arrays: ['item1', 'item2'],
       }
       mockRequire = vi.fn(() => mockTranslations)
       vi.mocked(createRequire).mockReturnValue(mockRequire)
 
       // Re-import to get fresh module with reset cache.
-      const { getTranslations: getTranslationsFresh } = await import('./translations.mts')
+      const { getTranslations: getTranslationsFresh } = await import(
+        './translations.mts'
+      )
 
       const result = getTranslationsFresh()
 

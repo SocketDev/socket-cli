@@ -35,7 +35,7 @@ describe('commands', () => {
         // Commands have either a 'run' method or 'handler' method.
         expect(
           typeof command.run === 'function' ||
-          typeof command.handler === 'function'
+            typeof command.handler === 'function',
         ).toBe(true)
       }
     })
@@ -97,7 +97,7 @@ describe('commands', () => {
         const command = rootCommands[pm]
         expect(
           typeof command.run === 'function' ||
-          typeof command.handler === 'function'
+            typeof command.handler === 'function',
         ).toBe(true)
       }
     })

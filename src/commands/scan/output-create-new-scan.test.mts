@@ -19,7 +19,7 @@ vi.mock('../../utils/fail-msg-with-badge.mts', () => ({
 }))
 
 vi.mock('../../utils/serialize-result-json.mts', () => ({
-  serializeResultJson: vi.fn((result) => JSON.stringify(result)),
+  serializeResultJson: vi.fn(result => JSON.stringify(result)),
 }))
 
 vi.mock('open', () => ({
@@ -51,17 +51,20 @@ describe('outputCreateNewScan', () => {
 
   it('outputs JSON format for successful result', async () => {
     const { logger } = await import('@socketsecurity/registry/lib/logger')
-    const { serializeResultJson } = await import('../../utils/serialize-result-json.mts')
+    const { serializeResultJson } = await import(
+      '../../utils/serialize-result-json.mts'
+    )
     const mockLog = vi.mocked(logger.log)
     const mockSerialize = vi.mocked(serializeResultJson)
 
-    const result: CResult<SocketSdkSuccessResult<'CreateOrgFullScan'>['data']> = {
-      ok: true,
-      data: {
-        html_report_url: 'https://socket.dev/report/123',
-        id: 'scan-123',
-      },
-    }
+    const result: CResult<SocketSdkSuccessResult<'CreateOrgFullScan'>['data']> =
+      {
+        ok: true,
+        data: {
+          html_report_url: 'https://socket.dev/report/123',
+          id: 'scan-123',
+        },
+      }
 
     await outputCreateNewScan(result, { outputKind: 'json' })
 
@@ -74,12 +77,13 @@ describe('outputCreateNewScan', () => {
     const { logger } = await import('@socketsecurity/registry/lib/logger')
     const mockLog = vi.mocked(logger.log)
 
-    const result: CResult<SocketSdkSuccessResult<'CreateOrgFullScan'>['data']> = {
-      ok: false,
-      code: 2,
-      message: 'Unauthorized',
-      cause: 'Invalid API token',
-    }
+    const result: CResult<SocketSdkSuccessResult<'CreateOrgFullScan'>['data']> =
+      {
+        ok: false,
+        code: 2,
+        message: 'Unauthorized',
+        cause: 'Invalid API token',
+      }
 
     await outputCreateNewScan(result, { outputKind: 'json' })
 
@@ -94,13 +98,14 @@ describe('outputCreateNewScan', () => {
     const mockSuccess = vi.mocked(logger.success)
     const mockTerminalLink = vi.mocked(terminalLink.default)
 
-    const result: CResult<SocketSdkSuccessResult<'CreateOrgFullScan'>['data']> = {
-      ok: true,
-      data: {
-        html_report_url: 'https://socket.dev/report/456',
-        id: 'scan-456',
-      },
-    }
+    const result: CResult<SocketSdkSuccessResult<'CreateOrgFullScan'>['data']> =
+      {
+        ok: true,
+        data: {
+          html_report_url: 'https://socket.dev/report/456',
+          id: 'scan-456',
+        },
+      }
 
     await outputCreateNewScan(result, { outputKind: 'text' })
 
@@ -109,20 +114,23 @@ describe('outputCreateNewScan', () => {
       'https://socket.dev/report/456',
       'https://socket.dev/report/456',
     )
-    expect(mockLog).toHaveBeenCalledWith('View report at: [https://socket.dev/report/456](https://socket.dev/report/456)')
+    expect(mockLog).toHaveBeenCalledWith(
+      'View report at: [https://socket.dev/report/456](https://socket.dev/report/456)',
+    )
   })
 
   it('outputs markdown format with scan ID', async () => {
     const { logger } = await import('@socketsecurity/registry/lib/logger')
     const mockLog = vi.mocked(logger.log)
 
-    const result: CResult<SocketSdkSuccessResult<'CreateOrgFullScan'>['data']> = {
-      ok: true,
-      data: {
-        html_report_url: 'https://socket.dev/report/789',
-        id: 'scan-789',
-      },
-    }
+    const result: CResult<SocketSdkSuccessResult<'CreateOrgFullScan'>['data']> =
+      {
+        ok: true,
+        data: {
+          html_report_url: 'https://socket.dev/report/789',
+          id: 'scan-789',
+        },
+      }
 
     await outputCreateNewScan(result, { outputKind: 'markdown' })
 
@@ -138,36 +146,45 @@ describe('outputCreateNewScan', () => {
     const { logger } = await import('@socketsecurity/registry/lib/logger')
     const mockFail = vi.mocked(logger.fail)
 
-    const result: CResult<SocketSdkSuccessResult<'CreateOrgFullScan'>['data']> = {
-      ok: true,
-      data: {
-        html_report_url: 'https://socket.dev/report/no-id',
-        id: undefined as any,
-      },
-    }
+    const result: CResult<SocketSdkSuccessResult<'CreateOrgFullScan'>['data']> =
+      {
+        ok: true,
+        data: {
+          html_report_url: 'https://socket.dev/report/no-id',
+          id: undefined as any,
+        },
+      }
 
     await outputCreateNewScan(result, { outputKind: 'text' })
 
-    expect(mockFail).toHaveBeenCalledWith('Did not receive a scan ID from the API.')
+    expect(mockFail).toHaveBeenCalledWith(
+      'Did not receive a scan ID from the API.',
+    )
     expect(process.exitCode).toBe(1)
   })
 
   it('outputs error in text format', async () => {
     const { logger } = await import('@socketsecurity/registry/lib/logger')
-    const { failMsgWithBadge } = await import('../../utils/fail-msg-with-badge.mts')
+    const { failMsgWithBadge } = await import(
+      '../../utils/fail-msg-with-badge.mts'
+    )
     const mockFail = vi.mocked(logger.fail)
     const mockFailMsg = vi.mocked(failMsgWithBadge)
 
-    const result: CResult<SocketSdkSuccessResult<'CreateOrgFullScan'>['data']> = {
-      ok: false,
-      code: 1,
-      message: 'Failed to create scan',
-      cause: 'Network error',
-    }
+    const result: CResult<SocketSdkSuccessResult<'CreateOrgFullScan'>['data']> =
+      {
+        ok: false,
+        code: 1,
+        message: 'Failed to create scan',
+        cause: 'Network error',
+      }
 
     await outputCreateNewScan(result, { outputKind: 'text' })
 
-    expect(mockFailMsg).toHaveBeenCalledWith('Failed to create scan', 'Network error')
+    expect(mockFailMsg).toHaveBeenCalledWith(
+      'Failed to create scan',
+      'Network error',
+    )
     expect(mockFail).toHaveBeenCalled()
     expect(process.exitCode).toBe(1)
   })
@@ -180,13 +197,14 @@ describe('outputCreateNewScan', () => {
 
     mockConfirm.mockResolvedValue(true)
 
-    const result: CResult<SocketSdkSuccessResult<'CreateOrgFullScan'>['data']> = {
-      ok: true,
-      data: {
-        html_report_url: 'https://socket.dev/report/browser-test',
-        id: 'scan-browser-test',
-      },
-    }
+    const result: CResult<SocketSdkSuccessResult<'CreateOrgFullScan'>['data']> =
+      {
+        ok: true,
+        data: {
+          html_report_url: 'https://socket.dev/report/browser-test',
+          id: 'scan-browser-test',
+        },
+      }
 
     await outputCreateNewScan(result, {
       interactive: true,
@@ -200,7 +218,9 @@ describe('outputCreateNewScan', () => {
       },
       { spinner: expect.any(Object) },
     )
-    expect(mockOpen).toHaveBeenCalledWith('https://socket.dev/report/browser-test')
+    expect(mockOpen).toHaveBeenCalledWith(
+      'https://socket.dev/report/browser-test',
+    )
   })
 
   it('does not open browser when user declines', async () => {
@@ -211,13 +231,14 @@ describe('outputCreateNewScan', () => {
 
     mockConfirm.mockResolvedValue(false)
 
-    const result: CResult<SocketSdkSuccessResult<'CreateOrgFullScan'>['data']> = {
-      ok: true,
-      data: {
-        html_report_url: 'https://socket.dev/report/no-browser',
-        id: 'scan-no-browser',
-      },
-    }
+    const result: CResult<SocketSdkSuccessResult<'CreateOrgFullScan'>['data']> =
+      {
+        ok: true,
+        data: {
+          html_report_url: 'https://socket.dev/report/no-browser',
+          id: 'scan-no-browser',
+        },
+      }
 
     await outputCreateNewScan(result, {
       interactive: true,
@@ -231,13 +252,14 @@ describe('outputCreateNewScan', () => {
   it('handles spinner lifecycle correctly', async () => {
     mockSpinner.isSpinning = true
 
-    const result: CResult<SocketSdkSuccessResult<'CreateOrgFullScan'>['data']> = {
-      ok: true,
-      data: {
-        html_report_url: 'https://socket.dev/report/spinner',
-        id: 'scan-spinner',
-      },
-    }
+    const result: CResult<SocketSdkSuccessResult<'CreateOrgFullScan'>['data']> =
+      {
+        ok: true,
+        data: {
+          html_report_url: 'https://socket.dev/report/spinner',
+          id: 'scan-spinner',
+        },
+      }
 
     await outputCreateNewScan(result, {
       outputKind: 'text',
@@ -252,13 +274,14 @@ describe('outputCreateNewScan', () => {
     const { logger } = await import('@socketsecurity/registry/lib/logger')
     const mockLog = vi.mocked(logger.log)
 
-    const result: CResult<SocketSdkSuccessResult<'CreateOrgFullScan'>['data']> = {
-      ok: true,
-      data: {
-        html_report_url: undefined as any,
-        id: 'scan-no-url',
-      },
-    }
+    const result: CResult<SocketSdkSuccessResult<'CreateOrgFullScan'>['data']> =
+      {
+        ok: true,
+        data: {
+          html_report_url: undefined as any,
+          id: 'scan-no-url',
+        },
+      }
 
     await outputCreateNewScan(result, { outputKind: 'text' })
 
@@ -266,10 +289,11 @@ describe('outputCreateNewScan', () => {
   })
 
   it('sets default exit code when code is undefined', async () => {
-    const result: CResult<SocketSdkSuccessResult<'CreateOrgFullScan'>['data']> = {
-      ok: false,
-      message: 'Error without code',
-    }
+    const result: CResult<SocketSdkSuccessResult<'CreateOrgFullScan'>['data']> =
+      {
+        ok: false,
+        message: 'Error without code',
+      }
 
     await outputCreateNewScan(result, { outputKind: 'json' })
 

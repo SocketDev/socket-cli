@@ -8,13 +8,13 @@ vi.mock('../../requirements.json', () => ({
     api: {
       'scan:create': {
         quota: 10,
-        permissions: ['create', 'scan']
+        permissions: ['create', 'scan'],
       },
       'organization:view': {
-        permissions: ['read']
-      }
-    }
-  }
+        permissions: ['read'],
+      },
+    },
+  },
 }))
 
 describe('requirements utilities', () => {
@@ -40,12 +40,16 @@ describe('requirements utilities', () => {
 
     it('converts nested command path to key with colons', () => {
       expect(getRequirementsKey('socket scan create')).toBe('scan:create')
-      expect(getRequirementsKey('socket organization view')).toBe('organization:view')
+      expect(getRequirementsKey('socket organization view')).toBe(
+        'organization:view',
+      )
     })
 
     it('handles multiple spaces', () => {
       expect(getRequirementsKey('socket  scan  create')).toBe(':scan:create')
-      expect(getRequirementsKey('socket   organization   view')).toBe(':organization:view')
+      expect(getRequirementsKey('socket   organization   view')).toBe(
+        ':organization:view',
+      )
     })
 
     it('handles path with colon separator', () => {
@@ -68,8 +72,12 @@ describe('requirements utilities', () => {
     })
 
     it('handles deeply nested commands', () => {
-      expect(getRequirementsKey('socket repos create test')).toBe('repos:create:test')
-      expect(getRequirementsKey('socket organization member add')).toBe('organization:member:add')
+      expect(getRequirementsKey('socket repos create test')).toBe(
+        'repos:create:test',
+      )
+      expect(getRequirementsKey('socket organization member add')).toBe(
+        'organization:member:add',
+      )
     })
 
     it('preserves non-space special characters', () => {

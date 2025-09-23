@@ -24,7 +24,9 @@ describe('dlx e2e tests', () => {
         }
 
         // Run cowsay with a test message.
-        const result = await spawnDlx(packageSpec, ['Hello from Socket CLI tests!'])
+        const result = await spawnDlx(packageSpec, [
+          'Hello from Socket CLI tests!',
+        ])
 
         // Verify it succeeded.
         expect(result.ok).toBe(true)
@@ -99,7 +101,9 @@ describe('dlx e2e tests', () => {
         }
 
         // Force npm agent.
-        const result = await spawnDlx(packageSpec, ['Moo from npm!'], { agent: 'npm' })
+        const result = await spawnDlx(packageSpec, ['Moo from npm!'], {
+          agent: 'npm',
+        })
 
         expect(result.ok).toBe(true)
         if (result.ok && result.data) {

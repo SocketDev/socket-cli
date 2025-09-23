@@ -16,11 +16,11 @@ vi.mock('../../utils/fail-msg-with-badge.mts', () => ({
 }))
 
 vi.mock('../../utils/markdown.mts', () => ({
-  mdTableOfPairs: vi.fn((pairs) => `Table with ${pairs.length} rows`),
+  mdTableOfPairs: vi.fn(pairs => `Table with ${pairs.length} rows`),
 }))
 
 vi.mock('../../utils/serialize-result-json.mts', () => ({
-  serializeResultJson: vi.fn((result) => JSON.stringify(result)),
+  serializeResultJson: vi.fn(result => JSON.stringify(result)),
 }))
 
 describe('outputLicensePolicy', () => {
@@ -31,7 +31,9 @@ describe('outputLicensePolicy', () => {
 
   it('outputs JSON format for successful result', async () => {
     const { logger } = await import('@socketsecurity/registry/lib/logger')
-    const { serializeResultJson } = await import('../../utils/serialize-result-json.mts')
+    const { serializeResultJson } = await import(
+      '../../utils/serialize-result-json.mts'
+    )
     const mockLog = vi.mocked(logger.log)
     const mockSerialize = vi.mocked(serializeResultJson)
 
@@ -104,7 +106,9 @@ describe('outputLicensePolicy', () => {
 
   it('outputs error in text format', async () => {
     const { logger } = await import('@socketsecurity/registry/lib/logger')
-    const { failMsgWithBadge } = await import('../../utils/fail-msg-with-badge.mts')
+    const { failMsgWithBadge } = await import(
+      '../../utils/fail-msg-with-badge.mts'
+    )
     const mockFail = vi.mocked(logger.fail)
     const mockFailMsg = vi.mocked(failMsgWithBadge)
 
@@ -117,7 +121,10 @@ describe('outputLicensePolicy', () => {
 
     await outputLicensePolicy(result, 'text')
 
-    expect(mockFailMsg).toHaveBeenCalledWith('Failed to fetch policy', 'Network error')
+    expect(mockFailMsg).toHaveBeenCalledWith(
+      'Failed to fetch policy',
+      'Network error',
+    )
     expect(mockFail).toHaveBeenCalled()
     expect(process.exitCode).toBe(1)
   })

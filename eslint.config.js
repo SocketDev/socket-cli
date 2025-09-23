@@ -225,7 +225,8 @@ module.exports = [
           defaultProject: 'tsconfig.json',
           tsconfigRootDir: rootPath,
           // Need this to glob the test files in /src. Otherwise it won't work.
-          maximumDefaultProjectFileMatchCount_THIS_WILL_SLOW_DOWN_LINTING: 1_000_000,
+          // Reduced from 1_000_000 to prevent hanging during linting.
+          maximumDefaultProjectFileMatchCount_THIS_WILL_SLOW_DOWN_LINTING: 5_000,
         },
       },
     },

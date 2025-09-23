@@ -45,11 +45,13 @@ describe('fetchDependencies', () => {
 
     const result = await fetchDependencies({ limit: 10, offset: 0 })
 
-    expect(mockSdk.searchDependencies).toHaveBeenCalledWith({ limit: 10, offset: 0 })
-    expect(mockHandleApi).toHaveBeenCalledWith(
-      expect.any(Promise),
-      { description: 'organization dependencies' },
-    )
+    expect(mockSdk.searchDependencies).toHaveBeenCalledWith({
+      limit: 10,
+      offset: 0,
+    })
+    expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
+      description: 'organization dependencies',
+    })
     expect(result.ok).toBe(true)
   })
 
@@ -109,10 +111,7 @@ describe('fetchDependencies', () => {
       baseUrl: 'https://custom.api.com',
     }
 
-    await fetchDependencies(
-      { limit: 100, offset: 50 },
-      { sdkOpts },
-    )
+    await fetchDependencies({ limit: 100, offset: 50 }, { sdkOpts })
 
     expect(mockSetupSdk).toHaveBeenCalledWith(sdkOpts)
   })

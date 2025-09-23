@@ -49,10 +49,9 @@ describe('fetchScanMetadata', () => {
       'test-org',
       'scan-123',
     )
-    expect(mockHandleApi).toHaveBeenCalledWith(
-      expect.any(Promise),
-      { description: 'meta data for a full scan' },
-    )
+    expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
+      description: 'meta data for a full scan',
+    })
     expect(result.ok).toBe(true)
     expect(result.data?.id).toBe('scan-123')
   })

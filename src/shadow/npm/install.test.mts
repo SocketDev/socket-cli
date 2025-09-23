@@ -15,10 +15,16 @@ vi.mock('@socketsecurity/registry/lib/spawn', () => ({
 }))
 
 vi.mock('@socketsecurity/registry/lib/agent', () => ({
-  isNpmAuditFlag: vi.fn((arg: string) => arg === '--audit' || arg === '--no-audit'),
-  isNpmFundFlag: vi.fn((arg: string) => arg === '--fund' || arg === '--no-fund'),
+  isNpmAuditFlag: vi.fn(
+    (arg: string) => arg === '--audit' || arg === '--no-audit',
+  ),
+  isNpmFundFlag: vi.fn(
+    (arg: string) => arg === '--fund' || arg === '--no-fund',
+  ),
   isNpmLoglevelFlag: vi.fn((arg: string) => arg.startsWith('--loglevel')),
-  isNpmProgressFlag: vi.fn((arg: string) => arg === '--progress' || arg === '--no-progress'),
+  isNpmProgressFlag: vi.fn(
+    (arg: string) => arg === '--progress' || arg === '--no-progress',
+  ),
   resolveBinPathSync: mockResolveBinPathSync,
 }))
 

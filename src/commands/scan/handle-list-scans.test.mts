@@ -139,10 +139,7 @@ describe('handleListScans', () => {
       sort: 'created_at',
     })
 
-    expect(mockOutput).toHaveBeenCalledWith(
-      expect.any(Object),
-      'markdown',
-    )
+    expect(mockOutput).toHaveBeenCalledWith(expect.any(Object), 'markdown')
   })
 
   it('handles filtering by branch and repository', async () => {

@@ -25,13 +25,15 @@ describe('lockfile utilities', () => {
   "lockfileVersion": 2,
   "packages": {}
 }`
-      
+
       vi.mocked(existsSync).mockReturnValue(true)
-      const { readFileUtf8 } = vi.mocked(await import('@socketsecurity/registry/lib/fs'))
+      const { readFileUtf8 } = vi.mocked(
+        await import('@socketsecurity/registry/lib/fs'),
+      )
       readFileUtf8.mockResolvedValue(mockContent)
 
       const result = await readLockfile('/path/to/package-lock.json')
-      
+
       expect(result).toBe(mockContent)
       expect(existsSync).toHaveBeenCalledWith('/path/to/package-lock.json')
       expect(readFileUtf8).toHaveBeenCalledWith('/path/to/package-lock.json')
@@ -39,10 +41,12 @@ describe('lockfile utilities', () => {
 
     it('returns undefined when lockfile does not exist', async () => {
       vi.mocked(existsSync).mockReturnValue(false)
-      const { readFileUtf8 } = vi.mocked(await import('@socketsecurity/registry/lib/fs'))
+      const { readFileUtf8 } = vi.mocked(
+        await import('@socketsecurity/registry/lib/fs'),
+      )
 
       const result = await readLockfile('/path/to/missing-lock.json')
-      
+
       expect(result).toBeUndefined()
       expect(existsSync).toHaveBeenCalledWith('/path/to/missing-lock.json')
       expect(readFileUtf8).not.toHaveBeenCalled()
@@ -57,13 +61,15 @@ express@^4.18.0:
   resolved "https://registry.yarnpkg.com/express/-/express-4.18.2.tgz"
   integrity sha512-xxx
 `
-      
+
       vi.mocked(existsSync).mockReturnValue(true)
-      const { readFileUtf8 } = vi.mocked(await import('@socketsecurity/registry/lib/fs'))
+      const { readFileUtf8 } = vi.mocked(
+        await import('@socketsecurity/registry/lib/fs'),
+      )
       readFileUtf8.mockResolvedValue(yarnLockContent)
 
       const result = await readLockfile('/path/to/yarn.lock')
-      
+
       expect(result).toBe(yarnLockContent)
     })
 
@@ -76,37 +82,47 @@ specifiers:
 dependencies:
   express: 4.18.2
 `
-      
+
       vi.mocked(existsSync).mockReturnValue(true)
-      const { readFileUtf8 } = vi.mocked(await import('@socketsecurity/registry/lib/fs'))
+      const { readFileUtf8 } = vi.mocked(
+        await import('@socketsecurity/registry/lib/fs'),
+      )
       readFileUtf8.mockResolvedValue(pnpmLockContent)
 
       const result = await readLockfile('/path/to/pnpm-lock.yaml')
-      
+
       expect(result).toBe(pnpmLockContent)
     })
 
     it('handles empty lockfile', async () => {
       vi.mocked(existsSync).mockReturnValue(true)
-      const { readFileUtf8 } = vi.mocked(await import('@socketsecurity/registry/lib/fs'))
+      const { readFileUtf8 } = vi.mocked(
+        await import('@socketsecurity/registry/lib/fs'),
+      )
       readFileUtf8.mockResolvedValue('')
 
       const result = await readLockfile('/path/to/empty-lock.json')
-      
+
       expect(result).toBe('')
     })
 
     it('propagates read errors', async () => {
       vi.mocked(existsSync).mockReturnValue(true)
-      const { readFileUtf8 } = vi.mocked(await import('@socketsecurity/registry/lib/fs'))
+      const { readFileUtf8 } = vi.mocked(
+        await import('@socketsecurity/registry/lib/fs'),
+      )
       readFileUtf8.mockRejectedValue(new Error('Permission denied'))
 
-      await expect(readLockfile('/path/to/protected-lock.json')).rejects.toThrow('Permission denied')
+      await expect(
+        readLockfile('/path/to/protected-lock.json'),
+      ).rejects.toThrow('Permission denied')
     })
 
     it('handles different lockfile paths', async () => {
       vi.mocked(existsSync).mockReturnValue(true)
-      const { readFileUtf8 } = vi.mocked(await import('@socketsecurity/registry/lib/fs'))
+      const { readFileUtf8 } = vi.mocked(
+        await import('@socketsecurity/registry/lib/fs'),
+      )
       readFileUtf8.mockResolvedValue('content')
 
       // Test various paths.
@@ -117,7 +133,9 @@ dependencies:
       expect(existsSync).toHaveBeenCalledWith('../package-lock.json')
 
       await readLockfile('/absolute/path/package-lock.json')
-      expect(existsSync).toHaveBeenCalledWith('/absolute/path/package-lock.json')
+      expect(existsSync).toHaveBeenCalledWith(
+        '/absolute/path/package-lock.json',
+      )
     })
   })
 })

@@ -55,10 +55,9 @@ describe('fetchRepoAnalytics', () => {
     const result = await fetchRepoAnalytics('test-org', 'my-repo')
 
     expect(mockSdk.getRepoAnalytics).toHaveBeenCalledWith('test-org', 'my-repo')
-    expect(mockHandleApi).toHaveBeenCalledWith(
-      expect.any(Promise),
-      { description: 'fetching repository analytics' },
-    )
+    expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
+      description: 'fetching repository analytics',
+    })
     expect(result.ok).toBe(true)
   })
 
@@ -86,7 +85,9 @@ describe('fetchRepoAnalytics', () => {
     const mockSetupSdk = vi.mocked(setupSdk)
 
     const mockSdk = {
-      getRepoAnalytics: vi.fn().mockRejectedValue(new Error('Repository not found')),
+      getRepoAnalytics: vi
+        .fn()
+        .mockRejectedValue(new Error('Repository not found')),
     }
 
     mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
@@ -168,10 +169,16 @@ describe('fetchRepoAnalytics', () => {
     mockHandleApi.mockResolvedValue({ ok: true, data: {} })
 
     await fetchRepoAnalytics('my-org', 'repo.with.dots')
-    expect(mockSdk.getRepoAnalytics).toHaveBeenCalledWith('my-org', 'repo.with.dots')
+    expect(mockSdk.getRepoAnalytics).toHaveBeenCalledWith(
+      'my-org',
+      'repo.with.dots',
+    )
 
     await fetchRepoAnalytics('my-org', 'repo-with-dashes')
-    expect(mockSdk.getRepoAnalytics).toHaveBeenCalledWith('my-org', 'repo-with-dashes')
+    expect(mockSdk.getRepoAnalytics).toHaveBeenCalledWith(
+      'my-org',
+      'repo-with-dashes',
+    )
   })
 
   it('uses null prototype for options', async () => {

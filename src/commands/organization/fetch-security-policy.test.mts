@@ -48,10 +48,9 @@ describe('fetchSecurityPolicy', () => {
     const result = await fetchSecurityPolicy('test-org')
 
     expect(mockSdk.getSecurityPolicy).toHaveBeenCalledWith('test-org')
-    expect(mockHandleApi).toHaveBeenCalledWith(
-      expect.any(Promise),
-      { description: 'fetching security policy' },
-    )
+    expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
+      description: 'fetching security policy',
+    })
     expect(result.ok).toBe(true)
   })
 

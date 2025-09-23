@@ -40,7 +40,7 @@ vi.mock('../install/setup-tab-completion.mts', () => ({
   updateInstalledTabCompletionScript: vi.fn(),
 }))
 vi.mock('../../utils/errors.mts', () => ({
-  getErrorCause: vi.fn((e) => e?.message || String(e)),
+  getErrorCause: vi.fn(e => e?.message || String(e)),
 }))
 
 describe('postinstallWrapper', () => {
@@ -56,7 +56,9 @@ describe('postinstallWrapper', () => {
     const mockExistsSync = vi.mocked(existsSync) as any
     const mockCheckSetup = vi.mocked(checkSocketWrapperSetup)
 
-    mockExistsSync.mockImplementation((path: string) => path === '/home/user/.bashrc')
+    mockExistsSync.mockImplementation(
+      (path: string) => path === '/home/user/.bashrc',
+    )
     mockCheckSetup.mockReturnValue(true)
 
     await postinstallWrapper()
@@ -73,8 +75,12 @@ describe('postinstallWrapper', () => {
     const mockExistsSync = vi.mocked(existsSync) as any
     const mockCheckSetup = vi.mocked(checkSocketWrapperSetup)
 
-    mockExistsSync.mockImplementation((path: string) => path === '/home/user/.zshrc')
-    mockCheckSetup.mockImplementation((path: string) => path === '/home/user/.zshrc')
+    mockExistsSync.mockImplementation(
+      (path: string) => path === '/home/user/.zshrc',
+    )
+    mockCheckSetup.mockImplementation(
+      (path: string) => path === '/home/user/.zshrc',
+    )
 
     await postinstallWrapper()
 
@@ -99,11 +105,15 @@ describe('postinstallWrapper', () => {
     await postinstallWrapper()
 
     expect(confirm).toHaveBeenCalledWith({
-      message: expect.stringContaining('Do you want to install the Socket npm wrapper'),
+      message: expect.stringContaining(
+        'Do you want to install the Socket npm wrapper',
+      ),
       default: true,
     })
     expect(logger.log).toHaveBeenCalledWith(
-      expect.stringContaining('Run `socket install completion` to setup bash tab completion'),
+      expect.stringContaining(
+        'Run `socket install completion` to setup bash tab completion',
+      ),
     )
   })
 
@@ -118,7 +128,9 @@ describe('postinstallWrapper', () => {
     const mockConfirm = vi.mocked(confirm)
     const mockAddWrapper = vi.mocked(addSocketWrapper)
 
-    mockExistsSync.mockImplementation((path: string) => path === '/home/user/.bashrc')
+    mockExistsSync.mockImplementation(
+      (path: string) => path === '/home/user/.bashrc',
+    )
     mockCheckSetup.mockReturnValue(false)
     mockConfirm.mockResolvedValue(true)
 

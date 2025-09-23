@@ -5,7 +5,7 @@ import {
   getMaxSemiSpaceSizeFlag,
   commonFlags,
   outputFlags,
-  validationFlags
+  validationFlags,
 } from './flags.mts'
 
 // Mock dependencies.
@@ -42,7 +42,7 @@ describe('flags', () => {
       const result = getMaxOldSpaceSizeFlag()
 
       // Should be 75% of 8GB in MiB.
-      expect(result).toBe(Math.floor((8 * 1024) * 0.75))
+      expect(result).toBe(Math.floor(8 * 1024 * 0.75))
       expect(result).toBe(6144)
     })
 
@@ -52,7 +52,8 @@ describe('flags', () => {
 
       // Need to reset the module to clear cached value.
       vi.resetModules()
-      const { getMaxOldSpaceSizeFlag: freshGetMaxOldSpaceSizeFlag } = await import('./flags.mts')
+      const { getMaxOldSpaceSizeFlag: freshGetMaxOldSpaceSizeFlag } =
+        await import('./flags.mts')
 
       const result = freshGetMaxOldSpaceSizeFlag()
       expect(result).toBe(512)
@@ -68,7 +69,8 @@ describe('flags', () => {
       } as any)
 
       vi.resetModules()
-      const { getMaxOldSpaceSizeFlag: freshGetMaxOldSpaceSizeFlag } = await import('./flags.mts')
+      const { getMaxOldSpaceSizeFlag: freshGetMaxOldSpaceSizeFlag } =
+        await import('./flags.mts')
 
       const result = freshGetMaxOldSpaceSizeFlag()
       expect(result).toBe(1024)
@@ -95,7 +97,8 @@ describe('flags', () => {
       constants.ENV.NODE_OPTIONS = '--max-semi-space-size=16'
 
       vi.resetModules()
-      const { getMaxSemiSpaceSizeFlag: freshGetMaxSemiSpaceSizeFlag } = await import('./flags.mts')
+      const { getMaxSemiSpaceSizeFlag: freshGetMaxSemiSpaceSizeFlag } =
+        await import('./flags.mts')
 
       const result = freshGetMaxSemiSpaceSizeFlag()
       expect(result).toBe(16)
@@ -111,7 +114,8 @@ describe('flags', () => {
       } as any)
 
       vi.resetModules()
-      const { getMaxSemiSpaceSizeFlag: freshGetMaxSemiSpaceSizeFlag } = await import('./flags.mts')
+      const { getMaxSemiSpaceSizeFlag: freshGetMaxSemiSpaceSizeFlag } =
+        await import('./flags.mts')
 
       const result = freshGetMaxSemiSpaceSizeFlag()
       expect(result).toBe(32)

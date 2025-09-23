@@ -31,12 +31,7 @@
     "./requirements.json": "./requirements.json",
     "./translations.json": "./translations.json"
   },
-  "files": [
-    "dist",
-    "bin",
-    "requirements.json",
-    "translations.json"
-  ],
+  "files": ["dist", "bin", "requirements.json", "translations.json"],
   "keywords": [
     "socket",
     "socket.dev",

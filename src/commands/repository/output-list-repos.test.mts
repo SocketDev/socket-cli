@@ -20,7 +20,7 @@ vi.mock('../../utils/fail-msg-with-badge.mts', () => ({
 }))
 
 vi.mock('../../utils/serialize-result-json.mts', () => ({
-  serializeResultJson: vi.fn((result) => JSON.stringify(result)),
+  serializeResultJson: vi.fn(result => JSON.stringify(result)),
 }))
 
 vi.mock('chalk-table', () => ({
@@ -29,7 +29,7 @@ vi.mock('chalk-table', () => ({
 
 vi.mock('yoctocolors-cjs', () => ({
   default: {
-    magenta: vi.fn((text) => text),
+    magenta: vi.fn(text => text),
   },
 }))
 
@@ -41,7 +41,9 @@ describe('outputListRepos', () => {
 
   it('outputs JSON format for successful result with pagination', async () => {
     const { logger } = await import('@socketsecurity/registry/lib/logger')
-    const { serializeResultJson } = await import('../../utils/serialize-result-json.mts')
+    const { serializeResultJson } = await import(
+      '../../utils/serialize-result-json.mts'
+    )
     const mockLog = vi.mocked(logger.log)
     const mockSerialize = vi.mocked(serializeResultJson)
 
@@ -145,12 +147,16 @@ describe('outputListRepos', () => {
     expect(mockInfo).toHaveBeenCalledWith(
       'This is page 2. Server indicated there are more results available on page 3...',
     )
-    expect(mockInfo).toHaveBeenCalledWith('(Hint: you can use `socket repository list --page 3`)')
+    expect(mockInfo).toHaveBeenCalledWith(
+      '(Hint: you can use `socket repository list --page 3`)',
+    )
   })
 
   it('outputs error in text format', async () => {
     const { logger } = await import('@socketsecurity/registry/lib/logger')
-    const { failMsgWithBadge } = await import('../../utils/fail-msg-with-badge.mts')
+    const { failMsgWithBadge } = await import(
+      '../../utils/fail-msg-with-badge.mts'
+    )
     const mockFail = vi.mocked(logger.fail)
     const mockFailMsg = vi.mocked(failMsgWithBadge)
 
@@ -163,7 +169,10 @@ describe('outputListRepos', () => {
 
     await outputListRepos(result, 'text', 1, null, 'name', 10, 'asc')
 
-    expect(mockFailMsg).toHaveBeenCalledWith('Failed to fetch repositories', 'Network error')
+    expect(mockFailMsg).toHaveBeenCalledWith(
+      'Failed to fetch repositories',
+      'Network error',
+    )
     expect(mockFail).toHaveBeenCalled()
     expect(process.exitCode).toBe(1)
   })
@@ -207,7 +216,9 @@ describe('outputListRepos', () => {
 
     await outputListRepos(result, 'text', 1, null, 'name', Infinity, 'asc')
 
-    expect(mockInfo).toHaveBeenCalledWith('This should be the entire list available on the server.')
+    expect(mockInfo).toHaveBeenCalledWith(
+      'This should be the entire list available on the server.',
+    )
   })
 
   it('handles empty repository list', async () => {

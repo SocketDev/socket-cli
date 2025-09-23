@@ -42,7 +42,7 @@ describe('handleScanView', () => {
       'test-org',
       'scan-123',
       '/output/path.json',
-      'json'
+      'json',
     )
   })
 
@@ -64,7 +64,7 @@ describe('handleScanView', () => {
       'test-org',
       'invalid-scan',
       '',
-      'text'
+      'text',
     )
   })
 
@@ -89,7 +89,7 @@ describe('handleScanView', () => {
       'org-2',
       'scan-456',
       'report.md',
-      'markdown'
+      'markdown',
     )
   })
 
@@ -110,7 +110,7 @@ describe('handleScanView', () => {
       'my-org',
       'scan-789',
       '',
-      'json'
+      'json',
     )
   })
 
@@ -136,7 +136,7 @@ describe('handleScanView', () => {
         'org',
         'scan-test',
         'output.json',
-        'json'
+        'json',
       )
     }
   })
@@ -162,7 +162,7 @@ describe('handleScanView', () => {
       'test-org',
       'scan-999',
       '-',
-      'text'
+      'text',
     )
   })
 
@@ -172,7 +172,7 @@ describe('handleScanView', () => {
     vi.mocked(fetchScan).mockRejectedValue(new Error('Network error'))
 
     await expect(
-      handleScanView('org', 'scan-id', 'file.json', 'json')
+      handleScanView('org', 'scan-id', 'file.json', 'json'),
     ).rejects.toThrow('Network error')
   })
 })

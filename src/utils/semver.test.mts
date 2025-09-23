@@ -1,11 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 import semver from 'semver'
 
-import {
-  RangeStyles,
-  getMajor,
-  getMinVersion,
-} from './semver.mts'
+import { RangeStyles, getMajor, getMinVersion } from './semver.mts'
 
 // Mock semver.
 vi.mock('semver', () => ({

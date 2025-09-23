@@ -29,6 +29,8 @@ import os from 'node:os'
 import path from 'node:path'
 import url from 'node:url'
 
+import { normalizePath } from '@socketsecurity/registry/lib/path'
+
 import trash from 'trash'
 
 import { spawn } from '@socketsecurity/registry/lib/spawn'
@@ -55,7 +57,7 @@ interface BuildOptions {
 
 // Default Node.js version for SEA.
 // Using v20 which has stable SEA support.
-const DEFAULT_NODE_VERSION = '20.11.0'
+const DEFAULT_NODE_VERSION = process.env['SOCKET_SEA_NODE_VERSION'] || '20.11.0'
 
 // Build targets for different platforms.
 const BUILD_TARGETS: BuildTarget[] = [
@@ -105,10 +107,14 @@ async function downloadNodeBinary(
   platform: NodeJS.Platform,
   arch: string,
 ): Promise<string> {
-  const nodeDir = path.join(os.homedir(), '.socket', 'node-binaries')
+  const nodeDir = normalizePath(
+    path.join(os.homedir(), '.socket', 'node-binaries'),
+  )
   const platformArch = `${platform}-${arch}`
   const nodeFilename = platform === 'win32' ? 'node.exe' : 'node'
-  const nodePath = path.join(nodeDir, `v${version}`, platformArch, nodeFilename)
+  const nodePath = normalizePath(
+    path.join(nodeDir, `v${version}`, platformArch, nodeFilename),
+  )
 
   // Check if already downloaded.
   if (existsSync(nodePath)) {
@@ -117,7 +123,9 @@ async function downloadNodeBinary(
   }
 
   // Construct download URL.
-  const baseUrl = 'https://nodejs.org/download/release'
+  const baseUrl =
+    process.env['SOCKET_NODE_DOWNLOAD_URL'] ||
+    'https://nodejs.org/download/release'
   const archMap: Record<string, string> = {
     x64: 'x64',
     arm64: 'arm64',
@@ -145,16 +153,18 @@ async function downloadNodeBinary(
   }
 
   // Create temp directory.
-  const tempDir = path.join(
-    nodeDir,
-    'tmp',
-    crypto.createHash('sha256').update(downloadUrl).digest('hex'),
+  const tempDir = normalizePath(
+    path.join(
+      nodeDir,
+      'tmp',
+      crypto.createHash('sha256').update(downloadUrl).digest('hex'),
+    ),
   )
   await fs.mkdir(tempDir, { recursive: true })
 
   try {
     // Save archive.
-    const archivePath = path.join(tempDir, `node${extension}`)
+    const archivePath = normalizePath(path.join(tempDir, `node${extension}`))
     const buffer = Buffer.from(await response.arrayBuffer())
     await fs.writeFile(archivePath, buffer)
 
@@ -173,23 +183,38 @@ async function downloadNodeBinary(
           { stdio: 'ignore' },
         )
       } else {
-        // On Unix building for Windows, try unzip.
+        // On Unix building for Windows, check for unzip availability.
+        try {
+          await spawn('which', ['unzip'], { stdio: 'ignore' })
+        } catch {
+          throw new Error(
+            'unzip is required to extract Windows Node.js binaries on Unix systems.\n' +
+              'Please install unzip: apt-get install unzip (Debian/Ubuntu) or brew install unzip (macOS)',
+          )
+        }
         await spawn('unzip', ['-q', archivePath, '-d', tempDir], {
           stdio: 'ignore',
         })
       }
     } else {
-      // Use tar for Unix systems.
+      // Check for tar availability on Unix systems.
+      try {
+        await spawn('which', ['tar'], { stdio: 'ignore' })
+      } catch {
+        throw new Error(
+          'tar is required to extract Node.js archives.\n' +
+            'Please install tar for your system.',
+        )
+      }
       await spawn('tar', ['-xzf', archivePath, '-C', tempDir], {
         stdio: 'ignore',
       })
     }
 
     // Find and move the Node binary.
-    const extractedDir = path.join(tempDir, tarName)
-    const extractedBinary = path.join(
-      extractedDir,
-      platform === 'win32' ? 'node.exe' : 'bin/node',
+    const extractedDir = normalizePath(path.join(tempDir, tarName))
+    const extractedBinary = normalizePath(
+      path.join(extractedDir, platform === 'win32' ? 'node.exe' : 'bin/node'),
     )
 
     // Ensure target directory exists.
@@ -219,8 +244,12 @@ async function generateSeaConfig(
   entryPoint: string,
   outputPath: string,
 ): Promise<string> {
-  const configPath = path.join(path.dirname(outputPath), 'sea-config.json')
-  const blobPath = path.join(path.dirname(outputPath), 'sea-blob.blob')
+  const configPath = normalizePath(
+    path.join(path.dirname(outputPath), 'sea-config.json'),
+  )
+  const blobPath = normalizePath(
+    path.join(path.dirname(outputPath), 'sea-blob.blob'),
+  )
 
   const config = {
     main: entryPoint,
@@ -279,15 +308,42 @@ async function injectSeaBlob(
 ): Promise<void> {
   console.log('Creating self-executable...')
 
+  // Check if postject is available.
+  try {
+    await spawn('pnpm', ['exec', 'postject', '--version'], {
+      stdio: 'ignore',
+    })
+  } catch {
+    throw new Error(
+      'postject is required to inject the SEA blob into the Node.js binary.\n' +
+        'Please install it: pnpm add -D postject',
+    )
+  }
+
   // Copy the Node binary.
   await fs.copyFile(nodeBinary, outputPath)
 
   if (process.platform === 'darwin') {
-    // On macOS, remove signature before injection.
-    console.log('Removing signature...')
-    await spawn('codesign', ['--remove-signature', outputPath], {
-      stdio: 'inherit',
-    })
+    // Check for codesign availability on macOS.
+    let codesignAvailable = false
+    try {
+      await spawn('which', ['codesign'], { stdio: 'ignore' })
+      codesignAvailable = true
+    } catch {
+      // codesign not available.
+    }
+    if (!codesignAvailable) {
+      console.warn(
+        'Warning: codesign not found. The binary may not work correctly on macOS.\n' +
+          'Install Xcode Command Line Tools: xcode-select --install',
+      )
+    } else {
+      // On macOS, remove signature before injection.
+      console.log('Removing signature...')
+      await spawn('codesign', ['--remove-signature', outputPath], {
+        stdio: 'inherit',
+      })
+    }
 
     // Inject with macOS-specific flags.
     console.log('Injecting SEA blob...')
@@ -307,11 +363,13 @@ async function injectSeaBlob(
       { stdio: 'inherit' },
     )
 
-    // Re-sign the binary.
-    console.log('Re-signing binary...')
-    await spawn('codesign', ['--sign', '-', outputPath], {
-      stdio: 'inherit',
-    })
+    // Re-sign the binary if codesign is available.
+    if (codesignAvailable) {
+      console.log('Re-signing binary...')
+      await spawn('codesign', ['--sign', '-', outputPath], {
+        stdio: 'inherit',
+      })
+    }
   } else if (process.platform === 'win32') {
     // Windows injection.
     await spawn(
@@ -353,7 +411,8 @@ async function buildTarget(
   target: BuildTarget,
   options: BuildOptions,
 ): Promise<void> {
-  const { outputDir = path.join(__dirname, '../../dist/sea') } = options
+  const { outputDir = normalizePath(path.join(__dirname, '../../dist/sea')) } =
+    options
 
   console.log(
     `\nBuilding thin wrapper for ${target.platform}-${target.arch}...`,
@@ -361,13 +420,13 @@ async function buildTarget(
   console.log('(Actual CLI will be downloaded from npm on first use)')
 
   // Use the thin bootstrap for minimal size.
-  const tsEntryPoint = path.join(__dirname, 'bootstrap.mts')
+  const tsEntryPoint = normalizePath(path.join(__dirname, 'bootstrap.mts'))
 
   // Ensure output directory exists.
   await fs.mkdir(outputDir, { recursive: true })
 
   // Build the bootstrap with Rollup to CommonJS for SEA.
-  const entryPoint = path.join(outputDir, 'bootstrap.cjs')
+  const entryPoint = normalizePath(path.join(outputDir, 'bootstrap.cjs'))
   console.log('Building bootstrap...')
 
   // Set environment variables for the rollup config.
@@ -386,7 +445,7 @@ async function buildTarget(
   )
 
   // Generate output path.
-  const outputPath = path.join(outputDir, target.outputName)
+  const outputPath = normalizePath(path.join(outputDir, target.outputName))
   await fs.mkdir(outputDir, { recursive: true })
 
   // Generate SEA configuration.
@@ -511,7 +570,7 @@ async function main(): Promise<void> {
 }
 
 // Run if executed directly.
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (import.meta.url === url.pathToFileURL(process.argv[1]!).href) {
   main().catch(error => {
     console.error('Build failed:', error)
     // eslint-disable-next-line n/no-process-exit

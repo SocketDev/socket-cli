@@ -18,7 +18,9 @@ describe('handleScanConfig', () => {
 
   it('sets up scan config and outputs result', async () => {
     const { setupScanConfig } = await import('./setup-scan-config.mts')
-    const { outputScanConfigResult } = await import('./output-scan-config-result.mts')
+    const { outputScanConfigResult } = await import(
+      './output-scan-config-result.mts'
+    )
     const mockSetup = vi.mocked(setupScanConfig)
     const mockOutput = vi.mocked(outputScanConfigResult)
 
@@ -42,7 +44,9 @@ describe('handleScanConfig', () => {
 
   it('uses defaultOnReadError when true', async () => {
     const { setupScanConfig } = await import('./setup-scan-config.mts')
-    const { outputScanConfigResult } = await import('./output-scan-config-result.mts')
+    const { outputScanConfigResult } = await import(
+      './output-scan-config-result.mts'
+    )
     const mockSetup = vi.mocked(setupScanConfig)
     const mockOutput = vi.mocked(outputScanConfigResult)
 
@@ -56,7 +60,9 @@ describe('handleScanConfig', () => {
 
   it('handles setup failure', async () => {
     const { setupScanConfig } = await import('./setup-scan-config.mts')
-    const { outputScanConfigResult } = await import('./output-scan-config-result.mts')
+    const { outputScanConfigResult } = await import(
+      './output-scan-config-result.mts'
+    )
     const mockSetup = vi.mocked(setupScanConfig)
     const mockOutput = vi.mocked(outputScanConfigResult)
 

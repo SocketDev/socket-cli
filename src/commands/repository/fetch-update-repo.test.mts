@@ -51,18 +51,21 @@ describe('fetchUpdateRepo', () => {
 
     const result = await fetchUpdateRepo(config)
 
-    expect(mockSdk.updateOrgRepo).toHaveBeenCalledWith('test-org', 'updated-repo', {
-      default_branch: 'main',
-      description: 'Updated description',
-      homepage: 'https://example.com',
-      name: 'updated-repo',
-      orgSlug: 'test-org',
-      visibility: 'private',
-    })
-    expect(mockHandleApi).toHaveBeenCalledWith(
-      expect.any(Promise),
-      { description: 'to update a repository' },
+    expect(mockSdk.updateOrgRepo).toHaveBeenCalledWith(
+      'test-org',
+      'updated-repo',
+      {
+        default_branch: 'main',
+        description: 'Updated description',
+        homepage: 'https://example.com',
+        name: 'updated-repo',
+        orgSlug: 'test-org',
+        visibility: 'private',
+      },
     )
+    expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
+      description: 'to update a repository',
+    })
     expect(result.ok).toBe(true)
   })
 
@@ -99,7 +102,9 @@ describe('fetchUpdateRepo', () => {
     const mockSetupSdk = vi.mocked(setupSdk)
 
     const mockSdk = {
-      updateOrgRepo: vi.fn().mockRejectedValue(new Error('Repository not found')),
+      updateOrgRepo: vi
+        .fn()
+        .mockRejectedValue(new Error('Repository not found')),
     }
 
     mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
@@ -180,14 +185,18 @@ describe('fetchUpdateRepo', () => {
 
     await fetchUpdateRepo(config)
 
-    expect(mockSdk.updateOrgRepo).toHaveBeenCalledWith('secure-org', 'secret-repo', {
-      default_branch: 'main',
-      description: 'Making repo private',
-      homepage: '',
-      name: 'secret-repo',
-      orgSlug: 'secure-org',
-      visibility: 'private',
-    })
+    expect(mockSdk.updateOrgRepo).toHaveBeenCalledWith(
+      'secure-org',
+      'secret-repo',
+      {
+        default_branch: 'main',
+        description: 'Making repo private',
+        homepage: '',
+        name: 'secret-repo',
+        orgSlug: 'secure-org',
+        visibility: 'private',
+      },
+    )
   })
 
   it('handles default branch updates', async () => {
@@ -214,14 +223,18 @@ describe('fetchUpdateRepo', () => {
 
     await fetchUpdateRepo(config)
 
-    expect(mockSdk.updateOrgRepo).toHaveBeenCalledWith('branch-org', 'branch-test', {
-      default_branch: 'develop',
-      description: 'Switching to develop branch',
-      homepage: 'https://dev.example.com',
-      name: 'branch-test',
-      orgSlug: 'branch-org',
-      visibility: 'public',
-    })
+    expect(mockSdk.updateOrgRepo).toHaveBeenCalledWith(
+      'branch-org',
+      'branch-test',
+      {
+        default_branch: 'develop',
+        description: 'Switching to develop branch',
+        homepage: 'https://dev.example.com',
+        name: 'branch-test',
+        orgSlug: 'branch-org',
+        visibility: 'public',
+      },
+    )
   })
 
   it('handles empty or minimal updates', async () => {
@@ -248,14 +261,18 @@ describe('fetchUpdateRepo', () => {
 
     await fetchUpdateRepo(config)
 
-    expect(mockSdk.updateOrgRepo).toHaveBeenCalledWith('minimal-org', 'minimal-repo', {
-      default_branch: '',
-      description: '',
-      homepage: '',
-      name: 'minimal-repo',
-      orgSlug: 'minimal-org',
-      visibility: '',
-    })
+    expect(mockSdk.updateOrgRepo).toHaveBeenCalledWith(
+      'minimal-org',
+      'minimal-repo',
+      {
+        default_branch: '',
+        description: '',
+        homepage: '',
+        name: 'minimal-repo',
+        orgSlug: 'minimal-org',
+        visibility: '',
+      },
+    )
   })
 
   it('uses null prototype for options', async () => {

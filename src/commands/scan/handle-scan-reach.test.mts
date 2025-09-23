@@ -48,12 +48,18 @@ vi.mock('../../constants.mts', () => {
 
 describe('handleScanReach', () => {
   it('performs reachability analysis successfully', async () => {
-    const { fetchSupportedScanFileNames } = await import('./fetch-supported-scan-file-names.mts')
+    const { fetchSupportedScanFileNames } = await import(
+      './fetch-supported-scan-file-names.mts'
+    )
     const { outputScanReach } = await import('./output-scan-reach.mts')
-    const { performReachabilityAnalysis } = await import('./perform-reachability-analysis.mts')
+    const { performReachabilityAnalysis } = await import(
+      './perform-reachability-analysis.mts'
+    )
     const { checkCommandInput } = await import('../../utils/check-input.mts')
-    const { getPackageFilesForScan } = await import('../../utils/path-resolve.mts')
-    
+    const { getPackageFilesForScan } = await import(
+      '../../utils/path-resolve.mts'
+    )
+
     const mockFetchSupported = vi.mocked(fetchSupportedScanFileNames)
     const mockOutput = vi.mocked(outputScanReach)
     const mockPerformAnalysis = vi.mocked(performReachabilityAnalysis)
@@ -64,7 +70,10 @@ describe('handleScanReach', () => {
       ok: true,
       data: ['package.json', 'package-lock.json'],
     })
-    mockGetPackageFiles.mockResolvedValue(['/project/package.json', '/project/package-lock.json'])
+    mockGetPackageFiles.mockResolvedValue([
+      '/project/package.json',
+      '/project/package-lock.json',
+    ])
     mockCheckInput.mockReturnValue(true)
     mockPerformAnalysis.mockResolvedValue({
       ok: true,
@@ -95,9 +104,11 @@ describe('handleScanReach', () => {
   })
 
   it('handles supported files fetch failure', async () => {
-    const { fetchSupportedScanFileNames } = await import('./fetch-supported-scan-file-names.mts')
+    const { fetchSupportedScanFileNames } = await import(
+      './fetch-supported-scan-file-names.mts'
+    )
     const { outputScanReach } = await import('./output-scan-reach.mts')
-    
+
     const mockFetchSupported = vi.mocked(fetchSupportedScanFileNames)
     const mockOutput = vi.mocked(outputScanReach)
 
@@ -123,10 +134,14 @@ describe('handleScanReach', () => {
   })
 
   it('handles no eligible files found', async () => {
-    const { fetchSupportedScanFileNames } = await import('./fetch-supported-scan-file-names.mts')
+    const { fetchSupportedScanFileNames } = await import(
+      './fetch-supported-scan-file-names.mts'
+    )
     const { checkCommandInput } = await import('../../utils/check-input.mts')
-    const { getPackageFilesForScan } = await import('../../utils/path-resolve.mts')
-    
+    const { getPackageFilesForScan } = await import(
+      '../../utils/path-resolve.mts'
+    )
+
     const mockFetchSupported = vi.mocked(fetchSupportedScanFileNames)
     const mockCheckInput = vi.mocked(checkCommandInput)
     const mockGetPackageFiles = vi.mocked(getPackageFilesForScan)
@@ -156,12 +171,18 @@ describe('handleScanReach', () => {
   })
 
   it('handles reachability analysis failure', async () => {
-    const { fetchSupportedScanFileNames } = await import('./fetch-supported-scan-file-names.mts')
+    const { fetchSupportedScanFileNames } = await import(
+      './fetch-supported-scan-file-names.mts'
+    )
     const { outputScanReach } = await import('./output-scan-reach.mts')
-    const { performReachabilityAnalysis } = await import('./perform-reachability-analysis.mts')
+    const { performReachabilityAnalysis } = await import(
+      './perform-reachability-analysis.mts'
+    )
     const { checkCommandInput } = await import('../../utils/check-input.mts')
-    const { getPackageFilesForScan } = await import('../../utils/path-resolve.mts')
-    
+    const { getPackageFilesForScan } = await import(
+      '../../utils/path-resolve.mts'
+    )
+
     const mockFetchSupported = vi.mocked(fetchSupportedScanFileNames)
     const mockOutput = vi.mocked(outputScanReach)
     const mockPerformAnalysis = vi.mocked(performReachabilityAnalysis)
@@ -171,7 +192,7 @@ describe('handleScanReach', () => {
     mockFetchSupported.mockResolvedValue({ ok: true, data: ['package.json'] })
     mockGetPackageFiles.mockResolvedValue(['/project/package.json'])
     mockCheckInput.mockReturnValue(true)
-    
+
     const analysisError = {
       ok: false,
       error: 'Analysis failed',
