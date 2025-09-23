@@ -77,6 +77,7 @@ You are a **Principal Software Engineer** responsible for:
 - **🚨 MANDATORY**: Always add dependencies with exact versions using `--save-exact` flag to ensure reproducible builds
 - **Override behavior**: pnpm.overrides in package.json controls dependency versions across the entire project
 - **Using $ syntax**: `"$package-name"` in overrides means "use the version specified in dependencies"
+- **Dynamic imports**: Only use dynamic imports for test mocking (e.g., `vi.importActual` in Vitest). Avoid runtime dynamic imports in production code
 
 ## Architecture
 
