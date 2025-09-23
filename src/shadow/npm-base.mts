@@ -8,6 +8,7 @@ import {
 } from '@socketsecurity/registry/lib/agent'
 import { isDebug } from '@socketsecurity/registry/lib/debug'
 import { getOwn } from '@socketsecurity/registry/lib/objects'
+import { normalizePath } from '@socketsecurity/registry/lib/path'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import { ensureIpcInStdio } from './stdio-ipc.mts'
@@ -51,7 +52,9 @@ export default async function shadowNpmBase(
 
   let cwd = getOwn(spawnOpts, 'cwd') ?? process.cwd()
   if (cwd instanceof URL) {
-    cwd = fileURLToPath(cwd)
+    cwd = normalizePath(fileURLToPath(cwd))
+  } else if (typeof cwd === 'string') {
+    cwd = normalizePath(cwd)
   }
 
   const isShadowNpm = binName === NPM
