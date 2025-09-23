@@ -559,6 +559,7 @@ export async function meowWithSubcommands(
       //'security',
       'threat-feed',
       'uninstall',
+      'whoami',
       'wrapper',
       // YARN,
     ])
@@ -618,6 +619,7 @@ export async function meowWithSubcommands(
       `  login                       Socket API login and CLI setup`,
       `  logout                      ${description(subcommands['logout'])}`,
       `  uninstall                   ${description(subcommands['uninstall'])}`,
+      `  whoami                      ${description(subcommands['whoami'])}`,
       `  wrapper                     ${description(subcommands['wrapper'])}`,
     )
   } else {

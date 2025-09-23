@@ -28,6 +28,7 @@ import { cmdRepository } from './commands/repository/cmd-repository.mts'
 import { cmdScan } from './commands/scan/cmd-scan.mts'
 import { cmdThreatFeed } from './commands/threat-feed/cmd-threat-feed.mts'
 import { cmdUninstall } from './commands/uninstall/cmd-uninstall.mts'
+import { cmdWhoami } from './commands/whoami/cmd-whoami.mts'
 import { cmdWrapper } from './commands/wrapper/cmd-wrapper.mts'
 import { cmdYarn } from './commands/yarn/cmd-yarn.mts'
 
@@ -60,6 +61,7 @@ export const rootCommands = {
   security: cmdOrganizationPolicySecurity,
   'threat-feed': cmdThreatFeed,
   uninstall: cmdUninstall,
+  whoami: cmdWhoami,
   wrapper: cmdWrapper,
   yarn: cmdYarn,
 }
