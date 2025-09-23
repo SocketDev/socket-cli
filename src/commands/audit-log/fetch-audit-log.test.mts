@@ -19,27 +19,24 @@ describe('fetchAuditLog', () => {
     const mockSetupSdk = vi.mocked(setupSdk)
 
     const mockSdk = {
-      getAuditLog: vi.fn().mockResolvedValue({
+      getAuditLogEvents: vi.fn().mockResolvedValue({
         success: true,
         data: {
-          entries: [
+          events: [
             {
-              id: 'entry-1',
-              action: 'user.login',
-              user: 'user@example.com',
-              timestamp: '2025-01-01T10:00:00Z',
-              details: { ip: '192.168.1.1' },
+              id: 'event-1',
+              action: 'package.scan',
+              actor: 'user@example.com',
+              timestamp: '2025-01-20T10:00:00Z',
             },
             {
-              id: 'entry-2',
-              action: 'scan.created',
-              user: 'admin@example.com',
-              timestamp: '2025-01-01T11:00:00Z',
-              details: { scanId: 'scan-123' },
+              id: 'event-2',
+              action: 'repository.create',
+              actor: 'admin@example.com',
+              timestamp: '2025-01-20T11:00:00Z',
             },
           ],
           total: 2,
-          hasMore: false,
         },
       }),
     }
@@ -48,26 +45,31 @@ describe('fetchAuditLog', () => {
     mockHandleApi.mockResolvedValue({
       ok: true,
       data: {
-        entries: expect.any(Array),
+        events: expect.any(Array),
         total: 2,
       },
     })
 
-    const result = await fetchAuditLog('test-org', {
-      limit: 50,
-      offset: 0,
-      startDate: '2025-01-01',
-      endDate: '2025-01-31',
-    })
+    const config = {
+      logType: 'all',
+      orgSlug: 'test-org',
+      outputKind: 'json' as const,
+      page: 1,
+      perPage: 100,
+    }
 
-    expect(mockSdk.getAuditLog).toHaveBeenCalledWith('test-org', {
-      limit: 50,
-      offset: 0,
-      startDate: '2025-01-01',
-      endDate: '2025-01-31',
+    const result = await fetchAuditLog(config)
+
+    expect(mockSdk.getAuditLogEvents).toHaveBeenCalledWith('test-org', {
+      outputJson: 'true',
+      outputMarkdown: 'false',
+      orgSlug: 'test-org',
+      type: 'all',
+      page: '1',
+      per_page: '100',
     })
     expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
-      description: 'fetching audit log',
+      description: 'audit log for test-org',
     })
     expect(result.ok).toBe(true)
   })
@@ -80,11 +82,19 @@ describe('fetchAuditLog', () => {
       ok: false,
       code: 1,
       message: 'Failed to setup SDK',
-      cause: 'Invalid configuration',
+      cause: 'Invalid API token',
     }
     mockSetupSdk.mockResolvedValue(error)
 
-    const result = await fetchAuditLog('my-org', { limit: 10 })
+    const config = {
+      logType: 'all',
+      orgSlug: 'my-org',
+      outputKind: 'text' as const,
+      page: 1,
+      perPage: 50,
+    }
+
+    const result = await fetchAuditLog(config)
 
     expect(result).toEqual(error)
   })
@@ -96,20 +106,30 @@ describe('fetchAuditLog', () => {
     const mockSetupSdk = vi.mocked(setupSdk)
 
     const mockSdk = {
-      getAuditLog: vi.fn().mockRejectedValue(new Error('Unauthorized')),
+      getAuditLogEvents: vi
+        .fn()
+        .mockRejectedValue(new Error('Unauthorized access')),
     }
 
     mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
     mockHandleApi.mockResolvedValue({
       ok: false,
-      error: 'Unauthorized access',
-      code: 401,
+      error: 'Access denied to audit log',
+      code: 403,
     })
 
-    const result = await fetchAuditLog('org', { limit: 100 })
+    const config = {
+      logType: 'security',
+      orgSlug: 'restricted-org',
+      outputKind: 'json' as const,
+      page: 1,
+      perPage: 100,
+    }
+
+    const result = await fetchAuditLog(config)
 
     expect(result.ok).toBe(false)
-    expect(result.code).toBe(401)
+    expect(result.code).toBe(403)
   })
 
   it('passes custom SDK options', async () => {
@@ -119,7 +139,7 @@ describe('fetchAuditLog', () => {
     const mockHandleApi = vi.mocked(handleApiCall)
 
     const mockSdk = {
-      getAuditLog: vi.fn().mockResolvedValue({}),
+      getAuditLogEvents: vi.fn().mockResolvedValue({}),
     }
 
     mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
@@ -130,7 +150,15 @@ describe('fetchAuditLog', () => {
       baseUrl: 'https://audit.api.com',
     }
 
-    await fetchAuditLog('my-org', { limit: 20 }, { sdkOpts })
+    const config = {
+      logType: 'all',
+      orgSlug: 'custom-org',
+      outputKind: 'json' as const,
+      page: 1,
+      perPage: 100,
+    }
+
+    await fetchAuditLog(config, { sdkOpts })
 
     expect(mockSetupSdk).toHaveBeenCalledWith(sdkOpts)
   })
@@ -142,23 +170,29 @@ describe('fetchAuditLog', () => {
     const mockHandleApi = vi.mocked(handleApiCall)
 
     const mockSdk = {
-      getAuditLog: vi.fn().mockResolvedValue({}),
+      getAuditLogEvents: vi.fn().mockResolvedValue({}),
     }
 
     mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
     mockHandleApi.mockResolvedValue({ ok: true, data: {} })
 
-    await fetchAuditLog('test-org', {
-      limit: 200,
-      offset: 100,
-      page: 2,
-    })
+    const config = {
+      logType: 'all',
+      orgSlug: 'test-org',
+      outputKind: 'json' as const,
+      page: 5,
+      perPage: 25,
+    }
 
-    expect(mockSdk.getAuditLog).toHaveBeenCalledWith('test-org', {
-      limit: 200,
-      offset: 100,
-      page: 2,
-    })
+    await fetchAuditLog(config)
+
+    expect(mockSdk.getAuditLogEvents).toHaveBeenCalledWith(
+      'test-org',
+      expect.objectContaining({
+        page: '5',
+        per_page: '25',
+      }),
+    )
   })
 
   it('handles date filtering', async () => {
@@ -168,27 +202,33 @@ describe('fetchAuditLog', () => {
     const mockHandleApi = vi.mocked(handleApiCall)
 
     const mockSdk = {
-      getAuditLog: vi.fn().mockResolvedValue({}),
+      getAuditLogEvents: vi.fn().mockResolvedValue({}),
     }
 
     mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
     mockHandleApi.mockResolvedValue({ ok: true, data: {} })
 
-    await fetchAuditLog('org', {
-      limit: 50,
-      startDate: '2025-01-01T00:00:00Z',
-      endDate: '2025-01-31T23:59:59Z',
-      action: 'user.login',
-      user: 'admin@example.com',
-    })
+    const logTypes = ['all', 'security', 'configuration', 'access']
 
-    expect(mockSdk.getAuditLog).toHaveBeenCalledWith('org', {
-      limit: 50,
-      startDate: '2025-01-01T00:00:00Z',
-      endDate: '2025-01-31T23:59:59Z',
-      action: 'user.login',
-      user: 'admin@example.com',
-    })
+    for (const logType of logTypes) {
+      const config = {
+        logType,
+        orgSlug: 'test-org',
+        outputKind: 'json' as const,
+        page: 1,
+        perPage: 100,
+      }
+
+      // eslint-disable-next-line no-await-in-loop
+      await fetchAuditLog(config)
+
+      expect(mockSdk.getAuditLogEvents).toHaveBeenCalledWith(
+        'test-org',
+        expect.objectContaining({
+          type: logType,
+        }),
+      )
+    }
   })
 
   it('uses null prototype for options', async () => {
@@ -198,16 +238,24 @@ describe('fetchAuditLog', () => {
     const mockHandleApi = vi.mocked(handleApiCall)
 
     const mockSdk = {
-      getAuditLog: vi.fn().mockResolvedValue({}),
+      getAuditLogEvents: vi.fn().mockResolvedValue({}),
     }
 
     mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
     mockHandleApi.mockResolvedValue({ ok: true, data: {} })
 
+    const config = {
+      logType: 'all',
+      orgSlug: 'test-org',
+      outputKind: 'json' as const,
+      page: 1,
+      perPage: 100,
+    }
+
     // This tests that the function properly uses __proto__: null.
-    await fetchAuditLog('test-org', { limit: 10 })
+    await fetchAuditLog(config)
 
     // The function should work without prototype pollution issues.
-    expect(mockSdk.getAuditLog).toHaveBeenCalled()
+    expect(mockSdk.getAuditLogEvents).toHaveBeenCalled()
   })
 })

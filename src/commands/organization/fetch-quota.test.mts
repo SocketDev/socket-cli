@@ -53,11 +53,11 @@ describe('fetchQuota', () => {
       },
     })
 
-    const result = await fetchQuota('test-org')
+    const result = await fetchQuota()
 
-    expect(mockSdk.getQuota).toHaveBeenCalledWith('test-org')
+    expect(mockSdk.getQuota).toHaveBeenCalledWith()
     expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
-      description: 'fetching organization quota',
+      description: 'token quota',
     })
     expect(result.ok).toBe(true)
   })
@@ -74,7 +74,7 @@ describe('fetchQuota', () => {
     }
     mockSetupSdk.mockResolvedValue(error)
 
-    const result = await fetchQuota('my-org')
+    const result = await fetchQuota()
 
     expect(result).toEqual(error)
   })
@@ -96,7 +96,7 @@ describe('fetchQuota', () => {
       code: 503,
     })
 
-    const result = await fetchQuota('org')
+    const result = await fetchQuota()
 
     expect(result.ok).toBe(false)
     expect(result.code).toBe(503)
@@ -120,7 +120,7 @@ describe('fetchQuota', () => {
       baseUrl: 'https://quota.api.com',
     }
 
-    await fetchQuota('my-org', { sdkOpts })
+    await fetchQuota({ sdkOpts })
 
     expect(mockSetupSdk).toHaveBeenCalledWith(sdkOpts)
   })
@@ -149,7 +149,7 @@ describe('fetchQuota', () => {
       },
     })
 
-    const result = await fetchQuota('maxed-org')
+    const result = await fetchQuota()
 
     expect(result.ok).toBe(true)
     expect(result.data.scans.percentage).toBe(100)
@@ -177,8 +177,8 @@ describe('fetchQuota', () => {
 
     for (const orgSlug of orgSlugs) {
       // eslint-disable-next-line no-await-in-loop
-      await fetchQuota(orgSlug)
-      expect(mockSdk.getQuota).toHaveBeenCalledWith(orgSlug)
+      await fetchQuota()
+      expect(mockSdk.getQuota).toHaveBeenCalledWith()
     }
   })
 
@@ -196,7 +196,7 @@ describe('fetchQuota', () => {
     mockHandleApi.mockResolvedValue({ ok: true, data: {} })
 
     // This tests that the function properly uses __proto__: null.
-    await fetchQuota('test-org')
+    await fetchQuota()
 
     // The function should work without prototype pollution issues.
     expect(mockSdk.getQuota).toHaveBeenCalled()

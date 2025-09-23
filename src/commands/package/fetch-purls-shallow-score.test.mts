@@ -19,7 +19,7 @@ describe('fetchPurlsShallowScore', () => {
     const mockSetupSdk = vi.mocked(setupSdk)
 
     const mockSdk = {
-      getPurlsShallowScore: vi.fn().mockResolvedValue({
+      batchPackageFetch: vi.fn().mockResolvedValue({
         success: true,
         data: [
           {
@@ -50,9 +50,12 @@ describe('fetchPurlsShallowScore', () => {
     const purls = ['pkg:npm/lodash@4.17.21', 'pkg:npm/express@4.18.2']
     const result = await fetchPurlsShallowScore(purls)
 
-    expect(mockSdk.getPurlsShallowScore).toHaveBeenCalledWith(purls)
+    expect(mockSdk.batchPackageFetch).toHaveBeenCalledWith(
+      { components: purls.map(purl => ({ purl })) },
+      { alerts: 'true' },
+    )
     expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
-      description: 'fetching purls shallow scores',
+      description: 'looking up package',
     })
     expect(result.ok).toBe(true)
     expect(result.data).toHaveLength(2)
@@ -82,7 +85,7 @@ describe('fetchPurlsShallowScore', () => {
     const mockSetupSdk = vi.mocked(setupSdk)
 
     const mockSdk = {
-      getPurlsShallowScore: vi
+      batchPackageFetch: vi
         .fn()
         .mockRejectedValue(new Error('Batch too large')),
     }
@@ -109,7 +112,7 @@ describe('fetchPurlsShallowScore', () => {
     const mockHandleApi = vi.mocked(handleApiCall)
 
     const mockSdk = {
-      getPurlsShallowScore: vi.fn().mockResolvedValue([]),
+      batchPackageFetch: vi.fn().mockResolvedValue([]),
     }
 
     mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
@@ -132,7 +135,7 @@ describe('fetchPurlsShallowScore', () => {
     const mockHandleApi = vi.mocked(handleApiCall)
 
     const mockSdk = {
-      getPurlsShallowScore: vi.fn().mockResolvedValue([]),
+      batchPackageFetch: vi.fn().mockResolvedValue([]),
     }
 
     mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
@@ -140,7 +143,10 @@ describe('fetchPurlsShallowScore', () => {
 
     const result = await fetchPurlsShallowScore([])
 
-    expect(mockSdk.getPurlsShallowScore).toHaveBeenCalledWith([])
+    expect(mockSdk.batchPackageFetch).toHaveBeenCalledWith(
+      { components: [] },
+      { alerts: 'true' },
+    )
     expect(result.ok).toBe(true)
     expect(result.data).toEqual([])
   })
@@ -152,7 +158,7 @@ describe('fetchPurlsShallowScore', () => {
     const mockHandleApi = vi.mocked(handleApiCall)
 
     const mockSdk = {
-      getPurlsShallowScore: vi.fn().mockResolvedValue([]),
+      batchPackageFetch: vi.fn().mockResolvedValue([]),
     }
 
     mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
@@ -167,7 +173,10 @@ describe('fetchPurlsShallowScore', () => {
 
     await fetchPurlsShallowScore(mixedPurls)
 
-    expect(mockSdk.getPurlsShallowScore).toHaveBeenCalledWith(mixedPurls)
+    expect(mockSdk.batchPackageFetch).toHaveBeenCalledWith(
+      { components: mixedPurls.map(purl => ({ purl })) },
+      { alerts: 'true' },
+    )
   })
 
   it('handles large batch of purls', async () => {
@@ -182,7 +191,7 @@ describe('fetchPurlsShallowScore', () => {
     const mockResults = largeBatch.map(purl => ({ purl, score: 80 }))
 
     const mockSdk = {
-      getPurlsShallowScore: vi.fn().mockResolvedValue(mockResults),
+      batchPackageFetch: vi.fn().mockResolvedValue(mockResults),
     }
 
     mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
@@ -201,7 +210,7 @@ describe('fetchPurlsShallowScore', () => {
     const mockHandleApi = vi.mocked(handleApiCall)
 
     const mockSdk = {
-      getPurlsShallowScore: vi.fn().mockResolvedValue([]),
+      batchPackageFetch: vi.fn().mockResolvedValue([]),
     }
 
     mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
@@ -211,6 +220,6 @@ describe('fetchPurlsShallowScore', () => {
     await fetchPurlsShallowScore(['pkg:npm/test@1.0.0'])
 
     // The function should work without prototype pollution issues.
-    expect(mockSdk.getPurlsShallowScore).toHaveBeenCalled()
+    expect(mockSdk.batchPackageFetch).toHaveBeenCalled()
   })
 })

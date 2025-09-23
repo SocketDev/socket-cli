@@ -24,6 +24,7 @@ import constants, {
   PNPM,
   PNPM_LOCK_YAML,
 } from '../../../src/constants.mts'
+import { withTempFixture } from '../../../src/utils/test-fixtures.mts'
 import { cmdit, spawnSocketCli, testPath } from '../../../test/utils.mts'
 
 const fixtureBaseDir = path.join(testPath, 'fixtures/commands/optimize')
@@ -173,6 +174,7 @@ describe('socket optimize', async () => {
       'optimize',
       FLAG_DRY_RUN,
       FLAG_PIN,
+      '.',
       FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
     ],
@@ -198,6 +200,7 @@ describe('socket optimize', async () => {
       'optimize',
       FLAG_DRY_RUN,
       FLAG_PROD,
+      '.',
       FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
     ],
@@ -224,6 +227,7 @@ describe('socket optimize', async () => {
       FLAG_DRY_RUN,
       FLAG_PIN,
       FLAG_PROD,
+      '.',
       FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
     ],
@@ -249,6 +253,7 @@ describe('socket optimize', async () => {
       'optimize',
       FLAG_DRY_RUN,
       FLAG_JSON,
+      '.',
       FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
     ],
@@ -269,6 +274,7 @@ describe('socket optimize', async () => {
       'optimize',
       FLAG_DRY_RUN,
       FLAG_MARKDOWN,
+      '.',
       FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
     ],
@@ -333,12 +339,15 @@ describe('socket optimize', async () => {
       FLAG_PIN,
       FLAG_PROD,
       FLAG_JSON,
+      '.',
       FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
     ],
     'should accept comprehensive flag combination',
     async cmd => {
-      const { code, stderr } = await spawnSocketCli(binCliPath, cmd)
+      const { code, stderr } = await spawnSocketCli(binCliPath, cmd, {
+        cwd: pnpmFixtureDir,
+      })
       // For dry-run, should not modify files.
       const packageJsonPath = path.join(pnpmFixtureDir, PACKAGE_JSON)
       const packageJson = await readPackageJson(packageJsonPath)
@@ -372,6 +381,7 @@ describe('socket optimize', async () => {
       FLAG_PIN,
       FLAG_PROD,
       FLAG_MARKDOWN,
+      '.',
       FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
     ],
@@ -504,27 +514,33 @@ describe('socket optimize', async () => {
       async cmd => {
         // Create temp fixture for this test.
         const { tempDir, cleanup } = await withTempFixture(pnpmFixtureDir)
-        cleanupFunctions.push(cleanup)
+        try {
+          const { code, stderr, stdout } = await spawnSocketCli(
+            binCliPath,
+            cmd,
+            {
+              cwd: tempDir,
+            },
+          )
 
-        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
-          cwd: tempDir,
-        })
+          expect(code).toBe(0)
 
-        expect(code).toBe(0)
+          // Check that command completed successfully (may or may not add overrides depending on available optimizations).
+          const packageJsonPath = path.join(tempDir, PACKAGE_JSON)
+          const packageJson = await readPackageJson(packageJsonPath)
+          // Note: overrides may be undefined if no production dependencies have available optimizations..
+          expect(packageJson).toBeDefined()
 
-        // Check that command completed successfully (may or may not add overrides depending on available optimizations).
-        const packageJsonPath = path.join(tempDir, PACKAGE_JSON)
-        const packageJson = await readPackageJson(packageJsonPath)
-        // Note: overrides may be undefined if no production dependencies have available optimizations..
-        expect(packageJson).toBeDefined()
+          // Verify pnpm-lock.yaml exists (since we're using pnpm, not npm).
+          const packageLockPath = path.join(tempDir, PNPM_LOCK_YAML)
+          expect(existsSync(packageLockPath)).toBe(true)
 
-        // Verify pnpm-lock.yaml exists (since we're using pnpm, not npm).
-        const packageLockPath = path.join(tempDir, PNPM_LOCK_YAML)
-        expect(existsSync(packageLockPath)).toBe(true)
-
-        // Should have optimization output.
-        const output = stdout + stderr
-        expect(output).toMatch(/Optimizing|Adding overrides/i)
+          // Should have optimization output.
+          const output = stdout + stderr
+          expect(output).toMatch(/Optimizing|Adding overrides/i)
+        } finally {
+          await cleanup()
+        }
       },
       { timeout: 120_000 },
     )
@@ -535,22 +551,28 @@ describe('socket optimize', async () => {
       async cmd => {
         // Create temp fixture for this test.
         const { tempDir, cleanup } = await withTempFixture(pnpmFixtureDir)
-        cleanupFunctions.push(cleanup)
+        try {
+          const { code, stderr, stdout } = await spawnSocketCli(
+            binCliPath,
+            cmd,
+            {
+              cwd: tempDir,
+            },
+          )
 
-        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
-          cwd: tempDir,
-        })
+          expect(code).toBe(0)
 
-        expect(code).toBe(0)
+          // Verify package.json has overrides.
+          const packageJsonPath = path.join(tempDir, PACKAGE_JSON)
+          const packageJson = await readPackageJson(packageJsonPath)
+          expect(packageJson.overrides).toBeDefined()
 
-        // Verify package.json has overrides.
-        const packageJsonPath = path.join(tempDir, PACKAGE_JSON)
-        const packageJson = await readPackageJson(packageJsonPath)
-        expect(packageJson.overrides).toBeDefined()
-
-        // Verify pnpm-lock.yaml was updated.
-        const packageLockPath = path.join(tempDir, PNPM_LOCK_YAML)
-        expect(existsSync(packageLockPath)).toBe(true)
+          // Verify pnpm-lock.yaml was updated.
+          const packageLockPath = path.join(tempDir, PNPM_LOCK_YAML)
+          expect(existsSync(packageLockPath)).toBe(true)
+        } finally {
+          await cleanup()
+        }
       },
     )
 
@@ -566,26 +588,32 @@ describe('socket optimize', async () => {
       async cmd => {
         // Create temp fixture for this test.
         const { tempDir, cleanup } = await withTempFixture(pnpmFixtureDir)
-        cleanupFunctions.push(cleanup)
+        try {
+          const { code, stderr, stdout } = await spawnSocketCli(
+            binCliPath,
+            cmd,
+            {
+              cwd: tempDir,
+            },
+          )
 
-        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
-          cwd: tempDir,
-        })
+          expect(code).toBe(0)
 
-        expect(code).toBe(0)
+          // Verify package.json has overrides.
+          const packageJsonPath = path.join(tempDir, PACKAGE_JSON)
+          const packageJson = await readPackageJson(packageJsonPath)
+          expect(packageJson.overrides).toBeDefined()
 
-        // Verify package.json has overrides.
-        const packageJsonPath = path.join(tempDir, PACKAGE_JSON)
-        const packageJson = await readPackageJson(packageJsonPath)
-        expect(packageJson.overrides).toBeDefined()
+          // Verify pnpm-lock.yaml was updated.
+          const packageLockPath = path.join(tempDir, PNPM_LOCK_YAML)
+          expect(existsSync(packageLockPath)).toBe(true)
 
-        // Verify pnpm-lock.yaml was updated.
-        const packageLockPath = path.join(pnpmFixtureDir, PNPM_LOCK_YAML)
-        expect(existsSync(packageLockPath)).toBe(true)
-
-        // Should have regular output (markdown flag doesn't change console output).
-        const output = stdout + stderr
-        expect(output).toMatch(/Optimizing|Adding overrides/i)
+          // Should have regular output (markdown flag doesn't change console output).
+          const output = stdout + stderr
+          expect(output).toMatch(/Optimizing|Adding overrides/i)
+        } finally {
+          await cleanup()
+        }
       },
     )
 
@@ -658,10 +686,12 @@ describe('socket optimize', async () => {
     )
 
     cmdit(
-      ['optimize', FLAG_DRY_RUN, FLAG_CONFIG, '{}'],
+      ['optimize', FLAG_DRY_RUN, '.', FLAG_CONFIG, '{}'],
       'should show clear error when API token is missing',
       async cmd => {
-        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
+          cwd: pnpmFixtureDir,
+        })
         const output = stdout + stderr
         expect(output.length).toBeGreaterThan(0)
         expect(code, 'should exit with code 0 when no token').toBe(0)
@@ -669,10 +699,12 @@ describe('socket optimize', async () => {
     )
 
     cmdit(
-      ['optimize', FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":""}'],
+      ['optimize', FLAG_DRY_RUN, '.', FLAG_CONFIG, '{"apiToken":""}'],
       'should show clear error when API token is empty',
       async cmd => {
-        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
+          cwd: pnpmFixtureDir,
+        })
         const output = stdout + stderr
         expect(output.length).toBeGreaterThan(0)
         expect(code, 'should exit with code 0 with empty token').toBe(0)
@@ -693,7 +725,9 @@ describe('socket optimize', async () => {
       ],
       'should show clear error when conflicting output flags are used',
       async cmd => {
-        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
+          cwd: pnpmFixtureDir,
+        })
         const output = stdout + stderr
         expect(output.length).toBeGreaterThan(0)
         expect(code).toBe(0)
@@ -711,7 +745,9 @@ describe('socket optimize', async () => {
       ],
       'should show helpful error for unknown flags',
       async cmd => {
-        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
+          cwd: pnpmFixtureDir,
+        })
         const output = stdout + stderr
         expect(output.length).toBeGreaterThan(0)
         expect(code).toBe(0)
@@ -722,19 +758,34 @@ describe('socket optimize', async () => {
       ['optimize', '.', FLAG_CONFIG, '{"apiToken":"invalid-token-format"}'],
       'should handle invalid API token gracefully',
       async cmd => {
-        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-        expect(code).toBe(0)
-        const output = stdout + stderr
-        // Should show authentication or token-related error.
-        expect(output.length).toBeGreaterThan(0)
+        // Use a temp directory outside the repo to avoid modifying repo files.
+        const { tempDir, cleanup } = await withTempFixture(pnpmFixtureDir)
+        try {
+          const { code, stderr, stdout } = await spawnSocketCli(
+            binCliPath,
+            cmd,
+            {
+              cwd: tempDir,
+            },
+          )
+          expect(code).toBe(0)
+          const output = stdout + stderr
+          // Should show authentication or token-related error.
+          expect(output.length).toBeGreaterThan(0)
+        } finally {
+          await cleanup()
+        }
       },
+      { timeout: 30_000 },
     )
 
     cmdit(
       ['optimize', FLAG_PIN, FLAG_PROD, FLAG_HELP, FLAG_CONFIG, '{}'],
       'should prioritize help over other flags',
       async cmd => {
-        const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+        const { code, stdout } = await spawnSocketCli(binCliPath, cmd, {
+          cwd: pnpmFixtureDir,
+        })
         expect(stdout).toContain(
           'Optimize dependencies with @socketregistry overrides',
         )
@@ -746,7 +797,9 @@ describe('socket optimize', async () => {
       ['optimize', FLAG_VERSION, FLAG_CONFIG, '{}'],
       'should show version information',
       async cmd => {
-        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
+          cwd: pnpmFixtureDir,
+        })
         const output = stdout + stderr
         expect(output.length).toBeGreaterThan(0)
         expect(

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { fetchRepoAnalytics } from './fetch-repo-analytics.mts'
+import { fetchRepoAnalyticsData } from './fetch-repo-analytics.mts'
 
 // Mock the dependencies.
 vi.mock('../../utils/api.mts', () => ({
@@ -22,22 +22,12 @@ describe('fetchRepoAnalytics', () => {
       getRepoAnalytics: vi.fn().mockResolvedValue({
         success: true,
         data: {
-          repository: 'my-repo',
-          commits: 1250,
-          contributors: 25,
-          dependencies: 145,
-          vulnerabilities: {
-            critical: 2,
-            high: 5,
-            medium: 12,
-            low: 18,
-          },
-          languages: {
-            JavaScript: 65.5,
-            TypeScript: 30.2,
-            CSS: 4.3,
-          },
-          lastUpdated: '2025-01-15T12:00:00Z',
+          commits: 450,
+          contributors: 12,
+          issues: 85,
+          pullRequests: 120,
+          stars: 340,
+          lastUpdated: '2025-01-20T12:00:00Z',
         },
       }),
     }
@@ -46,17 +36,17 @@ describe('fetchRepoAnalytics', () => {
     mockHandleApi.mockResolvedValue({
       ok: true,
       data: {
-        repository: 'my-repo',
-        commits: 1250,
-        contributors: 25,
+        commits: 450,
+        contributors: 12,
+        issues: 85,
       },
     })
 
-    const result = await fetchRepoAnalytics('test-org', 'my-repo')
+    const result = await fetchRepoAnalyticsData('test-repo', 30)
 
-    expect(mockSdk.getRepoAnalytics).toHaveBeenCalledWith('test-org', 'my-repo')
+    expect(mockSdk.getRepoAnalytics).toHaveBeenCalledWith('test-repo', '30')
     expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
-      description: 'fetching repository analytics',
+      description: 'analytics data',
     })
     expect(result.ok).toBe(true)
   })
@@ -69,11 +59,11 @@ describe('fetchRepoAnalytics', () => {
       ok: false,
       code: 1,
       message: 'Failed to setup SDK',
-      cause: 'Missing API token',
+      cause: 'Configuration error',
     }
     mockSetupSdk.mockResolvedValue(error)
 
-    const result = await fetchRepoAnalytics('org', 'repo')
+    const result = await fetchRepoAnalyticsData('my-repo', 7)
 
     expect(result).toEqual(error)
   })
@@ -93,11 +83,11 @@ describe('fetchRepoAnalytics', () => {
     mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
     mockHandleApi.mockResolvedValue({
       ok: false,
-      error: 'Repository not found',
+      error: 'Repository analytics unavailable',
       code: 404,
     })
 
-    const result = await fetchRepoAnalytics('org', 'nonexistent')
+    const result = await fetchRepoAnalyticsData('nonexistent-repo', 30)
 
     expect(result.ok).toBe(false)
     expect(result.code).toBe(404)
@@ -117,12 +107,11 @@ describe('fetchRepoAnalytics', () => {
     mockHandleApi.mockResolvedValue({ ok: true, data: {} })
 
     const sdkOpts = {
-      apiToken: 'repo-token-456',
-      baseUrl: 'https://custom.api.com',
-      timeout: 30000,
+      apiToken: 'repo-analytics-token',
+      baseUrl: 'https://repo.api.com',
     }
 
-    await fetchRepoAnalytics('my-org', 'my-repo', { sdkOpts })
+    await fetchRepoAnalyticsData('custom-repo', 90, { sdkOpts })
 
     expect(mockSetupSdk).toHaveBeenCalledWith(sdkOpts)
   })
@@ -140,22 +129,16 @@ describe('fetchRepoAnalytics', () => {
     mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
     mockHandleApi.mockResolvedValue({ ok: true, data: {} })
 
-    const testCases = [
-      ['simple-org', 'simple-repo'],
-      ['org_underscore', 'repo_underscore'],
-      ['org123', 'repo456'],
-      ['my-organization', 'my-project-name'],
-      ['socket', 'socket-cli'],
-    ]
+    const repos = ['org/repo1', 'org/repo2', 'another-org/repo', 'user/project']
 
-    for (const [org, repo] of testCases) {
+    for (const repo of repos) {
       // eslint-disable-next-line no-await-in-loop
-      await fetchRepoAnalytics(org, repo)
-      expect(mockSdk.getRepoAnalytics).toHaveBeenCalledWith(org, repo)
+      await fetchRepoAnalyticsData(repo, 30)
+      expect(mockSdk.getRepoAnalytics).toHaveBeenCalledWith(repo, '30')
     }
   })
 
-  it('handles repos with special characters', async () => {
+  it('handles different time ranges', async () => {
     const { setupSdk } = await import('../../utils/sdk.mts')
     const { handleApiCall } = await import('../../utils/api.mts')
     const mockSetupSdk = vi.mocked(setupSdk)
@@ -168,17 +151,16 @@ describe('fetchRepoAnalytics', () => {
     mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
     mockHandleApi.mockResolvedValue({ ok: true, data: {} })
 
-    await fetchRepoAnalytics('my-org', 'repo.with.dots')
-    expect(mockSdk.getRepoAnalytics).toHaveBeenCalledWith(
-      'my-org',
-      'repo.with.dots',
-    )
+    const timeRanges = [1, 7, 14, 30, 60, 90, 365]
 
-    await fetchRepoAnalytics('my-org', 'repo-with-dashes')
-    expect(mockSdk.getRepoAnalytics).toHaveBeenCalledWith(
-      'my-org',
-      'repo-with-dashes',
-    )
+    for (const time of timeRanges) {
+      // eslint-disable-next-line no-await-in-loop
+      await fetchRepoAnalyticsData('test-repo', time)
+      expect(mockSdk.getRepoAnalytics).toHaveBeenCalledWith(
+        'test-repo',
+        time.toString(),
+      )
+    }
   })
 
   it('uses null prototype for options', async () => {
@@ -195,7 +177,7 @@ describe('fetchRepoAnalytics', () => {
     mockHandleApi.mockResolvedValue({ ok: true, data: {} })
 
     // This tests that the function properly uses __proto__: null.
-    await fetchRepoAnalytics('test-org', 'test-repo')
+    await fetchRepoAnalyticsData('test-repo', 30)
 
     // The function should work without prototype pollution issues.
     expect(mockSdk.getRepoAnalytics).toHaveBeenCalled()

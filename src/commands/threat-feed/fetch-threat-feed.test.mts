@@ -4,232 +4,223 @@ import { fetchThreatFeed } from './fetch-threat-feed.mts'
 
 // Mock the dependencies.
 vi.mock('../../utils/api.mts', () => ({
-  handleApiCall: vi.fn(),
-}))
-
-vi.mock('../../utils/sdk.mts', () => ({
-  setupSdk: vi.fn(),
+  queryApiSafeJson: vi.fn(),
 }))
 
 describe('fetchThreatFeed', () => {
   it('fetches threat feed successfully', async () => {
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockHandleApi = vi.mocked(handleApiCall)
-    const mockSetupSdk = vi.mocked(setupSdk)
+    const { queryApiSafeJson } = await import('../../utils/api.mts')
+    const mockQueryApi = vi.mocked(queryApiSafeJson)
 
-    const mockSdk = {
-      getThreatFeed: vi.fn().mockResolvedValue({
-        success: true,
-        data: {
-          threats: [
-            {
-              id: 'threat-1',
-              package: 'malicious-package',
-              version: '1.0.0',
-              severity: 'critical',
-              type: 'malware',
-              discovered: '2025-01-20T10:00:00Z',
-            },
-            {
-              id: 'threat-2',
-              package: 'vulnerable-lib',
-              version: '2.3.1',
-              severity: 'high',
-              type: 'vulnerability',
-              discovered: '2025-01-19T15:00:00Z',
-            },
-          ],
-          total: 2,
-          updated_at: '2025-01-20T12:00:00Z',
+    const mockData = {
+      threats: [
+        {
+          id: 'threat-1',
+          package: 'malicious-package',
+          version: '1.0.0',
+          severity: 'critical',
+          type: 'malware',
+          discovered: '2025-01-20T10:00:00Z',
         },
-      }),
+        {
+          id: 'threat-2',
+          package: 'vulnerable-lib',
+          version: '2.3.1',
+          severity: 'high',
+          type: 'vulnerability',
+          discovered: '2025-01-19T15:00:00Z',
+        },
+      ],
+      total: 2,
+      updated_at: '2025-01-20T12:00:00Z',
     }
 
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
+    mockQueryApi.mockResolvedValue({
       ok: true,
-      data: {
-        threats: expect.any(Array),
-        total: 2,
-      },
+      data: mockData,
     })
 
     const result = await fetchThreatFeed({
-      limit: 100,
-      offset: 0,
-      severity: 'high',
-      type: 'malware',
+      direction: 'desc',
+      ecosystem: 'npm',
+      filter: 'high',
+      orgSlug: 'test-org',
+      page: '1',
+      perPage: 100,
+      pkg: 'test-package',
+      version: '1.0.0',
     })
 
-    expect(mockSdk.getThreatFeed).toHaveBeenCalledWith({
-      limit: 100,
-      offset: 0,
-      severity: 'high',
-      type: 'malware',
-    })
-    expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
-      description: 'fetching threat feed',
-    })
+    expect(mockQueryApi).toHaveBeenCalledWith(
+      expect.stringContaining('orgs/test-org/threat-feed'),
+      'the Threat Feed data',
+    )
     expect(result.ok).toBe(true)
+    expect(result.data).toEqual(mockData)
   })
 
   it('handles SDK setup failure', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
+    const { queryApiSafeJson } = await import('../../utils/api.mts')
+    const mockQueryApi = vi.mocked(queryApiSafeJson)
 
     const error = {
       ok: false,
       code: 1,
-      message: 'Failed to setup SDK',
+      message: 'Failed to fetch threat feed',
       cause: 'Invalid configuration',
     }
-    mockSetupSdk.mockResolvedValue(error)
+    mockQueryApi.mockResolvedValue(error)
 
-    const result = await fetchThreatFeed({ limit: 50 })
+    const result = await fetchThreatFeed({
+      direction: 'desc',
+      ecosystem: 'npm',
+      filter: '',
+      orgSlug: 'my-org',
+      page: '1',
+      perPage: 50,
+      pkg: '',
+      version: '',
+    })
 
     expect(result).toEqual(error)
   })
 
   it('handles API call failure', async () => {
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockHandleApi = vi.mocked(handleApiCall)
-    const mockSetupSdk = vi.mocked(setupSdk)
+    const { queryApiSafeJson } = await import('../../utils/api.mts')
+    const mockQueryApi = vi.mocked(queryApiSafeJson)
 
-    const mockSdk = {
-      getThreatFeed: vi
-        .fn()
-        .mockRejectedValue(new Error('Service unavailable')),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
+    mockQueryApi.mockResolvedValue({
       ok: false,
       error: 'Threat feed service unavailable',
       code: 503,
     })
 
-    const result = await fetchThreatFeed({})
+    const result = await fetchThreatFeed({
+      direction: 'asc',
+      ecosystem: 'npm',
+      filter: '',
+      orgSlug: 'org',
+      page: '1',
+      perPage: 10,
+      pkg: '',
+      version: '',
+    })
 
     expect(result.ok).toBe(false)
     expect(result.code).toBe(503)
   })
 
   it('passes custom SDK options', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
+    const { queryApiSafeJson } = await import('../../utils/api.mts')
+    const mockQueryApi = vi.mocked(queryApiSafeJson)
 
-    const mockSdk = {
-      getThreatFeed: vi.fn().mockResolvedValue({}),
-    }
+    mockQueryApi.mockResolvedValue({ ok: true, data: {} })
 
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: {} })
+    await fetchThreatFeed({
+      direction: 'desc',
+      ecosystem: 'npm',
+      filter: 'critical',
+      orgSlug: 'custom-org',
+      page: '2',
+      perPage: 50,
+      pkg: '',
+      version: '',
+    })
 
-    const sdkOpts = {
-      apiToken: 'threat-token',
-      baseUrl: 'https://threat.api.com',
-    }
-
-    await fetchThreatFeed({ limit: 20 }, { sdkOpts })
-
-    expect(mockSetupSdk).toHaveBeenCalledWith(sdkOpts)
+    expect(mockQueryApi).toHaveBeenCalledWith(
+      expect.stringContaining('filter=critical'),
+      'the Threat Feed data',
+    )
   })
 
   it('handles filtering by severity levels', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
+    const { queryApiSafeJson } = await import('../../utils/api.mts')
+    const mockQueryApi = vi.mocked(queryApiSafeJson)
 
-    const mockSdk = {
-      getThreatFeed: vi.fn().mockResolvedValue({}),
-    }
+    mockQueryApi.mockResolvedValue({ ok: true, data: { threats: [] } })
 
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: {} })
+    await fetchThreatFeed({
+      direction: 'desc',
+      ecosystem: 'npm',
+      filter: 'critical,high',
+      orgSlug: 'test-org',
+      page: '1',
+      perPage: 100,
+      pkg: '',
+      version: '',
+    })
 
-    const severities = ['critical', 'high', 'medium', 'low']
-
-    for (const severity of severities) {
-      // eslint-disable-next-line no-await-in-loop
-      await fetchThreatFeed({ severity })
-      expect(mockSdk.getThreatFeed).toHaveBeenCalledWith({ severity })
-    }
+    expect(mockQueryApi).toHaveBeenCalledWith(
+      expect.stringContaining('filter=critical%2Chigh'),
+      'the Threat Feed data',
+    )
   })
 
   it('handles pagination parameters', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
+    const { queryApiSafeJson } = await import('../../utils/api.mts')
+    const mockQueryApi = vi.mocked(queryApiSafeJson)
 
-    const mockSdk = {
-      getThreatFeed: vi.fn().mockResolvedValue({}),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: {} })
+    mockQueryApi.mockResolvedValue({ ok: true, data: { threats: [] } })
 
     await fetchThreatFeed({
-      limit: 500,
-      offset: 100,
-      page: 3,
+      direction: 'asc',
+      ecosystem: 'npm',
+      filter: '',
+      orgSlug: 'test-org',
+      page: '5',
+      perPage: 25,
+      pkg: '',
+      version: '',
     })
 
-    expect(mockSdk.getThreatFeed).toHaveBeenCalledWith({
-      limit: 500,
-      offset: 100,
-      page: 3,
-    })
+    expect(mockQueryApi).toHaveBeenCalledWith(
+      expect.stringMatching(/page_cursor=5.*per_page=25/),
+      'the Threat Feed data',
+    )
   })
 
   it('handles date range filtering', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
+    const { queryApiSafeJson } = await import('../../utils/api.mts')
+    const mockQueryApi = vi.mocked(queryApiSafeJson)
 
-    const mockSdk = {
-      getThreatFeed: vi.fn().mockResolvedValue({}),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: {} })
+    mockQueryApi.mockResolvedValue({ ok: true, data: { threats: [] } })
 
     await fetchThreatFeed({
-      startDate: '2025-01-01T00:00:00Z',
-      endDate: '2025-01-31T23:59:59Z',
-      type: 'vulnerability',
+      direction: 'desc',
+      ecosystem: 'npm',
+      filter: '',
+      orgSlug: 'test-org',
+      page: '1',
+      perPage: 100,
+      pkg: 'specific-package',
+      version: '1.2.3',
     })
 
-    expect(mockSdk.getThreatFeed).toHaveBeenCalledWith({
-      startDate: '2025-01-01T00:00:00Z',
-      endDate: '2025-01-31T23:59:59Z',
-      type: 'vulnerability',
-    })
+    expect(mockQueryApi).toHaveBeenCalledWith(
+      expect.stringMatching(/name=specific-package.*version=1\.2\.3/),
+      'the Threat Feed data',
+    )
   })
 
   it('uses null prototype for options', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
+    const { queryApiSafeJson } = await import('../../utils/api.mts')
+    const mockQueryApi = vi.mocked(queryApiSafeJson)
 
-    const mockSdk = {
-      getThreatFeed: vi.fn().mockResolvedValue({}),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: {} })
+    mockQueryApi.mockResolvedValue({ ok: true, data: {} })
 
     // This tests that the function properly uses __proto__: null.
-    await fetchThreatFeed({ limit: 10 })
+    await fetchThreatFeed({
+      direction: 'desc',
+      ecosystem: 'npm',
+      filter: '',
+      orgSlug: 'test-org',
+      page: '1',
+      perPage: 100,
+      pkg: '',
+      version: '',
+    })
 
     // The function should work without prototype pollution issues.
-    expect(mockSdk.getThreatFeed).toHaveBeenCalled()
+    expect(mockQueryApi).toHaveBeenCalled()
   })
 })

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { fetchOrgAnalytics } from './fetch-org-analytics.mts'
+import { fetchOrgAnalyticsData } from './fetch-org-analytics.mts'
 
 // Mock the dependencies.
 vi.mock('../../utils/api.mts', () => ({
@@ -46,11 +46,11 @@ describe('fetchOrgAnalytics', () => {
       },
     })
 
-    const result = await fetchOrgAnalytics('test-org')
+    const result = await fetchOrgAnalyticsData(30)
 
-    expect(mockSdk.getOrgAnalytics).toHaveBeenCalledWith('test-org')
+    expect(mockSdk.getOrgAnalytics).toHaveBeenCalledWith('30')
     expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
-      description: 'fetching organization analytics',
+      description: 'analytics data',
     })
     expect(result.ok).toBe(true)
   })
@@ -67,7 +67,7 @@ describe('fetchOrgAnalytics', () => {
     }
     mockSetupSdk.mockResolvedValue(error)
 
-    const result = await fetchOrgAnalytics('my-org')
+    const result = await fetchOrgAnalyticsData(7)
 
     expect(result).toEqual(error)
   })
@@ -79,20 +79,22 @@ describe('fetchOrgAnalytics', () => {
     const mockSetupSdk = vi.mocked(setupSdk)
 
     const mockSdk = {
-      getOrgAnalytics: vi.fn().mockRejectedValue(new Error('Network error')),
+      getOrgAnalytics: vi
+        .fn()
+        .mockRejectedValue(new Error('Analytics unavailable')),
     }
 
     mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
     mockHandleApi.mockResolvedValue({
       ok: false,
-      error: 'Failed to fetch analytics',
-      code: 500,
+      error: 'Analytics service unavailable',
+      code: 503,
     })
 
-    const result = await fetchOrgAnalytics('org-name')
+    const result = await fetchOrgAnalyticsData(30)
 
     expect(result.ok).toBe(false)
-    expect(result.code).toBe(500)
+    expect(result.code).toBe(503)
   })
 
   it('passes custom SDK options', async () => {
@@ -109,11 +111,11 @@ describe('fetchOrgAnalytics', () => {
     mockHandleApi.mockResolvedValue({ ok: true, data: {} })
 
     const sdkOpts = {
-      apiToken: 'custom-token-123',
-      baseUrl: 'https://api.example.com',
+      apiToken: 'analytics-token',
+      baseUrl: 'https://analytics.api.com',
     }
 
-    await fetchOrgAnalytics('my-org', { sdkOpts })
+    await fetchOrgAnalyticsData(90, { sdkOpts })
 
     expect(mockSetupSdk).toHaveBeenCalledWith(sdkOpts)
   })
@@ -131,17 +133,12 @@ describe('fetchOrgAnalytics', () => {
     mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
     mockHandleApi.mockResolvedValue({ ok: true, data: {} })
 
-    const testCases = [
-      'simple-org',
-      'org_with_underscore',
-      'org123',
-      'my-organization-name',
-    ]
+    const times = [7, 14, 30, 60, 90]
 
-    for (const orgSlug of testCases) {
+    for (const time of times) {
       // eslint-disable-next-line no-await-in-loop
-      await fetchOrgAnalytics(orgSlug)
-      expect(mockSdk.getOrgAnalytics).toHaveBeenCalledWith(orgSlug)
+      await fetchOrgAnalyticsData(time)
+      expect(mockSdk.getOrgAnalytics).toHaveBeenCalledWith(time.toString())
     }
   })
 
@@ -159,7 +156,7 @@ describe('fetchOrgAnalytics', () => {
     mockHandleApi.mockResolvedValue({ ok: true, data: {} })
 
     // This tests that the function properly uses __proto__: null.
-    await fetchOrgAnalytics('test-org')
+    await fetchOrgAnalyticsData(30)
 
     // The function should work without prototype pollution issues.
     expect(mockSdk.getOrgAnalytics).toHaveBeenCalled()

@@ -19,7 +19,7 @@ describe('fetchSecurityPolicy', () => {
     const mockSetupSdk = vi.mocked(setupSdk)
 
     const mockSdk = {
-      getSecurityPolicy: vi.fn().mockResolvedValue({
+      getOrgSecurityPolicy: vi.fn().mockResolvedValue({
         success: true,
         data: {
           policy: {
@@ -47,9 +47,9 @@ describe('fetchSecurityPolicy', () => {
 
     const result = await fetchSecurityPolicy('test-org')
 
-    expect(mockSdk.getSecurityPolicy).toHaveBeenCalledWith('test-org')
+    expect(mockSdk.getOrgSecurityPolicy).toHaveBeenCalledWith('test-org')
     expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
-      description: 'fetching security policy',
+      description: 'organization security policy',
     })
     expect(result.ok).toBe(true)
   })
@@ -78,7 +78,7 @@ describe('fetchSecurityPolicy', () => {
     const mockSetupSdk = vi.mocked(setupSdk)
 
     const mockSdk = {
-      getSecurityPolicy: vi.fn().mockRejectedValue(new Error('Forbidden')),
+      getOrgSecurityPolicy: vi.fn().mockRejectedValue(new Error('Forbidden')),
     }
 
     mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
@@ -101,7 +101,7 @@ describe('fetchSecurityPolicy', () => {
     const mockHandleApi = vi.mocked(handleApiCall)
 
     const mockSdk = {
-      getSecurityPolicy: vi.fn().mockResolvedValue({}),
+      getOrgSecurityPolicy: vi.fn().mockResolvedValue({}),
     }
 
     mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
@@ -124,7 +124,7 @@ describe('fetchSecurityPolicy', () => {
     const mockHandleApi = vi.mocked(handleApiCall)
 
     const mockSdk = {
-      getSecurityPolicy: vi.fn().mockResolvedValue({
+      getOrgSecurityPolicy: vi.fn().mockResolvedValue({
         policy: {
           block_high_severity: false,
           block_critical_severity: false,
@@ -158,7 +158,7 @@ describe('fetchSecurityPolicy', () => {
     const mockHandleApi = vi.mocked(handleApiCall)
 
     const mockSdk = {
-      getSecurityPolicy: vi.fn().mockResolvedValue({}),
+      getOrgSecurityPolicy: vi.fn().mockResolvedValue({}),
     }
 
     mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
@@ -174,7 +174,7 @@ describe('fetchSecurityPolicy', () => {
     for (const orgSlug of orgSlugs) {
       // eslint-disable-next-line no-await-in-loop
       await fetchSecurityPolicy(orgSlug)
-      expect(mockSdk.getSecurityPolicy).toHaveBeenCalledWith(orgSlug)
+      expect(mockSdk.getOrgSecurityPolicy).toHaveBeenCalledWith(orgSlug)
     }
   })
 
@@ -185,7 +185,7 @@ describe('fetchSecurityPolicy', () => {
     const mockHandleApi = vi.mocked(handleApiCall)
 
     const mockSdk = {
-      getSecurityPolicy: vi.fn().mockResolvedValue({}),
+      getOrgSecurityPolicy: vi.fn().mockResolvedValue({}),
     }
 
     mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
@@ -195,6 +195,6 @@ describe('fetchSecurityPolicy', () => {
     await fetchSecurityPolicy('test-org')
 
     // The function should work without prototype pollution issues.
-    expect(mockSdk.getSecurityPolicy).toHaveBeenCalled()
+    expect(mockSdk.getOrgSecurityPolicy).toHaveBeenCalled()
   })
 })

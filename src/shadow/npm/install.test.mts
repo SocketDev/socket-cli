@@ -44,7 +44,7 @@ vi.mock('../../constants.mts', async importOriginal => {
       nodeNoWarningsFlags: ['--no-warnings'],
       nodeDebugFlags: ['--inspect=0'],
       nodeHardenFlags: ['--frozen-intrinsics'],
-      nodeMemoryFlags: ['--max-old-space-size=4096'],
+      nodeMemoryFlags: [],
       processEnv: { SOCKET_ENV: 'test' },
       ENV: {
         INLINED_SOCKET_CLI_SENTRY_BUILD: false,
@@ -106,7 +106,6 @@ describe('shadowNpmInstall', () => {
         '--no-warnings',
         '--inspect=0',
         '--frozen-intrinsics',
-        '--max-old-space-size=4096',
         '--require',
         '/mock/inject.js',
         '/usr/bin/npm',
