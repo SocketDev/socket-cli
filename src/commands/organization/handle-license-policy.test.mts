@@ -32,14 +32,10 @@ describe('handleLicensePolicy', () => {
     }
     mockFetch.mockResolvedValue(mockResult)
 
-    await handleLicensePolicy({
-      outputKind: 'json',
-    })
+    await handleLicensePolicy('test-org', 'json')
 
-    expect(mockFetch).toHaveBeenCalled()
-    expect(mockOutput).toHaveBeenCalledWith(mockResult, {
-      outputKind: 'json',
-    })
+    expect(mockFetch).toHaveBeenCalledWith('test-org')
+    expect(mockOutput).toHaveBeenCalledWith(mockResult, 'json')
   })
 
   it('handles failed license policy fetch', async () => {
@@ -54,14 +50,10 @@ describe('handleLicensePolicy', () => {
     }
     mockFetch.mockResolvedValue(mockResult)
 
-    await handleLicensePolicy({
-      outputKind: 'text',
-    })
+    await handleLicensePolicy('test-org', 'text')
 
-    expect(mockFetch).toHaveBeenCalled()
-    expect(mockOutput).toHaveBeenCalledWith(mockResult, {
-      outputKind: 'text',
-    })
+    expect(mockFetch).toHaveBeenCalledWith('test-org')
+    expect(mockOutput).toHaveBeenCalledWith(mockResult, 'text')
   })
 
   it('handles markdown output format', async () => {
@@ -72,12 +64,8 @@ describe('handleLicensePolicy', () => {
 
     mockFetch.mockResolvedValue({ ok: true, data: {} })
 
-    await handleLicensePolicy({
-      outputKind: 'markdown',
-    })
+    await handleLicensePolicy('test-org', 'markdown')
 
-    expect(mockOutput).toHaveBeenCalledWith(expect.any(Object), {
-      outputKind: 'markdown',
-    })
+    expect(mockOutput).toHaveBeenCalledWith(expect.any(Object), 'markdown')
   })
 })

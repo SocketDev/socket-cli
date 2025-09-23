@@ -19,7 +19,7 @@ describe('fetchCreateRepo', () => {
     const mockSetupSdk = vi.mocked(setupSdk)
 
     const mockSdk = {
-      createRepository: vi.fn().mockResolvedValue({
+      createOrgRepo: vi.fn().mockResolvedValue({
         success: true,
         data: {
           id: 'repo-123',
@@ -42,19 +42,24 @@ describe('fetchCreateRepo', () => {
       },
     })
 
-    const result = await fetchCreateRepo('test-org', {
-      name: 'my-new-repo',
-      url: 'https://github.com/test-org/my-new-repo',
+    const result = await fetchCreateRepo({
+      orgSlug: 'test-org',
+      repoName: 'my-new-repo',
       description: 'A new repository',
+      homepage: 'https://github.com/test-org/my-new-repo',
+      defaultBranch: 'main',
+      visibility: 'private',
     })
 
-    expect(mockSdk.createRepository).toHaveBeenCalledWith('test-org', {
+    expect(mockSdk.createOrgRepo).toHaveBeenCalledWith('test-org', {
       name: 'my-new-repo',
-      url: 'https://github.com/test-org/my-new-repo',
+      homepage: 'https://github.com/test-org/my-new-repo',
       description: 'A new repository',
+      default_branch: 'main',
+      visibility: 'private',
     })
     expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
-      description: 'creating repository',
+      description: 'to create a repository',
     })
     expect(result.ok).toBe(true)
   })
@@ -71,7 +76,14 @@ describe('fetchCreateRepo', () => {
     }
     mockSetupSdk.mockResolvedValue(error)
 
-    const result = await fetchCreateRepo('org', { name: 'repo' })
+    const result = await fetchCreateRepo({
+      orgSlug: 'org',
+      repoName: 'repo',
+      description: '',
+      homepage: '',
+      defaultBranch: 'main',
+      visibility: 'private',
+    })
 
     expect(result).toEqual(error)
   })
@@ -83,7 +95,7 @@ describe('fetchCreateRepo', () => {
     const mockSetupSdk = vi.mocked(setupSdk)
 
     const mockSdk = {
-      createRepository: vi
+      createOrgRepo: vi
         .fn()
         .mockRejectedValue(new Error('Repository already exists')),
     }
@@ -95,7 +107,14 @@ describe('fetchCreateRepo', () => {
       code: 409,
     })
 
-    const result = await fetchCreateRepo('org', { name: 'existing-repo' })
+    const result = await fetchCreateRepo({
+      orgSlug: 'org',
+      repoName: 'existing-repo',
+      description: '',
+      homepage: '',
+      defaultBranch: 'main',
+      visibility: 'private',
+    })
 
     expect(result.ok).toBe(false)
     expect(result.code).toBe(409)
@@ -108,7 +127,7 @@ describe('fetchCreateRepo', () => {
     const mockHandleApi = vi.mocked(handleApiCall)
 
     const mockSdk = {
-      createRepository: vi.fn().mockResolvedValue({}),
+      createOrgRepo: vi.fn().mockResolvedValue({}),
     }
 
     mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
@@ -119,7 +138,17 @@ describe('fetchCreateRepo', () => {
       baseUrl: 'https://create.api.com',
     }
 
-    await fetchCreateRepo('my-org', { name: 'new-repo' }, { sdkOpts })
+    await fetchCreateRepo(
+      {
+        orgSlug: 'my-org',
+        repoName: 'new-repo',
+        description: '',
+        homepage: '',
+        defaultBranch: 'main',
+        visibility: 'private',
+      },
+      { sdkOpts },
+    )
 
     expect(mockSetupSdk).toHaveBeenCalledWith(sdkOpts)
   })
@@ -131,16 +160,27 @@ describe('fetchCreateRepo', () => {
     const mockHandleApi = vi.mocked(handleApiCall)
 
     const mockSdk = {
-      createRepository: vi.fn().mockResolvedValue({}),
+      createOrgRepo: vi.fn().mockResolvedValue({}),
     }
 
     mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
     mockHandleApi.mockResolvedValue({ ok: true, data: {} })
 
-    await fetchCreateRepo('simple-org', { name: 'simple-repo' })
+    await fetchCreateRepo({
+      orgSlug: 'simple-org',
+      repoName: 'simple-repo',
+      description: '',
+      homepage: '',
+      defaultBranch: 'main',
+      visibility: 'private',
+    })
 
-    expect(mockSdk.createRepository).toHaveBeenCalledWith('simple-org', {
+    expect(mockSdk.createOrgRepo).toHaveBeenCalledWith('simple-org', {
       name: 'simple-repo',
+      description: '',
+      homepage: '',
+      default_branch: 'main',
+      visibility: 'private',
     })
   })
 
@@ -151,28 +191,30 @@ describe('fetchCreateRepo', () => {
     const mockHandleApi = vi.mocked(handleApiCall)
 
     const mockSdk = {
-      createRepository: vi.fn().mockResolvedValue({}),
+      createOrgRepo: vi.fn().mockResolvedValue({}),
     }
 
     mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
     mockHandleApi.mockResolvedValue({ ok: true, data: {} })
 
     const fullConfig = {
-      name: 'full-config-repo',
-      url: 'https://github.com/org/full-config-repo',
+      orgSlug: 'config-org',
+      repoName: 'full-config-repo',
+      homepage: 'https://github.com/org/full-config-repo',
       description: 'Repository with full configuration',
-      branch: 'main',
+      defaultBranch: 'main',
       visibility: 'private',
-      auto_scan: true,
-      tags: ['production', 'backend'],
     }
 
-    await fetchCreateRepo('config-org', fullConfig)
+    await fetchCreateRepo(fullConfig)
 
-    expect(mockSdk.createRepository).toHaveBeenCalledWith(
-      'config-org',
-      fullConfig,
-    )
+    expect(mockSdk.createOrgRepo).toHaveBeenCalledWith('config-org', {
+      name: 'full-config-repo',
+      homepage: 'https://github.com/org/full-config-repo',
+      description: 'Repository with full configuration',
+      default_branch: 'main',
+      visibility: 'private',
+    })
   })
 
   it('uses null prototype for options', async () => {
@@ -182,16 +224,23 @@ describe('fetchCreateRepo', () => {
     const mockHandleApi = vi.mocked(handleApiCall)
 
     const mockSdk = {
-      createRepository: vi.fn().mockResolvedValue({}),
+      createOrgRepo: vi.fn().mockResolvedValue({}),
     }
 
     mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
     mockHandleApi.mockResolvedValue({ ok: true, data: {} })
 
     // This tests that the function properly uses __proto__: null.
-    await fetchCreateRepo('test-org', { name: 'test-repo' })
+    await fetchCreateRepo({
+      orgSlug: 'test-org',
+      repoName: 'test-repo',
+      description: '',
+      homepage: '',
+      defaultBranch: 'main',
+      visibility: 'private',
+    })
 
     // The function should work without prototype pollution issues.
-    expect(mockSdk.createRepository).toHaveBeenCalled()
+    expect(mockSdk.createOrgRepo).toHaveBeenCalled()
   })
 })

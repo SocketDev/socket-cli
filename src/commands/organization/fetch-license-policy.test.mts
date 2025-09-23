@@ -19,7 +19,7 @@ describe('fetchLicensePolicy', () => {
     const mockSetupSdk = vi.mocked(setupSdk)
 
     const mockSdk = {
-      getLicensePolicy: vi.fn().mockResolvedValue({
+      getOrgLicensePolicy: vi.fn().mockResolvedValue({
         success: true,
         data: {
           license_policy: {
@@ -47,9 +47,9 @@ describe('fetchLicensePolicy', () => {
 
     const result = await fetchLicensePolicy('test-org')
 
-    expect(mockSdk.getLicensePolicy).toHaveBeenCalledWith('test-org')
+    expect(mockSdk.getOrgLicensePolicy).toHaveBeenCalledWith('test-org')
     expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
-      description: 'fetching license policy',
+      description: 'organization license policy',
     })
     expect(result.ok).toBe(true)
   })
@@ -78,7 +78,9 @@ describe('fetchLicensePolicy', () => {
     const mockSetupSdk = vi.mocked(setupSdk)
 
     const mockSdk = {
-      getLicensePolicy: vi.fn().mockRejectedValue(new Error('Access denied')),
+      getOrgLicensePolicy: vi
+        .fn()
+        .mockRejectedValue(new Error('Access denied')),
     }
 
     mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
@@ -101,7 +103,7 @@ describe('fetchLicensePolicy', () => {
     const mockHandleApi = vi.mocked(handleApiCall)
 
     const mockSdk = {
-      getLicensePolicy: vi.fn().mockResolvedValue({}),
+      getOrgLicensePolicy: vi.fn().mockResolvedValue({}),
     }
 
     mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
@@ -124,7 +126,7 @@ describe('fetchLicensePolicy', () => {
     const mockHandleApi = vi.mocked(handleApiCall)
 
     const mockSdk = {
-      getLicensePolicy: vi.fn().mockResolvedValue({
+      getOrgLicensePolicy: vi.fn().mockResolvedValue({
         license_policy: {},
       }),
     }
@@ -148,7 +150,7 @@ describe('fetchLicensePolicy', () => {
     const mockHandleApi = vi.mocked(handleApiCall)
 
     const mockSdk = {
-      getLicensePolicy: vi.fn().mockResolvedValue({}),
+      getOrgLicensePolicy: vi.fn().mockResolvedValue({}),
     }
 
     mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
@@ -164,7 +166,7 @@ describe('fetchLicensePolicy', () => {
     for (const orgSlug of orgSlugs) {
       // eslint-disable-next-line no-await-in-loop
       await fetchLicensePolicy(orgSlug)
-      expect(mockSdk.getLicensePolicy).toHaveBeenCalledWith(orgSlug)
+      expect(mockSdk.getOrgLicensePolicy).toHaveBeenCalledWith(orgSlug)
     }
   })
 
@@ -175,7 +177,7 @@ describe('fetchLicensePolicy', () => {
     const mockHandleApi = vi.mocked(handleApiCall)
 
     const mockSdk = {
-      getLicensePolicy: vi.fn().mockResolvedValue({}),
+      getOrgLicensePolicy: vi.fn().mockResolvedValue({}),
     }
 
     mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
@@ -185,6 +187,6 @@ describe('fetchLicensePolicy', () => {
     await fetchLicensePolicy('test-org')
 
     // The function should work without prototype pollution issues.
-    expect(mockSdk.getLicensePolicy).toHaveBeenCalled()
+    expect(mockSdk.getOrgLicensePolicy).toHaveBeenCalled()
   })
 })

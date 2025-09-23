@@ -1,155 +1,162 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { fetchDefaultOrgSlug } from './fetch-default-org-slug.mts'
+import { getDefaultOrgSlug } from './fetch-default-org-slug.mts'
 
 // Mock the dependencies.
-vi.mock('../../utils/api.mts', () => ({
-  handleApiCall: vi.fn(),
+vi.mock('../../utils/config.mts', () => ({
+  getConfigValueOrUndef: vi.fn(),
 }))
 
-vi.mock('../../utils/sdk.mts', () => ({
-  setupSdk: vi.fn(),
+vi.mock('../../constants.mts', () => ({
+  default: {
+    ENV: {
+      SOCKET_CLI_ORG_SLUG: undefined,
+    },
+  },
 }))
 
-describe('fetchDefaultOrgSlug', () => {
-  it('fetches default org slug successfully', async () => {
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockHandleApi = vi.mocked(handleApiCall)
-    const mockSetupSdk = vi.mocked(setupSdk)
+vi.mock('../organization/fetch-organization-list.mts', () => ({
+  fetchOrganization: vi.fn(),
+}))
 
-    const mockSdk = {
-      getDefaultOrgSlug: vi.fn().mockResolvedValue({
-        success: true,
-        data: {
-          orgSlug: 'my-default-org',
-          orgName: 'My Default Organization',
-          orgId: 'org-123',
-        },
-      }),
-    }
+describe('getDefaultOrgSlug', () => {
+  it('uses config defaultOrg when set', async () => {
+    const { getConfigValueOrUndef } = await import('../../utils/config.mts')
+    vi.mocked(getConfigValueOrUndef).mockReturnValue('config-org-slug')
 
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
+    const result = await getDefaultOrgSlug()
+
+    expect(result).toEqual({
       ok: true,
-      data: 'my-default-org',
+      data: 'config-org-slug',
     })
-
-    const result = await fetchDefaultOrgSlug()
-
-    expect(mockSdk.getDefaultOrgSlug).toHaveBeenCalled()
-    expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
-      description: 'fetching default organization',
-    })
-    expect(result.ok).toBe(true)
-    expect(result.data).toBe('my-default-org')
+    expect(getConfigValueOrUndef).toHaveBeenCalledWith('defaultOrg')
   })
 
-  it('handles SDK setup failure', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
+  it('uses environment variable when no config', async () => {
+    const { getConfigValueOrUndef } = await import('../../utils/config.mts')
+    vi.mocked(getConfigValueOrUndef).mockReturnValue(undefined)
+
+    const constants = await import('../../constants.mts')
+    constants.default.ENV.SOCKET_CLI_ORG_SLUG = 'env-org-slug'
+
+    const result = await getDefaultOrgSlug()
+
+    expect(result).toEqual({
+      ok: true,
+      data: 'env-org-slug',
+    })
+  })
+
+  it('fetches from API when no config or env', async () => {
+    const { getConfigValueOrUndef } = await import('../../utils/config.mts')
+    const { fetchOrganization } = await import(
+      '../organization/fetch-organization-list.mts'
+    )
+
+    vi.mocked(getConfigValueOrUndef).mockReturnValue(undefined)
+    const constants = await import('../../constants.mts')
+    constants.default.ENV.SOCKET_CLI_ORG_SLUG = undefined
+
+    vi.mocked(fetchOrganization).mockResolvedValue({
+      ok: true,
+      data: {
+        organizations: {
+          'org-1': {
+            id: 'org-1',
+            name: 'Test Organization',
+            slug: 'test-org',
+          },
+        },
+      },
+    })
+
+    const result = await getDefaultOrgSlug()
+
+    expect(result).toEqual({
+      ok: true,
+      message: 'Retrieved default org from server',
+      data: 'Test Organization',
+    })
+  })
+
+  it('returns error when fetchOrganization fails', async () => {
+    const { getConfigValueOrUndef } = await import('../../utils/config.mts')
+    const { fetchOrganization } = await import(
+      '../organization/fetch-organization-list.mts'
+    )
+
+    vi.mocked(getConfigValueOrUndef).mockReturnValue(undefined)
+    const constants = await import('../../constants.mts')
+    constants.default.ENV.SOCKET_CLI_ORG_SLUG = undefined
 
     const error = {
       ok: false,
-      code: 1,
-      message: 'Failed to setup SDK',
-      cause: 'No API token',
+      code: 401,
+      message: 'Unauthorized',
     }
-    mockSetupSdk.mockResolvedValue(error)
+    vi.mocked(fetchOrganization).mockResolvedValue(error)
 
-    const result = await fetchDefaultOrgSlug()
+    const result = await getDefaultOrgSlug()
 
     expect(result).toEqual(error)
   })
 
-  it('handles API call failure', async () => {
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockHandleApi = vi.mocked(handleApiCall)
-    const mockSetupSdk = vi.mocked(setupSdk)
+  it('returns error when no organizations found', async () => {
+    const { getConfigValueOrUndef } = await import('../../utils/config.mts')
+    const { fetchOrganization } = await import(
+      '../organization/fetch-organization-list.mts'
+    )
 
-    const mockSdk = {
-      getDefaultOrgSlug: vi.fn().mockRejectedValue(new Error('No default org')),
-    }
+    vi.mocked(getConfigValueOrUndef).mockReturnValue(undefined)
+    const constants = await import('../../constants.mts')
+    constants.default.ENV.SOCKET_CLI_ORG_SLUG = undefined
 
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: false,
-      error: 'No default organization configured',
-      code: 404,
-    })
-
-    const result = await fetchDefaultOrgSlug()
-
-    expect(result.ok).toBe(false)
-    expect(result.code).toBe(404)
-  })
-
-  it('passes custom SDK options', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
-
-    const mockSdk = {
-      getDefaultOrgSlug: vi.fn().mockResolvedValue({}),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: 'org' })
-
-    const sdkOpts = {
-      apiToken: 'ci-token',
-      baseUrl: 'https://ci.api.com',
-    }
-
-    await fetchDefaultOrgSlug({ sdkOpts })
-
-    expect(mockSetupSdk).toHaveBeenCalledWith(sdkOpts)
-  })
-
-  it('returns string org slug', async () => {
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockHandleApi = vi.mocked(handleApiCall)
-    const mockSetupSdk = vi.mocked(setupSdk)
-
-    const mockSdk = {
-      getDefaultOrgSlug: vi.fn().mockResolvedValue({
-        orgSlug: 'simple-org-name',
-      }),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
+    vi.mocked(fetchOrganization).mockResolvedValue({
       ok: true,
-      data: 'simple-org-name',
+      data: {
+        organizations: {},
+      },
     })
 
-    const result = await fetchDefaultOrgSlug()
+    const result = await getDefaultOrgSlug()
 
-    expect(result.ok).toBe(true)
-    expect(typeof result.data).toBe('string')
-    expect(result.data).toBe('simple-org-name')
+    expect(result).toEqual({
+      ok: false,
+      message: 'Failed to establish identity',
+      data: 'No organization associated with the Socket API token. Unable to continue.',
+    })
   })
 
-  it('uses null prototype for options', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
+  it('returns error when organization has no name', async () => {
+    const { getConfigValueOrUndef } = await import('../../utils/config.mts')
+    const { fetchOrganization } = await import(
+      '../organization/fetch-organization-list.mts'
+    )
 
-    const mockSdk = {
-      getDefaultOrgSlug: vi.fn().mockResolvedValue({}),
-    }
+    vi.mocked(getConfigValueOrUndef).mockReturnValue(undefined)
+    const constants = await import('../../constants.mts')
+    constants.default.ENV.SOCKET_CLI_ORG_SLUG = undefined
 
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: 'test' })
+    vi.mocked(fetchOrganization).mockResolvedValue({
+      ok: true,
+      data: {
+        organizations: {
+          'org-1': {
+            id: 'org-1',
+            slug: 'org-slug',
+            // Missing name field.
+          },
+        },
+      },
+    })
 
-    // This tests that the function properly uses __proto__: null.
-    await fetchDefaultOrgSlug()
+    const result = await getDefaultOrgSlug()
 
-    // The function should work without prototype pollution issues.
-    expect(mockSdk.getDefaultOrgSlug).toHaveBeenCalled()
+    expect(result).toEqual({
+      ok: false,
+      message: 'Failed to establish identity',
+      data: 'Cannot determine the default organization for the API token. Unable to continue.',
+    })
   })
 })
