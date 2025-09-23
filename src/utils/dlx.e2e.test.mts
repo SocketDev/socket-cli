@@ -1,20 +1,22 @@
-import { describe, expect, it, beforeAll } from 'vitest'
-import { existsSync } from 'node:fs'
 import { execSync } from 'node:child_process'
+
+import { beforeAll, describe, expect, it } from 'vitest'
 
 import { spawnDlx } from './dlx.mts'
 import { findUp } from './fs.mts'
-import { hasDefaultApiToken } from './sdk.mts'
+import { getDefaultApiToken } from './sdk.mts'
 
 describe('dlx e2e tests', () => {
   let hasAuth = false
 
-  beforeAll(() => {
+  beforeAll(async () => {
     // Check if running e2e tests and if Socket API token is available.
     if (process.env.RUN_E2E_TESTS) {
-      hasAuth = hasDefaultApiToken()
-      if (!hasAuth) {
-        console.log('\n⚠️  E2E tests require Socket authentication.')
+      const apiToken = await getDefaultApiToken()
+      hasAuth = !!apiToken
+      if (!apiToken) {
+        console.log()
+        console.warn('E2E tests require Socket authentication.')
         console.log('Please run one of the following:')
         console.log('  1. socket login (to authenticate with Socket)')
         console.log('  2. Set SOCKET_SECURITY_API_KEY environment variable')
@@ -26,7 +28,7 @@ describe('dlx e2e tests', () => {
     }
   })
   describe('pnpm dlx regression test', () => {
-    it.skipIf(!process.env.RUN_E2E_TESTS || !hasDefaultApiToken())(
+    it.skipIf(!process.env.RUN_E2E_TESTS || !hasAuth)(
       'successfully runs pnpm dlx with cowsay (verifies no unsupported flags)',
       async () => {
         // Check if we're in a pnpm project.
@@ -62,7 +64,7 @@ describe('dlx e2e tests', () => {
       30000, // 30 second timeout for download.
     )
 
-    it.skipIf(!process.env.RUN_E2E_TESTS || !hasDefaultApiToken())(
+    it.skipIf(!process.env.RUN_E2E_TESTS || !hasAuth)(
       'verifies pnpm dlx command construction uses only supported flags',
       async () => {
         // This test verifies by checking what command would be run.
@@ -102,7 +104,7 @@ describe('dlx e2e tests', () => {
   })
 
   describe('npm npx regression test', () => {
-    it.skipIf(!process.env.RUN_E2E_TESTS || !hasDefaultApiToken())(
+    it.skipIf(!process.env.RUN_E2E_TESTS || !hasAuth)(
       'successfully runs npm/npx with cowsay',
       async () => {
         // Force npm by not finding any pnpm/yarn lockfiles.
@@ -136,7 +138,7 @@ describe('dlx e2e tests', () => {
   })
 
   describe('spawnCoanaDlx e2e tests', () => {
-    it.skipIf(!process.env.RUN_E2E_TESTS || !hasDefaultApiToken())(
+    it.skipIf(!process.env.RUN_E2E_TESTS || !hasAuth)(
       'executes coana-tech/cli via dlx',
       async () => {
         const { spawnCoanaDlx } = await import('./dlx.mts')
@@ -160,7 +162,7 @@ describe('dlx e2e tests', () => {
       30000,
     )
 
-    it.skipIf(!process.env.RUN_E2E_TESTS || !hasDefaultApiToken())(
+    it.skipIf(!process.env.RUN_E2E_TESTS || !hasAuth)(
       'handles error from spawn',
       async () => {
         const { spawnCoanaDlx } = await import('./dlx.mts')
@@ -179,7 +181,7 @@ describe('dlx e2e tests', () => {
   })
 
   describe('spawnSynpDlx e2e tests', () => {
-    it.skipIf(!process.env.RUN_E2E_TESTS || !hasDefaultApiToken())(
+    it.skipIf(!process.env.RUN_E2E_TESTS || !hasAuth)(
       'executes synp via dlx',
       async () => {
         const { spawnSynpDlx } = await import('./dlx.mts')
@@ -195,7 +197,7 @@ describe('dlx e2e tests', () => {
       30000,
     )
 
-    it.skipIf(!process.env.RUN_E2E_TESTS || !hasDefaultApiToken())(
+    it.skipIf(!process.env.RUN_E2E_TESTS || !hasAuth)(
       'handles error from spawn',
       async () => {
         const { spawnSynpDlx } = await import('./dlx.mts')
@@ -223,7 +225,7 @@ describe('dlx e2e tests', () => {
   })
 
   describe('spawnDlx e2e tests', () => {
-    it.skipIf(!process.env.RUN_E2E_TESTS || !hasDefaultApiToken())(
+    it.skipIf(!process.env.RUN_E2E_TESTS || !hasAuth)(
       'executes dlx command with package spec',
       async () => {
         const packageSpec = {
@@ -240,7 +242,7 @@ describe('dlx e2e tests', () => {
       30000,
     )
 
-    it.skipIf(!process.env.RUN_E2E_TESTS || !hasDefaultApiToken())(
+    it.skipIf(!process.env.RUN_E2E_TESTS || !hasAuth)(
       'handles force flag in options',
       async () => {
         const packageSpec = {
@@ -259,7 +261,7 @@ describe('dlx e2e tests', () => {
       30000,
     )
 
-    it.skipIf(!process.env.RUN_E2E_TESTS || !hasDefaultApiToken())(
+    it.skipIf(!process.env.RUN_E2E_TESTS || !hasAuth)(
       'handles silent flag in options',
       async () => {
         const packageSpec = {
