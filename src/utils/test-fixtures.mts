@@ -14,7 +14,7 @@ import trash from 'trash'
  */
 export async function createTempFixture(
   fixturePath: string,
-  cleanupHook?: (cleanup: () => Promise<void>) => void
+  cleanupHook?: (cleanup: () => Promise<void>) => void,
 ): Promise<string> {
   // Create a unique temporary directory.
   const tempBaseDir = tmpdir()
@@ -25,7 +25,7 @@ export async function createTempFixture(
   await fs.cp(fixturePath, tempDir, {
     recursive: true,
     // Preserve file permissions and timestamps.
-    preserveTimestamps: true
+    preserveTimestamps: true,
   })
 
   // Register cleanup if hook provided.
@@ -51,12 +51,13 @@ export async function createTempFixture(
  */
 export async function createTempFixtures(
   fixtures: Record<string, string>,
-  cleanupHook?: (cleanup: () => Promise<void>) => void
+  cleanupHook?: (cleanup: () => Promise<void>) => void,
 ): Promise<Record<string, string>> {
-  const tempFixtures: Record<string, string> = { __proto__: null } as Record<string, string>
+  const tempFixtures = { __proto__: null } as unknown as Record<string, string>
   const tempDirs: string[] = []
 
   for (const [name, fixturePath] of Object.entries(fixtures)) {
+    // eslint-disable-next-line no-await-in-loop
     const tempDir = await createTempFixture(fixturePath)
     tempFixtures[name] = tempDir
     tempDirs.push(tempDir)
@@ -65,9 +66,13 @@ export async function createTempFixtures(
   // Register cleanup for all temp directories.
   if (cleanupHook) {
     cleanupHook(async () => {
-      await Promise.all(tempDirs.map(dir => trash(dir).catch(() => {
-        // Ignore cleanup errors.
-      })))
+      await Promise.all(
+        tempDirs.map(dir =>
+          trash(dir).catch(() => {
+            // Ignore cleanup errors.
+          }),
+        ),
+      )
     })
   }
 
