@@ -502,20 +502,24 @@ describe('socket optimize', async () => {
       ],
       'should handle optimize with both --pin and --prod flags',
       async cmd => {
+        // Create temp fixture for this test.
+        const { tempDir, cleanup } = await withTempFixture(pnpmFixtureDir)
+        cleanupFunctions.push(cleanup)
+
         const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
-          cwd: pnpmFixtureDir,
+          cwd: tempDir,
         })
 
         expect(code).toBe(0)
 
         // Check that command completed successfully (may or may not add overrides depending on available optimizations).
-        const packageJsonPath = path.join(pnpmFixtureDir, PACKAGE_JSON)
+        const packageJsonPath = path.join(tempDir, PACKAGE_JSON)
         const packageJson = await readPackageJson(packageJsonPath)
         // Note: overrides may be undefined if no production dependencies have available optimizations..
         expect(packageJson).toBeDefined()
 
         // Verify pnpm-lock.yaml exists (since we're using pnpm, not npm).
-        const packageLockPath = path.join(pnpmFixtureDir, PNPM_LOCK_YAML)
+        const packageLockPath = path.join(tempDir, PNPM_LOCK_YAML)
         expect(existsSync(packageLockPath)).toBe(true)
 
         // Should have optimization output.
@@ -529,19 +533,23 @@ describe('socket optimize', async () => {
       ['optimize', '.', FLAG_JSON, FLAG_CONFIG, '{"apiToken":"fake-token"}'],
       'should handle optimize with --json output format',
       async cmd => {
+        // Create temp fixture for this test.
+        const { tempDir, cleanup } = await withTempFixture(pnpmFixtureDir)
+        cleanupFunctions.push(cleanup)
+
         const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
-          cwd: pnpmFixtureDir,
+          cwd: tempDir,
         })
 
         expect(code).toBe(0)
 
         // Verify package.json has overrides.
-        const packageJsonPath = path.join(pnpmFixtureDir, PACKAGE_JSON)
+        const packageJsonPath = path.join(tempDir, PACKAGE_JSON)
         const packageJson = await readPackageJson(packageJsonPath)
         expect(packageJson.overrides).toBeDefined()
 
         // Verify pnpm-lock.yaml was updated.
-        const packageLockPath = path.join(pnpmFixtureDir, PNPM_LOCK_YAML)
+        const packageLockPath = path.join(tempDir, PNPM_LOCK_YAML)
         expect(existsSync(packageLockPath)).toBe(true)
       },
     )
@@ -556,14 +564,18 @@ describe('socket optimize', async () => {
       ],
       'should handle optimize with --markdown output format',
       async cmd => {
+        // Create temp fixture for this test.
+        const { tempDir, cleanup } = await withTempFixture(pnpmFixtureDir)
+        cleanupFunctions.push(cleanup)
+
         const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
-          cwd: pnpmFixtureDir,
+          cwd: tempDir,
         })
 
         expect(code).toBe(0)
 
         // Verify package.json has overrides.
-        const packageJsonPath = path.join(pnpmFixtureDir, PACKAGE_JSON)
+        const packageJsonPath = path.join(tempDir, PACKAGE_JSON)
         const packageJson = await readPackageJson(packageJsonPath)
         expect(packageJson.overrides).toBeDefined()
 
@@ -681,9 +693,7 @@ describe('socket optimize', async () => {
       ],
       'should show clear error when conflicting output flags are used',
       async cmd => {
-        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
-          cwd: pnpmFixtureDir,
-        })
+        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
         const output = stdout + stderr
         expect(output.length).toBeGreaterThan(0)
         expect(code).toBe(0)
@@ -712,9 +722,7 @@ describe('socket optimize', async () => {
       ['optimize', '.', FLAG_CONFIG, '{"apiToken":"invalid-token-format"}'],
       'should handle invalid API token gracefully',
       async cmd => {
-        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
-          cwd: pnpmFixtureDir,
-        })
+        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
         expect(code).toBe(0)
         const output = stdout + stderr
         // Should show authentication or token-related error.

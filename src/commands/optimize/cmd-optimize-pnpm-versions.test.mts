@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 
 import { JsonContent } from '@socketsecurity/registry/lib/fs'
 import { readPackageJson } from '@socketsecurity/registry/lib/packages'
@@ -14,59 +14,54 @@ import constants, {
   PNPM,
   PNPM_LOCK_YAML,
 } from '../../../src/constants.mts'
+import { withTempFixture } from '../../../src/utils/test-fixtures.mts'
 import { spawnSocketCli, testPath } from '../../../test/utils.mts'
 
 const fixtureBaseDir = path.join(testPath, 'fixtures/commands/optimize')
-const pnpm8FixtureDir = path.join(fixtureBaseDir, 'pnpm8')
-const pnpm9FixtureDir = path.join(fixtureBaseDir, 'pnpm9')
+
+// Track cleanup functions for each test.
+let cleanupFunctions: Array<() => Promise<void>> = []
 
 describe('socket optimize - pnpm versions', { timeout: 60_000 }, async () => {
   const { binCliPath } = constants
 
+  afterEach(async () => {
+    // Clean up all temporary directories after each test.
+    await Promise.all(cleanupFunctions.map(cleanup => cleanup()))
+    cleanupFunctions = []
+  })
+
   describe('pnpm v8', () => {
-    const pnpm8BinPath = path.join(pnpm8FixtureDir, 'node_modules', '.bin')
-
-    beforeEach(async () => {
-      // Reset fixtures to their committed state (package.json and pnpm-lock.yaml).
-      try {
-        await spawn('git', ['checkout', 'HEAD', '--', '.'], {
-          cwd: pnpm8FixtureDir,
-          stdio: 'ignore',
-        })
-      } catch {}
-      // Ensure pnpm v8 is installed in the fixture.
-      // Skip if pnpm is not available globally (e.g., Windows CI).
-      try {
-        await spawn(
-          PNPM,
-          [
-            'install',
-            FLAG_SILENT,
-            '--config.confirmModulesPurge=false',
-            '--no-frozen-lockfile',
-          ],
-          {
-            cwd: pnpm8FixtureDir,
-            stdio: 'ignore',
-          },
-        )
-      } catch {}
-    })
-
-    afterEach(async () => {
-      // Reset fixtures to their committed state after each test.
-      try {
-        await spawn('git', ['checkout', 'HEAD', '--', '.'], {
-          cwd: pnpm8FixtureDir,
-          stdio: 'ignore',
-        })
-      } catch {}
-    })
 
     it(
       'should optimize packages with pnpm v8',
       { timeout: 30_000 },
       async () => {
+        // Create temp fixture for pnpm8.
+        const { tempDir: pnpm8FixtureDir, cleanup } = await withTempFixture(
+          path.join(fixtureBaseDir, 'pnpm8')
+        )
+        cleanupFunctions.push(cleanup)
+
+        const pnpm8BinPath = path.join(pnpm8FixtureDir, 'node_modules', '.bin')
+
+        // Ensure pnpm v8 is installed in the temp fixture.
+        try {
+          await spawn(
+            PNPM,
+            [
+              'install',
+              FLAG_SILENT,
+              '--config.confirmModulesPurge=false',
+              '--no-frozen-lockfile',
+            ],
+            {
+              cwd: pnpm8FixtureDir,
+              stdio: 'ignore',
+            },
+          )
+        } catch {}
+
         const packageJsonPath = path.join(pnpm8FixtureDir, 'package.json')
         const pkgJsonBefore = await readPackageJson(packageJsonPath)
 
@@ -121,6 +116,31 @@ describe('socket optimize - pnpm versions', { timeout: 60_000 }, async () => {
       'should handle --prod flag with pnpm v8',
       { timeout: 10_000 },
       async () => {
+        // Create temp fixture for pnpm8.
+        const { tempDir: pnpm8FixtureDir, cleanup } = await withTempFixture(
+          path.join(fixtureBaseDir, 'pnpm8')
+        )
+        cleanupFunctions.push(cleanup)
+
+        const pnpm8BinPath = path.join(pnpm8FixtureDir, 'node_modules', '.bin')
+
+        // Ensure pnpm v8 is installed in the temp fixture.
+        try {
+          await spawn(
+            PNPM,
+            [
+              'install',
+              FLAG_SILENT,
+              '--config.confirmModulesPurge=false',
+              '--no-frozen-lockfile',
+            ],
+            {
+              cwd: pnpm8FixtureDir,
+              stdio: 'ignore',
+            },
+          )
+        } catch {}
+
         const packageJsonPath = path.join(pnpm8FixtureDir, 'package.json')
         const pkgJsonBefore = await readPackageJson(packageJsonPath)
 
@@ -158,49 +178,36 @@ describe('socket optimize - pnpm versions', { timeout: 60_000 }, async () => {
   })
 
   describe('pnpm v9', () => {
-    const pnpm9BinPath = path.join(pnpm9FixtureDir, 'node_modules', '.bin')
-
-    beforeEach(async () => {
-      // Reset fixtures to their committed state (package.json and pnpm-lock.yaml).
-      try {
-        await spawn('git', ['checkout', 'HEAD', '--', '.'], {
-          cwd: pnpm9FixtureDir,
-          stdio: 'ignore',
-        })
-      } catch {}
-      // Ensure pnpm v9 is installed in the fixture.
-      // Skip if pnpm is not available globally (e.g., Windows CI).
-      try {
-        await spawn(
-          PNPM,
-          [
-            'install',
-            FLAG_SILENT,
-            '--config.confirmModulesPurge=false',
-            '--no-frozen-lockfile',
-          ],
-          {
-            cwd: pnpm9FixtureDir,
-            stdio: 'ignore',
-          },
-        )
-      } catch {}
-    })
-
-    afterEach(async () => {
-      // Reset fixtures to their committed state after each test.
-      try {
-        await spawn('git', ['checkout', 'HEAD', '--', '.'], {
-          cwd: pnpm9FixtureDir,
-          stdio: 'ignore',
-        })
-      } catch {}
-    })
 
     it(
       'should optimize packages with pnpm v9',
       { timeout: 30_000 },
       async () => {
+        // Create temp fixture for pnpm9.
+        const { tempDir: pnpm9FixtureDir, cleanup } = await withTempFixture(
+          path.join(fixtureBaseDir, 'pnpm9')
+        )
+        cleanupFunctions.push(cleanup)
+
+        const pnpm9BinPath = path.join(pnpm9FixtureDir, 'node_modules', '.bin')
+
+        // Ensure pnpm v9 is installed in the temp fixture.
+        try {
+          await spawn(
+            PNPM,
+            [
+              'install',
+              FLAG_SILENT,
+              '--config.confirmModulesPurge=false',
+              '--no-frozen-lockfile',
+            ],
+            {
+              cwd: pnpm9FixtureDir,
+              stdio: 'ignore',
+            },
+          )
+        } catch {}
+
         const packageJsonPath = path.join(pnpm9FixtureDir, 'package.json')
         const pkgJsonBefore = await readPackageJson(packageJsonPath)
 
@@ -251,6 +258,31 @@ describe('socket optimize - pnpm versions', { timeout: 60_000 }, async () => {
       'should handle --pin flag with pnpm v9',
       { timeout: 30_000 },
       async () => {
+        // Create temp fixture for pnpm9.
+        const { tempDir: pnpm9FixtureDir, cleanup } = await withTempFixture(
+          path.join(fixtureBaseDir, 'pnpm9')
+        )
+        cleanupFunctions.push(cleanup)
+
+        const pnpm9BinPath = path.join(pnpm9FixtureDir, 'node_modules', '.bin')
+
+        // Ensure pnpm v9 is installed in the temp fixture.
+        try {
+          await spawn(
+            PNPM,
+            [
+              'install',
+              FLAG_SILENT,
+              '--config.confirmModulesPurge=false',
+              '--no-frozen-lockfile',
+            ],
+            {
+              cwd: pnpm9FixtureDir,
+              stdio: 'ignore',
+            },
+          )
+        } catch {}
+
         const packageJsonPath = path.join(pnpm9FixtureDir, 'package.json')
 
         const { code, stderr } = await spawnSocketCli(

@@ -1,9 +1,6 @@
 import path from 'node:path'
 
-import { afterAll, afterEach, beforeAll, describe, expect } from 'vitest'
-
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
+import { afterEach, describe, expect } from 'vitest'
 
 import constants, {
   FLAG_CONFIG,
@@ -13,51 +10,23 @@ import constants, {
   FLAG_JSON,
   FLAG_MARKDOWN,
 } from '../../../src/constants.mts'
+import { withTempFixture } from '../../../src/utils/test-fixtures.mts'
 import { cmdit, spawnSocketCli, testPath } from '../../../test/utils.mts'
 
 const fixtureBaseDir = path.join(testPath, 'fixtures/commands/fix')
-const pnpmFixtureDir = path.join(fixtureBaseDir, 'pnpm')
 
-async function revertFixtureChanges() {
-  // Reset only the lockfiles that fix command might modify.
-  try {
-    await spawn('git', ['checkout', 'HEAD', '--', 'monorepo/pnpm-lock.yaml'], {
-      cwd: pnpmFixtureDir,
-      stdio: 'ignore',
-    })
-  } catch (e) {
-    // Log warning but continue - lockfile might not exist or have no changes.
-    logger.warn('Failed to revert lockfile:', e)
-  }
-  // Clean up any untracked files (node_modules, etc.).
-  try {
-    await spawn('git', ['clean', '-fd', '.'], {
-      cwd: pnpmFixtureDir,
-      stdio: 'ignore',
-    })
-  } catch (e) {
-    logger.warn('Failed to clean untracked files:', e)
-  }
-}
+// Track cleanup functions for each test.
+let cleanupFunctions: Array<() => Promise<void>> = []
 
 describe('socket fix', async () => {
   const { binCliPath } = constants
   // Increase timeout for CI environments and Windows where operations can be slower.
   const testTimeout = constants.ENV.CI || constants.WIN32 ? 60_000 : 30_000
 
-  beforeAll(async () => {
-    // Ensure fixtures are in clean state before tests.
-    await revertFixtureChanges()
-  })
-
   afterEach(async () => {
-    // Revert all changes after each test using git.
-    await revertFixtureChanges()
-  })
-
-  afterAll(async () => {
-    // Clean up once after all tests.
-    await revertFixtureChanges()
+    // Clean up all temporary directories after each test.
+    await Promise.all(cleanupFunctions.map(cleanup => cleanup()))
+    cleanupFunctions = []
   })
 
   describe('environment variable handling', () => {
@@ -399,8 +368,13 @@ describe('socket fix', async () => {
     ['fix', '.', FLAG_CONFIG, '{"apiToken":"fake-token"}'],
     'should handle vulnerable dependencies fixture project',
     async cmd => {
+      const { tempDir, cleanup } = await withTempFixture(
+        path.join(fixtureBaseDir, 'pnpm/vulnerable-deps')
+      )
+      cleanupFunctions.push(cleanup)
+
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
-        cwd: path.join(fixtureBaseDir, 'pnpm/vulnerable-deps'),
+        cwd: tempDir,
       })
       const output = stdout + stderr
       expect(output).toContain(
@@ -415,8 +389,13 @@ describe('socket fix', async () => {
     ['fix', '.', FLAG_CONFIG, '{"apiToken":"fake-token"}'],
     'should handle monorepo fixture project',
     async cmd => {
+      const { tempDir, cleanup } = await withTempFixture(
+        path.join(fixtureBaseDir, 'pnpm/monorepo')
+      )
+      cleanupFunctions.push(cleanup)
+
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
-        cwd: path.join(fixtureBaseDir, 'pnpm/monorepo'),
+        cwd: tempDir,
       })
       const output = stdout + stderr
       expect(output).toContain(
@@ -561,8 +540,13 @@ describe('socket fix', async () => {
       ],
       'should handle PURL-based vulnerability identification',
       async cmd => {
+        const { tempDir, cleanup } = await withTempFixture(
+          path.join(fixtureBaseDir, 'pnpm/vulnerable-deps')
+        )
+        cleanupFunctions.push(cleanup)
+
         const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
-          cwd: path.join(fixtureBaseDir, 'pnpm/vulnerable-deps'),
+          cwd: tempDir,
         })
         const output = stdout + stderr
         expect(output).toContain(
@@ -583,8 +567,13 @@ describe('socket fix', async () => {
       ],
       'should handle multiple vulnerability IDs in comma-separated format',
       async cmd => {
+        const { tempDir, cleanup } = await withTempFixture(
+          path.join(fixtureBaseDir, 'pnpm/vulnerable-deps')
+        )
+        cleanupFunctions.push(cleanup)
+
         const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
-          cwd: path.join(fixtureBaseDir, 'pnpm/vulnerable-deps'),
+          cwd: tempDir,
         })
         const output = stdout + stderr
         expect(output).toContain(
@@ -607,8 +596,13 @@ describe('socket fix', async () => {
       ],
       'should handle multiple vulnerability IDs as separate flags',
       async cmd => {
+        const { tempDir, cleanup } = await withTempFixture(
+          path.join(fixtureBaseDir, 'pnpm/vulnerable-deps')
+        )
+        cleanupFunctions.push(cleanup)
+
         const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
-          cwd: path.join(fixtureBaseDir, 'pnpm/vulnerable-deps'),
+          cwd: tempDir,
         })
         const output = stdout + stderr
         expect(output).toContain(
@@ -633,8 +627,13 @@ describe('socket fix', async () => {
       ],
       'should handle autopilot mode with JSON output and custom limit',
       async cmd => {
+        const { tempDir, cleanup } = await withTempFixture(
+          path.join(fixtureBaseDir, 'pnpm/vulnerable-deps')
+        )
+        cleanupFunctions.push(cleanup)
+
         const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
-          cwd: path.join(fixtureBaseDir, 'pnpm/vulnerable-deps'),
+          cwd: tempDir,
         })
         const output = stdout + stderr
         expect(output).toContain(
@@ -658,8 +657,13 @@ describe('socket fix', async () => {
       ],
       'should handle monorepo with pin style and markdown output',
       async cmd => {
+        const { tempDir, cleanup } = await withTempFixture(
+          path.join(fixtureBaseDir, 'pnpm/monorepo')
+        )
+        cleanupFunctions.push(cleanup)
+
         const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
-          cwd: path.join(fixtureBaseDir, 'pnpm/monorepo'),
+          cwd: tempDir,
         })
         const output = stdout + stderr
         expect(output).toContain(
@@ -762,8 +766,13 @@ describe('socket fix', async () => {
       ],
       'should handle non-existent GHSA IDs gracefully',
       async cmd => {
+        const { tempDir, cleanup } = await withTempFixture(
+          path.join(fixtureBaseDir, 'pnpm/vulnerable-deps')
+        )
+        cleanupFunctions.push(cleanup)
+
         const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
-          cwd: path.join(fixtureBaseDir, 'pnpm/vulnerable-deps'),
+          cwd: tempDir,
         })
         expect(code).toBeGreaterThan(0)
         const output = stdout + stderr
@@ -782,8 +791,13 @@ describe('socket fix', async () => {
       ],
       'should show clear error when both json and markdown flags are used',
       async cmd => {
+        const { tempDir, cleanup } = await withTempFixture(
+          path.join(fixtureBaseDir, 'pnpm/vulnerable-deps')
+        )
+        cleanupFunctions.push(cleanup)
+
         const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
-          cwd: path.join(fixtureBaseDir, 'pnpm/vulnerable-deps'),
+          cwd: tempDir,
         })
         const output = stdout + stderr
         expect(output).toMatch(/json.*markdown|conflicting|both.*set/i)
@@ -813,8 +827,13 @@ describe('socket fix', async () => {
       ],
       'should handle malformed CVE IDs gracefully',
       async cmd => {
+        const { tempDir, cleanup } = await withTempFixture(
+          path.join(fixtureBaseDir, 'pnpm/vulnerable-deps')
+        )
+        cleanupFunctions.push(cleanup)
+
         const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
-          cwd: path.join(fixtureBaseDir, 'pnpm/vulnerable-deps'),
+          cwd: tempDir,
         })
         expect(code).toBeGreaterThan(0)
         const output = stdout + stderr
@@ -841,8 +860,13 @@ describe('socket fix', async () => {
       ],
       'should handle unusually long tokens gracefully',
       async cmd => {
+        const { tempDir, cleanup } = await withTempFixture(
+          path.join(fixtureBaseDir, 'pnpm/vulnerable-deps')
+        )
+        cleanupFunctions.push(cleanup)
+
         const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
-          cwd: path.join(fixtureBaseDir, 'pnpm/vulnerable-deps'),
+          cwd: tempDir,
         })
         expect(code).toBeGreaterThan(0)
         const output = stdout + stderr
@@ -861,8 +885,13 @@ describe('socket fix', async () => {
       ],
       'should handle mixed valid and invalid vulnerability IDs',
       async cmd => {
+        const { tempDir, cleanup } = await withTempFixture(
+          path.join(fixtureBaseDir, 'pnpm/vulnerable-deps')
+        )
+        cleanupFunctions.push(cleanup)
+
         const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
-          cwd: path.join(fixtureBaseDir, 'pnpm/vulnerable-deps'),
+          cwd: tempDir,
         })
         expect(code).toBeGreaterThan(0)
         const output = stdout + stderr
