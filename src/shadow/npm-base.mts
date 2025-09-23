@@ -103,7 +103,8 @@ export default async function shadowNpmBase(
       ...constants.nodeNoWarningsFlags,
       ...constants.nodeDebugFlags,
       ...constants.nodeHardenFlags,
-      ...constants.nodeMemoryFlags,
+      // Memory flags commented out.
+      // ...constants.nodeMemoryFlags,
       ...(constants.ENV.INLINED_SOCKET_CLI_SENTRY_BUILD
         ? ['--require', constants.instrumentWithSentryPath]
         : []),
