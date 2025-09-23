@@ -3,6 +3,7 @@
   "files": {
     "includes": [
       "**",
+      "!**/.cache",
       "!**/.DS_Store",
       "!**/._.DS_Store",
       "!**/.env",
