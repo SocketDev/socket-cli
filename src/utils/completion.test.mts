@@ -46,7 +46,7 @@ describe('completion utilities', () => {
       })
 
       expect(fs.existsSync).toHaveBeenCalledWith(
-        '/mock/dist/path/socket-completion.bash'
+        '/mock/dist/path/socket-completion.bash',
       )
     })
 
@@ -58,7 +58,8 @@ describe('completion utilities', () => {
       expect(result).toEqual({
         ok: false,
         message: 'Tab Completion script not found',
-        cause: 'Expected to find completion script at `/mock/dist/path/socket-completion.bash` but it was not there',
+        cause:
+          'Expected to find completion script at `/mock/dist/path/socket-completion.bash` but it was not there',
       })
     })
   })
@@ -71,13 +72,25 @@ describe('completion utilities', () => {
 
       expect(result.ok).toBe(true)
       if (result.ok) {
-        expect(result.data.completionCommand).toBe('complete -F _socket_completion socket')
-        expect(result.data.sourcingCommand).toBe('source /mock/dist/path/socket-completion.bash')
+        expect(result.data.completionCommand).toBe(
+          'complete -F _socket_completion socket',
+        )
+        expect(result.data.sourcingCommand).toBe(
+          'source /mock/dist/path/socket-completion.bash',
+        )
         expect(result.data.targetName).toBe('socket')
-        expect(result.data.targetPath).toBe('/mock/app/completion/socket-completion.bash')
-        expect(result.data.toAddToBashrc).toContain('# Socket CLI completion for "socket"')
-        expect(result.data.toAddToBashrc).toContain('source "/mock/app/completion/socket-completion.bash"')
-        expect(result.data.toAddToBashrc).toContain('complete -F _socket_completion socket')
+        expect(result.data.targetPath).toBe(
+          '/mock/app/completion/socket-completion.bash',
+        )
+        expect(result.data.toAddToBashrc).toContain(
+          '# Socket CLI completion for "socket"',
+        )
+        expect(result.data.toAddToBashrc).toContain(
+          'source "/mock/app/completion/socket-completion.bash"',
+        )
+        expect(result.data.toAddToBashrc).toContain(
+          'complete -F _socket_completion socket',
+        )
       }
     })
 
@@ -89,7 +102,8 @@ describe('completion utilities', () => {
       expect(result).toEqual({
         ok: false,
         message: 'Tab Completion script not found',
-        cause: 'Expected to find completion script at `/mock/dist/path/socket-completion.bash` but it was not there',
+        cause:
+          'Expected to find completion script at `/mock/dist/path/socket-completion.bash` but it was not there',
       })
     })
 
@@ -108,11 +122,13 @@ describe('completion utilities', () => {
       expect(result.ok).toBe(true)
       if (result.ok) {
         expect(result.data.completionCommand).toBe(
-          'complete -F _socket_completion my-custom-socket'
+          'complete -F _socket_completion my-custom-socket',
         )
         expect(result.data.targetName).toBe('my-custom-socket')
         expect(result.data.toAddToBashrc).toContain('my-custom-socket')
-        expect(result.data.toAddToBashrc).toContain('# Socket CLI completion for "my-custom-socket"')
+        expect(result.data.toAddToBashrc).toContain(
+          '# Socket CLI completion for "my-custom-socket"',
+        )
       }
     })
 
@@ -124,7 +140,11 @@ describe('completion utilities', () => {
       expect(result.ok).toBe(true)
       if (result.ok) {
         expect(result.data.targetPath).toBe(
-          path.join(path.dirname('/mock/app/data'), 'completion', 'socket-completion.bash')
+          path.join(
+            path.dirname('/mock/app/data'),
+            'completion',
+            'socket-completion.bash',
+          ),
         )
       }
     })

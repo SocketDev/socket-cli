@@ -49,10 +49,9 @@ describe('fetchOrgAnalytics', () => {
     const result = await fetchOrgAnalytics('test-org')
 
     expect(mockSdk.getOrgAnalytics).toHaveBeenCalledWith('test-org')
-    expect(mockHandleApi).toHaveBeenCalledWith(
-      expect.any(Promise),
-      { description: 'fetching organization analytics' },
-    )
+    expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
+      description: 'fetching organization analytics',
+    })
     expect(result.ok).toBe(true)
   })
 

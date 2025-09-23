@@ -27,7 +27,7 @@ describe('fetchLicensePolicy', () => {
             'Apache-2.0': { allowed: true },
             'GPL-3.0': { allowed: false },
             'BSD-3-Clause': { allowed: true },
-            'ISC': { allowed: true },
+            ISC: { allowed: true },
           },
         },
       }),
@@ -48,10 +48,9 @@ describe('fetchLicensePolicy', () => {
     const result = await fetchLicensePolicy('test-org')
 
     expect(mockSdk.getLicensePolicy).toHaveBeenCalledWith('test-org')
-    expect(mockHandleApi).toHaveBeenCalledWith(
-      expect.any(Promise),
-      { description: 'fetching license policy' },
-    )
+    expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
+      description: 'fetching license policy',
+    })
     expect(result.ok).toBe(true)
   })
 

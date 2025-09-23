@@ -75,6 +75,11 @@ export function safeParseNpmSpec(
 
   if (!parsed) {
     // Fallback to simple parsing if npm-package-arg fails.
+    // Return undefined for empty spec.
+    if (!pkgSpec) {
+      return undefined
+    }
+
     // Handle scoped packages first to avoid confusion with version delimiter.
     if (pkgSpec.startsWith('@')) {
       const scopedMatch = pkgSpec.match(/^(@[^/@]+\/[^/@]+)(?:@(.+))?$/)
@@ -100,6 +105,12 @@ export function safeParseNpmSpec(
 
   // Extract name and version from parsed spec.
   const name = parsed.name || pkgSpec
+
+  // If name is empty, parsing failed.
+  if (!name) {
+    return undefined
+  }
+
   let version: string | undefined
 
   // Handle different spec types from npm-package-arg.

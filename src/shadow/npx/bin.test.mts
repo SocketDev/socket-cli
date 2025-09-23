@@ -41,7 +41,12 @@ describe('shadowNpxBin', () => {
     const args = ['create-react-app', 'my-app']
     const result = await shadowNpxBin(args)
 
-    expect(mockShadowNpmBase).toHaveBeenCalledWith(NPX, args, undefined, undefined)
+    expect(mockShadowNpmBase).toHaveBeenCalledWith(
+      NPX,
+      args,
+      undefined,
+      undefined,
+    )
     expect(result).toBe(mockSpawnResult)
   })
 
@@ -67,7 +72,12 @@ describe('shadowNpxBin', () => {
     try {
       await shadowNpxBin()
 
-      expect(mockShadowNpmBase).toHaveBeenCalledWith(NPX, ['create-vue', 'my-vue-app'], undefined, undefined)
+      expect(mockShadowNpmBase).toHaveBeenCalledWith(
+        NPX,
+        ['create-vue', 'my-vue-app'],
+        undefined,
+        undefined,
+      )
     } finally {
       process.argv = originalArgv
     }
@@ -77,28 +87,48 @@ describe('shadowNpxBin', () => {
     const args: string[] = []
     await shadowNpxBin(args)
 
-    expect(mockShadowNpmBase).toHaveBeenCalledWith(NPX, args, undefined, undefined)
+    expect(mockShadowNpmBase).toHaveBeenCalledWith(
+      NPX,
+      args,
+      undefined,
+      undefined,
+    )
   })
 
   it('should pass readonly args array correctly', async () => {
     const args: readonly string[] = ['typescript', '--version'] as const
     await shadowNpxBin(args)
 
-    expect(mockShadowNpmBase).toHaveBeenCalledWith(NPX, args, undefined, undefined)
+    expect(mockShadowNpmBase).toHaveBeenCalledWith(
+      NPX,
+      args,
+      undefined,
+      undefined,
+    )
   })
 
   it('should handle package execution with arguments', async () => {
     const args = ['jest', '--coverage', '--watch']
     await shadowNpxBin(args)
 
-    expect(mockShadowNpmBase).toHaveBeenCalledWith(NPX, args, undefined, undefined)
+    expect(mockShadowNpmBase).toHaveBeenCalledWith(
+      NPX,
+      args,
+      undefined,
+      undefined,
+    )
   })
 
   it('should handle scoped packages', async () => {
     const args = ['@angular/cli', 'new', 'my-app']
     await shadowNpxBin(args)
 
-    expect(mockShadowNpmBase).toHaveBeenCalledWith(NPX, args, undefined, undefined)
+    expect(mockShadowNpmBase).toHaveBeenCalledWith(
+      NPX,
+      args,
+      undefined,
+      undefined,
+    )
   })
 
   it('should preserve spawn result structure', async () => {
@@ -113,13 +143,20 @@ describe('shadowNpxBin', () => {
     const error = new Error('Shadow npm base failed')
     mockShadowNpmBase.mockRejectedValue(error)
 
-    await expect(shadowNpxBin(['create-react-app'])).rejects.toThrow('Shadow npm base failed')
+    await expect(shadowNpxBin(['create-react-app'])).rejects.toThrow(
+      'Shadow npm base failed',
+    )
   })
 
   it('should handle package with version specification', async () => {
     const args = ['create-react-app@latest', 'my-app']
     await shadowNpxBin(args)
 
-    expect(mockShadowNpmBase).toHaveBeenCalledWith(NPX, args, undefined, undefined)
+    expect(mockShadowNpmBase).toHaveBeenCalledWith(
+      NPX,
+      args,
+      undefined,
+      undefined,
+    )
   })
 })

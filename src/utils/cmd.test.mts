@@ -21,7 +21,11 @@ describe('cmd utilities', () => {
     })
 
     it('handles string with spaces', () => {
-      expect(cmdFlagValueToArray('foo, bar, baz')).toEqual(['foo', 'bar', 'baz'])
+      expect(cmdFlagValueToArray('foo, bar, baz')).toEqual([
+        'foo',
+        'bar',
+        'baz',
+      ])
     })
 
     it('handles array input', () => {
@@ -29,7 +33,11 @@ describe('cmd utilities', () => {
     })
 
     it('handles nested arrays', () => {
-      expect(cmdFlagValueToArray(['foo,bar', 'baz'])).toEqual(['foo', 'bar', 'baz'])
+      expect(cmdFlagValueToArray(['foo,bar', 'baz'])).toEqual([
+        'foo',
+        'bar',
+        'baz',
+      ])
     })
 
     it('handles empty string', () => {
@@ -66,7 +74,9 @@ describe('cmd utilities', () => {
     })
 
     it('preserves flag format', () => {
-      expect(cmdFlagsToString(['-v', '--help', '--output=file.txt'])).toBe('-v --help --output=file.txt')
+      expect(cmdFlagsToString(['-v', '--help', '--output=file.txt'])).toBe(
+        '-v --help --output=file.txt',
+      )
     })
   })
 

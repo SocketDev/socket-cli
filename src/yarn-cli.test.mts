@@ -1,7 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock process methods.
-const mockProcessExit = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never)
+const mockProcessExit = vi
+  .spyOn(process, 'exit')
+  .mockImplementation(() => undefined as never)
 const mockProcessKill = vi.spyOn(process, 'kill').mockImplementation(() => true)
 
 // Mock shadowYarnBin.
@@ -65,7 +67,7 @@ describe('yarn-cli', () => {
           stdio: 'inherit',
           cwd: process.cwd(),
           env: { ...process.env },
-        }
+        },
       )
     } finally {
       process.argv = originalArgv
@@ -119,14 +121,11 @@ describe('yarn-cli', () => {
     try {
       await import('./yarn-cli.mts')
 
-      expect(mockShadowYarnBin).toHaveBeenCalledWith(
-        [],
-        {
-          stdio: 'inherit',
-          cwd: process.cwd(),
-          env: { ...process.env },
-        }
-      )
+      expect(mockShadowYarnBin).toHaveBeenCalledWith([], {
+        stdio: 'inherit',
+        cwd: process.cwd(),
+        env: { ...process.env },
+      })
     } finally {
       process.argv = originalArgv
     }
@@ -141,14 +140,11 @@ describe('yarn-cli', () => {
     try {
       await import('./yarn-cli.mts')
 
-      expect(mockShadowYarnBin).toHaveBeenCalledWith(
-        ['workspace', 'list'],
-        {
-          stdio: 'inherit',
-          cwd: process.cwd(),
-          env: expect.objectContaining({ YARN_CACHE_FOLDER: '/tmp/yarn-cache' }),
-        }
-      )
+      expect(mockShadowYarnBin).toHaveBeenCalledWith(['workspace', 'list'], {
+        stdio: 'inherit',
+        cwd: process.cwd(),
+        env: expect.objectContaining({ YARN_CACHE_FOLDER: '/tmp/yarn-cache' }),
+      })
     } finally {
       process.argv = originalArgv
       process.env = originalEnv

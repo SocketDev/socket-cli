@@ -5,7 +5,7 @@ import { spawnDlx } from './dlx.mts'
 import type { DlxPackageSpec } from './dlx.mts'
 
 // Mock dependencies.
-vi.mock('node:module', async (importOriginal) => {
+vi.mock('node:module', async importOriginal => {
   const actual = await importOriginal<typeof import('node:module')>()
 
   // Create mocks inline to avoid hoisting issues.
@@ -29,9 +29,15 @@ vi.mock('node:module', async (importOriginal) => {
     createRequire: vi.fn(() => {
       // Return a require function that returns the correct shadow bin mock.
       return vi.fn((path: string) => {
-        if (path.includes('shadow-bin/npx')) return shadowNpxMock
-        if (path.includes('shadow-bin/pnpm')) return shadowPnpmMock
-        if (path.includes('shadow-bin/yarn')) return shadowYarnMock
+        if (path.includes('shadow-bin/npx')) {
+          return shadowNpxMock
+        }
+        if (path.includes('shadow-bin/pnpm')) {
+          return shadowPnpmMock
+        }
+        if (path.includes('shadow-bin/yarn')) {
+          return shadowYarnMock
+        }
         return vi.fn()
       })
     }),
@@ -47,7 +53,7 @@ vi.mock('../commands/ci/fetch-default-org-slug.mts', () => ({
 }))
 
 vi.mock('./errors.mts', () => ({
-  getErrorCause: vi.fn((error) => error?.message || 'Unknown error'),
+  getErrorCause: vi.fn(error => error?.message || 'Unknown error'),
 }))
 
 vi.mock('./fs.mts', () => ({
@@ -107,8 +113,10 @@ describe('spawnDlx', () => {
 
   it('uses pnpm dlx when pnpm-lock.yaml found', async () => {
     const { findUp } = vi.mocked(await import('./fs.mts'))
-    findUp.mockImplementation(async (file) => {
-      if (file === 'pnpm-lock.yaml') return '/project/pnpm-lock.yaml'
+    findUp.mockImplementation(async file => {
+      if (file === 'pnpm-lock.yaml') {
+        return '/project/pnpm-lock.yaml'
+      }
       return undefined
     })
 
@@ -128,8 +136,10 @@ describe('spawnDlx', () => {
 
   it('uses yarn dlx for Yarn Berry', async () => {
     const { findUp } = vi.mocked(await import('./fs.mts'))
-    findUp.mockImplementation(async (file) => {
-      if (file === 'yarn.lock') return '/project/yarn.lock'
+    findUp.mockImplementation(async file => {
+      if (file === 'yarn.lock') {
+        return '/project/yarn.lock'
+      }
       return undefined
     })
 
@@ -170,8 +180,10 @@ describe('spawnDlx', () => {
 
   it('applies force flag for pnpm with cache settings', async () => {
     const { findUp } = vi.mocked(await import('./fs.mts'))
-    findUp.mockImplementation(async (file) => {
-      if (file === 'pnpm-lock.yaml') return '/project/pnpm-lock.yaml'
+    findUp.mockImplementation(async file => {
+      if (file === 'pnpm-lock.yaml') {
+        return '/project/pnpm-lock.yaml'
+      }
       return undefined
     })
 
@@ -182,7 +194,14 @@ describe('spawnDlx', () => {
     await spawnDlx(packageSpec, ['test'], { force: true })
 
     expect(mockShadowPnpm).toHaveBeenCalledWith(
-      ['dlx', '--prefer-offline=false', '--package=test-package', '--silent', 'test-package', 'test'],
+      [
+        'dlx',
+        '--prefer-offline=false',
+        '--package=test-package',
+        '--silent',
+        'test-package',
+        'test',
+      ],
       {},
       undefined,
     )

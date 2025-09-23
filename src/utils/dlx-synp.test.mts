@@ -3,7 +3,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { spawnSynpDlx } from './dlx.mts'
 
 // Setup base mocks.
-vi.mock('./dlx.mts', async (importOriginal) => {
+vi.mock('./dlx.mts', async importOriginal => {
   const actual = await importOriginal<typeof import('./dlx.mts')>()
   return {
     ...actual,
@@ -65,8 +65,10 @@ describe('spawnSynpDlx', () => {
     const { spawnDlx } = vi.mocked(await import('./dlx.mts'))
 
     await spawnSynpDlx([
-      '--source-file', 'yarn.lock',
-      '--target-file', 'package-lock.json',
+      '--source-file',
+      'yarn.lock',
+      '--target-file',
+      'package-lock.json',
     ])
 
     expect(spawnDlx).toHaveBeenCalledWith(
@@ -80,14 +82,24 @@ describe('spawnSynpDlx', () => {
     const { spawnDlx } = vi.mocked(await import('./dlx.mts'))
 
     await spawnSynpDlx([
-      '--source-file', 'package-lock.json',
-      '--target-file', 'yarn.lock',
-      '--yarn-version', '1',
+      '--source-file',
+      'package-lock.json',
+      '--target-file',
+      'yarn.lock',
+      '--yarn-version',
+      '1',
     ])
 
     expect(spawnDlx).toHaveBeenCalledWith(
       { name: 'synp' },
-      ['--source-file', 'package-lock.json', '--target-file', 'yarn.lock', '--yarn-version', '1'],
+      [
+        '--source-file',
+        'package-lock.json',
+        '--target-file',
+        'yarn.lock',
+        '--yarn-version',
+        '1',
+      ],
       undefined,
     )
   })
@@ -97,10 +109,8 @@ describe('spawnSynpDlx', () => {
 
     await spawnSynpDlx(['--force'], { force: true })
 
-    expect(spawnDlx).toHaveBeenCalledWith(
-      { name: 'synp' },
-      ['--force'],
-      { force: true },
-    )
+    expect(spawnDlx).toHaveBeenCalledWith({ name: 'synp' }, ['--force'], {
+      force: true,
+    })
   })
 })

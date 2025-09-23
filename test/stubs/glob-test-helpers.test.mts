@@ -19,7 +19,9 @@ describe('glob utilities', () => {
     it('matches with double wildcards', () => {
       expect(isGlobMatch('src/deep/nested/file.ts', ['src/**/*.ts'])).toBe(true)
       expect(isGlobMatch('test/unit/spec.test.js', ['**/*.test.js'])).toBe(true)
-      expect(isGlobMatch('node_modules/pkg/index.js', ['**/index.js'])).toBe(true)
+      expect(isGlobMatch('node_modules/pkg/index.js', ['**/index.js'])).toBe(
+        true,
+      )
     })
 
     it('matches with brace expansion', () => {

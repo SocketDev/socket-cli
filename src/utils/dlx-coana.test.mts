@@ -3,7 +3,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { spawnCoanaDlx } from './dlx.mts'
 
 // Setup base mocks.
-vi.mock('./dlx.mts', async (importOriginal) => {
+vi.mock('./dlx.mts', async importOriginal => {
   const actual = await importOriginal<typeof import('./dlx.mts')>()
   return {
     ...actual,
@@ -78,8 +78,10 @@ describe('spawnCoanaDlx', () => {
 
     const complexArgs = [
       'analyze',
-      '--project', '/path/to/project',
-      '--output', 'report.json',
+      '--project',
+      '/path/to/project',
+      '--output',
+      'report.json',
       '--verbose',
     ]
 

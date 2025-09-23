@@ -180,7 +180,9 @@ describe('fetchScanData', () => {
       '../../utils/api.mts'
     )
     const { setupSdk } = await import('../../utils/sdk.mts')
-    const { debugDir, debugFn } = await import('@socketsecurity/registry/lib/debug')
+    const { debugDir, debugFn } = await import(
+      '@socketsecurity/registry/lib/debug'
+    )
     const mockHandleApiNoSpinner = vi.mocked(handleApiCallNoSpinner)
     const mockQueryApiText = vi.mocked(queryApiSafeText)
     const mockSetupSdk = vi.mocked(setupSdk)

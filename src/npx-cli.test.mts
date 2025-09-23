@@ -1,7 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock process methods.
-const mockProcessExit = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never)
+const mockProcessExit = vi
+  .spyOn(process, 'exit')
+  .mockImplementation(() => undefined as never)
 const mockProcessKill = vi.spyOn(process, 'kill').mockImplementation(() => true)
 
 // Mock shadowNpxBin.
@@ -63,7 +65,7 @@ describe('npx-cli', () => {
         ['create-next-app@latest', 'my-app'],
         {
           stdio: 'inherit',
-        }
+        },
       )
     } finally {
       process.argv = originalArgv
@@ -117,12 +119,9 @@ describe('npx-cli', () => {
     try {
       await import('./npx-cli.mts')
 
-      expect(mockShadowNpxBin).toHaveBeenCalledWith(
-        [],
-        {
-          stdio: 'inherit',
-        }
-      )
+      expect(mockShadowNpxBin).toHaveBeenCalledWith([], {
+        stdio: 'inherit',
+      })
     } finally {
       process.argv = originalArgv
     }
@@ -139,7 +138,7 @@ describe('npx-cli', () => {
         ['typescript', '--version'],
         expect.objectContaining({
           stdio: 'inherit',
-        })
+        }),
       )
     } finally {
       process.argv = originalArgv

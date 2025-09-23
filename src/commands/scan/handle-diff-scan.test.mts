@@ -21,12 +21,8 @@ describe('handleDiffScan', () => {
     const mockDiff = {
       ok: true,
       data: {
-        added: [
-          { name: 'new-package', version: '1.0.0' },
-        ],
-        removed: [
-          { name: 'old-package', version: '0.9.0' },
-        ],
+        added: [{ name: 'new-package', version: '1.0.0' }],
+        removed: [{ name: 'old-package', version: '0.9.0' }],
         changed: [
           {
             name: 'updated-package',

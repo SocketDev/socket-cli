@@ -75,10 +75,9 @@ describe('fetchOrgFullScanList', () => {
       page: '1',
       per_page: '10',
     })
-    expect(mockHandleApi).toHaveBeenCalledWith(
-      expect.any(Promise),
-      { description: 'list of scans' },
-    )
+    expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
+      description: 'list of scans',
+    })
     expect(result.ok).toBe(true)
   })
 

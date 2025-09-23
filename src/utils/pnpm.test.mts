@@ -89,7 +89,9 @@ packages:
     })
 
     it('handles BOM in lockfile content', () => {
-      const lockfileContent = '\ufeff' + `lockfileVersion: 5.4
+      const lockfileContent =
+        '\ufeff' +
+        `lockfileVersion: 5.4
 packages: {}`
 
       const result = parsePnpmLockfile(lockfileContent)
@@ -167,25 +169,39 @@ packages: {}`
 
   describe('stripLeadingPnpmDepPathSlash', () => {
     it('strips leading slash from dependency paths', () => {
-      expect(stripLeadingPnpmDepPathSlash('/lodash@4.17.21')).toBe('lodash@4.17.21')
-      expect(stripLeadingPnpmDepPathSlash('/@babel/core@7.0.0')).toBe('@babel/core@7.0.0')
+      expect(stripLeadingPnpmDepPathSlash('/lodash@4.17.21')).toBe(
+        'lodash@4.17.21',
+      )
+      expect(stripLeadingPnpmDepPathSlash('/@babel/core@7.0.0')).toBe(
+        '@babel/core@7.0.0',
+      )
     })
 
     it('returns unchanged for non-dependency paths', () => {
-      expect(stripLeadingPnpmDepPathSlash('lodash@4.17.21')).toBe('lodash@4.17.21')
+      expect(stripLeadingPnpmDepPathSlash('lodash@4.17.21')).toBe(
+        'lodash@4.17.21',
+      )
       expect(stripLeadingPnpmDepPathSlash('')).toBe('')
     })
   })
 
   describe('stripPnpmPeerSuffix', () => {
     it('strips peer dependency suffix with parentheses', () => {
-      expect(stripPnpmPeerSuffix('react@18.0.0(react-dom@18.0.0)')).toBe('react@18.0.0')
-      expect(stripPnpmPeerSuffix('vue@3.0.0(typescript@4.0.0)')).toBe('vue@3.0.0')
+      expect(stripPnpmPeerSuffix('react@18.0.0(react-dom@18.0.0)')).toBe(
+        'react@18.0.0',
+      )
+      expect(stripPnpmPeerSuffix('vue@3.0.0(typescript@4.0.0)')).toBe(
+        'vue@3.0.0',
+      )
     })
 
     it('strips peer dependency suffix with underscore', () => {
-      expect(stripPnpmPeerSuffix('react@18.0.0_react-dom@18.0.0')).toBe('react@18.0.0')
-      expect(stripPnpmPeerSuffix('vue@3.0.0_typescript@4.0.0')).toBe('vue@3.0.0')
+      expect(stripPnpmPeerSuffix('react@18.0.0_react-dom@18.0.0')).toBe(
+        'react@18.0.0',
+      )
+      expect(stripPnpmPeerSuffix('vue@3.0.0_typescript@4.0.0')).toBe(
+        'vue@3.0.0',
+      )
     })
 
     it('prefers parentheses over underscore', () => {
@@ -234,13 +250,13 @@ packages: {}`
           '/main@1.0.0': {
             resolution: { integrity: 'sha512-test' },
             dependencies: {
-              'dep': '1.0.0',
+              dep: '1.0.0',
             },
             optionalDependencies: {
-              'optional': '1.0.0',
+              optional: '1.0.0',
             },
             devDependencies: {
-              'dev': '1.0.0',
+              dev: '1.0.0',
             },
           },
           '/dep@1.0.0': {
@@ -270,13 +286,13 @@ packages: {}`
           '/a@1.0.0': {
             resolution: { integrity: 'sha512-test' },
             dependencies: {
-              'b': '1.0.0',
+              b: '1.0.0',
             },
           },
           '/b@1.0.0': {
             resolution: { integrity: 'sha512-test2' },
             dependencies: {
-              'a': '1.0.0',
+              a: '1.0.0',
             },
           },
         },

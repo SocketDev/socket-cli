@@ -20,14 +20,7 @@ vi.mock('../constants.mts', () => ({
   NPM: 'npm',
 }))
 
-// Mock the module to spy on internal functions.
-vi.mock('./npm-spec.mts', async () => {
-  const actual = await vi.importActual('./npm-spec.mts')
-  return {
-    ...actual,
-    safeParseNpmSpec: vi.fn(),
-  }
-})
+// Don't mock the module we're testing - only mock its dependencies.
 
 import npmPackageArg from 'npm-package-arg'
 import { createPurlObject } from './purl.mts'
@@ -389,13 +382,12 @@ describe('npm-spec utilities', () => {
       mockCreatePurlObject.mockReturnValue(undefined)
 
       // The fallback parsing would return { name: '', version: undefined } for empty string.
-      // But safeParseNpmSpec checks for empty name and the fallback parsing returns empty name.
-      // Actually, let's mock safeParseNpmSpec to return undefined directly.
+      // safeParseNpmSpec now correctly returns undefined for empty string.
       const result = safeNpmSpecToPurl('')
 
-      // For empty string, the fallback parsing returns { name: '', version: undefined }.
-      // This gets passed to createPurlObject which fails, then falls back to manual PURL.
-      expect(result).toBe('pkg:npm/')
+      // For empty string, the fallback parsing now returns undefined,
+      // so safeNpmSpecToPurl also returns undefined.
+      expect(result).toBeUndefined()
     })
 
     it('handles complex version ranges', () => {
@@ -443,7 +435,7 @@ describe('npm-spec utilities', () => {
 
       // Make the fallback parsing fail by providing an empty string that would result in empty name.
       expect(() => npmSpecToPurl('')).toThrow(
-        'Failed to convert npm spec to PURL:'
+        'Failed to convert npm spec to PURL:',
       )
     })
 
@@ -455,7 +447,7 @@ describe('npm-spec utilities', () => {
 
       // Make fallback parsing fail by providing empty string.
       expect(() => npmSpecToPurl('')).toThrow(
-        'Failed to convert npm spec to PURL: '
+        'Failed to convert npm spec to PURL: ',
       )
     })
 

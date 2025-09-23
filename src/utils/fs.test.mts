@@ -22,7 +22,10 @@ describe('fs utilities', () => {
       await fs.writeFile(path.join(testDir, 'root.txt'), 'root')
       await fs.writeFile(path.join(testDir, 'package.json'), '{}')
       await fs.writeFile(path.join(testDir, 'level1', 'middle.txt'), 'middle')
-      await fs.writeFile(path.join(testDir, 'level1', 'level2', 'package.json'), '{}')
+      await fs.writeFile(
+        path.join(testDir, 'level1', 'level2', 'package.json'),
+        '{}',
+      )
 
       // Create test directory.
       await fs.mkdir(path.join(testDir, 'level1', '.git'))
@@ -49,7 +52,9 @@ describe('fs utilities', () => {
 
     it('finds nearest file when multiple exist', async () => {
       const result = await findUp('package.json', { cwd: nestedDir })
-      expect(result).toBe(path.join(testDir, 'level1', 'level2', 'package.json'))
+      expect(result).toBe(
+        path.join(testDir, 'level1', 'level2', 'package.json'),
+      )
     })
 
     it('returns undefined when file not found', async () => {
@@ -59,7 +64,7 @@ describe('fs utilities', () => {
 
     it('searches for multiple file names', async () => {
       const result = await findUp(['nonexistent.txt', 'middle.txt'], {
-        cwd: nestedDir
+        cwd: nestedDir,
       })
       expect(result).toBe(path.join(testDir, 'level1', 'middle.txt'))
     })
@@ -67,7 +72,7 @@ describe('fs utilities', () => {
     it('finds directory when onlyDirectories is true', async () => {
       const result = await findUp('.git', {
         cwd: nestedDir,
-        onlyDirectories: true
+        onlyDirectories: true,
       })
       expect(result).toBe(path.join(testDir, 'level1', '.git'))
     })
@@ -75,7 +80,7 @@ describe('fs utilities', () => {
     it('ignores directories when onlyFiles is true', async () => {
       const result = await findUp('.git', {
         cwd: nestedDir,
-        onlyFiles: true
+        onlyFiles: true,
       })
       expect(result).toBeUndefined()
     })
@@ -86,7 +91,7 @@ describe('fs utilities', () => {
 
       const result = await findUp('package.json', {
         cwd: nestedDir,
-        signal: controller.signal
+        signal: controller.signal,
       })
       expect(result).toBeUndefined()
     })
@@ -95,14 +100,16 @@ describe('fs utilities', () => {
       const fileResult = await findUp('package.json', {
         cwd: nestedDir,
         onlyFiles: false,
-        onlyDirectories: false
+        onlyDirectories: false,
       })
-      expect(fileResult).toBe(path.join(testDir, 'level1', 'level2', 'package.json'))
+      expect(fileResult).toBe(
+        path.join(testDir, 'level1', 'level2', 'package.json'),
+      )
 
       const dirResult = await findUp('.git', {
         cwd: nestedDir,
         onlyFiles: false,
-        onlyDirectories: false
+        onlyDirectories: false,
       })
       expect(dirResult).toBe(path.join(testDir, 'level1', '.git'))
     })
@@ -114,7 +121,9 @@ describe('fs utilities', () => {
         const result = await findUp('package.json')
         // Handle macOS /private symlink.
         const expectedPath = path.join(testDir, 'package.json')
-        expect(result).toMatch(new RegExp(`${path.basename(testDir)}/package\\.json$`))
+        expect(result).toMatch(
+          new RegExp(`${path.basename(testDir)}/package\\.json$`),
+        )
       } finally {
         process.chdir(originalCwd)
       }
@@ -122,7 +131,7 @@ describe('fs utilities', () => {
 
     it('stops at filesystem root', async () => {
       const result = await findUp('absolutely-nonexistent-file.xyz', {
-        cwd: '/'
+        cwd: '/',
       })
       expect(result).toBeUndefined()
     })

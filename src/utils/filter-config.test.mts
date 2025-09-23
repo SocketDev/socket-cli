@@ -6,7 +6,7 @@ import type { FilterConfig } from './filter-config.mts'
 
 // Mock @socketsecurity/registry/lib/objects.
 vi.mock('@socketsecurity/registry/lib/objects', () => ({
-  isObject: vi.fn((val) => {
+  isObject: vi.fn(val => {
     return val !== null && typeof val === 'object' && !Array.isArray(val)
   }),
 }))
@@ -86,7 +86,7 @@ describe('filter-config utilities', () => {
 
     it('returns empty object for non-object input', async () => {
       const { isObject } = vi.mocked(
-        await import('@socketsecurity/registry/lib/objects')
+        await import('@socketsecurity/registry/lib/objects'),
       )
 
       isObject.mockReturnValue(false)
@@ -101,7 +101,7 @@ describe('filter-config utilities', () => {
 
     it('returns empty object for empty input object', async () => {
       const { isObject } = vi.mocked(
-        await import('@socketsecurity/registry/lib/objects')
+        await import('@socketsecurity/registry/lib/objects'),
       )
       isObject.mockReturnValue(true)
 
@@ -113,15 +113,33 @@ describe('filter-config utilities', () => {
 
     it('preserves nested arrays', () => {
       const input = {
-        nestedArrays: [['a', 'b'], ['c', 'd']],
-        deepNested: [[[1, 2], [3, 4]], [[5, 6]]],
+        nestedArrays: [
+          ['a', 'b'],
+          ['c', 'd'],
+        ],
+        deepNested: [
+          [
+            [1, 2],
+            [3, 4],
+          ],
+          [[5, 6]],
+        ],
       }
 
       const result = toFilterConfig(input)
 
       expect(result).toEqual({
-        nestedArrays: [['a', 'b'], ['c', 'd']],
-        deepNested: [[[1, 2], [3, 4]], [[5, 6]]],
+        nestedArrays: [
+          ['a', 'b'],
+          ['c', 'd'],
+        ],
+        deepNested: [
+          [
+            [1, 2],
+            [3, 4],
+          ],
+          [[5, 6]],
+        ],
       })
     })
 
@@ -163,7 +181,7 @@ describe('filter-config utilities', () => {
         0: true,
         1: false,
         100: ['array'],
-        'stringKey': true,
+        stringKey: true,
       }
 
       const result = toFilterConfig(input)

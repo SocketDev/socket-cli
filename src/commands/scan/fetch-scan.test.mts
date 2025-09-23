@@ -62,7 +62,9 @@ describe('fetchScan', () => {
   it('handles invalid JSON in scan data', async () => {
     const { fetchScan } = await import('./fetch-scan.mts')
     const { queryApiSafeText } = await import('../../utils/api.mts')
-    const { debugDir, debugFn } = await import('@socketsecurity/registry/lib/debug')
+    const { debugDir, debugFn } = await import(
+      '@socketsecurity/registry/lib/debug'
+    )
     const mockQueryApiText = vi.mocked(queryApiSafeText)
     const mockDebugFn = vi.mocked(debugFn)
     const mockDebugDir = vi.mocked(debugDir)
@@ -192,7 +194,8 @@ describe('fetchScan', () => {
     const { queryApiSafeText } = await import('../../utils/api.mts')
     const mockQueryApiText = vi.mocked(queryApiSafeText)
 
-    const singleLineData = '{"type":"package","name":"single","version":"1.0.0"}'
+    const singleLineData =
+      '{"type":"package","name":"single","version":"1.0.0"}'
 
     mockQueryApiText.mockResolvedValue({
       ok: true,

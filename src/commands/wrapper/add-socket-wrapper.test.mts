@@ -32,13 +32,13 @@ describe('addSocketWrapper', () => {
     expect(fs.appendFile).toHaveBeenCalledWith(
       '/home/user/.bashrc',
       'alias npm="socket npm"\nalias npx="socket npx"\n',
-      expect.any(Function)
+      expect.any(Function),
     )
     expect(logger.success).toHaveBeenCalledWith(
-      expect.stringContaining('The alias was added to /home/user/.bashrc')
+      expect.stringContaining('The alias was added to /home/user/.bashrc'),
     )
     expect(logger.info).toHaveBeenCalledWith(
-      'This will only be active in new terminal sessions going forward.'
+      'This will only be active in new terminal sessions going forward.',
     )
     expect(logger.log).toHaveBeenCalledWith('    source /home/user/.bashrc')
   })
@@ -56,7 +56,7 @@ describe('addSocketWrapper', () => {
     expect(fs.appendFile).toHaveBeenCalledWith(
       '/etc/protected-file',
       'alias npm="socket npm"\nalias npx="socket npx"\n',
-      expect.any(Function)
+      expect.any(Function),
     )
   })
 
@@ -71,7 +71,9 @@ describe('addSocketWrapper', () => {
 
     addSocketWrapper('/home/user/.zshrc')
 
-    expect(capturedContent).toBe('alias npm="socket npm"\nalias npx="socket npx"\n')
+    expect(capturedContent).toBe(
+      'alias npm="socket npm"\nalias npx="socket npx"\n',
+    )
   })
 
   it('logs disable instructions', async () => {
@@ -85,7 +87,7 @@ describe('addSocketWrapper', () => {
     addSocketWrapper('/home/user/.bashrc')
 
     expect(logger.log).toHaveBeenCalledWith(
-      '  If you want to disable it at any time, run `socket wrapper --disable`'
+      '  If you want to disable it at any time, run `socket wrapper --disable`',
     )
   })
 
@@ -109,7 +111,7 @@ describe('addSocketWrapper', () => {
       expect(fs.appendFile).toHaveBeenCalledWith(
         shellFile,
         'alias npm="socket npm"\nalias npx="socket npx"\n',
-        expect.any(Function)
+        expect.any(Function),
       )
     }
   })

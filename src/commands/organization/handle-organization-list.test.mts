@@ -19,7 +19,9 @@ vi.mock('./output-organization-list.mts', () => ({
 describe('handleOrganizationList', () => {
   it('fetches and outputs organization list successfully', async () => {
     const { fetchOrganization } = await import('./fetch-organization-list.mts')
-    const { outputOrganizationList } = await import('./output-organization-list.mts')
+    const { outputOrganizationList } = await import(
+      './output-organization-list.mts'
+    )
     const mockFetch = vi.mocked(fetchOrganization)
     const mockOutput = vi.mocked(outputOrganizationList)
 
@@ -50,7 +52,9 @@ describe('handleOrganizationList', () => {
 
   it('handles fetch failure', async () => {
     const { fetchOrganization } = await import('./fetch-organization-list.mts')
-    const { outputOrganizationList } = await import('./output-organization-list.mts')
+    const { outputOrganizationList } = await import(
+      './output-organization-list.mts'
+    )
     const mockFetch = vi.mocked(fetchOrganization)
     const mockOutput = vi.mocked(outputOrganizationList)
 
@@ -68,7 +72,9 @@ describe('handleOrganizationList', () => {
 
   it('uses default text output format', async () => {
     const { fetchOrganization } = await import('./fetch-organization-list.mts')
-    const { outputOrganizationList } = await import('./output-organization-list.mts')
+    const { outputOrganizationList } = await import(
+      './output-organization-list.mts'
+    )
     const mockFetch = vi.mocked(fetchOrganization)
     const mockOutput = vi.mocked(outputOrganizationList)
 
@@ -76,15 +82,14 @@ describe('handleOrganizationList', () => {
 
     await handleOrganizationList()
 
-    expect(mockOutput).toHaveBeenCalledWith(
-      expect.any(Object),
-      'text',
-    )
+    expect(mockOutput).toHaveBeenCalledWith(expect.any(Object), 'text')
   })
 
   it('handles markdown output format', async () => {
     const { fetchOrganization } = await import('./fetch-organization-list.mts')
-    const { outputOrganizationList } = await import('./output-organization-list.mts')
+    const { outputOrganizationList } = await import(
+      './output-organization-list.mts'
+    )
     const mockFetch = vi.mocked(fetchOrganization)
     const mockOutput = vi.mocked(outputOrganizationList)
 
@@ -92,14 +97,13 @@ describe('handleOrganizationList', () => {
 
     await handleOrganizationList('markdown')
 
-    expect(mockOutput).toHaveBeenCalledWith(
-      expect.any(Object),
-      'markdown',
-    )
+    expect(mockOutput).toHaveBeenCalledWith(expect.any(Object), 'markdown')
   })
 
   it('passes debug messages correctly', async () => {
-    const { debugDir, debugFn } = await import('@socketsecurity/registry/lib/debug')
+    const { debugDir, debugFn } = await import(
+      '@socketsecurity/registry/lib/debug'
+    )
     const { fetchOrganization } = await import('./fetch-organization-list.mts')
     const mockDebugDir = vi.mocked(debugDir)
     const mockDebugFn = vi.mocked(debugFn)

@@ -11,7 +11,9 @@ vi.mock('../../utils/sdk.mts', () => ({
 
 describe('fetchCreateOrgFullScan', () => {
   it('creates org full scan successfully', async () => {
-    const { fetchCreateOrgFullScan } = await import('./fetch-create-org-full-scan.mts')
+    const { fetchCreateOrgFullScan } = await import(
+      './fetch-create-org-full-scan.mts'
+    )
     const { handleApiCall } = await import('../../utils/api.mts')
     const { setupSdk } = await import('../../utils/sdk.mts')
     const mockHandleApi = vi.mocked(handleApiCall)
@@ -68,15 +70,16 @@ describe('fetchCreateOrgFullScan', () => {
         tmp: 'undefined',
       },
     )
-    expect(mockHandleApi).toHaveBeenCalledWith(
-      expect.any(Promise),
-      { description: 'to create a scan' },
-    )
+    expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
+      description: 'to create a scan',
+    })
     expect(result.ok).toBe(true)
   })
 
   it('handles SDK setup failure', async () => {
-    const { fetchCreateOrgFullScan } = await import('./fetch-create-org-full-scan.mts')
+    const { fetchCreateOrgFullScan } = await import(
+      './fetch-create-org-full-scan.mts'
+    )
     const { setupSdk } = await import('../../utils/sdk.mts')
     const mockSetupSdk = vi.mocked(setupSdk)
 
@@ -107,7 +110,9 @@ describe('fetchCreateOrgFullScan', () => {
   })
 
   it('handles API call failure', async () => {
-    const { fetchCreateOrgFullScan } = await import('./fetch-create-org-full-scan.mts')
+    const { fetchCreateOrgFullScan } = await import(
+      './fetch-create-org-full-scan.mts'
+    )
     const { handleApiCall } = await import('../../utils/api.mts')
     const { setupSdk } = await import('../../utils/sdk.mts')
     const mockHandleApi = vi.mocked(handleApiCall)
@@ -144,7 +149,9 @@ describe('fetchCreateOrgFullScan', () => {
   })
 
   it('passes custom SDK options and scan options', async () => {
-    const { fetchCreateOrgFullScan } = await import('./fetch-create-org-full-scan.mts')
+    const { fetchCreateOrgFullScan } = await import(
+      './fetch-create-org-full-scan.mts'
+    )
     const { setupSdk } = await import('../../utils/sdk.mts')
     const { handleApiCall } = await import('../../utils/api.mts')
     const mockSetupSdk = vi.mocked(setupSdk)
@@ -204,7 +211,9 @@ describe('fetchCreateOrgFullScan', () => {
   })
 
   it('handles empty optional config values', async () => {
-    const { fetchCreateOrgFullScan } = await import('./fetch-create-org-full-scan.mts')
+    const { fetchCreateOrgFullScan } = await import(
+      './fetch-create-org-full-scan.mts'
+    )
     const { setupSdk } = await import('../../utils/sdk.mts')
     const { handleApiCall } = await import('../../utils/api.mts')
     const mockSetupSdk = vi.mocked(setupSdk)
@@ -226,11 +235,7 @@ describe('fetchCreateOrgFullScan', () => {
       repoName: 'test-repo',
     }
 
-    await fetchCreateOrgFullScan(
-      ['/path/to/package.json'],
-      'test-org',
-      config,
-    )
+    await fetchCreateOrgFullScan(['/path/to/package.json'], 'test-org', config)
 
     expect(mockSdk.createOrgFullScan).toHaveBeenCalledWith(
       'test-org',
@@ -246,7 +251,9 @@ describe('fetchCreateOrgFullScan', () => {
   })
 
   it('handles multiple package paths', async () => {
-    const { fetchCreateOrgFullScan } = await import('./fetch-create-org-full-scan.mts')
+    const { fetchCreateOrgFullScan } = await import(
+      './fetch-create-org-full-scan.mts'
+    )
     const { setupSdk } = await import('../../utils/sdk.mts')
     const { handleApiCall } = await import('../../utils/api.mts')
     const mockSetupSdk = vi.mocked(setupSdk)
@@ -285,7 +292,9 @@ describe('fetchCreateOrgFullScan', () => {
   })
 
   it('uses null prototype for config and options', async () => {
-    const { fetchCreateOrgFullScan } = await import('./fetch-create-org-full-scan.mts')
+    const { fetchCreateOrgFullScan } = await import(
+      './fetch-create-org-full-scan.mts'
+    )
     const { setupSdk } = await import('../../utils/sdk.mts')
     const { handleApiCall } = await import('../../utils/api.mts')
     const mockSetupSdk = vi.mocked(setupSdk)
@@ -315,7 +324,9 @@ describe('fetchCreateOrgFullScan', () => {
   })
 
   it('handles edge cases for different org slugs and repo names', async () => {
-    const { fetchCreateOrgFullScan } = await import('./fetch-create-org-full-scan.mts')
+    const { fetchCreateOrgFullScan } = await import(
+      './fetch-create-org-full-scan.mts'
+    )
     const { setupSdk } = await import('../../utils/sdk.mts')
     const { handleApiCall } = await import('../../utils/api.mts')
     const mockSetupSdk = vi.mocked(setupSdk)

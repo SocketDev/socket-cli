@@ -46,9 +46,13 @@ describe('handleOptimize', () => {
   })
 
   it('optimizes packages successfully', async () => {
-    const { detectAndValidatePackageEnvironment } = await import('../../utils/package-environment.mts')
+    const { detectAndValidatePackageEnvironment } = await import(
+      '../../utils/package-environment.mts'
+    )
     const { applyOptimization } = await import('./apply-optimization.mts')
-    const { outputOptimizeResult } = await import('./output-optimize-result.mts')
+    const { outputOptimizeResult } = await import(
+      './output-optimize-result.mts'
+    )
     const { logger } = await import('@socketsecurity/registry/lib/logger')
 
     vi.mocked(detectAndValidatePackageEnvironment).mockResolvedValue({
@@ -75,28 +79,35 @@ describe('handleOptimize', () => {
       prod: false,
     })
 
-    expect(detectAndValidatePackageEnvironment).toHaveBeenCalledWith('/test/project', {
-      cmdName: 'optimize',
-      logger,
-      prod: false,
-    })
+    expect(detectAndValidatePackageEnvironment).toHaveBeenCalledWith(
+      '/test/project',
+      {
+        cmdName: 'optimize',
+        logger,
+        prod: false,
+      },
+    )
     expect(applyOptimization).toHaveBeenCalledWith(
       expect.objectContaining({
         agent: 'npm',
         agentVersion: '10.0.0',
       }),
-      { pin: false, prod: false }
+      { pin: false, prod: false },
     )
     expect(outputOptimizeResult).toHaveBeenCalledWith(
       expect.objectContaining({ ok: true }),
-      'json'
+      'json',
     )
     expect(process.exitCode).toBeUndefined()
   })
 
   it('handles package environment validation failure', async () => {
-    const { detectAndValidatePackageEnvironment } = await import('../../utils/package-environment.mts')
-    const { outputOptimizeResult } = await import('./output-optimize-result.mts')
+    const { detectAndValidatePackageEnvironment } = await import(
+      '../../utils/package-environment.mts'
+    )
+    const { outputOptimizeResult } = await import(
+      './output-optimize-result.mts'
+    )
     const { applyOptimization } = await import('./apply-optimization.mts')
 
     vi.mocked(detectAndValidatePackageEnvironment).mockResolvedValue({
@@ -114,15 +125,19 @@ describe('handleOptimize', () => {
 
     expect(outputOptimizeResult).toHaveBeenCalledWith(
       expect.objectContaining({ ok: false }),
-      'text'
+      'text',
     )
     expect(applyOptimization).not.toHaveBeenCalled()
     expect(process.exitCode).toBe(2)
   })
 
   it('handles missing package environment details', async () => {
-    const { detectAndValidatePackageEnvironment } = await import('../../utils/package-environment.mts')
-    const { outputOptimizeResult } = await import('./output-optimize-result.mts')
+    const { detectAndValidatePackageEnvironment } = await import(
+      '../../utils/package-environment.mts'
+    )
+    const { outputOptimizeResult } = await import(
+      './output-optimize-result.mts'
+    )
 
     vi.mocked(detectAndValidatePackageEnvironment).mockResolvedValue({
       ok: true,
@@ -140,16 +155,21 @@ describe('handleOptimize', () => {
       {
         ok: false,
         message: 'No package found.',
-        cause: 'No valid package environment found for project path: /test/project',
+        cause:
+          'No valid package environment found for project path: /test/project',
       },
-      'json'
+      'json',
     )
     expect(process.exitCode).toBe(1)
   })
 
   it('handles unsupported vlt package manager', async () => {
-    const { detectAndValidatePackageEnvironment } = await import('../../utils/package-environment.mts')
-    const { outputOptimizeResult } = await import('./output-optimize-result.mts')
+    const { detectAndValidatePackageEnvironment } = await import(
+      '../../utils/package-environment.mts'
+    )
+    const { outputOptimizeResult } = await import(
+      './output-optimize-result.mts'
+    )
     const { applyOptimization } = await import('./apply-optimization.mts')
 
     vi.mocked(detectAndValidatePackageEnvironment).mockResolvedValue({
@@ -175,16 +195,20 @@ describe('handleOptimize', () => {
         message: 'Unsupported',
         cause: 'optimize: vlt v1.0.0 does not support overrides.',
       },
-      'markdown'
+      'markdown',
     )
     expect(applyOptimization).not.toHaveBeenCalled()
     expect(process.exitCode).toBe(1)
   })
 
   it('handles optimization failure', async () => {
-    const { detectAndValidatePackageEnvironment } = await import('../../utils/package-environment.mts')
+    const { detectAndValidatePackageEnvironment } = await import(
+      '../../utils/package-environment.mts'
+    )
     const { applyOptimization } = await import('./apply-optimization.mts')
-    const { outputOptimizeResult } = await import('./output-optimize-result.mts')
+    const { outputOptimizeResult } = await import(
+      './output-optimize-result.mts'
+    )
 
     vi.mocked(detectAndValidatePackageEnvironment).mockResolvedValue({
       ok: true,
@@ -210,17 +234,19 @@ describe('handleOptimize', () => {
 
     expect(applyOptimization).toHaveBeenCalledWith(
       expect.objectContaining({ agent: 'yarn' }),
-      { pin: true, prod: true }
+      { pin: true, prod: true },
     )
     expect(outputOptimizeResult).toHaveBeenCalledWith(
       expect.objectContaining({ ok: false }),
-      'json'
+      'json',
     )
     expect(process.exitCode).toBe(3)
   })
 
   it('handles pnpm package manager', async () => {
-    const { detectAndValidatePackageEnvironment } = await import('../../utils/package-environment.mts')
+    const { detectAndValidatePackageEnvironment } = await import(
+      '../../utils/package-environment.mts'
+    )
     const { applyOptimization } = await import('./apply-optimization.mts')
     const { logger } = await import('@socketsecurity/registry/lib/logger')
 
@@ -245,16 +271,22 @@ describe('handleOptimize', () => {
       prod: false,
     })
 
-    expect(logger.info).toHaveBeenCalledWith('Optimizing packages for pnpm v8.0.0.\n')
+    expect(logger.info).toHaveBeenCalledWith(
+      'Optimizing packages for pnpm v8.0.0.\n',
+    )
     expect(applyOptimization).toHaveBeenCalledWith(
       expect.objectContaining({ agent: 'pnpm' }),
-      { pin: false, prod: false }
+      { pin: false, prod: false },
     )
   })
 
   it('logs debug information', async () => {
-    const { debugDir, debugFn } = await import('@socketsecurity/registry/lib/debug')
-    const { detectAndValidatePackageEnvironment } = await import('../../utils/package-environment.mts')
+    const { debugDir, debugFn } = await import(
+      '@socketsecurity/registry/lib/debug'
+    )
+    const { detectAndValidatePackageEnvironment } = await import(
+      '../../utils/package-environment.mts'
+    )
     const { applyOptimization } = await import('./apply-optimization.mts')
 
     vi.mocked(detectAndValidatePackageEnvironment).mockResolvedValue({
@@ -278,14 +310,20 @@ describe('handleOptimize', () => {
       prod: false,
     })
 
-    expect(debugFn).toHaveBeenCalledWith('notice', 'Starting optimization for /debug/project')
+    expect(debugFn).toHaveBeenCalledWith(
+      'notice',
+      'Starting optimization for /debug/project',
+    )
     expect(debugDir).toHaveBeenCalledWith('inspect', {
       cwd: '/debug/project',
       outputKind: 'json',
       pin: true,
       prod: false,
     })
-    expect(debugFn).toHaveBeenCalledWith('notice', 'Detected package manager: npm v10.0.0')
+    expect(debugFn).toHaveBeenCalledWith(
+      'notice',
+      'Detected package manager: npm v10.0.0',
+    )
     expect(debugFn).toHaveBeenCalledWith('notice', 'Applying optimization')
     expect(debugFn).toHaveBeenCalledWith('notice', 'Optimization succeeded')
   })

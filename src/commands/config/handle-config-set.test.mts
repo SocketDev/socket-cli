@@ -34,10 +34,13 @@ describe('handleConfigSet', () => {
       value: 'new-token-value',
     })
 
-    expect(updateConfigValue).toHaveBeenCalledWith('apiToken', 'new-token-value')
+    expect(updateConfigValue).toHaveBeenCalledWith(
+      'apiToken',
+      'new-token-value',
+    )
     expect(outputConfigSet).toHaveBeenCalledWith(
       { ok: true, value: 'new-value' },
-      'json'
+      'json',
     )
   })
 
@@ -58,10 +61,7 @@ describe('handleConfigSet', () => {
     })
 
     expect(updateConfigValue).toHaveBeenCalledWith('org', 'test-org')
-    expect(outputConfigSet).toHaveBeenCalledWith(
-      { ok: false, error },
-      'text'
-    )
+    expect(outputConfigSet).toHaveBeenCalledWith({ ok: false, error }, 'text')
   })
 
   it('handles markdown output', async () => {
@@ -82,12 +82,14 @@ describe('handleConfigSet', () => {
     expect(updateConfigValue).toHaveBeenCalledWith('repoName', 'my-repo')
     expect(outputConfigSet).toHaveBeenCalledWith(
       { ok: true, value: 'markdown-value' },
-      'markdown'
+      'markdown',
     )
   })
 
   it('logs debug information', async () => {
-    const { debugDir, debugFn } = await import('@socketsecurity/registry/lib/debug')
+    const { debugDir, debugFn } = await import(
+      '@socketsecurity/registry/lib/debug'
+    )
     const { updateConfigValue } = await import('../../utils/config.mts')
 
     vi.mocked(updateConfigValue).mockReturnValue({
@@ -101,7 +103,10 @@ describe('handleConfigSet', () => {
       value: 'https://api.example.com',
     })
 
-    expect(debugFn).toHaveBeenCalledWith('notice', 'Setting config apiBaseUrl = https://api.example.com')
+    expect(debugFn).toHaveBeenCalledWith(
+      'notice',
+      'Setting config apiBaseUrl = https://api.example.com',
+    )
     expect(debugDir).toHaveBeenCalledWith('inspect', {
       key: 'apiBaseUrl',
       value: 'https://api.example.com',

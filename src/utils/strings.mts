@@ -21,7 +21,11 @@ export function kebabToCamel(str: string): string {
 }
 
 // Added for testing.
-export function pluralize(word: string, count: number, plural?: string): string {
+export function pluralize(
+  word: string,
+  count: number,
+  plural?: string,
+): string {
   if (count === 1) {
     return word
   }

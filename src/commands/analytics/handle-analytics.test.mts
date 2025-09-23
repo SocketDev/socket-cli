@@ -45,12 +45,14 @@ describe('handleAnalytics', () => {
         repo: '',
         scope: 'org',
         time: 30,
-      }
+      },
     )
   })
 
   it('fetches repo analytics when repo is provided', async () => {
-    const { fetchRepoAnalyticsData } = await import('./fetch-repo-analytics.mts')
+    const { fetchRepoAnalyticsData } = await import(
+      './fetch-repo-analytics.mts'
+    )
     const { outputAnalytics } = await import('./output-analytics.mts')
 
     const mockData = [{ packages: 5, vulnerabilities: 1 }]
@@ -76,7 +78,7 @@ describe('handleAnalytics', () => {
         repo: 'test-repo',
         scope: 'repo',
         time: 7,
-      }
+      },
     )
   })
 
@@ -102,7 +104,7 @@ describe('handleAnalytics', () => {
         repo: '',
         scope: 'repo',
         time: 30,
-      }
+      },
     )
   })
 
@@ -126,15 +128,18 @@ describe('handleAnalytics', () => {
     expect(outputAnalytics).toHaveBeenCalledWith(
       {
         ok: true,
-        message: 'The analytics data for this organization is not yet available.',
+        message:
+          'The analytics data for this organization is not yet available.',
         data: [],
       },
-      expect.any(Object)
+      expect.any(Object),
     )
   })
 
   it('handles empty analytics data for repo', async () => {
-    const { fetchRepoAnalyticsData } = await import('./fetch-repo-analytics.mts')
+    const { fetchRepoAnalyticsData } = await import(
+      './fetch-repo-analytics.mts'
+    )
     const { outputAnalytics } = await import('./output-analytics.mts')
 
     vi.mocked(fetchRepoAnalyticsData).mockResolvedValue({
@@ -156,7 +161,7 @@ describe('handleAnalytics', () => {
         message: 'The analytics data for this repository is not yet available.',
         data: [],
       },
-      expect.any(Object)
+      expect.any(Object),
     )
   })
 
@@ -180,7 +185,7 @@ describe('handleAnalytics', () => {
 
     expect(outputAnalytics).toHaveBeenCalledWith(
       { ok: false, error },
-      expect.any(Object)
+      expect.any(Object),
     )
   })
 
@@ -210,7 +215,7 @@ describe('handleAnalytics', () => {
         repo: '',
         scope: 'org',
         time: 30,
-      }
+      },
     )
   })
 
@@ -240,7 +245,7 @@ describe('handleAnalytics', () => {
         repo: '',
         scope: 'org',
         time: 30,
-      }
+      },
     )
   })
 })

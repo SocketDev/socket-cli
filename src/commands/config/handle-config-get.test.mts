@@ -33,7 +33,7 @@ describe('handleConfigGet', () => {
     expect(outputConfigGet).toHaveBeenCalledWith(
       'apiToken',
       { ok: true, value: 'test-token' },
-      'json'
+      'json',
     )
   })
 
@@ -55,7 +55,7 @@ describe('handleConfigGet', () => {
     expect(outputConfigGet).toHaveBeenCalledWith(
       'org',
       { ok: false, error: new Error('Config value not found') },
-      'text'
+      'text',
     )
   })
 
@@ -77,7 +77,7 @@ describe('handleConfigGet', () => {
     expect(outputConfigGet).toHaveBeenCalledWith(
       'apiBaseUrl',
       { ok: true, value: 'https://api.socket.dev' },
-      'markdown'
+      'markdown',
     )
   })
 
@@ -103,7 +103,7 @@ describe('handleConfigGet', () => {
       expect(outputConfigGet).toHaveBeenCalledWith(
         key,
         { ok: true, value: `value-for-${key}` },
-        'json'
+        'json',
       )
     }
   })
@@ -125,7 +125,7 @@ describe('handleConfigGet', () => {
     expect(outputConfigGet).toHaveBeenCalledWith(
       'apiToken',
       { ok: true, value: '' },
-      'json'
+      'json',
     )
   })
 
@@ -146,7 +146,7 @@ describe('handleConfigGet', () => {
     expect(outputConfigGet).toHaveBeenCalledWith(
       'org',
       { ok: true, value: undefined },
-      'text'
+      'text',
     )
   })
 })

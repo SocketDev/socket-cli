@@ -70,10 +70,7 @@ describe('handleViewRepo', () => {
 
     await handleViewRepo('my-org', 'my-repo', 'markdown')
 
-    expect(mockOutput).toHaveBeenCalledWith(
-      expect.any(Object),
-      'markdown',
-    )
+    expect(mockOutput).toHaveBeenCalledWith(expect.any(Object), 'markdown')
   })
 
   it('handles text output format', async () => {

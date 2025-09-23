@@ -13,7 +13,9 @@ vi.mock('./output-requirements.mts', () => ({
 
 describe('handleManifestConda', () => {
   it('converts conda file and outputs requirements successfully', async () => {
-    const { convertCondaToRequirements } = await import('./convert-conda-to-requirements.mts')
+    const { convertCondaToRequirements } = await import(
+      './convert-conda-to-requirements.mts'
+    )
     const { outputRequirements } = await import('./output-requirements.mts')
     const mockConvert = vi.mocked(convertCondaToRequirements)
     const mockOutput = vi.mocked(outputRequirements)
@@ -37,12 +39,22 @@ describe('handleManifestConda', () => {
       verbose: true,
     })
 
-    expect(mockConvert).toHaveBeenCalledWith('environment.yml', '/project', true)
-    expect(mockOutput).toHaveBeenCalledWith(mockRequirements, 'text', 'requirements.txt')
+    expect(mockConvert).toHaveBeenCalledWith(
+      'environment.yml',
+      '/project',
+      true,
+    )
+    expect(mockOutput).toHaveBeenCalledWith(
+      mockRequirements,
+      'text',
+      'requirements.txt',
+    )
   })
 
   it('handles conversion failure', async () => {
-    const { convertCondaToRequirements } = await import('./convert-conda-to-requirements.mts')
+    const { convertCondaToRequirements } = await import(
+      './convert-conda-to-requirements.mts'
+    )
     const { outputRequirements } = await import('./output-requirements.mts')
     const mockConvert = vi.mocked(convertCondaToRequirements)
     const mockOutput = vi.mocked(outputRequirements)
@@ -66,7 +78,9 @@ describe('handleManifestConda', () => {
   })
 
   it('handles different output formats', async () => {
-    const { convertCondaToRequirements } = await import('./convert-conda-to-requirements.mts')
+    const { convertCondaToRequirements } = await import(
+      './convert-conda-to-requirements.mts'
+    )
     const { outputRequirements } = await import('./output-requirements.mts')
     const mockConvert = vi.mocked(convertCondaToRequirements)
     const mockOutput = vi.mocked(outputRequirements)
@@ -94,7 +108,9 @@ describe('handleManifestConda', () => {
   })
 
   it('handles verbose mode', async () => {
-    const { convertCondaToRequirements } = await import('./convert-conda-to-requirements.mts')
+    const { convertCondaToRequirements } = await import(
+      './convert-conda-to-requirements.mts'
+    )
     const mockConvert = vi.mocked(convertCondaToRequirements)
 
     mockConvert.mockResolvedValue({ ok: true, data: [] })
@@ -115,7 +131,9 @@ describe('handleManifestConda', () => {
   })
 
   it('handles different working directories', async () => {
-    const { convertCondaToRequirements } = await import('./convert-conda-to-requirements.mts')
+    const { convertCondaToRequirements } = await import(
+      './convert-conda-to-requirements.mts'
+    )
     const mockConvert = vi.mocked(convertCondaToRequirements)
 
     mockConvert.mockResolvedValue({ ok: true, data: [] })

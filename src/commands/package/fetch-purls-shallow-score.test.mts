@@ -51,10 +51,9 @@ describe('fetchPurlsShallowScore', () => {
     const result = await fetchPurlsShallowScore(purls)
 
     expect(mockSdk.getPurlsShallowScore).toHaveBeenCalledWith(purls)
-    expect(mockHandleApi).toHaveBeenCalledWith(
-      expect.any(Promise),
-      { description: 'fetching purls shallow scores' },
-    )
+    expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
+      description: 'fetching purls shallow scores',
+    })
     expect(result.ok).toBe(true)
     expect(result.data).toHaveLength(2)
   })
@@ -83,7 +82,9 @@ describe('fetchPurlsShallowScore', () => {
     const mockSetupSdk = vi.mocked(setupSdk)
 
     const mockSdk = {
-      getPurlsShallowScore: vi.fn().mockRejectedValue(new Error('Batch too large')),
+      getPurlsShallowScore: vi
+        .fn()
+        .mockRejectedValue(new Error('Batch too large')),
     }
 
     mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
@@ -93,7 +94,9 @@ describe('fetchPurlsShallowScore', () => {
       code: 400,
     })
 
-    const result = await fetchPurlsShallowScore(Array(1000).fill('pkg:npm/test@1.0.0'))
+    const result = await fetchPurlsShallowScore(
+      Array(1000).fill('pkg:npm/test@1.0.0'),
+    )
 
     expect(result.ok).toBe(false)
     expect(result.code).toBe(400)
@@ -173,7 +176,9 @@ describe('fetchPurlsShallowScore', () => {
     const mockSetupSdk = vi.mocked(setupSdk)
     const mockHandleApi = vi.mocked(handleApiCall)
 
-    const largeBatch = Array(100).fill(0).map((_, i) => `pkg:npm/package-${i}@1.0.0`)
+    const largeBatch = Array(100)
+      .fill(0)
+      .map((_, i) => `pkg:npm/package-${i}@1.0.0`)
     const mockResults = largeBatch.map(purl => ({ purl, score: 80 }))
 
     const mockSdk = {

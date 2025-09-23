@@ -76,9 +76,8 @@ describe('handleLicensePolicy', () => {
       outputKind: 'markdown',
     })
 
-    expect(mockOutput).toHaveBeenCalledWith(
-      expect.any(Object),
-      { outputKind: 'markdown' },
-    )
+    expect(mockOutput).toHaveBeenCalledWith(expect.any(Object), {
+      outputKind: 'markdown',
+    })
   })
 })

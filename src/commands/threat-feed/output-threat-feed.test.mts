@@ -19,7 +19,7 @@ vi.mock('../../utils/fail-msg-with-badge.mts', () => ({
 }))
 
 vi.mock('../../utils/serialize-result-json.mts', () => ({
-  serializeResultJson: vi.fn((result) => JSON.stringify(result)),
+  serializeResultJson: vi.fn(result => JSON.stringify(result)),
 }))
 
 vi.mock('../../utils/ms-at-home.mts', () => ({
@@ -89,7 +89,9 @@ describe('outputThreatFeed', () => {
 
   it('outputs JSON format for successful result', async () => {
     const { logger } = await import('@socketsecurity/registry/lib/logger')
-    const { serializeResultJson } = await import('../../utils/serialize-result-json.mts')
+    const { serializeResultJson } = await import(
+      '../../utils/serialize-result-json.mts'
+    )
     const mockLog = vi.mocked(logger.log)
     const mockSerialize = vi.mocked(serializeResultJson)
 
@@ -140,7 +142,9 @@ describe('outputThreatFeed', () => {
 
   it('outputs error in text format', async () => {
     const { logger } = await import('@socketsecurity/registry/lib/logger')
-    const { failMsgWithBadge } = await import('../../utils/fail-msg-with-badge.mts')
+    const { failMsgWithBadge } = await import(
+      '../../utils/fail-msg-with-badge.mts'
+    )
     const mockFail = vi.mocked(logger.fail)
     const mockFailMsg = vi.mocked(failMsgWithBadge)
 
@@ -153,7 +157,10 @@ describe('outputThreatFeed', () => {
 
     await outputThreatFeed(result, 'text')
 
-    expect(mockFailMsg).toHaveBeenCalledWith('Failed to fetch threat feed', 'Network error')
+    expect(mockFailMsg).toHaveBeenCalledWith(
+      'Failed to fetch threat feed',
+      'Network error',
+    )
     expect(mockFail).toHaveBeenCalled()
     expect(process.exitCode).toBe(1)
   })
@@ -172,7 +179,9 @@ describe('outputThreatFeed', () => {
 
     await outputThreatFeed(result, 'text')
 
-    expect(mockWarn).toHaveBeenCalledWith('Did not receive any data to display.')
+    expect(mockWarn).toHaveBeenCalledWith(
+      'Did not receive any data to display.',
+    )
     expect(process.exitCode).toBeUndefined()
   })
 
@@ -232,6 +241,8 @@ describe('outputThreatFeed', () => {
 
     await outputThreatFeed(result, 'text')
 
-    expect(mockWarn).toHaveBeenCalledWith('Did not receive any data to display.')
+    expect(mockWarn).toHaveBeenCalledWith(
+      'Did not receive any data to display.',
+    )
   })
 })

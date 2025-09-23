@@ -19,7 +19,7 @@ vi.mock('../../utils/fail-msg-with-badge.mts', () => ({
 }))
 
 vi.mock('../../utils/serialize-result-json.mts', () => ({
-  serializeResultJson: vi.fn((result) => JSON.stringify(result)),
+  serializeResultJson: vi.fn(result => JSON.stringify(result)),
 }))
 
 describe('outputDeleteRepo', () => {
@@ -30,7 +30,9 @@ describe('outputDeleteRepo', () => {
 
   it('outputs JSON format for successful result', async () => {
     const { logger } = await import('@socketsecurity/registry/lib/logger')
-    const { serializeResultJson } = await import('../../utils/serialize-result-json.mts')
+    const { serializeResultJson } = await import(
+      '../../utils/serialize-result-json.mts'
+    )
     const mockLog = vi.mocked(logger.log)
     const mockSerialize = vi.mocked(serializeResultJson)
 
@@ -78,13 +80,17 @@ describe('outputDeleteRepo', () => {
 
     await outputDeleteRepo(result, 'my-repository', 'text')
 
-    expect(mockSuccess).toHaveBeenCalledWith('OK. Repository `my-repository` deleted successfully')
+    expect(mockSuccess).toHaveBeenCalledWith(
+      'OK. Repository `my-repository` deleted successfully',
+    )
     expect(process.exitCode).toBeUndefined()
   })
 
   it('outputs error in text format', async () => {
     const { logger } = await import('@socketsecurity/registry/lib/logger')
-    const { failMsgWithBadge } = await import('../../utils/fail-msg-with-badge.mts')
+    const { failMsgWithBadge } = await import(
+      '../../utils/fail-msg-with-badge.mts'
+    )
     const mockFail = vi.mocked(logger.fail)
     const mockFailMsg = vi.mocked(failMsgWithBadge)
 
@@ -97,7 +103,10 @@ describe('outputDeleteRepo', () => {
 
     await outputDeleteRepo(result, 'nonexistent-repo', 'text')
 
-    expect(mockFailMsg).toHaveBeenCalledWith('Repository not found', 'Not found error')
+    expect(mockFailMsg).toHaveBeenCalledWith(
+      'Repository not found',
+      'Not found error',
+    )
     expect(mockFail).toHaveBeenCalled()
     expect(process.exitCode).toBe(1)
   })
@@ -115,7 +124,9 @@ describe('outputDeleteRepo', () => {
 
     await outputDeleteRepo(result, 'markdown-repo', 'markdown')
 
-    expect(mockSuccess).toHaveBeenCalledWith('OK. Repository `markdown-repo` deleted successfully')
+    expect(mockSuccess).toHaveBeenCalledWith(
+      'OK. Repository `markdown-repo` deleted successfully',
+    )
   })
 
   it('handles repository name with special characters', async () => {
@@ -149,7 +160,9 @@ describe('outputDeleteRepo', () => {
 
     await outputDeleteRepo(result, '', 'text')
 
-    expect(mockSuccess).toHaveBeenCalledWith('OK. Repository `` deleted successfully')
+    expect(mockSuccess).toHaveBeenCalledWith(
+      'OK. Repository `` deleted successfully',
+    )
   })
 
   it('sets default exit code when code is undefined', async () => {

@@ -1,7 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { DiffAction } from './arborist/types.mts'
-import { getAlertsMapFromArborist, getDetailsFromDiff } from './arborist-helpers.mts'
+import {
+  getAlertsMapFromArborist,
+  getDetailsFromDiff,
+} from './arborist-helpers.mts'
 
 import type { ArboristInstance, Diff, NodeClass } from './arborist/types.mts'
 import type { PackageDetail } from './arborist-helpers.mts'
@@ -59,7 +62,9 @@ describe('arborist-helpers', () => {
     mockGetAlertsMapFromPurls.mockResolvedValue(new Map())
     mockIdToNpmPurl.mockImplementation((pkgid: string) => `pkg:npm/${pkgid}`)
     mockParseUrl.mockImplementation((url: string) => ({
-      origin: url.startsWith('https://registry.npmjs.org') ? 'https://registry.npmjs.org' : 'https://example.com',
+      origin: url.startsWith('https://registry.npmjs.org')
+        ? 'https://registry.npmjs.org'
+        : 'https://example.com',
     }))
     mockToFilterConfig.mockImplementation((filter: any) => {
       return filter ?? { actions: ['error', 'monitor', 'warn'] }
@@ -74,9 +79,7 @@ describe('arborist-helpers', () => {
         resolved: 'https://registry.npmjs.org/lodash/-/lodash-4.17.21.tgz',
       } as any
 
-      const needInfoOn: PackageDetail[] = [
-        { node: mockNode },
-      ]
+      const needInfoOn: PackageDetail[] = [{ node: mockNode }]
 
       const mockArb: ArboristInstance = {
         actualTree: {
@@ -89,7 +92,10 @@ describe('arborist-helpers', () => {
       } as any
 
       const expectedMap = new Map([
-        ['pkg:npm/lodash@4.17.21', [{ action: 'warn', description: 'Test alert' }]],
+        [
+          'pkg:npm/lodash@4.17.21',
+          [{ action: 'warn', description: 'Test alert' }],
+        ],
       ])
       mockGetAlertsMapFromPurls.mockResolvedValue(expectedMap)
 
@@ -99,14 +105,17 @@ describe('arborist-helpers', () => {
       })
 
       expect(mockIdToNpmPurl).toHaveBeenCalledWith('lodash@4.17.21')
-      expect(mockGetAlertsMapFromPurls).toHaveBeenCalledWith(['pkg:npm/lodash@4.17.21'], {
-        apiToken: 'test-token',
-        consolidate: false,
-        filter: { actions: ['error', 'monitor', 'warn'] },
-        nothrow: false,
-        overrides: { lodash: '^4.0.0' },
-        spinner: mockSpinner,
-      })
+      expect(mockGetAlertsMapFromPurls).toHaveBeenCalledWith(
+        ['pkg:npm/lodash@4.17.21'],
+        {
+          apiToken: 'test-token',
+          consolidate: false,
+          filter: { actions: ['error', 'monitor', 'warn'] },
+          nothrow: false,
+          overrides: { lodash: '^4.0.0' },
+          spinner: mockSpinner,
+        },
+      )
       expect(result).toBe(expectedMap)
     })
 
@@ -297,7 +306,10 @@ describe('arborist-helpers', () => {
         unchanged: [],
       } as any
 
-      mockToFilterConfig.mockReturnValue({ existing: false, unknownOrigin: false })
+      mockToFilterConfig.mockReturnValue({
+        existing: false,
+        unknownOrigin: false,
+      })
       mockParseUrl.mockReturnValue({ origin: 'https://private-registry.com' })
 
       const result = getDetailsFromDiff(mockRootDiff, {
@@ -319,7 +331,10 @@ describe('arborist-helpers', () => {
         unchanged: [existingNode],
       } as any
 
-      mockToFilterConfig.mockReturnValue({ existing: true, unknownOrigin: true })
+      mockToFilterConfig.mockReturnValue({
+        existing: true,
+        unknownOrigin: true,
+      })
 
       const result = getDetailsFromDiff(mockRootDiff, {
         filter: { existing: true },
