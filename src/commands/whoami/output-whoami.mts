@@ -1,5 +1,9 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
+import { serializeResultJson } from '../../utils/serialize-result-json.mts'
+
+import type { CResult } from '../../types.mts'
+
 export interface WhoamiStatus {
   authenticated: boolean
   token: string | null
@@ -7,5 +11,9 @@ export interface WhoamiStatus {
 }
 
 export function outputWhoami(status: WhoamiStatus): void {
-  logger.json(status)
+  const result: CResult<WhoamiStatus> = {
+    ok: true,
+    data: status,
+  }
+  logger.log(serializeResultJson(result))
 }

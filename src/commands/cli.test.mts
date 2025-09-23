@@ -57,6 +57,7 @@ describe('socket root command', async () => {
             login                       Socket API login and CLI setup
             logout                      Socket API logout
             uninstall                   Uninstall Socket CLI tab completion
+            whoami                      Check Socket CLI authentication status
             wrapper                     Enable or disable the Socket npm/npx wrapper
 
           Options
