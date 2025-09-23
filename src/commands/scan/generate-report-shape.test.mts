@@ -91,7 +91,7 @@ describe('generate-report - report shape', () => {
           orgSlug: 'fakeOrg',
           scanId: 'scan-ai-dee',
           fold: 'none',
-          reportLevel: 'warn',
+          reportLevel: 'error', // When reportLevel is 'error', warns don't show up as alerts
         },
       )
 

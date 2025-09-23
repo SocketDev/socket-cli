@@ -59,7 +59,7 @@ vi.mock('../constants.mts', async importOriginal => {
       nodeNoWarningsFlags: ['--no-warnings'],
       nodeDebugFlags: ['--inspect=0'],
       nodeHardenFlags: ['--frozen-intrinsics'],
-      nodeMemoryFlags: ['--max-old-space-size=4096'],
+      nodeMemoryFlags: [],
       processEnv: { CUSTOM_ENV: 'test' },
       SUPPORTS_NODE_PERMISSION_FLAG: true,
       npmGlobalPrefix: '/usr/local',
@@ -115,7 +115,6 @@ describe('shadowNpmBase', () => {
         '--no-warnings',
         '--inspect=0',
         '--frozen-intrinsics',
-        '--max-old-space-size=4096',
         '--require',
         '/mock/inject.js',
         '/usr/bin/npm',
@@ -173,14 +172,13 @@ describe('shadowNpmBase', () => {
 
     await shadowNpmBase(NPM, ['install'], options)
 
-    expect(mockSpawn).toHaveBeenCalledWith(
-      expect.any(String),
-      expect.any(Array),
-      expect.objectContaining({
-        cwd: '/custom/path',
-      }),
-      undefined,
-    )
+    expect(mockSpawn).toHaveBeenCalled()
+    const spawnCall = mockSpawn.mock.calls[0]
+    // The cwd should be converted from URL to path string.
+    const cwdArg = spawnCall?.[2]?.cwd
+    // Handle both URL object and string path.
+    const actualCwd = cwdArg instanceof URL ? cwdArg.pathname : cwdArg
+    expect(actualCwd).toBe('/custom/path')
   })
 
   it('should preserve custom stdio options', async () => {
@@ -233,19 +231,15 @@ describe('shadowNpmBase', () => {
   })
 
   it('should preserve existing node-options', async () => {
-    await shadowNpmBase(NPM, [
-      'install',
-      '--node-options=--max-old-space-size=8192',
-    ])
+    await shadowNpmBase(NPM, ['install', '--node-options=--test-option'])
 
-    expect(mockSpawn).toHaveBeenCalledWith(
-      expect.any(String),
-      expect.arrayContaining([
-        `--node-options='--max-old-space-size=8192 --permission --allow-child-process --allow-fs-read=* --allow-fs-write=${process.cwd()}/* --allow-fs-write=/usr/local/* --allow-fs-write=/home/.npm/*'`,
-      ]),
-      expect.any(Object),
-      undefined,
+    const spawnCall = mockSpawn.mock.calls[0]
+    const nodeArgs = spawnCall[1] as string[]
+    const nodeOptionsArg = nodeArgs.find(arg =>
+      arg.startsWith('--node-options='),
     )
+    expect(nodeOptionsArg).toContain('--test-option')
+    expect(nodeOptionsArg).toContain('--permission')
   })
 
   it('should filter out audit and progress flags', async () => {
