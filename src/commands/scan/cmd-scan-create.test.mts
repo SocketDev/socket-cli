@@ -805,4 +805,36 @@ describe('socket scan create', async () => {
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
+
+  cmdit(
+    [
+      'scan',
+      'create',
+      FLAG_ORG,
+      'fakeOrg',
+      'target1',
+      'target2',
+      FLAG_DRY_RUN,
+      '--repo',
+      'xyz',
+      '--branch',
+      'abc',
+      '--reach',
+      FLAG_CONFIG,
+      '{"apiToken":"fakeToken"}',
+    ],
+    'should fail when --reach is used with multiple targets',
+    async cmd => {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      const output = stdout + stderr
+      expect(output).toContain(
+        'Reachability analysis (--reach) only supports a single target',
+      )
+      expect(output).toContain('provide only one target when using --reach')
+      expect(
+        code,
+        'should exit with non-zero code when validation fails',
+      ).not.toBe(0)
+    },
+  )
 })

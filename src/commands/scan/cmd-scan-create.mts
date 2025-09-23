@@ -485,6 +485,12 @@ async function run(
       message: 'Reachability analysis flags require --reach to be enabled',
       fail: 'add --reach flag to use --reach-* options',
     },
+    {
+      nook: true,
+      test: !reach || targets.length === 1,
+      message: 'Reachability analysis (--reach) only supports a single target',
+      fail: 'provide only one target when using --reach',
+    },
   )
   if (!wasValidInput) {
     return

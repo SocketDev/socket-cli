@@ -183,6 +183,12 @@ async function run(
       message: 'The json and markdown flags cannot be both set, pick one',
       fail: 'omit one',
     },
+    {
+      nook: true,
+      test: targets.length === 1,
+      message: 'Reachability analysis only supports a single target',
+      fail: 'provide only one target',
+    },
   )
   if (!wasValidInput) {
     return

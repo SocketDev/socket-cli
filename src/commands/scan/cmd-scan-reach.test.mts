@@ -1001,5 +1001,32 @@ describe('socket scan reach', async () => {
         expect(output.length).toBeGreaterThan(0)
       },
     )
+
+    cmdit(
+      [
+        'scan',
+        'reach',
+        'target1',
+        'target2',
+        FLAG_DRY_RUN,
+        '--org',
+        'fakeOrg',
+        FLAG_CONFIG,
+        '{"apiToken":"fakeToken"}',
+      ],
+      'should fail when multiple targets are provided',
+      async cmd => {
+        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+        const output = stdout + stderr
+        expect(output).toContain(
+          'Reachability analysis only supports a single target',
+        )
+        expect(output).toContain('provide only one target')
+        expect(
+          code,
+          'should exit with non-zero code when validation fails',
+        ).not.toBe(0)
+      },
+    )
   })
 })
