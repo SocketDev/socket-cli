@@ -66,10 +66,9 @@ describe('fetchAuditLog', () => {
       startDate: '2025-01-01',
       endDate: '2025-01-31',
     })
-    expect(mockHandleApi).toHaveBeenCalledWith(
-      expect.any(Promise),
-      { description: 'fetching audit log' },
-    )
+    expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
+      description: 'fetching audit log',
+    })
     expect(result.ok).toBe(true)
   })
 

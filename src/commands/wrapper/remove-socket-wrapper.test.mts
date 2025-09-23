@@ -105,7 +105,9 @@ describe('removeSocketWrapper', () => {
     const mockReadFileSync = vi.mocked(readFileSync) as any
     const mockWriteFileSync = vi.mocked(writeFileSync) as any
 
-    mockReadFileSync.mockReturnValue('alias ll="ls -la"\nexport PATH=$PATH:/usr/local/bin')
+    mockReadFileSync.mockReturnValue(
+      'alias ll="ls -la"\nexport PATH=$PATH:/usr/local/bin',
+    )
 
     removeSocketWrapper('/home/user/.bashrc')
 
@@ -181,7 +183,9 @@ describe('removeSocketWrapper', () => {
 
     removeSocketWrapper('/home/user/.bashrc')
 
-    expect(logger.fail).toHaveBeenCalledWith('There was an error removing the alias.')
+    expect(logger.fail).toHaveBeenCalledWith(
+      'There was an error removing the alias.',
+    )
     expect(logger.error).not.toHaveBeenCalled()
   })
 

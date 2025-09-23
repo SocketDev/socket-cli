@@ -47,10 +47,9 @@ describe('fetchViewRepo', () => {
     const result = await fetchViewRepo('test-org', 'test-repo')
 
     expect(mockSdk.getOrgRepo).toHaveBeenCalledWith('test-org', 'test-repo')
-    expect(mockHandleApi).toHaveBeenCalledWith(
-      expect.any(Promise),
-      { description: 'repository data' },
-    )
+    expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
+      description: 'repository data',
+    })
     expect(result.ok).toBe(true)
   })
 
@@ -149,7 +148,10 @@ describe('fetchViewRepo', () => {
     const result = await fetchViewRepo('private-org', 'secret-project')
 
     expect(result.ok).toBe(true)
-    expect(mockSdk.getOrgRepo).toHaveBeenCalledWith('private-org', 'secret-project')
+    expect(mockSdk.getOrgRepo).toHaveBeenCalledWith(
+      'private-org',
+      'secret-project',
+    )
   })
 
   it('handles special repository names', async () => {

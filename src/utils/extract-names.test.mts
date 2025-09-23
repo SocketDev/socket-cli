@@ -19,10 +19,14 @@ describe('extract-names utilities', () => {
     })
 
     it('replaces illegal characters with underscores', () => {
-      expect(extractName('name@with#special$chars')).toBe('name_with_special_chars')
+      expect(extractName('name@with#special$chars')).toBe(
+        'name_with_special_chars',
+      )
       expect(extractName('name with spaces')).toBe('name_with_spaces')
       expect(extractName('name/with/slashes')).toBe('name_with_slashes')
-      expect(extractName('name\\with\\backslashes')).toBe('name_with_backslashes')
+      expect(extractName('name\\with\\backslashes')).toBe(
+        'name_with_backslashes',
+      )
     })
 
     it('replaces multiple consecutive special chars with single underscore', () => {

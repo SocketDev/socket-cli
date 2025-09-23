@@ -59,10 +59,9 @@ describe('fetchListRepos', () => {
       per_page: '10',
       page: '1',
     })
-    expect(mockHandleApi).toHaveBeenCalledWith(
-      expect.any(Promise),
-      { description: 'list of repositories' },
-    )
+    expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
+      description: 'list of repositories',
+    })
     expect(result.ok).toBe(true)
   })
 
@@ -98,7 +97,9 @@ describe('fetchListRepos', () => {
     const mockSetupSdk = vi.mocked(setupSdk)
 
     const mockSdk = {
-      getOrgRepoList: vi.fn().mockRejectedValue(new Error('Invalid page number')),
+      getOrgRepoList: vi
+        .fn()
+        .mockRejectedValue(new Error('Invalid page number')),
     }
 
     mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })

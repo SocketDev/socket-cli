@@ -1,7 +1,11 @@
 import meow from 'meow'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { emitBanner, getLastSeenCommand, meowOrExit } from './meow-with-subcommands.mts'
+import {
+  emitBanner,
+  getLastSeenCommand,
+  meowOrExit,
+} from './meow-with-subcommands.mts'
 
 // Mock meow.
 vi.mock('meow', () => ({
@@ -11,7 +15,8 @@ vi.mock('meow', () => ({
     if (options?.flags) {
       for (const [key, flag] of Object.entries(options.flags)) {
         // @ts-expect-error - Mock implementation.
-        processedFlags[key] = flag.default !== undefined ? flag.default : undefined
+        processedFlags[key] =
+          flag.default !== undefined ? flag.default : undefined
       }
     }
     return {
@@ -55,7 +60,7 @@ vi.mock('./sdk.mts', () => ({
 
 // Mock terminal link utility.
 vi.mock('./terminal-link.mts', () => ({
-  socketPackageLink: vi.fn((pkg) => pkg),
+  socketPackageLink: vi.fn(pkg => pkg),
 }))
 
 // Mock process.exit.
@@ -194,7 +199,9 @@ describe('meow-with-subcommands', () => {
 
   describe('emitBanner', () => {
     it('emits banner with name and org', async () => {
-      const { logger } = vi.mocked(await import('@socketsecurity/registry/lib/logger'))
+      const { logger } = vi.mocked(
+        await import('@socketsecurity/registry/lib/logger'),
+      )
 
       emitBanner('socket', 'test-org', false)
 
@@ -202,7 +209,9 @@ describe('meow-with-subcommands', () => {
     })
 
     it('emits compact banner when compact mode is true', async () => {
-      const { logger } = vi.mocked(await import('@socketsecurity/registry/lib/logger'))
+      const { logger } = vi.mocked(
+        await import('@socketsecurity/registry/lib/logger'),
+      )
 
       emitBanner('socket', 'test-org', true)
 
@@ -210,7 +219,9 @@ describe('meow-with-subcommands', () => {
     })
 
     it('handles undefined org', async () => {
-      const { logger } = vi.mocked(await import('@socketsecurity/registry/lib/logger'))
+      const { logger } = vi.mocked(
+        await import('@socketsecurity/registry/lib/logger'),
+      )
 
       emitBanner('socket', undefined, false)
 

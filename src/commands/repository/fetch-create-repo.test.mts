@@ -53,10 +53,9 @@ describe('fetchCreateRepo', () => {
       url: 'https://github.com/test-org/my-new-repo',
       description: 'A new repository',
     })
-    expect(mockHandleApi).toHaveBeenCalledWith(
-      expect.any(Promise),
-      { description: 'creating repository' },
-    )
+    expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
+      description: 'creating repository',
+    })
     expect(result.ok).toBe(true)
   })
 
@@ -84,7 +83,9 @@ describe('fetchCreateRepo', () => {
     const mockSetupSdk = vi.mocked(setupSdk)
 
     const mockSdk = {
-      createRepository: vi.fn().mockRejectedValue(new Error('Repository already exists')),
+      createRepository: vi
+        .fn()
+        .mockRejectedValue(new Error('Repository already exists')),
     }
 
     mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
@@ -168,7 +169,10 @@ describe('fetchCreateRepo', () => {
 
     await fetchCreateRepo('config-org', fullConfig)
 
-    expect(mockSdk.createRepository).toHaveBeenCalledWith('config-org', fullConfig)
+    expect(mockSdk.createRepository).toHaveBeenCalledWith(
+      'config-org',
+      fullConfig,
+    )
   })
 
   it('uses null prototype for options', async () => {

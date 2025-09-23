@@ -78,7 +78,9 @@ describe('scanPackagesAndLogAlerts', () => {
     mockGetAlertsMapFromPurls.mockResolvedValue(new Map())
     mockSafeNpmSpecToPurl.mockImplementation((spec: string) => {
       // Return null for non-package arguments like flags
-      if (spec.startsWith('-') || spec === '--') return null
+      if (spec.startsWith('-') || spec === '--') {
+        return null
+      }
       return `pkg:npm/${spec}`
     })
   })
@@ -130,11 +132,14 @@ describe('scanPackagesAndLogAlerts', () => {
 
     expect(mockSafeNpmSpecToPurl).toHaveBeenCalledWith('create-react-app')
     expect(mockSafeNpmSpecToPurl).toHaveBeenCalledWith('my-app')
-    expect(mockGetAlertsMapFromPurls).toHaveBeenCalledWith(['pkg:npm/create-react-app', 'pkg:npm/my-app'], {
-      filter: { actions: ['error', 'monitor', 'warn'] },
-      nothrow: true,
-      spinner: undefined,
-    })
+    expect(mockGetAlertsMapFromPurls).toHaveBeenCalledWith(
+      ['pkg:npm/create-react-app', 'pkg:npm/my-app'],
+      {
+        filter: { actions: ['error', 'monitor', 'warn'] },
+        nothrow: true,
+        spinner: undefined,
+      },
+    )
     expect(result.shouldExit).toBe(false)
   })
 
@@ -201,7 +206,10 @@ describe('scanPackagesAndLogAlerts', () => {
 
   it('should exit with alerts when risks are found', async () => {
     const mockAlertsMap = new Map([
-      ['pkg:npm/malicious-package', [{ action: 'error', description: 'Malicious code' }]],
+      [
+        'pkg:npm/malicious-package',
+        [{ action: 'error', description: 'Malicious code' }],
+      ],
     ])
     mockGetAlertsMapFromPurls.mockResolvedValue(mockAlertsMap)
 
@@ -222,7 +230,9 @@ describe('scanPackagesAndLogAlerts', () => {
       hideAt: 'middle',
       output: process.stderr,
     })
-    expect(mockLogger.error).toHaveBeenCalledWith(expect.stringContaining('Socket npm exiting due to risks'))
+    expect(mockLogger.error).toHaveBeenCalledWith(
+      expect.stringContaining('Socket npm exiting due to risks'),
+    )
     expect(result.shouldExit).toBe(true)
     expect(result.alertsMap).toBe(mockAlertsMap)
     expect(process.exitCode).toBe(1)
@@ -260,6 +270,8 @@ describe('scanPackagesAndLogAlerts', () => {
       viewAllRisks: false,
     }
 
-    await expect(scanPackagesAndLogAlerts(options)).rejects.toThrow('process.exit called')
+    await expect(scanPackagesAndLogAlerts(options)).rejects.toThrow(
+      'process.exit called',
+    )
   })
 })

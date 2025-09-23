@@ -49,10 +49,9 @@ describe('github utilities', () => {
 
       await writeCache('test-key', { data: 'test' })
 
-      expect(mockMkdir).toHaveBeenCalledWith(
-        '/cache/github',
-        { recursive: true },
-      )
+      expect(mockMkdir).toHaveBeenCalledWith('/cache/github', {
+        recursive: true,
+      })
       expect(mockWriteJson).toHaveBeenCalledWith(
         '/cache/github/test-key.json',
         { data: 'test' },
@@ -80,7 +79,9 @@ describe('github utilities', () => {
 
   describe('cacheFetch', () => {
     it('returns cached data if not expired', async () => {
-      const { readJson, safeStatsSync } = await import('@socketsecurity/registry/lib/fs')
+      const { readJson, safeStatsSync } = await import(
+        '@socketsecurity/registry/lib/fs'
+      )
       const mockReadJson = vi.mocked(readJson)
       const mockSafeStatsSync = vi.mocked(safeStatsSync)
 
@@ -98,7 +99,9 @@ describe('github utilities', () => {
     })
 
     it('fetches fresh data if cache is expired', async () => {
-      const { safeStatsSync, writeJson } = await import('@socketsecurity/registry/lib/fs')
+      const { safeStatsSync, writeJson } = await import(
+        '@socketsecurity/registry/lib/fs'
+      )
       const mockSafeStatsSync = vi.mocked(safeStatsSync)
       const mockWriteJson = vi.mocked(writeJson)
 
@@ -117,7 +120,9 @@ describe('github utilities', () => {
     })
 
     it('fetches fresh data if no cache exists', async () => {
-      const { safeStatsSync, writeJson } = await import('@socketsecurity/registry/lib/fs')
+      const { safeStatsSync, writeJson } = await import(
+        '@socketsecurity/registry/lib/fs'
+      )
       const mockSafeStatsSync = vi.mocked(safeStatsSync)
       const mockWriteJson = vi.mocked(writeJson)
 

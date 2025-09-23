@@ -20,7 +20,9 @@ describe('output-formatting utilities', () => {
 
   describe('getFlagApiRequirementsOutput', () => {
     it('formats API requirements with quota and permissions', async () => {
-      const { getRequirements, getRequirementsKey } = vi.mocked(await import('./requirements.mts'))
+      const { getRequirements, getRequirementsKey } = vi.mocked(
+        await import('./requirements.mts'),
+      )
 
       getRequirementsKey.mockReturnValue('scan:create')
       getRequirements.mockReturnValue({
@@ -38,12 +40,14 @@ describe('output-formatting utilities', () => {
     })
 
     it('formats quota only when present', async () => {
-      const { getRequirements, getRequirementsKey } = vi.mocked(await import('./requirements.mts'))
+      const { getRequirements, getRequirementsKey } = vi.mocked(
+        await import('./requirements.mts'),
+      )
 
       getRequirementsKey.mockReturnValue('test')
       getRequirements.mockReturnValue({
         api: {
-          'test': {
+          test: {
             quota: 1,
           },
         },
@@ -54,12 +58,14 @@ describe('output-formatting utilities', () => {
     })
 
     it('formats permissions only when present', async () => {
-      const { getRequirements, getRequirementsKey } = vi.mocked(await import('./requirements.mts'))
+      const { getRequirements, getRequirementsKey } = vi.mocked(
+        await import('./requirements.mts'),
+      )
 
       getRequirementsKey.mockReturnValue('test')
       getRequirements.mockReturnValue({
         api: {
-          'test': {
+          test: {
             permissions: ['execute'],
           },
         },
@@ -70,7 +76,9 @@ describe('output-formatting utilities', () => {
     })
 
     it('returns (none) when no requirements found', async () => {
-      const { getRequirements, getRequirementsKey } = vi.mocked(await import('./requirements.mts'))
+      const { getRequirements, getRequirementsKey } = vi.mocked(
+        await import('./requirements.mts'),
+      )
 
       getRequirementsKey.mockReturnValue('missing')
       getRequirements.mockReturnValue({
@@ -82,12 +90,14 @@ describe('output-formatting utilities', () => {
     })
 
     it('respects custom indent option', async () => {
-      const { getRequirements, getRequirementsKey } = vi.mocked(await import('./requirements.mts'))
+      const { getRequirements, getRequirementsKey } = vi.mocked(
+        await import('./requirements.mts'),
+      )
 
       getRequirementsKey.mockReturnValue('test')
       getRequirements.mockReturnValue({
         api: {
-          'test': {
+          test: {
             quota: 5,
           },
         },

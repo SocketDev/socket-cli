@@ -41,11 +41,13 @@ describe('fetchDeleteRepo', () => {
 
     const result = await fetchDeleteRepo('test-org', 'deleted-repo')
 
-    expect(mockSdk.deleteOrgRepo).toHaveBeenCalledWith('test-org', 'deleted-repo')
-    expect(mockHandleApi).toHaveBeenCalledWith(
-      expect.any(Promise),
-      { description: 'to delete a repository' },
+    expect(mockSdk.deleteOrgRepo).toHaveBeenCalledWith(
+      'test-org',
+      'deleted-repo',
     )
+    expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
+      description: 'to delete a repository',
+    })
     expect(result.ok).toBe(true)
   })
 
@@ -73,7 +75,9 @@ describe('fetchDeleteRepo', () => {
     const mockSetupSdk = vi.mocked(setupSdk)
 
     const mockSdk = {
-      deleteOrgRepo: vi.fn().mockRejectedValue(new Error('Repository not found')),
+      deleteOrgRepo: vi
+        .fn()
+        .mockRejectedValue(new Error('Repository not found')),
     }
 
     mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
@@ -119,7 +123,9 @@ describe('fetchDeleteRepo', () => {
     const mockSetupSdk = vi.mocked(setupSdk)
 
     const mockSdk = {
-      deleteOrgRepo: vi.fn().mockRejectedValue(new Error('Insufficient permissions')),
+      deleteOrgRepo: vi
+        .fn()
+        .mockRejectedValue(new Error('Insufficient permissions')),
     }
 
     mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })

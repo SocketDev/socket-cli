@@ -68,10 +68,9 @@ describe('fetchThreatFeed', () => {
       severity: 'high',
       type: 'malware',
     })
-    expect(mockHandleApi).toHaveBeenCalledWith(
-      expect.any(Promise),
-      { description: 'fetching threat feed' },
-    )
+    expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
+      description: 'fetching threat feed',
+    })
     expect(result.ok).toBe(true)
   })
 
@@ -99,7 +98,9 @@ describe('fetchThreatFeed', () => {
     const mockSetupSdk = vi.mocked(setupSdk)
 
     const mockSdk = {
-      getThreatFeed: vi.fn().mockRejectedValue(new Error('Service unavailable')),
+      getThreatFeed: vi
+        .fn()
+        .mockRejectedValue(new Error('Service unavailable')),
     }
 
     mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })

@@ -8,7 +8,7 @@ describe('objects utilities', () => {
       const myEnum = createEnum({
         RED: 'red',
         GREEN: 'green',
-        BLUE: 'blue'
+        BLUE: 'blue',
       })
 
       expect(myEnum.RED).toBe('red')
@@ -20,21 +20,21 @@ describe('objects utilities', () => {
     it('prevents modification of enum', () => {
       const myEnum = createEnum({
         VALUE1: 1,
-        VALUE2: 2
+        VALUE2: 2,
       })
 
       expect(() => {
-        (myEnum as any).VALUE3 = 3
+        ;(myEnum as any).VALUE3 = 3
       }).toThrow()
 
       expect(() => {
-        (myEnum as any).VALUE1 = 10
+        ;(myEnum as any).VALUE1 = 10
       }).toThrow()
     })
 
     it('removes prototype chain', () => {
       const myEnum = createEnum({
-        KEY: 'value'
+        KEY: 'value',
       })
 
       expect(Object.getPrototypeOf(myEnum)).toBe(null)
@@ -52,7 +52,7 @@ describe('objects utilities', () => {
       const numEnum = createEnum({
         ZERO: 0,
         ONE: 1,
-        NEGATIVE: -1
+        NEGATIVE: -1,
       })
 
       expect(numEnum.ZERO).toBe(0)
@@ -66,7 +66,7 @@ describe('objects utilities', () => {
         NUMBER: 42,
         BOOLEAN: true,
         NULL: null,
-        UNDEFINED: undefined
+        UNDEFINED: undefined,
       })
 
       expect(mixedEnum.STRING).toBe('text')
@@ -83,7 +83,7 @@ describe('objects utilities', () => {
         a: 1,
         b: 2,
         c: 3,
-        d: 4
+        d: 4,
       }
 
       const result = pick(obj, ['a', 'c'])
@@ -93,7 +93,7 @@ describe('objects utilities', () => {
     it('handles empty keys array', () => {
       const obj = {
         a: 1,
-        b: 2
+        b: 2,
       }
 
       const result = pick(obj, [])
@@ -103,7 +103,7 @@ describe('objects utilities', () => {
     it('ignores non-existent keys', () => {
       const obj = {
         a: 1,
-        b: 2
+        b: 2,
       }
 
       const result = pick(obj, ['a', 'c' as keyof typeof obj])
@@ -114,7 +114,7 @@ describe('objects utilities', () => {
       const obj = {
         x: 'value1',
         y: 'value2',
-        z: 'value3'
+        z: 'value3',
       }
 
       const keys = ['x', 'z'] as const
@@ -127,7 +127,7 @@ describe('objects utilities', () => {
         a: undefined,
         b: null,
         c: 0,
-        d: ''
+        d: '',
       }
 
       const result = pick(obj, ['a', 'b', 'c'])
@@ -139,13 +139,13 @@ describe('objects utilities', () => {
         name: 'test',
         data: { nested: true },
         array: [1, 2, 3],
-        func: () => 'result'
+        func: () => 'result',
       }
 
       const result = pick(obj, ['name', 'data'])
       expect(result).toEqual({
         name: 'test',
-        data: { nested: true }
+        data: { nested: true },
       })
       expect(result.data).toBe(obj.data) // Same reference.
     })
@@ -153,7 +153,7 @@ describe('objects utilities', () => {
     it('returns new object', () => {
       const obj = {
         a: 1,
-        b: 2
+        b: 2,
       }
 
       const result = pick(obj, ['a', 'b'])

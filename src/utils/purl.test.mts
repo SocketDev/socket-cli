@@ -1,15 +1,13 @@
 import { describe, expect, it, vi } from 'vitest'
 import { PackageURL } from '@socketregistry/packageurl-js'
 
-import {
-  createPurlObject,
-  getPurlObject,
-  normalizePurl,
-} from './purl.mts'
+import { createPurlObject, getPurlObject, normalizePurl } from './purl.mts'
 
 // Mock dependencies.
 vi.mock('@socketsecurity/registry/lib/objects', () => ({
-  isObjectObject: vi.fn((obj) => obj !== null && typeof obj === 'object' && !Array.isArray(obj)),
+  isObjectObject: vi.fn(
+    obj => obj !== null && typeof obj === 'object' && !Array.isArray(obj),
+  ),
 }))
 
 describe('purl utilities', () => {
@@ -19,7 +17,9 @@ describe('purl utilities', () => {
     })
 
     it('keeps pkg: prefix when already present', () => {
-      expect(normalizePurl('pkg:npm/lodash@4.17.21')).toBe('pkg:npm/lodash@4.17.21')
+      expect(normalizePurl('pkg:npm/lodash@4.17.21')).toBe(
+        'pkg:npm/lodash@4.17.21',
+      )
     })
 
     it('handles empty string', () => {

@@ -53,7 +53,7 @@ describe('handleListRepos', () => {
       0,
       'name',
       Infinity,
-      'asc'
+      'asc',
     )
   })
 
@@ -97,7 +97,7 @@ describe('handleListRepos', () => {
       2,
       'updated',
       10,
-      'desc'
+      'desc',
     )
   })
 
@@ -128,7 +128,7 @@ describe('handleListRepos', () => {
       0,
       '',
       0,
-      'asc'
+      'asc',
     )
   })
 
@@ -162,7 +162,7 @@ describe('handleListRepos', () => {
       null,
       'name',
       10,
-      'asc'
+      'asc',
     )
   })
 
@@ -193,7 +193,7 @@ describe('handleListRepos', () => {
       0,
       'created',
       Infinity,
-      'desc'
+      'desc',
     )
   })
 
@@ -220,7 +220,7 @@ describe('handleListRepos', () => {
       })
 
       expect(fetchListRepos).toHaveBeenCalledWith(
-        expect.objectContaining({ sort })
+        expect.objectContaining({ sort }),
       )
     }
   })
@@ -246,7 +246,7 @@ describe('handleListRepos', () => {
     })
 
     expect(fetchListRepos).toHaveBeenCalledWith(
-      expect.objectContaining({ perPage: 100 })
+      expect.objectContaining({ perPage: 100 }),
     )
     expect(outputListRepos).toHaveBeenCalledWith(
       mockData,
@@ -255,7 +255,7 @@ describe('handleListRepos', () => {
       null,
       'name',
       100,
-      'asc'
+      'asc',
     )
   })
 })

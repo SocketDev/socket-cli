@@ -13,11 +13,24 @@ import { existsSync, promises as fs } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-// Minimal constants.
-const SOCKET_HOME = path.join(os.homedir(), '.socket')
-const SOCKET_CLI_DIR = path.join(SOCKET_HOME, 'cli')
-const SOCKET_CLI_PACKAGE = '@socketsecurity/cli'
-const NPM_REGISTRY = 'https://registry.npmjs.org'
+// Simple path normalization helper for Windows compatibility.
+function normalizePath(filepath: string): string {
+  return filepath.split(path.sep).join('/')
+}
+
+// Configurable constants with environment variable overrides.
+const SOCKET_HOME = normalizePath(
+  process.env['SOCKET_HOME'] || path.join(os.homedir(), '.socket'),
+)
+const SOCKET_CLI_DIR = normalizePath(
+  process.env['SOCKET_CLI_DIR'] || path.join(SOCKET_HOME, 'cli'),
+)
+const SOCKET_CLI_PACKAGE =
+  process.env['SOCKET_CLI_PACKAGE'] || '@socketsecurity/cli'
+const NPM_REGISTRY =
+  process.env['SOCKET_NPM_REGISTRY'] ||
+  process.env['NPM_REGISTRY'] ||
+  'https://registry.npmjs.org'
 
 async function getLatestVersion(): Promise<string> {
   const response = await fetch(`${NPM_REGISTRY}/${SOCKET_CLI_PACKAGE}/latest`)
@@ -38,15 +51,17 @@ async function downloadPackage(version: string): Promise<void> {
     throw new Error(`Failed to download package: ${response.statusText}`)
   }
 
-  const tempDir = path.join(
-    SOCKET_HOME,
-    'tmp',
-    crypto.createHash('sha256').update(`${version}`).digest('hex'),
+  const tempDir = normalizePath(
+    path.join(
+      SOCKET_HOME,
+      'tmp',
+      crypto.createHash('sha256').update(`${version}`).digest('hex'),
+    ),
   )
   await fs.mkdir(tempDir, { recursive: true })
 
   try {
-    const tarballPath = path.join(tempDir, 'package.tgz')
+    const tarballPath = normalizePath(path.join(tempDir, 'package.tgz'))
     const buffer = Buffer.from(await response.arrayBuffer())
     await fs.writeFile(tarballPath, buffer)
 
@@ -60,7 +75,7 @@ async function downloadPackage(version: string): Promise<void> {
       )
     })
 
-    const packageDir = path.join(tempDir, 'package')
+    const packageDir = normalizePath(path.join(tempDir, 'package'))
 
     if (existsSync(SOCKET_CLI_DIR)) {
       await fs.rm(SOCKET_CLI_DIR, { recursive: true, force: true })
@@ -91,7 +106,9 @@ async function downloadPackage(version: string): Promise<void> {
 }
 
 async function getInstalledVersion(): Promise<string | null> {
-  const packageJsonPath = path.join(SOCKET_CLI_DIR, 'package.json')
+  const packageJsonPath = normalizePath(
+    path.join(SOCKET_CLI_DIR, 'package.json'),
+  )
 
   if (!existsSync(packageJsonPath)) {
     return null
@@ -119,7 +136,9 @@ async function main(): Promise<void> {
     }
 
     // Find CLI entry point.
-    const packageJsonPath = path.join(SOCKET_CLI_DIR, 'package.json')
+    const packageJsonPath = normalizePath(
+      path.join(SOCKET_CLI_DIR, 'package.json'),
+    )
     const content = await fs.readFile(packageJsonPath, 'utf8')
     const packageJson = JSON.parse(content) as {
       bin?: Record<string, string> | string
@@ -127,11 +146,13 @@ async function main(): Promise<void> {
 
     let cliPath: string
     if (typeof packageJson.bin === 'string') {
-      cliPath = path.join(SOCKET_CLI_DIR, packageJson.bin)
+      cliPath = normalizePath(path.join(SOCKET_CLI_DIR, packageJson.bin))
     } else if (packageJson.bin?.['socket']) {
-      cliPath = path.join(SOCKET_CLI_DIR, packageJson.bin['socket'])
+      cliPath = normalizePath(
+        path.join(SOCKET_CLI_DIR, packageJson.bin['socket']),
+      )
     } else {
-      cliPath = path.join(SOCKET_CLI_DIR, 'dist', 'cli.js')
+      cliPath = normalizePath(path.join(SOCKET_CLI_DIR, 'dist', 'cli.js'))
     }
 
     // Forward all arguments to the CLI.

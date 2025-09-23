@@ -3,7 +3,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { spawnCdxgenDlx } from './dlx.mts'
 
 // Setup base mocks.
-vi.mock('./dlx.mts', async (importOriginal) => {
+vi.mock('./dlx.mts', async importOriginal => {
   const actual = await importOriginal<typeof import('./dlx.mts')>()
   return {
     ...actual,
@@ -66,10 +66,14 @@ describe('spawnCdxgenDlx', () => {
     const { spawnDlx } = vi.mocked(await import('./dlx.mts'))
 
     const sbomArgs = [
-      '--type', 'npm',
-      '--output', '/tmp/sbom.json',
-      '--spec-version', '1.4',
-      '--project-name', 'test-project',
+      '--type',
+      'npm',
+      '--output',
+      '/tmp/sbom.json',
+      '--spec-version',
+      '1.4',
+      '--project-name',
+      'test-project',
     ]
 
     await spawnCdxgenDlx(sbomArgs)

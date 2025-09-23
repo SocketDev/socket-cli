@@ -38,10 +38,9 @@ describe('fetchDefaultOrgSlug', () => {
     const result = await fetchDefaultOrgSlug()
 
     expect(mockSdk.getDefaultOrgSlug).toHaveBeenCalled()
-    expect(mockHandleApi).toHaveBeenCalledWith(
-      expect.any(Promise),
-      { description: 'fetching default organization' },
-    )
+    expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
+      description: 'fetching default organization',
+    })
     expect(result.ok).toBe(true)
     expect(result.data).toBe('my-default-org')
   })

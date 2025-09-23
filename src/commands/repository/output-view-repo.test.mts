@@ -18,7 +18,7 @@ vi.mock('../../utils/fail-msg-with-badge.mts', () => ({
 }))
 
 vi.mock('../../utils/serialize-result-json.mts', () => ({
-  serializeResultJson: vi.fn((result) => JSON.stringify(result)),
+  serializeResultJson: vi.fn(result => JSON.stringify(result)),
 }))
 
 vi.mock('chalk-table', () => ({
@@ -27,7 +27,7 @@ vi.mock('chalk-table', () => ({
 
 vi.mock('yoctocolors-cjs', () => ({
   default: {
-    magenta: vi.fn((text) => text),
+    magenta: vi.fn(text => text),
   },
 }))
 
@@ -39,7 +39,9 @@ describe('outputViewRepo', () => {
 
   it('outputs JSON format for successful result', async () => {
     const { logger } = await import('@socketsecurity/registry/lib/logger')
-    const { serializeResultJson } = await import('../../utils/serialize-result-json.mts')
+    const { serializeResultJson } = await import(
+      '../../utils/serialize-result-json.mts'
+    )
     const mockLog = vi.mocked(logger.log)
     const mockSerialize = vi.mocked(serializeResultJson)
 
@@ -122,7 +124,9 @@ describe('outputViewRepo', () => {
 
   it('outputs error in text format', async () => {
     const { logger } = await import('@socketsecurity/registry/lib/logger')
-    const { failMsgWithBadge } = await import('../../utils/fail-msg-with-badge.mts')
+    const { failMsgWithBadge } = await import(
+      '../../utils/fail-msg-with-badge.mts'
+    )
     const mockFail = vi.mocked(logger.fail)
     const mockFailMsg = vi.mocked(failMsgWithBadge)
 
@@ -135,7 +139,10 @@ describe('outputViewRepo', () => {
 
     await outputViewRepo(result, 'text')
 
-    expect(mockFailMsg).toHaveBeenCalledWith('Repository not found', 'Not found error')
+    expect(mockFailMsg).toHaveBeenCalledWith(
+      'Repository not found',
+      'Not found error',
+    )
     expect(mockFail).toHaveBeenCalled()
     expect(process.exitCode).toBe(1)
   })
@@ -196,8 +203,10 @@ describe('outputViewRepo', () => {
     const repoData = {
       archived: false,
       created_at: '2024-12-01T09:15:22Z',
-      default_branch: 'feature/very-long-branch-name-that-exceeds-normal-length',
-      homepage: 'https://very-long-domain-name-that-might-cause-display-issues.example.com/path',
+      default_branch:
+        'feature/very-long-branch-name-that-exceeds-normal-length',
+      homepage:
+        'https://very-long-domain-name-that-might-cause-display-issues.example.com/path',
       id: 999_999,
       name: 'repository-with-a-very-long-name-that-might-cause-table-formatting-issues',
       visibility: 'internal',

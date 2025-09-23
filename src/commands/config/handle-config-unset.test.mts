@@ -32,7 +32,7 @@ describe('handleConfigUnset', () => {
     expect(updateConfigValue).toHaveBeenCalledWith('apiToken', undefined)
     expect(outputConfigUnset).toHaveBeenCalledWith(
       { ok: true, value: undefined },
-      'json'
+      'json',
     )
   })
 
@@ -52,10 +52,7 @@ describe('handleConfigUnset', () => {
     })
 
     expect(updateConfigValue).toHaveBeenCalledWith('org', undefined)
-    expect(outputConfigUnset).toHaveBeenCalledWith(
-      { ok: false, error },
-      'text'
-    )
+    expect(outputConfigUnset).toHaveBeenCalledWith({ ok: false, error }, 'text')
   })
 
   it('handles markdown output', async () => {
@@ -75,7 +72,7 @@ describe('handleConfigUnset', () => {
     expect(updateConfigValue).toHaveBeenCalledWith('repoName', undefined)
     expect(outputConfigUnset).toHaveBeenCalledWith(
       { ok: true, value: undefined },
-      'markdown'
+      'markdown',
     )
   })
 
@@ -100,7 +97,7 @@ describe('handleConfigUnset', () => {
       expect(updateConfigValue).toHaveBeenCalledWith(key, undefined)
       expect(outputConfigUnset).toHaveBeenCalledWith(
         { ok: true, value: undefined },
-        'json'
+        'json',
       )
     }
   })
@@ -121,7 +118,7 @@ describe('handleConfigUnset', () => {
 
     expect(outputConfigUnset).toHaveBeenCalledWith(
       { ok: true, value: undefined },
-      'text'
+      'text',
     )
   })
 
@@ -143,7 +140,7 @@ describe('handleConfigUnset', () => {
     expect(updateConfigValue).toHaveBeenCalledWith('org', undefined)
     expect(outputConfigUnset).toHaveBeenCalledWith(
       { ok: true, value: undefined },
-      'json'
+      'json',
     )
   })
 })

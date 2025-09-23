@@ -48,7 +48,9 @@ describe('socket-json utilities', () => {
     it('returns default socket.json structure', () => {
       const result = getDefaultSocketJson()
       expect(result.version).toBe(1)
-      expect(result[' _____         _       _     ']).toContain(SOCKET_WEBSITE_URL)
+      expect(result[' _____         _       _     ']).toContain(
+        SOCKET_WEBSITE_URL,
+      )
       expect(Object.keys(result)).toContain('|   __|___ ___| |_ ___| |_   ')
       expect(Object.keys(result)).toContain("|__   | . |  _| '_| -_|  _|  ")
       expect(Object.keys(result)).toContain('|_____|___|___|_,_|___|_|.dev')
@@ -98,7 +100,10 @@ describe('socket-json utilities', () => {
 
       const result = await findSocketJsonUp('/test/dir')
       expect(result).toBe('/path/to/socket.json')
-      expect(findUp).toHaveBeenCalledWith(SOCKET_JSON, { onlyFiles: true, cwd: '/test/dir' })
+      expect(findUp).toHaveBeenCalledWith(SOCKET_JSON, {
+        onlyFiles: true,
+        cwd: '/test/dir',
+      })
     })
 
     it('returns undefined when socket.json not found', async () => {
@@ -303,7 +308,7 @@ describe('socket-json utilities', () => {
       expect(fs.writeFile).toHaveBeenCalledWith(
         path.join('/test/dir', SOCKET_JSON),
         expect.stringContaining('"version": 1'),
-        'utf8'
+        'utf8',
       )
     })
 
@@ -326,7 +331,7 @@ describe('socket-json utilities', () => {
       expect(fs.writeFile).toHaveBeenCalledWith(
         expect.any(String),
         expect.stringMatching(/\n$/),
-        'utf8'
+        'utf8',
       )
     })
   })

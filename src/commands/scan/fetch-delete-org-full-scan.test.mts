@@ -40,11 +40,13 @@ describe('fetchDeleteOrgFullScan', () => {
 
     const result = await fetchDeleteOrgFullScan('test-org', 'scan-123')
 
-    expect(mockSdk.deleteOrgFullScan).toHaveBeenCalledWith('test-org', 'scan-123')
-    expect(mockHandleApi).toHaveBeenCalledWith(
-      expect.any(Promise),
-      { description: 'to delete a scan' },
+    expect(mockSdk.deleteOrgFullScan).toHaveBeenCalledWith(
+      'test-org',
+      'scan-123',
     )
+    expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
+      description: 'to delete a scan',
+    })
     expect(result.ok).toBe(true)
   })
 

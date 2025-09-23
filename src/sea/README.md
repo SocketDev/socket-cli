@@ -67,6 +67,43 @@ First run downloads CLI from npm. Subsequent runs use cached version.
 2. **Subsequent Runs**: Uses cached CLI
 3. **Requirements**: System Node.js required to run downloaded CLI
 
+## Publishing
+
+### NPM Package
+
+The `socket` npm package provides a thin wrapper that downloads platform-specific binaries:
+
+```bash
+# Publish to npm (builds binaries and uploads to GitHub first)
+pnpm publish:sea
+
+# Publish only to npm (assumes GitHub release exists)
+pnpm publish:sea:npm --version=1.0.0
+```
+
+### GitHub Releases
+
+Binaries are attached to GitHub releases for direct download:
+
+```bash
+# Upload binaries to GitHub release
+pnpm publish:sea:github --version=1.0.0
+```
+
+### Distribution
+
+Three distribution methods:
+1. **npm package (`socket`)** - Downloads binary on install
+2. **npm package (`@socketsecurity/cli`)** - Full source distribution
+3. **GitHub releases** - Direct binary downloads
+
+### Workflow
+
+The GitHub workflow automatically:
+1. Builds binaries for all platforms
+2. Uploads to GitHub release
+3. Publishes `socket` package to npm
+
 ## Notes
 
 - Small binary contains only bootstrap code

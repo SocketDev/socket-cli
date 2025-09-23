@@ -46,7 +46,9 @@ describe('npm/paths', () => {
 
     // Default mock implementations.
     mockGetNpmRequire.mockReturnValue(mockRequire)
-    mockRequire.resolve.mockReturnValue('/usr/lib/node_modules/@npmcli/arborist/lib/arborist/index.js')
+    mockRequire.resolve.mockReturnValue(
+      '/usr/lib/node_modules/@npmcli/arborist/lib/arborist/index.js',
+    )
     mockNormalizePath.mockImplementation((p: string) => p.replace(/\\/g, '/'))
   })
 
@@ -56,7 +58,9 @@ describe('npm/paths', () => {
 
       expect(mockGetNpmRequire).toHaveBeenCalled()
       expect(mockRequire.resolve).toHaveBeenCalledWith('@npmcli/arborist')
-      expect(mockNormalizePath).toHaveBeenCalledWith('/usr/lib/node_modules/@npmcli/arborist/lib/arborist/index.js')
+      expect(mockNormalizePath).toHaveBeenCalledWith(
+        '/usr/lib/node_modules/@npmcli/arborist/lib/arborist/index.js',
+      )
       expect(result).toBe('/usr/lib/node_modules/@npmcli/arborist')
     })
 
@@ -70,7 +74,9 @@ describe('npm/paths', () => {
     })
 
     it('should handle complex paths with nested package structure', () => {
-      mockRequire.resolve.mockReturnValue('/complex/path/node_modules/@npmcli/arborist/nested/lib/index.js')
+      mockRequire.resolve.mockReturnValue(
+        '/complex/path/node_modules/@npmcli/arborist/nested/lib/index.js',
+      )
 
       const result = getArboristPackagePath()
 
@@ -90,14 +96,22 @@ describe('npm/paths', () => {
         }
       })
 
-      mockRequire.resolve.mockReturnValue('C:\\Program Files\\node_modules\\@npmcli\\arborist\\lib\\index.js')
-      mockNormalizePath.mockReturnValue('C:/Program Files/node_modules/@npmcli/arborist/lib/index.js')
+      mockRequire.resolve.mockReturnValue(
+        'C:\\Program Files\\node_modules\\@npmcli\\arborist\\lib\\index.js',
+      )
+      mockNormalizePath.mockReturnValue(
+        'C:/Program Files/node_modules/@npmcli/arborist/lib/index.js',
+      )
 
       // Re-import the module to get updated WIN32 value.
       return import('./paths.mts').then(module => {
         const result = module.getArboristPackagePath()
-        expect(path.normalize).toHaveBeenCalledWith('C:/Program Files/node_modules/@npmcli/arborist')
-        expect(result).toBe(path.normalize('C:/Program Files/node_modules/@npmcli/arborist'))
+        expect(path.normalize).toHaveBeenCalledWith(
+          'C:/Program Files/node_modules/@npmcli/arborist',
+        )
+        expect(result).toBe(
+          path.normalize('C:/Program Files/node_modules/@npmcli/arborist'),
+        )
       })
     })
   })
@@ -106,7 +120,9 @@ describe('npm/paths', () => {
     it('should return arborist class path', () => {
       const result = getArboristClassPath()
 
-      expect(result).toBe('/usr/lib/node_modules/@npmcli/arborist/lib/arborist/index.js')
+      expect(result).toBe(
+        '/usr/lib/node_modules/@npmcli/arborist/lib/arborist/index.js',
+      )
     })
 
     it('should cache the result on subsequent calls', () => {
@@ -151,7 +167,9 @@ describe('npm/paths', () => {
     it('should return arborist override set class path', () => {
       const result = getArboristOverrideSetClassPath()
 
-      expect(result).toBe('/usr/lib/node_modules/@npmcli/arborist/lib/override-set.js')
+      expect(result).toBe(
+        '/usr/lib/node_modules/@npmcli/arborist/lib/override-set.js',
+      )
     })
 
     it('should cache the result on subsequent calls', () => {

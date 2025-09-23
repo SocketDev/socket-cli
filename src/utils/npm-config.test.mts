@@ -46,50 +46,50 @@ describe('npm-config utilities', () => {
 
     it('uses custom cwd option', async () => {
       const NpmConfig = (await import('@npmcli/config')).default
-      
+
       await getNpmConfig({ cwd: '/custom/path' })
-      
+
       expect(NpmConfig).toHaveBeenCalledWith(
         expect.objectContaining({
           cwd: '/custom/path',
-        })
+        }),
       )
     })
 
     it('uses custom env option', async () => {
       const NpmConfig = (await import('@npmcli/config')).default
       const customEnv = { NODE_ENV: 'test', FOO: 'bar' }
-      
+
       await getNpmConfig({ env: customEnv })
-      
+
       expect(NpmConfig).toHaveBeenCalledWith(
         expect.objectContaining({
           env: customEnv,
-        })
+        }),
       )
     })
 
     it('uses custom npmPath option', async () => {
       const NpmConfig = (await import('@npmcli/config')).default
-      
+
       await getNpmConfig({ npmPath: '/custom/npm/path' })
-      
+
       expect(NpmConfig).toHaveBeenCalledWith(
         expect.objectContaining({
           npmPath: '/custom/npm/path',
-        })
+        }),
       )
     })
 
     it('uses custom platform option', async () => {
       const NpmConfig = (await import('@npmcli/config')).default
-      
+
       await getNpmConfig({ platform: 'win32' })
-      
+
       expect(NpmConfig).toHaveBeenCalledWith(
         expect.objectContaining({
           platform: 'win32',
-        })
+        }),
       )
     })
 
@@ -111,31 +111,34 @@ describe('npm-config utilities', () => {
 
     it('handles execPath option', async () => {
       const NpmConfig = (await import('@npmcli/config')).default
-      
+
       await getNpmConfig({ execPath: '/usr/bin/node' })
-      
+
       expect(NpmConfig).toHaveBeenCalledWith(
         expect.objectContaining({
           execPath: '/usr/bin/node',
-        })
+        }),
       )
     })
 
     it('calls config.load()', async () => {
       const mockLoad = vi.fn().mockResolvedValue(undefined)
-      vi.mocked((await import('@npmcli/config')).default).mockImplementation(() => ({
-        load: mockLoad,
-        flat: { test: 'value' },
-      }) as any)
-      
+      vi.mocked((await import('@npmcli/config')).default).mockImplementation(
+        () =>
+          ({
+            load: mockLoad,
+            flat: { test: 'value' },
+          }) as any,
+      )
+
       await getNpmConfig()
-      
+
       expect(mockLoad).toHaveBeenCalled()
     })
 
     it('returns flattened config with null prototype', async () => {
       const result = await getNpmConfig()
-      
+
       expect(Object.getPrototypeOf(result)).toBe(null)
     })
 
@@ -150,7 +153,7 @@ describe('npm-config utilities', () => {
         npmVersion: '9.0.0',
         platform: 'linux' as NodeJS.Platform,
       }
-      
+
       const result = await getNpmConfig(options)
       expect(result).toBeDefined()
     })

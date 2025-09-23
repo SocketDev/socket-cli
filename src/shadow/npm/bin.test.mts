@@ -41,7 +41,12 @@ describe('shadowNpmBin', () => {
     const args = ['install', 'lodash']
     const result = await shadowNpmBin(args)
 
-    expect(mockShadowNpmBase).toHaveBeenCalledWith(NPM, args, undefined, undefined)
+    expect(mockShadowNpmBase).toHaveBeenCalledWith(
+      NPM,
+      args,
+      undefined,
+      undefined,
+    )
     expect(result).toBe(mockSpawnResult)
   })
 
@@ -67,7 +72,12 @@ describe('shadowNpmBin', () => {
     try {
       await shadowNpmBin()
 
-      expect(mockShadowNpmBase).toHaveBeenCalledWith(NPM, ['install', 'react'], undefined, undefined)
+      expect(mockShadowNpmBase).toHaveBeenCalledWith(
+        NPM,
+        ['install', 'react'],
+        undefined,
+        undefined,
+      )
     } finally {
       process.argv = originalArgv
     }
@@ -77,21 +87,36 @@ describe('shadowNpmBin', () => {
     const args: string[] = []
     await shadowNpmBin(args)
 
-    expect(mockShadowNpmBase).toHaveBeenCalledWith(NPM, args, undefined, undefined)
+    expect(mockShadowNpmBase).toHaveBeenCalledWith(
+      NPM,
+      args,
+      undefined,
+      undefined,
+    )
   })
 
   it('should pass readonly args array correctly', async () => {
     const args: readonly string[] = ['install', 'typescript'] as const
     await shadowNpmBin(args)
 
-    expect(mockShadowNpmBase).toHaveBeenCalledWith(NPM, args, undefined, undefined)
+    expect(mockShadowNpmBase).toHaveBeenCalledWith(
+      NPM,
+      args,
+      undefined,
+      undefined,
+    )
   })
 
   it('should handle complex npm commands', async () => {
     const args = ['install', 'lodash@4.17.21', '--save-dev', '--no-audit']
     await shadowNpmBin(args)
 
-    expect(mockShadowNpmBase).toHaveBeenCalledWith(NPM, args, undefined, undefined)
+    expect(mockShadowNpmBase).toHaveBeenCalledWith(
+      NPM,
+      args,
+      undefined,
+      undefined,
+    )
   })
 
   it('should preserve spawn result structure', async () => {
@@ -106,6 +131,8 @@ describe('shadowNpmBin', () => {
     const error = new Error('Shadow npm base failed')
     mockShadowNpmBase.mockRejectedValue(error)
 
-    await expect(shadowNpmBin(['install'])).rejects.toThrow('Shadow npm base failed')
+    await expect(shadowNpmBin(['install'])).rejects.toThrow(
+      'Shadow npm base failed',
+    )
   })
 })

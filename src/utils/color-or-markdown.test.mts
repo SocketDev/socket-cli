@@ -14,7 +14,12 @@ describe('colorOrMarkdown', () => {
   })
 
   it('returns markdown text for markdown format', () => {
-    const result = colorOrMarkdown('markdown', 'plain', 'red text', '**markdown**')
+    const result = colorOrMarkdown(
+      'markdown',
+      'plain',
+      'red text',
+      '**markdown**',
+    )
     expect(result).toBe('**markdown**')
   })
 

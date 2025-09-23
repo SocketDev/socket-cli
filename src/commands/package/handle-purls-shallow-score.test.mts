@@ -20,8 +20,12 @@ describe('handlePurlsShallowScore', () => {
   })
 
   it('fetches and outputs shallow scores successfully', async () => {
-    const { fetchPurlsShallowScore } = await import('./fetch-purls-shallow-score.mts')
-    const { outputPurlsShallowScore } = await import('./output-purls-shallow-score.mts')
+    const { fetchPurlsShallowScore } = await import(
+      './fetch-purls-shallow-score.mts'
+    )
+    const { outputPurlsShallowScore } = await import(
+      './output-purls-shallow-score.mts'
+    )
 
     const mockData = {
       ok: true,
@@ -42,13 +46,17 @@ describe('handlePurlsShallowScore', () => {
     expect(outputPurlsShallowScore).toHaveBeenCalledWith(
       purls,
       mockData,
-      'json'
+      'json',
     )
   })
 
   it('handles fetch failure', async () => {
-    const { fetchPurlsShallowScore } = await import('./fetch-purls-shallow-score.mts')
-    const { outputPurlsShallowScore } = await import('./output-purls-shallow-score.mts')
+    const { fetchPurlsShallowScore } = await import(
+      './fetch-purls-shallow-score.mts'
+    )
+    const { outputPurlsShallowScore } = await import(
+      './output-purls-shallow-score.mts'
+    )
 
     const mockError = {
       ok: false,
@@ -66,13 +74,17 @@ describe('handlePurlsShallowScore', () => {
     expect(outputPurlsShallowScore).toHaveBeenCalledWith(
       purls,
       mockError,
-      'text'
+      'text',
     )
   })
 
   it('handles markdown output', async () => {
-    const { fetchPurlsShallowScore } = await import('./fetch-purls-shallow-score.mts')
-    const { outputPurlsShallowScore } = await import('./output-purls-shallow-score.mts')
+    const { fetchPurlsShallowScore } = await import(
+      './fetch-purls-shallow-score.mts'
+    )
+    const { outputPurlsShallowScore } = await import(
+      './output-purls-shallow-score.mts'
+    )
 
     const mockData = {
       ok: true,
@@ -89,13 +101,17 @@ describe('handlePurlsShallowScore', () => {
     expect(outputPurlsShallowScore).toHaveBeenCalledWith(
       purls,
       mockData,
-      'markdown'
+      'markdown',
     )
   })
 
   it('handles empty purls array', async () => {
-    const { fetchPurlsShallowScore } = await import('./fetch-purls-shallow-score.mts')
-    const { outputPurlsShallowScore } = await import('./output-purls-shallow-score.mts')
+    const { fetchPurlsShallowScore } = await import(
+      './fetch-purls-shallow-score.mts'
+    )
+    const { outputPurlsShallowScore } = await import(
+      './output-purls-shallow-score.mts'
+    )
 
     const mockData = {
       ok: true,
@@ -113,8 +129,12 @@ describe('handlePurlsShallowScore', () => {
   })
 
   it('logs debug information', async () => {
-    const { debugDir, debugFn } = await import('@socketsecurity/registry/lib/debug')
-    const { fetchPurlsShallowScore } = await import('./fetch-purls-shallow-score.mts')
+    const { debugDir, debugFn } = await import(
+      '@socketsecurity/registry/lib/debug'
+    )
+    const { fetchPurlsShallowScore } = await import(
+      './fetch-purls-shallow-score.mts'
+    )
 
     const mockData = {
       ok: true,
@@ -128,18 +148,26 @@ describe('handlePurlsShallowScore', () => {
       purls,
     })
 
-    expect(debugFn).toHaveBeenCalledWith('notice', 'Fetching shallow scores for 1 packages')
+    expect(debugFn).toHaveBeenCalledWith(
+      'notice',
+      'Fetching shallow scores for 1 packages',
+    )
     expect(debugDir).toHaveBeenCalledWith('inspect', {
       purls,
       outputKind: 'json',
     })
-    expect(debugFn).toHaveBeenCalledWith('notice', 'Shallow scores fetched successfully')
+    expect(debugFn).toHaveBeenCalledWith(
+      'notice',
+      'Shallow scores fetched successfully',
+    )
     expect(debugDir).toHaveBeenCalledWith('inspect', { packageData: mockData })
   })
 
   it('logs debug information on failure', async () => {
     const { debugFn } = await import('@socketsecurity/registry/lib/debug')
-    const { fetchPurlsShallowScore } = await import('./fetch-purls-shallow-score.mts')
+    const { fetchPurlsShallowScore } = await import(
+      './fetch-purls-shallow-score.mts'
+    )
 
     const mockError = {
       ok: false,
@@ -152,12 +180,19 @@ describe('handlePurlsShallowScore', () => {
       purls: ['pkg:npm/package1@1.0.0'],
     })
 
-    expect(debugFn).toHaveBeenCalledWith('notice', 'Shallow scores fetch failed')
+    expect(debugFn).toHaveBeenCalledWith(
+      'notice',
+      'Shallow scores fetch failed',
+    )
   })
 
   it('handles multiple purls', async () => {
-    const { fetchPurlsShallowScore } = await import('./fetch-purls-shallow-score.mts')
-    const { outputPurlsShallowScore } = await import('./output-purls-shallow-score.mts')
+    const { fetchPurlsShallowScore } = await import(
+      './fetch-purls-shallow-score.mts'
+    )
+    const { outputPurlsShallowScore } = await import(
+      './output-purls-shallow-score.mts'
+    )
 
     const mockData = {
       ok: true,
@@ -183,7 +218,7 @@ describe('handlePurlsShallowScore', () => {
     expect(outputPurlsShallowScore).toHaveBeenCalledWith(
       purls,
       mockData,
-      'json'
+      'json',
     )
   })
 })

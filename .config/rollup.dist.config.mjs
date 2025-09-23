@@ -204,11 +204,20 @@ async function copyPublishFiles() {
   // Determine which package.json to use based on build variant.
   let packageJsonSource
   if (constants.ENV[INLINED_SOCKET_CLI_LEGACY_BUILD]) {
-    packageJsonSource = path.join(constants.rootPath, '.config/packages/package.cli-legacy.json')
+    packageJsonSource = path.join(
+      constants.rootPath,
+      '.config/packages/package.cli-legacy.json',
+    )
   } else if (constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD]) {
-    packageJsonSource = path.join(constants.rootPath, '.config/packages/package.cli-with-sentry.json')
+    packageJsonSource = path.join(
+      constants.rootPath,
+      '.config/packages/package.cli-with-sentry.json',
+    )
   } else {
-    packageJsonSource = path.join(constants.rootPath, '.config/packages/package.cli.json')
+    packageJsonSource = path.join(
+      constants.rootPath,
+      '.config/packages/package.cli.json',
+    )
   }
 
   // Read the source package.json directly as JSON.
@@ -219,7 +228,10 @@ async function copyPublishFiles() {
   const distPkgJson = {
     ...sourcePkgJson,
   }
-  await fs.writeFile(distPackageJsonPath, JSON.stringify(distPkgJson, null, 2) + '\n')
+  await fs.writeFile(
+    distPackageJsonPath,
+    JSON.stringify(distPkgJson, null, 2) + '\n',
+  )
 
   // Copy requirements.json and translations.json to dist.
   const filesToCopy = ['requirements.json', 'translations.json']

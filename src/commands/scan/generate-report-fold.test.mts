@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
 import { generateReport } from './generate-report.mts'
-import { getScanWithEnvVars, getScanWithMultiplePackages } from './generate-report-test-helpers.mts'
+import {
+  getScanWithEnvVars,
+  getScanWithMultiplePackages,
+} from './generate-report-test-helpers.mts'
 
 import type { ScanReport } from './generate-report.mts'
 

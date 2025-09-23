@@ -19,7 +19,11 @@ vi.mock('../shadow/npm/install.mts', () => ({
 }))
 
 vi.mock('./cmd.mts', () => ({
-  cmdFlagsToString: vi.fn((flags) => Object.entries(flags || {}).map(([k, v]) => `--${k}=${v}`).join(' ')),
+  cmdFlagsToString: vi.fn(flags =>
+    Object.entries(flags || {})
+      .map(([k, v]) => `--${k}=${v}`)
+      .join(' '),
+  ),
 }))
 
 vi.mock('../constants.mts', () => ({
@@ -38,7 +42,9 @@ describe('agent utilities', () => {
 
   describe('runAgentInstall', () => {
     it('uses shadowNpmInstall for npm agent', async () => {
-      const { shadowNpmInstall } = vi.mocked(await import('../shadow/npm/install.mts'))
+      const { shadowNpmInstall } = vi.mocked(
+        await import('../shadow/npm/install.mts'),
+      )
       shadowNpmInstall.mockReturnValue(Promise.resolve({ status: 0 }) as any)
 
       const pkgEnvDetails = {
@@ -56,7 +62,9 @@ describe('agent utilities', () => {
     })
 
     it('uses spawn for pnpm agent', async () => {
-      const { spawn } = vi.mocked(await import('@socketsecurity/registry/lib/spawn'))
+      const { spawn } = vi.mocked(
+        await import('@socketsecurity/registry/lib/spawn'),
+      )
       spawn.mockReturnValue(Promise.resolve({ status: 0 }) as any)
 
       const pkgEnvDetails = {
@@ -70,18 +78,24 @@ describe('agent utilities', () => {
 
       expect(spawn).toHaveBeenCalledWith(
         '/usr/bin/pnpm',
-        ['install', '--config.confirmModulesPurge=false', '--no-frozen-lockfile'],
+        [
+          'install',
+          '--config.confirmModulesPurge=false',
+          '--no-frozen-lockfile',
+        ],
         expect.objectContaining({
           cwd: '/test/project',
           env: expect.objectContaining({
             CI: '1',
           }),
-        })
+        }),
       )
     })
 
     it('uses spawn for yarn agent', async () => {
-      const { spawn } = vi.mocked(await import('@socketsecurity/registry/lib/spawn'))
+      const { spawn } = vi.mocked(
+        await import('@socketsecurity/registry/lib/spawn'),
+      )
       spawn.mockReturnValue(Promise.resolve({ status: 0 }) as any)
 
       const pkgEnvDetails = {
@@ -97,12 +111,14 @@ describe('agent utilities', () => {
         ['install'],
         expect.objectContaining({
           cwd: '/test/project',
-        })
+        }),
       )
     })
 
     it('passes args to the agent command', async () => {
-      const { spawn } = vi.mocked(await import('@socketsecurity/registry/lib/spawn'))
+      const { spawn } = vi.mocked(
+        await import('@socketsecurity/registry/lib/spawn'),
+      )
       spawn.mockReturnValue(Promise.resolve({ status: 0 }) as any)
 
       const pkgEnvDetails = {
@@ -118,12 +134,14 @@ describe('agent utilities', () => {
       expect(spawn).toHaveBeenCalledWith(
         '/usr/bin/yarn',
         ['install', '--frozen-lockfile', '--production'],
-        expect.any(Object)
+        expect.any(Object),
       )
     })
 
     it('uses spinner when provided', async () => {
-      const { Spinner } = vi.mocked(await import('@socketsecurity/registry/lib/spinner'))
+      const { Spinner } = vi.mocked(
+        await import('@socketsecurity/registry/lib/spinner'),
+      )
       const mockSpinner = {
         start: vi.fn(),
         stop: vi.fn(),
@@ -142,18 +160,26 @@ describe('agent utilities', () => {
       })
 
       // Spinner would be passed through to spawn.
-      const { spawn } = vi.mocked(await import('@socketsecurity/registry/lib/spawn'))
+      const { spawn } = vi.mocked(
+        await import('@socketsecurity/registry/lib/spawn'),
+      )
       expect(spawn).toHaveBeenCalledWith(
         '/usr/bin/pnpm',
-        ['install', '--config.confirmModulesPurge=false', '--no-frozen-lockfile'],
+        [
+          'install',
+          '--config.confirmModulesPurge=false',
+          '--no-frozen-lockfile',
+        ],
         expect.objectContaining({
           spinner: mockSpinner,
-        })
+        }),
       )
     })
 
     it('handles unknown agent', async () => {
-      const { spawn } = vi.mocked(await import('@socketsecurity/registry/lib/spawn'))
+      const { spawn } = vi.mocked(
+        await import('@socketsecurity/registry/lib/spawn'),
+      )
       spawn.mockReturnValue(Promise.resolve({ status: 0 }) as any)
 
       const pkgEnvDetails = {
@@ -167,12 +193,14 @@ describe('agent utilities', () => {
       expect(spawn).toHaveBeenCalledWith(
         '/usr/bin/unknown-agent',
         ['install'],
-        expect.any(Object)
+        expect.any(Object),
       )
     })
 
     it('merges options correctly', async () => {
-      const { spawn } = vi.mocked(await import('@socketsecurity/registry/lib/spawn'))
+      const { spawn } = vi.mocked(
+        await import('@socketsecurity/registry/lib/spawn'),
+      )
       spawn.mockReturnValue(Promise.resolve({ status: 0 }) as any)
 
       const pkgEnvDetails = {
@@ -198,7 +226,7 @@ describe('agent utilities', () => {
             NODE_ENV: 'production',
           }),
           stdio: 'inherit',
-        })
+        }),
       )
     })
   })

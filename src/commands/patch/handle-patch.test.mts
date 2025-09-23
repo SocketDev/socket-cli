@@ -52,7 +52,9 @@ vi.mock('../../utils/fs.mts', () => ({
 
 vi.mock('../../utils/purl.mts', () => ({
   getPurlObject: vi.fn(),
-  normalizePurl: vi.fn((purl) => purl.startsWith('pkg:') ? purl : `pkg:${purl}`),
+  normalizePurl: vi.fn(purl =>
+    purl.startsWith('pkg:') ? purl : `pkg:${purl}`,
+  ),
 }))
 
 describe('handlePatch', () => {
@@ -310,10 +312,7 @@ describe('handlePatch', () => {
       spinner: mockSpinner as any,
     })
 
-    expect(mockOutput).toHaveBeenCalledWith(
-      expect.any(Object),
-      'markdown',
-    )
+    expect(mockOutput).toHaveBeenCalledWith(expect.any(Object), 'markdown')
   })
 
   it('handles file read errors', async () => {

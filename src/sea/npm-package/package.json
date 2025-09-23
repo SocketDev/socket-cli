@@ -1,0 +1,38 @@
+{
+  "name": "socket",
+  "version": "1.1.22",
+  "description": "Socket CLI - Security analysis for your dependencies",
+  "homepage": "https://github.com/SocketDev/socket-cli",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SocketDev/socket-cli.git"
+  },
+  "author": {
+    "name": "Socket Inc",
+    "email": "eng@socket.dev",
+    "url": "https://socket.dev"
+  },
+  "bin": {
+    "socket": "socket"
+  },
+  "scripts": {
+    "postinstall": "node install.js"
+  },
+  "keywords": [
+    "socket",
+    "security",
+    "dependencies",
+    "vulnerability",
+    "supply-chain",
+    "cli"
+  ],
+  "engines": {
+    "node": ">=18.18.0"
+  },
+  "preferGlobal": true,
+  "files": [
+    "install.js",
+    "socket"
+  ]
+}

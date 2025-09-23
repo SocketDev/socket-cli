@@ -127,7 +127,9 @@ describe('socket-package-alert', () => {
       } as SocketPackageAlert
 
       expect(alertSeverityComparator(alertCritical, alertHigh)).toBeLessThan(0)
-      expect(alertSeverityComparator(alertHigh, alertCritical)).toBeGreaterThan(0)
+      expect(alertSeverityComparator(alertHigh, alertCritical)).toBeGreaterThan(
+        0,
+      )
     })
 
     it('sorts high before middle', () => {
@@ -167,37 +169,58 @@ describe('socket-package-alert', () => {
   describe('getAlertsSeverityOrder', () => {
     it('returns 0 for blocked alerts', () => {
       const alerts: SocketPackageAlert[] = [
-        { blocked: true, raw: { severity: ALERT_SEVERITY.low } } as SocketPackageAlert,
+        {
+          blocked: true,
+          raw: { severity: ALERT_SEVERITY.low },
+        } as SocketPackageAlert,
       ]
       expect(getAlertsSeverityOrder(alerts)).toBe(0)
     })
 
     it('returns 0 for critical alerts', () => {
       const alerts: SocketPackageAlert[] = [
-        { blocked: false, raw: { severity: ALERT_SEVERITY.critical } } as SocketPackageAlert,
+        {
+          blocked: false,
+          raw: { severity: ALERT_SEVERITY.critical },
+        } as SocketPackageAlert,
       ]
       expect(getAlertsSeverityOrder(alerts)).toBe(0)
     })
 
     it('returns 1 for high alerts without critical or blocked', () => {
       const alerts: SocketPackageAlert[] = [
-        { blocked: false, raw: { severity: ALERT_SEVERITY.high } } as SocketPackageAlert,
-        { blocked: false, raw: { severity: ALERT_SEVERITY.low } } as SocketPackageAlert,
+        {
+          blocked: false,
+          raw: { severity: ALERT_SEVERITY.high },
+        } as SocketPackageAlert,
+        {
+          blocked: false,
+          raw: { severity: ALERT_SEVERITY.low },
+        } as SocketPackageAlert,
       ]
       expect(getAlertsSeverityOrder(alerts)).toBe(1)
     })
 
     it('returns 2 for middle alerts without higher severity', () => {
       const alerts: SocketPackageAlert[] = [
-        { blocked: false, raw: { severity: ALERT_SEVERITY.middle } } as SocketPackageAlert,
-        { blocked: false, raw: { severity: ALERT_SEVERITY.low } } as SocketPackageAlert,
+        {
+          blocked: false,
+          raw: { severity: ALERT_SEVERITY.middle },
+        } as SocketPackageAlert,
+        {
+          blocked: false,
+          raw: { severity: ALERT_SEVERITY.low },
+        } as SocketPackageAlert,
       ]
       expect(getAlertsSeverityOrder(alerts)).toBe(2)
     })
 
     it('returns 3 for low alerts only', () => {
       const alerts: SocketPackageAlert[] = [
-        { blocked: false, raw: { severity: ALERT_SEVERITY.low } } as SocketPackageAlert,
+        {
+          blocked: false,
+          raw: { severity: ALERT_SEVERITY.low },
+        } as SocketPackageAlert,
       ]
       expect(getAlertsSeverityOrder(alerts)).toBe(3)
     })

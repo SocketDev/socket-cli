@@ -124,7 +124,7 @@ describe('handleThreatFeed', () => {
       expect.objectContaining({
         pkg: 'specific-pkg',
         version: '1.2.3',
-      })
+      }),
     )
   })
 
@@ -179,7 +179,7 @@ describe('handleThreatFeed', () => {
       })
 
       expect(fetchThreatFeed).toHaveBeenCalledWith(
-        expect.objectContaining({ ecosystem })
+        expect.objectContaining({ ecosystem }),
       )
     }
   })
@@ -209,7 +209,7 @@ describe('handleThreatFeed', () => {
       })
 
       expect(fetchThreatFeed).toHaveBeenCalledWith(
-        expect.objectContaining({ filter })
+        expect.objectContaining({ filter }),
       )
     }
   })
@@ -239,7 +239,7 @@ describe('handleThreatFeed', () => {
       expect.objectContaining({
         page: '10',
         perPage: 100,
-      })
+      }),
     )
   })
 

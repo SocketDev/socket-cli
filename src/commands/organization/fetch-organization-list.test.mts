@@ -53,10 +53,9 @@ describe('fetchOrganizationList', () => {
     const result = await fetchOrganizationList()
 
     expect(mockSdk.getOrganizationList).toHaveBeenCalled()
-    expect(mockHandleApi).toHaveBeenCalledWith(
-      expect.any(Promise),
-      { description: 'fetching organization list' },
-    )
+    expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
+      description: 'fetching organization list',
+    })
     expect(result.ok).toBe(true)
   })
 

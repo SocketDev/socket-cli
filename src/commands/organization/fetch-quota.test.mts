@@ -56,10 +56,9 @@ describe('fetchQuota', () => {
     const result = await fetchQuota('test-org')
 
     expect(mockSdk.getQuota).toHaveBeenCalledWith('test-org')
-    expect(mockHandleApi).toHaveBeenCalledWith(
-      expect.any(Promise),
-      { description: 'fetching organization quota' },
-    )
+    expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
+      description: 'fetching organization quota',
+    })
     expect(result.ok).toBe(true)
   })
 

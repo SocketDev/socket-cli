@@ -49,8 +49,12 @@ describe('handleCi', () => {
 
   it('handles CI scan successfully', async () => {
     const { getDefaultOrgSlug } = await import('./fetch-default-org-slug.mts')
-    const { detectDefaultBranch, getRepoName, gitBranch } = await import('../../utils/git.mts')
-    const { handleCreateNewScan } = await import('../scan/handle-create-new-scan.mts')
+    const { detectDefaultBranch, getRepoName, gitBranch } = await import(
+      '../../utils/git.mts'
+    )
+    const { handleCreateNewScan } = await import(
+      '../scan/handle-create-new-scan.mts'
+    )
 
     vi.mocked(getDefaultOrgSlug).mockResolvedValue({
       ok: true,
@@ -92,8 +96,12 @@ describe('handleCi', () => {
 
   it('uses default branch when git branch is not available', async () => {
     const { getDefaultOrgSlug } = await import('./fetch-default-org-slug.mts')
-    const { detectDefaultBranch, getRepoName, gitBranch } = await import('../../utils/git.mts')
-    const { handleCreateNewScan } = await import('../scan/handle-create-new-scan.mts')
+    const { detectDefaultBranch, getRepoName, gitBranch } = await import(
+      '../../utils/git.mts'
+    )
+    const { handleCreateNewScan } = await import(
+      '../scan/handle-create-new-scan.mts'
+    )
 
     vi.mocked(getDefaultOrgSlug).mockResolvedValue({
       ok: true,
@@ -110,14 +118,16 @@ describe('handleCi', () => {
     expect(handleCreateNewScan).toHaveBeenCalledWith(
       expect.objectContaining({
         branchName: 'main',
-      })
+      }),
     )
   })
 
   it('handles auto-manifest mode', async () => {
     const { getDefaultOrgSlug } = await import('./fetch-default-org-slug.mts')
     const { getRepoName, gitBranch } = await import('../../utils/git.mts')
-    const { handleCreateNewScan } = await import('../scan/handle-create-new-scan.mts')
+    const { handleCreateNewScan } = await import(
+      '../scan/handle-create-new-scan.mts'
+    )
 
     vi.mocked(getDefaultOrgSlug).mockResolvedValue({
       ok: true,
@@ -131,15 +141,19 @@ describe('handleCi', () => {
     expect(handleCreateNewScan).toHaveBeenCalledWith(
       expect.objectContaining({
         autoManifest: true,
-      })
+      }),
     )
   })
 
   it('handles org slug fetch failure', async () => {
     const { getDefaultOrgSlug } = await import('./fetch-default-org-slug.mts')
     const { logger } = await import('@socketsecurity/registry/lib/logger')
-    const { serializeResultJson } = await import('../../utils/serialize-result-json.mts')
-    const { handleCreateNewScan } = await import('../scan/handle-create-new-scan.mts')
+    const { serializeResultJson } = await import(
+      '../../utils/serialize-result-json.mts'
+    )
+    const { handleCreateNewScan } = await import(
+      '../scan/handle-create-new-scan.mts'
+    )
 
     const error = {
       ok: false as const,
@@ -159,7 +173,9 @@ describe('handleCi', () => {
   it('sets default exit code on org slug failure without code', async () => {
     const { getDefaultOrgSlug } = await import('./fetch-default-org-slug.mts')
     const { logger } = await import('@socketsecurity/registry/lib/logger')
-    const { serializeResultJson } = await import('../../utils/serialize-result-json.mts')
+    const { serializeResultJson } = await import(
+      '../../utils/serialize-result-json.mts'
+    )
 
     const error = {
       ok: false as const,
@@ -175,7 +191,9 @@ describe('handleCi', () => {
   })
 
   it('logs debug information', async () => {
-    const { debugDir, debugFn } = await import('@socketsecurity/registry/lib/debug')
+    const { debugDir, debugFn } = await import(
+      '@socketsecurity/registry/lib/debug'
+    )
     const { getDefaultOrgSlug } = await import('./fetch-default-org-slug.mts')
     const { getRepoName, gitBranch } = await import('../../utils/git.mts')
 
@@ -192,7 +210,7 @@ describe('handleCi', () => {
     expect(debugDir).toHaveBeenCalledWith('inspect', { autoManifest: false })
     expect(debugFn).toHaveBeenCalledWith(
       'notice',
-      'CI scan for debug-org/debug-repo on branch debug-branch'
+      'CI scan for debug-org/debug-repo on branch debug-branch',
     )
     expect(debugDir).toHaveBeenCalledWith('inspect', {
       orgSlug: 'debug-org',
@@ -203,7 +221,9 @@ describe('handleCi', () => {
   })
 
   it('logs debug info on org slug failure', async () => {
-    const { debugDir, debugFn } = await import('@socketsecurity/registry/lib/debug')
+    const { debugDir, debugFn } = await import(
+      '@socketsecurity/registry/lib/debug'
+    )
     const { getDefaultOrgSlug } = await import('./fetch-default-org-slug.mts')
 
     const error = {
@@ -214,7 +234,10 @@ describe('handleCi', () => {
 
     await handleCi(false)
 
-    expect(debugFn).toHaveBeenCalledWith('warn', 'Failed to get default org slug')
+    expect(debugFn).toHaveBeenCalledWith(
+      'warn',
+      'Failed to get default org slug',
+    )
     expect(debugDir).toHaveBeenCalledWith('inspect', { orgSlugCResult: error })
   })
 })

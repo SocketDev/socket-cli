@@ -43,7 +43,7 @@ describe('handleCreateRepo', () => {
         defaultBranch: 'main',
         visibility: 'private',
       },
-      'json'
+      'json',
     )
 
     expect(fetchCreateRepo).toHaveBeenCalledWith({
@@ -76,13 +76,19 @@ describe('handleCreateRepo', () => {
         defaultBranch: 'main',
         visibility: 'public',
       },
-      'text'
+      'text',
     )
 
-    expect(fetchCreateRepo).toHaveBeenCalledWith(expect.objectContaining({
-      repoName: 'existing-repo',
-    }))
-    expect(outputCreateRepo).toHaveBeenCalledWith(mockError, 'existing-repo', 'text')
+    expect(fetchCreateRepo).toHaveBeenCalledWith(
+      expect.objectContaining({
+        repoName: 'existing-repo',
+      }),
+    )
+    expect(outputCreateRepo).toHaveBeenCalledWith(
+      mockError,
+      'existing-repo',
+      'text',
+    )
   })
 
   it('handles markdown output', async () => {
@@ -104,14 +110,20 @@ describe('handleCreateRepo', () => {
         defaultBranch: 'develop',
         visibility: 'internal',
       },
-      'markdown'
+      'markdown',
     )
 
-    expect(outputCreateRepo).toHaveBeenCalledWith(mockData, 'test-repo', 'markdown')
+    expect(outputCreateRepo).toHaveBeenCalledWith(
+      mockData,
+      'test-repo',
+      'markdown',
+    )
   })
 
   it('logs debug information', async () => {
-    const { debugDir, debugFn } = await import('@socketsecurity/registry/lib/debug')
+    const { debugDir, debugFn } = await import(
+      '@socketsecurity/registry/lib/debug'
+    )
     const { fetchCreateRepo } = await import('./fetch-create-repo.mts')
 
     const mockData = {
@@ -129,15 +141,24 @@ describe('handleCreateRepo', () => {
         defaultBranch: 'main',
         visibility: 'private',
       },
-      'json'
+      'json',
     )
 
-    expect(debugFn).toHaveBeenCalledWith('notice', 'Creating repository debug-org/debug-repo')
-    expect(debugDir).toHaveBeenCalledWith('inspect', expect.objectContaining({
-      orgSlug: 'debug-org',
-      repoName: 'debug-repo',
-    }))
-    expect(debugFn).toHaveBeenCalledWith('notice', 'Repository creation succeeded')
+    expect(debugFn).toHaveBeenCalledWith(
+      'notice',
+      'Creating repository debug-org/debug-repo',
+    )
+    expect(debugDir).toHaveBeenCalledWith(
+      'inspect',
+      expect.objectContaining({
+        orgSlug: 'debug-org',
+        repoName: 'debug-repo',
+      }),
+    )
+    expect(debugFn).toHaveBeenCalledWith(
+      'notice',
+      'Repository creation succeeded',
+    )
   })
 
   it('logs debug information on failure', async () => {
@@ -158,7 +179,7 @@ describe('handleCreateRepo', () => {
         defaultBranch: 'main',
         visibility: 'public',
       },
-      'json'
+      'json',
     )
 
     expect(debugFn).toHaveBeenCalledWith('notice', 'Repository creation failed')
@@ -186,11 +207,11 @@ describe('handleCreateRepo', () => {
           defaultBranch: 'main',
           visibility,
         },
-        'json'
+        'json',
       )
 
       expect(fetchCreateRepo).toHaveBeenCalledWith(
-        expect.objectContaining({ visibility })
+        expect.objectContaining({ visibility }),
       )
     }
   })
@@ -213,7 +234,7 @@ describe('handleCreateRepo', () => {
         defaultBranch: 'main',
         visibility: 'public',
       },
-      'json'
+      'json',
     )
 
     expect(fetchCreateRepo).toHaveBeenCalledWith({

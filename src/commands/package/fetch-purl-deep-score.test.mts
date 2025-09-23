@@ -47,11 +47,12 @@ describe('fetchPurlDeepScore', () => {
 
     const result = await fetchPurlDeepScore('pkg:npm/lodash@4.17.21')
 
-    expect(mockSdk.getPurlDeepScore).toHaveBeenCalledWith('pkg:npm/lodash@4.17.21')
-    expect(mockHandleApi).toHaveBeenCalledWith(
-      expect.any(Promise),
-      { description: 'fetching purl deep score' },
+    expect(mockSdk.getPurlDeepScore).toHaveBeenCalledWith(
+      'pkg:npm/lodash@4.17.21',
     )
+    expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
+      description: 'fetching purl deep score',
+    })
     expect(result.ok).toBe(true)
   })
 
@@ -79,7 +80,9 @@ describe('fetchPurlDeepScore', () => {
     const mockSetupSdk = vi.mocked(setupSdk)
 
     const mockSdk = {
-      getPurlDeepScore: vi.fn().mockRejectedValue(new Error('Package not found')),
+      getPurlDeepScore: vi
+        .fn()
+        .mockRejectedValue(new Error('Package not found')),
     }
 
     mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })

@@ -181,7 +181,7 @@ describe('handleAuditLog', () => {
       })
 
       expect(fetchAuditLog).toHaveBeenCalledWith(
-        expect.objectContaining({ logType })
+        expect.objectContaining({ logType }),
       )
     }
   })

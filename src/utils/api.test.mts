@@ -26,7 +26,8 @@ let mockEnv = {
 }
 
 vi.mock('../constants.mts', async () => {
-  const actual = await vi.importActual<typeof import('../constants.mts')>('../constants.mts')
+  const actual =
+    await vi.importActual<typeof import('../constants.mts')>('../constants.mts')
   return {
     ...actual,
     default: {
@@ -183,7 +184,9 @@ describe('api utilities', () => {
         fail: vi.fn(),
       }
 
-      await handleApiCallNoSpinner(mockApiPromise, { spinner: mockSpinner as any })
+      await handleApiCallNoSpinner(mockApiPromise, {
+        spinner: mockSpinner as any,
+      })
       expect(mockSpinner.start).not.toHaveBeenCalled()
     })
 

@@ -59,7 +59,9 @@ describe('constants', () => {
 
     expect(constants.API_V0_URL).toBe('https://api.socket.dev/v0/')
     expect(constants.NPM_REGISTRY_URL).toBe('https://registry.npmjs.org')
-    expect(constants.SOCKET_PUBLIC_API_TOKEN).toBe('sktsec_t_--RAN5U4ivauy4w37-6aoKyYPDt5ZbaT5JBVMqiwKo_api')
+    expect(constants.SOCKET_PUBLIC_API_TOKEN).toBe(
+      'sktsec_t_--RAN5U4ivauy4w37-6aoKyYPDt5ZbaT5JBVMqiwKo_api',
+    )
   })
 
   it('respects environment variable overrides', async () => {
@@ -102,9 +104,13 @@ describe('constants', () => {
   it('has correct socket-specific constants', async () => {
     const constants = (await import('./constants.mts')).default
 
-    expect(constants.SOCKET_CLI_ISSUES_URL).toBe('https://github.com/SocketDev/socket-cli/issues')
+    expect(constants.SOCKET_CLI_ISSUES_URL).toBe(
+      'https://github.com/SocketDev/socket-cli/issues',
+    )
     expect(constants.SOCKET_DEFAULT_BRANCH).toBe('socket-default-branch')
-    expect(constants.SOCKET_DEFAULT_REPOSITORY).toBe('socket-default-repository')
+    expect(constants.SOCKET_DEFAULT_REPOSITORY).toBe(
+      'socket-default-repository',
+    )
   })
 
   it('has various constant flags', async () => {

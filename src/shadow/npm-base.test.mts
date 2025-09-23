@@ -187,7 +187,12 @@ describe('shadowNpmBase', () => {
     const options: ShadowBinOptions = {
       stdio: 'inherit',
     }
-    mockEnsureIpcInStdio.mockReturnValue(['inherit', 'inherit', 'inherit', 'ipc'])
+    mockEnsureIpcInStdio.mockReturnValue([
+      'inherit',
+      'inherit',
+      'inherit',
+      'ipc',
+    ])
 
     await shadowNpmBase(NPM, ['install'], options)
 
@@ -220,13 +225,18 @@ describe('shadowNpmBase', () => {
 
     const spawnCall = mockSpawn.mock.calls[0]
     const nodeArgs = spawnCall[1] as string[]
-    const hasPermissionFlags = nodeArgs.some(arg => arg.includes('--permission'))
+    const hasPermissionFlags = nodeArgs.some(arg =>
+      arg.includes('--permission'),
+    )
 
     expect(hasPermissionFlags).toBe(false)
   })
 
   it('should preserve existing node-options', async () => {
-    await shadowNpmBase(NPM, ['install', '--node-options=--max-old-space-size=8192'])
+    await shadowNpmBase(NPM, [
+      'install',
+      '--node-options=--max-old-space-size=8192',
+    ])
 
     expect(mockSpawn).toHaveBeenCalledWith(
       expect.any(String),
@@ -239,7 +249,12 @@ describe('shadowNpmBase', () => {
   })
 
   it('should filter out audit and progress flags', async () => {
-    await shadowNpmBase(NPM, ['install', '--audit', '--progress', '--no-progress'])
+    await shadowNpmBase(NPM, [
+      'install',
+      '--audit',
+      '--progress',
+      '--no-progress',
+    ])
 
     const spawnCall = mockSpawn.mock.calls[0]
     const nodeArgs = spawnCall[1] as string[]

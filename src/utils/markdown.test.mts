@@ -1,18 +1,14 @@
 import { describe, expect, it } from 'vitest'
 
-import {
-  mdTableStringNumber,
-  mdTable,
-  mdTableOfPairs,
-} from './markdown.mts'
+import { mdTableStringNumber, mdTable, mdTableOfPairs } from './markdown.mts'
 
 describe('markdown utilities', () => {
   describe('mdTableStringNumber', () => {
     it('creates markdown table with string keys and number values', () => {
       const data = {
-        'First': 100,
-        'Second': 2500,
-        'Third': 50,
+        First: 100,
+        Second: 2500,
+        Third: 50,
       }
 
       const result = mdTableStringNumber('Name', 'Count', data)
@@ -39,9 +35,9 @@ describe('markdown utilities', () => {
 
     it('handles null and undefined values', () => {
       const data = {
-        'Valid': 123,
-        'Null': null as any,
-        'Undefined': undefined as any,
+        Valid: 123,
+        Null: null as any,
+        Undefined: undefined as any,
       }
 
       const result = mdTableStringNumber('Key', 'Value', data)
@@ -53,8 +49,8 @@ describe('markdown utilities', () => {
 
     it('adjusts column widths for long values', () => {
       const data = {
-        'VeryLongKeyName': 1,
-        'Short': 999999999,
+        VeryLongKeyName: 1,
+        Short: 999999999,
       }
 
       const result = mdTableStringNumber('K', 'V', data)
@@ -91,9 +87,7 @@ describe('markdown utilities', () => {
     })
 
     it('uses custom titles', () => {
-      const logs = [
-        { id: '1', name: 'Test' },
-      ]
+      const logs = [{ id: '1', name: 'Test' }]
 
       const result = mdTable(logs, ['id', 'name'], ['ID', 'Display Name'])
 
@@ -102,10 +96,7 @@ describe('markdown utilities', () => {
     })
 
     it('handles missing properties', () => {
-      const logs = [
-        { a: 'value1' },
-        { b: 'value2' },
-      ] as any[]
+      const logs = [{ a: 'value1' }, { b: 'value2' }] as any[]
 
       const result = mdTable(logs, ['a', 'b'])
 
@@ -137,9 +128,7 @@ describe('markdown utilities', () => {
     })
 
     it('handles non-string values', () => {
-      const logs = [
-        { num: 123, bool: true, obj: { nested: 'value' } },
-      ]
+      const logs = [{ num: 123, bool: true, obj: { nested: 'value' } }]
 
       const result = mdTable(logs, ['num', 'bool', 'obj'])
 

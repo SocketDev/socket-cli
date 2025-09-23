@@ -1,10 +1,6 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 
-import {
-  idToNpmPurl,
-  idToPurl,
-  resolvePackageVersion,
-} from './spec.mts'
+import { idToNpmPurl, idToPurl, resolvePackageVersion } from './spec.mts'
 
 // Mock semver module.
 vi.mock('semver', () => ({
@@ -31,7 +27,9 @@ describe('spec utilities', () => {
 
     it('handles scoped packages', () => {
       expect(idToNpmPurl('@babel/core@7.0.0')).toBe('pkg:npm/@babel/core@7.0.0')
-      expect(idToNpmPurl('@types/node@18.0.0')).toBe('pkg:npm/@types/node@18.0.0')
+      expect(idToNpmPurl('@types/node@18.0.0')).toBe(
+        'pkg:npm/@types/node@18.0.0',
+      )
     })
 
     it('handles packages without versions', () => {
@@ -44,7 +42,9 @@ describe('spec utilities', () => {
     it('converts package ID to PURL with specified type', () => {
       expect(idToPurl('flask==2.0.0', 'pypi')).toBe('pkg:pypi/flask==2.0.0')
       expect(idToPurl('gem@1.0.0', 'gem')).toBe('pkg:gem/gem@1.0.0')
-      expect(idToPurl('org.apache:commons@3.0', 'maven')).toBe('pkg:maven/org.apache:commons@3.0')
+      expect(idToPurl('org.apache:commons@3.0', 'maven')).toBe(
+        'pkg:maven/org.apache:commons@3.0',
+      )
     })
 
     it('handles npm type', () => {
@@ -132,7 +132,9 @@ describe('spec utilities', () => {
       expect(result).toBe('18.2.0')
 
       const { stripPnpmPeerSuffix } = vi.mocked(await import('./pnpm.mts'))
-      expect(stripPnpmPeerSuffix).toHaveBeenCalledWith('18.2.0_react-dom@18.2.0')
+      expect(stripPnpmPeerSuffix).toHaveBeenCalledWith(
+        '18.2.0_react-dom@18.2.0',
+      )
     })
   })
 })
