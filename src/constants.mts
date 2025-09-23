@@ -158,6 +158,8 @@ export type ENV = Remap<
       SOCKET_CLI_API_PROXY: string
       SOCKET_CLI_API_TIMEOUT: number
       SOCKET_CLI_API_TOKEN: string
+      SOCKET_CLI_CDXGEN_LOCAL_PATH: string
+      SOCKET_CLI_COANA_LOCAL_PATH: string
       SOCKET_CLI_CONFIG: string
       SOCKET_CLI_GIT_USER_EMAIL: string
       SOCKET_CLI_GIT_USER_NAME: string
@@ -165,6 +167,7 @@ export type ENV = Remap<
       SOCKET_CLI_NO_API_TOKEN: boolean
       SOCKET_CLI_NPM_PATH: string
       SOCKET_CLI_ORG_SLUG: string
+      SOCKET_CLI_SFW_LOCAL_PATH: string
       SOCKET_CLI_VIEW_ALL_RISKS: boolean
       TERM: string
       XDG_DATA_HOME: string
@@ -267,6 +270,8 @@ const SOCKET_JSON = 'socket.json'
 const SOCKET_WEBSITE_URL = 'https://socket.dev'
 const SOCKET_YAML = 'socket.yaml'
 const SOCKET_YML = 'socket.yml'
+const TOKEN_PREFIX = 'sktsec_'
+const TOKEN_PREFIX_LENGTH = TOKEN_PREFIX.length
 const V1_MIGRATION_GUIDE_URL = 'https://docs.socket.dev/docs/v1-migration-guide'
 
 export type Constants = Remap<
@@ -368,6 +373,8 @@ export type Constants = Remap<
     readonly SOCKET_WEBSITE_URL: typeof SOCKET_WEBSITE_URL
     readonly SOCKET_YAML: typeof SOCKET_YAML
     readonly SOCKET_YML: typeof SOCKET_YML
+    readonly TOKEN_PREFIX: typeof TOKEN_PREFIX
+    readonly TOKEN_PREFIX_LENGTH: typeof TOKEN_PREFIX_LENGTH
     readonly TSCONFIG_JSON: typeof TSCONFIG_JSON
     readonly UNKNOWN_ERROR: typeof UNKNOWN_ERROR
     readonly UNKNOWN_VALUE: typeof UNKNOWN_VALUE
@@ -605,6 +612,14 @@ const LAZY_ENV = () => {
       envAsString(env['SOCKET_CLI_API_KEY']) ||
       envAsString(env['SOCKET_SECURITY_API_TOKEN']) ||
       envAsString(env['SOCKET_SECURITY_API_KEY']),
+    // Local path to cdxgen binary for development/testing.
+    SOCKET_CLI_CDXGEN_LOCAL_PATH: envAsString(
+      env['SOCKET_CLI_CDXGEN_LOCAL_PATH'],
+    ),
+    // Local path to Coana CLI binary for development/testing.
+    SOCKET_CLI_COANA_LOCAL_PATH: envAsString(
+      env['SOCKET_CLI_COANA_LOCAL_PATH'],
+    ),
     // A JSON stringified Socket configuration object.
     SOCKET_CLI_CONFIG: envAsString(env['SOCKET_CLI_CONFIG']),
     // The git config user.email used by Socket CLI.
@@ -641,6 +656,8 @@ const LAZY_ENV = () => {
       envAsString(env['SOCKET_CLI_ORG_SLUG']) ||
       // Coana CLI accepts the SOCKET_ORG_SLUG environment variable.
       envAsString(env['SOCKET_ORG_SLUG']),
+    // Local path to synp/fork-write binary for development/testing.
+    SOCKET_CLI_SFW_LOCAL_PATH: envAsString(env['SOCKET_CLI_SFW_LOCAL_PATH']),
     // View all risks of a Socket wrapped npm/npx run.
     SOCKET_CLI_VIEW_ALL_RISKS: envAsBoolean(env[SOCKET_CLI_VIEW_ALL_RISKS]),
     // Specifies the type of terminal or terminal emulator being used by the process.
@@ -649,7 +666,7 @@ const LAZY_ENV = () => {
     // INLINED_SOCKET_CLI_PUBLISHED_BUILD environment variable.
     VITEST: INLINED_SOCKET_CLI_PUBLISHED_BUILD
       ? false
-      : envAsBoolean(process.env[VITEST]),
+      : envAsBoolean(process.env['VITEST']),
   })
 }
 
@@ -952,6 +969,8 @@ const constants: Constants = createConstantsObject(
     SOCKET_WEBSITE_URL,
     SOCKET_YAML,
     SOCKET_YML,
+    TOKEN_PREFIX,
+    TOKEN_PREFIX_LENGTH,
     TSCONFIG_JSON,
     UNKNOWN_ERROR,
     UNKNOWN_VALUE,
@@ -1208,6 +1227,8 @@ export {
   SOCKET_WEBSITE_URL,
   SOCKET_YAML,
   SOCKET_YML,
+  TOKEN_PREFIX,
+  TOKEN_PREFIX_LENGTH,
   V1_MIGRATION_GUIDE_URL,
 }
 
