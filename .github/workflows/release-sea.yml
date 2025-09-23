@@ -1,0 +1,141 @@
+name: Build and Release SEA Binaries
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (leave empty to use package.json version)'
+        required: false
+        type: string
+  release:
+    types: [created]
+
+jobs:
+  build-sea:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux
+            arch: x64
+          - os: ubuntu-latest
+            platform: linux
+            arch: arm64
+          - os: macos-latest
+            platform: darwin
+            arch: x64
+          - os: macos-latest
+            platform: darwin
+            arch: arm64
+          - os: windows-latest
+            platform: win32
+            arch: x64
+          - os: windows-latest
+            platform: win32
+            arch: arm64
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - uses: SocketDev/socket-registry/.github/actions/setup@main
+        with:
+          scope: '@socketsecurity'
+
+      - run: pnpm install
+
+      - name: Build SEA binary
+        run: pnpm run build:sea -- --platform=${{ matrix.platform }} --arch=${{ matrix.arch }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8 # v4.3.0
+        with:
+          name: socket-${{ matrix.platform }}-${{ matrix.arch }}
+          path: |
+            dist/sea/socket-*
+          retention-days: 7
+
+  upload-release:
+    needs: build-sea
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
+
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935 # v4.1.1
+        with:
+          path: dist/sea
+
+      - name: Flatten directory structure
+        run: |
+          cd dist/sea
+          find . -name "socket-*" -type f -exec mv {} . \;
+          find . -type d -empty -delete
+          ls -la
+
+      - name: Get version
+        id: version
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" = "release" ]; then
+            echo "version=${{ github.event.release.tag_name }}" >> $GITHUB_OUTPUT
+          else
+            VERSION=$(node -p "require('./src/sea/npm-package/package.json').version")
+            echo "version=v${VERSION}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Upload binaries to release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+
+          # Create release if it doesn't exist
+          if ! gh release view "$VERSION" > /dev/null 2>&1; then
+            gh release create "$VERSION" \
+              --title "$VERSION" \
+              --notes "Socket CLI $VERSION - See [CHANGELOG.md](https://github.com/SocketDev/socket-cli/blob/main/CHANGELOG.md) for details." \
+              --draft
+          fi
+
+          # Upload binaries
+          for file in dist/sea/socket-*; do
+            echo "Uploading $file..."
+            gh release upload "$VERSION" "$file" --clobber
+          done
+
+  publish-npm:
+    needs: upload-release
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release'
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - uses: SocketDev/socket-registry/.github/actions/setup@main
+        with:
+          scope: '@socketsecurity'
+
+      - name: Update npm package version
+        run: |
+          VERSION="${{ github.event.release.tag_name }}"
+          VERSION="${VERSION#v}"  # Remove 'v' prefix if present
+          cd src/sea/npm-package
+          npm version "$VERSION" --no-git-tag-version
+
+      - name: Publish to npm
+        working-directory: src/sea/npm-package
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
