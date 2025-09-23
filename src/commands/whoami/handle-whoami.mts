@@ -1,12 +1,15 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { commonFlags } from '../../flags.mts'
 import { outputWhoami } from './output-whoami.mts'
+import constants, {
+  CONFIG_KEY_API_TOKEN,
+  TOKEN_PREFIX,
+} from '../../constants.mts'
+import { commonFlags } from '../../flags.mts'
 import { getConfigValueOrUndef } from '../../utils/config.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
 import { getDefaultApiToken, getVisibleTokenPrefix } from '../../utils/sdk.mts'
-import constants, { CONFIG_KEY_API_TOKEN } from '../../constants.mts'
 
 import type {
   CliCommandConfig,
@@ -54,7 +57,7 @@ export async function handleWhoami(
 
   if (apiToken) {
     const visiblePrefix = getVisibleTokenPrefix()
-    const tokenDisplay = `sktsec_${visiblePrefix}...`
+    const tokenDisplay = `${TOKEN_PREFIX}${visiblePrefix}...`
 
     if (flags['json']) {
       outputWhoami({
@@ -63,7 +66,7 @@ export async function handleWhoami(
         location: tokenLocation,
       })
     } else {
-      logger.log(`✓ Authenticated with Socket`)
+      logger.success(`Authenticated with Socket`)
       logger.log(`  Token: ${tokenDisplay}`)
       logger.log(`  Source: ${tokenLocation}`)
     }
@@ -75,7 +78,7 @@ export async function handleWhoami(
         location: null,
       })
     } else {
-      logger.log(`✗ Not authenticated with Socket`)
+      logger.fail(`Not authenticated with Socket`)
       logger.log(``)
       logger.log(`To authenticate, run one of:`)
       logger.log(`  socket login`)
