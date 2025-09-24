@@ -25,6 +25,7 @@ import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
+import { buildErrorCause } from './errors.mts'
 import { getConfigValueOrUndef } from './config.mts'
 import { debugApiResponse } from './debug.mts'
 import constants, {
@@ -34,6 +35,7 @@ import constants, {
   HTTP_STATUS_FORBIDDEN,
   HTTP_STATUS_INTERNAL_SERVER_ERROR,
   HTTP_STATUS_NOT_FOUND,
+  HTTP_STATUS_TOO_MANY_REQUESTS,
   HTTP_STATUS_UNAUTHORIZED,
 } from '../constants.mts'
 import { getRequirements, getRequirementsKey } from './requirements.mts'
@@ -86,6 +88,7 @@ function logPermissionsFor403(cmdPath?: string | undefined): void {
   logger.error('Please ensure your API token has the required permissions.')
 }
 
+
 // The Socket API server that should be used for operations.
 export function getDefaultApiBaseUrl(): string | undefined {
   const baseUrl =
@@ -110,6 +113,9 @@ export async function getErrorMessageForHttpStatusCode(code: number) {
   }
   if (code === HTTP_STATUS_NOT_FOUND) {
     return 'The requested Socket API endpoint was not found (404) or there was no result for the requested parameters. If unexpected, this could be a temporary problem caused by an incident or a bug in the CLI. If the problem persists please let us know.'
+  }
+  if (code === HTTP_STATUS_TOO_MANY_REQUESTS) {
+    return 'API quota exceeded. If you are on the free plan, consider upgrading your account or waiting for the quota to reset. For enterprise users, contact support if this persists.'
   }
   if (code === HTTP_STATUS_INTERNAL_SERVER_ERROR) {
     return 'There was an unknown server side problem with your request. This ought to be temporary. Please let us know if this problem persists.'
@@ -184,8 +190,9 @@ export async function handleApiCall<T extends SocketSdkOperations>(
     const errStr = errCResult.error ? String(errCResult.error).trim() : ''
     const message = errStr || NO_ERROR_MESSAGE
     const reason = errCResult.cause || NO_ERROR_MESSAGE
-    const cause =
-      reason && message !== reason ? `${message} (reason: ${reason})` : message
+
+    const cause = await buildErrorCause(sdkResult.status as number, message, reason)
+
     const socketSdkErrorResult: ApiCallResult<T> = {
       ok: false,
       message: 'Socket API error',
@@ -243,8 +250,8 @@ export async function handleApiCallNoSpinner<T extends SocketSdkOperations>(
       : ''
     const message = errStr || NO_ERROR_MESSAGE
     const reason = sdkErrorResult.cause || NO_ERROR_MESSAGE
-    const cause =
-      reason && message !== reason ? `${message} (reason: ${reason})` : message
+
+    const cause = await buildErrorCause(sdkResult.status as number, message, reason)
 
     return {
       ok: false,

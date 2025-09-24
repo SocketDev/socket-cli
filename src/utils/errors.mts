@@ -136,3 +136,42 @@ export function formatErrorWithDetail(
   const errorMessage = getErrorMessage(error)
   return `${baseMessage}${errorMessage ? `: ${errorMessage}` : ''}`
 }
+
+/**
+ * Build error cause string for SDK error results, preserving detailed quota information for 429 errors.
+ * Used by API utilities to format consistent error messages with appropriate context.
+ *
+ * @param status - HTTP status code from the API response
+ * @param message - Primary error message from the API
+ * @param reason - Additional error reason/cause from the API
+ * @returns Formatted error cause string with appropriate context
+ *
+ * @example
+ * await buildErrorCause(429, 'Quota exceeded', 'Monthly limit reached')
+ * // Returns: "Monthly limit reached. API quota exceeded..."
+ *
+ * await buildErrorCause(400, 'Bad request', 'Invalid parameter')
+ * // Returns: "Bad request (reason: Invalid parameter)"
+ */
+export async function buildErrorCause(
+  status: number,
+  message: string,
+  reason: string,
+): Promise<string> {
+  const NO_ERROR_MESSAGE = 'No error message returned'
+
+  // For 429 errors, preserve the detailed quota information.
+  if (status === 429) {
+    const { getErrorMessageForHttpStatusCode } = await import('./api.mts')
+    const quotaMessage = await getErrorMessageForHttpStatusCode(429)
+    if (reason && reason !== NO_ERROR_MESSAGE) {
+      return `${reason}. ${quotaMessage}`
+    }
+    if (message && message !== NO_ERROR_MESSAGE) {
+      return `${message}. ${quotaMessage}`
+    }
+    return quotaMessage
+  }
+
+  return reason && message !== reason ? `${message} (reason: ${reason})` : message
+}
