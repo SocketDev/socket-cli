@@ -504,14 +504,17 @@ export default async () => {
           {
             name: 'fix-blessed-octal',
             transform(code, id) {
-              if (id.includes('blessed') && (id.includes('tput.js') || id.includes('box.js'))) {
+              if (
+                id.includes('blessed') &&
+                (id.includes('tput.js') || id.includes('box.js'))
+              ) {
                 return code
                   .replace(/ch = '\\200';/g, "ch = '\\x80';")
                   .replace(/'\\016'/g, "'\\x0E'")
                   .replace(/'\\017'/g, "'\\x0F'")
               }
               return null
-            }
+            },
           },
           commonjsPlugin({
             defaultIsModuleExports: true,

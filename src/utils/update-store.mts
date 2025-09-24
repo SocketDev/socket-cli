@@ -15,7 +15,7 @@
  * - Error-resistant implementation
  *
  * Storage Format:
- * - Stores in ~/.socket-update-store.json
+ * - Stores in ~/.socket/_socket/update-store.json
  * - Per-package update records with timestamps
  * - Thread-safe operations using process lock utility
  *
@@ -25,14 +25,20 @@
  * - Offline update information
  */
 
-import { existsSync, readFileSync, writeFileSync, unlinkSync } from 'node:fs'
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  writeFileSync,
+  unlinkSync,
+} from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
 import { readFileUtf8Sync } from '@socketsecurity/registry/lib/fs'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { UPDATE_STORE_FILE_NAME } from '../constants.mts'
+import { UPDATE_STORE_DIR, UPDATE_STORE_FILE_NAME } from '../constants.mts'
 import { processLock } from './process-lock.mts'
 
 interface StoreRecord {
@@ -43,7 +49,7 @@ interface StoreRecord {
 
 interface UpdateStoreOptions {
   /**
-   * Custom store file path (defaults to ~/.socket-update-store.json)
+   * Custom store file path (defaults to ~/.socket/_socket/update-store.json)
    */
   storePath?: string
 }
@@ -57,7 +63,8 @@ class UpdateStore {
 
   constructor(options: UpdateStoreOptions = {}) {
     this.storePath =
-      options.storePath ?? path.join(os.homedir(), UPDATE_STORE_FILE_NAME)
+      options.storePath ??
+      path.join(os.homedir(), UPDATE_STORE_DIR, UPDATE_STORE_FILE_NAME)
     this.lockPath = `${this.storePath}.lock`
   }
 
@@ -109,6 +116,16 @@ class UpdateStore {
 
       // Update record.
       data[name] = record
+
+      // Ensure directory exists.
+      const storeDir = path.dirname(this.storePath)
+      try {
+        mkdirSync(storeDir, { recursive: true })
+      } catch (error) {
+        logger.warn(
+          `Failed to create store directory: ${error instanceof Error ? error.message : String(error)}`,
+        )
+      }
 
       // Write atomically.
       const content = JSON.stringify(data, null, 2)

@@ -191,7 +191,7 @@ export async function addArtifactToAlertsMap<T extends AlertsByPurl>(
   }) as AlertFilter
 
   const enabledState = new Map<ALERT_TYPE, boolean>(
-    Object.entries(socketYml?.issueRules ?? {}) as Array<[ALERT_TYPE, boolean]>
+    Object.entries(socketYml?.issueRules ?? {}) as Array<[ALERT_TYPE, boolean]>,
   )
 
   let sockPkgAlerts: SocketPackageAlert[] = []
