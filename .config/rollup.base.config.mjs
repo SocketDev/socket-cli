@@ -109,7 +109,7 @@ export default function baseConfig(extendConfig = {}) {
     ? extendConfig.plugins.slice()
     : []
 
-  const extractedPlugins = { __proto__: null }
+  const extractedPlugins = Object.create(null)
   if (extendPlugins.length) {
     for (const pluginName of [
       'babel',
