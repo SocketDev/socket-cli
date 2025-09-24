@@ -33,19 +33,19 @@
     "./translations.json": "./translations.json"
   },
   "scripts": {
-    "build": "pnpm build:dist",
-    "build:dist": "pnpm build:dist:src && pnpm build:dist:types",
+    "build": "pnpm run build:dist",
+    "build:dist": "pnpm run build:dist:src && pnpm run build:dist:types",
     "build:dist:src": "run-p -c clean:dist clean:external && dotenvx -q run -f .env.local -- rollup -c .config/rollup.dist.config.mjs",
-    "build:dist:types": "pnpm clean:dist:types && tsgo --project tsconfig.dts.json",
+    "build:dist:types": "pnpm run clean:dist:types && tsgo --project tsconfig.dts.json",
     "build:sea": "node src/sea/build-sea.mts",
     "build:sea:internal:bootstrap": "rollup -c .config/rollup.sea.config.mjs",
     "publish:sea": "node src/sea/publish-sea.mts",
     "publish:sea:github": "node src/sea/publish-sea.mts --skip-npm",
     "publish:sea:npm": "node src/sea/publish-sea.mts --skip-github",
-    "check": "pnpm check:lint && pnpm check:tsc",
+    "check": "pnpm run check:lint && pnpm run check:tsc",
     "check:lint": "dotenvx -q run -f .env.local -- node scripts/run-eslint.mjs --timeout 20 .",
     "check:tsc": "tsgo",
-    "check-ci": "pnpm check:lint",
+    "check-ci": "pnpm run check:lint",
     "coverage": "run-s coverage:*",
     "coverage:test": "run-s test:prepare test:unit:coverage",
     "coverage:percent": "node scripts/get-coverage-percentage.mjs",
@@ -56,7 +56,7 @@
     "clean:dist:types": "del-cli 'dist/types'",
     "clean:external": "del-cli 'external'",
     "clean:node_modules": "del-cli '**/node_modules'",
-    "fix": "pnpm lint:fix",
+    "fix": "pnpm run lint:fix",
     "knip:dependencies": "knip --dependencies",
     "knip:exports": "knip --include exports,duplicates",
     "lint": "dotenvx -q run -f .env.local -- oxlint -c=.oxlintrc.json --ignore-path=.oxlintignore --tsconfig=tsconfig.json .",
@@ -73,17 +73,17 @@
     "lint-staged": "dotenvx -q run -f .env.local -- lint-staged",
     "precommit": "dotenvx -q run -f .env.local -- lint-staged",
     "prepare": "dotenvx -q run -f .env.local -- husky",
-    "bs": "dotenvx -q run -f .env.local -- pnpm build:dist:src; pnpm exec socket --",
+    "bs": "dotenvx -q run -f .env.local -- pnpm run build:dist:src; pnpm exec socket --",
     "s": "dotenvx -q run -f .env.local -- pnpm exec socket --",
     "test": "run-s check test:*",
-    "test:prepare": "dotenvx -q run -f .env.test -- pnpm build && del-cli 'test/**/node_modules'",
+    "test:prepare": "dotenvx -q run -f .env.test -- pnpm run build && del-cli 'test/**/node_modules'",
     "test:unit": "dotenvx -q run -f .env.test -- vitest run",
     "test:unit:update": "dotenvx -q run -f .env.test -- vitest run --update",
     "test:unit:coverage": "dotenvx -q run -f .env.test -- vitest run --coverage",
     "test-ci": "run-s test:*",
     "test-pre-commit": "dotenvx -q run -f .env.precommit -- pnpm test",
-    "testu": "dotenvx -q run -f .env.testu -- run-s test:prepare; pnpm test:unit:update --",
-    "testuf": "dotenvx -q run -f .env.testu -- pnpm test:unit:update --",
+    "testu": "dotenvx -q run -f .env.testu -- run-s test:prepare; pnpm run test:unit:update --",
+    "testuf": "dotenvx -q run -f .env.testu -- pnpm run test:unit:update --",
     "update": "run-p --aggregate-output update:**",
     "update:deps": "taze",
     "update:socket": "pnpm update '@socketsecurity/*' '@socketregistry/*' --latest"
@@ -207,8 +207,8 @@
   ],
   "lint-staged": {
     "*.{cjs,cts,js,json,md,mjs,mts,ts}": [
-      "pnpm lint:fix:oxlint",
-      "pnpm lint:fix:biome -- --no-errors-on-unmatched --files-ignore-unknown=true --colors=off"
+      "pnpm run lint:fix:oxlint",
+      "pnpm run lint:fix:biome -- --no-errors-on-unmatched --files-ignore-unknown=true --colors=off"
     ]
   },
   "pnpm": {
