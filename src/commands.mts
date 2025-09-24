@@ -31,10 +31,10 @@ import { cmdUninstall } from './commands/uninstall/cmd-uninstall.mts'
 import { cmdWhoami } from './commands/whoami/cmd-whoami.mts'
 import { cmdWrapper } from './commands/wrapper/cmd-wrapper.mts'
 import { cmdYarn } from './commands/yarn/cmd-yarn.mts'
-import { default as cmdSelfUpdate } from './commands/self-update/cmd-self-update.mts'
+import { cmdSelfUpdate } from './commands/self-update/cmd-self-update.mts'
 import { isSeaBinary } from './utils/sea.mts'
 
-const baseCommands = {
+export const rootCommands = {
   analytics: cmdAnalytics,
   'audit-log': cmdAuditLog,
   ci: cmdCI,
@@ -61,20 +61,13 @@ const baseCommands = {
   repository: cmdRepository,
   scan: cmdScan,
   security: cmdOrganizationPolicySecurity,
+  ...(isSeaBinary() ? { 'self-update': cmdSelfUpdate } : {}),
   'threat-feed': cmdThreatFeed,
   uninstall: cmdUninstall,
   whoami: cmdWhoami,
   wrapper: cmdWrapper,
   yarn: cmdYarn,
 }
-
-// Add SEA-specific commands when running as SEA binary.
-export const rootCommands = isSeaBinary()
-  ? {
-      ...baseCommands,
-      'self-update': cmdSelfUpdate,
-    }
-  : baseCommands
 
 export const rootAliases = {
   audit: {
