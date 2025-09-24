@@ -1,27 +1,62 @@
 /**
- * SEA (Single Executable Application) detection utilities.
- *
+ * SEA (Single Executable Application) detection utilities for Socket CLI.
  * Provides reliable detection of whether the current process is running
  * as a Node.js Single Executable Application.
+ *
+ * Key Functions:
+ * - isSeaBinary: Detect if running as SEA with caching
+ * - getSeaBinaryPath: Get the current SEA binary path
+ *
+ * Detection Method:
+ * - Uses Node.js 24+ native sea.isSea() API
+ * - Caches result for performance
+ * - Graceful fallback for unsupported versions
+ *
+ * Features:
+ * - Cached detection for performance
+ * - Error-resistant implementation
+ * - Support for Node.js 24+ SEA API
+ *
+ * Usage:
+ * - Detecting SEA execution context
+ * - Conditional SEA-specific functionality
+ * - Update notification customization
  */
+
+import { logger } from '@socketsecurity/registry/lib/logger'
+
+/**
+ * Cached SEA detection result.
+ */
+let _isSea: boolean | undefined
 
 /**
  * Detect if the current process is running as a SEA binary.
- *
- * @returns True if running as SEA, false otherwise
+ * Uses Node.js 24+ native API with caching for performance.
  */
 function isSeaBinary(): boolean {
-  try {
-    // Check for Node.js SEA indicators.
-    return !!(
-      process.env['NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2'] ||
-      // Check if running from a single executable.
-      (process.argv[0] && !process.argv[0].includes('node'))
-    )
-  } catch {
-    // If any error occurs during detection, assume not SEA.
-    return false
+  if (_isSea === undefined) {
+    try {
+      // Use Node.js 24+ native SEA detection API.
+      const seaModule = require('node:sea')
+      _isSea = seaModule.isSea()
+      logger.debug(`SEA detection result: ${_isSea}`)
+    } catch (error) {
+      logger.debug(
+        `SEA detection failed (likely Node.js < 24): ${error instanceof Error ? error.message : String(error)}`,
+      )
+      _isSea = false
+    }
   }
+  return _isSea ?? false
 }
 
-export { isSeaBinary }
+/**
+ * Get the current SEA binary path.
+ * Only valid when running as a SEA binary.
+ */
+function getSeaBinaryPath(): string | undefined {
+  return isSeaBinary() ? process.argv[0] : undefined
+}
+
+export { getSeaBinaryPath, isSeaBinary }
