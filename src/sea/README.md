@@ -2,6 +2,16 @@
 
 Build self-contained executables using Node.js SEA.
 
+## Platform Support Status
+
+| Platform | x64 | ARM64 | Status |
+|----------|-----|-------|--------|
+| Linux    | ✅   | ✅     | Stable |
+| macOS    | ✅   | ✅     | Stable |
+| Windows  | ✅   | ✅     | Stable |
+
+> **Note**: See [`docs/SEA_PLATFORM_SUPPORT.md`](../../docs/SEA_PLATFORM_SUPPORT.md) for platform-specific implementation details.
+
 ## Architecture
 
 The executable is a **thin wrapper** that downloads `@socketsecurity/cli` from npm on first use.
