@@ -1,24 +1,29 @@
-'use strict'
+import { createRequire } from 'node:module'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const path = require('node:path')
-
-const {
+import {
   convertIgnorePatternToMinimatch,
   includeIgnoreFile,
-} = require('@eslint/compat')
-const js = require('@eslint/js')
-const tsParser = require('@typescript-eslint/parser')
-const {
+} from '@eslint/compat'
+import js from '@eslint/js'
+import tsParser from '@typescript-eslint/parser'
+import {
   createTypeScriptImportResolver,
-} = require('eslint-import-resolver-typescript')
-const importXPlugin = require('eslint-plugin-import-x')
-const nodePlugin = require('eslint-plugin-n')
-const sortDestructureKeysPlugin = require('eslint-plugin-sort-destructure-keys')
-const unicornPlugin = require('eslint-plugin-unicorn')
-const globals = require('globals')
-const tsEslint = require('typescript-eslint')
+} from 'eslint-import-resolver-typescript'
+import importXPlugin from 'eslint-plugin-import-x'
+import nodePlugin from 'eslint-plugin-n'
+import sortDestructureKeysPlugin from 'eslint-plugin-sort-destructure-keys'
+import unicornPlugin from 'eslint-plugin-unicorn'
+import globals from 'globals'
+import tsEslint from 'typescript-eslint'
 
-const constants = require('@socketsecurity/scripts/constants')
+import constants from '@socketsecurity/scripts/constants'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+const require = createRequire(import.meta.url)
+
 const { BIOME_JSON, GITIGNORE, LATEST, TSCONFIG_JSON } = constants
 
 const { flatConfigs: origImportXFlatConfigs } = importXPlugin
@@ -30,17 +35,20 @@ const nodeGlobalsConfig = Object.fromEntries(
   Object.entries(globals.node).map(([k]) => [k, 'readonly']),
 )
 
-const biomeConfigPath = path.join(rootPath, BIOME_JSON)
+const biomeConfigPath = path.join(rootPath, 'biome.json')
 const biomeConfig = require(biomeConfigPath)
 const biomeIgnores = {
-  name: `Imported ${BIOME_JSON} ignore patterns`,
+  name: `Imported biome.json ignore patterns`,
   ignores: biomeConfig.files.includes
     .filter(p => p.startsWith('!'))
     .map(p => convertIgnorePatternToMinimatch(p.slice(1))),
 }
 
 const gitignorePath = path.join(rootPath, GITIGNORE)
-const gitIgnores = includeIgnoreFile(gitignorePath)
+const gitIgnores = {
+  ...includeIgnoreFile(gitignorePath),
+  name: `Imported .gitignore ignore patterns`,
+}
 
 if (process.env.LINT_DIST) {
   const isNotDistGlobPattern = p => !/(?:^|[\\/])dist/.test(p)
@@ -188,7 +196,7 @@ function getImportXFlatConfigs(isEsm) {
 const importFlatConfigsForScript = getImportXFlatConfigs(false)
 const importFlatConfigsForModule = getImportXFlatConfigs(true)
 
-module.exports = [
+export default [
   gitIgnores,
   biomeIgnores,
   {
