@@ -7,21 +7,24 @@ export default defineConfig({
   test: {
     globals: false,
     environment: 'node',
-    include: ['test/**/*.test.{js,ts,mjs,cjs,mts}'],
+    include: [
+      'test/**/*.test.{js,ts,mjs,cjs,mts}',
+      'src/**/*.test.{js,ts,mjs,cjs,mts}',
+    ],
     reporters: ['default'],
-    // Improve memory usage by running tests sequentially in CI.
+    // Use parallel execution with controlled concurrency.
     pool: 'forks',
     poolOptions: {
       forks: {
-        singleFork: true,
-        maxForks: 1,
+        singleFork: false,
+        maxForks: 4,
         // Isolate tests to prevent memory leaks between test files.
         isolate: true,
       },
       threads: {
-        singleThread: true,
+        singleThread: false,
         // Limit thread concurrency to prevent RegExp compiler exhaustion.
-        maxThreads: 1,
+        maxThreads: 4,
       },
     },
     testTimeout: 60_000,
