@@ -17,7 +17,6 @@ import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url))
 
-
 /**
  * Build SEA binaries for all platforms.
  */
