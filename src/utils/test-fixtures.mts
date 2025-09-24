@@ -53,7 +53,7 @@ export async function createTempFixtures(
   fixtures: Record<string, string>,
   cleanupHook?: (cleanup: () => Promise<void>) => void,
 ): Promise<Record<string, string>> {
-  const tempFixtures = { __proto__: null } as unknown as Record<string, string>
+  const tempFixtures = Object.create(null) as Record<string, string>
   const tempDirs: string[] = []
 
   for (const [name, fixturePath] of Object.entries(fixtures)) {
