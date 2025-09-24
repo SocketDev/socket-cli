@@ -4,6 +4,8 @@
  * Downloads the appropriate platform-specific binary from GitHub releases.
  */
 
+const { SOCKET_GITHUB_ORG } = require('@socketsecurity/registry/lib/constants')
+const { SOCKET_CLI_GITHUB_REPO } = require('../../dist/constants.js')
 const crypto = require('node:crypto')
 const fs = require('node:fs')
 const https = require('node:https')
@@ -12,7 +14,6 @@ const path = require('node:path')
 const { pipeline } = require('node:stream/promises')
 const zlib = require('node:zlib')
 
-const GITHUB_REPO = 'SocketDev/socket-cli'
 const BINARY_NAME = 'socket'
 
 // Map Node.js platform/arch to our binary names.
@@ -89,7 +90,7 @@ async function getBinaryUrl() {
   const binaryName = getBinaryName()
 
   // First try the tagged release.
-  return `https://github.com/${GITHUB_REPO}/releases/download/v${version}/${binaryName}`
+  return `https://github.com/${SOCKET_GITHUB_ORG}/${SOCKET_CLI_GITHUB_REPO}/releases/download/v${version}/${binaryName}`
 }
 
 /**
