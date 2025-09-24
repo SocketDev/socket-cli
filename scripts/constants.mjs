@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import registryConstants from '@socketsecurity/registry/lib/constants'
+import { envAsBoolean } from '@socketsecurity/registry/lib/env'
 
 const {
   kInternalsSymbol,
@@ -50,7 +51,6 @@ const SOCKET_CLI_SENTRY_PACKAGE_NAME = '@socketsecurity/cli-with-sentry'
 
 const LAZY_ENV = () => {
   const { env } = process
-  const { envAsBoolean } = registryConstants.envAsBoolean
   return Object.freeze({
     // Lazily access registryConstants.ENV.
     ...registryConstants.ENV,
