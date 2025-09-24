@@ -19,6 +19,11 @@ import constants from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { outputSelfUpdate } from './output-self-update.mts'
+import {
+  clearQuarantine,
+  ensureExecutable,
+  getExpectedAssetName,
+} from '../../utils/platform.mts'
 import { isSeaBinary } from '../../utils/sea.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
@@ -42,36 +47,6 @@ interface GitHubRelease {
   assets: ReleaseAsset[]
   published_at: string
   prerelease: boolean
-}
-
-/**
- * Determine the expected asset name for the current platform.
- */
-function getExpectedAssetName(): string {
-  const platform = process.platform
-  const arch = process.arch
-
-  // Map Node.js platform names to GitHub release names.
-  const platformMap: Record<string, string> = Object.assign(
-    Object.create(null),
-    {
-      darwin: 'macos',
-      linux: 'linux',
-      win32: 'win',
-    },
-  )
-
-  // Map Node.js arch names to GitHub release names.
-  const archMap: Record<string, string> = Object.assign(Object.create(null), {
-    arm64: 'arm64',
-    x64: 'x64',
-  })
-
-  const mappedPlatform = platformMap[platform] ?? platform
-  const mappedArch = archMap[arch] ?? arch
-
-  const extension = platform === 'win32' ? '.exe' : ''
-  return `socket-${mappedPlatform}-${mappedArch}${extension}`
 }
 
 /**
@@ -200,16 +175,16 @@ async function createBackup(currentPath: string): Promise<string> {
 
 /**
  * Replace the current binary atomically.
+ * Uses sfw-installer patterns for platform-specific handling.
  */
 async function replaceBinary(
   newPath: string,
   currentPath: string,
 ): Promise<void> {
   try {
-    // Make the new binary executable.
-    if (process.platform !== 'win32') {
-      await fs.chmod(newPath, 0o755)
-    }
+    // Ensure the new binary is executable and clear quarantine.
+    await ensureExecutable(newPath)
+    await clearQuarantine(newPath)
 
     // On Windows, we might need special handling for replacing the running executable.
     if (process.platform === 'win32') {
