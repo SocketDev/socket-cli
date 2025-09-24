@@ -1,7 +1,5 @@
-'use strict'
-
-const { statSync } = require('node:fs')
-const path = require('node:path')
+import { statSync } from 'node:fs'
+import path from 'node:path'
 
 function findUpSync(name, options) {
   const opts = { __proto__: null, ...options }
@@ -34,6 +32,6 @@ function findUpSync(name, options) {
   return undefined
 }
 
-module.exports = {
+export {
   findUpSync,
 }

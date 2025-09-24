@@ -1,5 +1,3 @@
-'use strict'
-
 // Helper to check if something is a .__proto__ access.
 function isProtoAccess(node, t) {
   return (
@@ -19,7 +17,7 @@ function unwrapProto(node, t) {
   }
 }
 
-module.exports = function ({ types: t }) {
+export default function ({ types: t }) {
   return {
     name: 'transform-set-proto',
     visitor: {
