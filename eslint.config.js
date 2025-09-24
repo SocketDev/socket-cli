@@ -18,7 +18,7 @@ const unicornPlugin = require('eslint-plugin-unicorn')
 const globals = require('globals')
 const tsEslint = require('typescript-eslint')
 
-const constants = require('@socketsecurity/registry/lib/constants')
+const constants = require('@socketsecurity/scripts/constants')
 const { BIOME_JSON, GITIGNORE, LATEST, TSCONFIG_JSON } = constants
 
 const { flatConfigs: origImportXFlatConfigs } = importXPlugin
@@ -33,7 +33,7 @@ const nodeGlobalsConfig = Object.fromEntries(
 const biomeConfigPath = path.join(rootPath, BIOME_JSON)
 const biomeConfig = require(biomeConfigPath)
 const biomeIgnores = {
-  name: 'Imported biome.json ignore patterns',
+  name: `Imported ${BIOME_JSON} ignore patterns`,
   ignores: biomeConfig.files.includes
     .filter(p => p.startsWith('!'))
     .map(p => convertIgnorePatternToMinimatch(p.slice(1))),

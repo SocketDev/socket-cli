@@ -19,8 +19,8 @@ const __dirname = path.dirname(__filename)
 
 const {
   AT_LATEST,
-  BIOME_JSON,
   BUN,
+  CHANGELOG_MD,
   CI,
   COLUMN_LIMIT,
   DOT_GIT_DIR,
@@ -61,6 +61,7 @@ const {
   NODE_ENV,
   NODE_MODULES,
   NODE_MODULES_GLOB_RECURSIVE,
+  NODE_SEA_FUSE,
   NPM,
   NPX,
   OVERRIDES,
@@ -257,6 +258,7 @@ const REPORT_LEVEL_WARN = 'warn'
 const REQUIREMENTS_TXT = 'requirements.txt'
 const SOCKET_CLI_ACCEPT_RISKS = 'SOCKET_CLI_ACCEPT_RISKS'
 const SOCKET_CLI_BIN_NAME = 'socket'
+const SOCKET_CLI_GITHUB_REPO = 'socket-cli'
 const SOCKET_CLI_ISSUES_URL = 'https://github.com/SocketDev/socket-cli/issues'
 const SOCKET_CLI_SHADOW_ACCEPT_RISKS = 'SOCKET_CLI_SHADOW_ACCEPT_RISKS'
 const SOCKET_CLI_SHADOW_API_TOKEN = 'SOCKET_CLI_SHADOW_API_TOKEN'
@@ -286,6 +288,7 @@ export type Constants = Remap<
     readonly ALERT_TYPE_MILD_CVE: typeof ALERT_TYPE_MILD_CVE
     readonly API_V0_URL: typeof API_V0_URL
     readonly BUN: typeof BUN
+    readonly CHANGELOG_MD: typeof CHANGELOG_MD
     readonly CONFIG_KEY_API_BASE_URL: typeof CONFIG_KEY_API_BASE_URL
     readonly CONFIG_KEY_API_PROXY: typeof CONFIG_KEY_API_PROXY
     readonly CONFIG_KEY_API_TOKEN: typeof CONFIG_KEY_API_TOKEN
@@ -339,6 +342,7 @@ export type Constants = Remap<
     readonly HTTP_STATUS_NOT_FOUND: typeof HTTP_STATUS_NOT_FOUND
     readonly HTTP_STATUS_UNAUTHORIZED: typeof HTTP_STATUS_UNAUTHORIZED
     readonly NODE_MODULES: typeof NODE_MODULES
+    readonly NODE_SEA_FUSE: typeof NODE_SEA_FUSE
     readonly NPM: typeof NPM
     readonly NPM_BUGGY_OVERRIDES_PATCHED_VERSION: typeof NPM_BUGGY_OVERRIDES_PATCHED_VERSION
     readonly NPM_REGISTRY_URL: typeof NPM_REGISTRY_URL
@@ -360,6 +364,7 @@ export type Constants = Remap<
     readonly REQUIREMENTS_TXT: typeof REQUIREMENTS_TXT
     readonly SOCKET_CLI_ACCEPT_RISKS: typeof SOCKET_CLI_ACCEPT_RISKS
     readonly SOCKET_CLI_BIN_NAME: typeof SOCKET_CLI_BIN_NAME
+    readonly SOCKET_CLI_GITHUB_REPO: typeof SOCKET_CLI_GITHUB_REPO
     readonly SOCKET_CLI_ISSUES_URL: typeof SOCKET_CLI_ISSUES_URL
     readonly SOCKET_CLI_SHADOW_ACCEPT_RISKS: typeof SOCKET_CLI_SHADOW_ACCEPT_RISKS
     readonly SOCKET_CLI_SHADOW_API_TOKEN: typeof SOCKET_CLI_SHADOW_API_TOKEN
@@ -956,6 +961,7 @@ const constants: Constants = createConstantsObject(
     REQUIREMENTS_TXT,
     SOCKET_CLI_ACCEPT_RISKS,
     SOCKET_CLI_BIN_NAME,
+    SOCKET_CLI_GITHUB_REPO,
     SOCKET_CLI_ISSUES_URL,
     SOCKET_CLI_SHADOW_ACCEPT_RISKS,
     SOCKET_CLI_SHADOW_API_TOKEN,
@@ -1068,8 +1074,8 @@ const constants: Constants = createConstantsObject(
 export {
   // Re-exported from socket-registry.
   AT_LATEST,
-  BIOME_JSON,
   BUN,
+  CHANGELOG_MD,
   CI,
   COLUMN_LIMIT,
   DOT_GIT_DIR,
@@ -1110,6 +1116,7 @@ export {
   NODE_ENV,
   NODE_MODULES,
   NODE_MODULES_GLOB_RECURSIVE,
+  NODE_SEA_FUSE,
   NPM,
   NPX,
   OVERRIDES,
@@ -1214,6 +1221,7 @@ export {
   REQUIREMENTS_TXT,
   SOCKET_CLI_ACCEPT_RISKS,
   SOCKET_CLI_BIN_NAME,
+  SOCKET_CLI_GITHUB_REPO,
   SOCKET_CLI_ISSUES_URL,
   SOCKET_CLI_SHADOW_ACCEPT_RISKS,
   SOCKET_CLI_SHADOW_API_TOKEN,
