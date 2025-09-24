@@ -59,8 +59,8 @@ export async function updateDependencies(
       cause: cmdPrefixMessage(
         cmdName,
         `${pkgEnvDetails.agent} install failed to update ${pkgEnvDetails.lockName}. ` +
-        `Check that ${pkgEnvDetails.agent} is properly installed and your project configuration is valid. ` +
-        `Run '${pkgEnvDetails.agent} install' manually to see detailed error information.`,
+          `Check that ${pkgEnvDetails.agent} is properly installed and your project configuration is valid. ` +
+          `Run '${pkgEnvDetails.agent} install' manually to see detailed error information.`,
       ),
     }
   }

@@ -88,7 +88,6 @@ function logPermissionsFor403(cmdPath?: string | undefined): void {
   logger.error('Please ensure your API token has the required permissions.')
 }
 
-
 // The Socket API server that should be used for operations.
 export function getDefaultApiBaseUrl(): string | undefined {
   const baseUrl =
@@ -191,7 +190,11 @@ export async function handleApiCall<T extends SocketSdkOperations>(
     const message = errStr || NO_ERROR_MESSAGE
     const reason = errCResult.cause || NO_ERROR_MESSAGE
 
-    const cause = await buildErrorCause(sdkResult.status as number, message, reason)
+    const cause = await buildErrorCause(
+      sdkResult.status as number,
+      message,
+      reason,
+    )
 
     const socketSdkErrorResult: ApiCallResult<T> = {
       ok: false,
@@ -251,7 +254,11 @@ export async function handleApiCallNoSpinner<T extends SocketSdkOperations>(
     const message = errStr || NO_ERROR_MESSAGE
     const reason = sdkErrorResult.cause || NO_ERROR_MESSAGE
 
-    const cause = await buildErrorCause(sdkResult.status as number, message, reason)
+    const cause = await buildErrorCause(
+      sdkResult.status as number,
+      message,
+      reason,
+    )
 
     return {
       ok: false,

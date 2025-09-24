@@ -9,8 +9,12 @@ import process from 'node:process'
 const originalEmitWarning = process.emitWarning
 process.emitWarning = function (warning, ...args) {
   if (
-    (typeof warning === 'string' && warning.includes('MaxListenersExceededWarning') && warning.includes('AbortSignal')) ||
-    (args[0] === 'MaxListenersExceededWarning' && typeof warning === 'string' && warning.includes('AbortSignal'))
+    (typeof warning === 'string' &&
+      warning.includes('MaxListenersExceededWarning') &&
+      warning.includes('AbortSignal')) ||
+    (args[0] === 'MaxListenersExceededWarning' &&
+      typeof warning === 'string' &&
+      warning.includes('AbortSignal'))
   ) {
     // Suppress the specific MaxListenersExceeded warning for AbortSignal.
     return

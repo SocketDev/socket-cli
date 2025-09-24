@@ -40,19 +40,6 @@ import WIN32 from '@socketsecurity/registry/lib/constants/win32'
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url))
 
-interface BuildTarget {
-  platform: NodeJS.Platform
-  arch: string
-  nodeVersion: string
-  outputName: string
-}
-
-interface BuildOptions {
-  platform?: NodeJS.Platform
-  arch?: string
-  nodeVersion?: string
-  outputDir?: string
-}
 
 // Supported Node.js versions for SEA.
 // Node v24+ has better SEA support and smaller binary sizes.
@@ -61,20 +48,14 @@ interface BuildOptions {
 /**
  * Fetch the latest stable Node.js version for v24+.
  */
-async function getLatestNode24Version(): Promise<string> {
+async function getLatestNode24Version() {
   try {
     const response = await fetch('https://nodejs.org/dist/index.json')
     if (!response.ok) {
       throw new Error(`Failed to fetch Node.js releases: ${response.statusText}`)
     }
 
-    const releases = await response.json() as Array<{
-      version: string
-      date: string
-      files: string[]
-      lts: boolean | string
-      security: boolean
-    }>
+    const releases = await response.json()
 
     // Find the latest v24+ version.
     const latestV24 = releases
@@ -97,14 +78,14 @@ async function getLatestNode24Version(): Promise<string> {
 /**
  * Get the default Node.js version for SEA builds.
  */
-async function getDefaultNodeVersion(): Promise<string> {
+async function getDefaultNodeVersion() {
   return constants.ENV.SOCKET_CLI_SEA_NODE_VERSION || await getLatestNode24Version()
 }
 
 /**
  * Generate build targets for different platforms.
  */
-async function getBuildTargets(): Promise<BuildTarget[]> {
+async function getBuildTargets() {
   const defaultNodeVersion = await getDefaultNodeVersion()
 
   return [
@@ -150,11 +131,7 @@ async function getBuildTargets(): Promise<BuildTarget[]> {
 /**
  * Download Node.js binary for a specific platform.
  */
-async function downloadNodeBinary(
-  version: string,
-  platform: NodeJS.Platform,
-  arch: string,
-): Promise<string> {
+async function downloadNodeBinary(version, platform, arch) {
   const isPlatWin = platform === 'win32'
   const nodeDir = normalizePath(
     path.join(os.homedir(), '.socket', 'node-binaries'),
@@ -175,12 +152,12 @@ async function downloadNodeBinary(
   const baseUrl =
     constants.ENV.SOCKET_NODE_DOWNLOAD_URL ||
     'https://nodejs.org/download/release'
-  const archMap: Record<string, string> = {
+  const archMap = {
     x64: 'x64',
     arm64: 'arm64',
     ia32: 'x86',
   }
-  const platformMap: Record<string, string> = {
+  const platformMap = {
     darwin: 'darwin',
     linux: 'linux',
     win32: 'win',
@@ -289,10 +266,7 @@ async function downloadNodeBinary(
 /**
  * Generate SEA configuration.
  */
-async function generateSeaConfig(
-  entryPoint: string,
-  outputPath: string,
-): Promise<string> {
+async function generateSeaConfig(entryPoint, outputPath) {
   const configPath = normalizePath(
     path.join(path.dirname(outputPath), 'sea-config.json'),
   )
@@ -316,10 +290,7 @@ async function generateSeaConfig(
 /**
  * Build SEA blob.
  */
-async function buildSeaBlob(
-  nodeBinary: string,
-  configPath: string,
-): Promise<string> {
+async function buildSeaBlob(nodeBinary, configPath) {
   const config = JSON.parse(await fs.readFile(configPath, 'utf8'))
   const blobPath = config.output
 
@@ -350,11 +321,7 @@ async function buildSeaBlob(
 /**
  * Inject SEA blob into Node binary.
  */
-async function injectSeaBlob(
-  nodeBinary: string,
-  blobPath: string,
-  outputPath: string,
-): Promise<void> {
+async function injectSeaBlob(nodeBinary, blobPath, outputPath) {
   console.log('Creating self-executable...')
 
   // Check if postject is available.
@@ -475,10 +442,7 @@ async function injectSeaBlob(
 /**
  * Build a single target.
  */
-async function buildTarget(
-  target: BuildTarget,
-  options: BuildOptions,
-): Promise<void> {
+async function buildTarget(target, options) {
   const { outputDir = normalizePath(path.join(__dirname, '../../dist/sea')) } =
     options
 
@@ -540,7 +504,7 @@ async function buildTarget(
       entryPoint.endsWith('.mjs') && !entryPoint.endsWith('.compiled.mjs')
         ? entryPoint
         : null,
-    ].filter(Boolean) as string[]
+    ].filter(Boolean)
 
     if (filesToClean.length > 0) {
       await trash(filesToClean).catch(() => {})
@@ -554,15 +518,15 @@ async function buildTarget(
 /**
  * Parse command-line arguments.
  */
-function parseArgs(): BuildOptions {
+function parseArgs() {
   const args = process.argv.slice(2)
-  const options: BuildOptions = {}
+  const options = {}
 
   for (const arg of args) {
     if (arg.startsWith('--platform=')) {
       const platform = arg.split('=')[1]
       if (platform) {
-        options.platform = platform as NodeJS.Platform
+        options.platform = platform
       }
     } else if (arg.startsWith('--arch=')) {
       const arch = arg.split('=')[1]
@@ -588,7 +552,7 @@ function parseArgs(): BuildOptions {
 /**
  * Main build function.
  */
-async function main(): Promise<void> {
+async function main() {
   const options = parseArgs()
 
   console.log('Socket CLI Self-Executable Builder')
@@ -638,7 +602,7 @@ async function main(): Promise<void> {
 }
 
 // Run if executed directly.
-if (import.meta.url === url.pathToFileURL(process.argv[1]!).href) {
+if (import.meta.url === url.pathToFileURL(process.argv[1]).href) {
   main().catch(error => {
     console.error('Build failed:', error)
     // eslint-disable-next-line n/no-process-exit

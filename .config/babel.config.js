@@ -21,7 +21,7 @@ module.exports = {
         version: '^7.27.1',
       },
     ],
-    path.join(babelPluginsPath, 'transform-set-proto-plugin.js'),
-    path.join(babelPluginsPath, 'transform-url-parse-plugin.js'),
+    path.join(babelPluginsPath, 'transform-set-proto-plugin.mjs'),
+    path.join(babelPluginsPath, 'transform-url-parse-plugin.mjs'),
   ],
 }
