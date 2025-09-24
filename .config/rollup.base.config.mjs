@@ -138,6 +138,18 @@ export default function baseConfig(extendConfig = {}) {
         id,
         path.isAbsolute(id) ? nmPath.length + 1 : 0,
       )
+      // Externalize anything from the external directory.
+      if (id.includes('/external/') || id.startsWith('../external/')) {
+        return true
+      }
+      // Externalize @socketsecurity/registry and all its internal paths.
+      if (
+        pkgName === '@socketsecurity/registry' ||
+        id.includes('@socketsecurity/registry/external/') ||
+        id.includes('/@socketsecurity+registry@')
+      ) {
+        return true
+      }
       return (
         id.endsWith('.d.cts') ||
         id.endsWith('.d.mts') ||
