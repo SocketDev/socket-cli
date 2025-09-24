@@ -8,7 +8,7 @@ overrides:
   '@octokit/graphql': 9.0.1
   '@octokit/request-error': 7.0.0
   '@rollup/plugin-commonjs': 28.0.6
-  '@socketsecurity/registry': 1.1.17
+  '@socketsecurity/registry': 1.2.2
   aggregate-error: npm:@socketregistry/aggregate-error@^1.0.14
   ansi-regex: 6.1.0
   ansi-term: 0.0.2
@@ -46,7 +46,6 @@ overrides:
   side-channel: npm:@socketregistry/side-channel@^1.0.9
   string_decoder: 0.10.31
   tiny-colors: 2.1.3
-  tiny-updater: 3.5.3
   typedarray: npm:@socketregistry/typedarray@^1.0.7
   undici: 6.21.3
   vite: 7.1.5
@@ -94,9 +93,6 @@ patchedDependencies:
   string_decoder@0.10.31:
     hash: 4f6ae5ec65b5537e81cd3ee7e83ae65bcc843a93cff14f147d8053e1c385ae1d
     path: patches/string_decoder@0.10.31.patch
-  tiny-updater@3.5.3:
-    hash: b3f4afb74b370538fe45248cba31833aee4553f83f15a6a07da47f85afae2f24
-    path: patches/tiny-updater@3.5.3.patch
 
 importers:
 
@@ -205,11 +201,11 @@ importers:
         specifier: 3.0.1
         version: 3.0.1
       '@socketsecurity/registry':
-        specifier: 1.1.17
-        version: 1.1.17
+        specifier: 1.2.2
+        version: 1.2.2
       '@socketsecurity/sdk':
-        specifier: 1.4.93
-        version: 1.4.93
+        specifier: 1.5.0
+        version: 1.5.0
       '@types/blessed':
         specifier: 0.1.25
         version: 0.1.25
@@ -375,9 +371,6 @@ importers:
       terminal-link:
         specifier: 2.1.1
         version: 2.1.1
-      tiny-updater:
-        specifier: 3.5.3
-        version: 3.5.3(patch_hash=b3f4afb74b370538fe45248cba31833aee4553f83f15a6a07da47f85afae2f24)
       trash:
         specifier: 10.0.0
         version: 10.0.0
@@ -1671,13 +1664,13 @@ packages:
     resolution: {integrity: sha512-kLKdSqi4W7SDSm5z+wYnfVRnZCVhxzbzuKcdOZSrcHoEGOT4Gl844uzoaML+f5eiQMxY+nISiETwRph/aXrIaQ==}
     engines: {node: 18.20.7 || ^20.18.3 || >=22.14.0}
 
-  '@socketsecurity/registry@1.1.17':
-    resolution: {integrity: sha512-5j0eH6JaBZlcvnbdu+58Sw8c99AK25PTp0Z/lwP7HknHdJ0TMMoTzNIBbp7WCTZKoGrPgBWchi0udN1ObZ53VQ==}
+  '@socketsecurity/registry@1.2.2':
+    resolution: {integrity: sha512-2SaktloQ7b3oowpqI2trZaKvfodAlWurL3CHGtOEgp4/20vWNxvX7HK022gRIZO+8Bm/NzxmG76H6hHeJlHACg==}
     engines: {node: '>=18'}
 
-  '@socketsecurity/sdk@1.4.93':
-    resolution: {integrity: sha512-YwMJg7yRLRHKLv8z1DqikNTwJ6My3LHR+t8mC/vHKvtbu9K/Dr+GsXm+yJt3UHkX4CZu0UKdRLt9vPwMA6ZKsw==}
-    engines: {node: '>=18'}
+  '@socketsecurity/sdk@1.5.0':
+    resolution: {integrity: sha512-nUAvnfJTlsEolNIIpsRa8+oqFcDtDt2j4jnxxpQwmX6JM0JUVL0iKYtvvLRa3lBWLZ6Qxi6sb5bP8WhDvcaYJw==}
+    engines: {node: '>=18', pnpm: '>=10.16.0'}
 
   '@stroncium/procfs@1.2.1':
     resolution: {integrity: sha512-X1Iui3FUNZP18EUvysTHxt+Avu2nlVzyf90YM8OYgP6SGzTzzX/0JgObfO1AQQDzuZtNNz29bVh8h5R97JrjxA==}
@@ -3091,9 +3084,6 @@ packages:
     resolution: {integrity: sha512-+N0ngpO3e7cRUWOJAS7qw0IZIVc6XPrW4MlFBdD066F2L4k1L6ker3hLqSq7iXxU5tgS4WGkIUElWn5vogAEnw==}
     engines: {node: ^18.17.0 || >=20.5.0}
 
-  ionstore@1.0.1:
-    resolution: {integrity: sha512-g+99vyka3EiNFJCnbq3NxegjV211RzGtkDUMbZGB01Con8ZqUmMx/FpWMeqgDXOqgM7QoVeDhe+CfYCWznaDVA==}
-
   ip-address@10.0.1:
     resolution: {integrity: sha512-NWv9YLW4PoW2B7xtzaS3NCot75m6nK7Icdv0o3lfMceJVRfSoQwqD4wEH5rLwoKJwUiZ/rfpiVBhnaF0FK4HoA==}
     engines: {node: '>= 12'}
@@ -4390,12 +4380,6 @@ packages:
   through2@4.0.2:
     resolution: {integrity: sha512-iOqSav00cVxEEICeD7TjLB1sueEL+81Wpzp2bY17uZjZN0pWZPuo4suZ/61VujxmqSGFfgOcNuTZ85QJwNZQpw==}
 
-  tiny-colors@2.1.3:
-    resolution: {integrity: sha512-QKQBQx8Xm/jmaCDF8pdptiLWgmtbqEUgJnxqVeKQQcQP5XjGGImJ5hDHlDKAiwQhmp+xi3stYQZBedBMKzm+fw==}
-
-  tiny-updater@3.5.3:
-    resolution: {integrity: sha512-wEUssfOOkVLg2raSaRbyZDHpVCDj6fnp7UjynpNE4XGuF+Gkj8GRRMoHdfk73VzLQs/AHKsbY8fCxXNz8Hx4Qg==}
-
   tinybench@2.9.0:
     resolution: {integrity: sha512-0+DUvqWMValLmha6lr4kD8iAMK1HzV0/aKnCtWb9v9641TnP/MFb7Pc2bxoxQjTXAErryXVgUOfv2YqNllqGeg==}
 
@@ -4691,9 +4675,6 @@ packages:
   whatwg-mimetype@4.0.0:
     resolution: {integrity: sha512-QaKxh0eNIi2mE9p2vEdzfagOKHCcj1pJ56EEHGQOVxp8r9/iszLUUV7v89x9O1p/T+NlTM5W7jW6+cz4Fq1YVg==}
     engines: {node: '>=18'}
-
-  when-exit@2.1.4:
-    resolution: {integrity: sha512-4rnvd3A1t16PWzrBUcSDZqcAmsUIy4minDXT/CZ8F2mVDgd65i4Aalimgz1aQkRGU0iH5eT5+6Rx2TK8o443Pg==}
 
   which@2.0.2:
     resolution: {integrity: sha512-BLI3Tl1TW3Pvl70l3yq3Y64i+awpwXqsGBYWkkqMtnbXgrMD+yj7rhW0kuEDxzJaYXGjEW5ogapKNMEKNMjibA==}
@@ -6116,11 +6097,11 @@ snapshots:
       pony-cause: 2.1.11
       yaml: 2.8.1
 
-  '@socketsecurity/registry@1.1.17': {}
+  '@socketsecurity/registry@1.2.2': {}
 
-  '@socketsecurity/sdk@1.4.93':
+  '@socketsecurity/sdk@1.5.0':
     dependencies:
-      '@socketsecurity/registry': 1.1.17
+      '@socketsecurity/registry': 1.2.2
 
   '@stroncium/procfs@1.2.1': {}
 
@@ -7678,8 +7659,6 @@ snapshots:
 
   ini@5.0.0: {}
 
-  ionstore@1.0.1: {}
-
   ip-address@10.0.1: {}
 
   is-arrayish@0.2.1: {}
@@ -9069,14 +9048,6 @@ snapshots:
     dependencies:
       readable-stream: 3.6.2
 
-  tiny-colors@2.1.3: {}
-
-  tiny-updater@3.5.3(patch_hash=b3f4afb74b370538fe45248cba31833aee4553f83f15a6a07da47f85afae2f24):
-    dependencies:
-      ionstore: 1.0.1
-      tiny-colors: 2.1.3
-      when-exit: 2.1.4
-
   tinybench@2.9.0: {}
 
   tinyexec@0.3.2: {}
@@ -9387,8 +9358,6 @@ snapshots:
       iconv-lite: 0.6.3
 
   whatwg-mimetype@4.0.0: {}
-
-  when-exit@2.1.4: {}
 
   which@2.0.2:
     dependencies:

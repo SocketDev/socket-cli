@@ -123,8 +123,8 @@
     "@socketregistry/is-interactive": "1.0.6",
     "@socketregistry/packageurl-js": "1.0.9",
     "@socketsecurity/config": "3.0.1",
-    "@socketsecurity/registry": "1.1.17",
-    "@socketsecurity/sdk": "1.4.93",
+    "@socketsecurity/registry": "1.2.2",
+    "@socketsecurity/sdk": "1.5.0",
     "@types/blessed": "0.1.25",
     "@types/cmd-shim": "5.0.2",
     "@types/js-yaml": "4.0.9",
@@ -180,7 +180,6 @@
     "synp": "1.9.14",
     "taze": "19.6.0",
     "terminal-link": "2.1.1",
-    "tiny-updater": "3.5.3",
     "trash": "10.0.0",
     "type-coverage": "2.29.7",
     "typescript-eslint": "8.43.0",
@@ -255,7 +254,6 @@
       "side-channel": "npm:@socketregistry/side-channel@^1.0.9",
       "string_decoder": "0.10.31",
       "tiny-colors": "$yoctocolors-cjs",
-      "tiny-updater": "3.5.3",
       "typedarray": "npm:@socketregistry/typedarray@^1.0.7",
       "undici": "6.21.3",
       "vite": "7.1.5",
@@ -276,8 +274,7 @@
       "brace-expansion@2.0.2": "patches/brace-expansion@2.0.2.patch",
       "bresenham@0.0.3": "patches/bresenham@0.0.3.patch",
       "lodash@4.17.21": "patches/lodash@4.17.21.patch",
-      "rollup@4.50.1": "patches/rollup@4.50.1.patch",
-      "tiny-updater@3.5.3": "patches/tiny-updater@3.5.3.patch"
+      "rollup@4.50.1": "patches/rollup@4.50.1.patch"
     }
   },
   "typeCoverage": {

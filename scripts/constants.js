@@ -12,6 +12,7 @@ const {
   },
 } = registryConstants
 
+const BIOME_JSON = 'biome.json'
 const CONSTANTS = 'constants'
 const INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION =
   'INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION'
@@ -97,6 +98,7 @@ const lazySrcPath = () => path.join(constants.rootPath, 'src')
 const constants = createConstantsObject(
   {
     ...registryConstantsAttribs.props,
+    BIOME_JSON,
     CONSTANTS,
     ENV: undefined,
     INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION,
