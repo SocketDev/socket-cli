@@ -11,7 +11,7 @@ describe('dlx e2e tests', () => {
 
   beforeAll(async () => {
     // Check if running e2e tests and if Socket API token is available.
-    if (process.env.RUN_E2E_TESTS) {
+    if (constants.ENV.RUN_E2E_TESTS) {
       const apiToken = await getDefaultApiToken()
       hasAuth = !!apiToken
       if (!apiToken) {
@@ -28,7 +28,7 @@ describe('dlx e2e tests', () => {
     }
   })
   describe('pnpm dlx regression test', () => {
-    it.skipIf(!process.env.RUN_E2E_TESTS || !hasAuth)(
+    it.skipIf(!constants.ENV.RUN_E2E_TESTS || !hasAuth)(
       'successfully runs pnpm dlx with cowsay (verifies no unsupported flags)',
       async () => {
         // Check if we're in a pnpm project.
@@ -64,7 +64,7 @@ describe('dlx e2e tests', () => {
       30000, // 30 second timeout for download.
     )
 
-    it.skipIf(!process.env.RUN_E2E_TESTS || !hasAuth)(
+    it.skipIf(!constants.ENV.RUN_E2E_TESTS || !hasAuth)(
       'verifies pnpm dlx command construction uses only supported flags',
       async () => {
         // This test verifies by checking what command would be run.
@@ -104,7 +104,7 @@ describe('dlx e2e tests', () => {
   })
 
   describe('npm npx regression test', () => {
-    it.skipIf(!process.env.RUN_E2E_TESTS || !hasAuth)(
+    it.skipIf(!constants.ENV.RUN_E2E_TESTS || !hasAuth)(
       'successfully runs npm/npx with cowsay',
       async () => {
         // Force npm by not finding any pnpm/yarn lockfiles.
@@ -138,7 +138,7 @@ describe('dlx e2e tests', () => {
   })
 
   describe('spawnCoanaDlx e2e tests', () => {
-    it.skipIf(!process.env.RUN_E2E_TESTS || !hasAuth)(
+    it.skipIf(!constants.ENV.RUN_E2E_TESTS || !hasAuth)(
       'executes coana-tech/cli via dlx',
       async () => {
         const { spawnCoanaDlx } = await import('./dlx.mts')
@@ -162,7 +162,7 @@ describe('dlx e2e tests', () => {
       30000,
     )
 
-    it.skipIf(!process.env.RUN_E2E_TESTS || !hasAuth)(
+    it.skipIf(!constants.ENV.RUN_E2E_TESTS || !hasAuth)(
       'handles error from spawn',
       async () => {
         const { spawnCoanaDlx } = await import('./dlx.mts')
@@ -181,7 +181,7 @@ describe('dlx e2e tests', () => {
   })
 
   describe('spawnSynpDlx e2e tests', () => {
-    it.skipIf(!process.env.RUN_E2E_TESTS || !hasAuth)(
+    it.skipIf(!constants.ENV.RUN_E2E_TESTS || !hasAuth)(
       'executes synp via dlx',
       async () => {
         const { spawnSynpDlx } = await import('./dlx.mts')
@@ -197,7 +197,7 @@ describe('dlx e2e tests', () => {
       30000,
     )
 
-    it.skipIf(!process.env.RUN_E2E_TESTS || !hasAuth)(
+    it.skipIf(!constants.ENV.RUN_E2E_TESTS || !hasAuth)(
       'handles error from spawn',
       async () => {
         const { spawnSynpDlx } = await import('./dlx.mts')
@@ -225,7 +225,7 @@ describe('dlx e2e tests', () => {
   })
 
   describe('spawnDlx e2e tests', () => {
-    it.skipIf(!process.env.RUN_E2E_TESTS || !hasAuth)(
+    it.skipIf(!constants.ENV.RUN_E2E_TESTS || !hasAuth)(
       'executes dlx command with package spec',
       async () => {
         const packageSpec = {
@@ -242,7 +242,7 @@ describe('dlx e2e tests', () => {
       30000,
     )
 
-    it.skipIf(!process.env.RUN_E2E_TESTS || !hasAuth)(
+    it.skipIf(!constants.ENV.RUN_E2E_TESTS || !hasAuth)(
       'handles force flag in options',
       async () => {
         const packageSpec = {
@@ -261,7 +261,7 @@ describe('dlx e2e tests', () => {
       30000,
     )
 
-    it.skipIf(!process.env.RUN_E2E_TESTS || !hasAuth)(
+    it.skipIf(!constants.ENV.RUN_E2E_TESTS || !hasAuth)(
       'handles silent flag in options',
       async () => {
         const packageSpec = {
