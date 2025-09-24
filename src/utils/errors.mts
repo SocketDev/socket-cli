@@ -173,5 +173,7 @@ export async function buildErrorCause(
     return quotaMessage
   }
 
-  return reason && message !== reason ? `${message} (reason: ${reason})` : message
+  return reason && message !== reason
+    ? `${message} (reason: ${reason})`
+    : message
 }

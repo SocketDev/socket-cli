@@ -8,9 +8,7 @@ import {
 } from '@eslint/compat'
 import js from '@eslint/js'
 import tsParser from '@typescript-eslint/parser'
-import {
-  createTypeScriptImportResolver,
-} from 'eslint-import-resolver-typescript'
+import { createTypeScriptImportResolver } from 'eslint-import-resolver-typescript'
 import importXPlugin from 'eslint-plugin-import-x'
 import nodePlugin from 'eslint-plugin-n'
 import sortDestructureKeysPlugin from 'eslint-plugin-sort-destructure-keys'

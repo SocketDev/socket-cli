@@ -86,7 +86,8 @@ const lazyRootPackageJsonPath = () =>
 const lazyRootPackageLockPath = () =>
   path.join(constants.rootPath, 'pnpm-lock.yaml')
 
-const lazyRootPath = () => path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
+const lazyRootPath = () =>
+  path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 
 const lazySocketRegistryPath = () =>
   path.join(constants.externalPath, '@socketsecurity/registry')

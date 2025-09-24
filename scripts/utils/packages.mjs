@@ -4,10 +4,7 @@ import path from 'node:path'
 import vm from 'node:vm'
 
 import { isValidPackageName } from '@socketsecurity/registry/lib/packages'
-import {
-  isRelative,
-  normalizePath,
-} from '@socketsecurity/registry/lib/path'
+import { isRelative, normalizePath } from '@socketsecurity/registry/lib/path'
 
 import { findUpSync } from './fs.mjs'
 
