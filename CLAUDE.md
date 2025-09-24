@@ -51,6 +51,9 @@ You are a **Principal Software Engineer** responsible for:
 - **Temp directories**: Use `os.tmpdir()` for temporary file paths in tests
   - ❌ WRONG: `'/tmp/test-project'` (POSIX-specific)
   - ✅ CORRECT: `path.join(os.tmpdir(), 'test-project')` (cross-platform)
+  - **Unique temp dirs**: Use `fs.mkdtemp()` or `fs.mkdtempSync()` for collision-free directories
+  - ✅ PREFERRED: `await fs.mkdtemp(path.join(os.tmpdir(), 'socket-test-'))` (async)
+  - ✅ ACCEPTABLE: `fs.mkdtempSync(path.join(os.tmpdir(), 'socket-test-'))` (sync)
 - **Path separators**: Never hard-code `/` or `\` in paths
   - Use `path.sep` when you need the separator character
   - Use `path.join()` to construct paths correctly
@@ -73,6 +76,13 @@ You are a **Principal Software Engineer** responsible for:
 - **Update with --update flag**: `pnpm test:unit src/commands/specific/cmd-file.test.mts --update`
 - **Timeout for long tests**: Use `timeout` command or specify in test file
 
+#### Vitest Memory Optimization (CRITICAL)
+- **Pool configuration**: Use `pool: 'forks'` with `singleFork: true`, `maxForks: 1`, `isolate: true`
+- **Memory limits**: Set `NODE_OPTIONS="--max-old-space-size=4096 --max-semi-space-size=512"` in `.env.test`
+- **Timeout settings**: Use `testTimeout: 60000, hookTimeout: 60000` for stability
+- **Thread limits**: Use `singleThread: true, maxThreads: 1` to prevent RegExp compiler exhaustion
+- **Test cleanup**: 🚨 MANDATORY - Import and use `trash` package: `import { trash } from 'trash'` then `await trash([paths])`
+
 ### Git Commit Guidelines
 - **🚨 FORBIDDEN**: NEVER add Claude co-authorship or Claude signatures to commits
 - **🚨 FORBIDDEN**: Do NOT include "Generated with Claude Code" or similar AI attribution in commit messages
@@ -92,6 +102,7 @@ You are a **Principal Software Engineer** responsible for:
 - **Add dev dependency**: `pnpm add -D <package> --save-exact`
 - **Update dependencies**: `pnpm update`
 - **🚨 MANDATORY**: Always add dependencies with exact versions using `--save-exact` flag to ensure reproducible builds
+- **Dependency validation**: All dependencies MUST be pinned to exact versions without range specifiers like `^` or `~`
 - **Override behavior**: pnpm.overrides in package.json controls dependency versions across the entire project
 - **Using $ syntax**: `"$package-name"` in overrides means "use the version specified in dependencies"
 - **Dynamic imports**: Only use dynamic imports for test mocking (e.g., `vi.importActual` in Vitest). Avoid runtime dynamic imports in production code
@@ -125,7 +136,8 @@ Each command follows a consistent pattern:
 
 ### Build System
 - Uses Rollup for building distribution files
-- TypeScript compilation with tsgo
+- TypeScript compilation with tsgo (preferred) or standard tsc
+- Individual file compilation rather than bundling for better maintainability
 - Multiple environment configs (.env.local, .env.test, .env.dist)
 - Dual linting with oxlint and eslint
 - Formatting with Biome
@@ -289,12 +301,21 @@ Socket CLI integrates with various third-party tools and services:
   - ❌ `process.exit(1)` (bypasses error handling framework)
 
 ### 🗑️ Safe File Operations (SECURITY CRITICAL)
-- **File deletion**: 🚨 ABSOLUTELY FORBIDDEN - NEVER use `rm -rf`. 🚨 MANDATORY - ALWAYS use `pnpm dlx trash-cli`
+- **Script usage only**: Use `trash` package ONLY in scripts, build files, and utilities - NOT in `/src/` files
+- **Import and use `trash` package**: `import { trash } from 'trash'` then `await trash(paths)` (scripts only)
+- **Source code deletion**: In `/src/` files, use `fs.rm()` with proper error handling when deletion is required
+- **Script deletion operations**: Use `await trash()` for scripts, build processes, and development utilities
+- **Array optimization**: `trash` accepts arrays - collect paths and pass as array
+- **Async requirement**: Always `await trash()` - it's an async operation
+- **NO rmSync**: 🚨 ABSOLUTELY FORBIDDEN - NEVER use `fs.rmSync()` or `rm -rf` commands
 - **Examples**:
   - ❌ CATASTROPHIC: `rm -rf directory` (permanent deletion - DATA LOSS RISK)
   - ❌ REPOSITORY DESTROYER: `rm -rf "$(pwd)"` (deletes entire repository)
-  - ✅ SAFE: `pnpm dlx trash-cli directory` (recoverable deletion)
-- **Why this matters**: trash-cli enables recovery from accidental deletions via system trash/recycle bin
+  - ❌ FORBIDDEN: `fs.rmSync(tmpDir, { recursive: true, force: true })` (dangerous)
+  - ✅ SCRIPTS: `await trash([tmpDir])` (recoverable deletion in build scripts)
+  - ✅ SOURCE CODE: `await fs.rm(tmpDir, { recursive: true, force: true })` (when needed in /src/)
+- **Why scripts use trash**: Enables recovery from accidental deletions during development and build processes
+- **Why source avoids trash**: Bundling complications and dependency management issues in production code
 
 ### Debugging and Troubleshooting
 - **CI vs Local Differences**: CI uses published npm packages, not local versions. Be defensive when using @socketsecurity/registry features
