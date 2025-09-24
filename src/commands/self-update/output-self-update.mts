@@ -33,9 +33,7 @@ export async function outputSelfUpdate(
   } = options
 
   if (isUpToDate) {
-    logger.success(
-      `Already up to date (${colors.cyan(currentVersion)})`,
-    )
+    logger.success(`Already up to date (${colors.cyan(currentVersion)})`)
     return
   }
 

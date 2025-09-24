@@ -12,10 +12,8 @@ export const CMD_NAME = 'self-update'
 const description = 'Update Socket CLI to the latest version'
 const hidden = true
 
-const cmdSelfUpdate = {
+export const cmdSelfUpdate = {
   description,
   hidden,
   run: handleSelfUpdate,
 }
-
-export default cmdSelfUpdate
