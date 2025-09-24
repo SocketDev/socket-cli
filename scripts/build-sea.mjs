@@ -40,7 +40,6 @@ import WIN32 from '@socketsecurity/registry/lib/constants/win32'
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url))
 
-
 // Supported Node.js versions for SEA.
 // Node v24+ has better SEA support and smaller binary sizes.
 // const SUPPORTED_NODE_VERSIONS = ['20.11.0', '22.0.0', '24.8.0']
@@ -52,7 +51,9 @@ async function getLatestNode24Version() {
   try {
     const response = await fetch('https://nodejs.org/dist/index.json')
     if (!response.ok) {
-      throw new Error(`Failed to fetch Node.js releases: ${response.statusText}`)
+      throw new Error(
+        `Failed to fetch Node.js releases: ${response.statusText}`,
+      )
     }
 
     const releases = await response.json()
@@ -60,8 +61,9 @@ async function getLatestNode24Version() {
     // Find the latest v24+ version.
     const latestV24 = releases
       .filter(release => release.version.startsWith('v24.'))
-      .sort((a, b) => b.version.localeCompare(a.version, undefined, { numeric: true }))
-      [0]
+      .sort((a, b) =>
+        b.version.localeCompare(a.version, undefined, { numeric: true }),
+      )[0]
 
     if (latestV24) {
       return latestV24.version.slice(1) // Remove 'v' prefix.
@@ -70,7 +72,9 @@ async function getLatestNode24Version() {
     // Fallback to hardcoded version if no v24 found.
     return '24.8.0'
   } catch (error) {
-    logger.log(`Warning: Failed to fetch latest Node.js version, using fallback: ${error instanceof Error ? error.message : String(error)}`)
+    logger.log(
+      `Warning: Failed to fetch latest Node.js version, using fallback: ${error instanceof Error ? error.message : String(error)}`,
+    )
     return '24.8.0'
   }
 }
@@ -79,7 +83,10 @@ async function getLatestNode24Version() {
  * Get the default Node.js version for SEA builds.
  */
 async function getDefaultNodeVersion() {
-  return constants.ENV.SOCKET_CLI_SEA_NODE_VERSION || await getLatestNode24Version()
+  return (
+    constants.ENV.SOCKET_CLI_SEA_NODE_VERSION ||
+    (await getLatestNode24Version())
+  )
 }
 
 /**
