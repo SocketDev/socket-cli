@@ -289,7 +289,8 @@ const TOKEN_PREFIX = 'sktsec_'
 const TOKEN_PREFIX_LENGTH = TOKEN_PREFIX.length
 const UPDATE_CHECK_TTL = 24 * 60 * 60 * 1_000
 const UPDATE_NOTIFIER_TIMEOUT = 10_000
-const UPDATE_STORE_FILE_NAME = '.socket-update-store.json'
+const UPDATE_STORE_DIR = '.socket/_socket'
+const UPDATE_STORE_FILE_NAME = 'update-store.json'
 const V1_MIGRATION_GUIDE_URL = 'https://docs.socket.dev/docs/v1-migration-guide'
 
 export type Constants = Remap<
@@ -320,6 +321,7 @@ export type Constants = Remap<
     readonly SEA_UPDATE_COMMAND: typeof SEA_UPDATE_COMMAND
     readonly UPDATE_CHECK_TTL: typeof UPDATE_CHECK_TTL
     readonly UPDATE_NOTIFIER_TIMEOUT: typeof UPDATE_NOTIFIER_TIMEOUT
+    readonly UPDATE_STORE_DIR: typeof UPDATE_STORE_DIR
     readonly UPDATE_STORE_FILE_NAME: typeof UPDATE_STORE_FILE_NAME
     readonly DRY_RUN_NOT_SAVING: typeof DRY_RUN_NOT_SAVING
     readonly EMPTY_VALUE: typeof EMPTY_VALUE
@@ -687,7 +689,9 @@ const LAZY_ENV = () => {
     // View all risks of a Socket wrapped npm/npx run.
     SOCKET_CLI_VIEW_ALL_RISKS: envAsBoolean(env[SOCKET_CLI_VIEW_ALL_RISKS]),
     // Node.js version to use for Single Executable Applications (SEA).
-    SOCKET_CLI_SEA_NODE_VERSION: envAsString(env['SOCKET_CLI_SEA_NODE_VERSION']),
+    SOCKET_CLI_SEA_NODE_VERSION: envAsString(
+      env['SOCKET_CLI_SEA_NODE_VERSION'],
+    ),
     // NPM registry URL.
     NPM_REGISTRY: envAsString(env['NPM_REGISTRY']),
     // Enable E2E tests.
@@ -1216,6 +1220,7 @@ export {
   SEA_UPDATE_COMMAND,
   UPDATE_CHECK_TTL,
   UPDATE_NOTIFIER_TIMEOUT,
+  UPDATE_STORE_DIR,
   UPDATE_STORE_FILE_NAME,
   ENVIRONMENT_YML,
   ERROR_NO_MANIFEST_FILES,
