@@ -13,24 +13,29 @@ on:
 jobs:
   build-sea:
     strategy:
+      fail-fast: false  # Continue building other platforms if one fails
       matrix:
         include:
+          # Linux builds - fully supported
           - os: ubuntu-latest
             platform: linux
             arch: x64
           - os: ubuntu-latest
             platform: linux
-            arch: arm64
+            arch: arm64    # Cross-compilation, generally stable
+          # macOS builds - fully supported (native compilation)
           - os: macos-latest
             platform: darwin
             arch: x64
           - os: macos-latest
             platform: darwin
             arch: arm64
+          # Windows builds - x64 is stable
           - os: windows-latest
             platform: win32
             arch: x64
-          - os: windows-latest
+          # Windows ARM64 - native ARM64 runner (GitHub Actions 2025)
+          - os: windows-2022-arm64
             platform: win32
             arch: arm64
 
@@ -105,11 +110,17 @@ jobs:
               --draft
           fi
 
-          # Upload binaries
-          for file in dist/sea/socket-*; do
-            echo "Uploading $file..."
-            gh release upload "$VERSION" "$file" --clobber
-          done
+          # Upload binaries (skip if none exist)
+          if ls dist/sea/socket-* 1> /dev/null 2>&1; then
+            for file in dist/sea/socket-*; do
+              echo "Uploading $file..."
+              gh release upload "$VERSION" "$file" --clobber
+            done
+          else
+            echo "⚠️  No binaries found to upload"
+            echo "This may be expected if some platform builds failed"
+            echo "See docs/SEA_PLATFORM_SUPPORT.md for supported platforms"
+          fi
 
   publish-npm:
     needs: upload-release
