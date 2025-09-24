@@ -2,7 +2,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { addOverrides } from './add-overrides.mts'
 import { CMD_NAME } from './shared.mts'
-import { updateLockfile } from './update-lockfile.mts'
+import { updateDependencies } from './update-dependencies.mts'
 import constants from '../../constants.mts'
 
 import type { CResult } from '../../types.mts'
@@ -41,7 +41,7 @@ export async function applyOptimization(
   const pkgJsonChanged = addedCount > 0 || updatedCount > 0
 
   if (pkgJsonChanged || pkgEnvDetails.features.npmBuggyOverrides) {
-    const result = await updateLockfile(pkgEnvDetails, {
+    const result = await updateDependencies(pkgEnvDetails, {
       cmdName: CMD_NAME,
       logger,
       spinner,
