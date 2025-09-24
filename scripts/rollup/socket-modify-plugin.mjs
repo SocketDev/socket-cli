@@ -1,7 +1,5 @@
-'use strict'
-
-const { createFilter } = require('@rollup/pluginutils')
-const MagicString = require('magic-string')
+import { createFilter } from '@rollup/pluginutils'
+import MagicString from 'magic-string'
 
 function socketModifyPlugin({
   exclude,
@@ -43,4 +41,4 @@ function socketModifyPlugin({
   }
 }
 
-module.exports = socketModifyPlugin
+export default socketModifyPlugin

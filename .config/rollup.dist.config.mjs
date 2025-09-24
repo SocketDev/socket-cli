@@ -23,13 +23,13 @@ import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import baseConfig, { EXTERNAL_PACKAGES } from './rollup.base.config.mjs'
-import constants from '../scripts/constants.js'
-import socketModifyPlugin from '../scripts/rollup/socket-modify-plugin.js'
+import constants from '../scripts/constants.mjs'
+import socketModifyPlugin from '../scripts/rollup/socket-modify-plugin.mjs'
 import {
   getPackageName,
   isBuiltin,
   normalizeId,
-} from '../scripts/utils/packages.js'
+} from '../scripts/utils/packages.mjs'
 
 const {
   CONSTANTS,
