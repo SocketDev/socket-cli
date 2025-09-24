@@ -204,8 +204,8 @@ importers:
         specifier: 1.2.2
         version: 1.2.2
       '@socketsecurity/sdk':
-        specifier: 1.5.1
-        version: 1.5.1
+        specifier: 1.6.1
+        version: 1.6.1
       '@types/blessed':
         specifier: 0.1.25
         version: 0.1.25
@@ -1668,8 +1668,8 @@ packages:
     resolution: {integrity: sha512-2SaktloQ7b3oowpqI2trZaKvfodAlWurL3CHGtOEgp4/20vWNxvX7HK022gRIZO+8Bm/NzxmG76H6hHeJlHACg==}
     engines: {node: '>=18'}
 
-  '@socketsecurity/sdk@1.5.1':
-    resolution: {integrity: sha512-Zs0IhixcGGbMzt27EgGjJX0Pss5a2CxXACY3hFOSh57r7pKrWUBZPLipd7mx8o2ZRBC+ykNTYn+8xC1RCSLZlg==}
+  '@socketsecurity/sdk@1.6.1':
+    resolution: {integrity: sha512-osXOob3QED+f1XXnoA6uuj7jnEBlkIujyuQ/mzwjySD6d7MF3c+rHOAQ28osgwiFFgxzU5vD4LgouD0ErMnGtg==}
     engines: {node: '>=18', pnpm: '>=10.16.0'}
 
   '@stroncium/procfs@1.2.1':
@@ -2504,8 +2504,8 @@ packages:
   destr@2.0.5:
     resolution: {integrity: sha512-ugFTXCtDZunbzasqBxrK93Ik/DRYsO6S/fedkWEMKqt04xZ4csmnmwGDBAb07QWNaGMAmnTIemsYZCksjATwsA==}
 
-  detect-libc@2.1.0:
-    resolution: {integrity: sha512-vEtk+OcP7VBRtQZ1EJ3bdgzSfBjgnEalLTp5zjJrS+2Z1w2KZly4SBdac/WDU3hhsNAZ9E8SC96ME4Ey8MZ7cg==}
+  detect-libc@2.1.1:
+    resolution: {integrity: sha512-ecqj/sy1jcK1uWrwpR67UhYrIFQ+5WlGxth34WquCbamhFA6hkkwiu37o6J5xCHdo1oixJRfVRw+ywV+Hq/0Aw==}
     engines: {node: '>=8'}
 
   detect-node@2.1.0:
@@ -6099,7 +6099,7 @@ snapshots:
 
   '@socketsecurity/registry@1.2.2': {}
 
-  '@socketsecurity/sdk@1.5.1':
+  '@socketsecurity/sdk@1.6.1':
     dependencies:
       '@socketsecurity/registry': 1.2.2
 
@@ -6998,7 +6998,7 @@ snapshots:
 
   destr@2.0.5: {}
 
-  detect-libc@2.1.0:
+  detect-libc@2.1.1:
     optional: true
 
   detect-node@2.1.0: {}
@@ -8522,7 +8522,7 @@ snapshots:
 
   prebuild-install@7.1.3:
     dependencies:
-      detect-libc: 2.1.0
+      detect-libc: 2.1.1
       expand-template: 2.0.3
       github-from-package: 0.0.0
       minimist: 1.2.8
