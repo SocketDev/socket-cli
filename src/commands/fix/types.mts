@@ -5,6 +5,7 @@ export type FixConfig = {
   autopilot: boolean
   applyFixes: boolean
   cwd: string
+  disableMajorUpdates: boolean
   ghsas: string[]
   glob: string
   limit: number
@@ -13,6 +14,7 @@ export type FixConfig = {
   orgSlug: string
   prCheck: boolean
   rangeStyle: RangeStyle
+  showAffectedDirectDependencies: boolean
   spinner: Spinner | undefined
   unknownFlags: string[]
   outputFile: string
