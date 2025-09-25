@@ -61,6 +61,14 @@ const generalFlags: MeowFlags = {
     // Hidden to allow custom documenting of the negated `--no-apply-fixes` variant.
     hidden: true,
   },
+  majorUpdates: {
+    type: 'boolean',
+    default: true,
+    description:
+      'Allow major version updates. Use --no-major-updates to disable.',
+    // Hidden to allow custom documenting of the negated `--no-major-updates` variant.
+    hidden: true,
+  },
   id: {
     type: 'string',
     default: [],
@@ -105,6 +113,12 @@ Available styles:
     default: '',
     description:
       'Set a minimum age requirement for suggested upgrade versions (e.g., 1h, 2d, 3w). A higher age requirement reduces the risk of upgrading to malicious versions. For example, setting the value to 1 week (1w) gives ecosystem maintainers one week to remove potentially malicious versions.',
+  },
+  showAffectedDirectDependencies: {
+    type: 'boolean',
+    default: false,
+    description:
+      'List the direct dependencies responsible for introducing transitive vulnerabilities and list the updates required to resolve the vulnerabilities',
   },
 }
 
@@ -197,6 +211,13 @@ async function run(
           ...config.flags['applyFixes'],
           hidden: false,
         } as MeowFlag,
+        // Explicitly document the negated --no-major-updates variant.
+        noMajorUpdates: {
+          ...config.flags['majorUpdates'],
+          description:
+            'Do not suggest or apply fixes that require major version updates of direct or transitive dependencies',
+          hidden: false,
+        } as MeowFlag,
       })}
 
     Environment Variables (for CI/PR mode)
@@ -228,12 +249,14 @@ async function run(
     glob,
     json,
     limit,
+    majorUpdates,
     markdown,
     maxSatisfying,
     minimumReleaseAge,
     outputFile,
     prCheck,
     rangeStyle,
+    showAffectedDirectDependencies,
     // We patched in this feature with `npx custompatch meow` at
     // socket-cli/patches/meow#13.2.0.patch.
     unknownFlags = [],
@@ -243,11 +266,13 @@ async function run(
     glob: string
     limit: number
     json: boolean
+    majorUpdates: boolean
     markdown: boolean
     maxSatisfying: boolean
     minSatisfying: boolean
     prCheck: boolean
     rangeStyle: RangeStyle
+    showAffectedDirectDependencies: boolean
     unknownFlags?: string[]
     outputFile: string
     minimumReleaseAge: string
@@ -257,6 +282,8 @@ async function run(
 
   const minSatisfying =
     (cli.flags['minSatisfying'] as boolean) || !maxSatisfying
+
+  const disableMajorUpdates = !majorUpdates
 
   const outputKind = getOutputKind(json, markdown)
 
@@ -311,6 +338,7 @@ async function run(
     autopilot,
     applyFixes,
     cwd,
+    disableMajorUpdates,
     ghsas,
     glob,
     limit,
@@ -320,6 +348,7 @@ async function run(
     orgSlug,
     outputKind,
     rangeStyle,
+    showAffectedDirectDependencies,
     spinner,
     unknownFlags,
     outputFile,

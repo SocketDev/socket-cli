@@ -46,12 +46,14 @@ export async function coanaFix(
     applyFixes,
     autopilot,
     cwd,
+    disableMajorUpdates,
     ghsas,
     glob,
     limit,
     minimumReleaseAge,
     orgSlug,
     outputFile,
+    showAffectedDirectDependencies,
     spinner,
   } = fixConfig
 
@@ -149,6 +151,10 @@ export async function coanaFix(
         ...(glob ? ['--glob', glob] : []),
         ...(!applyFixes ? [FLAG_DRY_RUN] : []),
         ...(outputFile ? ['--output-file', outputFile] : []),
+        ...(disableMajorUpdates ? ['--disable-major-updates'] : []),
+        ...(showAffectedDirectDependencies
+          ? ['--show-affected-direct-dependencies']
+          : []),
         ...fixConfig.unknownFlags,
       ],
       fixConfig.orgSlug,
@@ -202,6 +208,10 @@ export async function coanaFix(
           ? ['--minimum-release-age', minimumReleaseAge]
           : []),
         ...(glob ? ['--glob', glob] : []),
+        ...(disableMajorUpdates ? ['--disable-major-updates'] : []),
+        ...(showAffectedDirectDependencies
+          ? ['--show-affected-direct-dependencies']
+          : []),
         ...fixConfig.unknownFlags,
       ],
       fixConfig.orgSlug,
@@ -262,6 +272,10 @@ export async function coanaFix(
           ? ['--minimum-release-age', minimumReleaseAge]
           : []),
         ...(glob ? ['--glob', glob] : []),
+        ...(disableMajorUpdates ? ['--disable-major-updates'] : []),
+        ...(showAffectedDirectDependencies
+          ? ['--show-affected-direct-dependencies']
+          : []),
         ...fixConfig.unknownFlags,
       ],
       fixConfig.orgSlug,
