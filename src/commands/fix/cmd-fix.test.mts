@@ -182,11 +182,13 @@ describe('socket fix', async () => {
             --markdown          Output as Markdown
             --minimum-release-age  Set a minimum age requirement for suggested upgrade versions (e.g., 1h, 2d, 3w). A higher age requirement reduces the risk of upgrading to malicious versions. For example, setting the value to 1 week (1w) gives ecosystem maintainers one week to remove potentially malicious versions.
             --no-apply-fixes    Compute fixes only, do not apply them. Logs what upgrades would be applied. If combined with --output-file, the output file will contain the upgrades that would be applied.
+            --no-major-updates  Do not suggest or apply fixes that require major version updates of direct or transitive dependencies
             --output-file       Path to store upgrades as a JSON file at this path.
             --range-style       Define how dependency version ranges are updated in package.json (default 'preserve').
                                 Available styles:
                                   * pin - Use the exact version (e.g. 1.2.3)
                                   * preserve - Retain the existing version range style as-is
+            --show-affected-direct-dependencies  List the direct dependencies responsible for introducing transitive vulnerabilities and list the updates required to resolve the vulnerabilities
 
           Environment Variables (for CI/PR mode)
             CI                          Set to enable CI mode
@@ -370,6 +372,57 @@ describe('socket fix', async () => {
       '{"apiToken":"fakeToken"}',
     ],
     'should accept comprehensive flag combination',
+    async cmd => {
+      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+      expect(code, 'should exit with code 0').toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'fix',
+      FLAG_DRY_RUN,
+      '--no-major-updates',
+      FLAG_CONFIG,
+      '{"apiToken":"fakeToken"}',
+    ],
+    'should accept --no-major-updates flag',
+    async cmd => {
+      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+      expect(code, 'should exit with code 0').toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'fix',
+      FLAG_DRY_RUN,
+      '--show-affected-direct-dependencies',
+      FLAG_CONFIG,
+      '{"apiToken":"fakeToken"}',
+    ],
+    'should accept --show-affected-direct-dependencies flag',
+    async cmd => {
+      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+      expect(code, 'should exit with code 0').toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'fix',
+      FLAG_DRY_RUN,
+      '--no-major-updates',
+      '--show-affected-direct-dependencies',
+      '--limit',
+      '5',
+      FLAG_CONFIG,
+      '{"apiToken":"fakeToken"}',
+    ],
+    'should accept new flags in combination',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
