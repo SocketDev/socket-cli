@@ -16,8 +16,7 @@ describe('socket scan metadata', async () => {
     `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(
-        `
+      expect(stdout).toMatchInlineSnapshot(`
         "Get a scan's metadata
 
           Usage
@@ -36,8 +35,7 @@ describe('socket scan metadata', async () => {
           Examples
             $ socket scan metadata 000aaaa1-0000-0a0a-00a0-00a0000000a0
             $ socket scan metadata 000aaaa1-0000-0a0a-00a0-00a0000000a0 --json"
-      `,
-      )
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------

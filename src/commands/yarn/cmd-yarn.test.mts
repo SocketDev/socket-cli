@@ -17,8 +17,7 @@ describe('socket yarn', async () => {
     `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(
-        `
+      expect(stdout).toMatchInlineSnapshot(`
         "Wraps yarn with Socket security scanning
 
           Usage
@@ -37,8 +36,7 @@ describe('socket yarn', async () => {
             $ socket yarn install
             $ socket yarn add package-name
             $ socket yarn dlx package-name"
-      `,
-      )
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
@@ -153,7 +151,7 @@ describe('socket yarn', async () => {
         timeout: 30_000,
       })
 
-      expect(stdout).toMatchInlineSnapshot('"[DryRun]: Bailing now"')
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'dry-run exec with -c should exit with code 0').toBe(0)
     },
   )
@@ -174,7 +172,7 @@ describe('socket yarn', async () => {
         timeout: 30_000,
       })
 
-      expect(stdout).toMatchInlineSnapshot('"[DryRun]: Bailing now"')
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'dry-run exec with --config should exit with code 0').toBe(0)
     },
   )
@@ -195,7 +193,7 @@ describe('socket yarn', async () => {
         timeout: 30_000,
       })
 
-      expect(stdout).toMatchInlineSnapshot('"[DryRun]: Bailing now"')
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(
         code,
         'dry-run exec with multiple issueRules should exit with code 0',
@@ -219,7 +217,7 @@ describe('socket yarn', async () => {
         timeout: 30_000,
       })
 
-      expect(stdout).toMatchInlineSnapshot('"[DryRun]: Bailing now"')
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(
         code,
         'dry-run exec with --config and multiple issueRules should exit with code 0',

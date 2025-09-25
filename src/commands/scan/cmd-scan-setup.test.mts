@@ -15,8 +15,7 @@ describe('socket scan setup', async () => {
     `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(
-        `
+      expect(stdout).toMatchInlineSnapshot(`
         "Start interactive configurator to customize default flag values for \`socket scan\` in this dir
 
           Usage
@@ -40,8 +39,7 @@ describe('socket scan setup', async () => {
 
             $ socket scan setup
             $ socket scan setup ./proj"
-      `,
-      )
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------

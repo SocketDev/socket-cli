@@ -18,8 +18,7 @@ describe('socket scan report', async () => {
     `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(
-        `
+      expect(stdout).toMatchInlineSnapshot(`
         "Check whether a scan result passes the organizational policies (security, license)
 
           Usage
@@ -67,8 +66,7 @@ describe('socket scan report', async () => {
           Examples
             $ socket scan report 000aaaa1-0000-0a0a-00a0-00a0000000a0 --json --fold=version
             $ socket scan report 000aaaa1-0000-0a0a-00a0-00a0000000a0 --license --markdown --short"
-      `,
-      )
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------

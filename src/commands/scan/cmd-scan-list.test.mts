@@ -16,8 +16,7 @@ describe('socket scan list', async () => {
     `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(
-        `
+      expect(stdout).toMatchInlineSnapshot(`
         "List the scans for an organization
 
           Usage
@@ -47,8 +46,7 @@ describe('socket scan list', async () => {
           Examples
             $ socket scan list
             $ socket scan list webtools badbranch --markdown"
-      `,
-      )
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------

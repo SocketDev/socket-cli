@@ -513,7 +513,7 @@ describe('socket optimize', async () => {
       'should handle optimize with both --pin and --prod flags',
       async cmd => {
         // Create temp fixture for this test.
-        const { tempDir, cleanup } = await withTempFixture(pnpmFixtureDir)
+        const { cleanup, tempDir } = await withTempFixture(pnpmFixtureDir)
         try {
           const { code, stderr, stdout } = await spawnSocketCli(
             binCliPath,
@@ -550,7 +550,7 @@ describe('socket optimize', async () => {
       'should handle optimize with --json output format',
       async cmd => {
         // Create temp fixture for this test.
-        const { tempDir, cleanup } = await withTempFixture(pnpmFixtureDir)
+        const { cleanup, tempDir } = await withTempFixture(pnpmFixtureDir)
         try {
           const { code, stderr, stdout } = await spawnSocketCli(
             binCliPath,
@@ -587,7 +587,7 @@ describe('socket optimize', async () => {
       'should handle optimize with --markdown output format',
       async cmd => {
         // Create temp fixture for this test.
-        const { tempDir, cleanup } = await withTempFixture(pnpmFixtureDir)
+        const { cleanup, tempDir } = await withTempFixture(pnpmFixtureDir)
         try {
           const { code, stderr, stdout } = await spawnSocketCli(
             binCliPath,
@@ -759,7 +759,7 @@ describe('socket optimize', async () => {
       'should handle invalid API token gracefully',
       async cmd => {
         // Use a temp directory outside the repo to avoid modifying repo files.
-        const { tempDir, cleanup } = await withTempFixture(pnpmFixtureDir)
+        const { cleanup, tempDir } = await withTempFixture(pnpmFixtureDir)
         try {
           const { code, stderr, stdout } = await spawnSocketCli(
             binCliPath,

@@ -107,7 +107,7 @@ async function run(
     },
     {
       nook: true,
-      test: !!orgSlug,
+      test: !!orgSlug || dryRun,
       message: 'Org name by default setting, --org, or auto-discovered',
       fail: 'missing',
     },
@@ -118,7 +118,7 @@ async function run(
     },
     {
       nook: true,
-      test: hasApiToken,
+      test: hasApiToken || dryRun,
       message: 'This command requires a Socket API token for access',
       fail: 'try `socket login`',
     },

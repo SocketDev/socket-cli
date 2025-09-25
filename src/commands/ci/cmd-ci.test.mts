@@ -15,8 +15,7 @@ describe('socket ci', async () => {
     `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(
-        `
+      expect(stdout).toMatchInlineSnapshot(`
         "Alias for \`socket scan create --report\` (creates report and exits with error if unhealthy)
 
           Usage
@@ -38,8 +37,7 @@ describe('socket ci', async () => {
           Examples
             $ socket ci
             $ socket ci --auto-manifest"
-      `,
-      )
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------

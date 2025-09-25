@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock dependencies first.
 vi.mock('./config.mts', () => ({
@@ -21,7 +21,7 @@ vi.mock('@socketsecurity/registry/lib/spinner', () => ({
 }))
 
 // Mock constants module.
-let mockEnv = {
+const mockEnv = {
   SOCKET_CLI_API_BASE_URL: undefined as string | undefined,
 }
 

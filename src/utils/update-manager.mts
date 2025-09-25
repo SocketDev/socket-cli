@@ -30,12 +30,13 @@ import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
 import { UPDATE_CHECK_TTL } from '../constants.mts'
 import { checkForUpdates as performUpdateCheck } from './update-checker.mts'
-import type { AuthInfo } from './update-checker.mts'
 import {
   scheduleExitNotification,
   showUpdateNotification,
 } from './update-notifier.mts'
 import { updateStore } from './update-store.mts'
+
+import type { AuthInfo } from './update-checker.mts'
 import type { StoreRecord } from './update-store.mts'
 
 interface UpdateManagerOptions {
@@ -59,11 +60,11 @@ async function checkForUpdates(
 ): Promise<boolean> {
   const {
     authInfo,
+    immediate = false,
     name,
     registryUrl,
     ttl = UPDATE_CHECK_TTL,
     version,
-    immediate = false,
   } = { __proto__: null, ...options } as UpdateManagerOptions
 
   // Validate required parameters.

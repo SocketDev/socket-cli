@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * Build script for creating self-executable Socket CLI applications.
  * Uses Node.js Single Executable Application (SEA) feature.
@@ -29,14 +28,14 @@ import os from 'node:os'
 import path from 'node:path'
 import url from 'node:url'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { normalizePath } from '@socketsecurity/registry/lib/path'
-
 import trash from 'trash'
 
-import { spawn } from '@socketsecurity/registry/lib/spawn'
-import constants, { NODE_SEA_FUSE } from '../constants.mts'
 import WIN32 from '@socketsecurity/registry/lib/constants/win32'
+import { logger } from '@socketsecurity/registry/lib/logger'
+import { normalizePath } from '@socketsecurity/registry/lib/path'
+import { spawn } from '@socketsecurity/registry/lib/spawn'
+
+import constants, { NODE_SEA_FUSE } from '../src/constants.mts'
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url))
 

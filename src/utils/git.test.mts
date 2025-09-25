@@ -1,19 +1,19 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
-  parseGitRemoteUrl,
-  getBaseBranch,
-  gitBranch,
-  getRepoInfo,
   detectDefaultBranch,
-  gitCommit,
+  getBaseBranch,
+  getRepoInfo,
+  gitBranch,
   gitCheckoutBranch,
+  gitCleanFdx,
+  gitCommit,
   gitCreateBranch,
   gitDeleteBranch,
-  gitPushBranch,
-  gitCleanFdx,
-  gitResetHard,
   gitEnsureIdentity,
+  gitPushBranch,
+  gitResetHard,
+  parseGitRemoteUrl,
 } from './git.mts'
 
 // Mock spawn.
@@ -161,7 +161,7 @@ describe('git utilities', () => {
     })
 
     it('handles spawn errors', async () => {
-      const { spawn, isSpawnError } = vi.mocked(
+      const { isSpawnError, spawn } = vi.mocked(
         await import('@socketsecurity/registry/lib/spawn'),
       )
       const error = { isSpawnError: true, message: 'Command failed' }

@@ -15,8 +15,7 @@ describe('socket manifest kotlin', async () => {
     `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(
-        `
+      expect(stdout).toMatchInlineSnapshot(`
         "[beta] Use Gradle to generate a manifest file (\`pom.xml\`) for a Kotlin project
 
           Usage
@@ -51,8 +50,7 @@ describe('socket manifest kotlin', async () => {
 
             $ socket manifest kotlin .
             $ socket manifest kotlin --bin=../gradlew ."
-      `,
-      )
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------

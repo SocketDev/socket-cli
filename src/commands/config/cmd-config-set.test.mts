@@ -17,8 +17,7 @@ describe('socket config get', async () => {
     `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(
-        `
+      expect(stdout).toMatchInlineSnapshot(`
         "Update the value of a local CLI config item
 
           Usage
@@ -49,8 +48,7 @@ describe('socket config get', async () => {
 
           Examples
             $ socket config set apiProxy https://example.com"
-      `,
-      )
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------

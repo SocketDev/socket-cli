@@ -15,8 +15,7 @@ describe('socket wrapper', async () => {
     `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(
-        `
+      expect(stdout).toMatchInlineSnapshot(`
         "Enable or disable the Socket npm/npx wrapper
 
           Usage
@@ -32,8 +31,7 @@ describe('socket wrapper', async () => {
           Examples
             $ socket wrapper on
             $ socket wrapper off"
-      `,
-      )
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------

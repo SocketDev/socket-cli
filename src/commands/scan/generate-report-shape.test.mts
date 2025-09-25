@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
-import { generateReport } from './generate-report.mts'
 import {
-  getSimpleCleanScan,
   getScanWithEnvVars,
+  getSimpleCleanScan,
 } from './generate-report-test-helpers.mts'
+import { generateReport } from './generate-report.mts'
 
 import type { ScanReport } from './generate-report.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'

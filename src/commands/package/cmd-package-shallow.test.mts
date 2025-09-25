@@ -15,8 +15,7 @@ describe('socket package shallow', async () => {
     `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(
-        `
+      expect(stdout).toMatchInlineSnapshot(`
         "Look up info regarding one or more packages but not their transitives
 
           Usage
@@ -53,8 +52,7 @@ describe('socket package shallow', async () => {
             $ socket package shallow maven webtorrent babel
             $ socket package shallow npm/webtorrent golang/babel
             $ socket package shallow npm npm/webtorrent@1.0.1 babel"
-      `,
-      )
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------

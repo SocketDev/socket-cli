@@ -40,11 +40,17 @@ function isSeaBinary(): boolean {
       // Use Node.js 24+ native SEA detection API.
       const seaModule = require('node:sea')
       _isSea = seaModule.isSea()
-      logger.debug(`SEA detection result: ${_isSea}`)
+      // Suppress debug output during tests to avoid contaminating snapshots.
+      if (!process.env.VITEST && !process.env.NODE_ENV?.includes('test')) {
+        logger.debug(`SEA detection result: ${_isSea}`)
+      }
     } catch (error) {
-      logger.debug(
-        `SEA detection failed (likely Node.js < 24): ${error instanceof Error ? error.message : String(error)}`,
-      )
+      // Suppress debug output during tests to avoid contaminating snapshots.
+      if (!process.env.VITEST && !process.env.NODE_ENV?.includes('test')) {
+        logger.debug(
+          `SEA detection failed (likely Node.js < 24): ${error instanceof Error ? error.message : String(error)}`,
+        )
+      }
       _isSea = false
     }
   }

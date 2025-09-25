@@ -15,8 +15,7 @@ describe('socket raw-npx', async () => {
     `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(
-        `
+      expect(stdout).toMatchInlineSnapshot(`
         "Run npx without the Socket wrapper
 
           Usage
@@ -31,8 +30,7 @@ describe('socket raw-npx', async () => {
 
           Examples
             $ socket raw-npx cowsay"
-      `,
-      )
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------

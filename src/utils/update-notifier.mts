@@ -44,7 +44,7 @@ function formatUpdateMessage(options: UpdateNotificationOptions): {
   command?: string
   changelog: string
 } {
-  const { name, current, latest } = options
+  const { current, latest, name } = options
   const seaBinPath = getSeaBinaryPath()
 
   const message = `📦 Update available for ${colors.cyan(name)}: ${colors.gray(current)} → ${colors.green(latest)}`
@@ -93,7 +93,7 @@ function showUpdateNotification(options: UpdateNotificationOptions): void {
     logger.log(`📝 ${formatted.changelog}`)
   } catch (error) {
     // Fallback to console.log if logger fails.
-    const { name, current, latest } = options
+    const { current, latest, name } = options
     const seaBinPath = getSeaBinaryPath()
 
     console.log(`\n\n📦 Update available for ${name}: ${current} → ${latest}`)

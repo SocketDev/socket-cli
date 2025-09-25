@@ -26,10 +26,11 @@
  */
 
 import { existsSync, mkdirSync, rmSync, statSync } from 'node:fs'
+import path from 'node:path'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
-import { onExit } from '@socketsecurity/registry/lib/signal-exit'
 import promises from '@socketsecurity/registry/lib/promises'
+import { onExit } from '@socketsecurity/registry/lib/signal-exit'
 
 /**
  * Lock acquisition options.
@@ -110,9 +111,9 @@ class ProcessLockManager {
     options: LockOptions = {},
   ): Promise<() => void> {
     const {
-      retries = 3,
       baseDelayMs = 100,
       maxDelayMs = 1_000,
+      retries = 3,
       staleMs = 10_000,
     } = options
 
@@ -130,6 +131,10 @@ class ProcessLockManager {
               // If we can't remove it, someone else might be using it.
             }
           }
+
+          // Ensure parent directory exists.
+          const parentDir = path.dirname(lockPath)
+          mkdirSync(parentDir, { recursive: true })
 
           // Use mkdir for atomic lock creation - will fail if already exists.
           mkdirSync(lockPath, { recursive: false })

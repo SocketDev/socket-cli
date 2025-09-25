@@ -2,6 +2,7 @@ import { execSync } from 'node:child_process'
 
 import { beforeAll, describe, expect, it } from 'vitest'
 
+import constants from '../constants.mts'
 import { spawnDlx } from './dlx.mts'
 import { findUp } from './fs.mts'
 import { getDefaultApiToken } from './sdk.mts'

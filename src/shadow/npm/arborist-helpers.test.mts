@@ -393,7 +393,6 @@ describe('arborist-helpers', () => {
       // Create a large number of children to trigger loop sentinel.
       const children: Diff[] = []
       for (let i = 0; i < 100_001; i++) {
-        // eslint-disable-next-line no-await-in-loop
         children.push({
           action: DiffAction.add,
           actual: null,

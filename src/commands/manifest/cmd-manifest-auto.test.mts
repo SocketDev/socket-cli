@@ -15,8 +15,7 @@ describe('socket manifest auto', async () => {
     `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(
-        `
+      expect(stdout).toMatchInlineSnapshot(`
         "Auto-detect build and attempt to generate manifest file
 
           Usage
@@ -36,8 +35,7 @@ describe('socket manifest auto', async () => {
 
             $ socket manifest auto
             $ socket manifest auto ./project/foo"
-      `,
-      )
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------

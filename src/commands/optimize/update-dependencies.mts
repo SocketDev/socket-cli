@@ -1,8 +1,8 @@
 import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
-import constants from '../../constants.mts'
 import { runAgentInstall } from './agent-installer.mts'
+import constants from '../../constants.mts'
 import { cmdPrefixMessage } from '../../utils/cmd.mts'
 
 import type { CResult } from '../../types.mts'

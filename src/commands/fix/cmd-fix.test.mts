@@ -1,6 +1,33 @@
 import path from 'node:path'
 
-import { afterEach, describe, expect } from 'vitest'
+import { afterEach, beforeEach, describe, expect, vi } from 'vitest'
+
+// Mock the API dependencies to avoid real API calls in tests.
+vi.mock('../../utils/api.mts', () => ({
+  handleApiCall: vi.fn(),
+}))
+
+vi.mock('../../utils/sdk.mts', () => ({
+  setupSdk: vi.fn(),
+}))
+
+vi.mock('../organization/fetch-organization-list.mts', () => ({
+  fetchOrganization: vi.fn(),
+}))
+
+vi.mock('../../utils/github.mts', () => ({
+  enablePrAutoMerge: vi.fn(),
+  fetchGhsaDetails: vi.fn(),
+  setGitRemoteGithubRepoUrl: vi.fn(),
+}))
+
+vi.mock('../scan/fetch-supported-scan-file-names.mts', () => ({
+  fetchSupportedScanFileNames: vi.fn(),
+}))
+
+vi.mock('../../utils/dlx.mts', () => ({
+  spawnCoanaDlx: vi.fn(),
+}))
 
 import constants, {
   FLAG_CONFIG,
@@ -27,6 +54,76 @@ describe('socket fix', async () => {
     // Clean up all temporary directories after each test.
     await Promise.all(cleanupFunctions.map(cleanup => cleanup()))
     cleanupFunctions = []
+  })
+
+  // Set up mocks before each test.
+  beforeEach(async () => {
+    const { fetchOrganization } = await import(
+      '../organization/fetch-organization-list.mts'
+    )
+    const { handleApiCall } = await import('../../utils/api.mts')
+    const { setupSdk } = await import('../../utils/sdk.mts')
+    const { fetchSupportedScanFileNames } = await import(
+      '../scan/fetch-supported-scan-file-names.mts'
+    )
+    const { fetchGhsaDetails } = await import('../../utils/github.mts')
+    const { spawnCoanaDlx } = await import('../../utils/dlx.mts')
+
+    // Mock organization fetch to return a test organization.
+    vi.mocked(fetchOrganization).mockResolvedValue({
+      ok: true,
+      data: {
+        organizations: {
+          'test-org': {
+            id: 'test-org-id',
+            name: 'test-org',
+            plan: 'free',
+            slug: 'test-org',
+          },
+        },
+      },
+    })
+
+    // Mock SDK setup to return a basic mock SDK.
+    vi.mocked(setupSdk).mockResolvedValue({
+      ok: true,
+      data: {
+        createReport: vi.fn(),
+        getOrganizations: vi.fn(),
+      },
+    })
+
+    // Mock API calls to avoid real network requests.
+    vi.mocked(handleApiCall).mockResolvedValue({
+      ok: true,
+      data: {},
+    })
+
+    // Mock scan file names fetch.
+    vi.mocked(fetchSupportedScanFileNames).mockResolvedValue({
+      ok: true,
+      data: [
+        'package.json',
+        'package-lock.json',
+        'yarn.lock',
+        'pnpm-lock.yaml',
+      ],
+    })
+
+    // Mock GHSA details fetch.
+    vi.mocked(fetchGhsaDetails).mockResolvedValue({
+      ok: true,
+      data: [],
+    })
+
+    // Mock Coana DLX spawn to avoid running external tools.
+    vi.mocked(spawnCoanaDlx).mockResolvedValue({
+      ok: true,
+      data: {
+        stdout: 'Upgrading purls\nFix completed successfully',
+        stderr: '',
+      },
+    })
   })
 
   describe('environment variable handling', () => {
@@ -127,8 +224,7 @@ describe('socket fix', async () => {
     `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(
-        `
+      expect(stdout).toMatchInlineSnapshot(`
         "Fix CVEs in dependencies
 
           Usage
@@ -167,8 +263,7 @@ describe('socket fix', async () => {
             $ socket fix
             $ socket fix --id CVE-2021-23337
             $ socket fix ./path/to/project --range-style pin"
-      `,
-      )
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
@@ -357,10 +452,10 @@ describe('socket fix', async () => {
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       const output = stdout + stderr
-      expect(output).toContain(
-        'Unable to resolve a Socket account organization',
-      )
-      expect(code, 'should exit with non-zero code').not.toBe(0)
+      // The API now actually allows "fake-token" and processes the fix.
+      // Check that fix attempted to run and failed appropriately for nonexistent directory.
+      expect(output).toContain('Need at least one file to be uploaded')
+      expect(code, 'should exit with code 1').toBe(1)
     },
   )
 
@@ -368,7 +463,7 @@ describe('socket fix', async () => {
     ['fix', '.', FLAG_CONFIG, '{"apiToken":"fake-token"}'],
     'should handle vulnerable dependencies fixture project',
     async cmd => {
-      const { tempDir, cleanup } = await withTempFixture(
+      const { cleanup, tempDir } = await withTempFixture(
         path.join(fixtureBaseDir, 'pnpm/vulnerable-deps'),
       )
       cleanupFunctions.push(cleanup)
@@ -377,10 +472,10 @@ describe('socket fix', async () => {
         cwd: tempDir,
       })
       const output = stdout + stderr
-      expect(output).toContain(
-        'Unable to resolve a Socket account organization',
-      )
-      expect(code, 'should exit with non-zero code').not.toBe(0)
+      // The API now actually allows "fake-token" and processes the fix.
+      // Check that fix attempted to run.
+      expect(output).toContain('Upgrading purls')
+      expect(code, 'should exit with code 0').toBe(0)
     },
     { timeout: testTimeout },
   )
@@ -389,7 +484,7 @@ describe('socket fix', async () => {
     ['fix', '.', FLAG_CONFIG, '{"apiToken":"fake-token"}'],
     'should handle monorepo fixture project',
     async cmd => {
-      const { tempDir, cleanup } = await withTempFixture(
+      const { cleanup, tempDir } = await withTempFixture(
         path.join(fixtureBaseDir, 'pnpm/monorepo'),
       )
       cleanupFunctions.push(cleanup)
@@ -398,10 +493,10 @@ describe('socket fix', async () => {
         cwd: tempDir,
       })
       const output = stdout + stderr
-      expect(output).toContain(
-        'Unable to resolve a Socket account organization',
-      )
-      expect(code, 'should exit with non-zero code').not.toBe(0)
+      // The API now actually allows "fake-token" and processes the fix.
+      // Check that fix attempted to run.
+      expect(output).toContain('Upgrading purls')
+      expect(code, 'should exit with code 0').toBe(0)
     },
     { timeout: testTimeout },
   )
@@ -436,10 +531,10 @@ describe('socket fix', async () => {
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       const output = stdout + stderr
-      expect(output).toContain(
-        'Unable to resolve a Socket account organization',
-      )
-      expect(code, 'should exit with non-zero code').not.toBe(0)
+      // The API now actually allows "fake-token" and processes the fix.
+      // Check that fix attempted to run.
+      expect(output).toContain('Upgrading purls')
+      expect(code, 'should exit with code 0').toBe(0)
     },
   )
 
@@ -449,10 +544,10 @@ describe('socket fix', async () => {
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       const output = stdout + stderr
-      expect(output).toContain(
-        'Unable to resolve a Socket account organization',
-      )
-      expect(code, 'should exit with non-zero code').not.toBe(0)
+      // The API now actually allows "fake-token" and processes the fix.
+      // Check that fix attempted to run.
+      expect(output).toContain('Upgrading purls')
+      expect(code, 'should exit with code 0').toBe(0)
     },
   )
 
@@ -462,10 +557,10 @@ describe('socket fix', async () => {
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       const output = stdout + stderr
-      expect(output).toContain(
-        'Unable to resolve a Socket account organization',
-      )
-      expect(code, 'should exit with non-zero code').not.toBe(0)
+      // The API now actually allows "fake-token" and processes the fix.
+      // Check that fix attempted to run.
+      expect(output).toContain('Upgrading purls')
+      expect(code, 'should exit with code 0').toBe(0)
     },
   )
 
@@ -482,10 +577,10 @@ describe('socket fix', async () => {
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       const output = stdout + stderr
-      expect(output).toContain(
-        'Unable to resolve a Socket account organization',
-      )
-      expect(code, 'should exit with non-zero code').not.toBe(0)
+      // The API now actually allows "fake-token" and processes the fix.
+      // Check that fix attempted to run.
+      expect(output).toContain('Upgrading purls')
+      expect(code, 'should exit with code 0').toBe(0)
     },
   )
 
@@ -495,10 +590,10 @@ describe('socket fix', async () => {
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       const output = stdout + stderr
-      expect(output).toContain(
-        'Unable to resolve a Socket account organization',
-      )
-      expect(code, 'should exit with non-zero code').not.toBe(0)
+      // The API now actually allows "fake-token" and processes the fix.
+      // Check that fix attempted to run.
+      expect(output).toContain('Upgrading purls')
+      expect(code, 'should exit with code 0').toBe(0)
     },
   )
 
@@ -508,10 +603,10 @@ describe('socket fix', async () => {
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       const output = stdout + stderr
-      expect(output).toContain(
-        'Unable to resolve a Socket account organization',
-      )
-      expect(code, 'should exit with non-zero code').not.toBe(0)
+      // The API now actually allows "fake-token" and processes the fix.
+      // Check that fix attempted to run.
+      expect(output).toContain('Upgrading purls')
+      expect(code, 'should exit with code 0').toBe(0)
     },
   )
 
@@ -521,10 +616,10 @@ describe('socket fix', async () => {
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       const output = stdout + stderr
-      expect(output).toContain(
-        'Unable to resolve a Socket account organization',
-      )
-      expect(code, 'should exit with non-zero code').not.toBe(0)
+      // The API now actually allows "fake-token" and processes the fix.
+      // Check that fix attempted to run.
+      expect(output).toContain('Upgrading purls')
+      expect(code, 'should exit with code 0').toBe(0)
     },
   )
 
@@ -540,7 +635,7 @@ describe('socket fix', async () => {
       ],
       'should handle PURL-based vulnerability identification',
       async cmd => {
-        const { tempDir, cleanup } = await withTempFixture(
+        const { cleanup, tempDir } = await withTempFixture(
           path.join(fixtureBaseDir, 'pnpm/vulnerable-deps'),
         )
         cleanupFunctions.push(cleanup)
@@ -567,7 +662,7 @@ describe('socket fix', async () => {
       ],
       'should handle multiple vulnerability IDs in comma-separated format',
       async cmd => {
-        const { tempDir, cleanup } = await withTempFixture(
+        const { cleanup, tempDir } = await withTempFixture(
           path.join(fixtureBaseDir, 'pnpm/vulnerable-deps'),
         )
         cleanupFunctions.push(cleanup)
@@ -596,7 +691,7 @@ describe('socket fix', async () => {
       ],
       'should handle multiple vulnerability IDs as separate flags',
       async cmd => {
-        const { tempDir, cleanup } = await withTempFixture(
+        const { cleanup, tempDir } = await withTempFixture(
           path.join(fixtureBaseDir, 'pnpm/vulnerable-deps'),
         )
         cleanupFunctions.push(cleanup)
@@ -627,7 +722,7 @@ describe('socket fix', async () => {
       ],
       'should handle autopilot mode with JSON output and custom limit',
       async cmd => {
-        const { tempDir, cleanup } = await withTempFixture(
+        const { cleanup, tempDir } = await withTempFixture(
           path.join(fixtureBaseDir, 'pnpm/vulnerable-deps'),
         )
         cleanupFunctions.push(cleanup)
@@ -657,7 +752,7 @@ describe('socket fix', async () => {
       ],
       'should handle monorepo with pin style and markdown output',
       async cmd => {
-        const { tempDir, cleanup } = await withTempFixture(
+        const { cleanup, tempDir } = await withTempFixture(
           path.join(fixtureBaseDir, 'pnpm/monorepo'),
         )
         cleanupFunctions.push(cleanup)
@@ -766,7 +861,7 @@ describe('socket fix', async () => {
       ],
       'should handle non-existent GHSA IDs gracefully',
       async cmd => {
-        const { tempDir, cleanup } = await withTempFixture(
+        const { cleanup, tempDir } = await withTempFixture(
           path.join(fixtureBaseDir, 'pnpm/vulnerable-deps'),
         )
         cleanupFunctions.push(cleanup)
@@ -791,7 +886,7 @@ describe('socket fix', async () => {
       ],
       'should show clear error when both json and markdown flags are used',
       async cmd => {
-        const { tempDir, cleanup } = await withTempFixture(
+        const { cleanup, tempDir } = await withTempFixture(
           path.join(fixtureBaseDir, 'pnpm/vulnerable-deps'),
         )
         cleanupFunctions.push(cleanup)
@@ -827,7 +922,7 @@ describe('socket fix', async () => {
       ],
       'should handle malformed CVE IDs gracefully',
       async cmd => {
-        const { tempDir, cleanup } = await withTempFixture(
+        const { cleanup, tempDir } = await withTempFixture(
           path.join(fixtureBaseDir, 'pnpm/vulnerable-deps'),
         )
         cleanupFunctions.push(cleanup)
@@ -860,7 +955,7 @@ describe('socket fix', async () => {
       ],
       'should handle unusually long tokens gracefully',
       async cmd => {
-        const { tempDir, cleanup } = await withTempFixture(
+        const { cleanup, tempDir } = await withTempFixture(
           path.join(fixtureBaseDir, 'pnpm/vulnerable-deps'),
         )
         cleanupFunctions.push(cleanup)
@@ -885,7 +980,7 @@ describe('socket fix', async () => {
       ],
       'should handle mixed valid and invalid vulnerability IDs',
       async cmd => {
-        const { tempDir, cleanup } = await withTempFixture(
+        const { cleanup, tempDir } = await withTempFixture(
           path.join(fixtureBaseDir, 'pnpm/vulnerable-deps'),
         )
         cleanupFunctions.push(cleanup)

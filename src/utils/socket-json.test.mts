@@ -1,6 +1,7 @@
-import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
 import { existsSync, promises as fs, readFileSync } from 'node:fs'
 import path from 'node:path'
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
   findSocketJsonUp,
@@ -11,7 +12,6 @@ import {
   readSocketJsonSync,
   writeSocketJson,
 } from './socket-json.mts'
-
 import { SOCKET_JSON, SOCKET_WEBSITE_URL } from '../constants.mts'
 
 // Mock dependencies.

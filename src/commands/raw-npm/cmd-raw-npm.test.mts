@@ -15,8 +15,7 @@ describe('socket raw-npm', async () => {
     `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(
-        `
+      expect(stdout).toMatchInlineSnapshot(`
         "Run npm without the Socket wrapper
 
           Usage
@@ -31,8 +30,7 @@ describe('socket raw-npm', async () => {
 
           Examples
             $ socket raw-npm install -g cowsay"
-      `,
-      )
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------

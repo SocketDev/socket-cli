@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-import { fileURLToPath, pathToFileURL } from 'node:url'
 import process from 'node:process'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 
 // Suppress MaxListenersExceeded warning for AbortSignal.
 // The Socket SDK properly manages listeners but may exceed the default limit of 30

@@ -1,10 +1,12 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest'
+import npmPackageArg from 'npm-package-arg'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+// eslint-disable-next-line import-x/order
 import {
-  safeNpa,
-  safeParseNpmSpec,
-  safeNpmSpecToPurl,
   npmSpecToPurl,
+  safeNpa,
+  safeNpmSpecToPurl,
+  safeParseNpmSpec,
 } from './npm-spec.mts'
 
 // Mock dependencies.
@@ -22,7 +24,6 @@ vi.mock('../constants.mts', () => ({
 
 // Don't mock the module we're testing - only mock its dependencies.
 
-import npmPackageArg from 'npm-package-arg'
 import { createPurlObject } from './purl.mts'
 
 const mockNpmPackageArg = vi.mocked(npmPackageArg)

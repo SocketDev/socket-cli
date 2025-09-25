@@ -25,9 +25,9 @@ import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
-import { buildErrorCause } from './errors.mts'
 import { getConfigValueOrUndef } from './config.mts'
 import { debugApiResponse } from './debug.mts'
+import { buildErrorCause } from './errors.mts'
 import constants, {
   CONFIG_KEY_API_BASE_URL,
   EMPTY_VALUE,

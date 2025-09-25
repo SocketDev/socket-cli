@@ -15,8 +15,7 @@ describe('socket logout', async () => {
     `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(
-        `
+      expect(stdout).toMatchInlineSnapshot(`
         "Socket API logout
 
           Usage
@@ -26,8 +25,7 @@ describe('socket logout', async () => {
 
           Examples
             $ socket logout"
-      `,
-      )
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------

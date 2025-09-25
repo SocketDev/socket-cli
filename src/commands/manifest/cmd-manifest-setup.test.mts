@@ -15,8 +15,7 @@ describe('socket manifest setup', async () => {
     `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(
-        `
+      expect(stdout).toMatchInlineSnapshot(`
         "Start interactive configurator to customize default flag values for \`socket manifest\` in this dir
 
           Usage
@@ -47,8 +46,7 @@ describe('socket manifest setup', async () => {
           Examples
             $ socket manifest setup
             $ socket manifest setup ./proj"
-      `,
-      )
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------

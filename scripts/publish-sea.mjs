@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * Script to publish Socket CLI SEA binaries.
  *

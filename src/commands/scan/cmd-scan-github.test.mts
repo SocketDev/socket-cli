@@ -15,8 +15,7 @@ describe('socket scan github', async () => {
     `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(
-        `
+      expect(stdout).toMatchInlineSnapshot(`
         "Create a scan for given GitHub repo
 
           Usage
@@ -53,8 +52,7 @@ describe('socket scan github', async () => {
           Examples
             $ socket scan github
             $ socket scan github ./proj"
-      `,
-      )
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------

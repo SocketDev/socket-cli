@@ -15,8 +15,7 @@ describe('socket organization dependencies', async () => {
     `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(
-        `
+      expect(stdout).toMatchInlineSnapshot(`
         "Search for any dependency that is being used in your organization
 
           Usage
@@ -34,8 +33,7 @@ describe('socket organization dependencies', async () => {
           Examples
             socket organization dependencies
             socket organization dependencies --limit 20 --offset 10"
-      `,
-      )
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------

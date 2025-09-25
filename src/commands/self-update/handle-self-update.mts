@@ -5,20 +5,19 @@
  * pattern of downloading and replacing binaries with rollback capabilities.
  */
 
-import { existsSync } from 'node:fs'
-import { promises as fs } from 'node:fs'
 import crypto from 'node:crypto'
+import { existsSync, promises as fs } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
 import colors from 'yoctocolors-cjs'
 
-import constants from '../../constants.mts'
+import { logger } from '@socketsecurity/registry/lib/logger'
 
+import { outputSelfUpdate } from './output-self-update.mts'
+import constants from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
-import { outputSelfUpdate } from './output-self-update.mts'
 import {
   clearQuarantine,
   ensureExecutable,

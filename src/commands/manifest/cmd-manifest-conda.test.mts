@@ -25,8 +25,7 @@ describe('socket manifest conda', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
         cwd: testPath,
       })
-      expect(stdout).toMatchInlineSnapshot(
-        `
+      expect(stdout).toMatchInlineSnapshot(`
         "[beta] Convert a Conda environment.yml file to a python requirements.txt
 
           Usage
@@ -54,8 +53,7 @@ describe('socket manifest conda', async () => {
 
             $ socket manifest conda
             $ socket manifest conda ./project/foo --file environment.yaml"
-      `,
-      )
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------

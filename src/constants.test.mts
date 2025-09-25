@@ -1,6 +1,7 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock environment variables before importing constants.
 vi.stubEnv('SOCKET_API_BASE_URL', '')

@@ -1,16 +1,15 @@
 import { describe, expect, it, vi } from 'vitest'
 
+import { ALERT_SEVERITY } from './alert/severity.mts'
 import {
+  ALERT_SEVERITY_ORDER,
+  alertSeverityComparator,
   alertsHaveBlocked,
   alertsHaveSeverity,
-  alertSeverityComparator,
   getAlertSeverityOrder,
   getAlertsSeverityOrder,
   getSeverityLabel,
-  ALERT_SEVERITY_ORDER,
 } from './socket-package-alert.mts'
-
-import { ALERT_SEVERITY } from './alert/severity.mts'
 
 import type { SocketPackageAlert } from './socket-package-alert.mts'
 

@@ -1,5 +1,6 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import fs, { existsSync } from 'node:fs'
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { postinstallWrapper } from './postinstall-wrapper.mts'
 
