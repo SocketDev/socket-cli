@@ -102,6 +102,7 @@ export async function handleFix({
   applyFixes,
   autopilot,
   cwd,
+  disableMajorUpdates,
   ghsas,
   glob,
   limit,
@@ -112,6 +113,7 @@ export async function handleFix({
   outputKind,
   prCheck,
   rangeStyle,
+  showAffectedDirectDependencies,
   spinner,
   unknownFlags,
 }: HandleFixConfig) {
@@ -119,6 +121,7 @@ export async function handleFix({
   debugDir('inspect', {
     autopilot,
     cwd,
+    disableMajorUpdates,
     ghsas,
     glob,
     limit,
@@ -128,6 +131,7 @@ export async function handleFix({
     outputKind,
     prCheck,
     rangeStyle,
+    showAffectedDirectDependencies,
     unknownFlags,
   })
 
@@ -136,6 +140,7 @@ export async function handleFix({
       autopilot,
       applyFixes,
       cwd,
+      disableMajorUpdates,
       // Convert mixed CVE/GHSA/PURL inputs to GHSA IDs only
       ghsas: await convertIdsToGhsas(ghsas),
       glob,
@@ -145,6 +150,7 @@ export async function handleFix({
       orgSlug,
       prCheck,
       rangeStyle,
+      showAffectedDirectDependencies,
       spinner,
       unknownFlags,
       outputFile,
