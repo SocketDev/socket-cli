@@ -86,7 +86,7 @@
     "testu": "dotenvx -q run -f .env.testu -- run-s test:prepare; pnpm run test:unit:update --",
     "testuf": "dotenvx -q run -f .env.testu -- pnpm run test:unit:update --",
     "update": "run-p --aggregate-output update:**",
-    "update:deps": "taze",
+    "update:deps": "node scripts/taze.mjs",
     "update:socket": "pnpm update '@socketsecurity/*' '@socketregistry/*' --latest"
   },
   "devDependencies": {
@@ -139,8 +139,8 @@
     "@types/semver": "7.7.1",
     "@types/which": "3.0.4",
     "@types/yargs-parser": "21.0.3",
-    "@typescript-eslint/parser": "8.43.0",
-    "@typescript/native-preview": "7.0.0-dev.20250924.1",
+    "@typescript-eslint/parser": "8.44.1",
+    "@typescript/native-preview": "7.0.0-dev.20250927.1",
     "@vitest/coverage-v8": "3.2.4",
     "blessed": "0.1.81",
     "blessed-contrib": "4.11.0",
@@ -183,7 +183,7 @@
     "terminal-link": "2.1.1",
     "trash": "10.0.0",
     "type-coverage": "2.29.7",
-    "typescript-eslint": "8.43.0",
+    "typescript-eslint": "8.44.1",
     "unplugin-purge-polyfills": "0.1.0",
     "vitest": "3.2.4",
     "yaml": "2.8.1",
