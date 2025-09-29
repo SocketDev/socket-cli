@@ -16,8 +16,7 @@ describe('socket repository update', async () => {
     `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(
-        `
+      expect(stdout).toMatchInlineSnapshot(`
         "Update a repository in an organization
 
           Usage
@@ -40,8 +39,7 @@ describe('socket repository update', async () => {
           Examples
             $ socket repository update test-repo
             $ socket repository update test-repo --homepage https://example.com"
-      `,
-      )
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------

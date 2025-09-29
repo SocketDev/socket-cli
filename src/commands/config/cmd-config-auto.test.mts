@@ -15,8 +15,7 @@ describe('socket config auto', async () => {
     `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(
-        `
+      expect(stdout).toMatchInlineSnapshot(`
         "Automatically discover and set the correct value config item
 
           Usage
@@ -39,8 +38,7 @@ describe('socket config auto', async () => {
            - enforcedOrgs -- Orgs in this list have their security policies enforced on this machine
            - org -- Alias for defaultOrg
            - skipAskToPersistDefaultOrg -- This flag prevents the Socket CLI from asking you to persist the org slug when you selected one interactively"
-      `,
-      )
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------

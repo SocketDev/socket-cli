@@ -1,5 +1,6 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { readFileSync, writeFileSync } from 'node:fs'
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { removeSocketWrapper } from './remove-socket-wrapper.mts'
 

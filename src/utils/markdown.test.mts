@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { mdTableStringNumber, mdTable, mdTableOfPairs } from './markdown.mts'
+import { mdTable, mdTableOfPairs, mdTableStringNumber } from './markdown.mts'
 
 describe('markdown utilities', () => {
   describe('mdTableStringNumber', () => {

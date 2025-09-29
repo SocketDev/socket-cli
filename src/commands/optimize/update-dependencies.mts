@@ -1,8 +1,8 @@
 import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
+import { runAgentInstall } from './agent-installer.mts'
 import constants from '../../constants.mts'
-import { runAgentInstall } from '../../utils/agent.mts'
 import { cmdPrefixMessage } from '../../utils/cmd.mts'
 
 import type { CResult } from '../../types.mts'
@@ -11,15 +11,15 @@ import type { Logger } from '@socketsecurity/registry/lib/logger'
 
 const { NPM_BUGGY_OVERRIDES_PATCHED_VERSION } = constants
 
-export type UpdateLockfileOptions = {
+export type UpdateDependenciesOptions = {
   cmdName?: string | undefined
   logger?: Logger | undefined
   spinner?: Spinner | undefined
 }
 
-export async function updateLockfile(
+export async function updateDependencies(
   pkgEnvDetails: EnvDetails,
-  options: UpdateLockfileOptions,
+  options: UpdateDependenciesOptions,
 ): Promise<CResult<unknown>> {
   const {
     cmdName = '',
@@ -28,7 +28,7 @@ export async function updateLockfile(
   } = {
     __proto__: null,
     ...options,
-  } as UpdateLockfileOptions
+  } as UpdateDependenciesOptions
 
   const wasSpinning = !!spinner?.isSpinning
 
@@ -46,7 +46,7 @@ export async function updateLockfile(
   } catch (e) {
     spinner?.stop()
 
-    debugFn('error', 'Lockfile update failed')
+    debugFn('error', 'Dependencies update failed')
     debugDir('error', e)
 
     if (wasSpinning) {
@@ -55,10 +55,12 @@ export async function updateLockfile(
 
     return {
       ok: false,
-      message: 'Update failed',
+      message: 'Dependencies update failed',
       cause: cmdPrefixMessage(
         cmdName,
-        `${pkgEnvDetails.agent} install failed to update ${pkgEnvDetails.lockName}`,
+        `${pkgEnvDetails.agent} install failed to update ${pkgEnvDetails.lockName}. ` +
+          `Check that ${pkgEnvDetails.agent} is properly installed and your project configuration is valid. ` +
+          `Run '${pkgEnvDetails.agent} install' manually to see detailed error information.`,
       ),
     }
   }

@@ -17,8 +17,7 @@ describe('socket config unset', async () => {
     `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(
-        `
+      expect(stdout).toMatchInlineSnapshot(`
         "Clear the value of a local CLI config item
 
           Usage
@@ -43,8 +42,7 @@ describe('socket config unset', async () => {
 
           Examples
             $ socket config unset defaultOrg"
-      `,
-      )
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------

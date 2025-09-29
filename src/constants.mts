@@ -19,8 +19,8 @@ const __dirname = path.dirname(__filename)
 
 const {
   AT_LATEST,
-  BIOME_JSON,
   BUN,
+  CHANGELOG_MD,
   CI,
   COLUMN_LIMIT,
   DOT_GIT_DIR,
@@ -61,6 +61,7 @@ const {
   NODE_ENV,
   NODE_MODULES,
   NODE_MODULES_GLOB_RECURSIVE,
+  NODE_SEA_FUSE,
   NPM,
   NPX,
   OVERRIDES,
@@ -150,9 +151,18 @@ export type ENV = Remap<
       LOCALAPPDATA: string
       NODE_COMPILE_CACHE: string
       NODE_EXTRA_CA_CERTS: string
+      NPM_REGISTRY: string
       npm_config_cache: string
       npm_config_user_agent: string
       PATH: string
+      RUN_E2E_TESTS: boolean
+      SEA_BOOTSTRAP: string
+      SEA_OUTPUT: string
+      SOCKET_CLI_DIR: string
+      SOCKET_CLI_PACKAGE: string
+      SOCKET_HOME: string
+      SOCKET_NODE_DOWNLOAD_URL: string
+      SOCKET_NPM_REGISTRY: string
       SOCKET_CLI_ACCEPT_RISKS: boolean
       SOCKET_CLI_API_BASE_URL: string
       SOCKET_CLI_API_PROXY: string
@@ -169,6 +179,7 @@ export type ENV = Remap<
       SOCKET_CLI_ORG_SLUG: string
       SOCKET_CLI_SFW_LOCAL_PATH: string
       SOCKET_CLI_VIEW_ALL_RISKS: boolean
+      SOCKET_CLI_SEA_NODE_VERSION: string
       TERM: string
       XDG_DATA_HOME: string
     }>
@@ -201,7 +212,8 @@ const CONFIG_KEY_DEFAULT_ORG = 'defaultOrg'
 const CONFIG_KEY_ENFORCED_ORGS = 'enforcedOrgs'
 const CONFIG_KEY_ORG = 'org'
 const DOT_SOCKET_DOT_FACTS_JSON = `${DOT_SOCKET_DIR}.facts.json`
-const DLX_BINARY_CACHE_TTL = 7 * 24 * 60 * 60 * 1_000 // 7 days in milliseconds.
+// 7 days in milliseconds.
+const DLX_BINARY_CACHE_TTL = 7 * 24 * 60 * 60 * 1_000
 const DRY_RUN_LABEL = '[DryRun]'
 const DRY_RUN_BAILING_NOW = `${DRY_RUN_LABEL}: Bailing now`
 const DRY_RUN_NOT_SAVING = `${DRY_RUN_LABEL}: Not saving`
@@ -241,6 +253,7 @@ const HTTP_STATUS_BAD_REQUEST = 400
 const HTTP_STATUS_FORBIDDEN = 403
 const HTTP_STATUS_INTERNAL_SERVER_ERROR = 500
 const HTTP_STATUS_NOT_FOUND = 404
+const HTTP_STATUS_TOO_MANY_REQUESTS = 429
 const HTTP_STATUS_UNAUTHORIZED = 401
 const NPM_BUGGY_OVERRIDES_PATCHED_VERSION = '11.2.0'
 const NPM_REGISTRY_URL = 'https://registry.npmjs.org'
@@ -255,8 +268,10 @@ const REPORT_LEVEL_IGNORE = 'ignore'
 const REPORT_LEVEL_MONITOR = 'monitor'
 const REPORT_LEVEL_WARN = 'warn'
 const REQUIREMENTS_TXT = 'requirements.txt'
+const SEA_UPDATE_COMMAND = 'self-update'
 const SOCKET_CLI_ACCEPT_RISKS = 'SOCKET_CLI_ACCEPT_RISKS'
 const SOCKET_CLI_BIN_NAME = 'socket'
+const SOCKET_CLI_GITHUB_REPO = 'socket-cli'
 const SOCKET_CLI_ISSUES_URL = 'https://github.com/SocketDev/socket-cli/issues'
 const SOCKET_CLI_SHADOW_ACCEPT_RISKS = 'SOCKET_CLI_SHADOW_ACCEPT_RISKS'
 const SOCKET_CLI_SHADOW_API_TOKEN = 'SOCKET_CLI_SHADOW_API_TOKEN'
@@ -272,6 +287,10 @@ const SOCKET_YAML = 'socket.yaml'
 const SOCKET_YML = 'socket.yml'
 const TOKEN_PREFIX = 'sktsec_'
 const TOKEN_PREFIX_LENGTH = TOKEN_PREFIX.length
+const UPDATE_CHECK_TTL = 24 * 60 * 60 * 1_000
+const UPDATE_NOTIFIER_TIMEOUT = 10_000
+const UPDATE_STORE_DIR = '.socket/_socket'
+const UPDATE_STORE_FILE_NAME = 'update-store.json'
 const V1_MIGRATION_GUIDE_URL = 'https://docs.socket.dev/docs/v1-migration-guide'
 
 export type Constants = Remap<
@@ -286,18 +305,24 @@ export type Constants = Remap<
     readonly ALERT_TYPE_MILD_CVE: typeof ALERT_TYPE_MILD_CVE
     readonly API_V0_URL: typeof API_V0_URL
     readonly BUN: typeof BUN
+    readonly CHANGELOG_MD: typeof CHANGELOG_MD
     readonly CONFIG_KEY_API_BASE_URL: typeof CONFIG_KEY_API_BASE_URL
     readonly CONFIG_KEY_API_PROXY: typeof CONFIG_KEY_API_PROXY
     readonly CONFIG_KEY_API_TOKEN: typeof CONFIG_KEY_API_TOKEN
     readonly CONFIG_KEY_DEFAULT_ORG: typeof CONFIG_KEY_DEFAULT_ORG
     readonly CONFIG_KEY_ENFORCED_ORGS: typeof CONFIG_KEY_ENFORCED_ORGS
     readonly CONFIG_KEY_ORG: typeof CONFIG_KEY_ORG
+    readonly DLX_BINARY_CACHE_TTL: typeof DLX_BINARY_CACHE_TTL
     readonly DOT_GIT_DIR: typeof DOT_GIT_DIR
     readonly DOT_SOCKET_DIR: typeof DOT_SOCKET_DIR
-    readonly DLX_BINARY_CACHE_TTL: typeof DLX_BINARY_CACHE_TTL
     readonly DOT_SOCKET_DOT_FACTS_JSON: typeof DOT_SOCKET_DOT_FACTS_JSON
     readonly DRY_RUN_BAILING_NOW: typeof DRY_RUN_BAILING_NOW
     readonly DRY_RUN_LABEL: typeof DRY_RUN_LABEL
+    readonly SEA_UPDATE_COMMAND: typeof SEA_UPDATE_COMMAND
+    readonly UPDATE_CHECK_TTL: typeof UPDATE_CHECK_TTL
+    readonly UPDATE_NOTIFIER_TIMEOUT: typeof UPDATE_NOTIFIER_TIMEOUT
+    readonly UPDATE_STORE_DIR: typeof UPDATE_STORE_DIR
+    readonly UPDATE_STORE_FILE_NAME: typeof UPDATE_STORE_FILE_NAME
     readonly DRY_RUN_NOT_SAVING: typeof DRY_RUN_NOT_SAVING
     readonly EMPTY_VALUE: typeof EMPTY_VALUE
     readonly ENV: ENV
@@ -337,8 +362,10 @@ export type Constants = Remap<
     readonly HTTP_STATUS_FORBIDDEN: typeof HTTP_STATUS_FORBIDDEN
     readonly HTTP_STATUS_INTERNAL_SERVER_ERROR: typeof HTTP_STATUS_INTERNAL_SERVER_ERROR
     readonly HTTP_STATUS_NOT_FOUND: typeof HTTP_STATUS_NOT_FOUND
+    readonly HTTP_STATUS_TOO_MANY_REQUESTS: typeof HTTP_STATUS_TOO_MANY_REQUESTS
     readonly HTTP_STATUS_UNAUTHORIZED: typeof HTTP_STATUS_UNAUTHORIZED
     readonly NODE_MODULES: typeof NODE_MODULES
+    readonly NODE_SEA_FUSE: typeof NODE_SEA_FUSE
     readonly NPM: typeof NPM
     readonly NPM_BUGGY_OVERRIDES_PATCHED_VERSION: typeof NPM_BUGGY_OVERRIDES_PATCHED_VERSION
     readonly NPM_REGISTRY_URL: typeof NPM_REGISTRY_URL
@@ -360,6 +387,7 @@ export type Constants = Remap<
     readonly REQUIREMENTS_TXT: typeof REQUIREMENTS_TXT
     readonly SOCKET_CLI_ACCEPT_RISKS: typeof SOCKET_CLI_ACCEPT_RISKS
     readonly SOCKET_CLI_BIN_NAME: typeof SOCKET_CLI_BIN_NAME
+    readonly SOCKET_CLI_GITHUB_REPO: typeof SOCKET_CLI_GITHUB_REPO
     readonly SOCKET_CLI_ISSUES_URL: typeof SOCKET_CLI_ISSUES_URL
     readonly SOCKET_CLI_SHADOW_ACCEPT_RISKS: typeof SOCKET_CLI_SHADOW_ACCEPT_RISKS
     readonly SOCKET_CLI_SHADOW_API_TOKEN: typeof SOCKET_CLI_SHADOW_API_TOKEN
@@ -660,6 +688,28 @@ const LAZY_ENV = () => {
     SOCKET_CLI_SFW_LOCAL_PATH: envAsString(env['SOCKET_CLI_SFW_LOCAL_PATH']),
     // View all risks of a Socket wrapped npm/npx run.
     SOCKET_CLI_VIEW_ALL_RISKS: envAsBoolean(env[SOCKET_CLI_VIEW_ALL_RISKS]),
+    // Node.js version to use for Single Executable Applications (SEA).
+    SOCKET_CLI_SEA_NODE_VERSION: envAsString(
+      env['SOCKET_CLI_SEA_NODE_VERSION'],
+    ),
+    // NPM registry URL.
+    NPM_REGISTRY: envAsString(env['NPM_REGISTRY']),
+    // Enable E2E tests.
+    RUN_E2E_TESTS: envAsBoolean(env['RUN_E2E_TESTS']),
+    // SEA bootstrap entry point path.
+    SEA_BOOTSTRAP: envAsString(env['SEA_BOOTSTRAP']),
+    // SEA output path.
+    SEA_OUTPUT: envAsString(env['SEA_OUTPUT']),
+    // Socket CLI directory.
+    SOCKET_CLI_DIR: envAsString(env['SOCKET_CLI_DIR']),
+    // Socket CLI package name.
+    SOCKET_CLI_PACKAGE: envAsString(env['SOCKET_CLI_PACKAGE']),
+    // Socket home directory.
+    SOCKET_HOME: envAsString(env['SOCKET_HOME']),
+    // Socket Node.js download URL.
+    SOCKET_NODE_DOWNLOAD_URL: envAsString(env['SOCKET_NODE_DOWNLOAD_URL']),
+    // Socket npm registry URL.
+    SOCKET_NPM_REGISTRY: envAsString(env['SOCKET_NPM_REGISTRY']),
     // Specifies the type of terminal or terminal emulator being used by the process.
     TERM: envAsString(env['TERM']),
     // Redefine registryConstants.ENV.VITEST to account for the
@@ -934,6 +984,7 @@ const constants: Constants = createConstantsObject(
     HTTP_STATUS_FORBIDDEN,
     HTTP_STATUS_INTERNAL_SERVER_ERROR,
     HTTP_STATUS_NOT_FOUND,
+    HTTP_STATUS_TOO_MANY_REQUESTS,
     HTTP_STATUS_UNAUTHORIZED,
     NODE_MODULES,
     NPM_BUGGY_OVERRIDES_PATCHED_VERSION,
@@ -956,6 +1007,7 @@ const constants: Constants = createConstantsObject(
     REQUIREMENTS_TXT,
     SOCKET_CLI_ACCEPT_RISKS,
     SOCKET_CLI_BIN_NAME,
+    SOCKET_CLI_GITHUB_REPO,
     SOCKET_CLI_ISSUES_URL,
     SOCKET_CLI_SHADOW_ACCEPT_RISKS,
     SOCKET_CLI_SHADOW_API_TOKEN,
@@ -1068,8 +1120,8 @@ const constants: Constants = createConstantsObject(
 export {
   // Re-exported from socket-registry.
   AT_LATEST,
-  BIOME_JSON,
   BUN,
+  CHANGELOG_MD,
   CI,
   COLUMN_LIMIT,
   DOT_GIT_DIR,
@@ -1110,6 +1162,7 @@ export {
   NODE_ENV,
   NODE_MODULES,
   NODE_MODULES_GLOB_RECURSIVE,
+  NODE_SEA_FUSE,
   NPM,
   NPX,
   OVERRIDES,
@@ -1164,6 +1217,11 @@ export {
   DRY_RUN_LABEL,
   DRY_RUN_NOT_SAVING,
   ENVIRONMENT_YAML,
+  SEA_UPDATE_COMMAND,
+  UPDATE_CHECK_TTL,
+  UPDATE_NOTIFIER_TIMEOUT,
+  UPDATE_STORE_DIR,
+  UPDATE_STORE_FILE_NAME,
   ENVIRONMENT_YML,
   ERROR_NO_MANIFEST_FILES,
   ERROR_NO_PACKAGE_JSON,
@@ -1198,6 +1256,7 @@ export {
   HTTP_STATUS_FORBIDDEN,
   HTTP_STATUS_INTERNAL_SERVER_ERROR,
   HTTP_STATUS_NOT_FOUND,
+  HTTP_STATUS_TOO_MANY_REQUESTS,
   HTTP_STATUS_UNAUTHORIZED,
   NPM_BUGGY_OVERRIDES_PATCHED_VERSION,
   NPM_REGISTRY_URL,
@@ -1214,6 +1273,7 @@ export {
   REQUIREMENTS_TXT,
   SOCKET_CLI_ACCEPT_RISKS,
   SOCKET_CLI_BIN_NAME,
+  SOCKET_CLI_GITHUB_REPO,
   SOCKET_CLI_ISSUES_URL,
   SOCKET_CLI_SHADOW_ACCEPT_RISKS,
   SOCKET_CLI_SHADOW_API_TOKEN,

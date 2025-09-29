@@ -11,6 +11,7 @@ on:
         options:
           - '0'
           - '1'
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -26,14 +27,28 @@ jobs:
           scope: '@socketsecurity'
       - run: pnpm install
 
+      - name: Ensure npm version 11.5.1+ for trusted publishing
+        run: |
+          NPM_VERSION=$(npm --version)
+          echo "Current npm version: $NPM_VERSION"
+          # Check if npm version is >= 11.5.1
+          if ! npx --yes semver "$NPM_VERSION" -r ">=11.5.1"; then
+            echo "Installing npm 11.5.1+ for trusted publishing..."
+            npm install -g npm@latest
+            echo "Updated npm version: $(npm --version)"
+          else
+            echo "npm version $NPM_VERSION meets the 11.5.1+ requirement for trusted publishing"
+          fi
+
       # Build and publish 'socket' package (default).
       - name: Build socket package
         run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 pnpm run build:dist
+        env:
+          SOCKET_CLI_DEBUG: ${{ inputs.debug }}
       - name: Publish socket package
-        run: cd dist && npm publish --provenance --access public --no-git-checks
+        run: cd dist && npm publish --access public --no-git-checks
         continue-on-error: true
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
 
       # Build and publish '@socketsecurity/cli' package (legacy).
@@ -42,10 +57,9 @@ jobs:
         env:
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
       - name: Publish @socketsecurity/cli package
-        run: cd dist && npm publish --provenance --access public --no-git-checks
+        run: cd dist && npm publish --access public --no-git-checks
         continue-on-error: true
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
 
       # Build and publish '@socketsecurity/cli-with-sentry' package.
@@ -54,8 +68,7 @@ jobs:
         env:
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
       - name: Publish @socketsecurity/cli-with-sentry package
-        run: cd dist && npm publish --provenance --access public --no-git-checks
+        run: cd dist && npm publish --access public --no-git-checks
         continue-on-error: true
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}

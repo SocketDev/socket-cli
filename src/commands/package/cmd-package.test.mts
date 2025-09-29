@@ -15,8 +15,7 @@ describe('socket package', async () => {
     `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(
-        `
+      expect(stdout).toMatchInlineSnapshot(`
         "Look up published package details
 
           Usage
@@ -30,8 +29,7 @@ describe('socket package', async () => {
 
             --no-banner                 Hide the Socket banner
             --no-spinner                Hide the console spinner"
-      `,
-      )
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------

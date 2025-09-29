@@ -18,8 +18,7 @@ describe('socket repository list', async () => {
     `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(
-        `
+      expect(stdout).toMatchInlineSnapshot(`
         "List repositories in an organization
 
           Usage
@@ -43,8 +42,7 @@ describe('socket repository list', async () => {
           Examples
             $ socket repository list
             $ socket repository list --json"
-      `,
-      )
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------

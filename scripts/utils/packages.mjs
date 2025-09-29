@@ -1,17 +1,12 @@
-'use strict'
+import fs from 'node:fs'
+import Module from 'node:module'
+import path from 'node:path'
+import vm from 'node:vm'
 
-const fs = require('node:fs')
-const Module = require('node:module')
-const path = require('node:path')
-const vm = require('node:vm')
+import { isValidPackageName } from '@socketsecurity/registry/lib/packages'
+import { isRelative, normalizePath } from '@socketsecurity/registry/lib/path'
 
-const { isValidPackageName } = require('@socketsecurity/registry/lib/packages')
-const {
-  isRelative,
-  normalizePath,
-} = require('@socketsecurity/registry/lib/path')
-
-const { findUpSync } = require('./fs')
+import { findUpSync } from './fs.mjs'
 
 const { createRequire, isBuiltin } = Module
 
@@ -98,7 +93,7 @@ function isEsmId(id_, parentId_) {
     cwd: path.dirname(resolvedId),
   })
   if (pkgJsonPath) {
-    const pkgJson = require(pkgJsonPath)
+    const pkgJson = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf8'))
     const { exports: entryExports } = pkgJson
     if (
       pkgJson.type === 'module' &&
@@ -130,7 +125,7 @@ function normalizeId(id) {
     .replace(cjsPluginSuffixRegExp, '')
 }
 
-module.exports = {
+export {
   isBuiltin,
   isEsmId,
   getPackageName,

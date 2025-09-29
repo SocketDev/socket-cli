@@ -190,15 +190,14 @@ export async function addArtifactToAlertsMap<T extends AlertsByPurl>(
     ...getOwn(options, 'filter'),
   }) as AlertFilter
 
-  const enabledState = {
-    __proto__: null,
-    ...socketYml?.issueRules,
-  } as Partial<Record<ALERT_TYPE, boolean>>
+  const enabledState = new Map<ALERT_TYPE, boolean>(
+    Object.entries(socketYml?.issueRules ?? {}) as Array<[ALERT_TYPE, boolean]>,
+  )
 
   let sockPkgAlerts: SocketPackageAlert[] = []
   for (const alert of artifact.alerts) {
     const action = alert.action ?? ''
-    const enabledFlag = enabledState[alert.type]
+    const enabledFlag = enabledState.get(alert.type)
     if (
       (action === 'ignore' && enabledFlag !== true) ||
       enabledFlag === false
@@ -544,7 +543,13 @@ export function logAlertsMap(
       const severity = alert.raw.severity ?? ''
       const attributes = [
         ...(severity
-          ? [colors[ALERT_SEVERITY_COLOR[severity]](getSeverityLabel(severity))]
+          ? [
+              (colors as any)[
+                ALERT_SEVERITY_COLOR[
+                  severity as keyof typeof ALERT_SEVERITY_COLOR
+                ]
+              ](getSeverityLabel(severity)),
+            ]
           : []),
         ...(alert.blocked ? [colors.bold(colors.red('blocked'))] : []),
         ...(alert.fixable ? ['fixable'] : []),

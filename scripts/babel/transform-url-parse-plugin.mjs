@@ -1,6 +1,4 @@
-'use strict'
-
-module.exports = function ({ types: t }) {
+export default function ({ types: t }) {
   return {
     name: 'transform-url-parse',
     visitor: {

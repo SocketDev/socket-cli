@@ -15,8 +15,7 @@ describe('socket package score', async () => {
     `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(
-        `
+      expect(stdout).toMatchInlineSnapshot(`
         "Look up score for one package which reflects all of its transitive dependencies as well
 
           Usage
@@ -54,8 +53,7 @@ describe('socket package score', async () => {
             $ socket package score npm eslint@1.0.0 --json
             $ socket package score pkg:golang/github.com/steelpoor/tlsproxy@v0.0.0-20250304082521-29051ed19c60
             $ socket package score nuget/needpluscommonlibrary@1.0.0 --markdown"
-      `,
-      )
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------

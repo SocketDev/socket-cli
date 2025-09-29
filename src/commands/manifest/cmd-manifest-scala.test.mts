@@ -15,8 +15,7 @@ describe('socket manifest scala', async () => {
     `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(
-        `
+      expect(stdout).toMatchInlineSnapshot(`
         "[beta] Generate a manifest file (\`pom.xml\`) from Scala's \`build.sbt\` file
 
           Usage
@@ -58,8 +57,7 @@ describe('socket manifest scala', async () => {
 
             $ socket manifest scala
             $ socket manifest scala ./proj --bin=/usr/bin/sbt --file=boot.sbt"
-      `,
-      )
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------

@@ -116,7 +116,8 @@ describe('output-audit-log', () => {
         page: 1,
         perPage: 10,
       })
-      expect(r).toMatchInlineSnapshot(`
+      expect(r).toMatchInlineSnapshot(
+        `
         "
         # Socket Audit Logs
 
@@ -140,7 +141,8 @@ describe('output-audit-log', () => {
         | 116928   | 2025-03-10T22:53:35.734Z | updateApiTokenScopes      | person@socket.dev |                 |               |
         | -------- | ------------------------ | ------------------------- | ----------------- | --------------- | ------------- |
         "
-      `)
+      `,
+      )
     })
 
     it('should return error report on error', async () => {

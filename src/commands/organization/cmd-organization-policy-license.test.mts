@@ -18,8 +18,7 @@ describe('socket organization policy license', async () => {
     `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(
-        `
+      expect(stdout).toMatchInlineSnapshot(`
         "Retrieve the license policy of an organization
 
           Usage
@@ -41,8 +40,7 @@ describe('socket organization policy license', async () => {
           Examples
             $ socket organization policy license
             $ socket organization policy license --json"
-      `,
-      )
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------

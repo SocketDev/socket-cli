@@ -1,46 +1,50 @@
-'use strict'
+import { createRequire } from 'node:module'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const path = require('node:path')
-
-const {
+import {
   convertIgnorePatternToMinimatch,
   includeIgnoreFile,
-} = require('@eslint/compat')
-const js = require('@eslint/js')
-const tsParser = require('@typescript-eslint/parser')
-const {
-  createTypeScriptImportResolver,
-} = require('eslint-import-resolver-typescript')
-const importXPlugin = require('eslint-plugin-import-x')
-const nodePlugin = require('eslint-plugin-n')
-const sortDestructureKeysPlugin = require('eslint-plugin-sort-destructure-keys')
-const unicornPlugin = require('eslint-plugin-unicorn')
-const globals = require('globals')
-const tsEslint = require('typescript-eslint')
+} from '@eslint/compat'
+import js from '@eslint/js'
+import tsParser from '@typescript-eslint/parser'
+import { createTypeScriptImportResolver } from 'eslint-import-resolver-typescript'
+import importXPlugin from 'eslint-plugin-import-x'
+import nodePlugin from 'eslint-plugin-n'
+import sortDestructureKeysPlugin from 'eslint-plugin-sort-destructure-keys'
+import unicornPlugin from 'eslint-plugin-unicorn'
+import globals from 'globals'
+import tsEslint from 'typescript-eslint'
 
-const constants = require('@socketsecurity/registry/lib/constants')
-const { BIOME_JSON, GITIGNORE, LATEST, TSCONFIG_JSON } = constants
+import constants from '../socket-registry/scripts/constants.mjs'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+const require = createRequire(import.meta.url)
 
 const { flatConfigs: origImportXFlatConfigs } = importXPlugin
 
 const rootPath = __dirname
-const rootTsConfigPath = path.join(rootPath, TSCONFIG_JSON)
+const rootTsConfigPath = path.join(rootPath, 'tsconfig.json')
 
 const nodeGlobalsConfig = Object.fromEntries(
   Object.entries(globals.node).map(([k]) => [k, 'readonly']),
 )
 
-const biomeConfigPath = path.join(rootPath, BIOME_JSON)
+const biomeConfigPath = path.join(rootPath, 'biome.json')
 const biomeConfig = require(biomeConfigPath)
 const biomeIgnores = {
-  name: 'Imported biome.json ignore patterns',
+  name: `Imported biome.json ignore patterns`,
   ignores: biomeConfig.files.includes
     .filter(p => p.startsWith('!'))
     .map(p => convertIgnorePatternToMinimatch(p.slice(1))),
 }
 
-const gitignorePath = path.join(rootPath, GITIGNORE)
-const gitIgnores = includeIgnoreFile(gitignorePath)
+const gitignorePath = path.join(rootPath, '.gitignore')
+const gitIgnores = {
+  ...includeIgnoreFile(gitignorePath),
+  name: `Imported .gitignore ignore patterns`,
+}
 
 if (process.env.LINT_DIST) {
   const isNotDistGlobPattern = p => !/(?:^|[\\/])dist/.test(p)
@@ -154,7 +158,7 @@ function getImportXFlatConfigs(isEsm) {
       ...origImportXFlatConfigs.recommended,
       languageOptions: {
         ...origImportXFlatConfigs.recommended.languageOptions,
-        ecmaVersion: LATEST,
+        ecmaVersion: 'latest',
         sourceType: isEsm ? 'module' : 'script',
       },
       rules: {
@@ -188,11 +192,16 @@ function getImportXFlatConfigs(isEsm) {
 const importFlatConfigsForScript = getImportXFlatConfigs(false)
 const importFlatConfigsForModule = getImportXFlatConfigs(true)
 
-module.exports = [
+export default [
   gitIgnores,
   biomeIgnores,
   {
+    name: 'Ignore test fixture node_modules',
+    ignores: ['**/test/fixtures/**/node_modules/**'],
+  },
+  {
     files: ['**/*.{cts,mts,ts}'],
+    ignores: ['**/*.test.{cts,mts,ts}', 'test/**/*.{cts,mts,ts}'],
     ...js.configs.recommended,
     ...importFlatConfigsForModule.typescript,
     languageOptions: {
@@ -210,24 +219,7 @@ module.exports = [
       parserOptions: {
         ...js.configs.recommended.languageOptions?.parserOptions,
         ...importFlatConfigsForModule.typescript.languageOptions?.parserOptions,
-        projectService: {
-          ...importFlatConfigsForModule.typescript.languageOptions
-            ?.parserOptions?.projectService,
-          allowDefaultProject: [
-            // Allow configs.
-            '*.config.mts',
-            // Allow paths like src/utils/*.test.mts.
-            'src/*/*.test.mts',
-            // Allow paths like src/commands/optimize/*.test.mts.
-            'src/*/*/*.test.mts',
-            'test/*.mts',
-          ],
-          defaultProject: 'tsconfig.json',
-          tsconfigRootDir: rootPath,
-          // Need this to glob the test files in /src. Otherwise it won't work.
-          // Reduced from 1_000_000 to prevent hanging during linting.
-          maximumDefaultProjectFileMatchCount_THIS_WILL_SLOW_DOWN_LINTING: 5_000,
-        },
+        project: rootTsConfigPath,
       },
     },
     linterOptions: {
@@ -267,6 +259,66 @@ module.exports = [
       // we want), and it's nice to await before returning anyways, since you get
       // a slightly more comprehensive stack trace upon promise rejection.
       '@typescript-eslint/return-await': ['error', 'always'],
+      // Disable the following rules because they don't play well with TypeScript.
+      'n/hashbang': 'off',
+      'n/no-extraneous-import': 'off',
+      'n/no-missing-import': 'off',
+      'no-redeclare': 'off',
+      'no-unused-vars': 'off',
+    },
+  },
+  {
+    files: ['**/*.test.{cts,mts,ts}', 'test/**/*.{cts,mts,ts}'],
+    ...js.configs.recommended,
+    ...importFlatConfigsForModule.typescript,
+    languageOptions: {
+      ...js.configs.recommended.languageOptions,
+      ...importFlatConfigsForModule.typescript.languageOptions,
+      globals: {
+        ...js.configs.recommended.languageOptions?.globals,
+        ...importFlatConfigsForModule.typescript.languageOptions?.globals,
+        ...nodeGlobalsConfig,
+        BufferConstructor: 'readonly',
+        BufferEncoding: 'readonly',
+        NodeJS: 'readonly',
+      },
+      parser: tsParser,
+      parserOptions: {
+        ...js.configs.recommended.languageOptions?.parserOptions,
+        ...importFlatConfigsForModule.typescript.languageOptions?.parserOptions,
+        // No project specified for test files since they're excluded from tsconfig
+      },
+    },
+    linterOptions: {
+      ...js.configs.recommended.linterOptions,
+      ...importFlatConfigsForModule.typescript.linterOptions,
+      reportUnusedDisableDirectives: 'off',
+    },
+    plugins: {
+      ...js.configs.recommended.plugins,
+      ...importFlatConfigsForModule.typescript.plugins,
+      ...nodePlugin.configs['flat/recommended-module'].plugins,
+      ...sharedPlugins,
+      '@typescript-eslint': tsEslint.plugin,
+    },
+    rules: {
+      ...js.configs.recommended.rules,
+      ...importFlatConfigsForModule.typescript.rules,
+      ...nodePlugin.configs['flat/recommended-module'].rules,
+      ...sharedRulesForNode,
+      ...sharedRules,
+      '@typescript-eslint/array-type': ['error', { default: 'array-simple' }],
+      '@typescript-eslint/consistent-type-assertions': [
+        'error',
+        { assertionStyle: 'as' },
+      ],
+      '@typescript-eslint/no-misused-new': 'error',
+      '@typescript-eslint/no-this-alias': [
+        'error',
+        { allowDestructuring: true },
+      ],
+      // Disable TypeScript rules that require type information for test files
+      '@typescript-eslint/return-await': 'off',
       // Disable the following rules because they don't play well with TypeScript.
       'n/hashbang': 'off',
       'n/no-extraneous-import': 'off',

@@ -1,8 +1,8 @@
-'use strict'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const path = require('node:path')
-
-const registryConstants = require('@socketsecurity/registry/lib/constants')
+import registryConstants from '@socketsecurity/registry/lib/constants'
+import { envAsBoolean } from '@socketsecurity/registry/lib/env'
 
 const {
   kInternalsSymbol,
@@ -51,7 +51,6 @@ const SOCKET_CLI_SENTRY_PACKAGE_NAME = '@socketsecurity/cli-with-sentry'
 
 const LAZY_ENV = () => {
   const { env } = process
-  const { envAsBoolean } = require('@socketsecurity/registry/lib/env')
   return Object.freeze({
     // Lazily access registryConstants.ENV.
     ...registryConstants.ENV,
@@ -87,7 +86,8 @@ const lazyRootPackageJsonPath = () =>
 const lazyRootPackageLockPath = () =>
   path.join(constants.rootPath, 'pnpm-lock.yaml')
 
-const lazyRootPath = () => path.resolve(__dirname, '..')
+const lazyRootPath = () =>
+  path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 
 const lazySocketRegistryPath = () =>
   path.join(constants.externalPath, '@socketsecurity/registry')
@@ -160,4 +160,4 @@ const constants = createConstantsObject(
     },
   },
 )
-module.exports = constants
+export default constants

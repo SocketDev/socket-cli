@@ -15,8 +15,7 @@ describe('socket uninstall completion', async () => {
     `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(
-        `
+      expect(stdout).toMatchInlineSnapshot(`
         "Uninstall bash completion for Socket CLI
 
           Usage
@@ -37,8 +36,7 @@ describe('socket uninstall completion', async () => {
 
             $ socket uninstall completion
             $ socket uninstall completion sd"
-      `,
-      )
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------

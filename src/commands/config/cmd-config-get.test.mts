@@ -16,8 +16,7 @@ describe('socket config get', async () => {
     `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(
-        `
+      expect(stdout).toMatchInlineSnapshot(`
         "Get the value of a local CLI config item
 
           Usage
@@ -42,8 +41,7 @@ describe('socket config get', async () => {
 
           Examples
             $ socket config get defaultOrg"
-      `,
-      )
+      `)
       // Node 24 on Windows currently fails this test with added stderr:
       // Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), file src\win\async.c, line 76
       const skipOnWin32Node24 =
@@ -121,13 +119,11 @@ describe('socket config get', async () => {
         'should return undefined when token not set in config',
         async cmd => {
           const { stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-          expect(stdout).toMatchInlineSnapshot(
-            `
+          expect(stdout).toMatchInlineSnapshot(`
             "apiToken: null
 
             Note: the config is in read-only mode, meaning at least one key was temporarily overridden from an env var or command flag."
-          `,
-          )
+          `)
           expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
             "
                _____         _       _        /---------------
@@ -147,13 +143,11 @@ describe('socket config get', async () => {
           const { stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
             env: { SOCKET_CLI_API_TOKEN: 'abc' },
           })
-          expect(stdout).toMatchInlineSnapshot(
-            `
+          expect(stdout).toMatchInlineSnapshot(`
             "apiToken: abc
 
             Note: the config is in read-only mode, meaning at least one key was temporarily overridden from an env var or command flag."
-          `,
-          )
+          `)
           expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
             "
                _____         _       _        /---------------
@@ -174,13 +168,11 @@ describe('socket config get', async () => {
           const { stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
             env: { SOCKET_SECURITY_API_KEY: 'abc' },
           })
-          expect(stdout).toMatchInlineSnapshot(
-            `
+          expect(stdout).toMatchInlineSnapshot(`
             "apiToken: abc
 
             Note: the config is in read-only mode, meaning at least one key was temporarily overridden from an env var or command flag."
-          `,
-          )
+          `)
           expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
             "
                _____         _       _        /---------------
@@ -200,13 +192,11 @@ describe('socket config get', async () => {
           const { stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
             env: { SOCKET_CLI_API_TOKEN: 'abc' },
           })
-          expect(stdout).toMatchInlineSnapshot(
-            `
+          expect(stdout).toMatchInlineSnapshot(`
             "apiToken: abc
 
             Note: the config is in read-only mode, meaning at least one key was temporarily overridden from an env var or command flag."
-          `,
-          )
+          `)
           expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
             "
                _____         _       _        /---------------
@@ -227,13 +217,11 @@ describe('socket config get', async () => {
           const { stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
             env: { SOCKET_CLI_API_KEY: 'abc' },
           })
-          expect(stdout).toMatchInlineSnapshot(
-            `
+          expect(stdout).toMatchInlineSnapshot(`
             "apiToken: abc
 
             Note: the config is in read-only mode, meaning at least one key was temporarily overridden from an env var or command flag."
-          `,
-          )
+          `)
           expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
             "
                _____         _       _        /---------------
@@ -259,13 +247,11 @@ describe('socket config get', async () => {
           const { stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
             env: { SOCKET_CLI_API_KEY: 'abc' },
           })
-          expect(stdout).toMatchInlineSnapshot(
-            `
+          expect(stdout).toMatchInlineSnapshot(`
             "apiToken: abc
 
             Note: the config is in read-only mode, meaning at least one key was temporarily overridden from an env var or command flag."
-          `,
-          )
+          `)
           expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
             "
                _____         _       _        /---------------
@@ -289,13 +275,11 @@ describe('socket config get', async () => {
         'should use the config override when there is no env var',
         async cmd => {
           const { stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-          expect(stdout).toMatchInlineSnapshot(
-            `
+          expect(stdout).toMatchInlineSnapshot(`
             "apiToken: pickmepickme
 
             Note: the config is in read-only mode, meaning at least one key was temporarily overridden from an env var or command flag."
-          `,
-          )
+          `)
           expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
             "
                _____         _       _        /---------------
@@ -313,13 +297,11 @@ describe('socket config get', async () => {
         'should yield no token when override has none',
         async cmd => {
           const { stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-          expect(stdout).toMatchInlineSnapshot(
-            `
+          expect(stdout).toMatchInlineSnapshot(`
             "apiToken: undefined
 
             Note: the config is in read-only mode, meaning at least one key was temporarily overridden from an env var or command flag."
-          `,
-          )
+          `)
           expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
             "
                _____         _       _        /---------------

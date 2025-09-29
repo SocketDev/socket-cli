@@ -14,13 +14,13 @@ import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
 import { spawnSync } from '@socketsecurity/registry/lib/spawn'
 import { stripAnsi } from '@socketsecurity/registry/lib/strings'
 
-import constants from '../scripts/constants.js'
-import socketModifyPlugin from '../scripts/rollup/socket-modify-plugin.js'
+import constants from '../scripts/constants.mjs'
+import socketModifyPlugin from '../scripts/rollup/socket-modify-plugin.mjs'
 import {
   getPackageName,
   isBuiltin,
   normalizeId,
-} from '../scripts/utils/packages.js'
+} from '../scripts/utils/packages.mjs'
 
 const {
   INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION,
@@ -109,7 +109,7 @@ export default function baseConfig(extendConfig = {}) {
     ? extendConfig.plugins.slice()
     : []
 
-  const extractedPlugins = { __proto__: null }
+  const extractedPlugins = Object.create(null)
   if (extendPlugins.length) {
     for (const pluginName of [
       'babel',
@@ -138,6 +138,18 @@ export default function baseConfig(extendConfig = {}) {
         id,
         path.isAbsolute(id) ? nmPath.length + 1 : 0,
       )
+      // Externalize anything from the external directory.
+      if (id.includes('/external/') || id.startsWith('../external/')) {
+        return true
+      }
+      // Externalize @socketsecurity/registry and all its internal paths.
+      if (
+        pkgName === '@socketsecurity/registry' ||
+        id.includes('@socketsecurity/registry/external/') ||
+        id.includes('/@socketsecurity+registry@')
+      ) {
+        return true
+      }
       return (
         id.endsWith('.d.cts') ||
         id.endsWith('.d.mts') ||

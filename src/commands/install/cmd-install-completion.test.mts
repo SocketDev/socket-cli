@@ -15,8 +15,7 @@ describe('socket install completion', async () => {
     `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(
-        `
+      expect(stdout).toMatchInlineSnapshot(`
         "Install bash completion for Socket CLI
 
           Usage
@@ -45,8 +44,7 @@ describe('socket install completion', async () => {
             $ socket install completion
             $ socket install completion sd
             $ socket install completion ./sd"
-      `,
-      )
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------

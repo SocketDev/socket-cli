@@ -18,7 +18,7 @@ export type FilterConfig = {
 }
 
 export function toFilterConfig(obj: any): FilterConfig {
-  const normalized = { __proto__: null } as unknown as FilterConfig
+  const normalized = Object.create(null) as FilterConfig
   const keys = isObject(obj) ? Object.keys(obj) : []
   for (const key of keys) {
     const value = obj[key]

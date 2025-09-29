@@ -211,7 +211,7 @@ export async function spawnCoanaDlx(
   }
 
   try {
-    const localCoanaPath = process.env['SOCKET_CLI_COANA_LOCAL_PATH']
+    const localCoanaPath = constants.ENV.SOCKET_CLI_COANA_LOCAL_PATH
     // Use local Coana CLI if path is provided.
     if (localCoanaPath) {
       const finalEnv = {

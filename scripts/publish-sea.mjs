@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * Script to publish Socket CLI SEA binaries.
  *
@@ -17,18 +16,10 @@ import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url))
 
-interface PublishOptions {
-  version?: string
-  platforms?: string[]
-  skipBuild?: boolean
-  skipGithub?: boolean
-  skipNpm?: boolean
-}
-
 /**
  * Build SEA binaries for all platforms.
  */
-async function buildBinaries(platforms?: string[]): Promise<void> {
+async function buildBinaries(platforms) {
   console.log('Building SEA binaries...')
 
   const args = ['run', 'build:sea']
@@ -51,7 +42,7 @@ async function buildBinaries(platforms?: string[]): Promise<void> {
 /**
  * Upload binaries to GitHub release.
  */
-async function uploadToGitHub(version: string): Promise<void> {
+async function uploadToGitHub(version) {
   const seaDir = normalizePath(path.join(__dirname, '../../dist/sea'))
 
   if (!existsSync(seaDir)) {
@@ -124,7 +115,7 @@ async function uploadToGitHub(version: string): Promise<void> {
 /**
  * Publish the npm package.
  */
-async function publishNpmPackage(version: string): Promise<void> {
+async function publishNpmPackage(version) {
   const npmPackageDir = normalizePath(path.join(__dirname, 'npm-package'))
   const packageJsonPath = normalizePath(
     path.join(npmPackageDir, 'package.json'),
@@ -162,18 +153,18 @@ async function publishNpmPackage(version: string): Promise<void> {
 /**
  * Parse command-line arguments.
  */
-function parseArgs(): PublishOptions {
+function parseArgs() {
   const args = process.argv.slice(2)
-  const options: PublishOptions = {}
+  const options = {}
 
   for (const arg of args) {
     if (arg.startsWith('--version=')) {
-      options.version = arg.split('=')[1]!
+      options.version = arg.split('=')[1]
     } else if (arg.startsWith('--platform=')) {
       const platform = arg.split('=')[1]
       if (platform) {
         options.platforms = options.platforms || []
-        options.platforms.push(platform!)
+        options.platforms.push(platform)
       }
     } else if (arg === '--skip-build') {
       options.skipBuild = true
@@ -190,7 +181,7 @@ function parseArgs(): PublishOptions {
 /**
  * Main function.
  */
-async function main(): Promise<void> {
+async function main() {
   const options = parseArgs()
 
   // Get version from npm-package/package.json if not specified.
@@ -226,7 +217,7 @@ async function main(): Promise<void> {
 }
 
 // Run if executed directly.
-if (import.meta.url === url.pathToFileURL(process.argv[1]!).href) {
+if (import.meta.url === url.pathToFileURL(process.argv[1]).href) {
   main().catch(error => {
     console.error('Publishing failed:', error)
     // eslint-disable-next-line n/no-process-exit

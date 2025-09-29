@@ -16,8 +16,7 @@ describe('socket threat-feed', async () => {
     `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(
-        `
+      expect(stdout).toMatchInlineSnapshot(`
         "[Beta] View the threat-feed
 
           Usage
@@ -86,8 +85,7 @@ describe('socket threat-feed', async () => {
             $ socket threat-feed maven --json
             $ socket threat-feed typo
             $ socket threat-feed npm joke 1.0.0 --per-page=5 --page=2 --direction=asc"
-      `,
-      )
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------

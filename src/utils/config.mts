@@ -107,7 +107,6 @@ function getConfigValues(): LocalConfig {
           )
           debugConfig(socketAppDataPath, true)
         } catch (e) {
-          logger.warn(`Failed to parse config at ${socketAppDataPath}`)
           debugConfig(socketAppDataPath, false, e)
         }
         // Normalize apiKey to apiToken and persist it.

@@ -8,6 +8,13 @@ import type {
   ValidResult,
 } from './types.mts'
 
+function processResult(value: number): CResult<string> {
+  if (value > 0) {
+    return { ok: true, value: `Positive: ${value}` }
+  }
+  return { ok: false, error: new Error('Value must be positive') }
+}
+
 describe('types', () => {
   describe('CResult type', () => {
     it('can represent a valid result', () => {
@@ -32,13 +39,6 @@ describe('types', () => {
     })
 
     it('can be used as a union type', () => {
-      function processResult(value: number): CResult<string> {
-        if (value > 0) {
-          return { ok: true, value: `Positive: ${value}` }
-        }
-        return { ok: false, error: new Error('Value must be positive') }
-      }
-
       const success = processResult(5)
       const failure = processResult(-1)
 

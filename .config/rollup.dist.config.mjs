@@ -23,13 +23,13 @@ import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import baseConfig, { EXTERNAL_PACKAGES } from './rollup.base.config.mjs'
-import constants from '../scripts/constants.js'
-import socketModifyPlugin from '../scripts/rollup/socket-modify-plugin.js'
+import constants from '../scripts/constants.mjs'
+import socketModifyPlugin from '../scripts/rollup/socket-modify-plugin.mjs'
 import {
   getPackageName,
   isBuiltin,
   normalizeId,
-} from '../scripts/utils/packages.js'
+} from '../scripts/utils/packages.mjs'
 
 const {
   CONSTANTS,
@@ -468,12 +468,12 @@ export default async () => {
         cwd: blessedContribSrcPath,
       })
     ).map(filepath => {
-      const relPath = `${path.relative(srcPath, filepath).slice(0, -4 /*.mjs*/)}.js`
+      const relPath = `${path.relative(blessedContribSrcPath, filepath).slice(0, -4 /*.mjs*/)}.js`
       return {
         input: filepath,
         output: [
           {
-            file: path.join(rootPath, relPath),
+            file: path.join(constants.blessedContribPath, relPath),
             exports: 'auto',
             externalLiveBindings: false,
             format: 'cjs',
@@ -500,6 +500,22 @@ export default async () => {
             preferBuiltins: true,
           }),
           jsonPlugin(),
+          // Fix blessed library octal escape sequences
+          {
+            name: 'fix-blessed-octal',
+            transform(code, id) {
+              if (
+                id.includes('blessed') &&
+                (id.includes('tput.js') || id.includes('box.js'))
+              ) {
+                return code
+                  .replace(/ch = '\\200';/g, "ch = '\\x80';")
+                  .replace(/'\\016'/g, "'\\x0E'")
+                  .replace(/'\\017'/g, "'\\x0F'")
+              }
+              return null
+            },
+          },
           commonjsPlugin({
             defaultIsModuleExports: true,
             extensions: ['.cjs', '.js'],

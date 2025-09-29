@@ -1,3 +1,5 @@
+import { Module } from 'node:module'
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock process methods.
@@ -9,9 +11,14 @@ const mockProcessKill = vi.spyOn(process, 'kill').mockImplementation(() => true)
 // Mock shadowNpxBin.
 const mockShadowNpxBin = vi.fn()
 
-vi.mock('./shadow/npx/bin.mts', () => ({
-  default: mockShadowNpxBin,
-}))
+// Mock Module._load to intercept CommonJS require calls
+const originalLoad = Module._load
+Module._load = vi.fn((request: string, parent: any, isMain?: boolean) => {
+  if (request === '../dist/shadow-npx-bin.js') {
+    return mockShadowNpxBin
+  }
+  return originalLoad.call(Module, request, parent, isMain)
+})
 
 describe('npx-cli', () => {
   const mockChildProcess = {

@@ -71,7 +71,7 @@ describe('socket pnpm', async () => {
         timeout: 30_000,
       })
 
-      expect(stdout).toMatchInlineSnapshot('"[DryRun]: Bailing now"')
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(stderr).toContain('CLI')
       expect(code, 'dry-run without args should exit with code 0').toBe(0)
     },
@@ -92,7 +92,7 @@ describe('socket pnpm', async () => {
         timeout: 30_000,
       })
 
-      expect(stdout).toMatchInlineSnapshot('"[DryRun]: Bailing now"')
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'dry-run add should exit with code 0').toBe(0)
     },
   )
@@ -124,7 +124,7 @@ describe('socket pnpm', async () => {
         timeout: 30_000,
       })
 
-      expect(stdout).toMatchInlineSnapshot('"[DryRun]: Bailing now"')
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'dry-run add scoped package should exit with code 0').toBe(0)
     },
   )
@@ -187,7 +187,7 @@ describe('socket pnpm', async () => {
         timeout: 30_000,
       })
 
-      expect(stdout).toMatchInlineSnapshot('"[DryRun]: Bailing now"')
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'dry-run exec with --config should exit with code 0').toBe(0)
     },
   )
@@ -232,7 +232,7 @@ describe('socket pnpm', async () => {
         timeout: 30_000,
       })
 
-      expect(stdout).toMatchInlineSnapshot('"[DryRun]: Bailing now"')
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(
         code,
         'dry-run exec with --config and multiple issueRules should exit with code 0',
@@ -254,7 +254,7 @@ describe('socket pnpm', async () => {
         timeout: 30_000,
       })
 
-      expect(stdout).toMatchInlineSnapshot('"[DryRun]: Bailing now"')
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'dry-run install should exit with code 0').toBe(0)
     },
   )
@@ -273,7 +273,7 @@ describe('socket pnpm', async () => {
         timeout: 30_000,
       })
 
-      expect(stdout).toMatchInlineSnapshot('"[DryRun]: Bailing now"')
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(
         code,
         'dry-run install with --config should exit with code 0',
@@ -295,7 +295,7 @@ describe('socket pnpm', async () => {
         timeout: 30_000,
       })
 
-      expect(stdout).toMatchInlineSnapshot('"[DryRun]: Bailing now"')
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(
         code,
         'dry-run install with multiple issueRules should exit with code 0',
@@ -317,7 +317,7 @@ describe('socket pnpm', async () => {
         timeout: 30_000,
       })
 
-      expect(stdout).toMatchInlineSnapshot('"[DryRun]: Bailing now"')
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(
         code,
         'dry-run install with --config and multiple issueRules should exit with code 0',

@@ -1,3 +1,5 @@
+import { Module } from 'node:module'
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock process methods.
@@ -9,9 +11,14 @@ const mockProcessKill = vi.spyOn(process, 'kill').mockImplementation(() => true)
 // Mock shadowPnpmBin.
 const mockShadowPnpmBin = vi.fn()
 
-vi.mock('./shadow/pnpm/bin.mts', () => ({
-  default: mockShadowPnpmBin,
-}))
+// Mock Module._load to intercept CommonJS require calls
+const originalLoad = Module._load
+Module._load = vi.fn((request: string, parent: any, isMain?: boolean) => {
+  if (request === '../dist/shadow-pnpm-bin.js') {
+    return mockShadowPnpmBin
+  }
+  return originalLoad.call(Module, request, parent, isMain)
+})
 
 describe('pnpm-cli', () => {
   const mockChildProcess = {

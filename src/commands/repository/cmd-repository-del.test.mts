@@ -72,9 +72,7 @@ describe('socket repository del', async () => {
         \\xd7 Skipping auto-discovery of org in dry-run mode
         \\xd7  Input error:  Please review the input requirements and try again
 
-          \\xd7 Org name by default setting, --org, or auto-discovered (missing)
-          \\xd7 Repository name as first argument (missing)
-          \\xd7 This command requires a Socket API token for access (try \`socket login\`)"
+          \\xd7 Repository name as first argument (missing)"
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
@@ -121,7 +119,7 @@ describe('socket repository del', async () => {
     'should report missing org name',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
@@ -133,14 +131,10 @@ describe('socket repository del', async () => {
         i Note: Run \`socket login\` to set a default org.
               Use the --org flag to override the default org.
 
-        \\xd7 Skipping auto-discovery of org in dry-run mode
-        \\xd7  Input error:  Please review the input requirements and try again
-
-          \\xd7 Org name by default setting, --org, or auto-discovered (missing)
-          \\u221a Repository name as first argument"
+        \\xd7 Skipping auto-discovery of org in dry-run mode"
       `)
 
-      expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
+      expect(code, 'dry-run should exit with code 0 in dry-run mode').toBe(0)
     },
   )
 
@@ -223,7 +217,7 @@ describe('socket repository del', async () => {
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket repository del\`, cwd: <redacted>"
       `)
 
-      expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
+      expect(code, 'dry-run should exit with code 0 in dry-run mode').toBe(0)
     },
   )
 })

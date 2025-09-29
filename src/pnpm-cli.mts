@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 
-import shadowPnpmBin from './shadow/pnpm/bin.mts'
-
 void (async () => {
   process.exitCode = 1
+
+  // Use require to load from built dist path to avoid creating shadow-pnpm-bin files.
+  const shadowPnpmBin = require('../dist/shadow-pnpm-bin.js')
 
   const { spawnPromise } = await shadowPnpmBin(process.argv.slice(2), {
     stdio: 'inherit',
@@ -12,14 +13,17 @@ void (async () => {
   })
 
   // See https://nodejs.org/api/child_process.html#event-exit.
-  spawnPromise.process.on('exit', (code, signalName) => {
-    if (signalName) {
-      process.kill(process.pid, signalName)
-    } else if (typeof code === 'number') {
-      // eslint-disable-next-line n/no-process-exit
-      process.exit(code)
-    }
-  })
+  spawnPromise.process.on(
+    'exit',
+    (code: number | null, signalName: NodeJS.Signals | null) => {
+      if (signalName) {
+        process.kill(process.pid, signalName)
+      } else if (typeof code === 'number') {
+        // eslint-disable-next-line n/no-process-exit
+        process.exit(code)
+      }
+    },
+  )
 
   await spawnPromise
 })()

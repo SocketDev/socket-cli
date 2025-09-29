@@ -26,8 +26,8 @@ export async function getTypeCoverage() {
 
   // Extract the percentage value from the line using regex.
   if (percentageLine) {
-    // Matches patterns like "95.12%" and extracts the numeric part.
-    const match = percentageLine.match(/(\d+\.\d+)%/)
+    // Matches patterns like "95.12%" or "100%" and extracts the numeric part.
+    const match = percentageLine.match(/(\d+(?:\.\d+)?)%/)
     if (match) {
       return parseFloat(match[1])
     }

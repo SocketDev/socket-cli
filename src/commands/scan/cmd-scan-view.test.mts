@@ -18,8 +18,7 @@ describe('socket scan view', async () => {
     `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(
-        `
+      expect(stdout).toMatchInlineSnapshot(`
         "View the raw results of a scan
 
           Usage
@@ -41,8 +40,7 @@ describe('socket scan view', async () => {
           Examples
             $ socket scan view 000aaaa1-0000-0a0a-00a0-00a0000000a0
             $ socket scan view 000aaaa1-0000-0a0a-00a0-00a0000000a0 ./stream.txt"
-      `,
-      )
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------

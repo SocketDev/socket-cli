@@ -1,6 +1,7 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { createRequire } from 'node:module'
 import path from 'node:path'
+
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { getTranslations } from './translations.mts'
 
