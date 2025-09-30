@@ -18,10 +18,35 @@ describe('socket organization policy security', async () => {
     `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`
+        "Retrieve the security policy of an organization
+
+          Usage
+            $ socket organization policy security [options]
+
+          API Token Requirements
+            - Quota: 1 unit
+            - Permissions: security-policy:read
+
+          Options
+            --interactive       Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.
+            --json              Output as JSON
+            --markdown          Output as Markdown
+            --org               Force override the organization slug, overrides the default org from config
+
+          Your API token will need the \`security-policy:read\` permission otherwise
+          the request will fail with an authentication error.
+
+          Examples
+            $ socket organization policy security
+            $ socket organization policy security --json"
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           "
+           _____         _       _        /---------------
+          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket organization policy security\`, cwd: <redacted>"
       `)
 
       //expect(code, 'explicit help should exit with code 0').toBe(0)
@@ -36,7 +61,7 @@ describe('socket organization policy security', async () => {
     'should reject dry run without proper args',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       // expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       //   "
       //      _____         _       _        /---------------
@@ -70,10 +95,19 @@ describe('socket organization policy security', async () => {
     'should accept default org in v1',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           "
+           _____         _       _        /---------------
+          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket organization policy security\`, cwd: <redacted>
+
+        \\u203c Unable to determine the target org. Trying to auto-discover it now...
+        i Note: Run \`socket login\` to set a default org.
+              Use the --org flag to override the default org.
+
+        \\xd7 Skipping auto-discovery of org in dry-run mode"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
@@ -94,10 +128,13 @@ describe('socket organization policy security', async () => {
     'should accept --org flag in v1',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           "
+           _____         _       _        /---------------
+          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket organization policy security\`, cwd: <redacted>"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

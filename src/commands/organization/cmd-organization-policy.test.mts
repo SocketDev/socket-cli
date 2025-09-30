@@ -17,10 +17,26 @@ describe('socket organization list', async () => {
     `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`
+        "Organization policy details
+
+          Usage
+            $ socket organization policy <command>
+
+          Commands
+            license                     Retrieve the license policy of an organization
+
+          Options
+
+            --no-banner                 Hide the Socket banner
+            --no-spinner                Hide the console spinner"
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           "
+           _____         _       _        /---------------
+          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket organization policy\`, cwd: <redacted>"
       `)
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
@@ -42,11 +58,14 @@ describe('socket organization list', async () => {
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
-        `""`,
+        `"[DryRun]: No-op, call a sub-command; ok"`,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           "
+           _____         _       _        /---------------
+          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket organization policy\`, cwd: <redacted>"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

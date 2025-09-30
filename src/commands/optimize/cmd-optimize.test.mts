@@ -114,11 +114,31 @@ describe('socket optimize', async () => {
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
-        `""`,
+        `
+        "Optimize dependencies with @socketregistry overrides
+
+          Usage
+            $ socket optimize [options] [CWD=.]
+
+          API Token Requirements
+            - Quota: 100 units
+            - Permissions: packages:list
+
+          Options
+            --pin               Pin overrides to latest version
+            --prod              Add overrides for production dependencies only
+
+          Examples
+            $ socket optimize
+            $ socket optimize ./path/to/project --pin"
+      `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           "
+           _____         _       _        /---------------
+          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket optimize\`, cwd: <redacted>"
       `)
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
@@ -139,7 +159,10 @@ describe('socket optimize', async () => {
       expect(packageJson.overrides).toBeUndefined()
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           "
+           _____         _       _        /---------------
+          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket optimize\`, cwd: <redacted>"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
@@ -162,7 +185,12 @@ describe('socket optimize', async () => {
       const packageJsonPath = path.join(pnpmFixtureDir, PACKAGE_JSON)
       const packageJson = await readPackageJson(packageJsonPath)
       expect(packageJson.overrides).toBeUndefined()
-      expect(stderr).toMatchInlineSnapshot(`""`)
+      expect(stderr).toMatchInlineSnapshot(`
+        "_____         _       _        /---------------
+          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket optimize\`, cwd: <redacted>"
+      `)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -183,7 +211,12 @@ describe('socket optimize', async () => {
       const packageJsonPath = path.join(pnpmFixtureDir, PACKAGE_JSON)
       const packageJson = await readPackageJson(packageJsonPath)
       expect(packageJson.overrides).toBeUndefined()
-      expect(stderr).toMatchInlineSnapshot(`""`)
+      expect(stderr).toMatchInlineSnapshot(`
+        "_____         _       _        /---------------
+          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket optimize\`, cwd: <redacted>"
+      `)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -205,7 +238,12 @@ describe('socket optimize', async () => {
       const packageJsonPath = path.join(pnpmFixtureDir, PACKAGE_JSON)
       const packageJson = await readPackageJson(packageJsonPath)
       expect(packageJson.overrides).toBeUndefined()
-      expect(stderr).toMatchInlineSnapshot(`""`)
+      expect(stderr).toMatchInlineSnapshot(`
+        "_____         _       _        /---------------
+          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket optimize\`, cwd: <redacted>"
+      `)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -267,7 +305,12 @@ describe('socket optimize', async () => {
       const packageJsonPath = path.join(pnpmFixtureDir, PACKAGE_JSON)
       const packageJson = await readPackageJson(packageJsonPath)
       expect(packageJson.overrides).toBeUndefined()
-      expect(stderr).toMatchInlineSnapshot(`""`)
+      expect(stderr).toMatchInlineSnapshot(`
+        "_____         _       _        /---------------
+          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket optimize\`, cwd: <redacted>"
+      `)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )

@@ -15,10 +15,27 @@ describe('socket package', async () => {
     `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`
+        "Look up published package details
+
+          Usage
+            $ socket package <command>
+
+          Commands
+            score                       Look up score for one package which reflects all of its transitive dependencies as well
+            shallow                     Look up info regarding one or more packages but not their transitives
+
+          Options
+
+            --no-banner                 Hide the Socket banner
+            --no-spinner                Hide the console spinner"
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           "
+           _____         _       _        /---------------
+          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket package\`, cwd: <redacted>"
       `)
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
@@ -34,11 +51,14 @@ describe('socket package', async () => {
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
-        `""`,
+        `"[DryRun]: No-op, call a sub-command; ok"`,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           "
+           _____         _       _        /---------------
+          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket package\`, cwd: <redacted>"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
