@@ -64,7 +64,7 @@ export async function getBaseBranch(cwd = process.cwd()): Promise<string> {
   try {
     const originDetails = (
       await spawn('git', ['remote', 'show', 'origin'], { cwd })
-    ).stdout
+    ).stdout.toString()
 
     const match = /(?<=HEAD branch: ).+/.exec(originDetails)
     if (match?.[0]) {
@@ -88,7 +88,7 @@ export async function getRepoInfo(
   try {
     const remoteUrl = (
       await spawn('git', ['remote', 'get-url', 'origin'], { cwd })
-    ).stdout
+    ).stdout.toString()
     info = parseGitRemoteUrl(remoteUrl)
     if (!info) {
       debugFn('warn', `Unmatched git remote URL format: ${remoteUrl}`)
@@ -127,7 +127,7 @@ export async function gitBranch(
       ['symbolic-ref', '--short', 'HEAD'],
       stdioPipeOptions,
     )
-    return gitSymbolicRefResult.stdout
+    return gitSymbolicRefResult.stdout.toString()
   } catch (e) {
     // Expected in detached HEAD state, fallback to rev-parse.
     debugDir('inspect', { message: 'In detached HEAD state', error: e })
@@ -140,7 +140,7 @@ export async function gitBranch(
       ['rev-parse', '--short', 'HEAD'],
       stdioPipeOptions,
     )
-    return gitRevParseResult.stdout
+    return gitRevParseResult.stdout.toString()
   } catch (e) {
     // Both methods failed, likely not in a git repo.
     debugDir('inspect', { message: 'Unable to determine git branch', error: e })
@@ -274,8 +274,8 @@ export async function gitCommit(
   }
   const {
     cwd = process.cwd(),
-    email = constants.ENV.SOCKET_CLI_GIT_USER_EMAIL,
-    user = constants.ENV.SOCKET_CLI_GIT_USER_NAME,
+    email = constants.ENV['SOCKET_CLI_GIT_USER_EMAIL'],
+    user = constants.ENV['SOCKET_CLI_GIT_USER_NAME'],
   } = { __proto__: null, ...options } as GitCreateAndPushBranchOptions
 
   await gitEnsureIdentity(user, email, cwd)
@@ -479,7 +479,7 @@ export async function gitUnstagedModifiedFiles(
       ['diff', '--name-only'],
       stdioPipeOptions,
     )
-    const changedFilesDetails = gitDiffResult.stdout
+    const changedFilesDetails = gitDiffResult.stdout.toString()
     const relPaths = changedFilesDetails.split('\n')
     return {
       ok: true,

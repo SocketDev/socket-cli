@@ -102,6 +102,10 @@ const YARN = regConsts.YARN
 const YARN_BERRY = regConsts.YARN_BERRY
 const YARN_CLASSIC = regConsts.YARN_CLASSIC
 const YARN_LOCK = regConsts.YARN_LOCK
+const BUN_LOCK = regConsts.BUN_LOCK
+const BUN_LOCKB = regConsts.BUN_LOCKB
+const NPM_SHRINKWRAP_JSON = regConsts.NPM_SHRINKWRAP_JSON
+const VLT_LOCK_JSON = regConsts.VLT_LOCK_JSON
 
 // Access internals symbol and attributes.
 const kInternalsSymbol = regConsts.kInternalsSymbol
@@ -312,6 +316,8 @@ export type Constants = Remap<
     readonly ALERT_TYPE_MILD_CVE: typeof ALERT_TYPE_MILD_CVE
     readonly API_V0_URL: typeof API_V0_URL
     readonly BUN: typeof BUN
+    readonly BUN_LOCK: typeof BUN_LOCK
+    readonly BUN_LOCKB: typeof BUN_LOCKB
     readonly CHANGELOG_MD: typeof CHANGELOG_MD
     readonly CONFIG_KEY_API_BASE_URL: typeof CONFIG_KEY_API_BASE_URL
     readonly CONFIG_KEY_API_PROXY: typeof CONFIG_KEY_API_PROXY
@@ -321,6 +327,7 @@ export type Constants = Remap<
     readonly CONFIG_KEY_ORG: typeof CONFIG_KEY_ORG
     readonly DLX_BINARY_CACHE_TTL: typeof DLX_BINARY_CACHE_TTL
     readonly DOT_GIT_DIR: typeof DOT_GIT_DIR
+    readonly DOT_PACKAGE_LOCK_JSON: typeof DOT_PACKAGE_LOCK_JSON
     readonly DOT_SOCKET_DIR: typeof DOT_SOCKET_DIR
     readonly DOT_SOCKET_DOT_FACTS_JSON: typeof DOT_SOCKET_DOT_FACTS_JSON
     readonly DRY_RUN_BAILING_NOW: typeof DRY_RUN_BAILING_NOW
@@ -340,11 +347,14 @@ export type Constants = Remap<
     readonly ERROR_NO_REPO_FOUND: typeof ERROR_NO_REPO_FOUND
     readonly ERROR_NO_SOCKET_DIR: typeof ERROR_NO_SOCKET_DIR
     readonly ERROR_UNABLE_RESOLVE_ORG: typeof ERROR_UNABLE_RESOLVE_ORG
+    readonly EXT_LOCK: typeof EXT_LOCK
+    readonly EXT_LOCKB: typeof EXT_LOCKB
     readonly EXT_YAML: typeof EXT_YAML
     readonly EXT_YML: typeof EXT_YML
     readonly FLAG_CONFIG: typeof FLAG_CONFIG
     readonly FLAG_DRY_RUN: typeof FLAG_DRY_RUN
     readonly FLAG_HELP: typeof FLAG_HELP
+    readonly FLAG_HELP_FULL: typeof FLAG_HELP_FULL
     readonly FLAG_ID: typeof FLAG_ID
     readonly FLAG_JSON: typeof FLAG_JSON
     readonly FLAG_LOGLEVEL: typeof FLAG_LOGLEVEL
@@ -371,15 +381,19 @@ export type Constants = Remap<
     readonly HTTP_STATUS_NOT_FOUND: typeof HTTP_STATUS_NOT_FOUND
     readonly HTTP_STATUS_TOO_MANY_REQUESTS: typeof HTTP_STATUS_TOO_MANY_REQUESTS
     readonly HTTP_STATUS_UNAUTHORIZED: typeof HTTP_STATUS_UNAUTHORIZED
+    readonly kInternalsSymbol: typeof kInternalsSymbol
+    readonly LOOP_SENTINEL: typeof LOOP_SENTINEL
     readonly NODE_MODULES: typeof NODE_MODULES
     readonly NODE_SEA_FUSE: typeof NODE_SEA_FUSE
     readonly NPM: typeof NPM
     readonly NPM_BUGGY_OVERRIDES_PATCHED_VERSION: typeof NPM_BUGGY_OVERRIDES_PATCHED_VERSION
     readonly NPM_REGISTRY_URL: typeof NPM_REGISTRY_URL
+    readonly NPM_SHRINKWRAP_JSON: typeof NPM_SHRINKWRAP_JSON
     readonly NPX: typeof NPX
     readonly OUTPUT_JSON: typeof OUTPUT_JSON
     readonly OUTPUT_MARKDOWN: typeof OUTPUT_MARKDOWN
     readonly OUTPUT_TEXT: typeof OUTPUT_TEXT
+    readonly OVERRIDES: typeof OVERRIDES
     readonly PACKAGE_JSON: typeof PACKAGE_JSON
     readonly PACKAGE_LOCK_JSON: typeof PACKAGE_LOCK_JSON
     readonly PNPM: typeof PNPM
@@ -392,6 +406,7 @@ export type Constants = Remap<
     readonly REPORT_LEVEL_MONITOR: typeof REPORT_LEVEL_MONITOR
     readonly REPORT_LEVEL_WARN: typeof REPORT_LEVEL_WARN
     readonly REQUIREMENTS_TXT: typeof REQUIREMENTS_TXT
+    readonly RESOLUTIONS: typeof RESOLUTIONS
     readonly SOCKET_CLI_ACCEPT_RISKS: typeof SOCKET_CLI_ACCEPT_RISKS
     readonly SOCKET_CLI_BIN_NAME: typeof SOCKET_CLI_BIN_NAME
     readonly SOCKET_CLI_GITHUB_REPO: typeof SOCKET_CLI_GITHUB_REPO
@@ -404,7 +419,10 @@ export type Constants = Remap<
     readonly SOCKET_CLI_VIEW_ALL_RISKS: typeof SOCKET_CLI_VIEW_ALL_RISKS
     readonly SOCKET_DEFAULT_BRANCH: typeof SOCKET_DEFAULT_BRANCH
     readonly SOCKET_DEFAULT_REPOSITORY: typeof SOCKET_DEFAULT_REPOSITORY
+    readonly SOCKET_GITHUB_ORG: typeof SOCKET_GITHUB_ORG
+    readonly SOCKET_IPC_HANDSHAKE: typeof SOCKET_IPC_HANDSHAKE
     readonly SOCKET_JSON: typeof SOCKET_JSON
+    readonly SOCKET_PUBLIC_API_TOKEN: typeof SOCKET_PUBLIC_API_TOKEN
     readonly SOCKET_WEBSITE_URL: typeof SOCKET_WEBSITE_URL
     readonly SOCKET_YAML: typeof SOCKET_YAML
     readonly SOCKET_YML: typeof SOCKET_YML
@@ -415,9 +433,11 @@ export type Constants = Remap<
     readonly UNKNOWN_VALUE: typeof UNKNOWN_VALUE
     readonly V1_MIGRATION_GUIDE_URL: typeof V1_MIGRATION_GUIDE_URL
     readonly VLT: typeof VLT
+    readonly VLT_LOCK_JSON: typeof VLT_LOCK_JSON
     readonly YARN: typeof YARN
     readonly YARN_BERRY: typeof YARN_BERRY
     readonly YARN_CLASSIC: typeof YARN_CLASSIC
+    readonly YARN_LOCK: typeof YARN_LOCK
     readonly bashRcPath: string
     readonly binCliPath: string
     readonly binPath: string
@@ -459,6 +479,12 @@ export type Constants = Remap<
     readonly WIN32: boolean
     readonly nodeNoWarningsFlags: string[]
     readonly spinner: any
+    readonly abortSignal: AbortSignal
+    readonly execPath: string
+    readonly maintainedNodeVersions: readonly string[]
+    readonly npmExecPath: string
+    readonly pnpmExecPath: string
+    readonly SUPPORTS_NODE_PERMISSION_FLAG: boolean
   }
 >
 
@@ -581,10 +607,10 @@ const LAZY_ENV = () => {
     ),
     // Enable the module compile cache for the Node.js instance.
     // https://nodejs.org/api/cli.html#node_compile_cachedir
-    NODE_COMPILE_CACHE: constants.SUPPORTS_NODE_COMPILE_CACHE_ENV_VAR
+    NODE_COMPILE_CACHE: regConsts.SUPPORTS_NODE_COMPILE_CACHE_ENV_VAR
       ? constants.socketCachePath
       : '',
-    // Redefine registryConstants.ENV.NODE_ENV to account for the
+    // Redefine registryConstants.ENV['NODE_ENV'] to account for the
     // INLINED_SOCKET_CLI_PUBLISHED_BUILD environment variable.
     NODE_ENV:
       envAsString(env['NODE_ENV']).toLowerCase() === 'production'
@@ -723,7 +749,7 @@ const LAZY_ENV = () => {
     SOCKET_NPM_REGISTRY: envAsString(env['SOCKET_NPM_REGISTRY']),
     // Specifies the type of terminal or terminal emulator being used by the process.
     TERM: envAsString(env['TERM']),
-    // Redefine registryConstants.ENV.VITEST to account for the
+    // Redefine registryConstants.ENV['VITEST'] to account for the
     // INLINED_SOCKET_CLI_PUBLISHED_BUILD environment variable.
     VITEST: INLINED_SOCKET_CLI_PUBLISHED_BUILD
       ? false
@@ -787,7 +813,9 @@ const lazyMinimumVersionByAgent = () =>
 const lazyNmBinPath = () => path.join(constants.rootPath, 'node_modules/.bin')
 
 const lazyNodeDebugFlags = () =>
-  constants.ENV.SOCKET_CLI_DEBUG ? ['--trace-uncaught', '--trace-warnings'] : []
+  constants.ENV['SOCKET_CLI_DEBUG']
+    ? ['--trace-uncaught', '--trace-warnings']
+    : []
 
 // Redefine registryConstants.nodeHardenFlags to account for the
 // INLINED_SOCKET_CLI_SENTRY_BUILD environment variable.
@@ -795,7 +823,7 @@ const lazyNodeHardenFlags = () =>
   Object.freeze(
     // Harden Node security.
     // https://nodejs.org/en/learn/getting-started/security-best-practices
-    constants.ENV.INLINED_SOCKET_CLI_SENTRY_BUILD || constants.WIN32
+    constants.ENV['INLINED_SOCKET_CLI_SENTRY_BUILD'] || constants.WIN32
       ? [
           // https://nodejs.org/api/cli.html#--disallow-code-generation-from-strings
           // '--disallow-code-generation-from-strings'
@@ -835,25 +863,25 @@ const lazyNpmCachePath = () => {
   const spawnHelpers = /*@__PURE__*/ require('@socketsecurity/registry/lib/spawn')
   const spawnSync = spawnHelpers.spawnSync
   return spawnSync(
-    constants.npmExecPath,
+    regConsts.npmExecPath,
     ['config', 'get', 'cache'],
     getNpmStdioPipeOptions(),
-  ).stdout
+  ).stdout.toString()
 }
 
 const lazyNpmGlobalPrefix = () => {
   const spawnHelpers = /*@__PURE__*/ require('@socketsecurity/registry/lib/spawn')
   const spawnSync = spawnHelpers.spawnSync
   return spawnSync(
-    constants.npmExecPath,
+    regConsts.npmExecPath,
     ['prefix', '-g'],
     getNpmStdioPipeOptions(),
-  ).stdout
+  ).stdout.toString()
 }
 
 const lazyNpmNmNodeGypPath = () =>
   path.join(
-    constants.npmRealExecPath,
+    regConsts.npmRealExecPath,
     '../../node_modules/node-gyp/bin/node-gyp.js',
   )
 
@@ -914,8 +942,8 @@ const lazySocketAppDataPath = (): string | undefined => {
   // - Linux: %XDG_DATA_HOME%/socket/settings or "~/.local/share/socket/settings"
   const { WIN32 } = constants
   let dataHome: string | undefined = WIN32
-    ? constants.ENV.LOCALAPPDATA
-    : constants.ENV.XDG_DATA_HOME
+    ? constants.ENV['LOCALAPPDATA']
+    : constants.ENV['XDG_DATA_HOME']
   if (!dataHome) {
     if (WIN32) {
       const logger = /*@__PURE__*/ require('@socketsecurity/registry/lib/logger')
@@ -1211,6 +1239,10 @@ export {
   YARN_BERRY,
   YARN_CLASSIC,
   YARN_LOCK,
+  BUN_LOCK,
+  BUN_LOCKB,
+  NPM_SHRINKWRAP_JSON,
+  VLT_LOCK_JSON,
   // Socket CLI specific constants.
   ALERT_TYPE_CRITICAL_CVE,
   ALERT_TYPE_CVE,

@@ -17,13 +17,13 @@ import {
   isAddCommand,
   isPnpmLockfileScanCommand,
 } from '../../utils/cmd.mts'
+import { debugDir, debugFn } from '../../utils/debug.mts'
 import { parsePnpmLockfile, readPnpmLockfile } from '../../utils/pnpm.mts'
 import { getPublicApiToken } from '../../utils/sdk.mts'
 import { installPnpmLinks } from '../../utils/shadow-links.mts'
 import { logAlertsMap } from '../../utils/socket-package-alert.mts'
 import { scanPackagesAndLogAlerts } from '../common.mts'
 import { ensureIpcInStdio } from '../stdio-ipc.mts'
-import { debugDir, debugFn } from '../utils/debug.mts'
 
 import type { IpcObject } from '../../constants.mts'
 import type {
@@ -37,7 +37,7 @@ export type ShadowPnpmOptions = SpawnOptions & {
 }
 
 export type ShadowPnpmResult = {
-  spawnPromise: SpawnResult<string, SpawnExtra | undefined>
+  spawnPromise: SpawnResult
 }
 
 const DLX_COMMANDS = new Set(['dlx'])
@@ -80,8 +80,8 @@ export default async function shadowPnpmBin(
   spinner?.start()
 
   if (needsScanning && !rawPnpmArgs.includes(FLAG_DRY_RUN)) {
-    const acceptRisks = !!constants.ENV.SOCKET_CLI_ACCEPT_RISKS
-    const viewAllRisks = !!constants.ENV.SOCKET_CLI_VIEW_ALL_RISKS
+    const acceptRisks = !!constants.ENV['SOCKET_CLI_ACCEPT_RISKS']
+    const viewAllRisks = !!constants.ENV['SOCKET_CLI_VIEW_ALL_RISKS']
 
     // Handle add and dlx commands with shared utility.
     if (isDlxCommand || isAddCommand(command)) {

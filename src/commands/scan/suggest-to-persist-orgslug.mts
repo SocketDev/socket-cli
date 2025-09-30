@@ -10,7 +10,7 @@ export async function suggestToPersistOrgSlug(orgSlug: string): Promise<void> {
     return
   }
 
-  const result = await select<string>({
+  const result = await select({
     message: `Would you like to use this org (${orgSlug}) as the default org for future calls?`,
     choices: [
       {

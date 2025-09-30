@@ -10,16 +10,15 @@ export async function runRawNpx(
 ): Promise<void> {
   process.exitCode = 1
 
-  const spawnPromise = spawn(getNpxBinPath(), argv as string[], {
+  const result = spawn(getNpxBinPath(), argv as string[], {
     // On Windows, npx is often a .cmd file that requires shell execution.
     // The spawn function from @socketsecurity/registry will handle this properly
     // when shell is true.
     shell: constants.WIN32,
     stdio: 'inherit',
   })
-
   // See https://nodejs.org/api/child_process.html#event-exit.
-  (spawnPromise.process as ChildProcess).on(
+  ;(result.process as ChildProcess).on(
     'exit',
     (code: number | null, signalName: NodeJS.Signals | null) => {
       if (signalName) {
@@ -31,5 +30,5 @@ export async function runRawNpx(
     },
   )
 
-  await spawnPromise
+  await result
 }

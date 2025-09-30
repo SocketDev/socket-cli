@@ -3,14 +3,13 @@ import {
   isNpmFundFlag,
   isNpmLoglevelFlag,
   isNpmProgressFlag,
-  resolveBinPathSync,
 } from '@socketsecurity/registry/lib/agent'
 import { getOwn, isObject } from '@socketsecurity/registry/lib/objects'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import constants, { FLAG_LOGLEVEL, NPM } from '../../constants.mts'
+import { isDebug } from '../../utils/debug.mts'
 import { getNpmBinPath } from '../../utils/npm-paths.mts'
-import { isDebug } from '../utils/debug.mts'
 
 import type { SpawnResult } from '@socketsecurity/registry/lib/spawn'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
@@ -26,7 +25,7 @@ export type ShadowNpmInstallOptions = SpawnOption & {
 
 export function shadowNpmInstall(
   options?: ShadowNpmInstallOptions | undefined,
-): SpawnResult<string, Record<any, any> | undefined> {
+): SpawnResult {
   const {
     agentExecPath = getNpmBinPath(),
     args = [],
@@ -68,12 +67,12 @@ export function shadowNpmInstall(
       ...constants.nodeHardenFlags,
       // Memory flags commented out.
       // ...constants.nodeMemoryFlags,
-      ...(constants.ENV.INLINED_SOCKET_CLI_SENTRY_BUILD
+      ...(constants.ENV['INLINED_SOCKET_CLI_SENTRY_BUILD']
         ? ['--require', constants.instrumentWithSentryPath]
         : []),
       '--require',
       constants.shadowNpmInjectPath,
-      resolveBinPathSync(agentExecPath),
+      agentExecPath,
       'install',
       // Avoid code paths for 'audit' and 'fund'.
       '--no-audit',

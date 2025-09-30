@@ -12,11 +12,11 @@ import { commonFlags, outputFlags } from '../../flags.mts'
 import { filterFlags, isHelpFlag } from '../../utils/cmd.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 
-import type { ChildProcess } from 'node:child_process'
 import type {
   CliCommandConfig,
   CliCommandContext,
 } from '../../utils/meow-with-subcommands.mts'
+import type { ChildProcess } from 'node:child_process'
 
 // TODO: Convert yargs to meow.
 const toLower = (arg: string) => arg.toLowerCase()
@@ -326,10 +326,9 @@ async function run(
 
   process.exitCode = 1
 
-  const { spawnPromise } = await runCdxgen(yargv)
-
+  const result = await runCdxgen(yargv)
   // See https://nodejs.org/api/child_process.html#event-exit.
-  (spawnPromise.process as ChildProcess).on(
+  ;(result.spawnPromise.process as ChildProcess).on(
     'exit',
     (code: number | null, signalName: NodeJS.Signals | null) => {
       if (signalName) {
@@ -341,5 +340,5 @@ async function run(
     },
   )
 
-  await spawnPromise
+  await result.spawnPromise
 }

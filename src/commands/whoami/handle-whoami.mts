@@ -89,7 +89,7 @@ export async function handleWhoami(
 
 function getTokenLocation(): string {
   // Check environment variable first.
-  if (constants.ENV.SOCKET_CLI_API_TOKEN) {
+  if (constants.ENV['SOCKET_CLI_API_TOKEN']) {
     return 'Environment variable (SOCKET_SECURITY_API_KEY)'
   }
 

@@ -189,7 +189,7 @@ export async function spawnCoanaDlx(
   } as DlxOptions
 
   const mixinsEnv: Record<string, string> = {
-    SOCKET_CLI_VERSION: constants.ENV.INLINED_SOCKET_CLI_VERSION,
+    SOCKET_CLI_VERSION: constants.ENV['INLINED_SOCKET_CLI_VERSION'],
   }
   const defaultApiToken = getDefaultApiToken()
   if (defaultApiToken) {
@@ -211,7 +211,7 @@ export async function spawnCoanaDlx(
   }
 
   try {
-    const localCoanaPath = constants.ENV.SOCKET_CLI_COANA_LOCAL_PATH
+    const localCoanaPath = constants.ENV['SOCKET_CLI_COANA_LOCAL_PATH']
     // Use local Coana CLI if path is provided.
     if (localCoanaPath) {
       const finalEnv = {
@@ -226,14 +226,14 @@ export async function spawnCoanaDlx(
         stdio: spawnExtra?.['stdio'] || 'inherit',
       })
 
-      return { ok: true, data: spawnResult.stdout }
+      return { ok: true, data: spawnResult.stdout.toString() }
     }
 
     // Use npm/dlx version.
     const result = await spawnDlx(
       {
         name: '@coana-tech/cli',
-        version: `~${constants.ENV.INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION}`,
+        version: `~${constants.ENV['INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION']}`,
       },
       args,
       {
@@ -257,7 +257,7 @@ export async function spawnCoanaDlx(
       spawnExtra,
     )
     const output = await result.spawnPromise
-    return { ok: true, data: output.stdout }
+    return { ok: true, data: output.stdout.toString() }
   } catch (e) {
     const stderr = (e as any)?.stderr
     const cause = getErrorCause(e)
@@ -281,7 +281,7 @@ export async function spawnCdxgenDlx(
   return await spawnDlx(
     {
       name: '@cyclonedx/cdxgen',
-      version: `${constants.ENV.INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION}`,
+      version: `${constants.ENV['INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION']}`,
     },
     args,
     { force: false, silent: true, ...options },
@@ -300,7 +300,7 @@ export async function spawnSynpDlx(
   return await spawnDlx(
     {
       name: 'synp',
-      version: `${constants.ENV.INLINED_SOCKET_CLI_SYNP_VERSION}`,
+      version: `${constants.ENV['INLINED_SOCKET_CLI_SYNP_VERSION']}`,
     },
     args,
     { force: false, silent: true, ...options },

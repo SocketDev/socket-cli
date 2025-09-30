@@ -269,7 +269,7 @@ Examples
   const { flags } = cli
   const force = Boolean(flags['force'])
   const dryRun = Boolean(flags['dryRun'])
-  const currentVersion = constants.ENV.INLINED_SOCKET_CLI_VERSION
+  const currentVersion = constants.ENV['INLINED_SOCKET_CLI_VERSION']
   const currentBinaryPath = process.argv[0]
 
   if (!currentBinaryPath) {

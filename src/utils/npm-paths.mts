@@ -44,7 +44,7 @@ export function getNpmDirPath() {
     const npmBinPath = getNpmBinPath()
     _npmDirPath = npmBinPath ? findNpmDirPathSync(npmBinPath) : undefined
     if (!_npmDirPath) {
-      _npmDirPath = constants.ENV.SOCKET_CLI_NPM_PATH || undefined
+      _npmDirPath = constants.ENV['SOCKET_CLI_NPM_PATH'] || undefined
     }
     if (!_npmDirPath) {
       let message = 'Unable to find npm CLI install directory.'

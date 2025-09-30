@@ -54,7 +54,7 @@ export async function outputConfigAuto(
         '(Unable to persist this value because the config is in read-only mode, meaning it was overridden through env or flag.)',
       )
     } else if (key === 'defaultOrg') {
-      const proceed = await select<string>({
+      const proceed = await select({
         message:
           'Would you like to update the default org in local config to this value?',
         choices: (Array.isArray(result.data) ? result.data : [result.data])
@@ -83,7 +83,7 @@ export async function outputConfigAuto(
         logger.log('OK. No changes made.')
       }
     } else if (key === 'enforcedOrgs') {
-      const proceed = await select<string>({
+      const proceed = await select({
         message:
           'Would you like to update the enforced orgs in local config to this value?',
         choices: (Array.isArray(result.data) ? result.data : [result.data])

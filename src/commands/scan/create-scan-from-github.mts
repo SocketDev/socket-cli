@@ -591,7 +591,7 @@ async function getLastCommitDetails({
 }
 
 async function selectFocus(repos: string[]): Promise<CResult<string[]>> {
-  const proceed = await select<string>({
+  const proceed = await select({
     message: 'Please select the repo to process:',
     choices: repos
       .map(slug => ({

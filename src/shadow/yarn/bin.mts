@@ -4,11 +4,11 @@ import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import constants, { YARN } from '../../constants.mts'
 import { cmdFlagsToString } from '../../utils/cmd.mts'
+import { debugFn } from '../../utils/debug.mts'
 import { getPublicApiToken } from '../../utils/sdk.mts'
 import { installYarnLinks } from '../../utils/shadow-links.mts'
 import { scanPackagesAndLogAlerts } from '../common.mts'
 import { ensureIpcInStdio } from '../stdio-ipc.mts'
-import { debugFn } from '../utils/debug.mts'
 
 import type { IpcObject } from '../../constants.mts'
 import type {
@@ -22,7 +22,7 @@ export type ShadowYarnOptions = SpawnOptions & {
 }
 
 export type ShadowYarnResult = {
-  spawnPromise: SpawnResult<string, SpawnExtra | undefined>
+  spawnPromise: SpawnResult
 }
 
 const DLX_COMMANDS = new Set(['dlx'])
@@ -59,7 +59,7 @@ export default async function shadowYarnBin(
   // Check for package scanning.
   const command = rawYarnArgs[0]
   const scanResult = await scanPackagesAndLogAlerts({
-    acceptRisks: !!constants.ENV.SOCKET_CLI_ACCEPT_RISKS,
+    acceptRisks: !!constants.ENV['SOCKET_CLI_ACCEPT_RISKS'],
     command,
     cwd,
     dlxCommands: DLX_COMMANDS,
@@ -67,7 +67,7 @@ export default async function shadowYarnBin(
     managerName: YARN,
     rawArgs: rawYarnArgs,
     spinner,
-    viewAllRisks: !!constants.ENV.SOCKET_CLI_VIEW_ALL_RISKS,
+    viewAllRisks: !!constants.ENV['SOCKET_CLI_VIEW_ALL_RISKS'],
   })
 
   if (scanResult.shouldExit) {

@@ -102,7 +102,12 @@ function getConfigValues(): LocalConfig {
         try {
           Object.assign(
             _cachedConfig,
-            JSON.parse(Buffer.from(raw, 'base64').toString()),
+            JSON.parse(
+              Buffer.from(
+                typeof raw === 'string' ? raw : raw.toString(),
+                'base64',
+              ).toString(),
+            ),
           )
           debugConfig(socketAppDataPath, true)
         } catch (e) {

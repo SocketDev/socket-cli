@@ -54,7 +54,7 @@ const TOKEN_VISIBLE_LENGTH = 5
 // The Socket API server that should be used for operations.
 export function getDefaultApiBaseUrl(): string | undefined {
   const baseUrl =
-    constants.ENV.SOCKET_CLI_API_BASE_URL ||
+    constants.ENV['SOCKET_CLI_API_BASE_URL'] ||
     getConfigValueOrUndef(CONFIG_KEY_API_BASE_URL)
   return isUrl(baseUrl) ? baseUrl : undefined
 }
@@ -62,7 +62,7 @@ export function getDefaultApiBaseUrl(): string | undefined {
 // The Socket API server that should be used for operations.
 export function getDefaultProxyUrl(): string | undefined {
   const apiProxy =
-    constants.ENV.SOCKET_CLI_API_PROXY ||
+    constants.ENV['SOCKET_CLI_API_PROXY'] ||
     getConfigValueOrUndef(CONFIG_KEY_API_PROXY)
   return isUrl(apiProxy) ? apiProxy : undefined
 }
@@ -70,13 +70,13 @@ export function getDefaultProxyUrl(): string | undefined {
 // This Socket API token should be stored globally for the duration of the CLI execution.
 let _defaultToken: string | undefined
 export function getDefaultApiToken(): string | undefined {
-  if (constants.ENV.SOCKET_CLI_NO_API_TOKEN) {
+  if (constants.ENV['SOCKET_CLI_NO_API_TOKEN']) {
     _defaultToken = undefined
     return _defaultToken
   }
 
   const key =
-    constants.ENV.SOCKET_CLI_API_TOKEN ||
+    constants.ENV['SOCKET_CLI_API_TOKEN'] ||
     getConfigValueOrUndef(CONFIG_KEY_API_TOKEN) ||
     _defaultToken
 
@@ -87,7 +87,7 @@ export function getDefaultApiToken(): string | undefined {
 export function getPublicApiToken(): string {
   return (
     getDefaultApiToken() ||
-    constants.ENV.SOCKET_CLI_API_TOKEN ||
+    constants.ENV['SOCKET_CLI_API_TOKEN'] ||
     constants.SOCKET_PUBLIC_API_TOKEN
   )
 }
@@ -152,11 +152,11 @@ export async function setupSdk(
     data: new SocketSdk(apiToken, {
       ...(apiProxy ? { agent: new ProxyAgent({ proxy: apiProxy }) } : {}),
       ...(apiBaseUrl ? { baseUrl: apiBaseUrl } : {}),
-      timeout: constants.ENV.SOCKET_CLI_API_TIMEOUT,
+      timeout: constants.ENV['SOCKET_CLI_API_TIMEOUT'],
       userAgent: createUserAgentFromPkgJson({
-        name: constants.ENV.INLINED_SOCKET_CLI_NAME,
-        version: constants.ENV.INLINED_SOCKET_CLI_VERSION,
-        homepage: constants.ENV.INLINED_SOCKET_CLI_HOMEPAGE,
+        name: constants.ENV['INLINED_SOCKET_CLI_NAME'],
+        version: constants.ENV['INLINED_SOCKET_CLI_VERSION'],
+        homepage: constants.ENV['INLINED_SOCKET_CLI_HOMEPAGE'],
       }),
     }),
   }
@@ -182,12 +182,12 @@ export async function queryApiJson<T = unknown>(
       headers: {
         Authorization: `Basic ${btoa(`${apiToken}:`)}`,
         'User-Agent': createUserAgentFromPkgJson({
-          name: constants.ENV.INLINED_SOCKET_CLI_NAME,
-          version: constants.ENV.INLINED_SOCKET_CLI_VERSION,
-          homepage: constants.ENV.INLINED_SOCKET_CLI_HOMEPAGE,
+          name: constants.ENV['INLINED_SOCKET_CLI_NAME'],
+          version: constants.ENV['INLINED_SOCKET_CLI_VERSION'],
+          homepage: constants.ENV['INLINED_SOCKET_CLI_HOMEPAGE'],
         }),
       },
-      timeout: constants.ENV.SOCKET_CLI_API_TIMEOUT,
+      timeout: constants.ENV['SOCKET_CLI_API_TIMEOUT'],
     })
 
     if (!isResponseOk(response)) {
@@ -228,12 +228,12 @@ export async function queryApiText(
       headers: {
         Authorization: `Basic ${btoa(`${apiToken}:`)}`,
         'User-Agent': createUserAgentFromPkgJson({
-          name: constants.ENV.INLINED_SOCKET_CLI_NAME,
-          version: constants.ENV.INLINED_SOCKET_CLI_VERSION,
-          homepage: constants.ENV.INLINED_SOCKET_CLI_HOMEPAGE,
+          name: constants.ENV['INLINED_SOCKET_CLI_NAME'],
+          version: constants.ENV['INLINED_SOCKET_CLI_VERSION'],
+          homepage: constants.ENV['INLINED_SOCKET_CLI_HOMEPAGE'],
         }),
       },
-      timeout: constants.ENV.SOCKET_CLI_API_TIMEOUT,
+      timeout: constants.ENV['SOCKET_CLI_API_TIMEOUT'],
     })
 
     if (!isResponseOk(response)) {

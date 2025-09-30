@@ -11,6 +11,7 @@ import { findUp } from '../../utils/fs.mts'
 import { isYarnBerry } from '../../utils/yarn-version.mts'
 
 import type { ShadowBinResult } from '../../shadow/npm/bin.mts'
+import type { ChildProcess } from 'node:child_process'
 import type { DlxOptions } from '../../utils/dlx.mts'
 
 const { PACKAGE_LOCK_JSON, PNPM_LOCK_YAML, YARN_LOCK } = constants
@@ -121,7 +122,7 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
     agent,
   })
 
-  shadowResult.spawnPromise.process.on('exit', () => {
+  ;(shadowResult.spawnPromise.process as ChildProcess).on('exit', () => {
     if (cleanupPackageLock) {
       try {
         // TODO: Consider using trash instead of rmSync for safer deletion.

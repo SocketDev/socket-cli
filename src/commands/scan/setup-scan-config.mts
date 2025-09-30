@@ -313,7 +313,7 @@ async function configureGithub(
     message:
       '(--github-api-url) Do you want to override the default github url?',
 
-    default: config.githubApiUrl || constants.ENV.GITHUB_API_URL,
+    default: config.githubApiUrl || constants.ENV['GITHUB_API_URL'],
     required: false,
     // validate: async string => bool
   })
@@ -322,7 +322,7 @@ async function configureGithub(
   }
   if (
     defaultGithubApiUrl &&
-    defaultGithubApiUrl !== constants.ENV.GITHUB_API_URL
+    defaultGithubApiUrl !== constants.ENV['GITHUB_API_URL']
   ) {
     config.githubApiUrl = defaultGithubApiUrl
   } else {

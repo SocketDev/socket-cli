@@ -118,7 +118,7 @@ export class SafeArborist extends Arborist {
     const shadowSilent = !!ipc[constants.SOCKET_CLI_SHADOW_SILENT]
 
     const acceptRisks =
-      shadowAcceptRisks || constants.ENV.SOCKET_CLI_ACCEPT_RISKS
+      shadowAcceptRisks || constants.ENV['SOCKET_CLI_ACCEPT_RISKS']
     const reportOnlyBlocking = acceptRisks || options.dryRun || options['yes']
     const silent = !!options['silent']
     const spinner = silent || !shadowProgress ? undefined : constants.spinner
@@ -153,7 +153,7 @@ export class SafeArborist extends Arborist {
 
     if (alertsMap.size) {
       process.exitCode = 1
-      const viewAllRisks = constants.ENV.SOCKET_CLI_VIEW_ALL_RISKS
+      const viewAllRisks = constants.ENV['SOCKET_CLI_VIEW_ALL_RISKS']
       logAlertsMap(alertsMap, {
         hideAt: viewAllRisks ? 'none' : 'middle',
         output: process.stderr,

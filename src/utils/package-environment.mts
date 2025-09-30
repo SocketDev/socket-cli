@@ -324,8 +324,10 @@ export async function detectPackageEnvironment({
     : undefined
   // Read Corepack `packageManager` field in package.json:
   // https://nodejs.org/api/packages.html#packagemanager
-  const pkgManager = isNonEmptyString(editablePkgJson?.content?.packageManager)
-    ? editablePkgJson.content.packageManager
+  const pkgManager = isNonEmptyString(
+    editablePkgJson?.['content']?.packageManager,
+  )
+    ? editablePkgJson['content'].packageManager
     : undefined
 
   let agent: Agent | undefined
@@ -369,8 +371,8 @@ export async function detectPackageEnvironment({
   let pkgNodeRange: string | undefined
   let pkgMinAgentVersion = minSupportedAgentVersion
   let pkgMinNodeVersion = minSupportedNodeVersion
-  if (editablePkgJson?.content) {
-    const { engines } = editablePkgJson.content
+  if (editablePkgJson?.['content']) {
+    const { engines } = editablePkgJson['content']
     const engineAgentRange = engines?.[agent]
     const engineNodeRange = engines?.['node']
     if (isNonEmptyString(engineAgentRange)) {
@@ -391,7 +393,7 @@ export async function detectPackageEnvironment({
         pkgMinNodeVersion = coerced.version
       }
     }
-    const browserslistQuery = editablePkgJson.content['browserslist'] as
+    const browserslistQuery = editablePkgJson['content']['browserslist'] as
       | string[]
       | undefined
     if (Array.isArray(browserslistQuery)) {
@@ -570,7 +572,7 @@ export async function detectAndValidatePackageEnvironment(
     logger?.warn(
       cmdPrefixMessage(
         cmdName,
-        `Package ${lockName} found at ${constants.ENV.VITEST ? constants.REDACTED : details.lockPath}`,
+        `Package ${lockName} found at ${constants.ENV['VITEST'] ? constants.REDACTED : details.lockPath}`,
       ),
     )
   }

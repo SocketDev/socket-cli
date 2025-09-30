@@ -49,6 +49,9 @@ async function extractPackagePurlsFromPackageJson(
 
   try {
     const pkgJson = await readPackageJson(cwd)
+    if (!pkgJson) {
+      return packagePurls
+    }
 
     const allDeps = {
       ...pkgJson.dependencies,

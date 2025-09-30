@@ -11,10 +11,10 @@ import constants, { REDACTED, SOCKET_JSON } from '../../constants.mts'
 import { tildify } from '../../utils/tildify.mts'
 
 export async function outputCmdJson(cwd: string) {
-  logger.info('Target cwd:', constants.ENV.VITEST ? REDACTED : tildify(cwd))
+  logger.info('Target cwd:', constants.ENV['VITEST'] ? REDACTED : tildify(cwd))
 
   const sockJsonPath = path.join(cwd, SOCKET_JSON)
-  const tildeSockJsonPath = constants.ENV.VITEST
+  const tildeSockJsonPath = constants.ENV['VITEST']
     ? REDACTED
     : tildify(sockJsonPath)
 

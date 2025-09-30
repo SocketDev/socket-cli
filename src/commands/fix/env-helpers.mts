@@ -97,15 +97,15 @@ export function checkCiEnvVars(): MissingEnvVars {
 
 export async function getFixEnv(): Promise<FixEnv> {
   const baseBranch = await getBaseBranch()
-  const gitEmail = constants.ENV.SOCKET_CLI_GIT_USER_EMAIL
-  const gitUser = constants.ENV.SOCKET_CLI_GIT_USER_NAME
-  const githubToken = constants.ENV.SOCKET_CLI_GITHUB_TOKEN
-  const isCi = !!(constants.ENV.CI && gitEmail && gitUser && githubToken)
+  const gitEmail = constants.ENV['SOCKET_CLI_GIT_USER_EMAIL']
+  const gitUser = constants.ENV['SOCKET_CLI_GIT_USER_NAME']
+  const githubToken = constants.ENV['SOCKET_CLI_GITHUB_TOKEN']
+  const isCi = !!(constants.ENV['CI'] && gitEmail && gitUser && githubToken)
 
   const envCheck = checkCiEnvVars()
 
   // Provide clear feedback about missing environment variables.
-  if (constants.ENV.CI && envCheck.missing.length > 1) {
+  if (constants.ENV['CI'] && envCheck.missing.length > 1) {
     // CI is set but other required vars are missing.
     const missingExceptCi = envCheck.missing.filter(v => v !== 'CI')
     if (missingExceptCi.length) {
@@ -117,7 +117,7 @@ export async function getFixEnv(): Promise<FixEnv> {
     }
   } else if (
     // If not in CI but some CI-related env vars are set.
-    !constants.ENV.CI &&
+    !constants.ENV['CI'] &&
     envCheck.present.length &&
     // then log about it when in debug mode.
     isDebug('notice')

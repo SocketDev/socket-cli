@@ -58,7 +58,7 @@ async function getWorkspaceGlobs(
     const yml = await safeReadFile(workspacePath)
     if (yml) {
       try {
-        workspacePatterns = yamlParse(yml)?.packages
+        workspacePatterns = yamlParse(yml.toString())?.packages
       } catch {}
     }
   } else {
@@ -219,7 +219,7 @@ export async function globWithGitIgnore(
     ignore: DEFAULT_IGNORE_FOR_GIT_IGNORE,
   })
   for await (const ignorePatterns of transform(
-    gitIgnoreStream,
+    gitIgnoreStream as AsyncIterable<string>,
     async (filepath: string) =>
       ignoreFileToGlobPatterns(
         String((await safeReadFile(filepath)) ?? ''),

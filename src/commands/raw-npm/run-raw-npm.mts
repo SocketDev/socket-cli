@@ -10,16 +10,15 @@ export async function runRawNpm(
 ): Promise<void> {
   process.exitCode = 1
 
-  const spawnPromise = spawn(getNpmBinPath(), argv as string[], {
+  const result = spawn(getNpmBinPath(), argv as string[], {
     // On Windows, npm is often a .cmd file that requires shell execution.
     // The spawn function from @socketsecurity/registry will handle this properly
     // when shell is true.
     shell: constants.WIN32,
     stdio: 'inherit',
   })
-
   // See https://nodejs.org/api/child_process.html#event-exit.
-  (spawnPromise.process as ChildProcess).on(
+  ;(result.process as ChildProcess).on(
     'exit',
     (code: number | null, signalName: NodeJS.Signals | null) => {
       if (signalName) {
@@ -31,5 +30,5 @@ export async function runRawNpm(
     },
   )
 
-  await spawnPromise
+  await result
 }

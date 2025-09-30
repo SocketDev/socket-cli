@@ -63,7 +63,7 @@ export interface DlxBinaryResult {
   /** Whether the binary was newly downloaded. */
   downloaded: boolean
   /** The spawn promise for the running process. */
-  spawnPromise: ReturnType<typeof spawn>['promise']
+  spawnPromise: ReturnType<typeof spawn>['spawnPromise']
 }
 
 const { DLX_BINARY_CACHE_TTL } = constants
@@ -97,11 +97,11 @@ async function isCacheValid(
     }
 
     const metadata = await readJson(metaPath, { throws: false })
-    if (!metadata) {
+    if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) {
       return false
     }
     const now = Date.now()
-    const age = now - (metadata['timestamp'] as number)
+    const age = now - ((metadata['timestamp'] as number) || 0)
 
     return age < cacheTtl
   } catch {
@@ -219,10 +219,14 @@ export async function cleanDlxCache(
 
       // eslint-disable-next-line no-await-in-loop
       const metadata = await readJson(metaPath, { throws: false })
-      if (!metadata) {
+      if (
+        !metadata ||
+        typeof metadata !== 'object' ||
+        Array.isArray(metadata)
+      ) {
         continue
       }
-      const age = now - (metadata['timestamp'] as number)
+      const age = now - ((metadata['timestamp'] as number) || 0)
 
       if (age > maxAge) {
         // Remove entire cache entry directory.
@@ -289,7 +293,12 @@ export async function dlxBinary(
     try {
       const metaPath = getMetadataPath(cacheEntryDir)
       const metadata = await readJson(metaPath, { throws: false })
-      if (metadata && typeof metadata['checksum'] === 'string') {
+      if (
+        metadata &&
+        typeof metadata === 'object' &&
+        !Array.isArray(metadata) &&
+        typeof metadata['checksum'] === 'string'
+      ) {
         computedChecksum = metadata['checksum']
       } else {
         // If metadata is invalid, re-download.
@@ -377,7 +386,11 @@ export async function listDlxCache(): Promise<
       const metaPath = getMetadataPath(entryPath)
       // eslint-disable-next-line no-await-in-loop
       const metadata = await readJson(metaPath, { throws: false })
-      if (!metadata) {
+      if (
+        !metadata ||
+        typeof metadata !== 'object' ||
+        Array.isArray(metadata)
+      ) {
         continue
       }
 
@@ -393,9 +406,9 @@ export async function listDlxCache(): Promise<
 
         results.push({
           name: binaryFile,
-          url: metadata['url'] as string,
+          url: (metadata['url'] as string) || '',
           size: binaryStats.size,
-          age: now - (metadata['timestamp'] as number),
+          age: now - ((metadata['timestamp'] as number) || 0),
           platform: (metadata['platform'] as string) || 'unknown',
           arch: (metadata['arch'] as string) || 'unknown',
           checksum: (metadata['checksum'] as string) || '',

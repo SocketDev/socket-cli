@@ -58,9 +58,9 @@ void (async () => {
       authInfo: lookupRegistryAuthToken(registryUrl, { recursive: true }),
       name: isSeaBinary()
         ? SOCKET_CLI_BIN_NAME
-        : constants.ENV.INLINED_SOCKET_CLI_NAME,
+        : constants.ENV['INLINED_SOCKET_CLI_NAME'],
       registryUrl,
-      version: constants.ENV.INLINED_SOCKET_CLI_VERSION,
+      version: constants.ENV['INLINED_SOCKET_CLI_VERSION'],
     })
   }
 

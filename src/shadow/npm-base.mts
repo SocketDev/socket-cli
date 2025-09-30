@@ -35,7 +35,7 @@ export type ShadowBinOptions = SpawnOptions & {
 }
 
 export type ShadowBinResult = {
-  spawnPromise: SpawnResult<string, SpawnExtra | undefined>
+  spawnPromise: SpawnResult
 }
 
 export default async function shadowNpmBase(
@@ -108,7 +108,7 @@ export default async function shadowNpmBase(
       ...constants.nodeHardenFlags,
       // Memory flags commented out.
       // ...constants.nodeMemoryFlags,
-      ...(constants.ENV.INLINED_SOCKET_CLI_SENTRY_BUILD
+      ...(constants.ENV['INLINED_SOCKET_CLI_SENTRY_BUILD']
         ? ['--require', constants.instrumentWithSentryPath]
         : []),
       '--require',

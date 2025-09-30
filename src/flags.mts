@@ -64,7 +64,7 @@ export function getMaxOldSpaceSizeFlag(): number {
     _maxOldSpaceSizeFlag = getRawSpaceSizeFlags().maxOldSpaceSize
     if (!_maxOldSpaceSizeFlag) {
       const match = /(?<=--max-old-space-size=)\d+/.exec(
-        constants.ENV.NODE_OPTIONS,
+        constants.ENV['NODE_OPTIONS'],
       )?.[0]
       _maxOldSpaceSizeFlag = match ? Number(match) : 0
     }
@@ -93,7 +93,7 @@ export function getMaxSemiSpaceSizeFlag(): number {
     _maxSemiSpaceSizeFlag = getRawSpaceSizeFlags().maxSemiSpaceSize
     if (!_maxSemiSpaceSizeFlag) {
       const match = /(?<=--max-semi-space-size=)\d+/.exec(
-        constants.ENV.NODE_OPTIONS,
+        constants.ENV['NODE_OPTIONS'],
       )?.[0]
       _maxSemiSpaceSizeFlag = match ? Number(match) : 0
     }

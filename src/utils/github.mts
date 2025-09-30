@@ -59,7 +59,7 @@ async function readCache(
   const cacheJsonPath = path.join(constants.githubCachePath, `${key}.json`)
   const stat = safeStatsSync(cacheJsonPath)
   if (stat) {
-    const isExpired = Date.now() - stat.mtimeMs > ttlMs
+    const isExpired = Date.now() - Number(stat.mtimeMs) > ttlMs
     if (!isExpired) {
       return await readJson(cacheJsonPath)
     }
@@ -85,7 +85,7 @@ export async function cacheFetch<T>(
   ttlMs?: number | undefined,
 ): Promise<T> {
   // Optionally disable cache.
-  if (constants.ENV.DISABLE_GITHUB_CACHE) {
+  if (constants.ENV['DISABLE_GITHUB_CACHE']) {
     return await fetcher()
   }
   let data = (await readCache(key, ttlMs)) as T
@@ -186,7 +186,7 @@ export function getOctokit(): Octokit {
     }
     const octokitOptions = {
       auth: SOCKET_CLI_GITHUB_TOKEN,
-      baseUrl: constants.ENV.GITHUB_API_URL,
+      baseUrl: constants.ENV['GITHUB_API_URL'],
     }
     debugDir('inspect', { octokitOptions })
     _octokit = new Octokit(octokitOptions)

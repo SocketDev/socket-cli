@@ -56,7 +56,7 @@ async function run(
       },
       githubToken: {
         type: 'string',
-        default: constants.ENV.SOCKET_CLI_GITHUB_TOKEN,
+        default: constants.ENV['SOCKET_CLI_GITHUB_TOKEN'],
         description:
           'Required GitHub token for authentication.\nMay set environment variable GITHUB_TOKEN or SOCKET_CLI_GITHUB_TOKEN instead.',
       },
@@ -126,7 +126,7 @@ async function run(
   })
 
   const {
-    githubToken = constants.ENV.SOCKET_CLI_GITHUB_TOKEN,
+    githubToken = constants.ENV['SOCKET_CLI_GITHUB_TOKEN'],
     interactive = true,
     json,
     markdown,

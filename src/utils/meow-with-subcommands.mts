@@ -139,10 +139,10 @@ function findBestCommandMatch(
  * Determine the origin of the API token.
  */
 function getTokenOrigin(): string {
-  if (constants.ENV.SOCKET_CLI_NO_API_TOKEN) {
+  if (constants.ENV['SOCKET_CLI_NO_API_TOKEN']) {
     return ''
   }
-  if (constants.ENV.SOCKET_CLI_API_TOKEN) {
+  if (constants.ENV['SOCKET_CLI_API_TOKEN']) {
     return '(env)'
   }
   const configToken = getConfigValueOrUndef(CONFIG_KEY_API_TOKEN)
@@ -162,11 +162,11 @@ function getAsciiHeader(
 ) {
   // Note: In tests we return <redacted> because otherwise snapshots will fail.
   const { REDACTED } = constants
-  const redacting = constants.ENV.VITEST
+  const redacting = constants.ENV['VITEST']
 
   // Version display: show hash in debug mode, otherwise show semantic version.
-  const fullVersion = constants.ENV.INLINED_SOCKET_CLI_VERSION
-  const versionHash = constants.ENV.INLINED_SOCKET_CLI_VERSION_HASH
+  const fullVersion = constants.ENV['INLINED_SOCKET_CLI_VERSION']
+  const versionHash = constants.ENV['INLINED_SOCKET_CLI_VERSION_HASH']
   const cliVersion = redacting
     ? REDACTED
     : isDebug()
@@ -181,7 +181,7 @@ function getAsciiHeader(
   // Token display with origin indicator.
   const tokenPrefix = getVisibleTokenPrefix()
   const tokenOrigin = redacting ? '' : getTokenOrigin()
-  const noApiToken = constants.ENV.SOCKET_CLI_NO_API_TOKEN
+  const noApiToken = constants.ENV['SOCKET_CLI_NO_API_TOKEN']
   const shownToken = redacting
     ? REDACTED
     : noApiToken
@@ -448,7 +448,7 @@ export async function meowWithSubcommands(
   }
 
   const compactMode =
-    compactHeaderFlag || (constants.ENV.CI && !constants.ENV.VITEST)
+    compactHeaderFlag || (constants.ENV['CI'] && !constants.ENV['VITEST'])
   const noSpinner = spinnerFlag === false || isDebug()
 
   // Use CI spinner style when --no-spinner is passed or debug mode is enabled.
@@ -460,18 +460,20 @@ export async function meowWithSubcommands(
   // The env var overrides the --flag, which overrides the persisted config
   // Also, when either of these are used, config updates won't persist.
   let configOverrideResult
-  if (constants.ENV.SOCKET_CLI_CONFIG) {
-    configOverrideResult = overrideCachedConfig(constants.ENV.SOCKET_CLI_CONFIG)
+  if (constants.ENV['SOCKET_CLI_CONFIG']) {
+    configOverrideResult = overrideCachedConfig(
+      constants.ENV['SOCKET_CLI_CONFIG'],
+    )
   } else if (configFlag) {
     configOverrideResult = overrideCachedConfig(configFlag)
   }
 
-  if (constants.ENV.SOCKET_CLI_NO_API_TOKEN) {
+  if (constants.ENV['SOCKET_CLI_NO_API_TOKEN']) {
     // This overrides the config override and even the explicit token env var.
     // The config will be marked as readOnly to prevent persisting it.
     overrideConfigApiToken(undefined)
   } else {
-    const tokenOverride = constants.ENV.SOCKET_CLI_API_TOKEN
+    const tokenOverride = constants.ENV['SOCKET_CLI_API_TOKEN']
     if (tokenOverride) {
       // This will set the token (even if there was a config override) and
       // set it to readOnly, making sure the temp token won't be persisted.
@@ -831,7 +833,7 @@ export function meowOrExit(
   }
 
   const compactMode =
-    compactHeaderFlag || (constants.ENV.CI && !constants.ENV.VITEST)
+    compactHeaderFlag || (constants.ENV['CI'] && !constants.ENV['VITEST'])
   const noSpinner = spinnerFlag === false || isDebug()
 
   // Use CI spinner style when --no-spinner is passed.

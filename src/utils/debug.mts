@@ -21,8 +21,16 @@ import {
   debugDir as debugDirOriginal,
   debugFn as debugFnOriginal,
   debugLog,
-  isDebug,
+  isDebug as isDebugOriginal,
 } from '@socketsecurity/registry/lib/debug'
+
+/**
+ * Wrapper for isDebug that maintains backward compatibility.
+ * isDebugOriginal is a function that returns boolean.
+ */
+function isDebug(_namespace: string): boolean {
+  return isDebugOriginal()
+}
 
 /**
  * Wrapper for debugFn that maintains backward compatibility.
@@ -39,7 +47,7 @@ function debugFn(namespace: string, ...args: any[]): void {
  * Wrapper for debugDir that maintains backward compatibility.
  * The new API doesn't take a namespace, so we log it separately if needed.
  */
-function debugDir(namespace: string, obj: any, options?: any): void {
+function debugDir(namespace: string, obj: any): void {
   if (isDebug(namespace)) {
     debugLog(`[${namespace}]`)
     debugDirOriginal(obj)
@@ -170,4 +178,4 @@ export function debugGit(
   }
 }
 
-export { debugDir, debugFn, isDebug }
+export { debugDir, debugFn, debugLog, isDebug }
