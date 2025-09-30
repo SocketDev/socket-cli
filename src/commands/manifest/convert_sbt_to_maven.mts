@@ -55,10 +55,12 @@ export async function convertSbtToMaven({
       return
     }
     const poms: string[] = []
-    output.stdout.replace(/Wrote (.*?.pom)\n/g, (_all: string, fn: string) => {
-      poms.push(fn)
-      return fn
-    })
+    output.stdout
+      .toString()
+      .replace(/Wrote (.*?.pom)\n/g, (_all: string, fn: string) => {
+        poms.push(fn)
+        return fn
+      })
     if (!poms.length) {
       process.exitCode = 1
       logger.fail(

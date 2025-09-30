@@ -12,6 +12,7 @@ import { commonFlags, outputFlags } from '../../flags.mts'
 import { filterFlags, isHelpFlag } from '../../utils/cmd.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 
+import type { ChildProcess } from 'node:child_process'
 import type {
   CliCommandConfig,
   CliCommandContext,
@@ -328,14 +329,17 @@ async function run(
   const { spawnPromise } = await runCdxgen(yargv)
 
   // See https://nodejs.org/api/child_process.html#event-exit.
-  spawnPromise.process.on('exit', (code, signalName) => {
-    if (signalName) {
-      process.kill(process.pid, signalName)
-    } else if (typeof code === 'number') {
-      // eslint-disable-next-line n/no-process-exit
-      process.exit(code)
-    }
-  })
+  (spawnPromise.process as ChildProcess).on(
+    'exit',
+    (code: number | null, signalName: NodeJS.Signals | null) => {
+      if (signalName) {
+        process.kill(process.pid, signalName)
+      } else if (typeof code === 'number') {
+        // eslint-disable-next-line n/no-process-exit
+        process.exit(code)
+      }
+    },
+  )
 
   await spawnPromise
 }

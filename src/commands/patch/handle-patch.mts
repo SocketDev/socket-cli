@@ -381,7 +381,7 @@ export async function handlePatch({
       path.join(dotSocketDirPath, MANIFEST_JSON),
     )
     const manifestContent = await fs.readFile(manifestPath, UTF8)
-    const manifestData = JSON.parse(manifestContent)
+    const manifestData = JSON.parse(manifestContent.toString())
     const purls = purlObjs.map(String)
     const validated = PatchManifestSchema.parse(manifestData)
 

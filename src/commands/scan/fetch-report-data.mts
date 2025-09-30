@@ -4,7 +4,7 @@ import constants from '../../constants.mts'
 import { handleApiCallNoSpinner } from '../../utils/api.mts'
 import { debugDir, debugFn } from '../../utils/debug.mts'
 import { formatErrorWithDetail } from '../../utils/errors.mts'
-import { setupSdk } from '../../utils/sdk.mts'
+import { queryApiText, setupSdk } from '../../utils/sdk.mts'
 
 import type { CResult } from '../../types.mts'
 import type { SocketArtifact } from '../../utils/alert/artifact.mts'
@@ -70,7 +70,8 @@ export async function fetchScanData(
   }
 
   async function fetchScanResult(): Promise<CResult<SocketArtifact[]>> {
-    const result = await sockSdk.queryApiText(
+    const result = await queryApiText(
+      sockSdk,
       `orgs/${orgSlug}/full-scans/${encodeURIComponent(scanId)}${includeLicensePolicy ? '?include_license_details=true' : ''}`,
       {
         throws: false,

@@ -1,6 +1,6 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { setupSdk } from '../../utils/sdk.mts'
+import { queryApiJson, setupSdk } from '../../utils/sdk.mts'
 
 import type { CResult } from '../../types.mts'
 import type { SetupSdkOptions } from '../../utils/sdk.mts'
@@ -27,9 +27,10 @@ export async function fetchDiffScan({
   }
 
   const sdk = sdkResult.data
-  const result = await sdk.queryApiJson<
+  const result = await queryApiJson<
     SocketSdkSuccessResult<'GetOrgDiffScan'>['data']
   >(
+    sdk,
     `orgs/${orgSlug}/full-scans/diff?before=${encodeURIComponent(id1)}&after=${encodeURIComponent(id2)}`,
     {
       throws: false,

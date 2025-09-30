@@ -1,4 +1,4 @@
-import { setupSdk } from '../../utils/sdk.mts'
+import { queryApiJson, setupSdk } from '../../utils/sdk.mts'
 
 import type { ThreadFeedResponse } from './types.mts'
 import type { CResult } from '../../types.mts'
@@ -41,7 +41,8 @@ export async function fetchThreatFeed({
     version ? ['version', version] : ['', ''],
   ])
 
-  const result = await sdk.queryApiJson<ThreadFeedResponse>(
+  const result = await queryApiJson<ThreadFeedResponse>(
+    sdk,
     `orgs/${orgSlug}/threat-feed?${queryParams}`,
     {
       throws: false,

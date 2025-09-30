@@ -19,106 +19,104 @@ const __dirname = path.dirname(__filename)
 
 // Access constants directly from the registryConstants object.
 // The registry now exports constants as a special object with lazy getters.
-const AT_LATEST = registryConstants.AT_LATEST
-const BUN = registryConstants.BUN
-const CHANGELOG_MD = registryConstants.CHANGELOG_MD
-const CI = registryConstants.CI
-const COLUMN_LIMIT = registryConstants.COLUMN_LIMIT
-const DOT_GIT_DIR = registryConstants.DOT_GIT_DIR
-const DOT_PACKAGE_LOCK_JSON = registryConstants.DOT_PACKAGE_LOCK_JSON
-const DOT_SOCKET_DIR = registryConstants.DOT_SOCKET_DIR
-const EMPTY_FILE = registryConstants.EMPTY_FILE
-const EMPTY_VALUE = registryConstants.EMPTY_VALUE
-const ESLINT_CONFIG_JS = registryConstants.ESLINT_CONFIG_JS
-const ESNEXT = registryConstants.ESNEXT
-const EXTENSIONS = registryConstants.EXTENSIONS
-const EXTENSIONS_JSON = registryConstants.EXTENSIONS_JSON
-const EXT_CJS = registryConstants.EXT_CJS
-const EXT_CMD = registryConstants.EXT_CMD
-const EXT_CTS = registryConstants.EXT_CTS
-const EXT_DTS = registryConstants.EXT_DTS
-const EXT_JS = registryConstants.EXT_JS
-const EXT_JSON = registryConstants.EXT_JSON
-const EXT_LOCK = registryConstants.EXT_LOCK
-const EXT_LOCKB = registryConstants.EXT_LOCKB
-const EXT_MD = registryConstants.EXT_MD
-const EXT_MJS = registryConstants.EXT_MJS
-const EXT_MTS = registryConstants.EXT_MTS
-const EXT_PS1 = registryConstants.EXT_PS1
-const EXT_YAML = registryConstants.EXT_YAML
-const EXT_YML = registryConstants.EXT_YML
-const GITIGNORE = registryConstants.GITIGNORE
-const LATEST = registryConstants.LATEST
-const LICENSE = registryConstants.LICENSE
-const LICENSE_GLOB = registryConstants.LICENSE_GLOB
-const LICENSE_GLOB_RECURSIVE = registryConstants.LICENSE_GLOB_RECURSIVE
-const LICENSE_ORIGINAL = registryConstants.LICENSE_ORIGINAL
-const LICENSE_ORIGINAL_GLOB = registryConstants.LICENSE_ORIGINAL_GLOB
+// Type assertion needed because TypeScript sees this as generic 'object'.
+const regConsts = registryConstants as any
+const AT_LATEST = regConsts.AT_LATEST
+const BUN = regConsts.BUN
+const CHANGELOG_MD = regConsts.CHANGELOG_MD
+const CI = regConsts.CI
+const COLUMN_LIMIT = regConsts.COLUMN_LIMIT
+const DOT_GIT_DIR = regConsts.DOT_GIT_DIR
+const DOT_PACKAGE_LOCK_JSON = regConsts.DOT_PACKAGE_LOCK_JSON
+const DOT_SOCKET_DIR = regConsts.DOT_SOCKET_DIR
+const EMPTY_FILE = regConsts.EMPTY_FILE
+const EMPTY_VALUE = regConsts.EMPTY_VALUE
+const ESLINT_CONFIG_JS = regConsts.ESLINT_CONFIG_JS
+const ESNEXT = regConsts.ESNEXT
+const EXTENSIONS = regConsts.EXTENSIONS
+const EXTENSIONS_JSON = regConsts.EXTENSIONS_JSON
+const EXT_CJS = regConsts.EXT_CJS
+const EXT_CMD = regConsts.EXT_CMD
+const EXT_CTS = regConsts.EXT_CTS
+const EXT_DTS = regConsts.EXT_DTS
+const EXT_JS = regConsts.EXT_JS
+const EXT_JSON = regConsts.EXT_JSON
+const EXT_LOCK = regConsts.EXT_LOCK
+const EXT_LOCKB = regConsts.EXT_LOCKB
+const EXT_MD = regConsts.EXT_MD
+const EXT_MJS = regConsts.EXT_MJS
+const EXT_MTS = regConsts.EXT_MTS
+const EXT_PS1 = regConsts.EXT_PS1
+const EXT_YAML = regConsts.EXT_YAML
+const EXT_YML = regConsts.EXT_YML
+const GITIGNORE = regConsts.GITIGNORE
+const LATEST = regConsts.LATEST
+const LICENSE = regConsts.LICENSE
+const LICENSE_GLOB = regConsts.LICENSE_GLOB
+const LICENSE_GLOB_RECURSIVE = regConsts.LICENSE_GLOB_RECURSIVE
+const LICENSE_ORIGINAL = regConsts.LICENSE_ORIGINAL
+const LICENSE_ORIGINAL_GLOB = regConsts.LICENSE_ORIGINAL_GLOB
 const LICENSE_ORIGINAL_GLOB_RECURSIVE =
-  registryConstants.LICENSE_ORIGINAL_GLOB_RECURSIVE
-const LOOP_SENTINEL = registryConstants.LOOP_SENTINEL
-const MANIFEST_JSON = registryConstants.MANIFEST_JSON
-const MIT = registryConstants.MIT
-const NODE_AUTH_TOKEN = registryConstants.NODE_AUTH_TOKEN
-const NODE_ENV = registryConstants.NODE_ENV
-const NODE_MODULES = registryConstants.NODE_MODULES
-const NODE_MODULES_GLOB_RECURSIVE =
-  registryConstants.NODE_MODULES_GLOB_RECURSIVE
-const NODE_SEA_FUSE = registryConstants.NODE_SEA_FUSE
-const NPM = registryConstants.NPM
-const NPX = registryConstants.NPX
-const OVERRIDES = registryConstants.OVERRIDES
-const PACKAGE_DEFAULT_VERSION = registryConstants.PACKAGE_DEFAULT_VERSION
-const PACKAGE_JSON = registryConstants.PACKAGE_JSON
-const PACKAGE_LOCK_JSON = registryConstants.PACKAGE_LOCK_JSON
-const PNPM = registryConstants.PNPM
-const PNPM_LOCK_YAML = registryConstants.PNPM_LOCK_YAML
-const PRE_COMMIT = registryConstants.PRE_COMMIT
-const README_GLOB = registryConstants.README_GLOB
-const README_GLOB_RECURSIVE = registryConstants.README_GLOB_RECURSIVE
-const README_MD = registryConstants.README_MD
-const REGISTRY = registryConstants.REGISTRY
-const REGISTRY_SCOPE_DELIMITER = registryConstants.REGISTRY_SCOPE_DELIMITER
-const RESOLUTIONS = registryConstants.RESOLUTIONS
-const SOCKET_GITHUB_ORG = registryConstants.SOCKET_GITHUB_ORG
-const SOCKET_IPC_HANDSHAKE = registryConstants.SOCKET_IPC_HANDSHAKE
-const SOCKET_OVERRIDE_SCOPE = registryConstants.SOCKET_OVERRIDE_SCOPE
-const SOCKET_PUBLIC_API_TOKEN = registryConstants.SOCKET_PUBLIC_API_TOKEN
-const SOCKET_REGISTRY_NPM_ORG = registryConstants.SOCKET_REGISTRY_NPM_ORG
-const SOCKET_REGISTRY_PACKAGE_NAME =
-  registryConstants.SOCKET_REGISTRY_PACKAGE_NAME
-const SOCKET_REGISTRY_REPO_NAME = registryConstants.SOCKET_REGISTRY_REPO_NAME
-const SOCKET_REGISTRY_SCOPE = registryConstants.SOCKET_REGISTRY_SCOPE
-const SOCKET_SECURITY_SCOPE = registryConstants.SOCKET_SECURITY_SCOPE
-const TSCONFIG_JSON = registryConstants.TSCONFIG_JSON
-const UNKNOWN_ERROR = registryConstants.UNKNOWN_ERROR
-const UNKNOWN_VALUE = registryConstants.UNKNOWN_VALUE
-const UNLICENCED = registryConstants.UNLICENCED
-const UNLICENSED = registryConstants.UNLICENSED
-const UTF8 = registryConstants.UTF8
-const VITEST = registryConstants.VITEST
-const VLT = registryConstants.VLT
-const YARN = registryConstants.YARN
-const YARN_BERRY = registryConstants.YARN_BERRY
-const YARN_CLASSIC = registryConstants.YARN_CLASSIC
-const YARN_LOCK = registryConstants.YARN_LOCK
+  regConsts.LICENSE_ORIGINAL_GLOB_RECURSIVE
+const LOOP_SENTINEL = regConsts.LOOP_SENTINEL
+const MANIFEST_JSON = regConsts.MANIFEST_JSON
+const MIT = regConsts.MIT
+const NODE_AUTH_TOKEN = regConsts.NODE_AUTH_TOKEN
+const NODE_ENV = regConsts.NODE_ENV
+const NODE_MODULES = regConsts.NODE_MODULES
+const NODE_MODULES_GLOB_RECURSIVE = regConsts.NODE_MODULES_GLOB_RECURSIVE
+const NODE_SEA_FUSE = regConsts.NODE_SEA_FUSE
+const NPM = regConsts.NPM
+const NPX = regConsts.NPX
+const OVERRIDES = regConsts.OVERRIDES
+const PACKAGE_DEFAULT_VERSION = regConsts.PACKAGE_DEFAULT_VERSION
+const PACKAGE_JSON = regConsts.PACKAGE_JSON
+const PACKAGE_LOCK_JSON = regConsts.PACKAGE_LOCK_JSON
+const PNPM = regConsts.PNPM
+const PNPM_LOCK_YAML = regConsts.PNPM_LOCK_YAML
+const PRE_COMMIT = regConsts.PRE_COMMIT
+const README_GLOB = regConsts.README_GLOB
+const README_GLOB_RECURSIVE = regConsts.README_GLOB_RECURSIVE
+const README_MD = regConsts.README_MD
+const REGISTRY = regConsts.REGISTRY
+const REGISTRY_SCOPE_DELIMITER = regConsts.REGISTRY_SCOPE_DELIMITER
+const RESOLUTIONS = regConsts.RESOLUTIONS
+const SOCKET_GITHUB_ORG = regConsts.SOCKET_GITHUB_ORG
+const SOCKET_IPC_HANDSHAKE = regConsts.SOCKET_IPC_HANDSHAKE
+const SOCKET_OVERRIDE_SCOPE = regConsts.SOCKET_OVERRIDE_SCOPE
+const SOCKET_PUBLIC_API_TOKEN = regConsts.SOCKET_PUBLIC_API_TOKEN
+const SOCKET_REGISTRY_NPM_ORG = regConsts.SOCKET_REGISTRY_NPM_ORG
+const SOCKET_REGISTRY_PACKAGE_NAME = regConsts.SOCKET_REGISTRY_PACKAGE_NAME
+const SOCKET_REGISTRY_REPO_NAME = regConsts.SOCKET_REGISTRY_REPO_NAME
+const SOCKET_REGISTRY_SCOPE = regConsts.SOCKET_REGISTRY_SCOPE
+const SOCKET_SECURITY_SCOPE = regConsts.SOCKET_SECURITY_SCOPE
+const TSCONFIG_JSON = regConsts.TSCONFIG_JSON
+const UNKNOWN_ERROR = regConsts.UNKNOWN_ERROR
+const UNKNOWN_VALUE = regConsts.UNKNOWN_VALUE
+const UNLICENCED = regConsts.UNLICENCED
+const UNLICENSED = regConsts.UNLICENSED
+const UTF8 = regConsts.UTF8
+const VITEST = regConsts.VITEST
+const VLT = regConsts.VLT
+const YARN = regConsts.YARN
+const YARN_BERRY = regConsts.YARN_BERRY
+const YARN_CLASSIC = regConsts.YARN_CLASSIC
+const YARN_LOCK = regConsts.YARN_LOCK
 
 // Access internals symbol and attributes.
-const kInternalsSymbol = registryConstants.kInternalsSymbol
+const kInternalsSymbol = regConsts.kInternalsSymbol
 const registryConstantsAttribs =
-  registryConstants[kInternalsSymbol as unknown as 'Symbol(kInternalsSymbol)']
+  regConsts[kInternalsSymbol as unknown as 'Symbol(kInternalsSymbol)']
     .attributes
 const createConstantsObject =
-  registryConstants[kInternalsSymbol as unknown as 'Symbol(kInternalsSymbol)']
+  regConsts[kInternalsSymbol as unknown as 'Symbol(kInternalsSymbol)']
     .createConstantsObject
 const getIpc =
-  registryConstants[kInternalsSymbol as unknown as 'Symbol(kInternalsSymbol)']
-    .getIpc
+  regConsts[kInternalsSymbol as unknown as 'Symbol(kInternalsSymbol)'].getIpc
 
-export type RegistryEnv = typeof registryConstants.ENV
+export type RegistryEnv = typeof regConsts.ENV
 
-export type RegistryInternals =
-  (typeof registryConstants)['Symbol(kInternalsSymbol)']
+export type RegistryInternals = (typeof regConsts)['Symbol(kInternalsSymbol)']
 
 export type Sentry = any
 
@@ -500,7 +498,7 @@ const LAZY_ENV = () => {
   return Object.freeze({
     __proto__: null,
     // Lazily access registryConstants.ENV.
-    ...registryConstants.ENV,
+    ...regConsts.ENV,
     // Disable using GitHub's workflow actions/cache.
     // https://github.com/actions/cache
     DISABLE_GITHUB_CACHE: envAsBoolean(env['DISABLE_GITHUB_CACHE']),

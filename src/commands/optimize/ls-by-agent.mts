@@ -55,7 +55,7 @@ async function npmQuery(npmExecPath: string, cwd: string): Promise<string> {
         // when shell is true.
         shell: constants.WIN32,
       })
-    ).stdout
+    ).stdout.toString()
   } catch {}
   return cleanupQueryStdout(stdout)
 }
@@ -79,7 +79,7 @@ export async function lsBun(
         // when shell is true.
         shell: constants.WIN32,
       })
-    ).stdout
+    ).stdout.toString()
   } catch {}
   return ''
 }
@@ -125,7 +125,7 @@ export async function lsPnpm(
           shell: constants.WIN32,
         },
       )
-    ).stdout
+    ).stdout.toString()
   } catch {}
   return parsableToQueryStdout(stdout)
 }
@@ -153,7 +153,7 @@ export async function lsVlt(
           shell: constants.WIN32,
         },
       )
-    ).stdout
+    ).stdout.toString()
   } catch {}
   return cleanupQueryStdout(stdout)
 }
@@ -181,7 +181,7 @@ export async function lsYarnBerry(
           shell: constants.WIN32,
         },
       )
-    ).stdout
+    ).stdout.toString()
   } catch {}
   return ''
 }
@@ -207,7 +207,7 @@ export async function lsYarnClassic(
         // when shell is true.
         shell: constants.WIN32,
       })
-    ).stdout
+    ).stdout.toString()
   } catch {}
   return ''
 }

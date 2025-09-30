@@ -124,7 +124,11 @@ async function execGradleWithSpinner(
 
     pass = true
     const { code, stderr, stdout } = output
-    return { code, stdout, stderr }
+    return {
+      code,
+      stdout: stdout.toString(),
+      stderr: stderr.toString(),
+    }
   } finally {
     if (pass) {
       spinner.successAndStop('Gracefully completed gradlew execution.')

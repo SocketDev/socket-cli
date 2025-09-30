@@ -30,7 +30,13 @@ import isInteractive from '@socketregistry/is-interactive/index.cjs'
 import { password } from '@socketsecurity/registry/lib/prompts'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 import { isUrl } from '@socketsecurity/registry/lib/url'
-import { SocketSdk, createUserAgentFromPkgJson } from '@socketsecurity/sdk'
+import {
+  SocketSdk,
+  createGetRequest,
+  createUserAgentFromPkgJson,
+  getResponseJson,
+  isResponseOk,
+} from '@socketsecurity/sdk'
 
 import { getConfigValueOrUndef } from './config.mts'
 import constants, {
@@ -41,6 +47,7 @@ import constants, {
 } from '../constants.mts'
 
 import type { CResult } from '../types.mts'
+import type { IncomingMessage } from 'node:http'
 
 const TOKEN_VISIBLE_LENGTH = 5
 
@@ -152,5 +159,104 @@ export async function setupSdk(
         homepage: constants.ENV.INLINED_SOCKET_CLI_HOMEPAGE,
       }),
     }),
+  }
+}
+
+/**
+ * Query Socket API endpoint and parse JSON response.
+ * Helper function to replicate SDK's removed queryApiJson method.
+ */
+export async function queryApiJson<T = unknown>(
+  sdk: SocketSdk,
+  path: string,
+  options?: { throws?: boolean; description?: string } | undefined,
+): Promise<CResult<T>> {
+  const opts = { __proto__: null, throws: true, ...options }
+  try {
+    // Access SDK's private baseUrl and reqOptions through a workaround.
+    // The SDK stores these as private fields, so we need to construct the request manually.
+    const baseUrl = getDefaultApiBaseUrl() || 'https://api.socket.dev/v0/'
+    const apiToken = getDefaultApiToken() || constants.SOCKET_PUBLIC_API_TOKEN
+
+    const response = await createGetRequest(baseUrl, path, {
+      headers: {
+        Authorization: `Basic ${btoa(`${apiToken}:`)}`,
+        'User-Agent': createUserAgentFromPkgJson({
+          name: constants.ENV.INLINED_SOCKET_CLI_NAME,
+          version: constants.ENV.INLINED_SOCKET_CLI_VERSION,
+          homepage: constants.ENV.INLINED_SOCKET_CLI_HOMEPAGE,
+        }),
+      },
+      timeout: constants.ENV.SOCKET_CLI_API_TIMEOUT,
+    })
+
+    if (!isResponseOk(response)) {
+      const statusCode = response.statusCode
+      const message = `Failed to fetch ${opts.description || 'data'}: ${statusCode}`
+      if (opts.throws) {
+        throw new Error(message)
+      }
+      return { ok: false, message }
+    }
+
+    const data = (await getResponseJson(response)) as T
+    return { ok: true, data }
+  } catch (e) {
+    const message = `Error fetching ${opts.description || 'data'}: ${e instanceof Error ? e.message : String(e)}`
+    if (opts.throws) {
+      throw new Error(message, { cause: e })
+    }
+    return { ok: false, message }
+  }
+}
+
+/**
+ * Query Socket API endpoint and return text response.
+ * Helper function to replicate SDK's removed queryApiText method.
+ */
+export async function queryApiText(
+  sdk: SocketSdk,
+  path: string,
+  options?: { throws?: boolean; description?: string } | undefined,
+): Promise<CResult<string>> {
+  const opts = { __proto__: null, throws: true, ...options }
+  try {
+    const baseUrl = getDefaultApiBaseUrl() || 'https://api.socket.dev/v0/'
+    const apiToken = getDefaultApiToken() || constants.SOCKET_PUBLIC_API_TOKEN
+
+    const response = await createGetRequest(baseUrl, path, {
+      headers: {
+        Authorization: `Basic ${btoa(`${apiToken}:`)}`,
+        'User-Agent': createUserAgentFromPkgJson({
+          name: constants.ENV.INLINED_SOCKET_CLI_NAME,
+          version: constants.ENV.INLINED_SOCKET_CLI_VERSION,
+          homepage: constants.ENV.INLINED_SOCKET_CLI_HOMEPAGE,
+        }),
+      },
+      timeout: constants.ENV.SOCKET_CLI_API_TIMEOUT,
+    })
+
+    if (!isResponseOk(response)) {
+      const statusCode = response.statusCode
+      const message = `Failed to fetch ${opts.description || 'data'}: ${statusCode}`
+      if (opts.throws) {
+        throw new Error(message)
+      }
+      return { ok: false, message }
+    }
+
+    // Read response as text.
+    const chunks: Buffer[] = []
+    for await (const chunk of response as unknown as AsyncIterable<Buffer>) {
+      chunks.push(chunk)
+    }
+    const data = Buffer.concat(chunks).toString('utf8')
+    return { ok: true, data }
+  } catch (e) {
+    const message = `Error fetching ${opts.description || 'data'}: ${e instanceof Error ? e.message : String(e)}`
+    if (opts.throws) {
+      throw new Error(message, { cause: e })
+    }
+    return { ok: false, message }
   }
 }

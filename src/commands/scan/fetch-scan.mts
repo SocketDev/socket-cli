@@ -1,5 +1,5 @@
 import { debugDir, debugFn } from '../../utils/debug.mts'
-import { setupSdk } from '../../utils/sdk.mts'
+import { queryApiText, setupSdk } from '../../utils/sdk.mts'
 
 import type { CResult } from '../../types.mts'
 import type { SocketArtifact } from '../../utils/alert/artifact.mts'
@@ -17,7 +17,8 @@ export async function fetchScan(
   }
 
   const sdk = sdkResult.data
-  const result = await sdk.queryApiText(
+  const result = await queryApiText(
+    sdk,
     `orgs/${orgSlug}/full-scans/${encodeURIComponent(scanId)}`,
     {
       throws: false,

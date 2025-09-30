@@ -1,10 +1,16 @@
 import { hasKeys, isObject } from '@socketsecurity/registry/lib/objects'
+import { getEditablePackageJsonClass } from '@socketsecurity/registry/lib/packages'
 
 import constants from '../../constants.mts'
 
 import type { Overrides } from './types.mts'
 import type { Agent } from '../../utils/package-environment.mts'
-import type { EditablePackageJson } from '@socketsecurity/registry/lib/packages'
+
+type EditablePackageJson = ReturnType<
+  typeof getEditablePackageJsonClass
+> extends new () => infer T
+  ? T
+  : never
 
 const {
   BUN,
