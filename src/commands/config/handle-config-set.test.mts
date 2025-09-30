@@ -9,6 +9,12 @@ vi.mock('./output-config-set.mts', () => ({
 vi.mock('../../utils/config.mts', () => ({
   updateConfigValue: vi.fn(),
 }))
+vi.mock('../../utils/debug.mts', () => ({
+  debugDir: vi.fn(),
+  debugFn: vi.fn(),
+  debugLog: vi.fn(),
+  isDebug: vi.fn(),
+}))
 
 describe('handleConfigSet', () => {
   beforeEach(() => {
@@ -83,9 +89,7 @@ describe('handleConfigSet', () => {
   })
 
   it('logs debug information', async () => {
-    const { debugDir, debugFn } = await import(
-      '@socketsecurity/registry/lib/debug'
-    )
+    const { debugDir, debugFn } = await import('../../utils/debug.mts')
     const { updateConfigValue } = await import('../../utils/config.mts')
 
     vi.mocked(updateConfigValue).mockReturnValue({
@@ -112,7 +116,7 @@ describe('handleConfigSet', () => {
   })
 
   it('logs debug information on failure', async () => {
-    const { debugFn } = await import('@socketsecurity/registry/lib/debug')
+    const { debugFn } = await import('../../utils/debug.mts')
     const { updateConfigValue } = await import('../../utils/config.mts')
 
     vi.mocked(updateConfigValue).mockReturnValue({

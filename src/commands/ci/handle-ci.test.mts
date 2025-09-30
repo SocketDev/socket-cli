@@ -27,6 +27,12 @@ vi.mock('../../utils/serialize-result-json.mts', () => ({
 vi.mock('../scan/handle-create-new-scan.mts', () => ({
   handleCreateNewScan: vi.fn(),
 }))
+vi.mock('../../utils/debug.mts', () => ({
+  debugDir: vi.fn(),
+  debugFn: vi.fn(),
+  debugLog: vi.fn(),
+  isDebug: vi.fn(),
+}))
 
 describe('handleCi', () => {
   const originalCwd = process.cwd
@@ -187,9 +193,7 @@ describe('handleCi', () => {
   })
 
   it('logs debug information', async () => {
-    const { debugDir, debugFn } = await import(
-      '@socketsecurity/registry/lib/debug'
-    )
+    const { debugDir, debugFn } = await import('../../utils/debug.mts')
     const { getDefaultOrgSlug } = await import('./fetch-default-org-slug.mts')
     const { getRepoName, gitBranch } = await import('../../utils/git.mts')
 
@@ -217,9 +221,7 @@ describe('handleCi', () => {
   })
 
   it('logs debug info on org slug failure', async () => {
-    const { debugDir, debugFn } = await import(
-      '@socketsecurity/registry/lib/debug'
-    )
+    const { debugDir, debugFn } = await import('../../utils/debug.mts')
     const { getDefaultOrgSlug } = await import('./fetch-default-org-slug.mts')
 
     const error = {

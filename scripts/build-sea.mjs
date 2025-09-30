@@ -30,7 +30,7 @@ import url from 'node:url'
 
 import trash from 'trash'
 
-import WIN32 from '@socketsecurity/registry/lib/constants/WIN32'
+import WIN32 from '@socketsecurity/registry/lib/constants/win32'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { normalizePath } from '@socketsecurity/registry/lib/path'
 import { spawn } from '@socketsecurity/registry/lib/spawn'

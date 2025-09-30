@@ -40,7 +40,11 @@ vi.mock('../constants.mts', () => ({
 
 // Mock debug.
 vi.mock('./debug.mts', () => ({
+  debugDir: vi.fn(),
+  debugFn: vi.fn(),
   debugGit: vi.fn(),
+  debugLog: vi.fn(),
+  isDebug: vi.fn(),
 }))
 
 describe('git utilities', () => {
