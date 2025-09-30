@@ -3,10 +3,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { handleCreateRepo } from './handle-create-repo.mts'
 
 // Mock the dependencies.
-vi.mock('@socketsecurity/registry/lib/debug', () => ({
-  debugDir: vi.fn(),
-  debugFn: vi.fn(),
-}))
 vi.mock('./fetch-create-repo.mts', () => ({
   fetchCreateRepo: vi.fn(),
 }))

@@ -3,10 +3,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { handlePurlsShallowScore } from './handle-purls-shallow-score.mts'
 
 // Mock the dependencies.
-vi.mock('@socketsecurity/registry/lib/debug', () => ({
-  debugDir: vi.fn(),
-  debugFn: vi.fn(),
-}))
 vi.mock('./fetch-purls-shallow-score.mts', () => ({
   fetchPurlsShallowScore: vi.fn(),
 }))
