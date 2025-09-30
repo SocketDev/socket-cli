@@ -448,6 +448,12 @@ Socket CLI integrates with various third-party tools and services:
 
 # 🚨 CRITICAL BEHAVIORAL REQUIREMENTS
 
+## 🔍 Pre-Action Protocol
+- **🚨 MANDATORY**: Before taking ANY action, ALWAYS review and verify compliance with CLAUDE.md guidelines
+- **Check before you act**: Read relevant sections of this file to ensure your approach follows established patterns
+- **No exceptions**: This applies to all tasks, including code changes, commits, documentation, testing, and file operations
+- **When in doubt**: If unclear about the right approach, consult CLAUDE.md first before proceeding
+
 ## 🎯 Principal Engineer Mindset
 - Act with the authority and expertise of a principal-level software engineer
 - Make decisions that prioritize long-term maintainability over short-term convenience
