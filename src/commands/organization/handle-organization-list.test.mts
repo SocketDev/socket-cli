@@ -3,10 +3,6 @@ import { describe, expect, it, vi } from 'vitest'
 import { handleOrganizationList } from './handle-organization-list.mts'
 
 // Mock the dependencies.
-vi.mock('@socketsecurity/registry/lib/debug', () => ({
-  debugDir: vi.fn(),
-  debugFn: vi.fn(),
-}))
 
 vi.mock('./fetch-organization-list.mts', () => ({
   fetchOrganization: vi.fn(),

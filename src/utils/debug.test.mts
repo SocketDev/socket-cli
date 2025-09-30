@@ -9,20 +9,6 @@ import {
 } from './debug.mts'
 
 // Mock the registry debug functions.
-vi.mock('@socketsecurity/registry/lib/debug', () => ({
-  debugDir: vi.fn(),
-  debugFn: vi.fn(),
-  isDebug: vi.fn(category => {
-    // Mock different debug levels.
-    if (category === 'notice') {
-      return true
-    }
-    if (category === 'silly') {
-      return false
-    }
-    return false
-  }),
-}))
 
 describe('debug utilities', () => {
   beforeEach(() => {

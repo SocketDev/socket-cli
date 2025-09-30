@@ -3,10 +3,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { handleCreateNewScan } from './handle-create-new-scan.mts'
 
 // Mock all the dependencies.
-vi.mock('@socketsecurity/registry/lib/debug', () => ({
-  debugDir: vi.fn(),
-  debugFn: vi.fn(),
-}))
 vi.mock('@socketsecurity/registry/lib/logger', () => ({
   logger: {
     info: vi.fn(),

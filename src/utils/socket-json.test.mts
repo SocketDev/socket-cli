@@ -34,10 +34,6 @@ vi.mock('@socketsecurity/registry/lib/logger', () => ({
   },
 }))
 
-vi.mock('@socketsecurity/registry/lib/debug', () => ({
-  debugDir: vi.fn(),
-  debugFn: vi.fn(),
-}))
 
 describe('socket-json utilities', () => {
   beforeEach(() => {

@@ -19,9 +19,6 @@ vi.mock('fast-glob', () => ({
   },
 }))
 
-vi.mock('@socketsecurity/registry/lib/debug', () => ({
-  debugDir: vi.fn(),
-}))
 
 vi.mock('@socketsecurity/registry/lib/fs', () => ({
   readDirNames: vi.fn(),
