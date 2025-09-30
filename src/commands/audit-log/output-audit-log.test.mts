@@ -147,7 +147,8 @@ describe('output-audit-log', () => {
 
     it('should return error report on error', async () => {
       const r = await outputAsMarkdown(
-        {}, // this will fail
+        // this will fail
+        {},
         {
           logType: '',
           orgSlug: 'noorgslug',

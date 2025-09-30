@@ -144,12 +144,13 @@ async function run(
       test: !!(id1 && id2),
       message:
         'Specify two Scan IDs.\nA Scan ID looks like `aaa0aa0a-aaaa-0000-0a0a-0000000a00a0`.',
+      // Not sure how this can happen but ok.
       fail:
         !id1 && !id2
           ? 'missing both Scan IDs'
           : !id2
             ? 'missing second Scan ID'
-            : 'missing first Scan ID', // Not sure how this can happen but ok.
+            : 'missing first Scan ID',
     },
     {
       test: !!orgSlug,

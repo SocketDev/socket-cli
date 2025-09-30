@@ -42,7 +42,8 @@ describe('env-helpers', () => {
       // - "SOCKET_CLI_GITHUB_TOKEN (or GITHUB_TOKEN)"
 
       // These exact strings should appear in the missing/present arrays.
-      expect(true).toBe(true) // Placeholder - actual testing done in integration.
+      // Placeholder - actual testing done in integration.
+      expect(true).toBe(true)
     })
   })
 })

@@ -79,9 +79,12 @@ describe('commands', () => {
         // Check if the target exists in rootCommands or is a known subcommand.
         const isValidTarget =
           rootCommands[targetCommand] !== undefined ||
-          targetCommand === 'dependencies' || // Points to organization dependencies.
-          targetCommand === 'threat-feed' || // Special command.
-          targetCommand === 'repos' // Repository alias.
+          // Points to organization dependencies.
+          targetCommand === 'dependencies' ||
+          // Special command.
+          targetCommand === 'threat-feed' ||
+          // Repository alias.
+          targetCommand === 'repos'
 
         expect(isValidTarget).toBe(true)
       }

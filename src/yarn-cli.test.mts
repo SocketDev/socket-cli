@@ -1,17 +1,24 @@
+import { Module } from 'node:module'
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock process methods.
-const mockProcessExit = vi
-  .spyOn(process, 'exit')
-  .mockImplementation(() => undefined as never)
+const mockProcessExit = vi.spyOn(process, 'exit').mockImplementation((() => {
+  // Mock implementation that doesn't actually exit.
+}) as any)
 const mockProcessKill = vi.spyOn(process, 'kill').mockImplementation(() => true)
 
 // Mock shadowYarnBin.
 const mockShadowYarnBin = vi.fn()
 
-vi.mock('./shadow/yarn/bin.mts', () => ({
-  default: mockShadowYarnBin,
-}))
+// Mock Module._load to intercept CommonJS require calls
+const originalLoad = Module._load
+Module._load = vi.fn((request: string, parent: any, isMain?: boolean) => {
+  if (request === '../dist/shadow-yarn-bin.js') {
+    return mockShadowYarnBin
+  }
+  return originalLoad.call(Module, request, parent, isMain)
+})
 
 describe('yarn-cli', () => {
   const mockChildProcess = {

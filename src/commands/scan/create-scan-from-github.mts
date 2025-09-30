@@ -445,7 +445,8 @@ async function streamDownloadWithFetch(
   localPath: string,
   downloadUrl: string,
 ): Promise<CResult<string>> {
-  let response // Declare response here to access it in catch if needed
+  // Declare response here to access it in catch if needed
+  let response
 
   try {
     response = await fetch(downloadUrl)

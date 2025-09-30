@@ -1,21 +1,33 @@
 import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 
-import { queryApiSafeText } from '../../utils/api.mts'
+import { setupSdk } from '../../utils/sdk.mts'
 
 import type { CResult } from '../../types.mts'
 import type { SocketArtifact } from '../../utils/alert/artifact.mts'
+import type { SetupSdkOptions } from '../../utils/sdk.mts'
 
 export async function fetchScan(
   orgSlug: string,
   scanId: string,
+  options?: { sdkOpts?: SetupSdkOptions | undefined } | undefined,
 ): Promise<CResult<SocketArtifact[]>> {
-  const result = await queryApiSafeText(
+  const { sdkOpts } = { ...options }
+  const sdkResult = await setupSdk(sdkOpts)
+  if (!sdkResult.ok) {
+    return sdkResult
+  }
+
+  const sdk = sdkResult.data
+  const result = await sdk.queryApiText(
     `orgs/${orgSlug}/full-scans/${encodeURIComponent(scanId)}`,
-    'a scan',
+    {
+      throws: false,
+      description: 'a scan',
+    },
   )
 
   if (!result.ok) {
-    return result
+    return result as CResult<SocketArtifact[]>
   }
 
   const jsonsString = result.data

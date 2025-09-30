@@ -7,14 +7,16 @@ export type PatchRecord = z.infer<typeof PatchRecordSchema>
 export const PatchRecordSchema = z.object({
   exportedAt: z.string(),
   files: z.record(
-    z.string(), // File path
+    // File path
+    z.string(),
     z.object({
       beforeHash: z.string(),
       afterHash: z.string(),
     }),
   ),
   vulnerabilities: z.record(
-    z.string(), // Vulnerability ID like "GHSA-jrhj-2j3q-xf3v"
+    // Vulnerability ID like "GHSA-jrhj-2j3q-xf3v"
+    z.string(),
     z.object({
       cves: z.array(z.string()),
       summary: z.string(),

@@ -42,7 +42,8 @@ describe('dlx e2e tests', () => {
         // Use cowsay as a safe, pinned package for testing.
         const packageSpec = {
           name: 'cowsay',
-          version: '1.6.0', // Pinned version for consistency.
+          // Pinned version for consistency.
+          version: '1.6.0',
         }
 
         // Run cowsay with a test message.
@@ -62,7 +63,8 @@ describe('dlx e2e tests', () => {
           expect(spawnResult.stdout).toMatch(/\^__\^/)
         }
       },
-      30000, // 30 second timeout for download.
+      // 30 second timeout for download.
+      30000,
     )
 
     it.skipIf(!constants.ENV.RUN_E2E_TESTS || !hasAuth)(
@@ -215,7 +217,8 @@ describe('dlx e2e tests', () => {
         // The spawnPromise may throw or return with non-zero exit code
         try {
           const spawnResult = await result.spawnPromise
-          expect(spawnResult.code).toBeGreaterThan(0) // Should fail with non-zero exit code
+          // Should fail with non-zero exit code
+          expect(spawnResult.code).toBeGreaterThan(0)
         } catch (error) {
           // Command failed as expected - this is valid behavior
           expect(error).toBeDefined()
@@ -267,7 +270,8 @@ describe('dlx e2e tests', () => {
       async () => {
         const packageSpec = {
           name: 'cowsay',
-          version: '^1.6.0', // Range version should trigger silent.
+          // Range version should trigger silent.
+          version: '^1.6.0',
         }
 
         const result = await spawnDlx(packageSpec, ['Silent test'], {

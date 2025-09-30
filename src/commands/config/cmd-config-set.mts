@@ -66,7 +66,8 @@ ${getSupportedConfigEntries()
   .join('\n')}
 
     Examples
-      $ ${command} apiProxy https://example.com
+      // example.com
+      $ ${command} apiProxy https:
   `,
   }
 
@@ -95,7 +96,8 @@ ${getSupportedConfigEntries()
       fail: key ? 'invalid config key' : 'missing',
     },
     {
-      test: !!value, // This is a string, empty string is not ok
+      // This is a string, empty string is not ok
+      test: !!value,
       message:
         'Key value should be the remaining args (use `unset` to unset a value)',
       fail: 'missing',

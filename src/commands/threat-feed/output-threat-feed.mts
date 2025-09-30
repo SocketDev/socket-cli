@@ -50,8 +50,10 @@ export async function outputThreatFeed(
   screen.key(['escape', 'q', 'C-c'], () => process.exit(0))
 
   const TableWidget = /*@__PURE__*/ require('blessed-contrib/lib/widget/table.js')
-  const detailsBoxHeight = 20 // bottom N rows for details box
-  const tipsBoxHeight = 1 // 1 row for tips box
+  // bottom N rows for details box
+  const detailsBoxHeight = 20
+  // 1 row for tips box
+  const tipsBoxHeight = 1
 
   const table: any = new TableWidget({
     keys: 'true',
@@ -76,7 +78,8 @@ export async function outputThreatFeed(
 
   const BoxWidget = /*@__PURE__*/ require('blessed/lib/widgets/box.js')
   const tipsBox: Widgets.BoxElement = new BoxWidget({
-    bottom: detailsBoxHeight, // sits just above the details box
+    // sits just above the details box
+    bottom: detailsBoxHeight,
     height: tipsBoxHeight,
     width: '100%',
     style: {

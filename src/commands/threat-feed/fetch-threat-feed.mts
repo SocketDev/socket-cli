@@ -1,7 +1,8 @@
-import { queryApiSafeJson } from '../../utils/api.mts'
+import { setupSdk } from '../../utils/sdk.mts'
 
 import type { ThreadFeedResponse } from './types.mts'
 import type { CResult } from '../../types.mts'
+import type { SetupSdkOptions } from '../../utils/sdk.mts'
 
 export async function fetchThreatFeed({
   direction,
@@ -11,6 +12,7 @@ export async function fetchThreatFeed({
   page,
   perPage,
   pkg,
+  sdkOpts,
   version,
 }: {
   direction: string
@@ -21,7 +23,14 @@ export async function fetchThreatFeed({
   perPage: number
   pkg: string
   version: string
+  sdkOpts?: SetupSdkOptions | undefined
 }): Promise<CResult<ThreadFeedResponse>> {
+  const sdkResult = await setupSdk(sdkOpts)
+  if (!sdkResult.ok) {
+    return sdkResult
+  }
+
+  const sdk = sdkResult.data
   const queryParams = new URLSearchParams([
     ['direction', direction],
     ['ecosystem', ecosystem],
@@ -32,8 +41,13 @@ export async function fetchThreatFeed({
     version ? ['version', version] : ['', ''],
   ])
 
-  return await queryApiSafeJson(
+  const result = await sdk.queryApiJson<ThreadFeedResponse>(
     `orgs/${orgSlug}/threat-feed?${queryParams}`,
-    'the Threat Feed data',
+    {
+      throws: false,
+      description: 'the Threat Feed data',
+    },
   )
+
+  return result as CResult<ThreadFeedResponse>
 }

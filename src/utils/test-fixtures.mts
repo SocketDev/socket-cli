@@ -102,3 +102,30 @@ export async function withTempFixture(fixturePath: string): Promise<{
 
   return { tempDir, cleanup }
 }
+
+/**
+ * Helper to create a temporary fixture with git repository initialized.
+ * Used for tests that require a git repository to function properly.
+ *
+ * @param fixturePath - Path to the fixture directory.
+ * @returns Object with tempDir path and cleanup function.
+ */
+export async function withTempFixtureGit(fixturePath: string): Promise<{
+  tempDir: string
+  cleanup: () => Promise<void>
+}> {
+  const { cleanup, tempDir } = await withTempFixture(fixturePath)
+
+  // Initialize git repo in temp dir for CI tests.
+  await new Promise<void>((resolve, reject) => {
+    const { spawn } = require('node:child_process')
+    const git = spawn('git', ['init'], { cwd: tempDir, stdio: 'ignore' })
+    git.on('close', (code: number) =>
+      code === 0
+        ? resolve()
+        : reject(new Error(`git init failed with code ${code}`)),
+    )
+  })
+
+  return { tempDir, cleanup }
+}

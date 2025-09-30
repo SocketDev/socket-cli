@@ -58,7 +58,8 @@ export async function teardownTabCompletion(
     }
   } else {
     return {
-      ok: true, // Eh. I think this makes most sense.
+      // Eh. I think this makes most sense.
+      ok: true,
       data: { action: 'not found', left: [] },
       message: '~/.bashrc not found, skipping',
     }

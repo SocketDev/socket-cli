@@ -213,7 +213,8 @@ describe('pnpm-paths utilities', () => {
       const result1 = getPnpmBinPathDetails()
       const result2 = getPnpmBinPathDetails()
 
-      expect(result1).toBe(result2) // Same reference.
+      // Same reference.
+      expect(result1).toBe(result2)
       expect(findBinPathDetailsSync).toHaveBeenCalledTimes(1)
     })
   })

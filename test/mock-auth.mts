@@ -367,7 +367,8 @@ export async function mockRefreshToken(
     ok: true,
     data: {
       accessToken: `refreshed-token-${Date.now()}`,
-      expiresIn: 3600, // 1 hour.
+      // 1 hour.
+      expiresIn: 3600,
     },
   }
 }

@@ -23,8 +23,6 @@
  * - Update notification customization
  */
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 /**
  * Cached SEA detection result.
  */
@@ -38,19 +36,16 @@ function isSeaBinary(): boolean {
   if (_isSea === undefined) {
     try {
       // Use Node.js 24+ native SEA detection API.
+      // eslint-disable-next-line n/no-unsupported-features/node-builtins
       const seaModule = require('node:sea')
       _isSea = seaModule.isSea()
-      // Suppress debug output during tests to avoid contaminating snapshots.
-      if (!process.env.VITEST && !process.env.NODE_ENV?.includes('test')) {
-        logger.debug(`SEA detection result: ${_isSea}`)
-      }
+      // Debug output disabled to prevent contamination of test snapshots.
+      // logger.debug(`SEA detection result: ${_isSea}`)
     } catch (error) {
-      // Suppress debug output during tests to avoid contaminating snapshots.
-      if (!process.env.VITEST && !process.env.NODE_ENV?.includes('test')) {
-        logger.debug(
-          `SEA detection failed (likely Node.js < 24): ${error instanceof Error ? error.message : String(error)}`,
-        )
-      }
+      // Debug output disabled to prevent contamination of test snapshots.
+      // logger.debug(
+      //   `SEA detection failed (likely Node.js < 24): ${error instanceof Error ? error.message : String(error)}`,
+      // )
       _isSea = false
     }
   }

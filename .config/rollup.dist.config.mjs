@@ -1,8 +1,8 @@
-import assert from 'node:assert'
-import { existsSync, promises as fs } from 'node:fs'
+// import assert from 'node:assert'
+import { promises as fs } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import util from 'node:util'
+// import util from 'node:util'
 
 import { babel as babelPlugin } from '@rollup/plugin-babel'
 import commonjsPlugin from '@rollup/plugin-commonjs'
@@ -12,15 +12,15 @@ import fastGlob from 'fast-glob'
 import trash from 'trash'
 
 import { isDirEmptySync } from '@socketsecurity/registry/lib/fs'
-import { hasKeys } from '@socketsecurity/registry/lib/objects'
-import {
-  fetchPackageManifest,
-  readPackageJson,
-} from '@socketsecurity/registry/lib/packages'
+// import { hasKeys } from '@socketsecurity/registry/lib/objects'
+// import {
+//   fetchPackageManifest,
+//   readPackageJson,
+// } from '@socketsecurity/registry/lib/packages'
 import { normalizePath } from '@socketsecurity/registry/lib/path'
 import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
-import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
+// import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
+// import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import baseConfig, { EXTERNAL_PACKAGES } from './rollup.base.config.mjs'
 import constants from '../scripts/constants.mjs'
@@ -45,30 +45,30 @@ const {
   SHADOW_PNPM_BIN,
   SHADOW_YARN_BIN,
   SLASH_NODE_MODULES_SLASH,
-  SOCKET_CLI_BIN_NAME,
-  SOCKET_CLI_BIN_NAME_ALIAS,
-  SOCKET_CLI_LEGACY_PACKAGE_NAME,
-  SOCKET_CLI_NPM_BIN_NAME,
-  SOCKET_CLI_NPX_BIN_NAME,
-  SOCKET_CLI_PACKAGE_NAME,
-  SOCKET_CLI_PNPM_BIN_NAME,
-  SOCKET_CLI_SENTRY_BIN_NAME,
-  SOCKET_CLI_SENTRY_BIN_NAME_ALIAS,
-  SOCKET_CLI_SENTRY_NPM_BIN_NAME,
-  SOCKET_CLI_SENTRY_NPX_BIN_NAME,
-  SOCKET_CLI_SENTRY_PACKAGE_NAME,
-  SOCKET_CLI_SENTRY_PNPM_BIN_NAME,
-  SOCKET_CLI_SENTRY_YARN_BIN_NAME,
-  SOCKET_CLI_YARN_BIN_NAME,
+  // SOCKET_CLI_BIN_NAME,
+  // SOCKET_CLI_BIN_NAME_ALIAS,
+  // SOCKET_CLI_LEGACY_PACKAGE_NAME,
+  // SOCKET_CLI_NPM_BIN_NAME,
+  // SOCKET_CLI_NPX_BIN_NAME,
+  // SOCKET_CLI_PACKAGE_NAME,
+  // SOCKET_CLI_PNPM_BIN_NAME,
+  // SOCKET_CLI_SENTRY_BIN_NAME,
+  // SOCKET_CLI_SENTRY_BIN_NAME_ALIAS,
+  // SOCKET_CLI_SENTRY_NPM_BIN_NAME,
+  // SOCKET_CLI_SENTRY_NPX_BIN_NAME,
+  // SOCKET_CLI_SENTRY_PACKAGE_NAME,
+  // SOCKET_CLI_SENTRY_PNPM_BIN_NAME,
+  // SOCKET_CLI_SENTRY_YARN_BIN_NAME,
+  // SOCKET_CLI_YARN_BIN_NAME,
 } = constants
 
 const BLESSED = 'blessed'
 const BLESSED_CONTRIB = 'blessed-contrib'
 const FLAGS = 'flags'
 const LICENSE_MD = `LICENSE.md`
-const SENTRY_NODE = '@sentry/node'
-const SOCKET_DESCRIPTION = 'CLI for Socket.dev'
-const SOCKET_DESCRIPTION_WITH_SENTRY = `${SOCKET_DESCRIPTION}, includes Sentry error handling, otherwise identical to the regular \`${SOCKET_CLI_BIN_NAME}\` package`
+// const SENTRY_NODE = '@sentry/node'
+// const SOCKET_DESCRIPTION = 'CLI for Socket.dev'
+// const SOCKET_DESCRIPTION_WITH_SENTRY = `${SOCKET_DESCRIPTION}, includes Sentry error handling, otherwise identical to the regular \`${SOCKET_CLI_BIN_NAME}\` package`
 const SOCKET_SECURITY_REGISTRY = '@socketsecurity/registry'
 const UTILS = 'utils'
 const VENDOR = 'vendor'
@@ -193,12 +193,12 @@ async function copyPackage(pkgName, options) {
 }
 
 let _sentryManifest
-async function getSentryManifest() {
-  if (_sentryManifest === undefined) {
-    _sentryManifest = await fetchPackageManifest(`${SENTRY_NODE}@latest`)
-  }
-  return _sentryManifest
-}
+// async function getSentryManifest() {
+//   if (_sentryManifest === undefined) {
+//     _sentryManifest = await fetchPackageManifest(`${SENTRY_NODE}@latest`)
+//   }
+//   return _sentryManifest
+// }
 
 async function copyPublishFiles() {
   // Determine which package.json to use based on build variant.
@@ -286,53 +286,53 @@ async function removeFiles(thePath, options) {
   )
 }
 
-function resetBin(bin) {
-  const tmpBin = {
-    [SOCKET_CLI_BIN_NAME]:
-      bin?.[SOCKET_CLI_BIN_NAME] ?? bin?.[SOCKET_CLI_SENTRY_BIN_NAME],
-    [SOCKET_CLI_NPM_BIN_NAME]:
-      bin?.[SOCKET_CLI_NPM_BIN_NAME] ?? bin?.[SOCKET_CLI_SENTRY_NPM_BIN_NAME],
-    [SOCKET_CLI_NPX_BIN_NAME]:
-      bin?.[SOCKET_CLI_NPX_BIN_NAME] ?? bin?.[SOCKET_CLI_SENTRY_NPX_BIN_NAME],
-    [SOCKET_CLI_PNPM_BIN_NAME]:
-      bin?.[SOCKET_CLI_PNPM_BIN_NAME] ?? bin?.[SOCKET_CLI_SENTRY_PNPM_BIN_NAME],
-    [SOCKET_CLI_YARN_BIN_NAME]:
-      bin?.[SOCKET_CLI_YARN_BIN_NAME] ?? bin?.[SOCKET_CLI_SENTRY_YARN_BIN_NAME],
-  }
-  const newBin = {
-    ...(tmpBin[SOCKET_CLI_BIN_NAME]
-      ? { [SOCKET_CLI_BIN_NAME]: tmpBin.socket }
-      : {}),
-    ...(tmpBin[SOCKET_CLI_NPM_BIN_NAME]
-      ? { [SOCKET_CLI_NPM_BIN_NAME]: tmpBin[SOCKET_CLI_NPM_BIN_NAME] }
-      : {}),
-    ...(tmpBin[SOCKET_CLI_NPX_BIN_NAME]
-      ? { [SOCKET_CLI_NPX_BIN_NAME]: tmpBin[SOCKET_CLI_NPX_BIN_NAME] }
-      : {}),
-    ...(tmpBin[SOCKET_CLI_PNPM_BIN_NAME]
-      ? { [SOCKET_CLI_PNPM_BIN_NAME]: tmpBin[SOCKET_CLI_PNPM_BIN_NAME] }
-      : {}),
-    ...(tmpBin[SOCKET_CLI_YARN_BIN_NAME]
-      ? { [SOCKET_CLI_YARN_BIN_NAME]: tmpBin[SOCKET_CLI_YARN_BIN_NAME] }
-      : {}),
-  }
-  assert(
-    util.isDeepStrictEqual(Object.keys(newBin).sort(naturalCompare), [
-      SOCKET_CLI_BIN_NAME,
-      SOCKET_CLI_NPM_BIN_NAME,
-      SOCKET_CLI_NPX_BIN_NAME,
-      SOCKET_CLI_PNPM_BIN_NAME,
-      SOCKET_CLI_YARN_BIN_NAME,
-    ]),
-    "Update the rollup Legacy and Sentry build's .bin to match the default build.",
-  )
-  return newBin
-}
+// function resetBin(bin) {
+//   const tmpBin = {
+//     [SOCKET_CLI_BIN_NAME]:
+//       bin?.[SOCKET_CLI_BIN_NAME] ?? bin?.[SOCKET_CLI_SENTRY_BIN_NAME],
+//     [SOCKET_CLI_NPM_BIN_NAME]:
+//       bin?.[SOCKET_CLI_NPM_BIN_NAME] ?? bin?.[SOCKET_CLI_SENTRY_NPM_BIN_NAME],
+//     [SOCKET_CLI_NPX_BIN_NAME]:
+//       bin?.[SOCKET_CLI_NPX_BIN_NAME] ?? bin?.[SOCKET_CLI_SENTRY_NPX_BIN_NAME],
+//     [SOCKET_CLI_PNPM_BIN_NAME]:
+//       bin?.[SOCKET_CLI_PNPM_BIN_NAME] ?? bin?.[SOCKET_CLI_SENTRY_PNPM_BIN_NAME],
+//     [SOCKET_CLI_YARN_BIN_NAME]:
+//       bin?.[SOCKET_CLI_YARN_BIN_NAME] ?? bin?.[SOCKET_CLI_SENTRY_YARN_BIN_NAME],
+//   }
+//   const newBin = {
+//     ...(tmpBin[SOCKET_CLI_BIN_NAME]
+//       ? { [SOCKET_CLI_BIN_NAME]: tmpBin.socket }
+//       : {}),
+//     ...(tmpBin[SOCKET_CLI_NPM_BIN_NAME]
+//       ? { [SOCKET_CLI_NPM_BIN_NAME]: tmpBin[SOCKET_CLI_NPM_BIN_NAME] }
+//       : {}),
+//     ...(tmpBin[SOCKET_CLI_NPX_BIN_NAME]
+//       ? { [SOCKET_CLI_NPX_BIN_NAME]: tmpBin[SOCKET_CLI_NPX_BIN_NAME] }
+//       : {}),
+//     ...(tmpBin[SOCKET_CLI_PNPM_BIN_NAME]
+//       ? { [SOCKET_CLI_PNPM_BIN_NAME]: tmpBin[SOCKET_CLI_PNPM_BIN_NAME] }
+//       : {}),
+//     ...(tmpBin[SOCKET_CLI_YARN_BIN_NAME]
+//       ? { [SOCKET_CLI_YARN_BIN_NAME]: tmpBin[SOCKET_CLI_YARN_BIN_NAME] }
+//       : {}),
+//   }
+//   assert(
+//     util.isDeepStrictEqual(Object.keys(newBin).sort(naturalCompare), [
+//       SOCKET_CLI_BIN_NAME,
+//       SOCKET_CLI_NPM_BIN_NAME,
+//       SOCKET_CLI_NPX_BIN_NAME,
+//       SOCKET_CLI_PNPM_BIN_NAME,
+//       SOCKET_CLI_YARN_BIN_NAME,
+//     ]),
+//     "Update the rollup Legacy and Sentry build's .bin to match the default build.",
+//   )
+//   return newBin
+// }
 
-function resetDependencies(deps) {
-  const { [SENTRY_NODE]: _ignored, ...newDeps } = { ...deps }
-  return newDeps
-}
+// function resetDependencies(deps) {
+//   const { [SENTRY_NODE]: _ignored, ...newDeps } = { ...deps }
+//   return newDeps
+// }
 
 export default async () => {
   const { configPath, distPath, rootPath, srcPath } = constants
@@ -416,8 +416,7 @@ export default async () => {
                 return null
             }
           },
-          sourcemap: true,
-          sourcemapDebugIds: true,
+          sourcemap: false,
         },
       ],
       plugins: [
@@ -451,8 +450,6 @@ export default async () => {
               copyInitGradle(),
               copyBashCompletion(),
               copyPublishFiles(),
-              // Remove dist/vendor.js.map file.
-              trash([path.join(distPath, `${VENDOR}.js.map`)]),
             ])
             // Copy external packages AFTER other operations to avoid conflicts.
             await copyExternalPackages()

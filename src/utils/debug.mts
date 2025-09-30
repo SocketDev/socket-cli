@@ -17,7 +17,34 @@
  * to reduce noise. Enable them explicitly when needed for deep debugging.
  */
 
-import { debugDir, debugFn, isDebug } from '@socketsecurity/registry/lib/debug'
+import {
+  debugDir as debugDirOriginal,
+  debugFn as debugFnOriginal,
+  debugLog,
+  isDebug,
+} from '@socketsecurity/registry/lib/debug'
+
+/**
+ * Wrapper for debugFn that maintains backward compatibility.
+ * The new API returns a function, so we call it immediately with the message.
+ */
+function debugFn(namespace: string, ...args: any[]): void {
+  const debug = debugFnOriginal(namespace)
+  if (debug.enabled) {
+    debug(...args)
+  }
+}
+
+/**
+ * Wrapper for debugDir that maintains backward compatibility.
+ * The new API doesn't take a namespace, so we log it separately if needed.
+ */
+function debugDir(namespace: string, obj: any, options?: any): void {
+  if (isDebug(namespace)) {
+    debugLog(`[${namespace}]`)
+    debugDirOriginal(obj, options)
+  }
+}
 
 /**
  * Debug an API response.

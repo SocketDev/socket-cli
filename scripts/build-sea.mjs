@@ -30,7 +30,7 @@ import url from 'node:url'
 
 import trash from 'trash'
 
-import WIN32 from '@socketsecurity/registry/lib/constants/win32'
+import WIN32 from '@socketsecurity/registry/lib/constants/WIN32'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { normalizePath } from '@socketsecurity/registry/lib/path'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
@@ -65,7 +65,8 @@ async function getLatestNode24Version() {
       )[0]
 
     if (latestV24) {
-      return latestV24.version.slice(1) // Remove 'v' prefix.
+      // Remove 'v' prefix.
+      return latestV24.version.slice(1)
     }
 
     // Fallback to hardcoded version if no v24 found.
@@ -284,9 +285,12 @@ async function generateSeaConfig(entryPoint, outputPath) {
     main: entryPoint,
     output: blobPath,
     disableExperimentalSEAWarning: true,
-    useSnapshot: false, // Disable for compatibility.
-    useCodeCache: true, // Enable code cache for optimization.
-    assets: {}, // No assets to minimize size.
+    // Disable for compatibility.
+    useSnapshot: false,
+    // Enable code cache for optimization.
+    useCodeCache: true,
+    // No assets to minimize size.
+    assets: {},
   }
 
   await fs.writeFile(configPath, JSON.stringify(config, null, 2))
@@ -332,9 +336,12 @@ async function injectSeaBlob(nodeBinary, blobPath, outputPath) {
 
   // Check if postject is available.
   try {
-    await spawn('pnpm', ['exec', 'postject', '--version'], {
-      stdio: 'ignore',
+    const result = await spawn('pnpm', ['exec', 'which', 'postject'], {
+      stdio: 'pipe',
     })
+    if (result.code !== 0) {
+      throw new Error('postject not found')
+    }
   } catch {
     throw new Error(
       'postject is required to inject the SEA blob into the Node.js binary.\n' +
@@ -449,7 +456,7 @@ async function injectSeaBlob(nodeBinary, blobPath, outputPath) {
  * Build a single target.
  */
 async function buildTarget(target, options) {
-  const { outputDir = normalizePath(path.join(__dirname, '../../dist/sea')) } =
+  const { outputDir = normalizePath(path.join(__dirname, '../dist/sea')) } =
     options
 
   console.log(
@@ -458,7 +465,9 @@ async function buildTarget(target, options) {
   console.log('(Actual CLI will be downloaded from npm on first use)')
 
   // Use the thin bootstrap for minimal size.
-  const tsEntryPoint = normalizePath(path.join(__dirname, 'bootstrap.mts'))
+  const tsEntryPoint = normalizePath(
+    path.join(__dirname, '..', 'src', 'sea', 'bootstrap.mts'),
+  )
 
   // Ensure output directory exists.
   await fs.mkdir(outputDir, { recursive: true })

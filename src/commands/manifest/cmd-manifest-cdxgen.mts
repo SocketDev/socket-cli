@@ -162,7 +162,8 @@ const yargsConfig = {
     { key: 'author', type: 'string' },
     { key: 'exclude', type: 'string' },
     { key: 'exclude-type', type: 'string' },
-    { key: 'feature-flags', type: 'string' }, // hidden
+    // Hidden.
+    { key: 'feature-flags', type: 'string' },
     { key: 'filter', type: 'string' },
     { key: 'only', type: 'string' },
     { key: 'standard', type: 'string' },
@@ -172,7 +173,8 @@ const yargsConfig = {
   boolean: [
     'auto-compositions',
     'babel',
-    'banner', // hidden
+    // Hidden.
+    'banner',
     'deep',
     'evidence',
     'export-proto',
@@ -194,12 +196,17 @@ const yargsConfig = {
   ],
   string: [
     'api-key',
-    'data-flow-slices-file', // hidden
-    'deps-slices-file', // hidden
-    'evinse-output', // hidden
+    // Hidden.
+    'data-flow-slices-file',
+    // Hidden.
+    'deps-slices-file',
+    // Hidden.
+    'evinse-output',
     'lifecycle',
-    'min-confidence', // number
-    'openapi-spec-file', // hidden
+    // Number.
+    'min-confidence',
+    // Hidden.
+    'openapi-spec-file',
     'output',
     'parent-project-id',
     'profile',
@@ -208,13 +215,17 @@ const yargsConfig = {
     'project-version',
     'project-id',
     'proto-bin-file',
-    'reachables-slices-file', // hidden
-    'semantics-slices-file', // hidden
+    // Hidden.
+    'reachables-slices-file',
+    // Hidden.
+    'semantics-slices-file',
     'server-host',
     'server-port',
     'server-url',
-    'spec-version', // number
-    'usages-slices-file', // hidden
+    // Number.
+    'spec-version',
+    // Hidden.
+    'usages-slices-file',
   ],
 }
 

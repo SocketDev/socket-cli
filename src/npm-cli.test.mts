@@ -1,17 +1,24 @@
+import { Module } from 'node:module'
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock process methods.
-const mockProcessExit = vi
-  .spyOn(process, 'exit')
-  .mockImplementation(() => undefined as never)
+const mockProcessExit = vi.spyOn(process, 'exit').mockImplementation((() => {
+  // Mock implementation that doesn't actually exit.
+}) as any)
 const mockProcessKill = vi.spyOn(process, 'kill').mockImplementation(() => true)
 
 // Mock shadowNpmBin.
 const mockShadowNpmBin = vi.fn()
 
-vi.mock('./shadow/npm/bin.mts', () => ({
-  default: mockShadowNpmBin,
-}))
+// Mock Module._load to intercept CommonJS require calls
+const originalLoad = Module._load
+Module._load = vi.fn((request: string, parent: any, isMain?: boolean) => {
+  if (request === '../dist/shadow-npm-bin.js') {
+    return mockShadowNpmBin
+  }
+  return originalLoad.call(Module, request, parent, isMain)
+})
 
 describe('npm-cli', () => {
   const mockChildProcess = {

@@ -42,7 +42,8 @@ export async function fetchListAllRepos(
       sockSdk.getOrgRepoList(orgSlug, {
         sort,
         direction,
-        per_page: String(100), // max
+        // max
+        per_page: String(100),
         page: String(nextPage),
       }),
       { description: 'list of repositories' },

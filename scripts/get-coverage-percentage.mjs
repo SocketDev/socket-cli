@@ -15,9 +15,6 @@ const indent = '  '
 /**
  * Logs coverage percentage data including code and type coverage metrics.
  * Supports multiple output formats: default (formatted), JSON, and simple.
- * @param {Object} argv - Command line arguments.
- * @param {boolean} argv.json - Output as JSON.
- * @param {boolean} argv.simple - Output only the statement coverage percentage.
  */
 async function logCoveragePercentage(argv) {
   const { spinner } = constants

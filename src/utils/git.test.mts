@@ -236,9 +236,11 @@ describe('git utilities', () => {
       const { spawn } = vi.mocked(
         await import('@socketsecurity/registry/lib/spawn'),
       )
+      // gitLocalBranchExists fails.
       spawn
-        .mockRejectedValueOnce(new Error('Branch does not exist')) // gitLocalBranchExists fails.
-        .mockResolvedValueOnce({ status: 0, stdout: '', stderr: '' } as any) // git branch succeeds.
+        .mockRejectedValueOnce(new Error('Branch does not exist'))
+        // git branch succeeds.
+        .mockResolvedValueOnce({ status: 0, stdout: '', stderr: '' } as any)
 
       const result = await gitCreateBranch('new-feature')
       expect(result).toBe(true)

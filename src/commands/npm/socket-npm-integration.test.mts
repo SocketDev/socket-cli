@@ -46,7 +46,8 @@ if (!npmDirs.length) {
       it(
         'should intercept npm commands and show Socket output',
         {
-          timeout: 45_000, // Increased timeout for reliability.
+          // Increased timeout for reliability.
+          timeout: 45_000,
         },
         async () => {
           // Ensure npm is installed in the fixture.
@@ -88,7 +89,8 @@ if (!npmDirs.length) {
       it(
         'should detect typosquat packages',
         {
-          timeout: 60_000, // Longer timeout for network operations.
+          // Longer timeout for network operations.
+          timeout: 60_000,
         },
         async () => {
           const entryPath = path.join(constants.binPath, 'cli.js')

@@ -84,10 +84,8 @@ export interface SocketJson {
 
 export function readOrDefaultSocketJson(cwd: string): SocketJson {
   const jsonCResult = readSocketJsonSync(cwd, true)
-  return jsonCResult.ok
-    ? jsonCResult.data
-    : // This should be unreachable but it makes TS happy.
-      getDefaultSocketJson()
+  // This should be unreachable but it makes TS happy.
+  return jsonCResult.ok ? jsonCResult.data : getDefaultSocketJson()
 }
 
 export async function findSocketJsonUp(

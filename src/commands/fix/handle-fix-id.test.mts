@@ -48,8 +48,10 @@ describe('Socket fix --id functionality', () => {
         'GHSA-123',
         'GHSA-1234-5678-9ab',
         'GHSA-1234-5678-9abcd',
-        'GHSA-ABCD-EFGH-IJKL', // uppercase not allowed
-        'ghsa-1234-5678-9abc', // lowercase prefix not allowed
+        // Uppercase not allowed.
+        'GHSA-ABCD-EFGH-IJKL',
+        // Lowercase prefix not allowed.
+        'ghsa-1234-5678-9abc',
       ]
 
       const result = await convertIdsToGhsas(invalidGhsas)
@@ -199,10 +201,14 @@ describe('Socket fix --id functionality', () => {
 
     it('should handle mixed valid and invalid IDs', async () => {
       const mixedIds = [
-        'GHSA-1234-5678-9abc', // valid
-        'invalid-id', // invalid
-        'CVE-123', // invalid CVE format
-        'pkg:npm/lodash@4.17.20', // valid
+        // Valid.
+        'GHSA-1234-5678-9abc',
+        // Invalid.
+        'invalid-id',
+        // Invalid CVE format.
+        'CVE-123',
+        // Valid.
+        'pkg:npm/lodash@4.17.20',
       ]
 
       // Mock GitHub API call for the valid PURL.
@@ -227,8 +233,10 @@ describe('Socket fix --id functionality', () => {
       const invalidIds = [
         'random-string',
         'VULN-2021-1234',
-        'npm/lodash', // missing version
-        'pkg:maven/com.fasterxml.jackson.core/jackson-databind', // missing version
+        // Missing version.
+        'npm/lodash',
+        // Missing version.
+        'pkg:maven/com.fasterxml.jackson.core/jackson-databind',
         '',
         '   ',
       ]

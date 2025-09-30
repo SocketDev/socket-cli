@@ -105,7 +105,8 @@ export function generateReport(
 
       alerts?.forEach(
         (alert: NonNullable<SocketArtifact['alerts']>[number]) => {
-          const alertName = alert.type as keyof typeof securityRules // => policy[type]
+          // => policy[type]
+          const alertName = alert.type as keyof typeof securityRules
           const action = securityRules[alertName]?.action || ''
           switch (action) {
             case constants.REPORT_LEVEL_ERROR: {

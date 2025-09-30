@@ -330,7 +330,8 @@ describe('package score output', async () => {
           "
         `)
 
-        expect(txt.split('Supply Chain Risk:').length).toBe(2) // Should find it once so when you split that you get 2 parts
+        // Should find it once so when you split that you get 2 parts
+        expect(txt.split('Supply Chain Risk:').length).toBe(2)
       })
 
       it('should dedupe the python dupes and create a markdown report with three score blocks', () => {
@@ -356,7 +357,8 @@ describe('package score output', async () => {
           - Alerts (0/2/1):     [middle] hasNativeCode, [middle] usesEval, and [low] filesystemAccess"
         `)
 
-        expect(txt.split('Supply Chain Risk:').length).toBe(2) // Should find it once so when you split that you get 2 parts
+        // Should find it once so when you split that you get 2 parts
+        expect(txt.split('Supply Chain Risk:').length).toBe(2)
         expect(txt).toContain('pkg:pypi/charset-normalizer@3.4.0')
       })
     })

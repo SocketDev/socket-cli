@@ -1,15 +1,25 @@
 import path from 'node:path'
 
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 
 import constants, {
   FLAG_CONFIG,
   FLAG_DRY_RUN,
   FLAG_HELP,
 } from '../../../src/constants.mts'
+import { withTempFixture } from '../../../src/utils/test-fixtures.mts'
 import { cmdit, spawnSocketCli, testPath } from '../../../test/utils.mts'
 
 const fixtureBaseDir = path.join(testPath, 'fixtures/commands/scan/reach')
+
+// Track cleanup functions for temp directories.
+const cleanupFunctions: Array<() => Promise<void>> = []
+
+afterEach(async () => {
+  // Clean up all temp directories created during tests.
+  await Promise.all(cleanupFunctions.map(cleanup => cleanup().catch(() => {})))
+  cleanupFunctions.length = 0
+})
 
 describe('socket scan reach', async () => {
   const { binCliPath } = constants
@@ -509,7 +519,7 @@ describe('socket scan reach', async () => {
       [
         'scan',
         'reach',
-        'test/fixtures/commands/scan/reach',
+        'TEMP_DIR_PLACEHOLDER',
         '--org',
         'fakeOrg',
         FLAG_CONFIG,
@@ -517,7 +527,18 @@ describe('socket scan reach', async () => {
       ],
       'should handle reach analysis on test fixture',
       async cmd => {
-        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+        const { cleanup, tempDir } = await withTempFixture(fixtureBaseDir)
+        cleanupFunctions.push(cleanup)
+
+        // Replace placeholder with actual temp directory.
+        const updatedCmd = cmd.map(arg =>
+          arg === 'TEMP_DIR_PLACEHOLDER' ? tempDir : arg,
+        )
+
+        const { code, stderr, stdout } = await spawnSocketCli(
+          binCliPath,
+          updatedCmd,
+        )
         // Should fail due to fake token/org, but validates command parsing.
         expect(code).toBeGreaterThan(0)
         const output = stdout + stderr
@@ -529,7 +550,7 @@ describe('socket scan reach', async () => {
       [
         'scan',
         'reach',
-        'test/fixtures/commands/scan/reach',
+        'TEMP_DIR_PLACEHOLDER',
         '--reach-ecosystems',
         'npm',
         '--org',
@@ -539,7 +560,17 @@ describe('socket scan reach', async () => {
       ],
       'should handle npm ecosystem specification',
       async cmd => {
-        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+        const { cleanup, tempDir } = await withTempFixture(fixtureBaseDir)
+        cleanupFunctions.push(cleanup)
+
+        const updatedCmd = cmd.map(arg =>
+          arg === 'TEMP_DIR_PLACEHOLDER' ? tempDir : arg,
+        )
+
+        const { code, stderr, stdout } = await spawnSocketCli(
+          binCliPath,
+          updatedCmd,
+        )
         expect(code).toBeGreaterThan(0)
         const output = stdout + stderr
         expect(output.length).toBeGreaterThan(0)
@@ -550,7 +581,7 @@ describe('socket scan reach', async () => {
       [
         'scan',
         'reach',
-        'test/fixtures/commands/scan/reach',
+        'TEMP_DIR_PLACEHOLDER',
         '--reach-analysis-memory-limit',
         '2048',
         '--org',
@@ -560,7 +591,17 @@ describe('socket scan reach', async () => {
       ],
       'should handle custom memory limit',
       async cmd => {
-        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+        const { cleanup, tempDir } = await withTempFixture(fixtureBaseDir)
+        cleanupFunctions.push(cleanup)
+
+        const updatedCmd = cmd.map(arg =>
+          arg === 'TEMP_DIR_PLACEHOLDER' ? tempDir : arg,
+        )
+
+        const { code, stderr, stdout } = await spawnSocketCli(
+          binCliPath,
+          updatedCmd,
+        )
         expect(code).toBeGreaterThan(0)
         const output = stdout + stderr
         expect(output.length).toBeGreaterThan(0)
@@ -571,7 +612,7 @@ describe('socket scan reach', async () => {
       [
         'scan',
         'reach',
-        'test/fixtures/commands/scan/reach',
+        'TEMP_DIR_PLACEHOLDER',
         '--reach-analysis-timeout',
         '1800',
         '--org',
@@ -581,7 +622,17 @@ describe('socket scan reach', async () => {
       ],
       'should handle custom timeout',
       async cmd => {
-        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+        const { cleanup, tempDir } = await withTempFixture(fixtureBaseDir)
+        cleanupFunctions.push(cleanup)
+
+        const updatedCmd = cmd.map(arg =>
+          arg === 'TEMP_DIR_PLACEHOLDER' ? tempDir : arg,
+        )
+
+        const { code, stderr, stdout } = await spawnSocketCli(
+          binCliPath,
+          updatedCmd,
+        )
         expect(code).toBeGreaterThan(0)
         const output = stdout + stderr
         expect(output.length).toBeGreaterThan(0)
@@ -592,7 +643,7 @@ describe('socket scan reach', async () => {
       [
         'scan',
         'reach',
-        'test/fixtures/commands/scan/reach',
+        'TEMP_DIR_PLACEHOLDER',
         '--reach-exclude-paths',
         'node_modules,dist',
         '--org',
@@ -602,7 +653,17 @@ describe('socket scan reach', async () => {
       ],
       'should handle path exclusions',
       async cmd => {
-        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+        const { cleanup, tempDir } = await withTempFixture(fixtureBaseDir)
+        cleanupFunctions.push(cleanup)
+
+        const updatedCmd = cmd.map(arg =>
+          arg === 'TEMP_DIR_PLACEHOLDER' ? tempDir : arg,
+        )
+
+        const { code, stderr, stdout } = await spawnSocketCli(
+          binCliPath,
+          updatedCmd,
+        )
         expect(code).toBeGreaterThan(0)
         const output = stdout + stderr
         expect(output.length).toBeGreaterThan(0)
@@ -613,7 +674,7 @@ describe('socket scan reach', async () => {
       [
         'scan',
         'reach',
-        'test/fixtures/commands/scan/reach',
+        'TEMP_DIR_PLACEHOLDER',
         '--reach-disable-analytics',
         '--org',
         'fakeOrg',
@@ -622,7 +683,17 @@ describe('socket scan reach', async () => {
       ],
       'should handle analytics disabled',
       async cmd => {
-        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+        const { cleanup, tempDir } = await withTempFixture(fixtureBaseDir)
+        cleanupFunctions.push(cleanup)
+
+        const updatedCmd = cmd.map(arg =>
+          arg === 'TEMP_DIR_PLACEHOLDER' ? tempDir : arg,
+        )
+
+        const { code, stderr, stdout } = await spawnSocketCli(
+          binCliPath,
+          updatedCmd,
+        )
         expect(code).toBeGreaterThan(0)
         const output = stdout + stderr
         expect(output.length).toBeGreaterThan(0)
@@ -633,7 +704,7 @@ describe('socket scan reach', async () => {
       [
         'scan',
         'reach',
-        'test/fixtures/commands/scan/reach',
+        'TEMP_DIR_PLACEHOLDER',
         '--reach-skip-cache',
         '--org',
         'fakeOrg',
@@ -642,7 +713,17 @@ describe('socket scan reach', async () => {
       ],
       'should handle cache skipping',
       async cmd => {
-        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+        const { cleanup, tempDir } = await withTempFixture(fixtureBaseDir)
+        cleanupFunctions.push(cleanup)
+
+        const updatedCmd = cmd.map(arg =>
+          arg === 'TEMP_DIR_PLACEHOLDER' ? tempDir : arg,
+        )
+
+        const { code, stderr, stdout } = await spawnSocketCli(
+          binCliPath,
+          updatedCmd,
+        )
         expect(code).toBeGreaterThan(0)
         const output = stdout + stderr
         expect(output.length).toBeGreaterThan(0)
@@ -653,7 +734,7 @@ describe('socket scan reach', async () => {
       [
         'scan',
         'reach',
-        'test/fixtures/commands/scan/reach',
+        'TEMP_DIR_PLACEHOLDER',
         '--json',
         '--org',
         'fakeOrg',
@@ -662,7 +743,17 @@ describe('socket scan reach', async () => {
       ],
       'should handle JSON output format',
       async cmd => {
-        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+        const { cleanup, tempDir } = await withTempFixture(fixtureBaseDir)
+        cleanupFunctions.push(cleanup)
+
+        const updatedCmd = cmd.map(arg =>
+          arg === 'TEMP_DIR_PLACEHOLDER' ? tempDir : arg,
+        )
+
+        const { code, stderr, stdout } = await spawnSocketCli(
+          binCliPath,
+          updatedCmd,
+        )
         expect(code).toBeGreaterThan(0)
         // JSON output typically suppresses banner in stderr.
         const output = stdout + stderr
@@ -674,7 +765,7 @@ describe('socket scan reach', async () => {
       [
         'scan',
         'reach',
-        'test/fixtures/commands/scan/reach',
+        'TEMP_DIR_PLACEHOLDER',
         '--markdown',
         '--org',
         'fakeOrg',
@@ -683,7 +774,17 @@ describe('socket scan reach', async () => {
       ],
       'should handle markdown output format',
       async cmd => {
-        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+        const { cleanup, tempDir } = await withTempFixture(fixtureBaseDir)
+        cleanupFunctions.push(cleanup)
+
+        const updatedCmd = cmd.map(arg =>
+          arg === 'TEMP_DIR_PLACEHOLDER' ? tempDir : arg,
+        )
+
+        const { code, stderr, stdout } = await spawnSocketCli(
+          binCliPath,
+          updatedCmd,
+        )
         expect(code).toBeGreaterThan(0)
         // Markdown output typically suppresses banner in stderr.
         const output = stdout + stderr
@@ -695,7 +796,7 @@ describe('socket scan reach', async () => {
       [
         'scan',
         'reach',
-        'test/fixtures/commands/scan/reach',
+        'TEMP_DIR_PLACEHOLDER',
         '--reach-ecosystems',
         'npm',
         '--reach-analysis-memory-limit',
@@ -710,7 +811,17 @@ describe('socket scan reach', async () => {
       ],
       'should handle comprehensive flag combination',
       async cmd => {
-        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+        const { cleanup, tempDir } = await withTempFixture(fixtureBaseDir)
+        cleanupFunctions.push(cleanup)
+
+        const updatedCmd = cmd.map(arg =>
+          arg === 'TEMP_DIR_PLACEHOLDER' ? tempDir : arg,
+        )
+
+        const { code, stderr, stdout } = await spawnSocketCli(
+          binCliPath,
+          updatedCmd,
+        )
         expect(code).toBeGreaterThan(0)
         const output = stdout + stderr
         expect(output.length).toBeGreaterThan(0)
@@ -858,7 +969,7 @@ describe('socket scan reach', async () => {
       [
         'scan',
         'reach',
-        'test/fixtures/commands/scan/reach',
+        'TEMP_DIR_PLACEHOLDER',
         '--reach-analysis-memory-limit',
         '999999999',
         '--org',
@@ -868,7 +979,17 @@ describe('socket scan reach', async () => {
       ],
       'should handle extremely large memory limit values',
       async cmd => {
-        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+        const { cleanup, tempDir } = await withTempFixture(fixtureBaseDir)
+        cleanupFunctions.push(cleanup)
+
+        const updatedCmd = cmd.map(arg =>
+          arg === 'TEMP_DIR_PLACEHOLDER' ? tempDir : arg,
+        )
+
+        const { code, stderr, stdout } = await spawnSocketCli(
+          binCliPath,
+          updatedCmd,
+        )
         expect(code).toBeGreaterThan(0)
         const output = stdout + stderr
         expect(output.length).toBeGreaterThan(0)
@@ -879,7 +1000,7 @@ describe('socket scan reach', async () => {
       [
         'scan',
         'reach',
-        'test/fixtures/commands/scan/reach',
+        'TEMP_DIR_PLACEHOLDER',
         '--reach-exclude-paths',
         '',
         '--org',
@@ -889,7 +1010,17 @@ describe('socket scan reach', async () => {
       ],
       'should handle empty exclude paths gracefully',
       async cmd => {
-        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+        const { cleanup, tempDir } = await withTempFixture(fixtureBaseDir)
+        cleanupFunctions.push(cleanup)
+
+        const updatedCmd = cmd.map(arg =>
+          arg === 'TEMP_DIR_PLACEHOLDER' ? tempDir : arg,
+        )
+
+        const { code, stderr, stdout } = await spawnSocketCli(
+          binCliPath,
+          updatedCmd,
+        )
         expect(code).toBeGreaterThan(0)
         const output = stdout + stderr
         expect(output.length).toBeGreaterThan(0)
@@ -920,7 +1051,7 @@ describe('socket scan reach', async () => {
       [
         'scan',
         'reach',
-        'test/fixtures/commands/scan/reach',
+        'TEMP_DIR_PLACEHOLDER',
         '--reach-ecosystems',
         'npm,invalid-ecosystem,pypi',
         '--org',
@@ -930,7 +1061,17 @@ describe('socket scan reach', async () => {
       ],
       'should show clear error for mixed valid and invalid ecosystems',
       async cmd => {
-        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+        const { cleanup, tempDir } = await withTempFixture(fixtureBaseDir)
+        cleanupFunctions.push(cleanup)
+
+        const updatedCmd = cmd.map(arg =>
+          arg === 'TEMP_DIR_PLACEHOLDER' ? tempDir : arg,
+        )
+
+        const { code, stderr, stdout } = await spawnSocketCli(
+          binCliPath,
+          updatedCmd,
+        )
         const output = stdout + stderr
         expect(output).toMatch(/invalid.*ecosystem.*invalid-ecosystem/i)
         expect(code).toBeGreaterThan(0)
@@ -941,7 +1082,7 @@ describe('socket scan reach', async () => {
       [
         'scan',
         'reach',
-        'test/fixtures/commands/scan/reach',
+        'TEMP_DIR_PLACEHOLDER',
         '--reach-exclude-paths',
         '/absolute/path,relative/path,../parent/path',
         '--org',
@@ -951,7 +1092,17 @@ describe('socket scan reach', async () => {
       ],
       'should handle various path formats in exclude paths',
       async cmd => {
-        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+        const { cleanup, tempDir } = await withTempFixture(fixtureBaseDir)
+        cleanupFunctions.push(cleanup)
+
+        const updatedCmd = cmd.map(arg =>
+          arg === 'TEMP_DIR_PLACEHOLDER' ? tempDir : arg,
+        )
+
+        const { code, stderr, stdout } = await spawnSocketCli(
+          binCliPath,
+          updatedCmd,
+        )
         expect(code).toBeGreaterThan(0)
         const output = stdout + stderr
         expect(output.length).toBeGreaterThan(0)
@@ -962,7 +1113,7 @@ describe('socket scan reach', async () => {
       [
         'scan',
         'reach',
-        'test/fixtures/commands/scan/reach',
+        'TEMP_DIR_PLACEHOLDER',
         FLAG_CONFIG,
         '{"apiToken":"invalid-token-with-special-chars-!@#$%^&*()"}',
         '--org',
@@ -970,7 +1121,17 @@ describe('socket scan reach', async () => {
       ],
       'should handle tokens with special characters gracefully',
       async cmd => {
-        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+        const { cleanup, tempDir } = await withTempFixture(fixtureBaseDir)
+        cleanupFunctions.push(cleanup)
+
+        const updatedCmd = cmd.map(arg =>
+          arg === 'TEMP_DIR_PLACEHOLDER' ? tempDir : arg,
+        )
+
+        const { code, stderr, stdout } = await spawnSocketCli(
+          binCliPath,
+          updatedCmd,
+        )
         expect(code).toBeGreaterThan(0)
         const output = stdout + stderr
         expect(output.length).toBeGreaterThan(0)
@@ -981,7 +1142,7 @@ describe('socket scan reach', async () => {
       [
         'scan',
         'reach',
-        'test/fixtures/commands/scan/reach',
+        'TEMP_DIR_PLACEHOLDER',
         '--reach-ecosystems',
         'npm',
         '--reach-ecosystems',
@@ -995,7 +1156,17 @@ describe('socket scan reach', async () => {
       ],
       'should handle duplicate ecosystem flags gracefully',
       async cmd => {
-        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+        const { cleanup, tempDir } = await withTempFixture(fixtureBaseDir)
+        cleanupFunctions.push(cleanup)
+
+        const updatedCmd = cmd.map(arg =>
+          arg === 'TEMP_DIR_PLACEHOLDER' ? tempDir : arg,
+        )
+
+        const { code, stderr, stdout } = await spawnSocketCli(
+          binCliPath,
+          updatedCmd,
+        )
         expect(code).toBeGreaterThan(0)
         const output = stdout + stderr
         expect(output.length).toBeGreaterThan(0)

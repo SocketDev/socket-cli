@@ -17,94 +17,103 @@ const __filename = fileURLToPath(import.meta.url)
 // in the root of each.
 const __dirname = path.dirname(__filename)
 
-const {
-  AT_LATEST,
-  BUN,
-  CHANGELOG_MD,
-  CI,
-  COLUMN_LIMIT,
-  DOT_GIT_DIR,
-  DOT_SOCKET_DIR,
-  EMPTY_FILE,
-  EMPTY_VALUE,
-  ESLINT_CONFIG_JS,
-  ESNEXT,
-  EXT_CJS,
-  EXT_CMD,
-  EXT_CTS,
-  EXT_DTS,
-  EXT_JS,
-  EXT_JSON,
-  EXT_LOCK,
-  EXT_LOCKB,
-  EXT_MD,
-  EXT_MJS,
-  EXT_MTS,
-  EXT_PS1,
-  EXT_YAML,
-  EXT_YML,
-  EXTENSIONS,
-  EXTENSIONS_JSON,
-  GITIGNORE,
-  DOT_PACKAGE_LOCK_JSON,
-  LATEST,
-  LICENSE,
-  LICENSE_GLOB,
-  LICENSE_GLOB_RECURSIVE,
-  LICENSE_ORIGINAL,
-  LICENSE_ORIGINAL_GLOB,
-  LICENSE_ORIGINAL_GLOB_RECURSIVE,
-  LOOP_SENTINEL,
-  MANIFEST_JSON,
-  MIT,
-  NODE_AUTH_TOKEN,
-  NODE_ENV,
-  NODE_MODULES,
-  NODE_MODULES_GLOB_RECURSIVE,
-  NODE_SEA_FUSE,
-  NPM,
-  NPX,
-  OVERRIDES,
-  PACKAGE_DEFAULT_VERSION,
-  PACKAGE_JSON,
-  PACKAGE_LOCK_JSON,
-  PNPM,
-  PNPM_LOCK_YAML,
-  PRE_COMMIT,
-  README_GLOB,
-  README_GLOB_RECURSIVE,
-  REGISTRY_SCOPE_DELIMITER,
-  README_MD,
-  REGISTRY,
-  RESOLUTIONS,
-  SOCKET_GITHUB_ORG,
-  SOCKET_IPC_HANDSHAKE,
-  SOCKET_OVERRIDE_SCOPE,
-  SOCKET_PUBLIC_API_TOKEN,
-  SOCKET_REGISTRY_NPM_ORG,
-  SOCKET_REGISTRY_PACKAGE_NAME,
-  SOCKET_REGISTRY_REPO_NAME,
-  SOCKET_REGISTRY_SCOPE,
-  SOCKET_SECURITY_SCOPE,
-  TSCONFIG_JSON,
-  UNKNOWN_ERROR,
-  UNKNOWN_VALUE,
-  UNLICENCED,
-  UNLICENSED,
-  UTF8,
-  VITEST,
-  VLT,
-  YARN,
-  YARN_BERRY,
-  YARN_CLASSIC,
-  YARN_LOCK,
-  kInternalsSymbol,
-  [kInternalsSymbol as unknown as 'Symbol(kInternalsSymbol)']: {
-    attributes: registryConstantsAttribs,
-    createConstantsObject,
-    getIpc,
-  },
-} = registryConstants
+// Access constants directly from the registryConstants object.
+// The registry now exports constants as a special object with lazy getters.
+const AT_LATEST = registryConstants.AT_LATEST
+const BUN = registryConstants.BUN
+const CHANGELOG_MD = registryConstants.CHANGELOG_MD
+const CI = registryConstants.CI
+const COLUMN_LIMIT = registryConstants.COLUMN_LIMIT
+const DOT_GIT_DIR = registryConstants.DOT_GIT_DIR
+const DOT_PACKAGE_LOCK_JSON = registryConstants.DOT_PACKAGE_LOCK_JSON
+const DOT_SOCKET_DIR = registryConstants.DOT_SOCKET_DIR
+const EMPTY_FILE = registryConstants.EMPTY_FILE
+const EMPTY_VALUE = registryConstants.EMPTY_VALUE
+const ESLINT_CONFIG_JS = registryConstants.ESLINT_CONFIG_JS
+const ESNEXT = registryConstants.ESNEXT
+const EXTENSIONS = registryConstants.EXTENSIONS
+const EXTENSIONS_JSON = registryConstants.EXTENSIONS_JSON
+const EXT_CJS = registryConstants.EXT_CJS
+const EXT_CMD = registryConstants.EXT_CMD
+const EXT_CTS = registryConstants.EXT_CTS
+const EXT_DTS = registryConstants.EXT_DTS
+const EXT_JS = registryConstants.EXT_JS
+const EXT_JSON = registryConstants.EXT_JSON
+const EXT_LOCK = registryConstants.EXT_LOCK
+const EXT_LOCKB = registryConstants.EXT_LOCKB
+const EXT_MD = registryConstants.EXT_MD
+const EXT_MJS = registryConstants.EXT_MJS
+const EXT_MTS = registryConstants.EXT_MTS
+const EXT_PS1 = registryConstants.EXT_PS1
+const EXT_YAML = registryConstants.EXT_YAML
+const EXT_YML = registryConstants.EXT_YML
+const GITIGNORE = registryConstants.GITIGNORE
+const LATEST = registryConstants.LATEST
+const LICENSE = registryConstants.LICENSE
+const LICENSE_GLOB = registryConstants.LICENSE_GLOB
+const LICENSE_GLOB_RECURSIVE = registryConstants.LICENSE_GLOB_RECURSIVE
+const LICENSE_ORIGINAL = registryConstants.LICENSE_ORIGINAL
+const LICENSE_ORIGINAL_GLOB = registryConstants.LICENSE_ORIGINAL_GLOB
+const LICENSE_ORIGINAL_GLOB_RECURSIVE =
+  registryConstants.LICENSE_ORIGINAL_GLOB_RECURSIVE
+const LOOP_SENTINEL = registryConstants.LOOP_SENTINEL
+const MANIFEST_JSON = registryConstants.MANIFEST_JSON
+const MIT = registryConstants.MIT
+const NODE_AUTH_TOKEN = registryConstants.NODE_AUTH_TOKEN
+const NODE_ENV = registryConstants.NODE_ENV
+const NODE_MODULES = registryConstants.NODE_MODULES
+const NODE_MODULES_GLOB_RECURSIVE =
+  registryConstants.NODE_MODULES_GLOB_RECURSIVE
+const NODE_SEA_FUSE = registryConstants.NODE_SEA_FUSE
+const NPM = registryConstants.NPM
+const NPX = registryConstants.NPX
+const OVERRIDES = registryConstants.OVERRIDES
+const PACKAGE_DEFAULT_VERSION = registryConstants.PACKAGE_DEFAULT_VERSION
+const PACKAGE_JSON = registryConstants.PACKAGE_JSON
+const PACKAGE_LOCK_JSON = registryConstants.PACKAGE_LOCK_JSON
+const PNPM = registryConstants.PNPM
+const PNPM_LOCK_YAML = registryConstants.PNPM_LOCK_YAML
+const PRE_COMMIT = registryConstants.PRE_COMMIT
+const README_GLOB = registryConstants.README_GLOB
+const README_GLOB_RECURSIVE = registryConstants.README_GLOB_RECURSIVE
+const README_MD = registryConstants.README_MD
+const REGISTRY = registryConstants.REGISTRY
+const REGISTRY_SCOPE_DELIMITER = registryConstants.REGISTRY_SCOPE_DELIMITER
+const RESOLUTIONS = registryConstants.RESOLUTIONS
+const SOCKET_GITHUB_ORG = registryConstants.SOCKET_GITHUB_ORG
+const SOCKET_IPC_HANDSHAKE = registryConstants.SOCKET_IPC_HANDSHAKE
+const SOCKET_OVERRIDE_SCOPE = registryConstants.SOCKET_OVERRIDE_SCOPE
+const SOCKET_PUBLIC_API_TOKEN = registryConstants.SOCKET_PUBLIC_API_TOKEN
+const SOCKET_REGISTRY_NPM_ORG = registryConstants.SOCKET_REGISTRY_NPM_ORG
+const SOCKET_REGISTRY_PACKAGE_NAME =
+  registryConstants.SOCKET_REGISTRY_PACKAGE_NAME
+const SOCKET_REGISTRY_REPO_NAME = registryConstants.SOCKET_REGISTRY_REPO_NAME
+const SOCKET_REGISTRY_SCOPE = registryConstants.SOCKET_REGISTRY_SCOPE
+const SOCKET_SECURITY_SCOPE = registryConstants.SOCKET_SECURITY_SCOPE
+const TSCONFIG_JSON = registryConstants.TSCONFIG_JSON
+const UNKNOWN_ERROR = registryConstants.UNKNOWN_ERROR
+const UNKNOWN_VALUE = registryConstants.UNKNOWN_VALUE
+const UNLICENCED = registryConstants.UNLICENCED
+const UNLICENSED = registryConstants.UNLICENSED
+const UTF8 = registryConstants.UTF8
+const VITEST = registryConstants.VITEST
+const VLT = registryConstants.VLT
+const YARN = registryConstants.YARN
+const YARN_BERRY = registryConstants.YARN_BERRY
+const YARN_CLASSIC = registryConstants.YARN_CLASSIC
+const YARN_LOCK = registryConstants.YARN_LOCK
+
+// Access internals symbol and attributes.
+const kInternalsSymbol = registryConstants.kInternalsSymbol
+const registryConstantsAttribs =
+  registryConstants[kInternalsSymbol as unknown as 'Symbol(kInternalsSymbol)']
+    .attributes
+const createConstantsObject =
+  registryConstants[kInternalsSymbol as unknown as 'Symbol(kInternalsSymbol)']
+    .createConstantsObject
+const getIpc =
+  registryConstants[kInternalsSymbol as unknown as 'Symbol(kInternalsSymbol)']
+    .getIpc
 
 export type RegistryEnv = typeof registryConstants.ENV
 
@@ -448,6 +457,10 @@ export type Constants = Remap<
     readonly socketCachePath: string
     readonly socketRegistryPath: string
     readonly zshRcPath: string
+    readonly DARWIN: boolean
+    readonly WIN32: boolean
+    readonly nodeNoWarningsFlags: string[]
+    readonly spinner: any
   }
 >
 
@@ -816,7 +829,8 @@ const lazyNodeMemoryFlags = () => {
   //   `--max-old-space-size=${getMaxOldSpaceSizeFlag()}`,
   //   `--max-semi-space-size=${getMaxSemiSpaceSizeFlag()}`,
   // ])
-  return Object.freeze([]) // Return empty array - no memory flags
+  // Return empty array - no memory flags.
+  return Object.freeze([])
 }
 
 const lazyNpmCachePath = () => {

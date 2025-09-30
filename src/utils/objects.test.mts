@@ -147,7 +147,8 @@ describe('objects utilities', () => {
         name: 'test',
         data: { nested: true },
       })
-      expect(result.data).toBe(obj.data) // Same reference.
+      // Same reference.
+      expect(result.data).toBe(obj.data)
     })
 
     it('returns new object', () => {

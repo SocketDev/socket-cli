@@ -2,7 +2,7 @@ import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants from '../../constants.mts'
-import { handleApiCallNoSpinner, queryApiSafeText } from '../../utils/api.mts'
+import { handleApiCallNoSpinner } from '../../utils/api.mts'
 import { formatErrorWithDetail } from '../../utils/errors.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 
@@ -70,14 +70,18 @@ export async function fetchScanData(
   }
 
   async function fetchScanResult(): Promise<CResult<SocketArtifact[]>> {
-    const result = await queryApiSafeText(
+    const result = await sockSdk.queryApiText(
       `orgs/${orgSlug}/full-scans/${encodeURIComponent(scanId)}${includeLicensePolicy ? '?include_license_details=true' : ''}`,
+      {
+        throws: false,
+        description: 'scan result',
+      },
     )
 
     updateScan(`response received`)
 
     if (!result.ok) {
-      return result
+      return result as CResult<SocketArtifact[]>
     }
 
     const ndJsonString = result.data

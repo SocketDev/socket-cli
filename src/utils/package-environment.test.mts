@@ -8,7 +8,7 @@ import { AGENTS, detectPackageEnvironment } from './package-environment.mts'
 // Mock the dependencies.
 const mockExistsSync = vi.hoisted(() => vi.fn())
 vi.mock('node:fs', async importOriginal => {
-  const actual = (await importOriginal()) as any
+  const actual = await importOriginal<typeof import('node:fs')>()
   return {
     ...actual,
     existsSync: mockExistsSync,

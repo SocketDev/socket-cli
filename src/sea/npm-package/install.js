@@ -1,18 +1,20 @@
-#!/usr/bin/env node
+'use strict'
+
 /**
  * Postinstall script for Socket CLI binary distribution.
  * Downloads the appropriate platform-specific binary from GitHub releases.
  */
 
-const { SOCKET_GITHUB_ORG } = require('@socketsecurity/registry/lib/constants')
-const { SOCKET_CLI_GITHUB_REPO } = require('../../dist/constants.js')
-const crypto = require('node:crypto')
 const fs = require('node:fs')
 const https = require('node:https')
 const os = require('node:os')
 const path = require('node:path')
-const { pipeline } = require('node:stream/promises')
-const zlib = require('node:zlib')
+
+const {
+  SOCKET_CLI_GITHUB_REPO,
+  SOCKET_GITHUB_ORG,
+  // eslint-disable-next-line n/no-unpublished-require
+} = require('../../dist/constants.js')
 
 const BINARY_NAME = 'socket'
 
@@ -98,7 +100,7 @@ async function getBinaryUrl() {
  */
 async function install() {
   try {
-    const binaryName = getBinaryName()
+    const _binaryName = getBinaryName()
     const binaryPath = path.join(
       __dirname,
       BINARY_NAME + (os.platform() === 'win32' ? '.exe' : ''),

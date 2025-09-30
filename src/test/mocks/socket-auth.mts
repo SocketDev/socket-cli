@@ -63,7 +63,8 @@ export function mockConfigStorage() {
     }),
     has: vi.fn((key: string) => storage.has(key)),
     clear: vi.fn(() => storage.clear()),
-    storage, // Expose for testing
+    // Expose for testing
+    storage,
   }
 }
 

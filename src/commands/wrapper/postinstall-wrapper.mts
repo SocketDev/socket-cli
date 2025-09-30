@@ -32,7 +32,8 @@ Do you want to install the Socket npm wrapper (this will create an alias to the 
   // Attempt to update the existing tab completion
   let updatedTabCompletion = false
   try {
-    const details = getBashrcDetails('') // Note: command is not relevant, we just want the config path
+    // Note: command is not relevant, we just want the config path
+    const details = getBashrcDetails('')
     if (details.ok) {
       if (fs.existsSync(details.data.targetPath)) {
         // Replace the file with the one from this installation

@@ -195,7 +195,8 @@ const NetworkUtils = {
 
     let attempts = 0
     const maxAttempts = 3
-    const baseDelay = 1_000 // 1 second
+    // 1 second
+    const baseDelay = 1_000
 
     while (attempts < maxAttempts) {
       try {

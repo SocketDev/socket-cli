@@ -20,7 +20,8 @@ vi.mock('meow', () => ({
 
 vi.mock('node:os', () => ({
   default: {
-    totalmem: vi.fn(() => 8 * 1024 * 1024 * 1024), // 8GB.
+    // 8GB.
+    totalmem: vi.fn(() => 8 * 1024 * 1024 * 1024),
   },
 }))
 

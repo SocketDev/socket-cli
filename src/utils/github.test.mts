@@ -87,7 +87,8 @@ describe('github utilities', () => {
 
       const cachedData = { cached: true, data: 'test' }
       mockSafeStatsSync.mockReturnValue({
-        mtimeMs: Date.now() - 60000, // 1 minute ago.
+        // 1 minute ago.
+        mtimeMs: Date.now() - 60000,
       } as any)
       mockReadJson.mockResolvedValue(cachedData)
 
@@ -106,7 +107,8 @@ describe('github utilities', () => {
       const mockWriteJson = vi.mocked(writeJson)
 
       mockSafeStatsSync.mockReturnValue({
-        mtimeMs: Date.now() - 400000, // 6+ minutes ago.
+        // 6+ minutes ago.
+        mtimeMs: Date.now() - 400000,
       } as any)
 
       const freshData = { fresh: true, data: 'new' }

@@ -66,7 +66,8 @@ describe('ecosystem utilities', () => {
 
     it('rejects unknown ecosystems', () => {
       expect(isValidEcosystem('invalid')).toBe(false)
-      expect(isValidEcosystem('NPM')).toBe(false) // Case-sensitive.
+      // Case-sensitive.
+      expect(isValidEcosystem('NPM')).toBe(false)
       expect(isValidEcosystem('')).toBe(false)
       expect(isValidEcosystem('node')).toBe(false)
     })

@@ -12,7 +12,8 @@ import { fileLink } from '../../utils/terminal-link.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
-import type { Widgets } from 'blessed' // Note: Widgets does not seem to actually work as code :'(
+// Note: Widgets does not seem to actually work as code :'(
+import type { Widgets } from 'blessed'
 import type { grid as ContribGrid } from 'blessed-contrib'
 
 const require = createRequire(import.meta.url)
@@ -223,14 +224,14 @@ function displayAnalyticsScreen(data: FormattedData): void {
     screen,
     'Total high alerts',
     [0, 2, 1, 2],
-    data['total_high_alerts'],
+    data.total_high_alerts,
   )
   renderLineCharts(
     grid,
     screen,
     'Total critical alerts added to the main branch',
     [1, 0, 1, 2],
-    data['total_critical_added'],
+    data.total_critical_added,
   )
   renderLineCharts(
     grid,
@@ -251,14 +252,14 @@ function displayAnalyticsScreen(data: FormattedData): void {
     screen,
     'Total high alerts prevented from the main branch',
     [2, 2, 1, 2],
-    data['total_high_prevented'],
+    data.total_high_prevented,
   )
   renderLineCharts(
     grid,
     screen,
     'Total medium alerts prevented from the main branch',
     [3, 0, 1, 2],
-    data['total_medium_prevented'],
+    data.total_medium_prevented,
   )
   renderLineCharts(
     grid,

@@ -199,7 +199,8 @@ describe('postinstallWrapper', () => {
     const mockCheckSetup = vi.mocked(checkSocketWrapperSetup)
 
     mockExistsSync.mockReturnValue(true)
-    mockCheckSetup.mockReturnValue(true) // Wrapper already setup.
+    // Wrapper already setup.
+    mockCheckSetup.mockReturnValue(true)
     mockGetDetails.mockReturnValue({
       ok: true,
       data: { targetPath: '/home/user/.config/socket/tab-completion.bash' },

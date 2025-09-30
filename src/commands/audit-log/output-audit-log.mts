@@ -225,8 +225,10 @@ async function outputWithBlessed(
   screen.key(['escape', 'q', 'C-c'], () => process.exit(0))
 
   const TableWidget = /*@__PURE__*/ require('blessed-contrib/lib/widget/table.js')
-  const tipsBoxHeight = 1 // 1 row for tips box
-  const detailsBoxHeight = 20 // bottom N rows for details box. 20 gives 4 lines for condensed payload before it scrolls out of view
+  // 1 row for tips box.
+  const tipsBoxHeight = 1
+  // Bottom N rows for details box. 20 gives 4 lines for condensed payload before it scrolls out of view.
+  const detailsBoxHeight = 20
 
   const maxWidths = headers.map(s => s.length + 1)
   formattedOutput.forEach(row => {
@@ -249,7 +251,8 @@ async function outputWithBlessed(
       type: 'line',
       fg: 'cyan',
     },
-    columnWidth: maxWidths, //[10, 30, 40, 25, 15, 200],
+    // [10, 30, 40, 25, 15, 200],
+    columnWidth: maxWidths,
     // Note: spacing works as long as you don't reserve more than total width
     columnSpacing: 4,
     truncate: '_',
@@ -257,7 +260,8 @@ async function outputWithBlessed(
 
   const BoxWidget = /*@__PURE__*/ require('blessed/lib/widgets/box.js')
   const tipsBox: Widgets.BoxElement = new BoxWidget({
-    bottom: detailsBoxHeight, // sits just above the details box
+    // sits just above the details box
+    bottom: detailsBoxHeight,
     height: tipsBoxHeight,
     width: '100%',
     style: {

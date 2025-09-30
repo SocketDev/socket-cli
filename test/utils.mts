@@ -141,6 +141,12 @@ export async function spawnSocketCli(
         ...process.env,
         ...constants.processEnv,
         ...spawnEnv,
+        // Ensure test environment variables are passed to spawned processes.
+        // These must be last to override any previous settings.
+        VITEST: '1',
+        NODE_ENV: 'test',
+        SOCKET_CLI_DEBUG: 'false',
+        DEBUG: 'false',
       },
     })
     return {

@@ -12,7 +12,8 @@ import type { SocketArtifact } from '../../utils/alert/artifact.mts'
 
 // This is a simplified view of an artifact. Potentially merged with other artifacts.
 interface DedupedArtifact {
-  ecosystem: string // artifact.type
+  // artifact.type
+  ecosystem: string
   namespace: string
   name: string
   version: string
@@ -83,7 +84,8 @@ function formatReportCard(
   const maxLabelLength = Math.max(
     ...Object.keys(scoreResult).map(label => label.length),
   )
-  const labelPadding = maxLabelLength + 2 // +2 for ": "
+  // +2 for ": "
+  const labelPadding = maxLabelLength + 2
 
   return [
     'Package: ' + (colorize ? colors.bold(purl) : purl),

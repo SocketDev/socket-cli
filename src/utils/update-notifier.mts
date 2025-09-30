@@ -80,7 +80,8 @@ function formatUpdateMessage(options: UpdateNotificationOptions): {
  */
 function showUpdateNotification(options: UpdateNotificationOptions): void {
   if (!globalThis.process?.stdout?.isTTY) {
-    return // Probably piping stdout.
+    // Probably piping stdout.
+    return
   }
 
   try {
@@ -111,7 +112,8 @@ function showUpdateNotification(options: UpdateNotificationOptions): void {
  */
 function scheduleExitNotification(options: UpdateNotificationOptions): void {
   if (!globalThis.process?.stdout?.isTTY) {
-    return // Probably piping stdout.
+    // Probably piping stdout.
+    return
   }
 
   try {

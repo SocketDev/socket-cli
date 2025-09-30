@@ -252,7 +252,8 @@ describe('failMsgWithBadge', () => {
       expect(colors.bgRedBright).toHaveBeenCalledWith(
         '[BOLD][RED] ERROR[/RED][/BOLD]',
       )
-      expect(colors.bold).toHaveBeenCalledTimes(1) // Only called once for the badge.
+      // Only called once for the badge.
+      expect(colors.bold).toHaveBeenCalledTimes(1)
     })
   })
 })

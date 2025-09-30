@@ -3,9 +3,9 @@ import { Module } from 'node:module'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock process methods.
-const mockProcessExit = vi
-  .spyOn(process, 'exit')
-  .mockImplementation(() => undefined as never)
+const mockProcessExit = vi.spyOn(process, 'exit').mockImplementation((() => {
+  // Mock implementation that doesn't actually exit.
+}) as any)
 const mockProcessKill = vi.spyOn(process, 'kill').mockImplementation(() => true)
 
 // Mock shadowNpxBin.
