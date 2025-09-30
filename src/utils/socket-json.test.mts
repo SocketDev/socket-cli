@@ -34,7 +34,6 @@ vi.mock('@socketsecurity/registry/lib/logger', () => ({
   },
 }))
 
-
 describe('socket-json utilities', () => {
   beforeEach(() => {
     vi.clearAllMocks()

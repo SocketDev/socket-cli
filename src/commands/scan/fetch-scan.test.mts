@@ -2,15 +2,27 @@ import { describe, expect, it, vi } from 'vitest'
 
 // Mock the dependencies.
 
-vi.mock('../../utils/api.mts', () => ({
-  queryApiSafeText: vi.fn(),
+vi.mock('../../utils/sdk.mts', () => ({
+  queryApiText: vi.fn(),
+  setupSdk: vi.fn(),
+}))
+vi.mock('../../utils/debug.mts', () => ({
+  debugDir: vi.fn(),
+  debugFn: vi.fn(),
+  debugLog: vi.fn(),
+  isDebug: vi.fn(),
 }))
 
 describe('fetchScan', () => {
+  const mockSdk = { api: 'mock-sdk' }
+
   it('fetches scan successfully', async () => {
     const { fetchScan } = await import('./fetch-scan.mts')
-    const { queryApiSafeText } = await import('../../utils/api.mts')
-    const mockQueryApiText = vi.mocked(queryApiSafeText)
+    const { queryApiText, setupSdk } = await import('../../utils/sdk.mts')
+    const mockQueryApiText = vi.mocked(queryApiText)
+    const mockSetupSdk = vi.mocked(setupSdk)
+
+    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
 
     const mockScanData = [
       '{"type":"package","name":"lodash","version":"4.17.21"}',
@@ -26,8 +38,12 @@ describe('fetchScan', () => {
     const result = await fetchScan('test-org', 'scan-123')
 
     expect(mockQueryApiText).toHaveBeenCalledWith(
+      mockSdk,
       'orgs/test-org/full-scans/scan-123',
-      'a scan',
+      {
+        throws: false,
+        description: 'a scan',
+      },
     )
     expect(result.ok).toBe(true)
     expect(result.data).toEqual([
@@ -39,8 +55,12 @@ describe('fetchScan', () => {
 
   it('handles API call failure', async () => {
     const { fetchScan } = await import('./fetch-scan.mts')
-    const { queryApiSafeText } = await import('../../utils/api.mts')
-    const mockQueryApiText = vi.mocked(queryApiSafeText)
+    const { queryApiText, setupSdk } = await import('../../utils/sdk.mts')
+    const mockQueryApiText = vi.mocked(queryApiText)
+    const mockSetupSdk = vi.mocked(setupSdk)
+
+    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
+    const mockQueryApiText = vi.mocked(queryApiText)
 
     const error = {
       ok: false,
@@ -57,11 +77,15 @@ describe('fetchScan', () => {
 
   it('handles invalid JSON in scan data', async () => {
     const { fetchScan } = await import('./fetch-scan.mts')
-    const { queryApiSafeText } = await import('../../utils/api.mts')
+    const { queryApiText, setupSdk } = await import('../../utils/sdk.mts')
+    const mockQueryApiText = vi.mocked(queryApiText)
+    const mockSetupSdk = vi.mocked(setupSdk)
+
+    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
     const { debugDir, debugFn } = await import(
-      '@socketsecurity/registry/lib/debug'
+      '../../utils/debug.mts'
     )
-    const mockQueryApiText = vi.mocked(queryApiSafeText)
+    const mockQueryApiText = vi.mocked(queryApiText)
     const mockDebugFn = vi.mocked(debugFn)
     const mockDebugDir = vi.mocked(debugDir)
 
@@ -95,8 +119,12 @@ describe('fetchScan', () => {
 
   it('handles empty scan data', async () => {
     const { fetchScan } = await import('./fetch-scan.mts')
-    const { queryApiSafeText } = await import('../../utils/api.mts')
-    const mockQueryApiText = vi.mocked(queryApiSafeText)
+    const { queryApiText, setupSdk } = await import('../../utils/sdk.mts')
+    const mockQueryApiText = vi.mocked(queryApiText)
+    const mockSetupSdk = vi.mocked(setupSdk)
+
+    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
+    const mockQueryApiText = vi.mocked(queryApiText)
 
     mockQueryApiText.mockResolvedValue({
       ok: true,
@@ -111,8 +139,12 @@ describe('fetchScan', () => {
 
   it('filters out empty lines but fails on invalid JSON', async () => {
     const { fetchScan } = await import('./fetch-scan.mts')
-    const { queryApiSafeText } = await import('../../utils/api.mts')
-    const mockQueryApiText = vi.mocked(queryApiSafeText)
+    const { queryApiText, setupSdk } = await import('../../utils/sdk.mts')
+    const mockQueryApiText = vi.mocked(queryApiText)
+    const mockSetupSdk = vi.mocked(setupSdk)
+
+    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
+    const mockQueryApiText = vi.mocked(queryApiText)
 
     // The function filters out empty lines with .filter(Boolean), but '   ' is truthy.
     // So it will try to parse '   ' as JSON and fail.
@@ -139,8 +171,12 @@ describe('fetchScan', () => {
 
   it('properly URL encodes scan ID', async () => {
     const { fetchScan } = await import('./fetch-scan.mts')
-    const { queryApiSafeText } = await import('../../utils/api.mts')
-    const mockQueryApiText = vi.mocked(queryApiSafeText)
+    const { queryApiText, setupSdk } = await import('../../utils/sdk.mts')
+    const mockQueryApiText = vi.mocked(queryApiText)
+    const mockSetupSdk = vi.mocked(setupSdk)
+
+    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
+    const mockQueryApiText = vi.mocked(queryApiText)
 
     mockQueryApiText.mockResolvedValue({
       ok: true,
@@ -159,8 +195,12 @@ describe('fetchScan', () => {
 
   it('handles different org slugs', async () => {
     const { fetchScan } = await import('./fetch-scan.mts')
-    const { queryApiSafeText } = await import('../../utils/api.mts')
-    const mockQueryApiText = vi.mocked(queryApiSafeText)
+    const { queryApiText, setupSdk } = await import('../../utils/sdk.mts')
+    const mockQueryApiText = vi.mocked(queryApiText)
+    const mockSetupSdk = vi.mocked(setupSdk)
+
+    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
+    const mockQueryApiText = vi.mocked(queryApiText)
 
     mockQueryApiText.mockResolvedValue({
       ok: true,
@@ -187,8 +227,12 @@ describe('fetchScan', () => {
 
   it('handles single line of JSON', async () => {
     const { fetchScan } = await import('./fetch-scan.mts')
-    const { queryApiSafeText } = await import('../../utils/api.mts')
-    const mockQueryApiText = vi.mocked(queryApiSafeText)
+    const { queryApiText, setupSdk } = await import('../../utils/sdk.mts')
+    const mockQueryApiText = vi.mocked(queryApiText)
+    const mockSetupSdk = vi.mocked(setupSdk)
+
+    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
+    const mockQueryApiText = vi.mocked(queryApiText)
 
     const singleLineData =
       '{"type":"package","name":"single","version":"1.0.0"}'
@@ -208,8 +252,12 @@ describe('fetchScan', () => {
 
   it('uses null prototype internally', async () => {
     const { fetchScan } = await import('./fetch-scan.mts')
-    const { queryApiSafeText } = await import('../../utils/api.mts')
-    const mockQueryApiText = vi.mocked(queryApiSafeText)
+    const { queryApiText, setupSdk } = await import('../../utils/sdk.mts')
+    const mockQueryApiText = vi.mocked(queryApiText)
+    const mockSetupSdk = vi.mocked(setupSdk)
+
+    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
+    const mockQueryApiText = vi.mocked(queryApiText)
 
     mockQueryApiText.mockResolvedValue({
       ok: true,

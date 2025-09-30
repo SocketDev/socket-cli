@@ -201,8 +201,8 @@ importers:
         specifier: 3.0.1
         version: 3.0.1
       '@socketsecurity/registry':
-        specifier: 1.2.2
-        version: 1.2.2
+        specifier: 1.3.0
+        version: 1.3.0
       '@socketsecurity/sdk':
         specifier: 1.8.2
         version: 1.8.2
@@ -1670,6 +1670,10 @@ packages:
 
   '@socketsecurity/registry@1.2.2':
     resolution: {integrity: sha512-2SaktloQ7b3oowpqI2trZaKvfodAlWurL3CHGtOEgp4/20vWNxvX7HK022gRIZO+8Bm/NzxmG76H6hHeJlHACg==}
+    engines: {node: '>=18'}
+
+  '@socketsecurity/registry@1.3.0':
+    resolution: {integrity: sha512-lEwdMwObq88eAsIcffa/tvNBLo/fnoUAKR4/wajfMWsySya8FThlWm4iX7bVeeHeLeuhJVA8GIpz8394tOFD1A==}
     engines: {node: '>=18'}
 
   '@socketsecurity/sdk@1.8.2':
@@ -6108,6 +6112,8 @@ snapshots:
       yaml: 2.8.1
 
   '@socketsecurity/registry@1.2.2': {}
+
+  '@socketsecurity/registry@1.3.0': {}
 
   '@socketsecurity/sdk@1.8.2':
     dependencies:
