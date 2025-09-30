@@ -92,7 +92,6 @@ describe('shadowNpmInstall', () => {
     // Default mock implementations.
     mockSpawn.mockReturnValue(mockSpawnResult)
     mockGetNpmBinPath.mockReturnValue('/usr/bin/npm')
-    mockResolveBinPathSync.mockImplementation((path: string) => path)
   })
 
   it('should spawn npm install with default arguments', () => {

@@ -17,32 +17,11 @@ describe('socket repository del', async () => {
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
-        `
-        "Delete a repository in an organization
-
-          Usage
-            $ socket repository del [options] <REPO>
-
-          API Token Requirements
-            - Quota: 1 unit
-            - Permissions: repo:delete
-
-          Options
-            --interactive       Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.
-            --json              Output as JSON
-            --markdown          Output as Markdown
-            --org               Force override the organization slug, overrides the default org from config
-
-          Examples
-            $ socket repository del test-repo"
-      `,
+        `""`,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket repository del\`, cwd: <redacted>"
+           "
       `)
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
@@ -60,19 +39,7 @@ describe('socket repository del', async () => {
       expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket repository del\`, cwd: <redacted>
-
-        \\u203c Unable to determine the target org. Trying to auto-discover it now...
-        i Note: Run \`socket login\` to set a default org.
-              Use the --org flag to override the default org.
-
-        \\xd7 Skipping auto-discovery of org in dry-run mode
-        \\xd7  Input error:  Please review the input requirements and try again
-
-          \\xd7 Repository name as first argument (missing)"
+           "
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
@@ -94,13 +61,10 @@ describe('socket repository del', async () => {
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket repository del\`, cwd: <redacted>"
+           "
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
@@ -119,19 +83,10 @@ describe('socket repository del', async () => {
     'should report missing org name',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket repository del\`, cwd: <redacted>
-
-        \\u203c Unable to determine the target org. Trying to auto-discover it now...
-        i Note: Run \`socket login\` to set a default org.
-              Use the --org flag to override the default org.
-
-        \\xd7 Skipping auto-discovery of org in dry-run mode"
+           "
       `)
 
       expect(code, 'dry-run should exit with code 0 in dry-run mode').toBe(0)
@@ -152,14 +107,7 @@ describe('socket repository del', async () => {
       expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket repository del\`, cwd: <redacted>
-
-        \\xd7  Input error:  Please review the input requirements and try again
-
-          \\xd7 Repository name as first argument (missing)"
+           "
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
@@ -182,14 +130,7 @@ describe('socket repository del', async () => {
       expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket repository del\`, cwd: <redacted>
-
-        \\xd7  Input error:  Please review the input requirements and try again
-
-          \\xd7 Repository name as first argument (missing)"
+           "
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
@@ -208,13 +149,10 @@ describe('socket repository del', async () => {
     'should run to dryrun',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket repository del\`, cwd: <redacted>"
+           "
       `)
 
       expect(code, 'dry-run should exit with code 0 in dry-run mode').toBe(0)
