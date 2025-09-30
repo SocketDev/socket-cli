@@ -111,10 +111,8 @@ export async function addOverrides(
   const depEntries = getDependencyEntries(pkgEnvDetails)
   const manifestEntries = manifestNpmOverrides.filter(({ 1: data }) =>
     semver.satisfies(
-      // Roughly check Node range as semver.coerce will strip leading
-      // v's, carets (^), comparators (<,<=,>,>=,=), and tildes (~).
-      semver.coerce(data.engines.node)!,
-      pkgEnvDetails.pkgRequirements.node,
+      pkgEnvDetails.nodeVersion.version,
+      data.engines.node,
     ),
   )
 
