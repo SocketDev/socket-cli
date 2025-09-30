@@ -1,13 +1,12 @@
 import { fileURLToPath } from 'node:url'
 
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { readPackageJson } from '@socketsecurity/registry/lib/packages'
 
 import constants, { FLAG_DRY_RUN, PACKAGE_JSON } from '../constants.mts'
 import { getAlertsMapFromPurls } from '../utils/alerts-map.mts'
 import { isAddCommand } from '../utils/cmd.mts'
-import { debugScan } from '../utils/debug.mts'
+import { debugDir, debugFn, debugScan } from '../utils/debug.mts'
 import { safeNpmSpecToPurl } from '../utils/npm-spec.mts'
 import { logAlertsMap } from '../utils/socket-package-alert.mts'
 

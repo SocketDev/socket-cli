@@ -1,9 +1,9 @@
 import { joinAnd } from '@socketsecurity/registry/lib/arrays'
-import { debugFn, isDebug } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { getSocketFixPrs } from './pull-request.mts'
 import constants from '../../constants.mts'
+import { debugFn, isDebug } from '../../utils/debug.mts'
 import { getBaseBranch, getRepoInfo } from '../../utils/git.mts'
 
 import type { PrMatch } from './pull-request.mts'

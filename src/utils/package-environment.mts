@@ -32,7 +32,6 @@ import semver from 'semver'
 
 import { parse as parseBunLockb } from '@socketregistry/hyrious__bun.lockb/index.cjs'
 import { whichBin } from '@socketsecurity/registry/lib/bin'
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { readFileBinary, readFileUtf8 } from '@socketsecurity/registry/lib/fs'
 import { Logger } from '@socketsecurity/registry/lib/logger'
 import { readPackageJson } from '@socketsecurity/registry/lib/packages'
@@ -41,6 +40,7 @@ import { spawn } from '@socketsecurity/registry/lib/spawn'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
 import { cmdPrefixMessage } from './cmd.mts'
+import { debugDir, debugFn } from './debug.mts'
 import { findUp } from './fs.mts'
 import constants, {
   FLAG_VERSION,

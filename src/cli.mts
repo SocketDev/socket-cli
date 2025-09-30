@@ -27,11 +27,11 @@ import { messageWithCauses, stackWithCauses } from 'pony-cause'
 import lookupRegistryAuthToken from 'registry-auth-token'
 import lookupRegistryUrl from 'registry-url'
 
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { rootAliases, rootCommands } from './commands.mts'
 import constants, { SOCKET_CLI_BIN_NAME } from './constants.mts'
+import { debugDir, debugFn } from './utils/debug.mts'
 import { AuthError, InputError, captureException } from './utils/errors.mts'
 import { failMsgWithBadge } from './utils/fail-msg-with-badge.mts'
 import { meowWithSubcommands } from './utils/meow-with-subcommands.mts'

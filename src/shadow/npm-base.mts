@@ -6,7 +6,6 @@ import {
   isNpmNodeOptionsFlag,
   isNpmProgressFlag,
 } from '@socketsecurity/registry/lib/agent'
-import { isDebug } from '@socketsecurity/registry/lib/debug'
 import { getOwn } from '@socketsecurity/registry/lib/objects'
 import { normalizePath } from '@socketsecurity/registry/lib/path'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
@@ -19,6 +18,7 @@ import constants, {
   NPX,
 } from '../constants.mts'
 import { cmdFlagsToString } from '../utils/cmd.mts'
+import { isDebug } from '../utils/debug.mts'
 import { findUp } from '../utils/fs.mts'
 import { getPublicApiToken } from '../utils/sdk.mts'
 import { installNpmLinks, installNpxLinks } from '../utils/shadow-links.mts'

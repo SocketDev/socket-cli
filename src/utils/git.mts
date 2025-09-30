@@ -25,12 +25,11 @@
  * - gitBranch: Get current branch or commit hash
  */
 
-import { debugDir, debugFn, isDebug } from '@socketsecurity/registry/lib/debug'
 import { normalizePath } from '@socketsecurity/registry/lib/path'
 import { isSpawnError, spawn } from '@socketsecurity/registry/lib/spawn'
 
 import constants, { FLAG_QUIET } from '../constants.mts'
-import { debugGit } from './debug.mts'
+import { debugDir, debugFn, debugGit, isDebug } from './debug.mts'
 import { extractName, extractOwner } from './extract-names.mts'
 
 import type { CResult } from '../types.mts'

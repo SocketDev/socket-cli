@@ -1,8 +1,8 @@
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { getDefaultOrgSlug } from './fetch-default-org-slug.mts'
 import constants from '../../constants.mts'
+import { debugDir, debugFn } from '../../utils/debug.mts'
 import {
   detectDefaultBranch,
   getRepoName,

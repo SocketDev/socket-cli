@@ -1,8 +1,8 @@
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants from '../../constants.mts'
 import { handleApiCallNoSpinner } from '../../utils/api.mts'
+import { debugDir, debugFn } from '../../utils/debug.mts'
 import { formatErrorWithDetail } from '../../utils/errors.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 

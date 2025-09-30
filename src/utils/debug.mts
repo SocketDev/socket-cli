@@ -42,7 +42,7 @@ function debugFn(namespace: string, ...args: any[]): void {
 function debugDir(namespace: string, obj: any, options?: any): void {
   if (isDebug(namespace)) {
     debugLog(`[${namespace}]`)
-    debugDirOriginal(obj, options)
+    debugDirOriginal(obj)
   }
 }
 

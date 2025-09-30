@@ -1,4 +1,3 @@
-import { debugFn } from '@socketsecurity/registry/lib/debug'
 import { getOwn } from '@socketsecurity/registry/lib/objects'
 import { parseUrl } from '@socketsecurity/registry/lib/url'
 
@@ -7,6 +6,7 @@ import { DiffAction } from './arborist/types.mts'
 import { getAlertsMapFromPurls } from '../../utils/alerts-map.mts'
 import { toFilterConfig } from '../../utils/filter-config.mts'
 import { idToNpmPurl } from '../../utils/spec.mts'
+import { debugFn } from '../utils/debug.mts'
 
 import type { ArboristInstance, Diff, NodeClass } from './arborist/types.mts'
 import type {

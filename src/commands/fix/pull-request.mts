@@ -1,6 +1,5 @@
 import { RequestError } from '@octokit/request-error'
 
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
 import {
@@ -15,6 +14,7 @@ import {
   GQL_PR_STATE_OPEN,
   UNKNOWN_VALUE,
 } from '../../constants.mts'
+import { debugDir, debugFn } from '../../utils/debug.mts'
 import { formatErrorWithDetail } from '../../utils/errors.mts'
 import { gitDeleteRemoteBranch } from '../../utils/git.mts'
 import {

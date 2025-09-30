@@ -5,12 +5,12 @@ import {
   isNpmProgressFlag,
   resolveBinPathSync,
 } from '@socketsecurity/registry/lib/agent'
-import { isDebug } from '@socketsecurity/registry/lib/debug'
 import { getOwn, isObject } from '@socketsecurity/registry/lib/objects'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import constants, { FLAG_LOGLEVEL, NPM } from '../../constants.mts'
 import { getNpmBinPath } from '../../utils/npm-paths.mts'
+import { isDebug } from '../utils/debug.mts'
 
 import type { SpawnResult } from '@socketsecurity/registry/lib/spawn'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'

@@ -1,6 +1,5 @@
 import fs, { existsSync } from 'node:fs'
 
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { confirm } from '@socketsecurity/registry/lib/prompts'
 
@@ -8,6 +7,7 @@ import { addSocketWrapper } from './add-socket-wrapper.mts'
 import { checkSocketWrapperSetup } from './check-socket-wrapper-setup.mts'
 import constants from '../../constants.mts'
 import { getBashrcDetails } from '../../utils/completion.mts'
+import { debugDir, debugFn } from '../../utils/debug.mts'
 import { getErrorCause } from '../../utils/errors.mts'
 import { updateInstalledTabCompletionScript } from '../install/setup-tab-completion.mts'
 

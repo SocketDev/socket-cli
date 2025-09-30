@@ -33,7 +33,6 @@ import {
 } from '@octokit/graphql'
 import { Octokit } from '@octokit/rest'
 
-import { debugDir, debugFn, isDebug } from '@socketsecurity/registry/lib/debug'
 import {
   readJson,
   safeStatsSync,
@@ -42,6 +41,7 @@ import {
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 import { parseUrl } from '@socketsecurity/registry/lib/url'
 
+import { debugDir, debugFn, isDebug } from './debug.mts'
 import { formatErrorWithDetail } from './errors.mts'
 import constants from '../constants.mts'
 

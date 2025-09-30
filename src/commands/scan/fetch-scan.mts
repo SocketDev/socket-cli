@@ -1,5 +1,4 @@
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
-
+import { debugDir, debugFn } from '../../utils/debug.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 
 import type { CResult } from '../../types.mts'

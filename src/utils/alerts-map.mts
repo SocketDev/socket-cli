@@ -19,12 +19,12 @@
  */
 
 import { arrayUnique } from '@socketsecurity/registry/lib/arrays'
-import { debugDir } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { getOwn } from '@socketsecurity/registry/lib/objects'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
 import { findSocketYmlSync } from './config.mts'
+import { debugDir } from './debug.mts'
 import { toFilterConfig } from './filter-config.mts'
 import { extractPurlsFromPnpmLockfile } from './pnpm.mts'
 import { getPublicApiToken, setupSdk } from './sdk.mts'

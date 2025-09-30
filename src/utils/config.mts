@@ -25,12 +25,11 @@ import { mkdirSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 
 import config from '@socketsecurity/config'
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { safeReadFileSync } from '@socketsecurity/registry/lib/fs'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
 
-import { debugConfig } from './debug.mts'
+import { debugConfig, debugDir, debugFn } from './debug.mts'
 import constants, {
   CONFIG_KEY_API_BASE_URL,
   CONFIG_KEY_API_PROXY,

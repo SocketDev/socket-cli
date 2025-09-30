@@ -160,9 +160,7 @@ async function checkForUpdates(
         // Continue anyway - cache update failure is not critical.
       }
     } catch (error) {
-      logger.debug(
-        `Failed to fetch latest version: ${error instanceof Error ? error.message : String(error)}`,
-      )
+      // Debug: Failed to fetch latest version (silent failure).
 
       // Use cached version if available.
       if (record) {
@@ -172,7 +170,7 @@ async function checkForUpdates(
           updateAvailable: version !== record.version,
         }
       } else {
-        logger.debug('No version information available')
+        // Debug: No version information available.
         return false
       }
     }
@@ -224,9 +222,7 @@ async function scheduleUpdateCheck(
     await checkForUpdates(updateOptions)
   } catch (error) {
     // Silent failure - update checks should never block the main CLI.
-    logger.debug(
-      `Update check failed: ${error instanceof Error ? error.message : String(error)}`,
-    )
+    // Debug: Update check failed.
   }
 }
 

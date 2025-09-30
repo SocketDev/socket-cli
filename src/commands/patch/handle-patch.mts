@@ -5,7 +5,6 @@ import path from 'node:path'
 import fastGlob from 'fast-glob'
 
 import { joinAnd } from '@socketsecurity/registry/lib/arrays'
-import { debugDir } from '@socketsecurity/registry/lib/debug'
 import { readDirNames } from '@socketsecurity/registry/lib/fs'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { readPackageJson } from '@socketsecurity/registry/lib/packages'
@@ -22,6 +21,7 @@ import {
   NPM,
   UTF8,
 } from '../../constants.mts'
+import { debugDir } from '../../utils/debug.mts'
 import { getErrorCause } from '../../utils/errors.mts'
 import { findUp } from '../../utils/fs.mts'
 import { getPurlObject, normalizePurl } from '../../utils/purl.mts'

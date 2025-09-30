@@ -1,7 +1,6 @@
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
-
 import { outputConfigSet } from './output-config-set.mts'
 import { updateConfigValue } from '../../utils/config.mts'
+import { debugDir, debugFn } from '../../utils/debug.mts'
 
 import type { OutputKind } from '../../types.mts'
 import type { LocalConfig } from '../../utils/config.mts'

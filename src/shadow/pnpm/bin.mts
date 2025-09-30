@@ -2,7 +2,6 @@ import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { normalizePath } from '@socketsecurity/registry/lib/path'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
@@ -24,6 +23,7 @@ import { installPnpmLinks } from '../../utils/shadow-links.mts'
 import { logAlertsMap } from '../../utils/socket-package-alert.mts'
 import { scanPackagesAndLogAlerts } from '../common.mts'
 import { ensureIpcInStdio } from '../stdio-ipc.mts'
+import { debugDir, debugFn } from '../utils/debug.mts'
 
 import type { IpcObject } from '../../constants.mts'
 import type {

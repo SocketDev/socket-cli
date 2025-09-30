@@ -224,9 +224,7 @@ const NetworkUtils = {
 
         // Exponential backoff.
         const delay = baseDelay * Math.pow(2, attempts - 1)
-        logger.debug(
-          `Attempt ${attempts} failed, retrying in ${delay}ms: ${error instanceof Error ? error.message : String(error)}`,
-        )
+        // Debug: Attempt failed, retrying with exponential backoff.
 
         // eslint-disable-next-line no-await-in-loop
         await new Promise(resolve => setTimeout(resolve, delay))
@@ -257,28 +255,21 @@ async function checkForUpdates(
     throw new Error('Current version must be a non-empty string')
   }
 
-  try {
-    const latest = await NetworkUtils.getLatestVersion(name, {
-      ...(authInfo ? { authInfo } : {}),
-      ...(registryUrl ? { registryUrl } : {}),
-    })
+  const latest = await NetworkUtils.getLatestVersion(name, {
+    ...(authInfo ? { authInfo } : {}),
+    ...(registryUrl ? { registryUrl } : {}),
+  })
 
-    if (!isNonEmptyString(latest)) {
-      throw new Error('No version information available from registry')
-    }
+  if (!isNonEmptyString(latest)) {
+    throw new Error('No version information available from registry')
+  }
 
-    const updateAvailable = isUpdateAvailable(version, latest)
+  const updateAvailable = isUpdateAvailable(version, latest)
 
-    return {
-      current: version,
-      latest,
-      updateAvailable,
-    }
-  } catch (error) {
-    logger.debug(
-      `Failed to check for updates: ${error instanceof Error ? error.message : String(error)}`,
-    )
-    throw error
+  return {
+    current: version,
+    latest,
+    updateAvailable,
   }
 }
 

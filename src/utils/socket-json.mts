@@ -21,9 +21,9 @@
 import { existsSync, promises as fs, readFileSync } from 'node:fs'
 import path from 'node:path'
 
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
+import { debugDir, debugFn } from './debug.mts'
 import { formatErrorWithDetail } from './errors.mts'
 import { findUp } from './fs.mts'
 import { SOCKET_JSON, SOCKET_WEBSITE_URL } from '../constants.mts'

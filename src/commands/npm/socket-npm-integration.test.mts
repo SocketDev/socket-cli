@@ -2,7 +2,6 @@ import path from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
-import { isDebug } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
@@ -12,6 +11,7 @@ import constants, {
   FLAG_HELP,
   FLAG_SILENT,
 } from '../../constants.mts'
+import { isDebug } from '../../utils/debug.mts'
 
 import type { SpawnError } from '@socketsecurity/registry/lib/spawn'
 

@@ -1,7 +1,6 @@
 import path from 'node:path'
 
 import { joinAnd } from '@socketsecurity/registry/lib/arrays'
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { pluralize } from '@socketsecurity/registry/lib/words'
 
@@ -15,6 +14,7 @@ import { getSocketFixPrs, openSocketFixPr } from './pull-request.mts'
 import { FLAG_DRY_RUN, GQL_PR_STATE_OPEN } from '../../constants.mts'
 import { handleApiCall } from '../../utils/api.mts'
 import { cmdFlagValueToArray } from '../../utils/cmd.mts'
+import { debugDir, debugFn } from '../../utils/debug.mts'
 import { spawnCoanaDlx } from '../../utils/dlx.mts'
 import { getErrorCause } from '../../utils/errors.mts'
 import {
