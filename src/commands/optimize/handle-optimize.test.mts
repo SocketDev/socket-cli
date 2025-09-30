@@ -3,10 +3,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { handleOptimize } from './handle-optimize.mts'
 
 // Mock the dependencies.
-vi.mock('@socketsecurity/registry/lib/debug', () => ({
-  debugDir: vi.fn(),
-  debugFn: vi.fn(),
-}))
 vi.mock('@socketsecurity/registry/lib/logger', () => ({
   logger: {
     info: vi.fn(),

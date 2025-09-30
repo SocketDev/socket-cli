@@ -6,10 +6,6 @@ import { convertIdsToGhsas, handleFix } from './handle-fix.mts'
 vi.mock('@socketsecurity/registry/lib/arrays', () => ({
   joinAnd: vi.fn(arr => arr.join(' and ')),
 }))
-vi.mock('@socketsecurity/registry/lib/debug', () => ({
-  debugDir: vi.fn(),
-  debugFn: vi.fn(),
-}))
 vi.mock('@socketsecurity/registry/lib/logger', () => ({
   logger: {
     error: vi.fn(),

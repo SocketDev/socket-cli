@@ -1,10 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
 // Mock the dependencies.
-vi.mock('@socketsecurity/registry/lib/debug', () => ({
-  debugDir: vi.fn(),
-  debugFn: vi.fn(),
-}))
 
 vi.mock('@socketsecurity/registry/lib/logger', () => ({
   logger: {
