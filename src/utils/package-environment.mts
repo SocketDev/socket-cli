@@ -34,7 +34,7 @@ import { parse as parseBunLockb } from '@socketregistry/hyrious__bun.lockb/index
 import { whichBin } from '@socketsecurity/registry/lib/bin'
 import { readFileBinary, readFileUtf8 } from '@socketsecurity/registry/lib/fs'
 import { Logger } from '@socketsecurity/registry/lib/logger'
-import { readPackageJson } from '@socketsecurity/registry/lib/packages'
+import { getEditablePackageJsonClass } from '@socketsecurity/registry/lib/packages'
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
@@ -51,8 +51,13 @@ import constants, {
 
 import type { CResult } from '../types.mts'
 import type { Remap } from '@socketsecurity/registry/lib/objects'
-import type { EditablePackageJson } from '@socketsecurity/registry/lib/packages'
 import type { SemVer } from 'semver'
+
+type EditablePackageJsonInstance = ReturnType<
+  ReturnType<typeof getEditablePackageJsonClass>['load']
+> extends Promise<infer T>
+  ? T
+  : never
 
 const {
   BUN,
@@ -113,7 +118,7 @@ export type EnvDetails = Readonly<
   Remap<
     EnvBase & {
       agentVersion: SemVer
-      editablePkgJson: EditablePackageJson
+      editablePkgJson: EditablePackageJsonInstance
       lockName: string
       lockPath: string
       lockSrc: string
@@ -137,7 +142,7 @@ export type PartialEnvDetails = Readonly<
   Remap<
     EnvBase & {
       agentVersion: SemVer | undefined
-      editablePkgJson: EditablePackageJson | undefined
+      editablePkgJson: EditablePackageJsonInstance | undefined
       lockName: string | undefined
       lockPath: string | undefined
       lockSrc: string | undefined
@@ -181,10 +186,10 @@ const readLockFileByAgent: Map<Agent, ReadLockFile> = (() => {
           lockPath: string,
           agentExecPath: string,
           cwd = process.cwd(),
-        ) => {
+        ): Promise<string> => {
           const ext = path.extname(lockPath)
           if (ext === EXT_LOCK) {
-            return await defaultReader(lockPath)
+            return (await defaultReader(lockPath)) ?? ''
           }
           if (ext === EXT_LOCKB) {
             const lockBuffer = await binaryReader(lockPath)
@@ -196,25 +201,26 @@ const readLockFileByAgent: Map<Agent, ReadLockFile> = (() => {
             // To print a Yarn lockfile to your console without writing it to disk
             // use `bun bun.lockb`.
             // https://bun.sh/guides/install/yarnlock
-            return (
-              await spawn(agentExecPath, [lockPath], {
-                cwd,
-                // On Windows, bun is often a .cmd file that requires shell execution.
-                // The spawn function from @socketsecurity/registry will handle this properly
-                // when shell is true.
-                shell: constants.WIN32,
-              })
-            ).stdout
+            const result = await spawn(agentExecPath, [lockPath], {
+              cwd,
+              // On Windows, bun is often a .cmd file that requires shell execution.
+              // The spawn function from @socketsecurity/registry will handle this properly
+              // when shell is true.
+              shell: constants.WIN32,
+            })
+            return typeof result.stdout === 'string'
+              ? result.stdout
+              : result.stdout.toString('utf8')
           }
-          return undefined
+          return ''
         },
-      ),
+      ) as ReadLockFile,
     ],
-    [NPM, defaultReader],
-    [PNPM, defaultReader],
-    [VLT, defaultReader],
-    [YARN_BERRY, defaultReader],
-    [YARN_CLASSIC, defaultReader],
+    [NPM, defaultReader as ReadLockFile],
+    [PNPM, defaultReader as ReadLockFile],
+    [VLT, defaultReader as ReadLockFile],
+    [YARN_BERRY, defaultReader as ReadLockFile],
+    [YARN_CLASSIC, defaultReader as ReadLockFile],
   ])
 })()
 
@@ -255,7 +261,8 @@ async function getAgentExecPath(agent: Agent): Promise<string> {
       return npmInNodeDir
     }
     // Fall back to whichBin.
-    return (await whichBin(binName, { nothrow: true })) ?? binName
+    const result = await whichBin(binName, { nothrow: true })
+    return (Array.isArray(result) ? result[0] : result) ?? binName
   }
   if (binName === PNPM) {
     // Try to use constants.pnpmExecPath first, but verify it exists.
@@ -264,9 +271,11 @@ async function getAgentExecPath(agent: Agent): Promise<string> {
       return pnpmPath
     }
     // Fall back to whichBin.
-    return (await whichBin(binName, { nothrow: true })) ?? binName
+    const result = await whichBin(binName, { nothrow: true })
+    return (Array.isArray(result) ? result[0] : result) ?? binName
   }
-  return (await whichBin(binName, { nothrow: true })) ?? binName
+  const result = await whichBin(binName, { nothrow: true })
+  return (Array.isArray(result) ? result[0] : result) ?? binName
 }
 
 async function getAgentVersion(
@@ -278,22 +287,21 @@ async function getAgentVersion(
   const quotedCmd = `\`${agent} ${FLAG_VERSION}\``
   debugFn('stdio', `spawn: ${quotedCmd}`)
   try {
-    result =
-      // Coerce version output into a valid semver version by passing it through
-      // semver.coerce which strips leading v's, carets (^), comparators (<,<=,>,>=,=),
-      // and tildes (~).
-      semver.coerce(
-        // All package managers support the "--version" flag.
-        (
-          await spawn(agentExecPath, [FLAG_VERSION], {
-            cwd,
-            // On Windows, package managers are often .cmd files that require shell execution.
-            // The spawn function from @socketsecurity/registry will handle this properly
-            // when shell is true.
-            shell: constants.WIN32,
-          })
-        ).stdout,
-      ) ?? undefined
+    const spawnResult = await spawn(agentExecPath, [FLAG_VERSION], {
+      cwd,
+      // On Windows, package managers are often .cmd files that require shell execution.
+      // The spawn function from @socketsecurity/registry will handle this properly
+      // when shell is true.
+      shell: constants.WIN32,
+    })
+    // Coerce version output into a valid semver version by passing it through
+    // semver.coerce which strips leading v's, carets (^), comparators (<,<=,>,>=,=),
+    // and tildes (~).
+    const stdout =
+      typeof spawnResult.stdout === 'string'
+        ? spawnResult.stdout
+        : spawnResult.stdout.toString('utf8')
+    result = semver.coerce(stdout) ?? undefined
   } catch (e) {
     debugFn('error', `Package manager command failed: ${quotedCmd}`)
     debugDir('inspect', { cmd: quotedCmd })
@@ -319,15 +327,15 @@ export async function detectPackageEnvironment({
     pkgJsonPath && existsSync(pkgJsonPath)
       ? path.dirname(pkgJsonPath)
       : undefined
-  const editablePkgJson = pkgPath
-    ? await readPackageJson(pkgPath, { editable: true })
+  const editablePkgJson = pkgJsonPath
+    ? await getEditablePackageJsonClass().load(pkgJsonPath)
     : undefined
   // Read Corepack `packageManager` field in package.json:
   // https://nodejs.org/api/packages.html#packagemanager
   const pkgManager = isNonEmptyString(
-    editablePkgJson?.['content']?.packageManager,
+    editablePkgJson?.content?.['packageManager'] as any,
   )
-    ? editablePkgJson['content'].packageManager
+    ? (editablePkgJson?.content['packageManager'] as string)
     : undefined
 
   let agent: Agent | undefined
@@ -362,7 +370,9 @@ export async function detectPackageEnvironment({
   }
   const { maintainedNodeVersions } = constants
   const minSupportedAgentVersion = constants.minimumVersionByAgent.get(agent)!
-  const minSupportedNodeMajor = semver.major(maintainedNodeVersions.last)
+  const minSupportedNodeMajor = semver.major(
+    maintainedNodeVersions[maintainedNodeVersions.length - 1]!,
+  )
   const minSupportedNodeVersion = `${minSupportedNodeMajor}.0.0`
   const minSupportedNodeRange = `>=${minSupportedNodeMajor}`
   const nodeVersion = semver.coerce(process.version)!
@@ -371,8 +381,10 @@ export async function detectPackageEnvironment({
   let pkgNodeRange: string | undefined
   let pkgMinAgentVersion = minSupportedAgentVersion
   let pkgMinNodeVersion = minSupportedNodeVersion
-  if (editablePkgJson?.['content']) {
-    const { engines } = editablePkgJson['content']
+  if (editablePkgJson) {
+    const engines = editablePkgJson.content?.['engines'] as
+      | Record<string, string>
+      | undefined
     const engineAgentRange = engines?.[agent]
     const engineNodeRange = engines?.['node']
     if (isNonEmptyString(engineAgentRange)) {
@@ -393,7 +405,7 @@ export async function detectPackageEnvironment({
         pkgMinNodeVersion = coerced.version
       }
     }
-    const browserslistQuery = editablePkgJson['content']['browserslist'] as
+    const browserslistQuery = editablePkgJson.content?.['browserslist'] as
       | string[]
       | undefined
     if (Array.isArray(browserslistQuery)) {
@@ -502,7 +514,10 @@ export async function detectAndValidatePackageEnvironment(
     }
   }
   if (!details.nodeSupported) {
-    const minVersion = constants.maintainedNodeVersions.last
+    const minVersion =
+      constants.maintainedNodeVersions[
+        constants.maintainedNodeVersions.length - 1
+      ]!
     return {
       ok: false,
       message: 'Version mismatch',

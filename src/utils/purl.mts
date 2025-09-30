@@ -23,11 +23,12 @@
  * See: https://github.com/package-url/purl-spec
  */
 
-import { PackageURL, type PurlQualifiers } from '@socketregistry/packageurl-js'
+import { PackageURL } from '@socketregistry/packageurl-js'
 import { isObjectObject } from '@socketsecurity/registry/lib/objects'
 
 import type { SocketArtifact } from './alert/artifact.mts'
 import type { PURL_Type } from './ecosystem.mts'
+import type { QualifiersObject } from '@socketregistry/packageurl-js/dist/purl-component'
 
 export type PurlObject<T> = T & { type: PURL_Type }
 
@@ -38,7 +39,7 @@ export type CreatePurlObjectOptions = {
   namespace?: string | undefined
   name?: string | undefined
   version?: string | undefined
-  qualifiers?: PurlQualifiers | undefined
+  qualifiers?: QualifiersObject | undefined
   subpath?: string | undefined
   throws?: boolean | undefined
 }

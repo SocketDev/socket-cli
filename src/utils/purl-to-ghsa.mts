@@ -53,9 +53,9 @@ export async function convertPurlToGhsas(
 
     const response = await cacheFetch(cacheKey, () =>
       octokit.rest.securityAdvisories.listGlobalAdvisories({
-        ecosystem: githubEcosystem as any,
+        ecosystem: githubEcosystem,
         affects,
-      }),
+      } as any),
     )
 
     return {

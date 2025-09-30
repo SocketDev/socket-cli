@@ -47,7 +47,6 @@ import constants, {
 } from '../constants.mts'
 
 import type { CResult } from '../types.mts'
-import type { IncomingMessage } from 'node:http'
 
 const TOKEN_VISIBLE_LENGTH = 5
 
@@ -167,7 +166,7 @@ export async function setupSdk(
  * Helper function to replicate SDK's removed queryApiJson method.
  */
 export async function queryApiJson<T = unknown>(
-  sdk: SocketSdk,
+  _sdk: SocketSdk,
   path: string,
   options?: { throws?: boolean; description?: string } | undefined,
 ): Promise<CResult<T>> {
@@ -215,7 +214,7 @@ export async function queryApiJson<T = unknown>(
  * Helper function to replicate SDK's removed queryApiText method.
  */
 export async function queryApiText(
-  sdk: SocketSdk,
+  _sdk: SocketSdk,
   path: string,
   options?: { throws?: boolean; description?: string } | undefined,
 ): Promise<CResult<string>> {

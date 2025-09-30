@@ -169,12 +169,12 @@ function getAsciiHeader(
   const versionHash = constants.ENV['INLINED_SOCKET_CLI_VERSION_HASH']
   const cliVersion = redacting
     ? REDACTED
-    : isDebug()
+    : isDebug('socket:cli')
       ? versionHash
       : `v${fullVersion}`
 
   const nodeVersion = redacting ? REDACTED : process.version
-  const showNodeVersion = !redacting && isDebug()
+  const showNodeVersion = !redacting && isDebug('socket:cli')
   const defaultOrg = getConfigValueOrUndef(CONFIG_KEY_DEFAULT_ORG)
   const configFromFlagDot = isConfigFromFlag() ? '*' : '.'
 
@@ -369,7 +369,7 @@ export async function meowWithSubcommands(
   }
 
   if (isRootCommand) {
-    const hiddenDebugFlag = !isDebug()
+    const hiddenDebugFlag = !isDebug('socket:cli')
 
     flags['compactHeader'] = {
       ...flags['compactHeader'],
@@ -449,7 +449,7 @@ export async function meowWithSubcommands(
 
   const compactMode =
     compactHeaderFlag || (constants.ENV['CI'] && !constants.ENV['VITEST'])
-  const noSpinner = spinnerFlag === false || isDebug()
+  const noSpinner = spinnerFlag === false || isDebug('socket:cli')
 
   // Use CI spinner style when --no-spinner is passed or debug mode is enabled.
   // This prevents the spinner from interfering with debug output.
@@ -834,7 +834,7 @@ export function meowOrExit(
 
   const compactMode =
     compactHeaderFlag || (constants.ENV['CI'] && !constants.ENV['VITEST'])
-  const noSpinner = spinnerFlag === false || isDebug()
+  const noSpinner = spinnerFlag === false || isDebug('socket:cli')
 
   // Use CI spinner style when --no-spinner is passed.
   // This prevents the spinner from interfering with debug output.

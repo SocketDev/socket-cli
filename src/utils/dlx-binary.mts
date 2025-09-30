@@ -63,7 +63,7 @@ export interface DlxBinaryResult {
   /** Whether the binary was newly downloaded. */
   downloaded: boolean
   /** The spawn promise for the running process. */
-  spawnPromise: ReturnType<typeof spawn>['spawnPromise']
+  spawnPromise: ReturnType<typeof spawn>
 }
 
 const { DLX_BINARY_CACHE_TTL } = constants

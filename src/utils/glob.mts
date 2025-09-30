@@ -246,9 +246,9 @@ export async function globWithGitIgnore(
     absolute: true,
     cwd,
     dot: true,
-    ignore: hasNegatedPattern ? defaultIgnore : [...ignores],
+    ignore: (hasNegatedPattern ? defaultIgnore : [...ignores]) as string[],
     ...additionalOptions,
-  } as GlobOptions
+  } as unknown as GlobOptions
 
   if (!hasNegatedPattern) {
     return await fastGlob.glob(patterns as string[], globOptions)
@@ -282,8 +282,8 @@ export async function globWorkspace(
     ? await fastGlob.glob(workspaceGlobs, {
         absolute: true,
         cwd,
-        ignore: defaultIgnore,
-      })
+        ignore: defaultIgnore as string[],
+      } as unknown as GlobOptions)
     : []
 }
 

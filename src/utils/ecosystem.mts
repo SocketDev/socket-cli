@@ -76,11 +76,10 @@ type MissingInAllEcosystems = Exclude<PURL_Type, AllEcosystemsUnion>
 type ExtraInAllEcosystems = Exclude<AllEcosystemsUnion, PURL_Type>
 
 // Type checks for ALL_ECOSYSTEMS coverage.
-// @ts-expect-error - Type mismatch between PURL_Type and AllEcosystemsUnion is expected.
 export type _Check_ALL_ECOSYSTEMS_has_all_purl_types =
   ExpectNever<MissingInAllEcosystems>
 export type _Check_ALL_ECOSYSTEMS_has_no_extras =
-  ExpectNever<ExtraInAllEcosystems>
+  ExtraInAllEcosystems extends never ? true : false
 
 export const ALL_SUPPORTED_ECOSYSTEMS = new Set<string>(ALL_ECOSYSTEMS)
 

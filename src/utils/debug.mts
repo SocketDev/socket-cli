@@ -38,7 +38,7 @@ function isDebug(_namespace: string): boolean {
  */
 function debugFn(namespace: string, ...args: any[]): void {
   const debug = debugFnOriginal(namespace)
-  if (debug.enabled) {
+  if (debug?.enabled) {
     debug(...args)
   }
 }
