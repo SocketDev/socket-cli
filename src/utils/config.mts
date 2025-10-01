@@ -294,7 +294,7 @@ export function overrideConfigApiToken(apiToken: unknown) {
   debugFn('notice', 'override: Socket API token (not stored)')
   // Set token to the local cached config and mark it read-only so it doesn't persist.
   _cachedConfig = {
-    ...config,
+    ..._cachedConfig,
     ...(apiToken === undefined ? {} : { apiToken: String(apiToken) }),
   } as LocalConfig
   _configFromFlag = true
