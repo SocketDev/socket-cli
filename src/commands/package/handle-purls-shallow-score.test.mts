@@ -9,6 +9,12 @@ vi.mock('./fetch-purls-shallow-score.mts', () => ({
 vi.mock('./output-purls-shallow-score.mts', () => ({
   outputPurlsShallowScore: vi.fn(),
 }))
+vi.mock('../../utils/debug.mts', () => ({
+  debugDir: vi.fn(),
+  debugFn: vi.fn(),
+  debugLog: vi.fn(),
+  isDebug: vi.fn(() => false),
+}))
 
 describe('handlePurlsShallowScore', () => {
   beforeEach(() => {
@@ -126,7 +132,7 @@ describe('handlePurlsShallowScore', () => {
 
   it('logs debug information', async () => {
     const { debugDir, debugFn } = await import(
-      '@socketsecurity/registry/lib/debug'
+      '../../utils/debug.mts'
     )
     const { fetchPurlsShallowScore } = await import(
       './fetch-purls-shallow-score.mts'
@@ -160,7 +166,7 @@ describe('handlePurlsShallowScore', () => {
   })
 
   it('logs debug information on failure', async () => {
-    const { debugFn } = await import('@socketsecurity/registry/lib/debug')
+    const { debugFn } = await import('../../utils/debug.mts')
     const { fetchPurlsShallowScore } = await import(
       './fetch-purls-shallow-score.mts'
     )
