@@ -9,6 +9,12 @@ vi.mock('./fetch-create-repo.mts', () => ({
 vi.mock('./output-create-repo.mts', () => ({
   outputCreateRepo: vi.fn(),
 }))
+vi.mock('../../utils/debug.mts', () => ({
+  debugDir: vi.fn(),
+  debugFn: vi.fn(),
+  debugLog: vi.fn(),
+  isDebug: vi.fn(() => false),
+}))
 
 describe('handleCreateRepo', () => {
   beforeEach(() => {
@@ -118,7 +124,7 @@ describe('handleCreateRepo', () => {
 
   it('logs debug information', async () => {
     const { debugDir, debugFn } = await import(
-      '@socketsecurity/registry/lib/debug'
+      '../../utils/debug.mts'
     )
     const { fetchCreateRepo } = await import('./fetch-create-repo.mts')
 
@@ -158,7 +164,7 @@ describe('handleCreateRepo', () => {
   })
 
   it('logs debug information on failure', async () => {
-    const { debugFn } = await import('@socketsecurity/registry/lib/debug')
+    const { debugFn } = await import('../../utils/debug.mts')
     const { fetchCreateRepo } = await import('./fetch-create-repo.mts')
 
     vi.mocked(fetchCreateRepo).mockResolvedValue({
