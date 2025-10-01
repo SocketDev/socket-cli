@@ -150,6 +150,13 @@ export default function baseConfig(extendConfig = {}) {
       ) {
         return true
       }
+      // Externalize @socketsecurity/sdk and all its internal paths.
+      if (
+        pkgName === '@socketsecurity/sdk' ||
+        id.includes('/@socketsecurity+sdk@')
+      ) {
+        return true
+      }
       return (
         id.endsWith('.d.cts') ||
         id.endsWith('.d.mts') ||
