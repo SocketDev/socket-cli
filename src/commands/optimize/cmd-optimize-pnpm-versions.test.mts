@@ -285,7 +285,13 @@ describe('socket optimize - pnpm versions', { timeout: 60_000 }, async () => {
 
         const { code, stderr } = await spawnSocketCli(
           binCliPath,
-          ['optimize', pnpm9FixtureDir, '--pin', FLAG_CONFIG, '{}'],
+          [
+            'optimize',
+            pnpm9FixtureDir,
+            '--pin',
+            FLAG_CONFIG,
+            '{"apiToken":"fake-token"}',
+          ],
           {
             cwd: pnpm9FixtureDir,
             env: {
