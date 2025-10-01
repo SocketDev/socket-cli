@@ -152,24 +152,9 @@ async function copyExternalPackages() {
     ).map(async p => {
       const relPath = path.relative(path.dirname(p), socketRegistryPath)
       const content = await fs.readFile(p, 'utf8')
-      let modded = content.replace(
+      const modded = content.replace(
         /(?<=require\(["'])@socketsecurity\/registry(?=(?:\/[^"']+)?["']\))/g,
         () => relPath,
-      )
-      // Fix kebab-case constant names to match actual registry file names.
-      // Some constants are kebab-case (abort-signal), others are UPPER_SNAKE_CASE (SOCKET_PUBLIC_API_TOKEN).
-      modded = modded.replace(
-        /\/constants\/([\w-]+)(?=["'])/g,
-        (match, name) => {
-          // Keep kebab-case names that exist as-is: abort-signal, abort-controller, etc.
-          // Convert others to UPPER_SNAKE_CASE: socket-public-api-token -> SOCKET_PUBLIC_API_TOKEN
-          if (name.startsWith('abort-') || name === 'signal-exit') {
-            return `/constants/${name}`
-          }
-          // Convert kebab-case to UPPER_SNAKE_CASE.
-          const upperSnake = name.replace(/-/g, '_').toUpperCase()
-          return `/constants/${upperSnake}`
-        },
       )
       await fs.writeFile(p, modded, 'utf8')
     }),

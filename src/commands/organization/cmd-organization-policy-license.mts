@@ -5,6 +5,7 @@ import constants from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
+import { InputError } from '../../utils/errors.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import {
@@ -88,13 +89,35 @@ async function run(
 
   const hasApiToken = hasDefaultApiToken()
 
+  const outputKind = getOutputKind(json, markdown)
+
+  if (dryRun) {
+    await determineOrgSlug(String(orgFlag || ''), interactive, dryRun)
+    logger.log(constants.DRY_RUN_BAILING_NOW)
+    // Validate input and set exit code even in dry-run mode.
+    checkCommandInput(
+      outputKind,
+      {
+        nook: true,
+        test: !json || !markdown,
+        message: 'The json and markdown flags cannot be both set, pick one',
+        fail: 'omit one',
+      },
+      {
+        nook: true,
+        test: hasApiToken,
+        message: 'This command requires a Socket API token for access',
+        fail: 'try `socket login`',
+      },
+    )
+    return
+  }
+
   const { 0: orgSlug } = await determineOrgSlug(
     String(orgFlag || ''),
     interactive,
     dryRun,
   )
-
-  const outputKind = getOutputKind(json, markdown)
 
   const wasValidInput = checkCommandInput(
     outputKind,
@@ -115,9 +138,9 @@ async function run(
     return
   }
 
-  if (dryRun) {
-    logger.log(constants.DRY_RUN_BAILING_NOW)
-    return
+  if (!orgSlug) {
+    process.exitCode = 2
+    throw new InputError('Unable to determine organization slug')
   }
 
   await handleLicensePolicy(orgSlug, outputKind)
