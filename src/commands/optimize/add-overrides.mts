@@ -4,7 +4,6 @@ import semver from 'semver'
 
 import { getManifestData } from '@socketsecurity/registry'
 import { hasOwn, toSortedObject } from '@socketsecurity/registry/lib/objects'
-import { fetchPackageManifest } from '@socketsecurity/registry/lib/packages'
 import { pEach } from '@socketsecurity/registry/lib/promises'
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
@@ -109,14 +108,16 @@ export async function addOverrides(
 
   const depAliasMap = new Map<string, string>()
   const depEntries = getDependencyEntries(pkgEnvDetails)
-  const manifestEntries = manifestNpmOverrides.filter(({ 1: data }) =>
-    semver.satisfies(
-      // Roughly check Node range as semver.coerce will strip leading
-      // v's, carets (^), comparators (<,<=,>,>=,=), and tildes (~).
-      semver.coerce(data.engines.node)!,
+  const manifestEntries = manifestNpmOverrides.filter(({ 1: data }) => {
+    // Check if the project's minimum Node version satisfies the package's requirement.
+    const projectMinVersion = semver.minVersion(
       pkgEnvDetails.pkgRequirements.node,
-    ),
-  )
+    )
+    return (
+      projectMinVersion &&
+      semver.satisfies(projectMinVersion, data.engines.node)
+    )
+  })
 
   const addingText = `Adding overrides to ${workspace}...`
   let loggedAddingText = false
@@ -222,11 +223,9 @@ export async function addOverrides(
                       )?.version ?? version,
                     ) !== major
                   ) {
-                    const otherVersion = (await fetchPackageManifest(thisSpec))
-                      ?.version
-                    if (otherVersion && otherVersion !== version) {
-                      newSpec = `${sockOverridePrefix}${pin ? otherVersion : `^${getMajor(otherVersion)!}`}`
-                    }
+                    // Use the manifest version directly instead of fetching from npm registry.
+                    // The Socket registry manifest is the source of truth for available versions.
+                    newSpec = sockOverrideSpec
                   }
                 } else {
                   newSpec = oldSpec

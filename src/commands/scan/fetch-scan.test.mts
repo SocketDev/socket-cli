@@ -60,7 +60,6 @@ describe('fetchScan', () => {
     const mockSetupSdk = vi.mocked(setupSdk)
 
     mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    const mockQueryApiText = vi.mocked(queryApiText)
 
     const error = {
       ok: false,
@@ -78,16 +77,13 @@ describe('fetchScan', () => {
   it('handles invalid JSON in scan data', async () => {
     const { fetchScan } = await import('./fetch-scan.mts')
     const { queryApiText, setupSdk } = await import('../../utils/sdk.mts')
+    const { debugDir, debugFn } = await import('../../utils/debug.mts')
     const mockQueryApiText = vi.mocked(queryApiText)
     const mockSetupSdk = vi.mocked(setupSdk)
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    const { debugDir, debugFn } = await import(
-      '../../utils/debug.mts'
-    )
-    const mockQueryApiText = vi.mocked(queryApiText)
     const mockDebugFn = vi.mocked(debugFn)
     const mockDebugDir = vi.mocked(debugDir)
+
+    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
 
     const invalidJson = [
       '{"type":"package","name":"valid"}',
@@ -124,7 +120,6 @@ describe('fetchScan', () => {
     const mockSetupSdk = vi.mocked(setupSdk)
 
     mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    const mockQueryApiText = vi.mocked(queryApiText)
 
     mockQueryApiText.mockResolvedValue({
       ok: true,
@@ -144,7 +139,6 @@ describe('fetchScan', () => {
     const mockSetupSdk = vi.mocked(setupSdk)
 
     mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    const mockQueryApiText = vi.mocked(queryApiText)
 
     // The function filters out empty lines with .filter(Boolean), but '   ' is truthy.
     // So it will try to parse '   ' as JSON and fail.
@@ -176,7 +170,6 @@ describe('fetchScan', () => {
     const mockSetupSdk = vi.mocked(setupSdk)
 
     mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    const mockQueryApiText = vi.mocked(queryApiText)
 
     mockQueryApiText.mockResolvedValue({
       ok: true,
@@ -188,8 +181,12 @@ describe('fetchScan', () => {
     await fetchScan('test-org', specialCharsScanId)
 
     expect(mockQueryApiText).toHaveBeenCalledWith(
+      mockSdk,
       'orgs/test-org/full-scans/scan%2Bwith%25special%26chars%2Fand%3Fquery%3Dparams',
-      'a scan',
+      {
+        throws: false,
+        description: 'a scan',
+      },
     )
   })
 
@@ -200,7 +197,6 @@ describe('fetchScan', () => {
     const mockSetupSdk = vi.mocked(setupSdk)
 
     mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    const mockQueryApiText = vi.mocked(queryApiText)
 
     mockQueryApiText.mockResolvedValue({
       ok: true,
@@ -219,8 +215,12 @@ describe('fetchScan', () => {
       await fetchScan(orgSlug, 'scan-123')
 
       expect(mockQueryApiText).toHaveBeenCalledWith(
+        mockSdk,
         `orgs/${orgSlug}/full-scans/scan-123`,
-        'a scan',
+        {
+          throws: false,
+          description: 'a scan',
+        },
       )
     }
   })
@@ -232,7 +232,6 @@ describe('fetchScan', () => {
     const mockSetupSdk = vi.mocked(setupSdk)
 
     mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    const mockQueryApiText = vi.mocked(queryApiText)
 
     const singleLineData =
       '{"type":"package","name":"single","version":"1.0.0"}'
@@ -257,7 +256,6 @@ describe('fetchScan', () => {
     const mockSetupSdk = vi.mocked(setupSdk)
 
     mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    const mockQueryApiText = vi.mocked(queryApiText)
 
     mockQueryApiText.mockResolvedValue({
       ok: true,
