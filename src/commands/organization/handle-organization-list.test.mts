@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { handleOrganizationList } from './handle-organization-list.mts'
 
@@ -12,7 +12,18 @@ vi.mock('./output-organization-list.mts', () => ({
   outputOrganizationList: vi.fn(),
 }))
 
+vi.mock('../../utils/debug.mts', () => ({
+  debugDir: vi.fn(),
+  debugFn: vi.fn(),
+  debugLog: vi.fn(),
+  isDebug: vi.fn(() => false),
+}))
+
 describe('handleOrganizationList', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
   it('fetches and outputs organization list successfully', async () => {
     const { fetchOrganization } = await import('./fetch-organization-list.mts')
     const { outputOrganizationList } = await import(
@@ -98,7 +109,7 @@ describe('handleOrganizationList', () => {
 
   it('passes debug messages correctly', async () => {
     const { debugDir, debugFn } = await import(
-      '@socketsecurity/registry/lib/debug'
+      '../../utils/debug.mts'
     )
     const { fetchOrganization } = await import('./fetch-organization-list.mts')
     const mockDebugDir = vi.mocked(debugDir)
@@ -123,7 +134,7 @@ describe('handleOrganizationList', () => {
   })
 
   it('handles error case with debug messages', async () => {
-    const { debugFn } = await import('@socketsecurity/registry/lib/debug')
+    const { debugFn } = await import('../../utils/debug.mts')
     const { fetchOrganization } = await import('./fetch-organization-list.mts')
     const mockDebugFn = vi.mocked(debugFn)
     const mockFetch = vi.mocked(fetchOrganization)
