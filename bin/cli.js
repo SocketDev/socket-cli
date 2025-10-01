@@ -11,7 +11,7 @@ void (async () => {
     path.join(rootPath, 'dist/constants.js'),
   )
   const { spawn } = require(
-    path.join(rootPath, 'external/@socketsecurity/registry/lib/spawn.js'),
+    path.join(rootPath, 'external/@socketsecurity/registry/dist/lib/spawn.js'),
   )
 
   process.exitCode = 1

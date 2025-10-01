@@ -8,7 +8,7 @@ overrides:
   '@octokit/graphql': 9.0.1
   '@octokit/request-error': 7.0.0
   '@rollup/plugin-commonjs': 28.0.6
-  '@socketsecurity/registry': 1.3.3
+  '@socketsecurity/registry': 1.3.4
   aggregate-error: npm:@socketregistry/aggregate-error@^1.0.14
   ansi-regex: 6.1.0
   ansi-term: 0.0.2
@@ -201,11 +201,11 @@ importers:
         specifier: 3.0.1
         version: 3.0.1
       '@socketsecurity/registry':
-        specifier: 1.3.3
-        version: 1.3.3
+        specifier: 1.3.4
+        version: 1.3.4
       '@socketsecurity/sdk':
-        specifier: 1.8.2
-        version: 1.8.2
+        specifier: 1.8.4
+        version: 1.8.4
       '@types/blessed':
         specifier: 0.1.25
         version: 0.1.25
@@ -1672,12 +1672,12 @@ packages:
     resolution: {integrity: sha512-kLKdSqi4W7SDSm5z+wYnfVRnZCVhxzbzuKcdOZSrcHoEGOT4Gl844uzoaML+f5eiQMxY+nISiETwRph/aXrIaQ==}
     engines: {node: 18.20.7 || ^20.18.3 || >=22.14.0}
 
-  '@socketsecurity/registry@1.3.3':
-    resolution: {integrity: sha512-x8+u4HoBSmIX1d/fNIXhKiddzAaHPjoLUzA1cQ9lhVTTu3LGdJqGlxqvVUbng3C6xLKDbc6jTiAnNR5OxgjYiQ==}
+  '@socketsecurity/registry@1.3.4':
+    resolution: {integrity: sha512-VCRpoju59/nOC+ESi7oboikyigX9DSPttYnOZ49BGaaeflMrN8ikq6Yt7HUwkt+c9Nccoz7oRwqzQfHksH9k5A==}
     engines: {node: '>=18'}
 
-  '@socketsecurity/sdk@1.8.2':
-    resolution: {integrity: sha512-8nSY7rWf2BK5rCEsiGXIdO06AXsGCdsMuZA0gUil4RhV4beV0BIZ1mWLbQo1dPJk1O0uzhbq7yCprObkhOmlag==}
+  '@socketsecurity/sdk@1.8.4':
+    resolution: {integrity: sha512-KyCU3o0UDu3jEwd1bQ6oK+cR9vXkY0kuH934cKCc4hmIw1P2idcjpKoisyOzLRSNDF0yrakdVFjXKdOCVHQNEA==}
     engines: {node: '>=18', pnpm: '>=10.16.0'}
 
   '@stroncium/procfs@1.2.1':
@@ -6129,11 +6129,11 @@ snapshots:
       pony-cause: 2.1.11
       yaml: 2.8.1
 
-  '@socketsecurity/registry@1.3.3': {}
+  '@socketsecurity/registry@1.3.4': {}
 
-  '@socketsecurity/sdk@1.8.2':
+  '@socketsecurity/sdk@1.8.4':
     dependencies:
-      '@socketsecurity/registry': 1.3.3
+      '@socketsecurity/registry': 1.3.4
 
   '@stroncium/procfs@1.2.1': {}
 

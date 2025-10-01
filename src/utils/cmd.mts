@@ -88,7 +88,7 @@ export function filterFlags(
   const flagsToFilterSet = new Set<string>()
   const flagsWithValueSet = new Set<string>()
 
-  for (const [flagName, flag] of Object.entries(flagsToFilter)) {
+  for (const { 0: flagName, 1: flag } of Object.entries(flagsToFilter)) {
     const longFlag = `--${camelToKebab(flagName)}`
     // Special case for negated booleans.
     if (flagName === 'spinner' || flagName === 'banner') {

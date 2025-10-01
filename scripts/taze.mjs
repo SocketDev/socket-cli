@@ -45,7 +45,7 @@ void (async () => {
 
   tazePromise.process.on('close', () => {
     if (hasProvenanceDowngrade) {
-      logger.error()
+      logger.error('')
       logger.fail(
         'ERROR: Provenance downgrade detected! Failing build to maintain security.',
       )

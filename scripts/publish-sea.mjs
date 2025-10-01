@@ -194,7 +194,7 @@ async function main() {
   console.log('Socket CLI SEA Publisher')
   console.log('========================')
   console.log(`Version: ${version}`)
-  console.log()
+  console.log('')
 
   // Build binaries.
   if (!options.skipBuild) {

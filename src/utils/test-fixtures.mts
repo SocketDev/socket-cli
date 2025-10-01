@@ -56,7 +56,7 @@ export async function createTempFixtures(
   const tempFixtures = Object.create(null) as Record<string, string>
   const tempDirs: string[] = []
 
-  for (const [name, fixturePath] of Object.entries(fixtures)) {
+  for (const { 0: name, 1: fixturePath } of Object.entries(fixtures)) {
     // eslint-disable-next-line no-await-in-loop
     const tempDir = await createTempFixture(fixturePath)
     tempFixtures[name] = tempDir
