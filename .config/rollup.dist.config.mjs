@@ -126,9 +126,9 @@ async function copyExternalPackages() {
       [
         socketRegistryPath,
         [
-          'dist/external/**/*.js',
-          'dist/index.js',
-          'dist/lib/**/*.js',
+          'external/**/*.js',
+          'index.js',
+          'lib/**/*.js',
           'extensions.json',
           'manifest.json',
         ],
