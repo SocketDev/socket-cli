@@ -8,6 +8,12 @@ vi.mock('@socketsecurity/registry/lib/logger', () => ({
     info: vi.fn(),
   },
 }))
+vi.mock('../../utils/debug.mts', () => ({
+  debugDir: vi.fn(),
+  debugFn: vi.fn(),
+  debugLog: vi.fn(),
+  isDebug: vi.fn(() => false),
+}))
 vi.mock('./apply-optimization.mts', () => ({
   applyOptimization: vi.fn(),
 }))
@@ -277,9 +283,7 @@ describe('handleOptimize', () => {
   })
 
   it('logs debug information', async () => {
-    const { debugDir, debugFn } = await import(
-      '@socketsecurity/registry/lib/debug'
-    )
+    const { debugDir, debugFn } = await import('../../utils/debug.mts')
     const { detectAndValidatePackageEnvironment } = await import(
       '../../utils/package-environment.mts'
     )
