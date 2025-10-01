@@ -41,6 +41,7 @@ const {
 
 export const EXTERNAL_PACKAGES = [
   '@socketsecurity/registry',
+  '@socketsecurity/sdk',
   'blessed',
   'blessed-contrib',
 ]

@@ -126,9 +126,9 @@ async function copyExternalPackages() {
       [
         socketRegistryPath,
         [
-          'external/**/*.js',
-          'index.js',
-          'lib/**/*.js',
+          'dist/external/**/*.js',
+          'dist/index.js',
+          'dist/lib/**/*.js',
           'extensions.json',
           'manifest.json',
         ],
@@ -138,6 +138,25 @@ async function copyExternalPackages() {
         exclude: [...alwaysIgnoredPatterns, ...ignorePatterns],
       })
       await removeEmptyDirs(thePath)
+    }),
+  )
+  // Rewire '@socketsecurity/registry' inside '@socketsecurity/sdk'.
+  const sdkPath = path.join(constants.externalPath, '@socketsecurity/sdk')
+  await Promise.all(
+    (
+      await fastGlob.glob(['**/*.js'], {
+        absolute: true,
+        cwd: sdkPath,
+        ignore: [NODE_MODULES_GLOB_RECURSIVE],
+      })
+    ).map(async p => {
+      const relPath = path.relative(path.dirname(p), socketRegistryPath)
+      const content = await fs.readFile(p, 'utf8')
+      const modded = content.replace(
+        /(?<=require\(["'])@socketsecurity\/registry(?=(?:\/[^"']+)?["']\))/g,
+        () => relPath,
+      )
+      await fs.writeFile(p, modded, 'utf8')
     }),
   )
   // Rewire 'blessed' inside 'blessed-contrib'.
@@ -420,17 +439,38 @@ export default async () => {
         },
       ],
       plugins: [
+        // Replace require() and require.resolve() calls for @socketsecurity/registry
+        // require('@socketsecurity/registry/lib/path') with
+        // require('../external/@socketsecurity/registry/dist/lib/path')
+        socketModifyPlugin({
+          find: new RegExp(
+            `(?<=require[$\\w]*(?:\\.resolve)?\\(["'])${escapeRegExp(SOCKET_SECURITY_REGISTRY)}(?=(?:\\/[^"']+)?["']\\))`,
+            'g',
+          ),
+          replace: () => `../external/${SOCKET_SECURITY_REGISTRY}/dist`,
+        }),
+        // Replace individual registry constant requires with index file require.
+        // require('../external/@socketsecurity/registry/dist/lib/constants/socket-public-api-token') with
+        // require('../external/@socketsecurity/registry/dist/lib/constants/index')
+        socketModifyPlugin({
+          find: new RegExp(
+            `(?<=require[$\\w]*(?:\\.resolve)?\\(["'])(\\.\\./external/${escapeRegExp(SOCKET_SECURITY_REGISTRY)}/dist/lib/constants)/[^"']+(?=["']\\))`,
+            'g',
+          ),
+          replace: (match, prefix) => `${prefix}/index`,
+        }),
         // Replace require() and require.resolve() calls like
         // require('blessed/lib/widgets/screen') with
         // require('../external/blessed/lib/widgets/screen')
-        ...EXTERNAL_PACKAGES.map(n =>
-          socketModifyPlugin({
-            find: new RegExp(
-              `(?<=require[$\\w]*(?:\\.resolve)?\\(["'])${escapeRegExp(n)}(?=(?:\\/[^"']+)?["']\\))`,
-              'g',
-            ),
-            replace: id => `../external/${id}`,
-          }),
+        ...EXTERNAL_PACKAGES.filter(n => n !== SOCKET_SECURITY_REGISTRY).map(
+          n =>
+            socketModifyPlugin({
+              find: new RegExp(
+                `(?<=require[$\\w]*(?:\\.resolve)?\\(["'])${escapeRegExp(n)}(?=(?:\\/[^"']+)?["']\\))`,
+                'g',
+              ),
+              replace: id => `../external/${id}`,
+            }),
         ),
         // Replace require.resolve('node-gyp/bin/node-gyp.js') with
         // require('./constants.js').npmNmNodeGypPath.
