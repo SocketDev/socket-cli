@@ -91,9 +91,7 @@ describe('handlePurlDeepScore', () => {
   })
 
   it('logs debug information', async () => {
-    const { debugDir, debugFn } = await import(
-      '../../utils/debug.mts'
-    )
+    const { debugDir, debugFn } = await import('../../utils/debug.mts')
     const { fetchPurlDeepScore } = await import('./fetch-purl-deep-score.mts')
 
     const mockData = {

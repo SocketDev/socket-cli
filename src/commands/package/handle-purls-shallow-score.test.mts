@@ -131,9 +131,7 @@ describe('handlePurlsShallowScore', () => {
   })
 
   it('logs debug information', async () => {
-    const { debugDir, debugFn } = await import(
-      '../../utils/debug.mts'
-    )
+    const { debugDir, debugFn } = await import('../../utils/debug.mts')
     const { fetchPurlsShallowScore } = await import(
       './fetch-purls-shallow-score.mts'
     )

@@ -40,9 +40,9 @@ describe('socket repository del', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket repository del\`, cwd: <redacted>"
+          |   __|___ ___| |_ ___| |_      | CLI: v1.1.23
+          |__   | * |  _| '_| -_|  _|     | token: zP416*** (env), org: (not set)
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket repository del\`, cwd: ~/projects/socket-cli"
       `)
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
@@ -61,9 +61,9 @@ describe('socket repository del', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket repository del\`, cwd: <redacted>
+          |   __|___ ___| |_ ___| |_      | CLI: v1.1.23
+          |__   | * |  _| '_| -_|  _|     | token: zP416*** (env), org: (not set)
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket repository del\`, cwd: ~/projects/socket-cli
 
         \\u203c Unable to determine the target org. Trying to auto-discover it now...
         i Note: Run \`socket login\` to set a default org.
@@ -98,9 +98,9 @@ describe('socket repository del', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket repository del\`, cwd: <redacted>"
+          |   __|___ ___| |_ ___| |_      | CLI: v1.1.23
+          |__   | * |  _| '_| -_|  _|     | token: zP416*** (env), org: xyz (--org flag)
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket repository del\`, cwd: ~/projects/socket-cli"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
@@ -123,9 +123,9 @@ describe('socket repository del', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket repository del\`, cwd: <redacted>
+          |   __|___ ___| |_ ___| |_      | CLI: v1.1.23
+          |__   | * |  _| '_| -_|  _|     | token: zP416*** (env), org: (not set)
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket repository del\`, cwd: ~/projects/socket-cli
 
         \\u203c Unable to determine the target org. Trying to auto-discover it now...
         i Note: Run \`socket login\` to set a default org.
@@ -153,15 +153,10 @@ describe('socket repository del', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket repository del\`, cwd: <redacted>
+          |   __|___ ___| |_ ___| |_      | CLI: v1.1.23
+          |__   | * |  _| '_| -_|  _|     | token: zP416*** (env), org: fakeOrg (config)
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket repository del\`, cwd: ~/projects/socket-cli
 
-        \\u203c Unable to determine the target org. Trying to auto-discover it now...
-        i Note: Run \`socket login\` to set a default org.
-              Use the --org flag to override the default org.
-
-        \\xd7 Skipping auto-discovery of org in dry-run mode
         \\xd7  Input error:  Please review the input requirements and try again
 
           \\xd7 Repository name as first argument (missing)"
@@ -188,9 +183,9 @@ describe('socket repository del', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket repository del\`, cwd: <redacted>
+          |   __|___ ___| |_ ___| |_      | CLI: v1.1.23
+          |__   | * |  _| '_| -_|  _|     | token: zP416*** (env), org: forcedorg (--org flag)
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket repository del\`, cwd: ~/projects/socket-cli
 
         \\xd7  Input error:  Please review the input requirements and try again
 
@@ -217,15 +212,9 @@ describe('socket repository del', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket repository del\`, cwd: <redacted>
-
-        \\u203c Unable to determine the target org. Trying to auto-discover it now...
-        i Note: Run \`socket login\` to set a default org.
-              Use the --org flag to override the default org.
-
-        \\xd7 Skipping auto-discovery of org in dry-run mode"
+          |   __|___ ___| |_ ___| |_      | CLI: v1.1.23
+          |__   | * |  _| '_| -_|  _|     | token: zP416*** (env), org: fakeOrg (config)
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket repository del\`, cwd: ~/projects/socket-cli"
       `)
 
       expect(code, 'dry-run should exit with code 0 in dry-run mode').toBe(0)

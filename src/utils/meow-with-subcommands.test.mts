@@ -13,7 +13,7 @@ vi.mock('meow', () => ({
     // Simulate meow processing flags with defaults.
     const processedFlags = {}
     if (options?.flags) {
-      for (const [key, flag] of Object.entries(options.flags)) {
+      for (const { 0: key, 1: flag } of Object.entries(options.flags)) {
         // @ts-expect-error - Mock implementation.
         processedFlags[key] =
           flag.default !== undefined ? flag.default : undefined

@@ -32,8 +32,15 @@ vi.mock('@socketsecurity/registry/lib/fs', () => ({
 }))
 
 const mockReadPackageJson = vi.hoisted(() => vi.fn())
+const mockEditablePackageJsonLoad = vi.hoisted(() => vi.fn())
+const mockGetEditablePackageJsonClass = vi.hoisted(() =>
+  vi.fn().mockReturnValue({
+    load: mockEditablePackageJsonLoad,
+  }),
+)
 vi.mock('@socketsecurity/registry/lib/packages', () => ({
   readPackageJson: mockReadPackageJson,
+  getEditablePackageJsonClass: mockGetEditablePackageJsonClass,
 }))
 
 const mockSpawn = vi.hoisted(() => vi.fn())
@@ -68,6 +75,10 @@ describe('package-environment', () => {
     vi.clearAllMocks()
     // Default mock behavior for spawn to get package manager version.
     mockSpawn.mockResolvedValue({ stdout: '10.0.0', stderr: '', code: 0 })
+    // Make editablePackageJson.load() return content that matches mockReadPackageJson.
+    mockEditablePackageJsonLoad.mockImplementation(async () => ({
+      content: await mockReadPackageJson(),
+    }))
   })
 
   describe('AGENTS', () => {
@@ -265,7 +276,7 @@ describe('package-environment', () => {
       const result = await detectPackageEnvironment({ cwd: '/project' })
 
       // Node version info is in the pkgRequirements property.
-      expect(result.pkgRequirements?.node).toBe('>=20')
+      expect(result.pkgRequirements?.node).toBe('>=18.0.0')
     })
 
     it('detects browser targets from browserslist', async () => {

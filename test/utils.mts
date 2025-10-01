@@ -1,12 +1,15 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { it } from 'vitest'
+import { it, vi } from 'vitest'
 
 import { SpawnOptions, spawn } from '@socketsecurity/registry/lib/spawn'
 import { stripAnsi } from '@socketsecurity/registry/lib/strings'
 
 import constants, { FLAG_HELP, FLAG_VERSION } from '../src/constants.mts'
+
+import type { SetupSdkResult } from '../src/utils/sdk.mts'
+import type { MockedFunction } from 'vitest'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -166,5 +169,71 @@ export async function spawnSocketCli(
       stdout: cleanOutput(e?.['stdout'] ?? ''),
       stderr: cleanOutput(e?.['stderr'] ?? ''),
     }
+  }
+}
+
+/**
+ * Setup SDK mock that returns a successful result.
+ * Use this helper to avoid repetitive mock setup in tests.
+ */
+export function mockSetupSdkSuccess(
+  mockSetupSdk: MockedFunction<any>,
+  sdkData: any = {},
+): void {
+  mockSetupSdk.mockResolvedValue({ ok: true, data: sdkData } as SetupSdkResult)
+}
+
+/**
+ * Setup SDK mock that returns an error result.
+ * Use this helper when testing SDK setup failures.
+ */
+export function mockSetupSdkFailure(
+  mockSetupSdk: MockedFunction<any>,
+  error: { code: number; message: string; cause?: string },
+): void {
+  mockSetupSdk.mockResolvedValue({
+    ok: false,
+    ...error,
+  } as SetupSdkResult)
+}
+
+/**
+ * Setup queryApiJson mock that returns a successful result.
+ * The SDK and path parameters are ignored in the mock.
+ */
+export function mockQueryApiJsonSuccess<T = any>(
+  mockQueryApiJson: MockedFunction<any>,
+  data: T,
+): void {
+  mockQueryApiJson.mockResolvedValue({ ok: true, data })
+}
+
+/**
+ * Setup queryApiJson mock that returns an error result.
+ */
+export function mockQueryApiJsonFailure(
+  mockQueryApiJson: MockedFunction<any>,
+  error: { code?: number; message?: string; error?: string },
+): void {
+  mockQueryApiJson.mockResolvedValue({
+    ok: false,
+    ...error,
+  })
+}
+
+/**
+ * Create mocks for SDK utilities. Returns mocked functions ready to use.
+ * Use this at the top of your test to get both setupSdk and queryApiJson mocks.
+ *
+ * @example
+ * const { mockSetupSdk, mockQueryApiJson } = await getMockedSdkUtils()
+ * mockSetupSdkSuccess(mockSetupSdk)
+ * mockQueryApiJsonSuccess(mockQueryApiJson, { some: 'data' })
+ */
+export async function getMockedSdkUtils() {
+  const { queryApiJson, setupSdk } = await import('../src/utils/sdk.mts')
+  return {
+    mockSetupSdk: vi.mocked(setupSdk),
+    mockQueryApiJson: vi.mocked(queryApiJson),
   }
 }

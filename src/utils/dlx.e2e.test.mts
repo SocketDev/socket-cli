@@ -16,7 +16,7 @@ describe('dlx e2e tests', () => {
       const apiToken = await getDefaultApiToken()
       hasAuth = !!apiToken
       if (!apiToken) {
-        console.log()
+        console.log('')
         console.warn('E2E tests require Socket authentication.')
         console.log('Please run one of the following:')
         console.log('  1. socket login (to authenticate with Socket)')

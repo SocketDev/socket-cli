@@ -59,9 +59,9 @@ describe('socket audit-log', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket audit-log\`, cwd: <redacted>"
+          |   __|___ ___| |_ ___| |_      | CLI: v1.1.23
+          |__   | * |  _| '_| -_|  _|     | token: zP416*** (env), org: (not set)
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket audit-log\`, cwd: ~/projects/socket-cli"
       `)
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
@@ -80,9 +80,9 @@ describe('socket audit-log', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket audit-log\`, cwd: <redacted>
+          |   __|___ ___| |_ ___| |_      | CLI: v1.1.23
+          |__   | * |  _| '_| -_|  _|     | token: zP416*** (env), org: (not set)
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket audit-log\`, cwd: ~/projects/socket-cli
 
         \\u203c Unable to determine the target org. Trying to auto-discover it now...
         i Note: Run \`socket login\` to set a default org.
@@ -114,19 +114,13 @@ describe('socket audit-log', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket audit-log\`, cwd: <redacted>
+          |   __|___ ___| |_ ___| |_      | CLI: v1.1.23
+          |__   | * |  _| '_| -_|  _|     | token: zP416*** (env), org: fakeOrg (config)
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket audit-log\`, cwd: ~/projects/socket-cli
 
-        \\u203c Unable to determine the target org. Trying to auto-discover it now...
-        i Note: Run \`socket login\` to set a default org.
-              Use the --org flag to override the default org.
-
-        \\xd7 Skipping auto-discovery of org in dry-run mode
         \\xd7  Input error:  Please review the input requirements and try again
 
-          \\xd7 Legacy flags are no longer supported. See the v1 migration guide (https://docs.socket.dev/docs/v1-migration-guide). (received legacy flags)
-          \\xd7 Org name by default setting, --org, or auto-discovered (missing)"
+          \\xd7 Legacy flags are no longer supported. See the v1 migration guide (https://docs.socket.dev/docs/v1-migration-guide). (received legacy flags)"
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
@@ -143,22 +137,13 @@ describe('socket audit-log', async () => {
     'should accept default org',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket audit-log\`, cwd: <redacted>
-
-        \\u203c Unable to determine the target org. Trying to auto-discover it now...
-        i Note: Run \`socket login\` to set a default org.
-              Use the --org flag to override the default org.
-
-        \\xd7 Skipping auto-discovery of org in dry-run mode
-        \\xd7  Input error:  Please review the input requirements and try again
-
-          \\xd7 Org name by default setting, --org, or auto-discovered (missing)"
+          |   __|___ ___| |_ ___| |_      | CLI: v1.1.23
+          |__   | * |  _| '_| -_|  _|     | token: zP416*** (env), org: fakeOrg (config)
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket audit-log\`, cwd: ~/projects/socket-cli"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
@@ -181,9 +166,9 @@ describe('socket audit-log', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket audit-log\`, cwd: <redacted>"
+          |   __|___ ___| |_ ___| |_      | CLI: v1.1.23
+          |__   | * |  _| '_| -_|  _|     | token: zP416*** (env), org: forcedorg (--org flag)
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket audit-log\`, cwd: ~/projects/socket-cli"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

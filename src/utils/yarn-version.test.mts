@@ -50,7 +50,6 @@ describe('yarn-version utilities', () => {
         '/usr/local/bin/yarn',
         ['--version'],
         {
-          encoding: 'utf8',
           shell: false,
         },
       )
@@ -214,7 +213,6 @@ describe('yarn-version utilities', () => {
         'C:\\Program Files\\yarn\\yarn.cmd',
         ['--version'],
         {
-          encoding: 'utf8',
           shell: true,
         },
       )

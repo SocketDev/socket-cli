@@ -123,9 +123,7 @@ describe('handleCreateRepo', () => {
   })
 
   it('logs debug information', async () => {
-    const { debugDir, debugFn } = await import(
-      '../../utils/debug.mts'
-    )
+    const { debugDir, debugFn } = await import('../../utils/debug.mts')
     const { fetchCreateRepo } = await import('./fetch-create-repo.mts')
 
     const mockData = {

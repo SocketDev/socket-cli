@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock the dependencies.
 vi.mock('@socketsecurity/registry/lib/logger', () => ({
@@ -7,17 +7,25 @@ vi.mock('@socketsecurity/registry/lib/logger', () => ({
   },
 }))
 
-vi.mock('../../utils/api.mts', () => ({
-  queryApiSafeJson: vi.fn(),
+vi.mock('../../utils/sdk.mts', () => ({
+  queryApiJson: vi.fn(),
+  setupSdk: vi.fn(),
 }))
 
 describe('fetchDiffScan', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
   it('fetches diff scan successfully', async () => {
     const { fetchDiffScan } = await import('./fetch-diff-scan.mts')
-    const { queryApiSafeJson } = await import('../../utils/api.mts')
+    const { queryApiJson, setupSdk } = await import('../../utils/sdk.mts')
     const { logger } = await import('@socketsecurity/registry/lib/logger')
-    const mockQueryApi = vi.mocked(queryApiSafeJson)
+    const mockQueryApi = vi.mocked(queryApiJson)
+    const mockSetupSdk = vi.mocked(setupSdk)
     const mockLogger = vi.mocked(logger.info)
+
+    mockSetupSdk.mockResolvedValue({ ok: true, data: {} as any })
 
     const mockDiffData = {
       added: ['package-a@1.0.0'],
@@ -46,8 +54,9 @@ describe('fetchDiffScan', () => {
       'Note: this request may take some time if the scans are big',
     )
     expect(mockQueryApi).toHaveBeenCalledWith(
+      {},
       'orgs/test-org/full-scans/diff?before=scan-123&after=scan-456',
-      'a scan diff',
+      expect.objectContaining({ description: 'a scan diff' }),
     )
     expect(result.ok).toBe(true)
     expect(result.data).toEqual(mockDiffData)
@@ -55,8 +64,11 @@ describe('fetchDiffScan', () => {
 
   it('handles API call failure', async () => {
     const { fetchDiffScan } = await import('./fetch-diff-scan.mts')
-    const { queryApiSafeJson } = await import('../../utils/api.mts')
-    const mockQueryApi = vi.mocked(queryApiSafeJson)
+    const { queryApiJson, setupSdk } = await import('../../utils/sdk.mts')
+    const mockQueryApi = vi.mocked(queryApiJson)
+    const mockSetupSdk = vi.mocked(setupSdk)
+
+    mockSetupSdk.mockResolvedValue({ ok: true, data: {} as any })
 
     const error = {
       ok: false,
@@ -77,9 +89,11 @@ describe('fetchDiffScan', () => {
 
   it('properly URL encodes scan IDs', async () => {
     const { fetchDiffScan } = await import('./fetch-diff-scan.mts')
-    const { queryApiSafeJson } = await import('../../utils/api.mts')
-    const mockQueryApi = vi.mocked(queryApiSafeJson)
+    const { queryApiJson, setupSdk } = await import('../../utils/sdk.mts')
+    const mockQueryApi = vi.mocked(queryApiJson)
+    const mockSetupSdk = vi.mocked(setupSdk)
 
+    mockSetupSdk.mockResolvedValue({ ok: true, data: {} as any })
     mockQueryApi.mockResolvedValue({
       ok: true,
       data: {},
@@ -95,16 +109,19 @@ describe('fetchDiffScan', () => {
     })
 
     expect(mockQueryApi).toHaveBeenCalledWith(
+      {},
       'orgs/test-org/full-scans/diff?before=scan%2Bwith%25special%26chars&after=another%2Fscan%3Fwith%3Dquery',
-      'a scan diff',
+      expect.objectContaining({ description: 'a scan diff' }),
     )
   })
 
   it('handles different org slugs', async () => {
     const { fetchDiffScan } = await import('./fetch-diff-scan.mts')
-    const { queryApiSafeJson } = await import('../../utils/api.mts')
-    const mockQueryApi = vi.mocked(queryApiSafeJson)
+    const { queryApiJson, setupSdk } = await import('../../utils/sdk.mts')
+    const mockQueryApi = vi.mocked(queryApiJson)
+    const mockSetupSdk = vi.mocked(setupSdk)
 
+    mockSetupSdk.mockResolvedValue({ ok: true, data: {} as any })
     mockQueryApi.mockResolvedValue({
       ok: true,
       data: {},
@@ -126,16 +143,20 @@ describe('fetchDiffScan', () => {
       })
 
       expect(mockQueryApi).toHaveBeenCalledWith(
+        {},
         `orgs/${orgSlug}/full-scans/diff?before=scan-1&after=scan-2`,
-        'a scan diff',
+        expect.objectContaining({ description: 'a scan diff' }),
       )
     }
   })
 
   it('handles empty diff results', async () => {
     const { fetchDiffScan } = await import('./fetch-diff-scan.mts')
-    const { queryApiSafeJson } = await import('../../utils/api.mts')
-    const mockQueryApi = vi.mocked(queryApiSafeJson)
+    const { queryApiJson, setupSdk } = await import('../../utils/sdk.mts')
+    const mockQueryApi = vi.mocked(queryApiJson)
+    const mockSetupSdk = vi.mocked(setupSdk)
+
+    mockSetupSdk.mockResolvedValue({ ok: true, data: {} as any })
 
     const emptyDiffData = {
       added: [],
@@ -164,11 +185,13 @@ describe('fetchDiffScan', () => {
 
   it('handles same scan IDs gracefully', async () => {
     const { fetchDiffScan } = await import('./fetch-diff-scan.mts')
-    const { queryApiSafeJson } = await import('../../utils/api.mts')
+    const { queryApiJson, setupSdk } = await import('../../utils/sdk.mts')
     const { logger } = await import('@socketsecurity/registry/lib/logger')
-    const mockQueryApi = vi.mocked(queryApiSafeJson)
+    const mockQueryApi = vi.mocked(queryApiJson)
+    const mockSetupSdk = vi.mocked(setupSdk)
     const mockLogger = vi.mocked(logger.info)
 
+    mockSetupSdk.mockResolvedValue({ ok: true, data: {} as any })
     mockQueryApi.mockResolvedValue({
       ok: true,
       data: {
@@ -188,15 +211,19 @@ describe('fetchDiffScan', () => {
     expect(mockLogger).toHaveBeenCalledWith('Scan ID 1:', 'same-scan-id')
     expect(mockLogger).toHaveBeenCalledWith('Scan ID 2:', 'same-scan-id')
     expect(mockQueryApi).toHaveBeenCalledWith(
+      {},
       'orgs/test-org/full-scans/diff?before=same-scan-id&after=same-scan-id',
-      'a scan diff',
+      expect.objectContaining({ description: 'a scan diff' }),
     )
   })
 
   it('handles server timeout gracefully', async () => {
     const { fetchDiffScan } = await import('./fetch-diff-scan.mts')
-    const { queryApiSafeJson } = await import('../../utils/api.mts')
-    const mockQueryApi = vi.mocked(queryApiSafeJson)
+    const { queryApiJson, setupSdk } = await import('../../utils/sdk.mts')
+    const mockQueryApi = vi.mocked(queryApiJson)
+    const mockSetupSdk = vi.mocked(setupSdk)
+
+    mockSetupSdk.mockResolvedValue({ ok: true, data: {} as any })
 
     const timeoutError = {
       ok: false,
@@ -217,9 +244,11 @@ describe('fetchDiffScan', () => {
 
   it('uses null prototype internally', async () => {
     const { fetchDiffScan } = await import('./fetch-diff-scan.mts')
-    const { queryApiSafeJson } = await import('../../utils/api.mts')
-    const mockQueryApi = vi.mocked(queryApiSafeJson)
+    const { queryApiJson, setupSdk } = await import('../../utils/sdk.mts')
+    const mockQueryApi = vi.mocked(queryApiJson)
+    const mockSetupSdk = vi.mocked(setupSdk)
 
+    mockSetupSdk.mockResolvedValue({ ok: true, data: {} as any })
     mockQueryApi.mockResolvedValue({
       ok: true,
       data: {},
