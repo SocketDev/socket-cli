@@ -921,13 +921,15 @@ const lazySocketAppDataPath = (): string | undefined => {
 const lazySocketCachePath = () => path.join(constants.rootPath, '.cache')
 
 const lazySocketRegistryPath = () =>
-  path.join(constants.externalPath, '@socketsecurity/registry')
+  path.join(constants.externalPath, '@socketsecurity/registry/dist')
 
 const lazyZshRcPath = () => path.join(constants.homePath, '.zshrc')
 
 const constants: Constants = createConstantsObject(
   {
     ...registryConstantsAttribs.props,
+    // Override execPath since registry v1.3.0 has a bug accessing it.
+    execPath: process.execPath,
     ALERT_TYPE_CRITICAL_CVE,
     ALERT_TYPE_CVE,
     ALERT_TYPE_MEDIUM_CVE,
