@@ -421,8 +421,10 @@ describe('socket fix', async () => {
   )
 
   // Fixture-based tests with proper isolation
+  // NOTE: These tests spawn the actual CLI in a separate process where Vitest
+  // mocks don't apply. Using --dry-run to test CLI flow without executing actual fixes.
   cmdit(
-    ['fix', '.', FLAG_CONFIG, '{"apiToken":"fake-token"}'],
+    ['fix', FLAG_DRY_RUN, '.', FLAG_CONFIG, '{"apiToken":"fake-token"}'],
     'should handle vulnerable dependencies fixture project',
     async cmd => {
       const { cleanup, tempDir } = await withTempFixture(
@@ -441,7 +443,7 @@ describe('socket fix', async () => {
   )
 
   cmdit(
-    ['fix', '.', FLAG_CONFIG, '{"apiToken":"fake-token"}'],
+    ['fix', FLAG_DRY_RUN, '.', FLAG_CONFIG, '{"apiToken":"fake-token"}'],
     'should handle monorepo fixture project',
     async cmd => {
       const { cleanup, tempDir } = await withTempFixture(
@@ -453,8 +455,8 @@ describe('socket fix', async () => {
         cwd: tempDir,
       })
       const output = stdout + stderr
-      // Monorepo handling may still return exit code 1 even with mocks
-      expect(code).toBe(1)
+      // With dry-run, command completes successfully
+      expect(code).toBe(0)
     },
     { timeout: testTimeout },
   )
@@ -462,6 +464,7 @@ describe('socket fix', async () => {
   cmdit(
     [
       'fix',
+      FLAG_DRY_RUN,
       '--id',
       'GHSA-35jh-r3h4-6jhm',
       '.',
@@ -488,6 +491,7 @@ describe('socket fix', async () => {
   cmdit(
     [
       'fix',
+      FLAG_DRY_RUN,
       '--id',
       'CVE-2021-23337',
       '.',
@@ -512,7 +516,15 @@ describe('socket fix', async () => {
   )
 
   cmdit(
-    ['fix', '--limit', '1', '.', FLAG_CONFIG, '{"apiToken":"fake-token"}'],
+    [
+      'fix',
+      FLAG_DRY_RUN,
+      '--limit',
+      '1',
+      '.',
+      FLAG_CONFIG,
+      '{"apiToken":"fake-token"}',
+    ],
     'should respect fix limit parameter',
     async cmd => {
       const { cleanup, tempDir } = await withTempFixture(
@@ -533,6 +545,7 @@ describe('socket fix', async () => {
   cmdit(
     [
       'fix',
+      FLAG_DRY_RUN,
       '--range-style',
       'preserve',
       '--autopilot',
@@ -560,6 +573,7 @@ describe('socket fix', async () => {
   cmdit(
     [
       'fix',
+      FLAG_DRY_RUN,
       '--range-style',
       'pin',
       '.',
@@ -584,7 +598,14 @@ describe('socket fix', async () => {
   )
 
   cmdit(
-    ['fix', '--json', '.', FLAG_CONFIG, '{"apiToken":"fake-token"}'],
+    [
+      'fix',
+      FLAG_DRY_RUN,
+      '--json',
+      '.',
+      FLAG_CONFIG,
+      '{"apiToken":"fake-token"}',
+    ],
     'should output results in JSON format',
     async cmd => {
       const { cleanup, tempDir } = await withTempFixture(
@@ -603,7 +624,14 @@ describe('socket fix', async () => {
   )
 
   cmdit(
-    ['fix', '--markdown', '.', FLAG_CONFIG, '{"apiToken":"fake-token"}'],
+    [
+      'fix',
+      FLAG_DRY_RUN,
+      '--markdown',
+      '.',
+      FLAG_CONFIG,
+      '{"apiToken":"fake-token"}',
+    ],
     'should output results in markdown format',
     async cmd => {
       const { cleanup, tempDir } = await withTempFixture(
