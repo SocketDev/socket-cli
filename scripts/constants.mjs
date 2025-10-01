@@ -90,7 +90,7 @@ const lazyRootPath = () =>
   path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 
 const lazySocketRegistryPath = () =>
-  path.join(constants.externalPath, '@socketsecurity/registry')
+  path.join(constants.externalPath, '@socketsecurity/registry/dist')
 
 const lazySrcPath = () => path.join(constants.rootPath, 'src')
 
