@@ -226,7 +226,10 @@ export async function spawnCoanaDlx(
         stdio: spawnExtra?.['stdio'] || 'inherit',
       })
 
-      return { ok: true, data: spawnResult.stdout.toString() }
+      return {
+        ok: true,
+        data: spawnResult.stdout ? spawnResult.stdout.toString() : '',
+      }
     }
 
     // Use npm/dlx version.

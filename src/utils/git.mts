@@ -62,9 +62,12 @@ export async function getBaseBranch(cwd = process.cwd()): Promise<string> {
   // 3. Try to resolve the default remote branch using 'git remote show origin'.
   // This handles detached HEADs or workflows triggered by tags/releases.
   try {
-    const originDetails = (
-      await spawn('git', ['remote', 'show', 'origin'], { cwd })
-    ).stdout.toString()
+    const originResult = await spawn('git', ['remote', 'show', 'origin'], {
+      cwd,
+    })
+    const originDetails = originResult.stdout
+      ? originResult.stdout.toString()
+      : ''
 
     const match = /(?<=HEAD branch: ).+/.exec(originDetails)
     if (match?.[0]) {
@@ -86,9 +89,10 @@ export async function getRepoInfo(
 ): Promise<RepoInfo | undefined> {
   let info
   try {
-    const remoteUrl = (
-      await spawn('git', ['remote', 'get-url', 'origin'], { cwd })
-    ).stdout.toString()
+    const remoteResult = await spawn('git', ['remote', 'get-url', 'origin'], {
+      cwd,
+    })
+    const remoteUrl = remoteResult.stdout ? remoteResult.stdout.toString() : ''
     info = parseGitRemoteUrl(remoteUrl)
     if (!info) {
       debugFn('warn', `Unmatched git remote URL format: ${remoteUrl}`)
@@ -127,7 +131,9 @@ export async function gitBranch(
       ['symbolic-ref', '--short', 'HEAD'],
       stdioPipeOptions,
     )
-    return gitSymbolicRefResult.stdout.toString()
+    return gitSymbolicRefResult.stdout
+      ? gitSymbolicRefResult.stdout.toString()
+      : undefined
   } catch (e) {
     // Expected in detached HEAD state, fallback to rev-parse.
     debugDir('inspect', { message: 'In detached HEAD state', error: e })
@@ -140,7 +146,9 @@ export async function gitBranch(
       ['rev-parse', '--short', 'HEAD'],
       stdioPipeOptions,
     )
-    return gitRevParseResult.stdout.toString()
+    return gitRevParseResult.stdout
+      ? gitRevParseResult.stdout.toString()
+      : undefined
   } catch (e) {
     // Both methods failed, likely not in a git repo.
     debugDir('inspect', { message: 'Unable to determine git branch', error: e })
@@ -479,7 +487,9 @@ export async function gitUnstagedModifiedFiles(
       ['diff', '--name-only'],
       stdioPipeOptions,
     )
-    const changedFilesDetails = gitDiffResult.stdout.toString()
+    const changedFilesDetails = gitDiffResult.stdout
+      ? gitDiffResult.stdout.toString()
+      : ''
     const relPaths = changedFilesDetails.split('\n')
     return {
       ok: true,
