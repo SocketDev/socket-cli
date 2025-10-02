@@ -1,5 +1,4 @@
 import { existsSync, rmSync } from 'node:fs'
-import { createRequire } from 'node:module'
 import path from 'node:path'
 
 import colors from 'yoctocolors-cjs'
@@ -13,8 +12,6 @@ import { isYarnBerry } from '../../utils/yarn-version.mts'
 
 import type { ShadowBinResult } from '../../shadow/npm/bin.mts'
 import type { ChildProcess } from 'node:child_process'
-
-const require = createRequire(import.meta.url)
 
 const { PACKAGE_LOCK_JSON, PNPM_LOCK_YAML, YARN_LOCK } = constants
 
@@ -140,14 +137,19 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
   })
 
   // Create fake ShadowBinResult for backward compatibility.
+  const stdioResult = {
+    cmd: 'cdxgen',
+    args: [] as const,
+    code: result.ok ? 0 : (result.code ?? 1),
+    signal: null,
+    stderr: Buffer.from(''),
+    stdout: Buffer.from(result.ok ? result.data : ''),
+  }
   const shadowResult: ShadowBinResult = {
-    spawnPromise: {
-      code: result.ok ? 0 : 1,
+    spawnPromise: Object.assign(Promise.resolve(stdioResult), {
       process: {} as ChildProcess,
-      signal: null,
-      stderr: Buffer.from(''),
-      stdout: Buffer.from(result.ok ? result.data : ''),
-    },
+      stdin: null,
+    }),
   }
 
   // Handle cleanup on process exit.
