@@ -4,10 +4,6 @@ import os from 'node:os'
 import path from 'node:path'
 // import util from 'node:util'
 
-import { babel as babelPlugin } from '@rollup/plugin-babel'
-import commonjsPlugin from '@rollup/plugin-commonjs'
-import jsonPlugin from '@rollup/plugin-json'
-import { nodeResolve } from '@rollup/plugin-node-resolve'
 import fastGlob from 'fast-glob'
 import trash from 'trash'
 
@@ -25,11 +21,7 @@ import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
 import baseConfig, { EXTERNAL_PACKAGES } from './rollup.base.config.mjs'
 import constants from '../scripts/constants.mjs'
 import socketModifyPlugin from '../scripts/rollup/socket-modify-plugin.mjs'
-import {
-  getPackageName,
-  isBuiltin,
-  normalizeId,
-} from '../scripts/utils/packages.mjs'
+import { normalizeId } from '../scripts/utils/packages.mjs'
 
 const {
   CONSTANTS,
@@ -38,7 +30,6 @@ const {
   INSTRUMENT_WITH_SENTRY,
   NODE_MODULES,
   NODE_MODULES_GLOB_RECURSIVE,
-  ROLLUP_EXTERNAL_SUFFIX,
   SHADOW_NPM_BIN,
   SHADOW_NPM_INJECT,
   SHADOW_NPX_BIN,
@@ -62,10 +53,7 @@ const {
   // SOCKET_CLI_YARN_BIN_NAME,
 } = constants
 
-const BLESSED = 'blessed'
-const BLESSED_CONTRIB = 'blessed-contrib'
 const FLAGS = 'flags'
-const LICENSE_MD = `LICENSE.md`
 // const SENTRY_NODE = '@sentry/node'
 // const SOCKET_DESCRIPTION = 'CLI for Socket.dev'
 // const SOCKET_DESCRIPTION_WITH_SENTRY = `${SOCKET_DESCRIPTION}, includes Sentry error handling, otherwise identical to the regular \`${SOCKET_CLI_BIN_NAME}\` package`
@@ -89,40 +77,24 @@ async function copyBashCompletion() {
 }
 
 async function copyExternalPackages() {
-  const { blessedContribPath, blessedPath, socketRegistryPath } = constants
-  const nmPath = path.join(constants.rootPath, NODE_MODULES)
-  const blessedContribNmPath = path.join(nmPath, BLESSED_CONTRIB)
+  const { socketRegistryPath } = constants
 
   // Copy package folders.
-  await Promise.all([
-    ...EXTERNAL_PACKAGES
-      // Skip copying 'blessed-contrib' over because we already
-      // have it bundled as ./external/blessed-contrib.
-      .filter(n => n !== BLESSED_CONTRIB)
-      // Copy the other packages over to ./external/.
-      .map(n =>
-        copyPackage(n, {
-          strict:
-            // Skip adding 'use strict' directives to Socket packages.
-            n !== SOCKET_SECURITY_REGISTRY,
-        }),
-      ),
-    // Copy 'blessed-contrib' license over to
-    // ./external/blessed-contrib/LICENSE.md.
-    await fs.cp(
-      `${blessedContribNmPath}/${LICENSE_MD}`,
-      `${blessedContribPath}/${LICENSE_MD}`,
-      { dereference: true },
+  await Promise.all(
+    EXTERNAL_PACKAGES.map(n =>
+      copyPackage(n, {
+        strict:
+          // Skip adding 'use strict' directives to Socket packages.
+          n !== SOCKET_SECURITY_REGISTRY,
+      }),
     ),
-  ])
+  )
 
   const alwaysIgnoredPatterns = ['LICENSE*', 'README*']
 
   // Cleanup package files.
   await Promise.all(
     [
-      [blessedPath, ['lib/**/*.js', 'usr/**/**', 'vendor/**/*.js']],
-      [blessedContribPath, ['lib/**/*.js', 'index.js']],
       [
         socketRegistryPath,
         [
@@ -154,24 +126,6 @@ async function copyExternalPackages() {
       const content = await fs.readFile(p, 'utf8')
       const modded = content.replace(
         /(?<=require\(["'])@socketsecurity\/registry(?=(?:\/[^"']+)?["']\))/g,
-        () => relPath,
-      )
-      await fs.writeFile(p, modded, 'utf8')
-    }),
-  )
-  // Rewire 'blessed' inside 'blessed-contrib'.
-  await Promise.all(
-    (
-      await fastGlob.glob(['**/*.js'], {
-        absolute: true,
-        cwd: blessedContribPath,
-        ignore: [NODE_MODULES_GLOB_RECURSIVE],
-      })
-    ).map(async p => {
-      const relPath = path.relative(path.dirname(p), blessedPath)
-      const content = await fs.readFile(p, 'utf8')
-      const modded = content.replace(
-        /(?<=require\(["'])blessed(?=(?:\/[^"']+)?["']\))/g,
         () => relPath,
       )
       await fs.writeFile(p, modded, 'utf8')
@@ -354,13 +308,8 @@ async function removeFiles(thePath, options) {
 // }
 
 export default async () => {
-  const { configPath, distPath, rootPath, srcPath } = constants
-  const nmPath = normalizePath(path.join(rootPath, NODE_MODULES))
+  const { distPath, rootPath, srcPath } = constants
   const constantsSrcPath = normalizePath(path.join(srcPath, 'constants.mts'))
-  const externalSrcPath = normalizePath(path.join(srcPath, 'external'))
-  const blessedContribSrcPath = normalizePath(
-    path.join(externalSrcPath, BLESSED_CONTRIB),
-  )
   const flagsSrcPath = normalizePath(path.join(srcPath, 'flags.mts'))
   const shadowNpmBinSrcPath = normalizePath(
     path.join(srcPath, 'shadow/npm/bin.mts'),
@@ -496,79 +445,6 @@ export default async () => {
           },
         },
       ],
-    }),
-    // Bundle <root>/src/external/blessed-contrib/ files and output to
-    // <root>/external/blessed-contrib/.
-    ...(
-      await fastGlob.glob(['**/*.mjs'], {
-        absolute: true,
-        cwd: blessedContribSrcPath,
-      })
-    ).map(filepath => {
-      const relPath = `${path.relative(blessedContribSrcPath, filepath).slice(0, -4 /*.mjs*/)}.js`
-      return {
-        input: filepath,
-        output: [
-          {
-            file: path.join(constants.blessedContribPath, relPath),
-            exports: 'auto',
-            externalLiveBindings: false,
-            format: 'cjs',
-            inlineDynamicImports: true,
-            sourcemap: false,
-          },
-        ],
-        external(rawId) {
-          const id = normalizeId(rawId)
-          const pkgName = getPackageName(
-            id,
-            path.isAbsolute(id) ? nmPath.length + 1 : 0,
-          )
-          return (
-            pkgName === BLESSED ||
-            rawId.endsWith(ROLLUP_EXTERNAL_SUFFIX) ||
-            isBuiltin(rawId)
-          )
-        },
-        plugins: [
-          nodeResolve({
-            exportConditions: ['node'],
-            extensions: ['.mjs', '.js', '.json'],
-            preferBuiltins: true,
-          }),
-          jsonPlugin(),
-          // Fix blessed library octal escape sequences
-          {
-            name: 'fix-blessed-octal',
-            transform(code, id) {
-              if (
-                id.includes('blessed') &&
-                (id.includes('tput.js') || id.includes('box.js'))
-              ) {
-                return code
-                  .replace(/ch = '\\200';/g, "ch = '\\x80';")
-                  .replace(/'\\016'/g, "'\\x0E'")
-                  .replace(/'\\017'/g, "'\\x0F'")
-              }
-              return null
-            },
-          },
-          commonjsPlugin({
-            defaultIsModuleExports: true,
-            extensions: ['.cjs', '.js'],
-            ignoreDynamicRequires: true,
-            ignoreGlobal: true,
-            ignoreTryCatch: true,
-            strictRequires: true,
-          }),
-          babelPlugin({
-            babelHelpers: 'runtime',
-            babelrc: false,
-            configFile: path.join(configPath, 'babel.config.js'),
-            extensions: ['.js', '.cjs', '.mjs'],
-          }),
-        ],
-      }
     }),
   ]
 }

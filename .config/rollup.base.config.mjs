@@ -42,8 +42,6 @@ const {
 export const EXTERNAL_PACKAGES = [
   '@socketsecurity/registry',
   '@socketsecurity/sdk',
-  'blessed',
-  'blessed-contrib',
 ]
 
 const builtinAliases = builtinModules.reduce((o, n) => {
