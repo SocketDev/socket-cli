@@ -1,6 +1,7 @@
-import { createRequire } from 'node:module'
+import path from 'node:path'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
+import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import constants, {
   FLAG_JSON,
@@ -15,9 +16,6 @@ import { serializeResultJson } from '../../utils/serialize-result-json.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
-import type { Widgets } from 'blessed'
-
-const require = createRequire(import.meta.url)
 
 export async function outputAuditLog(
   result: CResult<SocketSdkSuccessResult<'getAuditLogEvents'>['data']>,
@@ -195,128 +193,42 @@ async function outputWithBlessed(
   data: SocketSdkSuccessResult<'getAuditLogEvents'>['data'],
   orgSlug: string,
 ) {
-  const filteredLogs = data.results
-  const formattedOutput = filteredLogs.map(logs => [
-    logs.event_id ?? '',
-    msAtHome(logs.created_at ?? ''),
-    logs.type ?? '',
-    logs.user_email ?? '',
-    logs.ip_address ?? '',
-    logs.user_agent ?? '',
-  ])
-  const headers = [
-    ' Event id',
-    ' Created at',
-    ' Event type',
-    ' User email',
-    ' IP address',
-    ' User agent',
-  ]
+  // Prepare data with formatted dates.
+  const results = data.results.map(log => ({
+    ...log,
+    formatted_created_at: msAtHome(log.created_at ?? ''),
+  }))
 
-  // Note: this temporarily takes over the terminal (just like `man` does).
-  const ScreenWidget = /*@__PURE__*/ require('blessed/lib/widgets/screen.js')
-  const screen: Widgets.Screen = new ScreenWidget({
-    ...constants.blessedOptions,
-  })
-  // Register these keys first so you can always exit, even when it gets stuck
-  // If we don't do this and the code crashes, the user must hard-kill the
-  // node process just to exit it. That's very bad UX.
-  // eslint-disable-next-line n/no-process-exit
-  screen.key(['escape', 'q', 'C-c'], () => process.exit(0))
+  // Spawn the Ink CLI subprocess.
+  const inkCliPath = path.join(
+    constants.rootPath,
+    'external',
+    'ink',
+    'audit-log',
+    'cli.js',
+  )
 
-  const TableWidget = /*@__PURE__*/ require('blessed-contrib/lib/widget/table.js')
-  // 1 row for tips box.
-  const tipsBoxHeight = 1
-  // Bottom N rows for details box. 20 gives 4 lines for condensed payload before it scrolls out of view.
-  const detailsBoxHeight = 20
-
-  const maxWidths = headers.map(s => s.length + 1)
-  formattedOutput.forEach(row => {
-    row.forEach((str, i) => {
-      maxWidths[i] = Math.max(str.length, maxWidths[i] ?? str.length)
-    })
-  })
-
-  const table: any = new TableWidget({
-    keys: 'true',
-    fg: 'white',
-    selectedFg: 'white',
-    selectedBg: 'magenta',
-    interactive: 'true',
-    label: `Audit Logs for ${orgSlug}`,
-    width: '100%',
-    top: 0,
-    bottom: detailsBoxHeight + tipsBoxHeight,
-    border: {
-      type: 'line',
-      fg: 'cyan',
+  const { exitCode, stderr, stdout } = await spawn(
+    process.execPath,
+    [inkCliPath],
+    {
+      encoding: 'utf8',
+      input: JSON.stringify({ orgSlug, results }),
+      stdio: ['pipe', 'inherit', 'pipe'],
     },
-    // [10, 30, 40, 25, 15, 200],
-    columnWidth: maxWidths,
-    // Note: spacing works as long as you don't reserve more than total width
-    columnSpacing: 4,
-    truncate: '_',
-  })
+  )
 
-  const BoxWidget = /*@__PURE__*/ require('blessed/lib/widgets/box.js')
-  const tipsBox: Widgets.BoxElement = new BoxWidget({
-    // sits just above the details box
-    bottom: detailsBoxHeight,
-    height: tipsBoxHeight,
-    width: '100%',
-    style: {
-      fg: 'yellow',
-      bg: 'black',
-    },
-    tags: true,
-    content: `↑/↓: Move    Enter: Select    q/ESC: Quit`,
-  })
-  const detailsBox: Widgets.BoxElement = new BoxWidget({
-    bottom: 0,
-    height: detailsBoxHeight,
-    width: '100%',
-    border: {
-      type: 'line',
-      fg: 'cyan',
-    },
-    label: 'Details',
-    content: formatResult(filteredLogs[0], true),
-    style: {
-      fg: 'white',
-    },
-  })
-
-  table.setData({
-    headers: headers,
-    data: formattedOutput,
-  })
-
-  // allow control the table with the keyboard
-  table.focus()
-
-  // Stacking order: table (top), tipsBox (middle), detailsBox (bottom)
-  screen.append(table)
-  screen.append(tipsBox)
-  screen.append(detailsBox)
-
-  // Update details box when selection changes
-  table.rows.on('select item', () => {
-    const selectedIndex = table.rows.selected
-    if (selectedIndex !== undefined && selectedIndex >= 0) {
-      const selectedRow = filteredLogs[selectedIndex]
-      detailsBox.setContent(formatResult(selectedRow))
-      screen.render()
+  if (exitCode !== 0) {
+    logger.error(`Ink app failed with exit code ${exitCode}`)
+    if (stderr) {
+      logger.error(stderr)
     }
-  })
+    process.exitCode = exitCode ?? 1
+    return
+  }
 
-  screen.render()
-
-  screen.key(['return'], () => {
-    const selectedIndex = table.rows.selected
-    screen.destroy()
-    const selectedRow = formattedOutput[selectedIndex]
-      ? formatResult(filteredLogs[selectedIndex], true)
-      : '(none)'
-    logger.log(`Last selection:\n${selectedRow.trim()}`)
-  })
+  // Log the stdout (which contains the last selection if user pressed Enter).
+  if (stdout && stdout.trim()) {
+    logger.log(stdout.trim())
+  }
 }

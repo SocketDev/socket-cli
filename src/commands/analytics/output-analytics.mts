@@ -1,7 +1,8 @@
 import fs from 'node:fs/promises'
-import { createRequire } from 'node:module'
+import path from 'node:path'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
+import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import constants from '../../constants.mts'
 import { debugFileOp } from '../../utils/debug.mts'
@@ -12,11 +13,6 @@ import { fileLink } from '../../utils/terminal-link.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
-// Note: Widgets does not seem to actually work as code :'(
-import type { Widgets } from 'blessed'
-import type { grid as ContribGrid } from 'blessed-contrib'
-
-const require = createRequire(import.meta.url)
 
 const METRICS = [
   'total_critical_alerts',
@@ -204,92 +200,29 @@ ${mdTableStringNumber('Name', 'Counts', data['top_five_alert_types'])}
   )
 }
 
-function displayAnalyticsScreen(data: FormattedData): void {
-  const ScreenWidget = /*@__PURE__*/ require('blessed/lib/widgets/screen.js')
-  const screen: Widgets.Screen = new ScreenWidget({
-    ...constants.blessedOptions,
-  })
-  const GridLayout = /*@__PURE__*/ require('blessed-contrib/lib/layout/grid.js')
-  const grid = new GridLayout({ rows: 5, cols: 4, screen })
-
-  renderLineCharts(
-    grid,
-    screen,
-    'Total critical alerts',
-    [0, 0, 1, 2],
-    data['total_critical_alerts'],
-  )
-  renderLineCharts(
-    grid,
-    screen,
-    'Total high alerts',
-    [0, 2, 1, 2],
-    data.total_high_alerts,
-  )
-  renderLineCharts(
-    grid,
-    screen,
-    'Total critical alerts added to the main branch',
-    [1, 0, 1, 2],
-    data.total_critical_added,
-  )
-  renderLineCharts(
-    grid,
-    screen,
-    'Total high alerts added to the main branch',
-    [1, 2, 1, 2],
-    data['total_high_added'],
-  )
-  renderLineCharts(
-    grid,
-    screen,
-    'Total critical alerts prevented from the main branch',
-    [2, 0, 1, 2],
-    data['total_critical_prevented'],
-  )
-  renderLineCharts(
-    grid,
-    screen,
-    'Total high alerts prevented from the main branch',
-    [2, 2, 1, 2],
-    data.total_high_prevented,
-  )
-  renderLineCharts(
-    grid,
-    screen,
-    'Total medium alerts prevented from the main branch',
-    [3, 0, 1, 2],
-    data.total_medium_prevented,
-  )
-  renderLineCharts(
-    grid,
-    screen,
-    'Total low alerts prevented from the main branch',
-    [3, 2, 1, 2],
-    data['total_low_prevented'],
+async function displayAnalyticsScreen(data: FormattedData): Promise<void> {
+  // Spawn the Ink CLI subprocess.
+  const inkCliPath = path.join(
+    constants.rootPath,
+    'external',
+    'ink',
+    'analytics',
+    'cli.js',
   )
 
-  const BarChart = /*@__PURE__*/ require('blessed-contrib/lib/widget/charts/bar.js')
-  const bar = grid.set(4, 0, 1, 2, BarChart, {
-    label: 'Top 5 alert types',
-    barWidth: 10,
-    barSpacing: 17,
-    xOffset: 0,
-    maxHeight: 9,
-    barBgColor: 'magenta',
+  const { exitCode, stderr } = await spawn(process.execPath, [inkCliPath], {
+    encoding: 'utf8',
+    input: JSON.stringify({ data }),
+    stdio: ['pipe', 'inherit', 'pipe'],
   })
 
-  // Must append before setting data.
-  screen.append(bar)
-
-  bar.setData({
-    titles: Object.keys(data.top_five_alert_types),
-    data: Object.values(data.top_five_alert_types),
-  })
-
-  screen.render()
-  // eslint-disable-next-line n/no-process-exit
-  screen.key(['escape', 'q', 'C-c'], () => process.exit(0))
+  if (exitCode !== 0) {
+    logger.error(`Ink app failed with exit code ${exitCode}`)
+    if (stderr) {
+      logger.error(stderr)
+    }
+    process.exitCode = exitCode ?? 1
+  }
 }
 
 export function formatDataRepo(
@@ -383,34 +316,4 @@ export function formatDataOrg(
 
 function formatDate(date: string): string {
   return `${Months[new Date(date).getMonth()]} ${new Date(date).getDate()}`
-}
-
-function renderLineCharts(
-  grid: ContribGrid,
-  screen: Widgets.Screen,
-  title: string,
-  coords: number[],
-  data: Record<string, number>,
-): void {
-  const LineChart = /*@__PURE__*/ require('blessed-contrib/lib/widget/charts/line.js')
-  const line = grid.set(...coords, LineChart, {
-    style: { line: 'cyan', text: 'cyan', baseline: 'black' },
-    xLabelPadding: 0,
-    xPadding: 0,
-    xOffset: 0,
-    wholeNumbersOnly: true,
-    legend: {
-      width: 1,
-    },
-    label: title,
-  })
-
-  screen.append(line)
-
-  const lineData = {
-    x: Object.keys(data),
-    y: Object.values(data),
-  }
-
-  line.setData([lineData])
 }
