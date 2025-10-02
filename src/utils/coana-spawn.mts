@@ -5,19 +5,16 @@ import { createRequire } from 'node:module'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import { getDefaultOrgSlug } from '../commands/ci/fetch-default-org-slug.mts'
-import constants, { FLAG_SILENT, NPM, PNPM, YARN } from '../constants.mts'
+import constants from '../constants.mts'
 import { getErrorCause } from './errors.mts'
-import { findUp } from './fs.mts'
 import { getDefaultApiToken, getDefaultProxyUrl } from './sdk.mts'
-import { isYarnBerry } from './yarn-version.mts'
+import { runShadowCommand } from './shadow-runner.mts'
 
 import type { ShadowBinOptions, ShadowBinResult } from '../shadow/npm-base.mts'
 import type { CResult } from '../types.mts'
 import type { SpawnExtra } from '@socketsecurity/registry/lib/spawn'
 
 const require = createRequire(import.meta.url)
-
-const { PACKAGE_LOCK_JSON, PNPM_LOCK_YAML, YARN_LOCK } = constants
 
 export type CoanaSpawnOptions = ShadowBinOptions & {
   agent?: 'npm' | 'pnpm' | 'yarn' | undefined
@@ -90,34 +87,10 @@ export async function spawnCoana(
       }
     }
 
-    // Auto-detect package manager if not specified.
-    let pm = agent
-    if (!pm) {
-      const pnpmLockPath = await findUp(PNPM_LOCK_YAML, { onlyFiles: true })
-      const yarnLockPath = pnpmLockPath
-        ? undefined
-        : await findUp(YARN_LOCK, { onlyFiles: true })
-      const npmLockPath =
-        pnpmLockPath || yarnLockPath
-          ? undefined
-          : await findUp(PACKAGE_LOCK_JSON, { onlyFiles: true })
-
-      if (pnpmLockPath) {
-        pm = PNPM
-      } else if (yarnLockPath) {
-        pm = YARN
-      } else if (npmLockPath) {
-        pm = NPM
-      } else {
-        // Default to npm if no lockfile found.
-        pm = NPM
-      }
-    }
-
-    // Use npm/dlx version.
+    // Use npm/dlx version via shadow-runner.
     const coanaVersion =
       constants.ENV['INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION']
-    const coanaArgs = [`@coana-tech/cli@~${coanaVersion}`, ...args]
+    const packageSpec = `@coana-tech/cli@~${coanaVersion}`
 
     const finalEnv = {
       ...process.env,
@@ -126,56 +99,19 @@ export async function spawnCoana(
       ...spawnEnv,
     }
 
-    const finalIpc = {
-      [constants.SOCKET_CLI_SHADOW_ACCEPT_RISKS]: true,
-      [constants.SOCKET_CLI_SHADOW_API_TOKEN]:
-        constants.SOCKET_PUBLIC_API_TOKEN,
-      [constants.SOCKET_CLI_SHADOW_SILENT]: true,
-      ...ipc,
-    }
+    const result = await runShadowCommand(packageSpec, args, {
+      agent,
+      cwd: shadowOptions.cwd,
+      env: finalEnv,
+      ipc,
+      stdio: spawnExtra?.['stdio'] || 'inherit',
+    })
 
-    let result: ShadowBinResult
-    if (pm === PNPM) {
-      const shadowPnpmBin = /*@__PURE__*/ require(constants.shadowPnpmBinPath)
-      result = await shadowPnpmBin(
-        ['dlx', FLAG_SILENT, ...coanaArgs],
-        {
-          ...shadowOptions,
-          env: finalEnv,
-          ipc: finalIpc,
-        },
-        spawnExtra,
-      )
-    } else if (pm === YARN && isYarnBerry()) {
-      const shadowYarnBin = /*@__PURE__*/ require(constants.shadowYarnBinPath)
-      result = await shadowYarnBin(
-        ['dlx', '--quiet', ...coanaArgs],
-        {
-          ...shadowOptions,
-          env: finalEnv,
-          ipc: finalIpc,
-        },
-        spawnExtra,
-      )
-    } else {
-      const shadowNpxBin = /*@__PURE__*/ require(constants.shadowNpxBinPath)
-      result = await shadowNpxBin(
-        ['--yes', '--force', FLAG_SILENT, ...coanaArgs],
-        {
-          ...shadowOptions,
-          env: finalEnv,
-          ipc: finalIpc,
-        },
-        spawnExtra,
-      )
-    }
-
-    const output = await result.spawnPromise
-    return { ok: true, data: output.stdout.toString() }
+    return result
   } catch (e) {
-    const stderr = (e as any)?.stderr
+    const stderr = (e as { stderr?: unknown })?.stderr
     const cause = getErrorCause(e)
-    const message = stderr || cause
+    const message = stderr ? String(stderr) : cause
     return {
       ok: false,
       data: e,
