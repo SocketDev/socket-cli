@@ -467,6 +467,33 @@ Socket CLI integrates with various third-party tools and services:
   - ❌ WRONG: `logger.error('Error occurred'); return`
   - ❌ WRONG: `process.exit(1)`
 
+#### Error Message Format & Style (Socket Standard)
+- **Catch parameters**: 🚨 MANDATORY - Use `catch (e)` not `catch (error)`
+- **JSDoc documentation**: Include `@throws {ErrorType} When condition occurs.` in function documentation
+- **Component references**: Use double quotes around component/field names in error messages
+  - ✅ CORRECT: `"config" field is required`
+  - ❌ WRONG: `'config' field is required`
+- **Quote characters**: Consistently use double quotes for literal values in error messages
+- **Descriptive messages**: Error messages must clearly state what's wrong and which component failed
+
+#### Error Message Patterns (Socket Standard)
+Use these standardized patterns for consistency across all Socket projects:
+- **Required fields**: `"{field}" is required` or `"{field}" is a required {type}`
+- **Invalid types**: `"{field}" must be a {type}`
+- **Validation failures**: `{context} "{field}" {violation}`
+  - Example: `config "apiKey" cannot be empty`
+- **Parse failures**: `failed to parse {format}` or `unable to {action} "{component}"`
+- **Character restrictions**: Use specific descriptions: `cannot start with`, `cannot contain`, `must start with`
+
+#### Error Handling Requirements (Socket Standard)
+- **Descriptive and actionable**: Errors must clearly state what's wrong and provide context
+- **Input validation**: Validate inputs thoroughly before processing
+- **Edge cases**: Handle edge cases gracefully with clear error messages
+- **Error context**: Include `{ cause: e }` when wrapping underlying errors
+- **No process.exit()**: Never use `process.exit(1)` - throw errors instead (except CLI entry points where appropriate)
+- **No silent failures**: Never use `logger.error()` or `console.error()` followed by `return` - throw proper errors
+- **Test error paths**: Test both success and error paths for comprehensive coverage
+
 ### 🗑️ File Operations (SECURITY CRITICAL)
 
 #### Safe Deletion Patterns
