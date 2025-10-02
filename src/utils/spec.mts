@@ -1,3 +1,5 @@
+/** @fileoverview Package specification utilities for PURL generation. */
+
 import semver from 'semver'
 
 import { NPM } from '../constants.mts'

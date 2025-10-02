@@ -1,3 +1,5 @@
+/** @fileoverview npm configuration utilities for Socket CLI. */
+
 import NpmConfig from '@npmcli/config'
 import {
   definitions as npmConfigDefinitions,

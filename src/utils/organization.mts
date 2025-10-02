@@ -1,3 +1,5 @@
+/** @fileoverview Organization utilities for enterprise features. */
+
 import type {
   EnterpriseOrganizations,
   Organizations,

@@ -1,3 +1,5 @@
+/** @fileoverview JSON result serialization utilities for CLI output. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { isObject } from '@socketsecurity/registry/lib/objects'
 

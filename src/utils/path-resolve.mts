@@ -1,3 +1,5 @@
+/** @fileoverview Binary path and package file resolution utilities. */
+
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 

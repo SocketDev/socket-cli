@@ -1,3 +1,5 @@
+/** @fileoverview Organization slug determination utilities for CLI commands. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import {

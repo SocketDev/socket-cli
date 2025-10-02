@@ -1,3 +1,5 @@
+/** @fileoverview Nested map traversal utilities. */
+
 type NestedMap<T> = Map<string, T | NestedMap<T>>
 
 export function* walkNestedMap<T>(

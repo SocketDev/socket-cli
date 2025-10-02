@@ -1,3 +1,5 @@
+/** @fileoverview Error message formatting utilities with styled badges. */
+
 import colors from 'yoctocolors-cjs'
 
 export function failMsgWithBadge(

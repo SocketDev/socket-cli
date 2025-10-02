@@ -1,3 +1,5 @@
+/** @fileoverview Lockfile reading utilities for package managers. */
+
 import { existsSync } from 'node:fs'
 
 import { readFileUtf8 } from '@socketsecurity/registry/lib/fs'

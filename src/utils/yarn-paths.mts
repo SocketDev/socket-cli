@@ -1,3 +1,5 @@
+/** @fileoverview Yarn binary path resolution utilities. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { YARN } from '../constants.mts'

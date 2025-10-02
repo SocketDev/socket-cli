@@ -1,3 +1,5 @@
+/** @fileoverview Semantic versioning utilities for Socket CLI. */
+
 import semver from 'semver'
 
 import type { SemVer } from 'semver'

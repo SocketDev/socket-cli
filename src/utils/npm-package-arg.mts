@@ -1,3 +1,5 @@
+/** @fileoverview Safe wrapper for npm-package-arg parsing. */
+
 import npmPackageArg from 'npm-package-arg'
 
 export type {

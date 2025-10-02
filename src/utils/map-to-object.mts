@@ -1,3 +1,5 @@
+/** @fileoverview Map to object conversion utilities for JSON serialization. */
+
 interface NestedRecord<T> {
   [key: string]: T | NestedRecord<T>
 }

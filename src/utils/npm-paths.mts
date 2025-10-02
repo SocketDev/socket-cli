@@ -1,3 +1,5 @@
+/** @fileoverview npm binary and directory path resolution utilities. */
+
 import { existsSync } from 'node:fs'
 import Module from 'node:module'
 import path from 'node:path'

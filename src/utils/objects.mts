@@ -1,3 +1,5 @@
+/** @fileoverview Object manipulation utilities for Socket CLI. */
+
 export function createEnum<const T extends Record<string, any>>(
   obj: T,
 ): Readonly<T> {

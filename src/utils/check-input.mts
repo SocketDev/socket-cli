@@ -1,3 +1,5 @@
+/** @fileoverview Command input validation utilities. */
+
 import colors from 'yoctocolors-cjs'
 
 import { LOG_SYMBOLS, logger } from '@socketsecurity/registry/lib/logger'

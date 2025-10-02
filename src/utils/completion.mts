@@ -1,3 +1,5 @@
+/** @fileoverview Bash completion utilities for Socket CLI. */
+
 import fs from 'node:fs'
 import path from 'node:path'
 

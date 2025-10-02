@@ -1,3 +1,5 @@
+/** @fileoverview pnpm lockfile parsing and processing utilities. */
+
 import { existsSync } from 'node:fs'
 
 import yaml from 'js-yaml'

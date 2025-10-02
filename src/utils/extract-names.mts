@@ -1,3 +1,5 @@
+/** @fileoverview Repository name extraction and sanitization utilities. */
+
 import constants from '../constants.mts'
 
 /**

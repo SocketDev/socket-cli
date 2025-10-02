@@ -1,3 +1,5 @@
+/** @fileoverview Relative time formatting utilities. */
+
 export function msAtHome(isoTimeStamp: string): string {
   const timeStart = Date.parse(isoTimeStamp)
   const timeEnd = Date.now()

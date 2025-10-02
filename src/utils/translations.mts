@@ -1,3 +1,5 @@
+/** @fileoverview Translation configuration loader for Socket CLI. */
+
 import { createRequire } from 'node:module'
 import path from 'node:path'
 
