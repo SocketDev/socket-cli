@@ -67,7 +67,8 @@ async function main() {
       // Increase Node.js heap size to prevent out of memory errors.
       // Use 8GB in CI, 4GB locally.
       // Add --max-semi-space-size for better GC with RegExp-heavy tests.
-      NODE_OPTIONS: `${process.env.NODE_OPTIONS || ''} --max-old-space-size=${process.env.CI ? 8192 : 4096} --max-semi-space-size=512`.trim(),
+      NODE_OPTIONS:
+        `${process.env.NODE_OPTIONS || ''} --max-old-space-size=${process.env.CI ? 8192 : 4096} --max-semi-space-size=512`.trim(),
     }
 
     // Handle Windows vs Unix for vitest executable.
