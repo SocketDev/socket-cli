@@ -8,7 +8,7 @@ import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
 import { getPurlObject } from '../../utils/purl.mts'
 import { serializeResultJson } from '../../utils/serialize-result-json.mts'
 
-import type { ThreatResult, ThreadFeedResponse } from './types.mts'
+import type { ThreadFeedResponse, ThreatResult } from './types.mts'
 import type { CResult, OutputKind } from '../../types.mts'
 
 /**
@@ -71,17 +71,25 @@ export async function outputThreatFeed(
     'cli.js',
   )
 
-  const { exitCode, stderr } = await spawn(process.execPath, [inkCliPath], {
-    encoding: 'utf8',
-    input: JSON.stringify({ results: parsedResults }),
+  const spawnPromise = spawn(process.execPath, [inkCliPath], {
+    stdioString: true,
     stdio: ['pipe', 'inherit', 'pipe'],
   })
 
-  if (exitCode !== 0) {
-    logger.error(`Ink app failed with exit code ${exitCode}`)
+  // Write data to stdin.
+  if (spawnPromise.stdin) {
+    spawnPromise.stdin.write(JSON.stringify({ results: parsedResults }))
+    spawnPromise.stdin.end()
+  }
+
+  const spawnResult = await spawnPromise
+
+  if (spawnResult.code !== 0) {
+    logger.error(`Ink app failed with exit code ${spawnResult.code}`)
+    const stderr = spawnResult.stderr.toString()
     if (stderr) {
       logger.error(stderr)
     }
-    process.exitCode = exitCode ?? 1
+    process.exitCode = spawnResult.code
   }
 }

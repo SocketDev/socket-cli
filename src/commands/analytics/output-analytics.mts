@@ -210,18 +210,26 @@ async function displayAnalyticsScreen(data: FormattedData): Promise<void> {
     'cli.js',
   )
 
-  const { exitCode, stderr } = await spawn(process.execPath, [inkCliPath], {
-    encoding: 'utf8',
-    input: JSON.stringify({ data }),
+  const spawnPromise = spawn(process.execPath, [inkCliPath], {
+    stdioString: true,
     stdio: ['pipe', 'inherit', 'pipe'],
   })
 
-  if (exitCode !== 0) {
-    logger.error(`Ink app failed with exit code ${exitCode}`)
+  // Write data to stdin.
+  if (spawnPromise.stdin) {
+    spawnPromise.stdin.write(JSON.stringify({ data }))
+    spawnPromise.stdin.end()
+  }
+
+  const result = await spawnPromise
+
+  if (result.code !== 0) {
+    logger.error(`Ink app failed with exit code ${result.code}`)
+    const stderr = result.stderr.toString()
     if (stderr) {
       logger.error(stderr)
     }
-    process.exitCode = exitCode ?? 1
+    process.exitCode = result.code
   }
 }
 

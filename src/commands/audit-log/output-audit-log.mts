@@ -68,26 +68,6 @@ export async function outputAuditLog(
   await outputWithBlessed(result.data, orgSlug)
 }
 
-function formatResult(
-  selectedRow?: SocketSdkSuccessResult<'getAuditLogEvents'>['data']['results'][number],
-  keepQuotes = false,
-): string {
-  if (!selectedRow) {
-    return '(none)'
-  }
-  // Format the object with spacing but keep the payload compact because
-  // that can contain just about anything and spread many lines.
-  const obj = { ...selectedRow, payload: 'REPLACEME' }
-  const json = JSON.stringify(obj, null, 2).replace(
-    /"payload": "REPLACEME"/,
-    `"payload": ${JSON.stringify(selectedRow.payload ?? {})}`,
-  )
-  if (keepQuotes) {
-    return json
-  }
-  return json.replace(/^\s*"([^"]+)?"/gm, '  $1')
-}
-
 export async function outputAsJson(
   auditLogs: CResult<SocketSdkSuccessResult<'getAuditLogEvents'>['data']>,
   {
@@ -208,26 +188,31 @@ async function outputWithBlessed(
     'cli.js',
   )
 
-  const { exitCode, stderr, stdout } = await spawn(
-    process.execPath,
-    [inkCliPath],
-    {
-      encoding: 'utf8',
-      input: JSON.stringify({ orgSlug, results }),
-      stdio: ['pipe', 'inherit', 'pipe'],
-    },
-  )
+  const spawnPromise = spawn(process.execPath, [inkCliPath], {
+    stdioString: true,
+    stdio: ['pipe', 'inherit', 'pipe'],
+  })
 
-  if (exitCode !== 0) {
-    logger.error(`Ink app failed with exit code ${exitCode}`)
+  // Write data to stdin.
+  if (spawnPromise.stdin) {
+    spawnPromise.stdin.write(JSON.stringify({ orgSlug, results }))
+    spawnPromise.stdin.end()
+  }
+
+  const result = await spawnPromise
+
+  if (result.code !== 0) {
+    logger.error(`Ink app failed with exit code ${result.code}`)
+    const stderr = result.stderr.toString()
     if (stderr) {
       logger.error(stderr)
     }
-    process.exitCode = exitCode ?? 1
+    process.exitCode = result.code
     return
   }
 
   // Log the stdout (which contains the last selection if user pressed Enter).
+  const stdout = result.stdout.toString()
   if (stdout && stdout.trim()) {
     logger.log(stdout.trim())
   }
