@@ -105,7 +105,7 @@
     "@npmcli/arborist": "9.1.4",
     "@npmcli/config": "10.4.0",
     "@octokit/graphql": "9.0.1",
-    "@octokit/openapi-types": "25.1.0",
+    "@octokit/openapi-types": "26.0.0",
     "@octokit/request-error": "7.0.0",
     "@octokit/rest": "22.0.0",
     "@octokit/types": "14.1.0",
