@@ -73,7 +73,13 @@ describe('socket package score', async () => {
   )
 
   cmdit(
-    ['package', 'score', FLAG_DRY_RUN, FLAG_CONFIG, '{}'],
+    [
+      'package',
+      'score',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
+      '{"apiToken":"fake-token"}',
+    ],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
