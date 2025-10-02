@@ -77,7 +77,8 @@ describe('socket scan view', async () => {
         \\xd7  Input error:  Please review the input requirements and try again
 
           \\xd7 Org name by default setting, --org, or auto-discovered (dot is an invalid org, most likely you forgot the org name here?)
-          \\xd7 Scan ID to view (missing)"
+          \\xd7 Scan ID to view (missing)
+          \\xd7 This command requires a Socket API token for access (try \`socket login\`)"
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
