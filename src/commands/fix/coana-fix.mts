@@ -14,8 +14,8 @@ import { getSocketFixPrs, openSocketFixPr } from './pull-request.mts'
 import { FLAG_DRY_RUN, GQL_PR_STATE_OPEN } from '../../constants.mts'
 import { handleApiCall } from '../../utils/api.mts'
 import { cmdFlagValueToArray } from '../../utils/cmd.mts'
+import { spawnCoana } from '../../utils/coana-spawn.mts'
 import { debugDir, debugFn } from '../../utils/debug.mts'
-import { spawnCoanaDlx } from '../../utils/dlx.mts'
 import { getErrorCause } from '../../utils/errors.mts'
 import {
   gitCheckoutBranch,
@@ -132,7 +132,7 @@ export async function coanaFix(
       return { ok: true, data: { fixed: false } }
     }
 
-    const fixCResult = await spawnCoanaDlx(
+    const fixCResult = await spawnCoana(
       [
         'compute-fixes-and-upgrade-purls',
         cwd,
@@ -189,7 +189,7 @@ export async function coanaFix(
   let ids: string[] | undefined
 
   if (shouldSpawnCoana && isAll) {
-    const foundCResult = await spawnCoanaDlx(
+    const foundCResult = await spawnCoana(
       [
         'compute-fixes-and-upgrade-purls',
         cwd,
@@ -247,7 +247,7 @@ export async function coanaFix(
 
     // Apply fix for single GHSA ID.
     // eslint-disable-next-line no-await-in-loop
-    const fixCResult = await spawnCoanaDlx(
+    const fixCResult = await spawnCoana(
       [
         'compute-fixes-and-upgrade-purls',
         cwd,

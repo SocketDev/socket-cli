@@ -2,8 +2,8 @@ import path from 'node:path'
 
 import constants from '../../constants.mts'
 import { handleApiCall } from '../../utils/api.mts'
+import { spawnCoana } from '../../utils/coana-spawn.mts'
 import { extractTier1ReachabilityScanId } from '../../utils/coana.mts'
-import { spawnCoanaDlx } from '../../utils/dlx.mts'
 import { hasEnterpriseOrgPlan } from '../../utils/organization.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 import { socketDevLink } from '../../utils/terminal-link.mts'
@@ -174,7 +174,7 @@ export async function performReachabilityAnalysis(
   }
 
   // Run Coana with the manifests tar hash.
-  const coanaResult = await spawnCoanaDlx(coanaArgs, orgSlug, {
+  const coanaResult = await spawnCoana(coanaArgs, orgSlug, {
     cwd,
     env: coanaEnv,
     spinner,
