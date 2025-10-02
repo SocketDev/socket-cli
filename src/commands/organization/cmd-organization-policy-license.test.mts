@@ -44,9 +44,9 @@ describe('socket organization policy license', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: v1.1.23
-          |__   | * |  _| '_| -_|  _|     | token: zP416*** (env), org: (not set)
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket organization policy license\`, cwd: ~/projects/socket-cli"
+          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket organization policy license\`, cwd: <redacted>"
       `)
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
@@ -58,7 +58,7 @@ describe('socket organization policy license', async () => {
 
   // Tests legacy pre-v1.0 behavior where positional org arguments were accepted.
   // In v1.0+, org must be specified via --org flag or default config.
-  // Dry-run mode exits gracefully with code 0 even when org cannot be determined.
+  // Dry-run mode exits without validating API token (code 0 despite missing token).
   cmdit(
     ['organization', 'policy', 'license', FLAG_DRY_RUN, FLAG_CONFIG, '{}'],
     'should reject dry run without proper args',
@@ -68,18 +68,21 @@ describe('socket organization policy license', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: v1.1.23
-          |__   | * |  _| '_| -_|  _|     | token: zP416*** (env), org: (not set)
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket organization policy license\`, cwd: ~/projects/socket-cli
+          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket organization policy license\`, cwd: <redacted>
 
         \\u203c Unable to determine the target org. Trying to auto-discover it now...
         i Note: Run \`socket login\` to set a default org.
               Use the --org flag to override the default org.
 
-        \\xd7 Skipping auto-discovery of org in dry-run mode"
+        \\xd7 Skipping auto-discovery of org in dry-run mode
+        \\xd7  Input error:  Please review the input requirements and try again
+
+          \\xd7 This command requires a Socket API token for access (try \`socket login\`)"
       `)
 
-      expect(code, 'dry-run should exit with code 0').toBe(0)
+      expect(code, 'dry-run exits with success code').toBe(0)
     },
   )
 
@@ -102,9 +105,9 @@ describe('socket organization policy license', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: v1.1.23
-          |__   | * |  _| '_| -_|  _|     | token: zP416*** (env), org: (not set)
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket organization policy license\`, cwd: ~/projects/socket-cli
+          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket organization policy license\`, cwd: <redacted>
 
         \\u203c Unable to determine the target org. Trying to auto-discover it now...
         i Note: Run \`socket login\` to set a default org.
@@ -133,9 +136,9 @@ describe('socket organization policy license', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: v1.1.23
-          |__   | * |  _| '_| -_|  _|     | token: zP416*** (env), org: fakeOrg (config)
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket organization policy license\`, cwd: ~/projects/socket-cli"
+          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket organization policy license\`, cwd: <redacted>"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
@@ -160,9 +163,9 @@ describe('socket organization policy license', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: v1.1.23
-          |__   | * |  _| '_| -_|  _|     | token: zP416*** (env), org: forcedorg (--org flag)
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket organization policy license\`, cwd: ~/projects/socket-cli"
+          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket organization policy license\`, cwd: <redacted>"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

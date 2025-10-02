@@ -44,9 +44,9 @@ describe('socket organization policy security', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: v1.1.23
-          |__   | * |  _| '_| -_|  _|     | token: zP416*** (env), org: (not set)
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket organization policy security\`, cwd: ~/projects/socket-cli"
+          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket organization policy security\`, cwd: <redacted>"
       `)
 
       //expect(code, 'explicit help should exit with code 0').toBe(0)
@@ -58,7 +58,7 @@ describe('socket organization policy security', async () => {
 
   // Tests legacy pre-v1.0 behavior where positional org arguments were accepted.
   // In v1.0+, org must be specified via --org flag or default config.
-  // Dry-run mode exits gracefully with code 0 even when org cannot be determined.
+  // Dry-run mode exits without validating API token (code 0 despite missing token).
   cmdit(
     ['organization', 'policy', 'security', FLAG_DRY_RUN, FLAG_CONFIG, '{}'],
     'should reject dry run without proper args',
@@ -82,7 +82,7 @@ describe('socket organization policy security', async () => {
       //   "
       // `)
 
-      expect(code, 'dry-run should exit with code 0').toBe(0)
+      expect(code, 'dry-run exits with success code').toBe(0)
     },
   )
 
@@ -102,9 +102,9 @@ describe('socket organization policy security', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: v1.1.23
-          |__   | * |  _| '_| -_|  _|     | token: zP416*** (env), org: fakeOrg (config)
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket organization policy security\`, cwd: ~/projects/socket-cli"
+          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket organization policy security\`, cwd: <redacted>"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
@@ -129,9 +129,9 @@ describe('socket organization policy security', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: v1.1.23
-          |__   | * |  _| '_| -_|  _|     | token: zP416*** (env), org: forcedorg (--org flag)
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket organization policy security\`, cwd: ~/projects/socket-cli"
+          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket organization policy security\`, cwd: <redacted>"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

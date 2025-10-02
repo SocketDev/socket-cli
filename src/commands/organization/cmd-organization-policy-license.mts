@@ -94,7 +94,7 @@ async function run(
   if (dryRun) {
     await determineOrgSlug(String(orgFlag || ''), interactive, dryRun)
     logger.log(constants.DRY_RUN_BAILING_NOW)
-    // Validate input and set exit code even in dry-run mode.
+    // Validate input in dry-run mode without setting exit code.
     checkCommandInput(
       outputKind,
       {
@@ -110,6 +110,8 @@ async function run(
         fail: 'try `socket login`',
       },
     )
+    // Reset exit code for dry-run mode.
+    process.exitCode = 0
     return
   }
 
