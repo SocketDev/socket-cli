@@ -1,10 +1,10 @@
+/** @fileoverview Type coverage percentage extraction from type-coverage tool output. */
+
 import constants from '@socketsecurity/registry/lib/constants'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 /**
- * Executes the type-coverage command and extracts the percentage from its output.
- * This runs 'pnpm run coverage:type' which internally executes the type-coverage tool.
- * @returns {Promise<number|null>} The type coverage percentage as a float, or null if not found.
+ * Execute type-coverage command and extract percentage from output.
  */
 export async function getTypeCoverage() {
   // Run the type-coverage command and capture its output.

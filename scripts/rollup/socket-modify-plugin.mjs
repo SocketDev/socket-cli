@@ -1,6 +1,12 @@
+/** @fileoverview Rollup plugin for find-and-replace transformations in bundled code. */
+
 import { createFilter } from '@rollup/pluginutils'
 import MagicString from 'magic-string'
 
+/**
+ * Create Rollup plugin for string replacement in chunks.
+ * Supports regex patterns and dynamic replacement functions.
+ */
 function socketModifyPlugin({
   exclude,
   find,

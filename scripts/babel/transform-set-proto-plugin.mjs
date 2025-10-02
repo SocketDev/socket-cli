@@ -1,4 +1,8 @@
-// Helper to check if something is a .__proto__ access.
+/** @fileoverview Babel plugin to transform __proto__ assignments into Object.setPrototypeOf calls. */
+
+/**
+ * Check if node is a __proto__ property access.
+ */
 function isProtoAccess(node, t) {
   return (
     t.isMemberExpression(node) &&

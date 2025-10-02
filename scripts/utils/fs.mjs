@@ -1,6 +1,12 @@
+/** @fileoverview File system utilities for build scripts. */
+
 import { statSync } from 'node:fs'
 import path from 'node:path'
 
+/**
+ * Find a file or directory by walking up parent directories.
+ * Similar to find-up but synchronous and minimal.
+ */
 function findUpSync(name, options) {
   const opts = { __proto__: null, ...options }
   const { cwd = process.cwd() } = opts
