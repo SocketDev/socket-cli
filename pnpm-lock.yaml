@@ -261,8 +261,8 @@ importers:
         specifier: 4.11.0
         version: 4.11.0(patch_hash=2c9f0a87aa8ce9ed95ce201819ef3fcdb9a00f1cabe12815f586d2a3c0bff69e)
       browserslist:
-        specifier: 4.25.4
-        version: 4.25.4
+        specifier: 4.26.2
+        version: 4.26.2
       chalk-table:
         specifier: 1.0.2
         version: 1.0.2
@@ -1615,12 +1615,12 @@ packages:
     resolution: {integrity: sha512-LtoMMhxAlorcGhmFYI+LhPgbPZCkgP6ra1YL604EeF6U98pLlQ3iWIGMdWSC+vWmPBWBNgmDBAhnAobLROJmwg==}
     engines: {node: '>=18'}
 
-  '@socketregistry/es-set-tostringtag@1.0.9':
-    resolution: {integrity: sha512-rLBDHYkhI3so1NSinOhIhmxQ53aG0SPht2KMfBLTNuanrfVgMQOusu+s0UkP5+lI4242yHaqYAbRyAEK820/Gg==}
+  '@socketregistry/es-set-tostringtag@1.0.10':
+    resolution: {integrity: sha512-btXmvw1JpA8WtSoXx9mTapo9NAyIDKRRzK84i48d8zc0X09M6ORfobVnHbgwhXf7CFhkRzhYrHG9dqbI9vpELQ==}
     engines: {node: '>=18'}
 
-  '@socketregistry/globalthis@1.0.7':
-    resolution: {integrity: sha512-8BwRKuNSMZYoR8B+ohBdO0vFARSo7wPyeczNTHMalwS7Cfql7duQybAYvlBw1K1rrEwcEg21U/UBbOeHapEI1A==}
+  '@socketregistry/globalthis@1.0.8':
+    resolution: {integrity: sha512-keylYAVfNG8oovtMwsaai129NlhO7NwytSnRVNqR91nqx0uhA+XuWCcFDxw22QJYT/7mlNrR1MdkKL2Ks6Rq3Q==}
     engines: {node: '>=18'}
 
   '@socketregistry/hasown@1.0.7':
@@ -1636,36 +1636,36 @@ packages:
     resolution: {integrity: sha512-h8MfBgjoPFiRYp60S9qzQJrmNIE/jAnqrjWZRGnHeKmpBH5M3DTwblrPG3hqxlu9IDtiu7H9NDvDGfFcM7dirw==}
     engines: {node: '>=18'}
 
-  '@socketregistry/is-core-module@1.0.10':
-    resolution: {integrity: sha512-N73WwnrbE+DA66skarYxgAq+FyR+ORhN7T6jwYNteKdUbmdPJxX6jqmG82R4eGlrBa3+WKzi9KYXCButbIeDlw==}
+  '@socketregistry/is-core-module@1.0.11':
+    resolution: {integrity: sha512-obrSzvIfJXKQthA3u1RmkjLHuA1QDtLm0SbXJxGs2CQfXZY9Eql5/pBGSV1hIUWKcpdcNphFgnJMC5BITcTXsQ==}
     engines: {node: '>=18'}
 
   '@socketregistry/is-interactive@1.0.6':
     resolution: {integrity: sha512-KbKE6j98nf+cZum6lAO5ubP/Sid5tbbl3S7XYb8VFu3RaHy9I1uIZ/dcM932xYk3+TQuoXgV3pzqAM2ekqA1tA==}
     engines: {node: '>=18'}
 
-  '@socketregistry/isarray@1.0.7':
-    resolution: {integrity: sha512-G+LghVUHkjihC52gH0ligRdRTUd1fSmoBkWG+tnRNL51k0sQnhDKrptCcc4KEa/4kNjwc7UlarkW3GHA8yQbIA==}
+  '@socketregistry/isarray@1.0.8':
+    resolution: {integrity: sha512-DM81ydAjO2GJKkNf2Vn17InJ37sEYLK1YyhxpDX16OdbOpYlsDIw8QyeFEUZtc7GqsQXbcPKJmz3j/2qS+BhKQ==}
     engines: {node: '>=18'}
 
   '@socketregistry/packageurl-js@1.1.4':
     resolution: {integrity: sha512-x6z5IDUobW/fkPRM9JboWpUGhAOD95Y71xO+dpb2AeP43uqYewJWBQc3KQ8GilFmydq93ew1tzut9UUi6yEdfg==}
     engines: {node: '>=18'}
 
-  '@socketregistry/path-parse@1.0.7':
-    resolution: {integrity: sha512-Tql/7zg51KKCB+J0bGWQkff1J/8TxEYSM087XoHn3RHJ6X1nZQe/ugZ8bgUuoGmUOEphAdzbQvfaKIPgShBAcQ==}
+  '@socketregistry/path-parse@1.0.8':
+    resolution: {integrity: sha512-9dcT4Vj4TY6BsU7hd3sEemoaA8OEGUutK2ufNdP+qKOljcH0xy/5+WnbEZ1RLEJcSKDnpZ3T47mVdq/ZWiGNxw==}
     engines: {node: '>=18'}
 
-  '@socketregistry/safe-buffer@1.0.8':
-    resolution: {integrity: sha512-tjGRJb7PQsO7apF3AaHXQRZvkY44ldloGngBHYp87LPYs2Kp3DmGnU0+yYJri/AIOfUc6FClLuJbeXYn6iYSQw==}
+  '@socketregistry/safe-buffer@1.0.9':
+    resolution: {integrity: sha512-eV4uYchI1+vQeKpFG+aBlhVQ/AaaPTTXaan+ReiNn/izy8U9hfT4WC8l4g8o8BC3zaeNnsNVxec14hJH/y2y3g==}
     engines: {node: '>=18'}
 
-  '@socketregistry/safer-buffer@1.0.9':
-    resolution: {integrity: sha512-njtALAmZzUbbgW2vMOz0DoMUmy/o+dKYt8t8nvp79TX8IO1ZpP1+Nr3c6kXOAJy0E873jg/SAFi3FiGxHtBpgw==}
+  '@socketregistry/safer-buffer@1.0.10':
+    resolution: {integrity: sha512-jbEY37bJn51W9pP1pXxIoGcQbmbi9EQDtnXfWBjGLNvKC1iEyNLOaGm8ee7dN7Z+KgJdQbrrDjjD3HbGeOFC4A==}
     engines: {node: '>=18'}
 
-  '@socketregistry/side-channel@1.0.9':
-    resolution: {integrity: sha512-EhdxZ8UiOlImFsqR9Wk6/dvU8Ld/NmUhS42GTTES9cpIEcc/deb+qNhUZdIK6UZy3VYoQjenPR8qWJBud5390w==}
+  '@socketregistry/side-channel@1.0.10':
+    resolution: {integrity: sha512-nqm2QgbXHldY6DgIBap3i1MlQms+eP7zIC0vPuyy9FmxF62ITa80hjj/3w6zH7DCxV4nQBcJsz3CaGNulQAP7g==}
     engines: {node: '>=18'}
 
   '@socketsecurity/config@3.0.1':
@@ -2162,6 +2162,10 @@ packages:
   base64-js@1.5.1:
     resolution: {integrity: sha512-AKpaYlHn8t4SVbOHCy+b5+KKgvR4vrsD8vbvrbiQJps7fKDTkjkDry6ji0rUJjC0kzbNePLwzxq8iypo41qeWA==}
 
+  baseline-browser-mapping@2.8.10:
+    resolution: {integrity: sha512-uLfgBi+7IBNay8ECBO2mVMGZAc1VgZWEChxm4lv+TobGdG82LnXMjuNGo/BSSZZL4UmkWhxEHP2f5ziLNwGWMA==}
+    hasBin: true
+
   before-after-hook@4.0.0:
     resolution: {integrity: sha512-q6tR3RPqIB1pMiTRMFcZwuG5T8vwp+vUvEG0vuI6B+Rikh5BfPp2fQ82c925FOs+b0lcFQ8CFrL+KbilfZFhOQ==}
 
@@ -2207,8 +2211,8 @@ packages:
   bresenham@0.0.3:
     resolution: {integrity: sha512-wbMxoJJM1p3+6G7xEFXYNCJ30h2qkwmVxebkbwIl4OcnWtno5R3UT9VuYLfStlVNAQCmRjkGwjPFdfaPd4iNXw==}
 
-  browserslist@4.25.4:
-    resolution: {integrity: sha512-4jYpcjabC606xJ3kw2QwGEZKX0Aw7sgQdZCvIK9dhVSPh76BKo+C+btT1RRofH7B+8iNpEbgGNVWiLki5q93yg==}
+  browserslist@4.26.2:
+    resolution: {integrity: sha512-ECFzp6uFOSB+dcZ5BK/IBaGWssbSYBHvuMeMt3MMFyhI0Z8SqGgEkBLARgpRH3hutIgPVsALcMwbDrJqPxQ65A==}
     engines: {node: ^6 || ^7 || ^8 || ^9 || ^10 || ^11 || ^12 || >=13.7}
     hasBin: true
 
@@ -2258,8 +2262,8 @@ packages:
     resolution: {integrity: sha512-P8BjAsXvZS+VIDUI11hHCQEv74YT67YUi5JJFNWIqL235sBmjX4+qx9Muvls5ivyNENctx46xQLQ3aTuE7ssaQ==}
     engines: {node: '>=6'}
 
-  caniuse-lite@1.0.30001741:
-    resolution: {integrity: sha512-QGUGitqsc8ARjLdgAfxETDhRbJ0REsP6O3I96TAth/mVjh2cYzN2u+3AzPP3aVSm2FehEItaJw1xd+IGBXWeSw==}
+  caniuse-lite@1.0.30001746:
+    resolution: {integrity: sha512-eA7Ys/DGw+pnkWWSE/id29f2IcPHVoE8wxtvE5JdvD2V28VTDPy1yEeo11Guz0sJ4ZeGRcm3uaTcAqK1LXaphA==}
 
   cardinal@2.1.1:
     resolution: {integrity: sha512-JSr5eOgoEymtYHBjNWyjrMqet9Am2miJhlfKNdqLp6zoeAh0KN5dRAcxlecj5mAJrmQomgiOBj35xHLrFjqBpw==}
@@ -2571,8 +2575,8 @@ packages:
   ee-first@1.1.1:
     resolution: {integrity: sha512-WMwm9LhRUo+WUaRN+vRuETqG89IgZphVSNkdFgeb6sS/E4OrDIN7t48CAewSHXc6C8lefD8KKfr5vY61brQlow==}
 
-  electron-to-chromium@1.5.218:
-    resolution: {integrity: sha512-uwwdN0TUHs8u6iRgN8vKeWZMRll4gBkz+QMqdS7DDe49uiK68/UX92lFb61oiFPrpYZNeZIqa4bA7O6Aiasnzg==}
+  electron-to-chromium@1.5.228:
+    resolution: {integrity: sha512-nxkiyuqAn4MJ1QbobwqJILiDtu/jk14hEAWaMiJmNPh1Z+jqoFlBFZjdXwLWGeVSeu9hGLg6+2G9yJaW8rBIFA==}
 
   emoji-regex@10.5.0:
     resolution: {integrity: sha512-lb49vf1Xzfx080OKA0o6l8DQQpV+6Vg95zyCJX9VB/BqKYlhG7N4wgROUUHRA+ZPUefLnteQOad7z1kT2bV7bg==}
@@ -4920,7 +4924,7 @@ snapshots:
     dependencies:
       '@babel/compat-data': 7.28.4
       '@babel/helper-validator-option': 7.27.1
-      browserslist: 4.25.4
+      browserslist: 4.26.2
       lru-cache: 5.1.1
       semver: 7.7.2
 
@@ -6096,9 +6100,9 @@ snapshots:
 
   '@sindresorhus/merge-streams@2.3.0': {}
 
-  '@socketregistry/es-set-tostringtag@1.0.9': {}
+  '@socketregistry/es-set-tostringtag@1.0.10': {}
 
-  '@socketregistry/globalthis@1.0.7': {}
+  '@socketregistry/globalthis@1.0.8': {}
 
   '@socketregistry/hasown@1.0.7': {}
 
@@ -6106,21 +6110,21 @@ snapshots:
 
   '@socketregistry/indent-string@1.0.13': {}
 
-  '@socketregistry/is-core-module@1.0.10': {}
+  '@socketregistry/is-core-module@1.0.11': {}
 
   '@socketregistry/is-interactive@1.0.6': {}
 
-  '@socketregistry/isarray@1.0.7': {}
+  '@socketregistry/isarray@1.0.8': {}
 
   '@socketregistry/packageurl-js@1.1.4': {}
 
-  '@socketregistry/path-parse@1.0.7': {}
+  '@socketregistry/path-parse@1.0.8': {}
 
-  '@socketregistry/safe-buffer@1.0.8': {}
+  '@socketregistry/safe-buffer@1.0.9': {}
 
-  '@socketregistry/safer-buffer@1.0.9': {}
+  '@socketregistry/safer-buffer@1.0.10': {}
 
-  '@socketregistry/side-channel@1.0.9':
+  '@socketregistry/side-channel@1.0.10':
     optional: true
 
   '@socketsecurity/config@3.0.1':
@@ -6626,6 +6630,8 @@ snapshots:
   base64-js@1.5.1:
     optional: true
 
+  baseline-browser-mapping@2.8.10: {}
+
   before-after-hook@4.0.0: {}
 
   bin-links@5.0.0:
@@ -6701,12 +6707,13 @@ snapshots:
 
   bresenham@0.0.3(patch_hash=cc5bda185ad608af96d1018f588dae1b7e8390459011701bffa97ae0f12537a6): {}
 
-  browserslist@4.25.4:
+  browserslist@4.26.2:
     dependencies:
-      caniuse-lite: 1.0.30001741
-      electron-to-chromium: 1.5.218
+      baseline-browser-mapping: 2.8.10
+      caniuse-lite: 1.0.30001746
+      electron-to-chromium: 1.5.228
       node-releases: 2.0.21
-      update-browserslist-db: 1.1.3(browserslist@4.25.4)
+      update-browserslist-db: 1.1.3(browserslist@4.26.2)
 
   buffer-equal-constant-time@1.0.1: {}
 
@@ -6772,7 +6779,7 @@ snapshots:
 
   callsites@3.1.0: {}
 
-  caniuse-lite@1.0.30001741: {}
+  caniuse-lite@1.0.30001746: {}
 
   cardinal@2.1.1:
     dependencies:
@@ -6922,7 +6929,7 @@ snapshots:
       debug: 2.6.9
       negotiator: 0.6.4
       on-headers: 1.1.0
-      safe-buffer: '@socketregistry/safe-buffer@1.0.8'
+      safe-buffer: '@socketregistry/safe-buffer@1.0.9'
       vary: 1.1.2
     transitivePeerDependencies:
       - supports-color
@@ -6954,7 +6961,7 @@ snapshots:
 
   core-js-compat@3.45.1:
     dependencies:
-      browserslist: 4.25.4
+      browserslist: 4.26.2
 
   core-util-is@1.0.3: {}
 
@@ -7079,7 +7086,7 @@ snapshots:
 
   ecdsa-sig-formatter@1.0.11:
     dependencies:
-      safe-buffer: '@socketregistry/safe-buffer@1.0.8'
+      safe-buffer: '@socketregistry/safe-buffer@1.0.9'
 
   eciesjs@0.4.15:
     dependencies:
@@ -7093,7 +7100,7 @@ snapshots:
   ee-first@1.1.1:
     optional: true
 
-  electron-to-chromium@1.5.218: {}
+  electron-to-chromium@1.5.228: {}
 
   emoji-regex@10.5.0: {}
 
@@ -7472,7 +7479,7 @@ snapshots:
     dependencies:
       asynckit: 0.4.0
       combined-stream: 1.0.8
-      es-set-tostringtag: '@socketregistry/es-set-tostringtag@1.0.9'
+      es-set-tostringtag: '@socketregistry/es-set-tostringtag@1.0.10'
       hasown: '@socketregistry/hasown@1.0.7'
       mime-types: 2.1.35
 
@@ -7657,11 +7664,11 @@ snapshots:
 
   iconv-lite@0.6.3:
     dependencies:
-      safer-buffer: '@socketregistry/safer-buffer@1.0.9'
+      safer-buffer: '@socketregistry/safer-buffer@1.0.10'
 
   iconv-lite@0.7.0:
     dependencies:
-      safer-buffer: '@socketregistry/safer-buffer@1.0.9'
+      safer-buffer: '@socketregistry/safer-buffer@1.0.10'
     optional: true
 
   ieee754@1.2.1:
@@ -7829,12 +7836,12 @@ snapshots:
     dependencies:
       buffer-equal-constant-time: 1.0.1
       ecdsa-sig-formatter: 1.0.11
-      safe-buffer: '@socketregistry/safe-buffer@1.0.8'
+      safe-buffer: '@socketregistry/safe-buffer@1.0.9'
 
   jws@4.0.0:
     dependencies:
       jwa: 2.0.1
-      safe-buffer: '@socketregistry/safe-buffer@1.0.8'
+      safe-buffer: '@socketregistry/safe-buffer@1.0.9'
 
   keyv@4.5.4:
     dependencies:
@@ -8622,7 +8629,7 @@ snapshots:
 
   qs@6.14.0:
     dependencies:
-      side-channel: '@socketregistry/side-channel@1.0.9'
+      side-channel: '@socketregistry/side-channel@1.0.10'
     optional: true
 
   quansync@0.2.11: {}
@@ -8671,7 +8678,7 @@ snapshots:
     dependencies:
       core-util-is: 1.0.3
       inherits: 2.0.4
-      isarray: '@socketregistry/isarray@1.0.7'
+      isarray: '@socketregistry/isarray@1.0.8'
       string_decoder: 0.10.31(patch_hash=4f6ae5ec65b5537e81cd3ee7e83ae65bcc843a93cff14f147d8053e1c385ae1d)
 
   readable-stream@3.6.2:
@@ -8711,8 +8718,8 @@ snapshots:
 
   resolve@1.22.10:
     dependencies:
-      is-core-module: '@socketregistry/is-core-module@1.0.10'
-      path-parse: '@socketregistry/path-parse@1.0.7'
+      is-core-module: '@socketregistry/is-core-module@1.0.11'
+      path-parse: '@socketregistry/path-parse@1.0.8'
       supports-preserve-symlinks-flag: 1.0.0
 
   responselike@3.0.0:
@@ -8737,7 +8744,7 @@ snapshots:
     dependencies:
       boolean: 3.2.0
       detect-node: 2.1.0
-      globalthis: '@socketregistry/globalthis@1.0.7'
+      globalthis: '@socketregistry/globalthis@1.0.8'
       json-stringify-safe: 5.0.1
       semver-compare: 1.0.0
       sprintf-js: 1.1.3
@@ -9167,7 +9174,7 @@ snapshots:
 
   tunnel-agent@0.6.0:
     dependencies:
-      safe-buffer: '@socketregistry/safe-buffer@1.0.8'
+      safe-buffer: '@socketregistry/safe-buffer@1.0.9'
     optional: true
 
   type-check@0.4.0:
@@ -9287,9 +9294,9 @@ snapshots:
       '@unrs/resolver-binding-win32-ia32-msvc': 1.11.1
       '@unrs/resolver-binding-win32-x64-msvc': 1.11.1
 
-  update-browserslist-db@1.1.3(browserslist@4.25.4):
+  update-browserslist-db@1.1.3(browserslist@4.26.2):
     dependencies:
-      browserslist: 4.25.4
+      browserslist: 4.26.2
       escalade: 3.2.0
       picocolors: 1.1.1
 
