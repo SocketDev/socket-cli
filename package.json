@@ -46,6 +46,8 @@
     "check:lint": "dotenvx -q run -f .env.local -- node scripts/run-eslint.mjs --timeout 20 .",
     "check:tsc": "tsgo",
     "check-ci": "pnpm run check:lint",
+    "lint-ci": "pnpm run check:lint",
+    "type-ci": "pnpm run check:tsc",
     "coverage": "run-s coverage:*",
     "coverage:test": "run-s test:prepare test:unit:coverage",
     "coverage:percent": "node scripts/get-coverage-percentage.mjs",
