@@ -38,7 +38,7 @@ function renderSpinner(state: SpinnerState): void {
   }
 
   const frame = SPINNER_FRAMES[state.frame % SPINNER_FRAMES.length]
-  const text = `${colors.cyan(frame)} ${state.message}`
+  const text = `${colors.cyan(frame ?? '')} ${state.message}`
 
   // Clear line and write spinner.
   process.stderr.write(`\r\x1b[K${text}`)

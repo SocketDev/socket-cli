@@ -58,7 +58,7 @@ export function formatErrorForDisplay(
     // Handle error causes (chain of errors).
     if (error.cause && showStack) {
       const causeLines = []
-      let currentCause = error.cause
+      let currentCause: unknown = error.cause
       let depth = 1
 
       while (currentCause && depth <= 5) {
