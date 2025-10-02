@@ -255,10 +255,10 @@ function formatResults(results) {
       const message = `${result.file}: ${issue.message}`
       if (issue.severity === 'error') {
         errors.push(message)
-        logger.error(`✗ ${message}`)
+        logger.fail(message)
       } else if (issue.severity === 'warning') {
         warnings.push(message)
-        logger.warn(`⚠ ${message}`)
+        logger.warn(message)
       } else {
         infos.push(message)
       }
@@ -278,9 +278,9 @@ async function main() {
   const buildIssues = await validateBuildArtifacts()
   if (buildIssues.some(issue => issue.severity === 'error')) {
     for (const issue of buildIssues) {
-      logger.error(`✗ ${issue.message}`)
+      logger.fail(issue.message)
     }
-    logger.error(
+    logger.fail(
       '\nBuild artifacts validation failed. Run build before testing.',
     )
     process.exitCode = 1
@@ -312,7 +312,7 @@ async function main() {
   logger.info(`With errors: ${results.filter(r => r.hasErrors).length}`)
 
   if (errors.length > 0) {
-    logger.error(`\n${errors.length} error(s) found`)
+    logger.fail(`\n${errors.length} error(s) found`)
     process.exitCode = 1
   } else if (warnings.length > 0) {
     logger.warn(`\n${warnings.length} warning(s) found`)
@@ -320,7 +320,7 @@ async function main() {
       logger.info(`${infos.length} info message(s)`)
     }
   } else {
-    logger.success('\n✓ All tests validated successfully!')
+    logger.success('\nAll tests validated successfully!')
     if (infos.length > 0) {
       logger.info(`${infos.length} info message(s)`)
     }
@@ -328,7 +328,7 @@ async function main() {
 }
 
 main().catch(e => {
-  logger.error(`Validation failed: ${e.message}`)
-  logger.error(e.stack)
+  logger.fail(`Validation failed: ${e.message}`)
+  logger.fail(e.stack)
   process.exitCode = 1
 })
