@@ -284,6 +284,54 @@ Socket CLI integrates with various third-party tools and services:
 - **cdxgen**: CycloneDX BOM generator for creating software bill of materials
 - **synp**: Tool for converting between yarn.lock and package-lock.json formats
 
+## 🔧 Git & Workflow
+
+### GitHub Actions Guidelines
+- **🚨 MANDATORY**: All GitHub Actions MUST reference commit SHAs, not version tags
+- **Security requirement**: SocketDev repositories require pinned commit hashes for supply chain security
+- **🚨 MANDATORY**: Reusable workflows MUST be created in `socket-registry/.github/workflows/`, NOT in individual project repositories
+- **Workflow location**: Individual projects should reference workflows from `SocketDev/socket-registry/.github/workflows/`
+- **Standard action SHAs** (keep these updated across all Socket projects):
+  - `actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8` (v5.0.0)
+  - `pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda` (v4.1.0)
+  - `actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444` (v5.0.0)
+  - `actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874` (v4.4.0)
+- **Format**: Always include version comment: `uses: owner/repo@sha # vX.Y.Z`
+- **Examples**:
+  - ✅ CORRECT: `uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0`
+  - ✅ CORRECT: `uses: SocketDev/socket-registry/.github/workflows/test.yml@main`
+  - ❌ FORBIDDEN: `uses: actions/checkout@v4` or `uses: actions/checkout@v5`
+  - ❌ FORBIDDEN: `uses: ./.github/workflows/_reusable-test.yml` (reusable workflows belong in socket-registry)
+- **Allowed actions**: Either SocketDev-owned or pinned by SHA from trusted sources
+- **Cross-project consistency**: Maintain identical SHAs across all Socket projects
+
+### CI Workflow Strategy
+- **🚨 MANDATORY**: Use the centralized `ci.yml` reusable workflow from socket-registry
+- **Workflow location**: `SocketDev/socket-registry/.github/workflows/ci.yml@main`
+- **Benefits**: Consistent CI strategy across all Socket projects, parallel execution of lint/type-check/test/coverage
+- **Configuration**: Customize via workflow inputs (scripts, node versions, OS versions, timeouts, etc.)
+- **Standard configuration pattern**:
+  ```yaml
+  jobs:
+    ci:
+      name: Run CI Pipeline
+      uses: SocketDev/socket-registry/.github/workflows/ci.yml@main
+      with:
+        coverage-script: 'pnpm run test:unit:coverage'
+        coverage-report-script: 'pnpm run coverage:percent --json'
+        fail-fast: false
+        lint-script: 'pnpm run check-ci'
+        node-versions: '[20, 22, 24]'
+        os-versions: '["ubuntu-latest", "windows-latest"]'
+        test-script: 'pnpm run test-ci'
+        test-setup-script: 'pnpm run build'
+        type-check-script: 'pnpm run check:tsc'
+        type-check-setup-script: 'pnpm run build'
+  ```
+- **Orchestration**: CI workflow orchestrates lint.yml, types.yml, test.yml, and coverage reporting
+- **Individual workflows**: Keep lint.yml, types.yml, test.yml for targeted runs; ci.yml runs all together
+- **Cross-project consistency**: All Socket projects should use identical CI orchestration pattern
+
 ## 🔧 Code Style (MANDATORY)
 
 ### 📁 File Organization & Imports
