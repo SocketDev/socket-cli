@@ -16,7 +16,7 @@ import unicornPlugin from 'eslint-plugin-unicorn'
 import globals from 'globals'
 import tsEslint from 'typescript-eslint'
 
-import constants from '../socket-registry/scripts/constants.mjs'
+import maintainedNodeVersions from '@socketsecurity/registry/lib/constants/maintained-node-versions'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -147,7 +147,7 @@ const sharedRulesForNode = {
         'test',
         'test.describe',
       ],
-      version: constants.maintainedNodeVersions.current,
+      version: maintainedNodeVersions.current,
     },
   ],
   'n/prefer-node-protocol': 'error',
