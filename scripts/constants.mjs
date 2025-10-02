@@ -1,3 +1,5 @@
+/** @fileoverview Build constants for Socket CLI project configuration and paths. */
+
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -69,11 +71,6 @@ const LAZY_ENV = () => {
   })
 }
 
-const lazyBlessedContribPath = () =>
-  path.join(constants.externalPath, 'blessed-contrib')
-
-const lazyBlessedPath = () => path.join(constants.externalPath, 'blessed')
-
 const lazyConfigPath = () => path.join(constants.rootPath, '.config')
 
 const lazyDistPath = () => path.join(constants.rootPath, 'dist')
@@ -132,9 +129,6 @@ const constants = createConstantsObject(
     SOCKET_CLI_SENTRY_PNPM_BIN_NAME,
     SOCKET_CLI_SENTRY_YARN_BIN_NAME,
     SOCKET_CLI_SENTRY_PACKAGE_NAME,
-    blessedContribPath: undefined,
-    blessedOptions: undefined,
-    blessedPath: undefined,
     configPath: undefined,
     distPath: undefined,
     externalPath: undefined,
@@ -147,8 +141,6 @@ const constants = createConstantsObject(
     getters: {
       ...registryConstantsAttribs.getters,
       ENV: LAZY_ENV,
-      blessedContribPath: lazyBlessedContribPath,
-      blessedPath: lazyBlessedPath,
       configPath: lazyConfigPath,
       distPath: lazyDistPath,
       externalPath: lazyExternalPath,
