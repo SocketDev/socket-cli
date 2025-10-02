@@ -125,6 +125,9 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
   const cdxgenPackageSpec = `@cyclonedx/cdxgen@${cdxgenVersion}`
   const cdxgenArgs = argvObjectToArray(argvMutable)
 
+  // Check if this is a help/version request.
+  const isHelpRequest = argvMutable['help'] || argvMutable['version']
+
   const result = await runShadowCommand(cdxgenPackageSpec, cdxgenArgs, {
     agent,
     ipc: {
@@ -137,17 +140,31 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
   })
 
   // Create fake ShadowBinResult for backward compatibility.
+  // Note: Help/version requests should always exit with code 0.
+  const exitCode = result.ok || isHelpRequest ? 0 : (result.code ?? 1)
   const stdioResult = {
     cmd: 'cdxgen',
     args: [] as const,
-    code: result.ok ? 0 : (result.code ?? 1),
+    code: exitCode,
     signal: null,
     stderr: Buffer.from(''),
     stdout: Buffer.from(result.ok ? result.data : ''),
   }
+
+  // Create a mock ChildProcess with event emitter methods for backward compatibility.
+  // The ShadowBinResult interface expects a ChildProcess, but runShadowCommand doesn't
+  // return one. This mock provides the minimum EventEmitter interface needed by callers
+  // while maintaining API compatibility. Each method returns 'this' to support chaining.
+  const mockProcess = {
+    on: () => mockProcess,
+    once: () => mockProcess,
+    off: () => mockProcess,
+    removeListener: () => mockProcess,
+  } as unknown as ChildProcess
+
   const shadowResult: ShadowBinResult = {
     spawnPromise: Object.assign(Promise.resolve(stdioResult), {
-      process: {} as ChildProcess,
+      process: mockProcess,
       stdin: null,
     }),
   }

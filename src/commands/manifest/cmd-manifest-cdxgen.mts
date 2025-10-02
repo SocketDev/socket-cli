@@ -16,7 +16,6 @@ import type {
   CliCommandConfig,
   CliCommandContext,
 } from '../../utils/meow-with-subcommands.mts'
-import type { ChildProcess } from 'node:child_process'
 
 // TODO: Convert yargs to meow.
 const toLower = (arg: string) => arg.toLowerCase()
@@ -327,18 +326,10 @@ async function run(
   process.exitCode = 1
 
   const result = await runCdxgen(yargv)
-  // See https://nodejs.org/api/child_process.html#event-exit.
-  ;(result.spawnPromise.process as ChildProcess).on(
-    'exit',
-    (code: number | null, signalName: NodeJS.Signals | null) => {
-      if (signalName) {
-        process.kill(process.pid, signalName)
-      } else if (typeof code === 'number') {
-        // eslint-disable-next-line n/no-process-exit
-        process.exit(code)
-      }
-    },
-  )
+  const output = await result.spawnPromise
 
-  await result.spawnPromise
+  // Update process exit code based on cdxgen result.
+  if (typeof output.code === 'number') {
+    process.exitCode = output.code
+  }
 }
