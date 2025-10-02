@@ -1,7 +1,5 @@
 /** @fileoverview Unified process runner for external CLIs with output buffering. */
 
-import { Buffer } from 'node:buffer'
-
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import { debugFn } from './debug.mts'
@@ -12,7 +10,6 @@ import {
   resumeSpinners,
   startSpinner,
 } from './spinner.mts'
-
 import { ensureIpcInStdio } from '../shadow/stdio-ipc.mts'
 
 import type { IpcObject } from '../constants.mts'
@@ -20,6 +17,7 @@ import type { CResult } from '../types.mts'
 import type {
   SpawnExtra,
   SpawnResult,
+  SpawnStdioResult,
 } from '@socketsecurity/registry/lib/spawn'
 
 export type ProcessRunnerOptions = {
@@ -69,25 +67,28 @@ export async function runExternalCommand(
     }
 
     // Handle stdio with IPC support.
-    let stdio = opts.stdio || (bufferOutput ? 'pipe' : 'inherit')
+    let stdio: 'inherit' | 'pipe' | unknown =
+      opts.stdio || (bufferOutput ? 'pipe' : 'inherit')
     if (useIpc) {
-      stdio = ensureIpcInStdio(stdio)
+      stdio = ensureIpcInStdio(stdio as 'inherit' | 'pipe')
     }
 
     const spawnExtra: SpawnExtra = { stdio }
 
     // Run command.
-    const spawnResult: SpawnResult = await spawn(command, args as string[], {
+    const spawnPromise: SpawnResult = spawn(command, args as string[], {
       cwd: opts.cwd,
       env: opts.env,
       ...spawnExtra,
     })
 
+    const spawnResult: SpawnStdioResult = await spawnPromise
+
     // Send IPC data if provided and process has IPC channel.
-    if (useIpc && spawnResult.process && 'send' in spawnResult.process) {
-      const sendResult = (spawnResult.process as NodeJS.Process).send?.(
-        opts.ipc,
-      )
+    if (useIpc && spawnPromise.process && 'send' in spawnPromise.process) {
+      const sendResult = (
+        spawnPromise.process as unknown as NodeJS.Process
+      ).send?.(opts.ipc)
       if (!sendResult) {
         debugFn('warn', 'Failed to send IPC data to child process')
       }
@@ -129,13 +130,6 @@ export async function runExternalCommand(
     debugFn('error', `Command failed: ${command}`, e)
 
     // Extract error details.
-    const stderr =
-      e && typeof e === 'object' && 'stderr' in e
-        ? Buffer.isBuffer((e as { stderr: unknown }).stderr)
-          ? (e as { stderr: Buffer }).stderr.toString()
-          : String((e as { stderr: unknown }).stderr)
-        : undefined
-
     const exitCode =
       e && typeof e === 'object' && 'code' in e
         ? Number((e as { code: unknown }).code)
