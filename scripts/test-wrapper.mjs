@@ -62,6 +62,27 @@ async function main() {
       args = args.slice(1)
     }
 
+    // Check for and warn about environment variables that can cause snapshot mismatches.
+    // These are all aliases for the Socket API token that should not be set during tests.
+    const problematicEnvVars = [
+      'SOCKET_CLI_API_KEY',
+      'SOCKET_CLI_API_TOKEN',
+      'SOCKET_SECURITY_API_KEY',
+      'SOCKET_SECURITY_API_TOKEN',
+    ]
+    const foundEnvVars = problematicEnvVars.filter(v => process.env[v])
+    if (foundEnvVars.length > 0) {
+      logger.warn(
+        `Detected environment variable(s) that may cause snapshot test failures: ${foundEnvVars.join(', ')}`,
+      )
+      logger.warn(
+        'These will be cleared for the test run to ensure consistent snapshots.',
+      )
+      logger.warn(
+        'Tests use .env.test configuration which should not include real API tokens.',
+      )
+    }
+
     const spawnEnv = {
       ...process.env,
       // Increase Node.js heap size to prevent out of memory errors.
@@ -69,6 +90,12 @@ async function main() {
       // Add --max-semi-space-size for better GC with RegExp-heavy tests.
       NODE_OPTIONS:
         `${process.env.NODE_OPTIONS || ''} --max-old-space-size=${process.env.CI ? 8192 : 4096} --max-semi-space-size=512`.trim(),
+      // Clear problematic environment variables that cause snapshot mismatches.
+      // Tests should use .env.test configuration instead.
+      SOCKET_CLI_API_KEY: undefined,
+      SOCKET_CLI_API_TOKEN: undefined,
+      SOCKET_SECURITY_API_KEY: undefined,
+      SOCKET_SECURITY_API_TOKEN: undefined,
     }
 
     // Handle Windows vs Unix for vitest executable.
