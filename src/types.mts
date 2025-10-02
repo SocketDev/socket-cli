@@ -1,3 +1,5 @@
+/** @fileoverview Type definitions for Socket CLI. */
+
 export type StringKeyValueObject = { [key: string]: string }
 
 export type OutputKind = 'json' | 'markdown' | 'text'

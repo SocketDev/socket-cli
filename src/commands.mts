@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+/** @fileoverview Command definitions and root command mappings for Socket CLI. */
+
 import { cmdAnalytics } from './commands/analytics/cmd-analytics.mts'
 import { cmdAuditLog } from './commands/audit-log/cmd-audit-log.mts'
 import { cmdCI } from './commands/ci/cmd-ci.mts'

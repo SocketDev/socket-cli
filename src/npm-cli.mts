@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+/** @fileoverview npm CLI wrapper entry point. */
+
 void (async () => {
   process.exitCode = 1
 
