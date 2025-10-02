@@ -370,9 +370,7 @@ export async function detectPackageEnvironment({
   }
   const { maintainedNodeVersions } = constants
   const minSupportedAgentVersion = constants.minimumVersionByAgent.get(agent)!
-  const minSupportedNodeMajor = semver.major(
-    maintainedNodeVersions[maintainedNodeVersions.length - 1]!,
-  )
+  const minSupportedNodeMajor = semver.major(maintainedNodeVersions[0]!)
   const minSupportedNodeVersion = `${minSupportedNodeMajor}.0.0`
   const minSupportedNodeRange = `>=${minSupportedNodeMajor}`
   const nodeVersion = semver.coerce(process.version)!
@@ -514,10 +512,7 @@ export async function detectAndValidatePackageEnvironment(
     }
   }
   if (!details.nodeSupported) {
-    const minVersion =
-      constants.maintainedNodeVersions[
-        constants.maintainedNodeVersions.length - 1
-      ]!
+    const minVersion = constants.maintainedNodeVersions[0]!
     return {
       ok: false,
       message: 'Version mismatch',
