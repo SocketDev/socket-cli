@@ -1,3 +1,5 @@
+/** @fileoverview Display combined code and type coverage percentages with color formatting. */
+
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 

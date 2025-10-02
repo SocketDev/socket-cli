@@ -1,3 +1,5 @@
+/** @fileoverview Package resolution and module detection utilities for build scripts. */
+
 import fs from 'node:fs'
 import Module from 'node:module'
 import path from 'node:path'
