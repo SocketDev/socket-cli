@@ -13,7 +13,7 @@
 - Dependency alignment
 - Changelog management
 
-**See the canonical reference:** `/Users/jdalton/projects/socket-registry/CLAUDE.md`
+**See the canonical reference:** `socket-registry/CLAUDE.md` (in sibling repository)
 
 This file contains **Socket CLI-specific** rules and patterns. When in doubt, consult socket-registry/CLAUDE.md first.
 
@@ -223,4 +223,4 @@ Socket CLI integrates with:
 
 ---
 
-**For all other standards not covered here, refer to `/Users/jdalton/projects/socket-registry/CLAUDE.md`**
+**For all other standards not covered here, refer to `socket-registry/CLAUDE.md` (in sibling repository)**
