@@ -23,7 +23,6 @@ process.emitWarning = function (warning, ...args) {
 }
 
 import meow from 'meow'
-import { messageWithCauses, stackWithCauses } from 'pony-cause'
 import lookupRegistryAuthToken from 'registry-auth-token'
 import lookupRegistryUrl from 'registry-url'
 
@@ -32,8 +31,11 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { rootAliases, rootCommands } from './commands.mts'
 import constants, { SOCKET_CLI_BIN_NAME } from './constants.mts'
 import { debugDir, debugFn } from './utils/debug.mts'
-import { AuthError, InputError, captureException } from './utils/errors.mts'
-import { failMsgWithBadge } from './utils/fail-msg-with-badge.mts'
+import {
+  formatErrorForJson,
+  formatErrorForTerminal,
+} from './utils/error-display.mts'
+import { captureException } from './utils/errors.mts'
 import { meowWithSubcommands } from './utils/meow-with-subcommands.mts'
 import { isSeaBinary } from './utils/sea.mts'
 import { serializeResultJson } from './utils/serialize-result-json.mts'
@@ -79,24 +81,6 @@ void (async () => {
     debugFn('error', 'CLI uncaught error')
     debugDir('error', e)
 
-    let errorBody: string | undefined
-    let errorTitle: string
-    let errorMessage = ''
-    if (e instanceof AuthError) {
-      errorTitle = 'Authentication error'
-      errorMessage = e.message
-    } else if (e instanceof InputError) {
-      errorTitle = 'Invalid input'
-      errorMessage = e.message
-      errorBody = e.body
-    } else if (e instanceof Error) {
-      errorTitle = 'Unexpected error'
-      errorMessage = messageWithCauses(e)
-      errorBody = stackWithCauses(e)
-    } else {
-      errorTitle = 'Unexpected error with no details'
-    }
-
     // Try to parse the flags, find out if --json is set.
     const isJson = (() => {
       const cli = meow({
@@ -111,20 +95,13 @@ void (async () => {
     })()
 
     if (isJson) {
-      logger.log(
-        serializeResultJson({
-          ok: false,
-          message: errorTitle,
-          cause: errorMessage,
-        }),
-      )
+      const errorResult = formatErrorForJson(e)
+      logger.log(serializeResultJson(errorResult))
     } else {
       // Add 2 newlines in stderr to bump below any spinner.
       logger.error('\n')
-      logger.fail(failMsgWithBadge(errorTitle, errorMessage))
-      if (errorBody) {
-        debugDir('inspect', { errorBody })
-      }
+      const errorMessage = formatErrorForTerminal(e)
+      logger.error(errorMessage)
     }
 
     await captureException(e)
