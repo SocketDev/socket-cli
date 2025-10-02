@@ -6,7 +6,6 @@ import { fileURLToPath } from 'node:url'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { pEach } from '@socketsecurity/registry/lib/promises'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import constants from './constants.mjs'
 
@@ -37,7 +36,10 @@ async function getTestFiles() {
       if (entry.isDirectory() && !entry.name.startsWith('.')) {
         // eslint-disable-next-line no-await-in-loop
         await collectFiles(fullPath)
-      } else if (entry.isFile() && /\.test\.(mts|ts|js|mjs)$/.test(entry.name)) {
+      } else if (
+        entry.isFile() &&
+        /\.test\.(mts|ts|js|mjs)$/.test(entry.name)
+      ) {
         files.push(fullPath)
       }
     }
@@ -278,7 +280,9 @@ async function main() {
     for (const issue of buildIssues) {
       logger.error(`✗ ${issue.message}`)
     }
-    logger.error('\nBuild artifacts validation failed. Run build before testing.')
+    logger.error(
+      '\nBuild artifacts validation failed. Run build before testing.',
+    )
     process.exitCode = 1
     return
   }
