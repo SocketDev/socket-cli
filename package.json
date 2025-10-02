@@ -47,6 +47,8 @@
     "check:lint": "eslint --report-unused-disable-directives .",
     "check:tsc": "tsgo --noEmit",
     "check-ci": "pnpm run check:lint",
+    "lint-ci": "pnpm run check:lint",
+    "type-ci": "pnpm run check:tsc",
     "coverage": "run-s coverage:*",
     "coverage:test": "run-s test:prepare test:unit:coverage",
     "coverage:percent": "node scripts/get-coverage-percentage.mjs",
