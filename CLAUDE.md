@@ -197,6 +197,21 @@ Socket CLI integrates with:
 - **cdxgen**: CycloneDX BOM generator
 - **synp**: Convert between yarn.lock and package-lock.json
 
+## 🔧 GIT WORKFLOW
+
+### Pre-Commit Quality Checks
+- **🚨 MANDATORY**: Always run these commands before committing:
+  - `pnpm run fix` - Fix linting and formatting issues
+  - `pnpm run check` - Run all checks (lint, type-check, tests)
+  - **Rationale**: Ensures code quality regardless of whether hooks run
+
+### Commit Strategy with --no-verify
+- **--no-verify usage**: Use `--no-verify` flag for commits that don't require pre-commit hooks
+  - ✅ **Safe to skip hooks**: Scripts (scripts/), GitHub Actions workflows (.github/workflows/), tests (test/), documentation (*.md), configuration files
+  - ❌ **Always run hooks**: Source code (src/), published package code, CLI command implementations
+  - **Important**: Even when using `--no-verify`, you MUST still run `pnpm run fix` and `pnpm run check` manually first
+  - **Rationale**: Pre-commit hooks run linting and type-checking which are critical for CLI source code but less critical for non-published files
+
 ## 🔍 DEBUGGING
 
 ### CI vs Local
