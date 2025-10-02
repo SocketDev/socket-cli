@@ -161,7 +161,7 @@
     "husky": "9.1.7",
     "ignore": "7.0.5",
     "js-yaml": "npm:@zkochan/js-yaml@0.0.10",
-    "knip": "5.63.1",
+    "knip": "5.64.0",
     "lint-staged": "16.1.6",
     "magic-string": "0.30.19",
     "meow": "13.2.0",
