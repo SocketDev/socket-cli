@@ -1,7 +1,5 @@
 /** @fileoverview Coana CLI spawn utilities for Socket CLI. */
 
-import { createRequire } from 'node:module'
-
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import { getDefaultOrgSlug } from '../commands/ci/fetch-default-org-slug.mts'
@@ -10,11 +8,9 @@ import { getErrorCause } from './errors.mts'
 import { getDefaultApiToken, getDefaultProxyUrl } from './sdk.mts'
 import { runShadowCommand } from './shadow-runner.mts'
 
-import type { ShadowBinOptions, ShadowBinResult } from '../shadow/npm-base.mts'
+import type { ShadowBinOptions } from '../shadow/npm-base.mts'
 import type { CResult } from '../types.mts'
 import type { SpawnExtra } from '@socketsecurity/registry/lib/spawn'
-
-const require = createRequire(import.meta.url)
 
 export type CoanaSpawnOptions = ShadowBinOptions & {
   agent?: 'npm' | 'pnpm' | 'yarn' | undefined
@@ -101,8 +97,11 @@ export async function spawnCoana(
 
     const result = await runShadowCommand(packageSpec, args, {
       agent,
-      cwd: shadowOptions.cwd,
-      env: finalEnv,
+      cwd:
+        typeof shadowOptions.cwd === 'string'
+          ? shadowOptions.cwd
+          : shadowOptions.cwd?.toString(),
+      env: finalEnv as Record<string, string>,
       ipc,
       stdio: spawnExtra?.['stdio'] || 'inherit',
     })
