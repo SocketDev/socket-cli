@@ -63,15 +63,11 @@ export function getDefaultProxyUrl(): string | undefined {
 // This Socket API token should be stored globally for the duration of the CLI execution.
 let _defaultToken: string | undefined
 export function getDefaultApiToken(): string | undefined {
-  if (constants.ENV['SOCKET_CLI_NO_API_TOKEN']) {
-    _defaultToken = undefined
-    return _defaultToken
-  }
-
-  const key =
-    constants.ENV['SOCKET_CLI_API_TOKEN'] ||
-    getConfigValueOrUndef(CONFIG_KEY_API_TOKEN) ||
-    _defaultToken
+  const key = constants.ENV['SOCKET_CLI_NO_API_TOKEN']
+    ? getConfigValueOrUndef(CONFIG_KEY_API_TOKEN) || _defaultToken
+    : constants.ENV['SOCKET_CLI_API_TOKEN'] ||
+      getConfigValueOrUndef(CONFIG_KEY_API_TOKEN) ||
+      _defaultToken
 
   _defaultToken = isNonEmptyString(key) ? key : undefined
   return _defaultToken
