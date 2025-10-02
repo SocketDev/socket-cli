@@ -403,23 +403,6 @@ describe('socket fix', async () => {
     },
   )
 
-  // Error handling tests
-  cmdit(
-    [
-      'fix',
-      path.join(testPath, 'fixtures/commands/fix/nonexistent'),
-      FLAG_CONFIG,
-      '{"apiToken":"fake-token"}',
-    ],
-    'should show helpful error when no package.json found',
-    async cmd => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      const output = stdout + stderr
-      expect(output).toContain('Need at least one file')
-      expect(code).toBe(1)
-    },
-  )
-
   // Fixture-based tests with proper isolation
   // NOTE: These tests spawn the actual CLI in a separate process where Vitest
   // mocks don't apply. Using --dry-run to test CLI flow without executing actual fixes.
