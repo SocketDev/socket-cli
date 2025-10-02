@@ -6,18 +6,12 @@ import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import constants, {
-  FLAG_HELP,
-  FLAG_SILENT,
-  NPM,
-  PNPM,
-  YARN,
-} from '../../constants.mts'
+import constants, { FLAG_HELP, YARN } from '../../constants.mts'
 import { findUp } from '../../utils/fs.mts'
+import { runShadowCommand } from '../../utils/shadow-runner.mts'
 import { isYarnBerry } from '../../utils/yarn-version.mts'
 
 import type { ShadowBinResult } from '../../shadow/npm/bin.mts'
-import type { ShadowBinOptions } from '../../shadow/npm-base.mts'
 import type { ChildProcess } from 'node:child_process'
 
 const require = createRequire(import.meta.url)
@@ -28,8 +22,8 @@ const nodejsPlatformTypes = new Set([
   'javascript',
   'js',
   'nodejs',
-  NPM,
-  PNPM,
+  'npm',
+  'pnpm',
   'ts',
   'tsx',
   'typescript',
@@ -74,16 +68,6 @@ function argvObjectToArray(argvObj: ArgvObject): string[] {
 export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
   const argvMutable = { __proto__: null, ...argvObj } as ArgvObject
 
-  const shadowOpts: ShadowBinOptions = {
-    ipc: {
-      [constants.SOCKET_CLI_SHADOW_ACCEPT_RISKS]: true,
-      [constants.SOCKET_CLI_SHADOW_API_TOKEN]:
-        constants.SOCKET_PUBLIC_API_TOKEN,
-      [constants.SOCKET_CLI_SHADOW_SILENT]: true,
-    },
-    stdio: 'inherit',
-  }
-
   // Detect package manager based on lockfiles.
   const pnpmLockPath = await findUp(PNPM_LOCK_YAML, { onlyFiles: true })
 
@@ -96,7 +80,11 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
       ? undefined
       : await findUp(YARN_LOCK, { onlyFiles: true })
 
-  const agent = pnpmLockPath ? PNPM : yarnLockPath && isYarnBerry() ? YARN : NPM
+  const agent = pnpmLockPath
+    ? 'pnpm'
+    : yarnLockPath && isYarnBerry()
+      ? 'yarn'
+      : 'npm'
 
   let cleanupPackageLock = false
   if (
@@ -105,91 +93,79 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
     nodejsPlatformTypes.has(argvMutable['type'] as string)
   ) {
     if (npmLockPath) {
-      argvMutable['type'] = NPM
+      argvMutable['type'] = 'npm'
     } else {
       // Use synp to create a package-lock.json from the yarn.lock,
       // based on the node_modules folder, for a more accurate SBOM.
       try {
         const synpVersion = constants.ENV['INLINED_SOCKET_CLI_SYNP_VERSION']
-        const synpArgs = [
-          FLAG_SILENT,
-          `synp@${synpVersion}`,
-          '--source-file',
-          `./${YARN_LOCK}`,
-        ]
+        const synpPackageSpec = `synp@${synpVersion}`
 
-        let synpResult: ShadowBinResult
-        if (agent === PNPM) {
-          const shadowPnpmBin = /*@__PURE__*/ require(
-            constants.shadowPnpmBinPath,
-          )
-          synpResult = await shadowPnpmBin(['dlx', ...synpArgs], shadowOpts)
-        } else if (agent === YARN) {
-          const shadowYarnBin = /*@__PURE__*/ require(
-            constants.shadowYarnBinPath,
-          )
-          synpResult = await shadowYarnBin(['dlx', ...synpArgs], shadowOpts)
-        } else {
-          const shadowNpxBin = /*@__PURE__*/ require(constants.shadowNpxBinPath)
-          synpResult = await shadowNpxBin(
-            ['--yes', ...synpArgs.slice(1)],
-            shadowOpts,
-          )
-        }
+        await runShadowCommand(
+          synpPackageSpec,
+          ['--source-file', `./${YARN_LOCK}`],
+          {
+            agent,
+            ipc: {
+              [constants.SOCKET_CLI_SHADOW_ACCEPT_RISKS]: true,
+              [constants.SOCKET_CLI_SHADOW_API_TOKEN]:
+                constants.SOCKET_PUBLIC_API_TOKEN,
+              [constants.SOCKET_CLI_SHADOW_SILENT]: true,
+            },
+            stdio: 'inherit',
+          },
+        )
 
-        await synpResult.spawnPromise
-        argvMutable['type'] = NPM
+        argvMutable['type'] = 'npm'
         cleanupPackageLock = true
       } catch {}
     }
   }
 
-  // Use appropriate package manager for cdxgen.
+  // Use appropriate package manager for cdxgen via shadow-runner.
   const cdxgenVersion =
     constants.ENV['INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION']
-  const cdxgenArgs = [
-    `@cyclonedx/cdxgen@${cdxgenVersion}`,
-    ...argvObjectToArray(argvMutable),
-  ]
+  const cdxgenPackageSpec = `@cyclonedx/cdxgen@${cdxgenVersion}`
+  const cdxgenArgs = argvObjectToArray(argvMutable)
 
-  let shadowResult: ShadowBinResult
-  if (agent === PNPM) {
-    const shadowPnpmBin = /*@__PURE__*/ require(constants.shadowPnpmBinPath)
-    shadowResult = await shadowPnpmBin(
-      ['dlx', FLAG_SILENT, ...cdxgenArgs],
-      shadowOpts,
-    )
-  } else if (agent === YARN) {
-    const shadowYarnBin = /*@__PURE__*/ require(constants.shadowYarnBinPath)
-    shadowResult = await shadowYarnBin(
-      ['dlx', '--quiet', ...cdxgenArgs],
-      shadowOpts,
-    )
-  } else {
-    const shadowNpxBin = /*@__PURE__*/ require(constants.shadowNpxBinPath)
-    shadowResult = await shadowNpxBin(
-      ['--yes', FLAG_SILENT, ...cdxgenArgs],
-      shadowOpts,
-    )
+  const result = await runShadowCommand(cdxgenPackageSpec, cdxgenArgs, {
+    agent,
+    ipc: {
+      [constants.SOCKET_CLI_SHADOW_ACCEPT_RISKS]: true,
+      [constants.SOCKET_CLI_SHADOW_API_TOKEN]:
+        constants.SOCKET_PUBLIC_API_TOKEN,
+      [constants.SOCKET_CLI_SHADOW_SILENT]: true,
+    },
+    stdio: 'inherit',
+  })
+
+  // Create fake ShadowBinResult for backward compatibility.
+  const shadowResult: ShadowBinResult = {
+    spawnPromise: {
+      code: result.ok ? 0 : 1,
+      process: {} as ChildProcess,
+      signal: null,
+      stderr: Buffer.from(''),
+      stdout: Buffer.from(result.ok ? result.data : ''),
+    },
   }
 
-  ;(shadowResult.spawnPromise.process as ChildProcess).on('exit', () => {
-    if (cleanupPackageLock) {
-      try {
-        // TODO: Consider using trash instead of rmSync for safer deletion.
-        // This removes the temporary package-lock.json we created for cdxgen.
-        rmSync(`./${PACKAGE_LOCK_JSON}`)
-      } catch {}
-    }
+  // Handle cleanup on process exit.
+  if (cleanupPackageLock) {
+    try {
+      // TODO: Consider using trash instead of rmSync for safer deletion.
+      // This removes the temporary package-lock.json we created for cdxgen.
+      rmSync(`./${PACKAGE_LOCK_JSON}`)
+    } catch {}
+  }
 
-    const outputPath = argvMutable['output'] as string
-    if (outputPath) {
-      const fullOutputPath = path.join(process.cwd(), outputPath)
-      if (existsSync(fullOutputPath)) {
-        logger.log(colors.cyanBright(`${outputPath} created!`))
-      }
+  const outputPath = argvMutable['output'] as string
+  if (outputPath) {
+    const fullOutputPath = path.join(process.cwd(), outputPath)
+    if (existsSync(fullOutputPath)) {
+      logger.log(colors.cyanBright(`${outputPath} created!`))
     }
-  })
+  }
 
   return shadowResult
 }
