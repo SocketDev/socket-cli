@@ -29,7 +29,7 @@ overrides:
   has-symbols: npm:@socketregistry/has-symbols@^1.0.7
   has-tostringtag: npm:@socketregistry/has-tostringtag@^1.0.7
   hasown: npm:@socketregistry/hasown@^1.0.7
-  indent-string: 1.0.13
+  indent-string: npm:@socketregistry/indent-string@^1.0.13
   is-core-module: npm:@socketregistry/is-core-module@^1.0.10
   isarray: npm:@socketregistry/isarray@^1.0.7
   lodash: 4.17.21
