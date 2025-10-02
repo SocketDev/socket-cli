@@ -50,9 +50,9 @@ describe('socket config get', async () => {
         expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
           "
              _____         _       _        /---------------
-            |   __|___ ___| |_ ___| |_      | CLI: v1.1.23
-            |__   | * |  _| '_| -_|  _|     | token: zP416*** (env), org: (not set)
-            |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: ~/projects/socket-cli"
+            |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+            |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+            |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>"
         `)
         expect(code, 'explicit help should exit with code 0').toBe(0)
       }
@@ -72,9 +72,9 @@ describe('socket config get', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: v1.1.23
-          |__   | * |  _| '_| -_|  _|     | token: zP416*** (env), org: (not set)
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: ~/projects/socket-cli
+          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>
 
         \\xd7  Input error:  Please review the input requirements and try again
 
@@ -103,9 +103,9 @@ describe('socket config get', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: v1.1.23
-          |__   | * |  _| '_| -_|  _|     | token: zP416*** (env), org: (not set)
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket config\`, cwd: ~/projects/socket-cli"
+          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket config\`, cwd: <redacted>"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
@@ -118,22 +118,28 @@ describe('socket config get', async () => {
         ['config', 'get', 'apiToken', FLAG_CONFIG, '{"apiToken":null}'],
         'should return undefined when token not set in config',
         async cmd => {
-          const { stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+          const { stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
+            env: {
+              SOCKET_SECURITY_API_KEY: '',
+              SOCKET_CLI_API_KEY: '',
+              SOCKET_CLI_API_TOKEN: '',
+            },
+          })
           expect(stdout).toMatchInlineSnapshot(`
-            "apiToken: sktsec_zP416vUiN4zVxlILVw8EVM_9MF1QcGJVxpgG9JcADezE_api
+            "apiToken: null
 
             Note: the config is in read-only mode, meaning at least one key was temporarily overridden from an env var or command flag."
           `)
           expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
             "
                _____         _       _        /---------------
-              |   __|___ ___| |_ ___| |_      | CLI: v1.1.23
-              |__   | * |  _| '_| -_|  _|     | token: zP416*** (env), org: (not set)
-              |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: ~/projects/socket-cli"
+              |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+              |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+              |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>"
           `)
 
-          // Env var takes precedence over config null, so we get the actual token
-          expect(stdout.includes('sktsec_zP416')).toBe(true)
+          // No env var set, config has null.
+          expect(stdout).toContain('apiToken: null')
         },
       )
 
@@ -142,22 +148,26 @@ describe('socket config get', async () => {
         'should return the env var token when set',
         async cmd => {
           const { stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
-            env: { SOCKET_CLI_API_TOKEN: 'abc' },
+            env: {
+              SOCKET_SECURITY_API_KEY: '',
+              SOCKET_CLI_API_KEY: '',
+              SOCKET_CLI_API_TOKEN: 'fakeToken',
+            },
           })
           expect(stdout).toMatchInlineSnapshot(`
-            "apiToken: abc
+            "apiToken: fakeToken
 
             Note: the config is in read-only mode, meaning at least one key was temporarily overridden from an env var or command flag."
           `)
           expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
             "
                _____         _       _        /---------------
-              |   __|___ ___| |_ ___| |_      | CLI: v1.1.23
-              |__   | * |  _| '_| -_|  _|     | token: (not set), org: (not set)
-              |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: ~/projects/socket-cli"
+              |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+              |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+              |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>"
           `)
 
-          expect(stdout.includes('apiToken: abc')).toBe(true)
+          expect(stdout).toContain('apiToken: fakeToken')
         },
       )
 
@@ -167,23 +177,27 @@ describe('socket config get', async () => {
         'should back compat support for API token as well env var',
         async cmd => {
           const { stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
-            env: { SOCKET_SECURITY_API_KEY: 'abc' },
+            env: {
+              SOCKET_SECURITY_API_KEY: 'fakeToken',
+              SOCKET_CLI_API_KEY: '',
+              SOCKET_CLI_API_TOKEN: '',
+            },
           })
           expect(stdout).toMatchInlineSnapshot(`
-            "apiToken: sktsec_zP416vUiN4zVxlILVw8EVM_9MF1QcGJVxpgG9JcADezE_api
+            "apiToken: fakeToken
 
             Note: the config is in read-only mode, meaning at least one key was temporarily overridden from an env var or command flag."
           `)
           expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
             "
                _____         _       _        /---------------
-              |   __|___ ___| |_ ___| |_      | CLI: v1.1.23
-              |__   | * |  _| '_| -_|  _|     | token: zP416*** (env), org: (not set)
-              |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: ~/projects/socket-cli"
+              |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+              |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+              |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>"
           `)
 
-          // The test environment's SOCKET_SECURITY_API_KEY takes precedence
-          expect(stdout.includes('sktsec_zP416')).toBe(true)
+          // The test sets SOCKET_SECURITY_API_KEY which takes precedence.
+          expect(stdout).toContain('apiToken: fakeToken')
         },
       )
 
@@ -192,22 +206,26 @@ describe('socket config get', async () => {
         'should be nice and support cli prefixed env var for token as well',
         async cmd => {
           const { stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
-            env: { SOCKET_CLI_API_TOKEN: 'abc' },
+            env: {
+              SOCKET_SECURITY_API_KEY: '',
+              SOCKET_CLI_API_KEY: '',
+              SOCKET_CLI_API_TOKEN: 'fakeToken',
+            },
           })
           expect(stdout).toMatchInlineSnapshot(`
-            "apiToken: abc
+            "apiToken: fakeToken
 
             Note: the config is in read-only mode, meaning at least one key was temporarily overridden from an env var or command flag."
           `)
           expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
             "
                _____         _       _        /---------------
-              |   __|___ ___| |_ ___| |_      | CLI: v1.1.23
-              |__   | * |  _| '_| -_|  _|     | token: (not set), org: (not set)
-              |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: ~/projects/socket-cli"
+              |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+              |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+              |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>"
           `)
 
-          expect(stdout.includes('apiToken: abc')).toBe(true)
+          expect(stdout).toContain('apiToken: fakeToken')
         },
       )
 
@@ -217,23 +235,27 @@ describe('socket config get', async () => {
         'should be very nice and support cli prefixed env var for key as well since it is an easy mistake to make',
         async cmd => {
           const { stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
-            env: { SOCKET_CLI_API_KEY: 'abc' },
+            env: {
+              SOCKET_SECURITY_API_KEY: '',
+              SOCKET_CLI_API_KEY: 'fakeToken',
+              SOCKET_CLI_API_TOKEN: '',
+            },
           })
           expect(stdout).toMatchInlineSnapshot(`
-            "apiToken: sktsec_zP416vUiN4zVxlILVw8EVM_9MF1QcGJVxpgG9JcADezE_api
+            "apiToken: fakeToken
 
             Note: the config is in read-only mode, meaning at least one key was temporarily overridden from an env var or command flag."
           `)
           expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
             "
                _____         _       _        /---------------
-              |   __|___ ___| |_ ___| |_      | CLI: v1.1.23
-              |__   | * |  _| '_| -_|  _|     | token: zP416*** (env), org: (not set)
-              |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: ~/projects/socket-cli"
+              |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+              |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+              |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>"
           `)
 
-          // The test environment's SOCKET_SECURITY_API_KEY takes precedence
-          expect(stdout.includes('sktsec_zP416')).toBe(true)
+          // The test sets SOCKET_CLI_API_KEY which takes precedence.
+          expect(stdout).toContain('apiToken: fakeToken')
         },
       )
 
@@ -248,52 +270,56 @@ describe('socket config get', async () => {
         'should use the env var token when the config override also has a token set',
         async cmd => {
           const { stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
-            env: { SOCKET_CLI_API_KEY: 'abc' },
+            env: {
+              SOCKET_SECURITY_API_KEY: '',
+              SOCKET_CLI_API_KEY: 'fakeToken',
+              SOCKET_CLI_API_TOKEN: '',
+            },
           })
           expect(stdout).toMatchInlineSnapshot(`
-            "apiToken: sktsec_zP416vUiN4zVxlILVw8EVM_9MF1QcGJVxpgG9JcADezE_api
+            "apiToken: fakeToken
 
             Note: the config is in read-only mode, meaning at least one key was temporarily overridden from an env var or command flag."
           `)
           expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
             "
                _____         _       _        /---------------
-              |   __|___ ___| |_ ___| |_      | CLI: v1.1.23
-              |__   | * |  _| '_| -_|  _|     | token: zP416*** (env), org: (not set)
-              |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: ~/projects/socket-cli"
+              |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+              |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+              |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>"
           `)
 
-          // The test environment's SOCKET_SECURITY_API_KEY takes precedence
-          expect(stdout.includes('sktsec_zP416')).toBe(true)
+          // The test sets SOCKET_CLI_API_KEY which takes precedence.
+          expect(stdout).toContain('apiToken: fakeToken')
         },
       )
 
       cmdit(
-        [
-          'config',
-          'get',
-          'apiToken',
-          FLAG_CONFIG,
-          '{"apiToken":"pickmepickme"}',
-        ],
+        ['config', 'get', 'apiToken', FLAG_CONFIG, '{"apiToken":"fakeToken"}'],
         'should use the config override when there is no env var',
         async cmd => {
-          const { stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+          const { stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
+            env: {
+              SOCKET_SECURITY_API_KEY: '',
+              SOCKET_CLI_API_KEY: '',
+              SOCKET_CLI_API_TOKEN: '',
+            },
+          })
           expect(stdout).toMatchInlineSnapshot(`
-            "apiToken: sktsec_zP416vUiN4zVxlILVw8EVM_9MF1QcGJVxpgG9JcADezE_api
+            "apiToken: fakeToken
 
             Note: the config is in read-only mode, meaning at least one key was temporarily overridden from an env var or command flag."
           `)
           expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
             "
                _____         _       _        /---------------
-              |   __|___ ___| |_ ___| |_      | CLI: v1.1.23
-              |__   | * |  _| '_| -_|  _|     | token: zP416*** (env), org: (not set)
-              |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: ~/projects/socket-cli"
+              |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+              |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+              |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>"
           `)
 
-          // The test environment's SOCKET_SECURITY_API_KEY takes precedence even over config
-          expect(stdout.includes('sktsec_zP416')).toBe(true)
+          // The config override token should be returned.
+          expect(stdout).toContain('apiToken: fakeToken')
         },
       )
 
@@ -301,22 +327,28 @@ describe('socket config get', async () => {
         ['config', 'get', 'apiToken', FLAG_CONFIG, '{}'],
         'should yield no token when override has none',
         async cmd => {
-          const { stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+          const { stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
+            env: {
+              SOCKET_SECURITY_API_KEY: '',
+              SOCKET_CLI_API_KEY: '',
+              SOCKET_CLI_API_TOKEN: '',
+            },
+          })
           expect(stdout).toMatchInlineSnapshot(`
-            "apiToken: sktsec_zP416vUiN4zVxlILVw8EVM_9MF1QcGJVxpgG9JcADezE_api
+            "apiToken: undefined
 
             Note: the config is in read-only mode, meaning at least one key was temporarily overridden from an env var or command flag."
           `)
           expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
             "
                _____         _       _        /---------------
-              |   __|___ ___| |_ ___| |_      | CLI: v1.1.23
-              |__   | * |  _| '_| -_|  _|     | token: zP416*** (env), org: (not set)
-              |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: ~/projects/socket-cli"
+              |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+              |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+              |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>"
           `)
 
-          // The test environment's SOCKET_SECURITY_API_KEY takes precedence
-          expect(stdout.includes('sktsec_zP416')).toBe(true)
+          // No token in the config override.
+          expect(stdout).toContain('apiToken: undefined')
         },
       )
     })

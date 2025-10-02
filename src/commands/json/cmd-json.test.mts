@@ -32,9 +32,9 @@ describe('socket json', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: v1.1.23
-          |__   | * |  _| '_| -_|  _|     | token: zP416*** (env), org: (not set)
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket json\`, cwd: ~/projects/socket-cli"
+          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket json\`, cwd: <redacted>"
       `)
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
@@ -51,12 +51,12 @@ describe('socket json', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: v1.1.23
-          |__   | * |  _| '_| -_|  _|     | token: zP416*** (env), org: (not set)
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket json\`, cwd: ~/projects/socket-cli
+          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket json\`, cwd: <redacted>
 
-        i Target cwd: ~/projects/socket-cli
-        \\xd7 Not found: ~/projects/socket-cli/socket.json"
+        i Target cwd: <redacted>
+        \\xd7 Not found: <redacted>"
       `)
 
       expect(code, 'not found is failure').toBe(1)
@@ -72,12 +72,12 @@ describe('socket json', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: v1.1.23
-          |__   | * |  _| '_| -_|  _|     | token: zP416*** (env), org: (not set)
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket json\`, cwd: ~/projects/socket-cli
+          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket json\`, cwd: <redacted>
 
-        i Target cwd: ~/projects/socket-cli
-        \\xd7 Not found: ~/projects/socket-cli/socket.json"
+        i Target cwd: <redacted>
+        \\xd7 Not found: <redacted>"
       `)
 
       expect(code, 'not found is failure').toBe(1)
@@ -99,12 +99,12 @@ describe('socket json', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: v1.1.23
-          |__   | * |  _| '_| -_|  _|     | token: zP416*** (env), org: (not set)
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket json\`, cwd: ~/projects/socket-cli
+          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket json\`, cwd: <redacted>
 
-        i Target cwd: ~/projects/socket-cli/doesnotexist
-        \\xd7 Not found: ~/projects/socket-cli/doesnotexist/socket.json"
+        i Target cwd: <redacted>
+        \\xd7 Not found: <redacted>"
       `)
 
       expect(code, 'not found is failure').toBe(1)
@@ -124,12 +124,12 @@ describe('socket json', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: v1.1.23
-          |__   | * |  _| '_| -_|  _|     | token: zP416*** (env), org: (not set)
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket json\`, cwd: ~/projects/socket-cli/test/fixtures/commands/json
+          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket json\`, cwd: <redacted>
 
-        i Target cwd: ~/projects/socket-cli/test/fixtures/commands/json
-        \\u221a This is the contents of ~/projects/socket-cli/test/fixtures/commands/json/socket.json:"
+        i Target cwd: <redacted>
+        \\u221a This is the contents of <redacted>:"
       `)
 
       expect(code, 'found is ok').toBe(0)

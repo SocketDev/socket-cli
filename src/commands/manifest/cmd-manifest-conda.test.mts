@@ -57,9 +57,9 @@ describe('socket manifest conda', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: v1.1.23
-          |__   | * |  _| '_| -_|  _|     | token: zP416*** (env), org: (not set)
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest conda\`, cwd: ~/projects/socket-cli/test"
+          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest conda\`, cwd: <redacted>"
       `)
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
@@ -80,9 +80,9 @@ describe('socket manifest conda', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: v1.1.23
-          |__   | * |  _| '_| -_|  _|     | token: zP416*** (env), org: (not set)
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest conda\`, cwd: ~/projects/socket-cli/test
+          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest conda\`, cwd: <redacted>
 
         \\u203c Warning: This will approximate your Conda dependencies using PyPI. We do not yet officially support Conda. Use at your own risk."
       `)
@@ -115,9 +115,9 @@ describe('socket manifest conda', async () => {
         expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
           "
              _____         _       _        /---------------
-            |   __|___ ___| |_ ___| |_      | CLI: v1.1.23
-            |__   | * |  _| '_| -_|  _|     | token: zP416*** (env), org: (not set)
-            |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest conda\`, cwd: ~/projects/socket-cli/test
+            |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+            |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+            |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest conda\`, cwd: <redacted>
 
           \\u203c Warning: This will approximate your Conda dependencies using PyPI. We do not yet officially support Conda. Use at your own risk."
         `)

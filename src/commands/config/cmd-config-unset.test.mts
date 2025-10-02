@@ -46,9 +46,9 @@ describe('socket config unset', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: v1.1.23
-          |__   | * |  _| '_| -_|  _|     | token: zP416*** (env), org: (not set)
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket config unset\`, cwd: ~/projects/socket-cli"
+          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket config unset\`, cwd: <redacted>"
       `)
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
@@ -67,9 +67,9 @@ describe('socket config unset', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: v1.1.23
-          |__   | * |  _| '_| -_|  _|     | token: zP416*** (env), org: (not set)
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket config unset\`, cwd: ~/projects/socket-cli
+          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket config unset\`, cwd: <redacted>
 
         \\xd7  Input error:  Please review the input requirements and try again
 
@@ -96,9 +96,9 @@ describe('socket config unset', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: v1.1.23
-          |__   | * |  _| '_| -_|  _|     | token: zP416*** (env), org: (not set)
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket config unset\`, cwd: ~/projects/socket-cli"
+          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket config unset\`, cwd: <redacted>"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
