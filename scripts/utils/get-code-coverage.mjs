@@ -1,3 +1,5 @@
+/** @fileoverview Code coverage percentage calculation from c8/vitest coverage reports. */
+
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 
@@ -6,6 +8,9 @@ import { readJson } from '@socketsecurity/registry/lib/fs'
 import { isObjectObject } from '@socketsecurity/registry/lib/objects'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
+/**
+ * Count how many items in array are greater than zero.
+ */
 function countCovered(counts) {
   return counts.filter(count => count > 0).length
 }
