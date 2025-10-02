@@ -112,6 +112,17 @@ async function copyExternalPackages() {
       await removeEmptyDirs(thePath)
     }),
   )
+  // Remove all source map files from external packages.
+  await removeFiles(constants.externalPath, {
+    exclude: [
+      ...alwaysIgnoredPatterns,
+      '**/*.js',
+      '**/*.mjs',
+      '**/*.cjs',
+      '**/*.json',
+      '**/*.d.ts',
+    ],
+  })
   // Rewire '@socketsecurity/registry' inside '@socketsecurity/sdk'.
   const sdkPath = path.join(constants.externalPath, '@socketsecurity/sdk')
   await Promise.all(

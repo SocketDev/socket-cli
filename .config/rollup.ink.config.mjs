@@ -25,6 +25,7 @@ export default {
     exports: 'named',
     // Use preserveModules to avoid bundling everything into one file.
     preserveModules: false,
+    sourcemap: false,
   },
   external: [
     'ink',
