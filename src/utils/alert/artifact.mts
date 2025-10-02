@@ -1,3 +1,5 @@
+/** @fileoverview Socket artifact and alert type definitions. */
+
 import constants from '../../constants.mts'
 
 import type { Remap } from '@socketsecurity/registry/lib/objects'

@@ -1,3 +1,5 @@
+/** @fileoverview Alert severity utilities for Socket CLI security scanning. */
+
 import { joinAnd } from '@socketsecurity/registry/lib/arrays'
 
 import { createEnum, pick } from '../objects.mts'
