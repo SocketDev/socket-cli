@@ -1,18 +1,26 @@
 import { existsSync, rmSync } from 'node:fs'
+import { createRequire } from 'node:module'
 import path from 'node:path'
 
 import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import constants, { FLAG_HELP, NPM, PNPM, YARN } from '../../constants.mts'
-import { spawnCdxgenDlx, spawnSynpDlx } from '../../utils/dlx.mts'
+import constants, {
+  FLAG_HELP,
+  FLAG_SILENT,
+  NPM,
+  PNPM,
+  YARN,
+} from '../../constants.mts'
 import { findUp } from '../../utils/fs.mts'
 import { isYarnBerry } from '../../utils/yarn-version.mts'
 
 import type { ShadowBinResult } from '../../shadow/npm/bin.mts'
-import type { DlxOptions } from '../../utils/dlx.mts'
+import type { ShadowBinOptions } from '../../shadow/npm-base.mts'
 import type { ChildProcess } from 'node:child_process'
+
+const require = createRequire(import.meta.url)
 
 const { PACKAGE_LOCK_JSON, PNPM_LOCK_YAML, YARN_LOCK } = constants
 
@@ -66,7 +74,7 @@ function argvObjectToArray(argvObj: ArgvObject): string[] {
 export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
   const argvMutable = { __proto__: null, ...argvObj } as ArgvObject
 
-  const shadowOpts: DlxOptions = {
+  const shadowOpts: ShadowBinOptions = {
     ipc: {
       [constants.SOCKET_CLI_SHADOW_ACCEPT_RISKS]: true,
       [constants.SOCKET_CLI_SHADOW_API_TOKEN]:
@@ -102,13 +110,33 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
       // Use synp to create a package-lock.json from the yarn.lock,
       // based on the node_modules folder, for a more accurate SBOM.
       try {
-        const synpResult = await spawnSynpDlx(
-          ['--source-file', `./${YARN_LOCK}`],
-          {
-            ...shadowOpts,
-            agent,
-          },
-        )
+        const synpVersion = constants.ENV['INLINED_SOCKET_CLI_SYNP_VERSION']
+        const synpArgs = [
+          FLAG_SILENT,
+          `synp@${synpVersion}`,
+          '--source-file',
+          `./${YARN_LOCK}`,
+        ]
+
+        let synpResult: ShadowBinResult
+        if (agent === PNPM) {
+          const shadowPnpmBin = /*@__PURE__*/ require(
+            constants.shadowPnpmBinPath,
+          )
+          synpResult = await shadowPnpmBin(['dlx', ...synpArgs], shadowOpts)
+        } else if (agent === YARN) {
+          const shadowYarnBin = /*@__PURE__*/ require(
+            constants.shadowYarnBinPath,
+          )
+          synpResult = await shadowYarnBin(['dlx', ...synpArgs], shadowOpts)
+        } else {
+          const shadowNpxBin = /*@__PURE__*/ require(constants.shadowNpxBinPath)
+          synpResult = await shadowNpxBin(
+            ['--yes', ...synpArgs.slice(1)],
+            shadowOpts,
+          )
+        }
+
         await synpResult.spawnPromise
         argvMutable['type'] = NPM
         cleanupPackageLock = true
@@ -117,10 +145,33 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
   }
 
   // Use appropriate package manager for cdxgen.
-  const shadowResult = await spawnCdxgenDlx(argvObjectToArray(argvMutable), {
-    ...shadowOpts,
-    agent,
-  })
+  const cdxgenVersion =
+    constants.ENV['INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION']
+  const cdxgenArgs = [
+    `@cyclonedx/cdxgen@${cdxgenVersion}`,
+    ...argvObjectToArray(argvMutable),
+  ]
+
+  let shadowResult: ShadowBinResult
+  if (agent === PNPM) {
+    const shadowPnpmBin = /*@__PURE__*/ require(constants.shadowPnpmBinPath)
+    shadowResult = await shadowPnpmBin(
+      ['dlx', FLAG_SILENT, ...cdxgenArgs],
+      shadowOpts,
+    )
+  } else if (agent === YARN) {
+    const shadowYarnBin = /*@__PURE__*/ require(constants.shadowYarnBinPath)
+    shadowResult = await shadowYarnBin(
+      ['dlx', '--quiet', ...cdxgenArgs],
+      shadowOpts,
+    )
+  } else {
+    const shadowNpxBin = /*@__PURE__*/ require(constants.shadowNpxBinPath)
+    shadowResult = await shadowNpxBin(
+      ['--yes', FLAG_SILENT, ...cdxgenArgs],
+      shadowOpts,
+    )
+  }
 
   ;(shadowResult.spawnPromise.process as ChildProcess).on('exit', () => {
     if (cleanupPackageLock) {
