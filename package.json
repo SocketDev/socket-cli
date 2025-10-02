@@ -140,6 +140,7 @@
     "@types/npmcli__arborist": "6.3.1",
     "@types/npmcli__config": "6.0.3",
     "@types/proc-log": "3.0.4",
+    "@types/react": "19.2.0",
     "@types/semver": "7.7.1",
     "@types/which": "3.0.4",
     "@types/yargs-parser": "21.0.3",
@@ -267,7 +268,6 @@
       "string_decoder@0.10.31": "patches/string_decoder@0.10.31.patch",
       "meow@13.2.0": "patches/meow@13.2.0.patch",
       "@rollup/plugin-commonjs@28.0.6": "patches/@rollup__plugin-commonjs@28.0.6.patch",
-      "ansi-term@0.0.2": "patches/ansi-term@0.0.2.patch",
       "brace-expansion@2.0.2": "patches/brace-expansion@2.0.2.patch",
       "rollup@4.50.1": "patches/rollup@4.50.1.patch"
     }
