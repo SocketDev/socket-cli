@@ -342,8 +342,8 @@ importers:
         specifier: 10.2.0
         version: 10.2.0
       oxlint:
-        specifier: 1.15.0
-        version: 1.15.0
+        specifier: 1.18.0
+        version: 1.18.0
       pony-cause:
         specifier: 2.1.11
         version: 2.1.11
@@ -1264,43 +1264,43 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@oxlint/darwin-arm64@1.15.0':
-    resolution: {integrity: sha512-fwYg7WDKI6eAErREBGMXkIAOqBuBFN0LWbQJvVNXCGjywGxsisdwkHnNu4UG8IpHo4P71mUxf3l2xm+5Xiy+TA==}
+  '@oxlint/darwin-arm64@1.18.0':
+    resolution: {integrity: sha512-z/4/ClV0sZYDNk/xsOZHr5BHFbAXI7LU+i3P8d/L2ejy7zF8e4WA8szd70OqVm7Gcsa81TSeeQygViR63WCQ1A==}
     cpu: [arm64]
     os: [darwin]
 
-  '@oxlint/darwin-x64@1.15.0':
-    resolution: {integrity: sha512-RtaAmB6NZZx4hvjCg6w35shzRY5fLclbMsToC92MTZ9lMDF9LotzcbyNHCZ1tvZb1tNPObpIsuX16BFeElF8nw==}
+  '@oxlint/darwin-x64@1.18.0':
+    resolution: {integrity: sha512-cQP5UtmfxZKLVyISh/BeaaK5z70AGOtQkf1wm7ZaEb0eT81PkLUdzkPwTjwyQq/TeT09uw2paVy3l2SEAO+JQA==}
     cpu: [x64]
     os: [darwin]
 
-  '@oxlint/linux-arm64-gnu@1.15.0':
-    resolution: {integrity: sha512-8uV0lAbmqp93KTBlJWyCdQWuxTzLn+QrDRidUaCLJjn65uvv8KlRhZJoZoyLh17X6U/cgezYktWTMiMhxX56BA==}
+  '@oxlint/linux-arm64-gnu@1.18.0':
+    resolution: {integrity: sha512-JsobGeuKwpQFKSgK398QHfZ4kN9XXWJ0xvI8kofoefO/LLmj1ox3+Yln3kx425AaooruRMqBhh1JFXqEKeDxOw==}
     cpu: [arm64]
     os: [linux]
 
-  '@oxlint/linux-arm64-musl@1.15.0':
-    resolution: {integrity: sha512-/+hTqh1J29+2GitKrWUHIYjQBM1szWSJ1U7OzQlgL+Uvf8jxg4sn1nV79LcPMXhC2t8lZy5EOXOgwIh92DsdhQ==}
+  '@oxlint/linux-arm64-musl@1.18.0':
+    resolution: {integrity: sha512-Sds76cCqGylhywWrJcJ++4JQ45MxQKDDm7iW6Gx6C9nH+DyCPnYOjZAMYDkQiiZ3MlWCIW87SggsHkMaGO45ew==}
     cpu: [arm64]
     os: [linux]
 
-  '@oxlint/linux-x64-gnu@1.15.0':
-    resolution: {integrity: sha512-GzeY3AhUd49yV+/76Gw0pjpwUJwxCkwYAJTNe7fFTdWjEQ6M6g8ZzJg5FKtUvgA5sMgmfzHhvSXxvT57YhcXnA==}
+  '@oxlint/linux-x64-gnu@1.18.0':
+    resolution: {integrity: sha512-pvBDpuf7SE3iMfwgmI3m8gandsdjs8CpIgiv/tiUhxCsKeK7gRVpiIr1XcewFrYwLn/km/EhjjFr/Kb7/CsHOA==}
     cpu: [x64]
     os: [linux]
 
-  '@oxlint/linux-x64-musl@1.15.0':
-    resolution: {integrity: sha512-p/7+juizUOCpGYreFmdfmIOSSSE3+JfsgnXnOHuP8mqlZfiOeXyevyajuXpPNRM60+k0reGvlV7ezp1iFitF7w==}
+  '@oxlint/linux-x64-musl@1.18.0':
+    resolution: {integrity: sha512-9G0km2Rt4MAoGOVndD/7+U947dnxQkWtLX9en5Gkh3lC7HBDvVpYLopXddguWE+qbqEQKp67PiuITeyYQ4uESA==}
     cpu: [x64]
     os: [linux]
 
-  '@oxlint/win32-arm64@1.15.0':
-    resolution: {integrity: sha512-2LaDLOtCMq+lzIQ63Eir3UJV/hQNlw01xtsij2L8sSxt4gA+zWvubOQJQIOPGMDxEKFcWT1lo/6YEXX/sNnZDA==}
+  '@oxlint/win32-arm64@1.18.0':
+    resolution: {integrity: sha512-Px9436ey0xIuU3/PuXw8EwxJSWPIxiZ9pi7FiryOMisY0dNHQP9XlGvk1MNqzyFctNmas93ZG5zyyctzLTtiUg==}
     cpu: [arm64]
     os: [win32]
 
-  '@oxlint/win32-x64@1.15.0':
-    resolution: {integrity: sha512-+jgRPpZrFIcrNxCVsDIy6HVCRpKVDN0DHD8VJodjrsDv6heqhq/qCTa2IXY3R4glWe1nWQ5JgdFKLn3Bl+aLNg==}
+  '@oxlint/win32-x64@1.18.0':
+    resolution: {integrity: sha512-6yG6xADwy3SJsBuV2TZXfDMWDAzDBpTx3Ja/shdHbhP+YiVT87rRESjT5dKmASqrzQViycgnZ71UXiTf/nxqTA==}
     cpu: [x64]
     os: [win32]
 
@@ -1615,12 +1615,12 @@ packages:
     resolution: {integrity: sha512-LtoMMhxAlorcGhmFYI+LhPgbPZCkgP6ra1YL604EeF6U98pLlQ3iWIGMdWSC+vWmPBWBNgmDBAhnAobLROJmwg==}
     engines: {node: '>=18'}
 
-  '@socketregistry/es-set-tostringtag@1.0.9':
-    resolution: {integrity: sha512-rLBDHYkhI3so1NSinOhIhmxQ53aG0SPht2KMfBLTNuanrfVgMQOusu+s0UkP5+lI4242yHaqYAbRyAEK820/Gg==}
+  '@socketregistry/es-set-tostringtag@1.0.10':
+    resolution: {integrity: sha512-btXmvw1JpA8WtSoXx9mTapo9NAyIDKRRzK84i48d8zc0X09M6ORfobVnHbgwhXf7CFhkRzhYrHG9dqbI9vpELQ==}
     engines: {node: '>=18'}
 
-  '@socketregistry/globalthis@1.0.7':
-    resolution: {integrity: sha512-8BwRKuNSMZYoR8B+ohBdO0vFARSo7wPyeczNTHMalwS7Cfql7duQybAYvlBw1K1rrEwcEg21U/UBbOeHapEI1A==}
+  '@socketregistry/globalthis@1.0.8':
+    resolution: {integrity: sha512-keylYAVfNG8oovtMwsaai129NlhO7NwytSnRVNqR91nqx0uhA+XuWCcFDxw22QJYT/7mlNrR1MdkKL2Ks6Rq3Q==}
     engines: {node: '>=18'}
 
   '@socketregistry/hasown@1.0.7':
@@ -1636,36 +1636,36 @@ packages:
     resolution: {integrity: sha512-h8MfBgjoPFiRYp60S9qzQJrmNIE/jAnqrjWZRGnHeKmpBH5M3DTwblrPG3hqxlu9IDtiu7H9NDvDGfFcM7dirw==}
     engines: {node: '>=18'}
 
-  '@socketregistry/is-core-module@1.0.10':
-    resolution: {integrity: sha512-N73WwnrbE+DA66skarYxgAq+FyR+ORhN7T6jwYNteKdUbmdPJxX6jqmG82R4eGlrBa3+WKzi9KYXCButbIeDlw==}
+  '@socketregistry/is-core-module@1.0.11':
+    resolution: {integrity: sha512-obrSzvIfJXKQthA3u1RmkjLHuA1QDtLm0SbXJxGs2CQfXZY9Eql5/pBGSV1hIUWKcpdcNphFgnJMC5BITcTXsQ==}
     engines: {node: '>=18'}
 
   '@socketregistry/is-interactive@1.0.6':
     resolution: {integrity: sha512-KbKE6j98nf+cZum6lAO5ubP/Sid5tbbl3S7XYb8VFu3RaHy9I1uIZ/dcM932xYk3+TQuoXgV3pzqAM2ekqA1tA==}
     engines: {node: '>=18'}
 
-  '@socketregistry/isarray@1.0.7':
-    resolution: {integrity: sha512-G+LghVUHkjihC52gH0ligRdRTUd1fSmoBkWG+tnRNL51k0sQnhDKrptCcc4KEa/4kNjwc7UlarkW3GHA8yQbIA==}
+  '@socketregistry/isarray@1.0.8':
+    resolution: {integrity: sha512-DM81ydAjO2GJKkNf2Vn17InJ37sEYLK1YyhxpDX16OdbOpYlsDIw8QyeFEUZtc7GqsQXbcPKJmz3j/2qS+BhKQ==}
     engines: {node: '>=18'}
 
   '@socketregistry/packageurl-js@1.1.4':
     resolution: {integrity: sha512-x6z5IDUobW/fkPRM9JboWpUGhAOD95Y71xO+dpb2AeP43uqYewJWBQc3KQ8GilFmydq93ew1tzut9UUi6yEdfg==}
     engines: {node: '>=18'}
 
-  '@socketregistry/path-parse@1.0.7':
-    resolution: {integrity: sha512-Tql/7zg51KKCB+J0bGWQkff1J/8TxEYSM087XoHn3RHJ6X1nZQe/ugZ8bgUuoGmUOEphAdzbQvfaKIPgShBAcQ==}
+  '@socketregistry/path-parse@1.0.8':
+    resolution: {integrity: sha512-9dcT4Vj4TY6BsU7hd3sEemoaA8OEGUutK2ufNdP+qKOljcH0xy/5+WnbEZ1RLEJcSKDnpZ3T47mVdq/ZWiGNxw==}
     engines: {node: '>=18'}
 
-  '@socketregistry/safe-buffer@1.0.8':
-    resolution: {integrity: sha512-tjGRJb7PQsO7apF3AaHXQRZvkY44ldloGngBHYp87LPYs2Kp3DmGnU0+yYJri/AIOfUc6FClLuJbeXYn6iYSQw==}
+  '@socketregistry/safe-buffer@1.0.9':
+    resolution: {integrity: sha512-eV4uYchI1+vQeKpFG+aBlhVQ/AaaPTTXaan+ReiNn/izy8U9hfT4WC8l4g8o8BC3zaeNnsNVxec14hJH/y2y3g==}
     engines: {node: '>=18'}
 
-  '@socketregistry/safer-buffer@1.0.9':
-    resolution: {integrity: sha512-njtALAmZzUbbgW2vMOz0DoMUmy/o+dKYt8t8nvp79TX8IO1ZpP1+Nr3c6kXOAJy0E873jg/SAFi3FiGxHtBpgw==}
+  '@socketregistry/safer-buffer@1.0.10':
+    resolution: {integrity: sha512-jbEY37bJn51W9pP1pXxIoGcQbmbi9EQDtnXfWBjGLNvKC1iEyNLOaGm8ee7dN7Z+KgJdQbrrDjjD3HbGeOFC4A==}
     engines: {node: '>=18'}
 
-  '@socketregistry/side-channel@1.0.9':
-    resolution: {integrity: sha512-EhdxZ8UiOlImFsqR9Wk6/dvU8Ld/NmUhS42GTTES9cpIEcc/deb+qNhUZdIK6UZy3VYoQjenPR8qWJBud5390w==}
+  '@socketregistry/side-channel@1.0.10':
+    resolution: {integrity: sha512-nqm2QgbXHldY6DgIBap3i1MlQms+eP7zIC0vPuyy9FmxF62ITa80hjj/3w6zH7DCxV4nQBcJsz3CaGNulQAP7g==}
     engines: {node: '>=18'}
 
   '@socketsecurity/config@3.0.1':
@@ -3740,9 +3740,9 @@ packages:
   oxc-resolver@11.7.2:
     resolution: {integrity: sha512-abgiTgtJ7FLVPdg5x+rcfoSqz5kpgS/j1Rk/BFNVlLbpAI56VXCj/MM7NyfQb+aVlQDBum0omdz4uFrOYEjNIw==}
 
-  oxlint@1.15.0:
-    resolution: {integrity: sha512-GZngkdF2FabM0pp0/l5OOhIQg+9L6LmOrmS8V8Vg+Swv9/VLJd/oc/LtAkv4HO45BNWL3EVaXzswI0CmGokVzw==}
-    engines: {node: '>=8.*'}
+  oxlint@1.18.0:
+    resolution: {integrity: sha512-bR/XSaWwrRyt87IGdJtCIf3KLspkY4Ni7FfkOdERWihfyazs40NUMCyYICZo5ojU/8zIq+EWpa/gEf7wsoBOug==}
+    engines: {node: ^20.19.0 || >=22.12.0}
     hasBin: true
     peerDependencies:
       oxlint-tsgolint: '>=0.2.0'
@@ -5788,28 +5788,28 @@ snapshots:
   '@oxc-resolver/binding-win32-x64-msvc@11.7.2':
     optional: true
 
-  '@oxlint/darwin-arm64@1.15.0':
+  '@oxlint/darwin-arm64@1.18.0':
     optional: true
 
-  '@oxlint/darwin-x64@1.15.0':
+  '@oxlint/darwin-x64@1.18.0':
     optional: true
 
-  '@oxlint/linux-arm64-gnu@1.15.0':
+  '@oxlint/linux-arm64-gnu@1.18.0':
     optional: true
 
-  '@oxlint/linux-arm64-musl@1.15.0':
+  '@oxlint/linux-arm64-musl@1.18.0':
     optional: true
 
-  '@oxlint/linux-x64-gnu@1.15.0':
+  '@oxlint/linux-x64-gnu@1.18.0':
     optional: true
 
-  '@oxlint/linux-x64-musl@1.15.0':
+  '@oxlint/linux-x64-musl@1.18.0':
     optional: true
 
-  '@oxlint/win32-arm64@1.15.0':
+  '@oxlint/win32-arm64@1.18.0':
     optional: true
 
-  '@oxlint/win32-x64@1.15.0':
+  '@oxlint/win32-x64@1.18.0':
     optional: true
 
   '@pkgjs/parseargs@0.11.0':
@@ -6096,9 +6096,9 @@ snapshots:
 
   '@sindresorhus/merge-streams@2.3.0': {}
 
-  '@socketregistry/es-set-tostringtag@1.0.9': {}
+  '@socketregistry/es-set-tostringtag@1.0.10': {}
 
-  '@socketregistry/globalthis@1.0.7': {}
+  '@socketregistry/globalthis@1.0.8': {}
 
   '@socketregistry/hasown@1.0.7': {}
 
@@ -6106,21 +6106,21 @@ snapshots:
 
   '@socketregistry/indent-string@1.0.13': {}
 
-  '@socketregistry/is-core-module@1.0.10': {}
+  '@socketregistry/is-core-module@1.0.11': {}
 
   '@socketregistry/is-interactive@1.0.6': {}
 
-  '@socketregistry/isarray@1.0.7': {}
+  '@socketregistry/isarray@1.0.8': {}
 
   '@socketregistry/packageurl-js@1.1.4': {}
 
-  '@socketregistry/path-parse@1.0.7': {}
+  '@socketregistry/path-parse@1.0.8': {}
 
-  '@socketregistry/safe-buffer@1.0.8': {}
+  '@socketregistry/safe-buffer@1.0.9': {}
 
-  '@socketregistry/safer-buffer@1.0.9': {}
+  '@socketregistry/safer-buffer@1.0.10': {}
 
-  '@socketregistry/side-channel@1.0.9':
+  '@socketregistry/side-channel@1.0.10':
     optional: true
 
   '@socketsecurity/config@3.0.1':
@@ -6922,7 +6922,7 @@ snapshots:
       debug: 2.6.9
       negotiator: 0.6.4
       on-headers: 1.1.0
-      safe-buffer: '@socketregistry/safe-buffer@1.0.8'
+      safe-buffer: '@socketregistry/safe-buffer@1.0.9'
       vary: 1.1.2
     transitivePeerDependencies:
       - supports-color
@@ -7079,7 +7079,7 @@ snapshots:
 
   ecdsa-sig-formatter@1.0.11:
     dependencies:
-      safe-buffer: '@socketregistry/safe-buffer@1.0.8'
+      safe-buffer: '@socketregistry/safe-buffer@1.0.9'
 
   eciesjs@0.4.15:
     dependencies:
@@ -7472,7 +7472,7 @@ snapshots:
     dependencies:
       asynckit: 0.4.0
       combined-stream: 1.0.8
-      es-set-tostringtag: '@socketregistry/es-set-tostringtag@1.0.9'
+      es-set-tostringtag: '@socketregistry/es-set-tostringtag@1.0.10'
       hasown: '@socketregistry/hasown@1.0.7'
       mime-types: 2.1.35
 
@@ -7657,11 +7657,11 @@ snapshots:
 
   iconv-lite@0.6.3:
     dependencies:
-      safer-buffer: '@socketregistry/safer-buffer@1.0.9'
+      safer-buffer: '@socketregistry/safer-buffer@1.0.10'
 
   iconv-lite@0.7.0:
     dependencies:
-      safer-buffer: '@socketregistry/safer-buffer@1.0.9'
+      safer-buffer: '@socketregistry/safer-buffer@1.0.10'
     optional: true
 
   ieee754@1.2.1:
@@ -7829,12 +7829,12 @@ snapshots:
     dependencies:
       buffer-equal-constant-time: 1.0.1
       ecdsa-sig-formatter: 1.0.11
-      safe-buffer: '@socketregistry/safe-buffer@1.0.8'
+      safe-buffer: '@socketregistry/safe-buffer@1.0.9'
 
   jws@4.0.0:
     dependencies:
       jwa: 2.0.1
-      safe-buffer: '@socketregistry/safe-buffer@1.0.8'
+      safe-buffer: '@socketregistry/safe-buffer@1.0.9'
 
   keyv@4.5.4:
     dependencies:
@@ -8395,16 +8395,16 @@ snapshots:
       '@oxc-resolver/binding-win32-ia32-msvc': 11.7.2
       '@oxc-resolver/binding-win32-x64-msvc': 11.7.2
 
-  oxlint@1.15.0:
+  oxlint@1.18.0:
     optionalDependencies:
-      '@oxlint/darwin-arm64': 1.15.0
-      '@oxlint/darwin-x64': 1.15.0
-      '@oxlint/linux-arm64-gnu': 1.15.0
-      '@oxlint/linux-arm64-musl': 1.15.0
-      '@oxlint/linux-x64-gnu': 1.15.0
-      '@oxlint/linux-x64-musl': 1.15.0
-      '@oxlint/win32-arm64': 1.15.0
-      '@oxlint/win32-x64': 1.15.0
+      '@oxlint/darwin-arm64': 1.18.0
+      '@oxlint/darwin-x64': 1.18.0
+      '@oxlint/linux-arm64-gnu': 1.18.0
+      '@oxlint/linux-arm64-musl': 1.18.0
+      '@oxlint/linux-x64-gnu': 1.18.0
+      '@oxlint/linux-x64-musl': 1.18.0
+      '@oxlint/win32-arm64': 1.18.0
+      '@oxlint/win32-x64': 1.18.0
 
   p-cancelable@4.0.1: {}
 
@@ -8622,7 +8622,7 @@ snapshots:
 
   qs@6.14.0:
     dependencies:
-      side-channel: '@socketregistry/side-channel@1.0.9'
+      side-channel: '@socketregistry/side-channel@1.0.10'
     optional: true
 
   quansync@0.2.11: {}
@@ -8671,7 +8671,7 @@ snapshots:
     dependencies:
       core-util-is: 1.0.3
       inherits: 2.0.4
-      isarray: '@socketregistry/isarray@1.0.7'
+      isarray: '@socketregistry/isarray@1.0.8'
       string_decoder: 0.10.31(patch_hash=4f6ae5ec65b5537e81cd3ee7e83ae65bcc843a93cff14f147d8053e1c385ae1d)
 
   readable-stream@3.6.2:
@@ -8711,8 +8711,8 @@ snapshots:
 
   resolve@1.22.10:
     dependencies:
-      is-core-module: '@socketregistry/is-core-module@1.0.10'
-      path-parse: '@socketregistry/path-parse@1.0.7'
+      is-core-module: '@socketregistry/is-core-module@1.0.11'
+      path-parse: '@socketregistry/path-parse@1.0.8'
       supports-preserve-symlinks-flag: 1.0.0
 
   responselike@3.0.0:
@@ -8737,7 +8737,7 @@ snapshots:
     dependencies:
       boolean: 3.2.0
       detect-node: 2.1.0
-      globalthis: '@socketregistry/globalthis@1.0.7'
+      globalthis: '@socketregistry/globalthis@1.0.8'
       json-stringify-safe: 5.0.1
       semver-compare: 1.0.0
       sprintf-js: 1.1.3
@@ -9167,7 +9167,7 @@ snapshots:
 
   tunnel-agent@0.6.0:
     dependencies:
-      safe-buffer: '@socketregistry/safe-buffer@1.0.8'
+      safe-buffer: '@socketregistry/safe-buffer@1.0.9'
     optional: true
 
   type-check@0.4.0:
