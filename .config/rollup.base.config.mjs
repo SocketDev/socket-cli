@@ -29,6 +29,8 @@ const {
   INLINED_SOCKET_CLI_LEGACY_BUILD,
   INLINED_SOCKET_CLI_NAME,
   INLINED_SOCKET_CLI_PUBLISHED_BUILD,
+  INLINED_SOCKET_CLI_PYTHON_BUILD_TAG,
+  INLINED_SOCKET_CLI_PYTHON_VERSION,
   INLINED_SOCKET_CLI_SENTRY_BUILD,
   INLINED_SOCKET_CLI_SYNP_VERSION,
   INLINED_SOCKET_CLI_VERSION,
@@ -223,6 +225,11 @@ export default function baseConfig(extendConfig = {}) {
               JSON.stringify(
                 getRootPkgJsonSync().devDependencies['@cyclonedx/cdxgen'],
               ),
+          ],
+          [INLINED_SOCKET_CLI_PYTHON_VERSION, () => JSON.stringify('3.10.18')],
+          [
+            INLINED_SOCKET_CLI_PYTHON_BUILD_TAG,
+            () => JSON.stringify('20250918'),
           ],
           [
             INLINED_SOCKET_CLI_HOMEPAGE,
