@@ -8,28 +8,51 @@
 
 CLI for [Socket.dev] security analysis
 
-## Usage
+## Quick Start
 
 ```bash
-npm install -g socket
+pnpm install -g socket
 socket --help
 ```
 
-## Commands
+## Core Commands
 
-- `socket npm [args...]` and `socket npx [args...]` - Wraps npm/npx with Socket security scanning
-
+- `socket npm [args...]` / `socket npx [args...]` - Wrap npm/npx with security scanning
+- `socket pnpm [args...]` / `socket yarn [args...]` - Wrap pnpm/yarn with security scanning
+- `socket pip [args...]` - Wrap pip with security scanning
+- `socket scan` - Create and manage security scans
+- `socket package <name>` - Analyze package security scores
 - `socket fix` - Fix CVEs in dependencies
-
 - `socket optimize` - Optimize dependencies with [`@socketregistry`](https://github.com/SocketDev/socket-registry) overrides
-
 - `socket cdxgen [command]` - Run [cdxgen](https://cyclonedx.github.io/cdxgen/#/?id=getting-started) for SBOM generation
+
+## Organization & Repository Management
+
+- `socket organization` (alias: `org`) - Manage organization settings
+- `socket repository` (alias: `repo`) - Manage repositories
+- `socket dependencies` (alias: `deps`) - View organization dependencies
+- `socket audit-log` (alias: `audit`) - View audit logs
+- `socket analytics` - View organization analytics
+- `socket threat-feed` (alias: `feed`) - View threat intelligence
+
+## Authentication & Configuration
+
+- `socket login` - Authenticate with Socket.dev
+- `socket logout` - Remove authentication
+- `socket whoami` - Show authenticated user
+- `socket config` - Manage CLI configuration
 
 ## Aliases
 
 All aliases support the flags and arguments of the commands they alias.
 
 - `socket ci` - Alias for `socket scan create --report` (creates report and exits with error if unhealthy)
+- `socket org` - Alias for `socket organization`
+- `socket repo` - Alias for `socket repository`
+- `socket pkg` - Alias for `socket package`
+- `socket deps` - Alias for `socket dependencies`
+- `socket audit` - Alias for `socket audit-log`
+- `socket feed` - Alias for `socket threat-feed`
 
 ## Flags
 
@@ -70,10 +93,10 @@ Supports version 2 format with `projectIgnorePaths` for excluding files from rep
 
 Run locally:
 
-```
-npm install
-npm run build
-npm exec socket
+```bash
+pnpm install
+pnpm run build
+pnpm exec socket
 ```
 
 ### Development environment variables
