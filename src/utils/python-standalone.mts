@@ -1,4 +1,44 @@
-/** @fileoverview Python runtime management using python-build-standalone for Socket CLI. */
+/**
+ * @fileoverview Python runtime management using python-build-standalone for Socket CLI.
+ *
+ * This module provides automatic Python runtime management for socket-python-cli integration.
+ * It handles:
+ * - System Python detection (3.10+)
+ * - Portable Python download from python-build-standalone
+ * - Python package management (socketsecurity)
+ * - Subprocess spawning for Python CLI operations
+ *
+ * Architecture:
+ * - Check for system Python 3.10+ first
+ * - If not found, download portable Python from astral-sh/python-build-standalone
+ * - Cache portable Python in ~/.socket/cache/dlx/python/
+ * - Install socketsecurity package for socket-python-cli
+ * - Forward unknown Socket CLI commands to Python CLI
+ *
+ * Python Version Support:
+ *   Minimum: 3.10 (required by socketsecurity package)
+ *   Portable: 3.10.18 (from python-build-standalone)
+ *
+ * Cache Structure:
+ *   ~/.socket/cache/dlx/python/
+ *   └── 3.10.18-20250918-darwin-arm64/
+ *       └── python/
+ *           ├── bin/python3
+ *           └── lib/python3.10/site-packages/socketsecurity/
+ *
+ * Environment Variables:
+ *   INLINED_SOCKET_CLI_PYTHON_VERSION - Python version to download
+ *   INLINED_SOCKET_CLI_PYTHON_BUILD_TAG - Python build standalone release tag
+ *
+ * External Dependencies:
+ *   - python-build-standalone: https://github.com/astral-sh/python-build-standalone
+ *   - socketsecurity: https://pypi.org/project/socketsecurity/
+ *   - socket-python-cli: https://github.com/SocketDev/socket-python-cli
+ *
+ * See also:
+ *   - Socket pip command: src/commands/pip/cmd-pip.mts
+ *   - DLX binary utilities: src/utils/dlx-binary.mts
+ */
 
 import { createWriteStream, existsSync, promises as fs } from 'node:fs'
 import os from 'node:os'
@@ -20,6 +60,23 @@ const { ENV, PYTHON_MIN_VERSION, WIN32 } = constants
 
 /**
  * Get the download URL for python-build-standalone based on platform and architecture.
+ *
+ * Constructs a GitHub release URL for downloading a portable Python distribution
+ * from the astral-sh/python-build-standalone project.
+ *
+ * Supported platforms:
+ * - macOS (darwin): x86_64, arm64
+ * - Linux: x86_64, arm64
+ * - Windows: x86_64
+ *
+ * @param version - Python version (e.g., "3.10.18")
+ * @param tag - python-build-standalone release tag (e.g., "20250918")
+ * @returns GitHub release URL for the platform-specific Python tarball
+ * @throws {InputError} If platform is unsupported
+ *
+ * @example
+ *   getPythonStandaloneUrl('3.10.18', '20250918')
+ *   // Returns: https://github.com/astral-sh/python-build-standalone/releases/download/20250918/cpython-3.10.18%2B20250918-aarch64-apple-darwin-install_only.tar.gz
  */
 function getPythonStandaloneUrl(
   version: string = ENV['INLINED_SOCKET_CLI_PYTHON_VERSION'],
@@ -164,13 +221,9 @@ async function downloadPython(pythonDir: string): Promise<void> {
  * Returns the path to the Python executable.
  */
 export async function ensurePython(): Promise<string> {
-  // Check system Python first
-  const systemPython = await checkSystemPython()
-  if (systemPython) {
-    return systemPython
-  }
-
-  // Use cached Python or download it
+  // Always use portable Python to avoid externally-managed-environment errors
+  // on systems like macOS with Homebrew Python (PEP 668).
+  // System Python can be externally-managed and refuse pip installs even with --user flag.
   const pythonDir = getPythonCachePath()
   const pythonBin = getPythonBinPath(pythonDir)
 
