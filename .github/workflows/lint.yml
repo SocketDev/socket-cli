@@ -8,4 +8,4 @@ permissions:
 
 jobs:
   lint-check:
-    uses: SocketDev/socket-registry/.github/workflows/lint.yml@c61feb5e700271684d8bf553f82c674d3254385c # main
+    uses: SocketDev/socket-registry/.github/workflows/lint.yml@08fba31a9abec77127b476c7eebc745fccd9feef # main
