@@ -39,7 +39,7 @@ jobs:
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
-      - uses: SocketDev/socket-registry/.github/actions/setup@d1bbbbad7d1b29b8b36dc5871bd7f71df6b51ac4 # main
+      - uses: SocketDev/socket-registry/.github/actions/setup@43a668e11f52d9f6a19ced20a0b3ee6e5cdde7e5 # main
         with:
           scope: '@socketsecurity'
 
@@ -123,7 +123,7 @@ jobs:
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
-      - uses: SocketDev/socket-registry/.github/actions/setup@d1bbbbad7d1b29b8b36dc5871bd7f71df6b51ac4 # main
+      - uses: SocketDev/socket-registry/.github/actions/setup@43a668e11f52d9f6a19ced20a0b3ee6e5cdde7e5 # main
         with:
           scope: '@socketsecurity'
 
