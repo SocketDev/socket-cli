@@ -40,6 +40,7 @@ import constants, {
   // YARN,
 } from '../constants.mts'
 import { commonFlags } from '../flags.mts'
+import { spawnSocketPython } from './python-standalone.mts'
 import { getVisibleTokenPrefix } from './sdk.mts'
 import { tildify } from './tildify.mts'
 
@@ -493,7 +494,8 @@ export async function meowWithSubcommands(
   }
 
   // If we have got some args, then lets find out if we can find a command.
-  if (commandOrAliasName) {
+  // Skip command lookup if first arg is a flag (starts with -)
+  if (commandOrAliasName && !commandOrAliasName.startsWith('-')) {
     const alias = aliases[commandOrAliasName]
     // First: Resolve argv data from alias if its an alias that's been given.
     const [commandName, ...commandArgv] = alias
@@ -520,7 +522,31 @@ export async function meowWithSubcommands(
         )
         return
       }
+
+      // Try forwarding to socket-python CLI for unrecognized commands.
+      // This enables commands like: socket report, socket purl, etc.
+      const pythonResult = await spawnSocketPython(commandArgv, {
+        stdio: 'inherit',
+      })
+      if (pythonResult.ok) {
+        // Successfully handled by Python CLI.
+        return
+      }
+      // If Python CLI also failed, fall through to show help.
     }
+  }
+
+  // If first arg is a flag (starts with --), try Python CLI forwarding.
+  // This enables: socket --repo owner/repo --target-path .
+  if (commandOrAliasName?.startsWith('--')) {
+    const pythonResult = await spawnSocketPython(argv, {
+      stdio: 'inherit',
+    })
+    if (pythonResult.ok) {
+      // Successfully handled by Python CLI.
+      return
+    }
+    // If Python CLI failed, fall through to show help.
   }
 
   const lines = ['', 'Usage', `  $ ${name} <command>`]
@@ -553,6 +579,7 @@ export async function meowWithSubcommands(
       'organization',
       'package',
       //'patch',
+      'pip',
       // PNPM,
       'raw-npm',
       'raw-npx',

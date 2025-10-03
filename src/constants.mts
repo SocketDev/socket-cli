@@ -530,14 +530,9 @@ function getNpmStdioPipeOptions() {
 const LAZY_ENV = () => {
   const { env } = process
   const envHelpers = /*@__PURE__*/ require('@socketsecurity/registry/lib/env')
-  const utils = /*@__PURE__*/ require(
-    path.join(constants.rootPath, 'dist/utils.js'),
-  )
   const envAsBoolean = envHelpers.envAsBoolean
   const envAsNumber = envHelpers.envAsNumber
   const envAsString = envHelpers.envAsString
-  const getConfigValueOrUndef = utils.getConfigValueOrUndef
-  const readOrDefaultSocketJson = utils.readOrDefaultSocketJson
   const GITHUB_TOKEN = envAsString(env['GITHUB_TOKEN'])
   const INLINED_SOCKET_CLI_PUBLISHED_BUILD = envAsBoolean(
     process.env['INLINED_SOCKET_CLI_PUBLISHED_BUILD'],
@@ -681,11 +676,11 @@ const LAZY_ENV = () => {
     SOCKET_CLI_ACCEPT_RISKS: envAsBoolean(env[SOCKET_CLI_ACCEPT_RISKS]),
     // Change the base URL for Socket API calls.
     // https://github.com/SocketDev/socket-cli?tab=readme-ov-file#environment-variables-for-development
+    // Note: Cannot use getConfigValueOrUndef() here due to circular dependency.
     SOCKET_CLI_API_BASE_URL:
       envAsString(env['SOCKET_CLI_API_BASE_URL']) ||
       // TODO: Remove legacy environment variable name.
       envAsString(env['SOCKET_SECURITY_API_BASE_URL']) ||
-      getConfigValueOrUndef('apiBaseUrl') ||
       API_V0_URL,
     // Set the proxy that all requests are routed through.
     // https://github.com/SocketDev/socket-cli?tab=readme-ov-file#environment-variables-for-development
@@ -731,11 +726,9 @@ const LAZY_ENV = () => {
       'Socket Bot',
     // Change the base URL for GitHub REST API calls.
     // https://docs.github.com/en/rest
+    // Note: Cannot use readOrDefaultSocketJson() here due to circular dependency.
     SOCKET_CLI_GITHUB_API_URL:
-      envAsString(env['SOCKET_CLI_GITHUB_API_URL']) ||
-      readOrDefaultSocketJson(process.cwd())?.defaults?.scan?.github
-        ?.githubApiUrl ||
-      'https://api.github.com',
+      envAsString(env['SOCKET_CLI_GITHUB_API_URL']) || 'https://api.github.com',
     // A classic GitHub personal access token with the "repo" scope or a
     // fine-grained access token with at least read/write permissions set for
     // "Contents" and "Pull Request".

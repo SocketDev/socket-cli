@@ -23,6 +23,7 @@ import { cmdOrganizationPolicySecurity } from './commands/organization/cmd-organ
 import { cmdOrganization } from './commands/organization/cmd-organization.mts'
 import { cmdPackage } from './commands/package/cmd-package.mts'
 import { cmdPatch } from './commands/patch/cmd-patch.mts'
+import { cmdPip } from './commands/pip/cmd-pip.mts'
 import { cmdPnpm } from './commands/pnpm/cmd-pnpm.mts'
 import { cmdRawNpm } from './commands/raw-npm/cmd-raw-npm.mts'
 import { cmdRawNpx } from './commands/raw-npx/cmd-raw-npx.mts'
@@ -58,6 +59,7 @@ export const rootCommands = {
   organization: cmdOrganization,
   package: cmdPackage,
   patch: cmdPatch,
+  pip: cmdPip,
   'raw-npm': cmdRawNpm,
   'raw-npx': cmdRawNpx,
   repository: cmdRepository,
