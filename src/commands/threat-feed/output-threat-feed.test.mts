@@ -28,7 +28,6 @@ vi.mock('../../utils/ms-at-home.mts', () => ({
 
 vi.mock('../../constants.mts', () => ({
   default: {
-    blessedOptions: {},
     spinner: {
       isSpinning: false,
       start: vi.fn(),
