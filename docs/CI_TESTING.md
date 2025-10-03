@@ -4,20 +4,21 @@
 
 This project uses socket-registry's centralized CI testing infrastructure. The solution provides:
 
-- **🚨 MANDATORY**: Use `SocketDev/socket-registry/.github/workflows/ci.yml@main` for consistent CI
+- **🚨 MANDATORY**: Use `SocketDev/socket-registry/.github/workflows/ci.yml@<SHA>` with full commit SHA
+- **🚨 CRITICAL**: GitHub Actions require full-length commit SHAs, NOT `@main`. Format: `@662bbcab1b7533e24ba8e3446cffd8a7e5f7617e # main`
 - **Multi-platform testing**: Linux, Windows, and macOS support
 - **Multi-version Node.js matrix**: Test across Node.js 20, 22, and 24
 - **Flexible configuration**: Customizable test scripts, timeouts, and artifact uploads
 - **Memory optimization**: Configured heap sizes for CI and local environments
 - **Cross-platform compatibility**: Handles Windows and POSIX path differences
 
-**For socket-registry-specific package testing tools**, see `socket-registry/docs/CI_TESTING_TOOLS.md` and `socket-registry/docs/PACKAGE_TESTING_GUIDE.md`. These tools (`validate:packages`, `validate:ci`) are specific to socket-registry's package override structure.
+**🚨 Socket-registry-specific tools**: The `validate:packages` and `validate:ci` scripts are specific to socket-registry's package override structure and not applicable to other Socket projects. See `socket-registry/docs/CI_TESTING_TOOLS.md` for details.
 
 ## Workflow Structure
 
 ### Centralized CI Workflow
 
-**🚨 MANDATORY**: Use `SocketDev/socket-registry/.github/workflows/ci.yml@main` for consistent CI across all Socket projects.
+**🚨 MANDATORY**: Use `SocketDev/socket-registry/.github/workflows/ci.yml@<SHA>` with full commit SHA for consistent CI across all Socket projects.
 
 **Key Features:**
 - Matrix testing across Node.js versions and operating systems
@@ -34,7 +35,7 @@ Located at `.github/workflows/test.yml`, this workflow calls socket-registry's r
 ```yaml
 jobs:
   test:
-    uses: SocketDev/socket-registry/.github/workflows/ci.yml@main
+    uses: SocketDev/socket-registry/.github/workflows/ci.yml@662bbcab1b7533e24ba8e3446cffd8a7e5f7617e # main
     with:
       setup-script: 'pnpm run build:dist:src'
       node-versions: '[20, 22, 24]'
@@ -45,7 +46,7 @@ jobs:
       timeout-minutes: 15
 ```
 
-**Note**: For projects still using local reusable workflows (`.github/workflows/_reusable-test.yml`), migrate to socket-registry's centralized workflow.
+**🚨 CRITICAL**: Never use `@main` - always use the full 40-character commit SHA. Get the SHA with: `cd /path/to/socket-registry && git rev-parse main`
 
 ## Configuration Options
 
@@ -92,11 +93,11 @@ The CLI relies on compiled TypeScript outputs in `dist/` directory. Tests will f
 
 ## Best Practices
 
-### 1. Use Centralized Workflow
+### 1. Use Centralized CI Workflow
 
-Always use socket-registry's centralized CI workflow for consistency:
+Always use socket-registry's centralized CI workflow with full commit SHA:
 ```yaml
-uses: SocketDev/socket-registry/.github/workflows/ci.yml@main
+uses: SocketDev/socket-registry/.github/workflows/ci.yml@662bbcab1b7533e24ba8e3446cffd8a7e5f7617e # main
 ```
 
 ### 2. Configure Timeouts
@@ -224,14 +225,14 @@ pnpm run s
 ## Integration with socket-registry
 
 This project uses socket-registry's centralized CI infrastructure:
-- **CI Workflow**: `SocketDev/socket-registry/.github/workflows/ci.yml@main`
+- **CI Workflow**: `SocketDev/socket-registry/.github/workflows/ci.yml@<SHA>` (must use full commit SHA)
 - **Cross-platform compatibility**: Follows socket-registry guidelines
 - **Memory optimization**: Aligned with socket-registry patterns
 - **Build requirements**: Pre-test builds are CLI-specific
 
-**Socket-registry-specific tools**: The `validate:packages` and `validate:ci` scripts in socket-registry are specific to its package override structure and not applicable to CLI projects. See `socket-registry/docs/CI_TESTING_TOOLS.md` and `socket-registry/docs/PACKAGE_TESTING_GUIDE.md` for details.
+**🚨 Socket-registry-specific tools**: The `validate:packages` and `validate:ci` scripts are specific to socket-registry's package override structure and not applicable to other Socket projects. See `socket-registry/docs/CI_TESTING_TOOLS.md` for details.
 
-For consistency across Socket projects, follow the patterns established in socket-registry/CLAUDE.md and documented here.
+For consistency across Socket projects, follow the patterns established in `socket-registry/CLAUDE.md`.
 
 ## CLI-Specific Notes
 
