@@ -156,6 +156,8 @@ export type ENV = Remap<
       GITHUB_TOKEN: string
       INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION: string
       INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION: string
+      INLINED_SOCKET_CLI_PYTHON_VERSION: string
+      INLINED_SOCKET_CLI_PYTHON_BUILD_TAG: string
       INLINED_SOCKET_CLI_HOMEPAGE: string
       INLINED_SOCKET_CLI_LEGACY_BUILD: string
       INLINED_SOCKET_CLI_NAME: string
@@ -273,6 +275,7 @@ const HTTP_STATUS_NOT_FOUND = 404
 const HTTP_STATUS_TOO_MANY_REQUESTS = 429
 const HTTP_STATUS_UNAUTHORIZED = 401
 const NPM_BUGGY_OVERRIDES_PATCHED_VERSION = '11.2.0'
+const PYTHON_MIN_VERSION = '3.10.0'
 const NPM_REGISTRY_URL = 'https://registry.npmjs.org'
 const OUTPUT_JSON = 'json'
 const OUTPUT_MARKDOWN = 'markdown'
@@ -411,6 +414,7 @@ export type Constants = Remap<
     readonly NPM: typeof NPM
     readonly NPM_BUGGY_OVERRIDES_PATCHED_VERSION: typeof NPM_BUGGY_OVERRIDES_PATCHED_VERSION
     readonly NPM_REGISTRY_URL: typeof NPM_REGISTRY_URL
+    readonly PYTHON_MIN_VERSION: typeof PYTHON_MIN_VERSION
     readonly NPM_SHRINKWRAP_JSON: typeof NPM_SHRINKWRAP_JSON
     readonly NPX: typeof NPX
     readonly OUTPUT_JSON: typeof OUTPUT_JSON
@@ -585,6 +589,16 @@ const LAZY_ENV = () => {
     // The '@rollup/plugin-replace' will replace "process.env['INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION']".
     INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION: envAsString(
       process.env['INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION'],
+    ),
+    // Comp-time inlined Python version for python-build-standalone.
+    // The '@rollup/plugin-replace' will replace "process.env['INLINED_SOCKET_CLI_PYTHON_VERSION']".
+    INLINED_SOCKET_CLI_PYTHON_VERSION: envAsString(
+      process.env['INLINED_SOCKET_CLI_PYTHON_VERSION'],
+    ),
+    // Comp-time inlined Python build tag for python-build-standalone releases.
+    // The '@rollup/plugin-replace' will replace "process.env['INLINED_SOCKET_CLI_PYTHON_BUILD_TAG']".
+    INLINED_SOCKET_CLI_PYTHON_BUILD_TAG: envAsString(
+      process.env['INLINED_SOCKET_CLI_PYTHON_BUILD_TAG'],
     ),
     // Comp-time inlined Socket package homepage.
     // The '@rollup/plugin-replace' will replace "process.env['INLINED_SOCKET_CLI_HOMEPAGE']".
@@ -1043,6 +1057,7 @@ const constants: Constants = createConstantsObject(
     NODE_MODULES,
     NPM_BUGGY_OVERRIDES_PATCHED_VERSION,
     NPM_REGISTRY_URL,
+    PYTHON_MIN_VERSION,
     NPX,
     OUTPUT_JSON,
     OUTPUT_MARKDOWN,
@@ -1324,6 +1339,7 @@ export {
   HTTP_STATUS_UNAUTHORIZED,
   NPM_BUGGY_OVERRIDES_PATCHED_VERSION,
   NPM_REGISTRY_URL,
+  PYTHON_MIN_VERSION,
   OUTPUT_JSON,
   OUTPUT_MARKDOWN,
   OUTPUT_TEXT,
