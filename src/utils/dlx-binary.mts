@@ -28,6 +28,7 @@ import os from 'node:os'
 import path from 'node:path'
 
 import { readJson } from '@socketsecurity/registry/lib/fs'
+import { normalizePath } from '@socketsecurity/registry/lib/path'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import constants from '../constants.mts'
@@ -324,21 +325,23 @@ export async function dlxBinary(
 
 /**
  * Get the DLX binary cache directory path.
+ * Returns normalized path for cross-platform compatibility.
  */
 export function getDlxCachePath(): string {
-  return path.join(getSocketHomePath(), 'cache', 'dlx')
+  return normalizePath(path.join(getSocketHomePath(), 'cache', 'dlx'))
 }
 
 /**
  * Get the base .socket directory path.
  * Uses %USERPROFILE% on Windows, $HOME on POSIX systems.
+ * Returns normalized path for cross-platform compatibility.
  */
 export function getSocketHomePath(): string {
   const homedir = os.homedir()
   if (!homedir) {
     throw new InputError('Unable to determine home directory')
   }
-  return path.join(homedir, '.socket')
+  return normalizePath(path.join(homedir, '.socket'))
 }
 
 /**
