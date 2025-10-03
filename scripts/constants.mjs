@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url'
 
 import registryConstants from '@socketsecurity/registry/lib/constants'
 import { envAsBoolean } from '@socketsecurity/registry/lib/env'
+import { normalizePath } from '@socketsecurity/registry/lib/path'
 
 const {
   kInternalsSymbol,
@@ -74,32 +75,38 @@ const LAZY_ENV = () => {
   })
 }
 
-const lazyConfigPath = () => path.join(constants.rootPath, '.config')
+const lazyConfigPath = () =>
+  normalizePath(path.join(constants.rootPath, '.config'))
 
-const lazyDistPath = () => path.join(constants.rootPath, 'dist')
+const lazyDistPath = () => normalizePath(path.join(constants.rootPath, 'dist'))
 
-const lazyExternalPath = () => path.join(constants.distPath, 'external')
+const lazyExternalPath = () =>
+  normalizePath(path.join(constants.distPath, 'external'))
 
 const lazyRootPackageJsonPath = () =>
-  path.join(constants.rootPath, constants.PACKAGE_JSON)
+  normalizePath(path.join(constants.rootPath, constants.PACKAGE_JSON))
 
 const lazyRootPackageLockPath = () =>
-  path.join(constants.rootPath, constants.PNPM_LOCK_YAML)
+  normalizePath(path.join(constants.rootPath, constants.PNPM_LOCK_YAML))
 
 const lazyRootNodeModulesBinPath = () =>
-  path.join(constants.rootPath, constants.NODE_MODULES, '.bin')
+  normalizePath(path.join(constants.rootPath, constants.NODE_MODULES, '.bin'))
 
 const lazyRootPath = () =>
-  path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
-
-const lazySocketRegistryPath = () =>
-  path.join(
-    constants.externalPath,
-    constants.SOCKET_REGISTRY_PACKAGE_NAME,
-    'dist',
+  normalizePath(
+    path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'),
   )
 
-const lazySrcPath = () => path.join(constants.rootPath, 'src')
+const lazySocketRegistryPath = () =>
+  normalizePath(
+    path.join(
+      constants.externalPath,
+      constants.SOCKET_REGISTRY_PACKAGE_NAME,
+      'dist',
+    ),
+  )
+
+const lazySrcPath = () => normalizePath(path.join(constants.rootPath, 'src'))
 
 const constants = createConstantsObject(
   {
