@@ -55,8 +55,8 @@ Supports version 2 format with `projectIgnorePaths` for excluding files from rep
 - `SOCKET_CLI_API_TOKEN` - Socket API token
 - `SOCKET_CLI_CONFIG` - JSON configuration object
 - `SOCKET_CLI_GITHUB_API_URL` - GitHub API base URL
-- `SOCKET_CLI_GIT_USER_EMAIL` - Git user email (default: `github-actions[bot]@users.noreply.github.com`)
-- `SOCKET_CLI_GIT_USER_NAME` - Git user name (default: `github-actions[bot]`)
+- `SOCKET_CLI_GIT_USER_EMAIL` - Git user email (default: `94589996+socket-bot@users.noreply.github.com`)
+- `SOCKET_CLI_GIT_USER_NAME` - Git user name (default: `Socket Bot`)
 - `SOCKET_CLI_GITHUB_TOKEN` - GitHub token with repo access (alias: `GITHUB_TOKEN`)
 - `SOCKET_CLI_NO_API_TOKEN` - Disable default API token
 - `SOCKET_CLI_NPM_PATH` - Path to npm directory
