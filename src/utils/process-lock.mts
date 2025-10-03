@@ -39,19 +39,19 @@ interface LockOptions {
   /**
    * Maximum number of retry attempts.
    */
-  retries?: number
+  retries?: number | undefined
   /**
    * Base delay between retries in milliseconds.
    */
-  baseDelayMs?: number
+  baseDelayMs?: number | undefined
   /**
    * Maximum delay between retries in milliseconds.
    */
-  maxDelayMs?: number
+  maxDelayMs?: number | undefined
   /**
    * Stale lock timeout in milliseconds.
    */
-  staleMs?: number
+  staleMs?: number | undefined
 }
 
 /**
@@ -196,7 +196,7 @@ class ProcessLockManager {
   async withLock<T>(
     lockPath: string,
     fn: () => Promise<T>,
-    options?: LockOptions,
+    options?: LockOptions | undefined,
   ): Promise<T> {
     const release = await this.acquire(lockPath, options)
 

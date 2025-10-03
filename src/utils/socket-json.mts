@@ -37,49 +37,65 @@ export interface SocketJson {
   '|_____|___|___|_,_|___|_|.dev': string
   version: number
 
-  defaults?: {
-    manifest?: {
-      conda?: {
-        disabled?: boolean | undefined
-        infile?: string | undefined
-        outfile?: string | undefined
-        stdin?: boolean | undefined
-        stdout?: boolean | undefined
-        target?: string | undefined
-        verbose?: boolean | undefined
+  defaults?:
+    | {
+        manifest?:
+          | {
+              conda?:
+                | {
+                    disabled?: boolean | undefined
+                    infile?: string | undefined
+                    outfile?: string | undefined
+                    stdin?: boolean | undefined
+                    stdout?: boolean | undefined
+                    target?: string | undefined
+                    verbose?: boolean | undefined
+                  }
+                | undefined
+              gradle?:
+                | {
+                    disabled?: boolean | undefined
+                    bin?: string | undefined
+                    gradleOpts?: string | undefined
+                    verbose?: boolean | undefined
+                  }
+                | undefined
+              sbt?:
+                | {
+                    disabled?: boolean | undefined
+                    infile?: string | undefined
+                    stdin?: boolean | undefined
+                    bin?: string | undefined
+                    outfile?: string | undefined
+                    sbtOpts?: string | undefined
+                    stdout?: boolean | undefined
+                    verbose?: boolean | undefined
+                  }
+                | undefined
+            }
+          | undefined
+        scan?:
+          | {
+              create?:
+                | {
+                    autoManifest?: boolean | undefined
+                    repo?: string | undefined
+                    report?: boolean | undefined
+                    branch?: string | undefined
+                  }
+                | undefined
+              github?:
+                | {
+                    all?: boolean | undefined
+                    githubApiUrl?: string | undefined
+                    orgGithub?: string | undefined
+                    repos?: string | undefined
+                  }
+                | undefined
+            }
+          | undefined
       }
-      gradle?: {
-        disabled?: boolean | undefined
-        bin?: string | undefined
-        gradleOpts?: string | undefined
-        verbose?: boolean | undefined
-      }
-      sbt?: {
-        disabled?: boolean | undefined
-        infile?: string | undefined
-        stdin?: boolean | undefined
-        bin?: string | undefined
-        outfile?: string | undefined
-        sbtOpts?: string | undefined
-        stdout?: boolean | undefined
-        verbose?: boolean | undefined
-      }
-    }
-    scan?: {
-      create?: {
-        autoManifest?: boolean | undefined
-        repo?: string | undefined
-        report?: boolean | undefined
-        branch?: string | undefined
-      }
-      github?: {
-        all?: boolean | undefined
-        githubApiUrl?: string | undefined
-        orgGithub?: string | undefined
-        repos?: string | undefined
-      }
-    }
-  }
+    | undefined
 }
 
 export function readOrDefaultSocketJson(cwd: string): SocketJson {

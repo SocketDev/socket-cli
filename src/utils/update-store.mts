@@ -52,7 +52,7 @@ interface UpdateStoreOptions {
   /**
    * Custom store file path (defaults to ~/.socket/_socket/updater/state.json)
    */
-  storePath?: string
+  storePath?: string | undefined
 }
 
 /**

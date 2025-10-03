@@ -1,3 +1,5 @@
+/** @fileoverview Extended meow CLI framework with subcommand support. Provides command routing, help generation, flag validation, and configuration management for Socket CLI commands. Integrates commonFlags, outputFlags, and custom flag sets. */
+
 import meow from 'meow'
 import terminalLink from 'terminal-link'
 import colors from 'yoctocolors-cjs'

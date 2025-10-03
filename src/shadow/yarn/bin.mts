@@ -1,3 +1,5 @@
+/** @fileoverview yarn shadow binary entry point for Socket CLI. Wraps yarn commands with security scanning before package installation. Supports both Yarn Classic (1.x) and Yarn Berry (2.x+). */
+
 import { fileURLToPath } from 'node:url'
 
 import { spawn } from '@socketsecurity/registry/lib/spawn'

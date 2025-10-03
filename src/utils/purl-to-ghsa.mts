@@ -1,3 +1,5 @@
+/** @fileoverview PURL to GHSA mapping utilities for Socket CLI. Converts package URLs to GitHub Security Advisory identifiers and fetches vulnerability details from the GitHub Advisory Database. Supports npm, PyPI, Maven, Cargo, and other ecosystems. */
+
 import { cacheFetch, getOctokit } from './github.mts'
 import { getPurlObject } from './purl.mts'
 import { LATEST } from '../constants.mts'

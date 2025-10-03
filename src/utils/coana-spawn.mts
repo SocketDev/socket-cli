@@ -25,7 +25,7 @@ export type CoanaSpawnOptions = ShadowBinOptions & {
  */
 export async function spawnCoana(
   args: string[] | readonly string[],
-  orgSlug?: string,
+  orgSlug?: string | undefined,
   options?: CoanaSpawnOptions | undefined,
   spawnExtra?: SpawnExtra | undefined,
 ): Promise<CResult<string>> {

@@ -1,3 +1,5 @@
+/** @fileoverview Test fixture utilities for Socket CLI tests. Creates temporary copies of fixture directories with automatic cleanup for isolated test execution. */
+
 import { promises as fs } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
@@ -14,7 +16,7 @@ import trash from 'trash'
  */
 export async function createTempFixture(
   fixturePath: string,
-  cleanupHook?: (cleanup: () => Promise<void>) => void,
+  cleanupHook?: ((cleanup: () => Promise<void>) => void) | undefined,
 ): Promise<string> {
   // Create a unique temporary directory.
   const tempBaseDir = tmpdir()
@@ -51,7 +53,7 @@ export async function createTempFixture(
  */
 export async function createTempFixtures(
   fixtures: Record<string, string>,
-  cleanupHook?: (cleanup: () => Promise<void>) => void,
+  cleanupHook?: ((cleanup: () => Promise<void>) => void) | undefined,
 ): Promise<Record<string, string>> {
   const tempFixtures = Object.create(null) as Record<string, string>
   const tempDirs: string[] = []

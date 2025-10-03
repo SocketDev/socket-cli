@@ -1,3 +1,5 @@
+/** @fileoverview Yarn version detection utilities for Socket CLI. Detects and caches Yarn Berry (2.x+) vs classic Yarn (1.x) installations to handle version-specific behaviors. */
+
 import { spawnSync } from '@socketsecurity/registry/lib/spawn'
 
 import { getYarnBinPath } from './yarn-paths.mts'

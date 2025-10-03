@@ -1,3 +1,5 @@
+/** @fileoverview npm install execution utilities for Socket CLI shadow wrapper. Executes npm install commands with proper flag filtering and spinner integration. */
+
 import {
   isNpmAuditFlag,
   isNpmFundFlag,

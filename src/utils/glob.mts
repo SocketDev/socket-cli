@@ -1,3 +1,5 @@
+/** @fileoverview Glob pattern matching utilities for Socket CLI. Provides file searching with gitignore-style exclusions, socket.yml ignore patterns, and package manager specific filtering. Integrates with fast-glob for performance. */
+
 import path from 'node:path'
 
 import fastGlob from 'fast-glob'

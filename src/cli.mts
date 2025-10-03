@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+/** @fileoverview Main CLI entry point that orchestrates command routing and execution. Integrates with meow for argument parsing and delegates to subcommand modules in src/commands/. */
+
 import process from 'node:process'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 

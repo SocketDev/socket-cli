@@ -1,3 +1,5 @@
+/** @fileoverview pnpm shadow binary entry point for Socket CLI. Wraps pnpm commands with security scanning of lockfiles before package installation. Supports both add commands and lockfile-based scanning. */
+
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'

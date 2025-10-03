@@ -1,3 +1,5 @@
+/** @fileoverview Central constants module that imports base constants from @socketsecurity/registry and defines CLI-specific constants. Provides paths, environment variables, and configuration shared across all commands. */
+
 import { realpathSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import os from 'node:os'

@@ -43,19 +43,19 @@ export interface DlxBinaryOptions {
   /** URL to download the binary from. */
   url: string
   /** Optional name for the cached binary (defaults to URL hash). */
-  name?: string
+  name?: string | undefined
   /** Expected checksum (sha256) for verification. */
-  checksum?: string
+  checksum?: string | undefined
   /** Cache TTL in milliseconds (default: 7 days). */
-  cacheTtl?: number
+  cacheTtl?: number | undefined
   /** Force re-download even if cached. */
-  force?: boolean
+  force?: boolean | undefined
   /** Platform override (defaults to current platform). */
-  platform?: NodeJS.Platform
+  platform?: NodeJS.Platform | undefined
   /** Architecture override (defaults to current arch). */
-  arch?: string
+  arch?: string | undefined
   /** Additional spawn options. */
-  spawnOptions?: SpawnOptions
+  spawnOptions?: SpawnOptions | undefined
 }
 
 export interface DlxBinaryResult {

@@ -1,3 +1,5 @@
+/** @fileoverview Common shadow binary utilities for Socket CLI. Provides shared functionality for extracting package PURLs from package manager commands and performing security scanning before installation. Used by npm, pnpm, and yarn shadow wrappers. */
+
 import { fileURLToPath } from 'node:url'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
@@ -84,18 +86,18 @@ async function extractPackagePurlsFromPackageJson(
 export type PackageScanOptions = {
   acceptRisks: boolean
   command: string | undefined
-  cwd?: string | URL
-  dlxCommands?: Set<string>
+  cwd?: string | URL | undefined
+  dlxCommands?: Set<string> | undefined
   installCommands: Set<string>
   managerName: string
-  nothrow?: boolean
+  nothrow?: boolean | undefined
   rawArgs: string[] | readonly string[]
   spinner?: Spinner | undefined
   viewAllRisks: boolean
 }
 
 export type PackageScanResult = {
-  alertsMap?: AlertsByPurl
+  alertsMap?: AlertsByPurl | undefined
   shouldExit: boolean
 }
 

@@ -41,7 +41,7 @@ export interface UpdateNotificationOptions {
  */
 function formatUpdateMessage(options: UpdateNotificationOptions): {
   message: string
-  command?: string
+  command?: string | undefined
   changelog: string
 } {
   const { current, latest, name } = options

@@ -1,3 +1,5 @@
+/** @fileoverview Flag definitions and utilities for meow CLI argument parsing. Exports commonFlags (--dry-run, --config), outputFlags (--json, --markdown), and memory management utilities. */
+
 import os from 'node:os'
 
 import meow from 'meow'

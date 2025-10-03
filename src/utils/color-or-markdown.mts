@@ -31,8 +31,8 @@ import indentString from '@socketregistry/indent-string/index.cjs'
 export function colorOrMarkdown(
   format: string,
   plainText: string,
-  coloredText?: string,
-  markdownText?: string,
+  coloredText?: string | undefined,
+  markdownText?: string | undefined,
 ): string {
   if (format === 'text') {
     return plainText

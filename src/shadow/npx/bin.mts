@@ -1,3 +1,5 @@
+/** @fileoverview npx shadow binary entry point for Socket CLI. Wraps npx commands with security scanning before temporary package execution. */
+
 import { NPX } from '../../constants.mts'
 import shadowNpmBase from '../npm-base.mts'
 

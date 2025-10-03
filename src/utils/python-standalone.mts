@@ -288,11 +288,13 @@ export async function ensureSocketCli(pythonBin: string): Promise<void> {
  */
 export async function spawnSocketPython(
   args: string[] | readonly string[],
-  options?: {
-    cwd?: string
-    env?: Record<string, string>
-    stdio?: 'inherit' | 'pipe'
-  },
+  options?:
+    | {
+        cwd?: string | undefined
+        env?: Record<string, string> | undefined
+        stdio?: 'inherit' | 'pipe' | undefined
+      }
+    | undefined,
 ): Promise<CResult<string>> {
   try {
     // Ensure Python is available

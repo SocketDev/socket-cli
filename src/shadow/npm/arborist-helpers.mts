@@ -1,3 +1,5 @@
+/** @fileoverview npm Arborist integration helpers for Socket CLI. Processes npm dependency trees to extract package information and perform security scanning using npm's internal Arborist library. */
+
 import { getOwn } from '@socketsecurity/registry/lib/objects'
 import { parseUrl } from '@socketsecurity/registry/lib/url'
 

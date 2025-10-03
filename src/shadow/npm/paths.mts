@@ -1,3 +1,5 @@
+/** @fileoverview npm Arborist path resolution utilities for Socket CLI. Locates and caches npm's internal @npmcli/arborist package path for dependency tree analysis. */
+
 import path from 'node:path'
 
 import { normalizePath } from '@socketsecurity/registry/lib/path'

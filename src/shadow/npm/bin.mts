@@ -1,3 +1,5 @@
+/** @fileoverview npm shadow binary entry point for Socket CLI. Wraps npm commands with security scanning before package installation. */
+
 import { NPM } from '../../constants.mts'
 import shadowNpmBase from '../npm-base.mts'
 

@@ -1,3 +1,5 @@
+/** @fileoverview Base npm shadow wrapper implementation for Socket CLI. Intercepts npm/npx commands, performs security scanning via Socket API, and delegates to the real package manager binary. Handles argument filtering, IPC communication, and error propagation. */
+
 import { fileURLToPath } from 'node:url'
 
 import {

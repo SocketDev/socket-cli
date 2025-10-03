@@ -1,3 +1,5 @@
+/** @fileoverview stdio IPC channel utilities for Socket CLI shadow binaries. Ensures child process stdio configuration includes IPC channel for parent-child communication in shadow wrappers. */
+
 import type { StdioOptions } from 'node:child_process'
 
 /**

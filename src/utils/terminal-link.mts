@@ -1,3 +1,5 @@
+/** @fileoverview Terminal hyperlink utilities for Socket CLI. Creates clickable terminal links for files, URLs, email addresses, and Socket.dev resources. Supports both terminal-native hyperlinks and plain text fallback. */
+
 import path from 'node:path'
 
 import terminalLink from 'terminal-link'

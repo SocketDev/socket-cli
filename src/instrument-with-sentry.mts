@@ -1,3 +1,5 @@
+/** @fileoverview Sentry error monitoring initialization for production builds. Only included when INLINED_SOCKET_CLI_SENTRY_BUILD is set. Configures error tracking with Socket-specific context. */
+
 // This should ONLY be included in the special Sentry build!
 // Otherwise the Sentry dependency won't even be present in the manifest.
 
