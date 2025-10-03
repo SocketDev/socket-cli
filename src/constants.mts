@@ -26,6 +26,10 @@ const BUN = regConsts.BUN
 const CHANGELOG_MD = regConsts.CHANGELOG_MD
 const CI = regConsts.CI
 const COLUMN_LIMIT = regConsts.COLUMN_LIMIT
+const CACHE_DIR = regConsts.CACHE_DIR
+const CACHE_GITHUB_DIR = regConsts.CACHE_GITHUB_DIR
+const CACHE_SOCKET_API_DIR = regConsts.CACHE_SOCKET_API_DIR
+const CACHE_TTL_DIR = regConsts.CACHE_TTL_DIR
 const DOT_GIT_DIR = regConsts.DOT_GIT_DIR
 const DOT_PACKAGE_LOCK_JSON = regConsts.DOT_PACKAGE_LOCK_JSON
 const DOT_SOCKET_DIR = regConsts.DOT_SOCKET_DIR
@@ -82,6 +86,7 @@ const REGISTRY = regConsts.REGISTRY
 const REGISTRY_SCOPE_DELIMITER = regConsts.REGISTRY_SCOPE_DELIMITER
 const RESOLUTIONS = regConsts.RESOLUTIONS
 const SOCKET_GITHUB_ORG = regConsts.SOCKET_GITHUB_ORG
+const SOCKET_CLI_APP_NAME = regConsts.SOCKET_CLI_APP_NAME
 const SOCKET_IPC_HANDSHAKE = regConsts.SOCKET_IPC_HANDSHAKE
 const SOCKET_OVERRIDE_SCOPE = regConsts.SOCKET_OVERRIDE_SCOPE
 const SOCKET_PUBLIC_API_TOKEN = regConsts.SOCKET_PUBLIC_API_TOKEN
@@ -216,6 +221,7 @@ const ALERT_TYPE_CVE = 'cve'
 const ALERT_TYPE_MEDIUM_CVE = 'mediumCVE'
 const ALERT_TYPE_MILD_CVE = 'mildCVE'
 const API_V0_URL = 'https://api.socket.dev/v0/'
+const CLI_DIR = 'cli'
 const CONFIG_KEY_API_BASE_URL = 'apiBaseUrl'
 const CONFIG_KEY_API_PROXY = 'apiProxy'
 const CONFIG_KEY_API_TOKEN = 'apiToken'
@@ -279,6 +285,7 @@ const REPORT_LEVEL_IGNORE = 'ignore'
 const REPORT_LEVEL_MONITOR = 'monitor'
 const REPORT_LEVEL_WARN = 'warn'
 const REQUIREMENTS_TXT = 'requirements.txt'
+const SEA_DIR = 'sea'
 const SEA_UPDATE_COMMAND = 'self-update'
 const SOCKET_CLI_ACCEPT_RISKS = 'SOCKET_CLI_ACCEPT_RISKS'
 const SOCKET_CLI_BIN_NAME = 'socket'
@@ -296,12 +303,18 @@ const SOCKET_JSON = 'socket.json'
 const SOCKET_WEBSITE_URL = 'https://socket.dev'
 const SOCKET_YAML = 'socket.yaml'
 const SOCKET_YML = 'socket.yml'
+const TMP_DIR = 'tmp'
 const TOKEN_PREFIX = 'sktsec_'
 const TOKEN_PREFIX_LENGTH = TOKEN_PREFIX.length
 const UPDATE_CHECK_TTL = 24 * 60 * 60 * 1_000
 const UPDATE_NOTIFIER_TIMEOUT = 10_000
 const UPDATE_STORE_DIR = '.socket/_socket'
 const UPDATE_STORE_FILE_NAME = 'update-store.json'
+const UPDATER_BACKUPS_DIR = 'backups'
+const UPDATER_DIR = 'updater'
+const UPDATER_DOWNLOADS_DIR = 'downloads'
+const UPDATER_STAGING_DIR = 'staging'
+const UPDATER_STATE_JSON = 'state.json'
 const V1_MIGRATION_GUIDE_URL = 'https://docs.socket.dev/docs/v1-migration-guide'
 
 export type Constants = Remap<
@@ -315,10 +328,15 @@ export type Constants = Remap<
     readonly ALERT_TYPE_MEDIUM_CVE: typeof ALERT_TYPE_MEDIUM_CVE
     readonly ALERT_TYPE_MILD_CVE: typeof ALERT_TYPE_MILD_CVE
     readonly API_V0_URL: typeof API_V0_URL
+    readonly CLI_DIR: typeof CLI_DIR
     readonly BUN: typeof BUN
     readonly BUN_LOCK: typeof BUN_LOCK
     readonly BUN_LOCKB: typeof BUN_LOCKB
     readonly CHANGELOG_MD: typeof CHANGELOG_MD
+    readonly CACHE_DIR: typeof CACHE_DIR
+    readonly CACHE_GITHUB_DIR: typeof CACHE_GITHUB_DIR
+    readonly CACHE_SOCKET_API_DIR: typeof CACHE_SOCKET_API_DIR
+    readonly CACHE_TTL_DIR: typeof CACHE_TTL_DIR
     readonly CONFIG_KEY_API_BASE_URL: typeof CONFIG_KEY_API_BASE_URL
     readonly CONFIG_KEY_API_PROXY: typeof CONFIG_KEY_API_PROXY
     readonly CONFIG_KEY_API_TOKEN: typeof CONFIG_KEY_API_TOKEN
@@ -337,6 +355,11 @@ export type Constants = Remap<
     readonly UPDATE_NOTIFIER_TIMEOUT: typeof UPDATE_NOTIFIER_TIMEOUT
     readonly UPDATE_STORE_DIR: typeof UPDATE_STORE_DIR
     readonly UPDATE_STORE_FILE_NAME: typeof UPDATE_STORE_FILE_NAME
+    readonly UPDATER_BACKUPS_DIR: typeof UPDATER_BACKUPS_DIR
+    readonly UPDATER_DIR: typeof UPDATER_DIR
+    readonly UPDATER_DOWNLOADS_DIR: typeof UPDATER_DOWNLOADS_DIR
+    readonly UPDATER_STAGING_DIR: typeof UPDATER_STAGING_DIR
+    readonly UPDATER_STATE_JSON: typeof UPDATER_STATE_JSON
     readonly DRY_RUN_NOT_SAVING: typeof DRY_RUN_NOT_SAVING
     readonly EMPTY_VALUE: typeof EMPTY_VALUE
     readonly ENV: ENV
@@ -406,7 +429,9 @@ export type Constants = Remap<
     readonly REPORT_LEVEL_MONITOR: typeof REPORT_LEVEL_MONITOR
     readonly REPORT_LEVEL_WARN: typeof REPORT_LEVEL_WARN
     readonly REQUIREMENTS_TXT: typeof REQUIREMENTS_TXT
+    readonly SEA_DIR: typeof SEA_DIR
     readonly RESOLUTIONS: typeof RESOLUTIONS
+    readonly SOCKET_CLI_APP_NAME: typeof SOCKET_CLI_APP_NAME
     readonly SOCKET_CLI_ACCEPT_RISKS: typeof SOCKET_CLI_ACCEPT_RISKS
     readonly SOCKET_CLI_BIN_NAME: typeof SOCKET_CLI_BIN_NAME
     readonly SOCKET_CLI_GITHUB_REPO: typeof SOCKET_CLI_GITHUB_REPO
@@ -426,6 +451,7 @@ export type Constants = Remap<
     readonly SOCKET_WEBSITE_URL: typeof SOCKET_WEBSITE_URL
     readonly SOCKET_YAML: typeof SOCKET_YAML
     readonly SOCKET_YML: typeof SOCKET_YML
+    readonly TMP_DIR: typeof TMP_DIR
     readonly TOKEN_PREFIX: typeof TOKEN_PREFIX
     readonly TOKEN_PREFIX_LENGTH: typeof TOKEN_PREFIX_LENGTH
     readonly TSCONFIG_JSON: typeof TSCONFIG_JSON
@@ -956,7 +982,12 @@ const constants: Constants = createConstantsObject(
     ALERT_TYPE_MEDIUM_CVE,
     ALERT_TYPE_MILD_CVE,
     API_V0_URL,
+    CLI_DIR,
     BUN,
+    CACHE_DIR,
+    CACHE_GITHUB_DIR,
+    CACHE_SOCKET_API_DIR,
+    CACHE_TTL_DIR,
     CONFIG_KEY_API_BASE_URL,
     CONFIG_KEY_API_PROXY,
     CONFIG_KEY_API_TOKEN,
@@ -1028,6 +1059,8 @@ const constants: Constants = createConstantsObject(
     REPORT_LEVEL_MONITOR,
     REPORT_LEVEL_WARN,
     REQUIREMENTS_TXT,
+    SEA_DIR,
+    SOCKET_CLI_APP_NAME,
     SOCKET_CLI_ACCEPT_RISKS,
     SOCKET_CLI_BIN_NAME,
     SOCKET_CLI_GITHUB_REPO,
@@ -1044,11 +1077,17 @@ const constants: Constants = createConstantsObject(
     SOCKET_WEBSITE_URL,
     SOCKET_YAML,
     SOCKET_YML,
+    TMP_DIR,
     TOKEN_PREFIX,
     TOKEN_PREFIX_LENGTH,
     TSCONFIG_JSON,
     UNKNOWN_ERROR,
     UNKNOWN_VALUE,
+    UPDATER_BACKUPS_DIR,
+    UPDATER_DIR,
+    UPDATER_DOWNLOADS_DIR,
+    UPDATER_STAGING_DIR,
+    UPDATER_STATE_JSON,
     V1_MIGRATION_GUIDE_URL,
     VLT,
     YARN,
@@ -1226,6 +1265,10 @@ export {
   ALERT_TYPE_MEDIUM_CVE,
   ALERT_TYPE_MILD_CVE,
   API_V0_URL,
+  CACHE_DIR,
+  CACHE_GITHUB_DIR,
+  CACHE_SOCKET_API_DIR,
+  CACHE_TTL_DIR,
   CONFIG_KEY_API_BASE_URL,
   CONFIG_KEY_API_PROXY,
   CONFIG_KEY_API_TOKEN,
@@ -1292,6 +1335,15 @@ export {
   REPORT_LEVEL_MONITOR,
   REPORT_LEVEL_WARN,
   REQUIREMENTS_TXT,
+  CLI_DIR,
+  SEA_DIR,
+  TMP_DIR,
+  UPDATER_BACKUPS_DIR,
+  UPDATER_DIR,
+  UPDATER_DOWNLOADS_DIR,
+  UPDATER_STAGING_DIR,
+  UPDATER_STATE_JSON,
+  SOCKET_CLI_APP_NAME,
   SOCKET_CLI_ACCEPT_RISKS,
   SOCKET_CLI_BIN_NAME,
   SOCKET_CLI_GITHUB_REPO,

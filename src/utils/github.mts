@@ -43,6 +43,7 @@ import { parseUrl } from '@socketsecurity/registry/lib/url'
 
 import { debugDir, debugFn, isDebug } from './debug.mts'
 import { formatErrorWithDetail } from './errors.mts'
+import { getSocketCliGithubCacheDir } from './paths.mts'
 import constants from '../constants.mts'
 
 import type { components } from '@octokit/openapi-types'
@@ -56,7 +57,8 @@ async function readCache(
   // 5 minute in milliseconds time to live (TTL).
   ttlMs = 5 * 60 * 1000,
 ): Promise<JsonContent | undefined> {
-  const cacheJsonPath = path.join(constants.githubCachePath, `${key}.json`)
+  const githubCachePath = getSocketCliGithubCacheDir()
+  const cacheJsonPath = path.join(githubCachePath, `${key}.json`)
   const stat = safeStatsSync(cacheJsonPath)
   if (stat) {
     const isExpired = Date.now() - Number(stat.mtimeMs) > ttlMs
@@ -71,7 +73,7 @@ export async function writeCache(
   key: string,
   data: JsonContent,
 ): Promise<void> {
-  const { githubCachePath } = constants
+  const githubCachePath = getSocketCliGithubCacheDir()
   const cacheJsonPath = path.join(githubCachePath, `${key}.json`)
   if (!existsSync(githubCachePath)) {
     await fs.mkdir(githubCachePath, { recursive: true })

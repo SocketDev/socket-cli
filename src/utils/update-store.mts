@@ -15,7 +15,7 @@
  * - Error-resistant implementation
  *
  * Storage Format:
- * - Stores in ~/.socket/_socket/update-store.json
+ * - Stores in ~/.socket/_socket/updater/state.json
  * - Per-package update records with timestamps
  * - Thread-safe operations using process lock utility
  *
@@ -39,6 +39,7 @@ import { readFileUtf8Sync } from '@socketsecurity/registry/lib/fs'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { UPDATE_STORE_DIR, UPDATE_STORE_FILE_NAME } from '../constants.mts'
+import { getSocketCliUpdaterStateJsonPath } from './paths.mts'
 import { processLock } from './process-lock.mts'
 
 interface StoreRecord {
@@ -49,7 +50,7 @@ interface StoreRecord {
 
 interface UpdateStoreOptions {
   /**
-   * Custom store file path (defaults to ~/.socket/_socket/update-store.json)
+   * Custom store file path (defaults to ~/.socket/_socket/updater/state.json)
    */
   storePath?: string
 }
@@ -62,10 +63,54 @@ class UpdateStore {
   private readonly lockPath: string
 
   constructor(options: UpdateStoreOptions = {}) {
-    this.storePath =
-      options.storePath ??
-      path.join(os.homedir(), UPDATE_STORE_DIR, UPDATE_STORE_FILE_NAME)
+    this.storePath = options.storePath ?? getSocketCliUpdaterStateJsonPath()
     this.lockPath = `${this.storePath}.lock`
+    this.migrateOldStore()
+  }
+
+  /**
+   * Migrate data from old store location to new location.
+   * Old location: ~/.socket/_socket/update-store.json
+   * New location: ~/.socket/_socket/updater/state.json
+   */
+  private migrateOldStore(): void {
+    const oldStorePath = path.join(
+      os.homedir(),
+      UPDATE_STORE_DIR,
+      UPDATE_STORE_FILE_NAME,
+    )
+
+    if (oldStorePath === this.storePath || !existsSync(oldStorePath)) {
+      return
+    }
+
+    try {
+      if (existsSync(this.storePath)) {
+        logger.info(
+          'New store file exists, skipping migration from old location',
+        )
+        return
+      }
+
+      const content = readFileSync(oldStorePath, 'utf8')
+      if (!content.trim()) {
+        unlinkSync(oldStorePath)
+        return
+      }
+
+      const storeDir = path.dirname(this.storePath)
+      mkdirSync(storeDir, { recursive: true })
+      writeFileSync(this.storePath, content, 'utf8')
+      unlinkSync(oldStorePath)
+
+      logger.info(
+        `Migrated update store from ${oldStorePath} to ${this.storePath}`,
+      )
+    } catch (error) {
+      logger.warn(
+        `Failed to migrate old store: ${error instanceof Error ? error.message : String(error)}`,
+      )
+    }
   }
 
   /**

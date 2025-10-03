@@ -16,11 +16,14 @@ vi.mock('@socketsecurity/registry/lib/fs', () => ({
   writeJson: vi.fn(),
 }))
 
+vi.mock('./paths.mts', () => ({
+  getSocketCliGithubCacheDir: vi.fn(() => '/cache/github'),
+}))
+
 vi.mock('../constants.mts', () => {
   const kInternalsSymbol = Symbol.for('kInternalsSymbol')
   return {
     default: {
-      githubCachePath: '/cache/github',
       ENV: {
         DISABLE_GITHUB_CACHE: false,
       },
@@ -144,7 +147,6 @@ describe('github utilities', () => {
       const kInternalsSymbol = Symbol.for('kInternalsSymbol')
       vi.doMock('../constants.mts', () => ({
         default: {
-          githubCachePath: '/cache/github',
           ENV: {
             DISABLE_GITHUB_CACHE: true,
           },
