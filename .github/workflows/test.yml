@@ -8,4 +8,4 @@ permissions:
 
 jobs:
   test:
-    uses: SocketDev/socket-registry/.github/workflows/test.yml@dc181fb5c81502b04d1ef8ee22ea9f0b4e6ec3a0 # main
+    uses: SocketDev/socket-registry/.github/workflows/test.yml@d1bbbbad7d1b29b8b36dc5871bd7f71df6b51ac4 # main
