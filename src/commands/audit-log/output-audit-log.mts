@@ -1,3 +1,5 @@
+/** @fileoverview Audit log output formatting for Socket CLI. Formats audit log events in JSON, markdown, or launches interactive TUI viewer with pagination and real-time updates. */
+
 import path from 'node:path'
 
 import { logger } from '@socketsecurity/registry/lib/logger'

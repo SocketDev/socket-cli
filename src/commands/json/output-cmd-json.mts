@@ -1,3 +1,5 @@
+/** @fileoverview JSON command output formatter for Socket CLI. Displays contents of socket.json configuration file with path validation, file type checks, and tildified path display for better UX. */
+
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 

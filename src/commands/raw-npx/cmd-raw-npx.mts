@@ -1,3 +1,5 @@
+/** @fileoverview Raw NPX command for Socket CLI. Executes native npx without Socket security scanning. Useful for bypassing Socket wrapper when needed. Hidden command for advanced users. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { runRawNpx } from './run-raw-npx.mts'

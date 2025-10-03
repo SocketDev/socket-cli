@@ -1,3 +1,5 @@
+/** @fileoverview Socket wrapper installer utility for Socket CLI. Adds Socket CLI wrapper configuration to package.json or config files. Modifies postinstall scripts to integrate Socket security scanning. */
+
 import fs from 'node:fs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'

@@ -1,3 +1,5 @@
+/** @fileoverview Login credential persistence for Socket CLI. Writes API token, enforced organizations, base URL, and proxy settings to Socket configuration file. Handles configuration updates for successful login. */
+
 import {
   CONFIG_KEY_API_BASE_URL,
   CONFIG_KEY_API_PROXY,

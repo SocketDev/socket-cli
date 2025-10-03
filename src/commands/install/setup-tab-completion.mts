@@ -1,3 +1,5 @@
+/** @fileoverview Tab completion setup utilities for Socket CLI. Installs bash completion scripts to shell rc files, validates target shells, and manages script sourcing configuration. */
+
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'

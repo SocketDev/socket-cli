@@ -1,3 +1,5 @@
+/** @fileoverview Raw NPM runner utility for Socket CLI. Spawns native npm process without Socket security scanning. Locates and executes system npm binary directly. */
+
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import constants from '../../constants.mts'

@@ -1,3 +1,5 @@
+/** @fileoverview Threat feed API fetcher for Socket CLI. Retrieves security threat intelligence from Socket API for specified ecosystems. Returns list of known malicious packages and security alerts. */
+
 import { queryApiJson, setupSdk } from '../../utils/sdk.mts'
 
 import type { ThreadFeedResponse } from './types.mts'

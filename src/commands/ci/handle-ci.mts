@@ -1,3 +1,5 @@
+/** @fileoverview CI business logic handler for Socket CLI. Processes CI command by detecting environment context and delegating to scan creation with report generation enabled. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { getDefaultOrgSlug } from './fetch-default-org-slug.mts'

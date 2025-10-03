@@ -1,3 +1,5 @@
+/** @fileoverview Logout command implementation for Socket CLI. Clears Socket API authentication credentials and enforced organization policies from configuration. Removes all persisted Socket credentials from disk. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { attemptLogout } from './attempt-logout.mts'

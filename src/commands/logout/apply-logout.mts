@@ -1,3 +1,5 @@
+/** @fileoverview Logout credential cleanup for Socket CLI. Clears API token, enforced organizations, base URL, and proxy settings from Socket configuration file. Handles configuration cleanup for successful logout. */
+
 import {
   CONFIG_KEY_API_BASE_URL,
   CONFIG_KEY_API_PROXY,

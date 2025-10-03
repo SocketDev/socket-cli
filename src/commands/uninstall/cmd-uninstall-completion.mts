@@ -1,3 +1,5 @@
+/** @fileoverview Tab completion uninstall command for Socket CLI. Removes bash tab completion from shell configuration files. Cleans up completion scripts from user's shell environment. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleUninstallCompletion } from './handle-uninstall-completion.mts'

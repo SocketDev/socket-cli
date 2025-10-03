@@ -1,3 +1,5 @@
+/** @fileoverview Audit log business logic handler for Socket CLI. Orchestrates fetching audit log data and delegating to appropriate output formatter (JSON, markdown, text, or interactive TUI). */
+
 import { fetchAuditLog } from './fetch-audit-log.mts'
 import { outputAuditLog } from './output-audit-log.mts'
 

@@ -1,3 +1,5 @@
+/** @fileoverview Tab completion uninstall handler for Socket CLI. Orchestrates tab completion removal and delegates to output formatter with results. */
+
 import { outputUninstallCompletion } from './output-uninstall-completion.mts'
 import { teardownTabCompletion } from './teardown-tab-completion.mts'
 

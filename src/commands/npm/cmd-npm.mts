@@ -1,3 +1,5 @@
+/** @fileoverview NPM wrapper command for Socket CLI. Wraps npm with Socket security scanning by delegating to shadow npm binary. Intercepts package installations for security analysis while maintaining npm compatibility. */
+
 import { createRequire } from 'node:module'
 
 import { logger } from '@socketsecurity/registry/lib/logger'

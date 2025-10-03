@@ -1,3 +1,5 @@
+/** @fileoverview JSON command implementation for Socket CLI. Displays the socket.json configuration file that applies to a target directory. Hidden debug command for inspecting Socket configuration discovery and resolution. */
+
 import path from 'node:path'
 
 import { handleCmdJson } from './handle-cmd-json.mts'

@@ -1,3 +1,5 @@
+/** @fileoverview Uninstall parent command for Socket CLI. Manages removal of Socket CLI features including tab completion. Delegates to subcommands: completion. */
+
 import { cmdUninstallCompletion } from './cmd-uninstall-completion.mts'
 import { meowWithSubcommands } from '../../utils/meow-with-subcommands.mts'
 

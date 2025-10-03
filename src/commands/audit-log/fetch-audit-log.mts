@@ -1,3 +1,5 @@
+/** @fileoverview Audit log data fetching for Socket CLI. Retrieves paginated audit log events from the Socket API with filtering support for event types and time ranges. */
+
 import { handleApiCall } from '../../utils/api.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 

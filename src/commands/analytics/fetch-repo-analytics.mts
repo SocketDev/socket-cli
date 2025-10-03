@@ -1,3 +1,5 @@
+/** @fileoverview Repository analytics fetching for Socket CLI. Retrieves repository-specific security metrics from the Socket API including alert counts and dependency analysis. */
+
 import { handleApiCall } from '../../utils/api.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 

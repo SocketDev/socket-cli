@@ -1,3 +1,5 @@
+/** @fileoverview Yarn wrapper command for Socket CLI. Wraps yarn with Socket security scanning by delegating to shadow yarn binary. Intercepts package installations for security analysis while maintaining yarn compatibility. */
+
 import { createRequire } from 'node:module'
 
 import { logger } from '@socketsecurity/registry/lib/logger'

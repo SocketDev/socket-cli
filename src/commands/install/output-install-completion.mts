@@ -1,3 +1,5 @@
+/** @fileoverview Install completion output formatting for Socket CLI. Displays installation success messages with instructions for shell reload or error messages for installation failures. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'

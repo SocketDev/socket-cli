@@ -1,3 +1,5 @@
+/** @fileoverview Threat feed command for Socket CLI. Retrieves security threat intelligence feed from Socket for specific ecosystems. Displays known malicious packages and security alerts. */
+
 import { joinAnd } from '@socketsecurity/registry/lib/arrays'
 import { logger } from '@socketsecurity/registry/lib/logger'
 

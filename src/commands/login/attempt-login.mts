@@ -1,3 +1,5 @@
+/** @fileoverview Login orchestration logic for Socket CLI. Manages interactive login flow including token verification, organization selection, enforced policy configuration, and optional tab completion setup. Integrates with Socket SDK for authentication and organization management. */
+
 import { joinAnd } from '@socketsecurity/registry/lib/arrays'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { confirm, password, select } from '@socketsecurity/registry/lib/prompts'

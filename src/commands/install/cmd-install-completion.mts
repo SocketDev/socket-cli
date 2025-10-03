@@ -1,3 +1,5 @@
+/** @fileoverview Install completion command for Socket CLI. Installs bash/zsh tab completion scripts to enable command and flag autocompletion in the shell. Supports multiple shell targets and rc file detection. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleInstallCompletion } from './handle-install-completion.mts'

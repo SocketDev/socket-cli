@@ -1,3 +1,5 @@
+/** @fileoverview Threat feed output formatter for Socket CLI. Displays security threat intelligence in JSON or text formats. Shows malicious packages, threat types, and security recommendations. */
+
 import path from 'node:path'
 
 import { logger } from '@socketsecurity/registry/lib/logger'

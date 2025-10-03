@@ -1,3 +1,5 @@
+/** @fileoverview Tab completion teardown utility for Socket CLI. Removes Socket CLI completion scripts from shell configuration files (.bashrc, .bash_profile). Cleans up completion integration. */
+
 import fs from 'node:fs'
 import path from 'node:path'
 

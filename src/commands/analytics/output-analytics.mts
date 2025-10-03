@@ -1,3 +1,5 @@
+/** @fileoverview Analytics output formatting for Socket CLI. Formats organization and repository analytics in JSON, markdown, or text format with metrics tables and file export support. */
+
 import fs from 'node:fs/promises'
 import path from 'node:path'
 

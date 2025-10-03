@@ -1,3 +1,5 @@
+/** @fileoverview Default organization slug fetching for Socket CLI CI command. Retrieves the primary organization slug from Socket API for CI environments where organization is not explicitly configured. */
+
 import constants from '../../constants.mts'
 import { getConfigValueOrUndef } from '../../utils/config.mts'
 import { debugFn } from '../../utils/debug.mts'

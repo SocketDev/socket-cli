@@ -1,3 +1,5 @@
+/** @fileoverview CI command implementation for Socket CLI. Alias for `socket scan create --report` optimized for CI/CD environments. Automatically detects organization, repository, and branch information from environment variables. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleCi } from './handle-ci.mts'

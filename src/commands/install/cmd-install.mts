@@ -1,3 +1,5 @@
+/** @fileoverview Install parent command for Socket CLI. Manages installation of optional features like shell tab completion. Delegates to subcommands: completion. */
+
 import { cmdInstallCompletion } from './cmd-install-completion.mts'
 import { meowWithSubcommands } from '../../utils/meow-with-subcommands.mts'
 

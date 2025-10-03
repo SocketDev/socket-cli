@@ -1,3 +1,5 @@
+/** @fileoverview Threat feed handler for Socket CLI. Orchestrates threat intelligence retrieval and delegates to output formatter for display. */
+
 import { fetchThreatFeed } from './fetch-threat-feed.mts'
 import { outputThreatFeed } from './output-threat-feed.mts'
 

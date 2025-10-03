@@ -1,3 +1,5 @@
+/** @fileoverview Audit log command implementation for Socket CLI. Displays organization audit log events with filtering by type, date ranges, and pagination. Supports JSON, markdown, text, and interactive TUI modes. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleAuditLog } from './handle-audit-log.mts'

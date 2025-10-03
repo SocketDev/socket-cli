@@ -1,3 +1,5 @@
+/** @fileoverview Whoami handler for Socket CLI. Orchestrates authentication status check by fetching user data and delegating to output formatter. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { outputWhoami } from './output-whoami.mts'

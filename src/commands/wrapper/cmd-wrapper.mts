@@ -1,3 +1,5 @@
+/** @fileoverview Wrapper command for Socket CLI. Manages Socket CLI integration with package managers by installing/removing wrapper scripts. Supports postinstall hooks and verification of wrapper setup. */
+
 import { existsSync } from 'node:fs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'

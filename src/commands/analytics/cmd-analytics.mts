@@ -1,3 +1,5 @@
+/** @fileoverview Analytics command implementation for Socket CLI. Retrieves and displays organization or repository security metrics including alert counts, issue summaries, and dependency statistics. Supports JSON, markdown, and text output formats. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleAnalytics } from './handle-analytics.mts'

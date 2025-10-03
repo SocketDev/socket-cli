@@ -1,3 +1,5 @@
+/** @fileoverview Logout orchestration logic for Socket CLI. Manages logout flow with error handling and read-only configuration detection. Delegates credential clearing to apply-logout module. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { applyLogout } from './apply-logout.mts'

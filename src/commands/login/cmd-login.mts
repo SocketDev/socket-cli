@@ -1,3 +1,5 @@
+/** @fileoverview Login command implementation for Socket CLI. Sets up CLI authentication with Socket API by prompting for API token, validating credentials, and persisting configuration. Supports custom API base URL and proxy settings. */
+
 import isInteractive from '@socketregistry/is-interactive/index.cjs'
 import { logger } from '@socketsecurity/registry/lib/logger'
 

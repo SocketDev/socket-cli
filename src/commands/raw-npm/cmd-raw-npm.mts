@@ -1,3 +1,5 @@
+/** @fileoverview Raw NPM command for Socket CLI. Executes native npm without Socket security scanning. Useful for bypassing Socket wrapper when needed. Hidden command for advanced users. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { runRawNpm } from './run-raw-npm.mts'

@@ -1,3 +1,5 @@
+/** @fileoverview Install completion business logic handler for Socket CLI. Orchestrates tab completion script installation and delegates to output formatter with success/failure status. */
+
 import { outputInstallCompletion } from './output-install-completion.mts'
 import { setupTabCompletion } from './setup-tab-completion.mts'
 

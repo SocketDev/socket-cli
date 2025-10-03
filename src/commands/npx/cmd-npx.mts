@@ -1,3 +1,5 @@
+/** @fileoverview NPX wrapper command for Socket CLI. Wraps npx with Socket security scanning by delegating to shadow npx binary. Intercepts package executions for security analysis while maintaining npx compatibility. */
+
 import { createRequire } from 'node:module'
 
 import { logger } from '@socketsecurity/registry/lib/logger'

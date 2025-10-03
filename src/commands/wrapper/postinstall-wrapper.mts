@@ -1,3 +1,5 @@
+/** @fileoverview Postinstall wrapper utility for Socket CLI. Executes during package installation to set up Socket CLI integration. Prompts user for wrapper installation and manages setup process. */
+
 import fs, { existsSync } from 'node:fs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'

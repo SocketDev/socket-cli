@@ -1,3 +1,5 @@
+/** @fileoverview Tab completion uninstall output formatter for Socket CLI. Displays tab completion removal results showing success confirmation or error messages. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'

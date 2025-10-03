@@ -1,3 +1,5 @@
+/** @fileoverview Oops command for Socket CLI. Debug command that displays last CLI error with full stack trace and debug information. Hidden command for troubleshooting issues. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants from '../../constants.mts'

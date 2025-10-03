@@ -1,3 +1,5 @@
+/** @fileoverview Whoami output formatter for Socket CLI. Displays authentication status in JSON or text formats. Shows logged-in user information or authentication errors. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { serializeResultJson } from '../../utils/serialize-result-json.mts'

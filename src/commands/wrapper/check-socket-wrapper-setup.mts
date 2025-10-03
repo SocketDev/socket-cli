@@ -1,3 +1,5 @@
+/** @fileoverview Socket wrapper verification utility for Socket CLI. Checks if Socket wrapper is properly installed in package.json or config files. Validates wrapper configuration integrity. */
+
 import fs from 'node:fs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'

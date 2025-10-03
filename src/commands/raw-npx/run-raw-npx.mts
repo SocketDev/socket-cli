@@ -1,3 +1,5 @@
+/** @fileoverview Raw NPX runner utility for Socket CLI. Spawns native npx process without Socket security scanning. Locates and executes system npx binary directly. */
+
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import constants from '../../constants.mts'

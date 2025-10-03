@@ -1,3 +1,5 @@
+/** @fileoverview PNPM wrapper command for Socket CLI. Wraps pnpm with Socket security scanning by delegating to shadow pnpm binary. Intercepts package installations for security analysis while maintaining pnpm compatibility. */
+
 import { createRequire } from 'node:module'
 
 import { logger } from '@socketsecurity/registry/lib/logger'

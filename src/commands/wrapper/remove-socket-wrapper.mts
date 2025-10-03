@@ -1,3 +1,5 @@
+/** @fileoverview Socket wrapper removal utility for Socket CLI. Removes Socket CLI wrapper configuration from package.json or config files. Cleans up postinstall scripts and wrapper references. */
+
 import { readFileSync, writeFileSync } from 'node:fs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'

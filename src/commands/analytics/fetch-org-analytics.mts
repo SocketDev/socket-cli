@@ -1,3 +1,5 @@
+/** @fileoverview Organization analytics fetching for Socket CLI. Retrieves organization-wide security metrics from the Socket API including alert counts and issue summaries. */
+
 import { handleApiCall } from '../../utils/api.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 

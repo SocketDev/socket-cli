@@ -1,3 +1,5 @@
+/** @fileoverview Analytics business logic handler for Socket CLI. Orchestrates fetching analytics data from Socket API and delegating to output formatters based on scope (org/repo). */
+
 import { fetchOrgAnalyticsData } from './fetch-org-analytics.mts'
 import { fetchRepoAnalyticsData } from './fetch-repo-analytics.mts'
 import { outputAnalytics } from './output-analytics.mts'
