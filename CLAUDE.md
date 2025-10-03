@@ -134,11 +134,11 @@ Each command follows consistent pattern:
 ### Distribution
 - **Binary entries**: `socket`, `socket-npm`, `socket-npx` (in `bin/` directory)
 - **Distribution**: Built files go to `dist/` directory
-- **External dependencies**: Bundled in `external/` directory
+- **External dependencies**: Bundled in `dist/external/` directory
 - **Test fixtures**: Located in `test/fixtures/`
 
 ### External Dependencies
-- Bundles external dependencies in `external/` directory
+- Bundles external dependencies in `dist/external/` directory
 - Uses Socket registry overrides for security
 - Custom patches applied to dependencies in `patches/`
 
