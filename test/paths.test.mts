@@ -137,13 +137,7 @@ describe('paths module', () => {
     it('should return CLI updater state JSON path', () => {
       const result = getSocketCliUpdaterStateJsonPath()
       expect(result).toBe(
-        path.join(
-          os.homedir(),
-          '.socket',
-          '_socket',
-          'updater',
-          'state.json',
-        ),
+        path.join(os.homedir(), '.socket', '_socket', 'updater', 'state.json'),
       )
     })
 

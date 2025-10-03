@@ -103,6 +103,12 @@ Each command follows consistent pattern:
   - Single file: ✅ CORRECT: `pnpm run testu src/commands/specific/cmd-file.test.mts`
   - ❌ WRONG: `pnpm run testu -- src/commands/specific/cmd-file.test.mts`
 
+### CI Testing Infrastructure
+- **🚨 MANDATORY**: Use `SocketDev/socket-registry/.github/workflows/ci.yml@main` for consistent CI across Socket projects
+- **Reusable workflows**: Socket-registry provides centralized, reusable workflows for lint/type-check/test/coverage
+- **Benefits**: Parallel execution, consistent configuration, cross-platform testing
+- **Documentation**: See `docs/CI_TESTING.md` and `socket-registry/docs/CI_TESTING_TOOLS.md`
+
 ## 🎨 CLI-SPECIFIC CODE PATTERNS
 
 ### File Structure
