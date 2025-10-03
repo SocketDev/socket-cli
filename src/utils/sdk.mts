@@ -188,16 +188,14 @@ export async function queryApiText(
 ): Promise<CResult<string>> {
   const opts = { __proto__: null, throws: false, ...options }
   try {
-    const result = await sdk.getApi<CResult<string>>(path, {
+    // SDK 1.9.0+ returns data directly when throws: true, or result object when throws: false.
+    // Always throw on error, we'll wrap in CResult.
+    const result = await sdk.getApi<string>(path, {
       responseType: 'text',
-      throws: opts.throws,
+      throws: true,
     })
 
-    if (result && typeof result === 'object' && 'ok' in result) {
-      return result as CResult<string>
-    }
-
-    // SDK returned direct string when throws: true succeeds.
+    // Wrap in CResult for backward compatibility
     return { ok: true, data: result as string }
   } catch (e) {
     const message = `Error fetching ${opts.description || 'data'}: ${e instanceof Error ? e.message : String(e)}`
