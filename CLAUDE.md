@@ -230,6 +230,18 @@ Socket CLI integrates with:
   5. Stage and commit docs: `git commit --no-verify -m "message"`
 - **Rationale**: Reduces commit time while maintaining code quality through initial validation
 
+### Git SHA Management (CRITICAL)
+- **🚨 NEVER GUESS OR MAKE UP GIT SHAs**: Always retrieve the exact full SHA using `git rev-parse`
+  - ✅ CORRECT: `cd /path/to/repo && git rev-parse HEAD` or `git rev-parse main`
+  - ❌ WRONG: Guessing the rest of a SHA after seeing only the short version (e.g., `43a668e1`)
+  - **Why this matters**: GitHub Actions workflow references require exact, full 40-character SHAs
+  - **Consequences of wrong SHA**: Workflow failures with "workflow was not found" errors
+- **Updating workflow SHA references**: When updating SHA references in workflow files:
+  1. Get the exact full SHA: `cd repo && git rev-parse HEAD`
+  2. Use the FULL 40-character SHA in sed commands
+  3. Verify the SHA exists: `git show <sha> --stat`
+- **Rationale**: Using incorrect SHAs breaks CI/CD pipelines and wastes debugging time
+
 ## 🔍 DEBUGGING
 
 ### CI vs Local
