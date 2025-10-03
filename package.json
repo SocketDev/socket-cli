@@ -4,7 +4,7 @@
   "private": true,
   "description": "CLI for Socket.dev",
   "homepage": "https://github.com/SocketDev/socket-cli",
-  "license": "MIT AND OFL-1.1",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/SocketDev/socket-cli.git"
