@@ -1,3 +1,5 @@
+/** @fileoverview Patch output formatter for Socket CLI. Displays available patches in JSON or text formats. Shows patch counts, package names, versions, and file locations with installation prompts. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { pluralize } from '@socketsecurity/registry/lib/words'
 

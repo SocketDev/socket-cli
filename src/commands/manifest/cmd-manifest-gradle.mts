@@ -1,3 +1,5 @@
+/** @fileoverview Manifest Gradle command for Socket CLI. Generates pom.xml manifest files from Gradle projects using local gradlew binary. Supports Java, Kotlin, and Scala projects that use Gradle build system. Beta feature with socket.json configuration support. */
+
 import path from 'node:path'
 
 import { logger } from '@socketsecurity/registry/lib/logger'

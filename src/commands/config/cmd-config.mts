@@ -1,3 +1,5 @@
+/** @fileoverview Config parent command for Socket CLI. Manages Socket CLI configuration including API tokens, organization settings, and preferences. Delegates to subcommands: auto, get, set, unset, list. */
+
 import { cmdConfigAuto } from './cmd-config-auto.mts'
 import { cmdConfigGet } from './cmd-config-get.mts'
 import { cmdConfigList } from './cmd-config-list.mts'

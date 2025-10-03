@@ -1,3 +1,5 @@
+/** @fileoverview Organization license policy output formatter for Socket CLI. Displays license policy configuration in JSON, markdown, or text formats. Shows allowed and denied license lists. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'

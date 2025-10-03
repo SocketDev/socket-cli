@@ -1,3 +1,5 @@
+/** @fileoverview Config set business logic handler for Socket CLI. Persists configuration key-value pairs to config file and delegates to output formatter. */
+
 import { outputConfigSet } from './output-config-set.mts'
 import { updateConfigValue } from '../../utils/config.mts'
 import { debugDir, debugFn } from '../../utils/debug.mts'

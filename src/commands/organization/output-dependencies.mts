@@ -1,3 +1,5 @@
+/** @fileoverview Organization dependencies output formatter for Socket CLI. Displays organization-wide dependency data in JSON, markdown, or text formats. Shows dependency usage statistics and metadata. */
+
 // @ts-ignore
 import chalkTable from 'chalk-table'
 import colors from 'yoctocolors-cjs'

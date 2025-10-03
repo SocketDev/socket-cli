@@ -1,3 +1,5 @@
+/** @fileoverview Config value discovery for Socket CLI. Automatically discovers configuration values by querying Socket API to determine user's default organization and other settings. */
+
 import { isSupportedConfigKey } from '../../utils/config.mts'
 import { getOrgSlugs } from '../../utils/organization.mts'
 import { hasDefaultApiToken } from '../../utils/sdk.mts'

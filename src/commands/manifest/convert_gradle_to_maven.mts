@@ -1,3 +1,5 @@
+/** @fileoverview Gradle to Maven pom.xml conversion for Socket CLI. Executes gradlew with init script to generate Maven pom.xml files for each Gradle task. Supports custom gradle options and verbose output. */
+
 import fs from 'node:fs'
 import path from 'node:path'
 

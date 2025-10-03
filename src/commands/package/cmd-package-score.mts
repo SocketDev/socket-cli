@@ -1,3 +1,5 @@
+/** @fileoverview Package score command for Socket CLI. Retrieves detailed security analysis and scores for npm packages including issue counts, supply chain risk, and quality metrics. Supports JSON and markdown output. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handlePurlDeepScore } from './handle-purl-deep-score.mts'

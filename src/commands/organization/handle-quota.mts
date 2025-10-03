@@ -1,3 +1,5 @@
+/** @fileoverview Organization quota business logic handler for Socket CLI. Orchestrates quota data retrieval and delegates to output formatter with quota limits and usage statistics. */
+
 import { fetchQuota } from './fetch-quota.mts'
 import { outputQuota } from './output-quota.mts'
 

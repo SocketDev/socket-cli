@@ -1,3 +1,5 @@
+/** @fileoverview Organization list output formatter for Socket CLI. Displays organization data in JSON, markdown, or text formats. Shows organization slugs, names, plan details, and metadata. */
+
 import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'

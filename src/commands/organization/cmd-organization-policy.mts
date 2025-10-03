@@ -1,3 +1,5 @@
+/** @fileoverview Organization policy parent command for Socket CLI. Manages organization security and license policy settings. Delegates to subcommands: license, security. */
+
 import { cmdOrganizationPolicyLicense } from './cmd-organization-policy-license.mts'
 import { cmdOrganizationPolicySecurity } from './cmd-organization-policy-security.mts'
 import { meowWithSubcommands } from '../../utils/meow-with-subcommands.mts'

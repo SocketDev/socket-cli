@@ -1,3 +1,5 @@
+/** @fileoverview Patch business logic handler for Socket CLI. Scans for available patches by matching package names and versions against patch manifest. Handles file detection, hash validation, and patch applicability checks. */
+
 import crypto from 'node:crypto'
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'

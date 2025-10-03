@@ -1,3 +1,5 @@
+/** @fileoverview Package deep score output formatter for Socket CLI. Displays detailed package security analysis in JSON, markdown, or text formats. Shows issue counts, scores, supply chain metrics, and quality data. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'

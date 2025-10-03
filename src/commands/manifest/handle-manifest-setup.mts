@@ -1,3 +1,5 @@
+/** @fileoverview Manifest setup business logic handler for Socket CLI. Orchestrates interactive configuration setup and delegates to output formatter with success/failure status. */
+
 import { outputManifestSetup } from './output-manifest-setup.mts'
 import { setupManifestConfig } from './setup-manifest-config.mts'
 

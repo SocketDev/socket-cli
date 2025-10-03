@@ -1,3 +1,5 @@
+/** @fileoverview Package deep score API fetcher for Socket CLI. Retrieves detailed security analysis from Socket API including issue counts, supply chain metrics, and quality scores for a single package. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { queryApiJson, setupSdk } from '../../utils/sdk.mts'

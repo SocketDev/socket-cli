@@ -1,3 +1,5 @@
+/** @fileoverview Repository view command for Socket CLI. Displays detailed information for Socket repository integration. Shows default branch, scan status, visibility settings, and repository metadata. Supports JSON and text output. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleViewRepo } from './handle-view-repo.mts'

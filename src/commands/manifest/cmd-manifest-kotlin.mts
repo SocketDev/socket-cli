@@ -1,3 +1,5 @@
+/** @fileoverview Manifest Kotlin command for Socket CLI. Generates pom.xml manifest files from Kotlin projects using Gradle. Delegates to gradlew binary with Kotlin-specific configuration defaults. Beta feature with socket.json support. */
+
 import path from 'node:path'
 
 import { logger } from '@socketsecurity/registry/lib/logger'

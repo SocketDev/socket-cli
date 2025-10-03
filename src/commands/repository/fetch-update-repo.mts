@@ -1,3 +1,5 @@
+/** @fileoverview Repository update API fetcher for Socket CLI. Updates repository integration settings via Socket API. Modifies default branch, visibility, and scanning configuration. */
+
 import { handleApiCall } from '../../utils/api.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 

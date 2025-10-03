@@ -1,3 +1,5 @@
+/** @fileoverview Config list command for Socket CLI. Lists all configuration keys and their current values with sources (env/flag/config/default). Supports full mode to show all keys including defaults. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { outputConfigList } from './output-config-list.mts'

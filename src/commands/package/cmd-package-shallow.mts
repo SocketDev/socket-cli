@@ -1,3 +1,5 @@
+/** @fileoverview Package shallow command for Socket CLI. Retrieves quick security scores for multiple npm packages without detailed analysis. Optimized for bulk package score lookups. Supports JSON and markdown output. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handlePurlsShallowScore } from './handle-purls-shallow-score.mts'

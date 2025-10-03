@@ -1,3 +1,5 @@
+/** @fileoverview Manifest cdxgen command for Socket CLI. Runs CycloneDX cdxgen tool for SBOM (Software Bill of Materials) generation with Socket-specific defaults. Uses yargs parser for cdxgen flag compatibility and sets lifecycle to pre-build for security. */
+
 import terminalLink from 'terminal-link'
 import yargsParse from 'yargs-parser'
 

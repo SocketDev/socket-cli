@@ -1,3 +1,5 @@
+/** @fileoverview Config auto business logic handler for Socket CLI. Orchestrates config value discovery and delegates to output formatter with optional persistence. */
+
 import { discoverConfigValue } from './discover-config-value.mts'
 import { outputConfigAuto } from './output-config-auto.mts'
 

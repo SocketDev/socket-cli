@@ -1,3 +1,5 @@
+/** @fileoverview Repository create business logic handler for Socket CLI. Orchestrates repository integration creation and delegates to output formatter with creation results. */
+
 import { fetchCreateRepo } from './fetch-create-repo.mts'
 import { outputCreateRepo } from './output-create-repo.mts'
 import { debugDir, debugFn } from '../../utils/debug.mts'

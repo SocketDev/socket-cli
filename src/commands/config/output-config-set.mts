@@ -1,3 +1,5 @@
+/** @fileoverview Config set output formatting for Socket CLI. Displays success/failure messages for configuration updates with formatted output in JSON/text modes. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'

@@ -1,3 +1,5 @@
+/** @fileoverview Repository list all API fetcher for Socket CLI. Retrieves all repositories across all organizations from Socket API. Returns complete repository list without organization filtering. */
+
 import { handleApiCall } from '../../utils/api.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 

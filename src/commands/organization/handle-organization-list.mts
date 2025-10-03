@@ -1,3 +1,5 @@
+/** @fileoverview Organization list business logic handler for Socket CLI. Orchestrates organization list retrieval and delegates to output formatter with organization metadata. */
+
 import { fetchOrganization } from './fetch-organization-list.mts'
 import { outputOrganizationList } from './output-organization-list.mts'
 import { debugDir, debugFn } from '../../utils/debug.mts'

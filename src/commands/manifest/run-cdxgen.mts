@@ -1,3 +1,5 @@
+/** @fileoverview CycloneDX cdxgen runner for Socket CLI. Executes cdxgen SBOM generator via shadow-runner with automatic package manager detection (npm, pnpm, yarn). Converts yarn.lock to package-lock.json using synp for better accuracy. */
+
 import { existsSync, rmSync } from 'node:fs'
 import path from 'node:path'
 

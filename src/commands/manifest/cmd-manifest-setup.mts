@@ -1,3 +1,5 @@
+/** @fileoverview Manifest setup command for Socket CLI. Interactive configurator for customizing manifest generation defaults in socket.json. Detects supported ecosystems and sets up project-specific flag defaults for Conda, Gradle, and SBT builds. */
+
 import path from 'node:path'
 
 import { logger } from '@socketsecurity/registry/lib/logger'

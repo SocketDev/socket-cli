@@ -1,3 +1,5 @@
+/** @fileoverview Repository view output formatter for Socket CLI. Displays repository integration details in JSON or table formats. Shows repository ID, name, visibility, default branch, homepage, archived status, and creation date. */
+
 // @ts-ignore
 import chalkTable from 'chalk-table'
 import colors from 'yoctocolors-cjs'

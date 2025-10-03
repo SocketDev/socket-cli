@@ -1,3 +1,5 @@
+/** @fileoverview Manifest parent command for Socket CLI. Generates declarative dependency manifests for ecosystems with dynamic manifests like Scala, Gradle, Kotlin, and Conda. Delegates to language-specific subcommands: auto, cdxgen, conda, gradle, kotlin, scala, setup. */
+
 import { cmdManifestAuto } from './cmd-manifest-auto.mts'
 import { cmdManifestCdxgen } from './cmd-manifest-cdxgen.mts'
 import { cmdManifestConda } from './cmd-manifest-conda.mts'

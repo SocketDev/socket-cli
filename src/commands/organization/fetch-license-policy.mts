@@ -1,3 +1,5 @@
+/** @fileoverview Organization license policy API fetcher for Socket CLI. Retrieves license policy configuration from Socket API including allowed and denied license lists for organization compliance. */
+
 import { handleApiCall } from '../../utils/api.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 

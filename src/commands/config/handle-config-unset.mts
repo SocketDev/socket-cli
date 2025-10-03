@@ -1,3 +1,5 @@
+/** @fileoverview Config unset business logic handler for Socket CLI. Removes configuration keys from persisted config and delegates to output formatter. */
+
 import { outputConfigUnset } from './output-config-unset.mts'
 import { updateConfigValue } from '../../utils/config.mts'
 

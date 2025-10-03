@@ -1,3 +1,5 @@
+/** @fileoverview Package shallow score business logic handler for Socket CLI. Orchestrates bulk package score retrieval and delegates to output formatter with quick score data for multiple packages. */
+
 import { fetchPurlsShallowScore } from './fetch-purls-shallow-score.mts'
 import { outputPurlsShallowScore } from './output-purls-shallow-score.mts'
 import { debugDir, debugFn } from '../../utils/debug.mts'

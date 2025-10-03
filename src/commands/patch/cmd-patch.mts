@@ -1,3 +1,5 @@
+/** @fileoverview Patch command for Socket CLI. Scans for available security patches and applies them to dependencies. Reads patch manifest, detects applicable patches, and offers optional auto-installation. Supports JSON and text output. */
+
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 

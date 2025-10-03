@@ -1,3 +1,5 @@
+/** @fileoverview Organization dependencies API fetcher for Socket CLI. Retrieves organization-wide dependency list from Socket API. Returns dependency metadata including usage counts across repositories. */
+
 import { handleApiCall } from '../../utils/api.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 

@@ -1,3 +1,5 @@
+/** @fileoverview Config unset command for Socket CLI. Removes configuration keys from the persisted config file. Provides feedback on success and warns if key doesn't exist. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleConfigUnset } from './handle-config-unset.mts'

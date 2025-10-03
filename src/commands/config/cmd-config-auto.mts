@@ -1,3 +1,5 @@
+/** @fileoverview Config auto command for Socket CLI. Automatically discovers and suggests configuration values by querying Socket API for user's organization settings. Optionally persists discovered values to config. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleConfigAuto } from './handle-config-auto.mts'

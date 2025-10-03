@@ -1,5 +1,4 @@
-// The point here is to attempt to detect the various supported manifest files
-// the CLI can generate. This would be environments that we can't do server side
+/** @fileoverview Manifest detection utilities for Socket CLI. Detects generatable manifest types (Conda, Gradle, SBT) by scanning for build files in target directory. Respects socket.json disabled flags for each ecosystem. */
 
 import { existsSync } from 'node:fs'
 import path from 'node:path'

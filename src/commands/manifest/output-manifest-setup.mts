@@ -1,3 +1,5 @@
+/** @fileoverview Manifest setup output formatter for Socket CLI. Displays success or failure messages for socket.json configuration updates. Handles error reporting with badges. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'

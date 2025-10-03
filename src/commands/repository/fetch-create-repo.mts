@@ -1,3 +1,5 @@
+/** @fileoverview Repository create API fetcher for Socket CLI. Creates repository integration via Socket API. Configures default branch and enables security scanning for GitHub repository. */
+
 import { handleApiCall } from '../../utils/api.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 

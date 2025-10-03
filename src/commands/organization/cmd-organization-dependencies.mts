@@ -1,3 +1,5 @@
+/** @fileoverview Organization dependencies command for Socket CLI. Lists dependencies across all repositories in an organization. Displays dependency usage statistics and metadata for organization-wide visibility. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleDependencies } from './handle-dependencies.mts'

@@ -1,3 +1,5 @@
+/** @fileoverview Manifest auto-detection command for Socket CLI. Automatically detects build system language and generates appropriate manifest files using detected or default settings. Supports socket.json configuration for excluding languages. */
+
 import path from 'node:path'
 
 import { logger } from '@socketsecurity/registry/lib/logger'

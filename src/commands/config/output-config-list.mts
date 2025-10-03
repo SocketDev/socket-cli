@@ -1,3 +1,5 @@
+/** @fileoverview Config list output formatter for Socket CLI. Displays configuration settings in table format showing keys, values, and locations. Lists all supported configuration options. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import {

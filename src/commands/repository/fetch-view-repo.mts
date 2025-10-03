@@ -1,3 +1,5 @@
+/** @fileoverview Repository view API fetcher for Socket CLI. Retrieves repository integration details from Socket API. Returns default branch, scan status, visibility settings, and metadata. */
+
 import { handleApiCall } from '../../utils/api.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 

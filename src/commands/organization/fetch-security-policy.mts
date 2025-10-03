@@ -1,3 +1,5 @@
+/** @fileoverview Organization security policy API fetcher for Socket CLI. Retrieves security policy settings from Socket API including alert thresholds, issue actions, and scanning configurations for organization. */
+
 import { handleApiCall } from '../../utils/api.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 

@@ -1,3 +1,5 @@
+/** @fileoverview Repository create command for Socket CLI. Creates Socket repository integration for GitHub repositories. Configures default branch and enables security scanning. Supports JSON and text output. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleCreateRepo } from './handle-create-repo.mts'

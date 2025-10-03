@@ -1,3 +1,5 @@
+/** @fileoverview Package shallow score output formatter for Socket CLI. Displays quick security scores for multiple packages in JSON, markdown, or text formats. Shows concise score summaries for bulk package lookups. */
+
 import colors from 'yoctocolors-cjs'
 
 import { joinAnd } from '@socketsecurity/registry/lib/arrays'

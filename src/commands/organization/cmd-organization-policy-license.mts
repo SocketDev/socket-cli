@@ -1,3 +1,5 @@
+/** @fileoverview Organization license policy command for Socket CLI. Displays allowed and denied license lists for organization. Shows license policy configuration for dependency license compliance. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleLicensePolicy } from './handle-license-policy.mts'

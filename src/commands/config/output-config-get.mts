@@ -1,3 +1,5 @@
+/** @fileoverview Config get output formatting for Socket CLI. Displays configuration value with source indication and formatted output in JSON/text modes. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { isConfigFromFlag } from '../../utils/config.mts'

@@ -1,3 +1,5 @@
+/** @fileoverview Config get command for Socket CLI. Retrieves and displays a specific configuration value by key with priority indication (env/flag/config file). Supports JSON and markdown output. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleConfigGet } from './handle-config-get.mts'

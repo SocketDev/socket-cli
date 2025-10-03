@@ -1,3 +1,5 @@
+/** @fileoverview Organization dependencies business logic handler for Socket CLI. Orchestrates dependency retrieval and delegates to output formatter with organization dependency data. */
+
 import { fetchDependencies } from './fetch-dependencies.mts'
 import { outputDependencies } from './output-dependencies.mts'
 import { debugDir, debugFn } from '../../utils/debug.mts'

@@ -1,3 +1,5 @@
+/** @fileoverview Config auto output formatting for Socket CLI. Displays discovered configuration values with interactive prompts for persistence and formatted output in JSON/text modes. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { select } from '@socketsecurity/registry/lib/prompts'
 

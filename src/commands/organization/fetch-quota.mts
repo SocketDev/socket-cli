@@ -1,3 +1,5 @@
+/** @fileoverview Organization quota API fetcher for Socket CLI. Retrieves organization quota limits and current usage from Socket API. Returns quota data for API calls, scans, and plan-specific limits. */
+
 import { handleApiCall } from '../../utils/api.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 

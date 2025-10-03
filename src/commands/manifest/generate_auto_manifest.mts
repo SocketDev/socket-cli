@@ -1,3 +1,5 @@
+/** @fileoverview Auto manifest generation orchestrator for Socket CLI. Generates manifest files for all detected ecosystems (SBT, Gradle, Conda) using socket.json defaults. Delegates to language-specific converters based on detection results. */
+
 import path from 'node:path'
 
 import { logger } from '@socketsecurity/registry/lib/logger'

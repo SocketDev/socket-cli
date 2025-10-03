@@ -1,3 +1,5 @@
+/** @fileoverview Repository delete API fetcher for Socket CLI. Removes repository integration via Socket API. Disables security scanning and removes repository from Socket organization. */
+
 import { handleApiCall } from '../../utils/api.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 

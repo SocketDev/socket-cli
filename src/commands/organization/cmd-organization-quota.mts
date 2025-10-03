@@ -1,3 +1,5 @@
+/** @fileoverview Organization quota command for Socket CLI. Displays organization plan quota limits and current usage. Shows API quotas, scan quotas, and plan-specific limits. Hidden debug command. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleQuota } from './handle-quota.mts'

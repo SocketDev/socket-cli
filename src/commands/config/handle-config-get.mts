@@ -1,3 +1,5 @@
+/** @fileoverview Config get business logic handler for Socket CLI. Retrieves configuration value by key and delegates to output formatter. */
+
 import { outputConfigGet } from './output-config-get.mts'
 import { getConfigValue } from '../../utils/config.mts'
 

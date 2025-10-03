@@ -1,3 +1,5 @@
+/** @fileoverview Organization parent command for Socket CLI. Manages Socket organization account operations including dependencies, quotas, policies, and organization listing. Delegates to subcommands: dependencies, list, policy, quota. */
+
 import { cmdOrganizationDependencies } from './cmd-organization-dependencies.mts'
 import { cmdOrganizationList } from './cmd-organization-list.mts'
 import { cmdOrganizationPolicyLicense } from './cmd-organization-policy-license.mts'

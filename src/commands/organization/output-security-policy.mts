@@ -1,3 +1,5 @@
+/** @fileoverview Organization security policy output formatter for Socket CLI. Displays security policy settings in JSON, markdown, or text formats. Shows alert thresholds, issue actions, and scanning preferences. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'

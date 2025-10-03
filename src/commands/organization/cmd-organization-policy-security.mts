@@ -1,3 +1,5 @@
+/** @fileoverview Organization security policy command for Socket CLI. Displays security policy settings including alert thresholds, issue actions, and scanning preferences for organization-wide security compliance. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleSecurityPolicy } from './handle-security-policy.mts'

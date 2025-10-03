@@ -1,3 +1,5 @@
+/** @fileoverview Repository list business logic handler for Socket CLI. Orchestrates repository listing with pagination and sorting support. Fetches all repositories or paginated results based on user preferences. */
+
 import { fetchListAllRepos } from './fetch-list-all-repos.mts'
 import { fetchListRepos } from './fetch-list-repos.mts'
 import { outputListRepos } from './output-list-repos.mts'

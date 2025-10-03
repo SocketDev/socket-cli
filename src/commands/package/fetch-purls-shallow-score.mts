@@ -1,3 +1,5 @@
+/** @fileoverview Package shallow score API fetcher for Socket CLI. Retrieves quick security scores from Socket API for multiple packages in a single batch request. Optimized for bulk package lookups. */
+
 import { joinAnd } from '@socketsecurity/registry/lib/arrays'
 import { logger } from '@socketsecurity/registry/lib/logger'
 

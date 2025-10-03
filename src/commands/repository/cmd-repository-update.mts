@@ -1,3 +1,5 @@
+/** @fileoverview Repository update command for Socket CLI. Updates Socket repository integration settings for GitHub repositories. Modifies default branch, visibility, and scanning configuration. Supports JSON and text output. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleUpdateRepo } from './handle-update-repo.mts'

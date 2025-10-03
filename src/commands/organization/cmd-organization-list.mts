@@ -1,3 +1,5 @@
+/** @fileoverview Organization list command for Socket CLI. Displays organizations associated with Socket API token. Shows organization slugs, names, and plan details in JSON, markdown, or text formats. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleOrganizationList } from './handle-organization-list.mts'

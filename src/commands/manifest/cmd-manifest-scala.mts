@@ -1,3 +1,5 @@
+/** @fileoverview Manifest Scala command for Socket CLI. Generates pom.xml manifest files from Scala build.sbt using sbt makePom. Exports socket.pom.xml with caveats for SBT-specific features. Beta feature for SBT projects only. */
+
 import path from 'node:path'
 
 import { logger } from '@socketsecurity/registry/lib/logger'

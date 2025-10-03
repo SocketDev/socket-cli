@@ -1,3 +1,5 @@
+/** @fileoverview Package specifier parsing utilities for Socket CLI. Parses package specifications from command-line arguments supporting PURL format (pkg:eco/name@version), ecosystem-prefixed format, and bare package names. */
+
 // Either an ecosystem was given or all args must be (namespaced) purls
 // The `pkg:` part is optional here. We'll scan for `eco/name@version`.
 // Not hardcoding the namespace since we don't know what the server accepts.

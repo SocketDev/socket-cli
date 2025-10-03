@@ -1,3 +1,5 @@
+/** @fileoverview Manifest Conda command for Socket CLI. Converts Conda environment.yml files to Python requirements.txt format by extracting pip dependencies. Beta feature for approximating Conda dependencies using PyPI. */
+
 import path from 'node:path'
 
 import { logger } from '@socketsecurity/registry/lib/logger'

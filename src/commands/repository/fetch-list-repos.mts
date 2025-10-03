@@ -1,3 +1,5 @@
+/** @fileoverview Repository list API fetcher for Socket CLI. Retrieves paginated repository list from Socket API. Supports sorting, filtering, and pagination for organization repositories. */
+
 import { handleApiCall } from '../../utils/api.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 

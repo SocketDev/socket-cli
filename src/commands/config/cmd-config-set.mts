@@ -1,3 +1,5 @@
+/** @fileoverview Config set command for Socket CLI. Sets and persists configuration values to the config file. Validates config keys and provides feedback on success/failure. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleConfigSet } from './handle-config-set.mts'

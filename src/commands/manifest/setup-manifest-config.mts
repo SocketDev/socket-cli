@@ -1,3 +1,5 @@
+/** @fileoverview Manifest configuration setup utilities for Socket CLI. Manages interactive prompts for configuring Conda, Gradle, and SBT manifest generation defaults. Writes configuration to socket.json with ecosystem detection and per-language settings. */
+
 import fs from 'node:fs'
 import path from 'node:path'
 

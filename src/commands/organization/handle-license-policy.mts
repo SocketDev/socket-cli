@@ -1,3 +1,5 @@
+/** @fileoverview Organization license policy business logic handler for Socket CLI. Orchestrates license policy retrieval and delegates to output formatter with policy configuration data. */
+
 import { fetchLicensePolicy } from './fetch-license-policy.mts'
 import { outputLicensePolicy } from './output-license-policy.mts'
 

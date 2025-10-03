@@ -1,3 +1,5 @@
+/** @fileoverview Repository parent command for Socket CLI. Manages GitHub repository integration with Socket for security scanning. Delegates to subcommands: create, delete, list, update, view. */
+
 import { cmdRepositoryCreate } from './cmd-repository-create.mts'
 import { cmdRepositoryDel } from './cmd-repository-del.mts'
 import { cmdRepositoryList } from './cmd-repository-list.mts'

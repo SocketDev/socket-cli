@@ -1,3 +1,5 @@
+/** @fileoverview Conda to requirements.txt conversion utilities for Socket CLI. Extracts pip dependencies from Conda environment.yml files by parsing YAML pip blocks. Supports stdin input and file paths. */
+
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 

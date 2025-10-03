@@ -1,3 +1,5 @@
+/** @fileoverview Repository update business logic handler for Socket CLI. Orchestrates repository integration updates including default branch, visibility, description, and homepage settings. */
+
 import { fetchUpdateRepo } from './fetch-update-repo.mts'
 import { outputUpdateRepo } from './output-update-repo.mts'
 

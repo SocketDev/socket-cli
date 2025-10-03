@@ -102,6 +102,24 @@ describe('socket config get', async () => {
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
+           usage: socketcli [-h] [--api-token <token>] [--repo <owner/repo>]
+                         [--repo-is-public] [--branch <name>] [--integration <type>]
+                         [--owner <name>] [--pr-number <number>]
+                         [--commit-message <message>] [--commit-sha <sha>]
+                         [--committers [<name> ...]] [--target-path <path>]
+                         [--sbom-file <path>] [--license-file-name <string>]
+                         [--save-submitted-files-list <path>]
+                         [--save-manifest-tar <path>] [--files <json>]
+                         [--sub-path <path>] [--workspace-name <name>]
+                         [--excluded-ecosystems EXCLUDED_ECOSYSTEMS]
+                         [--default-branch] [--pending-head] [--generate-license]
+                         [--enable-debug] [--enable-json] [--enable-sarif]
+                         [--disable-overview] [--exclude-license-details]
+                         [--allow-unverified] [--disable-security-issue]
+                         [--ignore-commit-files] [--disable-blocking] [--enable-diff]
+                         [--scm <type>] [--timeout <seconds>]
+                         [--include-module-folders] [--version]
+        socketcli: error: unrecognized arguments: test --dry-run --config {"apiToken":"fakeToken"}
            _____         _       _        /---------------
           |   __|___ ___| |_ ___| |_      | CLI: <redacted>
           |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>

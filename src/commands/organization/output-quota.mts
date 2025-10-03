@@ -1,3 +1,5 @@
+/** @fileoverview Organization quota output formatter for Socket CLI. Displays quota data in JSON, markdown, or text formats. Shows API quotas, scan quotas, and plan-specific usage limits. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'

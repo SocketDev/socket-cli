@@ -1,3 +1,5 @@
+/** @fileoverview Repository create output formatter for Socket CLI. Displays repository integration creation results in JSON or text formats. Shows repository name, default branch, and creation status. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'

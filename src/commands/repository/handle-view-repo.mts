@@ -1,3 +1,5 @@
+/** @fileoverview Repository view business logic handler for Socket CLI. Orchestrates fetching repository integration details and delegates to output formatter for display. */
+
 import { fetchViewRepo } from './fetch-view-repo.mts'
 import { outputViewRepo } from './output-view-repo.mts'
 

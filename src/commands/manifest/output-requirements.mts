@@ -1,3 +1,5 @@
+/** @fileoverview Requirements.txt output formatter for Socket CLI. Displays converted Conda pip dependencies in JSON, markdown, or plain text formats. Supports stdout and file output. */
+
 import fs from 'node:fs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'

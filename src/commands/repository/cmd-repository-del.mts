@@ -1,3 +1,5 @@
+/** @fileoverview Repository delete command for Socket CLI. Removes Socket repository integration for GitHub repositories. Disables security scanning and removes repository from Socket organization. Supports JSON and text output. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleDeleteRepo } from './handle-delete-repo.mts'

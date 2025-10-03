@@ -1,3 +1,5 @@
+/** @fileoverview Repository list command for Socket CLI. Lists GitHub repositories integrated with Socket organization. Shows repository names, default branches, scan status, and metadata. Supports pagination, sorting, and filtering. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleListRepos } from './handle-list-repos.mts'

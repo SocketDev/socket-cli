@@ -1,3 +1,5 @@
+/** @fileoverview Manifest Conda business logic handler for Socket CLI. Orchestrates Conda environment.yml conversion to requirements.txt and delegates to output formatter with conversion results. */
+
 import { convertCondaToRequirements } from './convert-conda-to-requirements.mts'
 import { outputRequirements } from './output-requirements.mts'
 

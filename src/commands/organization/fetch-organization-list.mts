@@ -1,3 +1,5 @@
+/** @fileoverview Organization list API fetcher for Socket CLI. Retrieves list of organizations associated with Socket API token. Returns organization metadata including slugs, names, and plan details. */
+
 import { handleApiCall } from '../../utils/api.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 

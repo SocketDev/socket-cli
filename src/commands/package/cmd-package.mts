@@ -1,3 +1,5 @@
+/** @fileoverview Package parent command for Socket CLI. Analyzes package security scores and metadata for npm packages. Delegates to subcommands: score (deep analysis), shallow (quick scores). */
+
 import { cmdPackageScore } from './cmd-package-score.mts'
 import { cmdPackageShallow } from './cmd-package-shallow.mts'
 import { meowWithSubcommands } from '../../utils/meow-with-subcommands.mts'

@@ -1,3 +1,5 @@
+/** @fileoverview SBT to Maven pom.xml conversion for Socket CLI. Executes sbt makePom to generate Maven pom.xml files from Scala build.sbt. Handles multiple output files and stdout targeting. */
+
 import { safeReadFile } from '@socketsecurity/registry/lib/fs'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { spawn } from '@socketsecurity/registry/lib/spawn'

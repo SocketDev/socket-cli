@@ -1,3 +1,5 @@
+/** @fileoverview Repository list output formatter for Socket CLI. Displays paginated repository listings in JSON or table formats. Shows repository ID, name, visibility, default branch, and archived status with pagination hints. */
+
 // @ts-ignore
 import chalkTable from 'chalk-table'
 import colors from 'yoctocolors-cjs'
