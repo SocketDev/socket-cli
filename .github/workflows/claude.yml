@@ -19,6 +19,6 @@ permissions:
 
 jobs:
   claude:
-    uses: SocketDev/socket-registry/.github/workflows/claude.yml@0782233ce8463a0b0eca22262905563b9bd4a919 # main
+    uses: SocketDev/socket-registry/.github/workflows/claude.yml@dba06046a487c9b3f32941e3ea40e1866d419ce8 # main
     secrets:
       anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
