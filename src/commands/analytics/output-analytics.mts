@@ -203,8 +203,7 @@ ${mdTableStringNumber('Name', 'Counts', data['top_five_alert_types'])}
 async function displayAnalyticsScreen(data: FormattedData): Promise<void> {
   // Spawn the Ink CLI subprocess.
   const inkCliPath = path.join(
-    constants.rootPath,
-    'external',
+    constants.externalPath,
     'ink',
     'analytics',
     'cli.js',

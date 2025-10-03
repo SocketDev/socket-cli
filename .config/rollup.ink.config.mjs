@@ -20,7 +20,7 @@ export default {
     'threat-feed/cli': 'src/commands/threat-feed/threat-feed-app-cli.mts',
   },
   output: {
-    dir: 'external/ink',
+    dir: 'dist/external/ink',
     format: 'esm',
     exports: 'named',
     // Use preserveModules to avoid bundling everything into one file.

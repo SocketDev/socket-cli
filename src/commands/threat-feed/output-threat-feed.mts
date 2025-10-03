@@ -64,8 +64,7 @@ export async function outputThreatFeed(
 
   // Spawn the Ink CLI subprocess.
   const inkCliPath = path.join(
-    constants.rootPath,
-    'external',
+    constants.externalPath,
     'ink',
     'threat-feed',
     'cli.js',

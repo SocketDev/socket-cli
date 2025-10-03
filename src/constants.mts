@@ -441,13 +441,6 @@ export type Constants = Remap<
     readonly bashRcPath: string
     readonly binCliPath: string
     readonly binPath: string
-    readonly blessedContribPath: string
-    readonly blessedOptions: {
-      smartCSR: boolean
-      term: string
-      useBCE: boolean
-    }
-    readonly blessedPath: string
     readonly distCliPath: string
     readonly distPath: string
     readonly externalPath: string
@@ -763,23 +756,11 @@ const lazyBinPath = () => path.join(constants.rootPath, 'bin')
 
 const lazyBinCliPath = () => path.join(constants.binPath, 'cli.js')
 
-const lazyBlessedContribPath = () =>
-  path.join(constants.externalPath, 'blessed-contrib')
-
-const lazyBlessedOptions = () =>
-  Object.freeze({
-    smartCSR: true,
-    term: constants.WIN32 ? 'windows-ansi' : 'xterm',
-    useBCE: true,
-  })
-
-const lazyBlessedPath = () => path.join(constants.externalPath, 'blessed')
-
 const lazyDistCliPath = () => path.join(constants.distPath, 'cli.js')
 
 const lazyDistPath = () => path.join(constants.rootPath, 'dist')
 
-const lazyExternalPath = () => path.join(constants.rootPath, 'external')
+const lazyExternalPath = () => path.join(constants.distPath, 'external')
 
 const lazyGithubCachePath = () => path.join(constants.socketCachePath, 'github')
 
@@ -1076,9 +1057,6 @@ const constants: Constants = createConstantsObject(
     bashRcPath: undefined,
     binPath: undefined,
     binCliPath: undefined,
-    blessedContribPath: undefined,
-    blessedOptions: undefined,
-    blessedPath: undefined,
     distCliPath: undefined,
     distPath: undefined,
     externalPath: undefined,
@@ -1112,9 +1090,6 @@ const constants: Constants = createConstantsObject(
       bashRcPath: lazyBashRcPath,
       binCliPath: lazyBinCliPath,
       binPath: lazyBinPath,
-      blessedContribPath: lazyBlessedContribPath,
-      blessedOptions: lazyBlessedOptions,
-      blessedPath: lazyBlessedPath,
       distCliPath: lazyDistCliPath,
       distPath: lazyDistPath,
       externalPath: lazyExternalPath,

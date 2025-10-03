@@ -75,7 +75,7 @@ const lazyConfigPath = () => path.join(constants.rootPath, '.config')
 
 const lazyDistPath = () => path.join(constants.rootPath, 'dist')
 
-const lazyExternalPath = () => path.join(constants.rootPath, 'external')
+const lazyExternalPath = () => path.join(constants.distPath, 'external')
 
 const lazyRootPackageJsonPath = () =>
   path.join(constants.rootPath, 'package.json')

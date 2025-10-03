@@ -181,8 +181,7 @@ async function outputWithBlessed(
 
   // Spawn the Ink CLI subprocess.
   const inkCliPath = path.join(
-    constants.rootPath,
-    'external',
+    constants.externalPath,
     'ink',
     'audit-log',
     'cli.js',

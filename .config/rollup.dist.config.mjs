@@ -401,27 +401,26 @@ export default async () => {
       plugins: [
         // Replace require() and require.resolve() calls for @socketsecurity/registry
         // require('@socketsecurity/registry/lib/path') with
-        // require('../external/@socketsecurity/registry/dist/lib/path')
+        // require('./external/@socketsecurity/registry/dist/lib/path')
         socketModifyPlugin({
           find: new RegExp(
             `(?<=require[$\\w]*(?:\\.resolve)?\\(["'])${escapeRegExp(SOCKET_SECURITY_REGISTRY)}(?=(?:\\/[^"']+)?["']\\))`,
             'g',
           ),
-          replace: () => `../external/${SOCKET_SECURITY_REGISTRY}/dist`,
+          replace: () => `./external/${SOCKET_SECURITY_REGISTRY}/dist`,
         }),
         // Replace individual registry constant requires with index file require.
-        // require('../external/@socketsecurity/registry/dist/lib/constants/socket-public-api-token') with
-        // require('../external/@socketsecurity/registry/dist/lib/constants/index')
+        // require('./external/@socketsecurity/registry/dist/lib/constants/socket-public-api-token') with
+        // require('./external/@socketsecurity/registry/dist/lib/constants/index')
         socketModifyPlugin({
           find: new RegExp(
-            `(?<=require[$\\w]*(?:\\.resolve)?\\(["'])(\\.\\./external/${escapeRegExp(SOCKET_SECURITY_REGISTRY)}/dist/lib/constants)/[^"']+(?=["']\\))`,
+            `(?<=require[$\\w]*(?:\\.resolve)?\\(["'])(\\.+/external/${escapeRegExp(SOCKET_SECURITY_REGISTRY)}/dist/lib/constants)/[^"']+(?=["']\\))`,
             'g',
           ),
           replace: (match, prefix) => `${prefix}/index`,
         }),
-        // Replace require() and require.resolve() calls like
-        // require('blessed/lib/widgets/screen') with
-        // require('../external/blessed/lib/widgets/screen')
+        // Replace require() and require.resolve() calls for other external packages
+        // (currently just @socketsecurity/sdk).
         ...EXTERNAL_PACKAGES.filter(n => n !== SOCKET_SECURITY_REGISTRY).map(
           n =>
             socketModifyPlugin({
@@ -429,7 +428,7 @@ export default async () => {
                 `(?<=require[$\\w]*(?:\\.resolve)?\\(["'])${escapeRegExp(n)}(?=(?:\\/[^"']+)?["']\\))`,
                 'g',
               ),
-              replace: id => `../external/${id}`,
+              replace: id => `./external/${id}`,
             }),
         ),
         // Replace require.resolve('node-gyp/bin/node-gyp.js') with
