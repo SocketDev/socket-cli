@@ -78,10 +78,13 @@ const lazyDistPath = () => path.join(constants.rootPath, 'dist')
 const lazyExternalPath = () => path.join(constants.distPath, 'external')
 
 const lazyRootPackageJsonPath = () =>
-  path.join(constants.rootPath, 'package.json')
+  path.join(constants.rootPath, constants.PACKAGE_JSON)
 
 const lazyRootPackageLockPath = () =>
-  path.join(constants.rootPath, 'pnpm-lock.yaml')
+  path.join(constants.rootPath, constants.PNPM_LOCK_YAML)
+
+const lazyRootNodeModulesBinPath = () =>
+  path.join(constants.rootPath, constants.NODE_MODULES, '.bin')
 
 const lazyRootPath = () =>
   path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
@@ -133,6 +136,7 @@ const constants = createConstantsObject(
     distPath: undefined,
     externalPath: undefined,
     rootPackageJsonPath: undefined,
+    rootNodeModulesBinPath: undefined,
     rootPath: undefined,
     socketRegistryPath: undefined,
     srcPath: undefined,
@@ -146,6 +150,7 @@ const constants = createConstantsObject(
       externalPath: lazyExternalPath,
       rootPackageJsonPath: lazyRootPackageJsonPath,
       rootPackageLockPath: lazyRootPackageLockPath,
+      rootNodeModulesBinPath: lazyRootNodeModulesBinPath,
       rootPath: lazyRootPath,
       socketRegistryPath: lazySocketRegistryPath,
       srcPath: lazySrcPath,
