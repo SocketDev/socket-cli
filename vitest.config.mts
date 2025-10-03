@@ -27,7 +27,6 @@ export default defineConfig({
         'bin/**',
         'coverage/**',
         'dist/**',
-        'external/**',
         'pnpmfile.*',
         'scripts/**',
         'src/**/types.mts',

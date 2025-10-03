@@ -14,7 +14,6 @@
       "!**/.vscode",
       "!**/coverage",
       "!**/dist",
-      "!**/external",
       "!**/package.json",
       "!**/pnpm-lock.yaml",
       "!test/**/fixtures",

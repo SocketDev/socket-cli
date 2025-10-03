@@ -7,7 +7,6 @@ Thumbs.db
 /.type-coverage
 /.vscode
 /coverage
-/external
 /npm-debug.log
 **/.cache
 **/dist
