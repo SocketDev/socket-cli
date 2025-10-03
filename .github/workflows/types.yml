@@ -8,4 +8,4 @@ permissions:
 
 jobs:
   type-check:
-    uses: SocketDev/socket-registry/.github/workflows/types.yml@43a668e122085d8b5836884e47ee940642216388 # main
+    uses: SocketDev/socket-registry/.github/workflows/types.yml@0782233ce8463a0b0eca22262905563b9bd4a919 # main
