@@ -653,12 +653,12 @@ const LAZY_ENV = () => {
     // The git config user.email used by Socket CLI.
     SOCKET_CLI_GIT_USER_EMAIL:
       envAsString(env['SOCKET_CLI_GIT_USER_EMAIL']) ||
-      'github-actions[bot]@users.noreply.github.com',
+      '94589996+socket-bot@users.noreply.github.com',
     // The git config user.name used by Socket CLI.
     SOCKET_CLI_GIT_USER_NAME:
       envAsString(env['SOCKET_CLI_GIT_USER_NAME']) ||
       envAsString(env['SOCKET_CLI_GIT_USERNAME']) ||
-      'github-actions[bot]',
+      'Socket Bot',
     // Change the base URL for GitHub REST API calls.
     // https://docs.github.com/en/rest
     SOCKET_CLI_GITHUB_API_URL:
