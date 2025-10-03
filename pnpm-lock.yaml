@@ -8,7 +8,7 @@ overrides:
   '@octokit/graphql': 9.0.1
   '@octokit/request-error': 7.0.0
   '@rollup/plugin-commonjs': 28.0.6
-  '@socketsecurity/registry': file:/Users/jdalton/projects/socket-registry/registry/socketsecurity-registry-1.3.7.tgz
+  '@socketsecurity/registry': 1.3.9
   aggregate-error: npm:@socketregistry/aggregate-error@^1.0.15
   ansi-regex: 6.1.0
   ansi-term: 0.0.2
@@ -181,11 +181,11 @@ importers:
         specifier: 3.0.1
         version: 3.0.1
       '@socketsecurity/registry':
-        specifier: file:/Users/jdalton/projects/socket-registry/registry/socketsecurity-registry-1.3.7.tgz
-        version: file:../socket-registry/registry/socketsecurity-registry-1.3.7.tgz
+        specifier: 1.3.9
+        version: 1.3.9
       '@socketsecurity/sdk':
-        specifier: 1.8.5
-        version: 1.8.5
+        specifier: 1.9.1
+        version: 1.9.1
       '@types/cmd-shim':
         specifier: 5.0.2
         version: 5.0.2
@@ -1688,13 +1688,12 @@ packages:
     resolution: {integrity: sha512-kLKdSqi4W7SDSm5z+wYnfVRnZCVhxzbzuKcdOZSrcHoEGOT4Gl844uzoaML+f5eiQMxY+nISiETwRph/aXrIaQ==}
     engines: {node: 18.20.7 || ^20.18.3 || >=22.14.0}
 
-  '@socketsecurity/registry@file:../socket-registry/registry/socketsecurity-registry-1.3.7.tgz':
-    resolution: {integrity: sha512-NQjDySjnfOfku0+L8PHf1XkSMu5wZlBexR4mYN6Q3TbsLgcwvJgLrDWtTYedSUNY9gFGbQtb7ejSQHhi7xuSbg==, tarball: file:../socket-registry/registry/socketsecurity-registry-1.3.7.tgz}
-    version: 1.3.7
+  '@socketsecurity/registry@1.3.9':
+    resolution: {integrity: sha512-tXN/MmR+tjk3+5vRBFg/UE2iYUzNvWP95o9BUOtSKzD5x9c0AHNnwgJsmEhTCIBkyRe/wPnxcdtPWhjWNYCSGA==}
     engines: {node: '>=18'}
 
-  '@socketsecurity/sdk@1.8.5':
-    resolution: {integrity: sha512-4oCgzjYtYVm/BzEvrkcHP8UlvkXCl9Q82PHL72KXG5qk66KmIaTIE+wS0k1CXISW63lPsrT9ztQRFTGCEmyKYw==}
+  '@socketsecurity/sdk@1.9.1':
+    resolution: {integrity: sha512-JHcwBo4Qwxk5ai/wLcXYJe4/sQdYwWrZVYncMb+yyL5LL++zacXEA8UzftlFw/vUvAMBi8SEgw9E2HSAzmuWAA==}
     engines: {node: '>=18', pnpm: '>=10.16.0'}
 
   '@stroncium/procfs@1.2.1':
@@ -6148,11 +6147,11 @@ snapshots:
       pony-cause: 2.1.11
       yaml: 2.8.1
 
-  '@socketsecurity/registry@file:../socket-registry/registry/socketsecurity-registry-1.3.7.tgz': {}
+  '@socketsecurity/registry@1.3.9': {}
 
-  '@socketsecurity/sdk@1.8.5':
+  '@socketsecurity/sdk@1.9.1':
     dependencies:
-      '@socketsecurity/registry': file:../socket-registry/registry/socketsecurity-registry-1.3.7.tgz
+      '@socketsecurity/registry': 1.3.9
 
   '@stroncium/procfs@1.2.1': {}
 
