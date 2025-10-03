@@ -1,3 +1,5 @@
+/** @fileoverview npm Arborist class installation and setup for Socket CLI. Provides safe Arborist wrappers that integrate security scanning into npm's dependency resolution process. */
+
 import { createRequire } from 'node:module'
 
 // @ts-ignore

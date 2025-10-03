@@ -1,3 +1,5 @@
+/** @fileoverview Safe Arborist class implementation for Socket CLI. Extends npm's Arborist to intercept buildIdealTree and reify operations for security scanning before package installation. */
+
 // @ts-ignore
 import UntypedArborist from '@npmcli/arborist/lib/arborist/index.js'
 
