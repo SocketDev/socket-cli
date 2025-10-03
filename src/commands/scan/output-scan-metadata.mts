@@ -1,3 +1,5 @@
+/** @fileoverview Scan metadata output formatter for Socket CLI. Displays scan configuration metadata in JSON or text formats. Shows supported file types, ecosystems, and scan parameters. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'

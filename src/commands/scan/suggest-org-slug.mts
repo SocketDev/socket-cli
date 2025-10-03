@@ -1,3 +1,5 @@
+/** @fileoverview Organization slug suggestion utility for Socket CLI. Fetches available organizations and prompts user to select one. Provides interactive organization selection for scan operations. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { select } from '@socketsecurity/registry/lib/prompts'
 

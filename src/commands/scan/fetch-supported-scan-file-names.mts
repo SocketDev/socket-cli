@@ -1,3 +1,5 @@
+/** @fileoverview Supported scan files API fetcher for Socket CLI. Retrieves list of supported package manifest filenames and ecosystems from Socket API. Used for scan target detection and validation. */
+
 import { handleApiCall } from '../../utils/api.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 

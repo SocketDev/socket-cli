@@ -1,3 +1,5 @@
+/** @fileoverview Coana reachability analysis integration for Socket CLI fix command. Executes Coana CLI to generate vulnerability fixes, manages CI environment detection, and coordinates fix application workflow. */
+
 import path from 'node:path'
 
 import { joinAnd } from '@socketsecurity/registry/lib/arrays'

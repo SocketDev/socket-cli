@@ -1,3 +1,5 @@
+/** @fileoverview Scan parent command for Socket CLI. Manages security scanning operations including scan creation, diffing, GitHub integration, reachability analysis, and metadata management. Delegates to subcommands: create, del, diff, github, list, metadata, reach, report, setup, view. */
+
 import { cmdScanCreate } from './cmd-scan-create.mts'
 import { cmdScanDel } from './cmd-scan-del.mts'
 import { cmdScanDiff } from './cmd-scan-diff.mts'

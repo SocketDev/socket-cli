@@ -1,3 +1,5 @@
+/** @fileoverview Scan reachability handler for Socket CLI. Orchestrates reachability analysis including package file detection, Coana integration, and result output. Identifies unused code paths in dependencies. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { pluralize } from '@socketsecurity/registry/lib/words'
 

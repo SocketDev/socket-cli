@@ -1,3 +1,5 @@
+/** @fileoverview Report generation test helpers for Socket CLI. Provides mock scan artifacts for testing report generation functionality. Creates clean scans, scans with issues, and various artifact configurations. */
+
 import type { SocketArtifact } from '../../utils/alert/artifact.mts'
 
 /**

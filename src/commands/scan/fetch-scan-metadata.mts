@@ -1,3 +1,5 @@
+/** @fileoverview Scan metadata API fetcher for Socket CLI. Retrieves scan configuration metadata from Socket API including supported file types and scan parameters. */
+
 import { handleApiCall } from '../../utils/api.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 

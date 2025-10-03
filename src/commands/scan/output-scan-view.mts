@@ -1,3 +1,5 @@
+/** @fileoverview Scan view output formatter for Socket CLI. Displays detailed scan information in JSON, markdown, or text formats. Shows security artifacts, dependency trees, and issue details with file filtering support. */
+
 import fs from 'node:fs/promises'
 
 import { logger } from '@socketsecurity/registry/lib/logger'

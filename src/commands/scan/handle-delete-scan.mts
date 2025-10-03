@@ -1,3 +1,5 @@
+/** @fileoverview Scan deletion handler for Socket CLI. Orchestrates scan removal by fetching deletion results and delegating to output formatter. */
+
 import { fetchDeleteOrgFullScan } from './fetch-delete-org-full-scan.mts'
 import { outputDeleteScan } from './output-delete-scan.mts'
 

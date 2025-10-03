@@ -1,3 +1,5 @@
+/** @fileoverview Scan metadata command for Socket CLI. Retrieves and displays metadata about scan configurations including supported file types, ecosystems, and scan parameters. Useful for understanding available scan options. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleOrgScanMetadata } from './handle-scan-metadata.mts'

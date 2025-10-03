@@ -1,3 +1,5 @@
+/** @fileoverview Package.json field update utilities for Socket CLI. Updates override fields (overrides, resolutions, pnpm.overrides) with intelligent insertion placement near dependency fields. Handles agent-specific field names and formats. */
+
 import { hasKeys, isObject } from '@socketsecurity/registry/lib/objects'
 import { getEditablePackageJsonClass } from '@socketsecurity/registry/lib/packages'
 

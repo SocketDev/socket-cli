@@ -1,3 +1,5 @@
+/** @fileoverview Lockfile package detection utilities for Socket CLI. Detects package presence in lockfiles using agent-specific parsing patterns. Supports package-lock.json, pnpm-lock.yaml, yarn.lock, bun.lockb, and vlt-lock.json. */
+
 import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
 
 import constants from '../../constants.mts'

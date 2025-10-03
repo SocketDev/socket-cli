@@ -1,3 +1,5 @@
+/** @fileoverview GitHub scan output formatter for Socket CLI. Displays GitHub repository scan results in JSON or text formats. Shows scan creation status and error messages. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'

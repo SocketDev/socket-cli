@@ -1,3 +1,5 @@
+/** @fileoverview Branch slug suggestion utility for Socket CLI. Suggests branch names by detecting current git branch or prompting user. Offers default branch as fallback option. */
+
 import { select } from '@socketsecurity/registry/lib/prompts'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 import { stripAnsi } from '@socketsecurity/registry/lib/strings'

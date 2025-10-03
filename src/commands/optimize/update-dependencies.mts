@@ -1,3 +1,5 @@
+/** @fileoverview Dependency installation orchestrator for Socket CLI. Triggers package manager install to update lockfiles after override modifications. Handles npm buggy overrides detection and error reporting. */
+
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import { runAgentInstall } from './agent-installer.mts'

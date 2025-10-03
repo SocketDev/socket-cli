@@ -1,3 +1,5 @@
+/** @fileoverview Fix result output formatting for Socket CLI. Displays fix operation results including applied fixes, created branches, PR links, and error messages. Supports JSON and text output formats. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'

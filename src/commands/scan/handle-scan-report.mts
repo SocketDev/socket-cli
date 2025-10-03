@@ -1,3 +1,5 @@
+/** @fileoverview Scan report handler for Socket CLI. Orchestrates report generation by fetching scan data and delegating to output formatter. Supports severity filtering, folding options, and file output. */
+
 import { fetchScanData } from './fetch-report-data.mts'
 import { outputScanReport } from './output-scan-report.mts'
 

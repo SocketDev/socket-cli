@@ -1,3 +1,5 @@
+/** @fileoverview Scan streaming utility for Socket CLI. Streams scan results in real-time using Socket API. Polls for scan status updates and yields progress events. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleApiCall } from '../../utils/api.mts'

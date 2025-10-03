@@ -1,3 +1,5 @@
+/** @fileoverview Dependency listing stdout parsing utilities for Socket CLI. Detects package presence in package manager list command output. Supports agent-specific parsing for npm, pnpm, yarn, and bun. */
+
 import constants from '../../constants.mts'
 
 import type { EnvDetails } from '../../utils/package-environment.mts'

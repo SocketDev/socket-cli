@@ -1,3 +1,5 @@
+/** @fileoverview Scan view command for Socket CLI. Displays detailed information about a specific scan including issues found, dependency trees, and security scores. Supports streaming updates for in-progress scans. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleScanView } from './handle-scan-view.mts'

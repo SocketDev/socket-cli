@@ -1,3 +1,5 @@
+/** @fileoverview Scan diff handler for Socket CLI. Orchestrates scan comparison by fetching diff data and delegating to output formatter. Supports depth control and file filtering. */
+
 import { fetchDiffScan } from './fetch-diff-scan.mts'
 import { outputDiffScan } from './output-diff-scan.mts'
 

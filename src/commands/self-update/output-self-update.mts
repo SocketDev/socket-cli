@@ -1,6 +1,4 @@
-/**
- * Output formatting for self-update command.
- */
+/** @fileoverview Self-update output formatter for Socket CLI. Displays update progress, version information, and success/error messages during SEA binary updates. */
 
 import colors from 'yoctocolors-cjs'
 
@@ -14,8 +12,8 @@ export interface SelfUpdateOutput {
   latestVersion: string
   isUpToDate: boolean
   dryRun: boolean
-  updateSucceeded?: boolean
-  backupPath?: string
+  updateSucceeded?: boolean | undefined
+  backupPath?: string | undefined
 }
 
 /**

@@ -1,3 +1,5 @@
+/** @fileoverview Fix command implementation for Socket CLI. Automatically fixes security vulnerabilities by applying Coana reachability analysis patches. Creates git branches, applies fixes, and optionally creates pull requests. Supports autopilot mode for CI/CD integration. */
+
 import path from 'node:path'
 
 import terminalLink from 'terminal-link'
@@ -248,7 +250,7 @@ async function run(
     minSatisfying: boolean
     prCheck: boolean
     rangeStyle: RangeStyle
-    unknownFlags?: string[]
+    unknownFlags?: string[] | undefined
     outputFile: string
     minimumReleaseAge: string
   }

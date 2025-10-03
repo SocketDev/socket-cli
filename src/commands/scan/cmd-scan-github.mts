@@ -1,3 +1,5 @@
+/** @fileoverview Scan GitHub command for Socket CLI. Creates security scans for GitHub repositories by fetching code directly from GitHub API. Supports custom branches, GitHub Enterprise URLs, and automatic repository detection from git config. */
+
 import path from 'node:path'
 
 import { logger } from '@socketsecurity/registry/lib/logger'

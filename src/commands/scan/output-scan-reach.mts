@@ -1,3 +1,5 @@
+/** @fileoverview Scan reachability output formatter for Socket CLI. Displays reachability analysis results in JSON or text formats. Shows unused dependencies, code paths, and optimization recommendations. */
+
 import path from 'node:path'
 
 import { logger } from '@socketsecurity/registry/lib/logger'

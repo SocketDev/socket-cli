@@ -1,3 +1,5 @@
+/** @fileoverview Optimize output formatter for Socket CLI. Displays optimization results showing added and updated overrides with workspace counts. Supports JSON and text output formats. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { pluralize } from '@socketsecurity/registry/lib/words'
 

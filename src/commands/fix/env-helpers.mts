@@ -1,3 +1,5 @@
+/** @fileoverview CI/CD environment helpers for Socket CLI fix command. Detects CI environment variables, validates required configuration, and provides environment-specific setup instructions for GitHub Actions, GitLab CI, etc. */
+
 import { joinAnd } from '@socketsecurity/registry/lib/arrays'
 import { logger } from '@socketsecurity/registry/lib/logger'
 

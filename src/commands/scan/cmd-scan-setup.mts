@@ -1,3 +1,5 @@
+/** @fileoverview Scan setup command for Socket CLI. Interactive configurator for customizing default scan flag values in socket.json. Helps teams establish consistent scanning configurations across projects. */
+
 import path from 'node:path'
 
 import { logger } from '@socketsecurity/registry/lib/logger'

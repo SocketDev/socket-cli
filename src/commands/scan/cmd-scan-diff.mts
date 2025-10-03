@@ -1,3 +1,5 @@
+/** @fileoverview Scan diff command for Socket CLI. Compares two security scans to identify changes in issues, dependencies, and security scores. Displays differences in JSON, markdown, or text formats. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleDiffScan } from './handle-diff-scan.mts'

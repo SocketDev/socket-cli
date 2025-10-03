@@ -1,3 +1,5 @@
+/** @fileoverview Reachability analysis flag definitions for Socket CLI. Defines CLI flags for controlling reachability analysis memory limits and timeout settings. */
+
 import type { MeowFlags } from '../../flags.mts'
 
 export const reachabilityFlags: MeowFlags = {

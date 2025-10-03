@@ -1,3 +1,5 @@
+/** @fileoverview Scan configuration setup utility for Socket CLI. Interactive configurator for customizing default scan flag values in socket.json. Prompts for ecosystem, issues, organization slug, and report settings. */
+
 import fs from 'node:fs'
 import path from 'node:path'
 

@@ -1,3 +1,5 @@
+/** @fileoverview Scan report output formatter for Socket CLI. Generates and displays security reports in JSON, markdown, or text formats. Supports severity filtering, folding options, issue grouping, and file export. */
+
 import fs from 'node:fs/promises'
 
 import { joinAnd } from '@socketsecurity/registry/lib/arrays'

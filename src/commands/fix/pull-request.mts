@@ -1,3 +1,5 @@
+/** @fileoverview GitHub pull request operations for Socket CLI fix command. Creates, updates, and manages pull requests for Socket fix branches using Octokit. Handles PR deduplication and error recovery. */
+
 import { RequestError } from '@octokit/request-error'
 
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
@@ -206,7 +208,7 @@ export type PrAutoMergeState = {
 export type SocketPrsOptions = {
   author?: string | undefined
   ghsaId?: string | undefined
-  states?: 'all' | GQL_PR_STATE | GQL_PR_STATE[]
+  states?: 'all' | GQL_PR_STATE | GQL_PR_STATE[] | undefined
 }
 
 export async function getSocketFixPrs(
@@ -220,9 +222,11 @@ export async function getSocketFixPrs(
 }
 
 type GqlPrNode = {
-  author?: {
-    login: string
-  }
+  author?:
+    | {
+        login: string
+      }
+    | undefined
   baseRefName: string
   headRefName: string
   mergeStateStatus: GQL_MERGE_STATE_STATUS

@@ -1,3 +1,5 @@
+/** @fileoverview Type definitions for Socket CLI fix command. Defines configuration interfaces for fix operations including autopilot mode, GHSA targets, version range styles, and fix application settings. */
+
 import type { RangeStyle } from '../../utils/semver.mts'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 

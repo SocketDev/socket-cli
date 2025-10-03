@@ -1,3 +1,5 @@
+/** @fileoverview Tier-1 scan finalization utility for Socket CLI. Finalizes tier-1 security scans with reachability analysis results. Submits scan finalization requests to Socket API. */
+
 import { sendApiRequest } from '../../utils/api.mts'
 
 import type { CResult } from '../../types.mts'

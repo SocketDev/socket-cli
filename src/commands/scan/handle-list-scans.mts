@@ -1,3 +1,5 @@
+/** @fileoverview Scan list handler for Socket CLI. Orchestrates scan listing with pagination, filtering, and sorting support. Fetches scan lists and delegates to output formatter. */
+
 import { fetchOrgFullScanList } from './fetch-list-scans.mts'
 import { outputListScans } from './output-list-scans.mts'
 

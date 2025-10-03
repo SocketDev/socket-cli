@@ -1,3 +1,5 @@
+/** @fileoverview Scan artifacts API fetcher for Socket CLI. Retrieves security artifacts from completed scans via Socket API. Returns parsed artifact data for analysis and reporting. */
+
 import { debugDir, debugFn } from '../../utils/debug.mts'
 import { queryApiText, setupSdk } from '../../utils/sdk.mts'
 

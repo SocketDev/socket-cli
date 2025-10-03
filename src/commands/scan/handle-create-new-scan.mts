@@ -1,3 +1,5 @@
+/** @fileoverview New scan creation handler for Socket CLI. Orchestrates security scan creation including package file detection, scan submission, reachability analysis, and report generation. Supports tier-1 workflow with automatic finalization. */
+
 import path from 'node:path'
 
 import { logger } from '@socketsecurity/registry/lib/logger'

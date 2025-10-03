@@ -1,21 +1,4 @@
-/**
- * Package manager agent installation utilities for optimize command.
- * Manages package installation via different package managers during optimization.
- *
- * Key Functions:
- * - runAgentInstall: Execute package installation with detected agent
- *
- * Supported Agents:
- * - npm: Node Package Manager with shadow installation
- * - pnpm: Fast, disk space efficient package manager
- * - yarn: Alternative package manager
- *
- * Features:
- * - Automatic agent detection
- * - Shadow installation for security scanning
- * - Spinner support for progress indication
- * - CI-mode configuration for non-interactive execution
- */
+/** @fileoverview Package manager agent installation utilities for Socket CLI optimize command. Executes package installation via npm, pnpm, yarn, or bun with automatic agent detection and shadow installation support. */
 
 import { getOwn } from '@socketsecurity/registry/lib/objects'
 import { spawn } from '@socketsecurity/registry/lib/spawn'

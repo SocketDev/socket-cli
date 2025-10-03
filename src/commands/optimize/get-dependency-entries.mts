@@ -1,3 +1,5 @@
+/** @fileoverview Package.json dependency extraction utilities for Socket CLI. Extracts dependency entries (dependencies, devDependencies, peerDependencies, optionalDependencies) from package.json for override processing. */
+
 import type { EnvDetails } from '../../utils/package-environment.mts'
 
 export function getDependencyEntries(pkgEnvDetails: EnvDetails) {

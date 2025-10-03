@@ -1,3 +1,5 @@
+/** @fileoverview Scan diff output formatter for Socket CLI. Displays scan comparison results in JSON, markdown, or text formats. Shows added/removed issues, dependency changes, and score differences with optional file export. */
+
 import fs from 'node:fs'
 import util from 'node:util'
 

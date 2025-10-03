@@ -1,3 +1,5 @@
+/** @fileoverview GitHub scan creation handler for Socket CLI. Orchestrates security scan creation for GitHub repositories. Supports interactive repo selection, batch scanning, and custom GitHub Enterprise URLs. */
+
 import { createScanFromGithub } from './create-scan-from-github.mts'
 import { outputScanGithub } from './output-scan-github.mts'
 

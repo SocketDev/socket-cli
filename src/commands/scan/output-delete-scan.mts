@@ -1,3 +1,5 @@
+/** @fileoverview Scan deletion output formatter for Socket CLI. Displays scan deletion results in JSON or text formats. Shows success confirmation or error messages. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'

@@ -1,3 +1,5 @@
+/** @fileoverview Package listing utilities by agent for Socket CLI. Executes package manager list commands with production filtering. Supports npm query, pnpm ls, yarn list, bun pm ls, and vlt ls with agent-specific output parsing. */
+
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import constants, { FLAG_PROD } from '../../constants.mts'

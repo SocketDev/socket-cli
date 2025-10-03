@@ -1,3 +1,5 @@
+/** @fileoverview Scan configuration output formatter for Socket CLI. Displays scan config setup results showing success confirmation or error messages after socket.json configuration. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'

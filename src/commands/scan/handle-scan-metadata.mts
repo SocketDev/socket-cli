@@ -1,3 +1,5 @@
+/** @fileoverview Scan metadata handler for Socket CLI. Orchestrates scan metadata retrieval and delegates to output formatter for display. */
+
 import { fetchScanMetadata } from './fetch-scan-metadata.mts'
 import { outputScanMetadata } from './output-scan-metadata.mts'
 

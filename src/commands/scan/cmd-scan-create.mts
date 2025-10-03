@@ -1,3 +1,5 @@
+/** @fileoverview Scan create command for Socket CLI. Creates new security scans for packages or projects. Supports custom branches, ecosystems, issue reporting rules, and reachability analysis. Detects scan targets automatically from socket.json or package files. */
+
 import path from 'node:path'
 
 import { joinAnd } from '@socketsecurity/registry/lib/arrays'

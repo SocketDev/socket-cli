@@ -1,3 +1,5 @@
+/** @fileoverview Optimize business logic handler for Socket CLI. Orchestrates package environment detection, validation, and optimization application. Delegates to apply-optimization module and output formatter. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { applyOptimization } from './apply-optimization.mts'

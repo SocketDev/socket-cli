@@ -1,3 +1,5 @@
+/** @fileoverview Scan report command for Socket CLI. Generates detailed security reports from scan results. Supports filtering by severity levels, folding settings, and custom output formats (JSON, markdown, text). */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleScanReport } from './handle-scan-report.mts'

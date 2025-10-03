@@ -1,3 +1,5 @@
+/** @fileoverview Reachability analysis performer for Socket CLI. Executes reachability analysis using Coana integration to identify unused code paths in dependencies. Requires enterprise organization plan. */
+
 import path from 'node:path'
 
 import constants from '../../constants.mts'

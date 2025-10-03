@@ -1,3 +1,5 @@
+/** @fileoverview Optimization application orchestrator for Socket CLI. Coordinates override addition and dependency updates for optimizing packages. Manages package.json modifications and installation triggers. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { addOverrides } from './add-overrides.mts'

@@ -1,3 +1,5 @@
+/** @fileoverview Scan diff API fetcher for Socket CLI. Retrieves differences between two security scans from Socket API. Compares issues, dependencies, and security scores across scan versions. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { queryApiJson, setupSdk } from '../../utils/sdk.mts'

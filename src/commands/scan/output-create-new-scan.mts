@@ -1,3 +1,5 @@
+/** @fileoverview New scan creation output formatter for Socket CLI. Displays scan creation results in JSON or text formats. Shows scan ID, dashboard link, and interactive browser open prompt. */
+
 import open from 'open'
 import terminalLink from 'terminal-link'
 

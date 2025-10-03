@@ -1,3 +1,5 @@
+/** @fileoverview Organization slug persistence utility for Socket CLI. Prompts user to save organization slug as default in CLI config. Helps streamline future scan operations. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { select } from '@socketsecurity/registry/lib/prompts'
 

@@ -1,3 +1,5 @@
+/** @fileoverview Optimize command implementation for Socket CLI. Automatically applies @socketregistry overrides to package.json for security-enhanced package alternatives. Supports pinning versions and production-only dependencies. */
+
 import path from 'node:path'
 
 import { logger } from '@socketsecurity/registry/lib/logger'

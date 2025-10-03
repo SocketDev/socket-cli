@@ -1,3 +1,5 @@
+/** @fileoverview Scan creation API fetcher for Socket CLI. Creates new organization-wide security scans via Socket API. Supports custom branches, commit metadata, pull requests, and pending head options. */
+
 import { handleApiCall } from '../../utils/api.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 

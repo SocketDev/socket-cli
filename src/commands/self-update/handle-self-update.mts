@@ -1,8 +1,4 @@
-/**
- * Handle self-update command logic.
- *
- * This implements the actual self-update functionality using the sfw-installer
- * pattern of downloading and replacing binaries with rollback capabilities.
+/** @fileoverview Self-update handler for Socket CLI SEA binaries. Downloads and replaces binary with latest version using sfw-installer pattern. Includes rollback capabilities for failed updates.
  */
 
 import crypto from 'node:crypto'
@@ -123,7 +119,7 @@ async function downloadFile(url: string, destination: string): Promise<void> {
  */
 async function verifyFile(
   filePath: string,
-  expectedChecksum?: string,
+  expectedChecksum?: string | undefined,
 ): Promise<boolean> {
   if (!expectedChecksum) {
     logger.warn('No checksum provided, skipping verification')
@@ -219,7 +215,9 @@ async function replaceBinary(
 export async function handleSelfUpdate(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
-  { parentName }: { parentName: string; rawArgv?: readonly string[] },
+  {
+    parentName,
+  }: { parentName: string; rawArgv?: readonly string[] | undefined },
 ): Promise<void> {
   // This command is only available when running as SEA binary.
   if (!isSeaBinary()) {

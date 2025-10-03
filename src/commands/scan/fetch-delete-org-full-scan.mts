@@ -1,3 +1,5 @@
+/** @fileoverview Scan deletion API fetcher for Socket CLI. Deletes organization scans via Socket API. Requires organization slug and scan identifier. Returns deletion confirmation. */
+
 import { handleApiCall } from '../../utils/api.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 

@@ -1,3 +1,5 @@
+/** @fileoverview Git utilities for Socket CLI fix command. Generates Socket fix branch names, PR titles/bodies with vulnerability details, and provides branch pattern parsing for identifying Socket-managed fix branches. */
+
 import { joinAnd } from '@socketsecurity/registry/lib/arrays'
 
 import constants from '../../constants.mts'

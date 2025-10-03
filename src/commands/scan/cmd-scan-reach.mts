@@ -1,3 +1,5 @@
+/** @fileoverview Scan reachability command for Socket CLI. Performs reachability analysis on dependencies to identify unused code paths. Supports Coana integration for advanced static analysis. Helps optimize dependency usage. */
+
 import path from 'node:path'
 
 import { joinAnd } from '@socketsecurity/registry/lib/arrays'

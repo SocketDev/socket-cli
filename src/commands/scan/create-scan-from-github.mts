@@ -1,3 +1,5 @@
+/** @fileoverview GitHub scan creator utility for Socket CLI. Fetches repositories from GitHub API, downloads code as tarballs, and creates security scans. Supports interactive repo selection and batch processing. */
+
 import {
   createWriteStream,
   existsSync,

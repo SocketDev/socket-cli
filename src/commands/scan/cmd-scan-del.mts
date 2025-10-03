@@ -1,3 +1,5 @@
+/** @fileoverview Scan delete command for Socket CLI. Deletes existing security scans by ID. Requires organization slug and scan identifier. Supports JSON and text output formats. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleDeleteScan } from './handle-delete-scan.mts'

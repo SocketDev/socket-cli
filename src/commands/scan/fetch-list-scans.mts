@@ -1,3 +1,5 @@
+/** @fileoverview Scan list API fetcher for Socket CLI. Retrieves paginated organization scan lists from Socket API. Supports filtering by branch, repository, time range, and sorting options. */
+
 import { handleApiCall } from '../../utils/api.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 

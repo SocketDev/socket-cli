@@ -1,3 +1,5 @@
+/** @fileoverview Scan list command for Socket CLI. Lists security scans for an organization with filtering and pagination support. Displays scan IDs, repositories, branches, and creation timestamps. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleListScans } from './handle-list-scans.mts'

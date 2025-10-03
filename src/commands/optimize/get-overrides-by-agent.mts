@@ -1,3 +1,5 @@
+/** @fileoverview Package manager override extraction utilities for Socket CLI. Retrieves existing overrides from package.json based on agent type (npm, pnpm, yarn, bun, vlt). Handles different override field names and formats. */
+
 import constants from '../../constants.mts'
 
 import type { NpmOverrides, Overrides, PnpmOrYarnOverrides } from './types.mts'

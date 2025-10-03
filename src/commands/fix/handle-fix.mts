@@ -1,3 +1,5 @@
+/** @fileoverview Fix business logic handler for Socket CLI. Orchestrates vulnerability fixing workflow including GHSA/CVE resolution, Coana analysis execution, git branch management, and optional PR creation. Supports both manual and autopilot modes. */
+
 import { joinAnd } from '@socketsecurity/registry/lib/arrays'
 import { logger } from '@socketsecurity/registry/lib/logger'
 

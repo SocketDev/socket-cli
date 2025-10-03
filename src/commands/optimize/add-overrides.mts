@@ -1,3 +1,5 @@
+/** @fileoverview Socket registry override addition logic for Socket CLI. Recursively adds and updates @socketregistry package overrides in package.json and workspaces. Handles npm, pnpm, and yarn override formats with dependency aliasing and version pinning. */
+
 import path from 'node:path'
 
 import semver from 'semver'

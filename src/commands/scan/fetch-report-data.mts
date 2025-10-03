@@ -1,3 +1,5 @@
+/** @fileoverview Scan report data fetcher for Socket CLI. Retrieves all data needed to generate security reports including scan results, artifacts, and license policies. Aggregates multiple API calls for comprehensive reporting. */
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants from '../../constants.mts'

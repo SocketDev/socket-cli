@@ -1,3 +1,5 @@
+/** @fileoverview Report generation engine for Socket CLI. Transforms security scan artifacts into formatted reports with severity filtering, issue grouping, and folding options. Generates JSON, markdown, and text outputs. */
+
 import constants, { UNKNOWN_VALUE } from '../../constants.mts'
 import { getSocketDevPackageOverviewUrlFromPurl } from '../../utils/socket-url.mts'
 

@@ -1,3 +1,5 @@
+/** @fileoverview Target directory suggestion utility for Socket CLI. Prompts user to confirm using current directory as scan target when no explicit target provided. */
+
 import { select } from '@socketsecurity/registry/lib/prompts'
 
 export async function suggestTarget(): Promise<string[]> {
