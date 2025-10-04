@@ -1,4 +1,7 @@
-import { describe, expect } from 'vitest'
+import { tmpdir } from 'node:os'
+import path from 'node:path'
+
+import { afterAll, beforeAll, describe, expect } from 'vitest'
 
 import constants, {
   FLAG_CONFIG,
@@ -10,12 +13,35 @@ import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
 
 describe('socket pnpm', async () => {
   const { binCliPath } = constants
+  let testCwd: string
+
+  beforeAll(async () => {
+    testCwd = path.join(
+      tmpdir(),
+      `socket-pnpm-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    )
+    const { promises: fs } = await import('node:fs')
+    await fs.mkdir(testCwd, { recursive: true })
+    await fs.writeFile(
+      path.join(testCwd, 'package.json'),
+      JSON.stringify({ name: 'test', version: '1.0.0', private: true }),
+    )
+  })
+
+  afterAll(async () => {
+    if (testCwd) {
+      const trash = (await import('trash')).default
+      await trash(testCwd).catch(() => {})
+    }
+  })
 
   cmdit(
     [PNPM, FLAG_HELP, FLAG_CONFIG, '{}'],
     `should support ${FLAG_HELP}`,
     async cmd => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
+        cwd: testCwd,
+      })
       expect(stdout).toMatchInlineSnapshot(`
         "Run pnpm with Socket security scanning
 
@@ -138,11 +164,12 @@ describe('socket pnpm', async () => {
 
       expect(stdout).toMatchInlineSnapshot(`
         "Progress: resolved 0, reused 1, downloaded 0, added 0
+        Progress: resolved 897, reused 786, downloaded 0, added 0
         \\u2009WARN\\u2009 2 deprecated subdependencies found: @sindresorhus/chunkify@2.0.0, boolean@3.2.0
         Already up to date
         Progress: resolved 1043, reused 932, downloaded 0, added 0, done
 
-        Done in 1.1s using pnpm v10.17.0"
+        Done in 2.2s using pnpm v10.17.0"
       `)
       expect(code, 'dry-run add should exit with code 0').toBe(0)
     },
@@ -177,11 +204,12 @@ describe('socket pnpm', async () => {
 
       expect(stdout).toMatchInlineSnapshot(`
         "Progress: resolved 0, reused 1, downloaded 0, added 0
+        Progress: resolved 1043, reused 932, downloaded 0, added 0
         \\u2009WARN\\u2009 2 deprecated subdependencies found: @sindresorhus/chunkify@2.0.0, boolean@3.2.0
         Already up to date
         Progress: resolved 1043, reused 932, downloaded 0, added 0, done
 
-        Done in 1s using pnpm v10.17.0"
+        Done in 1.6s using pnpm v10.17.0"
       `)
       expect(code, 'dry-run add scoped package should exit with code 0').toBe(0)
     },
@@ -207,7 +235,7 @@ describe('socket pnpm', async () => {
 
         . prepare$ husky
         . prepare: Done
-        Done in 858ms using pnpm v10.17.0"
+        Done in 931ms using pnpm v10.17.0"
       `)
       expect(code, 'dry-run install should exit with code 0').toBe(0)
     },
@@ -262,7 +290,7 @@ describe('socket pnpm', async () => {
 
         . prepare$ husky
         . prepare: Done
-        Done in 855ms using pnpm v10.17.0"
+        Done in 1.3s using pnpm v10.17.0"
       `)
       expect(
         code,
@@ -291,7 +319,7 @@ describe('socket pnpm', async () => {
 
         . prepare$ husky
         . prepare: Done
-        Done in 908ms using pnpm v10.17.0"
+        Done in 924ms using pnpm v10.17.0"
       `)
       expect(
         code,

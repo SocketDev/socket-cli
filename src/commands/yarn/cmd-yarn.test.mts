@@ -1,6 +1,7 @@
+import { tmpdir } from 'node:os'
 import path from 'node:path'
 
-import { afterEach, describe, expect } from 'vitest'
+import { afterEach, beforeAll, describe, expect } from 'vitest'
 
 import constants, {
   FLAG_CONFIG,
@@ -16,8 +17,23 @@ describe('socket yarn', async () => {
   const { binCliPath } = constants
   const fixtureBaseDir = path.join(testPath, 'fixtures/commands/yarn')
   const yarnMinimalFixture = path.join(fixtureBaseDir, 'minimal')
+  let testCwd: string
 
   const cleanupFunctions: Array<() => Promise<void>> = []
+
+  beforeAll(async () => {
+    // Create isolated temp directory for tests that don't use fixtures
+    testCwd = path.join(
+      tmpdir(),
+      `socket-yarn-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    )
+    const { promises: fs } = await import('node:fs')
+    await fs.mkdir(testCwd, { recursive: true })
+    await fs.writeFile(
+      path.join(testCwd, 'package.json'),
+      JSON.stringify({ name: 'test', version: '1.0.0', private: true }),
+    )
+  })
 
   afterEach(async () => {
     await Promise.all(cleanupFunctions.map(cleanup => cleanup()))
@@ -28,7 +44,9 @@ describe('socket yarn', async () => {
     [YARN, FLAG_HELP, FLAG_CONFIG, '{}'],
     `should support ${FLAG_HELP}`,
     async cmd => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
+        cwd: testCwd,
+      })
       expect(stdout).toMatchInlineSnapshot(`
         "Run yarn with Socket Firewall security
 
