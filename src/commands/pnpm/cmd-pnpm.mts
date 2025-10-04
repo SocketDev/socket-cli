@@ -1,14 +1,29 @@
-/** @fileoverview PNPM wrapper command for Socket CLI. Wraps pnpm with Socket security scanning by delegating to shadow pnpm binary. Intercepts package installations for security analysis while maintaining pnpm compatibility. */
+/**
+ * @fileoverview PNPM wrapper command for Socket CLI.
+ *
+ * This command wraps pnpm with Socket security scanning.
+ *
+ * Routing Logic (undocumented):
+ * - If --config or -c flags are provided: Uses shadow pnpm binary with Socket registry overrides
+ * - Otherwise: Forwards to Socket Firewall (sfw) for security scanning
+ *
+ * This conditional routing allows advanced users with Socket registry configs to use
+ * registry overrides, while providing sfw scanning for standard usage.
+ *
+ * Usage:
+ *   socket pnpm install
+ *   socket pnpm add <package>
+ *   socket pnpm dlx <package>
+ */
 
 import { createRequire } from 'node:module'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import constants, { FLAG_DRY_RUN, FLAG_HELP, PNPM } from '../../constants.mts'
+import constants, { PNPM } from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
-import { filterFlags } from '../../utils/cmd.mts'
+import { filterFlags, forwardToSfw } from '../../utils/cmd.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
-import { getFlagApiRequirementsOutput } from '../../utils/output-formatting.mts'
 
 import type {
   CliCommandConfig,
@@ -19,9 +34,9 @@ const require = createRequire(import.meta.url)
 
 export const CMD_NAME = PNPM
 
-const description = 'Wraps pnpm with Socket security scanning'
+const description = 'Run pnpm with Socket security scanning'
 
-const hidden = true
+const hidden = false
 
 export const cmdPnpm = {
   description,
@@ -46,16 +61,9 @@ async function run(
     Usage
       $ ${command} ...
 
-    API Token Requirements
-      ${getFlagApiRequirementsOutput(`${parentName}:${CMD_NAME}`)}
-
-    Note: Everything after "${PNPM}" is passed to the ${PNPM} command.
-          Only the \`${FLAG_DRY_RUN}\` and \`${FLAG_HELP}\` flags are caught here.
-
-    Use \`socket wrapper on\` to alias this command as \`${PNPM}\`.
+    Note: Everything after "${CMD_NAME}" is forwarded to pnpm with Socket security scanning.
 
     Examples
-      $ ${command}
       $ ${command} install
       $ ${command} add package-name
       $ ${command} dlx package-name
@@ -76,17 +84,38 @@ async function run(
     return
   }
 
-  const shadowPnpmBin = /*@__PURE__*/ require(constants.shadowPnpmBinPath)
+  // Conditional routing (undocumented feature):
+  // - With --config/-c: Use shadow pnpm binary for Socket registry overrides
+  // - Without config: Forward to sfw for security scanning
+  // This allows advanced users to use registry configs while defaulting to sfw.
+  const hasConfigFlag =
+    argv.includes('--config') ||
+    argv.includes('-c') ||
+    argv.some(arg => arg.startsWith('--config='))
 
-  process.exitCode = 1
+  if (hasConfigFlag) {
+    // Use shadow pnpm binary with Socket registry config
+    const shadowPnpmBin = /*@__PURE__*/ require(constants.shadowPnpmBinPath)
 
-  // Filter Socket flags from argv.
-  const filteredArgv = filterFlags(argv, config.flags)
+    process.exitCode = 1
 
-  const { spawnPromise } = await shadowPnpmBin(filteredArgv, {
-    stdio: 'inherit',
-  })
+    // Filter Socket flags from argv.
+    const filteredArgv = filterFlags(argv, config.flags)
 
-  await spawnPromise
-  process.exitCode = 0
+    const { spawnPromise } = await shadowPnpmBin(filteredArgv, {
+      stdio: 'inherit',
+    })
+
+    await spawnPromise
+    process.exitCode = 0
+  } else {
+    // Forward to sfw (Socket Firewall)
+    const argsToForward = filterFlags(argv, commonFlags, [])
+
+    const result = await forwardToSfw('pnpm', argsToForward)
+
+    if (!result.ok) {
+      process.exitCode = result.code || 1
+    }
+  }
 }

@@ -506,7 +506,6 @@ export type Constants = Remap<
     readonly shadowNpmInjectPath: string
     readonly shadowNpxBinPath: string
     readonly shadowPnpmBinPath: string
-    readonly shadowYarnBinPath: string
     readonly socketAppDataPath: string
     readonly socketCachePath: string
     readonly socketRegistryPath: string
@@ -985,9 +984,6 @@ const lazyShadowNpxBinPath = () =>
 const lazyShadowPnpmBinPath = () =>
   path.join(constants.distPath, 'shadow-pnpm-bin.js')
 
-const lazyShadowYarnBinPath = () =>
-  path.join(constants.distPath, 'shadow-yarn-bin.js')
-
 const lazySocketAppDataPath = (): string | undefined => {
   // Get the OS app data directory:
   // - Win: %LOCALAPPDATA% or fail?
@@ -1170,7 +1166,6 @@ const constants: Constants = createConstantsObject(
     shadowNpmInjectPath: undefined,
     shadowNpmBinPath: undefined,
     shadowPnpmBinPath: undefined,
-    shadowYarnBinPath: undefined,
     socketAppDataPath: undefined,
     socketCachePath: undefined,
     socketRegistryPath: undefined,
@@ -1204,7 +1199,6 @@ const constants: Constants = createConstantsObject(
       shadowNpmInjectPath: lazyShadowNpmInjectPath,
       shadowNpxBinPath: lazyShadowNpxBinPath,
       shadowPnpmBinPath: lazyShadowPnpmBinPath,
-      shadowYarnBinPath: lazyShadowYarnBinPath,
       socketAppDataPath: lazySocketAppDataPath,
       socketCachePath: lazySocketCachePath,
       socketRegistryPath: lazySocketRegistryPath,

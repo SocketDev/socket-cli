@@ -14,6 +14,12 @@ import { performReachabilityAnalysis } from './perform-reachability-analysis.mts
 import constants from '../../constants.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import { debugDir, debugFn } from '../../utils/debug.mts'
+import {
+  logErrorIf,
+  logIf,
+  logInfoIf,
+  logSuccessIf,
+} from '../../utils/output.mts'
 import { getPackageFilesForScan } from '../../utils/path-resolve.mts'
 import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
 import { socketDocsLink } from '../../utils/terminal-link.mts'
@@ -89,7 +95,7 @@ export async function handleCreateNewScan({
   })
 
   if (autoManifest) {
-    logger.info('Auto-generating manifest files ...')
+    logInfoIf(outputKind, 'Auto-generating manifest files ...')
     debugFn('notice', 'Auto-manifest mode enabled')
     const sockJson = readOrDefaultSocketJson(cwd)
     const detected = await detectManifestActions(sockJson, cwd)
@@ -100,7 +106,10 @@ export async function handleCreateNewScan({
       outputKind,
       verbose: false,
     })
-    logger.info('Auto-generation finished. Proceeding with Scan creation.')
+    logInfoIf(
+      outputKind,
+      'Auto-generation finished. Proceeding with Scan creation.',
+    )
   }
 
   const { spinner } = constants
@@ -143,14 +152,15 @@ export async function handleCreateNewScan({
     return
   }
 
-  logger.success(
+  logSuccessIf(
+    outputKind,
     `Found ${packagePaths.length} local ${pluralize('file', packagePaths.length)}`,
   )
 
   debugDir('inspect', { packagePaths })
 
   if (readOnly) {
-    logger.log('[ReadOnly] Bailing now')
+    logIf(outputKind, '[ReadOnly] Bailing now')
     debugFn('notice', 'Read-only mode, exiting early')
     return
   }
@@ -160,8 +170,8 @@ export async function handleCreateNewScan({
 
   // If reachability is enabled, perform reachability analysis.
   if (reach.runReachabilityAnalysis) {
-    logger.error('')
-    logger.info('Starting reachability analysis...')
+    logErrorIf(outputKind, '')
+    logInfoIf(outputKind, 'Starting reachability analysis...')
     debugFn('notice', 'Reachability analysis enabled')
     debugDir('inspect', { reachabilityOptions: reach })
 
@@ -184,7 +194,7 @@ export async function handleCreateNewScan({
       return
     }
 
-    logger.success('Reachability analysis completed successfully')
+    logSuccessIf(outputKind, 'Reachability analysis completed successfully')
 
     const reachabilityReport = reachResult.data?.reachabilityReport
 

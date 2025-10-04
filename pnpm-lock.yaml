@@ -8,7 +8,7 @@ overrides:
   '@octokit/graphql': 9.0.1
   '@octokit/request-error': 7.0.0
   '@rollup/plugin-commonjs': 28.0.6
-  '@socketsecurity/registry': 1.3.9
+  '@socketsecurity/registry': 1.3.10
   aggregate-error: npm:@socketregistry/aggregate-error@^1.0.15
   ansi-regex: 6.1.0
   ansi-term: 0.0.2
@@ -175,17 +175,17 @@ importers:
         specifier: 1.0.6
         version: 1.0.6
       '@socketregistry/packageurl-js':
-        specifier: 1.1.4
-        version: 1.1.4
+        specifier: 1.1.6
+        version: 1.1.6
       '@socketsecurity/config':
         specifier: 3.0.1
         version: 3.0.1
       '@socketsecurity/registry':
-        specifier: 1.3.9
-        version: 1.3.9
+        specifier: 1.3.10
+        version: 1.3.10
       '@socketsecurity/sdk':
-        specifier: 1.9.1
-        version: 1.9.1
+        specifier: 1.9.2
+        version: 1.9.2
       '@types/cmd-shim':
         specifier: 5.0.2
         version: 5.0.2
@@ -1664,8 +1664,8 @@ packages:
     resolution: {integrity: sha512-KbKE6j98nf+cZum6lAO5ubP/Sid5tbbl3S7XYb8VFu3RaHy9I1uIZ/dcM932xYk3+TQuoXgV3pzqAM2ekqA1tA==}
     engines: {node: '>=18'}
 
-  '@socketregistry/packageurl-js@1.1.4':
-    resolution: {integrity: sha512-x6z5IDUobW/fkPRM9JboWpUGhAOD95Y71xO+dpb2AeP43uqYewJWBQc3KQ8GilFmydq93ew1tzut9UUi6yEdfg==}
+  '@socketregistry/packageurl-js@1.1.6':
+    resolution: {integrity: sha512-XFzY0DYqe/l3Bdzi/osgcU0MLQ3a0ez3Neeb3aZfP1kG3iKi3Of7cWkG3n5uezFI6jUAB1vMSfUtarXhLpje2Q==}
     engines: {node: '>=18'}
 
   '@socketregistry/path-parse@1.0.8':
@@ -1688,12 +1688,12 @@ packages:
     resolution: {integrity: sha512-kLKdSqi4W7SDSm5z+wYnfVRnZCVhxzbzuKcdOZSrcHoEGOT4Gl844uzoaML+f5eiQMxY+nISiETwRph/aXrIaQ==}
     engines: {node: 18.20.7 || ^20.18.3 || >=22.14.0}
 
-  '@socketsecurity/registry@1.3.9':
-    resolution: {integrity: sha512-tXN/MmR+tjk3+5vRBFg/UE2iYUzNvWP95o9BUOtSKzD5x9c0AHNnwgJsmEhTCIBkyRe/wPnxcdtPWhjWNYCSGA==}
+  '@socketsecurity/registry@1.3.10':
+    resolution: {integrity: sha512-bkwZg6XjE54+dQOudpOz9OwyiD+xotkK6+3g0xYXYyzOjrPhxsCRTI3WG7052Ts8WLdi0Syl7ZQYnhKp3ld9qw==}
     engines: {node: '>=18'}
 
-  '@socketsecurity/sdk@1.9.1':
-    resolution: {integrity: sha512-JHcwBo4Qwxk5ai/wLcXYJe4/sQdYwWrZVYncMb+yyL5LL++zacXEA8UzftlFw/vUvAMBi8SEgw9E2HSAzmuWAA==}
+  '@socketsecurity/sdk@1.9.2':
+    resolution: {integrity: sha512-3KRMQ81eUkMHNh8JGoAuhyjcb3SBCDF4+lZfuzgz5gY/VSVKJZOM+U9ZEzLnDNo7RZFYhusosbip22tsFsfvcQ==}
     engines: {node: '>=18', pnpm: '>=10.16.0'}
 
   '@stroncium/procfs@1.2.1':
@@ -5206,7 +5206,7 @@ snapshots:
       iconv-lite: 0.6.3
       jws: 4.0.0
       node-stream-zip: 1.15.0
-      packageurl-js: '@socketregistry/packageurl-js@1.1.4'
+      packageurl-js: '@socketregistry/packageurl-js@1.1.6'
       prettify-xml: 1.2.0
       properties-reader: 2.3.0
       semver: 7.7.2
@@ -6130,7 +6130,7 @@ snapshots:
 
   '@socketregistry/is-interactive@1.0.6': {}
 
-  '@socketregistry/packageurl-js@1.1.4': {}
+  '@socketregistry/packageurl-js@1.1.6': {}
 
   '@socketregistry/path-parse@1.0.8': {}
 
@@ -6147,11 +6147,11 @@ snapshots:
       pony-cause: 2.1.11
       yaml: 2.8.1
 
-  '@socketsecurity/registry@1.3.9': {}
+  '@socketsecurity/registry@1.3.10': {}
 
-  '@socketsecurity/sdk@1.9.1':
+  '@socketsecurity/sdk@1.9.2':
     dependencies:
-      '@socketsecurity/registry': 1.3.9
+      '@socketsecurity/registry': 1.3.10
 
   '@stroncium/procfs@1.2.1': {}
 

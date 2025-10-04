@@ -1,6 +1,5 @@
 /** @fileoverview Scan reachability handler for Socket CLI. Orchestrates reachability analysis including package file detection, Coana integration, and result output. Identifies unused code paths in dependencies. */
 
-import { logger } from '@socketsecurity/registry/lib/logger'
 import { pluralize } from '@socketsecurity/registry/lib/words'
 
 import { fetchSupportedScanFileNames } from './fetch-supported-scan-file-names.mts'
@@ -8,6 +7,7 @@ import { outputScanReach } from './output-scan-reach.mts'
 import { performReachabilityAnalysis } from './perform-reachability-analysis.mts'
 import constants from '../../constants.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
+import { logSuccessIf } from '../../utils/output.mts'
 import { getPackageFilesForScan } from '../../utils/path-resolve.mts'
 
 import type { ReachabilityOptions } from './perform-reachability-analysis.mts'
@@ -63,7 +63,8 @@ export async function handleScanReach({
     return
   }
 
-  logger.success(
+  logSuccessIf(
+    outputKind,
     `Found ${packagePaths.length} local ${pluralize('file', packagePaths.length)}`,
   )
 

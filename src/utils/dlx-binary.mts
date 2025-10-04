@@ -10,8 +10,7 @@
  * - listDlxCache: Get information about cached binaries
  *
  * Cache Management:
- * - Stores binaries in ~/.socket/cache/dlx-bin (POSIX)
- * - Stores binaries in %USERPROFILE%\.socket\cache\dlx-bin (Windows)
+ * - Stores binaries in ~/.socket/_dlx (shared directory across Socket tools)
  * - Uses content-addressed storage with SHA256 hashes
  * - Supports TTL-based cache expiration
  * - Verifies checksums for security
@@ -27,12 +26,13 @@ import { existsSync, promises as fs } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-import { readJson } from '@socketsecurity/registry/lib/fs'
-import { normalizePath } from '@socketsecurity/registry/lib/path'
+import { readJson, remove } from '@socketsecurity/registry/lib/fs'
+import { getSocketDlxDir } from '@socketsecurity/registry/lib/paths'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import constants from '../constants.mts'
 import { InputError } from './errors.mts'
+import { httpRequest } from './http.mts'
 
 import type {
   SpawnExtra,
@@ -118,7 +118,14 @@ async function downloadBinary(
   destPath: string,
   checksum?: string,
 ): Promise<string> {
-  const response = await fetch(url)
+  const result = await httpRequest(url)
+
+  if (!result.ok) {
+    throw new InputError(`Failed to download binary: ${result.message}`)
+  }
+
+  const response = result.data!
+
   if (!response.ok) {
     throw new InputError(
       `Failed to download binary: ${response.status} ${response.statusText}`,
@@ -134,8 +141,7 @@ async function downloadBinary(
     await fs.mkdir(path.dirname(destPath), { recursive: true })
 
     // Get the response as a buffer and compute hash.
-    const arrayBuffer = await response.arrayBuffer()
-    const buffer = Buffer.from(arrayBuffer)
+    const buffer = response.body
 
     // Compute hash.
     hasher.update(buffer)
@@ -163,7 +169,7 @@ async function downloadBinary(
   } catch (error) {
     // Clean up temp file on error.
     try {
-      await fs.unlink(tempPath)
+      await remove(tempPath)
     } catch {
       // Ignore cleanup errors.
     }
@@ -232,7 +238,7 @@ export async function cleanDlxCache(
       if (age > maxAge) {
         // Remove entire cache entry directory.
         // eslint-disable-next-line no-await-in-loop
-        await fs.rm(entryPath, { recursive: true, force: true })
+        await remove(entryPath, { recursive: true, force: true })
         cleaned += 1
       }
     } catch {
@@ -334,23 +340,11 @@ export async function dlxBinary(
 
 /**
  * Get the DLX binary cache directory path.
+ * Uses the shared ~/.socket/_dlx directory for binary downloads.
  * Returns normalized path for cross-platform compatibility.
  */
 export function getDlxCachePath(): string {
-  return normalizePath(path.join(getSocketHomePath(), 'cache', 'dlx'))
-}
-
-/**
- * Get the base .socket directory path.
- * Uses %USERPROFILE% on Windows, $HOME on POSIX systems.
- * Returns normalized path for cross-platform compatibility.
- */
-export function getSocketHomePath(): string {
-  const homedir = os.homedir()
-  if (!homedir) {
-    throw new InputError('Unable to determine home directory')
-  }
-  return normalizePath(path.join(homedir, '.socket'))
+  return getSocketDlxDir()
 }
 
 /**

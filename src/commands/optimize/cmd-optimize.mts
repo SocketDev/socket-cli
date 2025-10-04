@@ -2,8 +2,6 @@
 
 import path from 'node:path'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import { handleOptimize } from './handle-optimize.mts'
 import constants from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
@@ -13,7 +11,9 @@ import {
   getFlagApiRequirementsOutput,
   getFlagListOutput,
 } from '../../utils/output-formatting.mts'
+import { logIf } from '../../utils/output.mts'
 
+import type { OutputKind } from '../../types.mts'
 import type {
   CliCommandConfig,
   CliCommandContext,
@@ -77,20 +77,18 @@ async function run(
   })
 
   const dryRun = !!cli.flags['dryRun']
+  const { json, markdown, pin, prod } = cli.flags
+  const outputKind: OutputKind = json ? 'json' : markdown ? 'markdown' : 'text'
 
   if (dryRun) {
-    logger.log(constants.DRY_RUN_BAILING_NOW)
+    logIf(outputKind, constants.DRY_RUN_BAILING_NOW)
     return
   }
-
-  const { json, markdown, pin, prod } = cli.flags
 
   let [cwd = '.'] = cli.input
   // Note: path.resolve vs .join:
   // If given path is absolute then cwd should not affect it.
   cwd = path.resolve(process.cwd(), cwd)
-
-  const outputKind = getOutputKind(json, markdown)
 
   await handleOptimize({
     cwd,

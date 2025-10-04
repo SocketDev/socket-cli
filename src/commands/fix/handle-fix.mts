@@ -1,12 +1,12 @@
 /** @fileoverview Fix business logic handler for Socket CLI. Orchestrates vulnerability fixing workflow including GHSA/CVE resolution, Coana analysis execution, git branch management, and optional PR creation. Supports both manual and autopilot modes. */
 
 import { joinAnd } from '@socketsecurity/registry/lib/arrays'
-import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { coanaFix } from './coana-fix.mts'
 import { outputFixResult } from './output-fix-result.mts'
 import { convertCveToGhsa } from '../../utils/cve-to-ghsa.mts'
 import { debugDir, debugFn } from '../../utils/debug.mts'
+import { logInfoIf, logWarnIf } from '../../utils/output.mts'
 import { convertPurlToGhsas } from '../../utils/purl-to-ghsa.mts'
 
 import type { FixConfig } from './types.mts'
@@ -33,7 +33,10 @@ export type HandleFixConfig = Remap<
  * Converts mixed CVE/GHSA/PURL IDs to GHSA IDs only.
  * Filters out invalid IDs and logs conversion results.
  */
-export async function convertIdsToGhsas(ids: string[]): Promise<string[]> {
+export async function convertIdsToGhsas(
+  ids: string[],
+  outputKind?: OutputKind | undefined,
+): Promise<string[]> {
   debugFn('notice', `Converting ${ids.length} IDs to GHSA format`)
   debugDir('inspect', { ids })
 
@@ -61,7 +64,10 @@ export async function convertIdsToGhsas(ids: string[]): Promise<string[]> {
       const conversionResult = await convertCveToGhsa(trimmedId)
       if (conversionResult.ok) {
         validGhsas.push(conversionResult.data)
-        logger.info(`Converted ${trimmedId} to ${conversionResult.data}`)
+        logInfoIf(
+          outputKind,
+          `Converted ${trimmedId} to ${conversionResult.data}`,
+        )
       } else {
         errors.push(`${trimmedId}: ${conversionResult.message}`)
       }
@@ -75,7 +81,8 @@ export async function convertIdsToGhsas(ids: string[]): Promise<string[]> {
           conversionResult.data.length > 3
             ? `${conversionResult.data.slice(0, 3).join(', ')} ... and ${conversionResult.data.length - 3} more`
             : joinAnd(conversionResult.data)
-        logger.info(
+        logInfoIf(
+          outputKind,
           `Converted ${trimmedId} to ${conversionResult.data.length} GHSA(s): ${displayGhsas}`,
         )
       } else {
@@ -92,7 +99,8 @@ export async function convertIdsToGhsas(ids: string[]): Promise<string[]> {
   }
 
   if (errors.length) {
-    logger.warn(
+    logWarnIf(
+      outputKind,
       `Skipped ${errors.length} invalid IDs:\n${errors.map(e => `  - ${e}`).join('\n')}`,
     )
     debugDir('inspect', { errors })
@@ -143,7 +151,7 @@ export async function handleFix({
       applyFixes,
       cwd,
       // Convert mixed CVE/GHSA/PURL inputs to GHSA IDs only
-      ghsas: await convertIdsToGhsas(ghsas),
+      ghsas: await convertIdsToGhsas(ghsas, outputKind),
       glob,
       limit,
       minimumReleaseAge,

@@ -11,7 +11,7 @@
  * Architecture:
  * - Check for system Python 3.10+ first
  * - If not found, download portable Python from astral-sh/python-build-standalone
- * - Cache portable Python in ~/.socket/cache/dlx/python/
+ * - Cache portable Python in ~/.socket/_dlx/<hash>/ (content-addressed, similar to npx)
  * - Install socketsecurity package for socket-python-cli
  * - Forward unknown Socket CLI commands to Python CLI
  *
@@ -19,12 +19,11 @@
  *   Minimum: 3.10 (required by socketsecurity package)
  *   Portable: 3.10.18 (from python-build-standalone)
  *
- * Cache Structure:
- *   ~/.socket/cache/dlx/python/
- *   └── 3.10.18-20250918-darwin-arm64/
- *       └── python/
- *           ├── bin/python3
- *           └── lib/python3.10/site-packages/socketsecurity/
+ * Cache Structure (hash-based, mimics npm's npx):
+ *   ~/.socket/_dlx/<sha256-hash>/
+ *   └── python/
+ *       ├── bin/python3
+ *       └── lib/python3.10/site-packages/socketsecurity/
  *
  * Environment Variables:
  *   INLINED_SOCKET_CLI_PYTHON_VERSION - Python version to download
@@ -108,6 +107,7 @@ function getPythonStandaloneUrl(
 
 /**
  * Get the path to the cached Python installation directory.
+ * Uses hash-based storage similar to npm's npx: ~/.socket/_dlx/<hash>
  */
 function getPythonCachePath(): string {
   const version = ENV['INLINED_SOCKET_CLI_PYTHON_VERSION']
@@ -115,11 +115,12 @@ function getPythonCachePath(): string {
   const platform = os.platform()
   const arch = os.arch()
 
-  return path.join(
-    getDlxCachePath(),
-    'python',
-    `${version}-${tag}-${platform}-${arch}`,
-  )
+  // Generate content-addressed hash for this Python configuration
+  const cacheKey = `python-${version}-${tag}-${platform}-${arch}`
+  const { createHash } = require('node:crypto')
+  const hash = createHash('sha256').update(cacheKey).digest('hex')
+
+  return path.join(getDlxCachePath(), hash)
 }
 
 /**

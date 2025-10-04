@@ -34,7 +34,6 @@ const {
   SHADOW_NPM_INJECT,
   SHADOW_NPX_BIN,
   SHADOW_PNPM_BIN,
-  SHADOW_YARN_BIN,
   SLASH_NODE_MODULES_SLASH,
   // SOCKET_CLI_BIN_NAME,
   // SOCKET_CLI_BIN_NAME_ALIAS,
@@ -334,9 +333,6 @@ export default async () => {
   const shadowPnpmBinSrcPath = normalizePath(
     path.join(srcPath, 'shadow/pnpm/bin.mts'),
   )
-  const shadowYarnBinSrcPath = normalizePath(
-    path.join(srcPath, 'shadow/yarn/bin.mts'),
-  )
   const utilsSrcPath = normalizePath(path.join(srcPath, UTILS))
 
   return [
@@ -353,7 +349,6 @@ export default async () => {
         [SHADOW_NPM_INJECT]: `${srcPath}/shadow/npm/inject.mts`,
         [SHADOW_NPX_BIN]: `${srcPath}/shadow/npx/bin.mts`,
         [SHADOW_PNPM_BIN]: `${srcPath}/shadow/pnpm/bin.mts`,
-        [SHADOW_YARN_BIN]: `${srcPath}/shadow/yarn/bin.mts`,
         ...(constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD]
           ? {
               [INSTRUMENT_WITH_SENTRY]: `${srcPath}/${INSTRUMENT_WITH_SENTRY}.mts`,
@@ -383,8 +378,6 @@ export default async () => {
                 return SHADOW_NPX_BIN
               case shadowPnpmBinSrcPath:
                 return SHADOW_PNPM_BIN
-              case shadowYarnBinSrcPath:
-                return SHADOW_YARN_BIN
               default:
                 if (id.startsWith(`${utilsSrcPath}/`)) {
                   return UTILS

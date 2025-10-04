@@ -7,6 +7,7 @@
  * Architecture:
  * - Parses Socket CLI flags (--help, --config, etc.)
  * - Filters out Socket-specific flags
+ * - Detects pip or pip3 binary availability
  * - Forwards remaining arguments to Socket Firewall via npx
  * - Socket Firewall acts as a proxy for pip operations
  *
@@ -18,6 +19,7 @@
  * Environment:
  *   Requires Node.js and npx (bundled with npm)
  *   Socket Firewall (sfw) is downloaded automatically via npx on first use
+ *   Checks for pip, falls back to pip3 if pip is not found
  *
  * See also:
  *   - Socket Firewall: https://www.npmjs.com/package/sfw
@@ -28,7 +30,7 @@ import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import constants from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
-import { filterFlags } from '../../utils/cmd.mts'
+import { filterFlags, forwardToSfw } from '../../utils/cmd.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 
 import type {
@@ -40,6 +42,41 @@ const { WIN32 } = constants
 
 const CMD_NAME = 'pip'
 const description = 'Run pip with Socket Firewall security'
+
+/**
+ * Detect which pip binary is available (pip or pip3).
+ * macOS systems typically have pip3, while others may have pip.
+ */
+async function detectPipBinary(): Promise<string> {
+  // Try pip first
+  try {
+    const result = await spawn('which', ['pip'], {
+      stdio: 'ignore',
+      shell: WIN32,
+    })
+    if (result.code === 0) {
+      return 'pip'
+    }
+  } catch {
+    // pip not found, try pip3
+  }
+
+  // Fall back to pip3
+  try {
+    const result = await spawn('which', ['pip3'], {
+      stdio: 'ignore',
+      shell: WIN32,
+    })
+    if (result.code === 0) {
+      return 'pip3'
+    }
+  } catch {
+    // pip3 not found
+  }
+
+  // Default to pip (sfw will handle the error)
+  return 'pip'
+}
 
 /**
  * Command export for socket pip.
@@ -103,13 +140,13 @@ async function run(
   // Filter out Socket CLI flags before forwarding to sfw
   const argsToForward = filterFlags(argv, commonFlags, [])
 
-  // Forward arguments to sfw (Socket Firewall) via npx.
-  const result = await spawn('npx', ['sfw', 'pip', ...argsToForward], {
-    shell: WIN32,
-    stdio: 'inherit',
-  })
+  // Detect pip or pip3 binary
+  const pipBinary = await detectPipBinary()
 
-  if (result.code !== 0) {
+  // Forward arguments to sfw (Socket Firewall) via npx.
+  const result = await forwardToSfw(pipBinary, argsToForward)
+
+  if (!result.ok) {
     process.exitCode = result.code || 1
   }
 }

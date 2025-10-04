@@ -1,12 +1,18 @@
-/** @fileoverview Shadow bin runner with IPC support and error handling. */
+/**
+ * @fileoverview Shadow bin runner with IPC support and error handling.
+ *
+ * NOTE: This module no longer uses package manager-specific dlx commands (npx/pnpm dlx/yarn dlx).
+ * Instead, it uses direct npx execution for all package installations, ensuring consistent
+ * behavior across different package manager environments.
+ */
 
 import { createRequire } from 'node:module'
 
-import constants, { FLAG_SILENT } from '../constants.mts'
+import { spawn } from '@socketsecurity/registry/lib/spawn'
+
+import constants from '../constants.mts'
 import { getErrorCause } from './errors.mts'
-import { findUp } from './fs.mts'
 import { startSpinner } from './spinner.mts'
-import { isYarnBerry } from './yarn-version.mts'
 
 import type { IpcObject } from '../constants.mts'
 import type { ShadowBinOptions, ShadowBinResult } from '../shadow/npm-base.mts'
@@ -15,8 +21,7 @@ import type { SpawnExtra } from '@socketsecurity/registry/lib/spawn'
 
 const require = createRequire(import.meta.url)
 
-const { NPM, PACKAGE_LOCK_JSON, PNPM, PNPM_LOCK_YAML, YARN, YARN_LOCK } =
-  constants
+const { WIN32 } = constants
 
 export type ShadowRunnerOptions = {
   agent?: 'npm' | 'pnpm' | 'yarn' | undefined
@@ -30,39 +35,10 @@ export type ShadowRunnerOptions = {
 }
 
 /**
- * Auto-detect package manager based on lockfiles.
- */
-async function detectPackageManager(
-  cwd?: string | undefined,
-): Promise<'npm' | 'pnpm' | 'yarn'> {
-  const pnpmLockPath = await findUp(PNPM_LOCK_YAML, {
-    cwd,
-    onlyFiles: true,
-  })
-  const yarnLockPath = pnpmLockPath
-    ? undefined
-    : await findUp(YARN_LOCK, { cwd, onlyFiles: true })
-  const npmLockPath =
-    pnpmLockPath || yarnLockPath
-      ? undefined
-      : await findUp(PACKAGE_LOCK_JSON, { cwd, onlyFiles: true })
-
-  if (pnpmLockPath) {
-    return PNPM
-  }
-  if (yarnLockPath) {
-    return YARN
-  }
-  if (npmLockPath) {
-    return NPM
-  }
-  // Default to npm if no lockfile found.
-  return NPM
-}
-
-/**
- * Run a command via package manager dlx/npx with shadow bin wrapping.
- * Handles IPC for secure config passing and provides unified error handling.
+ * Run a command via npx (no longer uses shadow binaries or package manager-specific dlx).
+ * Uses direct npx execution for consistent behavior across all environments.
+ *
+ * Note: The `agent` option is now ignored - we always use npx.
  */
 export async function runShadowCommand(
   packageSpec: string,
@@ -71,25 +47,13 @@ export async function runShadowCommand(
   spawnExtra?: SpawnExtra | undefined,
 ): Promise<CResult<string>> {
   const opts = { __proto__: null, ...options } as ShadowRunnerOptions
-  const agent = opts.agent ?? (await detectPackageManager(opts.cwd))
 
-  const shadowOpts: ShadowBinOptions = {
-    cwd: opts.cwd,
-    env: opts.env,
-    ipc: {
-      [constants.SOCKET_CLI_SHADOW_ACCEPT_RISKS]: true,
-      [constants.SOCKET_CLI_SHADOW_API_TOKEN]:
-        constants.SOCKET_PUBLIC_API_TOKEN,
-      [constants.SOCKET_CLI_SHADOW_SILENT]: true,
-      ...opts.ipc,
-    },
-    stdio: opts.stdio || 'inherit',
+  const finalEnv = {
+    ...process.env,
+    ...opts.env,
   }
 
-  const finalSpawnExtra: SpawnExtra = {
-    stdio: spawnExtra?.['stdio'] || shadowOpts.stdio,
-    ...spawnExtra,
-  }
+  const finalStdio = spawnExtra?.['stdio'] || opts.stdio || 'inherit'
 
   let stopSpinner: (() => void) | undefined
 
@@ -98,38 +62,34 @@ export async function runShadowCommand(
       stopSpinner = startSpinner(opts.spinnerMessage)
     }
 
-    let result: ShadowBinResult
+    // Use npx directly instead of shadow binaries
+    const npxArgs = ['--yes', packageSpec, ...args]
 
-    if (agent === PNPM) {
-      const shadowPnpmBin = /*@__PURE__*/ require(constants.shadowPnpmBinPath)
-      result = await shadowPnpmBin(
-        ['dlx', FLAG_SILENT, packageSpec, ...args],
-        shadowOpts,
-        finalSpawnExtra,
-      )
-    } else if (agent === YARN && isYarnBerry()) {
-      const shadowYarnBin = /*@__PURE__*/ require(constants.shadowYarnBinPath)
-      result = await shadowYarnBin(
-        ['dlx', '--quiet', packageSpec, ...args],
-        shadowOpts,
-        finalSpawnExtra,
-      )
-    } else {
-      const shadowNpxBin = /*@__PURE__*/ require(constants.shadowNpxBinPath)
-      result = await shadowNpxBin(
-        ['--yes', '--force', FLAG_SILENT, packageSpec, ...args],
-        shadowOpts,
-        finalSpawnExtra,
-      )
-    }
+    const result = await spawn('npx', npxArgs, {
+      cwd: opts.cwd,
+      env: finalEnv,
+      shell: WIN32,
+      stdio: finalStdio,
+    })
 
     if (stopSpinner) {
       stopSpinner()
       stopSpinner = undefined
     }
 
-    const output = await result.spawnPromise
-    return { ok: true, data: output.stdout.toString() }
+    const stdout = result.stdout ? result.stdout.toString() : ''
+
+    if (result.code !== 0) {
+      const stderr = result.stderr ? result.stderr.toString() : ''
+      return {
+        ok: false,
+        code: result.code || 1,
+        data: result,
+        message: stderr || `Command exited with code ${result.code}`,
+      }
+    }
+
+    return { ok: true, data: stdout }
   } catch (e) {
     if (stopSpinner) {
       stopSpinner()

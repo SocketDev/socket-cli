@@ -12,12 +12,10 @@ import type { ShadowBinOptions } from '../shadow/npm-base.mts'
 import type { CResult } from '../types.mts'
 import type { SpawnExtra } from '@socketsecurity/registry/lib/spawn'
 
-export type CoanaSpawnOptions = ShadowBinOptions & {
-  agent?: 'npm' | 'pnpm' | 'yarn' | undefined
-}
+export type CoanaSpawnOptions = ShadowBinOptions
 
 /**
- * Helper to spawn coana with package manager dlx commands.
+ * Helper to spawn coana via npx.
  * Returns a CResult with stdout extraction for backward compatibility.
  *
  * If SOCKET_CLI_COANA_LOCAL_PATH environment variable is set, uses the local
@@ -30,7 +28,6 @@ export async function spawnCoana(
   spawnExtra?: SpawnExtra | undefined,
 ): Promise<CResult<string>> {
   const {
-    agent,
     env: spawnEnv,
     ipc,
     ...shadowOptions
@@ -83,7 +80,7 @@ export async function spawnCoana(
       }
     }
 
-    // Use npm/dlx version via shadow-runner.
+    // Use npx to run coana.
     const coanaVersion =
       constants.ENV['INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION']
     const packageSpec = `@coana-tech/cli@~${coanaVersion}`
@@ -96,7 +93,6 @@ export async function spawnCoana(
     }
 
     const result = await runShadowCommand(packageSpec, args, {
-      agent,
       cwd:
         typeof shadowOptions.cwd === 'string'
           ? shadowOptions.cwd

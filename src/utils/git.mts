@@ -25,7 +25,7 @@
  * - gitBranch: Get current branch or commit hash
  */
 
-import { normalizePath } from '@socketsecurity/registry/lib/path'
+import { getUnstagedFiles } from '@socketsecurity/registry/lib/git'
 import { isSpawnError, spawn } from '@socketsecurity/registry/lib/spawn'
 
 import constants, { FLAG_QUIET } from '../constants.mts'
@@ -480,20 +480,11 @@ export async function gitResetHard(
 export async function gitUnstagedModifiedFiles(
   cwd = process.cwd(),
 ): Promise<CResult<string[]>> {
-  const stdioPipeOptions: SpawnOptions = { cwd }
   try {
-    const gitDiffResult = await spawn(
-      'git',
-      ['diff', '--name-only'],
-      stdioPipeOptions,
-    )
-    const changedFilesDetails = gitDiffResult.stdout
-      ? gitDiffResult.stdout.toString()
-      : ''
-    const relPaths = changedFilesDetails.split('\n')
+    const files = await getUnstagedFiles({ cwd })
     return {
       ok: true,
-      data: relPaths.map(p => normalizePath(p)),
+      data: files,
     }
   } catch (e) {
     debugFn('error', 'Failed to get unstaged modified files')

@@ -77,6 +77,68 @@ export function debugApiResponse(
 }
 
 /**
+ * Format HTTP error information for debugging.
+ * Logs date/time, method, URL, status, body, and cf-ray header.
+ */
+export function debugHttpError(error: unknown): void {
+  if (!isDebug('error')) {
+    return
+  }
+
+  const timestamp = new Date().toISOString()
+  const errorInfo: Record<string, unknown> = {
+    timestamp,
+  }
+
+  // Extract request information
+  if (error && typeof error === 'object') {
+    const err = error as any
+
+    // Request details
+    if (err.request) {
+      errorInfo.method = err.request.method || 'GET'
+      errorInfo.url = err.request.url || err.request.uri || 'unknown'
+    } else if (err.config) {
+      // Axios-style error
+      errorInfo.method = err.config.method?.toUpperCase() || 'GET'
+      errorInfo.url = err.config.url || 'unknown'
+    }
+
+    // Response details
+    if (err.response) {
+      errorInfo.status = err.response.status || err.response.statusCode
+      errorInfo.statusText = err.response.statusText || ''
+
+      // Response body
+      if (err.response.data) {
+        errorInfo.body = err.response.data
+      } else if (err.response.body) {
+        errorInfo.body = err.response.body
+      }
+
+      // Cloudflare ray ID for debugging
+      if (err.response.headers) {
+        const cfRay =
+          err.response.headers['cf-ray'] || err.response.headers['CF-RAY']
+        if (cfRay) {
+          errorInfo.cfRay = cfRay
+        }
+      }
+    } else if (err.statusCode) {
+      errorInfo.status = err.statusCode
+    }
+
+    // Error message
+    if (err.message) {
+      errorInfo.message = err.message
+    }
+  }
+
+  debugFn('error', 'HTTP request failed:')
+  debugDir('error', errorInfo)
+}
+
+/**
  * Debug file operation.
  * Logs file operations with appropriate level.
  */

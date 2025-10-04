@@ -1,19 +1,25 @@
-/** @fileoverview Self-update handler for Socket CLI SEA binaries. Downloads and replaces binary with latest version using sfw-installer pattern. Includes rollback capabilities for failed updates.
+/** @fileoverview Self-update handler for Socket CLI SEA binaries. Downloads and replaces binary with latest version using ~/.socket/_socket/updater directory structure. Includes rollback capabilities for failed updates.
  */
 
 import crypto from 'node:crypto'
 import { existsSync, promises as fs } from 'node:fs'
-import os from 'node:os'
 import path from 'node:path'
 
 import colors from 'yoctocolors-cjs'
 
+import { remove } from '@socketsecurity/registry/lib/fs'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { outputSelfUpdate } from './output-self-update.mts'
 import constants from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
+import { httpDownload, httpGetJson } from '../../utils/http.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
+import {
+  getSocketCliUpdaterBackupsDir,
+  getSocketCliUpdaterDownloadsDir,
+  getSocketCliUpdaterStagingDir,
+} from '../../utils/paths.mts'
 import {
   clearQuarantine,
   ensureExecutable,
@@ -51,32 +57,24 @@ async function fetchLatestRelease(): Promise<GitHubRelease> {
   const url =
     'https://api.github.com/repos/SocketDev/socket-cli/releases/latest'
 
-  try {
-    const response = await fetch(url, {
-      headers: {
-        Accept: 'application/vnd.github+json',
-        'User-Agent': 'socket-cli-self-update/1.0',
-      },
-    })
+  const result = await httpGetJson<GitHubRelease>(url, {
+    headers: {
+      Accept: 'application/vnd.github+json',
+      'User-Agent': 'socket-cli-self-update/1.0',
+    },
+  })
 
-    if (!response.ok) {
-      throw new Error(
-        `GitHub API request failed: ${response.status} ${response.statusText}`,
-      )
-    }
-
-    const release = (await response.json()) as GitHubRelease
-
-    if (!release.tag_name || !Array.isArray(release.assets)) {
-      throw new Error('Invalid release data from GitHub API')
-    }
-
-    return release
-  } catch (error) {
-    throw new Error(
-      `Failed to fetch release information: ${error instanceof Error ? error.message : String(error)}`,
-    )
+  if (!result.ok) {
+    throw new Error(`Failed to fetch release information: ${result.message}`)
   }
+
+  const release = result.data!
+
+  if (!release.tag_name || !Array.isArray(release.assets)) {
+    throw new Error('Invalid release data from GitHub API')
+  }
+
+  return release
 }
 
 /**
@@ -93,25 +91,29 @@ function findPlatformAsset(
  * Download a file with progress indication.
  */
 async function downloadFile(url: string, destination: string): Promise<void> {
-  try {
-    logger.info(`Downloading ${url}...`)
+  logger.info(`Downloading ${path.basename(destination)}...`)
 
-    const response = await fetch(url)
-    if (!response.ok) {
-      throw new Error(
-        `Download failed: ${response.status} ${response.statusText}`,
-      )
-    }
+  let lastProgress = 0
+  const result = await httpDownload(url, destination, {
+    onProgress: (downloaded, total) => {
+      if (total > 0) {
+        const progress = Math.floor((downloaded / total) * 100)
+        // Show progress every 10%
+        if (progress >= lastProgress + 10) {
+          logger.info(
+            `Progress: ${progress}% (${Math.floor(downloaded / 1024 / 1024)}MB / ${Math.floor(total / 1024 / 1024)}MB)`,
+          )
+          lastProgress = progress
+        }
+      }
+    },
+  })
 
-    const buffer = new Uint8Array(await response.arrayBuffer())
-    await fs.writeFile(destination, buffer)
-
-    logger.info(`Downloaded ${buffer.length} bytes to ${destination}`)
-  } catch (error) {
-    throw new Error(
-      `Failed to download file: ${error instanceof Error ? error.message : String(error)}`,
-    )
+  if (!result.ok) {
+    throw new Error(`Failed to download file: ${result.message}`)
   }
+
+  logger.info(`Downloaded ${Math.floor(result.data!.size / 1024 / 1024)}MB`)
 }
 
 /**
@@ -152,12 +154,19 @@ async function verifyFile(
 }
 
 /**
- * Create a backup of the current binary.
+ * Create a backup of the current binary in ~/.socket/_socket/updater/backups.
+ * Uses timestamp-based naming for tracking multiple backups.
  */
 async function createBackup(currentPath: string): Promise<string> {
-  const backupPath = `${currentPath}.backup.${Date.now()}`
+  const backupsDir = getSocketCliUpdaterBackupsDir()
+  const binaryName = path.basename(currentPath)
+  const timestamp = Date.now()
+  const backupPath = path.join(backupsDir, `${binaryName}.backup.${timestamp}`)
 
   try {
+    // Ensure backups directory exists.
+    await fs.mkdir(backupsDir, { recursive: true })
+
     await fs.copyFile(currentPath, backupPath)
     logger.info(`Created backup at ${backupPath}`)
     return backupPath
@@ -190,7 +199,7 @@ async function replaceBinary(
       try {
         await fs.rename(newPath, currentPath)
         // Clean up old binary.
-        await fs.unlink(tempName).catch(() => {})
+        await remove(tempName).catch(() => {})
       } catch (error) {
         // Try to restore on failure.
         await fs.rename(tempName, currentPath).catch(() => {})
@@ -346,26 +355,36 @@ Examples
 
   logger.info(`Found asset: ${asset.name} (${asset.size} bytes)`)
 
-  // Create temporary directory for download.
-  const tempDir = path.join(os.tmpdir(), `socket-update-${Date.now()}`)
-  await fs.mkdir(tempDir, { recursive: true })
+  // Use proper updater directory structure (~/.socket/_socket/updater).
+  const downloadsDir = getSocketCliUpdaterDownloadsDir()
+  const stagingDir = getSocketCliUpdaterStagingDir()
+
+  // Ensure directories exist.
+  await fs.mkdir(downloadsDir, { recursive: true })
+  await fs.mkdir(stagingDir, { recursive: true })
+
+  // Create unique download path with timestamp.
+  const timestamp = Date.now()
+  const downloadPath = path.join(downloadsDir, `${asset.name}.${timestamp}`)
+  const stagingPath = path.join(stagingDir, `${asset.name}.${timestamp}`)
 
   try {
-    const tempBinaryPath = path.join(tempDir, asset.name)
-
-    // Download the new binary.
-    await downloadFile(asset.browser_download_url, tempBinaryPath)
+    // Download the new binary to downloads directory.
+    await downloadFile(asset.browser_download_url, downloadPath)
 
     // Verify integrity if possible (GitHub doesn't provide checksums in release API).
     // In a production system, you'd want to verify signatures or checksums.
-    await verifyFile(tempBinaryPath)
+    await verifyFile(downloadPath)
 
-    // Create backup of current binary.
+    // Move to staging for final preparation.
+    await fs.rename(downloadPath, stagingPath)
+
+    // Create backup of current binary in backups directory.
     const backupPath = await createBackup(currentBinaryPath)
 
     try {
       // Replace the binary.
-      await replaceBinary(tempBinaryPath, currentBinaryPath)
+      await replaceBinary(stagingPath, currentBinaryPath)
 
       await outputSelfUpdate({
         currentVersion,
@@ -379,6 +398,13 @@ Examples
       logger.info(`${colors.green('✓')} Update completed successfully!`)
       logger.info(`Backup saved to: ${backupPath}`)
       logger.info('Please restart the application to use the new version.')
+
+      // Clean up staging file after successful update.
+      try {
+        await remove(stagingPath)
+      } catch {
+        // Cleanup failure is not critical.
+      }
     } catch (error) {
       // Restore from backup on failure.
       try {
@@ -392,9 +418,14 @@ Examples
       throw error
     }
   } finally {
-    // Clean up temporary directory.
+    // Clean up download and staging files if they still exist.
     try {
-      await fs.rm(tempDir, { recursive: true, force: true })
+      if (existsSync(downloadPath)) {
+        await remove(downloadPath)
+      }
+      if (existsSync(stagingPath)) {
+        await remove(stagingPath)
+      }
     } catch {
       // Cleanup failure is not critical.
     }

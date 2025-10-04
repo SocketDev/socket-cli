@@ -20,7 +20,6 @@ const files = [
   'src/shadow/npm/arborist/lib/arborist/index.mts',
   'src/shadow/npm/install.mts',
   'src/shadow/pnpm/bin.mts',
-  'src/shadow/yarn/bin.mts',
   'src/utils/api.mts',
   'src/utils/dlx-detection.mts',
   'src/utils/dlx.mts',

@@ -1,4 +1,4 @@
-/** @fileoverview CycloneDX cdxgen runner for Socket CLI. Executes cdxgen SBOM generator via shadow-runner with automatic package manager detection (npm, pnpm, yarn). Converts yarn.lock to package-lock.json using synp for better accuracy. */
+/** @fileoverview CycloneDX cdxgen runner for Socket CLI. Executes cdxgen SBOM generator via npx. Converts yarn.lock to package-lock.json using synp for better accuracy. */
 
 import { existsSync, rmSync } from 'node:fs'
 import path from 'node:path'
@@ -10,12 +10,11 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import constants, { FLAG_HELP, YARN } from '../../constants.mts'
 import { findUp } from '../../utils/fs.mts'
 import { runShadowCommand } from '../../utils/shadow-runner.mts'
-import { isYarnBerry } from '../../utils/yarn-version.mts'
 
 import type { ShadowBinResult } from '../../shadow/npm/bin.mts'
 import type { ChildProcess } from 'node:child_process'
 
-const { PACKAGE_LOCK_JSON, PNPM_LOCK_YAML, YARN_LOCK } = constants
+const { PACKAGE_LOCK_JSON, YARN_LOCK } = constants
 
 const nodejsPlatformTypes = new Set([
   'javascript',
@@ -67,23 +66,12 @@ function argvObjectToArray(argvObj: ArgvObject): string[] {
 export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
   const argvMutable = { __proto__: null, ...argvObj } as ArgvObject
 
-  // Detect package manager based on lockfiles.
-  const pnpmLockPath = await findUp(PNPM_LOCK_YAML, { onlyFiles: true })
+  // Detect lockfiles for synp conversion.
+  const npmLockPath = await findUp(PACKAGE_LOCK_JSON, { onlyFiles: true })
 
-  const npmLockPath = pnpmLockPath
+  const yarnLockPath = npmLockPath
     ? undefined
-    : await findUp(PACKAGE_LOCK_JSON, { onlyFiles: true })
-
-  const yarnLockPath =
-    pnpmLockPath || npmLockPath
-      ? undefined
-      : await findUp(YARN_LOCK, { onlyFiles: true })
-
-  const agent = pnpmLockPath
-    ? 'pnpm'
-    : yarnLockPath && isYarnBerry()
-      ? 'yarn'
-      : 'npm'
+    : await findUp(YARN_LOCK, { onlyFiles: true })
 
   let cleanupPackageLock = false
   if (
@@ -104,7 +92,6 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
           synpPackageSpec,
           ['--source-file', `./${YARN_LOCK}`],
           {
-            agent,
             ipc: {
               [constants.SOCKET_CLI_SHADOW_ACCEPT_RISKS]: true,
               [constants.SOCKET_CLI_SHADOW_API_TOKEN]:
@@ -121,7 +108,7 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
     }
   }
 
-  // Use appropriate package manager for cdxgen via shadow-runner.
+  // Run cdxgen via npx.
   const cdxgenVersion =
     constants.ENV['INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION']
   const cdxgenPackageSpec = `@cyclonedx/cdxgen@${cdxgenVersion}`
@@ -131,7 +118,6 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
   const isHelpRequest = argvMutable['help'] || argvMutable['version']
 
   const result = await runShadowCommand(cdxgenPackageSpec, cdxgenArgs, {
-    agent,
     ipc: {
       [constants.SOCKET_CLI_SHADOW_ACCEPT_RISKS]: true,
       [constants.SOCKET_CLI_SHADOW_API_TOKEN]:

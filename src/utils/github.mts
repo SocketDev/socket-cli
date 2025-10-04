@@ -38,6 +38,7 @@ import {
   safeStatsSync,
   writeJson,
 } from '@socketsecurity/registry/lib/fs'
+import { getGitHubToken } from '@socketsecurity/registry/lib/github'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 import { parseUrl } from '@socketsecurity/registry/lib/url'
 
@@ -182,12 +183,12 @@ export async function fetchGhsaDetails(
 let _octokit: Octokit | undefined
 export function getOctokit(): Octokit {
   if (_octokit === undefined) {
-    const { SOCKET_CLI_GITHUB_TOKEN } = constants.ENV
-    if (!SOCKET_CLI_GITHUB_TOKEN) {
-      debugFn('notice', 'miss: SOCKET_CLI_GITHUB_TOKEN env var')
+    const token = getGitHubToken()
+    if (!token) {
+      debugFn('notice', 'miss: GitHub token env var')
     }
     const octokitOptions = {
-      auth: SOCKET_CLI_GITHUB_TOKEN,
+      auth: token,
       baseUrl: constants.ENV['GITHUB_API_URL'],
     }
     debugDir('inspect', { octokitOptions })
@@ -199,13 +200,13 @@ export function getOctokit(): Octokit {
 let _octokitGraphql: typeof OctokitGraphql | undefined
 export function getOctokitGraphql(): typeof OctokitGraphql {
   if (!_octokitGraphql) {
-    const { SOCKET_CLI_GITHUB_TOKEN } = constants.ENV
-    if (!SOCKET_CLI_GITHUB_TOKEN) {
-      debugFn('notice', 'miss: SOCKET_CLI_GITHUB_TOKEN env var')
+    const token = getGitHubToken()
+    if (!token) {
+      debugFn('notice', 'miss: GitHub token env var')
     }
     _octokitGraphql = OctokitGraphql.defaults({
       headers: {
-        authorization: `token ${SOCKET_CLI_GITHUB_TOKEN}`,
+        authorization: `token ${token}`,
       },
     })
   }

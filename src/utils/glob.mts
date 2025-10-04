@@ -1,5 +1,6 @@
 /** @fileoverview Glob pattern matching utilities for Socket CLI. Provides file searching with gitignore-style exclusions, socket.yml ignore patterns, and package manager specific filtering. Integrates with fast-glob for performance. */
 
+import { existsSync, statSync } from 'node:fs'
 import path from 'node:path'
 
 import fastGlob from 'fast-glob'
@@ -301,5 +302,22 @@ export function pathsToGlobPatterns(
   paths: string[] | readonly string[],
 ): string[] {
   // TODO: Does not support `~/` paths.
-  return paths.map(p => (p === '.' || p === './' ? '**/*' : p))
+  return paths.map(p => {
+    if (p === '.' || p === './') {
+      return '**/*'
+    }
+    // If path ends with /, treat it as a directory and search recursively
+    if (p.endsWith('/')) {
+      return `${p}**/*`
+    }
+    // Check if path exists and is a directory
+    try {
+      if (existsSync(p) && statSync(p).isDirectory()) {
+        return `${p}/**/*`
+      }
+    } catch {
+      // If stat fails, treat as glob pattern
+    }
+    return p
+  })
 }

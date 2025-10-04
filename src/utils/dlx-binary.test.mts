@@ -17,13 +17,9 @@ import path from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 
 import { normalizePath } from '@socketsecurity/registry/lib/path'
+import { getSocketHomePath } from '@socketsecurity/registry/lib/paths'
 
-import {
-  cleanDlxCache,
-  getDlxCachePath,
-  getSocketHomePath,
-  listDlxCache,
-} from './dlx-binary.mts'
+import { cleanDlxCache, getDlxCachePath, listDlxCache } from './dlx-binary.mts'
 import { InputError } from './errors.mts'
 
 describe('dlx-binary', () => {
@@ -33,25 +29,12 @@ describe('dlx-binary', () => {
       const expected = normalizePath(path.join(os.homedir(), '.socket'))
       expect(result).toBe(expected)
     })
-
-    it('should throw error when home directory cannot be determined', () => {
-      const originalHomedir = os.homedir
-      os.homedir = vi.fn(() => '')
-
-      expect(() => getSocketHomePath()).toThrow(
-        new InputError('Unable to determine home directory'),
-      )
-
-      os.homedir = originalHomedir
-    })
   })
 
   describe('getDlxCachePath', () => {
     it('should return correct cache path', () => {
       const result = normalizePath(getDlxCachePath())
-      const expected = normalizePath(
-        path.join(os.homedir(), '.socket', 'cache', 'dlx'),
-      )
+      const expected = normalizePath(path.join(os.homedir(), '.socket', '_dlx'))
       expect(result).toBe(expected)
     })
   })
@@ -122,9 +105,7 @@ describe('dlx-binary', () => {
       const socketHome = normalizePath(getSocketHomePath())
 
       expect(cachePath.startsWith(socketHome)).toBe(true)
-      expect(cachePath.endsWith(normalizePath(path.join('cache', 'dlx')))).toBe(
-        true,
-      )
+      expect(cachePath.endsWith(normalizePath('_dlx'))).toBe(true)
 
       // If cache exists, verify it's a directory
       if (existsSync(cachePath)) {

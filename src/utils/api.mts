@@ -25,7 +25,12 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
 import { getConfigValueOrUndef } from './config.mts'
-import { debugApiResponse, debugDir, debugFn } from './debug.mts'
+import {
+  debugApiResponse,
+  debugDir,
+  debugFn,
+  debugHttpError,
+} from './debug.mts'
 import { buildErrorCause } from './errors.mts'
 import constants, {
   CONFIG_KEY_API_BASE_URL,
@@ -227,7 +232,7 @@ export async function handleApiCallNoSpinner<T extends SocketSdkOperations>(
     sdkResult = await value
   } catch (e) {
     debugFn('error', `API request failed: ${description}`)
-    debugDir('error', e)
+    debugHttpError(e)
 
     const errStr = e ? String(e).trim() : ''
     const message = 'Socket API error'
@@ -330,7 +335,7 @@ export async function queryApiSafeText(
     }
 
     debugFn('error', 'Query API request failed')
-    debugDir('error', e)
+    debugHttpError(e)
 
     const errStr = e ? String(e).trim() : ''
     const message = 'API request failed'
@@ -368,7 +373,7 @@ export async function queryApiSafeText(
     }
   } catch (e) {
     debugFn('error', 'Failed to read API response text')
-    debugDir('error', e)
+    debugHttpError(e)
 
     return {
       ok: false,
@@ -477,7 +482,7 @@ export async function sendApiRequest<T>(
     }
 
     debugFn('error', `API ${method} request failed`)
-    debugDir('error', e)
+    debugHttpError(e)
 
     const errStr = e ? String(e).trim() : ''
     const message = 'API request failed'
@@ -515,7 +520,7 @@ export async function sendApiRequest<T>(
     }
   } catch (e) {
     debugFn('error', 'Failed to parse API response JSON')
-    debugDir('error', e)
+    debugHttpError(e)
     return {
       ok: false,
       message: 'API request failed',

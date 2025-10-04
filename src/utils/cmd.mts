@@ -17,10 +17,19 @@
  * - stripConfigFlags: Remove --config flags from argument list
  * - stripDebugFlags: Remove debug-related flags
  * - stripHelpFlags: Remove help flags (-h, --help)
+ *
+ * External Tool Integration:
+ * - forwardToSfw: Forward commands to Socket Firewall (sfw) via npx
  */
 
-import { FLAG_CONFIG, FLAG_HELP } from '../constants.mts'
+import { spawn } from '@socketsecurity/registry/lib/spawn'
+
+import constants, { FLAG_CONFIG, FLAG_HELP } from '../constants.mts'
 import { camelToKebab } from './strings.mts'
+
+import type { CResult } from '../types.mts'
+
+const { WIN32 } = constants
 
 const CONFIG_FLAG_LONG_NAME = FLAG_CONFIG
 const CONFIG_FLAG_ASSIGNMENT = `${CONFIG_FLAG_LONG_NAME}=`
@@ -219,4 +228,32 @@ export function isYarnLockfileScanCommand(command: string): boolean {
     command === 'upgrade' ||
     command === 'upgrade-interactive'
   )
+}
+
+/**
+ * Forward a command to Socket Firewall (sfw) via npx.
+ *
+ * @param tool - The tool name to forward to sfw (e.g., 'yarn', 'cargo', 'pip')
+ * @param args - Arguments to forward to the tool
+ * @returns CResult with success status and exit code
+ */
+export async function forwardToSfw(
+  tool: string,
+  args: string[] | readonly string[],
+): Promise<CResult<void>> {
+  const result = await spawn('npx', ['sfw', tool, ...args], {
+    shell: WIN32,
+    stdio: 'inherit',
+  })
+
+  if (result.code !== 0) {
+    return {
+      ok: false,
+      code: result.code || 1,
+      data: undefined,
+      message: `${tool} exited with code ${result.code}`,
+    }
+  }
+
+  return { ok: true, data: undefined }
 }

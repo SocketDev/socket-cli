@@ -8,6 +8,7 @@ import { CMD_NAME } from './shared.mts'
 import constants from '../../constants.mts'
 import { cmdPrefixMessage } from '../../utils/cmd.mts'
 import { debugDir, debugFn } from '../../utils/debug.mts'
+import { logInfoIf } from '../../utils/output.mts'
 import { detectAndValidatePackageEnvironment } from '../../utils/package-environment.mts'
 
 import type { OutputKind } from '../../types.mts'
@@ -80,7 +81,7 @@ export async function handleOptimize({
     return
   }
 
-  logger.info(`Optimizing packages for ${agent} v${agentVersion}.\n`)
+  logInfoIf(outputKind, `Optimizing packages for ${agent} v${agentVersion}.\n`)
 
   debugFn('notice', 'Applying optimization')
   const optimizationResult = await applyOptimization(pkgEnvDetails, {

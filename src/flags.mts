@@ -219,6 +219,13 @@ export const commonFlags: MeowFlags = {
     // Hidden to allow custom documenting of the negated `--no-spinner` variant.
     hidden: true,
   },
+  log: {
+    type: 'boolean',
+    default: true,
+    description: 'Suppress all logger output (useful for automation)',
+    // Hidden to allow custom documenting of the negated `--no-log` variant.
+    hidden: true,
+  },
 }
 
 export const outputFlags: MeowFlags = {
