@@ -20,6 +20,7 @@
  */
 
 import { messageWithCauses } from 'pony-cause'
+import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
@@ -87,12 +88,12 @@ function logPermissionsFor403(cmdPath?: string | undefined): void {
   }
 
   logger.error('')
-  logger.error('🔐 Required API Permissions:')
+  logger.error(`🔐 ${colors.yellow('Required API Permissions')}:`)
   for (const permission of requirements.permissions) {
-    logger.error(`   • ${permission}`)
+    logger.error(`   • ${colors.cyan(permission)}`)
   }
   logger.error('')
-  logger.error('💡 To fix this:')
+  logger.error(`💡 ${colors.cyan('To fix this')}:`)
   logger.error(
     `   1. Visit ${webLink('https://socket.dev/settings/api-tokens')}`,
   )
@@ -121,52 +122,52 @@ export function getDefaultApiBaseUrl(): string | undefined {
 export async function getErrorMessageForHttpStatusCode(code: number) {
   if (code === HTTP_STATUS_BAD_REQUEST) {
     return (
-      '❌ Invalid request: One of the options or parameters may be incorrect.\n' +
-      '💡 Try: Check your command syntax and parameter values.'
+      `❌ ${colors.red('Invalid request')}: One of the options or parameters may be incorrect.\n` +
+      `💡 ${colors.cyan('Try')}: Check your command syntax and parameter values.`
     )
   }
   if (code === HTTP_STATUS_FORBIDDEN || code === HTTP_STATUS_UNAUTHORIZED) {
     return (
-      '❌ Access denied: Your API token lacks required permissions or organization access.\n' +
-      '💡 Try:\n' +
-      '  • Run `socket whoami` to verify your account and organization\n' +
+      `❌ ${colors.red('Access denied')}: Your API token lacks required permissions or organization access.\n` +
+      `💡 ${colors.cyan('Try')}:\n` +
+      `  • Run ${colors.bold('socket whoami')} to verify your account and organization\n` +
       `  • Check your API token permissions at ${webLink('https://socket.dev/settings/api-tokens')}\n` +
-      "  • Ensure you're accessing the correct organization with `--org` flag\n" +
+      `  • Ensure you're accessing the correct organization with ${colors.bold('--org')} flag\n` +
       `  • Verify your plan includes this feature at ${webLink('https://socket.dev/pricing')}`
     )
   }
   if (code === HTTP_STATUS_NOT_FOUND) {
     return (
-      "❌ Not found: The requested endpoint or resource doesn't exist.\n" +
-      '💡 Try:\n' +
+      `❌ ${colors.red('Not found')}: The requested endpoint or resource doesn't exist.\n` +
+      `💡 ${colors.cyan('Try')}:\n` +
       '  • Verify resource names (package, repository, organization)\n' +
       '  • Check if the resource was deleted or moved\n' +
-      '  • Update to the latest CLI version: `socket self-update` (SEA) or `npm update -g socket`\n' +
+      `  • Update to the latest CLI version: ${colors.bold('socket self-update')} (SEA) or ${colors.bold('npm update -g socket')}\n` +
       `  • Report persistent issues at ${githubRepoLink('SocketDev', 'socket-cli', 'issues')}`
     )
   }
   if (code === HTTP_STATUS_TOO_MANY_REQUESTS) {
     return (
-      '❌ Rate limit exceeded: Too many API requests.\n' +
-      '💡 Try:\n' +
-      `  • Free plan: Wait a few minutes for quota reset or upgrade at ${webLink('https://socket.dev/pricing')}\n` +
-      '  • Paid plan: Contact support if rate limits seem incorrect\n' +
-      '  • Check current quota: `socket organization quota`\n' +
+      `❌ ${colors.red('Rate limit exceeded')}: Too many API requests.\n` +
+      `💡 ${colors.cyan('Try')}:\n` +
+      `  • ${colors.yellow('Free plan')}: Wait a few minutes for quota reset or upgrade at ${webLink('https://socket.dev/pricing')}\n` +
+      `  • ${colors.yellow('Paid plan')}: Contact support if rate limits seem incorrect\n` +
+      `  • Check current quota: ${colors.bold('socket organization quota')}\n` +
       '  • Reduce request frequency or batch operations'
     )
   }
   if (code === HTTP_STATUS_INTERNAL_SERVER_ERROR) {
     return (
-      '❌ Server error: Socket API encountered an internal problem (HTTP 500).\n' +
-      '💡 Try:\n' +
+      `❌ ${colors.red('Server error')}: Socket API encountered an internal problem (HTTP 500).\n` +
+      `💡 ${colors.cyan('Try')}:\n` +
       '  • Wait a few minutes and retry your command\n' +
       `  • Check Socket status: ${webLink('https://status.socket.dev')}\n` +
       `  • Report persistent issues: ${githubRepoLink('SocketDev', 'socket-cli', 'issues')}`
     )
   }
   return (
-    `❌ HTTP ${code}: Server responded with unexpected status code.\n` +
-    `💡 Try: Check Socket status at ${webLink('https://status.socket.dev')} or report the issue.`
+    `❌ ${colors.red(`HTTP ${code}`)}: Server responded with unexpected status code.\n` +
+    `💡 ${colors.cyan('Try')}: Check Socket status at ${webLink('https://status.socket.dev')} or report the issue.`
   )
 }
 
