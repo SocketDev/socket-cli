@@ -21,4 +21,4 @@ jobs:
     with:
       coverage-script: 'pnpm run test:unit:coverage'
       coverage-report-script: 'pnpm run coverage:percent --json'
-      test-setup-script: 'pnpm run test:prepare'
+      test-setup-script: 'pnpm run pretest:unit'
