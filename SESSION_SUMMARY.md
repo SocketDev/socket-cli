@@ -404,11 +404,26 @@ All changes are production-ready and have been committed to the main branch.
    - TypeScript fixes for URL properties
    - Removed ~70 lines of duplicate streaming code
 
+8. **Clickable Links Commit** (0ea7691a):
+   - Added webLink() and githubRepoLink() to error messages
+   - All URLs in error messages now clickable in supported terminals
+   - Imported terminal-link helpers for consistency
+
 ### Updated Metrics
 
 **fetch() Migration Status**:
 - ✅ Completed: self-update, dlx-binary, python-standalone, GitHub scan creation
-- ⏳ Remaining: update-checker (intentionally uses fetch with AbortController)
+- ⏳ Remaining: update-checker (intentionally uses fetch with AbortController for timeout)
+
+**DX/UI Improvements Verified**:
+- ✅ Actionable error messages with emojis
+- ✅ 403 permission helper with actionable steps
+- ✅ Progress indicators for downloads (10% increments)
+- ✅ Clean JSON output (--json flag suppresses stdout)
+- ✅ Structured debug output
+- ✅ Clickable links in terminals (webLink, githubRepoLink)
+- ✅ Command suggestions with Levenshtein distance (already implemented)
+- ✅ Table formatting with chalk-table (already implemented)
 
 **Code Reduction**:
 - ~140 lines removed (70 from streaming + 70 from refactoring)
