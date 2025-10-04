@@ -22,10 +22,14 @@ void (async () => {
   // Run with command line arguments.
   const args = process.argv.slice(2)
 
-  const tazePromise = spawn('pnpm', ['taze', '-c', '.config/taze.config.mts', ...args], {
-    stdio: 'pipe',
-    cwd: process.cwd(),
-  })
+  const tazePromise = spawn(
+    'pnpm',
+    ['taze', '-c', '.config/taze.config.mts', ...args],
+    {
+      stdio: 'pipe',
+      cwd: process.cwd(),
+    },
+  )
 
   let hasProvenanceDowngrade = false
 
