@@ -53,6 +53,7 @@ export async function httpRequest(
   // Retry logic with exponential backoff
   let lastError: CResult<HttpResponse> | undefined
   for (let attempt = 0; attempt <= retries; attempt++) {
+    // eslint-disable-next-line no-await-in-loop
     const result = await httpRequestAttempt(url, {
       body,
       followRedirects,
@@ -75,14 +76,17 @@ export async function httpRequest(
 
     // Retry with exponential backoff
     const delayMs = retryDelay * Math.pow(2, attempt)
+    // eslint-disable-next-line no-await-in-loop
     await new Promise(resolve => setTimeout(resolve, delayMs))
   }
 
-  return lastError || {
-    ok: false,
-    message: 'Request failed',
-    cause: 'Unknown error after retries',
-  }
+  return (
+    lastError || {
+      ok: false,
+      message: 'Request failed',
+      cause: 'Unknown error after retries',
+    }
+  )
 }
 
 /**
@@ -109,7 +113,7 @@ async function httpRequestAttempt(
     const requestOptions = {
       hostname: parsedUrl.hostname,
       port: parsedUrl.port,
-      path: parsedUrl.path,
+      path: parsedUrl.pathname + parsedUrl.search,
       method,
       headers: {
         'User-Agent': 'socket-cli/1.0',
@@ -239,11 +243,12 @@ export async function httpDownload(
     retries = 0,
     retryDelay = 1000,
     timeout = 120000,
-  } = { __proto__: null, ...options }
+  } = options
 
   // Retry logic with exponential backoff
   let lastError: CResult<{ path: string; size: number }> | undefined
   for (let attempt = 0; attempt <= retries; attempt++) {
+    // eslint-disable-next-line no-await-in-loop
     const result = await httpDownloadAttempt(url, destPath, {
       headers,
       timeout,
@@ -263,14 +268,17 @@ export async function httpDownload(
 
     // Retry with exponential backoff
     const delayMs = retryDelay * Math.pow(2, attempt)
+    // eslint-disable-next-line no-await-in-loop
     await new Promise(resolve => setTimeout(resolve, delayMs))
   }
 
-  return lastError || {
-    ok: false,
-    message: 'Download failed',
-    cause: 'Unknown error after retries',
-  }
+  return (
+    lastError || {
+      ok: false,
+      message: 'Download failed',
+      cause: 'Unknown error after retries',
+    }
+  )
 }
 
 /**
@@ -289,7 +297,7 @@ async function httpDownloadAttempt(
     headers = {},
     onProgress,
     timeout = 120000,
-  } = { __proto__: null, ...options }
+  } = options
 
   return await new Promise(resolve => {
     const parsedUrl = new URL(url)
@@ -299,7 +307,7 @@ async function httpDownloadAttempt(
     const requestOptions = {
       hostname: parsedUrl.hostname,
       port: parsedUrl.port,
-      path: parsedUrl.path,
+      path: parsedUrl.pathname + parsedUrl.search,
       method: 'GET',
       headers: {
         'User-Agent': 'socket-cli/1.0',

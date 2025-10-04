@@ -45,8 +45,8 @@ import path from 'node:path'
 
 import semver from 'semver'
 
-import { remove } from '@socketsecurity/registry/lib/fs'
 import { whichBin } from '@socketsecurity/registry/lib/bin'
+import { remove } from '@socketsecurity/registry/lib/fs'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import constants from '../constants.mts'

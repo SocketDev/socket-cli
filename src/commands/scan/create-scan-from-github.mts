@@ -1,15 +1,8 @@
 /** @fileoverview GitHub scan creator utility for Socket CLI. Fetches repositories from GitHub API, downloads code as tarballs, and creates security scans. Supports interactive repo selection and batch processing. */
 
-import {
-  createWriteStream,
-  existsSync,
-  promises as fs,
-  mkdirSync,
-  mkdtempSync,
-} from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import { pipeline } from 'node:stream/promises'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { confirm, select } from '@socketsecurity/registry/lib/prompts'
@@ -18,8 +11,8 @@ import { fetchSupportedScanFileNames } from './fetch-supported-scan-file-names.m
 import { handleCreateNewScan } from './handle-create-new-scan.mts'
 import constants from '../../constants.mts'
 import { debugDir, debugFn } from '../../utils/debug.mts'
-import { formatErrorWithDetail } from '../../utils/errors.mts'
 import { isReportSupportedFile } from '../../utils/glob.mts'
+import { httpDownload, httpGetJson } from '../../utils/http.mts'
 import { fetchListAllRepos } from '../repository/fetch-list-all-repos.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
@@ -392,29 +385,31 @@ async function downloadManifestFile({
   const fileUrl = `${repoApiUrl}/contents/${file}?ref=${defaultBranch}`
   debugDir('inspect', { fileUrl })
 
-  const downloadUrlResponse = await fetch(fileUrl, {
-    method: 'GET',
-    headers: {
-      Authorization: `Bearer ${githubToken}`,
+  const downloadUrlResult = await httpGetJson<{ download_url: string }>(
+    fileUrl,
+    {
+      headers: {
+        Authorization: `Bearer ${githubToken}`,
+      },
     },
-  })
+  )
   debugFn('notice', 'complete: request')
 
-  const downloadUrlText = await downloadUrlResponse.text()
-  debugFn('inspect', 'response: raw download url', downloadUrlText)
-
-  let downloadUrl
-  try {
-    downloadUrl = JSON.parse(downloadUrlText).download_url
-  } catch {
+  if (!downloadUrlResult.ok) {
     logger.fail(
-      `GitHub response contained invalid JSON for download url for: ${file}`,
+      `Failed to get download URL from GitHub for: ${file}. ${downloadUrlResult.message}`,
     )
+    return downloadUrlResult
+  }
 
+  const downloadUrl = downloadUrlResult.data.download_url
+  debugFn('inspect', 'response: raw download url', downloadUrl)
+
+  if (!downloadUrl) {
     return {
       ok: false,
-      message: 'Invalid JSON response',
-      cause: `Server responded with invalid JSON for download url ${downloadUrl}`,
+      message: 'Missing download URL',
+      cause: `GitHub did not provide a download_url for ${file}`,
     }
   }
 
@@ -427,12 +422,18 @@ async function downloadManifestFile({
     localPath,
   )
 
-  // Now stream the file to that file...
-  const result = await streamDownloadWithFetch(localPath, downloadUrl)
+  // Make sure the dir exists. It may be nested and we need to construct that
+  // before starting the download.
+  const dir = path.dirname(localPath)
+  if (!existsSync(dir)) {
+    mkdirSync(dir, { recursive: true })
+  }
+
+  // Download using native HTTP utilities
+  const result = await httpDownload(downloadUrl, localPath)
   if (!result.ok) {
-    // Do we proceed? Bail? Hrm...
     logger.fail(
-      `Failed to download manifest file, skipping to next file. File: ${file}`,
+      `Failed to download manifest file, skipping to next file. File: ${file}. ${result.message}`,
     )
     return result
   }
@@ -440,83 +441,6 @@ async function downloadManifestFile({
   debugFn('notice', 'download: manifest file completed')
 
   return { ok: true, data: undefined }
-}
-
-// Courtesy of gemini:
-async function streamDownloadWithFetch(
-  localPath: string,
-  downloadUrl: string,
-): Promise<CResult<string>> {
-  // Declare response here to access it in catch if needed
-  let response
-
-  try {
-    response = await fetch(downloadUrl)
-
-    if (!response.ok) {
-      const errorMsg = `Download failed due to bad server response: ${response.status} ${response.statusText} for ${downloadUrl}`
-      logger.fail(errorMsg)
-      return { ok: false, message: 'Download Failed', cause: errorMsg }
-    }
-
-    if (!response.body) {
-      logger.fail(
-        `Download failed because the server response was empty, for ${downloadUrl}`,
-      )
-      return {
-        ok: false,
-        message: 'Download Failed',
-        cause: 'Response body is null or undefined.',
-      }
-    }
-
-    // Make sure the dir exists. It may be nested and we need to construct that
-    // before starting the download.
-    const dir = path.dirname(localPath)
-    if (!existsSync(dir)) {
-      mkdirSync(dir, { recursive: true })
-    }
-
-    const fileStream = createWriteStream(localPath)
-
-    // Using stream.pipeline for better error handling and cleanup
-
-    await pipeline(response.body, fileStream)
-    // 'pipeline' will automatically handle closing streams and propagating errors.
-    // It resolves when the piping is fully complete and fileStream is closed.
-    return { ok: true, data: localPath }
-  } catch (e) {
-    logger.fail(
-      'An error was thrown while trying to download a manifest file... url:',
-      downloadUrl,
-    )
-    debugDir('error', e)
-
-    // If an error occurs and fileStream was created, attempt to clean up.
-    if (existsSync(localPath)) {
-      // Check if fileStream was even opened before trying to delete
-      // This check might be too simplistic depending on when error occurs
-      try {
-        await fs.unlink(localPath)
-      } catch (e) {
-        logger.fail(
-          formatErrorWithDetail(`Error deleting partial file ${localPath}`, e),
-        )
-      }
-    }
-    // Construct a more informative error message
-    let detailedError = `Error during download of ${downloadUrl}: ${(e as { message: string }).message}`
-    if ((e as { cause: string }).cause) {
-      // Include cause if available (e.g., from network errors)
-      detailedError += `\nCause: ${(e as { cause: string }).cause}`
-    }
-    if (response && !response.ok) {
-      // If error was due to bad HTTP status
-      detailedError += ` (HTTP Status: ${response.status} ${response.statusText})`
-    }
-    debugFn('error', detailedError)
-    return { ok: false, message: 'Download Failed', cause: detailedError }
-  }
 }
 
 async function getLastCommitDetails({
@@ -545,25 +469,36 @@ async function getLastCommitDetails({
   const commitApiUrl = `${repoApiUrl}/commits?sha=${defaultBranch}&per_page=1`
   debugFn('inspect', 'url: commit', commitApiUrl)
 
-  const commitResponse = await fetch(commitApiUrl, {
+  interface GitHubCommit {
+    sha: string
+    message: string
+    commit: {
+      author: { name: string }
+      committer: { name: string }
+    }
+  }
+
+  const commitResult = await httpGetJson<GitHubCommit[]>(commitApiUrl, {
     headers: {
       Authorization: `Bearer ${githubToken}`,
     },
   })
 
-  const commitText = await commitResponse.text()
-  debugFn('inspect', 'response: commit', commitText)
+  if (!commitResult.ok) {
+    logger.fail(
+      `Failed to get last commit from GitHub. ${commitResult.message}`,
+    )
+    return commitResult
+  }
 
-  let lastCommit
-  try {
-    lastCommit = JSON.parse(commitText)?.[0]
-  } catch {
-    logger.fail(`GitHub response contained invalid JSON for last commit`)
-    logger.error(commitText)
+  debugFn('inspect', 'response: commit', JSON.stringify(commitResult.data))
+
+  const lastCommit = commitResult.data[0]
+  if (!lastCommit) {
     return {
       ok: false,
-      message: 'Invalid JSON response',
-      cause: `Server responded with invalid JSON for last commit of repo ${repoSlug}`,
+      message: 'No commits found',
+      cause: `No commits found for branch ${defaultBranch} in repo ${repoSlug}`,
     }
   }
 
@@ -649,29 +584,24 @@ async function getRepoDetails({
   const repoApiUrl = `${githubApiUrl}/repos/${orgGithub}/${repoSlug}`
   debugDir('inspect', { repoApiUrl })
 
-  const repoDetailsResponse = await fetch(repoApiUrl, {
-    method: 'GET',
+  interface GitHubRepo {
+    default_branch: string
+  }
+
+  const repoResult = await httpGetJson<GitHubRepo>(repoApiUrl, {
     headers: {
       Authorization: `Bearer ${githubToken}`,
     },
   })
-  logger.success(`Request completed.`)
 
-  const repoDetailsText = await repoDetailsResponse.text()
-  debugFn('inspect', 'response: repo', repoDetailsText)
-
-  let repoDetails
-  try {
-    repoDetails = JSON.parse(repoDetailsText)
-  } catch {
-    logger.fail(`GitHub response contained invalid JSON for repo ${repoSlug}`)
-    logger.error(repoDetailsText)
-    return {
-      ok: false,
-      message: 'Invalid JSON response',
-      cause: `Server responded with invalid JSON for repo ${repoSlug}`,
-    }
+  if (!repoResult.ok) {
+    logger.fail(`Failed to get repo details from GitHub. ${repoResult.message}`)
+    return repoResult
   }
+
+  logger.success(`Request completed.`)
+  const repoDetails = repoResult.data
+  debugFn('inspect', 'response: repo', JSON.stringify(repoDetails))
 
   const defaultBranch = repoDetails.default_branch
   if (!defaultBranch) {
@@ -705,30 +635,24 @@ async function getRepoBranchTree({
   const treeApiUrl = `${repoApiUrl}/git/trees/${defaultBranch}?recursive=1`
   debugFn('inspect', 'url: tree', treeApiUrl)
 
-  const treeResponse = await fetch(treeApiUrl, {
-    method: 'GET',
+  interface GitHubTreeResponse {
+    message?: string
+    tree?: Array<{ type: string; path: string }>
+  }
+
+  const treeResult = await httpGetJson<GitHubTreeResponse>(treeApiUrl, {
     headers: {
       Authorization: `Bearer ${githubToken}`,
     },
   })
 
-  const treeText = await treeResponse.text()
-  debugFn('inspect', 'response: tree', treeText)
-
-  let treeDetails
-  try {
-    treeDetails = JSON.parse(treeText)
-  } catch {
-    logger.fail(
-      `GitHub response contained invalid JSON for default branch of repo ${repoSlug}`,
-    )
-    logger.error(treeText)
-    return {
-      ok: false,
-      message: 'Invalid JSON response',
-      cause: `Server responded with invalid JSON for repo ${repoSlug}`,
-    }
+  if (!treeResult.ok) {
+    logger.fail(`Failed to get branch tree from GitHub. ${treeResult.message}`)
+    return treeResult
   }
+
+  const treeDetails = treeResult.data
+  debugFn('inspect', 'response: tree', JSON.stringify(treeDetails))
 
   if (treeDetails.message) {
     if (treeDetails.message === 'Git Repository is empty.') {
@@ -755,7 +679,7 @@ async function getRepoBranchTree({
     }
   }
 
-  const files = (treeDetails.tree as Array<{ type: string; path: string }>)
+  const files = treeDetails.tree
     .filter(obj => obj.type === 'blob')
     .map(obj => obj.path)
 

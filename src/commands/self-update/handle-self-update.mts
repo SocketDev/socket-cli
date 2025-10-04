@@ -62,8 +62,10 @@ async function fetchLatestRelease(): Promise<GitHubRelease> {
       Accept: 'application/vnd.github+json',
       'User-Agent': 'socket-cli-self-update/1.0',
     },
-    retries: 3, // Retry up to 3 times with exponential backoff
-    retryDelay: 1000, // Start with 1 second delay
+    // Retry up to 3 times with exponential backoff
+    retries: 3,
+    // Start with 1 second delay
+    retryDelay: 1000,
   })
 
   if (!result.ok) {
@@ -97,8 +99,10 @@ async function downloadFile(url: string, destination: string): Promise<void> {
 
   let lastProgress = 0
   const result = await httpDownload(url, destination, {
-    retries: 3, // Retry up to 3 times with exponential backoff
-    retryDelay: 1000, // Start with 1 second delay
+    // Retry up to 3 times with exponential backoff
+    retries: 3,
+    // Start with 1 second delay
+    retryDelay: 1000,
     onProgress: (downloaded, total) => {
       if (total > 0) {
         const progress = Math.floor((downloaded / total) * 100)
