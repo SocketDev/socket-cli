@@ -54,8 +54,16 @@ export function findBinPathDetailsSync(binName: string): {
 
 export function findNpmDirPathSync(npmBinPath: string): string | undefined {
   const { WIN32 } = constants
+  const MAX_ITERATIONS = 100
   let thePath = npmBinPath
+  let iterations = 0
   while (true) {
+    if (iterations >= MAX_ITERATIONS) {
+      throw new Error(
+        `path traversal exceeded maximum iterations of ${MAX_ITERATIONS}`,
+      )
+    }
+    iterations += 1
     const libNmNpmPath = path.join(thePath, `lib/${NODE_MODULES}/${NPM}`)
     // mise, which uses opaque binaries, puts its npm bin in a path like:
     //   /Users/SomeUsername/.local/share/mise/installs/node/vX.X.X/bin/npm.
