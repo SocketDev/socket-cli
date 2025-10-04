@@ -121,6 +121,12 @@ Each command follows consistent pattern:
 - **Command structure**: 🚨 MANDATORY - Each command MUST have `cmd-*.mts`, `handle-*.mts`, `output-*.mts`
 - **Flags**: Use `MeowFlags` type with descriptive help text
 - **GitHub API**: Use Octokit instances from `src/utils/github.mts` instead of raw fetch
+- **Null-prototype objects**:
+  - ✅ CORRECT: `{ __proto__: null, key: 'value' }` (object literal with properties)
+  - ✅ CORRECT: `{ __proto__: null, ...options }` (spread pattern)
+  - ✅ CORRECT: `const obj = Object.create(null)` (empty object, populate separately)
+  - ❌ WRONG: `const obj = { __proto__: null }` (empty object literal - use `Object.create(null)` instead)
+  - **Rationale**: Use `Object.create(null)` only for empty null-prototype objects; object literals with `__proto__: null` are fine when they have properties
 
 ### Error Handling
 - **Input validation**: Use `InputError` from `src/utils/errors.mts`
