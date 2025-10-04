@@ -51,10 +51,17 @@ export async function installNpmLinks(shadowBinPath: string): Promise<string> {
   // Move our bin directory to front of PATH so its found first.
   if (!shadowed) {
     if (WIN32) {
-      await cmdShim(
-        path.join(constants.distPath, 'npm-cli.js'),
-        path.join(shadowBinPath, 'npm'),
-      )
+      try {
+        await cmdShim(
+          path.join(constants.distPath, 'npm-cli.js'),
+          path.join(shadowBinPath, 'npm'),
+        )
+      } catch (e) {
+        throw new Error(
+          `failed to create npm cmd shim: ${(e as Error).message}`,
+          { cause: e },
+        )
+      }
     }
     const { env } = process
     env['PATH'] = `${shadowBinPath}${path.delimiter}${env['PATH']}`
@@ -75,10 +82,17 @@ export async function installNpxLinks(shadowBinPath: string): Promise<string> {
   // Move our bin directory to front of PATH so its found first.
   if (!shadowed) {
     if (WIN32) {
-      await cmdShim(
-        path.join(constants.distPath, 'npx-cli.js'),
-        path.join(shadowBinPath, 'npx'),
-      )
+      try {
+        await cmdShim(
+          path.join(constants.distPath, 'npx-cli.js'),
+          path.join(shadowBinPath, 'npx'),
+        )
+      } catch (e) {
+        throw new Error(
+          `failed to create npx cmd shim: ${(e as Error).message}`,
+          { cause: e },
+        )
+      }
     }
     const { env } = process
     env['PATH'] = `${shadowBinPath}${path.delimiter}${env['PATH']}`
@@ -101,10 +115,17 @@ export async function installPnpmLinks(shadowBinPath: string): Promise<string> {
   // Move our bin directory to front of PATH so its found first.
   if (!shadowed) {
     if (WIN32) {
-      await cmdShim(
-        path.join(constants.distPath, 'pnpm-cli.js'),
-        path.join(shadowBinPath, 'pnpm'),
-      )
+      try {
+        await cmdShim(
+          path.join(constants.distPath, 'pnpm-cli.js'),
+          path.join(shadowBinPath, 'pnpm'),
+        )
+      } catch (e) {
+        throw new Error(
+          `failed to create pnpm cmd shim: ${(e as Error).message}`,
+          { cause: e },
+        )
+      }
     }
     const { env } = process
     env['PATH'] = `${shadowBinPath}${path.delimiter}${env['PATH']}`
@@ -126,10 +147,17 @@ export async function installYarnLinks(shadowBinPath: string): Promise<string> {
 
   if (!shadowed) {
     if (WIN32) {
-      await cmdShim(
-        path.join(constants.distPath, 'yarn-cli.js'),
-        path.join(shadowBinPath, 'yarn'),
-      )
+      try {
+        await cmdShim(
+          path.join(constants.distPath, 'yarn-cli.js'),
+          path.join(shadowBinPath, 'yarn'),
+        )
+      } catch (e) {
+        throw new Error(
+          `failed to create yarn cmd shim: ${(e as Error).message}`,
+          { cause: e },
+        )
+      }
     }
     const { env } = process
     env['PATH'] = `${shadowBinPath}${path.delimiter}${env['PATH']}`
