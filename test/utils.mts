@@ -27,6 +27,35 @@ const asciiUnsafeRegexp = /[\u0000-\u0007\u0009\u000b-\u001f\u0080-\uffff]/g
 // Note: The fixture directory is in the same directory as this utils file.
 export const testPath = __dirname
 
+// Optimize fixture paths for package manager integration tests
+export const OPTIMIZE_FIXTURE_PATH = path.join(testPath, 'fixtures/optimize')
+export const PNPM_V8_FIXTURE = path.join(OPTIMIZE_FIXTURE_PATH, 'pnpm-v8')
+export const PNPM_V9_FIXTURE = path.join(OPTIMIZE_FIXTURE_PATH, 'pnpm-v9')
+export const PNPM_V10_FIXTURE = path.join(OPTIMIZE_FIXTURE_PATH, 'pnpm-v10')
+export const YARN_CLASSIC_FIXTURE = path.join(
+  OPTIMIZE_FIXTURE_PATH,
+  'yarn-classic',
+)
+export const YARN_BERRY_FIXTURE = path.join(OPTIMIZE_FIXTURE_PATH, 'yarn-berry')
+export const BUN_FIXTURE = path.join(OPTIMIZE_FIXTURE_PATH, 'bun')
+export const VLT_FIXTURE = path.join(OPTIMIZE_FIXTURE_PATH, 'vlt')
+
+// Agent fixture paths with installed package managers
+export const AGENT_FIXTURE_PATH = path.join(testPath, 'fixtures/agent')
+export const PNPM_V8_AGENT_FIXTURE = path.join(AGENT_FIXTURE_PATH, 'pnpm-v8')
+export const PNPM_V9_AGENT_FIXTURE = path.join(AGENT_FIXTURE_PATH, 'pnpm-v9')
+export const PNPM_V10_AGENT_FIXTURE = path.join(AGENT_FIXTURE_PATH, 'pnpm-v10')
+export const YARN_CLASSIC_AGENT_FIXTURE = path.join(
+  AGENT_FIXTURE_PATH,
+  'yarn-classic',
+)
+export const YARN_BERRY_AGENT_FIXTURE = path.join(
+  AGENT_FIXTURE_PATH,
+  'yarn-berry',
+)
+export const BUN_AGENT_FIXTURE = path.join(AGENT_FIXTURE_PATH, 'bun')
+export const VLT_AGENT_FIXTURE = path.join(AGENT_FIXTURE_PATH, 'vlt')
+
 function normalizeLogSymbols(str: string): string {
   return str
     .replaceAll('✖', '×')
@@ -58,10 +87,47 @@ function toAsciiSafeString(str: string): string {
   })
 }
 
+function stripTokenErrorMessages(str: string): string {
+  // Remove API token error messages to avoid snapshot inconsistencies
+  // when local environment has/doesn't have tokens set.
+  return str.replace(
+    /^\s*[×✖]\s+This command requires a Socket API token for access.*$/gm,
+    '',
+  )
+}
+
+function sanitizeTokens(str: string): string {
+  // Sanitize Socket API tokens to prevent leaking credentials into snapshots.
+  // Socket tokens follow the format: sktsec_[alphanumeric+underscore characters]
+
+  // Match Socket API tokens: sktsec_ followed by word characters
+  const tokenPattern = /sktsec_\w+/g
+  let result = str.replace(tokenPattern, 'sktsec_REDACTED_TOKEN')
+
+  // Sanitize token values in JSON-like structures
+  result = result.replace(
+    /"apiToken"\s*:\s*"sktsec_[^"]+"/g,
+    '"apiToken":"sktsec_REDACTED_TOKEN"',
+  )
+
+  // Sanitize token prefixes that might be displayed (e.g., "zP416" -> "REDAC")
+  // Match 5-character alphanumeric strings that appear after "token:" labels
+  result = result.replace(
+    /token:\s*\[?\d+m\]?([A-Za-z0-9]{5})\*{3}/gi,
+    'token: REDAC***',
+  )
+
+  return result
+}
+
 export function cleanOutput(output: string): string {
   return toAsciiSafeString(
     normalizeLogSymbols(
-      normalizeNewlines(stripZeroWidthSpace(stripAnsi(output.trim()))),
+      normalizeNewlines(
+        stripZeroWidthSpace(
+          sanitizeTokens(stripTokenErrorMessages(stripAnsi(output.trim()))),
+        ),
+      ),
     ),
   )
 }
