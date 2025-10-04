@@ -16,4 +16,10 @@ Thumbs.db
 *.d.ts.map
 *.tsbuildinfo
 
+# Yarn PnP files (tests may create these)
+/.yarn
+/.pnp.cjs
+/.pnp.loader.mjs
+/yarn.lock
+
 !/.vscode/extensions.json
