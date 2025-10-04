@@ -1,5 +1,4 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { IncomingMessage } from 'node:http'
 
 // Mock node:http and node:https modules
 const mockRequest = vi.fn()
@@ -18,6 +17,8 @@ vi.mock('node:https', () => ({
 }))
 
 import { httpGetJson, httpGetText, httpRequest } from './http.mts'
+
+import type { IncomingMessage } from 'node:http'
 
 describe('HTTP utilities', () => {
   beforeEach(() => {

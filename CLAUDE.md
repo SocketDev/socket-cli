@@ -102,6 +102,11 @@ Each command follows consistent pattern:
   - All tests: `pnpm run testu`
   - Single file: ✅ CORRECT: `pnpm run testu src/commands/specific/cmd-file.test.mts`
   - ❌ WRONG: `pnpm run testu -- src/commands/specific/cmd-file.test.mts`
+- **🚨 MANDATORY Coverage Requirements**: Before pushing commits, ensure test coverage is maintained or improved
+  - **Never decrease coverage**: All changes MUST maintain or increase existing coverage percentages
+  - **Check before push**: Run `pnpm run test` to verify coverage thresholds are met
+  - **Fix coverage drops**: If coverage decreases, add tests to restore or improve coverage before pushing
+  - **Rationale**: Declining coverage indicates untested code paths, which increases risk of bugs and regressions
 
 ### CI Testing Infrastructure
 - **🚨 MANDATORY**: Use `SocketDev/socket-registry/.github/workflows/ci.yml@<SHA>` with full commit SHA (not @main)

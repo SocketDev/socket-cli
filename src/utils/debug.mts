@@ -96,24 +96,24 @@ export function debugHttpError(error: unknown): void {
 
     // Request details
     if (err.request) {
-      errorInfo.method = err.request.method || 'GET'
-      errorInfo.url = err.request.url || err.request.uri || 'unknown'
+      errorInfo['method'] = err.request.method || 'GET'
+      errorInfo['url'] = err.request.url || err.request.uri || 'unknown'
     } else if (err.config) {
       // Axios-style error
-      errorInfo.method = err.config.method?.toUpperCase() || 'GET'
-      errorInfo.url = err.config.url || 'unknown'
+      errorInfo['method'] = err.config.method?.toUpperCase() || 'GET'
+      errorInfo['url'] = err.config.url || 'unknown'
     }
 
     // Response details
     if (err.response) {
-      errorInfo.status = err.response.status || err.response.statusCode
-      errorInfo.statusText = err.response.statusText || ''
+      errorInfo['status'] = err.response.status || err.response.statusCode
+      errorInfo['statusText'] = err.response.statusText || ''
 
       // Response body
       if (err.response.data) {
-        errorInfo.body = err.response.data
+        errorInfo['body'] = err.response.data
       } else if (err.response.body) {
-        errorInfo.body = err.response.body
+        errorInfo['body'] = err.response.body
       }
 
       // Cloudflare ray ID for debugging
@@ -121,16 +121,16 @@ export function debugHttpError(error: unknown): void {
         const cfRay =
           err.response.headers['cf-ray'] || err.response.headers['CF-RAY']
         if (cfRay) {
-          errorInfo.cfRay = cfRay
+          errorInfo['cfRay'] = cfRay
         }
       }
     } else if (err.statusCode) {
-      errorInfo.status = err.statusCode
+      errorInfo['status'] = err.statusCode
     }
 
     // Error message
     if (err.message) {
-      errorInfo.message = err.message
+      errorInfo['message'] = err.message
     }
   }
 

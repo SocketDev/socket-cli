@@ -97,12 +97,11 @@ describe('PromiseQueue', () => {
   it('should handle task errors', async () => {
     const queue = new PromiseQueue(1)
 
-    const goodTask = () => Promise.resolve('success')
-    const badTask = () => Promise.reject(new Error('failure'))
-
-    const result1 = await queue.add(goodTask)
-    await expect(queue.add(badTask)).rejects.toThrow('failure')
-    const result2 = await queue.add(goodTask)
+    const result1 = await queue.add(() => Promise.resolve('success'))
+    await expect(
+      queue.add(() => Promise.reject(new Error('failure'))),
+    ).rejects.toThrow('failure')
+    const result2 = await queue.add(() => Promise.resolve('success'))
 
     expect(result1).toBe('success')
     expect(result2).toBe('success')

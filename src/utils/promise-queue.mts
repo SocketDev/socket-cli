@@ -23,7 +23,9 @@ export class PromiseQueue {
    */
   constructor(maxConcurrency: number, maxQueueLength?: number) {
     this.maxConcurrency = maxConcurrency
-    this.maxQueueLength = maxQueueLength
+    if (maxQueueLength !== undefined) {
+      this.maxQueueLength = maxQueueLength
+    }
     if (maxConcurrency < 1) {
       throw new Error('maxConcurrency must be at least 1')
     }
@@ -35,7 +37,7 @@ export class PromiseQueue {
    * @returns Promise that resolves with the function's result
    */
   async add<T>(fn: () => Promise<T>): Promise<T> {
-    return new Promise<T>((resolve, reject) => {
+    return await new Promise<T>((resolve, reject) => {
       const task: QueuedTask<T> = { fn, resolve, reject }
 
       if (this.maxQueueLength && this.queue.length >= this.maxQueueLength) {
@@ -74,7 +76,7 @@ export class PromiseQueue {
    * Wait for all queued and running tasks to complete
    */
   async onIdle(): Promise<void> {
-    return new Promise<void>(resolve => {
+    return await new Promise<void>(resolve => {
       const check = () => {
         if (this.running === 0 && this.queue.length === 0) {
           resolve()

@@ -50,14 +50,13 @@ const noLog =
   process.argv.includes('--no-log') || process.argv.includes('--noLog')
 if (noLog) {
   // Silence all logger methods
-  const noop = () => {}
+  const noop = () => logger
   logger.log = noop
   logger.info = noop
   logger.success = noop
   logger.warn = noop
   logger.error = noop
   logger.fail = noop
-  logger.debug = noop
 }
 
 void (async () => {
