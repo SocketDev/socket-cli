@@ -240,7 +240,11 @@ export async function coanaFix(
     return { ok: true, data: { fixed: false } }
   }
 
-  debugFn('notice', `fetch: ${ids.length} GHSA details for ${joinAnd(ids)}`)
+  const displayIds =
+    ids.length > 3
+      ? `${ids.slice(0, 3).join(', ')} ... and ${ids.length - 3} more`
+      : joinAnd(ids)
+  debugFn('notice', `fetch: ${ids.length} GHSA details for ${displayIds}`)
 
   const ghsaDetails = await fetchGhsaDetails(ids)
   const scanBaseNames = new Set(scanFilepaths.map(p => path.basename(p)))
