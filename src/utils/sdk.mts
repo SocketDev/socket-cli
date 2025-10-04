@@ -63,6 +63,18 @@ export function getDefaultProxyUrl(): string | undefined {
 // This Socket API token should be stored globally for the duration of the CLI execution.
 let _defaultToken: string | undefined
 export function getDefaultApiToken(): string | undefined {
+  // In test mode: Ignore .env tokens and config file tokens to ensure
+  // consistent snapshots. Tests must explicitly pass tokens via --config flag.
+  // This prevents .env files from affecting test snapshots.
+  // Note: Use process.env directly (not constants.ENV) to check at runtime,
+  // since constants.ENV['VITEST'] is inlined at build time.
+  if (process.env['VITEST'] === '1') {
+    return undefined
+  }
+
+  // When SOCKET_CLI_NO_API_TOKEN=1: Ignore environment variable tokens and only
+  // check config file. This forces the token to be explicitly set via config.
+  // Otherwise: Check environment variables first, then config file.
   const key = constants.ENV['SOCKET_CLI_NO_API_TOKEN']
     ? getConfigValueOrUndef(CONFIG_KEY_API_TOKEN) || _defaultToken
     : constants.ENV['SOCKET_CLI_API_TOKEN'] ||

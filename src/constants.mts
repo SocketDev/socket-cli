@@ -188,6 +188,7 @@ export type ENV = Remap<
       SOCKET_CLI_API_PROXY: string
       SOCKET_CLI_API_TIMEOUT: number
       SOCKET_CLI_API_TOKEN: string
+      SOCKET_CLI_BUN_PATH: string
       SOCKET_CLI_CDXGEN_LOCAL_PATH: string
       SOCKET_CLI_COANA_LOCAL_PATH: string
       SOCKET_CLI_CONFIG: string
@@ -196,9 +197,19 @@ export type ENV = Remap<
       SOCKET_CLI_GITHUB_TOKEN: string
       SOCKET_CLI_NO_API_TOKEN: boolean
       SOCKET_CLI_NPM_PATH: string
+      SOCKET_CLI_NPX_PATH: string
       SOCKET_CLI_ORG_SLUG: string
+      SOCKET_CLI_PNPM_PATH: string
+      SOCKET_CLI_PNPM_V8_PATH: string
+      SOCKET_CLI_PNPM_V9_PATH: string
+      SOCKET_CLI_PNPM_V10_PATH: string
+      SOCKET_CLI_PYTHON_PATH: string
       SOCKET_CLI_SFW_LOCAL_PATH: string
+      SOCKET_CLI_VLT_PATH: string
       SOCKET_CLI_VIEW_ALL_RISKS: boolean
+      SOCKET_CLI_YARN_BERRY_PATH: string
+      SOCKET_CLI_YARN_CLASSIC_PATH: string
+      SOCKET_CLI_YARN_PATH: string
       SOCKET_CLI_SEA_NODE_VERSION: string
       TERM: string
       XDG_DATA_HOME: string
@@ -536,12 +547,15 @@ const LAZY_ENV = () => {
   const envAsNumber = envHelpers.envAsNumber
   const envAsString = envHelpers.envAsString
   const GITHUB_TOKEN = envAsString(env['GITHUB_TOKEN'])
+  const INLINED_SOCKET_CLI_NAME = envAsString(
+    process.env['INLINED_SOCKET_CLI_NAME'],
+  )
   const INLINED_SOCKET_CLI_PUBLISHED_BUILD = envAsBoolean(
     process.env['INLINED_SOCKET_CLI_PUBLISHED_BUILD'],
   )
   // We inline some environment values so that they CANNOT be influenced by user
   // provided environment variables.
-  return Object.freeze({
+  const ENV = Object.freeze({
     __proto__: null,
     // Lazily access registryConstants.ENV.
     ...regConsts.ENV,
@@ -609,9 +623,7 @@ const LAZY_ENV = () => {
     ),
     // Comp-time inlined Socket package name.
     // The '@rollup/plugin-replace' will replace "process.env['INLINED_SOCKET_CLI_NAME']".
-    INLINED_SOCKET_CLI_NAME: envAsString(
-      process.env['INLINED_SOCKET_CLI_NAME'],
-    ),
+    INLINED_SOCKET_CLI_NAME,
     // Comp-time inlined flag to determine if this is a published build.
     // The '@rollup/plugin-replace' will replace "process.env['INLINED_SOCKET_CLI_PUBLISHED_BUILD']".
     INLINED_SOCKET_CLI_PUBLISHED_BUILD,
@@ -783,6 +795,38 @@ const LAZY_ENV = () => {
       ? false
       : envAsBoolean(process.env['VITEST']),
   })
+
+  // Guard: Detect build/test mode mismatch.
+  // If the build was NOT made for testing (inlined VITEST is false) but we're
+  // running in test mode (process.env.VITEST is set), warn about the mismatch.
+  const runtimeVitestValue = envAsBoolean(env['VITEST'])
+  if (
+    INLINED_SOCKET_CLI_NAME === 'socket' &&
+    !INLINED_SOCKET_CLI_PUBLISHED_BUILD &&
+    runtimeVitestValue
+  ) {
+    // Check if running as SEA binary (inline to avoid require issues after bundling).
+    let isSea = false
+    try {
+      const seaModule = require('node:sea')
+      isSea = seaModule.isSea()
+    } catch {
+      // Node.js < 24 or SEA not available
+      isSea = false
+    }
+
+    if (!isSea) {
+      const { logger } = require('@socketsecurity/registry/lib/logger')
+      logger.warn(
+        'Build/test mode mismatch! Built without VITEST=1 but running in test mode.',
+      )
+      logger.warn(
+        'This causes snapshot failures. Rebuild with: pnpm run pretest:unit',
+      )
+    }
+  }
+
+  return ENV
 }
 
 const lazyBashRcPath = () => path.join(constants.homePath, '.bashrc')
