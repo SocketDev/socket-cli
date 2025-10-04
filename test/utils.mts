@@ -226,7 +226,11 @@ export async function spawnSocketCli(
   stdout: string
   stderr: string
 }> {
-  const { cwd = process.cwd(), env: spawnEnv } = {
+  const {
+    cwd = process.cwd(),
+    env: spawnEnv,
+    ...restOptions
+  } = {
     __proto__: null,
     ...options,
   } as SpawnOptions
@@ -244,6 +248,11 @@ export async function spawnSocketCli(
         SOCKET_CLI_DEBUG: 'false',
         DEBUG: 'false',
       },
+      ...restOptions,
+      // Close stdin to prevent tests from hanging
+      // when commands wait for input. Must be after restOptions
+      // to ensure it's not overridden.
+      stdio: restOptions?.stdio ?? ['ignore', 'pipe', 'pipe'],
     })
     return {
       status: true,
