@@ -1,0 +1,6 @@
+{
+  "name": "test-yarn-minimal",
+  "version": "1.0.0",
+  "private": true,
+  "packageManager": "yarn@4.10.3"
+}
