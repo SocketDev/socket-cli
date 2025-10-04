@@ -35,8 +35,9 @@ export type HandleFixConfig = Remap<
  */
 export async function convertIdsToGhsas(
   ids: string[],
-  outputKind?: OutputKind | undefined,
+  options: { outputKind?: OutputKind } = {},
 ): Promise<string[]> {
+  const { outputKind } = options
   debugFn('notice', `Converting ${ids.length} IDs to GHSA format`)
   debugDir('inspect', { ids })
 
@@ -157,7 +158,7 @@ export async function handleFix({
       applyFixes,
       cwd,
       // Convert mixed CVE/GHSA/PURL inputs to GHSA IDs only
-      ghsas: await convertIdsToGhsas(ghsas, outputKind),
+      ghsas: await convertIdsToGhsas(ghsas, { outputKind }),
       glob,
       limit,
       minimumReleaseAge,

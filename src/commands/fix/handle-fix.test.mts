@@ -75,10 +75,10 @@ describe('convertIdsToGhsas', () => {
   it('handles invalid GHSA format', async () => {
     const { logger } = await import('@socketsecurity/registry/lib/logger')
 
-    const result = await convertIdsToGhsas([
-      'GHSA-invalid',
-      'GHSA-1234-5678-9abc',
-    ])
+    const result = await convertIdsToGhsas(
+      ['GHSA-invalid', 'GHSA-1234-5678-9abc'],
+      { outputKind: 'text' },
+    )
 
     expect(result).toEqual(['GHSA-1234-5678-9abc'])
     expect(logger.warn).toHaveBeenCalledWith(
@@ -98,7 +98,10 @@ describe('convertIdsToGhsas', () => {
       data: 'GHSA-1234-5678-9abc',
     })
 
-    const result = await convertIdsToGhsas(['CVE-invalid', 'CVE-2021-12345'])
+    const result = await convertIdsToGhsas(
+      ['CVE-invalid', 'CVE-2021-12345'],
+      { outputKind: 'text' },
+    )
 
     expect(result).toEqual(['GHSA-1234-5678-9abc'])
     expect(logger.warn).toHaveBeenCalledWith(
@@ -119,7 +122,9 @@ describe('convertIdsToGhsas', () => {
       error: new Error('CVE not found'),
     })
 
-    const result = await convertIdsToGhsas(['CVE-2021-99999'])
+    const result = await convertIdsToGhsas(['CVE-2021-99999'], {
+      outputKind: 'text',
+    })
 
     expect(result).toEqual([])
     expect(logger.warn).toHaveBeenCalledWith(
@@ -140,7 +145,9 @@ describe('convertIdsToGhsas', () => {
       error: new Error('Package not found'),
     })
 
-    const result = await convertIdsToGhsas(['pkg:npm/nonexistent@1.0.0'])
+    const result = await convertIdsToGhsas(['pkg:npm/nonexistent@1.0.0'], {
+      outputKind: 'text',
+    })
 
     expect(result).toEqual([])
     expect(logger.warn).toHaveBeenCalledWith(
@@ -160,7 +167,9 @@ describe('convertIdsToGhsas', () => {
       data: [],
     })
 
-    const result = await convertIdsToGhsas(['pkg:npm/safe-package@1.0.0'])
+    const result = await convertIdsToGhsas(['pkg:npm/safe-package@1.0.0'], {
+      outputKind: 'text',
+    })
 
     expect(result).toEqual([])
     expect(logger.warn).toHaveBeenCalledWith(
