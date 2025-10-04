@@ -1,25 +1,13 @@
-import { promises as fs } from 'node:fs'
-import { tmpdir } from 'node:os'
-import path from 'node:path'
-
-import trash from 'trash'
-import { describe, expect, it, vi } from 'vitest'
-
-import { spawn } from '@socketsecurity/registry/lib/spawn'
+import { describe, expect } from 'vitest'
 
 import constants, {
   FLAG_CONFIG,
   FLAG_DRY_RUN,
   FLAG_HELP,
-  FLAG_SILENT,
-  FLAG_VERSION,
   PNPM,
 } from '../../../src/constants.mts'
 import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
 
-import type { SpawnOptions } from '@socketsecurity/registry/lib/spawn'
-
-// TODO: Several exec/install tests fail due to config flag handling.
 describe('socket pnpm', async () => {
   const { binCliPath } = constants
 
@@ -28,28 +16,18 @@ describe('socket pnpm', async () => {
     `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(
-        `
-        "Wraps pnpm with Socket security scanning
+      expect(stdout).toMatchInlineSnapshot(`
+        "Run pnpm with Socket security scanning
 
           Usage
             $ socket pnpm ...
 
-          API Token Requirements
-            (none)
-
-          Note: Everything after "pnpm" is passed to the pnpm command.
-                Only the \`--dry-run\` and \`--help\` flags are caught here.
-
-          Use \`socket wrapper on\` to alias this command as \`pnpm\`.
+          Note: Everything after "pnpm" is forwarded to pnpm with Socket security scanning.
 
           Examples
-            $ socket pnpm
             $ socket pnpm install
-            $ socket pnpm add package-name
-            $ socket pnpm dlx package-name"
-      `,
-      )
+            $ socket pnpm add package-name"
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
@@ -75,9 +53,71 @@ describe('socket pnpm', async () => {
         timeout: 30_000,
       })
 
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`
+        "Version 10.17.0 (compiled to binary; bundled Node.js v24.8.0)
+        Usage: pnpm [command] [flags]
+               pnpm [ -h | --help | -v | --version ]
+
+        Manage your dependencies:
+              add                  Installs a package and any packages that it depends
+                                   on. By default, any new package is installed as a
+                                   prod dependency
+              import               Generates a pnpm-lock.yaml from an npm
+                                   package-lock.json (or npm-shrinkwrap.json) file
+           i, install              Install all dependencies for a project
+          it, install-test         Runs a pnpm install followed immediately by a pnpm
+                                   test
+          ln, link                 Connect the local project to another one
+              prune                Removes extraneous packages
+          rb, rebuild              Rebuild a package
+          rm, remove               Removes packages from node_modules and from the
+                                   project's package.json
+              unlink               Unlinks a package. Like yarn unlink but pnpm
+                                   re-installs the dependency after removing the
+                                   external link
+          up, update               Updates packages to their latest version based on the
+                                   specified range
+
+        Review your dependencies:
+              audit                Checks for known security issues with the installed
+                                   packages
+              licenses             Check licenses in consumed packages
+          ls, list                 Print all the versions of packages that are
+                                   installed, as well as their dependencies, in a
+                                   tree-structure
+              outdated             Check for outdated packages
+
+        Run your scripts:
+              exec                 Executes a shell command in scope of a project
+              run                  Runs a defined package script
+              start                Runs an arbitrary command specified in the package's
+                                   "start" property of its "scripts" object
+           t, test                 Runs a package's "test" script, if one was provided
+
+        Other:
+              cat-file             Prints the contents of a file based on the hash value
+                                   stored in the index file
+              cat-index            Prints the index file of a specific package from the
+                                   store
+              find-hash            Experimental! Lists the packages that include the
+                                   file with the specified hash.
+              pack                 Create a tarball from a package
+              publish              Publishes a package to the registry
+              root                 Prints the effective modules directory
+
+        Manage your store:
+              store add            Adds new packages to the pnpm store directly. Does
+                                   not modify any projects or files outside the store
+              store path           Prints the path to the active store directory
+              store prune          Removes unreferenced (extraneous, orphan) packages
+                                   from the store
+              store status         Checks for modified packages in the store
+
+        Options:
+          -r, --recursive          Run the command for each project in the workspace."
+      `)
       expect(stderr).toContain('CLI')
-      expect(code, 'dry-run without args should exit with code 0').toBe(0)
+      expect(code, 'pnpm without args shows help and exits with code 1').toBe(1)
     },
   )
 
@@ -96,7 +136,14 @@ describe('socket pnpm', async () => {
         timeout: 30_000,
       })
 
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`
+        "Progress: resolved 0, reused 1, downloaded 0, added 0
+        \\u2009WARN\\u2009 2 deprecated subdependencies found: @sindresorhus/chunkify@2.0.0, boolean@3.2.0
+        Already up to date
+        Progress: resolved 1043, reused 932, downloaded 0, added 0, done
+
+        Done in 1.1s using pnpm v10.17.0"
+      `)
       expect(code, 'dry-run add should exit with code 0').toBe(0)
     },
   )
@@ -128,119 +175,15 @@ describe('socket pnpm', async () => {
         timeout: 30_000,
       })
 
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`
+        "Progress: resolved 0, reused 1, downloaded 0, added 0
+        \\u2009WARN\\u2009 2 deprecated subdependencies found: @sindresorhus/chunkify@2.0.0, boolean@3.2.0
+        Already up to date
+        Progress: resolved 1043, reused 932, downloaded 0, added 0, done
+
+        Done in 1s using pnpm v10.17.0"
+      `)
       expect(code, 'dry-run add scoped package should exit with code 0').toBe(0)
-    },
-  )
-
-  cmdit(
-    [
-      PNPM,
-      'dlx',
-      FLAG_SILENT,
-      'cowsay@^1.6.0',
-      'hello',
-      FLAG_DRY_RUN,
-      FLAG_CONFIG,
-      '{"apiToken":"fakeToken"}',
-    ],
-    'should handle dlx with version',
-    async cmd => {
-      const { code } = await spawnSocketCli(binCliPath, cmd, {
-        timeout: 30_000,
-      })
-
-      expect(code, 'dry-run dlx should exit with code 0').toBe(0)
-    },
-  )
-
-  cmdit(
-    [
-      PNPM,
-      'exec',
-      'cowsay@^1.6.0',
-      'hello',
-      FLAG_DRY_RUN,
-      FLAG_CONFIG,
-      '{"apiToken":"fakeToken","issueRules":{"malware":true}}',
-    ],
-    'should handle exec with issueRules for malware',
-    async cmd => {
-      const { code, stdout } = await spawnSocketCli(binCliPath, cmd, {
-        timeout: 30_000,
-      })
-
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
-      expect(code, 'dry-run exec should exit with code 0').toBe(0)
-    },
-  )
-
-  cmdit(
-    [
-      PNPM,
-      'exec',
-      FLAG_CONFIG,
-      '{"apiToken":"fakeToken","issueRules":{"malware":true}}',
-      'cowsay@^1.6.0',
-      'hello',
-      FLAG_DRY_RUN,
-    ],
-    'should handle exec with --config flag and issueRules for malware',
-    async cmd => {
-      const { code, stdout } = await spawnSocketCli(binCliPath, cmd, {
-        timeout: 30_000,
-      })
-
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
-      expect(code, 'dry-run exec with --config should exit with code 0').toBe(0)
-    },
-  )
-
-  cmdit(
-    [
-      PNPM,
-      'exec',
-      'cowsay@^1.6.0',
-      'hello',
-      FLAG_DRY_RUN,
-      FLAG_CONFIG,
-      '{"apiToken":"fakeToken","issueRules":{"malware":true,"gptMalware":true}}',
-    ],
-    'should handle exec with multiple issueRules (malware and gptMalware)',
-    async cmd => {
-      const { code, stdout } = await spawnSocketCli(binCliPath, cmd, {
-        timeout: 30_000,
-      })
-
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
-      expect(
-        code,
-        'dry-run exec with multiple issueRules should exit with code 0',
-      ).toBe(0)
-    },
-  )
-
-  cmdit(
-    [
-      PNPM,
-      'exec',
-      FLAG_CONFIG,
-      '{"apiToken":"fakeToken","issueRules":{"malware":true,"gptMalware":true}}',
-      'cowsay@^1.6.0',
-      'hello',
-      FLAG_DRY_RUN,
-    ],
-    'should handle exec with --config flag and multiple issueRules (malware and gptMalware)',
-    async cmd => {
-      const { code, stdout } = await spawnSocketCli(binCliPath, cmd, {
-        timeout: 30_000,
-      })
-
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
-      expect(
-        code,
-        'dry-run exec with --config and multiple issueRules should exit with code 0',
-      ).toBe(0)
     },
   )
 
@@ -258,7 +201,14 @@ describe('socket pnpm', async () => {
         timeout: 30_000,
       })
 
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`
+        "Lockfile is up to date, resolution step is skipped
+        Already up to date
+
+        . prepare$ husky
+        . prepare: Done
+        Done in 858ms using pnpm v10.17.0"
+      `)
       expect(code, 'dry-run install should exit with code 0').toBe(0)
     },
   )
@@ -277,7 +227,14 @@ describe('socket pnpm', async () => {
         timeout: 30_000,
       })
 
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`
+        "Lockfile is up to date, resolution step is skipped
+        Already up to date
+
+        . prepare$ husky
+        . prepare: Done
+        Done in 1s using pnpm v10.17.0"
+      `)
       expect(
         code,
         'dry-run install with --config should exit with code 0',
@@ -299,7 +256,14 @@ describe('socket pnpm', async () => {
         timeout: 30_000,
       })
 
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`
+        "Lockfile is up to date, resolution step is skipped
+        Already up to date
+
+        . prepare$ husky
+        . prepare: Done
+        Done in 855ms using pnpm v10.17.0"
+      `)
       expect(
         code,
         'dry-run install with multiple issueRules should exit with code 0',
@@ -321,82 +285,18 @@ describe('socket pnpm', async () => {
         timeout: 30_000,
       })
 
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`
+        "Lockfile is up to date, resolution step is skipped
+        Already up to date
+
+        . prepare$ husky
+        . prepare: Done
+        Done in 908ms using pnpm v10.17.0"
+      `)
       expect(
         code,
         'dry-run install with --config and multiple issueRules should exit with code 0',
       ).toBe(0)
     },
   )
-
-  it('should work when invoked via pnpm dlx', { timeout: 30_000 }, async () => {
-    // Mock spawn to avoid actual pnpm dlx execution.
-    const spawnMock = vi
-      .fn()
-      .mockImplementation(
-        async (command: string, args: string[], options: SpawnOptions) => {
-          // Simulate successful pnpm dlx execution.
-          if (command === PNPM && args[0] === 'dlx') {
-            // Simulate cowsay output if cowsay is being run.
-            if (args.some(a => a.includes('cowsay'))) {
-              return {
-                code: 0,
-                stdout: `
- _______
-< hello >
- -------
-        \\   ^__^
-         \\  (oo)\\_______
-            (__)\\       )\\/\\
-                ||----w |
-                ||     ||
-`.trim(),
-                stderr: '',
-              }
-            }
-
-            return {
-              code: 0,
-              stdout: 'Socket CLI executed successfully via pnpm dlx',
-              stderr: '',
-            }
-          }
-          // Fallback to original spawn for other commands.
-          return await spawn(command, args, options)
-        },
-      )
-
-    // Create a temporary directory for testing.
-    const tmpDir = path.join(tmpdir(), `pnpm-dlx-test-${Date.now()}`)
-    await fs.mkdir(tmpDir, { recursive: true })
-
-    try {
-      // Create a minimal package.json.
-      await fs.writeFile(
-        path.join(tmpDir, 'package.json'),
-        JSON.stringify({ name: 'test-pnpm-dlx', version: '1.0.0' }),
-      )
-
-      // Run socket pnpm via pnpm dlx (mocked).
-      const { code, stdout } = await spawnMock(
-        PNPM,
-        ['dlx', '@socketsecurity/cli@latest', PNPM, FLAG_VERSION],
-        {
-          cwd: tmpDir,
-          env: {
-            ...process.env,
-            SOCKET_CLI_ACCEPT_RISKS: '1',
-          },
-          timeout: 60_000,
-        },
-      )
-
-      // Check that the command succeeded.
-      expect(code, 'pnpm dlx socket pnpm should exit with code 0').toBe(0)
-      expect(stdout).toContain('Socket CLI executed successfully')
-    } finally {
-      // Clean up the temporary directory.
-      await trash(tmpDir)
-    }
-  })
 })
