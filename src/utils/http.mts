@@ -15,6 +15,8 @@ export interface HttpRequestOptions {
   timeout?: number | undefined
   followRedirects?: boolean | undefined
   maxRedirects?: number | undefined
+  retries?: number | undefined
+  retryDelay?: number | undefined
 }
 
 export interface HttpResponse {
@@ -31,10 +33,64 @@ export interface HttpResponse {
 /**
  * Make an HTTP request using Node's native http/https modules.
  * Provides a fetch-like API without depending on global fetch.
+ * Supports automatic retries with exponential backoff.
  */
 export async function httpRequest(
   url: string,
   options: HttpRequestOptions = {},
+): Promise<CResult<HttpResponse>> {
+  const {
+    body,
+    followRedirects = true,
+    headers = {},
+    maxRedirects = 5,
+    method = 'GET',
+    retries = 0,
+    retryDelay = 1000,
+    timeout = 30000,
+  } = { __proto__: null, ...options } as HttpRequestOptions
+
+  // Retry logic with exponential backoff
+  let lastError: CResult<HttpResponse> | undefined
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    const result = await httpRequestAttempt(url, {
+      body,
+      followRedirects,
+      headers,
+      maxRedirects,
+      method,
+      timeout,
+    })
+
+    // Success - return immediately
+    if (result.ok) {
+      return result
+    }
+
+    // Last attempt - return error
+    if (attempt === retries) {
+      lastError = result
+      break
+    }
+
+    // Retry with exponential backoff
+    const delayMs = retryDelay * Math.pow(2, attempt)
+    await new Promise(resolve => setTimeout(resolve, delayMs))
+  }
+
+  return lastError || {
+    ok: false,
+    message: 'Request failed',
+    cause: 'Unknown error after retries',
+  }
+}
+
+/**
+ * Single HTTP request attempt (used internally by httpRequest with retry logic).
+ */
+async function httpRequestAttempt(
+  url: string,
+  options: HttpRequestOptions,
 ): Promise<CResult<HttpResponse>> {
   const {
     body,
@@ -86,9 +142,13 @@ export async function httpRequest(
           : new URL(res.headers.location, url).toString()
 
         resolve(
-          httpRequest(redirectUrl, {
-            ...options,
+          httpRequestAttempt(redirectUrl, {
+            body,
+            followRedirects,
+            headers,
             maxRedirects: maxRedirects - 1,
+            method,
+            timeout,
           }),
         )
         return
@@ -160,8 +220,63 @@ export async function httpRequest(
 /**
  * Download a file from a URL to a local path using Node's native http/https modules.
  * Supports progress callbacks and streaming to avoid loading entire file in memory.
+ * Supports automatic retries with exponential backoff.
  */
 export async function httpDownload(
+  url: string,
+  destPath: string,
+  options: {
+    headers?: Record<string, string> | undefined
+    timeout?: number | undefined
+    retries?: number | undefined
+    retryDelay?: number | undefined
+    onProgress?: ((downloaded: number, total: number) => void) | undefined
+  } = {},
+): Promise<CResult<{ path: string; size: number }>> {
+  const {
+    headers = {},
+    onProgress,
+    retries = 0,
+    retryDelay = 1000,
+    timeout = 120000,
+  } = { __proto__: null, ...options }
+
+  // Retry logic with exponential backoff
+  let lastError: CResult<{ path: string; size: number }> | undefined
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    const result = await httpDownloadAttempt(url, destPath, {
+      headers,
+      timeout,
+      onProgress,
+    })
+
+    // Success - return immediately
+    if (result.ok) {
+      return result
+    }
+
+    // Last attempt - return error
+    if (attempt === retries) {
+      lastError = result
+      break
+    }
+
+    // Retry with exponential backoff
+    const delayMs = retryDelay * Math.pow(2, attempt)
+    await new Promise(resolve => setTimeout(resolve, delayMs))
+  }
+
+  return lastError || {
+    ok: false,
+    message: 'Download failed',
+    cause: 'Unknown error after retries',
+  }
+}
+
+/**
+ * Single download attempt (used internally by httpDownload with retry logic).
+ */
+async function httpDownloadAttempt(
   url: string,
   destPath: string,
   options: {
