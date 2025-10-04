@@ -29,8 +29,12 @@ export async function fetchPurlsShallowScore(
   }
   const sockSdk = sockSdkCResult.data
 
+  const displayPurls =
+    purls.length > 3
+      ? `${purls.slice(0, 3).join(', ')} ... and ${purls.length - 3} more`
+      : joinAnd(purls)
   logger.info(
-    `Requesting shallow score data for ${purls.length} package urls (purl): ${joinAnd(purls)}`,
+    `Requesting shallow score data for ${purls.length} package urls (purl): ${displayPurls}`,
   )
 
   const batchPackageCResult = await handleApiCall(

@@ -412,7 +412,11 @@ export async function handlePatch({
     }
 
     if (purls.length) {
-      spinner.start(`Checking patches for: ${joinAnd(purls)}`)
+      const displayPurls =
+        purls.length > 3
+          ? `${purls.slice(0, 3).join(', ')} ... and ${purls.length - 3} more`
+          : joinAnd(purls)
+      spinner.start(`Checking patches for: ${displayPurls}`)
     } else {
       spinner.start('Scanning all dependencies for available patches')
     }
