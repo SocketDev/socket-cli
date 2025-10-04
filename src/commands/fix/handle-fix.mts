@@ -71,8 +71,12 @@ export async function convertIdsToGhsas(ids: string[]): Promise<string[]> {
       const conversionResult = await convertPurlToGhsas(trimmedId)
       if (conversionResult.ok && conversionResult.data.length) {
         validGhsas.push(...conversionResult.data)
+        const displayGhsas =
+          conversionResult.data.length > 3
+            ? `${conversionResult.data.slice(0, 3).join(', ')} ... and ${conversionResult.data.length - 3} more`
+            : joinAnd(conversionResult.data)
         logger.info(
-          `Converted ${trimmedId} to ${conversionResult.data.length} GHSA(s): ${joinAnd(conversionResult.data)}`,
+          `Converted ${trimmedId} to ${conversionResult.data.length} GHSA(s): ${displayGhsas}`,
         )
       } else {
         errors.push(
