@@ -164,12 +164,12 @@ describe('socket pnpm', async () => {
 
       expect(stdout).toMatchInlineSnapshot(`
         "Progress: resolved 0, reused 1, downloaded 0, added 0
-        Progress: resolved 1009, reused 898, downloaded 0, added 0
+        Progress: resolved 892, reused 781, downloaded 0, added 0
         \\u2009WARN\\u2009 2 deprecated subdependencies found: @sindresorhus/chunkify@2.0.0, boolean@3.2.0
         Already up to date
         Progress: resolved 1043, reused 932, downloaded 0, added 0, done
 
-        Done in 2s using pnpm v10.17.0"
+        Done in 2.6s using pnpm v10.17.0"
       `)
       expect(code, 'dry-run add should exit with code 0').toBe(0)
     },
@@ -204,11 +204,12 @@ describe('socket pnpm', async () => {
 
       expect(stdout).toMatchInlineSnapshot(`
         "Progress: resolved 0, reused 1, downloaded 0, added 0
+        Progress: resolved 1033, reused 922, downloaded 0, added 0
         \\u2009WARN\\u2009 2 deprecated subdependencies found: @sindresorhus/chunkify@2.0.0, boolean@3.2.0
         Already up to date
         Progress: resolved 1043, reused 932, downloaded 0, added 0, done
 
-        Done in 1.1s using pnpm v10.17.0"
+        Done in 2.3s using pnpm v10.17.0"
       `)
       expect(code, 'dry-run add scoped package should exit with code 0').toBe(0)
     },
@@ -234,7 +235,7 @@ describe('socket pnpm', async () => {
 
         . prepare$ husky
         . prepare: Done
-        Done in 944ms using pnpm v10.17.0"
+        Done in 1.8s using pnpm v10.17.0"
       `)
       expect(code, 'dry-run install should exit with code 0').toBe(0)
     },
@@ -260,7 +261,7 @@ describe('socket pnpm', async () => {
 
         . prepare$ husky
         . prepare: Done
-        Done in 856ms using pnpm v10.17.0"
+        Done in 3.7s using pnpm v10.17.0"
       `)
       expect(
         code,
@@ -289,7 +290,7 @@ describe('socket pnpm', async () => {
 
         . prepare$ husky
         . prepare: Done
-        Done in 951ms using pnpm v10.17.0"
+        Done in 1.8s using pnpm v10.17.0"
       `)
       expect(
         code,
@@ -318,7 +319,7 @@ describe('socket pnpm', async () => {
 
         . prepare$ husky
         . prepare: Done
-        Done in 942ms using pnpm v10.17.0"
+        Done in 1.7s using pnpm v10.17.0"
       `)
       expect(
         code,

@@ -90,24 +90,6 @@ describe('socket install', async () => {
         \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
         \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
         \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
-        usage: socketcli [-h] [--api-token <token>] [--repo <owner/repo>]
-                         [--repo-is-public] [--branch <name>] [--integration <type>]
-                         [--owner <name>] [--pr-number <number>]
-                         [--commit-message <message>] [--commit-sha <sha>]
-                         [--committers [<name> ...]] [--target-path <path>]
-                         [--sbom-file <path>] [--license-file-name <string>]
-                         [--save-submitted-files-list <path>]
-                         [--save-manifest-tar <path>] [--files <json>]
-                         [--sub-path <path>] [--workspace-name <name>]
-                         [--excluded-ecosystems EXCLUDED_ECOSYSTEMS]
-                         [--default-branch] [--pending-head] [--generate-license]
-                         [--enable-debug] [--enable-json] [--enable-sarif]
-                         [--disable-overview] [--exclude-license-details]
-                         [--allow-unverified] [--disable-security-issue]
-                         [--ignore-commit-files] [--disable-blocking] [--enable-diff]
-                         [--scm <type>] [--timeout <seconds>]
-                         [--include-module-folders] [--version]
-        socketcli: error: unrecognized arguments: --dry-run --config {"apiToken":"fakeToken"}
            _____         _       _        /---------------
           |   __|___ ___| |_ ___| |_      | CLI: <redacted>
           |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>

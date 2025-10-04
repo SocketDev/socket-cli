@@ -792,6 +792,7 @@ export async function meowWithSubcommands(
   if (!helpFlag && dryRun) {
     logger.log(`${constants.DRY_RUN_LABEL}: No-op, call a sub-command; ok`)
     // Exit immediately to prevent tests from hanging waiting for stdin
+    // eslint-disable-next-line n/no-process-exit
     process.exit(0)
   } else {
     // When you explicitly request --help, the command should be successful
