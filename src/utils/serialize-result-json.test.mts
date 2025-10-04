@@ -57,4 +57,42 @@ describe('serializeResultJson', () => {
     const result = serializeResultJson({})
     expect(result).toBe('{}\n')
   })
+
+  it('handles non-object input (null)', () => {
+    const result = serializeResultJson(null as any)
+    const parsed = JSON.parse(result)
+    expect(parsed.ok).toBe(false)
+    expect(parsed.message).toBe('Unable to serialize JSON')
+    expect(parsed.cause).toContain('not an object')
+  })
+
+  it('handles non-object input (string)', () => {
+    const result = serializeResultJson('test' as any)
+    const parsed = JSON.parse(result)
+    expect(parsed.ok).toBe(false)
+    expect(parsed.message).toBe('Unable to serialize JSON')
+  })
+
+  it('handles non-object input (number)', () => {
+    const result = serializeResultJson(42 as any)
+    const parsed = JSON.parse(result)
+    expect(parsed.ok).toBe(false)
+    expect(parsed.message).toBe('Unable to serialize JSON')
+  })
+
+  it('handles non-object input (boolean)', () => {
+    const result = serializeResultJson(true as any)
+    const parsed = JSON.parse(result)
+    expect(parsed.ok).toBe(false)
+    expect(parsed.message).toBe('Unable to serialize JSON')
+  })
+
+  it('handles circular references', () => {
+    const circular: any = { ok: true }
+    circular.self = circular
+    const result = serializeResultJson(circular)
+    const parsed = JSON.parse(result)
+    expect(parsed.ok).toBe(false)
+    expect(parsed.message).toBe('Unable to serialize JSON')
+  })
 })

@@ -119,7 +119,7 @@ describe('git utilities', () => {
       )
       spawn.mockResolvedValue({
         status: 0,
-        stdout: 'main\n',
+        stdout: { toString: () => 'HEAD branch: main\n' },
         stderr: '',
       } as any)
 
@@ -135,7 +135,7 @@ describe('git utilities', () => {
       )
       spawn.mockResolvedValue({
         status: 0,
-        stdout: 'feature-branch\n',
+        stdout: { toString: () => 'feature-branch\n' },
         stderr: '',
       } as any)
 
@@ -156,7 +156,7 @@ describe('git utilities', () => {
         .mockRejectedValueOnce(new Error('Not on a branch'))
         .mockResolvedValueOnce({
           status: 0,
-          stdout: 'abc1234\n',
+          stdout: { toString: () => 'abc1234\n' },
           stderr: '',
         } as any)
 
@@ -347,6 +347,229 @@ describe('git utilities', () => {
         ['config', '--get', 'user.name'],
         expect.any(Object),
       )
+    })
+
+    it('handles missing user name', async () => {
+      const { spawn } = vi.mocked(
+        await import('@socketsecurity/registry/lib/spawn'),
+      )
+      // First call to get email fails, second succeeds
+      spawn
+        .mockRejectedValueOnce(new Error('Not configured'))
+        .mockRejectedValueOnce(new Error('Not configured'))
+        .mockResolvedValueOnce({ status: 0, stdout: '', stderr: '' } as any)
+        .mockResolvedValueOnce({ status: 0, stdout: '', stderr: '' } as any)
+
+      await gitEnsureIdentity('Test User', 'test@example.com')
+      expect(spawn).toHaveBeenCalledWith(
+        'git',
+        ['config', 'user.email', 'test@example.com'],
+        expect.any(Object),
+      )
+      expect(spawn).toHaveBeenCalledWith(
+        'git',
+        ['config', 'user.name', 'Test User'],
+        expect.any(Object),
+      )
+    })
+  })
+
+  describe('getRepoInfo', () => {
+    it('returns undefined when not in a git repo', async () => {
+      const { spawn } = vi.mocked(
+        await import('@socketsecurity/registry/lib/spawn'),
+      )
+      spawn.mockRejectedValue(new Error('Not a git repository'))
+
+      const result = await getRepoInfo('/non/git/dir')
+      expect(result).toBeUndefined()
+    })
+
+    it('parses remote URL correctly', async () => {
+      const { spawn } = vi.mocked(
+        await import('@socketsecurity/registry/lib/spawn'),
+      )
+      // Create a proper Buffer-like object with toString method
+      const mockStdout = {
+        toString: () => 'git@github.com:owner/repo.git',
+      }
+      spawn.mockResolvedValue({
+        status: 0,
+        stdout: mockStdout,
+        stderr: '',
+      } as any)
+
+      const result = await getRepoInfo()
+      expect(result).toEqual({ owner: 'owner', repo: 'repo' })
+    })
+  })
+
+  describe('detectDefaultBranch', () => {
+    it('returns main when no common branch exists', async () => {
+      const { spawn } = vi.mocked(
+        await import('@socketsecurity/registry/lib/spawn'),
+      )
+      // All branch checks fail
+      spawn.mockRejectedValue(new Error('Branch not found'))
+
+      const result = await detectDefaultBranch()
+      expect(result).toBe('main')
+    })
+
+    it('detects main branch', async () => {
+      const { spawn } = vi.mocked(
+        await import('@socketsecurity/registry/lib/spawn'),
+      )
+      // First branch check succeeds for 'main'
+      spawn.mockResolvedValueOnce({
+        status: 0,
+        stdout: '',
+        stderr: '',
+      } as any)
+
+      const result = await detectDefaultBranch()
+      expect(result).toBe('main')
+    })
+
+    it('detects master branch when main does not exist', async () => {
+      const { spawn } = vi.mocked(
+        await import('@socketsecurity/registry/lib/spawn'),
+      )
+      // 'main' fails, 'master' succeeds
+      spawn
+        .mockRejectedValueOnce(new Error('Branch not found'))
+        .mockResolvedValueOnce({ status: 0, stdout: '', stderr: '' } as any)
+
+      const result = await detectDefaultBranch()
+      expect(result).toBe('master')
+    })
+
+    it('checks remote branches if no local branches found', async () => {
+      const { spawn } = vi.mocked(
+        await import('@socketsecurity/registry/lib/spawn'),
+      )
+      // All local checks fail (5 common branches: main, master, develop, trunk, default)
+      const localChecks = 5
+      for (let i = 0; i < localChecks; i++) {
+        spawn.mockRejectedValueOnce(new Error('Branch not found'))
+      }
+      // First remote check succeeds for 'main'
+      spawn.mockResolvedValueOnce({ status: 0, stdout: '', stderr: '' } as any)
+
+      const result = await detectDefaultBranch()
+      expect(result).toBe('main')
+    })
+  })
+
+  describe('gitPushBranch error handling', () => {
+    it('handles push permission errors', async () => {
+      const { isSpawnError, spawn } = vi.mocked(
+        await import('@socketsecurity/registry/lib/spawn'),
+      )
+      const error = {
+        isSpawnError: true,
+        code: 128,
+        message: 'Permission denied',
+      }
+      spawn.mockRejectedValue(error)
+      isSpawnError.mockReturnValue(true)
+
+      const result = await gitPushBranch('feature')
+      expect(result).toBe(false)
+    })
+
+    it('handles other push errors', async () => {
+      const { isSpawnError, spawn } = vi.mocked(
+        await import('@socketsecurity/registry/lib/spawn'),
+      )
+      const error = { isSpawnError: true, code: 1, message: 'Generic error' }
+      spawn.mockRejectedValue(error)
+      isSpawnError.mockReturnValue(true)
+
+      const result = await gitPushBranch('feature')
+      expect(result).toBe(false)
+    })
+  })
+
+  describe('gitCreateBranch error handling', () => {
+    it('returns true when branch already exists', async () => {
+      const { spawn } = vi.mocked(
+        await import('@socketsecurity/registry/lib/spawn'),
+      )
+      // Branch exists check succeeds
+      spawn.mockResolvedValue({ status: 0, stdout: '', stderr: '' } as any)
+
+      const result = await gitCreateBranch('existing-branch')
+      expect(result).toBe(true)
+    })
+
+    it('handles branch creation failures', async () => {
+      const { spawn } = vi.mocked(
+        await import('@socketsecurity/registry/lib/spawn'),
+      )
+      // Branch doesn't exist, but creation fails
+      spawn
+        .mockRejectedValueOnce(new Error('Branch does not exist'))
+        .mockRejectedValueOnce(new Error('Failed to create branch'))
+
+      const result = await gitCreateBranch('new-branch')
+      expect(result).toBe(false)
+    })
+  })
+
+  describe('gitCommit error handling', () => {
+    it('handles git add failures', async () => {
+      const { spawn } = vi.mocked(
+        await import('@socketsecurity/registry/lib/spawn'),
+      )
+      // Identity checks succeed
+      spawn
+        .mockResolvedValueOnce({
+          status: 0,
+          stdout: 'test@example.com',
+          stderr: '',
+        } as any)
+        .mockResolvedValueOnce({
+          status: 0,
+          stdout: 'Test User',
+          stderr: '',
+        } as any)
+        // git add fails
+        .mockRejectedValueOnce(new Error('Failed to add files'))
+
+      const result = await gitCommit('Test commit', ['file.txt'], {
+        email: 'test@example.com',
+        user: 'Test User',
+      })
+      expect(result).toBe(false)
+    })
+
+    it('handles git commit failures', async () => {
+      const { spawn } = vi.mocked(
+        await import('@socketsecurity/registry/lib/spawn'),
+      )
+      // Identity checks succeed
+      spawn
+        .mockResolvedValueOnce({
+          status: 0,
+          stdout: 'test@example.com',
+          stderr: '',
+        } as any)
+        .mockResolvedValueOnce({
+          status: 0,
+          stdout: 'Test User',
+          stderr: '',
+        } as any)
+        // git add succeeds
+        .mockResolvedValueOnce({ status: 0, stdout: '', stderr: '' } as any)
+        // git commit fails
+        .mockRejectedValueOnce(new Error('Failed to commit'))
+
+      const result = await gitCommit('Test commit', ['file.txt'], {
+        email: 'test@example.com',
+        user: 'Test User',
+      })
+      expect(result).toBe(false)
     })
   })
 })

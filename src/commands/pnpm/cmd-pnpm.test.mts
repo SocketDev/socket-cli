@@ -52,6 +52,10 @@ describe('socket pnpm', async () => {
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
+           \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
+        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
+        \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
+        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
            _____         _       _        /---------------
           |   __|___ ___| |_ ___| |_      | CLI: <redacted>
           |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>

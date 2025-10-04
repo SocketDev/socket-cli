@@ -135,6 +135,10 @@ describe('socket optimize', async () => {
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
+           \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
+        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
+        \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
+        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
            _____         _       _        /---------------
           |   __|___ ___| |_ ___| |_      | CLI: <redacted>
           |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
@@ -159,6 +163,10 @@ describe('socket optimize', async () => {
       expect(packageJson.overrides).toBeUndefined()
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
+           \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
+        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
+        \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
+        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
            _____         _       _        /---------------
           |   __|___ ___| |_ ___| |_      | CLI: <redacted>
           |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
@@ -186,7 +194,11 @@ describe('socket optimize', async () => {
       const packageJson = await readPackageJson(packageJsonPath)
       expect(packageJson.overrides).toBeUndefined()
       expect(stderr).toMatchInlineSnapshot(`
-        "_____         _       _        /---------------
+        "\\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
+        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
+        \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
+        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
+           _____         _       _        /---------------
           |   __|___ ___| |_ ___| |_      | CLI: <redacted>
           |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket optimize\`, cwd: <redacted>"
@@ -212,7 +224,11 @@ describe('socket optimize', async () => {
       const packageJson = await readPackageJson(packageJsonPath)
       expect(packageJson.overrides).toBeUndefined()
       expect(stderr).toMatchInlineSnapshot(`
-        "_____         _       _        /---------------
+        "\\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
+        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
+        \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
+        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
+           _____         _       _        /---------------
           |   __|___ ___| |_ ___| |_      | CLI: <redacted>
           |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket optimize\`, cwd: <redacted>"
@@ -239,7 +255,11 @@ describe('socket optimize', async () => {
       const packageJson = await readPackageJson(packageJsonPath)
       expect(packageJson.overrides).toBeUndefined()
       expect(stderr).toMatchInlineSnapshot(`
-        "_____         _       _        /---------------
+        "\\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
+        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
+        \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
+        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
+           _____         _       _        /---------------
           |   __|___ ___| |_ ___| |_      | CLI: <redacted>
           |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket optimize\`, cwd: <redacted>"
@@ -264,7 +284,12 @@ describe('socket optimize', async () => {
       const packageJsonPath = path.join(pnpmFixtureDir, PACKAGE_JSON)
       const packageJson = await readPackageJson(packageJsonPath)
       expect(packageJson.overrides).toBeUndefined()
-      expect(stderr).toMatchInlineSnapshot(`""`)
+      expect(stderr).toMatchInlineSnapshot(`
+        "\\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
+        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
+        \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
+        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit"
+      `)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -285,7 +310,12 @@ describe('socket optimize', async () => {
       const packageJsonPath = path.join(pnpmFixtureDir, PACKAGE_JSON)
       const packageJson = await readPackageJson(packageJsonPath)
       expect(packageJson.overrides).toBeUndefined()
-      expect(stderr).toMatchInlineSnapshot(`""`)
+      expect(stderr).toMatchInlineSnapshot(`
+        "\\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
+        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
+        \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
+        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit"
+      `)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -306,7 +336,11 @@ describe('socket optimize', async () => {
       const packageJson = await readPackageJson(packageJsonPath)
       expect(packageJson.overrides).toBeUndefined()
       expect(stderr).toMatchInlineSnapshot(`
-        "_____         _       _        /---------------
+        "\\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
+        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
+        \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
+        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
+           _____         _       _        /---------------
           |   __|___ ___| |_ ___| |_      | CLI: <redacted>
           |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket optimize\`, cwd: <redacted>"
@@ -352,7 +386,12 @@ describe('socket optimize', async () => {
       const packageJsonPath = path.join(pnpmFixtureDir, PACKAGE_JSON)
       const packageJson = await readPackageJson(packageJsonPath)
       expect(packageJson.overrides).toBeUndefined()
-      expect(stderr).toMatchInlineSnapshot(`""`)
+      expect(stderr).toMatchInlineSnapshot(`
+        "\\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
+        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
+        \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
+        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit"
+      `)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -392,7 +431,12 @@ describe('socket optimize', async () => {
       const packageJsonPath = path.join(pnpmFixtureDir, PACKAGE_JSON)
       const packageJson = await readPackageJson(packageJsonPath)
       expect(packageJson.overrides).toBeUndefined()
-      expect(stderr).toMatchInlineSnapshot(`""`)
+      expect(stderr).toMatchInlineSnapshot(`
+        "\\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
+        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
+        \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
+        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit"
+      `)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
