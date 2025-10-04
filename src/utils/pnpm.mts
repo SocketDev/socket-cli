@@ -41,7 +41,10 @@ export async function extractPurlsFromPnpmLockfile(
       ...(pkg as any).devDependencies,
     }
     for (const depName in deps) {
-      const ref = deps[depName]!
+      const ref = deps[depName]
+      if (!ref) {
+        continue
+      }
       const subKey = isPnpmDepPath(ref) ? ref : `/${depName}@${ref}`
       visit(subKey)
     }
