@@ -1,0 +1,9 @@
+{
+  "name": "test-pnpm-v10",
+  "version": "1.0.0",
+  "private": true,
+  "packageManager": "pnpm@10.0.0",
+  "dependencies": {
+    "pnpm": "10.0.0"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "name": "test-bun",
+  "version": "1.0.0",
+  "private": true,
+  "packageManager": "bun@1.1.42",
+  "dependencies": {
+    "bun": "1.1.42"
+  }
+}

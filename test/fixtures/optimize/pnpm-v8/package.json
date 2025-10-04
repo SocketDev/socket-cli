@@ -1,0 +1,9 @@
+{
+  "name": "test-pnpm-v8",
+  "version": "1.0.0",
+  "private": true,
+  "packageManager": "pnpm@8.15.1",
+  "dependencies": {
+    "pnpm": "8.15.1"
+  }
+}
