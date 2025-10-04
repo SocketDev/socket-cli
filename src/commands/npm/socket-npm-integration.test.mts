@@ -17,10 +17,9 @@ import type { SpawnError } from '@socketsecurity/registry/lib/spawn'
 
 const npmFixturesPath = path.join(testPath, 'fixtures/commands/npm')
 
-// These aliases are defined in package.json.
-// Re-enabled with improved reliability.
-// TODO: Revisit after socket-registry dep is updated.
-const npmDirs = [] as string[]
+// Test with npm9, npm10, npm11 fixture directories.
+// These contain isolated package.json files for testing npm wrapper functionality.
+const npmDirs = ['npm9', 'npm10', 'npm11'] as string[]
 
 if (!npmDirs.length) {
   // Provide a placeholder test suite when no npm directories are configured.
@@ -31,11 +30,8 @@ if (!npmDirs.length) {
   })
 } else {
   for (const npmDir of npmDirs) {
-    if (constants.ENV.CI) {
-      // Skip in CI for now until we ensure stability.
-      describe('skipme', () => it('should skip', () => expect(true).toBe(true)))
-      continue
-    }
+    // Enable in CI - these tests are properly isolated in fixture directories
+    // and do not affect the main repository.
 
     const npmPath = path.join(npmFixturesPath, npmDir)
     const npmBinPath = path.join(npmPath, 'node_modules/.bin')
