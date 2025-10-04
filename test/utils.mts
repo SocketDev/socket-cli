@@ -4,9 +4,9 @@ import { fileURLToPath } from 'node:url'
 import { it, vi } from 'vitest'
 
 import { spawn } from '@socketsecurity/registry/lib/spawn'
-import { stripAnsi } from '@socketsecurity/registry/lib/strings'
 
 import constants, { FLAG_HELP, FLAG_VERSION } from '../src/constants.mts'
+import { cleanOutput } from './utils/scrubbers/clean-output.mts'
 
 import type { CResult } from '../src/types.mts'
 import type {
@@ -18,16 +18,6 @@ import type { MockedFunction } from 'vitest'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
-
-// The asciiUnsafeRegexp match characters that are:
-//   * Control characters in the Unicode range:
-//     - \u0000 to \u0007 (e.g., NUL, BEL)
-//     - \u0009 (Tab, but note: not \u0008 Backspace or \u000A Newline)
-//     - \u000B to \u001F (other non-printable control characters)
-//   * All non-ASCII characters:
-//     - \u0080 to \uFFFF (extended Unicode)
-// eslint-disable-next-line no-control-regex
-const asciiUnsafeRegexp = /[\u0000-\u0007\u0009\u000b-\u001f\u0080-\uffff]/g
 
 // Note: The fixture directory is in the same directory as this utils file.
 export const testPath = __dirname
@@ -61,103 +51,8 @@ export const YARN_BERRY_AGENT_FIXTURE = path.join(
 export const BUN_AGENT_FIXTURE = path.join(AGENT_FIXTURE_PATH, 'bun')
 export const VLT_AGENT_FIXTURE = path.join(AGENT_FIXTURE_PATH, 'vlt')
 
-function normalizeLogSymbols(str: string): string {
-  return str
-    .replaceAll('✖', '×')
-    .replaceAll('ℹ', 'i')
-    .replaceAll('✔', '√')
-    .replaceAll('⚠', '‼')
-}
-
-function normalizeNewlines(str: string): string {
-  return (
-    str
-      // Replace all literal \r\n.
-      .replaceAll('\r\n', '\n')
-      // Replace all escaped \\r\\n.
-      .replaceAll('\\r\\n', '\\n')
-  )
-}
-
-function stripZeroWidthSpace(str: string): string {
-  return str.replaceAll('\u200b', '')
-}
-
-function toAsciiSafeString(str: string): string {
-  return str.replace(asciiUnsafeRegexp, m => {
-    const code = m.charCodeAt(0)
-    return code < 255
-      ? `\\x${code.toString(16).padStart(2, '0')}`
-      : `\\u${code.toString(16).padStart(4, '0')}`
-  })
-}
-
-function stripTokenErrorMessages(str: string): string {
-  // Remove API token error messages to avoid snapshot inconsistencies
-  // when local environment has/doesn't have tokens set.
-  return str.replace(
-    /^\s*[×✖]\s+This command requires a Socket API token for access.*$/gm,
-    '',
-  )
-}
-
-function scrubFirewallOutput(str: string): string {
-  // Scrub dynamic content from Socket Firewall output to prevent snapshot inconsistencies
-  // from version numbers, timing, package counts, and other variable data.
-
-  let result = str
-
-  // Normalize Yarn version numbers (e.g., "Yarn 4.10.3" -> "Yarn X.X.X")
-  result = result.replace(/Yarn \d+\.\d+\.\d+/g, 'Yarn X.X.X')
-
-  // Normalize timing information (e.g., "3s 335ms" -> "Xs XXXms", "0s 357ms" -> "Xs XXXms")
-  result = result.replace(/\d+s \d+ms/g, 'Xs XXXms')
-
-  // Normalize package count information (e.g., "1137 more" -> "XXXX more")
-  result = result.replace(/and \d+ more\./g, 'and XXXX more.')
-
-  return result
-}
-
-function sanitizeTokens(str: string): string {
-  // Sanitize Socket API tokens to prevent leaking credentials into snapshots.
-  // Socket tokens follow the format: sktsec_[alphanumeric+underscore characters]
-
-  // Match Socket API tokens: sktsec_ followed by word characters
-  const tokenPattern = /sktsec_\w+/g
-  let result = str.replace(tokenPattern, 'sktsec_REDACTED_TOKEN')
-
-  // Sanitize token values in JSON-like structures
-  result = result.replace(
-    /"apiToken"\s*:\s*"sktsec_[^"]+"/g,
-    '"apiToken":"sktsec_REDACTED_TOKEN"',
-  )
-
-  // Sanitize token prefixes that might be displayed (e.g., "zP416" -> "REDAC")
-  // Match 5-character alphanumeric strings that appear after "token:" labels
-  result = result.replace(
-    /token:\s*\[?\d+m\]?([A-Za-z0-9]{5})\*{3}/gi,
-    'token: REDAC***',
-  )
-
-  return result
-}
-
-export function cleanOutput(output: string | Buffer<ArrayBufferLike>): string {
-  return toAsciiSafeString(
-    normalizeLogSymbols(
-      normalizeNewlines(
-        stripZeroWidthSpace(
-          scrubFirewallOutput(
-            sanitizeTokens(
-              stripTokenErrorMessages(stripAnsi(String(output).trim())),
-            ),
-          ),
-        ),
-      ),
-    ),
-  ).trim()
-}
+// Re-export cleanOutput from scrubbers for convenience
+export { cleanOutput }
 
 /**
  * Check if output contains cdxgen help content.
