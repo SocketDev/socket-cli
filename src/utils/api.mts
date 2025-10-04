@@ -32,6 +32,7 @@ import {
   debugHttpError,
 } from './debug.mts'
 import { buildErrorCause } from './errors.mts'
+import { githubRepoLink, webLink } from './terminal-link.mts'
 import constants, {
   CONFIG_KEY_API_BASE_URL,
   EMPTY_VALUE,
@@ -92,7 +93,9 @@ function logPermissionsFor403(cmdPath?: string | undefined): void {
   }
   logger.error('')
   logger.error('💡 To fix this:')
-  logger.error('   1. Visit https://socket.dev/settings/api-tokens')
+  logger.error(
+    `   1. Visit ${webLink('https://socket.dev/settings/api-tokens')}`,
+  )
   logger.error(
     '   2. Edit your API token to grant the permissions listed above',
   )
@@ -127,9 +130,9 @@ export async function getErrorMessageForHttpStatusCode(code: number) {
       '❌ Access denied: Your API token lacks required permissions or organization access.\n' +
       '💡 Try:\n' +
       '  • Run `socket whoami` to verify your account and organization\n' +
-      '  • Check your API token permissions at https://socket.dev/settings/api-tokens\n' +
+      `  • Check your API token permissions at ${webLink('https://socket.dev/settings/api-tokens')}\n` +
       "  • Ensure you're accessing the correct organization with `--org` flag\n" +
-      '  • Verify your plan includes this feature at https://socket.dev/pricing'
+      `  • Verify your plan includes this feature at ${webLink('https://socket.dev/pricing')}`
     )
   }
   if (code === HTTP_STATUS_NOT_FOUND) {
@@ -139,14 +142,14 @@ export async function getErrorMessageForHttpStatusCode(code: number) {
       '  • Verify resource names (package, repository, organization)\n' +
       '  • Check if the resource was deleted or moved\n' +
       '  • Update to the latest CLI version: `socket self-update` (SEA) or `npm update -g socket`\n' +
-      '  • Report persistent issues at https://github.com/SocketDev/socket-cli/issues'
+      `  • Report persistent issues at ${githubRepoLink('SocketDev', 'socket-cli', 'issues')}`
     )
   }
   if (code === HTTP_STATUS_TOO_MANY_REQUESTS) {
     return (
       '❌ Rate limit exceeded: Too many API requests.\n' +
       '💡 Try:\n' +
-      '  • Free plan: Wait a few minutes for quota reset or upgrade at https://socket.dev/pricing\n' +
+      `  • Free plan: Wait a few minutes for quota reset or upgrade at ${webLink('https://socket.dev/pricing')}\n` +
       '  • Paid plan: Contact support if rate limits seem incorrect\n' +
       '  • Check current quota: `socket organization quota`\n' +
       '  • Reduce request frequency or batch operations'
@@ -157,13 +160,13 @@ export async function getErrorMessageForHttpStatusCode(code: number) {
       '❌ Server error: Socket API encountered an internal problem (HTTP 500).\n' +
       '💡 Try:\n' +
       '  • Wait a few minutes and retry your command\n' +
-      '  • Check Socket status: https://status.socket.dev\n' +
-      '  • Report persistent issues: https://github.com/SocketDev/socket-cli/issues'
+      `  • Check Socket status: ${webLink('https://status.socket.dev')}\n` +
+      `  • Report persistent issues: ${githubRepoLink('SocketDev', 'socket-cli', 'issues')}`
     )
   }
   return (
     `❌ HTTP ${code}: Server responded with unexpected status code.\n` +
-    '💡 Try: Check Socket status at https://status.socket.dev or report the issue.'
+    `💡 Try: Check Socket status at ${webLink('https://status.socket.dev')} or report the issue.`
   )
 }
 
