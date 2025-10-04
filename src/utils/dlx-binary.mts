@@ -26,13 +26,13 @@ import { existsSync, promises as fs } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-import { downloadWithLock } from '@socketsecurity/registry/lib/download-lock'
 import { readJson, remove } from '@socketsecurity/registry/lib/fs'
 import { getSocketDlxDir } from '@socketsecurity/registry/lib/paths'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import constants from '../constants.mts'
 import { InputError } from './errors.mts'
+import { httpRequest } from './http.mts'
 
 import type {
   SpawnExtra,
@@ -111,33 +111,39 @@ async function isCacheValid(
 }
 
 /**
- * Download a file from a URL with integrity checking and download locking.
- * Uses registry's downloadWithLock to prevent concurrent downloads.
+ * Download a file from a URL with integrity checking.
  */
 async function downloadBinary(
   url: string,
   destPath: string,
   checksum?: string,
 ): Promise<string> {
-  // Create a temporary file first for integrity checking.
+  const result = await httpRequest(url)
+
+  if (!result.ok) {
+    throw new InputError(`Failed to download binary: ${result.message}`)
+  }
+
+  const response = result.data!
+
+  if (!response.ok) {
+    throw new InputError(
+      `Failed to download binary: ${response.status} ${response.statusText}`,
+    )
+  }
+
+  // Create a temporary file first.
   const tempPath = `${destPath}.download`
+  const hasher = createHash('sha256')
 
   try {
     // Ensure directory exists.
     await fs.mkdir(path.dirname(destPath), { recursive: true })
 
-    // Download with locking and automatic retries.
-    // This prevents concurrent downloads and provides retry logic.
-    await downloadWithLock(url, tempPath, {
-      lockTimeout: 120_000, // Wait up to 2 minutes for concurrent downloads
-      retries: 3, // Retry up to 3 times with exponential backoff
-      retryDelay: 1000, // Start with 1 second delay
-      timeout: 300_000, // 5 minute timeout per attempt
-    })
+    // Get the response as a buffer and compute hash.
+    const buffer = response.body
 
-    // Read file for checksum verification.
-    const buffer = await fs.readFile(tempPath)
-    const hasher = createHash('sha256')
+    // Compute hash.
     hasher.update(buffer)
     const actualChecksum = hasher.digest('hex')
 
@@ -147,6 +153,9 @@ async function downloadBinary(
         `Checksum mismatch: expected ${checksum}, got ${actualChecksum}`,
       )
     }
+
+    // Write to temp file.
+    await fs.writeFile(tempPath, buffer)
 
     // Make executable on POSIX systems.
     if (os.platform() !== 'win32') {
@@ -164,9 +173,7 @@ async function downloadBinary(
     } catch {
       // Ignore cleanup errors.
     }
-    throw error instanceof Error
-      ? error
-      : new InputError(`Failed to download binary: ${String(error)}`)
+    throw error
   }
 }
 
