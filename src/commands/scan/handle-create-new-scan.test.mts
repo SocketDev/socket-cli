@@ -228,7 +228,11 @@ describe('handleCreateNewScan', () => {
     ])
     vi.mocked(checkCommandInput).mockReturnValue(true)
 
-    await handleCreateNewScan({ ...mockConfig, readOnly: true })
+    await handleCreateNewScan({
+      ...mockConfig,
+      readOnly: true,
+      outputKind: 'text',
+    })
 
     expect(logger.log).toHaveBeenCalledWith('[ReadOnly] Bailing now')
     expect(fetchCreateOrgFullScan).not.toHaveBeenCalled()
