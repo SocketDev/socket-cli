@@ -15,10 +15,34 @@ describe('socket config', async () => {
     `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`
+        "Manage Socket CLI configuration
+
+          Usage
+            $ socket config <command>
+
+          Commands
+            auto                        Automatically discover and set the correct value config item
+            get                         Get the value of a local CLI config item
+            list                        Show all local CLI config items and their values
+            set                         Update the value of a local CLI config item
+            unset                       Clear the value of a local CLI config item
+
+          Options
+
+            --no-banner                 Hide the Socket banner
+            --no-spinner                Hide the console spinner"
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           "
+           \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
+        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
+        \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
+        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
+           _____         _       _        /---------------
+          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket config\`, cwd: <redacted>"
       `)
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
@@ -34,11 +58,18 @@ describe('socket config', async () => {
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
-        `""`,
+        `"[DryRun]: No-op, call a sub-command; ok"`,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           "
+           \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
+        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
+        \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
+        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
+           _____         _       _        /---------------
+          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket config\`, cwd: <redacted>"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
@@ -57,7 +88,16 @@ describe('socket config', async () => {
         expect(stdout).toMatchInlineSnapshot(`""`)
         expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
           "
-             "
+             \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
+          \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
+          \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
+          \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
+             _____         _       _        /---------------
+            |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+            |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+            |_____|___|___|_,_|___|_|.dev   | Command: \`socket\`, cwd: <redacted>
+
+          \\xd7 Could not parse Config as JSON"
         `)
 
         expect(stderr.includes('Could not parse Config as JSON')).toBe(true)
@@ -73,7 +113,16 @@ describe('socket config', async () => {
         expect(stdout).toMatchInlineSnapshot(`""`)
         expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
           "
-             "
+             \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
+          \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
+          \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
+          \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
+             _____         _       _        /---------------
+            |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+            |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+            |_____|___|___|_,_|___|_|.dev   | Command: \`socket\`, cwd: <redacted>
+
+          \\xd7 Could not parse Config as JSON"
         `)
 
         expect(stderr.includes('Could not parse Config as JSON')).toBe(true)

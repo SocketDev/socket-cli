@@ -54,9 +54,9 @@ describe('socket config get', async () => {
           \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
           \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
              _____         _       _        /---------------
-            |   __|___ ___| |_ ___| |_      | CLI: v1.1.23
-            |__   | * |  _| '_| -_|  _|     | token: (disabled), org: (not set)
-            |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: ~/projects/socket-cli"
+            |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+            |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+            |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>"
         `)
         expect(code, 'explicit help should exit with code 0').toBe(0)
       }
@@ -80,9 +80,9 @@ describe('socket config get', async () => {
         \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
         \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: v1.1.23
-          |__   | * |  _| '_| -_|  _|     | token: (disabled), org: (not set)
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: ~/projects/socket-cli
+          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>
 
         \\xd7  Input error:  Please review the input requirements and try again
 
@@ -115,9 +115,9 @@ describe('socket config get', async () => {
         \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
         \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: v1.1.23
-          |__   | * |  _| '_| -_|  _|     | token: (disabled), org: (not set)
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket config\`, cwd: ~/projects/socket-cli"
+          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket config\`, cwd: <redacted>"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
@@ -149,9 +149,9 @@ describe('socket config get', async () => {
             \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
             \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
                _____         _       _        /---------------
-              |   __|___ ___| |_ ___| |_      | CLI: v1.1.23
-              |__   | * |  _| '_| -_|  _|     | token: (disabled), org: (not set)
-              |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: ~/projects/socket-cli"
+              |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+              |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+              |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>"
           `)
 
           // No env var set, config has null.
@@ -171,7 +171,7 @@ describe('socket config get', async () => {
             },
           })
           expect(stdout).toMatchInlineSnapshot(`
-            "apiToken: null
+            "apiToken: fakeToken
 
             Note: the config is in read-only mode, meaning at least one key was temporarily overridden from an env var or command flag."
           `)
@@ -182,9 +182,9 @@ describe('socket config get', async () => {
             \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
             \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
                _____         _       _        /---------------
-              |   __|___ ___| |_ ___| |_      | CLI: v1.1.23
-              |__   | * |  _| '_| -_|  _|     | token: (disabled), org: (not set)
-              |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: ~/projects/socket-cli"
+              |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+              |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+              |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>"
           `)
 
           expect(stdout).toContain('apiToken: fakeToken')
@@ -204,7 +204,7 @@ describe('socket config get', async () => {
             },
           })
           expect(stdout).toMatchInlineSnapshot(`
-            "apiToken: null
+            "apiToken: fakeToken
 
             Note: the config is in read-only mode, meaning at least one key was temporarily overridden from an env var or command flag."
           `)
@@ -215,9 +215,9 @@ describe('socket config get', async () => {
             \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
             \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
                _____         _       _        /---------------
-              |   __|___ ___| |_ ___| |_      | CLI: v1.1.23
-              |__   | * |  _| '_| -_|  _|     | token: (disabled), org: (not set)
-              |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: ~/projects/socket-cli"
+              |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+              |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+              |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>"
           `)
 
           // The test sets SOCKET_SECURITY_API_KEY which takes precedence.
@@ -237,7 +237,7 @@ describe('socket config get', async () => {
             },
           })
           expect(stdout).toMatchInlineSnapshot(`
-            "apiToken: null
+            "apiToken: fakeToken
 
             Note: the config is in read-only mode, meaning at least one key was temporarily overridden from an env var or command flag."
           `)
@@ -248,9 +248,9 @@ describe('socket config get', async () => {
             \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
             \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
                _____         _       _        /---------------
-              |   __|___ ___| |_ ___| |_      | CLI: v1.1.23
-              |__   | * |  _| '_| -_|  _|     | token: (disabled), org: (not set)
-              |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: ~/projects/socket-cli"
+              |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+              |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+              |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>"
           `)
 
           expect(stdout).toContain('apiToken: fakeToken')
@@ -270,7 +270,7 @@ describe('socket config get', async () => {
             },
           })
           expect(stdout).toMatchInlineSnapshot(`
-            "apiToken: null
+            "apiToken: fakeToken
 
             Note: the config is in read-only mode, meaning at least one key was temporarily overridden from an env var or command flag."
           `)
@@ -281,9 +281,9 @@ describe('socket config get', async () => {
             \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
             \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
                _____         _       _        /---------------
-              |   __|___ ___| |_ ___| |_      | CLI: v1.1.23
-              |__   | * |  _| '_| -_|  _|     | token: (disabled), org: (not set)
-              |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: ~/projects/socket-cli"
+              |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+              |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+              |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>"
           `)
 
           // The test sets SOCKET_CLI_API_KEY which takes precedence.
@@ -309,7 +309,7 @@ describe('socket config get', async () => {
             },
           })
           expect(stdout).toMatchInlineSnapshot(`
-            "apiToken: ignoremebecausetheenvvarshouldbemoreimportant
+            "apiToken: fakeToken
 
             Note: the config is in read-only mode, meaning at least one key was temporarily overridden from an env var or command flag."
           `)
@@ -320,9 +320,9 @@ describe('socket config get', async () => {
             \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
             \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
                _____         _       _        /---------------
-              |   __|___ ___| |_ ___| |_      | CLI: v1.1.23
-              |__   | * |  _| '_| -_|  _|     | token: (disabled), org: (not set)
-              |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: ~/projects/socket-cli"
+              |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+              |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+              |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>"
           `)
 
           // The test sets SOCKET_CLI_API_KEY which takes precedence.
@@ -353,9 +353,9 @@ describe('socket config get', async () => {
             \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
             \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
                _____         _       _        /---------------
-              |   __|___ ___| |_ ___| |_      | CLI: v1.1.23
-              |__   | * |  _| '_| -_|  _|     | token: (disabled), org: (not set)
-              |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: ~/projects/socket-cli"
+              |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+              |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+              |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>"
           `)
 
           // The config override token should be returned.
@@ -386,9 +386,9 @@ describe('socket config get', async () => {
             \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
             \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
                _____         _       _        /---------------
-              |   __|___ ___| |_ ___| |_      | CLI: v1.1.23
-              |__   | * |  _| '_| -_|  _|     | token: (disabled), org: (not set)
-              |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: ~/projects/socket-cli"
+              |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+              |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+              |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>"
           `)
 
           // No token in the config override.
