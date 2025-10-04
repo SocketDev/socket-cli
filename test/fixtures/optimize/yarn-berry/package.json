@@ -1,0 +1,9 @@
+{
+  "name": "test-yarn-berry",
+  "version": "1.0.0",
+  "private": true,
+  "packageManager": "yarn@4.10.3",
+  "dependencies": {
+    "yarn": "4.10.3"
+  }
+}
