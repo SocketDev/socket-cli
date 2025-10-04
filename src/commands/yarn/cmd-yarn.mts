@@ -68,7 +68,6 @@ async function run(
     Examples
       $ ${command} install
       $ ${command} add package-name
-      $ ${command} dlx package-name
     `,
   }
 
@@ -81,7 +80,8 @@ async function run(
   })
 
   // Filter out Socket CLI flags before forwarding to sfw
-  const argsToForward = filterFlags(argv, commonFlags, [])
+  // Exception: Keep --dry-run to forward to yarn (yarn supports --dry-run natively)
+  const argsToForward = filterFlags(argv, commonFlags, ['dry-run'])
 
   // Forward arguments to sfw (Socket Firewall) via npx.
   const result = await forwardToSfw('yarn', argsToForward)

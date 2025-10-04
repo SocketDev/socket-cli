@@ -2,8 +2,6 @@
 
 import { createRequire } from 'node:module'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import constants, {
   FLAG_DRY_RUN,
   FLAG_HELP,
@@ -66,27 +64,23 @@ async function run(
     `,
   }
 
-  const cli = meowOrExit({
+  // Parse flags to handle --help
+  meowOrExit({
     argv,
     config,
     importMeta,
     parentName,
   })
 
-  const dryRun = !!cli.flags['dryRun']
-
-  if (dryRun) {
-    logger.log(constants.DRY_RUN_BAILING_NOW)
-    return
-  }
-
   const shadowNpmBin = /*@__PURE__*/ require(constants.shadowNpmBinPath)
 
   process.exitCode = 1
 
-  // Filter Socket flags from argv but keep --json for npm.
+  // Filter Socket flags from argv but keep --json and --dry-run for npm.
+  // npm supports --dry-run natively to show what would be installed without actually installing.
   const argsToForward = filterFlags(argv, { ...commonFlags, ...outputFlags }, [
     FLAG_JSON,
+    'dry-run',
   ])
   const { spawnPromise } = await shadowNpmBin(argsToForward, {
     stdio: 'inherit',

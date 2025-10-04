@@ -18,8 +18,6 @@
 
 import { createRequire } from 'node:module'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import constants, { PNPM } from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
 import { filterFlags, forwardToSfw } from '../../utils/cmd.mts'
@@ -66,23 +64,20 @@ async function run(
     Examples
       $ ${command} install
       $ ${command} add package-name
-      $ ${command} dlx package-name
     `,
   }
 
-  const cli = meowOrExit({
+  // Parse flags to handle --help
+  meowOrExit({
     argv,
     config,
     parentName,
     importMeta,
   })
 
-  const dryRun = !!cli.flags['dryRun']
-
-  if (dryRun) {
-    logger.log(constants.DRY_RUN_BAILING_NOW)
-    return
-  }
+  // Note: --dry-run is now forwarded to pnpm instead of bailing early
+  // This allows pnpm to run in dry-run mode (no actual install) while still
+  // enabling security scanning
 
   // Conditional routing (undocumented feature):
   // - With --config/-c: Use shadow pnpm binary for Socket registry overrides
@@ -110,7 +105,8 @@ async function run(
     process.exitCode = 0
   } else {
     // Forward to sfw (Socket Firewall)
-    const argsToForward = filterFlags(argv, commonFlags, [])
+    // Exception: Keep --dry-run to forward to pnpm (pnpm supports --dry-run natively)
+    const argsToForward = filterFlags(argv, commonFlags, ['dry-run'])
 
     const result = await forwardToSfw('pnpm', argsToForward)
 
