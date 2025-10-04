@@ -3,12 +3,17 @@ import { fileURLToPath } from 'node:url'
 
 import { it, vi } from 'vitest'
 
-import { SpawnOptions, spawn } from '@socketsecurity/registry/lib/spawn'
+import { spawn } from '@socketsecurity/registry/lib/spawn'
 import { stripAnsi } from '@socketsecurity/registry/lib/strings'
 
 import constants, { FLAG_HELP, FLAG_VERSION } from '../src/constants.mts'
 
-import type { SetupSdkResult } from '../src/utils/sdk.mts'
+import type { CResult } from '../src/types.mts'
+import type {
+  SpawnError,
+  SpawnOptions,
+} from '@socketsecurity/registry/lib/spawn'
+import type { SocketSdk } from '@socketsecurity/sdk'
 import type { MockedFunction } from 'vitest'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -120,16 +125,18 @@ function sanitizeTokens(str: string): string {
   return result
 }
 
-export function cleanOutput(output: string): string {
+export function cleanOutput(output: string | Buffer<ArrayBufferLike>): string {
   return toAsciiSafeString(
     normalizeLogSymbols(
       normalizeNewlines(
         stripZeroWidthSpace(
-          sanitizeTokens(stripTokenErrorMessages(stripAnsi(output.trim()))),
+          sanitizeTokens(
+            stripTokenErrorMessages(stripAnsi(String(output).trim())),
+          ),
         ),
       ),
     ),
-  )
+  ).trim()
 }
 
 /**
@@ -224,16 +231,17 @@ export async function spawnSocketCli(
       stdout: cleanOutput(output.stdout),
       stderr: cleanOutput(output.stderr),
     }
-  } catch (e: unknown) {
+  } catch (e) {
+    const maybeSpawnError = e as SpawnError
     return {
       status: false,
-      code: e?.['code'] || 1,
+      code: maybeSpawnError?.['code'] || 1,
       error: {
-        message: e?.['message'] || '',
-        stack: e?.['stack'] || '',
+        message: maybeSpawnError?.['message'] || '',
+        stack: maybeSpawnError?.['stack'] || '',
       },
-      stdout: cleanOutput(e?.['stdout'] ?? ''),
-      stderr: cleanOutput(e?.['stderr'] ?? ''),
+      stdout: cleanOutput(maybeSpawnError?.['stdout'] ?? ''),
+      stderr: cleanOutput(maybeSpawnError?.['stderr'] ?? ''),
     }
   }
 }
@@ -246,7 +254,10 @@ export function mockSetupSdkSuccess(
   mockSetupSdk: MockedFunction<any>,
   sdkData: any = {},
 ): void {
-  mockSetupSdk.mockResolvedValue({ ok: true, data: sdkData } as SetupSdkResult)
+  mockSetupSdk.mockResolvedValue({
+    ok: true,
+    data: sdkData,
+  } as CResult<SocketSdk>)
 }
 
 /**
@@ -260,7 +271,7 @@ export function mockSetupSdkFailure(
   mockSetupSdk.mockResolvedValue({
     ok: false,
     ...error,
-  } as SetupSdkResult)
+  } as CResult<SocketSdk>)
 }
 
 /**
