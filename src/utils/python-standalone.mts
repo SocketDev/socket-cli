@@ -46,13 +46,13 @@ import path from 'node:path'
 import semver from 'semver'
 
 import { whichBin } from '@socketsecurity/registry/lib/bin'
+import { downloadWithLock } from '@socketsecurity/registry/lib/download-lock'
 import { remove } from '@socketsecurity/registry/lib/fs'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import constants from '../constants.mts'
 import { getDlxCachePath } from './dlx-binary.mts'
 import { InputError, getErrorCause } from './errors.mts'
-import { httpDownload } from './http.mts'
 
 import type { CResult } from '../types.mts'
 
@@ -188,6 +188,7 @@ export async function checkSystemPython(): Promise<string | null> {
 
 /**
  * Download and extract Python from python-build-standalone.
+ * Uses downloadWithLock to prevent concurrent downloads.
  */
 async function downloadPython(pythonDir: string): Promise<void> {
   const url = getPythonStandaloneUrl()
@@ -196,10 +197,19 @@ async function downloadPython(pythonDir: string): Promise<void> {
   // Ensure directory exists
   await fs.mkdir(pythonDir, { recursive: true })
 
-  // Download with Node's native http module
-  const result = await httpDownload(url, tarballPath)
-  if (!result.ok) {
-    throw new InputError(`Failed to download Python: ${result.message}`)
+  // Download with locking and automatic retries.
+  // This prevents concurrent downloads and provides retry logic.
+  try {
+    await downloadWithLock(url, tarballPath, {
+      lockTimeout: 180_000, // Wait up to 3 minutes for concurrent downloads
+      retries: 3, // Retry up to 3 times with exponential backoff
+      retryDelay: 1000, // Start with 1 second delay
+      timeout: 600_000, // 10 minute timeout per attempt (large file)
+    })
+  } catch (error) {
+    throw new InputError(
+      `Failed to download Python: ${error instanceof Error ? error.message : String(error)}`,
+    )
   }
 
   // Extract using system tar command
