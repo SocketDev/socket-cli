@@ -13,7 +13,7 @@ export function ensureIpcInStdio(
     if (!stdio.includes('ipc')) {
       return stdio.concat('ipc')
     }
-    return stdio
+    return stdio.slice()
   } else {
     return ['pipe', 'pipe', 'pipe', 'ipc']
   }
