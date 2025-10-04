@@ -73,7 +73,7 @@ function getCommandRequirements(
 }
 
 /**
- * Log required permissions for a command when encountering 403 errors.
+ * Log required permissions for a command when encountering 403 errors with actionable guidance.
  */
 function logPermissionsFor403(cmdPath?: string | undefined): void {
   const requirements = getCommandRequirements(cmdPath)
@@ -81,11 +81,17 @@ function logPermissionsFor403(cmdPath?: string | undefined): void {
     return
   }
 
-  logger.error('This command requires the following API permissions:')
+  logger.error('')
+  logger.error('🔐 Required API Permissions:')
   for (const permission of requirements.permissions) {
-    logger.error(`  - ${permission}`)
+    logger.error(`   • ${permission}`)
   }
-  logger.error('Please ensure your API token has the required permissions.')
+  logger.error('')
+  logger.error('💡 To fix this:')
+  logger.error('   1. Visit https://socket.dev/settings/api-tokens')
+  logger.error('   2. Edit your API token to grant the permissions listed above')
+  logger.error('   3. Re-run your command')
+  logger.error('')
 }
 
 // The Socket API server that should be used for operations.
@@ -101,25 +107,46 @@ export function getDefaultApiBaseUrl(): string | undefined {
 }
 
 /**
- * Get user-friendly error message for HTTP status codes.
+ * Get user-friendly error message for HTTP status codes with actionable guidance.
  */
 export async function getErrorMessageForHttpStatusCode(code: number) {
   if (code === HTTP_STATUS_BAD_REQUEST) {
-    return 'One of the options passed might be incorrect'
+    return '❌ Invalid request: One of the options or parameters may be incorrect.\n' +
+           '💡 Try: Check your command syntax and parameter values.'
   }
   if (code === HTTP_STATUS_FORBIDDEN || code === HTTP_STATUS_UNAUTHORIZED) {
-    return 'Your Socket API token may not have the required permissions for this command or you might be trying to access (data from) an organization that is not linked to the API token you are logged in with'
+    return '❌ Access denied: Your API token lacks required permissions or organization access.\n' +
+           '💡 Try:\n' +
+           '  • Run `socket whoami` to verify your account and organization\n' +
+           '  • Check your API token permissions at https://socket.dev/settings/api-tokens\n' +
+           '  • Ensure you\'re accessing the correct organization with `--org` flag\n' +
+           '  • Verify your plan includes this feature at https://socket.dev/pricing'
   }
   if (code === HTTP_STATUS_NOT_FOUND) {
-    return 'The requested Socket API endpoint was not found (404) or there was no result for the requested parameters. If unexpected, this could be a temporary problem caused by an incident or a bug in the CLI. If the problem persists please let us know.'
+    return '❌ Not found: The requested endpoint or resource doesn\'t exist.\n' +
+           '💡 Try:\n' +
+           '  • Verify resource names (package, repository, organization)\n' +
+           '  • Check if the resource was deleted or moved\n' +
+           '  • Update to the latest CLI version: `socket self-update` (SEA) or `npm update -g socket`\n' +
+           '  • Report persistent issues at https://github.com/SocketDev/socket-cli/issues'
   }
   if (code === HTTP_STATUS_TOO_MANY_REQUESTS) {
-    return 'API quota exceeded. If you are on the free plan, consider upgrading your account or waiting for the quota to reset. For enterprise users, contact support if this persists.'
+    return '❌ Rate limit exceeded: Too many API requests.\n' +
+           '💡 Try:\n' +
+           '  • Free plan: Wait a few minutes for quota reset or upgrade at https://socket.dev/pricing\n' +
+           '  • Paid plan: Contact support if rate limits seem incorrect\n' +
+           '  • Check current quota: `socket organization quota`\n' +
+           '  • Reduce request frequency or batch operations'
   }
   if (code === HTTP_STATUS_INTERNAL_SERVER_ERROR) {
-    return 'There was an unknown server side problem with your request. This ought to be temporary. Please let us know if this problem persists.'
+    return '❌ Server error: Socket API encountered an internal problem (HTTP 500).\n' +
+           '💡 Try:\n' +
+           '  • Wait a few minutes and retry your command\n' +
+           '  • Check Socket status: https://status.socket.dev\n' +
+           '  • Report persistent issues: https://github.com/SocketDev/socket-cli/issues'
   }
-  return `Server responded with status code ${code}`
+  return `❌ HTTP ${code}: Server responded with unexpected status code.\n` +
+         '💡 Try: Check Socket status at https://status.socket.dev or report the issue.'
 }
 
 export type HandleApiCallOptions = {
