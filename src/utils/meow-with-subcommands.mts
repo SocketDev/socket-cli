@@ -780,8 +780,9 @@ export async function meowWithSubcommands(
     // Meow will add newline so don't add stderr spacing here.
   }
   if (!helpFlag && dryRun) {
-    process.exitCode = 0
     logger.log(`${constants.DRY_RUN_LABEL}: No-op, call a sub-command; ok`)
+    // Exit immediately to prevent tests from hanging waiting for stdin
+    process.exit(0)
   } else {
     // When you explicitly request --help, the command should be successful
     // so we exit(0). If we do it because we need more input, we exit(2).
