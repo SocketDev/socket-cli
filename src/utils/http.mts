@@ -293,11 +293,7 @@ async function httpDownloadAttempt(
     onProgress?: ((downloaded: number, total: number) => void) | undefined
   } = {},
 ): Promise<CResult<{ path: string; size: number }>> {
-  const {
-    headers = {},
-    onProgress,
-    timeout = 120000,
-  } = options
+  const { headers = {}, onProgress, timeout = 120000 } = options
 
   return await new Promise(resolve => {
     const parsedUrl = new URL(url)
