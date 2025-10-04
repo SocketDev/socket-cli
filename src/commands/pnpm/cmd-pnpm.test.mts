@@ -207,7 +207,7 @@ describe('socket pnpm', async () => {
         Already up to date
         Progress: resolved 1043, reused 932, downloaded 0, added 0, done
 
-        Done in 1s using pnpm v10.17.0"
+        Done in 1.2s using pnpm v10.17.0"
       `)
       expect(code, 'dry-run add scoped package should exit with code 0').toBe(0)
     },
@@ -233,7 +233,7 @@ describe('socket pnpm', async () => {
 
         . prepare$ husky
         . prepare: Done
-        Done in 1.1s using pnpm v10.17.0"
+        Done in 824ms using pnpm v10.17.0"
       `)
       expect(code, 'dry-run install should exit with code 0').toBe(0)
     },
@@ -259,7 +259,7 @@ describe('socket pnpm', async () => {
 
         . prepare$ husky
         . prepare: Done
-        Done in 826ms using pnpm v10.17.0"
+        Done in 837ms using pnpm v10.17.0"
       `)
       expect(
         code,
@@ -288,7 +288,7 @@ describe('socket pnpm', async () => {
 
         . prepare$ husky
         . prepare: Done
-        Done in 861ms using pnpm v10.17.0"
+        Done in 820ms using pnpm v10.17.0"
       `)
       expect(
         code,
@@ -317,7 +317,7 @@ describe('socket pnpm', async () => {
 
         . prepare$ husky
         . prepare: Done
-        Done in 853ms using pnpm v10.17.0"
+        Done in 925ms using pnpm v10.17.0"
       `)
       expect(
         code,
