@@ -37,6 +37,7 @@ const SHADOW_NPM_BIN = 'shadow-npm-bin'
 const SHADOW_NPM_INJECT = 'shadow-npm-inject'
 const SHADOW_NPX_BIN = 'shadow-npx-bin'
 const SHADOW_PNPM_BIN = 'shadow-pnpm-bin'
+const SHADOW_YARN_BIN = 'shadow-yarn-bin'
 const SLASH_NODE_MODULES_SLASH = '/node_modules/'
 const SOCKET_CLI_BIN_NAME = 'socket'
 const SOCKET_CLI_BIN_NAME_ALIAS = 'cli'
@@ -130,6 +131,7 @@ const constants = createConstantsObject(
     SHADOW_NPM_INJECT,
     SHADOW_NPX_BIN,
     SHADOW_PNPM_BIN,
+    SHADOW_YARN_BIN,
     SLASH_NODE_MODULES_SLASH,
     SOCKET_CLI_BIN_NAME,
     SOCKET_CLI_BIN_NAME_ALIAS,

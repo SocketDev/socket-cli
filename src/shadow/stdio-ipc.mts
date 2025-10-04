@@ -15,7 +15,8 @@ export function ensureIpcInStdio(
     if (!stdio.includes('ipc')) {
       return stdio.concat('ipc')
     }
-    return stdio.slice()
+    // Return original array if ipc is already present
+    return stdio
   } else {
     return ['pipe', 'pipe', 'pipe', 'ipc']
   }

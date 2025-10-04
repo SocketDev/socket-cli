@@ -1,26 +1,30 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock node:http and node:https modules
-const mockRequest = vi.fn()
-const mockHttpsRequest = vi.fn()
-
+// Note: Mock functions are created inside the factory to avoid hoisting issues
 vi.mock('node:http', () => ({
   default: {
-    request: mockRequest,
+    request: vi.fn(),
   },
 }))
 
 vi.mock('node:https', () => ({
   default: {
-    request: mockHttpsRequest,
+    request: vi.fn(),
   },
 }))
 
 import { httpGetJson, httpGetText, httpRequest } from './http.mts'
+import http from 'node:http'
+import https from 'node:https'
 
 import type { IncomingMessage } from 'node:http'
 
 describe('HTTP utilities', () => {
+  // Get references to the mocked functions
+  const mockRequest = vi.mocked(http.request)
+  const mockHttpsRequest = vi.mocked(https.request)
+
   beforeEach(() => {
     vi.clearAllMocks()
   })
