@@ -98,10 +98,9 @@ describe('convertIdsToGhsas', () => {
       data: 'GHSA-1234-5678-9abc',
     })
 
-    const result = await convertIdsToGhsas(
-      ['CVE-invalid', 'CVE-2021-12345'],
-      { outputKind: 'text' },
-    )
+    const result = await convertIdsToGhsas(['CVE-invalid', 'CVE-2021-12345'], {
+      outputKind: 'text',
+    })
 
     expect(result).toEqual(['GHSA-1234-5678-9abc'])
     expect(logger.warn).toHaveBeenCalledWith(

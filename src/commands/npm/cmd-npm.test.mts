@@ -160,9 +160,10 @@ describe('socket npm', async () => {
     async cmd => {
       const { code } = await spawnSocketCli(binCliPath, cmd, { cwd: testCwd })
       // npm exec can exit with 0 or 1 depending on whether the package is cached
-      expect(code, 'dry-run exec should exit with code 0 or 1').toBeGreaterThanOrEqual(
-        0,
-      )
+      expect(
+        code,
+        'dry-run exec should exit with code 0 or 1',
+      ).toBeGreaterThanOrEqual(0)
       expect(code).toBeLessThanOrEqual(1)
     },
   )
