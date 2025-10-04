@@ -62,11 +62,11 @@ export function checkCommandInput(
       serializeResultJson({
         ok: false,
         message: 'Input error',
-        data: stripAnsi(msg.join('\n')),
+        data: stripAnsi(msg.join('\n').trim()),
       }),
     )
   } else {
-    logger.fail(failMsgWithBadge('Input error', msg.join('\n')))
+    logger.fail(failMsgWithBadge('Input error', msg.join('\n').trim()))
   }
 
   return false
