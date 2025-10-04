@@ -36,9 +36,9 @@ describe('socket json', async () => {
         \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
         \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket json\`, cwd: <redacted>"
+          |   __|___ ___| |_ ___| |_      | CLI: v1.1.23
+          |__   | * |  _| '_| -_|  _|     | token: (disabled), org: (not set)
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket json\`, cwd: ~/projects/socket-cli"
       `)
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
@@ -59,12 +59,12 @@ describe('socket json', async () => {
         \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
         \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket json\`, cwd: <redacted>
+          |   __|___ ___| |_ ___| |_      | CLI: v1.1.23
+          |__   | * |  _| '_| -_|  _|     | token: (disabled), org: (not set)
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket json\`, cwd: ~/projects/socket-cli
 
-        i Target cwd: <redacted>
-        \\xd7 Not found: <redacted>"
+        i Target cwd: ~/projects/socket-cli
+        \\xd7 Not found: ~/projects/socket-cli/socket.json"
       `)
 
       expect(code, 'not found is failure').toBe(1)
@@ -84,12 +84,12 @@ describe('socket json', async () => {
         \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
         \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket json\`, cwd: <redacted>
+          |   __|___ ___| |_ ___| |_      | CLI: v1.1.23
+          |__   | * |  _| '_| -_|  _|     | token: (disabled), org: (not set)
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket json\`, cwd: ~/projects/socket-cli
 
-        i Target cwd: <redacted>
-        \\xd7 Not found: <redacted>"
+        i Target cwd: ~/projects/socket-cli
+        \\xd7 Not found: ~/projects/socket-cli/socket.json"
       `)
 
       expect(code, 'not found is failure').toBe(1)
@@ -115,12 +115,12 @@ describe('socket json', async () => {
         \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
         \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket json\`, cwd: <redacted>
+          |   __|___ ___| |_ ___| |_      | CLI: v1.1.23
+          |__   | * |  _| '_| -_|  _|     | token: (disabled), org: (not set)
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket json\`, cwd: ~/projects/socket-cli
 
-        i Target cwd: <redacted>
-        \\xd7 Not found: <redacted>"
+        i Target cwd: ~/projects/socket-cli/doesnotexist
+        \\xd7 Not found: ~/projects/socket-cli/doesnotexist/socket.json"
       `)
 
       expect(code, 'not found is failure').toBe(1)
@@ -134,9 +134,7 @@ describe('socket json', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
         cwd: path.join(testPath, 'fixtures/commands/json'),
       })
-      expect(stdout.replace(/(?:\\r|\\x0d)/g, '')).toMatchInlineSnapshot(
-        `"<Buffer 7b 0a 20 20 22 20 5f 5f 5f 5f 5f 20 20 20 20 20 20 20 20 20 5f 20 20 20 20 20 20 20 5f 20 20 20 20 20 22 3a 20 22 4c 6f 63 61 6c 20 63 6f 6e 66 69 67 ... 691 more bytes>"`,
-      )
+      expect(stdout.replace(/(?:\\r|\\x0d)/g, '')).toMatchInlineSnapshot(`"<Buffer 7b 0a 20 20 22 20 5f 5f 5f 5f 5f 20 20 20 20 20 20 20 20 20 5f 20 20 20 20 20 20 20 5f 20 20 20 20 20 22 3a 20 22 4c 6f 63 61 6c 20 63 6f 6e 66 69 67 ... 691 more bytes>"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
@@ -144,12 +142,12 @@ describe('socket json', async () => {
         \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
         \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket json\`, cwd: <redacted>
+          |   __|___ ___| |_ ___| |_      | CLI: v1.1.23
+          |__   | * |  _| '_| -_|  _|     | token: (disabled), org: (not set)
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket json\`, cwd: ~/projects/socket-cli/test/fixtures/commands/json
 
-        i Target cwd: <redacted>
-        \\u221a This is the contents of <redacted>:"
+        i Target cwd: ~/projects/socket-cli/test/fixtures/commands/json
+        \\u221a This is the contents of ~/projects/socket-cli/test/fixtures/commands/json/socket.json:"
       `)
 
       expect(code, 'found is ok').toBe(0)

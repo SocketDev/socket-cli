@@ -16,8 +16,7 @@ describe('socket audit-log', async () => {
     `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(
-        `
+      expect(stdout).toMatchInlineSnapshot(`
         "Look up the audit log for an organization
 
           Usage
@@ -54,8 +53,7 @@ describe('socket audit-log', async () => {
           Examples
             $ socket audit-log
             $ socket audit-log deleteReport --page 2 --per-page 10"
-      `,
-      )
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
@@ -63,9 +61,9 @@ describe('socket audit-log', async () => {
         \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
         \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket audit-log\`, cwd: <redacted>"
+          |   __|___ ___| |_ ___| |_      | CLI: v1.1.23
+          |__   | * |  _| '_| -_|  _|     | token: (disabled), org: (not set)
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket audit-log\`, cwd: ~/projects/socket-cli"
       `)
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
@@ -88,9 +86,9 @@ describe('socket audit-log', async () => {
         \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
         \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket audit-log\`, cwd: <redacted>
+          |   __|___ ___| |_ ___| |_      | CLI: v1.1.23
+          |__   | * |  _| '_| -_|  _|     | token: (disabled), org: (not set)
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket audit-log\`, cwd: ~/projects/socket-cli
 
         \\u203c Unable to determine the target org. Trying to auto-discover it now...
         i Note: Run \`socket login\` to set a default org.
@@ -126,9 +124,9 @@ describe('socket audit-log', async () => {
         \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
         \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket audit-log\`, cwd: <redacted>
+          |   __|___ ___| |_ ___| |_      | CLI: v1.1.23
+          |__   | * |  _| '_| -_|  _|     | token: (disabled), org: fakeOrg (config)
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket audit-log\`, cwd: ~/projects/socket-cli
 
         \\xd7  Input error:  Please review the input requirements and try again
 
@@ -157,9 +155,9 @@ describe('socket audit-log', async () => {
         \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
         \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket audit-log\`, cwd: <redacted>"
+          |   __|___ ___| |_ ___| |_      | CLI: v1.1.23
+          |__   | * |  _| '_| -_|  _|     | token: (disabled), org: fakeOrg (config)
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket audit-log\`, cwd: ~/projects/socket-cli"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
@@ -186,9 +184,9 @@ describe('socket audit-log', async () => {
         \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
         \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket audit-log\`, cwd: <redacted>"
+          |   __|___ ___| |_ ___| |_      | CLI: v1.1.23
+          |__   | * |  _| '_| -_|  _|     | token: (disabled), org: forcedorg (--org flag)
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket audit-log\`, cwd: ~/projects/socket-cli"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

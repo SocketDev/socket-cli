@@ -64,10 +64,12 @@ export async function convertIdsToGhsas(
       const conversionResult = await convertCveToGhsa(trimmedId)
       if (conversionResult.ok) {
         validGhsas.push(conversionResult.data)
-        logInfoIf(
-          outputKind,
-          `Converted ${trimmedId} to ${conversionResult.data}`,
-        )
+        if (outputKind) {
+          logInfoIf(
+            outputKind,
+            `Converted ${trimmedId} to ${conversionResult.data}`,
+          )
+        }
       } else {
         errors.push(`${trimmedId}: ${conversionResult.message}`)
       }
@@ -81,10 +83,12 @@ export async function convertIdsToGhsas(
           conversionResult.data.length > 3
             ? `${conversionResult.data.slice(0, 3).join(', ')} ... and ${conversionResult.data.length - 3} more`
             : joinAnd(conversionResult.data)
-        logInfoIf(
-          outputKind,
-          `Converted ${trimmedId} to ${conversionResult.data.length} GHSA(s): ${displayGhsas}`,
-        )
+        if (outputKind) {
+          logInfoIf(
+            outputKind,
+            `Converted ${trimmedId} to ${conversionResult.data.length} GHSA(s): ${displayGhsas}`,
+          )
+        }
       } else {
         errors.push(
           `${trimmedId}: ${conversionResult.message || 'No GHSAs found'}`,
@@ -99,10 +103,12 @@ export async function convertIdsToGhsas(
   }
 
   if (errors.length) {
-    logWarnIf(
-      outputKind,
-      `Skipped ${errors.length} invalid IDs:\n${errors.map(e => `  - ${e}`).join('\n')}`,
-    )
+    if (outputKind) {
+      logWarnIf(
+        outputKind,
+        `Skipped ${errors.length} invalid IDs:\n${errors.map(e => `  - ${e}`).join('\n')}`,
+      )
+    }
     debugDir('inspect', { errors })
   }
 

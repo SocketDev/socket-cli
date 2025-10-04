@@ -2,7 +2,6 @@
 
 import path from 'node:path'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
 import { pluralize } from '@socketsecurity/registry/lib/words'
 
 import { fetchCreateOrgFullScan } from './fetch-create-org-full-scan.mts'

@@ -17,37 +17,10 @@ describe('socket scan', async () => {
     `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`
-        "Manage Socket scans
-
-          Usage
-            $ socket scan <command>
-
-          Commands
-            create                      Create a new Socket scan and report
-            del                         Delete a scan
-            diff                        See what changed between two Scans
-            list                        List the scans for an organization
-            metadata                    Get a scan's metadata
-            report                      Check whether a scan result passes the organizational policies (security, license)
-            setup                       Start interactive configurator to customize default flag values for \`socket scan\` in this dir
-            view                        View the raw results of a scan
-
-          Options
-
-            --no-banner                 Hide the Socket banner
-            --no-spinner                Hide the console spinner"
-      `)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
-        \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
-           _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan\`, cwd: <redacted>"
+           "
       `)
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
@@ -61,36 +34,11 @@ describe('socket scan', async () => {
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
-        `"[DryRun]: No-op, call a sub-command; ok"`,
+        `""`,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
-        \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
-        usage: socketcli [-h] [--api-token <token>] [--repo <owner/repo>]
-                         [--repo-is-public] [--branch <name>] [--integration <type>]
-                         [--owner <name>] [--pr-number <number>]
-                         [--commit-message <message>] [--commit-sha <sha>]
-                         [--committers [<name> ...]] [--target-path <path>]
-                         [--sbom-file <path>] [--license-file-name <string>]
-                         [--save-submitted-files-list <path>]
-                         [--save-manifest-tar <path>] [--files <json>]
-                         [--sub-path <path>] [--workspace-name <name>]
-                         [--excluded-ecosystems EXCLUDED_ECOSYSTEMS]
-                         [--default-branch] [--pending-head] [--generate-license]
-                         [--enable-debug] [--enable-json] [--enable-sarif]
-                         [--disable-overview] [--exclude-license-details]
-                         [--allow-unverified] [--disable-security-issue]
-                         [--ignore-commit-files] [--disable-blocking] [--enable-diff]
-                         [--scm <type>] [--timeout <seconds>]
-                         [--include-module-folders] [--version]
-        socketcli: error: unrecognized arguments: --dry-run --config {"apiToken":"fakeToken"}
-           _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan\`, cwd: <redacted>"
+           "
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

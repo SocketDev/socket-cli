@@ -5,7 +5,6 @@ import path from 'node:path'
 import { handleOptimize } from './handle-optimize.mts'
 import constants from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
-import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import {
   getFlagApiRequirementsOutput,
