@@ -101,6 +101,24 @@ function stripTokenErrorMessages(str: string): string {
   )
 }
 
+function scrubFirewallOutput(str: string): string {
+  // Scrub dynamic content from Socket Firewall output to prevent snapshot inconsistencies
+  // from version numbers, timing, package counts, and other variable data.
+
+  let result = str
+
+  // Normalize Yarn version numbers (e.g., "Yarn 4.10.3" -> "Yarn X.X.X")
+  result = result.replace(/Yarn \d+\.\d+\.\d+/g, 'Yarn X.X.X')
+
+  // Normalize timing information (e.g., "3s 335ms" -> "Xs XXXms", "0s 357ms" -> "Xs XXXms")
+  result = result.replace(/\d+s \d+ms/g, 'Xs XXXms')
+
+  // Normalize package count information (e.g., "1137 more" -> "XXXX more")
+  result = result.replace(/and \d+ more\./g, 'and XXXX more.')
+
+  return result
+}
+
 function sanitizeTokens(str: string): string {
   // Sanitize Socket API tokens to prevent leaking credentials into snapshots.
   // Socket tokens follow the format: sktsec_[alphanumeric+underscore characters]
@@ -130,8 +148,10 @@ export function cleanOutput(output: string | Buffer<ArrayBufferLike>): string {
     normalizeLogSymbols(
       normalizeNewlines(
         stripZeroWidthSpace(
-          sanitizeTokens(
-            stripTokenErrorMessages(stripAnsi(String(output).trim())),
+          scrubFirewallOutput(
+            sanitizeTokens(
+              stripTokenErrorMessages(stripAnsi(String(output).trim())),
+            ),
           ),
         ),
       ),
