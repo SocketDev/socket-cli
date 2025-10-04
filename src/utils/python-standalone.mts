@@ -39,19 +39,20 @@
  *   - DLX binary utilities: src/utils/dlx-binary.mts
  */
 
-import { createWriteStream, existsSync, promises as fs } from 'node:fs'
+import { existsSync, promises as fs } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import { pipeline } from 'node:stream/promises'
 
 import semver from 'semver'
 
+import { remove } from '@socketsecurity/registry/lib/fs'
 import { whichBin } from '@socketsecurity/registry/lib/bin'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import constants from '../constants.mts'
 import { getDlxCachePath } from './dlx-binary.mts'
 import { InputError, getErrorCause } from './errors.mts'
+import { httpDownload } from './http.mts'
 
 import type { CResult } from '../types.mts'
 
@@ -195,18 +196,11 @@ async function downloadPython(pythonDir: string): Promise<void> {
   // Ensure directory exists
   await fs.mkdir(pythonDir, { recursive: true })
 
-  // Download
-  const response = await fetch(url)
-  if (!response.ok) {
-    throw new InputError(
-      `Failed to download Python: ${response.status} ${response.statusText}`,
-    )
+  // Download with Node's native http module
+  const result = await httpDownload(url, tarballPath)
+  if (!result.ok) {
+    throw new InputError(`Failed to download Python: ${result.message}`)
   }
-
-  // Save tarball
-  const fileStream = createWriteStream(tarballPath)
-  // @ts-expect-error - ReadableStream from fetch is compatible with pipeline
-  await pipeline(response.body, fileStream)
 
   // Extract using system tar command
   await spawn('tar', ['-xzf', tarballPath, '-C', pythonDir], {
@@ -214,7 +208,7 @@ async function downloadPython(pythonDir: string): Promise<void> {
   })
 
   // Clean up tarball
-  await fs.unlink(tarballPath)
+  await remove(tarballPath)
 }
 
 /**
