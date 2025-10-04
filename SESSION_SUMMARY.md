@@ -370,9 +370,56 @@ All changes are production-ready and have been committed to the main branch.
 3. Continue HTTP modernization (remaining fetch() usage)
 4. Add test coverage for new utilities
 
+## Session Continuation (Date: 2025-10-04)
+
+### Additional HTTP Modernization ✅
+
+**Migrated GitHub API calls from fetch() to native HTTP**:
+- `src/commands/scan/create-scan-from-github.mts`
+  - All GitHub API endpoint calls (repo details, commits, branch tree, file contents)
+  - File downloads for manifest files
+  - Removed 70+ lines of custom `streamDownloadWithFetch()` function
+
+**Impact**:
+- Consistent error handling across all GitHub API operations
+- Better type safety with TypeScript interfaces for GitHub API responses
+- Simplified download logic using `httpDownload()` utility
+- Reduced code duplication (removed custom streaming function)
+
+**Files Modified**:
+- `src/commands/scan/create-scan-from-github.mts` (4 fetch() calls → httpGetJson/httpDownload)
+- `src/commands/self-update/handle-self-update.mts` (comment formatting)
+- `src/utils/http.mts` (URL.path → URL.pathname + URL.search, null-prototype fixes)
+- `src/utils/python-standalone.mts` (import ordering)
+
+**TypeScript Fixes**:
+- Fixed `URL.path` deprecation → `URL.pathname + URL.search`
+- Removed invalid `__proto__` from type-inferred objects
+- Fixed ESLint inline comment positioning
+
+### Commits This Continuation
+
+7. **HTTP Modernization Commit** (169c92ff):
+   - GitHub scan creation migration from fetch() to native HTTP
+   - TypeScript fixes for URL properties
+   - Removed ~70 lines of duplicate streaming code
+
+### Updated Metrics
+
+**fetch() Migration Status**:
+- ✅ Completed: self-update, dlx-binary, python-standalone, GitHub scan creation
+- ⏳ Remaining: update-checker (intentionally uses fetch with AbortController)
+
+**Code Reduction**:
+- ~140 lines removed (70 from streaming + 70 from refactoring)
+- ~350 lines net reduction total across session
+
+**Build Status**: ✅ All builds passing
+
 ---
 
 *Session Date: 2025-10-04*
+*Continued Session Date: 2025-10-04*
 *Completed By: Claude Code*
 *Branch: main*
 *Status: ✅ Ready for Testing*
