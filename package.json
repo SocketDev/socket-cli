@@ -274,7 +274,7 @@
   },
   "typeCoverage": {
     "cache": true,
-    "atLeast": 94,
+    "atLeast": 95,
     "ignoreAsAssertion": true,
     "ignoreCatch": true,
     "ignoreEmptyType": true,
