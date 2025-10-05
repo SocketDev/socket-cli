@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.24](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.24) - 2025-10-05
+
+### Added
+- Optional API response caching to speed up repeated queries
+- `cacheEnabled` configuration option for enabling response caching (default: false)
+- `cacheTtl` configuration option for customizing cache duration in milliseconds (default: 300000 = 5 minutes)
+- `SOCKET_CLI_CACHE_ENABLED` environment variable for opt-in caching
+- `SOCKET_CLI_CACHE_TTL` environment variable for configuring cache TTL
+
 ## [1.1.23](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.23) - 2025-09-22
 
 ### Changed
