@@ -9,6 +9,7 @@ import { confirm } from '@socketsecurity/registry/lib/prompts'
 import constants from '../../constants.mts'
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
 import { serializeResultJson } from '../../utils/serialize-result-json.mts'
+import { withSpinnerRestore } from '../../utils/spinner.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
@@ -35,74 +36,64 @@ export async function outputCreateNewScan(
   }
 
   const wasSpinning = !!spinner?.isSpinning
-
   spinner?.stop()
 
-  if (outputKind === 'json') {
-    logger.log(serializeResultJson(result))
-    if (wasSpinning) {
-      spinner.start()
+  await withSpinnerRestore(spinner, wasSpinning, async () => {
+    if (outputKind === 'json') {
+      logger.log(serializeResultJson(result))
+      return
     }
-    return
-  }
 
-  if (!result.ok) {
-    logger.fail(failMsgWithBadge(result.message, result.cause))
-    if (wasSpinning) {
-      spinner.start()
+    if (!result.ok) {
+      logger.fail(failMsgWithBadge(result.message, result.cause))
+      return
     }
-    return
-  }
 
-  if (!result.data.id) {
-    logger.fail('Did not receive a scan ID from the API.')
-    process.exitCode = 1
-  }
+    if (!result.data.id) {
+      logger.fail('Did not receive a scan ID from the API.')
+      process.exitCode = 1
+    }
 
-  if (outputKind === 'markdown') {
-    logger.log('# Create New Scan')
-    logger.log('')
-    if (result.data.id) {
-      logger.log(
-        `A [new Scan](${result.data.html_report_url}) was created with ID: ${result.data.id}`,
-      )
+    if (outputKind === 'markdown') {
+      logger.log('# Create New Scan')
       logger.log('')
-    } else {
-      logger.log(
-        `The server did not return a Scan ID while trying to create a new Scan. This could be an indication something went wrong.`,
-      )
+      if (result.data.id) {
+        logger.log(
+          `A [new Scan](${result.data.html_report_url}) was created with ID: ${result.data.id}`,
+        )
+        logger.log('')
+      } else {
+        logger.log(
+          `The server did not return a Scan ID while trying to create a new Scan. This could be an indication something went wrong.`,
+        )
+      }
+      logger.log('')
+      return
     }
+
     logger.log('')
-    if (wasSpinning) {
-      spinner.start()
+    logger.success('Scan completed successfully!')
+
+    const htmlReportUrl = result.data.html_report_url
+    if (htmlReportUrl) {
+      logger.log(
+        `View report at: ${terminalLink(htmlReportUrl, htmlReportUrl)}`,
+      )
+    } else {
+      logger.log('No report available.')
     }
-    return
-  }
 
-  logger.log('')
-  logger.success('Scan completed successfully!')
-
-  const htmlReportUrl = result.data.html_report_url
-  if (htmlReportUrl) {
-    logger.log(`View report at: ${terminalLink(htmlReportUrl, htmlReportUrl)}`)
-  } else {
-    logger.log('No report available.')
-  }
-
-  if (
-    interactive &&
-    (await confirm(
-      {
-        message: 'Would you like to open it in your browser?',
-        default: false,
-      },
-      { spinner },
-    ))
-  ) {
-    await open(`${result.data.html_report_url}`)
-  }
-
-  if (wasSpinning) {
-    spinner.start()
-  }
+    if (
+      interactive &&
+      (await confirm(
+        {
+          message: 'Would you like to open it in your browser?',
+          default: false,
+        },
+        { spinner },
+      ))
+    ) {
+      await open(`${result.data.html_report_url}`)
+    }
+  })
 }
