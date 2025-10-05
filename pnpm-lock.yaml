@@ -8,7 +8,7 @@ overrides:
   '@octokit/graphql': 9.0.1
   '@octokit/request-error': 7.0.0
   '@rollup/plugin-commonjs': 28.0.6
-  '@socketsecurity/registry': 1.4.0
+  '@socketsecurity/registry': 1.4.1
   aggregate-error: npm:@socketregistry/aggregate-error@^1.0.15
   ansi-regex: 6.1.0
   ansi-term: 0.0.2
@@ -185,11 +185,11 @@ importers:
         specifier: 3.0.1
         version: 3.0.1
       '@socketsecurity/registry':
-        specifier: 1.4.0
-        version: 1.4.0
+        specifier: 1.4.1
+        version: 1.4.1
       '@socketsecurity/sdk':
-        specifier: 1.10.0
-        version: 1.10.0
+        specifier: 1.10.1
+        version: 1.10.1
       '@types/cmd-shim':
         specifier: 5.0.2
         version: 5.0.2
@@ -1692,12 +1692,12 @@ packages:
     resolution: {integrity: sha512-kLKdSqi4W7SDSm5z+wYnfVRnZCVhxzbzuKcdOZSrcHoEGOT4Gl844uzoaML+f5eiQMxY+nISiETwRph/aXrIaQ==}
     engines: {node: 18.20.7 || ^20.18.3 || >=22.14.0}
 
-  '@socketsecurity/registry@1.4.0':
-    resolution: {integrity: sha512-j9PJHgJUl0LIJ1YMqEFncxo2m6Hd+GTCBXN8cTYfdb35bFxfCohCV3RMKTfVPC35iNlXgs746mrP1KyHZEY8lA==}
+  '@socketsecurity/registry@1.4.1':
+    resolution: {integrity: sha512-tN23fvozu1mHNuuqGwJai9T+qIX9PlZaCynx+yy8hx+U5KwDM9epzcXjUQrVLf7kQbcXdcKthgj1NomOm5o2RQ==}
     engines: {node: '>=18'}
 
-  '@socketsecurity/sdk@1.10.0':
-    resolution: {integrity: sha512-fCtJ2hLmIAWz3sUPFGGHIPieo/RFrDp9Jw8JUTCDR5cW+3052KvV6BtwTU4P2klfC7KsE6CrK8PiWXnYFa80Dw==}
+  '@socketsecurity/sdk@1.10.1':
+    resolution: {integrity: sha512-Njiu8z6Fa17iFhwIMb8/edDYj9/X/TbRVbTiKzY7tko8OC7rFHF4uCIn3DLbyu41QsJMiRgnSipC1bTTSnxEOQ==}
     engines: {node: '>=18', pnpm: '>=10.16.0'}
 
   '@stroncium/procfs@1.2.1':
@@ -6151,11 +6151,11 @@ snapshots:
       pony-cause: 2.1.11
       yaml: 2.8.1
 
-  '@socketsecurity/registry@1.4.0': {}
+  '@socketsecurity/registry@1.4.1': {}
 
-  '@socketsecurity/sdk@1.10.0':
+  '@socketsecurity/sdk@1.10.1':
     dependencies:
-      '@socketsecurity/registry': 1.4.0
+      '@socketsecurity/registry': 1.4.1
 
   '@stroncium/procfs@1.2.1': {}
 
