@@ -46,10 +46,12 @@ export class ResultError extends Error {
  */
 export function requireOk<T>(result: CResult<T>, context: string): T {
   if (!result.ok) {
-    const errorOptions: ResultErrorOptions = {
-      __proto__: null,
-      ...(result.code !== undefined ? { code: result.code } : {}),
-      ...(result.cause !== undefined ? { cause: result.cause } : {}),
+    const errorOptions = Object.create(null) as ResultErrorOptions
+    if (result.code !== undefined) {
+      errorOptions.code = result.code
+    }
+    if (result.cause !== undefined) {
+      errorOptions.cause = result.cause
     }
     throw new ResultError(`${context}: ${result.message}`, errorOptions)
   }
