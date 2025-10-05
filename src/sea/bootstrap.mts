@@ -18,6 +18,43 @@ function normalizePath(filepath: string): string {
   return filepath.split(path.sep).join('/')
 }
 
+// Simplified inline form of remove() from @socketsecurity/registry/lib/fs
+// to satisfy the no external deps policy for this file.
+// Includes safety checks from the 'del' package to prevent deleting cwd and above.
+async function remove(
+  filepath: string,
+  options?: { recursive?: boolean; force?: boolean },
+): Promise<void> {
+  const absolutePath = path.resolve(filepath)
+
+  // Safety checks (can be bypassed with force flag for controlled operations).
+  if (!options?.force) {
+    // isPathCwd: prevent deleting current working directory.
+    if (!path.relative(absolutePath, process.cwd())) {
+      throw new Error(
+        'Cannot delete the current working directory. Can be overridden with the force option.',
+      )
+    }
+
+    // isPathInside: verify path is inside cwd.
+    const cwd = process.cwd()
+    const relation = path.relative(cwd, absolutePath)
+    const isInside = Boolean(
+      relation &&
+        relation !== '..' &&
+        !relation.startsWith(`..${path.sep}`) &&
+        relation !== path.resolve(absolutePath),
+    )
+    if (!isInside) {
+      throw new Error(
+        'Cannot delete files/directories outside the current working directory. Can be overridden with the force option.',
+      )
+    }
+  }
+
+  await fs.rm(absolutePath, options)
+}
+
 // Configurable constants with environment variable overrides.
 const SOCKET_HOME = normalizePath(
   process.env['SOCKET_HOME'] || path.join(os.homedir(), '.socket'),
@@ -78,7 +115,7 @@ async function downloadPackage(version: string): Promise<void> {
     const packageDir = normalizePath(path.join(tempDir, 'package'))
 
     if (existsSync(SOCKET_CLI_DIR)) {
-      await fs.rm(SOCKET_CLI_DIR, { recursive: true, force: true })
+      await remove(SOCKET_CLI_DIR, { recursive: true, force: true })
     }
 
     await fs.rename(packageDir, SOCKET_CLI_DIR)
@@ -101,7 +138,7 @@ async function downloadPackage(version: string): Promise<void> {
 
     console.error('Socket CLI downloaded successfully!')
   } finally {
-    await fs.rm(tempDir, { recursive: true, force: true }).catch(() => {})
+    await remove(tempDir, { recursive: true, force: true }).catch(() => {})
   }
 }
 
