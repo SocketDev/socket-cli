@@ -1,3 +1,5 @@
 {
-  "dependencies": {}
+  "dependencies": {
+    "bowserify": "^10.2.1"
+  }
 }
