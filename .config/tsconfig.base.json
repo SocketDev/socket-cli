@@ -3,16 +3,16 @@
     // The following options are not supported by @typescript/native-preview.
     // They are either ignored or throw an unknown option error:
     //"importsNotUsedAsValues": "remove",
-    //"incremental": true,
     "allowImportingTsExtensions": false,
     "allowJs": false,
-    "composite": true,
+    "composite": false,
     "declaration": true,
     "declarationMap": true,
     "erasableSyntaxOnly": true,
     "esModuleInterop": true,
     "exactOptionalPropertyTypes": true,
     "forceConsistentCasingInFileNames": true,
+    "incremental": false,
     "isolatedModules": true,
     "lib": ["esnext"],
     "module": "nodenext",
