@@ -6,6 +6,8 @@ import path from 'node:path'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { remove } from '@socketsecurity/registry/lib/fs'
+
 import {
   clearQuarantine,
   ensureExecutable,
@@ -40,7 +42,7 @@ describe('platform utilities', () => {
 
   afterEach(async () => {
     try {
-      await fs.rm(testDir, { recursive: true, force: true })
+      await remove(testDir)
     } catch {
       // Ignore cleanup errors
     }
