@@ -189,6 +189,8 @@ export type ENV = Remap<
       SOCKET_CLI_API_TIMEOUT: number
       SOCKET_CLI_API_TOKEN: string
       SOCKET_CLI_BUN_PATH: string
+      SOCKET_CLI_CACHE_ENABLED: string
+      SOCKET_CLI_CACHE_TTL: string
       SOCKET_CLI_CDXGEN_LOCAL_PATH: string
       SOCKET_CLI_COANA_LOCAL_PATH: string
       SOCKET_CLI_CONFIG: string
@@ -722,6 +724,10 @@ const LAZY_ENV = () => {
       envAsString(env['SOCKET_CLI_API_KEY']) ||
       envAsString(env['SOCKET_SECURITY_API_TOKEN']) ||
       envAsString(env['SOCKET_SECURITY_API_KEY']),
+    // Enable Socket API response caching.
+    SOCKET_CLI_CACHE_ENABLED: envAsString(env['SOCKET_CLI_CACHE_ENABLED']),
+    // Socket API response cache TTL in milliseconds.
+    SOCKET_CLI_CACHE_TTL: envAsString(env['SOCKET_CLI_CACHE_TTL']),
     // Local path to cdxgen binary for development/testing.
     SOCKET_CLI_CDXGEN_LOCAL_PATH: envAsString(
       env['SOCKET_CLI_CDXGEN_LOCAL_PATH'],
