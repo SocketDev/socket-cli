@@ -3,20 +3,17 @@ import { describe, expect, it, vi } from 'vitest'
 import { fetchDeleteOrgFullScan } from './fetch-delete-org-full-scan.mts'
 
 // Mock the dependencies.
-vi.mock('../../utils/api.mts', () => ({
-  handleApiCall: vi.fn(),
-}))
 
 vi.mock('../../utils/sdk.mts', () => ({
-  setupSdk: vi.fn(),
+  withSdk: vi.fn(),
 }))
 
 describe('fetchDeleteOrgFullScan', () => {
   it('deletes scan successfully', async () => {
     const { handleApiCall } = await import('../../utils/api.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
+    const { withSdk } = await import('../../utils/sdk.mts')
     const mockHandleApi = vi.mocked(handleApiCall)
-    const mockSetupSdk = vi.mocked(setupSdk)
+    const mockSetupSdk = vi.mocked(withSdk)
 
     const mockSdk = {
       deleteOrgFullScan: vi.fn().mockResolvedValue({
@@ -51,8 +48,8 @@ describe('fetchDeleteOrgFullScan', () => {
   })
 
   it('handles SDK setup failure', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
+    const { withSdk } = await import('../../utils/sdk.mts')
+    const mockSetupSdk = vi.mocked(withSdk)
 
     const error = {
       ok: false,
@@ -69,9 +66,9 @@ describe('fetchDeleteOrgFullScan', () => {
 
   it('handles API call failure', async () => {
     const { handleApiCall } = await import('../../utils/api.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
+    const { withSdk } = await import('../../utils/sdk.mts')
     const mockHandleApi = vi.mocked(handleApiCall)
-    const mockSetupSdk = vi.mocked(setupSdk)
+    const mockSetupSdk = vi.mocked(withSdk)
 
     const mockSdk = {
       deleteOrgFullScan: vi.fn().mockRejectedValue(new Error('Not found')),
@@ -91,9 +88,9 @@ describe('fetchDeleteOrgFullScan', () => {
   })
 
   it('passes custom SDK options', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
+    const { withSdk } = await import('../../utils/sdk.mts')
     const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
+    const mockSetupSdk = vi.mocked(withSdk)
     const mockHandleApi = vi.mocked(handleApiCall)
 
     const mockSdk = {
@@ -114,9 +111,9 @@ describe('fetchDeleteOrgFullScan', () => {
   })
 
   it('handles different org slugs and scan IDs', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
+    const { withSdk } = await import('../../utils/sdk.mts')
     const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
+    const mockSetupSdk = vi.mocked(withSdk)
     const mockHandleApi = vi.mocked(handleApiCall)
 
     const mockSdk = {
@@ -140,9 +137,9 @@ describe('fetchDeleteOrgFullScan', () => {
   })
 
   it('uses null prototype for options', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
+    const { withSdk } = await import('../../utils/sdk.mts')
     const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
+    const mockSetupSdk = vi.mocked(withSdk)
     const mockHandleApi = vi.mocked(handleApiCall)
 
     const mockSdk = {

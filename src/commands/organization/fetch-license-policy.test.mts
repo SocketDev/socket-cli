@@ -3,20 +3,17 @@ import { describe, expect, it, vi } from 'vitest'
 import { fetchLicensePolicy } from './fetch-license-policy.mts'
 
 // Mock the dependencies.
-vi.mock('../../utils/api.mts', () => ({
-  handleApiCall: vi.fn(),
-}))
 
 vi.mock('../../utils/sdk.mts', () => ({
-  setupSdk: vi.fn(),
+  withSdk: vi.fn(),
 }))
 
 describe('fetchLicensePolicy', () => {
   it('fetches license policy successfully', async () => {
     const { handleApiCall } = await import('../../utils/api.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
+    const { withSdk } = await import('../../utils/sdk.mts')
     const mockHandleApi = vi.mocked(handleApiCall)
-    const mockSetupSdk = vi.mocked(setupSdk)
+    const mockSetupSdk = vi.mocked(withSdk)
 
     const mockSdk = {
       getOrgLicensePolicy: vi.fn().mockResolvedValue({
@@ -55,8 +52,8 @@ describe('fetchLicensePolicy', () => {
   })
 
   it('handles SDK setup failure', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
+    const { withSdk } = await import('../../utils/sdk.mts')
+    const mockSetupSdk = vi.mocked(withSdk)
 
     const error = {
       ok: false,
@@ -73,9 +70,9 @@ describe('fetchLicensePolicy', () => {
 
   it('handles API call failure', async () => {
     const { handleApiCall } = await import('../../utils/api.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
+    const { withSdk } = await import('../../utils/sdk.mts')
     const mockHandleApi = vi.mocked(handleApiCall)
-    const mockSetupSdk = vi.mocked(setupSdk)
+    const mockSetupSdk = vi.mocked(withSdk)
 
     const mockSdk = {
       getOrgLicensePolicy: vi
@@ -97,9 +94,9 @@ describe('fetchLicensePolicy', () => {
   })
 
   it('passes custom SDK options', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
+    const { withSdk } = await import('../../utils/sdk.mts')
     const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
+    const mockSetupSdk = vi.mocked(withSdk)
     const mockHandleApi = vi.mocked(handleApiCall)
 
     const mockSdk = {
@@ -120,9 +117,9 @@ describe('fetchLicensePolicy', () => {
   })
 
   it('handles empty license policy', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
+    const { withSdk } = await import('../../utils/sdk.mts')
     const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
+    const mockSetupSdk = vi.mocked(withSdk)
     const mockHandleApi = vi.mocked(handleApiCall)
 
     const mockSdk = {
@@ -144,9 +141,9 @@ describe('fetchLicensePolicy', () => {
   })
 
   it('handles various org slugs', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
+    const { withSdk } = await import('../../utils/sdk.mts')
     const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
+    const mockSetupSdk = vi.mocked(withSdk)
     const mockHandleApi = vi.mocked(handleApiCall)
 
     const mockSdk = {
@@ -171,9 +168,9 @@ describe('fetchLicensePolicy', () => {
   })
 
   it('uses null prototype for options', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
+    const { withSdk } = await import('../../utils/sdk.mts')
     const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
+    const mockSetupSdk = vi.mocked(withSdk)
     const mockHandleApi = vi.mocked(handleApiCall)
 
     const mockSdk = {

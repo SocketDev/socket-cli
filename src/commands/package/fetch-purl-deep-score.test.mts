@@ -5,7 +5,7 @@ import { fetchPurlDeepScore } from './fetch-purl-deep-score.mts'
 // Mock the dependencies.
 vi.mock('../../utils/sdk.mts', () => ({
   queryApiJson: vi.fn(),
-  setupSdk: vi.fn(),
+  withSdk: vi.fn(),
 }))
 
 vi.mock('@socketsecurity/registry/lib/logger', () => ({
@@ -16,9 +16,9 @@ vi.mock('@socketsecurity/registry/lib/logger', () => ({
 
 describe('fetchPurlDeepScore', () => {
   it('fetches purl deep score successfully', async () => {
-    const { queryApiJson, setupSdk } = await import('../../utils/sdk.mts')
+    const { queryApiJson, withSdk } = await import('../../utils/sdk.mts')
     const mockQueryApi = vi.mocked(queryApiJson)
-    const mockSetupSdk = vi.mocked(setupSdk)
+    const mockSetupSdk = vi.mocked(withSdk)
 
     mockSetupSdk.mockResolvedValue({ ok: true, data: {} as any })
 
@@ -78,9 +78,9 @@ describe('fetchPurlDeepScore', () => {
   })
 
   it('handles SDK setup failure', async () => {
-    const { queryApiJson, setupSdk } = await import('../../utils/sdk.mts')
+    const { queryApiJson, withSdk } = await import('../../utils/sdk.mts')
     const mockQueryApi = vi.mocked(queryApiJson)
-    const mockSetupSdk = vi.mocked(setupSdk)
+    const mockSetupSdk = vi.mocked(withSdk)
 
     mockSetupSdk.mockResolvedValue({ ok: true, data: {} as any })
 
@@ -98,9 +98,9 @@ describe('fetchPurlDeepScore', () => {
   })
 
   it('handles API call failure', async () => {
-    const { queryApiJson, setupSdk } = await import('../../utils/sdk.mts')
+    const { queryApiJson, withSdk } = await import('../../utils/sdk.mts')
     const mockQueryApi = vi.mocked(queryApiJson)
-    const mockSetupSdk = vi.mocked(setupSdk)
+    const mockSetupSdk = vi.mocked(withSdk)
 
     mockSetupSdk.mockResolvedValue({ ok: true, data: {} as any })
 
@@ -117,9 +117,9 @@ describe('fetchPurlDeepScore', () => {
   })
 
   it('passes custom SDK options', async () => {
-    const { queryApiJson, setupSdk } = await import('../../utils/sdk.mts')
+    const { queryApiJson, withSdk } = await import('../../utils/sdk.mts')
     const mockQueryApi = vi.mocked(queryApiJson)
-    const mockSetupSdk = vi.mocked(setupSdk)
+    const mockSetupSdk = vi.mocked(withSdk)
 
     mockSetupSdk.mockResolvedValue({ ok: true, data: {} as any })
 
@@ -135,9 +135,9 @@ describe('fetchPurlDeepScore', () => {
   })
 
   it('handles different purl formats', async () => {
-    const { queryApiJson, setupSdk } = await import('../../utils/sdk.mts')
+    const { queryApiJson, withSdk } = await import('../../utils/sdk.mts')
     const mockQueryApi = vi.mocked(queryApiJson)
-    const mockSetupSdk = vi.mocked(setupSdk)
+    const mockSetupSdk = vi.mocked(withSdk)
 
     mockSetupSdk.mockResolvedValue({ ok: true, data: {} as any })
 
@@ -154,9 +154,9 @@ describe('fetchPurlDeepScore', () => {
   })
 
   it('handles low score packages', async () => {
-    const { queryApiJson, setupSdk } = await import('../../utils/sdk.mts')
+    const { queryApiJson, withSdk } = await import('../../utils/sdk.mts')
     const mockQueryApi = vi.mocked(queryApiJson)
-    const mockSetupSdk = vi.mocked(setupSdk)
+    const mockSetupSdk = vi.mocked(withSdk)
 
     mockSetupSdk.mockResolvedValue({ ok: true, data: {} as any })
 
@@ -218,9 +218,9 @@ describe('fetchPurlDeepScore', () => {
   })
 
   it('uses null prototype for options', async () => {
-    const { queryApiJson, setupSdk } = await import('../../utils/sdk.mts')
+    const { queryApiJson, withSdk } = await import('../../utils/sdk.mts')
     const mockQueryApi = vi.mocked(queryApiJson)
-    const mockSetupSdk = vi.mocked(setupSdk)
+    const mockSetupSdk = vi.mocked(withSdk)
 
     mockSetupSdk.mockResolvedValue({ ok: true, data: {} as any })
 

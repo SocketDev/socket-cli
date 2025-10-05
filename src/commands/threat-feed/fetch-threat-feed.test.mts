@@ -5,7 +5,7 @@ import { fetchThreatFeed } from './fetch-threat-feed.mts'
 // Mock the dependencies.
 vi.mock('../../utils/sdk.mts', () => ({
   queryApiJson: vi.fn(),
-  setupSdk: vi.fn(),
+  withSdk: vi.fn(),
 }))
 
 describe('fetchThreatFeed', () => {
@@ -14,9 +14,9 @@ describe('fetchThreatFeed', () => {
   })
 
   it('fetches threat feed successfully', async () => {
-    const { queryApiJson, setupSdk } = await import('../../utils/sdk.mts')
+    const { queryApiJson, withSdk } = await import('../../utils/sdk.mts')
     const mockQueryApi = vi.mocked(queryApiJson)
-    const mockSetupSdk = vi.mocked(setupSdk)
+    const mockSetupSdk = vi.mocked(withSdk)
 
     mockSetupSdk.mockResolvedValue({ ok: true, data: {} as any })
 
@@ -69,8 +69,8 @@ describe('fetchThreatFeed', () => {
   })
 
   it('handles SDK setup failure', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
+    const { withSdk } = await import('../../utils/sdk.mts')
+    const mockSetupSdk = vi.mocked(withSdk)
 
     const error = {
       ok: false,
@@ -95,9 +95,9 @@ describe('fetchThreatFeed', () => {
   })
 
   it('handles API call failure', async () => {
-    const { queryApiJson, setupSdk } = await import('../../utils/sdk.mts')
+    const { queryApiJson, withSdk } = await import('../../utils/sdk.mts')
     const mockQueryApi = vi.mocked(queryApiJson)
-    const mockSetupSdk = vi.mocked(setupSdk)
+    const mockSetupSdk = vi.mocked(withSdk)
 
     mockSetupSdk.mockResolvedValue({ ok: true, data: {} })
     mockQueryApi.mockResolvedValue({
@@ -122,9 +122,9 @@ describe('fetchThreatFeed', () => {
   })
 
   it('passes custom SDK options', async () => {
-    const { queryApiJson, setupSdk } = await import('../../utils/sdk.mts')
+    const { queryApiJson, withSdk } = await import('../../utils/sdk.mts')
     const mockQueryApi = vi.mocked(queryApiJson)
-    const mockSetupSdk = vi.mocked(setupSdk)
+    const mockSetupSdk = vi.mocked(withSdk)
 
     mockSetupSdk.mockResolvedValue({ ok: true, data: {} as any })
     mockQueryApi.mockResolvedValue({ ok: true, data: {} })
@@ -148,9 +148,9 @@ describe('fetchThreatFeed', () => {
   })
 
   it('handles filtering by severity levels', async () => {
-    const { queryApiJson, setupSdk } = await import('../../utils/sdk.mts')
+    const { queryApiJson, withSdk } = await import('../../utils/sdk.mts')
     const mockQueryApi = vi.mocked(queryApiJson)
-    const mockSetupSdk = vi.mocked(setupSdk)
+    const mockSetupSdk = vi.mocked(withSdk)
 
     mockSetupSdk.mockResolvedValue({ ok: true, data: {} as any })
     mockQueryApi.mockResolvedValue({ ok: true, data: { threats: [] } })
@@ -174,9 +174,9 @@ describe('fetchThreatFeed', () => {
   })
 
   it('handles pagination parameters', async () => {
-    const { queryApiJson, setupSdk } = await import('../../utils/sdk.mts')
+    const { queryApiJson, withSdk } = await import('../../utils/sdk.mts')
     const mockQueryApi = vi.mocked(queryApiJson)
-    const mockSetupSdk = vi.mocked(setupSdk)
+    const mockSetupSdk = vi.mocked(withSdk)
 
     mockSetupSdk.mockResolvedValue({ ok: true, data: {} as any })
     mockQueryApi.mockResolvedValue({ ok: true, data: { threats: [] } })
@@ -200,9 +200,9 @@ describe('fetchThreatFeed', () => {
   })
 
   it('handles date range filtering', async () => {
-    const { queryApiJson, setupSdk } = await import('../../utils/sdk.mts')
+    const { queryApiJson, withSdk } = await import('../../utils/sdk.mts')
     const mockQueryApi = vi.mocked(queryApiJson)
-    const mockSetupSdk = vi.mocked(setupSdk)
+    const mockSetupSdk = vi.mocked(withSdk)
 
     mockSetupSdk.mockResolvedValue({ ok: true, data: {} as any })
     mockQueryApi.mockResolvedValue({ ok: true, data: { threats: [] } })
@@ -226,9 +226,9 @@ describe('fetchThreatFeed', () => {
   })
 
   it('uses null prototype for options', async () => {
-    const { queryApiJson, setupSdk } = await import('../../utils/sdk.mts')
+    const { queryApiJson, withSdk } = await import('../../utils/sdk.mts')
     const mockQueryApi = vi.mocked(queryApiJson)
-    const mockSetupSdk = vi.mocked(setupSdk)
+    const mockSetupSdk = vi.mocked(withSdk)
 
     mockSetupSdk.mockResolvedValue({ ok: true, data: {} as any })
     mockQueryApi.mockResolvedValue({ ok: true, data: {} })

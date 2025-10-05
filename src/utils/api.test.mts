@@ -5,6 +5,14 @@ vi.mock('./config.mts', () => ({
   getConfigValueOrUndef: vi.fn(),
 }))
 
+vi.mock('./sdk.mts', async () => {
+  const actual = await vi.importActual<typeof import('./sdk.mts')>('./sdk.mts')
+  return {
+    ...actual,
+    getDefaultApiToken: vi.fn(),
+  }
+})
+
 vi.mock('@socketsecurity/registry/lib/logger', () => ({
   logger: {
     error: vi.fn(),
@@ -18,6 +26,18 @@ vi.mock('@socketsecurity/registry/lib/spinner', () => ({
     succeed: vi.fn(),
     fail: vi.fn(),
   })),
+  withSpinner: vi.fn(async opts => {
+    const { message, operation, spinner } = opts
+    if (spinner) {
+      spinner.start(message)
+      try {
+        return await operation()
+      } finally {
+        spinner.stop()
+      }
+    }
+    return await operation()
+  }),
 }))
 
 // Mock constants module.
@@ -41,11 +61,11 @@ vi.mock('../constants.mts', async () => {
 })
 
 import {
-  getDefaultApiBaseUrl,
   getErrorMessageForHttpStatusCode,
   handleApiCall,
   handleApiCallNoSpinner,
 } from './api.mts'
+import { getDefaultApiBaseUrl } from './sdk.mts'
 
 describe('api utilities', () => {
   beforeEach(() => {
