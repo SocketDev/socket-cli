@@ -9,9 +9,21 @@
  * - 'notice': Notable events and state changes
  * - 'silly': Very verbose debugging info
  *
- * OPT-IN ONLY (require explicit DEBUG='category' even with SOCKET_CLI_DEBUG=1):
- * - 'inspect': Detailed object inspection (DEBUG='inspect' or DEBUG='*')
- * - 'stdio': Command execution logs (DEBUG='stdio' or DEBUG='*')
+ * OPT-IN ONLY (require explicit DEBUG='category'):
+ * - 'inspect': Detailed object inspection
+ * - 'stdio': Command execution logs
+ * - 'cache': Cache hit/miss operations
+ * - 'network': HTTP requests with timing
+ * - 'command': External command execution
+ * - 'auth': Authentication flow
+ * - 'perf': Performance timing
+ * - 'spinner': Spinner state changes
+ *
+ * Usage Examples:
+ * - DEBUG=cache socket scan         # Cache debugging only
+ * - DEBUG=network,cache socket scan # Multiple categories
+ * - DEBUG=* socket scan              # All categories
+ * - SOCKET_CLI_DEBUG=1 socket scan  # Default categories
  *
  * These opt-in categories are intentionally excluded from default debug output
  * to reduce noise. Enable them explicitly when needed for deep debugging.
@@ -238,6 +250,155 @@ export function debugGit(
   } else if (isDebug('silly')) {
     debugFn('silly', `Git ${operation}`)
   }
+}
+
+/**
+ * Performance timer for measuring operation duration.
+ * Returns a stop function that logs the elapsed time.
+ *
+ * @example
+ * const stop = debugTimer('api-call', 'Fetching packages')
+ * await fetchPackages()
+ * stop() // Logs: "api-call: Fetching packages completed in 234ms"
+ */
+export function debugTimer(
+  namespace: string,
+  label: string,
+): () => void {
+  if (!isDebug(namespace) && !isDebug('perf')) {
+    return () => {} // No-op if debug disabled
+  }
+
+  const start = performance.now()
+  debugFn(namespace, `${label} started...`)
+
+  return () => {
+    const duration = Math.round(performance.now() - start)
+    debugFn(namespace, `${label} completed in ${duration}ms`)
+  }
+}
+
+/**
+ * Debug cache operations with hit/miss tracking.
+ */
+export function debugCache(
+  operation: 'hit' | 'miss' | 'set' | 'clear',
+  key: string,
+  details?: Record<string, unknown> | undefined,
+): void {
+  if (!isDebug('cache')) {
+    return
+  }
+
+  const message = `Cache ${operation}: ${key}`
+
+  if (details) {
+    debugDir('cache', { operation, key, ...details })
+  } else {
+    debugFn('cache', message)
+  }
+}
+
+/**
+ * Debug command execution with timing.
+ */
+export function debugCommand(
+  command: string,
+  args: string[],
+  result?: { exitCode?: number; duration?: number } | undefined,
+): void {
+  if (!isDebug('command')) {
+    return
+  }
+
+  const fullCommand = `${command} ${args.join(' ')}`
+
+  if (result) {
+    const { exitCode = 0, duration } = result
+    const status = exitCode === 0 ? 'success' : 'failed'
+    const timing = duration ? ` (${Math.round(duration)}ms)` : ''
+    debugFn('command', `Command ${status}: ${fullCommand}${timing}`)
+  } else {
+    debugFn('command', `Executing: ${fullCommand}`)
+  }
+}
+
+/**
+ * Debug authentication flow.
+ */
+export function debugAuth(
+  stage: 'start' | 'token_found' | 'token_missing' | 'validated' | 'failed',
+  details?: Record<string, unknown> | undefined,
+): void {
+  if (!isDebug('auth')) {
+    return
+  }
+
+  const messages = {
+    start: 'Authentication check started',
+    token_found: 'API token found',
+    token_missing: 'API token not found',
+    validated: 'API token validated successfully',
+    failed: 'Authentication failed',
+  }
+
+  debugFn('auth', messages[stage])
+
+  if (details) {
+    debugDir('auth', details)
+  }
+}
+
+/**
+ * Debug network requests with detailed timing.
+ */
+export function debugNetwork(
+  method: string,
+  url: string,
+  result?: {
+    status?: number
+    duration?: number
+    cached?: boolean
+    error?: unknown
+  } | undefined,
+): void {
+  if (!isDebug('network')) {
+    return
+  }
+
+  const request = `${method} ${url}`
+
+  if (result) {
+    const { status, duration, cached, error } = result
+
+    if (error) {
+      debugDir('network', {
+        request,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      })
+    } else {
+      const cacheStatus = cached ? ' [cached]' : ''
+      const timing = duration ? ` (${Math.round(duration)}ms)` : ''
+      debugFn('network', `${request} → ${status}${cacheStatus}${timing}`)
+    }
+  } else {
+    debugFn('network', `→ ${request}`)
+  }
+}
+
+/**
+ * Debug spinner state changes.
+ */
+export function debugSpinner(
+  action: 'start' | 'update' | 'stop' | 'fail' | 'succeed',
+  text?: string | undefined,
+): void {
+  if (!isDebug('spinner')) {
+    return
+  }
+
+  const message = text ? `Spinner ${action}: ${text}` : `Spinner ${action}`
+  debugFn('spinner', message)
 }
 
 export { debugDir, debugFn, debugLog, isDebug }

@@ -51,7 +51,16 @@ import type {
 
 const TOKEN_VISIBLE_LENGTH = 5
 
-// The Socket API server that should be used for operations.
+/**
+ * Get the API base URL for Socket API operations.
+ * Checks environment variable and config file, falls back to production API.
+ *
+ * @returns API base URL or undefined if not configured (uses default)
+ *
+ * @example
+ * const baseUrl = getDefaultApiBaseUrl()
+ * // Returns: 'https://api.socket.dev/v0' or custom URL
+ */
 export function getDefaultApiBaseUrl(): string | undefined {
   const baseUrl =
     constants.ENV['SOCKET_CLI_API_BASE_URL'] ||
@@ -63,7 +72,19 @@ export function getDefaultApiBaseUrl(): string | undefined {
   return API_V0_URL
 }
 
-// Check if API response caching is enabled.
+/**
+ * Check if API response caching is enabled.
+ * Caching is opt-in (disabled by default) for predictable behavior.
+ *
+ * Priority: Environment variable > Config file > Default (false)
+ *
+ * @returns true if caching is enabled, false otherwise
+ *
+ * @example
+ * if (getDefaultCacheEnabled()) {
+ *   // Use cached responses when available
+ * }
+ */
 export function getDefaultCacheEnabled(): boolean {
   const envValue = constants.ENV['SOCKET_CLI_CACHE_ENABLED']
   if (envValue !== undefined) {
@@ -77,7 +98,18 @@ export function getDefaultCacheEnabled(): boolean {
   return false
 }
 
-// Get cache TTL in milliseconds.
+/**
+ * Get cache TTL (time-to-live) in milliseconds.
+ * Determines how long cached API responses remain valid.
+ *
+ * Priority: Environment variable > Config file > Default (5 minutes)
+ *
+ * @returns TTL in milliseconds (default: 300000 = 5 minutes)
+ *
+ * @example
+ * const ttl = getDefaultCacheTtl()
+ * console.log(`Cache TTL: ${ttl / 1000} seconds`)
+ */
 export function getDefaultCacheTtl(): number {
   const envValue = constants.ENV['SOCKET_CLI_CACHE_TTL']
   if (envValue !== undefined) {
@@ -94,7 +126,16 @@ export function getDefaultCacheTtl(): number {
   return 5 * 60 * 1000
 }
 
-// The Socket API server that should be used for operations.
+/**
+ * Get the HTTP/HTTPS proxy URL for API requests.
+ * Checks environment variable and config file.
+ *
+ * @returns Proxy URL or undefined if not configured
+ *
+ * @example
+ * const proxy = getDefaultProxyUrl()
+ * // Returns: 'http://proxy.company.com:8080' or undefined
+ */
 export function getDefaultProxyUrl(): string | undefined {
   const apiProxy =
     constants.ENV['SOCKET_CLI_API_PROXY'] ||
