@@ -17,7 +17,6 @@ vi.mock('../../constants.mts', () => ({
   },
 }))
 
-
 vi.mock('../../utils/errors.mts', () => ({
   formatErrorWithDetail: vi.fn(),
 }))

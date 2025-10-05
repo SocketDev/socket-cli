@@ -35,6 +35,8 @@ describe('socket config unset', async () => {
            - apiBaseUrl -- Base URL of the Socket API endpoint
            - apiProxy -- A proxy through which to access the Socket API
            - apiToken -- The Socket API token required to access most Socket API endpoints
+           - cacheEnabled -- Enable API response caching (default: false)
+           - cacheTtl -- Cache TTL in milliseconds (default: 300000 = 5 minutes)
            - defaultOrg -- The default org slug to use; usually the org your Socket API token has access to. When set, all orgSlug arguments are implied to be this value.
            - enforcedOrgs -- Orgs in this list have their security policies enforced on this machine
            - org -- Alias for defaultOrg

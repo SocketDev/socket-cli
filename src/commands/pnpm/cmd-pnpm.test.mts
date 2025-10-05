@@ -164,9 +164,10 @@ describe('socket pnpm', async () => {
 
       expect(stdout).toMatchInlineSnapshot(`
         "Progress: resolved 0, reused 1, downloaded 0, added 0
+        Progress: resolved 1039, reused 928, downloaded 0, added 0
         \\u2009WARN\\u2009 2 deprecated subdependencies found: @sindresorhus/chunkify@2.0.0, boolean@3.2.0
         Already up to date
-        Progress: resolved 1043, reused 932, downloaded 0, added 0, done
+        Progress: resolved 1045, reused 934, downloaded 0, added 0, done
 
         Done in Xs using pnpm v10.17.0"
       `)
@@ -205,7 +206,7 @@ describe('socket pnpm', async () => {
         "Progress: resolved 0, reused 1, downloaded 0, added 0
         \\u2009WARN\\u2009 2 deprecated subdependencies found: @sindresorhus/chunkify@2.0.0, boolean@3.2.0
         Already up to date
-        Progress: resolved 1043, reused 932, downloaded 0, added 0, done
+        Progress: resolved 1045, reused 934, downloaded 0, added 0, done
 
         Done in Xs using pnpm v10.17.0"
       `)
