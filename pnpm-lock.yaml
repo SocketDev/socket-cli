@@ -8,7 +8,8 @@ overrides:
   '@octokit/graphql': 9.0.1
   '@octokit/request-error': 7.0.0
   '@rollup/plugin-commonjs': 28.0.6
-  '@socketsecurity/registry': 1.4.4
+  '@socketsecurity/registry': 1.4.6
+  '@types/node': ^20.0.0
   aggregate-error: npm:@socketregistry/aggregate-error@^1.0.15
   ansi-regex: 6.1.0
   ansi-term: 0.0.2
@@ -185,8 +186,8 @@ importers:
         specifier: 3.0.1
         version: 3.0.1
       '@socketsecurity/registry':
-        specifier: 1.4.4
-        version: 1.4.4
+        specifier: 1.4.6
+        version: 1.4.6
       '@socketsecurity/sdk':
         specifier: 1.11.0
         version: 1.11.0
@@ -1692,8 +1693,8 @@ packages:
     resolution: {integrity: sha512-kLKdSqi4W7SDSm5z+wYnfVRnZCVhxzbzuKcdOZSrcHoEGOT4Gl844uzoaML+f5eiQMxY+nISiETwRph/aXrIaQ==}
     engines: {node: 18.20.7 || ^20.18.3 || >=22.14.0}
 
-  '@socketsecurity/registry@1.4.4':
-    resolution: {integrity: sha512-njQeObrn7Vmnl8kEH4oXURoWj5pGe7zqHQONuAJsP3S4vbYxE4eJE3qzGalnrZGFqNTjditNT9i3ONb9SUwemg==}
+  '@socketsecurity/registry@1.4.6':
+    resolution: {integrity: sha512-DKwVhUcwAs2fSdkE0RkBQ7VdPDEI9/zWghHeNkcrJAIXV74iCIQe2UKl8SWHALar0A5+8BQfGI0TE0qNhlBKvA==}
     engines: {node: '>=18', pnpm: '>=10.16.0'}
 
   '@socketsecurity/sdk@1.11.0':
@@ -1763,9 +1764,6 @@ packages:
 
   '@types/node@20.19.19':
     resolution: {integrity: sha512-pb1Uqj5WJP7wrcbLU7Ru4QtA0+3kAXrkutGiD26wUKzSMgNNaPARTUDQmElUXp64kh3cWdou3Q0C7qwwxqSFmg==}
-
-  '@types/node@24.6.2':
-    resolution: {integrity: sha512-d2L25Y4j+W3ZlNAeMKcy7yDsK425ibcAOO2t7aPTz6gNMH0z2GThtwENCDc0d/Pw9wgyRqE5Px1wkV7naz8ang==}
 
   '@types/normalize-package-data@2.4.4':
     resolution: {integrity: sha512-37i+OaWTh9qeK4LSHPsyRC7NahnGotNuZvjLSgcPzblpHB3rrCJxAOgI5gCdKm7coonsaX1Of0ILiTcnZjbfxA==}
@@ -2512,8 +2510,8 @@ packages:
   destr@2.0.5:
     resolution: {integrity: sha512-ugFTXCtDZunbzasqBxrK93Ik/DRYsO6S/fedkWEMKqt04xZ4csmnmwGDBAb07QWNaGMAmnTIemsYZCksjATwsA==}
 
-  detect-libc@2.1.1:
-    resolution: {integrity: sha512-ecqj/sy1jcK1uWrwpR67UhYrIFQ+5WlGxth34WquCbamhFA6hkkwiu37o6J5xCHdo1oixJRfVRw+ywV+Hq/0Aw==}
+  detect-libc@2.1.2:
+    resolution: {integrity: sha512-Btj2BOOO83o3WyH59e8MgXsxEQVcarkUOpEYrubB0urwnN10yQ364rsiByU11nZlqWYZm05i/of7io4mzihBtQ==}
     engines: {node: '>=8'}
 
   detect-node@2.1.0:
@@ -3291,7 +3289,7 @@ packages:
     engines: {node: '>=18.18.0'}
     hasBin: true
     peerDependencies:
-      '@types/node': '>=18'
+      '@types/node': ^20.0.0
       typescript: '>=5.0.4'
 
   levn@0.4.1:
@@ -4508,9 +4506,6 @@ packages:
   undici-types@6.21.0:
     resolution: {integrity: sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ==}
 
-  undici-types@7.13.0:
-    resolution: {integrity: sha512-Ov2Rr9Sx+fRgagJ5AX0qvItZG/JKKoBRAVITs1zk7IqZGTJUwgUr7qoYBpWwakpWilTZFM98rG/AFRocu10iIQ==}
-
   undici@6.21.3:
     resolution: {integrity: sha512-gBLkYIlEnSp8pFbT64yFgGE6UIB9tAkhukC23PmMDCe5Nd+cRqKxSjw5y54MK2AZMgZfJWMaNE4nYUHgi1XEOw==}
     engines: {node: '>=18.17'}
@@ -4597,7 +4592,7 @@ packages:
     engines: {node: ^20.19.0 || >=22.12.0}
     hasBin: true
     peerDependencies:
-      '@types/node': ^20.19.0 || >=22.12.0
+      '@types/node': ^20.0.0
       jiti: '>=1.21.0'
       less: ^4.0.0
       lightningcss: ^1.21.0
@@ -4639,7 +4634,7 @@ packages:
     peerDependencies:
       '@edge-runtime/vm': '*'
       '@types/debug': ^4.1.12
-      '@types/node': ^18.0.0 || ^20.0.0 || >=22.0.0
+      '@types/node': ^20.0.0
       '@vitest/browser': 3.2.4
       '@vitest/ui': 3.2.4
       happy-dom: '*'
@@ -6157,11 +6152,11 @@ snapshots:
       pony-cause: 2.1.11
       yaml: 2.8.1
 
-  '@socketsecurity/registry@1.4.4': {}
+  '@socketsecurity/registry@1.4.6': {}
 
   '@socketsecurity/sdk@1.11.0':
     dependencies:
-      '@socketsecurity/registry': 1.4.4
+      '@socketsecurity/registry': 1.4.6
 
   '@stroncium/procfs@1.2.1': {}
 
@@ -6185,7 +6180,7 @@ snapshots:
 
   '@types/cacache@19.0.0':
     dependencies:
-      '@types/node': 24.6.2
+      '@types/node': 20.19.19
 
   '@types/chai@5.2.2':
     dependencies:
@@ -6214,23 +6209,19 @@ snapshots:
 
   '@types/mock-fs@4.13.4':
     dependencies:
-      '@types/node': 24.6.2
+      '@types/node': 20.19.19
 
   '@types/ms@2.1.0':
     optional: true
 
   '@types/node-fetch@2.6.13':
     dependencies:
-      '@types/node': 24.6.2
+      '@types/node': 20.19.19
       form-data: 4.0.4
 
   '@types/node@20.19.19':
     dependencies:
       undici-types: 6.21.0
-
-  '@types/node@24.6.2':
-    dependencies:
-      undici-types: 7.13.0
 
   '@types/normalize-package-data@2.4.4': {}
 
@@ -6238,7 +6229,7 @@ snapshots:
 
   '@types/npm-registry-fetch@8.0.8':
     dependencies:
-      '@types/node': 24.6.2
+      '@types/node': 20.19.19
       '@types/node-fetch': 2.6.13
       '@types/npm-package-arg': 6.1.4
       '@types/npmlog': 7.0.0
@@ -6248,24 +6239,24 @@ snapshots:
     dependencies:
       '@npm/types': 1.0.2
       '@types/cacache': 19.0.0
-      '@types/node': 24.6.2
+      '@types/node': 20.19.19
       '@types/npmcli__package-json': 4.0.4
       '@types/pacote': 11.1.8
 
   '@types/npmcli__config@6.0.3':
     dependencies:
-      '@types/node': 24.6.2
+      '@types/node': 20.19.19
       '@types/semver': 7.7.1
 
   '@types/npmcli__package-json@4.0.4': {}
 
   '@types/npmlog@7.0.0':
     dependencies:
-      '@types/node': 24.6.2
+      '@types/node': 20.19.19
 
   '@types/pacote@11.1.8':
     dependencies:
-      '@types/node': 24.6.2
+      '@types/node': 20.19.19
       '@types/npm-registry-fetch': 8.0.8
       '@types/npmlog': 7.0.0
       '@types/ssri': 7.1.5
@@ -6282,7 +6273,7 @@ snapshots:
 
   '@types/ssri@7.1.5':
     dependencies:
-      '@types/node': 24.6.2
+      '@types/node': 20.19.19
 
   '@types/validator@13.15.3':
     optional: true
@@ -7022,7 +7013,7 @@ snapshots:
 
   destr@2.0.5: {}
 
-  detect-libc@2.1.1:
+  detect-libc@2.1.2:
     optional: true
 
   detect-node@2.1.0: {}
@@ -8545,7 +8536,7 @@ snapshots:
 
   prebuild-install@7.1.3:
     dependencies:
-      detect-libc: 2.1.1
+      detect-libc: 2.1.2
       expand-template: 2.0.3
       github-from-package: 0.0.0
       minimist: 1.2.8
@@ -9202,8 +9193,6 @@ snapshots:
 
   undici-types@6.21.0: {}
 
-  undici-types@7.13.0: {}
-
   undici@6.21.3: {}
 
   unicorn-magic@0.3.0: {}
@@ -9406,7 +9395,7 @@ snapshots:
 
   wkx@0.5.0:
     dependencies:
-      '@types/node': 24.6.2
+      '@types/node': 20.19.19
     optional: true
 
   word-wrap@1.2.5: {}
