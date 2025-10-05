@@ -25,9 +25,10 @@
  * - Atomic write operations
  */
 
-import { existsSync, mkdirSync, rmSync, statSync } from 'node:fs'
+import { existsSync, mkdirSync, statSync } from 'node:fs'
 import path from 'node:path'
 
+import { removeSync } from '@socketsecurity/registry/lib/fs'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import promises from '@socketsecurity/registry/lib/promises'
 import { onExit } from '@socketsecurity/registry/lib/signal-exit'
@@ -74,7 +75,7 @@ class ProcessLockManager {
       for (const lockPath of this.activeLocks) {
         try {
           if (existsSync(lockPath)) {
-            rmSync(lockPath, { recursive: true, force: true })
+            removeSync(lockPath)
           }
         } catch {
           // Best effort cleanup - don't throw on exit.
@@ -126,7 +127,7 @@ class ProcessLockManager {
           if (existsSync(lockPath) && this.isStale(lockPath, staleMs)) {
             // Removing stale lock.
             try {
-              rmSync(lockPath, { recursive: true, force: true })
+              removeSync(lockPath)
             } catch {
               // If we can't remove it, someone else might be using it.
             }
@@ -178,7 +179,7 @@ class ProcessLockManager {
   release(lockPath: string): void {
     try {
       if (existsSync(lockPath)) {
-        rmSync(lockPath, { recursive: true, force: true })
+        removeSync(lockPath)
       }
       this.activeLocks.delete(lockPath)
       // Released lock.
