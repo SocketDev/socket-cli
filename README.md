@@ -108,6 +108,123 @@ pnpm exec socket
 - `SOCKET_CLI_DEBUG` - Enable debug logging
 - `DEBUG` - Enable [`debug`](https://socket.dev/npm/package/debug) package logging
 
+### Debug logging categories
+
+The CLI supports granular debug logging via the `DEBUG` environment variable:
+
+**Default categories** (shown with `SOCKET_CLI_DEBUG=1`):
+- `error` - Critical errors that prevent operation
+- `warn` - Important warnings that may affect behavior
+- `notice` - Notable events and state changes
+- `silly` - Very verbose debugging info
+
+**Opt-in categories** (require explicit `DEBUG='category'`):
+- `cache` - Cache hit/miss operations
+- `network` - HTTP requests with timing
+- `command` - External command execution
+- `auth` - Authentication flow
+- `perf` - Performance timing
+- `spinner` - Spinner state changes
+- `inspect` - Detailed object inspection
+- `stdio` - Command execution logs
+
+**Examples:**
+```bash
+DEBUG=cache socket scan              # Cache debugging only
+DEBUG=network,cache socket scan      # Multiple categories
+DEBUG=* socket scan                  # All categories
+SOCKET_CLI_DEBUG=1 socket scan       # Default categories
+```
+
+## Developer API
+
+### Progress indicators
+
+Track long-running operations with visual progress bars:
+
+```typescript
+import { startSpinner, updateSpinnerProgress } from './src/utils/spinner.mts'
+
+const stop = startSpinner('Processing files')
+for (let i = 0; i < files.length; i++) {
+  updateSpinnerProgress(i + 1, files.length, 'files')
+  await processFile(files[i])
+}
+stop()
+// Output: ⠋ Processing files ████████████░░░░░░░░ 60% (12/20 files)
+```
+
+### Table formatting
+
+Display structured data with professional table formatting:
+
+```typescript
+import { formatTable, formatSimpleTable } from './src/utils/output-formatting.mts'
+import colors from 'yoctocolors-cjs'
+
+// Bordered table with box-drawing characters
+const data = [
+  { name: 'lodash', version: '4.17.21', issues: 0 },
+  { name: 'react', version: '18.2.0', issues: 2 }
+]
+const columns = [
+  { key: 'name', header: 'Package' },
+  { key: 'version', header: 'Version', align: 'center' },
+  {
+    key: 'issues',
+    header: 'Issues',
+    align: 'right',
+    color: (v) => v === '0' ? colors.green(v) : colors.red(v)
+  }
+]
+console.log(formatTable(data, columns))
+// Output:
+// ┌─────────┬─────────┬────────┐
+// │ Package │ Version │ Issues │
+// ├─────────┼─────────┼────────┤
+// │ lodash  │ 4.17.21 │      0 │
+// │ react   │ 18.2.0  │      2 │
+// └─────────┴─────────┴────────┘
+
+// Simple table without borders
+console.log(formatSimpleTable(data, columns))
+// Output:
+// Package  Version  Issues
+// ───────  ───────  ──────
+// lodash   4.17.21       0
+// react    18.2.0        2
+```
+
+### Enhanced error handling
+
+Handle errors with actionable recovery suggestions:
+
+```typescript
+import { InputError, AuthError, getRecoverySuggestions } from './src/utils/errors.mts'
+
+// Throw errors with recovery suggestions
+throw new InputError('Invalid package name', 'Must be in format: @scope/name', [
+  'Use npm package naming conventions',
+  'Check for typos in the package name'
+])
+
+throw new AuthError('Token expired', [
+  'Run `socket login` to re-authenticate',
+  'Generate a new token at https://socket.dev/dashboard'
+])
+
+// Extract and display recovery suggestions
+try {
+  await operation()
+} catch (error) {
+  const suggestions = getRecoverySuggestions(error)
+  if (suggestions.length > 0) {
+    console.error('How to fix:')
+    suggestions.forEach(s => console.error(`  - ${s}`))
+  }
+}
+```
+
 ## See also
 
 - [Socket API Reference](https://docs.socket.dev/reference)
