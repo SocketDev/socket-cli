@@ -41,6 +41,7 @@ import constants, {
 } from '../constants.mts'
 import { getRequirements, getRequirementsKey } from './requirements.mts'
 import { getDefaultApiBaseUrl, getDefaultApiToken } from './sdk.mts'
+import { withExternalSpinner } from './spinner.mts'
 
 import type { CResult } from '../types.mts'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
@@ -176,16 +177,16 @@ export async function handleApiCall<T extends SocketSdkOperations>(
     ...options,
   } as HandleApiCallOptions
 
-  if (description) {
-    spinner?.start(`Requesting ${description} from API...`)
-  } else {
-    spinner?.start()
-  }
+  const spinnerMessage = description
+    ? `Requesting ${description} from API...`
+    : 'Requesting from API...'
 
   let sdkResult: SocketSdkResult<T>
   try {
-    sdkResult = await value
-    spinner?.stop()
+    sdkResult = await withExternalSpinner(spinner, spinnerMessage, async () => {
+      return await value
+    })
+
     if (description) {
       const message = `Received Socket API response (after requesting ${description}).`
       if (sdkResult.success) {
@@ -195,7 +196,6 @@ export async function handleApiCall<T extends SocketSdkOperations>(
       }
     }
   } catch (e) {
-    spinner?.stop()
     const socketSdkErrorResult: ApiCallResult<T> = {
       ok: false,
       message: 'Socket API error',
@@ -342,14 +342,18 @@ export async function queryApiSafeText(
   }
 
   const { spinner } = constants
-
-  if (description) {
-    spinner.start(`Requesting ${description} from API...`)
-  }
+  const spinnerMessage = description
+    ? `Requesting ${description} from API...`
+    : 'Requesting from API...'
 
   let result
   try {
-    result = await queryApi(path, apiToken)
+    result = await withExternalSpinner(
+      spinner,
+      spinnerMessage,
+      async () => await queryApi(path, apiToken),
+    )
+
     if (description) {
       spinner.successAndStop(
         `Received Socket API response (after requesting ${description}).`,
@@ -478,9 +482,9 @@ export async function sendApiRequest<T>(
   } as SendApiRequestOptions
   const { spinner } = constants
 
-  if (description) {
-    spinner.start(`Requesting ${description} from API...`)
-  }
+  const spinnerMessage = description
+    ? `Requesting ${description} from API...`
+    : 'Requesting from API...'
 
   let result
   try {
@@ -493,10 +497,16 @@ export async function sendApiRequest<T>(
       ...(body ? { body: JSON.stringify(body) } : {}),
     }
 
-    result = await fetch(
-      `${baseUrl}${baseUrl.endsWith('/') ? '' : '/'}${path}`,
-      fetchOptions,
+    result = await withExternalSpinner(
+      spinner,
+      spinnerMessage,
+      async () =>
+        await fetch(
+          `${baseUrl}${baseUrl.endsWith('/') ? '' : '/'}${path}`,
+          fetchOptions,
+        ),
     )
+
     if (description) {
       spinner.successAndStop(
         `Received Socket API response (after requesting ${description}).`,

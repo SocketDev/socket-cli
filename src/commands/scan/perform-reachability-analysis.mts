@@ -8,6 +8,10 @@ import { spawnCoana } from '../../utils/coana-spawn.mts'
 import { extractTier1ReachabilityScanId } from '../../utils/coana.mts'
 import { hasEnterpriseOrgPlan } from '../../utils/organization.mts'
 import { setupSdk } from '../../utils/sdk.mts'
+import {
+  withExternalSpinner,
+  withSpinnerRestore,
+} from '../../utils/spinner.mts'
 import { socketDevLink } from '../../utils/terminal-link.mts'
 import { fetchOrganization } from '../organization/fetch-organization-list.mts'
 
@@ -80,54 +84,68 @@ export async function performReachabilityAnalysis(
   let tarHash: string | undefined
 
   if (uploadManifests && orgSlug && packagePaths) {
-    // Setup SDK for uploading manifests
-    const sockSdkCResult = await setupSdk()
-    if (!sockSdkCResult.ok) {
-      return sockSdkCResult
-    }
+    const uploadResult = await withSpinnerRestore(
+      spinner,
+      wasSpinning,
+      async ():
+        | Promise<CResult<never>>
+        | Promise<{ ok: true; hash: string }> => {
+        // Setup SDK for uploading manifests
+        const sockSdkCResult = await setupSdk()
+        if (!sockSdkCResult.ok) {
+          return sockSdkCResult
+        }
 
-    const sockSdk = sockSdkCResult.data
+        const sockSdk = sockSdkCResult.data
 
-    // Exclude any .socket.facts.json files that happen to be in the scan
-    // folder before the analysis was run.
-    const filepathsToUpload = packagePaths.filter(
-      p =>
-        path.basename(p).toLowerCase() !== constants.DOT_SOCKET_DOT_FACTS_JSON,
-    )
+        // Exclude any .socket.facts.json files that happen to be in the scan
+        // folder before the analysis was run.
+        const filepathsToUpload = packagePaths.filter(
+          p =>
+            path.basename(p).toLowerCase() !==
+            constants.DOT_SOCKET_DOT_FACTS_JSON,
+        )
 
-    spinner?.start('Uploading manifests for reachability analysis...')
+        const uploadCResult = await withExternalSpinner(
+          spinner,
+          'Uploading manifests for reachability analysis...',
+          async () => {
+            return await handleApiCall(
+              sockSdk.uploadManifestFiles(orgSlug, filepathsToUpload),
+              {
+                description: 'upload manifests',
+                spinner,
+              },
+            )
+          },
+        )
 
-    const uploadCResult = await handleApiCall(
-      sockSdk.uploadManifestFiles(orgSlug, filepathsToUpload),
-      {
-        description: 'upload manifests',
-        spinner,
+        if (!uploadCResult.ok) {
+          return uploadCResult
+        }
+
+        const hash = (uploadCResult.data as { tarHash?: string })?.tarHash
+        if (!hash) {
+          return {
+            ok: false as const,
+            message: 'Failed to get manifest tar hash',
+            cause:
+              'Server did not return a tar hash for the uploaded manifests',
+          }
+        }
+
+        spinner?.start()
+        spinner?.success(`Manifests uploaded successfully. Tar hash: ${hash}`)
+
+        return { ok: true as const, hash }
       },
     )
 
-    spinner?.stop()
-
-    if (!uploadCResult.ok) {
-      if (wasSpinning) {
-        spinner.start()
-      }
-      return uploadCResult
+    if (!uploadResult.ok) {
+      return uploadResult
     }
 
-    tarHash = (uploadCResult.data as { tarHash?: string })?.tarHash
-    if (!tarHash) {
-      if (wasSpinning) {
-        spinner.start()
-      }
-      return {
-        ok: false,
-        message: 'Failed to get manifest tar hash',
-        cause: 'Server did not return a tar hash for the uploaded manifests',
-      }
-    }
-
-    spinner?.start()
-    spinner?.success(`Manifests uploaded successfully. Tar hash: ${tarHash}`)
+    tarHash = uploadResult.hash
   }
 
   spinner?.start()
@@ -176,16 +194,18 @@ export async function performReachabilityAnalysis(
   }
 
   // Run Coana with the manifests tar hash.
-  const coanaResult = await spawnCoana(coanaArgs, orgSlug, {
-    cwd,
-    env: coanaEnv,
+  const coanaResult = await withSpinnerRestore(
     spinner,
-    stdio: 'inherit',
-  })
-
-  if (wasSpinning) {
-    spinner.start()
-  }
+    wasSpinning,
+    async () => {
+      return await spawnCoana(coanaArgs, orgSlug, {
+        cwd,
+        env: coanaEnv,
+        spinner,
+        stdio: 'inherit',
+      })
+    },
+  )
 
   return coanaResult.ok
     ? {
