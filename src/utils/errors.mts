@@ -31,14 +31,156 @@ const {
 
 type EventHintOrCaptureContext = { [key: string]: any } | Function
 
-export class AuthError extends Error {}
+/**
+ * Authentication error with recovery suggestions.
+ * Thrown when API authentication fails (401/403).
+ */
+export class AuthError extends Error {
+  public readonly recovery: string[]
 
-export class InputError extends Error {
-  public body: string | undefined
-
-  constructor(message: string, body?: string | undefined) {
+  constructor(message: string, recovery?: string[]) {
     super(message)
+    this.name = 'AuthError'
+    this.recovery = recovery || [
+      'Run `socket login` to authenticate',
+      'Set SOCKET_SECURITY_API_KEY environment variable',
+      'Add apiToken to ~/.config/socket/config.toml',
+    ]
+  }
+}
+
+/**
+ * User input validation error with details.
+ * Thrown when user provides invalid input or arguments.
+ */
+export class InputError extends Error {
+  public readonly body: string | undefined
+  public readonly recovery: string[]
+
+  constructor(message: string, body?: string | undefined, recovery?: string[]) {
+    super(message)
+    this.name = 'InputError'
     this.body = body
+    this.recovery = recovery || ['Check command syntax with --help']
+  }
+}
+
+/**
+ * Network error with retry suggestions.
+ * Thrown when network requests fail due to connectivity issues.
+ */
+export class NetworkError extends Error {
+  public readonly statusCode?: number | undefined
+  public readonly recovery: string[]
+
+  constructor(
+    message: string,
+    statusCode?: number | undefined,
+    recovery?: string[] | undefined,
+  ) {
+    super(message)
+    this.name = 'NetworkError'
+    this.statusCode = statusCode
+    this.recovery = recovery || [
+      'Check your internet connection',
+      'Verify proxy settings if using a proxy',
+      'Try again in a few moments',
+    ]
+  }
+}
+
+/**
+ * API rate limit error with quota information.
+ * Thrown when API rate limits are exceeded (429).
+ */
+export class RateLimitError extends Error {
+  public readonly retryAfter?: number | undefined
+  public readonly recovery: string[]
+
+  constructor(message: string, retryAfter?: number | undefined) {
+    super(message)
+    this.name = 'RateLimitError'
+    this.retryAfter = retryAfter
+    this.recovery = [
+      retryAfter
+        ? `Wait ${retryAfter} seconds before retrying`
+        : 'Wait a few minutes before retrying',
+      'Check your API quota at https://socket.dev/dashboard',
+      'Consider upgrading your plan for higher limits',
+    ]
+  }
+}
+
+/**
+ * File system error with path context.
+ * Thrown when file operations fail.
+ */
+export class FileSystemError extends Error {
+  public readonly path?: string | undefined
+  public readonly code?: string | undefined
+  public readonly recovery: string[]
+
+  constructor(
+    message: string,
+    path?: string | undefined,
+    code?: string | undefined,
+    recovery?: string[] | undefined,
+  ) {
+    super(message)
+    this.name = 'FileSystemError'
+    this.path = path
+    this.code = code
+    this.recovery = recovery || this.getDefaultRecovery(code)
+  }
+
+  private getDefaultRecovery(code?: string): string[] {
+    switch (code) {
+      case 'ENOENT':
+        return [
+          'Verify the file or directory exists',
+          'Check the path spelling',
+          'Ensure you have permission to access the location',
+        ]
+      case 'EACCES':
+      case 'EPERM':
+        return [
+          'Check file permissions',
+          'Run with appropriate user privileges',
+          'Verify directory ownership',
+        ]
+      case 'ENOSPC':
+        return [
+          'Free up disk space',
+          'Check available disk space with `df -h`',
+          'Delete unnecessary files',
+        ]
+      default:
+        return ['Check file system permissions and availability']
+    }
+  }
+}
+
+/**
+ * Configuration error with setup instructions.
+ * Thrown when CLI configuration is invalid or missing.
+ */
+export class ConfigError extends Error {
+  public readonly configKey?: string | undefined
+  public readonly recovery: string[]
+
+  constructor(
+    message: string,
+    configKey?: string | undefined,
+    recovery?: string[] | undefined,
+  ) {
+    super(message)
+    this.name = 'ConfigError'
+    this.configKey = configKey
+    this.recovery = recovery || [
+      'Run `socket config list` to view current configuration',
+      'Use `socket config set <key> <value>` to update settings',
+      'Check ~/.config/socket/config.toml for syntax errors',
+    ]
   }
 }
 
@@ -71,6 +213,32 @@ export function isErrnoException(
     return false
   }
   return (value as NodeJS.ErrnoException).code !== undefined
+}
+
+/**
+ * Type guard to check if an error has recovery suggestions.
+ */
+export function hasRecoverySuggestions(
+  error: unknown,
+): error is Error & { recovery: string[] } {
+  return (
+    error instanceof Error &&
+    'recovery' in error &&
+    Array.isArray((error as any).recovery)
+  )
+}
+
+/**
+ * Extract recovery suggestions from an error.
+ *
+ * @param error - The error object to extract recovery suggestions from
+ * @returns Array of recovery suggestion strings, or empty array if none
+ */
+export function getRecoverySuggestions(error: unknown): string[] {
+  if (hasRecoverySuggestions(error)) {
+    return error.recovery
+  }
+  return []
 }
 
 /**

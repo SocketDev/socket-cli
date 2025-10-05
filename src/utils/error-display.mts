@@ -6,7 +6,15 @@ import { LOG_SYMBOLS } from '@socketsecurity/registry/lib/logger'
 import { stripAnsi } from '@socketsecurity/registry/lib/strings'
 
 import { debugFn, isDebug } from './debug.mts'
-import { AuthError, InputError } from './errors.mts'
+import {
+  AuthError,
+  ConfigError,
+  FileSystemError,
+  InputError,
+  NetworkError,
+  RateLimitError,
+  getRecoverySuggestions,
+} from './errors.mts'
 
 import type { CResult } from '../types.mts'
 
@@ -33,9 +41,33 @@ export function formatErrorForDisplay(
   let message = ''
   let body: string | undefined
 
-  if (error instanceof AuthError) {
+  if (error instanceof RateLimitError) {
+    title = 'API rate limit exceeded'
+    message = error.message
+    if (error.retryAfter) {
+      message += ` (retry after ${error.retryAfter}s)`
+    }
+  } else if (error instanceof AuthError) {
     title = 'Authentication error'
     message = error.message
+  } else if (error instanceof NetworkError) {
+    title = 'Network error'
+    message = error.message
+    if (error.statusCode) {
+      message += ` (HTTP ${error.statusCode})`
+    }
+  } else if (error instanceof FileSystemError) {
+    title = 'File system error'
+    message = error.message
+    if (error.path) {
+      message += ` (${error.path})`
+    }
+  } else if (error instanceof ConfigError) {
+    title = 'Configuration error'
+    message = error.message
+    if (error.configKey) {
+      message += ` (key: ${error.configKey})`
+    }
   } else if (error instanceof InputError) {
     title = 'Invalid input'
     message = error.message
@@ -138,6 +170,15 @@ export function formatErrorForTerminal(
     message ? `  ${message}` : '',
   ]
 
+  // Add recovery suggestions if available
+  const recovery = getRecoverySuggestions(error)
+  if (recovery.length > 0) {
+    lines.push('', colors.cyan('Suggested actions:'))
+    for (const suggestion of recovery) {
+      lines.push(`  ${colors.dim('•')} ${suggestion}`)
+    }
+  }
+
   if (body) {
     const verbose = options?.verbose ?? isDebug('error')
     if (verbose) {
@@ -160,16 +201,19 @@ export function formatErrorForTerminal(
 export function formatErrorForJson(
   error: unknown,
   options?: ErrorDisplayOptions | undefined,
-): CResult<never> {
+): CResult<never> & { recovery?: string[] } {
   const { body, message, title } = formatErrorForDisplay(error, {
     ...options,
     showStack: false,
   })
 
+  const recovery = getRecoverySuggestions(error)
+
   return {
     ok: false,
     cause: stripAnsi(body || message),
     message: stripAnsi(title),
+    ...(recovery.length > 0 ? { recovery } : {}),
   }
 }
 

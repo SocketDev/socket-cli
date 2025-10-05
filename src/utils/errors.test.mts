@@ -6,11 +6,17 @@ import { describe, expect, it } from 'vitest'
 
 import {
   AuthError,
+  ConfigError,
+  FileSystemError,
   InputError,
+  NetworkError,
+  RateLimitError,
   formatErrorWithDetail,
   getErrorCause,
   getErrorMessage,
   getErrorMessageOr,
+  getRecoverySuggestions,
+  hasRecoverySuggestions,
   isErrnoException,
 } from './errors.mts'
 import { UNKNOWN_ERROR } from '../constants.mts'
@@ -25,6 +31,82 @@ describe('Error Classes', () => {
       expect(error).toBeInstanceOf(AuthError)
       expect(error).toBeInstanceOf(Error)
       expect(error.message).toBe('Authentication failed')
+      expect(error.name).toBe('AuthError')
+    })
+
+    it('should have default recovery suggestions', () => {
+      const error = new AuthError('Auth failed')
+      expect(error.recovery).toHaveLength(3)
+      expect(error.recovery[0]).toContain('socket login')
+    })
+
+    it('should accept custom recovery suggestions', () => {
+      const recovery = ['Custom recovery']
+      const error = new AuthError('Auth failed', recovery)
+      expect(error.recovery).toEqual(recovery)
+    })
+  })
+
+  describe('NetworkError', () => {
+    it('should create a NetworkError with status code', () => {
+      const error = new NetworkError('Connection failed', 503)
+      expect(error).toBeInstanceOf(NetworkError)
+      expect(error.name).toBe('NetworkError')
+      expect(error.message).toBe('Connection failed')
+      expect(error.statusCode).toBe(503)
+    })
+
+    it('should have default recovery suggestions', () => {
+      const error = new NetworkError('Timeout')
+      expect(error.recovery).toHaveLength(3)
+      expect(error.recovery[0]).toContain('internet connection')
+    })
+  })
+
+  describe('RateLimitError', () => {
+    it('should create a RateLimitError with retry after', () => {
+      const error = new RateLimitError('Too many requests', 60)
+      expect(error).toBeInstanceOf(RateLimitError)
+      expect(error.name).toBe('RateLimitError')
+      expect(error.retryAfter).toBe(60)
+      expect(error.recovery[0]).toContain('60 seconds')
+    })
+
+    it('should handle missing retry after', () => {
+      const error = new RateLimitError('Quota exceeded')
+      expect(error.retryAfter).toBeUndefined()
+      expect(error.recovery[0]).toContain('few minutes')
+    })
+  })
+
+  describe('FileSystemError', () => {
+    it('should create FileSystemError with ENOENT code', () => {
+      const error = new FileSystemError('File not found', '/path', 'ENOENT')
+      expect(error).toBeInstanceOf(FileSystemError)
+      expect(error.name).toBe('FileSystemError')
+      expect(error.path).toBe('/path')
+      expect(error.code).toBe('ENOENT')
+      expect(error.recovery[0]).toContain('exists')
+    })
+
+    it('should provide EACCES-specific recovery', () => {
+      const error = new FileSystemError('Permission denied', '/etc', 'EACCES')
+      expect(error.recovery[0]).toContain('permissions')
+    })
+
+    it('should provide ENOSPC-specific recovery', () => {
+      const error = new FileSystemError('Disk full', '/tmp', 'ENOSPC')
+      expect(error.recovery[0]).toContain('disk space')
+    })
+  })
+
+  describe('ConfigError', () => {
+    it('should create ConfigError with config key', () => {
+      const error = new ConfigError('Invalid value', 'apiToken')
+      expect(error).toBeInstanceOf(ConfigError)
+      expect(error.name).toBe('ConfigError')
+      expect(error.configKey).toBe('apiToken')
+      expect(error.recovery[0]).toContain('config list')
     })
   })
 
@@ -182,5 +264,66 @@ describe('formatErrorWithDetail', () => {
     expect(formatErrorWithDetail('Failed to process "test.txt"', error)).toBe(
       'Failed to process "test.txt": File not found',
     )
+  })
+})
+
+describe('Recovery Utilities', () => {
+  describe('hasRecoverySuggestions', () => {
+    it('should return true for errors with recovery', () => {
+      const error = new AuthError('Test')
+      expect(hasRecoverySuggestions(error)).toBe(true)
+    })
+
+    it('should return false for standard errors', () => {
+      const error = new Error('Standard error')
+      expect(hasRecoverySuggestions(error)).toBe(false)
+    })
+
+    it('should return false for non-errors', () => {
+      expect(hasRecoverySuggestions('string')).toBe(false)
+      expect(hasRecoverySuggestions(null)).toBe(false)
+      expect(hasRecoverySuggestions(undefined)).toBe(false)
+      expect(hasRecoverySuggestions(123)).toBe(false)
+    })
+  })
+
+  describe('getRecoverySuggestions', () => {
+    it('should extract recovery from NetworkError', () => {
+      const error = new NetworkError('Connection failed')
+      const suggestions = getRecoverySuggestions(error)
+      expect(suggestions.length).toBeGreaterThan(0)
+      expect(suggestions[0]).toContain('internet connection')
+    })
+
+    it('should extract recovery from RateLimitError', () => {
+      const error = new RateLimitError('Too many requests', 30)
+      const suggestions = getRecoverySuggestions(error)
+      expect(suggestions.length).toBeGreaterThan(0)
+      expect(suggestions[0]).toContain('30 seconds')
+    })
+
+    it('should extract recovery from FileSystemError', () => {
+      const error = new FileSystemError('No access', '/etc', 'EACCES')
+      const suggestions = getRecoverySuggestions(error)
+      expect(suggestions[0]).toContain('permissions')
+    })
+
+    it('should extract recovery from ConfigError', () => {
+      const error = new ConfigError('Bad config')
+      const suggestions = getRecoverySuggestions(error)
+      expect(suggestions[0]).toContain('config list')
+    })
+
+    it('should return empty array for standard errors', () => {
+      const error = new Error('Standard error')
+      const suggestions = getRecoverySuggestions(error)
+      expect(suggestions).toEqual([])
+    })
+
+    it('should return empty array for non-errors', () => {
+      expect(getRecoverySuggestions('string')).toEqual([])
+      expect(getRecoverySuggestions(null)).toEqual([])
+      expect(getRecoverySuggestions(undefined)).toEqual([])
+    })
   })
 })
