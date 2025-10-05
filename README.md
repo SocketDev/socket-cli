@@ -104,6 +104,8 @@ pnpm exec socket
 - `SOCKET_CLI_API_BASE_URL` - API base URL (default: `https://api.socket.dev/v0/`)
 - `SOCKET_CLI_API_PROXY` - Proxy for API requests (aliases: `HTTPS_PROXY`, `https_proxy`, `HTTP_PROXY`, `http_proxy`)
 - `SOCKET_CLI_API_TIMEOUT` - API request timeout in milliseconds
+- `SOCKET_CLI_CACHE_ENABLED` - Enable API response caching (default: `false`)
+- `SOCKET_CLI_CACHE_TTL` - Cache TTL in milliseconds (default: `300000` = 5 minutes)
 - `SOCKET_CLI_DEBUG` - Enable debug logging
 - `DEBUG` - Enable [`debug`](https://socket.dev/npm/package/debug) package logging
 
