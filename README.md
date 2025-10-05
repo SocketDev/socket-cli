@@ -195,6 +195,39 @@ console.log(formatSimpleTable(data, columns))
 // react    18.2.0        2
 ```
 
+### Performance monitoring
+
+Track and optimize CLI performance with comprehensive monitoring utilities:
+
+```typescript
+import { perfTimer, measure, perfCheckpoint, printPerformanceSummary } from './src/utils/performance.mts'
+
+// Simple operation timing
+const stop = perfTimer('fetch-packages')
+await fetchPackages()
+stop({ count: 50 })
+
+// Function measurement
+const { result, duration } = await measure('parse-manifest', async () => {
+  return parseManifest(file)
+})
+console.log(`Parsed in ${duration}ms`)
+
+// Track complex operation progress
+perfCheckpoint('start-scan')
+perfCheckpoint('analyze-dependencies', { count: 100 })
+perfCheckpoint('detect-issues', { issueCount: 5 })
+perfCheckpoint('end-scan')
+
+// Print performance summary
+printPerformanceSummary()
+// Performance Summary:
+// fetch-packages: 1 calls, avg 234ms (min 234ms, max 234ms, total 234ms)
+// parse-manifest: 5 calls, avg 12ms (min 8ms, max 20ms, total 60ms)
+```
+
+**Enable with:** `DEBUG=perf socket <command>`
+
 ### Intelligent caching strategies
 
 Optimize API performance with smart caching based on data volatility:
