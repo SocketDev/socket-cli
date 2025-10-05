@@ -1,10 +1,11 @@
 /** @fileoverview CycloneDX cdxgen runner for Socket CLI. Executes cdxgen SBOM generator via npx. Converts yarn.lock to package-lock.json using synp for better accuracy. */
 
-import { existsSync, rmSync } from 'node:fs'
+import { existsSync } from 'node:fs'
 import path from 'node:path'
 
 import colors from 'yoctocolors-cjs'
 
+import { removeSync } from '@socketsecurity/registry/lib/fs'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants, { FLAG_HELP, YARN } from '../../constants.mts'
@@ -160,9 +161,8 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
   // Handle cleanup on process exit.
   if (cleanupPackageLock) {
     try {
-      // TODO: Consider using trash instead of rmSync for safer deletion.
       // This removes the temporary package-lock.json we created for cdxgen.
-      rmSync(`./${PACKAGE_LOCK_JSON}`)
+      removeSync(`./${PACKAGE_LOCK_JSON}`)
     } catch {}
   }
 
