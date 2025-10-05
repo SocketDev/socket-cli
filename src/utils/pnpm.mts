@@ -72,7 +72,7 @@ export function parsePnpmLockfile(
       result = yaml.load(stripBom(lockfileContent))
     } catch {}
   }
-  return isObjectObject(result) ? (result as LockfileObject) : null
+  return isObjectObject(result) ? (result as unknown as LockfileObject) : null
 }
 
 export function parsePnpmLockfileVersion(version: unknown): SemVer | undefined {

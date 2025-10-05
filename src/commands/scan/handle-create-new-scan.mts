@@ -136,7 +136,7 @@ export async function handleCreateNewScan({
   })
 
   spinner.successAndStop(
-    `Found ${packagePaths.length} ${pluralize('file', packagePaths.length)} to include in scan.`,
+    `Found ${packagePaths.length} ${pluralize('file', { count: packagePaths.length })} to include in scan.`,
   )
 
   const wasValidInput = checkCommandInput(outputKind, {
@@ -153,7 +153,7 @@ export async function handleCreateNewScan({
 
   logSuccessIf(
     outputKind,
-    `Found ${packagePaths.length} local ${pluralize('file', packagePaths.length)}`,
+    `Found ${packagePaths.length} local ${pluralize('file', { count: packagePaths.length })}`,
   )
 
   debugDir('inspect', { packagePaths })

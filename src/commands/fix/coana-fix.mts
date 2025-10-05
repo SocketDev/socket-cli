@@ -4,6 +4,7 @@ import path from 'node:path'
 
 import { joinAnd } from '@socketsecurity/registry/lib/arrays'
 import { logger } from '@socketsecurity/registry/lib/logger'
+import { withSpinner } from '@socketsecurity/registry/lib/spinner'
 import { pluralize } from '@socketsecurity/registry/lib/words'
 
 import {
@@ -36,7 +37,6 @@ import {
 } from '../../utils/github.mts'
 import { getPackageFilesForScan } from '../../utils/path-resolve.mts'
 import { setupSdk } from '../../utils/sdk.mts'
-import { withExternalSpinner } from '../../utils/spinner.mts'
 import { fetchSupportedScanFileNames } from '../scan/fetch-supported-scan-file-names.mts'
 
 import type { FixConfig } from './types.mts'
@@ -61,10 +61,9 @@ export async function coanaFix(
   const fixEnv = await getFixEnv()
   debugDir('inspect', { fixEnv })
 
-  return await withExternalSpinner(
-    spinner,
-    'Processing fix request...',
-    async () => {
+  return await withSpinner({
+    message: 'Processing fix request...',
+    operation: async () => {
       const sockSdkCResult = await setupSdk()
       if (!sockSdkCResult.ok) {
         return sockSdkCResult
@@ -182,7 +181,7 @@ export async function coanaFix(
           if (openPrCount > 0) {
             debugFn(
               'notice',
-              `limit: adjusted from ${limit} to ${adjustedLimit} (${openPrCount} open Socket Fix ${pluralize('PR', openPrCount)}`,
+              `limit: adjusted from ${limit} to ${adjustedLimit} (${openPrCount} open Socket Fix ${pluralize('PR', { count: openPrCount })}`,
             )
           }
         } catch (e) {
@@ -439,5 +438,6 @@ export async function coanaFix(
         data: { fixed: overallFixed },
       }
     },
-  )
+    spinner,
+  })
 }

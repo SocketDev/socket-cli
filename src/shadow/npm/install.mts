@@ -92,7 +92,9 @@ export function shadowNpmInstall(
       env: {
         ...process.env,
         ...constants.processEnv,
-        ...getOwn(spawnOpts, 'env'),
+        ...(getOwn(spawnOpts, 'env') as
+          | Record<string, string | undefined>
+          | undefined),
       },
       spinner,
       stdio,

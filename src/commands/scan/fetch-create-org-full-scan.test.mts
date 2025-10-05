@@ -57,17 +57,19 @@ describe('fetchCreateOrgFullScan', () => {
     expect(mockSdk.createOrgFullScan).toHaveBeenCalledWith(
       'test-org',
       ['/path/to/package.json'],
-      process.cwd(),
       {
-        branch: 'main',
-        commit_hash: 'abc123',
-        commit_message: 'Initial commit',
-        committers: 'john@example.com',
-        make_default_branch: 'undefined',
-        pull_request: '42',
-        repo: 'test-repo',
-        set_as_pending_head: 'undefined',
-        tmp: 'undefined',
+        pathsRelativeTo: process.cwd(),
+        queryParams: {
+          branch: 'main',
+          commit_hash: 'abc123',
+          commit_message: 'Initial commit',
+          committers: 'john@example.com',
+          make_default_branch: 'undefined',
+          pull_request: '42',
+          repo: 'test-repo',
+          set_as_pending_head: 'undefined',
+          tmp: 'undefined',
+        },
       },
     )
     expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
@@ -195,17 +197,19 @@ describe('fetchCreateOrgFullScan', () => {
     expect(mockSdk.createOrgFullScan).toHaveBeenCalledWith(
       'custom-org',
       ['/path/to/package.json'],
-      '/custom/path',
       {
-        branch: 'develop',
-        commit_hash: 'xyz789',
-        commit_message: 'Feature commit',
-        committers: 'jane@example.com',
-        make_default_branch: 'true',
-        pull_request: '123',
-        repo: 'feature-repo',
-        set_as_pending_head: 'false',
-        tmp: 'true',
+        pathsRelativeTo: '/custom/path',
+        queryParams: {
+          branch: 'develop',
+          commit_hash: 'xyz789',
+          commit_message: 'Feature commit',
+          committers: 'jane@example.com',
+          make_default_branch: 'true',
+          pull_request: '123',
+          repo: 'feature-repo',
+          set_as_pending_head: 'false',
+          tmp: 'true',
+        },
       },
     )
   })
@@ -240,12 +244,14 @@ describe('fetchCreateOrgFullScan', () => {
     expect(mockSdk.createOrgFullScan).toHaveBeenCalledWith(
       'test-org',
       ['/path/to/package.json'],
-      process.cwd(),
       {
-        make_default_branch: 'undefined',
-        repo: 'test-repo',
-        set_as_pending_head: 'undefined',
-        tmp: 'undefined',
+        pathsRelativeTo: process.cwd(),
+        queryParams: {
+          make_default_branch: 'undefined',
+          repo: 'test-repo',
+          set_as_pending_head: 'undefined',
+          tmp: 'undefined',
+        },
       },
     )
   })
@@ -286,8 +292,10 @@ describe('fetchCreateOrgFullScan', () => {
     expect(mockSdk.createOrgFullScan).toHaveBeenCalledWith(
       'mono-org',
       packagePaths,
-      process.cwd(),
-      expect.any(Object),
+      {
+        pathsRelativeTo: process.cwd(),
+        queryParams: expect.any(Object),
+      },
     )
   })
 
@@ -361,10 +369,12 @@ describe('fetchCreateOrgFullScan', () => {
       expect(mockSdk.createOrgFullScan).toHaveBeenCalledWith(
         org,
         ['/path/to/package.json'],
-        process.cwd(),
-        expect.objectContaining({
-          repo,
-        }),
+        {
+          pathsRelativeTo: process.cwd(),
+          queryParams: expect.objectContaining({
+            repo,
+          }),
+        },
       )
     }
   })

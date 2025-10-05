@@ -21,6 +21,7 @@ import { messageWithCauses } from 'pony-cause'
 import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
+import { withSpinner } from '@socketsecurity/registry/lib/spinner'
 
 import {
   debugApiResponse,
@@ -41,7 +42,6 @@ import constants, {
 } from '../constants.mts'
 import { getRequirements, getRequirementsKey } from './requirements.mts'
 import { getDefaultApiBaseUrl, getDefaultApiToken } from './sdk.mts'
-import { withExternalSpinner } from './spinner.mts'
 
 import type { CResult } from '../types.mts'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
@@ -183,8 +183,12 @@ export async function handleApiCall<T extends SocketSdkOperations>(
 
   let sdkResult: SocketSdkResult<T>
   try {
-    sdkResult = await withExternalSpinner(spinner, spinnerMessage, async () => {
-      return await value
+    sdkResult = await withSpinner({
+      message: spinnerMessage,
+      operation: async () => {
+        return await value
+      },
+      spinner,
     })
 
     if (description) {
@@ -348,11 +352,11 @@ export async function queryApiSafeText(
 
   let result
   try {
-    result = await withExternalSpinner(
+    result = await withSpinner({
+      message: spinnerMessage,
+      operation: async () => await queryApi(path, apiToken),
       spinner,
-      spinnerMessage,
-      async () => await queryApi(path, apiToken),
-    )
+    })
 
     if (description) {
       spinner.successAndStop(
@@ -497,15 +501,15 @@ export async function sendApiRequest<T>(
       ...(body ? { body: JSON.stringify(body) } : {}),
     }
 
-    result = await withExternalSpinner(
-      spinner,
-      spinnerMessage,
-      async () =>
+    result = await withSpinner({
+      message: spinnerMessage,
+      operation: async () =>
         await fetch(
           `${baseUrl}${baseUrl.endsWith('/') ? '' : '/'}${path}`,
           fetchOptions,
         ),
-    )
+      spinner,
+    })
 
     if (description) {
       spinner.successAndStop(

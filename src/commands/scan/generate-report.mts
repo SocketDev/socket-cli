@@ -1,8 +1,9 @@
 /** @fileoverview Report generation engine for Socket CLI. Transforms security scan artifacts into formatted reports with severity filtering, issue grouping, and folding options. Generates JSON, markdown, and text outputs. */
 
+import { withSpinnerSync } from '@socketsecurity/registry/lib/spinner'
+
 import constants, { UNKNOWN_VALUE } from '../../constants.mts'
 import { getSocketDevPackageOverviewUrlFromPurl } from '../../utils/socket-url.mts'
-import { withExternalSpinnerSync } from '../../utils/spinner.mts'
 
 import type { FOLD_SETTING, REPORT_LEVEL } from './types.mts'
 import type { CResult } from '../../types.mts'
@@ -60,183 +61,185 @@ export function generateReport(
     spinner?: Spinner | undefined
   },
 ): CResult<ScanReport | { healthy: boolean }> {
-  const now = Date.now()
+  return withSpinnerSync({
+    message: 'Generating report...',
+    operation: () => {
+      // Create an object that includes:
+      //   healthy: boolean
+      //   worst violation level;
+      //   per eco
+      //     per package
+      //       per version
+      //         per offending file
+      //           reported issue -> policy action
 
-  return withExternalSpinnerSync(spinner, 'Generating report...', () => {
-    // Create an object that includes:
-    //   healthy: boolean
-    //   worst violation level;
-    //   per eco
-    //     per package
-    //       per version
-    //         per offending file
-    //           reported issue -> policy action
+      // In the context of a report;
+      // - the alert.severity is irrelevant
+      // - the securityPolicyDefault is irrelevant
+      // - the report defaults to healthy:true with no alerts
+      // - the appearance of an alert will trigger the policy action;
+      //   - error: healthy will end up as false, add alerts to report
+      //   - warn: healthy unchanged, add alerts to report
+      //   - monitor/ignore: no action
+      //   - defer: unknown (no action)
 
-    // In the context of a report;
-    // - the alert.severity is irrelevant
-    // - the securityPolicyDefault is irrelevant
-    // - the report defaults to healthy:true with no alerts
-    // - the appearance of an alert will trigger the policy action;
-    //   - error: healthy will end up as false, add alerts to report
-    //   - warn: healthy unchanged, add alerts to report
-    //   - monitor/ignore: no action
-    //   - defer: unknown (no action)
+      // Note: the server will emit alerts for license policy violations but
+      //       those are only included if you set the flag when requesting the scan
+      //       data. The alerts map to a single security policy key that determines
+      //       what to do with any violation, regardless of the concrete license.
+      //       That rule is called "License Policy Violation".
+      // The license policy part is implicitly handled here. Either they are
+      // included and may show up, or they are not and won't show up.
 
-    // Note: the server will emit alerts for license policy violations but
-    //       those are only included if you set the flag when requesting the scan
-    //       data. The alerts map to a single security policy key that determines
-    //       what to do with any violation, regardless of the concrete license.
-    //       That rule is called "License Policy Violation".
-    // The license policy part is implicitly handled here. Either they are
-    // included and may show up, or they are not and won't show up.
+      const violations = new Map()
 
-    const violations = new Map()
+      let healthy = true
 
-    let healthy = true
+      const securityRules = securityPolicy.securityPolicyRules
+      if (securityRules) {
+        // Note: reportLevel: error > warn > monitor > ignore > defer
+        scan.forEach(artifact => {
+          const {
+            alerts,
+            name: pkgName = UNKNOWN_VALUE,
+            type: ecosystem,
+            version = UNKNOWN_VALUE,
+          } = artifact
 
-    const securityRules = securityPolicy.securityPolicyRules
-    if (securityRules) {
-      // Note: reportLevel: error > warn > monitor > ignore > defer
-      scan.forEach(artifact => {
-        const {
-          alerts,
-          name: pkgName = UNKNOWN_VALUE,
-          type: ecosystem,
-          version = UNKNOWN_VALUE,
-        } = artifact
-
-        alerts?.forEach(
-          (alert: NonNullable<SocketArtifact['alerts']>[number]) => {
-            // => policy[type]
-            const alertName = alert.type as keyof typeof securityRules
-            const action = securityRules[alertName]?.action || ''
-            switch (action) {
-              case constants.REPORT_LEVEL_ERROR: {
-                healthy = false
-                if (!short) {
-                  addAlert(
-                    artifact,
-                    violations,
-                    fold,
-                    ecosystem,
-                    pkgName,
-                    version,
-                    alert,
-                    action,
-                  )
+          alerts?.forEach(
+            (alert: NonNullable<SocketArtifact['alerts']>[number]) => {
+              // => policy[type]
+              const alertName = alert.type as keyof typeof securityRules
+              const action = securityRules[alertName]?.action || ''
+              switch (action) {
+                case constants.REPORT_LEVEL_ERROR: {
+                  healthy = false
+                  if (!short) {
+                    addAlert(
+                      artifact,
+                      violations,
+                      fold,
+                      ecosystem,
+                      pkgName,
+                      version,
+                      alert,
+                      action,
+                    )
+                  }
+                  break
                 }
-                break
-              }
-              case constants.REPORT_LEVEL_WARN: {
-                if (!short && reportLevel !== constants.REPORT_LEVEL_ERROR) {
-                  addAlert(
-                    artifact,
-                    violations,
-                    fold,
-                    ecosystem,
-                    pkgName,
-                    version,
-                    alert,
-                    action,
-                  )
+                case constants.REPORT_LEVEL_WARN: {
+                  if (!short && reportLevel !== constants.REPORT_LEVEL_ERROR) {
+                    addAlert(
+                      artifact,
+                      violations,
+                      fold,
+                      ecosystem,
+                      pkgName,
+                      version,
+                      alert,
+                      action,
+                    )
+                  }
+                  break
                 }
-                break
-              }
-              case constants.REPORT_LEVEL_MONITOR: {
-                if (
-                  !short &&
-                  reportLevel !== constants.REPORT_LEVEL_WARN &&
-                  reportLevel !== constants.REPORT_LEVEL_ERROR
-                ) {
-                  addAlert(
-                    artifact,
-                    violations,
-                    fold,
-                    ecosystem,
-                    pkgName,
-                    version,
-                    alert,
-                    action,
-                  )
+                case constants.REPORT_LEVEL_MONITOR: {
+                  if (
+                    !short &&
+                    reportLevel !== constants.REPORT_LEVEL_WARN &&
+                    reportLevel !== constants.REPORT_LEVEL_ERROR
+                  ) {
+                    addAlert(
+                      artifact,
+                      violations,
+                      fold,
+                      ecosystem,
+                      pkgName,
+                      version,
+                      alert,
+                      action,
+                    )
+                  }
+                  break
                 }
-                break
-              }
 
-              case constants.REPORT_LEVEL_IGNORE: {
-                if (
-                  !short &&
-                  reportLevel !== constants.REPORT_LEVEL_MONITOR &&
-                  reportLevel !== constants.REPORT_LEVEL_WARN &&
-                  reportLevel !== constants.REPORT_LEVEL_ERROR
-                ) {
-                  addAlert(
-                    artifact,
-                    violations,
-                    fold,
-                    ecosystem,
-                    pkgName,
-                    version,
-                    alert,
-                    action,
-                  )
+                case constants.REPORT_LEVEL_IGNORE: {
+                  if (
+                    !short &&
+                    reportLevel !== constants.REPORT_LEVEL_MONITOR &&
+                    reportLevel !== constants.REPORT_LEVEL_WARN &&
+                    reportLevel !== constants.REPORT_LEVEL_ERROR
+                  ) {
+                    addAlert(
+                      artifact,
+                      violations,
+                      fold,
+                      ecosystem,
+                      pkgName,
+                      version,
+                      alert,
+                      action,
+                    )
+                  }
+                  break
                 }
-                break
-              }
 
-              case constants.REPORT_LEVEL_DEFER: {
-                // Not sure but ignore for now. Defer to later ;)
-                if (!short && reportLevel === constants.REPORT_LEVEL_DEFER) {
-                  addAlert(
-                    artifact,
-                    violations,
-                    fold,
-                    ecosystem,
-                    pkgName,
-                    version,
-                    alert,
-                    action,
-                  )
+                case constants.REPORT_LEVEL_DEFER: {
+                  // Not sure but ignore for now. Defer to later ;)
+                  if (!short && reportLevel === constants.REPORT_LEVEL_DEFER) {
+                    addAlert(
+                      artifact,
+                      violations,
+                      fold,
+                      ecosystem,
+                      pkgName,
+                      version,
+                      alert,
+                      action,
+                    )
+                  }
+                  break
                 }
-                break
-              }
 
-              default: {
-                // This value was not emitted from the Socket API at the time of writing.
+                default: {
+                  // This value was not emitted from the Socket API at the time of writing.
+                }
               }
-            }
-          },
-        )
-      })
-    }
-
-    if (short) {
-      return {
-        ok: true,
-        data: { healthy },
+            },
+          )
+        })
       }
-    }
 
-    const report = {
-      healthy,
-      orgSlug,
-      scanId,
-      options: { fold, reportLevel },
-      alerts: violations,
-    }
+      if (short) {
+        return {
+          ok: true,
+          data: { healthy },
+        }
+      }
 
-    if (!healthy) {
+      const report = {
+        healthy,
+        orgSlug,
+        scanId,
+        options: { fold, reportLevel },
+        alerts: violations,
+      }
+
+      if (!healthy) {
+        return {
+          ok: true,
+          message:
+            'The report contains at least one alert that violates the policies set by your organization',
+          data: report,
+        }
+      }
+
       return {
         ok: true,
-        message:
-          'The report contains at least one alert that violates the policies set by your organization',
         data: report,
       }
-    }
-
-    return {
-      ok: true,
-      data: report,
-    }
+    },
+    spinner,
   })
 }
 

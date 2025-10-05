@@ -83,7 +83,7 @@ async function applyNpmPatches(
   spinner?.stop()
 
   logger.log(
-    `Found ${nmPaths.length} ${NODE_MODULES} ${pluralize('folder', nmPaths.length)}`,
+    `Found ${nmPaths.length} ${NODE_MODULES} ${pluralize('folder', { count: nmPaths.length })}`,
   )
 
   logger.group('')

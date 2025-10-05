@@ -2,16 +2,17 @@
 
 import path from 'node:path'
 
+import {
+  withSpinner,
+  withSpinnerRestore,
+} from '@socketsecurity/registry/lib/spinner'
+
 import constants from '../../constants.mts'
 import { handleApiCall } from '../../utils/api.mts'
 import { spawnCoana } from '../../utils/coana-spawn.mts'
 import { extractTier1ReachabilityScanId } from '../../utils/coana.mts'
 import { hasEnterpriseOrgPlan } from '../../utils/organization.mts'
 import { setupSdk } from '../../utils/sdk.mts'
-import {
-  withExternalSpinner,
-  withSpinnerRestore,
-} from '../../utils/spinner.mts'
 import { socketDevLink } from '../../utils/terminal-link.mts'
 import { fetchOrganization } from '../organization/fetch-organization-list.mts'
 
@@ -84,12 +85,10 @@ export async function performReachabilityAnalysis(
   let tarHash: string | undefined
 
   if (uploadManifests && orgSlug && packagePaths) {
-    const uploadResult = await withSpinnerRestore(
-      spinner,
-      wasSpinning,
-      async ():
-        | Promise<CResult<never>>
-        | Promise<{ ok: true; hash: string }> => {
+    const uploadResult = await withSpinnerRestore({
+      operation: async (): Promise<
+        CResult<never> | { ok: true; hash: string }
+      > => {
         // Setup SDK for uploading manifests
         const sockSdkCResult = await setupSdk()
         if (!sockSdkCResult.ok) {
@@ -106,10 +105,9 @@ export async function performReachabilityAnalysis(
             constants.DOT_SOCKET_DOT_FACTS_JSON,
         )
 
-        const uploadCResult = await withExternalSpinner(
-          spinner,
-          'Uploading manifests for reachability analysis...',
-          async () => {
+        const uploadCResult = await withSpinner({
+          message: 'Uploading manifests for reachability analysis...',
+          operation: async () => {
             return await handleApiCall(
               sockSdk.uploadManifestFiles(orgSlug, filepathsToUpload),
               {
@@ -118,7 +116,8 @@ export async function performReachabilityAnalysis(
               },
             )
           },
-        )
+          spinner,
+        })
 
         if (!uploadCResult.ok) {
           return uploadCResult
@@ -139,13 +138,15 @@ export async function performReachabilityAnalysis(
 
         return { ok: true as const, hash }
       },
-    )
+      spinner,
+      wasSpinning,
+    })
 
     if (!uploadResult.ok) {
-      return uploadResult
+      return uploadResult as CResult<never>
     }
 
-    tarHash = uploadResult.hash
+    tarHash = (uploadResult as { ok: true; hash: string }).hash
   }
 
   spinner?.start()
@@ -194,10 +195,8 @@ export async function performReachabilityAnalysis(
   }
 
   // Run Coana with the manifests tar hash.
-  const coanaResult = await withSpinnerRestore(
-    spinner,
-    wasSpinning,
-    async () => {
+  const coanaResult = await withSpinnerRestore({
+    operation: async () => {
       return await spawnCoana(coanaArgs, orgSlug, {
         cwd,
         env: coanaEnv,
@@ -205,7 +204,9 @@ export async function performReachabilityAnalysis(
         stdio: 'inherit',
       })
     },
-  )
+    spinner,
+    wasSpinning,
+  })
 
   return coanaResult.ok
     ? {

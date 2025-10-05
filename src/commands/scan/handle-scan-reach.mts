@@ -49,7 +49,7 @@ export async function handleScanReach({
   })
 
   spinner.successAndStop(
-    `Found ${packagePaths.length} ${pluralize('manifest file', packagePaths.length)} for reachability analysis.`,
+    `Found ${packagePaths.length} ${pluralize('manifest file', { count: packagePaths.length })} for reachability analysis.`,
   )
 
   const wasValidInput = checkCommandInput(outputKind, {
@@ -65,7 +65,7 @@ export async function handleScanReach({
 
   logSuccessIf(
     outputKind,
-    `Found ${packagePaths.length} local ${pluralize('file', packagePaths.length)}`,
+    `Found ${packagePaths.length} local ${pluralize('file', { count: packagePaths.length })}`,
   )
 
   spinner.start('Running reachability analysis...')

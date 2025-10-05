@@ -76,7 +76,9 @@ export function runAgentInstall(
         ...(skipNodeHardenFlags ? [] : constants.nodeHardenFlags),
         ...constants.nodeNoWarningsFlags,
       ]),
-      ...getOwn(spawnOpts, 'env'),
+      ...(getOwn(spawnOpts, 'env') as
+        | Record<string, string | undefined>
+        | undefined),
     },
   })
 }

@@ -97,7 +97,7 @@ export function getDetailsFromDiff(
   const filterConfig = toFilterConfig({
     existing: false,
     unknownOrigin: true,
-    ...getOwn(options, 'filter'),
+    ...(getOwn(options, 'filter') as Record<string, unknown> | undefined),
   }) as DiffQueryFilter
 
   const queue: Diff[] = [...diff.children]

@@ -187,7 +187,7 @@ export async function addArtifactToAlertsMap<T extends AlertsByPurl>(
     blocked: true,
     critical: true,
     cve: true,
-    ...getOwn(options, 'filter'),
+    ...(getOwn(options, 'filter') as Record<string, unknown> | undefined),
   }) as AlertFilter
 
   const enabledState = new Map<ALERT_TYPE, boolean>(

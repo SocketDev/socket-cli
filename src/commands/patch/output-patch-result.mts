@@ -33,7 +33,7 @@ export async function outputPatchResult(
 
   if (patched.length) {
     logger.group(
-      `Successfully processed patches for ${patched.length} ${pluralize('package', patched.length)}:`,
+      `Successfully processed patches for ${patched.length} ${pluralize('package', { count: patched.length })}:`,
     )
     for (const pkg of patched) {
       logger.success(pkg)

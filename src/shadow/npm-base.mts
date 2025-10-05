@@ -52,11 +52,14 @@ export default async function shadowNpmBase(
     ...spawnOpts
   } = { __proto__: null, ...options } as ShadowBinOptions
 
-  let cwd = getOwn(spawnOpts, 'cwd') ?? process.cwd()
-  if (cwd instanceof URL) {
-    cwd = normalizePath(fileURLToPath(cwd))
-  } else if (typeof cwd === 'string') {
-    cwd = normalizePath(cwd)
+  const cwdRaw = getOwn(spawnOpts, 'cwd') ?? process.cwd()
+  let cwd: string
+  if (cwdRaw instanceof URL) {
+    cwd = normalizePath(fileURLToPath(cwdRaw as URL))
+  } else if (typeof cwdRaw === 'string') {
+    cwd = normalizePath(cwdRaw)
+  } else {
+    cwd = process.cwd()
   }
 
   const isShadowNpm = binName === NPM
@@ -96,7 +99,9 @@ export default async function shadowNpmBase(
       ? []
       : ['--no-audit']
 
-  const stdio = ensureIpcInStdio(getOwn(spawnOpts, 'stdio'))
+  const stdio = ensureIpcInStdio(
+    getOwn(spawnOpts, 'stdio') as SpawnOptions['stdio'],
+  )
 
   const realBinPath = isShadowNpm
     ? await installNpmLinks(constants.shadowBinPath)
