@@ -129,10 +129,14 @@ async function downloadBinary(
     // Download with locking and automatic retries.
     // This prevents concurrent downloads and provides retry logic.
     await downloadWithLock(url, tempPath, {
-      lockTimeout: 120_000, // Wait up to 2 minutes for concurrent downloads
-      retries: 3, // Retry up to 3 times with exponential backoff
-      retryDelay: 1000, // Start with 1 second delay
-      timeout: 300_000, // 5 minute timeout per attempt
+      // Wait up to 2 minutes for concurrent downloads
+      lockTimeout: 120_000,
+      // Retry up to 3 times with exponential backoff
+      retries: 3,
+      // Start with 1 second delay
+      retryDelay: 1000,
+      // 5 minute timeout per attempt
+      timeout: 300_000,
     })
 
     // Read file for checksum verification.

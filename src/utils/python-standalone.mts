@@ -201,10 +201,14 @@ async function downloadPython(pythonDir: string): Promise<void> {
   // This prevents concurrent downloads and provides retry logic.
   try {
     await downloadWithLock(url, tarballPath, {
-      lockTimeout: 180_000, // Wait up to 3 minutes for concurrent downloads
-      retries: 3, // Retry up to 3 times with exponential backoff
-      retryDelay: 1000, // Start with 1 second delay
-      timeout: 600_000, // 10 minute timeout per attempt (large file)
+      // Wait up to 3 minutes for concurrent downloads
+      lockTimeout: 180_000,
+      // Retry up to 3 times with exponential backoff
+      retries: 3,
+      // Start with 1 second delay
+      retryDelay: 1000,
+      // 10 minute timeout per attempt (large file)
+      timeout: 600_000,
     })
   } catch (error) {
     throw new InputError(
