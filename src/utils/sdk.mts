@@ -37,6 +37,8 @@ import constants, {
   CONFIG_KEY_API_BASE_URL,
   CONFIG_KEY_API_PROXY,
   CONFIG_KEY_API_TOKEN,
+  CONFIG_KEY_CACHE_ENABLED,
+  CONFIG_KEY_CACHE_TTL,
   TOKEN_PREFIX_LENGTH,
 } from '../constants.mts'
 
@@ -59,6 +61,37 @@ export function getDefaultApiBaseUrl(): string | undefined {
   }
   const API_V0_URL = constants.API_V0_URL
   return API_V0_URL
+}
+
+// Check if API response caching is enabled.
+export function getDefaultCacheEnabled(): boolean {
+  const envValue = constants.ENV['SOCKET_CLI_CACHE_ENABLED']
+  if (envValue !== undefined) {
+    return envValue === '1' || envValue === 'true'
+  }
+  const configValue = getConfigValueOrUndef(CONFIG_KEY_CACHE_ENABLED)
+  if (typeof configValue === 'boolean') {
+    return configValue
+  }
+  // Default: cache disabled (opt-in)
+  return false
+}
+
+// Get cache TTL in milliseconds.
+export function getDefaultCacheTtl(): number {
+  const envValue = constants.ENV['SOCKET_CLI_CACHE_TTL']
+  if (envValue !== undefined) {
+    const parsed = parseInt(envValue, 10)
+    if (!isNaN(parsed) && parsed > 0) {
+      return parsed
+    }
+  }
+  const configValue = getConfigValueOrUndef(CONFIG_KEY_CACHE_TTL)
+  if (typeof configValue === 'number' && configValue > 0) {
+    return configValue
+  }
+  // Default: 5 minutes
+  return 5 * 60 * 1000
 }
 
 // The Socket API server that should be used for operations.
@@ -120,6 +153,8 @@ export type SetupSdkOptions = {
   apiBaseUrl?: string | undefined
   apiProxy?: string | undefined
   apiToken?: string | undefined
+  cache?: boolean | undefined
+  cacheTtl?: number | undefined
 }
 
 export async function setupSdk(
@@ -151,6 +186,11 @@ export async function setupSdk(
 
   const { apiBaseUrl = getDefaultApiBaseUrl() } = opts
 
+  // Get cache configuration with defaults
+  const cache = opts.cache !== undefined ? opts.cache : getDefaultCacheEnabled()
+  const cacheTtl =
+    opts.cacheTtl !== undefined ? opts.cacheTtl : getDefaultCacheTtl()
+
   // Usage of HttpProxyAgent vs. HttpsProxyAgent based on the chart at:
   // https://github.com/delvedor/hpagent?tab=readme-ov-file#usage
   const ProxyAgent = apiBaseUrl?.startsWith('http:')
@@ -162,6 +202,8 @@ export async function setupSdk(
     data: new SocketSdk(apiToken, {
       ...(apiProxy ? { agent: new ProxyAgent({ proxy: apiProxy }) } : {}),
       ...(apiBaseUrl ? { baseUrl: apiBaseUrl } : {}),
+      cache,
+      cacheTtl,
       timeout: constants.ENV['SOCKET_CLI_API_TIMEOUT'],
       userAgent: createUserAgentFromPkgJson({
         name: constants.ENV['INLINED_SOCKET_CLI_NAME'],

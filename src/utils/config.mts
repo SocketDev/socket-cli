@@ -34,6 +34,8 @@ import constants, {
   CONFIG_KEY_API_BASE_URL,
   CONFIG_KEY_API_PROXY,
   CONFIG_KEY_API_TOKEN,
+  CONFIG_KEY_CACHE_ENABLED,
+  CONFIG_KEY_CACHE_TTL,
   CONFIG_KEY_DEFAULT_ORG,
   CONFIG_KEY_ENFORCED_ORGS,
   CONFIG_KEY_ORG,
@@ -53,6 +55,8 @@ export interface LocalConfig {
   apiKey?: string | null | undefined
   apiProxy?: string | null | undefined
   apiToken?: string | null | undefined
+  cacheEnabled?: boolean | undefined
+  cacheTtl?: number | undefined
   defaultOrg?: string | undefined
   enforcedOrgs?: string[] | readonly string[] | null | undefined
   skipAskToPersistDefaultOrg?: boolean | undefined
@@ -70,6 +74,11 @@ const supportedConfig: Map<keyof LocalConfig, string> = new Map([
   [
     CONFIG_KEY_API_TOKEN,
     'The Socket API token required to access most Socket API endpoints',
+  ],
+  [CONFIG_KEY_CACHE_ENABLED, 'Enable API response caching (default: false)'],
+  [
+    CONFIG_KEY_CACHE_TTL,
+    'Cache TTL in milliseconds (default: 300000 = 5 minutes)',
   ],
   [
     CONFIG_KEY_DEFAULT_ORG,
