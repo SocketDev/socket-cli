@@ -7,9 +7,13 @@ vi.mock('../../utils/api.mts', () => ({
   handleApiCall: vi.fn(),
 }))
 
-vi.mock('../../utils/sdk.mts', () => ({
-  setupSdk: vi.fn(),
-}))
+vi.mock('../../utils/sdk.mts', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../utils/sdk.mts')>()
+  return {
+    ...actual,
+    setupSdk: vi.fn(),
+  }
+})
 
 describe('fetchDeleteRepo', () => {
   it('deletes repository successfully', async () => {
