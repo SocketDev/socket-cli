@@ -25,7 +25,6 @@ import {
   overrideCachedConfig,
   overrideConfigApiToken,
 } from './config.mts'
-import { isDebug } from './debug.mts'
 import { getFlagListOutput, getHelpListOutput } from './output-formatting.mts'
 import { socketPackageLink } from './terminal-link.mts'
 import constants, {
@@ -167,17 +166,12 @@ function getAsciiHeader(
   const { REDACTED } = constants
   const redacting = constants.ENV['VITEST']
 
-  // Version display: show hash in debug mode, otherwise show semantic version.
+  // Version display: show semantic version.
   const fullVersion = constants.ENV['INLINED_SOCKET_CLI_VERSION']
-  const versionHash = constants.ENV['INLINED_SOCKET_CLI_VERSION_HASH']
-  const cliVersion = redacting
-    ? REDACTED
-    : isDebug('socket:cli')
-      ? versionHash
-      : `v${fullVersion}`
+  const cliVersion = redacting ? REDACTED : `v${fullVersion}`
 
   const nodeVersion = redacting ? REDACTED : process.version
-  const showNodeVersion = !redacting && isDebug('socket:cli')
+  const showNodeVersion = false
   const defaultOrg = getConfigValueOrUndef(CONFIG_KEY_DEFAULT_ORG)
   const configFromFlagDot = isConfigFromFlag() ? '*' : '.'
 
@@ -372,7 +366,7 @@ export async function meowWithSubcommands(
   }
 
   if (isRootCommand) {
-    const hiddenDebugFlag = !isDebug('socket:cli')
+    const hiddenDebugFlag = true
 
     flags['compactHeader'] = {
       ...flags['compactHeader'],
@@ -452,10 +446,9 @@ export async function meowWithSubcommands(
 
   const compactMode =
     compactHeaderFlag || (constants.ENV['CI'] && !constants.ENV['VITEST'])
-  const noSpinner = spinnerFlag === false || isDebug('socket:cli')
+  const noSpinner = spinnerFlag === false
 
-  // Use CI spinner style when --no-spinner is passed or debug mode is enabled.
-  // This prevents the spinner from interfering with debug output.
+  // Use CI spinner style when --no-spinner is passed.
   if (noSpinner) {
     constants.spinner.spinner = getCliSpinners('ci')!
   }
@@ -871,10 +864,9 @@ export function meowOrExit(
 
   const compactMode =
     compactHeaderFlag || (constants.ENV['CI'] && !constants.ENV['VITEST'])
-  const noSpinner = spinnerFlag === false || isDebug('socket:cli')
+  const noSpinner = spinnerFlag === false
 
   // Use CI spinner style when --no-spinner is passed.
-  // This prevents the spinner from interfering with debug output.
   if (noSpinner) {
     constants.spinner.spinner = getCliSpinners('ci')!
   }
