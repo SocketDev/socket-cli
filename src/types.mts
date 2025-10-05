@@ -4,6 +4,11 @@ export type StringKeyValueObject = { [key: string]: string }
 
 export type OutputKind = 'json' | 'markdown' | 'text'
 
+// Base options type for fetch functions that use SDK
+export type BaseFetchOptions = {
+  sdkOpts?: import('./utils/sdk.mts').SetupSdkOptions | undefined
+}
+
 // CResult is akin to the "Result" or "Outcome" or "Either" pattern.
 // Main difference might be that it's less strict about the error side of
 // things, but still assumes a message is returned explaining the error.
