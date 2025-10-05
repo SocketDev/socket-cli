@@ -1,3 +1,4 @@
+// eslint-disable-next-line import-x/order -- vi.mock() must come before module imports
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock node:http and node:https modules
@@ -14,10 +15,10 @@ vi.mock('node:https', () => ({
   },
 }))
 
-import { httpGetJson, httpGetText, httpRequest } from './http.mts'
-
 import http from 'node:http'
 import https from 'node:https'
+
+import { httpGetJson, httpGetText, httpRequest } from './http.mts'
 
 import type { IncomingMessage } from 'node:http'
 
