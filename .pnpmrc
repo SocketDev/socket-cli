@@ -1,11 +1,14 @@
-# Delayed dependency updates - wait 7 days (10080 minutes) before allowing new packages.
+# Security: Allowlist for native binaries
+only-built-dependencies[]=@appthreat/sqlite3
+only-built-dependencies[]=esbuild
+only-built-dependencies[]=oxc-resolver
+only-built-dependencies[]=unrs-resolver
+
+# Enable pre/post scripts for the main project (e.g., prepare -> husky)
+enable-pre-post-scripts=true
+
+# Dependency management
 minimumReleaseAge=10080
-
-# Auto-install peers.
 auto-install-peers=true
-
-# Strict peer dependencies.
 strict-peer-dependencies=false
-
-# Save exact versions (like npm --save-exact).
 save-exact=true

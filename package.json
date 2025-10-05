@@ -72,7 +72,7 @@
     "lint:fix": "run-s -c lint:fix:*",
     "lint:fix:oxlint": "oxlint -c=.config/oxlintrc.json --ignore-path=.oxlintignore --tsconfig=tsconfig.json --quiet --fix . | dev-null",
     "lint:fix:biome": "biome format --log-level=none --fix . | dev-null",
-    "lint:fix:eslint": "eslint --config .config/eslint.config.mjs --report-unused-disable-directives --fix .",
+    "lint:fix:eslint": "eslint --config .config/eslint.config.mjs --report-unused-disable-directives --fix . | dev-null",
     "lint-staged": "lint-staged",
     "precommit": "lint-staged",
     "prepare": "husky",
