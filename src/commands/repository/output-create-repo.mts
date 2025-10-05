@@ -1,9 +1,6 @@
 /** @fileoverview Repository create output formatter for Socket CLI. Displays repository integration creation results in JSON or text formats. Shows repository name, default branch, and creation status. */
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-
-import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
-import { serializeResultJson } from '../../utils/serialize-result-json.mts'
+import { outputResult } from '../../utils/output.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
@@ -13,19 +10,10 @@ export function outputCreateRepo(
   requestedName: string,
   outputKind: OutputKind,
 ): void {
-  if (!result.ok) {
-    process.exitCode = result.code ?? 1
-  }
-  if (outputKind === 'json') {
-    logger.log(serializeResultJson(result))
-    return
-  }
-  if (!result.ok) {
-    logger.fail(failMsgWithBadge(result.message, result.cause))
-    return
-  }
-  const { slug } = result.data
-  logger.success(
-    `OK. Repository created successfully, slug: \`${slug}\`${slug !== requestedName ? ' (Warning: slug is not the same as name that was requested!)' : ''}`,
-  )
+  outputResult(result, outputKind, {
+    success: data => {
+      const { slug } = data
+      return `OK. Repository created successfully, slug: \`${slug}\`${slug !== requestedName ? ' (Warning: slug is not the same as name that was requested!)' : ''}`
+    },
+  })
 }

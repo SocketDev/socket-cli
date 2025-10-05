@@ -1,10 +1,8 @@
 /** @fileoverview Organization dependencies API fetcher for Socket CLI. Retrieves organization-wide dependency list from Socket API. Returns dependency metadata including usage counts across repositories. */
 
-import { handleApiCall } from '../../utils/api.mts'
-import { setupSdk } from '../../utils/sdk.mts'
+import { withSdk } from '../../utils/sdk.mts'
 
-import type { CResult } from '../../types.mts'
-import type { SetupSdkOptions } from '../../utils/sdk.mts'
+import type { BaseFetchOptions, CResult } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export type FetchDependenciesConfig = {
@@ -12,31 +10,20 @@ export type FetchDependenciesConfig = {
   offset: number
 }
 
-export type FetchDependenciesOptions = {
-  sdkOpts?: SetupSdkOptions | undefined
-}
+export type FetchDependenciesOptions = BaseFetchOptions
 
 export async function fetchDependencies(
   config: FetchDependenciesConfig,
   options?: FetchDependenciesOptions | undefined,
 ): Promise<CResult<SocketSdkSuccessResult<'searchDependencies'>['data']>> {
-  const { sdkOpts } = {
-    __proto__: null,
-    ...options,
-  } as FetchDependenciesOptions
-
-  const sockSdkCResult = await setupSdk(sdkOpts)
-  if (!sockSdkCResult.ok) {
-    return sockSdkCResult
-  }
-  const sockSdk = sockSdkCResult.data
-
   const { limit, offset } = {
     __proto__: null,
     ...config,
   } as FetchDependenciesConfig
 
-  return await handleApiCall(sockSdk.searchDependencies({ limit, offset }), {
-    description: 'organization dependencies',
-  })
+  return await withSdk(
+    sdk => sdk.searchDependencies({ limit, offset }),
+    'organization dependencies',
+    options,
+  )
 }

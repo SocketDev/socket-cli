@@ -1,10 +1,8 @@
 /** @fileoverview Repository list API fetcher for Socket CLI. Retrieves paginated repository list from Socket API. Supports sorting, filtering, and pagination for organization repositories. */
 
-import { handleApiCall } from '../../utils/api.mts'
-import { setupSdk } from '../../utils/sdk.mts'
+import { withSdk } from '../../utils/sdk.mts'
 
-import type { CResult } from '../../types.mts'
-import type { SetupSdkOptions } from '../../utils/sdk.mts'
+import type { BaseFetchOptions, CResult } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export type FetchListReposConfig = {
@@ -15,9 +13,7 @@ export type FetchListReposConfig = {
   sort: string
 }
 
-export type FetchListReposOptions = {
-  sdkOpts?: SetupSdkOptions | undefined
-}
+export type FetchListReposOptions = BaseFetchOptions
 
 export async function fetchListRepos(
   config: FetchListReposConfig,
@@ -28,24 +24,15 @@ export async function fetchListRepos(
     ...config,
   } as FetchListReposConfig
 
-  const { sdkOpts } = {
-    __proto__: null,
-    ...options,
-  } as FetchListReposOptions
-
-  const sockSdkCResult = await setupSdk(sdkOpts)
-  if (!sockSdkCResult.ok) {
-    return sockSdkCResult
-  }
-  const sockSdk = sockSdkCResult.data
-
-  return await handleApiCall(
-    sockSdk.getOrgRepoList(orgSlug, {
-      sort,
-      direction,
-      per_page: String(perPage),
-      page: String(page),
-    }),
-    { description: 'list of repositories' },
+  return await withSdk(
+    sdk =>
+      sdk.getOrgRepoList(orgSlug, {
+        sort,
+        direction,
+        per_page: String(perPage),
+        page: String(page),
+      }),
+    'list of repositories',
+    options,
   )
 }

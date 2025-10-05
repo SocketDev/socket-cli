@@ -6,8 +6,7 @@ import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
-import { serializeResultJson } from '../../utils/serialize-result-json.mts'
+import { outputResult } from '../../utils/output.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
@@ -24,20 +23,12 @@ export async function outputDependencies(
     outputKind: OutputKind
   },
 ): Promise<void> {
-  if (!result.ok) {
-    process.exitCode = result.code ?? 1
-  }
-
-  if (outputKind === 'json') {
-    logger.log(serializeResultJson(result))
-    return
-  }
-  if (!result.ok) {
-    logger.fail(failMsgWithBadge(result.message, result.cause))
-    return
-  }
-
-  outputMarkdown(result.data, { limit, offset })
+  outputResult(result, outputKind, {
+    success: data => {
+      outputMarkdown(data, { limit, offset })
+      return ''
+    },
+  })
 }
 
 function outputMarkdown(

@@ -41,6 +41,11 @@ import constants, {
 } from '../constants.mts'
 
 import type { CResult } from '../types.mts'
+import type {
+  SocketSdkOperations,
+  SocketSdkResult,
+  SocketSdkSuccessResult,
+} from '@socketsecurity/sdk'
 
 const TOKEN_VISIBLE_LENGTH = 5
 
@@ -49,7 +54,11 @@ export function getDefaultApiBaseUrl(): string | undefined {
   const baseUrl =
     constants.ENV['SOCKET_CLI_API_BASE_URL'] ||
     getConfigValueOrUndef(CONFIG_KEY_API_BASE_URL)
-  return isUrl(baseUrl) ? baseUrl : undefined
+  if (isUrl(baseUrl)) {
+    return baseUrl
+  }
+  const API_V0_URL = constants.API_V0_URL
+  return API_V0_URL
 }
 
 // The Socket API server that should be used for operations.
@@ -161,6 +170,29 @@ export async function setupSdk(
       }),
     }),
   }
+}
+
+/**
+ * Execute SDK operation with automatic setup and error handling.
+ * Consolidates the repetitive pattern of SDK initialization and API call handling.
+ */
+export async function withSdk<T extends SocketSdkOperations>(
+  operation: (sdk: SocketSdk) => Promise<SocketSdkResult<T>>,
+  description: string,
+  options?: { sdkOpts?: SetupSdkOptions | undefined } | undefined,
+): Promise<CResult<SocketSdkSuccessResult<T>['data']>> {
+  const { sdkOpts } = { __proto__: null, ...options } as {
+    sdkOpts?: SetupSdkOptions | undefined
+  }
+
+  const sockSdkCResult = await setupSdk(sdkOpts)
+  if (!sockSdkCResult.ok) {
+    return sockSdkCResult
+  }
+
+  // Import handleApiCall - using dynamic import to avoid circular dependency
+  const { handleApiCall } = await import('./api.mts')
+  return await handleApiCall(operation(sockSdkCResult.data), { description })
 }
 
 /**

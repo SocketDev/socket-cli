@@ -1,10 +1,8 @@
 /** @fileoverview Repository update API fetcher for Socket CLI. Updates repository integration settings via Socket API. Modifies default branch, visibility, and scanning configuration. */
 
-import { handleApiCall } from '../../utils/api.mts'
-import { setupSdk } from '../../utils/sdk.mts'
+import { withSdk } from '../../utils/sdk.mts'
 
-import type { CResult } from '../../types.mts'
-import type { SetupSdkOptions } from '../../utils/sdk.mts'
+import type { BaseFetchOptions, CResult } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export type FetchUpdateRepoConfig = {
@@ -16,9 +14,7 @@ export type FetchUpdateRepoConfig = {
   visibility: string
 }
 
-export type FetchUpdateRepoOptions = {
-  sdkOpts?: SetupSdkOptions | undefined
-}
+export type FetchUpdateRepoOptions = BaseFetchOptions
 
 export async function fetchUpdateRepo(
   config: FetchUpdateRepoConfig,
@@ -33,26 +29,17 @@ export async function fetchUpdateRepo(
     visibility,
   } = { __proto__: null, ...config } as FetchUpdateRepoConfig
 
-  const { sdkOpts } = {
-    __proto__: null,
-    ...options,
-  } as FetchUpdateRepoOptions
-
-  const sockSdkCResult = await setupSdk(sdkOpts)
-  if (!sockSdkCResult.ok) {
-    return sockSdkCResult
-  }
-  const sockSdk = sockSdkCResult.data
-
-  return await handleApiCall(
-    sockSdk.updateOrgRepo(orgSlug, repoName, {
-      default_branch: defaultBranch,
-      description,
-      homepage,
-      name: repoName,
-      orgSlug,
-      visibility,
-    }),
-    { description: 'to update a repository' },
+  return await withSdk(
+    sdk =>
+      sdk.updateOrgRepo(orgSlug, repoName, {
+        default_branch: defaultBranch,
+        description,
+        homepage,
+        name: repoName,
+        orgSlug,
+        visibility,
+      }),
+    'to update a repository',
+    options,
   )
 }

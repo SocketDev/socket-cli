@@ -3,7 +3,6 @@
  * Provides consistent API communication with error handling and permissions management.
  *
  * Key Functions:
- * - getDefaultApiBaseUrl: Get configured API endpoint
  * - getErrorMessageForHttpStatusCode: User-friendly HTTP error messages
  * - handleApiCall: Execute Socket SDK API calls with error handling
  * - handleApiCallNoSpinner: Execute API calls without UI spinner
@@ -15,17 +14,14 @@
  * - Integration with debug helpers for API response logging
  *
  * Configuration:
- * - Respects SOCKET_CLI_API_BASE_URL environment variable
- * - Falls back to configured apiBaseUrl or default API_V0_URL
+ * - API base URL resolved via sdk.mts getDefaultApiBaseUrl()
  */
 
 import { messageWithCauses } from 'pony-cause'
 import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
-import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
-import { getConfigValueOrUndef } from './config.mts'
 import {
   debugApiResponse,
   debugDir,
@@ -35,7 +31,6 @@ import {
 import { buildErrorCause } from './errors.mts'
 import { githubRepoLink, webLink } from './terminal-link.mts'
 import constants, {
-  CONFIG_KEY_API_BASE_URL,
   EMPTY_VALUE,
   HTTP_STATUS_BAD_REQUEST,
   HTTP_STATUS_FORBIDDEN,
@@ -45,7 +40,7 @@ import constants, {
   HTTP_STATUS_UNAUTHORIZED,
 } from '../constants.mts'
 import { getRequirements, getRequirementsKey } from './requirements.mts'
-import { getDefaultApiToken } from './sdk.mts'
+import { getDefaultApiBaseUrl, getDefaultApiToken } from './sdk.mts'
 
 import type { CResult } from '../types.mts'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
@@ -102,18 +97,6 @@ function logPermissionsFor403(cmdPath?: string | undefined): void {
   )
   logger.error('   3. Re-run your command')
   logger.error('')
-}
-
-// The Socket API server that should be used for operations.
-export function getDefaultApiBaseUrl(): string | undefined {
-  const baseUrl =
-    constants.ENV['SOCKET_CLI_API_BASE_URL'] ||
-    getConfigValueOrUndef(CONFIG_KEY_API_BASE_URL)
-  if (isNonEmptyString(baseUrl)) {
-    return baseUrl
-  }
-  const API_V0_URL = constants.API_V0_URL
-  return API_V0_URL
 }
 
 /**

@@ -3,14 +3,12 @@
 import { handleApiCall } from '../../utils/api.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 
-import type { CResult } from '../../types.mts'
-import type { SetupSdkOptions } from '../../utils/sdk.mts'
+import type { BaseFetchOptions, CResult } from '../../types.mts'
 import type { SocketSdk, SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
-export type FetchOrganizationOptions = {
+export type FetchOrganizationOptions = BaseFetchOptions & {
   description?: string | undefined
   sdk?: SocketSdk | undefined
-  sdkOpts?: SetupSdkOptions | undefined
 }
 
 export type EnterpriseOrganization = Omit<Organization, 'plan'> & {
@@ -40,6 +38,7 @@ export async function fetchOrganization(
     ...options,
   } as FetchOrganizationOptions
 
+  // Special case: if sdk is already provided, use it directly
   let sockSdk = sdk
   if (!sockSdk) {
     const sockSdkCResult = await setupSdk(sdkOpts)

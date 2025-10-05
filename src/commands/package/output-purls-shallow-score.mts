@@ -3,11 +3,9 @@
 import colors from 'yoctocolors-cjs'
 
 import { joinAnd } from '@socketsecurity/registry/lib/arrays'
-import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { debugFn } from '../../utils/debug.mts'
-import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
-import { serializeResultJson } from '../../utils/serialize-result-json.mts'
+import { outputResult } from '../../utils/output.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketArtifact } from '../../utils/alert/artifact.mts'
@@ -40,29 +38,17 @@ export function outputPurlsShallowScore(
   result: CResult<SocketArtifact[]>,
   outputKind: OutputKind,
 ): void {
-  if (!result.ok) {
-    process.exitCode = result.code ?? 1
-  }
+  outputResult(result, outputKind, {
+    success: data => {
+      const { missing, rows } = preProcess(data, purls)
 
-  if (outputKind === 'json') {
-    logger.log(serializeResultJson(result))
-    return
-  }
-  if (!result.ok) {
-    logger.fail(failMsgWithBadge(result.message, result.cause))
-    return
-  }
+      if (outputKind === 'markdown') {
+        return generateMarkdownReport(rows, missing)
+      }
 
-  const { missing, rows } = preProcess(result.data, purls)
-
-  if (outputKind === 'markdown') {
-    const md = generateMarkdownReport(rows, missing)
-    logger.log(md)
-    return
-  }
-
-  const txt = generateTextReport(rows, missing)
-  logger.log(txt)
+      return generateTextReport(rows, missing)
+    },
+  })
 }
 
 function formatReportCard(

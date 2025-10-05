@@ -3,8 +3,7 @@
 import { handleApiCall } from '../../utils/api.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 
-import type { CResult } from '../../types.mts'
-import type { SetupSdkOptions } from '../../utils/sdk.mts'
+import type { BaseFetchOptions, CResult } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export type FetchCreateOrgFullScanConfigs = {
@@ -16,11 +15,10 @@ export type FetchCreateOrgFullScanConfigs = {
   repoName: string
 }
 
-export type FetchCreateOrgFullScanOptions = {
+export type FetchCreateOrgFullScanOptions = BaseFetchOptions & {
   cwd?: string | undefined
   defaultBranch?: boolean | undefined
   pendingHead?: boolean | undefined
-  sdkOpts?: SetupSdkOptions | undefined
   tmp?: boolean | undefined
 }
 

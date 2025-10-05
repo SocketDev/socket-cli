@@ -1,33 +1,20 @@
 /** @fileoverview Scan metadata API fetcher for Socket CLI. Retrieves scan configuration metadata from Socket API including supported file types and scan parameters. */
 
-import { handleApiCall } from '../../utils/api.mts'
-import { setupSdk } from '../../utils/sdk.mts'
+import { withSdk } from '../../utils/sdk.mts'
 
-import type { CResult } from '../../types.mts'
-import type { SetupSdkOptions } from '../../utils/sdk.mts'
+import type { BaseFetchOptions, CResult } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
-export type FetchScanMetadataOptions = {
-  sdkOpts?: SetupSdkOptions | undefined
-}
+export type FetchScanMetadataOptions = BaseFetchOptions
 
 export async function fetchScanMetadata(
   orgSlug: string,
   scanId: string,
   options?: FetchScanMetadataOptions | undefined,
 ): Promise<CResult<SocketSdkSuccessResult<'getOrgFullScanMetadata'>['data']>> {
-  const { sdkOpts } = {
-    __proto__: null,
-    ...options,
-  } as FetchScanMetadataOptions
-
-  const sockSdkCResult = await setupSdk(sdkOpts)
-  if (!sockSdkCResult.ok) {
-    return sockSdkCResult
-  }
-  const sockSdk = sockSdkCResult.data
-
-  return await handleApiCall(sockSdk.getOrgFullScanMetadata(orgSlug, scanId), {
-    description: 'meta data for a full scan',
-  })
+  return await withSdk(
+    sdk => sdk.getOrgFullScanMetadata(orgSlug, scanId),
+    'meta data for a full scan',
+    options,
+  )
 }

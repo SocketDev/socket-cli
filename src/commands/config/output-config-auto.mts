@@ -5,7 +5,7 @@ import { select } from '@socketsecurity/registry/lib/prompts'
 
 import { isConfigFromFlag, updateConfigValue } from '../../utils/config.mts'
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
-import { serializeResultJson } from '../../utils/serialize-result-json.mts'
+import { outputResult } from '../../utils/output.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
 import type { LocalConfig } from '../../utils/config.mts'
@@ -15,19 +15,20 @@ export async function outputConfigAuto(
   result: CResult<unknown>,
   outputKind: OutputKind,
 ) {
-  if (!result.ok) {
-    process.exitCode = result.code ?? 1
-  }
+  outputResult(result, outputKind, {
+    success: async data => {
+      await handleSuccess(key, data, outputKind, result)
+      return ''
+    },
+  })
+}
 
-  if (outputKind === 'json') {
-    logger.log(serializeResultJson(result))
-    return
-  }
-  if (!result.ok) {
-    logger.fail(failMsgWithBadge(result.message, result.cause))
-    return
-  }
-
+async function handleSuccess(
+  key: keyof LocalConfig,
+  data: unknown,
+  outputKind: OutputKind,
+  result: CResult<unknown>,
+) {
   if (outputKind === 'markdown') {
     logger.log(`# Auto discover config value`)
     logger.log('')
@@ -35,12 +36,10 @@ export async function outputConfigAuto(
       `Attempted to automatically discover the value for config key: "${key}"`,
     )
     logger.log('')
-    if (result.ok) {
-      logger.log(`The discovered value is: "${result.data}"`)
-      if (result.message) {
-        logger.log('')
-        logger.log(result.message)
-      }
+    logger.log(`The discovered value is: "${data}"`)
+    if (result.message) {
+      logger.log('')
+      logger.log(result.message)
     }
     logger.log('')
   } else {
@@ -48,7 +47,7 @@ export async function outputConfigAuto(
       logger.log(result.message)
       logger.log('')
     }
-    logger.log(`- ${key}: ${result.data}`)
+    logger.log(`- ${key}: ${data}`)
     logger.log('')
 
     if (isConfigFromFlag()) {
@@ -59,7 +58,7 @@ export async function outputConfigAuto(
       const proceed = await select({
         message:
           'Would you like to update the default org in local config to this value?',
-        choices: (Array.isArray(result.data) ? result.data : [result.data])
+        choices: (Array.isArray(data) ? data : [data])
           .map(slug => ({
             name: 'Yes [' + slug + ']',
             value: slug,
@@ -88,7 +87,7 @@ export async function outputConfigAuto(
       const proceed = await select({
         message:
           'Would you like to update the enforced orgs in local config to this value?',
-        choices: (Array.isArray(result.data) ? result.data : [result.data])
+        choices: (Array.isArray(data) ? data : [data])
           .map(slug => ({
             name: 'Yes [' + slug + ']',
             value: slug,
