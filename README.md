@@ -196,6 +196,35 @@ console.log(formatSimpleTable(data, columns))
 // react    18.2.0        2
 ```
 
+### Intelligent caching strategies
+
+Optimize API performance with smart caching based on data volatility:
+
+```typescript
+import { getCacheStrategy, getRecommendedTtl, warmCaches } from './src/utils/cache-strategies.mts'
+
+// Get recommended TTL for an endpoint
+const ttl = getRecommendedTtl('/npm/lodash/4.17.21/score')
+// Returns: 900000 (15 minutes for stable package info)
+
+// Check cache strategy
+const strategy = getCacheStrategy('/scans/abc123')
+// Returns: { ttl: 120000, volatile: true } (2 minutes for active scans)
+
+// Warm critical caches on startup
+await warmCaches(sdk, [
+  '/users/me',
+  '/organizations/my-org/settings'
+])
+```
+
+**Built-in strategies:**
+- Package info: 15min (stable data)
+- Package issues: 5min (moderate volatility)
+- Scan results: 2min (high volatility)
+- Org settings: 30min (very stable)
+- User info: 1hr (most stable)
+
 ### Enhanced error handling
 
 Handle errors with actionable recovery suggestions:
