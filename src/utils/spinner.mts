@@ -18,6 +18,13 @@ type SpinnerState = {
   isSpinning: boolean
   message: string
   paused: boolean
+  progress?: ProgressInfo | undefined
+}
+
+type ProgressInfo = {
+  current: number
+  total: number
+  unit?: string | undefined
 }
 
 const spinnerStack: SpinnerState[] = []
@@ -30,6 +37,27 @@ function getCurrentSpinner(): SpinnerState | undefined {
 }
 
 /**
+ * Format progress information.
+ */
+function formatProgress(progress: ProgressInfo): string {
+  const { current, total, unit } = progress
+  const percentage = Math.round((current / total) * 100)
+  const bar = renderProgressBar(percentage)
+  const count = unit ? `${current}/${total} ${unit}` : `${current}/${total}`
+  return `${bar} ${percentage}% (${count})`
+}
+
+/**
+ * Render a progress bar.
+ */
+function renderProgressBar(percentage: number, width: number = 20): string {
+  const filled = Math.round((percentage / 100) * width)
+  const empty = width - filled
+  const bar = '█'.repeat(filled) + '░'.repeat(empty)
+  return colors.cyan(bar)
+}
+
+/**
  * Render spinner frame to stderr.
  */
 function renderSpinner(state: SpinnerState): void {
@@ -38,7 +66,12 @@ function renderSpinner(state: SpinnerState): void {
   }
 
   const frame = SPINNER_FRAMES[state.frame % SPINNER_FRAMES.length]
-  const text = `${colors.cyan(frame ?? '')} ${state.message}`
+  let text = `${colors.cyan(frame ?? '')} ${state.message}`
+
+  // Add progress if available
+  if (state.progress) {
+    text += ` ${formatProgress(state.progress)}`
+  }
 
   // Clear line and write spinner.
   process.stderr.write(`\r\x1b[K${text}`)
@@ -209,6 +242,53 @@ export function updateSpinnerMessage(message: string): void {
   if (current) {
     current.message = message
     renderSpinner(current)
+  }
+}
+
+/**
+ * Update progress of current active spinner.
+ *
+ * @param current - Current progress value
+ * @param total - Total progress value
+ * @param unit - Optional unit label (e.g., 'files', 'packages')
+ *
+ * @example
+ * const stop = startSpinner('Processing files')
+ * for (let i = 0; i < files.length; i++) {
+ *   updateSpinnerProgress(i + 1, files.length, 'files')
+ *   await processFile(files[i])
+ * }
+ * stop()
+ */
+export function updateSpinnerProgress(
+  current: number,
+  total: number,
+  unit?: string | undefined,
+): void {
+  const spinner = getCurrentSpinner()
+  if (spinner) {
+    spinner.progress = { current, total, unit }
+    renderSpinner(spinner)
+  }
+}
+
+/**
+ * Increment progress of current active spinner by 1.
+ *
+ * @example
+ * const stop = startSpinner('Scanning packages')
+ * updateSpinnerProgress(0, packages.length, 'packages')
+ * for (const pkg of packages) {
+ *   await scanPackage(pkg)
+ *   incrementSpinnerProgress()
+ * }
+ * stop()
+ */
+export function incrementSpinnerProgress(): void {
+  const spinner = getCurrentSpinner()
+  if (spinner?.progress) {
+    spinner.progress.current++
+    renderSpinner(spinner)
   }
 }
 

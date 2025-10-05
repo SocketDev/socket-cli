@@ -261,12 +261,10 @@ export function debugGit(
  * await fetchPackages()
  * stop() // Logs: "api-call: Fetching packages completed in 234ms"
  */
-export function debugTimer(
-  namespace: string,
-  label: string,
-): () => void {
+export function debugTimer(namespace: string, label: string): () => void {
   if (!isDebug(namespace) && !isDebug('perf')) {
-    return () => {} // No-op if debug disabled
+    // No-op if debug disabled
+    return () => {}
   }
 
   const start = performance.now()
@@ -314,7 +312,7 @@ export function debugCommand(
   const fullCommand = `${command} ${args.join(' ')}`
 
   if (result) {
-    const { exitCode = 0, duration } = result
+    const { duration, exitCode = 0 } = result
     const status = exitCode === 0 ? 'success' : 'failed'
     const timing = duration ? ` (${Math.round(duration)}ms)` : ''
     debugFn('command', `Command ${status}: ${fullCommand}${timing}`)
@@ -355,12 +353,14 @@ export function debugAuth(
 export function debugNetwork(
   method: string,
   url: string,
-  result?: {
-    status?: number
-    duration?: number
-    cached?: boolean
-    error?: unknown
-  } | undefined,
+  result?:
+    | {
+        status?: number
+        duration?: number
+        cached?: boolean
+        error?: unknown
+      }
+    | undefined,
 ): void {
   if (!isDebug('network')) {
     return
@@ -369,7 +369,7 @@ export function debugNetwork(
   const request = `${method} ${url}`
 
   if (result) {
-    const { status, duration, cached, error } = result
+    const { cached, duration, error, status } = result
 
     if (error) {
       debugDir('network', {
