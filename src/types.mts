@@ -4,7 +4,7 @@ export type StringKeyValueObject = { [key: string]: string }
 
 export type OutputKind = 'json' | 'markdown' | 'text'
 
-// Base options type for fetch functions that use SDK
+// Base options type for fetch functions that use SDK.
 export type BaseFetchOptions = {
   sdkOpts?: import('./utils/sdk.mts').SetupSdkOptions | undefined
 }
