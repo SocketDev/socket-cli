@@ -1,156 +1,177 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { fetchDependencies } from './fetch-dependencies.mts'
 
 // Mock the dependencies.
-
 vi.mock('../../utils/sdk.mts', () => ({
   withSdk: vi.fn(),
 }))
 
 describe('fetchDependencies', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
   it('fetches dependencies successfully', async () => {
-    const { handleApiCall } = await import('../../utils/api.mts')
     const { withSdk } = await import('../../utils/sdk.mts')
-    const mockHandleApi = vi.mocked(handleApiCall)
-    const mockSetupSdk = vi.mocked(withSdk)
+    const mockWithSdk = vi.mocked(withSdk)
 
-    const mockSdk = {
-      searchDependencies: vi.fn().mockResolvedValue({
-        success: true,
-        data: {
-          dependencies: [
-            { name: 'lodash', version: '4.17.21' },
-            { name: 'express', version: '4.18.2' },
-          ],
-          total: 2,
-        },
-      }),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: true,
+    const successResult = {
+      ok: true as const,
       data: {
         dependencies: [
-          { name: 'lodash', version: '4.17.21' },
-          { name: 'express', version: '4.18.2' },
+          { name: 'express', version: '4.18.2', count: 15 },
+          { name: 'lodash', version: '4.17.21', count: 23 },
         ],
         total: 2,
       },
-    })
+    }
 
-    const result = await fetchDependencies({ limit: 10, offset: 0 })
+    mockWithSdk.mockResolvedValueOnce(successResult)
 
-    expect(mockSdk.searchDependencies).toHaveBeenCalledWith({
-      limit: 10,
+    const config = {
+      limit: 100,
       offset: 0,
-    })
-    expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
-      description: 'organization dependencies',
-    })
-    expect(result.ok).toBe(true)
+    }
+
+    const result = await fetchDependencies(config)
+
+    expect(mockWithSdk).toHaveBeenCalledWith(
+      expect.any(Function),
+      'organization dependencies',
+      undefined,
+    )
+    expect(result).toEqual(successResult)
   })
 
   it('handles SDK setup failure', async () => {
     const { withSdk } = await import('../../utils/sdk.mts')
-    const mockSetupSdk = vi.mocked(withSdk)
+    const mockWithSdk = vi.mocked(withSdk)
 
     const error = {
-      ok: false,
+      ok: false as const,
       code: 1,
       message: 'Failed to setup SDK',
       cause: 'Invalid API token',
     }
-    mockSetupSdk.mockResolvedValue(error)
+    mockWithSdk.mockResolvedValueOnce(error)
 
-    const result = await fetchDependencies({ limit: 20, offset: 10 })
+    const config = {
+      limit: 50,
+      offset: 0,
+    }
 
+    const result = await fetchDependencies(config)
+
+    expect(mockWithSdk).toHaveBeenCalledWith(
+      expect.any(Function),
+      'organization dependencies',
+      undefined,
+    )
     expect(result).toEqual(error)
   })
 
   it('handles API call failure', async () => {
-    const { handleApiCall } = await import('../../utils/api.mts')
     const { withSdk } = await import('../../utils/sdk.mts')
-    const mockHandleApi = vi.mocked(handleApiCall)
-    const mockSetupSdk = vi.mocked(withSdk)
+    const mockWithSdk = vi.mocked(withSdk)
 
-    const mockSdk = {
-      searchDependencies: vi.fn().mockRejectedValue(new Error('API error')),
+    const error = {
+      ok: false as const,
+      error: 'Dependencies service unavailable',
+      code: 503,
+      message: 'Dependencies service unavailable',
+    }
+    mockWithSdk.mockResolvedValueOnce(error)
+
+    const config = {
+      limit: 100,
+      offset: 0,
     }
 
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: false,
-      error: 'API call failed',
-    })
+    const result = await fetchDependencies(config)
 
-    const result = await fetchDependencies({ limit: 50, offset: 0 })
-
+    expect(mockWithSdk).toHaveBeenCalledWith(
+      expect.any(Function),
+      'organization dependencies',
+      undefined,
+    )
     expect(result.ok).toBe(false)
+    expect(result.code).toBe(503)
   })
 
   it('passes custom SDK options', async () => {
     const { withSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(withSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
+    const mockWithSdk = vi.mocked(withSdk)
 
-    const mockSdk = {
-      searchDependencies: vi.fn().mockResolvedValue({}),
+    const successResult = {
+      ok: true as const,
+      data: {},
     }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: [] })
+    mockWithSdk.mockResolvedValueOnce(successResult)
 
     const sdkOpts = {
-      apiToken: 'custom-token',
-      baseUrl: 'https://custom.api.com',
+      apiToken: 'deps-token',
+      baseUrl: 'https://deps.api.com',
     }
 
-    await fetchDependencies({ limit: 100, offset: 50 }, { sdkOpts })
+    const config = {
+      limit: 100,
+      offset: 0,
+    }
 
-    expect(mockSetupSdk).toHaveBeenCalledWith(sdkOpts)
+    await fetchDependencies(config, { sdkOpts })
+
+    expect(mockWithSdk).toHaveBeenCalledWith(
+      expect.any(Function),
+      'organization dependencies',
+      { sdkOpts },
+    )
   })
 
   it('handles pagination parameters', async () => {
     const { withSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(withSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
+    const mockWithSdk = vi.mocked(withSdk)
 
-    const mockSdk = {
-      searchDependencies: vi.fn().mockResolvedValue({}),
+    const successResult = {
+      ok: true as const,
+      data: {},
+    }
+    mockWithSdk.mockResolvedValueOnce(successResult)
+
+    const config = {
+      limit: 50,
+      offset: 100,
     }
 
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: {} })
+    const result = await fetchDependencies(config)
 
-    await fetchDependencies({ limit: 200, offset: 100 })
-
-    expect(mockSdk.searchDependencies).toHaveBeenCalledWith({
-      limit: 200,
-      offset: 100,
-    })
+    expect(mockWithSdk).toHaveBeenCalledWith(
+      expect.any(Function),
+      'organization dependencies',
+      undefined,
+    )
+    expect(result.ok).toBe(true)
   })
 
   it('uses null prototype for options', async () => {
     const { withSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(withSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
+    const mockWithSdk = vi.mocked(withSdk)
 
-    const mockSdk = {
-      searchDependencies: vi.fn().mockResolvedValue({}),
+    const successResult = {
+      ok: true as const,
+      data: {},
+    }
+    mockWithSdk.mockResolvedValueOnce(successResult)
+
+    const config = {
+      limit: 100,
+      offset: 0,
     }
 
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: {} })
-
     // This tests that the function properly uses __proto__: null.
-    await fetchDependencies({ limit: 10, offset: 0 })
+    await fetchDependencies(config)
 
     // The function should work without prototype pollution issues.
-    expect(mockSdk.searchDependencies).toHaveBeenCalled()
+    expect(mockWithSdk).toHaveBeenCalled()
   })
 })

@@ -1,116 +1,97 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { fetchQuota } from './fetch-quota.mts'
 
 // Mock the dependencies.
-
 vi.mock('../../utils/sdk.mts', () => ({
   withSdk: vi.fn(),
 }))
 
 describe('fetchQuota', () => {
-  it('fetches quota successfully', async () => {
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const { withSdk } = await import('../../utils/sdk.mts')
-    const mockHandleApi = vi.mocked(handleApiCall)
-    const mockSetupSdk = vi.mocked(withSdk)
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
 
-    const mockSdk = {
-      getQuota: vi.fn().mockResolvedValue({
-        success: true,
-        data: {
-          scans: {
-            used: 250,
-            limit: 1000,
-            percentage: 25,
-          },
-          packages: {
-            used: 500,
-            limit: 2000,
-            percentage: 25,
-          },
-          repositories: {
-            used: 10,
-            limit: 50,
-            percentage: 20,
-          },
-          period_start: '2025-01-01T00:00:00Z',
-          period_end: '2025-01-31T23:59:59Z',
-        },
-      }),
+  it('fetches quota successfully', async () => {
+    const { withSdk } = await import('../../utils/sdk.mts')
+    const mockWithSdk = vi.mocked(withSdk)
+
+    const successResult = {
+      ok: true as const,
+      data: {
+        used: 850,
+        limit: 1000,
+        remaining: 150,
+        resetDate: '2025-02-01T00:00:00Z',
+      },
     }
 
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: true,
-      data: {
-        scans: { used: 250, limit: 1000 },
-        packages: { used: 500, limit: 2000 },
-        repositories: { used: 10, limit: 50 },
-      },
-    })
+    mockWithSdk.mockResolvedValueOnce(successResult)
 
     const result = await fetchQuota()
 
-    expect(mockSdk.getQuota).toHaveBeenCalledWith()
-    expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
-      description: 'token quota',
-    })
-    expect(result.ok).toBe(true)
+    expect(mockWithSdk).toHaveBeenCalledWith(
+      expect.any(Function),
+      'token quota',
+      undefined,
+    )
+    expect(result).toEqual(successResult)
   })
 
   it('handles SDK setup failure', async () => {
     const { withSdk } = await import('../../utils/sdk.mts')
-    const mockSetupSdk = vi.mocked(withSdk)
+    const mockWithSdk = vi.mocked(withSdk)
 
     const error = {
-      ok: false,
+      ok: false as const,
       code: 1,
       message: 'Failed to setup SDK',
-      cause: 'Configuration error',
+      cause: 'Invalid API token',
     }
-    mockSetupSdk.mockResolvedValue(error)
+    mockWithSdk.mockResolvedValueOnce(error)
 
     const result = await fetchQuota()
 
+    expect(mockWithSdk).toHaveBeenCalledWith(
+      expect.any(Function),
+      'token quota',
+      undefined,
+    )
     expect(result).toEqual(error)
   })
 
   it('handles API call failure', async () => {
-    const { handleApiCall } = await import('../../utils/api.mts')
     const { withSdk } = await import('../../utils/sdk.mts')
-    const mockHandleApi = vi.mocked(handleApiCall)
-    const mockSetupSdk = vi.mocked(withSdk)
+    const mockWithSdk = vi.mocked(withSdk)
 
-    const mockSdk = {
-      getQuota: vi.fn().mockRejectedValue(new Error('Quota unavailable')),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: false,
-      error: 'Quota information unavailable',
+    const error = {
+      ok: false as const,
+      error: 'Quota service unavailable',
       code: 503,
-    })
+      message: 'Quota service unavailable',
+    }
+    mockWithSdk.mockResolvedValueOnce(error)
 
     const result = await fetchQuota()
 
+    expect(mockWithSdk).toHaveBeenCalledWith(
+      expect.any(Function),
+      'token quota',
+      undefined,
+    )
     expect(result.ok).toBe(false)
     expect(result.code).toBe(503)
   })
 
   it('passes custom SDK options', async () => {
     const { withSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(withSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
+    const mockWithSdk = vi.mocked(withSdk)
 
-    const mockSdk = {
-      getQuota: vi.fn().mockResolvedValue({}),
+    const successResult = {
+      ok: true as const,
+      data: {},
     }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: {} })
+    mockWithSdk.mockResolvedValueOnce(successResult)
 
     const sdkOpts = {
       apiToken: 'quota-token',
@@ -119,83 +100,83 @@ describe('fetchQuota', () => {
 
     await fetchQuota({ sdkOpts })
 
-    expect(mockSetupSdk).toHaveBeenCalledWith(sdkOpts)
+    expect(mockWithSdk).toHaveBeenCalledWith(
+      expect.any(Function),
+      'token quota',
+      { sdkOpts },
+    )
   })
 
-  it('handles quota at limit', async () => {
+  it('handles zero quota remaining', async () => {
     const { withSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(withSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
+    const mockWithSdk = vi.mocked(withSdk)
 
-    const mockSdk = {
-      getQuota: vi.fn().mockResolvedValue({
-        scans: {
-          used: 1000,
-          limit: 1000,
-          percentage: 100,
-        },
-      }),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: true,
+    const successResult = {
+      ok: true as const,
       data: {
-        scans: { used: 1000, limit: 1000, percentage: 100 },
+        used: 1000,
+        limit: 1000,
+        remaining: 0,
+        resetDate: '2025-02-01T00:00:00Z',
       },
-    })
+    }
+    mockWithSdk.mockResolvedValueOnce(successResult)
 
     const result = await fetchQuota()
 
+    expect(mockWithSdk).toHaveBeenCalledWith(
+      expect.any(Function),
+      'token quota',
+      undefined,
+    )
     expect(result.ok).toBe(true)
-    expect(result.data.scans.percentage).toBe(100)
+    if (result.ok) {
+      expect(result.data.remaining).toBe(0)
+    }
   })
 
-  it('handles various org slugs', async () => {
+  it('handles unlimited quota', async () => {
     const { withSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(withSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
+    const mockWithSdk = vi.mocked(withSdk)
 
-    const mockSdk = {
-      getQuota: vi.fn().mockResolvedValue({}),
+    const successResult = {
+      ok: true as const,
+      data: {
+        used: 500,
+        limit: -1,
+        remaining: -1,
+        resetDate: null,
+      },
     }
+    mockWithSdk.mockResolvedValueOnce(successResult)
 
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: {} })
+    const result = await fetchQuota()
 
-    const orgSlugs = [
-      'simple',
-      'org-with-dashes',
-      'org_underscore',
-      'org123numbers',
-    ]
-
-    for (const orgSlug of orgSlugs) {
-      // eslint-disable-next-line no-await-in-loop
-      await fetchQuota()
-      expect(mockSdk.getQuota).toHaveBeenCalledWith()
+    expect(mockWithSdk).toHaveBeenCalledWith(
+      expect.any(Function),
+      'token quota',
+      undefined,
+    )
+    expect(result.ok).toBe(true)
+    if (result.ok) {
+      expect(result.data.limit).toBe(-1)
     }
   })
 
   it('uses null prototype for options', async () => {
     const { withSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(withSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
+    const mockWithSdk = vi.mocked(withSdk)
 
-    const mockSdk = {
-      getQuota: vi.fn().mockResolvedValue({}),
+    const successResult = {
+      ok: true as const,
+      data: {},
     }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: {} })
+    mockWithSdk.mockResolvedValueOnce(successResult)
 
     // This tests that the function properly uses __proto__: null.
     await fetchQuota()
 
     // The function should work without prototype pollution issues.
-    expect(mockSdk.getQuota).toHaveBeenCalled()
+    expect(mockWithSdk).toHaveBeenCalled()
   })
 })
