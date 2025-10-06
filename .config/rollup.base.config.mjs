@@ -133,6 +133,10 @@ export default function baseConfig(extendConfig = {}) {
   }
 
   return {
+    // Disable tree-shaking to prevent incorrect removal of code.
+    // Without this, Rollup may incorrectly remove code that appears unused
+    // but is actually accessed dynamically or through other means.
+    treeshake: false,
     external(rawId) {
       const id = normalizeId(rawId)
       const pkgName = getPackageName(
