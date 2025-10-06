@@ -202,7 +202,13 @@ export default [
   },
   {
     files: ['**/*.{cts,mts,ts}'],
-    ignores: ['**/*.test.{cts,mts,ts}', 'test/**/*.{cts,mts,ts}'],
+    ignores: [
+      '**/*.test.{cts,mts,ts}',
+      'test/**/*.{cts,mts,ts}',
+      'src/test/**/*.{cts,mts,ts}',
+      'src/utils/test-mocks.mts',
+      'scripts/**/*.d.{cts,mts,ts}',
+    ],
     ...js.configs.recommended,
     ...importFlatConfigsForModule.typescript,
     languageOptions: {
@@ -269,7 +275,13 @@ export default [
     },
   },
   {
-    files: ['**/*.test.{cts,mts,ts}', 'test/**/*.{cts,mts,ts}'],
+    files: [
+      '**/*.test.{cts,mts,ts}',
+      'test/**/*.{cts,mts,ts}',
+      'src/test/**/*.{cts,mts,ts}',
+      'src/utils/test-mocks.mts',
+      'scripts/**/*.d.{cts,mts,ts}',
+    ],
     ...js.configs.recommended,
     ...importFlatConfigsForModule.typescript,
     languageOptions: {
