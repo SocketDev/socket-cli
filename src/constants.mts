@@ -5,6 +5,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import registryConstants from '@socketsecurity/registry/lib/constants'
+import { safeReadFileSync } from '@socketsecurity/registry/lib/fs'
 
 import type { Agent } from './utils/package-environment.mts'
 import type { Remap } from '@socketsecurity/registry/lib/objects'
@@ -467,6 +468,30 @@ function getNpmStdioPipeOptions() {
   return _npmStdioPipeOptions
 }
 
+// Inline implementation of getConfigValueOrUndef('apiBaseUrl') to avoid circular dependency.
+// This reads the base64-encoded config file and extracts the apiBaseUrl value.
+function getApiBaseUrlFromConfig(): string | undefined {
+  const socketAppDataPath = lazySocketAppDataPath()
+  if (!socketAppDataPath) {
+    return undefined
+  }
+  try {
+    const raw = safeReadFileSync(socketAppDataPath)
+    if (!raw) {
+      return undefined
+    }
+    const config = JSON.parse(
+      Buffer.from(
+        typeof raw === 'string' ? raw : raw.toString(),
+        'base64',
+      ).toString(),
+    )
+    return config?.['apiBaseUrl']
+  } catch {
+    return undefined
+  }
+}
+
 const LAZY_ENV = () => {
   const { env } = process
   const envHelpers = /*@__PURE__*/ require('@socketsecurity/registry/lib/env')
@@ -606,11 +631,11 @@ const LAZY_ENV = () => {
     SOCKET_CLI_ACCEPT_RISKS: envAsBoolean(env[SOCKET_CLI_ACCEPT_RISKS]),
     // Change the base URL for Socket API calls.
     // https://github.com/SocketDev/socket-cli?tab=readme-ov-file#environment-variables-for-development
-    // Note: Cannot use getConfigValueOrUndef() here due to circular dependency.
     SOCKET_CLI_API_BASE_URL:
       envAsString(env['SOCKET_CLI_API_BASE_URL']) ||
       // TODO: Remove legacy environment variable name.
       envAsString(env['SOCKET_SECURITY_API_BASE_URL']) ||
+      getApiBaseUrlFromConfig() ||
       API_V0_URL,
     // Set the proxy that all requests are routed through.
     // https://github.com/SocketDev/socket-cli?tab=readme-ov-file#environment-variables-for-development
