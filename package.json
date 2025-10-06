@@ -43,7 +43,7 @@
     "publish:sea": "node scripts/publish-sea.mjs",
     "publish:sea:github": "node scripts/publish-sea.mjs --skip-npm",
     "publish:sea:npm": "node scripts/publish-sea.mjs --skip-github",
-    "check": "pnpm run check:lint && pnpm run check:tsc",
+    "check": "pnpm run fix && pnpm run check:lint && pnpm run check:tsc",
     "check:lint": "eslint --config .config/eslint.config.mjs --report-unused-disable-directives .",
     "check:tsc": "tsgo --noEmit",
     "check-ci": "pnpm run check:lint",
