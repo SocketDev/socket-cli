@@ -1,5 +1,4 @@
-/** @fileoverview Code coverage percentage calculation from c8/vitest coverage reports. */
-
+/** @fileoverview Utility to generate and calculate code coverage metrics. */
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 
@@ -9,13 +8,17 @@ import { isObjectObject } from '@socketsecurity/registry/lib/objects'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 /**
- * Count how many items in array are greater than zero.
+ * Count how many items in array are covered (greater than 0).
  */
 function countCovered(counts) {
   return counts.filter(count => count > 0).length
 }
 
-export async function getCodeCoverage(options = {}) {
+/**
+ * Get code coverage metrics from c8 coverage data.
+ * @throws {Error} When coverage generation fails or data is invalid.
+ */
+export async function getCodeCoverage(options) {
   const { generateIfMissing = true } = { __proto__: null, ...options }
 
   const coverageJsonPath = path.join(
