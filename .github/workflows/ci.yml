@@ -17,7 +17,7 @@ permissions:
 jobs:
   ci:
     name: Run CI Pipeline
-    uses: SocketDev/socket-registry/.github/workflows/ci.yml@a8e09da7ef5aa696efe94a5bb387168cafedb004 # main
+    uses: SocketDev/socket-registry/.github/workflows/ci.yml@17c8e09407f67149512e95e082a9c77dfe8e27a4 # main
     with:
       coverage-script: 'pnpm run test:unit:coverage'
       coverage-report-script: 'pnpm run coverage:percent --json'
