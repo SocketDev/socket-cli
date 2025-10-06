@@ -22,7 +22,7 @@ const __dirname = path.dirname(__filename)
 // Access constants directly from the registryConstants object.
 // The registry now exports constants as a special object with lazy getters.
 // Type assertion needed because TypeScript sees this as generic 'object'.
-const regConsts = registryConstants as Record<string, unknown>
+const regConsts = registryConstants as any
 const AT_LATEST = regConsts.AT_LATEST
 const BUN = regConsts.BUN
 const CHANGELOG_MD = regConsts.CHANGELOG_MD
@@ -129,7 +129,7 @@ export type RegistryEnv = typeof regConsts.ENV
 
 export type RegistryInternals = (typeof regConsts)['Symbol(kInternalsSymbol)']
 
-export type Sentry = typeof import('@sentry/node')
+export type Sentry = any
 
 export type Internals = Remap<
   Omit<RegistryInternals, 'getIpc'> &
@@ -519,7 +519,7 @@ export type Constants = Remap<
     readonly DARWIN: boolean
     readonly WIN32: boolean
     readonly nodeNoWarningsFlags: string[]
-    readonly spinner: typeof import('@socketsecurity/registry/lib/spinner')
+    readonly spinner: any
     readonly abortSignal: AbortSignal
     readonly execPath: string
     readonly maintainedNodeVersions: readonly string[]
