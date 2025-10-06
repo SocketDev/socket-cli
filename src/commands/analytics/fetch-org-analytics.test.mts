@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { fetchOrgAnalyticsData } from './fetch-org-analytics.mts'
 
@@ -8,6 +8,10 @@ vi.mock('../../utils/sdk.mts', () => ({
 }))
 
 describe('fetchOrgAnalytics', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
   it('fetches organization analytics successfully', async () => {
     const { withSdk } = await import('../../utils/sdk.mts')
     const mockWithSdk = vi.mocked(withSdk)
