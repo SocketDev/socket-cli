@@ -27,6 +27,7 @@
 import { HttpProxyAgent, HttpsProxyAgent } from 'hpagent'
 
 import isInteractive from '@socketregistry/is-interactive/index.cjs'
+import { envAsBoolean } from '@socketsecurity/registry/lib/env'
 import { password } from '@socketsecurity/registry/lib/prompts'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 import { isUrl } from '@socketsecurity/registry/lib/url'
@@ -151,7 +152,10 @@ export function getDefaultApiToken(): string | undefined {
   // This prevents .env files from affecting test snapshots.
   // Note: Use process.env directly (not constants.ENV) to check at runtime,
   // since constants.ENV['VITEST'] is inlined at build time.
-  if (process.env['VITEST'] === '1') {
+  // Check for various forms of VITEST being set (string '1', string 'true', or boolean true)
+  // Rollup may inline process.env references as constants.ENV values which are booleans.
+  const vitestValue = envAsBoolean(process.env['VITEST'])
+  if (vitestValue) {
     return undefined
   }
 
