@@ -11,6 +11,10 @@ vi.mock('../../utils/sdk.mts', () => ({
   setupSdk: vi.fn(),
 }))
 
+vi.mock('../../utils/api.mts', () => ({
+  handleApiCall: vi.fn(),
+}))
+
 describe('fetchDeleteOrgFullScan', () => {
   it('deletes scan successfully', async () => {
     const { handleApiCall } = await import('../../utils/api.mts')
