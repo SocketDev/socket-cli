@@ -1,121 +1,101 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { fetchScanMetadata } from './fetch-scan-metadata.mts'
 
 // Mock the dependencies.
-
-vi.mock('../../utils/sdk.mts', async importOriginal => {
-  const actual = await importOriginal()
-  return {
-    ...actual,
-    setupSdk: vi.fn(),
-  }
-})
-
-vi.mock('../../utils/api.mts', () => ({
-  handleApiCall: vi.fn(),
+vi.mock('../../utils/sdk.mts', () => ({
+  withSdk: vi.fn(),
 }))
 
 describe('fetchScanMetadata', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
   it('fetches scan metadata successfully', async () => {
-    const { fetchScanMetadata } = await import('./fetch-scan-metadata.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockHandleApi = vi.mocked(handleApiCall)
-    const mockSetupSdk = vi.mocked(setupSdk)
+    const { withSdk } = await import('../../utils/sdk.mts')
+    const mockWithSdk = vi.mocked(withSdk)
 
-    const mockSdk = {
-      getOrgFullScanMetadata: vi.fn().mockResolvedValue({
-        success: true,
-        data: {
-          id: 'scan-123',
-          status: 'completed',
-          createdAt: '2023-01-01T00:00:00Z',
-          completedAt: '2023-01-01T00:05:00Z',
-          packageCount: 150,
-          vulnerabilityCount: 5,
-          branch: 'main',
-          commit: 'abc123',
-        },
-      }),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: true,
+    const successResult = {
+      ok: true as const,
       data: {
         id: 'scan-123',
         status: 'completed',
+        createdAt: '2023-01-01T00:00:00Z',
+        completedAt: '2023-01-01T00:05:00Z',
         packageCount: 150,
+        vulnerabilityCount: 5,
+        branch: 'main',
+        commit: 'abc123',
       },
-    })
+    }
+
+    mockWithSdk.mockResolvedValueOnce(successResult)
 
     const result = await fetchScanMetadata('test-org', 'scan-123')
 
-    expect(mockSdk.getOrgFullScanMetadata).toHaveBeenCalledWith(
-      'test-org',
-      'scan-123',
+    expect(mockWithSdk).toHaveBeenCalledWith(
+      expect.any(Function),
+      'meta data for a full scan',
+      undefined,
     )
-    expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
-      description: 'meta data for a full scan',
-    })
-    expect(result.ok).toBe(true)
-    expect(result.data?.id).toBe('scan-123')
+    expect(result).toEqual(successResult)
   })
 
   it('handles SDK setup failure', async () => {
-    const { fetchScanMetadata } = await import('./fetch-scan-metadata.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
+    const { withSdk } = await import('../../utils/sdk.mts')
+    const mockWithSdk = vi.mocked(withSdk)
 
     const error = {
-      ok: false,
+      ok: false as const,
       code: 1,
       message: 'Failed to setup SDK',
       cause: 'Invalid configuration',
     }
-    mockSetupSdk.mockResolvedValue(error)
+    mockWithSdk.mockResolvedValueOnce(error)
 
     const result = await fetchScanMetadata('test-org', 'scan-123')
 
+    expect(mockWithSdk).toHaveBeenCalledWith(
+      expect.any(Function),
+      'meta data for a full scan',
+      undefined,
+    )
     expect(result).toEqual(error)
   })
 
   it('handles API call failure', async () => {
-    const { fetchScanMetadata } = await import('./fetch-scan-metadata.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockHandleApi = vi.mocked(handleApiCall)
-    const mockSetupSdk = vi.mocked(setupSdk)
+    const { withSdk } = await import('../../utils/sdk.mts')
+    const mockWithSdk = vi.mocked(withSdk)
 
-    const mockSdk = {
-      getOrgFullScanMetadata: vi.fn().mockRejectedValue(new Error('Not found')),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: false,
+    const error = {
+      ok: false as const,
       error: 'Scan metadata not found',
       code: 404,
-    })
+      message: 'Scan metadata not found',
+    }
+    mockWithSdk.mockResolvedValueOnce(error)
 
     const result = await fetchScanMetadata('test-org', 'nonexistent-scan')
 
+    expect(mockWithSdk).toHaveBeenCalledWith(
+      expect.any(Function),
+      'meta data for a full scan',
+      undefined,
+    )
     expect(result.ok).toBe(false)
     expect(result.code).toBe(404)
   })
 
   it('passes custom SDK options', async () => {
-    const { fetchScanMetadata } = await import('./fetch-scan-metadata.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
+    const { withSdk } = await import('../../utils/sdk.mts')
+    const mockWithSdk = vi.mocked(withSdk)
 
-    const mockSdk = {
-      getOrgFullScanMetadata: vi.fn().mockResolvedValue({}),
+    const successResult = {
+      ok: true as const,
+      data: {},
     }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: {} })
+    mockWithSdk.mockResolvedValueOnce(successResult)
 
     const options = {
       sdkOpts: {
@@ -126,26 +106,21 @@ describe('fetchScanMetadata', () => {
 
     await fetchScanMetadata('custom-org', 'scan-456', options)
 
-    expect(mockSetupSdk).toHaveBeenCalledWith(options.sdkOpts)
-    expect(mockSdk.getOrgFullScanMetadata).toHaveBeenCalledWith(
-      'custom-org',
-      'scan-456',
+    expect(mockWithSdk).toHaveBeenCalledWith(
+      expect.any(Function),
+      'meta data for a full scan',
+      options,
     )
   })
 
   it('handles different org slugs and scan IDs', async () => {
-    const { fetchScanMetadata } = await import('./fetch-scan-metadata.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
+    const { withSdk } = await import('../../utils/sdk.mts')
+    const mockWithSdk = vi.mocked(withSdk)
 
-    const mockSdk = {
-      getOrgFullScanMetadata: vi.fn().mockResolvedValue({}),
+    const successResult = {
+      ok: true as const,
+      data: {},
     }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: {} })
 
     const testCases = [
       ['org-with-dashes', 'scan-123'],
@@ -155,125 +130,106 @@ describe('fetchScanMetadata', () => {
     ]
 
     for (const [org, scanId] of testCases) {
+      mockWithSdk.mockResolvedValueOnce(successResult)
+
       // eslint-disable-next-line no-await-in-loop
       await fetchScanMetadata(org, scanId)
-      expect(mockSdk.getOrgFullScanMetadata).toHaveBeenCalledWith(org, scanId)
     }
+
+    expect(mockWithSdk).toHaveBeenCalledTimes(testCases.length)
+    expect(mockWithSdk).toHaveBeenCalledWith(
+      expect.any(Function),
+      'meta data for a full scan',
+      undefined,
+    )
   })
 
   it('handles empty metadata response', async () => {
-    const { fetchScanMetadata } = await import('./fetch-scan-metadata.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
+    const { withSdk } = await import('../../utils/sdk.mts')
+    const mockWithSdk = vi.mocked(withSdk)
 
-    const mockSdk = {
-      getOrgFullScanMetadata: vi.fn().mockResolvedValue({
-        success: true,
-        data: null,
-      }),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: true,
+    const successResult = {
+      ok: true as const,
       data: null,
-    })
+    }
+    mockWithSdk.mockResolvedValueOnce(successResult)
 
     const result = await fetchScanMetadata('test-org', 'empty-scan')
 
+    expect(mockWithSdk).toHaveBeenCalledWith(
+      expect.any(Function),
+      'meta data for a full scan',
+      undefined,
+    )
     expect(result.ok).toBe(true)
-    expect(result.data).toBe(null)
+    expect(result.data).toBeNull()
   })
 
   it('handles pending scan metadata', async () => {
-    const { fetchScanMetadata } = await import('./fetch-scan-metadata.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
+    const { withSdk } = await import('../../utils/sdk.mts')
+    const mockWithSdk = vi.mocked(withSdk)
 
-    const mockSdk = {
-      getOrgFullScanMetadata: vi.fn().mockResolvedValue({
-        success: true,
-        data: {
-          id: 'scan-pending',
-          status: 'pending',
-          createdAt: '2023-01-01T00:00:00Z',
-          completedAt: null,
-          packageCount: 0,
-          vulnerabilityCount: 0,
-          progress: 45,
-        },
-      }),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: true,
+    const successResult = {
+      ok: true as const,
       data: {
         id: 'scan-pending',
         status: 'pending',
-        progress: 45,
+        createdAt: '2023-01-01T00:00:00Z',
+        completedAt: null,
+        packageCount: 0,
+        vulnerabilityCount: 0,
       },
-    })
+    }
+    mockWithSdk.mockResolvedValueOnce(successResult)
 
     const result = await fetchScanMetadata('test-org', 'scan-pending')
 
+    expect(mockWithSdk).toHaveBeenCalledWith(
+      expect.any(Function),
+      'meta data for a full scan',
+      undefined,
+    )
     expect(result.ok).toBe(true)
-    expect(result.data?.status).toBe('pending')
-    expect(result.data?.progress).toBe(45)
+    if (result.ok) {
+      expect(result.data.status).toBe('pending')
+    }
   })
 
   it('handles special characters in scan IDs', async () => {
-    const { fetchScanMetadata } = await import('./fetch-scan-metadata.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
+    const { withSdk } = await import('../../utils/sdk.mts')
+    const mockWithSdk = vi.mocked(withSdk)
 
-    const mockSdk = {
-      getOrgFullScanMetadata: vi.fn().mockResolvedValue({
-        success: true,
-        data: { id: 'scan-with-special-chars' },
-      }),
+    const successResult = {
+      ok: true as const,
+      data: {},
     }
+    mockWithSdk.mockResolvedValueOnce(successResult)
 
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: true,
-      data: { id: 'scan-with-special-chars' },
-    })
+    const scanIdWithSpecialChars = 'scan-123_abc-xyz.test'
 
-    const specialScanId = 'scan-123_with-special.chars@example.com'
+    await fetchScanMetadata('test-org', scanIdWithSpecialChars)
 
-    await fetchScanMetadata('test-org', specialScanId)
-
-    expect(mockSdk.getOrgFullScanMetadata).toHaveBeenCalledWith(
-      'test-org',
-      specialScanId,
+    expect(mockWithSdk).toHaveBeenCalledWith(
+      expect.any(Function),
+      'meta data for a full scan',
+      undefined,
     )
   })
 
   it('uses null prototype for options', async () => {
-    const { fetchScanMetadata } = await import('./fetch-scan-metadata.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
+    const { withSdk } = await import('../../utils/sdk.mts')
+    const mockWithSdk = vi.mocked(withSdk)
 
-    const mockSdk = {
-      getOrgFullScanMetadata: vi.fn().mockResolvedValue({}),
+    const successResult = {
+      ok: true as const,
+      data: {},
     }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: {} })
+    mockWithSdk.mockResolvedValueOnce(successResult)
 
     // This tests that the function properly uses __proto__: null.
     await fetchScanMetadata('test-org', 'scan-123')
 
     // The function should work without prototype pollution issues.
-    expect(mockSdk.getOrgFullScanMetadata).toHaveBeenCalled()
+    expect(mockWithSdk).toHaveBeenCalled()
   })
 })

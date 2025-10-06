@@ -185,10 +185,10 @@ describe('fetchDiffScan', () => {
 
   it('handles same scan IDs gracefully', async () => {
     const { fetchDiffScan } = await import('./fetch-diff-scan.mts')
-    const { queryApiJson, withSdk } = await import('../../utils/sdk.mts')
+    const { queryApiJson, setupSdk } = await import('../../utils/sdk.mts')
     const { logger } = await import('@socketsecurity/registry/lib/logger')
     const mockQueryApi = vi.mocked(queryApiJson)
-    const mockSetupSdk = vi.mocked(withSdk)
+    const mockSetupSdk = vi.mocked(setupSdk)
     const mockLogger = vi.mocked(logger.info)
 
     mockSetupSdk.mockResolvedValue({ ok: true, data: {} as any })

@@ -76,10 +76,10 @@ describe('fetchScan', () => {
 
   it('handles invalid JSON in scan data', async () => {
     const { fetchScan } = await import('./fetch-scan.mts')
-    const { queryApiText, withSdk } = await import('../../utils/sdk.mts')
+    const { queryApiText, setupSdk } = await import('../../utils/sdk.mts')
     const { debugDir, debugFn } = await import('../../utils/debug.mts')
     const mockQueryApiText = vi.mocked(queryApiText)
-    const mockSetupSdk = vi.mocked(withSdk)
+    const mockSetupSdk = vi.mocked(setupSdk)
     const mockDebugFn = vi.mocked(debugFn)
     const mockDebugDir = vi.mocked(debugDir)
 

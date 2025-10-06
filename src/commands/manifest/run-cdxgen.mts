@@ -1,8 +1,9 @@
-/** @fileoverview CycloneDX cdxgen runner for Socket CLI. Executes cdxgen SBOM generator via npx. Converts yarn.lock to package-lock.json using synp for better accuracy. */
+/** @fileoverview CycloneDX cdxgen runner for Socket CLI. Executes cdxgen SBOM generator via npx. Converts yarn.lock to package-lock.json using synp for better accuracy. Applies Socket secure defaults for lifecycle and output. */
 
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 
+import terminalLink from 'terminal-link'
 import colors from 'yoctocolors-cjs'
 
 import { removeSync } from '@socketsecurity/registry/lib/fs'
@@ -28,44 +29,28 @@ const nodejsPlatformTypes = new Set([
   'typescript',
 ])
 
-export type ArgvObject = {
-  [key: string]: boolean | null | number | string | Array<string | number>
+function hasArg(args: readonly string[], ...flags: string[]): boolean {
+  return flags.some(flag => args.includes(flag))
 }
 
-function argvObjectToArray(argvObj: ArgvObject): string[] {
-  if (argvObj['help']) {
-    return [FLAG_HELP]
+function getArgValue(
+  args: readonly string[],
+  flag: string,
+): string | undefined {
+  const idx = args.indexOf(flag)
+  if (idx !== -1 && idx + 1 < args.length) {
+    return args[idx + 1]
   }
-  const result = []
-  for (const { 0: key, 1: value } of Object.entries(argvObj)) {
-    if (key === '_' || key === '--') {
-      continue
-    }
-    if (key === 'babel' || key === 'install-deps' || key === 'validate') {
-      // cdxgen documents no-babel, no-install-deps, and no-validate flags so
-      // use them when relevant.
-      result.push(`--${value ? key : `no-${key}`}`)
-    } else if (value === true) {
-      result.push(`--${key}`)
-    } else if (typeof value === 'string') {
-      result.push(`--${key}`, String(value))
-    } else if (Array.isArray(value)) {
-      result.push(`--${key}`, ...value.map(String))
-    }
-  }
-  const pathArgs = argvObj['_'] as string[]
-  if (Array.isArray(pathArgs)) {
-    result.push(...pathArgs)
-  }
-  const argsAfterDoubleHyphen = argvObj['--'] as string[]
-  if (Array.isArray(argsAfterDoubleHyphen)) {
-    result.push('--', ...argsAfterDoubleHyphen)
-  }
-  return result
+  // Check for --flag=value format.
+  const prefix = `${flag}=`
+  const arg = args.find(a => a.startsWith(prefix))
+  return arg ? arg.slice(prefix.length) : undefined
 }
 
-export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
-  const argvMutable = { __proto__: null, ...argvObj } as ArgvObject
+export async function runCdxgen(
+  args: readonly string[],
+): Promise<ShadowBinResult> {
+  const argsMutable = [...args]
 
   // Detect lockfiles for synp conversion.
   const npmLockPath = await findUp(PACKAGE_LOCK_JSON, { onlyFiles: true })
@@ -74,15 +59,16 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
     ? undefined
     : await findUp(YARN_LOCK, { onlyFiles: true })
 
+  const typeValue =
+    getArgValue(argsMutable, '--type') || getArgValue(argsMutable, '-t')
+
   let cleanupPackageLock = false
   if (
     yarnLockPath &&
-    argvMutable['type'] !== YARN &&
-    nodejsPlatformTypes.has(argvMutable['type'] as string)
+    typeValue !== YARN &&
+    (!typeValue || nodejsPlatformTypes.has(typeValue))
   ) {
-    if (npmLockPath) {
-      argvMutable['type'] = 'npm'
-    } else {
+    if (!npmLockPath) {
       // Use synp to create a package-lock.json from the yarn.lock,
       // based on the node_modules folder, for a more accurate SBOM.
       try {
@@ -103,9 +89,30 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
           },
         )
 
-        argvMutable['type'] = 'npm'
         cleanupPackageLock = true
       } catch {}
+    }
+  }
+
+  // Apply Socket secure defaults when not requesting help/version.
+  const isHelpRequest = hasArg(argsMutable, FLAG_HELP, '-h', '--version', '-v')
+  if (!isHelpRequest) {
+    // Set lifecycle to 'pre-build' to avoid arbitrary code execution.
+    // https://github.com/CycloneDX/cdxgen/issues/1328
+    if (!hasArg(argsMutable, '--lifecycle')) {
+      argsMutable.push('--lifecycle', 'pre-build')
+      argsMutable.push('--no-install-deps')
+      logger.info(
+        `Setting cdxgen --lifecycle to "pre-build" to avoid arbitrary code execution on this scan.\n  Pass "--lifecycle build" to generate a BOM consisting of information obtained during the build process.\n  See cdxgen ${terminalLink(
+          'BOM lifecycles documentation',
+          'https://cyclonedx.github.io/cdxgen/#/ADVANCED?id=bom-lifecycles',
+        )} for more details.\n`,
+      )
+    }
+
+    // Set default output filename.
+    if (!hasArg(argsMutable, '--output', '-o')) {
+      argsMutable.push('--output', 'socket-cdx.json')
     }
   }
 
@@ -113,12 +120,8 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
   const cdxgenVersion =
     constants.ENV['INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION']
   const cdxgenPackageSpec = `@cyclonedx/cdxgen@${cdxgenVersion}`
-  const cdxgenArgs = argvObjectToArray(argvMutable)
 
-  // Check if this is a help/version request.
-  const isHelpRequest = argvMutable['help'] || argvMutable['version']
-
-  const result = await runShadowCommand(cdxgenPackageSpec, cdxgenArgs, {
+  const result = await runShadowCommand(cdxgenPackageSpec, argsMutable, {
     ipc: {
       [constants.SOCKET_CLI_SHADOW_ACCEPT_RISKS]: true,
       [constants.SOCKET_CLI_SHADOW_API_TOKEN]:
@@ -166,7 +169,8 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
     } catch {}
   }
 
-  const outputPath = argvMutable['output'] as string
+  const outputPath =
+    getArgValue(argsMutable, '--output') || getArgValue(argsMutable, '-o')
   if (outputPath) {
     const fullOutputPath = path.join(process.cwd(), outputPath)
     if (existsSync(fullOutputPath)) {

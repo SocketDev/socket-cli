@@ -2,6 +2,7 @@
 ._.DS_Store
 Thumbs.db
 /.claude
+/.custom-node-build
 /.env
 /.nvm
 /.rollup.cache

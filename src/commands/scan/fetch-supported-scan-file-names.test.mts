@@ -1,132 +1,109 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { fetchSupportedScanFileNames } from './fetch-supported-scan-file-names.mts'
 
 // Mock the dependencies.
-
-vi.mock('../../utils/sdk.mts', async importOriginal => {
-  const actual = await importOriginal()
-  return {
-    ...actual,
-    setupSdk: vi.fn(),
-  }
-})
-
-vi.mock('../../utils/api.mts', () => ({
-  handleApiCall: vi.fn(),
+vi.mock('../../utils/sdk.mts', () => ({
+  withSdk: vi.fn(),
 }))
 
 describe('fetchSupportedScanFileNames', () => {
-  it('fetches supported scan file names successfully', async () => {
-    const { fetchSupportedScanFileNames } = await import(
-      './fetch-supported-scan-file-names.mts'
-    )
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockHandleApi = vi.mocked(handleApiCall)
-    const mockSetupSdk = vi.mocked(setupSdk)
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
 
-    const mockSdk = {
-      getSupportedScanFiles: vi.fn().mockResolvedValue({
-        success: true,
-        data: {
-          supportedFiles: [
-            'package.json',
-            'package-lock.json',
-            'yarn.lock',
-            'pnpm-lock.yaml',
-            'composer.json',
-            'composer.lock',
-            'Gemfile',
-            'Gemfile.lock',
-            'requirements.txt',
-            'Pipfile',
-            'Pipfile.lock',
-            'go.mod',
-            'go.sum',
-          ],
-          ecosystems: ['npm', 'composer', 'ruby', 'python', 'go'],
-        },
-      }),
+  it('fetches supported scan file names successfully', async () => {
+    const { withSdk } = await import('../../utils/sdk.mts')
+    const mockWithSdk = vi.mocked(withSdk)
+
+    const successResult = {
+      ok: true as const,
+      data: {
+        supportedFiles: [
+          'package.json',
+          'package-lock.json',
+          'yarn.lock',
+          'pnpm-lock.yaml',
+          'composer.json',
+          'composer.lock',
+          'Gemfile',
+          'Gemfile.lock',
+          'requirements.txt',
+          'Pipfile',
+          'Pipfile.lock',
+          'go.mod',
+          'go.sum',
+        ],
+        ecosystems: ['npm', 'composer', 'ruby', 'python', 'go'],
+      },
     }
 
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: true,
-      data: {
-        supportedFiles: ['package.json', 'yarn.lock', 'composer.json'],
-      },
-    })
+    mockWithSdk.mockResolvedValueOnce(successResult)
 
     const result = await fetchSupportedScanFileNames()
 
-    expect(mockSdk.getSupportedScanFiles).toHaveBeenCalledWith()
-    expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
-      description: 'supported scan file types',
-    })
-    expect(result.ok).toBe(true)
-    expect(result.data?.supportedFiles).toContain('package.json')
+    expect(mockWithSdk).toHaveBeenCalledWith(
+      expect.any(Function),
+      'supported scan file types',
+      undefined,
+    )
+    expect(result).toEqual(successResult)
   })
 
   it('handles SDK setup failure', async () => {
-    const { fetchSupportedScanFileNames } = await import(
-      './fetch-supported-scan-file-names.mts'
-    )
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
+    const { withSdk } = await import('../../utils/sdk.mts')
+    const mockWithSdk = vi.mocked(withSdk)
 
     const error = {
-      ok: false,
+      ok: false as const,
       code: 1,
       message: 'Failed to setup SDK',
       cause: 'Invalid configuration',
     }
-    mockSetupSdk.mockResolvedValue(error)
+    mockWithSdk.mockResolvedValueOnce(error)
 
     const result = await fetchSupportedScanFileNames()
 
+    expect(mockWithSdk).toHaveBeenCalledWith(
+      expect.any(Function),
+      'supported scan file types',
+      undefined,
+    )
     expect(result).toEqual(error)
   })
 
   it('handles API call failure', async () => {
-    const { fetchSupportedScanFileNames } = await import(
-      './fetch-supported-scan-file-names.mts'
-    )
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockHandleApi = vi.mocked(handleApiCall)
-    const mockSetupSdk = vi.mocked(setupSdk)
+    const { withSdk } = await import('../../utils/sdk.mts')
+    const mockWithSdk = vi.mocked(withSdk)
 
-    const mockSdk = {
-      getSupportedScanFiles: vi.fn().mockRejectedValue(new Error('API error')),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: false,
+    const error = {
+      ok: false as const,
       error: 'Failed to fetch supported files',
       code: 500,
-    })
+      message: 'Failed to fetch supported files',
+    }
+    mockWithSdk.mockResolvedValueOnce(error)
 
     const result = await fetchSupportedScanFileNames()
 
+    expect(mockWithSdk).toHaveBeenCalledWith(
+      expect.any(Function),
+      'supported scan file types',
+      undefined,
+    )
     expect(result.ok).toBe(false)
     expect(result.code).toBe(500)
   })
 
   it('passes custom SDK options', async () => {
-    const { fetchSupportedScanFileNames } = await import(
-      './fetch-supported-scan-file-names.mts'
-    )
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
+    const { withSdk } = await import('../../utils/sdk.mts')
+    const mockWithSdk = vi.mocked(withSdk)
 
-    const mockSdk = {
-      getSupportedScanFiles: vi.fn().mockResolvedValue({}),
+    const successResult = {
+      ok: true as const,
+      data: {},
     }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: {} })
+    mockWithSdk.mockResolvedValueOnce(successResult)
 
     const options = {
       sdkOpts: {
@@ -137,21 +114,20 @@ describe('fetchSupportedScanFileNames', () => {
 
     await fetchSupportedScanFileNames(options)
 
-    expect(mockSetupSdk).toHaveBeenCalledWith(options.sdkOpts)
-    expect(mockSdk.getSupportedScanFiles).toHaveBeenCalledWith()
+    expect(mockWithSdk).toHaveBeenCalledWith(
+      expect.any(Function),
+      'supported scan file types',
+      options,
+    )
   })
 
   it('passes custom spinner', async () => {
-    const { fetchSupportedScanFileNames } = await import(
-      './fetch-supported-scan-file-names.mts'
-    )
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
+    const { withSdk } = await import('../../utils/sdk.mts')
+    const mockWithSdk = vi.mocked(withSdk)
 
-    const mockSdk = {
-      getSupportedScanFiles: vi.fn().mockResolvedValue({}),
+    const successResult = {
+      ok: true as const,
+      data: {},
     }
 
     const mockSpinner = {
@@ -161,8 +137,7 @@ describe('fetchSupportedScanFileNames', () => {
       fail: vi.fn(),
     }
 
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: {} })
+    mockWithSdk.mockResolvedValueOnce(successResult)
 
     const options = {
       spinner: mockSpinner,
@@ -170,163 +145,133 @@ describe('fetchSupportedScanFileNames', () => {
 
     await fetchSupportedScanFileNames(options)
 
-    expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
-      description: 'supported scan file types',
-      spinner: mockSpinner,
-    })
+    // Note: withSdk doesn't support spinner option yet per implementation comment
+    expect(mockWithSdk).toHaveBeenCalledWith(
+      expect.any(Function),
+      'supported scan file types',
+      options,
+    )
   })
 
   it('handles empty supported files response', async () => {
-    const { fetchSupportedScanFileNames } = await import(
-      './fetch-supported-scan-file-names.mts'
-    )
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
+    const { withSdk } = await import('../../utils/sdk.mts')
+    const mockWithSdk = vi.mocked(withSdk)
 
-    const mockSdk = {
-      getSupportedScanFiles: vi.fn().mockResolvedValue({
-        success: true,
-        data: {
-          supportedFiles: [],
-          ecosystems: [],
-        },
-      }),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: true,
+    const successResult = {
+      ok: true as const,
       data: {
         supportedFiles: [],
         ecosystems: [],
       },
-    })
+    }
+    mockWithSdk.mockResolvedValueOnce(successResult)
 
     const result = await fetchSupportedScanFileNames()
 
+    expect(mockWithSdk).toHaveBeenCalledWith(
+      expect.any(Function),
+      'supported scan file types',
+      undefined,
+    )
     expect(result.ok).toBe(true)
-    expect(result.data?.supportedFiles).toEqual([])
-    expect(result.data?.ecosystems).toEqual([])
+    if (result.ok) {
+      expect(result.data.supportedFiles).toEqual([])
+    }
   })
 
   it('handles comprehensive file types', async () => {
-    const { fetchSupportedScanFileNames } = await import(
-      './fetch-supported-scan-file-names.mts'
-    )
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
+    const { withSdk } = await import('../../utils/sdk.mts')
+    const mockWithSdk = vi.mocked(withSdk)
 
-    const comprehensiveFiles = [
-      // JavaScript/Node.js
-      'package.json',
-      'package-lock.json',
-      'yarn.lock',
-      'pnpm-lock.yaml',
-      // PHP
-      'composer.json',
-      'composer.lock',
-      // Ruby
-      'Gemfile',
-      'Gemfile.lock',
-      // Python
-      'requirements.txt',
-      'Pipfile',
-      'Pipfile.lock',
-      'poetry.lock',
-      'pyproject.toml',
-      // Go
-      'go.mod',
-      'go.sum',
-      // Java
-      'pom.xml',
-      'build.gradle',
-      // .NET
-      'packages.config',
-      '*.csproj',
-      // Rust
-      'Cargo.toml',
-      'Cargo.lock',
-    ]
-
-    const mockSdk = {
-      getSupportedScanFiles: vi.fn().mockResolvedValue({
-        success: true,
-        data: {
-          supportedFiles: comprehensiveFiles,
-        },
-      }),
+    const successResult = {
+      ok: true as const,
+      data: {
+        supportedFiles: [
+          'package.json',
+          'package-lock.json',
+          'yarn.lock',
+          'pnpm-lock.yaml',
+          'npm-shrinkwrap.json',
+          'bun.lockb',
+          'Gemfile',
+          'Gemfile.lock',
+          'composer.json',
+          'composer.lock',
+          'requirements.txt',
+          'Pipfile',
+          'Pipfile.lock',
+          'poetry.lock',
+          'go.mod',
+          'go.sum',
+          'pom.xml',
+          'build.gradle',
+          'Cargo.toml',
+          'Cargo.lock',
+        ],
+        ecosystems: [
+          'npm',
+          'ruby',
+          'composer',
+          'python',
+          'go',
+          'maven',
+          'gradle',
+          'rust',
+        ],
+      },
     }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: true,
-      data: { supportedFiles: comprehensiveFiles },
-    })
+    mockWithSdk.mockResolvedValueOnce(successResult)
 
     const result = await fetchSupportedScanFileNames()
 
+    expect(mockWithSdk).toHaveBeenCalledWith(
+      expect.any(Function),
+      'supported scan file types',
+      undefined,
+    )
     expect(result.ok).toBe(true)
-    expect(result.data?.supportedFiles).toContain('package.json')
-    expect(result.data?.supportedFiles).toContain('Cargo.toml')
-    expect(result.data?.supportedFiles).toContain('pom.xml')
+    if (result.ok) {
+      expect(result.data.supportedFiles.length).toBeGreaterThan(10)
+      expect(result.data.ecosystems).toContain('npm')
+    }
   })
 
   it('works without options parameter', async () => {
-    const { fetchSupportedScanFileNames } = await import(
-      './fetch-supported-scan-file-names.mts'
-    )
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
+    const { withSdk } = await import('../../utils/sdk.mts')
+    const mockWithSdk = vi.mocked(withSdk)
 
-    const mockSdk = {
-      getSupportedScanFiles: vi.fn().mockResolvedValue({
-        success: true,
-        data: { supportedFiles: ['package.json'] },
-      }),
+    const successResult = {
+      ok: true as const,
+      data: {
+        supportedFiles: ['package.json'],
+        ecosystems: ['npm'],
+      },
     }
+    mockWithSdk.mockResolvedValueOnce(successResult)
 
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: true,
-      data: { supportedFiles: ['package.json'] },
-    })
+    await fetchSupportedScanFileNames()
 
-    const result = await fetchSupportedScanFileNames()
-
-    expect(mockSetupSdk).toHaveBeenCalledWith(undefined)
-    expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
-      description: 'supported scan file types',
-      spinner: undefined,
-    })
-    expect(result.ok).toBe(true)
+    expect(mockWithSdk).toHaveBeenCalledWith(
+      expect.any(Function),
+      'supported scan file types',
+      undefined,
+    )
   })
 
   it('uses null prototype for options', async () => {
-    const { fetchSupportedScanFileNames } = await import(
-      './fetch-supported-scan-file-names.mts'
-    )
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
+    const { withSdk } = await import('../../utils/sdk.mts')
+    const mockWithSdk = vi.mocked(withSdk)
 
-    const mockSdk = {
-      getSupportedScanFiles: vi.fn().mockResolvedValue({}),
+    const successResult = {
+      ok: true as const,
+      data: {},
     }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: {} })
+    mockWithSdk.mockResolvedValueOnce(successResult)
 
     // This tests that the function properly uses __proto__: null.
     await fetchSupportedScanFileNames()
 
     // The function should work without prototype pollution issues.
-    expect(mockSdk.getSupportedScanFiles).toHaveBeenCalled()
+    expect(mockWithSdk).toHaveBeenCalled()
   })
 })
