@@ -137,8 +137,8 @@ importers:
         specifier: 14.1.0
         version: 14.1.0
       '@pnpm/dependency-path':
-        specifier: 1001.1.0
-        version: 1001.1.0
+        specifier: 1001.1.1
+        version: 1001.1.1
       '@pnpm/lockfile.detect-dep-types':
         specifier: 1001.0.13
         version: 1001.0.13
@@ -1345,6 +1345,10 @@ packages:
     resolution: {integrity: sha512-hOVNtEu25HTNOdi0PkvDd27AQHXBke18njbGSYJ02J4GbyoufazqP8+YDiC/wQ+28rKOpgUylT7pVlZoTmdUsg==}
     engines: {node: '>=18.12'}
 
+  '@pnpm/dependency-path@1001.1.1':
+    resolution: {integrity: sha512-kUQeP42kxGSEyqhAZGzMs3UQGDiY8Xk3/718uIKqhtHUCSoCas/p3xRRiEXKs7Wesp0Eb1X0I5xrugZbPiK1dw==}
+    engines: {node: '>=18.12'}
+
   '@pnpm/error@1000.0.4':
     resolution: {integrity: sha512-22mG/Mq4u2r7gr2+XY5j4GlN7J4Mg4WiCfT9flvsUc1uZecShocv6WkyoA20qs14M64f6I+aaWB6b6xsDiITlg==}
     engines: {node: '>=18.12'}
@@ -1412,6 +1416,10 @@ packages:
 
   '@pnpm/types@1000.7.0':
     resolution: {integrity: sha512-1s7FvDqmOEIeFGLUj/VO8sF5lGFxeE/1WALrBpfZhDnMXY/x8FbmuygTTE5joWifebcZ8Ww8Kw2CgBoStsIevQ==}
+    engines: {node: '>=18.12'}
+
+  '@pnpm/types@1000.8.0':
+    resolution: {integrity: sha512-yx86CGHHquWAI0GgKIuV/RnYewcf5fVFZemC45C/K2cX0uV8GB8TUP541ZrokWola2fZx5sn1vL7xzbceRZfoQ==}
     engines: {node: '>=18.12'}
 
   '@pnpm/util.lex-comparator@3.0.2':
@@ -3578,8 +3586,8 @@ packages:
     resolution: {integrity: sha512-Q7HjkpyPeLa0ZVZC5qpxBt5EyLczFJ91MEewQiIi9taWuA0KB/MDJlUWtON+7dGouVdADTQsf9RA7TZk6D8VMw==}
     engines: {node: '>=18.20.0 <20 || >=20.12.1'}
 
-  node-abi@3.77.0:
-    resolution: {integrity: sha512-DSmt0OEcLoK4i3NuscSbGjOf3bqiDEutejqENSplMSFA/gmB8mkED9G4pKWnPl7MDU4rSHebKPHeitpDfyH0cQ==}
+  node-abi@3.78.0:
+    resolution: {integrity: sha512-E2wEyrgX/CqvicaQYU3Ze1PFGjc4QYPGsjUrlYkqAE0WjHEZwgOsGMPMzkMse4LjJbDmaEuDX3CM036j5K2DSQ==}
     engines: {node: '>=10'}
 
   node-addon-api@8.5.0:
@@ -5858,6 +5866,12 @@ snapshots:
       '@pnpm/types': 1000.7.0
       semver: 7.7.2
 
+  '@pnpm/dependency-path@1001.1.1':
+    dependencies:
+      '@pnpm/crypto.hash': 1000.2.0
+      '@pnpm/types': 1000.8.0
+      semver: 7.7.2
+
   '@pnpm/error@1000.0.4':
     dependencies:
       '@pnpm/constants': 1001.3.0
@@ -5952,6 +5966,8 @@ snapshots:
       '@pnpm/types': 1000.7.0
 
   '@pnpm/types@1000.7.0': {}
+
+  '@pnpm/types@1000.8.0': {}
 
   '@pnpm/util.lex-comparator@3.0.2': {}
 
@@ -8173,7 +8189,7 @@ snapshots:
       json-stringify-safe: 5.0.1
       propagate: 2.0.1
 
-  node-abi@3.77.0:
+  node-abi@3.78.0:
     dependencies:
       semver: 7.7.2
     optional: true
@@ -8551,7 +8567,7 @@ snapshots:
       minimist: 1.2.8
       mkdirp-classic: 0.5.3
       napi-build-utils: 2.0.0
-      node-abi: 3.77.0
+      node-abi: 3.78.0
       pump: 3.0.3
       rc: 1.2.8
       simple-get: 4.0.1
