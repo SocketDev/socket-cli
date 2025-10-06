@@ -131,6 +131,8 @@ describe('socket yarn', async () => {
     },
   )
 
+  // TODO: Fix test failure - yarn install with --dry-run flag
+  // Test may be failing due to yarn-specific behavior or snapshot mismatch
   cmdit(
     [YARN, 'install', FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fakeToken"}'],
     'should handle install with --dry-run flag',

@@ -620,6 +620,8 @@ describe('socket scan create', async () => {
     },
   )
 
+  // TODO: Fix test failure - scan create with zero timeout (unlimited)
+  // Test expects exit code 0 but actual behavior may differ
   cmdit(
     [
       'scan',

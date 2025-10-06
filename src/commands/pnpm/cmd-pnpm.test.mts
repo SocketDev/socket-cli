@@ -156,6 +156,8 @@ describe('socket pnpm', async () => {
       FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
     ],
+    // TODO: Fix test failure - pnpm add with --dry-run flag
+    // Test may be failing due to snapshot mismatch or pnpm behavior changes
     'should handle add with --dry-run flag',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd, {
@@ -196,6 +198,8 @@ describe('socket pnpm', async () => {
       FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
     ],
+    // TODO: Fix test failure - pnpm add scoped packages with version
+    // Test may be failing due to snapshot mismatch or pnpm behavior changes
     'should handle scoped packages with version',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd, {
@@ -222,6 +226,8 @@ describe('socket pnpm', async () => {
       FLAG_CONFIG,
       '{"apiToken":"fakeToken","issueRules":{"malware":true}}',
     ],
+    // TODO: Fix test failure - pnpm install with issueRules for malware
+    // Test may be failing due to API mocking or issueRules behavior changes
     'should handle install with issueRules for malware',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd, {

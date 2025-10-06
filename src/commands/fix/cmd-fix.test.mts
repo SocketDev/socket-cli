@@ -481,6 +481,8 @@ describe('socket fix', async () => {
       FLAG_CONFIG,
       '{"apiToken":"fake-token"}',
     ],
+    // TODO: Fix test failure - fix command with CVE ID conversion for lodash vulnerability
+    // Test may be failing due to API mocking or CVE lookup issues
     'should handle CVE ID conversion for lodash vulnerability',
     async cmd => {
       const { cleanup, tempDir } = await withTempFixture(

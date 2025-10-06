@@ -154,6 +154,8 @@ describe('socket manifest cdxgen', async () => {
       },
     )
 
+    // TODO: Fix test failure - cdxgen unknown short flag forwarding
+    // Test may be timing out or failing due to command forwarding logic changes
     it('should not forward an unknown short flag to cdxgen', async () => {
       const command = '-u'
       await expect(
@@ -168,6 +170,8 @@ describe('socket manifest cdxgen', async () => {
       )
     })
 
+    // TODO: Fix test failure - cdxgen unknown flag forwarding
+    // Test may be timing out or failing due to command forwarding logic changes
     it('should not forward an unknown flag to cdxgen', async () => {
       const command = '--unknown'
       await expect(
@@ -182,6 +186,8 @@ describe('socket manifest cdxgen', async () => {
       )
     })
 
+    // TODO: Fix test failure - cdxgen multiple unknown flags forwarding
+    // Test may be timing out or failing due to command forwarding logic changes
     it('should not forward multiple unknown flags to cdxgen', async () => {
       await expect(
         () =>

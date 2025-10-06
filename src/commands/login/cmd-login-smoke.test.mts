@@ -9,6 +9,8 @@ describe('socket login - smoke test scenarios', () => {
   })
 
   describe('basic functionality', () => {
+    // TODO: Fix test failure - login --help command
+    // Test may be failing due to snapshot mismatch or output format changes
     it('should show help: `login --help`', async () => {
       const result = await runWithConfig('login', '--help')
       expect(result.exitCode).toBe(0)

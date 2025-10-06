@@ -125,6 +125,8 @@ describe('socket analytics', async () => {
     },
   )
 
+  // TODO: Fix test failure - analytics with --dry-run without args
+  // Test may be timing out or failing on snapshot mismatch
   cmdit(
     ['analytics', FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fakeToken"}'],
     'should run to dryrun without args',
