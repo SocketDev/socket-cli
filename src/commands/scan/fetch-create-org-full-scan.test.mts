@@ -3,7 +3,11 @@ import { describe, expect, it, vi } from 'vitest'
 // Mock the dependencies.
 
 vi.mock('../../utils/sdk.mts', () => ({
-  withSdk: vi.fn(),
+  setupSdk: vi.fn(),
+}))
+
+vi.mock('../../utils/api.mts', () => ({
+  handleApiCall: vi.fn(),
 }))
 
 describe('fetchCreateOrgFullScan', () => {
@@ -12,9 +16,9 @@ describe('fetchCreateOrgFullScan', () => {
       './fetch-create-org-full-scan.mts'
     )
     const { handleApiCall } = await import('../../utils/api.mts')
-    const { withSdk } = await import('../../utils/sdk.mts')
+    const { setupSdk } = await import('../../utils/sdk.mts')
     const mockHandleApi = vi.mocked(handleApiCall)
-    const mockSetupSdk = vi.mocked(withSdk)
+    const mockSetupSdk = vi.mocked(setupSdk)
 
     const mockSdk = {
       createOrgFullScan: vi.fn().mockResolvedValue({
@@ -79,8 +83,8 @@ describe('fetchCreateOrgFullScan', () => {
     const { fetchCreateOrgFullScan } = await import(
       './fetch-create-org-full-scan.mts'
     )
-    const { withSdk } = await import('../../utils/sdk.mts')
-    const mockSetupSdk = vi.mocked(withSdk)
+    const { setupSdk } = await import('../../utils/sdk.mts')
+    const mockSetupSdk = vi.mocked(setupSdk)
 
     const error = {
       ok: false,
@@ -113,9 +117,9 @@ describe('fetchCreateOrgFullScan', () => {
       './fetch-create-org-full-scan.mts'
     )
     const { handleApiCall } = await import('../../utils/api.mts')
-    const { withSdk } = await import('../../utils/sdk.mts')
+    const { setupSdk } = await import('../../utils/sdk.mts')
     const mockHandleApi = vi.mocked(handleApiCall)
-    const mockSetupSdk = vi.mocked(withSdk)
+    const mockSetupSdk = vi.mocked(setupSdk)
 
     const mockSdk = {
       createOrgFullScan: vi.fn().mockRejectedValue(new Error('API error')),
@@ -151,9 +155,9 @@ describe('fetchCreateOrgFullScan', () => {
     const { fetchCreateOrgFullScan } = await import(
       './fetch-create-org-full-scan.mts'
     )
-    const { withSdk } = await import('../../utils/sdk.mts')
+    const { setupSdk } = await import('../../utils/sdk.mts')
     const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(withSdk)
+    const mockSetupSdk = vi.mocked(setupSdk)
     const mockHandleApi = vi.mocked(handleApiCall)
 
     const mockSdk = {
@@ -215,9 +219,9 @@ describe('fetchCreateOrgFullScan', () => {
     const { fetchCreateOrgFullScan } = await import(
       './fetch-create-org-full-scan.mts'
     )
-    const { withSdk } = await import('../../utils/sdk.mts')
+    const { setupSdk } = await import('../../utils/sdk.mts')
     const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(withSdk)
+    const mockSetupSdk = vi.mocked(setupSdk)
     const mockHandleApi = vi.mocked(handleApiCall)
 
     const mockSdk = {
@@ -257,9 +261,9 @@ describe('fetchCreateOrgFullScan', () => {
     const { fetchCreateOrgFullScan } = await import(
       './fetch-create-org-full-scan.mts'
     )
-    const { withSdk } = await import('../../utils/sdk.mts')
+    const { setupSdk } = await import('../../utils/sdk.mts')
     const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(withSdk)
+    const mockSetupSdk = vi.mocked(setupSdk)
     const mockHandleApi = vi.mocked(handleApiCall)
 
     const mockSdk = {
@@ -300,9 +304,9 @@ describe('fetchCreateOrgFullScan', () => {
     const { fetchCreateOrgFullScan } = await import(
       './fetch-create-org-full-scan.mts'
     )
-    const { withSdk } = await import('../../utils/sdk.mts')
+    const { setupSdk } = await import('../../utils/sdk.mts')
     const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(withSdk)
+    const mockSetupSdk = vi.mocked(setupSdk)
     const mockHandleApi = vi.mocked(handleApiCall)
 
     const mockSdk = {
@@ -332,9 +336,9 @@ describe('fetchCreateOrgFullScan', () => {
     const { fetchCreateOrgFullScan } = await import(
       './fetch-create-org-full-scan.mts'
     )
-    const { withSdk } = await import('../../utils/sdk.mts')
+    const { setupSdk } = await import('../../utils/sdk.mts')
     const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(withSdk)
+    const mockSetupSdk = vi.mocked(setupSdk)
     const mockHandleApi = vi.mocked(handleApiCall)
 
     const mockSdk = {

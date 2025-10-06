@@ -2,17 +2,25 @@ import { describe, expect, it, vi } from 'vitest'
 
 // Mock the dependencies.
 
-vi.mock('../../utils/sdk.mts', () => ({
-  withSdk: vi.fn(),
+vi.mock('../../utils/sdk.mts', async importOriginal => {
+  const actual = await importOriginal()
+  return {
+    ...actual,
+    setupSdk: vi.fn(),
+  }
+})
+
+vi.mock('../../utils/api.mts', () => ({
+  handleApiCall: vi.fn(),
 }))
 
 describe('fetchScanMetadata', () => {
   it('fetches scan metadata successfully', async () => {
     const { fetchScanMetadata } = await import('./fetch-scan-metadata.mts')
     const { handleApiCall } = await import('../../utils/api.mts')
-    const { withSdk } = await import('../../utils/sdk.mts')
+    const { setupSdk } = await import('../../utils/sdk.mts')
     const mockHandleApi = vi.mocked(handleApiCall)
-    const mockSetupSdk = vi.mocked(withSdk)
+    const mockSetupSdk = vi.mocked(setupSdk)
 
     const mockSdk = {
       getOrgFullScanMetadata: vi.fn().mockResolvedValue({
@@ -55,8 +63,8 @@ describe('fetchScanMetadata', () => {
 
   it('handles SDK setup failure', async () => {
     const { fetchScanMetadata } = await import('./fetch-scan-metadata.mts')
-    const { withSdk } = await import('../../utils/sdk.mts')
-    const mockSetupSdk = vi.mocked(withSdk)
+    const { setupSdk } = await import('../../utils/sdk.mts')
+    const mockSetupSdk = vi.mocked(setupSdk)
 
     const error = {
       ok: false,
@@ -74,9 +82,9 @@ describe('fetchScanMetadata', () => {
   it('handles API call failure', async () => {
     const { fetchScanMetadata } = await import('./fetch-scan-metadata.mts')
     const { handleApiCall } = await import('../../utils/api.mts')
-    const { withSdk } = await import('../../utils/sdk.mts')
+    const { setupSdk } = await import('../../utils/sdk.mts')
     const mockHandleApi = vi.mocked(handleApiCall)
-    const mockSetupSdk = vi.mocked(withSdk)
+    const mockSetupSdk = vi.mocked(setupSdk)
 
     const mockSdk = {
       getOrgFullScanMetadata: vi.fn().mockRejectedValue(new Error('Not found')),
@@ -97,9 +105,9 @@ describe('fetchScanMetadata', () => {
 
   it('passes custom SDK options', async () => {
     const { fetchScanMetadata } = await import('./fetch-scan-metadata.mts')
-    const { withSdk } = await import('../../utils/sdk.mts')
+    const { setupSdk } = await import('../../utils/sdk.mts')
     const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(withSdk)
+    const mockSetupSdk = vi.mocked(setupSdk)
     const mockHandleApi = vi.mocked(handleApiCall)
 
     const mockSdk = {
@@ -127,9 +135,9 @@ describe('fetchScanMetadata', () => {
 
   it('handles different org slugs and scan IDs', async () => {
     const { fetchScanMetadata } = await import('./fetch-scan-metadata.mts')
-    const { withSdk } = await import('../../utils/sdk.mts')
+    const { setupSdk } = await import('../../utils/sdk.mts')
     const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(withSdk)
+    const mockSetupSdk = vi.mocked(setupSdk)
     const mockHandleApi = vi.mocked(handleApiCall)
 
     const mockSdk = {
@@ -155,9 +163,9 @@ describe('fetchScanMetadata', () => {
 
   it('handles empty metadata response', async () => {
     const { fetchScanMetadata } = await import('./fetch-scan-metadata.mts')
-    const { withSdk } = await import('../../utils/sdk.mts')
+    const { setupSdk } = await import('../../utils/sdk.mts')
     const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(withSdk)
+    const mockSetupSdk = vi.mocked(setupSdk)
     const mockHandleApi = vi.mocked(handleApiCall)
 
     const mockSdk = {
@@ -181,9 +189,9 @@ describe('fetchScanMetadata', () => {
 
   it('handles pending scan metadata', async () => {
     const { fetchScanMetadata } = await import('./fetch-scan-metadata.mts')
-    const { withSdk } = await import('../../utils/sdk.mts')
+    const { setupSdk } = await import('../../utils/sdk.mts')
     const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(withSdk)
+    const mockSetupSdk = vi.mocked(setupSdk)
     const mockHandleApi = vi.mocked(handleApiCall)
 
     const mockSdk = {
@@ -220,9 +228,9 @@ describe('fetchScanMetadata', () => {
 
   it('handles special characters in scan IDs', async () => {
     const { fetchScanMetadata } = await import('./fetch-scan-metadata.mts')
-    const { withSdk } = await import('../../utils/sdk.mts')
+    const { setupSdk } = await import('../../utils/sdk.mts')
     const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(withSdk)
+    const mockSetupSdk = vi.mocked(setupSdk)
     const mockHandleApi = vi.mocked(handleApiCall)
 
     const mockSdk = {
@@ -250,9 +258,9 @@ describe('fetchScanMetadata', () => {
 
   it('uses null prototype for options', async () => {
     const { fetchScanMetadata } = await import('./fetch-scan-metadata.mts')
-    const { withSdk } = await import('../../utils/sdk.mts')
+    const { setupSdk } = await import('../../utils/sdk.mts')
     const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(withSdk)
+    const mockSetupSdk = vi.mocked(setupSdk)
     const mockHandleApi = vi.mocked(handleApiCall)
 
     const mockSdk = {

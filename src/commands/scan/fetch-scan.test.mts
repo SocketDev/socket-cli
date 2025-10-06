@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('../../utils/sdk.mts', () => ({
   queryApiText: vi.fn(),
-  withSdk: vi.fn(),
+  setupSdk: vi.fn(),
 }))
 vi.mock('../../utils/debug.mts', () => ({
   debugDir: vi.fn(),
@@ -18,9 +18,9 @@ describe('fetchScan', () => {
 
   it('fetches scan successfully', async () => {
     const { fetchScan } = await import('./fetch-scan.mts')
-    const { queryApiText, withSdk } = await import('../../utils/sdk.mts')
+    const { queryApiText, setupSdk } = await import('../../utils/sdk.mts')
     const mockQueryApiText = vi.mocked(queryApiText)
-    const mockSetupSdk = vi.mocked(withSdk)
+    const mockSetupSdk = vi.mocked(setupSdk)
 
     mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
 
@@ -55,9 +55,9 @@ describe('fetchScan', () => {
 
   it('handles API call failure', async () => {
     const { fetchScan } = await import('./fetch-scan.mts')
-    const { queryApiText, withSdk } = await import('../../utils/sdk.mts')
+    const { queryApiText, setupSdk } = await import('../../utils/sdk.mts')
     const mockQueryApiText = vi.mocked(queryApiText)
-    const mockSetupSdk = vi.mocked(withSdk)
+    const mockSetupSdk = vi.mocked(setupSdk)
 
     mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
 
@@ -115,9 +115,9 @@ describe('fetchScan', () => {
 
   it('handles empty scan data', async () => {
     const { fetchScan } = await import('./fetch-scan.mts')
-    const { queryApiText, withSdk } = await import('../../utils/sdk.mts')
+    const { queryApiText, setupSdk } = await import('../../utils/sdk.mts')
     const mockQueryApiText = vi.mocked(queryApiText)
-    const mockSetupSdk = vi.mocked(withSdk)
+    const mockSetupSdk = vi.mocked(setupSdk)
 
     mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
 
@@ -134,9 +134,9 @@ describe('fetchScan', () => {
 
   it('filters out empty lines but fails on invalid JSON', async () => {
     const { fetchScan } = await import('./fetch-scan.mts')
-    const { queryApiText, withSdk } = await import('../../utils/sdk.mts')
+    const { queryApiText, setupSdk } = await import('../../utils/sdk.mts')
     const mockQueryApiText = vi.mocked(queryApiText)
-    const mockSetupSdk = vi.mocked(withSdk)
+    const mockSetupSdk = vi.mocked(setupSdk)
 
     mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
 
@@ -165,9 +165,9 @@ describe('fetchScan', () => {
 
   it('properly URL encodes scan ID', async () => {
     const { fetchScan } = await import('./fetch-scan.mts')
-    const { queryApiText, withSdk } = await import('../../utils/sdk.mts')
+    const { queryApiText, setupSdk } = await import('../../utils/sdk.mts')
     const mockQueryApiText = vi.mocked(queryApiText)
-    const mockSetupSdk = vi.mocked(withSdk)
+    const mockSetupSdk = vi.mocked(setupSdk)
 
     mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
 
@@ -192,9 +192,9 @@ describe('fetchScan', () => {
 
   it('handles different org slugs', async () => {
     const { fetchScan } = await import('./fetch-scan.mts')
-    const { queryApiText, withSdk } = await import('../../utils/sdk.mts')
+    const { queryApiText, setupSdk } = await import('../../utils/sdk.mts')
     const mockQueryApiText = vi.mocked(queryApiText)
-    const mockSetupSdk = vi.mocked(withSdk)
+    const mockSetupSdk = vi.mocked(setupSdk)
 
     mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
 
@@ -227,9 +227,9 @@ describe('fetchScan', () => {
 
   it('handles single line of JSON', async () => {
     const { fetchScan } = await import('./fetch-scan.mts')
-    const { queryApiText, withSdk } = await import('../../utils/sdk.mts')
+    const { queryApiText, setupSdk } = await import('../../utils/sdk.mts')
     const mockQueryApiText = vi.mocked(queryApiText)
-    const mockSetupSdk = vi.mocked(withSdk)
+    const mockSetupSdk = vi.mocked(setupSdk)
 
     mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
 
@@ -251,9 +251,9 @@ describe('fetchScan', () => {
 
   it('uses null prototype internally', async () => {
     const { fetchScan } = await import('./fetch-scan.mts')
-    const { queryApiText, withSdk } = await import('../../utils/sdk.mts')
+    const { queryApiText, setupSdk } = await import('../../utils/sdk.mts')
     const mockQueryApiText = vi.mocked(queryApiText)
-    const mockSetupSdk = vi.mocked(withSdk)
+    const mockSetupSdk = vi.mocked(setupSdk)
 
     mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
 
