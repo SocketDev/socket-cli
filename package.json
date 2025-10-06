@@ -151,7 +151,7 @@
     "browserslist": "4.25.4",
     "chalk-table": "1.0.2",
     "cmd-shim": "7.0.0",
-    "del-cli": "6.0.0",
+    "del-cli": "7.0.0",
     "dev-null-cli": "2.0.0",
     "eslint": "9.36.0",
     "eslint-import-resolver-typescript": "4.4.4",
