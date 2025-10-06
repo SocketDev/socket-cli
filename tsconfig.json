@@ -1,5 +1,10 @@
 {
   "extends": "./.config/tsconfig.base.json",
-  "include": ["src/**/*.mts", "test/**/*.mts", "*.config.mts", ".config/*.mts"],
-  "exclude": ["src/**/*.test.mts"]
+  "include": ["src/**/*.mts", "*.config.mts", ".config/*.mts"],
+  "exclude": [
+    "src/**/*.test.mts",
+    "src/test/**/*.mts",
+    "src/utils/test-mocks.mts",
+    "test/**/*.mts"
+  ]
 }
