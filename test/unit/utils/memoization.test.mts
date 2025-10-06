@@ -27,7 +27,8 @@ describe('memoize', () => {
 
     expect(fn(5)).toBe(10)
     expect(fn(5)).toBe(10)
-    expect(callCount).toBe(1) // Only called once
+    // Only called once
+    expect(callCount).toBe(1)
   })
 
   it('should handle multiple arguments', () => {
@@ -39,7 +40,8 @@ describe('memoize', () => {
 
     expect(fn(2, 3)).toBe(5)
     expect(fn(2, 3)).toBe(5)
-    expect(fn(2, 4)).toBe(6) // Different args
+    // Different args
+    expect(fn(2, 4)).toBe(6)
     expect(callCount).toBe(2)
   })
 
@@ -54,7 +56,8 @@ describe('memoize', () => {
     )
 
     expect(fn({ id: 1, value: 'hello' })).toBe('HELLO')
-    expect(fn({ id: 1, value: 'world' })).toBe('HELLO') // Same id, cached
+    // Same id, cached
+    expect(fn({ id: 1, value: 'world' })).toBe('HELLO')
     expect(callCount).toBe(1)
   })
 
@@ -68,23 +71,28 @@ describe('memoize', () => {
       { maxSize: 2 },
     )
 
-    fn(1) // Cache: [1]
-    fn(2) // Cache: [1, 2]
-    fn(3) // Cache: [2, 3] (1 evicted)
-    fn(1) // Not cached, recompute
+    // Cache: [1]
+    fn(1)
+    // Cache: [1, 2]
+    fn(2)
+    // Cache: [2, 3] (1 evicted)
+    fn(3)
+    // Not cached, recompute
+    fn(1)
 
     expect(callCount).toBe(4)
   })
 
   it('should expire entries after TTL', async () => {
     let callCount = 0
+    // 50ms TTL
     const fn = memoize(
       (x: number) => {
         callCount++
         return x * 2
       },
       { ttl: 50 },
-    ) // 50ms TTL
+    )
 
     expect(fn(5)).toBe(10)
     expect(callCount).toBe(1)
@@ -93,7 +101,8 @@ describe('memoize', () => {
     await new Promise(resolve => setTimeout(resolve, 60))
 
     expect(fn(5)).toBe(10)
-    expect(callCount).toBe(2) // Recomputed after expiry
+    // Recomputed after expiry
+    expect(callCount).toBe(2)
   })
 
   it('should track cache hits', () => {
@@ -152,7 +161,8 @@ describe('memoizeAsync', () => {
     const results = await Promise.all([fn(5), fn(5), fn(5)])
 
     expect(results).toEqual([10, 10, 10])
-    expect(callCount).toBe(1) // Only computed once despite concurrent calls
+    // Only computed once despite concurrent calls
+    expect(callCount).toBe(1)
   })
 
   it('should not cache failed promises', async () => {
@@ -166,7 +176,8 @@ describe('memoizeAsync', () => {
     })
 
     await expect(fn(5)).rejects.toThrow('First call fails')
-    expect(await fn(5)).toBe(10) // Second call succeeds
+    // Second call succeeds
+    expect(await fn(5)).toBe(10)
     expect(callCount).toBe(2)
   })
 
@@ -201,8 +212,10 @@ describe('memoizeAsync', () => {
 
     await fn(1)
     await fn(2)
-    await fn(3) // Evicts 1
-    await fn(1) // Recomputes
+    // Evicts 1
+    await fn(3)
+    // Recomputes
+    await fn(1)
 
     expect(callCount).toBe(4)
   })
@@ -263,7 +276,8 @@ describe('once', () => {
     const result1 = fn()
     const result2 = fn()
 
-    expect(result1).toBe(result2) // Same object reference
+    // Same object reference
+    expect(result1).toBe(result2)
     expect(result1.config.value).toBe(42)
   })
 

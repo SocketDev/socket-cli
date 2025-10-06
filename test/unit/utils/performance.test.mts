@@ -72,7 +72,7 @@ describe('performance utilities', () => {
       await measure('async-op', async () => 'done')
 
       const metrics = getPerformanceMetrics()
-      expect(metrics[0]?.metadata?.success).toBe(true)
+      expect(metrics[0]?.metadata?.['success']).toBe(true)
     })
 
     it('should record error in metadata and rethrow', async () => {
@@ -83,8 +83,8 @@ describe('performance utilities', () => {
       ).rejects.toThrow('test error')
 
       const metrics = getPerformanceMetrics()
-      expect(metrics[0]?.metadata?.success).toBe(false)
-      expect(metrics[0]?.metadata?.error).toBe('test error')
+      expect(metrics[0]?.metadata?.['success']).toBe(false)
+      expect(metrics[0]?.metadata?.['error']).toBe('test error')
     })
   })
 
@@ -106,7 +106,7 @@ describe('performance utilities', () => {
       measureSync('sync-op', () => 'done')
 
       const metrics = getPerformanceMetrics()
-      expect(metrics[0]?.metadata?.success).toBe(true)
+      expect(metrics[0]?.metadata?.['success']).toBe(true)
     })
 
     it('should record error in metadata and rethrow', () => {
@@ -117,8 +117,8 @@ describe('performance utilities', () => {
       }).toThrow('sync error')
 
       const metrics = getPerformanceMetrics()
-      expect(metrics[0]?.metadata?.success).toBe(false)
-      expect(metrics[0]?.metadata?.error).toBe('sync error')
+      expect(metrics[0]?.metadata?.['success']).toBe(false)
+      expect(metrics[0]?.metadata?.['error']).toBe('sync error')
     })
   })
 
@@ -203,7 +203,7 @@ describe('performance utilities', () => {
       const metrics = getPerformanceMetrics()
       expect(metrics[0]?.operation).toBe('checkpoint:start')
       expect(metrics[0]?.duration).toBe(0)
-      expect(metrics[0]?.metadata?.phase).toBe('init')
+      expect(metrics[0]?.metadata?.['phase']).toBe('init')
     })
 
     it('should be no-op when DEBUG=perf is not set', () => {
@@ -224,7 +224,7 @@ describe('performance utilities', () => {
 
       const metrics = getPerformanceMetrics()
       expect(metrics[0]?.operation).toBe('checkpoint:memory:test-point')
-      expect(metrics[0]?.metadata?.heapUsed).toBe(memUsed)
+      expect(metrics[0]?.metadata?.['heapUsed']).toBe(memUsed)
     })
 
     it('should be no-op when DEBUG=perf is not set', () => {
