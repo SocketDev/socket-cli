@@ -89,7 +89,7 @@
     "test-pre-commit": "pnpm test",
     "testu": "dotenvx -q run -f .env.test -- run-s pretest:unit; pnpm run test:unit:update --",
     "testuf": "dotenvx -q run -f .env.test -- pnpm run test:unit:update --",
-    "update": "run-p --aggregate-output update:**",
+    "update": "run-p --aggregate-output update:*",
     "update:deps": "node scripts/taze.mjs",
     "update:socket": "pnpm -r update '@socketsecurity/*' '@socketregistry/*' --latest"
   },
