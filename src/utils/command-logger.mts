@@ -2,6 +2,8 @@
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
+type LoggerArgs = [message?: unknown, ...rest: unknown[]]
+
 /**
  * Logger with command context
  */
@@ -9,32 +11,32 @@ export interface CommandLogger {
   /**
    * Log an informational message
    */
-  log: (...args: any[]) => void
+  log: (...args: LoggerArgs) => void
 
   /**
    * Log an info message
    */
-  info: (...args: any[]) => void
+  info: (...args: LoggerArgs) => void
 
   /**
    * Log a warning message
    */
-  warn: (...args: any[]) => void
+  warn: (...args: LoggerArgs) => void
 
   /**
    * Log an error message
    */
-  error: (...args: any[]) => void
+  error: (...args: LoggerArgs) => void
 
   /**
    * Log a failure message with badge
    */
-  fail: (...args: any[]) => void
+  fail: (...args: LoggerArgs) => void
 
   /**
    * Log a success message with badge
    */
-  success: (...args: any[]) => void
+  success: (...args: LoggerArgs) => void
 
   /**
    * Get the command name
@@ -72,7 +74,7 @@ export function createCommandLogger(
 
   const prefix = includePrefix ? formatPrefix(commandName) : ''
 
-  const prefixArgs = (...args: any[]): any[] => {
+  const prefixArgs = (...args: LoggerArgs): LoggerArgs => {
     if (!prefix) {
       return args
     }
@@ -80,12 +82,12 @@ export function createCommandLogger(
   }
 
   return {
-    log: (...args: any[]) => logger.log(...prefixArgs(...args)),
-    info: (...args: any[]) => logger.info(...prefixArgs(...args)),
-    warn: (...args: any[]) => logger.warn(...prefixArgs(...args)),
-    error: (...args: any[]) => logger.error(...prefixArgs(...args)),
-    fail: (...args: any[]) => logger.fail(...prefixArgs(...args)),
-    success: (...args: any[]) => logger.success(...prefixArgs(...args)),
+    log: (...args: LoggerArgs) => logger.log(...prefixArgs(...args)),
+    info: (...args: LoggerArgs) => logger.info(...prefixArgs(...args)),
+    warn: (...args: LoggerArgs) => logger.warn(...prefixArgs(...args)),
+    error: (...args: LoggerArgs) => logger.error(...prefixArgs(...args)),
+    fail: (...args: LoggerArgs) => logger.fail(...prefixArgs(...args)),
+    success: (...args: LoggerArgs) => logger.success(...prefixArgs(...args)),
     commandName,
   }
 }
@@ -127,7 +129,9 @@ export { logger }
  * const debug = createDebugLogger('socket:cli:scan')
  * debug('Scanning directory...') // Only logs if DEBUG=socket:cli:scan
  */
-export function createDebugLogger(namespace: string): (...args: any[]) => void {
+export function createDebugLogger(
+  namespace: string,
+): (...args: LoggerArgs) => void {
   const debugEnv = process.env['DEBUG']
   const enabled =
     debugEnv === '*' ||
@@ -140,7 +144,7 @@ export function createDebugLogger(namespace: string): (...args: any[]) => void {
     return () => {}
   }
 
-  return (...args: any[]) => {
+  return (...args: LoggerArgs) => {
     logger.log(`[${namespace}]`, ...args)
   }
 }
