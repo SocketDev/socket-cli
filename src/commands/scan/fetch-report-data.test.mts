@@ -8,14 +8,19 @@ vi.mock('@socketsecurity/registry/lib/logger', () => ({
   },
 }))
 
-vi.mock('../../constants.mts', () => ({
-  default: {
-    spinner: {
-      start: vi.fn(),
-      stop: vi.fn(),
+vi.mock('../../constants.mts', async importOriginal => {
+  const actual = await importOriginal()
+  return {
+    ...actual,
+    default: {
+      ...actual.default,
+      spinner: {
+        start: vi.fn(),
+        stop: vi.fn(),
+      },
     },
-  },
-}))
+  }
+})
 
 vi.mock('../../utils/errors.mts', () => ({
   formatErrorWithDetail: vi.fn(),
@@ -40,6 +45,10 @@ vi.mock('../../utils/api.mts', () => ({
 }))
 
 describe('fetchScanData', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
   it('fetches scan data successfully', async () => {
     const { fetchScanData } = await import('./fetch-report-data.mts')
     const { handleApiCallNoSpinner } = await import('../../utils/api.mts')
