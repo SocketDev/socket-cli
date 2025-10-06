@@ -48,7 +48,7 @@ function isDebug(_namespace: string): boolean {
  * Wrapper for debugFn that maintains backward compatibility.
  * The new API returns a function, so we call it immediately with the message.
  */
-function debugFn(namespace: string, ...args: any[]): void {
+function debugFn(namespace: string, ...args: unknown[]): void {
   const debug = debugFnOriginal(namespace)
   if (debug?.enabled) {
     debug(...args)
@@ -59,7 +59,7 @@ function debugFn(namespace: string, ...args: any[]): void {
  * Wrapper for debugDir that maintains backward compatibility.
  * The new API doesn't take a namespace, so we log it separately if needed.
  */
-function debugDir(namespace: string, obj: any): void {
+function debugDir(namespace: string, obj: unknown): void {
   if (isDebug(namespace)) {
     debugLog(`[${namespace}]`)
     debugDirOriginal(obj)

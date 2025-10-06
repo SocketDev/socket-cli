@@ -94,7 +94,7 @@ export class ColorOrMarkdown {
     return this.useMarkdown ? `_${text}_` : colors.italic(`${text}`)
   }
 
-  json(value: any): string {
+  json(value: unknown): string {
     return this.useMarkdown
       ? '```json\n' + JSON.stringify(value) + '\n```'
       : JSON.stringify(value)
