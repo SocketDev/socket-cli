@@ -165,11 +165,9 @@ describe('socket pnpm', async () => {
       })
 
       expect(stdout).toMatchInlineSnapshot(`
-        "Progress: resolved 0, reused 1, downloaded 0, added 0
-        Progress: resolved 1039, reused 928, downloaded 0, added 0
-        \\u2009WARN\\u2009 2 deprecated subdependencies found: @sindresorhus/chunkify@2.0.0, boolean@3.2.0
+        "\\u2009WARN\\u2009 2 deprecated subdependencies found: @sindresorhus/chunkify@2.0.0, boolean@3.2.0
         Already up to date
-        Progress: resolved 1045, reused 934, downloaded 0, added 0, done
+        Progress: resolved X, reused X, downloaded X, added X, done
 
         Done in Xs using pnpm v10.17.0"
       `)
@@ -207,10 +205,22 @@ describe('socket pnpm', async () => {
       })
 
       expect(stdout).toMatchInlineSnapshot(`
-        "Progress: resolved 0, reused 1, downloaded 0, added 0
-        \\u2009WARN\\u2009 2 deprecated subdependencies found: @sindresorhus/chunkify@2.0.0, boolean@3.2.0
-        Already up to date
-        Progress: resolved 1045, reused 934, downloaded 0, added 0, done
+        "\\u2009WARN\\u2009 2 deprecated subdependencies found: @sindresorhus/chunkify@2.0.0, boolean@3.2.0
+        Packages: +8 -6
+        ++++++++------
+        Progress: resolved X, reused X, downloaded X, added X, done
+        \\u2009WARN\\u2009 Issues with peer dependencies found
+        .
+        \\u251c\\u2500\\u252c vitest 3.2.4
+        \\u2502 \\u251c\\u2500\\u2500 \\u2715 unmet peer @types/node@24.6.2: found 20.19.19
+        \\u2502 \\u2514\\u2500\\u252c vite 7.1.5
+        \\u2502   \\u2514\\u2500\\u2500 \\u2715 unmet peer @types/node@24.6.2: found 20.19.19
+        \\u2514\\u2500\\u252c knip 5.63.1
+          \\u2514\\u2500\\u2500 \\u2715 unmet peer @types/node@24.6.2: found 20.19.19
+
+        devDependencies:
+        - @types/node 24.6.2
+        + @types/node 20.19.19 (24.7.0 is available) already in devDependencies, was not moved to dependencies.
 
         Done in Xs using pnpm v10.17.0"
       `)
@@ -235,11 +245,17 @@ describe('socket pnpm', async () => {
       })
 
       expect(stdout).toMatchInlineSnapshot(`
-        "Lockfile is up to date, resolution step is skipped
-        Already up to date
-
+        "\\u2009WARN\\u2009 2 deprecated subdependencies found: @sindresorhus/chunkify@2.0.0, boolean@3.2.0
+        Packages: +6 -8
+        ++++++--------
+        Progress: resolved X, reused X, downloaded X, added X, done
         . prepare$ husky
         . prepare: Done
+
+        devDependencies:
+        - @types/node 20.19.19
+        + @types/node 24.6.2 (24.7.0 is available)
+
         Done in Xs using pnpm v10.17.0"
       `)
       expect(code, 'dry-run install should exit with code 0').toBe(0)
