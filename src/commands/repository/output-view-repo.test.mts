@@ -10,6 +10,7 @@ vi.mock('@socketsecurity/registry/lib/logger', () => ({
   logger: {
     fail: vi.fn(),
     log: vi.fn(),
+    success: vi.fn(),
   },
 }))
 
