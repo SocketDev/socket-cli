@@ -1,0 +1,26 @@
+{
+  "name": "socket",
+  "bin": {
+    "socket": "dist/cli.js",
+    "socket-npm": "dist/npm-cli.js",
+    "socket-npx": "dist/npx-cli.js",
+    "socket-pnpm": "dist/pnpm-cli.js",
+    "socket-yarn": "dist/yarn-cli.js"
+  },
+  "node": "/Users/jdalton/projects/socket-cli/.custom-node-build/node/out/Release/node",
+  "targets": [
+    "node22-macos-arm64",
+    "node22-macos-x64",
+    "node22-linux-arm64",
+    "node22-linux-x64",
+    "node22-win-arm64",
+    "node22-win-x64"
+  ],
+  "outputPath": "pkg-binaries",
+  "assets": [
+    "dist/**/*",
+    "requirements.json",
+    "translations.json",
+    "shadow-bin/**/*"
+  ]
+}
