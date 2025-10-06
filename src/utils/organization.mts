@@ -14,5 +14,5 @@ export function getOrgSlugs(orgs: Organizations): string[] {
 }
 
 export function hasEnterpriseOrgPlan(orgs: Organizations): boolean {
-  return orgs.some(o => o.plan === 'enterprise')
+  return orgs.some(o => o.plan.includes('enterprise'))
 }
