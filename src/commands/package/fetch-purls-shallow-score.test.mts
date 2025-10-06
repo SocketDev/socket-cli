@@ -43,7 +43,7 @@ describe('fetchPurlsShallowScore', () => {
 
     expect(mockWithSdk).toHaveBeenCalledWith(
       expect.any(Function),
-      'batch package fetch',
+      'looking up package',
       undefined,
     )
     expect(result).toEqual(successResult)
@@ -66,7 +66,7 @@ describe('fetchPurlsShallowScore', () => {
 
     expect(mockWithSdk).toHaveBeenCalledWith(
       expect.any(Function),
-      'batch package fetch',
+      'looking up package',
       undefined,
     )
     expect(result).toEqual(error)
@@ -89,7 +89,7 @@ describe('fetchPurlsShallowScore', () => {
 
     expect(mockWithSdk).toHaveBeenCalledWith(
       expect.any(Function),
-      'batch package fetch',
+      'looking up package',
       undefined,
     )
     expect(result.ok).toBe(false)
@@ -119,7 +119,7 @@ describe('fetchPurlsShallowScore', () => {
 
     expect(mockWithSdk).toHaveBeenCalledWith(
       expect.any(Function),
-      'batch package fetch',
+      'looking up package',
       { sdkOpts },
     )
   })
@@ -142,7 +142,7 @@ describe('fetchPurlsShallowScore', () => {
 
     expect(mockWithSdk).toHaveBeenCalledWith(
       expect.any(Function),
-      'batch package fetch',
+      'looking up package',
       undefined,
     )
     expect(result.ok).toBe(true)
@@ -174,7 +174,7 @@ describe('fetchPurlsShallowScore', () => {
 
     expect(mockWithSdk).toHaveBeenCalledWith(
       expect.any(Function),
-      'batch package fetch',
+      'looking up package',
       undefined,
     )
     expect(result.ok).toBe(true)
@@ -208,7 +208,7 @@ describe('fetchPurlsShallowScore', () => {
 
     expect(mockWithSdk).toHaveBeenCalledWith(
       expect.any(Function),
-      'batch package fetch',
+      'looking up package',
       undefined,
     )
     expect(result.ok).toBe(true)
