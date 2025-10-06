@@ -96,13 +96,15 @@ describe('formatTable', () => {
     const result = formatTable(data, columns)
 
     // Should contain ANSI color codes
+    // eslint-disable-next-line no-control-regex
     expect(result).toMatch(/\u001b\[/)
   })
 
   it('should handle missing values', () => {
     const data = [
       { name: 'lodash', version: '4.17.21' },
-      { name: 'react' }, // Missing version
+      // Missing version
+      { name: 'react' },
     ]
     const columns: TableColumn[] = [
       { key: 'name', header: 'Package' },
@@ -204,13 +206,15 @@ describe('formatSimpleTable', () => {
     const result = formatSimpleTable(data, columns)
 
     // Should contain ANSI color codes
+    // eslint-disable-next-line no-control-regex
     expect(result).toMatch(/\u001b\[/)
   })
 
   it('should handle missing values in simple tables', () => {
     const data = [
       { name: 'lodash', version: '4.17.21' },
-      { name: 'react' }, // Missing version
+      // Missing version
+      { name: 'react' },
     ]
     const columns: TableColumn[] = [
       { key: 'name', header: 'Package' },

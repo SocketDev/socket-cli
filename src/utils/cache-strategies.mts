@@ -26,7 +26,8 @@ type CacheStrategy = {
 const CACHE_STRATEGIES: Record<string, CacheStrategy> = {
   // Package metadata - relatively stable, cache longer
   'package-info': {
-    ttl: 15 * 60 * 1000, // 15 minutes
+    // 15 minutes
+    ttl: 15 * 60 * 1000,
     warmOnStartup: false,
     volatile: false,
     pattern: '/npm/*/*/score',
@@ -34,7 +35,8 @@ const CACHE_STRATEGIES: Record<string, CacheStrategy> = {
 
   // Package scores - updated periodically, medium TTL
   'package-scores': {
-    ttl: 10 * 60 * 1000, // 10 minutes
+    // 10 minutes
+    ttl: 10 * 60 * 1000,
     warmOnStartup: false,
     volatile: false,
     pattern: '/npm/*/*/score',
@@ -42,7 +44,8 @@ const CACHE_STRATEGIES: Record<string, CacheStrategy> = {
 
   // Issue data - can change with new scans, shorter TTL
   'package-issues': {
-    ttl: 5 * 60 * 1000, // 5 minutes
+    // 5 minutes
+    ttl: 5 * 60 * 1000,
     warmOnStartup: false,
     volatile: true,
     pattern: '/npm/*/*/issues',
@@ -50,7 +53,8 @@ const CACHE_STRATEGIES: Record<string, CacheStrategy> = {
 
   // Scan results - volatile during active development
   'scan-results': {
-    ttl: 2 * 60 * 1000, // 2 minutes
+    // 2 minutes
+    ttl: 2 * 60 * 1000,
     warmOnStartup: false,
     volatile: true,
     pattern: '/scans/*',
@@ -58,7 +62,8 @@ const CACHE_STRATEGIES: Record<string, CacheStrategy> = {
 
   // Organization settings - stable, cache longer
   'org-settings': {
-    ttl: 30 * 60 * 1000, // 30 minutes
+    // 30 minutes
+    ttl: 30 * 60 * 1000,
     warmOnStartup: true,
     volatile: false,
     pattern: '/organizations/*/settings',
@@ -66,7 +71,8 @@ const CACHE_STRATEGIES: Record<string, CacheStrategy> = {
 
   // User info - very stable, cache longest
   'user-info': {
-    ttl: 60 * 60 * 1000, // 1 hour
+    // 1 hour
+    ttl: 60 * 60 * 1000,
     warmOnStartup: true,
     volatile: false,
     pattern: '/users/*',
@@ -74,7 +80,8 @@ const CACHE_STRATEGIES: Record<string, CacheStrategy> = {
 
   // Repository list - moderately stable
   'repo-list': {
-    ttl: 10 * 60 * 1000, // 10 minutes
+    // 10 minutes
+    ttl: 10 * 60 * 1000,
     warmOnStartup: false,
     volatile: false,
     pattern: '/repositories',
@@ -82,7 +89,8 @@ const CACHE_STRATEGIES: Record<string, CacheStrategy> = {
 
   // Dependency tree - stable for a given package version
   'dependency-tree': {
-    ttl: 30 * 60 * 1000, // 30 minutes
+    // 30 minutes
+    ttl: 30 * 60 * 1000,
     warmOnStartup: false,
     volatile: false,
     pattern: '/dependencies/*',
@@ -119,8 +127,10 @@ export function getCacheStrategy(path: string): CacheStrategy {
 function matchesPattern(path: string, pattern: string): boolean {
   // Convert glob pattern to regex
   const regexPattern = pattern
-    .replaceAll(/\*/g, '[^/]+') // * matches non-slash chars
-    .replaceAll(/\//g, '\\/') // Escape forward slashes
+    // * matches non-slash chars
+    .replaceAll(/\*/g, '[^/]+')
+    // Escape forward slashes
+    .replaceAll(/\//g, '\\/')
 
   const regex = new RegExp(`^${regexPattern}$`)
   return regex.test(path)
@@ -207,7 +217,8 @@ export function calculateAdaptiveTtl(
   accessCount: number,
 ): number {
   // Reduce TTL for frequently accessed volatile data
-  const MIN_TTL = 30 * 1000 // 30 seconds minimum
+  // 30 seconds minimum
+  const MIN_TTL = 30 * 1000
   const MAX_ACCESSES = 10
 
   if (accessCount > MAX_ACCESSES) {

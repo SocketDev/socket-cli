@@ -13,37 +13,43 @@ import {
 describe('getCacheStrategy', () => {
   it('should return strategy for package info', () => {
     const strategy = getCacheStrategy('/npm/@types/node/score')
-    expect(strategy.ttl).toBe(15 * 60 * 1000) // 15 minutes
+    // 15 minutes
+    expect(strategy.ttl).toBe(15 * 60 * 1000)
     expect(strategy.volatile).toBe(false)
   })
 
   it('should return strategy for package issues', () => {
     const strategy = getCacheStrategy('/npm/lodash/4.17.21/issues')
-    expect(strategy.ttl).toBe(5 * 60 * 1000) // 5 minutes
+    // 5 minutes
+    expect(strategy.ttl).toBe(5 * 60 * 1000)
     expect(strategy.volatile).toBe(true)
   })
 
   it('should return strategy for scan results', () => {
     const strategy = getCacheStrategy('/scans/abc123')
-    expect(strategy.ttl).toBe(2 * 60 * 1000) // 2 minutes
+    // 2 minutes
+    expect(strategy.ttl).toBe(2 * 60 * 1000)
     expect(strategy.volatile).toBe(true)
   })
 
   it('should return strategy for org settings', () => {
     const strategy = getCacheStrategy('/organizations/my-org/settings')
-    expect(strategy.ttl).toBe(30 * 60 * 1000) // 30 minutes
+    // 30 minutes
+    expect(strategy.ttl).toBe(30 * 60 * 1000)
     expect(strategy.warmOnStartup).toBe(true)
   })
 
   it('should return strategy for user info', () => {
     const strategy = getCacheStrategy('/users/me')
-    expect(strategy.ttl).toBe(60 * 60 * 1000) // 1 hour
+    // 1 hour
+    expect(strategy.ttl).toBe(60 * 60 * 1000)
     expect(strategy.warmOnStartup).toBe(true)
   })
 
   it('should return default strategy for unknown path', () => {
     const strategy = getCacheStrategy('/unknown/endpoint')
-    expect(strategy.ttl).toBe(5 * 60 * 1000) // Default 5 minutes
+    // Default 5 minutes
+    expect(strategy.ttl).toBe(5 * 60 * 1000)
     expect(strategy.warmOnStartup).toBe(false)
     expect(strategy.volatile).toBe(false)
   })
@@ -52,17 +58,20 @@ describe('getCacheStrategy', () => {
 describe('getRecommendedTtl', () => {
   it('should return longer TTL for stable data', () => {
     const ttl = getRecommendedTtl('/users/john')
-    expect(ttl).toBe(60 * 60 * 1000) // 1 hour
+    // 1 hour
+    expect(ttl).toBe(60 * 60 * 1000)
   })
 
   it('should return shorter TTL for volatile data', () => {
     const ttl = getRecommendedTtl('/scans/xyz')
-    expect(ttl).toBe(2 * 60 * 1000) // 2 minutes
+    // 2 minutes
+    expect(ttl).toBe(2 * 60 * 1000)
   })
 
   it('should return medium TTL for package scores', () => {
     const ttl = getRecommendedTtl('/npm/react/18.2.0/score')
-    expect(ttl).toBe(15 * 60 * 1000) // 15 minutes (matches package-info strategy)
+    // 15 minutes (matches package-info strategy)
+    expect(ttl).toBe(15 * 60 * 1000)
   })
 })
 
@@ -108,26 +117,32 @@ describe('isVolatileData', () => {
 
 describe('calculateAdaptiveTtl', () => {
   it('should keep base TTL for low access count', () => {
-    const baseTtl = 10 * 60 * 1000 // 10 minutes
+    // 10 minutes
+    const baseTtl = 10 * 60 * 1000
     const ttl = calculateAdaptiveTtl(baseTtl, 5)
     expect(ttl).toBe(baseTtl)
   })
 
   it('should reduce TTL for high access count', () => {
-    const baseTtl = 10 * 60 * 1000 // 10 minutes
+    // 10 minutes
+    const baseTtl = 10 * 60 * 1000
     const ttl = calculateAdaptiveTtl(baseTtl, 20)
     expect(ttl).toBeLessThan(baseTtl)
-    expect(ttl).toBeGreaterThanOrEqual(30 * 1000) // Minimum 30s
+    // Minimum 30s
+    expect(ttl).toBeGreaterThanOrEqual(30 * 1000)
   })
 
   it('should enforce minimum TTL', () => {
-    const baseTtl = 1 * 60 * 1000 // 1 minute
+    // 1 minute
+    const baseTtl = 1 * 60 * 1000
     const ttl = calculateAdaptiveTtl(baseTtl, 100)
-    expect(ttl).toBe(30 * 1000) // Minimum 30s
+    // Minimum 30s
+    expect(ttl).toBe(30 * 1000)
   })
 
   it('should reduce TTL proportionally to access frequency', () => {
-    const baseTtl = 10 * 60 * 1000 // 10 minutes
+    // 10 minutes
+    const baseTtl = 10 * 60 * 1000
     const ttl11 = calculateAdaptiveTtl(baseTtl, 11)
     const ttl15 = calculateAdaptiveTtl(baseTtl, 15)
     const ttl20 = calculateAdaptiveTtl(baseTtl, 20)
@@ -138,7 +153,8 @@ describe('calculateAdaptiveTtl', () => {
   })
 
   it('should cap reduction at 50%', () => {
-    const baseTtl = 10 * 60 * 1000 // 10 minutes
+    // 10 minutes
+    const baseTtl = 10 * 60 * 1000
     const ttl = calculateAdaptiveTtl(baseTtl, 1000)
     const minExpected = baseTtl * 0.5
     expect(ttl).toBeGreaterThanOrEqual(Math.max(30 * 1000, minExpected))
