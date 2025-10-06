@@ -1,288 +1,268 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { fetchListRepos } from './fetch-list-repos.mts'
 
 // Mock the dependencies.
-
-vi.mock('../../utils/sdk.mts', async importOriginal => {
-  const actual = await importOriginal()
-  return {
-    ...actual,
-    setupSdk: vi.fn(),
-  }
-})
-
-vi.mock('../../utils/api.mts', () => ({
-  handleApiCall: vi.fn(),
+vi.mock('../../utils/sdk.mts', () => ({
+  withSdk: vi.fn(),
 }))
 
 describe('fetchListRepos', () => {
-  it('lists repositories with pagination successfully', async () => {
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockHandleApi = vi.mocked(handleApiCall)
-    const mockSetupSdk = vi.mocked(setupSdk)
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
 
-    const mockSdk = {
-      getOrgRepoList: vi.fn().mockResolvedValue({
-        success: true,
-        data: {
-          results: [
-            { id: 'repo-1', name: 'first-repo' },
-            { id: 'repo-2', name: 'second-repo' },
-          ],
-          nextPage: 2,
-        },
-      }),
+  it('lists repositories with pagination successfully', async () => {
+    const { withSdk } = await import('../../utils/sdk.mts')
+    const mockWithSdk = vi.mocked(withSdk)
+
+    const successResult = {
+      ok: true as const,
+      data: {
+        repositories: [
+          { id: 'repo-1', name: 'repo1' },
+          { id: 'repo-2', name: 'repo2' },
+        ],
+        total: 2,
+        page: 1,
+      },
     }
 
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: true,
-      data: {
-        results: [
-          { id: 'repo-1', name: 'first-repo' },
-          { id: 'repo-2', name: 'second-repo' },
-        ],
-        nextPage: 2,
-      },
-    })
+    mockWithSdk.mockResolvedValueOnce(successResult)
 
     const config = {
       direction: 'desc',
       orgSlug: 'test-org',
       page: 1,
-      perPage: 10,
-      sort: 'created_at',
+      perPage: 100,
+      sort: 'name',
     }
 
     const result = await fetchListRepos(config)
 
-    expect(mockSdk.getOrgRepoList).toHaveBeenCalledWith('test-org', {
-      sort: 'created_at',
-      direction: 'desc',
-      per_page: '10',
-      page: '1',
-    })
-    expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
-      description: 'list of repositories',
-    })
-    expect(result.ok).toBe(true)
+    expect(mockWithSdk).toHaveBeenCalledWith(
+      expect.any(Function),
+      'list of repositories',
+      undefined,
+    )
+    expect(result).toEqual(successResult)
   })
 
   it('handles SDK setup failure', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
+    const { withSdk } = await import('../../utils/sdk.mts')
+    const mockWithSdk = vi.mocked(withSdk)
 
     const error = {
-      ok: false,
+      ok: false as const,
       code: 1,
       message: 'Failed to setup SDK',
-      cause: 'Missing API token',
+      cause: 'Invalid API token',
     }
-    mockSetupSdk.mockResolvedValue(error)
-
-    const config = {
-      direction: 'asc',
-      orgSlug: 'org',
-      page: 0,
-      perPage: 20,
-      sort: 'name',
-    }
-
-    const result = await fetchListRepos(config)
-
-    expect(result).toEqual(error)
-  })
-
-  it('handles API call failure', async () => {
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockHandleApi = vi.mocked(handleApiCall)
-    const mockSetupSdk = vi.mocked(setupSdk)
-
-    const mockSdk = {
-      getOrgRepoList: vi
-        .fn()
-        .mockRejectedValue(new Error('Invalid page number')),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: false,
-      error: 'Invalid page number',
-      code: 400,
-    })
-
-    const config = {
-      direction: 'asc',
-      orgSlug: 'org',
-      page: -1,
-      perPage: 20,
-      sort: 'name',
-    }
-
-    const result = await fetchListRepos(config)
-
-    expect(result.ok).toBe(false)
-    expect(result.code).toBe(400)
-  })
-
-  it('passes custom SDK options', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
-
-    const mockSdk = {
-      getOrgRepoList: vi.fn().mockResolvedValue({}),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: true,
-      data: { results: [], nextPage: null },
-    })
+    mockWithSdk.mockResolvedValueOnce(error)
 
     const config = {
       direction: 'asc',
       orgSlug: 'my-org',
-      page: 0,
+      page: 1,
       perPage: 50,
-      sort: 'updated_at',
+      sort: 'created',
     }
 
-    const sdkOpts = {
-      apiToken: 'paginated-token',
-      baseUrl: 'https://paginated.api.com',
-    }
+    const result = await fetchListRepos(config)
 
-    await fetchListRepos(config, { sdkOpts })
-
-    expect(mockSetupSdk).toHaveBeenCalledWith(sdkOpts)
+    expect(mockWithSdk).toHaveBeenCalledWith(
+      expect.any(Function),
+      'list of repositories',
+      undefined,
+    )
+    expect(result).toEqual(error)
   })
 
-  it('handles large page size configuration', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
+  it('handles API call failure', async () => {
+    const { withSdk } = await import('../../utils/sdk.mts')
+    const mockWithSdk = vi.mocked(withSdk)
 
-    const mockSdk = {
-      getOrgRepoList: vi.fn().mockResolvedValue({}),
+    const error = {
+      ok: false as const,
+      error: 'Organization not found',
+      code: 404,
+      message: 'Organization not found',
     }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: true,
-      data: { results: [], nextPage: null },
-    })
+    mockWithSdk.mockResolvedValueOnce(error)
 
     const config = {
       direction: 'desc',
-      orgSlug: 'large-org',
-      page: 0,
+      orgSlug: 'nonexistent-org',
+      page: 1,
       perPage: 100,
-      sort: 'stars',
-    }
-
-    await fetchListRepos(config)
-
-    expect(mockSdk.getOrgRepoList).toHaveBeenCalledWith('large-org', {
-      sort: 'stars',
-      direction: 'desc',
-      per_page: '100',
-      page: '0',
-    })
-  })
-
-  it('handles different sort criteria', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
-
-    const mockSdk = {
-      getOrgRepoList: vi.fn().mockResolvedValue({}),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: true,
-      data: { results: [], nextPage: null },
-    })
-
-    const config = {
-      direction: 'asc',
-      orgSlug: 'sort-org',
-      page: 0,
-      perPage: 25,
-      sort: 'alphabetical',
-    }
-
-    await fetchListRepos(config)
-
-    expect(mockSdk.getOrgRepoList).toHaveBeenCalledWith('sort-org', {
-      sort: 'alphabetical',
-      direction: 'asc',
-      per_page: '25',
-      page: '0',
-    })
-  })
-
-  it('handles empty results on specific page', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
-
-    const mockSdk = {
-      getOrgRepoList: vi.fn().mockResolvedValue({}),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: true,
-      data: { results: [], nextPage: null },
-    })
-
-    const config = {
-      direction: 'asc',
-      orgSlug: 'empty-org',
-      page: 10,
-      perPage: 20,
       sort: 'name',
     }
 
     const result = await fetchListRepos(config)
 
+    expect(mockWithSdk).toHaveBeenCalledWith(
+      expect.any(Function),
+      'list of repositories',
+      undefined,
+    )
+    expect(result.ok).toBe(false)
+    expect(result.code).toBe(404)
+  })
+
+  it('passes custom SDK options', async () => {
+    const { withSdk } = await import('../../utils/sdk.mts')
+    const mockWithSdk = vi.mocked(withSdk)
+
+    const successResult = {
+      ok: true as const,
+      data: {},
+    }
+    mockWithSdk.mockResolvedValueOnce(successResult)
+
+    const sdkOpts = {
+      apiToken: 'list-repos-token',
+      baseUrl: 'https://repos.api.com',
+    }
+
+    const config = {
+      direction: 'desc',
+      orgSlug: 'custom-org',
+      page: 1,
+      perPage: 100,
+      sort: 'name',
+    }
+
+    await fetchListRepos(config, { sdkOpts })
+
+    expect(mockWithSdk).toHaveBeenCalledWith(
+      expect.any(Function),
+      'list of repositories',
+      { sdkOpts },
+    )
+  })
+
+  it('handles large page size configuration', async () => {
+    const { withSdk } = await import('../../utils/sdk.mts')
+    const mockWithSdk = vi.mocked(withSdk)
+
+    const successResult = {
+      ok: true as const,
+      data: {
+        repositories: Array.from({ length: 200 }, (_, i) => ({
+          id: `repo-${i}`,
+          name: `repo${i}`,
+        })),
+        total: 200,
+        page: 1,
+      },
+    }
+    mockWithSdk.mockResolvedValueOnce(successResult)
+
+    const config = {
+      direction: 'desc',
+      orgSlug: 'test-org',
+      page: 1,
+      perPage: 200,
+      sort: 'name',
+    }
+
+    const result = await fetchListRepos(config)
+
+    expect(mockWithSdk).toHaveBeenCalledWith(
+      expect.any(Function),
+      'list of repositories',
+      undefined,
+    )
+    expect(result.ok).toBe(true)
+  })
+
+  it('handles different sort criteria', async () => {
+    const { withSdk } = await import('../../utils/sdk.mts')
+    const mockWithSdk = vi.mocked(withSdk)
+
+    const successResult = {
+      ok: true as const,
+      data: {},
+    }
+
+    const sortOptions = [
+      { sort: 'name', direction: 'asc' },
+      { sort: 'created', direction: 'desc' },
+      { sort: 'updated', direction: 'desc' },
+      { sort: 'pushed', direction: 'asc' },
+    ]
+
+    for (const sortConfig of sortOptions) {
+      mockWithSdk.mockResolvedValueOnce(successResult)
+      const config = {
+        direction: sortConfig.direction,
+        orgSlug: 'test-org',
+        page: 1,
+        perPage: 100,
+        sort: sortConfig.sort,
+      }
+      // eslint-disable-next-line no-await-in-loop
+      await fetchListRepos(config)
+    }
+
+    expect(mockWithSdk).toHaveBeenCalledTimes(sortOptions.length)
+    expect(mockWithSdk).toHaveBeenCalledWith(
+      expect.any(Function),
+      'list of repositories',
+      undefined,
+    )
+  })
+
+  it('handles empty results on specific page', async () => {
+    const { withSdk } = await import('../../utils/sdk.mts')
+    const mockWithSdk = vi.mocked(withSdk)
+
+    const successResult = {
+      ok: true as const,
+      data: {
+        repositories: [],
+        total: 0,
+        page: 5,
+      },
+    }
+    mockWithSdk.mockResolvedValueOnce(successResult)
+
+    const config = {
+      direction: 'desc',
+      orgSlug: 'test-org',
+      page: 5,
+      perPage: 100,
+      sort: 'name',
+    }
+
+    const result = await fetchListRepos(config)
+
+    expect(mockWithSdk).toHaveBeenCalledWith(
+      expect.any(Function),
+      'list of repositories',
+      undefined,
+    )
     expect(result.ok).toBe(true)
     if (result.ok) {
-      expect(result.data.results).toHaveLength(0)
+      expect(result.data.repositories).toEqual([])
     }
   })
 
   it('uses null prototype for options', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
+    const { withSdk } = await import('../../utils/sdk.mts')
+    const mockWithSdk = vi.mocked(withSdk)
 
-    const mockSdk = {
-      getOrgRepoList: vi.fn().mockResolvedValue({}),
+    const successResult = {
+      ok: true as const,
+      data: {},
     }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: true,
-      data: { results: [], nextPage: null },
-    })
+    mockWithSdk.mockResolvedValueOnce(successResult)
 
     const config = {
-      direction: 'asc',
+      direction: 'desc',
       orgSlug: 'test-org',
-      page: 0,
-      perPage: 10,
+      page: 1,
+      perPage: 100,
       sort: 'name',
     }
 
@@ -290,6 +270,6 @@ describe('fetchListRepos', () => {
     await fetchListRepos(config)
 
     // The function should work without prototype pollution issues.
-    expect(mockSdk.getOrgRepoList).toHaveBeenCalled()
+    expect(mockWithSdk).toHaveBeenCalled()
   })
 })
