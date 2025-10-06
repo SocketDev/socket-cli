@@ -4,9 +4,13 @@ import { fetchPurlsShallowScore } from './fetch-purls-shallow-score.mts'
 
 // Mock the dependencies.
 
-vi.mock('../../utils/sdk.mts', () => ({
-  withSdk: vi.fn(),
-}))
+vi.mock('../../utils/sdk.mts', async importOriginal => {
+  const actual = await importOriginal()
+  return {
+    ...actual,
+    setupSdk: vi.fn(),
+  }
+})
 
 vi.mock('../../utils/api.mts', () => ({
   handleApiCall: vi.fn(),
@@ -15,9 +19,9 @@ vi.mock('../../utils/api.mts', () => ({
 describe('fetchPurlsShallowScore', () => {
   it('fetches purls shallow scores successfully', async () => {
     const { handleApiCall } = await import('../../utils/api.mts')
-    const { withSdk } = await import('../../utils/sdk.mts')
+    const { setupSdk } = await import('../../utils/sdk.mts')
     const mockHandleApi = vi.mocked(handleApiCall)
-    const mockSetupSdk = vi.mocked(withSdk)
+    const mockSetupSdk = vi.mocked(setupSdk)
 
     const mockSdk = {
       batchPackageFetch: vi.fn().mockResolvedValue({
@@ -63,8 +67,8 @@ describe('fetchPurlsShallowScore', () => {
   })
 
   it('handles SDK setup failure', async () => {
-    const { withSdk } = await import('../../utils/sdk.mts')
-    const mockSetupSdk = vi.mocked(withSdk)
+    const { setupSdk } = await import('../../utils/sdk.mts')
+    const mockSetupSdk = vi.mocked(setupSdk)
 
     const error = {
       ok: false,

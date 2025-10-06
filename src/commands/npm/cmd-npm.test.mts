@@ -183,7 +183,16 @@ describe('socket npm', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
         cwd: testCwd,
       })
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`
+        "_______
+        < hello >
+         -------
+                \\   ^__^
+                 \\  (oo)\\_______
+                    (__)\\       )\\/\\
+                        ||----w |
+                        ||     ||"
+      `)
       // issueRules require API calls even in dry-run mode
       // With fake token, expects 401 Unauthorized
       expect(code, 'exec with fake token should exit with code 1').toBe(1)
@@ -206,7 +215,16 @@ describe('socket npm', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
         cwd: testCwd,
       })
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`
+        "_______
+        < hello >
+         -------
+                \\   ^__^
+                 \\  (oo)\\_______
+                    (__)\\       )\\/\\
+                        ||----w |
+                        ||     ||"
+      `)
       // issueRules require API calls even in dry-run mode
       // With fake token, expects 401 Unauthorized
       expect(code, 'exec with fake token should exit with code 1').toBe(1)
@@ -229,7 +247,16 @@ describe('socket npm', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
         cwd: testCwd,
       })
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`
+        "_______
+        < hello >
+         -------
+                \\   ^__^
+                 \\  (oo)\\_______
+                    (__)\\       )\\/\\
+                        ||----w |
+                        ||     ||"
+      `)
       // issueRules require API calls even in dry-run mode
       // With fake token, expects 401 Unauthorized
       expect(code, 'exec with fake token should exit with code 1').toBe(1)
@@ -252,7 +279,16 @@ describe('socket npm', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
         cwd: testCwd,
       })
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`
+        "_______
+        < hello >
+         -------
+                \\   ^__^
+                 \\  (oo)\\_______
+                    (__)\\       )\\/\\
+                        ||----w |
+                        ||     ||"
+      `)
       // issueRules require API calls even in dry-run mode
       // With fake token, expects 401 Unauthorized
       expect(code, 'exec with fake token should exit with code 1').toBe(1)
