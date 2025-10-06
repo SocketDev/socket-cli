@@ -154,52 +154,8 @@ describe('socket manifest cdxgen', async () => {
       },
     )
 
-    // TODO: Fix test failure - cdxgen unknown short flag forwarding
-    // Test may be timing out or failing due to command forwarding logic changes
-    it('should not forward an unknown short flag to cdxgen', async () => {
-      const command = '-u'
-      await expect(
-        spawn(
-          constants.execPath,
-          [binCliPath, 'manifest', 'cdxgen', command],
-          spawnOpts,
-        ),
-        // @ts-ignore toHaveStderrInclude is defined above.
-      ).rejects.toHaveStderrInclude(
-        `${LOG_SYMBOLS.fail} Unknown argument: ${command}`,
-      )
-    })
-
-    // TODO: Fix test failure - cdxgen unknown flag forwarding
-    // Test may be timing out or failing due to command forwarding logic changes
-    it('should not forward an unknown flag to cdxgen', async () => {
-      const command = '--unknown'
-      await expect(
-        spawn(
-          constants.execPath,
-          [binCliPath, 'manifest', 'cdxgen', command],
-          spawnOpts,
-        ),
-        // @ts-ignore toHaveStderrInclude is defined above
-      ).rejects.toHaveStderrInclude(
-        `${LOG_SYMBOLS.fail} Unknown argument: ${command}`,
-      )
-    })
-
-    // TODO: Fix test failure - cdxgen multiple unknown flags forwarding
-    // Test may be timing out or failing due to command forwarding logic changes
-    it('should not forward multiple unknown flags to cdxgen', async () => {
-      await expect(
-        () =>
-          spawn(
-            constants.execPath,
-            [binCliPath, 'manifest', 'cdxgen', '-u', '-h', '--unknown'],
-            spawnOpts,
-          ),
-        // @ts-ignore toHaveStderrInclude is defined above
-      ).rejects.toHaveStderrInclude(
-        `${LOG_SYMBOLS.fail} Unknown arguments: -u and --unknown`,
-      )
-    })
+    // Note: Unknown flag validation was removed in commit de9fa089
+    // ("Simplify cdxgen command forwarding to remove complex validation").
+    // The command now forwards all flags to cdxgen, which handles validation.
   })
 })
