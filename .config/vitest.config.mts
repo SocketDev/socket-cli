@@ -16,7 +16,7 @@ export default defineConfig({
     hookTimeout: 60_000,
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'json', 'html'],
+      reporter: ['text', 'json', 'html', 'lcov'],
       exclude: [
         '**/*.config.*',
         '**/node_modules/**',
@@ -34,6 +34,12 @@ export default defineConfig({
       ],
       include: ['src/**/*.mts', 'src/**/*.ts'],
       all: true,
+      thresholds: {
+        lines: 80,
+        functions: 80,
+        branches: 80,
+        statements: 80,
+      },
     },
   },
 })
