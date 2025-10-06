@@ -93,30 +93,6 @@ async function run(
 
   const outputKind = getOutputKind(json, markdown)
 
-  if (dryRun) {
-    await determineOrgSlug(String(orgFlag || ''), interactive, dryRun)
-    logger.log(constants.DRY_RUN_BAILING_NOW)
-    // Validate input in dry-run mode without setting exit code.
-    checkCommandInput(
-      outputKind,
-      {
-        nook: true,
-        test: !json || !markdown,
-        message: 'The json and markdown flags cannot be both set, pick one',
-        fail: 'omit one',
-      },
-      {
-        nook: true,
-        test: hasApiToken,
-        message: 'This command requires a Socket API token for access',
-        fail: 'try `socket login`',
-      },
-    )
-    // Reset exit code for dry-run mode.
-    process.exitCode = 0
-    return
-  }
-
   const { 0: orgSlug } = await determineOrgSlug(
     String(orgFlag || ''),
     interactive,
@@ -145,6 +121,11 @@ async function run(
   if (!orgSlug) {
     process.exitCode = 2
     throw new InputError('Unable to determine organization slug')
+  }
+
+  if (dryRun) {
+    logger.log(constants.DRY_RUN_BAILING_NOW)
+    return
   }
 
   await handleLicensePolicy(orgSlug, outputKind)
