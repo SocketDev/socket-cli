@@ -27,6 +27,7 @@ import { spawn } from '@socketsecurity/registry/lib/spawn'
 import constants, { FLAG_CONFIG, FLAG_HELP } from '../constants.mts'
 import { camelToKebab } from './strings.mts'
 
+import type { MeowFlags } from '../flags.mts'
 import type { CResult } from '../types.mts'
 
 const { WIN32 } = constants
@@ -41,7 +42,7 @@ const helpFlags = new Set([FLAG_HELP, '-h'])
 /**
  * Convert flag values to array format for processing.
  */
-export function cmdFlagValueToArray(value: any): string[] {
+export function cmdFlagValueToArray(value: unknown): string[] {
   if (typeof value === 'string') {
     return value.trim().split(/, */).filter(Boolean)
   }
@@ -88,7 +89,7 @@ export function cmdPrefixMessage(cmdName: string, text: string): string {
  */
 export function filterFlags(
   argv: readonly string[],
-  flagsToFilter: Record<string, any>,
+  flagsToFilter: MeowFlags,
   exceptions?: string[] | undefined,
 ): string[] {
   const filtered: string[] = []

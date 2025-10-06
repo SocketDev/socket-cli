@@ -35,7 +35,7 @@ const depFields = [
 ]
 
 function getEntryIndexes(
-  entries: Array<[string | symbol, any]>,
+  entries: Array<[string | symbol, unknown]>,
   keys: Array<string | symbol>,
 ): number[] {
   return keys
@@ -45,14 +45,14 @@ function getEntryIndexes(
 }
 
 function getLowestEntryIndex(
-  entries: Array<[string | symbol, any]>,
+  entries: Array<[string | symbol, unknown]>,
   keys: Array<string | symbol>,
 ) {
   return getEntryIndexes(entries, keys)?.[0] ?? -1
 }
 
 function getHighestEntryIndex(
-  entries: Array<[string | symbol, any]>,
+  entries: Array<[string | symbol, unknown]>,
   keys: Array<string | symbol>,
 ) {
   return getEntryIndexes(entries, keys).at(-1) ?? -1
@@ -61,7 +61,7 @@ function getHighestEntryIndex(
 function updatePkgJsonField(
   editablePkgJson: EditablePackageJson,
   field: string,
-  value: any,
+  value: Overrides,
 ) {
   const oldValue = editablePkgJson.content[field]
   if (oldValue) {
@@ -69,11 +69,15 @@ function updatePkgJsonField(
     if (field === PNPM) {
       const isPnpmObj = isObject(oldValue)
       if (hasKeys(value)) {
+        const oldOverrides =
+          isPnpmObj && isObject((oldValue as Record<string, unknown>)[OVERRIDES])
+            ? ((oldValue as Record<string, unknown>)[OVERRIDES] as Overrides)
+            : {}
         editablePkgJson.update({
           [field]: {
             ...(isPnpmObj ? oldValue : {}),
             overrides: {
-              ...(isPnpmObj ? (oldValue as any)[OVERRIDES] : {}),
+              ...oldOverrides,
               ...value,
             },
           },
