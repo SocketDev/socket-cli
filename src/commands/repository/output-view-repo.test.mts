@@ -85,7 +85,7 @@ describe('outputViewRepo', () => {
   it('outputs repository table in text format', async () => {
     const { logger } = await import('@socketsecurity/registry/lib/logger')
     const chalkTable = await import('chalk-table')
-    const mockLog = vi.mocked(logger.log)
+    const mockSuccess = vi.mocked(logger.success)
     const mockChalkTable = vi.mocked(chalkTable.default)
 
     const repoData = {
@@ -119,7 +119,7 @@ describe('outputViewRepo', () => {
       }),
       [repoData],
     )
-    expect(mockLog).toHaveBeenCalledWith('Table with 1 row(s)')
+    expect(mockSuccess).toHaveBeenCalledWith('Table with 1 row(s)')
   })
 
   it('outputs error in text format', async () => {
