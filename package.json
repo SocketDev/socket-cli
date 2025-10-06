@@ -167,7 +167,7 @@
     "ink": "5.2.0",
     "ink-table": "3.1.0",
     "js-yaml": "npm:@zkochan/js-yaml@0.0.10",
-    "knip": "5.63.1",
+    "knip": "5.64.1",
     "lint-staged": "16.1.6",
     "magic-string": "0.30.19",
     "meow": "13.2.0",
