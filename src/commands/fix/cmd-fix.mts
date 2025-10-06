@@ -240,7 +240,7 @@ async function run(
       parentName,
       importMeta,
     },
-    { allowUnknownFlags: false },
+    { allowUnknownFlags: true },
   )
 
   const {
