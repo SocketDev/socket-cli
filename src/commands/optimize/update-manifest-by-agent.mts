@@ -70,7 +70,8 @@ function updatePkgJsonField(
       const isPnpmObj = isObject(oldValue)
       if (hasKeys(value)) {
         const oldOverrides =
-          isPnpmObj && isObject((oldValue as Record<string, unknown>)[OVERRIDES])
+          isPnpmObj &&
+          isObject((oldValue as Record<string, unknown>)[OVERRIDES])
             ? ((oldValue as Record<string, unknown>)[OVERRIDES] as Overrides)
             : {}
         editablePkgJson.update({
