@@ -84,7 +84,8 @@ describe('socket organization policy license', async () => {
         i Note: Run \`socket login\` to set a default org.
               Use the --org flag to override the default org.
 
-        \\xd7 Skipping auto-discovery of org in dry-run mode"
+        \\xd7 Skipping auto-discovery of org in dry-run mode
+        \\xd7  Input error:  Please review the input requirements and try again"
       `)
 
       expect(code, 'dry-run exits with success code').toBe(0)
