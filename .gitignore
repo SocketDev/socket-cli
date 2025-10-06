@@ -25,3 +25,4 @@ Thumbs.db
 /yarn.lock
 
 !/.vscode/extensions.json
+pkg-binaries/
