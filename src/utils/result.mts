@@ -46,7 +46,7 @@ export class ResultError extends Error {
  */
 export function requireOk<T>(result: CResult<T>, context: string): T {
   if (!result.ok) {
-    const errorOptions = Object.create(null) as ResultErrorOptions
+    const errorOptions = { __proto__: null } as ResultErrorOptions
     if (result.code !== undefined) {
       errorOptions.code = result.code
     }
