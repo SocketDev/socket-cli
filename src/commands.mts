@@ -141,16 +141,16 @@ export const rootAliases = {
   repo: {
     description: `${cmdRepository.description} (alias)`,
     hidden: false,
-    argv: ['repos'],
+    argv: ['repository'],
   },
   repos: {
     description: cmdRepository.description,
     hidden: true,
-    argv: ['repos'],
+    argv: ['repository'],
   },
   repositories: {
     description: cmdRepository.description,
     hidden: true,
-    argv: ['repos'],
+    argv: ['repository'],
   },
 }
