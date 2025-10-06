@@ -1,225 +1,200 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { fetchViewRepo } from './fetch-view-repo.mts'
 
 // Mock the dependencies.
-
-vi.mock('../../utils/sdk.mts', async importOriginal => {
-  const actual = await importOriginal()
-  return {
-    ...actual,
-    setupSdk: vi.fn(),
-  }
-})
-
-vi.mock('../../utils/api.mts', () => ({
-  handleApiCall: vi.fn(),
+vi.mock('../../utils/sdk.mts', () => ({
+  withSdk: vi.fn(),
 }))
 
 describe('fetchViewRepo', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
   it('views repository successfully', async () => {
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockHandleApi = vi.mocked(handleApiCall)
-    const mockSetupSdk = vi.mocked(setupSdk)
+    const { withSdk } = await import('../../utils/sdk.mts')
+    const mockWithSdk = vi.mocked(withSdk)
 
-    const mockSdk = {
-      getOrgRepo: vi.fn().mockResolvedValue({
-        success: true,
-        data: {
-          id: 'repo-123',
-          name: 'test-repo',
-          description: 'A test repository',
-          visibility: 'public',
-          default_branch: 'main',
-          created_at: '2025-01-01T10:00:00Z',
-          updated_at: '2025-01-20T15:30:00Z',
-        },
-      }),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: true,
+    const successResult = {
+      ok: true as const,
       data: {
         id: 'repo-123',
         name: 'test-repo',
         description: 'A test repository',
         visibility: 'public',
+        default_branch: 'main',
+        created_at: '2025-01-01T10:00:00Z',
+        updated_at: '2025-01-20T15:30:00Z',
       },
-    })
+    }
+
+    mockWithSdk.mockResolvedValueOnce(successResult)
 
     const result = await fetchViewRepo('test-org', 'test-repo')
 
-    expect(mockSdk.getOrgRepo).toHaveBeenCalledWith('test-org', 'test-repo')
-    expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
-      description: 'repository data',
-    })
-    expect(result.ok).toBe(true)
+    expect(mockWithSdk).toHaveBeenCalledWith(
+      expect.any(Function),
+      'repository data',
+      undefined,
+    )
+    expect(result).toEqual(successResult)
   })
 
   it('handles SDK setup failure', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
+    const { withSdk } = await import('../../utils/sdk.mts')
+    const mockWithSdk = vi.mocked(withSdk)
 
     const error = {
-      ok: false,
+      ok: false as const,
       code: 1,
       message: 'Failed to setup SDK',
-      cause: 'Missing API token',
+      cause: 'Invalid configuration',
     }
-    mockSetupSdk.mockResolvedValue(error)
+    mockWithSdk.mockResolvedValueOnce(error)
 
-    const result = await fetchViewRepo('org', 'repo')
+    const result = await fetchViewRepo('test-org', 'test-repo')
 
+    expect(mockWithSdk).toHaveBeenCalledWith(
+      expect.any(Function),
+      'repository data',
+      undefined,
+    )
     expect(result).toEqual(error)
   })
 
   it('handles API call failure', async () => {
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockHandleApi = vi.mocked(handleApiCall)
-    const mockSetupSdk = vi.mocked(setupSdk)
+    const { withSdk } = await import('../../utils/sdk.mts')
+    const mockWithSdk = vi.mocked(withSdk)
 
-    const mockSdk = {
-      getOrgRepo: vi.fn().mockRejectedValue(new Error('Repository not found')),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: false,
+    const error = {
+      ok: false as const,
       error: 'Repository not found',
       code: 404,
-    })
+      message: 'Repository not found',
+    }
+    mockWithSdk.mockResolvedValueOnce(error)
 
-    const result = await fetchViewRepo('org', 'nonexistent-repo')
+    const result = await fetchViewRepo('test-org', 'nonexistent-repo')
 
+    expect(mockWithSdk).toHaveBeenCalledWith(
+      expect.any(Function),
+      'repository data',
+      undefined,
+    )
     expect(result.ok).toBe(false)
     expect(result.code).toBe(404)
   })
 
   it('passes custom SDK options', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
+    const { withSdk } = await import('../../utils/sdk.mts')
+    const mockWithSdk = vi.mocked(withSdk)
 
-    const mockSdk = {
-      getOrgRepo: vi.fn().mockResolvedValue({}),
+    const successResult = {
+      ok: true as const,
+      data: {},
+    }
+    mockWithSdk.mockResolvedValueOnce(successResult)
+
+    const options = {
+      sdkOpts: {
+        apiToken: 'view-token',
+        baseUrl: 'https://view.api.com',
+      },
     }
 
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: {} })
+    await fetchViewRepo('custom-org', 'custom-repo', options)
 
-    const sdkOpts = {
-      apiToken: 'view-token',
-      baseUrl: 'https://view.api.com',
-    }
-
-    await fetchViewRepo('my-org', 'my-repo', { sdkOpts })
-
-    expect(mockSetupSdk).toHaveBeenCalledWith(sdkOpts)
+    expect(mockWithSdk).toHaveBeenCalledWith(
+      expect.any(Function),
+      'repository data',
+      options,
+    )
   })
 
   it('handles private repository access', async () => {
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockHandleApi = vi.mocked(handleApiCall)
-    const mockSetupSdk = vi.mocked(setupSdk)
+    const { withSdk } = await import('../../utils/sdk.mts')
+    const mockWithSdk = vi.mocked(withSdk)
 
-    const mockSdk = {
-      getOrgRepo: vi.fn().mockResolvedValue({
-        success: true,
-        data: {
-          id: 'private-repo-456',
-          name: 'secret-project',
-          description: 'A private repository',
-          visibility: 'private',
-          members_count: 5,
-        },
-      }),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: true,
+    const successResult = {
+      ok: true as const,
       data: {
-        id: 'private-repo-456',
+        id: 'repo-private',
         name: 'secret-project',
+        description: 'Private repository',
         visibility: 'private',
+        default_branch: 'main',
       },
-    })
+    }
+    mockWithSdk.mockResolvedValueOnce(successResult)
 
-    const result = await fetchViewRepo('private-org', 'secret-project')
+    await fetchViewRepo('private-org', 'secret-project')
 
-    expect(result.ok).toBe(true)
-    expect(mockSdk.getOrgRepo).toHaveBeenCalledWith(
-      'private-org',
-      'secret-project',
+    expect(mockWithSdk).toHaveBeenCalledWith(
+      expect.any(Function),
+      'repository data',
+      undefined,
     )
   })
 
   it('handles special repository names', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
+    const { withSdk } = await import('../../utils/sdk.mts')
+    const mockWithSdk = vi.mocked(withSdk)
 
-    const mockSdk = {
-      getOrgRepo: vi.fn().mockResolvedValue({}),
+    const successResult = {
+      ok: true as const,
+      data: {},
     }
+    mockWithSdk.mockResolvedValueOnce(successResult)
 
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: {} })
+    const specialRepoName = 'repo-with.special_chars-123'
 
-    await fetchViewRepo('special-org', 'repo-with-hyphens_and_underscores.dots')
+    await fetchViewRepo('special-org', specialRepoName)
 
-    expect(mockSdk.getOrgRepo).toHaveBeenCalledWith(
-      'special-org',
-      'repo-with-hyphens_and_underscores.dots',
+    expect(mockWithSdk).toHaveBeenCalledWith(
+      expect.any(Function),
+      'repository data',
+      undefined,
     )
   })
 
   it('handles insufficient permissions error', async () => {
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockHandleApi = vi.mocked(handleApiCall)
-    const mockSetupSdk = vi.mocked(setupSdk)
+    const { withSdk } = await import('../../utils/sdk.mts')
+    const mockWithSdk = vi.mocked(withSdk)
 
-    const mockSdk = {
-      getOrgRepo: vi.fn().mockRejectedValue(new Error('Access denied')),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: false,
-      error: 'Access denied',
+    const error = {
+      ok: false as const,
+      error: 'Insufficient permissions',
       code: 403,
-    })
+      message: 'Insufficient permissions',
+    }
+    mockWithSdk.mockResolvedValueOnce(error)
 
     const result = await fetchViewRepo('restricted-org', 'restricted-repo')
 
+    expect(mockWithSdk).toHaveBeenCalledWith(
+      expect.any(Function),
+      'repository data',
+      undefined,
+    )
     expect(result.ok).toBe(false)
     expect(result.code).toBe(403)
   })
 
   it('uses null prototype for options', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
+    const { withSdk } = await import('../../utils/sdk.mts')
+    const mockWithSdk = vi.mocked(withSdk)
 
-    const mockSdk = {
-      getOrgRepo: vi.fn().mockResolvedValue({}),
+    const successResult = {
+      ok: true as const,
+      data: {},
     }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: {} })
+    mockWithSdk.mockResolvedValueOnce(successResult)
 
     // This tests that the function properly uses __proto__: null.
     await fetchViewRepo('test-org', 'test-repo')
 
     // The function should work without prototype pollution issues.
-    expect(mockSdk.getOrgRepo).toHaveBeenCalled()
+    expect(mockWithSdk).toHaveBeenCalled()
   })
 })
