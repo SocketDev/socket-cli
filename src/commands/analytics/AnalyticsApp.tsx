@@ -1,7 +1,8 @@
 /** @fileoverview Analytics Ink React component. */
 
-import { Box, Text } from 'ink'
-import React from 'react'
+import type { Element } from '../../utils/ink.mts'
+// @ts-ignore - tsx files treated as CJS by tsgo
+import { Box, Text } from '../../utils/ink.mts'
 
 export type FormattedData = {
   top_five_alert_types: Record<string, number>
@@ -62,7 +63,8 @@ function renderLineChartSummary(
   return `${title}:\n  Total: ${total} | Avg: ${avg} | Max: ${max} | Min: ${min}`
 }
 
-export function AnalyticsApp({ data }: AnalyticsAppProps): React.ReactElement {
+// @ts-ignore - tsx files treated as CJS by tsgo
+export function AnalyticsApp({ data }: AnalyticsAppProps): Element {
   return (
     <Box flexDirection="column" paddingX={1}>
       <Box marginBottom={1}>

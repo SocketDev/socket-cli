@@ -1,9 +1,8 @@
 /** @fileoverview Threat feed Ink React component. */
 
-import { Box, Text } from 'ink'
-import InkTable from 'ink-table'
-import React from 'react'
-
+import type { Element } from '../../utils/ink.mts'
+// @ts-ignore - tsx files treated as CJS by tsgo
+import { Box, InkTable, Text } from '../../utils/ink.mts'
 import type { ThreatResult } from './types.mts'
 
 export type ParsedThreatResult = ThreatResult & {
@@ -35,11 +34,12 @@ function formatTimeDiff(dateStr: string): string {
   return `${days} days ago`
 }
 
-export function ThreatFeedApp({
-  results,
-}: ThreatFeedAppProps): React.ReactElement {
+// @ts-ignore - tsx files treated as CJS by tsgo
+export function ThreatFeedApp({ results }: ThreatFeedAppProps): Element {
   // Note: Interactive features removed because stdin is piped for data transfer
   const selectedIndex = 0
+  const selectedThreat = results[selectedIndex]
+  const selectedPurl = selectedThreat?.parsed
 
   const tableData = results.map((threat, index) => {
     const { ecosystem, name, version } = threat.parsed
@@ -61,12 +61,7 @@ export function ThreatFeedApp({
       </Box>
 
       {/* Tips */}
-      <Box
-        borderStyle="single"
-        borderColor="yellow"
-        paddingX={1}
-        backgroundColor="black"
-      >
+      <Box borderStyle="single" borderColor="yellow" paddingX={1}>
         <Text color="yellow">↑/↓: Move q/ESC: Quit</Text>
       </Box>
 

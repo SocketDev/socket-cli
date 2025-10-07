@@ -1,8 +1,8 @@
 /** @fileoverview Audit log Ink React component. */
 
-import { Box, Text } from 'ink'
-import InkTable from 'ink-table'
-import React from 'react'
+import type { Element } from '../../utils/ink.mts'
+// @ts-ignore - tsx files treated as CJS by tsgo
+import { Box, InkTable, Text } from '../../utils/ink.mts'
 
 export type AuditLogEntry = {
   created_at: string
@@ -35,10 +35,8 @@ function formatEntry(entry: AuditLogEntry, keepQuotes = false): string {
   return json.replace(/^\s*"([^"]+)?"/gm, '  $1')
 }
 
-export function AuditLogApp({
-  orgSlug,
-  results,
-}: AuditLogAppProps): React.ReactElement {
+// @ts-ignore - tsx files treated as CJS by tsgo
+export function AuditLogApp({ orgSlug, results }: AuditLogAppProps): Element {
   // Note: Interactive features removed because stdin is piped for data transfer
   const selectedIndex = 0
 

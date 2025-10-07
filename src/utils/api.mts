@@ -70,8 +70,37 @@ function getCommandRequirements(
   }
 
   const requirements = getRequirements()
-  const key = getRequirementsKey(cmdPath)
-  return (requirements.api as any)[key] || undefined
+  const keys = getRequirementsKey(cmdPath)
+
+  // Aggregate requirements from multiple SDK methods
+  let totalQuota = 0
+  const allPermissions = new Set<string>()
+  let foundAny = false
+
+  for (const key of keys) {
+    const req = requirements.api[key]
+    if (req) {
+      foundAny = true
+      if (req.quota) {
+        totalQuota += req.quota
+      }
+      if (req.permissions) {
+        for (const perm of req.permissions) {
+          allPermissions.add(perm)
+        }
+      }
+    }
+  }
+
+  if (!foundAny) {
+    return undefined
+  }
+
+  return {
+    quota: totalQuota || undefined,
+    permissions:
+      allPermissions.size > 0 ? Array.from(allPermissions) : undefined,
+  }
 }
 
 /**

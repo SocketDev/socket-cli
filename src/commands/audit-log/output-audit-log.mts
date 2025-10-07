@@ -178,8 +178,14 @@ async function outputWithBlessed(
 ) {
   // Prepare data with formatted dates.
   const results = data.results.map(log => ({
-    ...log,
+    created_at: log.created_at ?? '',
+    event_id: log.event_id ?? '',
+    ip_address: log.ip_address ?? '',
+    type: log.type ?? '',
+    user_agent: log.user_agent ?? '',
+    user_email: log.user_email ?? '',
     formatted_created_at: msAtHome(log.created_at ?? ''),
+    ...(log.payload && { payload: log.payload }),
   }))
 
   // Render the Ink app directly in the current process.
