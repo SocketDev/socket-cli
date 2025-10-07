@@ -7,20 +7,18 @@
     "socket-pnpm": "dist/pnpm-cli.js",
     "socket-yarn": "dist/yarn-cli.js"
   },
-  "node": "/Users/jdalton/projects/socket-cli/.custom-node-build/node/out/Release/node",
-  "targets": [
-    "node22-macos-arm64",
-    "node22-macos-x64",
-    "node22-linux-arm64",
-    "node22-linux-x64",
-    "node22-win-arm64",
-    "node22-win-x64"
-  ],
+  "node": "/Users/jdalton/projects/socket-cli/.custom-node-build/node-yao-pkg/out/Release/node",
+  "targets": ["node24-macos-arm64"],
   "outputPath": "pkg-binaries",
   "assets": [
     "dist/**/*",
     "requirements.json",
     "translations.json",
     "shadow-bin/**/*"
-  ]
+  ],
+  "scripts": {
+    "node_modules/.pnpm/yoga-layout@3.2.1_patch_hash=dafe472cc32ba93081f95126d6073a47897694d476fe87bb33f8ddfd7a7f4131/node_modules/yoga-layout/dist/binaries/yoga-wasm-base64-esm.js": "node_modules/.pnpm_patches/yoga-layout@3.2.1/dist/binaries/yoga-wasm-base64-esm.js",
+    "node_modules/.pnpm/yoga-layout@3.2.1_patch_hash=dafe472cc32ba93081f95126d6073a47897694d476fe87bb33f8ddfd7a7f4131/node_modules/yoga-layout/dist/src/wrapAssembly.js": "node_modules/.pnpm_patches/yoga-layout@3.2.1/dist/src/wrapAssembly.js",
+    "node_modules/.pnpm/yoga-layout@3.2.1_patch_hash=dafe472cc32ba93081f95126d6073a47897694d476fe87bb33f8ddfd7a7f4131/node_modules/yoga-layout/dist/src/generated/YGEnums.js": "node_modules/.pnpm_patches/yoga-layout@3.2.1/dist/src/generated/YGEnums.js"
+  }
 }
