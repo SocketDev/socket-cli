@@ -1,6 +1,6 @@
 /** @fileoverview Analytics Ink React component. */
 
-import { Box, Text, useApp, useInput } from 'ink'
+import { Box, Text } from 'ink'
 import React from 'react'
 
 export type FormattedData = {
@@ -63,14 +63,6 @@ function renderLineChartSummary(
 }
 
 export function AnalyticsApp({ data }: AnalyticsAppProps): React.ReactElement {
-  const { exit } = useApp()
-
-  useInput((input, key) => {
-    if (input === 'q' || key.escape || (key.ctrl && input === 'c')) {
-      exit()
-    }
-  })
-
   return (
     <Box flexDirection="column" paddingX={1}>
       <Box marginBottom={1}>
@@ -135,15 +127,6 @@ export function AnalyticsApp({ data }: AnalyticsAppProps): React.ReactElement {
           Top 5 Alert Types:
         </Text>
         <Text>{renderBarChart(data.top_five_alert_types)}</Text>
-      </Box>
-
-      <Box
-        borderStyle="single"
-        borderColor="yellow"
-        paddingX={1}
-        backgroundColor="black"
-      >
-        <Text color="yellow">q/ESC: Quit</Text>
       </Box>
     </Box>
   )

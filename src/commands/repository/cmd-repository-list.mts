@@ -134,12 +134,11 @@ async function run(
     sort: string
   }
 
-  const hasApiToken = hasDefaultApiToken()
-
   const { 0: orgSlug } = await determineOrgSlug(orgFlag, interactive, dryRun)
 
   const outputKind = getOutputKind(json, markdown)
 
+  // Input validations (run even in dry-run mode)
   const wasValidInput = checkCommandInput(
     outputKind,
     {
@@ -156,12 +155,6 @@ async function run(
     },
     {
       nook: true,
-      test: hasApiToken,
-      message: 'This command requires a Socket API token for access',
-      fail: 'try `socket login`',
-    },
-    {
-      nook: true,
       test: direction === 'asc' || direction === 'desc',
       message: 'The --direction value must be "asc" or "desc"',
       fail: 'unexpected value',
@@ -173,6 +166,18 @@ async function run(
 
   if (dryRun) {
     logger.log(constants.DRY_RUN_BAILING_NOW)
+    return
+  }
+
+  // Auth check (only in non-dry-run mode)
+  const hasApiToken = hasDefaultApiToken()
+  const wasValidAuth = checkCommandInput(outputKind, {
+    nook: true,
+    test: hasApiToken,
+    message: 'This command requires a Socket API token for access',
+    fail: 'try `socket login`',
+  })
+  if (!wasValidAuth) {
     return
   }
 

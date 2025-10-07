@@ -7,7 +7,6 @@ import constants from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
-import { InputError } from '../../utils/errors.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import {
@@ -89,33 +88,7 @@ async function run(
 
   const interactive = !!cli.flags['interactive']
 
-  const hasApiToken = hasDefaultApiToken()
-
   const outputKind = getOutputKind(json, markdown)
-
-  if (dryRun) {
-    await determineOrgSlug(String(orgFlag || ''), interactive, dryRun)
-    logger.log(constants.DRY_RUN_BAILING_NOW)
-    // Validate input in dry-run mode without setting exit code.
-    checkCommandInput(
-      outputKind,
-      {
-        nook: true,
-        test: !json || !markdown,
-        message: 'The json and markdown flags cannot be both set, pick one',
-        fail: 'omit one',
-      },
-      {
-        nook: true,
-        test: hasApiToken,
-        message: 'This command requires a Socket API token for access',
-        fail: 'try `socket login`',
-      },
-    )
-    // Reset exit code for dry-run mode.
-    process.exitCode = 0
-    return
-  }
 
   const { 0: orgSlug } = await determineOrgSlug(
     String(orgFlag || ''),
@@ -123,28 +96,41 @@ async function run(
     dryRun,
   )
 
+  // Input validations (run even in dry-run mode)
   const wasValidInput = checkCommandInput(
     outputKind,
+    {
+      nook: true,
+      test: !!orgSlug,
+      message: 'Unable to determine organization slug',
+      fail: 'missing',
+    },
     {
       nook: true,
       test: !json || !markdown,
       message: 'The json and markdown flags cannot be both set, pick one',
       fail: 'omit one',
     },
-    {
-      nook: true,
-      test: hasApiToken,
-      message: 'This command requires a Socket API token for access',
-      fail: 'try `socket login`',
-    },
   )
   if (!wasValidInput) {
     return
   }
 
-  if (!orgSlug) {
-    process.exitCode = 2
-    throw new InputError('Unable to determine organization slug')
+  if (dryRun) {
+    logger.log(constants.DRY_RUN_BAILING_NOW)
+    return
+  }
+
+  // Auth check (only in non-dry-run mode)
+  const hasApiToken = hasDefaultApiToken()
+  const wasValidAuth = checkCommandInput(outputKind, {
+    nook: true,
+    test: hasApiToken,
+    message: 'This command requires a Socket API token for access',
+    fail: 'try `socket login`',
+  })
+  if (!wasValidAuth) {
+    return
   }
 
   await handleSecurityPolicy(orgSlug, outputKind)

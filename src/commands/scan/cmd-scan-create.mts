@@ -444,6 +444,7 @@ async function run(
     hasReachExcludePaths ||
     reachSkipCache
 
+  // Input validations (run even in dry-run mode)
   const wasValidInput = checkCommandInput(
     outputKind,
     {
@@ -462,12 +463,6 @@ async function run(
       test: !json || !markdown,
       message: 'The json and markdown flags cannot be both set, pick one',
       fail: 'omit one',
-    },
-    {
-      nook: true,
-      test: hasApiToken,
-      message: 'This command requires a Socket API token for access',
-      fail: 'try `socket login`',
     },
     {
       nook: true,
@@ -494,6 +489,17 @@ async function run(
 
   if (dryRun) {
     logger.log(constants.DRY_RUN_BAILING_NOW)
+    return
+  }
+
+  // Auth check (only in non-dry-run mode)
+  const wasValidAuth = checkCommandInput(outputKind, {
+    nook: true,
+    test: hasApiToken,
+    message: 'This command requires a Socket API token for access',
+    fail: 'try `socket login`',
+  })
+  if (!wasValidAuth) {
     return
   }
 

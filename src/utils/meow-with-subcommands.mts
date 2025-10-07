@@ -37,8 +37,8 @@ import constants, {
   FLAG_ORG,
   NPM,
   NPX,
-  // PNPM,
-  // YARN,
+  PNPM,
+  YARN,
 } from '../constants.mts'
 import { commonFlags } from '../flags.mts'
 import { spawnSocketPython } from './python-standalone.mts'
@@ -564,6 +564,7 @@ export async function meowWithSubcommands(
     const commands = new Set([
       'analytics',
       'audit-log',
+      'cargo',
       'ci',
       'cdxgen',
       'config',
@@ -582,7 +583,7 @@ export async function meowWithSubcommands(
       'package',
       //'patch',
       'pip',
-      // PNPM,
+      PNPM,
       'raw-npm',
       'raw-npx',
       'repository',
@@ -590,9 +591,10 @@ export async function meowWithSubcommands(
       //'security',
       'threat-feed',
       'uninstall',
+      'uv',
       'whoami',
       'wrapper',
-      // YARN,
+      YARN,
     ])
     Object.entries(subcommands)
       .filter(([_name, subcommand]) => !subcommand.hidden)

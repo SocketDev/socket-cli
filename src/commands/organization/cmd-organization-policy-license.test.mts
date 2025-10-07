@@ -68,7 +68,7 @@ describe('socket organization policy license', async () => {
     'should reject dry run without proper args',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
@@ -88,7 +88,9 @@ describe('socket organization policy license', async () => {
         \\xd7  Input error:  Please review the input requirements and try again"
       `)
 
-      expect(code, 'dry-run exits with success code').toBe(0)
+      expect(code, 'dry-run exits with error code when validation fails').toBe(
+        2,
+      )
     },
   )
 
@@ -107,7 +109,7 @@ describe('socket organization policy license', async () => {
     'should be ok with org name and id',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
@@ -123,10 +125,13 @@ describe('socket organization policy license', async () => {
         i Note: Run \`socket login\` to set a default org.
               Use the --org flag to override the default org.
 
-        \\xd7 Skipping auto-discovery of org in dry-run mode"
+        \\xd7 Skipping auto-discovery of org in dry-run mode
+        \\xd7  Input error:  Please review the input requirements and try again"
       `)
 
-      expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
+      expect(code, 'dry-run should exit with code 2 if validation fails').toBe(
+        2,
+      )
     },
   )
 
@@ -142,7 +147,7 @@ describe('socket organization policy license', async () => {
     'should accept default org',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
@@ -152,10 +157,14 @@ describe('socket organization policy license', async () => {
            _____         _       _        /---------------
           |   __|___ ___| |_ ___| |_      | CLI: <redacted>
           |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket organization policy license\`, cwd: <redacted>"
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket organization policy license\`, cwd: <redacted>
+
+        \\xd7  Input error:  Please review the input requirements and try again"
       `)
 
-      expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
+      expect(code, 'dry-run should exit with code 2 if validation fails').toBe(
+        2,
+      )
     },
   )
 
@@ -173,7 +182,7 @@ describe('socket organization policy license', async () => {
     `should accept ${FLAG_ORG} flag`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
@@ -183,10 +192,14 @@ describe('socket organization policy license', async () => {
            _____         _       _        /---------------
           |   __|___ ___| |_ ___| |_      | CLI: <redacted>
           |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket organization policy license\`, cwd: <redacted>"
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket organization policy license\`, cwd: <redacted>
+
+        \\xd7  Input error:  Please review the input requirements and try again"
       `)
 
-      expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
+      expect(code, 'dry-run should exit with code 2 if validation fails').toBe(
+        2,
+      )
     },
   )
 })

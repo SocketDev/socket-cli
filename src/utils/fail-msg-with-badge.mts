@@ -7,7 +7,7 @@ export function failMsgWithBadge(
   message: string | undefined,
 ): string {
   const prefix = colors.bgRedBright(
-    colors.bold(colors.red(` ${badge}${message ? ': ' : ''}`)),
+    colors.bold(colors.white(` ${badge}${message ? ': ' : ''}`)),
   )
   const postfix = message ? ` ${colors.bold(message)}` : ''
   return `${prefix}${postfix}`

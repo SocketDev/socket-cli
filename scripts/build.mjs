@@ -20,28 +20,14 @@ async function main() {
   try {
     const { values } = parseArgs({
       options: {
-        'ink-only': { type: 'boolean', default: false },
         'src-only': { type: 'boolean', default: false },
         'types-only': { type: 'boolean', default: false },
       },
       strict: false,
     })
 
-    const inkOnly = values['ink-only']
     const srcOnly = values['src-only']
     const typesOnly = values['types-only']
-
-    if (inkOnly) {
-      logger.log('Building Ink components only...')
-      const exitCode = await runSequence([
-        {
-          args: ['-c', '.config/rollup.ink.config.mjs'],
-          command: 'rollup',
-        },
-      ])
-      process.exitCode = exitCode
-      return
-    }
 
     if (typesOnly) {
       logger.log('Building TypeScript declarations only...')
@@ -61,10 +47,6 @@ async function main() {
           args: ['-c', '.config/rollup.dist.config.mjs'],
           command: 'rollup',
         },
-        {
-          args: ['-c', '.config/rollup.ink.config.mjs'],
-          command: 'rollup',
-        },
       ])
       process.exitCode = exitCode
       return
@@ -73,15 +55,11 @@ async function main() {
     // Build both src and types
     logger.log('Building CLI (source + types)...')
 
-    // Build src + ink
+    // Build src
     const srcExitCode = await runSequence([
       { args: ['run', 'clean:dist'], command: 'pnpm' },
       {
         args: ['-c', '.config/rollup.dist.config.mjs'],
-        command: 'rollup',
-      },
-      {
-        args: ['-c', '.config/rollup.ink.config.mjs'],
         command: 'rollup',
       },
     ])

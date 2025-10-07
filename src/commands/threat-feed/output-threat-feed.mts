@@ -1,11 +1,11 @@
 /** @fileoverview Threat feed output formatter for Socket CLI. Displays security threat intelligence in JSON or text formats. Shows malicious packages, threat types, and security recommendations. */
 
-import path from 'node:path'
+import { render } from 'ink'
+import React from 'react'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
 
-import constants from '../../constants.mts'
+import { ThreatFeedApp } from './ThreatFeedApp.js'
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
 import { getPurlObject } from '../../utils/purl.mts'
 import { serializeResultJson } from '../../utils/serialize-result-json.mts'
@@ -64,33 +64,12 @@ export async function outputThreatFeed(
     parsed: parsePurl(threat.purl),
   }))
 
-  // Spawn the Ink CLI subprocess.
-  const inkCliPath = path.join(
-    constants.externalPath,
-    'ink',
-    'threat-feed',
-    'cli.js',
+  // Render the Ink app directly in the current process.
+  const { waitUntilExit } = render(
+    React.createElement(ThreatFeedApp, {
+      results: parsedResults,
+    }),
   )
 
-  const spawnPromise = spawn(process.execPath, [inkCliPath], {
-    stdioString: true,
-    stdio: ['pipe', 'inherit', 'pipe'],
-  })
-
-  // Write data to stdin.
-  if (spawnPromise.stdin) {
-    spawnPromise.stdin.write(JSON.stringify({ results: parsedResults }))
-    spawnPromise.stdin.end()
-  }
-
-  const spawnResult = await spawnPromise
-
-  if (spawnResult.code !== 0) {
-    logger.error(`Ink app failed with exit code ${spawnResult.code}`)
-    const stderr = spawnResult.stderr.toString()
-    if (stderr) {
-      logger.error(stderr)
-    }
-    process.exitCode = spawnResult.code
-  }
+  await waitUntilExit()
 }

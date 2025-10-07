@@ -61,31 +61,33 @@ async function run(
 
   const markdown = Boolean(cli.flags['markdown'])
 
-  const hasApiToken = hasDefaultApiToken()
-
   const outputKind = getOutputKind(json, markdown)
 
-  const wasValidInput = checkCommandInput(
-    outputKind,
-    {
-      nook: true,
-      test: !json || !markdown,
-      message: 'The json and markdown flags cannot be both set, pick one',
-      fail: 'omit one',
-    },
-    {
-      nook: true,
-      test: hasApiToken,
-      message: 'This command requires a Socket API token for access',
-      fail: 'try `socket login`',
-    },
-  )
+  // Input validations (run even in dry-run mode)
+  const wasValidInput = checkCommandInput(outputKind, {
+    nook: true,
+    test: !json || !markdown,
+    message: 'The json and markdown flags cannot be both set, pick one',
+    fail: 'omit one',
+  })
   if (!wasValidInput) {
     return
   }
 
   if (dryRun) {
     logger.log(constants.DRY_RUN_BAILING_NOW)
+    return
+  }
+
+  // Auth check (only in non-dry-run mode)
+  const hasApiToken = hasDefaultApiToken()
+  const wasValidAuth = checkCommandInput(outputKind, {
+    nook: true,
+    test: hasApiToken,
+    message: 'This command requires a Socket API token for access',
+    fail: 'try `socket login`',
+  })
+  if (!wasValidAuth) {
     return
   }
 

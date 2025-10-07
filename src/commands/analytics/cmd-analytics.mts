@@ -57,24 +57,27 @@ async function run(
     help: (command, { flags }) =>
       `
     Usage
-      $ ${command} [options] [ "org" | "repo" <reponame>] [TIME]
+      $ ${command} [options] [TIME]
+      $ ${command} [options] org [TIME]
+      $ ${command} [options] repo <org/repo> [TIME]
 
     API Token Requirements
       ${getFlagApiRequirementsOutput(`${parentName}:${CMD_NAME}`)}
 
+    Arguments
+      TIME        Number of days: 7, 30, or 90 (default: 30)
+      <org/repo>  Repository slug in org/repo format (e.g., SocketDev/socket-cli)
+
     The scope is either org or repo level, defaults to org.
-
-    When scope is repo, a repo slug must be given as well.
-
-    The TIME argument must be number 7, 30, or 90 and defaults to 30.
 
     Options
       ${getFlagListOutput(flags)}
 
     Examples
-      $ ${command} org 7
-      $ ${command} repo test-repo 30
+      $ ${command}
       $ ${command} 90
+      $ ${command} org 7
+      $ ${command} repo SocketDev/socket-cli 30
   `,
   }
 

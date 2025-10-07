@@ -1,8 +1,8 @@
 /** @fileoverview Threat feed Ink React component. */
 
-import { Box, Text, useApp, useInput } from 'ink'
+import { Box, Text } from 'ink'
 import InkTable from 'ink-table'
-import React, { useState } from 'react'
+import React from 'react'
 
 import type { ThreatResult } from './types.mts'
 
@@ -38,21 +38,8 @@ function formatTimeDiff(dateStr: string): string {
 export function ThreatFeedApp({
   results,
 }: ThreatFeedAppProps): React.ReactElement {
-  const { exit } = useApp()
-  const [selectedIndex, setSelectedIndex] = useState(0)
-
-  const selectedThreat = results[selectedIndex]
-  const selectedPurl = selectedThreat?.parsed
-
-  useInput((input, key) => {
-    if (input === 'q' || key.escape || (key.ctrl && input === 'c')) {
-      exit()
-    } else if (key.upArrow) {
-      setSelectedIndex(prev => Math.max(0, prev - 1))
-    } else if (key.downArrow) {
-      setSelectedIndex(prev => Math.min(results.length - 1, prev + 1))
-    }
-  })
+  // Note: Interactive features removed because stdin is piped for data transfer
+  const selectedIndex = 0
 
   const tableData = results.map((threat, index) => {
     const { ecosystem, name, version } = threat.parsed

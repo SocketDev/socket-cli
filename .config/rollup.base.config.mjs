@@ -16,6 +16,8 @@ import { stripAnsi } from '@socketsecurity/registry/lib/strings'
 
 import constants from '../scripts/constants.mjs'
 import socketModifyPlugin from '../scripts/rollup/socket-modify-plugin.mjs'
+// Transform Ink to remove DEV mode block with top-level await
+import transformInkPlugin from '../scripts/rollup/transform-ink-plugin.mjs'
 import {
   getPackageName,
   isBuiltin,
@@ -184,10 +186,21 @@ export default function baseConfig(extendConfig = {}) {
     },
     ...extendConfig,
     plugins: [
+      // Resolve yoga-layout to our external wrapper
+      {
+        name: 'resolve-yoga-layout',
+        resolveId(id) {
+          if (id === 'yoga-layout') {
+            return path.join(rootPath, 'src/external/yoga-layout.mjs')
+          }
+        },
+      },
+      // Transform Ink to remove DEV mode block with top-level await
+      transformInkPlugin(),
       extractedPlugins['node-resolve'] ??
         nodeResolve({
           exportConditions: ['node'],
-          extensions: ['.mjs', '.js', '.json', '.ts', '.mts'],
+          extensions: ['.mjs', '.mts', '.js', '.ts', '.tsx', '.json'],
           preferBuiltins: true,
         }),
       extractedPlugins['json'] ?? jsonPlugin(),
@@ -205,7 +218,7 @@ export default function baseConfig(extendConfig = {}) {
           babelHelpers: 'runtime',
           babelrc: false,
           configFile: path.join(configPath, 'babel.config.js'),
-          extensions: ['.mjs', '.js', '.ts', '.mts'],
+          extensions: ['.mjs', '.mts', '.js', '.ts', '.tsx'],
         }),
       extractedPlugins['unplugin-purge-polyfills'] ??
         purgePolyfills.rollup({

@@ -55,27 +55,42 @@ export function getFlagApiRequirementsOutput(
     __proto__: null,
     ...options,
   } as ApiRequirementsOptions
-  const key = getRequirementsKey(cmdPath)
+  const keys = getRequirementsKey(cmdPath)
   const requirements = getRequirements()
-  const data = (requirements.api as any)[key]
-  let result = ''
-  if (data) {
-    const quota: number = data?.quota
-    const rawPerms: string[] = data?.permissions
-    const padding = ''.padEnd(indent)
-    const lines = []
-    if (Number.isFinite(quota) && quota > 0) {
-      lines.push(
-        `${padding}- Quota: ${quota} ${pluralize('unit', { count: quota })}`,
-      )
+
+  // Combine requirements from multiple SDK methods
+  let totalQuota = 0
+  const allPerms = new Set<string>()
+
+  for (const k of keys) {
+    const data = (requirements.api as any)[k]
+    if (data) {
+      const quota: number = data?.quota
+      const rawPerms: string[] = data?.permissions
+      if (Number.isFinite(quota) && quota > 0) {
+        totalQuota += quota
+      }
+      if (Array.isArray(rawPerms)) {
+        for (const perm of rawPerms) {
+          allPerms.add(perm)
+        }
+      }
     }
-    if (Array.isArray(rawPerms) && rawPerms.length) {
-      const perms = rawPerms.slice().sort(naturalCompare)
-      lines.push(`${padding}- Permissions: ${joinAnd(perms)}`)
-    }
-    result += lines.join('\n')
   }
-  return result.trim() || '(none)'
+
+  const padding = ''.padEnd(indent)
+  const lines = []
+  if (totalQuota > 0) {
+    lines.push(
+      `${padding}- Quota: ${totalQuota} ${pluralize('unit', { count: totalQuota })}`,
+    )
+  }
+  if (allPerms.size > 0) {
+    const perms = [...allPerms].sort(naturalCompare)
+    lines.push(`${padding}- Permissions: ${joinAnd(perms)}`)
+  }
+
+  return lines.length > 0 ? lines.join('\n') : '(none)'
 }
 
 export function getFlagListOutput(

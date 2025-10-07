@@ -8,6 +8,7 @@ import type { CResult } from '../../types.mts'
 // Mock the dependencies.
 vi.mock('@socketsecurity/registry/lib/logger', () => ({
   logger: {
+    error: vi.fn(),
     fail: vi.fn(),
     log: vi.fn(),
     warn: vi.fn(),
@@ -22,12 +23,9 @@ vi.mock('../../utils/serialize-result-json.mts', () => ({
   serializeResultJson: vi.fn(result => JSON.stringify(result)),
 }))
 
-vi.mock('../../utils/ms-at-home.mts', () => ({
-  msAtHome: vi.fn(() => '2 days ago'),
-}))
-
 vi.mock('../../constants.mts', () => ({
   default: {
+    externalPath: '/mock/external',
     spinner: {
       isSpinning: false,
       start: vi.fn(),
@@ -36,41 +34,23 @@ vi.mock('../../constants.mts', () => ({
   },
 }))
 
-// Mock blessed and blessed-contrib.
-vi.mock('blessed/lib/widgets/screen.js', () => {
-  const mockScreen = {
-    append: vi.fn(),
-    destroy: vi.fn(),
-    key: vi.fn(),
-    render: vi.fn(),
-  }
-  return {
-    default: vi.fn(() => mockScreen),
-  }
-})
-
-vi.mock('blessed/lib/widgets/box.js', () => {
-  const mockBox = {
-    setContent: vi.fn(),
-  }
-  return {
-    default: vi.fn(() => mockBox),
-  }
-})
-
-vi.mock('blessed-contrib/lib/widget/table.js', () => {
-  const mockTable = {
-    focus: vi.fn(),
-    rows: {
-      on: vi.fn(),
-      selected: 0,
-    },
-    setData: vi.fn(),
-  }
-  return {
-    default: vi.fn(() => mockTable),
-  }
-})
+// Mock spawn for Ink subprocess.
+vi.mock('@socketsecurity/registry/lib/spawn', () => ({
+  spawn: vi.fn(() => {
+    const mockStdin = {
+      write: vi.fn(),
+      end: vi.fn(),
+    }
+    const spawnPromise = Promise.resolve({
+      code: 0,
+      stderr: Buffer.from(''),
+      stdout: Buffer.from(''),
+    })
+    // @ts-expect-error - Adding stdin to promise.
+    spawnPromise.stdin = mockStdin
+    return spawnPromise
+  }),
+}))
 
 // Mock process.exit.
 const mockProcessExit = vi.fn()
@@ -184,12 +164,9 @@ describe('outputThreatFeed', () => {
     expect(process.exitCode).toBeUndefined()
   })
 
-  it('handles threat results data formatting', async () => {
-    const { msAtHome } = await import('../../utils/ms-at-home.mts')
-    const mockMsAtHome = vi.mocked(msAtHome)
-
-    // Mock the entire outputThreatFeed module to avoid blessed issues.
-    const { outputThreatFeed } = await import('./output-threat-feed.mts')
+  it('spawns Ink CLI with threat results in text format', async () => {
+    const { spawn } = await import('@socketsecurity/registry/lib/spawn')
+    const mockSpawn = vi.mocked(spawn)
 
     const threatResults: ThreatResult[] = [
       {
@@ -212,9 +189,16 @@ describe('outputThreatFeed', () => {
       },
     }
 
-    // Just test JSON output to avoid blessed complexity.
-    await outputThreatFeed(result, 'json')
+    await outputThreatFeed(result, 'text')
 
+    expect(mockSpawn).toHaveBeenCalledWith(
+      process.execPath,
+      [expect.stringContaining('ink/threat-feed/cli.js')],
+      expect.objectContaining({
+        stdioString: true,
+        stdio: ['pipe', 'inherit', 'pipe'],
+      }),
+    )
     expect(process.exitCode).toBeUndefined()
   })
 
@@ -243,5 +227,47 @@ describe('outputThreatFeed', () => {
     expect(mockWarn).toHaveBeenCalledWith(
       'Did not receive any data to display.',
     )
+  })
+
+  it('handles Ink CLI spawn failure', async () => {
+    const { spawn } = await import('@socketsecurity/registry/lib/spawn')
+    const { logger } = await import('@socketsecurity/registry/lib/logger')
+    const mockError = vi.mocked(logger.error)
+
+    // Mock spawn to return failure.
+    vi.mocked(spawn).mockReturnValueOnce(
+      Promise.resolve({
+        code: 1,
+        stderr: Buffer.from('Ink error'),
+        stdout: Buffer.from(''),
+      }) as any,
+    )
+
+    const threatResults: ThreatResult[] = [
+      {
+        createdAt: '2024-01-01T00:00:00Z',
+        description: 'Test threat',
+        id: 1,
+        locationHtmlUrl: 'https://example.com',
+        packageHtmlUrl: 'https://example.com/package',
+        purl: 'pkg:npm/test@1.0.0',
+        removedAt: null,
+        threatType: 'malware',
+      },
+    ]
+
+    const result: CResult<ThreadFeedResponse> = {
+      ok: true,
+      data: {
+        nextPage: 'next',
+        results: threatResults,
+      },
+    }
+
+    await outputThreatFeed(result, 'text')
+
+    expect(mockError).toHaveBeenCalledWith('Ink app failed with exit code 1')
+    expect(mockError).toHaveBeenCalledWith('Ink error')
+    expect(process.exitCode).toBe(1)
   })
 })

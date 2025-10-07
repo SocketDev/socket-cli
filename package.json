@@ -193,6 +193,7 @@
     "yaml": "2.8.1",
     "yargs-parser": "22.0.0",
     "yoctocolors-cjs": "2.1.3",
+    "yoga-layout-prebuilt": "1.10.0",
     "zod": "4.1.8"
   },
   "engines": {

@@ -1,8 +1,8 @@
 /** @fileoverview Audit log Ink React component. */
 
-import { Box, Text, useApp, useInput } from 'ink'
+import { Box, Text } from 'ink'
 import InkTable from 'ink-table'
-import React, { useState } from 'react'
+import React from 'react'
 
 export type AuditLogEntry = {
   created_at: string
@@ -39,28 +39,10 @@ export function AuditLogApp({
   orgSlug,
   results,
 }: AuditLogAppProps): React.ReactElement {
-  const { exit } = useApp()
-  const [selectedIndex, setSelectedIndex] = useState(0)
+  // Note: Interactive features removed because stdin is piped for data transfer
+  const selectedIndex = 0
 
   const selectedEntry = results[selectedIndex]
-
-  useInput((input, key) => {
-    if (input === 'q' || key.escape || (key.ctrl && input === 'c')) {
-      exit()
-    } else if (key.upArrow) {
-      setSelectedIndex(prev => Math.max(0, prev - 1))
-    } else if (key.downArrow) {
-      setSelectedIndex(prev => Math.min(results.length - 1, prev + 1))
-    } else if (key.return) {
-      const selected = results[selectedIndex]
-      if (selected) {
-        const formatted = formatEntry(selected, true)
-        // Write to stdout before exiting.
-        process.stdout.write(`Last selection:\n${formatted}\n`)
-      }
-      exit()
-    }
-  })
 
   const tableData = results.map((entry, index) => ({
     ' ': index === selectedIndex ? '▶' : ' ',
@@ -77,16 +59,6 @@ export function AuditLogApp({
       {/* Table */}
       <Box flexGrow={1} flexShrink={1} overflowY="hidden">
         <InkTable data={tableData} />
-      </Box>
-
-      {/* Tips */}
-      <Box
-        borderStyle="single"
-        borderColor="yellow"
-        paddingX={1}
-        backgroundColor="black"
-      >
-        <Text color="yellow">↑/↓: Move Enter: Select q/ESC: Quit</Text>
       </Box>
 
       {/* Details */}

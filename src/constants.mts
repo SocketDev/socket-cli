@@ -1033,8 +1033,8 @@ const lazySocketAppDataPath = (): string | undefined => {
   // - Linux: %XDG_DATA_HOME%/socket/settings or "~/.local/share/socket/settings"
   const { WIN32 } = constants
   let dataHome: string | undefined = WIN32
-    ? constants.ENV['LOCALAPPDATA']
-    : constants.ENV['XDG_DATA_HOME']
+    ? regConsts.ENV['LOCALAPPDATA']
+    : regConsts.ENV['XDG_DATA_HOME']
   if (!dataHome) {
     if (WIN32) {
       const logger = /*@__PURE__*/ require('@socketsecurity/registry/lib/logger')

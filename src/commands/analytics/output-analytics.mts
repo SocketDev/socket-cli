@@ -1,12 +1,13 @@
 /** @fileoverview Analytics output formatting for Socket CLI. Formats organization and repository analytics in JSON, markdown, or text format with metrics tables and file export support. */
 
 import fs from 'node:fs/promises'
-import path from 'node:path'
+
+import { render } from 'ink'
+import React from 'react'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
 
-import constants from '../../constants.mts'
+import { AnalyticsApp } from './AnalyticsApp.js'
 import { debugFileOp } from '../../utils/debug.mts'
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
 import { mdTableStringNumber } from '../../utils/markdown.mts'
@@ -203,35 +204,10 @@ ${mdTableStringNumber('Name', 'Counts', data['top_five_alert_types'])}
 }
 
 async function displayAnalyticsScreen(data: FormattedData): Promise<void> {
-  // Spawn the Ink CLI subprocess.
-  const inkCliPath = path.join(
-    constants.externalPath,
-    'ink',
-    'analytics',
-    'cli.js',
-  )
+  // Render the Ink app directly in the current process.
+  const { waitUntilExit } = render(React.createElement(AnalyticsApp, { data }))
 
-  const spawnPromise = spawn(process.execPath, [inkCliPath], {
-    stdioString: true,
-    stdio: ['pipe', 'inherit', 'pipe'],
-  })
-
-  // Write data to stdin.
-  if (spawnPromise.stdin) {
-    spawnPromise.stdin.write(JSON.stringify({ data }))
-    spawnPromise.stdin.end()
-  }
-
-  const result = await spawnPromise
-
-  if (result.code !== 0) {
-    logger.error(`Ink app failed with exit code ${result.code}`)
-    const stderr = result.stderr.toString()
-    if (stderr) {
-      logger.error(stderr)
-    }
-    process.exitCode = result.code
-  }
+  await waitUntilExit()
 }
 
 export function formatDataRepo(
