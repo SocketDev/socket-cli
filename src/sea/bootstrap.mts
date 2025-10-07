@@ -35,7 +35,6 @@ try {
 const CLI_INSTALL_LOCK_FILE_NAME = '.install.lock'
 const DOWNLOAD_MESSAGE_DELAY_MS = 2_000
 const HTTPS_TIMEOUT_MS = 30_000
-const IPC_HANDSHAKE_TIMEOUT_MS = 5_000
 // 30 seconds total.
 const LOCK_MAX_RETRIES = 60
 const LOCK_RETRY_DELAY_MS = 500
@@ -45,9 +44,12 @@ const NPM_REGISTRY =
   'https://registry.npmjs.org'
 const SOCKET_CLI_DIR =
   process.env['SOCKET_CLI_DIR'] || path.join(SOCKET_HOME, '_cli')
+const SOCKET_CLI_PACKAGE_DIR = path.join(SOCKET_CLI_DIR, 'package')
 const SOCKET_CLI_PACKAGE =
   process.env['SOCKET_CLI_PACKAGE'] || '@socketsecurity/cli'
-const SOCKET_CLI_PACKAGE_JSON = path.join(SOCKET_CLI_DIR, 'package.json')
+const SOCKET_CLI_PACKAGE_JSON = path.join(SOCKET_CLI_PACKAGE_DIR, 'package.json')
+// Minimum Node.js version for system Node (v22 = Active LTS)
+const MIN_NODE_VERSION = parseInt(process.env['MIN_NODE_VERSION'] || '22', 10)
 
 // ============================================================================
 // Helper utilities
@@ -69,6 +71,7 @@ function debugLog(message: string): void {
 function formatError(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
 }
+
 
 /**
  * Sanitize tarball path to prevent directory traversal attacks.
@@ -238,8 +241,8 @@ async function downloadAndInstallPackage(version: string): Promise<void> {
   let tarballPath: string | undefined
 
   try {
-    // Ensure CLI directory exists before acquiring lock.
-    await fs.mkdir(SOCKET_CLI_DIR, { recursive: true })
+    // Ensure CLI package directory exists before acquiring lock.
+    await fs.mkdir(SOCKET_CLI_PACKAGE_DIR, { recursive: true })
 
     // Acquire installation lock.
     lockPath = await acquireLock()
@@ -347,7 +350,7 @@ async function extractTarball(tarballPath: string): Promise<void> {
     // Sanitize file path to prevent directory traversal attacks.
     // This removes 'package/' prefix, strips '..' segments, and normalizes separators.
     const sanitizedPath = sanitizeTarballPath(file.name)
-    const targetPath = path.join(SOCKET_CLI_DIR, sanitizedPath)
+    const targetPath = path.join(SOCKET_CLI_PACKAGE_DIR, sanitizedPath)
 
     if (file.type === 'directory') {
       await retryWithBackoff(() =>
@@ -408,6 +411,23 @@ async function extractTarball(tarballPath: string): Promise<void> {
             },
           )
         }
+      }
+
+      // CRITICAL: Ensure bin/ and shadow-bin/ files are executable.
+      // These directories contain entry points that must be executable.
+      const relativePath = path.relative(SOCKET_CLI_PACKAGE_DIR, targetPath)
+      if (
+        relativePath.startsWith('bin' + path.sep) ||
+        relativePath.startsWith('shadow-bin' + path.sep) ||
+        relativePath.startsWith('dist' + path.sep + 'shadow')
+      ) {
+        await retryWithBackoff(() => fs.chmod(targetPath, 0o755)).catch(
+          error => {
+            console.error(
+              `Warning: Failed to make ${targetPath} executable: ${formatError(error)}`,
+            )
+          },
+        )
       }
     }
   }
@@ -626,9 +646,16 @@ async function spawnEmbeddedNode(
   cliPath: string,
   args: string[] | readonly string[],
 ): Promise<void> {
-  return await spawnNodeProcess(process.execPath, args, {
+  // Build command arguments: security/warning flags + cli path + user args
+  const commandArgs = [
+    '--no-addons',
+    '--no-warnings',
+    cliPath,
+    ...args,
+  ]
+
+  return await spawnNodeProcess(process.execPath, commandArgs, {
     env: process.env,
-    cliPathForEmbedded: cliPath,
   })
 }
 
@@ -641,10 +668,9 @@ async function spawnNodeProcess(
   commandArgs: string[] | readonly string[],
   options: {
     env: NodeJS.ProcessEnv
-    cliPathForEmbedded?: string
   },
 ): Promise<void> {
-  const { cliPathForEmbedded, env } = options
+  const { env } = options
 
   const child = spawn(command, commandArgs, {
     stdio: ['inherit', 'inherit', 'inherit', 'ipc'],
@@ -657,7 +683,6 @@ async function spawnNodeProcess(
     const handshake: {
       SOCKET_IPC_HANDSHAKE: {
         SOCKET_CLI_STUB_PATH?: string
-        SOCKET_CLI_PATH?: string
       }
     } = {
       SOCKET_IPC_HANDSHAKE: {},
@@ -665,9 +690,6 @@ async function spawnNodeProcess(
 
     if (stubPath) {
       handshake.SOCKET_IPC_HANDSHAKE.SOCKET_CLI_STUB_PATH = stubPath
-    }
-    if (cliPathForEmbedded) {
-      handshake.SOCKET_IPC_HANDSHAKE.SOCKET_CLI_PATH = cliPathForEmbedded
     }
 
     if (Object.keys(handshake.SOCKET_IPC_HANDSHAKE).length > 0) {
@@ -710,7 +732,15 @@ async function spawnSystemNode(
   cliPath: string,
   args: string[] | readonly string[],
 ): Promise<void> {
-  return await spawnNodeProcess('node', [cliPath, ...args], {
+  // Build command arguments: security/warning flags + cli path + user args
+  const commandArgs = [
+    '--no-addons',
+    '--no-warnings',
+    cliPath,
+    ...args,
+  ]
+
+  return await spawnNodeProcess('node', commandArgs, {
     env: process.env,
   })
 }
@@ -724,55 +754,7 @@ async function spawnSystemNode(
  * Ensures CLI is installed, then spawns it with system Node.js.
  */
 async function main(): Promise<void> {
-  // Check if we're being spawned to execute the CLI directly (bypass bootstrap).
-  // Parent sends CLI path via IPC handshake.
-  if (process.send) {
-    const cliPath = await new Promise<string | undefined>(resolve => {
-      const timeout = setTimeout(
-        () => resolve(undefined),
-        IPC_HANDSHAKE_TIMEOUT_MS,
-      )
-      process.on('message', msg => {
-        if (
-          msg !== null &&
-          typeof msg === 'object' &&
-          'SOCKET_IPC_HANDSHAKE' in msg &&
-          msg.SOCKET_IPC_HANDSHAKE !== null &&
-          typeof msg.SOCKET_IPC_HANDSHAKE === 'object' &&
-          msg.SOCKET_IPC_HANDSHAKE &&
-          'SOCKET_CLI_PATH' in msg.SOCKET_IPC_HANDSHAKE
-        ) {
-          clearTimeout(timeout)
-          resolve(msg.SOCKET_IPC_HANDSHAKE.SOCKET_CLI_PATH as string)
-        }
-      })
-    })
-
-    if (cliPath) {
-      // Verify CLI file exists before attempting to require it.
-      if (!existsSync(cliPath)) {
-        console.error(
-          `Fatal: CLI entry point not found at ${cliPath}. Installation may be corrupted.`,
-        )
-        // eslint-disable-next-line n/no-process-exit
-        process.exit(1)
-      }
-
-      // Set process.argv to include CLI path and user arguments.
-      process.argv = [process.argv[0]!, cliPath, ...process.argv.slice(1)]
-      // Load and execute the CLI with embedded Node.js.
-      try {
-        require(cliPath)
-      } catch (error) {
-        console.error(
-          `Fatal: Failed to load CLI from ${cliPath}: ${formatError(error)}`,
-        )
-        // eslint-disable-next-line n/no-process-exit
-        process.exit(1)
-      }
-      return
-    }
-  }
+  // No IPC bypass check needed - we pass CLI path as command line argument now
 
   try {
     // Ensure Socket home directory exists with better error messages.
@@ -816,7 +798,7 @@ async function main(): Promise<void> {
     const args = process.argv.slice(2)
 
     // process.env.MIN_NODE_VERSION is inlined at build time.
-    const minNodeVersion = parseInt(process.env['MIN_NODE_VERSION'] ?? '0', 0)
+    const minNodeVersion = parseInt(process.env['MIN_NODE_VERSION'] ?? '0', 10) || MIN_NODE_VERSION
 
     const systemNodeVersion = await getSystemNodeVersion(minNodeVersion)
 
