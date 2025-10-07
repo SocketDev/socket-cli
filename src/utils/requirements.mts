@@ -50,6 +50,7 @@ const CLI_TO_SDK_METHOD_MAP = new Map<string, string[]>([
   ['optimize', ['batchPackageFetch']],
   ['organization:dependencies', ['searchDependencies']],
   ['organization:list', ['getOrganizations']],
+  ['organization:quota', ['getQuota']],
   ['organization:policy:license', ['getOrgLicensePolicy']],
   ['organization:policy:security', ['getOrgSecurityPolicy']],
   ['package:score', ['getScoreByNpmPackage']],
