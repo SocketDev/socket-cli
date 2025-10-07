@@ -69,6 +69,7 @@ CLI tool for Socket.dev security analysis - TypeScript with .mts extensions
 - **Input validation**: Use `InputError` from `src/utils/errors.mts`
 - **Authentication**: Use `AuthError` from `src/utils/errors.mts`
 - **Result pattern**: Use `CResult<T>` for fallible functions
+- **Messages**: NO periods at end (see canonical socket-registry/CLAUDE.md)
 - Examples:
   - ✅ `throw new InputError('No .socket directory found')`
   - ✅ `throw new AuthError('Invalid API token')`
