@@ -1,9 +1,20 @@
 /**
- * @fileoverview Re-export yoga-layout-prebuilt as yoga-layout.
+ * @fileoverview Synchronous yoga-layout wrapper that avoids top-level await.
  *
- * This allows Ink to import 'yoga-layout' while we provide the synchronous
- * prebuilt version that avoids top-level await issues in CommonJS builds.
+ * yoga-layout 3.2.1 uses top-level await which doesn't work in CommonJS builds.
+ * This wrapper loads the WASM binary synchronously following the pattern from:
+ * https://github.com/facebook/yoga/blob/v2.0.1/javascript/src/entrypoint/wasm-sync-node.ts
  */
 
-export { default } from 'yoga-layout-prebuilt'
-export * from 'yoga-layout-prebuilt'
+// @ts-ignore - untyped from Emscripten
+// eslint-disable-next-line n/no-missing-import, import-x/no-unresolved
+import loadYogaImpl from 'yoga-layout/dist/binaries/yoga-wasm-base64-esm.js'
+// eslint-disable-next-line n/no-missing-import, import-x/no-unresolved
+import wrapAssembly from 'yoga-layout/dist/src/wrapAssembly.js'
+
+// Load synchronously by calling the function directly (no await)
+const Yoga = wrapAssembly(loadYogaImpl())
+
+export default Yoga
+// eslint-disable-next-line n/no-missing-import, import-x/no-unresolved
+export * from 'yoga-layout/dist/src/generated/YGEnums.js'
