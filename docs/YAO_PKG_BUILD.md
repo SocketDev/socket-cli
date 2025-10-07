@@ -151,6 +151,11 @@ Before starting, ensure you have:
 - **Node.js** v22+ (for building Socket CLI, not for yao-pkg)
 - **pnpm** v9+
 - **Git**
+- **UPX** (optional, for binary compression on non-macOS):
+  - **Linux (Ubuntu/Debian)**: `sudo apt-get install upx-ucl`
+  - **Linux (RHEL/Fedora)**: `sudo dnf install upx`
+  - **Windows**: `choco install upx` or download from [upx.github.io](https://upx.github.io/)
+  - **Note**: UPX is not used on macOS due to code signing requirements
 - **~10GB free disk space** for Node.js source and build artifacts
 - **30-60 minutes** for initial Node.js build
 
@@ -259,30 +264,42 @@ If building manually, configure with these optimization flags:
 cd .custom-node-build/node-yao-pkg
 
 ./configure \
-  --with-intl=small-icu \
+  --without-intl \
   --without-npm \
   --without-corepack \
   --without-inspector \
   --without-amaro \
-  --without-sqlite
+  --without-sqlite \
+  --without-node-snapshot \
+  --without-node-code-cache
 ```
 
 **What these flags do:**
-- `--with-intl=small-icu` - English-only internationalization (~30MB saved vs full-icu)
-- `--without-npm` - Remove npm binary (~5MB saved)
-- `--without-corepack` - Remove corepack (~1MB saved)
-- `--without-inspector` - Remove debugger/inspector (~2-3MB saved)
-- `--without-amaro` - Remove TypeScript runtime utils (~500KB saved)
+- `--without-intl` - Remove ICU internationalization (~10MB saved)
+- `--without-npm` - Remove npm binary (~5-7MB saved)
+- `--without-corepack` - Remove corepack (~1-2MB saved)
+- `--without-inspector` - Remove debugger/inspector (~3-5MB saved)
+- `--without-amaro` - Remove TypeScript runtime utils (~1MB saved)
 - `--without-sqlite` - Remove SQLite/Web Storage API (~1-2MB saved)
+- `--without-node-snapshot` - Remove startup snapshot (minimal impact)
+- `--without-node-code-cache` - Remove V8 code cache (~0.5-1.5MB saved)
 
 **What we KEEP:**
 - ✅ V8 full compiler (required for bytecode compilation)
 - ✅ WASM support (required for yoga-layout/Ink)
 - ✅ JIT optimization (Turbofan, Sparkplug, Maglev)
 - ✅ SSL/TLS support (required for Socket API)
-- ✅ small-icu (English-only internationalization)
 
-**Result:** ~82-85MB binary (vs ~95MB unoptimized)
+**Result before post-processing:** ~64MB binary (vs ~95MB unoptimized)
+
+**Post-processing optimizations:**
+1. **Strip debug symbols** (`strip -x`): ~20MB savings → **44MB**
+2. **UPX compression** (Linux/Windows only): ~30-50% savings → **22-31MB**
+3. **Code signing** (macOS only): Ad-hoc signing for local execution
+
+**Final sizes:**
+- **macOS**: ~44MB (stripped, signed)
+- **Linux/Windows**: ~22-31MB (stripped, UPX compressed)
 
 ### Step 5: Build Node.js
 
@@ -562,17 +579,24 @@ The script:
 1. Clones Node.js v24.9.0 (exact version supported by yao-pkg)
 2. Applies yao-pkg patches for bytecode compilation
 3. Configures with size optimizations:
-   - `--with-intl=small-icu` - English-only ICU (~30MB saved)
-   - `--without-npm` - No npm (~5MB saved)
-   - `--without-corepack` - No corepack (~1MB saved)
-   - `--without-inspector` - No debugger (~2-3MB saved)
-   - `--without-amaro` - No TypeScript utils (~500KB saved)
+   - `--without-intl` - No ICU (~10MB saved)
+   - `--without-npm` - No npm (~5-7MB saved)
+   - `--without-corepack` - No corepack (~1-2MB saved)
+   - `--without-inspector` - No debugger (~3-5MB saved)
+   - `--without-amaro` - No TypeScript utils (~1MB saved)
    - `--without-sqlite` - No SQLite/Web Storage (~1-2MB saved)
+   - `--without-node-snapshot` - No startup snapshot
+   - `--without-node-code-cache` - No V8 code cache (~0.5-1.5MB saved)
 4. **Keeps:** V8 full compiler (bytecode), WASM, JIT, SSL/crypto
 5. Builds with all available CPU cores (30-60 minutes)
-6. Signs the binary for macOS ARM64
+6. **Strips debug symbols**: `strip -x` removes ~20MB
+7. **UPX compression** (Linux/Windows only): ~30-50% reduction
+8. **Code signs** the binary for macOS ARM64
 
-**Expected Binary Size:** ~80-85MB (vs ~95MB unoptimized)
+**Expected Binary Sizes:**
+- **macOS**: ~44MB (stripped, signed)
+- **Linux/Windows**: ~22-31MB (stripped, UPX compressed)
+
 **Output:** `.custom-node-build/node-yao-pkg/out/Release/node`
 
 ## Building pkg Binaries
@@ -724,4 +748,9 @@ Socket CLI supports both pkg (yao-pkg) and SEA (Single Executable Application):
 - [yao-pkg/pkg GitHub](https://github.com/yao-pkg/pkg)
 - [Original pkg tool](https://github.com/vercel/pkg) (discontinued)
 - [Node.js SEA Documentation](https://nodejs.org/api/single-executable-applications.html)
-- Socket CLI: `docs/SEA_PLATFORM_SUPPORT.md`
+- Socket CLI Documentation:
+  - `docs/SEA_PLATFORM_SUPPORT.md` - Single Executable Application builds
+  - `docs/YAO_PKG_CI_SETUP.md` - CI setup for yao-pkg builds
+  - `docs/BOOTSTRAP_EXECUTABLE.md` - Bootstrap launcher architecture
+  - `scripts/build-yao-pkg-node.mjs` - Node.js build script
+  - `scripts/check-build-deps.mjs` - Dependency verification script
