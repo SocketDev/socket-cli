@@ -85,6 +85,60 @@ function sanitizeTarballPath(filePath: string): string {
   return segments.join(path.sep)
 }
 
+/**
+ * Remove a file or directory with safety protections.
+ * Minimal inline version of @socketsecurity/registry/lib/fs remove().
+ * Prevents catastrophic deletes by checking paths are within safe boundaries.
+ * @throws {Error} When attempting to delete protected paths.
+ */
+async function remove(
+  filepath: string,
+  options?: { force?: boolean },
+): Promise<void> {
+  const absolutePath = path.resolve(filepath)
+  const cwd = process.cwd()
+
+  // Safety check: prevent deleting cwd or parent directories unless forced.
+  if (!options?.force) {
+    // Check if trying to delete cwd itself.
+    if (absolutePath === cwd) {
+      throw new Error('Cannot delete the current working directory')
+    }
+
+    // Check if trying to delete outside SOCKET_HOME (catastrophic delete protection).
+    const relation = path.relative(SOCKET_HOME, absolutePath)
+    const isInside = Boolean(
+      relation &&
+        relation !== '..' &&
+        !relation.startsWith(`..${path.sep}`) &&
+        !path.isAbsolute(relation),
+    )
+
+    if (!isInside) {
+      throw new Error(
+        `Cannot delete files/directories outside SOCKET_HOME (${SOCKET_HOME}). ` +
+          `Attempted to delete: ${absolutePath}`,
+      )
+    }
+  }
+
+  // Perform deletion.
+  try {
+    const stats = await fs.stat(absolutePath)
+    if (stats.isDirectory()) {
+      await fs.rm(absolutePath, { recursive: true, force: true })
+    } else {
+      await fs.unlink(absolutePath)
+    }
+  } catch (error) {
+    const code = (error as NodeJS.ErrnoException)?.code
+    // Silently ignore if file doesn't exist.
+    if (code !== 'ENOENT') {
+      throw error
+    }
+  }
+}
+
 // ============================================================================
 // Installation lock management
 // ============================================================================
@@ -119,9 +173,7 @@ async function acquireLock(): Promise<string> {
               // Process exists, wait and retry.
             } catch {
               // Process doesn't exist, remove stale lock.
-              await fs.unlink(lockPath).catch(() => {
-                // Ignore, may have been removed by another process.
-              })
+              await remove(lockPath)
               continue
             }
           }
@@ -154,15 +206,12 @@ async function acquireLock(): Promise<string> {
  */
 async function releaseLock(lockPath: string): Promise<void> {
   try {
-    await fs.unlink(lockPath)
+    await remove(lockPath)
     debugLog(`Released installation lock: ${lockPath}`)
   } catch (error) {
-    const code = (error as NodeJS.ErrnoException)?.code
-    if (code !== 'ENOENT') {
-      console.error(
-        `Warning: Failed to release lock ${lockPath}: ${formatError(error)}`,
-      )
-    }
+    console.error(
+      `Warning: Failed to release lock ${lockPath}: ${formatError(error)}`,
+    )
   }
 }
 
@@ -202,7 +251,7 @@ async function downloadAndInstallPackage(version: string): Promise<void> {
     await extractTarball(tarballPath)
 
     // Remove tarball after successful extraction.
-    await fs.unlink(tarballPath).catch(error => {
+    await remove(tarballPath).catch(error => {
       console.error(
         `Warning: Failed to remove tarball ${tarballPath}: ${formatError(error)}`,
       )
@@ -216,7 +265,7 @@ async function downloadAndInstallPackage(version: string): Promise<void> {
 
     // Clean up tarball if extraction failed.
     if (tarballPath) {
-      await fs.unlink(tarballPath).catch(() => {
+      await remove(tarballPath).catch(() => {
         // Ignore - best effort cleanup.
       })
     }
