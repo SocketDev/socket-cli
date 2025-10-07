@@ -5,7 +5,6 @@
  * synchronous WASM loading via WebAssembly synchronous APIs.
  */
 
- 
 export { default } from 'yoga-layout/dist/src/sync.js'
- 
+
 export * from 'yoga-layout/dist/src/sync.js'
