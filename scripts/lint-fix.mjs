@@ -57,7 +57,14 @@ async function main() {
         name: 'oxlint',
       },
       {
-        args: ['exec', 'biome', 'format', '--log-level=none', '--fix', targetDir],
+        args: [
+          'exec',
+          'biome',
+          'format',
+          '--log-level=none',
+          '--fix',
+          targetDir,
+        ],
         name: 'biome',
       },
     ]

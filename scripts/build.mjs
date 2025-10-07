@@ -33,7 +33,10 @@ async function main() {
       logger.log('Building TypeScript declarations only...')
       const exitCode = await runSequence([
         { args: ['run', 'clean:dist:types'], command: 'pnpm' },
-        { args: ['exec', 'tsgo', '--project', 'tsconfig.dts.json'], command: 'pnpm' },
+        {
+          args: ['exec', 'tsgo', '--project', 'tsconfig.dts.json'],
+          command: 'pnpm',
+        },
       ])
       process.exitCode = exitCode
       return
@@ -72,7 +75,10 @@ async function main() {
     // Build types
     const typesExitCode = await runSequence([
       { args: ['run', 'clean:dist:types'], command: 'pnpm' },
-      { args: ['exec', 'tsgo', '--project', 'tsconfig.dts.json'], command: 'pnpm' },
+      {
+        args: ['exec', 'tsgo', '--project', 'tsconfig.dts.json'],
+        command: 'pnpm',
+      },
     ])
 
     process.exitCode = typesExitCode

@@ -150,8 +150,12 @@ export default function baseConfig(extendConfig = {}) {
         return true
       }
       const id = normalizeId(rawId)
-      // Externalize anything from the external directory.
-      if (id.includes('/external/')) {
+      // Externalize anything from the external directory, except entry points.
+      if (
+        id.includes('/external/') &&
+        !id.endsWith('/external/ink-table.mjs') &&
+        !id.endsWith('/external/yoga-layout.mjs')
+      ) {
         return true
       }
       // Externalize TypeScript declaration files.
