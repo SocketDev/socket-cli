@@ -23,8 +23,7 @@ describe('socket repository create', async () => {
             $ socket repository create [options] <REPO>
 
           API Token Requirements
-            - Quota: 1 unit
-            - Permissions: repo:create
+                  - Permissions: repo:create
 
           The REPO name should be a "slug". Follows the same naming convention as GitHub.
 

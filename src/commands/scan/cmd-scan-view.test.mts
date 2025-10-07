@@ -25,8 +25,7 @@ describe('socket scan view', async () => {
             $ socket scan view [options] <SCAN_ID> [OUTPUT_FILE]
 
           API Token Requirements
-            - Quota: 1 unit
-            - Permissions: full-scans:list
+                  - Permissions: full-scans:list
 
           When no output path is given the contents is sent to stdout.
 
@@ -106,7 +105,7 @@ describe('socket scan view', async () => {
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
@@ -116,7 +115,11 @@ describe('socket scan view', async () => {
            _____         _       _        /---------------
           |   __|___ ___| |_ ___| |_      | CLI: <redacted>
           |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan view\`, cwd: <redacted>"
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan view\`, cwd: <redacted>
+
+        \\xd7  Input error:  Please review the input requirements and try again
+
+          \\u221a Scan ID to view"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

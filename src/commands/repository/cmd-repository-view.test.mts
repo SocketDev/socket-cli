@@ -23,8 +23,7 @@ describe('socket repository view', async () => {
             $ socket repository view [options] <REPO>
 
           API Token Requirements
-            - Quota: 1 unit
-            - Permissions: repo:list
+                  - Permissions: repo:list
 
           Options
             --interactive       Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.

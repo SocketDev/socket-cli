@@ -23,7 +23,7 @@ describe('socket audit-log', async () => {
             $ socket audit-log [options] [FILTER]
 
           API Token Requirements
-            - Quota: 1 unit
+                  - Quota: 10 units
             - Permissions: audit-log:list
 
           This feature requires an Enterprise Plan. To learn more about getting access

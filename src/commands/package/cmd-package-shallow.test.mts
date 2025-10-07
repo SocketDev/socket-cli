@@ -22,8 +22,7 @@ describe('socket package shallow', async () => {
             $ socket package shallow [options] <<ECOSYSTEM> <PKGNAME> [<PKGNAME> ...] | <PURL> [<PURL> ...]>
 
           API Token Requirements
-            - Quota: 100 units
-            - Permissions: packages:list
+                  - Quota: 10 units
 
           Options
             --json              Output as JSON

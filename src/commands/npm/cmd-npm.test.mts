@@ -54,7 +54,7 @@ describe('socket npm', async () => {
             $ socket npm ...
 
           API Token Requirements
-            - Quota: 100 units
+                  - Quota: 100 units
             - Permissions: packages:list
 
           Note: Everything after "npm" is passed to the npm command.

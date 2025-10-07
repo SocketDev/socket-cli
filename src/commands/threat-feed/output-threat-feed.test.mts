@@ -164,9 +164,9 @@ describe('outputThreatFeed', () => {
     expect(process.exitCode).toBeUndefined()
   })
 
-  it('spawns Ink CLI with threat results in text format', async () => {
-    const { spawn } = await import('@socketsecurity/registry/lib/spawn')
-    const mockSpawn = vi.mocked(spawn)
+  it('renders Ink app with threat results in text format', async () => {
+    const { render } = await import('ink')
+    const mockRender = vi.mocked(render)
 
     const threatResults: ThreatResult[] = [
       {
@@ -191,14 +191,7 @@ describe('outputThreatFeed', () => {
 
     await outputThreatFeed(result, 'text')
 
-    expect(mockSpawn).toHaveBeenCalledWith(
-      process.execPath,
-      [expect.stringContaining('ink/threat-feed/cli.js')],
-      expect.objectContaining({
-        stdioString: true,
-        stdio: ['pipe', 'inherit', 'pipe'],
-      }),
-    )
+    expect(mockRender).toHaveBeenCalled()
     expect(process.exitCode).toBeUndefined()
   })
 
@@ -229,19 +222,11 @@ describe('outputThreatFeed', () => {
     )
   })
 
-  it('handles Ink CLI spawn failure', async () => {
-    const { spawn } = await import('@socketsecurity/registry/lib/spawn')
-    const { logger } = await import('@socketsecurity/registry/lib/logger')
-    const mockError = vi.mocked(logger.error)
-
-    // Mock spawn to return failure.
-    vi.mocked(spawn).mockReturnValueOnce(
-      Promise.resolve({
-        code: 1,
-        stderr: Buffer.from('Ink error'),
-        stdout: Buffer.from(''),
-      }) as any,
-    )
+  it('waits for Ink app to exit', async () => {
+    const { render } = await import('ink')
+    const mockRender = vi.mocked(render)
+    const mockWaitUntilExit = vi.fn().mockResolvedValue(undefined)
+    mockRender.mockReturnValueOnce({ waitUntilExit: mockWaitUntilExit } as any)
 
     const threatResults: ThreatResult[] = [
       {
@@ -266,8 +251,8 @@ describe('outputThreatFeed', () => {
 
     await outputThreatFeed(result, 'text')
 
-    expect(mockError).toHaveBeenCalledWith('Ink app failed with exit code 1')
-    expect(mockError).toHaveBeenCalledWith('Ink error')
-    expect(process.exitCode).toBe(1)
+    expect(mockRender).toHaveBeenCalled()
+    expect(mockWaitUntilExit).toHaveBeenCalled()
+    expect(process.exitCode).toBeUndefined()
   })
 })

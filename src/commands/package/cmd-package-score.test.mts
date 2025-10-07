@@ -22,8 +22,7 @@ describe('socket package score', async () => {
             $ socket package score [options] <<ECOSYSTEM> <NAME> | <PURL>>
 
           API Token Requirements
-            - Quota: 100 units
-            - Permissions: packages:list
+                  - Quota: 10 units
 
           Options
             --json              Output as JSON

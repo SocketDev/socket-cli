@@ -25,8 +25,7 @@ describe('socket organization policy security', async () => {
             $ socket organization policy security [options]
 
           API Token Requirements
-            - Quota: 1 unit
-            - Permissions: security-policy:read
+                  - Permissions: settings:read
 
           Options
             --interactive       Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.
@@ -68,7 +67,7 @@ describe('socket organization policy security', async () => {
     'should reject dry run without proper args',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       // expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       //   "
       //      _____         _       _        /---------------

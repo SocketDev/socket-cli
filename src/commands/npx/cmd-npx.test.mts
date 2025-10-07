@@ -51,7 +51,7 @@ describe('socket npx', async () => {
             $ socket npx ...
 
           API Token Requirements
-            - Quota: 100 units
+                  - Quota: 100 units
             - Permissions: packages:list
 
           Note: Everything after "npx" is passed to the npx command.

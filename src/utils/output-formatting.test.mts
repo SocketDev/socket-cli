@@ -24,7 +24,7 @@ describe('output-formatting utilities', () => {
         await import('./requirements.mts'),
       )
 
-      getRequirementsKey.mockReturnValue('scan:create')
+      getRequirementsKey.mockReturnValue(['scan:create'])
       getRequirements.mockReturnValue({
         api: {
           'scan:create': {
@@ -44,7 +44,7 @@ describe('output-formatting utilities', () => {
         await import('./requirements.mts'),
       )
 
-      getRequirementsKey.mockReturnValue('test')
+      getRequirementsKey.mockReturnValue(['test'])
       getRequirements.mockReturnValue({
         api: {
           test: {
@@ -54,7 +54,7 @@ describe('output-formatting utilities', () => {
       } as any)
 
       const result = getFlagApiRequirementsOutput('test')
-      expect(result).toBe('- Quota: 1 unit')
+      expect(result).toBe('      - Quota: 1 unit')
     })
 
     it('formats permissions only when present', async () => {
@@ -62,7 +62,7 @@ describe('output-formatting utilities', () => {
         await import('./requirements.mts'),
       )
 
-      getRequirementsKey.mockReturnValue('test')
+      getRequirementsKey.mockReturnValue(['test'])
       getRequirements.mockReturnValue({
         api: {
           test: {
@@ -72,7 +72,7 @@ describe('output-formatting utilities', () => {
       } as any)
 
       const result = getFlagApiRequirementsOutput('test')
-      expect(result).toBe('- Permissions: execute')
+      expect(result).toBe('      - Permissions: execute')
     })
 
     it('returns (none) when no requirements found', async () => {
@@ -80,7 +80,7 @@ describe('output-formatting utilities', () => {
         await import('./requirements.mts'),
       )
 
-      getRequirementsKey.mockReturnValue('missing')
+      getRequirementsKey.mockReturnValue(['missing'])
       getRequirements.mockReturnValue({
         api: {},
       } as any)
@@ -94,7 +94,7 @@ describe('output-formatting utilities', () => {
         await import('./requirements.mts'),
       )
 
-      getRequirementsKey.mockReturnValue('test')
+      getRequirementsKey.mockReturnValue(['test'])
       getRequirements.mockReturnValue({
         api: {
           test: {
@@ -104,7 +104,7 @@ describe('output-formatting utilities', () => {
       } as any)
 
       const result = getFlagApiRequirementsOutput('test', { indent: 2 })
-      expect(result).toBe('- Quota: 5 units')
+      expect(result).toBe('  - Quota: 5 units')
     })
   })
 

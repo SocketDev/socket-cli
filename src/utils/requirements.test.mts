@@ -33,56 +33,45 @@ describe('requirements utilities', () => {
   })
 
   describe('getRequirementsKey', () => {
-    it('converts basic command path to key', () => {
-      expect(getRequirementsKey('socket scan')).toBe('scan')
-      expect(getRequirementsKey('socket organization')).toBe('organization')
+    it('converts basic command path to SDK method names', () => {
+      expect(getRequirementsKey('socket scan')).toEqual(['scan'])
+      expect(getRequirementsKey('socket organization')).toEqual([
+        'organization',
+      ])
     })
 
-    it('converts nested command path to key with colons', () => {
-      expect(getRequirementsKey('socket scan create')).toBe('scan:create')
-      expect(getRequirementsKey('socket organization view')).toBe(
-        'organization:view',
-      )
+    it('converts nested command path to SDK method names', () => {
+      expect(getRequirementsKey('socket scan create')).toEqual([
+        'createOrgFullScan',
+      ])
+      expect(getRequirementsKey('socket organization list')).toEqual([
+        'getOrganizations',
+      ])
     })
 
-    it('handles multiple spaces', () => {
-      expect(getRequirementsKey('socket  scan  create')).toBe(':scan:create')
-      expect(getRequirementsKey('socket   organization   view')).toBe(
-        ':organization:view',
-      )
+    it('handles login command', () => {
+      expect(getRequirementsKey('login')).toEqual(['getApi'])
+      expect(getRequirementsKey('socket login')).toEqual(['getApi'])
     })
 
-    it('handles path with colon separator', () => {
-      expect(getRequirementsKey('socket: scan')).toBe(':scan')
-      expect(getRequirementsKey('socket: scan create')).toBe(':scan:create')
+    it('handles threat-feed command', () => {
+      expect(getRequirementsKey('threat-feed')).toEqual(['getApi'])
+      expect(getRequirementsKey('socket threat-feed')).toEqual(['getApi'])
     })
 
-    it('handles path without socket prefix', () => {
-      expect(getRequirementsKey('scan create')).toBe('scan:create')
-      expect(getRequirementsKey('organization view')).toBe('organization:view')
-    })
-
-    it('handles single command', () => {
-      expect(getRequirementsKey('login')).toBe('login')
-      expect(getRequirementsKey('logout')).toBe('logout')
+    it('handles unknown commands by returning array with normalized key', () => {
+      expect(getRequirementsKey('socket unknown')).toEqual(['unknown'])
+      expect(getRequirementsKey('unknown command')).toEqual(['unknown:command'])
     })
 
     it('handles empty string', () => {
-      expect(getRequirementsKey('')).toBe('')
+      expect(getRequirementsKey('')).toEqual([''])
     })
 
-    it('handles deeply nested commands', () => {
-      expect(getRequirementsKey('socket repos create test')).toBe(
-        'repos:create:test',
-      )
-      expect(getRequirementsKey('socket organization member add')).toBe(
-        'organization:member:add',
-      )
-    })
-
-    it('preserves non-space special characters', () => {
-      expect(getRequirementsKey('socket scan-create')).toBe('scan-create')
-      expect(getRequirementsKey('socket org_view')).toBe('org_view')
+    it('returns array for scan report with multiple SDK methods', () => {
+      const result = getRequirementsKey('socket scan report')
+      expect(Array.isArray(result)).toBe(true)
+      expect(result).toEqual(['getOrgFullScanMetadata', 'getOrgSecurityPolicy'])
     })
   })
 })

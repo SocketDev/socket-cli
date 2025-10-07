@@ -23,8 +23,7 @@ describe('socket repository del', async () => {
             $ socket repository del [options] <REPO>
 
           API Token Requirements
-            - Quota: 1 unit
-            - Permissions: repo:delete
+                  - Permissions: repo:delete
 
           Options
             --interactive       Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.

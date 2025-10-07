@@ -213,7 +213,7 @@ describe('socket pnpm', async () => {
         .
         \\u251c\\u2500\\u252c vitest 3.2.4
         \\u2502 \\u251c\\u2500\\u2500 \\u2715 unmet peer @types/node@24.6.2: found 20.19.19
-        \\u2502 \\u2514\\u2500\\u252c vite 7.1.5
+        \\u2502 \\u2514\\u2500\\u252c vite 7.1.7
         \\u2502   \\u2514\\u2500\\u2500 \\u2715 unmet peer @types/node@24.6.2: found 20.19.19
         \\u2514\\u2500\\u252c knip 5.63.1
           \\u2514\\u2500\\u2500 \\u2715 unmet peer @types/node@24.6.2: found 20.19.19

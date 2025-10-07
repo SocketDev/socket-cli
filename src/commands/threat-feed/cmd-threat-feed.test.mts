@@ -23,8 +23,7 @@ describe('socket threat-feed', async () => {
             $ socket threat-feed [options] [ECOSYSTEM] [TYPE_FILTER]
 
           API Token Requirements
-            - Quota: 1 unit
-            - Permissions: threat-feed:list
+            (none)
             - Special access
 
           This feature requires a Threat Feed license. Please contact

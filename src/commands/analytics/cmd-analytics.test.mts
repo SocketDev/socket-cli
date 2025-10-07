@@ -20,17 +20,19 @@ describe('socket analytics', async () => {
         "Look up analytics data
 
           Usage
-            $ socket analytics [options] [ "org" | "repo" <reponame>] [TIME]
+            $ socket analytics [options] [TIME]
+            $ socket analytics [options] org [TIME]
+            $ socket analytics [options] repo <org/repo> [TIME]
 
           API Token Requirements
-            - Quota: 1 unit
+                  - Quota: 10 units
             - Permissions: report:write
 
+          Arguments
+            TIME        Number of days: 7, 30, or 90 (default: 30)
+            <org/repo>  Repository slug in org/repo format (e.g., SocketDev/socket-cli)
+
           The scope is either org or repo level, defaults to org.
-
-          When scope is repo, a repo slug must be given as well.
-
-          The TIME argument must be number 7, 30, or 90 and defaults to 30.
 
           Options
             --file              Path to store result, only valid with --json/--markdown
@@ -38,9 +40,10 @@ describe('socket analytics', async () => {
             --markdown          Output as Markdown
 
           Examples
+            $ socket analytics
+            $ socket analytics 90
             $ socket analytics org 7
-            $ socket analytics repo test-repo 30
-            $ socket analytics 90"
+            $ socket analytics repo SocketDev/socket-cli 30"
       `)
       // Node 24 on Windows currently fails this test with added stderr:
       // Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), file src\win\async.c, line 76

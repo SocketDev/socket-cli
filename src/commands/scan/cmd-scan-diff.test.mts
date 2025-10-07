@@ -25,8 +25,7 @@ describe('socket scan diff', async () => {
             $ socket scan diff [options] <SCAN_ID1> <SCAN_ID2>
 
           API Token Requirements
-            - Quota: 1 unit
-            - Permissions: full-scans:list
+                  - Permissions: diff-scans:create
 
           This command displays the package changes between two scans. The full output
           can be pretty large depending on the size of your repo and time range. It is
@@ -115,7 +114,7 @@ describe('socket scan diff', async () => {
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
@@ -125,7 +124,12 @@ describe('socket scan diff', async () => {
            _____         _       _        /---------------
           |   __|___ ___| |_ ___| |_      | CLI: <redacted>
           |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan diff\`, cwd: <redacted>"
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan diff\`, cwd: <redacted>
+
+        \\xd7  Input error:  Please review the input requirements and try again
+
+          \\u221a Specify two Scan IDs.
+            A Scan ID looks like \`aaa0aa0a-aaaa-0000-0a0a-0000000a00a0\`."
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

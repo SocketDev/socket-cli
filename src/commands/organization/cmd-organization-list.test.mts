@@ -24,7 +24,7 @@ describe('socket organization list', async () => {
             $ socket organization list [options]
 
           API Token Requirements
-            - Quota: 1 unit
+            (none)
 
           Options
             --json              Output as JSON

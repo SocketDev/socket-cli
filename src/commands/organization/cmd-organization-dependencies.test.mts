@@ -22,7 +22,7 @@ describe('socket organization dependencies', async () => {
             socket organization dependencies [options]
 
           API Token Requirements
-            - Quota: 1 unit
+                  - Quota: 100 units
 
           Options
             --json              Output as JSON

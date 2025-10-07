@@ -120,7 +120,7 @@ describe('socket optimize', async () => {
             $ socket optimize [options] [CWD=.]
 
           API Token Requirements
-            - Quota: 100 units
+                  - Quota: 100 units
             - Permissions: packages:list
 
           Options

@@ -23,8 +23,7 @@ describe('socket repository update', async () => {
             $ socket repository update [options] <REPO>
 
           API Token Requirements
-            - Quota: 1 unit
-            - Permissions: repo:update
+                  - Permissions: repo:update
 
           Options
             --default-branch    Repository default branch

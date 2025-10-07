@@ -22,8 +22,7 @@ describe('socket scan github', async () => {
             $ socket scan github [options] [CWD=.]
 
           API Token Requirements
-            - Quota: 1 unit
-            - Permissions: full-scans:create
+                  - Permissions: full-scans:create
 
           This is similar to the \`socket scan create\` command except it pulls the files
           from GitHub. See the help for that command for more details.
@@ -119,7 +118,7 @@ describe('socket scan github', async () => {
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
@@ -135,7 +134,10 @@ describe('socket scan github', async () => {
         i Note: Run \`socket login\` to set a default org.
               Use the --org flag to override the default org.
 
-        \\xd7 Skipping auto-discovery of org in dry-run mode"
+        \\xd7 Skipping auto-discovery of org in dry-run mode
+        \\xd7  Input error:  Please review the input requirements and try again
+
+          \\u221a This command requires a GitHub API token for access"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

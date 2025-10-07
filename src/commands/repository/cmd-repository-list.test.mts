@@ -25,8 +25,7 @@ describe('socket repository list', async () => {
             $ socket repository list [options]
 
           API Token Requirements
-            - Quota: 1 unit
-            - Permissions: repo:list
+                  - Permissions: repo:list
 
           Options
             --all               By default view shows the last n repos. This flag allows you to fetch the entire list. Will ignore --page and --per-page.

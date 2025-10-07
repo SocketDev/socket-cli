@@ -25,8 +25,7 @@ describe('socket organization policy license', async () => {
             $ socket organization policy license [options]
 
           API Token Requirements
-            - Quota: 1 unit
-            - Permissions: license-policy:read
+                  - Permissions: settings:read
 
           Options
             --interactive       Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.

@@ -29,8 +29,7 @@ describe('socket scan create', async () => {
             $ socket scan create [options] [TARGET...]
 
           API Token Requirements
-            - Quota: 1 unit
-            - Permissions: full-scans:create
+                  - Permissions: full-scans:create
 
           Options
             --auto-manifest     Run \`socket manifest auto\` before collecting manifest files. This is necessary for languages like Scala, Gradle, and Kotlin, See \`socket manifest auto --help\`.
