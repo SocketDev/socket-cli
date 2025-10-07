@@ -21,8 +21,12 @@ module.exports = {
         version: '^7.27.1',
       },
     ],
+    // Run strict-mode transformations first to fix loose-mode code
+    path.join(babelPluginsPath, 'babel-plugin-strict-mode.mjs'),
     path.join(babelPluginsPath, 'babel-plugin-inline-require-calls.js'),
     path.join(babelPluginsPath, 'transform-set-proto-plugin.mjs'),
     path.join(babelPluginsPath, 'transform-url-parse-plugin.mjs'),
+    // Run ICU removal last to transform Intl/locale APIs
+    path.join(babelPluginsPath, 'babel-plugin-remove-icu.mjs'),
   ],
 }
