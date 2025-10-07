@@ -32,6 +32,7 @@ try {
   // eslint-disable-next-line n/no-process-exit
   process.exit(1)
 }
+const CLI_INSTALL_LOCK_FILE_NAME = '.install.lock'
 const DOWNLOAD_MESSAGE_DELAY_MS = 2_000
 const HTTPS_TIMEOUT_MS = 30_000
 const IPC_HANDSHAKE_TIMEOUT_MS = 5_000
@@ -93,7 +94,7 @@ function sanitizeTarballPath(filePath: string): string {
  * Uses a lock file with retries to handle multiple SEA instances starting simultaneously.
  */
 async function acquireLock(): Promise<string> {
-  const lockPath = path.join(SOCKET_CLI_DIR, '.install.lock')
+  const lockPath = path.join(SOCKET_CLI_DIR, CLI_INSTALL_LOCK_FILE_NAME)
 
   for (let attempt = 0; attempt < LOCK_MAX_RETRIES; attempt += 1) {
     try {
