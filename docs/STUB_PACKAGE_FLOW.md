@@ -5,8 +5,10 @@ This document describes how Socket CLI handles platform-specific binary distribu
 ## Overview
 
 The Socket CLI uses a two-tier distribution model:
-1. **`socket` npm package**: Lightweight stub that downloads platform-specific binaries
+1. **`socket` npm package**: Lightweight npm package that downloads platform-specific binaries
 2. **`@socketsecurity/cli` npm package**: Full CLI implementation (JavaScript/TypeScript)
+
+The binaries are built using yao-pkg (enhanced fork of vercel/pkg), not Node.js native SEA.
 
 ## Architecture Components
 
@@ -67,30 +69,19 @@ matrix:
 
 Each platform build follows these steps:
 
-1. **Build Bootstrap**: Compile TypeScript bootstrap to CommonJS
+1. **Build Stub**: Compile TypeScript stub to CommonJS
    ```bash
-   pnpm run build:sea:internal:bootstrap
-   # Outputs: dist/sea/bootstrap.cjs
+   pnpm run build:sea:stub
+   # Outputs: dist/sea/stub.cjs
    ```
 
-2. **Generate SEA Blob**: Create Node.js SEA configuration
-   ```javascript
-   // sea-config.json
-   {
-     "main": "dist/sea/bootstrap.cjs",
-     "output": "dist/sea/sea-prep.blob",
-     "disableExperimentalSEAWarning": true,
-     "useSnapshot": false,  // Snapshots not stable across Node versions
-     "useCodeCache": true    // Improve startup performance
-   }
-   ```
+2. **Package with yao-pkg**: Create single executable
+   - Uses yao-pkg (enhanced fork of vercel/pkg)
+   - Not Node.js 24's native SEA feature
+   - Embeds Node.js runtime + stub code
+   - Configures platform-specific settings
 
-3. **Inject into Node Binary**: Platform-specific binary creation
-   - Download Node.js binary for target platform
-   - Inject SEA blob using Node's `--experimental-sea-config`
-   - Apply platform-specific post-processing
-
-4. **Platform Post-Processing**:
+3. **Platform Post-Processing**:
    - **Windows**: Sign with certificate (if available)
    - **macOS**: Remove quarantine attributes, ad-hoc sign
    - **Linux**: Set executable permissions
@@ -262,7 +253,7 @@ $ socket scan
 ┌──────────────────────────────────────────┐
 │ Platform Binary (socket-linux-x64)        │
 │                                           │
-│ 1. SEA Bootstrap Executes                 │
+│ 1. Stub Code Executes                     │
 │ 2. Check ~/.socket/_cli/package/          │
 │ 3. Download @socketsecurity/cli if needed │
 │ 4. Spawn Node.js with CLI                 │
