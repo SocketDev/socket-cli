@@ -152,22 +152,21 @@ async function main() {
 
   // Configure Node.js with optimizations
   console.log('⚙️  Configuring Node.js...')
-  console.log(
-    '   KEEP: V8 full compiler (bytecode), WASM support, JIT, SSL/crypto',
-  )
-  console.log('   REMOVE: npm, corepack, inspector, amaro, sqlite')
-  console.log('   ICU: small-icu (English-only)')
+  console.log('   KEEP: WASM support, SSL/crypto, JIT (required for WASM)')
+  console.log('   REMOVE: npm, corepack, inspector, amaro, sqlite, ICU, snapshot, code cache')
   console.log()
 
   await exec(
     './configure',
     [
-      '--with-intl=small-icu',
+      '--without-intl',
       '--without-npm',
       '--without-corepack',
       '--without-inspector',
       '--without-amaro',
       '--without-sqlite',
+      '--without-node-snapshot',
+      '--without-node-code-cache',
     ],
     { cwd: NODE_DIR },
   )
@@ -197,6 +196,36 @@ async function main() {
     },
   )
   console.log()
+
+  // Strip debug symbols to reduce binary size
+  console.log('🔪 Stripping debug symbols...')
+  const binarySizeBefore = await getFileSize(nodeBinary)
+  const strippedBinary = `${nodeBinary}-stripped`
+  await exec('strip', ['-x', nodeBinary, '-o', strippedBinary])
+
+  // Replace original with stripped version
+  await exec('mv', [strippedBinary, nodeBinary])
+  const binarySizeAfter = await getFileSize(nodeBinary)
+  console.log(`✅ Debug symbols stripped (saved ~20MB)`)
+  console.log(`   Before: ${binarySizeBefore} → After: ${binarySizeAfter}`)
+  console.log()
+
+  // UPX compression for non-macOS builds
+  if (!IS_MACOS) {
+    console.log('📦 Compressing binary with UPX...')
+    try {
+      const upxSizeBefore = await getFileSize(nodeBinary)
+      await exec('upx', ['--best', '--lzma', nodeBinary], { cwd: NODE_DIR })
+      const upxSizeAfter = await getFileSize(nodeBinary)
+      console.log(`✅ UPX compression complete`)
+      console.log(`   Before: ${upxSizeBefore} → After: ${upxSizeAfter}`)
+      console.log()
+    } catch (error) {
+      console.log('⚠️  UPX not available or failed, skipping compression')
+      console.log(`   Error: ${error.message}`)
+      console.log()
+    }
+  }
 
   // Sign for macOS ARM64
   if (IS_MACOS && ARCH === 'arm64') {
