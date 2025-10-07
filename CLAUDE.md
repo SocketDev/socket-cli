@@ -393,6 +393,8 @@ Socket CLI integrates with various third-party tools and services:
   - Temporary documentation and TODO lists
   - Any files not intended for production use
 
+**Git Workflow Reminder**: When user says "commit changes" → create actual commits, use small atomic commits, follow all CLAUDE.md rules (NO AI attribution).
+
 ---
 
 # 🚨 CRITICAL BEHAVIORAL REQUIREMENTS
