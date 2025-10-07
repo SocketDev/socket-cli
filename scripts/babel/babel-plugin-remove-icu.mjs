@@ -326,40 +326,63 @@ export default function babelPluginRemoveICU({ template, types: t }) {
        * @example
        * // Input:
        * /\p{Letter}/u
-       * /\p{Number}/u
-       * /\p{Script=Greek}/u
+       * /[\p{Alpha}0-9_]/u
        *
        * // Output:
        * /[a-zA-Z]/
-       * /[0-9]/
-       * /[α-ω]/  // Basic Greek range (or warning)
+       * /[a-zA-Z0-9_]/
        */
       RegExpLiteral(path) {
         const { node } = path
 
         // Check for unicode property escapes (\p{...})
         if (node.flags.includes('u') && node.pattern.includes('\\p{')) {
-          const pattern = node.pattern
-          let newPattern = pattern
+          let pattern = node.pattern
+          let transformed = false
 
-          // Common transformations
-          const transforms = {
+          // Transform \p{...} inside character classes [...]
+          // Match character classes that contain \p{...}
+          pattern = pattern.replace(
+            /\[([^\]]*\\p\{[^}]+\}[^\]]*)\]/g,
+            (match, content) => {
+              let newContent = content
+              // Inside character class, replace with just the character range
+              newContent = newContent.replace(/\\p\{Letter\}/g, 'a-zA-Z')
+              newContent = newContent.replace(/\\p\{L\}/g, 'a-zA-Z')
+              newContent = newContent.replace(/\\p\{Alpha\}/g, 'a-zA-Z')
+              newContent = newContent.replace(/\\p\{Alphabetic\}/g, 'a-zA-Z')
+              newContent = newContent.replace(/\\p\{Number\}/g, '0-9')
+              newContent = newContent.replace(/\\p\{N\}/g, '0-9')
+              newContent = newContent.replace(/\\p\{Digit\}/g, '0-9')
+              newContent = newContent.replace(/\\p\{Nd\}/g, '0-9')
+              newContent = newContent.replace(/\\p\{Space\}/g, '\\s')
+              newContent = newContent.replace(/\\p\{White_Space\}/g, '\\s')
+
+              if (newContent !== content) {
+                transformed = true
+              }
+              return `[${newContent}]`
+            },
+          )
+
+          // Transform standalone \p{...} (not inside character class)
+          const standaloneTransforms = {
             '\\p{Letter}': '[a-zA-Z]',
             '\\p{L}': '[a-zA-Z]',
+            '\\p{Alpha}': '[a-zA-Z]',
+            '\\p{Alphabetic}': '[a-zA-Z]',
             '\\p{Number}': '[0-9]',
             '\\p{N}': '[0-9]',
             '\\p{Digit}': '[0-9]',
             '\\p{Nd}': '[0-9]',
             '\\p{Space}': '\\s',
             '\\p{White_Space}': '\\s',
-            '\\p{Alphabetic}': '[a-zA-Z]',
             '\\p{ASCII}': '[\\x00-\\x7F]',
           }
 
-          let transformed = false
-          for (const [unicode, basic] of Object.entries(transforms)) {
-            if (newPattern.includes(unicode)) {
-              newPattern = newPattern.replace(
+          for (const [unicode, basic] of Object.entries(standaloneTransforms)) {
+            if (pattern.includes(unicode)) {
+              pattern = pattern.replace(
                 new RegExp(unicode.replace(/[\\{}]/g, '\\$&'), 'g'),
                 basic,
               )
@@ -370,7 +393,7 @@ export default function babelPluginRemoveICU({ template, types: t }) {
           if (transformed) {
             // Remove 'u' flag since we're no longer using unicode escapes
             const newFlags = node.flags.replace('u', '')
-            path.replaceWith(t.regExpLiteral(newPattern, newFlags))
+            path.replaceWith(t.regExpLiteral(pattern, newFlags))
             stats.unicodeRegex++
 
             path.addComment(
