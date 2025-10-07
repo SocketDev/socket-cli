@@ -1,6 +1,6 @@
-# Bootstrap Node.js Juggling & Update Flow
+# Stub Execution & Update Flow
 
-This document describes the complete flow of Socket CLI's bootstrap mechanism, including Node.js runtime selection, update checking logic, and permission handling.
+This document describes the complete flow of Socket CLI's stub execution mechanism, including Node.js runtime selection, update checking logic, and permission handling.
 
 ## Directory Structure
 
@@ -32,13 +32,13 @@ This document describes the complete flow of Socket CLI's bootstrap mechanism, i
     └── tmp/                       # Temporary files
 ```
 
-## 1. Bootstrap Startup - Node.js Decision Tree
+## 1. Stub Startup - Node.js Decision Tree
 
 ```
 User runs: /usr/local/bin/socket scan
            ↓
 ┌──────────────────────────────────────────────────────────────────────┐
-│ Bootstrap Stub (embedded in SEA binary)                              │
+│ Stub Binary (yao-pkg executable)                                     │
 │ Checks: ~/.socket/_cli/package/package.json exists?                  │
 └──────────────────────────────────────────────────────────────────────┘
            ↓ No                              ↓ Yes
@@ -99,7 +99,7 @@ User runs: /usr/local/bin/socket scan
 ### Node.js Detection Logic
 
 ```typescript
-// In src/sea/bootstrap.mts
+// In src/sea/stub.mts
 async function detectSystemNode(): Promise<string | null> {
   try {
     const nodeCmd = process.platform === 'win32' ? 'node.exe' : 'node'
