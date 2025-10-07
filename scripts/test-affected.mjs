@@ -96,7 +96,8 @@ async function main() {
       cwd: rootPath,
       env: {
         ...process.env,
-        NODE_OPTIONS: `${process.env.NODE_OPTIONS || ''} --max-old-space-size=${process.env.CI ? 8192 : 4096}`.trim(),
+        NODE_OPTIONS:
+          `${process.env.NODE_OPTIONS || ''} --max-old-space-size=${process.env.CI ? 8192 : 4096}`.trim(),
       },
       stdio: 'inherit',
     }
