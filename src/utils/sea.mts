@@ -4,18 +4,18 @@
  * as a Node.js Single Executable Application.
  *
  * Key Functions:
- * - isSeaBinary: Detect if running as SEA with caching
+ * - isSeaBinary: Detect if running as SEA
  * - getSeaBinaryPath: Get the current SEA binary path
  *
  * Detection Method:
- * - Uses Node.js 24+ native sea.isSea() API
- * - Caches result for performance
- * - Graceful fallback for unsupported versions
+ * - Checks for SOCKET_CLI_STUB_PATH from IPC handshake sent by bootstrap
+ * - Bootstrap stub sends IPC handshake on spawn with stub path
+ * - Delegates to stub-ipc.mts for actual detection
  *
  * Features:
- * - Cached detection for performance
- * - Error-resistant implementation
- * - Support for Node.js 24+ SEA API
+ * - Simple delegation to stub-ipc handler
+ * - Works with custom SEA bootstrap approach
+ * - No separate IPC listener needed
  *
  * Usage:
  * - Detecting SEA execution context
@@ -23,33 +23,14 @@
  * - Update notification customization
  */
 
-/**
- * Cached SEA detection result.
- */
-let _isSea: boolean | undefined
+import { getStubPath, isRunningViaSea } from './stub-ipc.mts'
 
 /**
  * Detect if the current process is running as a SEA binary.
- * Uses Node.js 24+ native API with caching for performance.
+ * Delegates to stub-ipc handler which checks for IPC handshake from bootstrap.
  */
 function isSeaBinary(): boolean {
-  if (_isSea === undefined) {
-    try {
-      // Use Node.js 24+ native SEA detection API.
-      // eslint-disable-next-line n/no-unsupported-features/node-builtins
-      const seaModule = require('node:sea')
-      _isSea = seaModule.isSea()
-      // Debug output disabled to prevent contamination of test snapshots.
-      // logger.debug(`SEA detection result: ${_isSea}`)
-    } catch (error) {
-      // Debug output disabled to prevent contamination of test snapshots.
-      // logger.debug(
-      //   `SEA detection failed (likely Node.js < 24): ${error instanceof Error ? error.message : String(error)}`,
-      // )
-      _isSea = false
-    }
-  }
-  return _isSea ?? false
+  return isRunningViaSea()
 }
 
 /**
@@ -57,7 +38,7 @@ function isSeaBinary(): boolean {
  * Only valid when running as a SEA binary.
  */
 function getSeaBinaryPath(): string | undefined {
-  return isSeaBinary() ? process.argv[0] : undefined
+  return getStubPath()
 }
 
 export { getSeaBinaryPath, isSeaBinary }
