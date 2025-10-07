@@ -4,6 +4,10 @@
 
 The SEA (Single Executable Application) self-update functionality is **production-ready** with excellent architecture and error handling. This document reviews the implementation, validates design decisions, and suggests minor enhancements.
 
+**Related Documentation**:
+- See [`SEA_BOOTSTRAP.md`](./SEA_BOOTSTRAP.md) for bootstrap architecture and install flow
+- See [`SEA_PLATFORM_SUPPORT.md`](./SEA_PLATFORM_SUPPORT.md) for platform-specific details
+
 ## Architecture Overview
 
 ### Multi-Stage Pipeline
