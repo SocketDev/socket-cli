@@ -1,6 +1,6 @@
 /**
- * Rollup configuration for building SEA bootstrap thin wrapper.
- * Compiles TypeScript bootstrap to CommonJS for Node.js SEA compatibility.
+ * Rollup configuration for building SEA stub thin wrapper.
+ * Compiles TypeScript stub to CommonJS for Node.js SEA compatibility.
  */
 
 import path from 'node:path'
@@ -25,10 +25,10 @@ const MIN_NODE_VERSION = semver.major(maintainedNodeVersions[2])
 
 export default {
   input:
-    process.env.SEA_BOOTSTRAP || path.join(rootDir, 'src/sea/bootstrap.mts'),
+    process.env.SEA_STUB || path.join(rootDir, 'src/sea/stub.mts'),
   output: {
     file:
-      process.env.SEA_OUTPUT || path.join(rootDir, 'dist/sea/bootstrap.cjs'),
+      process.env.SEA_OUTPUT || path.join(rootDir, 'dist/sea/stub.cjs'),
     format: 'cjs',
     interop: 'auto',
   },

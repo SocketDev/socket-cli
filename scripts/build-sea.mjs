@@ -1,11 +1,14 @@
 /**
  * Build script for creating self-executable Socket CLI applications.
- * Uses Node.js Single Executable Application (SEA) feature.
+ * Uses yao-pkg (enhanced fork of vercel/pkg) to create single executables.
  *
- * IMPORTANT: This builds a THIN WRAPPER that downloads @socketsecurity/cli on first use.
+ * NOTE: We use "SEA" as a general term for single executable applications,
+ * but this uses yao-pkg, not Node.js 24's native SEA feature.
+ *
+ * IMPORTANT: This builds a THIN STUB that downloads @socketsecurity/cli on first use.
  * The binary contains only:
- * - Node.js runtime
- * - Bootstrap code to download/execute @socketsecurity/cli
+ * - Node.js runtime (embedded by yao-pkg)
+ * - Stub code to download/execute @socketsecurity/cli
  * - No actual CLI implementation
  *
  * The real Socket CLI code lives in the @socketsecurity/cli npm package,
@@ -19,7 +22,7 @@
  * Usage:
  * - Build all platforms: npm run build:sea
  * - Build specific platform: npm run build:sea -- --platform=darwin --arch=x64
- * - Use advanced bootstrap: npm run build:sea -- --advanced
+ * - Use advanced stub: npm run build:sea -- --advanced
  */
 
 import crypto from 'node:crypto'
@@ -464,23 +467,23 @@ async function buildTarget(target, options) {
   )
   console.log('(Actual CLI will be downloaded from npm on first use)')
 
-  // Use the thin bootstrap for minimal size.
+  // Use the thin stub for minimal size.
   const tsEntryPoint = normalizePath(
-    path.join(__dirname, '..', 'src', 'sea', 'bootstrap.mts'),
+    path.join(__dirname, '..', 'src', 'sea', 'stub.mts'),
   )
 
   // Ensure output directory exists.
   await fs.mkdir(outputDir, { recursive: true })
 
-  // Build the bootstrap with Rollup to CommonJS for SEA.
-  const entryPoint = normalizePath(path.join(outputDir, 'bootstrap.cjs'))
-  console.log('Building bootstrap...')
+  // Build the stub with Rollup to CommonJS for yao-pkg.
+  const entryPoint = normalizePath(path.join(outputDir, 'stub.cjs'))
+  console.log('Building stub...')
 
   // Set environment variables for the rollup config.
-  process.env['SEA_BOOTSTRAP'] = tsEntryPoint
+  process.env['SEA_STUB'] = tsEntryPoint
   process.env['SEA_OUTPUT'] = entryPoint
 
-  await spawn('pnpm', ['run', 'build:sea:internal:bootstrap'], {
+  await spawn('pnpm', ['run', 'build:sea:stub'], {
     stdio: 'inherit',
   })
 

@@ -39,7 +39,7 @@
     "build:dist:types": "node scripts/build.mjs --types-only",
     "build:ink": "node scripts/build.mjs --ink-only",
     "build:sea": "node scripts/build-sea.mjs",
-    "build:sea:internal:bootstrap": "rollup -c .config/rollup.sea.config.mjs",
+    "build:sea:stub": "rollup -c .config/rollup.sea.config.mjs",
     "publish:sea": "node scripts/publish-sea.mjs",
     "publish:sea:github": "node scripts/publish-sea.mjs --skip-npm",
     "publish:sea:npm": "node scripts/publish-sea.mjs --skip-github",
