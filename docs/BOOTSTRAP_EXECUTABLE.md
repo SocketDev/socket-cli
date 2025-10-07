@@ -234,7 +234,7 @@ child.on('spawn', () => {
 })
 ```
 
-This keeps the stub **ultra-minimal** - all intelligence lives in the CLI.
+This keeps the stub minimal - all intelligence lives in the CLI.
 
 ### CLI Receives Stub Location
 

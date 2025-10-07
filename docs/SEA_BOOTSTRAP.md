@@ -530,4 +530,3 @@ rm -rf ~/.socket/_socket/updater/backups/*
 ---
 
 *Document created: 2025-10-07*
-*Author: Claude Code*
