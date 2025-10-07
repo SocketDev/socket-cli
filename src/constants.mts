@@ -227,6 +227,7 @@ export type IpcObject = Readonly<{
   SOCKET_CLI_SHADOW_BIN?: string | undefined
   SOCKET_CLI_SHADOW_PROGRESS?: boolean | undefined
   SOCKET_CLI_SHADOW_SILENT?: boolean | undefined
+  SOCKET_CLI_STUB_PATH?: string | undefined
 }>
 
 export type ProcessEnv = {
@@ -239,7 +240,7 @@ const ALERT_TYPE_CVE = 'cve'
 const ALERT_TYPE_MEDIUM_CVE = 'mediumCVE'
 const ALERT_TYPE_MILD_CVE = 'mildCVE'
 const API_V0_URL = 'https://api.socket.dev/v0/'
-const CLI_DIR = 'cli'
+const CLI_DIR = '_cli'
 const CONFIG_KEY_API_BASE_URL = 'apiBaseUrl'
 const CONFIG_KEY_API_PROXY = 'apiProxy'
 const CONFIG_KEY_API_TOKEN = 'apiToken'

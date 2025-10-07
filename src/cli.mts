@@ -41,6 +41,7 @@ import { captureException } from './utils/errors.mts'
 import { meowWithSubcommands } from './utils/meow-with-subcommands.mts'
 import { isSeaBinary } from './utils/sea.mts'
 import { serializeResultJson } from './utils/serialize-result-json.mts'
+import { initStubIpcHandler } from './utils/stub-ipc.mts'
 import { scheduleUpdateCheck } from './utils/update-manager.mts'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -58,6 +59,10 @@ if (noLog) {
   logger.error = noop
   logger.fail = noop
 }
+
+// Initialize IPC handler to receive stub path from bootstrap executable.
+// This must be set up before any async operations to ensure we receive the message.
+initStubIpcHandler()
 
 void (async () => {
   const registryUrl = lookupRegistryUrl()
