@@ -8,19 +8,22 @@
  * - Supports IPC handshake for self-update mechanism
  */
 
+/* eslint-disable no-await-in-loop */
+// Sequential operations required for: lock acquisition, file extraction, and retry logic
+
 import { spawn } from 'node:child_process'
 import { existsSync, promises as fs } from 'node:fs'
 import https from 'node:https'
 import os from 'node:os'
 import path from 'node:path'
+
 import { parseTarGzip } from 'nanotar'
 
 // Configurable constants with environment variable overrides.
 // os.homedir() can throw if no home directory is available.
 let SOCKET_HOME: string
 try {
-  SOCKET_HOME =
-    process.env['SOCKET_HOME'] || path.join(os.homedir(), '.socket')
+  SOCKET_HOME = process.env['SOCKET_HOME'] || path.join(os.homedir(), '.socket')
 } catch (error) {
   console.error(
     'Fatal: Unable to determine home directory. Set SOCKET_HOME environment variable.',
@@ -43,7 +46,7 @@ const SOCKET_CLI_DIR =
   process.env['SOCKET_CLI_DIR'] || path.join(SOCKET_HOME, '_cli')
 const SOCKET_CLI_PACKAGE =
   process.env['SOCKET_CLI_PACKAGE'] || '@socketsecurity/cli'
-const SOCKET_CLI_PACKAGE_JSON = path.join(SOCKET_CLI_DIR, 'package.json') 
+const SOCKET_CLI_PACKAGE_JSON = path.join(SOCKET_CLI_DIR, 'package.json')
 
 // ============================================================================
 // Helper utilities
@@ -74,7 +77,9 @@ function sanitizeTarballPath(filePath: string): string {
   // Remove 'package/' prefix from npm tarballs (tarballs always use forward slashes).
   const withoutPrefix = filePath.replace(/^package\//, '')
   // Split path and remove any '..' or '.' segments to prevent traversal.
-  const segments = withoutPrefix.split('/').filter(seg => seg && seg !== '.' && seg !== '..')
+  const segments = withoutPrefix
+    .split('/')
+    .filter(seg => seg && seg !== '.' && seg !== '..')
   // Normalize path separators for the current platform.
   return segments.join(path.sep)
 }
@@ -127,9 +132,7 @@ async function acquireLock(): Promise<string> {
           debugLog(
             `Installation lock held by another process, waiting... (attempt ${attempt + 1}/${LOCK_MAX_RETRIES})`,
           )
-          await new Promise(resolve =>
-            setTimeout(resolve, LOCK_RETRY_DELAY_MS),
-          )
+          await new Promise(resolve => setTimeout(resolve, LOCK_RETRY_DELAY_MS))
           continue
         }
       }
@@ -395,9 +398,7 @@ async function getLatestVersion(): Promise<string> {
     const data = JSON.parse(buffer.toString()) as { version?: string }
     // Validate version field exists and is non-empty.
     if (!data.version || typeof data.version !== 'string') {
-      throw new Error(
-        'npm registry response missing or invalid version field',
-      )
+      throw new Error('npm registry response missing or invalid version field')
     }
     return data.version
   } catch (error) {
@@ -466,7 +467,7 @@ async function getSystemNodeVersion(
  * Handles 301/302 redirects automatically with timeout.
  */
 async function httpsGet(url: string): Promise<Buffer> {
-  return new Promise((resolve, reject) => {
+  return await new Promise((resolve, reject) => {
     const request = https
       .get(url, res => {
         if (res.statusCode === 301 || res.statusCode === 302) {
@@ -575,7 +576,7 @@ async function spawnEmbeddedNode(
   cliPath: string,
   args: string[] | readonly string[],
 ): Promise<void> {
-  return spawnNodeProcess(process.execPath, args, {
+  return await spawnNodeProcess(process.execPath, args, {
     env: process.env,
     cliPathForEmbedded: cliPath,
   })
@@ -593,7 +594,7 @@ async function spawnNodeProcess(
     cliPathForEmbedded?: string
   },
 ): Promise<void> {
-  const { env, cliPathForEmbedded } = options
+  const { cliPathForEmbedded, env } = options
 
   const child = spawn(command, commandArgs, {
     stdio: ['inherit', 'inherit', 'inherit', 'ipc'],
@@ -631,7 +632,7 @@ async function spawnNodeProcess(
   })
 
   // Wait for child process to exit.
-  return new Promise<void>((_resolve, reject) => {
+  return await new Promise<void>((_resolve, reject) => {
     child.on('error', error => {
       const code = (error as NodeJS.ErrnoException)?.code
       if (code === 'ENOENT') {
@@ -641,11 +642,7 @@ async function spawnNodeProcess(
           ),
         )
       } else {
-        reject(
-          new Error(
-            `Failed to spawn ${command}: ${formatError(error)}`,
-          ),
-        )
+        reject(new Error(`Failed to spawn ${command}: ${formatError(error)}`))
       }
     })
     child.on('exit', code => {
@@ -663,7 +660,7 @@ async function spawnSystemNode(
   cliPath: string,
   args: string[] | readonly string[],
 ): Promise<void> {
-  return spawnNodeProcess('node', [cliPath, ...args], {
+  return await spawnNodeProcess('node', [cliPath, ...args], {
     env: process.env,
   })
 }
@@ -681,7 +678,10 @@ async function main(): Promise<void> {
   // Parent sends CLI path via IPC handshake.
   if (process.send) {
     const cliPath = await new Promise<string | undefined>(resolve => {
-      const timeout = setTimeout(() => resolve(undefined), IPC_HANDSHAKE_TIMEOUT_MS)
+      const timeout = setTimeout(
+        () => resolve(undefined),
+        IPC_HANDSHAKE_TIMEOUT_MS,
+      )
       process.on('message', msg => {
         if (
           msg !== null &&
@@ -748,9 +748,7 @@ async function main(): Promise<void> {
         const latestVersion = await getLatestVersion()
         await downloadAndInstallPackage(latestVersion)
       } catch (error) {
-        throw new Error(
-          `Failed to download Socket CLI: ${formatError(error)}`,
-        )
+        throw new Error(`Failed to download Socket CLI: ${formatError(error)}`)
       }
     }
 

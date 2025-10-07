@@ -3,18 +3,16 @@
  * Manages API permissions and quota requirements for commands.
  *
  * Key Functions:
- * - getRequirements: Load requirements configuration from SDK
+ * - getRequirements: Load requirements configuration from local copy
  * - getRequirementsKey: Convert command path to SDK method name
  *
  * Configuration:
- * - Loads from @socketsecurity/sdk/requirements.json
+ * - Loads from local requirements.json (copied from SDK)
  * - Maps CLI command paths to SDK method names
  * - Used for permission validation and help text
  */
 
-import { createRequire } from 'node:module'
-
-const require = createRequire(import.meta.url)
+import requirementsJson from '../../requirements.json' with { type: 'json' }
 
 let _requirements:
   | Readonly<{
@@ -30,7 +28,7 @@ let _requirements:
 
 export function getRequirements() {
   if (_requirements === undefined) {
-    _requirements = /*@__PURE__*/ require('@socketsecurity/sdk/requirements.json')
+    _requirements = requirementsJson as any
   }
   return _requirements!
 }

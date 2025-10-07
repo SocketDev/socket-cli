@@ -51,14 +51,20 @@ export function initStubIpcHandler(): void {
             const stubPathValue = (handshake as any).SOCKET_CLI_STUB_PATH
             if (stubPathValue && typeof stubPathValue === 'string') {
               stubPath = stubPathValue
-              debugFn('info', `Received stub path via IPC handshake: ${stubPath}`)
+              debugFn(
+                'info',
+                `Received stub path via IPC handshake: ${stubPath}`,
+              )
             }
           }
         }
         // Also support legacy format without wrapper for backwards compatibility
         else if ('SOCKET_CLI_STUB_PATH' in message) {
           const ipc = message as IpcObject
-          if (ipc.SOCKET_CLI_STUB_PATH && typeof ipc.SOCKET_CLI_STUB_PATH === 'string') {
+          if (
+            ipc.SOCKET_CLI_STUB_PATH &&
+            typeof ipc.SOCKET_CLI_STUB_PATH === 'string'
+          ) {
             stubPath = ipc.SOCKET_CLI_STUB_PATH
             debugFn('info', `Received stub path via IPC (legacy): ${stubPath}`)
           }

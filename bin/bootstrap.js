@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * @fileoverview Bootstrap loader for Socket CLI
  *
@@ -6,12 +5,15 @@
  * Otherwise downloads and installs Socket CLI there.
  */
 
+/* eslint-disable n/no-process-exit */
+// process.exit() is acceptable in CLI bootstrap scripts
+
 'use strict'
 
+const { spawnSync } = require('node:child_process')
 const { existsSync } = require('node:fs')
 const { homedir } = require('node:os')
 const { join } = require('node:path')
-const { spawnSync } = require('node:child_process')
 
 const SOCKET_CLI_DIR = join(homedir(), '.socket', '_socket')
 const CLI_ENTRY = join(SOCKET_CLI_DIR, 'index.js')
@@ -19,10 +21,17 @@ const CLI_ENTRY = join(SOCKET_CLI_DIR, 'index.js')
 // Check if CLI exists
 if (existsSync(CLI_ENTRY)) {
   // Delegate to ~/.socket/_socket
-  const result = spawnSync(process.execPath, [CLI_ENTRY, ...process.argv.slice(2)], {
-    stdio: 'inherit',
-    env: { ...process.env, PKG_EXECPATH: process.env.PKG_EXECPATH || 'PKG_INVOKE_NODEJS' }
-  })
+  const result = spawnSync(
+    process.execPath,
+    [CLI_ENTRY, ...process.argv.slice(2)],
+    {
+      stdio: 'inherit',
+      env: {
+        ...process.env,
+        PKG_EXECPATH: process.env.PKG_EXECPATH || 'PKG_INVOKE_NODEJS',
+      },
+    },
+  )
   process.exit(result.status || 0)
 } else {
   // Download and install

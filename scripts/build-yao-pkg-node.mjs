@@ -153,7 +153,9 @@ async function main() {
   // Configure Node.js with optimizations
   console.log('⚙️  Configuring Node.js...')
   console.log('   KEEP: WASM support, SSL/crypto, JIT (required for WASM)')
-  console.log('   REMOVE: npm, corepack, inspector, amaro, sqlite, ICU, snapshot, code cache')
+  console.log(
+    '   REMOVE: npm, corepack, inspector, amaro, sqlite, ICU, snapshot, code cache',
+  )
   console.log()
 
   await exec(

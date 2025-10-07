@@ -207,7 +207,7 @@ export default [
       'test/**/*.{cts,mts,ts}',
       'src/test/**/*.{cts,mts,ts}',
       'src/utils/test-mocks.mts',
-      'scripts/**/*.d.{cts,mts,ts}',
+      '**/*.d.{cts,mts,ts}',
     ],
     ...js.configs.recommended,
     ...importFlatConfigsForModule.typescript,

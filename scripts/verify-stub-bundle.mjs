@@ -1,12 +1,14 @@
-#!/usr/bin/env node
 /**
  * Verify that the bootstrap stub bundle only contains expected code
  * and no accidental dependencies.
  */
 
+/* eslint-disable n/no-process-exit, line-comment-position */
+// process.exit() and inline comments acceptable in build verification scripts
+
 import { existsSync, readFileSync, statSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootDir = path.join(__dirname, '..')
@@ -41,7 +43,9 @@ function info(message) {
 // Check if stub exists
 if (!existsSync(stubPath)) {
   fail(`Bootstrap stub not found at ${stubPath}`)
-  fail('Run: pnpm run build:sea or NODE_ENV=production pnpm exec rollup -c .config/rollup.sea.config.mjs')
+  fail(
+    'Run: pnpm run build:sea or NODE_ENV=production pnpm exec rollup -c .config/rollup.sea.config.mjs',
+  )
 }
 
 // Read stub content
@@ -165,9 +169,7 @@ if (unexpectedFunctions.length > 0) {
   functions.forEach(f => console.log(`    - ${f}`))
 }
 
-const missingFunctions = EXPECTED.functions.filter(
-  f => !functions.includes(f),
-)
+const missingFunctions = EXPECTED.functions.filter(f => !functions.includes(f))
 if (missingFunctions.length > 0) {
   fail(`Missing expected functions: ${missingFunctions.join(', ')}`)
 }

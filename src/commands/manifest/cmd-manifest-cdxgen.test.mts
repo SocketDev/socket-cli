@@ -66,9 +66,10 @@ describe('socket manifest cdxgen', async () => {
 
           // Verify we got output
           const combinedOutput = result.stdout + result.stderr
-          expect(combinedOutput.length, 'should produce output').toBeGreaterThan(
-            0,
-          )
+          expect(
+            combinedOutput.length,
+            'should produce output',
+          ).toBeGreaterThan(0)
 
           // Verify no error indicators
           const hasErrorIndicators =

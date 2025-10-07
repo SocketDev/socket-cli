@@ -15,11 +15,13 @@
  * 3. yoga-layout (used by Ink) requires WASM
  */
 
-import { readFile, writeFile } from 'node:fs/promises'
+/* eslint-disable n/no-process-exit */
+// process.exit() is acceptable in build utility scripts
+
 import { existsSync } from 'node:fs'
-import { join } from 'node:path'
+import { readFile, writeFile } from 'node:fs/promises'
+import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { dirname } from 'node:path'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -43,13 +45,13 @@ async function modifyGypi() {
   // Disable Sparkplug
   content = content.replace(
     /^(\s*)'v8_enable_sparkplug%':\s*1,$/m,
-    "$1'v8_enable_sparkplug%': 0,  # Disabled by Socket CLI code mod"
+    "$1'v8_enable_sparkplug%': 0,  # Disabled by Socket CLI code mod",
   )
 
   // Disable Turbofan
   content = content.replace(
     /^(\s*)'v8_enable_turbofan%':\s*1,$/m,
-    "$1'v8_enable_turbofan%': 0,  # Disabled by Socket CLI code mod"
+    "$1'v8_enable_turbofan%': 0,  # Disabled by Socket CLI code mod",
   )
 
   await writeFile(V8_GYPI, content, 'utf-8')

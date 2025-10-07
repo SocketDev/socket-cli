@@ -10,13 +10,15 @@ import { babel as babelPlugin } from '@rollup/plugin-babel'
 import commonjsPlugin from '@rollup/plugin-commonjs'
 import { nodeResolve } from '@rollup/plugin-node-resolve'
 import replacePlugin from '@rollup/plugin-replace'
-import maintainedNodeVersions from '@socketsecurity/registry/lib/constants/maintained-node-versions'
-import UnpluginOxc from 'unplugin-oxc/rollup'
 import semver from 'semver'
+import UnpluginOxc from 'unplugin-oxc/rollup'
+
+import maintainedNodeVersions from '@socketsecurity/registry/lib/constants/maintained-node-versions'
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url))
 const rootDir = path.join(__dirname, '..')
-const isProduction = process.env.NODE_ENV === 'production' || process.env.MINIFY === '1'
+const isProduction =
+  process.env.NODE_ENV === 'production' || process.env.MINIFY === '1'
 
 // Get the major version of the current maintained Node.js version (22.x.x -> 22)
 const MIN_NODE_VERSION = semver.major(maintainedNodeVersions[2])

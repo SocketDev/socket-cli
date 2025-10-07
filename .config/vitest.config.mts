@@ -25,14 +25,14 @@ export default defineConfig({
       forks: {
         // Use single fork for coverage to reduce memory, parallel otherwise.
         singleFork: isCoverageEnabled,
-        maxForks: isCoverageEnabled ? 1 : undefined,
+        ...(isCoverageEnabled ? { maxForks: 1 } : {}),
         // Isolate tests to prevent memory leaks between test files.
         isolate: true,
       },
       threads: {
         // Use single thread for coverage to reduce memory, parallel otherwise.
         singleThread: isCoverageEnabled,
-        maxThreads: isCoverageEnabled ? 1 : undefined,
+        ...(isCoverageEnabled ? { maxThreads: 1 } : {}),
       },
     },
     testTimeout: 60_000,

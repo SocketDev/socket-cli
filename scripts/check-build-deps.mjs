@@ -10,8 +10,12 @@
  * It can optionally install missing dependencies with user permission.
  */
 
+/* eslint-disable n/no-process-exit, line-comment-position */
+// process.exit() and inline comments acceptable in build utility scripts
+
 import { existsSync } from 'node:fs'
 import { platform } from 'node:os'
+
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 const IS_MACOS = platform() === 'darwin'
@@ -98,7 +102,7 @@ async function installUpx() {
           {
             stdio: 'inherit',
             shell: false,
-          }
+          },
         )
         return result.code === 0
       }
@@ -159,19 +163,30 @@ async function main() {
   const gccVersion = gcc ? await getVersion('gcc') : null
   checks.push({ name: 'gcc', required: true, found: gcc, version: gccVersion })
   console.log(`   ${gcc ? '✅' : '❌'} gcc: ${gccVersion || 'not found'}`)
-  if (!gcc) hasErrors = true
+  if (!gcc) {
+    hasErrors = true
+  }
 
   const gxx = await commandExists('g++')
   const gxxVersion = gxx ? await getVersion('g++') : null
   checks.push({ name: 'g++', required: true, found: gxx, version: gxxVersion })
   console.log(`   ${gxx ? '✅' : '❌'} g++: ${gxxVersion || 'not found'}`)
-  if (!gxx) hasErrors = true
+  if (!gxx) {
+    hasErrors = true
+  }
 
   const make = await commandExists('make')
   const makeVersion = make ? await getVersion('make') : null
-  checks.push({ name: 'make', required: true, found: make, version: makeVersion })
+  checks.push({
+    name: 'make',
+    required: true,
+    found: make,
+    version: makeVersion,
+  })
   console.log(`   ${make ? '✅' : '❌'} make: ${makeVersion || 'not found'}`)
-  if (!make) hasErrors = true
+  if (!make) {
+    hasErrors = true
+  }
 
   const python = await commandExists('python3')
   const pythonVersion = python ? await getVersion('python3') : null
@@ -182,15 +197,19 @@ async function main() {
     version: pythonVersion,
   })
   console.log(
-    `   ${python ? '✅' : '❌'} python3: ${pythonVersion || 'not found'}`
+    `   ${python ? '✅' : '❌'} python3: ${pythonVersion || 'not found'}`,
   )
-  if (!python) hasErrors = true
+  if (!python) {
+    hasErrors = true
+  }
 
   const git = await commandExists('git')
   const gitVersion = git ? await getVersion('git') : null
   checks.push({ name: 'git', required: true, found: git, version: gitVersion })
   console.log(`   ${git ? '✅' : '❌'} git: ${gitVersion || 'not found'}`)
-  if (!git) hasErrors = true
+  if (!git) {
+    hasErrors = true
+  }
 
   console.log()
 
@@ -202,17 +221,17 @@ async function main() {
   checks.push({ name: 'upx', required: false, found: upx, version: upxVersion })
 
   if (IS_MACOS) {
-    console.log(
-      `   ℹ️  UPX: not used on macOS (incompatible with code signing)`
-    )
+    console.log(`   ℹ️  UPX: not used on macOS (incompatible with code signing)`)
   } else {
     console.log(`   ${upx ? '✅' : '⚠️ '} upx: ${upxVersion || 'not found'}`)
     if (!upx) {
       hasWarnings = true
       console.log(
-        '      UPX enables 30-50% binary compression on Linux/Windows'
+        '      UPX enables 30-50% binary compression on Linux/Windows',
       )
-      console.log('      Build will succeed without UPX but produce larger binaries')
+      console.log(
+        '      Build will succeed without UPX but produce larger binaries',
+      )
     }
   }
 
@@ -227,7 +246,7 @@ async function main() {
 
   // Check existing build
   const nodeBuilt = existsSync(
-    '.custom-node-build/node-yao-pkg/out/Release/node'
+    '.custom-node-build/node-yao-pkg/out/Release/node',
   )
   if (nodeBuilt) {
     console.log('✅ Custom Node.js binary already built')
@@ -245,11 +264,11 @@ async function main() {
 
   console.log(
     `   Required: ${requiredOk}/${required.length} ` +
-      `${requiredOk === required.length ? '✅' : '❌'}`
+      `${requiredOk === required.length ? '✅' : '❌'}`,
   )
   console.log(
     `   Optional: ${optionalOk}/${optional.length} ` +
-      `${optionalOk === optional.length ? '✅' : '⚠️ '}`
+      `${optionalOk === optional.length ? '✅' : '⚠️ '}`,
   )
   console.log()
 
@@ -268,7 +287,7 @@ async function main() {
     } else if (IS_LINUX) {
       console.log('   Ubuntu/Debian:')
       console.log(
-        '   $ sudo apt-get install build-essential python3 git upx-ucl'
+        '   $ sudo apt-get install build-essential python3 git upx-ucl',
       )
       console.log()
       console.log('   RHEL/Fedora/CentOS:')
@@ -276,7 +295,9 @@ async function main() {
       console.log()
     } else if (IS_WINDOWS) {
       console.log('   Windows (Chocolatey):')
-      console.log('   $ choco install visualstudio2022buildtools python git upx')
+      console.log(
+        '   $ choco install visualstudio2022buildtools python git upx',
+      )
       console.log()
       console.log('   Or use WSL2 (recommended):')
       console.log('   $ wsl --install -d Ubuntu')
@@ -323,7 +344,7 @@ async function main() {
       } else {
         console.log('⏭️  Skipping UPX installation')
         console.log(
-          '   Build will continue but produce larger binaries (~44MB vs ~22-31MB)'
+          '   Build will continue but produce larger binaries (~44MB vs ~22-31MB)',
         )
       }
     } else {
@@ -343,7 +364,7 @@ async function main() {
   console.log('✅ All required dependencies are available')
   if (hasWarnings) {
     console.log(
-      '⚠️  Some optional optimizations are unavailable (build will succeed)'
+      '⚠️  Some optional optimizations are unavailable (build will succeed)',
     )
   }
   console.log()
