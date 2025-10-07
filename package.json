@@ -268,7 +268,8 @@
       "meow@13.2.0": "patches/meow@13.2.0.patch",
       "@rollup/plugin-commonjs@28.0.6": "patches/@rollup__plugin-commonjs@28.0.6.patch",
       "brace-expansion@2.0.2": "patches/brace-expansion@2.0.2.patch",
-      "rollup@4.50.1": "patches/rollup@4.50.1.patch"
+      "rollup@4.50.1": "patches/rollup@4.50.1.patch",
+      "yoga-layout@3.2.1": "patches/yoga-layout.patch"
     }
   },
   "typeCoverage": {

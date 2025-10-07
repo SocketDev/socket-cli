@@ -68,6 +68,9 @@ patchedDependencies:
   string_decoder@0.10.31:
     hash: 4f6ae5ec65b5537e81cd3ee7e83ae65bcc843a93cff14f147d8053e1c385ae1d
     path: patches/string_decoder@0.10.31.patch
+  yoga-layout@3.2.1:
+    hash: 746f40b1ca5065f664c4c2d927f47d332cc459fea7ade06606d1a9712c679a77
+    path: patches/yoga-layout.patch
 
 importers:
 
@@ -391,7 +394,7 @@ importers:
         version: 2.1.3
       yoga-layout:
         specifier: 3.2.1
-        version: 3.2.1
+        version: 3.2.1(patch_hash=746f40b1ca5065f664c4c2d927f47d332cc459fea7ade06606d1a9712c679a77)
       zod:
         specifier: 4.1.8
         version: 4.1.8
@@ -8308,7 +8311,7 @@ snapshots:
       widest-line: 5.0.0
       wrap-ansi: 9.0.2
       ws: 8.18.3
-      yoga-layout: 3.2.1
+      yoga-layout: 3.2.1(patch_hash=746f40b1ca5065f664c4c2d927f47d332cc459fea7ade06606d1a9712c679a77)
     optionalDependencies:
       '@types/react': 19.2.0
     transitivePeerDependencies:
@@ -10232,7 +10235,7 @@ snapshots:
 
   yoctocolors@2.1.2: {}
 
-  yoga-layout@3.2.1: {}
+  yoga-layout@3.2.1(patch_hash=746f40b1ca5065f664c4c2d927f47d332cc459fea7ade06606d1a9712c679a77): {}
 
   zod-validation-error@3.5.3(zod@3.25.76):
     dependencies:
