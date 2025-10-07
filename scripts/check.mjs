@@ -21,14 +21,16 @@ async function main() {
       { args: ['run', 'fix'], command: 'pnpm' },
       {
         args: [
+          'exec',
+          'eslint',
           '--config',
           '.config/eslint.config.mjs',
           '--report-unused-disable-directives',
           '.',
         ],
-        command: 'eslint',
+        command: 'pnpm',
       },
-      { args: ['--noEmit'], command: 'tsgo' },
+      { args: ['exec', 'tsgo', '--noEmit'], command: 'pnpm' },
     ])
 
     if (exitCode !== 0) {

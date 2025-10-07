@@ -33,7 +33,7 @@ async function main() {
       logger.log('Building TypeScript declarations only...')
       const exitCode = await runSequence([
         { args: ['run', 'clean:dist:types'], command: 'pnpm' },
-        { args: ['--project', 'tsconfig.dts.json'], command: 'tsgo' },
+        { args: ['exec', 'tsgo', '--project', 'tsconfig.dts.json'], command: 'pnpm' },
       ])
       process.exitCode = exitCode
       return
@@ -44,8 +44,8 @@ async function main() {
       const exitCode = await runSequence([
         { args: ['run', 'clean:dist'], command: 'pnpm' },
         {
-          args: ['-c', '.config/rollup.dist.config.mjs'],
-          command: 'rollup',
+          args: ['exec', 'rollup', '-c', '.config/rollup.dist.config.mjs'],
+          command: 'pnpm',
         },
       ])
       process.exitCode = exitCode
@@ -59,8 +59,8 @@ async function main() {
     const srcExitCode = await runSequence([
       { args: ['run', 'clean:dist'], command: 'pnpm' },
       {
-        args: ['-c', '.config/rollup.dist.config.mjs'],
-        command: 'rollup',
+        args: ['exec', 'rollup', '-c', '.config/rollup.dist.config.mjs'],
+        command: 'pnpm',
       },
     ])
 
@@ -72,7 +72,7 @@ async function main() {
     // Build types
     const typesExitCode = await runSequence([
       { args: ['run', 'clean:dist:types'], command: 'pnpm' },
-      { args: ['--project', 'tsconfig.dts.json'], command: 'tsgo' },
+      { args: ['exec', 'tsgo', '--project', 'tsconfig.dts.json'], command: 'pnpm' },
     ])
 
     process.exitCode = typesExitCode
