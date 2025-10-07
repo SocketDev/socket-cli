@@ -139,15 +139,32 @@ export default function baseConfig(extendConfig = {}) {
     // but is actually accessed dynamically or through other means.
     treeshake: false,
     external(rawId) {
+      // Order checks by likelihood for better performance.
+      // Externalize Node.js built-ins (most common case).
+      if (isBuiltin(rawId)) {
+        return true
+      }
+      // Externalize special rollup external suffix.
+      if (rawId.endsWith(ROLLUP_EXTERNAL_SUFFIX)) {
+        return true
+      }
       const id = normalizeId(rawId)
+      // Externalize anything from the external directory.
+      if (id.includes('/external/')) {
+        return true
+      }
+      // Externalize TypeScript declaration files.
+      if (
+        id.endsWith('.d.ts') ||
+        id.endsWith('.d.mts') ||
+        id.endsWith('.d.cts')
+      ) {
+        return true
+      }
       const pkgName = getPackageName(
         id,
         path.isAbsolute(id) ? nmPath.length + 1 : 0,
       )
-      // Externalize anything from the external directory.
-      if (id.includes('/external/') || id.startsWith('../external/')) {
-        return true
-      }
       // Externalize @socketsecurity/registry and all its internal paths.
       if (
         pkgName === '@socketsecurity/registry' ||
@@ -163,14 +180,8 @@ export default function baseConfig(extendConfig = {}) {
       ) {
         return true
       }
-      return (
-        id.endsWith('.d.cts') ||
-        id.endsWith('.d.mts') ||
-        id.endsWith('.d.ts') ||
-        EXTERNAL_PACKAGES.includes(pkgName) ||
-        rawId.endsWith(ROLLUP_EXTERNAL_SUFFIX) ||
-        isBuiltin(rawId)
-      )
+      // Externalize other specific external packages.
+      return EXTERNAL_PACKAGES.includes(pkgName)
     },
     onwarn(warning, warn) {
       // Suppress warnings.
