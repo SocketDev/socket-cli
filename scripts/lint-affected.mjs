@@ -8,10 +8,10 @@ import path from 'node:path'
 
 import { promises as fs } from 'node:fs'
 
-import { logger } from '../dist/utils/logger.js'
-import { spawn } from '../dist/utils/spawn.js'
+import WIN32 from '@socketsecurity/registry/lib/constants/WIN32'
+import { logger } from '@socketsecurity/registry/lib/logger'
+import { spawn } from '@socketsecurity/registry/lib/spawn'
 
-import constants from './constants.mjs'
 import { getChangedFiles, getStagedFiles } from './utils/git.mjs'
 import { runCommandQuiet } from './utils/run-command.mjs'
 
@@ -64,10 +64,7 @@ function shouldRunAllLinters(changedFiles) {
     }
 
     // Core types or commands.
-    if (
-      file.includes('src/types.ts') ||
-      file.includes('src/commands/')
-    ) {
+    if (file.includes('src/types.ts') || file.includes('src/commands/')) {
       return true
     }
   }
@@ -128,19 +125,6 @@ async function runLintersOnFiles(files, options = {}) {
       ],
       name: 'oxlint',
       enabled: true,
-    },
-    {
-      args: [
-        'exec',
-        'biome',
-        'format',
-        '--log-level=none',
-        ...(fix ? ['--write'] : ['--check']),
-        ...files,
-      ],
-      name: 'biome',
-      // Only run biome when fixing.
-      enabled: fix,
     },
     {
       args: [
@@ -206,19 +190,6 @@ async function runLintersOnAll(options = {}) {
       ],
       name: 'oxlint',
       enabled: true,
-    },
-    {
-      args: [
-        'exec',
-        'biome',
-        'format',
-        '--log-level=none',
-        ...(fix ? ['--write'] : ['--check']),
-        '.',
-      ],
-      name: 'biome',
-      // Only run biome when fixing.
-      enabled: fix,
     },
     {
       args: [
@@ -390,7 +361,7 @@ async function main() {
           ],
           {
             cwd: absolutePath,
-            shell: constants.WIN32,
+            shell: WIN32,
             stdio: 'inherit',
           },
         )
