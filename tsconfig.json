@@ -2,6 +2,11 @@
   "extends": "./.config/tsconfig.base.json",
   "include": ["src/**/*.mts", "*.config.mts", ".config/*.mts"],
   "exclude": [
+    "**/*.tsx",
+    "**/*.d.mts",
+    "src/commands/analytics/output-analytics.mts",
+    "src/commands/audit-log/output-audit-log.mts",
+    "src/commands/threat-feed/output-threat-feed.mts",
     "src/**/*.test.mts",
     "src/test/**/*.mts",
     "src/utils/test-mocks.mts",

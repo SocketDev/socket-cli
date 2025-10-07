@@ -7,6 +7,7 @@ export default defineConfig({
   test: {
     globals: false,
     environment: 'node',
+    setupFiles: ['./test/vitest-setup.mts'],
     include: [
       'test/**/*.test.{js,ts,mjs,cjs,mts}',
       'src/**/*.test.{js,ts,mjs,cjs,mts}',
