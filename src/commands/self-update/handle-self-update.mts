@@ -26,6 +26,7 @@ import {
   getExpectedAssetName,
 } from '../../utils/platform.mts'
 import { isSeaBinary } from '../../utils/sea.mts'
+import { getStubPath } from '../../utils/stub-ipc.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
@@ -227,6 +228,126 @@ async function replaceBinary(
 }
 
 /**
+ * Check if stub needs updating and update if necessary.
+ * Returns true if stub was updated, false if no update needed.
+ */
+async function checkAndUpdateStub(
+  release: GitHubRelease,
+  dryRun: boolean,
+): Promise<boolean> {
+  const stubPath = getStubPath()
+
+  // Only proceed if we have a stub path from IPC.
+  if (!stubPath) {
+    logger.info('No stub path received - CLI not launched via bootstrap stub')
+    return false
+  }
+
+  if (!existsSync(stubPath)) {
+    logger.warn(`Stub path from IPC does not exist: ${stubPath}`)
+    return false
+  }
+
+  logger.info(`Checking bootstrap stub for updates: ${stubPath}`)
+
+  try {
+    // Read current stub binary and compute hash.
+    const stubContent = await fs.readFile(stubPath)
+    const currentHash = crypto.createHash('sha256')
+    currentHash.update(stubContent)
+    const currentStubHash = currentHash.digest('hex')
+
+    logger.info(`Current stub hash: ${currentStubHash}`)
+
+    // TODO: Fetch known-good hashes for this release version
+    // For now, we'll check if a stub asset exists in the release
+    const stubAssetName = `socket-stub-${process.platform}-${process.arch}${process.platform === 'win32' ? '.exe' : ''}`
+    const stubAsset = release.assets.find(asset => asset.name === stubAssetName)
+
+    if (!stubAsset) {
+      logger.info(
+        `No stub binary found in release for ${process.platform}-${process.arch}`,
+      )
+      return false
+    }
+
+    // TODO: Implement hash comparison with known-good hashes
+    // For now, we'll just log that we found a stub asset
+    logger.info(`Found stub asset: ${stubAsset.name}`)
+
+    if (dryRun) {
+      logger.info('[DRY RUN] Would download and update stub')
+      return false
+    }
+
+    // Download and update stub.
+    logger.info('Downloading new stub...')
+
+    const downloadsDir = getSocketCliUpdaterDownloadsDir()
+    const stagingDir = getSocketCliUpdaterStagingDir()
+
+    await fs.mkdir(downloadsDir, { recursive: true })
+    await fs.mkdir(stagingDir, { recursive: true })
+
+    const timestamp = Date.now()
+    const downloadPath = path.join(
+      downloadsDir,
+      `${stubAsset.name}.${timestamp}`,
+    )
+    const stagingPath = path.join(stagingDir, `${stubAsset.name}.${timestamp}`)
+
+    try {
+      await downloadFile(stubAsset.browser_download_url, downloadPath)
+
+      // Move to staging.
+      await fs.rename(downloadPath, stagingPath)
+
+      // Create backup of current stub.
+      const backupPath = await createBackup(stubPath)
+      logger.info(`Created stub backup: ${backupPath}`)
+
+      try {
+        // Replace the stub binary.
+        await replaceBinary(stagingPath, stubPath)
+
+        logger.info(
+          `${colors.green('✓')} Bootstrap stub updated successfully!`,
+        )
+        return true
+      } catch (error) {
+        // Restore from backup on failure.
+        try {
+          await fs.copyFile(backupPath, stubPath)
+          logger.info('Restored stub from backup after update failure')
+        } catch (restoreError) {
+          logger.error(
+            `Failed to restore stub from backup: ${restoreError instanceof Error ? restoreError.message : String(restoreError)}`,
+          )
+        }
+        throw error
+      }
+    } finally {
+      // Clean up download and staging files.
+      try {
+        if (existsSync(downloadPath)) {
+          await remove(downloadPath)
+        }
+        if (existsSync(stagingPath)) {
+          await remove(stagingPath)
+        }
+      } catch {
+        // Cleanup failure is not critical.
+      }
+    }
+  } catch (error) {
+    logger.error(
+      `Failed to update stub: ${error instanceof Error ? error.message : String(error)}`,
+    )
+    return false
+  }
+}
+
+/**
  * Handle the self-update command.
  */
 export async function handleSelfUpdate(
@@ -312,6 +433,13 @@ Examples
       isUpToDate: true,
       dryRun,
     })
+
+    // Even if CLI is up to date, check if stub needs updating.
+    const stubUpdated = await checkAndUpdateStub(release, dryRun)
+    if (stubUpdated) {
+      logger.info('Bootstrap stub has been updated to match CLI version.')
+    }
+
     return
   }
 
@@ -405,6 +533,15 @@ Examples
 
       logger.info(`${colors.green('✓')} Update completed successfully!`)
       logger.info(`Backup saved to: ${backupPath}`)
+
+      // Check and update stub if launched via bootstrap.
+      const stubUpdated = await checkAndUpdateStub(release, dryRun)
+      if (stubUpdated) {
+        logger.info(
+          'Both CLI and bootstrap stub have been updated successfully!',
+        )
+      }
+
       logger.info('Please restart the application to use the new version.')
 
       // Clean up staging file after successful update.
