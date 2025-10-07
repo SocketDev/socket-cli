@@ -14,10 +14,15 @@
     "url": "https://socket.dev"
   },
   "bin": {
-    "socket": "socket"
+    "socket": "bin/socket.js"
   },
-  "scripts": {
-    "postinstall": "node install.js"
+  "optionalDependencies": {
+    "@socketbin/cli-darwin-arm64": "1.1.22",
+    "@socketbin/cli-darwin-x64": "1.1.22",
+    "@socketbin/cli-linux-arm64": "1.1.22",
+    "@socketbin/cli-linux-x64": "1.1.22",
+    "@socketbin/cli-win32-arm64": "1.1.22",
+    "@socketbin/cli-win32-x64": "1.1.22"
   },
   "keywords": [
     "socket",
@@ -32,7 +37,7 @@
   },
   "preferGlobal": true,
   "files": [
-    "install.js",
-    "socket"
+    "bin",
+    "README.md"
   ]
 }

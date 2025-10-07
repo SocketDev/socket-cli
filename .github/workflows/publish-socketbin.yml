@@ -1,0 +1,299 @@
+name: Publish @socketbin Packages
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (without v prefix)'
+        required: true
+        type: string
+      dry-run:
+        description: 'Dry run (build but do not publish)'
+        required: false
+        type: boolean
+        default: false
+  release:
+    types: [published]
+
+jobs:
+  build-binaries:
+    name: Build ${{ matrix.platform }}-${{ matrix.arch }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Linux builds
+          - os: ubuntu-latest
+            platform: linux
+            arch: x64
+          - os: ubuntu-latest
+            platform: linux
+            arch: arm64
+
+          # macOS builds
+          - os: macos-latest
+            platform: darwin
+            arch: x64
+          - os: macos-latest
+            platform: darwin
+            arch: arm64
+
+          # Windows builds
+          - os: windows-latest
+            platform: win32
+            arch: x64
+          - os: windows-latest
+            platform: win32
+            arch: arm64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build stub
+        run: pnpm run build:sea:stub
+
+      - name: Build binary
+        run: |
+          pnpm run build:sea -- \
+            --platform=${{ matrix.platform }} \
+            --arch=${{ matrix.arch }}
+
+      - name: Verify binary
+        run: |
+          ls -la dist/sea/socket-*
+          file dist/sea/socket-* || true
+
+      - name: Upload binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: binary-${{ matrix.platform }}-${{ matrix.arch }}
+          path: dist/sea/socket-*
+          retention-days: 1
+
+  publish-packages:
+    name: Publish to npm
+    needs: build-binaries
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write  # For provenance
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Determine version
+        id: version
+        run: |
+          if [[ "${{ github.event_name }}" == "release" ]]; then
+            VERSION="${{ github.event.release.tag_name }}"
+          else
+            VERSION="${{ inputs.version }}"
+          fi
+          # Remove 'v' prefix if present
+          VERSION="${VERSION#v}"
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Download all binaries
+        uses: actions/download-artifact@v4
+        with:
+          path: dist/sea
+          pattern: binary-*
+
+      - name: Organize binaries
+        run: |
+          # Flatten directory structure from artifacts
+          for dir in dist/sea/binary-*; do
+            if [ -d "$dir" ]; then
+              mv "$dir"/* dist/sea/
+              rmdir "$dir"
+            fi
+          done
+
+          # List all binaries
+          echo "Downloaded binaries:"
+          ls -la dist/sea/
+
+      - name: Generate and publish Linux x64
+        if: ${{ !inputs.dry-run }}
+        run: |
+          node scripts/generate-binary-package.mjs \
+            --platform=linux --arch=x64 \
+            --version=${{ steps.version.outputs.version }}
+
+          cd packages/binaries/cli-linux-x64
+          npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Generate and publish Linux ARM64
+        if: ${{ !inputs.dry-run }}
+        run: |
+          node scripts/generate-binary-package.mjs \
+            --platform=linux --arch=arm64 \
+            --version=${{ steps.version.outputs.version }}
+
+          cd packages/binaries/cli-linux-arm64
+          npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Generate and publish macOS x64
+        if: ${{ !inputs.dry-run }}
+        run: |
+          node scripts/generate-binary-package.mjs \
+            --platform=darwin --arch=x64 \
+            --version=${{ steps.version.outputs.version }}
+
+          cd packages/binaries/cli-darwin-x64
+          npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Generate and publish macOS ARM64
+        if: ${{ !inputs.dry-run }}
+        run: |
+          node scripts/generate-binary-package.mjs \
+            --platform=darwin --arch=arm64 \
+            --version=${{ steps.version.outputs.version }}
+
+          cd packages/binaries/cli-darwin-arm64
+          npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Generate and publish Windows x64
+        if: ${{ !inputs.dry-run }}
+        run: |
+          node scripts/generate-binary-package.mjs \
+            --platform=win32 --arch=x64 \
+            --version=${{ steps.version.outputs.version }}
+
+          cd packages/binaries/cli-win32-x64
+          npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Generate and publish Windows ARM64
+        if: ${{ !inputs.dry-run }}
+        run: |
+          node scripts/generate-binary-package.mjs \
+            --platform=win32 --arch=arm64 \
+            --version=${{ steps.version.outputs.version }}
+
+          cd packages/binaries/cli-win32-arm64
+          npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Dry run summary
+        if: ${{ inputs.dry-run }}
+        run: |
+          echo "🚫 Dry run mode - packages were NOT published"
+          echo ""
+          echo "Generated packages:"
+          find packages/binaries -name package.json -exec echo {} \; -exec jq -r '.name + "@" + .version' {} \;
+
+  publish-main:
+    name: Publish main socket package
+    needs: publish-packages
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Determine version
+        id: version
+        run: |
+          if [[ "${{ github.event_name }}" == "release" ]]; then
+            VERSION="${{ github.event.release.tag_name }}"
+          else
+            VERSION="${{ inputs.version }}"
+          fi
+          VERSION="${VERSION#v}"
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Update package.json for @socketbin
+        run: |
+          cd src/sea/npm-package
+
+          # Update version
+          npm version ${{ steps.version.outputs.version }} --no-git-tag-version
+
+          # Update package.json to use optionalDependencies
+          node -e "
+          const fs = require('fs');
+          const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+
+          // Remove old postinstall script
+          delete pkg.scripts?.postinstall;
+
+          // Add dispatcher script to bin
+          pkg.bin = { socket: 'bin/socket.js' };
+
+          // Add optionalDependencies
+          pkg.optionalDependencies = {
+            '@socketbin/cli-darwin-arm64': '${{ steps.version.outputs.version }}',
+            '@socketbin/cli-darwin-x64': '${{ steps.version.outputs.version }}',
+            '@socketbin/cli-linux-arm64': '${{ steps.version.outputs.version }}',
+            '@socketbin/cli-linux-x64': '${{ steps.version.outputs.version }}',
+            '@socketbin/cli-win32-arm64': '${{ steps.version.outputs.version }}',
+            '@socketbin/cli-win32-x64': '${{ steps.version.outputs.version }}'
+          };
+
+          // Update files list
+          pkg.files = ['bin', 'README.md'];
+
+          fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+          "
+
+          # Show the updated package.json
+          cat package.json
+
+      - name: Publish main package
+        if: ${{ !inputs.dry-run }}
+        working-directory: src/sea/npm-package
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Dry run summary
+        if: ${{ inputs.dry-run }}
+        run: |
+          echo "🚫 Dry run mode - main package was NOT published"
+          echo ""
+          echo "Would have published:"
+          cd src/sea/npm-package
+          echo "socket@$(jq -r .version package.json)"
