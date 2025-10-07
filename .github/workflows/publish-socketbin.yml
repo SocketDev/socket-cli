@@ -12,8 +12,6 @@ on:
         required: false
         type: boolean
         default: false
-  release:
-    types: [published]
 
 jobs:
   build-binaries:
@@ -107,11 +105,7 @@ jobs:
       - name: Determine version
         id: version
         run: |
-          if [[ "${{ github.event_name }}" == "release" ]]; then
-            VERSION="${{ github.event.release.tag_name }}"
-          else
-            VERSION="${{ inputs.version }}"
-          fi
+          VERSION="${{ inputs.version }}"
           # Remove 'v' prefix if present
           VERSION="${VERSION#v}"
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
@@ -145,8 +139,6 @@ jobs:
 
           cd packages/binaries/cli-linux-x64
           npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Generate and publish Linux ARM64
         if: ${{ !inputs.dry-run }}
@@ -157,8 +149,6 @@ jobs:
 
           cd packages/binaries/cli-linux-arm64
           npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Generate and publish macOS x64
         if: ${{ !inputs.dry-run }}
@@ -169,8 +159,6 @@ jobs:
 
           cd packages/binaries/cli-darwin-x64
           npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Generate and publish macOS ARM64
         if: ${{ !inputs.dry-run }}
@@ -181,8 +169,6 @@ jobs:
 
           cd packages/binaries/cli-darwin-arm64
           npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Generate and publish Windows x64
         if: ${{ !inputs.dry-run }}
@@ -193,8 +179,6 @@ jobs:
 
           cd packages/binaries/cli-win32-x64
           npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Generate and publish Windows ARM64
         if: ${{ !inputs.dry-run }}
@@ -205,8 +189,6 @@ jobs:
 
           cd packages/binaries/cli-win32-arm64
           npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Dry run summary
         if: ${{ inputs.dry-run }}
@@ -237,11 +219,8 @@ jobs:
       - name: Determine version
         id: version
         run: |
-          if [[ "${{ github.event_name }}" == "release" ]]; then
-            VERSION="${{ github.event.release.tag_name }}"
-          else
-            VERSION="${{ inputs.version }}"
-          fi
+          VERSION="${{ inputs.version }}"
+          # Remove 'v' prefix if present
           VERSION="${VERSION#v}"
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
 
@@ -286,8 +265,6 @@ jobs:
         if: ${{ !inputs.dry-run }}
         working-directory: src/sea/npm-package
         run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Dry run summary
         if: ${{ inputs.dry-run }}
