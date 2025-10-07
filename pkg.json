@@ -8,7 +8,14 @@
     "socket-yarn": "dist/yarn-cli.js"
   },
   "node": "/Users/jdalton/projects/socket-cli/.custom-node-build/node-yao-pkg/out/Release/node",
-  "targets": ["node24-macos-arm64"],
+  "targets": [
+    "node24-macos-arm64",
+    "node24-macos-x64",
+    "node24-linux-arm64",
+    "node24-linux-x64",
+    "node24-win-arm64",
+    "node24-win-x64"
+  ],
   "outputPath": "pkg-binaries",
   "assets": [
     "dist/**/*",

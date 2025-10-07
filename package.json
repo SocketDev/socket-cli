@@ -45,6 +45,8 @@
     "publish:sea:npm": "node scripts/publish-sea.mjs --skip-github",
     "build:pkg": "MINIFY=1 pnpm run build:dist:src && pkg .",
     "build:pkg:one": "MINIFY=1 pnpm run build:dist:src && pkg . --targets",
+    "build:yao-pkg": "pnpm run build:dist:src && pnpm exec pkg .",
+    "build:yao-pkg:node": "bash scripts/build-yao-pkg-node.sh",
     "check": "node scripts/check.mjs",
     "check:lint": "eslint --config .config/eslint.config.mjs --report-unused-disable-directives .",
     "check:tsc": "tsgo --noEmit",
