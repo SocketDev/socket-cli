@@ -521,4 +521,3 @@ This comprehensive improvement effort successfully enhanced Socket CLI's:
 
 *Document created: 2025-10-04*
 *Last updated: 2025-10-04*
-*Author: Claude Code*

@@ -523,4 +523,3 @@ The DLX implementation is solid but has room for improvement:
 
 *Document created: 2025-10-04*
 *Last updated: 2025-10-04*
-*Author: Claude Code*

@@ -534,4 +534,3 @@ async function cleanExpiredCache(cachePath: string, maxAge: number) {
 
 *Document created: 2025-10-04*
 *Last updated: 2025-10-04*
-*Author: Claude Code*
