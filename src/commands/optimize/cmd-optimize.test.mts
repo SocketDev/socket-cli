@@ -386,8 +386,6 @@ describe('socket optimize', async () => {
       expect(packageJson.overrides).toBeUndefined()
       expect(stderr).toMatchInlineSnapshot(`
         "\\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
-        \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
         \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit"
       `)
       expect(code, 'should exit with code 0').toBe(0)
