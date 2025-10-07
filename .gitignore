@@ -25,3 +25,7 @@ Thumbs.db
 
 !/.vscode/extensions.json
 pkg-binaries/
+
+# pkg/yao-pkg built binaries
+/socket
+/socket-*
