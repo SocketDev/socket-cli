@@ -277,7 +277,11 @@ export function emitBanner(
   // For now, output to both stdout and stderr to ensure it shows
   // TODO: Fix stderr output issue
   console.log(banner)
+  // Add extra newline for visual spacing
+  console.log('')
   process.stderr.write(banner + '\n')
+  // Add extra newline for visual spacing
+  process.stderr.write('\n')
 }
 
 // For debugging. Whenever you call meowOrExit it will store the command here
