@@ -19,6 +19,7 @@ const __dirname = dirname(__filename)
 
 const ROOT_DIR = join(__dirname, '..')
 const DIST_DIR = join(ROOT_DIR, 'dist')
+const BUILD_DIR = join(ROOT_DIR, 'build')
 const PKG_BINARIES_DIR = join(ROOT_DIR, 'pkg-binaries')
 const CUSTOM_NODE_BUILD_DIR = join(ROOT_DIR, '.custom-node-build')
 const NODE_MODULES_DIR = join(ROOT_DIR, 'node_modules')
@@ -93,9 +94,15 @@ async function cleanDist() {
  */
 async function cleanPkg() {
   console.log('🧹 Cleaning pkg binaries...')
-  const removed = await removeDir(PKG_BINARIES_DIR, 'pkg-binaries/')
+  let totalRemoved = 0
 
-  // Also remove any binaries in root
+  // Clean pkg-binaries directory
+  totalRemoved += await removeDir(PKG_BINARIES_DIR, 'pkg-binaries/')
+
+  // Clean build directory
+  totalRemoved += await removeDir(BUILD_DIR, 'build/')
+
+  // Also remove any binaries in root (legacy cleanup)
   const rootBinaries = [
     'socket',
     'socket-macos-arm64',
@@ -111,12 +118,12 @@ async function cleanPkg() {
     if (existsSync(binaryPath)) {
       // eslint-disable-next-line no-await-in-loop
       await rm(binaryPath, { force: true })
-      console.log(`   ✅ Removed ${binary}`)
+      console.log(`   ✅ Removed ${binary} from root (legacy)`)
     }
   }
 
-  if (removed === 0) {
-    console.log('   ℹ️  pkg-binaries/ not found (already clean)')
+  if (totalRemoved === 0) {
+    console.log('   ℹ️  No pkg binaries found (already clean)')
   }
   console.log()
 }
@@ -211,7 +218,7 @@ function showHelp() {
   console.log()
   console.log('Modes:')
   console.log('  dist         Clean rollup output (dist/)')
-  console.log('  pkg          Clean pkg binaries (pkg-binaries/)')
+  console.log('  pkg          Clean pkg binaries (pkg-binaries/, build/)')
   console.log('  node         Clean old Node.js builds (keep current)')
   console.log('  caches       Clean build caches')
   console.log('  all          Clean dist, pkg, old node, caches')

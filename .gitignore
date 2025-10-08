@@ -30,3 +30,6 @@ pkg-binaries/
 # pkg/yao-pkg built binaries
 /socket
 /socket-*
+
+# Build directory for temporary artifacts
+/build
