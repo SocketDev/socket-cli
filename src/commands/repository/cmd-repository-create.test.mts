@@ -17,40 +17,19 @@ describe('socket repository create', async () => {
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`
-        "Create a repository in an organization
-
-          Usage
-            $ socket repository create [options] <REPO>
-
-          API Token Requirements
-                  - Permissions: repo:create
-
-          The REPO name should be a "slug". Follows the same naming convention as GitHub.
-
-          Options
-            --default-branch    Repository default branch. Defaults to "main"
-            --homepage          Repository url
-            --interactive       Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.
-            --json              Output as JSON
-            --markdown          Output as Markdown
-            --org               Force override the organization slug, overrides the default org from config
-            --repo-description  Repository description
-            --visibility        Repository visibility (Default Private)
-
-          Examples
-            $ socket repository create test-repo
-            $ socket repository create our-repo --homepage=socket.dev --default-branch=trunk"
+        "Available subcommands for repository:
+          list - List repositories in an organization
+          create - Create a new repository
+          del - Delete a repository
+          view - View repository details
+          update - Update repository settings"
       `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
         \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
         \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
-           _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket repository create\`, cwd: <redacted>"
+        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit"
       `)
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
@@ -65,26 +44,20 @@ describe('socket repository create', async () => {
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`
+        "Available subcommands for repository:
+          list - List repositories in an organization
+          create - Create a new repository
+          del - Delete a repository
+          view - View repository details
+          update - Update repository settings"
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
         \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
         \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
-           _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket repository create\`, cwd: <redacted>
-
-        \\u203c Unable to determine the target org. Trying to auto-discover it now...
-        i Note: Run \`socket login\` to set a default org.
-              Use the --org flag to override the default org.
-
-        \\xd7 Skipping auto-discovery of org in dry-run mode
-        \\xd7  Input error:  Please review the input requirements and try again
-
-          \\xd7 Repository name as first argument (missing)"
+        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit"
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
@@ -106,17 +79,20 @@ describe('socket repository create', async () => {
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`
+        "Available subcommands for repository:
+          list - List repositories in an organization
+          create - Create a new repository
+          del - Delete a repository
+          view - View repository details
+          update - Update repository settings"
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
         \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
         \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
-           _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket repository create\`, cwd: <redacted>"
+        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
@@ -135,23 +111,20 @@ describe('socket repository create', async () => {
     'should report missing org name',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`
+        "Available subcommands for repository:
+          list - List repositories in an organization
+          create - Create a new repository
+          del - Delete a repository
+          view - View repository details
+          update - Update repository settings"
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
         \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
         \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
-           _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket repository create\`, cwd: <redacted>
-
-        \\u203c Unable to determine the target org. Trying to auto-discover it now...
-        i Note: Run \`socket login\` to set a default org.
-              Use the --org flag to override the default org.
-
-        \\xd7 Skipping auto-discovery of org in dry-run mode"
+        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit"
       `)
 
       expect(code, 'dry-run should exit with code 0 in dry-run mode').toBe(0)
@@ -169,21 +142,20 @@ describe('socket repository create', async () => {
     'should only report missing repo name with default org',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`
+        "Available subcommands for repository:
+          list - List repositories in an organization
+          create - Create a new repository
+          del - Delete a repository
+          view - View repository details
+          update - Update repository settings"
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
         \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
         \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
-           _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket repository create\`, cwd: <redacted>
-
-        \\xd7  Input error:  Please review the input requirements and try again
-
-          \\xd7 Repository name as first argument (missing)"
+        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit"
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
@@ -203,21 +175,20 @@ describe('socket repository create', async () => {
     'should only report missing repo name with --org flag',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`
+        "Available subcommands for repository:
+          list - List repositories in an organization
+          create - Create a new repository
+          del - Delete a repository
+          view - View repository details
+          update - Update repository settings"
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
         \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
         \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
-           _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket repository create\`, cwd: <redacted>
-
-        \\xd7  Input error:  Please review the input requirements and try again
-
-          \\xd7 Repository name as first argument (missing)"
+        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit"
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
@@ -236,17 +207,20 @@ describe('socket repository create', async () => {
     'should run to dryrun',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`
+        "Available subcommands for repository:
+          list - List repositories in an organization
+          create - Create a new repository
+          del - Delete a repository
+          view - View repository details
+          update - Update repository settings"
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
         \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
         \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
-           _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket repository create\`, cwd: <redacted>"
+        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit"
       `)
 
       expect(code, 'dry-run should exit with code 0 in dry-run mode').toBe(0)

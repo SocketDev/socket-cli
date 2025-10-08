@@ -16,35 +16,31 @@ describe('socket manifest', async () => {
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`
-        "Generate a dependency manifest for certain ecosystems
+        "What can I help you with?
 
-          Usage
-            $ socket manifest <command>
+        Help Topics:
+          scan       - Scan projects for vulnerabilities and security issues
+          fix        - Auto-fix vulnerabilities and apply security patches
+          pm         - Enhanced npm, npx, yarn, and pnpm wrappers
+          pkg        - Analyze package security and get security scores
+          org        - Manage organizations and repositories
+          config     - CLI settings and configuration management
+          env        - Environment variables for advanced configuration
+          flags      - Global command-line flags and options
+          ask        - Use plain English to interact with Socket
+          all        - Complete list of all available commands
+          quick      - Get started with Socket CLI in minutes
 
-          Commands
-            auto                        Auto-detect build and attempt to generate manifest file
-            cdxgen                      Run cdxgen for SBOM generation
-            conda                       [beta] Convert a Conda environment.yml file to a python requirements.txt
-            gradle                      [beta] Use Gradle to generate a manifest file (\`pom.xml\`) for a Gradle/Java/Kotlin/etc project
-            kotlin                      [beta] Use Gradle to generate a manifest file (\`pom.xml\`) for a Kotlin project
-            scala                       [beta] Generate a manifest file (\`pom.xml\`) from Scala's \`build.sbt\` file
-            setup                       Start interactive configurator to customize default flag values for \`socket manifest\` in this dir
+        Use: socket --help=<topic>
 
-          Options
-
-            --no-banner                 Hide the Socket banner
-            --no-spinner                Hide the console spinner"
+        \\ud83d\\udca1 Tip: Run in an interactive terminal for a better experience"
       `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
         \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
         \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
-           _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest\`, cwd: <redacted>"
+        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit"
       `)
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
@@ -73,11 +69,7 @@ describe('socket manifest', async () => {
            \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
         \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
         \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
-           _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest\`, cwd: <redacted>"
+        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

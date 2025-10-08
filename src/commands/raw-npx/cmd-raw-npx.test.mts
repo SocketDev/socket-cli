@@ -36,11 +36,7 @@ describe('socket raw-npx', async () => {
            \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
         \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
         \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
-           _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket raw-npx\`, cwd: <redacted>"
+        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit"
       `)
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
@@ -61,11 +57,7 @@ describe('socket raw-npx', async () => {
            \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
         \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
         \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
-           _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket raw-npx\`, cwd: <redacted>"
+        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

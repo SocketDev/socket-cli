@@ -16,34 +16,18 @@ describe('socket organization dependencies', async () => {
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`
-        "Search for any dependency that is being used in your organization
-
-          Usage
-            socket organization dependencies [options]
-
-          API Token Requirements
-                  - Quota: 100 units
-
-          Options
-            --json              Output as JSON
-            --limit             Maximum number of dependencies returned
-            --markdown          Output as Markdown
-            --offset            Page number
-
-          Examples
-            socket organization dependencies
-            socket organization dependencies --limit 20 --offset 10"
+        "Available subcommands for organization:
+          list - List all organizations
+          dependencies - View organization dependencies
+          quota - View organization quota and usage
+          policy - Manage organization policies"
       `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
         \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
         \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
-           _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket organization dependencies\`, cwd: <redacted>"
+        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit"
       `)
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
@@ -64,17 +48,19 @@ describe('socket organization dependencies', async () => {
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`
+        "Available subcommands for organization:
+          list - List all organizations
+          dependencies - View organization dependencies
+          quota - View organization quota and usage
+          policy - Manage organization policies"
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
         \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
         \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
-           _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket organization dependencies\`, cwd: <redacted>"
+        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

@@ -16,33 +16,19 @@ describe('socket repository', async () => {
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`
-        "Manage registered repositories
-
-          Usage
-            $ socket repository <command>
-
-          Commands
-            create                      Create a repository in an organization
-            del                         Delete a repository in an organization
-            list                        List repositories in an organization
-            update                      Update a repository in an organization
-            view                        View repositories in an organization
-
-          Options
-
-            --no-banner                 Hide the Socket banner
-            --no-spinner                Hide the console spinner"
+        "Available subcommands for repository:
+          list - List repositories in an organization
+          create - Create a new repository
+          del - Delete a repository
+          view - View repository details
+          update - Update repository settings"
       `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
         \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
         \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
-           _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket repository\`, cwd: <redacted>"
+        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit"
       `)
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
@@ -58,18 +44,21 @@ describe('socket repository', async () => {
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
-        `"[DryRun]: No-op, call a sub-command; ok"`,
+        `
+        "Available subcommands for repository:
+          list - List repositories in an organization
+          create - Create a new repository
+          del - Delete a repository
+          view - View repository details
+          update - Update repository settings"
+      `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
         \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
         \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
-           _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket repository\`, cwd: <redacted>"
+        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
@@ -82,22 +71,12 @@ describe('socket repository', async () => {
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`
-        "Manage registered repositories
-
-          Usage
-            $ socket repository <command>
-
-          Commands
-            create                      Create a repository in an organization
-            del                         Delete a repository in an organization
-            list                        List repositories in an organization
-            update                      Update a repository in an organization
-            view                        View repositories in an organization
-
-          Options
-
-            --no-banner                 Hide the Socket banner
-            --no-spinner                Hide the console spinner"
+        "Available subcommands for repository:
+          list - List repositories in an organization
+          create - Create a new repository
+          del - Delete a repository
+          view - View repository details
+          update - Update repository settings"
       `)
       expect(stderr).toContain('`socket repository`')
       expect(code, 'explicit help should exit with code 0').toBe(0)

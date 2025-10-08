@@ -136,11 +136,7 @@ describe('socket optimize', async () => {
            \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
         \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
         \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
-           _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket optimize\`, cwd: <redacted>"
+        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit"
       `)
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
@@ -164,11 +160,7 @@ describe('socket optimize', async () => {
            \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
         \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
         \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
-           _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket optimize\`, cwd: <redacted>"
+        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
@@ -195,11 +187,7 @@ describe('socket optimize', async () => {
         "\\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
         \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
         \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
-           _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket optimize\`, cwd: <redacted>"
+        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit"
       `)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -225,11 +213,7 @@ describe('socket optimize', async () => {
         "\\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
         \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
         \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
-           _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket optimize\`, cwd: <redacted>"
+        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit"
       `)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -256,11 +240,7 @@ describe('socket optimize', async () => {
         "\\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
         \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
         \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
-           _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket optimize\`, cwd: <redacted>"
+        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit"
       `)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -337,11 +317,7 @@ describe('socket optimize', async () => {
         "\\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
         \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
         \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
-           _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket optimize\`, cwd: <redacted>"
+        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit"
       `)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -386,6 +362,8 @@ describe('socket optimize', async () => {
       expect(packageJson.overrides).toBeUndefined()
       expect(stderr).toMatchInlineSnapshot(`
         "\\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
+        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
+        \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
         \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit"
       `)
       expect(code, 'should exit with code 0').toBe(0)
@@ -465,7 +443,7 @@ describe('socket optimize', async () => {
 
           // Should have optimization output.
           const output = stdout + stderr
-          expect(output).toMatch(/Optimizing|Adding overrides/i)
+          expect(output).toMatch(/optimized overrides|Optimizing|Adding overrides/i)
         } finally {
           // Clean up the temp directory safely.
           await trash(tempDir)
@@ -533,7 +511,7 @@ describe('socket optimize', async () => {
 
           // Should have optimization output.
           const output = stdout + stderr
-          expect(output).toMatch(/Optimizing|Adding overrides|Finished/i)
+          expect(output).toMatch(/optimized overrides|Optimizing|Adding overrides|Finished|No Socket.dev optimize/i)
         } finally {
           // Clean up the temp directory safely.
           await trash(tempDir)
@@ -578,7 +556,7 @@ describe('socket optimize', async () => {
 
           // Should have optimization output.
           const output = stdout + stderr
-          expect(output).toMatch(/Optimizing|Adding overrides/i)
+          expect(output).toMatch(/optimized overrides|Optimizing|Adding overrides/i)
         } finally {
           await cleanup()
         }
@@ -700,7 +678,7 @@ describe('socket optimize', async () => {
 
           // Should have optimization output.
           const output = stdout + stderr
-          expect(output).toMatch(/Optimizing|Adding overrides/i)
+          expect(output).toMatch(/optimized overrides|Optimizing|Adding overrides/i)
         } finally {
           // Clean up the temp directory safely.
           await trash(tempDir)

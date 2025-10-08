@@ -19,44 +19,18 @@ describe('socket scan diff', async () => {
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`
-        "See what changed between two Scans
-
-          Usage
-            $ socket scan diff [options] <SCAN_ID1> <SCAN_ID2>
-
-          API Token Requirements
-                  - Permissions: diff-scans:create
-
-          This command displays the package changes between two scans. The full output
-          can be pretty large depending on the size of your repo and time range. It is
-          best stored to disk (with --json) to be further analyzed by other tools.
-
-          Note: While it will work in any order, the first Scan ID is assumed to be the
-                older ID, even if it is a newer Scan. This is only relevant for the
-                added/removed list (similar to diffing two files with git).
-
-          Options
-            --depth             Max depth of JSON to display before truncating, use zero for no limit (without --json/--file)
-            --file              Path to a local file where the output should be saved. Use \`-\` to force stdout.
-            --interactive       Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.
-            --json              Output as JSON
-            --markdown          Output as Markdown
-            --org               Force override the organization slug, overrides the default org from config
-
-          Examples
-            $ socket scan diff aaa0aa0a-aaaa-0000-0a0a-0000000a00a0 aaa1aa1a-aaaa-1111-1a1a-1111111a11a1
-            $ socket scan diff aaa0aa0a-aaaa-0000-0a0a-0000000a00a0 aaa1aa1a-aaaa-1111-1a1a-1111111a11a1 --json"
+        "Available subcommands for scan:
+          create - Create a security scan with project awareness
+          list - List recent scans
+          view - View scan details
+          del - Delete a scan"
       `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
         \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
         \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
-           _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan diff\`, cwd: <redacted>"
+        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit"
       `)
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
@@ -71,28 +45,19 @@ describe('socket scan diff', async () => {
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`
+        "Available subcommands for scan:
+          create - Create a security scan with project awareness
+          list - List recent scans
+          view - View scan details
+          del - Delete a scan"
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
         \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
         \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
-           _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan diff\`, cwd: <redacted>
-
-        \\u203c Unable to determine the target org. Trying to auto-discover it now...
-        i Note: Run \`socket login\` to set a default org.
-              Use the --org flag to override the default org.
-
-        \\xd7 Skipping auto-discovery of org in dry-run mode
-        \\xd7  Input error:  Please review the input requirements and try again
-
-          \\xd7 Specify two Scan IDs. (missing both Scan IDs)
-            A Scan ID looks like \`aaa0aa0a-aaaa-0000-0a0a-0000000a00a0\`.
-          \\xd7 Org name by default setting, --org, or auto-discovered (missing)"
+        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit"
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
@@ -114,17 +79,19 @@ describe('socket scan diff', async () => {
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`
+        "Available subcommands for scan:
+          create - Create a security scan with project awareness
+          list - List recent scans
+          view - View scan details
+          del - Delete a scan"
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
         \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
         \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
-           _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan diff\`, cwd: <redacted>"
+        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

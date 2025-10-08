@@ -1,6 +1,7 @@
 /** @fileoverview Threat feed output formatter for Socket CLI. Displays security threat intelligence in JSON or text formats. Shows malicious packages, threat types, and security recommendations. */
 
 import { logger } from '@socketsecurity/registry/lib/logger'
+
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
 import { getPurlObject } from '../../utils/purl.mts'
 import { serializeResultJson } from '../../utils/serialize-result-json.mts'

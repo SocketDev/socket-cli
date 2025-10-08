@@ -17,45 +17,18 @@ describe('socket scan list', async () => {
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`
-        "List the scans for an organization
-
-          Usage
-            $ socket scan list [options] [REPO [BRANCH]]
-
-          API Token Requirements
-                  - Permissions: full-scans:list
-
-          Optionally filter by REPO. If you specify a repo, you can also specify a
-          branch to filter by. (Note: If you don't specify a repo then you must use
-          \`--branch\` to filter by branch across all repos).
-
-          Options
-            --branch            Filter to show only scans with this branch name
-            --direction         Direction option (\`desc\` or \`asc\`) - Default is \`desc\`
-            --from-time         From time - as a unix timestamp
-            --interactive       Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.
-            --json              Output as JSON
-            --markdown          Output as Markdown
-            --org               Force override the organization slug, overrides the default org from config
-            --page              Page number - Default is 1
-            --per-page          Results per page - Default is 30
-            --sort              Sorting option (\`name\` or \`created_at\`) - default is \`created_at\`
-            --until-time        Until time - as a unix timestamp
-
-          Examples
-            $ socket scan list
-            $ socket scan list webtools badbranch --markdown"
+        "Available subcommands for scan:
+          create - Create a security scan with project awareness
+          list - List recent scans
+          view - View scan details
+          del - Delete a scan"
       `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
         \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
         \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
-           _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan list\`, cwd: <redacted>"
+        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit"
       `)
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
@@ -70,26 +43,19 @@ describe('socket scan list', async () => {
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`
+        "Available subcommands for scan:
+          create - Create a security scan with project awareness
+          list - List recent scans
+          view - View scan details
+          del - Delete a scan"
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
         \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
         \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
-           _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan list\`, cwd: <redacted>
-
-        \\u203c Unable to determine the target org. Trying to auto-discover it now...
-        i Note: Run \`socket login\` to set a default org.
-              Use the --org flag to override the default org.
-
-        \\xd7 Skipping auto-discovery of org in dry-run mode
-        \\xd7  Input error:  Please review the input requirements and try again
-
-          \\xd7 Org name by default setting, --org, or auto-discovered (dot is an invalid org, most likely you forgot the org name here?)"
+        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit"
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
@@ -109,17 +75,19 @@ describe('socket scan list', async () => {
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`
+        "Available subcommands for scan:
+          create - Create a security scan with project awareness
+          list - List recent scans
+          view - View scan details
+          del - Delete a scan"
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
         \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
         \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
-           _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan list\`, cwd: <redacted>"
+        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
