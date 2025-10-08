@@ -16,6 +16,36 @@ interface HelpCategory {
 
 const helpCategories: HelpCategory[] = [
   {
+    title: 'Guided Tour',
+    key: 'tour',
+    icon: '🎯',
+    description: 'Take an interactive tour of Socket CLI',
+    content: () => {
+      logger.log(colors.cyan('\n🎯 Socket CLI Guided Tour\n'))
+      logger.log('The interactive tour will walk you through:')
+      logger.log('')
+      logger.log('  1. Authentication and setup')
+      logger.log('  2. Scanning for vulnerabilities')
+      logger.log('  3. Checking package safety')
+      logger.log('  4. Using natural language commands')
+      logger.log('  5. Fixing security issues')
+      logger.log('  6. Secure package installation')
+      logger.log('  7. Dependency optimization')
+      logger.log('  8. Offline mode and caching')
+      logger.log('  9. CI/CD integration')
+      logger.log('  10. Organization management')
+      logger.log('')
+      logger.log(colors.bold('To start the tour:'))
+      logger.log('  socket tour')
+      logger.log('')
+      logger.log(colors.gray('The tour is interactive and will:'))
+      logger.log(colors.gray('  • Show real commands you can use'))
+      logger.log(colors.gray('  • Let you run safe examples'))
+      logger.log(colors.gray('  • Provide tips and best practices'))
+      logger.log(colors.gray('  • Take about 5-10 minutes'))
+    },
+  },
+  {
     title: 'Security Scanning',
     key: 'scan',
     icon: '🔍',
@@ -220,6 +250,7 @@ const helpCategories: HelpCategory[] = [
         { cmd: 'scan', desc: 'Security scanning' },
         { cmd: 'security', desc: 'Security policy' },
         { cmd: 'threat-feed', desc: 'Threat intelligence' },
+        { cmd: 'tour', desc: '🎯 Interactive guided tour' },
         { cmd: 'whoami', desc: 'Current user info' },
         { cmd: 'wrapper', desc: 'CDN wrapper' },
         { cmd: 'yarn', desc: 'Secure yarn wrapper' },
@@ -241,6 +272,9 @@ const helpCategories: HelpCategory[] = [
     description: 'Get started quickly',
     content: () => {
       logger.log(colors.cyan('\n🚀 Quick Start Guide\n'))
+      logger.log(colors.bold('New to Socket CLI?'))
+      logger.log('   socket tour                  # Take the interactive tour!')
+      logger.log('')
       logger.log(colors.bold('1. First-time setup:'))
       logger.log('   socket login                 # Authenticate')
       logger.log('   socket config auto            # Auto-configure')
@@ -277,7 +311,9 @@ export async function showInteractiveHelp(): Promise<void> {
     logger.log('')
     logger.log(colors.gray('Run with an interactive terminal to select a category'))
     logger.log(colors.gray('Or use: socket --help=<category>'))
-    logger.log(colors.gray('Categories: scan, fix, pm, pkg, org, config, ask, all, quick'))
+    logger.log(colors.gray('Categories: tour, scan, fix, pm, pkg, org, config, ask, all, quick'))
+    logger.log('')
+    logger.log(colors.bold('💡 New user? Try: socket tour'))
     return
   }
 
@@ -286,7 +322,8 @@ export async function showInteractiveHelp(): Promise<void> {
 
   try {
     while (true) {
-      logger.log(colors.bold('What can I help you with?\n'))
+      logger.log(colors.bold('What can I help you with?'))
+      logger.log(colors.dim('💡 New user? Start with option 1 for a guided tour!\n'))
       showCategoryList()
       logger.log('')
 

@@ -35,6 +35,7 @@ import { cmdWhoami } from './commands/whoami/cmd-whoami.mts'
 import { cmdWrapper } from './commands/wrapper/cmd-wrapper.mts'
 import { cmdYarn } from './commands/yarn/cmd-yarn.mts'
 import { cmdAsk } from './commands/ask/cmd-ask.mts'
+import { cmdTour } from './commands/tour/cmd-tour.mts'
 import { isSeaBinary } from './utils/sea.mts'
 
 export const rootCommands = {
@@ -69,6 +70,7 @@ export const rootCommands = {
   security: cmdOrganizationPolicySecurity,
   ...(isSeaBinary() ? { 'self-update': cmdSelfUpdate } : {}),
   'threat-feed': cmdThreatFeed,
+  tour: cmdTour,
   uninstall: cmdUninstall,
   uv: cmdUv,
   whoami: cmdWhoami,

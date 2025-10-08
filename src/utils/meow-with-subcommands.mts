@@ -815,7 +815,7 @@ export async function meowWithSubcommands(
       const found = showCategoryHelp(helpCategory)
       if (!found) {
         logger.error(`Unknown help category: ${helpCategory}`)
-        logger.log('Valid categories: scan, fix, pm, pkg, org, config, ask, all, quick')
+        logger.log('Valid categories: tour, scan, fix, pm, pkg, org, config, ask, all, quick')
       }
       // eslint-disable-next-line n/no-process-exit
       process.exit(found ? 0 : 2)
