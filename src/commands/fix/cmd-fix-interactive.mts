@@ -1,6 +1,7 @@
 /** @fileoverview Interactive fix mode for guided vulnerability remediation. */
 
-import { createRequire } from 'node:module'
+import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { join } from 'node:path'
 import readline from 'node:readline/promises'
 import { stdin, stdout } from 'node:process'
 
@@ -9,13 +10,11 @@ import { satisfies, minVersion } from 'semver'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { commonFlags, outputFlags } from '../../flags.mts'
-import { checkCommandInput } from '../../utils/check-input.mts'
+import { buildCommand } from '../../utils/command-builder.mts'
 import { getProjectContext } from '../../utils/project-context.mts'
-import { Spinner } from '../../utils/rich-progress.mts'
-import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
-import { hasDefaultApiToken } from '../../utils/sdk.mts'
-import { getSdk } from '../../utils/sdk.mts'
+import { Spinner, MultiProgress } from '../../utils/rich-progress.mts'
+import { runStandardValidations } from '../../utils/common-validations.mts'
+import { setupSdk } from '../../utils/sdk.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 
 import type {
