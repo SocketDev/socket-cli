@@ -11,7 +11,6 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 interface HelpCategory {
   title: string
   key: string
-  icon: string
   description: string
   content: () => void
 }
@@ -20,21 +19,20 @@ const helpCategories: HelpCategory[] = [
   {
     title: 'Security Scanning',
     key: 'scan',
-    icon: '🔍',
-    description: 'Scan projects for vulnerabilities',
+    description: 'Scan projects for vulnerabilities and security issues',
     content: () => {
-      logger.log(colors.cyan('\n📦 Security Scanning Commands\n'))
+      logger.log(colors.cyan('\nSecurity Scanning Commands\n'))
       logger.log('  socket scan create [path]    Create a security scan')
       logger.log('  socket scan list             List recent scans')
       logger.log('  socket scan view <id>        View scan details')
       logger.log('  socket scan report           Generate scan report')
       logger.log('')
-      logger.log(colors.gray('Options:'))
+      logger.log(colors.bold('Options:'))
       logger.log('  --prod                       Scan production dependencies only')
       logger.log('  --reach                      Enable reachability analysis')
       logger.log('  --json                       Output as JSON')
       logger.log('')
-      logger.log(colors.gray('Examples:'))
+      logger.log(colors.bold('Examples:'))
       logger.log('  socket scan create .')
       logger.log('  socket scan create . --prod --reach')
       logger.log('  socket scan list --limit=10')
@@ -43,22 +41,21 @@ const helpCategories: HelpCategory[] = [
   {
     title: 'Fix & Patch',
     key: 'fix',
-    icon: '🔧',
-    description: 'Fix vulnerabilities and apply patches',
+    description: 'Auto-fix vulnerabilities and apply security patches',
     content: () => {
-      logger.log(colors.cyan('\n🔧 Fix & Patch Commands\n'))
+      logger.log(colors.cyan('\nFix & Patch Commands\n'))
       logger.log('  socket fix                   Auto-fix vulnerabilities')
       logger.log('  socket fix interactive       Interactive guided fixing')
       logger.log('  socket patch                 Apply security patches')
       logger.log('  socket optimize              Optimize dependencies')
       logger.log('')
-      logger.log(colors.gray('Fix Options:'))
+      logger.log(colors.bold('Fix Options:'))
       logger.log('  --dry-run                    Preview changes without applying')
       logger.log('  --auto                       Auto-apply safe fixes')
       logger.log('  --severity=high              Minimum severity to fix')
       logger.log('  --pin                        Pin to exact versions')
       logger.log('')
-      logger.log(colors.gray('Examples:'))
+      logger.log(colors.bold('Examples:'))
       logger.log('  socket fix --dry-run')
       logger.log('  socket fix interactive --auto')
       logger.log('  socket patch')
@@ -67,22 +64,21 @@ const helpCategories: HelpCategory[] = [
   {
     title: 'Package Managers',
     key: 'pm',
-    icon: '📦',
-    description: 'Enhanced package manager commands',
+    description: 'Enhanced npm, npx, yarn, and pnpm wrappers',
     content: () => {
-      logger.log(colors.cyan('\n📦 Package Manager Wrappers\n'))
+      logger.log(colors.cyan('\nPackage Manager Wrappers\n'))
       logger.log('  socket npm [command]         Secure npm wrapper')
       logger.log('  socket npx [command]         Secure npx wrapper')
       logger.log('  socket yarn [command]        Secure yarn wrapper')
       logger.log('  socket pnpm [command]        Secure pnpm wrapper')
       logger.log('')
-      logger.log(colors.gray('Features:'))
-      logger.log('  • Blocks typosquatted packages')
-      logger.log('  • Warns about risky dependencies')
-      logger.log('  • Prevents supply chain attacks')
-      logger.log('  • Maintains normal workflow')
+      logger.log(colors.bold('Features:'))
+      logger.log('  - Blocks typosquatted packages')
+      logger.log('  - Warns about risky dependencies')
+      logger.log('  - Prevents supply chain attacks')
+      logger.log('  - Maintains normal workflow')
       logger.log('')
-      logger.log(colors.gray('Examples:'))
+      logger.log(colors.bold('Examples:'))
       logger.log('  socket npm install express')
       logger.log('  socket npx create-react-app my-app')
       logger.log('  socket yarn add lodash')
@@ -91,32 +87,30 @@ const helpCategories: HelpCategory[] = [
   {
     title: 'Package Analysis',
     key: 'pkg',
-    icon: '📊',
-    description: 'Analyze package security',
+    description: 'Analyze package security and get security scores',
     content: () => {
-      logger.log(colors.cyan('\n📊 Package Analysis Commands\n'))
+      logger.log(colors.cyan('\nPackage Analysis Commands\n'))
       logger.log('  socket package score <pkg>   Get security score')
       logger.log('  socket package issues <pkg>  List security issues')
       logger.log('  socket package shallow <pkg> Quick security check')
       logger.log('')
-      logger.log(colors.gray('Package Formats:'))
+      logger.log(colors.bold('Package Formats:'))
       logger.log('  lodash                       Latest version')
       logger.log('  lodash@4.17.21              Specific version')
       logger.log('  pypi/flask/2.0.0           Python package')
       logger.log('')
-      logger.log(colors.gray('Examples:'))
+      logger.log(colors.bold('Examples:'))
       logger.log('  socket package score express')
       logger.log('  socket package issues react@18.0.0')
       logger.log('  socket ask "is lodash safe"')
     },
   },
   {
-    title: 'Organizations & Repos',
+    title: 'Organizations',
     key: 'org',
-    icon: '🏢',
     description: 'Manage organizations and repositories',
     content: () => {
-      logger.log(colors.cyan('\n🏢 Organization & Repository Commands\n'))
+      logger.log(colors.cyan('\nOrganization & Repository Commands\n'))
       logger.log('')
       logger.log(colors.bold('Organizations:'))
       logger.log('  socket org list              List your organizations')
@@ -129,7 +123,7 @@ const helpCategories: HelpCategory[] = [
       logger.log('  socket repo create <name>    Create repository')
       logger.log('  socket repo view <name>      View repository details')
       logger.log('')
-      logger.log(colors.gray('Examples:'))
+      logger.log(colors.bold('Examples:'))
       logger.log('  socket org list --json')
       logger.log('  socket repo create my-project')
     },
@@ -137,10 +131,9 @@ const helpCategories: HelpCategory[] = [
   {
     title: 'Configuration',
     key: 'config',
-    icon: '⚙️',
-    description: 'CLI settings and configuration',
+    description: 'CLI settings and configuration management',
     content: () => {
-      logger.log(colors.cyan('\n⚙️ Configuration\n'))
+      logger.log(colors.cyan('\nConfiguration\n'))
       logger.log('')
       logger.log(colors.bold('Commands:'))
       logger.log('  socket login                 Authenticate with Socket')
@@ -156,7 +149,7 @@ const helpCategories: HelpCategory[] = [
       logger.log('  apiToken                     Stored API token')
       logger.log('  apiBaseUrl                   API endpoint URL')
       logger.log('')
-      logger.log(colors.gray('Examples:'))
+      logger.log(colors.bold('Examples:'))
       logger.log('  socket config set defaultOrg my-org')
       logger.log('  socket config list --json')
       logger.log('  socket config get apiToken')
@@ -165,10 +158,9 @@ const helpCategories: HelpCategory[] = [
   {
     title: 'Environment Variables',
     key: 'env',
-    icon: '🌍',
-    description: 'Environment variables and settings',
+    description: 'Environment variables for advanced configuration',
     content: () => {
-      logger.log(colors.cyan('\n🌍 Environment Variables\n'))
+      logger.log(colors.cyan('\nEnvironment Variables\n'))
       logger.log('')
       logger.log(colors.bold('Authentication:'))
       logger.log('  SOCKET_CLI_API_TOKEN         Set the Socket API token')
@@ -205,7 +197,7 @@ const helpCategories: HelpCategory[] = [
       logger.log('  SOCKET_VERBOSE=1             Show verbose output')
       logger.log('  DEBUG                        NPM debug package pattern')
       logger.log('')
-      logger.log(colors.gray('Examples:'))
+      logger.log(colors.bold('Examples:'))
       logger.log('  SOCKET_CLI_API_TOKEN=xxx socket scan create')
       logger.log('  SOCKET_OFFLINE=1 socket scan list')
       logger.log('  SOCKET_CLI_DEBUG=1 socket fix --dry-run')
@@ -214,10 +206,9 @@ const helpCategories: HelpCategory[] = [
   {
     title: 'Common Flags',
     key: 'flags',
-    icon: '🚩',
-    description: 'Command-line flags and options',
+    description: 'Global command-line flags and options',
     content: () => {
-      logger.log(colors.cyan('\n🚩 Common Flags & Options\n'))
+      logger.log(colors.cyan('\nCommon Flags & Options\n'))
       logger.log('')
       logger.log(colors.bold('Output Formats:'))
       logger.log('  --json                       Output results as JSON')
@@ -244,7 +235,7 @@ const helpCategories: HelpCategory[] = [
       logger.log('  --help, -h                   Show help for command')
       logger.log('  --help=<topic>               Show help for specific topic')
       logger.log('')
-      logger.log(colors.gray('Examples:'))
+      logger.log(colors.bold('Examples:'))
       logger.log('  socket scan create --json')
       logger.log('  socket fix --dry-run --verbose')
       logger.log('  socket optimize --org my-org --force')
@@ -253,38 +244,36 @@ const helpCategories: HelpCategory[] = [
   {
     title: 'Natural Language',
     key: 'ask',
-    icon: '💬',
-    description: 'Use plain English commands',
+    description: 'Use plain English to interact with Socket',
     content: () => {
-      logger.log(colors.cyan('\n💬 Natural Language Interface\n'))
+      logger.log(colors.cyan('\nNatural Language Interface\n'))
       logger.log('')
       logger.log('  socket ask "<question>"      Ask in plain English')
       logger.log('')
-      logger.log(colors.gray('Examples:'))
+      logger.log(colors.bold('Examples:'))
       logger.log('  socket ask "scan for vulnerabilities"')
       logger.log('  socket ask "fix critical issues"')
       logger.log('  socket ask "is express safe to use"')
       logger.log('  socket ask "show production vulnerabilities"')
       logger.log('  socket ask "optimize my dependencies"')
       logger.log('')
-      logger.log(colors.gray('Options:'))
+      logger.log(colors.bold('Options:'))
       logger.log('  --execute, -e                Execute the command directly')
       logger.log('  --explain                    Show detailed explanation')
       logger.log('')
-      logger.log(colors.gray('Tips:'))
-      logger.log('  • Be specific about what you want')
-      logger.log('  • Mention "production" or "dev" to filter')
-      logger.log('  • Use severity levels: critical, high, medium, low')
-      logger.log('  • Say "dry run" to preview changes')
+      logger.log(colors.bold('Tips:'))
+      logger.log('  - Be specific about what you want')
+      logger.log('  - Mention "production" or "dev" to filter')
+      logger.log('  - Use severity levels: critical, high, medium, low')
+      logger.log('  - Say "dry run" to preview changes')
     },
   },
   {
     title: 'All Commands',
     key: 'all',
-    icon: '📚',
-    description: 'Show complete command list',
+    description: 'Complete list of all available commands',
     content: () => {
-      logger.log(colors.cyan('\n📚 All Socket CLI Commands\n'))
+      logger.log(colors.cyan('\nAll Socket CLI Commands\n'))
 
       const commands = [
         { cmd: 'analytics', desc: 'View security analytics' },
@@ -325,10 +314,9 @@ const helpCategories: HelpCategory[] = [
   {
     title: 'Quick Start',
     key: 'quick',
-    icon: '🚀',
-    description: 'Get started quickly',
+    description: 'Get started with Socket CLI in minutes',
     content: () => {
-      logger.log(colors.cyan('\n🚀 Quick Start Guide\n'))
+      logger.log(colors.cyan('\nQuick Start Guide\n'))
       logger.log(colors.bold('New to Socket CLI?'))
       logger.log('')
       logger.log(colors.bold('1. First-time setup:'))
@@ -366,17 +354,17 @@ export async function showInteractiveHelp(): Promise<void> {
     logger.log(colors.gray('Or use: socket --help=<category>'))
     logger.log(colors.gray('Categories: scan, fix, pm, pkg, org, config, env, flags, ask, all, quick'))
     logger.log('')
-    logger.log(colors.bold('💡 New user? Try: socket --help=quick'))
+    logger.log(colors.bold('New user? Try: socket --help=quick'))
     return
   }
 
-  // Interactive mode
+  // Interactive mode - simple prompt-based navigation
   const rl = readline.createInterface({ input: stdin, output: stdout })
 
   try {
     while (true) {
       logger.log(colors.bold('What can I help you with?'))
-      logger.log(colors.dim('💡 New user? Select "Quick Start" to get started!\n'))
+      logger.log('New user? Select "Quick Start" to get started!\n')
       showCategoryList()
       logger.log('')
 
@@ -412,10 +400,41 @@ export async function showInteractiveHelp(): Promise<void> {
 }
 
 function showCategoryList(): void {
+  // Calculate column widths
+  const termWidth = process.stdout.columns || 80
+  const numColumns = termWidth >= 120 ? 3 : termWidth >= 80 ? 2 : 1
+  const columnWidth = Math.floor(termWidth / numColumns) - 2
+
+  // Group categories into columns
+  const itemsPerColumn = Math.ceil(helpCategories.length / numColumns)
+  const columns: HelpCategory[][] = []
+
+  for (let i = 0; i < numColumns; i++) {
+    const start = i * itemsPerColumn
+    const end = Math.min(start + itemsPerColumn, helpCategories.length)
+    columns.push(helpCategories.slice(start, end))
+  }
+
+  // Print rows
+  for (let row = 0; row < itemsPerColumn; row++) {
+    let line = ''
+    for (let col = 0; col < numColumns; col++) {
+      const category = columns[col]?.[row]
+      if (category) {
+        const num = helpCategories.indexOf(category) + 1
+        const entry = `[${num}] ${category.title}`
+        line += entry.padEnd(columnWidth)
+      }
+    }
+    if (line.trim()) {
+      logger.log(line)
+    }
+  }
+
+  // Print descriptions below in a more compact format
+  logger.log('')
   helpCategories.forEach((cat, index) => {
-    const num = colors.dim(`[${index + 1}]`)
-    logger.log(`  ${num} ${cat.icon}  ${colors.bold(cat.title)}`)
-    logger.log(`      ${colors.gray(cat.description)}`)
+    logger.log(`  ${colors.gray(`[${index + 1}]`)} ${cat.description}`)
   })
 }
 
