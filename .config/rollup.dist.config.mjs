@@ -21,7 +21,7 @@ import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
 import baseConfig, { EXTERNAL_PACKAGES } from './rollup.base.config.mjs'
 import constants from '../scripts/constants.mjs'
 import socketModifyPlugin from '../scripts/rollup/socket-modify-plugin.mjs'
-import { normalizeId } from '../scripts/utils/packages.mjs'
+import { isBuiltin, normalizeId } from '../scripts/utils/packages.mjs'
 
 const {
   CONSTANTS,
@@ -350,8 +350,6 @@ export default async () => {
         [SHADOW_NPM_INJECT]: `${srcPath}/shadow/npm/inject.mts`,
         [SHADOW_NPX_BIN]: `${srcPath}/shadow/npx/bin.mts`,
         [SHADOW_PNPM_BIN]: `${srcPath}/shadow/pnpm/bin.mts`,
-        'external/ink-table': `${srcPath}/external/ink-table.mjs`,
-        'external/yoga-layout': `${srcPath}/external/yoga-layout.mjs`,
         ...(constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD]
           ? {
               [INSTRUMENT_WITH_SENTRY]: `${srcPath}/${INSTRUMENT_WITH_SENTRY}.mts`,
@@ -459,6 +457,35 @@ export default async () => {
           },
         },
       ],
+    }),
+    // Bundle external wrapper modules separately
+    // Each external module gets its own self-contained bundle
+    // Note: Using the base configuration to handle these properly
+    baseConfig({
+      input: {
+        'external/ink-table': `${srcPath}/external/ink-table.mjs`,
+        'external/yoga-layout': `${srcPath}/external/yoga-layout.mjs`,
+      },
+      output: {
+        dir: path.relative(rootPath, distPath),
+        entryFileNames: '[name].js',
+        format: 'cjs',
+        exports: 'auto',
+        externalLiveBindings: false,
+        generatedCode: {
+          preset: 'es2015',
+          arrowFunctions: true,
+          constBindings: true,
+          objectShorthand: true
+        },
+        compact: true,
+        sourcemap: false,
+      },
+      // Override external to bundle dependencies for these modules
+      external(id) {
+        // Only externalize Node.js built-ins
+        return isBuiltin(id)
+      },
     }),
   ]
 }
