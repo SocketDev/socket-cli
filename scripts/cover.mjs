@@ -3,7 +3,7 @@
  * Collects both code coverage and type coverage.
  *
  * Usage:
- *   node scripts/coverage.mjs [--code-only|--type-only|--percent]
+ *   node scripts/cover.mjs [--code-only|--type-only|--percent]
  */
 
 import { parseArgs } from 'node:util'
