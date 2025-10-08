@@ -2,7 +2,7 @@
 
 import { existsSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
-import { join, dirname } from 'node:path'
+import { dirname, join } from 'node:path'
 
 interface ProjectContext {
   type: 'npm' | 'yarn' | 'pnpm' | 'unknown'
@@ -19,9 +19,9 @@ interface ProjectContext {
  */
 export async function detectPackageManager(cwd: string): Promise<ProjectContext['type']> {
   // Check for lock files
-  if (existsSync(join(cwd, 'pnpm-lock.yaml'))) return 'pnpm'
-  if (existsSync(join(cwd, 'yarn.lock'))) return 'yarn'
-  if (existsSync(join(cwd, 'package-lock.json'))) return 'npm'
+  if (existsSync(join(cwd, 'pnpm-lock.yaml'))) {return 'pnpm'}
+  if (existsSync(join(cwd, 'yarn.lock'))) {return 'yarn'}
+  if (existsSync(join(cwd, 'package-lock.json'))) {return 'npm'}
 
   // Check packageManager field in package.json
   const pkgPath = join(cwd, 'package.json')
@@ -29,9 +29,9 @@ export async function detectPackageManager(cwd: string): Promise<ProjectContext[
     try {
       const pkg = JSON.parse(await readFile(pkgPath, 'utf8'))
       if (pkg.packageManager) {
-        if (pkg.packageManager.startsWith('pnpm')) return 'pnpm'
-        if (pkg.packageManager.startsWith('yarn')) return 'yarn'
-        if (pkg.packageManager.startsWith('npm')) return 'npm'
+        if (pkg.packageManager.startsWith('pnpm')) {return 'pnpm'}
+        if (pkg.packageManager.startsWith('yarn')) {return 'yarn'}
+        if (pkg.packageManager.startsWith('npm')) {return 'npm'}
       }
     } catch {
       // Ignore parse errors
@@ -62,24 +62,24 @@ export async function findProjectRoot(startDir: string): Promise<string | null> 
  */
 async function isMonorepo(root: string): Promise<boolean> {
   const pkgPath = join(root, 'package.json')
-  if (!existsSync(pkgPath)) return false
+  if (!existsSync(pkgPath)) {return false}
 
   try {
     const pkg = JSON.parse(await readFile(pkgPath, 'utf8'))
     // Check for workspaces (npm/yarn/pnpm)
-    if (pkg.workspaces) return true
+    if (pkg.workspaces) {return true}
 
     // Check for lerna
-    if (existsSync(join(root, 'lerna.json'))) return true
+    if (existsSync(join(root, 'lerna.json'))) {return true}
 
     // Check for rush
-    if (existsSync(join(root, 'rush.json'))) return true
+    if (existsSync(join(root, 'rush.json'))) {return true}
 
     // Check for nx
-    if (existsSync(join(root, 'nx.json'))) return true
+    if (existsSync(join(root, 'nx.json'))) {return true}
 
     // Check for pnpm workspaces
-    if (existsSync(join(root, 'pnpm-workspace.yaml'))) return true
+    if (existsSync(join(root, 'pnpm-workspace.yaml'))) {return true}
   } catch {
     // Ignore errors
   }
@@ -92,34 +92,34 @@ async function isMonorepo(root: string): Promise<boolean> {
  */
 async function detectFramework(root: string): Promise<string | undefined> {
   const pkgPath = join(root, 'package.json')
-  if (!existsSync(pkgPath)) return undefined
+  if (!existsSync(pkgPath)) {return undefined}
 
   try {
     const pkg = JSON.parse(await readFile(pkgPath, 'utf8'))
     const deps = { ...pkg.dependencies, ...pkg.devDependencies }
 
     // React-based
-    if (deps['next']) return 'next'
-    if (deps['react']) return 'react'
+    if (deps['next']) {return 'next'}
+    if (deps['react']) {return 'react'}
 
     // Vue-based
-    if (deps['nuxt']) return 'nuxt'
-    if (deps['vue']) return 'vue'
+    if (deps['nuxt']) {return 'nuxt'}
+    if (deps['vue']) {return 'vue'}
 
     // Angular
-    if (deps['@angular/core']) return 'angular'
+    if (deps['@angular/core']) {return 'angular'}
 
     // Svelte
-    if (deps['svelte'] || deps['@sveltejs/kit']) return 'svelte'
+    if (deps['svelte'] || deps['@sveltejs/kit']) {return 'svelte'}
 
     // Node.js frameworks
-    if (deps['express']) return 'express'
-    if (deps['fastify']) return 'fastify'
-    if (deps['koa']) return 'koa'
+    if (deps['express']) {return 'express'}
+    if (deps['fastify']) {return 'fastify'}
+    if (deps['koa']) {return 'koa'}
 
     // Static site generators
-    if (deps['gatsby']) return 'gatsby'
-    if (deps['@11ty/eleventy']) return 'eleventy'
+    if (deps['gatsby']) {return 'gatsby'}
+    if (deps['@11ty/eleventy']) {return 'eleventy'}
 
   } catch {
     // Ignore errors

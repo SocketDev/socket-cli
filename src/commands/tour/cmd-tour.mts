@@ -1,8 +1,9 @@
 /** @fileoverview Interactive tour command for Socket CLI */
 
+import isInteractive from '@socketregistry/is-interactive/index.cjs'
+
 import { buildCommand } from '../../utils/command-builder.mts'
 import { runInteractiveTour, showTourSummary } from '../../utils/interactive-tour.mts'
-import isInteractive from '@socketregistry/is-interactive/index.cjs'
 
 export const cmdTour = buildCommand({
   name: 'tour',

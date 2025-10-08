@@ -1,14 +1,15 @@
 /** @fileoverview Command builder to DRY out repetitive cmd-*.mts command definitions */
 
+import { logger } from '@socketsecurity/registry/lib/logger'
+
 import { meowOrExit } from './meow-with-subcommands.mts'
 import { commonFlags, outputFlags } from '../flags.mts'
-import { logger } from '@socketsecurity/registry/lib/logger'
 
 import type {
   CliCommandConfig,
   CliSubcommand,
-  MeowFlags,
 } from './meow-with-subcommands.mts'
+import type { MeowFlags } from '../flags.mts'
 
 /**
  * Options for building a CLI command
@@ -36,17 +37,17 @@ export interface CommandBuilderOptions {
  */
 export function buildCommand(options: CommandBuilderOptions): CliSubcommand {
   const {
-    name,
-    description,
-    hidden = false,
     args = '',
+    description,
+    examples = [],
     flags = {},
+    handler,
+    helpText,
+    hidden = false,
     includeCommonFlags = true,
     includeOutputFlags = false,
-    handler,
-    examples = [],
+    name,
     usage,
-    helpText,
   } = options
 
   // Combine flags based on options
@@ -59,13 +60,15 @@ export function buildCommand(options: CommandBuilderOptions): CliSubcommand {
   return {
     description,
     hidden,
-    async run(argv: readonly string[], importMeta: ImportMeta, parentName: string) {
+    async run(argv: readonly string[], importMeta: ImportMeta, { parentName }: { parentName: string }) {
       const config: CliCommandConfig = {
-        args,
+        commandName: name,
+        description,
+        hidden,
         flags: combinedFlags,
         help: helpText
           ? () => helpText
-          : (command, config) => {
+          : (command: string) => {
               const lines = [`Usage\n  $ ${command} ${args}`.trim()]
 
               if (examples.length > 0) {
@@ -85,7 +88,7 @@ export function buildCommand(options: CommandBuilderOptions): CliSubcommand {
               lines.push('\nOptions')
               // Auto-generate options from flags
               for (const [key, flag] of Object.entries(combinedFlags)) {
-                if (!flag || typeof flag !== 'object') continue
+                if (!flag || typeof flag !== 'object') {continue}
                 const shortFlag = 'shortFlag' in flag ? `-${flag.shortFlag}, ` : ''
                 const flagName = key.replace(/[A-Z]/g, m => '-' + m.toLowerCase())
                 lines.push(`  ${shortFlag}--${flagName}`)
@@ -121,14 +124,12 @@ export interface ParentCommandOptions {
 }
 
 export function buildParentCommand(options: ParentCommandOptions): CliSubcommand {
-  const { name, description, hidden = false, subcommands, defaultSubcommand } = options
+  const { defaultSubcommand, description, hidden = false, name, subcommands } = options
 
   return {
     description,
     hidden,
-    subcommands,
-    defaultSubcommand,
-    async run(argv: readonly string[], importMeta: ImportMeta, parentName: string) {
+    async run(argv: readonly string[], importMeta: ImportMeta, { parentName }: { parentName: string }) {
       // This is typically handled by meowWithSubcommands
       // but we can provide a fallback
       logger.log(`Available subcommands for ${name}:`)

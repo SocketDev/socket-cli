@@ -1,13 +1,17 @@
 /** @fileoverview Consolidated repository commands using DRY utilities */
 
-import { buildCommand, buildParentCommand } from '../../utils/command-builder.mts'
+import colors from 'yoctocolors-cjs'
+
+import { logger } from '@socketsecurity/registry/lib/logger'
+
 import { repoApi } from '../../utils/api-wrapper.mts'
-import { simpleOutput, outputPaginatedList, commonColumns } from '../../utils/simple-output.mts'
+import { buildCommand, buildParentCommand } from '../../utils/command-builder.mts'
 import { runStandardValidations } from '../../utils/common-validations.mts'
 import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
-import { logger } from '@socketsecurity/registry/lib/logger'
-import colors from 'yoctocolors-cjs'
+import { commonColumns, outputPaginatedList, simpleOutput } from '../../utils/simple-output.mts'
+
+
 
 // List repositories
 const cmdList = buildCommand({
@@ -59,7 +63,7 @@ const cmdList = buildCommand({
       requireAuth: true,
       dryRun,
       outputKind,
-    })) return
+    })) {return}
 
     const result = await repoApi.list(orgSlug, {
       sort,
@@ -115,7 +119,7 @@ const cmdCreate = buildCommand({
       description: 'Repository visibility (public/private)',
     },
   },
-  handler: async ({ input, flags }) => {
+  handler: async ({ flags, input }) => {
     const repoName = input[0]
     if (!repoName) {
       logger.error('Repository name is required')
@@ -123,7 +127,7 @@ const cmdCreate = buildCommand({
       return
     }
 
-    const { org: orgFlag, branch, description, visibility, dryRun, json, markdown } = flags
+    const { branch, description, dryRun, json, markdown, org: orgFlag, visibility } = flags
     const outputKind = getOutputKind(json, markdown)
     const { 0: orgSlug } = await determineOrgSlug(orgFlag, true, dryRun)
 
@@ -132,7 +136,7 @@ const cmdCreate = buildCommand({
       requireAuth: true,
       dryRun,
       outputKind,
-    })) return
+    })) {return}
 
     const result = await repoApi.create(orgSlug, {
       name: repoName,
@@ -170,7 +174,7 @@ const cmdDelete = buildCommand({
       shortFlag: 'f',
     },
   },
-  handler: async ({ input, flags }) => {
+  handler: async ({ flags, input }) => {
     const repoName = input[0]
     if (!repoName) {
       logger.error('Repository name is required')
@@ -178,7 +182,7 @@ const cmdDelete = buildCommand({
       return
     }
 
-    const { org: orgFlag, force, dryRun } = flags
+    const { dryRun, force, org: orgFlag } = flags
     const { 0: orgSlug } = await determineOrgSlug(orgFlag, true, dryRun)
 
     if (!runStandardValidations({
@@ -186,7 +190,7 @@ const cmdDelete = buildCommand({
       requireAuth: true,
       dryRun,
       outputKind: 'text',
-    })) return
+    })) {return}
 
     if (!force) {
       logger.warn(`This will permanently delete repository: ${repoName}`)
@@ -218,7 +222,7 @@ const cmdView = buildCommand({
       description: 'Organization slug',
     },
   },
-  handler: async ({ input, flags }) => {
+  handler: async ({ flags, input }) => {
     const repoName = input[0]
     if (!repoName) {
       logger.error('Repository name is required')
@@ -226,7 +230,7 @@ const cmdView = buildCommand({
       return
     }
 
-    const { org: orgFlag, dryRun, json, markdown } = flags
+    const { dryRun, json, markdown, org: orgFlag } = flags
     const outputKind = getOutputKind(json, markdown)
     const { 0: orgSlug } = await determineOrgSlug(orgFlag, true, dryRun)
 
@@ -235,7 +239,7 @@ const cmdView = buildCommand({
       requireAuth: true,
       dryRun,
       outputKind,
-    })) return
+    })) {return}
 
     const result = await repoApi.view(orgSlug, repoName)
 
@@ -278,7 +282,7 @@ const cmdUpdate = buildCommand({
       description: 'Repository visibility (public/private)',
     },
   },
-  handler: async ({ input, flags }) => {
+  handler: async ({ flags, input }) => {
     const repoName = input[0]
     if (!repoName) {
       logger.error('Repository name is required')
@@ -286,14 +290,14 @@ const cmdUpdate = buildCommand({
       return
     }
 
-    const { org: orgFlag, branch, description, visibility, dryRun, json, markdown } = flags
+    const { branch, description, dryRun, json, markdown, org: orgFlag, visibility } = flags
     const outputKind = getOutputKind(json, markdown)
     const { 0: orgSlug } = await determineOrgSlug(orgFlag, true, dryRun)
 
     const updates: any = {}
-    if (branch) updates.default_branch = branch
-    if (description !== undefined) updates.description = description
-    if (visibility) updates.visibility = visibility
+    if (branch) {updates.default_branch = branch}
+    if (description !== undefined) {updates.description = description}
+    if (visibility) {updates.visibility = visibility}
 
     if (Object.keys(updates).length === 0) {
       logger.error('No updates specified')
@@ -307,7 +311,7 @@ const cmdUpdate = buildCommand({
       requireAuth: true,
       dryRun,
       outputKind,
-    })) return
+    })) {return}
 
     const result = await repoApi.update(orgSlug, repoName, updates)
 

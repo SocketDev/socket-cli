@@ -3,17 +3,21 @@
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 
-import { buildCommand, buildParentCommand } from '../../utils/command-builder.mts'
+import colors from 'yoctocolors-cjs'
+
+import { logger } from '@socketsecurity/registry/lib/logger'
+
 import { scanApi } from '../../utils/api-wrapper.mts'
-import { simpleOutput, commonColumns } from '../../utils/simple-output.mts'
+import { buildCommand, buildParentCommand } from '../../utils/command-builder.mts'
 import { runStandardValidations } from '../../utils/common-validations.mts'
 import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
-import { getProjectContext } from '../../utils/project-context.mts'
-import { MultiProgress, Spinner, FileProgress } from '../../utils/rich-progress.mts'
 import { withCache } from '../../utils/offline-cache.mts'
-import { logger } from '@socketsecurity/registry/lib/logger'
-import colors from 'yoctocolors-cjs'
+import { getProjectContext } from '../../utils/project-context.mts'
+import { FileProgress, MultiProgress, Spinner } from '../../utils/rich-progress.mts'
+import { commonColumns, simpleOutput } from '../../utils/simple-output.mts'
+
+
 
 // Create scan with rich progress and project awareness
 const cmdCreate = buildCommand({
@@ -48,9 +52,9 @@ const cmdCreate = buildCommand({
       description: 'Use cached data when available',
     },
   },
-  handler: async ({ input, flags }) => {
+  handler: async ({ flags, input }) => {
     const targetPath = input[0] || process.cwd()
-    const { org: orgFlag, prod, reach, dryRun, json, markdown, cache } = flags
+    const { cache, dryRun, json, markdown, org: orgFlag, prod, reach } = flags
     const showProgress = !flags['no-progress'] && !json && !markdown
     const outputKind = getOutputKind(json, markdown)
     const { 0: orgSlug } = await determineOrgSlug(orgFlag, true, dryRun)
@@ -60,7 +64,7 @@ const cmdCreate = buildCommand({
       requireAuth: true,
       dryRun,
       outputKind,
-    })) return
+    })) {return}
 
     // Project context detection with progress
     let contextSpinner: Spinner | undefined
@@ -162,13 +166,13 @@ const cmdCreate = buildCommand({
           logger.log(`ID: ${data.id}`)
           logger.log(`Status: ${data.status}`)
           if (data.vulnerabilities) {
-            const { critical = 0, high = 0, medium = 0, low = 0 } = data.vulnerabilities
+            const { critical = 0, high = 0, low = 0, medium = 0 } = data.vulnerabilities
             logger.log('')
             logger.log('Vulnerabilities found:')
-            if (critical > 0) logger.log(`  🔴 Critical: ${critical}`)
-            if (high > 0) logger.log(`  🟠 High: ${high}`)
-            if (medium > 0) logger.log(`  🟡 Medium: ${medium}`)
-            if (low > 0) logger.log(`  ⚪ Low: ${low}`)
+            if (critical > 0) {logger.log(`  🔴 Critical: ${critical}`)}
+            if (high > 0) {logger.log(`  🟠 High: ${high}`)}
+            if (medium > 0) {logger.log(`  🟡 Medium: ${medium}`)}
+            if (low > 0) {logger.log(`  ⚪ Low: ${low}`)}
           }
         },
       })
@@ -196,7 +200,7 @@ const cmdList = buildCommand({
     },
   },
   handler: async ({ flags }) => {
-    const { org: orgFlag, limit, dryRun, json, markdown } = flags
+    const { dryRun, json, limit, markdown, org: orgFlag } = flags
     const outputKind = getOutputKind(json, markdown)
     const { 0: orgSlug } = await determineOrgSlug(orgFlag, true, dryRun)
 
@@ -205,7 +209,7 @@ const cmdList = buildCommand({
       requireAuth: true,
       dryRun,
       outputKind,
-    })) return
+    })) {return}
 
     const result = await scanApi.list(orgSlug, { limit })
 
@@ -245,7 +249,7 @@ const cmdView = buildCommand({
       description: 'Organization slug',
     },
   },
-  handler: async ({ input, flags }) => {
+  handler: async ({ flags, input }) => {
     const scanId = input[0]
     if (!scanId) {
       logger.error('Scan ID is required')
@@ -253,7 +257,7 @@ const cmdView = buildCommand({
       return
     }
 
-    const { org: orgFlag, dryRun, json, markdown } = flags
+    const { dryRun, json, markdown, org: orgFlag } = flags
     const outputKind = getOutputKind(json, markdown)
     const { 0: orgSlug } = await determineOrgSlug(orgFlag, true, dryRun)
 
@@ -262,7 +266,7 @@ const cmdView = buildCommand({
       requireAuth: true,
       dryRun,
       outputKind,
-    })) return
+    })) {return}
 
     const result = await scanApi.view(orgSlug, scanId)
 
@@ -300,7 +304,7 @@ const cmdDelete = buildCommand({
       description: 'Organization slug',
     },
   },
-  handler: async ({ input, flags }) => {
+  handler: async ({ flags, input }) => {
     const scanId = input[0]
     if (!scanId) {
       logger.error('Scan ID is required')
@@ -308,7 +312,7 @@ const cmdDelete = buildCommand({
       return
     }
 
-    const { org: orgFlag, dryRun } = flags
+    const { dryRun, org: orgFlag } = flags
     const { 0: orgSlug } = await determineOrgSlug(orgFlag, true, dryRun)
 
     if (!runStandardValidations({
@@ -316,7 +320,7 @@ const cmdDelete = buildCommand({
       requireAuth: true,
       dryRun,
       outputKind: 'text',
-    })) return
+    })) {return}
 
     const result = await scanApi.delete(orgSlug, scanId)
 

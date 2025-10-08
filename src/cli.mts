@@ -37,8 +37,8 @@ import {
   formatErrorForJson,
   formatErrorForTerminal,
 } from './utils/error-display.mts'
-import { captureException } from './utils/errors.mts'
 import { installErrorFiltering } from './utils/error-filter.mts'
+import { captureException } from './utils/errors.mts'
 import { meowWithSubcommands } from './utils/meow-with-subcommands.mts'
 import { isSeaBinary } from './utils/sea.mts'
 import { serializeResultJson } from './utils/serialize-result-json.mts'

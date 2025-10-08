@@ -1,13 +1,17 @@
 /** @fileoverview Consolidated package commands using DRY utilities with caching */
 
-import { buildCommand, buildParentCommand } from '../../utils/command-builder.mts'
+import colors from 'yoctocolors-cjs'
+
+import { logger } from '@socketsecurity/registry/lib/logger'
+
 import { packageApi } from '../../utils/api-wrapper.mts'
-import { simpleOutput } from '../../utils/simple-output.mts'
+import { buildCommand, buildParentCommand } from '../../utils/command-builder.mts'
 import { runStandardValidations } from '../../utils/common-validations.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { Spinner } from '../../utils/rich-progress.mts'
-import { logger } from '@socketsecurity/registry/lib/logger'
-import colors from 'yoctocolors-cjs'
+import { simpleOutput } from '../../utils/simple-output.mts'
+
+
 
 // Parse package specifier (e.g., "lodash@4.17.21" or "npm/lodash/4.17.21")
 function parsePackageSpec(spec: string): { ecosystem: string; name: string; version?: string } | null {
@@ -83,7 +87,7 @@ const cmdScore = buildCommand({
     { command: 'lodash@4.17.21', description: 'Get score for specific version' },
     { command: 'pypi/flask/2.0.0', description: 'Get score for Python package' },
   ],
-  handler: async ({ input, flags }) => {
+  handler: async ({ flags, input }) => {
     const spec = input[0]
     if (!spec) {
       logger.error('Package name is required')
@@ -95,7 +99,7 @@ const cmdScore = buildCommand({
       return
     }
 
-    const { ecosystem: ecosystemFlag, 'no-cache': noCache, detailed, dryRun, json, markdown } = flags
+    const { detailed, dryRun, ecosystem: ecosystemFlag, json, markdown, 'no-cache': noCache } = flags
     const outputKind = getOutputKind(json, markdown)
 
     // Parse package specifier
@@ -114,12 +118,12 @@ const cmdScore = buildCommand({
       requireAuth: true,
       dryRun,
       outputKind,
-    })) return
+    })) {return}
 
     // Fetch latest version if not specified
     if (!version) {
       const spinner = new Spinner(`Fetching latest version of ${name}...`)
-      if (!json && !markdown) spinner.start()
+      if (!json && !markdown) {spinner.start()}
 
       // In a real implementation, we'd fetch the latest version from registry
       version = 'latest'
@@ -187,7 +191,7 @@ const cmdIssues = buildCommand({
       description: 'Skip cached data',
     },
   },
-  handler: async ({ input, flags }) => {
+  handler: async ({ flags, input }) => {
     const spec = input[0]
     if (!spec) {
       logger.error('Package name is required')
@@ -195,7 +199,7 @@ const cmdIssues = buildCommand({
       return
     }
 
-    const { ecosystem: ecosystemFlag, severity, 'no-cache': noCache, dryRun, json, markdown } = flags
+    const { dryRun, ecosystem: ecosystemFlag, json, markdown, 'no-cache': noCache, severity } = flags
     const outputKind = getOutputKind(json, markdown)
 
     const parsed = parsePackageSpec(spec)
@@ -212,7 +216,7 @@ const cmdIssues = buildCommand({
       requireAuth: true,
       dryRun,
       outputKind,
-    })) return
+    })) {return}
 
     const result = await packageApi.issues(ecosystem, name, version, { cache: !noCache })
 
@@ -235,22 +239,22 @@ const cmdIssues = buildCommand({
         const bySeverity: Record<string, any[]> = {}
         for (const issue of filtered) {
           const sev = issue.severity || 'unknown'
-          if (!bySeverity[sev]) bySeverity[sev] = []
+          if (!bySeverity[sev]) {bySeverity[sev] = []}
           bySeverity[sev].push(issue)
         }
 
         const severityOrder = ['critical', 'high', 'medium', 'low', 'unknown']
         for (const sev of severityOrder) {
           const issues = bySeverity[sev]
-          if (!issues || issues.length === 0) continue
+          if (!issues || issues.length === 0) {continue}
 
           const icon = sev === 'critical' ? '🔴' : sev === 'high' ? '🟠' : sev === 'medium' ? '🟡' : '⚪'
           logger.log(`${icon} ${colors.bold(sev.toUpperCase())} (${issues.length})`)
 
           for (const issue of issues.slice(0, 3)) {
             logger.log(`   ${issue.type}: ${issue.description}`)
-            if (issue.cve) logger.log(`   CVE: ${issue.cve}`)
-            if (issue.fix) logger.log(`   Fix: Update to ${issue.fix}`)
+            if (issue.cve) {logger.log(`   CVE: ${issue.cve}`)}
+            if (issue.fix) {logger.log(`   Fix: Update to ${issue.fix}`)}
             logger.log('')
           }
 
@@ -269,7 +273,7 @@ const cmdShallow = buildCommand({
   description: 'Quick security check for a package',
   args: '<package>',
   includeOutputFlags: true,
-  handler: async ({ input, flags }) => {
+  handler: async ({ flags, input }) => {
     const spec = input[0]
     if (!spec) {
       logger.error('Package name is required')
@@ -293,11 +297,11 @@ const cmdShallow = buildCommand({
       requireAuth: true,
       dryRun,
       outputKind,
-    })) return
+    })) {return}
 
     // Quick parallel fetch of score and issues
     const spinner = new Spinner(`Analyzing ${name}@${version}...`)
-    if (!json && !markdown) spinner.start()
+    if (!json && !markdown) {spinner.start()}
 
     const [scoreResult, issuesResult] = await Promise.all([
       packageApi.score(ecosystem, name, version, { cache: true }),
@@ -328,8 +332,8 @@ const cmdShallow = buildCommand({
 
         logger.log(`${icon} ${color(data.status.toUpperCase())}: ${name}@${version}`)
         logger.log(`   Score: ${data.score}/100`)
-        if (data.issues.critical > 0) logger.log(`   🔴 Critical: ${data.issues.critical}`)
-        if (data.issues.high > 0) logger.log(`   🟠 High: ${data.issues.high}`)
+        if (data.issues.critical > 0) {logger.log(`   🔴 Critical: ${data.issues.critical}`)}
+        if (data.issues.high > 0) {logger.log(`   🟠 High: ${data.issues.high}`)}
       },
     })
   },

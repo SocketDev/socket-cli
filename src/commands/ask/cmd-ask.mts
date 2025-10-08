@@ -1,15 +1,14 @@
 /** @fileoverview Natural language command interface for Socket CLI. */
 
-import { logger } from '@socketsecurity/registry/lib/logger'
 import colors from 'yoctocolors-cjs'
+
+import { logger } from '@socketsecurity/registry/lib/logger'
+import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import type {
-  CliCommandConfig,
-  CliCommandContext,
   CliSubcommand,
 } from '../../utils/meow-with-subcommands.mts'
 
@@ -231,15 +230,15 @@ function parseNaturalLanguage(input: string): CommandIntent | null {
 function calculateConfidence(input: string, pattern: RegExp): number {
   // Simple confidence calculation based on how well the pattern matches
   const match = input.match(pattern)
-  if (!match) return 0
+  if (!match) {return 0}
 
   const matchLength = match[0].length
   const inputLength = input.length
   const coverage = matchLength / inputLength
 
   // Boost confidence for exact or near-exact matches
-  if (coverage > 0.8) return 0.9
-  if (coverage > 0.6) return 0.7
+  if (coverage > 0.8) {return 0.9}
+  if (coverage > 0.6) {return 0.7}
   return 0.5
 }
 
@@ -266,25 +265,24 @@ export const cmdAsk: CliSubcommand = {
   async run(
     argv: readonly string[],
     importMeta: ImportMeta,
-    parentName: string,
+    { parentName }: { parentName: string },
   ): Promise<void> {
-    const config: CliCommandConfig = {
-      args: '<natural-language-query>',
-      flags: {
-        ...commonFlags,
-        execute: {
-          type: 'boolean',
-          default: false,
-          shortFlag: 'e',
-          description: 'Execute the command directly without confirmation',
-        },
-        explain: {
-          type: 'boolean',
-          default: false,
-          description: 'Show detailed explanation of the command',
-        },
+    const flags = {
+      ...commonFlags,
+      execute: {
+        type: 'boolean',
+        default: false,
+        shortFlag: 'e',
+        description: 'Execute the command directly without confirmation',
       },
-      help: (command, config) => `
+      explain: {
+        type: 'boolean',
+        default: false,
+        description: 'Show detailed explanation of the command',
+      },
+    }
+
+    const help = (command: string) => `
       Usage
         $ ${command} <natural-language-query>
 
@@ -308,12 +306,17 @@ export const cmdAsk: CliSubcommand = {
         • Mention "production" or "dev" to filter dependencies
         • Use terms like "critical", "high", "medium", "low" for severity
         • Say "dry run" or "preview" to see changes without applying them
-      `,
-    }
+      `
 
     const cli = meowOrExit({
       argv,
-      config,
+      config: {
+        commandName: CMD_NAME,
+        description,
+        hidden,
+        flags,
+        help: () => help(`${parentName} ${CMD_NAME}`),
+      },
       parentName,
       importMeta,
     })

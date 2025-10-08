@@ -1,12 +1,13 @@
 /** @fileoverview Offline mode and intelligent caching for Socket CLI. */
 
+import crypto from 'node:crypto'
 import { existsSync } from 'node:fs'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
-import { join } from 'node:path'
 import { homedir } from 'node:os'
-import crypto from 'node:crypto'
+import { join } from 'node:path'
 
 import colors from 'yoctocolors-cjs'
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 interface CacheEntry<T = any> {
@@ -172,9 +173,9 @@ function formatAge(ms: number): string {
   const hours = Math.floor(minutes / 60)
   const days = Math.floor(hours / 24)
 
-  if (days > 0) return `${days}d`
-  if (hours > 0) return `${hours}h`
-  if (minutes > 0) return `${minutes}m`
+  if (days > 0) {return `${days}d`}
+  if (hours > 0) {return `${hours}h`}
+  if (minutes > 0) {return `${minutes}m`}
   return `${seconds}s`
 }
 
@@ -241,14 +242,14 @@ export async function getCacheStats(): Promise<{
           stats.size += fileStat.size
 
           const mtime = fileStat.mtime.getTime()
-          if (mtime < oldestTime) oldestTime = mtime
-          if (mtime > newestTime) newestTime = mtime
+          if (mtime < oldestTime) {oldestTime = mtime}
+          if (mtime > newestTime) {newestTime = mtime}
         }
       }
     }
 
-    if (oldestTime !== Infinity) stats.oldest = new Date(oldestTime)
-    if (newestTime !== 0) stats.newest = new Date(newestTime)
+    if (oldestTime !== Infinity) {stats.oldest = new Date(oldestTime)}
+    if (newestTime !== 0) {stats.newest = new Date(newestTime)}
   } catch {
     // Ignore errors
   }
@@ -266,7 +267,7 @@ export async function warmCache(
   logger.info('🔥 Warming cache...')
 
   const results = await Promise.allSettled(
-    operations.map(({ operation, params, fetcher }) =>
+    operations.map(({ fetcher, operation, params }) =>
       withCache(operation, params, fetcher, { ...options, refresh: true }),
     ),
   )

@@ -3,6 +3,7 @@
 /** @fileoverview Command definitions and root command mappings for Socket CLI. */
 
 import { cmdAnalytics } from './commands/analytics/cmd-analytics.mts'
+import { cmdAsk } from './commands/ask/cmd-ask.mts'
 import { cmdAuditLog } from './commands/audit-log/cmd-audit-log.mts'
 import { cmdCargo } from './commands/cargo/cmd-cargo.mts'
 import { cmdCI } from './commands/ci/cmd-ci.mts'
@@ -29,13 +30,12 @@ import { cmdRepository } from './commands/repository/index.mts'
 import { cmdScan } from './commands/scan/index.mts'
 import { cmdSelfUpdate } from './commands/self-update/cmd-self-update.mts'
 import { cmdThreatFeed } from './commands/threat-feed/cmd-threat-feed.mts'
+import { cmdTour } from './commands/tour/cmd-tour.mts'
 import { cmdUninstall } from './commands/uninstall/cmd-uninstall.mts'
 import { cmdUv } from './commands/uv/cmd-uv.mts'
 import { cmdWhoami } from './commands/whoami/cmd-whoami.mts'
 import { cmdWrapper } from './commands/wrapper/cmd-wrapper.mts'
 import { cmdYarn } from './commands/yarn/cmd-yarn.mts'
-import { cmdAsk } from './commands/ask/cmd-ask.mts'
-import { cmdTour } from './commands/tour/cmd-tour.mts'
 import { isSeaBinary } from './utils/sea.mts'
 
 export const rootCommands = {

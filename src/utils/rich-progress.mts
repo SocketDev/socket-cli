@@ -1,6 +1,7 @@
 /** @fileoverview Rich progress indicators for better CLI UX. */
 
 import { Writable } from 'node:stream'
+
 import colors from 'yoctocolors-cjs'
 
 interface ProgressBar {
@@ -61,7 +62,7 @@ export class MultiProgress {
    */
   updateTask(id: string, current: number, tokens?: Record<string, string>): void {
     const task = this.tasks.get(id)
-    if (!task) return
+    if (!task) {return}
 
     task.current = current
     task.status = 'running'
@@ -81,7 +82,7 @@ export class MultiProgress {
    */
   failTask(id: string, error?: string): void {
     const task = this.tasks.get(id)
-    if (!task) return
+    if (!task) {return}
 
     task.status = 'failed'
     task.tokens = { error: error || 'Failed' }

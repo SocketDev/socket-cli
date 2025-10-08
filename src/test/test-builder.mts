@@ -1,6 +1,7 @@
 /** @fileoverview Test builder utilities to DRY out repetitive test patterns */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
 import { spawn } from '@socketsecurity/registry/test/stubs/child-process'
 import { stubLoggerLog } from '@socketsecurity/registry/test/stubs/console'
 
@@ -19,7 +20,7 @@ export interface TestSetupOptions {
 }
 
 export function setupCommandTest(options: TestSetupOptions) {
-  const { commandPath, commandName, parentCommand, mockSdk = true, mockConfig = {}, env = {} } = options
+  const { commandName, commandPath, env = {}, mockConfig = {}, mockSdk = true, parentCommand } = options
 
   const stubs = {
     spawn: spawn as Mock,

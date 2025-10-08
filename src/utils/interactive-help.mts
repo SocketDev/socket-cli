@@ -1,10 +1,12 @@
 /** @fileoverview Interactive help system for Socket CLI */
 
-import readline from 'node:readline/promises'
 import { stdin, stdout } from 'node:process'
+import readline from 'node:readline/promises'
+
 import colors from 'yoctocolors-cjs'
-import { logger } from '@socketsecurity/registry/lib/logger'
+
 import isInteractive from '@socketregistry/is-interactive/index.cjs'
+import { logger } from '@socketsecurity/registry/lib/logger'
 
 interface HelpCategory {
   title: string

@@ -1,12 +1,14 @@
 /** @fileoverview Simplified output formatter to DRY out repetitive output-*.mts files */
 
-import colors from 'yoctocolors-cjs'
-// @ts-ignore
 import chalkTable from 'chalk-table'
+import colors from 'yoctocolors-cjs'
+
+// @ts-ignore
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { outputResult } from './output.mts'
 import { serializeResultJson } from './serialize-result-json.mts'
+
 import type { CResult, OutputKind } from '../types.mts'
 
 /**
@@ -40,12 +42,12 @@ export function simpleOutput<T>(
   outputKind: OutputKind,
   options: SimpleOutputOptions<T>,
 ): void {
-  const { json, table, text, title, emptyMessage = 'No data found' } = options
+  const { emptyMessage = 'No data found', json, table, text, title } = options
 
   outputResult(result, outputKind, {
     json: res => {
-      if (!res.ok) return serializeResultJson(res)
-      if (json) return serializeResultJson({ ok: true, data: json(res.data) })
+      if (!res.ok) {return serializeResultJson(res)}
+      if (json) {return serializeResultJson({ ok: true, data: json(res.data) })}
       return serializeResultJson({ ok: true, data: res.data })
     },
     success: data => {
@@ -142,7 +144,7 @@ export function outputPaginatedList<T>(
     }),
     text: data => {
       // Show pagination info
-      const { page, perPage, nextPage, sort, direction } = pagination
+      const { direction, nextPage, page, perPage, sort } = pagination
       logger.log(
         `Page: ${page}, Per page: ${perPage === Infinity ? 'all' : perPage}` +
         (sort ? `, Sort: ${sort}` : '') +

@@ -1,9 +1,11 @@
 /** @fileoverview Common validation patterns to DRY out repetitive checks */
 
 import { logger } from '@socketsecurity/registry/lib/logger'
-import { hasDefaultApiToken } from './sdk.mts'
+
 import { checkCommandInput } from './check-input.mts'
+import { hasDefaultApiToken } from './sdk.mts'
 import constants from '../constants.mts'
+
 import type { OutputKind } from '../types.mts'
 
 /**
@@ -46,7 +48,7 @@ export const validations = {
   /**
    * Validate enum value
    */
-  isOneOf: <T>(value: T, options: T[], name: string, outputKind: OutputKind): boolean =>
+  isOneOf: <T,>(value: T, options: T[], name: string, outputKind: OutputKind): boolean =>
     checkCommandInput(outputKind, {
       nook: true,
       test: options.includes(value),
@@ -100,11 +102,11 @@ export interface ValidationOptions {
 }
 
 export function runStandardValidations(options: ValidationOptions): boolean {
-  const { requireAuth: auth, requireOrg, dryRun, outputKind, validations: customValidations = [] } = options
+  const { dryRun, outputKind, requireAuth: auth, requireOrg, validations: customValidations = [] } = options
 
   // Run custom validations first
   for (const validation of customValidations) {
-    if (!validation()) return false
+    if (!validation()) {return false}
   }
 
   // Check org if required

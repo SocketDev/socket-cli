@@ -1,15 +1,19 @@
 /** @fileoverview Consolidated organization commands using DRY utilities */
 
-import { buildCommand, buildParentCommand } from '../../utils/command-builder.mts'
+import chalkTable from 'chalk-table'
+import colors from 'yoctocolors-cjs'
+
+import { logger } from '@socketsecurity/registry/lib/logger'
+
 import { orgApi } from '../../utils/api-wrapper.mts'
-import { simpleOutput, commonColumns } from '../../utils/simple-output.mts'
+import { buildCommand, buildParentCommand } from '../../utils/command-builder.mts'
 import { runStandardValidations } from '../../utils/common-validations.mts'
 import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
-import { logger } from '@socketsecurity/registry/lib/logger'
-import colors from 'yoctocolors-cjs'
+import { commonColumns, simpleOutput } from '../../utils/simple-output.mts'
+
+
 // @ts-ignore
-import chalkTable from 'chalk-table'
 
 // List organizations
 const cmdList = buildCommand({
@@ -24,7 +28,7 @@ const cmdList = buildCommand({
       requireAuth: true,
       dryRun,
       outputKind,
-    })) return
+    })) {return}
 
     const result = await orgApi.list()
 
@@ -66,7 +70,7 @@ const cmdDependencies = buildCommand({
     },
   },
   handler: async ({ flags }) => {
-    const { org: orgFlag, limit, offset, dryRun, json, markdown } = flags
+    const { dryRun, json, limit, markdown, offset, org: orgFlag } = flags
     const outputKind = getOutputKind(json, markdown)
     const { 0: orgSlug } = await determineOrgSlug(orgFlag, true, dryRun)
 
@@ -75,7 +79,7 @@ const cmdDependencies = buildCommand({
       requireAuth: true,
       dryRun,
       outputKind,
-    })) return
+    })) {return}
 
     const result = await orgApi.dependencies(orgSlug, { limit, offset })
 
@@ -107,7 +111,7 @@ const cmdQuota = buildCommand({
     },
   },
   handler: async ({ flags }) => {
-    const { org: orgFlag, dryRun, json, markdown } = flags
+    const { dryRun, json, markdown, org: orgFlag } = flags
     const outputKind = getOutputKind(json, markdown)
     const { 0: orgSlug } = await determineOrgSlug(orgFlag, true, dryRun)
 
@@ -116,7 +120,7 @@ const cmdQuota = buildCommand({
       requireAuth: true,
       dryRun,
       outputKind,
-    })) return
+    })) {return}
 
     const result = await orgApi.quota(orgSlug)
 
@@ -156,7 +160,7 @@ const cmdSecurityPolicy = buildCommand({
     },
   },
   handler: async ({ flags }) => {
-    const { org: orgFlag, dryRun, json, markdown } = flags
+    const { dryRun, json, markdown, org: orgFlag } = flags
     const outputKind = getOutputKind(json, markdown)
     const { 0: orgSlug } = await determineOrgSlug(orgFlag, true, dryRun)
 
@@ -165,7 +169,7 @@ const cmdSecurityPolicy = buildCommand({
       requireAuth: true,
       dryRun,
       outputKind,
-    })) return
+    })) {return}
 
     const result = await orgApi.securityPolicy(orgSlug)
 
@@ -202,7 +206,7 @@ const cmdLicensePolicy = buildCommand({
     },
   },
   handler: async ({ flags }) => {
-    const { org: orgFlag, dryRun, json, markdown } = flags
+    const { dryRun, json, markdown, org: orgFlag } = flags
     const outputKind = getOutputKind(json, markdown)
     const { 0: orgSlug } = await determineOrgSlug(orgFlag, true, dryRun)
 
@@ -211,7 +215,7 @@ const cmdLicensePolicy = buildCommand({
       requireAuth: true,
       dryRun,
       outputKind,
-    })) return
+    })) {return}
 
     const result = await orgApi.licensePolicy(orgSlug)
 

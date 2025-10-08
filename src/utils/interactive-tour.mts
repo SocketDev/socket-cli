@@ -1,13 +1,15 @@
 /** @fileoverview Interactive tour system for Socket CLI */
 
+import { spawn } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import readline from 'node:readline/promises'
 import { stdin, stdout } from 'node:process'
-import { spawn } from 'node:child_process'
+import readline from 'node:readline/promises'
+
 import colors from 'yoctocolors-cjs'
-import { logger } from '@socketsecurity/registry/lib/logger'
+
 import isInteractive from '@socketregistry/is-interactive/index.cjs'
+import { logger } from '@socketsecurity/registry/lib/logger'
 
 interface TourStep {
   title: string
@@ -183,7 +185,7 @@ Here's a quick reference of what we covered:
  * Run a command and show its output
  */
 async function runCommand(command: string): Promise<boolean> {
-  return new Promise((resolve) => {
+  return await new Promise((resolve) => {
     logger.log(colors.dim(`\n$ ${command}`))
     const child = spawn(command, [], {
       shell: true,
@@ -233,7 +235,7 @@ export async function runInteractiveTour(): Promise<void> {
       const stepNumber = i > 0 && i < tourSteps.length - 1 ? `Step ${i}/${tourSteps.length - 2}: ` : ''
 
       // Clear previous content with spacing
-      if (i > 0) logger.log('')
+      if (i > 0) {logger.log('')}
 
       // Show step title
       logger.log(colors.bold(colors.cyan(`${stepNumber}${step.title}`)))

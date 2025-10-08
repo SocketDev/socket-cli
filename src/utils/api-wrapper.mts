@@ -1,7 +1,8 @@
 /** @fileoverview Simplified API wrapper to DRY out repetitive fetch-*.mts files */
 
-import { withSdk } from './sdk.mts'
 import { withCache } from './offline-cache.mts'
+import { withSdk } from './sdk.mts'
+
 import type { BaseFetchOptions, CResult } from '../types.mts'
 import type { SocketSdk, SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
@@ -21,7 +22,7 @@ export async function apiCall<T extends keyof SocketSdk>(
   description: string,
   options?: ApiCallOptions,
 ): Promise<CResult<SocketSdkSuccessResult<T>['data']>> {
-  const { cache, cacheTtl, cacheNamespace, ...sdkOptions } = options || {}
+  const { cache, cacheNamespace, cacheTtl, ...sdkOptions } = options || {}
 
   if (cache) {
     return await withCache(

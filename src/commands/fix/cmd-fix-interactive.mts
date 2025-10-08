@@ -1,25 +1,21 @@
 /** @fileoverview Interactive fix mode for guided vulnerability remediation. */
 
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
-import { join } from 'node:path'
-import readline from 'node:readline/promises'
 import { stdin, stdout } from 'node:process'
+import readline from 'node:readline/promises'
 
 import colors from 'yoctocolors-cjs'
-import { satisfies, minVersion } from 'semver'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { buildCommand } from '../../utils/command-builder.mts'
-import { getProjectContext } from '../../utils/project-context.mts'
-import { Spinner, MultiProgress } from '../../utils/rich-progress.mts'
-import { runStandardValidations } from '../../utils/common-validations.mts'
-import { setupSdk } from '../../utils/sdk.mts'
+import { commonFlags, outputFlags } from '../../flags.mts'
+import { checkCommandInput } from '../../utils/check-input.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
+import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
+import { getProjectContext } from '../../utils/project-context.mts'
+import { Spinner } from '../../utils/rich-progress.mts'
+import { getSdk, hasDefaultApiToken } from '../../utils/sdk.mts'
 
 import type {
-  CliCommandConfig,
-  CliCommandContext,
   CliSubcommand,
 } from '../../utils/meow-with-subcommands.mts'
 
@@ -53,54 +49,58 @@ export const cmdFixInteractive: CliSubcommand = {
   async run(
     argv: readonly string[],
     importMeta: ImportMeta,
-    parentName: string,
+    { parentName }: { parentName: string },
   ): Promise<void> {
-    const config: CliCommandConfig = {
-      args: '[PATH]',
-      flags: {
-        ...commonFlags,
-        ...outputFlags,
-        auto: {
-          type: 'boolean',
-          default: false,
-          description: 'Automatically apply safe fixes without prompting',
-        },
-        'dry-run': {
-          type: 'boolean',
-          default: false,
-          description: 'Show what would be fixed without making changes',
-        },
-        severity: {
-          type: 'string',
-          default: 'low',
-          description: 'Minimum severity to fix (critical, high, medium, low)',
-        },
-        'group-by': {
-          type: 'string',
-          default: 'severity',
-          description: 'Group fixes by: severity, package, type',
-        },
+    const flags = {
+      ...commonFlags,
+      ...outputFlags,
+      auto: {
+        type: 'boolean',
+        default: false,
+        description: 'Automatically apply safe fixes without prompting',
       },
-      help: (command, config) => `
+      'dry-run': {
+        type: 'boolean',
+        default: false,
+        description: 'Show what would be fixed without making changes',
+      },
+      severity: {
+        type: 'string',
+        default: 'low',
+        description: 'Minimum severity to fix (critical, high, medium, low)',
+      },
+      'group-by': {
+        type: 'string',
+        default: 'severity',
+        description: 'Group fixes by: severity, package, type',
+      },
+    }
+
+    const help = (command: string) => `
       Usage
         $ ${command} [PATH]
 
       Options
-        ${config.flags ? Object.entries(config.flags).map(([name, flag]) =>
+        ${Object.entries(flags).map(([name, flag]: [string, any]) =>
           `  --${name}${flag.type === 'string' ? '=<value>' : ''} ${flag.description || ''}`
-        ).join('\n') : ''}
+        ).join('\n')}
 
       Examples
         $ ${command}                    # Interactive fix in current directory
         $ ${command} --auto             # Auto-apply safe fixes
         $ ${command} --severity=high    # Only fix high and critical issues
         $ ${command} --dry-run          # Preview fixes without applying
-      `,
-    }
+      `
 
     const cli = meowOrExit({
       argv,
-      config,
+      config: {
+        commandName: CMD_NAME,
+        description,
+        hidden,
+        flags,
+        help: () => help(`${parentName} ${CMD_NAME}`),
+      },
       parentName,
       importMeta,
     })
@@ -108,10 +108,10 @@ export const cmdFixInteractive: CliSubcommand = {
     const {
       auto,
       dryRun,
+      groupBy,
       json,
       markdown,
       severity,
-      groupBy,
     } = cli.flags as {
       auto: boolean
       dryRun: boolean

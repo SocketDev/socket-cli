@@ -2,6 +2,7 @@
 
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
+
 import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
@@ -18,7 +19,7 @@ interface EnhancedScanOptions {
 }
 
 export async function runEnhancedScan(options: EnhancedScanOptions): Promise<void> {
-  const { targetPath, orgSlug, outputKind = 'text', showProgress = true, autoDetect = true } = options
+  const { autoDetect = true, orgSlug, outputKind = 'text', showProgress = true, targetPath } = options
 
   if (!autoDetect || outputKind === 'json') {
     // Skip enhancements for JSON output or when disabled
@@ -165,14 +166,14 @@ export class ScanProgressTracker {
   }
 
   addPhase(id: string, name: string, total: number): void {
-    if (!this.enabled || !this.progress) return
+    if (!this.enabled || !this.progress) {return}
 
     this.tasks.set(id, { total, current: 0 })
     this.progress.addTask(id, name, total)
   }
 
   updatePhase(id: string, current: number, message?: string): void {
-    if (!this.enabled || !this.progress) return
+    if (!this.enabled || !this.progress) {return}
 
     const task = this.tasks.get(id)
     if (task) {
@@ -182,7 +183,7 @@ export class ScanProgressTracker {
   }
 
   completePhase(id: string): void {
-    if (!this.enabled || !this.progress) return
+    if (!this.enabled || !this.progress) {return}
 
     const task = this.tasks.get(id)
     if (task) {
@@ -191,7 +192,7 @@ export class ScanProgressTracker {
   }
 
   failPhase(id: string, error: string): void {
-    if (!this.enabled || !this.progress) return
+    if (!this.enabled || !this.progress) {return}
 
     this.progress.failTask(id, error)
   }
@@ -213,7 +214,7 @@ export function createScanProgress(
 ): ScanProgressTracker {
   const tracker = new ScanProgressTracker(enabled)
 
-  if (!enabled) return tracker
+  if (!enabled) {return tracker}
 
   // Add phases with weighted progress
   const totalWeight = phases.reduce((sum, p) => sum + (p.weight || 1), 0)
