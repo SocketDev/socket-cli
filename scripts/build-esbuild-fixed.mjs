@@ -1,15 +1,15 @@
-#!/usr/bin/env node
 /**
  * @fileoverview Fixed esbuild script that properly handles React externalization
  * This version addresses top-level await and import.meta issues
  */
 
-import { build } from 'esbuild'
 import { existsSync } from 'node:fs'
-import { mkdir, rm, writeFile, copyFile } from 'node:fs/promises'
+import { mkdir, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { performance } from 'node:perf_hooks'
+import { fileURLToPath } from 'node:url'
+
+import { build } from 'esbuild'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -43,7 +43,8 @@ async function buildMainCli() {
     { in: 'constants.mts', out: 'constants' },
   ]
 
-  for (const entry of mainEntries) {
+  // Build all entries in parallel
+  await Promise.all(mainEntries.map(async (entry) => {
     await build({
       entryPoints: [path.join(srcPath, entry.in)],
       bundle: true,
@@ -66,7 +67,8 @@ async function buildMainCli() {
         'yoga-layout',
         'yoga-wasm-web',
         'react-devtools-core',
-        '../dist/shadow-*',  // Shadow bins will be built separately
+        // Shadow bins will be built separately
+        '../dist/shadow-*',
       ],
 
       // Replace import.meta.url with a Node-compatible alternative
@@ -88,7 +90,7 @@ async function buildMainCli() {
     })
 
     console.log(`  ✅ Built ${entry.out}.js`)
-  }
+  }))
 }
 
 // Build shadow binaries
@@ -102,13 +104,14 @@ async function buildShadowBins() {
     { in: 'shadow/pnpm/bin.mts', out: 'shadow-pnpm-bin' },
   ]
 
-  for (const entry of shadowEntries) {
+  // Build all shadow entries in parallel
+  await Promise.all(shadowEntries.map(async (entry) => {
     const inputPath = path.join(srcPath, entry.in)
 
     // Check if file exists
     if (!existsSync(inputPath)) {
       console.log(`  ⚠️  Skipping ${entry.out} (file not found)`)
-      continue
+      return
     }
 
     await build({
@@ -145,7 +148,7 @@ async function buildShadowBins() {
     })
 
     console.log(`  ✅ Built ${entry.out}.js`)
-  }
+  }))
 }
 
 // Build external modules
@@ -157,17 +160,19 @@ async function buildExternals() {
     { in: 'external/yoga-layout.mjs', out: 'external/yoga-layout' },
   ]
 
-  for (const entry of externalEntries) {
+  // Build all external entries in parallel
+  await Promise.all(externalEntries.map(async (entry) => {
     const inputPath = path.join(srcPath, entry.in)
 
     if (!existsSync(inputPath)) {
       console.log(`  ⚠️  Skipping ${entry.out} (file not found)`)
-      continue
+      return
     }
 
     await build({
       entryPoints: [inputPath],
-      bundle: false,  // Don't bundle externals
+      // Don't bundle externals
+      bundle: false,
       platform: 'node',
       target: 'node18',
       format: 'cjs',
@@ -181,7 +186,7 @@ async function buildExternals() {
     })
 
     console.log(`  ✅ Built ${entry.out}.js`)
-  }
+  }))
 }
 
 // Create inject helper for import.meta compatibility
@@ -211,16 +216,18 @@ async function reportSizes() {
   const files = await fs.readdir(distPath)
 
   let totalSize = 0
-  const sizes = []
 
-  for (const file of files) {
-    if (file.endsWith('.js')) {
-      const stats = await fs.stat(path.join(distPath, file))
-      const sizeKB = (stats.size / 1024).toFixed(2)
-      totalSize += stats.size
-      sizes.push({ file, sizeKB, size: stats.size })
-    }
-  }
+  // Get all file stats in parallel
+  const sizes = await Promise.all(
+    files
+      .filter(file => file.endsWith('.js'))
+      .map(async file => {
+        const stats = await fs.stat(path.join(distPath, file))
+        const sizeKB = (stats.size / 1024).toFixed(2)
+        totalSize += stats.size
+        return { file, sizeKB, size: stats.size }
+      })
+  )
 
   // Sort by size
   sizes.sort((a, b) => b.size - a.size)
@@ -271,7 +278,7 @@ async function main() {
 
   } catch (error) {
     console.error('❌ Build failed:', error)
-    process.exit(1)
+    throw error
   }
 }
 

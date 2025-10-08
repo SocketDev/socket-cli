@@ -66,7 +66,7 @@ async function buildSource(options = {}) {
  * Build TypeScript declarations.
  */
 async function buildTypes(options = {}) {
-  const { quiet = false, skipClean = false, verbose = false } = options
+  const { quiet = false, skipClean = false } = options
 
   if (!quiet) {
     log.progress('Building TypeScript declarations')
@@ -214,7 +214,7 @@ async function main() {
     }
 
     if (!quiet) {
-      printHeader('Socket PackageURL Build Runner')
+      printHeader('Build Runner')
     }
 
     let exitCode = 0

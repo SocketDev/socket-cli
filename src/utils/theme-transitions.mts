@@ -88,6 +88,7 @@ async function animateTransition(
 
   for (const frame of frames) {
     stdout.write(`\r${frame}`)
+    // eslint-disable-next-line no-await-in-loop
     await new Promise(resolve => setTimeout(resolve, FRAME_DURATION))
   }
 
@@ -199,6 +200,7 @@ export async function colorWave(
     }).join('')
 
     stdout.write(`\r${chars}`)
+    // eslint-disable-next-line no-await-in-loop
     await new Promise(resolve => setTimeout(resolve, FRAME_DURATION))
   }
 
@@ -216,10 +218,12 @@ export async function pulse(
   for (let i = 0; i < pulses; i++) {
     // Bright
     stdout.write(`\r${color(text)}`)
+    // eslint-disable-next-line no-await-in-loop
     await new Promise(resolve => setTimeout(resolve, 200))
 
     // Dim
     stdout.write(`\r${colors.dim(color(text))}`)
+    // eslint-disable-next-line no-await-in-loop
     await new Promise(resolve => setTimeout(resolve, 200))
   }
 

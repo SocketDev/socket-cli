@@ -2,17 +2,16 @@
  * @fileoverview Ultra-fast Rollup configuration using SWC instead of Babel
  */
 
-import { randomUUID } from 'node:crypto'
-import { builtinModules } from 'node:module'
-import path from 'node:path'
 import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
+import { builtinModules } from 'node:module'
+import path from 'node:path'
 
 import commonjsPlugin from '@rollup/plugin-commonjs'
 import jsonPlugin from '@rollup/plugin-json'
 import { nodeResolve } from '@rollup/plugin-node-resolve'
 import replacePlugin from '@rollup/plugin-replace'
-import swc from '@rollup/plugin-swc'
+// import swc from '@rollup/plugin-swc'
 
 const rootPath = path.join(import.meta.dirname, '..')
 const srcPath = path.join(rootPath, 'src')
@@ -90,38 +89,40 @@ export default {
     }),
 
     // SWC - MUCH faster than Babel!
-    swc({
-      swc: {
-        jsc: {
-          parser: {
-            syntax: 'typescript',
-            tsx: true,
-            decorators: false,
-            dynamicImport: true,
-          },
-          target: 'es2018',
-          transform: {
-            react: {
-              runtime: 'automatic',
-              development: false,
-            },
-          },
-          // Minification handled by SWC
-          minify: {
-            compress: {
-              drop_console: false,
-              drop_debugger: true,
-              dead_code: true,
-              unused: true,
-            },
-            mangle: false,
-          },
-        },
-        minify: false, // We'll handle this separately
-      },
-      include: /\.(m?[jt]sx?)$/,
-      exclude: /node_modules/,
-    }),
+    // TODO: Enable when @rollup/plugin-swc is installed
+    // swc({
+    //   swc: {
+    //     jsc: {
+    //       parser: {
+    //         syntax: 'typescript',
+    //         tsx: true,
+    //         decorators: false,
+    //         dynamicImport: true,
+    //       },
+    //       target: 'es2018',
+    //       transform: {
+    //         react: {
+    //           runtime: 'automatic',
+    //           development: false,
+    //         },
+    //       },
+    //       // Minification handled by SWC
+    //       minify: {
+    //         compress: {
+    //           drop_console: false,
+    //           drop_debugger: true,
+    //           dead_code: true,
+    //           unused: true,
+    //         },
+    //         mangle: false,
+    //       },
+    //     },
+    //     // We'll handle this separately
+    //     minify: false,
+    //   },
+    //   include: /\.(m?[jt]sx?)$/,
+    //   exclude: /node_modules/,
+    // }),
 
     jsonPlugin(),
 

@@ -54,7 +54,8 @@ export function createBox(
 ): string {
   const border = borderStyles[style]
   const lines = content.split('\n')
-  const paddedWidth = width - 2 // Account for borders
+  // Account for borders
+  const paddedWidth = width - 2
 
   const result: string[] = []
 
@@ -98,10 +99,10 @@ export async function borderedInput(
   } = {}
 ): Promise<string> {
   const {
-    width = 50,
-    style = 'single',
     color = colors.blue,
     placeholder = '',
+    style = 'single',
+    width = 50,
   } = options
 
   const border = borderStyles[style]
@@ -136,7 +137,8 @@ export async function borderedInput(
   stdout.write(color(border.vertical) + ' ')
 
   // Save cursor position for input
-  const cursorX = 3 // After border and space
+  // After border and space
+  const cursorX = 3
 
   // Create readline interface
   const rl = readline.createInterface({
@@ -247,7 +249,8 @@ export class BorderedOutput {
   addLine(text: string): void {
     this.lines.push(text)
     if (this.lines.length > this.height - 2) {
-      this.lines.shift() // Remove oldest line
+      // Remove oldest line
+      this.lines.shift()
     }
     this.redraw()
   }

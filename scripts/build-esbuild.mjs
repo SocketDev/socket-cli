@@ -1,14 +1,14 @@
-#!/usr/bin/env node
 /**
  * @fileoverview Alternative build script using esbuild for faster builds.
  * This is an experimental faster alternative to the rollup build.
  */
 
-import { build } from 'esbuild'
 import { existsSync } from 'node:fs'
 import { mkdir, rm } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+
+import { build } from 'esbuild'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -71,12 +71,6 @@ async function buildWithEsbuild() {
   })
 
   // Output build analysis
-  const analysis = await build({
-    ...result,
-    metafile: true,
-    write: false,
-  })
-
   const text = await require('esbuild').analyzeMetafile(result.metafile, {
     verbose: false,
   })
@@ -98,7 +92,7 @@ async function main() {
     console.log(`\n✅ Build completed in ${duration}s`)
   } catch (error) {
     console.error('❌ Build failed:', error)
-    process.exit(1)
+    throw error
   }
 }
 

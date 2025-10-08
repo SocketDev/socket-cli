@@ -3,14 +3,14 @@
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 
-import { build, analyzeMetafile } from 'esbuild'
+import { analyzeMetafile, build } from 'esbuild'
 
 import constants from '../scripts/constants.mjs'
 
 const {
+  INLINED_SOCKET_CLI_HOMEPAGE,
   INLINED_SOCKET_CLI_VERSION,
   INLINED_SOCKET_CLI_VERSION_HASH,
-  INLINED_SOCKET_CLI_HOMEPAGE,
   distPath,
   srcPath,
 } = constants
@@ -117,7 +117,7 @@ async function buildCli() {
 
   } catch (error) {
     console.error('❌ Build failed:', error)
-    process.exit(1)
+    throw error
   }
 }
 
