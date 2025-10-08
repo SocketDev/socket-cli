@@ -1,6 +1,5 @@
 /** @fileoverview Consolidated organization commands using DRY utilities */
 
-import chalkTable from 'chalk-table'
 import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
@@ -11,6 +10,8 @@ import { runStandardValidations } from '../../utils/common-validations.mts'
 import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { commonColumns, simpleOutput } from '../../utils/simple-output.mts'
+
+import type { QuotaData } from '../../utils/api-types.mts'
 
 
 // @ts-ignore
@@ -40,7 +41,15 @@ const cmdList = buildCommand({
           { field: 'plan', name: colors.magenta('Plan') },
           { field: 'role', name: colors.magenta('Role') },
         ],
-        rows: data => data as any[],
+        rows: data => {
+          // Handle the organizations object structure
+          const typedData = data as Record<string, unknown>
+          if (typedData && typeof typedData === 'object' && 'organizations' in typedData) {
+            const orgs = typedData['organizations'] as Record<string, unknown>
+            return Object.values(orgs)
+          }
+          return Array.isArray(data) ? data : []
+        },
       },
       emptyMessage: 'No organizations found',
     })
@@ -91,7 +100,7 @@ const cmdDependencies = buildCommand({
           { field: 'ecosystem', name: colors.magenta('Ecosystem') },
           { field: 'direct', name: colors.magenta('Direct'), transform: v => v ? '✓' : '' },
         ],
-        rows: data => data.dependencies || [],
+        rows: data => (data as any).rows || (data as any).dependencies || [],
       },
       emptyMessage: 'No dependencies found',
     })
@@ -122,25 +131,36 @@ const cmdQuota = buildCommand({
       outputKind,
     })) {return}
 
-    const result = await orgApi.quota(orgSlug)
+    const result = await orgApi.quota()
 
     simpleOutput(result, outputKind, {
       text: data => {
         logger.log(colors.cyan('Organization Quota'))
         logger.log('')
 
-        const quotaData = [
-          ['Seats', `${data.seats_used} / ${data.seats_total || 'Unlimited'}`],
-          ['Repos', `${data.repos_used} / ${data.repos_total || 'Unlimited'}`],
-          ['Scans', `${data.scans_used} / ${data.scans_total || 'Unlimited'}`],
-        ]
-
-        for (const [label, value] of quotaData) {
-          logger.log(`${label}: ${value}`)
+        // The API returns { quota: number }
+        const quotaData = data as QuotaData
+        const quotaValue = quotaData.quota
+        if (quotaValue !== undefined) {
+          logger.log(`Available quota: ${quotaValue}`)
         }
 
-        if (data.seats_total && data.seats_used >= data.seats_total * 0.9) {
-          logger.warn('\n⚠️  Approaching seat limit!')
+        // If there are additional fields, display them
+        if (quotaData.seats_used !== undefined || quotaData.seats_total !== undefined) {
+          const quotaInfo = [
+            ['Seats', `${quotaData.seats_used || 0} / ${quotaData.seats_total || 'Unlimited'}`],
+            ['Repos', `${quotaData.repos_used || 0} / ${quotaData.repos_total || 'Unlimited'}`],
+            ['Scans', `${quotaData.scans_used || 0} / ${quotaData.scans_total || 'Unlimited'}`],
+          ]
+
+          for (const [label, value] of quotaInfo) {
+            logger.log(`${label}: ${value}`)
+          }
+
+          if (quotaData.seats_total && quotaData.seats_used && quotaData.seats_used >= quotaData.seats_total * 0.9) {
+            logger.log('')
+            logger.warn('Approaching seat limit!')
+          }
         }
       },
     })
@@ -178,15 +198,30 @@ const cmdSecurityPolicy = buildCommand({
         logger.log(colors.cyan('Security Policy'))
         logger.log('')
 
-        if (data.rules && data.rules.length > 0) {
-          for (const rule of data.rules) {
-            logger.log(`• ${rule.name}: ${rule.enabled ? colors.green('Enabled') : colors.red('Disabled')}`)
-            if (rule.severity) {
-              logger.log(`  Severity: ${rule.severity}`)
+        const anyData = data as any
+        // Check for securityPolicyRules or rules field
+        const rules = anyData.securityPolicyRules || anyData.rules
+
+        if (rules && typeof rules === 'object') {
+          const ruleEntries = Object.entries(rules)
+          if (ruleEntries.length > 0) {
+            for (const [name, rule] of ruleEntries) {
+              const ruleObj = rule as any
+              const action = ruleObj.action || 'unknown'
+              const actionColor = action === 'error' ? colors.red :
+                               action === 'warn' ? colors.yellow :
+                               action === 'monitor' ? colors.cyan : colors.gray
+              logger.log(`• ${name}: ${actionColor(action)}`)
             }
+          } else {
+            logger.log('No security policies configured')
           }
         } else {
           logger.log('No security policies configured')
+        }
+
+        if (anyData.securityPolicyDefault) {
+          logger.log(`\nDefault policy: ${anyData.securityPolicyDefault}`)
         }
       },
     })
@@ -224,8 +259,9 @@ const cmdLicensePolicy = buildCommand({
         logger.log(colors.cyan('License Policy'))
         logger.log('')
 
-        const allowed = data.allowed_licenses || []
-        const denied = data.denied_licenses || []
+        const anyData = data as any
+        const allowed = anyData['allowed_licenses'] || anyData.allowed_licenses || []
+        const denied = anyData['denied_licenses'] || anyData.denied_licenses || []
 
         if (allowed.length > 0) {
           logger.log(colors.green('Allowed licenses:'))
