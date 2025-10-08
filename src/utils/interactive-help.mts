@@ -18,36 +18,6 @@ interface HelpCategory {
 
 const helpCategories: HelpCategory[] = [
   {
-    title: 'Guided Tour',
-    key: 'tour',
-    icon: '🎯',
-    description: 'Take an interactive tour of Socket CLI',
-    content: () => {
-      logger.log(colors.cyan('\n🎯 Socket CLI Guided Tour\n'))
-      logger.log('The interactive tour will walk you through:')
-      logger.log('')
-      logger.log('  1. Authentication and setup')
-      logger.log('  2. Scanning for vulnerabilities')
-      logger.log('  3. Checking package safety')
-      logger.log('  4. Using natural language commands')
-      logger.log('  5. Fixing security issues')
-      logger.log('  6. Secure package installation')
-      logger.log('  7. Dependency optimization')
-      logger.log('  8. Offline mode and caching')
-      logger.log('  9. CI/CD integration')
-      logger.log('  10. Organization management')
-      logger.log('')
-      logger.log(colors.bold('To start the tour:'))
-      logger.log('  socket tour')
-      logger.log('')
-      logger.log(colors.gray('The tour is interactive and will:'))
-      logger.log(colors.gray('  • Show real commands you can use'))
-      logger.log(colors.gray('  • Let you run safe examples'))
-      logger.log(colors.gray('  • Provide tips and best practices'))
-      logger.log(colors.gray('  • Take about 5-10 minutes'))
-    },
-  },
-  {
     title: 'Security Scanning',
     key: 'scan',
     icon: '🔍',
@@ -252,7 +222,6 @@ const helpCategories: HelpCategory[] = [
         { cmd: 'scan', desc: 'Security scanning' },
         { cmd: 'security', desc: 'Security policy' },
         { cmd: 'threat-feed', desc: 'Threat intelligence' },
-        { cmd: 'tour', desc: '🎯 Interactive guided tour' },
         { cmd: 'whoami', desc: 'Current user info' },
         { cmd: 'wrapper', desc: 'CDN wrapper' },
         { cmd: 'yarn', desc: 'Secure yarn wrapper' },
@@ -275,7 +244,6 @@ const helpCategories: HelpCategory[] = [
     content: () => {
       logger.log(colors.cyan('\n🚀 Quick Start Guide\n'))
       logger.log(colors.bold('New to Socket CLI?'))
-      logger.log('   socket tour                  # Take the interactive tour!')
       logger.log('')
       logger.log(colors.bold('1. First-time setup:'))
       logger.log('   socket login                 # Authenticate')
@@ -301,10 +269,7 @@ const helpCategories: HelpCategory[] = [
 ]
 
 export async function showInteractiveHelp(): Promise<void> {
-  // Show header
-  logger.log('')
-  logger.log(colors.bold(colors.cyan('⚡ Socket CLI - Secure your supply chain')))
-  logger.log('')
+  // Note: Banner is already shown by meow-with-subcommands before calling this function
 
   // If not interactive, show categories and exit
   if (!isInteractive()) {
@@ -313,9 +278,9 @@ export async function showInteractiveHelp(): Promise<void> {
     logger.log('')
     logger.log(colors.gray('Run with an interactive terminal to select a category'))
     logger.log(colors.gray('Or use: socket --help=<category>'))
-    logger.log(colors.gray('Categories: tour, scan, fix, pm, pkg, org, config, ask, all, quick'))
+    logger.log(colors.gray('Categories: scan, fix, pm, pkg, org, config, ask, all, quick'))
     logger.log('')
-    logger.log(colors.bold('💡 New user? Try: socket tour'))
+    logger.log(colors.bold('💡 New user? Try: socket --help=quick'))
     return
   }
 
@@ -325,10 +290,11 @@ export async function showInteractiveHelp(): Promise<void> {
   try {
     while (true) {
       logger.log(colors.bold('What can I help you with?'))
-      logger.log(colors.dim('💡 New user? Start with option 1 for a guided tour!\n'))
+      logger.log(colors.dim('💡 New user? Select "Quick Start" to get started!\n'))
       showCategoryList()
       logger.log('')
 
+      // eslint-disable-next-line no-await-in-loop
       const answer = await rl.question(colors.cyan('Enter number or press Enter to exit: '))
 
       if (!answer || answer.toLowerCase() === 'q') {
@@ -339,9 +305,12 @@ export async function showInteractiveHelp(): Promise<void> {
       const num = parseInt(answer, 10)
       if (num >= 1 && num <= helpCategories.length) {
         const category = helpCategories[num - 1]
-        category.content()
-        logger.log('')
+        if (category) {
+          category.content()
+          logger.log('')
+        }
 
+        // eslint-disable-next-line no-await-in-loop
         const again = await rl.question(colors.gray('Press Enter to continue or q to quit: '))
         if (again.toLowerCase() === 'q') {
           break
@@ -368,6 +337,8 @@ function showCategoryList(): void {
  * Show help for a specific category (non-interactive)
  */
 export function showCategoryHelp(category: string): boolean {
+  // Note: Banner is already shown by meow-with-subcommands before calling this function
+
   const cat = helpCategories.find(c =>
     c.key === category ||
     c.title.toLowerCase().includes(category.toLowerCase())

@@ -277,7 +277,11 @@ export function emitBanner(
   //       and pipe the result to other tools. By emitting the banner over stderr
   //       you can do something like `socket scan view xyz | jq | process`.
   //       The spinner also emits over stderr for example.
-  logger.error(getAsciiHeader(name, orgFlag, compactMode))
+  const banner = getAsciiHeader(name, orgFlag, compactMode)
+  // For now, output to both stdout and stderr to ensure it shows
+  // TODO: Fix stderr output issue
+  console.log(banner)
+  process.stderr.write(banner + '\n')
 }
 
 // For debugging. Whenever you call meowOrExit it will store the command here
@@ -790,40 +794,57 @@ export async function meowWithSubcommands(
   }
 
   // ...else we provide basic instructions and help.
-  if (!shouldSuppressBanner(cli2.flags)) {
-    emitBanner(name, orgFlag, compactMode)
-    // Meow will add newline so don't add stderr spacing here.
-  }
+
+  // Handle dry-run first (no banner needed for simple dry-run check)
   if (!helpFlag && !helpCategory && dryRun) {
+    if (!shouldSuppressBanner(cli2.flags)) {
+      emitBanner(name, orgFlag, compactMode)
+      logger.error('')
+    }
     logger.log(`${constants.DRY_RUN_LABEL}: No-op, call a sub-command; ok`)
     // Exit immediately to prevent tests from hanging waiting for stdin
     // eslint-disable-next-line n/no-process-exit
     process.exit(0)
-  } else {
-    // Check if we should show interactive help
-    const shouldShowInteractive = (helpFlag || helpCategory !== null) && !cli2.flags['helpFull'] && !helpCategory
+  }
 
-    if (shouldShowInteractive) {
-      // Show interactive help for root --help command
-      const { showInteractiveHelp } = await import('./interactive-help.mts')
-      await showInteractiveHelp()
-      // eslint-disable-next-line n/no-process-exit
-      process.exit(0)
-    } else if (helpCategory) {
-      // Show specific category help
-      const { showCategoryHelp } = await import('./interactive-help.mts')
-      const found = showCategoryHelp(helpCategory)
-      if (!found) {
-        logger.error(`Unknown help category: ${helpCategory}`)
-        logger.log('Valid categories: tour, scan, fix, pm, pkg, org, config, ask, all, quick')
-      }
-      // eslint-disable-next-line n/no-process-exit
-      process.exit(found ? 0 : 2)
-    } else {
-      // When you explicitly request --help, the command should be successful
-      // so we exit(0). If we do it because we need more input, we exit(2).
-      cli2.showHelp(helpFlag ? 0 : 2)
+  // Check if we should show interactive help
+  const shouldShowInteractive = (helpFlag || helpCategory !== null) && !cli2.flags['helpFull'] && !helpCategory
+
+  if (shouldShowInteractive) {
+    // Show banner before interactive help
+    if (!shouldSuppressBanner(cli2.flags)) {
+      emitBanner(name, orgFlag, compactMode)
+      logger.error('')
     }
+    // Show interactive help for root --help command
+    const { showInteractiveHelp } = await import('./interactive-help.mts')
+    await showInteractiveHelp()
+    // eslint-disable-next-line n/no-process-exit
+    process.exit(0)
+  } else if (helpCategory) {
+    // Show banner before category help
+    if (!shouldSuppressBanner(cli2.flags)) {
+      emitBanner(name, orgFlag, compactMode)
+      logger.error('')
+    }
+    // Show specific category help
+    const { showCategoryHelp } = await import('./interactive-help.mts')
+    const found = showCategoryHelp(helpCategory)
+    if (!found) {
+      logger.error(`Unknown help category: ${helpCategory}`)
+      logger.log('Valid categories: scan, fix, pm, pkg, org, config, ask, all, quick')
+    }
+    // eslint-disable-next-line n/no-process-exit
+    process.exit(found ? 0 : 2)
+  } else {
+    // Show banner before traditional help
+    if (!shouldSuppressBanner(cli2.flags)) {
+      emitBanner(name, orgFlag, compactMode)
+      // Meow will add newline so don't add stderr spacing here.
+    }
+    // When you explicitly request --help, the command should be successful
+    // so we exit(0). If we do it because we need more input, we exit(2).
+    cli2.showHelp(helpFlag ? 0 : 2)
   }
 }
 
