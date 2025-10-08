@@ -246,11 +246,11 @@ async function main() {
 
   // Check existing build
   const nodeBuilt = existsSync(
-    '.custom-node-build/node-yao-pkg/out/Release/node',
+    'build/tiny-node/node-yao-pkg/out/Release/node',
   )
   if (nodeBuilt) {
     console.log('✅ Custom Node.js binary already built')
-    console.log('   Location: .custom-node-build/node-yao-pkg/out/Release/node')
+    console.log('   Location: build/tiny-node/node-yao-pkg/out/Release/node')
     console.log()
   }
 

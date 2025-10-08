@@ -1,0 +1,42 @@
+{
+  "description": "Code modifications configuration for custom Node.js builds",
+  "version": "1.0.0",
+  "mods": {
+    "v8-flags": {
+      "description": "V8 flag modifications for pkg compatibility",
+      "type": "patch",
+      "file": "001-v8-flags-harmony-dynamic-import.patch",
+      "versions": ["v24.9.0", "v22.19.0"],
+      "enabled": true
+    },
+    "node-gyp-static-linking": {
+      "description": "Force static linking in node-gyp builds",
+      "type": "patch",
+      "file": "002-node-gyp-static.patch",
+      "versions": ["v24.9.0", "v22.19.0"],
+      "enabled": true
+    },
+    "pkg-defines": {
+      "description": "Add PKG-specific build defines",
+      "type": "append",
+      "files": [
+        {
+          "path": "common.gypi",
+          "section": "defines",
+          "values": [
+            "PKG_BUILD=1",
+            "NODE_WANT_INTERNALS=1"
+          ]
+        }
+      ],
+      "enabled": true
+    },
+    "disable-code-cache": {
+      "description": "Disable V8 code cache for smaller binaries",
+      "type": "patch",
+      "file": "002-disable-code-cache.patch",
+      "versions": ["v24.9.0"],
+      "enabled": false
+    }
+  }
+}

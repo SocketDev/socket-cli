@@ -1,0 +1,13 @@
+--- a/common.gypi
++++ b/common.gypi
+@@ -98,7 +98,9 @@
+
+     # Node internal flags used to build node.js itself.
+     # Refs: https://github.com/nodejs/node/blob/v10.23.0/node.gyp
+-    'node_core_target_name%': 'node',
++    'node_core_target_name%': 'libnode',
++    'node_lib_target_name%': 'libnode',
++    'node_intermediate_lib_type%': 'static_library',
+
+     # Disable V8 untrusted code mitigations.
+     # Refs: https://github.com/v8/v8/wiki/Untrusted-code-mitigations
