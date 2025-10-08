@@ -145,5 +145,5 @@ async function run(
     return
   }
 
-  await handleViewRepo(orgSlug, String(repoName), outputKind)
+  await handleViewRepo(String(repoName), { outputKind })
 }

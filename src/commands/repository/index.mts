@@ -75,7 +75,7 @@ const cmdList = buildCommand({
     outputPaginatedList(result, outputKind, {
       page,
       perPage: all ? Infinity : perPage,
-      nextPage: result.ok && result.data.length === perPage ? page + 1 : null,
+      nextPage: result.ok && (result.data as any).results?.length === perPage ? page + 1 : null,
       sort,
       direction,
     }, {
@@ -86,7 +86,7 @@ const cmdList = buildCommand({
         { field: 'default_branch', name: colors.magenta('Default Branch') },
         commonColumns.boolean('archived', 'Archived'),
       ],
-      getRows: data => data as any[],
+      getRows: data => (data as any).results || [],
     })
   },
 })
@@ -150,7 +150,7 @@ const cmdCreate = buildCommand({
       title: 'Repository created',
       text: data => {
         logger.success(`Created repository: ${data.name}`)
-        logger.log(`URL: ${data.html_url}`)
+        logger.log(`URL: ${(data as any).html_url || 'N/A'}`)
       },
     })
   },
@@ -251,7 +251,7 @@ const cmdView = buildCommand({
         logger.log(`Visibility: ${data.visibility}`)
         logger.log(`Default Branch: ${data.default_branch}`)
         logger.log(`Created: ${new Date(data.created_at).toLocaleDateString()}`)
-        logger.log(`URL: ${data.html_url}`)
+        logger.log(`URL: ${(data as any).html_url || 'N/A'}`)
       },
     })
   },

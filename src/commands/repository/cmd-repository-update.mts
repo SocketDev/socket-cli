@@ -145,7 +145,8 @@ async function run(
     },
     {
       nook: true,
-      test: dryRun || hasApiToken,  // Skip API token check in dry-run mode
+      // Skip API token check in dry-run mode
+      test: dryRun || hasApiToken,
       message: 'This command requires a Socket API token for access',
       fail: 'try `socket login`',
     },
@@ -160,14 +161,11 @@ async function run(
   }
 
   await handleUpdateRepo(
+    String(repoName),
     {
-      orgSlug,
-      repoName: String(repoName),
       description: String(cli.flags['repoDescription'] || ''),
-      homepage: String(cli.flags['homepage'] || ''),
-      defaultBranch: String(cli.flags['defaultBranch'] || ''),
-      visibility: String(cli.flags['visibility'] || 'private'),
+      private: String(cli.flags['visibility'] || 'private') === 'private',
+      outputKind,
     },
-    outputKind,
   )
 }
