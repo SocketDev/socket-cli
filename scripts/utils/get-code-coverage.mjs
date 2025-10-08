@@ -32,7 +32,7 @@ export async function getCodeCoverage(options) {
       return null
     }
 
-    const result = await spawn('pnpm', ['run', 'test:unit:coverage'], {
+    const result = await spawn('pnpm', ['run', 'test', '--coverage'], {
       stdio: 'ignore',
       shell: constants.WIN32,
     })

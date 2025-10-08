@@ -44,11 +44,7 @@ async function main() {
     if (values['code-only']) {
       logger.log('Collecting code coverage...')
       const exitCode = await runSequence([
-        { args: ['run', 'pretest:unit'], command: 'pnpm' },
-        {
-          args: ['run', 'test:unit:coverage'],
-          command: 'pnpm',
-        },
+        { args: ['run', 'test', '--coverage'], command: 'pnpm' },
       ])
       process.exitCode = exitCode
       return
@@ -58,11 +54,7 @@ async function main() {
     logger.log('Collecting coverage (code + type)...')
 
     const codeExitCode = await runSequence([
-      { args: ['run', 'pretest:unit'], command: 'pnpm' },
-      {
-        args: ['run', 'test:unit:coverage'],
-        command: 'pnpm',
-      },
+      { args: ['run', 'test', '--coverage'], command: 'pnpm' },
     ])
 
     if (codeExitCode !== 0) {

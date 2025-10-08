@@ -19,13 +19,13 @@ jobs:
     name: Run CI Pipeline
     uses: SocketDev/socket-registry/.github/workflows/ci.yml@17c8e09407f67149512e95e082a9c77dfe8e27a4 # main
     with:
-      coverage-script: 'pnpm run test:unit:coverage'
-      coverage-report-script: 'pnpm run coverage:percent --json'
+      coverage-script: 'pnpm run cover'
+      coverage-report-script: 'pnpm run cover --percent'
       fail-fast: false
       lint-script: 'pnpm run lint-ci'
       node-versions: '[20, 22, 24]'
       os-versions: '["ubuntu-latest", "windows-latest"]'
       test-script: 'pnpm run test-ci'
-      test-setup-script: 'pnpm run pretest:unit'
+      test-setup-script: 'pnpm run build'
       type-check-script: 'pnpm run type-ci'
-      type-check-setup-script: 'pnpm run pretest:unit'
+      type-check-setup-script: 'pnpm run build'
