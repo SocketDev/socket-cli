@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 
 /**
  * @fileoverview Download patches from yao-pkg/pkg-fetch repository
@@ -8,7 +7,7 @@
  */
 
 import { existsSync } from 'node:fs'
-import { mkdir, writeFile, readdir } from 'node:fs/promises'
+import { mkdir, readdir, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 

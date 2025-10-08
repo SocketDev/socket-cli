@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 
 /**
  * @fileoverview Sync yao-pkg patches with caching
@@ -8,7 +7,7 @@
  */
 
 import { existsSync } from 'node:fs'
-import { stat, readFile, writeFile } from 'node:fs/promises'
+import { readFile, stat, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -67,9 +66,9 @@ async function updateCache(versions = []) {
 export async function syncYaoPatches(options = {}) {
   const {
     force = false,
+    quiet = false,
     ttl = DEFAULT_TTL,
-    versions = ['v24.9.0', 'v22.19.0', 'v20.19.5'],
-    quiet = false
+    versions = ['v24.9.0', 'v22.19.0', 'v20.19.5']
   } = options
 
   // Check if update is needed

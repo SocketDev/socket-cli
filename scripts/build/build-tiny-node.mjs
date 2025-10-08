@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 
 /**
  * @fileoverview Build custom Node.js with yao-pkg and custom patches
@@ -18,15 +17,16 @@
  *   --help             Show help
  */
 
-import { existsSync, readdirSync, readFileSync, createWriteStream } from 'node:fs'
-import { mkdir, copyFile, rm, writeFile, readFile, rename, stat, cp } from 'node:fs/promises'
+import { createWriteStream, existsSync, readFileSync, readdirSync } from 'node:fs'
+import { copyFile, cp, mkdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises'
 import { get as httpsGet } from 'node:https'
 import { cpus, platform } from 'node:os'
-import { dirname, join, resolve, relative, sep } from 'node:path'
+import { dirname, join, relative, resolve, sep } from 'node:path'
 import { pipeline } from 'node:stream/promises'
 import { fileURLToPath } from 'node:url'
 
 import { parseTarGzip } from 'nanotar'
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
@@ -403,8 +403,8 @@ async function applyPatchToFile(filePath, hunks) {
           contextMatches = false
           break
         }
-        if (hunkLine.type === ' ') lineIndex++
-        if (hunkLine.type === '-') lineIndex++
+        if (hunkLine.type === ' ') {lineIndex++}
+        if (hunkLine.type === '-') {lineIndex++}
       }
     }
 
@@ -415,7 +415,7 @@ async function applyPatchToFile(filePath, hunks) {
 
       for (let offset = -searchWindow; offset <= searchWindow; offset++) {
         const testStart = startLine + offset
-        if (testStart < 0 || testStart >= lines.length) continue
+        if (testStart < 0 || testStart >= lines.length) {continue}
 
         lineIndex = testStart
         contextMatches = true
@@ -426,8 +426,8 @@ async function applyPatchToFile(filePath, hunks) {
               contextMatches = false
               break
             }
-            if (hunkLine.type === ' ') lineIndex++
-            if (hunkLine.type === '-') lineIndex++
+            if (hunkLine.type === ' ') {lineIndex++}
+            if (hunkLine.type === '-') {lineIndex++}
           }
         }
 
@@ -571,7 +571,7 @@ async function applyCodeModifications(nodeDir, nodeVersion) {
           const patchFile = join(CUSTOM_PATCHES_DIR, mod.file)
           if (existsSync(patchFile)) {
             const success = await applyPatch(patchFile, nodeDir, modName)
-            if (success) appliedCount++
+            if (success) {appliedCount++}
           } else {
             logger.info(`     ⚠️  Patch file not found: ${mod.file}`)
           }
@@ -609,7 +609,7 @@ async function applyCodeModifications(nodeDir, nodeVersion) {
           for (const fileConfig of mod.files) {
             const filePath = join(nodeDir, fileConfig.path)
             if (existsSync(filePath)) {
-              let content = readFileSync(filePath, 'utf8')
+              const content = readFileSync(filePath, 'utf8')
 
               // For .gypi files, parse as JSON
               if (filePath.endsWith('.gypi')) {
@@ -617,7 +617,7 @@ async function applyCodeModifications(nodeDir, nodeVersion) {
                 const jsonContent = content.replace(/^#.*$/gm, '')
                 const data = JSON.parse(jsonContent)
 
-                if (!data.variables) data.variables = {}
+                if (!data.variables) {data.variables = {}}
                 if (!data.variables[fileConfig.section]) {
                   data.variables[fileConfig.section] = []
                 }
@@ -672,7 +672,7 @@ async function applyLegacyCodeModifications(nodeDir) {
  * Check if Visual Studio Build Tools are installed
  */
 async function checkVSBuildTools() {
-  if (platform() !== 'win32') return true
+  if (platform() !== 'win32') {return true}
 
   // Check for MSBuild
   try {
@@ -691,7 +691,7 @@ async function checkVSBuildTools() {
         '-requires', 'Microsoft.VisualStudio.Component.VC.Tools.x86.x64',
         '-property', 'installationPath'
       ])
-      if (result) return true
+      if (result) {return true}
     }
   } catch {}
 
@@ -894,7 +894,7 @@ function createBuildSpinner(message) {
 
   let frameIndex = 0
   let stageIndex = 0
-  let startTime = Date.now()
+  const startTime = Date.now()
   let interval
 
   const start = () => {
@@ -1095,7 +1095,7 @@ async function main() {
     process.exit(0)
   }
 
-  const { nodeVersion, skipDownload, skipYaoPatch, customPatches, skipCodeMods } = options
+  const { customPatches, nodeVersion, skipCodeMods, skipDownload, skipYaoPatch } = options
 
   logger.info(`🔨 Building Custom Node.js ${nodeVersion}`)
   logger.info('='.repeat(50))

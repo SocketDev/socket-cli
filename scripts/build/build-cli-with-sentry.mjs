@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 
 /**
  * @fileoverview Build the @socketsecurity/cli-with-sentry package
@@ -7,7 +6,7 @@
  */
 
 import { existsSync } from 'node:fs'
-import { copyFile, mkdir, writeFile, readFile } from 'node:fs/promises'
+import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 

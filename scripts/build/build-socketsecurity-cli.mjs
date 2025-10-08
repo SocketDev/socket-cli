@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 
 /**
  * @fileoverview Build the @socketsecurity/cli package
@@ -8,7 +7,7 @@
  */
 
 import { existsSync } from 'node:fs'
-import { copyFile, mkdir, writeFile, readFile, rm } from 'node:fs/promises'
+import { copyFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 

@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 
 /**
  * @fileoverview Build stub/SEA (Single Executable Application) binaries
@@ -38,10 +37,10 @@ const PKG_CONFIG = join(ROOT_DIR, '.config', 'pkg.json')
  */
 export async function buildStub(options = {}) {
   const {
-    platform = process.platform,
     arch = process.arch,
-    nodeVersion = 'v24.9.0',
     minify = false,
+    nodeVersion = 'v24.9.0',
+    platform = process.platform,
     quiet = false
   } = options
 

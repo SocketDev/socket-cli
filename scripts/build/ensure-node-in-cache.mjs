@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 
 /**
  * @fileoverview Ensure custom Node binary is in pkg cache
@@ -8,7 +7,7 @@
  */
 
 import { existsSync } from 'node:fs'
-import { mkdir, copyFile } from 'node:fs/promises'
+import { copyFile, mkdir } from 'node:fs/promises'
 import { homedir, platform as osPlatform } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
