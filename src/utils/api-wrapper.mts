@@ -4,7 +4,7 @@ import { withCache } from './offline-cache.mts'
 import { withSdk } from './sdk.mts'
 
 import type { BaseFetchOptions, CResult } from '../types.mts'
-import type { SocketSdk, SocketSdkSuccessResult } from '@socketsecurity/sdk'
+import type { SocketSdk } from '@socketsecurity/sdk'
 
 export interface ApiCallOptions extends BaseFetchOptions {
   cache?: boolean
@@ -18,10 +18,11 @@ export interface ApiCallOptions extends BaseFetchOptions {
  */
 export async function apiCall<T extends keyof SocketSdk>(
   method: T,
-  args: Parameters<SocketSdk[T]>,
+  // Allow any arguments since we're casting them anyway
+  args: any[],
   description: string,
   options?: ApiCallOptions,
-): Promise<CResult<SocketSdkSuccessResult<T>['data']>> {
+): Promise<CResult<any>> {
   const { cache, cacheNamespace, cacheTtl, ...sdkOptions } = options || {}
 
   if (cache) {
@@ -35,7 +36,8 @@ export async function apiCall<T extends keyof SocketSdk>(
       ),
       {
         namespace: cacheNamespace || 'api',
-        ttl: cacheTtl,
+        // Default 5 minutes
+        ttl: cacheTtl || 300000,
       }
     )
   }
@@ -75,42 +77,45 @@ export const orgApi = {
     apiCall('getOrganizations', [], 'list of organizations', { ...options, cache: true, cacheTtl: 300000 }),
 
   dependencies: (orgSlug: string, params: any, options?: ApiCallOptions) =>
-    apiCall('searchDependencies', [orgSlug, params], 'dependencies', options),
+    apiCall('searchDependencies', [orgSlug, params as any], 'dependencies', options),
 
-  quota: (orgSlug: string, options?: ApiCallOptions) =>
-    apiCall('getOrganizationQuota', [orgSlug], 'organization quota', { ...options, cache: true, cacheTtl: 60000 }),
+  quota: (options?: ApiCallOptions) =>
+    apiCall('getQuota', [], 'organization quota', { ...options, cache: true, cacheTtl: 60000 }),
 
   securityPolicy: (orgSlug: string, options?: ApiCallOptions) =>
-    apiCall('getOrganizationSecurityPolicy', [orgSlug], 'security policy', { ...options, cache: true, cacheTtl: 300000 }),
+    apiCall('getOrgSecurityPolicy', [orgSlug], 'security policy', { ...options, cache: true, cacheTtl: 300000 }),
 
   licensePolicy: (orgSlug: string, options?: ApiCallOptions) =>
-    apiCall('getOrganizationLicensePolicy', [orgSlug], 'license policy', { ...options, cache: true, cacheTtl: 300000 }),
+    apiCall('getOrgLicensePolicy', [orgSlug], 'license policy', { ...options, cache: true, cacheTtl: 300000 }),
 }
 
 /**
- * Simplified package API calls
+ * Simplified package API calls (NPM only)
  */
 export const packageApi = {
-  score: (ecosystem: string, name: string, version: string, options?: ApiCallOptions) =>
-    apiCall('getPackageScore', [ecosystem, name, version], 'package score', { ...options, cache: true, cacheTtl: 3600000 }),
+  score: (name: string, version: string, options?: ApiCallOptions) =>
+    apiCall('getScoreByNpmPackage', [name, version], 'package score', { ...options, cache: true, cacheTtl: 3600000 }),
 
-  issues: (ecosystem: string, name: string, version: string, options?: ApiCallOptions) =>
-    apiCall('getPackageIssues', [ecosystem, name, version], 'package issues', { ...options, cache: true, cacheTtl: 3600000 }),
+  issues: (name: string, version: string, options?: ApiCallOptions) =>
+    apiCall('getIssuesByNpmPackage', [name, version], 'package issues', { ...options, cache: true, cacheTtl: 3600000 }),
 }
 
 /**
  * Simplified scan API calls
  */
 export const scanApi = {
-  create: (orgSlug: string, params: any, options?: ApiCallOptions) =>
-    apiCall('createOrgScan', [orgSlug, params], 'to create a scan', options),
+  // Note: createOrgFullScan requires filepaths, not a simple params object
+  // This wrapper may need to be revisited for full scan creation
 
   list: (orgSlug: string, params: any, options?: ApiCallOptions) =>
-    apiCall('getOrgScanList', [orgSlug, params], 'list of scans', { ...options, cache: true, cacheTtl: 30000 }),
+    apiCall('getOrgFullScanList', [orgSlug, params], 'list of scans', { ...options, cache: true, cacheTtl: 30000 }),
 
   delete: (orgSlug: string, scanId: string, options?: ApiCallOptions) =>
-    apiCall('deleteOrgScan', [orgSlug, scanId], 'to delete a scan', options),
+    apiCall('deleteOrgFullScan', [orgSlug, scanId], 'to delete a scan', options),
 
   view: (orgSlug: string, scanId: string, options?: ApiCallOptions) =>
-    apiCall('getOrgScan', [orgSlug, scanId], 'scan details', { ...options, cache: true, cacheTtl: 60000 }),
+    apiCall('getOrgFullScanBuffered', [orgSlug, scanId], 'scan details', { ...options, cache: true, cacheTtl: 60000 }),
+
+  metadata: (orgSlug: string, scanId: string, options?: ApiCallOptions) =>
+    apiCall('getOrgFullScanMetadata', [orgSlug, scanId], 'scan metadata', { ...options, cache: true, cacheTtl: 60000 }),
 }

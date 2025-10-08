@@ -4,13 +4,6 @@ import { Writable } from 'node:stream'
 
 import colors from 'yoctocolors-cjs'
 
-interface ProgressBar {
-  start(total: number, initial?: number): void
-  update(current: number, tokens?: Record<string, string>): void
-  stop(): void
-  increment(delta?: number): void
-}
-
 interface MultiProgressOptions {
   stream?: Writable
   format?: string
@@ -36,9 +29,12 @@ export class MultiProgress {
   private stream: Writable
   private lastLineCount = 0
 
-  constructor(private options: MultiProgressOptions = {}) {
+  constructor(options: MultiProgressOptions = {}) {
+    this.options = options
     this.stream = options.stream || process.stderr
   }
+
+  private options: MultiProgressOptions
 
   /**
    * Add a new task to track
@@ -66,7 +62,9 @@ export class MultiProgress {
 
     task.current = current
     task.status = 'running'
-    task.tokens = tokens
+    if (tokens) {
+      task.tokens = tokens
+    }
 
     if (!task.startTime) {
       task.startTime = Date.now()
@@ -93,7 +91,8 @@ export class MultiProgress {
    */
   private start(): void {
     if (this.options.hideCursor) {
-      this.stream.write('\x1B[?25l') // Hide cursor
+      // Hide cursor
+      this.stream.write('\x1B[?25l')
     }
 
     this.renderInterval = setInterval(() => this.render(), 100)
@@ -105,13 +104,14 @@ export class MultiProgress {
   stop(): void {
     if (this.renderInterval) {
       clearInterval(this.renderInterval)
-      this.renderInterval = undefined
+      delete this.renderInterval
     }
 
     this.clearLines()
 
     if (this.options.hideCursor) {
-      this.stream.write('\x1B[?25h') // Show cursor
+      // Show cursor
+      this.stream.write('\x1B[?25h')
     }
   }
 
@@ -120,7 +120,8 @@ export class MultiProgress {
    */
   private clearLines(): void {
     for (let i = 0; i < this.lastLineCount; i++) {
-      this.stream.write('\x1B[1A\x1B[2K') // Move up and clear line
+      // Move up and clear line
+      this.stream.write('\x1B[1A\x1B[2K')
     }
     this.lastLineCount = 0
   }
@@ -184,14 +185,16 @@ export class Spinner {
   private current = 0
   private interval?: NodeJS.Timeout
   private stream: Writable
+  private message: string
 
-  constructor(private message: string, stream?: Writable) {
+  constructor(message: string, stream?: Writable) {
+    this.message = message
     this.stream = stream || process.stderr
   }
 
   start(): void {
     this.interval = setInterval(() => {
-      this.stream.write(`\r${colors.cyan(this.frames[this.current])} ${this.message}`)
+      this.stream.write(`\r${colors.cyan(this.frames[this.current] || '⠋')} ${this.message}`)
       this.current = (this.current + 1) % this.frames.length
     }, 80)
   }
@@ -202,19 +205,20 @@ export class Spinner {
 
   succeed(message?: string): void {
     this.stop()
-    this.stream.write(`\r${colors.green('✓')} ${message || this.message}\n`)
+    this.stream.write(`\r${colors.green('✓')} ${message ?? this.message}\n`)
   }
 
   fail(message?: string): void {
     this.stop()
-    this.stream.write(`\r${colors.red('✗')} ${message || this.message}\n`)
+    this.stream.write(`\r${colors.red('✗')} ${message ?? this.message}\n`)
   }
 
   private stop(): void {
     if (this.interval) {
       clearInterval(this.interval)
-      this.interval = undefined
-      this.stream.write('\r\x1B[2K') // Clear line
+      delete this.interval
+      // Clear line
+      this.stream.write('\r\x1B[2K')
     }
   }
 }
@@ -226,11 +230,13 @@ export class FileProgress {
   private processed = 0
   private total: number
   private startTime = Date.now()
+  private operation: string
 
   constructor(
-    private files: string[],
-    private operation: string = 'Processing',
+    files: string[],
+    operation: string = 'Processing',
   ) {
+    this.operation = operation
     this.total = files.length
   }
 
