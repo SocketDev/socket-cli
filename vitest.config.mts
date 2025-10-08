@@ -31,7 +31,7 @@ export default defineConfig({
     hookTimeout: 60_000,
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'json', 'html', 'lcov'],
+      reporter: ['text', 'json', 'html', 'lcov', 'clover'],
       exclude: [
         '**/*.config.*',
         '**/node_modules/**',
@@ -47,9 +47,16 @@ export default defineConfig({
         'scripts/**',
         'src/**/types.mts',
         'test/**',
+        'perf/**',
+        // Explicit root-level exclusions
+        '/scripts/**',
+        '/test/**',
       ],
       include: ['src/**/*.mts', 'src/**/*.ts'],
       all: true,
+      clean: true,
+      skipFull: false,
+      ignoreClassMethods: ['constructor'],
       thresholds: {
         lines: 80,
         functions: 80,
