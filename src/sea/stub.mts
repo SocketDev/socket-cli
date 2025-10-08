@@ -19,18 +19,35 @@ import path from 'node:path'
 
 import { parseTarGzip } from 'nanotar'
 
+// Platform detection
+const WIN32 = process.platform === 'win32'
+
 // Configurable constants with environment variable overrides.
 // os.homedir() can throw if no home directory is available.
 let SOCKET_HOME: string
-try {
-  SOCKET_HOME = process.env['SOCKET_HOME'] || path.join(os.homedir(), '.socket')
-} catch (error) {
-  console.error(
-    'Fatal: Unable to determine home directory. Set SOCKET_HOME environment variable.',
-  )
-  console.error(`Error: ${formatError(error)}`)
-  // eslint-disable-next-line n/no-process-exit
-  process.exit(1)
+if (process.env['SOCKET_HOME']) {
+  SOCKET_HOME = process.env['SOCKET_HOME']
+} else {
+  // Try multiple fallbacks to determine home directory
+  let homeDir: string | undefined
+  try {
+    homeDir = os.homedir()
+  } catch {
+    // os.homedir() can throw in some environments
+  }
+
+  // Fallback to environment variables
+  if (!homeDir) {
+    homeDir = process.env['HOME'] || process.env['USERPROFILE']
+  }
+
+  // Last resort: use temp directory
+  if (!homeDir) {
+    homeDir = path.join(os.tmpdir(), '.socket-cli-home')
+    console.warn(`Warning: Using temporary directory as home: ${homeDir}`)
+  }
+
+  SOCKET_HOME = path.join(homeDir, '.socket')
 }
 const CLI_INSTALL_LOCK_FILE_NAME = '.install.lock'
 const DOWNLOAD_MESSAGE_DELAY_MS = 2_000
@@ -49,7 +66,18 @@ const SOCKET_CLI_PACKAGE =
   process.env['SOCKET_CLI_PACKAGE'] || '@socketsecurity/cli'
 const SOCKET_CLI_PACKAGE_JSON = path.join(SOCKET_CLI_PACKAGE_DIR, 'package.json')
 // Minimum Node.js version for system Node (v22 = Active LTS)
-const MIN_NODE_VERSION = parseInt(process.env['MIN_NODE_VERSION'] || '22', 10)
+// Parse MIN_NODE_VERSION with validation
+const MIN_NODE_VERSION = (() => {
+  const envValue = process.env['MIN_NODE_VERSION']
+  if (envValue) {
+    const parsed = parseInt(envValue, 10)
+    if (!isNaN(parsed) && parsed > 0 && parsed < 100) {
+      return parsed
+    }
+    console.warn(`Warning: Invalid MIN_NODE_VERSION "${envValue}", using default 22`)
+  }
+  return 22
+})()
 
 // ============================================================================
 // Helper utilities
@@ -125,18 +153,30 @@ async function remove(
     }
   }
 
-  // Perform deletion.
+  // Perform deletion with retry logic for Windows file locks.
   try {
     const stats = await fs.stat(absolutePath)
     if (stats.isDirectory()) {
-      await fs.rm(absolutePath, { recursive: true, force: true })
+      // More retries for directories
+      await retryWithBackoff(
+        () => fs.rm(absolutePath, { recursive: true, force: true }),
+        3,
+        200,
+        2,
+      )
     } else {
-      await fs.unlink(absolutePath)
+      await retryWithBackoff(() => fs.unlink(absolutePath), 2, 200, 2)
     }
   } catch (error) {
     const code = (error as NodeJS.ErrnoException)?.code
     // Silently ignore if file doesn't exist.
     if (code !== 'ENOENT') {
+      // Check if it's a permission error on Windows
+      if (code === 'EPERM' && WIN32) {
+        debugLog(
+          `Warning: Unable to delete ${absolutePath} (Windows EPERM). File may be locked by antivirus or another process.`,
+        )
+      }
       throw error
     }
   }
@@ -169,15 +209,26 @@ async function acquireLock(): Promise<string> {
           const lockContent = await fs.readFile(lockPath, 'utf8')
           const lockPid = Number.parseInt(lockContent.trim(), 10)
           if (!Number.isNaN(lockPid)) {
-            // Try to check if process still exists (Unix-like systems).
-            // On Windows this will always succeed, but that's okay - timeout will handle it.
+            // Try to check if process still exists.
             try {
               process.kill(lockPid, 0)
               // Process exists, wait and retry.
-            } catch {
-              // Process doesn't exist, remove stale lock.
-              await remove(lockPath)
-              continue
+            } catch (killError: any) {
+              // On Windows, EPERM means the process exists but we don't have permission.
+              // On Unix, ESRCH means the process doesn't exist.
+              if (killError.code === 'ESRCH') {
+                // Process doesn't exist, remove stale lock.
+                await remove(lockPath)
+                continue
+              } else if (killError.code === 'EPERM' && WIN32) {
+                // On Windows, EPERM could mean process exists but owned by another user.
+                // We'll continue waiting as if the process exists.
+                debugLog('Lock file process may exist (Windows EPERM), waiting...')
+              } else {
+                // Process doesn't exist or other error, try to remove stale lock.
+                await remove(lockPath)
+                continue
+              }
             }
           }
         } catch {
@@ -618,12 +669,16 @@ async function retryWithBackoff<T>(
       return await fn()
     } catch (error) {
       lastError = error
-      // Only retry on transient errors (EBUSY, EMFILE, ENFILE).
+      // Only retry on transient errors (EBUSY, EMFILE, ENFILE, EPERM on Windows).
       const code = (error as NodeJS.ErrnoException)?.code
-      if (
-        attempt < maxRetries &&
-        (code === 'EBUSY' || code === 'EMFILE' || code === 'ENFILE')
-      ) {
+      const shouldRetry =
+        code === 'EBUSY' ||
+        code === 'EMFILE' ||
+        code === 'ENFILE' ||
+        (code === 'EPERM' && WIN32)
+
+      if (attempt < maxRetries && shouldRetry) {
+        debugLog(`Retrying after ${code} error (attempt ${attempt + 1}/${maxRetries})`)
         await new Promise(resolve => setTimeout(resolve, delay))
         delay *= backoffFactor
         continue
