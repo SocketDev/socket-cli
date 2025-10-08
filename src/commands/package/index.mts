@@ -8,7 +8,6 @@ import { packageApi } from '../../utils/api-wrapper.mts'
 import { buildCommand, buildParentCommand } from '../../utils/command-builder.mts'
 import { runStandardValidations } from '../../utils/common-validations.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
-import { InlineStatus } from '../../utils/inline-status.mts'
 import { displayExpandableError, formatExpandableList } from '../../utils/interactive-expand.mts'
 import { Spinner } from '../../utils/rich-progress.mts'
 import { simpleOutput } from '../../utils/simple-output.mts'
@@ -318,14 +317,11 @@ const cmdShallow = buildCommand({
       outputKind,
     })) {return}
 
-    // Quick parallel fetch of score and issues with inline status
-    const inlineStatus = new InlineStatus({
-      showSpinner: true,
-      showTime: true
-    })
+    // Quick parallel fetch of score and issues with spinner
+    const spinner = new Spinner(`Analyzing ${name}@${version}`)
 
     if (!json && !markdown) {
-      inlineStatus.start(`Analyzing ${name}@${version}`)
+      spinner.start()
     }
 
     const [scoreResult, issuesResult] = await Promise.all([
@@ -334,7 +330,7 @@ const cmdShallow = buildCommand({
     ])
 
     if (!json && !markdown) {
-      inlineStatus.stop()
+      spinner.succeed()
     }
 
     if (!scoreResult.ok || !issuesResult.ok) {

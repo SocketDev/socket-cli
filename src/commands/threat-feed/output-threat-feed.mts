@@ -1,11 +1,6 @@
 /** @fileoverview Threat feed output formatter for Socket CLI. Displays security threat intelligence in JSON or text formats. Shows malicious packages, threat types, and security recommendations. */
 
-import { render } from 'ink'
-import React from 'react'
-
 import { logger } from '@socketsecurity/registry/lib/logger'
-
-import { ThreatFeedApp } from './ThreatFeedApp.js'
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
 import { getPurlObject } from '../../utils/purl.mts'
 import { serializeResultJson } from '../../utils/serialize-result-json.mts'
@@ -64,12 +59,52 @@ export async function outputThreatFeed(
     parsed: parsePurl(threat.purl),
   }))
 
-  // Render the Ink app directly in the current process.
-  const { waitUntilExit } = render(
-    React.createElement(ThreatFeedApp, {
-      results: parsedResults,
-    }),
-  )
+  try {
+    // Dynamically import React and Ink only when needed
+    const [{ render }, React, { ThreatFeedApp }] = await Promise.all([
+      import('ink'),
+      import('react'),
+      import('./ThreatFeedApp.js'),
+    ])
 
-  await waitUntilExit()
+    // Render the Ink app directly in the current process.
+    const { waitUntilExit } = render(
+      React.createElement(ThreatFeedApp, {
+        results: parsedResults,
+      }),
+    )
+
+    await waitUntilExit()
+  } catch (error) {
+    // Fallback to simple text output if React/Ink fails to load
+    logger.error('Failed to load interactive display. Falling back to text output.')
+    displayThreatFeedTextFallback(parsedResults)
+  }
+}
+
+// Fallback text display when React/Ink is not available
+function displayThreatFeedTextFallback(
+  results: Array<ThreatResult & { parsed: { ecosystem: string; name: string; version: string } }>
+): void {
+  logger.log('\n🚨 Threat Feed Report\n')
+
+  if (results.length === 0) {
+    logger.log('No threats found.')
+    return
+  }
+
+  logger.log(`Found ${results.length} threats:\n`)
+
+  // Display threats in a simple text format
+  for (const threat of results) {
+    logger.log(`📦 ${threat.parsed.ecosystem}/${threat.parsed.name}@${threat.parsed.version}`)
+    logger.log(`  Type: ${threat.threatType || 'Unknown'}`)
+    if (threat.description) {
+      logger.log(`  Description: ${threat.description}`)
+    }
+    if (threat.createdAt) {
+      logger.log(`  Detected: ${new Date(threat.createdAt).toLocaleDateString()}`)
+    }
+    logger.log('')
+  }
 }

@@ -1,11 +1,6 @@
 /** @fileoverview Audit log output formatting for Socket CLI. Formats audit log events in JSON, markdown, or launches interactive TUI viewer with pagination and real-time updates. */
 
-import { render } from 'ink'
-import React from 'react'
-
 import { logger } from '@socketsecurity/registry/lib/logger'
-
-import { AuditLogApp } from './AuditLogApp.js'
 import constants, {
   FLAG_JSON,
   OUTPUT_JSON,
@@ -188,13 +183,60 @@ async function outputWithBlessed(
     ...(log.payload && { payload: log.payload }),
   }))
 
-  // Render the Ink app directly in the current process.
-  const { waitUntilExit } = render(
-    React.createElement(AuditLogApp, {
-      orgSlug,
-      results,
-    }),
-  )
+  try {
+    // Dynamically import React and Ink only when needed
+    const [{ render }, React, { AuditLogApp }] = await Promise.all([
+      import('ink'),
+      import('react'),
+      import('./AuditLogApp.js'),
+    ])
 
-  await waitUntilExit()
+    // Render the Ink app directly in the current process.
+    const { waitUntilExit } = render(
+      React.createElement(AuditLogApp, {
+        orgSlug,
+        results,
+      }),
+    )
+
+    await waitUntilExit()
+  } catch (error) {
+    // Fallback to simple text output if React/Ink fails to load
+    logger.error('Failed to load interactive display. Falling back to text output.')
+    displayAuditLogTextFallback(results, orgSlug)
+  }
+}
+
+// Fallback text display when React/Ink is not available
+function displayAuditLogTextFallback(
+  results: Array<{
+    created_at: string
+    event_id: string
+    ip_address: string
+    type: string
+    user_agent: string
+    user_email: string
+    formatted_created_at: string
+    payload?: any
+  }>,
+  orgSlug: string
+): void {
+  logger.log(`\n📋 Audit Log for ${orgSlug}\n`)
+
+  if (results.length === 0) {
+    logger.log('No audit log events found.')
+    return
+  }
+
+  // Display events in a simple text format
+  for (const event of results) {
+    logger.log(`${event.formatted_created_at}`)
+    logger.log(`  Type: ${event.type}`)
+    logger.log(`  User: ${event.user_email}`)
+    logger.log(`  IP: ${event.ip_address}`)
+    if (event.payload) {
+      logger.log(`  Payload: ${JSON.stringify(event.payload, null, 2)}`)
+    }
+    logger.log('')
+  }
 }

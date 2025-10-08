@@ -259,6 +259,26 @@ async function suggestAlternatives(input: string): Promise<string[]> {
   return suggestions
 }
 
+const askHelp = (command: string) => `
+  Usage
+    $ ${command} <natural-language-query>
+
+  Natural Language Examples
+    $ ${command} "scan this project for vulnerabilities"
+    $ ${command} "fix all critical issues"
+    $ ${command} "show me production vulnerabilities"
+    $ ${command} "optimize my dependencies"
+    $ ${command} "is lodash safe to use"
+
+  Options
+    --execute, -e    Execute the command directly
+    --explain        Show detailed explanation
+
+  Examples
+    $ ${command} "what vulnerabilities do I have?"
+    $ ${command} "fix critical issues" --execute
+`
+
 export const cmdAsk: CliSubcommand = {
   description,
   hidden,
@@ -270,43 +290,17 @@ export const cmdAsk: CliSubcommand = {
     const flags = {
       ...commonFlags,
       execute: {
-        type: 'boolean',
+        type: 'boolean' as const,
         default: false,
         shortFlag: 'e',
         description: 'Execute the command directly without confirmation',
       },
       explain: {
-        type: 'boolean',
+        type: 'boolean' as const,
         default: false,
         description: 'Show detailed explanation of the command',
       },
     }
-
-    const help = (command: string) => `
-      Usage
-        $ ${command} <natural-language-query>
-
-      Natural Language Examples
-        $ ${command} "scan this project for vulnerabilities"
-        $ ${command} "fix all critical issues"
-        $ ${command} "show me production vulnerabilities"
-        $ ${command} "optimize my dependencies"
-        $ ${command} "is lodash safe to use"
-
-      Options
-        --execute, -e    Execute the command directly
-        --explain        Show detailed explanation
-
-      Description
-        Use natural language to describe what you want to do.
-        Socket will translate your intent into the appropriate CLI command.
-
-      Tips
-        • Be specific about what you want to achieve
-        • Mention "production" or "dev" to filter dependencies
-        • Use terms like "critical", "high", "medium", "low" for severity
-        • Say "dry run" or "preview" to see changes without applying them
-      `
 
     const cli = meowOrExit({
       argv,
@@ -315,7 +309,7 @@ export const cmdAsk: CliSubcommand = {
         description,
         hidden,
         flags,
-        help: () => help(`${parentName} ${CMD_NAME}`),
+        help: () => askHelp(`${parentName} ${CMD_NAME}`),
       },
       parentName,
       importMeta,
@@ -369,13 +363,16 @@ export const cmdAsk: CliSubcommand = {
     }
 
     if (intent.confidence < 0.5) {
-      logger.warn('\n⚠️  Low confidence in this translation')
+      logger.log('')
+      logger.warn('Low confidence in this translation')
       logger.log('   Please verify this is what you intended')
     }
 
     // Execute or confirm
     if (execute && intent.confidence >= 0.7) {
-      logger.log('\n▶️  Executing command...\n')
+      logger.log('')
+      logger.log('Executing command...')
+      logger.log('')
 
       // Execute the actual command
       const result = await spawn('socket', intent.command, {
@@ -390,7 +387,8 @@ export const cmdAsk: CliSubcommand = {
       logger.log('\n   Or run with --execute flag to auto-execute:')
       logger.log(`   socket ask "${query}" --execute`)
     } else {
-      logger.warn('\n⚠️  Confidence too low for auto-execution')
+      logger.log('')
+      logger.warn('Confidence too low for auto-execution')
       logger.log('   Please run the command manually:')
       logger.log(`   ${colors.bold(commandStr)}`)
     }

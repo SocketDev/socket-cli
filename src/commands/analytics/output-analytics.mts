@@ -2,12 +2,7 @@
 
 import fs from 'node:fs/promises'
 
-import { render } from 'ink'
-import React from 'react'
-
 import { logger } from '@socketsecurity/registry/lib/logger'
-
-import { AnalyticsApp } from './AnalyticsApp.js'
 import { debugFileOp } from '../../utils/debug.mts'
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
 import { mdTableStringNumber } from '../../utils/markdown.mts'
@@ -204,10 +199,55 @@ ${mdTableStringNumber('Name', 'Counts', data['top_five_alert_types'])}
 }
 
 async function displayAnalyticsScreen(data: FormattedData): Promise<void> {
-  // Render the Ink app directly in the current process.
-  const { waitUntilExit } = render(React.createElement(AnalyticsApp, { data }))
+  try {
+    // Dynamically import React and Ink only when needed
+    const [{ render }, React, { AnalyticsApp }] = await Promise.all([
+      import('ink'),
+      import('react'),
+      import('./AnalyticsApp.js'),
+    ])
 
-  await waitUntilExit()
+    // Render the Ink app directly in the current process.
+    const { waitUntilExit } = render(React.createElement(AnalyticsApp, { data }))
+
+    await waitUntilExit()
+  } catch (error) {
+    // Fallback to simple text output if React/Ink fails to load
+    logger.error('Failed to load interactive display. Falling back to text output.')
+    displayAnalyticsTextFallback(data)
+  }
+}
+
+// Fallback text display when React/Ink is not available
+function displayAnalyticsTextFallback(data: FormattedData): void {
+  logger.log('\n📊 Analytics Report\n')
+
+  // Display top 5 alert types
+  if (Object.keys(data.top_five_alert_types).length > 0) {
+    logger.log('Top 5 Alert Types:')
+    for (const [type, count] of Object.entries(data.top_five_alert_types)) {
+      logger.log(`  ${type}: ${count}`)
+    }
+    logger.log('')
+  }
+
+  // Display key metrics
+  const metrics = [
+    ['Critical Alerts', data.total_critical_alerts],
+    ['High Alerts', data.total_high_alerts],
+    ['Medium Alerts', data.total_medium_alerts],
+    ['Low Alerts', data.total_low_alerts],
+  ] as const
+
+  for (const [label, values] of metrics) {
+    if (Object.keys(values).length > 0) {
+      logger.log(`${label}:`)
+      for (const [date, count] of Object.entries(values)) {
+        logger.log(`  ${date}: ${count}`)
+      }
+      logger.log('')
+    }
+  }
 }
 
 export function formatDataRepo(

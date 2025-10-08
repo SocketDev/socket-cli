@@ -13,7 +13,7 @@ import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getProjectContext } from '../../utils/project-context.mts'
 import { Spinner } from '../../utils/rich-progress.mts'
-import { getSdk, hasDefaultApiToken } from '../../utils/sdk.mts'
+import { hasDefaultApiToken } from '../../utils/sdk.mts'
 
 import type {
   CliSubcommand,
@@ -55,22 +55,22 @@ export const cmdFixInteractive: CliSubcommand = {
       ...commonFlags,
       ...outputFlags,
       auto: {
-        type: 'boolean',
+        type: 'boolean' as const,
         default: false,
         description: 'Automatically apply safe fixes without prompting',
       },
       'dry-run': {
-        type: 'boolean',
+        type: 'boolean' as const,
         default: false,
         description: 'Show what would be fixed without making changes',
       },
       severity: {
-        type: 'string',
+        type: 'string' as const,
         default: 'low',
         description: 'Minimum severity to fix (critical, high, medium, low)',
       },
       'group-by': {
-        type: 'string',
+        type: 'string' as const,
         default: 'severity',
         description: 'Group fixes by: severity, package, type',
       },
@@ -155,8 +155,6 @@ export const cmdFixInteractive: CliSubcommand = {
     const analysisSpinner = new Spinner('Analyzing vulnerabilities...')
     analysisSpinner.start()
 
-    const sdk = getSdk()
-
     // Mock vulnerability data for demonstration
     const vulnerabilities = await analyzeVulnerabilities(targetPath, severity)
 
@@ -186,7 +184,7 @@ export const cmdFixInteractive: CliSubcommand = {
 }
 
 async function analyzeVulnerabilities(
-  targetPath: string,
+  _targetPath: string,
   minSeverity: string,
 ): Promise<VulnerabilityFix[]> {
   // This would actually call the Socket API to get real vulnerability data
@@ -197,9 +195,9 @@ async function analyzeVulnerabilities(
       name: 'lodash',
       currentVersion: '4.17.19',
       suggestedVersion: '4.17.21',
-      severity: 'high',
+      severity: 'high' as const,
       issues: ['Prototype Pollution (CVE-2021-23337)'],
-      fixType: 'update',
+      fixType: 'update' as const,
       breakingChanges: false,
       dependents: ['express', 'webpack'],
     },
@@ -207,18 +205,17 @@ async function analyzeVulnerabilities(
       name: 'minimist',
       currentVersion: '1.2.0',
       suggestedVersion: '1.2.6',
-      severity: 'critical',
+      severity: 'critical' as const,
       issues: ['Prototype Pollution'],
-      fixType: 'update',
+      fixType: 'update' as const,
       breakingChanges: false,
     },
     {
       name: 'event-stream',
       currentVersion: '3.3.6',
-      suggestedVersion: undefined,
-      severity: 'critical',
+      severity: 'critical' as const,
       issues: ['Known malware'],
-      fixType: 'remove',
+      fixType: 'remove' as const,
       breakingChanges: true,
     },
   ].filter(v => {
@@ -305,7 +302,7 @@ function displayDryRunSummary(groups: FixGroup[]): void {
   }
 }
 
-async function applyAutoFixes(groups: FixGroup[], context: any): Promise<void> {
+async function applyAutoFixes(groups: FixGroup[], _context: any): Promise<void> {
   logger.log('\n🤖 Auto-applying safe fixes...\n')
 
   const safeFixCount = 0
@@ -343,6 +340,7 @@ async function runInteractiveMode(groups: FixGroup[], context: any): Promise<voi
 
   const appliedFixes: VulnerabilityFix[] = []
   const skippedFixes: VulnerabilityFix[] = []
+  let lastAnswer = ''
 
   try {
     for (const group of groups) {
@@ -366,7 +364,9 @@ async function runInteractiveMode(groups: FixGroup[], context: any): Promise<voi
           logger.log(colors.yellow(`   ⚠️  May contain breaking changes`))
         }
 
+        // eslint-disable-next-line no-await-in-loop
         const answer = await rl.question('\n   Action? [y/n/d/a/q]: ')
+        lastAnswer = answer
 
         switch (answer.toLowerCase()) {
           case 'y':
@@ -377,9 +377,11 @@ async function runInteractiveMode(groups: FixGroup[], context: any): Promise<voi
             skippedFixes.push(fix)
             logger.log(`   ⏭️  Skipped`)
             break
-          case 'd':
+          case 'd': {
+            // eslint-disable-next-line no-await-in-loop
             await showFixDetails(fix)
             // Ask again
+            // eslint-disable-next-line no-await-in-loop
             const retry = await rl.question('\n   Apply fix? [y/n]: ')
             if (retry.toLowerCase() === 'y') {
               appliedFixes.push(fix)
@@ -389,6 +391,7 @@ async function runInteractiveMode(groups: FixGroup[], context: any): Promise<voi
               logger.log(`   ⏭️  Skipped`)
             }
             break
+          }
           case 'a':
             // Apply all remaining safe fixes
             for (const remainingFix of [...group.fixes, ...groups.slice(groups.indexOf(group) + 1).flatMap(g => g.fixes)]) {
@@ -411,7 +414,7 @@ async function runInteractiveMode(groups: FixGroup[], context: any): Promise<voi
         }
       }
 
-      if (answer.toLowerCase() === 'a') {
+      if (lastAnswer.toLowerCase() === 'a') {
         break
       }
     }
@@ -424,6 +427,7 @@ async function runInteractiveMode(groups: FixGroup[], context: any): Promise<voi
     logger.log(`\n📦 Applying ${appliedFixes.length} fixes...\n`)
 
     for (const fix of appliedFixes) {
+      // eslint-disable-next-line no-await-in-loop
       await applyFix(fix, context)
       logger.success(`✓ Fixed ${fix.name}`)
     }
@@ -455,7 +459,7 @@ async function showFixDetails(fix: VulnerabilityFix): Promise<void> {
   }
 }
 
-async function applyFix(fix: VulnerabilityFix, context: any): Promise<void> {
+async function applyFix(_fix: VulnerabilityFix, _context: any): Promise<void> {
   // This would actually apply the fix using the appropriate package manager
   // For now, just simulate
   await new Promise(resolve => setTimeout(resolve, 100))
