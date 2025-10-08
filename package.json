@@ -51,6 +51,8 @@
     "check:tsc": "tsgo --noEmit",
     "check-ci": "pnpm run check:lint",
     "lint": "node scripts/lint.mjs",
+    "lint:affected": "node scripts/lint-affected.mjs",
+    "lint:cross": "node scripts/lint-affected.mjs --cross-repo",
     "lint-ci": "pnpm run check:lint",
     "type-ci": "pnpm run check:tsc",
     "coverage": "node scripts/coverage.mjs",
