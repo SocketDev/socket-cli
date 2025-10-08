@@ -43,14 +43,11 @@ export async function createScanFromGithub({
     .filter(Boolean)
   if (all || !targetRepos.length) {
     // Fetch from Socket API
-    const result = await fetchListAllRepos(orgSlug, {
-      direction: 'asc',
-      sort: 'name',
-    })
+    const result = await fetchListAllRepos(orgSlug)
     if (!result.ok) {
       return result
     }
-    targetRepos = result.data.results.map(obj => obj.slug || '')
+    targetRepos = ((result.data as any).repositories || (result.data as any).results || []).map((obj: any) => obj.slug || '')
   }
 
   targetRepos = targetRepos.map(s => s.trim()).filter(Boolean)
