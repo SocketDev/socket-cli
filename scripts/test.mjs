@@ -108,7 +108,7 @@ async function runBuild() {
   return 0
 }
 
-async function runTests(options) {
+async function runTests(options, positionals = []) {
   const { all, coverage, force, staged, update } = options
   const runAll = all || force
 
@@ -148,6 +148,11 @@ async function runTests(options) {
     vitestArgs.push(...testsToRun)
   }
 
+  // Add any additional positional arguments
+  if (positionals.length > 0) {
+    vitestArgs.push(...positionals)
+  }
+
   const spawnOptions = {
     cwd: rootPath,
     env: {
@@ -176,7 +181,7 @@ async function runTests(options) {
 async function main() {
   try {
     // Parse arguments
-    const { values } = parseArgs({
+    const { positionals, values } = parseArgs({
       options: {
         help: {
           type: 'boolean',
@@ -191,6 +196,14 @@ async function main() {
           default: false,
         },
         'skip-build': {
+          type: 'boolean',
+          default: false,
+        },
+        'skip-checks': {
+          type: 'boolean',
+          default: false,
+        },
+        changed: {
           type: 'boolean',
           default: false,
         },
@@ -219,36 +232,40 @@ async function main() {
           default: false,
         },
       },
-      allowPositionals: false,
+      allowPositionals: true,
       strict: false,
     })
 
     // Show help if requested
     if (values.help) {
       printHelpHeader('Test Runner')
-      console.log('\nUsage: pnpm test [options]')
+      console.log('\nUsage: pnpm test [options] [test-patterns...]')
       console.log('\nOptions:')
       console.log('  --help              Show this help message')
       console.log('  --fast, --quick     Skip lint/type checks for faster execution')
+      console.log('  --skip-checks       Skip lint/type checks (same as --fast)')
+      console.log('  --skip-build        Skip the build step')
+      console.log('  --changed           Run only tests affected by changes (default behavior)')
+      console.log('  --staged            Run tests affected by staged changes')
+      console.log('  --all, --force      Run all tests regardless of changes')
       console.log('  --cover, --coverage Run tests with code coverage')
       console.log('  --update            Update test snapshots')
-      console.log('  --all, --force      Run all tests regardless of changes')
-      console.log('  --staged            Run tests affected by staged changes')
-      console.log('  --skip-build        Skip the build step')
       console.log('\nExamples:')
-      console.log('  pnpm test                  # Run checks, build, and tests')
-      console.log('  pnpm test --fast           # Skip checks for quick testing')
-      console.log('  pnpm test --cover          # Run with coverage report')
-      console.log('  pnpm test --fast --cover   # Quick test with coverage')
-      console.log('  pnpm test --update         # Update test snapshots')
+      console.log('  pnpm test                           # Run checks, build, and affected tests')
+      console.log('  pnpm test --fast                    # Skip checks for quick testing')
+      console.log('  pnpm test --staged                  # Test staged changes only')
+      console.log('  pnpm test --all                     # Run all tests')
+      console.log('  pnpm test --cover                   # Run with coverage report')
+      console.log('  pnpm test --update                  # Update test snapshots')
+      console.log('  pnpm test src/commands/scan         # Run specific test files')
       process.exitCode = 0
       return
     }
 
-    printHeader('Socket PackageURL Test Runner')
+    printHeader('Test Runner')
 
     // Handle aliases
-    const skipChecks = values.fast || values.quick
+    const skipChecks = values.fast || values.quick || values['skip-checks']
     const withCoverage = values.cover || values.coverage
 
     let exitCode = 0
@@ -275,7 +292,7 @@ async function main() {
     }
 
     // Run tests
-    exitCode = await runTests({ ...values, coverage: withCoverage })
+    exitCode = await runTests({ ...values, coverage: withCoverage }, positionals)
 
     if (exitCode !== 0) {
       log.error('Tests failed')
