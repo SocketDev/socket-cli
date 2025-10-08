@@ -1,6 +1,6 @@
 /** @fileoverview Patch manifest schema for Socket CLI. Defines Zod validation schemas for patch manifest format including patch records with package specifiers, file hashes, and patch file locations. */
 
-import { z } from '../../external/zod.mjs'
+import { z } from 'zod'
 
 export type PatchManifest = z.infer<typeof PatchManifestSchema>
 
