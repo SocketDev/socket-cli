@@ -274,13 +274,9 @@ export function emitBanner(
   //       you can do something like `socket scan view xyz | jq | process`.
   //       The spinner also emits over stderr for example.
   const banner = getAsciiHeader(name, orgFlag, compactMode)
-  // For now, output to both stdout and stderr to ensure it shows
-  // TODO: Fix stderr output issue
-  console.log(banner)
-  // Add extra newline for visual spacing
-  console.log('')
+  // Output only to stderr for consistency
   process.stderr.write(banner + '\n')
-  // Add extra newline for visual spacing
+  // Add single newline for proper spacing before next output
   process.stderr.write('\n')
 }
 
@@ -338,6 +334,10 @@ export async function meowWithSubcommands(
   const isRootCommand =
     name === 'socket' &&
     (!commandOrAliasName || commandOrAliasName?.startsWith('-'))
+
+  // When no command is provided, we should NOT forward to Python CLI
+  // Instead, we should show our banner and enter JavaScript ask mode
+  const isNoArgsCase = isRootCommand && !commandOrAliasName
 
   // Try to support `socket <purl>` as a shorthand for `socket package score <purl>`.
   if (!isRootCommand) {
@@ -538,7 +538,9 @@ export async function meowWithSubcommands(
   // If first arg is a flag (starts with --), try Python CLI forwarding.
   // This enables: socket --repo owner/repo --target-path .
   // Skip forwarding for help/version/dry-run flags to ensure Node.js CLI handles them.
+  // IMPORTANT: Do NOT forward to Python when no args are provided at all (isNoArgsCase)
   if (
+    !isNoArgsCase &&
     commandOrAliasName?.startsWith('--') &&
     commandOrAliasName !== '--help' &&
     commandOrAliasName !== '--help-full' &&
@@ -808,14 +810,16 @@ export async function meowWithSubcommands(
     // eslint-disable-next-line n/no-process-exit
     process.exit(found ? 0 : 2)
   } else {
-    // Show banner before traditional help
+    // No command provided and no help flag - enter "ask" mode
     if (!shouldSuppressBanner(cli2.flags)) {
       emitBanner(name, orgFlag, compactMode)
-      // Meow will add newline so don't add stderr spacing here.
+      logger.error('')
     }
-    // When you explicitly request --help, the command should be successful
-    // so we exit(0). If we do it because we need more input, we exit(2).
-    cli2.showHelp(helpFlag ? 0 : 2)
+    // Import and run the ask mode
+    const { runAskMode } = await import('./ask-mode.mts')
+    await runAskMode()
+    // eslint-disable-next-line n/no-process-exit
+    process.exit(0)
   }
 }
 
