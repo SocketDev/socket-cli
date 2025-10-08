@@ -2,7 +2,6 @@
 ._.DS_Store
 Thumbs.db
 /.claude
-/.custom-node-build
 /.env
 /.nvm
 /.rollup.cache
@@ -24,11 +23,6 @@ Thumbs.db
 /yarn.lock
 
 !/.vscode/extensions.json
-pkg-binaries/
 
-# pkg/yao-pkg built binaries
-/socket
-/socket-*
-
-# Build directory for temporary artifacts
+# Build directory for all build artifacts
 /build

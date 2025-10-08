@@ -753,4 +753,4 @@ Socket CLI supports both pkg (yao-pkg) and SEA (Single Executable Application):
   - `docs/YAO_PKG_CI_SETUP.md` - CI setup for yao-pkg builds
   - `docs/BOOTSTRAP_EXECUTABLE.md` - Bootstrap launcher architecture
   - `scripts/build-yao-pkg-node.mjs` - Node.js build script
-  - `scripts/check-build-deps.mjs` - Dependency verification script
+  - `scripts/build/check-build-deps.mjs` - Dependency verification script

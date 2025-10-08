@@ -218,7 +218,7 @@ pnpm run s
 **Problem**: Coverage reports show gaps
 
 **Solution**:
-1. Run `pnpm coverage` locally
+1. Run `pnpm cover` locally
 2. Review untested code paths
 3. Add tests for edge cases
 
