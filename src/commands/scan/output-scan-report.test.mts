@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { toJsonReport, toMarkdownReport } from './output-scan-report.mts'
-import { SOCKET_WEBSITE_URL } from '../../constants.mjs'
+import { SOCKET_WEBSITE_URL } from '../../constants.mts'
 
 import type { ScanReport } from './generate-report.mts'
 

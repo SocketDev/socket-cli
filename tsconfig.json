@@ -1,7 +1,7 @@
 {
   "extends": "./.config/tsconfig.base.json",
   "compilerOptions": {
-    "typeRoots": ["./node_modules/@types", "./@types"]
+    "typeRoots": ["./node_modules/@types"]
   },
   "include": ["src/**/*.mts", "*.config.mts", ".config/*.mts"],
   "exclude": [

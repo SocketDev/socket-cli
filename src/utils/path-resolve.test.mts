@@ -12,7 +12,7 @@ import {
   PACKAGE_LOCK_JSON,
   PNPM_LOCK_YAML,
   YARN_LOCK,
-} from '../constants.mjs'
+} from '../constants.mts'
 import {
   findBinPathDetailsSync,
   findNpmDirPathSync,

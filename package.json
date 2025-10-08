@@ -42,7 +42,7 @@
     "lint": "node scripts/lint.mjs",
     "lint-ci": "pnpm run check:lint",
     "type-ci": "pnpm run check:tsc",
-    "coverage": "node scripts/coverage.mjs",
+    "cover": "node scripts/cover.mjs",
     "clean": "node scripts/clean.mjs",
     "fix": "node scripts/lint.mjs --fix",
     "lint-staged": "lint-staged",
@@ -121,7 +121,7 @@
     "cmd-shim": "7.0.0",
     "del-cli": "6.0.0",
     "dev-null-cli": "2.0.0",
-    "esbuild": "^0.25.10",
+    "esbuild": "0.25.10",
     "eslint": "9.36.0",
     "eslint-import-resolver-typescript": "4.4.4",
     "eslint-plugin-import-x": "4.16.1",
@@ -181,7 +181,6 @@
     "logo-dark.png",
     "logo-light.png",
     "requirements.json",
-    "themes.json",
     "translations.json"
   ],
   "lint-staged": {
