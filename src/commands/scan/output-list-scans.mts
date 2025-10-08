@@ -43,7 +43,7 @@ export async function outputListScans(
         }
       })
 
-      logger.log(chalkTable(options, formattedResults))
+      logger.log(chalkTable({ ...options, rows: formattedResults }))
       return ''
     },
   })

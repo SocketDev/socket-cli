@@ -61,7 +61,7 @@ export function simpleOutput<T>(
         const rows = table.rows(data)
         if (rows.length === 0) {
           logger.log(emptyMessage)
-          return
+          return ''
         }
 
         const formattedRows = rows.map(row => {
@@ -73,20 +73,45 @@ export function simpleOutput<T>(
           return formatted
         })
 
-        logger.log(chalkTable({ columns: table.columns }, formattedRows))
-        return
+        logger.log(chalkTable({ columns: table.columns, rows: formattedRows }))
+        return ''
       }
 
       // Handle text output
       if (text) {
         text(data)
-        return
+        return ''
       }
 
       // Default: log the data
       logger.log(data)
+      return ''
     },
   })
+}
+
+/**
+ * Simple table helper function
+ */
+export function simpleTable(options: {
+  headers: string[]
+  rows: any[][]
+}): string {
+  const columns = options.headers.map(header => ({
+    field: header.toLowerCase().replace(/\s+/g, '_'),
+    name: colors.magenta(header),
+  }))
+
+  const data = options.rows.map(row => {
+    const obj: any = {}
+    options.headers.forEach((header, index) => {
+      const field = header.toLowerCase().replace(/\s+/g, '_')
+      obj[field] = row[index]
+    })
+    return obj
+  })
+
+  return chalkTable({ columns, rows: data })
 }
 
 /**
@@ -167,7 +192,7 @@ export function outputPaginatedList<T>(
         return formatted
       })
 
-      logger.log(chalkTable({ columns: tableOptions.columns }, formattedRows))
+      logger.log(chalkTable({ columns: tableOptions.columns, rows: formattedRows }))
 
       // Show next page hint
       if (nextPage !== null) {
