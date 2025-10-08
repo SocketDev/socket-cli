@@ -1,7 +1,6 @@
 /** @fileoverview Extended meow CLI framework with subcommand support. Provides command routing, help generation, flag validation, and configuration management for Socket CLI commands. Integrates commonFlags, outputFlags, and custom flag sets. */
 
 import meow from 'meow'
-import terminalLink from 'terminal-link'
 import colors from 'yoctocolors-cjs'
 
 import { joinAnd } from '@socketsecurity/registry/lib/arrays'
@@ -26,12 +25,9 @@ import {
   overrideConfigApiToken,
 } from './config.mts'
 import { getFlagListOutput, getHelpListOutput } from './output-formatting.mts'
-import { socketPackageLink } from './terminal-link.mts'
 import constants, {
-  API_V0_URL,
   CONFIG_KEY_API_TOKEN,
   CONFIG_KEY_DEFAULT_ORG,
-  FLAG_HELP_FULL,
   FLAG_JSON,
   FLAG_MARKDOWN,
   FLAG_ORG,
@@ -715,49 +711,15 @@ export async function meowWithSubcommands(
     )}`,
   )
   if (isRootCommand) {
-    // Check if we should show full help with environment variables.
-    const showFullHelp = argv.includes(FLAG_HELP_FULL)
-
-    if (showFullHelp) {
-      // Show full help with environment variables.
-      lines.push(
-        '',
-        'Environment variables',
-        '  SOCKET_CLI_API_TOKEN        Set the Socket API token',
-        '  SOCKET_CLI_CONFIG           A JSON stringified Socket configuration object',
-        '  SOCKET_CLI_GITHUB_API_URL   Change the base URL for GitHub REST API calls',
-        '  SOCKET_CLI_GIT_USER_EMAIL   The git config `user.email` used by Socket CLI',
-        `                              ${colors.italic('Defaults:')} github-actions[bot]@users.noreply.github.com`,
-        '  SOCKET_CLI_GIT_USER_NAME    The git config `user.name` used by Socket CLI',
-        `                              ${colors.italic('Defaults:')} github-actions[bot]`,
-        `  SOCKET_CLI_GITHUB_TOKEN     A classic or fine-grained ${terminalLink('GitHub personal access token', 'https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens')}`,
-        `                              ${colors.italic('Aliases:')} GITHUB_TOKEN`,
-        '  SOCKET_CLI_NO_API_TOKEN     Make the default API token `undefined`',
-        '  SOCKET_CLI_NPM_PATH         The absolute location of the npm directory',
-        '  SOCKET_CLI_ORG_SLUG         Specify the Socket organization slug',
-        '',
-        '  SOCKET_CLI_ACCEPT_RISKS     Accept risks of a Socket wrapped npm/npx run',
-        '  SOCKET_CLI_VIEW_ALL_RISKS   View all risks of a Socket wrapped npm/npx run',
-        '',
-        'Environment variables for development',
-        '  SOCKET_CLI_API_BASE_URL     Change the base URL for Socket API calls',
-        `                              ${colors.italic('Defaults:')} The "apiBaseUrl" value of socket/settings local app data`,
-        `                              if present, else ${API_V0_URL}`,
-        '  SOCKET_CLI_API_PROXY        Set the proxy Socket API requests are routed through, e.g. if set to',
-        `                              ${terminalLink('http://127.0.0.1:9090', 'https://docs.proxyman.io/troubleshooting/couldnt-see-any-requests-from-3rd-party-network-libraries')} then all request are passed through that proxy`,
-        `                              ${colors.italic('Aliases:')} HTTPS_PROXY, https_proxy, HTTP_PROXY, and http_proxy`,
-        '  SOCKET_CLI_API_TIMEOUT      Set the timeout in milliseconds for Socket API requests',
-        '  SOCKET_CLI_DEBUG            Enable debug logging in Socket CLI',
-        `  DEBUG                       Enable debug logging based on the ${socketPackageLink('npm', 'debug', undefined, 'debug')} package`,
-      )
-    } else {
-      // Show condensed help with hint about --help-full.
-      lines.push(
-        '',
-        'Environment variables [more...]',
-        `  Use ${colors.bold(FLAG_HELP_FULL)} to view all environment variables`,
-      )
-    }
+    // Show hint to use interactive help
+    lines.push(
+      '',
+      'Help Topics',
+      `  Use ${colors.bold('socket --help=<topic>')} to view specific help`,
+      `  Topics: scan, fix, pm, pkg, org, config, env, flags, ask, all, quick`,
+      '',
+      `  ${colors.bold('💡 Tip:')} Run ${colors.cyan('socket --help')} in an interactive terminal for a better experience!`,
+    )
   }
 
   // Parse it again. Config overrides should now be applied (may affect help).
@@ -807,8 +769,13 @@ export async function meowWithSubcommands(
     process.exit(0)
   }
 
+  // Check if --help-full is used - redirect to environment category
+  if (cli2.flags['helpFull']) {
+    helpCategory = 'env'
+  }
+
   // Check if we should show interactive help
-  const shouldShowInteractive = (helpFlag || helpCategory !== null) && !cli2.flags['helpFull'] && !helpCategory
+  const shouldShowInteractive = (helpFlag || helpCategory !== null) && !helpCategory
 
   if (shouldShowInteractive) {
     // Show banner before interactive help
@@ -832,7 +799,7 @@ export async function meowWithSubcommands(
     const found = showCategoryHelp(helpCategory)
     if (!found) {
       logger.error(`Unknown help category: ${helpCategory}`)
-      logger.log('Valid categories: scan, fix, pm, pkg, org, config, ask, all, quick')
+      logger.log('Valid categories: scan, fix, pm, pkg, org, config, env, flags, ask, all, quick')
     }
     // eslint-disable-next-line n/no-process-exit
     process.exit(found ? 0 : 2)

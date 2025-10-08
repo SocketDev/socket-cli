@@ -190,7 +190,7 @@ export const commonFlags: MeowFlags = {
   helpFull: {
     type: 'boolean',
     default: false,
-    description: 'Show full help including environment variables',
+    description: 'Show environment variables help (alias for --help=env)',
     // Only show in root command.
     hidden: true,
   },

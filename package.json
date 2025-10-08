@@ -51,8 +51,6 @@
     "check:tsc": "tsgo --noEmit",
     "check-ci": "pnpm run check:lint",
     "lint": "node scripts/lint.mjs",
-    "lint:affected": "node scripts/lint-affected.mjs",
-    "lint:cross": "node scripts/lint-affected.mjs --cross-repo",
     "lint-ci": "pnpm run check:lint",
     "type-ci": "pnpm run check:tsc",
     "coverage": "node scripts/coverage.mjs",
@@ -166,7 +164,6 @@
     "npm-package-arg": "13.0.0",
     "npm-run-all2": "8.0.4",
     "open": "10.2.0",
-    "oxlint": "1.15.0",
     "pony-cause": "2.1.11",
     "postject": "1.0.0-alpha.6",
     "react": "18.3.1",
@@ -206,7 +203,6 @@
   ],
   "lint-staged": {
     "*.{cjs,cts,js,json,md,mjs,mts,ts}": [
-      "oxlint -c=.config/oxlintrc.json --ignore-path=.oxlintignore --tsconfig=tsconfig.json --quiet --fix",
       "biome format --log-level=none --fix --no-errors-on-unmatched --files-ignore-unknown=true --colors=off"
     ]
   },

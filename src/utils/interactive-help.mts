@@ -138,30 +138,116 @@ const helpCategories: HelpCategory[] = [
     title: 'Configuration',
     key: 'config',
     icon: '⚙️',
-    description: 'Settings and environment variables',
+    description: 'CLI settings and configuration',
     content: () => {
       logger.log(colors.cyan('\n⚙️ Configuration\n'))
       logger.log('')
       logger.log(colors.bold('Commands:'))
       logger.log('  socket login                 Authenticate with Socket')
+      logger.log('  socket logout                Sign out of Socket')
       logger.log('  socket config list           Show configuration')
       logger.log('  socket config set <key> <val> Set config value')
+      logger.log('  socket config get <key>      Get config value')
+      logger.log('  socket config unset <key>    Remove config value')
       logger.log('  socket whoami                Show current user')
-      logger.log('')
-      logger.log(colors.bold('Environment Variables:'))
-      logger.log('  SOCKET_CLI_API_TOKEN         API authentication token')
-      logger.log('  SOCKET_OFFLINE=1             Enable offline mode')
-      logger.log('  SOCKET_VERBOSE=1             Show verbose output')
-      logger.log('  SOCKET_CLI_API_PROXY         HTTP proxy URL')
-      logger.log('  SOCKET_CLI_CACHE_ENABLED=1   Enable API caching')
       logger.log('')
       logger.log(colors.bold('Config Keys:'))
       logger.log('  defaultOrg                   Default organization')
       logger.log('  apiToken                     Stored API token')
+      logger.log('  apiBaseUrl                   API endpoint URL')
       logger.log('')
       logger.log(colors.gray('Examples:'))
       logger.log('  socket config set defaultOrg my-org')
+      logger.log('  socket config list --json')
+      logger.log('  socket config get apiToken')
+    },
+  },
+  {
+    title: 'Environment Variables',
+    key: 'env',
+    icon: '🌍',
+    description: 'Environment variables and settings',
+    content: () => {
+      logger.log(colors.cyan('\n🌍 Environment Variables\n'))
+      logger.log('')
+      logger.log(colors.bold('Authentication:'))
+      logger.log('  SOCKET_CLI_API_TOKEN         Set the Socket API token')
+      logger.log('  SOCKET_CLI_NO_API_TOKEN      Disable API token usage')
+      logger.log('')
+      logger.log(colors.bold('Configuration:'))
+      logger.log('  SOCKET_CLI_CONFIG            JSON stringified config object')
+      logger.log('  SOCKET_CLI_ORG_SLUG          Specify organization slug')
+      logger.log('')
+      logger.log(colors.bold('Network & API:'))
+      logger.log('  SOCKET_CLI_API_BASE_URL      Change API base URL')
+      logger.log('  SOCKET_CLI_API_PROXY         HTTP proxy for API requests')
+      logger.log('  SOCKET_CLI_API_TIMEOUT       API request timeout (ms)')
+      logger.log('  SOCKET_CLI_GITHUB_API_URL    GitHub API base URL')
+      logger.log('')
+      logger.log(colors.bold('GitHub Integration:'))
+      logger.log('  SOCKET_CLI_GITHUB_TOKEN      GitHub personal access token')
+      logger.log('  GITHUB_TOKEN                 Alias for above')
+      logger.log('  SOCKET_CLI_GIT_USER_EMAIL    Git user email for commits')
+      logger.log('  SOCKET_CLI_GIT_USER_NAME     Git user name for commits')
+      logger.log('')
+      logger.log(colors.bold('Package Manager Wrappers:'))
+      logger.log('  SOCKET_CLI_ACCEPT_RISKS      Accept wrapped npm/npx risks')
+      logger.log('  SOCKET_CLI_VIEW_ALL_RISKS    View all wrapper risks')
+      logger.log('  SOCKET_CLI_NPM_PATH          Absolute npm directory path')
+      logger.log('')
+      logger.log(colors.bold('Cache & Offline:'))
+      logger.log('  SOCKET_OFFLINE=1             Enable offline mode')
+      logger.log('  SOCKET_CLI_CACHE_ENABLED=1   Enable API caching')
+      logger.log('  SOCKET_CACHE_DIR             Cache directory path')
+      logger.log('')
+      logger.log(colors.bold('Debug & Development:'))
+      logger.log('  SOCKET_CLI_DEBUG             Enable debug logging')
+      logger.log('  SOCKET_VERBOSE=1             Show verbose output')
+      logger.log('  DEBUG                        NPM debug package pattern')
+      logger.log('')
+      logger.log(colors.gray('Examples:'))
+      logger.log('  SOCKET_CLI_API_TOKEN=xxx socket scan create')
       logger.log('  SOCKET_OFFLINE=1 socket scan list')
+      logger.log('  SOCKET_CLI_DEBUG=1 socket fix --dry-run')
+    },
+  },
+  {
+    title: 'Common Flags',
+    key: 'flags',
+    icon: '🚩',
+    description: 'Command-line flags and options',
+    content: () => {
+      logger.log(colors.cyan('\n🚩 Common Flags & Options\n'))
+      logger.log('')
+      logger.log(colors.bold('Output Formats:'))
+      logger.log('  --json                       Output results as JSON')
+      logger.log('  --markdown                   Output results as Markdown')
+      logger.log('  --csv                        Output results as CSV')
+      logger.log('')
+      logger.log(colors.bold('Control Options:'))
+      logger.log('  --dry-run                    Preview changes without applying')
+      logger.log('  --force                      Skip confirmations')
+      logger.log('  --yes, -y                    Auto-confirm prompts')
+      logger.log('')
+      logger.log(colors.bold('Display Options:'))
+      logger.log('  --no-banner                  Hide Socket ASCII header')
+      logger.log('  --no-spinner                 Disable progress spinner')
+      logger.log('  --compact-header             Use compact single-line header')
+      logger.log('  --verbose                    Show detailed output')
+      logger.log('  --quiet                      Minimal output')
+      logger.log('')
+      logger.log(colors.bold('Configuration:'))
+      logger.log('  --org <name>                 Specify organization')
+      logger.log('  --config <json>              Override config with JSON')
+      logger.log('')
+      logger.log(colors.bold('Help Options:'))
+      logger.log('  --help, -h                   Show help for command')
+      logger.log('  --help=<topic>               Show help for specific topic')
+      logger.log('')
+      logger.log(colors.gray('Examples:'))
+      logger.log('  socket scan create --json')
+      logger.log('  socket fix --dry-run --verbose')
+      logger.log('  socket optimize --org my-org --force')
     },
   },
   {
@@ -278,7 +364,7 @@ export async function showInteractiveHelp(): Promise<void> {
     logger.log('')
     logger.log(colors.gray('Run with an interactive terminal to select a category'))
     logger.log(colors.gray('Or use: socket --help=<category>'))
-    logger.log(colors.gray('Categories: scan, fix, pm, pkg, org, config, ask, all, quick'))
+    logger.log(colors.gray('Categories: scan, fix, pm, pkg, org, config, env, flags, ask, all, quick'))
     logger.log('')
     logger.log(colors.bold('💡 New user? Try: socket --help=quick'))
     return

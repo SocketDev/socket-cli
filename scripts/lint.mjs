@@ -34,8 +34,6 @@ const CONFIG_PATTERNS = [
   'scripts/utils/**',
   'pnpm-lock.yaml',
   'tsconfig*.json',
-  '.oxlintignore',
-  'oxlintrc.json',
   'eslint.config.*',
   'biome.json',
 ]
