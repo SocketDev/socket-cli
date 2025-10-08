@@ -218,12 +218,12 @@ async function copyPublishFiles() {
 
   // Copy translations.json to dist.
   // Note: requirements.json is loaded from @socketsecurity/sdk at runtime.
-  const filesToCopy = ['translations.json']
+  const filesToCopy = ['.config/translations.json']
   await Promise.all(
     filesToCopy.map(file =>
       fs.copyFile(
         path.join(constants.rootPath, file),
-        path.join(constants.distPath, file),
+        path.join(constants.distPath, path.basename(file)),
       ),
     ),
   )

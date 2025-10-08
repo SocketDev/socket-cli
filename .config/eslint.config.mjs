@@ -31,10 +31,10 @@ const nodeGlobalsConfig = Object.fromEntries(
   Object.entries(globals.node).map(([k]) => [k, 'readonly']),
 )
 
-const biomeConfigPath = path.join(rootPath, 'biome.json')
+const biomeConfigPath = path.join(__dirname, 'biome.json')
 const biomeConfig = require(biomeConfigPath)
 const biomeIgnores = {
-  name: `Imported biome.json ignore patterns`,
+  name: `Imported .config/biome.json ignore patterns`,
   ignores: biomeConfig.files.includes
     .filter(p => p.startsWith('!'))
     .map(p => convertIgnorePatternToMinimatch(p.slice(1))),

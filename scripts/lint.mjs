@@ -35,7 +35,7 @@ const CONFIG_PATTERNS = [
   'pnpm-lock.yaml',
   'tsconfig*.json',
   'eslint.config.*',
-  'biome.json',
+  '.config/biome.json',
 ]
 
 /**
@@ -111,19 +111,16 @@ async function runLintOnFiles(files, options = {}) {
   const result = await runCommandQuiet('pnpm', args)
 
   if (result.exitCode !== 0) {
-    // When fixing, non-zero exit codes are normal if fixes were applied
-    if (!fix || (result.stderr && result.stderr.trim().length > 0)) {
-      if (!quiet) {
-        log.failed(`Linting failed`)
-      }
-      if (result.stderr) {
-        console.error(result.stderr)
-      }
-      if (result.stdout && !fix) {
-        console.log(result.stdout)
-      }
-      return result.exitCode
+    if (!quiet) {
+      log.failed(`Linting failed`)
     }
+    if (result.stderr) {
+      console.error(result.stderr)
+    }
+    if (result.stdout) {
+      console.log(result.stdout)
+    }
+    return result.exitCode
   }
 
   if (!quiet) {
@@ -156,19 +153,16 @@ async function runLintOnAll(options = {}) {
   const result = await runCommandQuiet('pnpm', args)
 
   if (result.exitCode !== 0) {
-    // When fixing, non-zero exit codes are normal if fixes were applied
-    if (!fix || (result.stderr && result.stderr.trim().length > 0)) {
-      if (!quiet) {
-        log.failed('Linting failed')
-      }
-      if (result.stderr) {
-        console.error(result.stderr)
-      }
-      if (result.stdout && !fix) {
-        console.log(result.stdout)
-      }
-      return result.exitCode
+    if (!quiet) {
+      log.failed('Linting failed')
     }
+    if (result.stderr) {
+      console.error(result.stderr)
+    }
+    if (result.stdout) {
+      console.log(result.stdout)
+    }
+    return result.exitCode
   }
 
   if (!quiet) {
@@ -284,7 +278,7 @@ async function main() {
     const quiet = isQuiet(values)
 
     if (!quiet) {
-      printHeader('Socket PackageURL Lint Runner')
+      printHeader('Lint Runner')
     }
 
     let exitCode = 0

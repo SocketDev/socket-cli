@@ -31,7 +31,7 @@ const RUN_ALL_PATTERNS = [
   'pnpm-lock.yaml',
   'tsconfig*.json',
   'eslint.config.*',
-  'biome.json',
+  '.config/biome.json',
 ]
 
 // Socket project paths for cross-repo support.

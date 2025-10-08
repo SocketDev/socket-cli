@@ -8,13 +8,13 @@ import constants from '../constants.mts'
 const require = createRequire(import.meta.url)
 
 let _translations:
-  | Readonly<typeof import('../../translations.json')>
+  | Readonly<typeof import('../../.config/translations.json')>
   | undefined
 
 export function getTranslations() {
   if (_translations === undefined) {
     _translations = /*@__PURE__*/ require(
-      path.join(constants.rootPath, 'translations.json'),
+      path.join(constants.rootPath, '.config', 'translations.json'),
     )
   }
   return _translations!
