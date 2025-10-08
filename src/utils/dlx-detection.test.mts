@@ -1,3 +1,4 @@
+import os from 'node:os'
 import path from 'node:path'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -142,7 +143,7 @@ describe('dlx-detection', () => {
 
     it('skips when cwd contains dlx- prefix', () => {
       const result = shouldSkipShadow('/usr/local/bin/pnpm', {
-        cwd: '/tmp/dlx-socket-cli-12345/node_modules/.bin',
+        cwd: path.join(os.tmpdir(), 'dlx-socket-cli-12345/node_modules/.bin'),
       })
       expect(result).toBe(true)
     })

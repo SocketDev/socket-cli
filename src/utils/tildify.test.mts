@@ -1,3 +1,4 @@
+import os from 'node:os'
 import path from 'node:path'
 
 import { describe, expect, it, vi } from 'vitest'
@@ -54,7 +55,8 @@ describe('tildify utilities', () => {
 
     it('leaves non-home paths unchanged', () => {
       expect(tildify('/var/log/system.log')).toBe('/var/log/system.log')
-      expect(tildify('/tmp/file.txt')).toBe('/tmp/file.txt')
+      const tmpPath = path.join(os.tmpdir(), 'file.txt')
+      expect(tildify(tmpPath)).toBe(tmpPath)
       expect(tildify('./relative/path')).toBe('./relative/path')
       expect(tildify('../parent/path')).toBe('../parent/path')
     })

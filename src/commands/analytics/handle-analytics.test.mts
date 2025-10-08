@@ -1,3 +1,6 @@
+import os from 'node:os'
+import path from 'node:path'
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { handleAnalytics } from './handle-analytics.mts'
@@ -14,6 +17,8 @@ vi.mock('./output-analytics.mts', () => ({
 }))
 
 describe('handleAnalytics', () => {
+  const tmpAnalyticsPath = path.join(os.tmpdir(), 'analytics.json')
+
   beforeEach(() => {
     vi.clearAllMocks()
   })
@@ -29,7 +34,7 @@ describe('handleAnalytics', () => {
     })
 
     await handleAnalytics({
-      filepath: '/tmp/analytics.json',
+      filepath: tmpAnalyticsPath,
       outputKind: 'json',
       repo: '',
       scope: 'org',
@@ -40,7 +45,7 @@ describe('handleAnalytics', () => {
     expect(outputAnalytics).toHaveBeenCalledWith(
       { ok: true, data: mockData },
       {
-        filepath: '/tmp/analytics.json',
+        filepath: tmpAnalyticsPath,
         outputKind: 'json',
         repo: '',
         scope: 'org',
@@ -62,7 +67,7 @@ describe('handleAnalytics', () => {
     })
 
     await handleAnalytics({
-      filepath: '/tmp/analytics.json',
+      filepath: tmpAnalyticsPath,
       outputKind: 'json',
       repo: 'test-repo',
       scope: 'repo',
@@ -73,7 +78,7 @@ describe('handleAnalytics', () => {
     expect(outputAnalytics).toHaveBeenCalledWith(
       { ok: true, data: mockData },
       {
-        filepath: '/tmp/analytics.json',
+        filepath: tmpAnalyticsPath,
         outputKind: 'json',
         repo: 'test-repo',
         scope: 'repo',
@@ -86,7 +91,7 @@ describe('handleAnalytics', () => {
     const { outputAnalytics } = await import('./output-analytics.mts')
 
     await handleAnalytics({
-      filepath: '/tmp/analytics.json',
+      filepath: tmpAnalyticsPath,
       outputKind: 'json',
       repo: '',
       scope: 'repo',
@@ -99,7 +104,7 @@ describe('handleAnalytics', () => {
         message: 'Missing repository name in command',
       },
       {
-        filepath: '/tmp/analytics.json',
+        filepath: tmpAnalyticsPath,
         outputKind: 'json',
         repo: '',
         scope: 'repo',
@@ -118,7 +123,7 @@ describe('handleAnalytics', () => {
     })
 
     await handleAnalytics({
-      filepath: '/tmp/analytics.json',
+      filepath: tmpAnalyticsPath,
       outputKind: 'json',
       repo: '',
       scope: 'org',
@@ -148,7 +153,7 @@ describe('handleAnalytics', () => {
     })
 
     await handleAnalytics({
-      filepath: '/tmp/analytics.json',
+      filepath: tmpAnalyticsPath,
       outputKind: 'json',
       repo: 'test-repo',
       scope: 'repo',
@@ -176,7 +181,7 @@ describe('handleAnalytics', () => {
     })
 
     await handleAnalytics({
-      filepath: '/tmp/analytics.json',
+      filepath: tmpAnalyticsPath,
       outputKind: 'json',
       repo: '',
       scope: 'org',
