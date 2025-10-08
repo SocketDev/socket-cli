@@ -328,7 +328,7 @@ export default function baseConfig(extendConfig = {}) {
             INLINED_SOCKET_CLI_VERSION_HASH,
             () => JSON.stringify(getSocketCliVersionHash()),
           ],
-          [VITEST, () => !!constants.ENV[VITEST]],
+          [VITEST, () => JSON.stringify(!!constants.ENV[VITEST])],
         ].reduce((obj, { 0: name, 1: value }) => {
           obj[`process.env.${name}`] = value
           obj[`process.env['${name}']`] = value
