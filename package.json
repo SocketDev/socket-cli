@@ -34,6 +34,7 @@
   },
   "scripts": {
     "build": "node scripts/build.mjs",
+    "build:fast": "pnpm run build",
     "build:ink": "node scripts/build.mjs --ink-only",
     "build:sea": "node scripts/build-sea.mjs",
     "build:sea:stub": "rollup -c .config/rollup.sea.config.mjs",
@@ -58,10 +59,6 @@
     "coverage:type": "type-coverage",
     "coverage:type:verbose": "type-coverage --detail",
     "clean": "node scripts/clean.mjs",
-    "clean:cache": "node scripts/clean.mjs --cache",
-    "clean:dist": "node scripts/clean.mjs --dist",
-    "clean:dist:types": "node scripts/clean.mjs --dist-types",
-    "clean:node_modules": "node scripts/clean.mjs --node-modules",
     "fix": "node scripts/lint.mjs --fix",
     "knip:dependencies": "knip --config .config/knip.json --dependencies",
     "knip:exports": "knip --config .config/knip.json --include exports,duplicates",
@@ -141,6 +138,7 @@
     "cmd-shim": "7.0.0",
     "del-cli": "6.0.0",
     "dev-null-cli": "2.0.0",
+    "esbuild": "^0.25.10",
     "eslint": "9.36.0",
     "eslint-import-resolver-typescript": "4.4.4",
     "eslint-plugin-import-x": "4.16.1",
@@ -201,6 +199,7 @@
     "logo-dark.png",
     "logo-light.png",
     "requirements.json",
+    "themes.json",
     "translations.json"
   ],
   "lint-staged": {
