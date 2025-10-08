@@ -25,12 +25,12 @@ const PLATFORM_MAP: Record<string, string> = {
   darwin: 'darwin',
   linux: 'linux',
   // Windows
-  win32: 'win32'
+  win32: 'win32',
 }
 
 const ARCH_MAP: Record<string, string> = {
   arm64: 'arm64',
-  x64: 'x64'
+  x64: 'x64',
 }
 
 /**
@@ -43,7 +43,7 @@ function getBinaryName(): string {
   if (!platform || !arch) {
     throw new Error(
       `Unsupported platform: ${os.platform()} ${os.arch()}. ` +
-      `Please install @socketsecurity/cli directly instead.`
+        `Please install @socketsecurity/cli directly instead.`,
     )
   }
 
@@ -56,15 +56,25 @@ function getBinaryName(): string {
  */
 async function getPackageVersion(): Promise<string> {
   // In production, this will be in npm-package/package.json
-  const packagePath = path.join(__dirname, '..', '..', 'npm-package', 'package.json')
+  const packagePath = path.join(
+    __dirname,
+    '..',
+    '..',
+    'npm-package',
+    'package.json',
+  )
   if (existsSync(packagePath)) {
-    const { default: pkg } = await import(packagePath, { with: { type: 'json' } })
+    const { default: pkg } = await import(packagePath, {
+      with: { type: 'json' },
+    })
     return pkg.version
   }
 
   // Fallback for development
   const devPackagePath = path.join(__dirname, '..', '..', '..', 'package.json')
-  const { default: pkg } = await import(devPackagePath, { with: { type: 'json' } })
+  const { default: pkg } = await import(devPackagePath, {
+    with: { type: 'json' },
+  })
   return pkg.version
 }
 
@@ -79,8 +89,8 @@ async function downloadFile(url: string, destPath: string): Promise<void> {
       url,
       {
         headers: {
-          'User-Agent': 'socket-cli-installer'
-        }
+          'User-Agent': 'socket-cli-installer',
+        },
       },
       response => {
         // Handle redirects
@@ -102,9 +112,9 @@ async function downloadFile(url: string, destPath: string): Promise<void> {
         if (response.statusCode !== 200) {
           file.close()
           unlink(destPath).catch(() => {})
-          reject(new Error(
-            `Failed to download binary: HTTP ${response.statusCode}`
-          ))
+          reject(
+            new Error(`Failed to download binary: HTTP ${response.statusCode}`),
+          )
           return
         }
 
@@ -114,7 +124,7 @@ async function downloadFile(url: string, destPath: string): Promise<void> {
         file.on('finish', () => {
           file.close(() => resolve())
         })
-      }
+      },
     )
 
     request.on('error', err => {
@@ -141,13 +151,20 @@ async function getBinaryUrl(): Promise<string> {
  */
 async function install(): Promise<void> {
   try {
-    const binaryName = getBinaryName()
     const targetName = BINARY_NAME + (os.platform() === 'win32' ? '.exe' : '')
-    const binaryPath = path.join(__dirname, '..', '..', 'npm-package', targetName)
+    const binaryPath = path.join(
+      __dirname,
+      '..',
+      '..',
+      'npm-package',
+      targetName,
+    )
 
     // For development, use local path
     const devBinaryPath = path.join(__dirname, targetName)
-    const finalPath = existsSync(path.dirname(binaryPath)) ? binaryPath : devBinaryPath
+    const finalPath = existsSync(path.dirname(binaryPath))
+      ? binaryPath
+      : devBinaryPath
 
     // Check if binary already exists
     if (existsSync(finalPath)) {
@@ -180,10 +197,16 @@ async function install(): Promise<void> {
     console.error(`Failed to install Socket CLI binary: ${message}`)
     console.error('')
     console.error('You can try:')
-    console.error('  1. Installing from source: npm install -g @socketsecurity/cli')
-    console.error('  2. Downloading manually from: https://github.com/SocketDev/socket-cli/releases')
+    console.error(
+      '  1. Installing from source: npm install -g @socketsecurity/cli',
+    )
+    console.error(
+      '  2. Downloading manually from: https://github.com/SocketDev/socket-cli/releases',
+    )
     console.error('')
-    console.error('For help, visit: https://github.com/SocketDev/socket-cli/issues')
+    console.error(
+      'For help, visit: https://github.com/SocketDev/socket-cli/issues',
+    )
 
     // Don't fail the npm install - allow fallback to source
     process.exitCode = 0

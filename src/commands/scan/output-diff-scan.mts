@@ -78,7 +78,7 @@ export async function outputDiffScan(
 async function handleJson(
   data: CResult<SocketSdkSuccessResult<'GetOrgDiffScan'>['data']>,
   file: string,
-  dashboardMessage: string,
+  _dashboardMessage: string,
 ) {
   const json = serializeResultJson(data)
 
