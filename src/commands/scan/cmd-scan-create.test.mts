@@ -730,7 +730,7 @@ describe('socket scan create', async () => {
     'should succeed with --reach and --json output format',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )

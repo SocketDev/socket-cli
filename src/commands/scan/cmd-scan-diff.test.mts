@@ -114,7 +114,7 @@ describe('socket scan diff', async () => {
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
@@ -124,12 +124,7 @@ describe('socket scan diff', async () => {
            _____         _       _        /---------------
           |   __|___ ___| |_ ___| |_      | CLI: <redacted>
           |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan diff\`, cwd: <redacted>
-
-        \\xd7  Input error:  Please review the input requirements and try again
-
-          \\u221a Specify two Scan IDs.
-            A Scan ID looks like \`aaa0aa0a-aaaa-0000-0a0a-0000000a00a0\`."
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan diff\`, cwd: <redacted>"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

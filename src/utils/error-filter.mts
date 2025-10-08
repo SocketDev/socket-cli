@@ -166,7 +166,7 @@ export function installErrorFiltering(): void {
   process.stderr.write = function(chunk: any, encodingOrCallback?: any, callback?: any): boolean {
     // Handle different overload signatures
     let encoding: BufferEncoding | undefined
-    let cb: ((error?: Error) => void) | undefined
+    let cb: ((err?: Error | null) => void) | undefined
 
     if (typeof encodingOrCallback === 'function') {
       cb = encodingOrCallback
@@ -178,15 +178,15 @@ export function installErrorFiltering(): void {
     // Convert to Buffer if needed
     const buffer = Buffer.isBuffer(chunk)
       ? chunk
-      : Buffer.from(String(chunk), encoding as BufferEncoding || 'utf8')
+      : Buffer.from(String(chunk), encoding || 'utf8')
 
     // Filter the output
     let filtered = false
-    stderrFilter.write(buffer, undefined, (error, result) => {
+    stderrFilter.write(buffer, (error: Error | null | undefined, result?: any) => {
       if (error) {
-        originalStderrWrite(chunk, encoding, cb)
+        originalStderrWrite(chunk, encoding as any, cb as any)
       } else if (result) {
-        originalStderrWrite(result, 'utf8', cb)
+        originalStderrWrite(result, 'utf8', cb as any)
         filtered = true
       } else if (cb) {
         // Nothing to write, but call callback
@@ -195,7 +195,7 @@ export function installErrorFiltering(): void {
       }
     })
 
-    return filtered || originalStderrWrite('', cb)
+    return filtered || originalStderrWrite('', 'utf8', cb as any)
   }
 }
 

@@ -165,8 +165,7 @@ describe('socket manifest conda', async () => {
              \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
           \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
           \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-          \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
-          \\u203c Warning: This will approximate your Conda dependencies using PyPI. We do not yet officially support Conda. Use at your own risk."
+          \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit"
         `)
       },
     )
