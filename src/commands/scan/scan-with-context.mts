@@ -19,7 +19,7 @@ interface EnhancedScanOptions {
 }
 
 export async function runEnhancedScan(options: EnhancedScanOptions): Promise<void> {
-  const { autoDetect = true, orgSlug, outputKind = 'text', showProgress = true, targetPath } = options
+  const { autoDetect = true, orgSlug: _orgSlug, outputKind = 'text', showProgress = true, targetPath } = options
 
   if (!autoDetect || outputKind === 'json') {
     // Skip enhancements for JSON output or when disabled
@@ -158,9 +158,12 @@ async function detectWorkspaces(targetPath: string, packageManager: string): Pro
 export class ScanProgressTracker {
   private progress?: MultiProgress
   private tasks: Map<string, { total: number; current: number }> = new Map()
+  private enabled: boolean
 
-  constructor(private enabled: boolean = true) {
+  constructor(enabled: boolean = true) {
+    this.enabled = enabled
     if (enabled) {
+      // @ts-ignore - MultiProgress type needs to be fixed
       this.progress = new MultiProgress({ hideCursor: true })
     }
   }
