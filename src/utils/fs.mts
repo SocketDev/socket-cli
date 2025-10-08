@@ -20,7 +20,8 @@
  * - Safely deleting files and directories
  */
 
-import { promises as fs } from 'node:fs'
+import { accessSync, promises as fs, constants as fsConstants } from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 
 import { remove } from '@socketsecurity/registry/lib/fs'
@@ -28,6 +29,37 @@ import { remove } from '@socketsecurity/registry/lib/fs'
 import constants from '../constants.mts'
 
 import type { RemoveOptions } from '@socketsecurity/registry/lib/fs'
+
+/**
+ * Safely get the current working directory.
+ * If the current directory has been deleted or is inaccessible,
+ * falls back to the home directory or temp directory.
+ */
+export function getSafeCwd(): string {
+  try {
+    const cwd = process.cwd()
+    // Verify the directory still exists
+    try {
+      accessSync(cwd, fsConstants.F_OK)
+      return cwd
+    } catch {
+      // Directory no longer exists
+    }
+  } catch {
+    // process.cwd() itself failed
+  }
+
+  // Fallback to home directory
+  try {
+    const home = constants.homePath
+    if (home) {return home}
+  } catch {
+    // homePath might not be available
+  }
+
+  // Last resort: temp directory
+  return os.tmpdir()
+}
 
 export type FindUpOptions = {
   cwd?: string | undefined
