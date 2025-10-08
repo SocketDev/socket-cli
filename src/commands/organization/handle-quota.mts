@@ -8,7 +8,13 @@ import type { OutputKind } from '../../types.mts'
 export async function handleQuota(
   outputKind: OutputKind = 'text',
 ): Promise<void> {
-  const data = await fetchQuota()
+  // TODO: Get orgSlug from config or context
+  const orgSlug = 'default-org'
+  const result = await fetchQuota(orgSlug)
 
-  await outputQuota(data, outputKind)
+  if (result.ok) {
+    await outputQuota(result.data, outputKind)
+  } else {
+    throw new Error(result.message || 'Failed to fetch quota')
+  }
 }

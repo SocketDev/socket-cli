@@ -9,7 +9,11 @@ export async function handleSecurityPolicy(
   orgSlug: string,
   outputKind: OutputKind,
 ): Promise<void> {
-  const data = await fetchSecurityPolicy(orgSlug)
+  const result = await fetchSecurityPolicy(orgSlug)
 
-  await outputSecurityPolicy(data, outputKind)
+  if (result.ok) {
+    await outputSecurityPolicy(result.data, outputKind)
+  } else {
+    throw new Error(result.message || 'Failed to fetch security policy')
+  }
 }

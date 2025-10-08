@@ -21,7 +21,9 @@ export async function handleDependencies({
   )
   debugDir('inspect', { limit, offset, outputKind })
 
-  const result = await fetchDependencies({ limit, offset })
+  // TODO: Get orgSlug from config or context
+  const orgSlug = 'default-org'
+  const result = await fetchDependencies(orgSlug)
 
   debugFn(
     'notice',
@@ -29,5 +31,9 @@ export async function handleDependencies({
   )
   debugDir('inspect', { result })
 
-  await outputDependencies(result, { limit, offset, outputKind })
+  if (result.ok) {
+    await outputDependencies(result.data, outputKind)
+  } else {
+    throw new Error(result.message || 'Failed to fetch dependencies')
+  }
 }

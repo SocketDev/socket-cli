@@ -9,7 +9,11 @@ export async function handleLicensePolicy(
   orgSlug: string,
   outputKind: OutputKind,
 ): Promise<void> {
-  const data = await fetchLicensePolicy(orgSlug)
+  const result = await fetchLicensePolicy(orgSlug)
 
-  await outputLicensePolicy(data, outputKind)
+  if (result.ok) {
+    await outputLicensePolicy(result.data, outputKind)
+  } else {
+    throw new Error(result.message || 'Failed to fetch license policy')
+  }
 }
