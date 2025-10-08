@@ -30,7 +30,6 @@ import { cmdRepository } from './commands/repository/index.mts'
 import { cmdScan } from './commands/scan/index.mts'
 import { cmdSelfUpdate } from './commands/self-update/cmd-self-update.mts'
 import { cmdThreatFeed } from './commands/threat-feed/cmd-threat-feed.mts'
-import { cmdTour } from './commands/tour/cmd-tour.mts'
 import { cmdUninstall } from './commands/uninstall/cmd-uninstall.mts'
 import { cmdUv } from './commands/uv/cmd-uv.mts'
 import { cmdWhoami } from './commands/whoami/cmd-whoami.mts'
@@ -70,7 +69,6 @@ export const rootCommands = {
   security: cmdOrganizationPolicySecurity,
   ...(isSeaBinary() ? { 'self-update': cmdSelfUpdate } : {}),
   'threat-feed': cmdThreatFeed,
-  tour: cmdTour,
   uninstall: cmdUninstall,
   uv: cmdUv,
   whoami: cmdWhoami,
