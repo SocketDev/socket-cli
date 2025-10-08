@@ -3,6 +3,7 @@
 import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
+import { confirm } from '@socketsecurity/registry/lib/prompts'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import { commonFlags } from '../../flags.mts'
@@ -333,45 +334,66 @@ export const cmdAsk: CliSubcommand = {
     const intent = parseNaturalLanguage(query)
 
     if (!intent) {
+      logger.log('')
       logger.warn(`I couldn't understand: "${query}"`)
-      logger.log('\nHere are some suggestions:')
+      logger.log('')
 
       const alternatives = await suggestAlternatives(query)
       if (alternatives.length > 0) {
+        logger.log('Here are some related commands:')
         for (const alt of alternatives) {
-          logger.log(`  • socket ${alt}`)
+          logger.log(`  socket ${alt}`)
         }
       } else {
-        logger.log('  • socket scan create .')
-        logger.log('  • socket fix interactive')
-        logger.log('  • socket optimize .')
-        logger.log('  • socket --help')
+        logger.log('Try one of these:')
+        logger.log('  socket scan create .')
+        logger.log('  socket fix interactive')
+        logger.log('  socket optimize .')
+        logger.log('  socket --help')
       }
       return
     }
 
-    // Display the interpreted command
+    // Display the interpreted command cleanly
     const commandStr = `socket ${intent.command.join(' ')}`
 
-    logger.log(colors.cyan('🤖 Translation:'))
-    logger.log(`   ${colors.gray('"' + query + '"')}`)
-    logger.log(`   ↓`)
-    logger.log(`   ${colors.bold(commandStr)}`)
+    logger.log('')
+    logger.log(colors.cyan('Command:') + ` ${colors.bold(commandStr)}`)
 
     if (explain || intent.confidence < 0.7) {
-      logger.log(`\n${colors.gray('📖 This command will:')} ${intent.explanation}`)
+      logger.log(colors.gray(`This will: ${intent.explanation}`))
     }
 
     if (intent.confidence < 0.5) {
       logger.log('')
       logger.warn('Low confidence in this translation')
-      logger.log('   Please verify this is what you intended')
+      logger.log('Please verify this is what you intended')
     }
 
     // Execute or confirm
+    let shouldExecute = false
+
     if (execute && intent.confidence >= 0.7) {
+      shouldExecute = true
+    } else if (!execute) {
+      // Prompt for confirmation
       logger.log('')
-      logger.log('Executing command...')
+      const confirmed = await confirm({
+        message: 'Execute this command?',
+        default: true,
+      })
+      shouldExecute = confirmed === true
+    } else {
+      logger.log('')
+      logger.warn('Confidence too low for auto-execution')
+      const confirmed = await confirm({
+        message: 'Execute this command anyway?',
+        default: false,
+      })
+      shouldExecute = confirmed === true
+    }
+
+    if (shouldExecute) {
       logger.log('')
 
       // Execute the actual command
@@ -381,16 +403,9 @@ export const cmdAsk: CliSubcommand = {
       })
 
       process.exitCode = result.code || 0
-    } else if (!execute) {
-      logger.log('\n💡 To execute this command:')
-      logger.log(`   ${colors.bold(commandStr)}`)
-      logger.log('\n   Or run with --execute flag to auto-execute:')
-      logger.log(`   socket ask "${query}" --execute`)
     } else {
       logger.log('')
-      logger.warn('Confidence too low for auto-execution')
-      logger.log('   Please run the command manually:')
-      logger.log(`   ${colors.bold(commandStr)}`)
+      logger.log(colors.gray('Command not executed'))
     }
   },
 }

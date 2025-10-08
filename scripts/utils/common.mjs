@@ -10,7 +10,7 @@ import colors from 'yoctocolors-cjs'
 // Get root path
 export const getRootPath = (importMetaUrl) => {
   const __dirname = path.dirname(fileURLToPath(importMetaUrl))
-  return path.join(__dirname, '..', '..')
+  return path.join(__dirname, '..')
 }
 
 // Console logging utilities
@@ -60,7 +60,7 @@ export function printFooter(message, success = true) {
 
 // Standard help header
 export function printHelpHeader(name) {
-  console.log(`Socket PackageURL ${name}`)
+  console.log(`${name}`)
 }
 
 // Handle quiet options

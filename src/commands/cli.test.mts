@@ -17,74 +17,31 @@ describe('socket root command', async () => {
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`
-        "CLI for Socket.dev
+        "What can I help you with?
 
-          Usage
-            $ socket <command>
-            $ socket scan create --json
-            $ socket package score npm lodash --markdown
+        Help Topics:
+          scan       - Scan projects for vulnerabilities and security issues
+          fix        - Auto-fix vulnerabilities and apply security patches
+          pm         - Enhanced npm, npx, yarn, and pnpm wrappers
+          pkg        - Analyze package security and get security scores
+          org        - Manage organizations and repositories
+          config     - CLI settings and configuration management
+          env        - Environment variables for advanced configuration
+          flags      - Global command-line flags and options
+          ask        - Use plain English to interact with Socket
+          all        - Complete list of all available commands
+          quick      - Get started with Socket CLI in minutes
 
-          Note: All commands have their own --help
+        Use: socket --help=<topic>
 
-          Main commands
-            socket login                Setup Socket CLI with an API token and defaults
-            socket scan create          Create a new Socket scan and report
-            socket npm/lodash@4.17.21   Request the Socket score of a package
-            socket fix                  Fix CVEs in dependencies
-            socket optimize             Optimize dependencies with @socketregistry overrides
-            socket cdxgen               Run cdxgen for SBOM generation
-            socket ci                   Alias for \`socket scan create --report\` (creates report and exits with error if unhealthy)
-
-          Socket API
-            analytics                   Look up analytics data
-            audit-log                   Look up the audit log for an organization
-            organization                Manage Socket organization account details
-            package                     Look up published package details
-            repository                  Manage registered repositories
-            scan                        Manage Socket scans
-            threat-feed                 [Beta] View the threat-feed
-
-          Local tools
-            manifest                    Generate a dependency manifest for certain ecosystems
-            npm                         Wraps npm with Socket security scanning
-            npx                         Wraps npx with Socket security scanning
-            raw-npm                     Run npm without the Socket wrapper
-            raw-npx                     Run npx without the Socket wrapper
-
-          CLI configuration
-            config                      Manage Socket CLI configuration
-            install                     Install Socket CLI tab completion
-            login                       Socket API login and CLI setup
-            logout                      Socket API logout
-            uninstall                   Uninstall Socket CLI tab completion
-            whoami                      Check Socket CLI authentication status
-            wrapper                     Enable or disable the Socket npm/npx wrapper
-
-          Options
-            Note: All commands have these flags even when not displayed in their help
-
-            --compact-header            Use compact single-line header format (auto-enabled in CI)
-            --config                    Override the local config with this JSON
-            --dry-run                   Run without uploading
-            --help                      Show help
-            --help-full                 Show full help including environment variables
-            --no-banner                 Hide the Socket banner
-            --no-spinner                Hide the console spinner
-            --version                   Print the app version
-
-          Environment variables [more...]
-            Use --help-full to view all environment variables"
+        \\ud83d\\udca1 Tip: Run in an interactive terminal for a better experience"
       `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
         \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
         \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
-           _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket\`, cwd: <redacted>"
+        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit"
       `)
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
@@ -105,11 +62,7 @@ describe('socket root command', async () => {
            \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
         \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
         \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
-           _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket\`, cwd: <redacted>"
+        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

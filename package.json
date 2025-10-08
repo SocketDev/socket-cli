@@ -48,7 +48,7 @@
     "lint-staged": "lint-staged",
     "precommit": "lint-staged",
     "prepare": "husky",
-    "bs": "pnpm run build:dist:src; pnpm exec socket --",
+    "bs": "pnpm run build --src; pnpm exec socket --",
     "s": "pnpm exec socket --",
     "test": "node scripts/test.mjs",
     "test:validate": "node scripts/validate-tests.mjs",

@@ -128,6 +128,87 @@ async function watchBuild(options = {}) {
 }
 
 /**
+ * Build SEA stub.
+ */
+async function buildStub(options = {}) {
+  const { quiet = false } = options
+
+  if (!quiet) {
+    log.progress('Building SEA stub')
+  }
+
+  process.env['NODE_ENV'] = 'production'
+  const exitCode = await runCommand(
+    'pnpm',
+    ['exec', 'rollup', '-c', '.config/rollup.sea.config.mjs'],
+    {
+      stdio: quiet ? 'pipe' : 'inherit'
+    }
+  )
+
+  if (exitCode !== 0) {
+    if (!quiet) {
+      log.failed('SEA stub build failed')
+    }
+    return exitCode
+  }
+
+  if (!quiet) {
+    log.done('SEA stub built')
+  }
+
+  return 0
+}
+
+/**
+ * Build SEA binary using yao-pkg.
+ */
+async function buildSea(options = {}) {
+  const {
+    arch = process.arch,
+    minify = false,  // Default to current platform
+    platform = process.platform,  // Default to current architecture
+    quiet = false
+  } = options
+
+  if (!quiet) {
+    log.progress(`Building yao-pkg binary for ${platform}-${arch}`)
+  }
+
+  // Build the SEA using yao-pkg (which uses the custom Node.js with patches)
+  const args = [path.join(rootPath, 'scripts', 'build', 'build-stub.mjs')]
+
+  // Always pass platform and arch (using defaults if not specified)
+  args.push(`--platform=${platform}`)
+  args.push(`--arch=${arch}`)
+
+  if (minify) {
+    args.push('--minify')
+  }
+
+  if (quiet) {
+    args.push('--quiet')
+  }
+
+  const exitCode = await runCommand('node', args, {
+    stdio: quiet ? 'pipe' : 'inherit'
+  })
+
+  if (exitCode !== 0) {
+    if (!quiet) {
+      log.failed('yao-pkg binary build failed')
+    }
+    return exitCode
+  }
+
+  if (!quiet) {
+    log.done('yao-pkg binary built')
+  }
+
+  return 0
+}
+
+/**
  * Check if build is needed.
  */
 function isBuildNeeded() {
@@ -174,6 +255,20 @@ async function main() {
           type: 'boolean',
           default: false,
         },
+        sea: {
+          type: 'boolean',
+          default: false,
+        },
+        stub: {
+          type: 'boolean',
+          default: false,
+        },
+        platform: {
+          type: 'string',
+        },
+        arch: {
+          type: 'string',
+        },
       },
       allowPositionals: false,
       strict: false,
@@ -187,6 +282,10 @@ async function main() {
       console.log('  --help       Show this help message')
       console.log('  --src        Build source code only')
       console.log('  --types      Build TypeScript declarations only')
+      console.log('  --sea        Build self-contained binary with yao-pkg')
+      console.log('  --stub       Build SEA stub only (for Node.js native SEA)')
+      console.log('  --platform   Platform for SEA build (darwin, linux, win32)')
+      console.log('  --arch       Architecture for SEA build (x64, arm64)')
       console.log('  --watch      Watch mode for development')
       console.log('  --needed     Only build if dist files are missing')
       console.log('  --quiet, --silent  Suppress progress messages')
@@ -195,6 +294,9 @@ async function main() {
       console.log('  pnpm build              # Full build (source + types)')
       console.log('  pnpm build --src        # Build source only')
       console.log('  pnpm build --types      # Build types only')
+      console.log('  pnpm build --stub       # Build SEA stub only (for Node.js native SEA)')
+      console.log('  pnpm build --sea        # Build self-contained binary with yao-pkg')
+      console.log('  pnpm build --sea --platform=darwin --arch=arm64  # Build macOS ARM64 binary')
       console.log('  pnpm build --watch      # Watch mode')
       console.log('  pnpm build --needed     # Build only if needed')
       process.exitCode = 0
@@ -222,6 +324,20 @@ async function main() {
     // Handle watch mode
     if (values.watch) {
       exitCode = await watchBuild({ quiet, verbose })
+    }
+    // Build SEA binary
+    else if (values.sea) {
+      if (!quiet) {
+        log.step('Building SEA binary')
+      }
+      exitCode = await buildSea({ quiet, verbose, platform: values.platform, arch: values.arch })
+    }
+    // Build SEA stub only
+    else if (values.stub) {
+      if (!quiet) {
+        log.step('Building SEA stub only')
+      }
+      exitCode = await buildStub({ quiet, verbose })
     }
     // Build types only
     else if (values.types && !values.src) {

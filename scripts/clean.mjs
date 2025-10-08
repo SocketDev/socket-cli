@@ -155,7 +155,7 @@ async function main() {
     }
 
     if (!quiet) {
-      printHeader('Socket PackageURL Clean Runner')
+      printHeader('Clean Runner')
       log.step('Cleaning project directories')
     }
 

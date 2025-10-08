@@ -7,6 +7,9 @@ import colors from 'yoctocolors-cjs'
 
 import isInteractive from '@socketregistry/is-interactive/index.cjs'
 import { logger } from '@socketsecurity/registry/lib/logger'
+import { select } from '@socketsecurity/registry/lib/prompts'
+
+import type { Choice } from '@socketsecurity/registry/lib/prompts'
 
 interface HelpCategory {
   title: string
@@ -345,97 +348,56 @@ const helpCategories: HelpCategory[] = [
 export async function showInteractiveHelp(): Promise<void> {
   // Note: Banner is already shown by meow-with-subcommands before calling this function
 
-  // If not interactive, show categories and exit
+  // If not interactive, show simple category list
   if (!isInteractive()) {
-    logger.log('What can I help you with?\n')
-    showCategoryList()
+    logger.log(colors.bold('What can I help you with?'))
     logger.log('')
-    logger.log(colors.gray('Run with an interactive terminal to select a category'))
-    logger.log(colors.gray('Or use: socket --help=<category>'))
-    logger.log(colors.gray('Categories: scan, fix, pm, pkg, org, config, env, flags, ask, all, quick'))
+    logger.log('Help Topics:')
+    for (const cat of helpCategories) {
+      logger.log(`  ${colors.bold(cat.key.padEnd(10))} - ${cat.description}`)
+    }
     logger.log('')
-    logger.log(colors.bold('New user? Try: socket --help=quick'))
+    logger.log(colors.gray('Use: socket --help=<topic>'))
+    logger.log('')
+    logger.log(colors.bold('💡 Tip: Run in an interactive terminal for a better experience'))
     return
   }
 
-  // Interactive mode - simple prompt-based navigation
-  const rl = readline.createInterface({ input: stdin, output: stdout })
+  // Interactive mode - use select prompt for clean category selection
+  while (true) {
+    const choices: Array<Choice<HelpCategory>> = helpCategories.map(cat => ({
+      name: `${colors.bold(cat.title)} - ${colors.gray(cat.description)}`,
+      value: cat,
+      short: cat.title,
+    }))
 
-  try {
-    while (true) {
-      logger.log(colors.bold('What can I help you with?'))
-      logger.log('New user? Select "Quick Start" to get started!\n')
-      showCategoryList()
-      logger.log('')
+    // eslint-disable-next-line no-await-in-loop
+    const selected = await select({
+      message: 'What can I help you with?',
+      choices: [
+        ...choices,
+        { name: colors.gray('Exit'), value: null as any, short: 'Exit' },
+      ],
+    })
 
-      // eslint-disable-next-line no-await-in-loop
-      const answer = await rl.question(colors.cyan('Enter number or press Enter to exit: '))
-
-      if (!answer || answer.toLowerCase() === 'q') {
-        logger.log(colors.gray('\nFor more info: socket <command> --help'))
-        break
-      }
-
-      const num = parseInt(answer, 10)
-      if (num >= 1 && num <= helpCategories.length) {
-        const category = helpCategories[num - 1]
-        if (category) {
-          category.content()
-          logger.log('')
-        }
-
-        // eslint-disable-next-line no-await-in-loop
-        const again = await rl.question(colors.gray('Press Enter to continue or q to quit: '))
-        if (again.toLowerCase() === 'q') {
-          break
-        }
-        logger.log('')
-      } else {
-        logger.log(colors.red('Invalid selection. Please try again.\n'))
-      }
+    if (!selected) {
+      logger.log(colors.gray('\nFor more info: socket <command> --help'))
+      break
     }
-  } finally {
+
+    // Clear screen and show selected help
+    console.clear()
+    selected.content()
+    logger.log('')
+
+    // Ask to continue or exit
+    const rl = readline.createInterface({ input: stdin, output: stdout })
+    // eslint-disable-next-line no-await-in-loop
+    await rl.question(colors.gray('Press Enter to continue...'))
     rl.close()
+
+    console.clear()
   }
-}
-
-function showCategoryList(): void {
-  // Calculate column widths
-  const termWidth = process.stdout.columns || 80
-  const numColumns = termWidth >= 120 ? 3 : termWidth >= 80 ? 2 : 1
-  const columnWidth = Math.floor(termWidth / numColumns) - 2
-
-  // Group categories into columns
-  const itemsPerColumn = Math.ceil(helpCategories.length / numColumns)
-  const columns: HelpCategory[][] = []
-
-  for (let i = 0; i < numColumns; i++) {
-    const start = i * itemsPerColumn
-    const end = Math.min(start + itemsPerColumn, helpCategories.length)
-    columns.push(helpCategories.slice(start, end))
-  }
-
-  // Print rows
-  for (let row = 0; row < itemsPerColumn; row++) {
-    let line = ''
-    for (let col = 0; col < numColumns; col++) {
-      const category = columns[col]?.[row]
-      if (category) {
-        const num = helpCategories.indexOf(category) + 1
-        const entry = `[${num}] ${category.title}`
-        line += entry.padEnd(columnWidth)
-      }
-    }
-    if (line.trim()) {
-      logger.log(line)
-    }
-  }
-
-  // Print descriptions below in a more compact format
-  logger.log('')
-  helpCategories.forEach((cat, index) => {
-    logger.log(`  ${colors.gray(`[${index + 1}]`)} ${cat.description}`)
-  })
 }
 
 /**

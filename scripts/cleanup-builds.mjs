@@ -20,8 +20,8 @@ const __dirname = dirname(__filename)
 const ROOT_DIR = join(__dirname, '..')
 const DIST_DIR = join(ROOT_DIR, 'dist')
 const BUILD_DIR = join(ROOT_DIR, 'build')
-const PKG_BINARIES_DIR = join(ROOT_DIR, 'pkg-binaries')
-const CUSTOM_NODE_BUILD_DIR = join(ROOT_DIR, '.custom-node-build')
+const STUB_DIR = join(BUILD_DIR, 'stub')
+const TINY_NODE_BUILD_DIR = join(BUILD_DIR, 'tiny-node')
 const NODE_MODULES_DIR = join(ROOT_DIR, 'node_modules')
 const ROLLUP_CACHE_DIR = join(ROOT_DIR, '.rollup.cache')
 const CACHE_DIR = join(ROOT_DIR, '.cache')
@@ -96,31 +96,8 @@ async function cleanPkg() {
   console.log('🧹 Cleaning pkg binaries...')
   let totalRemoved = 0
 
-  // Clean pkg-binaries directory
-  totalRemoved += await removeDir(PKG_BINARIES_DIR, 'pkg-binaries/')
-
-  // Clean build directory
-  totalRemoved += await removeDir(BUILD_DIR, 'build/')
-
-  // Also remove any binaries in root (legacy cleanup)
-  const rootBinaries = [
-    'socket',
-    'socket-macos-arm64',
-    'socket-macos-x64',
-    'socket-linux-x64',
-    'socket-linux-arm64',
-    'socket-win-x64',
-    'socket-win-arm64',
-  ]
-
-  for (const binary of rootBinaries) {
-    const binaryPath = join(ROOT_DIR, binary)
-    if (existsSync(binaryPath)) {
-      // eslint-disable-next-line no-await-in-loop
-      await rm(binaryPath, { force: true })
-      console.log(`   ✅ Removed ${binary} from root (legacy)`)
-    }
-  }
+  // Clean build/stub directory
+  totalRemoved += await removeDir(STUB_DIR, 'build/stub/')
 
   if (totalRemoved === 0) {
     console.log('   ℹ️  No pkg binaries found (already clean)')
@@ -134,13 +111,13 @@ async function cleanPkg() {
 async function cleanOldNode() {
   console.log('🧹 Cleaning old Node.js builds...')
 
-  if (!existsSync(CUSTOM_NODE_BUILD_DIR)) {
-    console.log('   ℹ️  .custom-node-build/ not found')
+  if (!existsSync(TINY_NODE_BUILD_DIR)) {
+    console.log('   ℹ️  build/tiny-node/ not found')
     console.log()
     return
   }
 
-  const entries = await readdir(CUSTOM_NODE_BUILD_DIR, { withFileTypes: true })
+  const entries = await readdir(TINY_NODE_BUILD_DIR, { withFileTypes: true })
   let totalRemoved = 0
 
   for (const entry of entries) {
@@ -155,7 +132,7 @@ async function cleanOldNode() {
     }
 
     // Remove old builds
-    const dirPath = join(CUSTOM_NODE_BUILD_DIR, entry.name)
+    const dirPath = join(TINY_NODE_BUILD_DIR, entry.name)
     // eslint-disable-next-line no-await-in-loop
     totalRemoved += await removeDir(dirPath, entry.name + '/')
   }
@@ -185,10 +162,10 @@ async function cleanCurrentNode() {
   console.log('🧹 Cleaning current Node.js build...')
   console.log('   ⚠️  This will require rebuilding (30-60 minutes)')
 
-  const removed = await removeDir(CUSTOM_NODE_BUILD_DIR, '.custom-node-build/')
+  const removed = await removeDir(TINY_NODE_BUILD_DIR, 'build/tiny-node/')
   if (removed > 0) {
     console.log(`   🎉 Freed ~${removed.toFixed(1)} GB`)
-    console.log('   📝 Rebuild with: pnpm run build:yao-pkg:node')
+    console.log('   📝 Rebuild with: node scripts/build/build-tiny-node.mjs')
   }
   console.log()
 }
