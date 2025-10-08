@@ -60,7 +60,8 @@ export function checkCommandInput(
   process.exitCode = 2
 
   if (outputKind === 'json') {
-    logger.log(
+    // Use console.log directly for JSON output to ensure it's not silenced
+    console.log(
       serializeResultJson({
         ok: false,
         message: 'Input error',

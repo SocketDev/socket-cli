@@ -133,7 +133,7 @@ async function run(
   const hasApiToken = hasDefaultApiToken()
   const wasValidAuth = checkCommandInput(outputKind, {
     nook: true,
-    test: hasApiToken,
+    test: dryRun || hasApiToken,  // Skip API token check in dry-run mode
     message: 'This command requires a Socket API token for access',
     fail: 'try `socket login`',
   })

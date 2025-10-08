@@ -38,6 +38,7 @@ import {
   formatErrorForTerminal,
 } from './utils/error-display.mts'
 import { captureException } from './utils/errors.mts'
+import { installErrorFiltering } from './utils/error-filter.mts'
 import { meowWithSubcommands } from './utils/meow-with-subcommands.mts'
 import { isSeaBinary } from './utils/sea.mts'
 import { serializeResultJson } from './utils/serialize-result-json.mts'
@@ -45,6 +46,9 @@ import { initStubIpcHandler } from './utils/stub-ipc.mts'
 import { scheduleUpdateCheck } from './utils/update-manager.mts'
 
 const __filename = fileURLToPath(import.meta.url)
+
+// Install error filtering to clean up Node.js stack traces
+installErrorFiltering()
 
 // Check for --no-log or --json flag early and silence logger if present
 // When --json is set, we want clean JSON output without any logger noise

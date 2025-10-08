@@ -236,12 +236,12 @@ async function run(
     },
     {
       nook: true,
-      test: hasSocketApiToken,
+      test: dryRun || hasSocketApiToken,  // Skip API token check in dry-run mode
       message: 'This command requires a Socket API token for access',
       fail: 'try `socket login`',
     },
     {
-      test: hasGithubApiToken,
+      test: dryRun || hasGithubApiToken,  // Skip API token check in dry-run mode
       message: 'This command requires a GitHub API token for access',
       fail: 'missing',
     },
