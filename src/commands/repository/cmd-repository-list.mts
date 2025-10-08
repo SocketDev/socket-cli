@@ -111,7 +111,6 @@ async function run(
   })
 
   const {
-    all,
     direction = 'desc',
     dryRun,
     interactive,
@@ -182,12 +181,9 @@ async function run(
   }
 
   await handleListRepos({
-    all,
-    direction,
-    orgSlug,
-    outputKind,
+    limit: perPage,
     page,
-    perPage,
-    sort,
+    sort: sort || direction,
+    outputKind,
   })
 }

@@ -8,6 +8,8 @@ import { packageApi } from '../../utils/api-wrapper.mts'
 import { buildCommand, buildParentCommand } from '../../utils/command-builder.mts'
 import { runStandardValidations } from '../../utils/common-validations.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
+import { InlineStatus } from '../../utils/inline-status.mts'
+import { displayExpandableError, formatExpandableList } from '../../utils/interactive-expand.mts'
 import { Spinner } from '../../utils/rich-progress.mts'
 import { simpleOutput } from '../../utils/simple-output.mts'
 
@@ -21,25 +23,25 @@ function parsePackageSpec(spec: string): { ecosystem: string; name: string; vers
   if (slashParts.length === 3) {
     // ecosystem/name/version
     return {
-      ecosystem: slashParts[0],
-      name: slashParts[1],
-      version: slashParts[2],
+      ecosystem: slashParts[0]!,
+      name: slashParts[1]!,
+      version: slashParts[2]!,
     }
   }
 
   if (slashParts.length === 2) {
     // ecosystem/name or ecosystem/name@version
-    const atIndex = slashParts[1].indexOf('@')
+    const atIndex = slashParts[1]!.indexOf('@')
     if (atIndex > 0) {
       return {
-        ecosystem: slashParts[0],
-        name: slashParts[1].slice(0, atIndex),
-        version: slashParts[1].slice(atIndex + 1),
+        ecosystem: slashParts[0]!,
+        name: slashParts[1]!.slice(0, atIndex),
+        version: slashParts[1]!.slice(atIndex + 1),
       }
     }
     return {
-      ecosystem: slashParts[0],
-      name: slashParts[1],
+      ecosystem: slashParts[0]!,
+      name: slashParts[1]!,
     }
   }
 
@@ -131,38 +133,47 @@ const cmdScore = buildCommand({
       spinner?.succeed(`Using version: ${version}`)
     }
 
+    // Check ecosystem limitation
+    if (ecosystem !== 'npm') {
+      logger.error('Package score is currently only available for NPM packages')
+      process.exitCode = 1
+      return
+    }
+
     // Fetch package score with caching
-    const result = await packageApi.score(ecosystem, name, version, { cache: !noCache })
+    const result = await packageApi.score(name, version, { cache: !noCache })
 
     simpleOutput(result, outputKind, {
       text: data => {
+        const anyData = data as any
         logger.log(colors.cyan(`Package Score: ${name}@${version}`))
         logger.log('')
 
-        const score = data.score || 0
+        const score = anyData.score || 0
         const scoreColor = score >= 80 ? colors.green : score >= 60 ? colors.yellow : colors.red
         logger.log(`Overall Score: ${scoreColor(score + '/100')}`)
 
-        if (detailed && data.breakdown) {
+        if (detailed && anyData.breakdown) {
           logger.log('\nScore Breakdown:')
-          logger.log(`  Supply Chain: ${data.breakdown.supply_chain || 0}/25`)
-          logger.log(`  Maintenance: ${data.breakdown.maintenance || 0}/25`)
-          logger.log(`  Vulnerability: ${data.breakdown.vulnerability || 0}/25`)
-          logger.log(`  License: ${data.breakdown.license || 0}/25`)
+          logger.log(`  Supply Chain: ${anyData.breakdown.supply_chain || 0}/25`)
+          logger.log(`  Maintenance: ${anyData.breakdown.maintenance || 0}/25`)
+          logger.log(`  Vulnerability: ${anyData.breakdown.vulnerability || 0}/25`)
+          logger.log(`  License: ${anyData.breakdown.license || 0}/25`)
         }
 
-        if (data.issues && data.issues.length > 0) {
-          logger.log(`\n${colors.red('Issues:')}`)
-          for (const issue of data.issues.slice(0, 5)) {
-            logger.log(`  • ${issue.severity}: ${issue.description}`)
-          }
-          if (data.issues.length > 5) {
-            logger.log(`  ... and ${data.issues.length - 5} more`)
-          }
+        if (anyData.issues && anyData.issues.length > 0) {
+          const issuesTitle = colors.red('\nIssues:')
+          const issueItems = anyData.issues.map((issue: any) =>
+            `${issue.severity}: ${issue.description}`
+          )
+
+          console.log(formatExpandableList(issuesTitle, issueItems, {
+            maxItemsCollapsed: 5
+          }))
         }
 
-        if (data.recommendation) {
-          logger.log(`\n💡 ${data.recommendation}`)
+        if (anyData.recommendation) {
+          logger.log(`\n💡 ${anyData.recommendation}`)
         }
       },
     })
@@ -218,13 +229,21 @@ const cmdIssues = buildCommand({
       outputKind,
     })) {return}
 
-    const result = await packageApi.issues(ecosystem, name, version, { cache: !noCache })
+    // Check ecosystem limitation
+    if (ecosystem !== 'npm') {
+      logger.error('Package issues are currently only available for NPM packages')
+      process.exitCode = 1
+      return
+    }
+
+    const result = await packageApi.issues(name, version, { cache: !noCache })
 
     simpleOutput(result, outputKind, {
       text: data => {
-        const issues = data.issues || []
+        const anyData = data as any
+        const issues = anyData.issues || []
         const filtered = severity
-          ? issues.filter(i => i.severity === severity)
+          ? issues.filter((i: any) => i.severity === severity)
           : issues
 
         if (filtered.length === 0) {
@@ -299,27 +318,40 @@ const cmdShallow = buildCommand({
       outputKind,
     })) {return}
 
-    // Quick parallel fetch of score and issues
-    const spinner = new Spinner(`Analyzing ${name}@${version}...`)
-    if (!json && !markdown) {spinner.start()}
+    // Quick parallel fetch of score and issues with inline status
+    const inlineStatus = new InlineStatus({
+      showSpinner: true,
+      showTime: true
+    })
+
+    if (!json && !markdown) {
+      inlineStatus.start(`Analyzing ${name}@${version}`)
+    }
 
     const [scoreResult, issuesResult] = await Promise.all([
-      packageApi.score(ecosystem, name, version, { cache: true }),
-      packageApi.issues(ecosystem, name, version, { cache: true }),
+      ecosystem === 'npm' ? packageApi.score(name, version, { cache: true }) : Promise.resolve({ ok: false, message: 'Score not available for non-NPM packages' }),
+      ecosystem === 'npm' ? packageApi.issues(name, version, { cache: true }) : Promise.resolve({ ok: false, message: 'Issues not available for non-NPM packages' }),
     ])
 
-    spinner?.stop()
+    if (!json && !markdown) {
+      inlineStatus.stop()
+    }
 
     if (!scoreResult.ok || !issuesResult.ok) {
-      logger.error('Failed to analyze package')
+      const errorDetails = [
+        !scoreResult.ok ? `Score: ${scoreResult.message}` : null,
+        !issuesResult.ok ? `Issues: ${issuesResult.message}` : null
+      ].filter(Boolean).join('\n')
+
+      displayExpandableError('Failed to analyze package', errorDetails)
       process.exitCode = 1
       return
     }
 
-    const score = scoreResult.data.score || 0
-    const issues = issuesResult.data.issues || []
-    const critical = issues.filter(i => i.severity === 'critical').length
-    const high = issues.filter(i => i.severity === 'high').length
+    const score = (scoreResult as any).data?.score || 0
+    const issues = (issuesResult as any).data?.issues || []
+    const critical = issues.filter((i: any) => i.severity === 'critical').length
+    const high = issues.filter((i: any) => i.severity === 'high').length
 
     // Quick assessment
     const status = score >= 80 && critical === 0 && high === 0 ? 'safe' :

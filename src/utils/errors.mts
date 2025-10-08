@@ -21,6 +21,7 @@
 import { setTimeout as wait } from 'node:timers/promises'
 
 import { debugFn } from './debug.mts'
+import { displayExpandableError } from './interactive-expand.mts'
 import constants, { UNKNOWN_ERROR } from '../constants.mts'
 
 const {
@@ -302,6 +303,35 @@ export function formatErrorWithDetail(
 ): string {
   const errorMessage = getErrorMessage(error)
   return `${baseMessage}${errorMessage ? `: ${errorMessage}` : ''}`
+}
+
+/**
+ * Display error with expandable stack trace.
+ * Shows error message with option to expand for more details.
+ *
+ * @example
+ * displayErrorWithStackTrace('Build failed', error)
+ * // Shows: "Build failed: Cannot find module (ctrl+o to show stack trace)"
+ */
+export function displayErrorWithStackTrace(
+  message: string,
+  error: unknown,
+  options?: {
+    showStack?: boolean
+    autoExpand?: boolean
+  }
+): void {
+  const err = error instanceof Error ? error : new Error(String(error))
+  const fullMessage = formatErrorWithDetail(message, err)
+
+  // Get stack trace
+  const stack = err.stack || ''
+  const stackLines = stack.split('\n').slice(1).join('\n')
+
+  displayExpandableError(fullMessage, stackLines, {
+    showStackTrace: options?.showStack ?? true,
+    autoExpand: options?.autoExpand ?? false
+  })
 }
 
 /**
