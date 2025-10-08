@@ -881,7 +881,25 @@ const lazyExternalPath = () => path.join(constants.distPath, 'external')
 
 const lazyGithubCachePath = () => path.join(constants.socketCachePath, 'github')
 
-const lazyHomePath = () => os.homedir()
+const lazyHomePath = () => {
+  // Try to get home directory with multiple fallbacks
+  try {
+    const home = os.homedir()
+    if (home) {return home}
+  } catch {
+    // os.homedir() can throw in some environments
+  }
+
+  // Fallback to environment variables
+  const homeEnv = process.env['HOME'] || process.env['USERPROFILE']
+  if (homeEnv) {return homeEnv}
+
+  // Last resort: use temp directory as a fallback
+  // This ensures the CLI can still run in containerized/restricted environments
+  const tmpHome = path.join(os.tmpdir(), '.socket-cli-home')
+  console.warn(`Warning: Using temporary directory as home: ${tmpHome}`)
+  return tmpHome
+}
 
 const lazyInstrumentWithSentryPath = () =>
   path.join(constants.distPath, 'instrument-with-sentry.js')

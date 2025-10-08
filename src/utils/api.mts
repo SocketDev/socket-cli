@@ -348,12 +348,24 @@ export async function queryApi(path: string, apiToken: string) {
     throw new Error('Socket API base URL is not configured.')
   }
 
-  return await fetch(`${baseUrl}${baseUrl.endsWith('/') ? '' : '/'}${path}`, {
-    method: 'GET',
-    headers: {
-      Authorization: `Basic ${btoa(`${apiToken}:`)}`,
-    },
-  })
+  // Add timeout support with AbortController
+  // Default to 30 seconds, configurable via SOCKET_CLI_API_TIMEOUT environment variable
+  const timeoutMs = constants.ENV.SOCKET_CLI_API_TIMEOUT || 30000
+
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
+
+  try {
+    return await fetch(`${baseUrl}${baseUrl.endsWith('/') ? '' : '/'}${path}`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Basic ${btoa(`${apiToken}:`)}`,
+      },
+      signal: controller.signal,
+    })
+  } finally {
+    clearTimeout(timeoutId)
+  }
 }
 
 /**
@@ -521,22 +533,34 @@ export async function sendApiRequest<T>(
 
   let result
   try {
+    // Add timeout support with AbortController
+    const timeoutMs = constants.ENV.SOCKET_CLI_API_TIMEOUT || 30000
+
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
+
     const fetchOptions = {
       method,
       headers: {
         Authorization: `Basic ${btoa(`${apiToken}:`)}`,
         'Content-Type': 'application/json',
       },
+      signal: controller.signal,
       ...(body ? { body: JSON.stringify(body) } : {}),
     }
 
     result = await withSpinner({
       message: spinnerMessage,
-      operation: async () =>
-        await fetch(
-          `${baseUrl}${baseUrl.endsWith('/') ? '' : '/'}${path}`,
-          fetchOptions,
-        ),
+      operation: async () => {
+        try {
+          return await fetch(
+            `${baseUrl}${baseUrl.endsWith('/') ? '' : '/'}${path}`,
+            fetchOptions,
+          )
+        } finally {
+          clearTimeout(timeoutId)
+        }
+      },
       spinner,
     })
 
