@@ -1,8 +1,7 @@
 /** @fileoverview Interactive tour system for Socket CLI */
 
 import { spawn } from 'node:child_process'
-import { existsSync, readFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { existsSync } from 'node:fs'
 import { stdin, stdout } from 'node:process'
 import readline from 'node:readline/promises'
 
@@ -230,8 +229,12 @@ export async function runInteractiveTour(): Promise<void> {
   const rl = readline.createInterface({ input: stdin, output: stdout })
 
   try {
+    let userQuit = false
     for (let i = 0; i < tourSteps.length; i++) {
       const step = tourSteps[i]
+      // Safety check
+      if (!step) {continue}
+
       const stepNumber = i > 0 && i < tourSteps.length - 1 ? `Step ${i}/${tourSteps.length - 2}: ` : ''
 
       // Clear previous content with spacing
@@ -263,10 +266,12 @@ export async function runInteractiveTour(): Promise<void> {
 
       // Handle interactive elements
       const prompt = step.nextPrompt || 'Press Enter to continue (or q to quit)'
+      // eslint-disable-next-line no-await-in-loop
       const answer = await rl.question(colors.cyan(`${prompt} `))
 
       if (answer.toLowerCase() === 'q' || answer.toLowerCase() === 'quit') {
         logger.log(colors.gray('\nTour ended. You can restart anytime with: socket --tour'))
+        userQuit = true
         break
       }
 
@@ -278,21 +283,23 @@ export async function runInteractiveTour(): Promise<void> {
             logger.log(colors.yellow('\n⚠️  This command works best in a project directory with package.json'))
             logger.log(colors.gray('Skipping command execution...'))
           } else {
+            // eslint-disable-next-line no-await-in-loop
             await runCommand(step.command)
           }
         }
       }
     }
 
-    logger.log('')
-    logger.log(colors.green('✨ Thanks for taking the Socket CLI tour!'))
-    logger.log('')
-    logger.log('Next steps:')
-    logger.log('  • Try scanning your project: ' + colors.cyan('socket scan create .'))
-    logger.log('  • Check a package: ' + colors.cyan('socket package score <package-name>'))
-    logger.log('  • Get help anytime: ' + colors.cyan('socket --help'))
-    logger.log('')
-
+    if (!userQuit) {
+      logger.log('')
+      logger.log(colors.green('✨ Thanks for taking the Socket CLI tour!'))
+      logger.log('')
+      logger.log('Next steps:')
+      logger.log('  • Try scanning your project: ' + colors.cyan('socket scan create .'))
+      logger.log('  • Check a package: ' + colors.cyan('socket package score <package-name>'))
+      logger.log('  • Get help anytime: ' + colors.cyan('socket --help'))
+      logger.log('')
+    }
   } catch (error) {
     logger.error('Tour interrupted')
   } finally {
