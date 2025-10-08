@@ -4,23 +4,23 @@ This document describes the new features added to Socket CLI inspired by modern 
 
 ## ✨ New Features
 
-### 1. Natural Language Command Interface (`socket ai`)
+### 1. Natural Language Command Interface (`socket ask`)
 
-Use natural language to describe what you want to do, and the AI will translate it to the appropriate Socket CLI command.
+Use natural language to describe what you want to do, and Socket will translate it to the appropriate CLI command.
 
 ```bash
 # Examples
-socket ai "scan this project for vulnerabilities"
-socket ai "fix all critical issues"
-socket ai "show me production vulnerabilities"
-socket ai "is express safe to use"
-socket ai "optimize my dependencies"
+socket ask "scan this project for vulnerabilities"
+socket ask "fix all critical issues"
+socket ask "show me production vulnerabilities"
+socket ask "is express safe to use"
+socket ask "optimize my dependencies"
 
 # Execute directly with -e flag
-socket ai "scan for vulnerabilities" -e
+socket ask "scan for vulnerabilities" -e
 ```
 
-The AI understands various intents:
+The command understands various intents:
 - Scanning and security checks
 - Fixing vulnerabilities
 - Package optimization
@@ -120,11 +120,11 @@ Features:
 
 ```bash
 # Ask what you want in plain English
-socket ai "check if my production dependencies are safe"
+socket ask "check if my production dependencies are safe"
 # → Translates to: socket scan create . --prod
 
 # Get help understanding commands
-socket ai "what does scan reach do"
+socket ask "what does scan reach do"
 # → Shows: socket scan reach --help
 ```
 
@@ -236,7 +236,7 @@ Potential additions based on this foundation:
 
 ## 📝 Notes
 
-- The AI command interface uses pattern matching, not actual AI (for now)
+- The ask command uses pattern matching to understand natural language queries
 - Cache is stored in `~/.socket/_cacache`
 - Progress indicators automatically disable for non-TTY outputs
 - All features respect `--json` flag for automation

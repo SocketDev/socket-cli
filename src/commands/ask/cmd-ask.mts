@@ -13,7 +13,7 @@ import type {
   CliSubcommand,
 } from '../../utils/meow-with-subcommands.mts'
 
-export const CMD_NAME = 'ai'
+export const CMD_NAME = 'ask'
 
 const description = 'Natural language interface - describe what you want to do'
 
@@ -260,7 +260,7 @@ async function suggestAlternatives(input: string): Promise<string[]> {
   return suggestions
 }
 
-export const cmdAi: CliSubcommand = {
+export const cmdAsk: CliSubcommand = {
   description,
   hidden,
   async run(
@@ -301,7 +301,7 @@ export const cmdAi: CliSubcommand = {
 
       Description
         Use natural language to describe what you want to do.
-        The AI will translate your intent into the appropriate Socket CLI command.
+        Socket will translate your intent into the appropriate CLI command.
 
       Tips
         • Be specific about what you want to achieve
@@ -326,9 +326,9 @@ export const cmdAi: CliSubcommand = {
     if (!query) {
       logger.error('Please provide a natural language query')
       logger.log('\nExamples:')
-      logger.log('  socket ai "scan for vulnerabilities"')
-      logger.log('  socket ai "fix critical issues"')
-      logger.log('  socket ai "is express safe"')
+      logger.log('  socket ask "scan for vulnerabilities"')
+      logger.log('  socket ask "fix critical issues"')
+      logger.log('  socket ask "is express safe"')
       return
     }
 
@@ -356,7 +356,7 @@ export const cmdAi: CliSubcommand = {
     // Display the interpreted command
     const commandStr = `socket ${intent.command.join(' ')}`
 
-    logger.log(colors.cyan('🤖 AI Translation:'))
+    logger.log(colors.cyan('🤖 Translation:'))
     logger.log(`   ${colors.gray('"' + query + '"')}`)
     logger.log(`   ↓`)
     logger.log(`   ${colors.bold(commandStr)}`)
@@ -385,7 +385,7 @@ export const cmdAi: CliSubcommand = {
       logger.log('\n💡 To execute this command:')
       logger.log(`   ${colors.bold(commandStr)}`)
       logger.log('\n   Or run with --execute flag to auto-execute:')
-      logger.log(`   socket ai "${query}" --execute`)
+      logger.log(`   socket ask "${query}" --execute`)
     } else {
       logger.warn('\n⚠️  Confidence too low for auto-execution')
       logger.log('   Please run the command manually:')

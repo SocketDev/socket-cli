@@ -37,11 +37,11 @@ import { cmdUv } from './commands/uv/cmd-uv.mts'
 import { cmdWhoami } from './commands/whoami/cmd-whoami.mts'
 import { cmdWrapper } from './commands/wrapper/cmd-wrapper.mts'
 import { cmdYarn } from './commands/yarn/cmd-yarn.mts'
-import { cmdAi } from './commands/ai/cmd-ai.mts'
+import { cmdAsk } from './commands/ask/cmd-ask.mts'
 import { isSeaBinary } from './utils/sea.mts'
 
 export const rootCommands = {
-  ai: cmdAi,
+  ask: cmdAsk,
   analytics: cmdAnalytics,
   'audit-log': cmdAuditLog,
   cargo: cmdCargo,
