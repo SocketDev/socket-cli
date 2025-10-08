@@ -5,40 +5,19 @@
 
 import { existsSync } from 'node:fs'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { parseArgs } from 'node:util'
 
-import colors from 'yoctocolors-cjs'
-
+import {
+  getRootPath,
+  isQuiet,
+  log,
+  printFooter,
+  printHeader,
+  printHelpHeader
+} from './utils/common.mjs'
 import { runCommand, runSequence } from './utils/run-command.mjs'
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const rootPath = path.join(__dirname, '..')
-
-// Simple clean logging without prefixes
-const log = {
-  info: msg => console.log(msg),
-  error: msg => console.error(`${colors.red('✗')} ${msg}`),
-  success: msg => console.log(`${colors.green('✓')} ${msg}`),
-  step: msg => console.log(`\n${msg}`),
-  substep: msg => console.log(`  ${msg}`),
-  progress: msg => {
-    // Write progress message without newline for in-place updates
-    process.stdout.write(`  ∴ ${msg}`)
-  },
-  done: msg => {
-    // Clear current line and write success message
-    // Carriage return + clear line
-    process.stdout.write('\r\x1b[K')
-    console.log(`  ${colors.green('✓')} ${msg}`)
-  },
-  failed: msg => {
-    // Clear current line and write failure message
-    // Carriage return + clear line
-    process.stdout.write('\r\x1b[K')
-    console.log(`  ${colors.red('✗')} ${msg}`)
-  }
-}
+const rootPath = getRootPath(import.meta.url)
 
 /**
  * Build source code with Rollup.
@@ -51,7 +30,7 @@ async function buildSource(options = {}) {
   }
 
   const exitCode = await runSequence([
-    { args: ['run', 'clean:dist'], command: 'pnpm' },
+    { args: ['run', 'clean', '--dist', '--quiet'], command: 'pnpm' },
     {
       args: ['exec', 'rollup', '-c', '.config/rollup.dist.config.mjs'],
       command: 'pnpm',
@@ -83,7 +62,7 @@ async function buildTypes(options = {}) {
   }
 
   const exitCode = await runSequence([
-    { args: ['run', 'clean:dist:types'], command: 'pnpm' },
+    { args: ['run', 'clean', '--types', '--quiet'], command: 'pnpm' },
     {
       args: ['exec', 'tsgo', '--project', 'tsconfig.dts.json'],
       command: 'pnpm',
@@ -176,7 +155,7 @@ async function main() {
 
     // Show help if requested
     if (values.help) {
-      console.log('Socket PackageURL Build Runner')
+      printHelpHeader('Build Runner')
       console.log('\nUsage: pnpm build [options]')
       console.log('\nOptions:')
       console.log('  --help       Show this help message')
@@ -195,8 +174,7 @@ async function main() {
       return
     }
 
-    // Handle aliases
-    const quiet = values.quiet || values.silent
+    const quiet = isQuiet(values)
 
     // Check if build is needed
     if (values.needed && !isBuildNeeded()) {
@@ -208,9 +186,7 @@ async function main() {
     }
 
     if (!quiet) {
-      console.log('═══════════════════════════════════════════════════════')
-      console.log('  Socket PackageURL Build Runner')
-      console.log('═══════════════════════════════════════════════════════')
+      printHeader('Socket PackageURL Build Runner')
     }
 
     let exitCode = 0
@@ -260,9 +236,7 @@ async function main() {
       process.exitCode = exitCode
     } else {
       if (!quiet) {
-        console.log('\n═══════════════════════════════════════════════════════')
-        log.success('Build completed successfully!')
-        console.log('═══════════════════════════════════════════════════════')
+        printFooter('Build completed successfully!')
       }
     }
   } catch (error) {

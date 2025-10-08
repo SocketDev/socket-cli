@@ -48,13 +48,14 @@ export const validations = {
   /**
    * Validate enum value
    */
-  isOneOf: <T,>(value: T, options: T[], name: string, outputKind: OutputKind): boolean =>
-    checkCommandInput(outputKind, {
+  isOneOf<T>(value: T, options: T[], name: string, outputKind: OutputKind): boolean {
+    return checkCommandInput(outputKind, {
       nook: true,
       test: options.includes(value),
       message: `--${name} must be one of: ${options.join(', ')}`,
       fail: 'bad',
-    }),
+    })
+  },
 
   /**
    * Validate positive number
@@ -139,7 +140,7 @@ export const validateParams = {
     )
   },
 
-  sorting: (sort: string, direction: string, outputKind: OutputKind): boolean => {
+  sorting: (_sort: string, direction: string, outputKind: OutputKind): boolean => {
     return validations.isOneOf(direction, ['asc', 'desc'], 'direction', outputKind)
   },
 
