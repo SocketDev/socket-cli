@@ -352,6 +352,7 @@ export default async () => {
         [SHADOW_PNPM_BIN]: `${srcPath}/shadow/pnpm/bin.mts`,
         'external/ink-table': `${srcPath}/external/ink-table.mjs`,
         'external/yoga-layout': `${srcPath}/external/yoga-layout.mjs`,
+        'external/zod': `${srcPath}/external/zod.mjs`,
         ...(constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD]
           ? {
               [INSTRUMENT_WITH_SENTRY]: `${srcPath}/${INSTRUMENT_WITH_SENTRY}.mts`,

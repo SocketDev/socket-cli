@@ -21,9 +21,11 @@ const GITHUB_REPO = 'socket-cli'
 
 // Map Node.js platform/arch to our binary naming convention
 const PLATFORM_MAP: Record<string, string> = {
-  darwin: 'darwin',  // macOS
+  // macOS
+  darwin: 'darwin',
   linux: 'linux',
-  win32: 'win32'     // Windows
+  // Windows
+  win32: 'win32'
 }
 
 const ARCH_MAP: Record<string, string> = {
@@ -70,7 +72,7 @@ async function getPackageVersion(): Promise<string> {
  * Download a file from a URL with redirect handling.
  */
 async function downloadFile(url: string, destPath: string): Promise<void> {
-  return new Promise((resolve, reject) => {
+  return await new Promise((resolve, reject) => {
     const file = createWriteStream(destPath)
 
     const request = https.get(
@@ -192,7 +194,8 @@ async function install(): Promise<void> {
 if (import.meta.url === `file://${process.argv[1]}`) {
   install().catch(error => {
     console.error('Unexpected error:', error)
-    process.exitCode = 0  // Still don't fail npm install
+    // Still don't fail npm install
+    process.exitCode = 0
   })
 }
 

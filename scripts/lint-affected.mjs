@@ -4,9 +4,9 @@
  * Supports cross-repository linting for Socket projects.
  */
 
+import { promises as fs } from 'node:fs'
 import path from 'node:path'
 
-import { promises as fs } from 'node:fs'
 
 import WIN32 from '@socketsecurity/registry/lib/constants/WIN32'
 import { logger } from '@socketsecurity/registry/lib/logger'

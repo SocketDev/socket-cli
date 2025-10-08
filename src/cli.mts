@@ -46,9 +46,12 @@ import { scheduleUpdateCheck } from './utils/update-manager.mts'
 
 const __filename = fileURLToPath(import.meta.url)
 
-// Check for --no-log flag early and silence logger if present
+// Check for --no-log or --json flag early and silence logger if present
+// When --json is set, we want clean JSON output without any logger noise
 const noLog =
-  process.argv.includes('--no-log') || process.argv.includes('--noLog')
+  process.argv.includes('--no-log') ||
+  process.argv.includes('--noLog') ||
+  process.argv.includes('--json')
 if (noLog) {
   // Silence all logger methods
   const noop = () => logger
@@ -117,7 +120,8 @@ void (async () => {
 
     if (isJson) {
       const errorResult = formatErrorForJson(e)
-      logger.log(serializeResultJson(errorResult))
+      // Use console.log directly for JSON output to ensure it's not silenced
+      console.log(serializeResultJson(errorResult))
     } else {
       // Add 2 newlines in stderr to bump below any spinner.
       logger.error('\n')

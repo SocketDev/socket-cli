@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 
 /**
  * @fileoverview Generates package.json for @socketbin/* binary packages.
@@ -7,8 +6,8 @@
 
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
-import { parseArgs } from 'node:util'
 import { fileURLToPath } from 'node:url'
+import { parseArgs } from 'node:util'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootDir = path.join(__dirname, '..')
@@ -23,11 +22,10 @@ const { values } = parseArgs({
   }
 })
 
-const { platform, arch, version, tool = 'cli', outdir } = values
+const { arch, outdir, platform, tool = 'cli', version } = values
 
 if (!platform || !arch || !version) {
-  console.error('Usage: generate-binary-package.mjs --platform=darwin --arch=arm64 --version=1.1.24')
-  process.exit(1)
+  throw new Error('Usage: generate-binary-package.mjs --platform=darwin --arch=arm64 --version=1.1.24')
 }
 
 // Clean version (remove 'v' prefix if present)
@@ -154,7 +152,7 @@ async function generatePackage() {
         await fs.chmod(targetBinary, 0o755)
       }
       console.log(`Copied binary: ${sourceBinary} -> ${targetBinary}`)
-    } catch (error) {
+    } catch {
       console.warn(`Warning: Binary not found at ${sourceBinary}`)
       console.warn('Binary should be copied manually or in CI')
     }
@@ -163,7 +161,7 @@ async function generatePackage() {
     console.log(`\nTo publish:\n  cd ${packageDir}\n  npm publish --provenance --access public`)
   } catch (error) {
     console.error('Error generating package:', error)
-    process.exit(1)
+    throw error
   }
 }
 

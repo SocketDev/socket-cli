@@ -10,7 +10,6 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import constants from '../../constants.mts'
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
 import { serializeResultJson } from '../../utils/serialize-result-json.mts'
-import { fileLink } from '../../utils/terminal-link.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
@@ -84,21 +83,22 @@ async function handleJson(
   const json = serializeResultJson(data)
 
   if (file && file !== '-') {
-    logger.log(`Writing json to \`${file}\``)
+    // Writing to file in background, don't output messages to keep JSON clean
     fs.writeFile(file, json, err => {
       if (err) {
-        logger.fail(`Writing to \`${file}\` failed...`)
-        logger.error(err)
-      } else {
-        logger.success(`Data successfully written to \`${fileLink(file)}\``)
+        // Output error as JSON when --json flag is used
+        console.error(
+          serializeResultJson({
+            ok: false,
+            message: `Writing to \`${file}\` failed`,
+            cause: err.message,
+          }),
+        )
       }
-      logger.error(dashboardMessage)
     })
   } else {
-    // only .log goes to stdout
-    logger.info(`\n Diff scan result: \n`)
-    logger.log(json)
-    logger.info(dashboardMessage)
+    // Use console.log directly for JSON output to ensure it's not silenced
+    console.log(json)
   }
 }
 

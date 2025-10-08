@@ -66,11 +66,39 @@ jobs:
       - name: Build stub
         run: pnpm run build:sea:stub
 
+      - name: Setup UPX (Linux/Windows)
+        if: matrix.platform != 'darwin'
+        uses: crazy-max/ghaction-upx@v3
+        with:
+          install-only: true
+
       - name: Build binary
         run: |
           pnpm run build:sea -- \
             --platform=${{ matrix.platform }} \
             --arch=${{ matrix.arch }}
+
+      - name: Compress binary with UPX (Linux/Windows)
+        if: matrix.platform != 'darwin'
+        run: |
+          # Find the binary file (different extensions for different platforms)
+          BINARY_FILE=$(find dist/sea -name "socket-*" -type f | head -1)
+          if [ -f "$BINARY_FILE" ]; then
+            echo "Compressing $BINARY_FILE with UPX..."
+            upx --best --lzma "$BINARY_FILE" || echo "UPX compression failed, continuing anyway"
+            ls -lh "$BINARY_FILE"
+          fi
+
+      - name: Sign binary (macOS)
+        if: matrix.platform == 'darwin'
+        run: |
+          # Sign the macOS binary with ad-hoc signature for distribution
+          BINARY_FILE=$(find dist/sea -name "socket-*" -type f | head -1)
+          if [ -f "$BINARY_FILE" ]; then
+            echo "Signing macOS binary: $BINARY_FILE"
+            codesign --sign - --force "$BINARY_FILE"
+            codesign -dv "$BINARY_FILE"
+          fi
 
       - name: Verify binary
         run: |

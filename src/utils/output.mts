@@ -74,7 +74,8 @@ export function outputResult<T>(
 
   if (outputKind === 'json') {
     const jsonContent = handlers.json?.(result) ?? serializeResultJson(result)
-    logger.log(jsonContent)
+    // Use console.log directly for JSON output to ensure it's not silenced
+    console.log(jsonContent)
     return
   }
 

@@ -13,7 +13,7 @@ const path = require('node:path')
 const {
   SOCKET_CLI_GITHUB_REPO,
   SOCKET_GITHUB_ORG,
-  // eslint-disable-next-line n/no-unpublished-require
+   
 } = require('../../dist/constants.js')
 
 const BINARY_NAME = 'socket'

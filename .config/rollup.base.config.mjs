@@ -154,7 +154,8 @@ export default function baseConfig(extendConfig = {}) {
       if (
         id.includes('/external/') &&
         !id.endsWith('/external/ink-table.mjs') &&
-        !id.endsWith('/external/yoga-layout.mjs')
+        !id.endsWith('/external/yoga-layout.mjs') &&
+        !id.endsWith('/external/zod.mjs')
       ) {
         return true
       }

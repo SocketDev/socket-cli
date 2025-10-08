@@ -40,26 +40,36 @@ export async function outputScanView(
     const json = serializeResultJson(result)
 
     if (filePath && filePath !== '-') {
-      logger.info('Writing json results to', filePath)
+      // Don't output any message when --json is set to keep output clean
+      if (outputKind !== 'json') {
+        logger.info('Writing json results to', filePath)
+      }
       try {
         await fs.writeFile(filePath, json, 'utf8')
-        logger.info(`Data successfully written to ${fileLink(filePath)}`)
+        if (outputKind !== 'json') {
+          logger.info(`Data successfully written to ${fileLink(filePath)}`)
+        }
       } catch (e) {
         process.exitCode = 1
-        logger.fail('There was an error trying to write the markdown to disk')
-        logger.error(e)
-        logger.log(
-          serializeResultJson({
-            ok: false,
-            message: 'File Write Failure',
-            cause: 'Failed to write json to disk',
-          }),
-        )
+        if (outputKind === 'json') {
+          // Use console.log directly for JSON output to ensure it's not silenced
+          console.log(
+            serializeResultJson({
+              ok: false,
+              message: 'File Write Failure',
+              cause: 'Failed to write json to disk',
+            }),
+          )
+        } else {
+          logger.fail('There was an error trying to write the json to disk')
+          logger.error(e)
+        }
       }
       return
     }
 
-    logger.log(json)
+    // Use console.log directly for JSON output to ensure it's not silenced
+    console.log(json)
     return
   }
 

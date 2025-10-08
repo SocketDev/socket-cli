@@ -8,8 +8,8 @@
 
 const { spawn } = require('node:child_process')
 const { existsSync, realpathSync } = require('node:fs')
-const path = require('node:path')
 const os = require('node:os')
+const path = require('node:path')
 
 // Detect platform and architecture
 const platform = os.platform()
@@ -49,7 +49,7 @@ try {
   } catch {
     // If realpath fails, continue with original path
   }
-} catch (error) {
+} catch {
   // Binary package not found or other error
   console.error(`Error: Socket CLI binary not available for ${platform}-${mappedArch}`)
   console.error(``)
@@ -89,6 +89,7 @@ try {
   console.error(``)
   console.error(`For help, visit: https://github.com/SocketDev/socket-cli/issues`)
 
+  // eslint-disable-next-line n/no-process-exit
   process.exit(1)
 }
 
@@ -118,6 +119,7 @@ child.on('exit', (code, signal) => {
     process.kill(process.pid, signal)
   } else {
     // Otherwise exit with child's exit code
+    // eslint-disable-next-line n/no-process-exit
     process.exit(code ?? 0)
   }
 })
@@ -133,5 +135,6 @@ child.on('error', error => {
   } else {
     console.error(`Failed to start Socket CLI:`, error.message)
   }
+  // eslint-disable-next-line n/no-process-exit
   process.exit(1)
 })

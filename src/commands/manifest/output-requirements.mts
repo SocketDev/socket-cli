@@ -32,7 +32,8 @@ export async function outputRequirements(
     const json = serializeResultJson(result)
 
     if (out === '-') {
-      logger.log(json)
+      // Use console.log directly for JSON output to ensure it's not silenced
+      console.log(json)
     } else {
       fs.writeFileSync(out, json, 'utf8')
     }

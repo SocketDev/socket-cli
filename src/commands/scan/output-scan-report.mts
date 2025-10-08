@@ -104,11 +104,15 @@ export async function outputScanReport(
       : toJsonReport(scanReport.data as ScanReport, includeLicensePolicy)
 
     if (filepath && filepath !== '-') {
-      logger.log('Writing json report to', filepath)
+      // Don't output any message when --json is set to keep output clean
+      if (outputKind !== 'json') {
+        logger.log('Writing json report to', filepath)
+      }
       return await fs.writeFile(filepath, json)
     }
 
-    logger.log(json)
+    // Use console.log directly for JSON output to ensure it's not silenced
+    console.log(json)
     return
   }
 

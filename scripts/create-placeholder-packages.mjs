@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 
 /**
  * @fileoverview Creates minimal placeholder packages for @socketbin/* to enable trusted publisher.
@@ -131,11 +130,9 @@ npm install -g socket
 async function main() {
   console.log('Creating @socketbin placeholder packages...\n')
 
-  const packageDirs = []
-  for (const { platform, arch } of platforms) {
-    const dir = await createPlaceholderPackage(platform, arch)
-    packageDirs.push(dir)
-  }
+  const packageDirs = await Promise.all(
+    platforms.map(({ arch, platform }) => createPlaceholderPackage(platform, arch))
+  )
 
   console.log('\n📦 Placeholder packages created!\n')
   console.log('To publish them:')
@@ -230,5 +227,5 @@ main()
 
 main().catch(error => {
   console.error('Error:', error)
-  process.exit(1)
+  throw error
 })
