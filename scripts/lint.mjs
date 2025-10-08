@@ -6,35 +6,15 @@
 import path from 'node:path'
 import { parseArgs } from 'node:util'
 
-import colors from 'yoctocolors-cjs'
-
+import {
+  isQuiet,
+  log,
+  printFooter,
+  printHeader,
+  printHelpHeader
+} from './utils/common.mjs'
 import { getChangedFiles, getStagedFiles } from './utils/git.mjs'
 import { runCommandQuiet } from './utils/run-command.mjs'
-
-// Simple clean logging without prefixes
-const log = {
-  info: msg => console.log(msg),
-  error: msg => console.error(`${colors.red('✗')} ${msg}`),
-  success: msg => console.log(`${colors.green('✓')} ${msg}`),
-  step: msg => console.log(`\n${msg}`),
-  substep: msg => console.log(`  ${msg}`),
-  progress: msg => {
-    // Write progress message without newline for in-place updates
-    process.stdout.write(`  ∴ ${msg}`)
-  },
-  done: msg => {
-    // Clear current line and write success message
-    // Carriage return + clear line
-    process.stdout.write('\r\x1b[K')
-    console.log(`  ${colors.green('✓')} ${msg}`)
-  },
-  failed: msg => {
-    // Clear current line and write failure message
-    // Carriage return + clear line
-    process.stdout.write('\r\x1b[K')
-    console.log(`  ${colors.red('✗')} ${msg}`)
-  }
-}
 
 // Files that trigger a full lint when changed
 const CORE_FILES = new Set([
@@ -273,6 +253,10 @@ async function main() {
           type: 'boolean',
           default: false,
         },
+        silent: {
+          type: 'boolean',
+          default: false,
+        },
       },
       allowPositionals: true,
       strict: false,
@@ -280,7 +264,7 @@ async function main() {
 
     // Show help if requested
     if (values.help) {
-      console.log('Socket PackageURL Lint Runner')
+      printHelpHeader('Lint Runner')
       console.log('\nUsage: pnpm lint [options] [files...]')
       console.log('\nOptions:')
       console.log('  --help         Show this help message')
@@ -288,7 +272,7 @@ async function main() {
       console.log('  --all          Lint all files (default if no target specified)')
       console.log('  --changed      Lint changed files')
       console.log('  --staged       Lint staged files')
-      console.log('  --quiet        Suppress progress messages')
+      console.log('  --quiet, --silent  Suppress progress messages')
       console.log('\nExamples:')
       console.log('  pnpm lint                   # Lint all files')
       console.log('  pnpm lint --fix             # Fix all linting issues')
@@ -299,10 +283,10 @@ async function main() {
       return
     }
 
-    if (!values.quiet) {
-      console.log('═══════════════════════════════════════════════════════')
-      console.log('  Socket PackageURL Lint Runner')
-      console.log('═══════════════════════════════════════════════════════')
+    const quiet = isQuiet(values)
+
+    if (!quiet) {
+      printHeader('Socket PackageURL Lint Runner')
     }
 
     let exitCode = 0
@@ -310,53 +294,51 @@ async function main() {
     // Handle positional arguments (specific files)
     if (positionals.length > 0) {
       const files = filterLintableFiles(positionals)
-      if (!values.quiet) {
+      if (!quiet) {
         log.step('Linting specified files')
       }
       exitCode = await runLintOnFiles(files, {
         fix: values.fix,
-        quiet: values.quiet
+        quiet
       })
     } else {
       // Get files to lint based on flags
       const { files, reason } = await getFilesToLint(values)
 
       if (files === null) {
-        if (!values.quiet) {
+        if (!quiet) {
           log.step('Skipping lint')
           log.substep(reason)
         }
         exitCode = 0
       } else if (files === 'all') {
-        if (!values.quiet) {
+        if (!quiet) {
           const reasonText = reason ? ` (${reason})` : ''
           log.step(`Linting all files${reasonText}`)
         }
         exitCode = await runLintOnAll({
           fix: values.fix,
-          quiet: values.quiet
+          quiet
         })
       } else {
-        if (!values.quiet) {
+        if (!quiet) {
           log.step('Linting affected files')
         }
         exitCode = await runLintOnFiles(files, {
           fix: values.fix,
-          quiet: values.quiet
+          quiet
         })
       }
     }
 
     if (exitCode !== 0) {
-      if (!values.quiet) {
+      if (!quiet) {
         log.error('Lint failed')
       }
       process.exitCode = exitCode
     } else {
-      if (!values.quiet) {
-        console.log('\n═══════════════════════════════════════════════════════')
-        log.success('All lint checks passed!')
-        console.log('═══════════════════════════════════════════════════════')
+      if (!quiet) {
+        printFooter('All lint checks passed!')
       }
     }
   } catch (error) {

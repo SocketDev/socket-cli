@@ -46,6 +46,11 @@ const {
 export const EXTERNAL_PACKAGES = [
   '@socketsecurity/registry',
   '@socketsecurity/sdk',
+  'react',
+  'ink',
+  'ink-table',
+  '@pppp606/ink-chart',
+  'yoga-layout',
 ]
 
 const builtinAliases = builtinModules.reduce((o, n) => {
@@ -135,10 +140,23 @@ export default function baseConfig(extendConfig = {}) {
   }
 
   return {
-    // Disable tree-shaking to prevent incorrect removal of code.
-    // Without this, Rollup may incorrectly remove code that appears unused
-    // but is actually accessed dynamically or through other means.
-    treeshake: false,
+    // Enable caching for faster rebuilds
+    cache: {
+      dir: path.join(rootPath, '.cache', 'rollup'),
+    },
+
+    // Maximum parallelization
+    maxParallelFileOps: 10,
+
+    // Enable safe tree-shaking that preserves side effects
+    treeshake: {
+      moduleSideEffects: true,
+      propertyReadSideEffects: true,
+      tryCatchDeoptimization: false,
+      unknownGlobalSideEffects: true,
+      correctVarValueBeforeDeclaration: true,
+      preset: 'safest'
+    },
     external(rawId) {
       // Order checks by likelihood for better performance.
       // Externalize Node.js built-ins (most common case).
@@ -234,6 +252,16 @@ export default function baseConfig(extendConfig = {}) {
           babelrc: false,
           configFile: path.join(configPath, 'babel.config.js'),
           extensions: ['.mjs', '.mts', '.js', '.ts', '.tsx'],
+          // Skip files that don't need transformation
+          exclude: [
+            'node_modules/**',
+            '**/*.min.js',
+            '**/vendor/**'
+          ],
+          // Only include what we need
+          include: [
+            'src/**',
+          ],
         }),
       extractedPlugins['unplugin-purge-polyfills'] ??
         purgePolyfills.rollup({

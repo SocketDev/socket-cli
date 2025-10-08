@@ -366,6 +366,14 @@ export default async () => {
           exports: 'auto',
           externalLiveBindings: false,
           format: 'cjs',
+          experimentalMinChunkSize: 10000,
+          generatedCode: {
+            preset: 'es2015',
+            arrowFunctions: true,
+            constBindings: true,
+            objectShorthand: true
+          },
+          compact: true,
           manualChunks(id_) {
             const id = normalizeId(id_)
             switch (id) {

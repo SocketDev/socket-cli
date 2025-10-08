@@ -23,19 +23,30 @@ const rootPath = getRootPath(import.meta.url)
  * Build source code with Rollup.
  */
 async function buildSource(options = {}) {
-  const { quiet = false } = options
+  const { quiet = false, skipClean = false, verbose = false } = options
 
   if (!quiet) {
     log.progress('Building source code')
   }
 
-  const exitCode = await runSequence([
-    { args: ['run', 'clean', '--dist', '--quiet'], command: 'pnpm' },
-    {
-      args: ['exec', 'rollup', '-c', '.config/rollup.dist.config.mjs'],
-      command: 'pnpm',
-    },
-  ])
+  const commands = []
+
+  if (!skipClean) {
+    commands.push({ args: ['run', 'clean', '--dist', '--quiet'], command: 'pnpm' })
+  }
+
+  const rollupArgs = ['exec', 'rollup', '-c', '.config/rollup.dist.config.mjs']
+  // Suppress Rollup warnings by default unless in verbose mode
+  if (!verbose) {
+    rollupArgs.push('--silent')
+  }
+
+  commands.push({
+    args: rollupArgs,
+    command: 'pnpm',
+  })
+
+  const exitCode = await runSequence(commands)
 
   if (exitCode !== 0) {
     if (!quiet) {
@@ -55,19 +66,24 @@ async function buildSource(options = {}) {
  * Build TypeScript declarations.
  */
 async function buildTypes(options = {}) {
-  const { quiet = false } = options
+  const { quiet = false, skipClean = false, verbose = false } = options
 
   if (!quiet) {
     log.progress('Building TypeScript declarations')
   }
 
-  const exitCode = await runSequence([
-    { args: ['run', 'clean', '--types', '--quiet'], command: 'pnpm' },
-    {
-      args: ['exec', 'tsgo', '--project', 'tsconfig.dts.json'],
-      command: 'pnpm',
-    },
-  ])
+  const commands = []
+
+  if (!skipClean) {
+    commands.push({ args: ['run', 'clean', '--types', '--quiet'], command: 'pnpm' })
+  }
+
+  commands.push({
+    args: ['exec', 'tsgo', '--project', 'tsconfig.dts.json'],
+    command: 'pnpm',
+  })
+
+  const exitCode = await runSequence(commands)
 
   if (exitCode !== 0) {
     if (!quiet) {
@@ -87,16 +103,22 @@ async function buildTypes(options = {}) {
  * Watch mode for development.
  */
 async function watchBuild(options = {}) {
-  const { quiet = false } = options
+  const { quiet = false, verbose = false } = options
 
   if (!quiet) {
     log.step('Starting watch mode')
     log.substep('Watching for file changes...')
   }
 
+  const rollupArgs = ['exec', 'rollup', '-c', '.config/rollup.dist.config.mjs', '--watch']
+  // Suppress Rollup warnings by default unless in verbose mode
+  if (!verbose) {
+    rollupArgs.push('--silent')
+  }
+
   const exitCode = await runCommand(
     'pnpm',
-    ['exec', 'rollup', '-c', '.config/rollup.dist.config.mjs', '--watch'],
+    rollupArgs,
     {
       stdio: 'inherit'
     }
@@ -148,6 +170,10 @@ async function main() {
           type: 'boolean',
           default: false,
         },
+        verbose: {
+          type: 'boolean',
+          default: false,
+        },
       },
       allowPositionals: false,
       strict: false,
@@ -164,6 +190,7 @@ async function main() {
       console.log('  --watch      Watch mode for development')
       console.log('  --needed     Only build if dist files are missing')
       console.log('  --quiet, --silent  Suppress progress messages')
+      console.log('  --verbose    Show detailed build output (including Rollup warnings)')
       console.log('\nExamples:')
       console.log('  pnpm build              # Full build (source + types)')
       console.log('  pnpm build --src        # Build source only')
@@ -175,6 +202,7 @@ async function main() {
     }
 
     const quiet = isQuiet(values)
+    const verbose = values.verbose
 
     // Check if build is needed
     if (values.needed && !isBuildNeeded()) {
@@ -193,21 +221,21 @@ async function main() {
 
     // Handle watch mode
     if (values.watch) {
-      exitCode = await watchBuild({ quiet })
+      exitCode = await watchBuild({ quiet, verbose })
     }
     // Build types only
     else if (values.types && !values.src) {
       if (!quiet) {
         log.step('Building TypeScript declarations only')
       }
-      exitCode = await buildTypes({ quiet })
+      exitCode = await buildTypes({ quiet, verbose })
     }
     // Build source only
     else if (values.src && !values.types) {
       if (!quiet) {
         log.step('Building source only')
       }
-      exitCode = await buildSource({ quiet })
+      exitCode = await buildSource({ quiet, verbose })
     }
     // Build everything (default)
     else {
@@ -215,18 +243,29 @@ async function main() {
         log.step('Building package (source + types)')
       }
 
-      // Build source first
-      exitCode = await buildSource({ quiet })
+      // Clean all directories first (once)
+      if (!quiet) {
+        log.progress('Cleaning build directories')
+      }
+      exitCode = await runSequence([
+        { args: ['run', 'clean', '--dist', '--types', '--quiet'], command: 'pnpm' }
+      ])
       if (exitCode !== 0) {
         if (!quiet) {
-          log.error('Build failed')
+          log.failed('Clean failed')
         }
         process.exitCode = exitCode
         return
       }
 
-      // Then build types
-      exitCode = await buildTypes({ quiet })
+      // Run source and types builds in parallel
+      const buildPromises = [
+        buildSource({ quiet, verbose, skipClean: true }),
+        buildTypes({ quiet, verbose, skipClean: true })
+      ]
+
+      const results = await Promise.all(buildPromises)
+      exitCode = results.find(code => code !== 0) || 0
     }
 
     if (exitCode !== 0) {

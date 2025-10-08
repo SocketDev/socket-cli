@@ -1,4 +1,3 @@
-
 /**
  * @fileoverview Unified test runner that provides a smooth, single-script experience.
  * Combines check, build, and test steps with clean, consistent output.
@@ -7,43 +6,21 @@
 import { spawn } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { parseArgs } from 'node:util'
-
-import colors from 'yoctocolors-cjs'
 
 import WIN32 from '@socketsecurity/registry/lib/constants/WIN32'
 
 import { getTestsToRun } from './utils/changed-test-mapper.mjs'
+import {
+  getRootPath,
+  log,
+  printFooter,
+  printHeader,
+  printHelpHeader
+} from './utils/common.mjs'
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const rootPath = path.join(__dirname, '..')
+const rootPath = getRootPath(import.meta.url)
 const nodeModulesBinPath = path.join(rootPath, 'node_modules', '.bin')
-
-// Simple clean logging without prefixes
-const log = {
-  info: msg => console.log(msg),
-  error: msg => console.error(`${colors.red('✗')} ${msg}`),
-  success: msg => console.log(`${colors.green('✓')} ${msg}`),
-  step: msg => console.log(`\n${msg}`),
-  substep: msg => console.log(`  ${msg}`),
-  progress: msg => {
-    // Write progress message without newline for in-place updates
-    process.stdout.write(`  ∴ ${msg}`)
-  },
-  done: msg => {
-    // Clear current line and write success message
-    // Carriage return + clear line
-    process.stdout.write('\r\x1b[K')
-    console.log(`  ${colors.green('✓')} ${msg}`)
-  },
-  failed: msg => {
-    // Clear current line and write failure message
-    // Carriage return + clear line
-    process.stdout.write('\r\x1b[K')
-    console.log(`  ${colors.red('✗')} ${msg}`)
-  }
-}
 
 async function runCommand(command, args = [], options = {}) {
   return new Promise((resolve, reject) => {
@@ -105,9 +82,7 @@ async function runCheck() {
   // Run TypeScript check
   log.progress('Checking TypeScript')
   exitCode = await runCommand('tsgo', [
-    '--noEmit',
-    '-p',
-    '.config/tsconfig.check.json'
+    '--noEmit'
   ], {
     stdio: 'pipe'
   })
@@ -115,9 +90,7 @@ async function runCheck() {
     log.failed('TypeScript check failed')
     // Re-run with output to show errors
     await runCommand('tsgo', [
-      '--noEmit',
-      '-p',
-      '.config/tsconfig.check.json'
+      '--noEmit'
     ])
     return exitCode
   }
@@ -252,7 +225,7 @@ async function main() {
 
     // Show help if requested
     if (values.help) {
-      console.log('Socket PackageURL Test Runner')
+      printHelpHeader('Test Runner')
       console.log('\nUsage: pnpm test [options]')
       console.log('\nOptions:')
       console.log('  --help              Show this help message')
@@ -272,9 +245,7 @@ async function main() {
       return
     }
 
-    console.log('═══════════════════════════════════════════════════════')
-    console.log('  Socket PackageURL Test Runner')
-    console.log('═══════════════════════════════════════════════════════')
+    printHeader('Socket PackageURL Test Runner')
 
     // Handle aliases
     const skipChecks = values.fast || values.quick
@@ -310,9 +281,7 @@ async function main() {
       log.error('Tests failed')
       process.exitCode = exitCode
     } else {
-      console.log('\n═══════════════════════════════════════════════════════')
-      log.success('All tests passed!')
-      console.log('═══════════════════════════════════════════════════════')
+      printFooter('All tests passed!')
     }
   } catch (error) {
     log.error(`Test runner failed: ${error.message}`)
