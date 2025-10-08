@@ -6,8 +6,6 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 
-import colors from 'yoctocolors-cjs'
-
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 interface CacheEntry<T = any> {
@@ -19,14 +17,17 @@ interface CacheEntry<T = any> {
 }
 
 interface CacheOptions {
-  ttl?: number  // Time to live in milliseconds
-  offline?: boolean  // Force offline mode
-  refresh?: boolean  // Force refresh even if cached
-  namespace?: string  // Cache namespace for organization
+  // Time to live in milliseconds
+  ttl?: number
+  // Force offline mode
+  offline?: boolean
+  // Force refresh even if cached
+  refresh?: boolean
+  // Cache namespace for organization
+  namespace?: string
 }
 
 const CACHE_DIR = join(homedir(), '.socket', '_cacache')
-const CACHE_METADATA_FILE = 'cache-metadata.json'
 
 /**
  * Get cache key for a given operation
@@ -65,7 +66,8 @@ async function readFromCache<T>(
     // Check if expired
     const now = Date.now()
     if (entry.ttl > 0 && now - entry.timestamp > entry.ttl) {
-      return null  // Expired
+      // Expired
+      return null
     }
 
     return entry
@@ -88,8 +90,9 @@ async function writeToCache<T>(
     const entry: CacheEntry<T> = {
       data,
       timestamp: Date.now(),
-      ttl: options.ttl || 3600000, // Default 1 hour
-      metadata: options.namespace ? { namespace: options.namespace } : undefined,
+      // Default 1 hour
+      ttl: options.ttl || 3600000,
+      ...(options.namespace ? { metadata: { namespace: options.namespace } } : {}),
     }
 
     await writeFile(path, JSON.stringify(entry, null, 2))
@@ -209,12 +212,16 @@ export async function getCacheStats(): Promise<{
   oldest?: Date
   newest?: Date
 }> {
-  const stats = {
+  const stats: {
+    size: number
+    entries: number
+    namespaces: string[]
+    oldest?: Date
+    newest?: Date
+  } = {
     size: 0,
     entries: 0,
-    namespaces: [] as string[],
-    oldest: undefined as Date | undefined,
-    newest: undefined as Date | undefined,
+    namespaces: [],
   }
 
   if (!existsSync(CACHE_DIR)) {
@@ -232,12 +239,14 @@ export async function getCacheStats(): Promise<{
 
     for (const ns of namespaces) {
       const nsPath = join(CACHE_DIR, ns)
+      // eslint-disable-next-line no-await-in-loop
       const files = await readdir(nsPath)
 
       for (const file of files) {
         if (file.endsWith('.json')) {
           stats.entries++
           const filePath = join(nsPath, file)
+          // eslint-disable-next-line no-await-in-loop
           const fileStat = await stat(filePath)
           stats.size += fileStat.size
 

@@ -58,41 +58,42 @@ export async function spawnCoana(
     mixinsEnv['SOCKET_CLI_API_PROXY'] = proxyUrl
   }
 
+  // Execute Coana
   try {
     const localCoanaPath = constants.ENV['SOCKET_CLI_COANA_LOCAL_PATH']
-    // Use local Coana CLI if path is provided.
-    if (localCoanaPath) {
+      // Use local Coana CLI if path is provided.
+      if (localCoanaPath) {
+        const finalEnv = {
+          ...process.env,
+          ...constants.processEnv,
+          ...mixinsEnv,
+          ...spawnEnv,
+        }
+        const spawnResult = await spawn('node', [localCoanaPath, ...args], {
+          cwd: shadowOptions.cwd,
+          env: finalEnv,
+          stdio: spawnExtra?.['stdio'] || 'inherit',
+        })
+
+        return {
+          ok: true,
+          data: spawnResult.stdout ? spawnResult.stdout.toString() : '',
+        }
+      }
+
+      // Use npx to run coana.
+      const coanaVersion =
+        constants.ENV['INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION']
+      const packageSpec = `@coana-tech/cli@~${coanaVersion}`
+
       const finalEnv = {
         ...process.env,
         ...constants.processEnv,
         ...mixinsEnv,
         ...spawnEnv,
       }
-      const spawnResult = await spawn('node', [localCoanaPath, ...args], {
-        cwd: shadowOptions.cwd,
-        env: finalEnv,
-        stdio: spawnExtra?.['stdio'] || 'inherit',
-      })
 
-      return {
-        ok: true,
-        data: spawnResult.stdout ? spawnResult.stdout.toString() : '',
-      }
-    }
-
-    // Use npx to run coana.
-    const coanaVersion =
-      constants.ENV['INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION']
-    const packageSpec = `@coana-tech/cli@~${coanaVersion}`
-
-    const finalEnv = {
-      ...process.env,
-      ...constants.processEnv,
-      ...mixinsEnv,
-      ...spawnEnv,
-    }
-
-    const result = await runShadowCommand(packageSpec, args, {
+      const result = await runShadowCommand(packageSpec, args, {
       cwd:
         typeof shadowOptions.cwd === 'string'
           ? shadowOptions.cwd

@@ -28,10 +28,14 @@ const NODE_ERROR_PATTERNS = [
   /^TypeError: .* is not a function$/,
 
   // Stack trace lines
-  /^\s*at\s+.*\(/,  // "    at functionName (/path/to/file.js:123:45)"
-  /^\s*at\s+\/.*:\d+:\d+$/,  // "    at /path/to/file.js:123:45"
-  /^\s*at\s+node:/,  // Node internal modules
-  /^\s*at\s+async\s+/,  // Async stack traces
+  // "    at functionName (/path/to/file.js:123:45)"
+  /^\s*at\s+.*\(/,
+  // "    at /path/to/file.js:123:45"
+  /^\s*at\s+\/.*:\d+:\d+$/,
+  // Node internal modules
+  /^\s*at\s+node:/,
+  // Async stack traces
+  /^\s*at\s+async\s+/,
 
   // Node.js internal paths
   /node_modules\//,
@@ -39,11 +43,13 @@ const NODE_ERROR_PATTERNS = [
   /internal\/process\//,
 
   // V8 error decoration
-  /^\s*\^+$/,  // Error position indicators like "^^^^^"
+  // Error position indicators like "^^^^^"
+  /^\s*\^+$/,
   /^SyntaxError:/,
 
   // Node warnings
-  /^\(node:\d+\)/,  // "(node:12345) Warning: ..."
+  // "(node:12345) Warning: ..."
+  /^\(node:\d+\)/,
   /^DeprecationWarning:/,
   /^ExperimentalWarning:/,
 
@@ -72,8 +78,9 @@ function cleanErrorMessage(line: string): string | null {
   }
 
   // Clean up common Node.js error prefixes
+  // Remove "Error: " prefix
   line = line
-    .replace(/^Error:\s+/, '')  // Remove "Error: " prefix
+    .replace(/^Error:\s+/, '')
     .replace(/^TypeError:\s+/, '')
     .replace(/^ReferenceError:\s+/, '')
     .replace(/^RangeError:\s+/, '')

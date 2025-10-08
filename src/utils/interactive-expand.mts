@@ -265,8 +265,8 @@ export function formatExpandableList(
     expanded?: boolean
   } = {}
 ): string {
-  const { expanded = false, maxItemsCollapsed = 3 } = options
   const theme = getTheme()
+  const { expanded = false, maxItemsCollapsed = 3 } = options
 
   if (items.length <= maxItemsCollapsed || expanded) {
     const list = items.map(item => `  • ${item}`).join('\n')

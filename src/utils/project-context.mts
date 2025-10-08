@@ -149,7 +149,7 @@ export async function getProjectContext(cwd: string = process.cwd()): Promise<Pr
     type: packageManager,
     root,
     hasLockFile,
-    framework,
+    ...(framework ? { framework } : {}),
     isMonorepo: monorepo,
   }
 }

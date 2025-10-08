@@ -124,12 +124,13 @@ export interface ParentCommandOptions {
 }
 
 export function buildParentCommand(options: ParentCommandOptions): CliSubcommand {
-  const { defaultSubcommand, description, hidden = false, name, subcommands } = options
+  const { description, hidden = false, name, subcommands } = options
+  // defaultSubcommand is intentionally unused - kept for API compatibility
 
   return {
     description,
     hidden,
-    async run(argv: readonly string[], importMeta: ImportMeta, { parentName }: { parentName: string }) {
+    async run(_argv: readonly string[], _importMeta: ImportMeta, _options: { parentName: string }) {
       // This is typically handled by meowWithSubcommands
       // but we can provide a fallback
       logger.log(`Available subcommands for ${name}:`)
