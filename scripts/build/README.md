@@ -10,7 +10,7 @@ scripts/build/
 ├── build-socket-package.mjs      # Build socket package
 ├── build-socketsecurity-cli.mjs  # Build @socketsecurity/cli package
 ├── build-stub.mjs                 # Create SEA/stub executables
-├── build-tiny-node.mjs            # Build custom Node.js for pkg
+├── build-tiny-node.mjs            # Build custom Node.js for pkg (socket-node)
 ├── check-build-deps.mjs           # Verify build dependencies
 ├── ensure-node-in-cache.mjs       # Manage pkg cache
 └── stub/
@@ -25,11 +25,15 @@ scripts/build/
 ## Build Outputs
 
 ```
-build/
+binaries/
 ├── stub/                          # SEA executables (socket-macos-arm64, etc.)
-└── tiny-node/                     # Node.js source and compilation
+└── socket-node/                   # Custom Node.js binaries
+    └── node-v24.9.0-macos-arm64  # Platform-specific Node binary
+
+build/
+└── socket-node/                   # Node.js source and compilation
     └── node-v24.9.0-custom/
-        └── out/Release/node[.exe] # Custom Node.js binary
+        └── out/Release/node[.exe] # Build artifacts
 ```
 
 ## Main Build Scripts

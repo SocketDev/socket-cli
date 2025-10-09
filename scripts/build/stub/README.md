@@ -68,17 +68,19 @@ node scripts/build/stub/build-stub.mjs --node-version=v24.9.0
 ### Build Custom Node
 ```bash
 # Download, patch, and build Node.js
-node scripts/build-tiny-node.mjs --version=v24.9.0
+pnpm run build --node
+# Or directly:
+node scripts/build/build-tiny-node.mjs --version=v24.9.0
 ```
 
 ## Creating Custom Patches
 
 To create a patch for Node.js modifications:
 
-1. Make your changes in the Node source directory (`build/tiny-node/node-*`)
+1. Make your changes in the Node source directory (`build/socket-node/node-*`)
 2. Generate a patch:
    ```bash
-   cd build/tiny-node/node-v24.9.0-custom
+   cd build/socket-node/node-v24.9.0-custom
    git diff > ../../scripts/build/stub/patches/socket/003-my-custom-change.patch
    ```
 
@@ -99,5 +101,6 @@ If a patch fails to apply:
 ## Output
 
 Built binaries are placed in:
-- `build/stub/` - Final SEA executables
-- `build/tiny-node/` - Node.js source and compilation
+- `binaries/stub/` - Final SEA executables
+- `binaries/socket-node/` - Custom Node.js binaries
+- `build/socket-node/` - Node.js source and compilation

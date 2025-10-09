@@ -20,8 +20,10 @@ const __dirname = dirname(__filename)
 const ROOT_DIR = join(__dirname, '..')
 const DIST_DIR = join(ROOT_DIR, 'dist')
 const BUILD_DIR = join(ROOT_DIR, 'build')
-const STUB_DIR = join(BUILD_DIR, 'stub')
-const TINY_NODE_BUILD_DIR = join(BUILD_DIR, 'tiny-node')
+const BINARIES_DIR = join(ROOT_DIR, 'binaries')
+const STUB_DIR = join(BINARIES_DIR, 'stub')
+const SOCKET_NODE_DIR = join(BINARIES_DIR, 'socket-node')
+const SOCKET_NODE_BUILD_DIR = join(BUILD_DIR, 'socket-node')
 const NODE_MODULES_DIR = join(ROOT_DIR, 'node_modules')
 const ROLLUP_CACHE_DIR = join(ROOT_DIR, '.rollup.cache')
 const CACHE_DIR = join(ROOT_DIR, '.cache')
@@ -96,8 +98,8 @@ async function cleanPkg() {
   console.log('🧹 Cleaning pkg binaries...')
   let totalRemoved = 0
 
-  // Clean build/stub directory
-  totalRemoved += await removeDir(STUB_DIR, 'build/stub/')
+  // Clean stub directory
+  totalRemoved += await removeDir(STUB_DIR, 'stub/')
 
   if (totalRemoved === 0) {
     console.log('   ℹ️  No pkg binaries found (already clean)')
@@ -111,13 +113,13 @@ async function cleanPkg() {
 async function cleanOldNode() {
   console.log('🧹 Cleaning old Node.js builds...')
 
-  if (!existsSync(TINY_NODE_BUILD_DIR)) {
-    console.log('   ℹ️  build/tiny-node/ not found')
+  if (!existsSync(SOCKET_NODE_BUILD_DIR)) {
+    console.log('   ℹ️  build/socket-node/ not found')
     console.log()
     return
   }
 
-  const entries = await readdir(TINY_NODE_BUILD_DIR, { withFileTypes: true })
+  const entries = await readdir(SOCKET_NODE_BUILD_DIR, { withFileTypes: true })
   let totalRemoved = 0
 
   for (const entry of entries) {
@@ -132,7 +134,7 @@ async function cleanOldNode() {
     }
 
     // Remove old builds
-    const dirPath = join(TINY_NODE_BUILD_DIR, entry.name)
+    const dirPath = join(SOCKET_NODE_BUILD_DIR, entry.name)
     // eslint-disable-next-line no-await-in-loop
     totalRemoved += await removeDir(dirPath, entry.name + '/')
   }
@@ -162,10 +164,13 @@ async function cleanCurrentNode() {
   console.log('🧹 Cleaning current Node.js build...')
   console.log('   ⚠️  This will require rebuilding (30-60 minutes)')
 
-  const removed = await removeDir(TINY_NODE_BUILD_DIR, 'build/tiny-node/')
-  if (removed > 0) {
-    console.log(`   🎉 Freed ~${removed.toFixed(1)} GB`)
-    console.log('   📝 Rebuild with: node scripts/build/build-tiny-node.mjs')
+  let totalRemoved = 0
+  totalRemoved += await removeDir(SOCKET_NODE_BUILD_DIR, 'build/socket-node/')
+  totalRemoved += await removeDir(SOCKET_NODE_DIR, 'binaries/socket-node/')
+
+  if (totalRemoved > 0) {
+    console.log(`   🎉 Freed ~${totalRemoved.toFixed(1)} GB`)
+    console.log('   📝 Rebuild with: pnpm run build --node')
   }
   console.log()
 }

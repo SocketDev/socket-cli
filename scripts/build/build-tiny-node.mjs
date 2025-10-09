@@ -1207,6 +1207,14 @@ async function main() {
   // Copy to pkg cache
   const cachePath = await copyToPkgCache(binaryPath, nodeVersion)
 
+  // Copy to centralized binaries directory
+  const centralBinaryDir = join(ROOT_DIR, 'binaries', 'socket-node')
+  await mkdir(centralBinaryDir, { recursive: true })
+  const centralBinaryName = `node-${nodeVersion}-${platform() === 'darwin' ? 'macos' : platform()}-${process.arch}${platform() === 'win32' ? '.exe' : ''}`
+  const centralBinaryPath = join(centralBinaryDir, centralBinaryName)
+  await copyFile(binaryPath, centralBinaryPath)
+  logger.success(` Binary copied to: ${centralBinaryPath}`)
+
   // Summary
   logger.info()
   logger.info('='.repeat(50))
