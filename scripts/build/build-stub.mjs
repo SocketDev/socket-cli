@@ -19,7 +19,7 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 const ROOT_DIR = join(__dirname, '../..')
 const BUILD_DIR = join(ROOT_DIR, 'build')
-const STUB_DIR = join(BUILD_DIR, 'stub')
+const STUB_DIR = join(ROOT_DIR, 'binaries', 'stub')
 const DIST_DIR = join(ROOT_DIR, 'dist')
 const PKG_CONFIG = join(ROOT_DIR, '.config', 'pkg.json')
 
@@ -32,7 +32,7 @@ const PKG_CONFIG = join(ROOT_DIR, '.config', 'pkg.json')
  * 3. Ensure custom Node.js binary exists in pkg cache
  * 4. Use yao-pkg to create self-contained executable
  *
- * Output: build/stub/socket-{platform}-{arch}[.exe]
+ * Output: binaries/stub/socket-{platform}-{arch}[.exe]
  */
 export async function buildStub(options = {}) {
   const {

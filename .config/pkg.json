@@ -7,7 +7,7 @@
     "socket-pnpm": "dist/pnpm-cli.js",
     "socket-yarn": "dist/yarn-cli.js"
   },
-  "node": "/Users/jdalton/projects/socket-cli/build/tiny-node/node-yao-pkg/out/Release/node",
+  "node": "/Users/jdalton/projects/socket-cli/build/socket-node/node-yao-pkg/out/Release/node",
   "bytecode": false,
   "targets": [
     "node24-macos-arm64",
@@ -17,7 +17,7 @@
     "node24-win-arm64",
     "node24-win-x64"
   ],
-  "outputPath": "build/stub",
+  "outputPath": "binaries/stub",
   "assets": [
     "dist/**/*",
     "requirements.json",
