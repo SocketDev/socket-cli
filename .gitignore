@@ -26,3 +26,4 @@ Thumbs.db
 
 # Build directory for all build artifacts
 /build
+/binaries
