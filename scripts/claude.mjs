@@ -2806,7 +2806,7 @@ async function runWatchMode(claudeCmd, options = {}) {
   log.info('👁️ Starting continuous monitoring...')
   log.substep('Press Ctrl+C to stop')
 
-  const watchPath = opts['no-cross-repo'] ? rootPath : parentPath
+  const _watchPath = opts['no-cross-repo'] ? rootPath : parentPath
   const projects = opts['no-cross-repo']
     ? [{ name: path.basename(rootPath), path: rootPath }]
     : SOCKET_PROJECTS.map(name => ({
@@ -2818,7 +2818,8 @@ async function runWatchMode(claudeCmd, options = {}) {
 
   // Track last scan time to avoid duplicate scans
   const lastScanTime = new Map()
-  const SCAN_COOLDOWN = 5000 // 5 seconds between scans
+  // 5 seconds between scans
+  const SCAN_COOLDOWN = 5000
 
   // File watcher for each project
   const watchers = []
@@ -2864,7 +2865,8 @@ async function runWatchMode(claudeCmd, options = {}) {
           // Auto-fix in careful mode
           await autonomousFixSession(claudeCmd, { [project.name]: scanResults }, [project], {
             ...opts,
-            prompt: false  // Force auto-fix in watch mode
+            // Force auto-fix in watch mode
+            prompt: false
           })
         } else {
           log.done('No issues found')
@@ -2895,7 +2897,8 @@ async function runWatchMode(claudeCmd, options = {}) {
         log.failed(`Full scan error in ${project.name}: ${error.message}`)
       }
     }
-  }, 30 * 60 * 1000) // 30 minutes
+    // 30 minutes
+  }, 30 * 60 * 1000)
 
   // Handle graceful shutdown
   process.on('SIGINT', () => {
@@ -2910,7 +2913,8 @@ async function runWatchMode(claudeCmd, options = {}) {
     clearInterval(fullScanInterval)
 
     log.success('Watch mode stopped')
-    process.exit(0)
+    process.exitCode = 0
+    throw new Error('Watch mode terminated by user')
   })
 
   // Keep process alive
@@ -3173,7 +3177,8 @@ async function main() {
     const executionMode = {
       workers: parseInt(values.workers) || 3,
       watch: values.watch || false,
-      autoFix: !values.prompt,  // Auto-fix by default unless --prompt
+      // Auto-fix by default unless --prompt
+      autoFix: !values.prompt,
       model: values['the-brain'] ? 'the-brain' : (values.pinky ? 'pinky' : 'auto')
     }
 
@@ -3196,7 +3201,8 @@ async function main() {
     if (executionMode.watch) {
       // Start continuous monitoring
       await runWatchMode(claudeCmd, options)
-      return // Watch mode runs indefinitely
+      // Watch mode runs indefinitely
+      return
     }
 
     // Core operations.
