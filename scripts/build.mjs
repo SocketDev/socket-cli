@@ -3,7 +3,7 @@
  */
 
 import { spawn } from 'node:child_process'
-import { existsSync } from 'node:fs'
+import { existsSync, statSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { parseArgs } from 'node:util'
@@ -230,6 +230,14 @@ async function main() {
           type: 'boolean',
           default: false,
         },
+        node: {
+          type: 'boolean',
+          default: false,
+        },
+        stub: {
+          type: 'boolean',
+          default: false,
+        },
       },
       allowPositionals: false,
       strict: false,
@@ -244,12 +252,63 @@ async function main() {
       console.log('  --types   Build TypeScript declarations only')
       console.log('  --watch   Watch mode for development')
       console.log('  --needed  Only build if dist files are missing')
+      console.log('  --node    Build custom Node.js binary (socket-node)')
+      console.log('  --stub    Build stub/SEA binary (includes Node build if needed)')
       console.log('\nExamples:')
       console.log('  pnpm build         # Full build (source + types)')
       console.log('  pnpm build --src   # Build source only')
       console.log('  pnpm build --types # Build types only')
       console.log('  pnpm build --watch # Watch mode')
+      console.log('  pnpm build --node  # Build custom Node.js binary')
+      console.log('  pnpm build --stub  # Build standalone executable')
       process.exitCode = 0
+      return
+    }
+
+    // Handle custom Node.js build.
+    if (values.node) {
+      printHeader('Custom Node.js Builder')
+      log.step('Building custom Node.js binary')
+
+      const buildNodeScript = path.join(__dirname, 'build', 'build-tiny-node.mjs')
+      const nodeArgs = ['exec', 'node', buildNodeScript]
+
+      const nodeExitCode = await runCommand('pnpm', nodeArgs)
+
+      if (nodeExitCode !== 0) {
+        log.error('Node build failed')
+        process.exitCode = nodeExitCode
+      } else {
+        // Report file size
+        const nodeBinary = WIN32 ? 'node.exe' : 'node'
+        const nodePath = path.join(rootPath, 'build', 'tiny-node', `node-v24.9.0-custom`, 'out', 'Release', nodeBinary)
+        if (existsSync(nodePath)) {
+          const stats = statSync(nodePath)
+          const sizeMB = (stats.size / 1024 / 1024).toFixed(1)
+          printFooter(`Node.js built successfully! Size: ${sizeMB}MB`)
+        } else {
+          printFooter('Node.js built successfully!')
+        }
+      }
+      return
+    }
+
+    // Handle stub/SEA build.
+    if (values.stub) {
+      printHeader('Stub/SEA Builder')
+      log.step('Building standalone executable')
+
+      const buildStubScript = path.join(__dirname, 'build', 'build-stub.mjs')
+      const stubArgs = ['exec', 'node', buildStubScript]
+
+      const stubExitCode = await runCommand('pnpm', stubArgs)
+
+      if (stubExitCode !== 0) {
+        log.error('Stub build failed')
+        process.exitCode = stubExitCode
+      } else {
+        printFooter('Stub/SEA binary built successfully!')
+      }
       return
     }
 

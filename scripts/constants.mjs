@@ -31,6 +31,9 @@ const constants = {
   // Platform
   WIN32: process.platform === 'win32',
 
+  // Environment variables
+  ENV: process.env,
+
   // Package names and paths
   PACKAGE_JSON: 'package.json',
   PNPM_LOCK_YAML: 'pnpm-lock.yaml',

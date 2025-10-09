@@ -54,7 +54,7 @@ export async function buildStub(options = {}) {
     console.log('📦 Building distribution files first...')
 
     const buildExitCode = await new Promise((resolve) => {
-      const child = spawn('pnpm', ['run', 'build:dist:src'], {
+      const child = spawn('pnpm', ['run', 'build', '--src'], {
         cwd: ROOT_DIR,
         stdio: quiet ? 'pipe' : 'inherit'
       })

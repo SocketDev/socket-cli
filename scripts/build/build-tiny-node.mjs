@@ -41,7 +41,7 @@ const logger = {
 
 // Configuration
 const ROOT_DIR = join(__dirname, '../..')
-const BUILD_DIR = join(ROOT_DIR, 'build', 'tiny-node')
+const BUILD_DIR = join(ROOT_DIR, 'build', 'socket-node')
 const CUSTOM_PATCHES_DIR = join(__dirname, 'stub', 'patches', 'socket')
 
 // Parse command line arguments
@@ -87,7 +87,7 @@ Options:
                       Examples: --version=v24.9.0, --version=v22.19.0
   --skip-download     Skip downloading if source already exists
   --skip-yao-patch    Skip applying yao-pkg patches
-  --custom-patches    Apply custom patches from build/tiny-node/patches/
+  --custom-patches    Apply custom patches from build/socket-node/patches/
   --skip-code-mods    Skip V8 flags and node-gyp modifications
   --help, -h          Show this help
 

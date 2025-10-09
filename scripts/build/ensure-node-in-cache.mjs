@@ -18,7 +18,7 @@ const PKG_CACHE_DIR = join(homedir(), '.pkg-cache', 'v3.5')
 /**
  * Ensure custom Node binary is in pkg cache
  *
- * This function looks for the custom Node.js binary built by build-tiny-node.mjs
+ * This function looks for the custom Node.js binary built by build-socket-node.mjs
  * and copies it to pkg's cache directory if not already there.
  *
  * @param {string} nodeVersion - Node version (e.g., 'v24.9.0')
@@ -46,9 +46,10 @@ export default async function ensureCustomNodeInCache(nodeVersion = 'v24.9.0', p
   const nodeBinary = platform === 'win32' ? 'node.exe' : 'node'
 
   const possiblePaths = [
-    join(rootDir, 'build', 'tiny-node', `node-${nodeVersion}-custom`, 'out', 'Release', nodeBinary),
-    join(rootDir, 'build', 'tiny-node', 'node-yao-pkg', 'out', 'Release', nodeBinary),
-    join(rootDir, 'build', 'tiny-node', 'node', 'out', 'Release', nodeBinary)
+    join(rootDir, 'binaries', 'socket-node', `node-${nodeVersion}-${platform}-${arch}${platform === 'win32' ? '.exe' : ''}`),
+    join(rootDir, 'build', 'socket-node', `node-${nodeVersion}-custom`, 'out', 'Release', nodeBinary),
+    join(rootDir, 'build', 'socket-node', 'node-yao-pkg', 'out', 'Release', nodeBinary),
+    join(rootDir, 'build', 'socket-node', 'node', 'out', 'Release', nodeBinary)
   ]
 
   let sourcePath = null
