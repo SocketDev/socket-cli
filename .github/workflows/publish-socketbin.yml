@@ -138,6 +138,11 @@ jobs:
           VERSION="${VERSION#v}"
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
 
+      - name: Check version consistency
+        run: |
+          echo "🔍 Checking version consistency for v${{ steps.version.outputs.version }}..."
+          node scripts/check-version-consistency.mjs ${{ steps.version.outputs.version }}
+
       - name: Download all binaries
         uses: actions/download-artifact@v4
         with:
