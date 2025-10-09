@@ -2,8 +2,10 @@
 
 import { spawn, spawnSync } from 'node:child_process'
 
-import WIN32 from '@socketsecurity/registry/lib/constants/WIN32'
-import { logger } from '@socketsecurity/registry/lib/logger'
+const WIN32 = process.platform === 'win32'
+const logger = {
+  error: msg => console.error(`✗ ${msg}`)
+}
 
 /**
  * Run a command and return a promise that resolves with the exit code.
@@ -87,13 +89,13 @@ export async function runParallel(commands) {
 }
 
 /**
- * Run a command and suppress output.
+ * Run a command and capture output (silent mode).
  * @param {string} command - The command to run
  * @param {string[]} args - Arguments to pass to the command
  * @param {object} options - Spawn options
  * @returns {Promise<{exitCode: number, stdout: string, stderr: string}>}
  */
-export function runCommandQuiet(command, args = [], options = {}) {
+export function runCommandSilent(command, args = [], options = {}) {
   return new Promise((resolve, reject) => {
     let stdout = ''
     let stderr = ''

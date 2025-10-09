@@ -8,8 +8,6 @@
 
 import { parseArgs } from 'node:util'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import { runSequence } from './utils/run-command.mjs'
 
 async function main() {
@@ -33,7 +31,7 @@ async function main() {
     }
 
     if (values['type-only']) {
-      logger.log('Collecting type coverage...')
+      console.log('Collecting type coverage...')
       const exitCode = await runSequence([
         { args: ['exec', 'type-coverage'], command: 'pnpm' },
       ])
@@ -42,7 +40,7 @@ async function main() {
     }
 
     if (values['code-only']) {
-      logger.log('Collecting code coverage...')
+      console.log('Collecting code coverage...')
       const exitCode = await runSequence([
         { args: ['run', 'test', '--coverage'], command: 'pnpm' },
       ])
@@ -51,7 +49,7 @@ async function main() {
     }
 
     // Collect both code and type coverage
-    logger.log('Collecting coverage (code + type)...')
+    console.log('Collecting coverage (code + type)...')
 
     const codeExitCode = await runSequence([
       { args: ['run', 'test', '--coverage'], command: 'pnpm' },
@@ -68,7 +66,7 @@ async function main() {
 
     process.exitCode = typeExitCode
   } catch (error) {
-    logger.error('Coverage collection failed:', error.message)
+    console.error('Coverage collection failed:', error.message)
     process.exitCode = 1
   }
 }

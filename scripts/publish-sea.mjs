@@ -7,12 +7,12 @@
  * 3. Uploads binaries to GitHub releases
  */
 
+import { spawn } from 'node:child_process'
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 import url from 'node:url'
 
-import { normalizePath } from '@socketsecurity/registry/lib/path'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
+const normalizePath = (p) => p.replace(/\\/g, '/')
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url))
 

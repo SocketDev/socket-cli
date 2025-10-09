@@ -1,6 +1,6 @@
 import path from 'node:path'
 
-import trash from 'trash'
+import { deleteAsync } from 'del'
 import { afterEach, describe, expect } from 'vitest'
 
 import { cmdit, spawnSocketCli, testPath } from '../../../test/utils.mts'
@@ -11,9 +11,11 @@ const pnpmFixtureDir = path.join(fixtureBaseDir, 'pnpm')
 
 async function cleanupNodeModules() {
   // Clean up node_modules from all package manager directories.
-  await trash(path.join(pnpmFixtureDir, 'node_modules'))
-  await trash(path.join(fixtureBaseDir, 'npm/node_modules'))
-  await trash(path.join(fixtureBaseDir, 'yarn/node_modules'))
+  await deleteAsync([
+    path.join(pnpmFixtureDir, 'node_modules'),
+    path.join(fixtureBaseDir, 'npm/node_modules'),
+    path.join(fixtureBaseDir, 'yarn/node_modules'),
+  ])
 }
 
 describe('socket patch', async () => {

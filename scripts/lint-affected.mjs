@@ -4,15 +4,14 @@
  * Supports cross-repository linting for Socket projects.
  */
 
+import { spawn } from 'node:child_process'
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 
-import WIN32 from '@socketsecurity/registry/lib/constants/WIN32'
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
-
 import { getChangedFiles, getStagedFiles } from './utils/git.mjs'
-import { runCommandQuiet } from './utils/run-command.mjs'
+import { runCommandSilent } from './utils/run-command.mjs'
+
+const WIN32 = process.platform === 'win32'
 
 const CORE_LIB_FILES = new Set([
   'src/logger.ts',
@@ -102,11 +101,11 @@ async function runLintersOnFiles(files, options = {}) {
   const hasFiles = files.length > 0
 
   if (!hasFiles) {
-    logger.log('No files to lint.\n')
+    console.log('No files to lint.\n')
     return
   }
 
-  logger.log(`Linting ${files.length} file(s)...\n`)
+  console.log(`Linting ${files.length} file(s)...\n`)
 
   // Build the linter configurations.
   const linters = [
@@ -132,18 +131,18 @@ async function runLintersOnFiles(files, options = {}) {
       continue
     }
 
-    logger.log(`  - Running ${name}...`)
+    console.log(`  - Running ${name}...`)
     // eslint-disable-next-line no-await-in-loop
-    const result = await runCommandQuiet('pnpm', args)
+    const result = await runCommandSilent('pnpm', args)
 
     if (result.exitCode !== 0) {
       // When fixing, non-zero exit codes are normal if fixes were applied.
       if (!fix || (result.stderr && result.stderr.trim().length > 0)) {
         if (result.stderr) {
-          logger.error(`${name} errors:`, result.stderr)
+          console.error(`${name} errors:`, result.stderr)
         }
         if (result.stdout && !fix) {
-          logger.log(result.stdout)
+          console.log(result.stdout)
         }
         hadError = true
       }
@@ -159,7 +158,7 @@ async function runLintersOnFiles(files, options = {}) {
 async function runLintersOnAll(options = {}) {
   const { fix = false } = options
 
-  logger.log('Running linters on all files...\n')
+  console.log('Running linters on all files...\n')
 
   const linters = [
     {
@@ -184,18 +183,18 @@ async function runLintersOnAll(options = {}) {
       continue
     }
 
-    logger.log(`  - Running ${name}...`)
+    console.log(`  - Running ${name}...`)
     // eslint-disable-next-line no-await-in-loop
-    const result = await runCommandQuiet('pnpm', args)
+    const result = await runCommandSilent('pnpm', args)
 
     if (result.exitCode !== 0) {
       // When fixing, non-zero exit codes are normal if fixes were applied.
       if (!fix || (result.stderr && result.stderr.trim().length > 0)) {
         if (result.stderr) {
-          logger.error(`${name} errors:`, result.stderr)
+          console.error(`${name} errors:`, result.stderr)
         }
         if (result.stdout && !fix) {
-          logger.log(result.stdout)
+          console.log(result.stdout)
         }
         hadError = true
       }
@@ -287,14 +286,14 @@ async function main() {
       const currentProject = await detectSocketProject(process.cwd())
 
       if (!currentProject) {
-        logger.error(
+        console.error(
           'Not in a recognized Socket project directory for cross-repo linting.',
         )
         process.exitCode = 1
         return
       }
 
-      logger.log(`Cross-repo linting from ${currentProject}...\n`)
+      console.log(`Cross-repo linting from ${currentProject}...\n`)
 
       // Run lint-affected in each Socket project.
       let hadError = false
@@ -314,29 +313,31 @@ async function main() {
           // eslint-disable-next-line no-await-in-loop
           await fs.access(absolutePath)
         } catch {
-          logger.log(`  - Skipping ${projectName} (not found)`)
+          console.log(`  - Skipping ${projectName} (not found)`)
           continue
         }
 
-        logger.log(`  - Linting ${projectName}...`)
+        console.log(`  - Linting ${projectName}...`)
 
         // Run lint-affected in the project.
         // eslint-disable-next-line no-await-in-loop
-        const result = await spawn(
-          'node',
-          [
-            path.join(absolutePath, 'scripts', 'lint-affected.mjs'),
-            ...(hasStaged ? ['--staged'] : []),
-            ...(hasFix ? ['--fix'] : []),
-          ],
-          {
-            cwd: absolutePath,
-            shell: WIN32,
-            stdio: 'inherit',
-          },
-        )
-          .then(res => res.code || 0)
-          .catch(() => 1)
+        const result = await new Promise((resolve) => {
+          const child = spawn(
+            'node',
+            [
+              path.join(absolutePath, 'scripts', 'lint-affected.mjs'),
+              ...(hasStaged ? ['--staged'] : []),
+              ...(hasFix ? ['--fix'] : []),
+            ],
+            {
+              cwd: absolutePath,
+              shell: WIN32,
+              stdio: 'inherit',
+            },
+          )
+          child.on('exit', (code) => resolve(code || 0))
+          child.on('error', () => resolve(1))
+        })
 
         if (result !== 0) {
           hadError = true
@@ -344,7 +345,7 @@ async function main() {
       }
 
       // Also lint the current project.
-      logger.log(`  - Linting ${currentProject}...`)
+      console.log(`  - Linting ${currentProject}...`)
       const currentError = await runLintersBasedOnChanges({
         fix: hasFix,
         runAll: false,
@@ -364,7 +365,7 @@ async function main() {
 
     process.exitCode = hadError ? 1 : 0
   } catch (e) {
-    logger.error('Error running linters:', e)
+    console.error('Error running linters:', e)
     process.exitCode = 1
   }
 }
@@ -381,15 +382,15 @@ async function runLintersBasedOnChanges(options = {}) {
 
   if (isPrecommit) {
     changedFiles = await getStagedFiles({ absolute: false })
-    logger.log(`Found ${changedFiles.length} staged file(s)\n`)
+    console.log(`Found ${changedFiles.length} staged file(s)\n`)
   } else {
     changedFiles = await getChangedFiles({ absolute: false })
-    logger.log(`Found ${changedFiles.length} changed file(s)\n`)
+    console.log(`Found ${changedFiles.length} changed file(s)\n`)
   }
 
   // If no files changed and not forced, skip linting.
   if (!changedFiles.length && !runAll) {
-    logger.log('No changed files, skipping linters.\n')
+    console.log('No changed files, skipping linters.\n')
     return false
   }
 
@@ -402,7 +403,7 @@ async function runLintersBasedOnChanges(options = {}) {
   const lintableFiles = filterLintableFiles(changedFiles)
 
   if (!lintableFiles.length) {
-    logger.log('No lintable files changed, skipping linters.\n')
+    console.log('No lintable files changed, skipping linters.\n')
     return false
   }
 

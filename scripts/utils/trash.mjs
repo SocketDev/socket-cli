@@ -1,29 +1,19 @@
-/** @fileoverview Safe file removal utility with trash fallback. */
-import trashPkg from 'trash'
+/** @fileoverview File removal utility using del package. */
 
-import { remove } from '@socketsecurity/registry/lib/fs'
+import { deleteAsync } from 'del'
 
 /**
- * Remove files or directories safely using trash with registry's remove() fallback.
- * First attempts to move items to trash for recoverability. If trash fails
- * (e.g., on CI systems or when trash binary is unavailable), falls back to
- * permanent deletion using registry's remove() method.
- * @throws {Error} Never throws on trash failure; falls back to remove().
+ * Remove files or directories using del package.
+ * @param {string|string[]} paths - Paths or glob patterns to delete
+ * @param {object} options - Options to pass to del
+ * @returns {Promise<string[]>} Deleted paths
  */
-export async function trash(paths, options) {
-  const pathArray = Array.isArray(paths) ? paths : [paths]
-  if (pathArray.length === 0) {
-    return
-  }
-
-  try {
-    await trashPkg(pathArray)
-  } catch {
-    // If trash fails, fallback to registry's remove().
-    await remove(pathArray, {
-      force: true,
-      recursive: true,
-      ...options,
-    })
-  }
+export async function trash(paths, options = {}) {
+  return deleteAsync(paths, {
+    force: true,
+    ...options
+  })
 }
+
+// Re-export deleteAsync for direct usage
+export { deleteAsync } from 'del'

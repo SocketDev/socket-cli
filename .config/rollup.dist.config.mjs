@@ -1,11 +1,9 @@
-// import assert from 'node:assert'
 import { promises as fs } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-// import util from 'node:util'
 
+import { deleteAsync } from 'del'
 import fastGlob from 'fast-glob'
-import trash from 'trash'
 
 import { isDirEmptySync } from '@socketsecurity/registry/lib/fs'
 // import { hasKeys } from '@socketsecurity/registry/lib/objects'
@@ -241,7 +239,7 @@ async function copyPublishFiles() {
 }
 
 async function removeEmptyDirs(thePath) {
-  await trash(
+  await deleteAsync(
     (
       await fastGlob.glob(['**/'], {
         ignore: [NODE_MODULES_GLOB_RECURSIVE],
@@ -258,65 +256,18 @@ async function removeEmptyDirs(thePath) {
 
 async function removeFiles(thePath, options) {
   const { exclude } = { __proto__: null, ...options }
-  const ignore = Array.isArray(exclude) ? exclude : exclude ? [exclude] : []
-  return await trash(
+  return await deleteAsync(
     await fastGlob.glob(['**/*'], {
       absolute: true,
       onlyFiles: true,
       cwd: thePath,
       dot: true,
-      ignore,
+      ignore: Array.isArray(exclude) 
+        ? exclude 
+        : (exclude ? [exclude] : []),
     }),
   )
 }
-
-// function resetBin(bin) {
-//   const tmpBin = {
-//     [SOCKET_CLI_BIN_NAME]:
-//       bin?.[SOCKET_CLI_BIN_NAME] ?? bin?.[SOCKET_CLI_SENTRY_BIN_NAME],
-//     [SOCKET_CLI_NPM_BIN_NAME]:
-//       bin?.[SOCKET_CLI_NPM_BIN_NAME] ?? bin?.[SOCKET_CLI_SENTRY_NPM_BIN_NAME],
-//     [SOCKET_CLI_NPX_BIN_NAME]:
-//       bin?.[SOCKET_CLI_NPX_BIN_NAME] ?? bin?.[SOCKET_CLI_SENTRY_NPX_BIN_NAME],
-//     [SOCKET_CLI_PNPM_BIN_NAME]:
-//       bin?.[SOCKET_CLI_PNPM_BIN_NAME] ?? bin?.[SOCKET_CLI_SENTRY_PNPM_BIN_NAME],
-//     [SOCKET_CLI_YARN_BIN_NAME]:
-//       bin?.[SOCKET_CLI_YARN_BIN_NAME] ?? bin?.[SOCKET_CLI_SENTRY_YARN_BIN_NAME],
-//   }
-//   const newBin = {
-//     ...(tmpBin[SOCKET_CLI_BIN_NAME]
-//       ? { [SOCKET_CLI_BIN_NAME]: tmpBin.socket }
-//       : {}),
-//     ...(tmpBin[SOCKET_CLI_NPM_BIN_NAME]
-//       ? { [SOCKET_CLI_NPM_BIN_NAME]: tmpBin[SOCKET_CLI_NPM_BIN_NAME] }
-//       : {}),
-//     ...(tmpBin[SOCKET_CLI_NPX_BIN_NAME]
-//       ? { [SOCKET_CLI_NPX_BIN_NAME]: tmpBin[SOCKET_CLI_NPX_BIN_NAME] }
-//       : {}),
-//     ...(tmpBin[SOCKET_CLI_PNPM_BIN_NAME]
-//       ? { [SOCKET_CLI_PNPM_BIN_NAME]: tmpBin[SOCKET_CLI_PNPM_BIN_NAME] }
-//       : {}),
-//     ...(tmpBin[SOCKET_CLI_YARN_BIN_NAME]
-//       ? { [SOCKET_CLI_YARN_BIN_NAME]: tmpBin[SOCKET_CLI_YARN_BIN_NAME] }
-//       : {}),
-//   }
-//   assert(
-//     util.isDeepStrictEqual(Object.keys(newBin).sort(naturalCompare), [
-//       SOCKET_CLI_BIN_NAME,
-//       SOCKET_CLI_NPM_BIN_NAME,
-//       SOCKET_CLI_NPX_BIN_NAME,
-//       SOCKET_CLI_PNPM_BIN_NAME,
-//       SOCKET_CLI_YARN_BIN_NAME,
-//     ]),
-//     "Update the rollup Legacy and Sentry build's .bin to match the default build.",
-//   )
-//   return newBin
-// }
-
-// function resetDependencies(deps) {
-//   const { [SENTRY_NODE]: _ignored, ...newDeps } = { ...deps }
-//   return newDeps
-// }
 
 export default async () => {
   const { distPath, rootPath, srcPath } = constants

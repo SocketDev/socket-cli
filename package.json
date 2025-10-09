@@ -36,17 +36,14 @@
     "build": "node scripts/build.mjs",
     "publish:sea": "node scripts/publish-sea.mjs",
     "check": "node scripts/check.mjs",
-    "check:lint": "node scripts/lint-affected.mjs --all",
-    "check:tsc": "tsgo --noEmit",
-    "check-ci": "pnpm run check:lint",
+    "check-ci": "pnpm run check",
     "lint": "node scripts/lint.mjs",
-    "lint-ci": "pnpm run check:lint",
-    "type-ci": "pnpm run check:tsc",
+    "lint-ci": "pnpm run check --lint",
+    "type-ci": "pnpm run check --type",
     "cover": "node scripts/cover.mjs",
     "clean": "node scripts/clean.mjs",
-    "fix": "node scripts/lint.mjs --fix",
-    "lint-staged": "lint-staged",
-    "precommit": "lint-staged",
+    "fix": "pnpm run lint --fix",
+    "precommit": "pnpm run lint --staged",
     "prepare": "husky",
     "bs": "pnpm run build --src; pnpm exec socket --",
     "s": "pnpm exec socket --",
@@ -119,6 +116,7 @@
     "browserslist": "4.25.4",
     "chalk-table": "1.0.2",
     "cmd-shim": "7.0.0",
+    "del": "8.0.1",
     "del-cli": "6.0.0",
     "dev-null-cli": "2.0.0",
     "esbuild": "0.25.10",
@@ -183,12 +181,11 @@
     "requirements.json",
     "translations.json"
   ],
-  "lint-staged": {
-    "*.{cjs,cts,js,json,md,mjs,mts,ts}": [
-      "biome format --log-level=none --fix --no-errors-on-unmatched --files-ignore-unknown=true --colors=off"
-    ]
-  },
   "pnpm": {
+    "ignoredBuiltDependencies": [
+      "esbuild",
+      "unrs-resolver"
+    ],
     "overrides": {
       "@octokit/graphql": "$@octokit/graphql",
       "@octokit/request-error": "$@octokit/request-error",
@@ -254,8 +251,5 @@
     "ignore-type-assertion": true,
     "ignore-files": "test/*",
     "strict": true
-  },
-  "dependencies": {
-    "lodash": "4.17.21"
   }
 }

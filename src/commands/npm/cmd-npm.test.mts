@@ -1,6 +1,7 @@
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 
+import { deleteAsync } from 'del'
 import { afterAll, beforeAll, describe, expect } from 'vitest'
 
 import constants, {
@@ -35,8 +36,7 @@ describe('socket npm', async () => {
   afterAll(async () => {
     // Cleanup temp directory
     if (testCwd) {
-      const trash = (await import('trash')).default
-      await trash(testCwd).catch(() => {})
+      await deleteAsync(testCwd).catch(() => {})
     }
   })
 

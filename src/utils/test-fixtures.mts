@@ -4,7 +4,7 @@ import { promises as fs } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 
-import trash from 'trash'
+import { deleteAsync } from 'del'
 
 /**
  * Creates a temporary copy of a fixture directory for testing.
@@ -34,7 +34,7 @@ export async function createTempFixture(
   if (cleanupHook) {
     cleanupHook(async () => {
       try {
-        await trash(tempDir)
+        await deleteAsync(tempDir)
       } catch {
         // Ignore cleanup errors in tests.
       }

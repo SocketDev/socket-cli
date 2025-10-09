@@ -5,19 +5,38 @@
 
 import { existsSync } from 'node:fs'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { parseArgs } from 'node:util'
 
-import {
-  getRootPath,
-  isQuiet,
-  log,
-  printFooter,
-  printHeader,
-  printHelpHeader
-} from './utils/common.mjs'
+import colors from 'yoctocolors-cjs'
+
+import { printDivider, printFooter, printHeader, printHelpHeader } from './print.mjs'
 import { runCommand, runSequence } from './utils/run-command.mjs'
 
-const rootPath = getRootPath(import.meta.url)
+// Simple inline logger.
+const log = {
+  info: msg => console.log(msg),
+  error: msg => console.error(`${colors.red('✗')} ${msg}`),
+  success: msg => console.log(`${colors.green('✓')} ${msg}`),
+  step: msg => console.log(`\n${msg}`),
+  substep: msg => console.log(`  ${msg}`),
+  progress: msg => process.stdout.write(`  ∴ ${msg}`),
+  done: msg => {
+    process.stdout.write('\r\x1b[K')
+    console.log(`  ${colors.green('✓')} ${msg}`)
+  },
+  failed: msg => {
+    process.stdout.write('\r\x1b[K')
+    console.log(`  ${colors.red('✗')} ${msg}`)
+  }
+}
+
+// Inline utilities.
+const isQuiet = values => values.quiet || values.silent
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+
+const rootPath = path.join(__dirname, '..')
 
 /**
  * Build source code with Rollup.

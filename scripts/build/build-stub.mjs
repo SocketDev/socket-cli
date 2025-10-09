@@ -6,12 +6,11 @@
  * yao-pkg with custom Node.js builds.
  */
 
+import { spawn } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { mkdir } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-
-import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import ensureCustomNodeInCache from './ensure-node-in-cache.mjs'
 import syncPatches from './stub/sync-yao-patches.mjs'
@@ -54,12 +53,16 @@ export async function buildStub(options = {}) {
   if (!existsSync(DIST_DIR) || !existsSync(join(DIST_DIR, 'cli.js'))) {
     console.log('📦 Building distribution files first...')
 
-    const buildResult = await spawn('pnpm', ['run', 'build:dist:src'], {
-      cwd: ROOT_DIR,
-      stdio: quiet ? 'pipe' : 'inherit'
+    const buildExitCode = await new Promise((resolve) => {
+      const child = spawn('pnpm', ['run', 'build:dist:src'], {
+        cwd: ROOT_DIR,
+        stdio: quiet ? 'pipe' : 'inherit'
+      })
+      child.on('exit', (code) => resolve(code || 0))
+      child.on('error', () => resolve(1))
     })
 
-    if (buildResult.code !== 0) {
+    if (buildExitCode !== 0) {
       console.error('❌ Failed to build distribution files')
       return 1
     }
@@ -107,13 +110,17 @@ export async function buildStub(options = {}) {
     env.MINIFY = '1'
   }
 
-  const pkgResult = await spawn('pnpm', pkgArgs, {
-    cwd: ROOT_DIR,
-    env,
-    stdio: quiet ? 'pipe' : 'inherit'
+  const pkgExitCode = await new Promise((resolve) => {
+    const child = spawn('pnpm', pkgArgs, {
+      cwd: ROOT_DIR,
+      env,
+      stdio: quiet ? 'pipe' : 'inherit'
+    })
+    child.on('exit', (code) => resolve(code || 0))
+    child.on('error', () => resolve(1))
   })
 
-  if (pkgResult.code !== 0) {
+  if (pkgExitCode !== 0) {
     console.error('❌ pkg build failed')
     return 1
   }

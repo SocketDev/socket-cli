@@ -11,8 +11,25 @@ import { copyFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { getRootPath, log, printFooter, printHeader } from '../utils/common.mjs'
+import colors from 'yoctocolors-cjs'
+
+import { printFooter, printHeader } from '../print.mjs'
 import { runCommand, runSequence } from '../utils/run-command.mjs'
+
+// Simple logger
+const log = {
+  progress: msg => process.stdout.write(`  ∴ ${msg}`),
+  done: msg => {
+    process.stdout.write('\r\x1b[K')
+    console.log(`  ${colors.green('✓')} ${msg}`)
+  },
+  failed: msg => {
+    process.stdout.write('\r\x1b[K')
+    console.log(`  ${colors.red('✗')} ${msg}`)
+  },
+  error: msg => console.error(`${colors.red('✗')} ${msg}`),
+  step: msg => console.log(`\n${msg}`)
+}
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)

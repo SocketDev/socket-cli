@@ -1,6 +1,7 @@
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 
+import trash from 'trash'
 import { afterAll, beforeAll, describe, expect } from 'vitest'
 
 import constants, {
@@ -29,7 +30,6 @@ describe('socket install', async () => {
 
   afterAll(async () => {
     if (testCwd) {
-      const trash = (await import('trash')).default
       await trash(testCwd).catch(() => {})
     }
   })

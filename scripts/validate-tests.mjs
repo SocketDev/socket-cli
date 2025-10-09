@@ -4,10 +4,22 @@ import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { pEach } from '@socketsecurity/registry/lib/promises'
+import colors from 'yoctocolors-cjs'
 
 import constants from './constants.mjs'
+
+// Simple logger
+const logger = {
+  error: msg => console.error(`${colors.red('✗')} ${msg}`),
+  warn: msg => console.log(`${colors.yellow('⚠')} ${msg}`),
+  info: msg => console.log(msg),
+  success: msg => console.log(`${colors.green('✓')} ${msg}`)
+}
+
+// Simple parallel each implementation
+async function pEach(items, fn) {
+  return Promise.all(items.map(fn))
+}
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const TEST_DIR = path.join(constants.rootPath, 'test')

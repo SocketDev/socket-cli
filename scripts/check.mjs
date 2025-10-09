@@ -9,13 +9,11 @@
  *   node scripts/check.mjs
  */
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import { runSequence } from './utils/run-command.mjs'
 
 async function main() {
   try {
-    logger.log('Running checks...')
+    console.log('Running checks...')
 
     const exitCode = await runSequence([
       { args: ['run', 'fix'], command: 'pnpm' },
@@ -34,13 +32,13 @@ async function main() {
     ])
 
     if (exitCode !== 0) {
-      logger.error('Some checks failed')
+      console.error('Some checks failed')
       process.exitCode = exitCode
     } else {
-      logger.log('All checks passed')
+      console.log('All checks passed')
     }
   } catch (error) {
-    logger.error('Check failed:', error.message)
+    console.error('Check failed:', error.message)
     process.exitCode = 1
   }
 }

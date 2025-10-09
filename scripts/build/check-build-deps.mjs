@@ -13,10 +13,9 @@
 /* eslint-disable n/no-process-exit, line-comment-position */
 // process.exit() and inline comments acceptable in build utility scripts
 
+import { spawn } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { platform } from 'node:os'
-
-import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 const IS_MACOS = platform() === 'darwin'
 const IS_LINUX = platform() === 'linux'
@@ -24,11 +23,38 @@ const IS_WINDOWS = platform() === 'win32'
 const IS_CI = process.env.CI === 'true'
 
 /**
+ * Helper to run spawn and return result with code and stdout
+ */
+async function runCommand(command, args, options) {
+  return new Promise((resolve) => {
+    let stdout = ''
+    let stderr = ''
+    const child = spawn(command, args, options)
+
+    if (options.stdio === 'pipe') {
+      child.stdout?.on('data', (data) => {
+        stdout += data.toString()
+      })
+      child.stderr?.on('data', (data) => {
+        stderr += data.toString()
+      })
+    }
+
+    child.on('exit', (code) => {
+      resolve({ code: code || 0, stdout, stderr })
+    })
+    child.on('error', () => {
+      resolve({ code: 1, stdout: '', stderr: '' })
+    })
+  })
+}
+
+/**
  * Execute a command and check if it exists
  */
 async function commandExists(command) {
   try {
-    const result = await spawn(IS_WINDOWS ? 'where' : 'which', [command], {
+    const result = await runCommand(IS_WINDOWS ? 'where' : 'which', [command], {
       stdio: 'pipe',
       shell: false,
     })
@@ -43,7 +69,7 @@ async function commandExists(command) {
  */
 async function getVersion(command, args = ['--version']) {
   try {
-    const result = await spawn(command, args, {
+    const result = await runCommand(command, args, {
       stdio: 'pipe',
       shell: false,
     })
@@ -61,7 +87,7 @@ async function getVersion(command, args = ['--version']) {
  */
 async function checkDiskSpace() {
   try {
-    const result = await spawn('df', ['-h', '.'], {
+    const result = await runCommand('df', ['-h', '.'], {
       stdio: 'pipe',
       shell: false,
     })
@@ -87,7 +113,7 @@ async function installUpx() {
   try {
     if (IS_MACOS) {
       console.log('   Using Homebrew...')
-      const result = await spawn('brew', ['install', 'upx'], {
+      const result = await runCommand('brew', ['install', 'upx'], {
         stdio: 'inherit',
         shell: false,
       })
@@ -96,7 +122,7 @@ async function installUpx() {
       // Try apt first (Ubuntu/Debian)
       if (await commandExists('apt-get')) {
         console.log('   Using apt-get...')
-        const result = await spawn(
+        const result = await runCommand(
           'sudo',
           ['apt-get', 'install', '-y', 'upx-ucl'],
           {
@@ -110,7 +136,7 @@ async function installUpx() {
       // Try dnf (RHEL/Fedora)
       if (await commandExists('dnf')) {
         console.log('   Using dnf...')
-        const result = await spawn('sudo', ['dnf', 'install', '-y', 'upx'], {
+        const result = await runCommand('sudo', ['dnf', 'install', '-y', 'upx'], {
           stdio: 'inherit',
           shell: false,
         })
@@ -120,7 +146,7 @@ async function installUpx() {
       // Try yum (older RHEL/CentOS)
       if (await commandExists('yum')) {
         console.log('   Using yum...')
-        const result = await spawn('sudo', ['yum', 'install', '-y', 'upx'], {
+        const result = await runCommand('sudo', ['yum', 'install', '-y', 'upx'], {
           stdio: 'inherit',
           shell: false,
         })
@@ -129,7 +155,7 @@ async function installUpx() {
     } else if (IS_WINDOWS) {
       if (await commandExists('choco')) {
         console.log('   Using Chocolatey...')
-        const result = await spawn('choco', ['install', '-y', 'upx'], {
+        const result = await runCommand('choco', ['install', '-y', 'upx'], {
           stdio: 'inherit',
           shell: false,
         })

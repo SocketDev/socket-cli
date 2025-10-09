@@ -1,15 +1,29 @@
 /** @fileoverview Utility to calculate TypeScript type coverage percentage. */
-import constants from '@socketsecurity/registry/lib/constants'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
+import { spawn } from 'node:child_process'
 
 /**
  * Execute type-coverage command and extract percentage from output.
  * @throws {Error} When type coverage command fails.
  */
 export async function getTypeCoverage() {
-  const result = await spawn('pnpm', ['run', 'coverage:type'], {
-    stdio: 'pipe',
-    shell: constants.WIN32,
+  const result = await new Promise((resolve) => {
+    let stdout = ''
+    const child = spawn('pnpm', ['run', 'coverage:type'], {
+      stdio: 'pipe',
+      shell: process.platform === 'win32',
+    })
+
+    child.stdout?.on('data', (data) => {
+      stdout += data.toString()
+    })
+
+    child.on('exit', (code) => {
+      resolve({ code: code || 0, stdout })
+    })
+
+    child.on('error', () => {
+      resolve({ code: 1, stdout: '' })
+    })
   })
 
   if (result.code !== 0) {

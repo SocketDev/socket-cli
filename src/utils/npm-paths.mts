@@ -9,16 +9,21 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import constants, { NODE_MODULES, NPM } from '../constants.mts'
 import { findBinPathDetailsSync, findNpmDirPathSync } from './path-resolve.mts'
 
+class BinaryNotFoundError extends Error {
+  public readonly code = 127
+  constructor(binName: string) {
+    super(`Socket unable to locate ${binName}; ensure it is available in the PATH environment variable`)
+    this.name = 'BinaryNotFoundError'
+  }
+}
+
 function exitWithBinPathError(binName: string): never {
   logger.fail(
     `Socket unable to locate ${binName}; ensure it is available in the PATH environment variable`,
   )
   // The exit code 127 indicates that the command or binary being executed
   // could not be found.
-  // eslint-disable-next-line n/no-process-exit
-  process.exit(127)
-  // This line is never reached in production, but helps tests.
-  throw new Error('process.exit called')
+  throw new BinaryNotFoundError(binName)
 }
 
 let _npmBinPath: string | undefined
@@ -59,10 +64,7 @@ export function getNpmDirPath() {
       logger.fail(message)
       // The exit code 127 indicates that the command or binary being executed
       // could not be found.
-      // eslint-disable-next-line n/no-process-exit
-      process.exit(127)
-      // This line is never reached in production, but helps tests.
-      throw new Error('process.exit called')
+      throw new BinaryNotFoundError('npm CLI install directory')
     }
   }
   return _npmDirPath

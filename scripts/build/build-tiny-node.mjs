@@ -17,6 +17,7 @@
  *   --help             Show help
  */
 
+import { spawn } from 'node:child_process'
 import { createWriteStream, existsSync, readFileSync, readdirSync } from 'node:fs'
 import { copyFile, cp, mkdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises'
 import { get as httpsGet } from 'node:https'
@@ -27,11 +28,16 @@ import { fileURLToPath } from 'node:url'
 
 import { parseTarGzip } from 'nanotar'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
-
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
+
+// Simple logger implementation
+const logger = {
+  info: (msg) => console.log(msg),
+  success: (msg) => console.log(`✅${msg}`),
+  warn: (msg) => console.warn(`⚠️ ${msg}`),
+  error: (msg) => console.error(msg)
+}
 
 // Configuration
 const ROOT_DIR = join(__dirname, '../..')
@@ -109,20 +115,24 @@ async function exec(command, args = [], options = {}) {
 
   logger.info(`$ ${command} ${args.join(' ')}`)
 
-  const result = await spawn(command, args, {
-    cwd,
-    env,
-    stdio: 'inherit',
-    shell: false,
+  const exitCode = await new Promise((resolve) => {
+    const child = spawn(command, args, {
+      cwd,
+      env,
+      stdio: 'inherit',
+      shell: false,
+    })
+    child.on('exit', (code) => resolve(code || 0))
+    child.on('error', () => resolve(1))
   })
 
-  if (result.code !== 0) {
+  if (exitCode !== 0) {
     throw new Error(
-      `Command failed with exit code ${result.code}: ${command} ${args.join(' ')}`,
+      `Command failed with exit code ${exitCode}: ${command} ${args.join(' ')}`,
     )
   }
 
-  return result
+  return { code: exitCode }
 }
 
 /**
@@ -131,11 +141,23 @@ async function exec(command, args = [], options = {}) {
 async function execCapture(command, args = [], options = {}) {
   const { cwd = process.cwd(), env = process.env } = options
 
-  const result = await spawn(command, args, {
-    cwd,
-    env,
-    stdio: 'pipe',
-    shell: false,
+  const result = await new Promise((resolve) => {
+    let stdout = ''
+    const child = spawn(command, args, {
+      cwd,
+      env,
+      stdio: 'pipe',
+      shell: false,
+    })
+    child.stdout?.on('data', (data) => {
+      stdout += data.toString()
+    })
+    child.on('exit', (code) => {
+      resolve({ code: code || 0, stdout })
+    })
+    child.on('error', () => {
+      resolve({ code: 1, stdout: '' })
+    })
   })
 
   if (result.code !== 0) {

@@ -7,10 +7,11 @@ import { existsSync } from 'node:fs'
 import path from 'node:path'
 
 import {
-  getChangedFilesSync,
-  getStagedFilesSync,
-} from '@socketsecurity/registry/lib/git'
-import { normalizePath } from '@socketsecurity/registry/lib/path'
+  getChangedFiles,
+  getStagedFiles,
+} from './git.mjs'
+
+const normalizePath = (p) => p.replace(/\\/g, '/')
 
 const rootPath = path.resolve(process.cwd())
 
@@ -98,7 +99,7 @@ export function getTestsToRun(options = {}) {
   }
 
   // Get changed files
-  const changedFiles = staged ? getStagedFilesSync() : getChangedFilesSync()
+  const changedFiles = staged ? getStagedFiles() : getChangedFiles()
 
   if (changedFiles.length === 0) {
     // No changes, skip tests

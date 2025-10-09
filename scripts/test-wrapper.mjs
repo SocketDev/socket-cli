@@ -13,8 +13,6 @@ import path from 'node:path'
 
 import fastGlob from 'fast-glob'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import constants from './constants.mjs'
 
 /**
@@ -23,8 +21,8 @@ import constants from './constants.mjs'
 function checkBuildArtifacts() {
   const distPath = path.join(constants.rootPath, 'dist')
   if (!existsSync(distPath)) {
-    logger.error('dist/ directory not found')
-    logger.error('Run `pnpm run build:dist:src` before running tests')
+    console.error('dist/ directory not found')
+    console.error('Run `pnpm run build:dist:src` before running tests')
     return false
   }
 
@@ -32,8 +30,8 @@ function checkBuildArtifacts() {
   for (const artifact of requiredArtifacts) {
     const fullPath = path.join(constants.rootPath, artifact)
     if (!existsSync(fullPath)) {
-      logger.error(`Required build artifact missing: ${artifact}`)
-      logger.error('Run `pnpm run build:dist:src` before running tests')
+      console.error(`Required build artifact missing: ${artifact}`)
+      console.error('Run `pnpm run build:dist:src` before running tests')
       return false
     }
   }
@@ -72,13 +70,13 @@ async function main() {
     ]
     const foundEnvVars = problematicEnvVars.filter(v => process.env[v])
     if (foundEnvVars.length > 0) {
-      logger.warn(
+      console.warn(
         `Detected environment variable(s) that may cause snapshot test failures: ${foundEnvVars.join(', ')}`,
       )
-      logger.warn(
+      console.warn(
         'These will be cleared for the test run to ensure consistent snapshots.',
       )
-      logger.warn(
+      console.warn(
         'Tests use .env.test configuration which should not include real API tokens.',
       )
     }
@@ -109,7 +107,7 @@ async function main() {
       if (arg.includes('*') && !arg.startsWith('-')) {
         const files = fastGlob.sync(arg, { cwd: constants.rootPath })
         if (files.length === 0) {
-          logger.warn(`No files matched pattern: ${arg}`)
+          console.warn(`No files matched pattern: ${arg}`)
         }
         expandedArgs.push(...files)
       } else {
@@ -135,16 +133,16 @@ async function main() {
     })
 
     child.on('error', e => {
-      logger.error('Failed to spawn test process:', e)
+      console.error('Failed to spawn test process:', e)
       process.exitCode = 1
     })
   } catch (e) {
-    logger.error('Error running tests:', e)
+    console.error('Error running tests:', e)
     process.exitCode = 1
   }
 }
 
 main().catch(e => {
-  logger.error('Unexpected error:', e)
+  console.error('Unexpected error:', e)
   process.exitCode = 1
 })

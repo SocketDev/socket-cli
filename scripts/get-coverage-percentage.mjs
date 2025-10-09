@@ -2,12 +2,9 @@
 
 import { existsSync } from 'node:fs'
 import path from 'node:path'
+import { parseArgs } from 'node:util'
 
 import colors from 'yoctocolors-cjs'
-
-import constants from '@socketsecurity/registry/lib/constants'
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { parseArgs } from '@socketsecurity/registry/lib/parse-args'
 
 import { getCodeCoverage } from './utils/get-code-coverage.mjs'
 import { getTypeCoverage } from './utils/get-type-coverage.mjs'
@@ -19,8 +16,6 @@ const indent = '  '
  * Supports multiple output formats: default (formatted), JSON, and simple.
  */
 async function logCoveragePercentage(argv) {
-  const { spinner } = constants
-
   // Check if coverage data exists to determine whether to generate or read it.
   const coverageJsonPath = path.join(
     process.cwd(),
@@ -32,17 +27,14 @@ async function logCoveragePercentage(argv) {
   let codeCoverage
   try {
     if (!existsSync(coverageJsonPath)) {
-      spinner.start('Generating coverage data...')
+      console.log('Generating coverage data...')
     } else {
-      spinner.start('Reading coverage data...')
+      console.log('Reading coverage data...')
     }
 
     codeCoverage = await getCodeCoverage()
-
-    spinner.stop()
   } catch (error) {
-    spinner.stop()
-    logger.error('Failed to get code coverage:', error.message)
+    console.error('Failed to get code coverage:', error.message)
     throw error
   }
 
@@ -51,7 +43,7 @@ async function logCoveragePercentage(argv) {
   try {
     typeCoveragePercent = await getTypeCoverage()
   } catch (error) {
-    logger.error('Failed to get type coverage:', error.message)
+    console.error('Failed to get type coverage:', error.message)
     // Continue without type coverage - it's not critical.
   }
 
@@ -131,26 +123,26 @@ async function logCoveragePercentage(argv) {
     console.log(codeCoverage.statements.percent)
   } else {
     // Default format: human-readable formatted output.
-    logger.info(`Coverage Summary:`)
-    logger.info(
+    console.log(`Coverage Summary:`)
+    console.log(
       `${indent}Statements: ${codeCoverage.statements.percent}% (${codeCoverage.statements.covered}/${codeCoverage.statements.total})`,
     )
-    logger.info(
+    console.log(
       `${indent}Branches:   ${codeCoverage.branches.percent}% (${codeCoverage.branches.covered}/${codeCoverage.branches.total})`,
     )
-    logger.info(
+    console.log(
       `${indent}Functions:  ${codeCoverage.functions.percent}% (${codeCoverage.functions.covered}/${codeCoverage.functions.total})`,
     )
-    logger.info(
+    console.log(
       `${indent}Lines:      ${codeCoverage.lines.percent}% (${codeCoverage.lines.covered}/${codeCoverage.lines.total})`,
     )
 
     if (typeCoveragePercent !== null) {
-      logger.info(`${indent}Types:      ${typeCoveragePercent.toFixed(2)}%`)
+      console.log(`${indent}Types:      ${typeCoveragePercent.toFixed(2)}%`)
     }
 
-    logger.info('')
-    logger.info(colors.bold(`Current coverage: ${overall}% overall!${emoji}`))
+    console.log('')
+    console.log(colors.bold(`Current coverage: ${overall}% overall!${emoji}`))
   }
 }
 

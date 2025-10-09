@@ -1,11 +1,13 @@
 /** @fileoverview Utility to generate and calculate code coverage metrics. */
-import { existsSync } from 'node:fs'
+import { spawn } from 'node:child_process'
+import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 
-import constants from '@socketsecurity/registry/lib/constants'
-import { readJson } from '@socketsecurity/registry/lib/fs'
-import { isObjectObject } from '@socketsecurity/registry/lib/objects'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
+// Simple JSON file reader
+const readJson = (filePath) => JSON.parse(readFileSync(filePath, 'utf8'))
+
+// Simple object check
+const isObjectObject = (value) => value !== null && typeof value === 'object' && !Array.isArray(value)
 
 /**
  * Count how many items in array are covered (greater than 0).
@@ -32,19 +34,28 @@ export async function getCodeCoverage(options) {
       return null
     }
 
-    const result = await spawn('pnpm', ['run', 'test', '--coverage'], {
-      stdio: 'ignore',
-      shell: constants.WIN32,
+    const exitCode = await new Promise((resolve) => {
+      const child = spawn('pnpm', ['run', 'test', '--coverage'], {
+        stdio: 'ignore',
+        shell: process.platform === 'win32',
+      })
+      child.on('exit', (code) => resolve(code || 0))
+      child.on('error', () => resolve(1))
     })
 
-    if (result.code !== 0) {
+    if (exitCode !== 0) {
       throw new Error(
-        `Failed to generate coverage data: exit code ${result.code}`,
+        `Failed to generate coverage data: exit code ${exitCode}`,
       )
     }
   }
 
-  const coverageData = await readJson(coverageJsonPath, { throws: false })
+  let coverageData
+  try {
+    coverageData = readJson(coverageJsonPath)
+  } catch {
+    coverageData = null
+  }
   if (!isObjectObject(coverageData)) {
     throw new Error('Error reading coverage data')
   }

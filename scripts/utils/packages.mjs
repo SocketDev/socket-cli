@@ -5,10 +5,16 @@ import Module from 'node:module'
 import path from 'node:path'
 import vm from 'node:vm'
 
-import { isValidPackageName } from '@socketsecurity/registry/lib/packages'
-import { isRelative, normalizePath } from '@socketsecurity/registry/lib/path'
-
 import { findUpSync } from './fs.mjs'
+
+// Simple helpers
+const isValidPackageName = (name) => {
+  if (!name || typeof name !== 'string') return false
+  // Basic validation - can be enhanced if needed
+  return /^(?:@[a-z0-9-~][a-z0-9-._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/.test(name)
+}
+const isRelative = (p) => p.startsWith('./') || p.startsWith('../')
+const normalizePath = (p) => p.replace(/\\/g, '/')
 
 const { createRequire, isBuiltin } = Module
 

@@ -3,174 +3,88 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import registryConstants from '@socketsecurity/registry/lib/constants'
-import { envAsBoolean } from '@socketsecurity/registry/lib/env'
-import { normalizePath } from '@socketsecurity/registry/lib/path'
+// Simple helpers
+const normalizePath = (p) => p.replace(/\\/g, '/')
 
-const {
-  kInternalsSymbol,
-  [kInternalsSymbol]: {
-    attributes: registryConstantsAttribs,
-    createConstantsObject,
-  },
-} = registryConstants
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const rootPath = normalizePath(path.resolve(__dirname, '..'))
 
-const CONSTANTS = 'constants'
-const INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION =
-  'INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION'
-const INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION =
-  'INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION'
-const INLINED_SOCKET_CLI_PYTHON_VERSION = 'INLINED_SOCKET_CLI_PYTHON_VERSION'
-const INLINED_SOCKET_CLI_PYTHON_BUILD_TAG =
-  'INLINED_SOCKET_CLI_PYTHON_BUILD_TAG'
-const INLINED_SOCKET_CLI_HOMEPAGE = 'INLINED_SOCKET_CLI_HOMEPAGE'
-const INLINED_SOCKET_CLI_LEGACY_BUILD = 'INLINED_SOCKET_CLI_LEGACY_BUILD'
-const INLINED_SOCKET_CLI_NAME = 'INLINED_SOCKET_CLI_NAME'
-const INLINED_SOCKET_CLI_PUBLISHED_BUILD = 'INLINED_SOCKET_CLI_PUBLISHED_BUILD'
-const INLINED_SOCKET_CLI_SENTRY_BUILD = 'INLINED_SOCKET_CLI_SENTRY_BUILD'
-const INLINED_SOCKET_CLI_SYNP_VERSION = 'INLINED_SOCKET_CLI_SYNP_VERSION'
-const INLINED_SOCKET_CLI_VERSION = 'INLINED_SOCKET_CLI_VERSION'
-const INLINED_SOCKET_CLI_VERSION_HASH = 'INLINED_SOCKET_CLI_VERSION_HASH'
-const INSTRUMENT_WITH_SENTRY = 'instrument-with-sentry'
-const ROLLUP_EXTERNAL_SUFFIX = '?commonjs-external'
-const SHADOW_NPM_BIN = 'shadow-npm-bin'
-const SHADOW_NPM_INJECT = 'shadow-npm-inject'
-const SHADOW_NPX_BIN = 'shadow-npx-bin'
-const SHADOW_PNPM_BIN = 'shadow-pnpm-bin'
-const SHADOW_YARN_BIN = 'shadow-yarn-bin'
-const SLASH_NODE_MODULES_SLASH = '/node_modules/'
-const SOCKET_CLI_BIN_NAME = 'socket'
-const SOCKET_CLI_BIN_NAME_ALIAS = 'cli'
-const SOCKET_CLI_SENTRY_BIN_NAME_ALIAS = 'cli-with-sentry'
-const SOCKET_CLI_LEGACY_PACKAGE_NAME = '@socketsecurity/cli'
-const SOCKET_CLI_NPM_BIN_NAME = 'socket-npm'
-const SOCKET_CLI_NPX_BIN_NAME = 'socket-npx'
-const SOCKET_CLI_PNPM_BIN_NAME = 'socket-pnpm'
-const SOCKET_CLI_YARN_BIN_NAME = 'socket-yarn'
-const SOCKET_CLI_PACKAGE_NAME = 'socket'
-const SOCKET_CLI_SENTRY_BIN_NAME = 'socket-with-sentry'
-const SOCKET_CLI_SENTRY_NPM_BIN_NAME = 'socket-npm-with-sentry'
-const SOCKET_CLI_SENTRY_NPX_BIN_NAME = 'socket-npx-with-sentry'
-const SOCKET_CLI_SENTRY_PNPM_BIN_NAME = 'socket-pnpm-with-sentry'
-const SOCKET_CLI_SENTRY_YARN_BIN_NAME = 'socket-yarn-with-sentry'
-const SOCKET_CLI_SENTRY_PACKAGE_NAME = '@socketsecurity/cli-with-sentry'
+// Build paths
+const configPath = normalizePath(path.join(rootPath, '.config'))
+const distPath = normalizePath(path.join(rootPath, 'dist'))
+const externalPath = normalizePath(path.join(distPath, 'external'))
+const srcPath = normalizePath(path.join(rootPath, 'src'))
+const rootNodeModulesBinPath = normalizePath(path.join(rootPath, 'node_modules', '.bin'))
 
-const LAZY_ENV = () => {
-  const { env } = process
-  return Object.freeze({
-    // Lazily access registryConstants.ENV.
-    ...registryConstants.ENV,
-    // Flag set to determine if this is the Legacy build.
-    [INLINED_SOCKET_CLI_LEGACY_BUILD]: envAsBoolean(
-      env[INLINED_SOCKET_CLI_LEGACY_BUILD],
-    ),
-    // Flag set to determine if this is a published build.
-    [INLINED_SOCKET_CLI_PUBLISHED_BUILD]: envAsBoolean(
-      env[INLINED_SOCKET_CLI_PUBLISHED_BUILD],
-    ),
-    // Flag set to determine if this is the Sentry build.
-    [INLINED_SOCKET_CLI_SENTRY_BUILD]: envAsBoolean(
-      env[INLINED_SOCKET_CLI_SENTRY_BUILD],
-    ),
-  })
+// Common constants
+const constants = {
+  // Paths
+  rootPath,
+  configPath,
+  distPath,
+  externalPath,
+  srcPath,
+  rootNodeModulesBinPath,
+  rootPackageJsonPath: normalizePath(path.join(rootPath, 'package.json')),
+  rootPackageLockPath: normalizePath(path.join(rootPath, 'pnpm-lock.yaml')),
+
+  // Platform
+  WIN32: process.platform === 'win32',
+
+  // Package names and paths
+  PACKAGE_JSON: 'package.json',
+  PNPM_LOCK_YAML: 'pnpm-lock.yaml',
+  NODE_MODULES: 'node_modules',
+  SOCKET_REGISTRY_PACKAGE_NAME: '@socketsecurity/registry',
+
+  // Socket CLI constants
+  SOCKET_CLI_BIN_NAME: 'socket',
+  SOCKET_CLI_BIN_NAME_ALIAS: 'cli',
+  SOCKET_CLI_NPM_BIN_NAME: 'socket-npm',
+  SOCKET_CLI_NPX_BIN_NAME: 'socket-npx',
+  SOCKET_CLI_PNPM_BIN_NAME: 'socket-pnpm',
+  SOCKET_CLI_YARN_BIN_NAME: 'socket-yarn',
+  SOCKET_CLI_PACKAGE_NAME: 'socket',
+  SOCKET_CLI_LEGACY_PACKAGE_NAME: '@socketsecurity/cli',
+
+  // Sentry-related constants
+  SOCKET_CLI_SENTRY_BIN_NAME: 'socket-with-sentry',
+  SOCKET_CLI_SENTRY_BIN_NAME_ALIAS: 'cli-with-sentry',
+  SOCKET_CLI_SENTRY_NPM_BIN_NAME: 'socket-npm-with-sentry',
+  SOCKET_CLI_SENTRY_NPX_BIN_NAME: 'socket-npx-with-sentry',
+  SOCKET_CLI_SENTRY_PNPM_BIN_NAME: 'socket-pnpm-with-sentry',
+  SOCKET_CLI_SENTRY_YARN_BIN_NAME: 'socket-yarn-with-sentry',
+  SOCKET_CLI_SENTRY_PACKAGE_NAME: '@socketsecurity/cli-with-sentry',
+
+  // Inlined constants
+  INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION: 'INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION',
+  INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION: 'INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION',
+  INLINED_SOCKET_CLI_PYTHON_VERSION: 'INLINED_SOCKET_CLI_PYTHON_VERSION',
+  INLINED_SOCKET_CLI_PYTHON_BUILD_TAG: 'INLINED_SOCKET_CLI_PYTHON_BUILD_TAG',
+  INLINED_SOCKET_CLI_HOMEPAGE: 'INLINED_SOCKET_CLI_HOMEPAGE',
+  INLINED_SOCKET_CLI_LEGACY_BUILD: 'INLINED_SOCKET_CLI_LEGACY_BUILD',
+  INLINED_SOCKET_CLI_NAME: 'INLINED_SOCKET_CLI_NAME',
+  INLINED_SOCKET_CLI_PUBLISHED_BUILD: 'INLINED_SOCKET_CLI_PUBLISHED_BUILD',
+  INLINED_SOCKET_CLI_SENTRY_BUILD: 'INLINED_SOCKET_CLI_SENTRY_BUILD',
+  INLINED_SOCKET_CLI_SYNP_VERSION: 'INLINED_SOCKET_CLI_SYNP_VERSION',
+  INLINED_SOCKET_CLI_VERSION: 'INLINED_SOCKET_CLI_VERSION',
+  INLINED_SOCKET_CLI_VERSION_HASH: 'INLINED_SOCKET_CLI_VERSION_HASH',
+
+  // Shadow bins
+  SHADOW_NPM_BIN: 'shadow-npm-bin',
+  SHADOW_NPM_INJECT: 'shadow-npm-inject',
+  SHADOW_NPX_BIN: 'shadow-npx-bin',
+  SHADOW_PNPM_BIN: 'shadow-pnpm-bin',
+  SHADOW_YARN_BIN: 'shadow-yarn-bin',
+
+  // Other
+  CONSTANTS: 'constants',
+  INSTRUMENT_WITH_SENTRY: 'instrument-with-sentry',
+  ROLLUP_EXTERNAL_SUFFIX: '?commonjs-external',
+  SLASH_NODE_MODULES_SLASH: '/node_modules/',
+
+  // Socket registry path
+  socketRegistryPath: normalizePath(path.join(externalPath, '@socketsecurity/registry', 'dist'))
 }
 
-const lazyConfigPath = () =>
-  normalizePath(path.join(constants.rootPath, '.config'))
-
-const lazyDistPath = () => normalizePath(path.join(constants.rootPath, 'dist'))
-
-const lazyExternalPath = () =>
-  normalizePath(path.join(constants.distPath, 'external'))
-
-const lazyRootPackageJsonPath = () =>
-  normalizePath(path.join(constants.rootPath, constants.PACKAGE_JSON))
-
-const lazyRootPackageLockPath = () =>
-  normalizePath(path.join(constants.rootPath, constants.PNPM_LOCK_YAML))
-
-const lazyRootNodeModulesBinPath = () =>
-  normalizePath(path.join(constants.rootPath, constants.NODE_MODULES, '.bin'))
-
-const lazyRootPath = () =>
-  normalizePath(
-    path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'),
-  )
-
-const lazySocketRegistryPath = () =>
-  normalizePath(
-    path.join(
-      constants.externalPath,
-      constants.SOCKET_REGISTRY_PACKAGE_NAME,
-      'dist',
-    ),
-  )
-
-const lazySrcPath = () => normalizePath(path.join(constants.rootPath, 'src'))
-
-const constants = createConstantsObject(
-  {
-    ...registryConstantsAttribs.props,
-    CONSTANTS,
-    ENV: undefined,
-    INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION,
-    INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION,
-    INLINED_SOCKET_CLI_PYTHON_VERSION,
-    INLINED_SOCKET_CLI_PYTHON_BUILD_TAG,
-    INLINED_SOCKET_CLI_HOMEPAGE,
-    INLINED_SOCKET_CLI_LEGACY_BUILD,
-    INLINED_SOCKET_CLI_NAME,
-    INLINED_SOCKET_CLI_PUBLISHED_BUILD,
-    INLINED_SOCKET_CLI_SENTRY_BUILD,
-    INLINED_SOCKET_CLI_SYNP_VERSION,
-    INLINED_SOCKET_CLI_VERSION,
-    INLINED_SOCKET_CLI_VERSION_HASH,
-    INSTRUMENT_WITH_SENTRY,
-    ROLLUP_EXTERNAL_SUFFIX,
-    SHADOW_NPM_BIN,
-    SHADOW_NPM_INJECT,
-    SHADOW_NPX_BIN,
-    SHADOW_PNPM_BIN,
-    SHADOW_YARN_BIN,
-    SLASH_NODE_MODULES_SLASH,
-    SOCKET_CLI_BIN_NAME,
-    SOCKET_CLI_BIN_NAME_ALIAS,
-    SOCKET_CLI_LEGACY_PACKAGE_NAME,
-    SOCKET_CLI_NPM_BIN_NAME,
-    SOCKET_CLI_NPX_BIN_NAME,
-    SOCKET_CLI_PNPM_BIN_NAME,
-    SOCKET_CLI_YARN_BIN_NAME,
-    SOCKET_CLI_PACKAGE_NAME,
-    SOCKET_CLI_SENTRY_BIN_NAME,
-    SOCKET_CLI_SENTRY_BIN_NAME_ALIAS,
-    SOCKET_CLI_SENTRY_NPM_BIN_NAME,
-    SOCKET_CLI_SENTRY_NPX_BIN_NAME,
-    SOCKET_CLI_SENTRY_PNPM_BIN_NAME,
-    SOCKET_CLI_SENTRY_YARN_BIN_NAME,
-    SOCKET_CLI_SENTRY_PACKAGE_NAME,
-    configPath: undefined,
-    distPath: undefined,
-    externalPath: undefined,
-    rootPackageJsonPath: undefined,
-    rootNodeModulesBinPath: undefined,
-    rootPath: undefined,
-    socketRegistryPath: undefined,
-    srcPath: undefined,
-  },
-  {
-    getters: {
-      ...registryConstantsAttribs.getters,
-      ENV: LAZY_ENV,
-      configPath: lazyConfigPath,
-      distPath: lazyDistPath,
-      externalPath: lazyExternalPath,
-      rootPackageJsonPath: lazyRootPackageJsonPath,
-      rootPackageLockPath: lazyRootPackageLockPath,
-      rootNodeModulesBinPath: lazyRootNodeModulesBinPath,
-      rootPath: lazyRootPath,
-      socketRegistryPath: lazySocketRegistryPath,
-      srcPath: lazySrcPath,
-    },
-  },
-)
 export default constants

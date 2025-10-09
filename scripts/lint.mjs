@@ -6,15 +6,32 @@
 import path from 'node:path'
 import { parseArgs } from 'node:util'
 
-import {
-  isQuiet,
-  log,
-  printFooter,
-  printHeader,
-  printHelpHeader
-} from './utils/common.mjs'
+import colors from 'yoctocolors-cjs'
+
+import { printFooter, printHeader, printHelpHeader } from './print.mjs'
 import { getChangedFiles, getStagedFiles } from './utils/git.mjs'
-import { runCommandQuiet } from './utils/run-command.mjs'
+import { runCommandSilent } from './utils/run-command.mjs'
+console.log(process.argv)
+// Simple inline logger
+const log = {
+  info: msg => console.log(msg),
+  error: msg => console.error(`${colors.red('✗')} ${msg}`),
+  success: msg => console.log(`${colors.green('✓')} ${msg}`),
+  step: msg => console.log(`\n${msg}`),
+  substep: msg => console.log(`  ${msg}`),
+  progress: msg => process.stdout.write(`  ∴ ${msg}`),
+  done: msg => {
+    process.stdout.write('\r\x1b[K')
+    console.log(`  ${colors.green('✓')} ${msg}`)
+  },
+  failed: msg => {
+    process.stdout.write('\r\x1b[K')
+    console.log(`  ${colors.red('✗')} ${msg}`)
+  }
+}
+
+// Inline utilities
+const isQuiet = values => values.quiet || values.silent
 
 // Files that trigger a full lint when changed
 const CORE_FILES = new Set([
@@ -108,7 +125,7 @@ async function runLintOnFiles(files, options = {}) {
     ...files,
   ]
 
-  const result = await runCommandQuiet('pnpm', args)
+  const result = await runCommandSilent('pnpm', args)
 
   if (result.exitCode !== 0) {
     if (!quiet) {
@@ -150,7 +167,7 @@ async function runLintOnAll(options = {}) {
     '.',
   ]
 
-  const result = await runCommandQuiet('pnpm', args)
+  const result = await runCommandSilent('pnpm', args)
 
   if (result.exitCode !== 0) {
     if (!quiet) {

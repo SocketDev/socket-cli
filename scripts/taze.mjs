@@ -7,8 +7,7 @@
  * Usage: node scripts/taze.mjs [taze-args...]
  */
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
+import { spawn } from 'node:child_process'
 
 function includesProvenanceDowngradeWarning(output) {
   const lowered = output.toString().toLowerCase()
@@ -22,34 +21,34 @@ void (async () => {
   // Run with command line arguments.
   const args = process.argv.slice(2)
 
-  const tazePromise = spawn('pnpm', ['taze', ...args], {
+  const tazeProcess = spawn('pnpm', ['taze', ...args], {
     stdio: 'pipe',
     cwd: process.cwd(),
   })
 
   let hasProvenanceDowngrade = false
 
-  tazePromise.process.stdout.on('data', chunk => {
+  tazeProcess.stdout.on('data', chunk => {
     process.stdout.write(chunk)
     if (includesProvenanceDowngradeWarning(chunk)) {
       hasProvenanceDowngrade = true
     }
   })
 
-  tazePromise.process.stderr.on('data', chunk => {
+  tazeProcess.stderr.on('data', chunk => {
     process.stderr.write(chunk)
     if (includesProvenanceDowngradeWarning(chunk)) {
       hasProvenanceDowngrade = true
     }
   })
 
-  tazePromise.process.on('close', () => {
+  tazeProcess.on('close', () => {
     if (hasProvenanceDowngrade) {
-      logger.error('')
-      logger.fail(
+      console.error('')
+      console.error(
         'ERROR: Provenance downgrade detected! Failing build to maintain security.',
       )
-      logger.error(
+      console.error(
         '   Configure your dependencies to maintain provenance or exclude problematic packages.',
       )
       // eslint-disable-next-line n/no-process-exit
@@ -57,5 +56,8 @@ void (async () => {
     }
   })
 
-  await tazePromise
+  // Wait for process to complete
+  await new Promise((resolve) => {
+    tazeProcess.on('exit', resolve)
+  })
 })()

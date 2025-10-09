@@ -2,10 +2,9 @@ import { existsSync, promises } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 
-import trash from 'trash'
+import { deleteAsync } from 'del'
 import { afterAll, afterEach, beforeAll, describe, expect } from 'vitest'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
 import { readPackageJson } from '@socketsecurity/registry/lib/packages'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
@@ -154,7 +153,7 @@ describe('socket optimize', async () => {
       // For dry-run, should not modify files.
       const packageJsonPath = path.join(pnpmFixtureDir, PACKAGE_JSON)
       const packageJson = await readPackageJson(packageJsonPath)
-      expect(packageJson.overrides).toBeUndefined()
+      expect(packageJson?.overrides).toBeUndefined()
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
@@ -182,7 +181,7 @@ describe('socket optimize', async () => {
       // For dry-run, should not modify files.
       const packageJsonPath = path.join(pnpmFixtureDir, PACKAGE_JSON)
       const packageJson = await readPackageJson(packageJsonPath)
-      expect(packageJson.overrides).toBeUndefined()
+      expect(packageJson?.overrides).toBeUndefined()
       expect(stderr).toMatchInlineSnapshot(`
         "\\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
         \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
@@ -208,7 +207,7 @@ describe('socket optimize', async () => {
       // For dry-run, should not modify files.
       const packageJsonPath = path.join(pnpmFixtureDir, PACKAGE_JSON)
       const packageJson = await readPackageJson(packageJsonPath)
-      expect(packageJson.overrides).toBeUndefined()
+      expect(packageJson?.overrides).toBeUndefined()
       expect(stderr).toMatchInlineSnapshot(`
         "\\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
         \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
@@ -235,7 +234,7 @@ describe('socket optimize', async () => {
       // For dry-run, should not modify files.
       const packageJsonPath = path.join(pnpmFixtureDir, PACKAGE_JSON)
       const packageJson = await readPackageJson(packageJsonPath)
-      expect(packageJson.overrides).toBeUndefined()
+      expect(packageJson?.overrides).toBeUndefined()
       expect(stderr).toMatchInlineSnapshot(`
         "\\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
         \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
@@ -261,7 +260,7 @@ describe('socket optimize', async () => {
       // For dry-run, should not modify files.
       const packageJsonPath = path.join(pnpmFixtureDir, PACKAGE_JSON)
       const packageJson = await readPackageJson(packageJsonPath)
-      expect(packageJson.overrides).toBeUndefined()
+      expect(packageJson?.overrides).toBeUndefined()
       expect(stderr).toMatchInlineSnapshot(`
         "\\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
         \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
@@ -287,7 +286,7 @@ describe('socket optimize', async () => {
       // For dry-run, should not modify files.
       const packageJsonPath = path.join(pnpmFixtureDir, PACKAGE_JSON)
       const packageJson = await readPackageJson(packageJsonPath)
-      expect(packageJson.overrides).toBeUndefined()
+      expect(packageJson?.overrides).toBeUndefined()
       expect(stderr).toMatchInlineSnapshot(`
         "\\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
         \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
@@ -312,7 +311,7 @@ describe('socket optimize', async () => {
       // For dry-run, should not modify files.
       const packageJsonPath = path.join(pnpmFixtureDir, PACKAGE_JSON)
       const packageJson = await readPackageJson(packageJsonPath)
-      expect(packageJson.overrides).toBeUndefined()
+      expect(packageJson?.overrides).toBeUndefined()
       expect(stderr).toMatchInlineSnapshot(`
         "\\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
         \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
@@ -359,7 +358,7 @@ describe('socket optimize', async () => {
       // For dry-run, should not modify files.
       const packageJsonPath = path.join(pnpmFixtureDir, PACKAGE_JSON)
       const packageJson = await readPackageJson(packageJsonPath)
-      expect(packageJson.overrides).toBeUndefined()
+      expect(packageJson?.overrides).toBeUndefined()
       expect(stderr).toMatchInlineSnapshot(`
         "\\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
         \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
@@ -404,7 +403,7 @@ describe('socket optimize', async () => {
       // For dry-run, should not modify files.
       const packageJsonPath = path.join(pnpmFixtureDir, PACKAGE_JSON)
       const packageJson = await readPackageJson(packageJsonPath)
-      expect(packageJson.overrides).toBeUndefined()
+      expect(packageJson?.overrides).toBeUndefined()
       expect(stderr).toMatchInlineSnapshot(`
         "\\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
         \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
@@ -435,7 +434,7 @@ describe('socket optimize', async () => {
           // Check that package.json was modified with overrides.
           const packageJsonPath = path.join(tempDir, PACKAGE_JSON)
           const packageJson = await readPackageJson(packageJsonPath)
-          expect(packageJson.overrides).toBeDefined()
+          expect(packageJson?.overrides).toBeDefined()
 
           // Check that pnpm-lock.yaml exists (was modified/created).
           const packageLockPath = path.join(tempDir, PNPM_LOCK_YAML)
@@ -446,7 +445,7 @@ describe('socket optimize', async () => {
           expect(output).toMatch(/optimized overrides|Optimizing|Adding overrides/i)
         } finally {
           // Clean up the temp directory safely.
-          await trash(tempDir)
+          await deleteAsync(tempDir)
         }
       },
     )
@@ -471,7 +470,7 @@ describe('socket optimize', async () => {
           // Verify package.json has overrides.
           const packageJsonPath = path.join(tempDir, PACKAGE_JSON)
           const packageJson = await readPackageJson(packageJsonPath)
-          expect(packageJson.overrides).toBeDefined()
+          expect(packageJson?.overrides).toBeDefined()
 
           // Verify pnpm-lock.yaml was updated.
           const packageLockPath = path.join(tempDir, PNPM_LOCK_YAML)
@@ -482,7 +481,7 @@ describe('socket optimize', async () => {
           expect(output).toMatch(/Optimizing|Adding overrides/i)
         } finally {
           // Clean up the temp directory safely.
-          await trash(tempDir)
+          await deleteAsync(tempDir)
         }
       },
     )
@@ -514,7 +513,7 @@ describe('socket optimize', async () => {
           expect(output).toMatch(/optimized overrides|Optimizing|Adding overrides|Finished|No Socket.dev optimize/i)
         } finally {
           // Clean up the temp directory safely.
-          await trash(tempDir)
+          await deleteAsync(tempDir)
         }
       },
       { timeout: 120_000 },
@@ -584,7 +583,7 @@ describe('socket optimize', async () => {
           // Verify package.json has overrides.
           const packageJsonPath = path.join(tempDir, PACKAGE_JSON)
           const packageJson = await readPackageJson(packageJsonPath)
-          expect(packageJson.overrides).toBeDefined()
+          expect(packageJson?.overrides).toBeDefined()
 
           // Verify pnpm-lock.yaml was updated.
           const packageLockPath = path.join(tempDir, PNPM_LOCK_YAML)
@@ -621,7 +620,7 @@ describe('socket optimize', async () => {
           // Verify package.json has overrides.
           const packageJsonPath = path.join(tempDir, PACKAGE_JSON)
           const packageJson = await readPackageJson(packageJsonPath)
-          expect(packageJson.overrides).toBeDefined()
+          expect(packageJson?.overrides).toBeDefined()
 
           // Verify pnpm-lock.yaml was updated.
           const packageLockPath = path.join(tempDir, PNPM_LOCK_YAML)
@@ -670,7 +669,7 @@ describe('socket optimize', async () => {
           // Check that package.json was modified with overrides.
           const packageJsonPath = path.join(tempDir, PACKAGE_JSON)
           const packageJson = await readPackageJson(packageJsonPath)
-          expect(packageJson.overrides).toBeDefined()
+          expect(packageJson?.overrides).toBeDefined()
 
           // Check that package-lock.json exists and was updated.
           const packageLockPath = path.join(tempDir, 'package-lock.json')
@@ -681,7 +680,7 @@ describe('socket optimize', async () => {
           expect(output).toMatch(/optimized overrides|Optimizing|Adding overrides/i)
         } finally {
           // Clean up the temp directory safely.
-          await trash(tempDir)
+          await deleteAsync(tempDir)
         }
       },
     )
