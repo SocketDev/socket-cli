@@ -143,6 +143,46 @@ function prepareClaudeArgs(args = [], options = {}) {
 }
 
 /**
+ * Determine if parallel execution should be used.
+ */
+function shouldRunParallel(options = {}) {
+  const opts = { __proto__: null, ...options }
+  // Parallel is default, unless:
+  // 1. --seq is specified
+  // 2. --no-cross-repo is specified (single repo only)
+  if (opts['no-cross-repo'] || opts.seq) {
+    return false
+  }
+  return true
+}
+
+/**
+ * Run tasks in parallel with progress tracking.
+ */
+async function runParallel(tasks, description = 'tasks') {
+  log.info(`Running ${tasks.length} ${description} in parallel...`)
+
+  const results = await Promise.allSettled(tasks)
+
+  const succeeded = results.filter(r => r.status === 'fulfilled').length
+  const failed = results.filter(r => r.status === 'rejected').length
+
+  if (failed > 0) {
+    log.warn(`Completed: ${succeeded} succeeded, ${failed} failed`)
+    // Log errors
+    results.forEach((result, index) => {
+      if (result.status === 'rejected') {
+        log.error(`Task ${index + 1} failed: ${result.reason}`)
+      }
+    })
+  } else {
+    log.success(`All ${succeeded} ${description} completed successfully`)
+  }
+
+  return results
+}
+
+/**
  * Find Socket projects in parent directory.
  */
 async function findSocketProjects() {
@@ -354,13 +394,32 @@ async function syncClaudeMd(claudeCmd, options = {}) {
 
   // Process other projects.
   log.step('Updating project-specific files')
-  for (const project of projects) {
-    if (project.name === 'socket-registry') continue
+  const otherProjects = projects.filter(p => p.name !== 'socket-registry')
 
-    const success = await updateProjectClaudeMd(claudeCmd, project, options)
-    if (!success && !opts['dry-run']) {
-      log.error(`Failed to update ${project.name}/CLAUDE.md`)
-      // Continue with other projects.
+  if (shouldRunParallel(opts) && otherProjects.length > 1) {
+    // Run in parallel
+    const tasks = otherProjects.map(project =>
+      updateProjectClaudeMd(claudeCmd, project, options)
+        .then(success => ({ project: project.name, success }))
+        .catch(error => ({ project: project.name, success: false, error }))
+    )
+
+    const results = await runParallel(tasks, 'CLAUDE.md updates')
+
+    // Check for failures
+    results.forEach(result => {
+      if (result.status === 'fulfilled' && !result.value.success && !opts['dry-run']) {
+        log.error(`Failed to update ${result.value.project}/CLAUDE.md`)
+      }
+    })
+  } else {
+    // Run sequentially
+    for (const project of otherProjects) {
+      const success = await updateProjectClaudeMd(claudeCmd, project, options)
+      if (!success && !opts['dry-run']) {
+        log.error(`Failed to update ${project.name}/CLAUDE.md`)
+        // Continue with other projects.
+      }
     }
   }
 
@@ -368,8 +427,15 @@ async function syncClaudeMd(claudeCmd, options = {}) {
   if (!opts['skip-commit'] && !opts['dry-run']) {
     log.step('Committing changes')
 
-    for (const project of projects) {
-      await commitChanges(project)
+    if (shouldRunParallel(opts) && projects.length > 1) {
+      // Run commits in parallel
+      const tasks = projects.map(project => commitChanges(project))
+      await runParallel(tasks, 'commits')
+    } else {
+      // Run sequentially
+      for (const project of projects) {
+        await commitChanges(project)
+      }
     }
   }
 
@@ -377,16 +443,44 @@ async function syncClaudeMd(claudeCmd, options = {}) {
   if (opts.push && !opts['dry-run']) {
     log.step('Pushing changes')
 
-    for (const project of projects) {
-      log.progress(`Pushing ${project.name}`)
-      const pushResult = await runCommandWithOutput('git', ['push'], {
-        cwd: project.path
+    if (shouldRunParallel(opts) && projects.length > 1) {
+      // Run pushes in parallel
+      const tasks = projects.map(project => {
+        return runCommandWithOutput('git', ['push'], {
+          cwd: project.path
+        }).then(pushResult => ({
+          project: project.name,
+          success: pushResult.exitCode === 0
+        })).catch(error => ({
+          project: project.name,
+          success: false,
+          error
+        }))
       })
 
-      if (pushResult.exitCode === 0) {
-        log.done(`Pushed ${project.name}`)
-      } else {
-        log.failed(`Failed to push ${project.name}`)
+      const results = await runParallel(tasks, 'pushes')
+
+      // Report results
+      results.forEach(result => {
+        if (result.status === 'fulfilled' && result.value.success) {
+          log.done(`Pushed ${result.value.project}`)
+        } else {
+          log.failed(`Failed to push ${result.value.project}`)
+        }
+      })
+    } else {
+      // Run sequentially
+      for (const project of projects) {
+        log.progress(`Pushing ${project.name}`)
+        const pushResult = await runCommandWithOutput('git', ['push'], {
+          cwd: project.path
+        })
+
+        if (pushResult.exitCode === 0) {
+          log.done(`Pushed ${project.name}`)
+        } else {
+          log.failed(`Failed to push ${project.name}`)
+        }
       }
     }
   }
@@ -641,10 +735,29 @@ async function runSecurityScan(claudeCmd, options = {}) {
   log.step('Scanning projects for issues')
   const scanResults = {}
 
-  for (const project of projects) {
-    const issues = await scanProjectForIssues(claudeCmd, project, options)
-    if (issues) {
-      scanResults[project.name] = issues
+  if (shouldRunParallel(opts) && projects.length > 1) {
+    // Run scans in parallel
+    const tasks = projects.map(project =>
+      scanProjectForIssues(claudeCmd, project, options)
+        .then(issues => ({ project: project.name, issues }))
+        .catch(error => ({ project: project.name, issues: null, error }))
+    )
+
+    const results = await runParallel(tasks, 'security scans')
+
+    // Collect results
+    results.forEach(result => {
+      if (result.status === 'fulfilled' && result.value.issues) {
+        scanResults[result.value.project] = result.value.issues
+      }
+    })
+  } else {
+    // Run sequentially
+    for (const project of projects) {
+      const issues = await scanProjectForIssues(claudeCmd, project, options)
+      if (issues) {
+        scanResults[project.name] = issues
+      }
     }
   }
 
@@ -712,21 +825,24 @@ async function runClaudeCommit(claudeCmd, options = {}) {
   log.success(`Found ${projects.length} project(s) with changes`)
 
   // Process each project with changes.
-  for (const project of projects) {
-    log.step(`Processing ${project.name}`)
+  if (shouldRunParallel(opts) && projects.length > 1) {
+    // Run commits in parallel
+    const tasks = projects.map(project => {
+      const commitTask = async () => {
+        log.step(`Processing ${project.name}`)
 
-    // Show current changes.
-    if (project.changes) {
-      log.substep('Changes detected:')
-      const changeLines = project.changes.split('\n')
-      changeLines.slice(0, 10).forEach(line => log.substep(`  ${line}`))
-      if (changeLines.length > 10) {
-        log.substep(`  ... and ${changeLines.length - 10} more`)
-      }
-    }
+        // Show current changes.
+        if (project.changes) {
+          log.substep('Changes detected:')
+          const changeLines = project.changes.split('\n')
+          changeLines.slice(0, 10).forEach(line => log.substep(`  ${line}`))
+          if (changeLines.length > 10) {
+            log.substep(`  ... and ${changeLines.length - 10} more`)
+          }
+        }
 
-    // Build the commit prompt.
-    let prompt = `You are in the ${project.name} project directory at ${project.path}.
+        // Build the commit prompt.
+        let prompt = `You are in the ${project.name} project directory at ${project.path}.
 
 Review the changes and create commits following these rules:
 1. Commit changes
@@ -735,29 +851,87 @@ Review the changes and create commits following these rules:
 4. NO AI attribution in commit messages
 5. Use descriptive, concise commit messages`
 
-    if (opts['no-verify']) {
-      prompt += `
+        if (opts['no-verify']) {
+          prompt += `
 6. Use --no-verify flag when committing (git commit --no-verify)`
-    }
+        }
 
-    prompt += `
+        prompt += `
 
 Check the current git status, review changes, and commit them appropriately.
 Remember: small commits, follow project standards, no AI attribution.`
 
-    log.progress(`Committing changes in ${project.name}`)
+        log.progress(`Committing changes in ${project.name}`)
 
-    // Launch Claude console for this project.
-    const commitResult = await runCommandWithOutput(claudeCmd, prepareClaudeArgs([], options), {
-      input: prompt,
-      cwd: project.path,
-      stdio: 'inherit'
+        // Launch Claude console for this project.
+        const commitResult = await runCommandWithOutput(claudeCmd, prepareClaudeArgs([], options), {
+          input: prompt,
+          cwd: project.path,
+          stdio: 'inherit'
+        })
+
+        if (commitResult.exitCode === 0) {
+          log.done(`Committed changes in ${project.name}`)
+          return { project: project.name, success: true }
+        } else {
+          log.failed(`Failed to commit in ${project.name}`)
+          return { project: project.name, success: false }
+        }
+      }
+
+      return commitTask()
     })
 
-    if (commitResult.exitCode === 0) {
-      log.done(`Committed changes in ${project.name}`)
-    } else {
-      log.failed(`Failed to commit in ${project.name}`)
+    await runParallel(tasks, 'commits')
+  } else {
+    // Run sequentially
+    for (const project of projects) {
+      log.step(`Processing ${project.name}`)
+
+      // Show current changes.
+      if (project.changes) {
+        log.substep('Changes detected:')
+        const changeLines = project.changes.split('\n')
+        changeLines.slice(0, 10).forEach(line => log.substep(`  ${line}`))
+        if (changeLines.length > 10) {
+          log.substep(`  ... and ${changeLines.length - 10} more`)
+        }
+      }
+
+      // Build the commit prompt.
+      let prompt = `You are in the ${project.name} project directory at ${project.path}.
+
+Review the changes and create commits following these rules:
+1. Commit changes
+2. Create small, atomic commits
+3. Follow claude.md rules for commit messages
+4. NO AI attribution in commit messages
+5. Use descriptive, concise commit messages`
+
+      if (opts['no-verify']) {
+        prompt += `
+6. Use --no-verify flag when committing (git commit --no-verify)`
+      }
+
+      prompt += `
+
+Check the current git status, review changes, and commit them appropriately.
+Remember: small commits, follow project standards, no AI attribution.`
+
+      log.progress(`Committing changes in ${project.name}`)
+
+      // Launch Claude console for this project.
+      const commitResult = await runCommandWithOutput(claudeCmd, prepareClaudeArgs([], options), {
+        input: prompt,
+        cwd: project.path,
+        stdio: 'inherit'
+      })
+
+      if (commitResult.exitCode === 0) {
+        log.done(`Committed changes in ${project.name}`)
+      } else {
+        log.failed(`Failed to commit in ${project.name}`)
+      }
     }
   }
 
@@ -765,16 +939,44 @@ Remember: small commits, follow project standards, no AI attribution.`
   if (opts.push) {
     log.step('Pushing changes to remote')
 
-    for (const project of projects) {
-      log.progress(`Pushing ${project.name}`)
-      const pushResult = await runCommandWithOutput('git', ['push'], {
-        cwd: project.path
+    if (shouldRunParallel(opts) && projects.length > 1) {
+      // Run pushes in parallel
+      const tasks = projects.map(project => {
+        return runCommandWithOutput('git', ['push'], {
+          cwd: project.path
+        }).then(pushResult => ({
+          project: project.name,
+          success: pushResult.exitCode === 0
+        })).catch(error => ({
+          project: project.name,
+          success: false,
+          error
+        }))
       })
 
-      if (pushResult.exitCode === 0) {
-        log.done(`Pushed ${project.name}`)
-      } else {
-        log.failed(`Failed to push ${project.name}`)
+      const results = await runParallel(tasks, 'pushes')
+
+      // Report results
+      results.forEach(result => {
+        if (result.status === 'fulfilled' && result.value.success) {
+          log.done(`Pushed ${result.value.project}`)
+        } else {
+          log.failed(`Failed to push ${result.value.project}`)
+        }
+      })
+    } else {
+      // Run sequentially
+      for (const project of projects) {
+        log.progress(`Pushing ${project.name}`)
+        const pushResult = await runCommandWithOutput('git', ['push'], {
+          cwd: project.path
+        })
+
+        if (pushResult.exitCode === 0) {
+          log.done(`Pushed ${project.name}`)
+        } else {
+          log.failed(`Failed to push ${project.name}`)
+        }
       }
     }
   }
@@ -1439,6 +1641,10 @@ async function main() {
           type: 'boolean',
           default: false,
         },
+        seq: {
+          type: 'boolean',
+          default: false,
+        },
       },
       allowPositionals: true,
       strict: false,
@@ -1462,6 +1668,7 @@ async function main() {
       console.log('  --no-report      Skip generating scan report (--fix)')
       console.log('  --no-interactive Skip interactive fix session (--fix)')
       console.log('  --no-cross-repo  Operate on current project only')
+      console.log('  --seq            Run sequentially (default: parallel)')
       console.log('  --no-darkwing    Disable "Let\'s get dangerous!" mode')
       console.log('\nExamples:')
       console.log('  pnpm claude --review         # Review staged changes')
