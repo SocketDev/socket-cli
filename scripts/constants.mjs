@@ -38,6 +38,7 @@ const constants = {
   PACKAGE_JSON: 'package.json',
   PNPM_LOCK_YAML: 'pnpm-lock.yaml',
   NODE_MODULES: 'node_modules',
+  NODE_MODULES_GLOB_RECURSIVE: '**/node_modules',
   SOCKET_REGISTRY_PACKAGE_NAME: '@socketsecurity/registry',
 
   // Socket CLI constants
