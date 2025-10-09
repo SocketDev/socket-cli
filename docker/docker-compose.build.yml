@@ -1,0 +1,61 @@
+# Docker Compose configuration for building Socket CLI binaries
+# This setup allows building for multiple architectures from a single host
+
+version: '3.8'
+
+services:
+  # Build Linux ARM64 binary
+  build-linux-arm64:
+    build:
+      context: ..
+      dockerfile: docker/build-arm.dockerfile
+      args:
+        ARCH: arm64
+        NODE_VERSION: 20
+      platforms:
+        - linux/arm64
+    image: socket-cli-builder:linux-arm64
+    volumes:
+      - ../dist:/output
+    command: |
+      sh -c "cp /usr/local/bin/socket /output/socket-linux-arm64 && \
+             echo 'Binary copied to dist/socket-linux-arm64'"
+
+  # Build Linux ARMv7 binary
+  build-linux-armv7:
+    build:
+      context: ..
+      dockerfile: docker/build-arm.dockerfile
+      args:
+        ARCH: arm/v7
+        NODE_VERSION: 20
+      platforms:
+        - linux/arm/v7
+    image: socket-cli-builder:linux-armv7
+    volumes:
+      - ../dist:/output
+    command: |
+      sh -c "cp /usr/local/bin/socket /output/socket-linux-armv7 && \
+             echo 'Binary copied to dist/socket-linux-armv7'"
+
+  # Build Linux x64 binary (for consistency)
+  build-linux-x64:
+    build:
+      context: ..
+      dockerfile: docker/build-arm.dockerfile
+      args:
+        ARCH: amd64
+        NODE_VERSION: 20
+      platforms:
+        - linux/amd64
+    image: socket-cli-builder:linux-x64
+    volumes:
+      - ../dist:/output
+    command: |
+      sh -c "cp /usr/local/bin/socket /output/socket-linux-x64 && \
+             echo 'Binary copied to dist/socket-linux-x64'"
+
+# Volumes for output
+volumes:
+  dist:
+    driver: local
