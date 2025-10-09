@@ -158,11 +158,11 @@ export async function buildStub(options = {}) {
                 if (line.trim() === '') {
                   // Empty line might end the warning
                   inSigningWarning = false
-                  signingWarningBuffer = []
+                  _signingWarningBuffer = []
                 } else if (line.startsWith('>') || line.startsWith('[') || line.includes('✅') || line.includes('📦')) {
                   // New content started, warning is over
                   inSigningWarning = false
-                  signingWarningBuffer = []
+                  _signingWarningBuffer = []
                   process.stdout.write(line + (i < lines.length - 1 ? '\n' : ''))
                 }
                 continue
