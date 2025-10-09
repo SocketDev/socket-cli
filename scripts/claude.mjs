@@ -1065,15 +1065,21 @@ ${JSON.stringify(packageJson.devDependencies || {}, null, 2)}
 Outdated packages:
 ${JSON.stringify(outdatedPackages, null, 2)}
 
-Provide:
-1. Security vulnerability analysis
-2. Unused dependency detection
-3. Update recommendations with migration notes
-4. License compatibility check
-5. Bundle size impact analysis
-6. Alternative package suggestions
+IMPORTANT Socket Requirements:
+- All dependencies MUST be pinned to exact versions (no ^ or ~ prefixes)
+- Use pnpm add <pkg> --save-exact for all new dependencies
+- GitHub CLI (gh) is required but installed separately (not via npm)
 
-Focus on actionable recommendations.`
+Provide:
+1. Version pinning issues (identify any deps with ^ or ~ prefixes)
+2. Security vulnerability analysis
+3. Unused dependency detection
+4. Update recommendations with migration notes (using exact versions)
+5. License compatibility check
+6. Bundle size impact analysis
+7. Alternative package suggestions
+
+Focus on actionable recommendations. Always recommend exact versions when suggesting updates.`
 
   await runCommand(claudeCmd, prepareClaudeArgs([], opts), {
     input: prompt,
@@ -1613,6 +1619,17 @@ Provide specific file edits or commands to fix this issue.`
     log.done('[DRY RUN] Would monitor CI workflow')
     printFooter('Green CI Pipeline (dry run) complete!')
     return true
+  }
+
+  // Check for GitHub CLI
+  const ghCheck = await runCommandWithOutput('which', ['gh'])
+  if (ghCheck.exitCode !== 0) {
+    log.error('GitHub CLI (gh) is required for CI monitoring')
+    log.info('Install with:')
+    log.substep('macOS: brew install gh')
+    log.substep('Linux: See https://github.com/cli/cli/blob/trunk/docs/install_linux.md')
+    log.substep('Windows: winget install --id GitHub.cli')
+    return false
   }
 
   // Get current commit SHA
