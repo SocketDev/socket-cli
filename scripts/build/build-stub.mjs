@@ -12,13 +12,12 @@ import { mkdir } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import ensureCustomNodeInCache from './ensure-node-in-cache.mjs'
+import { default as ensureCustomNodeInCache } from './ensure-node-in-cache.mjs'
 import syncPatches from './stub/sync-yao-patches.mjs'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 const ROOT_DIR = join(__dirname, '../..')
-const BUILD_DIR = join(ROOT_DIR, 'build')
 const STUB_DIR = join(ROOT_DIR, 'binaries', 'stub')
 const DIST_DIR = join(ROOT_DIR, 'dist')
 const PKG_CONFIG = join(ROOT_DIR, '.config', 'pkg.json')
@@ -114,8 +113,91 @@ export async function buildStub(options = {}) {
     const child = spawn('pnpm', pkgArgs, {
       cwd: ROOT_DIR,
       env,
-      stdio: quiet ? 'pipe' : 'inherit'
+      stdio: 'pipe'
     })
+
+    // Filter out signing warnings on macOS since we handle signing ourselves
+    const shouldFilterSigningWarnings = platform === 'darwin'
+    let inSigningWarning = false
+    let _signingWarningBuffer = []
+
+    if (!quiet) {
+      if (child.stdout) {
+        child.stdout.on('data', (data) => {
+          const lines = data.toString().split('\n')
+          for (let i = 0; i < lines.length; i++) {
+            const line = lines[i]
+
+            // Check if this is signing-related content we want to filter
+            if (shouldFilterSigningWarnings) {
+              // Start of signing warning
+              if ((line.includes('Warning') && line.includes('Unable to sign')) ||
+                  (line.includes('Due to the mandatory code signing'))) {
+                inSigningWarning = true
+                _signingWarningBuffer = []
+                continue
+              }
+
+              // Common signing-related lines to filter
+              const signingPhrases = [
+                'executable is distributed to end users',
+                'Otherwise, it will be immediately killed',
+                'An ad-hoc signature is sufficient',
+                'To do that, run pkg on a Mac',
+                'and run "codesign --sign -',
+                'install "ldid" utility to PATH'
+              ]
+
+              if (signingPhrases.some(phrase => line.includes(phrase))) {
+                inSigningWarning = true
+                continue
+              }
+
+              // If we're in a signing warning, buffer lines
+              if (inSigningWarning) {
+                if (line.trim() === '') {
+                  // Empty line might end the warning
+                  inSigningWarning = false
+                  signingWarningBuffer = []
+                } else if (line.startsWith('>') || line.startsWith('[') || line.includes('✅') || line.includes('📦')) {
+                  // New content started, warning is over
+                  inSigningWarning = false
+                  signingWarningBuffer = []
+                  process.stdout.write(line + (i < lines.length - 1 ? '\n' : ''))
+                }
+                continue
+              }
+            }
+
+            // Output non-filtered lines
+            if (i < lines.length - 1 || line !== '') {
+              process.stdout.write(line + (i < lines.length - 1 ? '\n' : ''))
+            }
+          }
+        })
+      }
+
+      if (child.stderr) {
+        child.stderr.on('data', (data) => {
+          const text = data.toString()
+          // Filter out codesign errors that we handle ourselves
+          if (shouldFilterSigningWarnings) {
+            const signingErrors = [
+              'replacing existing signature',
+              'internal error in Code Signing subsystem',
+              'code object is not signed at all'
+            ]
+            // Check if this stderr contains signing-related errors we want to suppress
+            if (signingErrors.some(err => text.includes(err))) {
+              // Don't output these errors
+              return
+            }
+          }
+          process.stderr.write(data)
+        })
+      }
+    }
+
     child.on('exit', (code) => resolve(code || 0))
     child.on('error', () => resolve(1))
   })
@@ -125,7 +207,19 @@ export async function buildStub(options = {}) {
     return 1
   }
 
-  // Step 5: Verify and report
+  // Step 5: Sign the binary on macOS
+  if (platform === 'darwin' && existsSync(outputPath)) {
+    console.log('🔏 Signing macOS binary...')
+    const signExitCode = await signMacOSBinary(outputPath, quiet)
+    if (signExitCode !== 0) {
+      console.error('⚠️  Warning: Failed to sign macOS binary')
+      console.error('   The binary may not run properly without signing')
+    } else {
+      console.log('✅ Binary signed successfully\n')
+    }
+  }
+
+  // Step 6: Verify and report
   if (existsSync(outputPath)) {
     const { stat } = await import('node:fs/promises')
     const stats = await stat(outputPath)
@@ -143,6 +237,84 @@ export async function buildStub(options = {}) {
   }
 
   return 0
+}
+
+/**
+ * Sign macOS binary using codesign
+ */
+async function signMacOSBinary(binaryPath, quiet = false) {
+  // First check if already signed
+  const checkSigned = await new Promise((resolve) => {
+    const child = spawn('codesign', ['-dv', binaryPath], {
+      stdio: 'pipe'
+    })
+
+    let stderr = ''
+    child.stderr.on('data', (data) => {
+      stderr += data.toString()
+    })
+
+    child.on('exit', (code) => {
+      // Exit code 0 means it's already signed
+      resolve({ signed: code === 0, output: stderr })
+    })
+    child.on('error', () => resolve({ signed: false, output: '' }))
+  })
+
+  if (checkSigned.signed) {
+    if (!quiet) {
+      console.log('   Binary is already signed')
+    }
+    return 0
+  }
+
+  // Sign the binary
+  return new Promise((resolve) => {
+    const child = spawn('codesign', ['--sign', '-', '--force', binaryPath], {
+      // Always pipe to prevent stderr leakage
+      stdio: 'pipe'
+    })
+
+    let stderr = ''
+    if (child.stderr) {
+      child.stderr.on('data', (data) => {
+        stderr += data.toString()
+      })
+    }
+
+    child.on('exit', (code) => {
+      // Even if codesign reports an error, verify if the binary got signed
+      if (code !== 0) {
+        // Check again if it's signed despite the error
+        const verifyChild = spawn('codesign', ['-dv', binaryPath], {
+          stdio: 'pipe'
+        })
+
+        verifyChild.on('exit', (verifyCode) => {
+          if (verifyCode === 0) {
+            // Binary is signed despite the error
+            resolve(0)
+          } else {
+            // Only show error if not quiet and signing actually failed
+            if (!quiet && stderr && !stderr.includes('replacing existing signature')) {
+              console.error(`   codesign output: ${stderr}`)
+            }
+            resolve(code)
+          }
+        })
+        verifyChild.on('error', () => resolve(code))
+      } else {
+        resolve(0)
+      }
+    })
+
+    child.on('error', (error) => {
+      if (!quiet) {
+        console.error(`   codesign error: ${error.message}`)
+      }
+      resolve(1)
+    })
+  })
 }
 
 /**
@@ -242,21 +414,29 @@ async function main() {
 
   if (options.help) {
     showHelp()
-    process.exit(0)
+    return 0
   }
 
   try {
     const exitCode = await buildStub(options)
-    process.exit(exitCode)
+    if (exitCode !== 0) {
+      throw new Error(`Build failed with exit code ${exitCode}`)
+    }
+    return 0
   } catch (error) {
     console.error('❌ Build failed:', error.message)
-    process.exit(1)
+    throw error
   }
 }
 
 // Run if called directly
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  main().catch(console.error)
+  main().then(exitCode => {
+    process.exitCode = exitCode || 0
+  }).catch(error => {
+    console.error(error)
+    process.exitCode = 1
+  })
 }
 
 export default buildStub
