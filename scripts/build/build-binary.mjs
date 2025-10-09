@@ -23,9 +23,17 @@ const BUILD_DIR = join(ROOT_DIR, 'build')
 const DIST_DIR = join(ROOT_DIR, 'dist')
 
 /**
- * Fetch latest supported Node version from yao-pkg
+ * Current socket-node version for yao-pkg
+ * IMPORTANT: socket-node is Socket's custom Node build.
+ * Yao-pkg then patches socket-node to create socket-stub for distribution.
+ * Do not change without updating the socket-node patches!
  */
-async function getLatestYaoPkgNodeVersion() {
+const SOCKET_NODE_VERSION = '24.9.0'
+
+/**
+ * Check for newer yao-pkg Node versions and notify if updates available
+ */
+async function checkYaoPkgNodeVersions() {
   try {
     const response = await fetch('https://api.github.com/repos/yao-pkg/pkg-fetch/contents/patches')
     const data = await response.json()
@@ -46,15 +54,55 @@ async function getLatestYaoPkgNodeVersion() {
         return bPatch - aPatch
       })
 
-    // Return latest v24.x, v22.x, or v20.x
+    // Find latest versions for each major
     const v24 = versions.find(v => v.startsWith('24.'))
     const v22 = versions.find(v => v.startsWith('22.'))
     const v20 = versions.find(v => v.startsWith('20.'))
 
-    return v24 || v22 || v20 || '24.9.0' // Fallback to known working version
+    // Check if there's a newer version than what we're using
+    const currentParts = SOCKET_NODE_VERSION.split('.').map(Number)
+    const newerVersions = versions.filter(v => {
+      const parts = v.split('.').map(Number)
+      // Only check same major version for patch updates
+      if (parts[0] !== currentParts[0]) return false
+      if (parts[1] > currentParts[1]) return true
+      if (parts[1] === currentParts[1] && parts[2] > currentParts[2]) return true
+      return false
+    })
+
+    if (newerVersions.length > 0) {
+      console.log('\n' + '═'.repeat(70))
+      console.log('║ 🚨 NEW YAO-PKG NODE VERSIONS AVAILABLE! 🚨')
+      console.log('═'.repeat(70))
+      console.log(`║ Current socket-node version: v${SOCKET_NODE_VERSION}`)
+      console.log(`║ Newer versions available: ${newerVersions.map(v => `v${v}`).join(', ')}`)
+      console.log('║')
+      console.log('║ ⚠️  ACTION REQUIRED:')
+      console.log('║ 1. Update socket-node patches for the new Node version')
+      console.log('║ 2. Test thoroughly with the new version')
+      console.log('║ 3. Update SOCKET_NODE_VERSION in build-binary.mjs')
+      console.log('║')
+      console.log('║ Latest versions by major:')
+      if (v24) console.log(`║   Node 24: v${v24}`)
+      if (v22) console.log(`║   Node 22: v${v22}`)
+      if (v20) console.log(`║   Node 20: v${v20}`)
+      console.log('═'.repeat(70) + '\n')
+    }
+
+    return {
+      current: SOCKET_NODE_VERSION,
+      available: { v24, v22, v20 },
+      hasUpdates: newerVersions.length > 0,
+      newerVersions
+    }
   } catch (e) {
-    console.warn('Failed to fetch latest yao-pkg Node version, using default')
-    return '24.9.0'
+    // Silently continue with current version if check fails
+    return {
+      current: SOCKET_NODE_VERSION,
+      available: {},
+      hasUpdates: false,
+      newerVersions: []
+    }
   }
 }
 
@@ -328,9 +376,9 @@ async function main() {
         type: 'boolean',
         default: false,
       },
-      'auto-detect': {
+      'skip-version-check': {
         type: 'boolean',
-        default: true,
+        default: false,
       },
       help: {
         type: 'boolean',
@@ -352,14 +400,14 @@ Options:
   --mode=MODE           Build mode: yao-pkg (default) or node-sea
   --platform=PLATFORM   Target platform: linux, macos, win, alpine
   --arch=ARCH          Target architecture: x64, arm64
-  --node-version=VER   Node version for yao-pkg (auto-detected by default)
+  --node-version=VER   Node version for yao-pkg (default: v24.9.0)
   --output=PATH        Output binary path
   --docker             Use Docker for cross-compilation (Linux ARM & Alpine)
-  --auto-detect        Auto-detect latest yao-pkg Node version (default: true)
+  --skip-version-check Skip checking for newer yao-pkg Node versions
   --help               Show this help
 
 Examples:
-  # Build with yao-pkg (auto-detect latest Node)
+  # Build with yao-pkg (socket-node v24.9.0 → socket-stub)
   node scripts/build/build-binary.mjs
 
   # Build with Node.js SEA
@@ -404,14 +452,21 @@ For production, we recommend GitHub Actions workflow.
     return
   }
 
-  // Auto-detect Node version for yao-pkg
+  // Check for yao-pkg Node version updates
   let nodeVersion = values['node-version']
-  if (values.mode === 'yao-pkg' && !nodeVersion && values['auto-detect']) {
-    console.log('🔍 Auto-detecting latest yao-pkg Node version...')
-    nodeVersion = await getLatestYaoPkgNodeVersion()
-    console.log(`   Found: v${nodeVersion}`)
+  if (values.mode === 'yao-pkg') {
+    if (!nodeVersion) {
+      // Use socket-node version by default
+      nodeVersion = SOCKET_NODE_VERSION
+      console.log(`📦 Using socket-node version: v${nodeVersion}`)
+    }
+
+    // Check for available updates (unless --skip-version-check is passed)
+    if (!values['skip-version-check']) {
+      await checkYaoPkgNodeVersions()
+    }
   }
-  nodeVersion = nodeVersion || '24.9.0'
+  nodeVersion = nodeVersion || SOCKET_NODE_VERSION
 
   // Determine output path
   const ext = values.platform === 'win' ? '.exe' : ''

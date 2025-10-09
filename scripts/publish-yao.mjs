@@ -23,6 +23,14 @@ const DIST_DIR = path.join(ROOT_DIR, 'dist')
 const PKG_CONFIG = path.join(ROOT_DIR, '.config', 'pkg.json')
 
 /**
+ * Current socket-node version for yao-pkg
+ * IMPORTANT: socket-node is Socket's custom Node build.
+ * Yao-pkg then patches socket-node to create socket-stub for distribution.
+ * Do not change without updating the socket-node patches!
+ */
+const SOCKET_NODE_VERSION = '24.9.0'
+
+/**
  * Platform configurations for @socketbin packages
  */
 const PLATFORMS = {
@@ -87,10 +95,12 @@ const PLATFORMS = {
 }
 
 /**
- * Detect latest supported Node version from yao-pkg
+ * Check for newer yao-pkg Node versions and notify if updates available
  */
-async function detectLatestNodeVersion() {
-  console.log('🔍 Detecting latest yao-pkg Node version...')
+async function checkNodeVersionsForPublish(silent = false) {
+  if (!silent) {
+    console.log('🔍 Checking for yao-pkg Node version updates...')
+  }
 
   try {
     const response = await fetch('https://api.github.com/repos/yao-pkg/pkg-fetch/contents/patches')
@@ -118,13 +128,51 @@ async function detectLatestNodeVersion() {
     const v20 = versions.find(v => v.startsWith('20.'))
     const v18 = versions.find(v => v.startsWith('18.'))
 
-    const latest = v24 || v22 || v20 || v18 || '24.9.0'
-    console.log(`   Found: v${latest} (supports v18, v20, v22, v24)`)
+    // Check if there's a newer version than what we're using
+    const currentParts = SOCKET_NODE_VERSION.split('.').map(Number)
+    const newerVersions = versions.filter(v => {
+      const parts = v.split('.').map(Number)
+      // Only check same major version for patch updates
+      if (parts[0] !== currentParts[0]) return false
+      if (parts[1] > currentParts[1]) return true
+      if (parts[1] === currentParts[1] && parts[2] > currentParts[2]) return true
+      return false
+    })
 
-    return latest
+    if (newerVersions.length > 0 && !silent) {
+      console.log('\n' + '═'.repeat(70))
+      console.log('║ 🚨 NEW YAO-PKG NODE VERSIONS AVAILABLE! 🚨')
+      console.log('═'.repeat(70))
+      console.log(`║ Current socket-node version: v${SOCKET_NODE_VERSION}`)
+      console.log(`║ Newer versions available: ${newerVersions.map(v => `v${v}`).join(', ')}`)
+      console.log('║')
+      console.log('║ ⚠️  ACTION REQUIRED:')
+      console.log('║ 1. Update socket-node patches for the new Node version')
+      console.log('║ 2. Test thoroughly with the new version')
+      console.log('║ 3. Update SOCKET_NODE_VERSION in scripts')
+      console.log('║')
+      console.log('║ Latest versions by major:')
+      if (v24) console.log(`║   Node 24: v${v24}`)
+      if (v22) console.log(`║   Node 22: v${v22}`)
+      if (v20) console.log(`║   Node 20: v${v20}`)
+      if (v18) console.log(`║   Node 18: v${v18}`)
+      console.log('═'.repeat(70) + '\n')
+    }
+
+    return {
+      current: SOCKET_NODE_VERSION,
+      available: { v24, v22, v20, v18 },
+      hasUpdates: newerVersions.length > 0
+    }
   } catch (e) {
-    console.warn('   Failed to auto-detect, using default: v24.9.0')
-    return '24.9.0'
+    if (!silent) {
+      console.warn(`   Version check failed, using socket-node: v${SOCKET_NODE_VERSION}`)
+    }
+    return {
+      current: SOCKET_NODE_VERSION,
+      available: {},
+      hasUpdates: false
+    }
   }
 }
 
@@ -419,9 +467,9 @@ async function main() {
       'node-version': {
         type: 'string',
       },
-      'auto-detect': {
+      'skip-version-check': {
         type: 'boolean',
-        default: true,
+        default: false,
       },
       'dry-run': {
         type: 'boolean',
@@ -459,8 +507,8 @@ Usage: node scripts/publish-yao.mjs [options]
 Options:
   --platform=PLATFORM    Specific platform(s) to build (can specify multiple)
   --version=VERSION      Version to publish (default: from package.json)
-  --node-version=VERSION Node.js version for yao-pkg (default: auto-detect latest)
-  --auto-detect          Auto-detect latest yao-pkg Node version (default: true)
+  --node-version=VERSION Node.js version for yao-pkg (default: v24.9.0 socket-node)
+  --skip-version-check  Skip checking for newer yao-pkg Node versions
   --dry-run             Perform dry-run without publishing
   --skip-build          Skip building binaries (use existing)
   --skip-optional       Skip optional platforms (armv7, alpine)
@@ -481,7 +529,7 @@ Optional:
   alpine-arm64   Alpine Linux ARM64       @socketbin/cli-alpine-arm64
 
 Examples:
-  # Build and publish all platforms with auto-detected Node version
+  # Build and publish all platforms with socket-node v24.9.0 → socket-stub
   node scripts/publish-yao.mjs
 
   # Build specific platforms
@@ -510,13 +558,13 @@ Notes:
   console.log('================================\n')
 
   try {
-    // Get or detect Node version
-    let nodeVersion = values['node-version']
-    if (!nodeVersion && values['auto-detect']) {
-      nodeVersion = await detectLatestNodeVersion()
-    } else {
-      nodeVersion = nodeVersion || '24.9.0'
-      console.log(`Using specified Node version: v${nodeVersion}`)
+    // Get Node version
+    let nodeVersion = values['node-version'] || SOCKET_NODE_VERSION
+    console.log(`📦 Using socket-node version: v${nodeVersion}`)
+
+    // Check for available updates unless disabled
+    if (!values['skip-version-check']) {
+      await checkNodeVersionsForPublish()
     }
 
     // Get version
