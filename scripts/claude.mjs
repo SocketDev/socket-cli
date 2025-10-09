@@ -57,12 +57,13 @@ function printFooter(message) {
 }
 
 async function runCommand(command, args = [], options = {}) {
+  const opts = { __proto__: null, ...options }
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, {
       stdio: 'inherit',
       cwd: rootPath,
       ...(WIN32 && { shell: true }),
-      ...options,
+      ...opts,
     })
 
     child.on('exit', code => {
@@ -76,6 +77,7 @@ async function runCommand(command, args = [], options = {}) {
 }
 
 async function runCommandWithOutput(command, args = [], options = {}) {
+  const opts = { __proto__: null, ...options }
   return new Promise((resolve, reject) => {
     let stdout = ''
     let stderr = ''
@@ -83,7 +85,7 @@ async function runCommandWithOutput(command, args = [], options = {}) {
     const child = spawn(command, args, {
       cwd: rootPath,
       ...(WIN32 && { shell: true }),
-      ...options,
+      ...opts,
     })
 
     if (child.stdout) {
@@ -124,6 +126,20 @@ async function checkClaude() {
     return 'claude'
   }
   return 'claude-console'
+}
+
+/**
+ * Prepare Claude command arguments.
+ * Adds --dangerously-skip-permissions by default (Let's get dangerous!)
+ * unless --no-darkwing flag is used.
+ */
+function prepareClaudeArgs(args = [], options = {}) {
+  const opts = { __proto__: null, ...options }
+  // "Let's get dangerous!" - Darkwing Duck.
+  if (!opts['no-darkwing']) {
+    return ['--dangerously-skip-permissions', ...args]
+  }
+  return args
 }
 
 /**
@@ -207,8 +223,9 @@ Output ONLY the updated CLAUDE.md content, nothing else.`
 /**
  * Update a project's CLAUDE.md using Claude.
  */
-async function updateProjectClaudeMd(claudeCmd, project) {
-  const { claudeMdPath, name } = project
+async function updateProjectClaudeMd(claudeCmd, project, options = {}) {
+  const opts = { __proto__: null, ...options }
+  const { name, claudeMdPath } = project
   const isRegistry = name === 'socket-registry'
 
   log.progress(`Updating ${name}/CLAUDE.md`)
@@ -244,7 +261,7 @@ ${currentContent}
 ===== OUTPUT UPDATED ${name}/CLAUDE.md BELOW =====`
 
   // Call Claude to update the file.
-  const result = await runCommandWithOutput(claudeCmd, [], {
+  const result = await runCommandWithOutput(claudeCmd, prepareClaudeArgs([], options), {
     input: fullPrompt,
     stdio: ['pipe', 'pipe', 'pipe']
   })
@@ -310,6 +327,7 @@ async function commitChanges(project) {
  * Sync CLAUDE.md files across Socket projects.
  */
 async function syncClaudeMd(claudeCmd, options = {}) {
+  const opts = { __proto__: null, ...options }
   printHeader('CLAUDE.md Synchronization')
 
   // Find Socket projects.
@@ -327,8 +345,8 @@ async function syncClaudeMd(claudeCmd, options = {}) {
   log.step('Updating canonical source')
   const registryProject = projects.find(p => p.name === 'socket-registry')
   if (registryProject) {
-    const success = await updateProjectClaudeMd(claudeCmd, registryProject)
-    if (!success && !options['dry-run']) {
+    const success = await updateProjectClaudeMd(claudeCmd, registryProject, options)
+    if (!success && !opts['dry-run']) {
       log.error('Failed to update canonical socket-registry/CLAUDE.md')
       return false
     }
@@ -337,17 +355,17 @@ async function syncClaudeMd(claudeCmd, options = {}) {
   // Process other projects.
   log.step('Updating project-specific files')
   for (const project of projects) {
-    if (project.name === 'socket-registry') {continue}
+    if (project.name === 'socket-registry') continue
 
-    const success = await updateProjectClaudeMd(claudeCmd, project)
-    if (!success && !options['dry-run']) {
+    const success = await updateProjectClaudeMd(claudeCmd, project, options)
+    if (!success && !opts['dry-run']) {
       log.error(`Failed to update ${project.name}/CLAUDE.md`)
       // Continue with other projects.
     }
   }
 
   // Commit changes if not skipped.
-  if (!options['skip-commit'] && !options['dry-run']) {
+  if (!opts['skip-commit'] && !opts['dry-run']) {
     log.step('Committing changes')
 
     for (const project of projects) {
@@ -356,7 +374,7 @@ async function syncClaudeMd(claudeCmd, options = {}) {
   }
 
   // Push if requested.
-  if (options.push && !options['dry-run']) {
+  if (opts.push && !opts['dry-run']) {
     log.step('Pushing changes')
 
     for (const project of projects) {
@@ -375,9 +393,9 @@ async function syncClaudeMd(claudeCmd, options = {}) {
 
   printFooter('CLAUDE.md synchronization complete!')
 
-  if (!options['skip-commit'] && !options['dry-run']) {
+  if (!opts['skip-commit'] && !opts['dry-run']) {
     log.info('\nNext steps:')
-    if (!options.push) {
+    if (!opts.push) {
       log.substep('Review changes with: git log --oneline -n 5')
       log.substep('Push to remote with: git push (in each project)')
     } else {
@@ -391,7 +409,8 @@ async function syncClaudeMd(claudeCmd, options = {}) {
 /**
  * Scan a project for issues and generate a report.
  */
-async function scanProjectForIssues(claudeCmd, project) {
+async function scanProjectForIssues(claudeCmd, project, options = {}) {
+  const opts = { __proto__: null, ...options }
   const { name, path: projectPath } = project
 
   log.progress(`Scanning ${name} for issues`)
@@ -401,7 +420,7 @@ async function scanProjectForIssues(claudeCmd, project) {
   const extensions = ['.js', '.mjs', '.ts', '.mts', '.jsx', '.tsx']
 
   async function findFiles(dir, depth = 0) {
-    if (depth > 5) {return} // Limit depth to avoid excessive scanning.
+    if (depth > 5) return // Limit depth to avoid excessive scanning.
 
     const entries = await fs.readdir(dir, { withFileTypes: true })
 
@@ -481,7 +500,7 @@ Files to scan: ${filesToScan.length} files in ${name}
 Provide ONLY the JSON array, nothing else.`
 
   // Call Claude to scan.
-  const result = await runCommandWithOutput(claudeCmd, [], {
+  const result = await runCommandWithOutput(claudeCmd, prepareClaudeArgs([], options), {
     input: prompt,
     stdio: ['pipe', 'pipe', 'pipe'],
     maxBuffer: 1024 * 1024 * 10 // 10MB buffer for large responses.
@@ -505,7 +524,8 @@ Provide ONLY the JSON array, nothing else.`
 /**
  * Interactive fix session with Claude.
  */
-async function interactiveFixSession(claudeCmd, scanResults, projects) {
+async function interactiveFixSession(claudeCmd, scanResults, projects, options = {}) {
+  const opts = { __proto__: null, ...options }
   printHeader('Interactive Fix Session')
 
   // Group issues by severity.
@@ -572,7 +592,7 @@ You can:
 Start by recommending which issues to fix first.`
 
   // Launch Claude console in interactive mode.
-  await runCommand(claudeCmd, [], {
+  await runCommand(claudeCmd, prepareClaudeArgs([], options), {
     input: sessionPrompt,
     stdio: 'inherit'
   })
@@ -582,13 +602,14 @@ Start by recommending which issues to fix first.`
  * Run security and quality scan on Socket projects.
  */
 async function runSecurityScan(claudeCmd, options = {}) {
+  const opts = { __proto__: null, ...options }
   printHeader('Security & Quality Scanner')
 
   // Find projects to scan.
   log.step('Finding projects to scan')
   const projects = []
 
-  if (options['no-cross-repo']) {
+  if (opts['no-cross-repo']) {
     // Scan only current project.
     const currentProjectName = path.basename(rootPath)
     projects.push({
@@ -621,14 +642,14 @@ async function runSecurityScan(claudeCmd, options = {}) {
   const scanResults = {}
 
   for (const project of projects) {
-    const issues = await scanProjectForIssues(claudeCmd, project)
+    const issues = await scanProjectForIssues(claudeCmd, project, options)
     if (issues) {
       scanResults[project.name] = issues
     }
   }
 
   // Generate report.
-  if (!options['no-report']) {
+  if (!opts['no-report']) {
     log.step('Generating scan report')
     const reportPath = path.join(rootPath, 'security-scan-report.json')
     await fs.writeFile(reportPath, JSON.stringify(scanResults, null, 2))
@@ -636,8 +657,8 @@ async function runSecurityScan(claudeCmd, options = {}) {
   }
 
   // Start interactive session if not skipped.
-  if (!options['no-interactive']) {
-    await interactiveFixSession(claudeCmd, scanResults, projects)
+  if (!opts['no-interactive']) {
+    await interactiveFixSession(claudeCmd, scanResults, projects, options)
   }
 
   return true
@@ -647,13 +668,14 @@ async function runSecurityScan(claudeCmd, options = {}) {
  * Run Claude-assisted commits across Socket projects.
  */
 async function runClaudeCommit(claudeCmd, options = {}) {
+  const opts = { __proto__: null, ...options }
   printHeader('Claude-Assisted Commit')
 
   // Find projects to commit in.
   log.step('Finding projects to commit')
   const projects = []
 
-  if (options['no-cross-repo']) {
+  if (opts['no-cross-repo']) {
     // Commit only in current project.
     const currentProjectName = path.basename(rootPath)
     projects.push({
@@ -713,7 +735,7 @@ Review the changes and create commits following these rules:
 4. NO AI attribution in commit messages
 5. Use descriptive, concise commit messages`
 
-    if (options['no-verify']) {
+    if (opts['no-verify']) {
       prompt += `
 6. Use --no-verify flag when committing (git commit --no-verify)`
     }
@@ -726,7 +748,7 @@ Remember: small commits, follow project standards, no AI attribution.`
     log.progress(`Committing changes in ${project.name}`)
 
     // Launch Claude console for this project.
-    const commitResult = await runCommandWithOutput(claudeCmd, [], {
+    const commitResult = await runCommandWithOutput(claudeCmd, prepareClaudeArgs([], options), {
       input: prompt,
       cwd: project.path,
       stdio: 'inherit'
@@ -740,7 +762,7 @@ Remember: small commits, follow project standards, no AI attribution.`
   }
 
   // Optionally push changes.
-  if (options.push) {
+  if (opts.push) {
     log.step('Pushing changes to remote')
 
     for (const project of projects) {
@@ -759,7 +781,7 @@ Remember: small commits, follow project standards, no AI attribution.`
 
   printFooter('Claude-assisted commits complete!')
 
-  if (!options.push) {
+  if (!opts.push) {
     log.info('\nNext steps:')
     log.substep('Review commits with: git log --oneline -n 5')
     log.substep('Push to remote with: git push (in each project)')
@@ -772,6 +794,7 @@ Remember: small commits, follow project standards, no AI attribution.`
  * Review code changes before committing.
  */
 async function runCodeReview(claudeCmd, options = {}) {
+  const opts = { __proto__: null, ...options }
   printHeader('Code Review')
 
   // Get git diff for staged changes.
@@ -799,7 +822,7 @@ ${diffResult.stdout}
 Format your review as constructive feedback with severity levels (critical/high/medium/low).`
 
   log.step('Starting code review with Claude')
-  await runCommand(claudeCmd, [], {
+  await runCommand(claudeCmd, prepareClaudeArgs([], opts), {
     input: prompt,
     stdio: 'inherit'
   })
@@ -811,6 +834,7 @@ Format your review as constructive feedback with severity levels (critical/high/
  * Analyze and manage dependencies.
  */
 async function runDependencyAnalysis(claudeCmd, options = {}) {
+  const opts = { __proto__: null, ...options }
   printHeader('Dependency Analysis')
 
   // Read package.json.
@@ -849,7 +873,7 @@ Provide:
 
 Focus on actionable recommendations.`
 
-  await runCommand(claudeCmd, [], {
+  await runCommand(claudeCmd, prepareClaudeArgs([], opts), {
     input: prompt,
     stdio: 'inherit'
   })
@@ -861,9 +885,10 @@ Focus on actionable recommendations.`
  * Generate test cases for existing code.
  */
 async function runTestGeneration(claudeCmd, options = {}) {
+  const opts = { __proto__: null, ...options }
   printHeader('Test Generation')
 
-  const { positionals = [] } = options
+  const { positionals = [] } = opts
   const targetFile = positionals[0]
 
   if (!targetFile) {
@@ -898,7 +923,7 @@ Create unit tests that:
 Output the complete test file content.`
 
   log.step(`Generating tests for ${fileName}`)
-  const result = await runCommandWithOutput(claudeCmd, [], {
+  const result = await runCommandWithOutput(claudeCmd, prepareClaudeArgs([], opts), {
     input: prompt,
     stdio: ['pipe', 'pipe', 'pipe']
   })
@@ -923,9 +948,10 @@ Output the complete test file content.`
  * Generate or update documentation.
  */
 async function runDocumentation(claudeCmd, options = {}) {
+  const opts = { __proto__: null, ...options }
   printHeader('Documentation Generation')
 
-  const { positionals = [] } = options
+  const { positionals = [] } = opts
   const targetPath = positionals[0] || rootPath
 
   const prompt = `Generate or update documentation for the project at ${targetPath}.
@@ -954,9 +980,10 @@ Output the documentation updates or new content.`
  * Suggest code refactoring improvements.
  */
 async function runRefactor(claudeCmd, options = {}) {
+  const opts = { __proto__: null, ...options }
   printHeader('Code Refactoring Analysis')
 
-  const { positionals = [] } = options
+  const { positionals = [] } = opts
   const targetFile = positionals[0]
 
   if (!targetFile) {
@@ -989,7 +1016,7 @@ Identify and fix:
 
 Provide the refactored code with explanations.`
 
-  await runCommand(claudeCmd, [], {
+  await runCommand(claudeCmd, prepareClaudeArgs([], opts), {
     input: prompt,
     stdio: 'inherit'
   })
@@ -1001,9 +1028,10 @@ Provide the refactored code with explanations.`
  * Optimize code for performance.
  */
 async function runOptimization(claudeCmd, options = {}) {
+  const opts = { __proto__: null, ...options }
   printHeader('Performance Optimization')
 
-  const { positionals = [] } = options
+  const { positionals = [] } = opts
   const targetFile = positionals[0]
 
   if (!targetFile) {
@@ -1037,7 +1065,7 @@ Focus on:
 
 Provide optimized code with benchmarks/explanations.`
 
-  await runCommand(claudeCmd, [], {
+  await runCommand(claudeCmd, prepareClaudeArgs([], opts), {
     input: prompt,
     stdio: 'inherit'
   })
@@ -1049,6 +1077,7 @@ Provide optimized code with benchmarks/explanations.`
  * Comprehensive security and quality audit.
  */
 async function runAudit(claudeCmd, options = {}) {
+  const opts = { __proto__: null, ...options }
   printHeader('Security & Quality Audit')
 
   log.step('Gathering project information')
@@ -1083,7 +1112,7 @@ Analyze:
 
 Provide actionable recommendations with priorities.`
 
-  await runCommand(claudeCmd, [], {
+  await runCommand(claudeCmd, prepareClaudeArgs([], opts), {
     input: prompt,
     stdio: 'inherit'
   })
@@ -1095,9 +1124,10 @@ Provide actionable recommendations with priorities.`
  * Explain code or concepts.
  */
 async function runExplain(claudeCmd, options = {}) {
+  const opts = { __proto__: null, ...options }
   printHeader('Code Explanation')
 
-  const { positionals = [] } = options
+  const { positionals = [] } = opts
   const targetFile = positionals[0]
 
   if (!targetFile) {
@@ -1142,7 +1172,7 @@ Provide:
 Focus on practical understanding for developers.`
   }
 
-  await runCommand(claudeCmd, [], {
+  await runCommand(claudeCmd, prepareClaudeArgs([], opts), {
     input: prompt,
     stdio: 'inherit'
   })
@@ -1154,9 +1184,10 @@ Focus on practical understanding for developers.`
  * Help with migrations.
  */
 async function runMigration(claudeCmd, options = {}) {
+  const opts = { __proto__: null, ...options }
   printHeader('Migration Assistant')
 
-  const { positionals = [] } = options
+  const { positionals = [] } = opts
   const migrationType = positionals[0]
 
   if (!migrationType) {
@@ -1187,7 +1218,7 @@ Provide:
 
 Be specific and actionable.`
 
-  await runCommand(claudeCmd, [], {
+  await runCommand(claudeCmd, prepareClaudeArgs([], opts), {
     input: prompt,
     stdio: 'inherit'
   })
@@ -1199,6 +1230,7 @@ Be specific and actionable.`
  * Clean up code by removing unused elements.
  */
 async function runCleanup(claudeCmd, options = {}) {
+  const opts = { __proto__: null, ...options }
   printHeader('Code Cleanup')
 
   log.step('Analyzing codebase for cleanup opportunities')
@@ -1234,9 +1266,10 @@ Format as actionable tasks.`
  * Help with debugging issues.
  */
 async function runDebug(claudeCmd, options = {}) {
+  const opts = { __proto__: null, ...options }
   printHeader('Debugging Assistant')
 
-  const { positionals = [] } = options
+  const { positionals = [] } = opts
   const errorOrFile = positionals.join(' ')
 
   if (!errorOrFile) {
@@ -1268,7 +1301,7 @@ Provide:
 
 Be specific and actionable.`
 
-  await runCommand(claudeCmd, [], {
+  await runCommand(claudeCmd, prepareClaudeArgs([], opts), {
     input: prompt,
     stdio: 'inherit'
   })
@@ -1308,7 +1341,7 @@ function showOperations() {
 async function main() {
   try {
     // Parse arguments.
-    const { positionals, values } = parseArgs({
+    const { values, positionals } = parseArgs({
       options: {
         // Core operations.
         help: {
@@ -1402,6 +1435,10 @@ async function main() {
           type: 'boolean',
           default: false,
         },
+        'no-darkwing': {
+          type: 'boolean',
+          default: false,
+        },
       },
       allowPositionals: true,
       strict: false,
@@ -1425,6 +1462,7 @@ async function main() {
       console.log('  --no-report      Skip generating scan report (--fix)')
       console.log('  --no-interactive Skip interactive fix session (--fix)')
       console.log('  --no-cross-repo  Operate on current project only')
+      console.log('  --no-darkwing    Disable "Let\'s get dangerous!" mode')
       console.log('\nExamples:')
       console.log('  pnpm claude --review         # Review staged changes')
       console.log('  pnpm claude --fix            # Scan for issues')
