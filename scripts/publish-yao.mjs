@@ -476,6 +476,10 @@ async function main() {
         type: 'boolean',
         default: false,
       },
+      'skip-consistency-check': {
+        type: 'boolean',
+        default: false,
+      },
       'dry-run': {
         type: 'boolean',
         default: false,
@@ -514,6 +518,7 @@ Options:
   --version=VERSION      Version to publish (default: from package.json)
   --node-version=VERSION Node.js version for yao-pkg (default: v24.9.0 socket-node)
   --skip-version-check  Skip checking for newer yao-pkg Node versions
+  --skip-consistency-check Skip package version consistency validation (NOT RECOMMENDED)
   --dry-run             Perform dry-run without publishing
   --skip-build          Skip building binaries (use existing)
   --skip-optional       Skip optional platforms (armv7, alpine)
@@ -576,6 +581,31 @@ Notes:
     // Get version
     const version = values.version || await getVersion()
     console.log(`Publishing version: ${version}\n`)
+
+    // Check version consistency across all packages.
+    if (!values['skip-consistency-check']) {
+      console.log(colors.bold('📋 Package Version Consistency Check'))
+      console.log('─'.repeat(60))
+      const isConsistent = await checkVersionConsistency(version)
+      console.log('─'.repeat(60))
+
+      if (!isConsistent) {
+        console.log(colors.red('\n❌ Version consistency check failed!'))
+        console.log(colors.yellow('This is CRITICAL: All @socketbin packages must have the same version.'))
+        console.log(colors.yellow('Fix the version mismatches before publishing.'))
+
+        if (!values['dry-run']) {
+          console.log(colors.red('\nAborting publish to prevent version inconsistency.'))
+          console.log('Use --skip-consistency-check to bypass this check (NOT RECOMMENDED).\n')
+          process.exitCode = 1
+          return
+        } else {
+          console.log(colors.yellow('\n⚠️  Continuing with dry-run despite version mismatch...\n'))
+        }
+      } else {
+        console.log()
+      }
+    }
 
     // Determine which platforms to build
     let platformsToBuild = values.platform || []
