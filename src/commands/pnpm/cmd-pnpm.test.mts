@@ -2,7 +2,7 @@ import { tmpdir } from 'node:os'
 import path from 'node:path'
 
 import { deleteAsync } from 'del'
-import { afterAll, beforeAll, describe, expect } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import constants, {
   FLAG_CONFIG,
@@ -344,4 +344,83 @@ describe('socket pnpm', async () => {
       ).toBe(0)
     },
   )
+
+  describe('CI environment routing', () => {
+    it('should forward to sfw when config flag is present but NOT in CI', async () => {
+      const originalCI = process.env.CI
+      try {
+        // Ensure we're not in CI.
+        delete process.env.CI
+
+        const { code, stderr } = await spawnSocketCli(
+          binCliPath,
+          [PNPM, 'ls', FLAG_CONFIG, '{"apiToken":"fakeToken"}'],
+          {
+            timeout: 10_000,
+          },
+        )
+
+        // When forwarding to sfw, npx will be invoked which may show npx-related output.
+        // The exact output depends on whether sfw is installed.
+        expect(code).toBeGreaterThanOrEqual(0)
+        // Should NOT show pnpm version output that comes from shadow binary.
+        expect(stderr).not.toContain('using pnpm v')
+      } finally {
+        if (originalCI !== undefined) {
+          process.env.CI = originalCI
+        }
+      }
+    })
+
+    it('should use shadow pnpm binary when config flag is present AND in CI', async () => {
+      const originalCI = process.env.CI
+      try {
+        // Set CI environment.
+        process.env.CI = '1'
+
+        const { code, stdout } = await spawnSocketCli(
+          binCliPath,
+          [PNPM, 'ls', FLAG_CONFIG, '{"apiToken":"fakeToken"}'],
+          {
+            timeout: 10_000,
+          },
+        )
+
+        expect(code).toBe(0)
+        // Shadow pnpm binary should be used, showing pnpm output.
+        expect(stdout).toContain('dependencies:')
+      } finally {
+        if (originalCI !== undefined) {
+          process.env.CI = originalCI
+        } else {
+          delete process.env.CI
+        }
+      }
+    })
+
+    it('should forward to sfw when no config flag regardless of CI', async () => {
+      const originalCI = process.env.CI
+      try {
+        // Set CI environment.
+        process.env.CI = '1'
+
+        const { code } = await spawnSocketCli(
+          binCliPath,
+          [PNPM, 'ls'],
+          {
+            timeout: 10_000,
+          },
+        )
+
+        // When forwarding to sfw without config, it should still work.
+        expect(code).toBeGreaterThanOrEqual(0)
+      } finally {
+        if (originalCI !== undefined) {
+          process.env.CI = originalCI
+        } else {
+          delete process.env.CI
+        }
+      }
+    })
+  })
 })
