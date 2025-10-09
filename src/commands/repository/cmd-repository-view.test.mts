@@ -257,7 +257,7 @@ describe('socket repository view', async () => {
           throw err;
           ^
 
-        Error: Cannot find module './external/@socketsecurity/registry/dist/lib/download-lock'
+        Error: Cannot find module './external/ink'
         Require stack:
         - /Users/jdalton/projects/socket-cli/dist/utils.js
         - /Users/jdalton/projects/socket-cli/dist/cli.js
@@ -269,7 +269,7 @@ describe('socket repository view', async () => {
             at wrapModuleLoad (node:internal/modules/cjs/loader:244:24)
             at Module.require (node:internal/modules/cjs/loader:1503:12)
             at require (node:internal/modules/helpers:152:16)
-            at Object.<anonymous> (/Users/jdalton/projects/socket-cli/dist/utils.js:1:1642)
+            at Object.<anonymous> (/Users/jdalton/projects/socket-cli/dist/utils.js:1:2437)
             at Module._compile (node:internal/modules/cjs/loader:1760:14) {
           code: 'MODULE_NOT_FOUND',
           requireStack: [

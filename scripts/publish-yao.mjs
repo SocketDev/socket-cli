@@ -18,6 +18,8 @@ import { parseArgs } from 'node:util'
 
 import colors from 'yoctocolors-cjs'
 
+import { checkVersionConsistency } from './check-version-consistency.mjs'
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const ROOT_DIR = path.join(__dirname, '..')
 const BUILD_DIR = path.join(ROOT_DIR, 'build', 'yao')
@@ -135,9 +137,9 @@ async function checkNodeVersionsForPublish(silent = false) {
     const newerVersions = versions.filter(v => {
       const parts = v.split('.').map(Number)
       // Only check same major version for patch updates
-      if (parts[0] !== currentParts[0]) return false
-      if (parts[1] > currentParts[1]) return true
-      if (parts[1] === currentParts[1] && parts[2] > currentParts[2]) return true
+      if (parts[0] !== currentParts[0]) {return false}
+      if (parts[1] > currentParts[1]) {return true}
+      if (parts[1] === currentParts[1] && parts[2] > currentParts[2]) {return true}
       return false
     })
 
@@ -154,10 +156,10 @@ async function checkNodeVersionsForPublish(silent = false) {
       console.log(colors.magenta('║') + ' 3. Update version in ' + colors.cyan('.config/socket-node.json'))
       console.log(colors.magenta('║'))
       console.log(colors.magenta('║') + ' Latest versions by major:')
-      if (v24) console.log(colors.magenta('║') + `   Node 24: ${colors.cyan(`v${v24}`)}`)
-      if (v22) console.log(colors.magenta('║') + `   Node 22: ${colors.cyan(`v${v22}`)}`)
-      if (v20) console.log(colors.magenta('║') + `   Node 20: ${colors.cyan(`v${v20}`)}`)
-      if (v18) console.log(colors.magenta('║') + `   Node 18: ${colors.cyan(`v${v18}`)}`)
+      if (v24) {console.log(colors.magenta('║') + `   Node 24: ${colors.cyan(`v${v24}`)}`)}
+      if (v22) {console.log(colors.magenta('║') + `   Node 22: ${colors.cyan(`v${v22}`)}`)}
+      if (v20) {console.log(colors.magenta('║') + `   Node 20: ${colors.cyan(`v${v20}`)}`)}
+      if (v18) {console.log(colors.magenta('║') + `   Node 18: ${colors.cyan(`v${v18}`)}`)}
       console.log(colors.magenta('═'.repeat(70)) + '\n')
     }
 
@@ -166,7 +168,7 @@ async function checkNodeVersionsForPublish(silent = false) {
       available: { v24, v22, v20, v18 },
       hasUpdates: newerVersions.length > 0
     }
-  } catch (e) {
+  } catch {
     if (!silent) {
       console.warn(`   Version check failed, using socket-node: v${SOCKET_NODE_VERSION}`)
     }
@@ -232,7 +234,8 @@ async function buildYaoBinary(platform, arch, nodeVersion) {
       PKG_CONFIG,
       '--targets', pkgTarget,
       '--output', outputPath,
-      '--compress', 'GZip',  // Use compression for smaller binaries
+      // Use compression for smaller binaries
+      '--compress', 'GZip',
     ]
 
     // Add minification in production
@@ -553,7 +556,8 @@ Notes:
   - Uses trusted publishing with --provenance flag
   - Each platform publishes as a separate npm package
 `)
-    process.exit(0)
+    process.exitCode = 0
+    return
   }
 
   console.log('🚀 Socket CLI Yao-PKG Publisher')
@@ -561,7 +565,7 @@ Notes:
 
   try {
     // Get Node version
-    let nodeVersion = values['node-version'] || SOCKET_NODE_VERSION
+    const nodeVersion = values['node-version'] || SOCKET_NODE_VERSION
     console.log(`📦 Using socket-node version: v${nodeVersion}`)
 
     // Check for available updates unless disabled

@@ -203,11 +203,9 @@ describe('socket analytics', async () => {
           throw err;
           ^
 
-        Error: Cannot find module './globs.js'
+        Error: Cannot find module './external/ink'
         Require stack:
-        - /Users/jdalton/projects/socket-cli/dist/external/@socketsecurity/registry/dist/lib/fs.js
-        - /Users/jdalton/projects/socket-cli/dist/constants.js
-        - /Users/jdalton/projects/socket-cli/dist/vendor.js
+        - /Users/jdalton/projects/socket-cli/dist/utils.js
         - /Users/jdalton/projects/socket-cli/dist/cli.js
             at Module._resolveFilename (node:internal/modules/cjs/loader:1420:15)
             at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)
@@ -217,13 +215,11 @@ describe('socket analytics', async () => {
             at wrapModuleLoad (node:internal/modules/cjs/loader:244:24)
             at Module.require (node:internal/modules/cjs/loader:1503:12)
             at require (node:internal/modules/helpers:152:16)
-            at Object.<anonymous> (/Users/jdalton/projects/socket-cli/dist/external/@socketsecurity/registry/dist/lib/fs.js:5:17)
+            at Object.<anonymous> (/Users/jdalton/projects/socket-cli/dist/utils.js:1:2437)
             at Module._compile (node:internal/modules/cjs/loader:1760:14) {
           code: 'MODULE_NOT_FOUND',
           requireStack: [
-            '/Users/jdalton/projects/socket-cli/dist/external/@socketsecurity/registry/dist/lib/fs.js',
-            '/Users/jdalton/projects/socket-cli/dist/constants.js',
-            '/Users/jdalton/projects/socket-cli/dist/vendor.js',
+            '/Users/jdalton/projects/socket-cli/dist/utils.js',
             '/Users/jdalton/projects/socket-cli/dist/cli.js'
           ]
         }
