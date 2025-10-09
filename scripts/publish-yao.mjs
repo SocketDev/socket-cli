@@ -16,6 +16,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { parseArgs } from 'node:util'
 
+import colors from 'yoctocolors-cjs'
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const ROOT_DIR = path.join(__dirname, '..')
 const BUILD_DIR = path.join(ROOT_DIR, 'build', 'yao')
@@ -23,12 +25,12 @@ const DIST_DIR = path.join(ROOT_DIR, 'dist')
 const PKG_CONFIG = path.join(ROOT_DIR, '.config', 'pkg.json')
 
 /**
- * Current socket-node version for yao-pkg
- * IMPORTANT: socket-node is Socket's custom Node build.
- * Yao-pkg then patches socket-node to create socket-stub for distribution.
- * Do not change without updating the socket-node patches!
+ * Load socket-node version from config
  */
-const SOCKET_NODE_VERSION = '24.9.0'
+const socketNodeConfig = JSON.parse(
+  await fs.readFile(path.join(ROOT_DIR, '.config', 'socket-node.json'), 'utf8')
+)
+const SOCKET_NODE_VERSION = socketNodeConfig.version
 
 /**
  * Platform configurations for @socketbin packages
@@ -140,23 +142,23 @@ async function checkNodeVersionsForPublish(silent = false) {
     })
 
     if (newerVersions.length > 0 && !silent) {
-      console.log('\n' + '═'.repeat(70))
-      console.log('║ 🚨 NEW YAO-PKG NODE VERSIONS AVAILABLE! 🚨')
-      console.log('═'.repeat(70))
-      console.log(`║ Current socket-node version: v${SOCKET_NODE_VERSION}`)
-      console.log(`║ Newer versions available: ${newerVersions.map(v => `v${v}`).join(', ')}`)
-      console.log('║')
-      console.log('║ ⚠️  ACTION REQUIRED:')
-      console.log('║ 1. Update socket-node patches for the new Node version')
-      console.log('║ 2. Test thoroughly with the new version')
-      console.log('║ 3. Update SOCKET_NODE_VERSION in scripts')
-      console.log('║')
-      console.log('║ Latest versions by major:')
-      if (v24) console.log(`║   Node 24: v${v24}`)
-      if (v22) console.log(`║   Node 22: v${v22}`)
-      if (v20) console.log(`║   Node 20: v${v20}`)
-      if (v18) console.log(`║   Node 18: v${v18}`)
-      console.log('═'.repeat(70) + '\n')
+      console.log('\n' + colors.magenta('═'.repeat(70)))
+      console.log(colors.magenta('║') + ' 🎉 🕺 ' + colors.bold(colors.cyan('NEW YAO-PKG NODE VERSIONS AVAILABLE!')) + ' 👯 🎉')
+      console.log(colors.magenta('═'.repeat(70)))
+      console.log(colors.magenta('║') + ' Current socket-node version: ' + colors.dim(`v${SOCKET_NODE_VERSION}`))
+      console.log(colors.magenta('║') + ' ' + colors.bold(colors.green(`Newer versions available: ${newerVersions.map(v => `v${v}`).join(', ')}`)))
+      console.log(colors.magenta('║'))
+      console.log(colors.magenta('║') + ' 📝 ' + colors.bold('ACTION REQUIRED:'))
+      console.log(colors.magenta('║') + ' 1. Update socket-node patches for the new Node version')
+      console.log(colors.magenta('║') + ' 2. Test thoroughly with the new version')
+      console.log(colors.magenta('║') + ' 3. Update version in ' + colors.cyan('.config/socket-node.json'))
+      console.log(colors.magenta('║'))
+      console.log(colors.magenta('║') + ' Latest versions by major:')
+      if (v24) console.log(colors.magenta('║') + `   Node 24: ${colors.cyan(`v${v24}`)}`)
+      if (v22) console.log(colors.magenta('║') + `   Node 22: ${colors.cyan(`v${v22}`)}`)
+      if (v20) console.log(colors.magenta('║') + `   Node 20: ${colors.cyan(`v${v20}`)}`)
+      if (v18) console.log(colors.magenta('║') + `   Node 18: ${colors.cyan(`v${v18}`)}`)
+      console.log(colors.magenta('═'.repeat(70)) + '\n')
     }
 
     return {

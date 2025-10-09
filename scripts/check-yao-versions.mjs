@@ -7,15 +7,22 @@
  * that Socket needs to update its socket-node patches for.
  */
 
+import { readFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import colors from 'yoctocolors-cjs'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
+const ROOT_DIR = join(__dirname, '..')
+
 /**
- * Current socket-node version for yao-pkg
- * IMPORTANT: socket-node is Socket's custom Node build.
- * Yao-pkg then patches socket-node to create socket-stub for distribution.
- * Do not change without updating the socket-node patches!
+ * Load socket-node version from config
  */
-const SOCKET_NODE_VERSION = '24.9.0'
+const socketNodeConfig = JSON.parse(
+  readFileSync(join(ROOT_DIR, '.config', 'socket-node.json'), 'utf8')
+)
+const SOCKET_NODE_VERSION = socketNodeConfig.version
 
 /**
  * Fetch and check yao-pkg Node versions
@@ -96,24 +103,21 @@ async function checkYaoPkgVersions() {
     console.log()
 
     if (newerVersions.length > 0) {
-      console.log('═'.repeat(70))
-      console.log('║ 🚨 NEW VERSIONS AVAILABLE FOR NODE ' + currentMajor + '! 🚨')
-      console.log('═'.repeat(70))
-      console.log(`║ Current socket-node: v${SOCKET_NODE_VERSION}`)
-      console.log(`║ Newer versions: ${newerVersions.map(v => `v${v}`).join(', ')}`)
-      console.log('║')
-      console.log('║ ⚠️  ACTION REQUIRED:')
-      console.log('║ 1. Review the changes in Node.js ${newerVersions[0]}')
-      console.log('║ 2. Update socket-node patches for the new version')
-      console.log('║ 3. Test thoroughly with the new version')
-      console.log('║ 4. Update SOCKET_NODE_VERSION in:')
-      console.log('║    - scripts/build/build-binary.mjs')
-      console.log('║    - scripts/publish-yao.mjs')
-      console.log('║    - scripts/check-yao-versions.mjs')
-      console.log('║')
-      console.log('║ 📝 Node.js changelog:')
-      console.log(`║ https://github.com/nodejs/node/releases/tag/v${newerVersions[0]}`)
-      console.log('═'.repeat(70))
+      console.log(colors.magenta('═'.repeat(70)))
+      console.log(colors.magenta('║') + ' 🎉 🕺 ' + colors.bold(colors.cyan(`NEW VERSIONS AVAILABLE FOR NODE ${currentMajor}!`)) + ' 👯 🎉')
+      console.log(colors.magenta('═'.repeat(70)))
+      console.log(colors.magenta('║') + ' Current socket-node: ' + colors.dim(`v${SOCKET_NODE_VERSION}`))
+      console.log(colors.magenta('║') + ' ' + colors.bold(colors.green(`Newer versions: ${newerVersions.map(v => `v${v}`).join(', ')}`)))
+      console.log(colors.magenta('║'))
+      console.log(colors.magenta('║') + ' 📝 ' + colors.bold('ACTION REQUIRED:'))
+      console.log(colors.magenta('║') + ' 1. Review the changes in Node.js ' + colors.cyan(`v${newerVersions[0]}`))
+      console.log(colors.magenta('║') + ' 2. Update socket-node patches for the new version')
+      console.log(colors.magenta('║') + ' 3. Test thoroughly with the new version')
+      console.log(colors.magenta('║') + ' 4. Update version in ' + colors.cyan('.config/socket-node.json'))
+      console.log(colors.magenta('║'))
+      console.log(colors.magenta('║') + ' 📚 Node.js changelog:')
+      console.log(colors.magenta('║') + ' ' + colors.blue(`https://github.com/nodejs/node/releases/tag/v${newerVersions[0]}`))
+      console.log(colors.magenta('═'.repeat(70)))
 
       process.exitCode = 1 // Exit with error to signal updates available
     } else {
