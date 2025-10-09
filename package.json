@@ -48,6 +48,7 @@
     "prepare": "husky",
     "bs": "pnpm run build --src; pnpm exec socket --",
     "s": "pnpm exec socket --",
+    "sync-claude": "node scripts/sync-claude.mjs",
     "test": "node scripts/test.mjs",
     "test:validate": "node scripts/validate-tests.mjs",
     "test:wrapper": "node scripts/test-wrapper.mjs",

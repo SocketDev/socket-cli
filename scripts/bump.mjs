@@ -712,6 +712,7 @@ async function main() {
       if (!claudeCmd) {
         log.failed('claude-console not found')
         log.error('Please install claude-console: https://github.com/anthropics/claude-console')
+        log.info('Install with: npm install -g @anthropic/claude-console')
         log.info('Or use --skip-changelog to skip AI-generated changelog')
         process.exitCode = 1
         return
