@@ -7,7 +7,6 @@
     "socket-pnpm": "dist/pnpm-cli.js",
     "socket-yarn": "dist/yarn-cli.js"
   },
-  "node": "/Users/jdalton/projects/socket-cli/build/socket-node/node-yao-pkg/out/Release/node",
   "bytecode": false,
   "targets": [
     "node24-macos-arm64",

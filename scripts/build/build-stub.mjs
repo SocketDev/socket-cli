@@ -101,7 +101,11 @@ export async function buildStub(options = {}) {
     'exec', 'pkg',
     PKG_CONFIG,
     '--targets', target,
-    '--output', outputPath
+    '--output', outputPath,
+    // Avoid bytecode compilation which can cause malformed binaries
+    '--no-bytecode',
+    // Use compression to reduce size
+    '--compress', 'GZip'
   ]
 
   const env = { ...process.env }
@@ -207,15 +211,29 @@ export async function buildStub(options = {}) {
     return 1
   }
 
-  // Step 5: Sign the binary on macOS
-  if (platform === 'darwin' && existsSync(outputPath)) {
-    console.log('🔏 Signing macOS binary...')
-    const signExitCode = await signMacOSBinary(outputPath, quiet)
-    if (signExitCode !== 0) {
-      console.error('⚠️  Warning: Failed to sign macOS binary')
-      console.error('   The binary may not run properly without signing')
+  // Step 5: Sign with ldid on ARM64 macOS (fixes yao-pkg malformed binary issue)
+  if (platform === 'darwin' && arch === 'arm64' && existsSync(outputPath)) {
+    console.log('🔏 Signing macOS ARM64 binary...')
+    const signResult = await signMacOSBinaryWithLdid(outputPath, quiet)
+    if (signResult === 'ldid-not-found') {
+      console.error('⚠️  Warning: ldid not found - binary may be malformed')
+      console.error('   Install ldid to fix: brew install ldid')
+      console.error('   Then manually sign: ldid -S ./binaries/stub/socket-macos-arm64')
+    } else if (signResult !== 0) {
+      console.error('⚠️  Warning: Failed to sign with ldid')
     } else {
-      console.log('✅ Binary signed successfully\n')
+      console.log('✅ Binary signed with ldid successfully\n')
+    }
+  }
+  // For x64 or if ldid wasn't used, verify the signature
+  else if (platform === 'darwin' && existsSync(outputPath)) {
+    console.log('🔏 Verifying macOS binary signature...')
+    const isSignedProperly = await verifyMacOSBinarySignature(outputPath, quiet)
+    if (!isSignedProperly) {
+      console.error('⚠️  Warning: Binary may not be properly signed')
+      console.error('   The binary may not run properly')
+    } else {
+      console.log('✅ Binary signature verified\n')
     }
   }
 
@@ -240,9 +258,79 @@ export async function buildStub(options = {}) {
 }
 
 /**
- * Sign macOS binary using codesign
+ * Sign macOS ARM64 binary with ldid (fixes yao-pkg malformed binary issue)
  */
-async function signMacOSBinary(binaryPath, quiet = false) {
+async function signMacOSBinaryWithLdid(binaryPath, quiet = false) {
+  // First check if ldid is available
+  const ldidAvailable = await new Promise((resolve) => {
+    const child = spawn('which', ['ldid'], {
+      stdio: 'pipe'
+    })
+    child.on('exit', (code) => resolve(code === 0))
+    child.on('error', () => resolve(false))
+  })
+
+  if (!ldidAvailable) {
+    return 'ldid-not-found'
+  }
+
+  // Remove existing signature first (if any)
+  await new Promise((resolve) => {
+    const child = spawn('codesign', ['--remove-signature', binaryPath], {
+      stdio: 'pipe'
+    })
+    child.on('exit', () => resolve())
+    child.on('error', () => resolve())
+  })
+
+  // Sign with ldid
+  return new Promise((resolve) => {
+    const child = spawn('ldid', ['-S', binaryPath], {
+      stdio: quiet ? 'pipe' : 'inherit'
+    })
+
+    child.on('exit', (code) => {
+      resolve(code || 0)
+    })
+    child.on('error', (error) => {
+      if (!quiet) {
+        console.error('   ldid error:', error.message)
+      }
+      resolve(1)
+    })
+  })
+}
+
+/**
+ * Verify macOS binary signature
+ */
+async function verifyMacOSBinarySignature(binaryPath, quiet = false) {
+  return new Promise((resolve) => {
+    const child = spawn('codesign', ['-dv', binaryPath], {
+      stdio: 'pipe'
+    })
+
+    let stderr = ''
+    child.stderr.on('data', (data) => {
+      stderr += data.toString()
+    })
+
+    child.on('exit', (code) => {
+      // Exit code 0 means it's properly signed
+      if (!quiet && code !== 0) {
+        console.error('   Signature verification failed:', stderr.trim())
+      }
+      resolve(code === 0)
+    })
+    child.on('error', () => resolve(false))
+  })
+}
+
+/**
+ * Sign macOS binary using codesign (DEPRECATED - pkg handles this)
+ * @deprecated pkg should handle signing during build
+ */
+async function _signMacOSBinary(binaryPath, quiet = false) {
   // First check if already signed
   const checkSigned = await new Promise((resolve) => {
     const child = spawn('codesign', ['-dv', binaryPath], {
