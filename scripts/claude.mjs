@@ -1,3 +1,5 @@
+/* eslint-disable no-await-in-loop */
+
 /**
  * @fileoverview Claude Code-powered utilities for Socket projects.
  * Provides various AI-assisted development tools and automations using Claude Code CLI.
@@ -168,6 +170,140 @@ async function checkClaude() {
   const ccpResult = await runCommandWithOutput(checkCommand, ['ccp'])
   if (ccpResult.exitCode === 0) {
     return 'ccp'
+  }
+
+  return false
+}
+
+/**
+ * Ensure Claude Code is authenticated, prompting for login if needed.
+ * Returns true if authenticated, false if unable to authenticate.
+ */
+async function ensureClaudeAuthenticated(claudeCmd) {
+  let attempts = 0
+  const maxAttempts = 3
+
+  while (attempts < maxAttempts) {
+    // Check if Claude is working by checking version
+    log.progress('Checking Claude Code status')
+    const versionCheck = await runCommandWithOutput(claudeCmd, ['--version'])
+
+    if (versionCheck.exitCode === 0) {
+      // Claude Code is installed and working
+      // Check if we need to login by looking for specific error patterns
+      const testPrompt = 'echo "test"'
+      const testResult = await runCommandWithOutput(claudeCmd, [], {
+        input: testPrompt,
+        stdio: ['pipe', 'pipe', 'pipe'],
+        env: { ...process.env, CLAUDE_OUTPUT_MODE: 'text' },
+        timeout: 10000
+      })
+
+      // Check for authentication errors
+      const output = (testResult.stdout + testResult.stderr).toLowerCase()
+      const needsAuth = output.includes('not logged in') ||
+                        output.includes('authentication') ||
+                        output.includes('unauthorized') ||
+                        output.includes('login required') ||
+                        output.includes('please login')
+
+      if (!needsAuth && (testResult.exitCode === 0 || testResult.stdout.length > 0)) {
+        log.done('Claude Code ready')
+        return true
+      }
+
+      if (!needsAuth) {
+        // Claude seems to be working, even if the test had an odd response
+        log.done('Claude Code ready')
+        return true
+      }
+    }
+
+    attempts++
+
+    if (attempts >= maxAttempts) {
+      log.error(`Failed to setup Claude Code after ${maxAttempts} attempts`)
+      return false
+    }
+
+    // Not authenticated, prompt for login
+    log.warn('Claude Code login required')
+    console.log(colors.yellow('\nClaude Code needs to be authenticated.'))
+    console.log('This will open your browser for authentication.\n')
+
+    // Run claude login interactively
+    log.progress('Starting Claude Code login process')
+    const loginResult = await runCommand(claudeCmd, ['--login'], {
+      stdio: 'inherit'
+    })
+
+    if (loginResult === 0) {
+      log.done('Login process completed')
+      // Give it a moment for the auth to register
+      await new Promise(resolve => setTimeout(resolve, 3000))
+    } else {
+      log.failed('Login process failed or was cancelled')
+
+      if (attempts < maxAttempts) {
+        console.log(colors.yellow(`\nWould you like to try again?`))
+        console.log(colors.gray(`Attempt ${attempts} of ${maxAttempts}`))
+        // Wait a bit before retrying
+        await new Promise(resolve => setTimeout(resolve, 2000))
+      }
+    }
+  }
+
+  return false
+}
+
+/**
+ * Ensure GitHub CLI is authenticated, prompting for login if needed.
+ * Returns true if authenticated, false if unable to authenticate.
+ */
+async function ensureGitHubAuthenticated() {
+  let attempts = 0
+  const maxAttempts = 3
+
+  while (attempts < maxAttempts) {
+    log.progress('Checking GitHub authentication')
+    const authCheck = await runCommandWithOutput('gh', ['auth', 'status'])
+
+    if (authCheck.exitCode === 0) {
+      log.done('GitHub CLI authenticated')
+      return true
+    }
+
+    attempts++
+
+    if (attempts >= maxAttempts) {
+      log.error(`Failed to authenticate with GitHub after ${maxAttempts} attempts`)
+      return false
+    }
+
+    // Not authenticated, prompt for login
+    log.warn('GitHub authentication required')
+    console.log(colors.yellow('\nYou need to authenticate with GitHub.'))
+    console.log('Follow the prompts to complete authentication.\n')
+
+    // Run gh auth login interactively
+    log.progress('Starting GitHub login process')
+    const loginResult = await runCommand('gh', ['auth', 'login'], {
+      stdio: 'inherit'
+    })
+
+    if (loginResult === 0) {
+      log.done('Login process completed')
+      // Give it a moment for the auth to register
+      await new Promise(resolve => setTimeout(resolve, 2000))
+    } else {
+      log.failed('Login process failed')
+      console.log(colors.red('\nLogin failed. Please try again.'))
+
+      if (attempts < maxAttempts) {
+        console.log(colors.yellow(`\nAttempt ${attempts + 1} of ${maxAttempts}`))
+        await new Promise(resolve => setTimeout(resolve, 1000))
+      }
+    }
   }
 
   return false
@@ -608,7 +744,8 @@ async function scanProjectForIssues(claudeCmd, project, options = {}) {
   const extensions = ['.js', '.mjs', '.ts', '.mts', '.jsx', '.tsx']
 
   async function findFiles(dir, depth = 0) {
-    if (depth > 5) {return} // Limit depth to avoid excessive scanning.
+    // Limit depth to avoid excessive scanning
+    if (depth > 5) {return}
 
     const entries = await fs.readdir(dir, { withFileTypes: true })
 
@@ -691,7 +828,8 @@ Provide ONLY the JSON array, nothing else.`
   const result = await runCommandWithOutput(claudeCmd, prepareClaudeArgs([], options), {
     input: prompt,
     stdio: ['pipe', 'pipe', 'pipe'],
-    maxBuffer: 1024 * 1024 * 10 // 10MB buffer for large responses.
+    // 10MB buffer for large responses
+    maxBuffer: 1024 * 1024 * 10
   })
 
   if (result.exitCode !== 0) {
@@ -703,7 +841,7 @@ Provide ONLY the JSON array, nothing else.`
 
   try {
     return JSON.parse(result.stdout.trim())
-  } catch (_e) {
+  } catch {
     log.warn(`Failed to parse scan results for ${name}`)
     return null
   }
@@ -1665,7 +1803,8 @@ Fix this issue now by making the necessary changes.`
 
         // Run Claude non-interactively with timeout and progress
         const startTime = Date.now()
-        const timeout = 120000 // 2 minute timeout
+        // 2 minute timeout
+        const timeout = 120000
         log.substep(`[${repoName}] Analyzing error...`)
 
         const claudeProcess = spawn(claudeCmd, prepareClaudeArgs([], opts), {
@@ -1686,7 +1825,8 @@ Fix this issue now by making the necessary changes.`
           } else {
             log.substep(`[${repoName}] Claude working... (${Math.round(elapsed/1000)}s)`)
           }
-        }, 10000) // Update every 10 seconds
+        }, 10000)
+        // Update every 10 seconds
 
         await new Promise((resolve) => {
           claudeProcess.on('close', () => {
@@ -1732,7 +1872,8 @@ Let's work through this together to get CI passing.`
             await runCommand(claudeCmd, prepareClaudeArgs([], opts), {
               input: interactivePrompt,
               cwd: rootPath,
-              stdio: 'inherit'  // Interactive mode
+              // Interactive mode
+              stdio: 'inherit'
             })
 
             // Try once more after interactive session
@@ -1801,7 +1942,7 @@ Let's work through this together to get CI passing.`
     return true
   }
 
-  // Check for GitHub CLI and authentication
+  // Check for GitHub CLI
   const ghCheck = await runCommandWithOutput('which', ['gh'])
   if (ghCheck.exitCode !== 0) {
     log.error('GitHub CLI (gh) is required for CI monitoring')
@@ -1818,25 +1959,14 @@ Let's work through this together to get CI passing.`
     return false
   }
 
-  // Check if gh is authenticated
-  log.progress('Checking GitHub authentication')
-  const authCheck = await runCommandWithOutput('gh', ['auth', 'status'])
-  if (authCheck.exitCode !== 0) {
-    log.failed('GitHub CLI is not authenticated')
-    console.log(colors.yellow('\nYou need to authenticate with GitHub:'))
-    console.log(`  1. Run: ${colors.green('gh auth login')}`)
-    console.log('  2. Choose "GitHub.com"')
-    console.log('  3. Choose your preferred authentication method')
-    console.log('  4. Follow the prompts to complete authentication')
-    console.log(`  5. Try again: ${colors.green('pnpm claude --green')}`)
-
-    if (authCheck.stderr) {
-      console.log(colors.gray('\nError details:'))
-      console.log(colors.gray(authCheck.stderr))
-    }
+  // Ensure GitHub is authenticated (will handle login automatically)
+  const isGitHubAuthenticated = await ensureGitHubAuthenticated()
+  if (!isGitHubAuthenticated) {
+    log.error('Unable to authenticate with GitHub')
+    console.log(colors.red('\nGitHub authentication is required for CI monitoring.'))
+    console.log('Please ensure you can login to GitHub CLI and try again.')
     return false
   }
-  log.done('GitHub CLI authenticated')
 
   // Get current commit SHA
   const shaResult = await runCommandWithOutput('git', ['rev-parse', 'HEAD'], {
@@ -1873,15 +2003,32 @@ Let's work through this together to get CI passing.`
     }
 
     // Check workflow runs using gh CLI
-    const runsResult = await runCommandWithOutput('gh', [
+    // First try to find runs for the specific commit
+    let runsResult = await runCommandWithOutput('gh', [
       'run', 'list',
       '--repo', `${owner}/${repo}`,
       '--commit', currentSha,
       '--limit', '1',
-      '--json', 'databaseId,status,conclusion,name'
+      '--json', 'databaseId,status,conclusion,name,headSha'
     ], {
       cwd: rootPath
     })
+
+    // If no runs found for commit, get recent runs and check if any match our SHA
+    if (runsResult.exitCode === 0) {
+      const runs = JSON.parse(runsResult.stdout || '[]')
+      if (runs.length === 0) {
+        // Fallback: get latest runs and find our commit
+        runsResult = await runCommandWithOutput('gh', [
+          'run', 'list',
+          '--repo', `${owner}/${repo}`,
+          '--limit', '10',
+          '--json', 'databaseId,status,conclusion,name,headSha'
+        ], {
+          cwd: rootPath
+        })
+      }
+    }
 
     if (runsResult.exitCode !== 0) {
       log.failed('Failed to fetch workflow runs')
@@ -1916,13 +2063,33 @@ Let's work through this together to get CI passing.`
       return false
     }
 
-    if (runs.length === 0) {
+    // Filter runs to find one matching our commit SHA
+    let matchingRun = null
+    for (const run of runs) {
+      if (run.headSha && run.headSha.startsWith(currentSha.substring(0, 7))) {
+        matchingRun = run
+        break
+      }
+    }
+
+    if (!matchingRun && runs.length > 0) {
+      // If no exact match, take the most recent run if it was triggered recently
+      // This handles cases where the workflow was triggered by the push but headSha isn't set yet
+      const latestRun = runs[0]
+      if (retryCount === 0) {
+        // On first attempt, assume the latest run might be ours if triggered very recently
+        matchingRun = latestRun
+        log.substep(`Monitoring latest workflow run: ${latestRun.name}`)
+      }
+    }
+
+    if (!matchingRun) {
       log.substep('No workflow runs found yet, waiting...')
       await new Promise(resolve => setTimeout(resolve, 30000))
       continue
     }
 
-    const run = runs[0]
+    const run = matchingRun
     lastRunId = run.databaseId
 
     log.substep(`Workflow "${run.name}" status: ${run.status}`)
@@ -1978,7 +2145,8 @@ Fix all CI failures now by making the necessary changes.`
           await runCommand(claudeCmd, prepareClaudeArgs([], opts), {
             input: fixPrompt,
             cwd: rootPath,
-            stdio: 'pipe'  // Run silently
+            // Run silently
+            stdio: 'pipe'
           })
 
           // Give Claude's changes a moment to complete
@@ -2258,6 +2426,16 @@ async function main() {
       return
     }
     log.done(`Found Claude Code CLI: ${claudeCmd}`)
+
+    // Ensure Claude is authenticated
+    const isClaudeAuthenticated = await ensureClaudeAuthenticated(claudeCmd)
+    if (!isClaudeAuthenticated) {
+      log.error('Unable to authenticate with Claude Code')
+      console.log(colors.red('\nAuthentication is required to use Claude utilities.'))
+      console.log('Please ensure you can login to Claude Code and try again.')
+      process.exitCode = 1
+      return
+    }
 
     // Execute requested operation.
     let success = true
