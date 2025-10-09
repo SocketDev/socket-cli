@@ -292,11 +292,12 @@ async function main() {
         if (existsSync(nodePath)) {
           const stats = statSync(nodePath)
           const sizeMB = (stats.size / 1024 / 1024).toFixed(1)
+          const relativeNodePath = path.relative(process.cwd(), nodePath)
           printFooter(`Node.js built successfully! Size: ${sizeMB}MB`)
           console.log(`\n✨ To run locally:`)
-          console.log(`   ${nodePath} [script.js]`)
+          console.log(`   ./${relativeNodePath} [script.js]`)
           console.log(`   # Or use with Socket CLI:`)
-          console.log(`   ${nodePath} bin/cli.js [command]`)
+          console.log(`   ./${relativeNodePath} bin/cli.js [command]`)
         } else {
           printFooter('Node.js built successfully!')
           console.log(`\n✨ To run locally:`)
@@ -325,12 +326,13 @@ async function main() {
         const stubExt = WIN32 ? '.exe' : ''
         const stubPath = path.join(rootPath, 'binaries', 'stub', `socket-${platformName}-${process.arch}${stubExt}`)
 
+        const relativeStubPath = path.relative(process.cwd(), stubPath)
         printFooter('Stub/SEA binary built successfully!')
         console.log(`\n✨ To run locally:`)
-        console.log(`   ${stubPath} [command]`)
+        console.log(`   ./${relativeStubPath} [command]`)
         console.log(`   # Examples:`)
-        console.log(`   ${stubPath} --help`)
-        console.log(`   ${stubPath} scan .`)
+        console.log(`   ./${relativeStubPath} --help`)
+        console.log(`   ./${relativeStubPath} scan .`)
       }
       return
     }
