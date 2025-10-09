@@ -1816,8 +1816,8 @@ Let's work through this together to get CI passing.`
     return false
   }
 
-  const [, owner, repoName] = repoMatch
-  const repo = repoName.replace('.git', '')
+  const [, owner, repoNameMatch] = repoMatch
+  const repo = repoNameMatch.replace('.git', '')
 
   // Monitor workflow with retries
   let retryCount = 0
