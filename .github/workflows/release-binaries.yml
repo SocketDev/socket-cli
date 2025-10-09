@@ -1,0 +1,317 @@
+name: Build and Release Binaries
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_mode:
+        description: 'Build mode'
+        required: true
+        type: choice
+        options:
+          - yao-pkg
+          - node-sea
+          - both
+        default: yao-pkg
+      version:
+        description: 'Version to release (leave empty to use package.json version)'
+        required: false
+        type: string
+      node_version:
+        description: 'Node.js version for yao-pkg (leave empty for auto-detect)'
+        required: false
+        type: string
+  release:
+    types: [created]
+
+env:
+  # Auto-detect latest supported Node version if not specified
+  NODE_VERSION: ${{ github.event.inputs.node_version || '' }}
+
+jobs:
+  detect-node-version:
+    runs-on: ubuntu-latest
+    outputs:
+      node_version: ${{ steps.detect.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            scripts/build/build-binary.mjs
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Detect latest yao-pkg Node version
+        id: detect
+        run: |
+          if [ -n "${{ env.NODE_VERSION }}" ]; then
+            echo "version=${{ env.NODE_VERSION }}" >> $GITHUB_OUTPUT
+          else
+            # Fetch latest supported version from yao-pkg
+            VERSION=$(node -e "
+              fetch('https://api.github.com/repos/yao-pkg/pkg-fetch/contents/patches')
+                .then(r => r.json())
+                .then(data => {
+                  const versions = data
+                    .filter(f => f.name.startsWith('node.v'))
+                    .map(f => f.name.match(/node\.v(\d+\.\d+\.\d+)/)?.[1])
+                    .filter(Boolean)
+                    .sort((a, b) => {
+                      const [aMajor, aMinor, aPatch] = a.split('.').map(Number);
+                      const [bMajor, bMinor, bPatch] = b.split('.').map(Number);
+                      if (aMajor !== bMajor) return bMajor - aMajor;
+                      if (aMinor !== bMinor) return bMinor - aMinor;
+                      return bPatch - aPatch;
+                    });
+                  const v24 = versions.find(v => v.startsWith('24.'));
+                  const v22 = versions.find(v => v.startsWith('22.'));
+                  console.log(v24 || v22 || '24.9.0');
+                })
+                .catch(() => console.log('24.9.0'));
+            ")
+            echo "version=${VERSION}" >> $GITHUB_OUTPUT
+            echo "Detected Node version: ${VERSION}"
+          fi
+
+  build-yao-pkg:
+    needs: detect-node-version
+    if: github.event.inputs.build_mode == 'yao-pkg' || github.event.inputs.build_mode == 'both' || github.event_name == 'release'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Linux builds
+          - os: ubuntu-latest
+            platform: linux
+            arch: x64
+          - os: ubuntu-latest
+            platform: linux
+            arch: arm64
+
+          # macOS builds
+          - os: macos-latest
+            platform: darwin
+            arch: x64
+          - os: macos-latest
+            platform: darwin
+            arch: arm64
+
+          # Windows builds
+          - os: windows-latest
+            platform: win32
+            arch: x64
+          - os: windows-latest
+            platform: win32
+            arch: arm64
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build distribution
+        run: pnpm run build
+
+      - name: Build binary with yao-pkg
+        run: |
+          node scripts/build/build-binary.mjs \
+            --mode=yao-pkg \
+            --platform=${{ matrix.platform }} \
+            --arch=${{ matrix.arch }} \
+            --node-version=${{ needs.detect-node-version.outputs.node_version }} \
+            --output=dist/binaries/socket-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.platform == 'win32' && '.exe' || '' }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: yao-pkg-${{ matrix.platform }}-${{ matrix.arch }}
+          path: dist/binaries/socket-*
+          retention-days: 7
+
+  build-node-sea:
+    if: github.event.inputs.build_mode == 'node-sea' || github.event.inputs.build_mode == 'both'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Node SEA requires Node 20.12+ or 22+
+          - os: ubuntu-latest
+            platform: linux
+            arch: x64
+            node: '22'
+          - os: ubuntu-latest
+            platform: linux
+            arch: arm64
+            node: '22'
+
+          - os: macos-latest
+            platform: darwin
+            arch: x64
+            node: '22'
+          - os: macos-latest
+            platform: darwin
+            arch: arm64
+            node: '22'
+
+          - os: windows-latest
+            platform: win32
+            arch: x64
+            node: '22'
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build distribution
+        run: pnpm run build
+
+      - name: Install postject
+        run: npm install -g postject
+
+      - name: Build SEA binary
+        run: |
+          node scripts/build/build-binary.mjs \
+            --mode=node-sea \
+            --platform=${{ matrix.platform }} \
+            --arch=${{ matrix.arch }} \
+            --output=dist/binaries/socket-sea-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.platform == 'win32' && '.exe' || '' }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: node-sea-${{ matrix.platform }}-${{ matrix.arch }}
+          path: dist/binaries/socket-sea-*
+          retention-days: 7
+
+  upload-release:
+    needs: [build-yao-pkg, build-node-sea]
+    # Only run if at least one build job succeeded
+    if: always() && (needs.build-yao-pkg.result == 'success' || needs.build-node-sea.result == 'success')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist/binaries
+          pattern: '*-*-*'
+
+      - name: Flatten directory structure
+        run: |
+          cd dist/binaries
+          find . -type f -name "socket-*" -exec mv {} . \;
+          find . -type d -empty -delete
+          ls -la
+
+      - name: Get version
+        id: version
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" = "release" ]; then
+            echo "version=${{ github.event.release.tag_name }}" >> $GITHUB_OUTPUT
+          else
+            VERSION=$(node -p "require('./package.json').version")
+            echo "version=v${VERSION}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create checksums
+        run: |
+          cd dist/binaries
+          sha256sum socket-* > checksums.txt
+          cat checksums.txt
+
+      - name: Create or update release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+
+          # Check if release exists
+          if gh release view "${VERSION}" > /dev/null 2>&1; then
+            echo "Release ${VERSION} exists, uploading binaries..."
+          else
+            echo "Creating release ${VERSION}..."
+            gh release create "${VERSION}" \
+              --title "Socket CLI ${VERSION}" \
+              --notes "Socket CLI ${VERSION}
+
+## Binaries
+
+This release includes binaries built with:
+- **yao-pkg**: Maximum compatibility, Node ${{ needs.detect-node-version.outputs.node_version || '24.9.0' }}
+- **node-sea**: Native Node.js Single Executable Applications (experimental)
+
+### Supported Platforms
+- Linux (x64, arm64)
+- macOS (x64, arm64)
+- Windows (x64, arm64)
+
+### Installation
+
+Download the appropriate binary for your platform and make it executable:
+
+\`\`\`bash
+# Linux/macOS
+chmod +x socket-linux-x64
+./socket-linux-x64 --version
+
+# Windows
+socket-win-x64.exe --version
+\`\`\`
+
+### Checksums
+
+See \`checksums.txt\` for SHA-256 checksums of all binaries.
+
+### Changelog
+
+See [CHANGELOG.md](https://github.com/SocketDev/socket-cli/blob/main/CHANGELOG.md) for details.
+" \
+              --draft
+          fi
+
+          # Upload binaries and checksums
+          cd dist/binaries
+          for file in socket-* checksums.txt; do
+            if [ -f "$file" ]; then
+              echo "Uploading $file..."
+              gh release upload "${VERSION}" "$file" --clobber
+            fi
+          done
+
+      - name: Summary
+        run: |
+          echo "## Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** ${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Build Mode:** ${{ github.event.inputs.build_mode || 'yao-pkg' }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Binaries Built" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          ls -lh dist/binaries/socket-* | awk '{print $NF, $5}' >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
