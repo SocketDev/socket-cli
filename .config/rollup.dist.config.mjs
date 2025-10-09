@@ -411,15 +411,11 @@ export default async () => {
     }),
     // Bundle external wrapper modules separately
     // Each external module gets its own self-contained bundle
-    // Note: Using the base configuration to handle these properly
+    // Bundle each one individually to avoid code splitting
     baseConfig({
-      input: {
-        'external/ink-table': `${srcPath}/external/ink-table.mjs`,
-        'external/yoga-layout': `${srcPath}/external/yoga-layout.mjs`,
-      },
+      input: `${srcPath}/external/ink.mjs`,
       output: {
-        dir: path.relative(rootPath, distPath),
-        entryFileNames: '[name].js',
+        file: path.join(path.relative(rootPath, distPath), 'external/ink.js'),
         format: 'cjs',
         exports: 'auto',
         externalLiveBindings: false,
@@ -431,6 +427,53 @@ export default async () => {
         },
         compact: true,
         sourcemap: false,
+        inlineDynamicImports: true,
+      },
+      // Override external to bundle dependencies for these modules
+      external(id) {
+        // Only externalize Node.js built-ins
+        return isBuiltin(id)
+      },
+    }),
+    baseConfig({
+      input: `${srcPath}/external/ink-table.mjs`,
+      output: {
+        file: path.join(path.relative(rootPath, distPath), 'external/ink-table.js'),
+        format: 'cjs',
+        exports: 'auto',
+        externalLiveBindings: false,
+        generatedCode: {
+          preset: 'es2015',
+          arrowFunctions: true,
+          constBindings: true,
+          objectShorthand: true
+        },
+        compact: true,
+        sourcemap: false,
+        inlineDynamicImports: true,
+      },
+      // Override external to bundle dependencies for these modules
+      external(id) {
+        // Only externalize Node.js built-ins
+        return isBuiltin(id)
+      },
+    }),
+    baseConfig({
+      input: `${srcPath}/external/yoga-layout.mjs`,
+      output: {
+        file: path.join(path.relative(rootPath, distPath), 'external/yoga-layout.js'),
+        format: 'cjs',
+        exports: 'auto',
+        externalLiveBindings: false,
+        generatedCode: {
+          preset: 'es2015',
+          arrowFunctions: true,
+          constBindings: true,
+          objectShorthand: true
+        },
+        compact: true,
+        sourcemap: false,
+        inlineDynamicImports: true,
       },
       // Override external to bundle dependencies for these modules
       external(id) {
