@@ -216,9 +216,9 @@ export async function buildStub(options = {}) {
     console.log('🔏 Signing macOS ARM64 binary...')
     const signResult = await signMacOSBinaryWithLdid(outputPath, quiet)
     if (signResult === 'ldid-not-found') {
-      console.error('⚠️  Warning: ldid not found - binary may be malformed')
-      console.error('   Install ldid to fix: brew install ldid')
-      console.error('   Then manually sign: ldid -S ./binaries/stub/socket-macos-arm64')
+      console.error('⚠️  Warning: Could not install or find ldid')
+      console.error('   Binary may be malformed without ldid signing')
+      console.error('   To fix manually: brew install ldid && ldid -S ./binaries/stub/socket-macos-arm64')
     } else if (signResult !== 0) {
       console.error('⚠️  Warning: Failed to sign with ldid')
     } else {
@@ -258,6 +258,55 @@ export async function buildStub(options = {}) {
 }
 
 /**
+ * Install ldid using Homebrew
+ */
+async function installLdidViaBrew(quiet = false) {
+  // First check if brew is available
+  const brewAvailable = await new Promise((resolve) => {
+    const child = spawn('which', ['brew'], {
+      stdio: 'pipe'
+    })
+    child.on('exit', (code) => resolve(code === 0))
+    child.on('error', () => resolve(false))
+  })
+
+  if (!brewAvailable) {
+    if (!quiet) {
+      console.error('   Homebrew not found, cannot auto-install ldid')
+      console.error('   To install Homebrew, run:')
+      console.error('   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"')
+      console.error('   Then re-run this build command')
+    }
+    return false
+  }
+
+  // Install ldid using brew
+  return new Promise((resolve) => {
+    console.log('   Running: brew install ldid')
+    const child = spawn('brew', ['install', 'ldid'], {
+      stdio: quiet ? 'pipe' : 'inherit'
+    })
+
+    child.on('exit', (code) => {
+      if (code === 0) {
+        resolve(true)
+      } else {
+        if (!quiet) {
+          console.error('   Failed to install ldid via Homebrew')
+        }
+        resolve(false)
+      }
+    })
+    child.on('error', (error) => {
+      if (!quiet) {
+        console.error('   Error installing ldid:', error.message)
+      }
+      resolve(false)
+    })
+  })
+}
+
+/**
  * Sign macOS ARM64 binary with ldid (fixes yao-pkg malformed binary issue)
  */
 async function signMacOSBinaryWithLdid(binaryPath, quiet = false) {
@@ -271,7 +320,13 @@ async function signMacOSBinaryWithLdid(binaryPath, quiet = false) {
   })
 
   if (!ldidAvailable) {
-    return 'ldid-not-found'
+    // Try to install ldid automatically
+    console.log('   ldid not found, attempting to install via Homebrew...')
+    const brewInstalled = await installLdidViaBrew(quiet)
+    if (!brewInstalled) {
+      return 'ldid-not-found'
+    }
+    console.log('   ldid installed successfully')
   }
 
   // Remove existing signature first (if any)
