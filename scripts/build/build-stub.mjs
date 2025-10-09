@@ -84,10 +84,41 @@ export async function buildStub(options = {}) {
     return 1
   }
 
-  // Step 3: Create output directory
+  // Step 3: Check and install required tools
+  console.log('🔧 Checking build requirements...')
+
+  // Check for essential tools on all platforms
+  const essentialTools = await checkEssentialTools(platform, arch, quiet)
+  if (!essentialTools) {
+    console.error('❌ Failed to install essential build tools')
+    return 1
+  }
+
+  // Additional checks for macOS
+  if (platform === 'darwin') {
+    // Check for ldid on ARM64 (required for proper signing)
+    if (arch === 'arm64') {
+      const ldidCheck = await checkAndInstallLdid(quiet)
+      if (ldidCheck === 'not-found') {
+        console.error('❌ Could not install ldid - binary will be malformed')
+        console.error('   The stub binary will not work properly on ARM64')
+        console.error('   Try installing manually: brew install ldid')
+        // Exit early - no point building a broken binary
+        return 1
+      } else if (ldidCheck === 'newly-installed') {
+        console.log('✅ ldid installed successfully')
+      } else {
+        console.log('✅ ldid is available')
+      }
+    }
+  }
+
+  console.log('✅ All build requirements met\n')
+
+  // Step 4: Create output directory
   await mkdir(STUB_DIR, { recursive: true })
 
-  // Step 4: Build with pkg
+  // Step 5: Build with pkg
   const target = getPkgTarget(platform, arch, nodeVersion)
   const outputName = getOutputName(platform, arch)
   const outputPath = join(STUB_DIR, outputName)
@@ -211,16 +242,15 @@ export async function buildStub(options = {}) {
     return 1
   }
 
-  // Step 5: Sign with ldid on ARM64 macOS (fixes yao-pkg malformed binary issue)
+  // Step 6: Sign with ldid on ARM64 macOS (if needed)
   if (platform === 'darwin' && arch === 'arm64' && existsSync(outputPath)) {
-    console.log('🔏 Signing macOS ARM64 binary...')
+    console.log('🔏 Signing macOS ARM64 binary with ldid...')
     const signResult = await signMacOSBinaryWithLdid(outputPath, quiet)
     if (signResult === 'ldid-not-found') {
-      console.error('⚠️  Warning: Could not install or find ldid')
-      console.error('   Binary may be malformed without ldid signing')
-      console.error('   To fix manually: brew install ldid && ldid -S ./binaries/stub/socket-macos-arm64')
+      console.error('⚠️  Warning: ldid disappeared after install?')
     } else if (signResult !== 0) {
       console.error('⚠️  Warning: Failed to sign with ldid')
+      console.error('   The binary may be malformed')
     } else {
       console.log('✅ Binary signed with ldid successfully\n')
     }
@@ -258,11 +288,189 @@ export async function buildStub(options = {}) {
 }
 
 /**
+ * Check and install essential build tools
+ */
+async function checkEssentialTools(platform, arch, quiet = false) {
+  const tools = []
+
+  // Git is essential for many operations
+  tools.push({ name: 'git', installCmd: 'git' })
+
+  // Platform-specific tools
+  if (platform === 'darwin') {
+    // Xcode Command Line Tools provide essential build tools
+    const hasXcodeTools = await checkCommand('xcodebuild', ['-version'])
+    if (!hasXcodeTools) {
+      console.log('   Xcode Command Line Tools not found, installing...')
+      // This will prompt for installation
+      await new Promise((resolve) => {
+        const child = spawn('xcode-select', ['--install'], {
+          stdio: 'inherit'
+        })
+        child.on('exit', resolve)
+        child.on('error', resolve)
+      })
+    }
+  } else if (platform === 'linux') {
+    // Linux needs build-essential
+    tools.push({ name: 'make', installCmd: 'build-essential' })
+    tools.push({ name: 'gcc', installCmd: 'build-essential' })
+  } else if (platform === 'win32') {
+    // Windows needs Visual Studio Build Tools
+    // These are harder to auto-install, so just check
+    const hasMSBuild = await checkCommand('msbuild', ['/version'])
+    if (!hasMSBuild) {
+      console.error('   Visual Studio Build Tools not found')
+      console.error('   Please install from: https://visualstudio.microsoft.com/downloads/')
+      return false
+    }
+  }
+
+  // Check and install tools sequentially
+  const installTool = async (tool) => {
+    const hasCommand = await checkCommand(tool.name)
+    if (!hasCommand) {
+      console.log(`   ${tool.name} not found`)
+      if (platform === 'darwin') {
+        // Try to install via Homebrew
+        const installed = await installViaHomebrew(tool.installCmd, quiet)
+        if (!installed) {
+          console.error(`   Failed to install ${tool.name}`)
+          return false
+        }
+      } else if (platform === 'linux') {
+        console.error(`   Please install ${tool.installCmd} manually`)
+        console.error(`   Ubuntu/Debian: sudo apt-get install ${tool.installCmd}`)
+        console.error(`   RHEL/Fedora: sudo dnf install ${tool.installCmd}`)
+        return false
+      }
+    }
+    return true
+  }
+
+  // Process tools sequentially (needed for dependency order)
+  for (const tool of tools) {
+    // eslint-disable-next-line no-await-in-loop
+    const success = await installTool(tool)
+    if (!success) {
+      return false
+    }
+  }
+
+  return true
+}
+
+/**
+ * Check if a command exists
+ */
+async function checkCommand(command, args = ['--version']) {
+  return new Promise((resolve) => {
+    const child = spawn(command, args, {
+      stdio: 'pipe'
+    })
+    child.on('exit', (code) => resolve(code === 0))
+    child.on('error', () => resolve(false))
+  })
+}
+
+/**
+ * Install a package via Homebrew
+ */
+async function installViaHomebrew(packageName, quiet = false) {
+  // First ensure Homebrew is available
+  let brewAvailable = await checkCommand('brew')
+  if (!brewAvailable) {
+    console.log('   Installing Homebrew first...')
+    brewAvailable = await installHomebrew(quiet)
+    if (!brewAvailable) {
+      return false
+    }
+  }
+
+  // Install the package
+  console.log(`   Installing ${packageName} via Homebrew...`)
+  return new Promise((resolve) => {
+    const child = spawn('brew', ['install', packageName], {
+      stdio: quiet ? 'pipe' : 'inherit'
+    })
+    child.on('exit', (code) => resolve(code === 0))
+    child.on('error', () => resolve(false))
+  })
+}
+
+/**
+ * Check for ldid and install if needed
+ * @returns {Promise<'available'|'newly-installed'|'not-found'>}
+ */
+async function checkAndInstallLdid(quiet = false) {
+  // First check if ldid is already available
+  const ldidAvailable = await new Promise((resolve) => {
+    const child = spawn('which', ['ldid'], {
+      stdio: 'pipe'
+    })
+    child.on('exit', (code) => resolve(code === 0))
+    child.on('error', () => resolve(false))
+  })
+
+  if (ldidAvailable) {
+    return 'available'
+  }
+
+  // Try to install ldid
+  console.log('   ldid not found, auto-installing...')
+  const installed = await installLdidViaBrew(quiet)
+
+  return installed ? 'newly-installed' : 'not-found'
+}
+
+/**
+ * Install Homebrew if not available
+ */
+async function installHomebrew(quiet = false) {
+  console.log('   Homebrew not found, installing...')
+  console.log('   This may take a few minutes...')
+
+  // Download and run Homebrew installer
+  return new Promise((resolve) => {
+    const child = spawn('/bin/bash', ['-c',
+      'curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh | /bin/bash'
+    ], {
+      stdio: quiet ? 'pipe' : 'inherit',
+      // Non-interactive install
+      env: { ...process.env, NONINTERACTIVE: '1' }
+    })
+
+    child.on('exit', async (code) => {
+      if (code === 0) {
+        // Add Homebrew to PATH for Apple Silicon Macs
+        if (process.arch === 'arm64') {
+          process.env.PATH = `/opt/homebrew/bin:${process.env.PATH}`
+        } else {
+          process.env.PATH = `/usr/local/bin:${process.env.PATH}`
+        }
+        console.log('   Homebrew installed successfully')
+        resolve(true)
+      } else {
+        console.error('   Failed to install Homebrew automatically')
+        console.error('   Please install manually from https://brew.sh')
+        resolve(false)
+      }
+    })
+    child.on('error', (error) => {
+      if (!quiet) {
+        console.error('   Error installing Homebrew:', error.message)
+      }
+      resolve(false)
+    })
+  })
+}
+
+/**
  * Install ldid using Homebrew
  */
 async function installLdidViaBrew(quiet = false) {
   // First check if brew is available
-  const brewAvailable = await new Promise((resolve) => {
+  let brewAvailable = await new Promise((resolve) => {
     const child = spawn('which', ['brew'], {
       stdio: 'pipe'
     })
@@ -271,13 +479,11 @@ async function installLdidViaBrew(quiet = false) {
   })
 
   if (!brewAvailable) {
-    if (!quiet) {
-      console.error('   Homebrew not found, cannot auto-install ldid')
-      console.error('   To install Homebrew, run:')
-      console.error('   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"')
-      console.error('   Then re-run this build command')
+    // Try to install Homebrew automatically
+    brewAvailable = await installHomebrew(quiet)
+    if (!brewAvailable) {
+      return false
     }
-    return false
   }
 
   // Install ldid using brew
@@ -310,7 +516,7 @@ async function installLdidViaBrew(quiet = false) {
  * Sign macOS ARM64 binary with ldid (fixes yao-pkg malformed binary issue)
  */
 async function signMacOSBinaryWithLdid(binaryPath, quiet = false) {
-  // First check if ldid is available
+  // Verify ldid is still available (should have been installed earlier)
   const ldidAvailable = await new Promise((resolve) => {
     const child = spawn('which', ['ldid'], {
       stdio: 'pipe'
@@ -320,13 +526,7 @@ async function signMacOSBinaryWithLdid(binaryPath, quiet = false) {
   })
 
   if (!ldidAvailable) {
-    // Try to install ldid automatically
-    console.log('   ldid not found, attempting to install via Homebrew...')
-    const brewInstalled = await installLdidViaBrew(quiet)
-    if (!brewInstalled) {
-      return 'ldid-not-found'
-    }
-    console.log('   ldid installed successfully')
+    return 'ldid-not-found'
   }
 
   // Remove existing signature first (if any)
