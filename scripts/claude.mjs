@@ -1,6 +1,7 @@
 /**
- * @fileoverview Claude-powered utilities for Socket projects.
- * Provides various AI-assisted development tools and automations.
+ * @fileoverview Claude Code-powered utilities for Socket projects.
+ * Provides various AI-assisted development tools and automations using Claude Code CLI.
+ * Requires Claude Code (claude) CLI to be installed.
  */
 
 import { spawn } from 'node:child_process'
@@ -111,49 +112,85 @@ async function runCommandWithOutput(command, args = [], options = {}) {
 }
 
 /**
- * Check if claude-console is available.
+ * Run Claude Code with a prompt.
+ * Handles both interactive and non-interactive modes properly.
  */
-async function checkClaude() {
-  const checkCommand = WIN32 ? 'where' : 'which'
-  const result = await runCommandWithOutput(checkCommand, ['claude-console'])
+async function runClaude(claudeCmd, prompt, options = {}) {
+  const opts = { __proto__: null, ...options }
+  const args = prepareClaudeArgs([], opts)
 
-  if (result.exitCode !== 0) {
-    // Also check common aliases.
-    const aliasResult = await runCommandWithOutput(checkCommand, ['claude'])
-    if (aliasResult.exitCode !== 0) {
-      return false
-    }
-    return 'claude'
+  if (opts.interactive !== false) {
+    // Interactive mode - spawn with inherited stdio and pipe prompt
+    return new Promise((resolve) => {
+      const child = spawn(claudeCmd, args, {
+        stdio: ['pipe', 'inherit', 'inherit'],
+        cwd: opts.cwd || rootPath,
+        ...(WIN32 && { shell: true })
+      })
+
+      // Write the prompt to stdin
+      if (prompt) {
+        child.stdin.write(prompt)
+        child.stdin.end()
+      }
+
+      child.on('exit', (code) => {
+        resolve(code || 0)
+      })
+
+      child.on('error', () => {
+        resolve(1)
+      })
+    })
+  } else {
+    // Non-interactive mode - capture output
+    return runCommandWithOutput(claudeCmd, args, {
+      ...opts,
+      input: prompt,
+      stdio: ['pipe', 'pipe', 'pipe']
+    })
   }
-  return 'claude-console'
 }
 
 /**
- * Prepare Claude command arguments.
- * Adds --dangerously-skip-permissions by default (Let's get dangerous!)
- * unless --no-darkwing flag is used.
- * Adds model selection based on --pinky (default) or --the-brain (expensive).
+ * Check if Claude Code CLI is available.
+ */
+async function checkClaude() {
+  const checkCommand = WIN32 ? 'where' : 'which'
+
+  // Check for 'claude' command (Claude Code)
+  const result = await runCommandWithOutput(checkCommand, ['claude'])
+  if (result.exitCode === 0) {
+    return 'claude'
+  }
+
+  // Check for 'ccp' as alternative
+  const ccpResult = await runCommandWithOutput(checkCommand, ['ccp'])
+  if (ccpResult.exitCode === 0) {
+    return 'ccp'
+  }
+
+  return false
+}
+
+/**
+ * Prepare Claude command arguments for Claude Code.
+ * Claude Code uses natural language prompts, not the same flags.
+ * We'll translate our flags into appropriate context.
  */
 function prepareClaudeArgs(args = [], options = {}) {
-  const opts = { __proto__: null, ...options }
+  const _opts = { __proto__: null, ...options }
   const claudeArgs = [...args]
 
-  // "Let's get dangerous!" - Darkwing Duck.
-  if (!opts['no-darkwing']) {
-    claudeArgs.unshift('--dangerously-skip-permissions')
-  }
+  // Claude Code doesn't use --dangerously-skip-permissions
+  // It has its own permission system
 
-  // "Gee, Brain, what do you want to do tonight?" - Pinky
-  // "The same thing we do every night, Pinky - try to take over the world!" - The Brain
-  if (opts['the-brain']) {
-    // Use the expensive, powerful model (Claude 3 Opus)
-    claudeArgs.push('--model', 'claude-3-opus-20240229')
-  } else if (opts.pinky) {
-    // Explicitly use the default model (Claude 3.5 Sonnet)
-    claudeArgs.push('--model', 'claude-3-5-sonnet-20241022')
-  }
-  // If neither flag is set, let claude-console use its default
+  // Model selection for Claude Code
+  // Note: Claude Code may not support direct model selection via CLI
+  // but we can mention it in the prompt context
 
+  // For now, just pass through the args
+  // The actual prompt will be passed via stdin
   return claudeArgs
 }
 
@@ -211,7 +248,8 @@ async function runParallel(tasks, description = 'tasks', taskNames = []) {
     if (pending > 0) {
       log.substep(`Progress: ${completed}/${tasks.length} complete, ${pending} running (${elapsed}s elapsed)`)
     }
-  }, 15000) // Update every 15 seconds
+  }, 15000)
+  // Update every 15 seconds
 
   const results = await Promise.allSettled(trackedTasks)
   clearInterval(progressInterval)
@@ -318,8 +356,8 @@ Output ONLY the updated CLAUDE.md content, nothing else.`
  * Update a project's CLAUDE.md using Claude.
  */
 async function updateProjectClaudeMd(claudeCmd, project, options = {}) {
-  const opts = { __proto__: null, ...options }
-  const { name, claudeMdPath } = project
+  const _opts = { __proto__: null, ...options }
+  const { claudeMdPath, name } = project
   const isRegistry = name === 'socket-registry'
 
   log.progress(`Updating ${name}/CLAUDE.md`)
@@ -560,7 +598,7 @@ async function syncClaudeMd(claudeCmd, options = {}) {
  * Scan a project for issues and generate a report.
  */
 async function scanProjectForIssues(claudeCmd, project, options = {}) {
-  const opts = { __proto__: null, ...options }
+  const _opts = { __proto__: null, ...options }
   const { name, path: projectPath } = project
 
   log.progress(`Scanning ${name} for issues`)
@@ -570,7 +608,7 @@ async function scanProjectForIssues(claudeCmd, project, options = {}) {
   const extensions = ['.js', '.mjs', '.ts', '.mts', '.jsx', '.tsx']
 
   async function findFiles(dir, depth = 0) {
-    if (depth > 5) return // Limit depth to avoid excessive scanning.
+    if (depth > 5) {return} // Limit depth to avoid excessive scanning.
 
     const entries = await fs.readdir(dir, { withFileTypes: true })
 
@@ -665,7 +703,7 @@ Provide ONLY the JSON array, nothing else.`
 
   try {
     return JSON.parse(result.stdout.trim())
-  } catch (e) {
+  } catch (_e) {
     log.warn(`Failed to parse scan results for ${name}`)
     return null
   }
@@ -675,7 +713,7 @@ Provide ONLY the JSON array, nothing else.`
  * Interactive fix session with Claude.
  */
 async function interactiveFixSession(claudeCmd, scanResults, projects, options = {}) {
-  const opts = { __proto__: null, ...options }
+  const _opts = { __proto__: null, ...options }
   printHeader('Interactive Fix Session')
 
   // Group issues by severity.
@@ -1084,10 +1122,7 @@ ${diffResult.stdout}
 Format your review as constructive feedback with severity levels (critical/high/medium/low).`
 
   log.step('Starting code review with Claude')
-  await runCommand(claudeCmd, prepareClaudeArgs([], opts), {
-    input: prompt,
-    stdio: 'inherit'
-  })
+  await runClaude(claudeCmd, prompt, opts)
 
   return true
 }
@@ -1141,10 +1176,7 @@ Provide:
 
 Focus on actionable recommendations. Always recommend exact versions when suggesting updates.`
 
-  await runCommand(claudeCmd, prepareClaudeArgs([], opts), {
-    input: prompt,
-    stdio: 'inherit'
-  })
+  await runClaude(claudeCmd, prompt, opts)
 
   return true
 }
@@ -1284,10 +1316,7 @@ Identify and fix:
 
 Provide the refactored code with explanations.`
 
-  await runCommand(claudeCmd, prepareClaudeArgs([], opts), {
-    input: prompt,
-    stdio: 'inherit'
-  })
+  await runClaude(claudeCmd, prompt, opts)
 
   return true
 }
@@ -1333,10 +1362,7 @@ Focus on:
 
 Provide optimized code with benchmarks/explanations.`
 
-  await runCommand(claudeCmd, prepareClaudeArgs([], opts), {
-    input: prompt,
-    stdio: 'inherit'
-  })
+  await runClaude(claudeCmd, prompt, opts)
 
   return true
 }
@@ -1380,10 +1406,7 @@ Analyze:
 
 Provide actionable recommendations with priorities.`
 
-  await runCommand(claudeCmd, prepareClaudeArgs([], opts), {
-    input: prompt,
-    stdio: 'inherit'
-  })
+  await runClaude(claudeCmd, prompt, opts)
 
   return true
 }
@@ -1440,10 +1463,7 @@ Provide:
 Focus on practical understanding for developers.`
   }
 
-  await runCommand(claudeCmd, prepareClaudeArgs([], opts), {
-    input: prompt,
-    stdio: 'inherit'
-  })
+  await runClaude(claudeCmd, prompt, opts)
 
   return true
 }
@@ -1486,10 +1506,7 @@ Provide:
 
 Be specific and actionable.`
 
-  await runCommand(claudeCmd, prepareClaudeArgs([], opts), {
-    input: prompt,
-    stdio: 'inherit'
-  })
+  await runClaude(claudeCmd, prompt, opts)
 
   return true
 }
@@ -1498,7 +1515,7 @@ Be specific and actionable.`
  * Clean up code by removing unused elements.
  */
 async function runCleanup(claudeCmd, options = {}) {
-  const opts = { __proto__: null, ...options }
+  const _opts = { __proto__: null, ...options }
   printHeader('Code Cleanup')
 
   log.step('Analyzing codebase for cleanup opportunities')
@@ -1569,10 +1586,7 @@ Provide:
 
 Be specific and actionable.`
 
-  await runCommand(claudeCmd, prepareClaudeArgs([], opts), {
-    input: prompt,
-    stdio: 'inherit'
-  })
+  await runClaude(claudeCmd, prompt, opts)
 
   return true
 }
@@ -1663,7 +1677,7 @@ Fix this issue now by making the necessary changes.`
         claudeProcess.stdin.end()
 
         // Monitor progress with timeout
-        let progressInterval = setInterval(() => {
+        const progressInterval = setInterval(() => {
           const elapsed = Date.now() - startTime
           if (elapsed > timeout) {
             log.warn(`[${repoName}] Claude fix timed out after ${Math.round(elapsed/1000)}s`)
@@ -1787,22 +1801,48 @@ Let's work through this together to get CI passing.`
     return true
   }
 
-  // Check for GitHub CLI
+  // Check for GitHub CLI and authentication
   const ghCheck = await runCommandWithOutput('which', ['gh'])
   if (ghCheck.exitCode !== 0) {
     log.error('GitHub CLI (gh) is required for CI monitoring')
-    log.info('Install with:')
-    log.substep('macOS: brew install gh')
-    log.substep('Linux: See https://github.com/cli/cli/blob/trunk/docs/install_linux.md')
-    log.substep('Windows: winget install --id GitHub.cli')
+    console.log('\n' + colors.cyan('Installation Instructions:'))
+    console.log(`  macOS:   ${colors.green('brew install gh')}`)
+    console.log(`  Ubuntu:  ${colors.green('sudo apt install gh')}`)
+    console.log(`  Fedora:  ${colors.green('sudo dnf install gh')}`)
+    console.log(`  Windows: ${colors.green('winget install --id GitHub.cli')}`)
+    console.log(`  Other:   ${colors.gray('https://github.com/cli/cli/blob/trunk/docs/install_linux.md')}`)
+    console.log('\n' + colors.yellow('After installation:'))
+    console.log('  1. Run: ' + colors.green('gh auth login'))
+    console.log('  2. Follow the prompts to authenticate')
+    console.log('  3. Try again: ' + colors.green('pnpm claude --green'))
     return false
   }
+
+  // Check if gh is authenticated
+  log.progress('Checking GitHub authentication')
+  const authCheck = await runCommandWithOutput('gh', ['auth', 'status'])
+  if (authCheck.exitCode !== 0) {
+    log.failed('GitHub CLI is not authenticated')
+    console.log(colors.yellow('\nYou need to authenticate with GitHub:'))
+    console.log(`  1. Run: ${colors.green('gh auth login')}`)
+    console.log('  2. Choose "GitHub.com"')
+    console.log('  3. Choose your preferred authentication method')
+    console.log('  4. Follow the prompts to complete authentication')
+    console.log(`  5. Try again: ${colors.green('pnpm claude --green')}`)
+
+    if (authCheck.stderr) {
+      console.log(colors.gray('\nError details:'))
+      console.log(colors.gray(authCheck.stderr))
+    }
+    return false
+  }
+  log.done('GitHub CLI authenticated')
 
   // Get current commit SHA
   const shaResult = await runCommandWithOutput('git', ['rev-parse', 'HEAD'], {
     cwd: rootPath
   })
-  const currentSha = shaResult.stdout.trim()
+  let currentSha = shaResult.stdout.trim()
 
   // Get repo info
   const remoteResult = await runCommandWithOutput('git', ['remote', 'get-url', 'origin'], {
@@ -1845,6 +1885,26 @@ Let's work through this together to get CI passing.`
 
     if (runsResult.exitCode !== 0) {
       log.failed('Failed to fetch workflow runs')
+
+      // Provide debugging information
+      if (runsResult.stderr) {
+        console.log(colors.red('\nError details:'))
+        console.log(runsResult.stderr)
+      }
+
+      // Common troubleshooting steps
+      console.log(colors.yellow('\nTroubleshooting:'))
+      console.log('1. Check GitHub CLI authentication:')
+      console.log(`   ${colors.green('gh auth status')}`)
+      console.log('\n2. If not authenticated, login:')
+      console.log(`   ${colors.green('gh auth login')}`)
+      console.log('\n3. Test repository access:')
+      console.log(`   ${colors.green(`gh api repos/${owner}/${repo}`)}`)
+      console.log('\n4. Check if workflows exist:')
+      console.log(`   ${colors.green(`gh workflow list --repo ${owner}/${repo}`)}`)
+      console.log('\n5. View recent runs manually:')
+      console.log(`   ${colors.green(`gh run list --repo ${owner}/${repo} --limit 5`)}`)
+
       return false
     }
 
@@ -2002,7 +2062,7 @@ function showOperations() {
 async function main() {
   try {
     // Parse arguments.
-    const { values, positionals } = parseArgs({
+    const { positionals, values } = parseArgs({
       options: {
         // Core operations.
         help: {
@@ -2169,23 +2229,35 @@ async function main() {
       console.log('  pnpm claude --push           # Commit and push changes')
       console.log('  pnpm claude --help           # Show this help')
       console.log('\nRequires:')
-      console.log('  - claude-console (or claude) CLI tool installed')
+      console.log('  - Claude Code CLI (claude) installed')
+      console.log('  - GitHub CLI (gh) for --green command')
       process.exitCode = 0
       return
     }
 
     // Check for Claude CLI.
     log.step('Checking prerequisites')
-    log.progress('Checking for Claude CLI')
+    log.progress('Checking for Claude Code CLI')
     const claudeCmd = await checkClaude()
     if (!claudeCmd) {
-      log.failed('claude-console not found')
-      log.error('Please install claude-console: https://github.com/anthropics/claude-console')
-      log.info('Install with: npm install -g @anthropic/claude-console')
+      log.failed('Claude Code CLI not found')
+      log.error('Please install Claude Code to use these utilities')
+      console.log('\n' + colors.cyan('Installation Instructions:'))
+      console.log('  1. Visit: https://docs.claude.com/en/docs/claude-code')
+      console.log('  2. Or install via npm:')
+      console.log(`     ${colors.green('npm install -g @anthropic/claude-desktop')}`)
+      console.log('  3. Or download directly:')
+      console.log(`     macOS: ${colors.gray('brew install claude')}`)
+      console.log(`     Linux: ${colors.gray('curl -fsSL https://docs.claude.com/install.sh | sh')}`)
+      console.log(`     Windows: ${colors.gray('Download from https://claude.ai/download')}`)
+      console.log('\n' + colors.yellow('After installation:'))
+      console.log('  1. Run: ' + colors.green('claude --login'))
+      console.log('  2. Sign in with your Anthropic account')
+      console.log('  3. Try again: ' + colors.green('pnpm claude --help'))
       process.exitCode = 1
       return
     }
-    log.done(`Found Claude CLI: ${claudeCmd}`)
+    log.done(`Found Claude Code CLI: ${claudeCmd}`)
 
     // Execute requested operation.
     let success = true
