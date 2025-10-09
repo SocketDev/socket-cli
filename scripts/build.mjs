@@ -281,7 +281,14 @@ async function main() {
       } else {
         // Report file size
         const nodeBinary = WIN32 ? 'node.exe' : 'node'
-        const nodePath = path.join(rootPath, 'build', 'tiny-node', `node-v24.9.0-custom`, 'out', 'Release', nodeBinary)
+        const centralNodePath = path.join(rootPath, 'binaries', 'socket-node', `node-v24.9.0-${process.platform === 'darwin' ? 'macos' : process.platform}-${process.arch}${WIN32 ? '.exe' : ''}`)
+        const buildNodePath = path.join(rootPath, 'build', 'socket-node', `node-v24.9.0-custom`, 'out', 'Release', nodeBinary)
+
+        let nodePath = centralNodePath
+        if (!existsSync(nodePath)) {
+          nodePath = buildNodePath
+        }
+
         if (existsSync(nodePath)) {
           const stats = statSync(nodePath)
           const sizeMB = (stats.size / 1024 / 1024).toFixed(1)
