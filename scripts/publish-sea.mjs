@@ -19,6 +19,8 @@ import { parseArgs } from 'node:util'
 import { promisify } from 'node:util'
 import { exec as execCallback } from 'node:child_process'
 
+import { checkVersionConsistency } from './check-version-consistency.mjs'
+
 const exec = promisify(execCallback)
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -389,6 +391,10 @@ async function main() {
         type: 'boolean',
         default: false,
       },
+      'skip-consistency-check': {
+        type: 'boolean',
+        default: false,
+      },
       'skip-build': {
         type: 'boolean',
         default: false,
@@ -422,6 +428,7 @@ Options:
   --platform=PLATFORM  Specific platform(s) to build (can specify multiple)
   --version=VERSION    Version to publish (default: from package.json)
   --dry-run           Perform dry-run without publishing
+  --skip-consistency-check Skip package version consistency validation (NOT RECOMMENDED)
   --skip-build        Skip building binaries (use existing)
   --skip-optional     Skip optional platforms (armv7, alpine)
   --otp=CODE          npm OTP for publishing
@@ -473,6 +480,31 @@ Notes:
     // Get version
     const version = values.version || await getVersion()
     console.log(`Publishing version: ${version}\n`)
+
+    // Check version consistency across all packages.
+    if (!values['skip-consistency-check']) {
+      console.log('📋 Package Version Consistency Check')
+      console.log('─'.repeat(60))
+      const isConsistent = await checkVersionConsistency(version)
+      console.log('─'.repeat(60))
+
+      if (!isConsistent) {
+        console.log('\n❌ Version consistency check failed!')
+        console.log('This is CRITICAL: All @socketbin packages must have the same version.')
+        console.log('Fix the version mismatches before publishing.')
+
+        if (!values['dry-run']) {
+          console.log('\nAborting publish to prevent version inconsistency.')
+          console.log('Use --skip-consistency-check to bypass this check (NOT RECOMMENDED).\n')
+          process.exitCode = 1
+          return
+        } else {
+          console.log('\n⚠️  Continuing with dry-run despite version mismatch...\n')
+        }
+      } else {
+        console.log()
+      }
+    }
 
     // Determine which platforms to build
     let platformsToBuild = values.platform || []
