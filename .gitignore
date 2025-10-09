@@ -33,3 +33,4 @@ pkg-binaries/
 
 # Build directory for temporary artifacts
 /build
+/binaries
