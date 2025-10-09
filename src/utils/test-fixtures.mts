@@ -68,7 +68,7 @@ export async function createTempFixtures(
     cleanupHook(async () => {
       await Promise.all(
         tempDirs.map(dir =>
-          trash(dir).catch(() => {
+          deleteAsync(dir).catch(() => {
             // Ignore cleanup errors.
           }),
         ),
@@ -94,7 +94,7 @@ export async function withTempFixture(fixturePath: string): Promise<{
 
   const cleanup = async () => {
     try {
-      await trash(tempDir)
+      await deleteAsync(tempDir)
     } catch {
       // Ignore cleanup errors.
     }
