@@ -4,11 +4,11 @@
  * This command wraps pnpm with Socket security scanning.
  *
  * Routing Logic (undocumented):
- * - If --config or -c flags are provided: Uses shadow pnpm binary with Socket registry overrides
+ * - If in CI environment AND --config or -c flags are provided: Uses shadow pnpm binary with Socket registry overrides
  * - Otherwise: Forwards to Socket Firewall (sfw) for security scanning
  *
- * This conditional routing allows advanced users with Socket registry configs to use
- * registry overrides, while providing sfw scanning for standard usage.
+ * This conditional routing ensures Socket registry overrides are only used in CI environments
+ * with explicit config, while providing sfw scanning for all other usage.
  *
  * Usage:
  *   socket pnpm install
@@ -80,15 +80,16 @@ async function run(
   // enabling security scanning
 
   // Conditional routing (undocumented feature):
-  // - With --config/-c: Use shadow pnpm binary for Socket registry overrides
-  // - Without config: Forward to sfw for security scanning
-  // This allows advanced users to use registry configs while defaulting to sfw.
+  // - In CI with --config/-c: Use shadow pnpm binary for Socket registry overrides
+  // - Otherwise: Forward to sfw for security scanning
+  // This ensures registry configs are only used in CI environments while defaulting to sfw.
   const hasConfigFlag =
     argv.includes('--config') ||
     argv.includes('-c') ||
     argv.some(arg => arg.startsWith('--config='))
 
-  if (hasConfigFlag) {
+  // Only use shadow pnpm binary when BOTH in CI AND config flag is present.
+  if (hasConfigFlag && constants.ENV.CI) {
     // Use shadow pnpm binary with Socket registry config
     const shadowPnpmBin = /*@__PURE__*/ require(constants.shadowPnpmBinPath)
 
