@@ -1524,6 +1524,7 @@ async function runGreen(claudeCmd, options = {}) {
   const opts = { __proto__: null, ...options }
   const maxRetries = parseInt(opts['max-retries'] || '3', 10)
   const isDryRun = opts['dry-run']
+  const MAX_AUTO_FIX_ATTEMPTS = parseInt(opts['max-auto-fixes'] || '10', 10)
 
   printHeader('Green CI Pipeline')
 
@@ -1536,6 +1537,8 @@ async function runGreen(claudeCmd, options = {}) {
     { name: 'Run coverage', cmd: 'pnpm', args: ['run', 'coverage'] },
     { name: 'Run tests', cmd: 'pnpm', args: ['run', 'test', '--', '--update'] }
   ]
+
+  let autoFixAttempts = 0
 
   for (const check of localChecks) {
     log.progress(check.name)
@@ -1552,30 +1555,103 @@ async function runGreen(claudeCmd, options = {}) {
 
     if (result.exitCode !== 0) {
       log.failed(`${check.name} failed`)
+      autoFixAttempts++
 
-      // Attempt to fix with Claude
-      log.progress('Attempting auto-fix with Claude')
-      const fixPrompt = `The command "${check.cmd} ${check.args.join(' ')}" failed in the ${path.basename(rootPath)} project.
+      // Decide whether to auto-fix or go interactive
+      const isAutoMode = autoFixAttempts <= MAX_AUTO_FIX_ATTEMPTS
+      const errorOutput = result.stderr || result.stdout || 'No error output available'
 
-Please analyze the error and provide a fix. The error output was:
-${result.stderr || result.stdout}
+      if (isAutoMode) {
+        // Attempt automatic fix
+        log.progress(`Attempting auto-fix with Claude (attempt ${autoFixAttempts}/${MAX_AUTO_FIX_ATTEMPTS})`)
 
-Provide specific file edits or commands to fix this issue.`
+        const fixPrompt = `You are fixing a CI/build issue automatically. The command "${check.cmd} ${check.args.join(' ')}" failed in the ${path.basename(rootPath)} project.
 
-      await runCommand(claudeCmd, prepareClaudeArgs([], opts), {
-        input: fixPrompt,
-        stdio: 'inherit',
-        cwd: rootPath
-      })
+Error output:
+${errorOutput}
 
-      // Retry the check
-      log.progress(`Retrying ${check.name}`)
-      const retryResult = await runCommandWithOutput(check.cmd, check.args, {
-        cwd: rootPath
-      })
+Your task:
+1. Analyze the error
+2. Provide the exact fix needed
+3. Use file edits, commands, or both to resolve the issue
 
-      if (retryResult.exitCode !== 0) {
-        log.error(`Failed to fix ${check.name} automatically`)
+IMPORTANT:
+- Be direct and specific - don't ask questions
+- Provide complete solutions that will fix the error
+- If the error is about missing dependencies, install them
+- If it's a type error, fix the code
+- If it's a lint error, fix the formatting
+- If tests are failing, update snapshots or fix the test
+
+Fix this issue now by making the necessary changes.`
+
+        // Run Claude non-interactively to get the fix
+        log.substep('Analyzing error and applying fixes...')
+        await runCommand(claudeCmd, prepareClaudeArgs([], opts), {
+          input: fixPrompt,
+          cwd: rootPath,
+          stdio: 'pipe'  // Don't inherit stdio - run silently
+        })
+
+        // Give Claude's changes a moment to complete
+        await new Promise(resolve => setTimeout(resolve, 2000))
+
+        // Retry the check
+        log.progress(`Retrying ${check.name}`)
+        const retryResult = await runCommandWithOutput(check.cmd, check.args, {
+          cwd: rootPath
+        })
+
+        if (retryResult.exitCode !== 0) {
+          // Auto-fix didn't work
+          if (autoFixAttempts >= MAX_AUTO_FIX_ATTEMPTS) {
+            // Switch to interactive mode
+            log.warn(`Auto-fix failed after ${MAX_AUTO_FIX_ATTEMPTS} attempts`)
+            log.info('Switching to interactive mode for manual assistance')
+
+            const interactivePrompt = `The command "${check.cmd} ${check.args.join(' ')}" is still failing after ${MAX_AUTO_FIX_ATTEMPTS} automatic fix attempts.
+
+Latest error output:
+${retryResult.stderr || retryResult.stdout || 'No error output'}
+
+Previous automatic fixes were attempted but did not resolve the issue. This appears to be a more complex problem that requires interactive debugging.
+
+Please help me fix this issue. You can:
+1. Analyze the error more carefully
+2. Try different approaches
+3. Ask me questions if needed
+4. Suggest manual steps I should take
+
+Let's work through this together to get CI passing.`
+
+            log.progress('Launching interactive Claude session')
+            await runCommand(claudeCmd, prepareClaudeArgs([], opts), {
+              input: interactivePrompt,
+              cwd: rootPath,
+              stdio: 'inherit'  // Interactive mode
+            })
+
+            // Try once more after interactive session
+            log.progress(`Final retry of ${check.name}`)
+            const finalResult = await runCommandWithOutput(check.cmd, check.args, {
+              cwd: rootPath
+            })
+
+            if (finalResult.exitCode !== 0) {
+              log.error(`${check.name} still failing after manual intervention`)
+              log.substep('Consider running the command manually to debug further')
+              return false
+            }
+          } else {
+            log.warn(`Auto-fix attempt ${autoFixAttempts} failed, will retry`)
+            // Will try again on next iteration
+            continue
+          }
+        }
+      } else {
+        // Already exceeded auto attempts, go straight to interactive
+        log.warn('Maximum auto-fix attempts exceeded')
+        log.info('Please fix this issue interactively')
         return false
       }
     }
@@ -1723,24 +1799,40 @@ Provide specific file edits or commands to fix this issue.`
 
           // Analyze and fix with Claude
           log.progress('Analyzing CI failure with Claude')
-          const fixPrompt = `The CI workflow failed for commit ${currentSha} in ${owner}/${repo}.
+          const fixPrompt = `You are automatically fixing CI failures. The CI workflow failed for commit ${currentSha} in ${owner}/${repo}.
 
 Failure logs:
 ${logsResult.stdout || 'No logs available'}
 
-Please analyze these CI logs and provide specific fixes for the failures. Focus on:
-1. Test failures
-2. Lint errors
-3. Type checking issues
-4. Build problems
+Your task:
+1. Analyze these CI logs
+2. Identify the root cause of failures
+3. Apply fixes directly to resolve the issues
 
-Provide exact file changes needed to fix these issues.`
+Focus on:
+- Test failures: Update snapshots, fix test logic, or correct test data
+- Lint errors: Fix code style and formatting issues
+- Type checking: Fix type errors and missing type annotations
+- Build problems: Fix import errors, missing dependencies, or syntax issues
 
+IMPORTANT:
+- Be direct and apply fixes immediately
+- Don't ask for clarification or permission
+- Make all necessary file changes to fix the CI
+- If multiple issues exist, fix them all
+
+Fix all CI failures now by making the necessary changes.`
+
+          // Run Claude non-interactively to apply fixes
+          log.substep('Applying CI fixes...')
           await runCommand(claudeCmd, prepareClaudeArgs([], opts), {
             input: fixPrompt,
-            stdio: 'inherit',
-            cwd: rootPath
+            cwd: rootPath,
+            stdio: 'pipe'  // Run silently
           })
+
+          // Give Claude's changes a moment to complete
+          await new Promise(resolve => setTimeout(resolve, 3000))
 
           // Run local checks again
           log.progress('Running local checks after fixes')
@@ -1930,6 +2022,10 @@ async function main() {
           type: 'string',
           default: '3',
         },
+        'max-auto-fixes': {
+          type: 'string',
+          default: '10',
+        },
       },
       allowPositionals: true,
       strict: false,
@@ -1956,12 +2052,14 @@ async function main() {
       console.log('  --seq            Run sequentially (default: parallel)')
       console.log('  --no-darkwing    Disable "Let\'s get dangerous!" mode')
       console.log('  --max-retries N  Max CI fix attempts (--green, default: 3)')
+      console.log('  --max-auto-fixes N  Max auto-fix attempts before interactive (--green, default: 10)')
       console.log('\nExamples:')
       console.log('  pnpm claude --review         # Review staged changes')
       console.log('  pnpm claude --fix            # Scan for issues')
       console.log('  pnpm claude --green          # Ensure CI passes')
       console.log('  pnpm claude --green --dry-run  # Test green without real CI')
-      console.log('  pnpm claude --green --max-retries 5  # More fix attempts')
+      console.log('  pnpm claude --green --max-retries 5  # More CI retry attempts')
+      console.log('  pnpm claude --green --max-auto-fixes 3  # Fewer auto-fix attempts')
       console.log('  pnpm claude --test lib/utils.js  # Generate tests for a file')
       console.log('  pnpm claude --explain path.join  # Explain a concept')
       console.log('  pnpm claude --refactor src/index.js  # Suggest refactoring')
