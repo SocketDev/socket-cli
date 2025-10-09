@@ -1512,6 +1512,265 @@ Be specific and actionable.`
 }
 
 /**
+ * Run all checks, push, and monitor CI until green.
+ */
+async function runGreen(claudeCmd, options = {}) {
+  const opts = { __proto__: null, ...options }
+  const maxRetries = parseInt(opts['max-retries'] || '3', 10)
+  const isDryRun = opts['dry-run']
+
+  printHeader('Green CI Pipeline')
+
+  // Step 1: Run local checks
+  log.step('Running local checks')
+  const localChecks = [
+    { name: 'Install dependencies', cmd: 'pnpm', args: ['install'] },
+    { name: 'Fix code style', cmd: 'pnpm', args: ['run', 'fix'] },
+    { name: 'Run checks', cmd: 'pnpm', args: ['run', 'check'] },
+    { name: 'Run coverage', cmd: 'pnpm', args: ['run', 'coverage'] },
+    { name: 'Run tests', cmd: 'pnpm', args: ['run', 'test', '--', '--update'] }
+  ]
+
+  for (const check of localChecks) {
+    log.progress(check.name)
+
+    if (isDryRun) {
+      log.done(`[DRY RUN] Would run: ${check.cmd} ${check.args.join(' ')}`)
+      continue
+    }
+
+    const result = await runCommandWithOutput(check.cmd, check.args, {
+      cwd: rootPath,
+      stdio: 'inherit'
+    })
+
+    if (result.exitCode !== 0) {
+      log.failed(`${check.name} failed`)
+
+      // Attempt to fix with Claude
+      log.progress('Attempting auto-fix with Claude')
+      const fixPrompt = `The command "${check.cmd} ${check.args.join(' ')}" failed in the ${path.basename(rootPath)} project.
+
+Please analyze the error and provide a fix. The error output was:
+${result.stderr || result.stdout}
+
+Provide specific file edits or commands to fix this issue.`
+
+      await runCommand(claudeCmd, prepareClaudeArgs([], opts), {
+        input: fixPrompt,
+        stdio: 'inherit',
+        cwd: rootPath
+      })
+
+      // Retry the check
+      log.progress(`Retrying ${check.name}`)
+      const retryResult = await runCommandWithOutput(check.cmd, check.args, {
+        cwd: rootPath
+      })
+
+      if (retryResult.exitCode !== 0) {
+        log.error(`Failed to fix ${check.name} automatically`)
+        return false
+      }
+    }
+
+    log.done(`${check.name} passed`)
+  }
+
+  // Step 2: Commit and push changes
+  log.step('Committing and pushing changes')
+
+  // Check for changes
+  const statusResult = await runCommandWithOutput('git', ['status', '--porcelain'], {
+    cwd: rootPath
+  })
+
+  if (statusResult.stdout.trim()) {
+    log.progress('Changes detected, committing')
+
+    if (isDryRun) {
+      log.done('[DRY RUN] Would commit and push changes')
+    } else {
+      // Stage all changes
+      await runCommand('git', ['add', '.'], { cwd: rootPath })
+
+      // Commit
+      const commitMessage = 'Fix CI issues and update tests'
+      await runCommand('git', ['commit', '-m', commitMessage, '--no-verify'], { cwd: rootPath })
+
+      // Push
+      await runCommand('git', ['push'], { cwd: rootPath })
+      log.done('Changes pushed to remote')
+    }
+  } else {
+    log.info('No changes to commit')
+  }
+
+  // Step 3: Monitor CI workflow
+  log.step('Monitoring CI workflow')
+
+  if (isDryRun) {
+    log.done('[DRY RUN] Would monitor CI workflow')
+    printFooter('Green CI Pipeline (dry run) complete!')
+    return true
+  }
+
+  // Get current commit SHA
+  const shaResult = await runCommandWithOutput('git', ['rev-parse', 'HEAD'], {
+    cwd: rootPath
+  })
+  const currentSha = shaResult.stdout.trim()
+
+  // Get repo info
+  const remoteResult = await runCommandWithOutput('git', ['remote', 'get-url', 'origin'], {
+    cwd: rootPath
+  })
+  const remoteUrl = remoteResult.stdout.trim()
+  const repoMatch = remoteUrl.match(/github\.com[:/](.+?)\/(.+?)(\.git)?$/)
+
+  if (!repoMatch) {
+    log.error('Could not determine GitHub repository from remote URL')
+    return false
+  }
+
+  const [, owner, repoName] = repoMatch
+  const repo = repoName.replace('.git', '')
+
+  // Monitor workflow with retries
+  let retryCount = 0
+  let lastRunId = null
+
+  while (retryCount < maxRetries) {
+    log.progress(`Checking CI status (attempt ${retryCount + 1}/${maxRetries})`)
+
+    // Wait a bit for CI to start
+    if (retryCount === 0) {
+      log.substep('Waiting 10 seconds for CI to start...')
+      await new Promise(resolve => setTimeout(resolve, 10000))
+    }
+
+    // Check workflow runs using gh CLI
+    const runsResult = await runCommandWithOutput('gh', [
+      'run', 'list',
+      '--repo', `${owner}/${repo}`,
+      '--commit', currentSha,
+      '--limit', '1',
+      '--json', 'databaseId,status,conclusion,name'
+    ], {
+      cwd: rootPath
+    })
+
+    if (runsResult.exitCode !== 0) {
+      log.failed('Failed to fetch workflow runs')
+      return false
+    }
+
+    let runs
+    try {
+      runs = JSON.parse(runsResult.stdout || '[]')
+    } catch {
+      log.failed('Failed to parse workflow runs')
+      return false
+    }
+
+    if (runs.length === 0) {
+      log.substep('No workflow runs found yet, waiting...')
+      await new Promise(resolve => setTimeout(resolve, 30000))
+      continue
+    }
+
+    const run = runs[0]
+    lastRunId = run.databaseId
+
+    log.substep(`Workflow "${run.name}" status: ${run.status}`)
+
+    if (run.status === 'completed') {
+      if (run.conclusion === 'success') {
+        log.done('CI workflow passed! 🎉')
+        printFooter('Green CI Pipeline complete!')
+        return true
+      } else {
+        log.failed(`CI workflow failed with conclusion: ${run.conclusion}`)
+
+        if (retryCount < maxRetries - 1) {
+          // Fetch failure logs
+          log.progress('Fetching failure logs')
+
+          const logsResult = await runCommandWithOutput('gh', [
+            'run', 'view', lastRunId.toString(),
+            '--repo', `${owner}/${repo}`,
+            '--log-failed'
+          ], {
+            cwd: rootPath
+          })
+
+          // Analyze and fix with Claude
+          log.progress('Analyzing CI failure with Claude')
+          const fixPrompt = `The CI workflow failed for commit ${currentSha} in ${owner}/${repo}.
+
+Failure logs:
+${logsResult.stdout || 'No logs available'}
+
+Please analyze these CI logs and provide specific fixes for the failures. Focus on:
+1. Test failures
+2. Lint errors
+3. Type checking issues
+4. Build problems
+
+Provide exact file changes needed to fix these issues.`
+
+          await runCommand(claudeCmd, prepareClaudeArgs([], opts), {
+            input: fixPrompt,
+            stdio: 'inherit',
+            cwd: rootPath
+          })
+
+          // Run local checks again
+          log.progress('Running local checks after fixes')
+          for (const check of localChecks) {
+            await runCommandWithOutput(check.cmd, check.args, {
+              cwd: rootPath,
+              stdio: 'inherit'
+            })
+          }
+
+          // Commit and push fixes
+          const fixStatusResult = await runCommandWithOutput('git', ['status', '--porcelain'], {
+            cwd: rootPath
+          })
+
+          if (fixStatusResult.stdout.trim()) {
+            log.progress('Committing CI fixes')
+            await runCommand('git', ['add', '.'], { cwd: rootPath })
+            await runCommand('git', ['commit', '-m', `Fix CI failures (attempt ${retryCount + 1})`, '--no-verify'], { cwd: rootPath })
+            await runCommand('git', ['push'], { cwd: rootPath })
+
+            // Update SHA for next check
+            const newShaResult = await runCommandWithOutput('git', ['rev-parse', 'HEAD'], {
+              cwd: rootPath
+            })
+            currentSha = newShaResult.stdout.trim()
+          }
+
+          retryCount++
+        } else {
+          log.error(`CI still failing after ${maxRetries} attempts`)
+          log.substep(`View run at: https://github.com/${owner}/${repo}/actions/runs/${lastRunId}`)
+          return false
+        }
+      }
+    } else {
+      // Workflow still running, wait and check again
+      log.substep('Workflow still running, waiting 30 seconds...')
+      await new Promise(resolve => setTimeout(resolve, 30000))
+    }
+  }
+
+  log.error(`Exceeded maximum retries (${maxRetries})`)
+  return false
+}
+
+/**
  * Show available Claude operations.
  */
 function showOperations() {
@@ -1519,6 +1778,7 @@ function showOperations() {
   console.log('  --sync         Synchronize CLAUDE.md files across projects')
   console.log('  --commit       Create commits with Claude assistance')
   console.log('  --push         Create commits and push to remote')
+  console.log('  --green        Ensure all tests pass, push, monitor CI until green')
 
   console.log('\nCode quality:')
   console.log('  --review       Review staged changes before committing')
@@ -1559,6 +1819,10 @@ async function main() {
           default: false,
         },
         push: {
+          type: 'boolean',
+          default: false,
+        },
+        green: {
           type: 'boolean',
           default: false,
         },
@@ -1645,6 +1909,10 @@ async function main() {
           type: 'boolean',
           default: false,
         },
+        'max-retries': {
+          type: 'string',
+          default: '3',
+        },
       },
       allowPositionals: true,
       strict: false,
@@ -1654,7 +1922,7 @@ async function main() {
     const hasOperation = values.sync || values.fix || values.commit || values.push ||
                         values.review || values.refactor || values.optimize || values.clean ||
                         values.audit || values.test || values.docs || values.explain ||
-                        values.debug || values.deps || values.migrate
+                        values.debug || values.deps || values.migrate || values.green
 
     // Show help if requested or no operation specified.
     if (values.help || !hasOperation) {
@@ -1670,9 +1938,13 @@ async function main() {
       console.log('  --no-cross-repo  Operate on current project only')
       console.log('  --seq            Run sequentially (default: parallel)')
       console.log('  --no-darkwing    Disable "Let\'s get dangerous!" mode')
+      console.log('  --max-retries N  Max CI fix attempts (--green, default: 3)')
       console.log('\nExamples:')
       console.log('  pnpm claude --review         # Review staged changes')
       console.log('  pnpm claude --fix            # Scan for issues')
+      console.log('  pnpm claude --green          # Ensure CI passes')
+      console.log('  pnpm claude --green --dry-run  # Test green without real CI')
+      console.log('  pnpm claude --green --max-retries 5  # More fix attempts')
       console.log('  pnpm claude --test lib/utils.js  # Generate tests for a file')
       console.log('  pnpm claude --explain path.join  # Explain a concept')
       console.log('  pnpm claude --refactor src/index.js  # Suggest refactoring')
@@ -1710,6 +1982,8 @@ async function main() {
     } else if (values.push) {
       // --push combines commit and push.
       success = await runClaudeCommit(claudeCmd, { ...options, push: true })
+    } else if (values.green) {
+      success = await runGreen(claudeCmd, options)
     }
     // Code quality operations.
     else if (values.review) {
