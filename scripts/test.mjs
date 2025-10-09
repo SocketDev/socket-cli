@@ -1,6 +1,6 @@
 /**
  * @fileoverview Unified test runner that provides a smooth, single-script experience.
- * Combines check, build, and test steps with clean, consistent output.
+ * Defaults to testing staged files (or changed if no staged), with --all flag for full test run.
  */
 
 import { spawn } from 'node:child_process'
@@ -11,17 +11,15 @@ import { parseArgs } from 'node:util'
 
 import colors from 'yoctocolors-cjs'
 
-import { printDivider, printFooter, printHeader, printHelpHeader } from './print.mjs'
-import { getTestsToRun } from './utils/changed-test-mapper.mjs'
-
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const rootPath = path.join(__dirname, '..')
 const WIN32 = process.platform === 'win32'
 
-// Simple inline logger
+// Simple inline logger.
 const log = {
   info: msg => console.log(msg),
   error: msg => console.error(`${colors.red('✗')} ${msg}`),
   success: msg => console.log(`${colors.green('✓')} ${msg}`),
-  warn: msg => console.log(`${colors.yellow('⚠')} ${msg}`),
   step: msg => console.log(`\n${msg}`),
   substep: msg => console.log(`  ${msg}`),
   progress: msg => process.stdout.write(`  ∴ ${msg}`),
@@ -35,14 +33,22 @@ const log = {
   }
 }
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const rootPath = path.join(__dirname, '..')
-const nodeModulesBinPath = path.join(rootPath, 'node_modules', '.bin')
+function printHeader(title) {
+  console.log(`\n${'─'.repeat(60)}`)
+  console.log(`  ${title}`)
+  console.log(`${'─'.repeat(60)}`)
+}
+
+function printFooter(message) {
+  console.log(`\n${'─'.repeat(60)}`)
+  if (message) {console.log(`  ${colors.green('✓')} ${message}`)}
+}
 
 async function runCommand(command, args = [], options = {}) {
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, {
       stdio: 'inherit',
+      cwd: rootPath,
       ...(WIN32 && { shell: true }),
       ...options,
     })
@@ -60,147 +66,154 @@ async function runCommand(command, args = [], options = {}) {
 async function runCheck() {
   log.step('Running checks')
 
-  // Run fix (auto-format) quietly since it has its own output
+  // Run fix (auto-format) quietly.
   log.progress('Formatting code')
   let exitCode = await runCommand('pnpm', ['run', 'fix'], {
     stdio: 'pipe'
   })
   if (exitCode !== 0) {
     log.failed('Formatting failed')
-    // Re-run with output to show errors
     await runCommand('pnpm', ['run', 'fix'])
     return exitCode
   }
   log.done('Code formatted')
 
-  // Run ESLint to check for remaining issues
-  log.progress('Checking ESLint')
-  exitCode = await runCommand('eslint', [
-    '--config',
-    '.config/eslint.config.mjs',
-    '--report-unused-disable-directives',
-    '.'
-  ], {
+  // Run lint check.
+  log.progress('Checking lint')
+  exitCode = await runCommand('pnpm', ['run', 'lint'], {
     stdio: 'pipe'
   })
   if (exitCode !== 0) {
-    log.failed('ESLint failed')
-    // Re-run with output to show errors
-    await runCommand('eslint', [
-      '--config',
-      '.config/eslint.config.mjs',
-      '--report-unused-disable-directives',
-      '.'
-    ])
+    log.failed('Lint check failed')
+    await runCommand('pnpm', ['run', 'lint'])
     return exitCode
   }
-  log.done('ESLint passed')
+  log.done('Lint check passed')
 
-  // Run TypeScript check
-  log.progress('Checking TypeScript')
-  exitCode = await runCommand('tsgo', [
-    '--noEmit'
-  ], {
-    stdio: 'pipe'
-  })
-  if (exitCode !== 0) {
-    log.failed('TypeScript check failed')
-    // Re-run with output to show errors
-    await runCommand('tsgo', [
-      '--noEmit'
-    ])
-    return exitCode
+  // Run TypeScript check if tsconfig exists.
+  const tsconfigPath = path.join(rootPath, 'tsconfig.json')
+  const tsconfigCheckPath = path.join(rootPath, '.config', 'tsconfig.check.json')
+  const configPath = existsSync(tsconfigCheckPath) ? tsconfigCheckPath : (existsSync(tsconfigPath) ? tsconfigPath : null)
+
+  if (configPath) {
+    log.progress('Checking TypeScript')
+    const tsconfigArg = configPath === tsconfigPath ? [] : ['-p', configPath]
+    exitCode = await runCommand('pnpm', [
+      'exec',
+      'tsgo',
+      '--noEmit',
+      ...tsconfigArg
+    ], {
+      stdio: 'pipe'
+    })
+    if (exitCode !== 0) {
+      log.failed('TypeScript check failed')
+      await runCommand('pnpm', [
+        'exec',
+        'tsgo',
+        '--noEmit',
+        ...tsconfigArg
+      ])
+      return exitCode
+    }
+    log.done('TypeScript check passed')
   }
-  log.done('TypeScript check passed')
 
-  return exitCode
+  return 0
 }
 
 async function runBuild() {
-  const distIndexPath = path.join(rootPath, 'dist', 'index.js')
-  if (!existsSync(distIndexPath)) {
+  const distPath = path.join(rootPath, 'dist')
+  const distIndexPath = path.join(distPath, 'index.js')
+
+  // Check if build is needed.
+  if (!existsSync(distPath) || !existsSync(distIndexPath)) {
     log.step('Building project')
     return runCommand('pnpm', ['run', 'build'])
   }
   return 0
 }
 
-async function runTests(options, positionals = []) {
-  const { all, coverage, force, staged, update } = options
-  const runAll = all || force
+async function runTests(options = {}) {
+  const { all, coverage, positionals, update } = options
 
-  // Get tests to run
-  const testInfo = getTestsToRun({ staged, all: runAll })
-  const { reason, tests: testsToRun } = testInfo
+  // Prepare vitest arguments.
+  const vitestArgs = []
 
-  // No tests needed
-  if (testsToRun === null) {
-    log.substep('No relevant changes detected, skipping tests')
-    return 0
+  // Check for vitest config.
+  const vitestConfigPath = path.join(rootPath, '.config', 'vitest.config.mts')
+  if (existsSync(vitestConfigPath)) {
+    vitestArgs.push('--config', '.config/vitest.config.mts')
   }
 
-  // Prepare vitest command
-  const vitestCmd = WIN32 ? 'vitest.cmd' : 'vitest'
-  const vitestPath = path.join(nodeModulesBinPath, vitestCmd)
+  vitestArgs.push('run')
 
-  const vitestArgs = ['--config', '.config/vitest.config.mts', 'run']
-
-  // Add coverage if requested
+  // Add coverage if requested.
   if (coverage) {
     vitestArgs.push('--coverage')
   }
 
-  // Add update if requested
+  // Add update if requested.
   if (update) {
     vitestArgs.push('--update')
   }
 
-  // Add test patterns if not running all
-  if (testsToRun === 'all') {
-    const reasonText = reason ? ` (${reason})` : ''
-    log.step(`Running all tests${reasonText}`)
-  } else {
-    log.step(`Running affected tests:`)
-    testsToRun.forEach(test => log.substep(test))
-    vitestArgs.push(...testsToRun)
-  }
-
-  // Add any additional positional arguments
-  if (positionals.length > 0) {
+  // If positional arguments provided, use them directly.
+  if (positionals && positionals.length > 0) {
     vitestArgs.push(...positionals)
+  } else if (!all) {
+    // Default to changed tests detection (this will be handled by vitest's changed mode).
+    vitestArgs.push('--changed')
   }
 
-  const spawnOptions = {
-    cwd: rootPath,
-    env: {
-      ...process.env,
-      NODE_OPTIONS:
-        `${process.env.NODE_OPTIONS || ''} --max-old-space-size=${process.env.CI ? 8192 : 4096}`.trim(),
-    },
-    stdio: 'inherit',
+  // Check if we have .env.test file.
+  const envTestPath = path.join(rootPath, '.env.test')
+  const hasEnvTest = existsSync(envTestPath)
+
+  const nodeOptions = `${process.env.NODE_OPTIONS || ''} --max-old-space-size=${process.env.CI ? 8192 : 4096}`.trim()
+
+  // Run tests with or without dotenvx.
+  if (hasEnvTest) {
+    return runCommand('pnpm', [
+      'exec',
+      'dotenvx',
+      '-q',
+      'run',
+      '-f',
+      '.env.test',
+      '--',
+      'vitest',
+      ...vitestArgs
+    ], {
+      env: {
+        ...process.env,
+        NODE_OPTIONS: nodeOptions
+      }
+    })
+  } else {
+    return runCommand('pnpm', [
+      'exec',
+      'vitest',
+      ...vitestArgs
+    ], {
+      env: {
+        ...process.env,
+        NODE_OPTIONS: nodeOptions
+      }
+    })
   }
-
-  // Use dotenvx to load test environment
-  const dotenvxCmd = WIN32 ? 'dotenvx.cmd' : 'dotenvx'
-  const dotenvxPath = path.join(nodeModulesBinPath, dotenvxCmd)
-
-  return runCommand(dotenvxPath, [
-    '-q',
-    'run',
-    '-f',
-    '.env.test',
-    '--',
-    vitestPath,
-    ...vitestArgs
-  ], spawnOptions)
 }
 
 async function main() {
   try {
-    // Parse arguments
+    // Parse arguments.
     const { positionals, values } = parseArgs({
       options: {
         help: {
+          type: 'boolean',
+          default: false,
+        },
+        all: {
           type: 'boolean',
           default: false,
         },
@@ -217,22 +230,6 @@ async function main() {
           default: false,
         },
         'skip-checks': {
-          type: 'boolean',
-          default: false,
-        },
-        changed: {
-          type: 'boolean',
-          default: false,
-        },
-        staged: {
-          type: 'boolean',
-          default: false,
-        },
-        all: {
-          type: 'boolean',
-          default: false,
-        },
-        force: {
           type: 'boolean',
           default: false,
         },
@@ -253,41 +250,45 @@ async function main() {
       strict: false,
     })
 
-    // Show help if requested
+    // Show help if requested.
     if (values.help) {
-      printHelpHeader('Test Runner')
-      console.log('\nUsage: pnpm test [options] [test-patterns...]')
+      console.log('\nUsage: pnpm test [options] [test-files...]')
       console.log('\nOptions:')
       console.log('  --help              Show this help message')
+      console.log('  --all               Run all tests (default: only changed/staged)')
       console.log('  --fast, --quick     Skip lint/type checks for faster execution')
       console.log('  --skip-checks       Skip lint/type checks (same as --fast)')
       console.log('  --skip-build        Skip the build step')
-      console.log('  --changed           Run only tests affected by changes (default behavior)')
-      console.log('  --staged            Run tests affected by staged changes')
-      console.log('  --all, --force      Run all tests regardless of changes')
       console.log('  --cover, --coverage Run tests with code coverage')
       console.log('  --update            Update test snapshots')
       console.log('\nExamples:')
-      console.log('  pnpm test                           # Run checks, build, and affected tests')
-      console.log('  pnpm test --fast                    # Skip checks for quick testing')
-      console.log('  pnpm test --staged                  # Test staged changes only')
-      console.log('  pnpm test --all                     # Run all tests')
-      console.log('  pnpm test --cover                   # Run with coverage report')
-      console.log('  pnpm test --update                  # Update test snapshots')
-      console.log('  pnpm test src/commands/scan         # Run specific test files')
+      console.log('  pnpm test                      # Run checks, build, and changed tests')
+      console.log('  pnpm test --all                # Run all tests')
+      console.log('  pnpm test --fast               # Skip checks for quick testing')
+      console.log('  pnpm test --cover              # Run with coverage report')
+      console.log('  pnpm test "**/*.test.mts"      # Run specific test pattern')
       process.exitCode = 0
       return
     }
 
+    // Detect lifecycle event.
+    const lifecycleEvent = process.env.npm_lifecycle_event || ''
+    const isTestCI = lifecycleEvent === 'test-ci'
+
+    // In CI mode, always run all tests.
+    if (isTestCI && !values.all) {
+      values.all = true
+    }
+
     printHeader('Test Runner')
 
-    // Handle aliases
+    // Handle aliases.
     const skipChecks = values.fast || values.quick || values['skip-checks']
     const withCoverage = values.cover || values.coverage
 
     let exitCode = 0
 
-    // Run checks unless skipped
+    // Run checks unless skipped.
     if (!skipChecks) {
       exitCode = await runCheck()
       if (exitCode !== 0) {
@@ -298,7 +299,7 @@ async function main() {
       log.success('All checks passed')
     }
 
-    // Run build unless skipped
+    // Run build unless skipped.
     if (!values['skip-build']) {
       exitCode = await runBuild()
       if (exitCode !== 0) {
@@ -308,8 +309,14 @@ async function main() {
       }
     }
 
-    // Run tests
-    exitCode = await runTests({ ...values, coverage: withCoverage }, positionals)
+    // Run tests.
+    log.step(values.all ? 'Running all tests' : 'Running changed tests')
+    exitCode = await runTests({
+      all: values.all,
+      coverage: withCoverage,
+      positionals,
+      update: values.update
+    })
 
     if (exitCode !== 0) {
       log.error('Tests failed')

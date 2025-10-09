@@ -1,8 +1,8 @@
 /**
- * @fileoverview Unified build runner with flag-based configuration.
- * Orchestrates the complete build process with flexible options.
+ * @fileoverview Standardized build runner that adapts to project configuration.
  */
 
+import { spawn } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -10,8 +10,9 @@ import { parseArgs } from 'node:util'
 
 import colors from 'yoctocolors-cjs'
 
-import { printDivider, printFooter, printHeader, printHelpHeader } from './print.mjs'
-import { runCommand, runSequence } from './utils/run-command.mjs'
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const rootPath = path.join(__dirname, '..')
+const WIN32 = process.platform === 'win32'
 
 // Simple inline logger.
 const log = {
@@ -31,215 +32,182 @@ const log = {
   }
 }
 
-// Inline utilities.
-const isQuiet = values => values.quiet || values.silent
+function printHeader(title) {
+  console.log(`\n${'─'.repeat(60)}`)
+  console.log(`  ${title}`)
+  console.log(`${'─'.repeat(60)}`)
+}
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
+function printFooter(message) {
+  console.log(`\n${'─'.repeat(60)}`)
+  if (message) {
+    console.log(`  ${colors.green('✓')} ${message}`)
+  }
+}
 
-const rootPath = path.join(__dirname, '..')
+async function runCommand(command, args = [], options = {}) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args, {
+      stdio: 'inherit',
+      cwd: rootPath,
+      ...(WIN32 && { shell: true }),
+      ...options,
+    })
+
+    child.on('exit', code => {
+      resolve(code || 0)
+    })
+
+    child.on('error', error => {
+      reject(error)
+    })
+  })
+}
 
 /**
- * Build source code with Rollup.
+ * Detect build configuration for the project.
  */
-async function buildSource(options = {}) {
-  const { quiet = false, skipClean = false, verbose = false } = options
-
-  if (!quiet) {
-    log.progress('Building source code')
+function detectBuildConfig() {
+  const config = {
+    hasRollup: false,
+    hasEsbuild: false,
+    hasTypes: false,
+    distPath: 'dist',
+    typesPath: 'dist',
   }
 
-  const commands = []
-
-  if (!skipClean) {
-    commands.push({ args: ['run', 'clean', '--dist', '--quiet'], command: 'pnpm' })
+  // Check for Rollup config.
+  const rollupConfigs = [
+    '.config/rollup.dist.config.mjs',
+    '.config/rollup.config.mjs',
+    'rollup.config.mjs',
+    'rollup.config.js'
+  ]
+  for (const configFile of rollupConfigs) {
+    if (existsSync(path.join(rootPath, configFile))) {
+      config.hasRollup = true
+      config.rollupConfig = configFile
+      break
+    }
   }
 
-  const rollupArgs = ['exec', 'rollup', '-c', '.config/rollup.dist.config.mjs']
-  // Suppress Rollup warnings by default unless in verbose mode
-  if (!verbose) {
-    rollupArgs.push('--silent')
+  // Check for esbuild script.
+  if (existsSync(path.join(rootPath, 'scripts', 'esbuild.mjs'))) {
+    config.hasEsbuild = true
   }
 
-  commands.push({
-    args: rollupArgs,
-    command: 'pnpm',
-  })
+  // Check for TypeScript config for declarations.
+  if (existsSync(path.join(rootPath, 'tsconfig.dts.json'))) {
+    config.hasTypes = true
+    config.tsConfig = 'tsconfig.dts.json'
+  } else if (existsSync(path.join(rootPath, 'tsconfig.json'))) {
+    config.hasTypes = true
+    config.tsConfig = 'tsconfig.json'
+  }
 
-  const exitCode = await runSequence(commands)
+  // Check for registry-specific paths.
+  if (existsSync(path.join(rootPath, 'registry'))) {
+    config.distPath = path.join('registry', 'dist')
+    config.typesPath = path.join('registry', 'dist')
+  }
+
+  return config
+}
+
+/**
+ * Build source code.
+ */
+async function buildSource(config) {
+  log.progress('Building source code')
+
+  let exitCode = 0
+
+  if (config.hasEsbuild) {
+    // Use esbuild for socket-registry.
+    const args = ['exec', 'node', 'scripts/esbuild.mjs', '--source']
+    if (existsSync(path.join(rootPath, 'registry'))) {
+      exitCode = await runCommand('pnpm', args, {
+        cwd: path.join(rootPath, 'registry'),
+        stdio: 'pipe'
+      })
+    } else {
+      exitCode = await runCommand('pnpm', args, { stdio: 'pipe' })
+    }
+  } else if (config.hasRollup) {
+    // Use Rollup for socket-cli and others.
+    const args = ['exec', 'rollup', '-c', config.rollupConfig, '--silent']
+    exitCode = await runCommand('pnpm', args, { stdio: 'pipe' })
+  } else {
+    // Fallback to TypeScript compiler.
+    exitCode = await runCommand('pnpm', ['exec', 'tsgo'], { stdio: 'pipe' })
+  }
 
   if (exitCode !== 0) {
-    if (!quiet) {
-      log.failed('Source build failed')
+    log.failed('Source build failed')
+    // Re-run with output.
+    if (config.hasEsbuild) {
+      const args = ['exec', 'node', 'scripts/esbuild.mjs', '--source']
+      if (existsSync(path.join(rootPath, 'registry'))) {
+        await runCommand('pnpm', args, { cwd: path.join(rootPath, 'registry') })
+      } else {
+        await runCommand('pnpm', args)
+      }
+    } else if (config.hasRollup) {
+      await runCommand('pnpm', ['exec', 'rollup', '-c', config.rollupConfig])
+    } else {
+      await runCommand('pnpm', ['exec', 'tsgo'])
     }
     return exitCode
   }
 
-  if (!quiet) {
-    log.done('Source build complete')
-  }
-
+  log.done('Source build complete')
   return 0
 }
 
 /**
  * Build TypeScript declarations.
  */
-async function buildTypes(options = {}) {
-  const { quiet = false, skipClean = false } = options
-
-  if (!quiet) {
-    log.progress('Building TypeScript declarations')
+async function buildTypes(config) {
+  if (!config.hasTypes) {
+    return 0
   }
 
-  const commands = []
+  log.progress('Building TypeScript declarations')
 
-  if (!skipClean) {
-    commands.push({ args: ['run', 'clean', '--types', '--quiet'], command: 'pnpm' })
+  const args = ['exec', 'tsgo']
+  if (config.tsConfig !== 'tsconfig.json') {
+    args.push('--project', config.tsConfig)
   }
 
-  commands.push({
-    args: ['exec', 'tsgo', '--project', 'tsconfig.dts.json'],
-    command: 'pnpm',
-  })
-
-  const exitCode = await runSequence(commands)
-
-  if (exitCode !== 0) {
-    if (!quiet) {
-      log.failed('Type declarations build failed')
-    }
-    return exitCode
-  }
-
-  if (!quiet) {
-    log.done('Type declarations built')
-  }
-
-  return 0
-}
-
-/**
- * Watch mode for development.
- */
-async function watchBuild(options = {}) {
-  const { quiet = false, verbose = false } = options
-
-  if (!quiet) {
-    log.step('Starting watch mode')
-    log.substep('Watching for file changes...')
-  }
-
-  const rollupArgs = ['exec', 'rollup', '-c', '.config/rollup.dist.config.mjs', '--watch']
-  // Suppress Rollup warnings by default unless in verbose mode
-  if (!verbose) {
-    rollupArgs.push('--silent')
-  }
-
-  const exitCode = await runCommand(
-    'pnpm',
-    rollupArgs,
-    {
-      stdio: 'inherit'
-    }
-  )
-
-  return exitCode
-}
-
-/**
- * Build SEA stub.
- */
-async function buildStub(options = {}) {
-  const { quiet = false } = options
-
-  if (!quiet) {
-    log.progress('Building SEA stub')
-  }
-
-  process.env['NODE_ENV'] = 'production'
-  const exitCode = await runCommand(
-    'pnpm',
-    ['exec', 'rollup', '-c', '.config/rollup.sea.config.mjs'],
-    {
-      stdio: quiet ? 'pipe' : 'inherit'
-    }
-  )
-
-  if (exitCode !== 0) {
-    if (!quiet) {
-      log.failed('SEA stub build failed')
-    }
-    return exitCode
-  }
-
-  if (!quiet) {
-    log.done('SEA stub built')
-  }
-
-  return 0
-}
-
-/**
- * Build SEA binary using yao-pkg.
- */
-async function buildSea(options = {}) {
-  const {
-    arch = process.arch,
-    minify = false,  // Default to current platform
-    platform = process.platform,  // Default to current architecture
-    quiet = false
-  } = options
-
-  if (!quiet) {
-    log.progress(`Building yao-pkg binary for ${platform}-${arch}`)
-  }
-
-  // Build the SEA using yao-pkg (which uses the custom Node.js with patches)
-  const args = [path.join(rootPath, 'scripts', 'build', 'build-stub.mjs')]
-
-  // Always pass platform and arch (using defaults if not specified)
-  args.push(`--platform=${platform}`)
-  args.push(`--arch=${arch}`)
-
-  if (minify) {
-    args.push('--minify')
-  }
-
-  if (quiet) {
-    args.push('--quiet')
-  }
-
-  const exitCode = await runCommand('node', args, {
-    stdio: quiet ? 'pipe' : 'inherit'
+  const exitCode = await runCommand('pnpm', args, {
+    cwd: existsSync(path.join(rootPath, 'registry')) ? path.join(rootPath, 'registry') : rootPath,
+    stdio: 'pipe'
   })
 
   if (exitCode !== 0) {
-    if (!quiet) {
-      log.failed('yao-pkg binary build failed')
-    }
+    log.failed('Type declarations build failed')
+    // Re-run with output.
+    await runCommand('pnpm', args, {
+      cwd: existsSync(path.join(rootPath, 'registry')) ? path.join(rootPath, 'registry') : rootPath
+    })
     return exitCode
   }
 
-  if (!quiet) {
-    log.done('yao-pkg binary built')
-  }
-
+  log.done('Type declarations built')
   return 0
 }
 
 /**
  * Check if build is needed.
  */
-function isBuildNeeded() {
-  const distPath = path.join(rootPath, 'dist', 'index.js')
-  const distTypesPath = path.join(rootPath, 'dist', 'types', 'index.d.ts')
-
-  return !existsSync(distPath) || !existsSync(distTypesPath)
+function isBuildNeeded(config) {
+  const distIndexPath = path.join(rootPath, config.distPath, 'index.js')
+  return !existsSync(distIndexPath)
 }
 
 async function main() {
   try {
-    // Parse arguments
+    // Parse arguments.
     const { values } = parseArgs({
       options: {
         help: {
@@ -262,156 +230,101 @@ async function main() {
           type: 'boolean',
           default: false,
         },
-        silent: {
-          type: 'boolean',
-          default: false,
-        },
-        quiet: {
-          type: 'boolean',
-          default: false,
-        },
-        verbose: {
-          type: 'boolean',
-          default: false,
-        },
-        sea: {
-          type: 'boolean',
-          default: false,
-        },
-        stub: {
-          type: 'boolean',
-          default: false,
-        },
-        platform: {
-          type: 'string',
-        },
-        arch: {
-          type: 'string',
-        },
       },
       allowPositionals: false,
       strict: false,
     })
 
-    // Show help if requested
+    // Show help if requested.
     if (values.help) {
-      printHelpHeader('Build Runner')
       console.log('\nUsage: pnpm build [options]')
       console.log('\nOptions:')
-      console.log('  --help       Show this help message')
-      console.log('  --src        Build source code only')
-      console.log('  --types      Build TypeScript declarations only')
-      console.log('  --sea        Build self-contained binary with yao-pkg')
-      console.log('  --stub       Build SEA stub only (for Node.js native SEA)')
-      console.log('  --platform   Platform for SEA build (darwin, linux, win32)')
-      console.log('  --arch       Architecture for SEA build (x64, arm64)')
-      console.log('  --watch      Watch mode for development')
-      console.log('  --needed     Only build if dist files are missing')
-      console.log('  --quiet, --silent  Suppress progress messages')
-      console.log('  --verbose    Show detailed build output (including Rollup warnings)')
+      console.log('  --help    Show this help message')
+      console.log('  --src     Build source code only')
+      console.log('  --types   Build TypeScript declarations only')
+      console.log('  --watch   Watch mode for development')
+      console.log('  --needed  Only build if dist files are missing')
       console.log('\nExamples:')
-      console.log('  pnpm build              # Full build (source + types)')
-      console.log('  pnpm build --src        # Build source only')
-      console.log('  pnpm build --types      # Build types only')
-      console.log('  pnpm build --stub       # Build SEA stub only (for Node.js native SEA)')
-      console.log('  pnpm build --sea        # Build self-contained binary with yao-pkg')
-      console.log('  pnpm build --sea --platform=darwin --arch=arm64  # Build macOS ARM64 binary')
-      console.log('  pnpm build --watch      # Watch mode')
-      console.log('  pnpm build --needed     # Build only if needed')
+      console.log('  pnpm build         # Full build (source + types)')
+      console.log('  pnpm build --src   # Build source only')
+      console.log('  pnpm build --types # Build types only')
+      console.log('  pnpm build --watch # Watch mode')
       process.exitCode = 0
       return
     }
 
-    const quiet = isQuiet(values)
-    const verbose = values.verbose
+    // Detect build configuration.
+    const config = detectBuildConfig()
 
-    // Check if build is needed
-    if (values.needed && !isBuildNeeded()) {
-      if (!quiet) {
-        log.info('Build artifacts exist, skipping build')
-      }
+    // Check if build is needed.
+    if (values.needed && !isBuildNeeded(config)) {
+      log.info('Build artifacts exist, skipping build')
       process.exitCode = 0
       return
     }
 
-    if (!quiet) {
-      printHeader('Build Runner')
-    }
+    printHeader('Build Runner')
 
     let exitCode = 0
 
-    // Handle watch mode
+    // Handle watch mode.
     if (values.watch) {
-      exitCode = await watchBuild({ quiet, verbose })
-    }
-    // Build SEA binary
-    else if (values.sea) {
-      if (!quiet) {
-        log.step('Building SEA binary')
-      }
-      exitCode = await buildSea({ quiet, verbose, platform: values.platform, arch: values.arch })
-    }
-    // Build SEA stub only
-    else if (values.stub) {
-      if (!quiet) {
-        log.step('Building SEA stub only')
-      }
-      exitCode = await buildStub({ quiet, verbose })
-    }
-    // Build types only
-    else if (values.types && !values.src) {
-      if (!quiet) {
-        log.step('Building TypeScript declarations only')
-      }
-      exitCode = await buildTypes({ quiet, verbose })
-    }
-    // Build source only
-    else if (values.src && !values.types) {
-      if (!quiet) {
-        log.step('Building source only')
-      }
-      exitCode = await buildSource({ quiet, verbose })
-    }
-    // Build everything (default)
-    else {
-      if (!quiet) {
-        log.step('Building package (source + types)')
-      }
+      log.step('Starting watch mode')
+      log.substep('Watching for file changes...')
 
-      // Clean all directories first (once)
-      if (!quiet) {
-        log.progress('Cleaning build directories')
+      if (config.hasRollup) {
+        const args = ['exec', 'rollup', '-c', config.rollupConfig, '--watch', '--silent']
+        exitCode = await runCommand('pnpm', args)
+      } else if (config.hasEsbuild) {
+        const args = ['exec', 'node', 'scripts/esbuild.mjs', '--watch']
+        exitCode = await runCommand('pnpm', args, {
+          cwd: existsSync(path.join(rootPath, 'registry')) ? rootPath : undefined
+        })
+      } else {
+        log.error('Watch mode not configured for this project')
+        exitCode = 1
       }
-      exitCode = await runSequence([
-        { args: ['run', 'clean', '--dist', '--types', '--quiet'], command: 'pnpm' }
-      ])
-      if (exitCode !== 0) {
-        if (!quiet) {
-          log.failed('Clean failed')
-        }
-        process.exitCode = exitCode
+    }
+    // Build types only.
+    else if (values.types && !values.src) {
+      log.step('Building TypeScript declarations only')
+      exitCode = await buildTypes(config)
+    }
+    // Build source only.
+    else if (values.src && !values.types) {
+      log.step('Building source only')
+      exitCode = await buildSource(config)
+    }
+    // Build everything (default).
+    else {
+      log.step('Building package')
+
+      // Clean build directories first.
+      log.progress('Cleaning build directories')
+      const cleanCode = await runCommand('pnpm', ['run', 'clean', '--dist'], {
+        stdio: 'pipe'
+      })
+      if (cleanCode !== 0) {
+        log.failed('Clean failed')
+        process.exitCode = cleanCode
         return
       }
+      log.done('Build directories cleaned')
 
-      // Run source and types builds in parallel
-      const buildPromises = [
-        buildSource({ quiet, verbose, skipClean: true }),
-        buildTypes({ quiet, verbose, skipClean: true })
-      ]
-
-      const results = await Promise.all(buildPromises)
-      exitCode = results.find(code => code !== 0) || 0
+      // Build source and types.
+      const sourceCode = await buildSource(config)
+      if (sourceCode !== 0) {
+        exitCode = sourceCode
+      } else if (config.hasTypes) {
+        exitCode = await buildTypes(config)
+      }
     }
 
     if (exitCode !== 0) {
-      if (!quiet) {
-        log.error('Build failed')
-      }
+      log.error('Build failed')
       process.exitCode = exitCode
     } else {
-      if (!quiet) {
-        printFooter('Build completed successfully!')
-      }
+      printFooter('Build completed successfully!')
     }
   } catch (error) {
     log.error(`Build runner failed: ${error.message}`)

@@ -1,18 +1,21 @@
 /**
  * @fileoverview Unified lint runner with flag-based configuration.
- * Provides smart linting that can target affected files or lint everything.
+ * Defaults to linting staged files (or changed if no staged), with --all flag for full lint.
  */
 
+import { spawn } from 'node:child_process'
+import { existsSync } from 'node:fs'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { parseArgs } from 'node:util'
 
 import colors from 'yoctocolors-cjs'
 
-import { printFooter, printHeader, printHelpHeader } from './print.mjs'
-import { getChangedFiles, getStagedFiles } from './utils/git.mjs'
-import { runCommandSilent } from './utils/run-command.mjs'
-console.log(process.argv)
-// Simple inline logger
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const rootPath = path.join(__dirname, '..')
+const WIN32 = process.platform === 'win32'
+
+// Simple inline logger.
 const log = {
   info: msg => console.log(msg),
   error: msg => console.error(`${colors.red('✗')} ${msg}`),
@@ -30,55 +33,121 @@ const log = {
   }
 }
 
-// Inline utilities
-const isQuiet = values => values.quiet || values.silent
-
-// Files that trigger a full lint when changed
-const CORE_FILES = new Set([
-  'src/logger.ts',
-  'src/spawn.ts',
-  'src/fs.ts',
-  'src/promises.ts',
-  'src/objects.ts',
-  'src/arrays.ts',
-  'src/strings.ts',
-  'src/types.ts',
-])
-
-// Config patterns that trigger a full lint
-const CONFIG_PATTERNS = [
-  '.config/**',
-  'scripts/utils/**',
-  'pnpm-lock.yaml',
-  'tsconfig*.json',
-  'eslint.config.*',
-  '.config/biome.json',
-]
-
-/**
- * Check if we should run all linters based on changed files.
- */
-function shouldRunAllLinters(changedFiles) {
-  for (const file of changedFiles) {
-    // Core library files
-    if (CORE_FILES.has(file)) {
-      return { runAll: true, reason: 'core files changed' }
-    }
-
-    // Config or infrastructure files
-    for (const pattern of CONFIG_PATTERNS) {
-      if (file.includes(pattern.replace('**', ''))) {
-        return { runAll: true, reason: 'config files changed' }
-      }
-    }
-  }
-
-  return { runAll: false }
+function printHeader(title) {
+  console.log(`\n${'─'.repeat(60)}`)
+  console.log(`  ${title}`)
+  console.log(`${'─'.repeat(60)}`)
 }
 
-/**
- * Filter files to only those that should be linted.
- */
+function printFooter(message) {
+  console.log(`\n${'─'.repeat(60)}`)
+  if (message) {console.log(`  ${colors.green('✓')} ${message}`)}
+}
+
+async function runCommand(command, args = [], options = {}) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args, {
+      stdio: 'inherit',
+      cwd: rootPath,
+      ...(WIN32 && { shell: true }),
+      ...options,
+    })
+
+    child.on('exit', code => {
+      resolve(code || 0)
+    })
+
+    child.on('error', error => {
+      reject(error)
+    })
+  })
+}
+
+async function runCommandQuiet(command, args = [], options = {}) {
+  return new Promise((resolve, reject) => {
+    let stdout = ''
+    let stderr = ''
+
+    const child = spawn(command, args, {
+      cwd: rootPath,
+      ...(WIN32 && { shell: true }),
+      ...options,
+    })
+
+    if (child.stdout) {
+      child.stdout.on('data', data => {
+        stdout += data
+      })
+    }
+
+    if (child.stderr) {
+      child.stderr.on('data', data => {
+        stderr += data
+      })
+    }
+
+    child.on('exit', code => {
+      resolve({ exitCode: code || 0, stdout, stderr })
+    })
+
+    child.on('error', error => {
+      reject(error)
+    })
+  })
+}
+
+async function getStagedFiles() {
+  const result = await runCommandQuiet('git', [
+    'diff',
+    '--cached',
+    '--name-only',
+    '--diff-filter=ACMR'
+  ])
+
+  if (result.exitCode !== 0) {
+    return []
+  }
+
+  return result.stdout
+    .trim()
+    .split('\n')
+    .filter(file => file.length > 0)
+}
+
+async function getChangedFiles() {
+  const result = await runCommandQuiet('git', [
+    'diff',
+    '--name-only',
+    '--diff-filter=ACMR',
+    'HEAD'
+  ])
+
+  if (result.exitCode !== 0) {
+    return []
+  }
+
+  const diffFiles = result.stdout
+    .trim()
+    .split('\n')
+    .filter(file => file.length > 0)
+
+  // Also get untracked files.
+  const untrackedResult = await runCommandQuiet('git', [
+    'ls-files',
+    '--others',
+    '--exclude-standard'
+  ])
+
+  const untrackedFiles = untrackedResult.exitCode === 0
+    ? untrackedResult.stdout
+        .trim()
+        .split('\n')
+        .filter(file => file.length > 0)
+    : []
+
+  return [...new Set([...diffFiles, ...untrackedFiles])]
+}
+
 function filterLintableFiles(files) {
   const lintableExtensions = new Set([
     '.js',
@@ -100,149 +169,42 @@ function filterLintableFiles(files) {
   })
 }
 
-/**
- * Run ESLint on specific files.
- */
-async function runLintOnFiles(files, options = {}) {
-  const { fix = false, quiet = false } = options
+async function runESLint(target, options = {}) {
+  const { fix = false } = options
 
-  if (!files.length) {
-    log.substep('No files to lint')
-    return 0
-  }
-
-  if (!quiet) {
-    log.progress(`Linting ${files.length} file(s)`)
-  }
-
-  const args = [
+  const eslintArgs = [
     'exec',
-    'eslint',
-    '--config',
-    '.config/eslint.config.mjs',
-    '--report-unused-disable-directives',
-    ...(fix ? ['--fix'] : []),
-    ...files,
+    'eslint'
   ]
 
-  const result = await runCommandSilent('pnpm', args)
-
-  if (result.exitCode !== 0) {
-    if (!quiet) {
-      log.failed(`Linting failed`)
-    }
-    if (result.stderr) {
-      console.error(result.stderr)
-    }
-    if (result.stdout) {
-      console.log(result.stdout)
-    }
-    return result.exitCode
+  // Check for ESLint config in .config directory.
+  const eslintConfigPath = path.join(rootPath, '.config', 'eslint.config.mjs')
+  if (existsSync(eslintConfigPath)) {
+    eslintArgs.push('--config', '.config/eslint.config.mjs')
   }
 
-  if (!quiet) {
-    log.done(`Linting passed`)
+  eslintArgs.push('--report-unused-disable-directives')
+
+  if (fix) {
+    eslintArgs.push('--fix')
   }
 
-  return 0
-}
-
-/**
- * Run ESLint on all files.
- */
-async function runLintOnAll(options = {}) {
-  const { fix = false, quiet = false } = options
-
-  if (!quiet) {
-    log.progress('Linting all files')
-  }
-
-  const args = [
-    'exec',
-    'eslint',
-    '--config',
-    '.config/eslint.config.mjs',
-    '--report-unused-disable-directives',
-    ...(fix ? ['--fix'] : []),
-    '.',
-  ]
-
-  const result = await runCommandSilent('pnpm', args)
-
-  if (result.exitCode !== 0) {
-    if (!quiet) {
-      log.failed('Linting failed')
-    }
-    if (result.stderr) {
-      console.error(result.stderr)
-    }
-    if (result.stdout) {
-      console.log(result.stdout)
-    }
-    return result.exitCode
-  }
-
-  if (!quiet) {
-    log.done('Linting passed')
-  }
-
-  return 0
-}
-
-/**
- * Get files to lint based on options.
- */
-async function getFilesToLint(options) {
-  const { all, changed, staged } = options
-
-  // If --all, return early
-  if (all) {
-    return { files: 'all', reason: 'all flag specified' }
-  }
-
-  // Get changed files
-  let changedFiles = []
-
-  if (staged) {
-    changedFiles = await getStagedFiles({ absolute: false })
-    if (!changedFiles.length) {
-      return { files: null, reason: 'no staged files' }
-    }
-  } else if (changed) {
-    changedFiles = await getChangedFiles({ absolute: false })
-    if (!changedFiles.length) {
-      return { files: null, reason: 'no changed files' }
-    }
+  // Add target files or directory.
+  if (Array.isArray(target)) {
+    eslintArgs.push(...target)
   } else {
-    // Default to all if no specific flag
-    return { files: 'all', reason: 'no target specified' }
+    eslintArgs.push(target)
   }
 
-  // Check if we should run all based on changed files
-  const { reason, runAll } = shouldRunAllLinters(changedFiles)
-  if (runAll) {
-    return { files: 'all', reason }
-  }
-
-  // Filter to lintable files
-  const lintableFiles = filterLintableFiles(changedFiles)
-  if (!lintableFiles.length) {
-    return { files: null, reason: 'no lintable files changed' }
-  }
-
-  return { files: lintableFiles, reason: null }
+  return runCommand('pnpm', eslintArgs)
 }
 
 async function main() {
   try {
-    // Parse arguments
+    // Parse arguments.
     const { positionals, values } = parseArgs({
       options: {
         help: {
-          type: 'boolean',
-          default: false,
-        },
-        fix: {
           type: 'boolean',
           default: false,
         },
@@ -250,7 +212,7 @@ async function main() {
           type: 'boolean',
           default: false,
         },
-        changed: {
+        fix: {
           type: 'boolean',
           default: false,
         },
@@ -258,11 +220,7 @@ async function main() {
           type: 'boolean',
           default: false,
         },
-        quiet: {
-          type: 'boolean',
-          default: false,
-        },
-        silent: {
+        changed: {
           type: 'boolean',
           default: false,
         },
@@ -271,84 +229,109 @@ async function main() {
       strict: false,
     })
 
-    // Show help if requested
+    // Show help if requested.
     if (values.help) {
-      printHelpHeader('Lint Runner')
       console.log('\nUsage: pnpm lint [options] [files...]')
       console.log('\nOptions:')
       console.log('  --help         Show this help message')
+      console.log('  --all          Lint all files (default: only staged/changed)')
       console.log('  --fix          Automatically fix problems')
-      console.log('  --all          Lint all files (default if no target specified)')
-      console.log('  --changed      Lint changed files')
-      console.log('  --staged       Lint staged files')
-      console.log('  --quiet, --silent  Suppress progress messages')
+      console.log('  --staged       Lint staged files only')
+      console.log('  --changed      Lint changed files only')
       console.log('\nExamples:')
-      console.log('  pnpm lint                   # Lint all files')
-      console.log('  pnpm lint --fix             # Fix all linting issues')
-      console.log('  pnpm lint --changed         # Lint changed files')
-      console.log('  pnpm lint --staged --fix    # Fix issues in staged files')
+      console.log('  pnpm lint                   # Lint staged files (or changed if none staged)')
+      console.log('  pnpm lint --all             # Lint all files')
+      console.log('  pnpm lint --fix             # Fix issues in staged/changed files')
+      console.log('  pnpm lint --all --fix       # Fix all linting issues')
       console.log('  pnpm lint src/index.ts      # Lint specific file(s)')
       process.exitCode = 0
       return
     }
 
-    const quiet = isQuiet(values)
+    // Detect lifecycle event.
+    const lifecycleEvent = process.env.npm_lifecycle_event || ''
+    const isLintCI = lifecycleEvent === 'lint-ci'
+    const isPrecommit = lifecycleEvent === 'precommit'
+    const isCheck = lifecycleEvent === 'check'
 
-    if (!quiet) {
-      printHeader('Lint Runner')
+    // In CI mode, always lint all.
+    if (isLintCI && !values.all && positionals.length === 0) {
+      values.all = true
     }
+
+    // In precommit or check mode, default to staged.
+    if ((isPrecommit || isCheck) && !values.all && !values.changed && positionals.length === 0) {
+      values.staged = true
+    }
+
+    printHeader('Lint Runner')
 
     let exitCode = 0
+    let target = null
 
-    // Handle positional arguments (specific files)
+    // Handle positional arguments (specific files).
     if (positionals.length > 0) {
       const files = filterLintableFiles(positionals)
-      if (!quiet) {
-        log.step('Linting specified files')
+      if (files.length === 0) {
+        log.step('No lintable files specified')
+        process.exitCode = 0
+        return
       }
-      exitCode = await runLintOnFiles(files, {
-        fix: values.fix,
-        quiet
-      })
+      log.step('Linting specified files')
+      target = files
+    } else if (values.all) {
+      log.step('Linting all files')
+      target = '.'
     } else {
-      // Get files to lint based on flags
-      const { files, reason } = await getFilesToLint(values)
+      // Default to staged files, fallback to changed.
+      let files = []
 
-      if (files === null) {
-        if (!quiet) {
-          log.step('Skipping lint')
-          log.substep(reason)
+      if (values.staged || (!values.changed && !values.staged)) {
+        // Try staged files first.
+        files = await getStagedFiles()
+        if (files.length > 0) {
+          log.step('Linting staged files')
         }
-        exitCode = 0
-      } else if (files === 'all') {
-        if (!quiet) {
-          const reasonText = reason ? ` (${reason})` : ''
-          log.step(`Linting all files${reasonText}`)
-        }
-        exitCode = await runLintOnAll({
-          fix: values.fix,
-          quiet
-        })
-      } else {
-        if (!quiet) {
-          log.step('Linting affected files')
-        }
-        exitCode = await runLintOnFiles(files, {
-          fix: values.fix,
-          quiet
-        })
       }
+
+      if (files.length === 0 && (values.changed || (!values.changed && !values.staged))) {
+        // Fallback to changed files.
+        files = await getChangedFiles()
+        if (files.length > 0) {
+          log.step('Linting changed files')
+        }
+      }
+
+      if (files.length === 0) {
+        log.step('No staged or changed files to lint')
+        printFooter('No files to lint')
+        process.exitCode = 0
+        return
+      }
+
+      // Filter to lintable files.
+      files = filterLintableFiles(files)
+      if (files.length === 0) {
+        log.step('No lintable files found')
+        printFooter('No lintable files')
+        process.exitCode = 0
+        return
+      }
+
+      target = files
     }
 
+    // Run ESLint.
+    log.progress(values.fix ? 'Running ESLint with fixes' : 'Running ESLint')
+    exitCode = await runESLint(target, { fix: values.fix })
+
     if (exitCode !== 0) {
-      if (!quiet) {
-        log.error('Lint failed')
-      }
+      log.failed('Lint failed')
+      log.error('Lint check failed')
       process.exitCode = exitCode
     } else {
-      if (!quiet) {
-        printFooter('All lint checks passed!')
-      }
+      log.done('Lint passed')
+      printFooter('All lint checks passed!')
     }
   } catch (error) {
     log.error(`Lint runner failed: ${error.message}`)

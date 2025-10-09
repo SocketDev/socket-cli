@@ -1,5 +1,5 @@
 /**
- * @fileoverview Coverage script that runs tests with coverage reporting.
+ * @fileoverview Fix script that runs lint with auto-fix enabled.
  */
 
 import { spawn } from 'node:child_process'
@@ -9,16 +9,8 @@ import { fileURLToPath } from 'node:url'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '..')
 
-// Pass through to test.mjs with --coverage flag, defaulting to --all for full coverage.
-const args = ['run', 'test', '--coverage']
-
-// If no --all flag is provided, add it by default for coverage runs.
-if (!process.argv.includes('--all')) {
-  args.push('--all')
-}
-
-// Pass through any additional arguments.
-args.push(...process.argv.slice(2))
+// Pass through to lint.mjs with --fix flag.
+const args = ['run', 'lint', '--fix', ...process.argv.slice(2)]
 
 const child = spawn('pnpm', args, {
   stdio: 'inherit',
@@ -31,6 +23,6 @@ child.on('exit', code => {
 })
 
 child.on('error', error => {
-  console.error(`Coverage script failed: ${error.message}`)
+  console.error(`Fix script failed: ${error.message}`)
   process.exitCode = 1
 })

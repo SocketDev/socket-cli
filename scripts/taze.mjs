@@ -1,63 +1,29 @@
 /**
- * Taze wrapper that errors on provenance downgrades.
- *
- * This script runs taze and parses the output for provenance downgrade warnings.
- * If any provenance downgrades are detected, the script exits with code 1.
- *
- * Usage: node scripts/taze.mjs [taze-args...]
+ * @fileoverview Backwards compatibility wrapper for taze.
+ * Calls update.mjs with --deps flag.
  */
 
 import { spawn } from 'node:child_process'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-function includesProvenanceDowngradeWarning(output) {
-  const lowered = output.toString().toLowerCase()
-  return (
-    lowered.includes('provenance') &&
-    (lowered.includes('downgrade') || lowered.includes('warn'))
-  )
-}
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const rootPath = path.join(__dirname, '..')
 
-void (async () => {
-  // Run with command line arguments.
-  const args = process.argv.slice(2)
+// Pass through to update.mjs with --deps flag and any additional arguments.
+const args = ['run', 'update', '--deps', ...process.argv.slice(2)]
 
-  const tazeProcess = spawn('pnpm', ['taze', ...args], {
-    stdio: 'pipe',
-    cwd: process.cwd(),
-  })
+const child = spawn('pnpm', args, {
+  stdio: 'inherit',
+  cwd: rootPath,
+  ...(process.platform === 'win32' && { shell: true }),
+})
 
-  let hasProvenanceDowngrade = false
+child.on('exit', code => {
+  process.exitCode = code || 0
+})
 
-  tazeProcess.stdout.on('data', chunk => {
-    process.stdout.write(chunk)
-    if (includesProvenanceDowngradeWarning(chunk)) {
-      hasProvenanceDowngrade = true
-    }
-  })
-
-  tazeProcess.stderr.on('data', chunk => {
-    process.stderr.write(chunk)
-    if (includesProvenanceDowngradeWarning(chunk)) {
-      hasProvenanceDowngrade = true
-    }
-  })
-
-  tazeProcess.on('close', () => {
-    if (hasProvenanceDowngrade) {
-      console.error('')
-      console.error(
-        'ERROR: Provenance downgrade detected! Failing build to maintain security.',
-      )
-      console.error(
-        '   Configure your dependencies to maintain provenance or exclude problematic packages.',
-      )
-      // eslint-disable-next-line n/no-process-exit
-      process.exit(1)
-    }
-  })
-
-  // Wait for process to complete
-  await new Promise((resolve) => {
-    tazeProcess.on('exit', resolve)
-  })
-})()
+child.on('error', error => {
+  console.error(`Taze script failed: ${error.message}`)
+  process.exitCode = 1
+})
