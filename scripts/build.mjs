@@ -293,8 +293,14 @@ async function main() {
           const stats = statSync(nodePath)
           const sizeMB = (stats.size / 1024 / 1024).toFixed(1)
           printFooter(`Node.js built successfully! Size: ${sizeMB}MB`)
+          console.log(`\n✨ To run locally:`)
+          console.log(`   ${nodePath} [script.js]`)
+          console.log(`   # Or use with Socket CLI:`)
+          console.log(`   ${nodePath} bin/cli.js [command]`)
         } else {
           printFooter('Node.js built successfully!')
+          console.log(`\n✨ To run locally:`)
+          console.log(`   ./build/socket-node/node-v24.9.0-custom/out/Release/node [script.js]`)
         }
       }
       return
@@ -314,7 +320,17 @@ async function main() {
         log.error('Stub build failed')
         process.exitCode = stubExitCode
       } else {
+        // Determine the output path for the stub binary
+        const platformName = process.platform === 'darwin' ? 'macos' : process.platform
+        const stubExt = WIN32 ? '.exe' : ''
+        const stubPath = path.join(rootPath, 'binaries', 'stub', `socket-${platformName}-${process.arch}${stubExt}`)
+
         printFooter('Stub/SEA binary built successfully!')
+        console.log(`\n✨ To run locally:`)
+        console.log(`   ${stubPath} [command]`)
+        console.log(`   # Examples:`)
+        console.log(`   ${stubPath} --help`)
+        console.log(`   ${stubPath} scan .`)
       }
       return
     }
@@ -391,6 +407,16 @@ async function main() {
       process.exitCode = exitCode
     } else {
       printFooter('Build completed successfully!')
+      // Only show run instructions for non-watch, non-types-only builds
+      if (!values.watch && !(values.types && !values.src)) {
+        console.log(`\n✨ To run locally:`)
+        console.log(`   pnpm exec socket [command]`)
+        console.log(`   # Or directly:`)
+        console.log(`   ./bin/cli.js [command]`)
+        console.log(`   # Examples:`)
+        console.log(`   pnpm exec socket --help`)
+        console.log(`   ./bin/cli.js scan .`)
+      }
     }
   } catch (error) {
     log.error(`Build runner failed: ${error.message}`)
