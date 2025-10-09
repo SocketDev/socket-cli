@@ -208,7 +208,7 @@ Output ONLY the updated CLAUDE.md content, nothing else.`
  * Update a project's CLAUDE.md using Claude.
  */
 async function updateProjectClaudeMd(claudeCmd, project) {
-  const { name, claudeMdPath } = project
+  const { claudeMdPath, name } = project
   const isRegistry = name === 'socket-registry'
 
   log.progress(`Updating ${name}/CLAUDE.md`)
@@ -337,7 +337,7 @@ async function syncClaudeMd(claudeCmd, options = {}) {
   // Process other projects.
   log.step('Updating project-specific files')
   for (const project of projects) {
-    if (project.name === 'socket-registry') continue
+    if (project.name === 'socket-registry') {continue}
 
     const success = await updateProjectClaudeMd(claudeCmd, project)
     if (!success && !options['dry-run']) {
@@ -401,7 +401,7 @@ async function scanProjectForIssues(claudeCmd, project) {
   const extensions = ['.js', '.mjs', '.ts', '.mts', '.jsx', '.tsx']
 
   async function findFiles(dir, depth = 0) {
-    if (depth > 5) return // Limit depth to avoid excessive scanning.
+    if (depth > 5) {return} // Limit depth to avoid excessive scanning.
 
     const entries = await fs.readdir(dir, { withFileTypes: true })
 
@@ -769,37 +769,553 @@ Remember: small commits, follow project standards, no AI attribution.`
 }
 
 /**
+ * Review code changes before committing.
+ */
+async function runCodeReview(claudeCmd, options = {}) {
+  printHeader('Code Review')
+
+  // Get git diff for staged changes.
+  const diffResult = await runCommandWithOutput('git', ['diff', '--cached'])
+
+  if (!diffResult.stdout.trim()) {
+    log.info('No staged changes to review')
+    log.substep('Stage changes with: git add <files>')
+    return true
+  }
+
+  const prompt = `Review the following staged changes for:
+1. Code quality and best practices
+2. Security vulnerabilities
+3. Performance issues
+4. CLAUDE.md compliance
+5. Cross-platform compatibility
+6. Error handling
+7. Test coverage needs
+
+Provide specific feedback with file:line references.
+
+${diffResult.stdout}
+
+Format your review as constructive feedback with severity levels (critical/high/medium/low).`
+
+  log.step('Starting code review with Claude')
+  await runCommand(claudeCmd, [], {
+    input: prompt,
+    stdio: 'inherit'
+  })
+
+  return true
+}
+
+/**
+ * Analyze and manage dependencies.
+ */
+async function runDependencyAnalysis(claudeCmd, options = {}) {
+  printHeader('Dependency Analysis')
+
+  // Read package.json.
+  const packageJson = JSON.parse(await fs.readFile(path.join(rootPath, 'package.json'), 'utf8'))
+
+  // Check for outdated packages.
+  log.progress('Checking for outdated packages')
+  const outdatedResult = await runCommandWithOutput('pnpm', ['outdated', '--json'])
+
+  let outdatedPackages = {}
+  try {
+    outdatedPackages = JSON.parse(outdatedResult.stdout || '{}')
+  } catch {
+    // Ignore parse errors.
+  }
+  log.done('Dependency check complete')
+
+  const prompt = `Analyze the dependencies for ${packageJson.name}:
+
+Current dependencies:
+${JSON.stringify(packageJson.dependencies || {}, null, 2)}
+
+Current devDependencies:
+${JSON.stringify(packageJson.devDependencies || {}, null, 2)}
+
+Outdated packages:
+${JSON.stringify(outdatedPackages, null, 2)}
+
+Provide:
+1. Security vulnerability analysis
+2. Unused dependency detection
+3. Update recommendations with migration notes
+4. License compatibility check
+5. Bundle size impact analysis
+6. Alternative package suggestions
+
+Focus on actionable recommendations.`
+
+  await runCommand(claudeCmd, [], {
+    input: prompt,
+    stdio: 'inherit'
+  })
+
+  return true
+}
+
+/**
+ * Generate test cases for existing code.
+ */
+async function runTestGeneration(claudeCmd, options = {}) {
+  printHeader('Test Generation')
+
+  const { positionals = [] } = options
+  const targetFile = positionals[0]
+
+  if (!targetFile) {
+    log.error('Please specify a file to generate tests for')
+    log.substep('Usage: pnpm claude --test <file>')
+    return false
+  }
+
+  const filePath = path.isAbsolute(targetFile) ? targetFile : path.join(rootPath, targetFile)
+
+  if (!existsSync(filePath)) {
+    log.error(`File not found: ${targetFile}`)
+    return false
+  }
+
+  const fileContent = await fs.readFile(filePath, 'utf8')
+  const fileName = path.basename(filePath)
+
+  const prompt = `Generate comprehensive test cases for ${fileName}:
+
+${fileContent}
+
+Create unit tests that:
+1. Cover all exported functions
+2. Test edge cases and error conditions
+3. Validate input/output contracts
+4. Test async operations properly
+5. Include proper setup/teardown
+6. Use vitest testing framework
+7. Follow Socket testing standards
+
+Output the complete test file content.`
+
+  log.step(`Generating tests for ${fileName}`)
+  const result = await runCommandWithOutput(claudeCmd, [], {
+    input: prompt,
+    stdio: ['pipe', 'pipe', 'pipe']
+  })
+
+  if (result.exitCode === 0 && result.stdout) {
+    const testDir = path.join(rootPath, 'test')
+    if (!existsSync(testDir)) {
+      await fs.mkdir(testDir, { recursive: true })
+    }
+
+    const testFileName = fileName.replace(/\.(m?[jt]s)$/, '.test.$1')
+    const testFilePath = path.join(testDir, testFileName)
+
+    await fs.writeFile(testFilePath, result.stdout.trim())
+    log.success(`Test file created: ${testFilePath}`)
+  }
+
+  return true
+}
+
+/**
+ * Generate or update documentation.
+ */
+async function runDocumentation(claudeCmd, options = {}) {
+  printHeader('Documentation Generation')
+
+  const { positionals = [] } = options
+  const targetPath = positionals[0] || rootPath
+
+  const prompt = `Generate or update documentation for the project at ${targetPath}.
+
+Tasks:
+1. Generate JSDoc comments for functions lacking documentation
+2. Create/update API documentation
+3. Improve README if needed
+4. Document complex algorithms
+5. Add usage examples
+6. Document configuration options
+
+Follow Socket documentation standards.
+Output the documentation updates or new content.`
+
+  await runCommand(claudeCmd, [], {
+    input: prompt,
+    stdio: 'inherit',
+    cwd: targetPath
+  })
+
+  return true
+}
+
+/**
+ * Suggest code refactoring improvements.
+ */
+async function runRefactor(claudeCmd, options = {}) {
+  printHeader('Code Refactoring Analysis')
+
+  const { positionals = [] } = options
+  const targetFile = positionals[0]
+
+  if (!targetFile) {
+    log.error('Please specify a file to refactor')
+    log.substep('Usage: pnpm claude --refactor <file>')
+    return false
+  }
+
+  const filePath = path.isAbsolute(targetFile) ? targetFile : path.join(rootPath, targetFile)
+
+  if (!existsSync(filePath)) {
+    log.error(`File not found: ${targetFile}`)
+    return false
+  }
+
+  const fileContent = await fs.readFile(filePath, 'utf8')
+
+  const prompt = `Analyze and suggest refactoring for this code:
+
+${fileContent}
+
+Identify and fix:
+1. Code smells (long functions, duplicate code, etc.)
+2. Performance bottlenecks
+3. Readability issues
+4. Maintainability problems
+5. Design pattern improvements
+6. SOLID principle violations
+7. Socket coding standards compliance
+
+Provide the refactored code with explanations.`
+
+  await runCommand(claudeCmd, [], {
+    input: prompt,
+    stdio: 'inherit'
+  })
+
+  return true
+}
+
+/**
+ * Optimize code for performance.
+ */
+async function runOptimization(claudeCmd, options = {}) {
+  printHeader('Performance Optimization')
+
+  const { positionals = [] } = options
+  const targetFile = positionals[0]
+
+  if (!targetFile) {
+    log.error('Please specify a file to optimize')
+    log.substep('Usage: pnpm claude --optimize <file>')
+    return false
+  }
+
+  const filePath = path.isAbsolute(targetFile) ? targetFile : path.join(rootPath, targetFile)
+
+  if (!existsSync(filePath)) {
+    log.error(`File not found: ${targetFile}`)
+    return false
+  }
+
+  const fileContent = await fs.readFile(filePath, 'utf8')
+
+  const prompt = `Analyze and optimize this code for performance:
+
+${fileContent}
+
+Focus on:
+1. Algorithm complexity improvements
+2. Memory allocation reduction
+3. Async operation optimization
+4. Caching opportunities
+5. Loop optimizations
+6. Data structure improvements
+7. V8 optimization tips
+8. Bundle size reduction
+
+Provide optimized code with benchmarks/explanations.`
+
+  await runCommand(claudeCmd, [], {
+    input: prompt,
+    stdio: 'inherit'
+  })
+
+  return true
+}
+
+/**
+ * Comprehensive security and quality audit.
+ */
+async function runAudit(claudeCmd, options = {}) {
+  printHeader('Security & Quality Audit')
+
+  log.step('Gathering project information')
+
+  // Run various checks.
+  const [npmAudit, depCheck, licenseCheck] = await Promise.all([
+    runCommandWithOutput('npm', ['audit', '--json']),
+    runCommandWithOutput('pnpm', ['licenses', 'list', '--json']),
+    fs.readFile(path.join(rootPath, 'package.json'), 'utf8')
+  ])
+
+  const packageJson = JSON.parse(licenseCheck)
+
+  const prompt = `Perform a comprehensive audit of the project:
+
+Package: ${packageJson.name}@${packageJson.version}
+
+NPM Audit Results:
+${npmAudit.stdout}
+
+License Information:
+${depCheck.stdout}
+
+Analyze:
+1. Security vulnerabilities (with severity and fixes)
+2. License compliance issues
+3. Dependency risks
+4. Code quality metrics
+5. Best practice violations
+6. Outdated dependencies with breaking changes
+7. Supply chain risks
+
+Provide actionable recommendations with priorities.`
+
+  await runCommand(claudeCmd, [], {
+    input: prompt,
+    stdio: 'inherit'
+  })
+
+  return true
+}
+
+/**
+ * Explain code or concepts.
+ */
+async function runExplain(claudeCmd, options = {}) {
+  printHeader('Code Explanation')
+
+  const { positionals = [] } = options
+  const targetFile = positionals[0]
+
+  if (!targetFile) {
+    log.error('Please specify a file or concept to explain')
+    log.substep('Usage: pnpm claude --explain <file|concept>')
+    return false
+  }
+
+  // Check if it's a file or a concept.
+  const filePath = path.isAbsolute(targetFile) ? targetFile : path.join(rootPath, targetFile)
+
+  let prompt
+  if (existsSync(filePath)) {
+    const fileContent = await fs.readFile(filePath, 'utf8')
+    prompt = `Explain this code in detail:
+
+${fileContent}
+
+Provide:
+1. Overall purpose and architecture
+2. Function-by-function breakdown
+3. Algorithm explanations
+4. Data flow analysis
+5. Dependencies and interactions
+6. Performance characteristics
+7. Potential improvements
+
+Make it educational and easy to understand.`
+  } else {
+    // Treat as a concept to explain.
+    prompt = `Explain the concept: ${targetFile}
+
+Provide:
+1. Clear definition
+2. How it works
+3. Use cases
+4. Best practices
+5. Common pitfalls
+6. Code examples
+7. Related concepts
+
+Focus on practical understanding for developers.`
+  }
+
+  await runCommand(claudeCmd, [], {
+    input: prompt,
+    stdio: 'inherit'
+  })
+
+  return true
+}
+
+/**
+ * Help with migrations.
+ */
+async function runMigration(claudeCmd, options = {}) {
+  printHeader('Migration Assistant')
+
+  const { positionals = [] } = options
+  const migrationType = positionals[0]
+
+  if (!migrationType) {
+    log.info('Available migration types:')
+    log.substep('node <version>    - Node.js version upgrade')
+    log.substep('deps              - Dependency updates')
+    log.substep('esm               - CommonJS to ESM')
+    log.substep('typescript        - JavaScript to TypeScript')
+    log.substep('vitest            - Jest/Mocha to Vitest')
+    return false
+  }
+
+  const packageJson = JSON.parse(await fs.readFile(path.join(rootPath, 'package.json'), 'utf8'))
+
+  const prompt = `Help migrate ${packageJson.name} for: ${migrationType}
+
+Current setup:
+${JSON.stringify(packageJson, null, 2)}
+
+Provide:
+1. Step-by-step migration guide
+2. Breaking changes to address
+3. Code modifications needed
+4. Configuration updates
+5. Testing strategy
+6. Rollback plan
+7. Common issues and solutions
+
+Be specific and actionable.`
+
+  await runCommand(claudeCmd, [], {
+    input: prompt,
+    stdio: 'inherit'
+  })
+
+  return true
+}
+
+/**
+ * Clean up code by removing unused elements.
+ */
+async function runCleanup(claudeCmd, options = {}) {
+  printHeader('Code Cleanup')
+
+  log.step('Analyzing codebase for cleanup opportunities')
+
+  const prompt = `Analyze the project and identify cleanup opportunities:
+
+1. Unused imports and variables
+2. Dead code paths
+3. Commented-out code blocks
+4. Duplicate code
+5. Unused dependencies
+6. Obsolete configuration
+7. Empty files
+8. Unreachable code
+
+For each item found:
+- Specify file and line numbers
+- Explain why it can be removed
+- Note any potential risks
+
+Format as actionable tasks.`
+
+  await runCommand(claudeCmd, [], {
+    input: prompt,
+    stdio: 'inherit',
+    cwd: rootPath
+  })
+
+  return true
+}
+
+/**
+ * Help with debugging issues.
+ */
+async function runDebug(claudeCmd, options = {}) {
+  printHeader('Debugging Assistant')
+
+  const { positionals = [] } = options
+  const errorOrFile = positionals.join(' ')
+
+  if (!errorOrFile) {
+    log.error('Please provide an error message or stack trace')
+    log.substep('Usage: pnpm claude --debug "<error message>"')
+    log.substep('   or: pnpm claude --debug <log-file>')
+    return false
+  }
+
+  let debugContent = errorOrFile
+
+  // Check if it's a file.
+  const possibleFile = path.isAbsolute(errorOrFile) ? errorOrFile : path.join(rootPath, errorOrFile)
+  if (existsSync(possibleFile)) {
+    debugContent = await fs.readFile(possibleFile, 'utf8')
+  }
+
+  const prompt = `Help debug this issue:
+
+${debugContent}
+
+Provide:
+1. Root cause analysis
+2. Step-by-step debugging approach
+3. Potential fixes with code
+4. Prevention strategies
+5. Related issues to check
+6. Testing to verify the fix
+
+Be specific and actionable.`
+
+  await runCommand(claudeCmd, [], {
+    input: prompt,
+    stdio: 'inherit'
+  })
+
+  return true
+}
+
+/**
  * Show available Claude operations.
  */
 function showOperations() {
-  console.log('\nAvailable operations:')
+  console.log('\nCore operations:')
   console.log('  --sync         Synchronize CLAUDE.md files across projects')
-  console.log('  --fix          Scan for bugs and security issues, fix interactively')
   console.log('  --commit       Create commits with Claude assistance')
   console.log('  --push         Create commits and push to remote')
-  console.log('  --help         Show this help message')
-  console.log('\nComing soon:')
-  console.log('  --review       Review code changes with Claude')
-  console.log('  --generate     Generate code or documentation')
+
+  console.log('\nCode quality:')
+  console.log('  --review       Review staged changes before committing')
+  console.log('  --fix          Scan for bugs and security issues')
+  console.log('  --refactor     Suggest code improvements')
+  console.log('  --optimize     Performance optimization analysis')
+  console.log('  --clean        Find unused code and imports')
+  console.log('  --audit        Security and quality audit')
+
+  console.log('\nDevelopment:')
+  console.log('  --test         Generate test cases')
+  console.log('  --docs         Generate documentation')
   console.log('  --explain      Explain code or concepts')
-  console.log('  --refactor     Refactor code with Claude\'s help')
-  console.log('  --test         Generate tests with Claude')
+  console.log('  --debug        Help debug errors')
+  console.log('  --deps         Analyze dependencies')
+  console.log('  --migrate      Migration assistance')
+
+  console.log('\nUtility:')
+  console.log('  --help         Show this help message')
 }
 
 async function main() {
   try {
     // Parse arguments.
-    const { values } = parseArgs({
+    const { positionals, values } = parseArgs({
       options: {
+        // Core operations.
         help: {
           type: 'boolean',
           default: false,
         },
         sync: {
-          type: 'boolean',
-          default: false,
-        },
-        fix: {
           type: 'boolean',
           default: false,
         },
@@ -811,6 +1327,57 @@ async function main() {
           type: 'boolean',
           default: false,
         },
+        // Code quality.
+        review: {
+          type: 'boolean',
+          default: false,
+        },
+        fix: {
+          type: 'boolean',
+          default: false,
+        },
+        refactor: {
+          type: 'boolean',
+          default: false,
+        },
+        optimize: {
+          type: 'boolean',
+          default: false,
+        },
+        clean: {
+          type: 'boolean',
+          default: false,
+        },
+        audit: {
+          type: 'boolean',
+          default: false,
+        },
+        // Development.
+        test: {
+          type: 'boolean',
+          default: false,
+        },
+        docs: {
+          type: 'boolean',
+          default: false,
+        },
+        explain: {
+          type: 'boolean',
+          default: false,
+        },
+        debug: {
+          type: 'boolean',
+          default: false,
+        },
+        deps: {
+          type: 'boolean',
+          default: false,
+        },
+        migrate: {
+          type: 'boolean',
+          default: false,
+        },
+        // Options.
         'no-verify': {
           type: 'boolean',
           default: false,
@@ -836,13 +1403,19 @@ async function main() {
           default: false,
         },
       },
-      allowPositionals: false,
+      allowPositionals: true,
       strict: false,
     })
 
+    // Check if any operation is specified.
+    const hasOperation = values.sync || values.fix || values.commit || values.push ||
+                        values.review || values.refactor || values.optimize || values.clean ||
+                        values.audit || values.test || values.docs || values.explain ||
+                        values.debug || values.deps || values.migrate
+
     // Show help if requested or no operation specified.
-    if (values.help || (!values.sync && !values.fix && !values.commit && !values.push)) {
-      console.log('\nUsage: pnpm claude [operation] [options]')
+    if (values.help || !hasOperation) {
+      console.log('\nUsage: pnpm claude [operation] [options] [files...]')
       console.log('\nClaude-powered utilities for Socket projects.')
       showOperations()
       console.log('\nOptions:')
@@ -853,11 +1426,13 @@ async function main() {
       console.log('  --no-interactive Skip interactive fix session (--fix)')
       console.log('  --no-cross-repo  Operate on current project only')
       console.log('\nExamples:')
-      console.log('  pnpm claude --sync           # Sync CLAUDE.md files')
-      console.log('  pnpm claude --fix            # Scan all projects for issues')
-      console.log('  pnpm claude --commit         # Create commits with Claude')
+      console.log('  pnpm claude --review         # Review staged changes')
+      console.log('  pnpm claude --fix            # Scan for issues')
+      console.log('  pnpm claude --test lib/utils.js  # Generate tests for a file')
+      console.log('  pnpm claude --explain path.join  # Explain a concept')
+      console.log('  pnpm claude --refactor src/index.js  # Suggest refactoring')
+      console.log('  pnpm claude --deps           # Analyze dependencies')
       console.log('  pnpm claude --push           # Commit and push changes')
-      console.log('  pnpm claude --push --no-verify  # Commit with --no-verify and push')
       console.log('  pnpm claude --help           # Show this help')
       console.log('\nRequires:')
       console.log('  - claude-console (or claude) CLI tool installed')
@@ -879,20 +1454,48 @@ async function main() {
     log.done(`Found Claude CLI: ${claudeCmd}`)
 
     // Execute requested operation.
+    let success = true
+    const options = { ...values, positionals }
+
+    // Core operations.
     if (values.sync) {
-      const success = await syncClaudeMd(claudeCmd, values)
-      process.exitCode = success ? 0 : 1
-    } else if (values.fix) {
-      const success = await runSecurityScan(claudeCmd, values)
-      process.exitCode = success ? 0 : 1
+      success = await syncClaudeMd(claudeCmd, options)
+    } else if (values.commit) {
+      success = await runClaudeCommit(claudeCmd, options)
     } else if (values.push) {
       // --push combines commit and push.
-      const success = await runClaudeCommit(claudeCmd, { ...values, push: true })
-      process.exitCode = success ? 0 : 1
-    } else if (values.commit) {
-      const success = await runClaudeCommit(claudeCmd, values)
-      process.exitCode = success ? 0 : 1
+      success = await runClaudeCommit(claudeCmd, { ...options, push: true })
     }
+    // Code quality operations.
+    else if (values.review) {
+      success = await runCodeReview(claudeCmd, options)
+    } else if (values.fix) {
+      success = await runSecurityScan(claudeCmd, options)
+    } else if (values.refactor) {
+      success = await runRefactor(claudeCmd, options)
+    } else if (values.optimize) {
+      success = await runOptimization(claudeCmd, options)
+    } else if (values.clean) {
+      success = await runCleanup(claudeCmd, options)
+    } else if (values.audit) {
+      success = await runAudit(claudeCmd, options)
+    }
+    // Development operations.
+    else if (values.test) {
+      success = await runTestGeneration(claudeCmd, options)
+    } else if (values.docs) {
+      success = await runDocumentation(claudeCmd, options)
+    } else if (values.explain) {
+      success = await runExplain(claudeCmd, options)
+    } else if (values.debug) {
+      success = await runDebug(claudeCmd, options)
+    } else if (values.deps) {
+      success = await runDependencyAnalysis(claudeCmd, options)
+    } else if (values.migrate) {
+      success = await runMigration(claudeCmd, options)
+    }
+
+    process.exitCode = success ? 0 : 1
   } catch (error) {
     log.error(`Operation failed: ${error.message}`)
     process.exitCode = 1
