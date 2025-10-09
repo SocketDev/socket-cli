@@ -391,7 +391,7 @@ async function main() {
         type: 'boolean',
         default: false,
       },
-      'skip-consistency-check': {
+      'no-version-check': {
         type: 'boolean',
         default: false,
       },
@@ -428,7 +428,7 @@ Options:
   --platform=PLATFORM  Specific platform(s) to build (can specify multiple)
   --version=VERSION    Version to publish (default: from package.json)
   --dry-run           Perform dry-run without publishing
-  --skip-consistency-check Skip package version consistency validation (NOT RECOMMENDED)
+  --no-version-check  Skip package version validation (NOT RECOMMENDED)
   --skip-build        Skip building binaries (use existing)
   --skip-optional     Skip optional platforms (armv7, alpine)
   --otp=CODE          npm OTP for publishing
@@ -482,20 +482,20 @@ Notes:
     console.log(`Publishing version: ${version}\n`)
 
     // Check version consistency across all packages.
-    if (!values['skip-consistency-check']) {
-      console.log('📋 Package Version Consistency Check')
+    if (!values['no-version-check']) {
+      console.log('📋 Package Version Check')
       console.log('─'.repeat(60))
       const isConsistent = await checkVersionConsistency(version)
       console.log('─'.repeat(60))
 
       if (!isConsistent) {
-        console.log('\n❌ Version consistency check failed!')
+        console.log('\n❌ Version check failed!')
         console.log('This is CRITICAL: All @socketbin packages must have the same version.')
         console.log('Fix the version mismatches before publishing.')
 
         if (!values['dry-run']) {
-          console.log('\nAborting publish to prevent version inconsistency.')
-          console.log('Use --skip-consistency-check to bypass this check (NOT RECOMMENDED).\n')
+          console.log('\nAborting publish to prevent version mismatch.')
+          console.log('Use --no-version-check to bypass this check (NOT RECOMMENDED).\n')
           process.exitCode = 1
           return
         } else {
