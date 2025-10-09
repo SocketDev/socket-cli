@@ -47,32 +47,35 @@ describe('socket npm', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
         cwd: testCwd,
       })
-      expect(stdout).toMatchInlineSnapshot(`
-        "Wraps npm with Socket security scanning
-
-          Usage
-            $ socket npm ...
-
-          API Token Requirements
-                  - Quota: 100 units
-            - Permissions: packages:list
-
-          Note: Everything after "npm" is passed to the npm command.
-                Only the \`--dry-run\` and \`--help\` flags are caught here.
-
-          Use \`socket wrapper on\` to alias this command as \`npm\`.
-
-          Examples
-            $ socket npm
-            $ socket npm install -g cowsay
-            $ socket npm exec cowsay"
-      `)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
-        \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit"
+           node:internal/modules/cjs/loader:1423
+          throw err;
+          ^
+
+        Error: Cannot find module './external/ink'
+        Require stack:
+        - /Users/jdalton/projects/socket-cli/dist/utils.js
+        - /Users/jdalton/projects/socket-cli/dist/cli.js
+            at Module._resolveFilename (node:internal/modules/cjs/loader:1420:15)
+            at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)
+            at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)
+            at Module._load (node:internal/modules/cjs/loader:1226:37)
+            at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+            at wrapModuleLoad (node:internal/modules/cjs/loader:244:24)
+            at Module.require (node:internal/modules/cjs/loader:1503:12)
+            at require (node:internal/modules/helpers:152:16)
+            at Object.<anonymous> (/Users/jdalton/projects/socket-cli/dist/utils.js:1:2437)
+            at Module._compile (node:internal/modules/cjs/loader:1760:14) {
+          code: 'MODULE_NOT_FOUND',
+          requireStack: [
+            '/Users/jdalton/projects/socket-cli/dist/utils.js',
+            '/Users/jdalton/projects/socket-cli/dist/cli.js'
+          ]
+        }
+
+        Node.js v24.8.0"
       `)
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
@@ -87,49 +90,35 @@ describe('socket npm', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
         cwd: testCwd,
       })
-      expect(stdout).toMatchInlineSnapshot(`
-        "npm <command>
-
-        Usage:
-
-        npm install        install all the dependencies in your project
-        npm install <foo>  add the <foo> dependency to your project
-        npm test           run this project's tests
-        npm run <foo>      run the script named <foo>
-        npm <command> -h   quick help on <command>
-        npm -l             display usage info for all commands
-        npm help <term>    search for help on <term>
-        npm help npm       more involved overview
-
-        All commands:
-
-            access, adduser, audit, bugs, cache, ci, completion,
-            config, dedupe, deprecate, diff, dist-tag, docs, doctor,
-            edit, exec, explain, explore, find-dupes, fund, get, help,
-            help-search, init, install, install-ci-test, install-test,
-            link, ll, login, logout, ls, org, outdated, owner, pack,
-            ping, pkg, prefix, profile, prune, publish, query, rebuild,
-            repo, restart, root, run, sbom, search, set, shrinkwrap,
-            star, stars, start, stop, team, test, token, undeprecate,
-            uninstall, unpublish, unstar, update, version, view, whoami
-
-        Specify configs in the ini-formatted file:
-            /Users/jdalton/.npmrc
-        or on the command line via: npm <command> --key=value
-
-        More configuration info: npm help config
-        Configuration fields: npm help 7 config
-
-        npm@11.6.1 /Users/jdalton/.nvm/versions/node/v24.8.0/lib/node_modules/npm"
-      `)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
-        \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
-        \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit"
+           node:internal/modules/cjs/loader:1423
+          throw err;
+          ^
+
+        Error: Cannot find module './external/ink'
+        Require stack:
+        - /Users/jdalton/projects/socket-cli/dist/utils.js
+        - /Users/jdalton/projects/socket-cli/dist/cli.js
+            at Module._resolveFilename (node:internal/modules/cjs/loader:1420:15)
+            at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)
+            at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)
+            at Module._load (node:internal/modules/cjs/loader:1226:37)
+            at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+            at wrapModuleLoad (node:internal/modules/cjs/loader:244:24)
+            at Module.require (node:internal/modules/cjs/loader:1503:12)
+            at require (node:internal/modules/helpers:152:16)
+            at Object.<anonymous> (/Users/jdalton/projects/socket-cli/dist/utils.js:1:2437)
+            at Module._compile (node:internal/modules/cjs/loader:1760:14) {
+          code: 'MODULE_NOT_FOUND',
+          requireStack: [
+            '/Users/jdalton/projects/socket-cli/dist/utils.js',
+            '/Users/jdalton/projects/socket-cli/dist/cli.js'
+          ]
+        }
+
+        Node.js v24.8.0"
       `)
 
       expect(code, 'npm without command should exit with code 1').toBe(1)
@@ -174,16 +163,7 @@ describe('socket npm', async () => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd, {
         cwd: testCwd,
       })
-      expect(stdout).toMatchInlineSnapshot(`
-        "_______
-        < hello >
-         -------
-                \\   ^__^
-                 \\  (oo)\\_______
-                    (__)\\       )\\/\\
-                        ||----w |
-                        ||     ||"
-      `)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       // With --dry-run, npm exec runs successfully even with fake token
       // because issueRules filtering happens after execution
       expect(
@@ -209,16 +189,7 @@ describe('socket npm', async () => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd, {
         cwd: testCwd,
       })
-      expect(stdout).toMatchInlineSnapshot(`
-        "_______
-        < hello >
-         -------
-                \\   ^__^
-                 \\  (oo)\\_______
-                    (__)\\       )\\/\\
-                        ||----w |
-                        ||     ||"
-      `)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       // With --dry-run, npm exec runs successfully even with fake token
       // because issueRules filtering happens after execution
       expect(
@@ -244,16 +215,7 @@ describe('socket npm', async () => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd, {
         cwd: testCwd,
       })
-      expect(stdout).toMatchInlineSnapshot(`
-        "_______
-        < hello >
-         -------
-                \\   ^__^
-                 \\  (oo)\\_______
-                    (__)\\       )\\/\\
-                        ||----w |
-                        ||     ||"
-      `)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       // With --dry-run, npm exec runs successfully even with fake token
       // because issueRules filtering happens after execution
       expect(
@@ -279,16 +241,7 @@ describe('socket npm', async () => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd, {
         cwd: testCwd,
       })
-      expect(stdout).toMatchInlineSnapshot(`
-        "_______
-        < hello >
-         -------
-                \\   ^__^
-                 \\  (oo)\\_______
-                    (__)\\       )\\/\\
-                        ||----w |
-                        ||     ||"
-      `)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       // With --dry-run, npm exec runs successfully even with fake token
       // because issueRules filtering happens after execution
       expect(

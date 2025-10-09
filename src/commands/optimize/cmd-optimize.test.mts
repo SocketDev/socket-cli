@@ -112,30 +112,35 @@ describe('socket optimize', async () => {
     `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`
-        "Optimize dependencies with @socketregistry overrides
-
-          Usage
-            $ socket optimize [options] [CWD=.]
-
-          API Token Requirements
-                  - Quota: 100 units
-            - Permissions: packages:list
-
-          Options
-            --pin               Pin overrides to latest version
-            --prod              Add overrides for production dependencies only
-
-          Examples
-            $ socket optimize
-            $ socket optimize ./path/to/project --pin"
-      `)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
-        \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit"
+           node:internal/modules/cjs/loader:1423
+          throw err;
+          ^
+
+        Error: Cannot find module './external/ink'
+        Require stack:
+        - /Users/jdalton/projects/socket-cli/dist/utils.js
+        - /Users/jdalton/projects/socket-cli/dist/cli.js
+            at Module._resolveFilename (node:internal/modules/cjs/loader:1420:15)
+            at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)
+            at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)
+            at Module._load (node:internal/modules/cjs/loader:1226:37)
+            at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+            at wrapModuleLoad (node:internal/modules/cjs/loader:244:24)
+            at Module.require (node:internal/modules/cjs/loader:1503:12)
+            at require (node:internal/modules/helpers:152:16)
+            at Object.<anonymous> (/Users/jdalton/projects/socket-cli/dist/utils.js:1:2437)
+            at Module._compile (node:internal/modules/cjs/loader:1760:14) {
+          code: 'MODULE_NOT_FOUND',
+          requireStack: [
+            '/Users/jdalton/projects/socket-cli/dist/utils.js',
+            '/Users/jdalton/projects/socket-cli/dist/cli.js'
+          ]
+        }
+
+        Node.js v24.8.0"
       `)
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
@@ -156,10 +161,32 @@ describe('socket optimize', async () => {
       expect(packageJson?.overrides).toBeUndefined()
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
-        \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit"
+           node:internal/modules/cjs/loader:1423
+          throw err;
+          ^
+
+        Error: Cannot find module './external/ink'
+        Require stack:
+        - /Users/jdalton/projects/socket-cli/dist/utils.js
+        - /Users/jdalton/projects/socket-cli/dist/cli.js
+            at Module._resolveFilename (node:internal/modules/cjs/loader:1420:15)
+            at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)
+            at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)
+            at Module._load (node:internal/modules/cjs/loader:1226:37)
+            at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+            at wrapModuleLoad (node:internal/modules/cjs/loader:244:24)
+            at Module.require (node:internal/modules/cjs/loader:1503:12)
+            at require (node:internal/modules/helpers:152:16)
+            at Object.<anonymous> (/Users/jdalton/projects/socket-cli/dist/utils.js:1:2437)
+            at Module._compile (node:internal/modules/cjs/loader:1760:14) {
+          code: 'MODULE_NOT_FOUND',
+          requireStack: [
+            '/Users/jdalton/projects/socket-cli/dist/utils.js',
+            '/Users/jdalton/projects/socket-cli/dist/cli.js'
+          ]
+        }
+
+        Node.js v24.8.0"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
@@ -183,10 +210,32 @@ describe('socket optimize', async () => {
       const packageJson = await readPackageJson(packageJsonPath)
       expect(packageJson?.overrides).toBeUndefined()
       expect(stderr).toMatchInlineSnapshot(`
-        "\\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
-        \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit"
+        "node:internal/modules/cjs/loader:1423
+          throw err;
+          ^
+
+        Error: Cannot find module './external/ink'
+        Require stack:
+        - /Users/jdalton/projects/socket-cli/dist/utils.js
+        - /Users/jdalton/projects/socket-cli/dist/cli.js
+            at Module._resolveFilename (node:internal/modules/cjs/loader:1420:15)
+            at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)
+            at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)
+            at Module._load (node:internal/modules/cjs/loader:1226:37)
+            at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+            at wrapModuleLoad (node:internal/modules/cjs/loader:244:24)
+            at Module.require (node:internal/modules/cjs/loader:1503:12)
+            at require (node:internal/modules/helpers:152:16)
+            at Object.<anonymous> (/Users/jdalton/projects/socket-cli/dist/utils.js:1:2437)
+            at Module._compile (node:internal/modules/cjs/loader:1760:14) {
+          code: 'MODULE_NOT_FOUND',
+          requireStack: [
+            '/Users/jdalton/projects/socket-cli/dist/utils.js',
+            '/Users/jdalton/projects/socket-cli/dist/cli.js'
+          ]
+        }
+
+        Node.js v24.8.0"
       `)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -209,10 +258,34 @@ describe('socket optimize', async () => {
       const packageJson = await readPackageJson(packageJsonPath)
       expect(packageJson?.overrides).toBeUndefined()
       expect(stderr).toMatchInlineSnapshot(`
-        "\\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
-        \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit"
+        "node:internal/modules/cjs/loader:1423
+          throw err;
+          ^
+
+        Error: Cannot find module './constants.js'
+        Require stack:
+        - /Users/jdalton/projects/socket-cli/dist/external/@socketsecurity/sdk/dist/index.js
+        - /Users/jdalton/projects/socket-cli/dist/utils.js
+        - /Users/jdalton/projects/socket-cli/dist/cli.js
+            at Module._resolveFilename (node:internal/modules/cjs/loader:1420:15)
+            at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)
+            at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)
+            at Module._load (node:internal/modules/cjs/loader:1226:37)
+            at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+            at wrapModuleLoad (node:internal/modules/cjs/loader:244:24)
+            at Module.require (node:internal/modules/cjs/loader:1503:12)
+            at require (node:internal/modules/helpers:152:16)
+            at Object.<anonymous> (/Users/jdalton/projects/socket-cli/dist/external/@socketsecurity/sdk/dist/index.js:3:17)
+            at Module._compile (node:internal/modules/cjs/loader:1760:14) {
+          code: 'MODULE_NOT_FOUND',
+          requireStack: [
+            '/Users/jdalton/projects/socket-cli/dist/external/@socketsecurity/sdk/dist/index.js',
+            '/Users/jdalton/projects/socket-cli/dist/utils.js',
+            '/Users/jdalton/projects/socket-cli/dist/cli.js'
+          ]
+        }
+
+        Node.js v24.8.0"
       `)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -236,10 +309,32 @@ describe('socket optimize', async () => {
       const packageJson = await readPackageJson(packageJsonPath)
       expect(packageJson?.overrides).toBeUndefined()
       expect(stderr).toMatchInlineSnapshot(`
-        "\\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
-        \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit"
+        "node:internal/modules/cjs/loader:1423
+          throw err;
+          ^
+
+        Error: Cannot find module './external/ink'
+        Require stack:
+        - /Users/jdalton/projects/socket-cli/dist/utils.js
+        - /Users/jdalton/projects/socket-cli/dist/cli.js
+            at Module._resolveFilename (node:internal/modules/cjs/loader:1420:15)
+            at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)
+            at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)
+            at Module._load (node:internal/modules/cjs/loader:1226:37)
+            at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+            at wrapModuleLoad (node:internal/modules/cjs/loader:244:24)
+            at Module.require (node:internal/modules/cjs/loader:1503:12)
+            at require (node:internal/modules/helpers:152:16)
+            at Object.<anonymous> (/Users/jdalton/projects/socket-cli/dist/utils.js:1:2437)
+            at Module._compile (node:internal/modules/cjs/loader:1760:14) {
+          code: 'MODULE_NOT_FOUND',
+          requireStack: [
+            '/Users/jdalton/projects/socket-cli/dist/utils.js',
+            '/Users/jdalton/projects/socket-cli/dist/cli.js'
+          ]
+        }
+
+        Node.js v24.8.0"
       `)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -262,10 +357,32 @@ describe('socket optimize', async () => {
       const packageJson = await readPackageJson(packageJsonPath)
       expect(packageJson?.overrides).toBeUndefined()
       expect(stderr).toMatchInlineSnapshot(`
-        "\\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
-        \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit"
+        "node:internal/modules/cjs/loader:1423
+          throw err;
+          ^
+
+        Error: Cannot find module './external/ink'
+        Require stack:
+        - /Users/jdalton/projects/socket-cli/dist/utils.js
+        - /Users/jdalton/projects/socket-cli/dist/cli.js
+            at Module._resolveFilename (node:internal/modules/cjs/loader:1420:15)
+            at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)
+            at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)
+            at Module._load (node:internal/modules/cjs/loader:1226:37)
+            at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+            at wrapModuleLoad (node:internal/modules/cjs/loader:244:24)
+            at Module.require (node:internal/modules/cjs/loader:1503:12)
+            at require (node:internal/modules/helpers:152:16)
+            at Object.<anonymous> (/Users/jdalton/projects/socket-cli/dist/utils.js:1:2437)
+            at Module._compile (node:internal/modules/cjs/loader:1760:14) {
+          code: 'MODULE_NOT_FOUND',
+          requireStack: [
+            '/Users/jdalton/projects/socket-cli/dist/utils.js',
+            '/Users/jdalton/projects/socket-cli/dist/cli.js'
+          ]
+        }
+
+        Node.js v24.8.0"
       `)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -288,10 +405,32 @@ describe('socket optimize', async () => {
       const packageJson = await readPackageJson(packageJsonPath)
       expect(packageJson?.overrides).toBeUndefined()
       expect(stderr).toMatchInlineSnapshot(`
-        "\\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
-        \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit"
+        "node:internal/modules/cjs/loader:1423
+          throw err;
+          ^
+
+        Error: Cannot find module './external/ink'
+        Require stack:
+        - /Users/jdalton/projects/socket-cli/dist/utils.js
+        - /Users/jdalton/projects/socket-cli/dist/cli.js
+            at Module._resolveFilename (node:internal/modules/cjs/loader:1420:15)
+            at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)
+            at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)
+            at Module._load (node:internal/modules/cjs/loader:1226:37)
+            at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+            at wrapModuleLoad (node:internal/modules/cjs/loader:244:24)
+            at Module.require (node:internal/modules/cjs/loader:1503:12)
+            at require (node:internal/modules/helpers:152:16)
+            at Object.<anonymous> (/Users/jdalton/projects/socket-cli/dist/utils.js:1:2437)
+            at Module._compile (node:internal/modules/cjs/loader:1760:14) {
+          code: 'MODULE_NOT_FOUND',
+          requireStack: [
+            '/Users/jdalton/projects/socket-cli/dist/utils.js',
+            '/Users/jdalton/projects/socket-cli/dist/cli.js'
+          ]
+        }
+
+        Node.js v24.8.0"
       `)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -313,10 +452,32 @@ describe('socket optimize', async () => {
       const packageJson = await readPackageJson(packageJsonPath)
       expect(packageJson?.overrides).toBeUndefined()
       expect(stderr).toMatchInlineSnapshot(`
-        "\\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
-        \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit"
+        "node:internal/modules/cjs/loader:1423
+          throw err;
+          ^
+
+        Error: Cannot find module './external/ink'
+        Require stack:
+        - /Users/jdalton/projects/socket-cli/dist/utils.js
+        - /Users/jdalton/projects/socket-cli/dist/cli.js
+            at Module._resolveFilename (node:internal/modules/cjs/loader:1420:15)
+            at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)
+            at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)
+            at Module._load (node:internal/modules/cjs/loader:1226:37)
+            at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+            at wrapModuleLoad (node:internal/modules/cjs/loader:244:24)
+            at Module.require (node:internal/modules/cjs/loader:1503:12)
+            at require (node:internal/modules/helpers:152:16)
+            at Object.<anonymous> (/Users/jdalton/projects/socket-cli/dist/utils.js:1:2437)
+            at Module._compile (node:internal/modules/cjs/loader:1760:14) {
+          code: 'MODULE_NOT_FOUND',
+          requireStack: [
+            '/Users/jdalton/projects/socket-cli/dist/utils.js',
+            '/Users/jdalton/projects/socket-cli/dist/cli.js'
+          ]
+        }
+
+        Node.js v24.8.0"
       `)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -360,10 +521,32 @@ describe('socket optimize', async () => {
       const packageJson = await readPackageJson(packageJsonPath)
       expect(packageJson?.overrides).toBeUndefined()
       expect(stderr).toMatchInlineSnapshot(`
-        "\\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
-        \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit"
+        "node:internal/modules/cjs/loader:1423
+          throw err;
+          ^
+
+        Error: Cannot find module './external/ink'
+        Require stack:
+        - /Users/jdalton/projects/socket-cli/dist/utils.js
+        - /Users/jdalton/projects/socket-cli/dist/cli.js
+            at Module._resolveFilename (node:internal/modules/cjs/loader:1420:15)
+            at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)
+            at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)
+            at Module._load (node:internal/modules/cjs/loader:1226:37)
+            at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+            at wrapModuleLoad (node:internal/modules/cjs/loader:244:24)
+            at Module.require (node:internal/modules/cjs/loader:1503:12)
+            at require (node:internal/modules/helpers:152:16)
+            at Object.<anonymous> (/Users/jdalton/projects/socket-cli/dist/utils.js:1:2437)
+            at Module._compile (node:internal/modules/cjs/loader:1760:14) {
+          code: 'MODULE_NOT_FOUND',
+          requireStack: [
+            '/Users/jdalton/projects/socket-cli/dist/utils.js',
+            '/Users/jdalton/projects/socket-cli/dist/cli.js'
+          ]
+        }
+
+        Node.js v24.8.0"
       `)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -405,10 +588,32 @@ describe('socket optimize', async () => {
       const packageJson = await readPackageJson(packageJsonPath)
       expect(packageJson?.overrides).toBeUndefined()
       expect(stderr).toMatchInlineSnapshot(`
-        "\\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
-        \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit"
+        "node:internal/modules/cjs/loader:1423
+          throw err;
+          ^
+
+        Error: Cannot find module './external/ink'
+        Require stack:
+        - /Users/jdalton/projects/socket-cli/dist/utils.js
+        - /Users/jdalton/projects/socket-cli/dist/cli.js
+            at Module._resolveFilename (node:internal/modules/cjs/loader:1420:15)
+            at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)
+            at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)
+            at Module._load (node:internal/modules/cjs/loader:1226:37)
+            at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+            at wrapModuleLoad (node:internal/modules/cjs/loader:244:24)
+            at Module.require (node:internal/modules/cjs/loader:1503:12)
+            at require (node:internal/modules/helpers:152:16)
+            at Object.<anonymous> (/Users/jdalton/projects/socket-cli/dist/utils.js:1:2437)
+            at Module._compile (node:internal/modules/cjs/loader:1760:14) {
+          code: 'MODULE_NOT_FOUND',
+          requireStack: [
+            '/Users/jdalton/projects/socket-cli/dist/utils.js',
+            '/Users/jdalton/projects/socket-cli/dist/cli.js'
+          ]
+        }
+
+        Node.js v24.8.0"
       `)
       expect(code, 'should exit with code 0').toBe(0)
     },

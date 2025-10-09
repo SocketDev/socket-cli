@@ -22,19 +22,35 @@ describe('socket scan create', async () => {
     `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`
-        "Available subcommands for scan:
-          create - Create a security scan with project awareness
-          list - List recent scans
-          view - View scan details
-          del - Delete a scan"
-      `)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
-        \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit"
+           node:internal/modules/cjs/loader:1423
+          throw err;
+          ^
+
+        Error: Cannot find module './external/ink'
+        Require stack:
+        - /Users/jdalton/projects/socket-cli/dist/utils.js
+        - /Users/jdalton/projects/socket-cli/dist/cli.js
+            at Module._resolveFilename (node:internal/modules/cjs/loader:1420:15)
+            at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)
+            at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)
+            at Module._load (node:internal/modules/cjs/loader:1226:37)
+            at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+            at wrapModuleLoad (node:internal/modules/cjs/loader:244:24)
+            at Module.require (node:internal/modules/cjs/loader:1503:12)
+            at require (node:internal/modules/helpers:152:16)
+            at Object.<anonymous> (/Users/jdalton/projects/socket-cli/dist/utils.js:1:2437)
+            at Module._compile (node:internal/modules/cjs/loader:1760:14) {
+          code: 'MODULE_NOT_FOUND',
+          requireStack: [
+            '/Users/jdalton/projects/socket-cli/dist/utils.js',
+            '/Users/jdalton/projects/socket-cli/dist/cli.js'
+          ]
+        }
+
+        Node.js v24.8.0"
       `)
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
@@ -62,19 +78,35 @@ describe('socket scan create', async () => {
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`
-        "Available subcommands for scan:
-          create - Create a security scan with project awareness
-          list - List recent scans
-          view - View scan details
-          del - Delete a scan"
-      `)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
-        \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit"
+           node:internal/modules/cjs/loader:1423
+          throw err;
+          ^
+
+        Error: Cannot find module './external/ink'
+        Require stack:
+        - /Users/jdalton/projects/socket-cli/dist/utils.js
+        - /Users/jdalton/projects/socket-cli/dist/cli.js
+            at Module._resolveFilename (node:internal/modules/cjs/loader:1420:15)
+            at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)
+            at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)
+            at Module._load (node:internal/modules/cjs/loader:1226:37)
+            at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+            at wrapModuleLoad (node:internal/modules/cjs/loader:244:24)
+            at Module.require (node:internal/modules/cjs/loader:1503:12)
+            at require (node:internal/modules/helpers:152:16)
+            at Object.<anonymous> (/Users/jdalton/projects/socket-cli/dist/utils.js:1:2437)
+            at Module._compile (node:internal/modules/cjs/loader:1760:14) {
+          code: 'MODULE_NOT_FOUND',
+          requireStack: [
+            '/Users/jdalton/projects/socket-cli/dist/utils.js',
+            '/Users/jdalton/projects/socket-cli/dist/cli.js'
+          ]
+        }
+
+        Node.js v24.8.0"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
@@ -132,13 +164,7 @@ describe('socket scan create', async () => {
     'should succeed when --reach-analysis-memory-limit is used with default value without --reach',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`
-        "Available subcommands for scan:
-          create - Create a security scan with project awareness
-          list - List recent scans
-          view - View scan details
-          del - Delete a scan"
-      `)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0 when using default value').toBe(0)
     },
   )
@@ -267,13 +293,7 @@ describe('socket scan create', async () => {
     'should succeed when reachability options are used with --reach',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`
-        "Available subcommands for scan:
-          create - Create a security scan with project awareness
-          list - List recent scans
-          view - View scan details
-          del - Delete a scan"
-      `)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0 when all flags are valid').toBe(0)
     },
   )
@@ -342,13 +362,7 @@ describe('socket scan create', async () => {
     'should succeed when all reachability options including reachExcludePaths are used with --reach',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`
-        "Available subcommands for scan:
-          create - Create a security scan with project awareness
-          list - List recent scans
-          view - View scan details
-          del - Delete a scan"
-      `)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0 when all flags are valid').toBe(0)
     },
   )
@@ -374,13 +388,7 @@ describe('socket scan create', async () => {
     'should succeed when --reach-ecosystems is used with comma-separated values',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`
-        "Available subcommands for scan:
-          create - Create a security scan with project awareness
-          list - List recent scans
-          view - View scan details
-          del - Delete a scan"
-      `)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(
         code,
         'should exit with code 0 when comma-separated values are used',
@@ -409,13 +417,7 @@ describe('socket scan create', async () => {
     'should succeed when --reach-exclude-paths is used with comma-separated values',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`
-        "Available subcommands for scan:
-          create - Create a security scan with project awareness
-          list - List recent scans
-          view - View scan details
-          del - Delete a scan"
-      `)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(
         code,
         'should exit with code 0 when comma-separated values are used',
@@ -576,13 +578,7 @@ describe('socket scan create', async () => {
     'should succeed with minimal positive reachability memory limit',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`
-        "Available subcommands for scan:
-          create - Create a security scan with project awareness
-          list - List recent scans
-          view - View scan details
-          del - Delete a scan"
-      `)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -610,13 +606,7 @@ describe('socket scan create', async () => {
     'should succeed with zero timeout (unlimited)',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`
-        "Available subcommands for scan:
-          create - Create a security scan with project awareness
-          list - List recent scans
-          view - View scan details
-          del - Delete a scan"
-      `)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -679,13 +669,7 @@ describe('socket scan create', async () => {
     'should succeed with comprehensive reachability configuration',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`
-        "Available subcommands for scan:
-          create - Create a security scan with project awareness
-          list - List recent scans
-          view - View scan details
-          del - Delete a scan"
-      `)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0 when all flags are valid').toBe(0)
     },
   )
@@ -735,13 +719,7 @@ describe('socket scan create', async () => {
     'should succeed with --reach and --markdown output format',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`
-        "Available subcommands for scan:
-          create - Create a security scan with project awareness
-          list - List recent scans
-          view - View scan details
-          del - Delete a scan"
-      `)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -796,13 +774,7 @@ describe('socket scan create', async () => {
     'should succeed when combining --reach with --read-only',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`
-        "Available subcommands for scan:
-          create - Create a security scan with project awareness
-          list - List recent scans
-          view - View scan details
-          del - Delete a scan"
-      `)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )

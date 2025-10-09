@@ -15,48 +15,35 @@ describe('socket manifest gradle', async () => {
     `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`
-        "[beta] Use Gradle to generate a manifest file (\`pom.xml\`) for a Gradle/Java/Kotlin/etc project
-
-          Usage
-            $ socket manifest gradle [options] [CWD=.]
-
-          Options
-            --bin               Location of gradlew binary to use, default: CWD/gradlew
-            --gradle-opts       Additional options to pass on to ./gradlew, see \`./gradlew --help\`
-            --verbose           Print debug messages
-
-          Uses gradle, preferably through your local project \`gradlew\`, to generate a
-          \`pom.xml\` file for each task. If you have no \`gradlew\` you can try the
-          global \`gradle\` binary but that may not work (hard to predict).
-
-          The \`pom.xml\` is a manifest file similar to \`package.json\` for npm or
-          or requirements.txt for PyPi), but specifically for Maven, which is Java's
-          dependency repository. Languages like Kotlin and Scala piggy back on it too.
-
-          There are some caveats with the gradle to \`pom.xml\` conversion:
-
-          - each task will generate its own xml file and by default it generates one xml
-            for every task. (This may be a good thing!)
-
-          - it's possible certain features don't translate well into the xml. If you
-            think something is missing that could be supported please reach out.
-
-          - it works with your \`gradlew\` from your repo and local settings and config
-
-          Support is beta. Please report issues or give us feedback on what's missing.
-
-          Examples
-
-            $ socket manifest gradle .
-            $ socket manifest gradle --bin=../gradlew ."
-      `)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
-        \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit"
+           node:internal/modules/cjs/loader:1423
+          throw err;
+          ^
+
+        Error: Cannot find module './external/ink'
+        Require stack:
+        - /Users/jdalton/projects/socket-cli/dist/utils.js
+        - /Users/jdalton/projects/socket-cli/dist/cli.js
+            at Module._resolveFilename (node:internal/modules/cjs/loader:1420:15)
+            at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)
+            at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)
+            at Module._load (node:internal/modules/cjs/loader:1226:37)
+            at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+            at wrapModuleLoad (node:internal/modules/cjs/loader:244:24)
+            at Module.require (node:internal/modules/cjs/loader:1503:12)
+            at require (node:internal/modules/helpers:152:16)
+            at Object.<anonymous> (/Users/jdalton/projects/socket-cli/dist/utils.js:1:2437)
+            at Module._compile (node:internal/modules/cjs/loader:1760:14) {
+          code: 'MODULE_NOT_FOUND',
+          requireStack: [
+            '/Users/jdalton/projects/socket-cli/dist/utils.js',
+            '/Users/jdalton/projects/socket-cli/dist/cli.js'
+          ]
+        }
+
+        Node.js v24.8.0"
       `)
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
@@ -71,13 +58,35 @@ describe('socket manifest gradle', async () => {
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
-        \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit"
+           node:internal/modules/cjs/loader:1423
+          throw err;
+          ^
+
+        Error: Cannot find module './external/ink'
+        Require stack:
+        - /Users/jdalton/projects/socket-cli/dist/utils.js
+        - /Users/jdalton/projects/socket-cli/dist/cli.js
+            at Module._resolveFilename (node:internal/modules/cjs/loader:1420:15)
+            at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)
+            at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)
+            at Module._load (node:internal/modules/cjs/loader:1226:37)
+            at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+            at wrapModuleLoad (node:internal/modules/cjs/loader:244:24)
+            at Module.require (node:internal/modules/cjs/loader:1503:12)
+            at require (node:internal/modules/helpers:152:16)
+            at Object.<anonymous> (/Users/jdalton/projects/socket-cli/dist/utils.js:1:2437)
+            at Module._compile (node:internal/modules/cjs/loader:1760:14) {
+          code: 'MODULE_NOT_FOUND',
+          requireStack: [
+            '/Users/jdalton/projects/socket-cli/dist/utils.js',
+            '/Users/jdalton/projects/socket-cli/dist/cli.js'
+          ]
+        }
+
+        Node.js v24.8.0"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

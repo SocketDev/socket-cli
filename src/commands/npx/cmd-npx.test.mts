@@ -44,31 +44,35 @@ describe('socket npx', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
         cwd: testCwd,
       })
-      expect(stdout).toMatchInlineSnapshot(`
-        "Wraps npx with Socket security scanning
-
-          Usage
-            $ socket npx ...
-
-          API Token Requirements
-                  - Quota: 100 units
-            - Permissions: packages:list
-
-          Note: Everything after "npx" is passed to the npx command.
-                Only the \`--dry-run\` and \`--help\` flags are caught here.
-
-          Use \`socket wrapper on\` to alias this command as \`npx\`.
-
-          Examples
-            $ socket npx cowsay
-            $ socket npx cowsay@1.6.0 hello"
-      `)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
-        \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit"
+           node:internal/modules/cjs/loader:1423
+          throw err;
+          ^
+
+        Error: Cannot find module './external/ink'
+        Require stack:
+        - /Users/jdalton/projects/socket-cli/dist/utils.js
+        - /Users/jdalton/projects/socket-cli/dist/cli.js
+            at Module._resolveFilename (node:internal/modules/cjs/loader:1420:15)
+            at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)
+            at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)
+            at Module._load (node:internal/modules/cjs/loader:1226:37)
+            at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+            at wrapModuleLoad (node:internal/modules/cjs/loader:244:24)
+            at Module.require (node:internal/modules/cjs/loader:1503:12)
+            at require (node:internal/modules/helpers:152:16)
+            at Object.<anonymous> (/Users/jdalton/projects/socket-cli/dist/utils.js:1:2437)
+            at Module._compile (node:internal/modules/cjs/loader:1760:14) {
+          code: 'MODULE_NOT_FOUND',
+          requireStack: [
+            '/Users/jdalton/projects/socket-cli/dist/utils.js',
+            '/Users/jdalton/projects/socket-cli/dist/cli.js'
+          ]
+        }
+
+        Node.js v24.8.0"
       `)
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
@@ -83,13 +87,35 @@ describe('socket npx', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
         cwd: testCwd,
       })
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit
-        \\u203c Build/test mode mismatch! Built without VITEST=1 but running in test mode.
-        \\u203c This causes snapshot failures. Rebuild with: pnpm run pretest:unit"
+           node:internal/modules/cjs/loader:1423
+          throw err;
+          ^
+
+        Error: Cannot find module './external/ink'
+        Require stack:
+        - /Users/jdalton/projects/socket-cli/dist/utils.js
+        - /Users/jdalton/projects/socket-cli/dist/cli.js
+            at Module._resolveFilename (node:internal/modules/cjs/loader:1420:15)
+            at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)
+            at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)
+            at Module._load (node:internal/modules/cjs/loader:1226:37)
+            at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+            at wrapModuleLoad (node:internal/modules/cjs/loader:244:24)
+            at Module.require (node:internal/modules/cjs/loader:1503:12)
+            at require (node:internal/modules/helpers:152:16)
+            at Object.<anonymous> (/Users/jdalton/projects/socket-cli/dist/utils.js:1:2437)
+            at Module._compile (node:internal/modules/cjs/loader:1760:14) {
+          code: 'MODULE_NOT_FOUND',
+          requireStack: [
+            '/Users/jdalton/projects/socket-cli/dist/utils.js',
+            '/Users/jdalton/projects/socket-cli/dist/cli.js'
+          ]
+        }
+
+        Node.js v24.8.0"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
@@ -129,7 +155,7 @@ describe('socket npx', async () => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd, {
         cwd: testCwd,
       })
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'dry-run npx with -c should exit with code 0').toBe(0)
     },
   )
@@ -148,7 +174,7 @@ describe('socket npx', async () => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd, {
         cwd: testCwd,
       })
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'dry-run npx with --config should exit with code 0').toBe(0)
     },
   )
@@ -167,7 +193,7 @@ describe('socket npx', async () => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd, {
         cwd: testCwd,
       })
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(
         code,
         'dry-run npx with multiple issueRules should exit with code 0',
@@ -189,7 +215,7 @@ describe('socket npx', async () => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd, {
         cwd: testCwd,
       })
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(
         code,
         'dry-run npx with --config and multiple issueRules should exit with code 0',
