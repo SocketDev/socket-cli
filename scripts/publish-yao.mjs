@@ -476,7 +476,7 @@ async function main() {
         type: 'boolean',
         default: false,
       },
-      'skip-consistency-check': {
+      'no-version-check': {
         type: 'boolean',
         default: false,
       },
@@ -518,7 +518,7 @@ Options:
   --version=VERSION      Version to publish (default: from package.json)
   --node-version=VERSION Node.js version for yao-pkg (default: v24.9.0 socket-node)
   --skip-version-check  Skip checking for newer yao-pkg Node versions
-  --skip-consistency-check Skip package version consistency validation (NOT RECOMMENDED)
+  --no-version-check    Skip package version validation (NOT RECOMMENDED)
   --dry-run             Perform dry-run without publishing
   --skip-build          Skip building binaries (use existing)
   --skip-optional       Skip optional platforms (armv7, alpine)
@@ -583,20 +583,20 @@ Notes:
     console.log(`Publishing version: ${version}\n`)
 
     // Check version consistency across all packages.
-    if (!values['skip-consistency-check']) {
-      console.log(colors.bold('📋 Package Version Consistency Check'))
+    if (!values['no-version-check']) {
+      console.log(colors.bold('📋 Package Version Check'))
       console.log('─'.repeat(60))
       const isConsistent = await checkVersionConsistency(version)
       console.log('─'.repeat(60))
 
       if (!isConsistent) {
-        console.log(colors.red('\n❌ Version consistency check failed!'))
+        console.log(colors.red('\n❌ Version check failed!'))
         console.log(colors.yellow('This is CRITICAL: All @socketbin packages must have the same version.'))
         console.log(colors.yellow('Fix the version mismatches before publishing.'))
 
         if (!values['dry-run']) {
-          console.log(colors.red('\nAborting publish to prevent version inconsistency.'))
-          console.log('Use --skip-consistency-check to bypass this check (NOT RECOMMENDED).\n')
+          console.log(colors.red('\nAborting publish to prevent version mismatch.'))
+          console.log('Use --no-version-check to bypass this check (NOT RECOMMENDED).\n')
           process.exitCode = 1
           return
         } else {
