@@ -132,14 +132,29 @@ async function checkClaude() {
  * Prepare Claude command arguments.
  * Adds --dangerously-skip-permissions by default (Let's get dangerous!)
  * unless --no-darkwing flag is used.
+ * Adds model selection based on --pinky (default) or --the-brain (expensive).
  */
 function prepareClaudeArgs(args = [], options = {}) {
   const opts = { __proto__: null, ...options }
+  const claudeArgs = [...args]
+
   // "Let's get dangerous!" - Darkwing Duck.
   if (!opts['no-darkwing']) {
-    return ['--dangerously-skip-permissions', ...args]
+    claudeArgs.unshift('--dangerously-skip-permissions')
   }
-  return args
+
+  // "Gee, Brain, what do you want to do tonight?" - Pinky
+  // "The same thing we do every night, Pinky - try to take over the world!" - The Brain
+  if (opts['the-brain']) {
+    // Use the expensive, powerful model (Claude 3 Opus)
+    claudeArgs.push('--model', 'claude-3-opus-20240229')
+  } else if (opts.pinky) {
+    // Explicitly use the default model (Claude 3.5 Sonnet)
+    claudeArgs.push('--model', 'claude-3-5-sonnet-20241022')
+  }
+  // If neither flag is set, let claude-console use its default
+
+  return claudeArgs
 }
 
 /**
@@ -158,25 +173,64 @@ function shouldRunParallel(options = {}) {
 
 /**
  * Run tasks in parallel with progress tracking.
+ * NOTE: When running Claude agents in parallel, they must use stdio: 'pipe' to avoid
+ * conflicting interactive prompts. If agents need user interaction, they would queue
+ * and block each other. Use --seq flag for sequential execution with full interactivity.
  */
-async function runParallel(tasks, description = 'tasks') {
+async function runParallel(tasks, description = 'tasks', taskNames = []) {
   log.info(`Running ${tasks.length} ${description} in parallel...`)
 
-  const results = await Promise.allSettled(tasks)
+  const startTime = Date.now()
+  let completed = 0
 
+  // Add progress tracking to each task
+  const trackedTasks = tasks.map((task, index) => {
+    const name = taskNames[index] || `Task ${index + 1}`
+    const taskStartTime = Date.now()
+
+    return task.then(
+      result => {
+        completed++
+        const elapsed = Math.round((Date.now() - taskStartTime) / 1000)
+        log.done(`[${name}] Completed (${elapsed}s) - ${completed}/${tasks.length}`)
+        return result
+      },
+      error => {
+        completed++
+        const elapsed = Math.round((Date.now() - taskStartTime) / 1000)
+        log.failed(`[${name}] Failed (${elapsed}s) - ${completed}/${tasks.length}`)
+        throw error
+      }
+    )
+  })
+
+  // Progress indicator
+  const progressInterval = setInterval(() => {
+    const elapsed = Math.round((Date.now() - startTime) / 1000)
+    const pending = tasks.length - completed
+    if (pending > 0) {
+      log.substep(`Progress: ${completed}/${tasks.length} complete, ${pending} running (${elapsed}s elapsed)`)
+    }
+  }, 15000) // Update every 15 seconds
+
+  const results = await Promise.allSettled(trackedTasks)
+  clearInterval(progressInterval)
+
+  const totalElapsed = Math.round((Date.now() - startTime) / 1000)
   const succeeded = results.filter(r => r.status === 'fulfilled').length
   const failed = results.filter(r => r.status === 'rejected').length
 
   if (failed > 0) {
-    log.warn(`Completed: ${succeeded} succeeded, ${failed} failed`)
-    // Log errors
+    log.warn(`Completed in ${totalElapsed}s: ${succeeded} succeeded, ${failed} failed`)
+    // Log errors with task names
     results.forEach((result, index) => {
       if (result.status === 'rejected') {
-        log.error(`Task ${index + 1} failed: ${result.reason}`)
+        const name = taskNames[index] || `Task ${index + 1}`
+        log.error(`[${name}] failed: ${result.reason}`)
       }
     })
   } else {
-    log.success(`All ${succeeded} ${description} completed successfully`)
+    log.success(`All ${succeeded} ${description} completed successfully in ${totalElapsed}s`)
   }
 
   return results
@@ -404,7 +458,8 @@ async function syncClaudeMd(claudeCmd, options = {}) {
         .catch(error => ({ project: project.name, success: false, error }))
     )
 
-    const results = await runParallel(tasks, 'CLAUDE.md updates')
+    const taskNames = projects.map(p => path.basename(p))
+    const results = await runParallel(tasks, 'CLAUDE.md updates', taskNames)
 
     // Check for failures
     results.forEach(result => {
@@ -430,7 +485,8 @@ async function syncClaudeMd(claudeCmd, options = {}) {
     if (shouldRunParallel(opts) && projects.length > 1) {
       // Run commits in parallel
       const tasks = projects.map(project => commitChanges(project))
-      await runParallel(tasks, 'commits')
+      const taskNames = projects.map(p => path.basename(p))
+      await runParallel(tasks, 'commits', taskNames)
     } else {
       // Run sequentially
       for (const project of projects) {
@@ -743,7 +799,8 @@ async function runSecurityScan(claudeCmd, options = {}) {
         .catch(error => ({ project: project.name, issues: null, error }))
     )
 
-    const results = await runParallel(tasks, 'security scans')
+    const taskNames = projects.map(p => p.name)
+    const results = await runParallel(tasks, 'security scans', taskNames)
 
     // Collect results
     results.forEach(result => {
@@ -779,6 +836,9 @@ async function runSecurityScan(claudeCmd, options = {}) {
 
 /**
  * Run Claude-assisted commits across Socket projects.
+ * IMPORTANT: When running in parallel mode (default), Claude agents run silently (stdio: 'pipe').
+ * Interactive prompts would conflict if multiple agents needed user input simultaneously.
+ * Use --seq flag if you need interactive debugging across multiple repos.
  */
 async function runClaudeCommit(claudeCmd, options = {}) {
   const opts = { __proto__: null, ...options }
@@ -1519,6 +1579,8 @@ Be specific and actionable.`
 
 /**
  * Run all checks, push, and monitor CI until green.
+ * NOTE: This operates on the current repo only. For multi-repo CI, run --green in each repo.
+ * Multi-repo parallel execution would conflict with interactive prompts if fixes fail.
  */
 async function runGreen(claudeCmd, options = {}) {
   const opts = { __proto__: null, ...options }
@@ -1529,19 +1591,20 @@ async function runGreen(claudeCmd, options = {}) {
   printHeader('Green CI Pipeline')
 
   // Step 1: Run local checks
-  log.step('Running local checks')
+  const repoName = path.basename(rootPath)
+  log.step(`Running local checks in ${colors.cyan(repoName)}`)
   const localChecks = [
     { name: 'Install dependencies', cmd: 'pnpm', args: ['install'] },
     { name: 'Fix code style', cmd: 'pnpm', args: ['run', 'fix'] },
     { name: 'Run checks', cmd: 'pnpm', args: ['run', 'check'] },
-    { name: 'Run coverage', cmd: 'pnpm', args: ['run', 'coverage'] },
+    { name: 'Run coverage', cmd: 'pnpm', args: ['run', 'cover'] },
     { name: 'Run tests', cmd: 'pnpm', args: ['run', 'test', '--', '--update'] }
   ]
 
   let autoFixAttempts = 0
 
   for (const check of localChecks) {
-    log.progress(check.name)
+    log.progress(`[${repoName}] ${check.name}`)
 
     if (isDryRun) {
       log.done(`[DRY RUN] Would run: ${check.cmd} ${check.args.join(' ')}`)
@@ -1563,7 +1626,7 @@ async function runGreen(claudeCmd, options = {}) {
 
       if (isAutoMode) {
         // Attempt automatic fix
-        log.progress(`Attempting auto-fix with Claude (attempt ${autoFixAttempts}/${MAX_AUTO_FIX_ATTEMPTS})`)
+        log.progress(`[${repoName}] Auto-fix attempt ${autoFixAttempts}/${MAX_AUTO_FIX_ATTEMPTS}`)
 
         const fixPrompt = `You are fixing a CI/build issue automatically. The command "${check.cmd} ${check.args.join(' ')}" failed in the ${path.basename(rootPath)} project.
 
@@ -1582,19 +1645,46 @@ IMPORTANT:
 - If it's a type error, fix the code
 - If it's a lint error, fix the formatting
 - If tests are failing, update snapshots or fix the test
+- If a script is missing, check if there's a similar script name (e.g., 'cover' vs 'coverage')
 
 Fix this issue now by making the necessary changes.`
 
-        // Run Claude non-interactively to get the fix
-        log.substep('Analyzing error and applying fixes...')
-        await runCommand(claudeCmd, prepareClaudeArgs([], opts), {
-          input: fixPrompt,
+        // Run Claude non-interactively with timeout and progress
+        const startTime = Date.now()
+        const timeout = 120000 // 2 minute timeout
+        log.substep(`[${repoName}] Analyzing error...`)
+
+        const claudeProcess = spawn(claudeCmd, prepareClaudeArgs([], opts), {
           cwd: rootPath,
-          stdio: 'pipe'  // Don't inherit stdio - run silently
+          stdio: ['pipe', 'pipe', 'pipe']
         })
 
-        // Give Claude's changes a moment to complete
-        await new Promise(resolve => setTimeout(resolve, 2000))
+        claudeProcess.stdin.write(fixPrompt)
+        claudeProcess.stdin.end()
+
+        // Monitor progress with timeout
+        let progressInterval = setInterval(() => {
+          const elapsed = Date.now() - startTime
+          if (elapsed > timeout) {
+            log.warn(`[${repoName}] Claude fix timed out after ${Math.round(elapsed/1000)}s`)
+            claudeProcess.kill()
+            clearInterval(progressInterval)
+          } else {
+            log.substep(`[${repoName}] Claude working... (${Math.round(elapsed/1000)}s)`)
+          }
+        }, 10000) // Update every 10 seconds
+
+        await new Promise((resolve) => {
+          claudeProcess.on('close', () => {
+            clearInterval(progressInterval)
+            const elapsed = Date.now() - startTime
+            log.done(`[${repoName}] Claude fix completed in ${Math.round(elapsed/1000)}s`)
+            resolve()
+          })
+        })
+
+        // Give file system a moment to sync
+        await new Promise(resolve => setTimeout(resolve, 1000))
 
         // Retry the check
         log.progress(`Retrying ${check.name}`)
@@ -2026,6 +2116,14 @@ async function main() {
           type: 'string',
           default: '10',
         },
+        pinky: {
+          type: 'boolean',
+          default: false,
+        },
+        'the-brain': {
+          type: 'boolean',
+          default: false,
+        },
       },
       allowPositionals: true,
       strict: false,
@@ -2053,6 +2151,8 @@ async function main() {
       console.log('  --no-darkwing    Disable "Let\'s get dangerous!" mode')
       console.log('  --max-retries N  Max CI fix attempts (--green, default: 3)')
       console.log('  --max-auto-fixes N  Max auto-fix attempts before interactive (--green, default: 10)')
+      console.log('  --pinky          Use default model (Claude 3.5 Sonnet)')
+      console.log('  --the-brain      Use expensive model (Claude 3 Opus) - "Try to take over the world!"')
       console.log('\nExamples:')
       console.log('  pnpm claude --review         # Review staged changes')
       console.log('  pnpm claude --fix            # Scan for issues')
@@ -2060,6 +2160,8 @@ async function main() {
       console.log('  pnpm claude --green --dry-run  # Test green without real CI')
       console.log('  pnpm claude --green --max-retries 5  # More CI retry attempts')
       console.log('  pnpm claude --green --max-auto-fixes 3  # Fewer auto-fix attempts')
+      console.log('  pnpm claude --fix --the-brain  # Deep analysis with powerful model')
+      console.log('  pnpm claude --refactor --pinky  # Quick refactor with default model')
       console.log('  pnpm claude --test lib/utils.js  # Generate tests for a file')
       console.log('  pnpm claude --explain path.join  # Explain a concept')
       console.log('  pnpm claude --refactor src/index.js  # Suggest refactoring')
