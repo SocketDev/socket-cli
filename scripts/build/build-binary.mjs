@@ -18,6 +18,8 @@ import { parseArgs } from 'node:util'
 
 import colors from 'yoctocolors-cjs'
 
+import { signBinary } from './code-signing.mjs'
+
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 const ROOT_DIR = join(__dirname, '../..')
@@ -318,12 +320,13 @@ async function buildWithNodeSea(options) {
     // Make executable
     await runCommand('chmod', ['+x', seaExe])
 
-    // Sign on macOS
-    if (platform === 'macos') {
-      try {
-        await runCommand('codesign', ['--sign', '-', seaExe])
-      } catch (e) {
-        console.warn('Warning: codesign failed, binary may not work on some macOS systems')
+    // Sign the binary
+    const signResult = await signBinary(seaExe, { force: true })
+    if (!signResult.success && signResult.message) {
+      if (platform === 'macos' && arch === 'arm64') {
+        throw new Error(signResult.message)
+      } else {
+        console.warn(signResult.message)
       }
     }
   }
