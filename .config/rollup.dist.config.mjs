@@ -25,11 +25,11 @@ const {
   CONSTANTS,
   INLINED_SOCKET_CLI_LEGACY_BUILD,
   INLINED_SOCKET_CLI_SENTRY_BUILD,
-  INSTRUMENT_WITH_SENTRY,
+  PRELOAD_SENTRY,
   NODE_MODULES,
   NODE_MODULES_GLOB_RECURSIVE,
   SHADOW_NPM_BIN,
-  SHADOW_NPM_INJECT,
+  SHADOW_NPM_PRELOAD_ARBORIST,
   SHADOW_NPX_BIN,
   SHADOW_PNPM_BIN,
   SLASH_NODE_MODULES_SLASH,
@@ -276,8 +276,8 @@ export default async () => {
   const shadowNpmBinSrcPath = normalizePath(
     path.join(srcPath, 'shadow/npm/bin.mts'),
   )
-  const shadowNpmInjectSrcPath = normalizePath(
-    path.join(srcPath, 'shadow/npm/inject.mts'),
+  const shadowNpmPreloadArboristSrcPath = normalizePath(
+    path.join(srcPath, 'shadow/npm/preload-arborist.mts'),
   )
   const shadowNpxBinSrcPath = normalizePath(
     path.join(srcPath, 'shadow/npx/bin.mts'),
@@ -298,12 +298,12 @@ export default async () => {
         'yarn-cli': `${srcPath}/yarn-cli.mts`,
         [CONSTANTS]: `${srcPath}/constants.mts`,
         [SHADOW_NPM_BIN]: `${srcPath}/shadow/npm/bin.mts`,
-        [SHADOW_NPM_INJECT]: `${srcPath}/shadow/npm/inject.mts`,
+        [SHADOW_NPM_PRELOAD_ARBORIST]: `${srcPath}/shadow/npm/preload-arborist.mts`,
         [SHADOW_NPX_BIN]: `${srcPath}/shadow/npx/bin.mts`,
         [SHADOW_PNPM_BIN]: `${srcPath}/shadow/pnpm/bin.mts`,
         ...(constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD]
           ? {
-              [INSTRUMENT_WITH_SENTRY]: `${srcPath}/${INSTRUMENT_WITH_SENTRY}.mts`,
+              [PRELOAD_SENTRY]: `${srcPath}/${PRELOAD_SENTRY}.mts`,
             }
           : {}),
       },
@@ -332,8 +332,8 @@ export default async () => {
                 return FLAGS
               case shadowNpmBinSrcPath:
                 return SHADOW_NPM_BIN
-              case shadowNpmInjectSrcPath:
-                return SHADOW_NPM_INJECT
+              case shadowNpmPreloadArboristSrcPath:
+                return SHADOW_NPM_PRELOAD_ARBORIST
               case shadowNpxBinSrcPath:
                 return SHADOW_NPX_BIN
               case shadowPnpmBinSrcPath:

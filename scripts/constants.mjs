@@ -76,14 +76,14 @@ const constants = {
 
   // Shadow bins
   SHADOW_NPM_BIN: 'shadow-npm-bin',
-  SHADOW_NPM_INJECT: 'shadow-npm-inject',
+  SHADOW_NPM_PRELOAD_ARBORIST: 'shadow-npm-preload-arborist',
   SHADOW_NPX_BIN: 'shadow-npx-bin',
   SHADOW_PNPM_BIN: 'shadow-pnpm-bin',
   SHADOW_YARN_BIN: 'shadow-yarn-bin',
 
   // Other
   CONSTANTS: 'constants',
-  INSTRUMENT_WITH_SENTRY: 'instrument-with-sentry',
+  PRELOAD_SENTRY: 'preload-sentry',
   ROLLUP_EXTERNAL_SUFFIX: '?commonjs-external',
   SLASH_NODE_MODULES_SLASH: '/node_modules/',
 

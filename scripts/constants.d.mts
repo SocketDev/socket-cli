@@ -21,10 +21,10 @@ type Constants = typeof registryConstants & {
   readonly INLINED_SOCKET_CLI_SYNP_VERSION: string
   readonly INLINED_SOCKET_CLI_VERSION: string
   readonly INLINED_SOCKET_CLI_VERSION_HASH: string
-  readonly INSTRUMENT_WITH_SENTRY: 'instrument-with-sentry'
+  readonly PRELOAD_SENTRY: 'preload-sentry'
   readonly ROLLUP_EXTERNAL_SUFFIX: '?commonjs-external'
   readonly SHADOW_NPM_BIN: 'shadow-npm-bin'
-  readonly SHADOW_NPM_INJECT: 'shadow-npm-inject'
+  readonly SHADOW_NPM_PRELOAD_ARBORIST: 'shadow-npm-preload-arborist'
   readonly SHADOW_NPX_BIN: 'shadow-npx-bin'
   readonly SHADOW_PNPM_BIN: 'shadow-pnpm-bin'
   readonly SHADOW_YARN_BIN: 'shadow-yarn-bin'
