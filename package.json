@@ -102,7 +102,7 @@
     "@types/js-yaml": "4.0.9",
     "@types/micromatch": "4.0.9",
     "@types/mock-fs": "4.13.4",
-    "@types/node": "20.19.19",
+    "@types/node": "20.19.20",
     "@types/npm-package-arg": "6.1.4",
     "@types/npmcli__arborist": "6.3.1",
     "@types/npmcli__config": "6.0.3",
@@ -179,9 +179,7 @@
     "shadow-bin/**",
     "CHANGELOG.md",
     "logo-dark.png",
-    "logo-light.png",
-    "requirements.json",
-    "translations.json"
+    "logo-light.png"
   ],
   "pnpm": {
     "ignoredBuiltDependencies": [
@@ -253,5 +251,8 @@
     "ignore-type-assertion": true,
     "ignore-files": "test/*",
     "strict": true
+  },
+  "dependencies": {
+    "lodash": "4.17.21"
   }
 }
