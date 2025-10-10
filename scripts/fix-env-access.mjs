@@ -15,7 +15,7 @@ const files = [
   'src/commands/whoami/handle-whoami.mts',
   'src/constants.mts',
   'src/flags.mts',
-  'src/instrument-with-sentry.mts',
+  'src/preload-sentry.mts',
   'src/shadow/npm-base.mts',
   'src/shadow/npm/arborist/lib/arborist/index.mts',
   'src/shadow/npm/install.mts',

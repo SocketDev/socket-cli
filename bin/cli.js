@@ -41,8 +41,9 @@ void (async () => {
         ...constants.nodeDebugFlags,
         ...constants.nodeHardenFlags,
         ...constants.nodeMemoryFlags,
+        // Preload Sentry instrumentation in @socketsecurity/cli-with-sentry builds.
         ...(constants.ENV.INLINED_SOCKET_CLI_SENTRY_BUILD
-          ? ['--require', constants.instrumentWithSentryPath]
+          ? ['--require', constants.preloadSentryPath]
           : []),
         constants.distCliPath,
         ...process.argv.slice(2),
