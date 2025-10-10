@@ -6,21 +6,34 @@
 // Import error types first
 import {
   AuthError,
+  ConfigError,
+  FileSystemError,
   InputError,
-  SocketError,
-  ValidationError
+  NetworkError,
+  RateLimitError
 } from '../errors.mts'
 
 // Re-export error types
 export {
   AuthError,
+  ConfigError,
+  FileSystemError,
   InputError,
-  SocketError,
-  ValidationError
+  NetworkError,
+  RateLimitError
 }
 
-export { outputError, formatError } from '../error-display.mts'
-export { filterErrors } from '../error-filter.mts'
+export {
+  formatErrorCompact,
+  formatErrorForDisplay,
+  formatErrorForJson,
+  formatErrorForTerminal
+} from '../error-display.mts'
+export {
+  createErrorFilterStream,
+  installErrorFiltering,
+  shouldShowFullError
+} from '../error-filter.mts'
 export { handleError } from '../error-handler.mts'
 export { failMsgWithBadge } from '../fail-msg-with-badge.mts'
 
@@ -50,9 +63,9 @@ export const ERROR_CODES = {
   SERVER_ERROR: 7
 } as const
 
-// Type guard for Socket errors
-export function isSocketError(error: unknown): error is SocketError {
-  return error instanceof Error && 'code' in error
+// Type guard for network errors
+export function isNetworkError(error: unknown): error is NetworkError {
+  return error instanceof Error && error.name === 'NetworkError'
 }
 
 // Type guard for auth errors
