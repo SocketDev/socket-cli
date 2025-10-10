@@ -29,35 +29,16 @@ describe('socket scan reach', async () => {
     `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`
+        "Available subcommands for scan:
+          create - Create a security scan with project awareness
+          list - List recent scans
+          view - View scan details
+          del - Delete a scan"
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           node:internal/modules/cjs/loader:1423
-          throw err;
-          ^
-
-        Error: Cannot find module './external/ink'
-        Require stack:
-        - /Users/jdalton/projects/socket-cli/dist/utils.js
-        - /Users/jdalton/projects/socket-cli/dist/cli.js
-            at Module._resolveFilename (node:internal/modules/cjs/loader:1420:15)
-            at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)
-            at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)
-            at Module._load (node:internal/modules/cjs/loader:1226:37)
-            at TracingChannel.traceSync (node:diagnostics_channel:322:14)
-            at wrapModuleLoad (node:internal/modules/cjs/loader:244:24)
-            at Module.require (node:internal/modules/cjs/loader:1503:12)
-            at require (node:internal/modules/helpers:152:16)
-            at Object.<anonymous> (/Users/jdalton/projects/socket-cli/dist/utils.js:1:2437)
-            at Module._compile (node:internal/modules/cjs/loader:1760:14) {
-          code: 'MODULE_NOT_FOUND',
-          requireStack: [
-            '/Users/jdalton/projects/socket-cli/dist/utils.js',
-            '/Users/jdalton/projects/socket-cli/dist/cli.js'
-          ]
-        }
-
-        Node.js v24.8.0"
+           "
       `)
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
@@ -80,35 +61,16 @@ describe('socket scan reach', async () => {
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`
+        "Available subcommands for scan:
+          create - Create a security scan with project awareness
+          list - List recent scans
+          view - View scan details
+          del - Delete a scan"
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           node:internal/modules/cjs/loader:1423
-          throw err;
-          ^
-
-        Error: Cannot find module './external/ink'
-        Require stack:
-        - /Users/jdalton/projects/socket-cli/dist/utils.js
-        - /Users/jdalton/projects/socket-cli/dist/cli.js
-            at Module._resolveFilename (node:internal/modules/cjs/loader:1420:15)
-            at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)
-            at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)
-            at Module._load (node:internal/modules/cjs/loader:1226:37)
-            at TracingChannel.traceSync (node:diagnostics_channel:322:14)
-            at wrapModuleLoad (node:internal/modules/cjs/loader:244:24)
-            at Module.require (node:internal/modules/cjs/loader:1503:12)
-            at require (node:internal/modules/helpers:152:16)
-            at Object.<anonymous> (/Users/jdalton/projects/socket-cli/dist/utils.js:1:2437)
-            at Module._compile (node:internal/modules/cjs/loader:1760:14) {
-          code: 'MODULE_NOT_FOUND',
-          requireStack: [
-            '/Users/jdalton/projects/socket-cli/dist/utils.js',
-            '/Users/jdalton/projects/socket-cli/dist/cli.js'
-          ]
-        }
-
-        Node.js v24.8.0"
+           "
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
@@ -129,7 +91,13 @@ describe('socket scan reach', async () => {
     'should accept --reach-disable-analytics flag',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`
+        "Available subcommands for scan:
+          create - Create a security scan with project awareness
+          list - List recent scans
+          view - View scan details
+          del - Delete a scan"
+      `)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -149,7 +117,13 @@ describe('socket scan reach', async () => {
     'should accept --reach-analysis-memory-limit flag',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`
+        "Available subcommands for scan:
+          create - Create a security scan with project awareness
+          list - List recent scans
+          view - View scan details
+          del - Delete a scan"
+      `)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -169,7 +143,13 @@ describe('socket scan reach', async () => {
     'should accept --reach-analysis-timeout flag',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`
+        "Available subcommands for scan:
+          create - Create a security scan with project awareness
+          list - List recent scans
+          view - View scan details
+          del - Delete a scan"
+      `)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -189,7 +169,13 @@ describe('socket scan reach', async () => {
     'should accept --reach-ecosystems with comma-separated values',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`
+        "Available subcommands for scan:
+          create - Create a security scan with project awareness
+          list - List recent scans
+          view - View scan details
+          del - Delete a scan"
+      `)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -257,7 +243,13 @@ describe('socket scan reach', async () => {
     'should accept --reach-exclude-paths with comma-separated values',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`
+        "Available subcommands for scan:
+          create - Create a security scan with project awareness
+          list - List recent scans
+          view - View scan details
+          del - Delete a scan"
+      `)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -279,7 +271,13 @@ describe('socket scan reach', async () => {
     'should accept multiple --reach-exclude-paths flags',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`
+        "Available subcommands for scan:
+          create - Create a security scan with project awareness
+          list - List recent scans
+          view - View scan details
+          del - Delete a scan"
+      `)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -306,7 +304,13 @@ describe('socket scan reach', async () => {
     'should accept all reachability flags together',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`
+        "Available subcommands for scan:
+          create - Create a security scan with project awareness
+          list - List recent scans
+          view - View scan details
+          del - Delete a scan"
+      `)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -326,7 +330,13 @@ describe('socket scan reach', async () => {
     'should accept minimal positive memory limit',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`
+        "Available subcommands for scan:
+          create - Create a security scan with project awareness
+          list - List recent scans
+          view - View scan details
+          del - Delete a scan"
+      `)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -346,7 +356,13 @@ describe('socket scan reach', async () => {
     'should handle single ecosystem flag',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`
+        "Available subcommands for scan:
+          create - Create a security scan with project awareness
+          list - List recent scans
+          view - View scan details
+          del - Delete a scan"
+      `)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -370,7 +386,13 @@ describe('socket scan reach', async () => {
     'should accept many exclude paths flags',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`
+        "Available subcommands for scan:
+          create - Create a security scan with project awareness
+          list - List recent scans
+          view - View scan details
+          del - Delete a scan"
+      `)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -396,7 +418,13 @@ describe('socket scan reach', async () => {
     'should accept multiple different ecosystems',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`
+        "Available subcommands for scan:
+          create - Create a security scan with project awareness
+          list - List recent scans
+          view - View scan details
+          del - Delete a scan"
+      `)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -418,7 +446,13 @@ describe('socket scan reach', async () => {
     'should accept custom memory limit and timeout values',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`
+        "Available subcommands for scan:
+          create - Create a security scan with project awareness
+          list - List recent scans
+          view - View scan details
+          del - Delete a scan"
+      `)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -497,7 +531,13 @@ describe('socket scan reach', async () => {
     'should accept markdown output flag alone',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`
+        "Available subcommands for scan:
+          create - Create a security scan with project awareness
+          list - List recent scans
+          view - View scan details
+          del - Delete a scan"
+      `)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -524,7 +564,13 @@ describe('socket scan reach', async () => {
         '{"apiToken":"fakeToken"}',
       ]
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`
+        "Available subcommands for scan:
+          create - Create a security scan with project awareness
+          list - List recent scans
+          view - View scan details
+          del - Delete a scan"
+      `)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )

@@ -112,35 +112,30 @@ describe('socket optimize', async () => {
     `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`
+        "Optimize dependencies with @socketregistry overrides
+
+          Usage
+            $ socket optimize [options] [CWD=.]
+
+          API Token Requirements
+                  - Quota: 100 units
+            - Permissions: packages:list
+
+          Options
+            --pin               Pin overrides to latest version
+            --prod              Add overrides for production dependencies only
+
+          Examples
+            $ socket optimize
+            $ socket optimize ./path/to/project --pin"
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           node:internal/modules/cjs/loader:1423
-          throw err;
-          ^
-
-        Error: Cannot find module './external/ink'
-        Require stack:
-        - /Users/jdalton/projects/socket-cli/dist/utils.js
-        - /Users/jdalton/projects/socket-cli/dist/cli.js
-            at Module._resolveFilename (node:internal/modules/cjs/loader:1420:15)
-            at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)
-            at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)
-            at Module._load (node:internal/modules/cjs/loader:1226:37)
-            at TracingChannel.traceSync (node:diagnostics_channel:322:14)
-            at wrapModuleLoad (node:internal/modules/cjs/loader:244:24)
-            at Module.require (node:internal/modules/cjs/loader:1503:12)
-            at require (node:internal/modules/helpers:152:16)
-            at Object.<anonymous> (/Users/jdalton/projects/socket-cli/dist/utils.js:1:2437)
-            at Module._compile (node:internal/modules/cjs/loader:1760:14) {
-          code: 'MODULE_NOT_FOUND',
-          requireStack: [
-            '/Users/jdalton/projects/socket-cli/dist/utils.js',
-            '/Users/jdalton/projects/socket-cli/dist/cli.js'
-          ]
-        }
-
-        Node.js v24.8.0"
+           _____         _       _        /---------------
+          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket optimize\`, cwd: <redacted>"
       `)
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
@@ -161,32 +156,10 @@ describe('socket optimize', async () => {
       expect(packageJson?.overrides).toBeUndefined()
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           node:internal/modules/cjs/loader:1423
-          throw err;
-          ^
-
-        Error: Cannot find module './external/ink'
-        Require stack:
-        - /Users/jdalton/projects/socket-cli/dist/utils.js
-        - /Users/jdalton/projects/socket-cli/dist/cli.js
-            at Module._resolveFilename (node:internal/modules/cjs/loader:1420:15)
-            at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)
-            at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)
-            at Module._load (node:internal/modules/cjs/loader:1226:37)
-            at TracingChannel.traceSync (node:diagnostics_channel:322:14)
-            at wrapModuleLoad (node:internal/modules/cjs/loader:244:24)
-            at Module.require (node:internal/modules/cjs/loader:1503:12)
-            at require (node:internal/modules/helpers:152:16)
-            at Object.<anonymous> (/Users/jdalton/projects/socket-cli/dist/utils.js:1:2437)
-            at Module._compile (node:internal/modules/cjs/loader:1760:14) {
-          code: 'MODULE_NOT_FOUND',
-          requireStack: [
-            '/Users/jdalton/projects/socket-cli/dist/utils.js',
-            '/Users/jdalton/projects/socket-cli/dist/cli.js'
-          ]
-        }
-
-        Node.js v24.8.0"
+           _____         _       _        /---------------
+          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket optimize\`, cwd: <redacted>"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
@@ -210,32 +183,10 @@ describe('socket optimize', async () => {
       const packageJson = await readPackageJson(packageJsonPath)
       expect(packageJson?.overrides).toBeUndefined()
       expect(stderr).toMatchInlineSnapshot(`
-        "node:internal/modules/cjs/loader:1423
-          throw err;
-          ^
-
-        Error: Cannot find module './external/ink'
-        Require stack:
-        - /Users/jdalton/projects/socket-cli/dist/utils.js
-        - /Users/jdalton/projects/socket-cli/dist/cli.js
-            at Module._resolveFilename (node:internal/modules/cjs/loader:1420:15)
-            at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)
-            at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)
-            at Module._load (node:internal/modules/cjs/loader:1226:37)
-            at TracingChannel.traceSync (node:diagnostics_channel:322:14)
-            at wrapModuleLoad (node:internal/modules/cjs/loader:244:24)
-            at Module.require (node:internal/modules/cjs/loader:1503:12)
-            at require (node:internal/modules/helpers:152:16)
-            at Object.<anonymous> (/Users/jdalton/projects/socket-cli/dist/utils.js:1:2437)
-            at Module._compile (node:internal/modules/cjs/loader:1760:14) {
-          code: 'MODULE_NOT_FOUND',
-          requireStack: [
-            '/Users/jdalton/projects/socket-cli/dist/utils.js',
-            '/Users/jdalton/projects/socket-cli/dist/cli.js'
-          ]
-        }
-
-        Node.js v24.8.0"
+        "_____         _       _        /---------------
+          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket optimize\`, cwd: <redacted>"
       `)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -258,32 +209,10 @@ describe('socket optimize', async () => {
       const packageJson = await readPackageJson(packageJsonPath)
       expect(packageJson?.overrides).toBeUndefined()
       expect(stderr).toMatchInlineSnapshot(`
-        "node:internal/modules/cjs/loader:1423
-          throw err;
-          ^
-
-        Error: Cannot find module './external/ink'
-        Require stack:
-        - /Users/jdalton/projects/socket-cli/dist/utils.js
-        - /Users/jdalton/projects/socket-cli/dist/cli.js
-            at Module._resolveFilename (node:internal/modules/cjs/loader:1420:15)
-            at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)
-            at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)
-            at Module._load (node:internal/modules/cjs/loader:1226:37)
-            at TracingChannel.traceSync (node:diagnostics_channel:322:14)
-            at wrapModuleLoad (node:internal/modules/cjs/loader:244:24)
-            at Module.require (node:internal/modules/cjs/loader:1503:12)
-            at require (node:internal/modules/helpers:152:16)
-            at Object.<anonymous> (/Users/jdalton/projects/socket-cli/dist/utils.js:1:2437)
-            at Module._compile (node:internal/modules/cjs/loader:1760:14) {
-          code: 'MODULE_NOT_FOUND',
-          requireStack: [
-            '/Users/jdalton/projects/socket-cli/dist/utils.js',
-            '/Users/jdalton/projects/socket-cli/dist/cli.js'
-          ]
-        }
-
-        Node.js v24.8.0"
+        "_____         _       _        /---------------
+          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket optimize\`, cwd: <redacted>"
       `)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -307,32 +236,10 @@ describe('socket optimize', async () => {
       const packageJson = await readPackageJson(packageJsonPath)
       expect(packageJson?.overrides).toBeUndefined()
       expect(stderr).toMatchInlineSnapshot(`
-        "node:internal/modules/cjs/loader:1423
-          throw err;
-          ^
-
-        Error: Cannot find module './external/ink'
-        Require stack:
-        - /Users/jdalton/projects/socket-cli/dist/utils.js
-        - /Users/jdalton/projects/socket-cli/dist/cli.js
-            at Module._resolveFilename (node:internal/modules/cjs/loader:1420:15)
-            at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)
-            at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)
-            at Module._load (node:internal/modules/cjs/loader:1226:37)
-            at TracingChannel.traceSync (node:diagnostics_channel:322:14)
-            at wrapModuleLoad (node:internal/modules/cjs/loader:244:24)
-            at Module.require (node:internal/modules/cjs/loader:1503:12)
-            at require (node:internal/modules/helpers:152:16)
-            at Object.<anonymous> (/Users/jdalton/projects/socket-cli/dist/utils.js:1:2437)
-            at Module._compile (node:internal/modules/cjs/loader:1760:14) {
-          code: 'MODULE_NOT_FOUND',
-          requireStack: [
-            '/Users/jdalton/projects/socket-cli/dist/utils.js',
-            '/Users/jdalton/projects/socket-cli/dist/cli.js'
-          ]
-        }
-
-        Node.js v24.8.0"
+        "_____         _       _        /---------------
+          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket optimize\`, cwd: <redacted>"
       `)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -354,34 +261,7 @@ describe('socket optimize', async () => {
       const packageJsonPath = path.join(pnpmFixtureDir, PACKAGE_JSON)
       const packageJson = await readPackageJson(packageJsonPath)
       expect(packageJson?.overrides).toBeUndefined()
-      expect(stderr).toMatchInlineSnapshot(`
-        "node:internal/modules/cjs/loader:1423
-          throw err;
-          ^
-
-        Error: Cannot find module './external/ink'
-        Require stack:
-        - /Users/jdalton/projects/socket-cli/dist/utils.js
-        - /Users/jdalton/projects/socket-cli/dist/cli.js
-            at Module._resolveFilename (node:internal/modules/cjs/loader:1420:15)
-            at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)
-            at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)
-            at Module._load (node:internal/modules/cjs/loader:1226:37)
-            at TracingChannel.traceSync (node:diagnostics_channel:322:14)
-            at wrapModuleLoad (node:internal/modules/cjs/loader:244:24)
-            at Module.require (node:internal/modules/cjs/loader:1503:12)
-            at require (node:internal/modules/helpers:152:16)
-            at Object.<anonymous> (/Users/jdalton/projects/socket-cli/dist/utils.js:1:2437)
-            at Module._compile (node:internal/modules/cjs/loader:1760:14) {
-          code: 'MODULE_NOT_FOUND',
-          requireStack: [
-            '/Users/jdalton/projects/socket-cli/dist/utils.js',
-            '/Users/jdalton/projects/socket-cli/dist/cli.js'
-          ]
-        }
-
-        Node.js v24.8.0"
-      `)
+      expect(stderr).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -402,34 +282,7 @@ describe('socket optimize', async () => {
       const packageJsonPath = path.join(pnpmFixtureDir, PACKAGE_JSON)
       const packageJson = await readPackageJson(packageJsonPath)
       expect(packageJson?.overrides).toBeUndefined()
-      expect(stderr).toMatchInlineSnapshot(`
-        "node:internal/modules/cjs/loader:1423
-          throw err;
-          ^
-
-        Error: Cannot find module './external/ink'
-        Require stack:
-        - /Users/jdalton/projects/socket-cli/dist/utils.js
-        - /Users/jdalton/projects/socket-cli/dist/cli.js
-            at Module._resolveFilename (node:internal/modules/cjs/loader:1420:15)
-            at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)
-            at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)
-            at Module._load (node:internal/modules/cjs/loader:1226:37)
-            at TracingChannel.traceSync (node:diagnostics_channel:322:14)
-            at wrapModuleLoad (node:internal/modules/cjs/loader:244:24)
-            at Module.require (node:internal/modules/cjs/loader:1503:12)
-            at require (node:internal/modules/helpers:152:16)
-            at Object.<anonymous> (/Users/jdalton/projects/socket-cli/dist/utils.js:1:2437)
-            at Module._compile (node:internal/modules/cjs/loader:1760:14) {
-          code: 'MODULE_NOT_FOUND',
-          requireStack: [
-            '/Users/jdalton/projects/socket-cli/dist/utils.js',
-            '/Users/jdalton/projects/socket-cli/dist/cli.js'
-          ]
-        }
-
-        Node.js v24.8.0"
-      `)
+      expect(stderr).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -450,32 +303,10 @@ describe('socket optimize', async () => {
       const packageJson = await readPackageJson(packageJsonPath)
       expect(packageJson?.overrides).toBeUndefined()
       expect(stderr).toMatchInlineSnapshot(`
-        "node:internal/modules/cjs/loader:1423
-          throw err;
-          ^
-
-        Error: Cannot find module './external/ink'
-        Require stack:
-        - /Users/jdalton/projects/socket-cli/dist/utils.js
-        - /Users/jdalton/projects/socket-cli/dist/cli.js
-            at Module._resolveFilename (node:internal/modules/cjs/loader:1420:15)
-            at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)
-            at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)
-            at Module._load (node:internal/modules/cjs/loader:1226:37)
-            at TracingChannel.traceSync (node:diagnostics_channel:322:14)
-            at wrapModuleLoad (node:internal/modules/cjs/loader:244:24)
-            at Module.require (node:internal/modules/cjs/loader:1503:12)
-            at require (node:internal/modules/helpers:152:16)
-            at Object.<anonymous> (/Users/jdalton/projects/socket-cli/dist/utils.js:1:2437)
-            at Module._compile (node:internal/modules/cjs/loader:1760:14) {
-          code: 'MODULE_NOT_FOUND',
-          requireStack: [
-            '/Users/jdalton/projects/socket-cli/dist/utils.js',
-            '/Users/jdalton/projects/socket-cli/dist/cli.js'
-          ]
-        }
-
-        Node.js v24.8.0"
+        "_____         _       _        /---------------
+          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket optimize\`, cwd: <redacted>"
       `)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -518,34 +349,7 @@ describe('socket optimize', async () => {
       const packageJsonPath = path.join(pnpmFixtureDir, PACKAGE_JSON)
       const packageJson = await readPackageJson(packageJsonPath)
       expect(packageJson?.overrides).toBeUndefined()
-      expect(stderr).toMatchInlineSnapshot(`
-        "node:internal/modules/cjs/loader:1423
-          throw err;
-          ^
-
-        Error: Cannot find module './external/ink'
-        Require stack:
-        - /Users/jdalton/projects/socket-cli/dist/utils.js
-        - /Users/jdalton/projects/socket-cli/dist/cli.js
-            at Module._resolveFilename (node:internal/modules/cjs/loader:1420:15)
-            at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)
-            at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)
-            at Module._load (node:internal/modules/cjs/loader:1226:37)
-            at TracingChannel.traceSync (node:diagnostics_channel:322:14)
-            at wrapModuleLoad (node:internal/modules/cjs/loader:244:24)
-            at Module.require (node:internal/modules/cjs/loader:1503:12)
-            at require (node:internal/modules/helpers:152:16)
-            at Object.<anonymous> (/Users/jdalton/projects/socket-cli/dist/utils.js:1:2437)
-            at Module._compile (node:internal/modules/cjs/loader:1760:14) {
-          code: 'MODULE_NOT_FOUND',
-          requireStack: [
-            '/Users/jdalton/projects/socket-cli/dist/utils.js',
-            '/Users/jdalton/projects/socket-cli/dist/cli.js'
-          ]
-        }
-
-        Node.js v24.8.0"
-      `)
+      expect(stderr).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -585,34 +389,7 @@ describe('socket optimize', async () => {
       const packageJsonPath = path.join(pnpmFixtureDir, PACKAGE_JSON)
       const packageJson = await readPackageJson(packageJsonPath)
       expect(packageJson?.overrides).toBeUndefined()
-      expect(stderr).toMatchInlineSnapshot(`
-        "node:internal/modules/cjs/loader:1423
-          throw err;
-          ^
-
-        Error: Cannot find module './external/ink'
-        Require stack:
-        - /Users/jdalton/projects/socket-cli/dist/utils.js
-        - /Users/jdalton/projects/socket-cli/dist/cli.js
-            at Module._resolveFilename (node:internal/modules/cjs/loader:1420:15)
-            at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)
-            at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)
-            at Module._load (node:internal/modules/cjs/loader:1226:37)
-            at TracingChannel.traceSync (node:diagnostics_channel:322:14)
-            at wrapModuleLoad (node:internal/modules/cjs/loader:244:24)
-            at Module.require (node:internal/modules/cjs/loader:1503:12)
-            at require (node:internal/modules/helpers:152:16)
-            at Object.<anonymous> (/Users/jdalton/projects/socket-cli/dist/utils.js:1:2437)
-            at Module._compile (node:internal/modules/cjs/loader:1760:14) {
-          code: 'MODULE_NOT_FOUND',
-          requireStack: [
-            '/Users/jdalton/projects/socket-cli/dist/utils.js',
-            '/Users/jdalton/projects/socket-cli/dist/cli.js'
-          ]
-        }
-
-        Node.js v24.8.0"
-      `)
+      expect(stderr).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
