@@ -5,13 +5,11 @@
 
 export { outputResult } from '../output.mts'
 export { simpleOutput } from '../simple-output.mts'
-// Note: These functions may not exist yet in output-formatting.mts
-// This is a proposed organization - implement as needed
 export { colorOrMarkdown } from '../color-or-markdown.mts'
 export {
-  markdownTable,
-  markdownList,
-  markdownCode
+  mdTable,
+  mdTableOfPairs,
+  mdTableStringNumber
 } from '../markdown.mts'
 
 // Output type constants
