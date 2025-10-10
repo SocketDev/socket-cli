@@ -6,13 +6,12 @@
  * yao-pkg with custom Node.js builds.
  */
 
-import { spawn, execSync } from 'node:child_process'
+import { execSync, spawn } from 'node:child_process'
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
-import { mkdir, writeFile, copyFile, stat, unlink, rename } from 'node:fs/promises'
+import { copyFile, mkdir, rename, stat, unlink, writeFile } from 'node:fs/promises'
+import { homedir, arch as osArch, platform as osPlatform, tmpdir  } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
-import { tmpdir } from 'node:os'
 import { fileURLToPath } from 'node:url'
-import { platform as osPlatform, arch as osArch, homedir } from 'node:os'
 
 import colors from 'yoctocolors-cjs'
 
@@ -350,7 +349,7 @@ export async function buildStub(options = {}) {
 
   // Step 1: Sync yao-pkg patches if needed (force sync with --sync-yao-patches)
   if (syncYaoPatches) {
-    if (!quiet) console.log('🔄 Syncing yao-pkg patches from upstream...')
+    if (!quiet) {console.log('🔄 Syncing yao-pkg patches from upstream...')}
     await fetchYaoPatches({ quiet })
   }
 
@@ -580,7 +579,7 @@ export async function buildStub(options = {}) {
                 return
               }
             }
-            if (!quiet) process.stderr.write(data)
+            if (!quiet) {process.stderr.write(data)}
           })
         }
       }

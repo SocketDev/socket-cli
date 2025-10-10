@@ -66,9 +66,9 @@ async function checkYaoPkgNodeVersions() {
     const newerVersions = versions.filter(v => {
       const parts = v.split('.').map(Number)
       // Only check same major version for patch updates
-      if (parts[0] !== currentParts[0]) return false
-      if (parts[1] > currentParts[1]) return true
-      if (parts[1] === currentParts[1] && parts[2] > currentParts[2]) return true
+      if (parts[0] !== currentParts[0]) {return false}
+      if (parts[1] > currentParts[1]) {return true}
+      if (parts[1] === currentParts[1] && parts[2] > currentParts[2]) {return true}
       return false
     })
 
@@ -85,9 +85,9 @@ async function checkYaoPkgNodeVersions() {
       console.log(colors.magenta('║') + ' 3. Update version in ' + colors.cyan('.config/socket-node.json'))
       console.log(colors.magenta('║'))
       console.log(colors.magenta('║') + ' Latest versions by major:')
-      if (v24) console.log(colors.magenta('║') + `   Node 24: ${colors.cyan(`v${v24}`)}`)
-      if (v22) console.log(colors.magenta('║') + `   Node 22: ${colors.cyan(`v${v22}`)}`)
-      if (v20) console.log(colors.magenta('║') + `   Node 20: ${colors.cyan(`v${v20}`)}`)
+      if (v24) {console.log(colors.magenta('║') + `   Node 24: ${colors.cyan(`v${v24}`)}`)}
+      if (v22) {console.log(colors.magenta('║') + `   Node 22: ${colors.cyan(`v${v22}`)}`)}
+      if (v20) {console.log(colors.magenta('║') + `   Node 20: ${colors.cyan(`v${v20}`)}`)}
       console.log(colors.magenta('═'.repeat(70)) + '\n')
     }
 
