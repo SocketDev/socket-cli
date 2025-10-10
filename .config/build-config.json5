@@ -1,0 +1,238 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "version": "1.0.0",
+
+  // Configuration for building custom Node.js binaries
+  // Size optimizations: ~24.5MB saved from configure flags
+  "node": {
+    "defaultVersion": "v22.19.0",
+    "currentVersion": "v24.9.0",
+
+    "build": {
+      // Configure flags for custom Node.js build
+      // These remove unnecessary features to reduce binary size
+      "configureArgs": [
+        "--without-intl",           // Remove ICU/Internationalization (saves ~12MB)
+        "--without-npm",            // Remove npm package manager (saves ~2MB)
+        "--without-corepack",       // Remove corepack (yarn/pnpm) (saves ~1MB)
+        "--without-inspector",      // Remove Chrome DevTools debugger (saves ~1MB)
+        "--without-amaro",          // Remove TypeScript support (saves ~0.5MB)
+        "--without-sqlite",         // Remove SQLite database (saves ~1MB)
+        "--without-node-snapshot",  // Disable V8 snapshot (saves ~4MB)
+        "--without-node-code-cache", // Disable V8 code cache (saves ~3MB)
+        "--without-node-options",   // Remove NODE_OPTIONS support (saves ~0.1MB, security)
+        // Security patches:
+        //   - disable-eval-flag-v24.patch: ALWAYS removes -e/--eval (no exceptions)
+        //   - restrict-require-flag-v24.patch: Removes -r/--require unless IPC subprocess
+        //   - make-issea-detect-pkg-v24.patch: Makes isSea() return true for pkg binaries
+        "--disable-single-executable-application", // Disable SEA support (saves ~0.5MB)
+        "--openssl-no-asm",        // Disable OpenSSL assembly (saves ~0.5MB, but slower crypto)
+        "--enable-lto",            // Link Time Optimization (saves ~2-3MB, slower build)
+        "--v8-lite-mode"           // V8 lite mode for embedded systems (saves ~5MB)
+
+        // Size reduction options
+        // "--without-ssl",          // Remove OpenSSL/crypto (saves ~3MB) - WARNING: Breaks HTTPS
+        // "--without-dtrace",        // INVALID in v24 - DTrace support is auto-detected
+        // "--without-etw",           // INVALID in v24 - ETW is Windows-specific, auto-detected
+        // "--without-perfctr",       // INVALID in v24 - Windows performance counters (saves ~0.1MB)
+
+        // Feature flags
+        // "--shared",                // Build shared library instead of executable
+        // "--fully-static",          // INVALID in v24 - Use --enable-static
+        // "--partly-static",         // INVALID in v24 - No longer supported
+        // "--enable-pgo-generate",   // Profile Guided Optimization - generate
+        // "--enable-pgo-use",        // Profile Guided Optimization - use profile
+
+        // V8 options
+        // "--v8-enable-hugepage",    // INVALID in v24 - Use runtime flag instead
+        // "--without-v8-platform-macos", // INVALID in v24 - Use --without-v8-platform
+        // "--without-bundled-v8",    // Use system V8 instead of bundled
+
+        // OpenSSL options
+        // "--shared-openssl",        // Use system OpenSSL instead of bundled
+        // "--openssl-fips",          // Enable FIPS 140-2 compliance
+
+        // Build options
+        // "--ninja",                 // Use Ninja build system instead of Make
+        // "--debug",                 // Debug build (much larger)
+        // "--gdb",                   // Add GDB debugging support
+        // "--coverage",              // Add code coverage support
+        // "--asan",                  // AddressSanitizer (memory error detector)
+        // "--ubsan",                 // UndefinedBehaviorSanitizer
+
+        // Target options
+        // "--dest-cpu=x64",          // Target CPU architecture
+        // "--dest-os=linux",         // Target operating system
+        // "--cross-compiling",       // Enable cross-compilation
+        // "--without-siphash",       // Remove SipHash (hash flooding protection)
+        // "--with-ltcg",             // Link-time code generation (Windows)
+
+        // Experimental
+        // "--experimental-http-parser", // Use experimental HTTP parser
+        // "--experimental-sea-config" // Single Executable Application config
+      ]
+    },
+
+    // V8 runtime flags - these generate patches for V8 behavior
+    "v8Flags": [
+      // "--harmony-import-assertions",   // REMOVED in v24 - replaced by harmony-import-attributes
+      "--harmony-import-attributes"       // Enable import attributes (for @yao-pkg/pkg) - Already default in v24
+
+      // Memory management
+      // "--max-old-space-size=4096",     // Set max heap memory (MB)
+      // "--max-semi-space-size=16",      // Set semi-space size (MB)
+      // "--expose-gc",                   // Expose global.gc() for manual GC
+      // "--trace-gc",                    // Trace garbage collection
+      // "--trace-gc-verbose",            // Verbose GC tracing
+
+      // Debugging & tracing
+      // "--trace-deprecation",           // Trace deprecation warnings
+      // "--throw-deprecation",           // Throw on deprecation
+      // "--pending-deprecation",         // Show pending deprecations
+      // "--trace-warnings",              // Trace warning origins
+      // "--trace-sync-io",               // Trace synchronous I/O
+      // "--abort-on-uncaught-exception", // Abort on uncaught exceptions
+
+      // Module system
+      // "--preserve-symlinks",           // Don't resolve symlinks for modules
+      // "--preserve-symlinks-main",      // Don't resolve symlinks for main module
+      // "--experimental-modules",        // Enable experimental ESM features
+      // "--experimental-wasm-modules",   // Enable WASM modules
+      // "--experimental-vm-modules",     // Enable VM modules support
+
+      // Security & policy
+      // "--experimental-policy",         // Enable policy feature
+      // "--zero-fill-buffers",           // Zero-fill Buffer/Uint8Array allocations
+      // "--disable-proto=throw",         // Disable __proto__ (security)
+      // "--no-expose-wasm",              // Don't expose WASM (security) - Can't use: We need WASM for yoga-layout (base64-encoded WASM module)
+
+      // Performance & profiling
+      // "--no-force-async-hooks-checks", // Disable async hooks checks (faster)
+      // "--track-heap-objects",          // Track heap object allocations
+      // "--heap-prof",                   // Enable heap profiling
+      // "--prof",                        // Generate V8 profiler output
+
+      // Reporting
+      // "--diagnostic-dir=./reports",    // Set diagnostics directory
+      // "--report-uncaught-exception",   // Report on uncaught exceptions
+      // "--report-on-signal",            // Generate report on signal (SIGUSR2)
+      // "--report-on-fatalerror"         // Generate report on fatal error
+    ],
+
+    // Node.js process flags (separate from V8 flags)
+    "nodeFlags": [
+      "--no-deprecation",                 // Disable deprecation warnings
+      "--no-warnings"                     // Disable process warnings
+
+      // Available Node.js flags
+      // "--enable-source-maps",          // Enable source map support
+      // "--preserve-symlinks",           // Preserve symbolic links
+      // "--preserve-symlinks-main",      // Preserve symlinks for main module
+      // "--inspect",                     // Enable inspector (requires --without-inspector not set)
+      // "--inspect-brk",                 // Enable inspector with break (requires --without-inspector not set)
+      // "--napi-modules",                // REMOVED - N-API is always enabled
+      // "--trace-event-categories",      // Trace event categories
+      // "--trace-event-file-pattern",    // Trace event file pattern
+      // "--trace-exit",                  // Trace exit
+      // "--trace-sigint",                // Trace SIGINT
+      // "--trace-tls",                   // Trace TLS
+      // "--tls-min-v1.0",               // Allow TLS 1.0
+      // "--tls-min-v1.1",               // Allow TLS 1.1
+      // "--tls-min-v1.2",               // Minimum TLS 1.2
+      // "--tls-min-v1.3",               // Minimum TLS 1.3
+      // "--use-openssl-ca",             // Use OpenSSL CA store
+      // "--use-bundled-ca",             // Use bundled CA store
+      // "--enable-fips",                // Enable FIPS crypto
+      // "--force-fips",                 // Force FIPS crypto
+      // "--redirect-warnings",          // Redirect warnings to file
+      // "--throw-deprecation",          // Throw on deprecation
+      // "--pending-deprecation",        // Show pending deprecations
+      // "--input-type",                 // Set input type (commonjs/module)
+      // "--experimental-loader",        // Custom ESM loader hooks
+      // "--experimental-modules",       // REMOVED - ESM is stable
+      // "--experimental-wasm-modules",  // REMOVED - Use --experimental-wasm-modules in V8 flags
+      // "--experimental-json-modules",  // REMOVED - JSON modules are stable
+      // "--experimental-top-level-await" // REMOVED - Top-level await is stable
+    ]
+  },
+
+  // Node.js SEA (Single Executable Application) configuration
+  // Used for injecting empty SEA blob into socket-node binary
+  // Makes isSea() return true for both yao-pkg and native SEA builds
+  // See: https://nodejs.org/api/single-executable-applications.html
+  "sea": {
+    "main": "// Empty SEA main - actual code injected via other mechanism\n"
+  },
+
+  // @yao-pkg/pkg configuration for creating standalone executables
+  // This follows the @yao-pkg/pkg configuration format
+  // See: https://github.com/yao-pkg/pkg#config
+  // Size optimizations: bytecode disabled, Brotli compression (up to 60% reduction)
+  "yao": {
+    "name": "socket",
+    "bytecode": false,  // Disabled to reduce binary size
+    "compress": "Brotli",  // Use Brotli compression to reduce size of JavaScript bundle (up to 60% reduction)
+    // Dictionaries map native .node files and dynamic requires that pkg can't detect at build time
+    // Typically includes: native C/C++ modules (bcrypt, sqlite3, canvas), WASM files, binary assets
+    // We use empty {} because Socket CLI is pure JS/TS without native dependencies - reduces binary size
+    "dictionary": {},
+
+    // Entry points for different CLI commands
+    "binaries": {
+      "socket": "dist/cli.js",
+      "socket-npm": "dist/npm-cli.js",
+      "socket-npx": "dist/npx-cli.js",
+      "socket-pnpm": "dist/pnpm-cli.js",
+      "socket-yarn": "dist/yarn-cli.js"
+    },
+
+    // Build targets for all platforms
+    // Linux targets work for both glibc and musl (Alpine) due to static compilation
+    // linuxstatic targets create fully static binaries (best for Docker containers)
+    // Note: linuxstatic cannot load native .node modules
+    "targets": [
+      "node24-macos-arm64",
+      "node24-macos-x64",
+      "node24-linux-arm64",
+      "node24-linux-x64",
+      "node24-linuxstatic-arm64",  // Fully static for Docker/Alpine ARM64
+      "node24-linuxstatic-x64",     // Fully static for Docker/Alpine x64
+      "node24-win-arm64",
+      "node24-win-x64"
+    ],
+
+    // Files to include in the packaged binary
+    "assets": [
+      "dist/**/*",
+      "requirements.json",
+      "translations.json",
+      "shadow-bin/**/*"
+    ]
+  },
+
+  // Build-related paths (all relative to repo root)
+  "paths": {
+    "buildDir": "build/socket-node",
+    "outputDir": "build/output",
+    "patchesDir": "build/patches",
+    "distDir": "dist",
+    // @yao-pkg/pkg's cache directory - hardcoded format, not configurable
+    // Must be: ~/.pkg-cache/{version}/built-{node_version}-{platform}-{arch}
+    "yaoCache": "~/.pkg-cache/{yao_version}",
+
+    // Node.js build artifacts and their locations
+    "socketNode": {
+      // Where Node.js build system outputs (hardcoded in GYP/GN, not configurable)
+      "buildOutput": "build/socket-node/{node_version}/out/Release/node",
+
+      // Processed versions (following Node's out/ structure)
+      "strippedOutput": "build/socket-node/{node_version}/out/Stripped/node",
+      "signedOutput": "build/socket-node/{node_version}/out/Signed/node"
+    }
+  },
+
+  // Source download configuration
+  "source": {
+    "baseUrl": "https://github.com/nodejs/node/archive/refs/tags"
+  }
+}
