@@ -71,7 +71,7 @@ if (noLog) {
 // This must be set up before any async operations to ensure we receive the message
 initStubIpcHandler()
 
-void (async () => {
+async function main() {
   const registryUrl = lookupRegistryUrl()
 
   // Skip update checking during tests to prevent cache directory errors and
@@ -135,4 +135,6 @@ void (async () => {
 
     await captureException(e)
   }
-})()
+}
+
+main().catch(console.error)

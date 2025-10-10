@@ -147,7 +147,7 @@ async function logCoveragePercentage(argv) {
 }
 
 // Main entry point - parse command line arguments and display coverage.
-void (async () => {
+async function main() {
   const { values } = parseArgs({
     args: process.argv.slice(2),
     options: {
@@ -164,4 +164,6 @@ void (async () => {
     },
   })
   await logCoveragePercentage(values)
-})()
+}
+
+main().catch(console.error)
