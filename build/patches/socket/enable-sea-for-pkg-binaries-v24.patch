@@ -1,0 +1,17 @@
+# Patch: Make isSea() return true for pkg binaries
+#
+# Overrides the isSea binding to always return true, making pkg binaries
+# report as Single Executable Applications for consistency.
+
+--- a/lib/sea.js
++++ b/lib/sea.js
+@@ -16,7 +16,8 @@ const {
+   ERR_UNKNOWN_BUILTIN_MODULE,
+ } = require('internal/errors').codes;
+
+-const { isSea, getAsset: getAssetInternal, getAssetKeys: getAssetKeysInternal } = internalBinding('sea');
++const isSea = () => true;
++const { getAsset: getAssetInternal, getAssetKeys: getAssetKeysInternal } = internalBinding('sea');
+
+ const {
+   setOwnProperty,
