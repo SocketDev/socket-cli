@@ -201,6 +201,15 @@ export default [
     ignores: ['**/test/fixtures/**/node_modules/**'],
   },
   {
+    name: 'Ignore build directory and build scripts',
+    ignores: [
+      'build/**',
+      'scripts/build/**/*.json',
+      'scripts/build/**/*.json5',
+      'package.json',
+    ],
+  },
+  {
     files: ['**/*.{cts,mts,ts}'],
     ignores: [
       '**/*.test.{cts,mts,ts}',

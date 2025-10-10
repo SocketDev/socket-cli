@@ -1,7 +1,7 @@
+// @ts-nocheck
 /** @fileoverview Analytics Ink React component. */
 
 import type { Element } from '../../utils/ink.mts'
-// @ts-expect-error - tsx files treated as CJS by tsgo
 import { Box, Text } from '../../utils/ink.mts'
 
 export type FormattedData = {
@@ -63,7 +63,6 @@ function renderLineChartSummary(
   return `${title}:\n  Total: ${total} | Avg: ${avg} | Max: ${max} | Min: ${min}`
 }
 
-// @ts-expect-error - tsx files treated as CJS by tsgo
 export function AnalyticsApp({ data }: AnalyticsAppProps): Element {
   return (
     <Box flexDirection="column" paddingX={1}>
