@@ -7,7 +7,7 @@
  * - getRequirementsKey: Convert command path to SDK method name
  */
 
-import requirementsJson from '../../.config/api-requirements.json' with { type: 'json' }
+import requirementsJson from '../../data/api-metadata.json' with { type: 'json' }
 
 let _requirements:
   | Readonly<{

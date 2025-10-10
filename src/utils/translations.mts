@@ -1,6 +1,6 @@
 /** @fileoverview Socket alert definitions loader */
 
-import translationsJson from '../../.config/socket-alerts.json' with { type: 'json' }
+import translationsJson from '../../data/alert-definitions.json' with { type: 'json' }
 
 let _translations: typeof translationsJson | undefined
 
