@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "description": "Lock file for build system - auto-generated, do not edit manually",
+  "generated": "2024-10-09T21:00:00Z",
+  "version": "1.0.0",
+
+  "node_versions": {
+    "v24.9.0": {
+      "sha": "7dd99f364de69bb15e75c77f998a88037e86c7db",
+      "sha_short": "7dd99f364de6",
+      "last_verified": "2024-10-09T21:00:00Z",
+      "source_url": "https://github.com/nodejs/node/archive/refs/tags/v24.9.0.tar.gz",
+      "size_bytes": 108273939
+    },
+    "v22.19.0": {
+      "sha": null,
+      "sha_short": null,
+      "last_verified": null,
+      "source_url": "https://github.com/nodejs/node/archive/refs/tags/v22.19.0.tar.gz",
+      "size_bytes": null
+    }
+  },
+
+  "builds": {
+    "last_successful_build": null,
+    "history": []
+  },
+
+  "patches": {
+    "yao_pkg": {
+      "last_sync": "2024-10-09T08:32:00Z",
+      "source": "@yao-pkg/pkg-fetch@3.5.28",
+      "versions_available": [
+        "v10.24.1",
+        "v12.22.11",
+        "v14.21.3",
+        "v16.20.2",
+        "v18.20.8",
+        "v20.19.5",
+        "v22.19.0",
+        "v24.9.0"
+      ]
+    },
+    "custom": {
+      "last_updated": "2024-10-09T21:00:00Z",
+      "files": [
+        "001-v8-flags-harmony-dynamic-import.patch",
+        "002-node-gyp-static-linking.patch",
+        "003-fix-v8-include-paths-v24.patch"
+      ]
+    }
+  },
+
+  "cache": {
+    "pkg_cache_path": "~/.pkg-cache/v3.5",
+    "binaries": {}
+  }
+}
