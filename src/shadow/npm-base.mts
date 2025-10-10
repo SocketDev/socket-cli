@@ -115,11 +115,8 @@ export default async function shadowNpmBase(
       ...constants.nodeHardenFlags,
       // Memory flags commented out.
       // ...constants.nodeMemoryFlags,
-      ...(constants.ENV['INLINED_SOCKET_CLI_SENTRY_BUILD']
-        ? ['--require', constants.instrumentWithSentryPath]
-        : []),
-      '--require',
-      constants.shadowNpmInjectPath,
+      // Non-SEA: Load inject via --require (SEA: inject code bundled in binary)
+      ...(process.isSea?.() ? [] : ['--require', constants.shadowNpmPreloadArboristPath]),
       realBinPath,
       ...noAuditArgs,
       ...(useNodeOptions
@@ -142,6 +139,8 @@ export default async function shadowNpmBase(
         ...process.env,
         ...constants.processEnv,
         ...spawnEnv,
+        // Signal the preload phase (for yao-pkg/SEA subprocesses)
+        SOCKET_CLI_PRELOAD_PHASE: '1',
       },
       stdio,
     },

@@ -13,12 +13,13 @@ import type { Agent } from './utils/package-environment.mts'
 import type { Remap } from '@socketsecurity/registry/lib/objects'
 import type { SpawnOptions } from '@socketsecurity/registry/lib/spawn'
 
-const require = createRequire(import.meta.url)
 const __filename = fileURLToPath(import.meta.url)
 // Using `path.dirname(__filename)` to resolve `__dirname` works for both 'dist'
 // AND 'src' directories because constants.js and constants.mts respectively are
 // in the root of each.
 const __dirname = path.dirname(__filename)
+
+const require = createRequire(import.meta.url)
 
 // Access constants directly from the registryConstants object.
 // The registry now exports constants as a special object with lazy getters.
@@ -169,17 +170,14 @@ export type ENV = RegistryEnv &
     INLINED_SOCKET_CLI_VERSION_HASH: string
     INLINED_SOCKET_CLI_SYNP_VERSION: string
     LOCALAPPDATA: string
+    NODE_CHANNEL_FD: number
     NODE_COMPILE_CACHE: string
     NODE_EXTRA_CA_CERTS: string
     NPM_REGISTRY: string
     npm_config_cache: string
     npm_config_user_agent: string
     PATH: string
-    RUN_E2E_TESTS: boolean
-    SEA_BOOTSTRAP: string
-    SEA_OUTPUT: string
     SOCKET_CLI_DIR: string
-    SOCKET_CLI_PACKAGE: string
     SOCKET_HOME: string
     SOCKET_NODE_DOWNLOAD_URL: string
     SOCKET_NPM_REGISTRY: string
@@ -205,6 +203,7 @@ export type ENV = RegistryEnv &
     SOCKET_CLI_PNPM_V8_PATH: string
     SOCKET_CLI_PNPM_V9_PATH: string
     SOCKET_CLI_PNPM_V10_PATH: string
+    SOCKET_CLI_PRELOAD_PHASE: string
     SOCKET_CLI_PYTHON_PATH: string
     SOCKET_CLI_SFW_LOCAL_PATH: string
     SOCKET_CLI_VLT_PATH: string
@@ -212,7 +211,6 @@ export type ENV = RegistryEnv &
     SOCKET_CLI_YARN_BERRY_PATH: string
     SOCKET_CLI_YARN_CLASSIC_PATH: string
     SOCKET_CLI_YARN_PATH: string
-    SOCKET_CLI_SEA_NODE_VERSION: string
     TERM: string
     XDG_DATA_HOME: string
   }>
@@ -497,7 +495,7 @@ export type Constants = Remap<
     readonly externalPath: string
     readonly githubCachePath: string
     readonly homePath: string
-    readonly instrumentWithSentryPath: string
+    readonly preloadSentryPath: string
     readonly ipcObject: IpcObject
     readonly minimumVersionByAgent: Map<Agent, string>
     readonly nmBinPath: string
@@ -511,7 +509,7 @@ export type Constants = Remap<
     readonly rootPath: string
     readonly shadowBinPath: string
     readonly shadowNpmBinPath: string
-    readonly shadowNpmInjectPath: string
+    readonly shadowNpmPreloadArboristPath: string
     readonly shadowNpxBinPath: string
     readonly shadowPnpmBinPath: string
     readonly socketAppDataPath: string
@@ -678,6 +676,8 @@ const LAZY_ENV = () => {
     INLINED_SOCKET_CLI_VERSION_HASH: envAsString(
       process.env['INLINED_SOCKET_CLI_VERSION_HASH'],
     ),
+    // IPC channel file descriptor set by Node.js when spawning with IPC (stdio includes 'ipc').
+    NODE_CHANNEL_FD: envAsNumber(env['NODE_CHANNEL_FD']),
     // Enable the module compile cache for the Node.js instance.
     // https://nodejs.org/api/cli.html#node_compile_cachedir
     NODE_COMPILE_CACHE: regConsts.SUPPORTS_NODE_COMPILE_CACHE_ENV_VAR
@@ -796,26 +796,18 @@ const LAZY_ENV = () => {
       envAsString(env['SOCKET_CLI_ORG_SLUG']) ||
       // Coana CLI accepts the SOCKET_ORG_SLUG environment variable.
       envAsString(env['SOCKET_ORG_SLUG']),
+    // Flag to signal the preload phase of Node (for yao-pkg/SEA subprocesses).
+    SOCKET_CLI_PRELOAD_PHASE: envAsBoolean(
+      env['SOCKET_CLI_PRELOAD_PHASE'],
+    ),
     // Local path to synp/fork-write binary for development/testing.
     SOCKET_CLI_SFW_LOCAL_PATH: envAsString(env['SOCKET_CLI_SFW_LOCAL_PATH']),
     // View all risks of a Socket wrapped npm/npx run.
     SOCKET_CLI_VIEW_ALL_RISKS: envAsBoolean(env[SOCKET_CLI_VIEW_ALL_RISKS]),
-    // Node.js version to use for Single Executable Applications (SEA).
-    SOCKET_CLI_SEA_NODE_VERSION: envAsString(
-      env['SOCKET_CLI_SEA_NODE_VERSION'],
-    ),
     // NPM registry URL.
     NPM_REGISTRY: envAsString(env['NPM_REGISTRY']),
-    // Enable E2E tests.
-    RUN_E2E_TESTS: envAsBoolean(env['RUN_E2E_TESTS']),
-    // SEA bootstrap entry point path.
-    SEA_BOOTSTRAP: envAsString(env['SEA_BOOTSTRAP']),
-    // SEA output path.
-    SEA_OUTPUT: envAsString(env['SEA_OUTPUT']),
     // Socket CLI directory.
     SOCKET_CLI_DIR: envAsString(env['SOCKET_CLI_DIR']),
-    // Socket CLI package name.
-    SOCKET_CLI_PACKAGE: envAsString(env['SOCKET_CLI_PACKAGE']),
     // Socket home directory.
     SOCKET_HOME: envAsString(env['SOCKET_HOME']),
     // Socket Node.js download URL.
@@ -832,35 +824,34 @@ const LAZY_ENV = () => {
   })
 
   // Guard: Detect build/test mode mismatch.
-  // Temporarily disabled to fix test failures - TODO: re-enable when build process is fixed
-  // const runtimeVitestValue = envAsBoolean(env['VITEST'])
-  // const builtForTesting = ENV.VITEST
-  // if (
-  //   INLINED_SOCKET_CLI_NAME === 'socket' &&
-  //   !INLINED_SOCKET_CLI_PUBLISHED_BUILD &&
-  //   !builtForTesting &&
-  //   runtimeVitestValue
-  // ) {
-  //   // Check if running as SEA binary (inline to avoid require issues after bundling).
-  //   let isSea = false
-  //   try {
-  //     const seaModule = require('node:sea')
-  //     isSea = seaModule.isSea()
-  //   } catch {
-  //     // Node.js < 24 or SEA not available
-  //     isSea = false
-  //   }
+  const runtimeVitestValue = envAsBoolean(env['VITEST'])
+  const builtForTesting = ENV.VITEST
+  if (
+    INLINED_SOCKET_CLI_NAME === 'socket' &&
+    !INLINED_SOCKET_CLI_PUBLISHED_BUILD &&
+    !builtForTesting &&
+    runtimeVitestValue
+  ) {
+    // Check if running as SEA binary (inline to avoid require issues after bundling).
+    let isSea = false
+    try {
+      const seaModule = require('node:sea')
+      isSea = seaModule.isSea()
+    } catch {
+      // Node.js < 24 or SEA not available
+      isSea = false
+    }
 
-  //   if (!isSea) {
-  //     const { logger } = require('@socketsecurity/registry/lib/logger')
-  //     logger.warn(
-  //       'Build/test mode mismatch! Built without VITEST=1 but running in test mode.',
-  //     )
-  //     logger.warn(
-  //       'This causes snapshot failures. Rebuild with: pnpm run pretest:unit',
-  //     )
-  //   }
-  // }
+    if (!isSea) {
+      const { logger } = require('@socketsecurity/registry/lib/logger')
+      logger.warn(
+        'Build/test mode mismatch! Built without VITEST=1 but running in test mode.',
+      )
+      logger.warn(
+        'This causes snapshot failures. Rebuild with: pnpm run pretest:unit',
+      )
+    }
+  }
 
   return ENV
 }
@@ -899,8 +890,8 @@ const lazyHomePath = () => {
   return tmpHome
 }
 
-const lazyInstrumentWithSentryPath = () =>
-  path.join(constants.distPath, 'instrument-with-sentry.js')
+const lazyPreloadSentryPath = () =>
+  path.join(constants.distPath, 'preload-sentry.js')
 
 const lazyMinimumVersionByAgent = () =>
   new Map([
@@ -1030,8 +1021,8 @@ const lazyShadowBinPath = () => path.join(constants.rootPath, 'shadow-npm-bin')
 const lazyShadowNpmBinPath = () =>
   path.join(constants.distPath, 'shadow-npm-bin.js')
 
-const lazyShadowNpmInjectPath = () =>
-  path.join(constants.distPath, 'shadow-npm-inject.js')
+const lazyShadowNpmPreloadArboristPath = () =>
+  path.join(constants.distPath, 'shadow-npm-preload-arborist.js')
 
 const lazyShadowNpxBinPath = () =>
   path.join(constants.distPath, 'shadow-npx-bin.js')
@@ -1208,7 +1199,7 @@ const constants: Constants = createConstantsObject(
     externalPath: undefined,
     githubCachePath: undefined,
     homePath: undefined,
-    instrumentWithSentryPath: undefined,
+    preloadSentryPath: undefined,
     minimumVersionByAgent: undefined,
     nmBinPath: undefined,
     nodeHardenFlags: undefined,
@@ -1220,7 +1211,7 @@ const constants: Constants = createConstantsObject(
     processEnv: undefined,
     rootPath: undefined,
     shadowBinPath: undefined,
-    shadowNpmInjectPath: undefined,
+    shadowNpmPreloadArboristPath: undefined,
     shadowNpmBinPath: undefined,
     shadowPnpmBinPath: undefined,
     socketAppDataPath: undefined,
@@ -1240,7 +1231,7 @@ const constants: Constants = createConstantsObject(
       externalPath: lazyExternalPath,
       githubCachePath: lazyGithubCachePath,
       homePath: lazyHomePath,
-      instrumentWithSentryPath: lazyInstrumentWithSentryPath,
+      preloadSentryPath: lazyPreloadSentryPath,
       minimumVersionByAgent: lazyMinimumVersionByAgent,
       nmBinPath: lazyNmBinPath,
       nodeDebugFlags: lazyNodeDebugFlags,
@@ -1253,7 +1244,7 @@ const constants: Constants = createConstantsObject(
       rootPath: lazyRootPath,
       shadowBinPath: lazyShadowBinPath,
       shadowNpmBinPath: lazyShadowNpmBinPath,
-      shadowNpmInjectPath: lazyShadowNpmInjectPath,
+      shadowNpmPreloadArboristPath: lazyShadowNpmPreloadArboristPath,
       shadowNpxBinPath: lazyShadowNpxBinPath,
       shadowPnpmBinPath: lazyShadowPnpmBinPath,
       socketAppDataPath: lazySocketAppDataPath,
