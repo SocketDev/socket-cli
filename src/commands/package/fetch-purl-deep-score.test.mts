@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { fetchPurlDeepScore } from './fetch-purl-deep-score.mts'
 
-// Mock the dependencies.
+// Mock the dependencies
 vi.mock('../../utils/sdk.mts', () => ({
   queryApiJson: vi.fn(),
   setupSdk: vi.fn(),

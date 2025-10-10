@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { RangeStyles, getMajor, getMinVersion } from './semver.mts'
 
-// Mock semver.
+// Mock semver
 vi.mock('semver', () => ({
   default: {
     coerce: vi.fn(),

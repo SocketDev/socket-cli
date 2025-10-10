@@ -4,7 +4,7 @@
 
 void (async () => {
   try {
-    // Use require to load from built dist path to avoid creating shadow-pnpm-bin files.
+    // Use require to load from built dist path to avoid creating shadow-pnpm-bin files
     const shadowPnpmBin = require('../dist/shadow-pnpm-bin.js')
 
     // Safely get current working directory, fall back if deleted
@@ -23,7 +23,7 @@ void (async () => {
       env: { ...process.env },
     })
 
-    // See https://nodejs.org/api/child_process.html#event-exit.
+    // See https://nodejs.org/api/child_process.html#event-exit
     spawnPromise.process.on(
       'exit',
       (code: number | null, signalName: NodeJS.Signals | null) => {

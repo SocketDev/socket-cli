@@ -33,7 +33,7 @@ export default async function ensureCustomNodeInCache(nodeVersion = 'v24.9.0', p
 
   // Check if already in cache
   if (existsSync(cachePath)) {
-    console.log(`✅ Custom Node binary found in cache: ${cacheName}`)
+    console.log(`✓ Custom Node binary found in cache: ${cacheName}`)
     return cachePath
   }
 
@@ -61,13 +61,13 @@ export default async function ensureCustomNodeInCache(nodeVersion = 'v24.9.0', p
   }
 
   if (sourcePath) {
-    console.log(`📦 Copying custom Node to pkg cache...`)
+    console.log(`Copying custom Node to pkg cache...`)
     console.log(`   From: ${sourcePath}`)
     console.log(`   To: ${cachePath}`)
 
     await mkdir(PKG_CACHE_DIR, { recursive: true })
     await copyFile(sourcePath, cachePath)
-    console.log(`✅ Custom Node copied to cache`)
+    console.log(`✓ Custom Node copied to cache`)
     return cachePath
   }
 

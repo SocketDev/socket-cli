@@ -19,7 +19,7 @@ import { spawnSocketCli, testPath } from '../../../test/utils.mts'
 
 const fixtureBaseDir = path.join(testPath, 'fixtures/commands/optimize')
 
-// Track cleanup functions for each test.
+// Track cleanup functions for each test
 let cleanupFunctions: Array<() => Promise<void>> = []
 
 describe('socket optimize - pnpm versions', { timeout: 60_000 }, async () => {

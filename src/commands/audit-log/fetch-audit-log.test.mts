@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { fetchAuditLog } from './fetch-audit-log.mts'
 
-// Mock the dependencies.
+// Mock the dependencies
 vi.mock('../../utils/sdk.mts', () => ({
   withSdk: vi.fn(),
 }))

@@ -21,7 +21,6 @@ const entryPoints = [
   path.join(srcPath, 'npm-cli.mts'),
   path.join(srcPath, 'npx-cli.mts'),
   path.join(srcPath, 'pnpm-cli.mts'),
-  path.join(srcPath, 'yarn-cli.mts'),
   path.join(srcPath, 'constants.mts'),
 ]
 

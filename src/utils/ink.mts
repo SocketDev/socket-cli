@@ -2,16 +2,12 @@
  * @fileoverview Ink and React re-exports with tsgo workaround.
  *
  * tsx files are treated as CommonJS by tsgo without package.json type:module.
- * This wrapper centralizes the @ts-ignore directives needed for tsx imports.
+ * This wrapper centralizes the @ts-expect-error directives needed for tsx imports.
  */
 
-// @ts-ignore - tsx files treated as CJS by tsgo without package.json type:module
-// @ts-ignore - tsx files treated as CJS by tsgo without package.json type:module
 import { Box as InkBox, Text as InkText, render as inkRender } from 'ink'
-// @ts-ignore - tsx files treated as CJS by tsgo without package.json type:module
 import ReactImport from 'react'
 
-// @ts-ignore - tsx files treated as CJS by tsgo without package.json type:module
 import InkTableImport from '../external/ink-table.mjs'
 
 import type { FC } from 'react'

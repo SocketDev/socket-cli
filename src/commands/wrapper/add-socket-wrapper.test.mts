@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { addSocketWrapper } from './add-socket-wrapper.mts'
 
-// Mock the dependencies.
+// Mock the dependencies
 vi.mock('node:fs')
 vi.mock('@socketsecurity/registry/lib/logger', () => ({
   logger: {

@@ -3,7 +3,6 @@
 import chalkTable from 'chalk-table'
 import colors from 'yoctocolors-cjs'
 
-// @ts-ignore
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { outputResult } from './output.mts'

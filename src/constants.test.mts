@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url'
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Mock environment variables before importing constants.
+// Mock environment variables before importing constants
 vi.stubEnv('SOCKET_API_BASE_URL', '')
 vi.stubEnv('SOCKET_API_KEY', '')
 vi.stubEnv('SOCKET_API_PROXY', '')

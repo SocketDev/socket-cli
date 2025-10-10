@@ -5,9 +5,9 @@
 import process from 'node:process'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
-// Suppress MaxListenersExceeded warning for AbortSignal.
+// Suppress MaxListenersExceeded warning for AbortSignal
 // The Socket SDK properly manages listeners but may exceed the default limit of 30
-// during high-concurrency batch operations.
+// during high-concurrency batch operations
 const originalEmitWarning = process.emitWarning
 process.emitWarning = function (warning, ...args) {
   if (
@@ -67,8 +67,8 @@ if (noLog) {
   logger.fail = noop
 }
 
-// Initialize IPC handler to receive stub path from bootstrap executable.
-// This must be set up before any async operations to ensure we receive the message.
+// Initialize IPC handler to receive stub path from bootstrap executable
+// This must be set up before any async operations to ensure we receive the message
 initStubIpcHandler()
 
 void (async () => {

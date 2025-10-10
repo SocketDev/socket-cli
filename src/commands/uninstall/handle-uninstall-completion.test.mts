@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { handleUninstallCompletion } from './handle-uninstall-completion.mts'
 
-// Mock the dependencies.
+// Mock the dependencies
 vi.mock('./output-uninstall-completion.mts', () => ({
   outputUninstallCompletion: vi.fn(),
 }))

@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { handleAnalytics } from './handle-analytics.mts'
 
-// Mock the dependencies.
+// Mock the dependencies
 vi.mock('./fetch-org-analytics.mts', () => ({
   fetchOrgAnalyticsData: vi.fn(),
 }))

@@ -32,7 +32,7 @@ export interface AuthInfo {
   type: string
 }
 
-// Type compatibility with registry-auth-token.
+// Type compatibility with registry-auth-token
 interface NpmCredentials {
   token: string
   type: string

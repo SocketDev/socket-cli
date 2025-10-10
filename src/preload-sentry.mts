@@ -7,9 +7,9 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import constants from './constants.mts'
 
 // Only run this preload script for @socketsecurity/cli-with-sentry in an
-// IPC subprocess spawned by Socket CLI.
-// NODE_CHANNEL_FD is set when spawned with IPC (stdio includes 'ipc').
-// SOCKET_CLI_PRELOAD_PHASE is set by Socket CLI when spawning.
+// IPC subprocess spawned by Socket CLI
+// NODE_CHANNEL_FD is set when spawned with IPC (stdio includes 'ipc')
+// SOCKET_CLI_PRELOAD_PHASE is set by Socket CLI when spawning
 if (
   !constants.ENV.INLINED_SOCKET_CLI_SENTRY_BUILD ||
   !constants.ENV.NODE_CHANNEL_FD ||

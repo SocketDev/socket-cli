@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { tildify } from './tildify.mts'
 
-// Mock constants.
+// Mock constants
 vi.mock('../constants.mts', () => ({
   default: {
     homePath: '/Users/testuser',

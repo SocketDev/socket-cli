@@ -8,7 +8,7 @@ import { scanPackagesAndLogAlerts } from './common.mts'
 import type { PackageScanOptions } from './common.mts'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
-// Mock all dependencies.
+// Mock all dependencies
 const mockReadPackageJson = vi.hoisted(() => vi.fn())
 const mockGetAlertsMapFromPurls = vi.hoisted(() => vi.fn())
 const mockLogAlertsMap = vi.hoisted(() => vi.fn())

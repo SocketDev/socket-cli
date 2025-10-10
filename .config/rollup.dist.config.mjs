@@ -214,17 +214,7 @@ async function copyPublishFiles() {
     JSON.stringify(distPkgJson, null, 2) + '\n',
   )
 
-  // Copy translations.json to dist.
-  // Note: requirements.json is loaded from @socketsecurity/sdk at runtime.
-  const filesToCopy = ['.config/translations.json']
-  await Promise.all(
-    filesToCopy.map(file =>
-      fs.copyFile(
-        path.join(constants.rootPath, file),
-        path.join(constants.distPath, path.basename(file)),
-      ),
-    ),
-  )
+  // JSON files are now inlined during build via @rollup/plugin-json
 
   // Copy bin directory to dist.
   const binDir = path.join(constants.rootPath, 'bin')
@@ -295,7 +285,6 @@ export default async () => {
         'npm-cli': `${srcPath}/npm-cli.mts`,
         'npx-cli': `${srcPath}/npx-cli.mts`,
         'pnpm-cli': `${srcPath}/pnpm-cli.mts`,
-        'yarn-cli': `${srcPath}/yarn-cli.mts`,
         [CONSTANTS]: `${srcPath}/constants.mts`,
         [SHADOW_NPM_BIN]: `${srcPath}/shadow/npm/bin.mts`,
         [SHADOW_NPM_PRELOAD_ARBORIST]: `${srcPath}/shadow/npm/preload-arborist.mts`,

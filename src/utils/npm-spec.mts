@@ -26,7 +26,7 @@ import npmPackageArg from 'npm-package-arg'
 import { NPM } from '../constants.mts'
 import { createPurlObject } from './purl.mts'
 
-// @ts-expect-error - Result is re-exported below.
+// @ts-expect-error - Result is re-exported below
 import type { Result } from 'npm-package-arg'
 
 export type {

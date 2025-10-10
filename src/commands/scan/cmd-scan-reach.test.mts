@@ -12,7 +12,7 @@ import { cmdit, spawnSocketCli, testPath } from '../../../test/utils.mts'
 
 const fixtureBaseDir = path.join(testPath, 'fixtures/commands/scan/reach')
 
-// Track cleanup functions for temp directories.
+// Track cleanup functions for temp directories
 const cleanupFunctions: Array<() => Promise<void>> = []
 
 afterEach(async () => {

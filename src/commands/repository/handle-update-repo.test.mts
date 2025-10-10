@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { handleUpdateRepo } from './handle-update-repo.mts'
 
-// Mock the dependencies.
+// Mock the dependencies
 vi.mock('./fetch-update-repo.mts', () => ({
   fetchUpdateRepo: vi.fn(),
 }))

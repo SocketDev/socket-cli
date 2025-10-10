@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { getRequirements, getRequirementsKey } from './requirements.mts'
 
-// Mock the requirements.json module.
+// Mock the requirements.json module
 vi.mock('../../requirements.json', () => ({
   default: {
     api: {

@@ -9,7 +9,7 @@ import {
   safeParseNpmSpec,
 } from './npm-spec.mts'
 
-// Mock dependencies.
+// Mock dependencies
 vi.mock('npm-package-arg', () => ({
   default: vi.fn(),
 }))
@@ -22,7 +22,7 @@ vi.mock('../constants.mts', () => ({
   NPM: 'npm',
 }))
 
-// Don't mock the module we're testing - only mock its dependencies.
+// Don't mock the module we're testing - only mock its dependencies
 
 import { createPurlObject } from './purl.mts'
 

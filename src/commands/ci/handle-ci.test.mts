@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { handleCi } from './handle-ci.mts'
 
-// Mock the dependencies.
+// Mock the dependencies
 vi.mock('@socketsecurity/registry/lib/logger', () => ({
   logger: {
     log: vi.fn(),

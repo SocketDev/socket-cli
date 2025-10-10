@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { removeSocketWrapper } from './remove-socket-wrapper.mts'
 
-// Mock the dependencies.
+// Mock the dependencies
 vi.mock('node:fs')
 vi.mock('@socketsecurity/registry/lib/logger', () => ({
   logger: {

@@ -1,18 +1,13 @@
 /**
- * Requirements configuration utilities for Socket CLI.
- * Manages API permissions and quota requirements for commands.
+ * @fileoverview API requirements configuration for Socket CLI
+ * Manages API permissions and quota requirements for commands
  *
  * Key Functions:
- * - getRequirements: Load requirements configuration from local copy
+ * - getRequirements: Load API requirements configuration
  * - getRequirementsKey: Convert command path to SDK method name
- *
- * Configuration:
- * - Loads from local requirements.json (copied from SDK)
- * - Maps CLI command paths to SDK method names
- * - Used for permission validation and help text
  */
 
-import requirementsJson from '../../requirements.json' with { type: 'json' }
+import requirementsJson from '../../.config/api-requirements.json' with { type: 'json' }
 
 let _requirements:
   | Readonly<{

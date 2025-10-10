@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Mock dependencies.
+// Mock dependencies
 vi.mock('node:fs', () => ({
   existsSync: vi.fn(),
 }))

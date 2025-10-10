@@ -116,7 +116,7 @@ export default async function shadowNpmBase(
       // Memory flags commented out.
       // ...constants.nodeMemoryFlags,
       // Non-SEA: Load inject via --require (SEA: inject code bundled in binary)
-      ...(process.isSea?.() ? [] : ['--require', constants.shadowNpmPreloadArboristPath]),
+      ...((process as any).isSea?.() ? [] : ['--require', constants.shadowNpmPreloadArboristPath]),
       realBinPath,
       ...noAuditArgs,
       ...(useNodeOptions

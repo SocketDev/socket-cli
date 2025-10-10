@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { handleListScans } from './handle-list-scans.mts'
 
-// Mock the dependencies.
+// Mock the dependencies
 vi.mock('./fetch-list-scans.mts', () => ({
   fetchOrgFullScanList: vi.fn(),
 }))

@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { handleManifestSetup } from './handle-manifest-setup.mts'
 
-// Mock the dependencies.
+// Mock the dependencies
 vi.mock('./output-manifest-setup.mts', () => ({
   outputManifestSetup: vi.fn(),
 }))

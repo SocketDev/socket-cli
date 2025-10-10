@@ -1,6 +1,6 @@
 /** @fileoverview Safe Arborist class implementation for Socket CLI. Extends npm's Arborist to intercept buildIdealTree and reify operations for security scanning before package installation. */
 
-// @ts-ignore
+// @ts-expect-error
 import UntypedArborist from '@npmcli/arborist/lib/arborist/index.js'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
@@ -37,7 +37,7 @@ export const SAFE_NO_SAVE_ARBORIST_REIFY_OPTIONS_OVERRIDES = {
 }
 
 export const SAFE_WITH_SAVE_ARBORIST_REIFY_OPTIONS_OVERRIDES = {
-  // @ts-ignore
+  // @ts-expect-error
   __proto__: null,
   ...SAFE_NO_SAVE_ARBORIST_REIFY_OPTIONS_OVERRIDES,
   dryRun: false,
@@ -88,7 +88,6 @@ export class SafeArborist extends Arborist {
     return ret
   }
 
-  // @ts-ignore Incorrectly typed.
   override async reify(
     this: SafeArborist,
     ...args: Parameters<InstanceType<ArboristClass>['reify']>
@@ -111,7 +110,7 @@ export class SafeArborist extends Arborist {
         ...SAFE_NO_SAVE_ARBORIST_REIFY_OPTIONS_OVERRIDES,
         progress: false,
       },
-      // @ts-ignore: TypeScript gets grumpy about rest parameters.
+      // @ts-expect-error: TypeScript gets grumpy about rest parameters.
       ...args.slice(1),
     )
 
@@ -155,7 +154,7 @@ export class SafeArborist extends Arborist {
 
     if (alertsMap.size) {
       process.exitCode = 1
-      const viewAllRisks = constants.ENV['SOCKET_CLI_VIEW_ALL_RISKS']
+      const viewAllRisks = constants.ENV.SOCKET_CLI_VIEW_ALL_RISKS
       logAlertsMap(alertsMap, {
         hideAt: viewAllRisks ? 'none' : 'middle',
         output: process.stderr,

@@ -1,5 +1,0 @@
-{
-  "version": "24.9.0",
-  "description": "Socket's custom Node build version for yao-pkg",
-  "notes": "Do not update without also updating socket-node patches"
-}

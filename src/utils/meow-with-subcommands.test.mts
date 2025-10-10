@@ -7,7 +7,7 @@ import {
   meowOrExit,
 } from './meow-with-subcommands.mts'
 
-// Mock meow.
+// Mock meow
 vi.mock('meow', () => ({
   default: vi.fn((helpText, options) => {
     // Simulate meow processing flags with defaults.
@@ -29,7 +29,7 @@ vi.mock('meow', () => ({
   }),
 }))
 
-// Mock logger.
+// Mock logger
 vi.mock('@socketsecurity/registry/lib/logger', () => ({
   logger: {
     error: vi.fn(),
@@ -40,7 +40,7 @@ vi.mock('@socketsecurity/registry/lib/logger', () => ({
   },
 }))
 
-// Mock config utilities.
+// Mock config utilities
 vi.mock('./config.mts', () => ({
   getConfigValueOrUndef: vi.fn(),
   isConfigFromFlag: vi.fn(() => false),
@@ -48,22 +48,22 @@ vi.mock('./config.mts', () => ({
   overrideConfigApiToken: vi.fn(),
 }))
 
-// Mock debug utility.
+// Mock debug utility
 vi.mock('./debug.mts', () => ({
   isDebug: vi.fn(() => false),
 }))
 
-// Mock SDK utility.
+// Mock SDK utility
 vi.mock('./sdk.mts', () => ({
   getVisibleTokenPrefix: vi.fn(() => 'test'),
 }))
 
-// Mock terminal link utility.
+// Mock terminal link utility
 vi.mock('./terminal-link.mts', () => ({
   socketPackageLink: vi.fn(pkg => pkg),
 }))
 
-// Mock process.exit.
+// Mock process.exit
 vi.spyOn(process, 'exit').mockImplementation(() => {
   throw new Error('process.exit called')
 })

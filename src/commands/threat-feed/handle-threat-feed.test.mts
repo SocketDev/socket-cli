@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { handleThreatFeed } from './handle-threat-feed.mts'
 
-// Mock the dependencies.
+// Mock the dependencies
 vi.mock('./fetch-threat-feed.mts', () => ({
   fetchThreatFeed: vi.fn(),
 }))

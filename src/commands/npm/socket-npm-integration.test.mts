@@ -17,8 +17,8 @@ import type { SpawnError } from '@socketsecurity/registry/lib/spawn'
 
 const npmFixturesPath = path.join(testPath, 'fixtures/commands/npm')
 
-// Test with npm9, npm10, npm11 fixture directories.
-// These contain isolated package.json files for testing npm wrapper functionality.
+// Test with npm9, npm10, npm11 fixture directories
+// These contain isolated package.json files for testing npm wrapper functionality
 const npmDirs = ['npm9', 'npm10', 'npm11'] as string[]
 
 if (!npmDirs.length) {

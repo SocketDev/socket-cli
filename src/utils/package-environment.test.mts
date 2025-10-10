@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { AGENTS, detectPackageEnvironment } from './package-environment.mts'
 
-// Mock the dependencies.
+// Mock the dependencies
 const mockExistsSync = vi.hoisted(() => vi.fn())
 vi.mock('node:fs', async importOriginal => {
   const actual = await importOriginal<typeof import('node:fs')>()

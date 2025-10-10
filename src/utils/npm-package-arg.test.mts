@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { safeNpa } from './npm-package-arg.mts'
 
-// Mock npm-package-arg.
+// Mock npm-package-arg
 vi.mock('npm-package-arg', () => ({
   default: vi.fn(),
 }))

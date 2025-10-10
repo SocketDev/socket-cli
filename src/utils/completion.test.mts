@@ -9,14 +9,14 @@ import {
   getCompletionSourcingCommand,
 } from './completion.mts'
 
-// Mock node:fs.
+// Mock node:fs
 vi.mock('node:fs', () => ({
   default: {
     existsSync: vi.fn(),
   },
 }))
 
-// Mock constants.
+// Mock constants
 vi.mock('../constants.mts', () => ({
   default: {
     distPath: '/mock/dist/path',

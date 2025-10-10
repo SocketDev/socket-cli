@@ -11,12 +11,12 @@ import {
   stripPnpmPeerSuffix,
 } from './pnpm.mts'
 
-// Mock fs module.
+// Mock fs module
 vi.mock('node:fs', () => ({
   existsSync: vi.fn(),
 }))
 
-// Mock registry modules.
+// Mock registry modules
 vi.mock('@socketsecurity/registry/lib/fs', () => ({
   readFileUtf8: vi.fn(),
 }))

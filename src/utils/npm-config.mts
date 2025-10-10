@@ -5,7 +5,7 @@ import {
   definitions as npmConfigDefinitions,
   flatten as npmConfigFlatten,
   shorthands as npmConfigShorthands,
-  // @ts-ignore: TypeScript types unavailable.
+  // @ts-expect-error: TypeScript types unavailable.
 } from '@npmcli/config/lib/definitions'
 
 import { getNpmDirPath } from './npm-paths.mts'

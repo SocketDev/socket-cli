@@ -35,7 +35,7 @@ import { extractName, extractOwner } from './extract-names.mts'
 import type { CResult } from '../types.mts'
 import type { SpawnOptions } from '@socketsecurity/registry/lib/spawn'
 
-// Listed in order of check preference.
+// Listed in order of check preference
 const COMMON_DEFAULT_BRANCH_NAMES = [
   // Modern default (GitHub, GitLab, Bitbucket have switched to this).
   'main',

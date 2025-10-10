@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { determineOrgSlug } from './determine-org-slug.mts'
 
-// Mock dependencies.
+// Mock dependencies
 vi.mock('@socketsecurity/registry/lib/logger', () => ({
   logger: {
     error: vi.fn(),

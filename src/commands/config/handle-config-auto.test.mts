@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { handleConfigAuto } from './handle-config-auto.mts'
 
-// Mock the dependencies.
+// Mock the dependencies
 vi.mock('./discover-config-value.mts', () => ({
   discoverConfigValue: vi.fn(),
 }))

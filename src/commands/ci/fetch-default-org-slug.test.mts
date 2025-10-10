@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { getDefaultOrgSlug } from './fetch-default-org-slug.mts'
 
-// Mock the dependencies.
+// Mock the dependencies
 vi.mock('../../utils/config.mts', () => ({
   getConfigValueOrUndef: vi.fn(),
 }))

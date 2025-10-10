@@ -117,12 +117,10 @@ export async function buildCLIWithSentry(options = {}) {
       JSON.stringify(packageJson, null, 2)
     )
 
-    // Copy necessary files
+    // Copy necessary files (JSON files are now inlined in the build)
     const filesToCopy = [
       'README.md',
-      'LICENSE',
-      'requirements.json',
-      'translations.json'
+      'LICENSE'
     ]
 
     for (const file of filesToCopy) {

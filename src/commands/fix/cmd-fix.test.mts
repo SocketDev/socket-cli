@@ -56,7 +56,7 @@ vi.mock('../../../src/commands/fix/coana-fix.mts', () => ({
 
 const fixtureBaseDir = path.join(testPath, 'fixtures/commands/fix')
 
-// Track cleanup functions for temp directories.
+// Track cleanup functions for temp directories
 const cleanupFunctions: Array<() => Promise<void>> = []
 
 afterEach(async () => {
@@ -65,7 +65,7 @@ afterEach(async () => {
   cleanupFunctions.length = 0
 })
 
-// Test configuration.
+// Test configuration
 const testTimeout = 60_000
 
 describe('socket fix', async () => {

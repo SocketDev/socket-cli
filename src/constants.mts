@@ -16,14 +16,14 @@ import type { SpawnOptions } from '@socketsecurity/registry/lib/spawn'
 const __filename = fileURLToPath(import.meta.url)
 // Using `path.dirname(__filename)` to resolve `__dirname` works for both 'dist'
 // AND 'src' directories because constants.js and constants.mts respectively are
-// in the root of each.
+// in the root of each
 const __dirname = path.dirname(__filename)
 
 const require = createRequire(import.meta.url)
 
-// Access constants directly from the registryConstants object.
-// The registry now exports constants as a special object with lazy getters.
-// Type assertion needed because TypeScript sees this as generic 'object'.
+// Access constants directly from the registryConstants object
+// The registry now exports constants as a special object with lazy getters
+// Type assertion needed because TypeScript sees this as generic 'object'
 const regConsts = registryConstants as any
 const AT_LATEST = regConsts.AT_LATEST
 const BUN = regConsts.BUN
@@ -116,7 +116,7 @@ const BUN_LOCKB = regConsts.BUN_LOCKB
 const NPM_SHRINKWRAP_JSON = regConsts.NPM_SHRINKWRAP_JSON
 const VLT_LOCK_JSON = regConsts.VLT_LOCK_JSON
 
-// Access internals symbol and attributes.
+// Access internals symbol and attributes
 const kInternalsSymbol = regConsts.kInternalsSymbol
 const registryConstantsAttribs =
   regConsts[kInternalsSymbol as unknown as 'Symbol(kInternalsSymbol)']
@@ -230,7 +230,7 @@ export type ProcessEnv = {
   [K in keyof ENV]?: string | undefined
 }
 
-// Socket CLI specific constants that are not in socket-registry.
+// Socket CLI specific constants that are not in socket-registry
 const ALERT_TYPE_CRITICAL_CVE = 'criticalCVE'
 const ALERT_TYPE_CVE = 'cve'
 const ALERT_TYPE_MEDIUM_CVE = 'mediumCVE'
@@ -246,7 +246,7 @@ const CONFIG_KEY_DEFAULT_ORG = 'defaultOrg'
 const CONFIG_KEY_ENFORCED_ORGS = 'enforcedOrgs'
 const CONFIG_KEY_ORG = 'org'
 const DOT_SOCKET_DOT_FACTS_JSON = `${DOT_SOCKET_DIR}.facts.json`
-// 7 days in milliseconds.
+// 7 days in milliseconds
 const DLX_BINARY_CACHE_TTL = 7 * 24 * 60 * 60 * 1_000
 const DRY_RUN_LABEL = '[DryRun]'
 const DRY_RUN_BAILING_NOW = `${DRY_RUN_LABEL}: Bailing now`
@@ -545,8 +545,8 @@ function getNpmStdioPipeOptions() {
   return _npmStdioPipeOptions
 }
 
-// Inline implementation of getConfigValueOrUndef('apiBaseUrl') to avoid circular dependency.
-// This reads the base64-encoded config file and extracts the apiBaseUrl value.
+// Inline implementation of getConfigValueOrUndef('apiBaseUrl') to avoid circular dependency
+// This reads the base64-encoded config file and extracts the apiBaseUrl value
 function getApiBaseUrlFromConfig(): string | undefined {
   const socketAppDataPath = lazySocketAppDataPath()
   if (!socketAppDataPath) {
@@ -923,7 +923,7 @@ const lazyNodeDebugFlags = () =>
     : []
 
 // Redefine registryConstants.nodeHardenFlags to account for the
-// INLINED_SOCKET_CLI_SENTRY_BUILD environment variable.
+// INLINED_SOCKET_CLI_SENTRY_BUILD environment variable
 const lazyNodeHardenFlags = () =>
   Object.freeze(
     // Harden Node security.

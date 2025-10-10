@@ -66,7 +66,7 @@ export interface CliSubcommand {
 
 // Property names are picked such that the name is at the top when the props
 // get ordered by alphabet while flags is near the bottom and the help text
-// at the bottom, because they tend ot occupy the most lines of code.
+// at the bottom, because they tend ot occupy the most lines of code
 export interface CliCommandConfig {
   commandName: string
   description: string
@@ -281,7 +281,7 @@ export function emitBanner(
 }
 
 // For debugging. Whenever you call meowOrExit it will store the command here
-// This module exports a getter that returns the current value.
+// This module exports a getter that returns the current value
 let lastSeenCommand = ''
 
 /**

@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { handlePurlDeepScore } from './handle-purl-deep-score.mts'
 
-// Mock the dependencies.
+// Mock the dependencies
 vi.mock('./fetch-purl-deep-score.mts', () => ({
   fetchPurlDeepScore: vi.fn(),
 }))

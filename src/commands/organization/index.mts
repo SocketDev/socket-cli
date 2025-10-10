@@ -13,9 +13,6 @@ import { commonColumns, simpleOutput } from '../../utils/simple-output.mts'
 
 import type { QuotaData } from '../../utils/api-types.mts'
 
-
-// @ts-ignore
-
 // List organizations
 const cmdList = buildCommand({
   name: 'list',

@@ -6,7 +6,6 @@
  * - installNpmLinks: Install shadow links for npm binary
  * - installNpxLinks: Install shadow links for npx binary
  * - installPnpmLinks: Install shadow links for pnpm binary
- * - installYarnLinks: Install shadow links for yarn binary
  *
  * Shadow Installation:
  * - Creates symlinks/cmd-shims to intercept package manager commands
@@ -33,7 +32,6 @@ import {
   isNpxBinPathShadowed,
 } from './npm-paths.mts'
 import { getPnpmBinPath, isPnpmBinPathShadowed } from './pnpm-paths.mts'
-import { getYarnBinPath, isYarnBinPathShadowed } from './yarn-paths.mts'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -134,34 +132,3 @@ export async function installPnpmLinks(shadowBinPath: string): Promise<string> {
   return binPath
 }
 
-export async function installYarnLinks(shadowBinPath: string): Promise<string> {
-  const binPath = getYarnBinPath()
-  const { WIN32 } = constants
-
-  // Skip shadow installation when in temporary execution context or when required for Windows.
-  if (shouldSkipShadow(binPath, { cwd: __dirname, win32: WIN32 })) {
-    return binPath
-  }
-
-  const shadowed = isYarnBinPathShadowed()
-
-  if (!shadowed) {
-    if (WIN32) {
-      try {
-        await cmdShim(
-          path.join(constants.distPath, 'yarn-cli.js'),
-          path.join(shadowBinPath, 'yarn'),
-        )
-      } catch (e) {
-        throw new Error(
-          `failed to create yarn cmd shim: ${(e as Error).message}`,
-          { cause: e },
-        )
-      }
-    }
-    const { env } = process
-    env['PATH'] = `${shadowBinPath}${path.delimiter}${env['PATH']}`
-  }
-
-  return binPath
-}

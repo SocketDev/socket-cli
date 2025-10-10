@@ -209,7 +209,7 @@ class ProcessLockManager {
   }
 }
 
-// Export singleton instance.
+// Export singleton instance
 const processLockManager = new ProcessLockManager()
 
 export { processLockManager as processLock }

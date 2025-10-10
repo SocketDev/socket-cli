@@ -144,7 +144,7 @@ export function getDefaultProxyUrl(): string | undefined {
   return isUrl(apiProxy) ? apiProxy : undefined
 }
 
-// This Socket API token should be stored globally for the duration of the CLI execution.
+// This Socket API token should be stored globally for the duration of the CLI execution
 let _defaultToken: string | undefined
 export function getDefaultApiToken(): string | undefined {
   // In test mode: Ignore .env tokens and config file tokens to ensure

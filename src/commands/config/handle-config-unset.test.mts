@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { handleConfigUnset } from './handle-config-unset.mts'
 
-// Mock the dependencies.
+// Mock the dependencies
 vi.mock('./output-config-unset.mts', () => ({
   outputConfigUnset: vi.fn(),
 }))

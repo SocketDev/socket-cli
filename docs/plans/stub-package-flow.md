@@ -380,9 +380,6 @@ DEBUG=1 npm install -g socket
 
 # Skip binary download (keep shim)
 SKIP_BINARY_DOWNLOAD=1 npm install -g socket
-
-# Use specific Node.js version for SEA
-SOCKET_CLI_SEA_NODE_VERSION=24.8.0 pnpm run build:sea
 ```
 
 ---

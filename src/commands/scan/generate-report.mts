@@ -41,7 +41,7 @@ export type ReportLeafNode = {
 }
 
 // Note: The returned cResult will only be ok:false when the generation
-//       failed. It won't reflect the healthy state.
+//       failed. It won't reflect the healthy state
 export function generateReport(
   scan: SocketArtifact[],
   securityPolicy: SocketSdkSuccessResult<'getOrgSecurityPolicy'>['data'],

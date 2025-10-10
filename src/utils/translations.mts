@@ -1,21 +1,12 @@
-/** @fileoverview Translation configuration loader for Socket CLI. */
+/** @fileoverview Socket alert definitions loader */
 
-import { createRequire } from 'node:module'
-import path from 'node:path'
+import translationsJson from '../../.config/socket-alerts.json' with { type: 'json' }
 
-import constants from '../constants.mts'
-
-const require = createRequire(import.meta.url)
-
-let _translations:
-  | Readonly<typeof import('../../.config/translations.json')>
-  | undefined
+let _translations: typeof translationsJson | undefined
 
 export function getTranslations() {
   if (_translations === undefined) {
-    _translations = /*@__PURE__*/ require(
-      path.join(constants.rootPath, '.config', 'translations.json'),
-    )
+    _translations = translationsJson
   }
   return _translations!
 }

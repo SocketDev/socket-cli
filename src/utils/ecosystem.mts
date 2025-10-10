@@ -75,7 +75,7 @@ type AllEcosystemsUnion = (typeof ALL_ECOSYSTEMS)[number]
 type MissingInAllEcosystems = Exclude<PURL_Type, AllEcosystemsUnion>
 type ExtraInAllEcosystems = Exclude<AllEcosystemsUnion, PURL_Type>
 
-// Type checks for ALL_ECOSYSTEMS coverage.
+// Type checks for ALL_ECOSYSTEMS coverage
 export type _Check_ALL_ECOSYSTEMS_has_all_purl_types =
   ExpectNever<MissingInAllEcosystems>
 export type _Check_ALL_ECOSYSTEMS_has_no_extras =

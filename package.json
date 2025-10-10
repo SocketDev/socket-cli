@@ -153,6 +153,7 @@
     "registry-url": "7.2.0",
     "rollup": "4.50.1",
     "semver": "7.7.2",
+    "strip-json-comments": "5.0.1",
     "synp": "1.9.14",
     "taze": "19.6.0",
     "terminal-link": "2.1.1",

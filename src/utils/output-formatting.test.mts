@@ -7,7 +7,7 @@ import {
   getHelpListOutput,
 } from './output-formatting.mts'
 
-// Mock requirements module.
+// Mock requirements module
 vi.mock('./requirements.mts', () => ({
   getRequirements: vi.fn(),
   getRequirementsKey: vi.fn(),

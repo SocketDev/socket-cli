@@ -1,7 +1,7 @@
 /** @fileoverview Threat feed Ink React component. */
 
 import type { Element } from '../../utils/ink.mts'
-// @ts-ignore - tsx files treated as CJS by tsgo
+// @ts-expect-error - tsx files treated as CJS by tsgo
 import { Box, InkTable, Text } from '../../utils/ink.mts'
 import type { ThreatResult } from './types.mts'
 
@@ -34,7 +34,7 @@ function formatTimeDiff(dateStr: string): string {
   return `${days} days ago`
 }
 
-// @ts-ignore - tsx files treated as CJS by tsgo
+// @ts-expect-error - tsx files treated as CJS by tsgo
 export function ThreatFeedApp({ results }: ThreatFeedAppProps): Element {
   // Note: Interactive features removed because stdin is piped for data transfer
   const selectedIndex = 0

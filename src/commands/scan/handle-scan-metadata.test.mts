@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { handleOrgScanMetadata } from './handle-scan-metadata.mts'
 
-// Mock the dependencies.
+// Mock the dependencies
 vi.mock('./fetch-scan-metadata.mts', () => ({
   fetchScanMetadata: vi.fn(),
 }))

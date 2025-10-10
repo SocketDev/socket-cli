@@ -10,7 +10,7 @@ import { outputResult } from '../../utils/output.mts'
 import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketArtifact } from '../../utils/alert/artifact.mts'
 
-// This is a simplified view of an artifact. Potentially merged with other artifacts.
+// This is a simplified view of an artifact. Potentially merged with other artifacts
 interface DedupedArtifact {
   // artifact.type
   ecosystem: string

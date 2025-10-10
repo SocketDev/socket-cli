@@ -5,7 +5,7 @@ import { NPX } from '../../constants.mts'
 
 import type { ShadowBinOptions } from '../npm-base.mts'
 
-// Mock shadowNpmBase.
+// Mock shadowNpmBase
 const mockShadowNpmBase = vi.hoisted(() => vi.fn())
 
 vi.mock('../npm-base.mts', () => ({

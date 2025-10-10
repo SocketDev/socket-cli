@@ -5,7 +5,7 @@ import { outputThreatFeed } from './output-threat-feed.mts'
 import type { ThreadFeedResponse, ThreatResult } from './types.mts'
 import type { CResult } from '../../types.mts'
 
-// Mock the dependencies.
+// Mock the dependencies
 vi.mock('@socketsecurity/registry/lib/logger', () => ({
   logger: {
     error: vi.fn(),
@@ -34,7 +34,7 @@ vi.mock('../../constants.mts', () => ({
   },
 }))
 
-// Mock spawn for Ink subprocess.
+// Mock spawn for Ink subprocess
 vi.mock('@socketsecurity/registry/lib/spawn', () => ({
   spawn: vi.fn(() => {
     const mockStdin = {
@@ -52,7 +52,7 @@ vi.mock('@socketsecurity/registry/lib/spawn', () => ({
   }),
 }))
 
-// Mock process.exit.
+// Mock process.exit
 const mockProcessExit = vi.fn()
 Object.defineProperty(process, 'exit', {
   value: mockProcessExit,

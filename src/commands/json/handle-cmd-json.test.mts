@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { handleCmdJson } from './handle-cmd-json.mts'
 
-// Mock the dependencies.
+// Mock the dependencies
 vi.mock('./output-cmd-json.mts', () => ({
   outputCmdJson: vi.fn(),
 }))

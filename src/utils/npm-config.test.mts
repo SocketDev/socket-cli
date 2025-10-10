@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { getNpmConfig } from './npm-config.mts'
 
-// Mock @npmcli/config.
+// Mock @npmcli/config
 vi.mock('@npmcli/config', () => ({
   default: vi.fn(() => ({
     load: vi.fn().mockResolvedValue(undefined),
@@ -14,14 +14,14 @@ vi.mock('@npmcli/config', () => ({
   })),
 }))
 
-// Mock @npmcli/config/lib/definitions.
+// Mock @npmcli/config/lib/definitions
 vi.mock('@npmcli/config/lib/definitions', () => ({
   definitions: {},
   flatten: vi.fn(),
   shorthands: {},
 }))
 
-// Mock npm-paths.
+// Mock npm-paths
 vi.mock('./npm-paths.mts', () => ({
   getNpmDirPath: vi.fn(() => '/usr/local/lib/node_modules/npm'),
 }))

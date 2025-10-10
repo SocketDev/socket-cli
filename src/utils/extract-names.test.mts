@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { extractName, extractOwner } from './extract-names.mts'
 
-// Mock constants.
+// Mock constants
 vi.mock('../constants.mts', () => ({
   default: {
     SOCKET_DEFAULT_REPOSITORY: 'default-repo',

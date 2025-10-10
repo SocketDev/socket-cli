@@ -5,7 +5,7 @@ import { shadowNpmInstall } from './install.mts'
 import type { ShadowNpmInstallOptions } from './install.mts'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
-// Mock all dependencies.
+// Mock all dependencies
 const mockSpawn = vi.hoisted(() => vi.fn())
 const mockGetNpmBinPath = vi.hoisted(() => vi.fn())
 

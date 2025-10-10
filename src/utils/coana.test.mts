@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { extractTier1ReachabilityScanId } from './coana.mts'
 
-// Mock @socketsecurity/registry/lib/fs.
+// Mock @socketsecurity/registry/lib/fs
 vi.mock('@socketsecurity/registry/lib/fs', () => ({
   readJsonSync: vi.fn(),
 }))

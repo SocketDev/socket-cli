@@ -163,8 +163,7 @@ export class ScanProgressTracker {
   constructor(enabled: boolean = true) {
     this.enabled = enabled
     if (enabled) {
-      // @ts-ignore - MultiProgress type needs to be fixed
-      this.progress = new MultiProgress({ hideCursor: true })
+      this.progress = new MultiProgress({ hideCursor: true } as any)
     }
   }
 

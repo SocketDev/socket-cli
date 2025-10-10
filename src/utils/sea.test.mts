@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { getSeaBinaryPath, isSeaBinary } from './sea.mts'
 
-// Mock stub-ipc module.
+// Mock stub-ipc module
 vi.mock('./stub-ipc.mts', () => ({
   getStubPath: vi.fn(),
   isRunningViaSea: vi.fn(),

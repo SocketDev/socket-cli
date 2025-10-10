@@ -10,7 +10,7 @@ import {
   getArboristPackagePath,
 } from './paths.mts'
 
-// Mock dependencies.
+// Mock dependencies
 const mockGetNpmRequire = vi.hoisted(() => vi.fn())
 const mockNormalizePath = vi.hoisted(() => vi.fn())
 

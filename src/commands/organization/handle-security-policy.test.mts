@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { handleSecurityPolicy } from './handle-security-policy.mts'
 
-// Mock the dependencies.
+// Mock the dependencies
 vi.mock('./fetch-security-policy.mts', () => ({
   fetchSecurityPolicy: vi.fn(),
 }))

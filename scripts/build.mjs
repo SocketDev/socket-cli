@@ -5,6 +5,7 @@
 import { spawn } from 'node:child_process'
 import { existsSync, statSync } from 'node:fs'
 import path from 'node:path'
+import readline from 'node:readline/promises'
 import { fileURLToPath } from 'node:url'
 import { parseArgs } from 'node:util'
 
@@ -65,6 +66,95 @@ async function runCommand(command, args = [], options = {}) {
 }
 
 /**
+ * Run command quietly and capture output
+ */
+async function runCommandQuiet(command, args = [], options = {}) {
+  return new Promise((resolve) => {
+    let stdout = ''
+    let stderr = ''
+
+    const child = spawn(command, args, {
+      stdio: 'pipe',
+      cwd: rootPath,
+      ...(WIN32 && { shell: true }),
+      ...options,
+    })
+
+    child.stdout?.on('data', (data) => {
+      stdout += data.toString()
+    })
+
+    child.stderr?.on('data', (data) => {
+      stderr += data.toString()
+    })
+
+    child.on('exit', (code) => {
+      resolve({ code: code || 0, stdout, stderr })
+    })
+
+    child.on('error', (err) => {
+      resolve({ code: 1, stdout, stderr, error: err })
+    })
+  })
+}
+
+/**
+ * Create a simple progress spinner
+ */
+function createSpinner(message) {
+  const frames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
+  let frameIndex = 0
+  let interval
+  const startTime = Date.now()
+
+  const start = () => {
+    process.stdout.write(`${frames[0]} ${message}`)
+    interval = setInterval(() => {
+      frameIndex = (frameIndex + 1) % frames.length
+      const elapsed = Date.now() - startTime
+      const seconds = Math.floor(elapsed / 1000)
+      const timeStr = seconds > 0 ? ` [${seconds}s]` : ''
+      process.stdout.write(`\r\x1b[K${frames[frameIndex]} ${message}${timeStr}`)
+    }, 100)
+  }
+
+  const stop = (success = true) => {
+    if (interval) {
+      clearInterval(interval)
+      const elapsed = Date.now() - startTime
+      const seconds = Math.floor(elapsed / 1000)
+      const timeStr = seconds > 0 ? ` [${seconds}s]` : ''
+      process.stdout.write('\r\x1b[K')
+
+      if (success) {
+        log.done(`${message.replace(/\.\.\.$/, '')} complete${timeStr}`)
+      } else {
+        log.failed(`${message.replace(/\.\.\.$/, '')} failed${timeStr}`)
+      }
+    }
+  }
+
+  return { start, stop }
+}
+
+/**
+ * Prompt user for confirmation
+ */
+async function promptConfirmation(message) {
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  })
+
+  try {
+    const answer = await rl.question(`${message} (y/N) `)
+    return answer.toLowerCase() === 'y'
+  } finally {
+    rl.close()
+  }
+}
+
+/**
  * Detect build configuration for the project.
  */
 function detectBuildConfig() {
@@ -118,33 +208,44 @@ function detectBuildConfig() {
  * Build source code.
  */
 async function buildSource(config) {
-  log.progress('Building source code')
+  const spinner = createSpinner('Building source code...')
+  spinner.start()
 
-  let exitCode = 0
+  let result
 
   if (config.hasEsbuild) {
     // Use esbuild for socket-registry.
     const args = ['exec', 'node', 'scripts/esbuild.mjs', '--source']
     if (existsSync(path.join(rootPath, 'registry'))) {
-      exitCode = await runCommand('pnpm', args, {
-        cwd: path.join(rootPath, 'registry'),
-        stdio: 'pipe'
+      result = await runCommandQuiet('pnpm', args, {
+        cwd: path.join(rootPath, 'registry')
       })
     } else {
-      exitCode = await runCommand('pnpm', args, { stdio: 'pipe' })
+      result = await runCommandQuiet('pnpm', args)
     }
   } else if (config.hasRollup) {
     // Use Rollup for socket-cli and others.
     const args = ['exec', 'rollup', '-c', config.rollupConfig, '--silent']
-    exitCode = await runCommand('pnpm', args, { stdio: 'pipe' })
+    result = await runCommandQuiet('pnpm', args)
   } else {
     // Fallback to TypeScript compiler.
-    exitCode = await runCommand('pnpm', ['exec', 'tsgo'], { stdio: 'pipe' })
+    result = await runCommandQuiet('pnpm', ['exec', 'tsgo'])
   }
 
-  if (exitCode !== 0) {
-    log.failed('Source build failed')
-    // Re-run with output.
+  if (result.code !== 0) {
+    spinner.stop(false)
+
+    // Show error details
+    if (result.stderr) {
+      log.error('Build errors:')
+      // Show last 30 lines of stderr
+      const lines = result.stderr.split('\n')
+      const lastLines = lines.slice(-30).join('\n')
+      console.error(lastLines)
+    }
+
+    // Re-run with full output for debugging
+    log.info('\nRe-running with full output for debugging...')
     if (config.hasEsbuild) {
       const args = ['exec', 'node', 'scripts/esbuild.mjs', '--source']
       if (existsSync(path.join(rootPath, 'registry'))) {
@@ -157,10 +258,10 @@ async function buildSource(config) {
     } else {
       await runCommand('pnpm', ['exec', 'tsgo'])
     }
-    return exitCode
+    return result.code
   }
 
-  log.done('Source build complete')
+  spinner.stop(true)
   return 0
 }
 
@@ -172,28 +273,39 @@ async function buildTypes(config) {
     return 0
   }
 
-  log.progress('Building TypeScript declarations')
+  const spinner = createSpinner('Building TypeScript declarations...')
+  spinner.start()
 
   const args = ['exec', 'tsgo']
   if (config.tsConfig !== 'tsconfig.json') {
     args.push('--project', config.tsConfig)
   }
 
-  const exitCode = await runCommand('pnpm', args, {
-    cwd: existsSync(path.join(rootPath, 'registry')) ? path.join(rootPath, 'registry') : rootPath,
-    stdio: 'pipe'
+  const result = await runCommandQuiet('pnpm', args, {
+    cwd: existsSync(path.join(rootPath, 'registry')) ? path.join(rootPath, 'registry') : rootPath
   })
 
-  if (exitCode !== 0) {
-    log.failed('Type declarations build failed')
-    // Re-run with output.
+  if (result.code !== 0) {
+    spinner.stop(false)
+
+    // Show error details
+    if (result.stderr) {
+      log.error('Type build errors:')
+      // Show last 30 lines of stderr
+      const lines = result.stderr.split('\n')
+      const lastLines = lines.slice(-30).join('\n')
+      console.error(lastLines)
+    }
+
+    // Re-run with full output for debugging
+    log.info('\nRe-running with full output for debugging...')
     await runCommand('pnpm', args, {
       cwd: existsSync(path.join(rootPath, 'registry')) ? path.join(rootPath, 'registry') : rootPath
     })
-    return exitCode
+    return result.code
   }
 
-  log.done('Type declarations built')
+  spinner.stop(true)
   return 0
 }
 
@@ -253,7 +365,7 @@ async function main() {
       console.log('  --watch   Watch mode for development')
       console.log('  --needed  Only build if dist files are missing')
       console.log('  --node    Build custom Node.js binary (socket-node)')
-      console.log('  --stub    Build stub/SEA binary (includes Node build if needed)')
+      console.log('  --stub    Build standalone binary with yao-pkg')
       console.log('\nExamples:')
       console.log('  pnpm build         # Full build (source + types)')
       console.log('  pnpm build --src   # Build source only')
@@ -268,9 +380,44 @@ async function main() {
     // Handle custom Node.js build.
     if (values.node) {
       printHeader('Custom Node.js Builder')
+
+      // Check if Node.js binary already exists
+      const nodeBinary = WIN32 ? 'node.exe' : 'node'
+      const centralNodePath = path.join(rootPath, 'binaries', 'socket-node', `node-v24.9.0-${process.platform === 'darwin' ? 'macos' : process.platform}-${process.arch}${WIN32 ? '.exe' : ''}`)
+      const buildNodePath = path.join(rootPath, 'build', 'socket-node', `node-v24.9.0-custom`, 'out', 'Release', nodeBinary)
+
+      let existingNodePath = null
+      if (existsSync(centralNodePath)) {
+        existingNodePath = centralNodePath
+      } else if (existsSync(buildNodePath)) {
+        existingNodePath = buildNodePath
+      }
+
+      // Prompt for rebuild if binary exists
+      if (existingNodePath) {
+        const stats = statSync(existingNodePath)
+        const sizeMB = (stats.size / 1024 / 1024).toFixed(1)
+        const relativeNodePath = path.relative(process.cwd(), existingNodePath)
+
+        console.log(`\n${colors.yellow('⚠')}  Node.js binary already exists:`)
+        console.log(`   Path: ${relativeNodePath}`)
+        console.log(`   Size: ${sizeMB}MB`)
+        console.log('')
+
+        const shouldRebuild = await promptConfirmation('Do you want to rebuild?')
+
+        if (!shouldRebuild) {
+          console.log('\n✓ Build cancelled')
+          process.exitCode = 0
+          return
+        }
+
+        console.log('')
+      }
+
       log.step('Building custom Node.js binary')
 
-      const buildNodeScript = path.join(__dirname, 'build', 'build-tiny-node.mjs')
+      const buildNodeScript = path.join(__dirname, 'build', 'build-socket-node.mjs')
       const nodeArgs = ['exec', 'node', buildNodeScript]
 
       const nodeExitCode = await runCommand('pnpm', nodeArgs)
@@ -280,10 +427,6 @@ async function main() {
         process.exitCode = nodeExitCode
       } else {
         // Report file size
-        const nodeBinary = WIN32 ? 'node.exe' : 'node'
-        const centralNodePath = path.join(rootPath, 'binaries', 'socket-node', `node-v24.9.0-${process.platform === 'darwin' ? 'macos' : process.platform}-${process.arch}${WIN32 ? '.exe' : ''}`)
-        const buildNodePath = path.join(rootPath, 'build', 'socket-node', `node-v24.9.0-custom`, 'out', 'Release', nodeBinary)
-
         let nodePath = centralNodePath
         if (!existsSync(nodePath)) {
           nodePath = buildNodePath
@@ -307,9 +450,37 @@ async function main() {
       return
     }
 
-    // Handle stub/SEA build.
+    // Handle standalone binary build.
     if (values.stub) {
-      printHeader('Stub/SEA Builder')
+      printHeader('Standalone Binary Builder (yao-pkg)')
+
+      // Check if stub binary already exists
+      const platformName = process.platform === 'darwin' ? 'macos' : process.platform
+      const stubExt = WIN32 ? '.exe' : ''
+      const stubPath = path.join(rootPath, 'binaries', 'stub', `socket-${platformName}-${process.arch}${stubExt}`)
+
+      // Prompt for rebuild if binary exists
+      if (existsSync(stubPath)) {
+        const stats = statSync(stubPath)
+        const sizeMB = (stats.size / 1024 / 1024).toFixed(1)
+        const relativeStubPath = path.relative(process.cwd(), stubPath)
+
+        console.log(`\n${colors.yellow('⚠')}  Standalone binary already exists:`)
+        console.log(`   Path: ${relativeStubPath}`)
+        console.log(`   Size: ${sizeMB}MB`)
+        console.log('')
+
+        const shouldRebuild = await promptConfirmation('Do you want to rebuild?')
+
+        if (!shouldRebuild) {
+          console.log('\n✓ Build cancelled')
+          process.exitCode = 0
+          return
+        }
+
+        console.log('')
+      }
+
       log.step('Building standalone executable')
 
       const buildStubScript = path.join(__dirname, 'build', 'build-stub.mjs')
@@ -321,13 +492,8 @@ async function main() {
         log.error('Stub build failed')
         process.exitCode = stubExitCode
       } else {
-        // Determine the output path for the stub binary
-        const platformName = process.platform === 'darwin' ? 'macos' : process.platform
-        const stubExt = WIN32 ? '.exe' : ''
-        const stubPath = path.join(rootPath, 'binaries', 'stub', `socket-${platformName}-${process.arch}${stubExt}`)
-
         const relativeStubPath = path.relative(process.cwd(), stubPath)
-        printFooter('Stub/SEA binary built successfully!')
+        printFooter('Standalone binary built successfully!')
         console.log(`\n✨ To run locally:`)
         console.log(`   ./${relativeStubPath} [command]`)
         console.log(`   # Examples:`)
@@ -384,16 +550,20 @@ async function main() {
       log.step('Building package')
 
       // Clean build directories first.
-      log.progress('Cleaning build directories')
-      const cleanCode = await runCommand('pnpm', ['run', 'clean', '--dist'], {
-        stdio: 'pipe'
-      })
-      if (cleanCode !== 0) {
-        log.failed('Clean failed')
-        process.exitCode = cleanCode
+      const cleanSpinner = createSpinner('Cleaning build directories...')
+      cleanSpinner.start()
+
+      const cleanResult = await runCommandQuiet('pnpm', ['run', 'clean', '--dist'])
+      if (cleanResult.code !== 0) {
+        cleanSpinner.stop(false)
+        if (cleanResult.stderr) {
+          log.error('Clean errors:')
+          console.error(cleanResult.stderr)
+        }
+        process.exitCode = cleanResult.code
         return
       }
-      log.done('Build directories cleaned')
+      cleanSpinner.stop(true)
 
       // Build source and types.
       const sourceCode = await buildSource(config)

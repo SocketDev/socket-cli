@@ -135,7 +135,7 @@ describe('error display utilities', () => {
 
     it('should handle non-Error cause types', () => {
       const error = new Error('Test')
-      // @ts-ignore - Testing runtime behavior
+      // @ts-expect-error - Testing runtime behavior
       error.cause = 'string cause'
       const result = formatErrorForDisplay(error, { showStack: true })
 

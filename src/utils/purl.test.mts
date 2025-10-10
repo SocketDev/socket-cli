@@ -4,7 +4,7 @@ import { PackageURL } from '@socketregistry/packageurl-js'
 
 import { createPurlObject, getPurlObject, normalizePurl } from './purl.mts'
 
-// Mock dependencies.
+// Mock dependencies
 vi.mock('@socketsecurity/registry/lib/objects', () => ({
   isObjectObject: vi.fn(
     obj => obj !== null && typeof obj === 'object' && !Array.isArray(obj),

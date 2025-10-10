@@ -4,7 +4,7 @@ import { handlePatch } from './handle-patch.mts'
 
 import type { PackageURL } from '@socketregistry/packageurl-js'
 
-// Mock the dependencies.
+// Mock the dependencies
 vi.mock('node:fs', () => ({
   existsSync: vi.fn(),
   promises: {

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
-// Mock the dependencies.
+// Mock the dependencies
 
 vi.mock('../../utils/sdk.mts', () => ({
   setupSdk: vi.fn(),

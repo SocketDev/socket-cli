@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { handleScanConfig } from './handle-scan-config.mts'
 
-// Mock the dependencies.
+// Mock the dependencies
 vi.mock('./output-scan-config-result.mts', () => ({
   outputScanConfigResult: vi.fn(),
 }))

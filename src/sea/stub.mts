@@ -22,8 +22,8 @@ import { parseTarGzip } from 'nanotar'
 // Platform detection
 const WIN32 = process.platform === 'win32'
 
-// Configurable constants with environment variable overrides.
-// os.homedir() can throw if no home directory is available.
+// Configurable constants with environment variable overrides
+// os.homedir() can throw if no home directory is available
 let SOCKET_HOME: string
 if (process.env['SOCKET_HOME']) {
   SOCKET_HOME = process.env['SOCKET_HOME']
@@ -52,7 +52,7 @@ if (process.env['SOCKET_HOME']) {
 const CLI_INSTALL_LOCK_FILE_NAME = '.install.lock'
 const DOWNLOAD_MESSAGE_DELAY_MS = 2_000
 const HTTPS_TIMEOUT_MS = 30_000
-// 30 seconds total.
+// 30 seconds total
 const LOCK_MAX_RETRIES = 60
 const LOCK_RETRY_DELAY_MS = 500
 const NPM_REGISTRY =

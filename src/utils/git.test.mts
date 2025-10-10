@@ -16,13 +16,13 @@ import {
   parseGitRemoteUrl,
 } from './git.mts'
 
-// Mock spawn.
+// Mock spawn
 vi.mock('@socketsecurity/registry/lib/spawn', () => ({
   spawn: vi.fn(),
   isSpawnError: vi.fn(e => e && e.isSpawnError),
 }))
 
-// Mock constants.
+// Mock constants
 vi.mock('../constants.mts', () => ({
   default: {
     ENV: {
@@ -38,7 +38,7 @@ vi.mock('../constants.mts', () => ({
   FLAG_QUIET: '--quiet',
 }))
 
-// Mock debug.
+// Mock debug
 vi.mock('./debug.mts', () => ({
   debugDir: vi.fn(),
   debugFn: vi.fn(),

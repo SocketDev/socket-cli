@@ -8,7 +8,7 @@ import constants from './constants.mts'
 
 import type { Flag } from 'meow'
 
-// Meow doesn't expose this.
+// Meow doesn't expose this
 export type AnyFlag = StringFlag | BooleanFlag | NumberFlag
 
 export type BooleanFlag =
@@ -24,7 +24,7 @@ export type MeowFlag = AnyFlag & {
   hidden?: boolean | undefined
 }
 
-// We use this description in getFlagListOutput, meow doesn't care.
+// We use this description in getFlagListOutput, meow doesn't care
 export type MeowFlags = Record<string, MeowFlag>
 
 type RawSpaceSizeFlags = {
@@ -37,7 +37,7 @@ function getRawSpaceSizeFlags(): RawSpaceSizeFlags {
   if (_rawSpaceSizeFlags === undefined) {
     const cli = meow({
       argv: process.argv.slice(2),
-      // Prevent meow from potentially exiting early.
+      // Prevent meow from potentially exiting early
       autoHelp: false,
       autoVersion: false,
       flags: {
@@ -71,18 +71,18 @@ export function getMaxOldSpaceSizeFlag(): number {
       _maxOldSpaceSizeFlag = match ? Number(match) : 0
     }
     if (!_maxOldSpaceSizeFlag) {
-      // Default value determined by available system memory.
+      // Default value determined by available system memory
       _maxOldSpaceSizeFlag = Math.floor(
-        // Total system memory in MiB.
+        // Total system memory in MiB
         (os.totalmem() / 1_024 / 1_024) *
-          // Set 75% of total memory (safe buffer to avoid system pressure).
+          // Set 75% of total memory (safe buffer to avoid system pressure)
           0.75,
       )
     }
   }
   return _maxOldSpaceSizeFlag
 }
-// Ensure export because dist/flags.js is required in src/constants.mts.
+// Ensure export because dist/flags.js is required in src/constants.mts
 // eslint-disable-next-line n/exports-style
 if (typeof exports === 'object' && exports !== null) {
   // eslint-disable-next-line n/exports-style
@@ -142,7 +142,7 @@ export function getMaxSemiSpaceSizeFlag(): number {
   }
   return _maxSemiSpaceSizeFlag
 }
-// Ensure export because dist/flags.js is required in src/constants.mts.
+// Ensure export because dist/flags.js is required in src/constants.mts
 // eslint-disable-next-line n/exports-style
 if (typeof exports === 'object' && exports !== null) {
   // eslint-disable-next-line n/exports-style

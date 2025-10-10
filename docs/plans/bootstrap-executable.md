@@ -109,7 +109,6 @@ Environment variables for customization:
 |----------|---------|-------------|
 | `SOCKET_HOME` | `~/.socket` | Root directory for Socket CLI data |
 | `SOCKET_CLI_DIR` | `~/.socket/_cli` | CLI installation directory |
-| `SOCKET_CLI_PACKAGE` | `@socketsecurity/cli` | npm package name |
 | `SOCKET_NPM_REGISTRY` | `https://registry.npmjs.org` | npm registry URL |
 | `NPM_REGISTRY` | (fallback) | Alternative registry env var |
 

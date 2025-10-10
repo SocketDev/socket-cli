@@ -106,7 +106,7 @@ function ignoreFileToGlobPatterns(
   return ignoreFileLinesToGlobPatterns(content.split(/\r?\n/), filepath, cwd)
 }
 
-// Based on `@eslint/compat` convertIgnorePatternToMinimatch.
+// Based on `@eslint/compat` convertIgnorePatternToMinimatch
 // Apache v2.0 licensed
 // Copyright Nicholas C. Zakas
 // https://github.com/eslint/rewrite/blob/compat-v1.2.1/packages/compat/src/ignore-file.js#L28

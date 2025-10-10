@@ -30,7 +30,6 @@ export default {
     'npm-cli': `${srcPath}/npm-cli.mts`,
     'npx-cli': `${srcPath}/npx-cli.mts`,
     'pnpm-cli': `${srcPath}/pnpm-cli.mts`,
-    'yarn-cli': `${srcPath}/yarn-cli.mts`,
     constants: `${srcPath}/constants.mts`,
     'shadow/npm/bin': `${srcPath}/shadow/npm/bin.mts`,
     'shadow/npm/inject': `${srcPath}/shadow/npm/inject.mts`,

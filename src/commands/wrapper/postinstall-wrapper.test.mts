@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { postinstallWrapper } from './postinstall-wrapper.mts'
 
-// Mock the dependencies.
+// Mock the dependencies
 vi.mock('node:fs')
 vi.mock('@socketsecurity/registry/lib/logger', () => ({
   logger: {

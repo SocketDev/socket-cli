@@ -1,7 +1,7 @@
 /** @fileoverview Audit log Ink React component. */
 
 import type { Element } from '../../utils/ink.mts'
-// @ts-ignore - tsx files treated as CJS by tsgo
+// @ts-expect-error - tsx files treated as CJS by tsgo
 import { Box, InkTable, Text } from '../../utils/ink.mts'
 
 export type AuditLogEntry = {
@@ -35,7 +35,7 @@ function formatEntry(entry: AuditLogEntry, keepQuotes = false): string {
   return json.replace(/^\s*"([^"]+)?"/gm, '  $1')
 }
 
-// @ts-ignore - tsx files treated as CJS by tsgo
+// @ts-expect-error - tsx files treated as CJS by tsgo
 export function AuditLogApp({ orgSlug, results }: AuditLogAppProps): Element {
   // Note: Interactive features removed because stdin is piped for data transfer
   const selectedIndex = 0

@@ -7,14 +7,14 @@ import {
   getSocketDevPackageOverviewUrlFromPurl,
 } from './socket-url.mts'
 
-// Mock constants.
+// Mock constants
 vi.mock('../constants.mts', () => ({
   default: {
     SOCKET_WEBSITE_URL: 'https://socket.dev',
   },
 }))
 
-// Mock purl.
+// Mock purl
 vi.mock('./purl.mts', () => ({
   getPurlObject: vi.fn(purl => {
     if (typeof purl === 'string') {

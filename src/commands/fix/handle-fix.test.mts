@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { convertIdsToGhsas, handleFix } from './handle-fix.mts'
 
-// Mock the dependencies.
+// Mock the dependencies
 vi.mock('@socketsecurity/registry/lib/arrays', () => ({
   joinAnd: vi.fn(arr => arr.join(' and ')),
 }))

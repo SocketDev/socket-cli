@@ -290,7 +290,7 @@ class UpdateStore {
   }
 }
 
-// Export singleton instance using default store location.
+// Export singleton instance using default store location
 const updateStore = new UpdateStore()
 
 export { UpdateStore, updateStore }

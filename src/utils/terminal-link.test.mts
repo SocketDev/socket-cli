@@ -12,7 +12,7 @@ import {
   webLink,
 } from './terminal-link.mts'
 
-// Mock terminal-link module.
+// Mock terminal-link module
 vi.mock('terminal-link', () => ({
   default: vi.fn((text, url) => `[${text}](${url})`),
 }))

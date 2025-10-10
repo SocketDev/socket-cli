@@ -5,7 +5,7 @@ import { outputCreateNewScan } from './output-create-new-scan.mts'
 import type { CResult } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
-// Mock the dependencies.
+// Mock the dependencies
 vi.mock('@socketsecurity/registry/lib/logger', () => ({
   logger: {
     fail: vi.fn(),

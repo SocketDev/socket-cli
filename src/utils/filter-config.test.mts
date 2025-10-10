@@ -4,7 +4,7 @@ import { toFilterConfig } from './filter-config.mts'
 
 import type { FilterConfig } from './filter-config.mts'
 
-// Mock @socketsecurity/registry/lib/objects.
+// Mock @socketsecurity/registry/lib/objects
 vi.mock('@socketsecurity/registry/lib/objects', () => ({
   isObject: vi.fn(val => {
     return val !== null && typeof val === 'object' && !Array.isArray(val)

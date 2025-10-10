@@ -8,7 +8,7 @@ import {
   validationFlags,
 } from './flags.mts'
 
-// Mock dependencies.
+// Mock dependencies
 vi.mock('meow', () => ({
   default: vi.fn(() => ({
     flags: {

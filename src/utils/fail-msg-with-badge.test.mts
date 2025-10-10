@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { failMsgWithBadge } from './fail-msg-with-badge.mts'
 
-// Mock yoctocolors-cjs.
+// Mock yoctocolors-cjs
 vi.mock('yoctocolors-cjs', () => ({
   default: {
     bgRedBright: vi.fn(
@@ -141,7 +141,7 @@ describe('failMsgWithBadge', () => {
     })
 
     it('handles boolean false as message (type coercion)', () => {
-      // @ts-expect-error Testing runtime behavior.
+      // @ts-expect-error Testing runtime behavior
       const result = failMsgWithBadge('ERROR', false)
       // false is falsy, should behave like undefined.
       expect(result).toBe(
@@ -150,7 +150,7 @@ describe('failMsgWithBadge', () => {
     })
 
     it('handles boolean true as message (type coercion)', () => {
-      // @ts-expect-error Testing runtime behavior.
+      // @ts-expect-error Testing runtime behavior
       const result = failMsgWithBadge('ERROR', true)
       // true is truthy, should add colon and format the message.
       expect(result).toBe(
@@ -159,7 +159,7 @@ describe('failMsgWithBadge', () => {
     })
 
     it('handles number as message (type coercion)', () => {
-      // @ts-expect-error Testing runtime behavior.
+      // @ts-expect-error Testing runtime behavior
       const result = failMsgWithBadge('ERROR', 42)
       // Number is truthy, should add colon and format the message.
       expect(result).toBe(
@@ -168,7 +168,7 @@ describe('failMsgWithBadge', () => {
     })
 
     it('handles object as message (type coercion)', () => {
-      // @ts-expect-error Testing runtime behavior.
+      // @ts-expect-error Testing runtime behavior
       const result = failMsgWithBadge('ERROR', { error: 'details' })
       // Object is truthy, should add colon and format the message.
       expect(result).toBe(
@@ -177,7 +177,7 @@ describe('failMsgWithBadge', () => {
     })
 
     it('handles array as message (type coercion)', () => {
-      // @ts-expect-error Testing runtime behavior.
+      // @ts-expect-error Testing runtime behavior
       const result = failMsgWithBadge('ERROR', ['item1', 'item2'])
       // Array is truthy, should add colon and format the message.
       expect(result).toBe(

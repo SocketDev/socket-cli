@@ -97,7 +97,7 @@ export async function convertCondaToRequirements(
   }
 }
 
-// Just extract the first pip block, if one exists at all.
+// Just extract the first pip block, if one exists at all
 export function convertCondaToRequirementsFromInput(input: string): string {
   let collecting = false
   let delim = '-'

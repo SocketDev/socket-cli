@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { handleDeleteRepo } from './handle-delete-repo.mts'
 
-// Mock the dependencies.
+// Mock the dependencies
 vi.mock('./fetch-delete-repo.mts', () => ({
   fetchDeleteRepo: vi.fn(),
 }))

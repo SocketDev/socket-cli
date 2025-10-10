@@ -11,7 +11,7 @@ import type { PackageDetail } from './arborist-helpers.mts'
 import type { AlertsByPurl } from '../../utils/socket-package-alert.mts'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
-// Mock all dependencies.
+// Mock all dependencies
 const mockGetAlertsMapFromPurls = vi.hoisted(() => vi.fn())
 const mockIdToNpmPurl = vi.hoisted(() => vi.fn())
 const mockParseUrl = vi.hoisted(() => vi.fn())

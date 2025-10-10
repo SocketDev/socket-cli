@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { fetchThreatFeed } from './fetch-threat-feed.mts'
 
-// Mock the dependencies.
+// Mock the dependencies
 vi.mock('../../utils/sdk.mts', () => ({
   queryApiJson: vi.fn(),
   setupSdk: vi.fn(),

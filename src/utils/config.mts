@@ -211,8 +211,8 @@ export function getConfigValue<Key extends keyof LocalConfig>(
   return { ok: true, data: localConfig[keyResult.data as Key] }
 }
 
-// This version squashes errors, returning undefined instead.
-// Should be used when we can reasonably predict the call can't fail.
+// This version squashes errors, returning undefined instead
+// Should be used when we can reasonably predict the call can't fail
 export function getConfigValueOrUndef<Key extends keyof LocalConfig>(
   key: Key,
 ): LocalConfig[Key] | undefined {
@@ -224,7 +224,7 @@ export function getConfigValueOrUndef<Key extends keyof LocalConfig>(
   return localConfig[keyResult.data as Key]
 }
 
-// Ensure export because dist/utils.js is required in src/constants.mts.
+// Ensure export because dist/utils.js is required in src/constants.mts
 // eslint-disable-next-line n/exports-style
 if (typeof exports === 'object' && exports !== null) {
   // eslint-disable-next-line n/exports-style
@@ -252,7 +252,7 @@ export function isSupportedConfigKey(key: string): key is keyof LocalConfig {
 }
 
 let _cachedConfig: LocalConfig | undefined
-// When using --config or SOCKET_CLI_CONFIG, do not persist the config.
+// When using --config or SOCKET_CLI_CONFIG, do not persist the config
 let _configFromFlag = false
 
 export function overrideCachedConfig(jsonConfig: unknown): CResult<undefined> {
@@ -284,7 +284,6 @@ export function overrideCachedConfig(jsonConfig: unknown): CResult<undefined> {
     }
   }
 
-  // @ts-ignore Override an illegal object.
   _cachedConfig = config as LocalConfig
   _configFromFlag = true
 

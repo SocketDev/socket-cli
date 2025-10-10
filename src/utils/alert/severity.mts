@@ -22,7 +22,7 @@ export type SocketSdkAlert = SocketSdkAlertList[number]['value'] extends
   ? U
   : never
 
-// Ordered from most severe to least.
+// Ordered from most severe to least
 export const ALERT_SEVERITIES_SORTED: ReadonlyArray<
   SocketSdkAlert['severity']
 > = Object.freeze(['critical', 'high', 'middle', 'low'])

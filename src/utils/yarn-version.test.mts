@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Mock dependencies.
+// Mock dependencies
 vi.mock('@socketsecurity/registry/lib/spawn', () => ({
   spawnSync: vi.fn(),
 }))

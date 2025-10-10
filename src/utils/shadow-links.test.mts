@@ -9,7 +9,7 @@ import {
   installYarnLinks,
 } from './shadow-links.mts'
 
-// Mock the dependencies.
+// Mock the dependencies
 vi.mock('cmd-shim')
 vi.mock('../constants.mts', () => ({
   default: {

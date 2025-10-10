@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { cacheFetch, writeCache } from './github.mts'
 
-// Mock the dependencies.
+// Mock the dependencies
 vi.mock('node:fs', () => ({
   existsSync: vi.fn(),
   promises: {

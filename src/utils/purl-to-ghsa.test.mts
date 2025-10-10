@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { convertPurlToGhsas } from './purl-to-ghsa.mts'
 
-// Mock the dependencies.
+// Mock the dependencies
 vi.mock('./github.mts', () => ({
   cacheFetch: vi.fn(),
   getOctokit: vi.fn(),

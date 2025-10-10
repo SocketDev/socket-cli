@@ -4,12 +4,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { readLockfile } from './lockfile.mts'
 
-// Mock node:fs.
+// Mock node:fs
 vi.mock('node:fs', () => ({
   existsSync: vi.fn(),
 }))
 
-// Mock @socketsecurity/registry/lib/fs.
+// Mock @socketsecurity/registry/lib/fs
 vi.mock('@socketsecurity/registry/lib/fs', () => ({
   readFileUtf8: vi.fn(),
 }))

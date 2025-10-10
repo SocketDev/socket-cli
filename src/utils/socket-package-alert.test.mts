@@ -13,7 +13,7 @@ import {
 
 import type { SocketPackageAlert } from './socket-package-alert.mts'
 
-// Mock dependencies.
+// Mock dependencies
 vi.mock('./alert/artifact.mts', () => ({
   isArtifactAlertCve: vi.fn(),
 }))

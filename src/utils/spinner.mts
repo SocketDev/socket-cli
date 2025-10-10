@@ -304,7 +304,7 @@ export function stopAllSpinners(): void {
   }
 }
 
-// Cleanup on process exit.
+// Cleanup on process exit
 process.on('exit', () => {
   stopAllSpinners()
 })

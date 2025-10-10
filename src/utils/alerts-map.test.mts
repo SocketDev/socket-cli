@@ -5,7 +5,7 @@ import {
   getAlertsMapFromPurls,
 } from './alerts-map.mts'
 
-// Mock dependencies.
+// Mock dependencies
 vi.mock('@socketsecurity/registry/lib/logger', () => ({
   logger: {
     error: vi.fn(),

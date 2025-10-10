@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { fetchListAllRepos } from './fetch-list-all-repos.mts'
 
-// Mock the dependencies.
+// Mock the dependencies
 
 vi.mock('../../utils/sdk.mts', () => ({
   setupSdk: vi.fn(),

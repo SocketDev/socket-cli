@@ -10,7 +10,7 @@ scripts/build/
 ├── build-socket-package.mjs      # Build socket package
 ├── build-socketsecurity-cli.mjs  # Build @socketsecurity/cli package
 ├── build-stub.mjs                 # Create SEA/stub executables
-├── build-tiny-node.mjs            # Build custom Node.js for pkg (socket-node)
+├── build-socket-node.mjs          # Build custom Node.js for pkg (socket-node)
 ├── check-build-deps.mjs           # Verify build dependencies
 ├── ensure-node-in-cache.mjs       # Manage pkg cache
 └── stub/
@@ -50,11 +50,11 @@ node scripts/build/build-stub.mjs [options]
   --quiet              Suppress output
 ```
 
-### `build-tiny-node.mjs`
+### `build-socket-node.mjs`
 Builds a custom Node.js binary with patches for pkg compatibility.
 
 ```bash
-node scripts/build/build-tiny-node.mjs [options]
+node scripts/build/build-socket-node.mjs [options]
   --version=VERSION    Node.js version to build (default: v24.9.0)
   --skip-download      Skip downloading if source already exists
   --skip-yao-patch     Skip applying yao-pkg patches
@@ -88,7 +88,7 @@ node scripts/build/build-tiny-node.mjs [options]
 
 1. **Custom Node.js Build** (one-time, ~30-60 minutes)
    ```bash
-   node scripts/build/build-tiny-node.mjs --version=v24.9.0
+   node scripts/build/build-socket-node.mjs --version=v24.9.0
    ```
    - Downloads Node.js source
    - Applies yao-pkg patches for pkg compatibility
@@ -171,7 +171,7 @@ node scripts/cleanup-builds.mjs --dist  # Clean dist/
 ## Troubleshooting
 
 ### "Custom Node.js binary not found"
-Run `node scripts/build/build-tiny-node.mjs` to build the custom Node.js first.
+Run `node scripts/build/build-socket-node.mjs` to build the custom Node.js first.
 
 ### "tar command not found" (Windows)
 Update to Windows 10+ or install a tar utility separately.

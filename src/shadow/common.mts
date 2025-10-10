@@ -1,4 +1,4 @@
-/** @fileoverview Common shadow binary utilities for Socket CLI. Provides shared functionality for extracting package PURLs from package manager commands and performing security scanning before installation. Used by npm, pnpm, and yarn shadow wrappers. */
+/** @fileoverview Common shadow binary utilities for Socket CLI. Provides shared functionality for extracting package PURLs from package manager commands and performing security scanning before installation. Used by npm and pnpm shadow wrappers. */
 
 import { fileURLToPath } from 'node:url'
 

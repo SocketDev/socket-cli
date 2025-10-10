@@ -286,8 +286,22 @@ async function buildWithNodeSea(options) {
   console.log('📦 Generating SEA blob...')
   await runCommand('node', ['--experimental-sea-config', configPath])
 
-  // Copy Node executable
-  const nodeExe = process.execPath
+  // Use our patched socket-node instead of system Node
+  // This ensures SEA binaries have our security patches (disable -e, restrict -r, etc.)
+  const socketNodePath = join(BUILD_DIR, 'socket-node', `v${SOCKET_NODE_VERSION}`, 'out', 'Signed', 'node')
+  const fallbackPath = join(BUILD_DIR, 'socket-node', `v${SOCKET_NODE_VERSION}`, 'out', 'Release', 'node')
+
+  let nodeExe
+  if (existsSync(socketNodePath)) {
+    nodeExe = socketNodePath
+    console.log('   Using signed socket-node binary')
+  } else if (existsSync(fallbackPath)) {
+    nodeExe = fallbackPath
+    console.log('   Using release socket-node binary')
+  } else {
+    throw new Error(`Socket-node binary not found. Run 'node scripts/build/build-socket-node.mjs' first.\n   Expected: ${socketNodePath}\n   Or: ${fallbackPath}`)
+  }
+
   const seaExe = output
 
   if (platform === 'win') {

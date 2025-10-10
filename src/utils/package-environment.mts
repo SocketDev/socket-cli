@@ -224,7 +224,7 @@ const readLockFileByAgent: Map<Agent, ReadLockFile> = (() => {
   ])
 })()
 
-// The order of LOCKS properties IS significant as it affects iteration order.
+// The order of LOCKS properties IS significant as it affects iteration order
 const LOCKS: Record<string, Agent> = {
   [BUN_LOCK]: BUN,
   [BUN_LOCKB]: BUN,

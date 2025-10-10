@@ -82,8 +82,8 @@ export default async function shadowPnpmBin(
   spinner?.start()
 
   if (needsScanning && !rawPnpmArgs.includes(FLAG_DRY_RUN)) {
-    const acceptRisks = !!constants.ENV['SOCKET_CLI_ACCEPT_RISKS']
-    const viewAllRisks = !!constants.ENV['SOCKET_CLI_VIEW_ALL_RISKS']
+    const acceptRisks = !!constants.ENV.SOCKET_CLI_ACCEPT_RISKS
+    const viewAllRisks = !!constants.ENV.SOCKET_CLI_VIEW_ALL_RISKS
 
     // Handle add and dlx commands with shared utility.
     if (isDlxCommand || isAddCommand(command)) {

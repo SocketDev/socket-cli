@@ -70,10 +70,10 @@ export function shadowNpmInstall(
       // Memory flags commented out.
       // ...constants.nodeMemoryFlags,
       ...(constants.ENV['INLINED_SOCKET_CLI_SENTRY_BUILD']
-        ? ['--require', constants.instrumentWithSentryPath]
+        ? ['--require', (constants as any).instrumentWithSentryPath]
         : []),
       '--require',
-      constants.shadowNpmInjectPath,
+      (constants as any).shadowNpmInjectPath || constants.shadowNpmPreloadArboristPath,
       agentExecPath,
       'install',
       // Avoid code paths for 'audit' and 'fund'.

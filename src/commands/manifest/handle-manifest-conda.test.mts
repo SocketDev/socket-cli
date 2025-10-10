@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { handleManifestConda } from './handle-manifest-conda.mts'
 
-// Mock the dependencies.
+// Mock the dependencies
 vi.mock('./convert-conda-to-requirements.mts', () => ({
   convertCondaToRequirements: vi.fn(),
 }))

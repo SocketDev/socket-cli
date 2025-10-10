@@ -21,7 +21,7 @@ import {
 
 import type FileSystem from 'mock-fs/lib/filesystem'
 
-// Mock dependencies for new tests.
+// Mock dependencies for new tests
 vi.mock('@socketsecurity/registry/lib/bin', async () => {
   const actual = await vi.importActual<
     typeof import('@socketsecurity/registry/lib/bin')

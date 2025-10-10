@@ -8,7 +8,7 @@ import {
   shouldSkipShadow,
 } from './dlx-detection.mts'
 
-// Mock the dependencies.
+// Mock the dependencies
 vi.mock('@socketsecurity/registry/lib/path', () => ({
   normalizePath: vi.fn((p: string) => p.replace(/\\/g, '/')),
 }))

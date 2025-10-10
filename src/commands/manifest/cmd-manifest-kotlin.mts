@@ -23,7 +23,7 @@ import type {
 //       makes sense to have separate commands for them and I think it makes
 //       sense for the help panels to note the requested language, rather than
 //       `socket manifest kotlin` to print help screens with `gradle` as the
-//       command. Room for improvement.
+//       command. Room for improvement
 const config: CliCommandConfig = {
   commandName: 'kotlin',
   description:

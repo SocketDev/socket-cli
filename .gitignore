@@ -24,6 +24,7 @@ Thumbs.db
 
 !/.vscode/extensions.json
 
-# Build directory for all build artifacts
-/build
-/binaries
+# Build outputs (keep build/patches in version control)
+/build/output
+/build/socket-node
+/.build

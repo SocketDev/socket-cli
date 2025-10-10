@@ -2,14 +2,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { idToNpmPurl, idToPurl, resolvePackageVersion } from './spec.mts'
 
-// Mock semver module.
+// Mock semver module
 vi.mock('semver', () => ({
   default: {
     coerce: vi.fn(),
   },
 }))
 
-// Mock pnpm utilities.
+// Mock pnpm utilities
 vi.mock('./pnpm.mts', () => ({
   stripPnpmPeerSuffix: vi.fn(v => v.replace(/_.*$/, '')),
 }))

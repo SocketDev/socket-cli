@@ -14,7 +14,7 @@ import {
 } from './socket-json.mts'
 import { SOCKET_JSON, SOCKET_WEBSITE_URL } from '../constants.mts'
 
-// Mock dependencies.
+// Mock dependencies
 vi.mock('node:fs', () => ({
   existsSync: vi.fn(),
   readFileSync: vi.fn(),

@@ -7,7 +7,7 @@ import { NPM, NPX } from '../constants.mts'
 
 import type { ShadowBinOptions } from './npm-base.mts'
 
-// Mock all dependencies.
+// Mock all dependencies
 const mockSpawn = vi.hoisted(() => vi.fn())
 const mockInstallNpmLinks = vi.hoisted(() => vi.fn())
 const mockInstallNpxLinks = vi.hoisted(() => vi.fn())
