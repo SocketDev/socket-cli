@@ -22,13 +22,14 @@ describe('handleQuota', () => {
       limit: 1000,
       percentage: 10,
     }
+    const mockResult = { ok: true, data: mockData }
 
-    vi.mocked(fetchQuota).mockResolvedValue(mockData)
+    vi.mocked(fetchQuota).mockResolvedValue(mockResult)
     vi.mocked(outputQuota).mockResolvedValue()
 
     await handleQuota()
 
-    expect(fetchQuota).toHaveBeenCalledOnce()
+    expect(fetchQuota).toHaveBeenCalledWith()
     expect(outputQuota).toHaveBeenCalledWith(mockData, 'text')
   })
 
@@ -38,13 +39,14 @@ describe('handleQuota', () => {
       limit: 1000,
       percentage: 50,
     }
+    const mockResult = { ok: true, data: mockData }
 
-    vi.mocked(fetchQuota).mockResolvedValue(mockData)
+    vi.mocked(fetchQuota).mockResolvedValue(mockResult)
     vi.mocked(outputQuota).mockResolvedValue()
 
     await handleQuota('json')
 
-    expect(fetchQuota).toHaveBeenCalledOnce()
+    expect(fetchQuota).toHaveBeenCalledWith()
     expect(outputQuota).toHaveBeenCalledWith(mockData, 'json')
   })
 
@@ -54,13 +56,14 @@ describe('handleQuota', () => {
       limit: 100,
       percentage: 0,
     }
+    const mockResult = { ok: true, data: mockData }
 
-    vi.mocked(fetchQuota).mockResolvedValue(mockData)
+    vi.mocked(fetchQuota).mockResolvedValue(mockResult)
     vi.mocked(outputQuota).mockResolvedValue()
 
     await handleQuota('markdown')
 
-    expect(fetchQuota).toHaveBeenCalledOnce()
+    expect(fetchQuota).toHaveBeenCalledWith()
     expect(outputQuota).toHaveBeenCalledWith(mockData, 'markdown')
   })
 
@@ -70,19 +73,20 @@ describe('handleQuota', () => {
       limit: 1000,
       percentage: 99.9,
     }
+    const mockResult = { ok: true, data: mockData }
 
-    vi.mocked(fetchQuota).mockResolvedValue(mockData)
+    vi.mocked(fetchQuota).mockResolvedValue(mockResult)
     vi.mocked(outputQuota).mockResolvedValue()
 
     await handleQuota('table')
 
-    expect(fetchQuota).toHaveBeenCalledOnce()
+    expect(fetchQuota).toHaveBeenCalledWith()
     expect(outputQuota).toHaveBeenCalledWith(mockData, 'table')
   })
 
   it('should propagate errors from fetchQuota', async () => {
-    const error = new Error('Network error')
-    vi.mocked(fetchQuota).mockRejectedValue(error)
+    const mockResult = { ok: false, message: 'Network error' }
+    vi.mocked(fetchQuota).mockResolvedValue(mockResult)
 
     await expect(handleQuota()).rejects.toThrow('Network error')
     expect(outputQuota).not.toHaveBeenCalled()
