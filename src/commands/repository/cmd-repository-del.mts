@@ -134,5 +134,5 @@ async function run(
     return
   }
 
-  await handleDeleteRepo(repoName, { force: false, outputKind })
+  await handleDeleteRepo(orgSlug, repoName, outputKind)
 }

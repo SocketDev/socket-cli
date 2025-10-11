@@ -2,25 +2,17 @@
  * @fileoverview Handler for deleting repositories.
  */
 
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { fetchDeleteRepo } from './fetch-delete-repo.mts'
+import { outputDeleteRepo } from './output-delete-repo.mts'
 
 import type { OutputKind } from '../../types.mts'
 
-/**
- * Handle repository deletion.
- */
 export async function handleDeleteRepo(
-  nameOrId: string,
-  options: {
-    force?: boolean
-    outputKind: OutputKind
-  },
+  orgSlug: string,
+  repoName: string,
+  outputKind: OutputKind,
 ): Promise<void> {
-  // TODO: Implement actual repository deletion
-  if (!options.force) {
-    logger.warn(`Would delete repository: ${nameOrId}`)
-    logger.log('Use --force to actually delete')
-  } else {
-    logger.log(`Deleting repository: ${nameOrId}`)
-  }
+  const data = await fetchDeleteRepo(orgSlug, repoName)
+
+  await outputDeleteRepo(data, repoName, outputKind)
 }
