@@ -12,7 +12,7 @@ export type FetchOrganizationOptions = BaseFetchOptions & {
 }
 
 export type EnterpriseOrganization = Omit<Organization, 'plan'> & {
-  plan: 'enterprise'
+  plan: `enterprise${string}`
 }
 
 export type EnterpriseOrganizations = EnterpriseOrganization[]

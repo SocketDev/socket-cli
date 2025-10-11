@@ -8,7 +8,7 @@ import type {
 export function getEnterpriseOrgs(
   orgs: Organizations,
 ): EnterpriseOrganizations {
-  return orgs.filter(o => o.plan === 'enterprise') as EnterpriseOrganizations
+  return orgs.filter(o => o.plan.includes('enterprise')) as EnterpriseOrganizations
 }
 
 export function getOrgSlugs(orgs: Organizations): string[] {
