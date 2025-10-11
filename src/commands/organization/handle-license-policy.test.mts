@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { handleLicensePolicy } from './handle-license-policy.mts'
 
@@ -13,6 +13,10 @@ vi.mock('./output-license-policy.mts', () => ({
 }))
 
 describe('handleLicensePolicy', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
   it('handles successful license policy fetch', async () => {
     const { fetchLicensePolicy } = await import('./fetch-license-policy.mts')
     const { outputLicensePolicy } = await import('./output-license-policy.mts')
@@ -31,7 +35,7 @@ describe('handleLicensePolicy', () => {
     await handleLicensePolicy('test-org', 'json')
 
     expect(mockFetch).toHaveBeenCalledWith('test-org')
-    expect(mockOutput).toHaveBeenCalledWith(mockResult, 'json')
+    expect(mockOutput).toHaveBeenCalledWith(mockResult.data, 'json')
   })
 
   it('handles failed license policy fetch', async () => {
@@ -42,14 +46,14 @@ describe('handleLicensePolicy', () => {
 
     const mockResult = {
       ok: false,
-      error: 'Unauthorized',
+      message: 'Unauthorized',
     }
     mockFetch.mockResolvedValue(mockResult)
 
-    await handleLicensePolicy('test-org', 'text')
+    await expect(handleLicensePolicy('test-org', 'text')).rejects.toThrow('Unauthorized')
 
     expect(mockFetch).toHaveBeenCalledWith('test-org')
-    expect(mockOutput).toHaveBeenCalledWith(mockResult, 'text')
+    expect(mockOutput).not.toHaveBeenCalled()
   })
 
   it('handles markdown output format', async () => {
