@@ -9,21 +9,21 @@ import type { OutputKind } from '../../types.mts'
 export async function handleDependencies({
   limit,
   offset,
+  orgSlug,
   outputKind,
 }: {
+  orgSlug: string
   limit: number
   offset: number
   outputKind: OutputKind
 }): Promise<void> {
   debugFn(
     'notice',
-    `Fetching dependencies with limit=${limit}, offset=${offset}`,
+    `Fetching dependencies for ${orgSlug} with limit=${limit}, offset=${offset}`,
   )
-  debugDir('inspect', { limit, offset, outputKind })
+  debugDir('inspect', { orgSlug, limit, offset, outputKind })
 
-  // TODO: Get orgSlug from config or context
-  const orgSlug = 'default-org'
-  const result = await fetchDependencies(orgSlug)
+  const result = await fetchDependencies(orgSlug, { limit, offset })
 
   debugFn(
     'notice',

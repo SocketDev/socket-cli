@@ -6,6 +6,7 @@ import { handleDependencies } from './handle-dependencies.mts'
 import constants, { FLAG_JSON, FLAG_MARKDOWN } from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
+import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import {
@@ -53,6 +54,11 @@ async function run(
         default: 0,
         description: 'Page number',
       },
+      org: {
+        type: 'string',
+        description:
+          'Force override the organization slug, overrides the default org from config',
+      },
       ...outputFlags,
     },
     help: (command, config) => `
@@ -78,20 +84,38 @@ async function run(
     importMeta,
   })
 
-  const { json, limit, markdown, offset } = cli.flags
+  const { json, limit, markdown, offset, org: orgFlag } = cli.flags
 
   const dryRun = !!cli.flags['dryRun']
+  // Default to interactive for consistency
+  const interactive = true
 
   const outputKind = getOutputKind(json, markdown)
 
+  const { 0: orgSlug } = await determineOrgSlug(
+    String(orgFlag || ''),
+    interactive,
+    dryRun,
+  )
+
   // Input validations (run even in dry-run mode)
   const wasValidInput = checkCommandInput(outputKind, {
+    nook: true,
+    test: !!orgSlug,
+    message: 'Unable to determine organization slug',
+    fail: 'missing',
+  })
+  if (!wasValidInput) {
+    return
+  }
+
+  const wasValidFlags = checkCommandInput(outputKind, {
     nook: true,
     test: !json || !markdown,
     message: `The \`${FLAG_JSON}\` and \`${FLAG_MARKDOWN}\` flags can not be used at the same time`,
     fail: 'bad',
   })
-  if (!wasValidInput) {
+  if (!wasValidFlags) {
     return
   }
 
@@ -114,6 +138,7 @@ async function run(
   }
 
   await handleDependencies({
+    orgSlug,
     limit: Number(limit || 0) || 0,
     offset: Number(offset || 0) || 0,
     outputKind,
