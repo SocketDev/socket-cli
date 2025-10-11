@@ -1,18 +1,27 @@
 /** @fileoverview Consolidated repository commands using DRY utilities */
 
-import colors from 'yoctocolors-cjs'
+// import colors from 'yoctocolors-cjs'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
+// import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { repoApi } from '../../utils/api-wrapper.mts'
-import { buildCommand, buildParentCommand } from '../../utils/command-builder.mts'
-import { runStandardValidations } from '../../utils/common-validations.mts'
-import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
-import { getOutputKind } from '../../utils/get-output-kind.mts'
-import { commonColumns, outputPaginatedList, simpleOutput } from '../../utils/simple-output.mts'
+// import { repoApi } from '../../utils/api-wrapper.mts'
+// import { buildCommand, buildParentCommand } from '../../utils/command-builder.mts'
+// import { runStandardValidations } from '../../utils/common-validations.mts'
+// import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
+// import { getOutputKind } from '../../utils/get-output-kind.mts'
+// import { commonColumns, outputPaginatedList, simpleOutput } from '../../utils/simple-output.mts'
+
+// Use the original implementations that properly handle help and command delegation
+import { cmdRepositoryCreate as cmdOriginalCreate } from './cmd-repository-create.mts'
+import { cmdRepositoryDel as cmdOriginalDel } from './cmd-repository-del.mts'
+import { cmdRepositoryList as cmdOriginalList } from './cmd-repository-list.mts'
+import { cmdRepositoryUpdate as cmdOriginalUpdate } from './cmd-repository-update.mts'
+import { cmdRepositoryView as cmdOriginalView } from './cmd-repository-view.mts'
+import { cmdRepository as cmdOriginalRepository } from './cmd-repository.mts'
 
 
 
+/*
 // List repositories
 const cmdList = buildCommand({
   name: 'list',
@@ -323,24 +332,28 @@ const cmdUpdate = buildCommand({
     })
   },
 })
+*/
 
 // Export parent command with subcommands
-export const cmdRepository = buildParentCommand({
-  name: 'repository',
-  description: 'Manage Socket repositories',
-  subcommands: {
-    list: cmdList,
-    create: cmdCreate,
-    del: cmdDelete,
-    view: cmdView,
-    update: cmdUpdate,
-  },
-  defaultSubcommand: 'list',
-})
+// export const cmdRepository = buildParentCommand({
+//   name: 'repository',
+//   description: 'Manage Socket repositories',
+//   subcommands: {
+//     list: cmdList,
+//     create: cmdCreate,
+//     del: cmdDelete,
+//     view: cmdView,
+//     update: cmdUpdate,
+//   },
+//   defaultSubcommand: 'list',
+// })
+
+// Export the original repository command which properly uses meowWithSubcommands
+export const cmdRepository = cmdOriginalRepository
 
 // Export individual commands for compatibility
-export { cmdList as cmdRepositoryList }
-export { cmdCreate as cmdRepositoryCreate }
-export { cmdDelete as cmdRepositoryDel }
-export { cmdView as cmdRepositoryView }
-export { cmdUpdate as cmdRepositoryUpdate }
+export { cmdOriginalList as cmdRepositoryList }
+export { cmdOriginalCreate as cmdRepositoryCreate }
+export { cmdOriginalDel as cmdRepositoryDel }
+export { cmdOriginalView as cmdRepositoryView }
+export { cmdOriginalUpdate as cmdRepositoryUpdate }

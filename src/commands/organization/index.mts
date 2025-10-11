@@ -1,20 +1,26 @@
 /** @fileoverview Consolidated organization commands using DRY utilities */
 
-import colors from 'yoctocolors-cjs'
+// Most imports commented out as they're used in the commented buildCommand code
+// import colors from 'yoctocolors-cjs'
+// import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
+// Import original organization command implementation
+import { cmdOrganizationDependencies } from './cmd-organization-dependencies.mts'
+import { cmdOrganizationList } from './cmd-organization-list.mts'
+import { cmdOrganizationPolicyLicense } from './cmd-organization-policy-license.mts'
+import { cmdOrganizationPolicySecurity } from './cmd-organization-policy-security.mts'
+import { cmdOrganizationQuota } from './cmd-organization-quota.mts'
+import { cmdOrganization as cmdOriginalOrganization } from './cmd-organization.mts'
+// import { orgApi } from '../../utils/api-wrapper.mts'
+// import { buildCommand, buildParentCommand } from '../../utils/command-builder.mts'
+// import { runStandardValidations } from '../../utils/common-validations.mts'
+// import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
+// import { getOutputKind } from '../../utils/get-output-kind.mts'
+// import { commonColumns, simpleOutput } from '../../utils/simple-output.mts'
+// import type { QuotaData } from '../../utils/api-types.mts'
 
-import { orgApi } from '../../utils/api-wrapper.mts'
-import { buildCommand, buildParentCommand } from '../../utils/command-builder.mts'
-import { runStandardValidations } from '../../utils/common-validations.mts'
-import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
-import { getOutputKind } from '../../utils/get-output-kind.mts'
-import { commonColumns, simpleOutput } from '../../utils/simple-output.mts'
-
-import type { QuotaData } from '../../utils/api-types.mts'
-
-// List organizations
-const cmdList = buildCommand({
+// List organizations (commented - using original implementation)
+/* const cmdList = buildCommand({
   name: 'list',
   description: 'List all organizations',
   includeOutputFlags: true,
@@ -51,10 +57,10 @@ const cmdList = buildCommand({
       emptyMessage: 'No organizations found',
     })
   },
-})
+}) */
 
-// Organization dependencies
-const cmdDependencies = buildCommand({
+// Organization dependencies (commented - using original implementation)
+/* const cmdDependencies = buildCommand({
   name: 'dependencies',
   description: 'View organization dependencies',
   includeOutputFlags: true,
@@ -102,10 +108,10 @@ const cmdDependencies = buildCommand({
       emptyMessage: 'No dependencies found',
     })
   },
-})
+}) */
 
-// Organization quota
-const cmdQuota = buildCommand({
+// Organization quota (commented - using original implementation)
+/* const cmdQuota = buildCommand({
   name: 'quota',
   description: 'View organization quota and usage',
   includeOutputFlags: true,
@@ -162,10 +168,10 @@ const cmdQuota = buildCommand({
       },
     })
   },
-})
+}) */
 
-// Security policy
-const cmdSecurityPolicy = buildCommand({
+// Security policy (commented - using original implementation)
+/* const cmdSecurityPolicy = buildCommand({
   name: 'security',
   description: 'View organization security policy',
   includeOutputFlags: true,
@@ -223,10 +229,10 @@ const cmdSecurityPolicy = buildCommand({
       },
     })
   },
-})
+}) */
 
-// License policy
-const cmdLicensePolicy = buildCommand({
+// License policy (commented - using original implementation)
+/* const cmdLicensePolicy = buildCommand({
   name: 'license',
   description: 'View organization license policy',
   includeOutputFlags: true,
@@ -280,34 +286,24 @@ const cmdLicensePolicy = buildCommand({
       },
     })
   },
-})
+}) */
 
-// Policy parent command
-const cmdPolicy = buildParentCommand({
+// Policy parent command (commented - using original implementation)
+/* const cmdPolicy = buildParentCommand({
   name: 'policy',
   description: 'Manage organization policies',
   subcommands: {
     security: cmdSecurityPolicy,
     license: cmdLicensePolicy,
   },
-})
+}) */
 
-// Export parent command with subcommands
-export const cmdOrganization = buildParentCommand({
-  name: 'organization',
-  description: 'Manage Socket organizations',
-  subcommands: {
-    list: cmdList,
-    dependencies: cmdDependencies,
-    quota: cmdQuota,
-    policy: cmdPolicy,
-  },
-  defaultSubcommand: 'list',
-})
+// Export the original organization command which properly uses meowWithSubcommands
+export const cmdOrganization = cmdOriginalOrganization
 
-// Export individual commands for compatibility
-export { cmdList as cmdOrganizationList }
-export { cmdDependencies as cmdOrganizationDependencies }
-export { cmdQuota as cmdOrganizationQuota }
-export { cmdSecurityPolicy as cmdOrganizationPolicySecurity }
-export { cmdLicensePolicy as cmdOrganizationPolicyLicense }
+// Re-export individual commands that are already imported
+export { cmdOrganizationDependencies }
+export { cmdOrganizationList }
+export { cmdOrganizationQuota }
+export { cmdOrganizationPolicySecurity }
+export { cmdOrganizationPolicyLicense }

@@ -4,13 +4,17 @@ import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
+import { cmdPackageScore as cmdOriginalScore } from './cmd-package-score.mts'
+import { cmdPackageShallow as cmdOriginalShallow } from './cmd-package-shallow.mts'
 import { packageApi } from '../../utils/api-wrapper.mts'
-import { buildCommand, buildParentCommand } from '../../utils/command-builder.mts'
+import { buildCommand } from '../../utils/command-builder.mts'
 import { runStandardValidations } from '../../utils/common-validations.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
-import { displayExpandableError, formatExpandableList } from '../../utils/interactive-expand.mts'
-import { Spinner } from '../../utils/rich-progress.mts'
+// import { formatExpandableList } from '../../utils/interactive-expand.mts' // Used in commented code
+import { meowWithSubcommands } from '../../utils/meow-with-subcommands.mts'
 import { simpleOutput } from '../../utils/simple-output.mts'
+
+import type { CliSubcommand } from '../../utils/meow-with-subcommands.mts'
 
 
 
@@ -60,8 +64,8 @@ function parsePackageSpec(spec: string): { ecosystem: string; name: string; vers
   }
 }
 
-// Get package score
-const cmdScore = buildCommand({
+// Get package score (kept for reference but not used - using original implementation)
+/* const cmdScore = buildCommand({
   name: 'score',
   description: 'Get security score for a package',
   args: '<package>',
@@ -177,7 +181,7 @@ const cmdScore = buildCommand({
       },
     })
   },
-})
+}) */
 
 // Get package issues
 const cmdIssues = buildCommand({
@@ -285,8 +289,8 @@ const cmdIssues = buildCommand({
   },
 })
 
-// Package shallow analysis (quick check)
-const cmdShallow = buildCommand({
+// Package shallow analysis (quick check) - not used, using original implementation
+/* const cmdShallow = buildCommand({
   name: 'shallow',
   description: 'Quick security check for a package',
   args: '<package>',
@@ -365,21 +369,40 @@ const cmdShallow = buildCommand({
       },
     })
   },
-})
+}) */
 
 // Export parent command with subcommands
-export const cmdPackage = buildParentCommand({
-  name: 'package',
+export const cmdPackage: CliSubcommand = {
   description: 'Analyze package security',
-  subcommands: {
-    score: cmdScore,
-    issues: cmdIssues,
-    shallow: cmdShallow,
+  hidden: false,
+  async run(argv, importMeta, { parentName }) {
+    await meowWithSubcommands(
+      {
+        argv,
+        name: `${parentName} package`,
+        importMeta,
+        subcommands: {
+          score: cmdOriginalScore,
+          // Keep the new issues implementation
+          issues: cmdIssues,
+          shallow: cmdOriginalShallow,
+        },
+      },
+      {
+        aliases: {
+          deep: {
+            description: 'Get security score for a package',
+            hidden: true,
+            argv: ['score'],
+          },
+        },
+        description: 'Analyze package security',
+      },
+    )
   },
-  defaultSubcommand: 'score',
-})
+}
 
 // Export individual commands for compatibility
-export { cmdScore as cmdPackageScore }
+export { cmdOriginalScore as cmdPackageScore }
 export { cmdIssues as cmdPackageIssues }
-export { cmdShallow as cmdPackageShallow }
+export { cmdOriginalShallow as cmdPackageShallow }
