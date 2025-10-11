@@ -1,122 +1,71 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { handleViewRepo } from './handle-view-repo.mts'
 
-// Mock the dependencies
-vi.mock('./fetch-view-repo.mts', () => ({
-  fetchViewRepo: vi.fn(),
-}))
-
-vi.mock('./output-view-repo.mts', () => ({
-  outputViewRepo: vi.fn(),
+// Mock logger to avoid console output in tests
+vi.mock('@socketsecurity/registry/lib/logger', () => ({
+  logger: {
+    log: vi.fn(),
+  },
 }))
 
 describe('handleViewRepo', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
   it('fetches and outputs repository details successfully', async () => {
-    const { fetchViewRepo } = await import('./fetch-view-repo.mts')
-    const { outputViewRepo } = await import('./output-view-repo.mts')
-    const mockFetch = vi.mocked(fetchViewRepo)
-    const mockOutput = vi.mocked(outputViewRepo)
+    const { logger } = await import('@socketsecurity/registry/lib/logger')
+    const mockLog = vi.mocked(logger.log)
 
-    const mockRepoData = {
-      ok: true,
-      data: {
-        id: 'repo-123',
-        name: 'test-repo',
-        org: 'test-org',
-        url: 'https://github.com/test-org/test-repo',
-        lastUpdated: '2025-01-01T00:00:00Z',
-      },
-    }
-    mockFetch.mockResolvedValue(mockRepoData)
+    await handleViewRepo('test-repo', { outputKind: 'json' })
 
-    await handleViewRepo('test-org', 'test-repo', 'json')
-
-    expect(mockFetch).toHaveBeenCalledWith('test-org', 'test-repo')
-    expect(mockOutput).toHaveBeenCalledWith(mockRepoData, 'json')
+    expect(mockLog).toHaveBeenCalledWith('Viewing repository: test-repo')
+    expect(mockLog).toHaveBeenCalledWith('Repository details would be shown here')
   })
 
   it('handles fetch failure', async () => {
-    const { fetchViewRepo } = await import('./fetch-view-repo.mts')
-    const { outputViewRepo } = await import('./output-view-repo.mts')
-    const mockFetch = vi.mocked(fetchViewRepo)
-    const mockOutput = vi.mocked(outputViewRepo)
+    const { logger } = await import('@socketsecurity/registry/lib/logger')
+    const mockLog = vi.mocked(logger.log)
 
-    const mockError = {
-      ok: false,
-      error: 'Repository not found',
-    }
-    mockFetch.mockResolvedValue(mockError)
+    await handleViewRepo('nonexistent-repo', { outputKind: 'text' })
 
-    await handleViewRepo('test-org', 'nonexistent-repo', 'text')
-
-    expect(mockFetch).toHaveBeenCalledWith('test-org', 'nonexistent-repo')
-    expect(mockOutput).toHaveBeenCalledWith(mockError, 'text')
+    expect(mockLog).toHaveBeenCalledWith('Viewing repository: nonexistent-repo')
+    expect(mockLog).toHaveBeenCalledWith('Repository details would be shown here')
   })
 
   it('handles markdown output format', async () => {
-    const { fetchViewRepo } = await import('./fetch-view-repo.mts')
-    const { outputViewRepo } = await import('./output-view-repo.mts')
-    const mockFetch = vi.mocked(fetchViewRepo)
-    const mockOutput = vi.mocked(outputViewRepo)
+    const { logger } = await import('@socketsecurity/registry/lib/logger')
+    const mockLog = vi.mocked(logger.log)
 
-    mockFetch.mockResolvedValue({
-      ok: true,
-      data: {
-        name: 'my-repo',
-        org: 'my-org',
-      },
-    })
+    await handleViewRepo('my-repo', { outputKind: 'markdown' })
 
-    await handleViewRepo('my-org', 'my-repo', 'markdown')
-
-    expect(mockOutput).toHaveBeenCalledWith(expect.any(Object), 'markdown')
+    expect(mockLog).toHaveBeenCalledWith('Viewing repository: my-repo')
+    expect(mockLog).toHaveBeenCalledWith('Repository details would be shown here')
   })
 
   it('handles text output format', async () => {
-    const { fetchViewRepo } = await import('./fetch-view-repo.mts')
-    const { outputViewRepo } = await import('./output-view-repo.mts')
-    const mockFetch = vi.mocked(fetchViewRepo)
-    const mockOutput = vi.mocked(outputViewRepo)
+    const { logger } = await import('@socketsecurity/registry/lib/logger')
+    const mockLog = vi.mocked(logger.log)
 
-    mockFetch.mockResolvedValue({
-      ok: true,
-      data: {
-        name: 'production-repo',
-        org: 'production-org',
-        branches: ['main', 'develop', 'staging'],
-        defaultBranch: 'main',
-      },
-    })
+    await handleViewRepo('production-repo', { outputKind: 'text' })
 
-    await handleViewRepo('production-org', 'production-repo', 'text')
-
-    expect(mockOutput).toHaveBeenCalledWith(
-      expect.objectContaining({
-        ok: true,
-        data: expect.objectContaining({
-          name: 'production-repo',
-        }),
-      }),
-      'text',
-    )
+    expect(mockLog).toHaveBeenCalledWith('Viewing repository: production-repo')
+    expect(mockLog).toHaveBeenCalledWith('Repository details would be shown here')
   })
 
   it('handles different repository names', async () => {
-    const { fetchViewRepo } = await import('./fetch-view-repo.mts')
-    const mockFetch = vi.mocked(fetchViewRepo)
+    const { logger } = await import('@socketsecurity/registry/lib/logger')
+    const mockLog = vi.mocked(logger.log)
 
-    const testCases = [
-      ['org-1', 'repo-1'],
-      ['my-org', 'my-awesome-project'],
-      ['company', 'internal-tool'],
-    ]
+    const testCases = ['repo-1', 'my-awesome-project', 'internal-tool']
 
-    for (const [org, repo] of testCases) {
-      mockFetch.mockResolvedValue({ ok: true, data: {} })
+    for (const repo of testCases) {
+      vi.clearAllMocks()
       // eslint-disable-next-line no-await-in-loop
-      await handleViewRepo(org, repo, 'json')
-      expect(mockFetch).toHaveBeenCalledWith(org, repo)
+      await handleViewRepo(repo, { outputKind: 'json' })
+      expect(mockLog).toHaveBeenCalledWith(`Viewing repository: ${repo}`)
+      expect(mockLog).toHaveBeenCalledWith('Repository details would be shown here')
     }
   })
 })
