@@ -34,7 +34,7 @@ export async function createTempFixture(
   if (cleanupHook) {
     cleanupHook(async () => {
       try {
-        await deleteAsync(tempDir)
+        await deleteAsync(tempDir, { force: true })
       } catch {
         // Ignore cleanup errors in tests.
       }
@@ -70,7 +70,7 @@ export async function createTempFixtures(
     cleanupHook(async () => {
       await Promise.all(
         tempDirs.map(dir =>
-          deleteAsync(dir).catch(() => {
+          deleteAsync(dir, { force: true }).catch(() => {
             // Ignore cleanup errors.
           }),
         ),
@@ -96,7 +96,7 @@ export async function withTempFixture(fixturePath: string): Promise<{
 
   const cleanup = async () => {
     try {
-      await deleteAsync(tempDir)
+      await deleteAsync(tempDir, { force: true })
     } catch {
       // Ignore cleanup errors.
     }

@@ -19,18 +19,15 @@
  * - stripHelpFlags: Remove help flags (-h, --help)
  *
  * External Tool Integration:
- * - forwardToSfw: Forward commands to Socket Firewall (sfw) via npx
+ * - forwardToSfw: Forward commands to Socket Firewall (sfw) via Socket's shadow runner
  */
 
-import { spawn } from '@socketsecurity/registry/lib/spawn'
-
-import constants, { FLAG_CONFIG, FLAG_HELP } from '../constants.mts'
+import { FLAG_CONFIG, FLAG_HELP } from '../constants.mts'
+import { runShadowCommand } from './shadow-runner.mts'
 import { camelToKebab } from './strings.mts'
 
 import type { MeowFlags } from '../flags.mts'
 import type { CResult } from '../types.mts'
-
-const { WIN32 } = constants
 
 const CONFIG_FLAG_LONG_NAME = FLAG_CONFIG
 const CONFIG_FLAG_ASSIGNMENT = `${CONFIG_FLAG_LONG_NAME}=`
@@ -232,7 +229,8 @@ export function isYarnLockfileScanCommand(command: string): boolean {
 }
 
 /**
- * Forward a command to Socket Firewall (sfw) via npx.
+ * Forward a command to Socket Firewall (sfw) via our shadow command runner.
+ * Uses Socket's internal dlx execution which handles caching and consistent behavior.
  *
  * @param tool - The tool name to forward to sfw (e.g., 'yarn', 'cargo', 'pip')
  * @param args - Arguments to forward to the tool
@@ -242,17 +240,19 @@ export async function forwardToSfw(
   tool: string,
   args: string[] | readonly string[],
 ): Promise<CResult<void>> {
-  const result = await spawn('npx', ['sfw', tool, ...args], {
-    shell: WIN32,
+  // Use runShadowCommand to execute sfw with the tool and arguments
+  // This uses Socket's internal package execution system which will
+  // download and cache sfw as needed
+  const result = await runShadowCommand('sfw', [tool, ...args], {
     stdio: 'inherit',
   })
 
-  if (result.code !== 0) {
+  if (!result.ok) {
     return {
       ok: false,
       code: result.code || 1,
       data: undefined,
-      message: `${tool} exited with code ${result.code}`,
+      message: result.message || `${tool} exited with code ${result.code}`,
     }
   }
 

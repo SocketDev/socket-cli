@@ -1,5 +1,6 @@
 /** @fileoverview Simplified output formatter to DRY out repetitive output-*.mts files */
 
+// @ts-ignore - Type definitions in src/types/chalk-table.d.ts
 import chalkTable from 'chalk-table'
 import colors from 'yoctocolors-cjs'
 

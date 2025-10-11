@@ -250,5 +250,8 @@
     "ignore-type-assertion": true,
     "ignore-files": "test/*",
     "strict": true
+  },
+  "dependencies": {
+    "lodash": "^4.17.21"
   }
 }

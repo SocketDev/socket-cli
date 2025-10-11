@@ -83,7 +83,7 @@ async function run(
   // Exception: Keep --dry-run to forward to yarn (yarn supports --dry-run natively)
   const argsToForward = filterFlags(argv, commonFlags, ['dry-run'])
 
-  // Forward arguments to sfw (Socket Firewall) via npx.
+  // Forward arguments to sfw (Socket Firewall) via our shadow runner.
   const result = await forwardToSfw('yarn', argsToForward)
 
   if (!result.ok) {
