@@ -13,7 +13,6 @@ vi.mock('@socketsecurity/registry/lib/logger', () => ({
   },
 }))
 
-
 vi.mock('./sdk.mts', () => ({
   getPublicApiToken: vi.fn(),
   setupSdk: vi.fn(() => ({

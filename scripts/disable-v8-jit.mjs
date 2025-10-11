@@ -43,13 +43,13 @@ async function modifyGypi() {
   // Disable Sparkplug
   content = content.replace(
     /^(\s*)'v8_enable_sparkplug%':\s*1,$/m,
-    "$1'v8_enable_sparkplug%': 0,  # Disabled by Socket CLI code mod"
+    "$1'v8_enable_sparkplug%': 0,  # Disabled by Socket CLI code mod",
   )
 
   // Disable Turbofan
   content = content.replace(
     /^(\s*)'v8_enable_turbofan%':\s*1,$/m,
-    "$1'v8_enable_turbofan%': 0,  # Disabled by Socket CLI code mod"
+    "$1'v8_enable_turbofan%': 0,  # Disabled by Socket CLI code mod",
   )
 
   await writeFile(V8_GYPI, content, 'utf-8')

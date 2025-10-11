@@ -2,7 +2,10 @@
 
 import { buildCommand } from '../../utils/command-builder.mts'
 import { repoApi } from '../../utils/api-wrapper.mts'
-import { outputPaginatedList, commonColumns } from '../../utils/simple-output.mts'
+import {
+  outputPaginatedList,
+  commonColumns,
+} from '../../utils/simple-output.mts'
 import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
@@ -88,7 +91,9 @@ export const cmdRepositoryListSimplified = buildCommand({
         fail: 'bad',
       },
     )
-    if (!wasValidInput) return
+    if (!wasValidInput) {
+      return
+    }
 
     // Dry run check
     if (dryRun) {
@@ -114,25 +119,31 @@ export const cmdRepositoryListSimplified = buildCommand({
     })
 
     // Calculate next page
-    const nextPage = result.ok && result.data.length === perPage ? page + 1 : null
+    const nextPage =
+      result.ok && result.data.length === perPage ? page + 1 : null
 
     // Output
-    outputPaginatedList(result, outputKind, {
-      page,
-      perPage: actualPerPage,
-      nextPage,
-      sort,
-      direction,
-    }, {
-      columns: [
-        commonColumns.id,
-        commonColumns.name,
-        { field: 'visibility', name: colors.magenta('Visibility') },
-        { field: 'default_branch', name: colors.magenta('Default Branch') },
-        commonColumns.boolean('archived', 'Archived'),
-      ],
-      getRows: data => data as any[],
-      emptyMessage: 'No repositories found',
-    })
+    outputPaginatedList(
+      result,
+      outputKind,
+      {
+        page,
+        perPage: actualPerPage,
+        nextPage,
+        sort,
+        direction,
+      },
+      {
+        columns: [
+          commonColumns.id,
+          commonColumns.name,
+          { field: 'visibility', name: colors.magenta('Visibility') },
+          { field: 'default_branch', name: colors.magenta('Default Branch') },
+          commonColumns.boolean('archived', 'Archived'),
+        ],
+        getRows: data => data as any[],
+        emptyMessage: 'No repositories found',
+      },
+    )
   },
 })

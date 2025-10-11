@@ -1,6 +1,10 @@
 /** @fileoverview Simplified tests for repository list command */
 
-import { buildCommandTests, commonTests, mockApiResponse } from '../../test/test-builder.mts'
+import {
+  buildCommandTests,
+  commonTests,
+  mockApiResponse,
+} from '../../test/test-builder.mts'
 
 const mockRepos = [
   {
@@ -90,8 +94,11 @@ buildCommandTests(
       setup: () => {
         mockApiResponse(global.mockSdk, 'getOrgRepoList', mockRepos)
       },
-      validate: (stubs) => {
-        expect(stubs.sdk.getOrgRepoList).toHaveBeenCalledWith('custom-org', expect.any(Object))
+      validate: stubs => {
+        expect(stubs.sdk.getOrgRepoList).toHaveBeenCalledWith(
+          'custom-org',
+          expect.any(Object),
+        )
       },
     },
   ],

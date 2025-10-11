@@ -28,7 +28,9 @@ const helpCategories: HelpCategory[] = [
       logger.log('  socket scan report           Generate scan report')
       logger.log('')
       logger.log(colors.gray('Options:'))
-      logger.log('  --prod                       Scan production dependencies only')
+      logger.log(
+        '  --prod                       Scan production dependencies only',
+      )
       logger.log('  --reach                      Enable reachability analysis')
       logger.log('  --json                       Output as JSON')
       logger.log('')
@@ -51,7 +53,9 @@ const helpCategories: HelpCategory[] = [
       logger.log('  socket optimize              Optimize dependencies')
       logger.log('')
       logger.log(colors.gray('Fix Options:'))
-      logger.log('  --dry-run                    Preview changes without applying')
+      logger.log(
+        '  --dry-run                    Preview changes without applying',
+      )
       logger.log('  --auto                       Auto-apply safe fixes')
       logger.log('  --severity=high              Minimum severity to fix')
       logger.log('  --pin                        Pin to exact versions')
@@ -267,7 +271,9 @@ const helpCategories: HelpCategory[] = [
 export async function showInteractiveHelp(): Promise<void> {
   // Show header
   logger.log('')
-  logger.log(colors.bold(colors.cyan('⚡ Socket CLI - Secure your supply chain')))
+  logger.log(
+    colors.bold(colors.cyan('⚡ Socket CLI - Secure your supply chain')),
+  )
   logger.log('')
 
   // If not interactive, show categories and exit
@@ -275,9 +281,15 @@ export async function showInteractiveHelp(): Promise<void> {
     logger.log('What can I help you with?\n')
     showCategoryList()
     logger.log('')
-    logger.log(colors.gray('Run with an interactive terminal to select a category'))
+    logger.log(
+      colors.gray('Run with an interactive terminal to select a category'),
+    )
     logger.log(colors.gray('Or use: socket --help=<category>'))
-    logger.log(colors.gray('Categories: scan, fix, pm, pkg, org, config, ask, all, quick'))
+    logger.log(
+      colors.gray(
+        'Categories: scan, fix, pm, pkg, org, config, ask, all, quick',
+      ),
+    )
     return
   }
 
@@ -290,7 +302,9 @@ export async function showInteractiveHelp(): Promise<void> {
       showCategoryList()
       logger.log('')
 
-      const answer = await rl.question(colors.cyan('Enter number or press Enter to exit: '))
+      const answer = await rl.question(
+        colors.cyan('Enter number or press Enter to exit: '),
+      )
 
       if (!answer || answer.toLowerCase() === 'q') {
         logger.log(colors.gray('\nFor more info: socket <command> --help'))
@@ -303,7 +317,9 @@ export async function showInteractiveHelp(): Promise<void> {
         category.content()
         logger.log('')
 
-        const again = await rl.question(colors.gray('Press Enter to continue or q to quit: '))
+        const again = await rl.question(
+          colors.gray('Press Enter to continue or q to quit: '),
+        )
         if (again.toLowerCase() === 'q') {
           break
         }
@@ -329,9 +345,10 @@ function showCategoryList(): void {
  * Show help for a specific category (non-interactive)
  */
 export function showCategoryHelp(category: string): boolean {
-  const cat = helpCategories.find(c =>
-    c.key === category ||
-    c.title.toLowerCase().includes(category.toLowerCase())
+  const cat = helpCategories.find(
+    c =>
+      c.key === category ||
+      c.title.toLowerCase().includes(category.toLowerCase()),
   )
 
   if (cat) {
@@ -341,20 +358,20 @@ export function showCategoryHelp(category: string): boolean {
 
   // Check for special shortcuts
   const shortcuts: Record<string, string> = {
-    'scanning': 'scan',
-    'vulnerabilities': 'scan',
-    'fixing': 'fix',
-    'patches': 'fix',
-    'npm': 'pm',
-    'yarn': 'pm',
-    'pnpm': 'pm',
-    'packages': 'pkg',
-    'orgs': 'org',
-    'repos': 'org',
-    'settings': 'config',
-    'env': 'config',
-    'natural': 'ask',
-    'start': 'quick',
+    scanning: 'scan',
+    vulnerabilities: 'scan',
+    fixing: 'fix',
+    patches: 'fix',
+    npm: 'pm',
+    yarn: 'pm',
+    pnpm: 'pm',
+    packages: 'pkg',
+    orgs: 'org',
+    repos: 'org',
+    settings: 'config',
+    env: 'config',
+    natural: 'ask',
+    start: 'quick',
   }
 
   const shortcut = shortcuts[category.toLowerCase()]

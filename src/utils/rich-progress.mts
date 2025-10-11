@@ -59,9 +59,15 @@ export class MultiProgress {
   /**
    * Update task progress
    */
-  updateTask(id: string, current: number, tokens?: Record<string, string>): void {
+  updateTask(
+    id: string,
+    current: number,
+    tokens?: Record<string, string>,
+  ): void {
     const task = this.tasks.get(id)
-    if (!task) return
+    if (!task) {
+      return
+    }
 
     task.current = current
     task.status = 'running'
@@ -81,7 +87,9 @@ export class MultiProgress {
    */
   failTask(id: string, error?: string): void {
     const task = this.tasks.get(id)
-    if (!task) return
+    if (!task) {
+      return
+    }
 
     task.status = 'failed'
     task.tokens = { error: error || 'Failed' }
@@ -147,7 +155,8 @@ export class MultiProgress {
    * Render a single task
    */
   private renderTask(task: TaskProgress): string {
-    const percentage = task.total > 0 ? Math.floor((task.current / task.total) * 100) : 0
+    const percentage =
+      task.total > 0 ? Math.floor((task.current / task.total) * 100) : 0
     const barLength = 30
     const filledLength = Math.floor((percentage / 100) * barLength)
 
@@ -168,7 +177,9 @@ export class MultiProgress {
         status = colors.gray('○')
     }
 
-    const elapsed = task.startTime ? ((Date.now() - task.startTime) / 1000).toFixed(1) + 's' : ''
+    const elapsed = task.startTime
+      ? ((Date.now() - task.startTime) / 1000).toFixed(1) + 's'
+      : ''
     const tokens = task.tokens ? ' ' + Object.values(task.tokens).join(' ') : ''
 
     return `${status} ${task.name.padEnd(20)} ${bar} ${percentage.toString().padStart(3)}% ${colors.gray(elapsed)}${tokens}`
@@ -184,13 +195,18 @@ export class Spinner {
   private interval?: NodeJS.Timeout
   private stream: Writable
 
-  constructor(private message: string, stream?: Writable) {
+  constructor(
+    private message: string,
+    stream?: Writable,
+  ) {
     this.stream = stream || process.stderr
   }
 
   start(): void {
     this.interval = setInterval(() => {
-      this.stream.write(`\r${colors.cyan(this.frames[this.current])} ${this.message}`)
+      this.stream.write(
+        `\r${colors.cyan(this.frames[this.current])} ${this.message}`,
+      )
       this.current = (this.current + 1) % this.frames.length
     }, 80)
   }

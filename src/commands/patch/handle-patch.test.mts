@@ -19,7 +19,6 @@ vi.mock('fast-glob', () => ({
   },
 }))
 
-
 vi.mock('@socketsecurity/registry/lib/fs', () => ({
   readDirNames: vi.fn(),
 }))

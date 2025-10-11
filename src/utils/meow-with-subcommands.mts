@@ -794,7 +794,10 @@ export async function meowWithSubcommands(
     process.exit(0)
   } else {
     // Check if we should show interactive help
-    const shouldShowInteractive = (helpFlag || helpCategory !== null) && !cli2.flags['helpFull'] && !helpCategory
+    const shouldShowInteractive =
+      (helpFlag || helpCategory !== null) &&
+      !cli2.flags['helpFull'] &&
+      !helpCategory
 
     if (shouldShowInteractive) {
       // Show interactive help for root --help command
@@ -808,7 +811,9 @@ export async function meowWithSubcommands(
       const found = showCategoryHelp(helpCategory)
       if (!found) {
         logger.error(`Unknown help category: ${helpCategory}`)
-        logger.log('Valid categories: scan, fix, pm, pkg, org, config, ask, all, quick')
+        logger.log(
+          'Valid categories: scan, fix, pm, pkg, org, config, ask, all, quick',
+        )
       }
       // eslint-disable-next-line n/no-process-exit
       process.exit(found ? 0 : 2)

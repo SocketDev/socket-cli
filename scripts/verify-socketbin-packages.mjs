@@ -13,32 +13,34 @@ const packages = [
   '@socketbin/cli-linux-arm64',
   '@socketbin/cli-linux-x64',
   '@socketbin/cli-win32-arm64',
-  '@socketbin/cli-win32-x64'
+  '@socketbin/cli-win32-x64',
 ]
 
 async function checkPackage(name) {
   const url = `https://registry.npmjs.org/${name}`
 
-  return new Promise((resolve) => {
-    https.get(url, (res) => {
-      if (res.statusCode === 200) {
-        let data = ''
-        res.on('data', chunk => data += chunk)
-        res.on('end', () => {
-          try {
-            const pkg = JSON.parse(data)
-            const latest = pkg['dist-tags']?.latest || 'unknown'
-            resolve({ name, exists: true, version: latest })
-          } catch {
-            resolve({ name, exists: false })
-          }
-        })
-      } else {
+  return new Promise(resolve => {
+    https
+      .get(url, res => {
+        if (res.statusCode === 200) {
+          let data = ''
+          res.on('data', chunk => (data += chunk))
+          res.on('end', () => {
+            try {
+              const pkg = JSON.parse(data)
+              const latest = pkg['dist-tags']?.latest || 'unknown'
+              resolve({ name, exists: true, version: latest })
+            } catch {
+              resolve({ name, exists: false })
+            }
+          })
+        } else {
+          resolve({ name, exists: false })
+        }
+      })
+      .on('error', () => {
         resolve({ name, exists: false })
-      }
-    }).on('error', () => {
-      resolve({ name, exists: false })
-    })
+      })
   })
 }
 
@@ -67,7 +69,9 @@ async function main() {
   if (missing.length === 0) {
     console.log('\n🎉 All packages are published!')
     console.log('\nNext steps:')
-    console.log('1. Go to: https://www.npmjs.com/settings/socketbin/integrations')
+    console.log(
+      '1. Go to: https://www.npmjs.com/settings/socketbin/integrations',
+    )
     console.log('2. Click "Add Trusted Publisher"')
     console.log('3. Enter:')
     console.log('   Repository: SocketDev/socket-cli')
