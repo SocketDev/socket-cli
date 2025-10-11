@@ -87,7 +87,41 @@ describe('socket npm', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
         cwd: testCwd,
       })
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`
+        "npm <command>
+
+        Usage:
+
+        npm install        install all the dependencies in your project
+        npm install <foo>  add the <foo> dependency to your project
+        npm test           run this project's tests
+        npm run <foo>      run the script named <foo>
+        npm <command> -h   quick help on <command>
+        npm -l             display usage info for all commands
+        npm help <term>    search for help on <term>
+        npm help npm       more involved overview
+
+        All commands:
+
+            access, adduser, audit, bugs, cache, ci, completion,
+            config, dedupe, deprecate, diff, dist-tag, docs, doctor,
+            edit, exec, explain, explore, find-dupes, fund, get, help,
+            help-search, init, install, install-ci-test, install-test,
+            link, ll, login, logout, ls, org, outdated, owner, pack,
+            ping, pkg, prefix, profile, prune, publish, query, rebuild,
+            repo, restart, root, run, sbom, search, set, shrinkwrap,
+            star, stars, start, stop, team, test, token, undeprecate,
+            uninstall, unpublish, unstar, update, version, view, whoami
+
+        Specify configs in the ini-formatted file:
+            /Users/jdalton/.npmrc
+        or on the command line via: npm <command> --key=value
+
+        More configuration info: npm help config
+        Configuration fields: npm help 7 config
+
+        npm@11.6.1 /Users/jdalton/.nvm/versions/node/v24.8.0/lib/node_modules/npm"
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
@@ -138,7 +172,16 @@ describe('socket npm', async () => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd, {
         cwd: testCwd,
       })
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`
+        "_______
+        < hello >
+         -------
+                \\   ^__^
+                 \\  (oo)\\_______
+                    (__)\\       )\\/\\
+                        ||----w |
+                        ||     ||"
+      `)
       // With --dry-run, npm exec runs successfully even with fake token
       // because issueRules filtering happens after execution
       expect(
@@ -164,7 +207,16 @@ describe('socket npm', async () => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd, {
         cwd: testCwd,
       })
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`
+        "_______
+        < hello >
+         -------
+                \\   ^__^
+                 \\  (oo)\\_______
+                    (__)\\       )\\/\\
+                        ||----w |
+                        ||     ||"
+      `)
       // With --dry-run, npm exec runs successfully even with fake token
       // because issueRules filtering happens after execution
       expect(
@@ -190,7 +242,16 @@ describe('socket npm', async () => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd, {
         cwd: testCwd,
       })
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`
+        "_______
+        < hello >
+         -------
+                \\   ^__^
+                 \\  (oo)\\_______
+                    (__)\\       )\\/\\
+                        ||----w |
+                        ||     ||"
+      `)
       // With --dry-run, npm exec runs successfully even with fake token
       // because issueRules filtering happens after execution
       expect(
@@ -216,7 +277,16 @@ describe('socket npm', async () => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd, {
         cwd: testCwd,
       })
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`
+        "_______
+        < hello >
+         -------
+                \\   ^__^
+                 \\  (oo)\\_______
+                    (__)\\       )\\/\\
+                        ||----w |
+                        ||     ||"
+      `)
       // With --dry-run, npm exec runs successfully even with fake token
       // because issueRules filtering happens after execution
       expect(

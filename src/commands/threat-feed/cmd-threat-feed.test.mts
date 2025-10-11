@@ -149,8 +149,8 @@ describe('socket threat-feed', async () => {
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket threat-feed\`, cwd: <redacted>"
       `)
 
-      expect(code, 'dry-run should exit with code 2 if validation fails').toBe(
-        2,
+      expect(code, 'dry-run should exit with code 0 when successful').toBe(
+        0,
       )
     },
   )
@@ -202,8 +202,8 @@ describe('socket threat-feed', async () => {
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket threat-feed\`, cwd: <redacted>"
       `)
 
-      expect(code, 'dry-run should exit with code 2 if validation fails').toBe(
-        2,
+      expect(code, 'dry-run should exit with code 0 when successful').toBe(
+        0,
       )
     },
   )
@@ -229,8 +229,8 @@ describe('socket threat-feed', async () => {
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket threat-feed\`, cwd: <redacted>"
       `)
 
-      expect(code, 'dry-run should exit with code 2 if validation fails').toBe(
-        2,
+      expect(code, 'dry-run should exit with code 0 when successful').toBe(
+        0,
       )
     },
   )

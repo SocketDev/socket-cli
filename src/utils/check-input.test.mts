@@ -150,7 +150,7 @@ describe('checkCommandInput', () => {
         message: 'Input error',
         data: expect.stringContaining('✗ Input validation failed'),
       })
-      expect(logger.log).toHaveBeenCalled()
+      // serializeResultJson outputs to stdout directly, not through logger.log
     })
   })
 

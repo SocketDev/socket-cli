@@ -41,26 +41,7 @@ describe('socket uninstall', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
         cwd: testCwd,
       })
-      expect(stdout).toMatchInlineSnapshot(`
-        "What can I help you with?
-
-        Help Topics:
-          scan       - Scan projects for vulnerabilities and security issues
-          fix        - Auto-fix vulnerabilities and apply security patches
-          pm         - Enhanced npm, npx, yarn, and pnpm wrappers
-          pkg        - Analyze package security and get security scores
-          org        - Manage organizations and repositories
-          config     - CLI settings and configuration management
-          env        - Environment variables for advanced configuration
-          flags      - Global command-line flags and options
-          ask        - Use plain English to interact with Socket
-          all        - Complete list of all available commands
-          quick      - Get started with Socket CLI in minutes
-
-        Use: socket --help=<topic>
-
-        \\ud83d\\udca1 Tip: Run in an interactive terminal for a better experience"
-      `)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------

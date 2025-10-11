@@ -98,7 +98,7 @@ describe('npm-paths utilities', () => {
         await import('@socketsecurity/registry/lib/logger'),
       )
 
-      expect(() => getNpmBinPath()).toThrow('process.exit(127)')
+      expect(() => getNpmBinPath()).toThrow('Socket unable to locate npm')
       expect(logger.fail).toHaveBeenCalledWith(
         expect.stringContaining('Socket unable to locate npm'),
       )
@@ -188,7 +188,7 @@ describe('npm-paths utilities', () => {
         await import('@socketsecurity/registry/lib/logger'),
       )
 
-      expect(() => getNpmDirPath()).toThrow('process.exit(127)')
+      expect(() => getNpmDirPath()).toThrow('Socket unable to locate npm CLI install directory')
       expect(logger.fail).toHaveBeenCalledWith(
         expect.stringContaining('Unable to find npm CLI install directory'),
       )
@@ -278,7 +278,7 @@ describe('npm-paths utilities', () => {
         await import('@socketsecurity/registry/lib/logger'),
       )
 
-      expect(() => getNpxBinPath()).toThrow('process.exit(127)')
+      expect(() => getNpxBinPath()).toThrow('Socket unable to locate npx')
       expect(logger.fail).toHaveBeenCalledWith(
         expect.stringContaining('Socket unable to locate npx'),
       )

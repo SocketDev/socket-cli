@@ -104,7 +104,7 @@ describe('socket scan report', async () => {
           \\xd7 Scan ID to report on (missing)"
       `)
 
-      expect(code, 'dry-run should exit with code 0 for subcommand help').toBe(0)
+      expect(code, 'dry-run should exit with code 2 when validation fails').toBe(2)
     },
   )
 

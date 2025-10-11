@@ -16,16 +16,31 @@ describe('socket repository', async () => {
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`
-        "Available subcommands for repository:
-          list - List repositories in an organization
-          create - Create a new repository
-          del - Delete a repository
-          view - View repository details
-          update - Update repository settings"
+        "What can I help you with?
+
+        Help Topics:
+          scan       - Scan projects for vulnerabilities and security issues
+          fix        - Auto-fix vulnerabilities and apply security patches
+          pm         - Enhanced npm, npx, yarn, and pnpm wrappers
+          pkg        - Analyze package security and get security scores
+          org        - Manage organizations and repositories
+          config     - CLI settings and configuration management
+          env        - Environment variables for advanced configuration
+          flags      - Global command-line flags and options
+          ask        - Use plain English to interact with Socket
+          all        - Complete list of all available commands
+          quick      - Get started with Socket CLI in minutes
+
+        Use: socket --help=<topic>
+
+        \\ud83d\\udca1 Tip: Run in an interactive terminal for a better experience"
       `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           "
+           _____         _       _        /---------------
+          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket repository\`, cwd: <redacted>"
       `)
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
@@ -41,18 +56,14 @@ describe('socket repository', async () => {
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
-        `
-        "Available subcommands for repository:
-          list - List repositories in an organization
-          create - Create a new repository
-          del - Delete a repository
-          view - View repository details
-          update - Update repository settings"
-      `,
+        `"[DryRun]: No-op, call a sub-command; ok"`,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           "
+           _____         _       _        /---------------
+          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket repository\`, cwd: <redacted>"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
@@ -65,12 +76,24 @@ describe('socket repository', async () => {
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`
-        "Available subcommands for repository:
-          list - List repositories in an organization
-          create - Create a new repository
-          del - Delete a repository
-          view - View repository details
-          update - Update repository settings"
+        "What can I help you with?
+
+        Help Topics:
+          scan       - Scan projects for vulnerabilities and security issues
+          fix        - Auto-fix vulnerabilities and apply security patches
+          pm         - Enhanced npm, npx, yarn, and pnpm wrappers
+          pkg        - Analyze package security and get security scores
+          org        - Manage organizations and repositories
+          config     - CLI settings and configuration management
+          env        - Environment variables for advanced configuration
+          flags      - Global command-line flags and options
+          ask        - Use plain English to interact with Socket
+          all        - Complete list of all available commands
+          quick      - Get started with Socket CLI in minutes
+
+        Use: socket --help=<topic>
+
+        \\ud83d\\udca1 Tip: Run in an interactive terminal for a better experience"
       `)
       expect(stderr).toContain('`socket repository`')
       expect(code, 'explicit help should exit with code 0').toBe(0)

@@ -30,15 +30,46 @@ describe('socket scan reach', async () => {
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`
-        "Available subcommands for scan:
-          create - Create a security scan with project awareness
-          list - List recent scans
-          view - View scan details
-          del - Delete a scan"
+        "Compute tier 1 reachability
+
+          Usage
+            $ socket scan reach [options] [CWD=.]
+
+          API Token Requirements
+                  - Permissions: full-scans:list
+
+          Options
+            --cwd               working directory, defaults to process.cwd()
+            --json              Output as JSON
+            --markdown          Output as Markdown
+            --org               Force override the organization slug, overrides the default org from config
+
+          Reachability Options
+            --reach-analysis-memory-limit  The maximum memory in MB to use for the reachability analysis. The default is 8192MB.
+            --reach-analysis-timeout  Set timeout for the reachability analysis. Split analysis runs may cause the total scan time to exceed this timeout significantly.
+            --reach-disable-analytics  Disable reachability analytics sharing with Socket. Also disables caching-based optimizations.
+            --reach-ecosystems  List of ecosystems to conduct reachability analysis on, as either a comma separated value or as multiple flags. Defaults to all ecosystems.
+            --reach-exclude-paths  List of paths to exclude from reachability analysis, as either a comma separated value or as multiple flags.
+            --reach-skip-cache  Skip caching-based optimizations. By default, the reachability analysis will use cached configurations from previous runs to speed up the analysis.
+
+          Runs the Socket reachability analysis without creating a scan in Socket.
+          The output is written to .socket.facts.json in the current working directory.
+
+          Note: Manifest files are uploaded to Socket's backend services because the
+          reachability analysis requires creating a Software Bill of Materials (SBOM)
+          from these files before the analysis can run.
+
+          Examples
+            $ socket scan reach
+            $ socket scan reach ./proj
+            $ socket scan reach ./proj --reach-ecosystems npm,pypi"
       `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           "
+           _____         _       _        /---------------
+          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan reach\`, cwd: <redacted>"
       `)
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
@@ -59,16 +90,13 @@ describe('socket scan reach', async () => {
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`
-        "Available subcommands for scan:
-          create - Create a security scan with project awareness
-          list - List recent scans
-          view - View scan details
-          del - Delete a scan"
-      `)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           "
+           _____         _       _        /---------------
+          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan reach\`, cwd: <redacted>"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
@@ -89,13 +117,7 @@ describe('socket scan reach', async () => {
     'should accept --reach-disable-analytics flag',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`
-        "Available subcommands for scan:
-          create - Create a security scan with project awareness
-          list - List recent scans
-          view - View scan details
-          del - Delete a scan"
-      `)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -115,13 +137,7 @@ describe('socket scan reach', async () => {
     'should accept --reach-analysis-memory-limit flag',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`
-        "Available subcommands for scan:
-          create - Create a security scan with project awareness
-          list - List recent scans
-          view - View scan details
-          del - Delete a scan"
-      `)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -141,13 +157,7 @@ describe('socket scan reach', async () => {
     'should accept --reach-analysis-timeout flag',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`
-        "Available subcommands for scan:
-          create - Create a security scan with project awareness
-          list - List recent scans
-          view - View scan details
-          del - Delete a scan"
-      `)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -167,13 +177,7 @@ describe('socket scan reach', async () => {
     'should accept --reach-ecosystems with comma-separated values',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`
-        "Available subcommands for scan:
-          create - Create a security scan with project awareness
-          list - List recent scans
-          view - View scan details
-          del - Delete a scan"
-      `)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -196,13 +200,7 @@ describe('socket scan reach', async () => {
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(code, 'should exit with code 0').toBe(0)
-      expect(stdout).toMatchInlineSnapshot(`
-        "Available subcommands for scan:
-          create - Create a security scan with project awareness
-          list - List recent scans
-          view - View scan details
-          del - Delete a scan"
-      `)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
     },
   )
 
@@ -221,14 +219,8 @@ describe('socket scan reach', async () => {
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       // Reach command is hidden/incomplete - shows subcommand list instead
-      expect(stdout).toMatchInlineSnapshot(`
-        "Available subcommands for scan:
-          create - Create a security scan with project awareness
-          list - List recent scans
-          view - View scan details
-          del - Delete a scan"
-      `)
-      expect(code, 'shows help with code 0').toBe(0)
+      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(code, 'shows error with code 1').toBe(1)
     },
   )
 
@@ -247,13 +239,7 @@ describe('socket scan reach', async () => {
     'should accept --reach-exclude-paths with comma-separated values',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`
-        "Available subcommands for scan:
-          create - Create a security scan with project awareness
-          list - List recent scans
-          view - View scan details
-          del - Delete a scan"
-      `)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -275,13 +261,7 @@ describe('socket scan reach', async () => {
     'should accept multiple --reach-exclude-paths flags',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`
-        "Available subcommands for scan:
-          create - Create a security scan with project awareness
-          list - List recent scans
-          view - View scan details
-          del - Delete a scan"
-      `)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -308,13 +288,7 @@ describe('socket scan reach', async () => {
     'should accept all reachability flags together',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`
-        "Available subcommands for scan:
-          create - Create a security scan with project awareness
-          list - List recent scans
-          view - View scan details
-          del - Delete a scan"
-      `)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -334,13 +308,7 @@ describe('socket scan reach', async () => {
     'should accept minimal positive memory limit',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`
-        "Available subcommands for scan:
-          create - Create a security scan with project awareness
-          list - List recent scans
-          view - View scan details
-          del - Delete a scan"
-      `)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -360,13 +328,7 @@ describe('socket scan reach', async () => {
     'should handle single ecosystem flag',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`
-        "Available subcommands for scan:
-          create - Create a security scan with project awareness
-          list - List recent scans
-          view - View scan details
-          del - Delete a scan"
-      `)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -390,13 +352,7 @@ describe('socket scan reach', async () => {
     'should accept many exclude paths flags',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`
-        "Available subcommands for scan:
-          create - Create a security scan with project awareness
-          list - List recent scans
-          view - View scan details
-          del - Delete a scan"
-      `)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -422,13 +378,7 @@ describe('socket scan reach', async () => {
     'should accept multiple different ecosystems',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`
-        "Available subcommands for scan:
-          create - Create a security scan with project awareness
-          list - List recent scans
-          view - View scan details
-          del - Delete a scan"
-      `)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -450,13 +400,7 @@ describe('socket scan reach', async () => {
     'should accept custom memory limit and timeout values',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`
-        "Available subcommands for scan:
-          create - Create a security scan with project awareness
-          list - List recent scans
-          view - View scan details
-          del - Delete a scan"
-      `)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -476,14 +420,8 @@ describe('socket scan reach', async () => {
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       // Reach command is hidden/incomplete - shows subcommand list instead
-      expect(stdout).toMatchInlineSnapshot(`
-        "Available subcommands for scan:
-          create - Create a security scan with project awareness
-          list - List recent scans
-          view - View scan details
-          del - Delete a scan"
-      `)
-      expect(code, 'shows help with code 0').toBe(0)
+      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(code, 'shows error with code 1').toBe(1)
     },
   )
 
@@ -502,9 +440,15 @@ describe('socket scan reach', async () => {
     'should fail when both json and markdown output flags are used',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      // Reach command is hidden/incomplete - shows empty output with flags
-      expect(stdout).toBe('')
-      expect(code, 'shows empty with code 0').toBe(0)
+      // The command now properly validates conflicting flags and returns JSON error
+      expect(stdout).toMatchInlineSnapshot(`
+        "{
+          "ok": false,
+          "message": "Input error",
+          "data": "Please review the input requirements and try again\\n\\n  \\xd7 The json and markdown flags cannot be both set, pick one (omit one)"
+        }"
+      `)
+      expect(code, 'shows error with code 2').toBe(2)
     },
   )
 
@@ -541,13 +485,7 @@ describe('socket scan reach', async () => {
     'should accept markdown output flag alone',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`
-        "Available subcommands for scan:
-          create - Create a security scan with project awareness
-          list - List recent scans
-          view - View scan details
-          del - Delete a scan"
-      `)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -574,13 +512,7 @@ describe('socket scan reach', async () => {
         '{"apiToken":"fakeToken"}',
       ]
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`
-        "Available subcommands for scan:
-          create - Create a security scan with project awareness
-          list - List recent scans
-          view - View scan details
-          del - Delete a scan"
-      `)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )

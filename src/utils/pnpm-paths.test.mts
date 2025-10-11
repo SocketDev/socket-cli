@@ -70,7 +70,7 @@ describe('pnpm-paths utilities', () => {
         await import('@socketsecurity/registry/lib/logger'),
       )
 
-      expect(() => getPnpmBinPath()).toThrow('process.exit(127)')
+      expect(() => getPnpmBinPath()).toThrow('Socket unable to locate pnpm')
       expect(logger.fail).toHaveBeenCalledWith(
         expect.stringContaining('Socket unable to locate pnpm'),
       )

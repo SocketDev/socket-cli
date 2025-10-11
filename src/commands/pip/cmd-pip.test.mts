@@ -1,9 +1,15 @@
 import { describe, expect } from 'vitest'
 
+import { whichBinSync } from '@socketsecurity/registry/lib/bin'
+
 import constants, { FLAG_CONFIG, FLAG_HELP } from '../../../src/constants.mts'
 import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
 
-describe('socket pip', async () => {
+// Check if pip is available
+const pipPath = whichBinSync('pip', { nothrow: true })
+const describeOrSkip = pipPath ? describe : describe.skip
+
+describeOrSkip('socket pip', async () => {
   const { binCliPath } = constants
 
   cmdit(

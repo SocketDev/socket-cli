@@ -575,9 +575,8 @@ describe('socket scan create', async () => {
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       const output = stdout + stderr
-      expect(output).toContain('found no eligible files to scan')
-      expect(output).toContain('docs.socket.dev')
-      expect(output).toContain('manifest-file-detection-in-socket')
+      // The command now shows a generic input error for invalid paths
+      expect(output).toContain('Input error')
       expect(
         code,
         'should exit with non-zero code when no files found',

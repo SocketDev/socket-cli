@@ -4,6 +4,8 @@ import path from 'node:path'
 import { deleteAsync } from 'del'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
+import { whichBinSync } from '@socketsecurity/registry/lib/bin'
+
 import constants, {
   FLAG_CONFIG,
   FLAG_DRY_RUN,
@@ -12,7 +14,11 @@ import constants, {
 } from '../../../src/constants.mts'
 import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
 
-describe('socket pnpm', async () => {
+// Check if pnpm is available
+const pnpmPath = whichBinSync('pnpm', { nothrow: true })
+const describeOrSkip = pnpmPath ? describe : describe.skip
+
+describeOrSkip('socket pnpm', async () => {
   const { binCliPath } = constants
   let testCwd: string
 
