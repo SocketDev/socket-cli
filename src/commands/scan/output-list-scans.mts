@@ -1,5 +1,6 @@
 /** @fileoverview Scan list output formatter for Socket CLI. Displays paginated scan listings in JSON or table formats. Shows scan IDs, repositories, branches, default branches, commit information, and creation timestamps with pagination hints. */
 
+// @ts-ignore - Type definitions in src/types/chalk-table.d.ts
 import chalkTable from 'chalk-table'
 import colors from 'yoctocolors-cjs'
 

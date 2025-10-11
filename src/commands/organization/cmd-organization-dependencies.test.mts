@@ -15,35 +15,32 @@ describe('socket organization dependencies', async () => {
     `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`
+        "Search for any dependency that is being used in your organization
+
+          Usage
+            socket organization dependencies [options]
+
+          API Token Requirements
+                  - Quota: 100 units
+
+          Options
+            --json              Output as JSON
+            --limit             Maximum number of dependencies returned
+            --markdown          Output as Markdown
+            --offset            Page number
+            --org               Force override the organization slug, overrides the default org from config
+
+          Examples
+            socket organization dependencies
+            socket organization dependencies --limit 20 --offset 10"
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           node:internal/modules/cjs/loader:1423
-          throw err;
-          ^
-
-        Error: Cannot find module './external/ink'
-        Require stack:
-        - /Users/jdalton/projects/socket-cli/dist/utils.js
-        - /Users/jdalton/projects/socket-cli/dist/cli.js
-            at Module._resolveFilename (node:internal/modules/cjs/loader:1420:15)
-            at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)
-            at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)
-            at Module._load (node:internal/modules/cjs/loader:1226:37)
-            at TracingChannel.traceSync (node:diagnostics_channel:322:14)
-            at wrapModuleLoad (node:internal/modules/cjs/loader:244:24)
-            at Module.require (node:internal/modules/cjs/loader:1503:12)
-            at require (node:internal/modules/helpers:152:16)
-            at Object.<anonymous> (/Users/jdalton/projects/socket-cli/dist/utils.js:1:2437)
-            at Module._compile (node:internal/modules/cjs/loader:1760:14) {
-          code: 'MODULE_NOT_FOUND',
-          requireStack: [
-            '/Users/jdalton/projects/socket-cli/dist/utils.js',
-            '/Users/jdalton/projects/socket-cli/dist/cli.js'
-          ]
-        }
-
-        Node.js v24.8.0"
+           _____         _       _        /---------------
+          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket organization dependencies\`, cwd: <redacted>"
       `)
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
@@ -67,35 +64,23 @@ describe('socket organization dependencies', async () => {
       expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           node:internal/modules/cjs/loader:1423
-          throw err;
-          ^
+           _____         _       _        /---------------
+          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket organization dependencies\`, cwd: <redacted>
 
-        Error: Cannot find module './external/ink'
-        Require stack:
-        - /Users/jdalton/projects/socket-cli/dist/utils.js
-        - /Users/jdalton/projects/socket-cli/dist/cli.js
-            at Module._resolveFilename (node:internal/modules/cjs/loader:1420:15)
-            at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)
-            at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)
-            at Module._load (node:internal/modules/cjs/loader:1226:37)
-            at TracingChannel.traceSync (node:diagnostics_channel:322:14)
-            at wrapModuleLoad (node:internal/modules/cjs/loader:244:24)
-            at Module.require (node:internal/modules/cjs/loader:1503:12)
-            at require (node:internal/modules/helpers:152:16)
-            at Object.<anonymous> (/Users/jdalton/projects/socket-cli/dist/utils.js:1:2437)
-            at Module._compile (node:internal/modules/cjs/loader:1760:14) {
-          code: 'MODULE_NOT_FOUND',
-          requireStack: [
-            '/Users/jdalton/projects/socket-cli/dist/utils.js',
-            '/Users/jdalton/projects/socket-cli/dist/cli.js'
-          ]
-        }
 
-        Node.js v24.8.0"
+        \\u203c Unable to determine the target org. Trying to auto-discover it now...
+        i Note: Run \`socket login\` to set a default org.
+              Use the --org flag to override the default org.
+
+        \\xd7 Skipping auto-discovery of org in dry-run mode
+        \\xd7  Input error:  Please review the input requirements and try again
+
+          \\xd7 Unable to determine organization slug (missing)"
       `)
 
-      expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
+      expect(code, 'dry-run should exit with code 2 when org cannot be determined').toBe(2)
     },
   )
 })

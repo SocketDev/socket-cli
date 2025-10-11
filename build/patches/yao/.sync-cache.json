@@ -1,0 +1,9 @@
+{
+  "lastSync": "2025-10-09T12:32:10.950Z",
+  "versions": [
+    "v24.9.0",
+    "v22.19.0",
+    "v20.19.5"
+  ],
+  "source": "https://github.com/yao-pkg/pkg-fetch/tree/main/patches"
+}

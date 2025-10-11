@@ -15,6 +15,7 @@ import { fileURLToPath } from 'node:url'
 
 import colors from 'yoctocolors-cjs'
 
+import { signMacOSBinary, isMacOSBinarySigned, isSigningToolAvailable, installLdid } from './code-signing.mjs'
 import { default as ensureCustomNodeInCache } from './ensure-node-in-cache.mjs'
 import { fetchYaoPatches } from './fetch-yao-patches.mjs'
 import { loadBuildConfig } from './load-config.mjs'
@@ -401,19 +402,23 @@ export async function buildStub(options = {}) {
 
   // Additional checks for macOS
   if (platform === 'darwin') {
-    // Check for ldid on ARM64 (required for proper signing)
+    // Check for signing tools on ARM64 (required for proper signing)
     if (arch === 'arm64') {
-      const ldidCheck = await checkAndInstallLdid(quiet)
-      if (ldidCheck === 'not-found') {
-        console.error(`${colors.red('✗')} Could not install ldid - binary will be malformed`)
-        console.error('   The stub binary will not work properly on ARM64')
-        console.error('   Try installing manually: brew install ldid')
-        // Exit early - no point building a broken binary
-        return 1
-      } else if (ldidCheck === 'newly-installed') {
+      const hasSigningTool = isSigningToolAvailable('codesign') || isSigningToolAvailable('ldid')
+      if (!hasSigningTool) {
+        // Try to install ldid as fallback
+        console.log('   No signing tools found, attempting to install ldid...')
+        const installed = await installLdid(quiet)
+        if (!installed) {
+          console.error(`${colors.red('✗')} Could not install signing tools - binary will be malformed`)
+          console.error('   The stub binary will not work properly on ARM64')
+          console.error('   Try installing manually: brew install ldid')
+          // Exit early - no point building a broken binary
+          return 1
+        }
         console.log(`${colors.green('✓')} ldid installed successfully`)
       } else {
-        console.log(`${colors.green('✓')} ldid is available`)
+        console.log(`${colors.green('✓')} Signing tools available`)
       }
     }
   }
@@ -606,30 +611,28 @@ export async function buildStub(options = {}) {
     }
   }
 
-  // Step 6: Sign with ldid on ARM64 macOS (if needed)
+  // Step 6: Sign macOS binaries
   // Note: We can't strip pkg-modified binaries, so we strip the base Node binary before pkg uses it
-  if (platform === 'darwin' && arch === 'arm64' && existsSync(tempOutputPath)) {
-    console.log('🔏 Signing macOS ARM64 binary with ldid...')
-    const signResult = await signMacOSBinaryWithLdid(tempOutputPath, quiet)
-    if (signResult === 'ldid-not-found') {
-      console.error(`${colors.yellow('⚠')} Warning: ldid disappeared after install?`)
-    } else if (signResult !== 0) {
-      // ldid returns non-zero but still signs the binary properly
-      // This is a known issue with yao-pkg binaries
-      console.log(`${colors.green('✓')} Binary signed with ldid\n`)
+  if (platform === 'darwin' && existsSync(tempOutputPath)) {
+    console.log('🔏 Signing macOS binary...')
+    const signResult = await signMacOSBinary(tempOutputPath, { force: true, quiet })
+
+    if (signResult.success) {
+      console.log(`${colors.green('✓')} Binary signed with ${signResult.tool}\n`)
+    } else if (arch === 'arm64') {
+      // Critical for ARM64
+      console.error(`${colors.red('✗')} Failed to sign ARM64 binary!`)
+      console.error(`   ${signResult.message}`)
+      throw new Error('ARM64 binaries must be signed to run on macOS')
     } else {
-      console.log(`${colors.green('✓')} Binary signed with ldid successfully\n`)
+      // Warning for x64
+      console.error(`${colors.yellow('⚠')} ${signResult.message}`)
     }
-  }
-  // For x64 or if ldid wasn't used, verify the signature
-  else if (platform === 'darwin' && existsSync(tempOutputPath)) {
-    console.log('🔏 Verifying macOS binary signature...')
-    const isSignedProperly = await verifyMacOSBinarySignature(tempOutputPath, quiet)
-    if (!isSignedProperly) {
-      console.error(`${colors.yellow('⚠')} Warning: Binary may not be properly signed`)
-      console.error('   The binary may not run properly')
-    } else {
-      console.log(`${colors.green('✓')} Binary signature verified\n`)
+
+    // Verify signature
+    const isSigned = await isMacOSBinarySigned(tempOutputPath)
+    if (!isSigned && arch === 'arm64') {
+      throw new Error('Failed to verify ARM64 binary signature')
     }
   }
 
@@ -782,30 +785,7 @@ async function installViaHomebrew(packageName, quiet = false) {
   })
 }
 
-/**
- * Check for ldid and install if needed
- * @returns {Promise<'available'|'newly-installed'|'not-found'>}
- */
-async function checkAndInstallLdid(quiet = false) {
-  // First check if ldid is already available
-  const ldidAvailable = await new Promise((resolve) => {
-    const child = spawn('which', ['ldid'], {
-      stdio: 'pipe'
-    })
-    child.on('exit', (code) => resolve(code === 0))
-    child.on('error', () => resolve(false))
-  })
-
-  if (ldidAvailable) {
-    return 'available'
-  }
-
-  // Try to install ldid
-  console.log('   ldid not found, auto-installing...')
-  const installed = await installLdidViaBrew(quiet)
-
-  return installed ? 'newly-installed' : 'not-found'
-}
+// Removed checkAndInstallLdid - now using installLdid from code-signing.mjs
 
 /**
  * Install Homebrew if not available
@@ -849,57 +829,13 @@ async function installHomebrew(quiet = false) {
   })
 }
 
-/**
- * Install ldid using Homebrew
- */
-async function installLdidViaBrew(quiet = false) {
-  // First check if brew is available
-  let brewAvailable = await new Promise((resolve) => {
-    const child = spawn('which', ['brew'], {
-      stdio: 'pipe'
-    })
-    child.on('exit', (code) => resolve(code === 0))
-    child.on('error', () => resolve(false))
-  })
-
-  if (!brewAvailable) {
-    // Try to install Homebrew automatically
-    brewAvailable = await installHomebrew(quiet)
-    if (!brewAvailable) {
-      return false
-    }
-  }
-
-  // Install ldid using brew
-  return new Promise((resolve) => {
-    console.log('   Running: brew install ldid')
-    const child = spawn('brew', ['install', 'ldid'], {
-      stdio: quiet ? 'pipe' : 'inherit'
-    })
-
-    child.on('exit', (code) => {
-      if (code === 0) {
-        resolve(true)
-      } else {
-        if (!quiet) {
-          console.error('   Failed to install ldid via Homebrew')
-        }
-        resolve(false)
-      }
-    })
-    child.on('error', (error) => {
-      if (!quiet) {
-        console.error('   Error installing ldid:', error.message)
-      }
-      resolve(false)
-    })
-  })
-}
+// Removed installLdidViaBrew - now using installLdid from code-signing.mjs
 
 /**
- * Sign macOS ARM64 binary with ldid (fixes yao-pkg malformed binary issue)
+ * DEPRECATED: Use signMacOSBinary from code-signing.mjs instead
+ * @deprecated
  */
-async function signMacOSBinaryWithLdid(binaryPath, quiet = false) {
+async function _deprecated_signMacOSBinaryWithLdid(binaryPath, quiet = false) {
   // Verify ldid is still available (should have been installed earlier)
   const ldidAvailable = await new Promise((resolve) => {
     const child = spawn('which', ['ldid'], {
@@ -965,9 +901,10 @@ async function signMacOSBinaryWithLdid(binaryPath, quiet = false) {
 }
 
 /**
- * Verify macOS binary signature
+ * DEPRECATED: Use isMacOSBinarySigned from code-signing.mjs instead
+ * @deprecated
  */
-async function verifyMacOSBinarySignature(binaryPath, quiet = false) {
+async function _deprecated_verifyMacOSBinarySignature(binaryPath, quiet = false) {
   return new Promise((resolve) => {
     const child = spawn('codesign', ['-dv', binaryPath], {
       stdio: 'pipe'

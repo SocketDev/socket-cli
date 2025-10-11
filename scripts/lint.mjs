@@ -163,7 +163,21 @@ function filterLintableFiles(files) {
     '.yaml',
   ])
 
+  // Patterns to exclude from linting
+  const excludePatterns = [
+    /^build\/patches\/.*\.json$/,
+    /^build\/patches\/.*\.md$/,
+    /^scripts\/build\/.*\.json$/,
+    /^scripts\/build\/.*\.json5$/,
+    /^package\.json$/,
+  ]
+
   return files.filter(file => {
+    // Check if file should be excluded
+    if (excludePatterns.some(pattern => pattern.test(file))) {
+      return false
+    }
+
     const ext = path.extname(file)
     return lintableExtensions.has(ext)
   })

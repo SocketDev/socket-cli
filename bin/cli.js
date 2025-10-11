@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 'use strict'
 
-void (async () => {
+async function main() {
   const Module = require('node:module')
   const path = require('node:path')
   const rootPath = path.join(__dirname, '..')
@@ -69,4 +69,6 @@ void (async () => {
 
     await spawnPromise
   }
-})()
+}
+
+main().catch(console.error)

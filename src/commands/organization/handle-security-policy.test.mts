@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { handleSecurityPolicy } from './handle-security-policy.mts'
 
@@ -12,6 +12,10 @@ vi.mock('./output-security-policy.mts', () => ({
 }))
 
 describe('handleSecurityPolicy', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
   it('fetches and outputs security policy successfully', async () => {
     const { fetchSecurityPolicy } = await import('./fetch-security-policy.mts')
     const { outputSecurityPolicy } = await import(
@@ -45,7 +49,7 @@ describe('handleSecurityPolicy', () => {
     await handleSecurityPolicy('test-org', 'json')
 
     expect(mockFetch).toHaveBeenCalledWith('test-org')
-    expect(mockOutput).toHaveBeenCalledWith(mockPolicy, 'json')
+    expect(mockOutput).toHaveBeenCalledWith(mockPolicy.data, 'json')
   })
 
   it('handles fetch failure', async () => {
@@ -58,14 +62,14 @@ describe('handleSecurityPolicy', () => {
 
     const mockError = {
       ok: false,
-      error: 'Organization not found',
+      message: 'Organization not found',
     }
     mockFetch.mockResolvedValue(mockError)
 
-    await handleSecurityPolicy('invalid-org', 'text')
+    await expect(handleSecurityPolicy('invalid-org', 'text')).rejects.toThrow('Organization not found')
 
     expect(mockFetch).toHaveBeenCalledWith('invalid-org')
-    expect(mockOutput).toHaveBeenCalledWith(mockError, 'text')
+    expect(mockOutput).not.toHaveBeenCalled()
   })
 
   it('handles markdown output format', async () => {
@@ -126,12 +130,10 @@ describe('handleSecurityPolicy', () => {
 
     expect(mockOutput).toHaveBeenCalledWith(
       expect.objectContaining({
-        ok: true,
-        data: expect.objectContaining({
-          rules: expect.arrayContaining([
-            expect.objectContaining({ id: 'rule-1' }),
-          ]),
-        }),
+        rules: expect.arrayContaining([
+          expect.objectContaining({ id: 'rule-1' }),
+        ]),
+        lastUpdated: '2025-01-01T00:00:00Z',
       }),
       'text',
     )

@@ -62,8 +62,8 @@ describe('socket cdxgen', async () => {
     `should support ${FLAG_JSON} flag`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      // With dry-run, should bail before actually running cdxgen.
-      expect(stdout).toContain('[DryRun]: Bailing now')
+      // With --json flag, logger is silenced so no dry-run message appears
+      expect(stdout).toBe('')
       expect(code, 'dry-run should exit with code 0').toBe(0)
     },
   )

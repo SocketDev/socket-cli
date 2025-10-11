@@ -18,35 +18,34 @@ describe('socket organization policy security', async () => {
     `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`
+        "Retrieve the security policy of an organization
+
+          Usage
+            $ socket organization policy security [options]
+
+          API Token Requirements
+                  - Permissions: settings:read
+
+          Options
+            --interactive       Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.
+            --json              Output as JSON
+            --markdown          Output as Markdown
+            --org               Force override the organization slug, overrides the default org from config
+
+          Your API token will need the \`security-policy:read\` permission otherwise
+          the request will fail with an authentication error.
+
+          Examples
+            $ socket organization policy security
+            $ socket organization policy security --json"
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           node:internal/modules/cjs/loader:1423
-          throw err;
-          ^
-
-        Error: Cannot find module './external/ink'
-        Require stack:
-        - /Users/jdalton/projects/socket-cli/dist/utils.js
-        - /Users/jdalton/projects/socket-cli/dist/cli.js
-            at Module._resolveFilename (node:internal/modules/cjs/loader:1420:15)
-            at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)
-            at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)
-            at Module._load (node:internal/modules/cjs/loader:1226:37)
-            at TracingChannel.traceSync (node:diagnostics_channel:322:14)
-            at wrapModuleLoad (node:internal/modules/cjs/loader:244:24)
-            at Module.require (node:internal/modules/cjs/loader:1503:12)
-            at require (node:internal/modules/helpers:152:16)
-            at Object.<anonymous> (/Users/jdalton/projects/socket-cli/dist/utils.js:1:2437)
-            at Module._compile (node:internal/modules/cjs/loader:1760:14) {
-          code: 'MODULE_NOT_FOUND',
-          requireStack: [
-            '/Users/jdalton/projects/socket-cli/dist/utils.js',
-            '/Users/jdalton/projects/socket-cli/dist/cli.js'
-          ]
-        }
-
-        Node.js v24.8.0"
+           _____         _       _        /---------------
+          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket organization policy security\`, cwd: <redacted>"
       `)
 
       //expect(code, 'explicit help should exit with code 0').toBe(0)
@@ -82,7 +81,7 @@ describe('socket organization policy security', async () => {
       //   "
       // `)
 
-      expect(code, 'dry-run exits with success code').toBe(0)
+      expect(code, 'dry-run exits with error code when validation fails').toBe(2)
     },
   )
 
@@ -98,35 +97,13 @@ describe('socket organization policy security', async () => {
     'should accept default org in v1',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           node:internal/modules/cjs/loader:1423
-          throw err;
-          ^
-
-        Error: Cannot find module './external/ink'
-        Require stack:
-        - /Users/jdalton/projects/socket-cli/dist/utils.js
-        - /Users/jdalton/projects/socket-cli/dist/cli.js
-            at Module._resolveFilename (node:internal/modules/cjs/loader:1420:15)
-            at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)
-            at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)
-            at Module._load (node:internal/modules/cjs/loader:1226:37)
-            at TracingChannel.traceSync (node:diagnostics_channel:322:14)
-            at wrapModuleLoad (node:internal/modules/cjs/loader:244:24)
-            at Module.require (node:internal/modules/cjs/loader:1503:12)
-            at require (node:internal/modules/helpers:152:16)
-            at Object.<anonymous> (/Users/jdalton/projects/socket-cli/dist/utils.js:1:2437)
-            at Module._compile (node:internal/modules/cjs/loader:1760:14) {
-          code: 'MODULE_NOT_FOUND',
-          requireStack: [
-            '/Users/jdalton/projects/socket-cli/dist/utils.js',
-            '/Users/jdalton/projects/socket-cli/dist/cli.js'
-          ]
-        }
-
-        Node.js v24.8.0"
+           _____         _       _        /---------------
+          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket organization policy security\`, cwd: <redacted>"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
@@ -147,35 +124,13 @@ describe('socket organization policy security', async () => {
     'should accept --org flag in v1',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           node:internal/modules/cjs/loader:1423
-          throw err;
-          ^
-
-        Error: Cannot find module './external/ink'
-        Require stack:
-        - /Users/jdalton/projects/socket-cli/dist/utils.js
-        - /Users/jdalton/projects/socket-cli/dist/cli.js
-            at Module._resolveFilename (node:internal/modules/cjs/loader:1420:15)
-            at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)
-            at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)
-            at Module._load (node:internal/modules/cjs/loader:1226:37)
-            at TracingChannel.traceSync (node:diagnostics_channel:322:14)
-            at wrapModuleLoad (node:internal/modules/cjs/loader:244:24)
-            at Module.require (node:internal/modules/cjs/loader:1503:12)
-            at require (node:internal/modules/helpers:152:16)
-            at Object.<anonymous> (/Users/jdalton/projects/socket-cli/dist/utils.js:1:2437)
-            at Module._compile (node:internal/modules/cjs/loader:1760:14) {
-          code: 'MODULE_NOT_FOUND',
-          requireStack: [
-            '/Users/jdalton/projects/socket-cli/dist/utils.js',
-            '/Users/jdalton/projects/socket-cli/dist/cli.js'
-          ]
-        }
-
-        Node.js v24.8.0"
+           _____         _       _        /---------------
+          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket organization policy security\`, cwd: <redacted>"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

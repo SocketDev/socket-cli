@@ -8,9 +8,7 @@ import type { OutputKind } from '../../types.mts'
 export async function handleQuota(
   outputKind: OutputKind = 'text',
 ): Promise<void> {
-  // TODO: Get orgSlug from config or context
-  const orgSlug = 'default-org'
-  const result = await fetchQuota(orgSlug)
+  const result = await fetchQuota()
 
   if (result.ok) {
     await outputQuota(result.data, outputKind)

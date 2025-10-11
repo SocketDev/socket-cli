@@ -2,7 +2,7 @@
 
 /** @fileoverview npm CLI wrapper entry point. */
 
-void (async () => {
+async function main() {
   try {
     // Use require to load from built dist path to avoid creating shadow-npm-bin files.
     const shadowNpmBin = require('../dist/shadow-npm-bin.js')
@@ -56,4 +56,6 @@ void (async () => {
     process.exitCode = 1
     throw error
   }
-})()
+}
+
+main().catch(console.error)

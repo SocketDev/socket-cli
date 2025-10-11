@@ -74,7 +74,7 @@ describe('yarn-paths utilities', () => {
         await import('@socketsecurity/registry/lib/logger'),
       )
 
-      expect(() => getYarnBinPath()).toThrow('process.exit(127)')
+      expect(() => getYarnBinPath()).toThrow('Socket unable to locate yarn')
       expect(logger.fail).toHaveBeenCalledWith(
         expect.stringContaining('Socket unable to locate yarn'),
       )

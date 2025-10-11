@@ -2,7 +2,7 @@
 
 /** @fileoverview npx CLI wrapper entry point. */
 
-void (async () => {
+async function main() {
   try {
     // Use require to load from built dist path to avoid creating shadow-npx-bin files.
     const shadowNpxBin = require('../dist/shadow-npx-bin.js')
@@ -55,4 +55,6 @@ void (async () => {
     process.exitCode = 1
     throw error
   }
-})()
+}
+
+main().catch(console.error)

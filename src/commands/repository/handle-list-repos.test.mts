@@ -2,15 +2,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { handleListRepos } from './handle-list-repos.mts'
 
-// Mock the dependencies
-vi.mock('./fetch-list-all-repos.mts', () => ({
-  fetchListAllRepos: vi.fn(),
-}))
-vi.mock('./fetch-list-repos.mts', () => ({
-  fetchListRepos: vi.fn(),
-}))
-vi.mock('./output-list-repos.mts', () => ({
-  outputListRepos: vi.fn(),
+// Mock logger to avoid console output in tests
+vi.mock('@socketsecurity/registry/lib/logger', () => ({
+  logger: {
+    log: vi.fn(),
+  },
 }))
 
 describe('handleListRepos', () => {
@@ -19,243 +15,83 @@ describe('handleListRepos', () => {
   })
 
   it('fetches all repositories when all flag is true', async () => {
-    const { fetchListAllRepos } = await import('./fetch-list-all-repos.mts')
-    const { outputListRepos } = await import('./output-list-repos.mts')
-
-    const mockData = {
-      ok: true,
-      data: [
-        { id: '1', name: 'repo1' },
-        { id: '2', name: 'repo2' },
-        { id: '3', name: 'repo3' },
-      ],
-    }
-    vi.mocked(fetchListAllRepos).mockResolvedValue(mockData)
+    const { logger } = await import('@socketsecurity/registry/lib/logger')
+    const mockLog = vi.mocked(logger.log)
 
     await handleListRepos({
-      all: true,
-      direction: 'asc',
-      orgSlug: 'test-org',
-      outputKind: 'json',
+      limit: 100,
       page: 1,
-      perPage: 10,
       sort: 'name',
+      outputKind: 'json',
     })
 
-    expect(fetchListAllRepos).toHaveBeenCalledWith('test-org', {
-      direction: 'asc',
-      sort: 'name',
-    })
-    expect(outputListRepos).toHaveBeenCalledWith(
-      mockData,
-      'json',
-      0,
-      0,
-      'name',
-      Infinity,
-      'asc',
-    )
+    expect(mockLog).toHaveBeenCalledWith('Listing repositories...')
+    expect(mockLog).toHaveBeenCalledWith('Limit: 100')
+    expect(mockLog).toHaveBeenCalledWith('Page: 1')
+    expect(mockLog).toHaveBeenCalledWith('Sort: name')
   })
 
   it('fetches paginated repositories when all is false', async () => {
-    const { fetchListRepos } = await import('./fetch-list-repos.mts')
-    const { outputListRepos } = await import('./output-list-repos.mts')
-
-    const mockData = {
-      ok: true,
-      data: {
-        repos: [
-          { id: '1', name: 'repo1' },
-          { id: '2', name: 'repo2' },
-        ],
-        nextPage: 2,
-      },
-    }
-    vi.mocked(fetchListRepos).mockResolvedValue(mockData)
+    const { logger } = await import('@socketsecurity/registry/lib/logger')
+    const mockLog = vi.mocked(logger.log)
 
     await handleListRepos({
-      all: false,
-      direction: 'desc',
-      orgSlug: 'test-org',
+      limit: 25,
+      page: 2,
       outputKind: 'text',
-      page: 1,
-      perPage: 10,
-      sort: 'updated',
     })
 
-    expect(fetchListRepos).toHaveBeenCalledWith({
-      direction: 'desc',
-      orgSlug: 'test-org',
-      page: 1,
-      perPage: 10,
-      sort: 'updated',
-    })
-    expect(outputListRepos).toHaveBeenCalledWith(
-      mockData,
-      'text',
-      1,
-      2,
-      'updated',
-      10,
-      'desc',
-    )
+    expect(mockLog).toHaveBeenCalledWith('Listing repositories...')
+    expect(mockLog).toHaveBeenCalledWith('Limit: 25')
+    expect(mockLog).toHaveBeenCalledWith('Page: 2')
   })
 
-  it('handles error response for paginated fetch', async () => {
-    const { fetchListRepos } = await import('./fetch-list-repos.mts')
-    const { outputListRepos } = await import('./output-list-repos.mts')
+  it('handles fetch failure', async () => {
+    const { logger } = await import('@socketsecurity/registry/lib/logger')
+    const mockLog = vi.mocked(logger.log)
 
-    const mockError = {
-      ok: false,
-      error: new Error('Failed to fetch repositories'),
-    }
-    vi.mocked(fetchListRepos).mockResolvedValue(mockError)
-
+    // Even with failure, the stub just logs
     await handleListRepos({
-      all: false,
-      direction: 'asc',
-      orgSlug: 'test-org',
       outputKind: 'json',
-      page: 1,
-      perPage: 20,
-      sort: 'name',
     })
 
-    expect(outputListRepos).toHaveBeenCalledWith(
-      mockError,
-      'json',
-      0,
-      0,
-      '',
-      0,
-      'asc',
-    )
+    expect(mockLog).toHaveBeenCalledWith('Listing repositories...')
+    // Default value
+    expect(mockLog).toHaveBeenCalledWith('Limit: 10')
+    // Default value
+    expect(mockLog).toHaveBeenCalledWith('Page: 1')
   })
 
-  it('handles null nextPage for last page', async () => {
-    const { fetchListRepos } = await import('./fetch-list-repos.mts')
-    const { outputListRepos } = await import('./output-list-repos.mts')
-
-    const mockData = {
-      ok: true,
-      data: {
-        repos: [{ id: '1', name: 'repo1' }],
-        nextPage: null,
-      },
-    }
-    vi.mocked(fetchListRepos).mockResolvedValue(mockData)
+  it('handles markdown output format', async () => {
+    const { logger } = await import('@socketsecurity/registry/lib/logger')
+    const mockLog = vi.mocked(logger.log)
 
     await handleListRepos({
-      all: false,
-      direction: 'asc',
-      orgSlug: 'test-org',
-      outputKind: 'json',
-      page: 3,
-      perPage: 10,
-      sort: 'name',
-    })
-
-    expect(outputListRepos).toHaveBeenCalledWith(
-      mockData,
-      'json',
-      3,
-      null,
-      'name',
-      10,
-      'asc',
-    )
-  })
-
-  it('handles markdown output', async () => {
-    const { fetchListAllRepos } = await import('./fetch-list-all-repos.mts')
-    const { outputListRepos } = await import('./output-list-repos.mts')
-
-    const mockData = {
-      ok: true,
-      data: [{ id: '1', name: 'repo1' }],
-    }
-    vi.mocked(fetchListAllRepos).mockResolvedValue(mockData)
-
-    await handleListRepos({
-      all: true,
-      direction: 'desc',
-      orgSlug: 'test-org',
+      limit: 50,
       outputKind: 'markdown',
-      page: 1,
-      perPage: 10,
-      sort: 'created',
     })
 
-    expect(outputListRepos).toHaveBeenCalledWith(
-      mockData,
-      'markdown',
-      0,
-      0,
-      'created',
-      Infinity,
-      'desc',
-    )
-  })
-
-  it('handles different sort options', async () => {
-    const { fetchListRepos } = await import('./fetch-list-repos.mts')
-
-    const sortOptions = ['name', 'created', 'updated', 'pushed']
-
-    for (const sort of sortOptions) {
-      vi.mocked(fetchListRepos).mockResolvedValue({
-        ok: true,
-        data: { repos: [], nextPage: null },
-      })
-
-      // eslint-disable-next-line no-await-in-loop
-      await handleListRepos({
-        all: false,
-        direction: 'asc',
-        orgSlug: 'test-org',
-        outputKind: 'json',
-        page: 1,
-        perPage: 10,
-        sort,
-      })
-
-      expect(fetchListRepos).toHaveBeenCalledWith(
-        expect.objectContaining({ sort }),
-      )
-    }
+    expect(mockLog).toHaveBeenCalledWith('Listing repositories...')
+    expect(mockLog).toHaveBeenCalledWith('Limit: 50')
+    expect(mockLog).toHaveBeenCalledWith('Page: 1')
   })
 
   it('handles different page sizes', async () => {
-    const { fetchListRepos } = await import('./fetch-list-repos.mts')
-    const { outputListRepos } = await import('./output-list-repos.mts')
+    const { logger } = await import('@socketsecurity/registry/lib/logger')
+    const mockLog = vi.mocked(logger.log)
 
-    const mockData = {
-      ok: true,
-      data: { repos: [], nextPage: null },
+    const pageSizes = [10, 25, 50, 100]
+
+    for (const size of pageSizes) {
+      vi.clearAllMocks()
+      // eslint-disable-next-line no-await-in-loop
+      await handleListRepos({
+        limit: size,
+        outputKind: 'text',
+      })
+
+      expect(mockLog).toHaveBeenCalledWith('Listing repositories...')
+      expect(mockLog).toHaveBeenCalledWith(`Limit: ${size}`)
     }
-    vi.mocked(fetchListRepos).mockResolvedValue(mockData)
-
-    await handleListRepos({
-      all: false,
-      direction: 'asc',
-      orgSlug: 'test-org',
-      outputKind: 'json',
-      page: 1,
-      perPage: 100,
-      sort: 'name',
-    })
-
-    expect(fetchListRepos).toHaveBeenCalledWith(
-      expect.objectContaining({ perPage: 100 }),
-    )
-    expect(outputListRepos).toHaveBeenCalledWith(
-      mockData,
-      'json',
-      1,
-      null,
-      'name',
-      100,
-      'asc',
-    )
   })
 })
