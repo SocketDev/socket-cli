@@ -44,8 +44,12 @@ export function simpleOutput<T>(
 
   outputResult(result, outputKind, {
     json: res => {
-      if (!res.ok) return serializeResultJson(res)
-      if (json) return serializeResultJson({ ok: true, data: json(res.data) })
+      if (!res.ok) {
+        return serializeResultJson(res)
+      }
+      if (json) {
+        return serializeResultJson({ ok: true, data: json(res.data) })
+      }
       return serializeResultJson({ ok: true, data: res.data })
     },
     success: data => {
@@ -97,7 +101,8 @@ export const commonColumns = {
   status: {
     field: 'status',
     name: colors.magenta('Status'),
-    transform: (v: string) => v === 'active' ? colors.green(v) : colors.yellow(v),
+    transform: (v: string) =>
+      v === 'active' ? colors.green(v) : colors.yellow(v),
   },
   created: {
     field: 'created_at',
@@ -112,7 +117,7 @@ export const commonColumns = {
   boolean: (field: string, label: string) => ({
     field,
     name: colors.magenta(label),
-    transform: (v: boolean) => v ? colors.green('✓') : colors.red('✗'),
+    transform: (v: boolean) => (v ? colors.green('✓') : colors.red('✗')),
   }),
 }
 
@@ -145,8 +150,8 @@ export function outputPaginatedList<T>(
       const { page, perPage, nextPage, sort, direction } = pagination
       logger.log(
         `Page: ${page}, Per page: ${perPage === Infinity ? 'all' : perPage}` +
-        (sort ? `, Sort: ${sort}` : '') +
-        (direction ? `, Direction: ${direction}` : ''),
+          (sort ? `, Sort: ${sort}` : '') +
+          (direction ? `, Direction: ${direction}` : ''),
       )
 
       // Show table

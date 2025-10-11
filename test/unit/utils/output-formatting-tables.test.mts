@@ -58,7 +58,9 @@ describe('formatTable', () => {
 
     // Right-aligned numbers should have leading spaces
     const lines = result.split('\n')
-    const dataLines = lines.filter(l => l.includes('lodash') || l.includes('react'))
+    const dataLines = lines.filter(
+      l => l.includes('lodash') || l.includes('react'),
+    )
     expect(dataLines.length).toBe(2)
 
     // Check that numbers appear right-aligned (after package names)

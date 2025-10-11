@@ -19,7 +19,14 @@ export interface TestSetupOptions {
 }
 
 export function setupCommandTest(options: TestSetupOptions) {
-  const { commandPath, commandName, parentCommand, mockSdk = true, mockConfig = {}, env = {} } = options
+  const {
+    commandPath,
+    commandName,
+    parentCommand,
+    mockSdk = true,
+    mockConfig = {},
+    env = {},
+  } = options
 
   const stubs = {
     spawn: spawn as Mock,
@@ -121,7 +128,9 @@ export function buildCommandTests(
 
         // Check output
         if (testCase.expectedOutput) {
-          const output = stubs.loggerLog?.mock.calls.map(call => call[0]).join('\n')
+          const output = stubs.loggerLog?.mock.calls
+            .map(call => call[0])
+            .join('\n')
           if (Array.isArray(testCase.expectedOutput)) {
             for (const expected of testCase.expectedOutput) {
               expect(output).toContain(expected)
@@ -136,7 +145,10 @@ export function buildCommandTests(
         // Check error
         if (testCase.expectedError) {
           const errors = stubs.loggerLog?.mock.calls
-            .filter(call => call[0]?.includes?.('error') || call[0]?.includes?.('Error'))
+            .filter(
+              call =>
+                call[0]?.includes?.('error') || call[0]?.includes?.('Error'),
+            )
             .map(call => call[0])
             .join('\n')
 
@@ -177,7 +189,7 @@ export const commonTests = {
     name: 'should output JSON',
     args: [],
     flags: { json: true },
-    validate: (stubs) => {
+    validate: stubs => {
       const output = stubs.loggerLog?.mock.calls.map(call => call[0]).join('')
       expect(() => JSON.parse(output)).not.toThrow()
     },
@@ -201,7 +213,9 @@ export const commonTests = {
     name: 'should fail without auth',
     args: [],
     setup: () => {
-      vi.mocked(require('../../utils/sdk.mts').hasDefaultApiToken).mockReturnValue(false)
+      vi.mocked(
+        require('../../utils/sdk.mts').hasDefaultApiToken,
+      ).mockReturnValue(false)
     },
     expectedError: /login/,
     expectedExitCode: 1,

@@ -53,7 +53,7 @@ import { spawn } from '@socketsecurity/registry/lib/spawn'
 import constants from '../constants.mts'
 import { getDlxCachePath } from './dlx-binary.mts'
 import { InputError, getErrorCause } from './errors.mts'
-import { httpDownload } from './http.mts'
+import { httpDownload } from '@socketsecurity/registry/lib/http-request'
 
 import type { CResult } from '../types.mts'
 
@@ -196,9 +196,10 @@ async function downloadPython(pythonDir: string): Promise<void> {
   await fs.mkdir(pythonDir, { recursive: true })
 
   // Download with Node's native http module
-  const result = await httpDownload(url, tarballPath)
-  if (!result.ok) {
-    throw new InputError(`Failed to download Python: ${result.message}`)
+  try {
+    await httpDownload(url, tarballPath)
+  } catch (error) {
+    throw new InputError(`Failed to download Python: ${error instanceof Error ? error.message : String(error)}`)
   }
 
   // Extract using system tar command

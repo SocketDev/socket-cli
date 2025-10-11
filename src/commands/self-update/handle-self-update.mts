@@ -298,9 +298,7 @@ async function checkAndUpdateStub(
         // Replace the stub binary.
         await replaceBinary(stagingPath, stubPath)
 
-        logger.info(
-          `${colors.green('✓')} Bootstrap stub updated successfully!`,
-        )
+        logger.info(`${colors.green('✓')} Bootstrap stub updated successfully!`)
         return true
       } catch (error) {
         // Restore from backup on failure.

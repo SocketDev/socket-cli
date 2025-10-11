@@ -51,18 +51,25 @@ try {
   }
 } catch (error) {
   // Binary package not found or other error
-  console.error(`Error: Socket CLI binary not available for ${platform}-${mappedArch}`)
+  console.error(
+    `Error: Socket CLI binary not available for ${platform}-${mappedArch}`,
+  )
   console.error(``)
 
   // Check if this is an unsupported platform
   const supportedPlatforms = [
-    'darwin-x64', 'darwin-arm64',
-    'linux-x64', 'linux-arm64',
-    'win32-x64', 'win32-arm64'
+    'darwin-x64',
+    'darwin-arm64',
+    'linux-x64',
+    'linux-arm64',
+    'win32-x64',
+    'win32-arm64',
   ]
 
   if (!supportedPlatforms.includes(`${platform}-${mappedArch}`)) {
-    console.error(`Your platform (${platform}-${mappedArch}) is not supported by Socket CLI binaries.`)
+    console.error(
+      `Your platform (${platform}-${mappedArch}) is not supported by Socket CLI binaries.`,
+    )
     console.error(``)
     console.error(`Supported platforms:`)
     supportedPlatforms.forEach(p => {
@@ -87,7 +94,9 @@ try {
   }
 
   console.error(``)
-  console.error(`For help, visit: https://github.com/SocketDev/socket-cli/issues`)
+  console.error(
+    `For help, visit: https://github.com/SocketDev/socket-cli/issues`,
+  )
 
   process.exit(1)
 }
@@ -98,7 +107,7 @@ const child = spawn(binaryPath, process.argv.slice(2), {
   env: process.env,
   cwd: process.cwd(),
   // Preserve colors and TTY
-  windowsHide: true
+  windowsHide: true,
 })
 
 // Handle signals
@@ -126,7 +135,9 @@ child.on('exit', (code, signal) => {
 child.on('error', error => {
   if (error.code === 'ENOENT') {
     console.error(`Error: Binary not found at ${binaryPath}`)
-    console.error(`This usually means the package was corrupted during installation.`)
+    console.error(
+      `This usually means the package was corrupted during installation.`,
+    )
   } else if (error.code === 'EACCES') {
     console.error(`Error: Permission denied executing ${binaryPath}`)
     console.error(`Try: chmod +x "${binaryPath}"`)

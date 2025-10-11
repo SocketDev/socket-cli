@@ -41,7 +41,9 @@ function info(message) {
 // Check if stub exists
 if (!existsSync(stubPath)) {
   fail(`Bootstrap stub not found at ${stubPath}`)
-  fail('Run: pnpm run build:sea or NODE_ENV=production pnpm exec rollup -c .config/rollup.sea.config.mjs')
+  fail(
+    'Run: pnpm run build:sea or NODE_ENV=production pnpm exec rollup -c .config/rollup.sea.config.mjs',
+  )
 }
 
 // Read stub content
@@ -165,9 +167,7 @@ if (unexpectedFunctions.length > 0) {
   functions.forEach(f => console.log(`    - ${f}`))
 }
 
-const missingFunctions = EXPECTED.functions.filter(
-  f => !functions.includes(f),
-)
+const missingFunctions = EXPECTED.functions.filter(f => !functions.includes(f))
 if (missingFunctions.length > 0) {
   fail(`Missing expected functions: ${missingFunctions.join(', ')}`)
 }

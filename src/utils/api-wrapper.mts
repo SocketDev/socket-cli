@@ -26,16 +26,41 @@ export async function apiCall<T extends keyof SocketSdk>(
  */
 export const repoApi = {
   list: (orgSlug: string, params: any, options?: BaseFetchOptions) =>
-    apiCall('getOrgRepoList', [orgSlug, params], 'list of repositories', options),
+    apiCall(
+      'getOrgRepoList',
+      [orgSlug, params],
+      'list of repositories',
+      options,
+    ),
 
   create: (orgSlug: string, params: any, options?: BaseFetchOptions) =>
-    apiCall('createOrgRepo', [orgSlug, params], 'to create a repository', options),
+    apiCall(
+      'createOrgRepo',
+      [orgSlug, params],
+      'to create a repository',
+      options,
+    ),
 
   delete: (orgSlug: string, repoName: string, options?: BaseFetchOptions) =>
-    apiCall('deleteOrgRepo', [orgSlug, repoName], 'to delete a repository', options),
+    apiCall(
+      'deleteOrgRepo',
+      [orgSlug, repoName],
+      'to delete a repository',
+      options,
+    ),
 
-  update: (orgSlug: string, repoName: string, params: any, options?: BaseFetchOptions) =>
-    apiCall('updateOrgRepo', [orgSlug, repoName, params], 'to update a repository', options),
+  update: (
+    orgSlug: string,
+    repoName: string,
+    params: any,
+    options?: BaseFetchOptions,
+  ) =>
+    apiCall(
+      'updateOrgRepo',
+      [orgSlug, repoName, params],
+      'to update a repository',
+      options,
+    ),
 
   view: (orgSlug: string, repoName: string, options?: BaseFetchOptions) =>
     apiCall('getOrgRepo', [orgSlug, repoName], 'repository', options),
@@ -55,21 +80,51 @@ export const orgApi = {
     apiCall('getOrganizationQuota', [orgSlug], 'organization quota', options),
 
   securityPolicy: (orgSlug: string, options?: BaseFetchOptions) =>
-    apiCall('getOrganizationSecurityPolicy', [orgSlug], 'security policy', options),
+    apiCall(
+      'getOrganizationSecurityPolicy',
+      [orgSlug],
+      'security policy',
+      options,
+    ),
 
   licensePolicy: (orgSlug: string, options?: BaseFetchOptions) =>
-    apiCall('getOrganizationLicensePolicy', [orgSlug], 'license policy', options),
+    apiCall(
+      'getOrganizationLicensePolicy',
+      [orgSlug],
+      'license policy',
+      options,
+    ),
 }
 
 /**
  * Simplified package API calls
  */
 export const packageApi = {
-  score: (ecosystem: string, name: string, version: string, options?: BaseFetchOptions) =>
-    apiCall('getPackageScore', [ecosystem, name, version], 'package score', options),
+  score: (
+    ecosystem: string,
+    name: string,
+    version: string,
+    options?: BaseFetchOptions,
+  ) =>
+    apiCall(
+      'getPackageScore',
+      [ecosystem, name, version],
+      'package score',
+      options,
+    ),
 
-  issues: (ecosystem: string, name: string, version: string, options?: BaseFetchOptions) =>
-    apiCall('getPackageIssues', [ecosystem, name, version], 'package issues', options),
+  issues: (
+    ecosystem: string,
+    name: string,
+    version: string,
+    options?: BaseFetchOptions,
+  ) =>
+    apiCall(
+      'getPackageIssues',
+      [ecosystem, name, version],
+      'package issues',
+      options,
+    ),
 }
 
 /**

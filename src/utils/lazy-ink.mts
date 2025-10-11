@@ -9,10 +9,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 export async function loadInk(): Promise<{ ink: any; React: any }> {
   try {
     // Dynamic import to create a separate chunk
-    const [ink, React] = await Promise.all([
-      import('ink'),
-      import('react'),
-    ])
+    const [ink, React] = await Promise.all([import('ink'), import('react')])
     return { ink, React }
   } catch (error) {
     logger.error('Failed to load Ink/React components')
@@ -51,7 +48,7 @@ export function isInkAvailable(): boolean {
  * Create a lazy loader for a specific Ink component
  */
 export function createLazyInkComponent<T extends (...args: any[]) => any>(
-  loader: () => Promise<T>
+  loader: () => Promise<T>,
 ): (...args: Parameters<T>) => Promise<ReturnType<T>> {
   let cachedComponent: T | null = null
 

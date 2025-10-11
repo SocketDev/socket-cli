@@ -18,12 +18,17 @@ const platforms = [
   { platform: 'linux', arch: 'arm64' },
   { platform: 'linux', arch: 'x64' },
   { platform: 'win32', arch: 'arm64' },
-  { platform: 'win32', arch: 'x64' }
+  { platform: 'win32', arch: 'x64' },
 ]
 
 async function createPlaceholderPackage(platform, arch) {
   const packageName = `@socketbin/cli-${platform}-${arch}`
-  const packageDir = path.join(rootDir, 'packages', 'placeholders', `cli-${platform}-${arch}`)
+  const packageDir = path.join(
+    rootDir,
+    'packages',
+    'placeholders',
+    `cli-${platform}-${arch}`,
+  )
 
   // Create directory structure
   await fs.mkdir(path.join(packageDir, 'bin'), { recursive: true })
@@ -37,34 +42,35 @@ async function createPlaceholderPackage(platform, arch) {
     homepage: 'https://github.com/SocketDev/socket-cli',
     repository: {
       type: 'git',
-      url: 'git+https://github.com/SocketDev/socket-cli.git'
+      url: 'git+https://github.com/SocketDev/socket-cli.git',
     },
     license: 'MIT',
     author: {
       name: 'Socket Inc',
       email: 'eng@socket.dev',
-      url: 'https://socket.dev'
+      url: 'https://socket.dev',
     },
     // Restrict to correct platform
     os: [platform === 'darwin' ? 'darwin' : platform],
     cpu: [arch],
     files: ['README.md', 'bin'],
     publishConfig: {
-      access: 'public'
-    }
+      access: 'public',
+    },
   }
 
   // Create placeholder binary script
   const binaryExt = platform === 'win32' ? '.cmd' : ''
   const binaryName = `cli${binaryExt}`
-  const binaryContent = platform === 'win32'
-    ? `@echo off
+  const binaryContent =
+    platform === 'win32'
+      ? `@echo off
 echo Socket CLI placeholder for ${platform}-${arch}
 echo Please wait for the real package to be published.
 echo Visit https://github.com/SocketDev/socket-cli for more info.
 exit /b 1
 `
-    : `#!/usr/bin/env node
+      : `#!/usr/bin/env node
 console.error('Socket CLI placeholder for ${platform}-${arch}');
 console.error('Please wait for the real package to be published.');
 console.error('Visit https://github.com/SocketDev/socket-cli for more info.');
@@ -106,18 +112,12 @@ npm install -g socket
   // Write files
   await fs.writeFile(
     path.join(packageDir, 'package.json'),
-    JSON.stringify(packageJson, null, 2) + '\n'
+    JSON.stringify(packageJson, null, 2) + '\n',
   )
 
-  await fs.writeFile(
-    path.join(packageDir, 'README.md'),
-    readme
-  )
+  await fs.writeFile(path.join(packageDir, 'README.md'), readme)
 
-  await fs.writeFile(
-    path.join(packageDir, 'bin', binaryName),
-    binaryContent
-  )
+  await fs.writeFile(path.join(packageDir, 'bin', binaryName), binaryContent)
 
   // Make script executable on Unix
   if (platform !== 'win32') {
@@ -140,7 +140,9 @@ async function main() {
   console.log('\n📦 Placeholder packages created!\n')
   console.log('To publish them:')
   console.log('1. Sign in as socket-bot: npm login')
-  console.log('2. Run the publish script: node scripts/publish-placeholders.mjs')
+  console.log(
+    '2. Run the publish script: node scripts/publish-placeholders.mjs',
+  )
   console.log('\nOr publish individually:')
 
   for (const dir of packageDirs) {
@@ -220,10 +222,13 @@ main()
 
   await fs.writeFile(
     path.join(rootDir, 'scripts', 'publish-placeholders.mjs'),
-    publishScript
+    publishScript,
   )
 
-  await fs.chmod(path.join(rootDir, 'scripts', 'publish-placeholders.mjs'), 0o755)
+  await fs.chmod(
+    path.join(rootDir, 'scripts', 'publish-placeholders.mjs'),
+    0o755,
+  )
 
   console.log('\n✅ Created publish script: scripts/publish-placeholders.mjs')
 }

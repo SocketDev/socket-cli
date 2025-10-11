@@ -21,11 +21,7 @@ export interface CommandBuilderOptions {
   flags?: MeowFlags
   includeCommonFlags?: boolean
   includeOutputFlags?: boolean
-  handler: (args: {
-    input: string[]
-    flags: any
-    cli: any
-  }) => Promise<void>
+  handler: (args: { input: string[]; flags: any; cli: any }) => Promise<void>
   examples?: Array<{ command: string; description?: string }>
   usage?: string
   helpText?: string
@@ -59,7 +55,11 @@ export function buildCommand(options: CommandBuilderOptions): CliSubcommand {
   return {
     description,
     hidden,
-    async run(argv: readonly string[], importMeta: ImportMeta, parentName: string) {
+    async run(
+      argv: readonly string[],
+      importMeta: ImportMeta,
+      parentName: string,
+    ) {
       const config: CliCommandConfig = {
         args,
         flags: combinedFlags,
@@ -85,9 +85,15 @@ export function buildCommand(options: CommandBuilderOptions): CliSubcommand {
               lines.push('\nOptions')
               // Auto-generate options from flags
               for (const [key, flag] of Object.entries(combinedFlags)) {
-                if (!flag || typeof flag !== 'object') continue
-                const shortFlag = 'shortFlag' in flag ? `-${flag.shortFlag}, ` : ''
-                const flagName = key.replace(/[A-Z]/g, m => '-' + m.toLowerCase())
+                if (!flag || typeof flag !== 'object') {
+                  continue
+                }
+                const shortFlag =
+                  'shortFlag' in flag ? `-${flag.shortFlag}, ` : ''
+                const flagName = key.replace(
+                  /[A-Z]/g,
+                  m => '-' + m.toLowerCase(),
+                )
                 lines.push(`  ${shortFlag}--${flagName}`)
                 if ('description' in flag && flag.description) {
                   lines.push(`    ${flag.description}`)
@@ -120,15 +126,27 @@ export interface ParentCommandOptions {
   defaultSubcommand?: string
 }
 
-export function buildParentCommand(options: ParentCommandOptions): CliSubcommand {
-  const { name, description, hidden = false, subcommands, defaultSubcommand } = options
+export function buildParentCommand(
+  options: ParentCommandOptions,
+): CliSubcommand {
+  const {
+    name,
+    description,
+    hidden = false,
+    subcommands,
+    defaultSubcommand,
+  } = options
 
   return {
     description,
     hidden,
     subcommands,
     defaultSubcommand,
-    async run(argv: readonly string[], importMeta: ImportMeta, parentName: string) {
+    async run(
+      argv: readonly string[],
+      importMeta: ImportMeta,
+      parentName: string,
+    ) {
       // This is typically handled by meowWithSubcommands
       // but we can provide a fallback
       logger.log(`Available subcommands for ${name}:`)

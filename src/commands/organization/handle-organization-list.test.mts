@@ -108,9 +108,7 @@ describe('handleOrganizationList', () => {
   })
 
   it('passes debug messages correctly', async () => {
-    const { debugDir, debugFn } = await import(
-      '../../utils/debug.mts'
-    )
+    const { debugDir, debugFn } = await import('../../utils/debug.mts')
     const { fetchOrganization } = await import('./fetch-organization-list.mts')
     const mockDebugDir = vi.mocked(debugDir)
     const mockDebugFn = vi.mocked(debugFn)

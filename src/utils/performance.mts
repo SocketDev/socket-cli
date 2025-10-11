@@ -91,7 +91,10 @@ export async function measure<T>(
     const metric = performanceMetrics[performanceMetrics.length - 1]
     return { result, duration: metric?.duration || 0 }
   } catch (error) {
-    stop({ success: false, error: error instanceof Error ? error.message : 'Unknown' })
+    stop({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown',
+    })
     throw error
   }
 }
@@ -123,7 +126,10 @@ export function measureSync<T>(
     const metric = performanceMetrics[performanceMetrics.length - 1]
     return { result, duration: metric?.duration || 0 }
   } catch (error) {
-    stop({ success: false, error: error instanceof Error ? error.message : 'Unknown' })
+    stop({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown',
+    })
     throw error
   }
 }
@@ -169,8 +175,10 @@ export function getPerformanceSummary(): Record<
     max: number
   }
 > {
-  const summary: Record<string, { count: number; total: number; min: number; max: number }> =
-    Object.create(null)
+  const summary: Record<
+    string,
+    { count: number; total: number; min: number; max: number }
+  > = Object.create(null)
 
   for (const metric of performanceMetrics) {
     const { operation, duration } = metric
@@ -192,8 +200,10 @@ export function getPerformanceSummary(): Record<
   }
 
   // Calculate averages and return with proper typing
-  const result: Record<string, { count: number; total: number; avg: number; min: number; max: number }> =
-    Object.create(null)
+  const result: Record<
+    string,
+    { count: number; total: number; avg: number; min: number; max: number }
+  > = Object.create(null)
 
   for (const [operation, stats] of Object.entries(summary)) {
     result[operation] = {
@@ -340,7 +350,10 @@ export function generatePerformanceReport(): string {
     report += `  Total: ${stats.total}ms\n\n`
   }
 
-  const totalDuration = Object.values(summary).reduce((sum, s) => sum + s.total, 0)
+  const totalDuration = Object.values(summary).reduce(
+    (sum, s) => sum + s.total,
+    0,
+  )
   report += `Total measured time: ${Math.round(totalDuration * 100) / 100}ms\n`
 
   return report

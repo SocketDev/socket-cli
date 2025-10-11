@@ -19,14 +19,16 @@ const { values } = parseArgs({
     arch: { type: 'string' },
     version: { type: 'string' },
     tool: { type: 'string', default: 'cli' },
-    outdir: { type: 'string' }
-  }
+    outdir: { type: 'string' },
+  },
 })
 
 const { platform, arch, version, tool = 'cli', outdir } = values
 
 if (!platform || !arch || !version) {
-  console.error('Usage: generate-binary-package.mjs --platform=darwin --arch=arm64 --version=1.1.24')
+  console.error(
+    'Usage: generate-binary-package.mjs --platform=darwin --arch=arm64 --version=1.1.24',
+  )
   process.exit(1)
 }
 
@@ -34,18 +36,20 @@ if (!platform || !arch || !version) {
 const cleanVersion = version.replace(/^v/, '')
 
 // Determine output directory
-const packageDir = outdir || path.join(rootDir, 'packages', 'binaries', `${tool}-${platform}-${arch}`)
+const packageDir =
+  outdir ||
+  path.join(rootDir, 'packages', 'binaries', `${tool}-${platform}-${arch}`)
 
 // Platform display names
 const platformNames = {
   darwin: 'macOS',
   linux: 'Linux',
-  win32: 'Windows'
+  win32: 'Windows',
 }
 
 const archNames = {
   x64: 'x64',
-  arm64: 'ARM64'
+  arm64: 'ARM64',
 }
 
 // Binary name (with .exe for Windows)
@@ -56,36 +60,40 @@ const packageJson = {
   name: `@socketbin/${tool}-${platform}-${arch}`,
   version: cleanVersion,
   description: `Socket ${tool.toUpperCase()} binary for ${platformNames[platform]} ${archNames[arch]}`,
-  keywords: ['socket', tool, 'binary', platform, arch, platformNames[platform].toLowerCase()],
+  keywords: [
+    'socket',
+    tool,
+    'binary',
+    platform,
+    arch,
+    platformNames[platform].toLowerCase(),
+  ],
   homepage: 'https://github.com/SocketDev/socket-cli',
   repository: {
     type: 'git',
     url: 'git+https://github.com/SocketDev/socket-cli.git',
-    directory: `packages/binaries/${tool}-${platform}-${arch}`
+    directory: `packages/binaries/${tool}-${platform}-${arch}`,
   },
   license: 'MIT',
   author: {
     name: 'Socket Inc',
     email: 'eng@socket.dev',
-    url: 'https://socket.dev'
+    url: 'https://socket.dev',
   },
   // Restrict installation to correct platform
   os: [platform === 'darwin' ? 'darwin' : platform],
   cpu: [arch],
   // Binary field for npm to handle
   bin: {
-    [`socket-${tool}-binary`]: `bin/${binaryName}`
+    [`socket-${tool}-binary`]: `bin/${binaryName}`,
   },
   // Files to include in package
-  files: [
-    'bin',
-    'README.md'
-  ],
+  files: ['bin', 'README.md'],
   // Publish configuration
   publishConfig: {
     access: 'public',
-    provenance: true
-  }
+    provenance: true,
+  },
 }
 
 // README content
@@ -132,19 +140,21 @@ async function generatePackage() {
     // Write package.json
     await fs.writeFile(
       path.join(packageDir, 'package.json'),
-      JSON.stringify(packageJson, null, 2) + '\n'
+      JSON.stringify(packageJson, null, 2) + '\n',
     )
     console.log(`Created: ${packageDir}/package.json`)
 
     // Write README
-    await fs.writeFile(
-      path.join(packageDir, 'README.md'),
-      readme
-    )
+    await fs.writeFile(path.join(packageDir, 'README.md'), readme)
     console.log(`Created: ${packageDir}/README.md`)
 
     // Check if binary exists and copy it
-    const sourceBinary = path.join(rootDir, 'dist', 'sea', `socket-${platform}-${arch}${platform === 'win32' ? '.exe' : ''}`)
+    const sourceBinary = path.join(
+      rootDir,
+      'dist',
+      'sea',
+      `socket-${platform}-${arch}${platform === 'win32' ? '.exe' : ''}`,
+    )
     const targetBinary = path.join(packageDir, 'bin', binaryName)
 
     try {
@@ -160,7 +170,9 @@ async function generatePackage() {
     }
 
     console.log(`\nPackage generated successfully at: ${packageDir}`)
-    console.log(`\nTo publish:\n  cd ${packageDir}\n  npm publish --provenance --access public`)
+    console.log(
+      `\nTo publish:\n  cd ${packageDir}\n  npm publish --provenance --access public`,
+    )
   } catch (error) {
     console.error('Error generating package:', error)
     process.exit(1)

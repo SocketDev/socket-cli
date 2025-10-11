@@ -1,9 +1,9 @@
 /**
  * Stub IPC utilities for inter-process communication.
+ * Re-exports from socket-registry for consistency.
  */
 
-import os from 'node:os'
-import path from 'node:path'
+import { getIpcStubPath } from '@socketsecurity/registry/lib/ipc'
 
 /**
  * Get the path to the IPC stub file.
@@ -12,6 +12,5 @@ import path from 'node:path'
  * @returns The path to the IPC stub file.
  */
 export function getStubPath(): string {
-  const tmpDir = os.tmpdir()
-  return path.join(tmpDir, 'socket-cli-ipc.stub')
+  return getIpcStubPath('socket-cli')
 }

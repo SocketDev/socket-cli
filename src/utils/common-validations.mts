@@ -35,7 +35,13 @@ export const validations = {
   /**
    * Validate mutually exclusive flags
    */
-  notBoth: (flag1: boolean, flag2: boolean, name1: string, name2: string, outputKind: OutputKind): boolean =>
+  notBoth: (
+    flag1: boolean,
+    flag2: boolean,
+    name1: string,
+    name2: string,
+    outputKind: OutputKind,
+  ): boolean =>
     checkCommandInput(outputKind, {
       nook: true,
       test: !(flag1 && flag2),
@@ -46,7 +52,12 @@ export const validations = {
   /**
    * Validate enum value
    */
-  isOneOf: <T>(value: T, options: T[], name: string, outputKind: OutputKind): boolean =>
+  isOneOf: <T,>(
+    value: T,
+    options: T[],
+    name: string,
+    outputKind: OutputKind,
+  ): boolean =>
     checkCommandInput(outputKind, {
       nook: true,
       test: options.includes(value),
@@ -100,15 +111,26 @@ export interface ValidationOptions {
 }
 
 export function runStandardValidations(options: ValidationOptions): boolean {
-  const { requireAuth: auth, requireOrg, dryRun, outputKind, validations: customValidations = [] } = options
+  const {
+    requireAuth: auth,
+    requireOrg,
+    dryRun,
+    outputKind,
+    validations: customValidations = [],
+  } = options
 
   // Run custom validations first
   for (const validation of customValidations) {
-    if (!validation()) return false
+    if (!validation()) {
+      return false
+    }
   }
 
   // Check org if required
-  if (requireOrg !== undefined && !validations.requireOrg(requireOrg, outputKind)) {
+  if (
+    requireOrg !== undefined &&
+    !validations.requireOrg(requireOrg, outputKind)
+  ) {
     return false
   }
 
@@ -130,18 +152,35 @@ export function runStandardValidations(options: ValidationOptions): boolean {
  * Common parameter validators
  */
 export const validateParams = {
-  pagination: (page: number, perPage: number, outputKind: OutputKind): boolean => {
+  pagination: (
+    page: number,
+    perPage: number,
+    outputKind: OutputKind,
+  ): boolean => {
     return (
       validations.isPositive(page, 'page', outputKind) &&
       validations.isPositive(perPage, 'per-page', outputKind)
     )
   },
 
-  sorting: (sort: string, direction: string, outputKind: OutputKind): boolean => {
-    return validations.isOneOf(direction, ['asc', 'desc'], 'direction', outputKind)
+  sorting: (
+    sort: string,
+    direction: string,
+    outputKind: OutputKind,
+  ): boolean => {
+    return validations.isOneOf(
+      direction,
+      ['asc', 'desc'],
+      'direction',
+      outputKind,
+    )
   },
 
-  outputFlags: (json: boolean, markdown: boolean, outputKind: OutputKind): boolean => {
+  outputFlags: (
+    json: boolean,
+    markdown: boolean,
+    outputKind: OutputKind,
+  ): boolean => {
     return validations.notBoth(json, markdown, 'json', 'markdown', outputKind)
   },
 }

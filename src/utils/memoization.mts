@@ -149,7 +149,10 @@ export function memoizeAsync<Args extends unknown[], Result>(
       const oldest = accessOrder.shift()
       if (oldest) {
         cache.delete(oldest)
-        debugCache('clear', `memoizeAsync:${name}`, { key: oldest, reason: 'LRU' })
+        debugCache('clear', `memoizeAsync:${name}`, {
+          key: oldest,
+          reason: 'LRU',
+        })
       }
     }
   }

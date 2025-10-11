@@ -19,10 +19,17 @@ const CLI_ENTRY = join(SOCKET_CLI_DIR, 'index.js')
 // Check if CLI exists
 if (existsSync(CLI_ENTRY)) {
   // Delegate to ~/.socket/_socket
-  const result = spawnSync(process.execPath, [CLI_ENTRY, ...process.argv.slice(2)], {
-    stdio: 'inherit',
-    env: { ...process.env, PKG_EXECPATH: process.env.PKG_EXECPATH || 'PKG_INVOKE_NODEJS' }
-  })
+  const result = spawnSync(
+    process.execPath,
+    [CLI_ENTRY, ...process.argv.slice(2)],
+    {
+      stdio: 'inherit',
+      env: {
+        ...process.env,
+        PKG_EXECPATH: process.env.PKG_EXECPATH || 'PKG_INVOKE_NODEJS',
+      },
+    },
+  )
   process.exit(result.status || 0)
 } else {
   // Download and install

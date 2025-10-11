@@ -177,18 +177,16 @@ export async function warmCaches(
 ): Promise<void> {
   debugCache('set', 'warming', { count: paths.length })
 
-  const warmPromises = paths
-    .filter(shouldWarmCache)
-    .map(async path => {
-      try {
-        await sdk.getApi(path, { responseType: 'json' })
-        debugCache('set', `warmed:${path}`)
-      } catch (error) {
-        debugCache('miss', `warm-failed:${path}`, {
-          error: error instanceof Error ? error.message : 'Unknown',
-        })
-      }
-    })
+  const warmPromises = paths.filter(shouldWarmCache).map(async path => {
+    try {
+      await sdk.getApi(path, { responseType: 'json' })
+      debugCache('set', `warmed:${path}`)
+    } catch (error) {
+      debugCache('miss', `warm-failed:${path}`, {
+        error: error instanceof Error ? error.message : 'Unknown',
+      })
+    }
+  })
 
   await Promise.all(warmPromises)
 }

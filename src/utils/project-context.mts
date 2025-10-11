@@ -17,11 +17,19 @@ interface ProjectContext {
 /**
  * Detect the package manager being used in the project
  */
-export async function detectPackageManager(cwd: string): Promise<ProjectContext['type']> {
+export async function detectPackageManager(
+  cwd: string,
+): Promise<ProjectContext['type']> {
   // Check for lock files
-  if (existsSync(join(cwd, 'pnpm-lock.yaml'))) return 'pnpm'
-  if (existsSync(join(cwd, 'yarn.lock'))) return 'yarn'
-  if (existsSync(join(cwd, 'package-lock.json'))) return 'npm'
+  if (existsSync(join(cwd, 'pnpm-lock.yaml'))) {
+    return 'pnpm'
+  }
+  if (existsSync(join(cwd, 'yarn.lock'))) {
+    return 'yarn'
+  }
+  if (existsSync(join(cwd, 'package-lock.json'))) {
+    return 'npm'
+  }
 
   // Check packageManager field in package.json
   const pkgPath = join(cwd, 'package.json')
@@ -29,9 +37,15 @@ export async function detectPackageManager(cwd: string): Promise<ProjectContext[
     try {
       const pkg = JSON.parse(await readFile(pkgPath, 'utf8'))
       if (pkg.packageManager) {
-        if (pkg.packageManager.startsWith('pnpm')) return 'pnpm'
-        if (pkg.packageManager.startsWith('yarn')) return 'yarn'
-        if (pkg.packageManager.startsWith('npm')) return 'npm'
+        if (pkg.packageManager.startsWith('pnpm')) {
+          return 'pnpm'
+        }
+        if (pkg.packageManager.startsWith('yarn')) {
+          return 'yarn'
+        }
+        if (pkg.packageManager.startsWith('npm')) {
+          return 'npm'
+        }
       }
     } catch {
       // Ignore parse errors
@@ -44,7 +58,9 @@ export async function detectPackageManager(cwd: string): Promise<ProjectContext[
 /**
  * Find the project root by looking for package.json
  */
-export async function findProjectRoot(startDir: string): Promise<string | null> {
+export async function findProjectRoot(
+  startDir: string,
+): Promise<string | null> {
   let currentDir = startDir
 
   while (currentDir !== dirname(currentDir)) {
@@ -62,24 +78,36 @@ export async function findProjectRoot(startDir: string): Promise<string | null> 
  */
 async function isMonorepo(root: string): Promise<boolean> {
   const pkgPath = join(root, 'package.json')
-  if (!existsSync(pkgPath)) return false
+  if (!existsSync(pkgPath)) {
+    return false
+  }
 
   try {
     const pkg = JSON.parse(await readFile(pkgPath, 'utf8'))
     // Check for workspaces (npm/yarn/pnpm)
-    if (pkg.workspaces) return true
+    if (pkg.workspaces) {
+      return true
+    }
 
     // Check for lerna
-    if (existsSync(join(root, 'lerna.json'))) return true
+    if (existsSync(join(root, 'lerna.json'))) {
+      return true
+    }
 
     // Check for rush
-    if (existsSync(join(root, 'rush.json'))) return true
+    if (existsSync(join(root, 'rush.json'))) {
+      return true
+    }
 
     // Check for nx
-    if (existsSync(join(root, 'nx.json'))) return true
+    if (existsSync(join(root, 'nx.json'))) {
+      return true
+    }
 
     // Check for pnpm workspaces
-    if (existsSync(join(root, 'pnpm-workspace.yaml'))) return true
+    if (existsSync(join(root, 'pnpm-workspace.yaml'))) {
+      return true
+    }
   } catch {
     // Ignore errors
   }
@@ -92,35 +120,58 @@ async function isMonorepo(root: string): Promise<boolean> {
  */
 async function detectFramework(root: string): Promise<string | undefined> {
   const pkgPath = join(root, 'package.json')
-  if (!existsSync(pkgPath)) return undefined
+  if (!existsSync(pkgPath)) {
+    return undefined
+  }
 
   try {
     const pkg = JSON.parse(await readFile(pkgPath, 'utf8'))
     const deps = { ...pkg.dependencies, ...pkg.devDependencies }
 
     // React-based
-    if (deps['next']) return 'next'
-    if (deps['react']) return 'react'
+    if (deps['next']) {
+      return 'next'
+    }
+    if (deps['react']) {
+      return 'react'
+    }
 
     // Vue-based
-    if (deps['nuxt']) return 'nuxt'
-    if (deps['vue']) return 'vue'
+    if (deps['nuxt']) {
+      return 'nuxt'
+    }
+    if (deps['vue']) {
+      return 'vue'
+    }
 
     // Angular
-    if (deps['@angular/core']) return 'angular'
+    if (deps['@angular/core']) {
+      return 'angular'
+    }
 
     // Svelte
-    if (deps['svelte'] || deps['@sveltejs/kit']) return 'svelte'
+    if (deps['svelte'] || deps['@sveltejs/kit']) {
+      return 'svelte'
+    }
 
     // Node.js frameworks
-    if (deps['express']) return 'express'
-    if (deps['fastify']) return 'fastify'
-    if (deps['koa']) return 'koa'
+    if (deps['express']) {
+      return 'express'
+    }
+    if (deps['fastify']) {
+      return 'fastify'
+    }
+    if (deps['koa']) {
+      return 'koa'
+    }
 
     // Static site generators
-    if (deps['gatsby']) return 'gatsby'
-    if (deps['@11ty/eleventy']) return 'eleventy'
-
+    if (deps['gatsby']) {
+      return 'gatsby'
+    }
+    if (deps['@11ty/eleventy']) {
+      return 'eleventy'
+    }
   } catch {
     // Ignore errors
   }
@@ -131,7 +182,9 @@ async function detectFramework(root: string): Promise<string | undefined> {
 /**
  * Get the full project context
  */
-export async function getProjectContext(cwd: string = process.cwd()): Promise<ProjectContext | null> {
+export async function getProjectContext(
+  cwd: string = process.cwd(),
+): Promise<ProjectContext | null> {
   const root = await findProjectRoot(cwd)
   if (!root) {
     return null
@@ -167,12 +220,16 @@ export function getContextualSuggestions(context: ProjectContext): string[] {
 
   // Framework specific
   if (context.framework === 'next') {
-    suggestions.push('Consider using `socket scan --prod` to exclude dev dependencies')
+    suggestions.push(
+      'Consider using `socket scan --prod` to exclude dev dependencies',
+    )
   }
 
   // Lock file missing
   if (!context.hasLockFile) {
-    suggestions.push(`Run \`${context.type} install\` to generate a lock file for accurate scanning`)
+    suggestions.push(
+      `Run \`${context.type} install\` to generate a lock file for accurate scanning`,
+    )
   }
 
   return suggestions
