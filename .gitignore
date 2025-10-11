@@ -4,6 +4,8 @@ Thumbs.db
 /.claude
 /.custom-node-build
 /.env
+/.env.local
+/.pnpmfile.cjs
 /.nvm
 /.rollup.cache
 /.type-coverage

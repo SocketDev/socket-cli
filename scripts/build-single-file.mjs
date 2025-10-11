@@ -22,10 +22,12 @@ import path from 'node:path'
 import { spawn } from 'node:child_process'
 import { promisify } from 'node:util'
 
+import { log, printHeader, printFooter } from './utils/common.mjs'
+
 const execAsync = promisify(spawn)
 
 async function buildSingleFile() {
-  console.log('🔧 Building Socket CLI as single file...\n')
+  printHeader('Single File Builder')
 
   const rootDir = process.cwd()
   const distDir = path.join(rootDir, 'dist-single')
