@@ -1,0 +1,107 @@
+/**
+ * Unified Socket CLI entry point.
+ *
+ * This single file handles all Socket CLI commands by detecting how it was invoked:
+ * - socket (main CLI)
+ * - socket-npm (npm wrapper)
+ * - socket-npx (npx wrapper)
+ * - socket-pnpm (pnpm wrapper)
+ * - socket-yarn (yarn wrapper)
+ *
+ * Perfect for SEA packaging and single-file distribution.
+ */
+
+import path from 'node:path'
+
+// Detect how this binary was invoked.
+function getInvocationMode(): string {
+  // Check environment variable first (for explicit mode).
+  const envMode = process.env.SOCKET_CLI_MODE
+  if (envMode) {
+    return envMode
+  }
+
+  // Check process.argv[1] for the actual script name.
+  const scriptPath = process.argv[1]
+  if (scriptPath) {
+    const scriptName = path
+      .basename(scriptPath)
+      .replace(/\.(js|mjs|cjs|exe)$/i, '')
+
+    // Map script names to modes.
+    if (scriptName.endsWith('npm')) {
+      return 'npm'
+    }
+    if (scriptName.endsWith('npx')) {
+      return 'npx'
+    }
+    if (scriptName.endsWith('pnpm')) {
+      return 'pnpm'
+    }
+    if (scriptName.endsWith('yarn')) {
+      return 'yarn'
+    }
+    if (scriptName.includes('socket')) {
+      return 'socket'
+    }
+  }
+
+  // Check process.argv0 as fallback.
+  const argv0 = path
+    .basename(process.argv0 || process.execPath)
+    .replace(/\.exe$/i, '')
+
+  if (argv0.endsWith('npm')) {
+    return 'npm'
+  }
+  if (argv0.endsWith('npx')) {
+    return 'npx'
+  }
+  if (argv0.endsWith('pnpm')) {
+    return 'pnpm'
+  }
+  if (argv0.endsWith('yarn')) {
+    return 'yarn'
+  }
+
+  // Default to main Socket CLI.
+  return 'socket'
+}
+
+// Route to the appropriate CLI based on invocation mode.
+async function main() {
+  const mode = getInvocationMode()
+
+  // Set environment variable for child processes.
+  process.env.SOCKET_CLI_MODE = mode
+
+  // Import and run the appropriate CLI.
+  switch (mode) {
+    case 'npm':
+      await import('./npm-cli.mjs')
+      break
+
+    case 'npx':
+      await import('./npx-cli.mjs')
+      break
+
+    case 'pnpm':
+      await import('./pnpm-cli.mjs')
+      break
+
+    case 'yarn':
+      await import('./yarn-cli.mjs')
+      break
+
+    case 'socket':
+    default:
+      await import('./cli.mjs')
+      break
+  }
+}
+
+// Run the appropriate CLI.
+main().catch(error => {
+  console.error('Socket CLI Error:', error)
+  process.exit(1)
+})
