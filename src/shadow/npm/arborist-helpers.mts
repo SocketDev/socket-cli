@@ -1,4 +1,4 @@
-import { debugFn } from '@socketsecurity/registry/lib/debug'
+import { debug } from '@socketsecurity/registry/lib/debug'
 import { getOwn } from '@socketsecurity/registry/lib/objects'
 import { parseUrl } from '@socketsecurity/registry/lib/url'
 
@@ -86,7 +86,7 @@ export function getDetailsFromDiff(
   const details: PackageDetail[] = []
   // `diff` is `null` when `npm install --package-lock-only` is passed.
   if (!diff) {
-    debugFn(`miss: diff is ${diff}`)
+    debug(`miss: diff is ${diff}`)
     return details
   }
 

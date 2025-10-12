@@ -33,7 +33,12 @@ import {
 } from '@octokit/graphql'
 import { Octokit } from '@octokit/rest'
 
-import { debugDir, debugFn, isDebug } from '@socketsecurity/registry/lib/debug'
+import {
+  debugDir,
+  debugDirNs,
+  debugNs,
+  isDebugNs,
+} from '@socketsecurity/registry/lib/debug'
 import {
   readJson,
   safeStatsSync,
@@ -59,7 +64,7 @@ async function readCache(
   const cacheJsonPath = path.join(constants.githubCachePath, `${key}.json`)
   const stat = safeStatsSync(cacheJsonPath)
   if (stat) {
-    const isExpired = Date.now() - stat.mtimeMs > ttlMs
+    const isExpired = Date.now() - Number(stat.mtimeMs) > ttlMs
     if (!isExpired) {
       return await readJson(cacheJsonPath)
     }
@@ -166,12 +171,12 @@ export async function fetchGhsaDetails(
       if (advisory && advisory.ghsaId) {
         results.set(id, advisory as GhsaDetails)
       } else {
-        debugFn('notice', `miss: no advisory found for ${id}`)
+        debugNs('notice', `miss: no advisory found for ${id}`)
       }
     }
   } catch (e) {
-    debugFn('error', formatErrorWithDetail('Failed to fetch GHSA details', e))
-    debugDir('error', e)
+    debugNs('error', formatErrorWithDetail('Failed to fetch GHSA details', e))
+    debugDirNs('error', e)
   }
 
   return results
@@ -182,7 +187,7 @@ export function getOctokit(): Octokit {
   if (_octokit === undefined) {
     const { SOCKET_CLI_GITHUB_TOKEN } = constants.ENV
     if (!SOCKET_CLI_GITHUB_TOKEN) {
-      debugFn('notice', 'miss: SOCKET_CLI_GITHUB_TOKEN env var')
+      debugNs('notice', 'miss: SOCKET_CLI_GITHUB_TOKEN env var')
     }
     const octokitOptions = {
       auth: SOCKET_CLI_GITHUB_TOKEN,
@@ -199,7 +204,7 @@ export function getOctokitGraphql(): typeof OctokitGraphql {
   if (!_octokitGraphql) {
     const { SOCKET_CLI_GITHUB_TOKEN } = constants.ENV
     if (!SOCKET_CLI_GITHUB_TOKEN) {
-      debugFn('notice', 'miss: SOCKET_CLI_GITHUB_TOKEN env var')
+      debugNs('notice', 'miss: SOCKET_CLI_GITHUB_TOKEN env var')
     }
     _octokitGraphql = OctokitGraphql.defaults({
       headers: {
@@ -281,24 +286,24 @@ export async function setGitRemoteGithubRepoUrl(
   const urlObj = parseUrl(GITHUB_SERVER_URL)
   const host = urlObj?.host
   if (!host) {
-    debugFn('error', 'invalid: GITHUB_SERVER_URL env var')
+    debugNs('error', 'invalid: GITHUB_SERVER_URL env var')
     debugDir('inspect', { GITHUB_SERVER_URL })
     return false
   }
   const url = `https://x-access-token:${token}@${host}/${owner}/${repo}`
   const stdioIgnoreOptions: SpawnOptions = {
     cwd,
-    stdio: isDebug('stdio') ? 'inherit' : 'ignore',
+    stdio: isDebugNs('stdio') ? 'inherit' : 'ignore',
   }
   const quotedCmd = `\`git remote set-url origin ${url}\``
-  debugFn('stdio', `spawn: ${quotedCmd}`)
+  debugNs('stdio', `spawn: ${quotedCmd}`)
   try {
     await spawn('git', ['remote', 'set-url', 'origin', url], stdioIgnoreOptions)
     return true
   } catch (e) {
-    debugFn('error', `Git command failed: ${quotedCmd}`)
-    debugDir('inspect', { cmd: quotedCmd })
-    debugDir('error', e)
+    debugNs('error', `Git command failed: ${quotedCmd}`)
+    debugDirNs('inspect', { cmd: quotedCmd })
+    debugDirNs('error', e)
   }
   return false
 }

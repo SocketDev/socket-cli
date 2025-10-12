@@ -21,10 +21,10 @@ import { socketDocsLink } from '../../utils/terminal-link.mts'
 import { setupTabCompletion } from '../install/setup-tab-completion.mts'
 import { fetchOrganization } from '../organization/fetch-organization-list.mts'
 
-import type { Choice, Separator } from '@socketsecurity/registry/lib/prompts'
+import type { Choice } from '@socketsecurity/registry/lib/prompts'
 
 type OrgChoice = Choice<string>
-type OrgChoices = Array<Separator | OrgChoice>
+type OrgChoices = OrgChoice[]
 
 export async function attemptLogin(
   apiBaseUrl: string | undefined,

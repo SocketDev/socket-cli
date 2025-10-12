@@ -29,6 +29,24 @@ import { getStubPath } from '../../utils/stub-ipc.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
+// Helper functions for updater paths.
+function getSocketCliUpdaterDownloadsDir(): string {
+  return path.join(os.tmpdir(), 'socket-cli-updater', 'downloads')
+}
+
+function getSocketCliUpdaterStagingDir(): string {
+  return path.join(os.tmpdir(), 'socket-cli-updater', 'staging')
+}
+
+// Helper function for removing files.
+async function remove(filePath: string): Promise<void> {
+  try {
+    await fs.rm(filePath, { recursive: true, force: true })
+  } catch {
+    // Ignore errors.
+  }
+}
+
 /**
  * GitHub release asset information.
  */

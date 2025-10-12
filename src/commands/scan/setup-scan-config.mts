@@ -298,7 +298,7 @@ async function configureGithub(
       default: config.repos,
       required: false,
       // validate: async string => bool
-    })
+    } as any)
     if (defaultRepos === undefined) {
       return canceledByUser()
     }

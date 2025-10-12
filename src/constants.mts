@@ -15,7 +15,7 @@ import { lazyConstants } from './constants/lazy.mts'
 import ENV from './constants/env.mts'
 
 // Import static constants that we need to reference.
-import { DOT_SOCKET_DIR } from './constants/static.mts'
+import { DOT_SOCKET_DIR, SOCKET_CLI_BIN_NAME } from './constants/static.mts'
 
 // Export individual lazy constants for backward compatibility.
 export const bashRcPath = lazyConstants.bashRcPath
@@ -48,10 +48,10 @@ export const srcPath = lazyConstants.srcPath
 export const zshRcPath = lazyConstants.zshRcPath
 
 // Re-export internals symbol.
-export const kInternalsSymbol = registryConstants.kInternalsSymbol
+export const kInternalsSymbol =
+  (registryConstants as any).kInternalsSymbol || Symbol('kInternalsSymbol')
 export const registryConstantsAttribs =
-  registryConstants[kInternalsSymbol as unknown as 'Symbol(kInternalsSymbol)']
-    .attributes
+  (registryConstants as any).attributes || {}
 
 // Additional Socket CLI specific constants.
 export const ALERT_TYPE_CRITICAL_CVE = 'criticalCVE'
@@ -155,9 +155,8 @@ export type { Agent } from './utils/package-environment.mts'
 export type { Remap } from '@socketsecurity/registry/lib/objects'
 export type { SpawnOptions } from '@socketsecurity/registry/lib/spawn'
 
-export type RegistryEnv = typeof registryConstants.ENV
-export type RegistryInternals =
-  (typeof registryConstants)['Symbol(kInternalsSymbol)']
+export type RegistryEnv = typeof ENV
+export type RegistryInternals = typeof registryConstantsAttribs
 
 export type Sentry = any
 

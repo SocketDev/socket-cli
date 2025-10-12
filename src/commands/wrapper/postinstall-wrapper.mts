@@ -1,6 +1,6 @@
 import fs, { existsSync } from 'node:fs'
 
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
+import { debugDir, debug } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { confirm } from '@socketsecurity/registry/lib/prompts'
 
@@ -48,7 +48,7 @@ Do you want to install the Socket npm wrapper (this will create an alias to the 
       }
     }
   } catch (e) {
-    debugFn('Tab completion setup failed (non-fatal)')
+    debug('Tab completion setup failed (non-fatal)')
     debugDir(e)
     // Ignore. Skip tab completion setup.
   }

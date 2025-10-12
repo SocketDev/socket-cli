@@ -1,6 +1,6 @@
 import { fileURLToPath } from 'node:url'
 
-import { debugFn } from '@socketsecurity/registry/lib/debug'
+import { debugNs } from '@socketsecurity/registry/lib/debug'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import constants, { YARN } from '../../constants.mts'
@@ -22,7 +22,7 @@ export type ShadowYarnOptions = SpawnOptions & {
 }
 
 export type ShadowYarnResult = {
-  spawnPromise: SpawnResult<string, SpawnExtra | undefined>
+  spawnPromise: SpawnResult
 }
 
 const DLX_COMMANDS = new Set(['dlx'])
@@ -82,7 +82,7 @@ export default async function shadowYarnBin(
   const otherArgs = terminatorPos === -1 ? [] : args.slice(terminatorPos)
   const suffixArgs = [...rawYarnArgs, ...otherArgs]
 
-  debugFn(
+  debugNs(
     'notice',
     `spawn: ${YARN} shadow bin ${realYarnPath} ${cmdFlagsToString(suffixArgs)}`,
   )

@@ -9,7 +9,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { pipeline } from 'node:stream/promises'
 
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
+import { debugDir, debug } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { confirm, select } from '@socketsecurity/registry/lib/prompts'
 
@@ -203,7 +203,7 @@ async function scanOneRepo(
   }
 
   const tmpDir = mkdtempSync(path.join(os.tmpdir(), repoSlug))
-  debugFn(`init: temp dir for scan root ${tmpDir}`)
+  debug(`init: temp dir for scan root ${tmpDir}`)
 
   const downloadResult = await testAndDownloadManifestFiles({
     files,
@@ -342,7 +342,7 @@ async function testAndDownloadManifestFile({
   repoApiUrl: string
   githubToken: string
 }): Promise<CResult<{ isManifest: boolean }>> {
-  debugFn(`testing: file ${file}`)
+  debug(`testing: file ${file}`)
 
   const supportedFilesCResult = await fetchSupportedScanFileNames()
   const supportedFiles = supportedFilesCResult.ok
@@ -350,12 +350,12 @@ async function testAndDownloadManifestFile({
     : undefined
 
   if (!supportedFiles || !isReportSupportedFile(file, supportedFiles)) {
-    debugFn('skip: not a known pattern')
+    debug('skip: not a known pattern')
     // Not an error.
     return { ok: true, data: { isManifest: false } }
   }
 
-  debugFn(`found: manifest file, going to attempt to download it; ${file}`)
+  debug(`found: manifest file, going to attempt to download it; ${file}`)
 
   const result = await downloadManifestFile({
     file,
@@ -381,7 +381,7 @@ async function downloadManifestFile({
   repoApiUrl: string
   githubToken: string
 }): Promise<CResult<undefined>> {
-  debugFn('request: download url from GitHub')
+  debug('request: download url from GitHub')
 
   const fileUrl = `${repoApiUrl}/contents/${file}?ref=${defaultBranch}`
   debugDir({ fileUrl })
@@ -392,10 +392,10 @@ async function downloadManifestFile({
       Authorization: `Bearer ${githubToken}`,
     },
   })
-  debugFn('complete: request')
+  debug('complete: request')
 
   const downloadUrlText = await downloadUrlResponse.text()
-  debugFn(`response: raw download url ${downloadUrlText}`)
+  debug(`response: raw download url ${downloadUrlText}`)
 
   let downloadUrl
   try {
@@ -413,7 +413,7 @@ async function downloadManifestFile({
   }
 
   const localPath = path.join(tmpDir, file)
-  debugFn(`download: manifest file started ${downloadUrl} -> ${localPath}`)
+  debug(`download: manifest file started ${downloadUrl} -> ${localPath}`)
 
   // Now stream the file to that file...
   const result = await streamDownloadWithFetch(localPath, downloadUrl)
@@ -425,7 +425,7 @@ async function downloadManifestFile({
     return result
   }
 
-  debugFn('download: manifest file completed')
+  debug('download: manifest file completed')
 
   return { ok: true, data: undefined }
 }
@@ -501,7 +501,7 @@ async function streamDownloadWithFetch(
       // If error was due to bad HTTP status
       detailedError += ` (HTTP Status: ${response.status} ${response.statusText})`
     }
-    debugFn(detailedError)
+    debug(detailedError)
     return { ok: false, message: 'Download Failed', cause: detailedError }
   }
 }
@@ -530,7 +530,7 @@ async function getLastCommitDetails({
   )
 
   const commitApiUrl = `${repoApiUrl}/commits?sha=${defaultBranch}&per_page=1`
-  debugFn(`url: commit ${commitApiUrl}`)
+  debug(`url: commit ${commitApiUrl}`)
 
   const commitResponse = await fetch(commitApiUrl, {
     headers: {
@@ -539,7 +539,7 @@ async function getLastCommitDetails({
   })
 
   const commitText = await commitResponse.text()
-  debugFn(`response: commit ${commitText}`)
+  debug(`response: commit ${commitText}`)
 
   let lastCommit
   try {
@@ -645,7 +645,7 @@ async function getRepoDetails({
   logger.success(`Request completed.`)
 
   const repoDetailsText = await repoDetailsResponse.text()
-  debugFn(`response: repo ${repoDetailsText}`)
+  debug(`response: repo ${repoDetailsText}`)
 
   let repoDetails
   try {
@@ -690,7 +690,7 @@ async function getRepoBranchTree({
   )
 
   const treeApiUrl = `${repoApiUrl}/git/trees/${defaultBranch}?recursive=1`
-  debugFn(`url: tree ${treeApiUrl}`)
+  debug(`url: tree ${treeApiUrl}`)
 
   const treeResponse = await fetch(treeApiUrl, {
     method: 'GET',
@@ -700,7 +700,7 @@ async function getRepoBranchTree({
   })
 
   const treeText = await treeResponse.text()
-  debugFn(`response: tree ${treeText}`)
+  debug(`response: tree ${treeText}`)
 
   let treeDetails
   try {

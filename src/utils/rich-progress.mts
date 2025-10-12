@@ -3,13 +3,6 @@
 import { Writable } from 'node:stream'
 import colors from 'yoctocolors-cjs'
 
-interface ProgressBar {
-  start(total: number, initial?: number): void
-  update(current: number, tokens?: Record<string, string>): void
-  stop(): void
-  increment(delta?: number): void
-}
-
 interface MultiProgressOptions {
   stream?: Writable
   format?: string
@@ -31,11 +24,13 @@ interface TaskProgress {
  */
 export class MultiProgress {
   private tasks: Map<string, TaskProgress> = new Map()
-  private renderInterval?: NodeJS.Timeout
+  private renderInterval: NodeJS.Timeout | undefined
   private stream: Writable
   private lastLineCount = 0
+  private options: MultiProgressOptions
 
-  constructor(private options: MultiProgressOptions = {}) {
+  constructor(options: MultiProgressOptions = {}) {
+    this.options = options
     this.stream = options.stream || process.stderr
   }
 
@@ -71,7 +66,9 @@ export class MultiProgress {
 
     task.current = current
     task.status = 'running'
-    task.tokens = tokens
+    if (tokens) {
+      task.tokens = tokens
+    }
 
     if (!task.startTime) {
       task.startTime = Date.now()
@@ -192,20 +189,19 @@ export class MultiProgress {
 export class Spinner {
   private frames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
   private current = 0
-  private interval?: NodeJS.Timeout
+  private interval: NodeJS.Timeout | undefined
   private stream: Writable
+  private message: string
 
-  constructor(
-    private message: string,
-    stream?: Writable,
-  ) {
+  constructor(message: string, stream?: Writable) {
+    this.message = message
     this.stream = stream || process.stderr
   }
 
   start(): void {
     this.interval = setInterval(() => {
       this.stream.write(
-        `\r${colors.cyan(this.frames[this.current])} ${this.message}`,
+        `\r${colors.cyan(this.frames[this.current]!)} ${this.message}`,
       )
       this.current = (this.current + 1) % this.frames.length
     }, 80)
@@ -241,11 +237,12 @@ export class FileProgress {
   private processed = 0
   private total: number
   private startTime = Date.now()
+  // private files: string[]
+  private operation: string
 
-  constructor(
-    private files: string[],
-    private operation: string = 'Processing',
-  ) {
+  constructor(files: string[], operation: string = 'Processing') {
+    // this.files = files
+    this.operation = operation
     this.total = files.length
   }
 

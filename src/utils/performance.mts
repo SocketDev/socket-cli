@@ -1,6 +1,6 @@
 /** @fileoverview Performance monitoring utilities for Socket CLI. Provides timing, profiling, and performance metric collection for identifying bottlenecks. */
 
-import { debugFn } from './debug.mts'
+import { debugNs } from './debug.mts'
 
 /**
  * Performance metrics collected during CLI execution.
@@ -47,7 +47,7 @@ export function perfTimer(
   }
 
   const start = performance.now()
-  debugFn('perf', `[START] ${operation}`)
+  debugNs('perf', `[START] ${operation}`)
 
   return (additionalMetadata?: Record<string, unknown>) => {
     const duration = performance.now() - start
@@ -59,7 +59,7 @@ export function perfTimer(
     }
 
     performanceMetrics.push(metric)
-    debugFn('perf', `[END] ${operation} - ${metric.duration}ms`)
+    debugNs('perf', `[END] ${operation} - ${metric.duration}ms`)
   }
 }
 
@@ -149,7 +149,7 @@ export function getPerformanceMetrics(): PerformanceMetrics[] {
  */
 export function clearPerformanceMetrics(): void {
   performanceMetrics.length = 0
-  debugFn('perf', 'Cleared performance metrics')
+  debugNs('perf', 'Cleared performance metrics')
 }
 
 /**
@@ -236,17 +236,17 @@ export function printPerformanceSummary(): void {
   const summary = getPerformanceSummary()
   const operations = Object.keys(summary).sort()
 
-  debugFn('perf', '\n=== Performance Summary ===')
+  debugNs('perf', '\n=== Performance Summary ===')
 
   for (const operation of operations) {
     const stats = summary[operation]!
-    debugFn(
+    debugNs(
       'perf',
       `${operation}: ${stats.count} calls, avg ${stats.avg}ms (min ${stats.min}ms, max ${stats.max}ms, total ${stats.total}ms)`,
     )
   }
 
-  debugFn('perf', '=========================\n')
+  debugNs('perf', '=========================\n')
 }
 
 /**
@@ -280,7 +280,7 @@ export function perfCheckpoint(
   }
 
   performanceMetrics.push(metric)
-  debugFn('perf', `[CHECKPOINT] ${checkpoint}`)
+  debugNs('perf', `[CHECKPOINT] ${checkpoint}`)
 }
 
 /**
@@ -304,7 +304,7 @@ export function trackMemory(label: string): number {
   const usage = process.memoryUsage()
   const heapUsedMB = Math.round((usage.heapUsed / 1024 / 1024) * 100) / 100
 
-  debugFn('perf', `[MEMORY] ${label}: ${heapUsedMB}MB heap used`)
+  debugNs('perf', `[MEMORY] ${label}: ${heapUsedMB}MB heap used`)
 
   const metric: PerformanceMetrics = {
     operation: `checkpoint:memory:${label}`,

@@ -6,7 +6,6 @@
  */
 
 // @ts-ignore - tsx files treated as CJS by tsgo without package.json type:module
-// @ts-ignore - tsx files treated as CJS by tsgo without package.json type:module
 import { Box as InkBox, Text as InkText, render as inkRender } from 'ink'
 // @ts-ignore - tsx files treated as CJS by tsgo without package.json type:module
 import ReactImport from 'react'
@@ -22,6 +21,7 @@ export const render: typeof inkRender = inkRender
 export const React: typeof ReactImport = ReactImport
 export const InkTable: typeof InkTableImport = InkTableImport
 
+// @ts-ignore - tsx files treated as CJS by tsgo without package.json type:module.
 export type { BoxProps, TextProps } from 'ink'
 export type { FC }
 export type Element = ReturnType<FC>

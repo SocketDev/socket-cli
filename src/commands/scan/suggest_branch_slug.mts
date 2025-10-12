@@ -6,9 +6,10 @@ export async function suggestBranchSlug(
   repoDefaultBranch: string | undefined,
 ): Promise<string | void> {
   const spawnResult = await spawn('git', ['branch', '--show-current'])
-  const stdoutStr = typeof spawnResult.stdout === 'string'
-    ? spawnResult.stdout
-    : spawnResult.stdout.toString('utf8')
+  const stdoutStr =
+    typeof spawnResult.stdout === 'string'
+      ? spawnResult.stdout
+      : spawnResult.stdout.toString('utf8')
   const currentBranch = stripAnsi(stdoutStr.trim())
   if (currentBranch && spawnResult.code === 0) {
     const proceed = await select<string>({

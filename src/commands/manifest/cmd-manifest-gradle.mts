@@ -1,6 +1,6 @@
 import path from 'node:path'
 
-import { debugFn } from '@socketsecurity/registry/lib/debug'
+import { debug } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { convertGradleToMaven } from './convert_gradle_to_maven.mts'
@@ -104,7 +104,7 @@ async function run(
 
   const sockJson = readOrDefaultSocketJson(cwd)
 
-  debugFn(
+  debug(
     `override: ${SOCKET_JSON} gradle: ${sockJson?.defaults?.manifest?.gradle}`,
   )
 

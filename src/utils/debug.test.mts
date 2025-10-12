@@ -37,7 +37,7 @@ describe('debug utilities', () => {
     })
 
     it('logs notice for successful responses when debug is enabled', async () => {
-      const { debugFn, isDebug } = await import(
+      const { debug, isDebug } = await import(
         '@socketsecurity/registry/lib/debug'
       )
       vi.mocked(isDebug).mockReturnValue(true)
@@ -48,7 +48,7 @@ describe('debug utilities', () => {
     })
 
     it('does not log for successful responses when debug is disabled', async () => {
-      const { debugFn, isDebug } = await import(
+      const { debug, isDebug } = await import(
         '@socketsecurity/registry/lib/debug'
       )
       vi.mocked(isDebug).mockReturnValue(false)
@@ -85,7 +85,7 @@ describe('debug utilities', () => {
     })
 
     it('logs silly level for successful operations when enabled', async () => {
-      const { debugFn, isDebug } = await import(
+      const { debug, isDebug } = await import(
         '@socketsecurity/registry/lib/debug'
       )
       vi.mocked(isDebug).mockReturnValue(true)
@@ -96,7 +96,7 @@ describe('debug utilities', () => {
     })
 
     it('does not log for successful operations when silly is disabled', async () => {
-      const { debugFn, isDebug } = await import(
+      const { debug, isDebug } = await import(
         '@socketsecurity/registry/lib/debug'
       )
       vi.mocked(isDebug).mockReturnValue(false)
@@ -139,7 +139,7 @@ describe('debug utilities', () => {
     })
 
     it('logs progress when silly debug is enabled', async () => {
-      const { debugFn, isDebug } = await import(
+      const { debug, isDebug } = await import(
         '@socketsecurity/registry/lib/debug'
       )
       vi.mocked(isDebug).mockReturnValue(true)
@@ -206,7 +206,7 @@ describe('debug utilities', () => {
     })
 
     it('logs silly when config not found and debug enabled', async () => {
-      const { debugFn, isDebug } = await import(
+      const { debug, isDebug } = await import(
         '@socketsecurity/registry/lib/debug'
       )
       vi.mocked(isDebug).mockReturnValue(true)
@@ -220,7 +220,7 @@ describe('debug utilities', () => {
     })
 
     it('does not log when config not found and debug disabled', async () => {
-      const { debugFn, isDebug } = await import(
+      const { debug, isDebug } = await import(
         '@socketsecurity/registry/lib/debug'
       )
       vi.mocked(isDebug).mockReturnValue(false)
@@ -244,7 +244,7 @@ describe('debug utilities', () => {
     })
 
     it('logs notice for important successful operations', async () => {
-      const { debugFn, isDebug } = await import(
+      const { debug, isDebug } = await import(
         '@socketsecurity/registry/lib/debug'
       )
       vi.mocked(isDebug).mockReturnValue(true)
@@ -263,7 +263,7 @@ describe('debug utilities', () => {
     })
 
     it('logs other operations only with silly debug', async () => {
-      const { debugFn, isDebug } = await import(
+      const { debug, isDebug } = await import(
         '@socketsecurity/registry/lib/debug'
       )
       vi.mocked(isDebug).mockImplementation(level => level === 'silly')
@@ -274,7 +274,7 @@ describe('debug utilities', () => {
     })
 
     it('does not log non-important operations without silly debug', async () => {
-      const { debugFn, isDebug } = await import(
+      const { debug, isDebug } = await import(
         '@socketsecurity/registry/lib/debug'
       )
       vi.mocked(isDebug).mockReturnValue(false)

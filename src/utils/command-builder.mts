@@ -7,8 +7,8 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import type {
   CliCommandConfig,
   CliSubcommand,
-  MeowFlags,
 } from './meow-with-subcommands.mts'
+import type { MeowFlags } from '../flags.mts'
 
 /**
  * Options for building a CLI command
@@ -32,7 +32,7 @@ export interface CommandBuilderOptions {
  */
 export function buildCommand(options: CommandBuilderOptions): CliSubcommand {
   const {
-    name,
+    name: commandName,
     description,
     hidden = false,
     args = '',
@@ -58,14 +58,16 @@ export function buildCommand(options: CommandBuilderOptions): CliSubcommand {
     async run(
       argv: readonly string[],
       importMeta: ImportMeta,
-      parentName: string,
+      context: { parentName: string; rawArgv?: readonly string[] },
     ) {
       const config: CliCommandConfig = {
-        args,
+        commandName,
+        description,
+        hidden,
         flags: combinedFlags,
         help: helpText
           ? () => helpText
-          : (command, config) => {
+          : (command, _config) => {
               const lines = [`Usage\n  $ ${command} ${args}`.trim()]
 
               if (examples.length > 0) {
@@ -104,7 +106,12 @@ export function buildCommand(options: CommandBuilderOptions): CliSubcommand {
             },
       }
 
-      const cli = meowOrExit({ argv, config, parentName, importMeta })
+      const cli = meowOrExit({
+        argv,
+        config,
+        parentName: context.parentName,
+        importMeta,
+      })
 
       await handler({
         input: cli.input,
@@ -128,7 +135,10 @@ export interface ParentCommandOptions {
 
 export function buildParentCommand(
   options: ParentCommandOptions,
-): CliSubcommand {
+): CliSubcommand & {
+  subcommands: Record<string, CliSubcommand>
+  defaultSubcommand?: string
+} {
   const {
     name,
     description,
@@ -141,11 +151,11 @@ export function buildParentCommand(
     description,
     hidden,
     subcommands,
-    defaultSubcommand,
+    ...(defaultSubcommand ? { defaultSubcommand } : {}),
     async run(
-      argv: readonly string[],
-      importMeta: ImportMeta,
-      parentName: string,
+      _argv: readonly string[],
+      _importMeta: ImportMeta,
+      _context: { parentName: string; rawArgv?: readonly string[] },
     ) {
       // This is typically handled by meowWithSubcommands
       // but we can provide a fallback

@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+import type { ChildProcess } from 'node:child_process'
+
 import shadowYarnBin from './shadow/yarn/bin.mts'
 
 void (async () => {
@@ -12,14 +14,17 @@ void (async () => {
   })
 
   // See https://nodejs.org/api/child_process.html#event-exit.
-  spawnPromise.process.on('exit', (code: number | null, signalName: string | null) => {
-    if (signalName) {
-      process.kill(process.pid, signalName)
-    } else if (typeof code === 'number') {
-      // eslint-disable-next-line n/no-process-exit
-      process.exit(code)
-    }
-  })
+  ;(spawnPromise.process as ChildProcess).on(
+    'exit',
+    (code: number | null, signalName: string | null) => {
+      if (signalName) {
+        process.kill(process.pid, signalName)
+      } else if (typeof code === 'number') {
+        // eslint-disable-next-line n/no-process-exit
+        process.exit(code)
+      }
+    },
+  )
 
   await spawnPromise
 })()

@@ -316,15 +316,12 @@ async function run(
 
   const { spawnPromise } = await runCdxgen(yargv)
 
-  // See https://nodejs.org/api/child_process.html#event-exit.
-  spawnPromise.process.on('exit', (code: number | null, signalName: string | null) => {
-    if (signalName) {
-      process.kill(process.pid, signalName)
-    } else if (typeof code === 'number') {
-      // eslint-disable-next-line n/no-process-exit
-      process.exit(code)
-    }
-  })
-
-  await spawnPromise
+  // Wait for the spawn promise to resolve and handle the result.
+  const result = await spawnPromise
+  if (result.signal) {
+    process.kill(process.pid, result.signal)
+  } else if (typeof result.code === 'number') {
+    // eslint-disable-next-line n/no-process-exit
+    process.exit(result.code)
+  }
 }

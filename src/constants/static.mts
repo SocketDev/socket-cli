@@ -5,70 +5,78 @@
 
 import path from 'node:path'
 
-import {
-  dirs,
-  env,
-  extensions,
-  files,
-  packageManagers,
-  paths,
-  socket,
-} from '@socketsecurity/registry/lib/constants'
+import registryConstants from '@socketsecurity/registry/lib/constants'
 
 // Map the new constants structure to the old names for compatibility
-export const AT_LATEST = '@latest'
+const c = registryConstants as any
+export const AT_LATEST = c.AT_LATEST ?? '@latest'
 export const LATEST = 'latest'
-export const BUN = packageManagers.bun.name
-export const CHANGELOG_MD = files.CHANGELOG_MD
-export const CI = env.CI
-export const COLUMN_LIMIT = 80
-export const DOT_GIT_DIR = dirs.DOT_GIT
-export const DOT_SOCKET_DIR = dirs.DOT_SOCKET
-export const EMPTY_FILE = ''
-export const EMPTY_VALUE = ''
-export const ESLINT_CONFIG_JS = files.ESLINT_CONFIG_JS
-export const ESNEXT = 'esnext'
-export const EXT_CJS = extensions.CJS
-export const EXT_CMD = '.cmd'
-export const EXT_CTS = extensions.CTS
-export const EXT_DTS = extensions.DTS
-export const EXT_JS = extensions.JS
-export const EXT_JSON = extensions.JSON
-export const EXT_LOCK = extensions.LOCK
-export const EXT_LOCKB = extensions.LOCKB
-export const EXT_MD = extensions.MD
-export const EXT_MJS = extensions.MJS
-export const EXT_MTS = extensions.MTS
-export const EXT_PS1 = '.ps1'
-export const EXT_YAML = extensions.YAML
-export const EXT_YML = extensions.YML
-export const EXTENSIONS = extensions
-export const EXTENSIONS_JSON = files.EXTENSIONS_JSON
-export const GITIGNORE = files.GITIGNORE
-export const DOT_PACKAGE_LOCK_JSON = files.PACKAGE_LOCK_JSON
+export const BUN = c.BUN ?? 'bun'
+export const CHANGELOG_MD = c.CHANGELOG_MD ?? 'CHANGELOG.md'
+export const CI = c.CI ?? false
+export const COLUMN_LIMIT = c.COLUMN_LIMIT ?? 80
+export const DOT_GIT_DIR = c.DOT_GIT_DIR ?? '.git'
+export const DOT_SOCKET_DIR = c.DOT_SOCKET_DIR ?? '.socket'
+export const EMPTY_FILE = c.EMPTY_FILE ?? ''
+export const EMPTY_VALUE = c.EMPTY_VALUE ?? ''
+export const ESLINT_CONFIG_JS = c.ESLINT_CONFIG_JS ?? 'eslint.config.js'
+export const ESNEXT = c.ESNEXT ?? 'esnext'
+export const EXT_CJS = c.EXT_CJS ?? '.cjs'
+export const EXT_CMD = c.EXT_CMD ?? '.cmd'
+export const EXT_CTS = c.EXT_CTS ?? '.cts'
+export const EXT_DTS = c.EXT_DTS ?? '.d.ts'
+export const EXT_JS = c.EXT_JS ?? '.js'
+export const EXT_JSON = c.EXT_JSON ?? '.json'
+export const EXT_LOCK = c.EXT_LOCK ?? '.lock'
+export const EXT_LOCKB = c.EXT_LOCKB ?? '.lockb'
+export const EXT_MD = c.EXT_MD ?? '.md'
+export const EXT_MJS = c.EXT_MJS ?? '.mjs'
+export const EXT_MTS = c.EXT_MTS ?? '.mts'
+export const EXT_PS1 = c.EXT_PS1 ?? '.ps1'
+export const EXT_YAML = c.EXT_YAML ?? '.yaml'
+export const EXT_YML = c.EXT_YML ?? '.yml'
+export const EXTENSIONS = {
+  CJS: EXT_CJS,
+  CTS: EXT_CTS,
+  DTS: EXT_DTS,
+  JS: EXT_JS,
+  JSON: EXT_JSON,
+  LOCK: EXT_LOCK,
+  LOCKB: EXT_LOCKB,
+  MD: EXT_MD,
+  MJS: EXT_MJS,
+  MTS: EXT_MTS,
+  YAML: EXT_YAML,
+  YML: EXT_YML,
+}
+export const EXTENSIONS_JSON = c.EXTENSIONS_JSON ?? 'extensions.json'
+export const GITIGNORE = c.GITIGNORE ?? '.gitignore'
+export const DOT_PACKAGE_LOCK_JSON =
+  c.DOT_PACKAGE_LOCK_JSON ?? '.package-lock.json'
 export const DOT_PACKAGE_LOCK_YML = '.package-lock.yml'
-export const DOT_PNPM_LOCK_YAML = files.PNPM_LOCK_YAML
+export const DOT_PNPM_LOCK_YAML = c.DOT_PNPM_LOCK_YAML ?? '.pnpm-lock.yaml'
 export const INDEX = 'index'
 export const INDEX_JS = 'index.js'
 export const JS = 'js'
-export const LICENSE = files.LICENSE
+export const LICENSE = c.LICENSE ?? 'LICENSE'
 export const LICENSE_MD = 'LICENSE.md'
-export const MANIFEST_JSON = files.MANIFEST_JSON
+export const MANIFEST_JSON = c.MANIFEST_JSON ?? 'manifest.json'
 export const NODE = 'node'
-export const NODE_MODULES = dirs.NODE_MODULES
-export const NODE_MODULES_GLOB_RECURSIVE = paths.NODE_MODULES_GLOB
-export const NPM = packageManagers.npm.name
+export const NODE_MODULES = c.NODE_MODULES ?? 'node_modules'
+export const NODE_MODULES_GLOB_RECURSIVE =
+  c.NODE_MODULES_GLOB_RECURSIVE ?? '**/node_modules/**'
+export const NPM = c.NPM ?? 'npm'
 export const NPMIGNORE = '.npmignore'
 export const NPMRC = '.npmrc'
-export const NPX = 'npx'
+export const NPX = c.NPX ?? 'npx'
 export const PACKAGE = 'package'
-export const PACKAGE_JSON = files.PACKAGE_JSON
+export const PACKAGE_JSON = c.PACKAGE_JSON ?? 'package.json'
 export const PACKAGE_LOCK = 'package-lock'
-export const PACKAGE_LOCK_JSON = 'package-lock.json'
-export const PNPM = packageManagers.pnpm.name
+export const PACKAGE_LOCK_JSON = c.PACKAGE_LOCK_JSON ?? 'package-lock.json'
+export const PNPM = c.PNPM ?? 'pnpm'
 export const PNPM_LOCK = 'pnpm-lock'
-export const PNPM_LOCK_YAML = files.PNPM_LOCK_YAML
-export const README_MD = files.README_MD
+export const PNPM_LOCK_YAML = c.PNPM_LOCK_YAML ?? 'pnpm-lock.yaml'
+export const README_MD = c.README_MD ?? 'README.md'
 export const ROLLUP_EXTERNAL_SUFFIX = '.external.js'
 export const SLASH_NODE_MODULES_SLASH = '/node_modules/'
 export const TEST = 'test'
@@ -81,12 +89,12 @@ export const UNLICENCED = 'UNLICENCED'
 export const UNLICENSED = 'UNLICENSED'
 export const V = 'v'
 export const VITEST = 'vitest'
-export const VLT = packageManagers.vlt.name
+export const VLT = c.VLT ?? 'vlt'
 export const WIN32 = 'win32'
-export const YARN = packageManagers.yarn.name
+export const YARN = c.YARN ?? 'yarn'
 export const YARN_BERRY = 'yarn_berry'
 export const YARN_CLASSIC = 'yarn_classic'
-export const YARN_LOCK = files.YARN_LOCK
+export const YARN_LOCK = c.YARN_LOCK ?? 'yarn.lock'
 
 // Socket CLI specific static constants
 export const BLESSED = 'blessed'

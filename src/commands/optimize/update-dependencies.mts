@@ -1,4 +1,4 @@
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
+import { debugDir, debug } from '@socketsecurity/registry/lib/debug'
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import constants from '../../constants.mts'
@@ -46,7 +46,7 @@ export async function updateDependencies(
   } catch (e) {
     spinner?.stop()
 
-    debugFn('Dependencies update failed')
+    debug('Dependencies update failed')
     debugDir(e)
 
     if (wasSpinning) {

@@ -109,13 +109,14 @@ export async function addOverrides(
 
   const depAliasMap = new Map<string, string>()
   const depEntries = getDependencyEntries(pkgEnvDetails)
-  const manifestEntries = manifestNpmOverrides.filter(({ 1: data }) =>
-    semver.satisfies(
-      // Roughly check Node range as semver.coerce will strip leading
-      // v's, carets (^), comparators (<,<=,>,>=,=), and tildes (~).
-      semver.coerce(data.engines.node)!,
-      pkgEnvDetails.pkgRequirements.node,
-    ),
+  const manifestEntries = manifestNpmOverrides.filter(
+    ({ 1: data }: { 1: any }) =>
+      semver.satisfies(
+        // Roughly check Node range as semver.coerce will strip leading
+        // v's, carets (^), comparators (<,<=,>,>=,=), and tildes (~).
+        semver.coerce(data.engines.node)!,
+        pkgEnvDetails.pkgRequirements.node,
+      ),
   )
 
   const addingText = `Adding overrides to ${workspace}...`
@@ -124,20 +125,20 @@ export async function addOverrides(
   // Chunk package names to process them in parallel 3 at a time.
   await pEach(
     manifestEntries,
-    async ({ 1: data }) => {
+    async ({ 1: data }: { 1: any }) => {
       const { name: sockRegPkgName, package: origPkgName, version } = data
       const major = getMajor(version)!
       const sockOverridePrefix = `npm:${sockRegPkgName}@`
       const sockOverrideSpec = `${sockOverridePrefix}${pin ? version : `^${major}`}`
       for (const { 1: depObj } of depEntries) {
         const sockSpec = hasOwn(depObj, sockRegPkgName)
-          ? depObj[sockRegPkgName]
+          ? (depObj[sockRegPkgName] as string)
           : undefined
         if (sockSpec) {
           depAliasMap.set(sockRegPkgName, sockSpec)
         }
         const origSpec = hasOwn(depObj, origPkgName)
-          ? depObj[origPkgName]
+          ? (depObj[origPkgName] as string)
           : undefined
         if (origSpec) {
           let thisSpec = origSpec

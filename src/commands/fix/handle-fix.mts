@@ -1,5 +1,5 @@
 import { joinAnd } from '@socketsecurity/registry/lib/arrays'
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
+import { debugDir, debug } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { coanaFix } from './coana-fix.mts'
@@ -32,7 +32,7 @@ export type HandleFixConfig = Remap<
  * Filters out invalid IDs and logs conversion results.
  */
 export async function convertIdsToGhsas(ids: string[]): Promise<string[]> {
-  debugFn(`Converting ${ids.length} IDs to GHSA format`)
+  debug(`Converting ${ids.length} IDs to GHSA format`)
   debugDir({ ids })
 
   const validGhsas: string[] = []
@@ -96,7 +96,7 @@ export async function convertIdsToGhsas(ids: string[]): Promise<string[]> {
     debugDir({ errors })
   }
 
-  debugFn(`Converted to ${validGhsas.length} valid GHSA IDs`)
+  debug(`Converted to ${validGhsas.length} valid GHSA IDs`)
   debugDir({ validGhsas })
 
   return validGhsas
@@ -121,7 +121,7 @@ export async function handleFix({
   spinner,
   unknownFlags,
 }: HandleFixConfig) {
-  debugFn(`Starting fix command for ${orgSlug}`)
+  debug(`Starting fix command for ${orgSlug}`)
   debugDir({
     autopilot,
     cwd,

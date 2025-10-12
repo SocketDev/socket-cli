@@ -39,6 +39,17 @@ import type {
   SpawnOptions,
 } from '@socketsecurity/registry/lib/spawn'
 
+/**
+ * Metadata structure for cached binaries.
+ */
+interface DlxMetadata {
+  timestamp: number
+  url: string
+  checksum?: string
+  platform?: string
+  arch?: string
+}
+
 export interface DlxBinaryOptions {
   /** URL to download the binary from. */
   url: string
@@ -64,7 +75,7 @@ export interface DlxBinaryResult {
   /** Whether the binary was newly downloaded. */
   downloaded: boolean
   /** The spawn promise for the running process. */
-  spawnPromise: ReturnType<typeof spawn>['promise']
+  spawnPromise: ReturnType<typeof spawn>
 }
 
 const { DLX_BINARY_CACHE_TTL } = constants
@@ -97,12 +108,14 @@ async function isCacheValid(
       return false
     }
 
-    const metadata = await readJson(metaPath, { throws: false })
+    const metadata = (await readJson(metaPath, {
+      throws: false,
+    })) as DlxMetadata | null
     if (!metadata) {
       return false
     }
     const now = Date.now()
-    const age = now - (metadata['timestamp'] as number)
+    const age = now - metadata.timestamp
 
     return age < cacheTtl
   } catch {
@@ -219,11 +232,13 @@ export async function cleanDlxCache(
       }
 
       // eslint-disable-next-line no-await-in-loop
-      const metadata = await readJson(metaPath, { throws: false })
+      const metadata = (await readJson(metaPath, {
+        throws: false,
+      })) as DlxMetadata | null
       if (!metadata) {
         continue
       }
-      const age = now - (metadata['timestamp'] as number)
+      const age = now - metadata.timestamp
 
       if (age > maxAge) {
         // Remove entire cache entry directory.
@@ -239,7 +254,7 @@ export async function cleanDlxCache(
         if (!contents.length) {
           // Remove empty directory.
           // eslint-disable-next-line no-await-in-loop
-          await remove(entryPath)
+          await fs.rm(entryPath, { recursive: true, force: true })
           cleaned += 1
         }
       } catch {}
@@ -289,9 +304,11 @@ export async function dlxBinary(
     // Binary is cached and valid, read the checksum from metadata.
     try {
       const metaPath = getMetadataPath(cacheEntryDir)
-      const metadata = await readJson(metaPath, { throws: false })
-      if (metadata && typeof metadata['checksum'] === 'string') {
-        computedChecksum = metadata['checksum']
+      const metadata = (await readJson(metaPath, {
+        throws: false,
+      })) as DlxMetadata | null
+      if (metadata && typeof metadata.checksum === 'string') {
+        computedChecksum = metadata.checksum
       } else {
         // If metadata is invalid, re-download.
         downloaded = true
@@ -379,7 +396,9 @@ export async function listDlxCache(): Promise<
 
       const metaPath = getMetadataPath(entryPath)
       // eslint-disable-next-line no-await-in-loop
-      const metadata = await readJson(metaPath, { throws: false })
+      const metadata = (await readJson(metaPath, {
+        throws: false,
+      })) as DlxMetadata | null
       if (!metadata) {
         continue
       }
@@ -396,12 +415,12 @@ export async function listDlxCache(): Promise<
 
         results.push({
           name: binaryFile,
-          url: metadata['url'] as string,
+          url: metadata.url,
           size: binaryStats.size,
-          age: now - (metadata['timestamp'] as number),
-          platform: (metadata['platform'] as string) || 'unknown',
-          arch: (metadata['arch'] as string) || 'unknown',
-          checksum: (metadata['checksum'] as string) || '',
+          age: now - metadata.timestamp,
+          platform: metadata.platform || 'unknown',
+          arch: metadata.arch || 'unknown',
+          checksum: metadata.checksum || '',
         })
       }
     } catch {}

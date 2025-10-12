@@ -32,7 +32,7 @@ import semver from 'semver'
 
 import { parse as parseBunLockb } from '@socketregistry/hyrious__bun.lockb/index.cjs'
 import { whichBin } from '@socketsecurity/registry/lib/bin'
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
+import { debugDirNs, debugNs } from '@socketsecurity/registry/lib/debug'
 import { readFileBinary, readFileUtf8 } from '@socketsecurity/registry/lib/fs'
 import { Logger } from '@socketsecurity/registry/lib/logger'
 import { readPackageJson } from '@socketsecurity/registry/lib/packages'
@@ -147,13 +147,16 @@ export type PartialEnvDetails = Readonly<
 >
 
 export type ReadLockFile =
-  | ((lockPath: string) => Promise<string | undefined>)
-  | ((lockPath: string, agentExecPath: string) => Promise<string | undefined>)
+  | ((lockPath: string) => Promise<string | Buffer | undefined>)
+  | ((
+      lockPath: string,
+      agentExecPath: string,
+    ) => Promise<string | Buffer | undefined>)
   | ((
       lockPath: string,
       agentExecPath: string,
       cwd: string,
-    ) => Promise<string | undefined>)
+    ) => Promise<string | Buffer | undefined>)
 
 const readLockFileByAgent: Map<Agent, ReadLockFile> = (() => {
   function wrapReader<T extends (...args: any[]) => Promise<any>>(
@@ -255,7 +258,10 @@ async function getAgentExecPath(agent: Agent): Promise<string> {
       return npmInNodeDir
     }
     // Fall back to whichBin.
-    return (await whichBin(binName, { nothrow: true })) ?? binName
+    const whichResult = await whichBin(binName, { nothrow: true })
+    return (
+      (Array.isArray(whichResult) ? whichResult[0] : whichResult) ?? binName
+    )
   }
   if (binName === PNPM) {
     // Try to use constants.pnpmExecPath first, but verify it exists.
@@ -264,9 +270,13 @@ async function getAgentExecPath(agent: Agent): Promise<string> {
       return pnpmPath
     }
     // Fall back to whichBin.
-    return (await whichBin(binName, { nothrow: true })) ?? binName
+    const whichResult = await whichBin(binName, { nothrow: true })
+    return (
+      (Array.isArray(whichResult) ? whichResult[0] : whichResult) ?? binName
+    )
   }
-  return (await whichBin(binName, { nothrow: true })) ?? binName
+  const whichResult = await whichBin(binName, { nothrow: true })
+  return (Array.isArray(whichResult) ? whichResult[0] : whichResult) ?? binName
 }
 
 async function getAgentVersion(
@@ -276,7 +286,7 @@ async function getAgentVersion(
 ): Promise<SemVer | undefined> {
   let result
   const quotedCmd = `\`${agent} ${FLAG_VERSION}\``
-  debugFn('stdio', `spawn: ${quotedCmd}`)
+  debugNs('stdio', `spawn: ${quotedCmd}`)
   try {
     result =
       // Coerce version output into a valid semver version by passing it through
@@ -284,20 +294,22 @@ async function getAgentVersion(
       // and tildes (~).
       semver.coerce(
         // All package managers support the "--version" flag.
-        (
-          await spawn(agentExecPath, [FLAG_VERSION], {
+        await (async () => {
+          const spawnResult = await spawn(agentExecPath, [FLAG_VERSION], {
             cwd,
             // On Windows, package managers are often .cmd files that require shell execution.
             // The spawn function from @socketsecurity/registry will handle this properly
             // when shell is true.
             shell: constants.WIN32,
           })
-        ).stdout,
+          const stdout = spawnResult.stdout
+          return typeof stdout === 'string' ? stdout : stdout.toString()
+        })(),
       ) ?? undefined
   } catch (e) {
-    debugFn('error', `Package manager command failed: ${quotedCmd}`)
-    debugDir('inspect', { cmd: quotedCmd })
-    debugDir('error', e)
+    debugNs('error', `Package manager command failed: ${quotedCmd}`)
+    debugDirNs('inspect', { cmd: quotedCmd })
+    debugDirNs('error', e)
   }
   return result
 }
@@ -320,12 +332,14 @@ export async function detectPackageEnvironment({
       ? path.dirname(pkgJsonPath)
       : undefined
   const editablePkgJson = pkgPath
-    ? await readPackageJson(pkgPath, { editable: true })
+    ? ((await readPackageJson(pkgPath, {
+        editable: true,
+      })) as unknown as EditablePackageJson)
     : undefined
   // Read Corepack `packageManager` field in package.json:
   // https://nodejs.org/api/packages.html#packagemanager
   const pkgManager = isNonEmptyString(editablePkgJson?.content?.packageManager)
-    ? editablePkgJson.content.packageManager
+    ? editablePkgJson!.content.packageManager
     : undefined
 
   let agent: Agent | undefined
@@ -408,10 +422,16 @@ export async function detectPackageEnvironment({
         }
       }
     }
-    lockSrc =
+    const rawLockSrc =
       typeof lockPath === 'string'
         ? await readLockFileByAgent.get(agent)!(lockPath, agentExecPath, cwd)
         : undefined
+    lockSrc =
+      typeof rawLockSrc === 'string'
+        ? rawLockSrc
+        : rawLockSrc instanceof Buffer
+          ? rawLockSrc.toString()
+          : undefined
   } else {
     lockName = undefined
     lockPath = undefined
@@ -456,7 +476,7 @@ export async function detectPackageEnvironment({
       // Does our minimum supported agent version meet the package's requirements?
       agent: semver.satisfies(minSupportedAgentVersion, pkgMinAgentRange),
       // Does our supported Node versions meet the package's requirements?
-      node: maintainedNodeVersions.some(v =>
+      node: maintainedNodeVersions.some((v: string) =>
         semver.satisfies(v, pkgMinNodeRange),
       ),
     },

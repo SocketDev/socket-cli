@@ -23,6 +23,7 @@ import { findUp } from '../utils/fs.mts'
 import { getPublicApiToken } from '../utils/sdk.mts'
 import { installNpmLinks, installNpxLinks } from '../utils/shadow-links.mts'
 
+import type { StdioOptions } from 'node:child_process'
 import type { IpcObject } from '../constants.mts'
 import type {
   SpawnExtra,
@@ -35,7 +36,7 @@ export type ShadowBinOptions = SpawnOptions & {
 }
 
 export type ShadowBinResult = {
-  spawnPromise: SpawnResult<string, SpawnExtra | undefined>
+  spawnPromise: SpawnResult
 }
 
 export default async function shadowNpmBase(
@@ -90,11 +91,14 @@ export default async function shadowNpmBase(
   // two levels quieter.
   const logLevelArgs = isSilent ? [FLAG_LOGLEVEL, 'error'] : []
   const noAuditArgs =
-    useAudit || !(await findUp(NODE_MODULES, { cwd, onlyDirectories: true }))
+    useAudit ||
+    !(await findUp(NODE_MODULES, { cwd: cwd as string, onlyDirectories: true }))
       ? []
       : ['--no-audit']
 
-  const stdio = ensureIpcInStdio(getOwn(spawnOpts, 'stdio'))
+  const stdio = ensureIpcInStdio(
+    getOwn(spawnOpts, 'stdio') as StdioOptions | undefined,
+  )
 
   const realBinPath = isShadowNpm
     ? await installNpmLinks(constants.shadowBinPath)

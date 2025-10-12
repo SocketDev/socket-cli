@@ -118,7 +118,7 @@ class ProcessLockManager {
 
     this.ensureExitHandler()
 
-    return await promises.pRetry(
+    return (await promises.pRetry(
       async () => {
         try {
           // Check for stale locks and remove them.
@@ -160,7 +160,7 @@ class ProcessLockManager {
         maxDelayMs,
         jitter: true,
       },
-    )
+    )) as () => void
   }
 
   /**

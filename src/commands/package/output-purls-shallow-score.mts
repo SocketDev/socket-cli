@@ -1,7 +1,7 @@
 import colors from 'yoctocolors-cjs'
 
 import { joinAnd } from '@socketsecurity/registry/lib/arrays'
-import { debugFn } from '@socketsecurity/registry/lib/debug'
+import { debug } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
@@ -75,7 +75,7 @@ function formatReportCard(
   }
   const alertString = getAlertString(artifact.alerts, { colorize })
   if (!artifact.ecosystem) {
-    debugFn(`miss: artifact ecosystem ${JSON.stringify(artifact)}`)
+    debug(`miss: artifact ecosystem ${JSON.stringify(artifact)}`)
   }
   const purl = `pkg:${artifact.ecosystem}/${artifact.name}${artifact.version ? '@' + artifact.version : ''}`
 

@@ -62,7 +62,9 @@ export function getFlagApiRequirementsOutput(
     const padding = ''.padEnd(indent)
     const lines = []
     if (Number.isFinite(quota) && quota > 0) {
-      lines.push(`${padding}- Quota: ${quota} ${pluralize('unit', { count: quota })}`)
+      lines.push(
+        `${padding}- Quota: ${quota} ${pluralize('unit', { count: quota })}`,
+      )
     }
     if (Array.isArray(rawPerms) && rawPerms.length) {
       const perms = rawPerms.slice().sort(naturalCompare)
@@ -119,7 +121,9 @@ export function getHelpListOutput(
 
     const description = entryIsObj ? entry.description : String(entry)
     if (description) {
-      result += indentString(description, preDescription.length).trimStart()
+      result += indentString(description, {
+        count: preDescription.length,
+      }).trimStart()
     }
     result += '\n'
   }

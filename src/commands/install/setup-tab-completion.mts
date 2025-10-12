@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { debugFn } from '@socketsecurity/registry/lib/debug'
+import { debug } from '@socketsecurity/registry/lib/debug'
 
 import constants from '../../constants.mts'
 import { getBashrcDetails } from '../../utils/completion.mts'
@@ -31,10 +31,10 @@ export async function setupTabCompletion(targetName: string): Promise<
 
   // Target dir is something like ~/.local/share/socket/settings/completion (linux)
   const targetDir = path.dirname(targetPath)
-  debugFn(`target: path + dir ${targetPath} ${targetDir}`)
+  debug(`target: path + dir ${targetPath} ${targetDir}`)
 
   if (!fs.existsSync(targetDir)) {
-    debugFn('create: target dir')
+    debug('create: target dir')
     fs.mkdirSync(targetDir, { recursive: true })
   }
 

@@ -21,7 +21,7 @@
 import { existsSync, promises as fs, readFileSync } from 'node:fs'
 import path from 'node:path'
 
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
+import { debugDir, debugNs } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { formatErrorWithDetail } from './errors.mts'
@@ -126,7 +126,7 @@ export async function readSocketJson(
 ): Promise<CResult<SocketJson>> {
   const sockJsonPath = path.join(cwd, SOCKET_JSON)
   if (!existsSync(sockJsonPath)) {
-    debugFn('notice', `miss: ${SOCKET_JSON} not found at ${cwd}`)
+    debugNs('notice', `miss: ${SOCKET_JSON} not found at ${cwd}`)
     return { ok: true, data: getDefaultSocketJson() }
   }
 
@@ -136,16 +136,16 @@ export async function readSocketJson(
   } catch (e) {
     if (defaultOnError) {
       logger.warn(`Failed to read ${SOCKET_JSON}, using default`)
-      debugFn('warn', `Failed to read ${SOCKET_JSON}`)
-      debugDir('warn', e)
+      debugNs('warn', `Failed to read ${SOCKET_JSON}`)
+      debugDir('warn', e as any)
       return { ok: true, data: getDefaultSocketJson() }
     }
     const cause = formatErrorWithDetail(
       `An error occurred while trying to read ${SOCKET_JSON}`,
       e,
     )
-    debugFn('error', `Failed to read ${SOCKET_JSON}`)
-    debugDir('error', e)
+    debugNs('error', `Failed to read ${SOCKET_JSON}`)
+    debugDir('error', e as any)
     return {
       ok: false,
       message: `Failed to read ${SOCKET_JSON}`,
@@ -157,9 +157,9 @@ export async function readSocketJson(
   try {
     obj = JSON.parse(json)
   } catch (e) {
-    debugFn('error', `Failed to parse ${SOCKET_JSON} as JSON`)
-    debugDir('inspect', { json })
-    debugDir('error', e)
+    debugNs('error', `Failed to parse ${SOCKET_JSON} as JSON`)
+    debugDir('inspect', { json } as any)
+    debugDir('error', e as any)
     if (defaultOnError) {
       logger.warn(`Failed to parse ${SOCKET_JSON}, using default`)
       return { ok: true, data: getDefaultSocketJson() }
@@ -187,7 +187,7 @@ export function readSocketJsonSync(
 ): CResult<SocketJson> {
   const sockJsonPath = path.join(cwd, SOCKET_JSON)
   if (!existsSync(sockJsonPath)) {
-    debugFn('notice', `miss: ${SOCKET_JSON} not found at ${cwd}`)
+    debugNs('notice', `miss: ${SOCKET_JSON} not found at ${cwd}`)
     return { ok: true, data: getDefaultSocketJson() }
   }
   let jsonContent = null
@@ -196,16 +196,16 @@ export function readSocketJsonSync(
   } catch (e) {
     if (defaultOnError) {
       logger.warn(`Failed to read ${SOCKET_JSON}, using default`)
-      debugFn('warn', `Failed to read ${SOCKET_JSON} sync`)
-      debugDir('warn', e)
+      debugNs('warn', `Failed to read ${SOCKET_JSON} sync`)
+      debugDir('warn', e as any)
       return { ok: true, data: getDefaultSocketJson() }
     }
     const cause = formatErrorWithDetail(
       `An error occurred while trying to read ${SOCKET_JSON}`,
       e,
     )
-    debugFn('error', `Failed to read ${SOCKET_JSON} sync`)
-    debugDir('error', e)
+    debugNs('error', `Failed to read ${SOCKET_JSON} sync`)
+    debugDir('error', e as any)
     return {
       ok: false,
       message: `Failed to read ${SOCKET_JSON}`,
@@ -217,9 +217,9 @@ export function readSocketJsonSync(
   try {
     jsonObj = JSON.parse(jsonContent)
   } catch (e) {
-    debugFn('error', `Failed to parse ${SOCKET_JSON} as JSON (sync)`)
-    debugDir('inspect', { jsonContent })
-    debugDir('error', e)
+    debugNs('error', `Failed to parse ${SOCKET_JSON} as JSON (sync)`)
+    debugDir('inspect', { jsonContent } as any)
+    debugDir('error', e as any)
     if (defaultOnError) {
       logger.warn(`Failed to parse ${SOCKET_JSON}, using default`)
       return { ok: true, data: getDefaultSocketJson() }
@@ -249,9 +249,9 @@ export async function writeSocketJson(
   try {
     jsonContent = JSON.stringify(sockJson, null, 2)
   } catch (e) {
-    debugFn('error', `Failed to serialize ${SOCKET_JSON} to JSON`)
-    debugDir('inspect', { sockJson })
-    debugDir('error', e)
+    debugNs('error', `Failed to serialize ${SOCKET_JSON} to JSON`)
+    debugDir('inspect', { sockJson } as any)
+    debugDir('error', e as any)
     return {
       ok: false,
       message: 'Failed to serialize to JSON',

@@ -1,4 +1,4 @@
-import { debugFn } from '@socketsecurity/registry/lib/debug'
+import { debug } from '@socketsecurity/registry/lib/debug'
 
 import constants from '../../constants.mts'
 import { getConfigValueOrUndef } from '../../utils/config.mts'
@@ -10,7 +10,7 @@ import type { CResult } from '../../types.mts'
 export async function getDefaultOrgSlug(): Promise<CResult<string>> {
   const defaultOrgResult = getConfigValueOrUndef('defaultOrg')
   if (defaultOrgResult) {
-    debugFn(
+    debug(
       `use: org from "defaultOrg" value of socket/settings local app data: ${defaultOrgResult}`,
     )
     return { ok: true, data: defaultOrgResult }
@@ -18,7 +18,7 @@ export async function getDefaultOrgSlug(): Promise<CResult<string>> {
 
   const envOrgSlug = constants.ENV.SOCKET_CLI_ORG_SLUG
   if (envOrgSlug) {
-    debugFn(
+    debug(
       `use: org from SOCKET_CLI_ORG_SLUG environment variable: ${envOrgSlug}`,
     )
     return { ok: true, data: envOrgSlug }
@@ -48,7 +48,7 @@ export async function getDefaultOrgSlug(): Promise<CResult<string>> {
     }
   }
 
-  debugFn(`resolve: org from Socket API: ${slug}`)
+  debug(`resolve: org from Socket API: ${slug}`)
 
   return {
     ok: true,

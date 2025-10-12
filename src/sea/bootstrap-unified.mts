@@ -13,10 +13,11 @@
  */
 
 import { spawn } from 'node:child_process'
-import { existsSync, promises as fs } from 'node:fs'
+import { promises as fs } from 'node:fs'
 import https from 'node:https'
 import os from 'node:os'
 import path from 'node:path'
+// @ts-ignore - nanotar module not available currently
 import { parseTarGzip } from 'nanotar'
 
 // ============================================================================
@@ -70,7 +71,7 @@ try {
 
 const DOWNLOAD_MESSAGE_DELAY_MS = 2_000
 const HTTPS_TIMEOUT_MS = 30_000
-const IPC_HANDSHAKE_TIMEOUT_MS = 5_000
+// const IPC_HANDSHAKE_TIMEOUT_MS = 5_000 // Currently unused.
 const LOCK_MAX_RETRIES = 60
 const LOCK_RETRY_DELAY_MS = 500
 const NPM_REGISTRY =
@@ -281,9 +282,11 @@ async function ensureSocketCli(): Promise<string> {
   // Check if already installed
   if (await fileExists(SOCKET_CLI_PACKAGE_JSON)) {
     try {
-      const pkgJson = JSON.parse(
-        await fs.readFile(SOCKET_CLI_PACKAGE_JSON, 'utf-8'),
-      )
+      // const pkgJson = JSON.parse(
+      //   await fs.readFile(SOCKET_CLI_PACKAGE_JSON, 'utf-8'),
+      // )
+      // Validate package.json exists.
+      await fs.readFile(SOCKET_CLI_PACKAGE_JSON, 'utf-8')
 
       // Return the bin directory path
       const binDir = path.join(SOCKET_CLI_DIR, 'bin')

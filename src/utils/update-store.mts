@@ -78,9 +78,11 @@ class UpdateStore {
       }
 
       const rawContent = readFileUtf8Sync(this.storePath)
-      const content = (typeof rawContent === 'string'
-        ? rawContent
-        : rawContent.toString('utf8')).trim()
+      const content = (
+        typeof rawContent === 'string'
+          ? rawContent
+          : rawContent.toString('utf8')
+      ).trim()
       if (!content) {
         return undefined
       }
@@ -227,9 +229,11 @@ class UpdateStore {
       }
 
       const rawContent = readFileUtf8Sync(this.storePath)
-      const content = (typeof rawContent === 'string'
-        ? rawContent
-        : rawContent.toString('utf8')).trim()
+      const content = (
+        typeof rawContent === 'string'
+          ? rawContent
+          : rawContent.toString('utf8')
+      ).trim()
       if (!content) {
         return []
       }

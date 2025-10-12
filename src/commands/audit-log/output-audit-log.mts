@@ -1,6 +1,6 @@
 import { createRequire } from 'node:module'
 
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
+import { debugDir, debug } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants, {
@@ -185,7 +185,7 @@ ${table}
     logger.fail(
       `There was a problem converting the logs to Markdown, please try the \`${FLAG_JSON}\` flag`,
     )
-    debugFn('Markdown conversion failed')
+    debug('Markdown conversion failed')
     debugDir(e)
     return 'Failed to generate the markdown report'
   }

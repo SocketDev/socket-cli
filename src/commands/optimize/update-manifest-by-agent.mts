@@ -6,7 +6,7 @@ import constants from '../../constants.mts'
 import type { Overrides } from './types.mts'
 import type { Agent } from '../../utils/package-environment.mts'
 
-type EditablePackageJson = ReturnType<typeof toEditablePackageJson>
+type EditablePackageJson = Awaited<ReturnType<typeof toEditablePackageJson>>
 
 const {
   BUN,

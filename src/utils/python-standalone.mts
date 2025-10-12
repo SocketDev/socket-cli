@@ -46,7 +46,6 @@ import path from 'node:path'
 
 import semver from 'semver'
 
-import { remove } from '@socketsecurity/registry/lib/fs'
 import { whichBin } from '@socketsecurity/registry/lib/bin'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
@@ -209,8 +208,8 @@ async function downloadPython(pythonDir: string): Promise<void> {
     shell: WIN32,
   })
 
-  // Clean up tarball
-  await remove(tarballPath)
+  // Clean up tarball.
+  await fs.rm(tarballPath, { force: true })
 }
 
 /**

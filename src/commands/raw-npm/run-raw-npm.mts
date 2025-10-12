@@ -17,14 +17,18 @@ export async function runRawNpm(
   })
 
   // See https://nodejs.org/api/child_process.html#event-exit.
-  spawnPromise.process.on('exit', (code: number | null, signalName: string | null) => {
-    if (signalName) {
-      process.kill(process.pid, signalName)
-    } else if (typeof code === 'number') {
-      // eslint-disable-next-line n/no-process-exit
-      process.exit(code)
-    }
-  })
+  // @ts-ignore - process.on method exists at runtime
+  spawnPromise.process.on?.(
+    'exit',
+    (code: number | null, signalName: string | null) => {
+      if (signalName) {
+        process.kill(process.pid, signalName)
+      } else if (typeof code === 'number') {
+        // eslint-disable-next-line n/no-process-exit
+        process.exit(code)
+      }
+    },
+  )
 
   await spawnPromise
 }

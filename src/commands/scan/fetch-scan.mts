@@ -1,4 +1,4 @@
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
+import { debugDir, debug } from '@socketsecurity/registry/lib/debug'
 
 import { queryApiSafeText } from '../../utils/api.mts'
 
@@ -28,7 +28,7 @@ export async function fetchScan(
       return JSON.parse(line)
     } catch (e) {
       ok = false
-      debugFn('Failed to parse scan result line as JSON')
+      debug('Failed to parse scan result line as JSON')
       debugDir({ error: e, line })
       return undefined
     }

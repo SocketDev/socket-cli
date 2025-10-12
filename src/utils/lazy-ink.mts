@@ -9,6 +9,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 export async function loadInk(): Promise<{ ink: any; React: any }> {
   try {
     // Dynamic import to create a separate chunk
+    // @ts-ignore - ink module bundled externally
     const [ink, React] = await Promise.all([import('ink'), import('react')])
     return { ink, React }
   } catch (error) {
@@ -22,6 +23,7 @@ export async function loadInk(): Promise<{ ink: any; React: any }> {
  */
 export async function loadInkTable() {
   try {
+    // @ts-ignore - ink-table module bundled externally
     const { default: Table } = await import('ink-table')
     return Table
   } catch (error) {

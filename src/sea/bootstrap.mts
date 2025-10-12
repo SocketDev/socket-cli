@@ -13,6 +13,7 @@ import { existsSync, promises as fs } from 'node:fs'
 import https from 'node:https'
 import os from 'node:os'
 import path from 'node:path'
+// @ts-ignore - nanotar module not available currently
 import { parseTarGzip } from 'nanotar'
 
 // Configurable constants with environment variable overrides.

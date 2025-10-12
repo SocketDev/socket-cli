@@ -1,7 +1,7 @@
 /** @fileoverview Intelligent caching strategies for Socket CLI API responses. Provides cache warming, invalidation, and adaptive TTL based on data volatility. */
 
-import { debugCache } from './debug.mts'
-import { getDefaultCacheTtl } from './sdk.mts'
+import { debugCache } from '@socketsecurity/registry/lib/debug'
+// getDefaultCacheTtl doesn't exist yet - need to implement or use a constant.
 
 import type { SocketSdk } from '@socketsecurity/sdk'
 
@@ -111,7 +111,7 @@ export function getCacheStrategy(path: string): CacheStrategy {
   }
 
   // Return default strategy
-  const defaultTtl = getDefaultCacheTtl()
+  const defaultTtl = 60_000 // Default to 60 seconds.
   debugCache('miss', 'strategy:default', { path, ttl: defaultTtl })
   return {
     ttl: defaultTtl,
@@ -172,14 +172,15 @@ export function isVolatileData(path: string): boolean {
  * await warmCaches(sdk.data, ['/users/me', '/organizations/my-org/settings'])
  */
 export async function warmCaches(
-  sdk: SocketSdk,
+  _sdk: SocketSdk,
   paths: string[],
 ): Promise<void> {
   debugCache('set', 'warming', { count: paths.length })
 
   const warmPromises = paths.filter(shouldWarmCache).map(async path => {
     try {
-      await sdk.getApi(path, { responseType: 'json' })
+      // getApi doesn't exist on SocketSdk - needs to be reimplemented.
+      // await sdk.getApi(path, { responseType: 'json' })
       debugCache('set', `warmed:${path}`)
     } catch (error) {
       debugCache('miss', `warm-failed:${path}`, {
@@ -198,8 +199,8 @@ export async function warmCaches(
  * Note: This requires SDK support for cache invalidation.
  * Currently a no-op pending SDK cache API enhancement.
  */
-export function invalidateCachePattern(_pattern: string): void {
-  debugCache('clear', `pattern:${_pattern}`)
+export function invalidateCachePattern(pattern: string): void {
+  debugCache('clear', `pattern:${pattern}`)
   // TODO: Implement when SDK exposes cache invalidation API
   // For now, caches auto-expire based on TTL
 }

@@ -21,7 +21,7 @@
 
 import { messageWithCauses } from 'pony-cause'
 
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
+import { debugDir, debug } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
@@ -268,7 +268,7 @@ export async function handleApiCallNoSpinner<T extends SocketSdkOperations>(
   try {
     sdkResult = await value
   } catch (e) {
-    debugFn(`API request failed: ${description}`)
+    debug(`API request failed: ${description}`)
     debugDir(e)
 
     const errStr = e ? String(e).trim() : ''
@@ -285,7 +285,7 @@ export async function handleApiCallNoSpinner<T extends SocketSdkOperations>(
 
   // Note: TS can't narrow down the type of result due to generics
   if (sdkResult.success === false) {
-    debugFn(`fail: ${description} bad response`)
+    debug(`fail: ${description} bad response`)
     debugDir({ sdkResult })
 
     const sdkErrorResult = sdkResult as SocketSdkErrorResult<T>
@@ -371,7 +371,7 @@ export async function queryApiSafeText(
       )
     }
 
-    debugFn('Query API request failed')
+    debug('Query API request failed')
     debugDir(e)
 
     const errStr = e ? String(e).trim() : ''
@@ -409,7 +409,7 @@ export async function queryApiSafeText(
       data,
     }
   } catch (e) {
-    debugFn('Failed to read API response text')
+    debug('Failed to read API response text')
     debugDir(e)
 
     return {
@@ -518,7 +518,7 @@ export async function sendApiRequest<T>(
       )
     }
 
-    debugFn(`API ${method} request failed`)
+    debug(`API ${method} request failed`)
     debugDir(e)
 
     const errStr = e ? String(e).trim() : ''
@@ -556,7 +556,7 @@ export async function sendApiRequest<T>(
       data: data as T,
     }
   } catch (e) {
-    debugFn('Failed to parse API response JSON')
+    debug('Failed to parse API response JSON')
     debugDir(e)
     return {
       ok: false,

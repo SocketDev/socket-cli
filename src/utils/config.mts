@@ -25,7 +25,7 @@ import { mkdirSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 
 import config from '@socketsecurity/config'
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
+import { debugDirNs, debugNs } from '@socketsecurity/registry/lib/debug'
 import { safeReadFileSync } from '@socketsecurity/registry/lib/fs'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
@@ -101,10 +101,11 @@ function getConfigValues(): LocalConfig {
       const raw = safeReadFileSync(socketAppDataPath)
       if (raw) {
         try {
-          Object.assign(
-            _cachedConfig,
-            JSON.parse(Buffer.from(raw, 'base64').toString()),
-          )
+          const decoded =
+            typeof raw === 'string'
+              ? Buffer.from(raw, 'base64').toString()
+              : Buffer.from(raw.toString(), 'base64').toString()
+          Object.assign(_cachedConfig, JSON.parse(decoded))
           debugConfig(socketAppDataPath, true)
         } catch (e) {
           logger.warn(`Failed to parse config at ${socketAppDataPath}`)
@@ -173,8 +174,8 @@ export function findSocketYmlSync(
           },
         }
       } catch (e) {
-        debugFn('error', `Failed to parse config file: ${ymlPath}`)
-        debugDir('error', e)
+        debugNs('error', `Failed to parse config file: ${ymlPath}`)
+        debugDirNs('error', e)
         return {
           ok: false,
           message: `Found file but was unable to parse ${ymlPath}`,
@@ -244,7 +245,7 @@ let _cachedConfig: LocalConfig | undefined
 let _configFromFlag = false
 
 export function overrideCachedConfig(jsonConfig: unknown): CResult<undefined> {
-  debugFn('notice', 'override: full config (not stored)')
+  debugNs('notice', 'override: full config (not stored)')
 
   let config
   try {
@@ -291,7 +292,7 @@ export function overrideCachedConfig(jsonConfig: unknown): CResult<undefined> {
 }
 
 export function overrideConfigApiToken(apiToken: unknown) {
-  debugFn('notice', 'override: Socket API token (not stored)')
+  debugNs('notice', 'override: Socket API token (not stored)')
   // Set token to the local cached config and mark it read-only so it doesn't persist.
   _cachedConfig = {
     ..._cachedConfig,
