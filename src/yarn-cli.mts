@@ -12,7 +12,7 @@ void (async () => {
   })
 
   // See https://nodejs.org/api/child_process.html#event-exit.
-  spawnPromise.process.on('exit', (code, signalName) => {
+  spawnPromise.process.on('exit', (code: number | null, signalName: string | null) => {
     if (signalName) {
       process.kill(process.pid, signalName)
     } else if (typeof code === 'number') {

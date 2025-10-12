@@ -5,7 +5,7 @@ import colors from 'yoctocolors-cjs'
 import { LOG_SYMBOLS } from '@socketsecurity/registry/lib/logger'
 import { stripAnsi } from '@socketsecurity/registry/lib/strings'
 
-import { debugFn, isDebug } from './debug.mts'
+import { debugFn, debugFnNs, isDebug, isDebugNs } from './debug.mts'
 import {
   AuthError,
   ConfigError,
@@ -34,7 +34,7 @@ export function formatErrorForDisplay(
   options?: ErrorDisplayOptions | undefined,
 ): { body?: string | undefined; message: string; title: string } {
   const opts = { __proto__: null, ...options } as ErrorDisplayOptions
-  const verbose = opts.verbose ?? isDebug('error')
+  const verbose = opts.verbose ?? isDebugNs('error')
   const showStack = opts.showStack ?? verbose
 
   let title = opts.title || 'Error'
@@ -180,7 +180,7 @@ export function formatErrorForTerminal(
   }
 
   if (body) {
-    const verbose = options?.verbose ?? isDebug('error')
+    const verbose = options?.verbose ?? isDebugNs('error')
     if (verbose) {
       lines.push('', colors.dim('Stack trace:'), body)
     } else {
@@ -260,8 +260,8 @@ export function formatExternalCliError(
     lines.push(`  ${error.message}`)
   }
 
-  if (opts.verbose ?? isDebug('error')) {
-    debugFn('error', `External CLI error details: ${command}`, error)
+  if (opts.verbose ?? isDebugNs('error')) {
+    debugFnNs('error', `External CLI error details: ${command}`, error)
   }
 
   return lines.join('\n')
