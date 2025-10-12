@@ -77,7 +77,10 @@ class UpdateStore {
         return undefined
       }
 
-      const content = readFileUtf8Sync(this.storePath).trim()
+      const rawContent = readFileUtf8Sync(this.storePath)
+      const content = (typeof rawContent === 'string'
+        ? rawContent
+        : rawContent.toString('utf8')).trim()
       if (!content) {
         return undefined
       }
@@ -223,7 +226,10 @@ class UpdateStore {
         return []
       }
 
-      const content = readFileUtf8Sync(this.storePath).trim()
+      const rawContent = readFileUtf8Sync(this.storePath)
+      const content = (typeof rawContent === 'string'
+        ? rawContent
+        : rawContent.toString('utf8')).trim()
       if (!content) {
         return []
       }
