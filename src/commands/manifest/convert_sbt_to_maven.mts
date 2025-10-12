@@ -55,7 +55,11 @@ export async function convertSbtToMaven({
       return
     }
     const poms: string[] = []
-    output.stdout.replace(/Wrote (.*?.pom)\n/g, (_all: string, fn: string) => {
+    const stdoutStr =
+      typeof output.stdout === 'string'
+        ? output.stdout
+        : output.stdout.toString('utf8')
+    stdoutStr.replace(/Wrote (.*?.pom)\n/g, (_all: string, fn: string) => {
       poms.push(fn)
       return fn
     })

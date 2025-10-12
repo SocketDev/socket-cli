@@ -216,7 +216,7 @@ export async function handleApiCall<T extends SocketSdkOperations>(
     } else {
       debugApiResponse('Socket API', undefined, e)
     }
-    debugDir('inspect', { socketSdkErrorResult })
+    debugDir({ socketSdkErrorResult })
     return socketSdkErrorResult
   }
 
@@ -224,7 +224,7 @@ export async function handleApiCall<T extends SocketSdkOperations>(
   if (sdkResult.success === false) {
     const endpoint = description || 'Socket API'
     debugApiResponse(endpoint, sdkResult.status as number)
-    debugDir('inspect', { sdkResult })
+    debugDir({ sdkResult })
 
     const errCResult = sdkResult as SocketSdkErrorResult<T>
     const errStr = errCResult.error ? String(errCResult.error).trim() : ''
@@ -268,8 +268,8 @@ export async function handleApiCallNoSpinner<T extends SocketSdkOperations>(
   try {
     sdkResult = await value
   } catch (e) {
-    debugFn('error', `API request failed: ${description}`)
-    debugDir('error', e)
+    debugFn(`API request failed: ${description}`)
+    debugDir(e)
 
     const errStr = e ? String(e).trim() : ''
     const message = 'Socket API error'
@@ -285,8 +285,8 @@ export async function handleApiCallNoSpinner<T extends SocketSdkOperations>(
 
   // Note: TS can't narrow down the type of result due to generics
   if (sdkResult.success === false) {
-    debugFn('error', `fail: ${description} bad response`)
-    debugDir('inspect', { sdkResult })
+    debugFn(`fail: ${description} bad response`)
+    debugDir({ sdkResult })
 
     const sdkErrorResult = sdkResult as SocketSdkErrorResult<T>
     const errStr = sdkErrorResult.error
@@ -371,8 +371,8 @@ export async function queryApiSafeText(
       )
     }
 
-    debugFn('error', 'Query API request failed')
-    debugDir('error', e)
+    debugFn('Query API request failed')
+    debugDir(e)
 
     const errStr = e ? String(e).trim() : ''
     const message = 'API request failed'
@@ -409,8 +409,8 @@ export async function queryApiSafeText(
       data,
     }
   } catch (e) {
-    debugFn('error', 'Failed to read API response text')
-    debugDir('error', e)
+    debugFn('Failed to read API response text')
+    debugDir(e)
 
     return {
       ok: false,
@@ -518,8 +518,8 @@ export async function sendApiRequest<T>(
       )
     }
 
-    debugFn('error', `API ${method} request failed`)
-    debugDir('error', e)
+    debugFn(`API ${method} request failed`)
+    debugDir(e)
 
     const errStr = e ? String(e).trim() : ''
     const message = 'API request failed'
@@ -556,8 +556,8 @@ export async function sendApiRequest<T>(
       data: data as T,
     }
   } catch (e) {
-    debugFn('error', 'Failed to parse API response JSON')
-    debugDir('error', e)
+    debugFn('Failed to parse API response JSON')
+    debugDir(e)
     return {
       ok: false,
       message: 'API request failed',
