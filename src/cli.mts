@@ -27,7 +27,7 @@ import { messageWithCauses, stackWithCauses } from 'pony-cause'
 import lookupRegistryAuthToken from 'registry-auth-token'
 import lookupRegistryUrl from 'registry-url'
 
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
+import { debugDir, debug } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { rootAliases, rootCommands } from './commands.mts'
@@ -66,7 +66,7 @@ void (async () => {
     )
   } catch (e) {
     process.exitCode = 1
-    debugFn('CLI uncaught error')
+    debug('CLI uncaught error')
     debugDir(e)
 
     let errorBody: string | undefined

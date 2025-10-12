@@ -1,6 +1,6 @@
 import { RequestError } from '@octokit/request-error'
 
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
+import { debugDir, debug } from '@socketsecurity/registry/lib/debug'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
 import {
@@ -75,7 +75,7 @@ export async function openSocketFixPr(
         .join('\n')
       message += `:\n${details}`
     }
-    debugFn(message)
+    debug(message)
   }
   return undefined
 }
@@ -135,13 +135,13 @@ export async function cleanupSocketFixPrs(
             // The target branch (source).
             head: match.baseRefName,
           })
-          debugFn(`pr: updating stale ${prRef}`)
+          debug(`pr: updating stale ${prRef}`)
           // Update cache entry - only GraphQL is used now.
           context.entry.mergeStateStatus = 'CLEAN'
           // Mark cache to be saved.
           cachesToSave.set(context.cacheKey, context.data)
         } catch (e) {
-          debugFn(formatErrorWithDetail(`pr: failed to update ${prRef}`, e))
+          debug(formatErrorWithDetail(`pr: failed to update ${prRef}`, e))
           debugDir(e)
         }
       }
@@ -153,17 +153,15 @@ export async function cleanupSocketFixPrs(
         try {
           const success = await gitDeleteRemoteBranch(match.headRefName)
           if (success) {
-            debugFn(
-              `pr: deleted merged branch ${match.headRefName} for ${prRef}`,
-            )
+            debug(`pr: deleted merged branch ${match.headRefName} for ${prRef}`)
           } else {
-            debugFn(
+            debug(
               `pr: failed to delete branch ${match.headRefName} for ${prRef}`,
             )
           }
         } catch (e) {
           // Don't treat this as a hard error - branch might already be deleted.
-          debugFn(
+          debug(
             formatErrorWithDetail(
               `pr: failed to delete branch ${match.headRefName} for ${prRef}`,
               e,
@@ -352,7 +350,7 @@ async function getSocketFixPrsWithContext(
 
       // Safety limit to prevent infinite loops.
       if (pageIndex === GQL_PAGE_SENTINEL) {
-        debugFn(
+        debug(
           `GraphQL pagination reached safety limit (${GQL_PAGE_SENTINEL} pages) for ${owner}/${repo}`,
         )
         break
@@ -365,7 +363,7 @@ async function getSocketFixPrsWithContext(
       }
     }
   } catch (e) {
-    debugFn(`GraphQL pagination failed for ${owner}/${repo}`)
+    debug(`GraphQL pagination failed for ${owner}/${repo}`)
     debugDir(e)
   }
 

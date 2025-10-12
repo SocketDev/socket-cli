@@ -23,7 +23,9 @@ export class PromiseQueue {
    */
   constructor(maxConcurrency: number, maxQueueLength?: number) {
     this.maxConcurrency = maxConcurrency
-    this.maxQueueLength = maxQueueLength
+    if (maxQueueLength !== undefined) {
+      this.maxQueueLength = maxQueueLength
+    }
     if (maxConcurrency < 1) {
       throw new Error('maxConcurrency must be at least 1')
     }

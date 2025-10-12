@@ -1,4 +1,4 @@
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
+import { debugDir, debug } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { applyOptimization } from './apply-optimization.mts'
@@ -23,7 +23,7 @@ export async function handleOptimize({
   pin: boolean
   prod: boolean
 }) {
-  debugFn(`Starting optimization for ${cwd}`)
+  debug(`Starting optimization for ${cwd}`)
   debugDir({ cwd, outputKind, pin, prod })
 
   const pkgEnvCResult = await detectAndValidatePackageEnvironment(cwd, {
@@ -33,7 +33,7 @@ export async function handleOptimize({
   })
   if (!pkgEnvCResult.ok) {
     process.exitCode = pkgEnvCResult.code ?? 1
-    debugFn('Package environment validation failed')
+    debug('Package environment validation failed')
     debugDir({ pkgEnvCResult })
     await outputOptimizeResult(pkgEnvCResult, outputKind)
     return
@@ -42,7 +42,7 @@ export async function handleOptimize({
   const pkgEnvDetails = pkgEnvCResult.data
   if (!pkgEnvDetails) {
     process.exitCode = 1
-    debugFn('No package environment details found')
+    debug('No package environment details found')
     await outputOptimizeResult(
       {
         ok: false,
@@ -54,7 +54,7 @@ export async function handleOptimize({
     return
   }
 
-  debugFn(
+  debug(
     `Detected package manager: ${pkgEnvDetails.agent} v${pkgEnvDetails.agentVersion}`,
   )
   debugDir({ pkgEnvDetails })
@@ -62,7 +62,7 @@ export async function handleOptimize({
   const { agent, agentVersion } = pkgEnvDetails
   if (agent === VLT) {
     process.exitCode = 1
-    debugFn(`${agent} does not support overrides`)
+    debug(`${agent} does not support overrides`)
     await outputOptimizeResult(
       {
         ok: false,
@@ -79,7 +79,7 @@ export async function handleOptimize({
 
   logger.info(`Optimizing packages for ${agent} v${agentVersion}.\n`)
 
-  debugFn('Applying optimization')
+  debug('Applying optimization')
   const optimizationResult = await applyOptimization(pkgEnvDetails, {
     pin,
     prod,
@@ -88,7 +88,7 @@ export async function handleOptimize({
   if (!optimizationResult.ok) {
     process.exitCode = optimizationResult.code ?? 1
   }
-  debugFn(`Optimization ${optimizationResult.ok ? 'succeeded' : 'failed'}`)
+  debug(`Optimization ${optimizationResult.ok ? 'succeeded' : 'failed'}`)
   debugDir({ optimizationResult })
   await outputOptimizeResult(optimizationResult, outputKind)
 }

@@ -5,7 +5,7 @@ import path from 'node:path'
 import fastGlob from 'fast-glob'
 
 import { joinAnd } from '@socketsecurity/registry/lib/arrays'
-import { debugDir } from '@socketsecurity/registry/lib/debug'
+import { debugDirNs } from '@socketsecurity/registry/lib/debug'
 import { readDirNames } from '@socketsecurity/registry/lib/fs'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { readPackageJson } from '@socketsecurity/registry/lib/packages'
@@ -346,7 +346,7 @@ async function processFilePatch(
     }
   } catch (e) {
     logger.error('Error applying patch')
-    debugDir('error', e)
+    debugDirNs('error', e)
     result = false
   }
   logger.groupEnd()

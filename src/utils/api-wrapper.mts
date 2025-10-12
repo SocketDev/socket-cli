@@ -1,8 +1,9 @@
 /** @fileoverview Simplified API wrapper to DRY out repetitive fetch-*.mts files */
 
-import { withSdk } from './sdk.mts'
+import { handleApiCall } from './api.mts'
+import { setupSdk } from './sdk.mts'
 import type { BaseFetchOptions, CResult } from '../types.mts'
-import type { SocketSdk, SocketSdkSuccessResult } from '@socketsecurity/sdk'
+import type { SocketSdk } from '@socketsecurity/sdk'
 
 /**
  * Generic API call wrapper that eliminates the need for separate fetch-*.mts files
@@ -13,12 +14,14 @@ export async function apiCall<T extends keyof SocketSdk>(
   args: Parameters<SocketSdk[T]>,
   description: string,
   options?: BaseFetchOptions,
-): Promise<CResult<SocketSdkSuccessResult<T>['data']>> {
-  return await withSdk(
-    sdk => (sdk[method] as any)(...args),
-    description,
-    options,
-  )
+): Promise<CResult<any>> {
+  const sdkResult = await setupSdk(options?.sdkOpts)
+  if (!sdkResult.ok) {
+    return sdkResult
+  }
+  const sdk = sdkResult.data
+
+  return await handleApiCall((sdk[method] as any)(...args), { description })
 }
 
 /**
@@ -73,27 +76,17 @@ export const orgApi = {
   list: (options?: BaseFetchOptions) =>
     apiCall('getOrganizations', [], 'list of organizations', options),
 
-  dependencies: (orgSlug: string, params: any, options?: BaseFetchOptions) =>
-    apiCall('searchDependencies', [orgSlug, params], 'dependencies', options),
+  dependencies: (_orgSlug: string, params: any, options?: BaseFetchOptions) =>
+    apiCall('searchDependencies', [params], 'dependencies', options),
 
-  quota: (orgSlug: string, options?: BaseFetchOptions) =>
-    apiCall('getOrganizationQuota', [orgSlug], 'organization quota', options),
+  quota: (_orgSlug: string, options?: BaseFetchOptions) =>
+    apiCall('getQuota' as keyof SocketSdk, [], 'organization quota', options),
 
   securityPolicy: (orgSlug: string, options?: BaseFetchOptions) =>
-    apiCall(
-      'getOrganizationSecurityPolicy',
-      [orgSlug],
-      'security policy',
-      options,
-    ),
+    apiCall('getOrgSecurityPolicy', [orgSlug], 'security policy', options),
 
   licensePolicy: (orgSlug: string, options?: BaseFetchOptions) =>
-    apiCall(
-      'getOrganizationLicensePolicy',
-      [orgSlug],
-      'license policy',
-      options,
-    ),
+    apiCall('getOrgLicensePolicy', [orgSlug], 'license policy', options),
 }
 
 /**
@@ -101,27 +94,27 @@ export const orgApi = {
  */
 export const packageApi = {
   score: (
-    ecosystem: string,
+    _ecosystem: string,
     name: string,
     version: string,
     options?: BaseFetchOptions,
   ) =>
     apiCall(
-      'getPackageScore',
-      [ecosystem, name, version],
+      'getScoreByNpmPackage' as keyof SocketSdk,
+      [name, version],
       'package score',
       options,
     ),
 
   issues: (
-    ecosystem: string,
+    _ecosystem: string,
     name: string,
     version: string,
     options?: BaseFetchOptions,
   ) =>
     apiCall(
-      'getPackageIssues',
-      [ecosystem, name, version],
+      'getIssuesByNpmPackage' as keyof SocketSdk,
+      [name, version],
       'package issues',
       options,
     ),
@@ -132,14 +125,29 @@ export const packageApi = {
  */
 export const scanApi = {
   create: (orgSlug: string, params: any, options?: BaseFetchOptions) =>
-    apiCall('createOrgScan', [orgSlug, params], 'to create a scan', options),
+    apiCall(
+      'createOrgFullScan' as keyof SocketSdk,
+      [orgSlug, params],
+      'to create a scan',
+      options,
+    ),
 
   list: (orgSlug: string, params: any, options?: BaseFetchOptions) =>
-    apiCall('getOrgScanList', [orgSlug, params], 'list of scans', options),
+    apiCall(
+      'getOrgFullScanList' as keyof SocketSdk,
+      [orgSlug, params],
+      'list of scans',
+      options,
+    ),
 
   delete: (orgSlug: string, scanId: string, options?: BaseFetchOptions) =>
-    apiCall('deleteOrgScan', [orgSlug, scanId], 'to delete a scan', options),
+    apiCall(
+      'deleteOrgFullScan' as keyof SocketSdk,
+      [orgSlug, scanId],
+      'to delete a scan',
+      options,
+    ),
 
-  view: (orgSlug: string, scanId: string, options?: BaseFetchOptions) =>
-    apiCall('getOrgScan', [orgSlug, scanId], 'scan details', options),
+  view: (_orgSlug: string, scanId: string, options?: BaseFetchOptions) =>
+    apiCall('getScan' as keyof SocketSdk, [scanId], 'scan details', options),
 }

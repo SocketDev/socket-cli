@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
+import { debug, debugDir, debugNs } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { normalizePath } from '@socketsecurity/registry/lib/path'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
@@ -37,7 +37,7 @@ export type ShadowPnpmOptions = SpawnOptions & {
 }
 
 export type ShadowPnpmResult = {
-  spawnPromise: SpawnResult<string, SpawnExtra | undefined>
+  spawnPromise: SpawnResult
 }
 
 const DLX_COMMANDS = new Set(['dlx'])
@@ -113,7 +113,7 @@ export default async function shadowPnpmBin(
             const lockfile = parsePnpmLockfile(lockfileContent)
             if (lockfile) {
               // Use existing function to scan the entire lockfile
-              debugFn(`scanning: all dependencies from ${PNPM_LOCK_YAML}`)
+              debug(`scanning: all dependencies from ${PNPM_LOCK_YAML}`)
 
               const alertsMap = await getAlertsMapFromPnpmLockfile(lockfile, {
                 nothrow: true,
@@ -149,21 +149,21 @@ export default async function shadowPnpmBin(
               }
 
               // Return early since we've already done the scanning
-              debugFn('complete: lockfile scanning, proceeding with install')
+              debug('complete: lockfile scanning, proceeding with install')
             }
           }
         } catch (e) {
-          debugFn(`${PNPM} lockfile scanning failed`)
+          debug(`${PNPM} lockfile scanning failed`)
           debugDir(e)
         }
       } else {
-        debugFn(
+        debug(
           `skip: no ${PNPM_LOCK_YAML} found, skipping bulk install scanning`,
         )
       }
     }
 
-    debugFn('complete: scanning, proceeding with install')
+    debug('complete: scanning, proceeding with install')
   }
 
   const realPnpmPath = await installPnpmLinks(constants.shadowBinPath)
@@ -171,7 +171,7 @@ export default async function shadowPnpmBin(
   const otherArgs = terminatorPos === -1 ? [] : args.slice(terminatorPos)
   const suffixArgs = [...rawPnpmArgs, ...otherArgs]
 
-  debugFn(
+  debugNs(
     'notice',
     `spawn: ${PNPM} shadow bin ${realPnpmPath} ${cmdFlagsToString(suffixArgs)}`,
   )

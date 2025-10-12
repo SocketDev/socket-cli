@@ -52,7 +52,7 @@ export const validations = {
   /**
    * Validate enum value
    */
-  isOneOf: <T,>(
+  isOneOf: <T extends unknown>(
     value: T,
     options: T[],
     name: string,
@@ -164,7 +164,7 @@ export const validateParams = {
   },
 
   sorting: (
-    sort: string,
+    _sort: string,
     direction: string,
     outputKind: OutputKind,
   ): boolean => {

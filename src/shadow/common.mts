@@ -1,6 +1,6 @@
 import { fileURLToPath } from 'node:url'
 
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
+import { debugDir, debug } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { readPackageJson } from '@socketsecurity/registry/lib/packages'
 
@@ -51,6 +51,10 @@ async function extractPackagePurlsFromPackageJson(
   try {
     const pkgJson = await readPackageJson(cwd)
 
+    if (!pkgJson) {
+      return packagePurls
+    }
+
     const allDeps = {
       ...pkgJson.dependencies,
       ...pkgJson.devDependencies,
@@ -69,7 +73,7 @@ async function extractPackagePurlsFromPackageJson(
 
     debugScan('start', packagePurls.length)
   } catch (e) {
-    debugFn(`${PACKAGE_JSON} not found or invalid during dependency scanning`)
+    debug(`${PACKAGE_JSON} not found or invalid during dependency scanning`)
     debugDir(e)
   }
 

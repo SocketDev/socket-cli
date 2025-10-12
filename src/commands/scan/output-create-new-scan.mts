@@ -89,13 +89,10 @@ export async function outputCreateNewScan(
 
   if (
     interactive &&
-    (await confirm(
-      {
-        message: 'Would you like to open it in your browser?',
-        default: false,
-      },
-      { spinner },
-    ))
+    (await confirm({
+      message: 'Would you like to open it in your browser?',
+      default: false,
+    }))
   ) {
     await open(`${result.data.html_report_url}`)
   }

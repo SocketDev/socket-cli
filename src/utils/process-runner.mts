@@ -2,7 +2,7 @@
 
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
-import { debugFn } from './debug.mts'
+import { debugNs } from './debug.mts'
 import { formatExternalCliError } from './error-display.mts'
 import {
   logWithSpinnerCoordination,
@@ -52,10 +52,10 @@ export async function runExternalCommand(
   const spinnerMessage = opts.spinnerMessage || `Running ${command}...`
   const useIpc = opts.ipc !== undefined
 
-  debugFn('stdio', `Executing: ${command} ${args.join(' ')}`)
+  debugNs('stdio', `Executing: ${command} ${args.join(' ')}`)
 
   if (useIpc) {
-    debugFn('stdio', 'Using IPC for secure config passing')
+    debugNs('stdio', 'Using IPC for secure config passing')
   }
 
   let stopSpinner: (() => void) | undefined
@@ -90,7 +90,7 @@ export async function runExternalCommand(
         spawnPromise.process as unknown as NodeJS.Process
       ).send?.(opts.ipc)
       if (!sendResult) {
-        debugFn('warn', 'Failed to send IPC data to child process')
+        debugNs('warn', 'Failed to send IPC data to child process')
       }
     }
 
@@ -104,7 +104,7 @@ export async function runExternalCommand(
     const stderr = spawnResult.stderr ? spawnResult.stderr.toString() : ''
     const exitCode = spawnResult.code ?? 0
 
-    debugFn('stdio', `Command completed with exit code: ${exitCode}`)
+    debugNs('stdio', `Command completed with exit code: ${exitCode}`)
 
     // If buffered and has output, log it with spinner coordination.
     if (bufferOutput && stdout) {
@@ -127,7 +127,7 @@ export async function runExternalCommand(
       stopSpinner()
     }
 
-    debugFn('error', `Command failed: ${command}`, e)
+    debugNs('error', `Command failed: ${command}`, e)
 
     // Extract error details.
     const exitCode =

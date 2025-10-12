@@ -50,9 +50,7 @@ async function getWorkspaceGlobs(
     const yml = await safeReadFile(workspacePath)
     if (yml) {
       try {
-        const ymlStr = typeof yml === 'string'
-          ? yml
-          : yml.toString('utf8')
+        const ymlStr = typeof yml === 'string' ? yml : yml.toString('utf8')
         workspacePatterns = yamlParse(ymlStr)?.packages
       } catch {}
     }
@@ -214,17 +212,15 @@ export async function globWithGitIgnore(
     ignore: DEFAULT_IGNORE_FOR_GIT_IGNORE,
   })
   for await (const ignorePatterns of transform(
-    gitIgnoreStream,
+    gitIgnoreStream as AsyncIterable<string>,
     async (filepath: string) => {
       const content = await safeReadFile(filepath)
       const contentStr = content
-        ? (typeof content === 'string' ? content : content.toString('utf8'))
+        ? typeof content === 'string'
+          ? content
+          : content.toString('utf8')
         : ''
-      return ignoreFileToGlobPatterns(
-        contentStr,
-        filepath,
-        cwd,
-      )
+      return ignoreFileToGlobPatterns(contentStr, filepath, cwd)
     },
     { concurrency: 8 },
   )) {
@@ -241,14 +237,13 @@ export async function globWithGitIgnore(
     }
   }
 
-  const globOptions = {
-    __proto__: null,
+  const globOptions: GlobOptions = {
     absolute: true,
     cwd,
     dot: true,
-    ignore: hasNegatedPattern ? defaultIgnore : [...ignores],
+    ignore: hasNegatedPattern ? [...defaultIgnore] : [...ignores],
     ...additionalOptions,
-  } as GlobOptions
+  }
 
   if (!hasNegatedPattern) {
     return await fastGlob.glob(patterns as string[], globOptions)
@@ -282,7 +277,7 @@ export async function globWorkspace(
     ? await fastGlob.glob(workspaceGlobs, {
         absolute: true,
         cwd,
-        ignore: defaultIgnore,
+        ignore: [...defaultIgnore],
       })
     : []
 }

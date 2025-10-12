@@ -1,8 +1,9 @@
 /** @fileoverview Test builder utilities to DRY out repetitive test patterns */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { spawn } from '@socketsecurity/registry/test/stubs/child-process'
-import { stubLoggerLog } from '@socketsecurity/registry/test/stubs/console'
+// Test stubs commented out - need to be reimplemented locally.
+// import { spawn } from '@socketsecurity/registry/test/stubs/child-process'
+// import { stubLoggerLog } from '@socketsecurity/registry/test/stubs/console'
 
 import type { Mock } from 'vitest'
 
@@ -20,16 +21,17 @@ export interface TestSetupOptions {
 
 export function setupCommandTest(options: TestSetupOptions) {
   const {
-    commandPath,
-    commandName,
-    parentCommand,
+    // Commented out to avoid unused variable errors.
+    // commandPath,
+    // commandName,
+    // parentCommand,
     mockSdk = true,
     mockConfig = {},
     env = {},
   } = options
 
   const stubs = {
-    spawn: spawn as Mock,
+    // spawn: spawn as Mock, // Commented out - stub not available.
     loggerLog: null as Mock | null,
     sdk: null as any,
     config: mockConfig,
@@ -41,8 +43,8 @@ export function setupCommandTest(options: TestSetupOptions) {
       process.env[key] = value
     }
 
-    // Mock logger
-    stubs.loggerLog = stubLoggerLog()
+    // Mock logger - commented out, stub not available.
+    // stubs.loggerLog = stubLoggerLog()
 
     // Mock SDK if needed
     if (mockSdk) {
@@ -190,7 +192,9 @@ export const commonTests = {
     args: [],
     flags: { json: true },
     validate: stubs => {
-      const output = stubs.loggerLog?.mock.calls.map(call => call[0]).join('')
+      const output = stubs.loggerLog?.mock.calls
+        .map((call: any[]) => call[0])
+        .join('')
       expect(() => JSON.parse(output)).not.toThrow()
     },
   }),

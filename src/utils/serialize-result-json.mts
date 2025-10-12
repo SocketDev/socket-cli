@@ -1,4 +1,4 @@
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
+import { debugDirNs, debugNs } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { isObject } from '@socketsecurity/registry/lib/objects'
 
@@ -10,7 +10,7 @@ export function serializeResultJson(data: CResult<unknown>): string {
   if (!isObject(data)) {
     process.exitCode = 1
 
-    debugFn('inspect', { data })
+    debugDirNs('inspect', { data })
 
     // We should not allow the JSON value to be "null", or a boolean/number/string,
     // even if they are valid "json".
@@ -31,8 +31,8 @@ export function serializeResultJson(data: CResult<unknown>): string {
       'There was a problem converting the data set to JSON. Please try again without --json'
 
     logger.fail(message)
-    debugFn('error', 'JSON serialization failed')
-    debugDir('error', e)
+    debugNs('error', 'JSON serialization failed')
+    debugDirNs('error', e)
 
     // This could be caused by circular references, which is an "us" problem.
     return `${JSON.stringify({

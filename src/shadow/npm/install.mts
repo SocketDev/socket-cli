@@ -3,7 +3,6 @@ import {
   isNpmFundFlag,
   isNpmLoglevelFlag,
   isNpmProgressFlag,
-  resolveBinPathSync,
 } from '@socketsecurity/registry/lib/agent'
 import { isDebug } from '@socketsecurity/registry/lib/debug'
 import { getOwn, isObject } from '@socketsecurity/registry/lib/objects'
@@ -26,7 +25,7 @@ export type ShadowNpmInstallOptions = SpawnOption & {
 
 export function shadowNpmInstall(
   options?: ShadowNpmInstallOptions | undefined,
-): SpawnResult<string, Record<any, any> | undefined> {
+): SpawnResult {
   const {
     agentExecPath = getNpmBinPath(),
     args = [],
@@ -73,7 +72,7 @@ export function shadowNpmInstall(
         : []),
       '--require',
       constants.shadowNpmInjectPath,
-      resolveBinPathSync(agentExecPath),
+      agentExecPath,
       'install',
       // Avoid code paths for 'audit' and 'fund'.
       '--no-audit',

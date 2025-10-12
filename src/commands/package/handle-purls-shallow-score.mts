@@ -1,4 +1,4 @@
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
+import { debugDir, debug } from '@socketsecurity/registry/lib/debug'
 
 import { fetchPurlsShallowScore } from './fetch-purls-shallow-score.mts'
 import { outputPurlsShallowScore } from './output-purls-shallow-score.mts'
@@ -13,12 +13,12 @@ export async function handlePurlsShallowScore({
   outputKind: OutputKind
   purls: string[]
 }) {
-  debugFn(`Fetching shallow scores for ${purls.length} packages`)
+  debug(`Fetching shallow scores for ${purls.length} packages`)
   debugDir({ purls, outputKind })
 
   const packageData = await fetchPurlsShallowScore(purls)
 
-  debugFn(
+  debug(
     `Shallow scores ${packageData.ok ? 'fetched successfully' : 'fetch failed'}`,
   )
   debugDir({ packageData })

@@ -226,7 +226,13 @@ export async function spawnCoanaDlx(
         stdio: spawnExtra?.['stdio'] || 'inherit',
       })
 
-      return { ok: true, data: spawnResult.stdout }
+      return {
+        ok: true,
+        data:
+          typeof spawnResult.stdout === 'string'
+            ? spawnResult.stdout
+            : spawnResult.stdout.toString(),
+      }
     }
 
     // Use npm/dlx version.
@@ -257,7 +263,13 @@ export async function spawnCoanaDlx(
       spawnExtra,
     )
     const output = await result.spawnPromise
-    return { ok: true, data: output.stdout }
+    return {
+      ok: true,
+      data:
+        typeof output.stdout === 'string'
+          ? output.stdout
+          : output.stdout.toString(),
+    }
   } catch (e) {
     const stderr = (e as any)?.stderr
     const cause = getErrorCause(e)

@@ -1,4 +1,4 @@
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
+import { debugDir, debug } from '@socketsecurity/registry/lib/debug'
 
 import { fetchPurlDeepScore } from './fetch-purl-deep-score.mts'
 import { outputPurlsDeepScore } from './output-purls-deep-score.mts'
@@ -9,12 +9,12 @@ export async function handlePurlDeepScore(
   purl: string,
   outputKind: OutputKind,
 ) {
-  debugFn(`Fetching deep score for ${purl}`)
+  debug(`Fetching deep score for ${purl}`)
   debugDir({ purl, outputKind })
 
   const result = await fetchPurlDeepScore(purl)
 
-  debugFn(`Deep score ${result.ok ? 'fetched successfully' : 'fetch failed'}`)
+  debug(`Deep score ${result.ok ? 'fetched successfully' : 'fetch failed'}`)
   debugDir({ result })
 
   await outputPurlsDeepScore(purl, result, outputKind)

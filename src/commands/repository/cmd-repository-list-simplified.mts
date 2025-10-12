@@ -120,7 +120,7 @@ export const cmdRepositoryListSimplified = buildCommand({
 
     // Calculate next page
     const nextPage =
-      result.ok && result.data.length === perPage ? page + 1 : null
+      result.ok && result.data.results?.length === perPage ? page + 1 : null
 
     // Output
     outputPaginatedList(
@@ -141,7 +141,7 @@ export const cmdRepositoryListSimplified = buildCommand({
           { field: 'default_branch', name: colors.magenta('Default Branch') },
           commonColumns.boolean('archived', 'Archived'),
         ],
-        getRows: data => data as any[],
+        getRows: data => data.results as any[],
         emptyMessage: 'No repositories found',
       },
     )

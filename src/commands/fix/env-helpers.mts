@@ -1,5 +1,5 @@
 import { joinAnd } from '@socketsecurity/registry/lib/arrays'
-import { debugFn, isDebug } from '@socketsecurity/registry/lib/debug'
+import { debug, isDebug } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { getSocketFixPrs } from './pull-request.mts'
@@ -12,7 +12,7 @@ import type { RepoInfo } from '../../utils/git.mts'
 function ciRepoInfo(): RepoInfo | undefined {
   const { GITHUB_REPOSITORY } = constants.ENV
   if (!GITHUB_REPOSITORY) {
-    debugFn('miss: GITHUB_REPOSITORY env var')
+    debug('miss: GITHUB_REPOSITORY env var')
   }
   const ownerSlashRepo = GITHUB_REPOSITORY
   const slashIndex = ownerSlashRepo.indexOf('/')
@@ -122,7 +122,7 @@ export async function getFixEnv(): Promise<FixEnv> {
     // then log about it when in debug mode.
     isDebug()
   ) {
-    debugFn(
+    debug(
       `miss: fixEnv.isCi is false, expected ${joinAnd(envCheck.missing)} to be set`,
     )
   }
@@ -133,7 +133,7 @@ export async function getFixEnv(): Promise<FixEnv> {
   }
   if (!repoInfo) {
     if (isCi) {
-      debugFn('falling back to `git remote get-url origin`')
+      debug('falling back to `git remote get-url origin`')
     }
     repoInfo = await getRepoInfo()
   }

@@ -107,7 +107,7 @@ function description(command: CliSubcommand | undefined): string {
   const description = command?.description
   const str =
     typeof description === 'string' ? description : String(description)
-  return indentString(str, HELP_PAD_NAME).trimStart()
+  return indentString(str, { count: HELP_PAD_NAME }).trimStart()
 }
 
 /**
@@ -766,7 +766,7 @@ export async function meowWithSubcommands(
     autoVersion: false,
     // We want to detect whether a bool flag is given at all.
     booleanDefault: undefined,
-    help: lines.map(l => indentString(l, HELP_INDENT)).join('\n'),
+    help: lines.map(l => indentString(l, { count: HELP_INDENT })).join('\n'),
   })
 
   const { dryRun, help: helpFlag } = cli2.flags as {

@@ -25,7 +25,7 @@
  * - gitBranch: Get current branch or commit hash
  */
 
-import { debugDir, debugFn, isDebug } from '@socketsecurity/registry/lib/debug'
+import { debugDir, debug, isDebug } from '@socketsecurity/registry/lib/debug'
 import { normalizePath } from '@socketsecurity/registry/lib/path'
 import { isSpawnError, spawn } from '@socketsecurity/registry/lib/spawn'
 
@@ -96,7 +96,7 @@ export async function getRepoInfo(
         : result.stdout.toString('utf8')
     info = parseGitRemoteUrl(remoteUrl)
     if (!info) {
-      debugFn(`Unmatched git remote URL format: ${remoteUrl}`)
+      debug(`Unmatched git remote URL format: ${remoteUrl}`)
       debugDir({ remoteUrl })
     }
   } catch (e) {
@@ -259,7 +259,7 @@ export async function gitPushBranch(
     return true
   } catch (e) {
     if (isSpawnError(e) && e.code === 128) {
-      debugFn(
+      debug(
         "Push denied: token requires write permissions for 'contents' and 'pull-requests'",
       )
       debugDir(e)
@@ -277,7 +277,7 @@ export async function gitCommit(
   options?: GitCreateAndPushBranchOptions | undefined,
 ): Promise<boolean> {
   if (!filepaths.length) {
-    debugFn('miss: no filepaths to add')
+    debug('miss: no filepaths to add')
     return false
   }
   const {
@@ -396,7 +396,7 @@ export async function gitEnsureIdentity(
         try {
           await spawn('git', ['config', prop, value], stdioIgnoreOptions)
         } catch (e) {
-          debugFn(`Failed to set git config: ${prop}`)
+          debug(`Failed to set git config: ${prop}`)
           debugDir(e)
           debugDir({ value })
         }
@@ -497,7 +497,7 @@ export async function gitUnstagedModifiedFiles(
       data: relPaths.map((p: string) => normalizePath(p)),
     }
   } catch (e) {
-    debugFn('Failed to get unstaged modified files')
+    debug('Failed to get unstaged modified files')
     debugDir(e)
     return {
       ok: false,

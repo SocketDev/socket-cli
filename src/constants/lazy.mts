@@ -7,16 +7,13 @@ import { realpathSync } from 'node:fs'
 import { homedir } from 'node:os'
 import path from 'node:path'
 
-import { safeReadFileSync } from '@socketsecurity/registry/lib/fs'
-import registryConstantsAttribs from '@socketsecurity/registry/lib/constants/attributes'
+import registryConstants from '@socketsecurity/registry/lib/constants'
 
-import {
-  distPath,
-  rootPath,
-  srcPath,
-  configPath,
-  externalPath,
-} from './static.mts'
+const registryConstantsAttribs = (registryConstants as any).attributes || {
+  getters: {},
+}
+
+import { distPath, rootPath, srcPath, externalPath } from './static.mts'
 
 // Lazy getter functions for paths
 function lazyBashRcPath() {
@@ -132,7 +129,7 @@ function lazyShadowYarnBinPath() {
 }
 
 function lazySocketAppDataPath() {
-  const xdgDataHome = process.env.XDG_DATA_HOME
+  const xdgDataHome = process.env['XDG_DATA_HOME']
   if (xdgDataHome) {
     return path.join(xdgDataHome, 'socket')
   }
@@ -143,7 +140,7 @@ function lazySocketAppDataPath() {
       return path.join(home, 'Library', 'Application Support', 'Socket')
     case 'win32':
       return path.join(
-        process.env.LOCALAPPDATA || path.join(home, 'AppData', 'Local'),
+        process.env['LOCALAPPDATA'] || path.join(home, 'AppData', 'Local'),
         'Socket',
       )
     default:
@@ -152,7 +149,7 @@ function lazySocketAppDataPath() {
 }
 
 function lazySocketCachePath() {
-  const xdgCacheHome = process.env.XDG_CACHE_HOME
+  const xdgCacheHome = process.env['XDG_CACHE_HOME']
   if (xdgCacheHome) {
     return path.join(xdgCacheHome, 'socket')
   }
@@ -163,8 +160,8 @@ function lazySocketCachePath() {
       return path.join(home, 'Library', 'Caches', 'socket')
     case 'win32':
       const tempDir =
-        process.env.TEMP ||
-        process.env.TMP ||
+        process.env['TEMP'] ||
+        process.env['TMP'] ||
         path.join(home, 'AppData', 'Local', 'Temp')
       return path.join(tempDir, 'socket')
     default:

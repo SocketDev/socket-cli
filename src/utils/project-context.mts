@@ -198,13 +198,18 @@ export async function getProjectContext(
 
   const hasLockFile = ['npm', 'yarn', 'pnpm'].includes(packageManager)
 
-  return {
+  const context: ProjectContext = {
     type: packageManager,
     root,
     hasLockFile,
-    framework,
     isMonorepo: monorepo,
   }
+
+  if (framework !== undefined) {
+    context.framework = framework
+  }
+
+  return context
 }
 
 /**

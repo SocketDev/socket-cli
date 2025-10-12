@@ -1,6 +1,6 @@
 import path from 'node:path'
 
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
+import { debugDir, debug } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { pluralize } from '@socketsecurity/registry/lib/words'
 
@@ -70,7 +70,7 @@ export async function handleCreateNewScan({
   targets,
   tmp,
 }: HandleCreateNewScanConfig): Promise<void> {
-  debugFn(`Creating new scan for ${orgSlug}/${repoName}`)
+  debug(`Creating new scan for ${orgSlug}/${repoName}`)
   debugDir({
     autoManifest,
     branchName,
@@ -88,7 +88,7 @@ export async function handleCreateNewScan({
 
   if (autoManifest) {
     logger.info('Auto-generating manifest files ...')
-    debugFn('Auto-manifest mode enabled')
+    debug('Auto-manifest mode enabled')
     const sockJson = readOrDefaultSocketJson(cwd)
     const detected = await detectManifestActions(sockJson, cwd)
     debugDir({ detected })
@@ -105,7 +105,7 @@ export async function handleCreateNewScan({
 
   const supportedFilesCResult = await fetchSupportedScanFileNames({ spinner })
   if (!supportedFilesCResult.ok) {
-    debugFn('Failed to fetch supported scan file names')
+    debug('Failed to fetch supported scan file names')
     debugDir({ supportedFilesCResult })
     await outputCreateNewScan(supportedFilesCResult, {
       interactive,
@@ -113,7 +113,7 @@ export async function handleCreateNewScan({
     })
     return
   }
-  debugFn(`Fetched ${supportedFilesCResult.data['size']} supported file types`)
+  debug(`Fetched ${supportedFilesCResult.data['size']} supported file types`)
 
   spinner.start('Searching for local files to include in scan...')
 
@@ -134,7 +134,7 @@ export async function handleCreateNewScan({
       'TARGET (file/dir) must contain matching / supported file types for a scan',
   })
   if (!wasValidInput) {
-    debugFn('No eligible files found to scan')
+    debug('No eligible files found to scan')
     return
   }
 
@@ -146,7 +146,7 @@ export async function handleCreateNewScan({
 
   if (readOnly) {
     logger.log('[ReadOnly] Bailing now')
-    debugFn('Read-only mode, exiting early')
+    debug('Read-only mode, exiting early')
     return
   }
 
@@ -157,7 +157,7 @@ export async function handleCreateNewScan({
   if (reach.runReachabilityAnalysis) {
     logger.error('')
     logger.info('Starting reachability analysis...')
-    debugFn('Reachability analysis enabled')
+    debug('Reachability analysis enabled')
     debugDir({ reachabilityOptions: reach })
 
     spinner.start()

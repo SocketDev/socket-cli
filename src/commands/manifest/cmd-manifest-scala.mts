@@ -1,6 +1,6 @@
 import path from 'node:path'
 
-import { debugFn } from '@socketsecurity/registry/lib/debug'
+import { debug } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { convertSbtToMaven } from './convert_sbt_to_maven.mts'
@@ -117,7 +117,7 @@ async function run(
 
   const sockJson = readOrDefaultSocketJson(cwd)
 
-  debugFn(`override: ${SOCKET_JSON} sbt: ${sockJson?.defaults?.manifest?.sbt}`)
+  debug(`override: ${SOCKET_JSON} sbt: ${sockJson?.defaults?.manifest?.sbt}`)
 
   let { bin, out, sbtOpts, stdout, verbose } = cli.flags
 

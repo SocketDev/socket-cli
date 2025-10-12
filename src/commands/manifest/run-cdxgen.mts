@@ -121,7 +121,8 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
     agent,
   })
 
-  shadowResult.spawnPromise.process.on('exit', () => {
+  // Use finally handler for cleanup instead of process.on('exit').
+  shadowResult.spawnPromise.finally(() => {
     if (cleanupPackageLock) {
       try {
         // TODO: Consider using trash instead of rmSync for safer deletion.

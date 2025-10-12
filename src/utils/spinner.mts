@@ -7,7 +7,7 @@ import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { isDebug } from './debug.mts'
+import { isDebugNs } from './debug.mts'
 
 const SPINNER_FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
 const SPINNER_INTERVAL = 80
@@ -61,7 +61,7 @@ function clearSpinnerLine(): void {
  */
 export function startSpinner(message: string): () => void {
   // Disable spinners in debug mode to avoid interfering with debug output.
-  if (isDebug('error') || isDebug('stdio') || !process.stderr.isTTY) {
+  if (isDebugNs('error') || isDebugNs('stdio') || !process.stderr.isTTY) {
     // Return no-op stop function.
     return () => {}
   }

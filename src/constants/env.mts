@@ -3,7 +3,10 @@
  * This avoids circular dependencies while maintaining access to environment variables.
  */
 
-import registryEnv from '@socketsecurity/registry/lib/constants/env'
+import registryConstants from '@socketsecurity/registry/lib/constants'
+
+// Extract the ENV object from registry constants if it exists.
+const registryEnv = (registryConstants as any).ENV || {}
 
 // Create a proxy that delegates to registry ENV but allows overrides.
 const envHandler: ProxyHandler<typeof registryEnv> = {

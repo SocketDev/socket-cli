@@ -1,7 +1,7 @@
 import path from 'node:path'
 
 import { joinAnd } from '@socketsecurity/registry/lib/arrays'
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
+import { debugDir, debug } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { pluralize } from '@socketsecurity/registry/lib/words'
 
@@ -179,12 +179,12 @@ export async function coanaFix(
       // Reduce limit by number of open PRs to avoid creating too many.
       adjustedLimit = Math.max(0, limit - openPrCount)
       if (openPrCount > 0) {
-        debugFn(
+        debug(
           `limit: adjusted from ${limit} to ${adjustedLimit} (${openPrCount} open Socket Fix ${pluralize('PR', { count: openPrCount })}`,
         )
       }
     } catch (e) {
-      debugFn('Failed to count open PRs, using original limit')
+      debug('Failed to count open PRs, using original limit')
       debugDir(e)
     }
   }
@@ -227,11 +227,11 @@ export async function coanaFix(
   }
 
   if (!ids?.length) {
-    debugFn('miss: no GHSA IDs to process')
+    debug('miss: no GHSA IDs to process')
   }
 
   if (!fixEnv.repoInfo) {
-    debugFn('miss: no repo info detected')
+    debug('miss: no repo info detected')
   }
 
   if (!ids?.length || !fixEnv.repoInfo) {
@@ -243,12 +243,12 @@ export async function coanaFix(
     ids.length > 3
       ? `${ids.slice(0, 3).join(', ')} ... and ${ids.length - 3} more`
       : joinAnd(ids)
-  debugFn(`fetch: ${ids.length} GHSA details for ${displayIds}`)
+  debug(`fetch: ${ids.length} GHSA details for ${displayIds}`)
 
   const ghsaDetails = await fetchGhsaDetails(ids)
   const scanBaseNames = new Set(scanFilepaths.map(p => path.basename(p)))
 
-  debugFn(`found: ${ghsaDetails.size} GHSA details`)
+  debug(`found: ${ghsaDetails.size} GHSA details`)
 
   let count = 0
   let overallFixed = false
@@ -256,7 +256,7 @@ export async function coanaFix(
   // Process each GHSA ID individually.
   ghsaLoop: for (let i = 0, { length } = ids; i < length; i += 1) {
     const ghsaId = ids[i]!
-    debugFn(`check: ${ghsaId}`)
+    debug(`check: ${ghsaId}`)
 
     // Apply fix for single GHSA ID.
     // eslint-disable-next-line no-await-in-loop
@@ -300,7 +300,7 @@ export async function coanaFix(
       : []
 
     if (!modifiedFiles.length) {
-      debugFn(`skip: no changes for ${ghsaId}`)
+      debug(`skip: no changes for ${ghsaId}`)
       continue ghsaLoop
     }
 
@@ -312,14 +312,14 @@ export async function coanaFix(
       // Check if branch already exists.
       // eslint-disable-next-line no-await-in-loop
       if (await gitRemoteBranchExists(branch, cwd)) {
-        debugFn(`skip: remote branch "${branch}" exists`)
+        debug(`skip: remote branch "${branch}" exists`)
         continue ghsaLoop
       }
 
-      debugFn(`pr: creating for ${ghsaId}`)
+      debug(`pr: creating for ${ghsaId}`)
 
       const details = ghsaDetails.get(ghsaId)
-      debugFn(`ghsa: ${ghsaId} details ${details ? 'found' : 'missing'}`)
+      debug(`ghsa: ${ghsaId} details ${details ? 'found' : 'missing'}`)
 
       const pushed =
         // eslint-disable-next-line no-await-in-loop
@@ -427,7 +427,7 @@ export async function coanaFix(
     }
 
     count += 1
-    debugFn(`increment: count ${count}/${Math.min(adjustedLimit, ids.length)}`)
+    debug(`increment: count ${count}/${Math.min(adjustedLimit, ids.length)}`)
     if (count >= adjustedLimit) {
       break ghsaLoop
     }

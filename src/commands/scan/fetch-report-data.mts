@@ -1,4 +1,4 @@
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
+import { debugDir, debug } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants from '../../constants.mts'
@@ -90,7 +90,7 @@ export async function fetchScanData(
         return JSON.parse(line)
       } catch (e) {
         ok = false
-        debugFn('Failed to parse report data line as JSON')
+        debug('Failed to parse report data line as JSON')
         debugDir({ error: e, line })
         return
       }

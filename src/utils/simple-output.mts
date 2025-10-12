@@ -5,9 +5,26 @@ import colors from 'yoctocolors-cjs'
 import chalkTable from 'chalk-table'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { outputResult } from './output.mts'
 import { serializeResultJson } from './serialize-result-json.mts'
 import type { CResult, OutputKind } from '../types.mts'
+
+// Simple outputResult implementation
+function outputResult<T>(
+  result: CResult<T>,
+  outputKind: OutputKind,
+  handlers: {
+    json: (res: CResult<T>) => string
+    success: (data: T) => void
+  },
+): void {
+  if (outputKind === 'json') {
+    logger.log(handlers.json(result))
+  } else if (result.ok) {
+    handlers.success(result.data)
+  } else {
+    logger.error(result.message || 'Operation failed')
+  }
+}
 
 /**
  * Table column definition for formatted output
@@ -43,7 +60,7 @@ export function simpleOutput<T>(
   const { json, table, text, title, emptyMessage = 'No data found' } = options
 
   outputResult(result, outputKind, {
-    json: res => {
+    json: (res: CResult<T>) => {
       if (!res.ok) {
         return serializeResultJson(res)
       }
@@ -52,7 +69,7 @@ export function simpleOutput<T>(
       }
       return serializeResultJson({ ok: true, data: res.data })
     },
-    success: data => {
+    success: (data: T) => {
       // Show title if provided
       if (title) {
         logger.log(colors.cyan(title))

@@ -20,7 +20,7 @@
 
 import { setTimeout as wait } from 'node:timers/promises'
 
-import { debugFn } from '@socketsecurity/registry/lib/debug'
+import { debugNs } from '@socketsecurity/registry/lib/debug'
 
 import constants, { UNKNOWN_ERROR } from '../constants.mts'
 
@@ -202,7 +202,7 @@ export function captureExceptionSync(
   if (!Sentry) {
     return ''
   }
-  debugFn('notice', 'send: exception to Sentry')
+  debugNs('notice', 'send: exception to Sentry')
   return Sentry.captureException(exception, hint) as string
 }
 

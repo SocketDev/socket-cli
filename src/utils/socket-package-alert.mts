@@ -24,7 +24,7 @@ import semver from 'semver'
 import colors from 'yoctocolors-cjs'
 
 import { getManifestData } from '@socketsecurity/registry'
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
+import { debugDirNs, debugNs } from '@socketsecurity/registry/lib/debug'
 import { getOwn, hasOwn } from '@socketsecurity/registry/lib/objects'
 import { resolvePackageName } from '@socketsecurity/registry/lib/packages'
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
@@ -183,11 +183,12 @@ export async function addArtifactToAlertsMap<T extends AlertsByPurl>(
     },
   )
 
+  const userFilter = getOwn(options, 'filter')
   const filterConfig = toFilterConfig({
     blocked: true,
     critical: true,
     cve: true,
-    ...getOwn(options, 'filter'),
+    ...userFilter,
   }) as AlertFilter
 
   const enabledState = new Map<ALERT_TYPE, boolean>(
@@ -373,8 +374,8 @@ export function getCveInfoFromAlertsMap(
   alertsMapLoop: for (const { 0: purl, 1: sockPkgAlerts } of alertsMap) {
     const purlObj = getPurlObject(purl, { throws: false })
     if (!purlObj) {
-      debugFn('error', 'invalid PURL')
-      debugDir('inspect', { purl })
+      debugNs('error', 'invalid PURL')
+      debugDirNs('inspect', { purl })
       continue alertsMapLoop
     }
     const partialPurl = createPurlObject({
@@ -427,9 +428,9 @@ export function getCveInfoFromAlertsMap(
             error = e
           }
         }
-        debugFn('error', 'fail: invalid SocketPackageAlert')
-        debugDir('inspect', { alert })
-        debugDir('error', error)
+        debugNs('error', 'fail: invalid SocketPackageAlert')
+        debugDirNs('inspect', { alert })
+        debugDirNs('error', error)
       }
     }
   }
