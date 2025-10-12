@@ -48,8 +48,8 @@ Do you want to install the Socket npm wrapper (this will create an alias to the 
       }
     }
   } catch (e) {
-    debugFn('warn', 'Tab completion setup failed (non-fatal)')
-    debugDir('warn', e)
+    debugFn('Tab completion setup failed (non-fatal)')
+    debugDir(e)
     // Ignore. Skip tab completion setup.
   }
   if (!updatedTabCompletion) {

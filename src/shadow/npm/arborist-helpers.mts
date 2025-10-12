@@ -86,7 +86,7 @@ export function getDetailsFromDiff(
   const details: PackageDetail[] = []
   // `diff` is `null` when `npm install --package-lock-only` is passed.
   if (!diff) {
-    debugFn('notice', `miss: diff is ${diff}`)
+    debugFn(`miss: diff is ${diff}`)
     return details
   }
 

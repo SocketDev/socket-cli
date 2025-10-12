@@ -80,7 +80,7 @@ export default async function shadowNpmBase(
       : []
 
   const useAudit = rawBinArgs.includes('--audit')
-  const useDebug = isDebug('stdio')
+  const useDebug = isDebug()
   const useNodeOptions = nodeOptionsArg || permArgs.length
   const binArgs = rawBinArgs.filter(
     a => !isNpmAuditFlag(a) && !isNpmProgressFlag(a),

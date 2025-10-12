@@ -199,7 +199,9 @@ async function downloadPython(pythonDir: string): Promise<void> {
   try {
     await httpDownload(url, tarballPath)
   } catch (error) {
-    throw new InputError(`Failed to download Python: ${error instanceof Error ? error.message : String(error)}`)
+    throw new InputError(
+      `Failed to download Python: ${error instanceof Error ? error.message : String(error)}`,
+    )
   }
 
   // Extract using system tar command
