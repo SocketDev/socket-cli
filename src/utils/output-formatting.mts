@@ -62,7 +62,7 @@ export function getFlagApiRequirementsOutput(
     const padding = ''.padEnd(indent)
     const lines = []
     if (Number.isFinite(quota) && quota > 0) {
-      lines.push(`${padding}- Quota: ${quota} ${pluralize('unit', quota)}`)
+      lines.push(`${padding}- Quota: ${quota} ${pluralize('unit', { count: quota })}`)
     }
     if (Array.isArray(rawPerms) && rawPerms.length) {
       const perms = rawPerms.slice().sort(naturalCompare)

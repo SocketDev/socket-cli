@@ -88,9 +88,9 @@ async function clearQuarantine(filePath: string): Promise<void> {
     await spawn('xattr', ['-d', 'com.apple.quarantine', filePath], {
       stdio: 'ignore',
     })
-    logger.debug('Cleared quarantine attribute')
+    logger.log('Cleared quarantine attribute')
   } catch (e) {
-    logger.debug(
+    logger.log(
       `Failed to clear quarantine: ${e instanceof Error ? e.message : String(e)}`,
     )
   }
@@ -107,7 +107,7 @@ async function ensureExecutable(filePath: string): Promise<void> {
 
   try {
     await fs.chmod(filePath, 0o755)
-    logger.debug('Set executable permissions')
+    logger.log('Set executable permissions')
   } catch (e) {
     logger.warn(
       `Failed to set executable permissions: ${e instanceof Error ? e.message : String(e)}`,

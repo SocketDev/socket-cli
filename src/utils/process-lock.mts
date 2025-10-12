@@ -123,7 +123,7 @@ class ProcessLockManager {
         try {
           // Check for stale locks and remove them.
           if (existsSync(lockPath) && this.isStale(lockPath, staleMs)) {
-            logger.debug(`Removing stale lock: ${lockPath}`)
+            logger.log(`Removing stale lock: ${lockPath}`)
             try {
               rmSync(lockPath, { recursive: true, force: true })
             } catch {
@@ -137,7 +137,7 @@ class ProcessLockManager {
           // Track for cleanup.
           this.activeLocks.add(lockPath)
 
-          logger.debug(`Acquired lock: ${lockPath}`)
+          logger.log(`Acquired lock: ${lockPath}`)
 
           // Return release function.
           return () => this.release(lockPath)
@@ -172,7 +172,7 @@ class ProcessLockManager {
         rmSync(lockPath, { recursive: true, force: true })
       }
       this.activeLocks.delete(lockPath)
-      logger.debug(`Released lock: ${lockPath}`)
+      logger.log(`Released lock: ${lockPath}`)
     } catch (error) {
       logger.warn(
         `Failed to release lock ${lockPath}: ${error instanceof Error ? error.message : String(error)}`,
