@@ -50,7 +50,10 @@ async function getWorkspaceGlobs(
     const yml = await safeReadFile(workspacePath)
     if (yml) {
       try {
-        workspacePatterns = yamlParse(yml)?.packages
+        const ymlStr = typeof yml === 'string'
+          ? yml
+          : yml.toString('utf8')
+        workspacePatterns = yamlParse(ymlStr)?.packages
       } catch {}
     }
   } else {
@@ -212,12 +215,17 @@ export async function globWithGitIgnore(
   })
   for await (const ignorePatterns of transform(
     gitIgnoreStream,
-    async (filepath: string) =>
-      ignoreFileToGlobPatterns(
-        (await safeReadFile(filepath)) ?? '',
+    async (filepath: string) => {
+      const content = await safeReadFile(filepath)
+      const contentStr = content
+        ? (typeof content === 'string' ? content : content.toString('utf8'))
+        : ''
+      return ignoreFileToGlobPatterns(
+        contentStr,
         filepath,
         cwd,
-      ),
+      )
+    },
     { concurrency: 8 },
   )) {
     for (const p of ignorePatterns) {
