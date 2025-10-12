@@ -34,7 +34,7 @@ export function shadowNpmInstall(
     spinner,
     ...spawnOpts
   } = { __proto__: null, ...options } as ShadowNpmInstallOptions
-  const useDebug = isDebug('stdio')
+  const useDebug = isDebug()
   const terminatorPos = args.indexOf('--')
   const rawBinArgs = terminatorPos === -1 ? args : args.slice(0, terminatorPos)
   const binArgs = rawBinArgs.filter(

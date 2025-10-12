@@ -69,11 +69,8 @@ async function extractPackagePurlsFromPackageJson(
 
     debugScan('start', packagePurls.length)
   } catch (e) {
-    debugFn(
-      'warn',
-      `${PACKAGE_JSON} not found or invalid during dependency scanning`,
-    )
-    debugDir('error', e)
+    debugFn(`${PACKAGE_JSON} not found or invalid during dependency scanning`)
+    debugDir(e)
   }
 
   return packagePurls

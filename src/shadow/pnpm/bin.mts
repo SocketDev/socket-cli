@@ -113,10 +113,7 @@ export default async function shadowPnpmBin(
             const lockfile = parsePnpmLockfile(lockfileContent)
             if (lockfile) {
               // Use existing function to scan the entire lockfile
-              debugFn(
-                'notice',
-                `scanning: all dependencies from ${PNPM_LOCK_YAML}`,
-              )
+              debugFn(`scanning: all dependencies from ${PNPM_LOCK_YAML}`)
 
               const alertsMap = await getAlertsMapFromPnpmLockfile(lockfile, {
                 nothrow: true,
@@ -152,25 +149,19 @@ export default async function shadowPnpmBin(
               }
 
               // Return early since we've already done the scanning
-              debugFn(
-                'notice',
-                'complete: lockfile scanning, proceeding with install',
-              )
+              debugFn('complete: lockfile scanning, proceeding with install')
             }
           }
         } catch (e) {
-          debugFn('error', `${PNPM} lockfile scanning failed`)
-          debugDir('error', e)
+          debugFn(`${PNPM} lockfile scanning failed`)
+          debugDir(e)
         }
       } else {
-        debugFn(
-          'notice',
-          `skip: no ${PNPM_LOCK_YAML} found, skipping bulk install scanning`,
-        )
+        debugFn(`skip: no ${PNPM_LOCK_YAML} found, skipping bulk install scanning`)
       }
     }
 
-    debugFn('notice', 'complete: scanning, proceeding with install')
+    debugFn('complete: scanning, proceeding with install')
   }
 
   const realPnpmPath = await installPnpmLinks(constants.shadowBinPath)

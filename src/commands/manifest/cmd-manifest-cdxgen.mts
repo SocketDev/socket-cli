@@ -282,7 +282,7 @@ async function run(
     // https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
     process.exitCode = 2
     logger.fail(
-      `Unknown ${pluralize('argument', unknownsCount)}: ${joinAnd(unknowns)}`,
+      `Unknown ${pluralize('argument', { count: unknownsCount })}: ${joinAnd(unknowns)}`,
     )
     return
   }

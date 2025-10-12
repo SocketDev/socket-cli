@@ -113,10 +113,7 @@ export async function handleCreateNewScan({
     })
     return
   }
-  debugFn(
-    'notice',
-    `Fetched ${supportedFilesCResult.data['size']} supported file types`,
-  )
+  debugFn(`Fetched ${supportedFilesCResult.data['size']} supported file types`)
 
   spinner.start('Searching for local files to include in scan...')
 
@@ -126,7 +123,7 @@ export async function handleCreateNewScan({
   })
 
   spinner.successAndStop(
-    `Found ${packagePaths.length} ${pluralize('file', packagePaths.length)} to include in scan.`,
+    `Found ${packagePaths.length} ${pluralize('file', { count: packagePaths.length })} to include in scan.`,
   )
 
   const wasValidInput = checkCommandInput(outputKind, {
@@ -137,19 +134,19 @@ export async function handleCreateNewScan({
       'TARGET (file/dir) must contain matching / supported file types for a scan',
   })
   if (!wasValidInput) {
-    debugFn('warn', 'No eligible files found to scan')
+    debugFn('No eligible files found to scan')
     return
   }
 
   logger.success(
-    `Found ${packagePaths.length} local ${pluralize('file', packagePaths.length)}`,
+    `Found ${packagePaths.length} local ${pluralize('file', { count: packagePaths.length })}`,
   )
 
-  debugDir('inspect', { packagePaths })
+  debugDir({ packagePaths })
 
   if (readOnly) {
     logger.log('[ReadOnly] Bailing now')
-    debugFn('notice', 'Read-only mode, exiting early')
+    debugFn('Read-only mode, exiting early')
     return
   }
 
@@ -160,8 +157,8 @@ export async function handleCreateNewScan({
   if (reach.runReachabilityAnalysis) {
     logger.error('')
     logger.info('Starting reachability analysis...')
-    debugFn('notice', 'Reachability analysis enabled')
-    debugDir('inspect', { reachabilityOptions: reach })
+    debugFn('Reachability analysis enabled')
+    debugDir({ reachabilityOptions: reach })
 
     spinner.start()
 
