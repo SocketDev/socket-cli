@@ -17,7 +17,7 @@
  * to reduce noise. Enable them explicitly when needed for deep debugging.
  */
 
-import { debugDir, debugFn, isDebug } from '@socketsecurity/registry/lib/debug'
+import { debugDir, debugDirNs, debugFn, debugFnNs, isDebug, isDebugNs } from '@socketsecurity/registry/lib/debug'
 
 /**
  * Debug an API response.
@@ -29,15 +29,15 @@ export function debugApiResponse(
   error?: unknown | undefined,
 ): void {
   if (error) {
-    debugDir('error', {
+    debugDir( {
       endpoint,
       error: error instanceof Error ? error.message : 'Unknown error',
     })
   } else if (status && status >= 400) {
-    debugFn('warn', `API ${endpoint}: HTTP ${status}`)
+    debugFn( `API ${endpoint}: HTTP ${status}`)
     /* c8 ignore next 3 */
-  } else if (isDebug('notice')) {
-    debugFn('notice', `API ${endpoint}: ${status || 'pending'}`)
+  } else if (isDebug()) {
+    debugFn( `API ${endpoint}: ${status || 'pending'}`)
   }
 }
 
@@ -51,14 +51,14 @@ export function debugFileOp(
   error?: unknown | undefined,
 ): void {
   if (error) {
-    debugDir('warn', {
+    debugDir( {
       operation,
       filepath,
       error: error instanceof Error ? error.message : 'Unknown error',
     })
     /* c8 ignore next 3 */
-  } else if (isDebug('silly')) {
-    debugFn('silly', `File ${operation}: ${filepath}`)
+  } else if (isDebug()) {
+    debugFn( `File ${operation}: ${filepath}`)
   }
 }
 
@@ -74,22 +74,22 @@ export function debugScan(
   switch (phase) {
     case 'start':
       if (packageCount) {
-        debugFn('notice', `Scanning ${packageCount} packages`)
+        debugFn(`Scanning ${packageCount} packages`)
       }
       break
     case 'progress':
-      if (isDebug('silly') && packageCount) {
-        debugFn('silly', `Scan progress: ${packageCount} packages processed`)
+      if (isDebug() && packageCount) {
+        debugFn(`Scan progress: ${packageCount} packages processed`)
       }
       break
     case 'complete':
-      debugFn(
+      debugFnNs(
         'notice',
         `Scan complete${packageCount ? `: ${packageCount} packages` : ''}`,
       )
       break
     case 'error':
-      debugDir('error', {
+      debugDir({
         phase: 'scan_error',
         details,
       })
@@ -106,15 +106,15 @@ export function debugConfig(
   error?: unknown | undefined,
 ): void {
   if (error) {
-    debugDir('warn', {
+    debugDir( {
       source,
       error: error instanceof Error ? error.message : 'Unknown error',
     })
   } else if (found) {
-    debugFn('notice', `Config loaded: ${source}`)
+    debugFn( `Config loaded: ${source}`)
     /* c8 ignore next 3 */
-  } else if (isDebug('silly')) {
-    debugFn('silly', `Config not found: ${source}`)
+  } else if (isDebug()) {
+    debugFn( `Config not found: ${source}`)
   }
 }
 
@@ -128,19 +128,19 @@ export function debugGit(
   details?: Record<string, unknown> | undefined,
 ): void {
   if (!success) {
-    debugDir('warn', {
+    debugDir( {
       git_op: operation,
       ...details,
     })
   } else if (
-    (isDebug('notice') && operation.includes('push')) ||
+    (isDebug() && operation.includes('push')) ||
     operation.includes('commit')
   ) {
     // Only log important operations like push and commit.
-    debugFn('notice', `Git ${operation} succeeded`)
-  } else if (isDebug('silly')) {
-    debugFn('silly', `Git ${operation}`)
+    debugFn( `Git ${operation} succeeded`)
+  } else if (isDebug()) {
+    debugFn( `Git ${operation}`)
   }
 }
 
-export { debugDir, debugFn, isDebug }
+export { debugDir, debugDirNs, debugFn, debugFnNs, isDebug, isDebugNs }

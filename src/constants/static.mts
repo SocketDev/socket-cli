@@ -3,6 +3,8 @@
  * These are safe to bundle and won't cause circular dependencies.
  */
 
+import path from 'node:path'
+
 import {
   dirs,
   env,
@@ -15,6 +17,7 @@ import {
 
 // Map the new constants structure to the old names for compatibility
 export const AT_LATEST = '@latest'
+export const LATEST = 'latest'
 export const BUN = packageManagers.bun.name
 export const CHANGELOG_MD = files.CHANGELOG_MD
 export const CI = env.CI
@@ -61,6 +64,7 @@ export const NPX = 'npx'
 export const PACKAGE = 'package'
 export const PACKAGE_JSON = files.PACKAGE_JSON
 export const PACKAGE_LOCK = 'package-lock'
+export const PACKAGE_LOCK_JSON = 'package-lock.json'
 export const PNPM = packageManagers.pnpm.name
 export const PNPM_LOCK = 'pnpm-lock'
 export const PNPM_LOCK_YAML = files.PNPM_LOCK_YAML

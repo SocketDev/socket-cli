@@ -223,7 +223,7 @@ const NetworkUtils = {
 
         // Exponential backoff.
         const delay = baseDelay * Math.pow(2, attempts - 1)
-        logger.debug(
+        logger.log(
           `Attempt ${attempts} failed, retrying in ${delay}ms: ${error instanceof Error ? error.message : String(error)}`,
         )
 
@@ -274,7 +274,7 @@ async function checkForUpdates(
       updateAvailable,
     }
   } catch (error) {
-    logger.debug(
+    logger.log(
       `Failed to check for updates: ${error instanceof Error ? error.message : String(error)}`,
     )
     throw error
