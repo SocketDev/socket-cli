@@ -63,9 +63,11 @@ export async function getBaseBranch(cwd = process.cwd()): Promise<string> {
   // 3. Try to resolve the default remote branch using 'git remote show origin'.
   // This handles detached HEADs or workflows triggered by tags/releases.
   try {
-    const originDetails = (
-      await spawn('git', ['remote', 'show', 'origin'], { cwd })
-    ).stdout
+    const result = await spawn('git', ['remote', 'show', 'origin'], { cwd })
+    const originDetails =
+      typeof result.stdout === 'string'
+        ? result.stdout
+        : result.stdout.toString('utf8')
 
     const match = /(?<=HEAD branch: ).+/.exec(originDetails)
     if (match?.[0]) {
@@ -87,17 +89,19 @@ export async function getRepoInfo(
 ): Promise<RepoInfo | undefined> {
   let info
   try {
-    const remoteUrl = (
-      await spawn('git', ['remote', 'get-url', 'origin'], { cwd })
-    ).stdout
+    const result = await spawn('git', ['remote', 'get-url', 'origin'], { cwd })
+    const remoteUrl =
+      typeof result.stdout === 'string'
+        ? result.stdout
+        : result.stdout.toString('utf8')
     info = parseGitRemoteUrl(remoteUrl)
     if (!info) {
-      debugFn('warn', `Unmatched git remote URL format: ${remoteUrl}`)
-      debugDir('warn', { remoteUrl })
+      debugFn(`Unmatched git remote URL format: ${remoteUrl}`)
+      debugDir({ remoteUrl })
     }
   } catch (e) {
     // Expected failure when not in a git repo.
-    debugDir('inspect', { message: 'git remote get-url failed', error: e })
+    debugDir({ message: 'git remote get-url failed', error: e })
   }
   return info
 }
@@ -128,10 +132,12 @@ export async function gitBranch(
       ['symbolic-ref', '--short', 'HEAD'],
       stdioPipeOptions,
     )
-    return gitSymbolicRefResult.stdout
+    return typeof gitSymbolicRefResult.stdout === 'string'
+      ? gitSymbolicRefResult.stdout
+      : gitSymbolicRefResult.stdout.toString('utf8')
   } catch (e) {
     // Expected in detached HEAD state, fallback to rev-parse.
-    debugDir('inspect', { message: 'In detached HEAD state', error: e })
+    debugDir({ message: 'In detached HEAD state', error: e })
   }
   // Fallback to using rev-parse to get the short commit hash in a
   // detached HEAD state.
@@ -141,10 +147,12 @@ export async function gitBranch(
       ['rev-parse', '--short', 'HEAD'],
       stdioPipeOptions,
     )
-    return gitRevParseResult.stdout
+    return typeof gitRevParseResult.stdout === 'string'
+      ? gitRevParseResult.stdout
+      : gitRevParseResult.stdout.toString('utf8')
   } catch (e) {
     // Both methods failed, likely not in a git repo.
-    debugDir('inspect', { message: 'Unable to determine git branch', error: e })
+    debugDir({ message: 'Unable to determine git branch', error: e })
   }
   return undefined
 }
@@ -182,7 +190,7 @@ export type GitCreateAndPushBranchOptions = {
 export async function gitCleanFdx(cwd = process.cwd()): Promise<boolean> {
   const stdioIgnoreOptions: SpawnOptions = {
     cwd,
-    stdio: isDebug('stdio') ? 'inherit' : 'ignore',
+    stdio: isDebug() ? 'inherit' : 'ignore',
   }
   try {
     await spawn('git', ['clean', '-fdx'], stdioIgnoreOptions)
@@ -200,7 +208,7 @@ export async function gitCheckoutBranch(
 ): Promise<boolean> {
   const stdioIgnoreOptions: SpawnOptions = {
     cwd,
-    stdio: isDebug('stdio') ? 'inherit' : 'ignore',
+    stdio: isDebug() ? 'inherit' : 'ignore',
   }
   try {
     await spawn('git', ['checkout', branch], stdioIgnoreOptions)
@@ -221,7 +229,7 @@ export async function gitCreateBranch(
   }
   const stdioIgnoreOptions: SpawnOptions = {
     cwd,
-    stdio: isDebug('stdio') ? 'inherit' : 'ignore',
+    stdio: isDebug() ? 'inherit' : 'ignore',
   }
   try {
     await spawn('git', ['branch', branch], stdioIgnoreOptions)
@@ -239,7 +247,7 @@ export async function gitPushBranch(
 ): Promise<boolean> {
   const stdioIgnoreOptions: SpawnOptions = {
     cwd,
-    stdio: isDebug('stdio') ? 'inherit' : 'ignore',
+    stdio: isDebug() ? 'inherit' : 'ignore',
   }
   try {
     await spawn(
@@ -252,11 +260,10 @@ export async function gitPushBranch(
   } catch (e) {
     if (isSpawnError(e) && e.code === 128) {
       debugFn(
-        'error',
         "Push denied: token requires write permissions for 'contents' and 'pull-requests'",
       )
-      debugDir('error', e)
-      debugDir('inspect', { branch })
+      debugDir(e)
+      debugDir({ branch })
     } else {
       debugGit(`push ${branch}`, false, { error: e })
     }
@@ -270,7 +277,7 @@ export async function gitCommit(
   options?: GitCreateAndPushBranchOptions | undefined,
 ): Promise<boolean> {
   if (!filepaths.length) {
-    debugFn('notice', `miss: no filepaths to add`)
+    debugFn('miss: no filepaths to add')
     return false
   }
   const {
@@ -283,14 +290,14 @@ export async function gitCommit(
 
   const stdioIgnoreOptions: SpawnOptions = {
     cwd,
-    stdio: isDebug('stdio') ? 'inherit' : 'ignore',
+    stdio: isDebug() ? 'inherit' : 'ignore',
   }
   try {
     await spawn('git', ['add', ...filepaths], stdioIgnoreOptions)
     debugGit('add', true, { count: filepaths.length })
   } catch (e) {
     debugGit('add', false, { error: e })
-    debugDir('inspect', { filepaths })
+    debugDir({ filepaths })
     return false
   }
 
@@ -300,7 +307,7 @@ export async function gitCommit(
     return true
   } catch (e) {
     debugGit('commit', false, { error: e })
-    debugDir('inspect', { commitMsg })
+    debugDir({ commitMsg })
   }
   return false
 }
@@ -311,7 +318,7 @@ export async function gitDeleteBranch(
 ): Promise<boolean> {
   const stdioIgnoreOptions: SpawnOptions = {
     cwd,
-    stdio: isDebug('stdio') ? 'inherit' : 'ignore',
+    stdio: isDebug() ? 'inherit' : 'ignore',
   }
   try {
     // Will throw with exit code 1 if branch does not exist.
@@ -319,7 +326,7 @@ export async function gitDeleteBranch(
     return true
   } catch (e) {
     // Expected failure when branch doesn't exist.
-    debugDir('inspect', {
+    debugDir({
       message: `Branch deletion failed (may not exist): ${branch}`,
       error: e,
     })
@@ -333,7 +340,7 @@ export async function gitDeleteRemoteBranch(
 ): Promise<boolean> {
   const stdioIgnoreOptions: SpawnOptions = {
     cwd,
-    stdio: isDebug('stdio') ? 'inherit' : 'ignore',
+    stdio: isDebug() ? 'inherit' : 'ignore',
   }
   try {
     // Will throw with exit code 1 if branch does not exist.
@@ -345,7 +352,7 @@ export async function gitDeleteRemoteBranch(
     return true
   } catch (e) {
     // Expected failure when remote branch doesn't exist.
-    debugDir('inspect', {
+    debugDir({
       message: `Remote branch deletion failed (may not exist): ${branch}`,
       error: e,
     })
@@ -376,7 +383,7 @@ export async function gitEnsureIdentity(
         configValue = gitConfigResult.stdout
       } catch (e) {
         // Expected when config property is not set.
-        debugDir('inspect', {
+        debugDir({
           message: `Git config property not set: ${prop}`,
           error: e,
         })
@@ -384,14 +391,14 @@ export async function gitEnsureIdentity(
       if (configValue !== value) {
         const stdioIgnoreOptions: SpawnOptions = {
           cwd,
-          stdio: isDebug('stdio') ? 'inherit' : 'ignore',
+          stdio: isDebug() ? 'inherit' : 'ignore',
         }
         try {
           await spawn('git', ['config', prop, value], stdioIgnoreOptions)
         } catch (e) {
-          debugFn('warn', `Failed to set git config: ${prop}`)
-          debugDir('warn', e)
-          debugDir('inspect', { value })
+          debugFn(`Failed to set git config: ${prop}`)
+          debugDir(e)
+          debugDir({ value })
         }
       }
     }),
@@ -404,7 +411,7 @@ export async function gitLocalBranchExists(
 ): Promise<boolean> {
   const stdioIgnoreOptions: SpawnOptions = {
     cwd,
-    stdio: isDebug('stdio') ? 'inherit' : 'ignore',
+    stdio: isDebug() ? 'inherit' : 'ignore',
   }
   try {
     // Will throw with exit code 1 if the branch does not exist.
@@ -434,7 +441,7 @@ export async function gitRemoteBranchExists(
     return lsRemoteResult.stdout.length > 0
   } catch (e) {
     // Expected when remote is not accessible or branch doesn't exist.
-    debugDir('inspect', {
+    debugDir({
       message: `Remote branch check failed: ${branch}`,
       error: e,
     })
@@ -458,7 +465,7 @@ export async function gitResetHard(
 ): Promise<boolean> {
   const stdioIgnoreOptions: SpawnOptions = {
     cwd,
-    stdio: isDebug('stdio') ? 'inherit' : 'ignore',
+    stdio: isDebug() ? 'inherit' : 'ignore',
   }
   try {
     await spawn('git', ['reset', '--hard', branch], stdioIgnoreOptions)
@@ -480,15 +487,18 @@ export async function gitUnstagedModifiedFiles(
       ['diff', '--name-only'],
       stdioPipeOptions,
     )
-    const changedFilesDetails = gitDiffResult.stdout
+    const changedFilesDetails =
+      typeof gitDiffResult.stdout === 'string'
+        ? gitDiffResult.stdout
+        : gitDiffResult.stdout.toString('utf8')
     const relPaths = changedFilesDetails.split('\n')
     return {
       ok: true,
-      data: relPaths.map(p => normalizePath(p)),
+      data: relPaths.map((p: string) => normalizePath(p)),
     }
   } catch (e) {
-    debugFn('error', 'Failed to get unstaged modified files')
-    debugDir('error', e)
+    debugFn('Failed to get unstaged modified files')
+    debugDir(e)
     return {
       ok: false,
       message: 'Git Error',

@@ -157,7 +157,9 @@ export default async function shadowPnpmBin(
           debugDir(e)
         }
       } else {
-        debugFn(`skip: no ${PNPM_LOCK_YAML} found, skipping bulk install scanning`)
+        debugFn(
+          `skip: no ${PNPM_LOCK_YAML} found, skipping bulk install scanning`,
+        )
       }
     }
 

@@ -3,86 +3,86 @@
  * These are safe to bundle and won't cause circular dependencies.
  */
 
-import { createRequire } from 'node:module'
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
-
-const require = createRequire(import.meta.url)
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(path.dirname(__filename)) // Go up to src/
-
-// Re-export static constants from registry that we need
-export {
-  AT_LATEST,
-  BUN,
-  CHANGELOG_MD,
-  CI,
-  COLUMN_LIMIT,
-  DOT_GIT_DIR,
-  DOT_SOCKET_DIR,
-  EMPTY_FILE,
-  EMPTY_VALUE,
-  ESLINT_CONFIG_JS,
-  ESNEXT,
-  EXT_CJS,
-  EXT_CMD,
-  EXT_CTS,
-  EXT_DTS,
-  EXT_JS,
-  EXT_JSON,
-  EXT_LOCK,
-  EXT_LOCKB,
-  EXT_MD,
-  EXT_MJS,
-  EXT_MTS,
-  EXT_PS1,
-  EXT_YAML,
-  EXT_YML,
-  EXTENSIONS,
-  EXTENSIONS_JSON,
-  GITIGNORE,
-  DOT_PACKAGE_LOCK_JSON,
-  DOT_PACKAGE_LOCK_YML,
-  DOT_PNPM_LOCK_YAML,
-  INDEX,
-  INDEX_JS,
-  JS,
-  LICENSE,
-  LICENSE_MD,
-  MANIFEST_JSON,
-  NODE,
-  NODE_MODULES,
-  NODE_MODULES_GLOB_RECURSIVE,
-  NPM,
-  NPMIGNORE,
-  NPMRC,
-  NPX,
-  PACKAGE,
-  PACKAGE_JSON,
-  PACKAGE_LOCK,
-  PNPM,
-  PNPM_LOCK,
-  PNPM_LOCK_YAML,
-  README_MD,
-  ROLLUP_EXTERNAL_SUFFIX,
-  SLASH_NODE_MODULES_SLASH,
-  TEST,
-  TS,
-  TSX,
-  UTF8,
-  UNKNOWN_ERROR,
-  UNKNOWN_VALUE,
-  UNLICENCED,
-  UNLICENSED,
-  V,
-  VITEST,
-  VLT,
-  WIN32,
-  YARN,
-  YARN_BERRY,
-  YARN_CLASSIC,
-  YARN_LOCK,
+import {
+  dirs,
+  env,
+  extensions,
+  files,
+  packageManagers,
+  paths,
+  socket,
 } from '@socketsecurity/registry/lib/constants'
+
+// Map the new constants structure to the old names for compatibility
+export const AT_LATEST = '@latest'
+export const BUN = packageManagers.bun.name
+export const CHANGELOG_MD = files.CHANGELOG_MD
+export const CI = env.CI
+export const COLUMN_LIMIT = 80
+export const DOT_GIT_DIR = dirs.DOT_GIT
+export const DOT_SOCKET_DIR = dirs.DOT_SOCKET
+export const EMPTY_FILE = ''
+export const EMPTY_VALUE = ''
+export const ESLINT_CONFIG_JS = files.ESLINT_CONFIG_JS
+export const ESNEXT = 'esnext'
+export const EXT_CJS = extensions.CJS
+export const EXT_CMD = '.cmd'
+export const EXT_CTS = extensions.CTS
+export const EXT_DTS = extensions.DTS
+export const EXT_JS = extensions.JS
+export const EXT_JSON = extensions.JSON
+export const EXT_LOCK = extensions.LOCK
+export const EXT_LOCKB = extensions.LOCKB
+export const EXT_MD = extensions.MD
+export const EXT_MJS = extensions.MJS
+export const EXT_MTS = extensions.MTS
+export const EXT_PS1 = '.ps1'
+export const EXT_YAML = extensions.YAML
+export const EXT_YML = extensions.YML
+export const EXTENSIONS = extensions
+export const EXTENSIONS_JSON = files.EXTENSIONS_JSON
+export const GITIGNORE = files.GITIGNORE
+export const DOT_PACKAGE_LOCK_JSON = files.PACKAGE_LOCK_JSON
+export const DOT_PACKAGE_LOCK_YML = '.package-lock.yml'
+export const DOT_PNPM_LOCK_YAML = files.PNPM_LOCK_YAML
+export const INDEX = 'index'
+export const INDEX_JS = 'index.js'
+export const JS = 'js'
+export const LICENSE = files.LICENSE
+export const LICENSE_MD = 'LICENSE.md'
+export const MANIFEST_JSON = files.MANIFEST_JSON
+export const NODE = 'node'
+export const NODE_MODULES = dirs.NODE_MODULES
+export const NODE_MODULES_GLOB_RECURSIVE = paths.NODE_MODULES_GLOB
+export const NPM = packageManagers.npm.name
+export const NPMIGNORE = '.npmignore'
+export const NPMRC = '.npmrc'
+export const NPX = 'npx'
+export const PACKAGE = 'package'
+export const PACKAGE_JSON = files.PACKAGE_JSON
+export const PACKAGE_LOCK = 'package-lock'
+export const PNPM = packageManagers.pnpm.name
+export const PNPM_LOCK = 'pnpm-lock'
+export const PNPM_LOCK_YAML = files.PNPM_LOCK_YAML
+export const README_MD = files.README_MD
+export const ROLLUP_EXTERNAL_SUFFIX = '.external.js'
+export const SLASH_NODE_MODULES_SLASH = '/node_modules/'
+export const TEST = 'test'
+export const TS = 'ts'
+export const TSX = 'tsx'
+export const UTF8 = 'utf8'
+export const UNKNOWN_ERROR = 'Unknown error'
+export const UNKNOWN_VALUE = 'unknown'
+export const UNLICENCED = 'UNLICENCED'
+export const UNLICENSED = 'UNLICENSED'
+export const V = 'v'
+export const VITEST = 'vitest'
+export const VLT = packageManagers.vlt.name
+export const WIN32 = 'win32'
+export const YARN = packageManagers.yarn.name
+export const YARN_BERRY = 'yarn_berry'
+export const YARN_CLASSIC = 'yarn_classic'
+export const YARN_LOCK = files.YARN_LOCK
 
 // Socket CLI specific static constants
 export const BLESSED = 'blessed'
