@@ -8,16 +8,15 @@ import type { OutputKind } from '../../types.mts'
 export async function handleOrganizationList(
   outputKind: OutputKind = 'text',
 ): Promise<void> {
-  debugFn('notice', 'Fetching organization list')
-  debugDir('inspect', { outputKind })
+  debugFn('Fetching organization list')
+  debugDir({ outputKind })
 
   const data = await fetchOrganization()
 
   debugFn(
-    'notice',
     `Organization list ${data.ok ? 'fetched successfully' : 'fetch failed'}`,
   )
-  debugDir('inspect', { data })
+  debugDir({ data })
 
   await outputOrganizationList(data, outputKind)
 }

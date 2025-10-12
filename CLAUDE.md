@@ -18,6 +18,16 @@ When working in any Socket repository, check for updates and patterns in other c
 - Examples: c8 comment formatting, error handling patterns, code style rules
 - This ensures consistency across the Socket ecosystem
 
+## 🚫 PROHIBITED PRACTICES - MANDATORY RESTRICTIONS
+
+### Automated Fix Scripts - STRICTLY FORBIDDEN
+- **🚨 NEVER create automated fix scripts** (e.g., fix-*.mjs, update-*.mjs, migrate-*.mjs)
+- **🚨 NEVER use sed, awk, or regex-based bulk replacements** for fixing code issues
+- **🚨 NEVER create temporary scripts in /scripts directories** to automate fixes
+- **Reason**: Automated scripts with regex patterns corrupt code by creating malformed syntax, especially with template literals and complex type expressions
+- **Required approach**: Fix each issue manually with proper understanding of context using the Edit tool
+- **Exception**: None. All fixes must be done through direct file editing
+
 ## 🎯 Your Role
 You are a **Principal Software Engineer** responsible for:
 - Writing production-quality, maintainable code

@@ -32,7 +32,7 @@ import url from 'node:url'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { normalizePath } from '@socketsecurity/registry/lib/path'
 
-import trash from 'trash'
+import { safeDelete } from '@socketsecurity/registry/lib/fs'
 
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 import constants, { NODE_SEA_FUSE } from '../constants.mts'
@@ -266,7 +266,7 @@ async function downloadNodeBinary(version, platform, arch) {
     return nodePath
   } finally {
     // Clean up the temp directory safely.
-    await trash(tempDir)
+    await safeDelete(tempDir)
   }
 }
 
@@ -514,11 +514,11 @@ async function buildTarget(target, options) {
     ].filter(Boolean)
 
     if (filesToClean.length > 0) {
-      await trash(filesToClean).catch(() => {})
+      await safeDelete(filesToClean).catch(() => {})
     }
   } finally {
     // Clean up config.
-    await trash(configPath).catch(() => {})
+    await safeDelete(configPath).catch(() => {})
   }
 }
 

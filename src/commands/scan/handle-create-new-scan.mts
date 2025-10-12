@@ -70,8 +70,8 @@ export async function handleCreateNewScan({
   targets,
   tmp,
 }: HandleCreateNewScanConfig): Promise<void> {
-  debugFn('notice', `Creating new scan for ${orgSlug}/${repoName}`)
-  debugDir('inspect', {
+  debugFn(`Creating new scan for ${orgSlug}/${repoName}`)
+  debugDir({
     autoManifest,
     branchName,
     commitHash,
@@ -88,10 +88,10 @@ export async function handleCreateNewScan({
 
   if (autoManifest) {
     logger.info('Auto-generating manifest files ...')
-    debugFn('notice', 'Auto-manifest mode enabled')
+    debugFn('Auto-manifest mode enabled')
     const sockJson = readOrDefaultSocketJson(cwd)
     const detected = await detectManifestActions(sockJson, cwd)
-    debugDir('inspect', { detected })
+    debugDir({ detected })
     await generateAutoManifest({
       detected,
       cwd,
@@ -105,8 +105,8 @@ export async function handleCreateNewScan({
 
   const supportedFilesCResult = await fetchSupportedScanFileNames({ spinner })
   if (!supportedFilesCResult.ok) {
-    debugFn('warn', 'Failed to fetch supported scan file names')
-    debugDir('inspect', { supportedFilesCResult })
+    debugFn('Failed to fetch supported scan file names')
+    debugDir({ supportedFilesCResult })
     await outputCreateNewScan(supportedFilesCResult, {
       interactive,
       outputKind,

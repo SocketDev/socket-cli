@@ -23,8 +23,8 @@ export async function handleCreateRepo(
   },
   outputKind: OutputKind,
 ): Promise<void> {
-  debugFn('notice', `Creating repository ${orgSlug}/${repoName}`)
-  debugDir('inspect', {
+  debugFn(`Creating repository ${orgSlug}/${repoName}`)
+  debugDir({
     defaultBranch,
     description,
     homepage,
@@ -43,8 +43,8 @@ export async function handleCreateRepo(
     visibility,
   })
 
-  debugFn('notice', `Repository creation ${data.ok ? 'succeeded' : 'failed'}`)
-  debugDir('inspect', { data })
+  debugFn(`Repository creation ${data.ok ? 'succeeded' : 'failed'}`)
+  debugDir({ data })
 
   outputCreateRepo(data, repoName, outputKind)
 }

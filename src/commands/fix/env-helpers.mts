@@ -12,7 +12,7 @@ import type { RepoInfo } from '../../utils/git.mts'
 function ciRepoInfo(): RepoInfo | undefined {
   const { GITHUB_REPOSITORY } = constants.ENV
   if (!GITHUB_REPOSITORY) {
-    debugFn('notice', 'miss: GITHUB_REPOSITORY env var')
+    debugFn('miss: GITHUB_REPOSITORY env var')
   }
   const ownerSlashRepo = GITHUB_REPOSITORY
   const slashIndex = ownerSlashRepo.indexOf('/')
@@ -120,10 +120,9 @@ export async function getFixEnv(): Promise<FixEnv> {
     !constants.ENV.CI &&
     envCheck.present.length &&
     // then log about it when in debug mode.
-    isDebug('notice')
+    isDebug()
   ) {
     debugFn(
-      'notice',
       `miss: fixEnv.isCi is false, expected ${joinAnd(envCheck.missing)} to be set`,
     )
   }
@@ -134,7 +133,7 @@ export async function getFixEnv(): Promise<FixEnv> {
   }
   if (!repoInfo) {
     if (isCi) {
-      debugFn('notice', 'falling back to `git remote get-url origin`')
+      debugFn('falling back to `git remote get-url origin`')
     }
     repoInfo = await getRepoInfo()
   }

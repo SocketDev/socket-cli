@@ -15,13 +15,13 @@ export async function handleConfigSet({
   outputKind: OutputKind
   value: string
 }) {
-  debugFn('notice', `Setting config ${key} = ${value}`)
-  debugDir('inspect', { key, value, outputKind })
+  debugFn(`Setting config ${key} = ${value}`)
+  debugDir({ key, value, outputKind })
 
   const result = updateConfigValue(key, value)
 
-  debugFn('notice', `Config update ${result.ok ? 'succeeded' : 'failed'}`)
-  debugDir('inspect', { result })
+  debugFn(`Config update ${result.ok ? 'succeeded' : 'failed'}`)
+  debugDir({ result })
 
   await outputConfigSet(result, outputKind)
 }

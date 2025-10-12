@@ -105,9 +105,7 @@ async function run(
   const sockJson = readOrDefaultSocketJson(cwd)
 
   debugFn(
-    'inspect',
-    `override: ${SOCKET_JSON} gradle`,
-    sockJson?.defaults?.manifest?.gradle,
+    `override: ${SOCKET_JSON} gradle: ${sockJson?.defaults?.manifest?.gradle}`,
   )
 
   let { bin, gradleOpts, verbose } = cli.flags

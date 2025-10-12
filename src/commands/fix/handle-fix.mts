@@ -32,8 +32,8 @@ export type HandleFixConfig = Remap<
  * Filters out invalid IDs and logs conversion results.
  */
 export async function convertIdsToGhsas(ids: string[]): Promise<string[]> {
-  debugFn('notice', `Converting ${ids.length} IDs to GHSA format`)
-  debugDir('inspect', { ids })
+  debugFn(`Converting ${ids.length} IDs to GHSA format`)
+  debugDir({ ids })
 
   const validGhsas: string[] = []
   const errors: string[] = []
@@ -93,11 +93,11 @@ export async function convertIdsToGhsas(ids: string[]): Promise<string[]> {
     logger.warn(
       `Skipped ${errors.length} invalid IDs:\n${errors.map(e => `  - ${e}`).join('\n')}`,
     )
-    debugDir('inspect', { errors })
+    debugDir({ errors })
   }
 
-  debugFn('notice', `Converted to ${validGhsas.length} valid GHSA IDs`)
-  debugDir('inspect', { validGhsas })
+  debugFn(`Converted to ${validGhsas.length} valid GHSA IDs`)
+  debugDir({ validGhsas })
 
   return validGhsas
 }
@@ -121,8 +121,8 @@ export async function handleFix({
   spinner,
   unknownFlags,
 }: HandleFixConfig) {
-  debugFn('notice', `Starting fix command for ${orgSlug}`)
-  debugDir('inspect', {
+  debugFn(`Starting fix command for ${orgSlug}`)
+  debugDir({
     autopilot,
     cwd,
     disableMajorUpdates,
