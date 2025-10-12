@@ -75,7 +75,7 @@ function formatReportCard(
   }
   const alertString = getAlertString(artifact.alerts, { colorize })
   if (!artifact.ecosystem) {
-    debugFn('notice', 'miss: artifact ecosystem', artifact)
+    debugFn(`miss: artifact ecosystem ${JSON.stringify(artifact)}`)
   }
   const purl = `pkg:${artifact.ecosystem}/${artifact.name}${artifact.version ? '@' + artifact.version : ''}`
 

@@ -46,8 +46,8 @@ export async function updateDependencies(
   } catch (e) {
     spinner?.stop()
 
-    debugFn('error', 'Dependencies update failed')
-    debugDir('error', e)
+    debugFn('Dependencies update failed')
+    debugDir(e)
 
     if (wasSpinning) {
       spinner.start()

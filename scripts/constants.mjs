@@ -2,8 +2,12 @@
 
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import registryConstants from '@socketsecurity/registry/lib/constants'
-import { envAsBoolean } from '@socketsecurity/registry/lib/env'
+import registryConstantsModule from '@socketsecurity/registry/lib/constants'
+import envUtils from '@socketsecurity/registry/lib/env'
+
+const { envAsBoolean } = envUtils
+const registryConstants =
+  registryConstantsModule.default || registryConstantsModule
 
 const {
   kInternalsSymbol,

@@ -117,11 +117,7 @@ async function run(
 
   const sockJson = readOrDefaultSocketJson(cwd)
 
-  debugFn(
-    'inspect',
-    `override: ${SOCKET_JSON} sbt`,
-    sockJson?.defaults?.manifest?.sbt,
-  )
+  debugFn(`override: ${SOCKET_JSON} sbt: ${sockJson?.defaults?.manifest?.sbt}`)
 
   let { bin, out, sbtOpts, stdout, verbose } = cli.flags
 

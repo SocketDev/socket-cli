@@ -90,8 +90,8 @@ export async function fetchScanData(
         return JSON.parse(line)
       } catch (e) {
         ok = false
-        debugFn('error', 'Failed to parse report data line as JSON')
-        debugDir('error', { error: e, line })
+        debugFn('Failed to parse report data line as JSON')
+        debugDir({ error: e, line })
         return
       }
     }) as unknown as SocketArtifact[]

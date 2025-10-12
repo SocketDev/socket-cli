@@ -13,16 +13,15 @@ export async function handlePurlsShallowScore({
   outputKind: OutputKind
   purls: string[]
 }) {
-  debugFn('notice', `Fetching shallow scores for ${purls.length} packages`)
-  debugDir('inspect', { purls, outputKind })
+  debugFn(`Fetching shallow scores for ${purls.length} packages`)
+  debugDir({ purls, outputKind })
 
   const packageData = await fetchPurlsShallowScore(purls)
 
   debugFn(
-    'notice',
     `Shallow scores ${packageData.ok ? 'fetched successfully' : 'fetch failed'}`,
   )
-  debugDir('inspect', { packageData })
+  debugDir({ packageData })
 
   outputPurlsShallowScore(
     purls,

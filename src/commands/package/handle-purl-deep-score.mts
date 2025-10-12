@@ -9,16 +9,13 @@ export async function handlePurlDeepScore(
   purl: string,
   outputKind: OutputKind,
 ) {
-  debugFn('notice', `Fetching deep score for ${purl}`)
-  debugDir('inspect', { purl, outputKind })
+  debugFn(`Fetching deep score for ${purl}`)
+  debugDir({ purl, outputKind })
 
   const result = await fetchPurlDeepScore(purl)
 
-  debugFn(
-    'notice',
-    `Deep score ${result.ok ? 'fetched successfully' : 'fetch failed'}`,
-  )
-  debugDir('inspect', { result })
+  debugFn(`Deep score ${result.ok ? 'fetched successfully' : 'fetch failed'}`)
+  debugDir({ result })
 
   await outputPurlsDeepScore(purl, result, outputKind)
 }

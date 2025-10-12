@@ -23,8 +23,8 @@ export async function handleOptimize({
   pin: boolean
   prod: boolean
 }) {
-  debugFn('notice', `Starting optimization for ${cwd}`)
-  debugDir('inspect', { cwd, outputKind, pin, prod })
+  debugFn(`Starting optimization for ${cwd}`)
+  debugDir({ cwd, outputKind, pin, prod })
 
   const pkgEnvCResult = await detectAndValidatePackageEnvironment(cwd, {
     cmdName: CMD_NAME,
@@ -33,8 +33,8 @@ export async function handleOptimize({
   })
   if (!pkgEnvCResult.ok) {
     process.exitCode = pkgEnvCResult.code ?? 1
-    debugFn('warn', 'Package environment validation failed')
-    debugDir('inspect', { pkgEnvCResult })
+    debugFn('Package environment validation failed')
+    debugDir({ pkgEnvCResult })
     await outputOptimizeResult(pkgEnvCResult, outputKind)
     return
   }
@@ -42,7 +42,7 @@ export async function handleOptimize({
   const pkgEnvDetails = pkgEnvCResult.data
   if (!pkgEnvDetails) {
     process.exitCode = 1
-    debugFn('warn', 'No package environment details found')
+    debugFn('No package environment details found')
     await outputOptimizeResult(
       {
         ok: false,
@@ -55,15 +55,14 @@ export async function handleOptimize({
   }
 
   debugFn(
-    'notice',
     `Detected package manager: ${pkgEnvDetails.agent} v${pkgEnvDetails.agentVersion}`,
   )
-  debugDir('inspect', { pkgEnvDetails })
+  debugDir({ pkgEnvDetails })
 
   const { agent, agentVersion } = pkgEnvDetails
   if (agent === VLT) {
     process.exitCode = 1
-    debugFn('warn', `${agent} does not support overrides`)
+    debugFn(`${agent} does not support overrides`)
     await outputOptimizeResult(
       {
         ok: false,
@@ -80,7 +79,7 @@ export async function handleOptimize({
 
   logger.info(`Optimizing packages for ${agent} v${agentVersion}.\n`)
 
-  debugFn('notice', 'Applying optimization')
+  debugFn('Applying optimization')
   const optimizationResult = await applyOptimization(pkgEnvDetails, {
     pin,
     prod,
@@ -89,10 +88,7 @@ export async function handleOptimize({
   if (!optimizationResult.ok) {
     process.exitCode = optimizationResult.code ?? 1
   }
-  debugFn(
-    'notice',
-    `Optimization ${optimizationResult.ok ? 'succeeded' : 'failed'}`,
-  )
-  debugDir('inspect', { optimizationResult })
+  debugFn(`Optimization ${optimizationResult.ok ? 'succeeded' : 'failed'}`)
+  debugDir({ optimizationResult })
   await outputOptimizeResult(optimizationResult, outputKind)
 }

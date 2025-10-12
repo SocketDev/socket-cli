@@ -14,19 +14,13 @@ export async function handleDependencies({
   offset: number
   outputKind: OutputKind
 }): Promise<void> {
-  debugFn(
-    'notice',
-    `Fetching dependencies with limit=${limit}, offset=${offset}`,
-  )
-  debugDir('inspect', { limit, offset, outputKind })
+  debugFn(`Fetching dependencies with limit=${limit}, offset=${offset}`)
+  debugDir({ limit, offset, outputKind })
 
   const result = await fetchDependencies({ limit, offset })
 
-  debugFn(
-    'notice',
-    `Dependencies ${result.ok ? 'fetched successfully' : 'fetch failed'}`,
-  )
-  debugDir('inspect', { result })
+  debugFn(`Dependencies ${result.ok ? 'fetched successfully' : 'fetch failed'}`)
+  debugDir({ result })
 
   await outputDependencies(result, { limit, offset, outputKind })
 }

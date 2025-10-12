@@ -66,8 +66,8 @@ void (async () => {
     )
   } catch (e) {
     process.exitCode = 1
-    debugFn('error', 'CLI uncaught error')
-    debugDir('error', e)
+    debugFn('CLI uncaught error')
+    debugDir(e)
 
     let errorBody: string | undefined
     let errorTitle: string

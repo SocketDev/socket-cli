@@ -11,9 +11,7 @@ export async function getDefaultOrgSlug(): Promise<CResult<string>> {
   const defaultOrgResult = getConfigValueOrUndef('defaultOrg')
   if (defaultOrgResult) {
     debugFn(
-      'notice',
-      'use: org from "defaultOrg" value of socket/settings local app data',
-      defaultOrgResult,
+      `use: org from "defaultOrg" value of socket/settings local app data: ${defaultOrgResult}`,
     )
     return { ok: true, data: defaultOrgResult }
   }
@@ -21,9 +19,7 @@ export async function getDefaultOrgSlug(): Promise<CResult<string>> {
   const envOrgSlug = constants.ENV.SOCKET_CLI_ORG_SLUG
   if (envOrgSlug) {
     debugFn(
-      'notice',
-      'use: org from SOCKET_CLI_ORG_SLUG environment variable',
-      envOrgSlug,
+      `use: org from SOCKET_CLI_ORG_SLUG environment variable: ${envOrgSlug}`,
     )
     return { ok: true, data: envOrgSlug }
   }
@@ -52,7 +48,7 @@ export async function getDefaultOrgSlug(): Promise<CResult<string>> {
     }
   }
 
-  debugFn('notice', 'resolve: org from Socket API', slug)
+  debugFn(`resolve: org from Socket API: ${slug}`)
 
   return {
     ok: true,
