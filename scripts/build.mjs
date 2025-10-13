@@ -74,7 +74,7 @@ async function main() {
 
     // Run build steps
     if (!quiet) {
-      log.progress(
+      log.step(
         `Running ${steps.length} build step${steps.length > 1 ? 's' : ''}...`,
       )
     }
@@ -86,11 +86,6 @@ async function main() {
       }),
     )
 
-    // Clear progress line
-    if (!quiet) {
-      process.stdout.write('\r\x1b[K')
-    }
-
     // Check for failures
     const failures = results.filter(r => r.exitCode !== 0)
 
@@ -98,7 +93,7 @@ async function main() {
       // Show failures
       for (const { name, stdout, stderr } of failures) {
         if (!quiet) {
-          log.failed(`${name} build failed`)
+          log.error(`${name} build failed`)
         }
         if (verbose || failures.length === 1) {
           if (stdout) {
