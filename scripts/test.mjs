@@ -24,6 +24,11 @@ const runningProcesses = new Set()
 
 // Setup exit handler
 const removeExitHandler = onExit((_code, signal) => {
+  // Stop spinner first
+  try {
+    spinner.stop()
+  } catch {}
+
   // Kill all running processes
   for (const child of runningProcesses) {
     try {
@@ -399,10 +404,18 @@ async function main() {
       }
     }
   } catch (error) {
+    // Ensure spinner is stopped
+    try {
+      spinner.stop()
+    } catch {}
     logger.error('')
     console.log(`Test runner failed: ${error.message}`)
     process.exitCode = 1
   } finally {
+    // Ensure spinner is stopped
+    try {
+      spinner.stop()
+    } catch {}
     removeExitHandler()
   }
 }
