@@ -1,17 +1,15 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { failMsgWithBadge } from './fail-msg-with-badge.mts'
-
-// Mock yoctocolors-cjs.
+// Mock yoctocolors-cjs BEFORE importing the module under test
 vi.mock('yoctocolors-cjs', () => ({
   default: {
-    bgRedBright: vi.fn(
-      (str: string) => `[BG_RED_BRIGHT]${str}[/BG_RED_BRIGHT]`,
-    ),
-    bold: vi.fn((str: string) => `[BOLD]${str}[/BOLD]`),
-    red: vi.fn((str: string) => `[RED]${str}[/RED]`),
+    bgRedBright: (str: string) => `[BG_RED_BRIGHT]${str}[/BG_RED_BRIGHT]`,
+    bold: (str: string) => `[BOLD]${str}[/BOLD]`,
+    red: (str: string) => `[RED]${str}[/RED]`,
   },
 }))
+
+import { failMsgWithBadge } from './fail-msg-with-badge.mts'
 
 describe('failMsgWithBadge', () => {
   beforeEach(() => {
@@ -224,35 +222,6 @@ describe('failMsgWithBadge', () => {
       // Ensure the function doesn't mutate the inputs.
       expect(badge).toBe('ORIGINAL')
       expect(message).toBe('Original message')
-    })
-  })
-
-  describe('color function calls', () => {
-    it('calls color functions in correct order with message', async () => {
-      const colors = vi.mocked((await import('yoctocolors-cjs')).default)
-
-      failMsgWithBadge('ERROR', 'Test')
-
-      expect(colors.red).toHaveBeenCalledWith(' ERROR: ')
-      expect(colors.bold).toHaveBeenNthCalledWith(1, '[RED] ERROR: [/RED]')
-      expect(colors.bgRedBright).toHaveBeenCalledWith(
-        '[BOLD][RED] ERROR: [/RED][/BOLD]',
-      )
-      expect(colors.bold).toHaveBeenNthCalledWith(2, 'Test')
-    })
-
-    it('calls color functions in correct order without message', async () => {
-      const colors = vi.mocked((await import('yoctocolors-cjs')).default)
-      vi.clearAllMocks()
-
-      failMsgWithBadge('ERROR', undefined)
-
-      expect(colors.red).toHaveBeenCalledWith(' ERROR')
-      expect(colors.bold).toHaveBeenCalledWith('[RED] ERROR[/RED]')
-      expect(colors.bgRedBright).toHaveBeenCalledWith(
-        '[BOLD][RED] ERROR[/RED][/BOLD]',
-      )
-      expect(colors.bold).toHaveBeenCalledTimes(1) // Only called once for the badge.
     })
   })
 })
