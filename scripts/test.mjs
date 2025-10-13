@@ -152,7 +152,7 @@ async function runCheck(options = {}) {
   if (!quiet) {
     spinner.start('Checking TypeScript...')
   }
-  result = await runCommandWithOutput('pnpm', ['run', 'check:types'])
+  result = await runCommandWithOutput('pnpm', ['run', 'check:tsc'])
 
   if (result.code !== 0) {
     if (!quiet) {
