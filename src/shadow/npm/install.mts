@@ -90,6 +90,7 @@ export function shadowNpmInstall(
       env: {
         ...process.env,
         ...constants.processEnv,
+        // @ts-expect-error - getOwn may return undefined, but spread handles it
         ...getOwn(spawnOpts, 'env'),
       },
       spinner,

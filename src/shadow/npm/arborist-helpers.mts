@@ -95,6 +95,7 @@ export function getDetailsFromDiff(
   const filterConfig = toFilterConfig({
     existing: false,
     unknownOrigin: true,
+    // @ts-expect-error - getOwn may return undefined, but spread handles it
     ...getOwn(options, 'filter'),
   }) as DiffQueryFilter
 
