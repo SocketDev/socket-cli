@@ -163,8 +163,8 @@ importers:
         specifier: 1001.1.0
         version: 1001.1.0
       '@pnpm/lockfile.detect-dep-types':
-        specifier: 1001.0.13
-        version: 1001.0.13
+        specifier: 1001.0.15
+        version: 1001.0.15
       '@pnpm/lockfile.fs':
         specifier: 1001.1.17
         version: 1001.1.17(@pnpm/logger@1001.0.0)
@@ -1336,12 +1336,20 @@ packages:
     resolution: {integrity: sha512-L22sQHDC4VM9cPSbOFi0e+C7JSt3isl/biV1jShz8MG9QjemiwTUMog4h0k0C5HoB1ycUjGkXTqAE4RJu3jLQA==}
     engines: {node: '>=18.12'}
 
+  '@pnpm/crypto.hash@1000.2.1':
+    resolution: {integrity: sha512-Kgo3bgYbdKkC5xFvvQshbHa+Nru7k50D91+yyq7enp4Ur2EMp4wg5oXleaC5xu5hC9A/1eSCRI8npCioplxG4A==}
+    engines: {node: '>=18.12'}
+
   '@pnpm/crypto.polyfill@1000.1.0':
     resolution: {integrity: sha512-tNe7a6U4rCpxLMBaR0SIYTdjxGdL0Vwb3G1zY8++sPtHSvy7qd54u8CIB0Z+Y6t5tc9pNYMYCMwhE/wdSY7ltg==}
     engines: {node: '>=18.12'}
 
   '@pnpm/dependency-path@1001.1.0':
     resolution: {integrity: sha512-hOVNtEu25HTNOdi0PkvDd27AQHXBke18njbGSYJ02J4GbyoufazqP8+YDiC/wQ+28rKOpgUylT7pVlZoTmdUsg==}
+    engines: {node: '>=18.12'}
+
+  '@pnpm/dependency-path@1001.1.2':
+    resolution: {integrity: sha512-fih99/lY+HRRak0U0KMKAO7+nacilWMcvFTH6YDKzjCBTOhxDr6Eeap2mF7uf4ED4dnKsQVNUGmFpvaSXSuFCQ==}
     engines: {node: '>=18.12'}
 
   '@pnpm/error@1000.0.4':
@@ -1356,8 +1364,12 @@ packages:
     resolution: {integrity: sha512-RvMEliAmcfd/4UoaYQ93DLQcFeqit78jhYmeJJVPxqFGmj0jEcb9Tu0eAOXr7tGP3eJHpgvPbTU4o6pZ1bJhxg==}
     engines: {node: '>=18.12'}
 
-  '@pnpm/lockfile.detect-dep-types@1001.0.13':
-    resolution: {integrity: sha512-CYVsUdxFkfj+V9W/6d/I4GZ/JqlJKIkiZMax+JnEtzPMWl0lPVZsbsVKt3bcVXy8IA5E9S45DQAoAi5X/NY5SQ==}
+  '@pnpm/graceful-fs@1000.0.1':
+    resolution: {integrity: sha512-JnzaAVFJIEgwTcB55eww8N3h5B6qJdZqDA2wYkSK+OcTvvMSQb9c2STMhBP6GfkWygG1fs3w8D7JRx9SPZnxJg==}
+    engines: {node: '>=18.12'}
+
+  '@pnpm/lockfile.detect-dep-types@1001.0.15':
+    resolution: {integrity: sha512-YJzdy4EYg87xE2IPpgO85W184HsKCMnddBiqCVKb6tU5DKmu/ad5uBmsoXO1dss0v6j7+uCR7iUciIipZUsU1w==}
     engines: {node: '>=18.12'}
 
   '@pnpm/lockfile.fs@1001.1.17':
@@ -1372,6 +1384,10 @@ packages:
 
   '@pnpm/lockfile.types@1002.0.0':
     resolution: {integrity: sha512-Y1UZAFKviKGmftMF3hk2jxRTWymctSG+x+5XjOAuNAV6mwtdPdrjUVM8zTbLW+om7GoYhaSszyicO7Qn9InRfg==}
+    engines: {node: '>=18.12'}
+
+  '@pnpm/lockfile.types@1002.0.1':
+    resolution: {integrity: sha512-anzBtzb78rf2KRExS8R38v4nyiU7b9ZMUsyzRdWpo+rfCmLUupjIxvasVlDgsf5pV7tbcBPASOamQ2G5V8IGAQ==}
     engines: {node: '>=18.12'}
 
   '@pnpm/lockfile.utils@1003.0.0':
@@ -1409,8 +1425,16 @@ packages:
     resolution: {integrity: sha512-EGrQzH913uCHtkjIIR06JOUog0x0VlXS4dAD4unTrX6kPpRSPdISKn+LWRujoEJc8i0JBW6KIfUXcNmI0W5q+Q==}
     engines: {node: '>=18.12'}
 
+  '@pnpm/resolver-base@1005.0.1':
+    resolution: {integrity: sha512-NBha12KjFMKwaG1BWTCtgr/RprNQhXItCBkzc8jZuVU0itAHRQhEykexna9K8XjAtYxZ9rhvir0T5a7fTB23yQ==}
+    engines: {node: '>=18.12'}
+
   '@pnpm/types@1000.7.0':
     resolution: {integrity: sha512-1s7FvDqmOEIeFGLUj/VO8sF5lGFxeE/1WALrBpfZhDnMXY/x8FbmuygTTE5joWifebcZ8Ww8Kw2CgBoStsIevQ==}
+    engines: {node: '>=18.12'}
+
+  '@pnpm/types@1000.8.0':
+    resolution: {integrity: sha512-yx86CGHHquWAI0GgKIuV/RnYewcf5fVFZemC45C/K2cX0uV8GB8TUP541ZrokWola2fZx5sn1vL7xzbceRZfoQ==}
     engines: {node: '>=18.12'}
 
   '@pnpm/util.lex-comparator@3.0.2':
@@ -5877,12 +5901,24 @@ snapshots:
       '@pnpm/graceful-fs': 1000.0.0
       ssri: 10.0.5
 
+  '@pnpm/crypto.hash@1000.2.1':
+    dependencies:
+      '@pnpm/crypto.polyfill': 1000.1.0
+      '@pnpm/graceful-fs': 1000.0.1
+      ssri: 10.0.5
+
   '@pnpm/crypto.polyfill@1000.1.0': {}
 
   '@pnpm/dependency-path@1001.1.0':
     dependencies:
       '@pnpm/crypto.hash': 1000.2.0
       '@pnpm/types': 1000.7.0
+      semver: 7.7.2
+
+  '@pnpm/dependency-path@1001.1.2':
+    dependencies:
+      '@pnpm/crypto.hash': 1000.2.1
+      '@pnpm/types': 1000.8.0
       semver: 7.7.2
 
   '@pnpm/error@1000.0.4':
@@ -5897,11 +5933,15 @@ snapshots:
     dependencies:
       graceful-fs: 4.2.11(patch_hash=17007d43dcc01ee2047730ab13eb23c41adc01ae0f24ee872b1fe69142db5200)
 
-  '@pnpm/lockfile.detect-dep-types@1001.0.13':
+  '@pnpm/graceful-fs@1000.0.1':
     dependencies:
-      '@pnpm/dependency-path': 1001.1.0
-      '@pnpm/lockfile.types': 1002.0.0
-      '@pnpm/types': 1000.7.0
+      graceful-fs: 4.2.11(patch_hash=17007d43dcc01ee2047730ab13eb23c41adc01ae0f24ee872b1fe69142db5200)
+
+  '@pnpm/lockfile.detect-dep-types@1001.0.15':
+    dependencies:
+      '@pnpm/dependency-path': 1001.1.2
+      '@pnpm/lockfile.types': 1002.0.1
+      '@pnpm/types': 1000.8.0
 
   '@pnpm/lockfile.fs@1001.1.17(@pnpm/logger@1001.0.0)':
     dependencies:
@@ -5937,6 +5977,12 @@ snapshots:
       '@pnpm/patching.types': 1000.1.0
       '@pnpm/resolver-base': 1005.0.0
       '@pnpm/types': 1000.7.0
+
+  '@pnpm/lockfile.types@1002.0.1':
+    dependencies:
+      '@pnpm/patching.types': 1000.1.0
+      '@pnpm/resolver-base': 1005.0.1
+      '@pnpm/types': 1000.8.0
 
   '@pnpm/lockfile.utils@1003.0.0':
     dependencies:
@@ -5978,7 +6024,13 @@ snapshots:
     dependencies:
       '@pnpm/types': 1000.7.0
 
+  '@pnpm/resolver-base@1005.0.1':
+    dependencies:
+      '@pnpm/types': 1000.8.0
+
   '@pnpm/types@1000.7.0': {}
+
+  '@pnpm/types@1000.8.0': {}
 
   '@pnpm/util.lex-comparator@3.0.2': {}
 
