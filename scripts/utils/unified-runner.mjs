@@ -70,13 +70,14 @@ export async function runWithOutput(command, args = [], options = {}) {
               isSpinning = false
             }
 
-            // Clear line and show buffer
+            // Clear spinner line and show buffer
             process.stdout.write('\r\x1b[K')
+            // Dump all buffered output
             if (outputBuffer.length > 0) {
-              console.log('--- Showing output ---')
               outputBuffer.forEach(line => process.stdout.write(line))
-              outputBuffer = []
+              // DON'T clear the buffer - keep it for potential toggle back
             }
+            // Now output continues to stream live to stdout
           } else {
             // Hide output and restart spinner
             process.stdout.write('\r\x1b[K')
@@ -84,6 +85,7 @@ export async function runWithOutput(command, args = [], options = {}) {
               spinner.start(`${message} (Ctrl+O ${toggleText})`)
               isSpinning = true
             }
+            // Output will now buffer again
           }
         }
         // Ctrl+C to cancel
