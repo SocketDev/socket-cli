@@ -188,6 +188,7 @@ export async function addArtifactToAlertsMap<T extends AlertsByPurl>(
     blocked: true,
     critical: true,
     cve: true,
+    // @ts-expect-error - userFilter may be undefined, but spread handles it
     ...userFilter,
   }) as AlertFilter
 

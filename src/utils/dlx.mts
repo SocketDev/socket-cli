@@ -122,6 +122,7 @@ export async function spawnDlx(
       finalShadowOptions = {
         ...finalShadowOptions,
         env: {
+          // @ts-expect-error - getOwn may return undefined, but spread handles it
           ...getOwn(finalShadowOptions, 'env'),
           // Set dlx cache max age to 0 minutes to bypass cache.
           // The npm_config_ prefix is how pnpm reads config from environment variables.

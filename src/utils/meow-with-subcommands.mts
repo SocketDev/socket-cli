@@ -325,6 +325,7 @@ export async function meowWithSubcommands(
       hidden: true,
       description: 'Print the app version',
     },
+    // @ts-expect-error - getOwn may return undefined, but spread handles it
     ...getOwn(additionalOptions, 'flags'),
   }
 

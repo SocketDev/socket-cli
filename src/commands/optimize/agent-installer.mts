@@ -93,6 +93,7 @@ export function runAgentInstall(
         ...(skipNodeHardenFlags ? [] : constants.nodeHardenFlags),
         ...constants.nodeNoWarningsFlags,
       ]),
+      // @ts-expect-error - getOwn may return undefined, but spread handles it
       ...getOwn(spawnOpts, 'env'),
     },
   })
