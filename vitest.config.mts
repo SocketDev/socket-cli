@@ -1,5 +1,9 @@
 import { defineConfig } from 'vitest/config'
 
+const isCoverageEnabled =
+  process.env.npm_lifecycle_event === 'cover' ||
+  process.argv.includes('--coverage')
+
 export default defineConfig({
   resolve: {
     preserveSymlinks: false,
@@ -12,23 +16,18 @@ export default defineConfig({
       'src/**/*.test.{js,ts,mjs,cjs,mts}',
     ],
     reporters: ['default'],
-    // Use parallel execution with controlled concurrency.
-    pool: 'forks',
+    setupFiles: ['./test/setup.mts'],
+    // Use threads for better performance
+    pool: 'threads',
     poolOptions: {
-      forks: {
-        singleFork: false,
-        maxForks: 4,
-        // Isolate tests to prevent memory leaks between test files.
-        isolate: true,
-      },
       threads: {
         singleThread: false,
-        // Limit thread concurrency to prevent RegExp compiler exhaustion.
-        maxThreads: 4,
+        maxThreads: isCoverageEnabled ? 1 : 16,
+        isolate: false,
       },
     },
-    testTimeout: 60_000,
-    hookTimeout: 60_000,
+    testTimeout: 30_000,
+    hookTimeout: 30_000,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html', 'lcov', 'clover'],
