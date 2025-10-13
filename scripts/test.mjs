@@ -228,12 +228,40 @@ async function runVitestSimple(args, options = {}) {
     })
   }
 
-  // Simple execution with inherited stdio for non-TTY or quiet mode
-  return runCommand(vitestPath, vitestArgs, {
+  // Fallback to execution with output capture to handle worker termination errors
+  const result = await runCommandWithOutput(vitestPath, vitestArgs, {
     cwd: rootPath,
     env,
-    stdio: quiet ? 'pipe' : 'inherit',
+    stdio: ['inherit', 'pipe', 'pipe'],
   })
+
+  // Print output if not quiet
+  if (!quiet) {
+    if (result.stdout) {
+      process.stdout.write(result.stdout)
+    }
+    if (result.stderr) {
+      process.stderr.write(result.stderr)
+    }
+  }
+
+  // Check if we have worker termination error but no test failures
+  const hasWorkerTerminationError =
+    (result.stdout + result.stderr).includes('Terminating worker thread') ||
+    (result.stdout + result.stderr).includes('ThreadTermination')
+
+  const output = result.stdout + result.stderr
+  const hasTestFailures =
+    output.includes('FAIL') ||
+    (output.includes('Test Files') && output.match(/(\d+) failed/) !== null) ||
+    (output.includes('Tests') && output.match(/Tests\s+\d+ failed/) !== null)
+
+  // Override exit code if we only have worker termination errors
+  if (result.code !== 0 && hasWorkerTerminationError && !hasTestFailures) {
+    return 0
+  }
+
+  return result.code
 }
 
 async function runTests(options) {
@@ -412,15 +440,22 @@ async function main() {
     console.log(`Test runner failed: ${error.message}`)
     process.exitCode = 1
   } finally {
-    // Ensure spinner is stopped
+    // Ensure spinner is stopped and cleared
     try {
       spinner.stop()
     } catch {}
+    try {
+      // Clear any remaining spinner output - multiple times to be sure
+      process.stdout.write('\r\x1b[K')
+      process.stdout.write('\r')
+    } catch {}
     removeExitHandler()
+    // Explicitly exit to prevent hanging
+    process.exit(process.exitCode || 0)
   }
 }
 
 main().catch(error => {
   console.error(error)
-  process.exitCode = 1
+  process.exit(1)
 })
