@@ -120,69 +120,62 @@ async function runCheck(options = {}) {
 
   if (!quiet) {
     logger.step('Running checks')
+    console.log('  (Press Ctrl+O to show/hide output)')
+    console.log()
   }
 
-  // Run fix (auto-format) quietly
-  if (!quiet) {
-    spinner.start('Formatting code...')
-  }
+  // Import unified runner for interactive experience
+  const { runWithOutput } = await import('./utils/unified-runner.mjs')
 
-  let result = await runCommandWithOutput('pnpm', ['run', 'fix'])
-  if (result.code !== 0) {
+  // Run fix (auto-format)
+  let exitCode = await runWithOutput('pnpm', ['run', 'fix'], {
+    message: 'Formatting code',
+    toggleText: 'to see formatter output',
+    verbose: quiet,
+  })
+  if (exitCode !== 0) {
     if (!quiet) {
-      spinner.fail('Formatting failed')
+      logger.error('')
+      logger.error('Formatting failed')
     }
-    if (result.stderr) {
-      console.error(result.stderr)
-    }
-    return result.code
+    return exitCode
   }
   if (!quiet) {
-    spinner.success('Code formatted')
+    logger.success('Code formatted')
   }
 
   // Run ESLint
-  if (!quiet) {
-    spinner.start('Running ESLint...')
-  }
-  result = await runCommandWithOutput('pnpm', ['run', 'check:lint'])
-
-  if (result.code !== 0) {
+  exitCode = await runWithOutput('pnpm', ['run', 'check:lint'], {
+    message: 'Running ESLint',
+    toggleText: 'to see linter output',
+    verbose: quiet,
+  })
+  if (exitCode !== 0) {
     if (!quiet) {
-      spinner.fail('ESLint failed')
+      logger.error('')
+      logger.error('ESLint failed')
     }
-    if (result.stderr) {
-      console.error(result.stderr)
-    }
-    if (result.stdout) {
-      console.log(result.stdout)
-    }
-    return result.code
+    return exitCode
   }
   if (!quiet) {
-    spinner.success('ESLint passed')
+    logger.success('ESLint passed')
   }
 
   // Run TypeScript check
-  if (!quiet) {
-    spinner.start('Checking TypeScript...')
-  }
-  result = await runCommandWithOutput('pnpm', ['run', 'check:tsc'])
-
-  if (result.code !== 0) {
+  exitCode = await runWithOutput('pnpm', ['run', 'check:tsc'], {
+    message: 'Checking TypeScript',
+    toggleText: 'to see type errors',
+    verbose: quiet,
+  })
+  if (exitCode !== 0) {
     if (!quiet) {
-      spinner.fail('TypeScript check failed')
+      logger.error('')
+      logger.error('TypeScript check failed')
     }
-    if (result.stderr) {
-      console.error(result.stderr)
-    }
-    if (result.stdout) {
-      console.log(result.stdout)
-    }
-    return result.code
+    return exitCode
   }
   if (!quiet) {
-    spinner.success('TypeScript check passed')
+    logger.success('TypeScript check passed')
   }
 
   return 0
@@ -192,21 +185,19 @@ async function runBuild() {
   const distIndexPath = path.join(rootPath, 'dist', 'index.mjs')
   if (!existsSync(distIndexPath)) {
     logger.step('Building project')
-    spinner.start('Running build...')
-    const result = await runCommandWithOutput('pnpm', ['run', 'build'])
-    if (result.code !== 0) {
-      spinner.fail('Build failed')
-      // Show output on failure
-      if (result.stdout) {
-        console.log(result.stdout)
-      }
-      if (result.stderr) {
-        console.error(result.stderr)
-      }
-    } else {
-      spinner.success('Build completed')
+
+    // Import unified runner for interactive experience
+    const { runWithOutput } = await import('./utils/unified-runner.mjs')
+
+    const exitCode = await runWithOutput('pnpm', ['run', 'build'], {
+      message: 'Building project',
+      toggleText: 'to see build output',
+    })
+    if (exitCode !== 0) {
+      logger.error('')
+      logger.error('Build failed')
     }
-    return result.code
+    return exitCode
   }
   return 0
 }
