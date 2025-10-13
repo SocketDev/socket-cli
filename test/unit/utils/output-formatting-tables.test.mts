@@ -6,9 +6,9 @@ import { describe, expect, it } from 'vitest'
 import {
   formatSimpleTable,
   formatTable,
-} from '../../../src/utils/output-formatting.mts'
+} from '@socketsecurity/registry/lib/tables'
 
-import type { TableColumn } from '../../../src/utils/output-formatting.mts'
+import type { TableColumn } from '@socketsecurity/registry/lib/tables'
 
 describe('formatTable', () => {
   it('should format empty data', () => {

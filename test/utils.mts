@@ -216,7 +216,7 @@ export async function spawnSocketCli(
       // Close stdin to prevent tests from hanging
       // when commands wait for input. Must be after restOptions
       // to ensure it's not overridden.
-      stdio: restOptions?.stdio ?? ['ignore', 'pipe', 'pipe'],
+      stdio: restOptions.stdio ?? ['ignore', 'pipe', 'pipe'],
     })
     return {
       status: true,
@@ -227,7 +227,7 @@ export async function spawnSocketCli(
   } catch (e: unknown) {
     return {
       status: false,
-      code: e?.['code'] || 1,
+      code: typeof e?.['code'] === 'number' ? e['code'] : 1,
       error: {
         message: e?.['message'] || '',
         stack: e?.['stack'] || '',
