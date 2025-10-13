@@ -162,7 +162,7 @@ export async function addOverrides(
               state.addedInWorkspaces.add(workspace)
             }
             if (!loggedAddingText) {
-              spinner?.setText(addingText)
+              spinner?.text(addingText)
               loggedAddingText = true
             }
           }
@@ -238,7 +238,7 @@ export async function addOverrides(
                 const addedOrUpdated = overrideExists ? 'updated' : 'added'
                 state[addedOrUpdated].add(sockRegPkgName)
                 if (!loggedAddingText) {
-                  spinner?.setText(addingText)
+                  spinner?.text(addingText)
                   loggedAddingText = true
                 }
               }

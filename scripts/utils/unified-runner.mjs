@@ -1,0 +1,203 @@
+#!/usr/bin/env node
+/**
+ * @fileoverview Unified runner for interactive commands with Ctrl+O toggle.
+ * Standardized across all socket-* repositories.
+ */
+
+import { spawn } from 'node:child_process'
+import readline from 'node:readline'
+import { spinner } from '@socketsecurity/registry/lib/spinner'
+
+// Will import from registry once built:
+// import { attachOutputMask, clearLine, writeOutput } from '@socketsecurity/registry/lib/stdio/mask'
+
+/**
+ * Run a command with unified interactive output control.
+ * Standard experience across all socket-* repos.
+ *
+ * @param {string} command - Command to run
+ * @param {string[]} args - Command arguments
+ * @param {object} options - Options
+ * @param {string} options.message - Progress message
+ * @param {string} options.toggleText - Text after "Ctrl+O" (default: "to see output")
+ * @param {boolean} options.showOnError - Show output on error (default: true)
+ * @param {boolean} options.verbose - Start in verbose mode (default: false)
+ * @returns {Promise<number>} Exit code
+ */
+export async function runWithOutput(command, args = [], options = {}) {
+  const {
+    message = 'Running',
+    toggleText = 'to see output',
+    showOnError = true,
+    verbose = false,
+    env = process.env,
+    cwd = process.cwd(),
+  } = options
+
+  return new Promise((resolve, reject) => {
+    let isSpinning = false
+    let outputBuffer = []
+    let showOutput = verbose
+
+    // Start spinner if not verbose and TTY
+    if (!showOutput && process.stdout.isTTY) {
+      spinner.start(`${message} (Ctrl+O ${toggleText})`)
+      isSpinning = true
+    }
+
+    const child = spawn(command, args, {
+      cwd,
+      env,
+      stdio: ['inherit', 'pipe', 'pipe'],
+    })
+
+    // Setup keyboard handling for TTY
+    if (process.stdin.isTTY && !verbose) {
+      readline.emitKeypressEvents(process.stdin)
+      process.stdin.setRawMode(true)
+
+      const keypressHandler = (_str, key) => {
+        // Ctrl+O toggles output
+        if (key && key.ctrl && key.name === 'o') {
+          showOutput = !showOutput
+
+          if (showOutput) {
+            // Stop spinner and show buffered output
+            if (isSpinning) {
+              spinner.stop()
+              isSpinning = false
+            }
+
+            // Clear line and show buffer
+            process.stdout.write('\r\x1b[K')
+            if (outputBuffer.length > 0) {
+              console.log('--- Showing output ---')
+              outputBuffer.forEach(line => process.stdout.write(line))
+              outputBuffer = []
+            }
+          } else {
+            // Hide output and restart spinner
+            process.stdout.write('\r\x1b[K')
+            if (!isSpinning) {
+              spinner.start(`${message} (Ctrl+O ${toggleText})`)
+              isSpinning = true
+            }
+          }
+        }
+        // Ctrl+C to cancel
+        else if (key && key.ctrl && key.name === 'c') {
+          child.kill('SIGTERM')
+          if (process.stdin.isTTY) {
+            process.stdin.setRawMode(false)
+          }
+          process.exit(130)
+        }
+      }
+
+      process.stdin.on('keypress', keypressHandler)
+
+      // Cleanup on exit
+      child.on('exit', () => {
+        if (process.stdin.isTTY) {
+          process.stdin.setRawMode(false)
+          process.stdin.removeListener('keypress', keypressHandler)
+        }
+      })
+    }
+
+    // Handle stdout
+    if (child.stdout) {
+      child.stdout.on('data', data => {
+        const text = data.toString()
+        if (showOutput) {
+          process.stdout.write(text)
+        } else {
+          outputBuffer.push(text)
+          // Keep buffer reasonable (last 1000 lines)
+          const lines = outputBuffer.join('').split('\n')
+          if (lines.length > 1000) {
+            outputBuffer = [lines.slice(-1000).join('\n')]
+          }
+        }
+      })
+    }
+
+    // Handle stderr
+    if (child.stderr) {
+      child.stderr.on('data', data => {
+        const text = data.toString()
+        if (showOutput) {
+          process.stderr.write(text)
+        } else {
+          outputBuffer.push(text)
+        }
+      })
+    }
+
+    child.on('exit', code => {
+      // Cleanup keyboard if needed
+      if (process.stdin.isTTY && !verbose) {
+        process.stdin.setRawMode(false)
+      }
+
+      if (isSpinning) {
+        if (code === 0) {
+          spinner.success(`${message} completed`)
+        } else {
+          spinner.fail(`${message} failed`)
+          // Show output on error if configured
+          if (showOnError && outputBuffer.length > 0) {
+            console.log('\n--- Output ---')
+            outputBuffer.forEach(line => process.stdout.write(line))
+          }
+        }
+      }
+
+      resolve(code || 0)
+    })
+
+    child.on('error', error => {
+      if (process.stdin.isTTY && !verbose) {
+        process.stdin.setRawMode(false)
+      }
+
+      if (isSpinning) {
+        spinner.fail(`${message} error: ${error.message}`)
+      }
+      reject(error)
+    })
+  })
+}
+
+/**
+ * Standard test runner with interactive output.
+ */
+export async function runTests(command, args, options = {}) {
+  return runWithOutput(command, args, {
+    message: 'Running tests',
+    toggleText: 'to see test output',
+    ...options,
+  })
+}
+
+/**
+ * Standard lint runner with interactive output.
+ */
+export async function runLint(command, args, options = {}) {
+  return runWithOutput(command, args, {
+    message: 'Running linter',
+    toggleText: 'to see lint results',
+    ...options,
+  })
+}
+
+/**
+ * Standard build runner with interactive output.
+ */
+export async function runBuild(command, args, options = {}) {
+  return runWithOutput(command, args, {
+    message: 'Building',
+    toggleText: 'to see build output',
+    ...options,
+  })
+}

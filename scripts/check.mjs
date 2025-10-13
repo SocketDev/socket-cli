@@ -1,33 +1,55 @@
+#!/usr/bin/env node
 /**
- * @fileoverview Unified check script - runs ESLint and TypeScript checks.
- * Standardized across all socket-* repositories.
- *
- * Usage:
- *   node scripts/check.mjs [options]
- *
- * Options:
- *   --quiet    Suppress progress output
- *   --verbose  Show detailed output
+ * @fileoverview Unified check script with registry utilities.
  */
 
-import {
-  isQuiet,
-  isVerbose,
-  log,
-  printError,
-  printFooter,
-  printHeader,
-  printSuccess,
-} from './utils/cli-helpers.mjs'
-import { runCommandQuiet, runParallel } from './utils/run-command.mjs'
+import path from 'node:path'
+import { parseArgs } from 'node:util'
+import { fileURLToPath } from 'node:url'
+import { createSectionHeader } from '@socketsecurity/registry/lib/stdio/header'
+import { logger } from '@socketsecurity/registry/lib/logger'
+import { isQuiet } from '@socketsecurity/registry/lib/argv/flags'
+import { spinner } from '@socketsecurity/registry/lib/spinner'
+import { runCommandQuiet } from './utils/run-command.mjs'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const rootPath = path.resolve(__dirname, '..')
 
 async function main() {
-  const quiet = isQuiet()
-  const verbose = isVerbose()
-
   try {
+    const { values } = parseArgs({
+      options: {
+        help: {
+          type: 'boolean',
+          default: false,
+        },
+        quiet: {
+          type: 'boolean',
+          default: false,
+        },
+        silent: {
+          type: 'boolean',
+          default: false,
+        },
+      },
+      strict: false,
+    })
+
+    if (values.help) {
+      console.log('Check Script')
+      console.log('\nUsage: pnpm check [options]')
+      console.log('\nOptions:')
+      console.log('  --help         Show this help message')
+      console.log('  --quiet, --silent  Minimal output')
+      process.exitCode = 0
+      return
+    }
+
+    const quiet = isQuiet(values)
+
     if (!quiet) {
-      printHeader('Running Checks')
+      console.log(createSectionHeader('Running Checks'))
+      console.log()
     }
 
     // Run ESLint and TypeScript checks in parallel
@@ -53,7 +75,7 @@ async function main() {
 
     // Show progress for each check
     if (!quiet) {
-      log.progress('Running ESLint and TypeScript checks...')
+      spinner.start('Running ESLint and TypeScript checks...')
     }
 
     const results = await Promise.all(
@@ -63,47 +85,37 @@ async function main() {
       }),
     )
 
-    // Clear progress line
-    if (!quiet) {
-      process.stdout.write('\r\x1b[K')
-    }
-
     // Check for failures
     const failures = results.filter(r => r.exitCode !== 0)
 
     if (failures.length > 0) {
+      if (!quiet) {
+        spinner.fail('Some checks failed')
+      }
+
       // Show failures
       for (const { name, stdout, stderr } of failures) {
         if (!quiet) {
-          log.failed(`${name} check failed`)
+          logger.error(`${name} check failed`)
         }
-        if (verbose || failures.length === 1) {
-          if (stdout) {
-            console.log(stdout)
-          }
-          if (stderr) {
-            console.error(stderr)
-          }
+        if (stdout) {
+          console.log(stdout)
+        }
+        if (stderr) {
+          console.error(stderr)
         }
       }
 
-      if (!quiet) {
-        printError('Some checks failed')
-      }
       process.exitCode = 1
     } else {
       if (!quiet) {
-        printSuccess('All checks passed')
-        printFooter()
+        spinner.success('All checks passed')
+        console.log()
+        logger.success('All checks passed!')
       }
     }
   } catch (error) {
-    if (!quiet) {
-      printError(`Check failed: ${error.message}`)
-    }
-    if (verbose) {
-      console.error(error)
-    }
+    logger.error(`Check failed: ${error.message}`)
     process.exitCode = 1
   }
 }
