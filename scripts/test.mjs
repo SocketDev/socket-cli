@@ -15,6 +15,21 @@ import { createSectionHeader } from '@socketsecurity/registry/lib/stdio/header'
 import { onExit } from '@socketsecurity/registry/lib/signal-exit'
 import { spinner } from '@socketsecurity/registry/lib/spinner'
 
+// Suppress non-fatal worker termination unhandled rejections
+process.on('unhandledRejection', (reason, _promise) => {
+  const errorMessage = String(reason?.message || reason || '')
+  // Filter out known non-fatal worker termination errors
+  if (
+    errorMessage.includes('Terminating worker thread') ||
+    errorMessage.includes('ThreadTermination')
+  ) {
+    // Ignore these - they're cleanup messages from vitest worker threads
+    return
+  }
+  // Re-throw other unhandled rejections
+  throw reason
+})
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.resolve(__dirname, '..')
 const nodeModulesBinPath = path.join(rootPath, 'node_modules', '.bin')
