@@ -216,7 +216,8 @@ async function runVitestSimple(args, options = {}) {
   env.DEBUG_HIDE_DATE = '1'
 
   // Set optimized memory settings
-  env.NODE_OPTIONS = '--max-old-space-size=2048'
+  // Suppress unhandled rejections from worker thread cleanup
+  env.NODE_OPTIONS = '--max-old-space-size=2048 --unhandled-rejections=warn'
 
   // Use unified runner for consistent Ctrl+O experience
   if (!quiet && process.stdout.isTTY) {

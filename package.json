@@ -74,7 +74,7 @@
     "prepare": "dotenvx -q run -f .env.local -- husky",
     "bs": "dotenvx -q run -f .env.local -- pnpm run build:dist:src; pnpm exec socket --",
     "s": "dotenvx -q run -f .env.local -- pnpm exec socket --",
-    "test": "run-s check test:*",
+    "test": "node scripts/test.mjs",
     "test:prepare": "dotenvx -q run -f .env.test -- pnpm run build && del-cli 'test/**/node_modules'",
     "test:unit": "dotenvx -q run -f .env.test -- vitest run",
     "test:unit:update": "dotenvx -q run -f .env.test -- vitest run --update",
