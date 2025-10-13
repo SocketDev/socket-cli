@@ -49,12 +49,28 @@ const __dirname = path.dirname(__filename)
 const rootNmPath = path.join(__dirname, '../..', NODE_MODULES)
 const mockFixturePath = normalizePath(path.join(__dirname, 'mock'))
 const mockNmPath = normalizePath(rootNmPath)
-const mockedNmCallback = mockFs.load(rootNmPath)
+// Load the registry from its actual location (socket-registry/registry)
+// because node_modules/@socketsecurity/registry is a symlink and require follows it
+const actualRegistryPath = path.resolve(
+  __dirname,
+  '../../../socket-registry/registry',
+)
+const mockRegistryDist = mockFs.load(path.join(actualRegistryPath, 'dist'))
+const mockRegistryPackageJson = mockFs.load(
+  path.join(actualRegistryPath, 'package.json'),
+)
 
 function mockTestFs(config: FileSystem.DirectoryItems) {
+  // Don't load entire node_modules to avoid ENAMETOOLONG from circular symlinks
+  // between @socketregistry/packageurl-js and @socketsecurity/registry.
+  // Instead, load only the registry from its actual location since require follows symlinks.
   return mockFs({
     ...config,
-    [mockNmPath]: mockedNmCallback,
+    [mockNmPath]: {},
+    [actualRegistryPath]: {
+      dist: mockRegistryDist,
+      'package.json': mockRegistryPackageJson,
+    },
   })
 }
 
