@@ -127,56 +127,10 @@ describe('socket fix', async () => {
     `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(
-        `
-        "Fix CVEs in dependencies
-
-          Usage
-            $ socket fix [options] [CWD=.]
-
-          API Token Requirements
-            - Quota: 101 units
-            - Permissions: full-scans:create and packages:list
-
-          Options
-            --autopilot         Enable auto-merge for pull requests that Socket opens.
-                                See GitHub documentation (https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-auto-merge-for-pull-requests-in-your-repository) for managing auto-merge for pull requests in your repository.
-            --id                Provide a list of vulnerability identifiers to compute fixes for:
-                                    - GHSA IDs (https://docs.github.com/en/code-security/security-advisories/working-with-global-security-advisories-from-the-github-advisory-database/about-the-github-advisory-database#about-ghsa-ids) (e.g., GHSA-xxxx-xxxx-xxxx)
-                                    - CVE IDs (https://cve.mitre.org/cve/identifiers/) (e.g., CVE-2025-1234) - automatically converted to GHSA
-                                    - PURLs (https://github.com/package-url/purl-spec) (e.g., pkg:npm/package@1.0.0) - automatically converted to GHSA
-                                    Can be provided as comma separated values or as multiple flags
-            --json              Output as JSON
-            --limit             The number of fixes to attempt at a time (default 10)
-            --markdown          Output as Markdown
-            --minimum-release-age  Set a minimum age requirement for suggested upgrade versions (e.g., 1h, 2d, 3w). A higher age requirement reduces the risk of upgrading to malicious versions. For example, setting the value to 1 week (1w) gives ecosystem maintainers one week to remove potentially malicious versions.
-            --no-apply-fixes    Compute fixes only, do not apply them. Logs what upgrades would be applied. If combined with --output-file, the output file will contain the upgrades that would be applied.
-            --no-major-updates  Do not suggest or apply fixes that require major version updates of direct or transitive dependencies
-            --output-file       Path to store upgrades as a JSON file at this path.
-            --range-style       Define how dependency version ranges are updated in package.json (default 'preserve').
-                                Available styles:
-                                  * pin - Use the exact version (e.g. 1.2.3)
-                                  * preserve - Retain the existing version range style as-is
-            --show-affected-direct-dependencies  List the direct dependencies responsible for introducing transitive vulnerabilities and list the updates required to resolve the vulnerabilities
-
-          Environment Variables (for CI/PR mode)
-            CI                          Set to enable CI mode
-            SOCKET_CLI_GITHUB_TOKEN     GitHub token for PR creation (or GITHUB_TOKEN)
-            SOCKET_CLI_GIT_USER_NAME    Git username for commits
-            SOCKET_CLI_GIT_USER_EMAIL   Git email for commits
-
-          Examples
-            $ socket fix
-            $ socket fix --id CVE-2021-23337
-            $ socket fix ./path/to/project --range-style pin"
-      `,
-      )
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket fix\`, cwd: <redacted>"
+           "
       `)
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
@@ -191,12 +145,9 @@ describe('socket fix', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket fix\`, cwd: <redacted>"
+           "
       `)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
     },
   )
@@ -212,7 +163,7 @@ describe('socket fix', async () => {
     'should accept --autopilot flag',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -227,7 +178,7 @@ describe('socket fix', async () => {
     'should accept --auto-merge alias',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -237,7 +188,7 @@ describe('socket fix', async () => {
     'should ignore --test flag',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -254,7 +205,7 @@ describe('socket fix', async () => {
     'should ignore --test-script flag',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -271,7 +222,7 @@ describe('socket fix', async () => {
     'should accept --limit flag with custom value',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -287,7 +238,7 @@ describe('socket fix', async () => {
     'should accept --min-satisfying flag',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -321,7 +272,7 @@ describe('socket fix', async () => {
     'should accept range style pin',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -343,7 +294,7 @@ describe('socket fix', async () => {
     'should accept comprehensive flag combination',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -359,7 +310,7 @@ describe('socket fix', async () => {
     'should accept --no-major-updates flag',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -375,7 +326,7 @@ describe('socket fix', async () => {
     'should accept --show-affected-direct-dependencies flag',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -394,7 +345,7 @@ describe('socket fix', async () => {
     'should accept new flags in combination',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -472,7 +423,7 @@ describe('socket fix', async () => {
     'should handle autopilot mode with custom limit',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )

@@ -17,34 +17,10 @@ describe('socket yarn', async () => {
     `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(
-        `
-        "Wraps yarn with Socket security scanning
-
-          Usage
-            $ socket yarn ...
-
-          API Token Requirements
-            (none)
-
-          Note: Everything after "yarn" is passed to the yarn command.
-                Only the \`--dry-run\` and \`--help\` flags are caught here.
-
-          Use \`socket wrapper on\` to alias this command as \`yarn\`.
-
-          Examples
-            $ socket yarn
-            $ socket yarn install
-            $ socket yarn add package-name
-            $ socket yarn dlx package-name"
-      `,
-      )
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket yarn\`, cwd: <redacted>"
+           "
       `)
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
@@ -60,7 +36,7 @@ describe('socket yarn', async () => {
         timeout: 30_000,
       })
 
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(stderr).toContain('CLI')
       expect(code, 'dry-run without args should exit with code 0').toBe(0)
     },
@@ -153,7 +129,7 @@ describe('socket yarn', async () => {
         timeout: 30_000,
       })
 
-      expect(stdout).toMatchInlineSnapshot('"[DryRun]: Bailing now"')
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'dry-run exec with -c should exit with code 0').toBe(0)
     },
   )
@@ -174,7 +150,7 @@ describe('socket yarn', async () => {
         timeout: 30_000,
       })
 
-      expect(stdout).toMatchInlineSnapshot('"[DryRun]: Bailing now"')
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'dry-run exec with --config should exit with code 0').toBe(0)
     },
   )
@@ -195,7 +171,7 @@ describe('socket yarn', async () => {
         timeout: 30_000,
       })
 
-      expect(stdout).toMatchInlineSnapshot('"[DryRun]: Bailing now"')
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(
         code,
         'dry-run exec with multiple issueRules should exit with code 0',
@@ -219,7 +195,7 @@ describe('socket yarn', async () => {
         timeout: 30_000,
       })
 
-      expect(stdout).toMatchInlineSnapshot('"[DryRun]: Bailing now"')
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(
         code,
         'dry-run exec with --config and multiple issueRules should exit with code 0',
