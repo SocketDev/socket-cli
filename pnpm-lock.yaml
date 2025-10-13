@@ -139,8 +139,8 @@ importers:
         specifier: 9.35.0
         version: 9.35.0
       '@npmcli/arborist':
-        specifier: 9.1.4
-        version: 9.1.4
+        specifier: 9.1.6
+        version: 9.1.6
       '@npmcli/config':
         specifier: 10.4.0
         version: 10.4.0
@@ -1048,8 +1048,8 @@ packages:
     resolution: {integrity: sha512-kAQTcEN9E8ERLVg5AsGwLNoFb+oEG6engbqAU2P43gD4JEIkNGMHdVQ096FsOAAYpZPB0RSt0zgInKIAS1l5QA==}
     engines: {node: ^20.17.0 || >=22.9.0}
 
-  '@npmcli/arborist@9.1.4':
-    resolution: {integrity: sha512-2Co31oEFlzT9hYjGahGL4PqDXXpA18tX9yu55j5on+m2uDiyBoljQjHNnnNVCji4pFUjawlHi23tQ4j2A5gHow==}
+  '@npmcli/arborist@9.1.6':
+    resolution: {integrity: sha512-c5Pr3EG8UP5ollkJy2x+UdEQC5sEHe3H9whYn6hb2HJimAKS4zmoJkx5acCiR/g4P38RnCSMlsYQyyHnKYeLvQ==}
     engines: {node: ^20.17.0 || >=22.9.0}
     hasBin: true
 
@@ -1077,6 +1077,10 @@ packages:
   '@npmcli/map-workspaces@4.0.2':
     resolution: {integrity: sha512-mnuMuibEbkaBTYj9HQ3dMe6L0ylYW+s/gfz7tBDMFY/la0w9Kf44P9aLn4/+/t3aTR3YUHKoT6XQL9rlicIe3Q==}
     engines: {node: ^18.17.0 || >=20.5.0}
+
+  '@npmcli/map-workspaces@5.0.0':
+    resolution: {integrity: sha512-+YJN6+BIQEC5QL4EqffJ2I1S9ySspwn7GP7uQINtZhf3uy7P0KnnIg+Ab5WeSUTZYpg+jn3GSfMme2FutB7qEQ==}
+    engines: {node: ^20.17.0 || >=22.9.0}
 
   '@npmcli/metavuln-calculator@9.0.2':
     resolution: {integrity: sha512-eESzlCRLuD30qYefT2jYZTUepgu9DNJQdXABGGxjkir055x2UtnpNfDZCA6OJxButQNgxNKc9AeTchYxSgbMCw==}
@@ -1113,10 +1117,6 @@ packages:
   '@npmcli/run-script@10.0.0':
     resolution: {integrity: sha512-vaQj4nccJbAslopIvd49pQH2NhUp7G9pY4byUtmwhe37ZZuubGrx0eB9hW2F37uVNRuDDK6byFGXF+7JCuMSZg==}
     engines: {node: ^20.17.0 || >=22.9.0}
-
-  '@npmcli/run-script@9.1.0':
-    resolution: {integrity: sha512-aoNSbxtkePXUlbZB+anS1LqsJdctG5n3UVhfU47+CDdwMi6uNTBMF9gPcQRnqghQd2FGzcwwIFBruFMxjhBewg==}
-    engines: {node: ^18.17.0 || >=20.5.0}
 
   '@octokit/auth-token@6.0.0':
     resolution: {integrity: sha512-P4YJBPdPSpWTQ1NU4XYdvHvXJJDxM6YwpS0FZHRgP7YFkdVxsWcpWGy/NVqlAA7PcPCnMacXlRm1y2PFZRWL/w==}
@@ -3680,10 +3680,6 @@ packages:
     resolution: {integrity: sha512-HnU7FYSWbo7dTVHtK0G+BXbZ0aIfxz/aUCVLN0979Ec6rGUX5cJ6RbgVx5fqb5G31ufz+BVFA7y1SkRTPVNoVQ==}
     engines: {node: ^20.17.0 || >=22.9.0}
 
-  npm-registry-fetch@18.0.2:
-    resolution: {integrity: sha512-LeVMZBBVy+oQb5R6FDV9OlJCcWDU+al10oKpe+nsvcHnG24Z3uM3SvJYKfGJlfGjVU8v9liejCrUR/M5HO5NEQ==}
-    engines: {node: ^18.17.0 || >=20.5.0}
-
   npm-registry-fetch@19.0.0:
     resolution: {integrity: sha512-DFxSAemHUwT/POaXAOY4NJmEWBPB0oKbwD6FFDE9hnt1nORkt/FXvgjD4hQjoKoHw9u0Ezws9SPXwV7xE/Gyww==}
     engines: {node: ^20.17.0 || >=22.9.0}
@@ -5215,7 +5211,7 @@ snapshots:
       '@babel/parser': 7.28.4
       '@babel/traverse': 7.28.4
       '@iarna/toml': 2.2.5
-      '@npmcli/arborist': 9.1.4
+      '@npmcli/arborist': 9.1.6
       ajv: 8.17.1
       ajv-formats: 3.0.1(ajv@8.17.1)
       cheerio: 1.1.2
@@ -5550,38 +5546,37 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@npmcli/arborist@9.1.4':
+  '@npmcli/arborist@9.1.6':
     dependencies:
       '@isaacs/string-locale-compare': 1.1.0
       '@npmcli/fs': 4.0.0
       '@npmcli/installed-package-contents': 3.0.0
-      '@npmcli/map-workspaces': 4.0.2
+      '@npmcli/map-workspaces': 5.0.0
       '@npmcli/metavuln-calculator': 9.0.2
       '@npmcli/name-from-folder': 3.0.0
       '@npmcli/node-gyp': 4.0.0
-      '@npmcli/package-json': 6.2.0
+      '@npmcli/package-json': 7.0.1
       '@npmcli/query': 4.0.1
       '@npmcli/redact': 3.2.2
-      '@npmcli/run-script': 9.1.0
+      '@npmcli/run-script': 10.0.0
       bin-links: 5.0.0
-      cacache: 19.0.1
+      cacache: 20.0.1
       common-ancestor-path: 1.0.1
-      hosted-git-info: 8.1.0
+      hosted-git-info: 9.0.2
       json-stringify-nice: 1.1.4
-      lru-cache: 10.4.3
-      minimatch: 9.0.5
+      lru-cache: 11.2.2
+      minimatch: 10.0.3
       nopt: 8.1.0
       npm-install-checks: 7.1.2
       npm-package-arg: 13.0.0
-      npm-pick-manifest: 10.0.0
-      npm-registry-fetch: 18.0.2
+      npm-pick-manifest: 11.0.1
+      npm-registry-fetch: 19.0.0
       pacote: 21.0.3
       parse-conflict-json: 4.0.0
       proc-log: 5.0.0
       proggy: 3.0.0
       promise-all-reject-late: 1.0.1
       promise-call-limit: 3.0.2
-      read-package-json-fast: 4.0.0
       semver: 7.7.2
       ssri: 12.0.0
       treeverse: 3.0.0
@@ -5638,6 +5633,13 @@ snapshots:
       glob: 10.4.5
       minimatch: 9.0.5
 
+  '@npmcli/map-workspaces@5.0.0':
+    dependencies:
+      '@npmcli/name-from-folder': 3.0.0
+      '@npmcli/package-json': 7.0.1
+      glob: 11.0.3
+      minimatch: 10.0.3
+
   '@npmcli/metavuln-calculator@9.0.2':
     dependencies:
       cacache: 20.0.1
@@ -5686,17 +5688,6 @@ snapshots:
     dependencies:
       '@npmcli/node-gyp': 4.0.0
       '@npmcli/package-json': 7.0.1
-      '@npmcli/promise-spawn': 8.0.3
-      node-gyp: 11.4.2
-      proc-log: 5.0.0
-      which: 5.0.0
-    transitivePeerDependencies:
-      - supports-color
-
-  '@npmcli/run-script@9.1.0':
-    dependencies:
-      '@npmcli/node-gyp': 4.0.0
-      '@npmcli/package-json': 6.2.0
       '@npmcli/promise-spawn': 8.0.3
       node-gyp: 11.4.2
       proc-log: 5.0.0
@@ -8316,19 +8307,6 @@ snapshots:
       npm-normalize-package-bin: 4.0.0
       npm-package-arg: 13.0.0
       semver: 7.7.2
-
-  npm-registry-fetch@18.0.2:
-    dependencies:
-      '@npmcli/redact': 3.2.2
-      jsonparse: 1.3.1
-      make-fetch-happen: 14.0.3
-      minipass: 7.1.2
-      minipass-fetch: 4.0.1
-      minizlib: 3.1.0
-      npm-package-arg: 13.0.0
-      proc-log: 5.0.0
-    transitivePeerDependencies:
-      - supports-color
 
   npm-registry-fetch@19.0.0:
     dependencies:
