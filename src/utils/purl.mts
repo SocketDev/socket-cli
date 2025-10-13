@@ -23,7 +23,7 @@
  * See: https://github.com/package-url/purl-spec
  */
 
-import { PackageURL, type PurlQualifiers } from '@socketregistry/packageurl-js'
+import { PackageURL } from '@socketregistry/packageurl-js'
 import { isObjectObject } from '@socketsecurity/registry/lib/objects'
 
 import type { SocketArtifact } from './alert/artifact.mts'
@@ -38,7 +38,7 @@ export type CreatePurlObjectOptions = {
   namespace?: string | undefined
   name?: string | undefined
   version?: string | undefined
-  qualifiers?: PurlQualifiers | undefined
+  qualifiers?: Record<string, string> | undefined
   subpath?: string | undefined
   throws?: boolean | undefined
 }
