@@ -11,9 +11,9 @@ import { fileURLToPath } from 'node:url'
 import WIN32 from '@socketsecurity/registry/lib/constants/WIN32'
 import { isQuiet } from '@socketsecurity/registry/lib/argv/flags'
 import { logger } from '@socketsecurity/registry/lib/logger'
-import { createSectionHeader } from '@socketsecurity/registry/lib/stdio/header'
 import { onExit } from '@socketsecurity/registry/lib/signal-exit'
 import { spinner } from '@socketsecurity/registry/lib/spinner'
+import { printHeader } from '@socketsecurity/registry/lib/stdio/header'
 
 // Suppress non-fatal worker termination unhandled rejections
 process.on('unhandledRejection', (reason, _promise) => {
@@ -192,7 +192,21 @@ async function runBuild() {
   const distIndexPath = path.join(rootPath, 'dist', 'index.mjs')
   if (!existsSync(distIndexPath)) {
     logger.step('Building project')
-    return runCommand('pnpm', ['run', 'build'])
+    spinner.start('Running build...')
+    const result = await runCommandWithOutput('pnpm', ['run', 'build'])
+    if (result.code !== 0) {
+      spinner.fail('Build failed')
+      // Show output on failure
+      if (result.stdout) {
+        console.log(result.stdout)
+      }
+      if (result.stderr) {
+        console.error(result.stderr)
+      }
+    } else {
+      spinner.success('Build completed')
+    }
+    return result.code
   }
   return 0
 }
@@ -387,8 +401,7 @@ async function main() {
     const quiet = isQuiet(values)
 
     if (!quiet) {
-      console.log(createSectionHeader('Running Tests'))
-      console.log()
+      printHeader('Test Runner')
     }
 
     // Handle aliases
