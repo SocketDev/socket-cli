@@ -142,8 +142,8 @@ importers:
         specifier: 9.1.4
         version: 9.1.4
       '@npmcli/config':
-        specifier: 10.4.0
-        version: 10.4.0
+        specifier: 10.4.2
+        version: 10.4.2
       '@octokit/graphql':
         specifier: 9.0.1
         version: 9.0.1
@@ -1053,8 +1053,8 @@ packages:
     engines: {node: ^20.17.0 || >=22.9.0}
     hasBin: true
 
-  '@npmcli/config@10.4.0':
-    resolution: {integrity: sha512-0l6f/q/qfB726SWOGIEooh7u6aB1SOgRxGLu7DeJ6Z9Vvq1gG1s3x+Mq+qv9wt0Q0t53mVHIEBokfJZpeaWDyA==}
+  '@npmcli/config@10.4.2':
+    resolution: {integrity: sha512-wHcJiqWvC7lKX3L/BOtk6jefzXZyNNosU0dEBeNkF9U9rUXrZWB2MBupR717MyaAtLXko4XXzca3sOYNlkuxDw==}
     engines: {node: ^20.17.0 || >=22.9.0}
 
   '@npmcli/fs@4.0.0':
@@ -1077,6 +1077,10 @@ packages:
   '@npmcli/map-workspaces@4.0.2':
     resolution: {integrity: sha512-mnuMuibEbkaBTYj9HQ3dMe6L0ylYW+s/gfz7tBDMFY/la0w9Kf44P9aLn4/+/t3aTR3YUHKoT6XQL9rlicIe3Q==}
     engines: {node: ^18.17.0 || >=20.5.0}
+
+  '@npmcli/map-workspaces@5.0.0':
+    resolution: {integrity: sha512-+YJN6+BIQEC5QL4EqffJ2I1S9ySspwn7GP7uQINtZhf3uy7P0KnnIg+Ab5WeSUTZYpg+jn3GSfMme2FutB7qEQ==}
+    engines: {node: ^20.17.0 || >=22.9.0}
 
   '@npmcli/metavuln-calculator@9.0.2':
     resolution: {integrity: sha512-eESzlCRLuD30qYefT2jYZTUepgu9DNJQdXABGGxjkir055x2UtnpNfDZCA6OJxButQNgxNKc9AeTchYxSgbMCw==}
@@ -5589,10 +5593,10 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@npmcli/config@10.4.0':
+  '@npmcli/config@10.4.2':
     dependencies:
-      '@npmcli/map-workspaces': 4.0.2
-      '@npmcli/package-json': 6.2.0
+      '@npmcli/map-workspaces': 5.0.0
+      '@npmcli/package-json': 7.0.1
       ci-info: 4.3.1
       ini: 5.0.0
       nopt: 8.1.0
@@ -5637,6 +5641,13 @@ snapshots:
       '@npmcli/package-json': 6.2.0
       glob: 10.4.5
       minimatch: 9.0.5
+
+  '@npmcli/map-workspaces@5.0.0':
+    dependencies:
+      '@npmcli/name-from-folder': 3.0.0
+      '@npmcli/package-json': 7.0.1
+      glob: 11.0.3
+      minimatch: 10.0.3
 
   '@npmcli/metavuln-calculator@9.0.2':
     dependencies:
