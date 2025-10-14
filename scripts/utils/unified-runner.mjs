@@ -114,6 +114,19 @@ export async function runWithOutput(command, args = [], options = {}) {
       child.stdout.on('data', data => {
         const text = data.toString()
 
+        // Filter out known non-fatal warnings (can appear in stdout too)
+        const isFilteredWarning =
+          text.includes('Terminating worker thread') ||
+          text.includes('Unhandled Rejection') ||
+          text.includes('Object.ThreadTermination') ||
+          text.includes('tinypool@')
+
+        if (isFilteredWarning) {
+          hasWorkerTerminationError = true
+          // Skip these warnings - they're non-fatal cleanup messages
+          // But continue to check for test failures in the same output
+        }
+
         // Check for test failures in vitest output
         if (
           text.includes('FAIL') ||
@@ -121,6 +134,11 @@ export async function runWithOutput(command, args = [], options = {}) {
           text.match(/Tests\s+\d+ failed/)
         ) {
           hasTestFailures = true
+        }
+
+        // Don't write filtered warnings to output
+        if (isFilteredWarning) {
+          return
         }
 
         if (showOutput) {
