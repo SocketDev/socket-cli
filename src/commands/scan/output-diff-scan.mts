@@ -127,7 +127,7 @@ async function handleMarkdown(
       logger.log(`  - ${artifact.type} ${artifact.name}@${artifact.version}`)
     })
     if (data.artifacts.added.length > 10) {
-      logger.log(`  ... and ${data.artifacts.added.length - 10} more`)
+      logger.log(`  … and ${data.artifacts.added.length - 10} more`)
     }
   }
 
@@ -137,7 +137,7 @@ async function handleMarkdown(
       logger.log(`  - ${artifact.type} ${artifact.name}@${artifact.version}`)
     })
     if (data.artifacts.removed.length > 10) {
-      logger.log(`  ... and ${data.artifacts.removed.length - 10} more`)
+      logger.log(`  … and ${data.artifacts.removed.length - 10} more`)
     }
   }
 
@@ -147,7 +147,7 @@ async function handleMarkdown(
       logger.log(`  - ${artifact.type} ${artifact.name}@${artifact.version}`)
     })
     if (data.artifacts.replaced.length > 10) {
-      logger.log(`  ... and ${data.artifacts.replaced.length - 10} more`)
+      logger.log(`  … and ${data.artifacts.replaced.length - 10} more`)
     }
   }
 
@@ -157,7 +157,7 @@ async function handleMarkdown(
       logger.log(`  - ${artifact.type} ${artifact.name}@${artifact.version}`)
     })
     if (data.artifacts.updated.length > 10) {
-      logger.log(`  ... and ${data.artifacts.updated.length - 10} more`)
+      logger.log(`  … and ${data.artifacts.updated.length - 10} more`)
     }
   }
 
@@ -169,7 +169,7 @@ async function handleMarkdown(
       logger.log(`  - ${artifact.type} ${artifact.name}@${artifact.version}`)
     }
     if (unchanged.length > 10) {
-      logger.log(`  ... and ${unchanged.length - 10} more`)
+      logger.log(`  … and ${unchanged.length - 10} more`)
     }
   }
 

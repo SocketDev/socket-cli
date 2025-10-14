@@ -442,7 +442,7 @@ export async function queryApiSafeJson<T>(
     return {
       ok: false,
       message: 'Server returned invalid JSON',
-      cause: `Please report this. JSON.parse threw an error over the following response: \`${(result.data?.slice?.(0, 100) || EMPTY_VALUE).trim() + (result.data?.length > 100 ? '...' : '')}\``,
+      cause: `Please report this. JSON.parse threw an error over the following response: \`${(result.data?.slice?.(0, 100) || EMPTY_VALUE).trim() + (result.data?.length > 100 ? '…' : '')}\``,
     }
   }
 }

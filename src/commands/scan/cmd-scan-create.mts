@@ -406,7 +406,7 @@ async function run(
     )
     logger.error('```')
     logger.error(
-      `    socket scan create [other flags...] ${orgSlug} ${targets.join(' ')}`,
+      `    socket scan create [other flags…] ${orgSlug} ${targets.join(' ')}`,
     )
     logger.error('```')
     logger.error('')
