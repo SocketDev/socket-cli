@@ -7,7 +7,15 @@ const scriptsPath = path.join(rootPath, 'scripts')
 const babelPluginsPath = path.join(scriptsPath, 'babel')
 
 module.exports = {
-  presets: ['@babel/preset-typescript'],
+  presets: [
+    '@babel/preset-typescript',
+    [
+      '@babel/preset-react',
+      {
+        runtime: 'automatic',
+      },
+    ],
+  ],
   plugins: [
     '@babel/plugin-proposal-export-default-from',
     '@babel/plugin-transform-export-namespace-from',

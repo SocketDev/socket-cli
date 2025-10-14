@@ -22,7 +22,7 @@ process.emitWarning = function (warning, ...args) {
   return Reflect.apply(originalEmitWarning, this, [warning, ...args])
 }
 
-import meow from 'meow'
+import meow from './meow.mts'
 import { messageWithCauses, stackWithCauses } from 'pony-cause'
 import lookupRegistryAuthToken from 'registry-auth-token'
 import lookupRegistryUrl from 'registry-url'

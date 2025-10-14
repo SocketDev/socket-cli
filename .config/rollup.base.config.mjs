@@ -62,6 +62,12 @@ export function getLocalPackageAliases() {
     aliases['@socketregistry/packageurl-js'] = packageurlPath
   }
 
+  // Check for ../socket-sdk-js
+  const sdkPath = path.join(rootDir, '..', 'socket-sdk-js')
+  if (existsSync(path.join(sdkPath, 'package.json'))) {
+    aliases['@socketsecurity/sdk'] = sdkPath
+  }
+
   return aliases
 }
 

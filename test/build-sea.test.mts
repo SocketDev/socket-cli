@@ -22,7 +22,7 @@ describe('SEA build validation', () => {
     const configPath = path.join(
       process.cwd(),
       '.config',
-      'rollup.sea.config.mjs',
+      'rollup.cli-sea.config.mjs',
     )
     expect(existsSync(configPath)).toBe(true)
   })

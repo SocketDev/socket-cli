@@ -42,7 +42,7 @@ function info(message) {
 if (!existsSync(stubPath)) {
   fail(`Bootstrap stub not found at ${stubPath}`)
   fail(
-    'Run: pnpm run build:sea or NODE_ENV=production pnpm exec rollup -c .config/rollup.sea.config.mjs',
+    'Run: pnpm run build:sea or NODE_ENV=production pnpm exec rollup -c .config/rollup.cli-sea.config.mjs',
   )
 }
 

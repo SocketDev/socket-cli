@@ -1,4 +1,4 @@
-import meow from 'meow'
+import meow from '../meow.mts'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {

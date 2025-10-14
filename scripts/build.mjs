@@ -1,6 +1,6 @@
 /**
- * @fileoverview Unified build script - compiles TypeScript and bundles code.
- * Standardized across all socket-* repositories.
+ * @fileoverview Unified build script for Socket CLI.
+ * Runs rollup to build distribution files and types.
  *
  * Usage:
  *   node scripts/build.mjs [options]
@@ -8,112 +8,129 @@
  * Options:
  *   --quiet    Suppress progress output
  *   --verbose  Show detailed output
- *   --watch    Watch for changes
+ *   --src-only Build source files only (skip types)
+ *   --types-only Build type definitions only (skip source)
  */
 
-import {
-  isQuiet,
-  isVerbose,
-  log,
-  printError,
-  printFooter,
-  printHeader,
-  printSuccess,
-} from './utils/cli-helpers.mjs'
-import { runCommandQuiet, runSequence } from './utils/run-command.mjs'
+import { runCommand, runCommandQuiet } from './utils/run-command.mjs'
+
+// Simple CLI helpers without registry dependencies.
+const isQuiet = () => process.argv.includes('--quiet')
+const isVerbose = () => process.argv.includes('--verbose')
+const log = {
+  info: msg => console.log(`ℹ ${msg}`),
+  step: msg => console.log(`→ ${msg}`),
+  success: msg => console.log(`✓ ${msg}`),
+  error: msg => console.error(`✖ ${msg}`),
+}
+const printHeader = title => console.log(`\n━━━ ${title} ━━━\n`)
+const printFooter = () => console.log('')
+const printSuccess = msg => console.log(`\n✓ ${msg}\n`)
+const printError = msg => console.error(`\n✖ ${msg}\n`)
 
 async function main() {
   const quiet = isQuiet()
   const verbose = isVerbose()
-  const watch = process.argv.includes('--watch')
+  const srcOnly = process.argv.includes('--src-only')
+  const typesOnly = process.argv.includes('--types-only')
 
   try {
     if (!quiet) {
-      printHeader('Building Project')
+      printHeader('Building Socket CLI')
     }
 
     const steps = []
 
-    // Check if TypeScript compilation is needed
-    // This will be customized per repo based on presence of tsconfig.json
-    const needsTypeScript = await runCommandQuiet('test', [
-      '-f',
-      'tsconfig.json',
-    ]).then(r => r.exitCode === 0)
-
-    if (needsTypeScript) {
+    // Build dist files with rollup.
+    if (!typesOnly) {
       steps.push({
-        name: 'TypeScript',
+        name: 'Clean Dist',
         command: 'pnpm',
-        args: watch ? ['exec', 'tsgo', '--watch'] : ['exec', 'tsgo'],
+        args: ['run', 'clean:dist'],
+      })
+      steps.push({
+        name: 'Rollup Bundle',
+        command: 'dotenvx',
+        args: [
+          '-q',
+          'run',
+          '-f',
+          '.env.local',
+          '--',
+          'rollup',
+          '-c',
+          '.config/rollup.cli-js.config.mjs',
+        ],
       })
     }
 
-    // Check for custom build scripts
-    const packageJson = await import('../package.json', {
-      with: { type: 'json' },
-    })
-      .then(m => m.default)
-      .catch(() => ({}))
-
-    if (packageJson.scripts?.['build:custom']) {
+    // Build type definitions with tsgo.
+    if (!srcOnly) {
       steps.push({
-        name: 'Custom Build',
+        name: 'Type Definitions',
         command: 'pnpm',
-        args: ['run', 'build:custom'],
+        args: ['run', 'clean:dist:types'],
+      })
+      steps.push({
+        name: 'TypeScript Declarations',
+        command: 'tsgo',
+        args: ['--project', 'tsconfig.dts.json'],
       })
     }
 
     if (steps.length === 0) {
       if (!quiet) {
-        log.info('No build steps configured')
+        log.info('No build steps to run')
         printFooter()
       }
       return
     }
 
-    // Run build steps
+    // Run build steps sequentially.
     if (!quiet) {
       log.step(
         `Running ${steps.length} build step${steps.length > 1 ? 's' : ''}...`,
       )
     }
 
-    const results = await Promise.all(
-      steps.map(async ({ name, command, args }) => {
-        const result = await runCommandQuiet(command, args)
-        return { name, ...result }
-      }),
-    )
+    for (const { name, command, args } of steps) {
+      if (verbose && !quiet) {
+        log.info(`Running: ${command} ${args.join(' ')}`)
+      }
 
-    // Check for failures
-    const failures = results.filter(r => r.exitCode !== 0)
+      // Always use runCommandQuiet to capture output for error reporting.
+      const result = await runCommandQuiet(command, args)
 
-    if (failures.length > 0) {
-      // Show failures
-      for (const { name, stdout, stderr } of failures) {
+      if (result.exitCode !== 0) {
         if (!quiet) {
-          log.error(`${name} build failed`)
+          log.error(`${name} failed (exit code: ${result.exitCode})`)
         }
-        if (verbose || failures.length === 1) {
-          if (stdout) {
-            console.log(stdout)
-          }
-          if (stderr) {
-            console.error(stderr)
-          }
+        // Always show output on failure.
+        if (result.stdout) {
+          console.log(result.stdout)
         }
+        if (result.stderr) {
+          console.error(result.stderr)
+        }
+        if (!quiet) {
+          printError('Build failed')
+        }
+        process.exitCode = 1
+        return
       }
 
-      if (!quiet) {
-        printError('Build failed')
+      // Show output in verbose mode.
+      if (!quiet && verbose) {
+        if (result.stdout) {
+          console.log(result.stdout)
+        }
+        log.success(`${name} completed`)
       }
-      process.exitCode = 1
-    } else {
-      if (!quiet) {
-        printSuccess('Build completed')
-        printFooter()
-      }
+    }
+
+    if (!quiet) {
+      printSuccess('Build completed')
+      printFooter()
     }
   } catch (error) {
     if (!quiet) {

@@ -1,4 +1,3 @@
-import meow from 'meow'
 import terminalLink from 'terminal-link'
 import colors from 'yoctocolors-cjs'
 
@@ -17,15 +16,6 @@ import {
   trimNewlines,
 } from '@socketsecurity/registry/lib/strings'
 
-import {
-  getConfigValueOrUndef,
-  isConfigFromFlag,
-  overrideCachedConfig,
-  overrideConfigApiToken,
-} from './config.mts'
-import { isDebug } from './debug.mts'
-import { getFlagListOutput, getHelpListOutput } from './output-formatting.mts'
-import { socketPackageLink } from './terminal-link.mts'
 import constants, {
   API_V0_URL,
   CONFIG_KEY_API_TOKEN,
@@ -40,12 +30,22 @@ import constants, {
   // YARN,
 } from '../constants.mts'
 import { commonFlags } from '../flags.mts'
+import meow from '../meow.mts'
+import {
+  getConfigValueOrUndef,
+  isConfigFromFlag,
+  overrideCachedConfig,
+  overrideConfigApiToken,
+} from './config.mts'
+import { isDebug } from './debug.mts'
+import { getFlagListOutput, getHelpListOutput } from './output-formatting.mts'
 import { spawnSocketPython } from './python-standalone.mts'
 import { getVisibleTokenPrefix } from './sdk.mts'
+import { socketPackageLink } from './terminal-link.mts'
 import { tildify } from './tildify.mts'
 
 import type { MeowFlag, MeowFlags } from '../flags.mts'
-import type { Options, Result } from 'meow'
+import type { Options, Result } from '../meow.mts'
 
 export interface CliAlias {
   description: string

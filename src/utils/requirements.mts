@@ -7,7 +7,7 @@
  * - getRequirementsKey: Convert command path to requirements key
  *
  * Configuration:
- * - Loads from requirements.json
+ * - Loads from data/command-api-requirements.json
  * - Maps command paths to permission requirements
  * - Used for permission validation and help text
  */
@@ -20,13 +20,13 @@ import constants from '../constants.mts'
 const require = createRequire(import.meta.url)
 
 let _requirements:
-  | Readonly<typeof import('../../requirements.json')>
+  | Readonly<typeof import('../../data/command-api-requirements.json')>
   | undefined
 
 export function getRequirements() {
   if (_requirements === undefined) {
     _requirements = /*@__PURE__*/ require(
-      path.join(constants.rootPath, 'requirements.json'),
+      path.join(constants.rootPath, 'data', 'command-api-requirements.json'),
     )
   }
   return _requirements!

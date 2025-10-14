@@ -8,21 +8,22 @@ import type { CResult } from '../types.mts'
 export const COMPLETION_CMD_PREFIX = 'complete -F _socket_completion'
 
 export function getCompletionSourcingCommand(): CResult<string> {
-  // Note: this is exported to distPath in .config/rollup.dist.config.mjs
-  const completionScriptExportPath = path.join(
-    constants.distPath,
+  // Bash completion script lives in data directory.
+  const completionScriptPath = path.join(
+    constants.rootPath,
+    'data',
     'socket-completion.bash',
   )
 
-  if (!fs.existsSync(completionScriptExportPath)) {
+  if (!fs.existsSync(completionScriptPath)) {
     return {
       ok: false,
       message: 'Tab Completion script not found',
-      cause: `Expected to find completion script at \`${completionScriptExportPath}\` but it was not there`,
+      cause: `Expected to find completion script at \`${completionScriptPath}\` but it was not there`,
     }
   }
 
-  return { ok: true, data: `source ${completionScriptExportPath}` }
+  return { ok: true, data: `source ${completionScriptPath}` }
 }
 
 export function getBashrcDetails(targetCommandName: string): CResult<{
