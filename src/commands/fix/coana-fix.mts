@@ -241,7 +241,7 @@ export async function coanaFix(
 
   const displayIds =
     ids.length > 3
-      ? `${ids.slice(0, 3).join(', ')} ... and ${ids.length - 3} more`
+      ? `${ids.slice(0, 3).join(', ')} … and ${ids.length - 3} more`
       : joinAnd(ids)
   debug(`fetch: ${ids.length} GHSA details for ${displayIds}`)
 

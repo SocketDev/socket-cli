@@ -745,7 +745,7 @@ export async function meowWithSubcommands(
       // Show condensed help with hint about --help-full.
       lines.push(
         '',
-        'Environment variables [more...]',
+        'Environment variables [more…]',
         `  Use ${colors.bold(FLAG_HELP_FULL)} to view all environment variables`,
       )
     }
