@@ -87,6 +87,7 @@
     "@babel/plugin-proposal-export-default-from": "7.27.1",
     "@babel/plugin-transform-export-namespace-from": "7.27.1",
     "@babel/plugin-transform-runtime": "7.28.3",
+    "@babel/preset-react": "7.27.1",
     "@babel/preset-typescript": "7.27.1",
     "@babel/runtime": "7.28.4",
     "@biomejs/biome": "2.2.4",
@@ -251,7 +252,8 @@
       "graceful-fs@4.2.11": "patches/graceful-fs@4.2.11.patch",
       "lodash@4.17.21": "patches/lodash@4.17.21.patch",
       "rollup@4.50.1": "patches/rollup@4.50.1.patch",
-      "string_decoder@0.10.31": "patches/string_decoder@0.10.31.patch"
+      "string_decoder@0.10.31": "patches/string_decoder@0.10.31.patch",
+      "yoga-layout@3.2.1": "patches/yoga-layout@3.2.1.patch"
     }
   },
   "typeCoverage": {

@@ -1,10 +1,9 @@
 import os from 'node:os'
 
-import meow from 'meow'
-
 import constants from './constants.mts'
+import meow from './meow.mts'
 
-import type { Flag } from 'meow'
+import type { Flag } from './meow.mts'
 
 // Meow doesn't expose this.
 export type AnyFlag = StringFlag | BooleanFlag | NumberFlag

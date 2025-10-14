@@ -64,6 +64,9 @@ patchedDependencies:
   string_decoder@0.10.31:
     hash: 4f6ae5ec65b5537e81cd3ee7e83ae65bcc843a93cff14f147d8053e1c385ae1d
     path: patches/string_decoder@0.10.31.patch
+  yoga-layout@3.2.1:
+    hash: b5aa47d97562754013db7bc61e5f1fab4f4c0bd9a8d781a6528a867838e02085
+    path: patches/yoga-layout@3.2.1.patch
 
 importers:
 
@@ -81,6 +84,9 @@ importers:
       '@babel/plugin-transform-runtime':
         specifier: 7.28.3
         version: 7.28.3(@babel/core@7.28.4)
+      '@babel/preset-react':
+        specifier: 7.27.1
+        version: 7.27.1(@babel/core@7.28.4)
       '@babel/preset-typescript':
         specifier: 7.27.1
         version: 7.27.1(@babel/core@7.28.4)
@@ -365,7 +371,7 @@ importers:
         version: 2.1.3
       yoga-layout:
         specifier: 3.2.1
-        version: 3.2.1
+        version: 3.2.1(patch_hash=b5aa47d97562754013db7bc61e5f1fab4f4c0bd9a8d781a6528a867838e02085)
       zod:
         specifier: 4.1.8
         version: 4.1.8
@@ -527,6 +533,30 @@ packages:
     peerDependencies:
       '@babel/core': ^7.0.0-0
 
+  '@babel/plugin-transform-react-display-name@7.28.0':
+    resolution: {integrity: sha512-D6Eujc2zMxKjfa4Zxl4GHMsmhKKZ9VpcqIchJLvwTxad9zWIYulwYItBovpDOoNLISpcZSXoDJ5gaGbQUDqViA==}
+    engines: {node: '>=6.9.0'}
+    peerDependencies:
+      '@babel/core': ^7.0.0-0
+
+  '@babel/plugin-transform-react-jsx-development@7.27.1':
+    resolution: {integrity: sha512-ykDdF5yI4f1WrAolLqeF3hmYU12j9ntLQl/AOG1HAS21jxyg1Q0/J/tpREuYLfatGdGmXp/3yS0ZA76kOlVq9Q==}
+    engines: {node: '>=6.9.0'}
+    peerDependencies:
+      '@babel/core': ^7.0.0-0
+
+  '@babel/plugin-transform-react-jsx@7.27.1':
+    resolution: {integrity: sha512-2KH4LWGSrJIkVf5tSiBFYuXDAoWRq2MMwgivCf+93dd0GQi8RXLjKA/0EvRnVV5G0hrHczsquXuD01L8s6dmBw==}
+    engines: {node: '>=6.9.0'}
+    peerDependencies:
+      '@babel/core': ^7.0.0-0
+
+  '@babel/plugin-transform-react-pure-annotations@7.27.1':
+    resolution: {integrity: sha512-JfuinvDOsD9FVMTHpzA/pBLisxpv1aSf+OIV8lgH3MuWrks19R27e6a6DipIg4aX1Zm9Wpb04p8wljfKrVSnPA==}
+    engines: {node: '>=6.9.0'}
+    peerDependencies:
+      '@babel/core': ^7.0.0-0
+
   '@babel/plugin-transform-runtime@7.28.3':
     resolution: {integrity: sha512-Y6ab1kGqZ0u42Zv/4a7l0l72n9DKP/MKoKWaUSBylrhNZO2prYuqFOLbn5aW5SIFXwSH93yfjbgllL8lxuGKLg==}
     engines: {node: '>=6.9.0'}
@@ -535,6 +565,12 @@ packages:
 
   '@babel/plugin-transform-typescript@7.28.0':
     resolution: {integrity: sha512-4AEiDEBPIZvLQaWlc9liCavE0xRM0dNca41WtBeM3jgFptfUOSG9z0uteLhq6+3rq+WB6jIvUwKDTpXEHPJ2Vg==}
+    engines: {node: '>=6.9.0'}
+    peerDependencies:
+      '@babel/core': ^7.0.0-0
+
+  '@babel/preset-react@7.27.1':
+    resolution: {integrity: sha512-oJHWh2gLhU9dW9HHr42q0cI0/iHHXTLGe39qvpAZZzagHy0MzYLCnCVV0symeRvzmjHyVU7mw2K06E6u/JwbhA==}
     engines: {node: '>=6.9.0'}
     peerDependencies:
       '@babel/core': ^7.0.0-0
@@ -4873,6 +4909,35 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  '@babel/plugin-transform-react-display-name@7.28.0(@babel/core@7.28.4)':
+    dependencies:
+      '@babel/core': 7.28.4
+      '@babel/helper-plugin-utils': 7.27.1
+
+  '@babel/plugin-transform-react-jsx-development@7.27.1(@babel/core@7.28.4)':
+    dependencies:
+      '@babel/core': 7.28.4
+      '@babel/plugin-transform-react-jsx': 7.27.1(@babel/core@7.28.4)
+    transitivePeerDependencies:
+      - supports-color
+
+  '@babel/plugin-transform-react-jsx@7.27.1(@babel/core@7.28.4)':
+    dependencies:
+      '@babel/core': 7.28.4
+      '@babel/helper-annotate-as-pure': 7.27.3
+      '@babel/helper-module-imports': 7.27.1
+      '@babel/helper-plugin-utils': 7.27.1
+      '@babel/plugin-syntax-jsx': 7.27.1(@babel/core@7.28.4)
+      '@babel/types': 7.28.4
+    transitivePeerDependencies:
+      - supports-color
+
+  '@babel/plugin-transform-react-pure-annotations@7.27.1(@babel/core@7.28.4)':
+    dependencies:
+      '@babel/core': 7.28.4
+      '@babel/helper-annotate-as-pure': 7.27.3
+      '@babel/helper-plugin-utils': 7.27.1
+
   '@babel/plugin-transform-runtime@7.28.3(@babel/core@7.28.4)':
     dependencies:
       '@babel/core': 7.28.4
@@ -4893,6 +4958,18 @@ snapshots:
       '@babel/helper-plugin-utils': 7.27.1
       '@babel/helper-skip-transparent-expression-wrappers': 7.27.1
       '@babel/plugin-syntax-typescript': 7.27.1(@babel/core@7.28.4)
+    transitivePeerDependencies:
+      - supports-color
+
+  '@babel/preset-react@7.27.1(@babel/core@7.28.4)':
+    dependencies:
+      '@babel/core': 7.28.4
+      '@babel/helper-plugin-utils': 7.27.1
+      '@babel/helper-validator-option': 7.27.1
+      '@babel/plugin-transform-react-display-name': 7.28.0(@babel/core@7.28.4)
+      '@babel/plugin-transform-react-jsx': 7.27.1(@babel/core@7.28.4)
+      '@babel/plugin-transform-react-jsx-development': 7.27.1(@babel/core@7.28.4)
+      '@babel/plugin-transform-react-pure-annotations': 7.27.1(@babel/core@7.28.4)
     transitivePeerDependencies:
       - supports-color
 
@@ -7459,7 +7536,7 @@ snapshots:
       widest-line: 5.0.0
       wrap-ansi: 9.0.2
       ws: 8.18.3
-      yoga-layout: 3.2.1
+      yoga-layout: 3.2.1(patch_hash=b5aa47d97562754013db7bc61e5f1fab4f4c0bd9a8d781a6528a867838e02085)
     optionalDependencies:
       '@types/react': 19.2.2
     transitivePeerDependencies:
@@ -9224,6 +9301,6 @@ snapshots:
 
   yoctocolors@2.1.2: {}
 
-  yoga-layout@3.2.1: {}
+  yoga-layout@3.2.1(patch_hash=b5aa47d97562754013db7bc61e5f1fab4f4c0bd9a8d781a6528a867838e02085): {}
 
   zod@4.1.8: {}

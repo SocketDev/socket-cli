@@ -46,7 +46,7 @@ export async function convertGradleToMaven({
     // we can upload them and predict them through the GitHub API. We could do a
     // .socket folder. We could do a socket.pom.gz with all the poms, although
     // I'd prefer something plain-text if it is to be committed.
-    // Note: init.gradle will be exported by .config/rollup.dist.config.mjs
+    // Note: init.gradle will be exported by .config/rollup.cli-js.config.mjs
     const initLocation = path.join(constants.distPath, 'init.gradle')
     const commandArgs = ['--init-script', initLocation, ...gradleOpts, 'pom']
     if (verbose) {

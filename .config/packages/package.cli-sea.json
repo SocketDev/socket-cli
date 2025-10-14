@@ -1,7 +1,7 @@
 {
-  "name": "@socketsecurity/cli-with-sentry",
+  "name": "@socketsecurity/cli",
   "version": "1.1.22",
-  "description": "CLI for Socket.dev with error monitoring",
+  "description": "CLI for Socket.dev",
   "homepage": "https://github.com/SocketDev/socket-cli",
   "license": "MIT AND OFL-1.1",
   "repository": {
@@ -14,12 +14,11 @@
     "url": "https://socket.dev"
   },
   "bin": {
-    "socket-with-sentry": "bin/cli.js",
-    "socket-sentry": "bin/cli.js",
-    "socket-sentry-npm": "bin/npm-cli.js",
-    "socket-sentry-npx": "bin/npx-cli.js",
-    "socket-sentry-pnpm": "bin/pnpm-cli.js",
-    "socket-sentry-yarn": "bin/yarn-cli.js"
+    "socket": "bin/cli.js",
+    "socket-npm": "bin/npm-cli.js",
+    "socket-npx": "bin/npx-cli.js",
+    "socket-pnpm": "bin/pnpm-cli.js",
+    "socket-yarn": "bin/yarn-cli.js"
   },
   "types": "./dist/types/src/cli.d.ts",
   "exports": {
@@ -29,13 +28,10 @@
     "./bin/pnpm-cli.js": "./dist/pnpm-cli.js",
     "./bin/yarn-cli.js": "./dist/yarn-cli.js",
     "./package.json": "./package.json",
-    "./requirements.json": "./requirements.json",
-    "./translations.json": "./translations.json"
+    "./data/alert-translations.json": "./data/alert-translations.json",
+    "./data/command-api-requirements.json": "./data/command-api-requirements.json"
   },
-  "files": ["dist", "bin", "requirements.json", "translations.json"],
-  "dependencies": {
-    "@sentry/node": "8.42.0"
-  },
+  "files": ["bin", "data", "dist"],
   "keywords": [
     "socket",
     "socket.dev",
