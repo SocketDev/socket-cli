@@ -34,8 +34,6 @@
   },
   "scripts": {
     "build": "node scripts/build.mjs",
-    "build:src": "node scripts/build.mjs --src-only",
-    "build:types": "node scripts/build.mjs --types-only",
     "build:sea": "node scripts/build-sea.mjs",
     "build:sea:internal:bootstrap": "rollup -c .config/rollup.cli-sea.config.mjs",
     "build:js": "dotenvx -q run -f .env.local -- rollup -c .config/rollup.cli-js.config.mjs",
@@ -67,7 +65,7 @@
     "lint-staged": "dotenvx -q run -f .env.local -- lint-staged",
     "precommit": "dotenvx -q run -f .env.local -- lint-staged",
     "prepare": "dotenvx -q run -f .env.local -- husky",
-    "bs": "dotenvx -q run -f .env.local -- pnpm run build:src; pnpm exec socket --",
+    "bs": "dotenvx -q run -f .env.local -- pnpm run build -- --src-only; pnpm exec socket --",
     "s": "dotenvx -q run -f .env.local -- pnpm exec socket --",
     "test": "node scripts/test.mjs",
     "test:prepare": "dotenvx -q run -f .env.test -- pnpm run build && del-cli 'test/**/node_modules'",
