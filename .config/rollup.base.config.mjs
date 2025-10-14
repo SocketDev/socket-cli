@@ -42,10 +42,7 @@ const {
   VITEST,
 } = constants
 
-export const EXTERNAL_PACKAGES = [
-  'blessed',
-  'blessed-contrib',
-]
+export const EXTERNAL_PACKAGES = ['blessed', 'blessed-contrib']
 
 // Check for local sibling projects to use in development.
 // Falls back to published versions in CI.
