@@ -1,6 +1,4 @@
-import { createRequire } from 'node:module'
-
-import { debugDir, debug } from '@socketsecurity/registry/lib/debug'
+import { debugDir, debugFn as debug } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants, {
@@ -10,14 +8,10 @@ import constants, {
 } from '../../constants.mts'
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
 import { mdTable } from '../../utils/markdown.mts'
-import { msAtHome } from '../../utils/ms-at-home.mts'
 import { serializeResultJson } from '../../utils/serialize-result-json.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
-import type { Widgets } from 'blessed'
-
-const require = createRequire(import.meta.url)
 
 export async function outputAuditLog(
   result: CResult<SocketSdkSuccessResult<'getAuditLogEvents'>['data']>,
@@ -67,27 +61,7 @@ export async function outputAuditLog(
     return
   }
 
-  await outputWithBlessed(result.data, orgSlug)
-}
-
-function formatResult(
-  selectedRow?: SocketSdkSuccessResult<'getAuditLogEvents'>['data']['results'][number],
-  keepQuotes = false,
-): string {
-  if (!selectedRow) {
-    return '(none)'
-  }
-  // Format the object with spacing but keep the payload compact because
-  // that can contain just about anything and spread many lines.
-  const obj = { ...selectedRow, payload: 'REPLACEME' }
-  const json = JSON.stringify(obj, null, 2).replace(
-    /"payload": "REPLACEME"/,
-    `"payload": ${JSON.stringify(selectedRow.payload ?? {})}`,
-  )
-  if (keepQuotes) {
-    return json
-  }
-  return json.replace(/^\s*"([^"]+)?"/gm, '  $1')
+  await outputWithInk(result.data, orgSlug)
 }
 
 export async function outputAsJson(
@@ -191,128 +165,23 @@ ${table}
   }
 }
 
-async function outputWithBlessed(
+/**
+ * Display audit log using Ink React components.
+ */
+async function outputWithInk(
   data: SocketSdkSuccessResult<'getAuditLogEvents'>['data'],
   orgSlug: string,
-) {
-  const filteredLogs = data.results
-  const formattedOutput = filteredLogs.map(logs => [
-    logs.event_id ?? '',
-    msAtHome(logs.created_at ?? ''),
-    logs.type ?? '',
-    logs.user_email ?? '',
-    logs.ip_address ?? '',
-    logs.user_agent ?? '',
-  ])
-  const headers = [
-    ' Event id',
-    ' Created at',
-    ' Event type',
-    ' User email',
-    ' IP address',
-    ' User agent',
-  ]
+): Promise<void> {
+  const React = await import('react')
+  // @ts-ignore - tsx files treated as CJS by tsgo without package.json type:module
+  const { render } = await import('ink')
+  // @ts-ignore - tsx files treated as CJS by tsgo without package.json type:module
+  const { AuditLogApp } = await import('./AuditLogApp.js')
 
-  // Note: this temporarily takes over the terminal (just like `man` does).
-  const ScreenWidget = /*@__PURE__*/ require('blessed/lib/widgets/screen.js')
-  const screen: Widgets.Screen = new ScreenWidget({
-    ...constants.blessedOptions,
-  })
-  // Register these keys first so you can always exit, even when it gets stuck
-  // If we don't do this and the code crashes, the user must hard-kill the
-  // node process just to exit it. That's very bad UX.
-  // eslint-disable-next-line n/no-process-exit
-  screen.key(['escape', 'q', 'C-c'], () => process.exit(0))
-
-  const TableWidget = /*@__PURE__*/ require('blessed-contrib/lib/widget/table.js')
-  const tipsBoxHeight = 1 // 1 row for tips box
-  const detailsBoxHeight = 20 // bottom N rows for details box. 20 gives 4 lines for condensed payload before it scrolls out of view
-
-  const maxWidths = headers.map(s => s.length + 1)
-  formattedOutput.forEach(row => {
-    row.forEach((str, i) => {
-      maxWidths[i] = Math.max(str.length, maxWidths[i] ?? str.length)
-    })
-  })
-
-  const table: any = new TableWidget({
-    keys: 'true',
-    fg: 'white',
-    selectedFg: 'white',
-    selectedBg: 'magenta',
-    interactive: 'true',
-    label: `Audit Logs for ${orgSlug}`,
-    width: '100%',
-    top: 0,
-    bottom: detailsBoxHeight + tipsBoxHeight,
-    border: {
-      type: 'line',
-      fg: 'cyan',
-    },
-    columnWidth: maxWidths, //[10, 30, 40, 25, 15, 200],
-    // Note: spacing works as long as you don't reserve more than total width
-    columnSpacing: 4,
-    truncate: '_',
-  })
-
-  const BoxWidget = /*@__PURE__*/ require('blessed/lib/widgets/box.js')
-  const tipsBox: Widgets.BoxElement = new BoxWidget({
-    bottom: detailsBoxHeight, // sits just above the details box
-    height: tipsBoxHeight,
-    width: '100%',
-    style: {
-      fg: 'yellow',
-      bg: 'black',
-    },
-    tags: true,
-    content: `↑/↓: Move    Enter: Select    q/ESC: Quit`,
-  })
-  const detailsBox: Widgets.BoxElement = new BoxWidget({
-    bottom: 0,
-    height: detailsBoxHeight,
-    width: '100%',
-    border: {
-      type: 'line',
-      fg: 'cyan',
-    },
-    label: 'Details',
-    content: formatResult(filteredLogs[0], true),
-    style: {
-      fg: 'white',
-    },
-  })
-
-  table.setData({
-    headers: headers,
-    data: formattedOutput,
-  })
-
-  // allow control the table with the keyboard
-  table.focus()
-
-  // Stacking order: table (top), tipsBox (middle), detailsBox (bottom)
-  screen.append(table)
-  screen.append(tipsBox)
-  screen.append(detailsBox)
-
-  // Update details box when selection changes
-  table.rows.on('select item', () => {
-    const selectedIndex = table.rows.selected
-    if (selectedIndex !== undefined && selectedIndex >= 0) {
-      const selectedRow = filteredLogs[selectedIndex]
-      detailsBox.setContent(formatResult(selectedRow))
-      screen.render()
-    }
-  })
-
-  screen.render()
-
-  screen.key(['return'], () => {
-    const selectedIndex = table.rows.selected
-    screen.destroy()
-    const selectedRow = formattedOutput[selectedIndex]
-      ? formatResult(filteredLogs[selectedIndex], true)
-      : '(none)'
-    logger.log(`Last selection:\n${selectedRow.trim()}`)
-  })
+  render(
+    React.createElement(AuditLogApp, {
+      orgSlug,
+      results: data.results,
+    }),
+  )
 }
