@@ -20,7 +20,7 @@ import {
   printHeader,
   printSuccess,
 } from './utils/cli-helpers.mjs'
-import { runCommand } from './utils/run-command.mjs'
+import { runCommand, runParallel } from './utils/run-command.mjs'
 
 async function main() {
   const quiet = isQuiet()
@@ -32,7 +32,7 @@ async function main() {
       printHeader('Checking Dependencies')
     }
 
-    // Build taze command with appropriate flags
+    // Build taze command with appropriate flags.
     const tazeArgs = ['exec', 'taze']
 
     if (apply) {
@@ -46,12 +46,33 @@ async function main() {
       }
     }
 
-    // Run taze command
-    const exitCode = await runCommand('pnpm', tazeArgs, {
-      stdio: quiet ? 'pipe' : 'inherit',
-    })
+    // Run both taze and Socket package updates in parallel.
+    const commands = [
+      {
+        args: tazeArgs,
+        command: 'pnpm',
+        options: { stdio: quiet ? 'pipe' : 'inherit' },
+      },
+    ]
 
-    // Clear progress line
+    // Add Socket package update command if applying updates.
+    if (apply) {
+      commands.push({
+        args: [
+          'update',
+          '@socketsecurity/*',
+          '@socketregistry/*',
+          '--latest',
+          '--no-workspace',
+        ],
+        command: 'pnpm',
+        options: { stdio: quiet ? 'pipe' : 'inherit' },
+      })
+    }
+
+    const exitCode = await runParallel(commands)
+
+    // Clear progress line.
     if (!quiet) {
       process.stdout.write('\r\x1b[K')
     }
