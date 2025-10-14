@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto'
+import { existsSync } from 'node:fs'
 import { builtinModules } from 'node:module'
 import path from 'node:path'
 
@@ -42,10 +43,30 @@ const {
 } = constants
 
 export const EXTERNAL_PACKAGES = [
-  '@socketsecurity/registry',
   'blessed',
   'blessed-contrib',
 ]
+
+// Check for local sibling projects to use in development.
+// Falls back to published versions in CI.
+export function getLocalPackageAliases() {
+  const aliases = {}
+  const rootDir = constants.rootPath
+
+  // Check for ../socket-registry/registry
+  const registryPath = path.join(rootDir, '..', 'socket-registry', 'registry')
+  if (existsSync(path.join(registryPath, 'package.json'))) {
+    aliases['@socketsecurity/registry'] = registryPath
+  }
+
+  // Check for ../socket-packageurl-js
+  const packageurlPath = path.join(rootDir, '..', 'socket-packageurl-js')
+  if (existsSync(path.join(packageurlPath, 'package.json'))) {
+    aliases['@socketregistry/packageurl-js'] = packageurlPath
+  }
+
+  return aliases
+}
 
 const builtinAliases = builtinModules.reduce((o, n) => {
   if (!n.startsWith('node:')) {
@@ -198,6 +219,7 @@ export default function baseConfig(extendConfig = {}) {
     plugins: [
       extractedPlugins['node-resolve'] ??
         nodeResolve({
+          alias: getLocalPackageAliases(),
           exportConditions: ['node'],
           extensions: ['.mjs', '.js', '.json', '.ts', '.mts'],
           preferBuiltins: true,
