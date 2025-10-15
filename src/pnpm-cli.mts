@@ -2,7 +2,7 @@
 
 import shadowPnpmBin from './shadow/pnpm/bin.mts'
 
-void (async () => {
+export default async function runPnpmCli() {
   process.exitCode = 1
 
   const { spawnPromise } = await shadowPnpmBin(process.argv.slice(2), {
@@ -19,4 +19,13 @@ void (async () => {
     // eslint-disable-next-line n/no-process-exit
     process.exit(result.code)
   }
-})()
+}
+
+// Run if invoked directly (not as a module).
+if (import.meta.url === `file://${process.argv[1]}`) {
+  runPnpmCli().catch(error => {
+    console.error('Socket pnpm wrapper error:', error)
+    // eslint-disable-next-line n/no-process-exit
+    process.exit(1)
+  })
+}

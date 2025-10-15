@@ -2,7 +2,7 @@
 
 import shadowNpxBin from './shadow/npx/bin.mts'
 
-void (async () => {
+export default async function runNpxCli() {
   process.exitCode = 1
 
   const { spawnPromise } = await shadowNpxBin(process.argv.slice(2), {
@@ -17,4 +17,13 @@ void (async () => {
     // eslint-disable-next-line n/no-process-exit
     process.exit(result.code)
   }
-})()
+}
+
+// Run if invoked directly (not as a module).
+if (import.meta.url === `file://${process.argv[1]}`) {
+  runNpxCli().catch(error => {
+    console.error('Socket npx wrapper error:', error)
+    // eslint-disable-next-line n/no-process-exit
+    process.exit(1)
+  })
+}

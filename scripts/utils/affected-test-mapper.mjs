@@ -18,7 +18,8 @@ const rootPath = path.resolve(process.cwd())
  * Core files that require running all tests when changed.
  */
 const CORE_FILES = [
-  'src/cli.mts',
+  'src/cli-entry.mts',
+  'src/cli-dispatch.mts',
   'src/constants.mts',
   'src/types.mts',
   'src/utils/debug.mts',
