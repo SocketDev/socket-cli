@@ -1,6 +1,6 @@
 /** @fileoverview Test builder utilities to DRY out repetitive test patterns */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 // Test stubs commented out - need to be reimplemented locally.
 // import { spawn } from '@socketsecurity/registry/test/stubs/child-process'
 // import { stubLoggerLog } from '@socketsecurity/registry/test/stubs/console'
@@ -25,9 +25,9 @@ export function setupCommandTest(options: TestSetupOptions) {
     // commandPath,
     // commandName,
     // parentCommand,
-    mockSdk = true,
-    mockConfig = {},
     env = {},
+    mockConfig = {},
+    mockSdk = true,
   } = options
 
   const stubs = {
@@ -48,7 +48,7 @@ export function setupCommandTest(options: TestSetupOptions) {
 
     // Mock SDK if needed
     if (mockSdk) {
-      vi.mock('../../utils/sdk.mts', () => ({
+      vi.mock('../../utils/socket/sdk.mjs', () => ({
         hasDefaultApiToken: vi.fn(() => true),
         setupSdk: vi.fn(() => ({ ok: true, data: stubs.sdk })),
       }))
@@ -218,7 +218,7 @@ export const commonTests = {
     args: [],
     setup: () => {
       vi.mocked(
-        require('../../utils/sdk.mts').hasDefaultApiToken,
+        require('../../utils/socket/sdk.mjs').hasDefaultApiToken,
       ).mockReturnValue(false)
     },
     expectedError: /login/,

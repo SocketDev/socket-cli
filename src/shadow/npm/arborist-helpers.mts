@@ -4,15 +4,15 @@ import { parseUrl } from '@socketsecurity/registry/lib/url'
 
 import constants from '../../constants.mts'
 import { DiffAction } from './arborist/types.mts'
-import { getAlertsMapFromPurls } from '../../utils/alerts-map.mts'
-import { toFilterConfig } from '../../utils/filter-config.mts'
-import { idToNpmPurl } from '../../utils/spec.mts'
+import { idToNpmPurl } from '../../utils/ecosystem/spec.mjs'
+import { getAlertsMapFromPurls } from '../../utils/socket/alerts.mts'
+import { toFilterConfig } from '../../utils/validation/filter-config.mts'
 
 import type { ArboristInstance, Diff, NodeClass } from './arborist/types.mts'
 import type {
   AlertFilter,
   AlertsByPurl,
-} from '../../utils/socket-package-alert.mts'
+} from '../../utils/socket/package-alert.mts'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 function getUrlOrigin(input: string): string {

@@ -1,6 +1,6 @@
 /** @fileoverview Type definitions for npm Arborist integration in Socket CLI. Extends @npmcli/arborist types with Socket-specific enhancements for dependency tree analysis and security scanning. */
 
-import { createEnum } from '../../../utils/objects.mts'
+import { createEnum } from '../../../utils/data/objects.mjs'
 
 import type {
   Advisory as BaseAdvisory,

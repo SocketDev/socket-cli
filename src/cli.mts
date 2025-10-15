@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-import { fileURLToPath, pathToFileURL } from 'node:url'
 import process from 'node:process'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 
 // Suppress MaxListenersExceeded warning for AbortSignal.
 // The Socket SDK properly manages listeners but may exceed the default limit of 30
@@ -22,22 +22,26 @@ process.emitWarning = function (warning, ...args) {
   return Reflect.apply(originalEmitWarning, this, [warning, ...args])
 }
 
-import meow from './meow.mts'
 import { messageWithCauses, stackWithCauses } from 'pony-cause'
 import lookupRegistryAuthToken from 'registry-auth-token'
 import lookupRegistryUrl from 'registry-url'
 
-import { debugDir, debug } from '@socketsecurity/registry/lib/debug'
+import { debug, debugDir } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { rootAliases, rootCommands } from './commands.mts'
 import constants, { SOCKET_CLI_BIN_NAME } from './constants.mts'
-import { AuthError, InputError, captureException } from './utils/errors.mts'
-import { failMsgWithBadge } from './utils/fail-msg-with-badge.mts'
-import { meowWithSubcommands } from './utils/meow-with-subcommands.mts'
-import { isSeaBinary } from './utils/sea.mts'
-import { serializeResultJson } from './utils/serialize-result-json.mts'
-import { scheduleUpdateCheck } from './utils/update-manager.mts'
+import meow from './meow.mts'
+import { meowWithSubcommands } from './utils/cli/with-subcommands.mts'
+import {
+  AuthError,
+  InputError,
+  captureException,
+} from './utils/error/errors.mts'
+import { failMsgWithBadge } from './utils/error/fail-msg-with-badge.mts'
+import { isSeaBinary } from './utils/executable/detect.mts'
+import { serializeResultJson } from './utils/output/result-json.mts'
+import { scheduleUpdateCheck } from './utils/update/manager.mts'
 
 const __filename = fileURLToPath(import.meta.url)
 
@@ -49,9 +53,9 @@ void (async () => {
     authInfo: lookupRegistryAuthToken(registryUrl, { recursive: true }),
     name: isSeaBinary()
       ? SOCKET_CLI_BIN_NAME
-      : constants.ENV.INLINED_SOCKET_CLI_NAME,
+      : constants.ENV.INLINED_SOCKET_CLI_NAME || SOCKET_CLI_BIN_NAME,
     registryUrl,
-    version: constants.ENV.INLINED_SOCKET_CLI_VERSION,
+    version: constants.ENV.INLINED_SOCKET_CLI_VERSION || '0.0.0',
   })
 
   try {

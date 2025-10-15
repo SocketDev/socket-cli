@@ -29,6 +29,14 @@ jobs:
             platform: linux
             arch: arm64
 
+          # Alpine Linux builds
+          - os: ubuntu-latest
+            platform: alpine
+            arch: x64
+          - os: ubuntu-latest
+            platform: alpine
+            arch: arm64
+
           # macOS builds
           - os: macos-latest
             platform: darwin
@@ -47,16 +55,16 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version: 22
           registry-url: 'https://registry.npmjs.org'
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v3
+        uses: pnpm/action-setup@e9540b3eafaf84907c087a645d3258bfaa861427 # v3.0.0
         with:
           version: 8
 
@@ -67,8 +75,19 @@ jobs:
         run: pnpm run build:sea:stub
 
       - name: Build binary
+        id: build-binary
+        continue-on-error: true
         run: |
-          pnpm run build:sea -- \
+          pnpm run build --sea -- \
+            --platform=${{ matrix.platform }} \
+            --arch=${{ matrix.arch }}
+
+      - name: Build binary (fallback with clean rebuild)
+        if: steps.build-binary.outcome == 'failure'
+        run: |
+          echo "Initial build failed, attempting clean rebuild with Node.js..."
+          node scripts/build-yao-pkg-node.mjs --clean
+          pnpm run build --sea -- \
             --platform=${{ matrix.platform }} \
             --arch=${{ matrix.arch }}
 
@@ -78,7 +97,7 @@ jobs:
           file dist/sea/socket-* || true
 
       - name: Upload binary artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: binary-${{ matrix.platform }}-${{ matrix.arch }}
           path: dist/sea/socket-*
@@ -94,10 +113,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version: 22
           registry-url: 'https://registry.npmjs.org'
@@ -116,7 +135,7 @@ jobs:
           node scripts/check-version-consistency.mjs ${{ steps.version.outputs.version }}
 
       - name: Download all binaries
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@cc203385981b70ca67e1cc392babf9cc229d5806 # v4.1.9
         with:
           path: dist/sea
           pattern: binary-*
@@ -153,6 +172,26 @@ jobs:
             --version=${{ steps.version.outputs.version }}
 
           cd packages/binaries/cli-linux-arm64
+          npm publish --provenance --access public
+
+      - name: Generate and publish Alpine x64
+        if: ${{ !inputs.dry-run }}
+        run: |
+          node scripts/generate-binary-package.mjs \
+            --platform=alpine --arch=x64 \
+            --version=${{ steps.version.outputs.version }}
+
+          cd packages/binaries/cli-alpine-x64
+          npm publish --provenance --access public
+
+      - name: Generate and publish Alpine ARM64
+        if: ${{ !inputs.dry-run }}
+        run: |
+          node scripts/generate-binary-package.mjs \
+            --platform=alpine --arch=arm64 \
+            --version=${{ steps.version.outputs.version }}
+
+          cd packages/binaries/cli-alpine-arm64
           npm publish --provenance --access public
 
       - name: Generate and publish macOS x64
@@ -213,10 +252,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version: 22
           registry-url: 'https://registry.npmjs.org'
@@ -249,6 +288,8 @@ jobs:
 
           // Add optionalDependencies
           pkg.optionalDependencies = {
+            '@socketbin/cli-alpine-arm64': '${{ steps.version.outputs.version }}',
+            '@socketbin/cli-alpine-x64': '${{ steps.version.outputs.version }}',
             '@socketbin/cli-darwin-arm64': '${{ steps.version.outputs.version }}',
             '@socketbin/cli-darwin-x64': '${{ steps.version.outputs.version }}',
             '@socketbin/cli-linux-arm64': '${{ steps.version.outputs.version }}',

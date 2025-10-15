@@ -8,6 +8,7 @@ import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 // Mock all dependencies.
 const mockSpawn = vi.hoisted(() => vi.fn())
 const mockGetNpmBinPath = vi.hoisted(() => vi.fn())
+const mockResolveBinPathSync = vi.hoisted(() => vi.fn())
 
 vi.mock('@socketsecurity/registry/lib/spawn', () => ({
   spawn: mockSpawn,
@@ -26,7 +27,7 @@ vi.mock('@socketsecurity/registry/lib/agent', () => ({
   ),
 }))
 
-vi.mock('../../utils/npm-paths.mts', () => ({
+vi.mock('../../utils/npm/paths.mts', () => ({
   getNpmBinPath: mockGetNpmBinPath,
 }))
 

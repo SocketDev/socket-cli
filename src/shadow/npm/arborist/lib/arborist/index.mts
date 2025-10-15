@@ -5,9 +5,9 @@ import UntypedArborist from '@npmcli/arborist/lib/arborist/index.js'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import constants, { NODE_MODULES, NPX } from '../../../../../constants.mts'
-import { findUp } from '../../../../../utils/fs.mts'
-import { logAlertsMap } from '../../../../../utils/socket-package-alert.mts'
+import constants, { NODE_MODULES, NPX, getInternals  } from '../../../../../constants.mts'
+import { findUp } from '../../../../../utils/fs/fs.mjs'
+import { logAlertsMap } from '../../../../../utils/socket/package-alert.mts'
 import {
   getAlertsMapFromArborist,
   getDetailsFromDiff,
@@ -19,10 +19,9 @@ import type {
   NodeClass,
 } from '../../types.mts'
 
-const {
-  kInternalsSymbol,
-  [kInternalsSymbol as unknown as 'Symbol(kInternalsSymbol)']: { getIpc },
-} = constants
+
+const internals = getInternals(constants)
+const getIpc = internals.getIpc
 
 export const SAFE_NO_SAVE_ARBORIST_REIFY_OPTIONS_OVERRIDES = {
   __proto__: null,
@@ -98,9 +97,9 @@ export class SafeArborist extends Arborist {
       ...(args.length ? args[0] : undefined),
     } as ArboristReifyOptions
 
-    const ipc = await getIpc()
+    const ipc = getIpc ? await getIpc() : undefined
 
-    const binName = ipc[constants.SOCKET_CLI_SHADOW_BIN]
+    const binName = ipc?.[constants.SOCKET_CLI_SHADOW_BIN]
     if (!binName) {
       return await this[kRiskyReify](...args)
     }
@@ -115,9 +114,9 @@ export class SafeArborist extends Arborist {
       ...args.slice(1),
     )
 
-    const shadowAcceptRisks = !!ipc[constants.SOCKET_CLI_SHADOW_ACCEPT_RISKS]
-    const shadowProgress = !!ipc[constants.SOCKET_CLI_SHADOW_PROGRESS]
-    const shadowSilent = !!ipc[constants.SOCKET_CLI_SHADOW_SILENT]
+    const shadowAcceptRisks = !!ipc?.[constants.SOCKET_CLI_SHADOW_ACCEPT_RISKS]
+    const shadowProgress = !!ipc?.[constants.SOCKET_CLI_SHADOW_PROGRESS]
+    const shadowSilent = !!ipc?.[constants.SOCKET_CLI_SHADOW_SILENT]
 
     const acceptRisks =
       shadowAcceptRisks || constants.ENV.SOCKET_CLI_ACCEPT_RISKS
@@ -139,7 +138,7 @@ export class SafeArborist extends Arborist {
     })
 
     const alertsMap = await getAlertsMapFromArborist(this, needInfoOn, {
-      apiToken: ipc[constants.SOCKET_CLI_SHADOW_API_TOKEN],
+      apiToken: ipc?.[constants.SOCKET_CLI_SHADOW_API_TOKEN],
       spinner,
       filter: reportOnlyBlocking
         ? {

@@ -1,9 +1,9 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
+  commonFlags,
   getMaxOldSpaceSizeFlag,
   getMaxSemiSpaceSizeFlag,
-  commonFlags,
   outputFlags,
   validationFlags,
 } from './flags.mts'

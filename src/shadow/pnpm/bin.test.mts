@@ -27,7 +27,7 @@ const mockReadPnpmLockfile = vi.hoisted(() => vi.fn())
 const mockLogAlertsMap = vi.hoisted(() => vi.fn())
 const mockExistsSync = vi.hoisted(() => vi.fn())
 
-vi.mock('../../utils/alerts-map.mts', () => ({
+vi.mock('../../utils/socket/alerts.mts', () => ({
   getAlertsMapFromPnpmLockfile: mockGetAlertsMapFromPnpmLockfile,
   getAlertsMapFromPurls: mockGetAlertsMapFromPurls,
 }))
@@ -37,11 +37,11 @@ vi.mock('../../utils/pnpm.mts', () => ({
   readPnpmLockfile: mockReadPnpmLockfile,
 }))
 
-vi.mock('../../utils/socket-package-alert.mts', () => ({
+vi.mock('../../utils/socket/package-alert.mts', () => ({
   logAlertsMap: mockLogAlertsMap,
 }))
 
-vi.mock('../../utils/shadow-links.mts', () => ({
+vi.mock('../../utils/shadow/links.mts', () => ({
   installPnpmLinks: mockInstallPnpmLinks,
 }))
 

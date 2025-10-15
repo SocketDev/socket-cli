@@ -9,7 +9,7 @@ import { getOwn, isObject } from '@socketsecurity/registry/lib/objects'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import constants, { FLAG_LOGLEVEL, NPM } from '../../constants.mts'
-import { getNpmBinPath } from '../../utils/npm-paths.mts'
+import { getNpmBinPath } from '../../utils/npm/paths.mts'
 
 import type { SpawnResult } from '@socketsecurity/registry/lib/spawn'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'

@@ -5,7 +5,7 @@ import { createRequire } from 'node:module'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import constants from './constants.mts'
+import constants, { getInternals } from './constants.mts'
 
 if (constants.ENV.INLINED_SOCKET_CLI_SENTRY_BUILD) {
   const require = createRequire(import.meta.url)
@@ -34,11 +34,10 @@ if (constants.ENV.INLINED_SOCKET_CLI_SENTRY_BUILD) {
   } else {
     Sentry.setTag('debugging', false)
   }
-  const {
-    kInternalsSymbol,
-    [kInternalsSymbol as unknown as 'Symbol(kInternalsSymbol)']: { setSentry },
-  } = constants
-  setSentry(Sentry)
+  const internals = getInternals(constants)
+  if (internals.setSentry) {
+    internals.setSentry(Sentry)
+  }
 } else if (constants.ENV.SOCKET_CLI_DEBUG) {
   logger.info('[DEBUG] Sentry disabled explicitly.')
 }

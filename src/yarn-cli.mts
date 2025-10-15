@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 
+import shadowYarnBin from './shadow/yarn/bin.mts'
+
 import type { ChildProcess } from 'node:child_process'
 
-import shadowYarnBin from './shadow/yarn/bin.mts'
 
 void (async () => {
   process.exitCode = 1

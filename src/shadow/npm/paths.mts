@@ -3,7 +3,7 @@ import path from 'node:path'
 import { normalizePath } from '@socketsecurity/registry/lib/path'
 
 import constants from '../../constants.mts'
-import { getNpmRequire } from '../../utils/npm-paths.mts'
+import { getNpmRequire } from '../../utils/npm/paths.mts'
 
 let _arboristPkgPath: string | undefined
 export function getArboristPackagePath() {

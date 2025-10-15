@@ -50,15 +50,15 @@ export interface MeowResult<T = Record<string, unknown>> {
 
 // Type aliases for compatibility.
 export type Flag = MeowFlag
-export type Options<T = MeowFlags> = MeowOptions
+export type Options = MeowOptions
 export type Result<T = Record<string, unknown>> = MeowResult<T>
 
 /**
  * Parse command-line arguments meow-style.
  */
-export default function meow<T = Record<string, unknown>>(
-  options: MeowOptions = {},
-): MeowResult<T> {
+export default function meow<
+  T extends Record<string, unknown> = Record<string, unknown>,
+>(options: MeowOptions = {}): MeowResult<T> {
   const {
     argv = process.argv.slice(2),
     autoHelp = false,
@@ -96,9 +96,9 @@ export default function meow<T = Record<string, unknown>>(
     }
 
     // Handle aliases.
-    const aliases = flag.aliases || (flag.alias ? [flag.alias] : [])
+    const aliases = flag.aliases || (flag.alias ? [flag.alias].flat() : [])
     for (const alias of aliases) {
-      parseArgsOptions[alias] = {
+      parseArgsOptions[alias as string] = {
         type,
         default: flag.default,
       }
@@ -141,7 +141,7 @@ export default function meow<T = Record<string, unknown>>(
 
   // Build help text.
   let fullHelp = ''
-  if (description && description !== false) {
+  if (description !== false && description) {
     fullHelp += `\n${description}\n`
   }
   if (helpText) {
@@ -165,7 +165,7 @@ export default function meow<T = Record<string, unknown>>(
     for (const arg of argv) {
       if (typeof arg === 'string' && arg.startsWith('-')) {
         const flagName = arg.replace(/^-+/, '').split('=')[0]
-        if (!(flagName in flags)) {
+        if (flagName && !(flagName in flags)) {
           unknownFlags.push(arg)
         }
       }
@@ -174,11 +174,13 @@ export default function meow<T = Record<string, unknown>>(
 
   const showHelp = (exitCode: number = 2) => {
     console.log(fullHelp)
+    // eslint-disable-next-line n/no-process-exit -- Required for CLI exit behavior.
     process.exit(exitCode)
   }
 
   const showVersion = () => {
-    console.log(pkg.version || '0.0.0')
+    console.log(pkg['version'] || '0.0.0')
+    // eslint-disable-next-line n/no-process-exit -- Required for CLI exit behavior.
     process.exit(0)
   }
 

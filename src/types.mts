@@ -4,7 +4,7 @@ export type OutputKind = 'json' | 'markdown' | 'text'
 
 // Base options type for fetch functions that use SDK.
 export type BaseFetchOptions = {
-  sdkOpts?: import('./utils/sdk.mts').SetupSdkOptions | undefined
+  sdkOpts?: import('./utils/socket/sdk.mjs').SetupSdkOptions | undefined
 }
 
 // CResult is akin to the "Result" or "Outcome" or "Either" pattern.

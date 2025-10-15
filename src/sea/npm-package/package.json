@@ -14,9 +14,11 @@
     "url": "https://socket.dev"
   },
   "bin": {
-    "socket": "bin/socket.js"
+    "socket": "bin/cli.js"
   },
   "optionalDependencies": {
+    "@socketbin/cli-alpine-arm64": "1.1.22",
+    "@socketbin/cli-alpine-x64": "1.1.22",
     "@socketbin/cli-darwin-arm64": "1.1.22",
     "@socketbin/cli-darwin-x64": "1.1.22",
     "@socketbin/cli-linux-arm64": "1.1.22",
