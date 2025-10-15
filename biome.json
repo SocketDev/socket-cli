@@ -58,6 +58,9 @@
   },
   "linter": {
     "rules": {
+      "complexity": {
+        "useLiteralKeys": "off"
+      },
       "style": {
         "noParameterAssign": "error",
         "useAsConstAssertion": "error",
