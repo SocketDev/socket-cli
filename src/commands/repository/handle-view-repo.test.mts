@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { handleViewRepo } from './handle-view-repo.mts'
-import { createSuccessResult } from '../../../test/helpers/mocks.mts'
+import { createSuccessResult } from '../../../test/helpers/index.mts'
 
-// Mock the dependencies.
+// Setup mocks at module level
 vi.mock('./fetch-view-repo.mts', () => ({
   fetchViewRepo: vi.fn(),
 }))
@@ -26,6 +26,7 @@ describe('handleViewRepo', () => {
       url: 'https://github.com/test-org/test-repo',
       lastUpdated: '2025-01-01T00:00:00Z',
     })
+
     mockFetch.mockResolvedValue(mockRepoData)
 
     await handleViewRepo('test-org', 'test-repo', 'json')
@@ -41,9 +42,11 @@ describe('handleViewRepo', () => {
     const mockOutput = vi.mocked(outputViewRepo)
 
     const mockError = {
-      ok: false,
-      error: 'Repository not found',
+      ok: false as const,
+      message: 'Repository not found',
+      code: 404,
     }
+
     mockFetch.mockResolvedValue(mockError)
 
     await handleViewRepo('test-org', 'nonexistent-repo', 'text')
@@ -58,12 +61,10 @@ describe('handleViewRepo', () => {
     const mockFetch = vi.mocked(fetchViewRepo)
     const mockOutput = vi.mocked(outputViewRepo)
 
-    mockFetch.mockResolvedValue(
-      createSuccessResult({
-        name: 'my-repo',
-        org: 'my-org',
-      }),
-    )
+    mockFetch.mockResolvedValue(createSuccessResult({
+      name: 'my-repo',
+      org: 'my-org',
+    }))
 
     await handleViewRepo('my-org', 'my-repo', 'markdown')
 
@@ -76,14 +77,12 @@ describe('handleViewRepo', () => {
     const mockFetch = vi.mocked(fetchViewRepo)
     const mockOutput = vi.mocked(outputViewRepo)
 
-    mockFetch.mockResolvedValue(
-      createSuccessResult({
-        name: 'production-repo',
-        org: 'production-org',
-        branches: ['main', 'develop', 'staging'],
-        defaultBranch: 'main',
-      }),
-    )
+    mockFetch.mockResolvedValue(createSuccessResult({
+      name: 'production-repo',
+      org: 'production-org',
+      branches: ['main', 'develop', 'staging'],
+      defaultBranch: 'main',
+    }))
 
     await handleViewRepo('production-org', 'production-repo', 'text')
 
