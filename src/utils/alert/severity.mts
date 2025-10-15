@@ -2,7 +2,7 @@
 
 import { joinAnd } from '@socketsecurity/registry/lib/arrays'
 
-import { createEnum, pick } from '../objects.mts'
+import { createEnum, pick } from '../data/objects.mts'
 
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 

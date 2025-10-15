@@ -1,5 +1,5 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest'
 import semver from 'semver'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { RangeStyles, getMajor, getMinVersion } from './semver.mts'
 

@@ -53,8 +53,8 @@ export function memoize<Args extends unknown[], Result>(
   const {
     keyGen = (...args) => JSON.stringify(args),
     maxSize = Number.POSITIVE_INFINITY,
-    ttl = Number.POSITIVE_INFINITY,
     name = fn.name || 'anonymous',
+    ttl = Number.POSITIVE_INFINITY,
   } = options
 
   const cache = new Map<string, CacheEntry<Result>>()
@@ -137,8 +137,8 @@ export function memoizeAsync<Args extends unknown[], Result>(
   const {
     keyGen = (...args) => JSON.stringify(args),
     maxSize = Number.POSITIVE_INFINITY,
-    ttl = Number.POSITIVE_INFINITY,
     name = fn.name || 'anonymous',
+    ttl = Number.POSITIVE_INFINITY,
   } = options
 
   const cache = new Map<string, CacheEntry<Promise<Result>>>()

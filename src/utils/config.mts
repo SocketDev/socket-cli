@@ -40,10 +40,10 @@ import constants, {
   CONFIG_KEY_ORG,
   SOCKET_YAML,
   SOCKET_YML,
-} from '../constants.mts'
-import { getErrorCause } from './errors.mts'
+} from '../constants.mjs'
+import { getErrorCause } from './error/errors.mjs'
 
-import type { CResult } from '../types.mts'
+import type { CResult } from '../types.mjs'
 import type { SocketYml } from '@socketsecurity/config'
 
 export interface LocalConfig {

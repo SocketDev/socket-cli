@@ -2,12 +2,12 @@ import path from 'node:path'
 
 import { beforeEach, describe, expect, it } from 'vitest'
 
+import { testPath } from '../../test/utils.mts'
 import {
   findSocketYmlSync,
   overrideCachedConfig,
   updateConfigValue,
-} from './config.mts'
-import { testPath } from '../../test/utils.mts'
+} from '../config.mts'
 
 const fixtureBaseDir = path.join(testPath, 'fixtures/utils/config')
 
