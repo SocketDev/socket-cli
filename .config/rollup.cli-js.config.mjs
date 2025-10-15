@@ -168,23 +168,29 @@ export default {
     // Don't create source maps for the unified build to keep it simple.
     sourcemap: false,
   },
-  // Externalize Node.js built-ins and problematic packages.
-  // iconv-lite and encoding cause CommonJS parsing issues with large data tables.
+  // Externalize Node.js built-ins only.
+  // Other problematic packages are handled by stub plugins.
   external(id) {
-    return (
-      isBuiltin(id) ||
-      id === 'iconv-lite' ||
-      id.startsWith('iconv-lite/') ||
-      id === 'encoding' ||
-      id.startsWith('encoding/')
-    )
+    return isBuiltin(id)
   },
   // Disable tree-shaking to ensure all code paths are included.
   treeshake: false,
   plugins: [
-    // FIRST: Replace iconv-lite and encoding with stubs to avoid bundling issues.
+    // FIRST: Redirect ajv to ajv-dist (pre-bundled version).
     {
-      name: 'stub-iconv-encoding',
+      name: 'alias-ajv-to-ajv-dist',
+      resolveId(source, _importer, options) {
+        if (source === 'ajv') {
+          // Redirect ajv imports to ajv-dist by resolving it through the resolution chain.
+          return this.resolve('ajv-dist', _importer, { ...options, skipSelf: true })
+        }
+        return null
+      },
+    },
+
+    // Replace iconv-lite and encoding with stubs to avoid bundling issues.
+    {
+      name: 'stub-problematic-packages',
       resolveId(source) {
         if (
           source === 'iconv-lite' ||
@@ -262,7 +268,7 @@ export default {
       },
     },
 
-    // Replace environment variables.
+    // Replace environment variables and import.meta.
     replacePlugin({
       preventAssignment: true,
       delimiters: ['(?<![\'"])\\b', '(?![\'"])'],
@@ -341,8 +347,14 @@ export default {
       // Control what's returned when requiring an ES module from CJS.
       // 'auto' will intelligently handle both default and named exports.
       requireReturnsDefault: 'auto',
-      // Don't throw on dynamic requires - let them pass through.
-      ignoreDynamicRequires: true,
+      // Don't throw on dynamic requires - let them pass through EXCEPT for ajv.
+      ignoreDynamicRequires: (id) => {
+        // Force ajv requires to be resolved, not ignored.
+        if (id.includes('node_modules/ajv')) {
+          return false
+        }
+        return true
+      },
       // Leave requires in try-catch blocks as-is (for optional deps).
       ignoreTryCatch: true,
       // Don't add "use strict" to transformed CommonJS modules (we have one at the top).
@@ -375,6 +387,9 @@ export default {
         '**/*.test.*',
         '**/*.spec.*',
         '**/fixtures/**',
+        '**/yoga-wasm-web/**',
+        '**/yoga-layout/**',
+        '**/yargs-parser/**',
       ],
     }),
 
@@ -429,6 +444,15 @@ export default {
           }
           return ''
         })
+        // Fix import.meta transformation - replace empty objects assigned from import.meta.
+        // Pattern: var SomeName = {}; where it should be import.meta.
+        // The fix: Since we're in CommonJS, import.meta.url should resolve to require.main.filename or __filename.
+        // Replace patterns like: me = ne.createRequire ? (0, ne.createRequire)(Ve.url) : void 0
+        // Where Ve = {} is the transformed import.meta.
+        cleaned = cleaned.replace(
+          /(\w+)\.createRequire\s*\?\s*\(\s*0\s*,\s*\1\.createRequire\s*\)\s*\(\s*(\w+)\.url\s*\)\s*:\s*void\s+0/g,
+          '$1.createRequire ? (0, $1.createRequire)(__filename) : void 0'
+        )
         return cleaned
       },
     },
