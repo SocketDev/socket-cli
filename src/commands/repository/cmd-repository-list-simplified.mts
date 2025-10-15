@@ -1,18 +1,21 @@
 /** @fileoverview Simplified repository list command demonstrating DRY principles */
 
-import { buildCommand } from '../../utils/command-builder.mts'
-import { repoApi } from '../../utils/api-wrapper.mts'
-import {
-  outputPaginatedList,
-  commonColumns,
-} from '../../utils/simple-output.mts'
-import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
-import { getOutputKind } from '../../utils/get-output-kind.mts'
-import { checkCommandInput } from '../../utils/check-input.mts'
-import { hasDefaultApiToken } from '../../utils/sdk.mts'
-import { logger } from '@socketsecurity/registry/lib/logger'
-import constants from '../../constants.mts'
 import colors from 'yoctocolors-cjs'
+
+import { logger } from '@socketsecurity/registry/lib/logger'
+
+import constants from '../../constants.mts'
+import { buildCommand } from '../../utils/command/builder.mts'
+import { getOutputKind } from '../../utils/output/mode.mjs'
+import { repoApi } from '../../utils/socket/api-wrapper.mjs'
+import { determineOrgSlug } from '../../utils/socket/org-slug.mjs'
+import { hasDefaultApiToken } from '../../utils/socket/sdk.mjs'
+import {
+  commonColumns,
+  outputPaginatedList,
+} from '../../utils/terminal/simple-output.mts'
+import { checkCommandInput } from '../../utils/validation/check-input.mts'
+
 
 export const cmdRepositoryListSimplified = buildCommand({
   name: 'list',

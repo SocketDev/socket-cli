@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { handleCi } from './handle-ci.mts'
+import { UNKNOWN_ERROR } from '../../constants.mts'
 
 // Mock the dependencies.
 vi.mock('@socketsecurity/registry/lib/logger', () => ({
@@ -21,7 +22,7 @@ vi.mock('../../utils/git.mts', () => ({
   getRepoName: vi.fn(),
   gitBranch: vi.fn(),
 }))
-vi.mock('../../utils/serialize-result-json.mts', () => ({
+vi.mock('../../utils/serialize/result-json.mts', () => ({
   serializeResultJson: vi.fn(),
 }))
 vi.mock('../scan/handle-create-new-scan.mts', () => ({
@@ -145,7 +146,7 @@ describe('handleCi', () => {
     const { getDefaultOrgSlug } = await import('./fetch-default-org-slug.mts')
     const { logger } = await import('@socketsecurity/registry/lib/logger')
     const { serializeResultJson } = await import(
-      '../../utils/serialize-result-json.mts'
+      '../../utils/serialize/result-json.mts'
     )
     const { handleCreateNewScan } = await import(
       '../scan/handle-create-new-scan.mts'
@@ -170,12 +171,12 @@ describe('handleCi', () => {
     const { getDefaultOrgSlug } = await import('./fetch-default-org-slug.mts')
     const { logger } = await import('@socketsecurity/registry/lib/logger')
     const { serializeResultJson } = await import(
-      '../../utils/serialize-result-json.mts'
+      '../../utils/serialize/result-json.mts'
     )
 
     const error = {
       ok: false as const,
-      error: new Error('Unknown error'),
+      error: new Error(UNKNOWN_ERROR),
     }
     vi.mocked(getDefaultOrgSlug).mockResolvedValue(error)
     vi.mocked(serializeResultJson).mockReturnValue('{"error":"Unknown error"}')

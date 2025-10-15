@@ -3,12 +3,12 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { attemptLogout } from './attempt-logout.mts'
 import constants from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
-import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
+import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 
 import type {
   CliCommandConfig,
   CliCommandContext,
-} from '../../utils/meow-with-subcommands.mts'
+} from '../../utils/cli/with-subcommands.mjs'
 
 const config: CliCommandConfig = {
   commandName: 'logout',

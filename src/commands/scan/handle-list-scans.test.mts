@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { handleListScans } from './handle-list-scans.mts'
+import { createErrorResult, createSuccessResult } from '../../../test/helpers/mocks.mts'
 
 // Mock the dependencies.
 vi.mock('./fetch-list-scans.mts', () => ({
@@ -18,25 +19,22 @@ describe('handleListScans', () => {
     const mockFetch = vi.mocked(fetchOrgFullScanList)
     const mockOutput = vi.mocked(outputListScans)
 
-    const mockData = {
-      ok: true,
-      data: [
-        {
-          id: 'scan-123',
-          createdAt: '2025-01-01T00:00:00Z',
-          status: 'completed',
-          repository: 'test-repo',
-          branch: 'main',
-        },
-        {
-          id: 'scan-456',
-          createdAt: '2025-01-02T00:00:00Z',
-          status: 'in_progress',
-          repository: 'another-repo',
-          branch: 'develop',
-        },
-      ],
-    }
+    const mockData = createSuccessResult([
+      {
+        id: 'scan-123',
+        createdAt: '2025-01-01T00:00:00Z',
+        status: 'completed',
+        repository: 'test-repo',
+        branch: 'main',
+      },
+      {
+        id: 'scan-456',
+        createdAt: '2025-01-02T00:00:00Z',
+        status: 'in_progress',
+        repository: 'another-repo',
+        branch: 'develop',
+      },
+    ])
     mockFetch.mockResolvedValue(mockData)
 
     const params = {
@@ -72,10 +70,7 @@ describe('handleListScans', () => {
     const mockFetch = vi.mocked(fetchOrgFullScanList)
     const mockOutput = vi.mocked(outputListScans)
 
-    const mockError = {
-      ok: false,
-      error: 'Unauthorized',
-    }
+    const mockError = createErrorResult('Unauthorized')
     mockFetch.mockResolvedValue(mockError)
 
     await handleListScans({
@@ -97,7 +92,7 @@ describe('handleListScans', () => {
     const { fetchOrgFullScanList } = await import('./fetch-list-scans.mts')
     const mockFetch = vi.mocked(fetchOrgFullScanList)
 
-    mockFetch.mockResolvedValue({ ok: true, data: [] })
+    mockFetch.mockResolvedValue(createSuccessResult([]))
 
     await handleListScans({
       branch: '',
@@ -125,7 +120,7 @@ describe('handleListScans', () => {
     const mockFetch = vi.mocked(fetchOrgFullScanList)
     const mockOutput = vi.mocked(outputListScans)
 
-    mockFetch.mockResolvedValue({ ok: true, data: [] })
+    mockFetch.mockResolvedValue(createSuccessResult([]))
 
     await handleListScans({
       branch: 'main',
@@ -146,7 +141,7 @@ describe('handleListScans', () => {
     const { fetchOrgFullScanList } = await import('./fetch-list-scans.mts')
     const mockFetch = vi.mocked(fetchOrgFullScanList)
 
-    mockFetch.mockResolvedValue({ ok: true, data: [] })
+    mockFetch.mockResolvedValue(createSuccessResult([]))
 
     await handleListScans({
       branch: 'feature/new-feature',

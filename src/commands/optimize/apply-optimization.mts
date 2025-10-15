@@ -6,7 +6,7 @@ import { updateDependencies } from './update-dependencies.mts'
 import constants from '../../constants.mts'
 
 import type { CResult } from '../../types.mts'
-import type { EnvDetails } from '../../utils/package-environment.mts'
+import type { EnvDetails } from '../../utils/ecosystem/environment.mjs'
 
 export type OptimizeConfig = {
   pin: boolean

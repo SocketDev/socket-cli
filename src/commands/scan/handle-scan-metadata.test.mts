@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { handleOrgScanMetadata } from './handle-scan-metadata.mts'
+import { createErrorResult, createSuccessResult } from '../../../test/helpers/mocks.mts'
 
 // Mock the dependencies.
 vi.mock('./fetch-scan-metadata.mts', () => ({
@@ -18,19 +19,16 @@ describe('handleOrgScanMetadata', () => {
     const mockFetch = vi.mocked(fetchScanMetadata)
     const mockOutput = vi.mocked(outputScanMetadata)
 
-    const mockMetadata = {
-      ok: true,
-      data: {
-        scanId: 'scan-123',
-        createdAt: '2025-01-01T00:00:00Z',
-        updatedAt: '2025-01-01T01:00:00Z',
-        status: 'completed',
-        packageManager: 'npm',
-        repository: 'test-repo',
-        branch: 'main',
-        commit: 'abc123def456',
-      },
-    }
+    const mockMetadata = createSuccessResult({
+      scanId: 'scan-123',
+      createdAt: '2025-01-01T00:00:00Z',
+      updatedAt: '2025-01-01T01:00:00Z',
+      status: 'completed',
+      packageManager: 'npm',
+      repository: 'test-repo',
+      branch: 'main',
+      commit: 'abc123def456',
+    })
     mockFetch.mockResolvedValue(mockMetadata)
 
     await handleOrgScanMetadata('test-org', 'scan-123', 'json')
@@ -45,10 +43,7 @@ describe('handleOrgScanMetadata', () => {
     const mockFetch = vi.mocked(fetchScanMetadata)
     const mockOutput = vi.mocked(outputScanMetadata)
 
-    const mockError = {
-      ok: false,
-      error: 'Scan not found',
-    }
+    const mockError = createErrorResult('Scan not found')
     mockFetch.mockResolvedValue(mockError)
 
     await handleOrgScanMetadata('test-org', 'invalid-scan', 'text')
@@ -63,13 +58,12 @@ describe('handleOrgScanMetadata', () => {
     const mockFetch = vi.mocked(fetchScanMetadata)
     const mockOutput = vi.mocked(outputScanMetadata)
 
-    mockFetch.mockResolvedValue({
-      ok: true,
-      data: {
+    mockFetch.mockResolvedValue(
+      createSuccessResult({
         scanId: 'scan-456',
         status: 'in_progress',
-      },
-    })
+      }),
+    )
 
     await handleOrgScanMetadata('my-org', 'scan-456', 'markdown')
 
@@ -94,7 +88,7 @@ describe('handleOrgScanMetadata', () => {
     ]
 
     for (const scanId of scanIds) {
-      mockFetch.mockResolvedValue({ ok: true, data: {} })
+      mockFetch.mockResolvedValue(createSuccessResult({}))
       // eslint-disable-next-line no-await-in-loop
       await handleOrgScanMetadata('test-org', scanId, 'json')
       expect(mockFetch).toHaveBeenCalledWith('test-org', scanId)
@@ -107,17 +101,16 @@ describe('handleOrgScanMetadata', () => {
     const mockFetch = vi.mocked(fetchScanMetadata)
     const mockOutput = vi.mocked(outputScanMetadata)
 
-    mockFetch.mockResolvedValue({
-      ok: true,
-      data: {
+    mockFetch.mockResolvedValue(
+      createSuccessResult({
         scanId: 'scan-xyz',
         createdAt: '2025-01-01T10:00:00Z',
         status: 'completed',
         packagesScanned: 150,
         vulnerabilitiesFound: 3,
         duration: '45s',
-      },
-    })
+      }),
+    )
 
     await handleOrgScanMetadata('production-org', 'scan-xyz', 'text')
 

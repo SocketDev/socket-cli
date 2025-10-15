@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { handleCreateNewScan } from './handle-create-new-scan.mts'
+import { createErrorResult, createSuccessResult } from '../../../test/helpers/mocks.mts'
 
 // Mock all the dependencies.
 vi.mock('@socketsecurity/registry/lib/logger', () => ({
@@ -43,16 +44,16 @@ vi.mock('../../constants.mts', () => ({
     FOLD_SETTING_VERSION: 2,
   },
 }))
-vi.mock('../../utils/check-input.mts', () => ({
+vi.mock('../../utils/validation/check-input.mts', () => ({
   checkCommandInput: vi.fn(),
 }))
-vi.mock('../../utils/path-resolve.mts', () => ({
+vi.mock('../../utils/path/resolve.mts', () => ({
   getPackageFilesForScan: vi.fn(),
 }))
-vi.mock('../../utils/socket-json.mts', () => ({
+vi.mock('../../utils/socket/json.mts', () => ({
   readOrDefaultSocketJson: vi.fn(),
 }))
-vi.mock('../../utils/terminal-link.mts', () => ({
+vi.mock('../../utils/terminal/link.mts', () => ({
   socketDocsLink: vi.fn(() => 'https://docs.socket.dev'),
 }))
 vi.mock('../manifest/detect-manifest-actions.mts', () => ({
@@ -96,27 +97,27 @@ describe('handleCreateNewScan', () => {
       './fetch-supported-scan-file-names.mts'
     )
     const { getPackageFilesForScan } = await import(
-      '../../utils/path-resolve.mts'
+      '../../utils/path/resolve.mts'
     )
-    const { checkCommandInput } = await import('../../utils/check-input.mts')
+    const { checkCommandInput } = await import(
+      '../../utils/validation/check-input.mts'
+    )
     const { fetchCreateOrgFullScan } = await import(
       './fetch-create-org-full-scan.mts'
     )
     const { outputCreateNewScan } = await import('./output-create-new-scan.mts')
 
-    vi.mocked(fetchSupportedScanFileNames).mockResolvedValue({
-      ok: true,
-      data: new Set(['package.json', 'yarn.lock']),
-    })
+    vi.mocked(fetchSupportedScanFileNames).mockResolvedValue(
+      createSuccessResult(new Set(['package.json', 'yarn.lock'])),
+    )
     vi.mocked(getPackageFilesForScan).mockResolvedValue([
       '/test/project/package.json',
       '/test/project/yarn.lock',
     ])
     vi.mocked(checkCommandInput).mockReturnValue(true)
-    vi.mocked(fetchCreateOrgFullScan).mockResolvedValue({
-      ok: true,
-      data: { id: 'scan-123' },
-    })
+    vi.mocked(fetchCreateOrgFullScan).mockResolvedValue(
+      createSuccessResult({ id: 'scan-123' }),
+    )
 
     await handleCreateNewScan(mockConfig)
 
@@ -133,14 +134,14 @@ describe('handleCreateNewScan', () => {
       expect.any(Object),
     )
     expect(outputCreateNewScan).toHaveBeenCalledWith(
-      { ok: true, data: { id: 'scan-123' } },
+      createSuccessResult({ id: 'scan-123' }),
       { interactive: false, outputKind: 'json' },
     )
   })
 
   it('handles auto-manifest mode', async () => {
     const { readOrDefaultSocketJson } = await import(
-      '../../utils/socket-json.mts'
+      '../../utils/socket/json.mts'
     )
     const { detectManifestActions } = await import(
       '../manifest/detect-manifest-actions.mts'
@@ -152,16 +153,17 @@ describe('handleCreateNewScan', () => {
       './fetch-supported-scan-file-names.mts'
     )
     const { getPackageFilesForScan } = await import(
-      '../../utils/path-resolve.mts'
+      '../../utils/path/resolve.mts'
     )
-    const { checkCommandInput } = await import('../../utils/check-input.mts')
+    const { checkCommandInput } = await import(
+      '../../utils/validation/check-input.mts'
+    )
 
     vi.mocked(readOrDefaultSocketJson).mockReturnValue({})
     vi.mocked(detectManifestActions).mockResolvedValue({ detected: true })
-    vi.mocked(fetchSupportedScanFileNames).mockResolvedValue({
-      ok: true,
-      data: new Set(['package.json']),
-    })
+    vi.mocked(fetchSupportedScanFileNames).mockResolvedValue(
+      createSuccessResult(new Set(['package.json'])),
+    )
     vi.mocked(getPackageFilesForScan).mockResolvedValue([
       '/test/project/package.json',
     ])
@@ -184,14 +186,15 @@ describe('handleCreateNewScan', () => {
       './fetch-supported-scan-file-names.mts'
     )
     const { getPackageFilesForScan } = await import(
-      '../../utils/path-resolve.mts'
+      '../../utils/path/resolve.mts'
     )
-    const { checkCommandInput } = await import('../../utils/check-input.mts')
+    const { checkCommandInput } = await import(
+      '../../utils/validation/check-input.mts'
+    )
 
-    vi.mocked(fetchSupportedScanFileNames).mockResolvedValue({
-      ok: true,
-      data: new Set(['package.json']),
-    })
+    vi.mocked(fetchSupportedScanFileNames).mockResolvedValue(
+      createSuccessResult(new Set(['package.json'])),
+    )
     vi.mocked(getPackageFilesForScan).mockResolvedValue([])
     vi.mocked(checkCommandInput).mockReturnValue(false)
 
@@ -212,17 +215,18 @@ describe('handleCreateNewScan', () => {
       './fetch-supported-scan-file-names.mts'
     )
     const { getPackageFilesForScan } = await import(
-      '../../utils/path-resolve.mts'
+      '../../utils/path/resolve.mts'
     )
-    const { checkCommandInput } = await import('../../utils/check-input.mts')
+    const { checkCommandInput } = await import(
+      '../../utils/validation/check-input.mts'
+    )
     const { fetchCreateOrgFullScan } = await import(
       './fetch-create-org-full-scan.mts'
     )
 
-    vi.mocked(fetchSupportedScanFileNames).mockResolvedValue({
-      ok: true,
-      data: new Set(['package.json']),
-    })
+    vi.mocked(fetchSupportedScanFileNames).mockResolvedValue(
+      createSuccessResult(new Set(['package.json'])),
+    )
     vi.mocked(getPackageFilesForScan).mockResolvedValue([
       '/test/project/package.json',
     ])
@@ -243,9 +247,11 @@ describe('handleCreateNewScan', () => {
       './fetch-supported-scan-file-names.mts'
     )
     const { getPackageFilesForScan } = await import(
-      '../../utils/path-resolve.mts'
+      '../../utils/path/resolve.mts'
     )
-    const { checkCommandInput } = await import('../../utils/check-input.mts')
+    const { checkCommandInput } = await import(
+      '../../utils/validation/check-input.mts'
+    )
     const { performReachabilityAnalysis } = await import(
       './perform-reachability-analysis.mts'
     )
@@ -254,25 +260,22 @@ describe('handleCreateNewScan', () => {
     )
     const { finalizeTier1Scan } = await import('./finalize-tier1-scan.mts')
 
-    vi.mocked(fetchSupportedScanFileNames).mockResolvedValue({
-      ok: true,
-      data: new Set(['package.json']),
-    })
+    vi.mocked(fetchSupportedScanFileNames).mockResolvedValue(
+      createSuccessResult(new Set(['package.json'])),
+    )
     vi.mocked(getPackageFilesForScan).mockResolvedValue([
       '/test/project/package.json',
     ])
     vi.mocked(checkCommandInput).mockReturnValue(true)
-    vi.mocked(performReachabilityAnalysis).mockResolvedValue({
-      ok: true,
-      data: {
+    vi.mocked(performReachabilityAnalysis).mockResolvedValue(
+      createSuccessResult({
         reachabilityReport: '/test/project/.socket.facts.json',
         tier1ReachabilityScanId: 'tier1-scan-456',
-      },
-    })
-    vi.mocked(fetchCreateOrgFullScan).mockResolvedValue({
-      ok: true,
-      data: { id: 'scan-789' },
-    })
+      }),
+    )
+    vi.mocked(fetchCreateOrgFullScan).mockResolvedValue(
+      createSuccessResult({ id: 'scan-789' }),
+    )
 
     await handleCreateNewScan({
       ...mockConfig,
@@ -294,26 +297,26 @@ describe('handleCreateNewScan', () => {
       './fetch-supported-scan-file-names.mts'
     )
     const { getPackageFilesForScan } = await import(
-      '../../utils/path-resolve.mts'
+      '../../utils/path/resolve.mts'
     )
-    const { checkCommandInput } = await import('../../utils/check-input.mts')
+    const { checkCommandInput } = await import(
+      '../../utils/validation/check-input.mts'
+    )
     const { fetchCreateOrgFullScan } = await import(
       './fetch-create-org-full-scan.mts'
     )
     const { handleScanReport } = await import('./handle-scan-report.mts')
 
-    vi.mocked(fetchSupportedScanFileNames).mockResolvedValue({
-      ok: true,
-      data: new Set(['package.json']),
-    })
+    vi.mocked(fetchSupportedScanFileNames).mockResolvedValue(
+      createSuccessResult(new Set(['package.json'])),
+    )
     vi.mocked(getPackageFilesForScan).mockResolvedValue([
       '/test/project/package.json',
     ])
     vi.mocked(checkCommandInput).mockReturnValue(true)
-    vi.mocked(fetchCreateOrgFullScan).mockResolvedValue({
-      ok: true,
-      data: { id: 'scan-report-123' },
-    })
+    vi.mocked(fetchCreateOrgFullScan).mockResolvedValue(
+      createSuccessResult({ id: 'scan-report-123' }),
+    )
 
     await handleCreateNewScan({ ...mockConfig, report: true })
 
@@ -336,15 +339,14 @@ describe('handleCreateNewScan', () => {
     const { outputCreateNewScan } = await import('./output-create-new-scan.mts')
 
     const error = new Error('API error')
-    vi.mocked(fetchSupportedScanFileNames).mockResolvedValue({
-      ok: false,
-      error,
-    })
+    vi.mocked(fetchSupportedScanFileNames).mockResolvedValue(
+      createErrorResult(error.message),
+    )
 
     await handleCreateNewScan(mockConfig)
 
     expect(outputCreateNewScan).toHaveBeenCalledWith(
-      { ok: false, error },
+      createErrorResult(error.message),
       { interactive: false, outputKind: 'json' },
     )
   })

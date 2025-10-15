@@ -5,7 +5,7 @@ import constants from '../../constants.mts'
 import {
   COMPLETION_CMD_PREFIX,
   getBashrcDetails,
-} from '../../utils/completion.mts'
+} from '../../utils/cli/completion.mjs'
 
 import type { CResult } from '../../types.mts'
 

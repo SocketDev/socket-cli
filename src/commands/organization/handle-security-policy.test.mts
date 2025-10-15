@@ -1,6 +1,10 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { handleSecurityPolicy } from './handle-security-policy.mts'
+import {
+  createErrorResult,
+  createSuccessResult,
+} from '../../../test/helpers/mocks.mts'
 
 // Mock the dependencies.
 vi.mock('./fetch-security-policy.mts', () => ({
@@ -20,26 +24,23 @@ describe('handleSecurityPolicy', () => {
     const mockFetch = vi.mocked(fetchSecurityPolicy)
     const mockOutput = vi.mocked(outputSecurityPolicy)
 
-    const mockPolicy = {
-      ok: true,
-      data: {
-        rules: [
-          {
-            id: 'rule-1',
-            name: 'No critical vulnerabilities',
-            severity: 'critical',
-            action: 'block',
-          },
-          {
-            id: 'rule-2',
-            name: 'License check',
-            type: 'license',
-            allowed: ['MIT', 'Apache-2.0'],
-          },
-        ],
-        enforcementLevel: 'strict',
-      },
-    }
+    const mockPolicy = createSuccessResult({
+      rules: [
+        {
+          id: 'rule-1',
+          name: 'No critical vulnerabilities',
+          severity: 'critical',
+          action: 'block',
+        },
+        {
+          id: 'rule-2',
+          name: 'License check',
+          type: 'license',
+          allowed: ['MIT', 'Apache-2.0'],
+        },
+      ],
+      enforcementLevel: 'strict',
+    })
     mockFetch.mockResolvedValue(mockPolicy)
 
     await handleSecurityPolicy('test-org', 'json')
@@ -56,10 +57,7 @@ describe('handleSecurityPolicy', () => {
     const mockFetch = vi.mocked(fetchSecurityPolicy)
     const mockOutput = vi.mocked(outputSecurityPolicy)
 
-    const mockError = {
-      ok: false,
-      error: 'Organization not found',
-    }
+    const mockError = createErrorResult('Organization not found')
     mockFetch.mockResolvedValue(mockError)
 
     await handleSecurityPolicy('invalid-org', 'text')
@@ -76,7 +74,7 @@ describe('handleSecurityPolicy', () => {
     const mockFetch = vi.mocked(fetchSecurityPolicy)
     const mockOutput = vi.mocked(outputSecurityPolicy)
 
-    mockFetch.mockResolvedValue({ ok: true, data: {} })
+    mockFetch.mockResolvedValue(createSuccessResult({}))
 
     await handleSecurityPolicy('my-org', 'markdown')
 
@@ -95,7 +93,7 @@ describe('handleSecurityPolicy', () => {
     ]
 
     for (const orgSlug of orgSlugs) {
-      mockFetch.mockResolvedValue({ ok: true, data: {} })
+      mockFetch.mockResolvedValue(createSuccessResult({}))
       // eslint-disable-next-line no-await-in-loop
       await handleSecurityPolicy(orgSlug, 'json')
       expect(mockFetch).toHaveBeenCalledWith(orgSlug)
@@ -110,17 +108,16 @@ describe('handleSecurityPolicy', () => {
     const mockFetch = vi.mocked(fetchSecurityPolicy)
     const mockOutput = vi.mocked(outputSecurityPolicy)
 
-    mockFetch.mockResolvedValue({
-      ok: true,
-      data: {
+    mockFetch.mockResolvedValue(
+      createSuccessResult({
         rules: [
           { id: 'rule-1', name: 'CVE check', enabled: true },
           { id: 'rule-2', name: 'Malware scan', enabled: true },
           { id: 'rule-3', name: 'License compliance', enabled: false },
         ],
         lastUpdated: '2025-01-01T00:00:00Z',
-      },
-    })
+      }),
+    )
 
     await handleSecurityPolicy('production-org', 'text')
 

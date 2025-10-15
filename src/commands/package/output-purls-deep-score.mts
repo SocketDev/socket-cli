@@ -1,8 +1,8 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
-import { mdTable } from '../../utils/markdown.mts'
-import { serializeResultJson } from '../../utils/serialize-result-json.mts'
+import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
+import { mdTable } from '../../utils/output/markdown.mts'
+import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
 import type { PurlDataResponse } from './fetch-purl-deep-score.mts'
 import type { CResult, OutputKind } from '../../types.mts'

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { handleAuditLog } from './handle-audit-log.mts'
+import { createErrorResult, createSuccessResult } from '../../../test/helpers/mocks.mts'
 
 // Mock the dependencies.
 vi.mock('./fetch-audit-log.mts', () => ({
@@ -19,13 +20,10 @@ describe('handleAuditLog', () => {
     const { fetchAuditLog } = await import('./fetch-audit-log.mts')
     const { outputAuditLog } = await import('./output-audit-log.mts')
 
-    const mockLogs = {
-      ok: true,
-      data: [
-        { id: 1, type: 'security', message: 'Security event' },
-        { id: 2, type: 'access', message: 'Access event' },
-      ],
-    }
+    const mockLogs = createSuccessResult([
+      { id: 1, type: 'security', message: 'Security event' },
+      { id: 2, type: 'access', message: 'Access event' },
+    ])
     vi.mocked(fetchAuditLog).mockResolvedValue(mockLogs)
 
     await handleAuditLog({
@@ -56,10 +54,7 @@ describe('handleAuditLog', () => {
     const { fetchAuditLog } = await import('./fetch-audit-log.mts')
     const { outputAuditLog } = await import('./output-audit-log.mts')
 
-    const mockLogs = {
-      ok: true,
-      data: [],
-    }
+    const mockLogs = createSuccessResult([])
     vi.mocked(fetchAuditLog).mockResolvedValue(mockLogs)
 
     await handleAuditLog({
@@ -90,10 +85,9 @@ describe('handleAuditLog', () => {
     const { fetchAuditLog } = await import('./fetch-audit-log.mts')
     const { outputAuditLog } = await import('./output-audit-log.mts')
 
-    const mockLogs = {
-      ok: true,
-      data: [{ id: 1, type: 'config', message: 'Config change' }],
-    }
+    const mockLogs = createSuccessResult([
+      { id: 1, type: 'config', message: 'Config change' },
+    ])
     vi.mocked(fetchAuditLog).mockResolvedValue(mockLogs)
 
     await handleAuditLog({
@@ -124,10 +118,7 @@ describe('handleAuditLog', () => {
     const { fetchAuditLog } = await import('./fetch-audit-log.mts')
     const { outputAuditLog } = await import('./output-audit-log.mts')
 
-    const mockLogs = {
-      ok: true,
-      data: [],
-    }
+    const mockLogs = createSuccessResult([])
     vi.mocked(fetchAuditLog).mockResolvedValue(mockLogs)
 
     await handleAuditLog({
@@ -145,10 +136,7 @@ describe('handleAuditLog', () => {
     const { fetchAuditLog } = await import('./fetch-audit-log.mts')
     const { outputAuditLog } = await import('./output-audit-log.mts')
 
-    const mockError = {
-      ok: false,
-      error: new Error('API error'),
-    }
+    const mockError = createErrorResult('API error')
     vi.mocked(fetchAuditLog).mockResolvedValue(mockError)
 
     await handleAuditLog({
@@ -169,7 +157,7 @@ describe('handleAuditLog', () => {
     const logTypes = ['all', 'security', 'access', 'config', 'data']
 
     for (const logType of logTypes) {
-      vi.mocked(fetchAuditLog).mockResolvedValue({ ok: true, data: [] })
+      vi.mocked(fetchAuditLog).mockResolvedValue(createSuccessResult([]))
 
       // eslint-disable-next-line no-await-in-loop
       await handleAuditLog({

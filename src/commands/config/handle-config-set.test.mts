@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { handleConfigSet } from './handle-config-set.mts'
+import {
+  createErrorResult,
+  createSuccessResult,
+} from '../../../test/helpers/mocks.mts'
 
 // Mock the dependencies.
 vi.mock('./output-config-set.mts', () => ({
@@ -19,10 +23,8 @@ describe('handleConfigSet', () => {
     const { updateConfigValue } = await import('../../utils/config.mts')
     const { outputConfigSet } = await import('./output-config-set.mts')
 
-    vi.mocked(updateConfigValue).mockReturnValue({
-      ok: true,
-      value: 'new-value',
-    })
+    const mockResult = createSuccessResult('new-value')
+    vi.mocked(updateConfigValue).mockReturnValue(mockResult)
 
     await handleConfigSet({
       key: 'apiToken',
@@ -34,21 +36,15 @@ describe('handleConfigSet', () => {
       'apiToken',
       'new-token-value',
     )
-    expect(outputConfigSet).toHaveBeenCalledWith(
-      { ok: true, value: 'new-value' },
-      'json',
-    )
+    expect(outputConfigSet).toHaveBeenCalledWith(mockResult, 'json')
   })
 
   it('handles config update failure', async () => {
     const { updateConfigValue } = await import('../../utils/config.mts')
     const { outputConfigSet } = await import('./output-config-set.mts')
 
-    const error = new Error('Config update failed')
-    vi.mocked(updateConfigValue).mockReturnValue({
-      ok: false,
-      error,
-    })
+    const mockResult = createErrorResult('Config update failed')
+    vi.mocked(updateConfigValue).mockReturnValue(mockResult)
 
     await handleConfigSet({
       key: 'org',
@@ -57,17 +53,15 @@ describe('handleConfigSet', () => {
     })
 
     expect(updateConfigValue).toHaveBeenCalledWith('org', 'test-org')
-    expect(outputConfigSet).toHaveBeenCalledWith({ ok: false, error }, 'text')
+    expect(outputConfigSet).toHaveBeenCalledWith(mockResult, 'text')
   })
 
   it('handles markdown output', async () => {
     const { updateConfigValue } = await import('../../utils/config.mts')
     const { outputConfigSet } = await import('./output-config-set.mts')
 
-    vi.mocked(updateConfigValue).mockReturnValue({
-      ok: true,
-      value: 'markdown-value',
-    })
+    const mockResult = createSuccessResult('markdown-value')
+    vi.mocked(updateConfigValue).mockReturnValue(mockResult)
 
     await handleConfigSet({
       key: 'repoName',
@@ -76,10 +70,7 @@ describe('handleConfigSet', () => {
     })
 
     expect(updateConfigValue).toHaveBeenCalledWith('repoName', 'my-repo')
-    expect(outputConfigSet).toHaveBeenCalledWith(
-      { ok: true, value: 'markdown-value' },
-      'markdown',
-    )
+    expect(outputConfigSet).toHaveBeenCalledWith(mockResult, 'markdown')
   })
 
   it('logs debug information', async () => {
@@ -88,10 +79,9 @@ describe('handleConfigSet', () => {
     )
     const { updateConfigValue } = await import('../../utils/config.mts')
 
-    vi.mocked(updateConfigValue).mockReturnValue({
-      ok: true,
-      value: 'debug-value',
-    })
+    vi.mocked(updateConfigValue).mockReturnValue(
+      createSuccessResult('debug-value'),
+    )
 
     await handleConfigSet({
       key: 'apiBaseUrl',
@@ -115,10 +105,7 @@ describe('handleConfigSet', () => {
     const { debugFn } = await import('@socketsecurity/registry/lib/debug')
     const { updateConfigValue } = await import('../../utils/config.mts')
 
-    vi.mocked(updateConfigValue).mockReturnValue({
-      ok: false,
-      error: new Error('Failed'),
-    })
+    vi.mocked(updateConfigValue).mockReturnValue(createErrorResult('Failed'))
 
     await handleConfigSet({
       key: 'apiToken',
@@ -136,10 +123,9 @@ describe('handleConfigSet', () => {
     const keys = ['apiToken', 'org', 'repoName', 'apiBaseUrl', 'apiProxy']
 
     for (const key of keys) {
-      vi.mocked(updateConfigValue).mockReturnValue({
-        ok: true,
-        value: `value-for-${key}`,
-      })
+      vi.mocked(updateConfigValue).mockReturnValue(
+        createSuccessResult(`value-for-${key}`),
+      )
 
       // eslint-disable-next-line no-await-in-loop
       await handleConfigSet({

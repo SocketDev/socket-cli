@@ -3,20 +3,20 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { handleConfigGet } from './handle-config-get.mts'
 import constants, { FLAG_JSON, FLAG_MARKDOWN } from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
-import { checkCommandInput } from '../../utils/check-input.mts'
+import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import {
   getSupportedConfigEntries,
   isSupportedConfigKey,
 } from '../../utils/config.mts'
-import { getOutputKind } from '../../utils/get-output-kind.mts'
-import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
-import { getFlagListOutput } from '../../utils/output-formatting.mts'
+import { getFlagListOutput } from '../../utils/output/formatting.mts'
+import { getOutputKind } from '../../utils/output/mode.mjs'
+import { checkCommandInput } from '../../utils/validation/check-input.mts'
 
-import type { LocalConfig } from '../../utils/config.mts'
 import type {
   CliCommandConfig,
   CliCommandContext,
-} from '../../utils/meow-with-subcommands.mts'
+} from '../../utils/cli/with-subcommands.mjs'
+import type { LocalConfig } from '../../utils/config.mts'
 
 const config: CliCommandConfig = {
   commandName: 'get',

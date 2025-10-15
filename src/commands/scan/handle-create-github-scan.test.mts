@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { handleCreateGithubScan } from './handle-create-github-scan.mts'
+import { createErrorResult, createSuccessResult } from '../../../test/helpers/mocks.mts'
 
 // Mock the dependencies.
 vi.mock('./create-scan-from-github.mts', () => ({
@@ -24,15 +25,12 @@ describe('handleCreateGithubScan', () => {
     const mockCreate = vi.mocked(createScanFromGithub)
     const mockOutput = vi.mocked(outputScanGithub)
 
-    const mockResult = {
-      ok: true,
-      data: {
-        scanId: 'scan-123',
-        repositories: ['repo1', 'repo2'],
-        status: 'created',
-        createdAt: '2025-01-01T00:00:00Z',
-      },
-    }
+    const mockResult = createSuccessResult({
+      scanId: 'scan-123',
+      repositories: ['repo1', 'repo2'],
+      status: 'created',
+      createdAt: '2025-01-01T00:00:00Z',
+    })
     mockCreate.mockResolvedValue(mockResult)
 
     await handleCreateGithubScan({
@@ -67,10 +65,7 @@ describe('handleCreateGithubScan', () => {
     const mockCreate = vi.mocked(createScanFromGithub)
     const mockOutput = vi.mocked(outputScanGithub)
 
-    const mockError = {
-      ok: false,
-      error: 'GitHub authentication failed',
-    }
+    const mockError = createErrorResult('GitHub authentication failed')
     mockCreate.mockResolvedValue(mockError)
 
     await handleCreateGithubScan({
@@ -93,7 +88,7 @@ describe('handleCreateGithubScan', () => {
     )
     const mockCreate = vi.mocked(createScanFromGithub)
 
-    mockCreate.mockResolvedValue({ ok: true, data: {} })
+    mockCreate.mockResolvedValue(createSuccessResult({}))
 
     await handleCreateGithubScan({
       all: true,
@@ -117,7 +112,7 @@ describe('handleCreateGithubScan', () => {
     )
     const mockCreate = vi.mocked(createScanFromGithub)
 
-    mockCreate.mockResolvedValue({ ok: true, data: {} })
+    mockCreate.mockResolvedValue(createSuccessResult({}))
 
     await handleCreateGithubScan({
       all: false,
@@ -143,7 +138,7 @@ describe('handleCreateGithubScan', () => {
     const mockCreate = vi.mocked(createScanFromGithub)
     const mockOutput = vi.mocked(outputScanGithub)
 
-    mockCreate.mockResolvedValue({ ok: true, data: {} })
+    mockCreate.mockResolvedValue(createSuccessResult({}))
 
     await handleCreateGithubScan({
       all: false,
@@ -165,7 +160,7 @@ describe('handleCreateGithubScan', () => {
     )
     const mockCreate = vi.mocked(createScanFromGithub)
 
-    mockCreate.mockResolvedValue({ ok: true, data: {} })
+    mockCreate.mockResolvedValue(createSuccessResult({}))
 
     // Test with various falsy values.
     await handleCreateGithubScan({

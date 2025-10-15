@@ -1,6 +1,6 @@
 import { RequestError } from '@octokit/request-error'
 
-import { debugDir, debug } from '@socketsecurity/registry/lib/debug'
+import { debug, debugDir } from '@socketsecurity/registry/lib/debug'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
 import {
@@ -15,8 +15,8 @@ import {
   GQL_PR_STATE_OPEN,
   UNKNOWN_VALUE,
 } from '../../constants.mts'
-import { formatErrorWithDetail } from '../../utils/errors.mts'
-import { gitDeleteRemoteBranch } from '../../utils/git.mts'
+import { formatErrorWithDetail } from '../../utils/error/errors.mjs'
+import { gitDeleteRemoteBranch } from '../../utils/git/git.mjs'
 import {
   type GhsaDetails,
   type Pr,
@@ -24,7 +24,7 @@ import {
   getOctokit,
   getOctokitGraphql,
   writeCache,
-} from '../../utils/github.mts'
+} from '../../utils/git/github.mts'
 
 import type { OctokitResponse } from '@octokit/types'
 import type { JsonContent } from '@socketsecurity/registry/lib/fs'

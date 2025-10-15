@@ -1,5 +1,5 @@
 import constants, { UNKNOWN_VALUE } from '../../constants.mts'
-import { getSocketDevPackageOverviewUrlFromPurl } from '../../utils/socket-url.mts'
+import { getSocketDevPackageOverviewUrlFromPurl } from '../../utils/socket/url.mts'
 
 import type { FOLD_SETTING, REPORT_LEVEL } from './types.mts'
 import type { CResult } from '../../types.mts'

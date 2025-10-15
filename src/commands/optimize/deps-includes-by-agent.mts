@@ -1,6 +1,6 @@
 import constants from '../../constants.mts'
 
-import type { EnvDetails } from '../../utils/package-environment.mts'
+import type { EnvDetails } from '../../utils/ecosystem/environment.mjs'
 
 const { BUN, NPM, PNPM, VLT, YARN_BERRY, YARN_CLASSIC } = constants
 

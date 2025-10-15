@@ -2,7 +2,7 @@ import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import constants, { FLAG_PROD } from '../../constants.mts'
 
-import type { EnvDetails } from '../../utils/package-environment.mts'
+import type { EnvDetails } from '../../utils/ecosystem/environment.mjs'
 
 const { BUN, NPM, PNPM, VLT, YARN_BERRY, YARN_CLASSIC } = constants
 

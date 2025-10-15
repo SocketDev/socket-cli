@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { handleUpdateRepo } from './handle-update-repo.mts'
+import { createSuccessResult } from '../../../test/helpers/mocks.mts'
 
 // Mock the dependencies.
 vi.mock('./fetch-update-repo.mts', () => ({
@@ -18,18 +19,15 @@ describe('handleUpdateRepo', () => {
     const mockFetch = vi.mocked(fetchUpdateRepo)
     const mockOutput = vi.mocked(outputUpdateRepo)
 
-    const mockResult = {
-      ok: true,
-      data: {
-        id: 'repo-123',
-        name: 'test-repo',
-        description: 'Updated description',
-        homepage: 'https://example.com',
-        defaultBranch: 'main',
-        visibility: 'public',
-        updatedAt: '2025-01-01T00:00:00Z',
-      },
-    }
+    const mockResult = createSuccessResult({
+      id: 'repo-123',
+      name: 'test-repo',
+      description: 'Updated description',
+      homepage: 'https://example.com',
+      defaultBranch: 'main',
+      visibility: 'public',
+      updatedAt: '2025-01-01T00:00:00Z',
+    })
     mockFetch.mockResolvedValue(mockResult)
 
     const params = {
@@ -80,7 +78,7 @@ describe('handleUpdateRepo', () => {
     const mockFetch = vi.mocked(fetchUpdateRepo)
     const mockOutput = vi.mocked(outputUpdateRepo)
 
-    mockFetch.mockResolvedValue({ ok: true, data: {} })
+    mockFetch.mockResolvedValue(createSuccessResult({}))
 
     await handleUpdateRepo(
       {
@@ -105,7 +103,7 @@ describe('handleUpdateRepo', () => {
     const { fetchUpdateRepo } = await import('./fetch-update-repo.mts')
     const mockFetch = vi.mocked(fetchUpdateRepo)
 
-    mockFetch.mockResolvedValue({ ok: true, data: {} })
+    mockFetch.mockResolvedValue(createSuccessResult({}))
 
     const visibilities = ['public', 'private', 'internal']
 
@@ -135,10 +133,9 @@ describe('handleUpdateRepo', () => {
     const mockFetch = vi.mocked(fetchUpdateRepo)
     const mockOutput = vi.mocked(outputUpdateRepo)
 
-    mockFetch.mockResolvedValue({
-      ok: true,
-      data: { defaultBranch: 'develop' },
-    })
+    mockFetch.mockResolvedValue(
+      createSuccessResult({ defaultBranch: 'develop' }),
+    )
 
     await handleUpdateRepo(
       {

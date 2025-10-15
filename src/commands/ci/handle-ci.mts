@@ -1,4 +1,4 @@
-import { debugDir, debug } from '@socketsecurity/registry/lib/debug'
+import { debug, debugDir } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { getDefaultOrgSlug } from './fetch-default-org-slug.mts'
@@ -7,8 +7,8 @@ import {
   detectDefaultBranch,
   getRepoName,
   gitBranch,
-} from '../../utils/git.mts'
-import { serializeResultJson } from '../../utils/serialize-result-json.mts'
+} from '../../utils/git/git.mjs'
+import { serializeResultJson } from '../../utils/output/result-json.mjs'
 import { handleCreateNewScan } from '../scan/handle-create-new-scan.mts'
 
 export async function handleCi(autoManifest: boolean): Promise<void> {

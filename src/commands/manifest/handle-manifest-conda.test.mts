@@ -1,6 +1,10 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { handleManifestConda } from './handle-manifest-conda.mts'
+import {
+  createErrorResult,
+  createSuccessResult,
+} from '../../../test/helpers/mocks.mts'
 
 // Mock the dependencies.
 vi.mock('./convert-conda-to-requirements.mts', () => ({
@@ -20,15 +24,12 @@ describe('handleManifestConda', () => {
     const mockConvert = vi.mocked(convertCondaToRequirements)
     const mockOutput = vi.mocked(outputRequirements)
 
-    const mockRequirements = {
-      ok: true,
-      data: [
-        'numpy==1.23.0',
-        'pandas>=2.0.0',
-        'scikit-learn~=1.3.0',
-        'matplotlib',
-      ],
-    }
+    const mockRequirements = createSuccessResult([
+      'numpy==1.23.0',
+      'pandas>=2.0.0',
+      'scikit-learn~=1.3.0',
+      'matplotlib',
+    ])
     mockConvert.mockResolvedValue(mockRequirements)
 
     await handleManifestConda({
@@ -59,10 +60,7 @@ describe('handleManifestConda', () => {
     const mockConvert = vi.mocked(convertCondaToRequirements)
     const mockOutput = vi.mocked(outputRequirements)
 
-    const mockError = {
-      ok: false,
-      error: 'Invalid conda file format',
-    }
+    const mockError = createErrorResult('Invalid conda file format')
     mockConvert.mockResolvedValue(mockError)
 
     await handleManifestConda({
@@ -85,7 +83,7 @@ describe('handleManifestConda', () => {
     const mockConvert = vi.mocked(convertCondaToRequirements)
     const mockOutput = vi.mocked(outputRequirements)
 
-    mockConvert.mockResolvedValue({ ok: true, data: [] })
+    mockConvert.mockResolvedValue(createSuccessResult([]))
 
     const formats = ['text', 'json', 'markdown'] as const
 
@@ -113,7 +111,7 @@ describe('handleManifestConda', () => {
     )
     const mockConvert = vi.mocked(convertCondaToRequirements)
 
-    mockConvert.mockResolvedValue({ ok: true, data: [] })
+    mockConvert.mockResolvedValue(createSuccessResult([]))
 
     await handleManifestConda({
       cwd: '/verbose',
@@ -136,7 +134,7 @@ describe('handleManifestConda', () => {
     )
     const mockConvert = vi.mocked(convertCondaToRequirements)
 
-    mockConvert.mockResolvedValue({ ok: true, data: [] })
+    mockConvert.mockResolvedValue(createSuccessResult([]))
 
     const cwds = ['/root', '/home/user/project', './relative', '.']
 

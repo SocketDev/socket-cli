@@ -20,14 +20,14 @@ import { listPackages } from './ls-by-agent.mts'
 import { CMD_NAME } from './shared.mts'
 import { updateManifest } from './update-manifest-by-agent.mts'
 import { NPM, PNPM } from '../../constants.mts'
-import { cmdPrefixMessage } from '../../utils/cmd.mts'
-import { globWorkspace } from '../../utils/glob.mts'
-import { safeNpa } from '../../utils/npm-package-arg.mts'
+import { globWorkspace } from '../../utils/fs/glob.mts'
+import { safeNpa } from '../../utils/npm/package-arg.mts'
+import { cmdPrefixMessage } from '../../utils/process/cmd.mts'
 import { getMajor } from '../../utils/semver.mts'
 
 import type { GetOverridesResult } from './get-overrides-by-agent.mts'
-import type { AliasResult } from '../../utils/npm-package-arg.mts'
-import type { EnvDetails } from '../../utils/package-environment.mts'
+import type { EnvDetails } from '../../utils/ecosystem/environment.mjs'
+import type { AliasResult } from '../../utils/npm/package-arg.mts'
 import type { Logger } from '@socketsecurity/registry/lib/logger'
 import type { PackageJson } from '@socketsecurity/registry/lib/packages'
 
@@ -223,8 +223,8 @@ export async function addOverrides(
                       )?.version ?? version,
                     ) !== major
                   ) {
-                    const otherVersion = (await fetchPackageManifest(thisSpec))
-                      ?.version
+                    const manifest = await fetchPackageManifest(thisSpec)
+                    const otherVersion = (manifest as { version?: string })?.version
                     if (otherVersion && otherVersion !== version) {
                       newSpec = `${sockOverridePrefix}${pin ? otherVersion : `^${getMajor(otherVersion)!}`}`
                     }

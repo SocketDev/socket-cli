@@ -1,6 +1,6 @@
 import path from 'node:path'
 
-import { debugDir, debug } from '@socketsecurity/registry/lib/debug'
+import { debug, debugDir } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { pluralize } from '@socketsecurity/registry/lib/words'
 
@@ -11,10 +11,10 @@ import { handleScanReport } from './handle-scan-report.mts'
 import { outputCreateNewScan } from './output-create-new-scan.mts'
 import { performReachabilityAnalysis } from './perform-reachability-analysis.mts'
 import constants from '../../constants.mts'
-import { checkCommandInput } from '../../utils/check-input.mts'
-import { getPackageFilesForScan } from '../../utils/path-resolve.mts'
-import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
-import { socketDocsLink } from '../../utils/terminal-link.mts'
+import { getPackageFilesForScan } from '../../utils/fs/path-resolve.mjs'
+import { readOrDefaultSocketJson } from '../../utils/socket/json.mts'
+import { socketDocsLink } from '../../utils/terminal/link.mts'
+import { checkCommandInput } from '../../utils/validation/check-input.mts'
 import { detectManifestActions } from '../manifest/detect-manifest-actions.mts'
 import { generateAutoManifest } from '../manifest/generate_auto_manifest.mts'
 

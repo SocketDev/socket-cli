@@ -37,7 +37,7 @@ describe('socket optimize - pnpm versions', { timeout: 60_000 }, async () => {
       { timeout: 30_000 },
       async () => {
         // Create temp fixture for pnpm8.
-        const { tempDir: pnpm8FixtureDir, cleanup } = await withTempFixture(
+        const { cleanup, tempDir: pnpm8FixtureDir } = await withTempFixture(
           path.join(fixtureBaseDir, 'pnpm8'),
         )
         cleanupFunctions.push(cleanup)
@@ -116,7 +116,7 @@ describe('socket optimize - pnpm versions', { timeout: 60_000 }, async () => {
       { timeout: 10_000 },
       async () => {
         // Create temp fixture for pnpm8.
-        const { tempDir: pnpm8FixtureDir, cleanup } = await withTempFixture(
+        const { cleanup, tempDir: pnpm8FixtureDir } = await withTempFixture(
           path.join(fixtureBaseDir, 'pnpm8'),
         )
         cleanupFunctions.push(cleanup)
@@ -182,7 +182,7 @@ describe('socket optimize - pnpm versions', { timeout: 60_000 }, async () => {
       { timeout: 30_000 },
       async () => {
         // Create temp fixture for pnpm9.
-        const { tempDir: pnpm9FixtureDir, cleanup } = await withTempFixture(
+        const { cleanup, tempDir: pnpm9FixtureDir } = await withTempFixture(
           path.join(fixtureBaseDir, 'pnpm9'),
         )
         cleanupFunctions.push(cleanup)
@@ -257,7 +257,7 @@ describe('socket optimize - pnpm versions', { timeout: 60_000 }, async () => {
       { timeout: 30_000 },
       async () => {
         // Create temp fixture for pnpm9.
-        const { tempDir: pnpm9FixtureDir, cleanup } = await withTempFixture(
+        const { cleanup, tempDir: pnpm9FixtureDir } = await withTempFixture(
           path.join(fixtureBaseDir, 'pnpm9'),
         )
         cleanupFunctions.push(cleanup)

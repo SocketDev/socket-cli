@@ -4,9 +4,9 @@ import { cmdOrganizationPolicyLicense } from './cmd-organization-policy-license.
 import { cmdOrganizationPolicySecurity } from './cmd-organization-policy-security.mts'
 import { cmdOrganizationPolicy } from './cmd-organization-policy.mts'
 import { cmdOrganizationQuota } from './cmd-organization-quota.mts'
-import { meowWithSubcommands } from '../../utils/meow-with-subcommands.mts'
+import { meowWithSubcommands } from '../../utils/cli/with-subcommands.mjs'
 
-import type { CliSubcommand } from '../../utils/meow-with-subcommands.mts'
+import type { CliSubcommand } from '../../utils/cli/with-subcommands.mjs'
 
 const description = 'Manage Socket organization account details'
 

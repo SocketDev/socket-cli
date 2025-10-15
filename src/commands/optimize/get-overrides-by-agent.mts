@@ -1,7 +1,7 @@
 import constants from '../../constants.mts'
 
 import type { NpmOverrides, Overrides, PnpmOrYarnOverrides } from './types.mts'
-import type { Agent, EnvDetails } from '../../utils/package-environment.mts'
+import type { Agent, EnvDetails } from '../../utils/ecosystem/environment.mjs'
 import type { PackageJson } from '@socketsecurity/registry/lib/packages'
 
 const {
@@ -18,7 +18,7 @@ const {
 export function getOverridesDataBun(
   pkgEnvDetails: EnvDetails,
   pkgJson = pkgEnvDetails.editablePkgJson.content,
-) {
+): { type: Agent; overrides: PnpmOrYarnOverrides } {
   const overrides = (pkgJson?.[RESOLUTIONS] ?? {}) as PnpmOrYarnOverrides
   return { type: YARN_BERRY, overrides }
 }
@@ -28,7 +28,7 @@ export function getOverridesDataBun(
 export function getOverridesDataNpm(
   pkgEnvDetails: EnvDetails,
   pkgJson = pkgEnvDetails.editablePkgJson.content,
-) {
+): { type: Agent; overrides: NpmOverrides } {
   const overrides = (pkgJson?.[OVERRIDES] ?? {}) as NpmOverrides
   return { type: NPM, overrides }
 }
@@ -38,7 +38,7 @@ export function getOverridesDataNpm(
 export function getOverridesDataPnpm(
   pkgEnvDetails: EnvDetails,
   pkgJson = pkgEnvDetails.editablePkgJson.content,
-) {
+): { type: Agent; overrides: PnpmOrYarnOverrides } {
   const overrides = ((pkgJson as any)?.[PNPM]?.[OVERRIDES] ??
     {}) as PnpmOrYarnOverrides
   return { type: PNPM, overrides }
@@ -47,7 +47,7 @@ export function getOverridesDataPnpm(
 export function getOverridesDataVlt(
   pkgEnvDetails: EnvDetails,
   pkgJson = pkgEnvDetails.editablePkgJson.content,
-) {
+): { type: Agent; overrides: NpmOverrides } {
   const overrides = (pkgJson?.[OVERRIDES] ?? {}) as NpmOverrides
   return { type: VLT, overrides }
 }
@@ -57,7 +57,7 @@ export function getOverridesDataVlt(
 export function getOverridesDataYarn(
   pkgEnvDetails: EnvDetails,
   pkgJson = pkgEnvDetails.editablePkgJson.content,
-) {
+): { type: Agent; overrides: PnpmOrYarnOverrides } {
   const overrides = (pkgJson?.[RESOLUTIONS] ?? {}) as PnpmOrYarnOverrides
   return { type: YARN_BERRY, overrides }
 }
@@ -67,7 +67,7 @@ export function getOverridesDataYarn(
 export function getOverridesDataYarnClassic(
   pkgEnvDetails: EnvDetails,
   pkgJson = pkgEnvDetails.editablePkgJson.content,
-) {
+): { type: Agent; overrides: PnpmOrYarnOverrides } {
   const overrides = (pkgJson?.[RESOLUTIONS] ?? {}) as PnpmOrYarnOverrides
   return { type: YARN_CLASSIC, overrides }
 }

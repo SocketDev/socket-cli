@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { handleLicensePolicy } from './handle-license-policy.mts'
+import { createErrorResult, createSuccessResult } from '../../../test/helpers/mocks.mts'
 
 // Mock the dependencies.
 
@@ -19,13 +20,10 @@ describe('handleLicensePolicy', () => {
     const mockFetch = vi.mocked(fetchLicensePolicy)
     const mockOutput = vi.mocked(outputLicensePolicy)
 
-    const mockResult = {
-      ok: true,
-      data: {
-        allowed: ['MIT', 'Apache-2.0', 'BSD-3-Clause'],
-        denied: ['GPL-3.0', 'AGPL-3.0'],
-      },
-    }
+    const mockResult = createSuccessResult({
+      allowed: ['MIT', 'Apache-2.0', 'BSD-3-Clause'],
+      denied: ['GPL-3.0', 'AGPL-3.0'],
+    })
     mockFetch.mockResolvedValue(mockResult)
 
     await handleLicensePolicy('test-org', 'json')
@@ -40,10 +38,7 @@ describe('handleLicensePolicy', () => {
     const mockFetch = vi.mocked(fetchLicensePolicy)
     const mockOutput = vi.mocked(outputLicensePolicy)
 
-    const mockResult = {
-      ok: false,
-      error: 'Unauthorized',
-    }
+    const mockResult = createErrorResult('Unauthorized')
     mockFetch.mockResolvedValue(mockResult)
 
     await handleLicensePolicy('test-org', 'text')
@@ -58,7 +53,7 @@ describe('handleLicensePolicy', () => {
     const mockFetch = vi.mocked(fetchLicensePolicy)
     const mockOutput = vi.mocked(outputLicensePolicy)
 
-    mockFetch.mockResolvedValue({ ok: true, data: {} })
+    mockFetch.mockResolvedValue(createSuccessResult({}))
 
     await handleLicensePolicy('test-org', 'markdown')
 

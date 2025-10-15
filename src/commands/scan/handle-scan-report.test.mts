@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { handleScanReport } from './handle-scan-report.mts'
+import { createErrorResult, createSuccessResult } from '../../../test/helpers/mocks.mts'
 
 // Mock the dependencies.
 vi.mock('./fetch-report-data.mts', () => ({
@@ -18,17 +19,14 @@ describe('handleScanReport', () => {
     const mockFetch = vi.mocked(fetchScanData)
     const mockOutput = vi.mocked(outputScanReport)
 
-    const mockScanData = {
-      ok: true,
-      data: {
-        scan: {
-          id: 'scan-123',
-          status: 'completed',
-          packages: [],
-        },
-        issues: [],
+    const mockScanData = createSuccessResult({
+      scan: {
+        id: 'scan-123',
+        status: 'completed',
+        packages: [],
       },
-    }
+      issues: [],
+    })
     mockFetch.mockResolvedValue(mockScanData)
 
     await handleScanReport({
@@ -63,10 +61,7 @@ describe('handleScanReport', () => {
     const mockFetch = vi.mocked(fetchScanData)
     const mockOutput = vi.mocked(outputScanReport)
 
-    const mockError = {
-      ok: false,
-      error: 'Scan not found',
-    }
+    const mockError = createErrorResult('Scan not found')
     mockFetch.mockResolvedValue(mockError)
 
     await handleScanReport({
@@ -92,7 +87,7 @@ describe('handleScanReport', () => {
     const mockFetch = vi.mocked(fetchScanData)
     const mockOutput = vi.mocked(outputScanReport)
 
-    mockFetch.mockResolvedValue({ ok: true, data: {} })
+    mockFetch.mockResolvedValue(createSuccessResult({}))
 
     await handleScanReport({
       orgSlug: 'test-org',
@@ -119,7 +114,7 @@ describe('handleScanReport', () => {
     const mockFetch = vi.mocked(fetchScanData)
     const mockOutput = vi.mocked(outputScanReport)
 
-    mockFetch.mockResolvedValue({ ok: true, data: {} })
+    mockFetch.mockResolvedValue(createSuccessResult({}))
 
     const config = {
       orgSlug: 'my-org',
@@ -146,13 +141,12 @@ describe('handleScanReport', () => {
     const mockFetch = vi.mocked(fetchScanData)
     const mockOutput = vi.mocked(outputScanReport)
 
-    mockFetch.mockResolvedValue({
-      ok: true,
-      data: {
+    mockFetch.mockResolvedValue(
+      createSuccessResult({
         scan: { id: 'scan-abc' },
         issues: [{ severity: 'high', package: 'vulnerable-pkg' }],
-      },
-    })
+      }),
+    )
 
     await handleScanReport({
       orgSlug: 'test-org',

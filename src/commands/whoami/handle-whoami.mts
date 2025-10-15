@@ -6,15 +6,18 @@ import constants, {
   TOKEN_PREFIX,
 } from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
+import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { getConfigValueOrUndef } from '../../utils/config.mts'
-import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
-import { getFlagListOutput } from '../../utils/output-formatting.mts'
-import { getDefaultApiToken, getVisibleTokenPrefix } from '../../utils/sdk.mts'
+import { getFlagListOutput } from '../../utils/output/formatting.mts'
+import {
+  getDefaultApiToken,
+  getVisibleTokenPrefix,
+} from '../../utils/socket/sdk.mjs'
 
 import type {
   CliCommandConfig,
   CliCommandContext,
-} from '../../utils/meow-with-subcommands.mts'
+} from '../../utils/cli/with-subcommands.mjs'
 
 export async function handleWhoami(
   argv: string[] | readonly string[],

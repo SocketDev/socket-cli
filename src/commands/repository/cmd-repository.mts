@@ -3,9 +3,9 @@ import { cmdRepositoryDel } from './cmd-repository-del.mts'
 import { cmdRepositoryList } from './cmd-repository-list.mts'
 import { cmdRepositoryUpdate } from './cmd-repository-update.mts'
 import { cmdRepositoryView } from './cmd-repository-view.mts'
-import { meowWithSubcommands } from '../../utils/meow-with-subcommands.mts'
+import { meowWithSubcommands } from '../../utils/cli/with-subcommands.mjs'
 
-import type { CliSubcommand } from '../../utils/meow-with-subcommands.mts'
+import type { CliSubcommand } from '../../utils/cli/with-subcommands.mjs'
 
 const description = 'Manage registered repositories'
 

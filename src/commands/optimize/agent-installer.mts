@@ -22,10 +22,10 @@ import { spawn } from '@socketsecurity/registry/lib/spawn'
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import constants, { NPM, PNPM } from '../../constants.mts'
-import { cmdFlagsToString } from '../../utils/cmd.mts'
 import { shadowNpmInstall } from '../../shadow/npm/install.mts'
+import { cmdFlagsToString } from '../../utils/process/cmd.mts'
 
-import type { EnvDetails } from '../../utils/package-environment.mts'
+import type { EnvDetails } from '../../utils/ecosystem/environment.mjs'
 
 type SpawnOption = Exclude<Parameters<typeof spawn>[2], undefined>
 

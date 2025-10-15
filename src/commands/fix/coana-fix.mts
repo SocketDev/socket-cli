@@ -1,7 +1,7 @@
 import path from 'node:path'
 
 import { joinAnd } from '@socketsecurity/registry/lib/arrays'
-import { debugDir, debug } from '@socketsecurity/registry/lib/debug'
+import { debug, debugDir } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { pluralize } from '@socketsecurity/registry/lib/words'
 
@@ -13,10 +13,9 @@ import {
 import { getSocketFixBranchName, getSocketFixCommitMessage } from './git.mts'
 import { getSocketFixPrs, openSocketFixPr } from './pull-request.mts'
 import { FLAG_DRY_RUN, GQL_PR_STATE_OPEN } from '../../constants.mts'
-import { handleApiCall } from '../../utils/api.mts'
-import { cmdFlagValueToArray } from '../../utils/cmd.mts'
-import { spawnCoanaDlx } from '../../utils/dlx.mts'
-import { getErrorCause } from '../../utils/errors.mts'
+import { spawnCoanaDlx } from '../../utils/dlx/spawn.mjs'
+import { getErrorCause } from '../../utils/error/errors.mjs'
+import { getPackageFilesForScan } from '../../utils/fs/path-resolve.mjs'
 import {
   gitCheckoutBranch,
   gitCommit,
@@ -26,14 +25,15 @@ import {
   gitRemoteBranchExists,
   gitResetAndClean,
   gitUnstagedModifiedFiles,
-} from '../../utils/git.mts'
+} from '../../utils/git/git.mjs'
 import {
   enablePrAutoMerge,
   fetchGhsaDetails,
   setGitRemoteGithubRepoUrl,
-} from '../../utils/github.mts'
-import { getPackageFilesForScan } from '../../utils/path-resolve.mts'
-import { setupSdk } from '../../utils/sdk.mts'
+} from '../../utils/git/github.mts'
+import { cmdFlagValueToArray } from '../../utils/process/cmd.mts'
+import { handleApiCall } from '../../utils/socket/api.mjs'
+import { setupSdk } from '../../utils/socket/sdk.mjs'
 import { fetchSupportedScanFileNames } from '../scan/fetch-supported-scan-file-names.mts'
 
 import type { FixConfig } from './types.mts'

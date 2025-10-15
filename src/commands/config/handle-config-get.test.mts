@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { handleConfigGet } from './handle-config-get.mts'
+import {
+  createErrorResult,
+  createSuccessResult,
+} from '../../../test/helpers/mocks.mts'
 
 // Mock the dependencies.
 vi.mock('./output-config-get.mts', () => ({
@@ -19,10 +23,8 @@ describe('handleConfigGet', () => {
     const { getConfigValue } = await import('../../utils/config.mts')
     const { outputConfigGet } = await import('./output-config-get.mts')
 
-    vi.mocked(getConfigValue).mockReturnValue({
-      ok: true,
-      value: 'test-token',
-    })
+    const mockResult = createSuccessResult('test-token')
+    vi.mocked(getConfigValue).mockReturnValue(mockResult)
 
     await handleConfigGet({
       key: 'apiToken',
@@ -30,21 +32,15 @@ describe('handleConfigGet', () => {
     })
 
     expect(getConfigValue).toHaveBeenCalledWith('apiToken')
-    expect(outputConfigGet).toHaveBeenCalledWith(
-      'apiToken',
-      { ok: true, value: 'test-token' },
-      'json',
-    )
+    expect(outputConfigGet).toHaveBeenCalledWith('apiToken', mockResult, 'json')
   })
 
   it('handles missing config value', async () => {
     const { getConfigValue } = await import('../../utils/config.mts')
     const { outputConfigGet } = await import('./output-config-get.mts')
 
-    vi.mocked(getConfigValue).mockReturnValue({
-      ok: false,
-      error: new Error('Config value not found'),
-    })
+    const mockResult = createErrorResult('Config value not found')
+    vi.mocked(getConfigValue).mockReturnValue(mockResult)
 
     await handleConfigGet({
       key: 'org',
@@ -52,21 +48,15 @@ describe('handleConfigGet', () => {
     })
 
     expect(getConfigValue).toHaveBeenCalledWith('org')
-    expect(outputConfigGet).toHaveBeenCalledWith(
-      'org',
-      { ok: false, error: new Error('Config value not found') },
-      'text',
-    )
+    expect(outputConfigGet).toHaveBeenCalledWith('org', mockResult, 'text')
   })
 
   it('handles markdown output', async () => {
     const { getConfigValue } = await import('../../utils/config.mts')
     const { outputConfigGet } = await import('./output-config-get.mts')
 
-    vi.mocked(getConfigValue).mockReturnValue({
-      ok: true,
-      value: 'https://api.socket.dev',
-    })
+    const mockResult = createSuccessResult('https://api.socket.dev')
+    vi.mocked(getConfigValue).mockReturnValue(mockResult)
 
     await handleConfigGet({
       key: 'apiBaseUrl',
@@ -76,7 +66,7 @@ describe('handleConfigGet', () => {
     expect(getConfigValue).toHaveBeenCalledWith('apiBaseUrl')
     expect(outputConfigGet).toHaveBeenCalledWith(
       'apiBaseUrl',
-      { ok: true, value: 'https://api.socket.dev' },
+      mockResult,
       'markdown',
     )
   })
@@ -88,10 +78,8 @@ describe('handleConfigGet', () => {
     const keys = ['apiToken', 'org', 'repoName', 'apiBaseUrl', 'apiProxy']
 
     for (const key of keys) {
-      vi.mocked(getConfigValue).mockReturnValue({
-        ok: true,
-        value: `value-for-${key}`,
-      })
+      const mockResult = createSuccessResult(`value-for-${key}`)
+      vi.mocked(getConfigValue).mockReturnValue(mockResult)
 
       // eslint-disable-next-line no-await-in-loop
       await handleConfigGet({
@@ -100,11 +88,7 @@ describe('handleConfigGet', () => {
       })
 
       expect(getConfigValue).toHaveBeenCalledWith(key)
-      expect(outputConfigGet).toHaveBeenCalledWith(
-        key,
-        { ok: true, value: `value-for-${key}` },
-        'json',
-      )
+      expect(outputConfigGet).toHaveBeenCalledWith(key, mockResult, 'json')
     }
   })
 
@@ -112,41 +96,29 @@ describe('handleConfigGet', () => {
     const { getConfigValue } = await import('../../utils/config.mts')
     const { outputConfigGet } = await import('./output-config-get.mts')
 
-    vi.mocked(getConfigValue).mockReturnValue({
-      ok: true,
-      value: '',
-    })
+    const mockResult = createSuccessResult('')
+    vi.mocked(getConfigValue).mockReturnValue(mockResult)
 
     await handleConfigGet({
       key: 'apiToken',
       outputKind: 'json',
     })
 
-    expect(outputConfigGet).toHaveBeenCalledWith(
-      'apiToken',
-      { ok: true, value: '' },
-      'json',
-    )
+    expect(outputConfigGet).toHaveBeenCalledWith('apiToken', mockResult, 'json')
   })
 
   it('handles undefined config value', async () => {
     const { getConfigValue } = await import('../../utils/config.mts')
     const { outputConfigGet } = await import('./output-config-get.mts')
 
-    vi.mocked(getConfigValue).mockReturnValue({
-      ok: true,
-      value: undefined,
-    })
+    const mockResult = createSuccessResult(undefined)
+    vi.mocked(getConfigValue).mockReturnValue(mockResult)
 
     await handleConfigGet({
       key: 'org',
       outputKind: 'text',
     })
 
-    expect(outputConfigGet).toHaveBeenCalledWith(
-      'org',
-      { ok: true, value: undefined },
-      'text',
-    )
+    expect(outputConfigGet).toHaveBeenCalledWith('org', mockResult, 'text')
   })
 })

@@ -2,7 +2,7 @@ import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
 
 import constants from '../../constants.mts'
 
-import type { EnvDetails } from '../../utils/package-environment.mts'
+import type { EnvDetails } from '../../utils/ecosystem/environment.mjs'
 
 const { BUN, EXT_LOCK, NPM, PNPM, VLT, YARN_BERRY, YARN_CLASSIC } = constants
 

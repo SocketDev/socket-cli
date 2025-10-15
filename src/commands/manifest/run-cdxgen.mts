@@ -6,12 +6,12 @@ import colors from 'yoctocolors-cjs'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants, { FLAG_HELP, NPM, PNPM, YARN } from '../../constants.mts'
-import { spawnCdxgenDlx, spawnSynpDlx } from '../../utils/dlx.mts'
-import { findUp } from '../../utils/fs.mts'
-import { isYarnBerry } from '../../utils/yarn-version.mts'
+import { spawnCdxgenDlx, spawnSynpDlx } from '../../utils/dlx/spawn.mjs'
+import { findUp } from '../../utils/fs/fs.mjs'
+import { isYarnBerry } from '../../utils/yarn/version.mts'
 
 import type { ShadowBinResult } from '../../shadow/npm/bin.mts'
-import type { DlxOptions } from '../../utils/dlx.mts'
+import type { DlxOptions } from '../../utils/dlx/spawn.mjs'
 
 const { PACKAGE_LOCK_JSON, PNPM_LOCK_YAML, YARN_LOCK } = constants
 
@@ -125,8 +125,9 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
   shadowResult.spawnPromise.finally(() => {
     if (cleanupPackageLock) {
       try {
-        // TODO: Consider using trash instead of rmSync for safer deletion.
         // This removes the temporary package-lock.json we created for cdxgen.
+        // Note: rmSync is appropriate here for temporary file cleanup in source code.
+        // (trash package is reserved for scripts/build files per CLAUDE.md guidelines)
         rmSync(`./${PACKAGE_LOCK_JSON}`)
       } catch {}
     }

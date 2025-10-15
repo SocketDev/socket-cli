@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { handleConfigUnset } from './handle-config-unset.mts'
+import {
+  createErrorResult,
+  createSuccessResult,
+} from '../../../test/helpers/mocks.mts'
 
 // Mock the dependencies.
 vi.mock('./output-config-unset.mts', () => ({
@@ -19,10 +23,8 @@ describe('handleConfigUnset', () => {
     const { updateConfigValue } = await import('../../utils/config.mts')
     const { outputConfigUnset } = await import('./output-config-unset.mts')
 
-    vi.mocked(updateConfigValue).mockReturnValue({
-      ok: true,
-      value: undefined,
-    })
+    const mockResult = createSuccessResult(undefined)
+    vi.mocked(updateConfigValue).mockReturnValue(mockResult)
 
     await handleConfigUnset({
       key: 'apiToken',
@@ -30,21 +32,15 @@ describe('handleConfigUnset', () => {
     })
 
     expect(updateConfigValue).toHaveBeenCalledWith('apiToken', undefined)
-    expect(outputConfigUnset).toHaveBeenCalledWith(
-      { ok: true, value: undefined },
-      'json',
-    )
+    expect(outputConfigUnset).toHaveBeenCalledWith(mockResult, 'json')
   })
 
   it('handles unset failure', async () => {
     const { updateConfigValue } = await import('../../utils/config.mts')
     const { outputConfigUnset } = await import('./output-config-unset.mts')
 
-    const error = new Error('Cannot unset config')
-    vi.mocked(updateConfigValue).mockReturnValue({
-      ok: false,
-      error,
-    })
+    const mockResult = createErrorResult('Cannot unset config')
+    vi.mocked(updateConfigValue).mockReturnValue(mockResult)
 
     await handleConfigUnset({
       key: 'org',
@@ -52,17 +48,15 @@ describe('handleConfigUnset', () => {
     })
 
     expect(updateConfigValue).toHaveBeenCalledWith('org', undefined)
-    expect(outputConfigUnset).toHaveBeenCalledWith({ ok: false, error }, 'text')
+    expect(outputConfigUnset).toHaveBeenCalledWith(mockResult, 'text')
   })
 
   it('handles markdown output', async () => {
     const { updateConfigValue } = await import('../../utils/config.mts')
     const { outputConfigUnset } = await import('./output-config-unset.mts')
 
-    vi.mocked(updateConfigValue).mockReturnValue({
-      ok: true,
-      value: undefined,
-    })
+    const mockResult = createSuccessResult(undefined)
+    vi.mocked(updateConfigValue).mockReturnValue(mockResult)
 
     await handleConfigUnset({
       key: 'repoName',
@@ -70,10 +64,7 @@ describe('handleConfigUnset', () => {
     })
 
     expect(updateConfigValue).toHaveBeenCalledWith('repoName', undefined)
-    expect(outputConfigUnset).toHaveBeenCalledWith(
-      { ok: true, value: undefined },
-      'markdown',
-    )
+    expect(outputConfigUnset).toHaveBeenCalledWith(mockResult, 'markdown')
   })
 
   it('handles different config keys', async () => {
@@ -83,10 +74,8 @@ describe('handleConfigUnset', () => {
     const keys = ['apiToken', 'org', 'repoName', 'apiBaseUrl', 'apiProxy']
 
     for (const key of keys) {
-      vi.mocked(updateConfigValue).mockReturnValue({
-        ok: true,
-        value: undefined,
-      })
+      const mockResult = createSuccessResult(undefined)
+      vi.mocked(updateConfigValue).mockReturnValue(mockResult)
 
       // eslint-disable-next-line no-await-in-loop
       await handleConfigUnset({
@@ -95,10 +84,7 @@ describe('handleConfigUnset', () => {
       })
 
       expect(updateConfigValue).toHaveBeenCalledWith(key, undefined)
-      expect(outputConfigUnset).toHaveBeenCalledWith(
-        { ok: true, value: undefined },
-        'json',
-      )
+      expect(outputConfigUnset).toHaveBeenCalledWith(mockResult, 'json')
     }
   })
 
@@ -106,20 +92,15 @@ describe('handleConfigUnset', () => {
     const { updateConfigValue } = await import('../../utils/config.mts')
     const { outputConfigUnset } = await import('./output-config-unset.mts')
 
-    vi.mocked(updateConfigValue).mockReturnValue({
-      ok: true,
-      value: undefined,
-    })
+    const mockResult = createSuccessResult(undefined)
+    vi.mocked(updateConfigValue).mockReturnValue(mockResult)
 
     await handleConfigUnset({
       key: 'apiToken',
       outputKind: 'text',
     })
 
-    expect(outputConfigUnset).toHaveBeenCalledWith(
-      { ok: true, value: undefined },
-      'text',
-    )
+    expect(outputConfigUnset).toHaveBeenCalledWith(mockResult, 'text')
   })
 
   it('handles already unset config value', async () => {
@@ -127,10 +108,8 @@ describe('handleConfigUnset', () => {
     const { outputConfigUnset } = await import('./output-config-unset.mts')
 
     // Even if already unset, the function should still succeed.
-    vi.mocked(updateConfigValue).mockReturnValue({
-      ok: true,
-      value: undefined,
-    })
+    const mockResult = createSuccessResult(undefined)
+    vi.mocked(updateConfigValue).mockReturnValue(mockResult)
 
     await handleConfigUnset({
       key: 'org',
@@ -138,9 +117,6 @@ describe('handleConfigUnset', () => {
     })
 
     expect(updateConfigValue).toHaveBeenCalledWith('org', undefined)
-    expect(outputConfigUnset).toHaveBeenCalledWith(
-      { ok: true, value: undefined },
-      'json',
-    )
+    expect(outputConfigUnset).toHaveBeenCalledWith(mockResult, 'json')
   })
 })

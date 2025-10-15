@@ -9,14 +9,14 @@ import {
   detectDefaultBranch,
   getRepoName,
   gitBranch,
-} from '../../utils/git.mts'
+} from '../../utils/git/git.mjs'
 import {
   readSocketJsonSync,
   writeSocketJson,
-} from '../../utils/socket-json.mts'
+} from '../../utils/socket/json.mts'
 
 import type { CResult } from '../../types.mts'
-import type { SocketJson } from '../../utils/socket-json.mts'
+import type { SocketJson } from '../../utils/socket/json.mts'
 
 export async function setupScanConfig(
   cwd: string,
@@ -313,7 +313,7 @@ async function configureGithub(
     message:
       '(--github-api-url) Do you want to override the default github url?',
 
-    default: config.githubApiUrl || constants.ENV.GITHUB_API_URL,
+    default: config.githubApiUrl || constants.ENV.GITHUB_API_URL || '',
     required: false,
     // validate: async string => bool
   })

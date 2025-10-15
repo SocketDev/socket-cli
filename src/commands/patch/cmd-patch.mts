@@ -6,22 +6,22 @@ import { arrayUnique } from '@socketsecurity/registry/lib/arrays'
 import { handlePatch } from './handle-patch.mts'
 import constants, { DOT_SOCKET_DIR, MANIFEST_JSON } from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
-import { checkCommandInput } from '../../utils/check-input.mts'
-import { cmdFlagValueToArray } from '../../utils/cmd.mts'
-import { InputError } from '../../utils/errors.mts'
-import { getOutputKind } from '../../utils/get-output-kind.mts'
-import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
+import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
+import { InputError } from '../../utils/error/errors.mjs'
 import {
   getFlagApiRequirementsOutput,
   getFlagListOutput,
-} from '../../utils/output-formatting.mts'
-import { getPurlObject } from '../../utils/purl.mts'
+} from '../../utils/output/formatting.mts'
+import { getOutputKind } from '../../utils/output/mode.mjs'
+import { cmdFlagValueToArray } from '../../utils/process/cmd.mts'
+import { getPurlObject } from '../../utils/purl/parse.mjs'
+import { checkCommandInput } from '../../utils/validation/check-input.mts'
 
 import type {
   CliCommandConfig,
   CliCommandContext,
-} from '../../utils/meow-with-subcommands.mts'
-import type { PurlObject } from '../../utils/purl.mts'
+} from '../../utils/cli/with-subcommands.mjs'
+import type { PurlObject } from '../../utils/purl/parse.mjs'
 import type { PackageURL } from '@socketregistry/packageurl-js'
 
 export const CMD_NAME = 'patch'
@@ -84,7 +84,7 @@ async function run(
     { allowUnknownFlags: false },
   )
 
-  const { dryRun, json, markdown } = cli.flags as {
+  const { dryRun, json, markdown } = cli.flags as unknown as {
     dryRun: boolean
     json: boolean
     markdown: boolean

@@ -10,33 +10,33 @@ import { suggestOrgSlug } from './suggest-org-slug.mts'
 import { suggestTarget } from './suggest_target.mts'
 import constants, { REQUIREMENTS_TXT, SOCKET_JSON } from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
-import { checkCommandInput } from '../../utils/check-input.mts'
-import { cmdFlagValueToArray } from '../../utils/cmd.mts'
-import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
-import { getEcosystemChoicesForMeow } from '../../utils/ecosystem.mts'
-import { getOutputKind } from '../../utils/get-output-kind.mts'
+import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
+import { getEcosystemChoicesForMeow } from '../../utils/ecosystem/ecosystem.mjs'
 import {
   detectDefaultBranch,
   getRepoName,
   gitBranch,
-} from '../../utils/git.mts'
-import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
+} from '../../utils/git/git.mjs'
 import {
   getFlagApiRequirementsOutput,
   getFlagListOutput,
-} from '../../utils/output-formatting.mts'
-import { hasDefaultApiToken } from '../../utils/sdk.mts'
-import { readOrDefaultSocketJsonUp } from '../../utils/socket-json.mts'
-import { socketDashboardLink } from '../../utils/terminal-link.mts'
+} from '../../utils/output/formatting.mts'
+import { getOutputKind } from '../../utils/output/mode.mjs'
+import { cmdFlagValueToArray } from '../../utils/process/cmd.mts'
+import { readOrDefaultSocketJsonUp } from '../../utils/socket/json.mts'
+import { determineOrgSlug } from '../../utils/socket/org-slug.mjs'
+import { hasDefaultApiToken } from '../../utils/socket/sdk.mjs'
+import { socketDashboardLink } from '../../utils/terminal/link.mts'
+import { checkCommandInput } from '../../utils/validation/check-input.mts'
 import { detectManifestActions } from '../manifest/detect-manifest-actions.mts'
 
 import type { REPORT_LEVEL } from './types.mts'
 import type { MeowFlags } from '../../flags.mts'
-import type { PURL_Type } from '../../utils/ecosystem.mts'
 import type {
   CliCommandConfig,
   CliCommandContext,
-} from '../../utils/meow-with-subcommands.mts'
+} from '../../utils/cli/with-subcommands.mjs'
+import type { PURL_Type } from '../../utils/ecosystem/ecosystem.mjs'
 
 export const CMD_NAME = 'create'
 
@@ -244,7 +244,7 @@ async function run(
     reportLevel,
     setAsAlertsPage: pendingHeadFlag,
     tmp,
-  } = cli.flags as {
+  } = cli.flags as unknown as {
     cwd: string
     commitHash: string
     commitMessage: string
@@ -287,7 +287,7 @@ async function run(
     branch: branchName,
     repo: repoName,
     report,
-  } = cli.flags as {
+  } = cli.flags as unknown as {
     autoManifest?: boolean | undefined
     branch: string
     repo: string
@@ -350,7 +350,7 @@ async function run(
   let updatedInput = false
 
   // Accept zero or more paths. Default to cwd() if none given.
-  let targets = cli.input || [cwd]
+  let targets: string[] = cli.input ? [...cli.input] : [cwd]
 
   if (!targets.length && !dryRun && interactive) {
     targets = await suggestTarget()

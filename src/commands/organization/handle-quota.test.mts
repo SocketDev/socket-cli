@@ -1,8 +1,9 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { fetchQuota } from './fetch-quota.mts'
 import { handleQuota } from './handle-quota.mts'
 import { outputQuota } from './output-quota.mts'
+import { setupTestEnvironment } from '../../../test/helpers/index.mts'
 
 vi.mock('./fetch-quota.mts', () => ({
   fetchQuota: vi.fn(),
@@ -12,9 +13,7 @@ vi.mock('./output-quota.mts', () => ({
 }))
 
 describe('handleQuota', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-  })
+  setupTestEnvironment()
 
   it('should fetch and output quota with default output kind', async () => {
     const mockData = {

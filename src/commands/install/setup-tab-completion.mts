@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url'
 import { debug } from '@socketsecurity/registry/lib/debug'
 
 import constants from '../../constants.mts'
-import { getBashrcDetails } from '../../utils/completion.mts'
+import { getBashrcDetails } from '../../utils/cli/completion.mjs'
 
 import type { CResult } from '../../types.mts'
 
@@ -108,7 +108,7 @@ export function updateInstalledTabCompletionScript(
     targetPath,
     content.data.replaceAll(
       '%SOCKET_VERSION_TOKEN%',
-      constants.ENV.INLINED_SOCKET_CLI_VERSION_HASH,
+      constants.ENV.INLINED_SOCKET_CLI_VERSION_HASH || '',
     ),
     'utf8',
   )

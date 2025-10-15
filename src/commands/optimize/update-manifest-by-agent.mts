@@ -1,12 +1,10 @@
 import { hasKeys, isObject } from '@socketsecurity/registry/lib/objects'
-import { toEditablePackageJson } from '@socketsecurity/registry/lib/packages'
 
 import constants from '../../constants.mts'
 
 import type { Overrides } from './types.mts'
-import type { Agent } from '../../utils/package-environment.mts'
-
-type EditablePackageJson = Awaited<ReturnType<typeof toEditablePackageJson>>
+import type { Agent } from '../../utils/ecosystem/environment.mjs'
+import type { EditablePackageJson } from '@socketsecurity/registry/lib/packages'
 
 const {
   BUN,

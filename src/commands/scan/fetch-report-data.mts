@@ -1,14 +1,17 @@
-import { debugDir, debug } from '@socketsecurity/registry/lib/debug'
+import { debug, debugDir } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants from '../../constants.mts'
-import { handleApiCallNoSpinner, queryApiSafeText } from '../../utils/api.mts'
-import { formatErrorWithDetail } from '../../utils/errors.mts'
-import { setupSdk } from '../../utils/sdk.mts'
+import { formatErrorWithDetail } from '../../utils/error/errors.mjs'
+import {
+  handleApiCallNoSpinner,
+  queryApiSafeText,
+} from '../../utils/socket/api.mjs'
+import { setupSdk } from '../../utils/socket/sdk.mjs'
 
 import type { CResult } from '../../types.mts'
 import type { SocketArtifact } from '../../utils/alert/artifact.mts'
-import type { SetupSdkOptions } from '../../utils/sdk.mts'
+import type { SetupSdkOptions } from '../../utils/socket/sdk.mjs'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export type FetchScanData = {

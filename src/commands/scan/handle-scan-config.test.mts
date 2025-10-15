@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { handleScanConfig } from './handle-scan-config.mts'
+import { createErrorResult, createSuccessResult } from '../../../test/helpers/mocks.mts'
 
 // Mock the dependencies.
 vi.mock('./output-scan-config-result.mts', () => ({
@@ -24,16 +25,13 @@ describe('handleScanConfig', () => {
     const mockSetup = vi.mocked(setupScanConfig)
     const mockOutput = vi.mocked(outputScanConfigResult)
 
-    const mockResult = {
-      ok: true,
-      data: {
-        config: {
-          excludePatterns: ['node_modules/**', 'dist/**'],
-          includePatterns: ['src/**'],
-          scanLevel: 'high',
-        },
+    const mockResult = createSuccessResult({
+      config: {
+        excludePatterns: ['node_modules/**', 'dist/**'],
+        includePatterns: ['src/**'],
+        scanLevel: 'high',
       },
-    }
+    })
     mockSetup.mockResolvedValue(mockResult)
 
     await handleScanConfig('/project', false)
@@ -50,7 +48,7 @@ describe('handleScanConfig', () => {
     const mockSetup = vi.mocked(setupScanConfig)
     const mockOutput = vi.mocked(outputScanConfigResult)
 
-    mockSetup.mockResolvedValue({ ok: true, data: {} })
+    mockSetup.mockResolvedValue(createSuccessResult({}))
 
     await handleScanConfig('/another/path', true)
 
@@ -66,10 +64,7 @@ describe('handleScanConfig', () => {
     const mockSetup = vi.mocked(setupScanConfig)
     const mockOutput = vi.mocked(outputScanConfigResult)
 
-    const mockError = {
-      ok: false,
-      error: 'Configuration file not found',
-    }
+    const mockError = createErrorResult('Configuration file not found')
     mockSetup.mockResolvedValue(mockError)
 
     await handleScanConfig('/nonexistent', false)
@@ -81,7 +76,7 @@ describe('handleScanConfig', () => {
     const { setupScanConfig } = await import('./setup-scan-config.mts')
     const mockSetup = vi.mocked(setupScanConfig)
 
-    mockSetup.mockResolvedValue({ ok: true, data: {} })
+    mockSetup.mockResolvedValue(createSuccessResult({}))
 
     await handleScanConfig('/project')
 
@@ -96,7 +91,7 @@ describe('handleScanConfig', () => {
     const cwds = ['/root', '/home/user/project', './relative/path', '.']
 
     for (const cwd of cwds) {
-      mockSetup.mockResolvedValue({ ok: true, data: {} })
+      mockSetup.mockResolvedValue(createSuccessResult({}))
       // eslint-disable-next-line no-await-in-loop
       await handleScanConfig(cwd, false)
       expect(mockSetup).toHaveBeenCalledWith(cwd, false)

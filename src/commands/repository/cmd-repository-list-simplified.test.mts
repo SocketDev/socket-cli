@@ -1,5 +1,7 @@
 /** @fileoverview Simplified tests for repository list command */
 
+import { expect } from 'vitest'
+
 import {
   buildCommandTests,
   commonTests,

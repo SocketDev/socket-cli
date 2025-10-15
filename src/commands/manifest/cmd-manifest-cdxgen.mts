@@ -9,13 +9,13 @@ import { pluralize } from '@socketsecurity/registry/lib/words'
 import { runCdxgen } from './run-cdxgen.mts'
 import constants, { FLAG_HELP } from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
-import { filterFlags, isHelpFlag } from '../../utils/cmd.mts'
-import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
+import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
+import { filterFlags, isHelpFlag } from '../../utils/process/cmd.mts'
 
 import type {
   CliCommandConfig,
   CliCommandContext,
-} from '../../utils/meow-with-subcommands.mts'
+} from '../../utils/cli/with-subcommands.mjs'
 
 // TODO: Convert yargs to meow.
 const toLower = (arg: string) => arg.toLowerCase()
@@ -251,7 +251,7 @@ async function run(
     parentName,
   })
 
-  const { dryRun } = cli.flags as { dryRun: boolean }
+  const { dryRun } = cli.flags as unknown as { dryRun: boolean }
 
   // Filter Socket flags from argv but keep --no-banner and --help for cdxgen.
   const argsToProcess = filterFlags(argv, { ...commonFlags, ...outputFlags }, [
