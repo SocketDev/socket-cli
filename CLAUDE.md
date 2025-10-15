@@ -1,45 +1,20 @@
 # CLAUDE.md
 
-🚨 **CRITICAL**: This file contains MANDATORY guidelines for Claude Code (claude.ai/code). You MUST follow these guidelines EXACTLY as specified. Act as a principal-level software engineer with deep expertise in TypeScript, Node.js, and CLI development.
+🚨 **MANDATORY**: Act as principal-level engineer with deep expertise in TypeScript, Node.js, and CLI development.
 
-## 📚 Learning & Knowledge Sharing
+## 📚 SHARED STANDARDS
 
-### Self-Learning Protocol
-Claude Code should periodically scan and learn from CLAUDE.md files across Socket repositories:
-- `socket-cli/CLAUDE.md`
-- `socket-packageurl-js/CLAUDE.md`
-- `socket-registry/CLAUDE.md`
-- `socket-sdk-js/CLAUDE.md`
+**See canonical reference:** `../socket-registry/CLAUDE.md`
 
-When working in any Socket repository, check for updates and patterns in other claude.md files to ensure consistency across the ecosystem.
+For all shared Socket standards (git workflow, testing, code style, imports, sorting, error handling, cross-platform, CI, etc.), refer to socket-registry/CLAUDE.md.
 
-### Cross-Project Learning
-- When discovering generally applicable patterns or guidelines, update CLAUDE.md files in other socket- projects
-- Examples: c8 comment formatting, error handling patterns, code style rules
-- This ensures consistency across the Socket ecosystem
+**Git Workflow Reminder**: When user says "commit changes" → create actual commits, use small atomic commits, follow all CLAUDE.md rules (NO AI attribution).
 
-## 🚫 PROHIBITED PRACTICES - MANDATORY RESTRICTIONS
+---
 
-### Automated Fix Scripts - STRICTLY FORBIDDEN
-- **🚨 NEVER create automated fix scripts** (e.g., fix-*.mjs, update-*.mjs, migrate-*.mjs)
-- **🚨 NEVER use sed, awk, or regex-based bulk replacements** for fixing code issues
-- **🚨 NEVER create temporary scripts in /scripts directories** to automate fixes
-- **Reason**: Automated scripts with regex patterns corrupt code by creating malformed syntax, especially with template literals and complex type expressions
-- **Required approach**: Fix each issue manually with proper understanding of context using the Edit tool
-- **Exception**: None. All fixes must be done through direct file editing
+## 🏗️ CLI-SPECIFIC
 
-## 🎯 Your Role
-You are a **Principal Software Engineer** responsible for:
-- Writing production-quality, maintainable code
-- Making architectural decisions with long-term impact in mind
-- Ensuring code follows established patterns and conventions
-- Mentoring through code examples and best practices
-- Prioritizing system reliability, performance, and developer experience
-- Taking ownership of technical decisions and their consequences
-
-## Commands
-
-### Development Commands
+### Commands
 - **Build**: `npm run build` (alias for `npm run build:dist`)
 - **Build source**: `npm run build:dist:src` or `pnpm build:dist:src`
 - **Build types**: `npm run build:dist:types`
@@ -51,27 +26,7 @@ You are a **Principal Software Engineer** responsible for:
 - **Fix linting**: `npm run fix` (auto-fixes linting issues)
 - **Commit without tests**: `git commit --no-verify` (skips pre-commit hooks including tests)
 
-### Cross-Platform Compatibility - CRITICAL: Windows and POSIX
-- **🚨 MANDATORY**: Tests and functionality MUST work on both POSIX (macOS/Linux) and Windows systems
-- **Path handling**: ALWAYS use `path.join()`, `path.resolve()`, `path.sep` for file paths
-  - ❌ WRONG: `'/usr/local/bin/npm'` (hard-coded POSIX path)
-  - ✅ CORRECT: `path.join(path.sep, 'usr', 'local', 'bin', 'npm')` (cross-platform)
-  - ❌ WRONG: `'/project/package-lock.json'` (hard-coded forward slashes)
-  - ✅ CORRECT: `path.join('project', 'package-lock.json')` (uses correct separator)
-- **Temp directories**: Use `os.tmpdir()` for temporary file paths in tests
-  - ❌ WRONG: `'/tmp/test-project'` (POSIX-specific)
-  - ✅ CORRECT: `path.join(os.tmpdir(), 'test-project')` (cross-platform)
-  - **Unique temp dirs**: Use `fs.mkdtemp()` or `fs.mkdtempSync()` for collision-free directories
-  - ✅ PREFERRED: `await fs.mkdtemp(path.join(os.tmpdir(), 'socket-test-'))` (async)
-  - ✅ ACCEPTABLE: `fs.mkdtempSync(path.join(os.tmpdir(), 'socket-test-'))` (sync)
-- **Path separators**: Never hard-code `/` or `\` in paths
-  - Use `path.sep` when you need the separator character
-  - Use `path.join()` to construct paths correctly
-- **File URLs**: Use `pathToFileURL()` and `fileURLToPath()` from `node:url` when working with file:// URLs
-- **Line endings**: Be aware of CRLF (Windows) vs LF (Unix) differences when processing text files
-- **Shell commands**: Consider platform differences in shell commands and utilities
-
-### Testing Best Practices - CRITICAL: NO -- FOR FILE PATHS
+### Testing Best Practices
 - **🚨 NEVER USE `--` BEFORE TEST FILE PATHS** - This runs ALL tests, not just your specified files!
 - **Always build before testing**: Run `pnpm build:dist:src` before running tests to ensure dist files are up to date
 - **Test single file**: ✅ CORRECT: `pnpm test:unit src/commands/specific/cmd-file.test.mts`
@@ -86,35 +41,13 @@ You are a **Principal Software Engineer** responsible for:
 - **Update with --update flag**: `pnpm test:unit src/commands/specific/cmd-file.test.mts --update`
 - **Timeout for long tests**: Use `timeout` command or specify in test file
 
-#### Vitest Memory Optimization (CRITICAL)
-- **Pool configuration**: Use `pool: 'forks'` with `singleFork: true`, `maxForks: 1`, `isolate: true`
-- **Memory limits**: Set `NODE_OPTIONS="--max-old-space-size=4096 --max-semi-space-size=512"` in `.env.test`
-- **Timeout settings**: Use `testTimeout: 60000, hookTimeout: 60000` for stability
-- **Thread limits**: Use `singleThread: true, maxThreads: 1` to prevent RegExp compiler exhaustion
-- **Test cleanup**: 🚨 MANDATORY - Import and use `trash` package: `import { trash } from 'trash'` then `await trash([paths])`
-
-### Git Commit Guidelines
-- **🚨 FORBIDDEN**: NEVER add Claude co-authorship or Claude signatures to commits
-- **🚨 FORBIDDEN**: Do NOT include "Generated with Claude Code" or similar AI attribution in commit messages
-- **Commit messages**: Should be written as if by a human developer, focusing on the what and why of changes
-- **Professional commits**: Write clear, concise commit messages that describe the actual changes made
-
 ### Running the CLI locally
 - **Build and run**: `npm run build && npm exec socket` or `pnpm build && pnpm exec socket`
 - **Quick build + run**: `npm run bs` or `pnpm bs` (builds source only, then runs socket)
 - **Run without build**: `npm run s` or `pnpm s` (runs socket directly)
 - **Native TypeScript**: `./sd` (runs the CLI without building using Node.js native TypeScript support on Node 22+)
 
-### Package Management
-- **Package Manager**: This project uses pnpm (v10.16.0+)
-- **Install dependencies**: `pnpm install`
-- **Add dependency**: `pnpm add <package> --save-exact`
-- **Add dev dependency**: `pnpm add -D <package> --save-exact`
-- **Update dependencies**: `pnpm update`
-- **🚨 MANDATORY**: Always add dependencies with exact versions using `--save-exact` flag to ensure reproducible builds
-- **Dependency validation**: All dependencies MUST be pinned to exact versions without range specifiers like `^` or `~`
-- **Override behavior**: pnpm.overrides in package.json controls dependency versions across the entire project
-- **Using $ syntax**: `"$package-name"` in overrides means "use the version specified in dependencies"
+### CLI-Specific Notes
 - **Dynamic imports**: Only use dynamic imports for test mocking (e.g., `vi.importActual` in Vitest). Avoid runtime dynamic imports in production code
 
 ## Architecture
