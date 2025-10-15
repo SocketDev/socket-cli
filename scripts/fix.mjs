@@ -6,7 +6,10 @@
  *   node scripts/fix.mjs [options]
  *
  * Options:
+ *   --all      Fix all files (skip file filtering)
+ *   --changed  Fix changed files (default behavior)
  *   --quiet    Suppress progress output
+ *   --staged   Fix staged files
  *   --verbose  Show detailed output
  */
 
@@ -20,8 +23,11 @@ import { runCommand } from './utils/run-command.mjs'
 async function main() {
   const { values } = parseArgs({
     options: {
+      all: { type: 'boolean', default: false },
+      changed: { type: 'boolean', default: false },
       quiet: { type: 'boolean', default: false },
       silent: { type: 'boolean', default: false },
+      staged: { type: 'boolean', default: false },
       verbose: { type: 'boolean', default: false },
     },
     strict: false,
@@ -36,8 +42,20 @@ async function main() {
       console.log()
     }
 
-    // Run lint with --fix flag
-    const exitCode = await runCommand('pnpm', ['run', 'lint', '--fix'], {
+    // Build lint command arguments.
+    const lintArgs = ['run', 'lint', '--fix']
+    if (values.all) {
+      lintArgs.push('--all')
+    }
+    if (values.changed) {
+      lintArgs.push('--changed')
+    }
+    if (values.staged) {
+      lintArgs.push('--staged')
+    }
+
+    // Run lint with --fix flag.
+    const exitCode = await runCommand('pnpm', lintArgs, {
       stdio: quiet ? 'pipe' : 'inherit',
     })
 
