@@ -21,7 +21,6 @@ import replacePlugin from '@rollup/plugin-replace'
 
 import fixDebug from './rollup-plugin-fix-debug.mjs'
 import fixInk from './rollup-plugin-fix-ink.mjs'
-import fixYoga from './rollup-plugin-fix-yoga.mjs'
 import constants from './rollup.cli-js.constants.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -156,7 +155,7 @@ function getSocketCliVersionHash() {
 }
 
 export default {
-  input: path.join(constants.srcPath, 'unified-cli.mts'),
+  input: path.join(constants.srcPath, 'cli-dispatch.mts'),
   output: {
     file: path.join(constants.distPath, 'cli.js'),
     format: 'cjs',
@@ -215,7 +214,6 @@ export default {
     // Fix package-specific issues BEFORE replace plugin runs.
     fixDebug(),
     fixInk(),
-    fixYoga(),
 
     // Custom plugin to force bundling of socket packages.
     {
@@ -387,8 +385,6 @@ export default {
         '**/*.test.*',
         '**/*.spec.*',
         '**/fixtures/**',
-        '**/yoga-wasm-web/**',
-        '**/yoga-layout/**',
         '**/yargs-parser/**',
       ],
     }),
