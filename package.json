@@ -57,13 +57,10 @@
     "s": "dotenvx -q run -f .env.local -- pnpm exec socket --",
     "test": "node scripts/test.mjs",
     "test:prepare": "dotenvx -q run -f .env.test -- pnpm run build && del-cli 'test/**/node_modules'",
-    "test:unit": "dotenvx -q run -f .env.test -- vitest run",
     "test:validate": "node scripts/validate-tests.mjs",
     "test:wrapper": "node scripts/test-wrapper.mjs",
     "test-ci": "run-s test:*",
     "test-pre-commit": "dotenvx -q run -f .env.precommit -- pnpm test",
-    "testu": "dotenvx -q run -f .env.testu -- run-s test:prepare; pnpm run test:unit -- --update",
-    "testuf": "dotenvx -q run -f .env.testu -- pnpm run test:unit -- --update",
     "update": "node scripts/update.mjs"
   },
   "devDependencies": {

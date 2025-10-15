@@ -29,19 +29,20 @@ function getInvocationMode(): string {
       .replace(/\.(js|mjs|cjs|exe)$/i, '')
 
     // Map script names to modes.
-    if (scriptName.endsWith('npm')) {
+    if (scriptName.endsWith('-npm') || scriptName === 'npm') {
       return 'npm'
     }
-    if (scriptName.endsWith('npx')) {
+    if (scriptName.endsWith('-npx') || scriptName === 'npx') {
       return 'npx'
     }
-    if (scriptName.endsWith('pnpm')) {
+    if (scriptName.endsWith('-pnpm') || scriptName === 'pnpm') {
       return 'pnpm'
     }
-    if (scriptName.endsWith('yarn')) {
+    if (scriptName.endsWith('-yarn') || scriptName === 'yarn') {
       return 'yarn'
     }
-    if (scriptName.includes('socket')) {
+    // For 'cli' or anything containing 'socket', default to socket mode.
+    if (scriptName.includes('socket') || scriptName === 'cli') {
       return 'socket'
     }
   }
@@ -75,27 +76,35 @@ async function main() {
   // Set environment variable for child processes.
   process.env['SOCKET_CLI_MODE'] = mode
 
-  // Import and run the appropriate CLI.
+  // Import and run the appropriate CLI function.
   switch (mode) {
-    case 'npm':
-      await import('./npm-cli.mjs')
+    case 'npm': {
+      const { default: runNpmCli } = await import('./npm-cli.mjs')
+      await runNpmCli()
       break
+    }
 
-    case 'npx':
-      await import('./npx-cli.mjs')
+    case 'npx': {
+      const { default: runNpxCli } = await import('./npx-cli.mjs')
+      await runNpxCli()
       break
+    }
 
-    case 'pnpm':
-      await import('./pnpm-cli.mjs')
+    case 'pnpm': {
+      const { default: runPnpmCli } = await import('./pnpm-cli.mjs')
+      await runPnpmCli()
       break
+    }
 
-    case 'yarn':
-      await import('./yarn-cli.mjs')
+    case 'yarn': {
+      const { default: runYarnCli } = await import('./yarn-cli.mjs')
+      await runYarnCli()
       break
+    }
 
     case 'socket':
     default:
-      await import('./cli.mjs')
+      await import('./cli-entry.mjs')
       break
   }
 }

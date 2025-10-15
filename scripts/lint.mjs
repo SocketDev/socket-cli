@@ -3,6 +3,7 @@
  * Provides smart linting that can target affected files or lint everything.
  */
 
+import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -79,7 +80,8 @@ function filterLintableFiles(files) {
 
   return files.filter(file => {
     const ext = path.extname(file)
-    return lintableExtensions.has(ext)
+    // Only lint files that have lintable extensions AND still exist.
+    return lintableExtensions.has(ext) && existsSync(file)
   })
 }
 
