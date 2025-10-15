@@ -1,50 +1,39 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { fetchOrgAnalyticsData } from './fetch-org-analytics.mts'
+import { createErrorResult } from '../../../test/helpers/mocks.mts'
+import {
+  setupSdkMockError,
+  setupSdkMockSuccess,
+  setupSdkSetupFailure,
+} from '../../../test/helpers/sdk-test-helpers.mts'
 
 // Mock the dependencies.
-vi.mock('../../utils/api.mts', () => ({
+vi.mock('../../utils/socket/api.mjs', () => ({
   handleApiCall: vi.fn(),
 }))
 
-vi.mock('../../utils/sdk.mts', () => ({
+vi.mock('../../utils/socket/sdk.mjs', () => ({
   setupSdk: vi.fn(),
 }))
 
 describe('fetchOrgAnalytics', () => {
   it('fetches organization analytics successfully', async () => {
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockHandleApi = vi.mocked(handleApiCall)
-    const mockSetupSdk = vi.mocked(setupSdk)
-
-    const mockSdk = {
-      getOrgAnalytics: vi.fn().mockResolvedValue({
-        success: true,
-        data: {
-          packages: 125,
-          repositories: 45,
-          scans: 320,
-          vulnerabilities: {
-            critical: 5,
-            high: 12,
-            medium: 28,
-            low: 45,
-          },
-          lastUpdated: '2025-01-01T00:00:00Z',
-        },
-      }),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: true,
-      data: {
+    const { mockHandleApi, mockSdk } = await setupSdkMockSuccess(
+      'getOrgAnalytics',
+      {
         packages: 125,
         repositories: 45,
         scans: 320,
+        vulnerabilities: {
+          critical: 5,
+          high: 12,
+          medium: 28,
+          low: 45,
+        },
+        lastUpdated: '2025-01-01T00:00:00Z',
       },
-    })
+    )
 
     const result = await fetchOrgAnalyticsData(30)
 
@@ -56,40 +45,23 @@ describe('fetchOrgAnalytics', () => {
   })
 
   it('handles SDK setup failure', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-
-    const error = {
-      ok: false,
+    await setupSdkSetupFailure('Failed to setup SDK', {
       code: 1,
-      message: 'Failed to setup SDK',
       cause: 'Invalid configuration',
-    }
-    mockSetupSdk.mockResolvedValue(error)
+    })
 
     const result = await fetchOrgAnalyticsData(7)
 
-    expect(result).toEqual(error)
+    expect(result.ok).toBe(false)
+    expect(result.message).toBe('Failed to setup SDK')
   })
 
   it('handles API call failure', async () => {
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockHandleApi = vi.mocked(handleApiCall)
-    const mockSetupSdk = vi.mocked(setupSdk)
-
-    const mockSdk = {
-      getOrgAnalytics: vi
-        .fn()
-        .mockRejectedValue(new Error('Analytics unavailable')),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: false,
-      error: 'Analytics service unavailable',
-      code: 503,
-    })
+    await setupSdkMockError(
+      'getOrgAnalytics',
+      'Analytics service unavailable',
+      503,
+    )
 
     const result = await fetchOrgAnalyticsData(30)
 
@@ -98,17 +70,7 @@ describe('fetchOrgAnalytics', () => {
   })
 
   it('passes custom SDK options', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
-
-    const mockSdk = {
-      getOrgAnalytics: vi.fn().mockResolvedValue({}),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: {} })
+    const { mockSetupSdk } = await setupSdkMockSuccess('getOrgAnalytics', {})
 
     const sdkOpts = {
       apiToken: 'analytics-token',
@@ -121,17 +83,7 @@ describe('fetchOrgAnalytics', () => {
   })
 
   it('handles different organization slugs', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
-
-    const mockSdk = {
-      getOrgAnalytics: vi.fn().mockResolvedValue({}),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: {} })
+    const { mockSdk } = await setupSdkMockSuccess('getOrgAnalytics', {})
 
     const times = [7, 14, 30, 60, 90]
 
@@ -143,17 +95,7 @@ describe('fetchOrgAnalytics', () => {
   })
 
   it('uses null prototype for options', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
-
-    const mockSdk = {
-      getOrgAnalytics: vi.fn().mockResolvedValue({}),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: {} })
+    const { mockSdk } = await setupSdkMockSuccess('getOrgAnalytics', {})
 
     // This tests that the function properly uses __proto__: null.
     await fetchOrgAnalyticsData(30)

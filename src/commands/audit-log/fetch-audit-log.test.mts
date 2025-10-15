@@ -1,54 +1,43 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { fetchAuditLog } from './fetch-audit-log.mts'
+import {
+  setupSdkMockError,
+  setupSdkMockSuccess,
+  setupSdkSetupFailure,
+} from '../../../test/helpers/sdk-test-helpers.mts'
 
 // Mock the dependencies.
-vi.mock('../../utils/api.mts', () => ({
+vi.mock('../../utils/socket/api.mjs', () => ({
   handleApiCall: vi.fn(),
 }))
 
-vi.mock('../../utils/sdk.mts', () => ({
+vi.mock('../../utils/socket/sdk.mjs', () => ({
   setupSdk: vi.fn(),
 }))
 
 describe('fetchAuditLog', () => {
   it('fetches audit log successfully', async () => {
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockHandleApi = vi.mocked(handleApiCall)
-    const mockSetupSdk = vi.mocked(setupSdk)
-
-    const mockSdk = {
-      getAuditLogEvents: vi.fn().mockResolvedValue({
-        success: true,
-        data: {
-          events: [
-            {
-              id: 'event-1',
-              action: 'package.scan',
-              actor: 'user@example.com',
-              timestamp: '2025-01-20T10:00:00Z',
-            },
-            {
-              id: 'event-2',
-              action: 'repository.create',
-              actor: 'admin@example.com',
-              timestamp: '2025-01-20T11:00:00Z',
-            },
-          ],
-          total: 2,
-        },
-      }),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: true,
-      data: {
-        events: expect.any(Array),
+    const { mockHandleApi, mockSdk } = await setupSdkMockSuccess(
+      'getAuditLogEvents',
+      {
+        events: [
+          {
+            id: 'event-1',
+            action: 'package.scan',
+            actor: 'user@example.com',
+            timestamp: '2025-01-20T10:00:00Z',
+          },
+          {
+            id: 'event-2',
+            action: 'repository.create',
+            actor: 'admin@example.com',
+            timestamp: '2025-01-20T11:00:00Z',
+          },
+        ],
         total: 2,
       },
-    })
+    )
 
     const config = {
       logType: 'all',
@@ -75,16 +64,10 @@ describe('fetchAuditLog', () => {
   })
 
   it('handles SDK setup failure', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-
-    const error = {
-      ok: false,
+    await setupSdkSetupFailure('Failed to setup SDK', {
       code: 1,
-      message: 'Failed to setup SDK',
       cause: 'Invalid API token',
-    }
-    mockSetupSdk.mockResolvedValue(error)
+    })
 
     const config = {
       logType: 'all',
@@ -96,27 +79,16 @@ describe('fetchAuditLog', () => {
 
     const result = await fetchAuditLog(config)
 
-    expect(result).toEqual(error)
+    expect(result.ok).toBe(false)
+    expect(result.message).toBe('Failed to setup SDK')
   })
 
   it('handles API call failure', async () => {
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockHandleApi = vi.mocked(handleApiCall)
-    const mockSetupSdk = vi.mocked(setupSdk)
-
-    const mockSdk = {
-      getAuditLogEvents: vi
-        .fn()
-        .mockRejectedValue(new Error('Unauthorized access')),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: false,
-      error: 'Access denied to audit log',
-      code: 403,
-    })
+    await setupSdkMockError(
+      'getAuditLogEvents',
+      'Unauthorized access',
+      403,
+    )
 
     const config = {
       logType: 'security',
@@ -133,17 +105,7 @@ describe('fetchAuditLog', () => {
   })
 
   it('passes custom SDK options', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
-
-    const mockSdk = {
-      getAuditLogEvents: vi.fn().mockResolvedValue({}),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: {} })
+    const { mockSetupSdk } = await setupSdkMockSuccess('getAuditLogEvents', {})
 
     const sdkOpts = {
       apiToken: 'audit-token',
@@ -164,17 +126,7 @@ describe('fetchAuditLog', () => {
   })
 
   it('handles pagination parameters', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
-
-    const mockSdk = {
-      getAuditLogEvents: vi.fn().mockResolvedValue({}),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: {} })
+    const { mockSdk } = await setupSdkMockSuccess('getAuditLogEvents', {})
 
     const config = {
       logType: 'all',
@@ -196,17 +148,7 @@ describe('fetchAuditLog', () => {
   })
 
   it('handles date filtering', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
-
-    const mockSdk = {
-      getAuditLogEvents: vi.fn().mockResolvedValue({}),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: {} })
+    const { mockSdk } = await setupSdkMockSuccess('getAuditLogEvents', {})
 
     const logTypes = ['all', 'security', 'configuration', 'access']
 
@@ -232,17 +174,7 @@ describe('fetchAuditLog', () => {
   })
 
   it('uses null prototype for options', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
-
-    const mockSdk = {
-      getAuditLogEvents: vi.fn().mockResolvedValue({}),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: {} })
+    const { mockSdk } = await setupSdkMockSuccess('getAuditLogEvents', {})
 
     const config = {
       logType: 'all',

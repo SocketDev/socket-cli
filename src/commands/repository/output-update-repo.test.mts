@@ -1,26 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { outputUpdateRepo } from './output-update-repo.mts'
+import {
+  createErrorResult,
+  createSuccessResult,
+  setupStandardOutputMocks,
+} from '../../../test/helpers/index.mts'
 
 import type { CResult } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 // Mock the dependencies.
-vi.mock('@socketsecurity/registry/lib/logger', () => ({
-  logger: {
-    fail: vi.fn(),
-    log: vi.fn(),
-    success: vi.fn(),
-  },
-}))
-
-vi.mock('../../utils/fail-msg-with-badge.mts', () => ({
-  failMsgWithBadge: vi.fn((msg, cause) => `${msg}: ${cause}`),
-}))
-
-vi.mock('../../utils/serialize-result-json.mts', () => ({
-  serializeResultJson: vi.fn(result => JSON.stringify(result)),
-}))
+setupStandardOutputMocks()
 
 describe('outputUpdateRepo', () => {
   beforeEach(() => {
@@ -31,17 +22,15 @@ describe('outputUpdateRepo', () => {
   it('outputs JSON format for successful result', async () => {
     const { logger } = await import('@socketsecurity/registry/lib/logger')
     const { serializeResultJson } = await import(
-      '../../utils/serialize-result-json.mts'
+      '../../utils/serialize/result-json.mts'
     )
     const mockLog = vi.mocked(logger.log)
     const mockSerialize = vi.mocked(serializeResultJson)
 
-    const result: CResult<SocketSdkSuccessResult<'updateOrgRepo'>['data']> = {
-      ok: true,
-      data: {
+    const result: CResult<SocketSdkSuccessResult<'updateOrgRepo'>['data']> =
+      createSuccessResult({
         success: true,
-      },
-    }
+      })
 
     await outputUpdateRepo(result, 'test-repo', 'json')
 
@@ -54,12 +43,11 @@ describe('outputUpdateRepo', () => {
     const { logger } = await import('@socketsecurity/registry/lib/logger')
     const mockLog = vi.mocked(logger.log)
 
-    const result: CResult<SocketSdkSuccessResult<'updateOrgRepo'>['data']> = {
-      ok: false,
-      code: 2,
-      message: 'Unauthorized',
-      cause: 'Invalid API token',
-    }
+    const result: CResult<SocketSdkSuccessResult<'updateOrgRepo'>['data']> =
+      createErrorResult('Unauthorized', {
+        cause: 'Invalid API token',
+        code: 2,
+      })
 
     await outputUpdateRepo(result, 'test-repo', 'json')
 
@@ -71,12 +59,10 @@ describe('outputUpdateRepo', () => {
     const { logger } = await import('@socketsecurity/registry/lib/logger')
     const mockSuccess = vi.mocked(logger.success)
 
-    const result: CResult<SocketSdkSuccessResult<'updateOrgRepo'>['data']> = {
-      ok: true,
-      data: {
+    const result: CResult<SocketSdkSuccessResult<'updateOrgRepo'>['data']> =
+      createSuccessResult({
         success: true,
-      },
-    }
+      })
 
     await outputUpdateRepo(result, 'my-repository', 'text')
 
@@ -89,17 +75,16 @@ describe('outputUpdateRepo', () => {
   it('outputs error in text format', async () => {
     const { logger } = await import('@socketsecurity/registry/lib/logger')
     const { failMsgWithBadge } = await import(
-      '../../utils/fail-msg-with-badge.mts'
+      '../../utils/error/fail-msg-with-badge.mts'
     )
     const mockFail = vi.mocked(logger.fail)
     const mockFailMsg = vi.mocked(failMsgWithBadge)
 
-    const result: CResult<SocketSdkSuccessResult<'updateOrgRepo'>['data']> = {
-      ok: false,
-      code: 1,
-      message: 'Repository not found',
-      cause: 'Not found error',
-    }
+    const result: CResult<SocketSdkSuccessResult<'updateOrgRepo'>['data']> =
+      createErrorResult('Repository not found', {
+        cause: 'Not found error',
+        code: 1,
+      })
 
     await outputUpdateRepo(result, 'nonexistent-repo', 'text')
 
@@ -115,12 +100,10 @@ describe('outputUpdateRepo', () => {
     const { logger } = await import('@socketsecurity/registry/lib/logger')
     const mockSuccess = vi.mocked(logger.success)
 
-    const result: CResult<SocketSdkSuccessResult<'updateOrgRepo'>['data']> = {
-      ok: true,
-      data: {
+    const result: CResult<SocketSdkSuccessResult<'updateOrgRepo'>['data']> =
+      createSuccessResult({
         success: true,
-      },
-    }
+      })
 
     await outputUpdateRepo(result, 'markdown-repo', 'markdown')
 
@@ -133,12 +116,10 @@ describe('outputUpdateRepo', () => {
     const { logger } = await import('@socketsecurity/registry/lib/logger')
     const mockSuccess = vi.mocked(logger.success)
 
-    const result: CResult<SocketSdkSuccessResult<'updateOrgRepo'>['data']> = {
-      ok: true,
-      data: {
+    const result: CResult<SocketSdkSuccessResult<'updateOrgRepo'>['data']> =
+      createSuccessResult({
         success: true,
-      },
-    }
+      })
 
     await outputUpdateRepo(result, 'repo-with-dashes_and_underscores', 'text')
 
@@ -151,12 +132,10 @@ describe('outputUpdateRepo', () => {
     const { logger } = await import('@socketsecurity/registry/lib/logger')
     const mockSuccess = vi.mocked(logger.success)
 
-    const result: CResult<SocketSdkSuccessResult<'updateOrgRepo'>['data']> = {
-      ok: true,
-      data: {
+    const result: CResult<SocketSdkSuccessResult<'updateOrgRepo'>['data']> =
+      createSuccessResult({
         success: true,
-      },
-    }
+      })
 
     await outputUpdateRepo(result, '', 'text')
 
@@ -166,10 +145,8 @@ describe('outputUpdateRepo', () => {
   })
 
   it('sets default exit code when code is undefined', async () => {
-    const result: CResult<SocketSdkSuccessResult<'updateOrgRepo'>['data']> = {
-      ok: false,
-      message: 'Error without code',
-    }
+    const result: CResult<SocketSdkSuccessResult<'updateOrgRepo'>['data']> =
+      createErrorResult('Error without code')
 
     await outputUpdateRepo(result, 'test-repo', 'json')
 

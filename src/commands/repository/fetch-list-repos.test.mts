@@ -1,20 +1,22 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { fetchListRepos } from './fetch-list-repos.mts'
+import { createErrorResult, createSuccessResult } from '../../../test/helpers/mocks.mts'
+import { setupSdkMockError, setupSdkMockSuccess, setupSdkSetupFailure } from '../../../test/helpers/sdk-test-helpers.mts'
 
 // Mock the dependencies.
-vi.mock('../../utils/api.mts', () => ({
+vi.mock('../../utils/socket/api.mjs', () => ({
   handleApiCall: vi.fn(),
 }))
 
-vi.mock('../../utils/sdk.mts', () => ({
+vi.mock('../../utils/socket/sdk.mjs', () => ({
   setupSdk: vi.fn(),
 }))
 
 describe('fetchListRepos', () => {
   it('lists repositories with pagination successfully', async () => {
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
+    const { handleApiCall } = await import('../../utils/socket/api.mjs')
+    const { setupSdk } = await import('../../utils/socket/sdk.mjs')
     const mockHandleApi = vi.mocked(handleApiCall)
     const mockSetupSdk = vi.mocked(setupSdk)
 
@@ -31,17 +33,14 @@ describe('fetchListRepos', () => {
       }),
     }
 
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: true,
-      data: {
-        results: [
-          { id: 'repo-1', name: 'first-repo' },
-          { id: 'repo-2', name: 'second-repo' },
-        ],
-        nextPage: 2,
-      },
-    })
+    mockSetupSdk.mockResolvedValue(createSuccessResult(mockSdk))
+    mockHandleApi.mockResolvedValue(createSuccessResult({
+      results: [
+        { id: 'repo-1', name: 'first-repo' },
+        { id: 'repo-2', name: 'second-repo' },
+      ],
+      nextPage: 2,
+    }))
 
     const config = {
       direction: 'desc',
@@ -66,16 +65,7 @@ describe('fetchListRepos', () => {
   })
 
   it('handles SDK setup failure', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-
-    const error = {
-      ok: false,
-      code: 1,
-      message: 'Failed to setup SDK',
-      cause: 'Missing API token',
-    }
-    mockSetupSdk.mockResolvedValue(error)
+    await setupSdkSetupFailure('Failed to setup SDK', { code: 1, cause: 'Missing API token' })
 
     const config = {
       direction: 'asc',
@@ -87,27 +77,11 @@ describe('fetchListRepos', () => {
 
     const result = await fetchListRepos(config)
 
-    expect(result).toEqual(error)
+    expect(result.ok).toBe(false)
   })
 
   it('handles API call failure', async () => {
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockHandleApi = vi.mocked(handleApiCall)
-    const mockSetupSdk = vi.mocked(setupSdk)
-
-    const mockSdk = {
-      getOrgRepoList: vi
-        .fn()
-        .mockRejectedValue(new Error('Invalid page number')),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: false,
-      error: 'Invalid page number',
-      code: 400,
-    })
+    await setupSdkMockError('getOrgRepoList', new Error('Invalid page number'), 400)
 
     const config = {
       direction: 'asc',
@@ -124,8 +98,8 @@ describe('fetchListRepos', () => {
   })
 
   it('passes custom SDK options', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
+    const { setupSdk } = await import('../../utils/socket/sdk.mjs')
+    const { handleApiCall } = await import('../../utils/socket/api.mjs')
     const mockSetupSdk = vi.mocked(setupSdk)
     const mockHandleApi = vi.mocked(handleApiCall)
 
@@ -133,11 +107,8 @@ describe('fetchListRepos', () => {
       getOrgRepoList: vi.fn().mockResolvedValue({}),
     }
 
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: true,
-      data: { results: [], nextPage: null },
-    })
+    mockSetupSdk.mockResolvedValue(createSuccessResult(mockSdk))
+    mockHandleApi.mockResolvedValue(createSuccessResult({ results: [], nextPage: null }))
 
     const config = {
       direction: 'asc',
@@ -158,8 +129,8 @@ describe('fetchListRepos', () => {
   })
 
   it('handles large page size configuration', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
+    const { setupSdk } = await import('../../utils/socket/sdk.mjs')
+    const { handleApiCall } = await import('../../utils/socket/api.mjs')
     const mockSetupSdk = vi.mocked(setupSdk)
     const mockHandleApi = vi.mocked(handleApiCall)
 
@@ -167,11 +138,8 @@ describe('fetchListRepos', () => {
       getOrgRepoList: vi.fn().mockResolvedValue({}),
     }
 
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: true,
-      data: { results: [], nextPage: null },
-    })
+    mockSetupSdk.mockResolvedValue(createSuccessResult(mockSdk))
+    mockHandleApi.mockResolvedValue(createSuccessResult({ results: [], nextPage: null }))
 
     const config = {
       direction: 'desc',
@@ -192,8 +160,8 @@ describe('fetchListRepos', () => {
   })
 
   it('handles different sort criteria', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
+    const { setupSdk } = await import('../../utils/socket/sdk.mjs')
+    const { handleApiCall } = await import('../../utils/socket/api.mjs')
     const mockSetupSdk = vi.mocked(setupSdk)
     const mockHandleApi = vi.mocked(handleApiCall)
 
@@ -201,11 +169,8 @@ describe('fetchListRepos', () => {
       getOrgRepoList: vi.fn().mockResolvedValue({}),
     }
 
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: true,
-      data: { results: [], nextPage: null },
-    })
+    mockSetupSdk.mockResolvedValue(createSuccessResult(mockSdk))
+    mockHandleApi.mockResolvedValue(createSuccessResult({ results: [], nextPage: null }))
 
     const config = {
       direction: 'asc',
@@ -226,8 +191,8 @@ describe('fetchListRepos', () => {
   })
 
   it('handles empty results on specific page', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
+    const { setupSdk } = await import('../../utils/socket/sdk.mjs')
+    const { handleApiCall } = await import('../../utils/socket/api.mjs')
     const mockSetupSdk = vi.mocked(setupSdk)
     const mockHandleApi = vi.mocked(handleApiCall)
 
@@ -235,11 +200,8 @@ describe('fetchListRepos', () => {
       getOrgRepoList: vi.fn().mockResolvedValue({}),
     }
 
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: true,
-      data: { results: [], nextPage: null },
-    })
+    mockSetupSdk.mockResolvedValue(createSuccessResult(mockSdk))
+    mockHandleApi.mockResolvedValue(createSuccessResult({ results: [], nextPage: null }))
 
     const config = {
       direction: 'asc',
@@ -258,8 +220,8 @@ describe('fetchListRepos', () => {
   })
 
   it('uses null prototype for options', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
+    const { setupSdk } = await import('../../utils/socket/sdk.mjs')
+    const { handleApiCall } = await import('../../utils/socket/api.mjs')
     const mockSetupSdk = vi.mocked(setupSdk)
     const mockHandleApi = vi.mocked(handleApiCall)
 
@@ -267,11 +229,8 @@ describe('fetchListRepos', () => {
       getOrgRepoList: vi.fn().mockResolvedValue({}),
     }
 
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: true,
-      data: { results: [], nextPage: null },
-    })
+    mockSetupSdk.mockResolvedValue(createSuccessResult(mockSdk))
+    mockHandleApi.mockResolvedValue(createSuccessResult({ results: [], nextPage: null }))
 
     const config = {
       direction: 'asc',

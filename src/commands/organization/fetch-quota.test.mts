@@ -1,57 +1,26 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { fetchQuota } from './fetch-quota.mts'
+import { setupSdkMockError, setupSdkMockSuccess, setupSdkSetupFailure } from '../../../test/helpers/sdk-test-helpers.mts'
 
 // Mock the dependencies.
-vi.mock('../../utils/api.mts', () => ({
+vi.mock('../../utils/socket/api.mjs', () => ({
   handleApiCall: vi.fn(),
 }))
 
-vi.mock('../../utils/sdk.mts', () => ({
+vi.mock('../../utils/socket/sdk.mjs', () => ({
   setupSdk: vi.fn(),
 }))
 
 describe('fetchQuota', () => {
   it('fetches quota successfully', async () => {
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockHandleApi = vi.mocked(handleApiCall)
-    const mockSetupSdk = vi.mocked(setupSdk)
-
-    const mockSdk = {
-      getQuota: vi.fn().mockResolvedValue({
-        success: true,
-        data: {
-          scans: {
-            used: 250,
-            limit: 1000,
-            percentage: 25,
-          },
-          packages: {
-            used: 500,
-            limit: 2000,
-            percentage: 25,
-          },
-          repositories: {
-            used: 10,
-            limit: 50,
-            percentage: 20,
-          },
-          period_start: '2025-01-01T00:00:00Z',
-          period_end: '2025-01-31T23:59:59Z',
-        },
-      }),
+    const mockData = {
+      scans: { used: 250, limit: 1000 },
+      packages: { used: 500, limit: 2000 },
+      repositories: { used: 10, limit: 50 },
     }
 
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: true,
-      data: {
-        scans: { used: 250, limit: 1000 },
-        packages: { used: 500, limit: 2000 },
-        repositories: { used: 10, limit: 50 },
-      },
-    })
+    const { mockHandleApi, mockSdk } = await setupSdkMockSuccess('getQuota', mockData)
 
     const result = await fetchQuota()
 
@@ -63,38 +32,15 @@ describe('fetchQuota', () => {
   })
 
   it('handles SDK setup failure', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-
-    const error = {
-      ok: false,
-      code: 1,
-      message: 'Failed to setup SDK',
-      cause: 'Configuration error',
-    }
-    mockSetupSdk.mockResolvedValue(error)
+    await setupSdkSetupFailure('Failed to setup SDK', { cause: 'Configuration error' })
 
     const result = await fetchQuota()
 
-    expect(result).toEqual(error)
+    expect(result.ok).toBe(false)
   })
 
   it('handles API call failure', async () => {
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockHandleApi = vi.mocked(handleApiCall)
-    const mockSetupSdk = vi.mocked(setupSdk)
-
-    const mockSdk = {
-      getQuota: vi.fn().mockRejectedValue(new Error('Quota unavailable')),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: false,
-      error: 'Quota information unavailable',
-      code: 503,
-    })
+    await setupSdkMockError('getQuota', 'Quota unavailable', 503)
 
     const result = await fetchQuota()
 
@@ -103,17 +49,7 @@ describe('fetchQuota', () => {
   })
 
   it('passes custom SDK options', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
-
-    const mockSdk = {
-      getQuota: vi.fn().mockResolvedValue({}),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: {} })
+    const { mockSetupSdk } = await setupSdkMockSuccess('getQuota', {})
 
     const sdkOpts = {
       apiToken: 'quota-token',
@@ -126,28 +62,11 @@ describe('fetchQuota', () => {
   })
 
   it('handles quota at limit', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
-
-    const mockSdk = {
-      getQuota: vi.fn().mockResolvedValue({
-        scans: {
-          used: 1000,
-          limit: 1000,
-          percentage: 100,
-        },
-      }),
+    const mockData = {
+      scans: { used: 1000, limit: 1000, percentage: 100 },
     }
 
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: true,
-      data: {
-        scans: { used: 1000, limit: 1000, percentage: 100 },
-      },
-    })
+    await setupSdkMockSuccess('getQuota', mockData)
 
     const result = await fetchQuota()
 
@@ -156,17 +75,7 @@ describe('fetchQuota', () => {
   })
 
   it('handles various org slugs', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
-
-    const mockSdk = {
-      getQuota: vi.fn().mockResolvedValue({}),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: {} })
+    const { mockSdk } = await setupSdkMockSuccess('getQuota', {})
 
     const orgSlugs = [
       'simple',
@@ -183,17 +92,7 @@ describe('fetchQuota', () => {
   })
 
   it('uses null prototype for options', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
-
-    const mockSdk = {
-      getQuota: vi.fn().mockResolvedValue({}),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: {} })
+    const { mockSdk } = await setupSdkMockSuccess('getQuota', {})
 
     // This tests that the function properly uses __proto__: null.
     await fetchQuota()

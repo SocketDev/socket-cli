@@ -1,25 +1,17 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { outputDependencies } from './output-dependencies.mts'
+import {
+  createErrorResult,
+  createSuccessResult,
+  setupStandardOutputMocks,
+  setupTestEnvironment,
+} from '../../../test/helpers/index.mts'
 
 import type { CResult } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
-// Mock the dependencies.
-vi.mock('@socketsecurity/registry/lib/logger', () => ({
-  logger: {
-    fail: vi.fn(),
-    log: vi.fn(),
-  },
-}))
-
-vi.mock('../../utils/fail-msg-with-badge.mts', () => ({
-  failMsgWithBadge: vi.fn((msg, cause) => `${msg}: ${cause}`),
-}))
-
-vi.mock('../../utils/serialize-result-json.mts', () => ({
-  serializeResultJson: vi.fn(result => JSON.stringify(result)),
-}))
+setupStandardOutputMocks()
 
 vi.mock('chalk-table', () => ({
   default: vi.fn((options, data) => `Table with ${data.length} rows`),
@@ -32,38 +24,32 @@ vi.mock('yoctocolors-cjs', () => ({
 }))
 
 describe('outputDependencies', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-    process.exitCode = undefined
-  })
+  setupTestEnvironment()
 
   it('outputs JSON format for successful result', async () => {
     const { logger } = await import('@socketsecurity/registry/lib/logger')
     const { serializeResultJson } = await import(
-      '../../utils/serialize-result-json.mts'
+      '../../utils/serialize/result-json.mts'
     )
     const mockLog = vi.mocked(logger.log)
     const mockSerialize = vi.mocked(serializeResultJson)
 
     const result: CResult<
       SocketSdkSuccessResult<'searchDependencies'>['data']
-    > = {
-      ok: true,
-      data: {
-        end: false,
-        rows: [
-          {
-            branch: 'main',
-            direct: true,
-            name: 'test-package',
-            namespace: '@test',
-            repository: 'test-repo',
-            type: 'npm',
-            version: '1.0.0',
-          },
-        ],
-      },
-    }
+    > = createSuccessResult({
+      end: false,
+      rows: [
+        {
+          branch: 'main',
+          direct: true,
+          name: 'test-package',
+          namespace: '@test',
+          repository: 'test-repo',
+          type: 'npm',
+          version: '1.0.0',
+        },
+      ],
+    })
 
     await outputDependencies(result, {
       limit: 10,
@@ -82,12 +68,10 @@ describe('outputDependencies', () => {
 
     const result: CResult<
       SocketSdkSuccessResult<'searchDependencies'>['data']
-    > = {
-      ok: false,
-      code: 2,
-      message: 'Unauthorized',
+    > = createErrorResult('Unauthorized', {
       cause: 'Invalid API token',
-    }
+      code: 2,
+    })
 
     await outputDependencies(result, {
       limit: 10,
@@ -107,23 +91,20 @@ describe('outputDependencies', () => {
 
     const result: CResult<
       SocketSdkSuccessResult<'searchDependencies'>['data']
-    > = {
-      ok: true,
-      data: {
-        end: true,
-        rows: [
-          {
-            branch: 'main',
-            direct: false,
-            name: 'lodash',
-            namespace: '',
-            repository: 'my-app',
-            type: 'npm',
-            version: '4.17.21',
-          },
-        ],
-      },
-    }
+    > = createSuccessResult({
+      end: true,
+      rows: [
+        {
+          branch: 'main',
+          direct: false,
+          name: 'lodash',
+          namespace: '',
+          repository: 'my-app',
+          type: 'npm',
+          version: '4.17.21',
+        },
+      ],
+    })
 
     await outputDependencies(result, {
       limit: 50,
@@ -157,19 +138,17 @@ describe('outputDependencies', () => {
   it('outputs error in markdown format', async () => {
     const { logger } = await import('@socketsecurity/registry/lib/logger')
     const { failMsgWithBadge } = await import(
-      '../../utils/fail-msg-with-badge.mts'
+      '../../utils/error/fail-msg-with-badge.mts'
     )
     const mockFail = vi.mocked(logger.fail)
     const mockFailMsg = vi.mocked(failMsgWithBadge)
 
     const result: CResult<
       SocketSdkSuccessResult<'searchDependencies'>['data']
-    > = {
-      ok: false,
-      code: 1,
-      message: 'Failed to fetch dependencies',
+    > = createErrorResult('Failed to fetch dependencies', {
       cause: 'Network error',
-    }
+      code: 1,
+    })
 
     await outputDependencies(result, {
       limit: 10,
@@ -191,23 +170,20 @@ describe('outputDependencies', () => {
 
     const result: CResult<
       SocketSdkSuccessResult<'searchDependencies'>['data']
-    > = {
-      ok: true,
-      data: {
-        end: false,
-        rows: [
-          {
-            branch: 'dev',
-            direct: true,
-            name: 'express',
-            namespace: '',
-            repository: 'api-server',
-            type: 'npm',
-            version: '4.18.2',
-          },
-        ],
-      },
-    }
+    > = createSuccessResult({
+      end: false,
+      rows: [
+        {
+          branch: 'dev',
+          direct: true,
+          name: 'express',
+          namespace: '',
+          repository: 'api-server',
+          type: 'npm',
+          version: '4.18.2',
+        },
+      ],
+    })
 
     await outputDependencies(result, {
       limit: 25,
@@ -228,13 +204,10 @@ describe('outputDependencies', () => {
 
     const result: CResult<
       SocketSdkSuccessResult<'searchDependencies'>['data']
-    > = {
-      ok: true,
-      data: {
-        end: true,
-        rows: [],
-      },
-    }
+    > = createSuccessResult({
+      end: true,
+      rows: [],
+    })
 
     await outputDependencies(result, {
       limit: 10,
@@ -248,10 +221,7 @@ describe('outputDependencies', () => {
   it('sets default exit code when code is undefined', async () => {
     const result: CResult<
       SocketSdkSuccessResult<'searchDependencies'>['data']
-    > = {
-      ok: false,
-      message: 'Error without code',
-    }
+    > = createErrorResult('Error without code')
 
     await outputDependencies(result, {
       limit: 10,

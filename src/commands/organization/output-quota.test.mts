@@ -1,46 +1,31 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { outputQuota } from './output-quota.mts'
+import {
+  createErrorResult,
+  createSuccessResult,
+  setupStandardOutputMocks,
+  setupTestEnvironment,
+} from '../../../test/helpers/index.mts'
 
-import type { CResult } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
-// Mock the dependencies.
-vi.mock('@socketsecurity/registry/lib/logger', () => ({
-  logger: {
-    fail: vi.fn(),
-    log: vi.fn(),
-  },
-}))
-
-vi.mock('../../utils/fail-msg-with-badge.mts', () => ({
-  failMsgWithBadge: vi.fn((msg, cause) => `${msg}: ${cause}`),
-}))
-
-vi.mock('../../utils/serialize-result-json.mts', () => ({
-  serializeResultJson: vi.fn(result => JSON.stringify(result)),
-}))
+setupStandardOutputMocks()
 
 describe('outputQuota', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-    process.exitCode = undefined
-  })
+  setupTestEnvironment()
 
   it('outputs JSON format for successful result', async () => {
     const { logger } = await import('@socketsecurity/registry/lib/logger')
     const { serializeResultJson } = await import(
-      '../../utils/serialize-result-json.mts'
+      '../../utils/output/result-json.mjs'
     )
     const mockLog = vi.mocked(logger.log)
     const mockSerialize = vi.mocked(serializeResultJson)
 
-    const result: CResult<SocketSdkSuccessResult<'getQuota'>['data']> = {
-      ok: true,
-      data: {
-        quota: 1000,
-      },
-    }
+    const result = createSuccessResult<SocketSdkSuccessResult<'getQuota'>['data']>({
+      quota: 1000,
+    })
 
     await outputQuota(result, 'json')
 
@@ -53,12 +38,10 @@ describe('outputQuota', () => {
     const { logger } = await import('@socketsecurity/registry/lib/logger')
     const mockLog = vi.mocked(logger.log)
 
-    const result: CResult<SocketSdkSuccessResult<'getQuota'>['data']> = {
-      ok: false,
+    const result = createErrorResult('Unauthorized', {
       code: 2,
-      message: 'Unauthorized',
       cause: 'Invalid API token',
-    }
+    })
 
     await outputQuota(result, 'json')
 
@@ -70,12 +53,9 @@ describe('outputQuota', () => {
     const { logger } = await import('@socketsecurity/registry/lib/logger')
     const mockLog = vi.mocked(logger.log)
 
-    const result: CResult<SocketSdkSuccessResult<'getQuota'>['data']> = {
-      ok: true,
-      data: {
-        quota: 500,
-      },
-    }
+    const result = createSuccessResult<SocketSdkSuccessResult<'getQuota'>['data']>({
+      quota: 500,
+    })
 
     await outputQuota(result, 'text')
 
@@ -90,12 +70,9 @@ describe('outputQuota', () => {
     const { logger } = await import('@socketsecurity/registry/lib/logger')
     const mockLog = vi.mocked(logger.log)
 
-    const result: CResult<SocketSdkSuccessResult<'getQuota'>['data']> = {
-      ok: true,
-      data: {
-        quota: 750,
-      },
-    }
+    const result = createSuccessResult<SocketSdkSuccessResult<'getQuota'>['data']>({
+      quota: 750,
+    })
 
     await outputQuota(result, 'markdown')
 
@@ -111,17 +88,14 @@ describe('outputQuota', () => {
   it('outputs error in text format', async () => {
     const { logger } = await import('@socketsecurity/registry/lib/logger')
     const { failMsgWithBadge } = await import(
-      '../../utils/fail-msg-with-badge.mts'
+      '../../utils/error/fail-msg-with-badge.mts'
     )
     const mockFail = vi.mocked(logger.fail)
     const mockFailMsg = vi.mocked(failMsgWithBadge)
 
-    const result: CResult<SocketSdkSuccessResult<'getQuota'>['data']> = {
-      ok: false,
-      code: 1,
-      message: 'Failed to fetch quota',
+    const result = createErrorResult('Failed to fetch quota', {
       cause: 'Network error',
-    }
+    })
 
     await outputQuota(result, 'text')
 
@@ -137,12 +111,9 @@ describe('outputQuota', () => {
     const { logger } = await import('@socketsecurity/registry/lib/logger')
     const mockLog = vi.mocked(logger.log)
 
-    const result: CResult<SocketSdkSuccessResult<'getQuota'>['data']> = {
-      ok: true,
-      data: {
-        quota: 0,
-      },
-    }
+    const result = createSuccessResult<SocketSdkSuccessResult<'getQuota'>['data']>({
+      quota: 0,
+    })
 
     await outputQuota(result, 'text')
 
@@ -155,12 +126,9 @@ describe('outputQuota', () => {
     const { logger } = await import('@socketsecurity/registry/lib/logger')
     const mockLog = vi.mocked(logger.log)
 
-    const result: CResult<SocketSdkSuccessResult<'getQuota'>['data']> = {
-      ok: true,
-      data: {
-        quota: 100,
-      },
-    }
+    const result = createSuccessResult<SocketSdkSuccessResult<'getQuota'>['data']>({
+      quota: 100,
+    })
 
     await outputQuota(result)
 
@@ -171,10 +139,7 @@ describe('outputQuota', () => {
   })
 
   it('sets default exit code when code is undefined', async () => {
-    const result: CResult<SocketSdkSuccessResult<'getQuota'>['data']> = {
-      ok: false,
-      message: 'Error without code',
-    }
+    const result = createErrorResult('Error without code')
 
     await outputQuota(result, 'json')
 

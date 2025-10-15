@@ -1,25 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { outputViewRepo } from './output-view-repo.mts'
+import {
+  createErrorResult,
+  createSuccessResult,
+  setupStandardOutputMocks,
+} from '../../../test/helpers/index.mts'
 
 import type { CResult } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 // Mock the dependencies.
-vi.mock('@socketsecurity/registry/lib/logger', () => ({
-  logger: {
-    fail: vi.fn(),
-    log: vi.fn(),
-  },
-}))
-
-vi.mock('../../utils/fail-msg-with-badge.mts', () => ({
-  failMsgWithBadge: vi.fn((msg, cause) => `${msg}: ${cause}`),
-}))
-
-vi.mock('../../utils/serialize-result-json.mts', () => ({
-  serializeResultJson: vi.fn(result => JSON.stringify(result)),
-}))
+setupStandardOutputMocks()
 
 vi.mock('chalk-table', () => ({
   default: vi.fn((options, data) => `Table with ${data.length} row(s)`),
@@ -40,14 +32,13 @@ describe('outputViewRepo', () => {
   it('outputs JSON format for successful result', async () => {
     const { logger } = await import('@socketsecurity/registry/lib/logger')
     const { serializeResultJson } = await import(
-      '../../utils/serialize-result-json.mts'
+      '../../utils/serialize/result-json.mts'
     )
     const mockLog = vi.mocked(logger.log)
     const mockSerialize = vi.mocked(serializeResultJson)
 
-    const result: CResult<SocketSdkSuccessResult<'createOrgRepo'>['data']> = {
-      ok: true,
-      data: {
+    const result: CResult<SocketSdkSuccessResult<'createOrgRepo'>['data']> =
+      createSuccessResult({
         archived: false,
         created_at: '2024-01-01T00:00:00Z',
         default_branch: 'main',
@@ -55,8 +46,7 @@ describe('outputViewRepo', () => {
         id: 123,
         name: 'test-repo',
         visibility: 'public',
-      },
-    }
+      })
 
     await outputViewRepo(result, 'json')
 
@@ -69,12 +59,11 @@ describe('outputViewRepo', () => {
     const { logger } = await import('@socketsecurity/registry/lib/logger')
     const mockLog = vi.mocked(logger.log)
 
-    const result: CResult<SocketSdkSuccessResult<'createOrgRepo'>['data']> = {
-      ok: false,
-      code: 2,
-      message: 'Unauthorized',
-      cause: 'Invalid API token',
-    }
+    const result: CResult<SocketSdkSuccessResult<'createOrgRepo'>['data']> =
+      createErrorResult('Unauthorized', {
+        cause: 'Invalid API token',
+        code: 2,
+      })
 
     await outputViewRepo(result, 'json')
 
@@ -98,10 +87,8 @@ describe('outputViewRepo', () => {
       visibility: 'private',
     }
 
-    const result: CResult<SocketSdkSuccessResult<'createOrgRepo'>['data']> = {
-      ok: true,
-      data: repoData,
-    }
+    const result: CResult<SocketSdkSuccessResult<'createOrgRepo'>['data']> =
+      createSuccessResult(repoData)
 
     await outputViewRepo(result, 'text')
 
@@ -125,17 +112,16 @@ describe('outputViewRepo', () => {
   it('outputs error in text format', async () => {
     const { logger } = await import('@socketsecurity/registry/lib/logger')
     const { failMsgWithBadge } = await import(
-      '../../utils/fail-msg-with-badge.mts'
+      '../../utils/error/fail-msg-with-badge.mts'
     )
     const mockFail = vi.mocked(logger.fail)
     const mockFailMsg = vi.mocked(failMsgWithBadge)
 
-    const result: CResult<SocketSdkSuccessResult<'createOrgRepo'>['data']> = {
-      ok: false,
-      code: 1,
-      message: 'Repository not found',
-      cause: 'Not found error',
-    }
+    const result: CResult<SocketSdkSuccessResult<'createOrgRepo'>['data']> =
+      createErrorResult('Repository not found', {
+        cause: 'Not found error',
+        code: 1,
+      })
 
     await outputViewRepo(result, 'text')
 
@@ -162,10 +148,8 @@ describe('outputViewRepo', () => {
       visibility: 'public',
     }
 
-    const result: CResult<SocketSdkSuccessResult<'createOrgRepo'>['data']> = {
-      ok: true,
-      data: repoData,
-    }
+    const result: CResult<SocketSdkSuccessResult<'createOrgRepo'>['data']> =
+      createSuccessResult(repoData)
 
     await outputViewRepo(result, 'text')
 
@@ -186,10 +170,8 @@ describe('outputViewRepo', () => {
       visibility: 'public',
     }
 
-    const result: CResult<SocketSdkSuccessResult<'createOrgRepo'>['data']> = {
-      ok: true,
-      data: repoData,
-    }
+    const result: CResult<SocketSdkSuccessResult<'createOrgRepo'>['data']> =
+      createSuccessResult(repoData)
 
     await outputViewRepo(result, 'markdown')
 
@@ -212,10 +194,8 @@ describe('outputViewRepo', () => {
       visibility: 'internal',
     }
 
-    const result: CResult<SocketSdkSuccessResult<'createOrgRepo'>['data']> = {
-      ok: true,
-      data: repoData,
-    }
+    const result: CResult<SocketSdkSuccessResult<'createOrgRepo'>['data']> =
+      createSuccessResult(repoData)
 
     await outputViewRepo(result, 'text')
 
@@ -223,10 +203,8 @@ describe('outputViewRepo', () => {
   })
 
   it('sets default exit code when code is undefined', async () => {
-    const result: CResult<SocketSdkSuccessResult<'createOrgRepo'>['data']> = {
-      ok: false,
-      message: 'Error without code',
-    }
+    const result: CResult<SocketSdkSuccessResult<'createOrgRepo'>['data']> =
+      createErrorResult('Error without code')
 
     await outputViewRepo(result, 'json')
 

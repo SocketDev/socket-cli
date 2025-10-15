@@ -1,46 +1,34 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { fetchRepoAnalyticsData } from './fetch-repo-analytics.mts'
+import {
+  setupSdkMockError,
+  setupSdkMockSuccess,
+  setupSdkSetupFailure,
+} from '../../../test/helpers/sdk-test-helpers.mts'
 
 // Mock the dependencies.
-vi.mock('../../utils/api.mts', () => ({
+vi.mock('../../utils/socket/api.mjs', () => ({
   handleApiCall: vi.fn(),
 }))
 
-vi.mock('../../utils/sdk.mts', () => ({
+vi.mock('../../utils/socket/sdk.mjs', () => ({
   setupSdk: vi.fn(),
 }))
 
 describe('fetchRepoAnalytics', () => {
   it('fetches repository analytics successfully', async () => {
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockHandleApi = vi.mocked(handleApiCall)
-    const mockSetupSdk = vi.mocked(setupSdk)
-
-    const mockSdk = {
-      getRepoAnalytics: vi.fn().mockResolvedValue({
-        success: true,
-        data: {
-          commits: 450,
-          contributors: 12,
-          issues: 85,
-          pullRequests: 120,
-          stars: 340,
-          lastUpdated: '2025-01-20T12:00:00Z',
-        },
-      }),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: true,
-      data: {
+    const { mockHandleApi, mockSdk } = await setupSdkMockSuccess(
+      'getRepoAnalytics',
+      {
         commits: 450,
         contributors: 12,
         issues: 85,
+        pullRequests: 120,
+        stars: 340,
+        lastUpdated: '2025-01-20T12:00:00Z',
       },
-    })
+    )
 
     const result = await fetchRepoAnalyticsData('test-repo', 30)
 
@@ -52,40 +40,23 @@ describe('fetchRepoAnalytics', () => {
   })
 
   it('handles SDK setup failure', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-
-    const error = {
-      ok: false,
+    await setupSdkSetupFailure('Failed to setup SDK', {
       code: 1,
-      message: 'Failed to setup SDK',
       cause: 'Configuration error',
-    }
-    mockSetupSdk.mockResolvedValue(error)
+    })
 
     const result = await fetchRepoAnalyticsData('my-repo', 7)
 
-    expect(result).toEqual(error)
+    expect(result.ok).toBe(false)
+    expect(result.message).toBe('Failed to setup SDK')
   })
 
   it('handles API call failure', async () => {
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockHandleApi = vi.mocked(handleApiCall)
-    const mockSetupSdk = vi.mocked(setupSdk)
-
-    const mockSdk = {
-      getRepoAnalytics: vi
-        .fn()
-        .mockRejectedValue(new Error('Repository not found')),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: false,
-      error: 'Repository analytics unavailable',
-      code: 404,
-    })
+    await setupSdkMockError(
+      'getRepoAnalytics',
+      'Repository analytics unavailable',
+      404,
+    )
 
     const result = await fetchRepoAnalyticsData('nonexistent-repo', 30)
 
@@ -94,17 +65,7 @@ describe('fetchRepoAnalytics', () => {
   })
 
   it('passes custom SDK options', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
-
-    const mockSdk = {
-      getRepoAnalytics: vi.fn().mockResolvedValue({}),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: {} })
+    const { mockSetupSdk } = await setupSdkMockSuccess('getRepoAnalytics', {})
 
     const sdkOpts = {
       apiToken: 'repo-analytics-token',
@@ -117,17 +78,7 @@ describe('fetchRepoAnalytics', () => {
   })
 
   it('handles different org and repo combinations', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
-
-    const mockSdk = {
-      getRepoAnalytics: vi.fn().mockResolvedValue({}),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: {} })
+    const { mockSdk } = await setupSdkMockSuccess('getRepoAnalytics', {})
 
     const repos = ['org/repo1', 'org/repo2', 'another-org/repo', 'user/project']
 
@@ -139,17 +90,7 @@ describe('fetchRepoAnalytics', () => {
   })
 
   it('handles different time ranges', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
-
-    const mockSdk = {
-      getRepoAnalytics: vi.fn().mockResolvedValue({}),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: {} })
+    const { mockSdk } = await setupSdkMockSuccess('getRepoAnalytics', {})
 
     const timeRanges = [1, 7, 14, 30, 60, 90, 365]
 
@@ -164,17 +105,7 @@ describe('fetchRepoAnalytics', () => {
   })
 
   it('uses null prototype for options', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
-
-    const mockSdk = {
-      getRepoAnalytics: vi.fn().mockResolvedValue({}),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: {} })
+    const { mockSdk } = await setupSdkMockSuccess('getRepoAnalytics', {})
 
     // This tests that the function properly uses __proto__: null.
     await fetchRepoAnalyticsData('test-repo', 30)

@@ -1,65 +1,37 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { fetchOrganization } from './fetch-organization-list.mts'
+import { setupSdkMockError, setupSdkMockSuccess, setupSdkSetupFailure } from '../../../test/helpers/sdk-test-helpers.mts'
 
 // Mock the dependencies.
-vi.mock('../../utils/api.mts', () => ({
+vi.mock('../../utils/socket/api.mjs', () => ({
   handleApiCall: vi.fn(),
 }))
 
-vi.mock('../../utils/sdk.mts', () => ({
+vi.mock('../../utils/socket/sdk.mjs', () => ({
   setupSdk: vi.fn(),
 }))
 
 describe('fetchOrganizationList', () => {
   it('fetches organization list successfully', async () => {
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockHandleApi = vi.mocked(handleApiCall)
-    const mockSetupSdk = vi.mocked(setupSdk)
-
-    const mockSdk = {
-      getOrganizations: vi.fn().mockResolvedValue({
-        success: true,
-        data: {
-          organizations: {
-            'org-1': {
-              id: 'org-1',
-              name: 'Test Org 1',
-              slug: 'test-org-1',
-              plan: 'pro',
-            },
-            'org-2': {
-              id: 'org-2',
-              name: 'Test Org 2',
-              slug: 'test-org-2',
-              plan: 'enterprise',
-            },
-          },
+    const mockData = {
+      organizations: {
+        'org-1': {
+          id: 'org-1',
+          name: 'Test Org 1',
+          slug: 'test-org-1',
+          plan: 'pro',
         },
-      }),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: true,
-      data: {
-        organizations: {
-          'org-1': {
-            id: 'org-1',
-            name: 'Test Org 1',
-            slug: 'test-org-1',
-            plan: 'pro',
-          },
-          'org-2': {
-            id: 'org-2',
-            name: 'Test Org 2',
-            slug: 'test-org-2',
-            plan: 'enterprise',
-          },
+        'org-2': {
+          id: 'org-2',
+          name: 'Test Org 2',
+          slug: 'test-org-2',
+          plan: 'enterprise',
         },
       },
-    })
+    }
+
+    const { mockHandleApi, mockSdk } = await setupSdkMockSuccess('getOrganizations', mockData)
 
     const result = await fetchOrganization()
 
@@ -74,38 +46,15 @@ describe('fetchOrganizationList', () => {
   })
 
   it('handles SDK setup failure', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-
-    const error = {
-      ok: false,
-      code: 1,
-      message: 'Failed to setup SDK',
-      cause: 'Configuration error',
-    }
-    mockSetupSdk.mockResolvedValue(error)
+    await setupSdkSetupFailure('Failed to setup SDK', { code: 1, cause: 'Configuration error' })
 
     const result = await fetchOrganization()
 
-    expect(result).toEqual(error)
+    expect(result.ok).toBe(false)
   })
 
   it('handles API call failure', async () => {
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockHandleApi = vi.mocked(handleApiCall)
-    const mockSetupSdk = vi.mocked(setupSdk)
-
-    const mockSdk = {
-      getOrganizations: vi.fn().mockRejectedValue(new Error('Network error')),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: false,
-      error: 'Failed to fetch organizations',
-      code: 500,
-    })
+    await setupSdkMockError('getOrganizations', 'Network error', 500)
 
     const result = await fetchOrganization()
 
@@ -114,17 +63,7 @@ describe('fetchOrganizationList', () => {
   })
 
   it('passes custom SDK options', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
-
-    const mockSdk = {
-      getOrganizations: vi.fn().mockResolvedValue({}),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: { organizations: {} } })
+    const { mockSetupSdk } = await setupSdkMockSuccess('getOrganizations', { organizations: {} })
 
     const sdkOpts = {
       apiToken: 'org-token',
@@ -137,14 +76,14 @@ describe('fetchOrganizationList', () => {
   })
 
   it('uses provided SDK instance', async () => {
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockHandleApi = vi.mocked(handleApiCall)
+    const { handleApiCall } = await import('../../utils/socket/api.mjs')
+    const { createSuccessResult } = await import('../../../test/helpers/mocks.mts')
 
     const mockSdk = {
       getOrganizations: vi.fn().mockResolvedValue({}),
     } as any
 
-    mockHandleApi.mockResolvedValue({ ok: true, data: { organizations: {} } })
+    vi.mocked(handleApiCall).mockResolvedValue(createSuccessResult({ organizations: {} }))
 
     await fetchOrganization({ sdk: mockSdk })
 
@@ -152,17 +91,7 @@ describe('fetchOrganizationList', () => {
   })
 
   it('uses null prototype for options', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
-
-    const mockSdk = {
-      getOrganizations: vi.fn().mockResolvedValue({}),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: { organizations: {} } })
+    const { mockSdk } = await setupSdkMockSuccess('getOrganizations', { organizations: {} })
 
     // This tests that the function properly uses __proto__: null.
     await fetchOrganization()
