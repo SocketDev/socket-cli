@@ -1,11 +1,18 @@
 import { describe, expect, it, vi } from 'vitest'
 
+import {
+  setupSdkMockError,
+  setupSdkMockSuccess,
+  setupSdkMockWithCustomSdk,
+  setupSdkSetupFailure,
+} from '../../../test/helpers/sdk-test-helpers.mts'
+
 // Mock the dependencies.
-vi.mock('../../utils/api.mts', () => ({
+vi.mock('../../utils/socket/api.mts', () => ({
   handleApiCall: vi.fn(),
 }))
 
-vi.mock('../../utils/sdk.mts', () => ({
+vi.mock('../../utils/socket/sdk.mts', () => ({
   setupSdk: vi.fn(),
 }))
 
@@ -14,30 +21,14 @@ describe('fetchCreateOrgFullScan', () => {
     const { fetchCreateOrgFullScan } = await import(
       './fetch-create-org-full-scan.mts'
     )
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockHandleApi = vi.mocked(handleApiCall)
-    const mockSetupSdk = vi.mocked(setupSdk)
 
-    const mockSdk = {
-      createOrgFullScan: vi.fn().mockResolvedValue({
-        success: true,
-        data: {
-          scanId: 'scan-123',
-          status: 'pending',
-          packagePaths: ['/path/to/package.json'],
-        },
-      }),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: true,
-      data: {
+    const { mockHandleApi, mockSdk } = await setupSdkMockSuccess(
+      'createOrgFullScan',
+      {
         scanId: 'scan-123',
         status: 'pending',
       },
-    })
+    )
 
     const config = {
       branchName: 'main',
@@ -57,17 +48,19 @@ describe('fetchCreateOrgFullScan', () => {
     expect(mockSdk.createOrgFullScan).toHaveBeenCalledWith(
       'test-org',
       ['/path/to/package.json'],
-      process.cwd(),
       {
-        branch: 'main',
-        commit_hash: 'abc123',
-        commit_message: 'Initial commit',
-        committers: 'john@example.com',
-        make_default_branch: 'undefined',
-        pull_request: '42',
-        repo: 'test-repo',
-        set_as_pending_head: 'undefined',
-        tmp: 'undefined',
+        pathsRelativeTo: process.cwd(),
+        queryParams: {
+          branch: 'main',
+          commit_hash: 'abc123',
+          commit_message: 'Initial commit',
+          committers: 'john@example.com',
+          make_default_branch: 'undefined',
+          pull_request: '42',
+          repo: 'test-repo',
+          set_as_pending_head: 'undefined',
+          tmp: 'undefined',
+        },
       },
     )
     expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
@@ -80,16 +73,10 @@ describe('fetchCreateOrgFullScan', () => {
     const { fetchCreateOrgFullScan } = await import(
       './fetch-create-org-full-scan.mts'
     )
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
 
-    const error = {
-      ok: false,
-      code: 1,
-      message: 'Failed to setup SDK',
+    await setupSdkSetupFailure('Failed to setup SDK', {
       cause: 'Invalid configuration',
-    }
-    mockSetupSdk.mockResolvedValue(error)
+    })
 
     const config = {
       branchName: 'main',
@@ -106,28 +93,20 @@ describe('fetchCreateOrgFullScan', () => {
       config,
     )
 
-    expect(result).toEqual(error)
+    expect(result).toEqual({
+      ok: false,
+      code: 1,
+      message: 'Failed to setup SDK',
+      cause: 'Invalid configuration',
+    })
   })
 
   it('handles API call failure', async () => {
     const { fetchCreateOrgFullScan } = await import(
       './fetch-create-org-full-scan.mts'
     )
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockHandleApi = vi.mocked(handleApiCall)
-    const mockSetupSdk = vi.mocked(setupSdk)
 
-    const mockSdk = {
-      createOrgFullScan: vi.fn().mockRejectedValue(new Error('API error')),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: false,
-      error: 'Failed to create scan',
-      code: 500,
-    })
+    await setupSdkMockError('createOrgFullScan', 'Failed to create scan', 500)
 
     const config = {
       branchName: 'main',
@@ -152,17 +131,11 @@ describe('fetchCreateOrgFullScan', () => {
     const { fetchCreateOrgFullScan } = await import(
       './fetch-create-org-full-scan.mts'
     )
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
 
-    const mockSdk = {
-      createOrgFullScan: vi.fn().mockResolvedValue({}),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: {} })
+    const { mockSdk, mockSetupSdk } = await setupSdkMockSuccess(
+      'createOrgFullScan',
+      {},
+    )
 
     const config = {
       branchName: 'develop',
@@ -195,17 +168,19 @@ describe('fetchCreateOrgFullScan', () => {
     expect(mockSdk.createOrgFullScan).toHaveBeenCalledWith(
       'custom-org',
       ['/path/to/package.json'],
-      '/custom/path',
       {
-        branch: 'develop',
-        commit_hash: 'xyz789',
-        commit_message: 'Feature commit',
-        committers: 'jane@example.com',
-        make_default_branch: 'true',
-        pull_request: '123',
-        repo: 'feature-repo',
-        set_as_pending_head: 'false',
-        tmp: 'true',
+        pathsRelativeTo: '/custom/path',
+        queryParams: {
+          branch: 'develop',
+          commit_hash: 'xyz789',
+          commit_message: 'Feature commit',
+          committers: 'jane@example.com',
+          make_default_branch: 'true',
+          pull_request: '123',
+          repo: 'feature-repo',
+          set_as_pending_head: 'false',
+          tmp: 'true',
+        },
       },
     )
   })
@@ -214,17 +189,8 @@ describe('fetchCreateOrgFullScan', () => {
     const { fetchCreateOrgFullScan } = await import(
       './fetch-create-org-full-scan.mts'
     )
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
 
-    const mockSdk = {
-      createOrgFullScan: vi.fn().mockResolvedValue({}),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: {} })
+    const { mockSdk } = await setupSdkMockSuccess('createOrgFullScan', {})
 
     const config = {
       branchName: '',
@@ -240,12 +206,14 @@ describe('fetchCreateOrgFullScan', () => {
     expect(mockSdk.createOrgFullScan).toHaveBeenCalledWith(
       'test-org',
       ['/path/to/package.json'],
-      process.cwd(),
       {
-        make_default_branch: 'undefined',
-        repo: 'test-repo',
-        set_as_pending_head: 'undefined',
-        tmp: 'undefined',
+        pathsRelativeTo: process.cwd(),
+        queryParams: {
+          make_default_branch: 'undefined',
+          repo: 'test-repo',
+          set_as_pending_head: 'undefined',
+          tmp: 'undefined',
+        },
       },
     )
   })
@@ -254,17 +222,8 @@ describe('fetchCreateOrgFullScan', () => {
     const { fetchCreateOrgFullScan } = await import(
       './fetch-create-org-full-scan.mts'
     )
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
 
-    const mockSdk = {
-      createOrgFullScan: vi.fn().mockResolvedValue({}),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: {} })
+    const { mockSdk } = await setupSdkMockSuccess('createOrgFullScan', {})
 
     const config = {
       branchName: 'main',
@@ -286,8 +245,10 @@ describe('fetchCreateOrgFullScan', () => {
     expect(mockSdk.createOrgFullScan).toHaveBeenCalledWith(
       'mono-org',
       packagePaths,
-      process.cwd(),
-      expect.any(Object),
+      expect.objectContaining({
+        pathsRelativeTo: process.cwd(),
+        queryParams: expect.any(Object),
+      }),
     )
   })
 
@@ -295,17 +256,8 @@ describe('fetchCreateOrgFullScan', () => {
     const { fetchCreateOrgFullScan } = await import(
       './fetch-create-org-full-scan.mts'
     )
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
 
-    const mockSdk = {
-      createOrgFullScan: vi.fn().mockResolvedValue({}),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: {} })
+    const { mockSdk } = await setupSdkMockSuccess('createOrgFullScan', {})
 
     const config = {
       branchName: 'main',
@@ -327,17 +279,8 @@ describe('fetchCreateOrgFullScan', () => {
     const { fetchCreateOrgFullScan } = await import(
       './fetch-create-org-full-scan.mts'
     )
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
 
-    const mockSdk = {
-      createOrgFullScan: vi.fn().mockResolvedValue({}),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: {} })
+    const { mockSdk } = await setupSdkMockSuccess('createOrgFullScan', {})
 
     const testCases = [
       ['org-with-dashes', 'repo-with-dashes'],
@@ -361,9 +304,11 @@ describe('fetchCreateOrgFullScan', () => {
       expect(mockSdk.createOrgFullScan).toHaveBeenCalledWith(
         org,
         ['/path/to/package.json'],
-        process.cwd(),
         expect.objectContaining({
-          repo,
+          pathsRelativeTo: process.cwd(),
+          queryParams: expect.objectContaining({
+            repo,
+          }),
         }),
       )
     }

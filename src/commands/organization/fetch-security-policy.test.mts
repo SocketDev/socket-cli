@@ -1,49 +1,33 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { fetchSecurityPolicy } from './fetch-security-policy.mts'
+import { setupSdkMockError, setupSdkMockSuccess, setupSdkSetupFailure } from '../../../test/helpers/sdk-test-helpers.mts'
 
 // Mock the dependencies.
-vi.mock('../../utils/api.mts', () => ({
+vi.mock('../../utils/socket/api.mjs', () => ({
   handleApiCall: vi.fn(),
 }))
 
-vi.mock('../../utils/sdk.mts', () => ({
+vi.mock('../../utils/socket/sdk.mjs', () => ({
   setupSdk: vi.fn(),
 }))
 
 describe('fetchSecurityPolicy', () => {
   it('fetches security policy successfully', async () => {
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockHandleApi = vi.mocked(handleApiCall)
-    const mockSetupSdk = vi.mocked(setupSdk)
-
-    const mockSdk = {
-      getOrgSecurityPolicy: vi.fn().mockResolvedValue({
-        success: true,
-        data: {
-          policy: {
-            block_high_severity: true,
-            block_critical_severity: true,
-            block_medium_severity: false,
-            block_low_severity: false,
-            auto_scan: true,
-            scan_on_push: true,
-            require_approval: true,
-          },
-          updated_at: '2025-01-15T10:00:00Z',
-        },
-      }),
+    const mockData = {
+      policy: {
+        block_high_severity: true,
+        block_critical_severity: true,
+        block_medium_severity: false,
+        block_low_severity: false,
+        auto_scan: true,
+        scan_on_push: true,
+        require_approval: true,
+      },
+      updated_at: '2025-01-15T10:00:00Z',
     }
 
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: true,
-      data: {
-        policy: expect.any(Object),
-        updated_at: '2025-01-15T10:00:00Z',
-      },
-    })
+    const { mockHandleApi, mockSdk } = await setupSdkMockSuccess('getOrgSecurityPolicy', mockData)
 
     const result = await fetchSecurityPolicy('test-org')
 
@@ -55,38 +39,15 @@ describe('fetchSecurityPolicy', () => {
   })
 
   it('handles SDK setup failure', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-
-    const error = {
-      ok: false,
-      code: 1,
-      message: 'Failed to setup SDK',
-      cause: 'Authentication failed',
-    }
-    mockSetupSdk.mockResolvedValue(error)
+    await setupSdkSetupFailure('Failed to setup SDK', { code: 1, cause: 'Authentication failed' })
 
     const result = await fetchSecurityPolicy('my-org')
 
-    expect(result).toEqual(error)
+    expect(result.ok).toBe(false)
   })
 
   it('handles API call failure', async () => {
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockHandleApi = vi.mocked(handleApiCall)
-    const mockSetupSdk = vi.mocked(setupSdk)
-
-    const mockSdk = {
-      getOrgSecurityPolicy: vi.fn().mockRejectedValue(new Error('Forbidden')),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: false,
-      error: 'Access forbidden',
-      code: 403,
-    })
+    await setupSdkMockError('getOrgSecurityPolicy', 'Forbidden', 403)
 
     const result = await fetchSecurityPolicy('restricted-org')
 
@@ -95,17 +56,7 @@ describe('fetchSecurityPolicy', () => {
   })
 
   it('passes custom SDK options', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
-
-    const mockSdk = {
-      getOrgSecurityPolicy: vi.fn().mockResolvedValue({}),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: {} })
+    const { mockSetupSdk } = await setupSdkMockSuccess('getOrgSecurityPolicy', {})
 
     const sdkOpts = {
       apiToken: 'security-token',
@@ -118,32 +69,15 @@ describe('fetchSecurityPolicy', () => {
   })
 
   it('handles default security policy', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
-
-    const mockSdk = {
-      getOrgSecurityPolicy: vi.fn().mockResolvedValue({
-        policy: {
-          block_high_severity: false,
-          block_critical_severity: false,
-          auto_scan: false,
-        },
-      }),
+    const mockData = {
+      policy: {
+        block_high_severity: false,
+        block_critical_severity: false,
+        auto_scan: false,
+      },
     }
 
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: true,
-      data: {
-        policy: {
-          block_high_severity: false,
-          block_critical_severity: false,
-          auto_scan: false,
-        },
-      },
-    })
+    await setupSdkMockSuccess('getOrgSecurityPolicy', mockData)
 
     const result = await fetchSecurityPolicy('new-org')
 
@@ -152,17 +86,7 @@ describe('fetchSecurityPolicy', () => {
   })
 
   it('handles various org slugs', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
-
-    const mockSdk = {
-      getOrgSecurityPolicy: vi.fn().mockResolvedValue({}),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: {} })
+    const { mockSdk } = await setupSdkMockSuccess('getOrgSecurityPolicy', {})
 
     const orgSlugs = [
       'simple-org',
@@ -179,17 +103,7 @@ describe('fetchSecurityPolicy', () => {
   })
 
   it('uses null prototype for options', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
-
-    const mockSdk = {
-      getOrgSecurityPolicy: vi.fn().mockResolvedValue({}),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: {} })
+    const { mockSdk } = await setupSdkMockSuccess('getOrgSecurityPolicy', {})
 
     // This tests that the function properly uses __proto__: null.
     await fetchSecurityPolicy('test-org')

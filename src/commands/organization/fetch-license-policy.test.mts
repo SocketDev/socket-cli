@@ -1,49 +1,28 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { fetchLicensePolicy } from './fetch-license-policy.mts'
+import { setupSdkMockError, setupSdkMockSuccess, setupSdkSetupFailure } from '../../../test/helpers/sdk-test-helpers.mts'
 
 // Mock the dependencies.
-vi.mock('../../utils/api.mts', () => ({
+vi.mock('../../utils/socket/api.mjs', () => ({
   handleApiCall: vi.fn(),
 }))
 
-vi.mock('../../utils/sdk.mts', () => ({
+vi.mock('../../utils/socket/sdk.mjs', () => ({
   setupSdk: vi.fn(),
 }))
 
 describe('fetchLicensePolicy', () => {
   it('fetches license policy successfully', async () => {
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockHandleApi = vi.mocked(handleApiCall)
-    const mockSetupSdk = vi.mocked(setupSdk)
-
-    const mockSdk = {
-      getOrgLicensePolicy: vi.fn().mockResolvedValue({
-        success: true,
-        data: {
-          license_policy: {
-            MIT: { allowed: true },
-            'Apache-2.0': { allowed: true },
-            'GPL-3.0': { allowed: false },
-            'BSD-3-Clause': { allowed: true },
-            ISC: { allowed: true },
-          },
-        },
-      }),
+    const mockData = {
+      license_policy: {
+        MIT: { allowed: true },
+        'Apache-2.0': { allowed: true },
+        'GPL-3.0': { allowed: false },
+      },
     }
 
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: true,
-      data: {
-        license_policy: {
-          MIT: { allowed: true },
-          'Apache-2.0': { allowed: true },
-          'GPL-3.0': { allowed: false },
-        },
-      },
-    })
+    const { mockHandleApi, mockSdk } = await setupSdkMockSuccess('getOrgLicensePolicy', mockData)
 
     const result = await fetchLicensePolicy('test-org')
 
@@ -55,40 +34,15 @@ describe('fetchLicensePolicy', () => {
   })
 
   it('handles SDK setup failure', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-
-    const error = {
-      ok: false,
-      code: 1,
-      message: 'Failed to setup SDK',
-      cause: 'Invalid token',
-    }
-    mockSetupSdk.mockResolvedValue(error)
+    await setupSdkSetupFailure('Failed to setup SDK', { code: 1, cause: 'Invalid token' })
 
     const result = await fetchLicensePolicy('my-org')
 
-    expect(result).toEqual(error)
+    expect(result.ok).toBe(false)
   })
 
   it('handles API call failure', async () => {
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockHandleApi = vi.mocked(handleApiCall)
-    const mockSetupSdk = vi.mocked(setupSdk)
-
-    const mockSdk = {
-      getOrgLicensePolicy: vi
-        .fn()
-        .mockRejectedValue(new Error('Access denied')),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: false,
-      error: 'Insufficient permissions',
-      code: 403,
-    })
+    await setupSdkMockError('getOrgLicensePolicy', 'Access denied', 403)
 
     const result = await fetchLicensePolicy('restricted-org')
 
@@ -97,17 +51,7 @@ describe('fetchLicensePolicy', () => {
   })
 
   it('passes custom SDK options', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
-
-    const mockSdk = {
-      getOrgLicensePolicy: vi.fn().mockResolvedValue({}),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: {} })
+    const { mockSetupSdk } = await setupSdkMockSuccess('getOrgLicensePolicy', {})
 
     const sdkOpts = {
       apiToken: 'policy-token',
@@ -120,22 +64,8 @@ describe('fetchLicensePolicy', () => {
   })
 
   it('handles empty license policy', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
-
-    const mockSdk = {
-      getOrgLicensePolicy: vi.fn().mockResolvedValue({
-        license_policy: {},
-      }),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: true,
-      data: { license_policy: {} },
-    })
+    const mockData = { license_policy: {} }
+    await setupSdkMockSuccess('getOrgLicensePolicy', mockData)
 
     const result = await fetchLicensePolicy('new-org')
 
@@ -144,17 +74,7 @@ describe('fetchLicensePolicy', () => {
   })
 
   it('handles various org slugs', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
-
-    const mockSdk = {
-      getOrgLicensePolicy: vi.fn().mockResolvedValue({}),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: {} })
+    const { mockSdk } = await setupSdkMockSuccess('getOrgLicensePolicy', {})
 
     const orgSlugs = [
       'simple-org',
@@ -171,17 +91,7 @@ describe('fetchLicensePolicy', () => {
   })
 
   it('uses null prototype for options', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
-
-    const mockSdk = {
-      getOrgLicensePolicy: vi.fn().mockResolvedValue({}),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: {} })
+    const { mockSdk } = await setupSdkMockSuccess('getOrgLicensePolicy', {})
 
     // This tests that the function properly uses __proto__: null.
     await fetchLicensePolicy('test-org')

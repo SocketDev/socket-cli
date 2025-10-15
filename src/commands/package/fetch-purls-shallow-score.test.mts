@@ -1,55 +1,40 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { fetchPurlsShallowScore } from './fetch-purls-shallow-score.mts'
+import {
+  setupSdkMockError,
+  setupSdkMockSuccess,
+  setupSdkSetupFailure,
+} from '../../../test/helpers/sdk-test-helpers.mts'
 
 // Mock the dependencies.
-vi.mock('../../utils/api.mts', () => ({
+vi.mock('../../utils/socket/api.mjs', () => ({
   handleApiCall: vi.fn(),
 }))
 
-vi.mock('../../utils/sdk.mts', () => ({
+vi.mock('../../utils/socket/sdk.mjs', () => ({
   setupSdk: vi.fn(),
-}))
-
-vi.mock('../../utils/api.mts', () => ({
-  handleApiCall: vi.fn(),
 }))
 
 describe('fetchPurlsShallowScore', () => {
   it('fetches purls shallow scores successfully', async () => {
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockHandleApi = vi.mocked(handleApiCall)
-    const mockSetupSdk = vi.mocked(setupSdk)
-
-    const mockSdk = {
-      batchPackageFetch: vi.fn().mockResolvedValue({
-        success: true,
-        data: [
-          {
-            purl: 'pkg:npm/lodash@4.17.21',
-            score: 85,
-            name: 'lodash',
-            version: '4.17.21',
-          },
-          {
-            purl: 'pkg:npm/express@4.18.2',
-            score: 92,
-            name: 'express',
-            version: '4.18.2',
-          },
-        ],
-      }),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: true,
-      data: [
-        { purl: 'pkg:npm/lodash@4.17.21', score: 85 },
-        { purl: 'pkg:npm/express@4.18.2', score: 92 },
+    const { mockHandleApi, mockSdk } = await setupSdkMockSuccess(
+      'batchPackageFetch',
+      [
+        {
+          purl: 'pkg:npm/lodash@4.17.21',
+          score: 85,
+          name: 'lodash',
+          version: '4.17.21',
+        },
+        {
+          purl: 'pkg:npm/express@4.18.2',
+          score: 92,
+          name: 'express',
+          version: '4.18.2',
+        },
       ],
-    })
+    )
 
     const purls = ['pkg:npm/lodash@4.17.21', 'pkg:npm/express@4.18.2']
     const result = await fetchPurlsShallowScore(purls)
@@ -66,40 +51,19 @@ describe('fetchPurlsShallowScore', () => {
   })
 
   it('handles SDK setup failure', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-
-    const error = {
-      ok: false,
+    await setupSdkSetupFailure('Failed to setup SDK', {
       code: 1,
-      message: 'Failed to setup SDK',
       cause: 'Invalid configuration',
-    }
-    mockSetupSdk.mockResolvedValue(error)
+    })
 
     const result = await fetchPurlsShallowScore(['pkg:npm/test@1.0.0'])
 
-    expect(result).toEqual(error)
+    expect(result.ok).toBe(false)
+    expect(result.message).toBe('Failed to setup SDK')
   })
 
   it('handles API call failure', async () => {
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockHandleApi = vi.mocked(handleApiCall)
-    const mockSetupSdk = vi.mocked(setupSdk)
-
-    const mockSdk = {
-      batchPackageFetch: vi
-        .fn()
-        .mockRejectedValue(new Error('Batch too large')),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: false,
-      error: 'Batch size exceeded',
-      code: 400,
-    })
+    await setupSdkMockError('batchPackageFetch', 'Batch too large', 400)
 
     const result = await fetchPurlsShallowScore(
       Array(1000).fill('pkg:npm/test@1.0.0'),
@@ -110,17 +74,7 @@ describe('fetchPurlsShallowScore', () => {
   })
 
   it('passes custom SDK options', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
-
-    const mockSdk = {
-      batchPackageFetch: vi.fn().mockResolvedValue([]),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: [] })
+    const { mockSetupSdk } = await setupSdkMockSuccess('batchPackageFetch', [])
 
     const sdkOpts = {
       apiToken: 'batch-token',
@@ -133,17 +87,7 @@ describe('fetchPurlsShallowScore', () => {
   })
 
   it('handles empty purl array', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
-
-    const mockSdk = {
-      batchPackageFetch: vi.fn().mockResolvedValue([]),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: [] })
+    const { mockSdk } = await setupSdkMockSuccess('batchPackageFetch', [])
 
     const result = await fetchPurlsShallowScore([])
 
@@ -156,17 +100,7 @@ describe('fetchPurlsShallowScore', () => {
   })
 
   it('handles mixed purl types', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
-
-    const mockSdk = {
-      batchPackageFetch: vi.fn().mockResolvedValue([]),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: [] })
+    const { mockSdk } = await setupSdkMockSuccess('batchPackageFetch', [])
 
     const mixedPurls = [
       'pkg:npm/lodash@4.17.21',
@@ -184,22 +118,12 @@ describe('fetchPurlsShallowScore', () => {
   })
 
   it('handles large batch of purls', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
-
     const largeBatch = Array(100)
       .fill(0)
       .map((_, i) => `pkg:npm/package-${i}@1.0.0`)
     const mockResults = largeBatch.map(purl => ({ purl, score: 80 }))
 
-    const mockSdk = {
-      batchPackageFetch: vi.fn().mockResolvedValue(mockResults),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: mockResults })
+    await setupSdkMockSuccess('batchPackageFetch', mockResults)
 
     const result = await fetchPurlsShallowScore(largeBatch)
 
@@ -208,17 +132,7 @@ describe('fetchPurlsShallowScore', () => {
   })
 
   it('uses null prototype for options', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
-
-    const mockSdk = {
-      batchPackageFetch: vi.fn().mockResolvedValue([]),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: [] })
+    const { mockSdk } = await setupSdkMockSuccess('batchPackageFetch', [])
 
     // This tests that the function properly uses __proto__: null.
     await fetchPurlsShallowScore(['pkg:npm/test@1.0.0'])

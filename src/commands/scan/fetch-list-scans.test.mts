@@ -1,56 +1,25 @@
 import { describe, expect, it, vi } from 'vitest'
 
+import { setupSdkMockSuccess } from '../../../test/helpers/sdk-test-helpers.mts'
+
 // Mock the dependencies.
-vi.mock('../../utils/api.mts', () => ({
+vi.mock('../../utils/socket/api.mjs', () => ({
   handleApiCall: vi.fn(),
 }))
 
-vi.mock('../../utils/sdk.mts', () => ({
+vi.mock('../../utils/socket/sdk.mjs', () => ({
   setupSdk: vi.fn(),
 }))
 
 describe('fetchOrgFullScanList', () => {
   it('fetches scan list successfully', async () => {
     const { fetchOrgFullScanList } = await import('./fetch-list-scans.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockHandleApi = vi.mocked(handleApiCall)
-    const mockSetupSdk = vi.mocked(setupSdk)
 
-    const mockSdk = {
-      getOrgFullScanList: vi.fn().mockResolvedValue({
-        success: true,
-        data: {
-          scans: [
-            {
-              id: 'scan-123',
-              status: 'completed',
-              createdAt: '2023-01-01T00:00:00Z',
-            },
-            {
-              id: 'scan-456',
-              status: 'pending',
-              createdAt: '2023-01-02T00:00:00Z',
-            },
-          ],
-          pagination: {
-            page: 1,
-            perPage: 10,
-            total: 2,
-          },
-        },
-      }),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: true,
-      data: {
-        scans: [
-          { id: 'scan-123', status: 'completed' },
-          { id: 'scan-456', status: 'pending' },
-        ],
-      },
+    const { mockHandleApi, mockSdk } = await setupSdkMockSuccess('getOrgFullScanList', {
+      scans: [
+        { id: 'scan-123', status: 'completed' },
+        { id: 'scan-456', status: 'pending' },
+      ],
     })
 
     const config = {
@@ -83,16 +52,11 @@ describe('fetchOrgFullScanList', () => {
 
   it('handles SDK setup failure', async () => {
     const { fetchOrgFullScanList } = await import('./fetch-list-scans.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
+    const { setupSdkSetupFailure } = await import('../../../test/helpers/sdk-test-helpers.mts')
 
-    const error = {
-      ok: false,
-      code: 1,
-      message: 'Failed to setup SDK',
+    await setupSdkSetupFailure('Failed to setup SDK', {
       cause: 'Invalid configuration',
-    }
-    mockSetupSdk.mockResolvedValue(error)
+    })
 
     const config = {
       branch: 'main',
@@ -107,26 +71,16 @@ describe('fetchOrgFullScanList', () => {
 
     const result = await fetchOrgFullScanList(config)
 
-    expect(result).toEqual(error)
+    expect(result.ok).toBe(false)
+    expect(result.message).toBe('Failed to setup SDK')
+    expect(result.cause).toBe('Invalid configuration')
   })
 
   it('handles API call failure', async () => {
     const { fetchOrgFullScanList } = await import('./fetch-list-scans.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockHandleApi = vi.mocked(handleApiCall)
-    const mockSetupSdk = vi.mocked(setupSdk)
+    const { setupSdkMockError } = await import('../../../test/helpers/sdk-test-helpers.mts')
 
-    const mockSdk = {
-      getOrgFullScanList: vi.fn().mockRejectedValue(new Error('API error')),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: false,
-      error: 'Failed to fetch scan list',
-      code: 500,
-    })
+    await setupSdkMockError('getOrgFullScanList', 'API error', 500)
 
     const config = {
       branch: 'main',
@@ -147,17 +101,8 @@ describe('fetchOrgFullScanList', () => {
 
   it('passes custom SDK options', async () => {
     const { fetchOrgFullScanList } = await import('./fetch-list-scans.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
 
-    const mockSdk = {
-      getOrgFullScanList: vi.fn().mockResolvedValue({}),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: {} })
+    const { mockSdk, mockSetupSdk } = await setupSdkMockSuccess('getOrgFullScanList', {})
 
     const config = {
       branch: 'develop',
@@ -193,17 +138,8 @@ describe('fetchOrgFullScanList', () => {
 
   it('handles empty optional config values', async () => {
     const { fetchOrgFullScanList } = await import('./fetch-list-scans.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
 
-    const mockSdk = {
-      getOrgFullScanList: vi.fn().mockResolvedValue({}),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: {} })
+    const { mockSdk } = await setupSdkMockSuccess('getOrgFullScanList', {})
 
     const config = {
       branch: '',
@@ -229,17 +165,8 @@ describe('fetchOrgFullScanList', () => {
 
   it('handles different pagination parameters', async () => {
     const { fetchOrgFullScanList } = await import('./fetch-list-scans.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
 
-    const mockSdk = {
-      getOrgFullScanList: vi.fn().mockResolvedValue({}),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: {} })
+    const { mockSdk } = await setupSdkMockSuccess('getOrgFullScanList', {})
 
     const testCases = [
       { page: 1, perPage: 10 },
@@ -277,17 +204,8 @@ describe('fetchOrgFullScanList', () => {
 
   it('handles different sort and direction combinations', async () => {
     const { fetchOrgFullScanList } = await import('./fetch-list-scans.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
 
-    const mockSdk = {
-      getOrgFullScanList: vi.fn().mockResolvedValue({}),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: {} })
+    const { mockSdk } = await setupSdkMockSuccess('getOrgFullScanList', {})
 
     const testCases = [
       { sort: 'created_at', direction: 'asc' },
@@ -325,17 +243,8 @@ describe('fetchOrgFullScanList', () => {
 
   it('uses null prototype for config and options', async () => {
     const { fetchOrgFullScanList } = await import('./fetch-list-scans.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
 
-    const mockSdk = {
-      getOrgFullScanList: vi.fn().mockResolvedValue({}),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: {} })
+    const { mockSdk } = await setupSdkMockSuccess('getOrgFullScanList', {})
 
     const config = {
       branch: 'main',

@@ -1,6 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { setupHandleFunctionMocks } from '../../../test/helpers/mock-setup.mts'
+import { createErrorResult, createSuccessResult } from '../../../test/helpers/mocks.mts'
+import { setupSdkMockSuccess, setupSdkMockWithCustomSdk, setupSdkSetupFailure } from '../../../test/helpers/sdk-test-helpers.mts'
+
 // Mock the dependencies.
+setupHandleFunctionMocks()
+
+vi.mock('@socketsecurity/registry/lib/debug', () => ({
+  debug: vi.fn(),
+  debugDir: vi.fn(),
+  debugFn: vi.fn(),
+}))
 
 vi.mock('@socketsecurity/registry/lib/logger', () => ({
   logger: {
@@ -8,31 +19,45 @@ vi.mock('@socketsecurity/registry/lib/logger', () => ({
   },
 }))
 
-vi.mock('../../constants.mts', async importOriginal => {
-  const actual = await importOriginal()
-  return {
-    ...actual,
-    default: {
-      ...actual.default,
-      spinner: {
-        start: vi.fn(),
-        stop: vi.fn(),
-      },
+vi.mock('../../constants.mts', () => {
+  const kInternalsSymbol = Symbol.for('kInternalsSymbol')
+  const mockConstants = {
+    spinner: {
+      start: vi.fn(),
+      stop: vi.fn(),
     },
+    kInternalsSymbol,
+    [kInternalsSymbol]: {
+      getSentry: vi.fn(() => undefined),
+    },
+  }
+  return {
+    default: mockConstants,
+    CONFIG_KEY_API_BASE_URL: 'apiBaseUrl',
+    CONFIG_KEY_API_PROXY: 'apiProxy',
+    CONFIG_KEY_API_TOKEN: 'apiToken',
+    CONFIG_KEY_DEFAULT_ORG: 'defaultOrg',
+    CONFIG_KEY_ENFORCED_ORGS: 'enforcedOrgs',
+    CONFIG_KEY_ORG: 'org',
+    UNKNOWN_ERROR: 'unknown error',
+    getInternals: vi.fn(() => ({
+      getSentry: vi.fn(() => undefined),
+    })),
   }
 })
 
-vi.mock('../../utils/api.mts', () => ({
+vi.mock('../../utils/socket/api.mjs', () => ({
+  handleApiCall: vi.fn(),
   handleApiCallNoSpinner: vi.fn(),
   queryApiSafeText: vi.fn(),
 }))
 
-vi.mock('../../utils/errors.mts', () => ({
-  formatErrorWithDetail: vi.fn(),
+vi.mock('../../utils/socket/sdk.mjs', () => ({
+  setupSdk: vi.fn(),
 }))
 
-vi.mock('../../utils/sdk.mts', () => ({
-  setupSdk: vi.fn(),
+vi.mock('../../utils/error/errors.mjs', () => ({
+  formatErrorWithDetail: vi.fn(),
 }))
 
 describe('fetchScanData', () => {
@@ -42,44 +67,37 @@ describe('fetchScanData', () => {
 
   it('fetches scan data successfully', async () => {
     const { fetchScanData } = await import('./fetch-report-data.mts')
-    const { handleApiCallNoSpinner, queryApiSafeText } = await import(
-      '../../utils/api.mts'
-    )
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockHandleApiNoSpinner = vi.mocked(handleApiCallNoSpinner)
+    const { handleApiCallNoSpinner, queryApiSafeText } = await import('../../utils/socket/api.mjs')
     const mockQueryApiText = vi.mocked(queryApiSafeText)
-    const mockSetupSdk = vi.mocked(setupSdk)
+    const mockHandleApiNoSpinner = vi.mocked(handleApiCallNoSpinner)
 
-    const mockSdk = {
-      getOrgSecurityPolicy: vi.fn().mockResolvedValue({
-        success: true,
-        data: {
-          rules: [
-            { id: 'rule-1', enabled: true, severity: 'high' },
-            { id: 'rule-2', enabled: false, severity: 'medium' },
-          ],
-        },
-      }),
+    const mockSecurityPolicy = {
+      rules: [{ id: 'rule-1', enabled: true }],
     }
+
+    const { mockSdk } = await setupSdkMockWithCustomSdk(
+      {
+        getOrgSecurityPolicy: vi.fn().mockResolvedValue({
+          success: true,
+          data: {
+            rules: [
+              { id: 'rule-1', enabled: true, severity: 'high' },
+              { id: 'rule-2', enabled: false, severity: 'medium' },
+            ],
+          },
+        }),
+      },
+      mockSecurityPolicy,
+    )
 
     const mockScanData = JSON.stringify({
       type: 'package',
       name: 'lodash',
       version: '4.17.21',
     })
-    const mockSecurityPolicy = {
-      rules: [{ id: 'rule-1', enabled: true }],
-    }
 
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockQueryApiText.mockResolvedValue({
-      ok: true,
-      data: mockScanData,
-    })
-    mockHandleApiNoSpinner.mockResolvedValue({
-      ok: true,
-      data: mockSecurityPolicy,
-    })
+    mockQueryApiText.mockResolvedValue(createSuccessResult(mockScanData))
+    mockHandleApiNoSpinner.mockResolvedValue(createSuccessResult(mockSecurityPolicy))
 
     const result = await fetchScanData('test-org', 'scan-123')
 
@@ -100,43 +118,31 @@ describe('fetchScanData', () => {
 
   it('handles SDK setup failure', async () => {
     const { fetchScanData } = await import('./fetch-report-data.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
 
-    const error = {
-      ok: false,
-      code: 1,
-      message: 'Failed to setup SDK',
-      cause: 'Invalid configuration',
-    }
-    mockSetupSdk.mockResolvedValue(error)
+    await setupSdkSetupFailure('Failed to setup SDK', { code: 1, cause: 'Invalid configuration' })
 
     const result = await fetchScanData('test-org', 'scan-123')
 
-    expect(result).toEqual(error)
+    expect(result.ok).toBe(false)
+    expect(result.message).toBe('Failed to setup SDK')
   })
 
   it('handles scan fetch failure', async () => {
     const { fetchScanData } = await import('./fetch-report-data.mts')
-    const { queryApiSafeText } = await import('../../utils/api.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
+    const { queryApiSafeText } = await import('../../utils/socket/api.mjs')
     const mockQueryApiText = vi.mocked(queryApiSafeText)
-    const mockSetupSdk = vi.mocked(setupSdk)
 
-    const mockSdk = {
-      getOrgSecurityPolicy: vi.fn().mockResolvedValue({
-        success: true,
-        data: { rules: [] },
-      }),
-    }
+    await setupSdkMockWithCustomSdk(
+      {
+        getOrgSecurityPolicy: vi.fn().mockResolvedValue({
+          success: true,
+          data: { rules: [] },
+        }),
+      },
+      { rules: [] },
+    )
 
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockQueryApiText.mockResolvedValue({
-      ok: false,
-      code: 404,
-      message: 'Scan not found',
-      cause: 'The specified scan does not exist',
-    })
+    mockQueryApiText.mockResolvedValue(createErrorResult('Scan not found', { code: 404, cause: 'The specified scan does not exist' }))
 
     const result = await fetchScanData('test-org', 'nonexistent-scan')
 
@@ -146,32 +152,22 @@ describe('fetchScanData', () => {
 
   it('handles security policy fetch failure', async () => {
     const { fetchScanData } = await import('./fetch-report-data.mts')
-    const { handleApiCallNoSpinner, queryApiSafeText } = await import(
-      '../../utils/api.mts'
-    )
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockHandleApiNoSpinner = vi.mocked(handleApiCallNoSpinner)
+    const { handleApiCallNoSpinner, queryApiSafeText } = await import('../../utils/socket/api.mjs')
     const mockQueryApiText = vi.mocked(queryApiSafeText)
-    const mockSetupSdk = vi.mocked(setupSdk)
+    const mockHandleApiNoSpinner = vi.mocked(handleApiCallNoSpinner)
 
-    const mockSdk = {
-      getOrgSecurityPolicy: vi.fn().mockResolvedValue({
-        success: true,
-        data: { rules: [] },
-      }),
-    }
+    await setupSdkMockWithCustomSdk(
+      {
+        getOrgSecurityPolicy: vi.fn().mockResolvedValue({
+          success: true,
+          data: { rules: [] },
+        }),
+      },
+      { rules: [] },
+    )
 
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockQueryApiText.mockResolvedValue({
-      ok: true,
-      data: '{"type":"package","name":"test"}',
-    })
-    mockHandleApiNoSpinner.mockResolvedValue({
-      ok: false,
-      code: 403,
-      message: 'Access denied',
-      cause: 'Insufficient permissions',
-    })
+    mockQueryApiText.mockResolvedValue(createSuccessResult('{"type":"package","name":"test"}'))
+    mockHandleApiNoSpinner.mockResolvedValue(createErrorResult('Access denied', { code: 403, cause: 'Insufficient permissions' }))
 
     const result = await fetchScanData('restricted-org', 'scan-123')
 
@@ -181,45 +177,36 @@ describe('fetchScanData', () => {
 
   it('handles invalid JSON in scan data', async () => {
     const { fetchScanData } = await import('./fetch-report-data.mts')
-    const { handleApiCallNoSpinner, queryApiSafeText } = await import(
-      '../../utils/api.mts'
-    )
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { debugDir, debugFn } = await import(
+    const { handleApiCallNoSpinner, queryApiSafeText } = await import('../../utils/socket/api.mjs')
+    const { debug, debugDir } = await import(
       '@socketsecurity/registry/lib/debug'
     )
-    const mockHandleApiNoSpinner = vi.mocked(handleApiCallNoSpinner)
     const mockQueryApiText = vi.mocked(queryApiSafeText)
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockDebugFn = vi.mocked(debugFn)
+    const mockHandleApiNoSpinner = vi.mocked(handleApiCallNoSpinner)
+    const mockDebug = vi.mocked(debug)
     const mockDebugDir = vi.mocked(debugDir)
 
-    const mockSdk = {
-      getOrgSecurityPolicy: vi.fn().mockResolvedValue({
-        success: true,
-        data: { rules: [] },
-      }),
-    }
+    await setupSdkMockWithCustomSdk(
+      {
+        getOrgSecurityPolicy: vi.fn().mockResolvedValue({
+          success: true,
+          data: { rules: [] },
+        }),
+      },
+      { rules: [] },
+    )
 
     const invalidJson = '{"valid":"json"}\n{"invalid":json}'
 
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockQueryApiText.mockResolvedValue({
-      ok: true,
-      data: invalidJson,
-    })
-    mockHandleApiNoSpinner.mockResolvedValue({
-      ok: true,
-      data: { rules: [] },
-    })
+    mockQueryApiText.mockResolvedValue(createSuccessResult(invalidJson))
+    mockHandleApiNoSpinner.mockResolvedValue(createSuccessResult({ rules: [] }))
 
     const result = await fetchScanData('test-org', 'scan-123')
 
-    expect(mockDebugFn).toHaveBeenCalledWith(
-      'error',
+    expect(mockDebug).toHaveBeenCalledWith(
       'Failed to parse report data line as JSON',
     )
-    expect(mockDebugDir).toHaveBeenCalledWith('error', {
+    expect(mockDebugDir).toHaveBeenCalledWith({
       error: expect.any(SyntaxError),
       line: '{"invalid":json}',
     })
@@ -229,30 +216,22 @@ describe('fetchScanData', () => {
 
   it('includes license policy when requested', async () => {
     const { fetchScanData } = await import('./fetch-report-data.mts')
-    const { handleApiCallNoSpinner, queryApiSafeText } = await import(
-      '../../utils/api.mts'
-    )
-    const { setupSdk } = await import('../../utils/sdk.mts')
+    const { handleApiCallNoSpinner, queryApiSafeText } = await import('../../utils/socket/api.mjs')
     const mockQueryApiText = vi.mocked(queryApiSafeText)
     const mockHandleApiNoSpinner = vi.mocked(handleApiCallNoSpinner)
-    const mockSetupSdk = vi.mocked(setupSdk)
 
-    const mockSdk = {
-      getOrgSecurityPolicy: vi.fn().mockResolvedValue({
-        success: true,
-        data: { rules: [] },
-      }),
-    }
+    await setupSdkMockWithCustomSdk(
+      {
+        getOrgSecurityPolicy: vi.fn().mockResolvedValue({
+          success: true,
+          data: { rules: [] },
+        }),
+      },
+      { rules: [] },
+    )
 
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockQueryApiText.mockResolvedValue({
-      ok: true,
-      data: '{"type":"package","name":"test"}',
-    })
-    mockHandleApiNoSpinner.mockResolvedValue({
-      ok: true,
-      data: { rules: [] },
-    })
+    mockQueryApiText.mockResolvedValue(createSuccessResult('{"type":"package","name":"test"}'))
+    mockHandleApiNoSpinner.mockResolvedValue(createSuccessResult({ rules: [] }))
 
     const options = {
       includeLicensePolicy: true,
@@ -267,30 +246,22 @@ describe('fetchScanData', () => {
 
   it('handles custom SDK options', async () => {
     const { fetchScanData } = await import('./fetch-report-data.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCallNoSpinner, queryApiSafeText } = await import(
-      '../../utils/api.mts'
-    )
-    const mockSetupSdk = vi.mocked(setupSdk)
+    const { handleApiCallNoSpinner, queryApiSafeText } = await import('../../utils/socket/api.mjs')
     const mockQueryApiText = vi.mocked(queryApiSafeText)
     const mockHandleApiNoSpinner = vi.mocked(handleApiCallNoSpinner)
 
-    const mockSdk = {
-      getOrgSecurityPolicy: vi.fn().mockResolvedValue({
-        success: true,
-        data: { rules: [] },
-      }),
-    }
+    const { mockSetupSdk } = await setupSdkMockWithCustomSdk(
+      {
+        getOrgSecurityPolicy: vi.fn().mockResolvedValue({
+          success: true,
+          data: { rules: [] },
+        }),
+      },
+      { rules: [] },
+    )
 
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockQueryApiText.mockResolvedValue({
-      ok: true,
-      data: '{"type":"package","name":"test"}',
-    })
-    mockHandleApiNoSpinner.mockResolvedValue({
-      ok: true,
-      data: { rules: [] },
-    })
+    mockQueryApiText.mockResolvedValue(createSuccessResult('{"type":"package","name":"test"}'))
+    mockHandleApiNoSpinner.mockResolvedValue(createSuccessResult({ rules: [] }))
 
     const options = {
       sdkOpts: {
@@ -306,33 +277,23 @@ describe('fetchScanData', () => {
 
   it('handles non-array scan data', async () => {
     const { fetchScanData } = await import('./fetch-report-data.mts')
-    const { handleApiCallNoSpinner, queryApiSafeText } = await import(
-      '../../utils/api.mts'
-    )
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockHandleApiNoSpinner = vi.mocked(handleApiCallNoSpinner)
+    const { queryApiSafeText } = await import('../../utils/socket/api.mjs')
     const mockQueryApiText = vi.mocked(queryApiSafeText)
-    const mockSetupSdk = vi.mocked(setupSdk)
 
-    const mockSdk = {
-      getOrgSecurityPolicy: vi.fn().mockResolvedValue({
-        success: true,
-        data: { rules: [] },
-      }),
-    }
+    await setupSdkMockWithCustomSdk(
+      {
+        getOrgSecurityPolicy: vi.fn().mockResolvedValue({
+          success: true,
+          data: { rules: [] },
+        }),
+      },
+      { rules: [] },
+    )
 
     // Return non-array data to trigger the error path.
     const nonArrayData = 'not-json-at-all'
 
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockQueryApiText.mockResolvedValue({
-      ok: true,
-      data: nonArrayData,
-    })
-    mockHandleApiNoSpinner.mockResolvedValue({
-      ok: true,
-      data: { rules: [] },
-    })
+    mockQueryApiText.mockResolvedValue(createSuccessResult(nonArrayData))
 
     const result = await fetchScanData('test-org', 'scan-123')
 
@@ -342,30 +303,22 @@ describe('fetchScanData', () => {
 
   it('uses null prototype for options', async () => {
     const { fetchScanData } = await import('./fetch-report-data.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCallNoSpinner, queryApiSafeText } = await import(
-      '../../utils/api.mts'
-    )
-    const mockSetupSdk = vi.mocked(setupSdk)
+    const { handleApiCallNoSpinner, queryApiSafeText } = await import('../../utils/socket/api.mjs')
     const mockQueryApiText = vi.mocked(queryApiSafeText)
     const mockHandleApiNoSpinner = vi.mocked(handleApiCallNoSpinner)
 
-    const mockSdk = {
-      getOrgSecurityPolicy: vi.fn().mockResolvedValue({
-        success: true,
-        data: { rules: [] },
-      }),
-    }
+    const { mockSetupSdk } = await setupSdkMockWithCustomSdk(
+      {
+        getOrgSecurityPolicy: vi.fn().mockResolvedValue({
+          success: true,
+          data: { rules: [] },
+        }),
+      },
+      { rules: [] },
+    )
 
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockQueryApiText.mockResolvedValue({
-      ok: true,
-      data: '{"type":"package","name":"test"}',
-    })
-    mockHandleApiNoSpinner.mockResolvedValue({
-      ok: true,
-      data: { rules: [] },
-    })
+    mockQueryApiText.mockResolvedValue(createSuccessResult('{"type":"package","name":"test"}'))
+    mockHandleApiNoSpinner.mockResolvedValue(createSuccessResult({ rules: [] }))
 
     // This tests that the function properly uses __proto__: null.
     await fetchScanData('test-org', 'scan-123')

@@ -1,27 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { outputListRepos } from './output-list-repos.mts'
+import {
+  createErrorResult,
+  createSuccessResult,
+  setupStandardOutputMocks,
+} from '../../../test/helpers/index.mts'
 
 import type { Direction } from './types.mts'
 import type { CResult } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
-// Mock the dependencies.
-vi.mock('@socketsecurity/registry/lib/logger', () => ({
-  logger: {
-    fail: vi.fn(),
-    info: vi.fn(),
-    log: vi.fn(),
-  },
-}))
-
-vi.mock('../../utils/fail-msg-with-badge.mts', () => ({
-  failMsgWithBadge: vi.fn((msg, cause) => `${msg}: ${cause}`),
-}))
-
-vi.mock('../../utils/serialize-result-json.mts', () => ({
-  serializeResultJson: vi.fn(result => JSON.stringify(result)),
-}))
+setupStandardOutputMocks()
 
 vi.mock('chalk-table', () => ({
   default: vi.fn((options, data) => `Table with ${data.length} rows`),
@@ -42,14 +32,13 @@ describe('outputListRepos', () => {
   it('outputs JSON format for successful result with pagination', async () => {
     const { logger } = await import('@socketsecurity/registry/lib/logger')
     const { serializeResultJson } = await import(
-      '../../utils/serialize-result-json.mts'
+      '../../utils/serialize/result-json.mts'
     )
     const mockLog = vi.mocked(logger.log)
     const mockSerialize = vi.mocked(serializeResultJson)
 
-    const result: CResult<SocketSdkSuccessResult<'getOrgRepoList'>['data']> = {
-      ok: true,
-      data: {
+    const result: CResult<SocketSdkSuccessResult<'getOrgRepoList'>['data']> =
+      createSuccessResult({
         results: [
           {
             archived: false,
@@ -59,8 +48,7 @@ describe('outputListRepos', () => {
             visibility: 'public',
           },
         ],
-      },
-    }
+      })
 
     await outputListRepos(result, 'json', 1, 2, 'name', 10, 'asc')
 
@@ -83,12 +71,11 @@ describe('outputListRepos', () => {
     const { logger } = await import('@socketsecurity/registry/lib/logger')
     const mockLog = vi.mocked(logger.log)
 
-    const result: CResult<SocketSdkSuccessResult<'getOrgRepoList'>['data']> = {
-      ok: false,
-      code: 2,
-      message: 'Unauthorized',
-      cause: 'Invalid API token',
-    }
+    const result: CResult<SocketSdkSuccessResult<'getOrgRepoList'>['data']> =
+      createErrorResult('Unauthorized', {
+        cause: 'Invalid API token',
+        code: 2,
+      })
 
     await outputListRepos(result, 'json', 1, null, 'created_at', 25, 'desc')
 
@@ -120,12 +107,10 @@ describe('outputListRepos', () => {
       },
     ]
 
-    const result: CResult<SocketSdkSuccessResult<'getOrgRepoList'>['data']> = {
-      ok: true,
-      data: {
+    const result: CResult<SocketSdkSuccessResult<'getOrgRepoList'>['data']> =
+      createSuccessResult({
         results: repos,
-      },
-    }
+      })
 
     await outputListRepos(result, 'text', 2, 3, 'updated_at', 50, 'desc')
 
@@ -155,17 +140,16 @@ describe('outputListRepos', () => {
   it('outputs error in text format', async () => {
     const { logger } = await import('@socketsecurity/registry/lib/logger')
     const { failMsgWithBadge } = await import(
-      '../../utils/fail-msg-with-badge.mts'
+      '../../utils/error/fail-msg-with-badge.mts'
     )
     const mockFail = vi.mocked(logger.fail)
     const mockFailMsg = vi.mocked(failMsgWithBadge)
 
-    const result: CResult<SocketSdkSuccessResult<'getOrgRepoList'>['data']> = {
-      ok: false,
-      code: 1,
-      message: 'Failed to fetch repositories',
-      cause: 'Network error',
-    }
+    const result: CResult<SocketSdkSuccessResult<'getOrgRepoList'>['data']> =
+      createErrorResult('Failed to fetch repositories', {
+        cause: 'Network error',
+        code: 1,
+      })
 
     await outputListRepos(result, 'text', 1, null, 'name', 10, 'asc')
 
@@ -181,9 +165,8 @@ describe('outputListRepos', () => {
     const { logger } = await import('@socketsecurity/registry/lib/logger')
     const mockInfo = vi.mocked(logger.info)
 
-    const result: CResult<SocketSdkSuccessResult<'getOrgRepoList'>['data']> = {
-      ok: true,
-      data: {
+    const result: CResult<SocketSdkSuccessResult<'getOrgRepoList'>['data']> =
+      createSuccessResult({
         results: [
           {
             archived: false,
@@ -193,8 +176,7 @@ describe('outputListRepos', () => {
             visibility: 'private',
           },
         ],
-      },
-    }
+      })
 
     await outputListRepos(result, 'text', 5, null, 'name', 20, 'asc')
 
@@ -207,12 +189,10 @@ describe('outputListRepos', () => {
     const { logger } = await import('@socketsecurity/registry/lib/logger')
     const mockInfo = vi.mocked(logger.info)
 
-    const result: CResult<SocketSdkSuccessResult<'getOrgRepoList'>['data']> = {
-      ok: true,
-      data: {
+    const result: CResult<SocketSdkSuccessResult<'getOrgRepoList'>['data']> =
+      createSuccessResult({
         results: [],
-      },
-    }
+      })
 
     await outputListRepos(result, 'text', 1, null, 'name', Infinity, 'asc')
 
@@ -226,12 +206,10 @@ describe('outputListRepos', () => {
     const chalkTable = await import('chalk-table')
     const mockChalkTable = vi.mocked(chalkTable.default)
 
-    const result: CResult<SocketSdkSuccessResult<'getOrgRepoList'>['data']> = {
-      ok: true,
-      data: {
+    const result: CResult<SocketSdkSuccessResult<'getOrgRepoList'>['data']> =
+      createSuccessResult({
         results: [],
-      },
-    }
+      })
 
     await outputListRepos(result, 'text', 1, null, 'name', 10, 'desc')
 
@@ -239,10 +217,8 @@ describe('outputListRepos', () => {
   })
 
   it('sets default exit code when code is undefined', async () => {
-    const result: CResult<SocketSdkSuccessResult<'getOrgRepoList'>['data']> = {
-      ok: false,
-      message: 'Error without code',
-    }
+    const result: CResult<SocketSdkSuccessResult<'getOrgRepoList'>['data']> =
+      createErrorResult('Error without code')
 
     await outputListRepos(result, 'json', 1, null, 'name', 10, 'asc')
 

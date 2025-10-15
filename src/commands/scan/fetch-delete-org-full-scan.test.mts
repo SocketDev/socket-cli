@@ -1,46 +1,30 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { fetchDeleteOrgFullScan } from './fetch-delete-org-full-scan.mts'
+import {
+  setupSdkMockError,
+  setupSdkMockSuccess,
+  setupSdkSetupFailure,
+} from '../../../test/helpers/sdk-test-helpers.mts'
 
 // Mock the dependencies.
-vi.mock('../../utils/api.mts', () => ({
+vi.mock('../../utils/socket/api.mts', () => ({
   handleApiCall: vi.fn(),
 }))
 
-vi.mock('../../utils/sdk.mts', () => ({
+vi.mock('../../utils/socket/sdk.mts', () => ({
   setupSdk: vi.fn(),
-}))
-
-vi.mock('../../utils/api.mts', () => ({
-  handleApiCall: vi.fn(),
 }))
 
 describe('fetchDeleteOrgFullScan', () => {
   it('deletes scan successfully', async () => {
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockHandleApi = vi.mocked(handleApiCall)
-    const mockSetupSdk = vi.mocked(setupSdk)
-
-    const mockSdk = {
-      deleteOrgFullScan: vi.fn().mockResolvedValue({
-        success: true,
-        data: {
-          deleted: true,
-          scanId: 'scan-123',
-          message: 'Scan deleted successfully',
-        },
-      }),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: true,
-      data: {
+    const { mockHandleApi, mockSdk } = await setupSdkMockSuccess(
+      'deleteOrgFullScan',
+      {
         deleted: true,
         scanId: 'scan-123',
       },
-    })
+    )
 
     const result = await fetchDeleteOrgFullScan('test-org', 'scan-123')
 
@@ -55,38 +39,22 @@ describe('fetchDeleteOrgFullScan', () => {
   })
 
   it('handles SDK setup failure', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
+    await setupSdkSetupFailure('Failed to setup SDK', {
+      cause: 'Invalid configuration',
+    })
 
-    const error = {
+    const result = await fetchDeleteOrgFullScan('org', 'scan-456')
+
+    expect(result).toEqual({
       ok: false,
       code: 1,
       message: 'Failed to setup SDK',
       cause: 'Invalid configuration',
-    }
-    mockSetupSdk.mockResolvedValue(error)
-
-    const result = await fetchDeleteOrgFullScan('org', 'scan-456')
-
-    expect(result).toEqual(error)
+    })
   })
 
   it('handles API call failure', async () => {
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockHandleApi = vi.mocked(handleApiCall)
-    const mockSetupSdk = vi.mocked(setupSdk)
-
-    const mockSdk = {
-      deleteOrgFullScan: vi.fn().mockRejectedValue(new Error('Not found')),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: false,
-      error: 'Scan not found',
-      code: 404,
-    })
+    await setupSdkMockError('deleteOrgFullScan', 'Scan not found', 404)
 
     const result = await fetchDeleteOrgFullScan('org', 'nonexistent-scan')
 
@@ -95,17 +63,7 @@ describe('fetchDeleteOrgFullScan', () => {
   })
 
   it('passes custom SDK options', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
-
-    const mockSdk = {
-      deleteOrgFullScan: vi.fn().mockResolvedValue({}),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: {} })
+    const { mockSetupSdk } = await setupSdkMockSuccess('deleteOrgFullScan', {})
 
     const sdkOpts = {
       apiToken: 'custom-token',
@@ -118,17 +76,7 @@ describe('fetchDeleteOrgFullScan', () => {
   })
 
   it('handles different org slugs and scan IDs', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
-
-    const mockSdk = {
-      deleteOrgFullScan: vi.fn().mockResolvedValue({}),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: {} })
+    const { mockSdk } = await setupSdkMockSuccess('deleteOrgFullScan', {})
 
     const testCases = [
       ['org-with-dashes', 'scan-123'],
@@ -144,17 +92,7 @@ describe('fetchDeleteOrgFullScan', () => {
   })
 
   it('uses null prototype for options', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
-
-    const mockSdk = {
-      deleteOrgFullScan: vi.fn().mockResolvedValue({}),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: {} })
+    const { mockSdk } = await setupSdkMockSuccess('deleteOrgFullScan', {})
 
     // This tests that the function properly uses __proto__: null.
     await fetchDeleteOrgFullScan('org', 'scan')

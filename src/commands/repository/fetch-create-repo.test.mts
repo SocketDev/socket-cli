@@ -1,20 +1,22 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { fetchCreateRepo } from './fetch-create-repo.mts'
+import { createErrorResult, createSuccessResult } from '../../../test/helpers/mocks.mts'
+import { setupSdkMockError, setupSdkMockSuccess, setupSdkSetupFailure } from '../../../test/helpers/sdk-test-helpers.mts'
 
 // Mock the dependencies.
-vi.mock('../../utils/api.mts', () => ({
+vi.mock('../../utils/socket/api.mjs', () => ({
   handleApiCall: vi.fn(),
 }))
 
-vi.mock('../../utils/sdk.mts', () => ({
+vi.mock('../../utils/socket/sdk.mjs', () => ({
   setupSdk: vi.fn(),
 }))
 
 describe('fetchCreateRepo', () => {
   it('creates repository successfully', async () => {
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
+    const { handleApiCall } = await import('../../utils/socket/api.mjs')
+    const { setupSdk } = await import('../../utils/socket/sdk.mjs')
     const mockHandleApi = vi.mocked(handleApiCall)
     const mockSetupSdk = vi.mocked(setupSdk)
 
@@ -32,15 +34,12 @@ describe('fetchCreateRepo', () => {
       }),
     }
 
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: true,
-      data: {
-        id: 'repo-123',
-        name: 'my-new-repo',
-        org: 'test-org',
-      },
-    })
+    mockSetupSdk.mockResolvedValue(createSuccessResult(mockSdk))
+    mockHandleApi.mockResolvedValue(createSuccessResult({
+      id: 'repo-123',
+      name: 'my-new-repo',
+      org: 'test-org',
+    }))
 
     const result = await fetchCreateRepo({
       orgSlug: 'test-org',
@@ -65,16 +64,7 @@ describe('fetchCreateRepo', () => {
   })
 
   it('handles SDK setup failure', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-
-    const error = {
-      ok: false,
-      code: 1,
-      message: 'Failed to setup SDK',
-      cause: 'Missing API token',
-    }
-    mockSetupSdk.mockResolvedValue(error)
+    await setupSdkSetupFailure('Failed to setup SDK', { code: 1, cause: 'Missing API token' })
 
     const result = await fetchCreateRepo({
       orgSlug: 'org',
@@ -85,27 +75,11 @@ describe('fetchCreateRepo', () => {
       visibility: 'private',
     })
 
-    expect(result).toEqual(error)
+    expect(result.ok).toBe(false)
   })
 
   it('handles API call failure', async () => {
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockHandleApi = vi.mocked(handleApiCall)
-    const mockSetupSdk = vi.mocked(setupSdk)
-
-    const mockSdk = {
-      createOrgRepo: vi
-        .fn()
-        .mockRejectedValue(new Error('Repository already exists')),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: false,
-      error: 'Repository already exists',
-      code: 409,
-    })
+    await setupSdkMockError('createOrgRepo', new Error('Repository already exists'), 409)
 
     const result = await fetchCreateRepo({
       orgSlug: 'org',
@@ -121,8 +95,8 @@ describe('fetchCreateRepo', () => {
   })
 
   it('passes custom SDK options', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
+    const { setupSdk } = await import('../../utils/socket/sdk.mjs')
+    const { handleApiCall } = await import('../../utils/socket/api.mjs')
     const mockSetupSdk = vi.mocked(setupSdk)
     const mockHandleApi = vi.mocked(handleApiCall)
 
@@ -130,8 +104,8 @@ describe('fetchCreateRepo', () => {
       createOrgRepo: vi.fn().mockResolvedValue({}),
     }
 
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: {} })
+    mockSetupSdk.mockResolvedValue(createSuccessResult(mockSdk))
+    mockHandleApi.mockResolvedValue(createSuccessResult({}))
 
     const sdkOpts = {
       apiToken: 'create-token',
@@ -154,8 +128,8 @@ describe('fetchCreateRepo', () => {
   })
 
   it('handles minimal repository data', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
+    const { setupSdk } = await import('../../utils/socket/sdk.mjs')
+    const { handleApiCall } = await import('../../utils/socket/api.mjs')
     const mockSetupSdk = vi.mocked(setupSdk)
     const mockHandleApi = vi.mocked(handleApiCall)
 
@@ -163,8 +137,8 @@ describe('fetchCreateRepo', () => {
       createOrgRepo: vi.fn().mockResolvedValue({}),
     }
 
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: {} })
+    mockSetupSdk.mockResolvedValue(createSuccessResult(mockSdk))
+    mockHandleApi.mockResolvedValue(createSuccessResult({}))
 
     await fetchCreateRepo({
       orgSlug: 'simple-org',
@@ -185,8 +159,8 @@ describe('fetchCreateRepo', () => {
   })
 
   it('handles full repository configuration', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
+    const { setupSdk } = await import('../../utils/socket/sdk.mjs')
+    const { handleApiCall } = await import('../../utils/socket/api.mjs')
     const mockSetupSdk = vi.mocked(setupSdk)
     const mockHandleApi = vi.mocked(handleApiCall)
 
@@ -194,8 +168,8 @@ describe('fetchCreateRepo', () => {
       createOrgRepo: vi.fn().mockResolvedValue({}),
     }
 
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: {} })
+    mockSetupSdk.mockResolvedValue(createSuccessResult(mockSdk))
+    mockHandleApi.mockResolvedValue(createSuccessResult({}))
 
     const fullConfig = {
       orgSlug: 'config-org',
@@ -218,8 +192,8 @@ describe('fetchCreateRepo', () => {
   })
 
   it('uses null prototype for options', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
+    const { setupSdk } = await import('../../utils/socket/sdk.mjs')
+    const { handleApiCall } = await import('../../utils/socket/api.mjs')
     const mockSetupSdk = vi.mocked(setupSdk)
     const mockHandleApi = vi.mocked(handleApiCall)
 
@@ -227,8 +201,8 @@ describe('fetchCreateRepo', () => {
       createOrgRepo: vi.fn().mockResolvedValue({}),
     }
 
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: {} })
+    mockSetupSdk.mockResolvedValue(createSuccessResult(mockSdk))
+    mockHandleApi.mockResolvedValue(createSuccessResult({}))
 
     // This tests that the function properly uses __proto__: null.
     await fetchCreateRepo({

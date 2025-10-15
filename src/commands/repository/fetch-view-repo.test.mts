@@ -1,48 +1,38 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { fetchViewRepo } from './fetch-view-repo.mts'
+import { createSuccessResult } from '../../../test/helpers/mocks.mts'
+import {
+  setupSdkMockError,
+  setupSdkMockSuccess,
+  setupSdkSetupFailure,
+} from '../../../test/helpers/sdk-test-helpers.mts'
 
 // Mock the dependencies.
-vi.mock('../../utils/api.mts', () => ({
+vi.mock('../../utils/socket/api.mjs', () => ({
   handleApiCall: vi.fn(),
 }))
 
-vi.mock('../../utils/sdk.mts', () => ({
+vi.mock('../../utils/socket/sdk.mjs', () => ({
   setupSdk: vi.fn(),
 }))
 
 describe('fetchViewRepo', () => {
   it('views repository successfully', async () => {
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockHandleApi = vi.mocked(handleApiCall)
-    const mockSetupSdk = vi.mocked(setupSdk)
-
-    const mockSdk = {
-      getOrgRepo: vi.fn().mockResolvedValue({
-        success: true,
-        data: {
-          id: 'repo-123',
-          name: 'test-repo',
-          description: 'A test repository',
-          visibility: 'public',
-          default_branch: 'main',
-          created_at: '2025-01-01T10:00:00Z',
-          updated_at: '2025-01-20T15:30:00Z',
-        },
-      }),
+    const mockData = {
+      id: 'repo-123',
+      name: 'test-repo',
+      description: 'A test repository',
+      visibility: 'public',
+      default_branch: 'main',
+      created_at: '2025-01-01T10:00:00Z',
+      updated_at: '2025-01-20T15:30:00Z',
     }
 
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: true,
-      data: {
-        id: 'repo-123',
-        name: 'test-repo',
-        description: 'A test repository',
-        visibility: 'public',
-      },
-    })
+    const { mockHandleApi, mockSdk } = await setupSdkMockSuccess(
+      'getOrgRepo',
+      mockData,
+    )
 
     const result = await fetchViewRepo('test-org', 'test-repo')
 
@@ -54,38 +44,19 @@ describe('fetchViewRepo', () => {
   })
 
   it('handles SDK setup failure', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-
-    const error = {
-      ok: false,
+    await setupSdkSetupFailure('Failed to setup SDK', {
       code: 1,
-      message: 'Failed to setup SDK',
       cause: 'Missing API token',
-    }
-    mockSetupSdk.mockResolvedValue(error)
+    })
 
     const result = await fetchViewRepo('org', 'repo')
 
-    expect(result).toEqual(error)
+    expect(result.ok).toBe(false)
+    expect(result.code).toBe(1)
   })
 
   it('handles API call failure', async () => {
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockHandleApi = vi.mocked(handleApiCall)
-    const mockSetupSdk = vi.mocked(setupSdk)
-
-    const mockSdk = {
-      getOrgRepo: vi.fn().mockRejectedValue(new Error('Repository not found')),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: false,
-      error: 'Repository not found',
-      code: 404,
-    })
+    await setupSdkMockError('getOrgRepo', 'Repository not found', 404)
 
     const result = await fetchViewRepo('org', 'nonexistent-repo')
 
@@ -94,17 +65,7 @@ describe('fetchViewRepo', () => {
   })
 
   it('passes custom SDK options', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
-
-    const mockSdk = {
-      getOrgRepo: vi.fn().mockResolvedValue({}),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: {} })
+    const { mockSetupSdk } = await setupSdkMockSuccess('getOrgRepo', {})
 
     const sdkOpts = {
       apiToken: 'view-token',
@@ -117,33 +78,15 @@ describe('fetchViewRepo', () => {
   })
 
   it('handles private repository access', async () => {
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockHandleApi = vi.mocked(handleApiCall)
-    const mockSetupSdk = vi.mocked(setupSdk)
-
-    const mockSdk = {
-      getOrgRepo: vi.fn().mockResolvedValue({
-        success: true,
-        data: {
-          id: 'private-repo-456',
-          name: 'secret-project',
-          description: 'A private repository',
-          visibility: 'private',
-          members_count: 5,
-        },
-      }),
+    const mockData = {
+      id: 'private-repo-456',
+      name: 'secret-project',
+      description: 'A private repository',
+      visibility: 'private',
+      members_count: 5,
     }
 
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: true,
-      data: {
-        id: 'private-repo-456',
-        name: 'secret-project',
-        visibility: 'private',
-      },
-    })
+    const { mockSdk } = await setupSdkMockSuccess('getOrgRepo', mockData)
 
     const result = await fetchViewRepo('private-org', 'secret-project')
 
@@ -155,17 +98,7 @@ describe('fetchViewRepo', () => {
   })
 
   it('handles special repository names', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
-
-    const mockSdk = {
-      getOrgRepo: vi.fn().mockResolvedValue({}),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: {} })
+    const { mockSdk } = await setupSdkMockSuccess('getOrgRepo', {})
 
     await fetchViewRepo('special-org', 'repo-with-hyphens_and_underscores.dots')
 
@@ -176,21 +109,7 @@ describe('fetchViewRepo', () => {
   })
 
   it('handles insufficient permissions error', async () => {
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockHandleApi = vi.mocked(handleApiCall)
-    const mockSetupSdk = vi.mocked(setupSdk)
-
-    const mockSdk = {
-      getOrgRepo: vi.fn().mockRejectedValue(new Error('Access denied')),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: false,
-      error: 'Access denied',
-      code: 403,
-    })
+    await setupSdkMockError('getOrgRepo', 'Access denied', 403)
 
     const result = await fetchViewRepo('restricted-org', 'restricted-repo')
 
@@ -199,17 +118,7 @@ describe('fetchViewRepo', () => {
   })
 
   it('uses null prototype for options', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
-
-    const mockSdk = {
-      getOrgRepo: vi.fn().mockResolvedValue({}),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: {} })
+    const { mockSdk } = await setupSdkMockSuccess('getOrgRepo', {})
 
     // This tests that the function properly uses __proto__: null.
     await fetchViewRepo('test-org', 'test-repo')

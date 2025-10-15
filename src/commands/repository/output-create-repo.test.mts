@@ -1,26 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { outputCreateRepo } from './output-create-repo.mts'
+import { setupStandardOutputMocks } from '../../../test/helpers/index.mts'
 
 import type { CResult } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
-// Mock the dependencies.
-vi.mock('@socketsecurity/registry/lib/logger', () => ({
-  logger: {
-    fail: vi.fn(),
-    log: vi.fn(),
-    success: vi.fn(),
-  },
-}))
-
-vi.mock('../../utils/fail-msg-with-badge.mts', () => ({
-  failMsgWithBadge: vi.fn((msg, cause) => `${msg}: ${cause}`),
-}))
-
-vi.mock('../../utils/serialize-result-json.mts', () => ({
-  serializeResultJson: vi.fn(result => JSON.stringify(result)),
-}))
+setupStandardOutputMocks()
 
 describe('outputCreateRepo', () => {
   beforeEach(() => {

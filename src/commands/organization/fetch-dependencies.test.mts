@@ -1,47 +1,29 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { fetchDependencies } from './fetch-dependencies.mts'
+import { createSuccessResult } from '../../../test/helpers/mocks.mts'
+import { setupSdkMockError, setupSdkMockSuccess, setupSdkSetupFailure } from '../../../test/helpers/sdk-test-helpers.mts'
 
 // Mock the dependencies.
-vi.mock('../../utils/api.mts', () => ({
+vi.mock('../../utils/socket/api.mjs', () => ({
   handleApiCall: vi.fn(),
 }))
 
-vi.mock('../../utils/sdk.mts', () => ({
+vi.mock('../../utils/socket/sdk.mjs', () => ({
   setupSdk: vi.fn(),
 }))
 
 describe('fetchDependencies', () => {
   it('fetches dependencies successfully', async () => {
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockHandleApi = vi.mocked(handleApiCall)
-    const mockSetupSdk = vi.mocked(setupSdk)
-
-    const mockSdk = {
-      searchDependencies: vi.fn().mockResolvedValue({
-        success: true,
-        data: {
-          dependencies: [
-            { name: 'lodash', version: '4.17.21' },
-            { name: 'express', version: '4.18.2' },
-          ],
-          total: 2,
-        },
-      }),
+    const mockData = {
+      dependencies: [
+        { name: 'lodash', version: '4.17.21' },
+        { name: 'express', version: '4.18.2' },
+      ],
+      total: 2,
     }
 
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: true,
-      data: {
-        dependencies: [
-          { name: 'lodash', version: '4.17.21' },
-          { name: 'express', version: '4.18.2' },
-        ],
-        total: 2,
-      },
-    })
+    const { mockHandleApi, mockSdk } = await setupSdkMockSuccess('searchDependencies', mockData)
 
     const result = await fetchDependencies({ limit: 10, offset: 0 })
 
@@ -56,37 +38,15 @@ describe('fetchDependencies', () => {
   })
 
   it('handles SDK setup failure', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-
-    const error = {
-      ok: false,
-      code: 1,
-      message: 'Failed to setup SDK',
-      cause: 'Invalid API token',
-    }
-    mockSetupSdk.mockResolvedValue(error)
+    await setupSdkSetupFailure('Failed to setup SDK', { code: 1, cause: 'Invalid API token' })
 
     const result = await fetchDependencies({ limit: 20, offset: 10 })
 
-    expect(result).toEqual(error)
+    expect(result.ok).toBe(false)
   })
 
   it('handles API call failure', async () => {
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const mockHandleApi = vi.mocked(handleApiCall)
-    const mockSetupSdk = vi.mocked(setupSdk)
-
-    const mockSdk = {
-      searchDependencies: vi.fn().mockRejectedValue(new Error('API error')),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({
-      ok: false,
-      error: 'API call failed',
-    })
+    await setupSdkMockError('searchDependencies', 'API error')
 
     const result = await fetchDependencies({ limit: 50, offset: 0 })
 
@@ -94,17 +54,7 @@ describe('fetchDependencies', () => {
   })
 
   it('passes custom SDK options', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
-
-    const mockSdk = {
-      searchDependencies: vi.fn().mockResolvedValue({}),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: [] })
+    const { mockSetupSdk } = await setupSdkMockSuccess('searchDependencies', [])
 
     const sdkOpts = {
       apiToken: 'custom-token',
@@ -117,17 +67,7 @@ describe('fetchDependencies', () => {
   })
 
   it('handles pagination parameters', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
-
-    const mockSdk = {
-      searchDependencies: vi.fn().mockResolvedValue({}),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: {} })
+    const { mockSdk } = await setupSdkMockSuccess('searchDependencies', {})
 
     await fetchDependencies({ limit: 200, offset: 100 })
 
@@ -138,17 +78,7 @@ describe('fetchDependencies', () => {
   })
 
   it('uses null prototype for options', async () => {
-    const { setupSdk } = await import('../../utils/sdk.mts')
-    const { handleApiCall } = await import('../../utils/api.mts')
-    const mockSetupSdk = vi.mocked(setupSdk)
-    const mockHandleApi = vi.mocked(handleApiCall)
-
-    const mockSdk = {
-      searchDependencies: vi.fn().mockResolvedValue({}),
-    }
-
-    mockSetupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    mockHandleApi.mockResolvedValue({ ok: true, data: {} })
+    const { mockSdk } = await setupSdkMockSuccess('searchDependencies', {})
 
     // This tests that the function properly uses __proto__: null.
     await fetchDependencies({ limit: 10, offset: 0 })
