@@ -1,7 +1,9 @@
 import { cmdPatchApply } from './cmd-patch-apply.mts'
+import { cmdPatchCleanup } from './cmd-patch-cleanup.mts'
 import { cmdPatchGet } from './cmd-patch-get.mts'
 import { cmdPatchInfo } from './cmd-patch-info.mts'
 import { cmdPatchList } from './cmd-patch-list.mts'
+import { cmdPatchRm } from './cmd-patch-rm.mts'
 import { meowWithSubcommands } from '../../utils/cli/with-subcommands.mjs'
 
 import type { CliSubcommand } from '../../utils/cli/with-subcommands.mjs'
@@ -21,9 +23,11 @@ export const cmdPatch: CliSubcommand = {
         importMeta,
         subcommands: {
           apply: cmdPatchApply,
+          cleanup: cmdPatchCleanup,
           get: cmdPatchGet,
           info: cmdPatchInfo,
           list: cmdPatchList,
+          rm: cmdPatchRm,
         },
       },
       {
