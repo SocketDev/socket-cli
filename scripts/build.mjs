@@ -6,13 +6,16 @@
  *   node scripts/build.mjs [options]
  *
  * Options:
- *   --quiet    Suppress progress output
- *   --verbose  Show detailed output
- *   --src-only Build source files only (skip types)
+ *   --quiet      Suppress progress output
+ *   --verbose    Show detailed output
+ *   --src-only   Build source files only (skip types)
  *   --types-only Build type definitions only (skip source)
+ *   --sea        Build SEA binaries (delegates to build-sea.mjs)
  */
 
-import { runCommand, runCommandQuiet } from './utils/run-command.mjs'
+import { spawn } from 'node:child_process'
+
+import { runCommandQuiet } from './utils/run-command.mjs'
 
 // Simple CLI helpers without registry dependencies.
 const isQuiet = () => process.argv.includes('--quiet')
@@ -23,7 +26,7 @@ const log = {
   success: msg => console.log(`✓ ${msg}`),
   error: msg => console.error(`✖ ${msg}`),
 }
-const printHeader = title => console.log(`\n━━━ ${title} ━━━\n`)
+const printHeader = title => console.log(`\n${title}\n${'='.repeat(title.length)}\n`)
 const printFooter = () => console.log('')
 const printSuccess = msg => console.log(`\n✓ ${msg}\n`)
 const printError = msg => console.error(`\n✖ ${msg}\n`)
@@ -33,10 +36,30 @@ async function main() {
   const verbose = isVerbose()
   const srcOnly = process.argv.includes('--src-only')
   const typesOnly = process.argv.includes('--types-only')
+  const sea = process.argv.includes('--sea')
+
+  // Delegate to build-sea.mjs if --sea flag is present.
+  if (sea) {
+    const seaArgs = process.argv.filter(arg => arg !== '--sea')
+    const child = spawn('node', ['scripts/build-sea.mjs', ...seaArgs.slice(2)], {
+      stdio: 'inherit',
+    })
+    return new Promise((resolve, reject) => {
+      child.on('exit', code => {
+        if (code === 0) {
+          resolve()
+        } else {
+          process.exitCode = code ?? 1
+          reject(new Error(`SEA build failed with exit code ${code}`))
+        }
+      })
+      child.on('error', reject)
+    })
+  }
 
   try {
     if (!quiet) {
-      printHeader('Building Socket CLI')
+      printHeader('Build Runner')
     }
 
     const steps = []
@@ -93,7 +116,7 @@ async function main() {
       )
     }
 
-    for (const { name, command, args } of steps) {
+    for (const { args, command, name } of steps) {
       if (verbose && !quiet) {
         log.info(`Running: ${command} ${args.join(' ')}`)
       }

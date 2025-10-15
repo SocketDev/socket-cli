@@ -14,7 +14,7 @@
     "forceConsistentCasingInFileNames": true,
     "incremental": false,
     "isolatedModules": true,
-    "lib": ["esnext"],
+    "lib": ["ES2024"],
     "module": "nodenext",
     "noEmit": true,
     "noEmitOnError": true,
@@ -30,7 +30,7 @@
     "sourceMap": true,
     "strict": true,
     "strictNullChecks": true,
-    "target": "esnext",
+    "target": "ES2024",
     "useUnknownInCatchVariables": true,
     "verbatimModuleSyntax": true
   }

@@ -35,6 +35,6 @@ module.exports = {
     path.join(babelPluginsPath, 'transform-set-proto-plugin.mjs'),
     path.join(babelPluginsPath, 'transform-url-parse-plugin.mjs'),
     // Run ICU removal last to transform Intl/locale APIs
-    path.join(babelPluginsPath, 'babel-plugin-remove-icu.mjs'),
+    path.join(babelPluginsPath, 'babel-plugin-english-only-icu.mjs'),
   ],
 }

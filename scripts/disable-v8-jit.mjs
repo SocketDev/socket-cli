@@ -15,11 +15,10 @@
  * 3. yoga-layout (used by Ink) requires WASM
  */
 
-import { readFile, writeFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
-import { join } from 'node:path'
+import { readFile, writeFile } from 'node:fs/promises'
+import { dirname, join  } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { dirname } from 'node:path'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)

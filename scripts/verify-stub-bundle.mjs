@@ -1,12 +1,11 @@
-#!/usr/bin/env node
 /**
  * Verify that the bootstrap stub bundle only contains expected code
  * and no accidental dependencies.
  */
 
 import { existsSync, readFileSync, statSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootDir = path.join(__dirname, '..')
@@ -42,7 +41,7 @@ function info(message) {
 if (!existsSync(stubPath)) {
   fail(`Bootstrap stub not found at ${stubPath}`)
   fail(
-    'Run: pnpm run build:sea or NODE_ENV=production pnpm exec rollup -c .config/rollup.cli-sea.config.mjs',
+    'Run: pnpm run build --sea or NODE_ENV=production pnpm exec rollup -c .config/rollup.cli-sea.config.mjs',
   )
 }
 

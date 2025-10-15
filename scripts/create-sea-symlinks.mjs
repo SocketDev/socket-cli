@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * Create symlinks for the unified Socket CLI SEA binary.
  *

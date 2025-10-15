@@ -7,9 +7,9 @@ import { spawn } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { parseArgs } from 'node:util'
 
-import WIN32 from '@socketsecurity/registry/lib/constants/WIN32'
+import { WIN32 } from '@socketsecurity/registry/constants/platform'
+import { parseArgs } from '@socketsecurity/registry/lib/argv/parse'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { getTestsToRun } from './utils/affected-test-mapper.mjs'

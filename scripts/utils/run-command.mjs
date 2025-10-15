@@ -69,7 +69,7 @@ export async function runCommandQuiet(command, args, options = {}) {
  * Run multiple commands in sequence.
  */
 export async function runSequence(commands) {
-  for (const { command, args, options } of commands) {
+  for (const { args, command, options } of commands) {
     const exitCode = await runCommand(command, args, options)
     if (exitCode !== 0) {
       return exitCode
@@ -82,7 +82,7 @@ export async function runSequence(commands) {
  * Run multiple commands in parallel.
  */
 export async function runParallel(commands) {
-  const promises = commands.map(({ command, args, options }) =>
+  const promises = commands.map(({ args, command, options }) =>
     runCommand(command, args, options),
   )
   const results = await Promise.all(promises)

@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * @fileoverview Optimized test runner with progress bar.
  */
@@ -6,10 +5,11 @@
 import { spawn } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import path from 'node:path'
-import { parseArgs } from 'node:util'
 import { fileURLToPath } from 'node:url'
-import WIN32 from '@socketsecurity/registry/lib/constants/WIN32'
+
+import { WIN32 } from '@socketsecurity/registry/constants/platform'
 import { isQuiet } from '@socketsecurity/registry/lib/argv/flags'
+import { parseArgs } from '@socketsecurity/registry/lib/argv/parse'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { onExit } from '@socketsecurity/registry/lib/signal-exit'
 import { spinner } from '@socketsecurity/registry/lib/spinner'
@@ -57,6 +57,8 @@ const removeExitHandler = onExit((_code, signal) => {
   }
 })
 
+// Runs command with proper process tracking.
+// eslint-disable-next-line no-unused-vars
 async function runCommand(command, args = [], options = {}) {
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, {
@@ -124,8 +126,8 @@ async function runCheck(options = {}) {
     console.log()
   }
 
-  // Import unified runner for interactive experience
-  const { runWithOutput } = await import('./utils/unified-runner.mjs')
+  // Import interactive runner for interactive experience
+  const { runWithOutput } = await import('./utils/interactive-runner.mjs')
 
   // Run fix (auto-format)
   let exitCode = await runWithOutput('pnpm', ['run', 'fix'], {
@@ -145,7 +147,7 @@ async function runCheck(options = {}) {
   }
 
   // Run ESLint
-  exitCode = await runWithOutput('pnpm', ['run', 'check:lint'], {
+  exitCode = await runWithOutput('pnpm', ['run', 'lint'], {
     message: 'Running ESLint',
     toggleText: 'to see linter output',
     verbose: quiet,
@@ -162,7 +164,7 @@ async function runCheck(options = {}) {
   }
 
   // Run TypeScript check
-  exitCode = await runWithOutput('pnpm', ['run', 'check:tsc'], {
+  exitCode = await runWithOutput('pnpm', ['run', 'type'], {
     message: 'Checking TypeScript',
     toggleText: 'to see type errors',
     verbose: quiet,
@@ -186,8 +188,8 @@ async function runBuild() {
   if (!existsSync(distIndexPath)) {
     logger.step('Building project')
 
-    // Import unified runner for interactive experience
-    const { runWithOutput } = await import('./utils/unified-runner.mjs')
+    // Import interactive runner for interactive experience
+    const { runWithOutput } = await import('./utils/interactive-runner.mjs')
 
     const exitCode = await runWithOutput('pnpm', ['run', 'build'], {
       message: 'Building project',
@@ -203,7 +205,7 @@ async function runBuild() {
 }
 
 async function runVitestSimple(args, options = {}) {
-  const { coverage = false, update = false, quiet = false } = options
+  const { coverage = false, quiet = false, update = false } = options
 
   const vitestCmd = WIN32 ? 'vitest.cmd' : 'vitest'
   const vitestPath = path.join(nodeModulesBinPath, vitestCmd)
@@ -239,9 +241,9 @@ async function runVitestSimple(args, options = {}) {
   // Suppress unhandled rejections from worker thread cleanup
   env.NODE_OPTIONS = '--max-old-space-size=2048 --unhandled-rejections=warn'
 
-  // Use unified runner for consistent Ctrl+O experience
+  // Use interactive runner for consistent Ctrl+O experience
   if (!quiet && process.stdout.isTTY) {
-    const { runTests } = await import('./utils/unified-runner.mjs')
+    const { runTests } = await import('./utils/interactive-runner.mjs')
     return runTests(vitestPath, vitestArgs, {
       env,
       cwd: rootPath,
@@ -286,7 +288,7 @@ async function runVitestSimple(args, options = {}) {
 }
 
 async function runTests(options) {
-  const { all, coverage, positionals, update, quiet } = options
+  const { coverage, positionals, quiet, update } = options
 
   // If positional arguments provided, use them directly
   if (positionals && positionals.length > 0) {

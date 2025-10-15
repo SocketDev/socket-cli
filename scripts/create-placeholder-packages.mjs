@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 
 /**
  * @fileoverview Creates minimal placeholder packages for @socketbin/* to enable trusted publisher.
@@ -132,7 +131,7 @@ async function main() {
   console.log('Creating @socketbin placeholder packages...\n')
 
   const packageDirs = []
-  for (const { platform, arch } of platforms) {
+  for (const { arch, platform } of platforms) {
     const dir = await createPlaceholderPackage(platform, arch)
     packageDirs.push(dir)
   }

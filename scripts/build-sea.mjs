@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+ 
 /**
  * Build script for creating self-executable Socket CLI applications.
  * Uses Node.js Single Executable Application (SEA) feature.
@@ -18,9 +18,9 @@
  * - Linux (x64, arm64)
  *
  * Usage:
- * - Build all platforms: npm run build:sea
- * - Build specific platform: npm run build:sea -- --platform=darwin --arch=x64
- * - Use advanced bootstrap: npm run build:sea -- --advanced
+ * - Build all platforms: npm run build --sea
+ * - Build specific platform: npm run build --sea -- --platform=darwin --arch=x64
+ * - Use advanced bootstrap: npm run build --sea -- --advanced
  */
 
 import crypto from 'node:crypto'
@@ -29,14 +29,17 @@ import os from 'node:os'
 import path from 'node:path'
 import url from 'node:url'
 
+import { WIN32 } from '@socketsecurity/registry/constants/platform'
+import { safeDelete } from '@socketsecurity/registry/lib/fs'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { normalizePath } from '@socketsecurity/registry/lib/path'
-
-import { safeDelete } from '@socketsecurity/registry/lib/fs'
-
 import { spawn } from '@socketsecurity/registry/lib/spawn'
-import constants, { NODE_SEA_FUSE } from '../constants.mts'
-import WIN32 from '@socketsecurity/registry/lib/constants/win32'
+
+import constants from './constants.mjs'
+
+// Inline NODE_SEA_FUSE constant (not exported from constants.mjs).
+const NODE_SEA_FUSE = 'NODE_SEA_FUSE'
+
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url))
 
@@ -333,7 +336,7 @@ async function injectSeaBlob(nodeBinary, blobPath, outputPath) {
 
   // Check if postject is available.
   try {
-    await spawn('pnpm', ['exec', 'postject', '--version'], {
+    await spawn('pnpm', ['exec', 'postject', '--help'], {
       stdio: 'ignore',
     })
   } catch {
@@ -459,7 +462,9 @@ async function buildTarget(target, options) {
   console.log('(Actual CLI will be downloaded from npm on first use)')
 
   // Use the thin bootstrap for minimal size.
-  const tsEntryPoint = normalizePath(path.join(__dirname, 'bootstrap.mts'))
+  const tsEntryPoint = normalizePath(
+    path.join(__dirname, '..', 'src', 'sea', 'bootstrap.mts'),
+  )
 
   // Ensure output directory exists.
   await fs.mkdir(outputDir, { recursive: true })
@@ -598,7 +603,7 @@ async function main() {
 
   // Build each target.
   for (const target of targets) {
-    // eslint-disable-next-line no-await-in-loop
+     
     await buildTarget(target, options)
   }
 
@@ -612,7 +617,7 @@ async function main() {
 if (import.meta.url === url.pathToFileURL(process.argv[1]).href) {
   main().catch(error => {
     console.error('Build failed:', error)
-    // eslint-disable-next-line n/no-process-exit
+     
     process.exit(1)
   })
 }

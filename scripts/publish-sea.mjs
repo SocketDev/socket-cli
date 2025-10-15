@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * Script to publish Socket CLI SEA binaries.
  *
@@ -23,11 +22,11 @@ const __dirname = path.dirname(url.fileURLToPath(import.meta.url))
 async function buildBinaries(platforms) {
   console.log('Building SEA binaries...')
 
-  const args = ['run', 'build:sea']
+  const args = ['run', 'build', '--sea']
 
   if (platforms && platforms.length > 0) {
     for (const platform of platforms) {
-      // eslint-disable-next-line no-await-in-loop
+       
       await spawn('pnpm', [...args, '--', `--platform=${platform}`], {
         stdio: 'inherit',
       })
@@ -47,7 +46,7 @@ async function uploadToGitHub(version) {
   const seaDir = normalizePath(path.join(__dirname, '../../dist/sea'))
 
   if (!existsSync(seaDir)) {
-    throw new Error('SEA binaries not found. Run build:sea first.')
+    throw new Error('SEA binaries not found. Run build --sea first.')
   }
 
   // Check if GitHub CLI is available.
@@ -102,7 +101,7 @@ async function uploadToGitHub(version) {
   for (const binary of binaries) {
     const binaryPath = normalizePath(path.join(seaDir, binary))
     console.log(`Uploading ${binary}...`)
-    // eslint-disable-next-line no-await-in-loop
+     
     await spawn(
       'gh',
       ['release', 'upload', `v${version}`, binaryPath, '--clobber'],
@@ -221,7 +220,7 @@ async function main() {
 if (import.meta.url === url.pathToFileURL(process.argv[1]).href) {
   main().catch(error => {
     console.error('Publishing failed:', error)
-    // eslint-disable-next-line n/no-process-exit
+     
     process.exit(1)
   })
 }

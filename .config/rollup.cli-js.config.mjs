@@ -8,8 +8,7 @@
 
 import { spawnSync as nodeSpawnSync } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
-import { existsSync } from 'node:fs'
-import fs from 'node:fs'
+import fs, { existsSync } from 'node:fs'
 import { isBuiltin } from 'node:module'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -20,6 +19,9 @@ import jsonPlugin from '@rollup/plugin-json'
 import { nodeResolve } from '@rollup/plugin-node-resolve'
 import replacePlugin from '@rollup/plugin-replace'
 
+import fixDebug from './rollup-plugin-fix-debug.mjs'
+import fixInk from './rollup-plugin-fix-ink.mjs'
+import fixYoga from './rollup-plugin-fix-yoga.mjs'
 import constants from './rollup.cli-js.constants.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -142,6 +144,7 @@ function getSocketCliVersionHash() {
       })
       if (result.status === 0) {
         // Strip ANSI codes: simple regex for common escape sequences.
+        // eslint-disable-next-line no-control-regex
         gitHash = result.stdout.trim().replace(/\x1b\[[0-9;]*m/g, '')
       }
     } catch {}
@@ -155,7 +158,7 @@ function getSocketCliVersionHash() {
 export default {
   input: path.join(constants.srcPath, 'unified-cli.mts'),
   output: {
-    file: path.join(constants.distPath, 'socket.js'),
+    file: path.join(constants.distPath, 'cli.js'),
     format: 'cjs',
     // Bundle everything into one file.
     inlineDynamicImports: true,
@@ -165,33 +168,53 @@ export default {
     // Don't create source maps for the unified build to keep it simple.
     sourcemap: false,
   },
-  // Only externalize Node.js built-ins - bundle EVERYTHING else.
+  // Externalize Node.js built-ins and problematic packages.
+  // iconv-lite and encoding cause CommonJS parsing issues with large data tables.
   external(id) {
-    // Externalize Node.js built-ins.
-    if (isBuiltin(id)) {
-      return true
-    }
-
-    // Externalize Ink and its dependencies (loaded via dynamic import).
-    // Ink's reconciler.js has top-level await which is incompatible with CJS.
-    if (
-      id === 'ink' ||
-      id === 'react' ||
-      id === 'react-reconciler' ||
-      id === 'yoga-layout'
-    ) {
-      return true
-    }
-
-    return false
+    return (
+      isBuiltin(id) ||
+      id === 'iconv-lite' ||
+      id.startsWith('iconv-lite/') ||
+      id === 'encoding' ||
+      id.startsWith('encoding/')
+    )
   },
   // Disable tree-shaking to ensure all code paths are included.
   treeshake: false,
   plugins: [
+    // FIRST: Replace iconv-lite and encoding with stubs to avoid bundling issues.
+    {
+      name: 'stub-iconv-encoding',
+      resolveId(source) {
+        if (
+          source === 'iconv-lite' ||
+          source.startsWith('iconv-lite/') ||
+          source === 'encoding' ||
+          source.startsWith('encoding/')
+        ) {
+          // Return a virtual module ID that we'll handle in load hook.
+          return `\0stub:${source}`
+        }
+        return null
+      },
+      load(id) {
+        if (id.startsWith('\0stub:')) {
+          // Return an empty stub module.
+          return 'export default {};'
+        }
+        return null
+      },
+    },
+
+    // Fix package-specific issues BEFORE replace plugin runs.
+    fixDebug(),
+    fixInk(),
+    fixYoga(),
+
     // Custom plugin to force bundling of socket packages.
     {
       name: 'force-bundle-socket-packages',
-      resolveId(source, importer, options) {
+      resolveId(source, _importer, _options) {
         // Define socket packages and their local paths.
         const socketPackages = {
           __proto__: null,
@@ -298,7 +321,7 @@ export default {
       // Look in parent directory for local packages first.
       rootDir: path.join(constants.rootPath, '..'),
       // Resolve/bundle everything (not just certain packages).
-      resolveOnly: module => {
+      resolveOnly: _module => {
         // Bundle everything except what external() function handles.
         return true
       },
@@ -332,6 +355,8 @@ export default {
         '**/*.spec.js',
         '**/fixtures/**',
         '**/dependencies.js',
+        '**/iconv-lite/**',
+        '**/encoding/**',
       ],
     }),
 
@@ -356,7 +381,7 @@ export default {
     // Custom plugin to handle special cases.
     {
       name: 'handle-special-cases',
-      resolveId(source, importer, options) {
+      resolveId(source, _importer, _options) {
         // Skip test imports entirely.
         if (
           source.includes('/test/') ||

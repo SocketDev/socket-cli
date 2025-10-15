@@ -34,7 +34,7 @@ async function getTestFiles() {
     for (const entry of entries) {
       const fullPath = path.join(dir, entry.name)
       if (entry.isDirectory() && !entry.name.startsWith('.')) {
-        // eslint-disable-next-line no-await-in-loop
+         
         await collectFiles(fullPath)
       } else if (
         entry.isFile() &&
