@@ -6,7 +6,7 @@ import {
   isConfigFromFlag,
   isSensitiveConfigKey,
 } from '../../utils/config.mts'
-import { serializeResultJson } from '../../utils/serialize-result-json.mts'
+import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
 import type { OutputKind } from '../../types.mts'
 

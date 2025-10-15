@@ -6,16 +6,16 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { convertGradleToMaven } from './convert_gradle_to_maven.mts'
 import constants, { REQUIREMENTS_TXT, SOCKET_JSON } from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
-import { checkCommandInput } from '../../utils/check-input.mts'
-import { getOutputKind } from '../../utils/get-output-kind.mts'
-import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
-import { getFlagListOutput } from '../../utils/output-formatting.mts'
-import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
+import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
+import { getFlagListOutput } from '../../utils/output/formatting.mts'
+import { getOutputKind } from '../../utils/output/mode.mjs'
+import { readOrDefaultSocketJson } from '../../utils/socket/json.mts'
+import { checkCommandInput } from '../../utils/validation/check-input.mts'
 
 import type {
   CliCommandConfig,
   CliCommandContext,
-} from '../../utils/meow-with-subcommands.mts'
+} from '../../utils/cli/with-subcommands.mjs'
 
 const config: CliCommandConfig = {
   commandName: 'gradle',
@@ -108,7 +108,11 @@ async function run(
     `override: ${SOCKET_JSON} gradle: ${sockJson?.defaults?.manifest?.gradle}`,
   )
 
-  let { bin, gradleOpts, verbose } = cli.flags
+  let { bin, gradleOpts, verbose } = cli.flags as unknown as {
+    bin: string | undefined
+    gradleOpts: string | undefined
+    verbose: boolean | undefined
+  }
 
   // Set defaults for any flag/arg that is not given. Check socket.json first.
   if (!bin) {

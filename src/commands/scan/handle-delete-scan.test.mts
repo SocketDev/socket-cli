@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { handleDeleteScan } from './handle-delete-scan.mts'
+import { createErrorResult, createSuccessResult } from '../../../test/helpers/mocks.mts'
 
 // Mock the dependencies.
 vi.mock('./fetch-delete-org-full-scan.mts', () => ({
@@ -20,14 +21,11 @@ describe('handleDeleteScan', () => {
     const mockFetch = vi.mocked(fetchDeleteOrgFullScan)
     const mockOutput = vi.mocked(outputDeleteScan)
 
-    const mockResult = {
-      ok: true,
-      data: {
-        deleted: true,
-        scanId: 'scan-123',
-        deletedAt: '2025-01-01T00:00:00Z',
-      },
-    }
+    const mockResult = createSuccessResult({
+      deleted: true,
+      scanId: 'scan-123',
+      deletedAt: '2025-01-01T00:00:00Z',
+    })
     mockFetch.mockResolvedValue(mockResult)
 
     await handleDeleteScan('test-org', 'scan-123', 'json')
@@ -44,10 +42,7 @@ describe('handleDeleteScan', () => {
     const mockFetch = vi.mocked(fetchDeleteOrgFullScan)
     const mockOutput = vi.mocked(outputDeleteScan)
 
-    const mockError = {
-      ok: false,
-      error: 'Scan not found',
-    }
+    const mockError = createErrorResult('Scan not found')
     mockFetch.mockResolvedValue(mockError)
 
     await handleDeleteScan('test-org', 'nonexistent-scan', 'text')
@@ -64,7 +59,7 @@ describe('handleDeleteScan', () => {
     const mockFetch = vi.mocked(fetchDeleteOrgFullScan)
     const mockOutput = vi.mocked(outputDeleteScan)
 
-    mockFetch.mockResolvedValue({ ok: true, data: {} })
+    mockFetch.mockResolvedValue(createSuccessResult({}))
 
     await handleDeleteScan('my-org', 'scan-456', 'markdown')
 
@@ -77,7 +72,7 @@ describe('handleDeleteScan', () => {
     )
     const mockFetch = vi.mocked(fetchDeleteOrgFullScan)
 
-    mockFetch.mockResolvedValue({ ok: true, data: {} })
+    mockFetch.mockResolvedValue(createSuccessResult({}))
 
     const scanIds = [
       'scan-123',
@@ -101,13 +96,12 @@ describe('handleDeleteScan', () => {
     const mockFetch = vi.mocked(fetchDeleteOrgFullScan)
     const mockOutput = vi.mocked(outputDeleteScan)
 
-    mockFetch.mockResolvedValue({
-      ok: true,
-      data: {
+    mockFetch.mockResolvedValue(
+      createSuccessResult({
         deleted: true,
         message: 'Scan successfully deleted',
-      },
-    })
+      }),
+    )
 
     await handleDeleteScan('production-org', 'scan-to-delete', 'text')
 

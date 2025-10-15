@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { handleDiffScan } from './handle-diff-scan.mts'
+import { createErrorResult, createSuccessResult } from '../../../test/helpers/mocks.mts'
 
 // Mock the dependencies.
 vi.mock('./fetch-diff-scan.mts', () => ({
@@ -18,20 +19,17 @@ describe('handleDiffScan', () => {
     const mockFetch = vi.mocked(fetchDiffScan)
     const mockOutput = vi.mocked(outputDiffScan)
 
-    const mockDiff = {
-      ok: true,
-      data: {
-        added: [{ name: 'new-package', version: '1.0.0' }],
-        removed: [{ name: 'old-package', version: '0.9.0' }],
-        changed: [
-          {
-            name: 'updated-package',
-            oldVersion: '1.0.0',
-            newVersion: '2.0.0',
-          },
-        ],
-      },
-    }
+    const mockDiff = createSuccessResult({
+      added: [{ name: 'new-package', version: '1.0.0' }],
+      removed: [{ name: 'old-package', version: '0.9.0' }],
+      changed: [
+        {
+          name: 'updated-package',
+          oldVersion: '1.0.0',
+          newVersion: '2.0.0',
+        },
+      ],
+    })
     mockFetch.mockResolvedValue(mockDiff)
 
     await handleDiffScan({
@@ -61,10 +59,7 @@ describe('handleDiffScan', () => {
     const mockFetch = vi.mocked(fetchDiffScan)
     const mockOutput = vi.mocked(outputDiffScan)
 
-    const mockError = {
-      ok: false,
-      error: 'Scans not found',
-    }
+    const mockError = createErrorResult('Scans not found')
     mockFetch.mockResolvedValue(mockError)
 
     await handleDiffScan({
@@ -89,7 +84,7 @@ describe('handleDiffScan', () => {
     const mockFetch = vi.mocked(fetchDiffScan)
     const mockOutput = vi.mocked(outputDiffScan)
 
-    mockFetch.mockResolvedValue({ ok: true, data: {} })
+    mockFetch.mockResolvedValue(createSuccessResult({}))
 
     await handleDiffScan({
       depth: 3,
@@ -115,7 +110,7 @@ describe('handleDiffScan', () => {
     const mockFetch = vi.mocked(fetchDiffScan)
     const mockOutput = vi.mocked(outputDiffScan)
 
-    mockFetch.mockResolvedValue({ ok: true, data: {} })
+    mockFetch.mockResolvedValue(createSuccessResult({}))
 
     const depths = [0, 1, 5, 10, 100]
 
@@ -143,15 +138,14 @@ describe('handleDiffScan', () => {
     const mockFetch = vi.mocked(fetchDiffScan)
     const mockOutput = vi.mocked(outputDiffScan)
 
-    mockFetch.mockResolvedValue({
-      ok: true,
-      data: {
+    mockFetch.mockResolvedValue(
+      createSuccessResult({
         added: [],
         removed: [],
         changed: [],
         summary: 'No changes detected',
-      },
-    })
+      }),
+    )
 
     await handleDiffScan({
       depth: 2,

@@ -1,11 +1,11 @@
 import { joinAnd } from '@socketsecurity/registry/lib/arrays'
-import { debugDir, debug } from '@socketsecurity/registry/lib/debug'
+import { debug, debugDir } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { coanaFix } from './coana-fix.mts'
 import { outputFixResult } from './output-fix-result.mts'
 import { convertCveToGhsa } from '../../utils/cve-to-ghsa.mts'
-import { convertPurlToGhsas } from '../../utils/purl-to-ghsa.mts'
+import { convertPurlToGhsas } from '../../utils/purl/to-ghsa.mts'
 
 import type { FixConfig } from './types.mts'
 import type { OutputKind } from '../../types.mts'

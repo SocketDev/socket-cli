@@ -4,15 +4,16 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { getSocketFixPrs } from './pull-request.mts'
 import constants from '../../constants.mts'
-import { getBaseBranch, getRepoInfo } from '../../utils/git.mts'
+import { getBaseBranch, getRepoInfo } from '../../utils/git/git.mjs'
 
 import type { PrMatch } from './pull-request.mts'
-import type { RepoInfo } from '../../utils/git.mts'
+import type { RepoInfo } from '../../utils/git/git.mjs'
 
 function ciRepoInfo(): RepoInfo | undefined {
   const { GITHUB_REPOSITORY } = constants.ENV
   if (!GITHUB_REPOSITORY) {
     debug('miss: GITHUB_REPOSITORY env var')
+    return undefined
   }
   const ownerSlashRepo = GITHUB_REPOSITORY
   const slashIndex = ownerSlashRepo.indexOf('/')
@@ -27,9 +28,9 @@ function ciRepoInfo(): RepoInfo | undefined {
 
 export interface FixEnv {
   baseBranch: string
-  gitEmail: string
-  githubToken: string
-  gitUser: string
+  gitEmail: string | undefined
+  githubToken: string | undefined
+  gitUser: string | undefined
   isCi: boolean
   prs: PrMatch[]
   repoInfo: RepoInfo | undefined

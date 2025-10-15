@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { handleDeleteRepo } from './handle-delete-repo.mts'
+import { createSuccessResult } from '../../../test/helpers/mocks.mts'
 
 // Mock the dependencies.
 vi.mock('./fetch-delete-repo.mts', () => ({
@@ -18,10 +19,7 @@ describe('handleDeleteRepo', () => {
     const mockFetch = vi.mocked(fetchDeleteRepo)
     const mockOutput = vi.mocked(outputDeleteRepo)
 
-    const mockResult = {
-      ok: true,
-      data: { success: true },
-    }
+    const mockResult = createSuccessResult({ success: true })
     mockFetch.mockResolvedValue(mockResult)
 
     await handleDeleteRepo('test-org', 'test-repo', 'json')
@@ -58,7 +56,7 @@ describe('handleDeleteRepo', () => {
     const mockFetch = vi.mocked(fetchDeleteRepo)
     const mockOutput = vi.mocked(outputDeleteRepo)
 
-    mockFetch.mockResolvedValue({ ok: true, data: {} })
+    mockFetch.mockResolvedValue(createSuccessResult({}))
 
     await handleDeleteRepo('my-org', 'my-repo', 'markdown')
 
@@ -83,7 +81,7 @@ describe('handleDeleteRepo', () => {
     ]
 
     for (const repoName of repoNames) {
-      mockFetch.mockResolvedValue({ ok: true, data: {} })
+      mockFetch.mockResolvedValue(createSuccessResult({}))
       // eslint-disable-next-line no-await-in-loop
       await handleDeleteRepo('test-org', repoName, 'json')
       expect(mockFetch).toHaveBeenCalledWith('test-org', repoName)
@@ -96,10 +94,9 @@ describe('handleDeleteRepo', () => {
     const mockFetch = vi.mocked(fetchDeleteRepo)
     const mockOutput = vi.mocked(outputDeleteRepo)
 
-    mockFetch.mockResolvedValue({
-      ok: true,
-      data: { deleted: true, timestamp: '2025-01-01T00:00:00Z' },
-    })
+    mockFetch.mockResolvedValue(
+      createSuccessResult({ deleted: true, timestamp: '2025-01-01T00:00:00Z' }),
+    )
 
     await handleDeleteRepo('production-org', 'deprecated-repo', 'text')
 

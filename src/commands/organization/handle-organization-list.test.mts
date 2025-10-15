@@ -1,6 +1,7 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { handleOrganizationList } from './handle-organization-list.mts'
+import { setupTestEnvironment } from '../../../test/helpers/index.mts'
 
 // Mock the dependencies.
 
@@ -20,9 +21,7 @@ vi.mock('../../utils/debug.mts', () => ({
 }))
 
 describe('handleOrganizationList', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-  })
+  setupTestEnvironment()
 
   it('fetches and outputs organization list successfully', async () => {
     const { fetchOrganization } = await import('./fetch-organization-list.mts')

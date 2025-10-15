@@ -2,9 +2,9 @@ import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
-import { getVisibleTokenPrefix } from '../../utils/sdk.mts'
-import { serializeResultJson } from '../../utils/serialize-result-json.mts'
+import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
+import { serializeResultJson } from '../../utils/output/result-json.mjs'
+import { getVisibleTokenPrefix } from '../../utils/socket/sdk.mjs'
 
 import type { OrganizationsCResult } from './fetch-organization-list.mts'
 import type { OutputKind } from '../../types.mts'

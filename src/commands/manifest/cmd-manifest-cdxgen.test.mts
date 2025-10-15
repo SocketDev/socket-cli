@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
-import constants, { FLAG_HELP } from '../../constants.mts'
+import constants, { FLAG_HELP, LOG_SYMBOLS } from '../../constants.mts'
 
 import type { PromiseSpawnOptions } from '@socketsecurity/registry/lib/spawn'
 

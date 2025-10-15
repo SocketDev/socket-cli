@@ -7,21 +7,21 @@ import { outputScanGithub } from './output-scan-github.mts'
 import { suggestOrgSlug } from './suggest-org-slug.mts'
 import constants from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
-import { checkCommandInput } from '../../utils/check-input.mts'
-import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
-import { getOutputKind } from '../../utils/get-output-kind.mts'
-import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
+import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import {
   getFlagApiRequirementsOutput,
   getFlagListOutput,
-} from '../../utils/output-formatting.mts'
-import { hasDefaultApiToken } from '../../utils/sdk.mts'
-import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
+} from '../../utils/output/formatting.mts'
+import { getOutputKind } from '../../utils/output/mode.mjs'
+import { readOrDefaultSocketJson } from '../../utils/socket/json.mts'
+import { determineOrgSlug } from '../../utils/socket/org-slug.mjs'
+import { hasDefaultApiToken } from '../../utils/socket/sdk.mjs'
+import { checkCommandInput } from '../../utils/validation/check-input.mts'
 
 import type {
   CliCommandConfig,
   CliCommandContext,
-} from '../../utils/meow-with-subcommands.mts'
+} from '../../utils/cli/with-subcommands.mjs'
 
 export const CMD_NAME = 'github'
 
@@ -131,7 +131,7 @@ async function run(
     json,
     markdown,
     org: orgFlag,
-  } = cli.flags as {
+  } = cli.flags as unknown as {
     githubToken: string
     interactive: boolean
     json: boolean
@@ -142,7 +142,7 @@ async function run(
 
   const dryRun = !!cli.flags['dryRun']
 
-  let { all, githubApiUrl, orgGithub, repos } = cli.flags as {
+  let { all, githubApiUrl, orgGithub, repos } = cli.flags as unknown as {
     all: boolean | undefined
     githubApiUrl: string
     orgGithub: string
@@ -257,7 +257,7 @@ async function run(
   await handleCreateGithubScan({
     all: Boolean(all),
     githubApiUrl,
-    githubToken,
+    githubToken: githubToken || '',
     interactive: Boolean(interactive),
     orgSlug,
     orgGithub,

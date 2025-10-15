@@ -1,6 +1,10 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { handleConfigAuto } from './handle-config-auto.mts'
+import {
+  createErrorResult,
+  createSuccessResult,
+} from '../../../test/helpers/mocks.mts'
 
 // Mock the dependencies.
 vi.mock('./discover-config-value.mts', () => ({
@@ -18,11 +22,7 @@ describe('handleConfigAuto', () => {
     const mockDiscover = vi.mocked(discoverConfigValue)
     const mockOutput = vi.mocked(outputConfigAuto)
 
-    const mockResult = {
-      ok: true,
-      data: 'discovered-api-token',
-      source: 'environment',
-    }
+    const mockResult = createSuccessResult('discovered-api-token')
     mockDiscover.mockResolvedValue(mockResult)
 
     await handleConfigAuto({ key: 'apiToken', outputKind: 'json' })
@@ -37,10 +37,7 @@ describe('handleConfigAuto', () => {
     const mockDiscover = vi.mocked(discoverConfigValue)
     const mockOutput = vi.mocked(outputConfigAuto)
 
-    const mockResult = {
-      ok: false,
-      error: 'Config not found',
-    }
+    const mockResult = createErrorResult('Config not found')
     mockDiscover.mockResolvedValue(mockResult)
 
     await handleConfigAuto({ key: 'orgSlug', outputKind: 'text' })
@@ -55,7 +52,7 @@ describe('handleConfigAuto', () => {
     const mockDiscover = vi.mocked(discoverConfigValue)
     const mockOutput = vi.mocked(outputConfigAuto)
 
-    mockDiscover.mockResolvedValue({ ok: true, data: 'test-value' })
+    mockDiscover.mockResolvedValue(createSuccessResult('test-value'))
 
     await handleConfigAuto({ key: 'orgId', outputKind: 'markdown' })
 
@@ -75,7 +72,7 @@ describe('handleConfigAuto', () => {
     const keys = ['apiToken', 'apiUrl', 'orgId', 'orgSlug'] as const
 
     for (const key of keys) {
-      mockDiscover.mockResolvedValue({ ok: true, data: `${key}-value` })
+      mockDiscover.mockResolvedValue(createSuccessResult(`${key}-value`))
       // eslint-disable-next-line no-await-in-loop
       await handleConfigAuto({ key, outputKind: 'json' })
       expect(mockDiscover).toHaveBeenCalledWith(key)
@@ -88,11 +85,9 @@ describe('handleConfigAuto', () => {
     const mockDiscover = vi.mocked(discoverConfigValue)
     const mockOutput = vi.mocked(outputConfigAuto)
 
-    mockDiscover.mockResolvedValue({
-      ok: true,
-      data: 'https://api.socket.dev',
-      source: 'config file',
-    })
+    mockDiscover.mockResolvedValue(
+      createSuccessResult('https://api.socket.dev'),
+    )
 
     await handleConfigAuto({ key: 'apiUrl', outputKind: 'text' })
 

@@ -1,8 +1,12 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { fetchDependencies } from './fetch-dependencies.mts'
 import { handleDependencies } from './handle-dependencies.mts'
 import { outputDependencies } from './output-dependencies.mts'
+import {
+  createSuccessResult,
+  setupTestEnvironment,
+} from '../../../test/helpers/index.mts'
 
 vi.mock('./fetch-dependencies.mts', () => ({
   fetchDependencies: vi.fn(),
@@ -12,21 +16,16 @@ vi.mock('./output-dependencies.mts', () => ({
 }))
 
 describe('handleDependencies', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-  })
+  setupTestEnvironment()
 
   it('should fetch and output dependencies successfully', async () => {
-    const mockResult = {
-      ok: true,
-      data: [
-        {
-          name: 'test-package',
-          version: '1.0.0',
-          description: 'Test package',
-        },
-      ],
-    }
+    const mockResult = createSuccessResult([
+      {
+        name: 'test-package',
+        version: '1.0.0',
+        description: 'Test package',
+      },
+    ])
 
     vi.mocked(fetchDependencies).mockResolvedValue(mockResult)
     vi.mocked(outputDependencies).mockResolvedValue()
@@ -69,10 +68,7 @@ describe('handleDependencies', () => {
   })
 
   it('should handle different output kinds', async () => {
-    const mockResult = {
-      ok: true,
-      data: [],
-    }
+    const mockResult = createSuccessResult([])
 
     vi.mocked(fetchDependencies).mockResolvedValue(mockResult)
     vi.mocked(outputDependencies).mockResolvedValue()
@@ -91,10 +87,7 @@ describe('handleDependencies', () => {
   })
 
   it('should handle large offsets and limits', async () => {
-    const mockResult = {
-      ok: true,
-      data: [],
-    }
+    const mockResult = createSuccessResult([])
 
     vi.mocked(fetchDependencies).mockResolvedValue(mockResult)
     vi.mocked(outputDependencies).mockResolvedValue()

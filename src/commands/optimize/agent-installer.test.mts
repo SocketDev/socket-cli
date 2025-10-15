@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { runAgentInstall } from './agent-installer.mts'
 
@@ -18,7 +18,7 @@ vi.mock('../../shadow/npm/install.mts', () => ({
   shadowNpmInstall: vi.fn(),
 }))
 
-vi.mock('../../utils/cmd.mts', () => ({
+vi.mock('../../utils/process/cmd.mts', () => ({
   cmdFlagsToString: vi.fn(flags =>
     Object.entries(flags || {})
       .map(([k, v]) => `--${k}=${v}`)

@@ -2,14 +2,14 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
-import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
-import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
-import { serializeResultJson } from '../../utils/serialize-result-json.mts'
+import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
+import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
+import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
 import type {
   CliCommandConfig,
   CliCommandContext,
-} from '../../utils/meow-with-subcommands.mts'
+} from '../../utils/cli/with-subcommands.mjs'
 
 const config: CliCommandConfig = {
   commandName: 'oops',

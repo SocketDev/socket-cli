@@ -6,7 +6,7 @@ import { convertGradleToMaven } from './convert_gradle_to_maven.mts'
 import { convertSbtToMaven } from './convert_sbt_to_maven.mts'
 import { handleManifestConda } from './handle-manifest-conda.mts'
 import { REQUIREMENTS_TXT, SOCKET_JSON } from '../../constants.mts'
-import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
+import { readOrDefaultSocketJson } from '../../utils/socket/json.mts'
 
 import type { GeneratableManifests } from './detect-manifest-actions.mts'
 import type { OutputKind } from '../../types.mts'

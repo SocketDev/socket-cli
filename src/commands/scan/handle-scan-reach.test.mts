@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { handleScanReach } from './handle-scan-reach.mts'
+import { createErrorResult, createSuccessResult } from '../../../test/helpers/mocks.mts'
 
 // Mock the dependencies.
 vi.mock('@socketsecurity/registry/lib/logger', () => ({
@@ -21,17 +22,18 @@ vi.mock('./perform-reachability-analysis.mts', () => ({
   performReachabilityAnalysis: vi.fn(),
 }))
 
-vi.mock('../../utils/check-input.mts', () => ({
+vi.mock('../../utils/validation/check-input.mts', () => ({
   checkCommandInput: vi.fn(),
 }))
 
-vi.mock('../../utils/path-resolve.mts', () => ({
+vi.mock('../../utils/path/resolve.mts', () => ({
   getPackageFilesForScan: vi.fn(),
 }))
 
 vi.mock('../../constants.mts', () => {
   const kInternalsSymbol = Symbol.for('kInternalsSymbol')
   return {
+    NODE_MODULES: 'node_modules',
     default: {
       spinner: {
         start: vi.fn(),
@@ -55,9 +57,11 @@ describe('handleScanReach', () => {
     const { performReachabilityAnalysis } = await import(
       './perform-reachability-analysis.mts'
     )
-    const { checkCommandInput } = await import('../../utils/check-input.mts')
+    const { checkCommandInput } = await import(
+      '../../utils/validation/check-input.mts'
+    )
     const { getPackageFilesForScan } = await import(
-      '../../utils/path-resolve.mts'
+      '../../utils/path/resolve.mts'
     )
 
     const mockFetchSupported = vi.mocked(fetchSupportedScanFileNames)
@@ -66,22 +70,20 @@ describe('handleScanReach', () => {
     const mockCheckInput = vi.mocked(checkCommandInput)
     const mockGetPackageFiles = vi.mocked(getPackageFilesForScan)
 
-    mockFetchSupported.mockResolvedValue({
-      ok: true,
-      data: ['package.json', 'package-lock.json'],
-    })
+    mockFetchSupported.mockResolvedValue(
+      createSuccessResult(['package.json', 'package-lock.json']),
+    )
     mockGetPackageFiles.mockResolvedValue([
       '/project/package.json',
       '/project/package-lock.json',
     ])
     mockCheckInput.mockReturnValue(true)
-    mockPerformAnalysis.mockResolvedValue({
-      ok: true,
-      data: {
+    mockPerformAnalysis.mockResolvedValue(
+      createSuccessResult({
         reachablePackages: 10,
         totalPackages: 50,
-      },
-    })
+      }),
+    )
 
     await handleScanReach({
       cwd: '/project',
@@ -112,10 +114,7 @@ describe('handleScanReach', () => {
     const mockFetchSupported = vi.mocked(fetchSupportedScanFileNames)
     const mockOutput = vi.mocked(outputScanReach)
 
-    const mockError = {
-      ok: false,
-      error: 'Failed to fetch supported files',
-    }
+    const mockError = createErrorResult('Failed to fetch supported files')
     mockFetchSupported.mockResolvedValue(mockError)
 
     await handleScanReach({
@@ -137,19 +136,18 @@ describe('handleScanReach', () => {
     const { fetchSupportedScanFileNames } = await import(
       './fetch-supported-scan-file-names.mts'
     )
-    const { checkCommandInput } = await import('../../utils/check-input.mts')
+    const { checkCommandInput } = await import(
+      '../../utils/validation/check-input.mts'
+    )
     const { getPackageFilesForScan } = await import(
-      '../../utils/path-resolve.mts'
+      '../../utils/path/resolve.mts'
     )
 
     const mockFetchSupported = vi.mocked(fetchSupportedScanFileNames)
     const mockCheckInput = vi.mocked(checkCommandInput)
     const mockGetPackageFiles = vi.mocked(getPackageFilesForScan)
 
-    mockFetchSupported.mockResolvedValue({
-      ok: true,
-      data: ['package.json'],
-    })
+    mockFetchSupported.mockResolvedValue(createSuccessResult(['package.json']))
     mockGetPackageFiles.mockResolvedValue([])
     mockCheckInput.mockReturnValue(false)
 
@@ -178,9 +176,11 @@ describe('handleScanReach', () => {
     const { performReachabilityAnalysis } = await import(
       './perform-reachability-analysis.mts'
     )
-    const { checkCommandInput } = await import('../../utils/check-input.mts')
+    const { checkCommandInput } = await import(
+      '../../utils/validation/check-input.mts'
+    )
     const { getPackageFilesForScan } = await import(
-      '../../utils/path-resolve.mts'
+      '../../utils/path/resolve.mts'
     )
 
     const mockFetchSupported = vi.mocked(fetchSupportedScanFileNames)
@@ -189,14 +189,11 @@ describe('handleScanReach', () => {
     const mockCheckInput = vi.mocked(checkCommandInput)
     const mockGetPackageFiles = vi.mocked(getPackageFilesForScan)
 
-    mockFetchSupported.mockResolvedValue({ ok: true, data: ['package.json'] })
+    mockFetchSupported.mockResolvedValue(createSuccessResult(['package.json']))
     mockGetPackageFiles.mockResolvedValue(['/project/package.json'])
     mockCheckInput.mockReturnValue(true)
 
-    const analysisError = {
-      ok: false,
-      error: 'Analysis failed',
-    }
+    const analysisError = createErrorResult('Analysis failed')
     mockPerformAnalysis.mockResolvedValue(analysisError)
 
     await handleScanReach({

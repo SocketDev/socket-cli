@@ -1,6 +1,6 @@
-import { debugDir, debug } from '@socketsecurity/registry/lib/debug'
+import { debug, debugDir } from '@socketsecurity/registry/lib/debug'
 
-import { queryApiSafeText } from '../../utils/api.mts'
+import { queryApiSafeText } from '../../utils/socket/api.mjs'
 
 import type { CResult } from '../../types.mts'
 import type { SocketArtifact } from '../../utils/alert/artifact.mts'

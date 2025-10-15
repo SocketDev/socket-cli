@@ -9,11 +9,11 @@ import constants, {
   OUTPUT_JSON,
   OUTPUT_TEXT,
 } from '../../constants.mts'
-import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
-import { mapToObject } from '../../utils/map-to-object.mts'
-import { mdTable } from '../../utils/markdown.mts'
-import { serializeResultJson } from '../../utils/serialize-result-json.mts'
-import { walkNestedMap } from '../../utils/walk-nested-map.mts'
+import { mapToObject } from '../../utils/data/map-to-object.mjs'
+import { walkNestedMap } from '../../utils/data/walk-nested-map.mjs'
+import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
+import { mdTable } from '../../utils/output/markdown.mts'
+import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
 import type { ReportLeafNode, ScanReport } from './generate-report.mts'
 import type { FOLD_SETTING, REPORT_LEVEL } from './types.mts'

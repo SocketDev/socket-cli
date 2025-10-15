@@ -14,10 +14,10 @@ import {
   isConfigFromFlag,
   updateConfigValue,
 } from '../../utils/config.mts'
-import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
+import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 import { getEnterpriseOrgs, getOrgSlugs } from '../../utils/organization.mts'
-import { setupSdk } from '../../utils/sdk.mts'
-import { socketDocsLink } from '../../utils/terminal-link.mts'
+import { setupSdk } from '../../utils/socket/sdk.mjs'
+import { socketDocsLink } from '../../utils/terminal/link.mts'
 import { setupTabCompletion } from '../install/setup-tab-completion.mts'
 import { fetchOrganization } from '../organization/fetch-organization-list.mts'
 

@@ -8,7 +8,7 @@ import {
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants, { REDACTED, SOCKET_JSON } from '../../constants.mts'
-import { tildify } from '../../utils/tildify.mts'
+import { tildify } from '../../utils/fs/home-path.mjs'
 
 export async function outputCmdJson(cwd: string) {
   logger.info('Target cwd:', constants.ENV.VITEST ? REDACTED : tildify(cwd))

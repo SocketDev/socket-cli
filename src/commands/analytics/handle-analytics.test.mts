@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { handleAnalytics } from './handle-analytics.mts'
+import {
+  createErrorResult,
+  createSuccessResult,
+} from '../../../test/helpers/mocks.mts'
 
 // Mock the dependencies.
 vi.mock('./fetch-org-analytics.mts', () => ({
@@ -23,10 +27,9 @@ describe('handleAnalytics', () => {
     const { outputAnalytics } = await import('./output-analytics.mts')
 
     const mockData = [{ packages: 10, vulnerabilities: 2 }]
-    vi.mocked(fetchOrgAnalyticsData).mockResolvedValue({
-      ok: true,
-      data: mockData,
-    })
+    vi.mocked(fetchOrgAnalyticsData).mockResolvedValue(
+      createSuccessResult(mockData),
+    )
 
     await handleAnalytics({
       filepath: '/tmp/analytics.json',
@@ -38,7 +41,7 @@ describe('handleAnalytics', () => {
 
     expect(fetchOrgAnalyticsData).toHaveBeenCalledWith(30)
     expect(outputAnalytics).toHaveBeenCalledWith(
-      { ok: true, data: mockData },
+      createSuccessResult(mockData),
       {
         filepath: '/tmp/analytics.json',
         outputKind: 'json',
@@ -56,10 +59,9 @@ describe('handleAnalytics', () => {
     const { outputAnalytics } = await import('./output-analytics.mts')
 
     const mockData = [{ packages: 5, vulnerabilities: 1 }]
-    vi.mocked(fetchRepoAnalyticsData).mockResolvedValue({
-      ok: true,
-      data: mockData,
-    })
+    vi.mocked(fetchRepoAnalyticsData).mockResolvedValue(
+      createSuccessResult(mockData),
+    )
 
     await handleAnalytics({
       filepath: '/tmp/analytics.json',
@@ -71,7 +73,7 @@ describe('handleAnalytics', () => {
 
     expect(fetchRepoAnalyticsData).toHaveBeenCalledWith('test-repo', 7)
     expect(outputAnalytics).toHaveBeenCalledWith(
-      { ok: true, data: mockData },
+      createSuccessResult(mockData),
       {
         filepath: '/tmp/analytics.json',
         outputKind: 'json',
@@ -112,10 +114,9 @@ describe('handleAnalytics', () => {
     const { fetchOrgAnalyticsData } = await import('./fetch-org-analytics.mts')
     const { outputAnalytics } = await import('./output-analytics.mts')
 
-    vi.mocked(fetchOrgAnalyticsData).mockResolvedValue({
-      ok: true,
-      data: [],
-    })
+    vi.mocked(fetchOrgAnalyticsData).mockResolvedValue(
+      createSuccessResult([]),
+    )
 
     await handleAnalytics({
       filepath: '/tmp/analytics.json',
@@ -142,10 +143,9 @@ describe('handleAnalytics', () => {
     )
     const { outputAnalytics } = await import('./output-analytics.mts')
 
-    vi.mocked(fetchRepoAnalyticsData).mockResolvedValue({
-      ok: true,
-      data: [],
-    })
+    vi.mocked(fetchRepoAnalyticsData).mockResolvedValue(
+      createSuccessResult([]),
+    )
 
     await handleAnalytics({
       filepath: '/tmp/analytics.json',
@@ -169,11 +169,8 @@ describe('handleAnalytics', () => {
     const { fetchOrgAnalyticsData } = await import('./fetch-org-analytics.mts')
     const { outputAnalytics } = await import('./output-analytics.mts')
 
-    const error = new Error('API error')
-    vi.mocked(fetchOrgAnalyticsData).mockResolvedValue({
-      ok: false,
-      error,
-    })
+    const errorResult = createErrorResult('API error')
+    vi.mocked(fetchOrgAnalyticsData).mockResolvedValue(errorResult)
 
     await handleAnalytics({
       filepath: '/tmp/analytics.json',
@@ -184,7 +181,7 @@ describe('handleAnalytics', () => {
     })
 
     expect(outputAnalytics).toHaveBeenCalledWith(
-      { ok: false, error },
+      errorResult,
       expect.any(Object),
     )
   })
@@ -194,10 +191,9 @@ describe('handleAnalytics', () => {
     const { outputAnalytics } = await import('./output-analytics.mts')
 
     const mockData = [{ packages: 10, vulnerabilities: 2 }]
-    vi.mocked(fetchOrgAnalyticsData).mockResolvedValue({
-      ok: true,
-      data: mockData,
-    })
+    vi.mocked(fetchOrgAnalyticsData).mockResolvedValue(
+      createSuccessResult(mockData),
+    )
 
     await handleAnalytics({
       filepath: '',
@@ -208,7 +204,7 @@ describe('handleAnalytics', () => {
     })
 
     expect(outputAnalytics).toHaveBeenCalledWith(
-      { ok: true, data: mockData },
+      createSuccessResult(mockData),
       {
         filepath: '',
         outputKind: 'markdown',
@@ -224,10 +220,9 @@ describe('handleAnalytics', () => {
     const { outputAnalytics } = await import('./output-analytics.mts')
 
     const mockData = [{ packages: 10, vulnerabilities: 2 }]
-    vi.mocked(fetchOrgAnalyticsData).mockResolvedValue({
-      ok: true,
-      data: mockData,
-    })
+    vi.mocked(fetchOrgAnalyticsData).mockResolvedValue(
+      createSuccessResult(mockData),
+    )
 
     await handleAnalytics({
       filepath: '',
@@ -238,7 +233,7 @@ describe('handleAnalytics', () => {
     })
 
     expect(outputAnalytics).toHaveBeenCalledWith(
-      { ok: true, data: mockData },
+      createSuccessResult(mockData),
       {
         filepath: '',
         outputKind: 'text',

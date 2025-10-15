@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { handleViewRepo } from './handle-view-repo.mts'
+import { createSuccessResult } from '../../../test/helpers/mocks.mts'
 
 // Mock the dependencies.
 vi.mock('./fetch-view-repo.mts', () => ({
@@ -18,16 +19,13 @@ describe('handleViewRepo', () => {
     const mockFetch = vi.mocked(fetchViewRepo)
     const mockOutput = vi.mocked(outputViewRepo)
 
-    const mockRepoData = {
-      ok: true,
-      data: {
-        id: 'repo-123',
-        name: 'test-repo',
-        org: 'test-org',
-        url: 'https://github.com/test-org/test-repo',
-        lastUpdated: '2025-01-01T00:00:00Z',
-      },
-    }
+    const mockRepoData = createSuccessResult({
+      id: 'repo-123',
+      name: 'test-repo',
+      org: 'test-org',
+      url: 'https://github.com/test-org/test-repo',
+      lastUpdated: '2025-01-01T00:00:00Z',
+    })
     mockFetch.mockResolvedValue(mockRepoData)
 
     await handleViewRepo('test-org', 'test-repo', 'json')
@@ -60,13 +58,12 @@ describe('handleViewRepo', () => {
     const mockFetch = vi.mocked(fetchViewRepo)
     const mockOutput = vi.mocked(outputViewRepo)
 
-    mockFetch.mockResolvedValue({
-      ok: true,
-      data: {
+    mockFetch.mockResolvedValue(
+      createSuccessResult({
         name: 'my-repo',
         org: 'my-org',
-      },
-    })
+      }),
+    )
 
     await handleViewRepo('my-org', 'my-repo', 'markdown')
 
@@ -79,15 +76,14 @@ describe('handleViewRepo', () => {
     const mockFetch = vi.mocked(fetchViewRepo)
     const mockOutput = vi.mocked(outputViewRepo)
 
-    mockFetch.mockResolvedValue({
-      ok: true,
-      data: {
+    mockFetch.mockResolvedValue(
+      createSuccessResult({
         name: 'production-repo',
         org: 'production-org',
         branches: ['main', 'develop', 'staging'],
         defaultBranch: 'main',
-      },
-    })
+      }),
+    )
 
     await handleViewRepo('production-org', 'production-repo', 'text')
 
@@ -113,7 +109,7 @@ describe('handleViewRepo', () => {
     ]
 
     for (const [org, repo] of testCases) {
-      mockFetch.mockResolvedValue({ ok: true, data: {} })
+      mockFetch.mockResolvedValue(createSuccessResult({}))
       // eslint-disable-next-line no-await-in-loop
       await handleViewRepo(org, repo, 'json')
       expect(mockFetch).toHaveBeenCalledWith(org, repo)

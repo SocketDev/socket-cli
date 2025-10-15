@@ -10,10 +10,10 @@ import { REQUIREMENTS_TXT, SOCKET_JSON } from '../../constants.mts'
 import {
   readSocketJsonSync,
   writeSocketJson,
-} from '../../utils/socket-json.mts'
+} from '../../utils/socket/json.mts'
 
 import type { CResult } from '../../types.mts'
-import type { SocketJson } from '../../utils/socket-json.mts'
+import type { SocketJson } from '../../utils/socket/json.mts'
 
 export async function setupManifestConfig(
   cwd: string,

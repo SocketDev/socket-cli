@@ -21,20 +21,20 @@
  *
  * See also:
  *   - Socket Firewall: https://www.npmjs.com/package/sfw
- *   - Python CLI: src/utils/python-standalone.mts
+ *   - Python CLI: src/utils/python/standalone.mts
  */
 
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import constants from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
-import { filterFlags } from '../../utils/cmd.mts'
-import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
+import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
+import { filterFlags } from '../../utils/process/cmd.mts'
 
 import type {
   CliCommandConfig,
   CliCommandContext,
-} from '../../utils/meow-with-subcommands.mts'
+} from '../../utils/cli/with-subcommands.mjs'
 
 const { WIN32 } = constants
 

@@ -4,13 +4,13 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants, { FLAG_DRY_RUN, FLAG_HELP, NPX } from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
-import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
-import { getFlagApiRequirementsOutput } from '../../utils/output-formatting.mts'
+import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
+import { getFlagApiRequirementsOutput } from '../../utils/output/formatting.mts'
 
 import type {
   CliCommandConfig,
   CliCommandContext,
-} from '../../utils/meow-with-subcommands.mts'
+} from '../../utils/cli/with-subcommands.mjs'
 
 const require = createRequire(import.meta.url)
 

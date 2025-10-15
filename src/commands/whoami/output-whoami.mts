@@ -1,6 +1,6 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { serializeResultJson } from '../../utils/serialize-result-json.mts'
+import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
 import type { CResult } from '../../types.mts'
 

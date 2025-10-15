@@ -5,29 +5,28 @@
  * pattern of downloading and replacing binaries with rollback capabilities.
  */
 
-import { existsSync } from 'node:fs'
-import { promises as fs } from 'node:fs'
 import crypto from 'node:crypto'
+import { existsSync, promises as fs  } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
 import colors from 'yoctocolors-cjs'
 
-import constants from '../../constants.mts'
+import { getIpcStubPath } from '@socketsecurity/registry/lib/ipc'
+import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { commonFlags } from '../../flags.mts'
-import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { outputSelfUpdate } from './output-self-update.mts'
+import constants from '../../constants.mts'
+import { commonFlags } from '../../flags.mts'
+import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
+import { isSeaBinary } from '../../utils/executable/detect.mjs'
 import {
   clearQuarantine,
   ensureExecutable,
   getExpectedAssetName,
-} from '../../utils/platform.mts'
-import { isSeaBinary } from '../../utils/sea.mts'
-import { getStubPath } from '../../utils/stub-ipc.mts'
+} from '../../utils/process/os.mjs'
 
-import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
+import type { CliCommandConfig } from '../../utils/cli/with-subcommands.mjs'
 
 // Helper functions for updater paths.
 function getSocketCliUpdaterDownloadsDir(): string {
@@ -55,6 +54,91 @@ interface ReleaseAsset {
   browser_download_url: string
   content_type: string
   size: number
+}
+
+/**
+ * Parse checksums file content.
+ * Supports formats like "hash filename" or "hash  filename".
+ */
+function parseChecksumsFile(content: string): Map<string, string> {
+  const checksums = new Map<string, string>()
+  const lines = content.split('\n')
+
+  for (const line of lines) {
+    const trimmed = line.trim()
+    if (!trimmed || trimmed.startsWith('#')) {
+      continue
+    }
+
+    // Match: hash  filename or hash filename.
+    const match = /^([a-f0-9]{64})\s+(.+)$/i.exec(trimmed)
+    if (match) {
+      const hash = match[1]
+      const filename = match[2]
+      if (hash && filename) {
+        checksums.set(filename, hash.toLowerCase())
+      }
+    }
+  }
+
+  return checksums
+}
+
+/**
+ * Fetch checksums for a release.
+ * Looks for common checksum file names in release assets.
+ */
+async function fetchReleaseChecksums(
+  release: GitHubRelease,
+): Promise<Map<string, string> | null> {
+  // Common checksum file names.
+  const checksumFileNames = [
+    'checksums.txt',
+    'SHA256SUMS',
+    'SHA256SUMS.txt',
+    'sha256sums.txt',
+    'CHECKSUMS.txt',
+  ]
+
+  for (const fileName of checksumFileNames) {
+    const checksumAsset = release.assets.find(
+      asset => asset.name.toLowerCase() === fileName.toLowerCase(),
+    )
+
+    if (checksumAsset) {
+      try {
+        logger.info(`Found checksums file: ${checksumAsset.name}`)
+        // Sequential fetch required to validate checksums before downloading binaries.
+        // eslint-disable-next-line no-await-in-loop
+        const response = await fetch(checksumAsset.browser_download_url)
+
+        if (!response.ok) {
+          logger.warn(
+            `Failed to download checksums file: ${response.status} ${response.statusText}`,
+          )
+          continue
+        }
+
+        // Sequential fetch required.
+        // eslint-disable-next-line no-await-in-loop
+        const content = await response.text()
+        const checksums = parseChecksumsFile(content)
+
+        if (checksums.size > 0) {
+          logger.info(`Loaded ${checksums.size} checksums from release`)
+          return checksums
+        }
+      } catch (e) {
+        logger.warn(
+          `Error fetching checksums from ${checksumAsset.name}: ${e instanceof Error ? e.message : String(e)}`,
+        )
+        continue
+      }
+    }
+  }
+
+  logger.warn('No checksums file found in release assets')
+  return null
 }
 
 /**
@@ -241,7 +325,7 @@ async function checkAndUpdateStub(
   release: GitHubRelease,
   dryRun: boolean,
 ): Promise<boolean> {
-  const stubPath = getStubPath()
+  const stubPath = getIpcStubPath('socket-cli')
 
   // Only proceed if we have a stub path from IPC.
   if (!stubPath) {
@@ -265,8 +349,9 @@ async function checkAndUpdateStub(
 
     logger.info(`Current stub hash: ${currentStubHash}`)
 
-    // TODO: Fetch known-good hashes for this release version
-    // For now, we'll check if a stub asset exists in the release
+    // Fetch known-good hashes for this release version.
+    const releaseChecksums = await fetchReleaseChecksums(release)
+
     const stubAssetName = `socket-stub-${process.platform}-${process.arch}${process.platform === 'win32' ? '.exe' : ''}`
     const stubAsset = release.assets.find(asset => asset.name === stubAssetName)
 
@@ -277,9 +362,29 @@ async function checkAndUpdateStub(
       return false
     }
 
-    // TODO: Implement hash comparison with known-good hashes
-    // For now, we'll just log that we found a stub asset
     logger.info(`Found stub asset: ${stubAsset.name}`)
+
+    // Check if current stub matches the release version using checksums.
+    if (releaseChecksums) {
+      const expectedHash = releaseChecksums.get(stubAssetName)
+
+      if (expectedHash) {
+        if (currentStubHash === expectedHash) {
+          logger.info(
+            'Current stub hash matches release version - no update needed',
+          )
+          return false
+        }
+
+        logger.info(
+          `Stub hash mismatch - current: ${currentStubHash.slice(0, 12)}..., expected: ${expectedHash.slice(0, 12)}...`,
+        )
+      } else {
+        logger.warn(
+          `No checksum found for ${stubAssetName} in release checksums file`,
+        )
+      }
+    }
 
     if (dryRun) {
       logger.info('[DRY RUN] Would download and update stub')
@@ -304,6 +409,21 @@ async function checkAndUpdateStub(
 
     try {
       await downloadFile(stubAsset.browser_download_url, downloadPath)
+
+      // Verify downloaded stub integrity if checksums are available.
+      if (releaseChecksums) {
+        const expectedHash = releaseChecksums.get(stubAssetName)
+
+        if (expectedHash) {
+          const isValid = await verifyFile(downloadPath, expectedHash)
+
+          if (!isValid) {
+            throw new Error(
+              'Downloaded stub checksum verification failed - file may be corrupted or tampered with',
+            )
+          }
+        }
+      }
 
       // Move to staging.
       await fs.rename(downloadPath, stagingPath)
@@ -407,7 +527,7 @@ Examples
   const { flags } = cli
   const force = Boolean(flags['force'])
   const dryRun = Boolean(flags['dryRun'])
-  const currentVersion = constants.ENV.INLINED_SOCKET_CLI_VERSION
+  const currentVersion = constants.ENV.INLINED_SOCKET_CLI_VERSION || 'unknown'
   const currentBinaryPath = process.argv[0]
 
   if (!currentBinaryPath) {

@@ -3,22 +3,22 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { handleScanReport } from './handle-scan-report.mts'
 import constants from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
-import { checkCommandInput } from '../../utils/check-input.mts'
-import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
-import { getOutputKind } from '../../utils/get-output-kind.mts'
-import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
+import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import {
   getFlagApiRequirementsOutput,
   getFlagListOutput,
-} from '../../utils/output-formatting.mts'
-import { hasDefaultApiToken } from '../../utils/sdk.mts'
+} from '../../utils/output/formatting.mts'
+import { getOutputKind } from '../../utils/output/mode.mjs'
+import { determineOrgSlug } from '../../utils/socket/org-slug.mjs'
+import { hasDefaultApiToken } from '../../utils/socket/sdk.mjs'
+import { checkCommandInput } from '../../utils/validation/check-input.mts'
 
 import type { FOLD_SETTING, REPORT_LEVEL } from './types.mts'
 import type {
   CliCommandConfig,
   CliCommandContext,
   CliSubcommand,
-} from '../../utils/meow-with-subcommands.mts'
+} from '../../utils/cli/with-subcommands.mjs'
 
 export const CMD_NAME = 'report'
 
@@ -129,13 +129,13 @@ async function run(
 
   const dryRun = !!cli.flags['dryRun']
 
-  const fold = cli.flags['fold'] as FOLD_SETTING
+  const fold = cli.flags['fold'] as unknown as FOLD_SETTING
 
   const interactive = !!cli.flags['interactive']
 
   const includeLicensePolicy = !!cli.flags['license']
 
-  const reportLevel = cli.flags['reportLevel'] as REPORT_LEVEL
+  const reportLevel = cli.flags['reportLevel'] as unknown as REPORT_LEVEL
 
   const short = !!cli.flags['short']
 

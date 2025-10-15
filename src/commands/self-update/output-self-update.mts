@@ -2,8 +2,9 @@
  * Output formatting for self-update command.
  */
 
-import { logger } from '@socketsecurity/registry/lib/logger'
 import colors from 'yoctocolors-cjs'
+
+import { logger } from '@socketsecurity/registry/lib/logger'
 
 /**
  * Self-update output options.
@@ -24,12 +25,12 @@ export async function outputSelfUpdate(
   options: SelfUpdateOutput,
 ): Promise<void> {
   const {
-    currentVersion,
-    latestVersion,
-    isUpToDate,
-    dryRun,
-    updateSucceeded,
     backupPath,
+    currentVersion,
+    dryRun,
+    isUpToDate,
+    latestVersion,
+    updateSucceeded,
   } = options
 
   if (isUpToDate) {

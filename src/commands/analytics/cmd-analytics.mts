@@ -7,20 +7,20 @@ import constants, {
   V1_MIGRATION_GUIDE_URL,
 } from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
-import { checkCommandInput } from '../../utils/check-input.mts'
-import { getOutputKind } from '../../utils/get-output-kind.mts'
-import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
+import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import {
   getFlagApiRequirementsOutput,
   getFlagListOutput,
-} from '../../utils/output-formatting.mts'
-import { hasDefaultApiToken } from '../../utils/sdk.mts'
-import { webLink } from '../../utils/terminal-link.mts'
+} from '../../utils/output/formatting.mts'
+import { getOutputKind } from '../../utils/output/mode.mjs'
+import { hasDefaultApiToken } from '../../utils/socket/sdk.mjs'
+import { webLink } from '../../utils/terminal/link.mts'
+import { checkCommandInput } from '../../utils/validation/check-input.mts'
 
 import type {
   CliCommandConfig,
   CliCommandContext,
-} from '../../utils/meow-with-subcommands.mts'
+} from '../../utils/cli/with-subcommands.mjs'
 
 export const CMD_NAME = 'analytics'
 
@@ -115,7 +115,7 @@ async function run(
     file: filepath,
     json,
     markdown,
-  } = cli.flags as { file: string; json: boolean; markdown: boolean }
+  } = cli.flags as unknown as { file: string; json: boolean; markdown: boolean }
 
   const dryRun = !!cli.flags['dryRun']
 

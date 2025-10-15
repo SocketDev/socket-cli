@@ -22,9 +22,9 @@ import {
   NPM,
   UTF8,
 } from '../../constants.mts'
-import { getErrorCause } from '../../utils/errors.mts'
-import { findUp } from '../../utils/fs.mts'
-import { getPurlObject, normalizePurl } from '../../utils/purl.mts'
+import { getErrorCause } from '../../utils/error/errors.mjs'
+import { findUp } from '../../utils/fs/fs.mjs'
+import { getPurlObject, normalizePurl } from '../../utils/purl/parse.mjs'
 
 import type { PatchRecord } from './manifest-schema.mts'
 import type { CResult, OutputKind } from '../../types.mts'

@@ -1,6 +1,6 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { queryApiSafeJson } from '../../utils/api.mts'
+import { queryApiSafeJson } from '../../utils/socket/api.mjs'
 
 import type { CResult } from '../../types.mts'
 

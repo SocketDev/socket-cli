@@ -11,22 +11,22 @@ import constants, {
   FLAG_ID,
 } from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
-import { checkCommandInput } from '../../utils/check-input.mts'
-import { cmdFlagValueToArray } from '../../utils/cmd.mts'
-import { getOutputKind } from '../../utils/get-output-kind.mts'
-import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
+import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import {
   getFlagApiRequirementsOutput,
   getFlagListOutput,
-} from '../../utils/output-formatting.mts'
+} from '../../utils/output/formatting.mts'
+import { getOutputKind } from '../../utils/output/mode.mjs'
+import { cmdFlagValueToArray } from '../../utils/process/cmd.mts'
 import { RangeStyles } from '../../utils/semver.mts'
+import { checkCommandInput } from '../../utils/validation/check-input.mts'
 import { getDefaultOrgSlug } from '../ci/fetch-default-org-slug.mts'
 
 import type { MeowFlag, MeowFlags } from '../../flags.mts'
 import type {
   CliCommandConfig,
   CliCommandContext,
-} from '../../utils/meow-with-subcommands.mts'
+} from '../../utils/cli/with-subcommands.mjs'
 import type { RangeStyle } from '../../utils/semver.mts'
 
 export const CMD_NAME = 'fix'
@@ -260,7 +260,7 @@ async function run(
     // We patched in this feature with `npx custompatch meow` at
     // socket-cli/patches/meow#13.2.0.patch.
     unknownFlags = [],
-  } = cli.flags as {
+  } = cli.flags as unknown as {
     autopilot: boolean
     applyFixes: boolean
     glob: string
@@ -281,7 +281,7 @@ async function run(
   const dryRun = !!cli.flags['dryRun']
 
   const minSatisfying =
-    (cli.flags['minSatisfying'] as boolean) || !maxSatisfying
+    (cli.flags['minSatisfying'] as unknown as boolean) || !maxSatisfying
 
   const disableMajorUpdates = !majorUpdates
 

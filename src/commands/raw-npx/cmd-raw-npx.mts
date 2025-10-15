@@ -3,12 +3,12 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { runRawNpx } from './run-raw-npx.mts'
 import constants, { FLAG_DRY_RUN, FLAG_HELP } from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
-import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
+import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 
 import type {
   CliCommandConfig,
   CliCommandContext,
-} from '../../utils/meow-with-subcommands.mts'
+} from '../../utils/cli/with-subcommands.mjs'
 
 const config: CliCommandConfig = {
   commandName: 'raw-npx',

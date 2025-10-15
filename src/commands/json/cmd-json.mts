@@ -3,12 +3,12 @@ import path from 'node:path'
 import { handleCmdJson } from './handle-cmd-json.mts'
 import { SOCKET_JSON } from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
-import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
+import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 
 import type {
   CliCommandConfig,
   CliCommandContext,
-} from '../../utils/meow-with-subcommands.mts'
+} from '../../utils/cli/with-subcommands.mjs'
 
 const config: CliCommandConfig = {
   commandName: 'json',

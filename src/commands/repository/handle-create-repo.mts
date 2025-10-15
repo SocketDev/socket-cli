@@ -1,4 +1,4 @@
-import { debugDir, debug } from '@socketsecurity/registry/lib/debug'
+import { debug, debugDir } from '@socketsecurity/registry/lib/debug'
 
 import { fetchCreateRepo } from './fetch-create-repo.mts'
 import { outputCreateRepo } from './output-create-repo.mts'
