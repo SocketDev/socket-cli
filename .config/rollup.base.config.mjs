@@ -192,7 +192,6 @@ export default function baseConfig(extendConfig = {}) {
       // Externalize @socketsecurity/registry and all its internal paths.
       if (
         pkgName === '@socketsecurity/registry' ||
-        id.includes('@socketsecurity/registry/external/') ||
         id.includes('/@socketsecurity+registry@')
       ) {
         return true

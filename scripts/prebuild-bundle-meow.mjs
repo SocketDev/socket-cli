@@ -1,15 +1,15 @@
-#!/usr/bin/env node
 /**
  * Pre-build script to bundle meow into a single self-contained file.
  * This bundled meow can then be imported by the main unified build.
  */
 
-import { rollup } from 'rollup'
+import { readFileSync, readdirSync } from 'node:fs'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
 import commonjs from '@rollup/plugin-commonjs'
 import { nodeResolve } from '@rollup/plugin-node-resolve'
-import { readFileSync, writeFileSync, readdirSync } from 'node:fs'
-import { join, dirname } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { rollup } from 'rollup'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const rootDir = join(__dirname, '..')

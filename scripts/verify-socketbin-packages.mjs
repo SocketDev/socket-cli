@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 
 /**
  * @fileoverview Verifies that all @socketbin/* packages exist on npm registry.

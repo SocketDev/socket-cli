@@ -2,19 +2,23 @@
 
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import registryConstantsModule from '@socketsecurity/registry/lib/constants'
+
+import registryConstants from '@socketsecurity/registry/lib/constants'
 import envUtils from '@socketsecurity/registry/lib/env'
+import { createConstantsObject } from '@socketsecurity/registry/lib/objects'
 
 const { envAsBoolean } = envUtils
-const registryConstants =
-  registryConstantsModule.default || registryConstantsModule
 
+// Re-export needed constants from registry.
 const {
-  kInternalsSymbol,
-  [kInternalsSymbol]: {
-    attributes: registryConstantsAttribs,
-    createConstantsObject,
-  },
+  GITIGNORE,
+  LATEST,
+  NODE_MODULES,
+  PACKAGE_JSON,
+  PNPM_LOCK_YAML,
+  SOCKET_REGISTRY_PACKAGE_NAME,
+  TSCONFIG_JSON,
+  maintainedNodeVersions,
 } = registryConstants
 
 const BIOME_JSON = 'biome.json'
@@ -62,7 +66,7 @@ const LAZY_ENV = () => {
   const { env } = process
   return Object.freeze({
     // Lazily access registryConstants.ENV.
-    ...registryConstants.ENV,
+    ...(registryConstants.ENV || {}),
     // Flag set to determine if this is the Legacy build.
     [INLINED_SOCKET_CLI_LEGACY_BUILD]: envAsBoolean(
       env[INLINED_SOCKET_CLI_LEGACY_BUILD],
@@ -107,7 +111,16 @@ const lazySrcPath = () => path.join(constants.rootPath, 'src')
 
 const constants = createConstantsObject(
   {
-    ...registryConstantsAttribs.props,
+    // Registry constants.
+    GITIGNORE,
+    LATEST,
+    NODE_MODULES,
+    PACKAGE_JSON,
+    PNPM_LOCK_YAML,
+    SOCKET_REGISTRY_PACKAGE_NAME,
+    TSCONFIG_JSON,
+    maintainedNodeVersions,
+    // CLI-specific constants.
     BIOME_JSON,
     CONSTANTS,
     ENV: undefined,
@@ -157,7 +170,6 @@ const constants = createConstantsObject(
   },
   {
     getters: {
-      ...registryConstantsAttribs.getters,
       ENV: LAZY_ENV,
       configPath: lazyConfigPath,
       distPath: lazyDistPath,

@@ -1,16 +1,15 @@
-#!/usr/bin/env node
 /**
  * Pre-build transform for meow package.
  * Converts dependencies.js from ESM to CommonJS to prevent rollup commonjs plugin issues.
  */
 
 import {
-  readFileSync,
-  writeFileSync,
-  readdirSync,
   promises as fs,
+  readFileSync,
+  readdirSync,
+  writeFileSync,
 } from 'node:fs'
-import { join, dirname } from 'node:path'
+import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))

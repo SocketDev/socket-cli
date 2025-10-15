@@ -45,10 +45,10 @@ async function getDirSize(dirPath) {
       for (const entry of entries) {
         const entryPath = join(dir, entry.name)
         if (entry.isDirectory()) {
-          // eslint-disable-next-line no-await-in-loop
+           
           await walk(entryPath)
         } else {
-          // eslint-disable-next-line no-await-in-loop
+           
           const stats = await stat(entryPath)
           totalSize += stats.size
         }
@@ -116,7 +116,7 @@ async function cleanPkg() {
   for (const binary of rootBinaries) {
     const binaryPath = join(ROOT_DIR, binary)
     if (existsSync(binaryPath)) {
-      // eslint-disable-next-line no-await-in-loop
+       
       await rm(binaryPath, { force: true })
       console.log(`   ✅ Removed ${binary} from root (legacy)`)
     }
@@ -156,7 +156,7 @@ async function cleanOldNode() {
 
     // Remove old builds
     const dirPath = join(CUSTOM_NODE_BUILD_DIR, entry.name)
-    // eslint-disable-next-line no-await-in-loop
+     
     totalRemoved += await removeDir(dirPath, entry.name + '/')
   }
 

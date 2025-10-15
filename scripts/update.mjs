@@ -11,16 +11,16 @@
  *   --apply    Apply updates (default is check-only)
  */
 
+import { isQuiet, isVerbose } from '@socketsecurity/registry/lib/argv/flags'
+import { logger } from '@socketsecurity/registry/lib/logger'
 import {
-  isQuiet,
-  isVerbose,
-  log,
   printError,
   printFooter,
   printHeader,
   printSuccess,
-} from './utils/cli-helpers.mjs'
-import { runCommand, runParallel } from './utils/run-command.mjs'
+} from '@socketsecurity/registry/lib/stdio/header'
+
+import { runParallel } from './utils/run-command.mjs'
 
 async function main() {
   const quiet = isQuiet()
@@ -38,11 +38,11 @@ async function main() {
     if (apply) {
       tazeArgs.push('-w')
       if (!quiet) {
-        log.progress('Updating dependencies...')
+        logger.progress('Updating dependencies...')
       }
     } else {
       if (!quiet) {
-        log.progress('Checking for updates...')
+        logger.progress('Checking for updates...')
       }
     }
 
@@ -82,7 +82,7 @@ async function main() {
         if (apply) {
           printError('Failed to update dependencies')
         } else {
-          log.info('Updates available. Run with --apply to update')
+          logger.info('Updates available. Run with --apply to update')
         }
       }
       process.exitCode = apply ? 1 : 0

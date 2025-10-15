@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+ 
 /**
  * Build Socket CLI as a single bundled JavaScript file.
  *
@@ -17,16 +17,15 @@
  *   # Creates: dist-single/socket-cli-bundle.js
  */
 
+import { spawn } from 'node:child_process'
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
-import { spawn } from 'node:child_process'
-import { promisify } from 'node:util'
 
-import { log, printHeader, printFooter } from './utils/common.mjs'
-
-const execAsync = promisify(spawn)
+import { isVerbose } from '@socketsecurity/registry/lib/argv/flags'
+import { printHeader } from '@socketsecurity/registry/lib/stdio/header'
 
 async function buildSingleFile() {
+  const _verbose = isVerbose()
   printHeader('Single File Builder')
 
   const rootDir = process.cwd()

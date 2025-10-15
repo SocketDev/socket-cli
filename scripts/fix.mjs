@@ -10,24 +10,30 @@
  *   --verbose  Show detailed output
  */
 
-import {
-  isQuiet,
-  isVerbose,
-  log,
-  printError,
-  printFooter,
-  printHeader,
-  printSuccess,
-} from './utils/cli-helpers.mjs'
+import { isQuiet } from '@socketsecurity/registry/lib/argv/flags'
+import { parseArgs } from '@socketsecurity/registry/lib/argv/parse'
+import { logger } from '@socketsecurity/registry/lib/logger'
+import { printHeader } from '@socketsecurity/registry/lib/stdio/header'
+
 import { runCommand } from './utils/run-command.mjs'
 
 async function main() {
-  const quiet = isQuiet()
-  const verbose = isVerbose()
+  const { values } = parseArgs({
+    options: {
+      quiet: { type: 'boolean', default: false },
+      silent: { type: 'boolean', default: false },
+      verbose: { type: 'boolean', default: false },
+    },
+    strict: false,
+  })
+
+  const quiet = isQuiet(values)
+  const verbose = values.verbose
 
   try {
     if (!quiet) {
       printHeader('Running Auto-fix')
+      console.log()
     }
 
     // Run lint with --fix flag
@@ -37,18 +43,18 @@ async function main() {
 
     if (exitCode !== 0) {
       if (!quiet) {
-        printError('Some fixes could not be applied')
+        logger.error('Some fixes could not be applied')
       }
       process.exitCode = 1
     } else {
       if (!quiet) {
-        printSuccess('Linting passed')
-        printFooter()
+        console.log()
+        logger.success('Auto-fix completed!')
       }
     }
   } catch (error) {
     if (!quiet) {
-      printError(`Fix failed: ${error.message}`)
+      logger.error(`Fix failed: ${error.message}`)
     }
     if (verbose) {
       console.error(error)

@@ -11,15 +11,15 @@
  *   --open     Open coverage report in browser
  */
 
+import { isQuiet, isVerbose } from '@socketsecurity/registry/lib/argv/flags'
+import { logger } from '@socketsecurity/registry/lib/logger'
 import {
-  isQuiet,
-  isVerbose,
-  log,
   printError,
   printFooter,
   printHeader,
   printSuccess,
-} from './utils/cli-helpers.mjs'
+} from '@socketsecurity/registry/lib/stdio/header'
+
 import { runCommand } from './utils/run-command.mjs'
 
 async function main() {
@@ -34,7 +34,7 @@ async function main() {
 
     // Show progress
     if (!quiet) {
-      log.progress('Collecting coverage...')
+      logger.progress('Collecting coverage...')
     }
 
     // Run vitest coverage command
@@ -69,7 +69,7 @@ async function main() {
 
         // Open coverage report if requested
         if (open) {
-          log.info('Opening coverage report...')
+          logger.info('Opening coverage report...')
           await runCommand('open', ['coverage/index.html'], {
             stdio: 'ignore',
           })
