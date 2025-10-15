@@ -147,6 +147,10 @@ export function getTestsToRun(options = {}) {
   let runAllTests = false
 
   for (const file of changedFiles) {
+    // Skip deleted files.
+    if (!existsSync(file)) {
+      continue
+    }
     const normalized = normalizePath(file)
     const tests = mapSourceToTests(normalized)
 

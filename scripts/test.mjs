@@ -11,6 +11,7 @@ import { WIN32 } from '@socketsecurity/registry/constants/platform'
 import { isQuiet } from '@socketsecurity/registry/lib/argv/flags'
 import { parseArgs } from '@socketsecurity/registry/lib/argv/parse'
 import { logger } from '@socketsecurity/registry/lib/logger'
+import { confirm } from '@socketsecurity/registry/lib/prompts'
 import { onExit } from '@socketsecurity/registry/lib/signal-exit'
 import { spinner } from '@socketsecurity/registry/lib/spinner'
 import { printHeader } from '@socketsecurity/registry/lib/stdio/header'
@@ -58,7 +59,7 @@ const removeExitHandler = onExit((_code, signal) => {
 })
 
 // Runs command with proper process tracking.
-// eslint-disable-next-line no-unused-vars
+ 
 async function runCommand(command, args = [], options = {}) {
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, {
@@ -205,7 +206,8 @@ async function runBuild() {
 }
 
 async function runVitestSimple(args, options = {}) {
-  const { coverage = false, quiet = false, update = false } = options
+  const { coverage = false, customNodePath, quiet = false, update = false } =
+    options
 
   const vitestCmd = WIN32 ? 'vitest.cmd' : 'vitest'
   const vitestPath = path.join(nodeModulesBinPath, vitestCmd)
@@ -240,6 +242,57 @@ async function runVitestSimple(args, options = {}) {
   // Set optimized memory settings
   // Suppress unhandled rejections from worker thread cleanup
   env.NODE_OPTIONS = '--max-old-space-size=2048 --unhandled-rejections=warn'
+
+  // If using custom Node binary, we need to run it directly instead of vitest wrapper.
+  if (customNodePath) {
+    // Run: customNodePath vitestPath run [args].
+    const nodeArgs = [vitestPath, ...vitestArgs]
+
+    // Use interactive runner for consistent Ctrl+O experience
+    if (!quiet && process.stdout.isTTY) {
+      const { runTests } = await import('./utils/interactive-runner.mjs')
+      return runTests(customNodePath, nodeArgs, {
+        env,
+        cwd: rootPath,
+        verbose: false,
+      })
+    }
+
+    // Fallback to execution with output capture to handle worker termination errors
+    const result = await runCommandWithOutput(customNodePath, nodeArgs, {
+      cwd: rootPath,
+      env,
+      stdio: ['inherit', 'pipe', 'pipe'],
+    })
+
+    // Print output if not quiet
+    if (!quiet) {
+      if (result.stdout) {
+        process.stdout.write(result.stdout)
+      }
+      if (result.stderr) {
+        process.stderr.write(result.stderr)
+      }
+    }
+
+    // Check if we have worker termination error but no test failures
+    const hasWorkerTerminationError =
+      (result.stdout + result.stderr).includes('Terminating worker thread') ||
+      (result.stdout + result.stderr).includes('ThreadTermination')
+
+    const output = result.stdout + result.stderr
+    const hasTestFailures =
+      output.includes('FAIL') ||
+      (output.includes('Test Files') && output.match(/(\d+) failed/) !== null) ||
+      (output.includes('Tests') && output.match(/Tests\s+\d+ failed/) !== null)
+
+    // Override exit code if we only have worker termination errors
+    if (result.code !== 0 && hasWorkerTerminationError && !hasTestFailures) {
+      return 0
+    }
+
+    return result.code
+  }
 
   // Use interactive runner for consistent Ctrl+O experience
   if (!quiet && process.stdout.isTTY) {
@@ -288,21 +341,26 @@ async function runVitestSimple(args, options = {}) {
 }
 
 async function runTests(options) {
-  const { coverage, positionals, quiet, update } = options
+  const { coverage, customNodePath, positionals, quiet, update } = options
 
   // If positional arguments provided, use them directly
   if (positionals && positionals.length > 0) {
     if (!quiet) {
       logger.step(`Running specified tests: ${positionals.join(', ')}`)
     }
-    return runVitestSimple(positionals, { coverage, update, quiet })
+    return runVitestSimple(positionals, {
+      coverage,
+      customNodePath,
+      quiet,
+      update,
+    })
   }
 
   // Run all tests by default
   if (!quiet) {
     logger.step('Running all tests')
   }
-  return runVitestSimple([], { coverage, update, quiet })
+  return runVitestSimple([], { coverage, customNodePath, quiet, update })
 }
 
 async function main() {
@@ -354,6 +412,18 @@ async function main() {
           type: 'boolean',
           default: false,
         },
+        yao: {
+          type: 'boolean',
+          default: false,
+        },
+        sea: {
+          type: 'boolean',
+          default: false,
+        },
+        bun: {
+          type: 'boolean',
+          default: false,
+        },
       },
       allowPositionals: true,
       strict: false,
@@ -376,6 +446,9 @@ async function main() {
       console.log('  --update            Update test snapshots')
       console.log('  --all               Run all tests')
       console.log('  --quiet, --silent   Minimal output')
+      console.log('  --yao               Test with yao-pkg binary from build/out/Yao/node')
+      console.log('  --sea               Test with SEA binary from build/out/Sea/node')
+      console.log('  --bun               Test with Bun runtime (if installed)')
       console.log('\nExamples:')
       console.log(
         '  pnpm test                      # Run checks, build, and tests',
@@ -387,6 +460,15 @@ async function main() {
       console.log(
         '  pnpm test "**/*.test.mts"      # Run specific test pattern',
       )
+      console.log(
+        '  pnpm test --yao                # Test with yao-pkg custom binary',
+      )
+      console.log(
+        '  pnpm test --sea                # Test with SEA custom binary',
+      )
+      console.log(
+        '  pnpm test --bun                # Test with Bun runtime',
+      )
       process.exitCode = 0
       return
     }
@@ -395,6 +477,396 @@ async function main() {
 
     if (!quiet) {
       printHeader('Test Runner')
+    }
+
+    // Handle custom runtime selection with validation.
+    let customNodePath = null
+
+    // Validate that multiple runtime flags are not set.
+    const runtimeFlags = [values.yao, values.sea, values.bun].filter(Boolean)
+    if (runtimeFlags.length > 1) {
+      if (!quiet) {
+        logger.error('')
+        logger.error(
+          'Cannot use multiple runtime flags (--yao, --sea, --bun) simultaneously. Please choose one.',
+        )
+      }
+      process.exitCode = 1
+      return
+    }
+
+    if (values.bun) {
+      // Handle Bun runtime selection.
+      if (!quiet) {
+        logger.step('Checking for Bun runtime')
+        logger.logNewline()
+      }
+
+      // Check if Bun is installed.
+      try {
+        let bunResult = await runCommandWithOutput('which', ['bun'], {
+          cwd: rootPath,
+          timeout: 5000,
+        })
+
+        if (bunResult.code !== 0 || !bunResult.stdout.trim()) {
+          if (!quiet) {
+            logger.error('')
+            logger.error('Bun is not installed on this system.')
+            logger.logNewline()
+          }
+
+          // Prompt to install Bun.
+          let shouldInstall = false
+          try {
+            shouldInstall = await confirm({
+              message: 'Would you like to install Bun now?',
+              default: true,
+            })
+          } catch (e) {
+            // User cancelled prompt (Ctrl+C).
+            if (!quiet) {
+              logger.error('')
+              logger.error('Installation cancelled.')
+            }
+            process.exitCode = 1
+            return
+          }
+
+          if (!shouldInstall) {
+            if (!quiet) {
+              logger.error('')
+              logger.error('Cannot proceed without Bun runtime.')
+              logger.logNewline()
+              logger.log('To install Bun later, run:')
+              logger.log('  node scripts/install-bun.mjs')
+              logger.logNewline()
+              logger.log('Or visit: https://bun.sh for more installation options')
+              logger.logNewline()
+            }
+            process.exitCode = 1
+            return
+          }
+
+          // Run install-bun.mjs script.
+          const installScript = path.join(rootPath, 'scripts', 'install-bun.mjs')
+          if (!quiet) {
+            logger.log(`Running: node ${installScript}`)
+            logger.logNewline()
+          }
+
+          const installExitCode = await runCommand('node', [installScript], {
+            cwd: rootPath,
+            stdio: 'inherit',
+          })
+
+          if (installExitCode !== 0) {
+            if (!quiet) {
+              logger.error('')
+              logger.error('Failed to install Bun')
+            }
+            process.exitCode = installExitCode
+            return
+          }
+
+          // Verify Bun was installed by checking again.
+          bunResult = await runCommandWithOutput('which', ['bun'], {
+            cwd: rootPath,
+            timeout: 5000,
+          })
+
+          if (bunResult.code !== 0 || !bunResult.stdout.trim()) {
+            if (!quiet) {
+              logger.error('')
+              logger.error('Bun installation succeeded but Bun is still not found.')
+              logger.logNewline()
+              logger.log('You may need to restart your terminal or source your shell configuration:')
+              logger.log('  source ~/.bashrc  # or ~/.zshrc')
+              logger.logNewline()
+            }
+            process.exitCode = 1
+            return
+          }
+
+          if (!quiet) {
+            logger.success('✅ Bun installed successfully')
+            logger.logNewline()
+          }
+        }
+
+        const bunPath = bunResult.stdout.trim()
+
+        // Test Bun execution.
+        const bunVersionResult = await runCommandWithOutput(bunPath, ['--version'], {
+          cwd: rootPath,
+          timeout: 5000,
+        })
+
+        if (bunVersionResult.code !== 0) {
+          if (!quiet) {
+            logger.error('')
+            logger.error('Bun execution test failed.')
+            if (bunVersionResult.stderr) {
+              logger.error(`Error output: ${bunVersionResult.stderr}`)
+            }
+          }
+          process.exitCode = bunVersionResult.code
+          return
+        }
+
+        const bunVersion = bunVersionResult.stdout.trim()
+        customNodePath = bunPath
+
+        if (!quiet) {
+          logger.success(`✅ Using Bun ${bunVersion} for tests`)
+          logger.logNewline()
+        }
+      } catch (e) {
+        if (!quiet) {
+          logger.error('')
+          logger.error(
+            `Failed to check for Bun: ${e instanceof Error ? e.message : String(e)}`,
+          )
+        }
+        process.exitCode = 1
+        return
+      }
+    } else if (values.yao || values.sea) {
+      // Handle custom Node binary selection.
+      const buildType = values.yao ? 'Yao' : 'Sea'
+      const buildDir = path.join(rootPath, 'build', 'out', buildType)
+      const binaryName = WIN32 ? 'node.exe' : 'node'
+      const binaryPath = path.join(buildDir, binaryName)
+
+      // For yao binaries, use wrapper if available.
+      let testBinaryPath = binaryPath
+      if (values.yao) {
+        const wrapperPath = path.join(buildDir, 'yao-wrapper.js')
+        if (existsSync(wrapperPath)) {
+          testBinaryPath = wrapperPath
+        }
+      }
+
+      if (!quiet) {
+        logger.step(`Validating ${buildType} binary`)
+        logger.log(`Looking for binary at: ${binaryPath}`)
+        if (values.yao && testBinaryPath !== binaryPath) {
+          logger.log(`Using wrapper at: ${testBinaryPath}`)
+        }
+        logger.logNewline()
+      }
+
+      // Check if binary exists.
+      if (!existsSync(binaryPath)) {
+        if (!quiet) {
+          logger.error('')
+          logger.error(
+            `${buildType} binary not found at: ${binaryPath}`,
+          )
+          logger.logNewline()
+        }
+
+        // Prompt to build the missing binary.
+        let shouldBuild = false
+        try {
+          shouldBuild = await confirm({
+            message: `${buildType} binary is not built. Would you like to build it now?`,
+            default: true,
+          })
+        } catch (e) {
+          // User cancelled prompt (Ctrl+C).
+          if (!quiet) {
+            logger.error('')
+            logger.error('Build cancelled.')
+          }
+          process.exitCode = 1
+          return
+        }
+
+        if (!shouldBuild) {
+          if (!quiet) {
+            logger.error('')
+            logger.error(`Cannot proceed without ${buildType} binary.`)
+          }
+          process.exitCode = 1
+          return
+        }
+
+        // Build the missing binary.
+        if (values.yao) {
+          // Build yao-pkg binary.
+          const buildYaoScript = path.join(rootPath, 'scripts', 'build-yao-pkg-node.mjs')
+          if (!quiet) {
+            logger.log(`Running: node ${buildYaoScript}`)
+            logger.logNewline()
+          }
+
+          const buildExitCode = await runCommand('node', [buildYaoScript], {
+            cwd: rootPath,
+            stdio: 'inherit',
+          })
+
+          if (buildExitCode !== 0) {
+            if (!quiet) {
+              logger.error('')
+              logger.error('Failed to build yao-pkg binary')
+            }
+            process.exitCode = buildExitCode
+            return
+          }
+
+          // Verify binary was created.
+          if (!existsSync(binaryPath)) {
+            if (!quiet) {
+              logger.error('')
+              logger.error(
+                `Build succeeded but binary still not found at: ${binaryPath}`,
+              )
+            }
+            process.exitCode = 1
+            return
+          }
+
+          if (!quiet) {
+            logger.success('✅ Yao-pkg binary built successfully')
+            logger.logNewline()
+          }
+        } else {
+          // Build SEA binary.
+          const buildSeaScript = path.join(rootPath, 'scripts', 'build-sea.mjs')
+          if (!quiet) {
+            logger.log(`Running: node ${buildSeaScript}`)
+            logger.logNewline()
+          }
+
+          const buildExitCode = await runCommand('node', [buildSeaScript], {
+            cwd: rootPath,
+            stdio: 'inherit',
+          })
+
+          if (buildExitCode !== 0) {
+            if (!quiet) {
+              logger.error('')
+              logger.error('Failed to build SEA binary')
+            }
+            process.exitCode = buildExitCode
+            return
+          }
+
+          // Verify binary was created.
+          if (!existsSync(binaryPath)) {
+            if (!quiet) {
+              logger.error('')
+              logger.error(
+                `Build succeeded but binary still not found at: ${binaryPath}`,
+              )
+            }
+            process.exitCode = 1
+            return
+          }
+
+          if (!quiet) {
+            logger.success('✅ SEA binary built successfully')
+            logger.logNewline()
+          }
+        }
+      }
+
+      // Verify binary is executable.
+      try {
+        const stats = await import('node:fs/promises').then(fs =>
+          fs.stat(binaryPath),
+        )
+        // Check if file has execute permission (Unix-like systems).
+        if (process.platform !== 'win32') {
+          const isExecutable = (stats.mode & 0o111) !== 0
+          if (!isExecutable) {
+            if (!quiet) {
+              logger.error('')
+              logger.error(`Binary is not executable: ${binaryPath}`)
+              logger.logNewline()
+              logger.log('Making binary executable...')
+              logger.logNewline()
+            }
+
+            // Make binary executable.
+            const chmodExitCode = await runCommand('chmod', ['+x', binaryPath], {
+              cwd: rootPath,
+            })
+
+            if (chmodExitCode !== 0) {
+              if (!quiet) {
+                logger.error('')
+                logger.error('Failed to make binary executable')
+              }
+              process.exitCode = chmodExitCode
+              return
+            }
+
+            if (!quiet) {
+              logger.success('✅ Binary is now executable')
+              logger.logNewline()
+            }
+          }
+        }
+      } catch (e) {
+        if (!quiet) {
+          logger.error('')
+          logger.error(
+            `Failed to check binary permissions: ${e instanceof Error ? e.message : String(e)}`,
+          )
+        }
+        process.exitCode = 1
+        return
+      }
+
+      // Test binary execution.
+      if (!quiet) {
+        logger.log('Testing binary execution...')
+        logger.logNewline()
+      }
+
+      try {
+        const testResult = await runCommandWithOutput(testBinaryPath, ['--version'], {
+          cwd: rootPath,
+          timeout: 5000,
+        })
+
+        if (testResult.code !== 0) {
+          if (!quiet) {
+            logger.error('')
+            logger.error(`Binary execution test failed with exit code: ${testResult.code}`)
+            if (testResult.stderr) {
+              logger.error(`Error output: ${testResult.stderr}`)
+            }
+          }
+          process.exitCode = testResult.code
+          return
+        }
+
+        const version = testResult.stdout.trim()
+        if (!quiet) {
+          logger.success(`✅ Binary is working (Node.js ${version})`)
+          logger.logNewline()
+        }
+      } catch (e) {
+        if (!quiet) {
+          logger.error('')
+          logger.error(
+            `Binary execution test failed: ${e instanceof Error ? e.message : String(e)}`,
+          )
+        }
+        process.exitCode = 1
+        return
+      }
+
+      // All checks passed - use this binary.
+      customNodePath = testBinaryPath
+
+      if (!quiet) {
+        logger.success(`✅ Using ${buildType} binary for tests`)
+        logger.logNewline()
+      }
     }
 
     // Handle aliases
@@ -437,6 +909,7 @@ async function main() {
     exitCode = await runTests({
       ...values,
       coverage: withCoverage,
+      customNodePath,
       positionals,
       quiet,
     })

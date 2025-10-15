@@ -3,6 +3,7 @@
 Thumbs.db
 /.claude
 /.custom-node-build
+/.node-source
 /.env
 /.env.local
 /.pnpmfile.cjs
@@ -34,5 +35,10 @@ pkg-binaries/
 /socket-*
 
 # Build directory for temporary artifacts
-/build
+/build/*
+!/build/out
+/build/out/*
+!/build/out/Yao
+/build/out/Yao/*
+!/build/out/Yao/yao-wrapper.js
 /binaries

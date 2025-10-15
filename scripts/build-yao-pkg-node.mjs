@@ -72,15 +72,22 @@ const RUN_FULL_TESTS = args.includes('--test-full')
 // Configuration
 const NODE_VERSION = 'v24.10.0'
 const ROOT_DIR = join(__dirname, '..')
-const BUILD_DIR = join(ROOT_DIR, '.custom-node-build')
-const NODE_DIR = join(BUILD_DIR, 'node-yao-pkg')
-const PATCHES_DIR = join(BUILD_DIR, 'patches')
-const YAO_PATCH_FILE = join(PATCHES_DIR, 'node.v24.10.0.cpp.patch')
-const YAO_PATCH_URL =
-  'https://raw.githubusercontent.com/yao-pkg/pkg-fetch/main/patches/node.v24.10.0.cpp.patch'
+const NODE_SOURCE_DIR = join(ROOT_DIR, '.node-source')
+const BUILD_DIR = join(ROOT_DIR, 'build')
+const YAO_PATCHES_DIR = join(BUILD_DIR, 'patches', 'yao')
+const SOCKET_PATCHES_DIR = join(BUILD_DIR, 'patches', 'socket')
+const YAO_PATCH_FILE = join(YAO_PATCHES_DIR, `node.${NODE_VERSION}.cpp.patch`)
+const YAO_PATCH_URL = `https://raw.githubusercontent.com/yao-pkg/pkg-fetch/main/patches/node.${NODE_VERSION}.cpp.patch`
 
-// Socket-specific patches
-const SOCKET_PATCHES_DIR = join(ROOT_DIR, 'build', 'patches', 'socket')
+// Directory structure.
+// .node-source/ - Node.js source code (gitignored).
+// .node-source/out/Release/node - Node.js build output (gitignored).
+// build/out/Release/node - Copy of Release binary (gitignored).
+// build/out/Stripped/node - Stripped binary (gitignored).
+// build/out/Signed/node - Stripped + signed binary (gitignored).
+// build/out/Sea/node - Stripped + signed binary for SEA builds (gitignored).
+// build/patches/yao/ - Yao-pkg patches (tracked in git).
+// build/patches/socket/ - Socket patches (tracked in git).
 
 /**
  * Find Socket patches for this Node version
@@ -488,7 +495,32 @@ async function main() {
   }
 
   // Ensure patches directory exists.
-  await mkdir(PATCHES_DIR, { recursive: true })
+  await mkdir(YAO_PATCHES_DIR, { recursive: true })
+
+  // Check patches.json for offline builds and version validation.
+  const patchesJsonPath = join(YAO_PATCHES_DIR, 'patches.json')
+  let patchesMetadata = null
+  if (existsSync(patchesJsonPath)) {
+    try {
+      const patchesContent = await readFile(patchesJsonPath, 'utf8')
+      patchesMetadata = JSON.parse(patchesContent)
+
+      // Validate that this Node version has a patch entry.
+      if (patchesMetadata[NODE_VERSION]) {
+        console.log(`✅ patches.json contains entry for ${NODE_VERSION}`)
+        console.log(`   Expected patch: ${patchesMetadata[NODE_VERSION][0]}`)
+        console.log()
+      } else {
+        console.log(`⚠️  patches.json does not contain entry for ${NODE_VERSION}`)
+        console.log(`   Available versions: ${Object.keys(patchesMetadata).join(', ')}`)
+        console.log(`   Will attempt to download from yao-pkg...`)
+        console.log()
+      }
+    } catch (e) {
+      console.warn(`⚠️  Could not read patches.json: ${e.message}`)
+      console.log()
+    }
+  }
 
   // Download yao-pkg patch if needed.
   if (!existsSync(YAO_PATCH_FILE)) {
@@ -505,6 +537,17 @@ async function main() {
       })
       console.log(`✅ Patch downloaded and verified successfully`)
       console.log()
+
+      // Update patches.json with new version.
+      if (patchesMetadata && !patchesMetadata[NODE_VERSION]) {
+        const patchFileName = `node.${NODE_VERSION}.cpp.patch`
+        patchesMetadata[NODE_VERSION] = [patchFileName]
+
+        const { writeFile } = await import('node:fs/promises')
+        await writeFile(patchesJsonPath, JSON.stringify(patchesMetadata, null, 2) + '\n', 'utf8')
+        console.log(`✅ Updated patches.json with ${NODE_VERSION}`)
+        console.log()
+      }
     } catch (e) {
       printError(
         'Download Failed',
@@ -628,7 +671,7 @@ async function main() {
             '--branch',
             NODE_VERSION,
             'https://github.com/nodejs/node.git',
-            'node-yao-pkg',
+            '.',
           ],
           { cwd: BUILD_DIR },
         )
@@ -643,8 +686,9 @@ async function main() {
               'Check your internet connection',
               'Try again in a few minutes',
               'Manually clone:',
+              `  mkdir -p ${BUILD_DIR}`,
               `  cd ${BUILD_DIR}`,
-              `  git clone --depth 1 --branch ${NODE_VERSION} https://github.com/nodejs/node.git node-yao-pkg`,
+              `  git clone --depth 1 --branch ${NODE_VERSION} https://github.com/nodejs/node.git .`,
             ]
           )
           throw new Error('Git clone failed after retries')
@@ -1055,6 +1099,22 @@ async function main() {
   console.log('✅ Binary is functional')
   console.log()
 
+  // Copy unmodified binary to build/out/Release.
+  printHeader('Copying to Build Output (Release)')
+  logger.log('Copying unmodified binary to build/out/Release directory...')
+  logger.logNewline()
+
+  const outputReleaseDir = join(BUILD_DIR, 'out', 'Release')
+  await mkdir(outputReleaseDir, { recursive: true })
+  const outputReleaseBinary = join(outputReleaseDir, 'node')
+  await exec('cp', [nodeBinary, outputReleaseBinary])
+
+  logger.substep(`Release directory: ${outputReleaseDir}`)
+  logger.substep('Binary: node (unmodified)')
+  logger.logNewline()
+  logger.success('Unmodified binary copied to build/out/Release')
+  logger.logNewline()
+
   // Strip debug symbols to reduce size.
   printHeader('Optimizing Binary Size')
   const sizeBeforeStrip = await getFileSize(nodeBinary)
@@ -1120,36 +1180,85 @@ async function main() {
   console.log('✅ Binary functional after stripping')
   console.log()
 
+  // Copy stripped binary to build/out/Stripped.
+  printHeader('Copying to Build Output (Stripped)')
+  logger.log('Copying stripped binary to build/out/Stripped directory...')
+  logger.logNewline()
+
+  const outputStrippedDir = join(BUILD_DIR, 'out', 'Stripped')
+  await mkdir(outputStrippedDir, { recursive: true })
+  const outputStrippedBinary = join(outputStrippedDir, 'node')
+  await exec('cp', [nodeBinary, outputStrippedBinary])
+
+  logger.substep(`Stripped directory: ${outputStrippedDir}`)
+  logger.substep('Binary: node (stripped)')
+  logger.logNewline()
+  logger.success('Stripped binary copied to build/out/Stripped')
+  logger.logNewline()
+
   // Sign for macOS ARM64.
   if (IS_MACOS && ARCH === 'arm64') {
     printHeader('Code Signing (macOS ARM64)')
-    console.log('Signing binary for macOS ARM64 compatibility...')
-    console.log()
+    logger.log('Signing binary for macOS ARM64 compatibility...')
+    logger.logNewline()
     await exec('codesign', ['--sign', '-', '--force', nodeBinary])
 
     const sigInfo = await execCapture('codesign', ['-dv', nodeBinary], {
       env: { ...process.env, STDERR: '>&1' },
     })
-    console.log(sigInfo)
-    console.log()
-    console.log('✅ Binary signed successfully')
-    console.log()
+    logger.log(sigInfo)
+    logger.logNewline()
+    logger.success('Binary signed successfully')
+    logger.logNewline()
   }
 
-  // Copy to yao-pkg cache directory.
+  // Copy signed binary to build/out/Signed.
+  printHeader('Copying to Build Output (Signed)')
+  logger.log('Copying signed binary to build/out/Signed directory...')
+  logger.logNewline()
+
+  const outputSignedDir = join(BUILD_DIR, 'out', 'Signed')
+  await mkdir(outputSignedDir, { recursive: true })
+  const outputSignedBinary = join(outputSignedDir, 'node')
+  await exec('cp', [nodeBinary, outputSignedBinary])
+
+  logger.substep(`Signed directory: ${outputSignedDir}`)
+  logger.substep('Binary: node (stripped + signed)')
+  logger.logNewline()
+  logger.success('Signed binary copied to build/out/Signed')
+  logger.logNewline()
+
+  // Copy signed binary to build/out/Sea (for SEA builds).
+  printHeader('Copying to Build Output (Sea)')
+  logger.log('Copying signed binary to build/out/Sea directory for SEA builds...')
+  logger.logNewline()
+
+  const outputSeaDir = join(BUILD_DIR, 'out', 'Sea')
+  await mkdir(outputSeaDir, { recursive: true })
+  const outputSeaBinary = join(outputSeaDir, 'node')
+  await exec('cp', [nodeBinary, outputSeaBinary])
+
+  logger.substep(`Sea directory: ${outputSeaDir}`)
+  logger.substep('Binary: node (stripped + signed, ready for SEA)')
+  logger.logNewline()
+  logger.success('Binary copied to build/out/Sea')
+  logger.logNewline()
+
+  // Copy to yao-pkg cache directory (for yao-pkg to use).
   const pkgCacheDir = join(process.env.HOME || process.env.USERPROFILE, '.pkg-cache', 'v3.5')
   const targetName = `built-${NODE_VERSION}-${platform()}-${ARCH}${IS_MACOS && ARCH === 'arm64' ? '-signed' : ''}`
   const targetPath = join(pkgCacheDir, targetName)
 
-  printHeader('Installing to pkg Cache')
-  console.log('Installing binary so pkg can find it...')
-  console.log()
-  console.log(`Cache directory: ${pkgCacheDir}`)
-  console.log(`Binary name: ${targetName}`)
-  console.log()
+  printHeader('Installing to pkg Cache (for yao-pkg)')
+  logger.log('Installing binary to pkg cache so yao-pkg can find it...')
+  logger.logNewline()
+  logger.substep(`Source: ${outputSignedBinary}`)
+  logger.substep(`Cache directory: ${pkgCacheDir}`)
+  logger.substep(`Binary name: ${targetName}`)
+  logger.logNewline()
 
   await mkdir(pkgCacheDir, { recursive: true })
-  await exec('cp', [nodeBinary, targetPath])
+  await exec('cp', [outputSignedBinary, targetPath])
 
   // Verify it was copied.
   if (!existsSync(targetPath)) {
@@ -1158,7 +1267,7 @@ async function main() {
       'Binary was not copied to pkg cache successfully.',
       [
         'Check permissions on ~/.pkg-cache directory',
-        'Manually copy: cp .custom-node-build/node-yao-pkg/out/Release/node ~/.pkg-cache/v3.5/' + targetName,
+        'Manually copy: cp build/out/Signed/node ~/.pkg-cache/v3.5/' + targetName,
       ]
     )
     throw new Error('Failed to install binary to pkg cache')
@@ -1195,8 +1304,24 @@ async function main() {
   console.log('✅ pkg can use this binary')
   console.log()
 
+  // Copy final binary to build/out/Yao.
+  printHeader('Copying Final Binary to build/out/Yao')
+  logger.log('Creating final yao-pkg binary location...')
+  logger.logNewline()
+
+  const yaoOutputDir = join(BUILD_DIR, 'out', 'Yao')
+  await mkdir(yaoOutputDir, { recursive: true })
+  const yaoOutputBinary = join(yaoOutputDir, 'node')
+  await exec('cp', [outputSignedBinary, yaoOutputBinary])
+
+  logger.substep(`Yao directory: ${yaoOutputDir}`)
+  logger.substep('Binary: node (final yao-pkg build)')
+  logger.logNewline()
+  logger.success('Final binary copied to build/out/Yao')
+  logger.logNewline()
+
   // Report build complete.
-  const binarySize = await getFileSize(targetPath)
+  const binarySize = await getFileSize(yaoOutputBinary)
   await createCheckpoint(BUILD_DIR, 'complete')
   await cleanCheckpoint(BUILD_DIR)
 
@@ -1223,8 +1348,12 @@ async function main() {
   logger.logNewline()
 
   logger.log('📁 Binary Locations:')
-  logger.log(`   Source: ${nodeBinary}`)
-  logger.log(`   Cache:  ${targetPath}`)
+  logger.log(`   Source:       ${nodeBinary}`)
+  logger.log(`   Release:      ${outputReleaseBinary}`)
+  logger.log(`   Stripped:     ${outputStrippedBinary}`)
+  logger.log(`   Signed:       ${outputSignedBinary}`)
+  logger.log(`   Final (Yao):  ${yaoOutputBinary}`)
+  logger.log(`   pkg cache:    ${targetPath}`)
   logger.logNewline()
 
   logger.log('🚀 Next Steps:')

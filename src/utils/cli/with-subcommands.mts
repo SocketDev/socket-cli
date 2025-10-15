@@ -16,6 +16,10 @@ import {
   trimNewlines,
 } from '@socketsecurity/registry/lib/strings'
 
+import {
+  getCliVersion,
+  getCliVersionHash,
+} from '../../constants/env.mts'
 import constants, {
   API_V0_URL,
   CONFIG_KEY_API_TOKEN,
@@ -166,8 +170,8 @@ function getAsciiHeader(
   const redacting = constants.ENV.VITEST
 
   // Version display: show hash in debug mode, otherwise show semantic version.
-  const fullVersion = constants.ENV.INLINED_SOCKET_CLI_VERSION
-  const versionHash = constants.ENV.INLINED_SOCKET_CLI_VERSION_HASH
+  const fullVersion = getCliVersion()
+  const versionHash = getCliVersionHash()
   const cliVersion = redacting
     ? REDACTED
     : isDebug()
