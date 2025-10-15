@@ -61,10 +61,12 @@ describe('handleViewRepo', () => {
     const mockFetch = vi.mocked(fetchViewRepo)
     const mockOutput = vi.mocked(outputViewRepo)
 
-    mockFetch.mockResolvedValue(createSuccessResult({
-      name: 'my-repo',
-      org: 'my-org',
-    }))
+    mockFetch.mockResolvedValue(
+      createSuccessResult({
+        name: 'my-repo',
+        org: 'my-org',
+      }),
+    )
 
     await handleViewRepo('my-org', 'my-repo', 'markdown')
 
@@ -77,12 +79,14 @@ describe('handleViewRepo', () => {
     const mockFetch = vi.mocked(fetchViewRepo)
     const mockOutput = vi.mocked(outputViewRepo)
 
-    mockFetch.mockResolvedValue(createSuccessResult({
-      name: 'production-repo',
-      org: 'production-org',
-      branches: ['main', 'develop', 'staging'],
-      defaultBranch: 'main',
-    }))
+    mockFetch.mockResolvedValue(
+      createSuccessResult({
+        name: 'production-repo',
+        org: 'production-org',
+        branches: ['main', 'develop', 'staging'],
+        defaultBranch: 'main',
+      }),
+    )
 
     await handleViewRepo('production-org', 'production-repo', 'text')
 

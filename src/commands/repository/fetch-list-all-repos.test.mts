@@ -1,8 +1,11 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { fetchListAllRepos } from './fetch-list-all-repos.mts'
-import { createErrorResult, createSuccessResult } from '../../../test/helpers/mocks.mts'
-import { setupSdkMockError, setupSdkMockSuccess, setupSdkSetupFailure } from '../../../test/helpers/sdk-test-helpers.mts'
+import { createSuccessResult } from '../../../test/helpers/mocks.mts'
+import {
+  setupSdkMockError,
+  setupSdkSetupFailure,
+} from '../../../test/helpers/sdk-test-helpers.mts'
 
 // Mock the dependencies.
 vi.mock('../../utils/socket/api.mjs', () => ({
@@ -34,13 +37,15 @@ describe('fetchListAllRepos', () => {
     }
 
     mockSetupSdk.mockResolvedValue(createSuccessResult(mockSdk))
-    mockHandleApi.mockResolvedValue(createSuccessResult({
-      results: [
-        { id: 'repo-1', name: 'first-repo' },
-        { id: 'repo-2', name: 'second-repo' },
-      ],
-      nextPage: null,
-    }))
+    mockHandleApi.mockResolvedValue(
+      createSuccessResult({
+        results: [
+          { id: 'repo-1', name: 'first-repo' },
+          { id: 'repo-2', name: 'second-repo' },
+        ],
+        nextPage: null,
+      }),
+    )
 
     const result = await fetchListAllRepos('test-org')
 
@@ -57,7 +62,10 @@ describe('fetchListAllRepos', () => {
   })
 
   it('handles SDK setup failure', async () => {
-    await setupSdkSetupFailure('Failed to setup SDK', { code: 1, cause: 'Missing API token' })
+    await setupSdkSetupFailure('Failed to setup SDK', {
+      code: 1,
+      cause: 'Missing API token',
+    })
 
     const result = await fetchListAllRepos('org')
 
@@ -91,15 +99,19 @@ describe('fetchListAllRepos', () => {
 
     // Mock first page.
     mockHandleApi
-      .mockResolvedValueOnce(createSuccessResult({
-        results: [{ id: 'repo-1', name: 'first-repo' }],
-        nextPage: 1,
-      }))
+      .mockResolvedValueOnce(
+        createSuccessResult({
+          results: [{ id: 'repo-1', name: 'first-repo' }],
+          nextPage: 1,
+        }),
+      )
       // Mock second page.
-      .mockResolvedValueOnce(createSuccessResult({
-        results: [{ id: 'repo-2', name: 'second-repo' }],
-        nextPage: null,
-      }))
+      .mockResolvedValueOnce(
+        createSuccessResult({
+          results: [{ id: 'repo-2', name: 'second-repo' }],
+          nextPage: null,
+        }),
+      )
 
     const result = await fetchListAllRepos('big-org')
 
@@ -122,7 +134,9 @@ describe('fetchListAllRepos', () => {
     }
 
     mockSetupSdk.mockResolvedValue(createSuccessResult(mockSdk))
-    mockHandleApi.mockResolvedValue(createSuccessResult({ results: [], nextPage: null }))
+    mockHandleApi.mockResolvedValue(
+      createSuccessResult({ results: [], nextPage: null }),
+    )
 
     await fetchListAllRepos('sorted-org', {
       sort: 'name',
@@ -154,10 +168,12 @@ describe('fetchListAllRepos', () => {
     mockSetupSdk.mockResolvedValue(createSuccessResult(mockSdk))
 
     // Always return the same nextPage to trigger protection.
-    mockHandleApi.mockResolvedValue(createSuccessResult({
-      results: [{ id: 'repo-1', name: 'repo' }],
-      nextPage: 1,
-    }))
+    mockHandleApi.mockResolvedValue(
+      createSuccessResult({
+        results: [{ id: 'repo-1', name: 'repo' }],
+        nextPage: 1,
+      }),
+    )
 
     const result = await fetchListAllRepos('infinite-org')
 
@@ -179,7 +195,9 @@ describe('fetchListAllRepos', () => {
     }
 
     mockSetupSdk.mockResolvedValue(createSuccessResult(mockSdk))
-    mockHandleApi.mockResolvedValue(createSuccessResult({ results: [], nextPage: null }))
+    mockHandleApi.mockResolvedValue(
+      createSuccessResult({ results: [], nextPage: null }),
+    )
 
     const sdkOpts = {
       apiToken: 'list-token',
@@ -202,7 +220,9 @@ describe('fetchListAllRepos', () => {
     }
 
     mockSetupSdk.mockResolvedValue(createSuccessResult(mockSdk))
-    mockHandleApi.mockResolvedValue(createSuccessResult({ results: [], nextPage: null }))
+    mockHandleApi.mockResolvedValue(
+      createSuccessResult({ results: [], nextPage: null }),
+    )
 
     // This tests that the function properly uses __proto__: null.
     await fetchListAllRepos('test-org')

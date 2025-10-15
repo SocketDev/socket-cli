@@ -47,10 +47,7 @@ export class ResultAssertion<T> {
   /**
    * Assert data contains expected properties
    */
-  dataContains(
-    expected: Partial<T>,
-    message?: string,
-  ): this {
+  dataContains(expected: Partial<T>, message?: string): this {
     this.isSuccess(message)
     const data = (this.result as { data: T }).data
     expect(data, message).toMatchObject(expected)
@@ -62,10 +59,7 @@ export class ResultAssertion<T> {
    */
   hasMessage(message?: string): this {
     this.isFailure(message)
-    expect(
-      (this.result as { message: string }).message,
-      message,
-    ).toBeDefined()
+    expect((this.result as { message: string }).message, message).toBeDefined()
     return this
   }
 
@@ -241,7 +235,10 @@ export function expectFailure<T>(result: CResult<T>): {
  * expectSuccessWithData(result, { id: 'scan-123', status: 'completed' })
  * ```
  */
-export function expectSuccessWithData<T>(result: CResult<T>, expected: T): void {
+export function expectSuccessWithData<T>(
+  result: CResult<T>,
+  expected: T,
+): void {
   expect(result.ok).toBe(true)
   expect((result as { data: T }).data).toEqual(expected)
 }
@@ -336,9 +333,7 @@ export function expectResultMatchesType<T, U extends T>(
 export function expectAllSuccess<T>(results: Array<CResult<T>>): void {
   const failures = results.filter(r => !r.ok)
   if (failures.length > 0) {
-    const messages = failures.map(
-      f => (f as { message: string }).message,
-    )
+    const messages = failures.map(f => (f as { message: string }).message)
     throw new Error(
       `Expected all results to succeed, but ${failures.length} failed:\n${messages.join('\n')}`,
     )

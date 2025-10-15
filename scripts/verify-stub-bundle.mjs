@@ -186,13 +186,13 @@ if (stats.size > EXPECTED.maxSize) {
 }
 
 // Summary
-log('\n' + '='.repeat(50), 'green')
+log(`\n${'='.repeat(50)}`, 'green')
 log('✅ VERIFICATION PASSED', 'green')
-log('='.repeat(50) + '\n', 'green')
+log(`${'='.repeat(50)}\n`, 'green')
 
 console.log('Summary:')
 console.log(`  - ${requiredModules.length} Node.js built-ins (all expected)`)
 console.log(`  - ${functions.length} functions (all expected)`)
-console.log(`  - 0 external dependencies`)
+console.log('  - 0 external dependencies')
 console.log(`  - ${sizeKB} KB bundle size`)
 console.log()

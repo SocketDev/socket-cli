@@ -37,6 +37,20 @@ import * as cliSocket from './constants/socket.mjs'
 
 // Import ENV module
 
+// Re-export registry constants (these get overridden by CLI-specific if there are conflicts)
+export * from '@socketsecurity/registry/constants/agents'
+export * from '@socketsecurity/registry/constants/core'
+export * from '@socketsecurity/registry/constants/encoding'
+export * from '@socketsecurity/registry/constants/github'
+export * from '@socketsecurity/registry/constants/licenses'
+export * from '@socketsecurity/registry/constants/node'
+export * from '@socketsecurity/registry/constants/packages'
+export * from '@socketsecurity/registry/constants/paths'
+export * from '@socketsecurity/registry/constants/platform'
+export * from '@socketsecurity/registry/constants/process'
+export * from '@socketsecurity/registry/constants/socket'
+export * from '@socketsecurity/registry/constants/testing'
+export * from '@socketsecurity/registry/constants/typescript'
 // Re-export all semantic constant modules
 export * from './constants/alerts.mjs'
 export * from './constants/build.mjs'
@@ -52,21 +66,6 @@ export * from './constants/reporting.mjs'
 export * from './constants/shadow.mjs'
 export * from './constants/socket.mjs'
 
-// Re-export registry constants (these get overridden by CLI-specific if there are conflicts)
-export * from '@socketsecurity/registry/constants/agents'
-export * from '@socketsecurity/registry/constants/core'
-export * from '@socketsecurity/registry/constants/encoding'
-export * from '@socketsecurity/registry/constants/github'
-export * from '@socketsecurity/registry/constants/licenses'
-export * from '@socketsecurity/registry/constants/node'
-export * from '@socketsecurity/registry/constants/packages'
-export * from '@socketsecurity/registry/constants/paths'
-export * from '@socketsecurity/registry/constants/platform'
-export * from '@socketsecurity/registry/constants/process'
-export * from '@socketsecurity/registry/constants/socket'
-export * from '@socketsecurity/registry/constants/testing'
-export * from '@socketsecurity/registry/constants/typescript'
-
 // Export ENV
 export { ENV }
 
@@ -74,10 +73,10 @@ export { ENV }
 // No need to re-export it here.
 export const registryConstantsAttribs = {}
 
-// Type exports
-export type { Agent } from './utils/ecosystem/environment.mjs'
 export type { Remap } from '@socketsecurity/registry/lib/objects'
 export type { SpawnOptions } from '@socketsecurity/registry/lib/spawn'
+// Type exports
+export type { Agent } from './utils/ecosystem/environment.mjs'
 
 export type RegistryEnv = typeof ENV
 export type RegistryInternals = {

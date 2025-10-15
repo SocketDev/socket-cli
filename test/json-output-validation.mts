@@ -38,13 +38,12 @@ export function validateSocketJson(output: string, exitCode: number) {
     // Basic validation of expected Socket CLI JSON format.
     if (exitCode === 0) {
       return { ok: true, data: parsed }
-    } else {
-      return {
-        ok: false,
-        message: parsed.message || parsed.error || 'Unknown error',
-      }
     }
-  } catch (e) {
+    return {
+      ok: false,
+      message: parsed.message || parsed.error || 'Unknown error',
+    }
+  } catch (_e) {
     // If not valid JSON, return error.
     return { ok: false, message: 'Invalid JSON output' }
   }

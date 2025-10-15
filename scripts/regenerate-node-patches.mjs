@@ -30,7 +30,9 @@ const args = process.argv.slice(2)
 const versionArg = args.find(arg => arg.startsWith('--version='))
 if (!versionArg) {
   console.error('❌ Missing --version argument')
-  console.error('Usage: node scripts/regenerate-node-patches.mjs --version=v24.10.0')
+  console.error(
+    'Usage: node scripts/regenerate-node-patches.mjs --version=v24.10.0',
+  )
   process.exit(1)
 }
 
@@ -61,9 +63,7 @@ async function exec(command, args = [], options = {}) {
   })
 
   if (result.code !== 0) {
-    throw new Error(
-      `Command failed with exit code ${result.code}`,
-    )
+    throw new Error(`Command failed with exit code ${result.code}`)
   }
 
   return result
@@ -143,7 +143,8 @@ async function applySocketModifications() {
   const seaFile = join(NODE_DIR, 'lib', 'sea.js')
   try {
     let content = await readFile(seaFile, 'utf8')
-    const oldImport = 'const { isSea, getAsset: getAssetInternal, getAssetKeys: getAssetKeysInternal } = internalBinding(\'sea\');'
+    const oldImport =
+      "const { isSea, getAsset: getAssetInternal, getAssetKeys: getAssetKeysInternal } = internalBinding('sea');"
     const newImport = `const isSea = () => true;
 const { getAsset: getAssetInternal, getAssetKeys: getAssetKeysInternal } = internalBinding('sea');`
 
@@ -182,7 +183,10 @@ async function generatePatch(name, description) {
 `
 
   const patchContent = header + diff
-  const patchFile = join(OUTPUT_DIR, `${name}-${NODE_VERSION.replace(/\./g, '-')}.patch`)
+  const patchFile = join(
+    OUTPUT_DIR,
+    `${name}-${NODE_VERSION.replace(/\./g, '-')}.patch`,
+  )
 
   await writeFile(patchFile, patchContent)
   console.log(`✅ Generated: ${patchFile}`)
@@ -208,13 +212,19 @@ async function main() {
 
   // Step 1: Clone Node.js
   console.log(`📥 Cloning Node.js ${NODE_VERSION}...`)
-  await exec('git', [
-    'clone',
-    '--depth', '1',
-    '--branch', NODE_VERSION,
-    'https://github.com/nodejs/node.git',
-    'node',
-  ], { cwd: WORK_DIR })
+  await exec(
+    'git',
+    [
+      'clone',
+      '--depth',
+      '1',
+      '--branch',
+      NODE_VERSION,
+      'https://github.com/nodejs/node.git',
+      'node',
+    ],
+    { cwd: WORK_DIR },
+  )
   console.log()
 
   // Step 2: Download and apply yao-pkg patch
@@ -223,7 +233,8 @@ async function main() {
 
   try {
     await exec('curl', ['-sL', YAO_PATCH_URL, '-o', yaoPatchFile])
-  } catch (e) {
+    // eslint-disable-next-line no-unused-vars
+  } catch (_e) {
     console.error(`❌ Failed to download yao-pkg patch from: ${YAO_PATCH_URL}`)
     console.error('   The patch may not exist yet for this Node.js version.')
     process.exit(1)
@@ -236,7 +247,9 @@ async function main() {
   // Step 3: Commit baseline (yao-pkg patches applied)
   console.log('📌 Creating baseline commit...')
   await exec('git', ['add', '-A'], { cwd: NODE_DIR })
-  await exec('git', ['commit', '-m', 'Apply yao-pkg patches'], { cwd: NODE_DIR })
+  await exec('git', ['commit', '-m', 'Apply yao-pkg patches'], {
+    cwd: NODE_DIR,
+  })
   console.log()
 
   // Step 4: Apply Socket modifications
@@ -252,10 +265,10 @@ async function main() {
   const combinedPatch = await generatePatch(
     'socket-node-modifications',
     'Socket CLI modifications for Node.js\n' +
-    '#\n' +
-    '# Includes:\n' +
-    '# - Fix V8 include paths\n' +
-    '# - Enable SEA detection for pkg binaries',
+      '#\n' +
+      '# Includes:\n' +
+      '# - Fix V8 include paths\n' +
+      '# - Enable SEA detection for pkg binaries',
   )
 
   if (combinedPatch) {
@@ -274,7 +287,9 @@ async function main() {
     console.log()
     console.log('📝 Next steps:')
     console.log('   1. Review the generated patches')
-    console.log('   2. Update scripts/build-yao-pkg-node.mjs to use new patch files')
+    console.log(
+      '   2. Update scripts/build-yao-pkg-node.mjs to use new patch files',
+    )
     console.log('   3. Update SOCKET_PATCHES array with new filenames')
     console.log('   4. Test the build')
   } else {

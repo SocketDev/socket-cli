@@ -70,11 +70,11 @@ export function createMarkdownReport(data: PurlDataResponse): string {
   o.push('')
   if (dependencyCount) {
     o.push(
-      `It will show you the shallow score for just the package itself and a deep score for all the transitives combined. Additionally you can see which capabilities were found and the top alerts as well as a package that was responsible for it.`,
+      'It will show you the shallow score for just the package itself and a deep score for all the transitives combined. Additionally you can see which capabilities were found and the top alerts as well as a package that was responsible for it.',
     )
   } else {
     o.push(
-      `It will show you the shallow score for the package itself, which capabilities were found, and its top alerts.`,
+      'It will show you the shallow score for the package itself, which capabilities were found, and its top alerts.',
     )
     o.push('')
     o.push(

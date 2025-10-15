@@ -78,7 +78,6 @@ export function lockSrcIncludes(
       return yarnLockSrcIncludes(lockSrc, name)
     case YARN_CLASSIC:
       return yarnLockSrcIncludes(lockSrc, name)
-    case NPM:
     default:
       return npmLockSrcIncludes(lockSrc, name)
   }

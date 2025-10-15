@@ -6,7 +6,7 @@
  */
 
 import crypto from 'node:crypto'
-import { existsSync, promises as fs  } from 'node:fs'
+import { existsSync, promises as fs } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
@@ -132,7 +132,6 @@ async function fetchReleaseChecksums(
         logger.warn(
           `Error fetching checksums from ${checksumAsset.name}: ${e instanceof Error ? e.message : String(e)}`,
         )
-        continue
       }
     }
   }
@@ -525,8 +524,8 @@ Examples
     importMeta,
   })
   const { flags } = cli
-  const force = Boolean(flags['force'])
-  const dryRun = Boolean(flags['dryRun'])
+  const force = Boolean(flags.force)
+  const dryRun = Boolean(flags.dryRun)
   const currentVersion = constants.ENV.INLINED_SOCKET_CLI_VERSION || 'unknown'
   const currentBinaryPath = process.argv[0]
 
@@ -593,21 +592,25 @@ Examples
 
     // Provide platform-specific guidance
     if (process.platform === 'win32' && process.arch === 'arm64') {
-      errorMessage += `📋 Windows ARM64 SEA binaries are not currently supported due to:\n`
-      errorMessage += `   • Cross-compilation limitations with Node.js SEA\n`
-      errorMessage += `   • Limited testing coverage for Windows ARM64 + postject\n`
-      errorMessage += `   • Code signing complexity for ARM64 Windows binaries\n\n`
-      errorMessage += `💡 Recommended alternatives:\n`
+      errorMessage +=
+        '📋 Windows ARM64 SEA binaries are not currently supported due to:\n'
+      errorMessage += '   • Cross-compilation limitations with Node.js SEA\n'
+      errorMessage +=
+        '   • Limited testing coverage for Windows ARM64 + postject\n'
+      errorMessage +=
+        '   • Code signing complexity for ARM64 Windows binaries\n\n'
+      errorMessage += '💡 Recommended alternatives:\n'
       errorMessage += `   1. Use npm package: ${colors.cyan('npm install -g socket')}\n`
-      errorMessage += `   2. Use Windows x64 binary (runs via emulation):\n`
-      errorMessage += `      Download socket-win-x64.exe from the release\n`
+      errorMessage += '   2. Use Windows x64 binary (runs via emulation):\n'
+      errorMessage += '      Download socket-win-x64.exe from the release\n'
     } else {
-      errorMessage += `💡 Try using the npm package instead:\n`
+      errorMessage += '💡 Try using the npm package instead:\n'
       errorMessage += `   ${colors.cyan('npm install -g socket')}\n\n`
-      errorMessage += `   The npm package works on all platforms and architectures.\n`
+      errorMessage +=
+        '   The npm package works on all platforms and architectures.\n'
     }
 
-    errorMessage += `\n📚 For more details, see: docs/SEA_PLATFORM_SUPPORT.md`
+    errorMessage += '\n📚 For more details, see: docs/SEA_PLATFORM_SUPPORT.md'
     throw new Error(errorMessage)
   }
 

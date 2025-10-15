@@ -1,6 +1,6 @@
 import fs, { existsSync } from 'node:fs'
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { postinstallWrapper } from './postinstall-wrapper.mts'
 
@@ -127,7 +127,7 @@ describe('postinstallWrapper', () => {
     const mockExistsSync = vi.mocked(existsSync) as any
     const mockCheckSetup = vi.mocked(checkSocketWrapperSetup)
     const mockConfirm = vi.mocked(confirm)
-    const mockAddWrapper = vi.mocked(addSocketWrapper)
+    const _mockAddWrapper = vi.mocked(addSocketWrapper)
 
     mockExistsSync.mockImplementation(
       (path: string) => path === '/home/user/.bashrc',

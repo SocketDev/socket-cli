@@ -94,7 +94,6 @@ export function getOverridesData(
       return getOverridesDataYarn(pkgEnvDetails, pkgJson)
     case YARN_CLASSIC:
       return getOverridesDataYarnClassic(pkgEnvDetails, pkgJson)
-    case NPM:
     default:
       return getOverridesDataNpm(pkgEnvDetails, pkgJson)
   }

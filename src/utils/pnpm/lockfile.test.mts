@@ -54,7 +54,8 @@ dependencies:
     })
 
     it('handles Windows line endings', () => {
-      const lockfileContent = `lockfileVersion: 5.4\r\noverrides:\r\n  lodash: 4.17.21\r\n\r\ndependencies:`
+      const lockfileContent =
+        'lockfileVersion: 5.4\r\noverrides:\r\n  lodash: 4.17.21\r\n\r\ndependencies:'
       const result = extractOverridesFromPnpmLockSrc(lockfileContent)
       expect(result).toBe('overrides:\r\n  lodash: 4.17.21\r\n\r\n')
     })
@@ -100,7 +101,7 @@ packages: {}`
     })
 
     it('returns null for invalid YAML', () => {
-      const lockfileContent = `{not: valid yaml`
+      const lockfileContent = '{not: valid yaml'
       const result = parsePnpmLockfile(lockfileContent)
       expect(result).toBeNull()
     })

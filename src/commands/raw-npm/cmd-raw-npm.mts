@@ -51,7 +51,7 @@ async function run(
     importMeta,
   })
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = !!cli.flags.dryRun
 
   if (dryRun) {
     logger.log(constants.DRY_RUN_BAILING_NOW)

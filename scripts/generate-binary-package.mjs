@@ -1,4 +1,3 @@
-
 /**
  * @fileoverview Generates package.json for @socketbin/* binary packages.
  * Used in CI to create the package structure for each platform binary.
@@ -140,7 +139,7 @@ async function generatePackage() {
     // Write package.json
     await fs.writeFile(
       path.join(packageDir, 'package.json'),
-      JSON.stringify(packageJson, null, 2) + '\n',
+      `${JSON.stringify(packageJson, null, 2)}\n`,
     )
     console.log(`Created: ${packageDir}/package.json`)
 

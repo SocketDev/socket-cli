@@ -5,7 +5,6 @@
  */
 
 import { readFile } from 'node:fs/promises'
-import { join } from 'node:path'
 
 /**
  * Parse patch metadata from header comments.
@@ -20,11 +19,16 @@ export function parsePatchMetadata(patchContent) {
   }
 
   for (const line of lines) {
-    if (!line.startsWith('#')) {break} // Stop at first non-comment
+    if (!line.startsWith('#')) {
+      break
+    } // Stop at first non-comment
 
     // Parse metadata directives.
     if (line.includes('@node-versions:')) {
-      const versions = line.split(':')[1].trim().split(/[,\s]+/)
+      const versions = line
+        .split(':')[1]
+        .trim()
+        .split(/[,\s]+/)
       metadata.nodeVersions.push(...versions)
     }
     if (line.includes('@requires:')) {
@@ -63,7 +67,10 @@ export function isPatchCompatible(metadata, nodeVersion) {
     } else if (versionSpec.includes('-')) {
       // v24.9.0-v24.9.5 means range.
       const [min, max] = versionSpec.split('-')
-      if (compareVersions(nodeVersion, min) >= 0 && compareVersions(nodeVersion, max) <= 0) {
+      if (
+        compareVersions(nodeVersion, min) >= 0 &&
+        compareVersions(nodeVersion, max) <= 0
+      ) {
         return { compatible: true, reason: null }
       }
     } else {
@@ -88,8 +95,12 @@ function compareVersions(v1, v2) {
   const parts2 = v2.replace('v', '').split('.').map(Number)
 
   for (let i = 0; i < 3; i++) {
-    if (parts1[i] > parts2[i]) {return 1}
-    if (parts1[i] < parts2[i]) {return -1}
+    if (parts1[i] > parts2[i]) {
+      return 1
+    }
+    if (parts1[i] < parts2[i]) {
+      return -1
+    }
   }
   return 0
 }
@@ -125,9 +136,15 @@ export async function validatePatch(patchPath, nodeVersion) {
 
     // Check for suspicious patterns.
     const suspiciousPatterns = [
-      { pattern: /<html>/i, reason: 'Patch contains HTML (probably download error)' },
+      {
+        pattern: /<html>/i,
+        reason: 'Patch contains HTML (probably download error)',
+      },
       { pattern: /404 not found/i, reason: 'Patch contains 404 error' },
-      { pattern: /access denied/i, reason: 'Patch contains access denied error' },
+      {
+        pattern: /access denied/i,
+        reason: 'Patch contains access denied error',
+      },
     ]
 
     for (const { pattern, reason } of suspiciousPatterns) {
@@ -168,14 +185,21 @@ export function analyzePatchContent(patchContent) {
       const match = line.match(/[+-]{3}\s+(?:a\/|b\/)?(.+)/)
       if (match) {
         currentFile = match[1]
-        if (currentFile !== '/dev/null' && !analysis.modifiesFiles.includes(currentFile)) {
+        if (
+          currentFile !== '/dev/null' &&
+          !analysis.modifiesFiles.includes(currentFile)
+        ) {
           analysis.modifiesFiles.push(currentFile)
         }
       }
     }
 
     // Check for V8 include modifications.
-    if (line.includes('#include') && line.includes('base/') && currentFile?.includes('deps/v8')) {
+    if (
+      line.includes('#include') &&
+      line.includes('base/') &&
+      currentFile?.includes('deps/v8')
+    ) {
       analysis.modifiesV8Includes = true
     }
 
@@ -236,24 +260,21 @@ export function checkPatchConflicts(patches, nodeVersion) {
 /**
  * Test if a patch will apply cleanly (dry-run).
  */
-export async function testPatchApplication(patchPath, targetDir, stripLevel = 1) {
+export async function testPatchApplication(
+  patchPath,
+  targetDir,
+  stripLevel = 1,
+) {
   const { spawn } = await import('@socketsecurity/registry/lib/spawn')
 
   try {
     const result = await spawn(
       'patch',
-      [
-        `-p${stripLevel}`,
-        '--dry-run',
-        '--batch',
-        '--forward',
-        '-i',
-        patchPath,
-      ],
+      [`-p${stripLevel}`, '--dry-run', '--batch', '--forward', '-i', patchPath],
       {
         cwd: targetDir,
         stdio: 'pipe',
-      }
+      },
     )
 
     if (result.code === 0) {

@@ -127,6 +127,7 @@ export async function createTestWorkspace(
   for (const file of files) {
     const filePath = path.join(workspacePath, file.path)
     const fileDir = path.dirname(filePath)
+    // eslint-disable-next-line no-await-in-loop
     await fs.mkdir(fileDir, { recursive: true })
 
     const content =
@@ -134,12 +135,15 @@ export async function createTestWorkspace(
         ? file.content
         : JSON.stringify(file.content, null, 2)
 
+    // eslint-disable-next-line no-await-in-loop
     await fs.writeFile(filePath, content, 'utf8')
   }
 
   // Create node_modules directory if requested
   if (createNodeModules) {
-    await fs.mkdir(path.join(workspacePath, 'node_modules'), { recursive: true })
+    await fs.mkdir(path.join(workspacePath, 'node_modules'), {
+      recursive: true,
+    })
   }
 
   // Initialize git repository if requested
@@ -364,11 +368,11 @@ export async function setupPackageJson(
   }
 
   if (dependencies) {
-    pkg['dependencies'] = { ...pkg['dependencies'], ...dependencies }
+    pkg.dependencies = { ...pkg.dependencies, ...dependencies }
   }
 
   if (devDependencies) {
-    pkg['devDependencies'] = { ...pkg['devDependencies'], ...devDependencies }
+    pkg.devDependencies = { ...pkg.devDependencies, ...devDependencies }
   }
 
   await fs.writeFile(pkgPath, JSON.stringify(pkg, null, 2), 'utf8')

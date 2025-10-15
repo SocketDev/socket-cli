@@ -1,3 +1,4 @@
+
 import { describe, expect, it } from 'vitest'
 
 import { spawn } from '@socketsecurity/registry/lib/spawn'
@@ -91,7 +92,7 @@ describe('socket manifest cdxgen', async () => {
           [binCliPath, 'manifest', 'cdxgen', command],
           spawnOpts,
         ),
-        // @ts-ignore toHaveStderrInclude is defined above.
+        // @ts-expect-error toHaveStderrInclude is defined above.
       ).rejects.toHaveStderrInclude(
         `${LOG_SYMBOLS.fail} Unknown argument: ${command}`,
       )
@@ -105,7 +106,7 @@ describe('socket manifest cdxgen', async () => {
           [binCliPath, 'manifest', 'cdxgen', command],
           spawnOpts,
         ),
-        // @ts-ignore toHaveStderrInclude is defined above
+        // @ts-expect-error toHaveStderrInclude is defined above
       ).rejects.toHaveStderrInclude(
         `${LOG_SYMBOLS.fail} Unknown argument: ${command}`,
       )
@@ -119,7 +120,7 @@ describe('socket manifest cdxgen', async () => {
             [binCliPath, 'manifest', 'cdxgen', '-u', '-h', '--unknown'],
             spawnOpts,
           ),
-        // @ts-ignore toHaveStderrInclude is defined above
+        // @ts-expect-error toHaveStderrInclude is defined above
       ).rejects.toHaveStderrInclude(
         `${LOG_SYMBOLS.fail} Unknown arguments: -u and --unknown`,
       )

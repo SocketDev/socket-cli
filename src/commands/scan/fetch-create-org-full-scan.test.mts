@@ -3,7 +3,6 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   setupSdkMockError,
   setupSdkMockSuccess,
-  setupSdkMockWithCustomSdk,
   setupSdkSetupFailure,
 } from '../../../test/helpers/sdk-test-helpers.mts'
 

@@ -2,7 +2,6 @@ import { describe, expect } from 'vitest'
 
 import { cmdit, spawnSocketCli } from '../../test/utils.mts'
 import constants, {
-  API_V0_URL,
   FLAG_CONFIG,
   FLAG_DRY_RUN,
   FLAG_HELP,

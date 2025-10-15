@@ -5,6 +5,7 @@ import colors from 'yoctocolors-cjs'
 import { LOG_SYMBOLS } from '@socketsecurity/registry/lib/logger'
 import { stripAnsi } from '@socketsecurity/registry/lib/strings'
 
+
 import { debugNs, isDebugNs } from '../debug.mts'
 import {
   AuthError,
@@ -166,7 +167,7 @@ export function formatErrorForTerminal(
   const { body, message, title } = formatErrorForDisplay(error, options)
 
   const lines = [
-    `${LOG_SYMBOLS['error']} ${colors.red(colors.bold(title))}`,
+    `${LOG_SYMBOLS.error} ${colors.red(colors.bold(title))}`,
     message ? `  ${message}` : '',
   ]
 
@@ -241,12 +242,12 @@ export function formatExternalCliError(
       : undefined
 
   const lines = [
-    `${LOG_SYMBOLS['error']} ${colors.red(colors.bold(`Command failed: ${command}`))}`,
+    `${LOG_SYMBOLS.error} ${colors.red(colors.bold(`Command failed: ${command}`))}`,
   ]
 
   if (exitCode) {
     lines.push(
-      `  ${colors.dim(`Exit code:`)} ${colors.yellow(String(exitCode))}`,
+      `  ${colors.dim('Exit code:')} ${colors.yellow(String(exitCode))}`,
     )
   }
 
@@ -274,7 +275,7 @@ export function formatWarning(
   message: string,
   details?: string | undefined,
 ): string {
-  const lines = [`${LOG_SYMBOLS['warning']} ${colors.yellow(message)}`]
+  const lines = [`${LOG_SYMBOLS.warning} ${colors.yellow(message)}`]
 
   if (details) {
     lines.push(`  ${colors.dim(details)}`)
@@ -290,7 +291,7 @@ export function formatSuccess(
   message: string,
   details?: string | undefined,
 ): string {
-  const lines = [`${LOG_SYMBOLS['success']} ${colors.green(message)}`]
+  const lines = [`${LOG_SYMBOLS.success} ${colors.green(message)}`]
 
   if (details) {
     lines.push(`  ${colors.dim(details)}`)
@@ -306,7 +307,7 @@ export function formatInfo(
   message: string,
   details?: string | undefined,
 ): string {
-  const lines = [`${LOG_SYMBOLS['info']} ${colors.cyan(message)}`]
+  const lines = [`${LOG_SYMBOLS.info} ${colors.cyan(message)}`]
 
   if (details) {
     lines.push(`  ${colors.dim(details)}`)

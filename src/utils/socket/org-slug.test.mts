@@ -22,7 +22,7 @@ vi.mock('../config.mts', () => ({
 }))
 
 vi.mock('./link.mts', () => ({
-  webLink: vi.fn((url, text) => text),
+  webLink: vi.fn((_url, text) => text),
 }))
 
 vi.mock('../commands/scan/suggest-org-slug.mts', () => ({

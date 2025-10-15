@@ -79,8 +79,8 @@ const { ENV, PYTHON_MIN_VERSION, WIN32 } = constants
  *   // Returns: https://github.com/astral-sh/python-build-standalone/releases/download/20250918/cpython-3.10.18%2B20250918-aarch64-apple-darwin-install_only.tar.gz
  */
 function getPythonStandaloneUrl(
-  version: string = ENV['INLINED_SOCKET_CLI_PYTHON_VERSION'] || '',
-  tag: string = ENV['INLINED_SOCKET_CLI_PYTHON_BUILD_TAG'] || '',
+  version: string = ENV.INLINED_SOCKET_CLI_PYTHON_VERSION || '',
+  tag: string = ENV.INLINED_SOCKET_CLI_PYTHON_BUILD_TAG || '',
 ): string {
   const platform = os.platform()
   const arch = os.arch()
@@ -110,8 +110,8 @@ function getPythonStandaloneUrl(
  * Get the path to the cached Python installation directory.
  */
 function getPythonCachePath(): string {
-  const version = ENV['INLINED_SOCKET_CLI_PYTHON_VERSION']
-  const tag = ENV['INLINED_SOCKET_CLI_PYTHON_BUILD_TAG']
+  const version = ENV.INLINED_SOCKET_CLI_PYTHON_VERSION
+  const tag = ENV.INLINED_SOCKET_CLI_PYTHON_BUILD_TAG
   const platform = os.platform()
   const arch = os.arch()
 

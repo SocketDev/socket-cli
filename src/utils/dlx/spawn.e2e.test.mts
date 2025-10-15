@@ -109,7 +109,7 @@ describe('dlx e2e tests', () => {
       'successfully runs npm/npx with cowsay',
       async () => {
         // Force npm by not finding any pnpm/yarn lockfiles.
-        const npmLock = await findUp('package-lock.json')
+        const _npmLock = await findUp('package-lock.json')
         const pnpmLock = await findUp('pnpm-lock.yaml')
         const yarnLock = await findUp('yarn.lock')
 

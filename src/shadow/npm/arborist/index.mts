@@ -2,11 +2,11 @@
 
 import { createRequire } from 'node:module'
 
-// @ts-ignore
+// @ts-expect-error
 import UntypedEdge from '@npmcli/arborist/lib/edge.js'
-// @ts-ignore
+// @ts-expect-error
 import UntypedNode from '@npmcli/arborist/lib/node.js'
-// @ts-ignore
+// @ts-expect-error
 import UntypedOverrideSet from '@npmcli/arborist/lib/override-set.js'
 
 import {

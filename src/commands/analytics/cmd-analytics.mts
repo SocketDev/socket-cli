@@ -117,10 +117,9 @@ async function run(
     markdown,
   } = cli.flags as unknown as { file: string; json: boolean; markdown: boolean }
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = !!cli.flags.dryRun
 
-  const noLegacy =
-    !cli.flags['scope'] && !cli.flags['repo'] && !cli.flags['time']
+  const noLegacy = !cli.flags.scope && !cli.flags.repo && !cli.flags.time
 
   const hasApiToken = hasDefaultApiToken()
 
@@ -132,7 +131,7 @@ async function run(
       nook: true,
       test: noLegacy,
       message: `Legacy flags are no longer supported. See the ${webLink(V1_MIGRATION_GUIDE_URL, 'v1 migration guide')}.`,
-      fail: `received legacy flags`,
+      fail: 'received legacy flags',
     },
     {
       nook: true,

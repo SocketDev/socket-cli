@@ -34,7 +34,6 @@ async function getTestFiles() {
     for (const entry of entries) {
       const fullPath = path.join(dir, entry.name)
       if (entry.isDirectory() && !entry.name.startsWith('.')) {
-         
         await collectFiles(fullPath)
       } else if (
         entry.isFile() &&
@@ -303,7 +302,7 @@ async function main() {
   logger.info('\n--- Validation Results ---\n')
   const { errors, infos, warnings } = formatResults(results)
 
-  logger.info(`\n--- Summary ---`)
+  logger.info('\n--- Summary ---')
   logger.info(`Total test files: ${testFiles.length}`)
   logger.info(`Passed: ${results.filter(r => r.issues.length === 0).length}`)
   logger.info(

@@ -173,9 +173,9 @@ async function outputWithInk(
   orgSlug: string,
 ): Promise<void> {
   const React = await import('react')
-  // @ts-ignore - tsx files treated as CJS by tsgo without package.json type:module
+  // @ts-expect-error - tsx files treated as CJS by tsgo without package.json type:module
   const { render } = await import('ink')
-  // @ts-ignore - tsx files treated as CJS by tsgo without package.json type:module
+  // @ts-expect-error - tsx files treated as CJS by tsgo without package.json type:module
   const { AuditLogApp } = await import('./AuditLogApp.js')
 
   render(

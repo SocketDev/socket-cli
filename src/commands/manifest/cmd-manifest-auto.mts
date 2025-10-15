@@ -71,7 +71,7 @@ async function run(
   // TODO: Implement json/md further.
   const { json, markdown, verbose: verboseFlag } = cli.flags
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = !!cli.flags.dryRun
 
   const verbose = !!verboseFlag
 

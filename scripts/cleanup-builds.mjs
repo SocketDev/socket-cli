@@ -45,10 +45,8 @@ async function getDirSize(dirPath) {
       for (const entry of entries) {
         const entryPath = join(dir, entry.name)
         if (entry.isDirectory()) {
-           
           await walk(entryPath)
         } else {
-           
           const stats = await stat(entryPath)
           totalSize += stats.size
         }
@@ -116,7 +114,6 @@ async function cleanPkg() {
   for (const binary of rootBinaries) {
     const binaryPath = join(ROOT_DIR, binary)
     if (existsSync(binaryPath)) {
-       
       await rm(binaryPath, { force: true })
       console.log(`   ✅ Removed ${binary} from root (legacy)`)
     }
@@ -156,8 +153,8 @@ async function cleanOldNode() {
 
     // Remove old builds
     const dirPath = join(CUSTOM_NODE_BUILD_DIR, entry.name)
-     
-    totalRemoved += await removeDir(dirPath, entry.name + '/')
+
+    totalRemoved += await removeDir(dirPath, `${entry.name}/`)
   }
 
   if (totalRemoved === 0) {
@@ -303,8 +300,6 @@ async function main() {
       console.log('      pnpm run build:yao-pkg')
       console.log()
       break
-
-    case 'help':
     default:
       showHelp()
       break

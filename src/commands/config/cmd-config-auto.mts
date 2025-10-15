@@ -75,7 +75,7 @@ ${getSupportedConfigEntries()
     markdown: boolean
   }
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = !!cli.flags.dryRun
 
   const [key = ''] = cli.input
 

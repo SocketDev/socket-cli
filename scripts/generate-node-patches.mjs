@@ -22,9 +22,7 @@ const __dirname = dirname(__filename)
 // Parse arguments
 const args = process.argv.slice(2)
 const versionArg = args.find(arg => arg.startsWith('--version='))
-const NODE_VERSION = versionArg
-  ? versionArg.split('=')[1]
-  : 'v24.10.0'
+const NODE_VERSION = versionArg ? versionArg.split('=')[1] : 'v24.10.0'
 
 const ROOT_DIR = join(__dirname, '..')
 const BUILD_DIR = join(ROOT_DIR, '.custom-node-build')
@@ -91,17 +89,25 @@ async function generateV8IncludePathsPatch() {
 
     // Create a git diff for this file
     try {
-      const diff = await exec('git', ['diff', '--no-index', '/dev/null', file], {
-        cwd: NODE_DIR,
-      })
+      const diff = await exec(
+        'git',
+        ['diff', '--no-index', '/dev/null', file],
+        {
+          cwd: NODE_DIR,
+        },
+      )
       patchContent += `\n${diff}`
-    } catch (e) {
-      // git diff returns non-zero for differences, which is expected
+      // eslint-disable-next-line no-unused-vars
+    } catch (_e) {
+      // git diff returns non-zero for differences, which is expected.
       console.warn(`   Skipping ${file} (no changes or error)`)
     }
   }
 
-  const patchFile = join(PATCHES_OUTPUT_DIR, `fix-v8-include-paths-${NODE_VERSION.replace('v', 'v')}.patch`)
+  const patchFile = join(
+    PATCHES_OUTPUT_DIR,
+    `fix-v8-include-paths-${NODE_VERSION.replace('v', 'v')}.patch`,
+  )
   await writeFile(patchFile, patchContent)
   console.log(`✅ Generated: ${patchFile}`)
 
@@ -137,7 +143,10 @@ async function generateSeaPatch() {
    setOwnProperty,
 `
 
-  const patchFile = join(PATCHES_OUTPUT_DIR, `enable-sea-for-pkg-binaries-${NODE_VERSION.replace('v', 'v')}.patch`)
+  const patchFile = join(
+    PATCHES_OUTPUT_DIR,
+    `enable-sea-for-pkg-binaries-${NODE_VERSION.replace('v', 'v')}.patch`,
+  )
   await writeFile(patchFile, patchContent)
   console.log(`✅ Generated: ${patchFile}`)
 
@@ -155,7 +164,7 @@ async function main() {
   if (!existsSync(NODE_DIR)) {
     throw new Error(
       `Node.js source directory not found: ${NODE_DIR}\n` +
-      `Run build-yao-pkg-node.mjs first to download and patch Node.js source.`,
+        'Run build-yao-pkg-node.mjs first to download and patch Node.js source.',
     )
   }
 
@@ -187,7 +196,9 @@ async function main() {
   console.log()
   console.log('📝 Next steps:')
   console.log('   1. Review the generated patches')
-  console.log('   2. Update build-yao-pkg-node.mjs to reference new patch files')
+  console.log(
+    '   2. Update build-yao-pkg-node.mjs to reference new patch files',
+  )
   console.log('   3. Test the build with new patches')
   console.log()
 }

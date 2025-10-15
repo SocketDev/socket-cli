@@ -1,7 +1,10 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { handleOrgScanMetadata } from './handle-scan-metadata.mts'
-import { createErrorResult, createSuccessResult } from '../../../test/helpers/mocks.mts'
+import {
+  createErrorResult,
+  createSuccessResult,
+} from '../../../test/helpers/mocks.mts'
 
 // Mock the dependencies.
 vi.mock('./fetch-scan-metadata.mts', () => ({
@@ -78,7 +81,7 @@ describe('handleOrgScanMetadata', () => {
     const { fetchScanMetadata } = await import('./fetch-scan-metadata.mts')
     const { outputScanMetadata } = await import('./output-scan-metadata.mts')
     const mockFetch = vi.mocked(fetchScanMetadata)
-    const mockOutput = vi.mocked(outputScanMetadata)
+    const _mockOutput = vi.mocked(outputScanMetadata)
 
     const scanIds = [
       'scan-abc123',

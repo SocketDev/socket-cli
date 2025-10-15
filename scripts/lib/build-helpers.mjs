@@ -5,7 +5,6 @@
  */
 
 import { promises as fs, statfsSync } from 'node:fs'
-import { homedir } from 'node:os'
 import { join } from 'node:path'
 
 import { spawn } from '@socketsecurity/registry/lib/spawn'
@@ -40,7 +39,7 @@ export async function checkDiskSpace(path) {
   try {
     const stats = statfsSync(path)
     const availableBytes = stats.bavail * stats.bsize
-    const availableGB = availableBytes / (1024 ** 3)
+    const availableGB = availableBytes / 1024 ** 3
     return {
       availableGB: Math.floor(availableGB),
       availableBytes,
@@ -71,12 +70,19 @@ export async function verifyFileIntegrity(filePath) {
 
     // Check file is not an HTML error page.
     if (content.includes('<html>') || content.includes('<!DOCTYPE')) {
-      return { valid: false, reason: 'File contains HTML (probably error page)' }
+      return {
+        valid: false,
+        reason: 'File contains HTML (probably error page)',
+      }
     }
 
     // For patch files, check they start with diff markers.
     if (filePath.endsWith('.patch')) {
-      if (!content.includes('diff ') && !content.includes('---') && !content.includes('+++')) {
+      if (
+        !content.includes('diff ') &&
+        !content.includes('---') &&
+        !content.includes('+++')
+      ) {
         return { valid: false, reason: 'Patch file missing diff markers' }
       }
     }
@@ -180,7 +186,7 @@ export function getBuildLogPath(buildDir) {
 export async function saveBuildLog(buildDir, content) {
   const logPath = getBuildLogPath(buildDir)
   try {
-    await fs.appendFile(logPath, content + '\n')
+    await fs.appendFile(logPath, `${content}\n`)
   } catch {
     // Don't fail build if logging fails.
   }
@@ -228,7 +234,7 @@ export async function createCheckpoint(buildDir, step) {
       JSON.stringify({
         step,
         timestamp: Date.now(),
-      })
+      }),
     )
   } catch {
     // Don't fail if checkpoint creation fails.
@@ -300,7 +306,8 @@ export async function checkNetworkConnectivity() {
 
     const statusCode = result.stdout
     return {
-      connected: statusCode === '200' || statusCode === '301' || statusCode === '302',
+      connected:
+        statusCode === '200' || statusCode === '301' || statusCode === '302',
       statusCode,
     }
   } catch {
@@ -344,7 +351,7 @@ export async function smokeTestBinary(binaryPath, env = {}) {
     const jsResult = await execCapture(
       binaryPath,
       ['-e', 'console.log("OK")'],
-      { env }
+      { env },
     )
     if (jsResult.code !== 0 || jsResult.stdout !== 'OK') {
       return { passed: false, reason: 'JS execution failed' }

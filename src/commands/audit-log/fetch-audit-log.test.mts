@@ -84,11 +84,7 @@ describe('fetchAuditLog', () => {
   })
 
   it('handles API call failure', async () => {
-    await setupSdkMockError(
-      'getAuditLogEvents',
-      'Unauthorized access',
-      403,
-    )
+    await setupSdkMockError('getAuditLogEvents', 'Unauthorized access', 403)
 
     const config = {
       logType: 'security',

@@ -109,11 +109,11 @@ export async function startPatch(packageSpec) {
       )
 
       if (!shouldOverwrite) {
-        throw new Error(`Patch creation cancelled by user`)
+        throw new Error('Patch creation cancelled by user')
       }
 
       // Remove existing patch directory.
-      console.log(`Removing existing patch directory...`)
+      console.log('Removing existing patch directory...')
       rmSync(existingPatchDir, { force: true, recursive: true })
 
       // Try pnpm patch again.
@@ -211,7 +211,7 @@ export async function createPatch(patchDef) {
     }
 
     if (!hasChanges) {
-      console.log(`No changes made, skipping patch commit`)
+      console.log('No changes made, skipping patch commit')
       // Cleanup temp directory.
       if (existsSync(patchPath)) {
         rmSync(patchPath, { force: true, recursive: true })

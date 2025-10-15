@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-'use strict'
 
 /** @fileoverview Socket CLI entry point. Executes the unified CLI bundle. */
 

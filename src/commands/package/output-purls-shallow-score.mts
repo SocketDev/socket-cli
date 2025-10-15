@@ -10,6 +10,7 @@ import { serializeResultJson } from '../../utils/output/result-json.mjs'
 import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketArtifact } from '../../utils/alert/artifact.mts'
 
+
 // This is a simplified view of an artifact. Potentially merged with other artifacts.
 interface DedupedArtifact {
   ecosystem: string // artifact.type
@@ -77,7 +78,7 @@ function formatReportCard(
   if (!artifact.ecosystem) {
     debug(`miss: artifact ecosystem ${JSON.stringify(artifact)}`)
   }
-  const purl = `pkg:${artifact.ecosystem}/${artifact.name}${artifact.version ? '@' + artifact.version : ''}`
+  const purl = `pkg:${artifact.ecosystem}/${artifact.name}${artifact.version ? `@${artifact.version}` : ''}`
 
   // Calculate proper padding based on longest label.
   const maxLabelLength = Math.max(
@@ -86,7 +87,7 @@ function formatReportCard(
   const labelPadding = maxLabelLength + 2 // +2 for ": "
 
   return [
-    'Package: ' + (colorize ? colors.bold(purl) : purl),
+    `Package: ${colorize ? colors.bold(purl) : purl}`,
     '',
     ...Object.entries(scoreResult).map(
       score =>

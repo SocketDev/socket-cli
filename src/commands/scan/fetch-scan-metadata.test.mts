@@ -15,11 +15,14 @@ describe('fetchScanMetadata', () => {
   it('fetches scan metadata successfully', async () => {
     const { fetchScanMetadata } = await import('./fetch-scan-metadata.mts')
 
-    const { mockHandleApi, mockSdk } = await setupSdkMockSuccess('getOrgFullScanMetadata', {
-      id: 'scan-123',
-      status: 'completed',
-      packageCount: 150,
-    })
+    const { mockHandleApi, mockSdk } = await setupSdkMockSuccess(
+      'getOrgFullScanMetadata',
+      {
+        id: 'scan-123',
+        status: 'completed',
+        packageCount: 150,
+      },
+    )
 
     const result = await fetchScanMetadata('test-org', 'scan-123')
 
@@ -36,7 +39,9 @@ describe('fetchScanMetadata', () => {
 
   it('handles SDK setup failure', async () => {
     const { fetchScanMetadata } = await import('./fetch-scan-metadata.mts')
-    const { setupSdkSetupFailure } = await import('../../../test/helpers/sdk-test-helpers.mts')
+    const { setupSdkSetupFailure } = await import(
+      '../../../test/helpers/sdk-test-helpers.mts'
+    )
 
     await setupSdkSetupFailure('Failed to setup SDK', {
       cause: 'Invalid configuration',
@@ -51,7 +56,9 @@ describe('fetchScanMetadata', () => {
 
   it('handles API call failure', async () => {
     const { fetchScanMetadata } = await import('./fetch-scan-metadata.mts')
-    const { setupSdkMockError } = await import('../../../test/helpers/sdk-test-helpers.mts')
+    const { setupSdkMockError } = await import(
+      '../../../test/helpers/sdk-test-helpers.mts'
+    )
 
     await setupSdkMockError('getOrgFullScanMetadata', 'Not found', 404)
 
@@ -64,7 +71,10 @@ describe('fetchScanMetadata', () => {
   it('passes custom SDK options', async () => {
     const { fetchScanMetadata } = await import('./fetch-scan-metadata.mts')
 
-    const { mockSdk, mockSetupSdk } = await setupSdkMockSuccess('getOrgFullScanMetadata', {})
+    const { mockSdk, mockSetupSdk } = await setupSdkMockSuccess(
+      'getOrgFullScanMetadata',
+      {},
+    )
 
     const options = {
       sdkOpts: {

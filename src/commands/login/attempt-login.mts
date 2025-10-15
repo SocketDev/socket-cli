@@ -165,6 +165,6 @@ export async function attemptLogin(
     }
   } catch {
     process.exitCode = 1
-    logger.fail(`API login failed`)
+    logger.fail('API login failed')
   }
 }

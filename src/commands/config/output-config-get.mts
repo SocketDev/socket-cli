@@ -28,7 +28,7 @@ export async function outputConfigGet(
   const readOnly = isConfigFromFlag()
 
   if (outputKind === 'markdown') {
-    logger.log(`# Config Value`)
+    logger.log('# Config Value')
     logger.log('')
     logger.log(`Config key '${key}' has value '${result.data}`)
     if (readOnly) {

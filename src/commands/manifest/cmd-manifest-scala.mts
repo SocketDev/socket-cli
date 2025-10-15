@@ -105,7 +105,7 @@ async function run(
 
   const { json = false, markdown = false } = cli.flags
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = !!cli.flags.dryRun
 
   let [cwd = '.'] = cli.input
   // Note: path.resolve vs .join:
@@ -187,7 +187,7 @@ async function run(
     nook: true,
     test: cli.input.length <= 1,
     message: 'Can only accept one DIR (make sure to escape spaces!)',
-    fail: 'received ' + cli.input.length,
+    fail: `received ${cli.input.length}`,
   })
   if (!wasValidInput) {
     return

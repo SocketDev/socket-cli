@@ -16,7 +16,7 @@ import path from 'node:path'
 // Detect how this binary was invoked.
 function getInvocationMode(): string {
   // Check environment variable first (for explicit mode).
-  const envMode = process.env['SOCKET_CLI_MODE']
+  const envMode = process.env.SOCKET_CLI_MODE
   if (envMode) {
     return envMode
   }
@@ -74,7 +74,7 @@ async function main() {
   const mode = getInvocationMode()
 
   // Set environment variable for child processes.
-  process.env['SOCKET_CLI_MODE'] = mode
+  process.env.SOCKET_CLI_MODE = mode
 
   // Import and run the appropriate CLI function.
   switch (mode) {
@@ -101,8 +101,6 @@ async function main() {
       await runYarnCli()
       break
     }
-
-    case 'socket':
     default:
       await import('./cli-entry.mjs')
       break

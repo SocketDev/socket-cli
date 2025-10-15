@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { fetchViewRepo } from './fetch-view-repo.mts'
-import { createSuccessResult } from '../../../test/helpers/mocks.mts'
 import {
   setupSdkMockError,
   setupSdkMockSuccess,

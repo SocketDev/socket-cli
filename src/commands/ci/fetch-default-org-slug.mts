@@ -35,7 +35,7 @@ export async function getDefaultOrgSlug(): Promise<CResult<string>> {
     return {
       ok: false,
       message: 'Failed to establish identity',
-      data: `No organization associated with the Socket API token. Unable to continue.`,
+      data: 'No organization associated with the Socket API token. Unable to continue.',
     }
   }
 
@@ -44,7 +44,7 @@ export async function getDefaultOrgSlug(): Promise<CResult<string>> {
     return {
       ok: false,
       message: 'Failed to establish identity',
-      data: `Cannot determine the default organization for the API token. Unable to continue.`,
+      data: 'Cannot determine the default organization for the API token. Unable to continue.',
     }
   }
 

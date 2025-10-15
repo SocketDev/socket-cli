@@ -125,11 +125,11 @@ async function run(
     reachSkipCache: boolean
   }
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = !!cli.flags.dryRun
 
   // Process comma-separated values for isMultiple flags.
-  const reachEcosystemsRaw = cmdFlagValueToArray(cli.flags['reachEcosystems'])
-  const reachExcludePaths = cmdFlagValueToArray(cli.flags['reachExcludePaths'])
+  const reachEcosystemsRaw = cmdFlagValueToArray(cli.flags.reachEcosystems)
+  const reachExcludePaths = cmdFlagValueToArray(cli.flags.reachExcludePaths)
 
   // Validate ecosystem values.
   const reachEcosystems: PURL_Type[] = []

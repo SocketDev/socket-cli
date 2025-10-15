@@ -167,10 +167,10 @@ export async function performReachabilityAnalysis(
   // do not pass default repo and branch name to coana to avoid mixing
   // buckets (cached configuration) from projects that are likely very different.
   if (repoName && repoName !== constants.SOCKET_DEFAULT_REPOSITORY) {
-    coanaEnv['SOCKET_REPO_NAME'] = repoName
+    coanaEnv.SOCKET_REPO_NAME = repoName
   }
   if (branchName && branchName !== constants.SOCKET_DEFAULT_BRANCH) {
-    coanaEnv['SOCKET_BRANCH_NAME'] = branchName
+    coanaEnv.SOCKET_BRANCH_NAME = branchName
   }
 
   // Run Coana with the manifests tar hash.

@@ -61,17 +61,16 @@ function formatUpdateMessage(options: UpdateNotificationOptions): {
         'View changelog',
       ),
     }
-  } else {
-    // npm installation - show npm install command
-    return {
-      message,
-      changelog: socketPackageLink(
-        constants.NPM,
-        name,
-        `files/${latest}/${constants.CHANGELOG_MD}`,
-        'View changelog',
-      ),
-    }
+  }
+  // npm installation - show npm install command
+  return {
+    message,
+    changelog: socketPackageLink(
+      constants.NPM,
+      name,
+      `files/${latest}/${constants.CHANGELOG_MD}`,
+      'View changelog',
+    ),
   }
 }
 
@@ -91,7 +90,7 @@ function showUpdateNotification(options: UpdateNotificationOptions): void {
       logger.log(formatted.command)
     }
     logger.log(`📝 ${formatted.changelog}`)
-  } catch (error) {
+  } catch (_error) {
     // Fallback to console.log if logger fails.
     const { current, latest, name } = options
     const seaBinPath = getSeaBinaryPath()

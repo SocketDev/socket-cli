@@ -48,8 +48,8 @@ function getRawSpaceSizeFlags(): RawSpaceSizeFlags {
       importMeta: { url: import.meta.url } as ImportMeta,
     })
     _rawSpaceSizeFlags = {
-      maxOldSpaceSize: Number(cli.flags['maxOldSpaceSize']),
-      maxSemiSpaceSize: Number(cli.flags['maxSemiSpaceSize']),
+      maxOldSpaceSize: Number(cli.flags.maxOldSpaceSize),
+      maxSemiSpaceSize: Number(cli.flags.maxSemiSpaceSize),
     }
   }
   return _rawSpaceSizeFlags!

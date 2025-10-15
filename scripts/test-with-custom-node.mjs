@@ -36,7 +36,7 @@ const IS_MACOS = platform() === 'darwin'
 const pkgCacheDir = join(
   process.env.HOME || process.env.USERPROFILE,
   '.pkg-cache',
-  'v3.5'
+  'v3.5',
 )
 const targetName = `built-${NODE_VERSION}-${platform()}-${ARCH}${IS_MACOS && ARCH === 'arm64' ? '-signed' : ''}`
 const CUSTOM_NODE_PATH = join(pkgCacheDir, targetName)
@@ -66,9 +66,7 @@ async function execCapture(command, args = [], options = {}) {
   // For custom Node binaries built with yao-pkg patches:
   // Set PKG_EXECPATH to empty string to run as regular Node.js
   // See: https://github.com/yao-pkg/pkg#detect-if-the-app-is-running-as-packaged
-  const execEnv = customNode
-    ? { ...env, PKG_EXECPATH: '' }
-    : env
+  const execEnv = customNode ? { ...env, PKG_EXECPATH: '' } : env
 
   const result = await spawn(command, args, {
     cwd,
@@ -112,17 +110,12 @@ async function runTests(nodePath, testFiles, label, isCustomNode = false) {
 
   const result = await spawn(
     nodePath,
-    [
-      vitestEntry,
-      'run',
-      ...testFiles,
-      '--reporter=verbose',
-    ],
+    [vitestEntry, 'run', ...testFiles, '--reporter=verbose'],
     {
       cwd: ROOT_DIR,
       env: testEnv,
       stdio: 'inherit',
-    }
+    },
   )
 
   const duration = Date.now() - startTime
@@ -158,7 +151,9 @@ function verifyCustomNode() {
  * Get Node version.
  */
 async function getNodeVersion(nodePath, isCustomNode = false) {
-  const result = await execCapture(nodePath, ['--version'], { customNode: isCustomNode })
+  const result = await execCapture(nodePath, ['--version'], {
+    customNode: isCustomNode,
+  })
   if (result.code === 0) {
     return result.stdout
   }
@@ -207,12 +202,22 @@ async function main() {
   logger.logNewline()
 
   // Run with custom Node.
-  const customResult = await runTests(CUSTOM_NODE_PATH, testFiles, `${testLabel} (Custom Node)`, true)
+  const customResult = await runTests(
+    CUSTOM_NODE_PATH,
+    testFiles,
+    `${testLabel} (Custom Node)`,
+    true,
+  )
 
   // Compare mode: also run with system Node.
   if (COMPARE_MODE) {
     logger.logNewline()
-    const systemResult = await runTests('node', testFiles, `${testLabel} (System Node)`, false)
+    const systemResult = await runTests(
+      'node',
+      testFiles,
+      `${testLabel} (System Node)`,
+      false,
+    )
 
     logger.logNewline()
     logger.log('━'.repeat(60))
@@ -223,7 +228,7 @@ async function main() {
       const diff = customResult.duration - systemResult.duration
       const pct = ((diff / systemResult.duration) * 100).toFixed(1)
       if (Math.abs(diff) < 1000) {
-        logger.info(`Performance: Similar (within 1 second)`)
+        logger.info('Performance: Similar (within 1 second)')
       } else if (diff > 0) {
         logger.warn(`Performance: Custom Node ${pct}% slower`)
       } else {
@@ -251,7 +256,9 @@ async function main() {
 
   logger.fail('Custom Node binary has issues')
   logger.substep('Review test output above for details')
-  logger.substep('Consider rebuilding: node scripts/build-yao-pkg-node.mjs --clean')
+  logger.substep(
+    'Consider rebuilding: node scripts/build-yao-pkg-node.mjs --clean',
+  )
   logger.logNewline()
   process.exit(1)
 }

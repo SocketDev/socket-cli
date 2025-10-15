@@ -128,7 +128,7 @@ export { logger }
  * debug('Scanning directory...') // Only logs if DEBUG=socket:cli:scan
  */
 export function createDebugLogger(namespace: string): (...args: any[]) => void {
-  const debugEnv = process.env['DEBUG']
+  const debugEnv = process.env.DEBUG
   const enabled =
     debugEnv === '*' ||
     debugEnv?.split(',').some(ns => {
@@ -158,16 +158,16 @@ export class LoggerFactory {
    * @returns A cached or new command logger
    */
   static getLogger(commandName: string): CommandLogger {
-    if (!this.instances.has(commandName)) {
-      this.instances.set(commandName, createCommandLogger(commandName))
+    if (!LoggerFactory.instances.has(commandName)) {
+      LoggerFactory.instances.set(commandName, createCommandLogger(commandName))
     }
-    return this.instances.get(commandName)!
+    return LoggerFactory.instances.get(commandName)!
   }
 
   /**
    * Clear all cached loggers
    */
   static clear(): void {
-    this.instances.clear()
+    LoggerFactory.instances.clear()
   }
 }

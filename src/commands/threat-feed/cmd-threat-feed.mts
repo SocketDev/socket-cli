@@ -184,9 +184,9 @@ async function run(
     version,
   } = cli.flags
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = !!cli.flags.dryRun
 
-  const interactive = !!cli.flags['interactive']
+  const interactive = !!cli.flags.interactive
 
   let ecoFilter = String(eco || '')
   let versionFilter = String(version || '')
@@ -274,13 +274,13 @@ async function run(
   }
 
   await handleThreatFeed({
-    direction: String(cli.flags['direction'] || 'desc'),
+    direction: String(cli.flags.direction || 'desc'),
     ecosystem: ecoFilter,
     filter: typeFilter,
     outputKind,
     orgSlug,
-    page: String(cli.flags['page'] || '1'),
-    perPage: Number(cli.flags['perPage']) || 30,
+    page: String(cli.flags.page || '1'),
+    perPage: Number(cli.flags.perPage) || 30,
     pkg: nameFilter,
     version: versionFilter,
   })

@@ -1,7 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { fetchDeleteRepo } from './fetch-delete-repo.mts'
-import { createErrorResult, createSuccessResult } from '../../../test/helpers/mocks.mts'
+import {
+  createErrorResult,
+  createSuccessResult,
+} from '../../../test/helpers/mocks.mts'
 
 // Mock the dependencies.
 vi.mock('../../utils/sdk.mts', () => ({
@@ -38,7 +41,10 @@ describe('fetchDeleteRepo', () => {
     const { withSdk } = await import('../../utils/sdk.mts')
     const mockWithSdk = vi.mocked(withSdk)
 
-    const error = createErrorResult('Failed to setup SDK', { code: 1, cause: 'Missing API token' })
+    const error = createErrorResult('Failed to setup SDK', {
+      code: 1,
+      cause: 'Missing API token',
+    })
     mockWithSdk.mockResolvedValueOnce(error)
 
     const result = await fetchDeleteRepo('org', 'repo')

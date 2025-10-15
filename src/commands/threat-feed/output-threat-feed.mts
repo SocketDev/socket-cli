@@ -36,9 +36,9 @@ export async function outputThreatFeed(
  */
 async function outputWithInk(data: ThreadFeedResponse): Promise<void> {
   const React = await import('react')
-  // @ts-ignore - tsx files treated as CJS by tsgo without package.json type:module
+  // @ts-expect-error - tsx files treated as CJS by tsgo without package.json type:module
   const { render } = await import('ink')
-  // @ts-ignore - tsx files treated as CJS by tsgo without package.json type:module
+  // @ts-expect-error - tsx files treated as CJS by tsgo without package.json type:module
   const { ThreatFeedApp } = await import('./ThreatFeedApp.js')
 
   render(React.createElement(ThreatFeedApp, { results: data.results }))

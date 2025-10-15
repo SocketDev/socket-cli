@@ -48,9 +48,9 @@ export function cmdFlagValueToArray(value: any): string[] {
 export function cmdFlagsToString(args: string[] | readonly string[]): string {
   const result = []
   for (let i = 0, { length } = args; i < length; i += 1) {
-    const arg = args[i]!.trim()
+    const arg = args[i]?.trim()
     if (arg.startsWith('--')) {
-      const nextArg = i + 1 < length ? args[i + 1]!.trim() : undefined
+      const nextArg = i + 1 < length ? args[i + 1]?.trim() : undefined
       // Check if the next item exists and is NOT another flag.
       if (nextArg && !nextArg.startsWith('--') && !nextArg.startsWith('-')) {
         result.push(`${arg}=${nextArg}`)
@@ -151,7 +151,7 @@ export function getConfigFlag(
   argv: string[] | readonly string[],
 ): string | undefined {
   for (let i = 0, { length } = argv; i < length; i += 1) {
-    const arg = argv[i]!.trim()
+    const arg = argv[i]?.trim()
     // Handle --config=value format.
     if (arg.startsWith(CONFIG_FLAG_ASSIGNMENT)) {
       return arg.slice(CONFIG_FLAG_ASSIGNMENT_LENGTH)

@@ -77,7 +77,7 @@ export async function convertSbtToMaven({
       logger.log('Result:\n```')
       logger.log(await safeReadFile(poms[0]!))
       logger.log('```')
-      logger.success(`OK`)
+      logger.success('OK')
     } else if (out === '-') {
       process.exitCode = 1
       logger.error('')
@@ -107,7 +107,7 @@ export async function convertSbtToMaven({
       // await renamep(loc, out)
       logger.success(`Generated ${poms.length} pom files`)
       poms.forEach(fn => logger.log('-', fn))
-      logger.success(`OK`)
+      logger.success('OK')
     }
   } catch (e) {
     process.exitCode = 1

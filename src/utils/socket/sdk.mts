@@ -156,8 +156,7 @@ export async function setupSdk(
         name: constants.ENV.INLINED_SOCKET_CLI_NAME || 'socket',
         version: constants.ENV.INLINED_SOCKET_CLI_VERSION || '0.0.0',
         homepage:
-          constants.ENV.INLINED_SOCKET_CLI_HOMEPAGE ||
-          'https://socket.dev/cli',
+          constants.ENV.INLINED_SOCKET_CLI_HOMEPAGE || 'https://socket.dev/cli',
       }),
     }),
   }

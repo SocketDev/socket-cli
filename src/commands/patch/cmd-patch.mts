@@ -123,7 +123,7 @@ async function run(
 
   const { spinner } = constants
 
-  const purlObjs = arrayUnique(cmdFlagValueToArray(cli.flags['purl']))
+  const purlObjs = arrayUnique(cmdFlagValueToArray(cli.flags.purl))
     .map(p => getPurlObject(p, { throws: false }))
     .filter(Boolean) as Array<PurlObject<PackageURL>>
 

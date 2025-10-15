@@ -31,7 +31,7 @@ export type ArgvObject = {
 }
 
 function argvObjectToArray(argvObj: ArgvObject): string[] {
-  if (argvObj['help']) {
+  if (argvObj.help) {
     return [FLAG_HELP]
   }
   const result = []
@@ -51,7 +51,7 @@ function argvObjectToArray(argvObj: ArgvObject): string[] {
       result.push(`--${key}`, ...value.map(String))
     }
   }
-  const pathArgs = argvObj['_'] as string[]
+  const pathArgs = argvObj._ as string[]
   if (Array.isArray(pathArgs)) {
     result.push(...pathArgs)
   }
@@ -92,11 +92,11 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
   let cleanupPackageLock = false
   if (
     yarnLockPath &&
-    argvMutable['type'] !== YARN &&
-    nodejsPlatformTypes.has(argvMutable['type'] as string)
+    argvMutable.type !== YARN &&
+    nodejsPlatformTypes.has(argvMutable.type as string)
   ) {
     if (npmLockPath) {
-      argvMutable['type'] = NPM
+      argvMutable.type = NPM
     } else {
       // Use synp to create a package-lock.json from the yarn.lock,
       // based on the node_modules folder, for a more accurate SBOM.
@@ -109,7 +109,7 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
           },
         )
         await synpResult.spawnPromise
-        argvMutable['type'] = NPM
+        argvMutable.type = NPM
         cleanupPackageLock = true
       } catch {}
     }
@@ -132,7 +132,7 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
       } catch {}
     }
 
-    const outputPath = argvMutable['output'] as string
+    const outputPath = argvMutable.output as string
     if (outputPath) {
       const fullOutputPath = path.join(process.cwd(), outputPath)
       if (existsSync(fullOutputPath)) {

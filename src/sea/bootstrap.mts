@@ -15,14 +15,14 @@ import https from 'node:https'
 import os from 'node:os'
 import path from 'node:path'
 
-// @ts-ignore - nanotar module not available currently
+// @ts-expect-error - nanotar module not available currently
 import { parseTarGzip } from 'nanotar'
 
 // Configurable constants with environment variable overrides.
 // os.homedir() can throw if no home directory is available.
 let SOCKET_HOME: string
 try {
-  SOCKET_HOME = process.env['SOCKET_HOME'] || path.join(os.homedir(), '.socket')
+  SOCKET_HOME = process.env.SOCKET_HOME || path.join(os.homedir(), '.socket')
 } catch (error) {
   console.error(
     'Fatal: Unable to determine home directory. Set SOCKET_HOME environment variable.',
@@ -38,13 +38,13 @@ const IPC_HANDSHAKE_TIMEOUT_MS = 5_000
 const LOCK_MAX_RETRIES = 60
 const LOCK_RETRY_DELAY_MS = 500
 const NPM_REGISTRY =
-  process.env['SOCKET_NPM_REGISTRY'] ||
-  process.env['NPM_REGISTRY'] ||
+  process.env.SOCKET_NPM_REGISTRY ||
+  process.env.NPM_REGISTRY ||
   'https://registry.npmjs.org'
 const SOCKET_CLI_DIR =
-  process.env['SOCKET_CLI_DIR'] || path.join(SOCKET_HOME, '_cli')
+  process.env.SOCKET_CLI_DIR || path.join(SOCKET_HOME, '_cli')
 const SOCKET_CLI_PACKAGE =
-  process.env['SOCKET_CLI_PACKAGE'] || '@socketsecurity/cli'
+  process.env.SOCKET_CLI_PACKAGE || '@socketsecurity/cli'
 const SOCKET_CLI_PACKAGE_JSON = path.join(SOCKET_CLI_DIR, 'package.json')
 
 // ============================================================================
@@ -55,7 +55,7 @@ const SOCKET_CLI_PACKAGE_JSON = path.join(SOCKET_CLI_DIR, 'package.json')
  * Log message to stderr only in debug mode.
  */
 function debugLog(message: string): void {
-  if (process.env['DEBUG']) {
+  if (process.env.DEBUG) {
     console.error(message)
   }
 }
@@ -194,7 +194,7 @@ async function acquireLock(): Promise<string> {
   }
 
   throw new Error(
-    `Failed to acquire installation lock: another process is installing CLI`,
+    'Failed to acquire installation lock: another process is installing CLI',
   )
 }
 
@@ -393,7 +393,7 @@ async function extractTarball(tarballPath: string): Promise<void> {
       // We parse it as base-8 (octal) and apply it with fs.chmod.
       // This ensures CLI entry points remain executable after extraction.
       if (file.attrs?.mode) {
-        const mode = parseInt(file.attrs.mode, 8)
+        const mode = Number.parseInt(file.attrs.mode, 8)
         // Validate mode is a valid number before attempting chmod.
         if (!Number.isNaN(mode)) {
           await retryWithBackoff(() => fs.chmod(targetPath, mode)).catch(
@@ -484,7 +484,7 @@ async function getSystemNodeVersion(
     // Parse version (e.g., "v22.1.0" -> 22).
     const match = versionOutput.trim().match(/(?<=^v)\d+/)
     if (match) {
-      const majorVersion = parseInt(match[0], 10)
+      const majorVersion = Number.parseInt(match[0], 10)
       const systemNodeVersion = versionOutput.trim()
 
       if (majorVersion >= minNodeVersion) {
@@ -492,12 +492,11 @@ async function getSystemNodeVersion(
           `Using system Node.js ${systemNodeVersion} to run Socket CLI`,
         )
         return systemNodeVersion
-      } else {
-        console.error(
-          `System Node.js ${systemNodeVersion} is too old (need >=v${minNodeVersion})`,
-        )
-        console.error('Falling back to embedded Node.js runtime')
       }
+      console.error(
+        `System Node.js ${systemNodeVersion} is too old (need >=v${minNodeVersion})`,
+      )
+      console.error('Falling back to embedded Node.js runtime')
     }
   } catch {
     console.error('System Node.js not found, using embedded runtime')
@@ -521,14 +520,13 @@ async function httpsGet(url: string): Promise<Buffer> {
         if (res.statusCode === 301 || res.statusCode === 302) {
           if (res.headers.location) {
             return httpsGet(res.headers.location).then(resolve, reject)
-          } else {
-            reject(
-              new Error(
-                `HTTP ${res.statusCode} redirect missing Location header`,
-              ),
-            )
-            return
           }
+          reject(
+            new Error(
+              `HTTP ${res.statusCode} redirect missing Location header`,
+            ),
+          )
+          return
         }
 
         if (res.statusCode !== 200) {
@@ -814,7 +812,10 @@ async function main(): Promise<void> {
     const args = process.argv.slice(2)
 
     // process.env.MIN_NODE_VERSION is inlined at build time.
-    const minNodeVersion = parseInt(process.env['MIN_NODE_VERSION'] ?? '0', 0)
+    const minNodeVersion = Number.parseInt(
+      process.env.MIN_NODE_VERSION ?? '0',
+      0,
+    )
 
     const systemNodeVersion = await getSystemNodeVersion(minNodeVersion)
 

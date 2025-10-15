@@ -5,6 +5,7 @@ import { queryApiSafeJson } from '../../utils/socket/api.mjs'
 import type { CResult } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
+
 export async function fetchDiffScan({
   id1,
   id2,

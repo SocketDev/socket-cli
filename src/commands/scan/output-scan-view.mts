@@ -82,8 +82,7 @@ export async function outputScanView(
     'score',
   ])
 
-  const report =
-    `
+  const report = `${`
 # Scan Details
 
 These are the artifacts and their scores found.
@@ -93,7 +92,7 @@ Scan ID: ${scanId}
 ${md}
 
 View this report at: ${constants.SOCKET_WEBSITE_URL}/dashboard/org/${orgSlug}/sbom/${scanId}
-  `.trim() + '\n'
+  `.trim()}\n`
 
   if (filePath && filePath !== '-') {
     try {

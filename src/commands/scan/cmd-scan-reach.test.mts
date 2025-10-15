@@ -9,7 +9,7 @@ import constants, {
 } from '../../../src/constants.mts'
 import { cmdit, spawnSocketCli, testPath } from '../../../test/utils.mts'
 
-const fixtureBaseDir = path.join(testPath, 'fixtures/commands/scan/reach')
+const _fixtureBaseDir = path.join(testPath, 'fixtures/commands/scan/reach')
 
 describe('socket scan reach', async () => {
   const { binCliPath } = constants

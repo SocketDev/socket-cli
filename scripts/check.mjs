@@ -5,7 +5,10 @@
 
 import { parseArgs } from '@socketsecurity/registry/lib/argv/parse'
 import { logger } from '@socketsecurity/registry/lib/logger'
-import { printFooter, printHeader } from '@socketsecurity/registry/lib/stdio/header'
+import {
+  printFooter,
+  printHeader,
+} from '@socketsecurity/registry/lib/stdio/header'
 
 import { runCommandQuiet } from './utils/run-command.mjs'
 
@@ -13,16 +16,25 @@ import { runCommandQuiet } from './utils/run-command.mjs'
  * Run ESLint check via lint script.
  */
 async function runEslintCheck(options = {}) {
-  const { all = false, changed = false, quiet = false, staged = false } = options
+  const {
+    all = false,
+    changed = false,
+    quiet = false,
+    staged = false,
+  } = options
 
   if (!quiet) {
     logger.progress('Checking ESLint')
   }
 
   const args = ['run', 'lint']
-  if (all) {args.push('--all')}
-  else if (staged) {args.push('--staged')}
-  else if (changed) {args.push('--changed')}
+  if (all) {
+    args.push('--all')
+  } else if (staged) {
+    args.push('--staged')
+  } else if (changed) {
+    args.push('--changed')
+  }
 
   const result = await runCommandQuiet('pnpm', args)
 
@@ -162,7 +174,7 @@ async function main() {
         all: values.all,
         changed: values.changed,
         quiet,
-        staged: values.staged
+        staged: values.staged,
       })
       if (exitCode !== 0) {
         if (!quiet) {

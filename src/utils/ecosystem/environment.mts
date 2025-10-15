@@ -34,7 +34,6 @@ import { parse as parseBunLockb } from '@socketregistry/hyrious__bun.lockb/index
 import { whichBin } from '@socketsecurity/registry/lib/bin'
 import { debugDirNs, debugNs } from '@socketsecurity/registry/lib/debug'
 import { readFileBinary, readFileUtf8 } from '@socketsecurity/registry/lib/fs'
-import { Logger } from '@socketsecurity/registry/lib/logger'
 import {
   readPackageJson,
   toEditablePackageJson,
@@ -42,6 +41,8 @@ import {
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
+
+
 
 import constants, {
   FLAG_VERSION,
@@ -53,6 +54,7 @@ import { findUp } from '../fs/fs.mts'
 import { cmdPrefixMessage } from '../process/cmd.mts'
 
 import type { CResult } from '../../types.mjs'
+import type { Logger } from '@socketsecurity/registry/lib/logger'
 import type { Remap } from '@socketsecurity/registry/lib/objects'
 import type { EditablePackageJson } from '@socketsecurity/registry/lib/packages'
 import type { SemVer } from 'semver'
@@ -334,16 +336,14 @@ export async function detectPackageEnvironment({
     pkgJsonPath && existsSync(pkgJsonPath)
       ? path.dirname(pkgJsonPath)
       : undefined
-  const pkgJson = pkgPath
-    ? await readPackageJson(pkgPath)
-    : undefined
-  const editablePkgJson = (pkgJson
-    ? await toEditablePackageJson(pkgJson)
-    : undefined) as EditablePackageJson | undefined
+  const pkgJson = pkgPath ? await readPackageJson(pkgPath) : undefined
+  const editablePkgJson = (
+    pkgJson ? await toEditablePackageJson(pkgJson) : undefined
+  ) as EditablePackageJson | undefined
   // Read Corepack `packageManager` field in package.json:
   // https://nodejs.org/api/packages.html#packagemanager
   const pkgManager = isNonEmptyString(editablePkgJson?.content?.packageManager)
-    ? editablePkgJson!.content.packageManager
+    ? editablePkgJson?.content.packageManager
     : undefined
 
   let agent: Agent | undefined
@@ -390,7 +390,7 @@ export async function detectPackageEnvironment({
   if (editablePkgJson?.content) {
     const { engines } = editablePkgJson.content
     const engineAgentRange = engines?.[agent]
-    const engineNodeRange = engines?.['node']
+    const engineNodeRange = engines?.node
     if (isNonEmptyString(engineAgentRange)) {
       pkgAgentRange = engineAgentRange
       // Roughly check agent range as semver.coerce will strip leading
@@ -409,7 +409,7 @@ export async function detectPackageEnvironment({
         pkgMinNodeVersion = coerced.version
       }
     }
-    const browserslistQuery = editablePkgJson.content['browserslist'] as
+    const browserslistQuery = editablePkgJson.content.browserslist as
       | string[]
       | undefined
     if (Array.isArray(browserslistQuery)) {
@@ -428,7 +428,7 @@ export async function detectPackageEnvironment({
     }
     const rawLockSrc =
       typeof lockPath === 'string'
-        ? await readLockFileByAgent.get(agent)!(lockPath, agentExecPath, cwd)
+        ? await readLockFileByAgent.get(agent)?.(lockPath, agentExecPath, cwd)
         : undefined
     lockSrc =
       typeof rawLockSrc === 'string'

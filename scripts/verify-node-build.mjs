@@ -14,7 +14,7 @@
 
 import { existsSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
-import { cpus, platform } from 'node:os'
+import { platform } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -121,7 +121,7 @@ async function verifySeaModification() {
 
   // Check if it still has the original import.
   const hasOriginalImport = content.includes(
-    "const { isSea, getAsset: getAssetInternal, getAssetKeys: getAssetKeysInternal } = internalBinding('sea');"
+    "const { isSea, getAsset: getAssetInternal, getAssetKeys: getAssetKeysInternal } = internalBinding('sea');",
   )
 
   if (!hasCorrectModification) {
@@ -165,9 +165,13 @@ async function verifyV8IncludeFixes() {
   const needsV8Fixes = major < 24 || (major === 24 && minor < 10)
 
   if (!needsV8Fixes) {
-    info('Node.js v24.10.0+ detected - V8 includes should have "src/" prefix (no fixes needed)')
+    info(
+      'Node.js v24.10.0+ detected - V8 includes should have "src/" prefix (no fixes needed)',
+    )
   } else {
-    info('Node.js v24.9.0 or earlier detected - V8 includes should NOT have "src/" prefix (fixes required)')
+    info(
+      'Node.js v24.9.0 or earlier detected - V8 includes should NOT have "src/" prefix (fixes required)',
+    )
   }
 
   const fixes = [
@@ -218,7 +222,9 @@ async function verifyV8IncludeFixes() {
       } else if (content.includes(includeWithoutPrefix)) {
         success(`${file} correctly fixed (no "src/" prefix)`)
       } else {
-        warn(`${file} has neither expected include format (may have changed in this Node version)`)
+        warn(
+          `${file} has neither expected include format (may have changed in this Node version)`,
+        )
       }
     } else {
       // For v24.10.0+: Check that "src/" prefix is PRESENT.
@@ -229,7 +235,9 @@ async function verifyV8IncludeFixes() {
       } else if (content.includes(includeWithPrefix)) {
         success(`${file} correctly left unchanged (has "src/" prefix)`)
       } else {
-        warn(`${file} has neither expected include format (may have changed in this Node version)`)
+        warn(
+          `${file} has neither expected include format (may have changed in this Node version)`,
+        )
       }
     }
   }
@@ -303,13 +311,9 @@ async function testBinary() {
   // Test 1: Version check.
   // For yao-pkg patched binaries, set PKG_EXECPATH to empty string to run as regular Node.js
   // See: https://github.com/yao-pkg/pkg#detect-if-the-app-is-running-as-packaged
-  const versionResult = await execCapture(
-    nodeBinary,
-    ['--version'],
-    {
-      env: { ...process.env, PKG_EXECPATH: '' },
-    }
-  )
+  const versionResult = await execCapture(nodeBinary, ['--version'], {
+    env: { ...process.env, PKG_EXECPATH: '' },
+  })
 
   if (versionResult.code !== 0) {
     error('Binary failed version check')
@@ -331,7 +335,7 @@ async function testBinary() {
     ['-e', 'console.log("OK")'],
     {
       env: { ...process.env, PKG_EXECPATH: '' },
-    }
+    },
   )
 
   if (execResult.code !== 0 || execResult.stdout !== 'OK') {
@@ -348,13 +352,9 @@ async function testBinary() {
     console.log(sea.isSea() ? 'SEA_YES' : 'SEA_NO');
   `
 
-  const seaResult = await execCapture(
-    nodeBinary,
-    ['-e', seaScript],
-    {
-      env: { ...process.env, PKG_EXECPATH: '' },
-    }
-  )
+  const seaResult = await execCapture(nodeBinary, ['-e', seaScript], {
+    env: { ...process.env, PKG_EXECPATH: '' },
+  })
 
   if (seaResult.code !== 0) {
     error('Binary failed SEA detection test')
@@ -386,7 +386,7 @@ function verifyPkgCache() {
   const pkgCacheDir = join(
     process.env.HOME || process.env.USERPROFILE,
     '.pkg-cache',
-    'v3.5'
+    'v3.5',
   )
   const targetName = `built-${NODE_VERSION}-${platform()}-${ARCH}${IS_MACOS && ARCH === 'arm64' ? '-signed' : ''}`
   const targetPath = join(pkgCacheDir, targetName)
@@ -446,7 +446,7 @@ async function main() {
     ['macOS signature', verifySignature],
   ]
 
-  for (const [name, check] of checks) {
+  for (const [_name, check] of checks) {
     logger.log('')
     const result = await check()
     if (!result) {
@@ -462,7 +462,9 @@ async function main() {
   if (hasErrors) {
     logger.error('❌ VERIFICATION FAILED')
     logger.error('')
-    logger.error('Critical issues were found. Please fix them before using this build.')
+    logger.error(
+      'Critical issues were found. Please fix them before using this build.',
+    )
     logger.error('')
     logger.error('To rebuild:')
     logger.error('  node scripts/build-yao-pkg-node.mjs')

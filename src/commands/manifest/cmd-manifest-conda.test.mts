@@ -1,12 +1,9 @@
 import { describe, expect } from 'vitest'
 
 import constants, {
-  ENVIRONMENT_YAML,
-  ENVIRONMENT_YML,
   FLAG_CONFIG,
   FLAG_DRY_RUN,
   FLAG_HELP,
-  REQUIREMENTS_TXT,
 } from '../../../src/constants.mts'
 import {
   cleanOutput,

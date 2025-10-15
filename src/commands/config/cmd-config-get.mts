@@ -67,7 +67,7 @@ async function run(
 
   const { json, markdown } = cli.flags
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = !!cli.flags.dryRun
 
   const [key = ''] = cli.input
 

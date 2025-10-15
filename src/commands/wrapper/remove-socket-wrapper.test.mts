@@ -1,6 +1,6 @@
 import { readFileSync, writeFileSync } from 'node:fs'
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { removeSocketWrapper } from './remove-socket-wrapper.mts'
 
@@ -27,7 +27,7 @@ describe('removeSocketWrapper', () => {
   it('successfully removes both aliases from file', async () => {
     const { logger } = await import('@socketsecurity/registry/lib/logger')
     const mockReadFileSync = vi.mocked(readFileSync) as any
-    const mockWriteFileSync = vi.mocked(writeFileSync) as any
+    const _mockWriteFileSync = vi.mocked(writeFileSync) as any
 
     mockReadFileSync.mockReturnValue(
       'alias npm="socket npm"\nalias npx="socket npx"\nother content',
@@ -51,7 +51,7 @@ describe('removeSocketWrapper', () => {
 
   it('removes only socket aliases, leaving others intact', () => {
     const mockReadFileSync = vi.mocked(readFileSync) as any
-    const mockWriteFileSync = vi.mocked(writeFileSync) as any
+    const _mockWriteFileSync = vi.mocked(writeFileSync) as any
 
     mockReadFileSync.mockReturnValue(
       'alias ll="ls -la"\nalias npm="socket npm"\nalias gs="git status"\nalias npx="socket npx"',
@@ -104,7 +104,7 @@ describe('removeSocketWrapper', () => {
   it('handles file with no socket aliases', async () => {
     const { logger } = await import('@socketsecurity/registry/lib/logger')
     const mockReadFileSync = vi.mocked(readFileSync) as any
-    const mockWriteFileSync = vi.mocked(writeFileSync) as any
+    const _mockWriteFileSync = vi.mocked(writeFileSync) as any
 
     mockReadFileSync.mockReturnValue(
       'alias ll="ls -la"\nexport PATH=$PATH:/usr/local/bin',
@@ -126,7 +126,7 @@ describe('removeSocketWrapper', () => {
 
   it('preserves empty lines when removing aliases', () => {
     const mockReadFileSync = vi.mocked(readFileSync) as any
-    const mockWriteFileSync = vi.mocked(writeFileSync) as any
+    const _mockWriteFileSync = vi.mocked(writeFileSync) as any
 
     mockReadFileSync.mockReturnValue(
       '\nalias npm="socket npm"\n\nalias npx="socket npx"\n\nother content\n',
@@ -144,7 +144,7 @@ describe('removeSocketWrapper', () => {
   it('handles empty file', async () => {
     const { logger } = await import('@socketsecurity/registry/lib/logger')
     const mockReadFileSync = vi.mocked(readFileSync) as any
-    const mockWriteFileSync = vi.mocked(writeFileSync) as any
+    const _mockWriteFileSync = vi.mocked(writeFileSync) as any
 
     mockReadFileSync.mockReturnValue('')
 
@@ -159,7 +159,7 @@ describe('removeSocketWrapper', () => {
 
   it('removes only exact matches', () => {
     const mockReadFileSync = vi.mocked(readFileSync) as any
-    const mockWriteFileSync = vi.mocked(writeFileSync) as any
+    const _mockWriteFileSync = vi.mocked(writeFileSync) as any
 
     mockReadFileSync.mockReturnValue(
       'alias npm="socket npm"\nalias npm2="socket npm"\nalias npx="socket npx"\nalias npx-extra="socket npx --extra"',

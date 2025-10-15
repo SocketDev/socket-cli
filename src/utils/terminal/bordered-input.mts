@@ -48,7 +48,7 @@ export const borderStyles = {
  */
 export function createBox(
   content: string,
-  width: number = 40,
+  width = 40,
   style: keyof typeof borderStyles = 'single',
   color: (text: string) => string = colors.blue,
 ): string {
@@ -108,9 +108,9 @@ export async function borderedInput(
   // Clear line and draw top border
   stdout.write('\r\x1b[K')
   stdout.write(
-    color(
+    `${color(
       border.topLeft + border.horizontal.repeat(innerWidth) + border.topRight,
-    ) + '\n',
+    )}\n`,
   )
 
   // Draw prompt line
@@ -133,7 +133,7 @@ export async function borderedInput(
   }
 
   // Draw input line with placeholder
-  stdout.write(color(border.vertical) + ' ')
+  stdout.write(`${color(border.vertical)} `)
 
   // Save cursor position for input
   const cursorX = 3 // After border and space
@@ -147,15 +147,15 @@ export async function borderedInput(
 
   // Draw right border after input area
   stdout.write(' '.repeat(innerWidth - 1))
-  stdout.write(color(border.vertical) + '\n')
+  stdout.write(`${color(border.vertical)}\n`)
 
   // Draw bottom border
   stdout.write(
-    color(
+    `${color(
       border.bottomLeft +
         border.horizontal.repeat(innerWidth) +
         border.bottomRight,
-    ) + '\n',
+    )}\n`,
   )
 
   // Move cursor back up to input line
@@ -212,21 +212,21 @@ export class BorderedOutput {
       const rightPad = innerWidth - titleStr.length - leftPad
 
       stdout.write(
-        this.color(
+        `${this.color(
           border.topLeft +
             border.horizontal.repeat(leftPad) +
             colors.cyan(titleStr) +
             border.horizontal.repeat(rightPad) +
             border.topRight,
-        ) + '\n',
+        )}\n`,
       )
     } else {
       stdout.write(
-        this.color(
+        `${this.color(
           border.topLeft +
             border.horizontal.repeat(innerWidth) +
             border.topRight,
-        ) + '\n',
+        )}\n`,
       )
     }
 
@@ -244,11 +244,11 @@ export class BorderedOutput {
 
     // Bottom border
     stdout.write(
-      this.color(
+      `${this.color(
         border.bottomLeft +
           border.horizontal.repeat(innerWidth) +
           border.bottomRight,
-      ) + '\n',
+      )}\n`,
     )
   }
 
@@ -303,7 +303,7 @@ export async function borderedMenu(
   stdout.write(color(border.topLeft + border.horizontal.repeat(leftPad)))
   stdout.write(colors.bold(colors.white(titleStr)))
   stdout.write(
-    color(border.horizontal.repeat(rightPad) + border.topRight) + '\n',
+    `${color(border.horizontal.repeat(rightPad) + border.topRight)}\n`,
   )
 
   // Draw separator
@@ -319,25 +319,25 @@ export async function borderedMenu(
     const option = `  ${i + 1}. ${options[i]}`
     const paddedOption = option.padEnd(innerWidth, ' ')
     stdout.write(
-      color(border.vertical) + paddedOption + color(border.vertical) + '\n',
+      `${color(border.vertical) + paddedOption + color(border.vertical)}\n`,
     )
   }
 
   // Draw bottom border
   stdout.write(
-    color(
+    `${color(
       border.bottomLeft +
         border.horizontal.repeat(innerWidth) +
         border.bottomRight,
-    ) + '\n',
+    )}\n`,
   )
 
   // Get selection
   const rl = readline.createInterface({ input: stdin, output: stdout })
   const answer = await rl.question(
-    colors.cyan('Select an option (1-' + options.length + '): '),
+    colors.cyan(`Select an option (1-${options.length}): `),
   )
   rl.close()
 
-  return parseInt(answer, 10) || 0
+  return Number.parseInt(answer, 10) || 0
 }

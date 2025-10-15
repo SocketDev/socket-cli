@@ -15,12 +15,15 @@ describe('fetchOrgFullScanList', () => {
   it('fetches scan list successfully', async () => {
     const { fetchOrgFullScanList } = await import('./fetch-list-scans.mts')
 
-    const { mockHandleApi, mockSdk } = await setupSdkMockSuccess('getOrgFullScanList', {
-      scans: [
-        { id: 'scan-123', status: 'completed' },
-        { id: 'scan-456', status: 'pending' },
-      ],
-    })
+    const { mockHandleApi, mockSdk } = await setupSdkMockSuccess(
+      'getOrgFullScanList',
+      {
+        scans: [
+          { id: 'scan-123', status: 'completed' },
+          { id: 'scan-456', status: 'pending' },
+        ],
+      },
+    )
 
     const config = {
       branch: 'main',
@@ -52,7 +55,9 @@ describe('fetchOrgFullScanList', () => {
 
   it('handles SDK setup failure', async () => {
     const { fetchOrgFullScanList } = await import('./fetch-list-scans.mts')
-    const { setupSdkSetupFailure } = await import('../../../test/helpers/sdk-test-helpers.mts')
+    const { setupSdkSetupFailure } = await import(
+      '../../../test/helpers/sdk-test-helpers.mts'
+    )
 
     await setupSdkSetupFailure('Failed to setup SDK', {
       cause: 'Invalid configuration',
@@ -78,7 +83,9 @@ describe('fetchOrgFullScanList', () => {
 
   it('handles API call failure', async () => {
     const { fetchOrgFullScanList } = await import('./fetch-list-scans.mts')
-    const { setupSdkMockError } = await import('../../../test/helpers/sdk-test-helpers.mts')
+    const { setupSdkMockError } = await import(
+      '../../../test/helpers/sdk-test-helpers.mts'
+    )
 
     await setupSdkMockError('getOrgFullScanList', 'API error', 500)
 
@@ -102,7 +109,10 @@ describe('fetchOrgFullScanList', () => {
   it('passes custom SDK options', async () => {
     const { fetchOrgFullScanList } = await import('./fetch-list-scans.mts')
 
-    const { mockSdk, mockSetupSdk } = await setupSdkMockSuccess('getOrgFullScanList', {})
+    const { mockSdk, mockSetupSdk } = await setupSdkMockSuccess(
+      'getOrgFullScanList',
+      {},
+    )
 
     const config = {
       branch: 'develop',

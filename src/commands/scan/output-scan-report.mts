@@ -110,7 +110,7 @@ export async function outputScanReport(
     return
   }
 
-  if (outputKind === 'markdown' || (filepath && filepath.endsWith('.md'))) {
+  if (outputKind === 'markdown' || filepath?.endsWith('.md')) {
     const md = short
       ? `healthy = ${scanReport.data.healthy}`
       : toMarkdownReport(
@@ -182,8 +182,7 @@ export function toMarkdownReport(
   const minPolicyLevel =
     reportLevel === constants.REPORT_LEVEL_DEFER ? 'everything' : reportLevel
 
-  const md =
-    `
+  const md = `${`
 # Scan Policy Report
 
 This report tells you whether the results of a Socket scan results violate the
@@ -227,7 +226,7 @@ ${
         'Manifest file',
       ])
 }
-  `.trim() + '\n'
+  `.trim()}\n`
 
   return md
 }

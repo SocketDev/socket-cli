@@ -1,6 +1,4 @@
 #!/usr/bin/env node
-/* eslint-disable n/no-process-exit -- CLI entry point requires process.exit */
-'use strict'
 
 /**
  * @fileoverview Platform dispatcher for Socket CLI.
@@ -55,13 +53,14 @@ const mappedArch = archMap[arch]
 // This prevents creating invalid package names for unsupported architectures.
 if (!mappedArch) {
   console.error(`Error: Unsupported architecture: ${arch}`)
-  console.error(``)
-  console.error(`Supported architectures: arm64, x64`)
-  console.error(``)
-  console.error(`You can install the JavaScript version instead:`)
-  console.error(`  npm install -g @socketsecurity/cli`)
-  console.error(``)
-  console.error(`Then use: npx @socketsecurity/cli`)
+  console.error('')
+  console.error('Supported architectures: arm64, x64')
+  console.error('')
+  console.error('You can install the JavaScript version instead:')
+  console.error('  npm install -g @socketsecurity/cli')
+  console.error('')
+  console.error('Then use: npx @socketsecurity/cli')
+  // eslint-disable-next-line n/no-process-exit
   process.exit(1)
 }
 
@@ -135,7 +134,8 @@ try {
   } catch {
     // If realpath fails, continue with original path.
   }
-} catch (error) {
+  // eslint-disable-next-line no-unused-vars
+} catch (_error) {
   // Binary package not found or other resolution error.
   // This can happen if:
   // 1. The platform is not supported
@@ -144,7 +144,7 @@ try {
   console.error(
     `Error: Socket CLI binary not available for ${platformVariant}-${mappedArch}`,
   )
-  console.error(``)
+  console.error('')
 
   // Check if this is an unsupported platform vs. a supported platform with
   // a missing binary package. This helps us provide more specific error messages.
@@ -164,17 +164,17 @@ try {
     console.error(
       `Your platform (${platformVariant}-${mappedArch}) is not supported by Socket CLI binaries.`,
     )
-    console.error(``)
-    console.error(`Supported platforms:`)
+    console.error('')
+    console.error('Supported platforms:')
     supportedPlatforms.forEach(p => {
       const [os, arch] = p.split('-')
       console.error(`  - ${os} ${arch}`)
     })
-    console.error(``)
-    console.error(`You can install the JavaScript version instead:`)
-    console.error(`  npm install -g @socketsecurity/cli`)
-    console.error(``)
-    console.error(`Then use: npx @socketsecurity/cli`)
+    console.error('')
+    console.error('You can install the JavaScript version instead:')
+    console.error('  npm install -g @socketsecurity/cli')
+    console.error('')
+    console.error('Then use: npx @socketsecurity/cli')
   } else {
     // Case 2: Supported platform but binary package is missing.
     // This can happen if:
@@ -182,20 +182,21 @@ try {
     // - The package was manually deleted
     // - There was a network issue during installation
     console.error(`The package ${packageName} was not installed properly.`)
-    console.error(``)
-    console.error(`Try reinstalling:`)
-    console.error(`  npm uninstall -g socket`)
-    console.error(`  npm install -g socket`)
-    console.error(``)
-    console.error(`If the problem persists, you can install from source:`)
-    console.error(`  npm install -g @socketsecurity/cli`)
+    console.error('')
+    console.error('Try reinstalling:')
+    console.error('  npm uninstall -g socket')
+    console.error('  npm install -g socket')
+    console.error('')
+    console.error('If the problem persists, you can install from source:')
+    console.error('  npm install -g @socketsecurity/cli')
   }
 
-  console.error(``)
+  console.error('')
   console.error(
-    `For help, visit: https://github.com/SocketDev/socket-cli/issues`,
+    'For help, visit: https://github.com/SocketDev/socket-cli/issues',
   )
 
+  // eslint-disable-next-line n/no-process-exit
   process.exit(1)
 }
 
@@ -238,23 +239,23 @@ const signals = ['SIGABRT', 'SIGALRM', 'SIGHUP', 'SIGINT', 'SIGTERM']
 if (!WIN32) {
   signals.push(
     'SIGVTALRM', // Virtual timer alarm
-    'SIGXCPU',   // CPU time limit exceeded
-    'SIGXFSZ',   // File size limit exceeded
-    'SIGUSR2',   // User-defined signal 2
-    'SIGTRAP',   // Trace/breakpoint trap
-    'SIGSYS',    // Bad system call
-    'SIGQUIT',   // Quit from keyboard
-    'SIGIOT'     // IOT trap (alias for SIGABRT)
+    'SIGXCPU', // CPU time limit exceeded
+    'SIGXFSZ', // File size limit exceeded
+    'SIGUSR2', // User-defined signal 2
+    'SIGTRAP', // Trace/breakpoint trap
+    'SIGSYS', // Bad system call
+    'SIGQUIT', // Quit from keyboard
+    'SIGIOT', // IOT trap (alias for SIGABRT)
   )
 }
 
 // Add Linux-specific signals.
 if (platform === 'linux') {
   signals.push(
-    'SIGIO',      // I/O now possible
-    'SIGPOLL',    // Pollable event (alias for SIGIO)
-    'SIGPWR',     // Power failure
-    'SIGSTKFLT'   // Stack fault on coprocessor
+    'SIGIO', // I/O now possible
+    'SIGPOLL', // Pollable event (alias for SIGIO)
+    'SIGPWR', // Power failure
+    'SIGSTKFLT', // Stack fault on coprocessor
   )
 }
 
@@ -294,6 +295,7 @@ child.on('exit', (code, signal) => {
   } else {
     // Otherwise, exit with the child's exit code.
     // Use 0 as fallback if code is null/undefined (shouldn't happen in practice).
+    // eslint-disable-next-line n/no-process-exit
     process.exit(code ?? 0)
   }
 })
@@ -312,20 +314,20 @@ child.on('error', error => {
     // This is very rare since we check existsSync() before spawning, but can
     // happen if the file is deleted between the check and spawn.
     console.error(`Error: Binary not found at ${binaryPath}`)
-    console.error(``)
+    console.error('')
     console.error(
-      `This usually means the package was corrupted during installation.`,
+      'This usually means the package was corrupted during installation.',
     )
-    console.error(``)
-    console.error(`Try reinstalling:`)
-    console.error(`  npm uninstall -g socket`)
-    console.error(`  npm install -g socket`)
+    console.error('')
+    console.error('Try reinstalling:')
+    console.error('  npm uninstall -g socket')
+    console.error('  npm install -g socket')
   } else if (error.code === 'EACCES') {
     // Permission denied when trying to execute the binary.
     // This typically happens on Unix when the binary doesn't have execute
     // permissions (should be 755 or 0o755).
     console.error(`Error: Permission denied executing ${binaryPath}`)
-    console.error(``)
+    console.error('')
     console.error(`Try: chmod +x "${binaryPath}"`)
   } else if (error.code === 'ENOEXEC') {
     // The binary format is not executable on this system.
@@ -334,21 +336,24 @@ child.on('error', error => {
     // - The binary is corrupted
     // - On Linux, the binary is for a different libc (glibc vs musl)
     console.error(`Error: Binary format not executable: ${binaryPath}`)
-    console.error(``)
+    console.error('')
     console.error(
-      `This may indicate an architecture mismatch or corrupted binary.`,
+      'This may indicate an architecture mismatch or corrupted binary.',
     )
-    console.error(``)
-    console.error(`Try reinstalling or use the JavaScript version:`)
-    console.error(`  npm install -g @socketsecurity/cli`)
+    console.error('')
+    console.error('Try reinstalling or use the JavaScript version:')
+    console.error('  npm install -g @socketsecurity/cli')
   } else {
     // Unknown error - provide debug information.
-    console.error(`Failed to start Socket CLI:`, error.message)
-    console.error(``)
+    console.error('Failed to start Socket CLI:', error.message)
+    console.error('')
     console.error(`Binary path: ${binaryPath}`)
     console.error(`Platform: ${platformVariant}-${mappedArch}`)
-    console.error(``)
-    console.error(`For help, visit: https://github.com/SocketDev/socket-cli/issues`)
+    console.error('')
+    console.error(
+      'For help, visit: https://github.com/SocketDev/socket-cli/issues',
+    )
   }
+  // eslint-disable-next-line n/no-process-exit
   process.exit(1)
 })

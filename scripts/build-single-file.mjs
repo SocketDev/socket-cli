@@ -1,4 +1,3 @@
- 
 /**
  * Build Socket CLI as a single bundled JavaScript file.
  *
@@ -135,7 +134,7 @@ process.env.SOCKET_CLI_VARIANT = 'socket-${cmd}';`,
   console.log(`\nOutput location: ${distDir}`)
   console.log('\nUsage:')
   console.log(`  node ${outputFile} [args]`)
-  console.log(`  # or`)
+  console.log('  # or')
   console.log(`  ${outputFile} [args]  # (already executable)`)
   console.log('\nFor SEA packaging:')
   console.log(`  Use ${outputFile} as your single entry point`)

@@ -27,7 +27,7 @@ export async function outputConfigAuto(
   }
 
   if (outputKind === 'markdown') {
-    logger.log(`# Auto discover config value`)
+    logger.log('# Auto discover config value')
     logger.log('')
     logger.log(
       `Attempted to automatically discover the value for config key: "${key}"`,
@@ -59,7 +59,7 @@ export async function outputConfigAuto(
           'Would you like to update the default org in local config to this value?',
         choices: (Array.isArray(result.data) ? result.data : [result.data])
           .map(slug => ({
-            name: 'Yes [' + slug + ']',
+            name: `Yes [${slug}]`,
             value: slug,
             description: `Use "${slug}" as the default organization`,
           }))
@@ -88,7 +88,7 @@ export async function outputConfigAuto(
           'Would you like to update the enforced orgs in local config to this value?',
         choices: (Array.isArray(result.data) ? result.data : [result.data])
           .map(slug => ({
-            name: 'Yes [' + slug + ']',
+            name: `Yes [${slug}]`,
             value: slug,
             description: `Enforce the security policy of "${slug}" on this machine`,
           }))

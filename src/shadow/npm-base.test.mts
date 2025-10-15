@@ -1,9 +1,7 @@
-import { promises as fs } from 'node:fs'
-
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import shadowNpmBase from './npm-base.mts'
 import { NPM, NPX } from '../constants.mts'
+import shadowNpmBase from './npm-base.mts'
 
 import type { ShadowBinOptions } from './npm-base.mts'
 

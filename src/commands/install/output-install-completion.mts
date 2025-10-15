@@ -42,7 +42,7 @@ export async function outputInstallCompletion(
   logger.log('')
   logger.log('1. Reload your .bashrc script (best):')
   logger.log('')
-  logger.log(`   source ~/.bashrc`)
+  logger.log('   source ~/.bashrc')
   logger.log('')
   logger.log('2. Run these commands to load the completion script:')
   logger.log('')

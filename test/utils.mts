@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url'
 
 import { it } from 'vitest'
 
-import { SpawnOptions, spawn } from '@socketsecurity/registry/lib/spawn'
+import { type SpawnOptions, spawn } from '@socketsecurity/registry/lib/spawn'
 import { stripAnsi } from '@socketsecurity/registry/lib/strings'
 
 import constants, { FLAG_HELP, FLAG_VERSION } from '../src/constants.mts'
@@ -241,13 +241,13 @@ export async function spawnSocketCli(
   } catch (e: unknown) {
     return {
       status: false,
-      code: typeof e?.['code'] === 'number' ? e['code'] : 1,
+      code: typeof e?.code === 'number' ? e.code : 1,
       error: {
-        message: e?.['message'] || '',
-        stack: e?.['stack'] || '',
+        message: e?.message || '',
+        stack: e?.stack || '',
       },
-      stdout: cleanOutput(e?.['stdout'] ?? ''),
-      stderr: cleanOutput(e?.['stderr'] ?? ''),
+      stdout: cleanOutput(e?.stdout ?? ''),
+      stderr: cleanOutput(e?.stderr ?? ''),
     }
   }
 }

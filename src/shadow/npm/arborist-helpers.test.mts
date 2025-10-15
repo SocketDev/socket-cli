@@ -8,7 +8,6 @@ import {
 
 import type { ArboristInstance, Diff, NodeClass } from './arborist/types.mts'
 import type { PackageDetail } from './arborist-helpers.mts'
-import type { AlertsByPurl } from '../../utils/socket/package-alert.mts'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 // Mock all dependencies.
@@ -393,7 +392,6 @@ describe('arborist-helpers', () => {
       // Create a large number of children to trigger loop sentinel.
       const children: Diff[] = []
       for (let i = 0; i < 100_001; i++) {
-         
         children.push({
           action: DiffAction.add,
           actual: null,

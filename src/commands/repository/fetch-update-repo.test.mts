@@ -1,8 +1,11 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { fetchUpdateRepo } from './fetch-update-repo.mts'
-import { createErrorResult, createSuccessResult } from '../../../test/helpers/mocks.mts'
-import { setupSdkMockError, setupSdkMockSuccess, setupSdkSetupFailure } from '../../../test/helpers/sdk-test-helpers.mts'
+import { createSuccessResult } from '../../../test/helpers/mocks.mts'
+import {
+  setupSdkMockError,
+  setupSdkSetupFailure,
+} from '../../../test/helpers/sdk-test-helpers.mts'
 
 // Mock the dependencies.
 vi.mock('../../utils/socket/api.mjs', () => ({
@@ -33,11 +36,13 @@ describe('fetchUpdateRepo', () => {
     }
 
     mockSetupSdk.mockResolvedValue(createSuccessResult(mockSdk))
-    mockHandleApi.mockResolvedValue(createSuccessResult({
-      id: 'repo-123',
-      name: 'updated-repo',
-      description: 'Updated description',
-    }))
+    mockHandleApi.mockResolvedValue(
+      createSuccessResult({
+        id: 'repo-123',
+        name: 'updated-repo',
+        description: 'Updated description',
+      }),
+    )
 
     const config = {
       defaultBranch: 'main',
@@ -69,7 +74,10 @@ describe('fetchUpdateRepo', () => {
   })
 
   it('handles SDK setup failure', async () => {
-    await setupSdkSetupFailure('Failed to setup SDK', { code: 1, cause: 'Missing API token' })
+    await setupSdkSetupFailure('Failed to setup SDK', {
+      code: 1,
+      cause: 'Missing API token',
+    })
 
     const config = {
       defaultBranch: 'main',
@@ -86,7 +94,11 @@ describe('fetchUpdateRepo', () => {
   })
 
   it('handles API call failure', async () => {
-    await setupSdkMockError('updateOrgRepo', new Error('Repository not found'), 404)
+    await setupSdkMockError(
+      'updateOrgRepo',
+      new Error('Repository not found'),
+      404,
+    )
 
     const config = {
       defaultBranch: 'main',

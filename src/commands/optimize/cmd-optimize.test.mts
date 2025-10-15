@@ -5,7 +5,6 @@ import path from 'node:path'
 import trash from 'trash'
 import { afterAll, afterEach, beforeAll, describe, expect } from 'vitest'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
 import { readPackageJson } from '@socketsecurity/registry/lib/packages'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
@@ -620,7 +619,7 @@ describe('socket optimize', async () => {
     cmdit(
       ['optimize', '.', FLAG_CONFIG, '{"apiToken":"fake-token"}'],
       'should handle npm projects with cwd correctly',
-      async cmd => {
+      async _cmd => {
         // Create a temporary directory to test npm specifically.
         const tempDir = path.join(tmpdir(), 'socket-npm-test')
         await promises.mkdir(tempDir, { recursive: true })

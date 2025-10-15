@@ -67,12 +67,12 @@ async function run(
     importMeta,
   })
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = !!cli.flags.dryRun
 
   if (dryRun) {
     logger.log(constants.DRY_RUN_BAILING_NOW)
     return
   }
 
-  await handleCi(Boolean(cli.flags['autoManifest']))
+  await handleCi(Boolean(cli.flags.autoManifest))
 }

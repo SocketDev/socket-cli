@@ -64,7 +64,7 @@ export async function installNpmLinks(shadowBinPath: string): Promise<string> {
       }
     }
     const { env } = process
-    env['PATH'] = `${shadowBinPath}${path.delimiter}${env['PATH']}`
+    env.PATH = `${shadowBinPath}${path.delimiter}${env.PATH}`
   }
   return binPath
 }
@@ -95,7 +95,7 @@ export async function installNpxLinks(shadowBinPath: string): Promise<string> {
       }
     }
     const { env } = process
-    env['PATH'] = `${shadowBinPath}${path.delimiter}${env['PATH']}`
+    env.PATH = `${shadowBinPath}${path.delimiter}${env.PATH}`
   }
   return binPath
 }
@@ -128,7 +128,7 @@ export async function installPnpmLinks(shadowBinPath: string): Promise<string> {
       }
     }
     const { env } = process
-    env['PATH'] = `${shadowBinPath}${path.delimiter}${env['PATH']}`
+    env.PATH = `${shadowBinPath}${path.delimiter}${env.PATH}`
   }
 
   return binPath
@@ -160,7 +160,7 @@ export async function installYarnLinks(shadowBinPath: string): Promise<string> {
       }
     }
     const { env } = process
-    env['PATH'] = `${shadowBinPath}${path.delimiter}${env['PATH']}`
+    env.PATH = `${shadowBinPath}${path.delimiter}${env.PATH}`
   }
 
   return binPath

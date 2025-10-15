@@ -40,11 +40,11 @@ describe('shadow-links', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
-    originalPath = process.env['PATH']
+    originalPath = process.env.PATH
   })
 
   afterEach(() => {
-    process.env['PATH'] = originalPath
+    process.env.PATH = originalPath
   })
 
   describe('installNpmLinks', () => {
@@ -60,7 +60,7 @@ describe('shadow-links', () => {
       const result = await installNpmLinks('/shadow/bin')
 
       expect(result).toBe('/usr/local/bin/npm')
-      expect(process.env['PATH']).toBe(originalPath)
+      expect(process.env.PATH).toBe(originalPath)
     })
 
     it('should install shadow when not already shadowed', async () => {
@@ -79,7 +79,7 @@ describe('shadow-links', () => {
       const result = await installNpmLinks('/shadow/bin')
 
       expect(result).toBe('/usr/local/bin/npm')
-      expect(process.env['PATH']).toMatch(/^\/shadow\/bin/)
+      expect(process.env.PATH).toMatch(/^\/shadow\/bin/)
     })
 
     it('should skip PATH modification when already shadowed', async () => {
@@ -98,7 +98,7 @@ describe('shadow-links', () => {
       const result = await installNpmLinks('/shadow/bin')
 
       expect(result).toBe('/usr/local/bin/npm')
-      expect(process.env['PATH']).toBe(originalPath)
+      expect(process.env.PATH).toBe(originalPath)
     })
 
     it('should create cmd shim on Windows', async () => {
@@ -144,7 +144,7 @@ describe('shadow-links', () => {
       const result = await installNpxLinks('/shadow/bin')
 
       expect(result).toBe('/usr/local/bin/npx')
-      expect(process.env['PATH']).toBe(originalPath)
+      expect(process.env.PATH).toBe(originalPath)
     })
 
     it('should install shadow when not already shadowed', async () => {
@@ -163,7 +163,7 @@ describe('shadow-links', () => {
       const result = await installNpxLinks('/shadow/bin')
 
       expect(result).toBe('/usr/local/bin/npx')
-      expect(process.env['PATH']).toMatch(/^\/shadow\/bin/)
+      expect(process.env.PATH).toMatch(/^\/shadow\/bin/)
     })
   })
 
@@ -180,7 +180,7 @@ describe('shadow-links', () => {
       const result = await installPnpmLinks('/shadow/bin')
 
       expect(result).toBe('/usr/local/bin/pnpm')
-      expect(process.env['PATH']).toBe(originalPath)
+      expect(process.env.PATH).toBe(originalPath)
     })
 
     it('should install shadow when not already shadowed', async () => {
@@ -199,7 +199,7 @@ describe('shadow-links', () => {
       const result = await installPnpmLinks('/shadow/bin')
 
       expect(result).toBe('/usr/local/bin/pnpm')
-      expect(process.env['PATH']).toMatch(/^\/shadow\/bin/)
+      expect(process.env.PATH).toMatch(/^\/shadow\/bin/)
     })
 
     it('should create cmd shim on Windows', async () => {
@@ -245,7 +245,7 @@ describe('shadow-links', () => {
       const result = await installYarnLinks('/shadow/bin')
 
       expect(result).toBe('/usr/local/bin/yarn')
-      expect(process.env['PATH']).toBe(originalPath)
+      expect(process.env.PATH).toBe(originalPath)
     })
 
     it('should install shadow when not already shadowed', async () => {
@@ -264,7 +264,7 @@ describe('shadow-links', () => {
       const result = await installYarnLinks('/shadow/bin')
 
       expect(result).toBe('/usr/local/bin/yarn')
-      expect(process.env['PATH']).toMatch(/^\/shadow\/bin/)
+      expect(process.env.PATH).toMatch(/^\/shadow\/bin/)
     })
 
     it('should skip PATH modification when already shadowed', async () => {
@@ -283,7 +283,7 @@ describe('shadow-links', () => {
       const result = await installYarnLinks('/shadow/bin')
 
       expect(result).toBe('/usr/local/bin/yarn')
-      expect(process.env['PATH']).toBe(originalPath)
+      expect(process.env.PATH).toBe(originalPath)
     })
 
     it('should create cmd shim on Windows', async () => {

@@ -344,7 +344,7 @@ export default function babelPluginRemoveICU({ template, types: t }) {
           // Match character classes that contain \p{...}
           pattern = pattern.replace(
             /\[([^\]]*\\p\{[^}]+\}[^\]]*)\]/g,
-            (match, content) => {
+            (_match, content) => {
               let newContent = content
               // Inside character class, replace with just the character range
               newContent = newContent.replace(/\\p\{Letter\}/g, 'a-zA-Z')

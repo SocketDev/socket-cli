@@ -53,11 +53,11 @@ async function run(
     importMeta,
   })
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = !!cli.flags.dryRun
 
-  const json = Boolean(cli.flags['json'])
+  const json = Boolean(cli.flags.json)
 
-  const markdown = Boolean(cli.flags['markdown'])
+  const markdown = Boolean(cli.flags.markdown)
 
   const hasApiToken = hasDefaultApiToken()
 

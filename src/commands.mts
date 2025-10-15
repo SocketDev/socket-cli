@@ -87,7 +87,7 @@ export const rootAliases = {
     hidden: true,
     argv: ['audit-log'],
   },
-  ['audit-logs']: {
+  'audit-logs': {
     description: cmdAuditLog.description,
     hidden: true,
     argv: ['audit-log'],

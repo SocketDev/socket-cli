@@ -52,7 +52,7 @@ describe('handleListRepos', () => {
       0,
       0,
       'name',
-      Infinity,
+      Number.POSITIVE_INFINITY,
       'asc',
     )
   })
@@ -192,7 +192,7 @@ describe('handleListRepos', () => {
       0,
       0,
       'created',
-      Infinity,
+      Number.POSITIVE_INFINITY,
       'desc',
     )
   })

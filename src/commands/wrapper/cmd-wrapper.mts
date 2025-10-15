@@ -69,7 +69,7 @@ async function run(
   // TODO: Implement json/md further.
   const { json, markdown } = cli.flags
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = !!cli.flags.dryRun
 
   let enable = false
   let disable = false
@@ -95,7 +95,7 @@ async function run(
       nook: true,
       test: cli.input.length <= 1,
       message: 'expecting exactly one argument',
-      fail: `got multiple`,
+      fail: 'got multiple',
     },
   )
   if (!wasValidInput) {

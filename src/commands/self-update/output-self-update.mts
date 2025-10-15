@@ -54,6 +54,6 @@ export async function outputSelfUpdate(
       logger.log(`${colors.dim('Backup:')} ${backupPath}`)
     }
   } else {
-    logger.fail(`Update failed`)
+    logger.fail('Update failed')
   }
 }

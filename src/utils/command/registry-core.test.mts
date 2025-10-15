@@ -208,7 +208,7 @@ describe('CommandRegistry', () => {
           },
         },
         async handler({ flags }) {
-          expect(flags['verbose']).toBe(true)
+          expect(flags.verbose).toBe(true)
           return { ok: true, data: undefined }
         },
       }
@@ -229,7 +229,7 @@ describe('CommandRegistry', () => {
           },
         },
         async handler({ flags }) {
-          expect(flags['name']).toBe('foo')
+          expect(flags.name).toBe('foo')
           return { ok: true, data: undefined }
         },
       }
@@ -250,7 +250,7 @@ describe('CommandRegistry', () => {
           },
         },
         async handler({ flags }) {
-          expect(flags['name']).toBe('foo')
+          expect(flags.name).toBe('foo')
           return { ok: true, data: undefined }
         },
       }
@@ -272,7 +272,7 @@ describe('CommandRegistry', () => {
           },
         },
         async handler({ flags }) {
-          expect(flags['verbose']).toBe(true)
+          expect(flags.verbose).toBe(true)
           return { ok: true, data: undefined }
         },
       }
@@ -317,7 +317,7 @@ describe('CommandRegistry', () => {
           },
         },
         validate(flags) {
-          if (typeof flags['count'] === 'number' && flags['count'] < 0) {
+          if (typeof flags.count === 'number' && flags.count < 0) {
             return {
               ok: false,
               errors: ['Count must be non-negative'],
@@ -343,13 +343,13 @@ describe('CommandRegistry', () => {
     it('should execute middleware in order', async () => {
       const order: string[] = []
 
-      registry.use(async (ctx, next) => {
+      registry.use(async (_ctx, next) => {
         order.push('middleware1-before')
         await next()
         order.push('middleware1-after')
       })
 
-      registry.use(async (ctx, next) => {
+      registry.use(async (_ctx, next) => {
         order.push('middleware2-before')
         await next()
         order.push('middleware2-after')

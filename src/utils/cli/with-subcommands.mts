@@ -16,10 +16,8 @@ import {
   trimNewlines,
 } from '@socketsecurity/registry/lib/strings'
 
-import {
-  getCliVersion,
-  getCliVersionHash,
-} from '../../constants/env.mts'
+
+import { getCliVersion, getCliVersionHash } from '../../constants/env.mts'
 import constants, {
   API_V0_URL,
   CONFIG_KEY_API_TOKEN,
@@ -123,7 +121,7 @@ function findBestCommandMatch(
   aliases: Record<string, unknown>,
 ): string | null {
   let bestMatch = null
-  let bestScore = Infinity
+  let bestScore = Number.POSITIVE_INFINITY
   const allCommands = [...Object.keys(subcommands), ...Object.keys(aliases)]
   for (const command of allCommands) {
     const distance = levenshteinDistance(
@@ -163,7 +161,7 @@ function getTokenOrigin(): string {
 function getAsciiHeader(
   command: string,
   orgFlag: string | undefined,
-  compactMode: boolean = false,
+  compactMode = false,
 ) {
   // Note: In tests we return <redacted> because otherwise snapshots will fail.
   const { REDACTED } = constants
@@ -249,24 +247,22 @@ function levenshteinDistance(a: string, b: string): number {
       const cost = a[i - 1] === b[j - 1] ? 0 : 1
       matrix[i]![j] = Math.min(
         // Deletion.
-        matrix[i - 1]![j]! + 1,
+        matrix[i - 1]?.[j]! + 1,
         // Insertion.
-        matrix[i]![j - 1]! + 1,
+        matrix[i]?.[j - 1]! + 1,
         // Substitution.
-        matrix[i - 1]![j - 1]! + cost,
+        matrix[i - 1]?.[j - 1]! + cost,
       )
     }
   }
-  return matrix[a.length]![b.length]!
+  return matrix[a.length]?.[b.length]!
 }
 
 /**
  * Determine if the banner should be suppressed based on output flags.
  */
 function shouldSuppressBanner(flags: Record<string, unknown>): boolean {
-  return Boolean(
-    flags['json'] || flags['markdown'] || flags['banner'] === false,
-  )
+  return Boolean(flags.json || flags.markdown || flags.banner === false)
 }
 
 /**
@@ -275,7 +271,7 @@ function shouldSuppressBanner(flags: Record<string, unknown>): boolean {
 export function emitBanner(
   name: string,
   orgFlag: string | undefined,
-  compactMode: boolean = false,
+  compactMode = false,
 ) {
   // Print a banner at the top of each command.
   // This helps with brand recognition and marketing.
@@ -377,52 +373,52 @@ export async function meowWithSubcommands(
   if (isRootCommand) {
     const hiddenDebugFlag = !isDebug()
 
-    flags['compactHeader'] = {
-      ...flags['compactHeader'],
+    flags.compactHeader = {
+      ...flags.compactHeader,
       hidden: false,
     } as MeowFlag
 
-    flags['config'] = {
-      ...flags['config'],
+    flags.config = {
+      ...flags.config,
       hidden: false,
     } as MeowFlag
 
-    flags['dryRun'] = {
-      ...flags['dryRun'],
+    flags.dryRun = {
+      ...flags.dryRun,
       hidden: false,
     } as MeowFlag
 
-    flags['help'] = {
-      ...flags['help'],
+    flags.help = {
+      ...flags.help,
       hidden: false,
     } as MeowFlag
 
-    flags['helpFull'] = {
-      ...flags['helpFull'],
+    flags.helpFull = {
+      ...flags.helpFull,
       hidden: false,
     } as MeowFlag
 
-    flags['maxOldSpaceSize'] = {
-      ...flags['maxOldSpaceSize'],
+    flags.maxOldSpaceSize = {
+      ...flags.maxOldSpaceSize,
       hidden: hiddenDebugFlag,
     } as MeowFlag
 
-    flags['maxSemiSpaceSize'] = {
-      ...flags['maxSemiSpaceSize'],
+    flags.maxSemiSpaceSize = {
+      ...flags.maxSemiSpaceSize,
       hidden: hiddenDebugFlag,
     } as MeowFlag
 
-    flags['version'] = {
-      ...flags['version'],
+    flags.version = {
+      ...flags.version,
       hidden: false,
     } as MeowFlag
 
-    delete flags['json']
-    delete flags['markdown']
+    delete flags.json
+    delete flags.markdown
   } else {
-    delete flags['help']
-    delete flags['helpFull']
-    delete flags['version']
+    delete flags.help
+    delete flags.helpFull
+    delete flags.version
   }
 
   // This is basically a dry-run parse of cli args and flags. We use this to
@@ -621,38 +617,38 @@ export async function meowWithSubcommands(
       'Note: All commands have their own --help',
       '',
       'Main commands',
-      `  socket login                ${description(subcommands['login'])}`,
-      `  socket scan create          Create a new Socket scan and report`,
-      `  socket npm/lodash@4.17.21   Request the Socket score of a package`,
-      `  socket fix                  ${description(subcommands['fix'])}`,
-      `  socket optimize             ${description(subcommands['optimize'])}`,
-      `  socket cdxgen               ${description(subcommands['cdxgen'])}`,
-      `  socket ci                   ${description(subcommands['ci'])}`,
-      ``,
+      `  socket login                ${description(subcommands.login)}`,
+      '  socket scan create          Create a new Socket scan and report',
+      '  socket npm/lodash@4.17.21   Request the Socket score of a package',
+      `  socket fix                  ${description(subcommands.fix)}`,
+      `  socket optimize             ${description(subcommands.optimize)}`,
+      `  socket cdxgen               ${description(subcommands.cdxgen)}`,
+      `  socket ci                   ${description(subcommands.ci)}`,
+      '',
       'Socket API',
-      `  analytics                   ${description(subcommands['analytics'])}`,
+      `  analytics                   ${description(subcommands.analytics)}`,
       `  audit-log                   ${description(subcommands['audit-log'])}`,
-      `  organization                ${description(subcommands['organization'])}`,
-      `  package                     ${description(subcommands['package'])}`,
-      `  repository                  ${description(subcommands['repository'])}`,
-      `  scan                        ${description(subcommands['scan'])}`,
+      `  organization                ${description(subcommands.organization)}`,
+      `  package                     ${description(subcommands.package)}`,
+      `  repository                  ${description(subcommands.repository)}`,
+      `  scan                        ${description(subcommands.scan)}`,
       `  threat-feed                 ${description(subcommands['threat-feed'])}`,
-      ``,
+      '',
       'Local tools',
-      `  manifest                    ${description(subcommands['manifest'])}`,
+      `  manifest                    ${description(subcommands.manifest)}`,
       `  npm                         ${description(subcommands[NPM])}`,
       `  npx                         ${description(subcommands[NPX])}`,
       `  raw-npm                     ${description(subcommands['raw-npm'])}`,
       `  raw-npx                     ${description(subcommands['raw-npx'])}`,
       '',
       'CLI configuration',
-      `  config                      ${description(subcommands['config'])}`,
-      `  install                     ${description(subcommands['install'])}`,
-      `  login                       Socket API login and CLI setup`,
-      `  logout                      ${description(subcommands['logout'])}`,
-      `  uninstall                   ${description(subcommands['uninstall'])}`,
-      `  whoami                      ${description(subcommands['whoami'])}`,
-      `  wrapper                     ${description(subcommands['wrapper'])}`,
+      `  config                      ${description(subcommands.config)}`,
+      `  install                     ${description(subcommands.install)}`,
+      '  login                       Socket API login and CLI setup',
+      `  logout                      ${description(subcommands.logout)}`,
+      `  uninstall                   ${description(subcommands.uninstall)}`,
+      `  whoami                      ${description(subcommands.whoami)}`,
+      `  wrapper                     ${description(subcommands.wrapper)}`,
     )
   } else {
     lines.push('Commands')
@@ -697,12 +693,12 @@ export async function meowWithSubcommands(
         ...flags,
         // Explicitly document the negated --no-banner variant.
         noBanner: {
-          ...flags['banner'],
+          ...flags.banner,
           hidden: false,
         } as MeowFlag,
         // Explicitly document the negated --no-spinner variant.
         noSpinner: {
-          ...flags['spinner'],
+          ...flags.spinner,
           hidden: false,
         } as MeowFlag,
       },
@@ -802,7 +798,7 @@ export async function meowWithSubcommands(
     // Check if we should show interactive help
     const shouldShowInteractive =
       (helpFlag || helpCategory !== null) &&
-      !cli2.flags['helpFull'] &&
+      !cli2.flags.helpFull &&
       !helpCategory
 
     if (shouldShowInteractive) {

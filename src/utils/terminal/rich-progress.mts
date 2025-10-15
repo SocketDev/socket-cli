@@ -1,8 +1,9 @@
 /** @fileoverview Rich progress indicators for better CLI UX. */
 
-import { Writable } from 'node:stream'
-
 import colors from 'yoctocolors-cjs'
+
+import type { Writable } from 'node:stream'
+
 
 interface MultiProgressOptions {
   stream?: Writable
@@ -144,7 +145,7 @@ export class MultiProgress {
 
     const output = lines.join('\n')
     if (output) {
-      this.stream.write(output + '\n')
+      this.stream.write(`${output}\n`)
       this.lastLineCount = lines.length
     }
   }
@@ -176,9 +177,9 @@ export class MultiProgress {
     }
 
     const elapsed = task.startTime
-      ? ((Date.now() - task.startTime) / 1000).toFixed(1) + 's'
+      ? `${((Date.now() - task.startTime) / 1000).toFixed(1)}s`
       : ''
-    const tokens = task.tokens ? ' ' + Object.values(task.tokens).join(' ') : ''
+    const tokens = task.tokens ? ` ${Object.values(task.tokens).join(' ')}` : ''
 
     return `${status} ${task.name.padEnd(20)} ${bar} ${percentage.toString().padStart(3)}% ${colors.gray(elapsed)}${tokens}`
   }
@@ -241,7 +242,7 @@ export class FileProgress {
   // private files: string[]
   private operation: string
 
-  constructor(files: string[], operation: string = 'Processing') {
+  constructor(files: string[], operation = 'Processing') {
     // this.files = files
     this.operation = operation
     this.total = files.length

@@ -62,30 +62,30 @@ export async function handleWhoami(
     const visiblePrefix = getVisibleTokenPrefix()
     const tokenDisplay = `${TOKEN_PREFIX}${visiblePrefix}...`
 
-    if (flags['json']) {
+    if (flags.json) {
       outputWhoami({
         authenticated: true,
         token: tokenDisplay,
         location: tokenLocation,
       })
     } else {
-      logger.success(`Authenticated with Socket`)
+      logger.success('Authenticated with Socket')
       logger.log(`  Token: ${tokenDisplay}`)
       logger.log(`  Source: ${tokenLocation}`)
     }
   } else {
-    if (flags['json']) {
+    if (flags.json) {
       outputWhoami({
         authenticated: false,
         token: null,
         location: null,
       })
     } else {
-      logger.fail(`Not authenticated with Socket`)
-      logger.log(``)
-      logger.log(`To authenticate, run one of:`)
-      logger.log(`  socket login`)
-      logger.log(`  export SOCKET_SECURITY_API_KEY=<your-token>`)
+      logger.fail('Not authenticated with Socket')
+      logger.log('')
+      logger.log('To authenticate, run one of:')
+      logger.log('  socket login')
+      logger.log('  export SOCKET_SECURITY_API_KEY=<your-token>')
     }
   }
 }

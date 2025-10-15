@@ -47,7 +47,7 @@ describe('patch-manifest', () => {
     'a23e4567-e89b-12d3-a456-426614174009',
   ]
 
-  function createSamplePatch(index: number = 0): PatchRecord {
+  function createSamplePatch(index = 0): PatchRecord {
     return {
       uuid: TEST_UUIDS[index] || TEST_UUIDS[0],
       exportedAt: new Date().toISOString(),

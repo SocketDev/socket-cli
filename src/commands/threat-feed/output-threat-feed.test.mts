@@ -187,7 +187,7 @@ describe('outputThreatFeed', () => {
 
   it('handles threat results data formatting', async () => {
     const { msAtHome } = await import('../../utils/ms/at-home.mts')
-    const mockMsAtHome = vi.mocked(msAtHome)
+    const _mockMsAtHome = vi.mocked(msAtHome)
 
     // Mock the entire outputThreatFeed module to avoid blessed issues.
     const { outputThreatFeed } = await import('./output-threat-feed.mts')

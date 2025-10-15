@@ -249,7 +249,6 @@ export async function listPackages(
       return await lsYarnBerry(pkgEnvDetails, options)
     case YARN_CLASSIC:
       return await lsYarnClassic(pkgEnvDetails, options)
-    case NPM:
     default:
       return await lsNpm(pkgEnvDetails, options)
   }

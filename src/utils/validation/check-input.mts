@@ -3,6 +3,7 @@ import colors from 'yoctocolors-cjs'
 import { LOG_SYMBOLS, logger } from '@socketsecurity/registry/lib/logger'
 import { stripAnsi } from '@socketsecurity/registry/lib/strings'
 
+
 import { failMsgWithBadge } from '../error/fail-msg-with-badge.mts'
 import { serializeResultJson } from '../output/result-json.mts'
 
@@ -39,7 +40,7 @@ export function checkCommandInput(
     }
     // If the message has newlines then format the first line with the input
     // expectation and the rest indented below it.
-    const logSymbol = d.test ? LOG_SYMBOLS['success'] : LOG_SYMBOLS['fail']
+    const logSymbol = d.test ? LOG_SYMBOLS.success : LOG_SYMBOLS.fail
     const reason = d.test ? d.pass : d.fail
     let listItem = `  ${logSymbol} ${lines[0]}`
     if (reason) {

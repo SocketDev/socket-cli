@@ -1,12 +1,4 @@
 #!/usr/bin/env node
-/**
- * @fileoverview Bootstrap loader for Socket CLI
- *
- * Checks if ~/.socket/_socket exists, delegates to it.
- * Otherwise downloads and installs Socket CLI there.
- */
-
-'use strict'
 
 const { existsSync } = require('node:fs')
 const { homedir } = require('node:os')

@@ -2,6 +2,7 @@ import crypto from 'node:crypto'
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 
+
 import fastGlob from 'fast-glob'
 
 import { joinAnd } from '@socketsecurity/registry/lib/arrays'
@@ -146,7 +147,7 @@ async function applyNpmPatches(
           `Found match: ${pkgJson.name}@${pkgJson.version} at ${pkgPath}`,
         )
         logger.log(`Patch key: ${patchInfo.key}`)
-        logger.group(`Processing files:`)
+        logger.group('Processing files:')
 
         spinner?.start()
 
@@ -299,7 +300,7 @@ async function processFilePatch(
   logger.group()
 
   if (dryRun) {
-    logger.log(`(dry run - no changes made)`)
+    logger.log('(dry run - no changes made)')
     logger.groupEnd()
     logger.groupEnd()
     if (wasSpinning) {
@@ -335,14 +336,14 @@ async function processFilePatch(
       )
       result = false
     } else if (verifyHashResult.data !== fileInfo.afterHash) {
-      logger.error(`Hash verification failed after patch`)
+      logger.error('Hash verification failed after patch')
       logger.group()
       logger.log(`Expected: ${fileInfo.afterHash}`)
       logger.log(`Got:      ${verifyHashResult.data}`)
       logger.groupEnd()
       result = false
     } else {
-      logger.success(`Patch applied successfully`)
+      logger.success('Patch applied successfully')
     }
   } catch (e) {
     logger.error('Error applying patch')

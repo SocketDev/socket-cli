@@ -158,22 +158,22 @@ export function isTest(): boolean {
 
 // Use direct process.env access (not ENV proxy) so rollup replace plugin can inline values.
 export function getCliVersion(): string | undefined {
-  return process.env['INLINED_SOCKET_CLI_VERSION']
+  return process.env.INLINED_SOCKET_CLI_VERSION
 }
 
 // Use direct process.env access (not ENV proxy) so rollup replace plugin can inline values.
 export function getCliVersionHash(): string | undefined {
-  return process.env['INLINED_SOCKET_CLI_VERSION_HASH']
+  return process.env.INLINED_SOCKET_CLI_VERSION_HASH
 }
 
 // Use direct process.env access (not ENV proxy) so rollup replace plugin can inline values.
 export function getCliHomepage(): string | undefined {
-  return process.env['INLINED_SOCKET_CLI_HOMEPAGE']
+  return process.env.INLINED_SOCKET_CLI_HOMEPAGE
 }
 
 // Use direct process.env access (not ENV proxy) so rollup replace plugin can inline values.
 export function getCliName(): string | undefined {
-  return process.env['INLINED_SOCKET_CLI_NAME']
+  return process.env.INLINED_SOCKET_CLI_NAME
 }
 
 export function isPublishedBuild(): boolean {

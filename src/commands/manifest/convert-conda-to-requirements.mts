@@ -18,7 +18,7 @@ export async function convertCondaToRequirements(
   let content: string
   if (filename === '-') {
     if (verbose) {
-      logger.info(`[VERBOSE] reading input from stdin`)
+      logger.info('[VERBOSE] reading input from stdin')
     }
 
     const strings: string[] = []
@@ -120,7 +120,7 @@ export function convertCondaToRequirementsFromInput(input: string): string {
       if (!indent) {
         // Store the indentation of the block.
         if (trimmed.startsWith('-')) {
-          indent = line.split('-')[0] + '-'
+          indent = `${line.split('-')[0]}-`
           if (indent.length <= delim.length) {
             // The first line after the `pip:` line does not indent further
             // than that so the block is empty?
@@ -137,7 +137,7 @@ export function convertCondaToRequirementsFromInput(input: string): string {
     }
     // Note: the line may end with a line comment so don't === it.
     else if (trimmed.startsWith('- pip:')) {
-      delim = line.split('-')[0] + '-'
+      delim = `${line.split('-')[0]}-`
       collecting = true
     }
   }

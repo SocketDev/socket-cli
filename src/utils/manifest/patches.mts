@@ -334,7 +334,7 @@ export async function migrateHashes(cwd?: string): Promise<number> {
       if (fileInfo.beforeHash.startsWith('git-sha256-')) {
         console.warn(
           `Legacy git-sha256 hash detected for ${purl}:${filePath}. ` +
-            `Manual migration required - see convertToSsri() in patch-hash.mts`,
+            'Manual migration required - see convertToSsri() in patch-hash.mts',
         )
         migratedCount++
       }
@@ -343,7 +343,7 @@ export async function migrateHashes(cwd?: string): Promise<number> {
       if (fileInfo.afterHash.startsWith('git-sha256-')) {
         console.warn(
           `Legacy git-sha256 hash detected for ${purl}:${filePath}. ` +
-            `Manual migration required - see convertToSsri() in patch-hash.mts`,
+            'Manual migration required - see convertToSsri() in patch-hash.mts',
         )
         migratedCount++
       }
@@ -370,7 +370,7 @@ export async function validateManifest(cwd?: string): Promise<boolean> {
   try {
     await readManifest(cwd)
     return true
-  } catch (error) {
+  } catch (_error) {
     return false
   }
 }

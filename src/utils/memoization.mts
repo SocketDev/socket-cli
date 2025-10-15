@@ -232,11 +232,11 @@ export function memoizeAsync<Args extends unknown[], Result>(
  * }
  */
 export function Memoize(options: MemoizeOptions<unknown[], unknown> = {}) {
-  return function (
+  return (
     _target: unknown,
     propertyKey: string,
     descriptor: PropertyDescriptor,
-  ): PropertyDescriptor {
+  ): PropertyDescriptor => {
     const originalMethod = descriptor.value as (...args: unknown[]) => unknown
 
     descriptor.value = memoize(originalMethod, {

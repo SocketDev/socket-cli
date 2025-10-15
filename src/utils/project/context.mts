@@ -129,18 +129,18 @@ async function detectFramework(root: string): Promise<string | undefined> {
     const deps = { ...pkg.dependencies, ...pkg.devDependencies }
 
     // React-based
-    if (deps['next']) {
+    if (deps.next) {
       return 'next'
     }
-    if (deps['react']) {
+    if (deps.react) {
       return 'react'
     }
 
     // Vue-based
-    if (deps['nuxt']) {
+    if (deps.nuxt) {
       return 'nuxt'
     }
-    if (deps['vue']) {
+    if (deps.vue) {
       return 'vue'
     }
 
@@ -150,23 +150,23 @@ async function detectFramework(root: string): Promise<string | undefined> {
     }
 
     // Svelte
-    if (deps['svelte'] || deps['@sveltejs/kit']) {
+    if (deps.svelte || deps['@sveltejs/kit']) {
       return 'svelte'
     }
 
     // Node.js frameworks
-    if (deps['express']) {
+    if (deps.express) {
       return 'express'
     }
-    if (deps['fastify']) {
+    if (deps.fastify) {
       return 'fastify'
     }
-    if (deps['koa']) {
+    if (deps.koa) {
       return 'koa'
     }
 
     // Static site generators
-    if (deps['gatsby']) {
+    if (deps.gatsby) {
       return 'gatsby'
     }
     if (deps['@11ty/eleventy']) {

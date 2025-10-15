@@ -1,8 +1,11 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { fetchListRepos } from './fetch-list-repos.mts'
-import { createErrorResult, createSuccessResult } from '../../../test/helpers/mocks.mts'
-import { setupSdkMockError, setupSdkMockSuccess, setupSdkSetupFailure } from '../../../test/helpers/sdk-test-helpers.mts'
+import { createSuccessResult } from '../../../test/helpers/mocks.mts'
+import {
+  setupSdkMockError,
+  setupSdkSetupFailure,
+} from '../../../test/helpers/sdk-test-helpers.mts'
 
 // Mock the dependencies.
 vi.mock('../../utils/socket/api.mjs', () => ({
@@ -34,13 +37,15 @@ describe('fetchListRepos', () => {
     }
 
     mockSetupSdk.mockResolvedValue(createSuccessResult(mockSdk))
-    mockHandleApi.mockResolvedValue(createSuccessResult({
-      results: [
-        { id: 'repo-1', name: 'first-repo' },
-        { id: 'repo-2', name: 'second-repo' },
-      ],
-      nextPage: 2,
-    }))
+    mockHandleApi.mockResolvedValue(
+      createSuccessResult({
+        results: [
+          { id: 'repo-1', name: 'first-repo' },
+          { id: 'repo-2', name: 'second-repo' },
+        ],
+        nextPage: 2,
+      }),
+    )
 
     const config = {
       direction: 'desc',
@@ -65,7 +70,10 @@ describe('fetchListRepos', () => {
   })
 
   it('handles SDK setup failure', async () => {
-    await setupSdkSetupFailure('Failed to setup SDK', { code: 1, cause: 'Missing API token' })
+    await setupSdkSetupFailure('Failed to setup SDK', {
+      code: 1,
+      cause: 'Missing API token',
+    })
 
     const config = {
       direction: 'asc',
@@ -81,7 +89,11 @@ describe('fetchListRepos', () => {
   })
 
   it('handles API call failure', async () => {
-    await setupSdkMockError('getOrgRepoList', new Error('Invalid page number'), 400)
+    await setupSdkMockError(
+      'getOrgRepoList',
+      new Error('Invalid page number'),
+      400,
+    )
 
     const config = {
       direction: 'asc',
@@ -108,7 +120,9 @@ describe('fetchListRepos', () => {
     }
 
     mockSetupSdk.mockResolvedValue(createSuccessResult(mockSdk))
-    mockHandleApi.mockResolvedValue(createSuccessResult({ results: [], nextPage: null }))
+    mockHandleApi.mockResolvedValue(
+      createSuccessResult({ results: [], nextPage: null }),
+    )
 
     const config = {
       direction: 'asc',
@@ -139,7 +153,9 @@ describe('fetchListRepos', () => {
     }
 
     mockSetupSdk.mockResolvedValue(createSuccessResult(mockSdk))
-    mockHandleApi.mockResolvedValue(createSuccessResult({ results: [], nextPage: null }))
+    mockHandleApi.mockResolvedValue(
+      createSuccessResult({ results: [], nextPage: null }),
+    )
 
     const config = {
       direction: 'desc',
@@ -170,7 +186,9 @@ describe('fetchListRepos', () => {
     }
 
     mockSetupSdk.mockResolvedValue(createSuccessResult(mockSdk))
-    mockHandleApi.mockResolvedValue(createSuccessResult({ results: [], nextPage: null }))
+    mockHandleApi.mockResolvedValue(
+      createSuccessResult({ results: [], nextPage: null }),
+    )
 
     const config = {
       direction: 'asc',
@@ -201,7 +219,9 @@ describe('fetchListRepos', () => {
     }
 
     mockSetupSdk.mockResolvedValue(createSuccessResult(mockSdk))
-    mockHandleApi.mockResolvedValue(createSuccessResult({ results: [], nextPage: null }))
+    mockHandleApi.mockResolvedValue(
+      createSuccessResult({ results: [], nextPage: null }),
+    )
 
     const config = {
       direction: 'asc',
@@ -230,7 +250,9 @@ describe('fetchListRepos', () => {
     }
 
     mockSetupSdk.mockResolvedValue(createSuccessResult(mockSdk))
-    mockHandleApi.mockResolvedValue(createSuccessResult({ results: [], nextPage: null }))
+    mockHandleApi.mockResolvedValue(
+      createSuccessResult({ results: [], nextPage: null }),
+    )
 
     const config = {
       direction: 'asc',

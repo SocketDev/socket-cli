@@ -114,9 +114,7 @@ describe('handleAnalytics', () => {
     const { fetchOrgAnalyticsData } = await import('./fetch-org-analytics.mts')
     const { outputAnalytics } = await import('./output-analytics.mts')
 
-    vi.mocked(fetchOrgAnalyticsData).mockResolvedValue(
-      createSuccessResult([]),
-    )
+    vi.mocked(fetchOrgAnalyticsData).mockResolvedValue(createSuccessResult([]))
 
     await handleAnalytics({
       filepath: '/tmp/analytics.json',
@@ -143,9 +141,7 @@ describe('handleAnalytics', () => {
     )
     const { outputAnalytics } = await import('./output-analytics.mts')
 
-    vi.mocked(fetchRepoAnalyticsData).mockResolvedValue(
-      createSuccessResult([]),
-    )
+    vi.mocked(fetchRepoAnalyticsData).mockResolvedValue(createSuccessResult([]))
 
     await handleAnalytics({
       filepath: '/tmp/analytics.json',

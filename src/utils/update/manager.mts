@@ -39,6 +39,7 @@ import { UPDATE_CHECK_TTL } from '../../constants.mts'
 import type { AuthInfo } from './checker.mts'
 import type { StoreRecord } from './store.mts'
 
+
 interface UpdateManagerOptions {
   authInfo?: AuthInfo | undefined
   name: string
