@@ -25,6 +25,7 @@ import {
 } from '../../constants.mts'
 import { getErrorCause } from '../../utils/error/errors.mjs'
 import { findUp } from '../../utils/fs/fs.mjs'
+import { createBackup } from '../../utils/manifest/patches/backup.mts'
 import { getPurlObject, normalizePurl } from '../../utils/purl/parse.mjs'
 
 import type { PatchRecord } from './manifest-schema.mts'
@@ -164,6 +165,7 @@ async function applyNpmPatches(
             socketDir,
             {
               dryRun,
+              patchUuid: patchInfo.patch.uuid,
               spinner,
             },
           )
@@ -230,6 +232,7 @@ async function findNodeModulesPaths(cwd: string): Promise<string[]> {
 
 type ProcessFilePatchOptions = {
   dryRun?: boolean | undefined
+  patchUuid?: string | undefined
   spinner?: Spinner | undefined
 }
 
@@ -240,7 +243,7 @@ async function processFilePatch(
   socketDir: string,
   options?: ProcessFilePatchOptions | undefined,
 ): Promise<boolean> {
-  const { dryRun, spinner } = {
+  const { dryRun, patchUuid, spinner } = {
     __proto__: null,
     ...options,
   } as ProcessFilePatchOptions
@@ -326,6 +329,19 @@ async function processFilePatch(
 
   let result = true
   try {
+    // Create backup before applying patch if UUID is provided.
+    if (patchUuid) {
+      try {
+        await createBackup(patchUuid, filepath)
+        logger.log(`Created backup for ${fileName}`)
+      } catch (e) {
+        logger.warn(
+          `Failed to create backup for ${fileName}: ${getErrorCause(e)}`,
+        )
+        // Continue with patching even if backup fails.
+      }
+    }
+
     await fs.copyFile(blobPath, filepath)
 
     // Verify the hash after copying to ensure file integrity.
