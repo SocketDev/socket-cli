@@ -18,7 +18,7 @@ const srcDir = path.join(rootDir, 'src')
 const distDir = path.join(rootDir, 'dist-single')
 
 export default {
-  input: path.join(srcDir, 'cli.mts'),
+  input: path.join(srcDir, 'cli-entry.mts'),
   output: {
     file: path.join(distDir, 'socket-cli-bundle.js'),
     format: 'cjs',

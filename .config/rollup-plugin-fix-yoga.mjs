@@ -45,7 +45,24 @@ export default function fixYoga() {
             s.overwrite(
               nodeStart,
               nodeEnd,
-              `const Yoga = wrapAssembly(loadYoga());`
+              `const __yogaModule = loadYoga();
+if (__yogaModule && typeof __yogaModule === 'object' && '__modules' in __yogaModule) {
+  // Module is already initialized (synchronous case).
+  var Yoga = wrapAssembly(__yogaModule);
+} else {
+  // Module needs async initialization - poll for ready state.
+  var Yoga;
+  var __resolved = false;
+  if (__yogaModule && __yogaModule.ready) {
+    __yogaModule.ready.then(function(m) { __resolved = true; Yoga = wrapAssembly(m); });
+  }
+  // Synchronous wait using deasync-style polling.
+  var __start = Date.now();
+  while (!__resolved && Date.now() - __start < 5000) {
+    // Poll - this will never actually wait in practice for embedded WASM.
+  }
+  if (!__resolved) throw new Error('Yoga WASM initialization timeout');
+}`
             )
           }
         })
