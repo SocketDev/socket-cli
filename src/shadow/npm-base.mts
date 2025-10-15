@@ -1,3 +1,5 @@
+import { homedir } from 'node:os'
+import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import {
@@ -9,7 +11,7 @@ import {
 import { isDebug } from '@socketsecurity/registry/lib/debug'
 import { getOwn } from '@socketsecurity/registry/lib/objects'
 import { normalizePath } from '@socketsecurity/registry/lib/path'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
+import { spawn, spawnSync } from '@socketsecurity/registry/lib/spawn'
 
 import { ensureIpcInStdio } from './stdio-ipc.mts'
 import constants, {
@@ -64,6 +66,30 @@ export default async function shadowNpmBase(
   const nodeOptionsArg = rawBinArgs.findLast(isNpmNodeOptionsFlag)
   const progressArg = rawBinArgs.findLast(isNpmProgressFlag) !== '--no-progress'
   const otherArgs = terminatorPos === -1 ? [] : args.slice(terminatorPos)
+
+  // Compute npm paths inline for permission flags.
+  let npmGlobalPrefix = ''
+  let npmCachePath = ''
+  if (isShadowNpm && constants.SUPPORTS_NODE_PERMISSION_FLAG) {
+    try {
+      const { findRealNpm } = await import('@socketsecurity/registry/lib/bin')
+      const npmBin = findRealNpm()
+      // Get npm global prefix.
+      const prefixResult = spawnSync(npmBin, ['prefix', '-g'], { cwd: process.cwd() })
+      npmGlobalPrefix = prefixResult.stdout.trim()
+      // Get npm cache path.
+      const cacheResult = spawnSync(npmBin, ['config', 'get', 'cache'], { cwd: process.cwd() })
+      npmCachePath = cacheResult.stdout.trim()
+    } catch {
+      // Fallback to defaults if npm commands fail.
+      const home = homedir()
+      npmGlobalPrefix = process.platform === 'win32'
+        ? path.join(process.env['APPDATA'] || path.join(home, 'AppData', 'Roaming'), 'npm')
+        : '/usr/local'
+      npmCachePath = path.join(home, '.npm')
+    }
+  }
+
   const permArgs =
     isShadowNpm && constants.SUPPORTS_NODE_PERMISSION_FLAG
       ? [
@@ -75,8 +101,8 @@ export default async function shadowNpmBase(
           // and package.json files.
           '--allow-fs-read=*',
           `--allow-fs-write=${cwd}/*`,
-          `--allow-fs-write=${constants.npmGlobalPrefix}/*`,
-          `--allow-fs-write=${constants.npmCachePath}/*`,
+          `--allow-fs-write=${npmGlobalPrefix}/*`,
+          `--allow-fs-write=${npmCachePath}/*`,
         ]
       : []
 

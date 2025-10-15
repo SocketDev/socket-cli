@@ -136,112 +136,80 @@ const constants = {
   ENV,
   // Add property getters for shadow bin paths to maintain backward compatibility.
   get shadowBinPath() {
-    const { getShadowBinPath } = require('./constants/paths.mjs')
-    return getShadowBinPath()
+    return cliPaths.getShadowBinPath()
   },
   get shadowNpmBinPath() {
-    const { getShadowNpmBinPath } = require('./constants/paths.mjs')
-    return getShadowNpmBinPath()
+    return cliPaths.getShadowNpmBinPath()
   },
   get shadowNpmInjectPath() {
-    const { getShadowNpmInjectPath } = require('./constants/paths.mjs')
-    return getShadowNpmInjectPath()
+    return cliPaths.getShadowNpmInjectPath()
   },
   get shadowNpxBinPath() {
-    const { getShadowNpxBinPath } = require('./constants/paths.mjs')
-    return getShadowNpxBinPath()
+    return cliPaths.getShadowNpxBinPath()
   },
   get shadowPnpmBinPath() {
-    const { getShadowPnpmBinPath } = require('./constants/paths.mjs')
-    return getShadowPnpmBinPath()
+    return cliPaths.getShadowPnpmBinPath()
   },
   get shadowYarnBinPath() {
-    const { getShadowYarnBinPath } = require('./constants/paths.mjs')
-    return getShadowYarnBinPath()
+    return cliPaths.getShadowYarnBinPath()
   },
   get instrumentWithSentryPath() {
-    const { getInstrumentWithSentryPath } = require('./constants/paths.mjs')
-    return getInstrumentWithSentryPath()
+    return cliPaths.getInstrumentWithSentryPath()
   },
   // Add RC path getters.
   get bashRcPath() {
-    const { getBashRcPath } = require('./constants/paths.mjs')
-    return getBashRcPath()
+    return cliPaths.getBashRcPath()
   },
   get zshRcPath() {
-    const { getZshRcPath } = require('./constants/paths.mjs')
-    return getZshRcPath()
+    return cliPaths.getZshRcPath()
   },
   // Add CLI binary path getter.
   get binCliPath() {
-    const { getBinCliPath } = require('./constants/paths.mjs')
-    return getBinCliPath()
+    return cliPaths.getBinCliPath()
   },
   // Add cache path getter.
   get githubCachePath() {
-    const { getGithubCachePath } = require('./constants/paths.mjs')
-    return getGithubCachePath()
+    return cliPaths.getGithubCachePath()
   },
   // Add socket app data path getter.
   get socketAppDataPath() {
-    const { getSocketAppDataPath } = require('./constants/paths.mjs')
-    return getSocketAppDataPath()
+    return cliPaths.getSocketAppDataPath()
   },
   // Re-export spinner from registry process constants.
   get spinner() {
-    const { getSpinner } = require('@socketsecurity/registry/constants/process')
-    return getSpinner()
+    return registryProcess.getSpinner()
   },
   // Add node flag getters to maintain backward compatibility.
   get execPath() {
-    const { getExecPath } = require('@socketsecurity/registry/constants/node')
-    return getExecPath()
+    return registryNode.getExecPath()
   },
   get nodeDebugFlags() {
-    const { getNodeDebugFlags } = require('@socketsecurity/registry/constants/node')
-    return getNodeDebugFlags()
+    return registryNode.getNodeDebugFlags()
   },
   get nodeHardenFlags() {
-    const { getNodeHardenFlags } = require('@socketsecurity/registry/constants/node')
-    return getNodeHardenFlags()
+    return registryNode.getNodeHardenFlags()
   },
   get nodeNoWarningsFlags() {
-    const { getNodeNoWarningsFlags } = require('@socketsecurity/registry/constants/node')
-    return getNodeNoWarningsFlags()
+    return registryNode.getNodeNoWarningsFlags()
   },
   // Add registry getters.
   get abortSignal() {
-    const { getAbortSignal } = require('@socketsecurity/registry/constants/process')
-    return getAbortSignal()
+    return registryProcess.getAbortSignal()
   },
   get maintainedNodeVersions() {
-    const { getMaintainedNodeVersions } = require('@socketsecurity/registry/constants/node')
-    return getMaintainedNodeVersions()
+    return registryNode.getMaintainedNodeVersions()
   },
   get npmExecPath() {
-    const { getNpmExecPath } = require('@socketsecurity/registry/constants/node')
-    return getNpmExecPath()
+    return registryAgents.getNpmExecPath()
   },
   get pnpmExecPath() {
-    const { getPnpmExecPath } = require('@socketsecurity/registry/constants/node')
-    return getPnpmExecPath()
-  },
-  // Add npm/cache related getters.
-  get npmGlobalPrefix() {
-    const { getNpmGlobalPrefix } = require('@socketsecurity/registry/constants/node')
-    return getNpmGlobalPrefix()
-  },
-  get npmCachePath() {
-    const { getNpmCachePath } = require('@socketsecurity/registry/constants/node')
-    return getNpmCachePath()
+    return registryAgents.getPnpmExecPath()
   },
   get supportsNodePermissionFlag() {
-    const { supportsNodePermissionFlag } = require('@socketsecurity/registry/constants/node')
-    return supportsNodePermissionFlag()
+    return registryNode.supportsNodePermissionFlag()
   },
   get SUPPORTS_NODE_PERMISSION_FLAG() {
-    const { supportsNodePermissionFlag } = require('@socketsecurity/registry/constants/node')
-    return supportsNodePermissionFlag()
+    return registryNode.supportsNodePermissionFlag()
   },
   // Add processEnv getter to access process.env.
   get processEnv() {
