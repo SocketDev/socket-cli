@@ -69,7 +69,7 @@ const sharedRules = {
   'unicorn/consistent-function-scoping': 'error',
   curly: 'error',
   'no-await-in-loop': 'error',
-  'no-control-regex': 'error',
+  'no-control-regex': 'off',
   'no-empty': ['error', { allowEmptyCatch: true }],
   'no-new': 'error',
   'no-proto': 'error',
