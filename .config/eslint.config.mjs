@@ -299,6 +299,7 @@ export default [
       // DISABLED: Requires type-aware linting which causes performance issues.
       // '@typescript-eslint/return-await': ['error', 'always'],
       // Disable the following rules because they don't play well with TypeScript.
+      'dot-notation': 'off',
       'n/hashbang': 'off',
       'n/no-extraneous-import': 'off',
       'n/no-missing-import': 'off',
