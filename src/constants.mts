@@ -19,7 +19,7 @@ import * as registrySocket from '@socketsecurity/registry/constants/socket'
 import * as registryTesting from '@socketsecurity/registry/constants/testing'
 import * as registryTypescript from '@socketsecurity/registry/constants/typescript'
 
-// Import CLI-specific semantic constant modules
+// Import CLI-specific semantic constant modules.
 import * as cliAlerts from './constants/alerts.mjs'
 import * as cliBuild from './constants/build.mjs'
 import * as cliCache from './constants/cache.mjs'

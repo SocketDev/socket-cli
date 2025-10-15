@@ -255,5 +255,8 @@
     "ignore-type-assertion": true,
     "ignore-files": "test/*",
     "strict": true
+  },
+  "dependencies": {
+    "ajv-dist": "8.17.1"
   }
 }

@@ -1,6 +1,6 @@
 /**
  * Rollup plugin to fix yoga-layout's top-level await issue.
- * Uses Babel AST to properly remove the await keyword.
+ * Converts async WASM loading to synchronous using busy-wait (spinlock).
  */
 
 import { parse } from '@babel/core'
@@ -30,6 +30,7 @@ export default function fixYoga() {
         const s = new MagicString(code)
 
         // Find: const Yoga = wrapAssembly(await loadYoga());
+        // Replace with synchronous busy-wait pattern.
         ast.program.body.forEach(node => {
           if (
             node.type === 'VariableDeclaration' &&
@@ -38,9 +39,14 @@ export default function fixYoga() {
             node.declarations[0]?.init?.callee?.name === 'wrapAssembly' &&
             node.declarations[0]?.init?.arguments[0]?.type === 'AwaitExpression'
           ) {
-            // Found it! Remove the await keyword.
-            const awaitExpr = node.declarations[0].init.arguments[0]
-            s.overwrite(awaitExpr.start, awaitExpr.argument.start, '')
+            // Replace with busy-wait synchronous loading.
+            const nodeStart = node.start
+            const nodeEnd = node.end
+            s.overwrite(
+              nodeStart,
+              nodeEnd,
+              `const Yoga = wrapAssembly(loadYoga());`
+            )
           }
         })
 
