@@ -32,9 +32,11 @@ describe('types', () => {
     })
 
     it('can be used as a union type', () => {
-      function processResult(value: number): CResult<string> {
+      // Intentionally defined inline to test type inference in specific context.
+      // eslint-disable-next-line unicorn/consistent-function-scoping
+      const processResult = (value: number): CResult<string> => {
         if (value > 0) {
-          return { ok: true, value: `Positive: ${value}` }
+          return { ok: true, data: `Positive: ${value}` }
         }
         return { ok: false, error: new Error('Value must be positive') }
       }
@@ -43,7 +45,7 @@ describe('types', () => {
       const failure = processResult(-1)
 
       if (success.ok) {
-        expect(success.value).toBe('Positive: 5')
+        expect(success.data).toBe('Positive: 5')
       }
 
       if (!failure.ok) {

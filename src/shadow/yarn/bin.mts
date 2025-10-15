@@ -4,9 +4,9 @@ import { debugNs } from '@socketsecurity/registry/lib/debug'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import constants, { YARN } from '../../constants.mts'
-import { cmdFlagsToString } from '../../utils/cmd.mts'
-import { getPublicApiToken } from '../../utils/sdk.mts'
-import { installYarnLinks } from '../../utils/shadow-links.mts'
+import { cmdFlagsToString } from '../../utils/process/cmd.mts'
+import { installYarnLinks } from '../../utils/shadow/links.mts'
+import { getPublicApiToken } from '../../utils/socket/sdk.mjs'
 import { scanPackagesAndLogAlerts } from '../common.mts'
 import { ensureIpcInStdio } from '../stdio-ipc.mts'
 

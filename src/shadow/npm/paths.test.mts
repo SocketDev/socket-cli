@@ -14,7 +14,7 @@ import {
 const mockGetNpmRequire = vi.hoisted(() => vi.fn())
 const mockNormalizePath = vi.hoisted(() => vi.fn())
 
-vi.mock('../../utils/npm-paths.mts', () => ({
+vi.mock('../../utils/npm/paths.mts', () => ({
   getNpmRequire: mockGetNpmRequire,
 }))
 

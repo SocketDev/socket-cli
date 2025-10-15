@@ -35,13 +35,13 @@ On first run:
 
 ```bash
 # Build for current platform
-pnpm build:sea
+pnpm build --sea
 
 # Build for specific platform/arch
-pnpm build:sea -- --platform=darwin --arch=arm64
+pnpm build --sea -- --platform=darwin --arch=arm64
 
 # Use specific Node version
-pnpm build:sea -- --node-version=20.11.0
+pnpm build --sea -- --node-version=20.11.0
 ```
 
 ### Options

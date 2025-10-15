@@ -33,12 +33,12 @@ jobs:
     outputs:
       node_version: ${{ steps.detect.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
         with:
           sparse-checkout: |
             scripts/build/build-binary.mjs
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version: '20'
 
@@ -66,9 +66,9 @@ jobs:
                     });
                   const v24 = versions.find(v => v.startsWith('24.'));
                   const v22 = versions.find(v => v.startsWith('22.'));
-                  console.log(v24 || v22 || '24.9.0');
+                  console.log(v24 || v22 || '24.10.0');
                 })
-                .catch(() => console.log('24.9.0'));
+                .catch(() => console.log('24.10.0'));
             ")
             echo "version=${VERSION}" >> $GITHUB_OUTPUT
             echo "Detected Node version: ${VERSION}"
@@ -89,6 +89,14 @@ jobs:
             platform: linux
             arch: arm64
 
+          # Alpine Linux builds
+          - os: ubuntu-latest
+            platform: alpine
+            arch: x64
+          - os: ubuntu-latest
+            platform: alpine
+            arch: arm64
+
           # macOS builds
           - os: macos-latest
             platform: darwin
@@ -107,13 +115,13 @@ jobs:
 
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version: '20'
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@9fd676a19091d4595eefd76e4bd31c97133911f1 # v4.2.0
         with:
           version: latest
 
@@ -123,6 +131,8 @@ jobs:
         run: pnpm run build
 
       - name: Build binary with yao-pkg
+        id: build-yao-pkg
+        continue-on-error: true
         run: |
           node scripts/build/build-binary.mjs \
             --mode=yao-pkg \
@@ -131,8 +141,25 @@ jobs:
             --node-version=${{ needs.detect-node-version.outputs.node_version }} \
             --output=dist/binaries/socket-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.platform == 'win32' && '.exe' || '' }}
 
+      - name: Build binary with yao-pkg (fallback with clean rebuild)
+        if: steps.build-yao-pkg.outcome == 'failure'
+        run: |
+          echo "Initial build failed, attempting clean rebuild with Node.js..."
+          node scripts/build-yao-pkg-node.mjs --clean --node-version=${{ needs.detect-node-version.outputs.node_version }}
+          node scripts/build/build-binary.mjs \
+            --mode=yao-pkg \
+            --platform=${{ matrix.platform }} \
+            --arch=${{ matrix.arch }} \
+            --node-version=${{ needs.detect-node-version.outputs.node_version }} \
+            --output=dist/binaries/socket-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.platform == 'win32' && '.exe' || '' }}
+
+      - name: Verify binary
+        run: |
+          ls -la dist/binaries/socket-*
+          file dist/binaries/socket-* || true
+
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: yao-pkg-${{ matrix.platform }}-${{ matrix.arch }}
           path: dist/binaries/socket-*
@@ -170,13 +197,13 @@ jobs:
 
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version: ${{ matrix.node }}
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@9fd676a19091d4595eefd76e4bd31c97133911f1 # v4.2.0
         with:
           version: latest
 
@@ -196,8 +223,13 @@ jobs:
             --arch=${{ matrix.arch }} \
             --output=dist/binaries/socket-sea-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.platform == 'win32' && '.exe' || '' }}
 
+      - name: Verify binary
+        run: |
+          ls -la dist/binaries/socket-sea-*
+          file dist/binaries/socket-sea-* || true
+
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: node-sea-${{ matrix.platform }}-${{ matrix.arch }}
           path: dist/binaries/socket-sea-*
@@ -212,10 +244,10 @@ jobs:
       contents: write
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
 
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@cc203385981b70ca67e1cc392babf9cc229d5806 # v4.1.9
         with:
           path: dist/binaries
           pattern: '*-*-*'
@@ -263,7 +295,7 @@ jobs:
 ## Binaries
 
 This release includes binaries built with:
-- **yao-pkg**: Maximum compatibility, Node ${{ needs.detect-node-version.outputs.node_version || '24.9.0' }}
+- **yao-pkg**: Maximum compatibility, Node ${{ needs.detect-node-version.outputs.node_version || '24.10.0' }}
 - **node-sea**: Native Node.js Single Executable Applications (experimental)
 
 ### Supported Platforms

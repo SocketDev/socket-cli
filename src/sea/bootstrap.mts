@@ -1,3 +1,4 @@
+/* eslint-disable no-await-in-loop -- Sequential operations required for bootstrap */
 /**
  * Ultra-thin bootstrap wrapper for Socket CLI SEA.
  *
@@ -13,6 +14,7 @@ import { existsSync, promises as fs } from 'node:fs'
 import https from 'node:https'
 import os from 'node:os'
 import path from 'node:path'
+
 // @ts-ignore - nanotar module not available currently
 import { parseTarGzip } from 'nanotar'
 
@@ -640,7 +642,7 @@ async function spawnNodeProcess(
     cliPathForEmbedded?: string
   },
 ): Promise<void> {
-  const { env, cliPathForEmbedded } = options
+  const { cliPathForEmbedded, env } = options
 
   const child = spawn(command, commandArgs, {
     stdio: ['inherit', 'inherit', 'inherit', 'ipc'],

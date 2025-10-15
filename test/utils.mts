@@ -204,8 +204,22 @@ export async function spawnSocketCli(
     __proto__: null,
     ...options,
   } as SpawnOptions
+
+  // Detect if entryPath is a standalone binary (not a JS file).
+  // Binaries include: yao-pkg, SEA, or any executable without JS extension.
+  const isJsFile =
+    entryPath.endsWith('.js') ||
+    entryPath.endsWith('.mjs') ||
+    entryPath.endsWith('.cjs') ||
+    entryPath.endsWith('.mts') ||
+    entryPath.endsWith('.ts')
+
+  // For binaries, execute directly. For JS files, run through Node.
+  const command = isJsFile ? constants.execPath : entryPath
+  const commandArgs = isJsFile ? [entryPath, ...args] : args
+
   try {
-    const output = await spawn(constants.execPath, [entryPath, ...args], {
+    const output = await spawn(command, commandArgs, {
       cwd,
       env: {
         ...process.env,

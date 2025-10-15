@@ -22,15 +22,15 @@ const mockSpawn = vi.hoisted(() => vi.fn())
 const mockGetAlertsMapFromPurls = vi.hoisted(() => vi.fn())
 const mockLogAlertsMap = vi.hoisted(() => vi.fn())
 
-vi.mock('../../utils/alerts-map.mts', () => ({
+vi.mock('../../utils/socket/alerts.mts', () => ({
   getAlertsMapFromPurls: mockGetAlertsMapFromPurls,
 }))
 
-vi.mock('../../utils/socket-package-alert.mts', () => ({
+vi.mock('../../utils/socket/package-alert.mts', () => ({
   logAlertsMap: mockLogAlertsMap,
 }))
 
-vi.mock('../../utils/shadow-links.mts', () => ({
+vi.mock('../../utils/shadow/links.mts', () => ({
   installYarnLinks: mockInstallYarnLinks,
 }))
 

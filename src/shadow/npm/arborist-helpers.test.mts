@@ -8,7 +8,7 @@ import {
 
 import type { ArboristInstance, Diff, NodeClass } from './arborist/types.mts'
 import type { PackageDetail } from './arborist-helpers.mts'
-import type { AlertsByPurl } from '../../utils/socket-package-alert.mts'
+import type { AlertsByPurl } from '../../utils/socket/package-alert.mts'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 // Mock all dependencies.
@@ -17,7 +17,7 @@ const mockIdToNpmPurl = vi.hoisted(() => vi.fn())
 const mockParseUrl = vi.hoisted(() => vi.fn())
 const mockToFilterConfig = vi.hoisted(() => vi.fn())
 
-vi.mock('../../utils/alerts-map.mts', () => ({
+vi.mock('../../utils/socket/alerts.mts', () => ({
   getAlertsMapFromPurls: mockGetAlertsMapFromPurls,
 }))
 
@@ -29,7 +29,7 @@ vi.mock('@socketsecurity/registry/lib/url', () => ({
   parseUrl: mockParseUrl,
 }))
 
-vi.mock('../../utils/filter-config.mts', () => ({
+vi.mock('../../utils/validation/filter-config.mts', () => ({
   toFilterConfig: mockToFilterConfig,
 }))
 
@@ -393,7 +393,7 @@ describe('arborist-helpers', () => {
       // Create a large number of children to trigger loop sentinel.
       const children: Diff[] = []
       for (let i = 0; i < 100_001; i++) {
-        // eslint-disable-next-line no-await-in-loop
+         
         children.push({
           action: DiffAction.add,
           actual: null,

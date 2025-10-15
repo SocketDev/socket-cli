@@ -45,10 +45,10 @@ You are a **Principal Software Engineer** responsible for:
 - **Build types**: `npm run build:dist:types`
 - **Test**: `npm run test` (runs check + all tests)
 - **Test unit only**: `npm run test:unit` or `pnpm test:unit`
-- **Lint**: `npm run check:lint` (uses eslint)
-- **Type check**: `npm run check:tsc` (uses tsgo)
+- **Lint**: `npm run lint` (uses eslint)
+- **Type check**: `npm run type` (uses tsgo)
 - **Check all**: `npm run check` (lint + typecheck)
-- **Fix linting**: `npm run lint:fix`
+- **Fix linting**: `npm run fix` (auto-fixes linting issues)
 - **Commit without tests**: `git commit --no-verify` (skips pre-commit hooks including tests)
 
 ### Cross-Platform Compatibility - CRITICAL: Windows and POSIX
@@ -153,10 +153,120 @@ Each command follows a consistent pattern:
 - Formatting with Biome
 
 ### Testing
-- Vitest for unit testing
-- Test files use `.test.mts` extension
-- Fixtures in `test/fixtures/`
-- Coverage reporting available
+
+Socket CLI uses Vitest for unit testing with comprehensive test helpers for consistent patterns.
+
+#### Test Structure
+- **Test helpers**: `test/helpers/` - Reusable test utilities
+- **Command tests**: `src/commands/*/*.test.mts` - Tests co-located with command modules
+- **Test utils**: `test/utils.mts`, `test/constants.mts` - Core test infrastructure
+- **Fixtures**: `test/fixtures/` - Test data and mock files
+- **Organization**: Tests organized by command area (organization, repository, scan, etc.)
+
+#### Test Helpers
+Socket CLI provides four categories of test helpers for consistent testing patterns:
+
+1. **CLI Execution Helpers** (`test/helpers/cli-execution.mts` - 312 lines)
+   - `executeCliCommand()` - Execute CLI with enhanced result handling
+   - `expectCliSuccess()` - Expect successful command execution
+   - `expectCliError()` - Expect command failure with specific exit code
+   - `executeCliJson()` - Execute and parse JSON output automatically
+   - `executeCliWithRetry()` - Execute with retry logic for transient failures
+   - `executeBatchCliCommands()` - Execute multiple commands in sequence
+   - `executeCliWithTiming()` - Execute with performance timing
+
+2. **Output Assertions** (`test/helpers/output-assertions.mts` - 423 lines)
+   - `expectOutput()` - Fluent API for output validation
+   - `expectStdoutContainsAll()` - Validate multiple required strings
+   - `expectOrderedPatterns()` - Validate patterns appear in order
+   - `expectValidJson()` - Validate and parse JSON output
+   - `expectLineCount()` - Validate output line count
+   - `expectNoAnsiCodes()` - Validate plain text output
+   - `expectTableStructure()` - Validate table-like structure
+
+3. **Result Assertions** (`test/helpers/result-assertions.mts` - 418 lines)
+   - `expectResult()` - Fluent API for CResult validation
+   - `expectSuccess()` - Extract data from successful CResult
+   - `expectFailure()` - Extract error from failed CResult
+   - `expectFailureWithMessage()` - Validate error message and code
+   - `expectAllSuccess()` - Validate array of results all succeeded
+   - `extractSuccessData()` - Extract data from successful results
+   - `extractErrorMessages()` - Extract error messages from failures
+
+4. **Workspace Helpers** (`test/helpers/workspace-helper.mts` - 402 lines)
+   - `createTestWorkspace()` - Create temporary test workspace
+   - `withTestWorkspace()` - Auto-cleanup workspace pattern
+   - `createWorkspaceWithLockfile()` - Create workspace with lockfiles (npm/pnpm/yarn)
+   - `createMonorepoWorkspace()` - Create monorepo structure
+   - `createWorkspaceWithSocketConfig()` - Create workspace with .socketrc.json
+   - `setupPackageJson()` - Add dependencies to existing workspace
+
+#### Usage Examples
+
+**Before (without helpers):**
+```typescript
+describe('socket scan', () => {
+  it('should execute scan', async () => {
+    const binPath = path.join(__dirname, '../../bin/cli.js')
+    const result = await spawn(process.execPath, [binPath, 'scan', '--json', '--config', '{}'])
+    expect(result.code).toBe(0)
+    const json = JSON.parse(result.stdout)
+    expect(json.id).toBeDefined()
+    const cleanedStdout = stripAnsi(result.stdout.trim())
+    expect(cleanedStdout).toContain('scan')
+  })
+})
+```
+
+**After (with helpers):**
+```typescript
+import { executeCliJson, expectOutput } from '../helpers/index.mts'
+
+describe('socket scan', () => {
+  it('should execute scan', async () => {
+    const { data, result } = await executeCliJson<ScanResult>(['scan'])
+    expectOutput(result).succeeded().stdoutContains('scan')
+    expect(data.id).toBeDefined()
+  })
+})
+```
+
+**Benefits:**
+- 70% fewer lines of code
+- Automatic config isolation
+- Built-in output cleaning
+- Type-safe JSON parsing
+- Fluent assertion API
+- Better error messages
+
+See `test/helpers/EXAMPLES.md` for comprehensive usage examples and `test/helpers/example-usage.test.mts` for working test demonstrations.
+
+#### Running Tests
+- **All tests**: `pnpm test`
+- **Unit tests only**: `pnpm test:unit`
+- **Specific file**: `pnpm test:unit src/commands/specific/cmd-file.test.mts`
+  - **CRITICAL**: NEVER use `--` before test file paths (runs ALL tests instead!)
+- **With pattern**: `pnpm test:unit src/commands/specific/cmd-file.test.mts -t "pattern"`
+- **Update snapshots**: `pnpm testu` (all) or `pnpm testu <file>`
+- **Coverage**: `pnpm run test:unit:coverage` (individual test coverage)
+- **Coverage percentage**: `pnpm run coverage:percent`
+
+#### Test Best Practices
+- **Use `setupTestEnvironment()`** in `beforeEach` hooks for consistent test setup
+- **Use helper factories**: `createSuccessResult()`, `createErrorResult()` for CResult patterns
+- **Use `executeCliCommand()`** for CLI tests instead of raw spawn
+- **Leverage fluent assertions**: Chain `expectOutput()` and `expectResult()` methods
+- **Auto-cleanup workspaces**: Use `withTestWorkspace()` instead of manual cleanup
+- **Isolate config**: All CLI commands automatically add `--config {}` to prevent user config pollution
+- **Type safety**: Use generic types in `executeCliJson<T>()` and `expectResult<T>()`
+- **Follow migrated patterns**: Reference existing test files for established patterns
+
+#### Coverage Status
+Coverage reporting available via:
+- `pnpm run test:unit:coverage` - Run tests with coverage
+- `pnpm run coverage:percent` - Display coverage percentage
+- **Known Issue**: `pnpm run cover` currently broken due to import issues in `scripts/cover.mjs`
+  - **Workaround**: Use `pnpm run test:unit:coverage` instead
 
 ### External Dependencies
 - Bundles external dependencies in `external/` directory
@@ -288,7 +398,7 @@ Socket CLI integrates with various third-party tools and services:
         os-versions: '["ubuntu-latest", "windows-latest"]'
         test-script: 'pnpm run test-ci'
         test-setup-script: 'pnpm run build'
-        type-check-script: 'pnpm run check:tsc'
+        type-check-script: 'pnpm run type'
         type-check-setup-script: 'pnpm run build'
   ```
 - **Orchestration**: CI workflow orchestrates lint.yml, types.yml, test.yml, and coverage reporting

@@ -29,12 +29,12 @@ vi.mock('@socketsecurity/registry/lib/spawn', () => ({
   spawn: mockSpawn,
 }))
 
-vi.mock('../utils/shadow-links.mts', () => ({
+vi.mock('../utils/shadow/links.mts', () => ({
   installNpmLinks: mockInstallNpmLinks,
   installNpxLinks: mockInstallNpxLinks,
 }))
 
-vi.mock('../utils/sdk.mts', () => ({
+vi.mock('../utils/socket/sdk.mjs', () => ({
   getPublicApiToken: mockGetPublicApiToken,
 }))
 

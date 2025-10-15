@@ -12,16 +12,19 @@ import constants, {
   PNPM,
   PNPM_LOCK_YAML,
 } from '../../constants.mts'
-import { getAlertsMapFromPnpmLockfile } from '../../utils/alerts-map.mts'
+import {
+  parsePnpmLockfile,
+  readPnpmLockfile,
+} from '../../utils/pnpm/lockfile.mts'
 import {
   cmdFlagsToString,
   isAddCommand,
   isPnpmLockfileScanCommand,
-} from '../../utils/cmd.mts'
-import { parsePnpmLockfile, readPnpmLockfile } from '../../utils/pnpm.mts'
-import { getPublicApiToken } from '../../utils/sdk.mts'
-import { installPnpmLinks } from '../../utils/shadow-links.mts'
-import { logAlertsMap } from '../../utils/socket-package-alert.mts'
+} from '../../utils/process/cmd.mts'
+import { installPnpmLinks } from '../../utils/shadow/links.mts'
+import { getAlertsMapFromPnpmLockfile } from '../../utils/socket/alerts.mts'
+import { logAlertsMap } from '../../utils/socket/package-alert.mts'
+import { getPublicApiToken } from '../../utils/socket/sdk.mjs'
 import { scanPackagesAndLogAlerts } from '../common.mts'
 import { ensureIpcInStdio } from '../stdio-ipc.mts'
 

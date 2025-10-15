@@ -18,18 +18,18 @@ import constants, {
   NPM,
   NPX,
 } from '../constants.mts'
-import { cmdFlagsToString } from '../utils/cmd.mts'
-import { findUp } from '../utils/fs.mts'
-import { getPublicApiToken } from '../utils/sdk.mts'
-import { installNpmLinks, installNpxLinks } from '../utils/shadow-links.mts'
+import { findUp } from '../utils/fs/fs.mjs'
+import { cmdFlagsToString } from '../utils/process/cmd.mts'
+import { installNpmLinks, installNpxLinks } from '../utils/shadow/links.mts'
+import { getPublicApiToken } from '../utils/socket/sdk.mjs'
 
-import type { StdioOptions } from 'node:child_process'
 import type { IpcObject } from '../constants.mts'
 import type {
   SpawnExtra,
   SpawnOptions,
   SpawnResult,
 } from '@socketsecurity/registry/lib/spawn'
+import type { StdioOptions } from 'node:child_process'
 
 export type ShadowBinOptions = SpawnOptions & {
   ipc?: IpcObject | undefined
