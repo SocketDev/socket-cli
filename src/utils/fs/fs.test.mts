@@ -120,7 +120,7 @@ describe('fs utilities', () => {
         process.chdir(testDir)
         const result = await findUp('package.json')
         // Handle macOS /private symlink.
-        const expectedPath = path.join(testDir, 'package.json')
+        const _expectedPath = path.join(testDir, 'package.json')
         expect(result).toMatch(
           new RegExp(`${path.basename(testDir)}/package\\.json$`),
         )

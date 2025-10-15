@@ -1,8 +1,10 @@
-// @ts-ignore
+// @ts-expect-error
+
 import chalkTable from 'chalk-table'
 import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
+
 
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'

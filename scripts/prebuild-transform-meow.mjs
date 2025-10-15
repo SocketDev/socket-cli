@@ -40,8 +40,8 @@ function convertImportsToCjs(code) {
   // To: const require$$temp = require('module'); const x = require$$temp.a; const y = require$$temp.b
   code = code.replace(
     /^import\s+\{\s*([^}]+)\s*\}\s+from\s+(['"][^'"]+['"])/gm,
-    (match, imports, modulePath) => {
-      const tempVar = 'require$$temp' + Math.random().toString(36).slice(2, 8)
+    (_match, imports, modulePath) => {
+      const tempVar = `require$$temp${Math.random().toString(36).slice(2, 8)}`
       const parts = imports.split(',').map(s => s.trim())
       const assignments = parts.map(part => {
         const asMatch = part.match(/^(\S+)\s+as\s+(\S+)$/)
@@ -58,8 +58,8 @@ function convertImportsToCjs(code) {
   // To: const require$$default = require('module'); const defaultExport = require$$default; const named = require$$default.named
   code = code.replace(
     /^import\s+([^,\s{]+)\s*,\s*\{\s*([^}]+)\s*\}\s+from\s+(['"][^'"]+['"])/gm,
-    (match, defaultName, namedImports, modulePath) => {
-      const tempVar = 'require$$temp' + Math.random().toString(36).slice(2, 8)
+    (_match, defaultName, namedImports, modulePath) => {
+      const tempVar = `require$$temp${Math.random().toString(36).slice(2, 8)}`
       const parts = namedImports.split(',').map(s => s.trim())
       const assignments = parts.map(part => {
         const asMatch = part.match(/^(\S+)\s+as\s+(\S+)$/)
@@ -90,7 +90,7 @@ function convertExportsToCjs(code) {
   // To: module.exports = { x: a, y: b, z: c }
   code = code.replace(
     /^export\s+\{\s*([^}]+)\s*\}\s*;?\s*$/gm,
-    (match, exports) => {
+    (_match, exports) => {
       // Parse the exports: "a as x, b as y, c as z"
       const exportPairs = exports.split(',').map(e => e.trim())
       const mappings = exportPairs.map(pair => {

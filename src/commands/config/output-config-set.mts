@@ -23,7 +23,7 @@ export async function outputConfigSet(
   }
 
   if (outputKind === 'markdown') {
-    logger.log(`# Update config`)
+    logger.log('# Update config')
     logger.log('')
     logger.log(result.message)
     if (result.data) {
@@ -31,7 +31,7 @@ export async function outputConfigSet(
       logger.log(result.data)
     }
   } else {
-    logger.log(`OK`)
+    logger.log('OK')
     logger.log(result.message)
     if (result.data) {
       logger.log('')

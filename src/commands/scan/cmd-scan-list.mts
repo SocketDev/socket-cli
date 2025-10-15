@@ -126,11 +126,11 @@ async function run(
 
   const { branch: branchFlag, json, markdown, org: orgFlag } = cli.flags
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = !!cli.flags.dryRun
 
-  const interactive = !!cli.flags['interactive']
+  const interactive = !!cli.flags.interactive
 
-  const noLegacy = !cli.flags['repo']
+  const noLegacy = !cli.flags.repo
 
   const [repo = '', branchArg = ''] = cli.input
 
@@ -152,7 +152,7 @@ async function run(
       nook: true,
       test: noLegacy,
       message: `Legacy flags are no longer supported. See the ${webLink(V1_MIGRATION_GUIDE_URL, 'v1 migration guide')}.`,
-      fail: `received legacy flags`,
+      fail: 'received legacy flags',
     },
     {
       nook: true,
@@ -191,13 +191,13 @@ async function run(
 
   await handleListScans({
     branch: branch ? String(branch) : '',
-    direction: String(cli.flags['direction'] || ''),
-    from_time: String(cli.flags['fromTime'] || ''),
+    direction: String(cli.flags.direction || ''),
+    from_time: String(cli.flags.fromTime || ''),
     orgSlug,
     outputKind,
-    page: Number(cli.flags['page'] || 1),
-    perPage: Number(cli.flags['perPage'] || 30),
+    page: Number(cli.flags.page || 1),
+    perPage: Number(cli.flags.perPage || 30),
     repo: repo ? String(repo) : '',
-    sort: String(cli.flags['sort'] || ''),
+    sort: String(cli.flags.sort || ''),
   })
 }

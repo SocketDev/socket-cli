@@ -49,7 +49,7 @@ describe('generate-report - report shape', () => {
       `)
       expect(result.ok).toBe(true)
       expect(result.ok && result.data.healthy).toBe(true)
-      expect((result.data as ScanReport)['alerts']?.size).toBe(0)
+      expect((result.data as ScanReport).alerts?.size).toBe(0)
     })
 
     it('should return a sick report with alert when an alert violates at error', () => {
@@ -73,7 +73,7 @@ describe('generate-report - report shape', () => {
 
       expect(result.ok).toBe(true)
       expect(result.ok && result.data.healthy).toBe(false)
-      expect((result.data as ScanReport)['alerts']?.size).toBeGreaterThan(0)
+      expect((result.data as ScanReport).alerts?.size).toBeGreaterThan(0)
     })
 
     it('should return a healthy report without alerts when an alert violates at warn', () => {
@@ -97,7 +97,7 @@ describe('generate-report - report shape', () => {
 
       expect(result.ok).toBe(true)
       expect(result.ok && result.data.healthy).toBe(true)
-      expect((result.data as ScanReport)['alerts']?.size).toBe(0)
+      expect((result.data as ScanReport).alerts?.size).toBe(0)
     })
   })
 
@@ -123,7 +123,7 @@ describe('generate-report - report shape', () => {
 
       expect(result.ok).toBe(true)
       expect(result.ok && result.data.healthy).toBe(true)
-      expect((result.data as ScanReport)['alerts']?.size).toBe(0)
+      expect((result.data as ScanReport).alerts?.size).toBe(0)
     })
 
     it('should return a sick report with alert when an alert violates at error', () => {
@@ -147,7 +147,7 @@ describe('generate-report - report shape', () => {
 
       expect(result.ok).toBe(true)
       expect(result.ok && result.data.healthy).toBe(false)
-      expect((result.data as ScanReport)['alerts']?.size).toBeGreaterThan(0)
+      expect((result.data as ScanReport).alerts?.size).toBeGreaterThan(0)
     })
 
     it('should return a healthy report without alerts when an alert violates at warn', () => {
@@ -171,7 +171,7 @@ describe('generate-report - report shape', () => {
 
       expect(result.ok).toBe(true)
       expect(result.ok && result.data.healthy).toBe(true)
-      expect((result.data as ScanReport)['alerts']?.size).toBe(0)
+      expect((result.data as ScanReport).alerts?.size).toBe(0)
     })
   })
 })

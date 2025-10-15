@@ -2,7 +2,11 @@
 
 import { vi } from 'vitest'
 
-import { createErrorResult, createMockSdk, createSuccessResult } from './mocks.mts'
+import {
+  createErrorResult,
+  createMockSdk,
+  createSuccessResult,
+} from './mocks.mts'
 
 /**
  * Setup SDK mock for successful API call
@@ -73,9 +77,7 @@ export async function setupSdkSetupFailure(
 ) {
   const { setupSdk } = await import('../../src/utils/socket/sdk.mjs')
 
-  vi.mocked(setupSdk).mockResolvedValue(
-    createErrorResult(message, options),
-  )
+  vi.mocked(setupSdk).mockResolvedValue(createErrorResult(message, options))
 }
 
 /**
@@ -114,14 +116,14 @@ export async function setupSdkMockWithCustomSdk(
  * @returns Mock SDK object
  */
 export async function setupWithSdkMock(
-  callback: (sdk: any) => any,
+  _callback: (sdk: any) => any,
   mockSdkMethods: Record<string, any> = {},
 ) {
   const { withSdk } = await import('../../src/utils/socket/sdk.mjs')
 
   const mockSdk = createMockSdk(mockSdkMethods)
 
-  vi.mocked(withSdk).mockImplementation(async (cb) => {
+  vi.mocked(withSdk).mockImplementation(async cb => {
     return cb(mockSdk)
   })
 

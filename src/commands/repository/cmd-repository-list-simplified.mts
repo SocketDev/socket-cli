@@ -16,7 +16,6 @@ import {
 } from '../../utils/terminal/simple-output.mts'
 import { checkCommandInput } from '../../utils/validation/check-input.mts'
 
-
 export const cmdRepositoryListSimplified = buildCommand({
   name: 'list',
   description: 'List repositories in an organization',
@@ -113,7 +112,7 @@ export const cmdRepositoryListSimplified = buildCommand({
     }
 
     // Fetch data
-    const actualPerPage = all ? Infinity : perPage
+    const actualPerPage = all ? Number.POSITIVE_INFINITY : perPage
     const result = await repoApi.list(orgSlug, {
       sort,
       direction,

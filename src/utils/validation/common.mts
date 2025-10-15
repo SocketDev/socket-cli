@@ -54,7 +54,7 @@ export const validations = {
   /**
    * Validate enum value
    */
-  isOneOf: <T extends unknown>(
+  isOneOf: <T,>(
     value: T,
     options: T[],
     name: string,

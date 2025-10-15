@@ -2,8 +2,6 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { toFilterConfig } from './filter-config.mts'
 
-import type { FilterConfig } from './filter-config.mts'
-
 // Mock @socketsecurity/registry/lib/objects.
 vi.mock('@socketsecurity/registry/lib/objects', () => ({
   isObject: vi.fn(val => {
@@ -148,8 +146,8 @@ describe('filter-config utilities', () => {
         inherited = true
       }
       const obj = new CustomClass()
-      obj['direct'] = false
-      obj['array'] = ['test']
+      obj.direct = false
+      obj.array = ['test']
 
       const result = toFilterConfig(obj)
 

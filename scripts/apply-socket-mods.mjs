@@ -29,31 +29,46 @@ async function fixV8IncludePaths() {
     {
       file: 'deps/v8/src/ast/ast-value-factory.h',
       replacements: [
-        { from: '#include "src/base/hashmap.h"', to: '#include "base/hashmap.h"' },
+        {
+          from: '#include "src/base/hashmap.h"',
+          to: '#include "base/hashmap.h"',
+        },
       ],
     },
     {
       file: 'deps/v8/src/heap/new-spaces-inl.h',
       replacements: [
-        { from: '#include "src/heap/spaces-inl.h"', to: '#include "heap/spaces-inl.h"' },
+        {
+          from: '#include "src/heap/spaces-inl.h"',
+          to: '#include "heap/spaces-inl.h"',
+        },
       ],
     },
     {
       file: 'deps/v8/src/heap/factory-inl.h',
       replacements: [
-        { from: '#include "src/heap/factory-base-inl.h"', to: '#include "heap/factory-base-inl.h"' },
+        {
+          from: '#include "src/heap/factory-base-inl.h"',
+          to: '#include "heap/factory-base-inl.h"',
+        },
       ],
     },
     {
       file: 'deps/v8/src/objects/js-objects-inl.h',
       replacements: [
-        { from: '#include "src/objects/hash-table-inl.h"', to: '#include "objects/hash-table-inl.h"' },
+        {
+          from: '#include "src/objects/hash-table-inl.h"',
+          to: '#include "objects/hash-table-inl.h"',
+        },
       ],
     },
     {
       file: 'deps/v8/src/heap/cppgc/heap-page.h',
       replacements: [
-        { from: '#include "src/base/iterator.h"', to: '#include "base/iterator.h"' },
+        {
+          from: '#include "src/base/iterator.h"',
+          to: '#include "base/iterator.h"',
+        },
       ],
     },
   ]
@@ -96,7 +111,8 @@ async function enableSeaForPkg() {
     let content = await readFile(filePath, 'utf8')
 
     // Replace the isSea import
-    const oldImport = 'const { isSea, getAsset: getAssetInternal, getAssetKeys: getAssetKeysInternal } = internalBinding(\'sea\');'
+    const oldImport =
+      "const { isSea, getAsset: getAssetInternal, getAssetKeys: getAssetKeysInternal } = internalBinding('sea');"
     const newImport = `const isSea = () => true;
 const { getAsset: getAssetInternal, getAssetKeys: getAssetKeysInternal } = internalBinding('sea');`
 

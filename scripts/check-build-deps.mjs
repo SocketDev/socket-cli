@@ -89,7 +89,8 @@ async function installUpx() {
         shell: false,
       })
       return result.code === 0
-    } else if (IS_LINUX) {
+    }
+    if (IS_LINUX) {
       // Try apt first (Ubuntu/Debian)
       if (await commandExists('apt-get')) {
         console.log('   Using apt-get...')
@@ -218,7 +219,7 @@ async function main() {
   checks.push({ name: 'upx', required: false, found: upx, version: upxVersion })
 
   if (IS_MACOS) {
-    console.log(`   ℹ️  UPX: not used on macOS (incompatible with code signing)`)
+    console.log('   ℹ️  UPX: not used on macOS (incompatible with code signing)')
   } else {
     console.log(`   ${upx ? '✅' : '⚠️ '} upx: ${upxVersion || 'not found'}`)
     if (!upx) {

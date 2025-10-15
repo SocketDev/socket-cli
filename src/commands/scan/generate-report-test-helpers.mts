@@ -64,7 +64,7 @@ export function getScanWithEnvVars(): SocketArtifact[] {
           start: 54,
           end: 72,
           props: {
-            // @ts-ignore - Test data.
+            // @ts-expect-error - Test data.
             envVars: 'XYZ',
           },
         },
@@ -74,7 +74,7 @@ export function getScanWithEnvVars(): SocketArtifact[] {
           start: 200,
           end: 250,
           props: {
-            // @ts-ignore - Test data.
+            // @ts-expect-error - Test data.
             envVars: 'ABC',
           },
         },
@@ -120,7 +120,7 @@ export function getScanWithMultiplePackages(): SocketArtifact[] {
           start: 54,
           end: 72,
           props: {
-            // @ts-ignore - Test data.
+            // @ts-expect-error - Test data.
             envVars: 'XYZ',
           },
         },
@@ -130,7 +130,7 @@ export function getScanWithMultiplePackages(): SocketArtifact[] {
           start: 200,
           end: 250,
           props: {
-            // @ts-ignore - Test data.
+            // @ts-expect-error - Test data.
             envVars: 'ABC',
           },
         },
@@ -168,7 +168,7 @@ export function getScanWithMultiplePackages(): SocketArtifact[] {
           start: 100,
           end: 120,
           props: {
-            // @ts-ignore - Test data.
+            // @ts-expect-error - Test data.
             envVars: 'SECRET_KEY',
           },
         },

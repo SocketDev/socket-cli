@@ -4,8 +4,6 @@ import constants, {
   FLAG_CONFIG,
   FLAG_DRY_RUN,
   FLAG_HELP,
-  FLAG_JSON,
-  FLAG_MARKDOWN,
   FLAG_ORG,
 } from '../../../src/constants.mts'
 import { cmdit, spawnSocketCli } from '../../../test/utils.mts'

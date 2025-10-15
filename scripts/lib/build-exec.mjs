@@ -105,7 +105,9 @@ export async function downloadWithRetry(url, outputPath, options = {}) {
       return true
     } catch (e) {
       if (attempt === maxRetries) {
-        throw new Error(`Download failed after ${maxRetries} attempts: ${e.message}`)
+        throw new Error(
+          `Download failed after ${maxRetries} attempts: ${e.message}`,
+        )
       }
 
       logger.warn(`  ⚠️  Download attempt ${attempt} failed: ${e.message}`)
@@ -119,7 +121,7 @@ export async function downloadWithRetry(url, outputPath, options = {}) {
       }
 
       // Wait before retry (exponential backoff).
-      const waitTime = Math.min(1000 * (2 ** (attempt - 1)), 5000)
+      const waitTime = Math.min(1000 * 2 ** (attempt - 1), 5000)
       logger.log(`  ⏱️  Waiting ${waitTime}ms before retry...`)
       await new Promise(resolve => setTimeout(resolve, waitTime))
     }

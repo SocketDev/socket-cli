@@ -30,7 +30,6 @@ import { safeReadFileSync } from '@socketsecurity/registry/lib/fs'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
 
-import { debugConfig } from './debug.mts'
 import constants, {
   CONFIG_KEY_API_BASE_URL,
   CONFIG_KEY_API_PROXY,
@@ -41,6 +40,7 @@ import constants, {
   SOCKET_YAML,
   SOCKET_YML,
 } from '../constants.mjs'
+import { debugConfig } from './debug.mts'
 import { getErrorCause } from './error/errors.mjs'
 
 import type { CResult } from '../types.mjs'
@@ -113,9 +113,9 @@ function getConfigValues(): LocalConfig {
         }
         // Normalize apiKey to apiToken and persist it.
         // This is a one time migration per user.
-        if (_cachedConfig['apiKey']) {
-          const token = _cachedConfig['apiKey']
-          delete _cachedConfig['apiKey']
+        if (_cachedConfig.apiKey) {
+          const token = _cachedConfig.apiKey
+          delete _cachedConfig.apiKey
           updateConfigValue(CONFIG_KEY_API_TOKEN, token)
         }
       } else {
@@ -273,19 +273,19 @@ export function overrideCachedConfig(jsonConfig: unknown): CResult<undefined> {
     }
   }
 
-  // @ts-ignore Override an illegal object.
+  // @ts-expect-error Override an illegal object.
   _cachedConfig = config as LocalConfig
   _configFromFlag = true
 
   // Normalize apiKey to apiToken.
-  if (_cachedConfig['apiKey']) {
-    if (_cachedConfig['apiToken']) {
+  if (_cachedConfig.apiKey) {
+    if (_cachedConfig.apiToken) {
       logger.warn(
         'Note: The config override had both apiToken and apiKey. Using the apiToken value. Remove the apiKey to get rid of this message.',
       )
     }
-    _cachedConfig['apiToken'] = _cachedConfig['apiKey']
-    delete _cachedConfig['apiKey']
+    _cachedConfig.apiToken = _cachedConfig.apiKey
+    delete _cachedConfig.apiKey
   }
 
   return { ok: true, data: undefined }
@@ -316,9 +316,9 @@ export function updateConfigValue<Key extends keyof LocalConfig>(
   let wasDeleted = value === undefined
   if (key === 'skipAskToPersistDefaultOrg') {
     if (value === 'true' || value === 'false') {
-      localConfig['skipAskToPersistDefaultOrg'] = value === 'true'
+      localConfig.skipAskToPersistDefaultOrg = value === 'true'
     } else {
-      delete localConfig['skipAskToPersistDefaultOrg']
+      delete localConfig.skipAskToPersistDefaultOrg
       wasDeleted = true
     }
   } else {
@@ -332,7 +332,7 @@ export function updateConfigValue<Key extends keyof LocalConfig>(
   if (_configFromFlag) {
     return {
       ok: true,
-      message: `Config key '${key}' was ${wasDeleted ? 'deleted' : `updated`}`,
+      message: `Config key '${key}' was ${wasDeleted ? 'deleted' : 'updated'}`,
       data: 'Change applied but not persisted; current config is overridden through env var or flag',
     }
   }
@@ -353,7 +353,7 @@ export function updateConfigValue<Key extends keyof LocalConfig>(
 
   return {
     ok: true,
-    message: `Config key '${key}' was ${wasDeleted ? 'deleted' : `updated`}`,
+    message: `Config key '${key}' was ${wasDeleted ? 'deleted' : 'updated'}`,
     data: undefined,
   }
 }

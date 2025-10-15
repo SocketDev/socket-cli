@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { fetchOrgAnalyticsData } from './fetch-org-analytics.mts'
-import { createErrorResult } from '../../../test/helpers/mocks.mts'
 import {
   setupSdkMockError,
   setupSdkMockSuccess,

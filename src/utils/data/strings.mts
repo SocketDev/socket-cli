@@ -29,5 +29,5 @@ export function pluralize(
   if (count === 1) {
     return word
   }
-  return plural || word + 's'
+  return plural || `${word}s`
 }

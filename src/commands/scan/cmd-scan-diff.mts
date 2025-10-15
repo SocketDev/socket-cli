@@ -117,7 +117,7 @@ async function run(
     org: string
   }
 
-  const interactive = !!cli.flags['interactive']
+  const interactive = !!cli.flags.interactive
 
   let [id1 = '', id2 = ''] = cli.input
   // Support dropping in full socket urls to an sbom.

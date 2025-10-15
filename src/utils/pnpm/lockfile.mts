@@ -7,6 +7,8 @@ import { readFileUtf8 } from '@socketsecurity/registry/lib/fs'
 import { isObjectObject } from '@socketsecurity/registry/lib/objects'
 import { stripBom } from '@socketsecurity/registry/lib/strings'
 
+
+
 import { idToNpmPurl } from '../ecosystem/spec.mjs'
 
 import type { LockfileObject, PackageSnapshot } from '@pnpm/lockfile.fs'

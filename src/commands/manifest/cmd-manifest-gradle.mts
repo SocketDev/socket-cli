@@ -92,7 +92,7 @@ async function run(
 
   const { json = false, markdown = false } = cli.flags
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = !!cli.flags.dryRun
 
   // TODO: Implement json/md further.
   const outputKind = getOutputKind(json, markdown)
@@ -159,7 +159,7 @@ async function run(
     nook: true,
     test: cli.input.length <= 1,
     message: 'Can only accept one DIR (make sure to escape spaces!)',
-    fail: 'received ' + cli.input.length,
+    fail: `received ${cli.input.length}`,
   })
   if (!wasValidInput) {
     return

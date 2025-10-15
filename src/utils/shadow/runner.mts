@@ -90,7 +90,7 @@ export async function runShadowCommand(
   }
 
   const finalSpawnExtra: SpawnExtra = {
-    stdio: spawnExtra?.['stdio'] || shadowOpts.stdio,
+    stdio: spawnExtra?.stdio || shadowOpts.stdio,
     ...spawnExtra,
   }
 

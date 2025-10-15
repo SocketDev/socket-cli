@@ -68,21 +68,21 @@ function resolveFromExports(packagePath, subpath) {
   // For package root, try dist/index.
   if (subpath === '.') {
     const indexPath = path.join(packagePath, 'dist', 'index')
-    if (existsSync(indexPath + '.js')) {
-      return indexPath + '.js'
+    if (existsSync(`${indexPath}.js`)) {
+      return `${indexPath}.js`
     }
-    if (existsSync(indexPath + '.mjs')) {
-      return indexPath + '.mjs'
+    if (existsSync(`${indexPath}.mjs`)) {
+      return `${indexPath}.mjs`
     }
   }
 
   // For subpaths, try dist/subpath.
   const baseResolved = path.join(packagePath, 'dist', subpath)
-  if (existsSync(baseResolved + '.js')) {
-    return baseResolved + '.js'
+  if (existsSync(`${baseResolved}.js`)) {
+    return `${baseResolved}.js`
   }
-  if (existsSync(baseResolved + '.mjs')) {
-    return baseResolved + '.mjs'
+  if (existsSync(`${baseResolved}.mjs`)) {
+    return `${baseResolved}.mjs`
   }
   if (existsSync(path.join(baseResolved, 'index.js'))) {
     return path.join(baseResolved, 'index.js')
@@ -181,7 +181,10 @@ export default {
       resolveId(source, _importer, options) {
         if (source === 'ajv') {
           // Redirect ajv imports to ajv-dist by resolving it through the resolution chain.
-          return this.resolve('ajv-dist', _importer, { ...options, skipSelf: true })
+          return this.resolve('ajv-dist', _importer, {
+            ...options,
+            skipSelf: true,
+          })
         }
         return null
       },
@@ -253,7 +256,7 @@ export default {
         for (const [packageName, packagePath] of Object.entries(
           socketPackages,
         )) {
-          if (source.startsWith(packageName + '/')) {
+          if (source.startsWith(`${packageName}/`)) {
             const subpath = source.slice(packageName.length + 1)
             const resolved = resolveFromExports(packagePath, subpath)
             if (resolved) {
@@ -302,7 +305,7 @@ export default {
             getRootPkgJsonSync().devDependencies['@cyclonedx/cdxgen'],
           ),
         'process.env.INLINED_SOCKET_CLI_SYNP_VERSION': JSON.stringify(
-          getRootPkgJsonSync().devDependencies['synp'],
+          getRootPkgJsonSync().devDependencies.synp,
         ),
         'process.env.INLINED_SOCKET_CLI_PYTHON_VERSION':
           JSON.stringify('3.10.18'),
@@ -346,7 +349,7 @@ export default {
       // 'auto' will intelligently handle both default and named exports.
       requireReturnsDefault: 'auto',
       // Don't throw on dynamic requires - let them pass through EXCEPT for ajv.
-      ignoreDynamicRequires: (id) => {
+      ignoreDynamicRequires: id => {
         // Force ajv requires to be resolved, not ignored.
         if (id.includes('node_modules/ajv')) {
           return false
@@ -447,7 +450,7 @@ export default {
         // Where Ve = {} is the transformed import.meta.
         cleaned = cleaned.replace(
           /(\w+)\.createRequire\s*\?\s*\(\s*0\s*,\s*\1\.createRequire\s*\)\s*\(\s*(\w+)\.url\s*\)\s*:\s*void\s+0/g,
-          '$1.createRequire ? (0, $1.createRequire)(__filename) : void 0'
+          '$1.createRequire ? (0, $1.createRequire)(__filename) : void 0',
         )
         return cleaned
       },

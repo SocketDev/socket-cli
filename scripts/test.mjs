@@ -59,7 +59,7 @@ const removeExitHandler = onExit((_code, signal) => {
 })
 
 // Runs command with proper process tracking.
- 
+
 async function runCommand(command, args = [], options = {}) {
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, {
@@ -206,8 +206,12 @@ async function runBuild() {
 }
 
 async function runVitestSimple(args, options = {}) {
-  const { coverage = false, customNodePath, quiet = false, update = false } =
-    options
+  const {
+    coverage = false,
+    customNodePath,
+    quiet = false,
+    update = false,
+  } = options
 
   const vitestCmd = WIN32 ? 'vitest.cmd' : 'vitest'
   const vitestPath = path.join(nodeModulesBinPath, vitestCmd)
@@ -283,7 +287,8 @@ async function runVitestSimple(args, options = {}) {
     const output = result.stdout + result.stderr
     const hasTestFailures =
       output.includes('FAIL') ||
-      (output.includes('Test Files') && output.match(/(\d+) failed/) !== null) ||
+      (output.includes('Test Files') &&
+        output.match(/(\d+) failed/) !== null) ||
       (output.includes('Tests') && output.match(/Tests\s+\d+ failed/) !== null)
 
     // Override exit code if we only have worker termination errors
@@ -446,8 +451,12 @@ async function main() {
       console.log('  --update            Update test snapshots')
       console.log('  --all               Run all tests')
       console.log('  --quiet, --silent   Minimal output')
-      console.log('  --yao               Test with yao-pkg binary from build/out/Yao/node')
-      console.log('  --sea               Test with SEA binary from build/out/Sea/node')
+      console.log(
+        '  --yao               Test with yao-pkg binary from build/out/Yao/node',
+      )
+      console.log(
+        '  --sea               Test with SEA binary from build/out/Sea/node',
+      )
       console.log('  --bun               Test with Bun runtime (if installed)')
       console.log('\nExamples:')
       console.log(
@@ -466,9 +475,7 @@ async function main() {
       console.log(
         '  pnpm test --sea                # Test with SEA custom binary',
       )
-      console.log(
-        '  pnpm test --bun                # Test with Bun runtime',
-      )
+      console.log('  pnpm test --bun                # Test with Bun runtime')
       process.exitCode = 0
       return
     }
@@ -523,7 +530,8 @@ async function main() {
               message: 'Would you like to install Bun now?',
               default: true,
             })
-          } catch (e) {
+            // eslint-disable-next-line no-unused-vars
+          } catch (_e) {
             // User cancelled prompt (Ctrl+C).
             if (!quiet) {
               logger.error('')
@@ -541,7 +549,9 @@ async function main() {
               logger.log('To install Bun later, run:')
               logger.log('  node scripts/install-bun.mjs')
               logger.logNewline()
-              logger.log('Or visit: https://bun.sh for more installation options')
+              logger.log(
+                'Or visit: https://bun.sh for more installation options',
+              )
               logger.logNewline()
             }
             process.exitCode = 1
@@ -549,7 +559,11 @@ async function main() {
           }
 
           // Run install-bun.mjs script.
-          const installScript = path.join(rootPath, 'scripts', 'install-bun.mjs')
+          const installScript = path.join(
+            rootPath,
+            'scripts',
+            'install-bun.mjs',
+          )
           if (!quiet) {
             logger.log(`Running: node ${installScript}`)
             logger.logNewline()
@@ -578,9 +592,13 @@ async function main() {
           if (bunResult.code !== 0 || !bunResult.stdout.trim()) {
             if (!quiet) {
               logger.error('')
-              logger.error('Bun installation succeeded but Bun is still not found.')
+              logger.error(
+                'Bun installation succeeded but Bun is still not found.',
+              )
               logger.logNewline()
-              logger.log('You may need to restart your terminal or source your shell configuration:')
+              logger.log(
+                'You may need to restart your terminal or source your shell configuration:',
+              )
               logger.log('  source ~/.bashrc  # or ~/.zshrc')
               logger.logNewline()
             }
@@ -597,10 +615,14 @@ async function main() {
         const bunPath = bunResult.stdout.trim()
 
         // Test Bun execution.
-        const bunVersionResult = await runCommandWithOutput(bunPath, ['--version'], {
-          cwd: rootPath,
-          timeout: 5000,
-        })
+        const bunVersionResult = await runCommandWithOutput(
+          bunPath,
+          ['--version'],
+          {
+            cwd: rootPath,
+            timeout: 5000,
+          },
+        )
 
         if (bunVersionResult.code !== 0) {
           if (!quiet) {
@@ -660,9 +682,7 @@ async function main() {
       if (!existsSync(binaryPath)) {
         if (!quiet) {
           logger.error('')
-          logger.error(
-            `${buildType} binary not found at: ${binaryPath}`,
-          )
+          logger.error(`${buildType} binary not found at: ${binaryPath}`)
           logger.logNewline()
         }
 
@@ -673,7 +693,8 @@ async function main() {
             message: `${buildType} binary is not built. Would you like to build it now?`,
             default: true,
           })
-        } catch (e) {
+          // eslint-disable-next-line no-unused-vars
+        } catch (_e) {
           // User cancelled prompt (Ctrl+C).
           if (!quiet) {
             logger.error('')
@@ -695,7 +716,11 @@ async function main() {
         // Build the missing binary.
         if (values.yao) {
           // Build yao-pkg binary.
-          const buildYaoScript = path.join(rootPath, 'scripts', 'build-yao-pkg-node.mjs')
+          const buildYaoScript = path.join(
+            rootPath,
+            'scripts',
+            'build-yao-pkg-node.mjs',
+          )
           if (!quiet) {
             logger.log(`Running: node ${buildYaoScript}`)
             logger.logNewline()
@@ -790,9 +815,13 @@ async function main() {
             }
 
             // Make binary executable.
-            const chmodExitCode = await runCommand('chmod', ['+x', binaryPath], {
-              cwd: rootPath,
-            })
+            const chmodExitCode = await runCommand(
+              'chmod',
+              ['+x', binaryPath],
+              {
+                cwd: rootPath,
+              },
+            )
 
             if (chmodExitCode !== 0) {
               if (!quiet) {
@@ -827,15 +856,21 @@ async function main() {
       }
 
       try {
-        const testResult = await runCommandWithOutput(testBinaryPath, ['--version'], {
-          cwd: rootPath,
-          timeout: 5000,
-        })
+        const testResult = await runCommandWithOutput(
+          testBinaryPath,
+          ['--version'],
+          {
+            cwd: rootPath,
+            timeout: 5000,
+          },
+        )
 
         if (testResult.code !== 0) {
           if (!quiet) {
             logger.error('')
-            logger.error(`Binary execution test failed with exit code: ${testResult.code}`)
+            logger.error(
+              `Binary execution test failed with exit code: ${testResult.code}`,
+            )
             if (testResult.stderr) {
               logger.error(`Error output: ${testResult.stderr}`)
             }

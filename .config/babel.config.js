@@ -1,5 +1,3 @@
-'use strict'
-
 const path = require('node:path')
 
 const rootPath = path.join(__dirname, '..')

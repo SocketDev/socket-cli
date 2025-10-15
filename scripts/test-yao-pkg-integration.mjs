@@ -13,7 +13,7 @@
  */
 
 import { existsSync } from 'node:fs'
-import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdir, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -80,7 +80,7 @@ async function main() {
       process.env.HOME || process.env.USERPROFILE,
       '.pkg-cache',
       'v3.5',
-      targetName
+      targetName,
     )
 
     if (!existsSync(binaryPath)) {
@@ -139,7 +139,7 @@ async function main() {
 
     await writeFile(
       join(TEST_DIR, 'package.json'),
-      JSON.stringify(testPackageJson, null, 2)
+      JSON.stringify(testPackageJson, null, 2),
     )
 
     // Create test CLI script.
@@ -201,7 +201,7 @@ if (isSea) {
       ],
       {
         cwd: TEST_DIR,
-      }
+      },
     )
 
     if (pkgResult.code !== 0) {
@@ -212,7 +212,10 @@ if (isSea) {
       throw new Error('pkg failed')
     }
 
-    const executablePath = join(TEST_DIR, `socket-test${platform === 'win32' ? '.exe' : ''}`)
+    const executablePath = join(
+      TEST_DIR,
+      `socket-test${platform === 'win32' ? '.exe' : ''}`,
+    )
     if (!existsSync(executablePath)) {
       console.error(`❌ Executable not created: ${executablePath}`)
       testsFailed++

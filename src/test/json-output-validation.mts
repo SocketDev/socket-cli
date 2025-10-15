@@ -40,7 +40,7 @@ export function validateSocketJson<T = unknown>(
   // Check if it's valid JSON.
   try {
     parsed = JSON.parse(jsonString)
-  } catch (e) {
+  } catch (_e) {
     throw new Error(`Invalid JSON output: ${jsonString}`)
   }
 

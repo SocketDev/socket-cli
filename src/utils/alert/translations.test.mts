@@ -3,8 +3,6 @@ import path from 'node:path'
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { getTranslations } from './translations.mts'
-
 // Mock node:module.
 vi.mock('node:module', () => ({
   createRequire: vi.fn(() => vi.fn()),

@@ -57,7 +57,7 @@ export function mdTable<T extends Array<Record<string, string>>>(
 
   for (const log of logs) {
     for (let i = 0, { length } = cols; i < length; i += 1) {
-      // @ts-ignore
+      // @ts-expect-error
       const val: unknown = log[cols[i] ?? ''] ?? ''
       cws[i] = Math.max(
         cws[i] ?? 0,
@@ -69,21 +69,21 @@ export function mdTable<T extends Array<Record<string, string>>>(
 
   let div = '|'
   for (const cw of cws) {
-    div += ' ' + '-'.repeat(cw) + ' |'
+    div += ` ${'-'.repeat(cw)} |`
   }
 
   let header = '|'
   for (let i = 0, { length } = titles; i < length; i += 1) {
-    header += ' ' + String(titles[i]).padEnd(cws[i] ?? 0, ' ') + ' |'
+    header += ` ${String(titles[i]).padEnd(cws[i] ?? 0, ' ')} |`
   }
 
   let body = ''
   for (const log of logs) {
     body += '|'
     for (let i = 0, { length } = cols; i < length; i += 1) {
-      // @ts-ignore
+      // @ts-expect-error
       const val: unknown = log[cols[i] ?? ''] ?? ''
-      body += ' ' + String(val).padEnd(cws[i] ?? 0, ' ') + ' |'
+      body += ` ${String(val).padEnd(cws[i] ?? 0, ' ')} |`
     }
     body += '\n'
   }
@@ -107,19 +107,19 @@ export function mdTableOfPairs(
 
   let div = '|'
   for (const cw of cws) {
-    div += ' ' + '-'.repeat(cw) + ' |'
+    div += ` ${'-'.repeat(cw)} |`
   }
 
   let header = '|'
   for (let i = 0, { length } = cols; i < length; i += 1) {
-    header += ' ' + String(cols[i]).padEnd(cws[i] ?? 0, ' ') + ' |'
+    header += ` ${String(cols[i]).padEnd(cws[i] ?? 0, ' ')} |`
   }
 
   let body = ''
   for (const [key, val] of arr) {
     body += '|'
-    body += ' ' + String(key).padEnd(cws[0] ?? 0, ' ') + ' |'
-    body += ' ' + String(val ?? '').padEnd(cws[1] ?? 0, ' ') + ' |'
+    body += ` ${String(key).padEnd(cws[0] ?? 0, ' ')} |`
+    body += ` ${String(val ?? '').padEnd(cws[1] ?? 0, ' ')} |`
     body += '\n'
   }
 

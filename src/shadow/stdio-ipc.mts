@@ -9,12 +9,12 @@ export function ensureIpcInStdio(
 ): StdioOptions {
   if (typeof stdio === 'string') {
     return [stdio, stdio, stdio, 'ipc']
-  } else if (Array.isArray(stdio)) {
+  }
+  if (Array.isArray(stdio)) {
     if (!stdio.includes('ipc')) {
       return stdio.concat('ipc')
     }
     return stdio.slice()
-  } else {
-    return ['pipe', 'pipe', 'pipe', 'ipc']
   }
+  return ['pipe', 'pipe', 'pipe', 'ipc']
 }

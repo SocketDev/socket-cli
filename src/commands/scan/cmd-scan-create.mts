@@ -269,7 +269,7 @@ async function run(
 
   // Validate ecosystem values.
   const reachEcosystems: PURL_Type[] = []
-  const reachEcosystemsRaw = cmdFlagValueToArray(cli.flags['reachEcosystems'])
+  const reachEcosystemsRaw = cmdFlagValueToArray(cli.flags.reachEcosystems)
   const validEcosystems = getEcosystemChoicesForMeow()
   for (const ecosystem of reachEcosystemsRaw) {
     if (!validEcosystems.includes(ecosystem)) {
@@ -280,7 +280,7 @@ async function run(
     reachEcosystems.push(ecosystem as PURL_Type)
   }
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = !!cli.flags.dryRun
 
   let {
     autoManifest,
@@ -416,7 +416,7 @@ async function run(
     logger.error('')
   }
 
-  const reachExcludePaths = cmdFlagValueToArray(cli.flags['reachExcludePaths'])
+  const reachExcludePaths = cmdFlagValueToArray(cli.flags.reachExcludePaths)
 
   // Validation helpers for better readability.
   const hasReachEcosystems = reachEcosystems.length > 0
@@ -425,14 +425,13 @@ async function run(
 
   const isUsingNonDefaultMemoryLimit =
     reachAnalysisMemoryLimit !==
-    reachabilityFlags['reachAnalysisMemoryLimit']?.default
+    reachabilityFlags.reachAnalysisMemoryLimit?.default
 
   const isUsingNonDefaultTimeout =
-    reachAnalysisTimeout !== reachabilityFlags['reachAnalysisTimeout']?.default
+    reachAnalysisTimeout !== reachabilityFlags.reachAnalysisTimeout?.default
 
   const isUsingNonDefaultAnalytics =
-    reachDisableAnalytics !==
-    reachabilityFlags['reachDisableAnalytics']?.default
+    reachDisableAnalytics !== reachabilityFlags.reachDisableAnalytics?.default
 
   const isUsingAnyReachabilityFlags =
     isUsingNonDefaultMemoryLimit ||

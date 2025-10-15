@@ -1,5 +1,4 @@
 import { debug, debugDir } from '@socketsecurity/registry/lib/debug'
-import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import { runAgentInstall } from './agent-installer.mts'
 import constants from '../../constants.mts'
@@ -8,6 +7,8 @@ import { cmdPrefixMessage } from '../../utils/process/cmd.mts'
 import type { CResult } from '../../types.mts'
 import type { EnvDetails } from '../../utils/ecosystem/environment.mjs'
 import type { Logger } from '@socketsecurity/registry/lib/logger'
+import type { Spinner } from '@socketsecurity/registry/lib/spinner'
+
 
 const { NPM_BUGGY_OVERRIDES_PATCHED_VERSION } = constants
 

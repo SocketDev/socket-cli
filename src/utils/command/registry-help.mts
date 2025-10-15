@@ -20,20 +20,20 @@ export function generateCommandHelp(command: CommandDefinition): string {
 
   // Usage
   const flagsText = command.flags ? ' [options]' : ''
-  lines.push(`Usage:`)
+  lines.push('Usage:')
   lines.push(`  socket ${command.name}${flagsText}`)
   lines.push('')
 
   // Aliases
   if (command.aliases && command.aliases.length > 0) {
-    lines.push(`Aliases:`)
+    lines.push('Aliases:')
     lines.push(`  ${command.aliases.join(', ')}`)
     lines.push('')
   }
 
   // Flags
   if (command.flags) {
-    lines.push(`Options:`)
+    lines.push('Options:')
     const flagEntries = Object.entries(command.flags)
 
     for (const [name, def] of flagEntries) {
@@ -45,7 +45,7 @@ export function generateCommandHelp(command: CommandDefinition): string {
 
   // Examples
   if (command.examples && command.examples.length > 0) {
-    lines.push(`Examples:`)
+    lines.push('Examples:')
     for (const example of command.examples) {
       lines.push(`  ${example}`)
     }

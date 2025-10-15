@@ -61,11 +61,9 @@ export async function openSocketFixPr(
     debugDir({ octokitPullsCreateParams })
     return await octokit.pulls.create(octokitPullsCreateParams)
   } catch (e) {
-    let message = `Failed to open pull request`
+    let message = 'Failed to open pull request'
     const errors =
-      e instanceof RequestError
-        ? (e.response?.data as any)?.['errors']
-        : undefined
+      e instanceof RequestError ? (e.response?.data as any)?.errors : undefined
     if (Array.isArray(errors) && errors.length) {
       const details = errors
         .map(

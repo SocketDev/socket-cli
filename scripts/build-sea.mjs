@@ -1,4 +1,3 @@
- 
 /**
  * Build script for creating self-executable Socket CLI applications.
  * Uses Node.js Single Executable Application (SEA) feature.
@@ -39,7 +38,6 @@ import constants from './constants.mjs'
 
 // Inline NODE_SEA_FUSE constant (not exported from constants.mjs).
 const NODE_SEA_FUSE = 'NODE_SEA_FUSE'
-
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url))
 
@@ -318,11 +316,9 @@ async function buildSeaBlob(nodeBinary, configPath) {
     result &&
     typeof result === 'object' &&
     'exitCode' in result &&
-    result['exitCode'] !== 0
+    result.exitCode !== 0
   ) {
-    throw new Error(
-      `Failed to generate SEA blob: exit code ${result['exitCode']}`,
-    )
+    throw new Error(`Failed to generate SEA blob: exit code ${result.exitCode}`)
   }
 
   return blobPath
@@ -474,8 +470,8 @@ async function buildTarget(target, options) {
   console.log('Building bootstrap...')
 
   // Set environment variables for the rollup config.
-  process.env['SEA_BOOTSTRAP'] = tsEntryPoint
-  process.env['SEA_OUTPUT'] = entryPoint
+  process.env.SEA_BOOTSTRAP = tsEntryPoint
+  process.env.SEA_OUTPUT = entryPoint
 
   await spawn('pnpm', ['run', 'build:sea:internal:bootstrap'], {
     stdio: 'inherit',
@@ -603,7 +599,6 @@ async function main() {
 
   // Build each target.
   for (const target of targets) {
-     
     await buildTarget(target, options)
   }
 
@@ -617,7 +612,7 @@ async function main() {
 if (import.meta.url === url.pathToFileURL(process.argv[1]).href) {
   main().catch(error => {
     console.error('Build failed:', error)
-     
+
     process.exit(1)
   })
 }

@@ -67,7 +67,7 @@ describe('handleConfigAuto', () => {
     const { discoverConfigValue } = await import('./discover-config-value.mts')
     const { outputConfigAuto } = await import('./output-config-auto.mts')
     const mockDiscover = vi.mocked(discoverConfigValue)
-    const mockOutput = vi.mocked(outputConfigAuto)
+    const _mockOutput = vi.mocked(outputConfigAuto)
 
     const keys = ['apiToken', 'apiUrl', 'orgId', 'orgSlug'] as const
 

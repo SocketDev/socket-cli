@@ -1,8 +1,10 @@
-// @ts-ignore
+// @ts-expect-error
+
 import chalkTable from 'chalk-table'
 import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
+
 
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
@@ -50,7 +52,7 @@ export async function outputListRepos(
   }
 
   logger.log(
-    `Result page: ${page}, results per page: ${perPage === Infinity ? 'all' : perPage}, sorted by: ${sort}, direction: ${direction}`,
+    `Result page: ${page}, results per page: ${perPage === Number.POSITIVE_INFINITY ? 'all' : perPage}, sorted by: ${sort}, direction: ${direction}`,
   )
 
   const options = {
@@ -71,8 +73,8 @@ export async function outputListRepos(
     logger.info(
       `(Hint: you can use \`socket repository list --page ${nextPage}\`)`,
     )
-  } else if (perPage === Infinity) {
-    logger.info(`This should be the entire list available on the server.`)
+  } else if (perPage === Number.POSITIVE_INFINITY) {
+    logger.info('This should be the entire list available on the server.')
   } else {
     logger.info(
       `This is page ${page}. Server indicated this is the last page with results.`,

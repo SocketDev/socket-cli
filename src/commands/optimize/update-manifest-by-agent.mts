@@ -184,7 +184,6 @@ export function updateManifest(
     case YARN_CLASSIC:
       updateResolutionsField(editablePkgJson, overrides)
       return
-    case NPM:
     default:
       updateOverridesField(editablePkgJson, overrides)
       return

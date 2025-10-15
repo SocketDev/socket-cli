@@ -40,9 +40,9 @@ describe('getOutputKind', () => {
   })
 
   it('handles edge cases with special values', () => {
-    expect(getOutputKind(NaN, false)).toBe(OUTPUT_TEXT)
-    expect(getOutputKind(false, NaN)).toBe(OUTPUT_TEXT)
-    expect(getOutputKind(NaN, NaN)).toBe(OUTPUT_TEXT)
+    expect(getOutputKind(Number.NaN, false)).toBe(OUTPUT_TEXT)
+    expect(getOutputKind(false, Number.NaN)).toBe(OUTPUT_TEXT)
+    expect(getOutputKind(Number.NaN, Number.NaN)).toBe(OUTPUT_TEXT)
   })
 
   it('follows JavaScript truthy/falsy rules', () => {
@@ -51,7 +51,7 @@ describe('getOutputKind', () => {
     expect(getOutputKind('a', false)).toBe(OUTPUT_JSON)
     expect(getOutputKind(42, false)).toBe(OUTPUT_JSON)
     expect(getOutputKind(-1, false)).toBe(OUTPUT_JSON)
-    expect(getOutputKind(Infinity, false)).toBe(OUTPUT_JSON)
+    expect(getOutputKind(Number.POSITIVE_INFINITY, false)).toBe(OUTPUT_JSON)
     expect(getOutputKind([], false)).toBe(OUTPUT_JSON)
     expect(getOutputKind({}, false)).toBe(OUTPUT_JSON)
     expect(getOutputKind(() => {}, false)).toBe(OUTPUT_JSON)
@@ -64,6 +64,6 @@ describe('getOutputKind', () => {
     expect(getOutputKind('', false)).toBe(OUTPUT_TEXT)
     expect(getOutputKind(null, false)).toBe(OUTPUT_TEXT)
     expect(getOutputKind(undefined, false)).toBe(OUTPUT_TEXT)
-    expect(getOutputKind(NaN, false)).toBe(OUTPUT_TEXT)
+    expect(getOutputKind(Number.NaN, false)).toBe(OUTPUT_TEXT)
   })
 })

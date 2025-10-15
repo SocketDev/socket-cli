@@ -31,18 +31,19 @@ const NODE_VERSION = 'v24.10.0'
 // Determine platform-specific executable name.
 const ARCH = process.arch
 const PLATFORM = platform()
-const PKG_BINARY = PLATFORM === 'darwin'
-  ? `socket-macos-${ARCH}`
-  : PLATFORM === 'win32'
-  ? `socket-win-${ARCH}.exe`
-  : `socket-linux-${ARCH}`
+const PKG_BINARY =
+  PLATFORM === 'darwin'
+    ? `socket-macos-${ARCH}`
+    : PLATFORM === 'win32'
+      ? `socket-win-${ARCH}.exe`
+      : `socket-linux-${ARCH}`
 const PKG_BINARY_PATH = join(ROOT_DIR, 'pkg-binaries', PKG_BINARY)
 
 // Verify custom Node binary exists.
 const pkgCacheDir = join(
   process.env.HOME || process.env.USERPROFILE,
   '.pkg-cache',
-  'v3.5'
+  'v3.5',
 )
 const IS_MACOS = PLATFORM === 'darwin'
 const targetName = `built-${NODE_VERSION}-${PLATFORM}-${ARCH}${IS_MACOS && ARCH === 'arm64' ? '-signed' : ''}`
@@ -90,10 +91,14 @@ async function main() {
     logger.substep(`Output: ${PKG_BINARY_PATH}`)
     logger.substep(`Target: node24-${PLATFORM}-${ARCH}`)
     try {
-      await spawn('pnpm', ['exec', 'pkg', '.', '--targets', `node24-${PLATFORM}-${ARCH}`], {
-        cwd: ROOT_DIR,
-        stdio: 'inherit',
-      })
+      await spawn(
+        'pnpm',
+        ['exec', 'pkg', '.', '--targets', `node24-${PLATFORM}-${ARCH}`],
+        {
+          cwd: ROOT_DIR,
+          stdio: 'inherit',
+        },
+      )
       logger.success('pkg executable created')
     } catch (e) {
       logger.fail('pkg creation failed')

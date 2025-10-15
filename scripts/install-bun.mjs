@@ -43,18 +43,12 @@ async function main() {
   if (platform === 'win32') {
     // Windows installation.
     installCommand = 'powershell'
-    installArgs = [
-      '-c',
-      'irm bun.sh/install.ps1 | iex',
-    ]
+    installArgs = ['-c', 'irm bun.sh/install.ps1 | iex']
     logger.log('Installing Bun for Windows...')
   } else {
     // Unix-like systems (macOS, Linux).
     installCommand = 'bash'
-    installArgs = [
-      '-c',
-      'curl -fsSL https://bun.sh/install | bash',
-    ]
+    installArgs = ['-c', 'curl -fsSL https://bun.sh/install | bash']
     logger.log('Installing Bun for Unix-like systems...')
   }
 
@@ -69,7 +63,9 @@ async function main() {
     logger.error('')
     logger.error('Bun installation failed.')
     logger.logNewline()
-    logger.log('Please visit https://bun.sh for manual installation instructions.')
+    logger.log(
+      'Please visit https://bun.sh for manual installation instructions.',
+    )
     process.exitCode = exitCode
     return
   }

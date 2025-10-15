@@ -51,11 +51,9 @@ export async function buildSeaBlob(
     result &&
     typeof result === 'object' &&
     'exitCode' in result &&
-    result['exitCode'] !== 0
+    result.exitCode !== 0
   ) {
-    throw new Error(
-      `Failed to generate SEA blob: exit code ${result['exitCode']}`,
-    )
+    throw new Error(`Failed to generate SEA blob: exit code ${result.exitCode}`)
   }
 
   return blobPath
@@ -139,7 +137,7 @@ export async function downloadNodeBinary(
 
   // Construct download URL.
   const baseUrl =
-    process.env['SOCKET_NODE_DOWNLOAD_URL'] ||
+    process.env.SOCKET_NODE_DOWNLOAD_URL ||
     'https://nodejs.org/download/release'
   const archMap = {
     __proto__: null,
@@ -333,7 +331,7 @@ export async function getBuildTargets(): Promise<BuildTargetOptions[]> {
  */
 export async function getDefaultNodeVersion(): Promise<string> {
   return (
-    process.env['SOCKET_SEA_NODE_VERSION'] || (await getLatestCurrentRelease())
+    process.env.SOCKET_SEA_NODE_VERSION || (await getLatestCurrentRelease())
   )
 }
 

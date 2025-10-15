@@ -1,9 +1,3 @@
-/**
- * @fileoverview Babel plugin to inline require calls marked with @__INLINE__.
- */
-
-'use strict'
-
 const { createRequire } = require('node:module')
 const path = require('node:path')
 
@@ -68,10 +62,10 @@ module.exports = function inlineRequireCalls(babel) {
           absolutePath = path.resolve(currentDir, requirePath)
           const possiblePaths = [
             absolutePath,
-            absolutePath + '.ts',
-            absolutePath + '.js',
-            absolutePath + '/index.ts',
-            absolutePath + '/index.js',
+            `${absolutePath}.ts`,
+            `${absolutePath}.js`,
+            `${absolutePath}/index.ts`,
+            `${absolutePath}/index.js`,
           ]
 
           // Find the first path that exists.
@@ -113,14 +107,14 @@ module.exports = function inlineRequireCalls(babel) {
           t.addComment(
             replacement,
             'trailing',
-            " was: require('" + requirePath + "') ",
+            ` was: require('${requirePath}') `,
             false,
           )
 
           nodePath.replaceWith(replacement)
         } catch (e) {
           throw nodePath.buildCodeFrameError(
-            "Cannot inline require('" + requirePath + "'): " + e.message,
+            `Cannot inline require('${requirePath}'): ${e.message}`,
           )
         }
       },
@@ -161,5 +155,5 @@ function valueToASTNode(t, value) {
   if (typeof value === 'boolean') {
     return t.booleanLiteral(value)
   }
-  throw new Error('Unsupported value type: ' + typeof value)
+  throw new Error(`Unsupported value type: ${typeof value}`)
 }

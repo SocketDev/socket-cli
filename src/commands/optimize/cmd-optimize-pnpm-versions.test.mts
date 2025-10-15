@@ -3,7 +3,6 @@ import path from 'node:path'
 
 import { afterEach, describe, expect, it } from 'vitest'
 
-import { JsonContent } from '@socketsecurity/registry/lib/fs'
 import { readPackageJson } from '@socketsecurity/registry/lib/packages'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
@@ -16,6 +15,8 @@ import constants, {
 } from '../../../src/constants.mts'
 import { withTempFixture } from '../../../src/utils/test-fixtures.mts'
 import { spawnSocketCli, testPath } from '../../../test/utils.mts'
+
+import type { JsonContent } from '@socketsecurity/registry/lib/fs'
 
 const fixtureBaseDir = path.join(testPath, 'fixtures/commands/optimize')
 

@@ -90,7 +90,7 @@ if (!npmDirs.length) {
           const entryPath = path.join(constants.binPath, 'cli.js')
 
           try {
-            const result = await spawn(
+            const _result = await spawn(
               constants.execPath,
               [
                 entryPath,
@@ -117,7 +117,7 @@ if (!npmDirs.length) {
             )
           } catch (e) {
             const errorMessage =
-              (e as SpawnError)?.['stderr'] || (e as Error)?.['message'] || ''
+              (e as SpawnError)?.stderr || (e as Error)?.message || ''
 
             // Success cases: Socket detected an issue.
             if (

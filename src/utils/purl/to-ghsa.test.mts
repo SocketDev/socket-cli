@@ -73,7 +73,7 @@ describe('convertPurlToGhsas', () => {
     }
     mockGetOctokit.mockReturnValue(mockOctokit as any)
 
-    mockCacheFetch.mockImplementation(async (key, fn) => {
+    mockCacheFetch.mockImplementation(async (_key, _fn) => {
       return {
         data: [
           { ghsa_id: 'GHSA-1234-5678-9abc' },
@@ -116,7 +116,7 @@ describe('convertPurlToGhsas', () => {
     }
     mockGetOctokit.mockReturnValue(mockOctokit as any)
 
-    mockCacheFetch.mockImplementation(async (key, fn) => {
+    mockCacheFetch.mockImplementation(async (_key, fn) => {
       // Call the function to verify correct parameters.
       await fn()
       return { data: [] }
@@ -154,7 +154,7 @@ describe('convertPurlToGhsas', () => {
     }
     mockGetOctokit.mockReturnValue(mockOctokit as any)
 
-    mockCacheFetch.mockImplementation(async (key, fn) => {
+    mockCacheFetch.mockImplementation(async (_key, fn) => {
       await fn()
       return { data: [] }
     })
@@ -195,7 +195,7 @@ describe('convertPurlToGhsas', () => {
     }
     mockGetOctokit.mockReturnValue(mockOctokit as any)
 
-    mockCacheFetch.mockImplementation(async (key, fn) => {
+    mockCacheFetch.mockImplementation(async (_key, fn) => {
       await fn()
       return { data: [] }
     })
@@ -232,7 +232,7 @@ describe('convertPurlToGhsas', () => {
     }
     mockGetOctokit.mockReturnValue(mockOctokit as any)
 
-    mockCacheFetch.mockImplementation(async (key, fn) => {
+    mockCacheFetch.mockImplementation(async (_key, fn) => {
       await fn()
       return { data: [] }
     })
@@ -318,7 +318,7 @@ describe('convertPurlToGhsas', () => {
       },
     }
     mockGetOctokit.mockReturnValue(mockOctokit as any)
-    mockCacheFetch.mockImplementation(async (key, fn) => {
+    mockCacheFetch.mockImplementation(async (_key, fn) => {
       await fn()
       return { data: [] }
     })

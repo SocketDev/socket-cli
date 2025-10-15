@@ -127,17 +127,17 @@ async function run(
 
   const { json, markdown, org: orgFlag } = cli.flags
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = !!cli.flags.dryRun
 
-  const fold = cli.flags['fold'] as unknown as FOLD_SETTING
+  const fold = cli.flags.fold as unknown as FOLD_SETTING
 
-  const interactive = !!cli.flags['interactive']
+  const interactive = !!cli.flags.interactive
 
-  const includeLicensePolicy = !!cli.flags['license']
+  const includeLicensePolicy = !!cli.flags.license
 
-  const reportLevel = cli.flags['reportLevel'] as unknown as REPORT_LEVEL
+  const reportLevel = cli.flags.reportLevel as unknown as REPORT_LEVEL
 
-  const short = !!cli.flags['short']
+  const short = !!cli.flags.short
 
   const [scanId = '', filepath = ''] = cli.input
 

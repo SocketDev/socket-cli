@@ -9,7 +9,10 @@ import { fileURLToPath } from 'node:url'
 
 import { isQuiet } from '@socketsecurity/registry/lib/argv/flags'
 import { parseArgs } from '@socketsecurity/registry/lib/argv/parse'
-import { getChangedFiles, getStagedFiles } from '@socketsecurity/registry/lib/git'
+import {
+  getChangedFiles,
+  getStagedFiles,
+} from '@socketsecurity/registry/lib/git'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { printHeader } from '@socketsecurity/registry/lib/stdio/header'
 
@@ -130,7 +133,7 @@ async function runLintOnFiles(files, options = {}) {
     // When fixing, non-zero exit codes are normal if fixes were applied
     if (!fix || (result.stderr && result.stderr.trim().length > 0)) {
       if (!quiet) {
-        logger.error(`Linting failed`)
+        logger.error('Linting failed')
       }
       if (result.stderr) {
         console.error(result.stderr)
@@ -316,7 +319,9 @@ async function main() {
       console.log('  --staged       Lint staged files')
       console.log('  --quiet, --silent  Suppress progress messages')
       console.log('\nExamples:')
-      console.log('  pnpm lint                   # Lint changed files (default)')
+      console.log(
+        '  pnpm lint                   # Lint changed files (default)',
+      )
       console.log('  pnpm lint --fix             # Fix issues in changed files')
       console.log('  pnpm lint --all             # Lint all files')
       console.log('  pnpm lint --staged --fix    # Fix issues in staged files')
@@ -341,7 +346,7 @@ async function main() {
       }
       exitCode = await runLintOnFiles(files, {
         fix: values.fix,
-        quiet
+        quiet,
       })
     } else {
       // Get files to lint based on flags
@@ -359,7 +364,7 @@ async function main() {
         }
         exitCode = await runLintOnAll({
           fix: values.fix,
-          quiet
+          quiet,
         })
       } else {
         if (!quiet) {
@@ -368,7 +373,7 @@ async function main() {
         }
         exitCode = await runLintOnFiles(files, {
           fix: values.fix,
-          quiet
+          quiet,
         })
       }
     }

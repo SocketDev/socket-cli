@@ -254,7 +254,7 @@ export async function coanaFix(
   let overallFixed = false
 
   // Process each GHSA ID individually.
-  ghsaLoop: for (let i = 0, { length } = ids; i < length; i += 1) {
+  for (let i = 0, { length } = ids; i < length; i += 1) {
     const ghsaId = ids[i]!
     debug(`check: ${ghsaId}`)
 
@@ -287,7 +287,7 @@ export async function coanaFix(
 
     if (!fixCResult.ok) {
       logger.error(`Update failed for ${ghsaId}: ${getErrorCause(fixCResult)}`)
-      continue ghsaLoop
+      continue
     }
 
     // Check for modified files after applying the fix.
@@ -301,7 +301,7 @@ export async function coanaFix(
 
     if (!modifiedFiles.length) {
       debug(`skip: no changes for ${ghsaId}`)
-      continue ghsaLoop
+      continue
     }
 
     overallFixed = true
@@ -313,7 +313,7 @@ export async function coanaFix(
       // eslint-disable-next-line no-await-in-loop
       if (await gitRemoteBranchExists(branch, cwd)) {
         debug(`skip: remote branch "${branch}" exists`)
-        continue ghsaLoop
+        continue
       }
 
       debug(`pr: creating for ${ghsaId}`)
@@ -347,7 +347,7 @@ export async function coanaFix(
         await gitCheckoutBranch(fixEnv.baseBranch, cwd)
         // eslint-disable-next-line no-await-in-loop
         await gitDeleteBranch(branch, cwd)
-        continue ghsaLoop
+        continue
       }
 
       // Set up git remote.
@@ -362,7 +362,7 @@ export async function coanaFix(
         await gitCheckoutBranch(fixEnv.baseBranch, cwd)
         // eslint-disable-next-line no-await-in-loop
         await gitDeleteBranch(branch, cwd)
-        continue ghsaLoop
+        continue
       }
       // eslint-disable-next-line no-await-in-loop
       await setGitRemoteGithubRepoUrl(
@@ -429,7 +429,7 @@ export async function coanaFix(
     count += 1
     debug(`increment: count ${count}/${Math.min(adjustedLimit, ids.length)}`)
     if (count >= adjustedLimit) {
-      break ghsaLoop
+      break
     }
   }
 

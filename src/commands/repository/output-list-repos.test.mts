@@ -7,14 +7,13 @@ import {
   setupStandardOutputMocks,
 } from '../../../test/helpers/index.mts'
 
-import type { Direction } from './types.mts'
 import type { CResult } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 setupStandardOutputMocks()
 
 vi.mock('chalk-table', () => ({
-  default: vi.fn((options, data) => `Table with ${data.length} rows`),
+  default: vi.fn((_options, data) => `Table with ${data.length} rows`),
 }))
 
 vi.mock('yoctocolors-cjs', () => ({
@@ -194,7 +193,15 @@ describe('outputListRepos', () => {
         results: [],
       })
 
-    await outputListRepos(result, 'text', 1, null, 'name', Infinity, 'asc')
+    await outputListRepos(
+      result,
+      'text',
+      1,
+      null,
+      'name',
+      Number.POSITIVE_INFINITY,
+      'asc',
+    )
 
     expect(mockInfo).toHaveBeenCalledWith(
       'This should be the entire list available on the server.',

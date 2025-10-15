@@ -196,7 +196,8 @@ async function setupConda(
   const on = await askForEnabled(!config.disabled)
   if (on === undefined) {
     return canceledByUser()
-  } else if (on) {
+  }
+  if (on) {
     delete config.disabled
   } else {
     config.disabled = true
@@ -205,7 +206,8 @@ async function setupConda(
   const infile = await askForInputFile(config.infile || 'environment.yml')
   if (infile === undefined) {
     return canceledByUser()
-  } else if (infile === '-') {
+  }
+  if (infile === '-') {
     config.stdin = true
   } else {
     delete config.stdin
@@ -219,7 +221,8 @@ async function setupConda(
   const stdout = await askForStdout(config.stdout)
   if (stdout === undefined) {
     return canceledByUser()
-  } else if (stdout === 'yes') {
+  }
+  if (stdout === 'yes') {
     config.stdout = true
   } else if (stdout === 'no') {
     config.stdout = false
@@ -231,7 +234,8 @@ async function setupConda(
     const out = await askForOutputFile(config.outfile || REQUIREMENTS_TXT)
     if (out === undefined) {
       return canceledByUser()
-    } else if (out === '-') {
+    }
+    if (out === '-') {
       config.stdout = true
     } else {
       delete config.stdout
@@ -246,7 +250,8 @@ async function setupConda(
   const verbose = await askForVerboseFlag(config.verbose)
   if (verbose === undefined) {
     return canceledByUser()
-  } else if (verbose === 'yes' || verbose === 'no') {
+  }
+  if (verbose === 'yes' || verbose === 'no') {
     config.verbose = verbose === 'yes'
   } else {
     delete config.verbose
@@ -263,7 +268,8 @@ async function setupGradle(
   const bin = await askForBin(config.bin || './gradlew')
   if (bin === undefined) {
     return canceledByUser()
-  } else if (bin) {
+  }
+  if (bin) {
     config.bin = bin
   } else {
     delete config.bin
@@ -277,7 +283,8 @@ async function setupGradle(
   })
   if (opts === undefined) {
     return canceledByUser()
-  } else if (opts) {
+  }
+  if (opts) {
     config.gradleOpts = opts
   } else {
     delete config.gradleOpts
@@ -286,7 +293,8 @@ async function setupGradle(
   const verbose = await askForVerboseFlag(config.verbose)
   if (verbose === undefined) {
     return canceledByUser()
-  } else if (verbose === 'yes' || verbose === 'no') {
+  }
+  if (verbose === 'yes' || verbose === 'no') {
     config.verbose = verbose === 'yes'
   } else {
     delete config.verbose
@@ -303,7 +311,8 @@ async function setupSbt(
   const bin = await askForBin(config.bin || 'sbt')
   if (bin === undefined) {
     return canceledByUser()
-  } else if (bin) {
+  }
+  if (bin) {
     config.bin = bin
   } else {
     delete config.bin
@@ -317,7 +326,8 @@ async function setupSbt(
   })
   if (opts === undefined) {
     return canceledByUser()
-  } else if (opts) {
+  }
+  if (opts) {
     config.sbtOpts = opts
   } else {
     delete config.sbtOpts
@@ -326,7 +336,8 @@ async function setupSbt(
   const stdout = await askForStdout(config.stdout)
   if (stdout === undefined) {
     return canceledByUser()
-  } else if (stdout === 'yes') {
+  }
+  if (stdout === 'yes') {
     config.stdout = true
   } else if (stdout === 'no') {
     config.stdout = false
@@ -338,7 +349,8 @@ async function setupSbt(
     const out = await askForOutputFile(config.outfile || 'sbt.pom.xml')
     if (out === undefined) {
       return canceledByUser()
-    } else if (out === '-') {
+    }
+    if (out === '-') {
       config.stdout = true
     } else {
       delete config.stdout
@@ -353,7 +365,8 @@ async function setupSbt(
   const verbose = await askForVerboseFlag(config.verbose)
   if (verbose === undefined) {
     return canceledByUser()
-  } else if (verbose === 'yes' || verbose === 'no') {
+  }
+  if (verbose === 'yes' || verbose === 'no') {
     config.verbose = verbose === 'yes'
   } else {
     delete config.verbose

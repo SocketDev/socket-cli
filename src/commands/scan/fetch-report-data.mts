@@ -77,7 +77,7 @@ export async function fetchScanData(
       `orgs/${orgSlug}/full-scans/${encodeURIComponent(scanId)}${includeLicensePolicy ? '?include_license_details=true' : ''}`,
     )
 
-    updateScan(`response received`)
+    updateScan('response received')
 
     if (!result.ok) {
       return result

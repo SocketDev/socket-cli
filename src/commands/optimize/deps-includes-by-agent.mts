@@ -22,9 +22,6 @@ export function lsStdoutIncludes(
     case YARN_BERRY:
     case YARN_CLASSIC:
       return matchLsCmdViewHumanStdout(stdout, name)
-    case PNPM:
-    case VLT:
-    case NPM:
     default:
       return matchQueryCmdStdout(stdout, name)
   }

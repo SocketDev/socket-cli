@@ -1,7 +1,7 @@
 /** @fileoverview Command registry system for Socket CLI. Provides declarative command definitions, middleware, and plugin support. */
 
+export { CommandRegistry, registry } from './registry-core.mjs'
 export { defineCommand } from './registry-define.mjs'
-export { registry, CommandRegistry } from './registry-core.mjs'
 export {
   generateCommandHelp,
   generateGlobalHelp,

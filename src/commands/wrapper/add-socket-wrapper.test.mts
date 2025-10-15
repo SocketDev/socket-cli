@@ -23,7 +23,7 @@ describe('addSocketWrapper', () => {
     const { logger } = await import('@socketsecurity/registry/lib/logger')
     const mockAppendFile = vi.mocked(fs.appendFile) as any
 
-    mockAppendFile.mockImplementation((file, content, callback) => {
+    mockAppendFile.mockImplementation((_file, _content, callback) => {
       callback(null)
     })
 
@@ -47,11 +47,11 @@ describe('addSocketWrapper', () => {
     const mockAppendFile = vi.mocked(fs.appendFile) as any
     const error = new Error('Permission denied')
 
-    mockAppendFile.mockImplementation((file, content, callback) => {
+    mockAppendFile.mockImplementation((_file, _content, callback) => {
       callback(error)
     })
 
-    const result = addSocketWrapper('/etc/protected-file')
+    const _result = addSocketWrapper('/etc/protected-file')
 
     expect(fs.appendFile).toHaveBeenCalledWith(
       '/etc/protected-file',
@@ -64,7 +64,7 @@ describe('addSocketWrapper', () => {
     const mockAppendFile = vi.mocked(fs.appendFile) as any
     let capturedContent = ''
 
-    mockAppendFile.mockImplementation((file, content, callback) => {
+    mockAppendFile.mockImplementation((_file, content, callback) => {
       capturedContent = content
       callback(null)
     })
@@ -80,7 +80,7 @@ describe('addSocketWrapper', () => {
     const { logger } = await import('@socketsecurity/registry/lib/logger')
     const mockAppendFile = vi.mocked(fs.appendFile) as any
 
-    mockAppendFile.mockImplementation((file, content, callback) => {
+    mockAppendFile.mockImplementation((_file, _content, callback) => {
       callback(null)
     })
 
@@ -102,7 +102,7 @@ describe('addSocketWrapper', () => {
 
     for (const shellFile of shells) {
       vi.clearAllMocks()
-      mockAppendFile.mockImplementation((file, content, callback) => {
+      mockAppendFile.mockImplementation((_file, _content, callback) => {
         callback(null)
       })
 

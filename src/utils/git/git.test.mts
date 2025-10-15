@@ -1,9 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
-  detectDefaultBranch,
   getBaseBranch,
-  getRepoInfo,
   gitBranch,
   gitCheckoutBranch,
   gitCleanFdx,
@@ -19,7 +17,7 @@ import {
 // Mock spawn.
 vi.mock('@socketsecurity/registry/lib/spawn', () => ({
   spawn: vi.fn(),
-  isSpawnError: vi.fn(e => e && e.isSpawnError),
+  isSpawnError: vi.fn(e => e?.isSpawnError),
 }))
 
 // Mock constants.

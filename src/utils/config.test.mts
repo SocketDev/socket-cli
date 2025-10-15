@@ -32,7 +32,7 @@ describe('utils/config', () => {
     it('should warn for invalid key', () => {
       expect(
         updateConfigValue(
-          // @ts-ignore
+          // @ts-expect-error
           'nawthiswontwork',
           'fake_test_org',
         ),

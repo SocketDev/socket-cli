@@ -287,7 +287,7 @@ async function testAndDownloadManifestFiles({
   logger.info(
     `File tree for ${defaultBranch} contains`,
     files.length,
-    `entries. Searching for supported manifest files...`,
+    'entries. Searching for supported manifest files...',
   )
   logger.group()
   let fileCount = 0
@@ -545,7 +545,7 @@ async function getLastCommitDetails({
   try {
     lastCommit = JSON.parse(commitText)?.[0]
   } catch {
-    logger.fail(`GitHub response contained invalid JSON for last commit`)
+    logger.fail('GitHub response contained invalid JSON for last commit')
     logger.error(commitText)
     return {
       ok: false,
@@ -642,7 +642,7 @@ async function getRepoDetails({
       Authorization: `Bearer ${githubToken}`,
     },
   })
-  logger.success(`Request completed.`)
+  logger.success('Request completed.')
 
   const repoDetailsText = await repoDetailsResponse.text()
   debug(`response: repo ${repoDetailsText}`)

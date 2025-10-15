@@ -1,7 +1,7 @@
 /** @fileoverview Analytics Ink React component. */
 
 import { Box, Text, useApp, useInput } from 'ink'
-import React from 'react'
+import type React from 'react'
 
 export type FormattedData = {
   top_five_alert_types: Record<string, number>

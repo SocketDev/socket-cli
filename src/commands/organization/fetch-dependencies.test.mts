@@ -1,8 +1,11 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { fetchDependencies } from './fetch-dependencies.mts'
-import { createSuccessResult } from '../../../test/helpers/mocks.mts'
-import { setupSdkMockError, setupSdkMockSuccess, setupSdkSetupFailure } from '../../../test/helpers/sdk-test-helpers.mts'
+import {
+  setupSdkMockError,
+  setupSdkMockSuccess,
+  setupSdkSetupFailure,
+} from '../../../test/helpers/sdk-test-helpers.mts'
 
 // Mock the dependencies.
 vi.mock('../../utils/socket/api.mjs', () => ({
@@ -23,7 +26,10 @@ describe('fetchDependencies', () => {
       total: 2,
     }
 
-    const { mockHandleApi, mockSdk } = await setupSdkMockSuccess('searchDependencies', mockData)
+    const { mockHandleApi, mockSdk } = await setupSdkMockSuccess(
+      'searchDependencies',
+      mockData,
+    )
 
     const result = await fetchDependencies({ limit: 10, offset: 0 })
 
@@ -38,7 +44,10 @@ describe('fetchDependencies', () => {
   })
 
   it('handles SDK setup failure', async () => {
-    await setupSdkSetupFailure('Failed to setup SDK', { code: 1, cause: 'Invalid API token' })
+    await setupSdkSetupFailure('Failed to setup SDK', {
+      code: 1,
+      cause: 'Invalid API token',
+    })
 
     const result = await fetchDependencies({ limit: 20, offset: 10 })
 

@@ -12,6 +12,7 @@ import { readPackageJson } from '@socketsecurity/registry/lib/packages'
 import { transform } from '@socketsecurity/registry/lib/streams'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
+
 import { NODE_MODULES, PNPM } from '../../constants.mts'
 
 import type { Agent } from '../ecosystem/environment.mts'
@@ -56,9 +57,8 @@ async function getWorkspaceGlobs(
       } catch {}
     }
   } else {
-    workspacePatterns = (await readPackageJson(cwd, { throws: false }))?.[
-      'workspaces'
-    ]
+    workspacePatterns = (await readPackageJson(cwd, { throws: false }))
+      ?.workspaces
   }
   return Array.isArray(workspacePatterns)
     ? workspacePatterns
@@ -75,7 +75,7 @@ function ignoreFileLinesToGlobPatterns(
   const base = path.relative(cwd, path.dirname(filepath)).replace(/\\/g, '/')
   const patterns = []
   for (let i = 0, { length } = lines; i < length; i += 1) {
-    const pattern = lines[i]!.trim()
+    const pattern = lines[i]?.trim()
     if (pattern.length > 0 && pattern.charCodeAt(0) !== 35 /*'#'*/) {
       patterns.push(
         ignorePatternToMinimatch(

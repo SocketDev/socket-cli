@@ -315,7 +315,7 @@ export async function showInteractiveHelp(): Promise<void> {
         break
       }
 
-      const num = parseInt(answer, 10)
+      const num = Number.parseInt(answer, 10)
       if (num >= 1 && num <= helpCategories.length) {
         const category = helpCategories[num - 1]
         if (category) {

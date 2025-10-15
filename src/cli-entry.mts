@@ -101,7 +101,7 @@ void (async () => {
         flags: {},
         importMeta: { url: `${pathToFileURL(__filename)}` } as ImportMeta,
       })
-      return !!cli.flags['json']
+      return !!cli.flags.json
     })()
 
     if (isJson) {

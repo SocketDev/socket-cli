@@ -29,13 +29,13 @@ export async function convertGradleToMaven({
   logger.info(`- executing: \`${rBin}\``)
   if (!binExists) {
     logger.warn(
-      `Warning: It appears the executable could not be found. An error might be printed later because of that.`,
+      'Warning: It appears the executable could not be found. An error might be printed later because of that.',
     )
   }
   logger.info(`- src dir: \`${cwd}\``)
   if (!cwdExists) {
     logger.warn(
-      `Warning: It appears the src dir could not be found. An error might be printed later because of that.`,
+      'Warning: It appears the src dir could not be found. An error might be printed later because of that.',
     )
   }
   logger.groupEnd()
@@ -112,7 +112,7 @@ async function execGradleWithSpinner(
     logger.info(
       '(It will show no output, you can use --verbose to see its output)',
     )
-    spinner.start(`Running gradlew...`)
+    spinner.start('Running gradlew...')
 
     const output = await spawn(bin, commandArgs, {
       // We can pipe the output through to have the user see the result

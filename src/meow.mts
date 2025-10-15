@@ -172,14 +172,14 @@ export default function meow<
     }
   }
 
-  const showHelp = (exitCode: number = 2) => {
+  const showHelp = (exitCode = 2) => {
     console.log(fullHelp)
     // eslint-disable-next-line n/no-process-exit -- Required for CLI exit behavior.
     process.exit(exitCode)
   }
 
   const showVersion = () => {
-    console.log(pkg['version'] || '0.0.0')
+    console.log(pkg.version || '0.0.0')
     // eslint-disable-next-line n/no-process-exit -- Required for CLI exit behavior.
     process.exit(0)
   }

@@ -23,7 +23,9 @@ describe('outputQuota', () => {
     const mockLog = vi.mocked(logger.log)
     const mockSerialize = vi.mocked(serializeResultJson)
 
-    const result = createSuccessResult<SocketSdkSuccessResult<'getQuota'>['data']>({
+    const result = createSuccessResult<
+      SocketSdkSuccessResult<'getQuota'>['data']
+    >({
       quota: 1000,
     })
 
@@ -53,7 +55,9 @@ describe('outputQuota', () => {
     const { logger } = await import('@socketsecurity/registry/lib/logger')
     const mockLog = vi.mocked(logger.log)
 
-    const result = createSuccessResult<SocketSdkSuccessResult<'getQuota'>['data']>({
+    const result = createSuccessResult<
+      SocketSdkSuccessResult<'getQuota'>['data']
+    >({
       quota: 500,
     })
 
@@ -70,7 +74,9 @@ describe('outputQuota', () => {
     const { logger } = await import('@socketsecurity/registry/lib/logger')
     const mockLog = vi.mocked(logger.log)
 
-    const result = createSuccessResult<SocketSdkSuccessResult<'getQuota'>['data']>({
+    const result = createSuccessResult<
+      SocketSdkSuccessResult<'getQuota'>['data']
+    >({
       quota: 750,
     })
 
@@ -111,7 +117,9 @@ describe('outputQuota', () => {
     const { logger } = await import('@socketsecurity/registry/lib/logger')
     const mockLog = vi.mocked(logger.log)
 
-    const result = createSuccessResult<SocketSdkSuccessResult<'getQuota'>['data']>({
+    const result = createSuccessResult<
+      SocketSdkSuccessResult<'getQuota'>['data']
+    >({
       quota: 0,
     })
 
@@ -126,7 +134,9 @@ describe('outputQuota', () => {
     const { logger } = await import('@socketsecurity/registry/lib/logger')
     const mockLog = vi.mocked(logger.log)
 
-    const result = createSuccessResult<SocketSdkSuccessResult<'getQuota'>['data']>({
+    const result = createSuccessResult<
+      SocketSdkSuccessResult<'getQuota'>['data']
+    >({
       quota: 100,
     })
 

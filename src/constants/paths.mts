@@ -53,7 +53,7 @@ export function getBinPath(): string {
 
 export function getBinCliPath(): string {
   // Allow overriding CLI binary path for testing built binaries (SEA, yao-pkg, etc).
-  const binPath = process.env['SOCKET_CLI_BIN_PATH']
+  const binPath = process.env.SOCKET_CLI_BIN_PATH
   if (binPath) {
     return binPath
   }
@@ -109,7 +109,7 @@ export function getBlessedContribPath(): string {
 }
 
 export function getBlessedOptions() {
-  const blessedColorDepth = (process.env['TERM'] ?? '').includes('256color')
+  const blessedColorDepth = (process.env.TERM ?? '').includes('256color')
     ? 256
     : 8
   return {
@@ -125,7 +125,7 @@ export function getBlessedOptions() {
 }
 
 export function getSocketAppDataPath(): string {
-  const xdgDataHome = process.env['XDG_DATA_HOME']
+  const xdgDataHome = process.env.XDG_DATA_HOME
   if (xdgDataHome) {
     return path.join(xdgDataHome, 'socket')
   }
@@ -136,7 +136,7 @@ export function getSocketAppDataPath(): string {
       return path.join(home, 'Library', 'Application Support', 'Socket')
     case 'win32':
       return path.join(
-        process.env['LOCALAPPDATA'] || path.join(home, 'AppData', 'Local'),
+        process.env.LOCALAPPDATA || path.join(home, 'AppData', 'Local'),
         'Socket',
       )
     default:
@@ -145,7 +145,7 @@ export function getSocketAppDataPath(): string {
 }
 
 export function getSocketCachePath(): string {
-  const xdgCacheHome = process.env['XDG_CACHE_HOME']
+  const xdgCacheHome = process.env.XDG_CACHE_HOME
   if (xdgCacheHome) {
     return path.join(xdgCacheHome, 'socket')
   }
@@ -156,8 +156,8 @@ export function getSocketCachePath(): string {
       return path.join(home, 'Library', 'Caches', 'socket')
     case 'win32': {
       const tempDir =
-        process.env['TEMP'] ||
-        process.env['TMP'] ||
+        process.env.TEMP ||
+        process.env.TMP ||
         path.join(home, 'AppData', 'Local', 'Temp')
       return path.join(tempDir, 'socket')
     }

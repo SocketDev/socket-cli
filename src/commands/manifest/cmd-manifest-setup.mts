@@ -77,7 +77,7 @@ async function run(
 
   const { defaultOnReadError = false } = cli.flags
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = !!cli.flags.dryRun
 
   let [cwd = '.'] = cli.input
   // Note: path.resolve vs .join:

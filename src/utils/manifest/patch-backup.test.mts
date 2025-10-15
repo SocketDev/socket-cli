@@ -72,9 +72,9 @@ describe('patch-backup', () => {
 
       const metadata = await getPatchMetadata(uuid)
       expect(metadata).toBeDefined()
-      expect(metadata!.uuid).toBe(uuid)
-      expect(metadata!.patchedAt).toBeDefined()
-      expect(Object.keys(metadata!.files)).toHaveLength(1)
+      expect(metadata?.uuid).toBe(uuid)
+      expect(metadata?.patchedAt).toBeDefined()
+      expect(Object.keys(metadata?.files)).toHaveLength(1)
     })
 
     it('updates metadata for multiple files', async () => {
@@ -89,9 +89,9 @@ describe('patch-backup', () => {
       await createBackup(uuid, file2)
 
       const metadata = await getPatchMetadata(uuid)
-      expect(Object.keys(metadata!.files)).toHaveLength(2)
-      expect(metadata!.files[file1]).toBeDefined()
-      expect(metadata!.files[file2]).toBeDefined()
+      expect(Object.keys(metadata?.files)).toHaveLength(2)
+      expect(metadata?.files[file1]).toBeDefined()
+      expect(metadata?.files[file2]).toBeDefined()
     })
 
     it('handles nested file paths', async () => {
@@ -286,9 +286,9 @@ describe('patch-backup', () => {
       const info = await getBackupInfo(uuid, testFile)
 
       expect(info).toBeDefined()
-      expect(info!.size).toBe(testContent.length)
-      expect(info!.integrity).toMatch(/^sha256-/)
-      expect(info!.originalPath).toBe(testFile)
+      expect(info?.size).toBe(testContent.length)
+      expect(info?.integrity).toMatch(/^sha256-/)
+      expect(info?.originalPath).toBe(testFile)
     })
 
     it('returns undefined for non-existent file', async () => {
@@ -311,9 +311,9 @@ describe('patch-backup', () => {
       const metadata = await getPatchMetadata(uuid)
 
       expect(metadata).toBeDefined()
-      expect(metadata!.uuid).toBe(uuid)
-      expect(metadata!.patchedAt).toBeDefined()
-      expect(metadata!.files).toBeDefined()
+      expect(metadata?.uuid).toBe(uuid)
+      expect(metadata?.patchedAt).toBeDefined()
+      expect(metadata?.files).toBeDefined()
     })
 
     it('returns undefined for non-existent patch', async () => {
@@ -427,7 +427,7 @@ describe('patch-backup', () => {
 
       // Verify integrity matches
       const info = await getBackupInfo(uuid, testFile)
-      expect(info!.integrity).toBe(backupInfo.integrity)
+      expect(info?.integrity).toBe(backupInfo.integrity)
     })
   })
 
@@ -460,7 +460,7 @@ describe('patch-backup', () => {
       expect(backups).toHaveLength(5)
 
       const metadata = await getPatchMetadata(uuid)
-      expect(Object.keys(metadata!.files)).toHaveLength(5)
+      expect(Object.keys(metadata?.files)).toHaveLength(5)
     })
 
     it('handles sequential backups for same patch', async () => {
@@ -482,7 +482,7 @@ describe('patch-backup', () => {
       expect(backups).toHaveLength(3)
 
       const metadata = await getPatchMetadata(uuid)
-      expect(Object.keys(metadata!.files)).toHaveLength(3)
+      expect(Object.keys(metadata?.files)).toHaveLength(3)
     })
   })
 })

@@ -1,7 +1,11 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { fetchOrganization } from './fetch-organization-list.mts'
-import { setupSdkMockError, setupSdkMockSuccess, setupSdkSetupFailure } from '../../../test/helpers/sdk-test-helpers.mts'
+import {
+  setupSdkMockError,
+  setupSdkMockSuccess,
+  setupSdkSetupFailure,
+} from '../../../test/helpers/sdk-test-helpers.mts'
 
 // Mock the dependencies.
 vi.mock('../../utils/socket/api.mjs', () => ({
@@ -31,7 +35,10 @@ describe('fetchOrganizationList', () => {
       },
     }
 
-    const { mockHandleApi, mockSdk } = await setupSdkMockSuccess('getOrganizations', mockData)
+    const { mockHandleApi, mockSdk } = await setupSdkMockSuccess(
+      'getOrganizations',
+      mockData,
+    )
 
     const result = await fetchOrganization()
 
@@ -46,7 +53,10 @@ describe('fetchOrganizationList', () => {
   })
 
   it('handles SDK setup failure', async () => {
-    await setupSdkSetupFailure('Failed to setup SDK', { code: 1, cause: 'Configuration error' })
+    await setupSdkSetupFailure('Failed to setup SDK', {
+      code: 1,
+      cause: 'Configuration error',
+    })
 
     const result = await fetchOrganization()
 
@@ -63,7 +73,9 @@ describe('fetchOrganizationList', () => {
   })
 
   it('passes custom SDK options', async () => {
-    const { mockSetupSdk } = await setupSdkMockSuccess('getOrganizations', { organizations: {} })
+    const { mockSetupSdk } = await setupSdkMockSuccess('getOrganizations', {
+      organizations: {},
+    })
 
     const sdkOpts = {
       apiToken: 'org-token',
@@ -77,13 +89,17 @@ describe('fetchOrganizationList', () => {
 
   it('uses provided SDK instance', async () => {
     const { handleApiCall } = await import('../../utils/socket/api.mjs')
-    const { createSuccessResult } = await import('../../../test/helpers/mocks.mts')
+    const { createSuccessResult } = await import(
+      '../../../test/helpers/mocks.mts'
+    )
 
     const mockSdk = {
       getOrganizations: vi.fn().mockResolvedValue({}),
     } as any
 
-    vi.mocked(handleApiCall).mockResolvedValue(createSuccessResult({ organizations: {} }))
+    vi.mocked(handleApiCall).mockResolvedValue(
+      createSuccessResult({ organizations: {} }),
+    )
 
     await fetchOrganization({ sdk: mockSdk })
 
@@ -91,7 +107,9 @@ describe('fetchOrganizationList', () => {
   })
 
   it('uses null prototype for options', async () => {
-    const { mockSdk } = await setupSdkMockSuccess('getOrganizations', { organizations: {} })
+    const { mockSdk } = await setupSdkMockSuccess('getOrganizations', {
+      organizations: {},
+    })
 
     // This tests that the function properly uses __proto__: null.
     await fetchOrganization()

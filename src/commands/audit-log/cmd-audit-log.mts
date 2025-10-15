@@ -122,9 +122,9 @@ async function run(
     perPage: number
   }
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = !!cli.flags.dryRun
 
-  const noLegacy = !cli.flags['type']
+  const noLegacy = !cli.flags.type
 
   let [typeFilter = ''] = cli.input
 
@@ -146,7 +146,7 @@ async function run(
       nook: true,
       test: noLegacy,
       message: `Legacy flags are no longer supported. See the ${webLink(V1_MIGRATION_GUIDE_URL, 'v1 migration guide')}.`,
-      fail: `received legacy flags`,
+      fail: 'received legacy flags',
     },
     {
       nook: true,

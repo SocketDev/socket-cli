@@ -1,7 +1,11 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { fetchLicensePolicy } from './fetch-license-policy.mts'
-import { setupSdkMockError, setupSdkMockSuccess, setupSdkSetupFailure } from '../../../test/helpers/sdk-test-helpers.mts'
+import {
+  setupSdkMockError,
+  setupSdkMockSuccess,
+  setupSdkSetupFailure,
+} from '../../../test/helpers/sdk-test-helpers.mts'
 
 // Mock the dependencies.
 vi.mock('../../utils/socket/api.mjs', () => ({
@@ -22,7 +26,10 @@ describe('fetchLicensePolicy', () => {
       },
     }
 
-    const { mockHandleApi, mockSdk } = await setupSdkMockSuccess('getOrgLicensePolicy', mockData)
+    const { mockHandleApi, mockSdk } = await setupSdkMockSuccess(
+      'getOrgLicensePolicy',
+      mockData,
+    )
 
     const result = await fetchLicensePolicy('test-org')
 
@@ -34,7 +41,10 @@ describe('fetchLicensePolicy', () => {
   })
 
   it('handles SDK setup failure', async () => {
-    await setupSdkSetupFailure('Failed to setup SDK', { code: 1, cause: 'Invalid token' })
+    await setupSdkSetupFailure('Failed to setup SDK', {
+      code: 1,
+      cause: 'Invalid token',
+    })
 
     const result = await fetchLicensePolicy('my-org')
 
@@ -51,7 +61,10 @@ describe('fetchLicensePolicy', () => {
   })
 
   it('passes custom SDK options', async () => {
-    const { mockSetupSdk } = await setupSdkMockSuccess('getOrgLicensePolicy', {})
+    const { mockSetupSdk } = await setupSdkMockSuccess(
+      'getOrgLicensePolicy',
+      {},
+    )
 
     const sdkOpts = {
       apiToken: 'policy-token',

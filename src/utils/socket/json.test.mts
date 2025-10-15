@@ -1,7 +1,7 @@
 import { existsSync, promises as fs, readFileSync } from 'node:fs'
 import path from 'node:path'
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
   findSocketJsonUp,

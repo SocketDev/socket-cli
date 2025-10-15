@@ -1,7 +1,11 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { fetchSecurityPolicy } from './fetch-security-policy.mts'
-import { setupSdkMockError, setupSdkMockSuccess, setupSdkSetupFailure } from '../../../test/helpers/sdk-test-helpers.mts'
+import {
+  setupSdkMockError,
+  setupSdkMockSuccess,
+  setupSdkSetupFailure,
+} from '../../../test/helpers/sdk-test-helpers.mts'
 
 // Mock the dependencies.
 vi.mock('../../utils/socket/api.mjs', () => ({
@@ -27,7 +31,10 @@ describe('fetchSecurityPolicy', () => {
       updated_at: '2025-01-15T10:00:00Z',
     }
 
-    const { mockHandleApi, mockSdk } = await setupSdkMockSuccess('getOrgSecurityPolicy', mockData)
+    const { mockHandleApi, mockSdk } = await setupSdkMockSuccess(
+      'getOrgSecurityPolicy',
+      mockData,
+    )
 
     const result = await fetchSecurityPolicy('test-org')
 
@@ -39,7 +46,10 @@ describe('fetchSecurityPolicy', () => {
   })
 
   it('handles SDK setup failure', async () => {
-    await setupSdkSetupFailure('Failed to setup SDK', { code: 1, cause: 'Authentication failed' })
+    await setupSdkSetupFailure('Failed to setup SDK', {
+      code: 1,
+      cause: 'Authentication failed',
+    })
 
     const result = await fetchSecurityPolicy('my-org')
 
@@ -56,7 +66,10 @@ describe('fetchSecurityPolicy', () => {
   })
 
   it('passes custom SDK options', async () => {
-    const { mockSetupSdk } = await setupSdkMockSuccess('getOrgSecurityPolicy', {})
+    const { mockSetupSdk } = await setupSdkMockSuccess(
+      'getOrgSecurityPolicy',
+      {},
+    )
 
     const sdkOpts = {
       apiToken: 'security-token',

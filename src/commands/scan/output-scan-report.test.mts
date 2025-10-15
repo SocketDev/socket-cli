@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { setupStandardOutputMocks } from '../../../test/helpers/index.mts'
 import { toJsonReport, toMarkdownReport } from './output-scan-report.mts'
+import { setupStandardOutputMocks } from '../../../test/helpers/index.mts'
 import { SOCKET_WEBSITE_URL } from '../../constants.mjs'
 
 import type { ScanReport } from './generate-report.mts'

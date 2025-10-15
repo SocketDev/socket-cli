@@ -1,5 +1,3 @@
-import type { IncomingMessage } from 'node:http'
-
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock node:http and node:https modules.
@@ -19,6 +17,8 @@ vi.mock('node:https', () => ({
 }))
 
 import { httpGetJson, httpGetText, httpRequest } from './http.mts'
+
+import type { IncomingMessage } from 'node:http'
 
 describe('HTTP utilities', () => {
   beforeEach(() => {
@@ -44,7 +44,7 @@ describe('HTTP utilities', () => {
         }),
       } as unknown as IncomingMessage
 
-      mockRequest.mockImplementation((options, callback) => {
+      mockRequest.mockImplementation((_options, callback) => {
         callback(mockResponse)
         return {
           on: vi.fn(),
@@ -75,7 +75,7 @@ describe('HTTP utilities', () => {
         }),
       } as unknown as IncomingMessage
 
-      mockRequest.mockImplementation((options, callback) => {
+      mockRequest.mockImplementation((_options, callback) => {
         callback(mockResponse)
         return {
           on: vi.fn(),
@@ -105,7 +105,7 @@ describe('HTTP utilities', () => {
         }),
       } as unknown as IncomingMessage
 
-      mockHttpsRequest.mockImplementation((options, callback) => {
+      mockHttpsRequest.mockImplementation((_options, callback) => {
         callback(mockResponse)
         return {
           on: vi.fn(),
@@ -181,7 +181,7 @@ describe('HTTP utilities', () => {
         }),
       } as unknown as IncomingMessage
 
-      mockRequest.mockImplementation((options, callback) => {
+      mockRequest.mockImplementation((_options, callback) => {
         callback(mockResponse)
         return {
           on: vi.fn(),
@@ -215,7 +215,7 @@ describe('HTTP utilities', () => {
         }),
       } as unknown as IncomingMessage
 
-      mockRequest.mockImplementation((options, callback) => {
+      mockRequest.mockImplementation((_options, callback) => {
         callback(mockResponse)
         return {
           on: vi.fn(),
@@ -248,7 +248,7 @@ describe('HTTP utilities', () => {
         }),
       } as unknown as IncomingMessage
 
-      mockRequest.mockImplementation((options, callback) => {
+      mockRequest.mockImplementation((_options, callback) => {
         callback(mockResponse)
         return {
           on: vi.fn(),

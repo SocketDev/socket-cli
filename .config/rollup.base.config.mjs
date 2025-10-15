@@ -226,8 +226,8 @@ export default function baseConfig(extendConfig = {}) {
           extensions: ['.mjs', '.js', '.json', '.ts', '.mts'],
           preferBuiltins: true,
         }),
-      extractedPlugins['json'] ?? jsonPlugin(),
-      extractedPlugins['commonjs'] ??
+      extractedPlugins.json ?? jsonPlugin(),
+      extractedPlugins.commonjs ??
         commonjsPlugin({
           defaultIsModuleExports: true,
           extensions: ['.cjs', '.js'],
@@ -236,7 +236,7 @@ export default function baseConfig(extendConfig = {}) {
           ignoreTryCatch: true,
           strictRequires: true,
         }),
-      extractedPlugins['babel'] ??
+      extractedPlugins.babel ??
         babelPlugin({
           babelHelpers: 'runtime',
           babelrc: false,
@@ -298,7 +298,7 @@ export default function baseConfig(extendConfig = {}) {
           ],
           [
             INLINED_SOCKET_CLI_SYNP_VERSION,
-            () => JSON.stringify(getRootPkgJsonSync().devDependencies['synp']),
+            () => JSON.stringify(getRootPkgJsonSync().devDependencies.synp),
           ],
           [
             INLINED_SOCKET_CLI_VERSION,

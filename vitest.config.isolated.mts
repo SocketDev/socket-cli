@@ -6,8 +6,8 @@ import { defineConfig } from 'vitest/config'
 
 // Check if coverage is enabled via CLI flags or environment.
 const isCoverageEnabled =
-  process.env['COVERAGE'] === 'true' ||
-  process.env['npm_lifecycle_event']?.includes('coverage') ||
+  process.env.COVERAGE === 'true' ||
+  process.env.npm_lifecycle_event?.includes('coverage') ||
   process.argv.some(arg => arg.includes('coverage'))
 
 export default defineConfig({

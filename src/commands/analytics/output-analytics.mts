@@ -141,8 +141,7 @@ export function renderMarkdown(
   days: number,
   repoSlug: string,
 ): string {
-  return (
-    `
+  return `${`
 # Socket Alert Analytics
 
 These are the Socket.dev analytics for the ${repoSlug ? `${repoSlug} repo` : 'org'} of the past ${days} days
@@ -150,35 +149,35 @@ These are the Socket.dev analytics for the ${repoSlug ? `${repoSlug} repo` : 'or
 ${[
   [
     'Total critical alerts',
-    mdTableStringNumber('Date', 'Counts', data['total_critical_alerts']),
+    mdTableStringNumber('Date', 'Counts', data.total_critical_alerts),
   ],
   [
     'Total high alerts',
-    mdTableStringNumber('Date', 'Counts', data['total_high_alerts']),
+    mdTableStringNumber('Date', 'Counts', data.total_high_alerts),
   ],
   [
     'Total critical alerts added to the main branch',
-    mdTableStringNumber('Date', 'Counts', data['total_critical_added']),
+    mdTableStringNumber('Date', 'Counts', data.total_critical_added),
   ],
   [
     'Total high alerts added to the main branch',
-    mdTableStringNumber('Date', 'Counts', data['total_high_added']),
+    mdTableStringNumber('Date', 'Counts', data.total_high_added),
   ],
   [
     'Total critical alerts prevented from the main branch',
-    mdTableStringNumber('Date', 'Counts', data['total_critical_prevented']),
+    mdTableStringNumber('Date', 'Counts', data.total_critical_prevented),
   ],
   [
     'Total high alerts prevented from the main branch',
-    mdTableStringNumber('Date', 'Counts', data['total_high_prevented']),
+    mdTableStringNumber('Date', 'Counts', data.total_high_prevented),
   ],
   [
     'Total medium alerts prevented from the main branch',
-    mdTableStringNumber('Date', 'Counts', data['total_medium_prevented']),
+    mdTableStringNumber('Date', 'Counts', data.total_medium_prevented),
   ],
   [
     'Total low alerts prevented from the main branch',
-    mdTableStringNumber('Date', 'Counts', data['total_low_prevented']),
+    mdTableStringNumber('Date', 'Counts', data.total_low_prevented),
   ],
 ]
   .map(([title, table]) =>
@@ -192,9 +191,8 @@ ${table}
 
 ## Top 5 alert types
 
-${mdTableStringNumber('Name', 'Counts', data['top_five_alert_types'])}
-`.trim() + '\n'
-  )
+${mdTableStringNumber('Name', 'Counts', data.top_five_alert_types)}
+`.trim()}\n`
 }
 
 /**
@@ -202,9 +200,9 @@ ${mdTableStringNumber('Name', 'Counts', data['top_five_alert_types'])}
  */
 async function displayAnalyticsWithInk(data: FormattedData): Promise<void> {
   const React = await import('react')
-  // @ts-ignore - tsx files treated as CJS by tsgo without package.json type:module
+  // @ts-expect-error - tsx files treated as CJS by tsgo without package.json type:module
   const { render } = await import('ink')
-  // @ts-ignore - tsx files treated as CJS by tsgo without package.json type:module
+  // @ts-expect-error - tsx files treated as CJS by tsgo without package.json type:module
   const { AnalyticsApp } = await import('./AnalyticsApp.js')
 
   render(React.createElement(AnalyticsApp, { data }))
@@ -222,7 +220,7 @@ export function formatDataRepo(
   }
 
   for (const entry of data) {
-    const topFiveAlertTypes = entry['top_five_alert_types']
+    const topFiveAlertTypes = entry.top_five_alert_types
     for (const type of Object.keys(topFiveAlertTypes)) {
       const count = topFiveAlertTypes[type] ?? 0
       if (!totalTopAlerts[type]) {
@@ -234,7 +232,7 @@ export function formatDataRepo(
   }
   for (const entry of data) {
     for (const metric of METRICS) {
-      formattedData[metric]![formatDate(entry['created_at'])] = entry[metric]
+      formattedData[metric]![formatDate(entry.created_at)] = entry[metric]
     }
   }
 
@@ -263,7 +261,7 @@ export function formatDataOrg(
   }
 
   for (const entry of data) {
-    const topFiveAlertTypes = entry['top_five_alert_types']
+    const topFiveAlertTypes = entry.top_five_alert_types
     for (const type of Object.keys(topFiveAlertTypes)) {
       const count = topFiveAlertTypes[type] ?? 0
       if (totalTopAlerts[type]) {
@@ -277,7 +275,7 @@ export function formatDataOrg(
   for (const metric of METRICS) {
     const formatted = formattedData[metric]
     for (const entry of data) {
-      const date = formatDate(entry['created_at'])
+      const date = formatDate(entry.created_at)
       if (formatted[date]) {
         formatted[date] += entry[metric]!
       } else {

@@ -1,15 +1,16 @@
 /** @fileoverview Simplified output formatter to DRY out repetitive output-*.mts files */
 
+// @ts-expect-error
 // @ts-expect-error - chalk-table does not have type definitions.
 import chalkTable from 'chalk-table'
 import colors from 'yoctocolors-cjs'
 
-// @ts-ignore
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { serializeResultJson } from '../output/result-json.mjs'
 
 import type { CResult, OutputKind } from '../../types.mjs'
+
 
 // Simple outputResult implementation
 function outputResult<T>(
@@ -169,7 +170,7 @@ export function outputPaginatedList<T>(
       // Show pagination info
       const { direction, nextPage, page, perPage, sort } = pagination
       logger.log(
-        `Page: ${page}, Per page: ${perPage === Infinity ? 'all' : perPage}` +
+        `Page: ${page}, Per page: ${perPage === Number.POSITIVE_INFINITY ? 'all' : perPage}` +
           (sort ? `, Sort: ${sort}` : '') +
           (direction ? `, Direction: ${direction}` : ''),
       )

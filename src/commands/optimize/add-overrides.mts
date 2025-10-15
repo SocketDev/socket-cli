@@ -6,7 +6,6 @@ import { getManifestData } from '@socketsecurity/registry'
 import { hasOwn, toSortedObject } from '@socketsecurity/registry/lib/objects'
 import { fetchPackageManifest } from '@socketsecurity/registry/lib/packages'
 import { pEach } from '@socketsecurity/registry/lib/promises'
-import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import { lsStdoutIncludes } from './deps-includes-by-agent.mts'
 import { getDependencyEntries } from './get-dependency-entries.mts'
@@ -30,6 +29,7 @@ import type { EnvDetails } from '../../utils/ecosystem/environment.mjs'
 import type { AliasResult } from '../../utils/npm/package-arg.mts'
 import type { Logger } from '@socketsecurity/registry/lib/logger'
 import type { PackageJson } from '@socketsecurity/registry/lib/packages'
+import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 type AddOverridesOptions = {
   logger?: Logger | undefined
@@ -98,7 +98,7 @@ export async function addOverrides(
   }
 
   const overridesDataObjects = [] as GetOverridesResult[]
-  if (isWorkspace || pkgEnvDetails.editablePkgJson.content['private']) {
+  if (isWorkspace || pkgEnvDetails.editablePkgJson.content.private) {
     overridesDataObjects.push(getOverridesData(pkgEnvDetails))
   } else {
     overridesDataObjects.push(
@@ -224,7 +224,8 @@ export async function addOverrides(
                     ) !== major
                   ) {
                     const manifest = await fetchPackageManifest(thisSpec)
-                    const otherVersion = (manifest as { version?: string })?.version
+                    const otherVersion = (manifest as { version?: string })
+                      ?.version
                     if (otherVersion && otherVersion !== version) {
                       newSpec = `${sockOverridePrefix}${pin ? otherVersion : `^${getMajor(otherVersion)!}`}`
                     }

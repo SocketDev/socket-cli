@@ -30,7 +30,7 @@ describe('generate-report - fold functionality', () => {
       )
 
       expect(result.ok).toBe(true)
-      const alerts = (result.data as ScanReport)['alerts']
+      const alerts = (result.data as ScanReport).alerts
 
       // Check that alerts exist.
       expect(alerts).toBeDefined()
@@ -59,7 +59,7 @@ describe('generate-report - fold functionality', () => {
       )
 
       expect(result.ok).toBe(true)
-      const alerts = (result.data as ScanReport)['alerts']
+      const alerts = (result.data as ScanReport).alerts
 
       // When folded by package, alerts should be grouped.
       if (alerts && alerts.size > 0) {
@@ -125,7 +125,7 @@ describe('generate-report - fold functionality', () => {
       // When folded to all, alerts should be maximally grouped.
       expect(result.data.healthy).toBe(false)
 
-      const alerts = (result.data as ScanReport)['alerts']
+      const alerts = (result.data as ScanReport).alerts
       if (alerts && alerts.size > 0) {
         // The structure should be simplified when fold=all.
         expect(alerts.size).toBeGreaterThan(0)

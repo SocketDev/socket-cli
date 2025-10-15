@@ -98,7 +98,11 @@ describe('CLI Execution Helpers - Examples', () => {
 
   describe('executeCliJson', () => {
     it('should parse JSON output', async () => {
-      const { data, result } = await executeCliJson(['config', 'list', '--json'])
+      const { data, result } = await executeCliJson([
+        'config',
+        'list',
+        '--json',
+      ])
 
       expect(result.status).toBe(true)
       expect(typeof data).toBe('object')
@@ -162,7 +166,10 @@ describe('Output Assertion Helpers - Examples', () => {
     it('should validate failure with fluent assertions', async () => {
       const result = await executeCliCommand(['invalid-command'])
 
-      expectOutput(result).failed().exitCode(1).stderrContains(/unknown.*command/i)
+      expectOutput(result)
+        .failed()
+        .exitCode(1)
+        .stderrContains(/unknown.*command/i)
     })
 
     it('should validate output patterns', async () => {
@@ -187,11 +194,7 @@ describe('Output Assertion Helpers - Examples', () => {
     it('should validate pattern order', async () => {
       const result = await executeCliCommand(['--help'])
 
-      expectOrderedPatterns(result.stdout, [
-        /usage/i,
-        /commands/i,
-        /options/i,
-      ])
+      expectOrderedPatterns(result.stdout, [/usage/i, /commands/i, /options/i])
     })
   })
 
@@ -373,7 +376,7 @@ describe('Workspace Helpers - Examples', () => {
 
   describe('withTestWorkspace', () => {
     it('should auto-cleanup workspace', async () => {
-      let workspacePath: string = ''
+      let workspacePath = ''
 
       await withTestWorkspace(
         {
@@ -490,7 +493,9 @@ describe('Combined Helper Usage - Real World Examples', () => {
         })
 
         // Validate output
-        expectOutput(result).succeeded().stdoutContains(/\d+\.\d+\.\d+/)
+        expectOutput(result)
+          .succeeded()
+          .stdoutContains(/\d+\.\d+\.\d+/)
 
         // Verify workspace state
         expect(await workspace.fileExists('package.json')).toBe(true)
@@ -513,7 +518,7 @@ describe('Combined Helper Usage - Real World Examples', () => {
     ])
 
     expectAllSuccess(
-      results.map(r => ({ ok: r.status, data: r.stdout } as const)),
+      results.map(r => ({ ok: r.status, data: r.stdout }) as const),
     )
   })
 })

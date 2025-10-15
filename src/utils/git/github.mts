@@ -168,7 +168,7 @@ export async function fetchGhsaDetails(
       const id = ids[i]!
       const advisoryKey = `advisory${i}`
       const advisory = (gqlResp as any)?.[advisoryKey]
-      if (advisory && advisory.ghsaId) {
+      if (advisory?.ghsaId) {
         results.set(id, advisory as GhsaDetails)
       } else {
         debugNs('notice', `miss: no advisory found for ${id}`)
@@ -191,7 +191,9 @@ export function getOctokit(): Octokit {
     }
     const octokitOptions = {
       ...(SOCKET_CLI_GITHUB_TOKEN ? { auth: SOCKET_CLI_GITHUB_TOKEN } : {}),
-      ...(constants.ENV.GITHUB_API_URL ? { baseUrl: constants.ENV.GITHUB_API_URL } : {}),
+      ...(constants.ENV.GITHUB_API_URL
+        ? { baseUrl: constants.ENV.GITHUB_API_URL }
+        : {}),
     }
     debugDir('inspect', { octokitOptions })
     _octokit = new Octokit(octokitOptions)

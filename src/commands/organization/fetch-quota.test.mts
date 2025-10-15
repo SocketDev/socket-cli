@@ -1,7 +1,11 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { fetchQuota } from './fetch-quota.mts'
-import { setupSdkMockError, setupSdkMockSuccess, setupSdkSetupFailure } from '../../../test/helpers/sdk-test-helpers.mts'
+import {
+  setupSdkMockError,
+  setupSdkMockSuccess,
+  setupSdkSetupFailure,
+} from '../../../test/helpers/sdk-test-helpers.mts'
 
 // Mock the dependencies.
 vi.mock('../../utils/socket/api.mjs', () => ({
@@ -20,7 +24,10 @@ describe('fetchQuota', () => {
       repositories: { used: 10, limit: 50 },
     }
 
-    const { mockHandleApi, mockSdk } = await setupSdkMockSuccess('getQuota', mockData)
+    const { mockHandleApi, mockSdk } = await setupSdkMockSuccess(
+      'getQuota',
+      mockData,
+    )
 
     const result = await fetchQuota()
 
@@ -32,7 +39,9 @@ describe('fetchQuota', () => {
   })
 
   it('handles SDK setup failure', async () => {
-    await setupSdkSetupFailure('Failed to setup SDK', { cause: 'Configuration error' })
+    await setupSdkSetupFailure('Failed to setup SDK', {
+      cause: 'Configuration error',
+    })
 
     const result = await fetchQuota()
 
@@ -84,7 +93,7 @@ describe('fetchQuota', () => {
       'org123numbers',
     ]
 
-    for (const orgSlug of orgSlugs) {
+    for (const _orgSlug of orgSlugs) {
       // eslint-disable-next-line no-await-in-loop
       await fetchQuota()
       expect(mockSdk.getQuota).toHaveBeenCalledWith()

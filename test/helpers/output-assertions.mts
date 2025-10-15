@@ -407,9 +407,7 @@ export function expectNoAnsiCodes(output: string): void {
 export function expectTableStructure(output: string): void {
   const lines = output.split('\n').filter(line => line.trim())
 
-  expect(lines.length, 'Expected at least 2 lines for table').toBeGreaterThan(
-    1,
-  )
+  expect(lines.length, 'Expected at least 2 lines for table').toBeGreaterThan(1)
 
   // Check if lines have consistent structure (similar lengths or alignment)
   const lineLengths = lines.map(line => line.length)

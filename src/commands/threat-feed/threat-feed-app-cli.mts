@@ -17,7 +17,7 @@ async function main() {
 
   // Dynamically import ESM modules.
   const React = await import('react')
-  // @ts-ignore - ink module not available currently
+  // @ts-expect-error - ink module not available currently
   const { render } = await import('ink')
   const { ThreatFeedApp } = await import(
     pathToFileURL(new URL('./ThreatFeedApp.js', import.meta.url).pathname).href

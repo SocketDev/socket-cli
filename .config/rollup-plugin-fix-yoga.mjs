@@ -62,7 +62,7 @@ if (__yogaModule && typeof __yogaModule === 'object' && '__modules' in __yogaMod
     // Poll - this will never actually wait in practice for embedded WASM.
   }
   if (!__resolved) throw new Error('Yoga WASM initialization timeout');
-}`
+}`,
             )
           }
         })

@@ -1,11 +1,15 @@
 /** @fileoverview Safe Arborist class implementation for Socket CLI. Extends npm's Arborist to intercept buildIdealTree and reify operations for security scanning before package installation. */
 
-// @ts-ignore
+// @ts-expect-error
 import UntypedArborist from '@npmcli/arborist/lib/arborist/index.js'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import constants, { NODE_MODULES, NPX, getInternals  } from '../../../../../constants.mts'
+import constants, {
+  NODE_MODULES,
+  NPX,
+  getInternals,
+} from '../../../../../constants.mts'
 import { findUp } from '../../../../../utils/fs/fs.mjs'
 import { logAlertsMap } from '../../../../../utils/socket/package-alert.mts'
 import {
@@ -18,7 +22,6 @@ import type {
   ArboristReifyOptions,
   NodeClass,
 } from '../../types.mts'
-
 
 const internals = getInternals(constants)
 const getIpc = internals.getIpc
@@ -36,7 +39,7 @@ export const SAFE_NO_SAVE_ARBORIST_REIFY_OPTIONS_OVERRIDES = {
 }
 
 export const SAFE_WITH_SAVE_ARBORIST_REIFY_OPTIONS_OVERRIDES = {
-  // @ts-ignore
+  // @ts-expect-error
   __proto__: null,
   ...SAFE_NO_SAVE_ARBORIST_REIFY_OPTIONS_OVERRIDES,
   dryRun: false,
@@ -87,7 +90,7 @@ export class SafeArborist extends Arborist {
     return ret
   }
 
-  // @ts-ignore Incorrectly typed.
+  // @ts-expect-error Incorrectly typed.
   override async reify(
     this: SafeArborist,
     ...args: Parameters<InstanceType<ArboristClass>['reify']>
@@ -110,7 +113,7 @@ export class SafeArborist extends Arborist {
         ...SAFE_NO_SAVE_ARBORIST_REIFY_OPTIONS_OVERRIDES,
         progress: false,
       },
-      // @ts-ignore: TypeScript gets grumpy about rest parameters.
+      // @ts-expect-error: TypeScript gets grumpy about rest parameters.
       ...args.slice(1),
     )
 
@@ -120,8 +123,8 @@ export class SafeArborist extends Arborist {
 
     const acceptRisks =
       shadowAcceptRisks || constants.ENV.SOCKET_CLI_ACCEPT_RISKS
-    const reportOnlyBlocking = acceptRisks || options.dryRun || options['yes']
-    const silent = !!options['silent']
+    const reportOnlyBlocking = acceptRisks || options.dryRun || options.yes
+    const silent = !!options.silent
     const spinner = silent || !shadowProgress ? undefined : constants.spinner
 
     const isShadowNpx = binName === NPX
@@ -172,12 +175,13 @@ export class SafeArborist extends Arborist {
           }
         `.trim(),
       )
-    } else if (!silent && !shadowSilent) {
+    }
+    if (!silent && !shadowSilent) {
       logger.success(
         `Socket ${binName} ${acceptRisks ? 'accepted' : 'found no'}${hasExisting ? ' new' : ''} risks`,
       )
       if (isShadowNpx) {
-        logger.log(`Running ${options.add![0]}`)
+        logger.log(`Running ${options.add?.[0]}`)
       }
     }
 

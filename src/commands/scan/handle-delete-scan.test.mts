@@ -1,7 +1,10 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { handleDeleteScan } from './handle-delete-scan.mts'
-import { createErrorResult, createSuccessResult } from '../../../test/helpers/mocks.mts'
+import {
+  createErrorResult,
+  createSuccessResult,
+} from '../../../test/helpers/mocks.mts'
 
 // Mock the dependencies.
 vi.mock('./fetch-delete-org-full-scan.mts', () => ({

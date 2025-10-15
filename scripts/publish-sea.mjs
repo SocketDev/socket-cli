@@ -26,7 +26,6 @@ async function buildBinaries(platforms) {
 
   if (platforms && platforms.length > 0) {
     for (const platform of platforms) {
-       
       await spawn('pnpm', [...args, '--', `--platform=${platform}`], {
         stdio: 'inherit',
       })
@@ -76,7 +75,7 @@ async function uploadToGitHub(version) {
     { stdio: 'pipe' },
   )
 
-  const releaseExists = releaseCheckResult['exitCode'] === 0
+  const releaseExists = releaseCheckResult.exitCode === 0
 
   if (!releaseExists) {
     // Create the release if it doesn't exist.
@@ -101,7 +100,7 @@ async function uploadToGitHub(version) {
   for (const binary of binaries) {
     const binaryPath = normalizePath(path.join(seaDir, binary))
     console.log(`Uploading ${binary}...`)
-     
+
     await spawn(
       'gh',
       ['release', 'upload', `v${version}`, binaryPath, '--clobber'],
@@ -136,7 +135,7 @@ async function publishNpmPackage(version) {
   packageJson.version = version
   await fs.writeFile(
     packageJsonPath,
-    JSON.stringify(packageJson, null, 2) + '\n',
+    `${JSON.stringify(packageJson, null, 2)}\n`,
   )
 
   console.log(`Publishing socket@${version} to npm...`)
@@ -220,7 +219,7 @@ async function main() {
 if (import.meta.url === url.pathToFileURL(process.argv[1]).href) {
   main().catch(error => {
     console.error('Publishing failed:', error)
-     
+
     process.exit(1)
   })
 }

@@ -60,7 +60,7 @@ export async function runWithOutput(command, args = [], options = {}) {
 
       const keypressHandler = (_str, key) => {
         // ctrl+o toggles output
-        if (key && key.ctrl && key.name === 'o') {
+        if (key?.ctrl && key.name === 'o') {
           showOutput = !showOutput
 
           if (showOutput) {
@@ -89,7 +89,7 @@ export async function runWithOutput(command, args = [], options = {}) {
           }
         }
         // ctrl+c to cancel
-        else if (key && key.ctrl && key.name === 'c') {
+        else if (key?.ctrl && key.name === 'c') {
           child.kill('SIGTERM')
           if (process.stdin.isTTY) {
             process.stdin.setRawMode(false)

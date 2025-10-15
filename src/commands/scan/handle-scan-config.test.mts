@@ -1,7 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { handleScanConfig } from './handle-scan-config.mts'
-import { createErrorResult, createSuccessResult } from '../../../test/helpers/mocks.mts'
+import {
+  createErrorResult,
+  createSuccessResult,
+} from '../../../test/helpers/mocks.mts'
 
 // Mock the dependencies.
 vi.mock('./output-scan-config-result.mts', () => ({

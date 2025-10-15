@@ -43,7 +43,7 @@ async function main() {
     }
   }
 
-  console.log(`\n✅ All patches created successfully!`)
+  console.log('\n✅ All patches created successfully!')
 }
 
 main()

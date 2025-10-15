@@ -96,7 +96,7 @@ export class ColorOrMarkdown {
 
   json(value: any): string {
     return this.useMarkdown
-      ? '```json\n' + JSON.stringify(value) + '\n```'
+      ? `\`\`\`json\n${JSON.stringify(value)}\n\`\`\``
       : JSON.stringify(value)
   }
 

@@ -169,7 +169,7 @@ export class CommandRegistry implements ICommandRegistry {
     // Add before hook as middleware
     if (command.before) {
       chain.push(async (ctx, next) => {
-        await command.before!(ctx)
+        await command.before?.(ctx)
         await next()
       })
     }

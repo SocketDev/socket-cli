@@ -124,11 +124,11 @@ Available styles:
 
 const hiddenFlags: MeowFlags = {
   autoMerge: {
-    ...generalFlags['autopilot'],
+    ...generalFlags.autopilot,
     hidden: true,
   } as MeowFlag,
   ghsa: {
-    ...generalFlags['id'],
+    ...generalFlags.id,
     hidden: true,
   } as MeowFlag,
   glob: {
@@ -208,12 +208,12 @@ async function run(
         ...config.flags,
         // Explicitly document the negated --no-apply-fixes variant.
         noApplyFixes: {
-          ...config.flags['applyFixes'],
+          ...config.flags.applyFixes,
           hidden: false,
         } as MeowFlag,
         // Explicitly document the negated --no-major-updates variant.
         noMajorUpdates: {
-          ...config.flags['majorUpdates'],
+          ...config.flags.majorUpdates,
           description:
             'Do not suggest or apply fixes that require major version updates of direct or transitive dependencies',
           hidden: false,
@@ -278,10 +278,10 @@ async function run(
     minimumReleaseAge: string
   }
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = !!cli.flags.dryRun
 
   const minSatisfying =
-    (cli.flags['minSatisfying'] as unknown as boolean) || !maxSatisfying
+    (cli.flags.minSatisfying as unknown as boolean) || !maxSatisfying
 
   const disableMajorUpdates = !majorUpdates
 
@@ -329,9 +329,9 @@ async function run(
   const { spinner } = constants
 
   const ghsas = arrayUnique([
-    ...cmdFlagValueToArray(cli.flags['id']),
-    ...cmdFlagValueToArray(cli.flags['ghsa']),
-    ...cmdFlagValueToArray(cli.flags['purl']),
+    ...cmdFlagValueToArray(cli.flags.id),
+    ...cmdFlagValueToArray(cli.flags.ghsa),
+    ...cmdFlagValueToArray(cli.flags.purl),
   ])
 
   await handleFix({

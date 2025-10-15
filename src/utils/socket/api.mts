@@ -312,12 +312,11 @@ export async function handleApiCallNoSpinner<T extends SocketSdkOperations>(
         code: sdkResult.status,
       },
     }
-  } else {
-    const sdkSuccessResult = sdkResult as SocketSdkSuccessResult<T>
-    return {
-      ok: true,
-      data: sdkSuccessResult.data,
-    }
+  }
+  const sdkSuccessResult = sdkResult as SocketSdkSuccessResult<T>
+  return {
+    ok: true,
+    data: sdkSuccessResult.data,
   }
 }
 
@@ -441,7 +440,7 @@ export async function queryApiSafeJson<T>(
       ok: true,
       data: JSON.parse(result.data) as T,
     }
-  } catch (e) {
+  } catch (_e) {
     return {
       ok: false,
       message: 'Server returned invalid JSON',

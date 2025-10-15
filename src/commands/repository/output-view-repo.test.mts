@@ -14,7 +14,7 @@ import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 setupStandardOutputMocks()
 
 vi.mock('chalk-table', () => ({
-  default: vi.fn((options, data) => `Table with ${data.length} row(s)`),
+  default: vi.fn((_options, data) => `Table with ${data.length} row(s)`),
 }))
 
 vi.mock('yoctocolors-cjs', () => ({

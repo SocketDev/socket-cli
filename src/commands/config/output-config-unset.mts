@@ -23,7 +23,7 @@ export async function outputConfigUnset(
   }
 
   if (outputKind === 'markdown') {
-    logger.log(`# Update config`)
+    logger.log('# Update config')
     logger.log('')
     logger.log(updateResult.message)
     if (updateResult.data) {
@@ -31,7 +31,7 @@ export async function outputConfigUnset(
       logger.log(updateResult.data)
     }
   } else {
-    logger.log(`OK`)
+    logger.log('OK')
     logger.log(updateResult.message)
     if (updateResult.data) {
       logger.log('')

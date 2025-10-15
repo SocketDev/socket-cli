@@ -21,12 +21,12 @@ export function isValidIpcMessage(value: unknown): value is IpcMessage {
 
   const msg = value as Record<string, unknown>
   return (
-    typeof msg['id'] === 'string' &&
-    msg['id'].length > 0 &&
-    typeof msg['timestamp'] === 'number' &&
-    msg['timestamp'] > 0 &&
-    typeof msg['type'] === 'string' &&
-    msg['type'].length > 0 &&
+    typeof msg.id === 'string' &&
+    msg.id.length > 0 &&
+    typeof msg.timestamp === 'number' &&
+    msg.timestamp > 0 &&
+    typeof msg.type === 'string' &&
+    msg.type.length > 0 &&
     'data' in msg
   )
 }
@@ -46,11 +46,11 @@ export function isValidIpcHandshake(value: unknown): value is IpcHandshake {
 
   const data = msg.data as Record<string, unknown>
   return (
-    typeof data['version'] === 'string' &&
-    typeof data['pid'] === 'number' &&
-    data['pid'] > 0 &&
-    typeof data['appName'] === 'string' &&
-    (data['apiToken'] === undefined || typeof data['apiToken'] === 'string')
+    typeof data.version === 'string' &&
+    typeof data.pid === 'number' &&
+    data.pid > 0 &&
+    typeof data.appName === 'string' &&
+    (data.apiToken === undefined || typeof data.apiToken === 'string')
   )
 }
 
@@ -64,10 +64,10 @@ export function isValidIpcStub(value: unknown): value is IpcStub {
 
   const stub = value as Record<string, unknown>
   return (
-    typeof stub['pid'] === 'number' &&
-    stub['pid'] > 0 &&
-    typeof stub['timestamp'] === 'number' &&
-    stub['timestamp'] > 0 &&
+    typeof stub.pid === 'number' &&
+    stub.pid > 0 &&
+    typeof stub.timestamp === 'number' &&
+    stub.timestamp > 0 &&
     'data' in stub
   )
 }

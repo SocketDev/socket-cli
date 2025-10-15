@@ -19,7 +19,7 @@ export function extractTier1ReachabilityScanId(
   const json = readJsonSync(socketFactsFile, { throws: false })
   const tier1ReachabilityScanId =
     json && typeof json === 'object' && 'tier1ReachabilityScanId' in json
-      ? String(json['tier1ReachabilityScanId']).trim()
+      ? String(json.tier1ReachabilityScanId).trim()
       : ''
   return tier1ReachabilityScanId.length > 0
     ? tier1ReachabilityScanId

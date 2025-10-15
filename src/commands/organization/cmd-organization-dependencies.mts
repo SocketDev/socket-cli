@@ -78,7 +78,7 @@ async function run(
 
   const { json, limit, markdown, offset } = cli.flags
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = !!cli.flags.dryRun
 
   const hasApiToken = hasDefaultApiToken()
 

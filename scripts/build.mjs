@@ -26,7 +26,8 @@ const log = {
   success: msg => console.log(`✓ ${msg}`),
   error: msg => console.error(`✖ ${msg}`),
 }
-const printHeader = title => console.log(`\n${title}\n${'='.repeat(title.length)}\n`)
+const printHeader = title =>
+  console.log(`\n${title}\n${'='.repeat(title.length)}\n`)
 const printFooter = () => console.log('')
 const printSuccess = msg => console.log(`\n✓ ${msg}\n`)
 const printError = msg => console.error(`\n✖ ${msg}\n`)
@@ -41,9 +42,13 @@ async function main() {
   // Delegate to build-sea.mjs if --sea flag is present.
   if (sea) {
     const seaArgs = process.argv.filter(arg => arg !== '--sea')
-    const child = spawn('node', ['scripts/build-sea.mjs', ...seaArgs.slice(2)], {
-      stdio: 'inherit',
-    })
+    const child = spawn(
+      'node',
+      ['scripts/build-sea.mjs', ...seaArgs.slice(2)],
+      {
+        stdio: 'inherit',
+      },
+    )
     return new Promise((resolve, reject) => {
       child.on('exit', code => {
         if (code === 0) {

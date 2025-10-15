@@ -1,7 +1,10 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { handleDiffScan } from './handle-diff-scan.mts'
-import { createErrorResult, createSuccessResult } from '../../../test/helpers/mocks.mts'
+import {
+  createErrorResult,
+  createSuccessResult,
+} from '../../../test/helpers/mocks.mts'
 
 // Mock the dependencies.
 vi.mock('./fetch-diff-scan.mts', () => ({

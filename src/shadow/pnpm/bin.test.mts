@@ -1,5 +1,3 @@
-import { promises as fs } from 'node:fs'
-
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import shadowPnpm from './bin.mts'

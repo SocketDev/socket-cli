@@ -1,5 +1,3 @@
-import { promises as fs } from 'node:fs'
-
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { FLAG_DRY_RUN } from '../constants.mts'

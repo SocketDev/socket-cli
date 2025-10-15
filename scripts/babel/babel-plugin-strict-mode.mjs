@@ -32,7 +32,7 @@ function convertOctalLiteral(value) {
   }
 
   const octalDigits = octalMatch[1]
-  return parseInt(octalDigits, 8)
+  return Number.parseInt(octalDigits, 8)
 }
 
 /**
@@ -79,14 +79,14 @@ function transformOctalEscapes(str) {
   for (const [octal, replacement] of Object.entries(commonOctals)) {
     // Use word boundary to avoid matching longer sequences
     result = result.replace(
-      new RegExp(octal.replace(/\\/g, '\\\\') + '(?![0-7])', 'g'),
+      new RegExp(`${octal.replace(/\\/g, '\\\\')}(?![0-7])`, 'g'),
       replacement,
     )
   }
 
   // Replace any remaining octal escapes (\16-\377) with hex escapes
-  result = result.replace(/\\([0-7]{1,3})/g, (match, octalDigits) => {
-    const codePoint = parseInt(octalDigits, 8)
+  result = result.replace(/\\([0-7]{1,3})/g, (_match, octalDigits) => {
+    const codePoint = Number.parseInt(octalDigits, 8)
     if (codePoint <= 0xff) {
       return `\\x${codePoint.toString(16).padStart(2, '0')}`
     }

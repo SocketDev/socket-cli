@@ -29,6 +29,7 @@ import { getOwn, hasOwn } from '@socketsecurity/registry/lib/objects'
 import { resolvePackageName } from '@socketsecurity/registry/lib/packages'
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
 
+
 import { getSocketDevPackageOverviewUrl } from './url.mts'
 import { isArtifactAlertCve } from '../alert/artifact.mts'
 import { ALERT_FIX_TYPE } from '../alert/fix.mts'
@@ -370,12 +371,12 @@ export function getCveInfoFromAlertsMap(
   const filterConfig = toFilterConfig(getOwn(options, 'filter')) as CveFilter
 
   let infoByPartialPurl: CveInfoByPartialPurl | null = null
-  alertsMapLoop: for (const { 0: purl, 1: sockPkgAlerts } of alertsMap) {
+  for (const { 0: purl, 1: sockPkgAlerts } of alertsMap) {
     const purlObj = getPurlObject(purl, { throws: false })
     if (!purlObj) {
       debugNs('error', 'invalid PURL')
       debugDirNs('inspect', { purl })
-      continue alertsMapLoop
+      continue
     }
     const partialPurl = createPurlObject({
       type: purlObj.type,
@@ -386,14 +387,14 @@ export function getCveInfoFromAlertsMap(
       name: purlObj.name!,
       ...(purlObj.namespace && { namespace: purlObj.namespace }),
     })
-    sockPkgAlertsLoop: for (const sockPkgAlert of sockPkgAlerts) {
+    for (const sockPkgAlert of sockPkgAlerts) {
       const alert = sockPkgAlert.raw
       if (
         alert.fix?.type !== ALERT_FIX_TYPE.cve ||
         (filterConfig.upgradable === false &&
           getManifestData(sockPkgAlert.ecosystem as any, name))
       ) {
-        continue sockPkgAlertsLoop
+        continue
       }
       if (!infoByPartialPurl) {
         infoByPartialPurl = new Map()
@@ -425,7 +426,7 @@ export function getCveInfoFromAlertsMap(
                   .replace(/; +/g, ' || '),
               ).format(),
             })
-            continue sockPkgAlertsLoop
+            continue
           } catch (e) {
             error = e
           }
@@ -594,7 +595,7 @@ export function logAlertsMap(
       mentionedPurlsWithHiddenAlerts.add(purl)
       if (hiddenAlertsCount === 1) {
         output.write(
-          `  ${colors.dim(`+1 Hidden ${getSeverityLabel(hiddenAlerts[0]!.raw.severity ?? 'low')} risk alert`)}\n`,
+          `  ${colors.dim(`+1 Hidden ${getSeverityLabel(hiddenAlerts[0]?.raw.severity ?? 'low')} risk alert`)}\n`,
         )
       } else {
         output.write(

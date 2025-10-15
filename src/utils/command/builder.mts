@@ -11,6 +11,7 @@ import type {
   CliSubcommand,
 } from '../cli/with-subcommands.mjs'
 
+
 /**
  * Options for building a CLI command
  */
@@ -95,7 +96,7 @@ export function buildCommand(options: CommandBuilderOptions): CliSubcommand {
                   'shortFlag' in flag ? `-${flag.shortFlag}, ` : ''
                 const flagName = key.replace(
                   /[A-Z]/g,
-                  m => '-' + m.toLowerCase(),
+                  m => `-${m.toLowerCase()}`,
                 )
                 lines.push(`  ${shortFlag}--${flagName}`)
                 if ('description' in flag && flag.description) {

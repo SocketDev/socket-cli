@@ -222,7 +222,7 @@ const NetworkUtils = {
         }
 
         // Exponential backoff.
-        const delay = baseDelay * Math.pow(2, attempts - 1)
+        const delay = baseDelay * 2 ** (attempts - 1)
         logger.log(
           `Attempt ${attempts} failed, retrying in ${delay}ms: ${error instanceof Error ? error.message : String(error)}`,
         )

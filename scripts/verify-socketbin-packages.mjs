@@ -1,4 +1,3 @@
-
 /**
  * @fileoverview Verifies that all @socketbin/* packages exist on npm registry.
  * Use after publishing to confirm everything is available.

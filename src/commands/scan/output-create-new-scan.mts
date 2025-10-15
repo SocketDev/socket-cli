@@ -67,7 +67,7 @@ export async function outputCreateNewScan(
       logger.log('')
     } else {
       logger.log(
-        `The server did not return a Scan ID while trying to create a new Scan. This could be an indication something went wrong.`,
+        'The server did not return a Scan ID while trying to create a new Scan. This could be an indication something went wrong.',
       )
     }
     logger.log('')

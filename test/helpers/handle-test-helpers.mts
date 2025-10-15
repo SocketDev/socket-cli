@@ -15,7 +15,9 @@ function deriveFunctionName(path: string, prefix: string): string {
   if (parts[0] === prefix) {
     // Remove prefix and convert to camelCase
     return parts
-      .map((part, i) => (i === 0 ? part : part.charAt(0).toUpperCase() + part.slice(1)))
+      .map((part, i) =>
+        i === 0 ? part : part.charAt(0).toUpperCase() + part.slice(1),
+      )
       .join('')
   }
 
@@ -64,10 +66,12 @@ export function setupStandardHandleMocks(
   fetchModulePath: string,
   outputModulePath: string,
   fetchFunctionName?: string,
-  outputFunctionName?: string
+  outputFunctionName?: string,
 ) {
-  const fetchName = fetchFunctionName || deriveFunctionName(fetchModulePath, 'fetch')
-  const outputName = outputFunctionName || deriveFunctionName(outputModulePath, 'output')
+  const fetchName =
+    fetchFunctionName || deriveFunctionName(fetchModulePath, 'fetch')
+  const outputName =
+    outputFunctionName || deriveFunctionName(outputModulePath, 'output')
 
   vi.mock(fetchModulePath, () => ({
     [fetchName]: vi.fn(),

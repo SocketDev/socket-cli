@@ -8,9 +8,9 @@
  */
 
 import { spawnSync } from 'node:child_process'
-import { mkdtempSync, writeFileSync, rmSync } from 'node:fs'
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join, dirname } from 'node:path'
+import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -96,12 +96,16 @@ if (firstArg === '--version' || firstArg === '-v') {
   console.log('  -h, --help        Print this help message')
   console.log('')
   console.log('This is a wrapper for yao-pkg patched Node.js binaries.')
-  console.log('Yao-pkg binaries require scripts to be passed as files, not flags.')
+  console.log(
+    'Yao-pkg binaries require scripts to be passed as files, not flags.',
+  )
   process.exit(0)
 } else if (firstArg.startsWith('-')) {
   // Unknown flag - yao-pkg will fail on these.
   console.error(`Error: Unknown or unsupported flag: ${firstArg}`)
-  console.error('Yao-pkg binaries do not support most Node.js command-line flags.')
+  console.error(
+    'Yao-pkg binaries do not support most Node.js command-line flags.',
+  )
   console.error('Use yao-wrapper --help for supported options.')
   process.exit(1)
 } else {

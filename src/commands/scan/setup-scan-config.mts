@@ -18,6 +18,7 @@ import {
 import type { CResult } from '../../types.mts'
 import type { SocketJson } from '../../utils/socket/json.mts'
 
+
 export async function setupScanConfig(
   cwd: string,
   defaultOnReadError = false,

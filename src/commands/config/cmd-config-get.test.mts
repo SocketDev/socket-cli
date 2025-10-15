@@ -20,7 +20,7 @@ describe('socket config get', async () => {
       // Node 24 on Windows currently fails this test with added stderr:
       // Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), file src\win\async.c, line 76
       const skipOnWin32Node24 =
-        constants.WIN32 && semver.parse(constants.NODE_VERSION)!.major >= 24
+        constants.WIN32 && semver.parse(constants.NODE_VERSION)?.major >= 24
       if (!skipOnWin32Node24) {
         expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
           "

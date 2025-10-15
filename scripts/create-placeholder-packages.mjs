@@ -1,4 +1,3 @@
-
 /**
  * @fileoverview Creates minimal placeholder packages for @socketbin/* to enable trusted publisher.
  * These are version 0.0.0 packages that will be replaced with real binaries later.
@@ -111,7 +110,7 @@ npm install -g socket
   // Write files
   await fs.writeFile(
     path.join(packageDir, 'package.json'),
-    JSON.stringify(packageJson, null, 2) + '\n',
+    `${JSON.stringify(packageJson, null, 2)}\n`,
   )
 
   await fs.writeFile(path.join(packageDir, 'README.md'), readme)

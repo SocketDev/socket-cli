@@ -2,7 +2,8 @@
 
 import { Box, Text, useApp, useInput } from 'ink'
 import InkTable from 'ink-table'
-import React, { useState } from 'react'
+import type React from 'react'
+import { useState } from 'react'
 
 import type { ThreatResult } from './types.mts'
 

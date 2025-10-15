@@ -45,23 +45,21 @@ export async function teardownTabCompletion(
         },
         message: 'Removed completion from ~/.bashrc',
       }
-    } else {
-      const left = findRemainingCompletionSetups(content)
-      return {
-        ok: true,
-        data: {
-          action: 'missing',
-          left,
-        },
-        message: `Completion was not found in ~/.bashrc${left.length ? ' (you may need to manually edit your .bashrc to clean this up...)' : ''}`,
-      }
     }
-  } else {
+    const left = findRemainingCompletionSetups(content)
     return {
-      ok: true, // Eh. I think this makes most sense.
-      data: { action: 'not found', left: [] },
-      message: '~/.bashrc not found, skipping',
+      ok: true,
+      data: {
+        action: 'missing',
+        left,
+      },
+      message: `Completion was not found in ~/.bashrc${left.length ? ' (you may need to manually edit your .bashrc to clean this up...)' : ''}`,
     }
+  }
+  return {
+    ok: true, // Eh. I think this makes most sense.
+    data: { action: 'not found', left: [] },
+    message: '~/.bashrc not found, skipping',
   }
 }
 

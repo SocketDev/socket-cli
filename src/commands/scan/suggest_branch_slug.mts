@@ -4,7 +4,7 @@ import { stripAnsi } from '@socketsecurity/registry/lib/strings'
 
 export async function suggestBranchSlug(
   repoDefaultBranch: string | undefined,
-): Promise<string | void> {
+): Promise<string | undefined> {
   const spawnResult = await spawn('git', ['branch', '--show-current'])
   const stdoutStr =
     typeof spawnResult.stdout === 'string'

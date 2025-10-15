@@ -180,7 +180,7 @@ export const commonTests = {
   help: (commandName: string): CommandTestCase => ({
     name: 'should show help',
     args: ['--help'],
-    expectedOutput: [`Usage`, commandName],
+    expectedOutput: ['Usage', commandName],
     expectedExitCode: 0,
   }),
 

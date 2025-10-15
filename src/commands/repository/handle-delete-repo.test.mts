@@ -71,7 +71,7 @@ describe('handleDeleteRepo', () => {
     const { fetchDeleteRepo } = await import('./fetch-delete-repo.mts')
     const { outputDeleteRepo } = await import('./output-delete-repo.mts')
     const mockFetch = vi.mocked(fetchDeleteRepo)
-    const mockOutput = vi.mocked(outputDeleteRepo)
+    const _mockOutput = vi.mocked(outputDeleteRepo)
 
     const repoNames = [
       'simple-repo',

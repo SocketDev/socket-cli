@@ -230,12 +230,14 @@ export async function executeCliWithRetry(
   while (attempts < maxRetries) {
     attempts++
     try {
+      // eslint-disable-next-line no-await-in-loop
       return await executeCliCommand(args, options)
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error))
 
       if (attempts < maxRetries) {
         // Wait before retrying
+        // eslint-disable-next-line no-await-in-loop
         await new Promise(resolve => setTimeout(resolve, retryDelay))
       }
     }

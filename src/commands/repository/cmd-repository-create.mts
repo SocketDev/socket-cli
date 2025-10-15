@@ -102,11 +102,11 @@ async function run(
 
   const { json, markdown, org: orgFlag } = cli.flags
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = !!cli.flags.dryRun
 
-  const interactive = !!cli.flags['interactive']
+  const interactive = !!cli.flags.interactive
 
-  const noLegacy = !cli.flags['repoName']
+  const noLegacy = !cli.flags.repoName
 
   const [repoName = ''] = cli.input
 
@@ -132,7 +132,7 @@ async function run(
       nook: true,
       test: noLegacy,
       message: `Legacy flags are no longer supported. See the ${webLink(V1_MIGRATION_GUIDE_URL, 'v1 migration guide')}.`,
-      fail: `received legacy flags`,
+      fail: 'received legacy flags',
     },
     {
       test: !!repoName,
@@ -159,10 +159,10 @@ async function run(
     {
       orgSlug,
       repoName: String(repoName),
-      description: String(cli.flags['repoDescription'] || ''),
-      homepage: String(cli.flags['homepage'] || ''),
-      defaultBranch: String(cli.flags['defaultBranch'] || ''),
-      visibility: String(cli.flags['visibility'] || 'private'),
+      description: String(cli.flags.repoDescription || ''),
+      homepage: String(cli.flags.homepage || ''),
+      defaultBranch: String(cli.flags.defaultBranch || ''),
+      visibility: String(cli.flags.visibility || 'private'),
     },
     outputKind,
   )

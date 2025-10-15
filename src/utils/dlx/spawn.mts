@@ -141,7 +141,8 @@ export async function spawnDlx(
 
     const shadowPnpmBin = /*@__PURE__*/ require(constants.shadowPnpmBinPath)
     return await shadowPnpmBin(spawnArgs, finalShadowOptions, spawnExtra)
-  } else if (pm === YARN && isYarnBerry()) {
+  }
+  if (pm === YARN && isYarnBerry()) {
     spawnArgs = ['dlx']
     // Yarn dlx runs in a temporary environment by design and should always fetch fresh.
     if (silent) {
@@ -151,22 +152,21 @@ export async function spawnDlx(
 
     const shadowYarnBin = /*@__PURE__*/ require(constants.shadowYarnBinPath)
     return await shadowYarnBin(spawnArgs, finalShadowOptions, spawnExtra)
-  } else {
-    // Use npm exec/npx.
-    // For consistency, we'll use npx which is more commonly used for one-off execution.
-    spawnArgs = ['--yes']
-    if (force) {
-      // Use --force to bypass cache and get latest within range.
-      spawnArgs.push('--force')
-    }
-    if (silent) {
-      spawnArgs.push(FLAG_SILENT)
-    }
-    spawnArgs.push(packageString, ...args)
-
-    const shadowNpxBin = /*@__PURE__*/ require(constants.shadowNpxBinPath)
-    return await shadowNpxBin(spawnArgs, finalShadowOptions, spawnExtra)
   }
+  // Use npm exec/npx.
+  // For consistency, we'll use npx which is more commonly used for one-off execution.
+  spawnArgs = ['--yes']
+  if (force) {
+    // Use --force to bypass cache and get latest within range.
+    spawnArgs.push('--force')
+  }
+  if (silent) {
+    spawnArgs.push(FLAG_SILENT)
+  }
+  spawnArgs.push(packageString, ...args)
+
+  const shadowNpxBin = /*@__PURE__*/ require(constants.shadowNpxBinPath)
+  return await shadowNpxBin(spawnArgs, finalShadowOptions, spawnExtra)
 }
 
 /**
@@ -197,21 +197,21 @@ export async function spawnCoanaDlx(
   }
   const defaultApiToken = getDefaultApiToken()
   if (defaultApiToken) {
-    mixinsEnv['SOCKET_CLI_API_TOKEN'] = defaultApiToken
+    mixinsEnv.SOCKET_CLI_API_TOKEN = defaultApiToken
   }
 
   if (orgSlug) {
-    mixinsEnv['SOCKET_ORG_SLUG'] = orgSlug
+    mixinsEnv.SOCKET_ORG_SLUG = orgSlug
   } else {
     const orgSlugCResult = await getDefaultOrgSlug()
     if (orgSlugCResult.ok) {
-      mixinsEnv['SOCKET_ORG_SLUG'] = orgSlugCResult.data
+      mixinsEnv.SOCKET_ORG_SLUG = orgSlugCResult.data
     }
   }
 
   const proxyUrl = getDefaultProxyUrl()
   if (proxyUrl) {
-    mixinsEnv['SOCKET_CLI_API_PROXY'] = proxyUrl
+    mixinsEnv.SOCKET_CLI_API_PROXY = proxyUrl
   }
 
   try {
@@ -227,7 +227,7 @@ export async function spawnCoanaDlx(
       const spawnResult = await spawn('node', [localCoanaPath, ...args], {
         cwd: dlxOptions.cwd,
         env: finalEnv,
-        stdio: spawnExtra?.['stdio'] || 'inherit',
+        stdio: spawnExtra?.stdio || 'inherit',
       })
 
       return {

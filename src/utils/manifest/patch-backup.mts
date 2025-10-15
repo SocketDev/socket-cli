@@ -22,10 +22,10 @@ import crypto from 'node:crypto'
 import { promises as fs } from 'node:fs'
 import { dirname, join } from 'node:path'
 
-// @ts-expect-error - ssri does not have type definitions.
 import ssri from 'ssri'
 
 import { get, put, remove } from '@socketsecurity/registry/lib/cacache'
+// @ts-expect-error - ssri does not have type definitions.
 
 export interface BackupFileInfo {
   integrity: string // ssri format: sha256-base64
@@ -59,7 +59,7 @@ function buildBackupKey(uuid: string, filePath: string): string {
  * Get the path to the metadata file for a patch.
  */
 function getMetadataPath(uuid: string): string {
-  const socketHome = process.env['HOME'] || process.env['USERPROFILE'] || '~'
+  const socketHome = process.env.HOME || process.env.USERPROFILE || '~'
   return join(socketHome, '.socket', '_patches', 'manifests', `${uuid}.json`)
 }
 
@@ -434,7 +434,7 @@ export async function hasBackup(
  * console.log('Found', patches.length, 'patches with backups')
  */
 export async function listAllPatches(): Promise<string[]> {
-  const socketHome = process.env['HOME'] || process.env['USERPROFILE'] || '~'
+  const socketHome = process.env.HOME || process.env.USERPROFILE || '~'
   const manifestsDir = join(socketHome, '.socket', '_patches', 'manifests')
 
   try {
