@@ -1,9 +1,7 @@
 import crypto from 'node:crypto'
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
-
-
-import fastGlob from 'fast-glob'
+import type { PackageURL } from '@socketregistry/packageurl-js'
 
 import { joinAnd } from '@socketsecurity/registry/lib/arrays'
 import { debugDirNs } from '@socketsecurity/registry/lib/debug'
@@ -11,11 +9,10 @@ import { readDirNames } from '@socketsecurity/registry/lib/fs'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { readPackageJson } from '@socketsecurity/registry/lib/packages'
 import { normalizePath } from '@socketsecurity/registry/lib/path'
+import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 import { pluralize } from '@socketsecurity/registry/lib/words'
-
-import { PatchManifestSchema } from './manifest-schema.mts'
-import { outputPatchResult } from './output-patch-result.mts'
+import fastGlob from 'fast-glob'
 import {
   DOT_SOCKET_DIR,
   MANIFEST_JSON,
@@ -23,14 +20,13 @@ import {
   NPM,
   UTF8,
 } from '../../constants.mts'
+import type { CResult, OutputKind } from '../../types.mts'
 import { getErrorCause } from '../../utils/error/errors.mjs'
 import { findUp } from '../../utils/fs/fs.mjs'
 import { getPurlObject, normalizePurl } from '../../utils/purl/parse.mjs'
-
 import type { PatchRecord } from './manifest-schema.mts'
-import type { CResult, OutputKind } from '../../types.mts'
-import type { PackageURL } from '@socketregistry/packageurl-js'
-import type { Spinner } from '@socketsecurity/registry/lib/spinner'
+import { PatchManifestSchema } from './manifest-schema.mts'
+import { outputPatchResult } from './output-patch-result.mts'
 
 type PatchEntry = {
   key: string
@@ -361,7 +357,7 @@ async function processFilePatch(
   return result
 }
 
-export interface HandlePatchConfig {
+export interface HandlePatchApplyConfig {
   cwd: string
   dryRun: boolean
   outputKind: OutputKind
@@ -369,13 +365,13 @@ export interface HandlePatchConfig {
   spinner: Spinner
 }
 
-export async function handlePatch({
+export async function handlePatchApply({
   cwd,
   dryRun,
   outputKind,
   purlObjs,
   spinner,
-}: HandlePatchConfig): Promise<void> {
+}: HandlePatchApplyConfig): Promise<void> {
   try {
     const dotSocketDirPath = normalizePath(path.join(cwd, DOT_SOCKET_DIR))
     const manifestPath = normalizePath(
