@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
   debugApiResponse,
@@ -9,6 +9,8 @@ import {
 } from './debug.mts'
 
 // Mock the registry debug functions.
+// Mock variable to track debug function calls.
+let debugFn: ReturnType<typeof vi.fn>
 
 describe('debug utilities', () => {
   beforeEach(() => {

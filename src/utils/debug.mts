@@ -27,6 +27,8 @@ import {
   isDebugNs,
 } from '@socketsecurity/registry/lib/debug'
 
+import { UNKNOWN_ERROR } from '../constants.mts'
+
 /**
  * Debug an API response.
  * Logs essential info without exposing sensitive data.
@@ -39,7 +41,7 @@ export function debugApiResponse(
   if (error) {
     debugDir({
       endpoint,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: error instanceof Error ? error.message : UNKNOWN_ERROR,
     })
   } else if (status && status >= 400) {
     debug(`API ${endpoint}: HTTP ${status}`)
@@ -62,7 +64,7 @@ export function debugFileOp(
     debugDir({
       operation,
       filepath,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: error instanceof Error ? error.message : UNKNOWN_ERROR,
     })
     /* c8 ignore next 3 */
   } else if (isDebugNs('silly')) {
@@ -116,7 +118,7 @@ export function debugConfig(
   if (error) {
     debugDir({
       source,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: error instanceof Error ? error.message : UNKNOWN_ERROR,
     })
   } else if (found) {
     debug(`Config loaded: ${source}`)
