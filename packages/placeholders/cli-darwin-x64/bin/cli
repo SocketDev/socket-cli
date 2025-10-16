@@ -1,5 +1,0 @@
-#!/usr/bin/env node
-console.error('Socket CLI placeholder for darwin-x64');
-console.error('Please wait for the real package to be published.');
-console.error('Visit https://github.com/SocketDev/socket-cli for more info.');
-process.exit(1);
