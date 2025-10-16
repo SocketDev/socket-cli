@@ -2,6 +2,7 @@
  * Report level constants for security issue severity.
  */
 
+export const FOLD_SETTING_VERSION = 'version'
 export const REPORT_LEVEL_DEFER = 'defer'
 export const REPORT_LEVEL_ERROR = 'error'
 export const REPORT_LEVEL_IGNORE = 'ignore'

@@ -7,7 +7,7 @@ import { isPath } from '@socketsecurity/registry/lib/path'
 import { pluralize } from '@socketsecurity/registry/lib/words'
 
 import { runCdxgen } from './run-cdxgen.mts'
-import constants, { FLAG_HELP } from '../../constants.mts'
+import { DRY_RUN_BAILING_NOW, FLAG_HELP } from '../../constants/cli.mjs'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { filterFlags, isHelpFlag } from '../../utils/process/cmd.mts'
@@ -288,7 +288,7 @@ async function run(
   }
 
   if (dryRun) {
-    logger.log(constants.DRY_RUN_BAILING_NOW)
+    logger.log(DRY_RUN_BAILING_NOW)
     return
   }
 

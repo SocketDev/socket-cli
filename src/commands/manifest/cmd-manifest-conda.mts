@@ -3,14 +3,13 @@ import path from 'node:path'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleManifestConda } from './handle-manifest-conda.mts'
-import constants, {
+import { DRY_RUN_BAILING_NOW, FLAG_JSON, FLAG_MARKDOWN } from '../../constants/cli.mjs'
+import {
   ENVIRONMENT_YAML,
   ENVIRONMENT_YML,
-  FLAG_JSON,
-  FLAG_MARKDOWN,
   REQUIREMENTS_TXT,
-  SOCKET_JSON,
-} from '../../constants.mts'
+} from '../../constants/paths.mjs'
+import { SOCKET_JSON } from '../../constants/socket.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { getFlagListOutput } from '../../utils/output/formatting.mts'
@@ -201,7 +200,7 @@ async function run(
   )
 
   if (dryRun) {
-    logger.log(constants.DRY_RUN_BAILING_NOW)
+    logger.log(DRY_RUN_BAILING_NOW)
     return
   }
 

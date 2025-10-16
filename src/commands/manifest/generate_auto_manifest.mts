@@ -2,10 +2,11 @@ import path from 'node:path'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { convertGradleToMaven } from './convert_gradle_to_maven.mts'
-import { convertSbtToMaven } from './convert_sbt_to_maven.mts'
+import { convertGradleToMaven } from './convert-gradle-to-maven.mts'
+import { convertSbtToMaven } from './convert-sbt-to-maven.mts'
 import { handleManifestConda } from './handle-manifest-conda.mts'
-import { REQUIREMENTS_TXT, SOCKET_JSON } from '../../constants.mts'
+import { REQUIREMENTS_TXT } from '../../constants/paths.mjs'
+import { SOCKET_JSON } from '../../constants/socket.mts'
 import { readOrDefaultSocketJson } from '../../utils/socket/json.mts'
 
 import type { GeneratableManifests } from './detect-manifest-actions.mts'

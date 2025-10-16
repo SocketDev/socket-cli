@@ -3,17 +3,27 @@ import path from 'node:path'
 
 import colors from 'yoctocolors-cjs'
 
+import { NPM, PNPM, YARN } from '@socketsecurity/registry/constants/agents'
+import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/registry/constants/socket'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import constants, { FLAG_HELP, NPM, PNPM, YARN } from '../../constants.mts'
+import { FLAG_HELP } from '../../constants/cli.mjs'
+import {
+  PACKAGE_LOCK_JSON,
+  PNPM_LOCK_YAML,
+  YARN_LOCK,
+} from '../../constants/paths.mts'
+import {
+  SOCKET_CLI_SHADOW_ACCEPT_RISKS,
+  SOCKET_CLI_SHADOW_API_TOKEN,
+  SOCKET_CLI_SHADOW_SILENT,
+} from '../../constants/shadow.mjs'
 import { spawnCdxgenDlx, spawnSynpDlx } from '../../utils/dlx/spawn.mjs'
 import { findUp } from '../../utils/fs/fs.mjs'
 import { isYarnBerry } from '../../utils/yarn/version.mts'
 
 import type { ShadowBinResult } from '../../shadow/npm/bin.mts'
 import type { DlxOptions } from '../../utils/dlx/spawn.mjs'
-
-const { PACKAGE_LOCK_JSON, PNPM_LOCK_YAML, YARN_LOCK } = constants
 
 const nodejsPlatformTypes = new Set([
   'javascript',
@@ -31,7 +41,7 @@ export type ArgvObject = {
 }
 
 function argvObjectToArray(argvObj: ArgvObject): string[] {
-  if (argvObj.help) {
+  if (argvObj['help']) {
     return [FLAG_HELP]
   }
   const result = []
@@ -51,7 +61,7 @@ function argvObjectToArray(argvObj: ArgvObject): string[] {
       result.push(`--${key}`, ...value.map(String))
     }
   }
-  const pathArgs = argvObj._ as string[]
+  const pathArgs = argvObj['_'] as string[]
   if (Array.isArray(pathArgs)) {
     result.push(...pathArgs)
   }
@@ -67,10 +77,9 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
 
   const shadowOpts: DlxOptions = {
     ipc: {
-      [constants.SOCKET_CLI_SHADOW_ACCEPT_RISKS]: true,
-      [constants.SOCKET_CLI_SHADOW_API_TOKEN]:
-        constants.SOCKET_PUBLIC_API_TOKEN,
-      [constants.SOCKET_CLI_SHADOW_SILENT]: true,
+      [SOCKET_CLI_SHADOW_ACCEPT_RISKS]: true,
+      [SOCKET_CLI_SHADOW_API_TOKEN]: SOCKET_PUBLIC_API_TOKEN,
+      [SOCKET_CLI_SHADOW_SILENT]: true,
     },
     stdio: 'inherit',
   }
@@ -92,11 +101,11 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
   let cleanupPackageLock = false
   if (
     yarnLockPath &&
-    argvMutable.type !== YARN &&
-    nodejsPlatformTypes.has(argvMutable.type as string)
+    argvMutable['type'] !== YARN &&
+    nodejsPlatformTypes.has(argvMutable['type'] as string)
   ) {
     if (npmLockPath) {
-      argvMutable.type = NPM
+      argvMutable['type'] = NPM
     } else {
       // Use synp to create a package-lock.json from the yarn.lock,
       // based on the node_modules folder, for a more accurate SBOM.
@@ -109,7 +118,7 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
           },
         )
         await synpResult.spawnPromise
-        argvMutable.type = NPM
+        argvMutable['type'] = NPM
         cleanupPackageLock = true
       } catch {}
     }
@@ -132,7 +141,7 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
       } catch {}
     }
 
-    const outputPath = argvMutable.output as string
+    const outputPath = argvMutable['output'] as string
     if (outputPath) {
       const fullOutputPath = path.join(process.cwd(), outputPath)
       if (existsSync(fullOutputPath)) {
