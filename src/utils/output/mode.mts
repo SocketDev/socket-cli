@@ -16,9 +16,9 @@
  * - Defaults to text format for terminal display
  */
 
-import { OUTPUT_JSON, OUTPUT_MARKDOWN, OUTPUT_TEXT } from '../../constants.mts'
+import { OUTPUT_JSON, OUTPUT_MARKDOWN, OUTPUT_TEXT } from '../../constants/cli.mts'
 
-import type { OutputKind } from '../../types.mjs'
+import type { OutputKind } from '../../types.mts'
 
 export function getOutputKind(json: unknown, markdown: unknown): OutputKind {
   if (json) {

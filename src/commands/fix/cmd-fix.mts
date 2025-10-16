@@ -6,10 +6,8 @@ import { arrayUnique, joinOr } from '@socketsecurity/registry/lib/arrays'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleFix } from './handle-fix.mts'
-import constants, {
-  ERROR_UNABLE_RESOLVE_ORG,
-  FLAG_ID,
-} from '../../constants.mts'
+import { DRY_RUN_NOT_SAVING, FLAG_ID  } from '../../constants/cli.mts'
+import { ERROR_UNABLE_RESOLVE_ORG } from '../../constants/errors.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import {
@@ -124,11 +122,11 @@ Available styles:
 
 const hiddenFlags: MeowFlags = {
   autoMerge: {
-    ...generalFlags.autopilot,
+    ...generalFlags['autopilot'],
     hidden: true,
   } as MeowFlag,
   ghsa: {
-    ...generalFlags.id,
+    ...generalFlags['id'],
     hidden: true,
   } as MeowFlag,
   glob: {
@@ -208,12 +206,12 @@ async function run(
         ...config.flags,
         // Explicitly document the negated --no-apply-fixes variant.
         noApplyFixes: {
-          ...config.flags.applyFixes,
+          ...config.flags['applyFixes'],
           hidden: false,
         } as MeowFlag,
         // Explicitly document the negated --no-major-updates variant.
         noMajorUpdates: {
-          ...config.flags.majorUpdates,
+          ...config.flags['majorUpdates'],
           description:
             'Do not suggest or apply fixes that require major version updates of direct or transitive dependencies',
           hidden: false,
@@ -278,10 +276,10 @@ async function run(
     minimumReleaseAge: string
   }
 
-  const dryRun = !!cli.flags.dryRun
+  const dryRun = !!cli.flags['dryRun']
 
   const minSatisfying =
-    (cli.flags.minSatisfying as unknown as boolean) || !maxSatisfying
+    (cli.flags['minSatisfying'] as unknown as boolean) || !maxSatisfying
 
   const disableMajorUpdates = !majorUpdates
 
@@ -306,7 +304,7 @@ async function run(
   }
 
   if (dryRun) {
-    logger.log(constants.DRY_RUN_NOT_SAVING)
+    logger.log(DRY_RUN_NOT_SAVING)
     return
   }
 
@@ -326,12 +324,12 @@ async function run(
   // If given path is absolute then cwd should not affect it.
   cwd = path.resolve(process.cwd(), cwd)
 
-  const { spinner } = constants
+  const spinner = undefined
 
   const ghsas = arrayUnique([
-    ...cmdFlagValueToArray(cli.flags.id),
-    ...cmdFlagValueToArray(cli.flags.ghsa),
-    ...cmdFlagValueToArray(cli.flags.purl),
+    ...cmdFlagValueToArray(cli.flags['id']),
+    ...cmdFlagValueToArray(cli.flags['ghsa']),
+    ...cmdFlagValueToArray(cli.flags['purl']),
   ])
 
   await handleFix({

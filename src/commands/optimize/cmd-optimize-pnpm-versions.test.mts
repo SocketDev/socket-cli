@@ -3,30 +3,26 @@ import path from 'node:path'
 
 import { afterEach, describe, expect, it } from 'vitest'
 
+import { PNPM } from '@socketsecurity/registry/constants/agents'
 import { readPackageJson } from '@socketsecurity/registry/lib/packages'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
-import constants, {
-  FLAG_CONFIG,
-  FLAG_DRY_RUN,
-  FLAG_SILENT,
-  PNPM,
-  PNPM_LOCK_YAML,
-} from '../../../src/constants.mts'
 import { withTempFixture } from '../../../src/utils/test-fixtures.mts'
 import { spawnSocketCli, testPath } from '../../../test/utils.mts'
+import { PNPM_LOCK_YAML } from '../../constants/packages.mts'
+import { FLAG_CONFIG, FLAG_DRY_RUN, FLAG_SILENT } from '../constants/cli.mts'
+import ENV from '../constants/env.mts'
+import { getBinCliPath } from '../constants/paths.mts'
 
 import type { JsonContent } from '@socketsecurity/registry/lib/fs'
 
+const binCliPath = getBinCliPath()
 const fixtureBaseDir = path.join(testPath, 'fixtures/commands/optimize')
 
 // Track cleanup functions for each test.
 let cleanupFunctions: Array<() => Promise<void>> = []
 
-describe('socket optimize - pnpm versions', { timeout: 60_000 }, async () => {
-  const { binCliPath } = constants
-
-  afterEach(async () => {
+describe('socket optimize - pnpm versions', { timeout: 60_000 }, async () => {afterEach(async () => {
     // Clean up all temporary directories after each test.
     await Promise.all(cleanupFunctions.map(cleanup => cleanup()))
     cleanupFunctions = []
@@ -76,7 +72,7 @@ describe('socket optimize - pnpm versions', { timeout: 60_000 }, async () => {
             env: {
               ...process.env,
               CI: '1',
-              PATH: `${pnpm8BinPath}:${constants.ENV.PATH || process.env.PATH}`,
+              PATH: `${pnpm8BinPath}:${ENV.PATH || process.env['PATH']}`,
             },
           },
         )
@@ -164,7 +160,7 @@ describe('socket optimize - pnpm versions', { timeout: 60_000 }, async () => {
             env: {
               ...process.env,
               CI: '1',
-              PATH: `${pnpm8BinPath}:${constants.ENV.PATH || process.env.PATH}`,
+              PATH: `${pnpm8BinPath}:${ENV.PATH || process.env['PATH']}`,
             },
             timeout: 10_000,
           },
@@ -221,7 +217,7 @@ describe('socket optimize - pnpm versions', { timeout: 60_000 }, async () => {
             env: {
               ...process.env,
               CI: '1',
-              PATH: `${pnpm9BinPath}:${constants.ENV.PATH || process.env.PATH}`,
+              PATH: `${pnpm9BinPath}:${ENV.PATH || process.env['PATH']}`,
             },
           },
         )
@@ -298,7 +294,7 @@ describe('socket optimize - pnpm versions', { timeout: 60_000 }, async () => {
             env: {
               ...process.env,
               CI: '1',
-              PATH: `${pnpm9BinPath}:${constants.ENV.PATH || process.env.PATH}`,
+              PATH: `${pnpm9BinPath}:${ENV.PATH || process.env['PATH']}`,
             },
           },
         )

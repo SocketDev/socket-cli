@@ -1,3 +1,4 @@
+// @ts-nocheck
 /** @fileoverview Audit log Ink React component. */
 
 import { Box, Text, useApp, useInput } from 'ink'

@@ -2,7 +2,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handlePurlsShallowScore } from './handle-purls-shallow-score.mts'
 import { parsePackageSpecifiers } from './parse-package-specifiers.mts'
-import constants from '../../constants.mts'
+import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import {
@@ -95,7 +95,7 @@ async function run(
 
   const { json, markdown } = cli.flags
 
-  const dryRun = !!cli.flags.dryRun
+  const dryRun = !!cli.flags['dryRun']
 
   const [ecosystem = '', ...pkgs] = cli.input
 
@@ -128,7 +128,7 @@ async function run(
   }
 
   if (dryRun) {
-    logger.log(constants.DRY_RUN_BAILING_NOW)
+    logger.log(DRY_RUN_BAILING_NOW)
     return
   }
 

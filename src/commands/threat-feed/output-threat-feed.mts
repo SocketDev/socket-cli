@@ -2,6 +2,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
+import { getPurlObject } from '../../utils/purl/parse.mts'
 
 import type { ThreadFeedResponse } from './types.mts'
 import type { CResult, OutputKind } from '../../types.mts'
@@ -36,10 +37,22 @@ export async function outputThreatFeed(
  */
 async function outputWithInk(data: ThreadFeedResponse): Promise<void> {
   const React = await import('react')
-  // @ts-expect-error - tsx files treated as CJS by tsgo without package.json type:module
   const { render } = await import('ink')
-  // @ts-expect-error - tsx files treated as CJS by tsgo without package.json type:module
   const { ThreatFeedApp } = await import('./ThreatFeedApp.js')
 
-  render(React.createElement(ThreatFeedApp, { results: data.results }))
+  render(
+    React.createElement(ThreatFeedApp, {
+      results: data.results.map(result => {
+        const purlObj = getPurlObject(result.purl, { throws: false })
+        return {
+          ...result,
+          parsed: {
+            ecosystem: purlObj?.type || '',
+            name: purlObj?.name || '',
+            version: purlObj?.version || '',
+          },
+        }
+      }),
+    }),
+  )
 }

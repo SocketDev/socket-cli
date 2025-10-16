@@ -1,10 +1,4 @@
-import constants from '../../constants.mts'
-
-import type { NpmOverrides, Overrides, PnpmOrYarnOverrides } from './types.mts'
-import type { Agent, EnvDetails } from '../../utils/ecosystem/environment.mjs'
-import type { PackageJson } from '@socketsecurity/registry/lib/packages'
-
-const {
+import {
   BUN,
   NPM,
   OVERRIDES,
@@ -13,7 +7,11 @@ const {
   VLT,
   YARN_BERRY,
   YARN_CLASSIC,
-} = constants
+} from '@socketsecurity/registry/constants/agents'
+
+import type { NpmOverrides, Overrides, PnpmOrYarnOverrides } from './types.mts'
+import type { Agent, EnvDetails } from '../../utils/ecosystem/environment.mjs'
+import type { PackageJson } from '@socketsecurity/registry/lib/packages'
 
 export function getOverridesDataBun(
   pkgEnvDetails: EnvDetails,

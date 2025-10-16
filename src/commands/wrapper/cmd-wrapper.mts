@@ -6,7 +6,11 @@ import { addSocketWrapper } from './add-socket-wrapper.mts'
 import { checkSocketWrapperSetup } from './check-socket-wrapper-setup.mts'
 import { postinstallWrapper } from './postinstall-wrapper.mts'
 import { removeSocketWrapper } from './remove-socket-wrapper.mts'
-import constants from '../../constants.mts'
+import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mjs'
+import {
+  getBashRcPath,
+  getZshRcPath,
+} from '../../constants/paths.mjs'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { getFlagListOutput } from '../../utils/output/formatting.mts'
@@ -69,7 +73,7 @@ async function run(
   // TODO: Implement json/md further.
   const { json, markdown } = cli.flags
 
-  const dryRun = !!cli.flags.dryRun
+  const dryRun = !!cli.flags['dryRun']
 
   let enable = false
   let disable = false
@@ -103,11 +107,12 @@ async function run(
   }
 
   if (dryRun) {
-    logger.log(constants.DRY_RUN_BAILING_NOW)
+    logger.log(DRY_RUN_BAILING_NOW)
     return
   }
 
-  const { bashRcPath, zshRcPath } = constants
+  const bashRcPath = getBashRcPath()
+  const zshRcPath = getZshRcPath()
   if (enable) {
     if (existsSync(bashRcPath) && !checkSocketWrapperSetup(bashRcPath)) {
       addSocketWrapper(bashRcPath)

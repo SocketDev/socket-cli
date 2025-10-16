@@ -7,13 +7,15 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import { testPath } from '../../../test/utils.mts'
-import constants, {
-  FLAG_DRY_RUN,
-  FLAG_HELP,
-  FLAG_SILENT,
-} from '../../constants.mts'
+import { FLAG_DRY_RUN, FLAG_HELP, FLAG_SILENT } from '../constants/cli.mts'
+import ENV from '../constants/env.mts'
+import { getBinPath, getExecPath, getProcessEnv } from '../constants/paths.mts'
 
 import type { SpawnError } from '@socketsecurity/registry/lib/spawn'
+
+const binPath = getBinPath()
+const execPath = getExecPath()
+const processEnv = getProcessEnv()
 
 const npmFixturesPath = path.join(testPath, 'fixtures/commands/npm')
 
@@ -51,18 +53,18 @@ if (!npmDirs.length) {
             stdio: useDebug ? 'inherit' : 'ignore',
           })
 
-          const entryPath = path.join(constants.binPath, 'cli.js')
+          const entryPath = path.join(binPath, 'cli.js')
 
           try {
             const result = await spawn(
-              constants.execPath,
+              execPath,
               [entryPath, 'npm', FLAG_HELP],
               {
                 cwd: npmPath,
                 env: {
                   ...process.env,
-                  ...constants.processEnv,
-                  PATH: `${npmBinPath}:${constants.ENV.PATH}`,
+                  ...processEnv,
+                  PATH: `${npmBinPath}:${ENV.PATH}`,
                 },
               },
             )
@@ -87,11 +89,11 @@ if (!npmDirs.length) {
           timeout: 60_000, // Longer timeout for network operations.
         },
         async () => {
-          const entryPath = path.join(constants.binPath, 'cli.js')
+          const entryPath = path.join(binPath, 'cli.js')
 
           try {
             const _result = await spawn(
-              constants.execPath,
+              execPath,
               [
                 entryPath,
                 'npm',
@@ -105,8 +107,8 @@ if (!npmDirs.length) {
                 cwd: path.join(npmFixturesPath, 'lacking-typosquat'),
                 env: {
                   ...process.env,
-                  ...constants.processEnv,
-                  PATH: `${npmBinPath}:${constants.ENV.PATH}`,
+                  ...processEnv,
+                  PATH: `${npmBinPath}:${ENV.PATH}`,
                 },
               },
             )

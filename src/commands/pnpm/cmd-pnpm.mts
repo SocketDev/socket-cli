@@ -1,8 +1,14 @@
 import { createRequire } from 'node:module'
 
+import { PNPM } from '@socketsecurity/registry/constants/agents'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import constants, { FLAG_DRY_RUN, FLAG_HELP, PNPM } from '../../constants.mts'
+import {
+  DRY_RUN_BAILING_NOW,
+  FLAG_DRY_RUN,
+  FLAG_HELP,
+} from '../../constants/cli.mts'
+import { getShadowPnpmBinPath } from '../../constants/paths.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { getFlagApiRequirementsOutput } from '../../utils/output/formatting.mts'
@@ -67,14 +73,14 @@ async function run(
     importMeta,
   })
 
-  const dryRun = !!cli.flags.dryRun
+  const dryRun = !!cli.flags['dryRun']
 
   if (dryRun) {
-    logger.log(constants.DRY_RUN_BAILING_NOW)
+    logger.log(DRY_RUN_BAILING_NOW)
     return
   }
 
-  const shadowPnpmBin = /*@__PURE__*/ require(constants.shadowPnpmBinPath)
+  const shadowPnpmBin = /*@__PURE__*/ require(getShadowPnpmBinPath())
 
   process.exitCode = 1
 

@@ -40,7 +40,7 @@ export function checkCommandInput(
     }
     // If the message has newlines then format the first line with the input
     // expectation and the rest indented below it.
-    const logSymbol = d.test ? LOG_SYMBOLS.success : LOG_SYMBOLS.fail
+    const logSymbol = d.test ? LOG_SYMBOLS['success'] : LOG_SYMBOLS['fail']
     const reason = d.test ? d.pass : d.fail
     let listItem = `  ${logSymbol} ${lines[0]}`
     if (reason) {

@@ -1,7 +1,11 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleScanReport } from './handle-scan-report.mts'
-import constants from '../../constants.mts'
+import {
+  DRY_RUN_BAILING_NOW,
+  FOLD_SETTING_NONE,
+} from '../../constants/cli.mts'
+import { REPORT_LEVEL_WARN } from '../../constants/reporting.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import {
@@ -47,8 +51,8 @@ async function run(
       ...outputFlags,
       fold: {
         type: 'string',
-        default: constants.FOLD_SETTING_NONE,
-        description: `Fold reported alerts to some degree (default '${constants.FOLD_SETTING_NONE}')`,
+        default: FOLD_SETTING_NONE,
+        description: `Fold reported alerts to some degree (default '${FOLD_SETTING_NONE}')`,
       },
       interactive: {
         type: 'boolean',
@@ -63,8 +67,8 @@ async function run(
       },
       reportLevel: {
         type: 'string',
-        default: constants.REPORT_LEVEL_WARN,
-        description: `Which policy level alerts should be reported (default '${constants.REPORT_LEVEL_WARN}')`,
+        default: REPORT_LEVEL_WARN,
+        description: `Which policy level alerts should be reported (default '${REPORT_LEVEL_WARN}')`,
       },
       short: {
         type: 'boolean',
@@ -127,17 +131,17 @@ async function run(
 
   const { json, markdown, org: orgFlag } = cli.flags
 
-  const dryRun = !!cli.flags.dryRun
+  const dryRun = !!cli.flags['dryRun']
 
-  const fold = cli.flags.fold as unknown as FOLD_SETTING
+  const fold = cli.flags['fold'] as unknown as FOLD_SETTING
 
-  const interactive = !!cli.flags.interactive
+  const interactive = !!cli.flags['interactive']
 
-  const includeLicensePolicy = !!cli.flags.license
+  const includeLicensePolicy = !!cli.flags['license']
 
-  const reportLevel = cli.flags.reportLevel as unknown as REPORT_LEVEL
+  const reportLevel = cli.flags['reportLevel'] as unknown as REPORT_LEVEL
 
-  const short = !!cli.flags.short
+  const short = !!cli.flags['short']
 
   const [scanId = '', filepath = ''] = cli.input
 
@@ -182,7 +186,7 @@ async function run(
   }
 
   if (dryRun) {
-    logger.log(constants.DRY_RUN_BAILING_NOW)
+    logger.log(DRY_RUN_BAILING_NOW)
     return
   }
 

@@ -4,7 +4,8 @@ import path from 'node:path'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { input, select } from '@socketsecurity/registry/lib/prompts'
 
-import constants, { SOCKET_JSON } from '../../constants.mts'
+import ENV from '../../constants/env.mts'
+import { SOCKET_JSON } from '../../constants/paths.mts'
 import {
   detectDefaultBranch,
   getRepoName,
@@ -314,17 +315,14 @@ async function configureGithub(
     message:
       '(--github-api-url) Do you want to override the default github url?',
 
-    default: config.githubApiUrl || constants.ENV.GITHUB_API_URL || '',
+    default: config.githubApiUrl || ENV.GITHUB_API_URL || '',
     required: false,
     // validate: async string => bool
   })
   if (defaultGithubApiUrl === undefined) {
     return canceledByUser()
   }
-  if (
-    defaultGithubApiUrl &&
-    defaultGithubApiUrl !== constants.ENV.GITHUB_API_URL
-  ) {
+  if (defaultGithubApiUrl && defaultGithubApiUrl !== ENV.GITHUB_API_URL) {
     config.githubApiUrl = defaultGithubApiUrl
   } else {
     delete config.githubApiUrl

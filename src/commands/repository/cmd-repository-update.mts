@@ -1,7 +1,8 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleUpdateRepo } from './handle-update-repo.mts'
-import constants, { V1_MIGRATION_GUIDE_URL } from '../../constants.mts'
+import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mjs'
+import { V1_MIGRATION_GUIDE_URL } from '../../constants/socket.mjs'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import {
@@ -104,11 +105,11 @@ async function run(
 
   const { json, markdown, org: orgFlag } = cli.flags
 
-  const dryRun = !!cli.flags.dryRun
+  const dryRun = !!cli.flags['dryRun']
 
-  const interactive = !!cli.flags.interactive
+  const interactive = !!cli.flags['interactive']
 
-  const noLegacy = !cli.flags.repoName
+  const noLegacy = !cli.flags['repoName']
 
   const [repoName = ''] = cli.input
 
@@ -153,7 +154,7 @@ async function run(
   }
 
   if (dryRun) {
-    logger.log(constants.DRY_RUN_BAILING_NOW)
+    logger.log(DRY_RUN_BAILING_NOW)
     return
   }
 
@@ -161,10 +162,10 @@ async function run(
     {
       orgSlug,
       repoName: String(repoName),
-      description: String(cli.flags.repoDescription || ''),
-      homepage: String(cli.flags.homepage || ''),
-      defaultBranch: String(cli.flags.defaultBranch || ''),
-      visibility: String(cli.flags.visibility || 'private'),
+      description: String(cli.flags['repoDescription'] || ''),
+      homepage: String(cli.flags['homepage'] || ''),
+      defaultBranch: String(cli.flags['defaultBranch'] || ''),
+      visibility: String(cli.flags['visibility'] || 'private'),
     },
     outputKind,
   )

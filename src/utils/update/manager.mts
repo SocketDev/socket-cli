@@ -34,7 +34,7 @@ import {
   showUpdateNotification,
 } from './notifier.mts'
 import { updateStore } from './store.mts'
-import { UPDATE_CHECK_TTL } from '../../constants.mts'
+import { UPDATE_CHECK_TTL } from '../../constants/cache.mts'
 
 import type { AuthInfo } from './checker.mts'
 import type { StoreRecord } from './store.mts'

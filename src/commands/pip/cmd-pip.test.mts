@@ -1,12 +1,12 @@
 import { describe, expect } from 'vitest'
 
-import constants, { FLAG_CONFIG, FLAG_HELP } from '../../../src/constants.mts'
 import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
+import { FLAG_CONFIG, FLAG_HELP } from '../constants/cli.mts'
+import { getBinCliPath } from '../constants/paths.mts'
 
-describe('socket pip', async () => {
-  const { binCliPath } = constants
+const binCliPath = getBinCliPath()
 
-  cmdit(
+describe('socket pip', async () => {cmdit(
     ['pip', FLAG_HELP, FLAG_CONFIG, '{}'],
     `should support ${FLAG_HELP}`,
     async cmd => {

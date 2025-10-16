@@ -1,4 +1,4 @@
-import constants from '../constants.mjs'
+import { SOCKET_DEFAULT_REPOSITORY } from '../constants/socket.mts'
 
 /**
  * Sanitizes a name to comply with repository naming constraints.
@@ -37,7 +37,7 @@ function sanitizeName(name: string): string {
  */
 export function extractName(name: string): string {
   const sanitized = sanitizeName(name)
-  return sanitized || constants.SOCKET_DEFAULT_REPOSITORY
+  return sanitized || SOCKET_DEFAULT_REPOSITORY
 }
 
 /**

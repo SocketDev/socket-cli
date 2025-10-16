@@ -1,3 +1,4 @@
+// @ts-nocheck
 /** @fileoverview Threat feed Ink React component. */
 
 import { Box, Text, useApp, useInput } from 'ink'

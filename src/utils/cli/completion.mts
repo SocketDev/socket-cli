@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 
-import constants from '../../constants.mjs'
+import { getSocketAppDataPath, rootPath } from '../../constants/paths.mts'
 
 import type { CResult } from '../../types.mjs'
 
@@ -10,7 +10,7 @@ export const COMPLETION_CMD_PREFIX = 'complete -F _socket_completion'
 export function getCompletionSourcingCommand(): CResult<string> {
   // Bash completion script lives in data directory.
   const completionScriptPath = path.join(
-    constants.rootPath,
+    rootPath,
     'data',
     'socket-completion.bash',
   )
@@ -38,7 +38,7 @@ export function getBashrcDetails(targetCommandName: string): CResult<{
     return sourcingCommand
   }
 
-  const { socketAppDataPath } = constants
+  const socketAppDataPath = getSocketAppDataPath()
   if (!socketAppDataPath) {
     return {
       ok: false,

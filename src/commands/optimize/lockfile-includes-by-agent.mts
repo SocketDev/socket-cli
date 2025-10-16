@@ -1,10 +1,14 @@
+import {
+  BUN,
+  PNPM,
+  VLT,
+  YARN_BERRY,
+  YARN_CLASSIC,
+} from '@socketsecurity/registry/constants/agents'
+import { EXT_LOCK } from '@socketsecurity/registry/constants/paths'
 import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
 
-import constants from '../../constants.mts'
-
 import type { EnvDetails } from '../../utils/ecosystem/environment.mjs'
-
-const { BUN, EXT_LOCK, NPM, PNPM, VLT, YARN_BERRY, YARN_CLASSIC } = constants
 
 export function npmLockSrcIncludes(lockSrc: string, name: string) {
   // Detects the package name in the following cases:

@@ -30,17 +30,17 @@ import { safeReadFileSync } from '@socketsecurity/registry/lib/fs'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
 
-import constants, {
+import { debugConfig } from './debug.mts'
+import {
   CONFIG_KEY_API_BASE_URL,
   CONFIG_KEY_API_PROXY,
   CONFIG_KEY_API_TOKEN,
   CONFIG_KEY_DEFAULT_ORG,
   CONFIG_KEY_ENFORCED_ORGS,
   CONFIG_KEY_ORG,
-  SOCKET_YAML,
-  SOCKET_YML,
-} from '../constants.mjs'
-import { debugConfig } from './debug.mts'
+} from '../constants/config.mts'
+import { getSocketAppDataPath } from '../constants/paths.mts'
+import { SOCKET_YAML, SOCKET_YML } from '../constants/socket.mts'
 import { getErrorCause } from './error/errors.mjs'
 
 import type { CResult } from '../types.mjs'
@@ -96,7 +96,7 @@ function getConfigValues(): LocalConfig {
   if (_cachedConfig === undefined) {
     // Order: env var > --config flag > file
     _cachedConfig = {} as LocalConfig
-    const { socketAppDataPath } = constants
+    const socketAppDataPath = getSocketAppDataPath()
     if (socketAppDataPath) {
       const raw = safeReadFileSync(socketAppDataPath)
       if (raw) {
@@ -273,7 +273,6 @@ export function overrideCachedConfig(jsonConfig: unknown): CResult<undefined> {
     }
   }
 
-  // @ts-expect-error Override an illegal object.
   _cachedConfig = config as LocalConfig
   _configFromFlag = true
 
@@ -341,7 +340,7 @@ export function updateConfigValue<Key extends keyof LocalConfig>(
     _pendingSave = true
     process.nextTick(() => {
       _pendingSave = false
-      const { socketAppDataPath } = constants
+      const socketAppDataPath = getSocketAppDataPath()
       if (socketAppDataPath) {
         writeFileSync(
           socketAppDataPath,

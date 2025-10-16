@@ -1,15 +1,17 @@
 import { describe, expect } from 'vitest'
 
-import constants, {
+import {
   FLAG_CONFIG,
   FLAG_DRY_RUN,
   FLAG_HELP,
   FLAG_ORG,
-} from '../../../src/constants.mts'
+} from '../../../src/constants/cli.mts'
+import { getBinCliPath } from '../../../src/constants/paths.mts'
 import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
 
+const binCliPath = getBinCliPath()
+
 describe('socket audit-log', async () => {
-  const { binCliPath } = constants
 
   cmdit(
     ['audit-log', FLAG_HELP, FLAG_CONFIG, '{}'],

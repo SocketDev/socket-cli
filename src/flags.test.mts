@@ -7,6 +7,7 @@ import {
   outputFlags,
   validationFlags,
 } from './flags.mts'
+import ENV from '../constants/env.mts'
 
 // Mock dependencies.
 vi.mock('meow', () => ({
@@ -48,7 +49,7 @@ describe('flags', () => {
 
     it('respects NODE_OPTIONS', async () => {
       const constants = vi.mocked(await import('./constants.mts')).default
-      constants.ENV.NODE_OPTIONS = '--max-old-space-size=512'
+      ENV.NODE_OPTIONS = '--max-old-space-size=512'
 
       // Need to reset the module to clear cached value.
       vi.resetModules()
@@ -94,7 +95,7 @@ describe('flags', () => {
 
     it('respects NODE_OPTIONS', async () => {
       const constants = vi.mocked(await import('./constants.mts')).default
-      constants.ENV.NODE_OPTIONS = '--max-semi-space-size=16'
+      ENV.NODE_OPTIONS = '--max-semi-space-size=16'
 
       vi.resetModules()
       const { getMaxSemiSpaceSizeFlag: freshGetMaxSemiSpaceSizeFlag } =

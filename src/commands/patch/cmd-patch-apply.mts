@@ -1,10 +1,11 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 
+import { DOT_SOCKET_DIR, MANIFEST_JSON } from '@socketsecurity/registry/constants/paths'
+import { getSpinner } from '@socketsecurity/registry/constants/process'
 import { arrayUnique } from '@socketsecurity/registry/lib/arrays'
 
 import { handlePatchApply } from './handle-patch-apply.mts'
-import constants, { DOT_SOCKET_DIR, MANIFEST_JSON } from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { InputError } from '../../utils/error/errors.mjs'
@@ -43,6 +44,7 @@ async function run(
   const config: CliCommandConfig = {
     commandName: CMD_NAME,
     description,
+    hidden: false,
     flags: {
       ...commonFlags,
       ...outputFlags,
@@ -119,9 +121,9 @@ async function run(
     )
   }
 
-  const { spinner } = constants
+  const spinner = getSpinner()!
 
-  const purlObjs = arrayUnique(cmdFlagValueToArray(cli.flags.purl))
+  const purlObjs = arrayUnique(cmdFlagValueToArray(cli.flags['purl']))
     .map(p => getPurlObject(p, { throws: false }))
     .filter(Boolean) as Array<PurlObject<PackageURL>>
 

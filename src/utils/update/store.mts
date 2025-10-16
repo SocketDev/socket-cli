@@ -38,7 +38,7 @@ import path from 'node:path'
 import { readFileUtf8Sync } from '@socketsecurity/registry/lib/fs'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { UPDATE_STORE_DIR, UPDATE_STORE_FILE_NAME } from '../../constants.mts'
+import { UPDATE_STORE_DIR, UPDATE_STORE_FILE_NAME } from '../../constants/paths.mts'
 import { processLock } from '../process/lock.mts'
 
 interface StoreRecord {

@@ -3,13 +3,22 @@
 // @ts-expect-error
 import UntypedArborist from '@npmcli/arborist/lib/arborist/index.js'
 
+import { getSpinner } from '@socketsecurity/registry/constants/process'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import constants, {
-  NODE_MODULES,
-  NPX,
+import { NPX } from '../../../../../constants/agents.mts'
+import ENV from '../../../../../constants/env.mts'
+import { NODE_MODULES } from '../../../../../constants/packages.mts'
+import {
+  SOCKET_CLI_ACCEPT_RISKS,
+  SOCKET_CLI_SHADOW_ACCEPT_RISKS,
+  SOCKET_CLI_SHADOW_API_TOKEN,
+  SOCKET_CLI_SHADOW_BIN,
+  SOCKET_CLI_SHADOW_PROGRESS,
+  SOCKET_CLI_SHADOW_SILENT,
+  SOCKET_CLI_VIEW_ALL_RISKS,
   getInternals,
-} from '../../../../../constants.mts'
+} from '../../../../../constants/shadow.mts'
 import { findUp } from '../../../../../utils/fs/fs.mjs'
 import { logAlertsMap } from '../../../../../utils/socket/package-alert.mts'
 import {
@@ -23,7 +32,7 @@ import type {
   NodeClass,
 } from '../../types.mts'
 
-const internals = getInternals(constants)
+const internals = getInternals()
 const getIpc = internals.getIpc
 
 export const SAFE_NO_SAVE_ARBORIST_REIFY_OPTIONS_OVERRIDES = {
@@ -39,8 +48,6 @@ export const SAFE_NO_SAVE_ARBORIST_REIFY_OPTIONS_OVERRIDES = {
 }
 
 export const SAFE_WITH_SAVE_ARBORIST_REIFY_OPTIONS_OVERRIDES = {
-  // @ts-expect-error
-  __proto__: null,
   ...SAFE_NO_SAVE_ARBORIST_REIFY_OPTIONS_OVERRIDES,
   dryRun: false,
   save: true,
@@ -90,7 +97,6 @@ export class SafeArborist extends Arborist {
     return ret
   }
 
-  // @ts-expect-error Incorrectly typed.
   override async reify(
     this: SafeArborist,
     ...args: Parameters<InstanceType<ArboristClass>['reify']>
@@ -102,7 +108,7 @@ export class SafeArborist extends Arborist {
 
     const ipc = getIpc ? await getIpc() : undefined
 
-    const binName = ipc?.[constants.SOCKET_CLI_SHADOW_BIN]
+    const binName = ipc?.[SOCKET_CLI_SHADOW_BIN]
     if (!binName) {
       return await this[kRiskyReify](...args)
     }
@@ -117,15 +123,15 @@ export class SafeArborist extends Arborist {
       ...args.slice(1),
     )
 
-    const shadowAcceptRisks = !!ipc?.[constants.SOCKET_CLI_SHADOW_ACCEPT_RISKS]
-    const shadowProgress = !!ipc?.[constants.SOCKET_CLI_SHADOW_PROGRESS]
-    const shadowSilent = !!ipc?.[constants.SOCKET_CLI_SHADOW_SILENT]
+    const shadowAcceptRisks = !!ipc?.[SOCKET_CLI_SHADOW_ACCEPT_RISKS]
+    const shadowProgress = !!ipc?.[SOCKET_CLI_SHADOW_PROGRESS]
+    const shadowSilent = !!ipc?.[SOCKET_CLI_SHADOW_SILENT]
 
-    const acceptRisks =
-      shadowAcceptRisks || constants.ENV.SOCKET_CLI_ACCEPT_RISKS
-    const reportOnlyBlocking = acceptRisks || options.dryRun || options.yes
-    const silent = !!options.silent
-    const spinner = silent || !shadowProgress ? undefined : constants.spinner
+    const acceptRisks = shadowAcceptRisks || ENV.SOCKET_CLI_ACCEPT_RISKS
+    const reportOnlyBlocking = acceptRisks || options['dryRun'] || options['yes']
+    const silent = !!options['silent']
+    const spinnerInstance =
+      silent || !shadowProgress ? undefined : getSpinner() ?? undefined
 
     const isShadowNpx = binName === NPX
     const hasExisting = await findUp(NODE_MODULES, {
@@ -141,8 +147,8 @@ export class SafeArborist extends Arborist {
     })
 
     const alertsMap = await getAlertsMapFromArborist(this, needInfoOn, {
-      apiToken: ipc?.[constants.SOCKET_CLI_SHADOW_API_TOKEN],
-      spinner,
+      apiToken: ipc?.[SOCKET_CLI_SHADOW_API_TOKEN],
+      spinner: spinnerInstance,
       filter: reportOnlyBlocking
         ? {
             actions: ['error'],
@@ -157,7 +163,7 @@ export class SafeArborist extends Arborist {
 
     if (alertsMap.size) {
       process.exitCode = 1
-      const viewAllRisks = constants.ENV.SOCKET_CLI_VIEW_ALL_RISKS
+      const viewAllRisks = ENV.SOCKET_CLI_VIEW_ALL_RISKS
       logAlertsMap(alertsMap, {
         hideAt: viewAllRisks ? 'none' : 'middle',
         output: process.stderr,
@@ -167,11 +173,11 @@ export class SafeArborist extends Arborist {
           Socket ${binName} exiting due to risks.${
             viewAllRisks
               ? ''
-              : `\nView all risks - Rerun with environment variable ${constants.SOCKET_CLI_VIEW_ALL_RISKS}=1.`
+              : `\nView all risks - Rerun with environment variable ${SOCKET_CLI_VIEW_ALL_RISKS}=1.`
           }${
             acceptRisks
               ? ''
-              : `\nAccept risks - Rerun with environment variable ${constants.SOCKET_CLI_ACCEPT_RISKS}=1.`
+              : `\nAccept risks - Rerun with environment variable ${SOCKET_CLI_ACCEPT_RISKS}=1.`
           }
         `.trim(),
       )

@@ -1,7 +1,7 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleQuota } from './handle-quota.mts'
-import constants from '../../constants.mts'
+import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { getFlagListOutput } from '../../utils/output/formatting.mts'
@@ -53,11 +53,11 @@ async function run(
     importMeta,
   })
 
-  const dryRun = !!cli.flags.dryRun
+  const dryRun = !!cli.flags['dryRun']
 
-  const json = Boolean(cli.flags.json)
+  const json = Boolean(cli.flags['json'])
 
-  const markdown = Boolean(cli.flags.markdown)
+  const markdown = Boolean(cli.flags['markdown'])
 
   const hasApiToken = hasDefaultApiToken()
 
@@ -83,7 +83,7 @@ async function run(
   }
 
   if (dryRun) {
-    logger.log(constants.DRY_RUN_BAILING_NOW)
+    logger.log(DRY_RUN_BAILING_NOW)
     return
   }
 

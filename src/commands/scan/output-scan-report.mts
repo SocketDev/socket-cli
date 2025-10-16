@@ -1,14 +1,12 @@
 import fs from 'node:fs/promises'
 
+import { getSpinner } from '@socketsecurity/registry/constants/process'
 import { joinAnd } from '@socketsecurity/registry/lib/arrays'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { generateReport } from './generate-report.mts'
-import constants, {
-  EXT_JSON,
-  OUTPUT_JSON,
-  OUTPUT_TEXT,
-} from '../../constants.mts'
+import { FOLD_SETTING_NONE, OUTPUT_JSON, OUTPUT_TEXT } from '../../constants/cli.mts'
+import { REPORT_LEVEL_DEFER } from '../../constants/reporting.mts'
 import { mapToObject } from '../../utils/data/map-to-object.mjs'
 import { walkNestedMap } from '../../utils/data/walk-nested-map.mjs'
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
@@ -61,6 +59,7 @@ export async function outputScanReport(
     return
   }
 
+  const spinner = getSpinner()!
   const scanReport = generateReport(
     result.data.scan,
     result.data.securityPolicy,
@@ -70,7 +69,7 @@ export async function outputScanReport(
       fold,
       reportLevel,
       short,
-      spinner: constants.spinner,
+      spinner,
     },
   )
 
@@ -95,7 +94,7 @@ export async function outputScanReport(
 
   if (
     outputKind === OUTPUT_JSON ||
-    (outputKind === OUTPUT_TEXT && filepath && filepath.endsWith(EXT_JSON))
+    (outputKind === OUTPUT_TEXT && filepath && filepath.endsWith('.json'))
   ) {
     const json = short
       ? serializeResultJson(scanReport)
@@ -161,7 +160,7 @@ export function toMarkdownReport(
   const reportLevel = report.options.reportLevel
 
   const alertFolding =
-    report.options.fold === constants.FOLD_SETTING_NONE
+    report.options.fold === FOLD_SETTING_NONE
       ? 'none'
       : `up to ${report.options.fold}`
 
@@ -180,7 +179,7 @@ export function toMarkdownReport(
   )
 
   const minPolicyLevel =
-    reportLevel === constants.REPORT_LEVEL_DEFER ? 'everything' : reportLevel
+    reportLevel === REPORT_LEVEL_DEFER ? 'everything' : reportLevel
 
   const md = `${`
 # Scan Policy Report

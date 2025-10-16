@@ -179,7 +179,7 @@ export default function meow<
   }
 
   const showVersion = () => {
-    console.log(pkg.version || '0.0.0')
+    console.log(pkg['version'] || '0.0.0')
     // eslint-disable-next-line n/no-process-exit -- Required for CLI exit behavior.
     process.exit(0)
   }

@@ -1,6 +1,8 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 
+import { NPM } from '@socketsecurity/registry/constants/agents'
+import { WIN32 } from '@socketsecurity/registry/constants/platform'
 import {
   resolveBinPathSync,
   whichBinSync,
@@ -12,7 +14,8 @@ import {
   globWithGitIgnore,
   pathsToGlobPatterns,
 } from './glob.mts'
-import constants, { NODE_MODULES, NPM } from '../../constants.mts'
+import { NODE_MODULES } from '../../constants/packages.mts'
+import { shadowBinPath } from '../../constants/paths.mts'
 
 import type { SocketYml } from '@socketsecurity/config'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
@@ -34,7 +37,6 @@ export function findBinPathDetailsSync(binName: string): {
     : typeof rawBinPaths === 'string'
       ? [rawBinPaths]
       : []
-  const { shadowBinPath } = constants
   let shadowIndex = -1
   let theBinPath: string | undefined
   for (let i = 0, { length } = binPaths; i < length; i += 1) {
@@ -51,7 +53,6 @@ export function findBinPathDetailsSync(binName: string): {
 }
 
 export function findNpmDirPathSync(npmBinPath: string): string | undefined {
-  const { WIN32 } = constants
   const MAX_ITERATIONS = 100
   let thePath = npmBinPath
   let iterations = 0
@@ -95,7 +96,7 @@ export function findNpmDirPathSync(npmBinPath: string): string | undefined {
       // Optimistically look for the default location.
       (path.basename(thePath) === NPM ||
         // Chocolatey installs npm bins in the same directory as node bins.
-        (WIN32 && existsSync(path.join(thePath, `${NPM}.cmd`))))
+        (!!WIN32 && existsSync(path.join(thePath, `${NPM}.cmd`))))
     ) {
       return hasNmInParentPath ? path.dirname(thePath) : thePath
     }

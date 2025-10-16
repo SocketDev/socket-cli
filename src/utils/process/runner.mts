@@ -12,7 +12,7 @@ import {
   startSpinner,
 } from '../terminal/spinner.mjs'
 
-import type { IpcObject } from '../../constants.mts'
+import type { IpcObject } from '../../constants/shadow.mts'
 import type { CResult } from '../../types.mjs'
 import type {
   SpawnExtra,

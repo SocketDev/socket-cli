@@ -1,9 +1,9 @@
+import { getSpinner } from '@socketsecurity/registry/constants/process'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { addOverrides } from './add-overrides.mts'
 import { CMD_NAME } from './shared.mts'
 import { updateDependencies } from './update-dependencies.mts'
-import constants from '../../constants.mts'
 
 import type { CResult } from '../../types.mts'
 import type { EnvDetails } from '../../utils/ecosystem/environment.mjs'
@@ -25,15 +25,15 @@ export async function applyOptimization(
     addedInWorkspaces: number
   }>
 > {
-  const { spinner } = constants
+  const spinner = getSpinner()
 
-  spinner.start()
+  spinner?.start()
 
   const state = await addOverrides(pkgEnvDetails, pkgEnvDetails.pkgPath, {
     logger,
     pin,
     prod,
-    spinner,
+    spinner: spinner ?? undefined,
   })
 
   const addedCount = state.added.size
@@ -44,16 +44,16 @@ export async function applyOptimization(
     const result = await updateDependencies(pkgEnvDetails, {
       cmdName: CMD_NAME,
       logger,
-      spinner,
+      spinner: spinner ?? undefined,
     })
 
     if (!result.ok) {
-      spinner.stop()
+      spinner?.stop()
       return result
     }
   }
 
-  spinner.stop()
+  spinner?.stop()
   return {
     ok: true,
     data: {

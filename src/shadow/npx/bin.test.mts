@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { NPX } from '@socketsecurity/registry/constants/agents'
+
 import shadowNpxBin from './bin.mts'
-import { NPX } from '../../constants.mts'
 
 import type { ShadowBinOptions } from '../npm-base.mts'
 

@@ -21,23 +21,25 @@
 
 import { messageWithCauses } from 'pony-cause'
 
+import { getSpinner } from '@socketsecurity/registry/constants/process'
 import { debug, debugDir } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
-import constants, {
-  CONFIG_KEY_API_BASE_URL,
-  EMPTY_VALUE,
+import { getDefaultApiToken } from './sdk.mts'
+import { CONFIG_KEY_API_BASE_URL } from '../../constants/config.mts'
+import ENV from '../../constants/env.mts'
+import {
   HTTP_STATUS_BAD_REQUEST,
   HTTP_STATUS_FORBIDDEN,
   HTTP_STATUS_INTERNAL_SERVER_ERROR,
   HTTP_STATUS_NOT_FOUND,
   HTTP_STATUS_TOO_MANY_REQUESTS,
   HTTP_STATUS_UNAUTHORIZED,
-} from '../../constants.mts'
+} from '../../constants/http.mts'
+import { API_V0_URL } from '../../constants/socket.mts'
 import { getConfigValueOrUndef } from '../config.mts'
 import { debugApiResponse } from '../debug.mts'
-import { getDefaultApiToken } from './sdk.mts'
 import {
   getRequirements,
   getRequirementsKey,
@@ -102,12 +104,11 @@ function logPermissionsFor403(cmdPath?: string | undefined): void {
 // The Socket API server that should be used for operations.
 export function getDefaultApiBaseUrl(): string | undefined {
   const baseUrl =
-    constants.ENV.SOCKET_CLI_API_BASE_URL ||
+    ENV.SOCKET_CLI_API_BASE_URL ||
     getConfigValueOrUndef(CONFIG_KEY_API_BASE_URL)
   if (isNonEmptyString(baseUrl)) {
     return baseUrl
   }
-  const API_V0_URL = constants.API_V0_URL
   return API_V0_URL
 }
 
@@ -352,23 +353,23 @@ export async function queryApiSafeText(
     }
   }
 
-  const { spinner } = constants
+  const spinner = getSpinner()
 
   if (description) {
-    spinner.start(`Requesting ${description} from API...`)
+    spinner?.start(`Requesting ${description} from API...`)
   }
 
   let result
   try {
     result = await queryApi(path, apiToken)
     if (description) {
-      spinner.successAndStop(
+      spinner?.successAndStop(
         `Received Socket API response (after requesting ${description}).`,
       )
     }
   } catch (e) {
     if (description) {
-      spinner.failAndStop(
+      spinner?.failAndStop(
         `An error was thrown while requesting ${description}.`,
       )
     }
@@ -444,7 +445,7 @@ export async function queryApiSafeJson<T>(
     return {
       ok: false,
       message: 'Server returned invalid JSON',
-      cause: `Please report this. JSON.parse threw an error over the following response: \`${(result.data?.slice?.(0, 100) || EMPTY_VALUE).trim() + (result.data?.length > 100 ? '…' : '')}\``,
+      cause: `Please report this. JSON.parse threw an error over the following response: \`${(result.data?.slice?.(0, 100) || '').trim() + (result.data?.length > 100 ? '…' : '')}\``,
     }
   }
 }
@@ -487,10 +488,10 @@ export async function sendApiRequest<T>(
     __proto__: null,
     ...options,
   } as SendApiRequestOptions
-  const { spinner } = constants
+  const spinner = getSpinner()
 
   if (description) {
-    spinner.start(`Requesting ${description} from API...`)
+    spinner?.start(`Requesting ${description} from API...`)
   }
 
   let result
@@ -509,13 +510,13 @@ export async function sendApiRequest<T>(
       fetchOptions,
     )
     if (description) {
-      spinner.successAndStop(
+      spinner?.successAndStop(
         `Received Socket API response (after requesting ${description}).`,
       )
     }
   } catch (e) {
     if (description) {
-      spinner.failAndStop(
+      spinner?.failAndStop(
         `An error was thrown while requesting ${description}.`,
       )
     }

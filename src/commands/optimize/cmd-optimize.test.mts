@@ -5,26 +5,17 @@ import path from 'node:path'
 import trash from 'trash'
 import { afterAll, afterEach, beforeAll, describe, expect } from 'vitest'
 
+import { NPM, PNPM } from '@socketsecurity/registry/constants/agents'
 import { readPackageJson } from '@socketsecurity/registry/lib/packages'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
-import constants, {
-  FLAG_CONFIG,
-  FLAG_DRY_RUN,
-  FLAG_HELP,
-  FLAG_JSON,
-  FLAG_MARKDOWN,
-  FLAG_PIN,
-  FLAG_PROD,
-  FLAG_VERSION,
-  NPM,
-  PACKAGE_JSON,
-  PACKAGE_LOCK_JSON,
-  PNPM,
-  PNPM_LOCK_YAML,
-} from '../../../src/constants.mts'
 import { withTempFixture } from '../../../src/utils/test-fixtures.mts'
 import { cmdit, spawnSocketCli, testPath } from '../../../test/utils.mts'
+import { PACKAGE_JSON, PACKAGE_LOCK_JSON, PNPM_LOCK_YAML } from '../../constants/packages.mts'
+import { FLAG_CONFIG, FLAG_DRY_RUN, FLAG_HELP, FLAG_JSON, FLAG_MARKDOWN, FLAG_PIN, FLAG_PROD, FLAG_VERSION } from '../constants/cli.mts'
+import { getBinCliPath } from '../constants/paths.mts'
+
+const binCliPath = getBinCliPath()
 
 const fixtureBaseDir = path.join(testPath, 'fixtures/commands/optimize')
 const npmFixtureDir = path.join(fixtureBaseDir, NPM)
@@ -89,10 +80,7 @@ async function createTempFixture(sourceDir: string): Promise<string> {
   return tempDir
 }
 
-describe('socket optimize', async () => {
-  const { binCliPath } = constants
-
-  beforeAll(async () => {
+describe('socket optimize', async () => {beforeAll(async () => {
     // Ensure fixtures are in clean state before tests.
     await revertFixtureChanges()
   })

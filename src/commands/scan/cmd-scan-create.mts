@@ -8,7 +8,9 @@ import { outputCreateNewScan } from './output-create-new-scan.mts'
 import { reachabilityFlags } from './reachability-flags.mts'
 import { suggestOrgSlug } from './suggest-org-slug.mts'
 import { suggestTarget } from './suggest_target.mts'
-import constants, { REQUIREMENTS_TXT, SOCKET_JSON } from '../../constants.mts'
+import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'
+import { REQUIREMENTS_TXT, SOCKET_JSON } from '../../constants/paths.mts'
+import { REPORT_LEVEL_ERROR } from '../../constants/reporting.mjs'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { getEcosystemChoicesForMeow } from '../../utils/ecosystem/ecosystem.mjs'
@@ -128,8 +130,8 @@ const generalFlags: MeowFlags = {
   },
   reportLevel: {
     type: 'string',
-    default: constants.REPORT_LEVEL_ERROR,
-    description: `Which policy level alerts should be reported (default '${constants.REPORT_LEVEL_ERROR}')`,
+    default: REPORT_LEVEL_ERROR,
+    description: `Which policy level alerts should be reported (default '${REPORT_LEVEL_ERROR}')`,
   },
   setAsAlertsPage: {
     type: 'boolean',
@@ -269,7 +271,7 @@ async function run(
 
   // Validate ecosystem values.
   const reachEcosystems: PURL_Type[] = []
-  const reachEcosystemsRaw = cmdFlagValueToArray(cli.flags.reachEcosystems)
+  const reachEcosystemsRaw = cmdFlagValueToArray(cli.flags['reachEcosystems'])
   const validEcosystems = getEcosystemChoicesForMeow()
   for (const ecosystem of reachEcosystemsRaw) {
     if (!validEcosystems.includes(ecosystem)) {
@@ -280,7 +282,7 @@ async function run(
     reachEcosystems.push(ecosystem as PURL_Type)
   }
 
-  const dryRun = !!cli.flags.dryRun
+  const dryRun = !!cli.flags['dryRun']
 
   let {
     autoManifest,
@@ -416,7 +418,7 @@ async function run(
     logger.error('')
   }
 
-  const reachExcludePaths = cmdFlagValueToArray(cli.flags.reachExcludePaths)
+  const reachExcludePaths = cmdFlagValueToArray(cli.flags['reachExcludePaths'])
 
   // Validation helpers for better readability.
   const hasReachEcosystems = reachEcosystems.length > 0
@@ -425,13 +427,13 @@ async function run(
 
   const isUsingNonDefaultMemoryLimit =
     reachAnalysisMemoryLimit !==
-    reachabilityFlags.reachAnalysisMemoryLimit?.default
+    reachabilityFlags['reachAnalysisMemoryLimit']?.default
 
   const isUsingNonDefaultTimeout =
-    reachAnalysisTimeout !== reachabilityFlags.reachAnalysisTimeout?.default
+    reachAnalysisTimeout !== reachabilityFlags['reachAnalysisTimeout']?.default
 
   const isUsingNonDefaultAnalytics =
-    reachDisableAnalytics !== reachabilityFlags.reachDisableAnalytics?.default
+    reachDisableAnalytics !== reachabilityFlags['reachDisableAnalytics']?.default
 
   const isUsingAnyReachabilityFlags =
     isUsingNonDefaultMemoryLimit ||
@@ -490,7 +492,7 @@ async function run(
   }
 
   if (dryRun) {
-    logger.log(constants.DRY_RUN_BAILING_NOW)
+    logger.log(DRY_RUN_BAILING_NOW)
     return
   }
 

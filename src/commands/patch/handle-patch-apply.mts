@@ -5,6 +5,9 @@ import path from 'node:path'
 
 import fastGlob from 'fast-glob'
 
+import { NPM } from '@socketsecurity/registry/constants/agents'
+import { UTF8 } from '@socketsecurity/registry/constants/encoding'
+import { DOT_SOCKET_DIR, MANIFEST_JSON, NODE_MODULES } from '@socketsecurity/registry/constants/paths'
 import { joinAnd } from '@socketsecurity/registry/lib/arrays'
 import { debugDirNs } from '@socketsecurity/registry/lib/debug'
 import { readDirNames } from '@socketsecurity/registry/lib/fs'
@@ -14,18 +17,12 @@ import { normalizePath } from '@socketsecurity/registry/lib/path'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 import { pluralize } from '@socketsecurity/registry/lib/words'
 
+
 import { PatchManifestSchema } from './manifest-schema.mts'
 import { outputPatchResult } from './output-patch-result.mts'
-import {
-  DOT_SOCKET_DIR,
-  MANIFEST_JSON,
-  NODE_MODULES,
-  NPM,
-  UTF8,
-} from '../../constants.mts'
 import { getErrorCause } from '../../utils/error/errors.mjs'
 import { findUp } from '../../utils/fs/fs.mjs'
-import { createBackup } from '../../utils/manifest/patches/backup.mts'
+import { createBackup } from '../../utils/manifest/patch-backup.mts'
 import { getPurlObject, normalizePurl } from '../../utils/purl/parse.mjs'
 
 import type { PatchRecord } from './manifest-schema.mts'

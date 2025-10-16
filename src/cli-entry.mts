@@ -1,5 +1,8 @@
 #!/usr/bin/env node
 
+// Load Intl polyfill for --with-intl=none builds.
+import './polyfills/intl-stub.mts'
+
 import process from 'node:process'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
@@ -30,7 +33,8 @@ import { debug, debugDir } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { rootAliases, rootCommands } from './commands.mts'
-import constants, { SOCKET_CLI_BIN_NAME } from './constants.mts'
+import ENV from './constants/env.mts'
+import { SOCKET_CLI_BIN_NAME } from './constants/packages.mts'
 import meow from './meow.mts'
 import { meowWithSubcommands } from './utils/cli/with-subcommands.mts'
 import {
@@ -53,15 +57,15 @@ void (async () => {
     authInfo: lookupRegistryAuthToken(registryUrl, { recursive: true }),
     name: isSeaBinary()
       ? SOCKET_CLI_BIN_NAME
-      : constants.ENV.INLINED_SOCKET_CLI_NAME || SOCKET_CLI_BIN_NAME,
+      : ENV.INLINED_SOCKET_CLI_NAME || SOCKET_CLI_BIN_NAME,
     registryUrl,
-    version: constants.ENV.INLINED_SOCKET_CLI_VERSION || '0.0.0',
+    version: ENV.INLINED_SOCKET_CLI_VERSION || '0.0.0',
   })
 
   try {
     await meowWithSubcommands(
       {
-        name: constants.SOCKET_CLI_BIN_NAME,
+        name: SOCKET_CLI_BIN_NAME,
         argv: process.argv.slice(2),
         importMeta: { url: `${pathToFileURL(__filename)}` } as ImportMeta,
         subcommands: rootCommands,
@@ -101,7 +105,7 @@ void (async () => {
         flags: {},
         importMeta: { url: `${pathToFileURL(__filename)}` } as ImportMeta,
       })
-      return !!cli.flags.json
+      return !!cli.flags['json']
     })()
 
     if (isJson) {

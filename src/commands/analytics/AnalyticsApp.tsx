@@ -1,3 +1,4 @@
+// @ts-nocheck
 /** @fileoverview Analytics Ink React component. */
 
 import { Box, Text, useApp, useInput } from 'ink'

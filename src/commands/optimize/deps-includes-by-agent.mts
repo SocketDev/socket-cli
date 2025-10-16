@@ -1,8 +1,10 @@
-import constants from '../../constants.mts'
+import {
+  BUN,
+  YARN_BERRY,
+  YARN_CLASSIC,
+} from '@socketsecurity/registry/constants/agents'
 
 import type { EnvDetails } from '../../utils/ecosystem/environment.mjs'
-
-const { BUN, NPM, PNPM, VLT, YARN_BERRY, YARN_CLASSIC } = constants
 
 export function matchLsCmdViewHumanStdout(stdout: string, name: string) {
   return stdout.includes(` ${name}@`)

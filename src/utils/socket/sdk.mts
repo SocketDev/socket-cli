@@ -27,17 +27,19 @@
 import { HttpProxyAgent, HttpsProxyAgent } from 'hpagent'
 
 import isInteractive from '@socketregistry/is-interactive/index.cjs'
+import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/registry/constants/socket'
 import { password } from '@socketsecurity/registry/lib/prompts'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 import { isUrl } from '@socketsecurity/registry/lib/url'
 import { SocketSdk, createUserAgentFromPkgJson } from '@socketsecurity/sdk'
 
-import constants, {
+import {
   CONFIG_KEY_API_BASE_URL,
   CONFIG_KEY_API_PROXY,
   CONFIG_KEY_API_TOKEN,
-  TOKEN_PREFIX_LENGTH,
-} from '../../constants.mts'
+} from '../../constants/config.mjs'
+import ENV from '../../constants/env.mts'
+import { TOKEN_PREFIX_LENGTH } from '../../constants/socket.mts'
 import { getConfigValueOrUndef } from '../config.mts'
 
 import type { CResult } from '../../types.mts'
@@ -47,7 +49,7 @@ const TOKEN_VISIBLE_LENGTH = 5
 // The Socket API server that should be used for operations.
 export function getDefaultApiBaseUrl(): string | undefined {
   const baseUrl =
-    constants.ENV.SOCKET_CLI_API_BASE_URL ||
+    ENV.SOCKET_CLI_API_BASE_URL ||
     getConfigValueOrUndef(CONFIG_KEY_API_BASE_URL) ||
     undefined
   return isUrl(baseUrl) ? baseUrl : undefined
@@ -56,7 +58,7 @@ export function getDefaultApiBaseUrl(): string | undefined {
 // The Socket API server that should be used for operations.
 export function getDefaultProxyUrl(): string | undefined {
   const apiProxy =
-    constants.ENV.SOCKET_CLI_API_PROXY ||
+    ENV.SOCKET_CLI_API_PROXY ||
     getConfigValueOrUndef(CONFIG_KEY_API_PROXY) ||
     undefined
   return isUrl(apiProxy) ? apiProxy : undefined
@@ -65,13 +67,13 @@ export function getDefaultProxyUrl(): string | undefined {
 // This Socket API token should be stored globally for the duration of the CLI execution.
 let _defaultToken: string | undefined
 export function getDefaultApiToken(): string | undefined {
-  if (constants.ENV.SOCKET_CLI_NO_API_TOKEN) {
+  if (ENV.SOCKET_CLI_NO_API_TOKEN) {
     _defaultToken = undefined
     return _defaultToken
   }
 
   const key =
-    constants.ENV.SOCKET_CLI_API_TOKEN ||
+    ENV.SOCKET_CLI_API_TOKEN ||
     getConfigValueOrUndef(CONFIG_KEY_API_TOKEN) ||
     _defaultToken
 
@@ -81,9 +83,7 @@ export function getDefaultApiToken(): string | undefined {
 
 export function getPublicApiToken(): string {
   return (
-    getDefaultApiToken() ||
-    constants.ENV.SOCKET_CLI_API_TOKEN ||
-    constants.SOCKET_PUBLIC_API_TOKEN
+    getDefaultApiToken() || ENV.SOCKET_CLI_API_TOKEN || SOCKET_PUBLIC_API_TOKEN
   )
 }
 
@@ -142,8 +142,8 @@ export async function setupSdk(
     ? HttpProxyAgent
     : HttpsProxyAgent
 
-  const timeout = constants.ENV.SOCKET_CLI_API_TIMEOUT
-    ? Number.parseInt(constants.ENV.SOCKET_CLI_API_TIMEOUT, 10)
+  const timeout = ENV.SOCKET_CLI_API_TIMEOUT
+    ? Number.parseInt(ENV.SOCKET_CLI_API_TIMEOUT, 10)
     : undefined
 
   return {
@@ -153,10 +153,9 @@ export async function setupSdk(
       ...(apiBaseUrl ? { baseUrl: apiBaseUrl } : {}),
       ...(timeout ? { timeout } : {}),
       userAgent: createUserAgentFromPkgJson({
-        name: constants.ENV.INLINED_SOCKET_CLI_NAME || 'socket',
-        version: constants.ENV.INLINED_SOCKET_CLI_VERSION || '0.0.0',
-        homepage:
-          constants.ENV.INLINED_SOCKET_CLI_HOMEPAGE || 'https://socket.dev/cli',
+        name: ENV.INLINED_SOCKET_CLI_NAME || 'socket',
+        version: ENV.INLINED_SOCKET_CLI_VERSION || '0.0.0',
+        homepage: ENV.INLINED_SOCKET_CLI_HOMEPAGE || 'https://socket.dev/cli',
       }),
     }),
   }

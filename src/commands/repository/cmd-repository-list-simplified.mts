@@ -4,7 +4,7 @@ import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import constants from '../../constants.mts'
+import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'
 import { buildCommand } from '../../utils/command/builder.mts'
 import { getOutputKind } from '../../utils/output/mode.mjs'
 import { repoApi } from '../../utils/socket/api-wrapper.mjs'
@@ -99,7 +99,7 @@ export const cmdRepositoryListSimplified = buildCommand({
 
     // Dry run check
     if (dryRun) {
-      logger.log(constants.DRY_RUN_BAILING_NOW)
+      logger.log(DRY_RUN_BAILING_NOW)
       return
     }
 

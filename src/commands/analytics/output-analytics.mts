@@ -200,9 +200,7 @@ ${mdTableStringNumber('Name', 'Counts', data.top_five_alert_types)}
  */
 async function displayAnalyticsWithInk(data: FormattedData): Promise<void> {
   const React = await import('react')
-  // @ts-expect-error - tsx files treated as CJS by tsgo without package.json type:module
   const { render } = await import('ink')
-  // @ts-expect-error - tsx files treated as CJS by tsgo without package.json type:module
   const { AnalyticsApp } = await import('./AnalyticsApp.js')
 
   render(React.createElement(AnalyticsApp, { data }))

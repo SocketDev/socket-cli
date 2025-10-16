@@ -29,7 +29,7 @@ export async function outputLicensePolicy(
   logger.log('')
   logger.log('This is the license policy for your organization:')
   logger.log('')
-  const rules = result.data.license_policy!
+  const rules = result.data['license_policy']!
   const entries = rules ? Object.entries(rules) : []
   const mapped: Array<[string, string]> = entries.map(
     ({ 0: key, 1: value }) =>

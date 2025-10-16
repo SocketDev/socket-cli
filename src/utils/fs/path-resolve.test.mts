@@ -4,20 +4,18 @@ import { fileURLToPath } from 'node:url'
 import mockFs from 'mock-fs'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { NODE_MODULES } from '@socketsecurity/registry/constants/paths'
 import { normalizePath } from '@socketsecurity/registry/lib/path'
+
 
 import {
   findBinPathDetailsSync,
   findNpmDirPathSync,
   getPackageFilesForScan,
 } from './resolve.mts'
-import {
-  NODE_MODULES,
-  PACKAGE_JSON,
-  PACKAGE_LOCK_JSON,
-  PNPM_LOCK_YAML,
-  YARN_LOCK,
-} from '../../constants.mjs'
+import { PACKAGE_LOCK_JSON, PNPM_LOCK_YAML, YARN_LOCK } from '../../constants/packages.mts'
+
+const PACKAGE_JSON = 'package.json'
 
 import type FileSystem from 'mock-fs/lib/filesystem'
 

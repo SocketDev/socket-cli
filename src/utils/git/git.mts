@@ -29,7 +29,9 @@ import { debug, debugDir, isDebug } from '@socketsecurity/registry/lib/debug'
 import { normalizePath } from '@socketsecurity/registry/lib/path'
 import { isSpawnError, spawn } from '@socketsecurity/registry/lib/spawn'
 
-import constants, { FLAG_QUIET } from '../../constants.mts'
+import { FLAG_QUIET } from '../../constants/cli.mts'
+import ENV from '../../constants/env.mts'
+import { SOCKET_DEFAULT_BRANCH, SOCKET_DEFAULT_REPOSITORY } from '../../constants/socket.mts'
 import { debugGit } from '../debug.mts'
 import { extractName, extractOwner } from '../sanitize-names.mts'
 
@@ -51,7 +53,7 @@ const COMMON_DEFAULT_BRANCH_NAMES = [
 ]
 
 export async function getBaseBranch(cwd = process.cwd()): Promise<string> {
-  const { GITHUB_BASE_REF, GITHUB_REF_NAME, GITHUB_REF_TYPE } = constants.ENV
+  const { GITHUB_BASE_REF, GITHUB_REF_NAME, GITHUB_REF_TYPE } = ENV
   // 1. In a pull request, this is always the base branch.
   if (GITHUB_BASE_REF) {
     return GITHUB_BASE_REF
@@ -110,7 +112,7 @@ export async function getRepoName(cwd = process.cwd()): Promise<string> {
   const repoInfo = await getRepoInfo(cwd)
   return repoInfo?.repo
     ? extractName(repoInfo.repo)
-    : constants.SOCKET_DEFAULT_REPOSITORY
+    : SOCKET_DEFAULT_REPOSITORY
 }
 
 export async function getRepoOwner(
@@ -178,7 +180,7 @@ export async function detectDefaultBranch(
       return branch
     }
   }
-  return constants.SOCKET_DEFAULT_BRANCH
+  return SOCKET_DEFAULT_BRANCH
 }
 
 export type GitCreateAndPushBranchOptions = {
@@ -282,8 +284,8 @@ export async function gitCommit(
   }
   const {
     cwd = process.cwd(),
-    email = constants.ENV.SOCKET_CLI_GIT_USER_EMAIL,
-    user = constants.ENV.SOCKET_CLI_GIT_USER_NAME,
+    email = ENV.SOCKET_CLI_GIT_USER_EMAIL,
+    user = ENV.SOCKET_CLI_GIT_USER_NAME,
   } = { __proto__: null, ...options } as GitCreateAndPushBranchOptions
 
   await gitEnsureIdentity(user || '', email || '', cwd)

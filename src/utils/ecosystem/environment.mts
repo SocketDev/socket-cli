@@ -25,13 +25,37 @@
  */
 
 import { existsSync } from 'node:fs'
+import { createRequire } from 'node:module'
 import path from 'node:path'
 
 import browserslist from 'browserslist'
 import semver from 'semver'
 
-import { parse as parseBunLockb } from '@socketregistry/hyrious__bun.lockb/index.cjs'
+const require = createRequire(import.meta.url)
+// Type definition is incorrect - exports object with parse method, not namespace.
+const { parse: parseBunLockb } = require('@socketregistry/hyrious__bun.lockb/index.cjs') as { parse: (buf: Uint8Array | ArrayBuffer) => string }
+import {
+  BUN,
+  BUN_LOCK,
+  BUN_LOCKB,
+  NPM,
+  NPM_SHRINKWRAP_JSON,
+  PACKAGE_LOCK_JSON,
+  PNPM,
+  PNPM_LOCK_YAML,
+  VLT,
+  VLT_LOCK_JSON,
+  YARN,
+  YARN_BERRY,
+  YARN_CLASSIC,
+  YARN_LOCK,
+} from '@socketsecurity/registry/constants/agents'
+import { getMaintainedNodeVersions } from '@socketsecurity/registry/constants/node'
+import { WIN32 } from '@socketsecurity/registry/constants/platform'
 import { whichBin } from '@socketsecurity/registry/lib/bin'
+
+
+const DOT_PACKAGE_LOCK_JSON = '.package-lock.json'
 import { debugDirNs, debugNs } from '@socketsecurity/registry/lib/debug'
 import { readFileBinary, readFileUtf8 } from '@socketsecurity/registry/lib/fs'
 import {
@@ -44,12 +68,21 @@ import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
 
 
-import constants, {
-  FLAG_VERSION,
-  PACKAGE_LOCK_JSON,
-  PNPM_LOCK_YAML,
-  YARN_LOCK,
-} from '../../constants.mts'
+
+import {
+  getMinimumVersionByAgent,
+  getNpmExecPath,
+  getPnpmExecPath,
+} from '../../constants/agents.mts'
+import { FLAG_VERSION } from '../../constants/cli.mts'
+import ENV from '../../constants/env.mts'
+import {
+  EXT_LOCK,
+  EXT_LOCKB,
+  NODE_MODULES,
+  NPM_BUGGY_OVERRIDES_PATCHED_VERSION,
+  PACKAGE_JSON,
+} from '../../constants/packages.mts'
 import { findUp } from '../fs/fs.mts'
 import { cmdPrefixMessage } from '../process/cmd.mts'
 
@@ -58,26 +91,6 @@ import type { Logger } from '@socketsecurity/registry/lib/logger'
 import type { Remap } from '@socketsecurity/registry/lib/objects'
 import type { EditablePackageJson } from '@socketsecurity/registry/lib/packages'
 import type { SemVer } from 'semver'
-
-const {
-  BUN,
-  BUN_LOCK,
-  BUN_LOCKB,
-  DOT_PACKAGE_LOCK_JSON,
-  EXT_LOCK,
-  EXT_LOCKB,
-  NODE_MODULES,
-  NPM,
-  NPM_BUGGY_OVERRIDES_PATCHED_VERSION,
-  NPM_SHRINKWRAP_JSON,
-  PACKAGE_JSON,
-  PNPM,
-  VLT,
-  VLT_LOCK_JSON,
-  YARN,
-  YARN_BERRY,
-  YARN_CLASSIC,
-} = constants
 
 export const AGENTS = [BUN, NPM, PNPM, YARN_BERRY, YARN_CLASSIC, VLT] as const
 
@@ -210,7 +223,7 @@ const readLockFileByAgent: Map<Agent, ReadLockFile> = (() => {
                 // On Windows, bun is often a .cmd file that requires shell execution.
                 // The spawn function from @socketsecurity/registry will handle this properly
                 // when shell is true.
-                shell: constants.WIN32,
+                shell: WIN32,
               })
             ).stdout
           }
@@ -250,17 +263,10 @@ const LOCKS: Record<string, Agent> = {
 async function getAgentExecPath(agent: Agent): Promise<string> {
   const binName = binByAgent.get(agent)!
   if (binName === NPM) {
-    // Try to use constants.npmExecPath first, but verify it exists.
-    const npmPath = constants.npmExecPath
+    // Try to use getNpmExecPath() first, but verify it exists.
+    const npmPath = await getNpmExecPath()
     if (existsSync(npmPath)) {
       return npmPath
-    }
-    // If npmExecPath doesn't exist, try common locations.
-    // Check npm in the same directory as node.
-    const nodeDir = path.dirname(process.execPath)
-    const npmInNodeDir = path.join(nodeDir, NPM)
-    if (existsSync(npmInNodeDir)) {
-      return npmInNodeDir
     }
     // Fall back to whichBin.
     const whichResult = await whichBin(binName, { nothrow: true })
@@ -269,8 +275,8 @@ async function getAgentExecPath(agent: Agent): Promise<string> {
     )
   }
   if (binName === PNPM) {
-    // Try to use constants.pnpmExecPath first, but verify it exists.
-    const pnpmPath = constants.pnpmExecPath
+    // Try to use getPnpmExecPath() first, but verify it exists.
+    const pnpmPath = await getPnpmExecPath()
     if (existsSync(pnpmPath)) {
       return pnpmPath
     }
@@ -305,7 +311,7 @@ async function getAgentVersion(
             // On Windows, package managers are often .cmd files that require shell execution.
             // The spawn function from @socketsecurity/registry will handle this properly
             // when shell is true.
-            shell: constants.WIN32,
+            shell: WIN32,
           })
           const stdout = spawnResult.stdout
           return typeof stdout === 'string' ? stdout : stdout.toString()
@@ -376,8 +382,8 @@ export async function detectPackageEnvironment({
   if (agent === YARN_CLASSIC && (agentVersion?.major ?? 0) > 1) {
     agent = YARN_BERRY
   }
-  const { maintainedNodeVersions } = constants
-  const minSupportedAgentVersion = constants.minimumVersionByAgent.get(agent)!
+  const maintainedNodeVersions = getMaintainedNodeVersions()
+  const minSupportedAgentVersion = getMinimumVersionByAgent(agent)
   const minSupportedNodeMajor = semver.major(maintainedNodeVersions.last)
   const minSupportedNodeVersion = `${minSupportedNodeMajor}.0.0`
   const minSupportedNodeRange = `>=${minSupportedNodeMajor}`
@@ -390,7 +396,7 @@ export async function detectPackageEnvironment({
   if (editablePkgJson?.content) {
     const { engines } = editablePkgJson.content
     const engineAgentRange = engines?.[agent]
-    const engineNodeRange = engines?.node
+    const engineNodeRange = engines?.['node']
     if (isNonEmptyString(engineAgentRange)) {
       pkgAgentRange = engineAgentRange
       // Roughly check agent range as semver.coerce will strip leading
@@ -409,7 +415,7 @@ export async function detectPackageEnvironment({
         pkgMinNodeVersion = coerced.version
       }
     }
-    const browserslistQuery = editablePkgJson.content.browserslist as
+    const browserslistQuery = editablePkgJson.content['browserslist'] as
       | string[]
       | undefined
     if (Array.isArray(browserslistQuery)) {
@@ -513,7 +519,7 @@ export async function detectAndValidatePackageEnvironment(
   const { agent, nodeVersion, pkgRequirements } = details
   const agentVersion = details.agentVersion ?? 'unknown'
   if (!details.agentSupported) {
-    const minVersion = constants.minimumVersionByAgent.get(agent)!
+    const minVersion = getMinimumVersionByAgent(agent)
     return {
       ok: false,
       message: 'Version mismatch',
@@ -524,7 +530,7 @@ export async function detectAndValidatePackageEnvironment(
     }
   }
   if (!details.nodeSupported) {
-    const minVersion = constants.maintainedNodeVersions.last
+    const minVersion = getMaintainedNodeVersions().last
     return {
       ok: false,
       message: 'Version mismatch',
@@ -594,7 +600,7 @@ export async function detectAndValidatePackageEnvironment(
     logger?.warn(
       cmdPrefixMessage(
         cmdName,
-        `Package ${lockName} found at ${constants.ENV.VITEST ? constants.REDACTED : details.lockPath}`,
+        `Package ${lockName} found at ${ENV.VITEST ? '[REDACTED]' : details.lockPath}`,
       ),
     )
   }

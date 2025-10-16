@@ -8,7 +8,22 @@ import { isDebug } from '@socketsecurity/registry/lib/debug'
 import { getOwn, isObject } from '@socketsecurity/registry/lib/objects'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
-import constants, { FLAG_LOGLEVEL, NPM } from '../../constants.mts'
+import { NPM } from '../../constants/agents.mts'
+import { FLAG_LOGLEVEL } from '../../constants/cli.mts'
+import ENV, { processEnv } from '../../constants/env.mts'
+import {
+  execPath,
+  instrumentWithSentryPath,
+  nodeDebugFlags,
+  nodeHardenFlags,
+  nodeNoWarningsFlags,
+  shadowNpmInjectPath,
+} from '../../constants/paths.mts'
+import {
+  SOCKET_CLI_SHADOW_BIN,
+  SOCKET_CLI_SHADOW_PROGRESS,
+  SOCKET_IPC_HANDSHAKE,
+} from '../../constants/shadow.mts'
 import { getNpmBinPath } from '../../utils/npm/paths.mts'
 
 import type { SpawnResult } from '@socketsecurity/registry/lib/spawn'
@@ -60,18 +75,18 @@ export function shadowNpmInstall(
   }
 
   const spawnPromise = spawn(
-    constants.execPath,
+    execPath,
     [
-      ...constants.nodeNoWarningsFlags,
-      ...constants.nodeDebugFlags,
-      ...constants.nodeHardenFlags,
+      ...nodeNoWarningsFlags,
+      ...nodeDebugFlags,
+      ...nodeHardenFlags,
       // Memory flags commented out.
       // ...constants.nodeMemoryFlags,
-      ...(constants.ENV.INLINED_SOCKET_CLI_SENTRY_BUILD
-        ? ['--require', constants.instrumentWithSentryPath]
+      ...(ENV.INLINED_SOCKET_CLI_SENTRY_BUILD
+        ? ['--require', instrumentWithSentryPath]
         : []),
       '--require',
-      constants.shadowNpmInjectPath,
+      shadowNpmInjectPath,
       agentExecPath,
       'install',
       // Avoid code paths for 'audit' and 'fund'.
@@ -89,7 +104,7 @@ export function shadowNpmInstall(
       ...spawnOpts,
       env: {
         ...process.env,
-        ...constants.processEnv,
+        ...processEnv,
         // @ts-expect-error - getOwn may return undefined, but spread handles it
         ...getOwn(spawnOpts, 'env'),
       },
@@ -100,9 +115,9 @@ export function shadowNpmInstall(
 
   if (useIpc) {
     spawnPromise.process.send({
-      [constants.SOCKET_IPC_HANDSHAKE]: {
-        [constants.SOCKET_CLI_SHADOW_BIN]: NPM,
-        [constants.SOCKET_CLI_SHADOW_PROGRESS]: progressArg,
+      [SOCKET_IPC_HANDSHAKE]: {
+        [SOCKET_CLI_SHADOW_BIN]: NPM,
+        [SOCKET_CLI_SHADOW_PROGRESS]: progressArg,
         ...ipc,
       },
     })

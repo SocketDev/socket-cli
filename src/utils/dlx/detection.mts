@@ -26,7 +26,7 @@ import path from 'node:path'
 
 import { normalizePath } from '@socketsecurity/registry/lib/path'
 
-import constants from '../../constants.mts'
+import ENV from '../../constants/env.mts'
 
 /**
  * Detects if the current process is running in a temporary package execution context
@@ -40,7 +40,7 @@ import constants from '../../constants.mts'
  */
 export function isRunningInTemporaryExecutor(): boolean {
   // Check environment variable for exec/npx/dlx indicators.
-  const userAgent = constants.ENV.npm_config_user_agent
+  const userAgent = ENV.npm_config_user_agent
   if (
     userAgent?.includes('exec') ||
     userAgent?.includes('npx') ||
@@ -53,7 +53,7 @@ export function isRunningInTemporaryExecutor(): boolean {
   const normalizedDirname = normalizePath(__dirname)
 
   // Check if running from npm's npx cache.
-  const npmCache = constants.ENV.npm_config_cache
+  const npmCache = ENV.npm_config_cache
   if (npmCache && normalizedDirname.includes(normalizePath(npmCache))) {
     return true
   }
@@ -116,7 +116,7 @@ export function shouldSkipShadow(
   }
 
   // Check environment variable for exec/npx/dlx indicators.
-  const userAgent = constants.ENV.npm_config_user_agent
+  const userAgent = ENV.npm_config_user_agent
   if (
     userAgent?.includes('exec') ||
     userAgent?.includes('npx') ||
@@ -129,7 +129,7 @@ export function shouldSkipShadow(
   const normalizedCwd = normalizePath(cwd)
 
   // Check if running from npm's npx cache.
-  const npmCache = constants.ENV.npm_config_cache
+  const npmCache = ENV.npm_config_cache
   if (npmCache && normalizedCwd.includes(normalizePath(npmCache))) {
     return true
   }

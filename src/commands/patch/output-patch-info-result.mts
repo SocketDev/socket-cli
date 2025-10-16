@@ -1,7 +1,6 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { pluralize } from '@socketsecurity/registry/lib/words'
 
-import { OUTPUT_JSON } from '../../constants.mts'
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
@@ -16,7 +15,7 @@ export async function outputPatchInfoResult(
     process.exitCode = result.code ?? 1
   }
 
-  if (outputKind === OUTPUT_JSON) {
+  if (outputKind === 'json') {
     logger.log(serializeResultJson(result))
     return
   }
@@ -27,11 +26,6 @@ export async function outputPatchInfoResult(
   }
 
   const patch = result.data
-
-  if (outputKind === 'json') {
-    logger.log(JSON.stringify(patch, null, 2))
-    return
-  }
 
   if (outputKind === 'markdown') {
     logger.log(`## Patch Information\n`)
@@ -119,8 +113,9 @@ export async function outputPatchInfoResult(
 
   if (patch.vulnerabilities) {
     const vulnCount = Object.keys(patch.vulnerabilities).length
+    const vulnWord = vulnCount === 1 ? 'vulnerability' : 'vulnerabilities'
     logger.log(
-      `\nVulnerabilities (${vulnCount} ${pluralize('vulnerability', { count: vulnCount, plural: 'vulnerabilities' })}):`,
+      `\nVulnerabilities (${vulnCount} ${vulnWord}):`,
     )
     logger.group()
     for (const { 0: ghsaId, 1: vuln } of Object.entries(

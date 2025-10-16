@@ -4,7 +4,12 @@ import { debug, debugDir } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { readPackageJson } from '@socketsecurity/registry/lib/packages'
 
-import constants, { FLAG_DRY_RUN, PACKAGE_JSON } from '../constants.mts'
+import { FLAG_DRY_RUN } from '../constants/cli.mts'
+import { PACKAGE_JSON } from '../constants/packages.mts'
+import {
+  SOCKET_CLI_ACCEPT_RISKS,
+  SOCKET_CLI_VIEW_ALL_RISKS,
+} from '../constants/shadow.mts'
 import { debugScan } from '../utils/debug.mts'
 import { safeNpmSpecToPurl } from '../utils/npm/spec.mts'
 import { isAddCommand } from '../utils/process/cmd.mts'
@@ -168,11 +173,11 @@ export async function scanPackagesAndLogAlerts(
       const errorMessage = `Socket ${managerName} exiting due to risks.${
         viewAllRisks
           ? ''
-          : `\nView all risks - Rerun with environment variable ${constants.SOCKET_CLI_VIEW_ALL_RISKS}=1.`
+          : `\nView all risks - Rerun with environment variable ${SOCKET_CLI_VIEW_ALL_RISKS}=1.`
       }${
         acceptRisks
           ? ''
-          : `\nAccept risks - Rerun with environment variable ${constants.SOCKET_CLI_ACCEPT_RISKS}=1.`
+          : `\nAccept risks - Rerun with environment variable ${SOCKET_CLI_ACCEPT_RISKS}=1.`
       }`.trim()
 
       logger.error(errorMessage)

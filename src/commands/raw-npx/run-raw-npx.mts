@@ -1,6 +1,6 @@
+import { WIN32 } from '@socketsecurity/registry/constants/platform'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
-import constants from '../../constants.mts'
 import { getNpxBinPath } from '../../utils/npm/paths.mts'
 
 export async function runRawNpx(
@@ -12,7 +12,7 @@ export async function runRawNpx(
     // On Windows, npx is often a .cmd file that requires shell execution.
     // The spawn function from @socketsecurity/registry will handle this properly
     // when shell is true.
-    shell: constants.WIN32,
+    shell: WIN32,
     stdio: 'inherit',
   })
 

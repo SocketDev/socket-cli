@@ -20,11 +20,16 @@
 
 import { setTimeout as wait } from 'node:timers/promises'
 
+import { UNKNOWN_ERROR, kInternalsSymbol  } from '@socketsecurity/registry/constants/core'
 import { debugNs } from '@socketsecurity/registry/lib/debug'
 
-import constants, { UNKNOWN_ERROR, getInternals } from '../../constants.mts'
+import ENV from '../../constants/env.mts'
 
-const internals = getInternals(constants)
+import type { RegistryInternals } from '../../constants/types.mts'
+
+// Access internals via kInternalsSymbol.
+const constants = { ENV, [kInternalsSymbol]: {} as RegistryInternals }
+const internals = constants[kInternalsSymbol]
 const getSentry = internals.getSentry
 
 type EventHintOrCaptureContext = { [key: string]: any } | Function

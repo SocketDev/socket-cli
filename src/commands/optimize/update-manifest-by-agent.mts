@@ -1,21 +1,17 @@
-import { hasKeys, isObject } from '@socketsecurity/registry/lib/objects'
-
-import constants from '../../constants.mts'
-
-import type { Overrides } from './types.mts'
-import type { Agent } from '../../utils/ecosystem/environment.mjs'
-import type { EditablePackageJson } from '@socketsecurity/registry/lib/packages'
-
-const {
+import {
   BUN,
-  NPM,
   OVERRIDES,
   PNPM,
   RESOLUTIONS,
   VLT,
   YARN_BERRY,
   YARN_CLASSIC,
-} = constants
+} from '@socketsecurity/registry/constants/agents'
+import { hasKeys, isObject } from '@socketsecurity/registry/lib/objects'
+
+import type { Overrides } from './types.mts'
+import type { Agent } from '../../utils/ecosystem/environment.mjs'
+import type { EditablePackageJson } from '@socketsecurity/registry/lib/packages'
 
 const depFields = [
   'dependencies',

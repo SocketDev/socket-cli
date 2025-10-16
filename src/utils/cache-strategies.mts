@@ -1,8 +1,7 @@
 /** @fileoverview Intelligent caching strategies for Socket CLI API responses. Provides cache warming, invalidation, and adaptive TTL based on data volatility. */
 
+import { UNKNOWN_ERROR } from '@socketsecurity/registry/constants/core'
 import { debugCache } from '@socketsecurity/registry/lib/debug'
-
-import { UNKNOWN_ERROR } from '../constants.mts'
 
 import type { SocketSdk } from '@socketsecurity/sdk'
 

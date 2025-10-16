@@ -1,7 +1,7 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { outputConfigList } from './output-config-list.mts'
-import constants, { FLAG_JSON, FLAG_MARKDOWN } from '../../constants.mts'
+import { DRY_RUN_BAILING_NOW, FLAG_JSON, FLAG_MARKDOWN } from '../../constants/cli.mjs'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { getFlagListOutput } from '../../utils/output/formatting.mts'
@@ -58,7 +58,7 @@ async function run(
 
   const { full, json, markdown } = cli.flags
 
-  const dryRun = !!cli.flags.dryRun
+  const dryRun = !!cli.flags['dryRun']
 
   const outputKind = getOutputKind(json, markdown)
 
@@ -73,7 +73,7 @@ async function run(
   }
 
   if (dryRun) {
-    logger.log(constants.DRY_RUN_BAILING_NOW)
+    logger.log(DRY_RUN_BAILING_NOW)
     return
   }
 

@@ -20,17 +20,25 @@
 
 import { createRequire } from 'node:module'
 
+import { NPM, PNPM, YARN } from '@socketsecurity/registry/constants/agents'
+import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/registry/constants/socket'
 import { getOwn } from '@socketsecurity/registry/lib/objects'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import { getDefaultOrgSlug } from '../../commands/ci/fetch-default-org-slug.mjs'
-import constants, {
-  FLAG_QUIET,
-  FLAG_SILENT,
-  NPM,
-  PNPM,
-  YARN,
-} from '../../constants.mjs'
+import { FLAG_QUIET, FLAG_SILENT } from '../../constants/cli.mts'
+import ENV from '../../constants/env.mts'
+import { PACKAGE_LOCK_JSON, PNPM_LOCK_YAML, YARN_LOCK } from '../../constants/packages.mts'
+import {
+  getShadowNpxBinPath,
+  getShadowPnpmBinPath,
+  getShadowYarnBinPath,
+} from '../../constants/paths.mts'
+import {
+  SOCKET_CLI_SHADOW_ACCEPT_RISKS,
+  SOCKET_CLI_SHADOW_API_TOKEN,
+  SOCKET_CLI_SHADOW_SILENT,
+} from '../../constants/shadow.mts'
 import { getErrorCause } from '../error/errors.mts'
 import { findUp } from '../fs/fs.mts'
 import { getDefaultApiToken, getDefaultProxyUrl } from '../socket/sdk.mjs'
@@ -44,8 +52,6 @@ import type { CResult } from '../../types.mjs'
 import type { SpawnExtra } from '@socketsecurity/registry/lib/spawn'
 
 const require = createRequire(import.meta.url)
-
-const { PACKAGE_LOCK_JSON, PNPM_LOCK_YAML, YARN_LOCK } = constants
 
 export type DlxOptions = ShadowBinOptions & {
   force?: boolean | undefined
@@ -139,7 +145,7 @@ export async function spawnDlx(
     }
     spawnArgs.push(packageString, ...args)
 
-    const shadowPnpmBin = /*@__PURE__*/ require(constants.shadowPnpmBinPath)
+    const shadowPnpmBin = /*@__PURE__*/ require(getShadowPnpmBinPath())
     return await shadowPnpmBin(spawnArgs, finalShadowOptions, spawnExtra)
   }
   if (pm === YARN && isYarnBerry()) {
@@ -150,7 +156,7 @@ export async function spawnDlx(
     }
     spawnArgs.push(packageString, ...args)
 
-    const shadowYarnBin = /*@__PURE__*/ require(constants.shadowYarnBinPath)
+    const shadowYarnBin = /*@__PURE__*/ require(getShadowYarnBinPath())
     return await shadowYarnBin(spawnArgs, finalShadowOptions, spawnExtra)
   }
   // Use npm exec/npx.
@@ -165,7 +171,7 @@ export async function spawnDlx(
   }
   spawnArgs.push(packageString, ...args)
 
-  const shadowNpxBin = /*@__PURE__*/ require(constants.shadowNpxBinPath)
+  const shadowNpxBin = /*@__PURE__*/ require(getShadowNpxBinPath())
   return await shadowNpxBin(spawnArgs, finalShadowOptions, spawnExtra)
 }
 
@@ -193,41 +199,40 @@ export async function spawnCoanaDlx(
   } as DlxOptions
 
   const mixinsEnv: Record<string, string> = {
-    SOCKET_CLI_VERSION: constants.ENV.INLINED_SOCKET_CLI_VERSION || '',
+    SOCKET_CLI_VERSION: ENV.INLINED_SOCKET_CLI_VERSION || '',
   }
   const defaultApiToken = getDefaultApiToken()
   if (defaultApiToken) {
-    mixinsEnv.SOCKET_CLI_API_TOKEN = defaultApiToken
+    mixinsEnv['SOCKET_CLI_API_TOKEN'] = defaultApiToken
   }
 
   if (orgSlug) {
-    mixinsEnv.SOCKET_ORG_SLUG = orgSlug
+    mixinsEnv['SOCKET_ORG_SLUG'] = orgSlug
   } else {
     const orgSlugCResult = await getDefaultOrgSlug()
     if (orgSlugCResult.ok) {
-      mixinsEnv.SOCKET_ORG_SLUG = orgSlugCResult.data
+      mixinsEnv['SOCKET_ORG_SLUG'] = orgSlugCResult.data
     }
   }
 
   const proxyUrl = getDefaultProxyUrl()
   if (proxyUrl) {
-    mixinsEnv.SOCKET_CLI_API_PROXY = proxyUrl
+    mixinsEnv['SOCKET_CLI_API_PROXY'] = proxyUrl
   }
 
   try {
-    const localCoanaPath = constants.ENV.SOCKET_CLI_COANA_LOCAL_PATH
+    const localCoanaPath = ENV.SOCKET_CLI_COANA_LOCAL_PATH
     // Use local Coana CLI if path is provided.
     if (localCoanaPath) {
       const finalEnv = {
         ...process.env,
-        ...constants.processEnv,
         ...mixinsEnv,
         ...spawnEnv,
       }
       const spawnResult = await spawn('node', [localCoanaPath, ...args], {
         cwd: dlxOptions.cwd,
         env: finalEnv,
-        stdio: spawnExtra?.stdio || 'inherit',
+        stdio: spawnExtra?.['stdio'] || 'inherit',
       })
 
       return {
@@ -243,7 +248,7 @@ export async function spawnCoanaDlx(
     const result = await spawnDlx(
       {
         name: '@coana-tech/cli',
-        version: `~${constants.ENV.INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION}`,
+        version: `~${ENV.INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION}`,
       },
       args,
       {
@@ -252,15 +257,13 @@ export async function spawnCoanaDlx(
         ...dlxOptions,
         env: {
           ...process.env,
-          ...constants.processEnv,
           ...mixinsEnv,
           ...spawnEnv,
         },
         ipc: {
-          [constants.SOCKET_CLI_SHADOW_ACCEPT_RISKS]: true,
-          [constants.SOCKET_CLI_SHADOW_API_TOKEN]:
-            constants.SOCKET_PUBLIC_API_TOKEN,
-          [constants.SOCKET_CLI_SHADOW_SILENT]: true,
+          [SOCKET_CLI_SHADOW_ACCEPT_RISKS]: true,
+          [SOCKET_CLI_SHADOW_API_TOKEN]: SOCKET_PUBLIC_API_TOKEN,
+          [SOCKET_CLI_SHADOW_SILENT]: true,
           ...ipc,
         },
       },
@@ -297,7 +300,7 @@ export async function spawnCdxgenDlx(
   return await spawnDlx(
     {
       name: '@cyclonedx/cdxgen',
-      version: `${constants.ENV.INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION}`,
+      version: `${ENV.INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION}`,
     },
     args,
     { force: false, silent: true, ...options },
@@ -316,7 +319,7 @@ export async function spawnSynpDlx(
   return await spawnDlx(
     {
       name: 'synp',
-      version: `${constants.ENV.INLINED_SOCKET_CLI_SYNP_VERSION}`,
+      version: `${ENV.INLINED_SOCKET_CLI_SYNP_VERSION}`,
     },
     args,
     { force: false, silent: true, ...options },

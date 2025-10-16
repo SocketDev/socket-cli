@@ -1,7 +1,8 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleListScans } from './handle-list-scans.mts'
-import constants, { V1_MIGRATION_GUIDE_URL } from '../../constants.mts'
+import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'
+import { V1_MIGRATION_GUIDE_URL } from '../../constants/socket.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import {
@@ -126,11 +127,11 @@ async function run(
 
   const { branch: branchFlag, json, markdown, org: orgFlag } = cli.flags
 
-  const dryRun = !!cli.flags.dryRun
+  const dryRun = !!cli.flags['dryRun']
 
-  const interactive = !!cli.flags.interactive
+  const interactive = !!cli.flags['interactive']
 
-  const noLegacy = !cli.flags.repo
+  const noLegacy = !cli.flags['repo']
 
   const [repo = '', branchArg = ''] = cli.input
 
@@ -185,19 +186,19 @@ async function run(
   }
 
   if (dryRun) {
-    logger.log(constants.DRY_RUN_BAILING_NOW)
+    logger.log(DRY_RUN_BAILING_NOW)
     return
   }
 
   await handleListScans({
     branch: branch ? String(branch) : '',
-    direction: String(cli.flags.direction || ''),
-    from_time: String(cli.flags.fromTime || ''),
+    direction: String(cli.flags['direction'] || ''),
+    from_time: String(cli.flags['fromTime'] || ''),
     orgSlug,
     outputKind,
-    page: Number(cli.flags.page || 1),
-    perPage: Number(cli.flags.perPage || 30),
+    page: Number(cli.flags['page'] || 1),
+    perPage: Number(cli.flags['perPage'] || 30),
     repo: repo ? String(repo) : '',
-    sort: String(cli.flags.sort || ''),
+    sort: String(cli.flags['sort'] || ''),
   })
 }

@@ -2,8 +2,9 @@ import { debug } from '@socketsecurity/registry/lib/debug'
 import { getOwn } from '@socketsecurity/registry/lib/objects'
 import { parseUrl } from '@socketsecurity/registry/lib/url'
 
-import constants from '../../constants.mts'
 import { DiffAction } from './arborist/types.mts'
+import { LOOP_SENTINEL } from '../../constants/errors.mts'
+import { NPM_REGISTRY_URL } from '../../constants/http.mts'
 import { idToNpmPurl } from '../../utils/ecosystem/spec.mjs'
 import { getAlertsMapFromPurls } from '../../utils/socket/alerts.mts'
 import { toFilterConfig } from '../../utils/validation/filter-config.mts'
@@ -90,8 +91,6 @@ export function getDetailsFromDiff(
     return details
   }
 
-  const { NPM_REGISTRY_URL } = constants
-
   const filterConfig = toFilterConfig({
     existing: false,
     unknownOrigin: true,
@@ -103,7 +102,7 @@ export function getDetailsFromDiff(
   let pos = 0
   let { length: queueLength } = queue
   while (pos < queueLength) {
-    if (pos === constants.LOOP_SENTINEL) {
+    if (pos === LOOP_SENTINEL) {
       throw new Error('Detected infinite loop while walking Arborist diff.')
     }
     const currDiff = queue[pos++]!

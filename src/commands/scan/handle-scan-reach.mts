@@ -1,10 +1,10 @@
+import { getSpinner } from '@socketsecurity/registry/constants/process'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { pluralize } from '@socketsecurity/registry/lib/words'
 
 import { fetchSupportedScanFileNames } from './fetch-supported-scan-file-names.mts'
 import { outputScanReach } from './output-scan-reach.mts'
 import { performReachabilityAnalysis } from './perform-reachability-analysis.mts'
-import constants from '../../constants.mts'
 import { getPackageFilesForScan } from '../../utils/fs/path-resolve.mjs'
 import { checkCommandInput } from '../../utils/validation/check-input.mts'
 
@@ -28,7 +28,7 @@ export async function handleScanReach({
   reachabilityOptions,
   targets,
 }: HandleScanReachConfig) {
-  const { spinner } = constants
+  const spinner = getSpinner()!
 
   // Get supported file names
   const supportedFilesCResult = await fetchSupportedScanFileNames({ spinner })

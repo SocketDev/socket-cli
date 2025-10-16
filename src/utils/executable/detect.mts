@@ -23,9 +23,13 @@
  * - Update notification customization
  */
 
-/* eslint-disable n/no-unsupported-features/node-builtins -- SEA is experimental but required for binary builds */
+ 
+
+import { createRequire } from 'node:module'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
+
+const require = createRequire(import.meta.url)
 
 /**
  * Cached SEA detection result.

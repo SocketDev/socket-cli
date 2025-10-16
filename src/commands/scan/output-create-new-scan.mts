@@ -1,10 +1,10 @@
 import open from 'open'
 import terminalLink from 'terminal-link'
 
+import { getSpinner } from '@socketsecurity/registry/constants/process'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { confirm } from '@socketsecurity/registry/lib/prompts'
 
-import constants from '../../constants.mts'
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
@@ -25,7 +25,7 @@ export async function outputCreateNewScan(
   const {
     interactive = false,
     outputKind = 'text',
-    spinner = constants.spinner,
+    spinner = getSpinner()!,
   } = { __proto__: null, ...options } as CreateNewScanOptions
 
   if (!result.ok) {

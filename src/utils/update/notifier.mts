@@ -26,9 +26,14 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { onExit } from '@socketsecurity/registry/lib/signal-exit'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
-import constants, { SEA_UPDATE_COMMAND } from '../../constants.mts'
+import { SEA_UPDATE_COMMAND } from '../../constants/cli.mts'
 import { getSeaBinaryPath } from '../executable/detect.mts'
 import { githubRepoLink, socketPackageLink } from '../terminal/link.mts'
+
+const CHANGELOG_MD = 'CHANGELOG.md'
+const NPM = 'npm'
+const SOCKET_CLI_GITHUB_REPO = 'socket-cli'
+const SOCKET_GITHUB_ORG = 'SocketDev'
 
 export interface UpdateNotificationOptions {
   name: string
@@ -55,9 +60,9 @@ function formatUpdateMessage(options: UpdateNotificationOptions): {
       message,
       command: `🔄 Run ${colors.cyan(`${seaBinPath} ${SEA_UPDATE_COMMAND}`)} to update automatically`,
       changelog: githubRepoLink(
-        constants.SOCKET_GITHUB_ORG,
-        constants.SOCKET_CLI_GITHUB_REPO,
-        `blob/${latest}/${constants.CHANGELOG_MD}`,
+        SOCKET_GITHUB_ORG,
+        SOCKET_CLI_GITHUB_REPO,
+        `blob/${latest}/${CHANGELOG_MD}`,
         'View changelog',
       ),
     }
@@ -66,9 +71,9 @@ function formatUpdateMessage(options: UpdateNotificationOptions): {
   return {
     message,
     changelog: socketPackageLink(
-      constants.NPM,
+      NPM,
       name,
-      `files/${latest}/${constants.CHANGELOG_MD}`,
+      `files/${latest}/${CHANGELOG_MD}`,
       'View changelog',
     ),
   }

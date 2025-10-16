@@ -2,7 +2,7 @@ import { debug, debugDir } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { getDefaultOrgSlug } from './fetch-default-org-slug.mts'
-import constants from '../../constants.mts'
+import { REPORT_LEVEL_ERROR } from '../../constants/reporting.mts'
 import {
   detectDefaultBranch,
   getRepoName,
@@ -59,7 +59,7 @@ export async function handleCi(autoManifest: boolean): Promise<void> {
     repoName,
     readOnly: false,
     report: true,
-    reportLevel: constants.REPORT_LEVEL_ERROR,
+    reportLevel: REPORT_LEVEL_ERROR,
     targets: ['.'],
     // Don't set 'tmp' when 'pendingHead' is true.
     tmp: false,

@@ -12,17 +12,20 @@
 import { spawn } from 'node:child_process'
 import { existsSync, promises as fs } from 'node:fs'
 import https from 'node:https'
+import { createRequire } from 'node:module'
 import os from 'node:os'
 import path from 'node:path'
 
 // @ts-expect-error - nanotar module not available currently
 import { parseTarGzip } from 'nanotar'
 
+const require = createRequire(import.meta.url)
+
 // Configurable constants with environment variable overrides.
 // os.homedir() can throw if no home directory is available.
 let SOCKET_HOME: string
 try {
-  SOCKET_HOME = process.env.SOCKET_HOME || path.join(os.homedir(), '.socket')
+  SOCKET_HOME = process.env['SOCKET_HOME'] || path.join(os.homedir(), '.socket')
 } catch (error) {
   console.error(
     'Fatal: Unable to determine home directory. Set SOCKET_HOME environment variable.',
@@ -38,13 +41,13 @@ const IPC_HANDSHAKE_TIMEOUT_MS = 5_000
 const LOCK_MAX_RETRIES = 60
 const LOCK_RETRY_DELAY_MS = 500
 const NPM_REGISTRY =
-  process.env.SOCKET_NPM_REGISTRY ||
-  process.env.NPM_REGISTRY ||
+  process.env['SOCKET_NPM_REGISTRY'] ||
+  process.env['NPM_REGISTRY'] ||
   'https://registry.npmjs.org'
 const SOCKET_CLI_DIR =
-  process.env.SOCKET_CLI_DIR || path.join(SOCKET_HOME, '_cli')
+  process.env['SOCKET_CLI_DIR'] || path.join(SOCKET_HOME, '_cli')
 const SOCKET_CLI_PACKAGE =
-  process.env.SOCKET_CLI_PACKAGE || '@socketsecurity/cli'
+  process.env['SOCKET_CLI_PACKAGE'] || '@socketsecurity/cli'
 const SOCKET_CLI_PACKAGE_JSON = path.join(SOCKET_CLI_DIR, 'package.json')
 
 // ============================================================================
@@ -55,7 +58,7 @@ const SOCKET_CLI_PACKAGE_JSON = path.join(SOCKET_CLI_DIR, 'package.json')
  * Log message to stderr only in debug mode.
  */
 function debugLog(message: string): void {
-  if (process.env.DEBUG) {
+  if (process.env['DEBUG']) {
     console.error(message)
   }
 }
@@ -813,7 +816,7 @@ async function main(): Promise<void> {
 
     // process.env.MIN_NODE_VERSION is inlined at build time.
     const minNodeVersion = Number.parseInt(
-      process.env.MIN_NODE_VERSION ?? '0',
+      process.env['MIN_NODE_VERSION'] ?? '0',
       0,
     )
 

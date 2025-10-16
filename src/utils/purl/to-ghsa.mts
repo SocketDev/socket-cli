@@ -1,4 +1,5 @@
-import { LATEST } from '../../constants.mts'
+import { LATEST } from '@socketsecurity/registry/constants/packages'
+
 import { getErrorCause } from '../error/errors.mts'
 import { cacheFetch, getOctokit } from '../git/github.mts'
 import { getPurlObject } from '../purl/parse.mts'

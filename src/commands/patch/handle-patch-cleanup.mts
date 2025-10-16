@@ -1,18 +1,20 @@
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 
+import { UTF8 } from '@socketsecurity/registry/constants/encoding'
+import { DOT_SOCKET_DIR, MANIFEST_JSON } from '@socketsecurity/registry/constants/paths'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { normalizePath } from '@socketsecurity/registry/lib/path'
 import { pluralize } from '@socketsecurity/registry/lib/words'
 
+
 import { PatchManifestSchema } from './manifest-schema.mts'
 import { outputPatchCleanupResult } from './output-patch-cleanup-result.mts'
-import { DOT_SOCKET_DIR, MANIFEST_JSON, UTF8 } from '../../constants.mts'
 import { getErrorCause } from '../../utils/error/errors.mjs'
 import {
   cleanupBackups,
   listAllPatches,
-} from '../../utils/manifest/patches/backup.mts'
+} from '../../utils/manifest/patch-backup.mts'
 
 import type { OutputKind } from '../../types.mts'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
@@ -55,7 +57,7 @@ export async function handlePatchCleanup({
         spinner.stop()
         logger.log('No patch backups found')
       } else {
-        spinner.text = `Cleaning up ${allPatchUuids.length} ${pluralize('patch', { count: allPatchUuids.length })}`
+        spinner.text(`Cleaning up ${allPatchUuids.length} ${pluralize('patch', { count: allPatchUuids.length })}`)
 
         for (const patchUuid of allPatchUuids) {
           // eslint-disable-next-line no-await-in-loop
@@ -88,7 +90,7 @@ export async function handlePatchCleanup({
         }
       }
 
-      spinner.text = 'Finding all patch backups'
+      spinner.text('Finding all patch backups')
       const allPatchUuids = await listAllPatches()
 
       // Find orphaned UUIDs (in backups but not in manifest).
@@ -100,7 +102,7 @@ export async function handlePatchCleanup({
         spinner.stop()
         logger.log('No orphaned patch backups found')
       } else {
-        spinner.text = `Cleaning up ${orphanedUuids.length} orphaned ${pluralize('backup', { count: orphanedUuids.length })}`
+        spinner.text(`Cleaning up ${orphanedUuids.length} orphaned ${pluralize('backup', { count: orphanedUuids.length })}`)
 
         for (const patchUuid of orphanedUuids) {
           // eslint-disable-next-line no-await-in-loop

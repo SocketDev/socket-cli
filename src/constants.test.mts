@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import ENV from '../constants/env.mts'
+
 // Mock environment variables before importing constants.
 vi.stubEnv('SOCKET_API_BASE_URL', '')
 vi.stubEnv('SOCKET_API_KEY', '')
@@ -34,7 +36,7 @@ describe('constants', () => {
 
     // Check for environment object.
     expect(constants).toHaveProperty('ENV')
-    expect(typeof constants.ENV).toBe('object')
+    expect(typeof ENV).toBe('object')
   })
 
   it('has correct path properties', async () => {
@@ -139,8 +141,8 @@ describe('constants', () => {
   it('ENV object contains expected environment variables', async () => {
     const constants = (await import('./constants.mts')).default
 
-    expect(constants.ENV).toBeDefined()
-    expect(typeof constants.ENV).toBe('object')
-    expect(constants.ENV).toHaveProperty('NODE_OPTIONS')
+    expect(ENV).toBeDefined()
+    expect(typeof ENV).toBe('object')
+    expect(ENV).toHaveProperty('NODE_OPTIONS')
   })
 })

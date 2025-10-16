@@ -2,7 +2,7 @@ import isInteractive from '@socketregistry/is-interactive/index.cjs'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { attemptLogin } from './attempt-login.mts'
-import constants from '../../constants.mts'
+import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { InputError } from '../../utils/error/errors.mjs'
@@ -75,10 +75,10 @@ async function run(
     importMeta,
   })
 
-  const dryRun = !!cli.flags.dryRun
+  const dryRun = !!cli.flags['dryRun']
 
   if (dryRun) {
-    logger.log(constants.DRY_RUN_BAILING_NOW)
+    logger.log(DRY_RUN_BAILING_NOW)
     return
   }
 

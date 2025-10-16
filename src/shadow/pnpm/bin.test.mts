@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import shadowPnpm from './bin.mts'
-import { FLAG_DRY_RUN } from '../../constants.mts'
+import { FLAG_DRY_RUN } from '../../constants/cli.mts'
 
 // Mock fs module
 vi.mock('node:fs', async importOriginal => {
@@ -59,10 +59,10 @@ vi.mock('../../constants.mts', async importOriginal => {
         {
           get(_target, prop) {
             if (prop === 'SOCKET_CLI_ACCEPT_RISKS') {
-              return process.env.SOCKET_CLI_ACCEPT_RISKS || ''
+              return process.env['SOCKET_CLI_ACCEPT_RISKS'] || ''
             }
             if (prop === 'SOCKET_CLI_VIEW_ALL_RISKS') {
-              return process.env.SOCKET_CLI_VIEW_ALL_RISKS || ''
+              return process.env['SOCKET_CLI_VIEW_ALL_RISKS'] || ''
             }
             return ''
           },
@@ -96,13 +96,13 @@ describe('shadowPnpm', () => {
     mockExistsSync.mockReturnValue(false)
 
     // Mock process.env
-    process.env.SOCKET_CLI_ACCEPT_RISKS = ''
-    process.env.SOCKET_CLI_VIEW_ALL_RISKS = ''
+    process.env['SOCKET_CLI_ACCEPT_RISKS'] = ''
+    process.env['SOCKET_CLI_VIEW_ALL_RISKS'] = ''
   })
 
   afterEach(() => {
-    delete process.env.SOCKET_CLI_ACCEPT_RISKS
-    delete process.env.SOCKET_CLI_VIEW_ALL_RISKS
+    delete process.env['SOCKET_CLI_ACCEPT_RISKS']
+    delete process.env['SOCKET_CLI_VIEW_ALL_RISKS']
   })
 
   it('should handle pnpm add with single package', async () => {
@@ -194,7 +194,7 @@ describe('shadowPnpm', () => {
   })
 
   it('should respect SOCKET_CLI_ACCEPT_RISKS environment variable', async () => {
-    process.env.SOCKET_CLI_ACCEPT_RISKS = '1'
+    process.env['SOCKET_CLI_ACCEPT_RISKS'] = '1'
 
     await shadowPnpm(['add', 'lodash'])
 

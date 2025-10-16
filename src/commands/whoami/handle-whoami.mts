@@ -1,10 +1,9 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { outputWhoami } from './output-whoami.mts'
-import constants, {
-  CONFIG_KEY_API_TOKEN,
-  TOKEN_PREFIX,
-} from '../../constants.mts'
+import { CONFIG_KEY_API_TOKEN } from '../../constants/config.mjs'
+import ENV from '../../constants/env.mts'
+import { TOKEN_PREFIX } from '../../constants/socket.mjs'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { getConfigValueOrUndef } from '../../utils/config.mts'
@@ -62,7 +61,7 @@ export async function handleWhoami(
     const visiblePrefix = getVisibleTokenPrefix()
     const tokenDisplay = `${TOKEN_PREFIX}${visiblePrefix}...`
 
-    if (flags.json) {
+    if (flags['json']) {
       outputWhoami({
         authenticated: true,
         token: tokenDisplay,
@@ -74,7 +73,7 @@ export async function handleWhoami(
       logger.log(`  Source: ${tokenLocation}`)
     }
   } else {
-    if (flags.json) {
+    if (flags['json']) {
       outputWhoami({
         authenticated: false,
         token: null,
@@ -92,7 +91,7 @@ export async function handleWhoami(
 
 function getTokenLocation(): string {
   // Check environment variable first.
-  if (constants.ENV.SOCKET_CLI_API_TOKEN) {
+  if (ENV.SOCKET_CLI_API_TOKEN) {
     return 'Environment variable (SOCKET_SECURITY_API_KEY)'
   }
 

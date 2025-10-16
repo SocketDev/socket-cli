@@ -3,17 +3,18 @@
 
 import { createRequire } from 'node:module'
 
+import { kInternalsSymbol } from '@socketsecurity/registry/constants/core'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import constants, { getInternals } from './constants.mts'
+import ENV from './constants/env.mts'
 
-if (constants.ENV.INLINED_SOCKET_CLI_SENTRY_BUILD) {
+if (ENV.INLINED_SOCKET_CLI_SENTRY_BUILD) {
   const require = createRequire(import.meta.url)
   const Sentry = /*@__PURE__*/ require('@sentry/node')
   Sentry.init({
     onFatalError(error: Error) {
       // Defer module loads until after Sentry.init is called.
-      if (constants.ENV.SOCKET_CLI_DEBUG) {
+      if (ENV.SOCKET_CLI_DEBUG) {
         logger.fail('[DEBUG] [Sentry onFatalError]:', error)
       }
     },
@@ -23,21 +24,19 @@ if (constants.ENV.INLINED_SOCKET_CLI_SENTRY_BUILD) {
   })
   Sentry.setTag(
     'environment',
-    constants.ENV.INLINED_SOCKET_CLI_PUBLISHED_BUILD
-      ? 'pub'
-      : constants.ENV.NODE_ENV,
+    ENV.INLINED_SOCKET_CLI_PUBLISHED_BUILD ? 'pub' : ENV.NODE_ENV,
   )
-  Sentry.setTag('version', constants.ENV.INLINED_SOCKET_CLI_VERSION_HASH)
-  if (constants.ENV.SOCKET_CLI_DEBUG) {
+  Sentry.setTag('version', ENV.INLINED_SOCKET_CLI_VERSION_HASH)
+  if (ENV.SOCKET_CLI_DEBUG) {
     Sentry.setTag('debugging', true)
     logger.info('[DEBUG] Set up Sentry.')
   } else {
     Sentry.setTag('debugging', false)
   }
-  const internals = getInternals(constants)
-  if (internals.setSentry) {
+  const internals = (global as any)[kInternalsSymbol]
+  if (internals?.setSentry) {
     internals.setSentry(Sentry)
   }
-} else if (constants.ENV.SOCKET_CLI_DEBUG) {
+} else if (ENV.SOCKET_CLI_DEBUG) {
   logger.info('[DEBUG] Sentry disabled explicitly.')
 }

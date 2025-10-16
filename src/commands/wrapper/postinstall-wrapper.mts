@@ -6,13 +6,14 @@ import { confirm } from '@socketsecurity/registry/lib/prompts'
 
 import { addSocketWrapper } from './add-socket-wrapper.mts'
 import { checkSocketWrapperSetup } from './check-socket-wrapper-setup.mts'
-import constants from '../../constants.mts'
+import { getBashRcPath, getZshRcPath } from '../../constants/paths.mts'
 import { getBashrcDetails } from '../../utils/cli/completion.mjs'
 import { getErrorCause } from '../../utils/error/errors.mjs'
 import { updateInstalledTabCompletionScript } from '../install/setup-tab-completion.mts'
 
 export async function postinstallWrapper() {
-  const { bashRcPath, zshRcPath } = constants
+  const bashRcPath = getBashRcPath()
+  const zshRcPath = getZshRcPath()
   const socketWrapperEnabled =
     (existsSync(bashRcPath) && checkSocketWrapperSetup(bashRcPath)) ||
     (existsSync(zshRcPath) && checkSocketWrapperSetup(zshRcPath))
@@ -73,7 +74,8 @@ async function setupShadowNpm(query: string): Promise<void> {
       default: true,
     })
   ) {
-    const { bashRcPath, zshRcPath } = constants
+    const bashRcPath = getBashRcPath()
+    const zshRcPath = getZshRcPath()
     try {
       if (existsSync(bashRcPath)) {
         addSocketWrapper(bashRcPath)

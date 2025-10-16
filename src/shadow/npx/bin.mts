@@ -1,4 +1,4 @@
-import { NPX } from '../../constants.mts'
+import { NPX } from '../../constants/agents.mts'
 import shadowNpmBase from '../npm-base.mts'
 
 import type { ShadowBinOptions, ShadowBinResult } from '../npm-base.mts'

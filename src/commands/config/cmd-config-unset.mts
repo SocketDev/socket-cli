@@ -1,7 +1,7 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleConfigUnset } from './handle-config-unset.mts'
-import constants, { FLAG_JSON, FLAG_MARKDOWN } from '../../constants.mts'
+import { DRY_RUN_BAILING_NOW, FLAG_JSON, FLAG_MARKDOWN } from '../../constants/cli.mjs'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import {
@@ -73,7 +73,7 @@ ${getSupportedConfigEntries()
 
   const { json, markdown } = cli.flags
 
-  const dryRun = !!cli.flags.dryRun
+  const dryRun = !!cli.flags['dryRun']
 
   const [key = ''] = cli.input
 
@@ -98,7 +98,7 @@ ${getSupportedConfigEntries()
   }
 
   if (dryRun) {
-    logger.log(constants.DRY_RUN_BAILING_NOW)
+    logger.log(DRY_RUN_BAILING_NOW)
     return
   }
 

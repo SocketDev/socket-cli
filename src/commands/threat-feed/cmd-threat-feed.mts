@@ -1,8 +1,9 @@
+import { NPM } from '@socketsecurity/registry/constants/agents'
 import { joinAnd } from '@socketsecurity/registry/lib/arrays'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleThreatFeed } from './handle-threat-feed.mts'
-import constants, { NPM } from '../../constants.mts'
+import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import {
@@ -184,9 +185,9 @@ async function run(
     version,
   } = cli.flags
 
-  const dryRun = !!cli.flags.dryRun
+  const dryRun = !!cli.flags['dryRun']
 
-  const interactive = !!cli.flags.interactive
+  const interactive = !!cli.flags['interactive']
 
   let ecoFilter = String(eco || '')
   let versionFilter = String(version || '')
@@ -269,18 +270,18 @@ async function run(
   }
 
   if (dryRun) {
-    logger.log(constants.DRY_RUN_BAILING_NOW)
+    logger.log(DRY_RUN_BAILING_NOW)
     return
   }
 
   await handleThreatFeed({
-    direction: String(cli.flags.direction || 'desc'),
+    direction: String(cli.flags['direction'] || 'desc'),
     ecosystem: ecoFilter,
     filter: typeFilter,
     outputKind,
     orgSlug,
-    page: String(cli.flags.page || '1'),
-    perPage: Number(cli.flags.perPage) || 30,
+    page: String(cli.flags['page'] || '1'),
+    perPage: Number(cli.flags['perPage']) || 30,
     pkg: nameFilter,
     version: versionFilter,
   })

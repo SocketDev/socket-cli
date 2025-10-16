@@ -1,10 +1,17 @@
+import {
+  BUN,
+  NPM,
+  PNPM,
+  VLT,
+  YARN_BERRY,
+  YARN_CLASSIC,
+} from '@socketsecurity/registry/constants/agents'
+import { WIN32 } from '@socketsecurity/registry/constants/platform'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
-import constants, { FLAG_PROD } from '../../constants.mts'
+import { FLAG_PROD } from '../../constants/cli.mts'
 
 import type { EnvDetails } from '../../utils/ecosystem/environment.mjs'
-
-const { BUN, NPM, PNPM, VLT, YARN_BERRY, YARN_CLASSIC } = constants
 
 function cleanupQueryStdout(stdout: string): string {
   if (stdout === '') {
@@ -52,7 +59,7 @@ async function npmQuery(npmExecPath: string, cwd: string): Promise<string> {
       // On Windows, npm is often a .cmd file that requires shell execution.
       // The spawn function from @socketsecurity/registry will handle this properly
       // when shell is true.
-      shell: constants.WIN32,
+      shell: WIN32,
     })
     stdout =
       typeof result.stdout === 'string'
@@ -81,7 +88,7 @@ export async function lsBun(
         // On Windows, bun is often a .cmd file that requires shell execution.
         // The spawn function from @socketsecurity/registry will handle this properly
         // when shell is true.
-        shell: constants.WIN32,
+        shell: WIN32,
       },
     )
     return typeof result.stdout === 'string'
@@ -128,7 +135,7 @@ export async function lsPnpm(
         // On Windows, pnpm is often a .cmd file that requires shell execution.
         // The spawn function from @socketsecurity/registry will handle this properly
         // when shell is true.
-        shell: constants.WIN32,
+        shell: WIN32,
       },
     )
     stdout =
@@ -158,7 +165,7 @@ export async function lsVlt(
         // On Windows, pnpm is often a .cmd file that requires shell execution.
         // The spawn function from @socketsecurity/registry will handle this properly
         // when shell is true.
-        shell: constants.WIN32,
+        shell: WIN32,
       },
     )
     stdout =
@@ -188,7 +195,7 @@ export async function lsYarnBerry(
         // On Windows, yarn is often a .cmd file that requires shell execution.
         // The spawn function from @socketsecurity/registry will handle this properly
         // when shell is true.
-        shell: constants.WIN32,
+        shell: WIN32,
       },
     )
     return typeof result.stdout === 'string'
@@ -219,7 +226,7 @@ export async function lsYarnClassic(
         // On Windows, yarn is often a .cmd file that requires shell execution.
         // The spawn function from @socketsecurity/registry will handle this properly
         // when shell is true.
-        shell: constants.WIN32,
+        shell: WIN32,
       },
     )
     return typeof result.stdout === 'string'

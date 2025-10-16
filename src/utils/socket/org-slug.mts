@@ -2,10 +2,8 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { suggestOrgSlug } from '../../commands/scan/suggest-org-slug.mjs'
 import { suggestToPersistOrgSlug } from '../../commands/scan/suggest-to-persist-orgslug.mjs'
-import {
-  CONFIG_KEY_DEFAULT_ORG,
-  V1_MIGRATION_GUIDE_URL,
-} from '../../constants.mts'
+import { CONFIG_KEY_DEFAULT_ORG } from '../../constants/config.mjs'
+import { V1_MIGRATION_GUIDE_URL } from '../../constants/socket.mts'
 import { getConfigValueOrUndef } from '../config.mts'
 import { webLink } from '../terminal/link.mjs'
 

@@ -1,7 +1,6 @@
 /** @fileoverview Simplified output formatter to DRY out repetitive output-*.mts files */
 
-// @ts-expect-error
-// @ts-expect-error - chalk-table does not have type definitions.
+// @ts-expect-error - No type declarations available.
 import chalkTable from 'chalk-table'
 import colors from 'yoctocolors-cjs'
 
