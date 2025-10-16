@@ -200,30 +200,18 @@ export default [
   {
     name: 'Build directories and generated files to ignore',
     ignores: [
-      // Root level directories.
-      'build/**',
-      'binaries/**',
-      'dist/**',
-      'external/**',
-      'coverage/**',
+      // Specific dot folders to ignore.
       '.cache/**',
       '.claude/**',
-      '.rollup.cache/**',
-      '.type-coverage/**',
-      '.yarn/**',
-      'node_modules/**',
-      'pkg-binaries/**',
+      '.git/**',
+      '.github/**',
+      '.vscode/**',
       // Nested directories.
-      '**/build/**',
       '**/binaries/**',
+      '**/build/**',
+      '**/coverage/**',
       '**/dist/**',
       '**/external/**',
-      '**/coverage/**',
-      '**/.cache/**',
-      '**/.claude/**',
-      '**/.rollup.cache/**',
-      '**/.type-coverage/**',
-      '**/.yarn/**',
       '**/node_modules/**',
       '**/pkg-binaries/**',
       // Test fixtures (may contain invalid code samples).

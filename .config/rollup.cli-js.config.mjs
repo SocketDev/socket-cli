@@ -9,6 +9,7 @@
 import { spawnSync as nodeSpawnSync } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
 import fs, { existsSync } from 'node:fs'
+// eslint-disable-next-line n/no-unsupported-features/node-builtins
 import { isBuiltin } from 'node:module'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -18,6 +19,7 @@ import commonjsPlugin from '@rollup/plugin-commonjs'
 import jsonPlugin from '@rollup/plugin-json'
 import { nodeResolve } from '@rollup/plugin-node-resolve'
 import replacePlugin from '@rollup/plugin-replace'
+import { transform as esbuildTransform } from 'esbuild'
 
 import fixDebug from './rollup-plugin-fix-debug.mjs'
 import fixInk from './rollup-plugin-fix-ink.mjs'
@@ -143,7 +145,7 @@ function getSocketCliVersionHash() {
       })
       if (result.status === 0) {
         // Strip ANSI codes: simple regex for common escape sequences.
-        // eslint-disable-next-line no-control-regex
+         
         gitHash = result.stdout.trim().replace(/\x1b\[[0-9;]*m/g, '')
       }
     } catch {}
@@ -453,6 +455,39 @@ export default {
           '$1.createRequire ? (0, $1.createRequire)(__filename) : void 0',
         )
         return cleaned
+      },
+    },
+
+    // Minify the final bundle with esbuild.
+    {
+      name: 'esbuild-minify',
+      async renderChunk(code) {
+        const result = await esbuildTransform(code, {
+          loader: 'js',
+          minify: true,
+          minifyWhitespace: true,
+          minifyIdentifiers: true,
+          minifySyntax: true,
+          target: 'node22',
+          format: 'cjs',
+          platform: 'node',
+          logLevel: 'silent',
+          // Preserve shebang and "use strict" from banner.
+          legalComments: 'inline',
+          // Keep function names for better stack traces.
+          keepNames: false,
+        })
+
+        const minified = result.code
+        const originalSize = Buffer.byteLength(code, 'utf8')
+        const minifiedSize = Buffer.byteLength(minified, 'utf8')
+        const savings = ((1 - minifiedSize / originalSize) * 100).toFixed(1)
+
+        console.log(
+          `✓ Minified dist/cli.js: ${(originalSize / 1024).toFixed(1)}KB → ${(minifiedSize / 1024).toFixed(1)}KB (-${savings}%)`,
+        )
+
+        return minified
       },
     },
   ],
