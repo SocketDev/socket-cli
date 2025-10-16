@@ -5,7 +5,7 @@ import ignore from 'ignore'
 import micromatch from 'micromatch'
 import { parse as yamlParse } from 'yaml'
 
-import { safeReadFile } from '@socketsecurity/registry/lib/fs'
+import { isDirSync, safeReadFile } from '@socketsecurity/registry/lib/fs'
 import { defaultIgnore } from '@socketsecurity/registry/lib/globs'
 import { readPackageJson } from '@socketsecurity/registry/lib/packages'
 import { transform } from '@socketsecurity/registry/lib/streams'
@@ -291,5 +291,14 @@ export function pathsToGlobPatterns(
   paths: string[] | readonly string[],
 ): string[] {
   // TODO: Does not support `~/` paths.
-  return paths.map(p => (p === '.' || p === './' ? '**/*' : p))
+  return paths.map(p => {
+    if (p === '.' || p === './') {
+      return '**/*'
+    }
+    // If the path is a directory, scan it recursively for all files.
+    if (isDirSync(p)) {
+      return `${p}/**/*`
+    }
+    return p
+  })
 }
