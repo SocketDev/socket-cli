@@ -4,6 +4,7 @@
  * Extracted helpers for better organization and testability.
  */
 
+// eslint-disable-next-line n/no-unsupported-features/node-builtins
 import { promises as fs, statfsSync } from 'node:fs'
 import { join } from 'node:path'
 

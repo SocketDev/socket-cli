@@ -1,23 +1,28 @@
 /**
- * @fileoverview Babel plugin to remove ICU dependencies from code
+ * @fileoverview Babel plugin for --with-intl=none compatibility
  *
  * This plugin transforms ICU-dependent JavaScript features into ICU-free alternatives,
- * allowing Node.js to be built with --without-intl to save ~8-10MB.
+ * enabling Node.js builds with --with-intl=none to save ~6-8MB.
+ *
+ * Note: --without-intl is deprecated, use --with-intl=none instead.
  *
  * Transformations:
  * 1. `.toLocaleString()` → Simple formatting with commas/basic date strings
  * 2. `Intl.*` APIs → Polyfills or basic implementations
  * 3. Unicode regex `\p{...}` → Character class alternatives
- * 4. `.localeCompare()` → Basic string comparison
+ * 4. Unicode regex `/v` flag → Downgrade to `/u` or remove
+ * 5. `.localeCompare()` → Basic string comparison
  *
  * @example
  * // Before:
  * const formatted = count.toLocaleString()
  * const date = new Date().toLocaleDateString()
+ * const regex = /[\p{Letter}\p{Number}]+/v
  *
  * // After:
  * const formatted = count.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
  * const date = new Date().toISOString().split('T')[0]
+ * const regex = /[a-zA-Z0-9]+/
  */
 
 /**
@@ -29,7 +34,7 @@
  * __simpleCompare(a, b) - Basic string comparison
  */
 
-export default function babelPluginRemoveICU({ template, types: t }) {
+export default function babelPluginWithIntlNone({ template, types: t }) {
   const stats = {
     toLocaleString: 0,
     toLocaleDateString: 0,
@@ -90,7 +95,7 @@ export default function babelPluginRemoveICU({ template, types: t }) {
   }
 
   return {
-    name: 'babel-plugin-remove-icu',
+    name: 'babel-plugin-with-intl-none',
 
     visitor: {
       /**
@@ -143,7 +148,7 @@ export default function babelPluginRemoveICU({ template, types: t }) {
 
             path.addComment(
               'leading',
-              ' ICU-free: Transformed toLocaleString() → __formatNumber()',
+              ' --with-intl=none: Transformed toLocaleString() → __formatNumber()',
             )
             return
           }
@@ -163,7 +168,7 @@ export default function babelPluginRemoveICU({ template, types: t }) {
 
             path.addComment(
               'leading',
-              ' ICU-free: Transformed Date.toLocaleString() → __formatDateTime()',
+              ' --with-intl=none: Transformed Date.toLocaleString() → __formatDateTime()',
             )
             return
           }
@@ -184,7 +189,7 @@ export default function babelPluginRemoveICU({ template, types: t }) {
 
           path.addComment(
             'leading',
-            ' ICU-free: Transformed toLocaleDateString() → __formatDate()',
+            ' --with-intl=none: Transformed toLocaleDateString() → __formatDate()',
           )
           return
         }
@@ -217,7 +222,7 @@ export default function babelPluginRemoveICU({ template, types: t }) {
 
           path.addComment(
             'leading',
-            ' ICU-free: Transformed toLocaleTimeString() → ISO time',
+            ' --with-intl=none: Transformed toLocaleTimeString() → ISO time',
           )
           return
         }
@@ -238,7 +243,7 @@ export default function babelPluginRemoveICU({ template, types: t }) {
 
           path.addComment(
             'leading',
-            ' ICU-free: Transformed localeCompare() → __simpleCompare()',
+            ' --with-intl=none: Transformed localeCompare() → __simpleCompare()',
           )
           return
         }
@@ -321,22 +326,48 @@ export default function babelPluginRemoveICU({ template, types: t }) {
       },
 
       /**
-       * Transform Unicode property escapes in regex
+       * Transform Unicode property escapes in regex and handle /v flag
        *
        * @example
        * // Input:
        * /\p{Letter}/u
        * /[\p{Alpha}0-9_]/u
+       * /[\p{Letter}\p{Number}]+/v
        *
        * // Output:
        * /[a-zA-Z]/
        * /[a-zA-Z0-9_]/
+       * /[a-zA-Z0-9]+/
        */
       RegExpLiteral(path) {
         const { node } = path
 
-        // Check for unicode property escapes (\p{...})
-        if (node.flags.includes('u') && node.pattern.includes('\\p{')) {
+        // Handle /v flag (unicodeSets) - ES2024 feature requiring Unicode support.
+        // The /v flag provides enhanced Unicode character class features.
+        // Downgrade to /u flag (basic Unicode) or remove if transforming.
+        if (node.flags.includes('v')) {
+          const pattern = node.pattern
+          const newFlags = node.flags.replace('v', 'u')
+          let _transformed = false
+
+          // Check if pattern uses \p{...} that we can transform.
+          if (pattern.includes('\\p{')) {
+            // Continue to transformation below.
+            _transformed = true
+          } else {
+            // No \p{...} - just downgrade v→u flag.
+            path.replaceWith(t.regExpLiteral(pattern, newFlags))
+            stats.unicodeRegex++
+            path.addComment(
+              'leading',
+              ' --with-intl=none: Downgraded /v flag → /u flag',
+            )
+            return
+          }
+        }
+
+        // Check for unicode property escapes (\p{...}).
+        if ((node.flags.includes('u') || node.flags.includes('v')) && node.pattern.includes('\\p{')) {
           let pattern = node.pattern
           let transformed = false
 
@@ -391,14 +422,14 @@ export default function babelPluginRemoveICU({ template, types: t }) {
           }
 
           if (transformed) {
-            // Remove 'u' flag since we're no longer using unicode escapes
-            const newFlags = node.flags.replace('u', '')
+            // Remove 'u' and 'v' flags since we're no longer using unicode escapes.
+            const newFlags = node.flags.replace('u', '').replace('v', '')
             path.replaceWith(t.regExpLiteral(pattern, newFlags))
             stats.unicodeRegex++
 
             path.addComment(
               'leading',
-              ' ICU-free: Transformed unicode regex → character class',
+              ' --with-intl=none: Transformed unicode regex → character class',
             )
           } else if (pattern.includes('\\p{')) {
             // Can't transform - add warning

@@ -1,6 +1,6 @@
 /**
  * @fileoverview Unified build script for Socket CLI.
- * Runs rollup to build distribution files and types.
+ * Runs rollup to build distribution files.
  *
  * Usage:
  *   node scripts/build.mjs [options]
@@ -8,8 +8,6 @@
  * Options:
  *   --quiet      Suppress progress output
  *   --verbose    Show detailed output
- *   --src-only   Build source files only (skip types)
- *   --types-only Build type definitions only (skip source)
  *   --sea        Build SEA binaries (delegates to build-sea.mjs)
  */
 
@@ -35,8 +33,6 @@ const printError = msg => console.error(`\n✖ ${msg}\n`)
 async function main() {
   const quiet = isQuiet()
   const verbose = isVerbose()
-  const srcOnly = process.argv.includes('--src-only')
-  const typesOnly = process.argv.includes('--types-only')
   const sea = process.argv.includes('--sea')
 
   // Delegate to build-sea.mjs if --sea flag is present.
@@ -67,16 +63,13 @@ async function main() {
       printHeader('Build Runner')
     }
 
-    const steps = []
-
-    // Build dist files with rollup.
-    if (!typesOnly) {
-      steps.push({
+    const steps = [
+      {
         name: 'Clean Dist',
         command: 'pnpm',
         args: ['run', 'clean:dist'],
-      })
-      steps.push({
+      },
+      {
         name: 'Rollup Bundle',
         command: 'dotenvx',
         args: [
@@ -89,30 +82,8 @@ async function main() {
           '-c',
           '.config/rollup.cli-js.config.mjs',
         ],
-      })
-    }
-
-    // Build type definitions with tsgo.
-    if (!srcOnly) {
-      steps.push({
-        name: 'Type Definitions',
-        command: 'pnpm',
-        args: ['run', 'clean:dist:types'],
-      })
-      steps.push({
-        name: 'TypeScript Declarations',
-        command: 'tsgo',
-        args: ['--project', 'tsconfig.dts.json'],
-      })
-    }
-
-    if (steps.length === 0) {
-      if (!quiet) {
-        log.info('No build steps to run')
-        printFooter()
-      }
-      return
-    }
+      },
+    ]
 
     // Run build steps sequentially.
     if (!quiet) {
