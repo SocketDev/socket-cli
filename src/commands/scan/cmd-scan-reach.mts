@@ -47,6 +47,13 @@ const generalFlags: MeowFlags = {
     description:
       'Force override the organization slug, overrides the default org from config',
   },
+  output: {
+    type: 'string',
+    default: '',
+    description:
+      'Path to write the reachability report to (must end with .json). Defaults to .socket.facts.json in the current working directory.',
+    shortFlag: 'o',
+  },
 }
 
 export const cmdScanReach = {
@@ -83,7 +90,8 @@ async function run(
       ${getFlagListOutput(reachabilityFlags)}
 
     Runs the Socket reachability analysis without creating a scan in Socket.
-    The output is written to .socket.facts.json in the current working directory.
+    The output is written to .socket.facts.json in the current working directory
+    unless the --output flag is specified.
 
     Note: Manifest files are uploaded to Socket's backend services because the
     reachability analysis requires creating a Software Bill of Materials (SBOM)
@@ -93,6 +101,8 @@ async function run(
       $ ${command}
       $ ${command} ./proj
       $ ${command} ./proj --reach-ecosystems npm,pypi
+      $ ${command} --output custom-report.json
+      $ ${command} ./proj --output ./reports/analysis.json
   `,
   }
 
@@ -109,6 +119,7 @@ async function run(
     json,
     markdown,
     org: orgFlag,
+    output: outputPath,
     reachAnalysisMemoryLimit,
     reachAnalysisTimeout,
     reachDisableAnalytics,
@@ -119,6 +130,7 @@ async function run(
     json: boolean
     markdown: boolean
     org: string
+    output: string
     reachAnalysisTimeout: number
     reachAnalysisMemoryLimit: number
     reachDisableAnalytics: boolean
@@ -183,6 +195,12 @@ async function run(
       message: 'The json and markdown flags cannot be both set, pick one',
       fail: 'omit one',
     },
+    {
+      nook: true,
+      test: !outputPath || outputPath.endsWith('.json'),
+      message: 'The --output path must end with .json',
+      fail: 'use a path ending with .json',
+    },
   )
   if (!wasValidInput) {
     return
@@ -195,10 +213,10 @@ async function run(
 
   await handleScanReach({
     cwd,
+    interactive,
     orgSlug,
     outputKind,
-    targets,
-    interactive,
+    outputPath: outputPath || '',
     reachabilityOptions: {
       reachAnalysisTimeout: Number(reachAnalysisTimeout),
       reachAnalysisMemoryLimit: Number(reachAnalysisMemoryLimit),
@@ -207,5 +225,6 @@ async function run(
       reachExcludePaths,
       reachSkipCache: Boolean(reachSkipCache),
     },
+    targets,
   })
 }

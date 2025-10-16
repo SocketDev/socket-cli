@@ -34,6 +34,7 @@ describe('socket scan reach', async () => {
             --json              Output as JSON
             --markdown          Output as Markdown
             --org               Force override the organization slug, overrides the default org from config
+            --output            Path to write the reachability report to (must end with .json). Defaults to .socket.facts.json in the current working directory.
 
           Reachability Options
             --reach-analysis-memory-limit  The maximum memory in MB to use for the reachability analysis. The default is 8192MB.
@@ -44,7 +45,8 @@ describe('socket scan reach', async () => {
             --reach-skip-cache  Skip caching-based optimizations. By default, the reachability analysis will use cached configurations from previous runs to speed up the analysis.
 
           Runs the Socket reachability analysis without creating a scan in Socket.
-          The output is written to .socket.facts.json in the current working directory.
+          The output is written to .socket.facts.json in the current working directory
+          unless the --output flag is specified.
 
           Note: Manifest files are uploaded to Socket's backend services because the
           reachability analysis requires creating a Software Bill of Materials (SBOM)
@@ -53,7 +55,9 @@ describe('socket scan reach', async () => {
           Examples
             $ socket scan reach
             $ socket scan reach ./proj
-            $ socket scan reach ./proj --reach-ecosystems npm,pypi"
+            $ socket scan reach ./proj --reach-ecosystems npm,pypi
+            $ socket scan reach --output custom-report.json
+            $ socket scan reach ./proj --output ./reports/analysis.json"
       `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -714,6 +718,131 @@ describe('socket scan reach', async () => {
         expect(code).toBeGreaterThan(0)
         const output = stdout + stderr
         expect(output.length).toBeGreaterThan(0)
+      },
+    )
+  })
+
+  describe('output path tests', () => {
+    cmdit(
+      [
+        'scan',
+        'reach',
+        FLAG_DRY_RUN,
+        '--output',
+        'custom-report.json',
+        '--org',
+        'fakeOrg',
+        FLAG_CONFIG,
+        '{"apiToken":"fakeToken"}',
+      ],
+      'should accept --output flag with .json extension',
+      async cmd => {
+        const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+        expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+        expect(code, 'should exit with code 0').toBe(0)
+      },
+    )
+
+    cmdit(
+      [
+        'scan',
+        'reach',
+        FLAG_DRY_RUN,
+        '-o',
+        'report.json',
+        '--org',
+        'fakeOrg',
+        FLAG_CONFIG,
+        '{"apiToken":"fakeToken"}',
+      ],
+      'should accept -o short flag with .json extension',
+      async cmd => {
+        const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+        expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+        expect(code, 'should exit with code 0').toBe(0)
+      },
+    )
+
+    cmdit(
+      [
+        'scan',
+        'reach',
+        FLAG_DRY_RUN,
+        '--output',
+        './reports/analysis.json',
+        '--org',
+        'fakeOrg',
+        FLAG_CONFIG,
+        '{"apiToken":"fakeToken"}',
+      ],
+      'should accept --output flag with path',
+      async cmd => {
+        const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+        expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+        expect(code, 'should exit with code 0').toBe(0)
+      },
+    )
+
+    cmdit(
+      [
+        'scan',
+        'reach',
+        FLAG_DRY_RUN,
+        '--output',
+        'report.txt',
+        '--org',
+        'fakeOrg',
+        FLAG_CONFIG,
+        '{"apiToken":"fakeToken"}',
+      ],
+      'should fail when --output does not end with .json',
+      async cmd => {
+        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+        const output = stdout + stderr
+        expect(output).toContain('The --output path must end with .json')
+        expect(code, 'should exit with non-zero code').not.toBe(0)
+      },
+    )
+
+    cmdit(
+      [
+        'scan',
+        'reach',
+        FLAG_DRY_RUN,
+        '--output',
+        'report',
+        '--org',
+        'fakeOrg',
+        FLAG_CONFIG,
+        '{"apiToken":"fakeToken"}',
+      ],
+      'should fail when --output has no extension',
+      async cmd => {
+        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+        const output = stdout + stderr
+        expect(output).toContain('The --output path must end with .json')
+        expect(code, 'should exit with non-zero code').not.toBe(0)
+      },
+    )
+
+    cmdit(
+      [
+        'scan',
+        'reach',
+        FLAG_DRY_RUN,
+        '--output',
+        'report.JSON',
+        '--org',
+        'fakeOrg',
+        FLAG_CONFIG,
+        '{"apiToken":"fakeToken"}',
+      ],
+      'should fail when --output ends with .JSON (uppercase)',
+      async cmd => {
+        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+        const output = stdout + stderr
+        expect(output).toContain('The --output path must end with .json')
+        expect(code, 'should exit with non-zero code').not.toBe(0)
       },
     )
   })
