@@ -21,9 +21,12 @@ import { nodeResolve } from '@rollup/plugin-node-resolve'
 import replacePlugin from '@rollup/plugin-replace'
 import { transform as esbuildTransform } from 'esbuild'
 
+
 import fixDebug from './rollup-plugin-fix-debug.mjs'
 import fixInk from './rollup-plugin-fix-ink.mjs'
 import constants from './rollup.cli-js.constants.mjs'
+import { rootPath } from '../scripts/constants/paths.mjs'
+import { getLocalPackageAliases } from '../scripts/utils/get-local-package-aliases.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -94,32 +97,6 @@ function resolveFromExports(packagePath, subpath) {
   }
 
   return null
-}
-
-// Inline getLocalPackageAliases to avoid importing from registry.
-function getLocalPackageAliases() {
-  const aliases = {}
-  const rootDir = constants.rootPath
-
-  // Check for ../socket-registry/registry.
-  const registryPath = path.join(rootDir, '..', 'socket-registry', 'registry')
-  if (existsSync(path.join(registryPath, 'package.json'))) {
-    aliases['@socketsecurity/registry'] = registryPath
-  }
-
-  // Check for ../socket-packageurl-js.
-  const packageurlPath = path.join(rootDir, '..', 'socket-packageurl-js')
-  if (existsSync(path.join(packageurlPath, 'package.json'))) {
-    aliases['@socketregistry/packageurl-js'] = packageurlPath
-  }
-
-  // Check for ../socket-sdk-js.
-  const sdkPath = path.join(rootDir, '..', 'socket-sdk-js')
-  if (existsSync(path.join(sdkPath, 'package.json'))) {
-    aliases['@socketsecurity/sdk'] = sdkPath
-  }
-
-  return aliases
 }
 
 // Get package.json for version info.
@@ -318,7 +295,7 @@ export default {
 
     // Resolve node modules - bundle ALL dependencies.
     nodeResolve({
-      alias: getLocalPackageAliases(),
+      alias: getLocalPackageAliases(rootPath),
       dedupe: [
         '@socketsecurity/registry',
         '@socketsecurity/sdk',
@@ -507,4 +484,24 @@ export default {
     }
     warn(warning)
   },
+
+  // Watch mode configuration for development
+  watch: {
+    include: 'src/**',
+    exclude: ['node_modules/**', 'dist/**', 'test/**'],
+    chokidar: {
+      // Use native FSEvents on macOS for better performance
+      useFsEvents: process.platform === 'darwin',
+      // Ignore dotfiles
+      ignored: /(^|[/\\])\../,
+    },
+    // Clear screen on rebuild
+    clearScreen: false,
+  },
+
+  // Enable caching for faster subsequent builds
+  cache: true,
+
+  // Optimize parallel processing
+  maxParallelFileOps: 20,
 }

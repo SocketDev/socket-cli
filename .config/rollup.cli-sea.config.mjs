@@ -10,6 +10,8 @@ import { babel as babelPlugin } from '@rollup/plugin-babel'
 import commonjsPlugin from '@rollup/plugin-commonjs'
 import { nodeResolve } from '@rollup/plugin-node-resolve'
 
+import { getLocalPackageAliases } from '../scripts/utils/get-local-package-aliases.mjs'
+
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url))
 const rootDir = path.join(__dirname, '..')
 
@@ -28,6 +30,7 @@ export default {
   ],
   plugins: [
     nodeResolve({
+      alias: getLocalPackageAliases(rootPath),
       preferBuiltins: true,
       exportConditions: ['node'],
     }),

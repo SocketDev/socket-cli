@@ -1,8 +1,8 @@
 diff --git a/build/reconciler.js b/build/reconciler.js
-index 0000000000000000000000000000000000000000..1111111111111111111111111111111111111111 100644
+index dbcad54d70b0870a469eb5767bae375f6804eb36..c9013afef1c67e820dc3595a4b2d648d0456c2fb 100644
 --- a/build/reconciler.js
 +++ b/build/reconciler.js
-@@ -5,27 +5,11 @@ import Yoga from 'yoga-layout';
+@@ -5,29 +5,12 @@ import Yoga from 'yoga-layout';
  import { createContext } from 'react';
  import { createTextNode, appendChildNode, insertBeforeNode, removeChildNode, setStyle, setTextNodeValue, createNode, setAttribute, } from './dom.js';
  import applyStyles from './styles.js';
@@ -18,7 +18,7 @@ index 0000000000000000000000000000000000000000..11111111111111111111111111111111
 -            console.warn(`
 -The environment variable DEV is set to true, so Ink tried to import \`react-devtools-core\`,
 -but this failed as it was not installed. Debugging with React Devtools requires it.
--
+ 
 -To install use this command:
 -
 -$ npm install --save-dev react-devtools-core
@@ -29,7 +29,6 @@ index 0000000000000000000000000000000000000000..11111111111111111111111111111111
 -            throw error;
 -        }
 -    }
-+
 +// Devtools disabled - no-op function to avoid top-level await.
 +// Original devtools connection removed to prevent bundling issues.
 +// See https://github.com/vadimdemedes/ink/issues/384
@@ -37,7 +36,10 @@ index 0000000000000000000000000000000000000000..11111111111111111111111111111111
 +    // No-op: devtools intentionally disabled for bundled builds.
  }
  const diff = (before, after) => {
-@@ -70,6 +72,8 @@ export default createReconciler({
+     if (before === after) {
+@@ -69,6 +52,8 @@ export default createReconciler({
+     preparePortalMount: () => null,
+     clearContainer: () => false,
      resetAfterCommit(rootNode) {
 +        // Attempt to load devtools on first render.
 +        loadDevtools();
