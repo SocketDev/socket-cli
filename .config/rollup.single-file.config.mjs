@@ -12,6 +12,8 @@ import jsonPlugin from '@rollup/plugin-json'
 import { nodeResolve } from '@rollup/plugin-node-resolve'
 import replacePlugin from '@rollup/plugin-replace'
 
+import { getLocalPackageAliases } from '../scripts/utils/get-local-package-aliases.mjs'
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootDir = path.join(__dirname, '..')
 const srcDir = path.join(rootDir, 'src')
@@ -66,6 +68,7 @@ export default {
 
     // Resolve node modules
     nodeResolve({
+      alias: getLocalPackageAliases(rootPath),
       preferBuiltins: true,
       exportConditions: ['node'],
       // Bundle all dependencies

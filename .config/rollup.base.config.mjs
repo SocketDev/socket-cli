@@ -1,5 +1,4 @@
 import { randomUUID } from 'node:crypto'
-import { existsSync } from 'node:fs'
 import { builtinModules } from 'node:module'
 import path from 'node:path'
 
@@ -16,7 +15,9 @@ import { spawnSync } from '@socketsecurity/registry/lib/spawn'
 import { stripAnsi } from '@socketsecurity/registry/lib/strings'
 
 import constants from '../scripts/constants.mjs'
+import { rootPath } from '../scripts/constants/paths.mjs'
 import socketModifyPlugin from '../scripts/rollup/socket-modify-plugin.mjs'
+import { getLocalPackageAliases } from '../scripts/utils/get-local-package-aliases.mjs'
 import {
   getPackageName,
   isBuiltin,
@@ -43,33 +44,6 @@ const {
 } = constants
 
 export const EXTERNAL_PACKAGES = ['blessed', 'blessed-contrib']
-
-// Check for local sibling projects to use in development.
-// Falls back to published versions in CI.
-export function getLocalPackageAliases() {
-  const aliases = {}
-  const rootDir = constants.rootPath
-
-  // Check for ../socket-registry/registry
-  const registryPath = path.join(rootDir, '..', 'socket-registry', 'registry')
-  if (existsSync(path.join(registryPath, 'package.json'))) {
-    aliases['@socketsecurity/registry'] = registryPath
-  }
-
-  // Check for ../socket-packageurl-js
-  const packageurlPath = path.join(rootDir, '..', 'socket-packageurl-js')
-  if (existsSync(path.join(packageurlPath, 'package.json'))) {
-    aliases['@socketregistry/packageurl-js'] = packageurlPath
-  }
-
-  // Check for ../socket-sdk-js
-  const sdkPath = path.join(rootDir, '..', 'socket-sdk-js')
-  if (existsSync(path.join(sdkPath, 'package.json'))) {
-    aliases['@socketsecurity/sdk'] = sdkPath
-  }
-
-  return aliases
-}
 
 const builtinAliases = builtinModules.reduce((o, n) => {
   if (!n.startsWith('node:')) {
@@ -221,7 +195,7 @@ export default function baseConfig(extendConfig = {}) {
     plugins: [
       extractedPlugins['node-resolve'] ??
         nodeResolve({
-          alias: getLocalPackageAliases(),
+          alias: getLocalPackageAliases(rootPath),
           exportConditions: ['node'],
           extensions: ['.mjs', '.js', '.json', '.ts', '.mts'],
           preferBuiltins: true,
