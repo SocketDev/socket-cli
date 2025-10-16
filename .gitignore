@@ -21,6 +21,9 @@ Thumbs.db
 *.d.ts.map
 *.tsbuildinfo
 
+# Allow ambient module declarations
+!src/types/**/*.d.ts
+
 # Yarn PnP files (tests may create these)
 /.yarn
 /.pnp.cjs
