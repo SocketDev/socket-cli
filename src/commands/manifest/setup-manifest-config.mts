@@ -6,7 +6,8 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { input, select } from '@socketsecurity/registry/lib/prompts'
 
 import { detectManifestActions } from './detect-manifest-actions.mts'
-import { REQUIREMENTS_TXT, SOCKET_JSON } from '../../constants.mts'
+import { REQUIREMENTS_TXT } from '../../constants/paths.mjs'
+import { SOCKET_JSON } from '../../constants/socket.mts'
 import {
   readSocketJsonSync,
   writeSocketJson,

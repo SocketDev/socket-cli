@@ -2,7 +2,7 @@ import fs from 'node:fs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { REQUIREMENTS_TXT } from '../../constants.mts'
+import { REQUIREMENTS_TXT } from '../../constants/paths.mjs'
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
 

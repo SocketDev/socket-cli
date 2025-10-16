@@ -3,7 +3,8 @@ import path from 'node:path'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleManifestSetup } from './handle-manifest-setup.mts'
-import constants, { SOCKET_JSON } from '../../constants.mts'
+import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mjs'
+import { SOCKET_JSON } from '../../constants/socket.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { getFlagListOutput } from '../../utils/output/formatting.mts'
@@ -77,7 +78,7 @@ async function run(
 
   const { defaultOnReadError = false } = cli.flags
 
-  const dryRun = !!cli.flags.dryRun
+  const dryRun = !!cli.flags['dryRun']
 
   let [cwd = '.'] = cli.input
   // Note: path.resolve vs .join:
@@ -85,7 +86,7 @@ async function run(
   cwd = path.resolve(process.cwd(), cwd)
 
   if (dryRun) {
-    logger.log(constants.DRY_RUN_BAILING_NOW)
+    logger.log(DRY_RUN_BAILING_NOW)
     return
   }
 

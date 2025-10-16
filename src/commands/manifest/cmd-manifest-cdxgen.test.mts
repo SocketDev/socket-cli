@@ -4,17 +4,20 @@ import { describe, expect, it } from 'vitest'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
-import constants, { FLAG_HELP, LOG_SYMBOLS } from '../../constants.mts'
+import { FLAG_HELP, LOG_SYMBOLS } from '../constants/cli.mts'
+import { getBinCliPath, getExecPath, getProcessEnv } from '../constants/paths.mts'
 
 import type { PromiseSpawnOptions } from '@socketsecurity/registry/lib/spawn'
 
-describe('socket manifest cdxgen', async () => {
-  const { binCliPath } = constants
+const binCliPath = getBinCliPath()
+const execPath = getExecPath()
+const processEnv = getProcessEnv()
 
+describe('socket manifest cdxgen', async () => {
   const spawnOpts: PromiseSpawnOptions = {
     env: {
       ...process.env,
-      ...constants.processEnv,
+      ...processEnv,
       SOCKET_CLI_CONFIG: '{}',
     },
   }
@@ -57,7 +60,7 @@ describe('socket manifest cdxgen', async () => {
         for (const command of ['-h', FLAG_HELP]) {
           // eslint-disable-next-line no-await-in-loop
           const result = await spawn(
-            constants.execPath,
+            execPath,
             [binCliPath, 'manifest', 'cdxgen', command],
             spawnOpts,
           )
@@ -88,7 +91,7 @@ describe('socket manifest cdxgen', async () => {
       const command = '-u'
       await expect(
         spawn(
-          constants.execPath,
+          execPath,
           [binCliPath, 'manifest', 'cdxgen', command],
           spawnOpts,
         ),
@@ -102,7 +105,7 @@ describe('socket manifest cdxgen', async () => {
       const command = '--unknown'
       await expect(
         spawn(
-          constants.execPath,
+          execPath,
           [binCliPath, 'manifest', 'cdxgen', command],
           spawnOpts,
         ),
@@ -116,7 +119,7 @@ describe('socket manifest cdxgen', async () => {
       await expect(
         () =>
           spawn(
-            constants.execPath,
+            execPath,
             [binCliPath, 'manifest', 'cdxgen', '-u', '-h', '--unknown'],
             spawnOpts,
           ),

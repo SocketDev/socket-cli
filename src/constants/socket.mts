@@ -2,6 +2,9 @@
  * Socket.dev specific constants for the CLI (extends registry socket constants).
  */
 
+// Re-export NPM registry URL from registry for backward compatibility.
+export { NPM_REGISTRY_URL } from '@socketsecurity/registry/constants/agents'
+
 // Socket API URLs
 export const API_V0_URL = 'https://api.socket.dev/v0/'
 export const SOCKET_WEBSITE_URL = 'https://socket.dev'

@@ -9,7 +9,28 @@ import { homedir } from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import {
+  getExecPath,
+  getNodeDebugFlags,
+  getNodeHardenFlags,
+  getNodeNoWarningsFlags,
+} from '@socketsecurity/registry/constants/node'
 import { DOT_SOCKET_DIR } from '@socketsecurity/registry/constants/paths'
+
+// Import socket constants for re-export.
+import { SOCKET_JSON } from './socket.mts'
+
+// Re-export socket constants for backward compatibility.
+export { SOCKET_JSON }
+
+// Re-export node-related constants from registry for convenience.
+export { getExecPath, getNodeDebugFlags, getNodeHardenFlags, getNodeNoWarningsFlags }
+
+// Export as non-function constants for backward compatibility.
+export const execPath = getExecPath()
+export const nodeDebugFlags = getNodeDebugFlags()
+export const nodeHardenFlags = getNodeHardenFlags()
+export const nodeNoWarningsFlags = getNodeNoWarningsFlags()
 
 // Get base paths relative to this file's location
 const __filename = fileURLToPath(import.meta.url)
@@ -27,6 +48,11 @@ export const homePath = homedir()
 export const ENVIRONMENT_YAML = 'environment.yaml'
 export const ENVIRONMENT_YML = 'environment.yml'
 export const REQUIREMENTS_TXT = 'requirements.txt'
+
+// Lockfile Names (CLI-specific)
+export const PACKAGE_LOCK_JSON = 'package-lock.json'
+export const PNPM_LOCK_YAML = 'pnpm-lock.yaml'
+export const YARN_LOCK = 'yarn.lock'
 
 // Directory Names (CLI-specific)
 export const UPDATE_STORE_DIR = '.socket/_socket'
@@ -53,11 +79,15 @@ export function getBinPath(): string {
 
 export function getBinCliPath(): string {
   // Allow overriding CLI binary path for testing built binaries (SEA, yao-pkg, etc).
-  const binPath = process.env.SOCKET_CLI_BIN_PATH
+  const binPath = process.env['SOCKET_CLI_BIN_PATH']
   if (binPath) {
     return binPath
   }
   return path.join(rootPath, 'bin/cli.js')
+}
+
+export function getDistPath(): string {
+  return distPath
 }
 
 export function getDistBinPath(): string {
@@ -76,6 +106,9 @@ export function getShadowBinPath(): string {
   return path.join(rootPath, 'shadow-bin')
 }
 
+// Export shadowBinPath as a constant for backward compatibility.
+export const shadowBinPath = path.join(rootPath, 'shadow-bin')
+
 export function getShadowNpmBinPath(): string {
   return path.join(distPath, 'shadow-npm-bin.js')
 }
@@ -87,6 +120,10 @@ export function getShadowNpmInjectPath(): string {
 export function getInstrumentWithSentryPath(): string {
   return path.join(distPath, 'instrument-with-sentry.js')
 }
+
+// Export as constants for backward compatibility.
+export const shadowNpmInjectPath = path.join(distPath, 'shadow-npm-inject.js')
+export const instrumentWithSentryPath = path.join(distPath, 'instrument-with-sentry.js')
 
 export function getShadowNpxBinPath(): string {
   return path.join(distPath, 'shadow-npx-bin.js')
@@ -109,7 +146,7 @@ export function getBlessedContribPath(): string {
 }
 
 export function getBlessedOptions() {
-  const blessedColorDepth = (process.env.TERM ?? '').includes('256color')
+  const blessedColorDepth = (process.env['TERM'] ?? '').includes('256color')
     ? 256
     : 8
   return {
@@ -125,7 +162,7 @@ export function getBlessedOptions() {
 }
 
 export function getSocketAppDataPath(): string {
-  const xdgDataHome = process.env.XDG_DATA_HOME
+  const xdgDataHome = process.env['XDG_DATA_HOME']
   if (xdgDataHome) {
     return path.join(xdgDataHome, 'socket')
   }
@@ -136,7 +173,7 @@ export function getSocketAppDataPath(): string {
       return path.join(home, 'Library', 'Application Support', 'Socket')
     case 'win32':
       return path.join(
-        process.env.LOCALAPPDATA || path.join(home, 'AppData', 'Local'),
+        process.env['LOCALAPPDATA'] || path.join(home, 'AppData', 'Local'),
         'Socket',
       )
     default:
@@ -145,7 +182,7 @@ export function getSocketAppDataPath(): string {
 }
 
 export function getSocketCachePath(): string {
-  const xdgCacheHome = process.env.XDG_CACHE_HOME
+  const xdgCacheHome = process.env['XDG_CACHE_HOME']
   if (xdgCacheHome) {
     return path.join(xdgCacheHome, 'socket')
   }
@@ -156,8 +193,8 @@ export function getSocketCachePath(): string {
       return path.join(home, 'Library', 'Caches', 'socket')
     case 'win32': {
       const tempDir =
-        process.env.TEMP ||
-        process.env.TMP ||
+        process.env['TEMP'] ||
+        process.env['TMP'] ||
         path.join(home, 'AppData', 'Local', 'Temp')
       return path.join(tempDir, 'socket')
     }

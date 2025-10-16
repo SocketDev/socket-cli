@@ -2,6 +2,19 @@
  * Package and binary name constants for Socket CLI.
  */
 
+// Re-export lockfile constants from registry
+export { PNPM_LOCK_YAML, YARN_LOCK, PACKAGE_LOCK_JSON } from '@socketsecurity/registry/constants/agents'
+
+// Package manifest files
+export const PACKAGE_JSON = 'package.json'
+
+// Directory names
+export const NODE_MODULES = 'node_modules'
+
+// File extensions
+export const EXT_LOCK = '.lock'
+export const EXT_LOCKB = '.lockb'
+
 // NPM Package Versions (CLI-specific)
 export const NPM_BUGGY_OVERRIDES_PATCHED_VERSION = '11.2.0'
 

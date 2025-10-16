@@ -1,233 +1,190 @@
 /**
- * Environment variable configuration using proxy/getters to reference registry ENV.
- * This avoids circular dependencies while maintaining access to environment variables.
+ * Environment variable configuration using direct imports from env modules.
+ * This provides centralized access to environment variables without proxies.
  */
 
-import ENV_REGISTRY from '@socketsecurity/registry/constants/env'
+import { env } from 'node:process'
 
-// Extract the ENV object from registry constants.
-const registryEnv = ENV_REGISTRY
+import { envAsBoolean } from '@socketsecurity/registry/lib/env'
 
-// Define CLI-specific environment variables interface.
-export interface CliEnvVariables {
-  // API configuration.
-  SOCKET_API_BASE_URL?: string
-  SOCKET_API_TOKEN?: string
-  SOCKET_CLI_API_BASE_URL?: string
-  SOCKET_CLI_API_PROXY?: string
-  SOCKET_CLI_API_TIMEOUT?: string
-  SOCKET_CLI_API_TOKEN?: string
-  SOCKET_CLI_DEBUG?: string
-  SOCKET_CLI_NO_API_TOKEN?: string
-  SOCKET_REGISTRY_URL?: string
+// Import CLI-specific env modules.
+import { DISABLE_GITHUB_CACHE } from '../env/disable-github-cache.mts'
+import { GITHUB_API_URL } from '../env/github-api-url.mts'
+import { GITHUB_BASE_REF } from '../env/github-base-ref.mts'
+import { GITHUB_REF_NAME } from '../env/github-ref-name.mts'
+import { GITHUB_REF_TYPE } from '../env/github-ref-type.mts'
+import { GITHUB_SERVER_URL } from '../env/github-server-url.mts'
+import { NODE_ENV } from '../env/node-env.mts'
+import { NODE_OPTIONS } from '../env/node-options.mts'
+import { npm_config_cache } from '../env/npm-config-cache.mts'
+import { npm_config_user_agent } from '../env/npm-config-user-agent.mts'
+import { SOCKET_CLI_ACCEPT_RISKS } from '../env/socket-cli-accept-risks.mts'
+import { SOCKET_CLI_API_BASE_URL } from '../env/socket-cli-api-base-url.mts'
+import { SOCKET_CLI_API_PROXY } from '../env/socket-cli-api-proxy.mts'
+import { SOCKET_CLI_API_TIMEOUT } from '../env/socket-cli-api-timeout.mts'
+import { SOCKET_CLI_API_TOKEN } from '../env/socket-cli-api-token.mts'
+import { SOCKET_CLI_BIN_PATH } from '../env/socket-cli-bin-path.mts'
+import { SOCKET_CLI_COANA_LOCAL_PATH } from '../env/socket-cli-coana-local-path.mts'
+import { SOCKET_CLI_CONFIG } from '../env/socket-cli-config.mts'
+import { SOCKET_CLI_DEBUG } from '../env/socket-cli-debug.mts'
+import { SOCKET_CLI_FIX } from '../env/socket-cli-fix.mts'
+import { SOCKET_CLI_GIT_USER_EMAIL } from '../env/socket-cli-git-user-email.mts'
+import { SOCKET_CLI_GIT_USER_NAME } from '../env/socket-cli-git-user-name.mts'
+import { SOCKET_CLI_GITHUB_TOKEN } from '../env/socket-cli-github-token.mts'
+import { SOCKET_CLI_JS_PATH } from '../env/socket-cli-js-path.mts'
+import { SOCKET_CLI_MODE } from '../env/socket-cli-mode.mts'
+import { SOCKET_CLI_NO_API_TOKEN } from '../env/socket-cli-no-api-token.mts'
+import { SOCKET_CLI_NPM_PATH } from '../env/socket-cli-npm-path.mts'
+import { SOCKET_CLI_OPTIMIZE } from '../env/socket-cli-optimize.mts'
+import { SOCKET_CLI_VIEW_ALL_RISKS } from '../env/socket-cli-view-all-risks.mts'
+import { VITEST } from '../env/vitest.mts'
 
-  // Build metadata.
-  INLINED_SOCKET_CLI_CDXGEN_VERSION?: string
-  INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION?: string
-  INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION?: string
-  INLINED_SOCKET_CLI_HOMEPAGE?: string
-  INLINED_SOCKET_CLI_LEGACY_BUILD?: string
-  INLINED_SOCKET_CLI_NAME?: string
-  INLINED_SOCKET_CLI_PUBLISHED_BUILD?: string
-  INLINED_SOCKET_CLI_PYTHON_BUILD_TAG?: string
-  INLINED_SOCKET_CLI_PYTHON_VERSION?: string
-  INLINED_SOCKET_CLI_SENTRY_BUILD?: string
-  INLINED_SOCKET_CLI_SYNP_VERSION?: string
-  INLINED_SOCKET_CLI_UNIFIED_BUILD?: string
-  INLINED_SOCKET_CLI_VERSION?: string
-  INLINED_SOCKET_CLI_VERSION_HASH?: string
-
-  // Configuration (NODE_ENV is defined in registry ENV).
-  NODE_OPTIONS?: string
-  SOCKET_CLI_ACCEPT_RISKS?: string
-  SOCKET_CLI_CONFIG?: string
-  SOCKET_CLI_FIX?: string
-  SOCKET_CLI_GIT_USER_EMAIL?: string
-  SOCKET_CLI_GIT_USER_NAME?: string
-  SOCKET_CLI_GITHUB_TOKEN?: string
-  SOCKET_CLI_MODE?: string
-  SOCKET_CLI_OPTIMIZE?: string
-  SOCKET_CLI_ORG_SLUG?: string
-  SOCKET_CLI_VIEW_ALL_RISKS?: string
-
-  // CI environment (CI itself is defined in registry ENV).
-  GITHUB_API_URL?: string
-  GITHUB_BASE_REF?: string
-  GITHUB_REF_NAME?: string
-  GITHUB_REF_TYPE?: string
-  GITHUB_REPOSITORY?: string
-  GITHUB_SERVER_URL?: string
-
-  // Cache and configuration.
-  DISABLE_GITHUB_CACHE?: string
-  npm_config_cache?: string
-  npm_config_user_agent?: string
-  SOCKET_CLI_BIN_PATH?: string
-  SOCKET_CLI_COANA_LOCAL_PATH?: string
-  SOCKET_CLI_JS_PATH?: string
-  SOCKET_CLI_NPM_PATH?: string
-
-  // Testing.
-  VITEST?: string
+// Re-export CLI-specific env variables.
+export {
+  DISABLE_GITHUB_CACHE,
+  GITHUB_API_URL,
+  GITHUB_BASE_REF,
+  GITHUB_REF_NAME,
+  GITHUB_REF_TYPE,
+  GITHUB_SERVER_URL,
+  NODE_ENV,
+  NODE_OPTIONS,
+  npm_config_cache,
+  npm_config_user_agent,
+  SOCKET_CLI_ACCEPT_RISKS,
+  SOCKET_CLI_API_BASE_URL,
+  SOCKET_CLI_API_PROXY,
+  SOCKET_CLI_API_TIMEOUT,
+  SOCKET_CLI_API_TOKEN,
+  SOCKET_CLI_BIN_PATH,
+  SOCKET_CLI_COANA_LOCAL_PATH,
+  SOCKET_CLI_CONFIG,
+  SOCKET_CLI_DEBUG,
+  SOCKET_CLI_FIX,
+  SOCKET_CLI_GIT_USER_EMAIL,
+  SOCKET_CLI_GIT_USER_NAME,
+  SOCKET_CLI_GITHUB_TOKEN,
+  SOCKET_CLI_JS_PATH,
+  SOCKET_CLI_MODE,
+  SOCKET_CLI_NO_API_TOKEN,
+  SOCKET_CLI_NPM_PATH,
+  SOCKET_CLI_OPTIMIZE,
+  SOCKET_CLI_VIEW_ALL_RISKS,
+  VITEST,
 }
 
-// Define the shape of registry ENV properties we use.
-export interface RegistryEnvBase {
-  CI: boolean
-  GITHUB_TOKEN: string
-  NODE_AUTH_TOKEN: string
-  NODE_ENV: string
-  NPM_TOKEN: string
-  SOCKET_API_BASE_URL: string
-  SOCKET_API_TOKEN: string
-}
-
-// Merge CLI env variables with registry env, letting registry properties take precedence.
-// This avoids type conflicts for properties that exist in both interfaces.
-type MergedEnv = RegistryEnvBase & Omit<CliEnvVariables, keyof RegistryEnvBase>
-
-// Create a proxy that delegates to registry ENV but allows overrides.
-const envHandler: ProxyHandler<MergedEnv> = {
-  get(target, prop) {
-    // Handle Socket CLI specific environment variables.
-    if (typeof prop === 'string') {
-      // Check for Socket CLI specific env vars first.
-      if (
-        prop.startsWith('SOCKET_CLI_') ||
-        prop.startsWith('INLINED_SOCKET_CLI_')
-      ) {
-        const value = process.env[prop]
-        if (value !== undefined) {
-          return value
-        }
-      }
-    }
-
-    // Delegate to registry ENV.
-    return Reflect.get(target, prop)
-  },
-
-  has(target, prop) {
-    if (typeof prop === 'string') {
-      // Check for Socket CLI specific env vars.
-      if (
-        prop.startsWith('SOCKET_CLI_') ||
-        prop.startsWith('INLINED_SOCKET_CLI_')
-      ) {
-        return prop in process.env
-      }
-    }
-    // Delegate to registry ENV.
-    return Reflect.has(target, prop)
-  },
-}
-
-// Create the proxied ENV object.
-// Cast through unknown to satisfy TypeScript - the proxy ensures type safety at runtime.
-const ENV = new Proxy(registryEnv as unknown as MergedEnv, envHandler)
-
-// Export getters for commonly used environment variables.
-// These provide type-safe access and avoid direct ENV references.
-export function getApiToken(): string | undefined {
-  return ENV.SOCKET_API_TOKEN
-}
-
-export function getApiBaseUrl(): string {
-  return ENV.SOCKET_API_BASE_URL || 'https://api.socket.dev'
-}
-
-export function getRegistryUrl(): string {
-  return ENV.SOCKET_REGISTRY_URL || 'https://registry.npmjs.org'
-}
-
-export function getNodeEnv(): string {
-  return ENV.NODE_ENV || 'production'
-}
-
-export function isProduction(): boolean {
-  return getNodeEnv() === 'production'
-}
-
-export function isDevelopment(): boolean {
-  return getNodeEnv() === 'development'
-}
-
-export function isTest(): boolean {
-  return getNodeEnv() === 'test' || !!ENV.VITEST
-}
-
-// Use direct process.env access (not ENV proxy) so rollup replace plugin can inline values.
+// Getter functions for build metadata.
+// Use direct process.env access (not env imports) so rollup replace plugin can inline values.
 export function getCliVersion(): string | undefined {
-  return process.env.INLINED_SOCKET_CLI_VERSION
+  return env['INLINED_SOCKET_CLI_VERSION']
 }
 
-// Use direct process.env access (not ENV proxy) so rollup replace plugin can inline values.
 export function getCliVersionHash(): string | undefined {
-  return process.env.INLINED_SOCKET_CLI_VERSION_HASH
+  return env['INLINED_SOCKET_CLI_VERSION_HASH']
 }
 
-// Use direct process.env access (not ENV proxy) so rollup replace plugin can inline values.
 export function getCliHomepage(): string | undefined {
-  return process.env.INLINED_SOCKET_CLI_HOMEPAGE
+  return env['INLINED_SOCKET_CLI_HOMEPAGE']
 }
 
-// Use direct process.env access (not ENV proxy) so rollup replace plugin can inline values.
 export function getCliName(): string | undefined {
-  return process.env.INLINED_SOCKET_CLI_NAME
+  return env['INLINED_SOCKET_CLI_NAME']
 }
 
 export function isPublishedBuild(): boolean {
-  return (
-    ENV.INLINED_SOCKET_CLI_PUBLISHED_BUILD === '1' ||
-    ENV.INLINED_SOCKET_CLI_PUBLISHED_BUILD === 'true'
-  )
+  return envAsBoolean(env['INLINED_SOCKET_CLI_PUBLISHED_BUILD'])
 }
 
 export function isLegacyBuild(): boolean {
-  return (
-    ENV.INLINED_SOCKET_CLI_LEGACY_BUILD === '1' ||
-    ENV.INLINED_SOCKET_CLI_LEGACY_BUILD === 'true'
-  )
+  return envAsBoolean(env['INLINED_SOCKET_CLI_LEGACY_BUILD'])
 }
 
 export function isSentryBuild(): boolean {
-  return (
-    ENV.INLINED_SOCKET_CLI_SENTRY_BUILD === '1' ||
-    ENV.INLINED_SOCKET_CLI_SENTRY_BUILD === 'true'
-  )
+  return envAsBoolean(env['INLINED_SOCKET_CLI_SENTRY_BUILD'])
 }
 
 export function isUnifiedBuild(): boolean {
-  return (
-    ENV.INLINED_SOCKET_CLI_UNIFIED_BUILD === '1' ||
-    ENV.INLINED_SOCKET_CLI_UNIFIED_BUILD === 'true'
-  )
-}
-
-export function getCliMode(): string | undefined {
-  return ENV.SOCKET_CLI_MODE
+  return envAsBoolean(env['INLINED_SOCKET_CLI_UNIFIED_BUILD'])
 }
 
 export function getCoanaVersion(): string | undefined {
-  return ENV.INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION
+  return env['INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION']
 }
 
 export function getCdxgenVersion(): string | undefined {
-  return ENV.INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION
+  return env['INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION']
 }
 
 export function getSynpVersion(): string | undefined {
-  return ENV.INLINED_SOCKET_CLI_SYNP_VERSION
+  return env['INLINED_SOCKET_CLI_SYNP_VERSION']
 }
 
 export function getPythonVersion(): string | undefined {
-  return ENV.INLINED_SOCKET_CLI_PYTHON_VERSION
+  return env['INLINED_SOCKET_CLI_PYTHON_VERSION']
 }
 
 export function getPythonBuildTag(): string | undefined {
-  return ENV.INLINED_SOCKET_CLI_PYTHON_BUILD_TAG
+  return env['INLINED_SOCKET_CLI_PYTHON_BUILD_TAG']
 }
 
-// Export the proxied ENV for backward compatibility.
-// This should be avoided in new code - use the getter functions instead.
+// Export processEnv for backward compatibility with shadow npm integration.
+// This provides access to process.env for spawned processes.
+export const processEnv = env
+
+// Legacy default export for backward compatibility.
+// This should be avoided in new code - use the named exports instead.
+const ENV = {
+  DISABLE_GITHUB_CACHE,
+  GITHUB_API_URL,
+  GITHUB_BASE_REF,
+  GITHUB_REF_NAME,
+  GITHUB_REF_TYPE,
+  GITHUB_SERVER_URL,
+  NODE_ENV,
+  NODE_OPTIONS,
+  npm_config_cache,
+  npm_config_user_agent,
+  SOCKET_CLI_ACCEPT_RISKS,
+  SOCKET_CLI_API_BASE_URL,
+  SOCKET_CLI_API_PROXY,
+  SOCKET_CLI_API_TIMEOUT,
+  SOCKET_CLI_API_TOKEN,
+  SOCKET_CLI_BIN_PATH,
+  SOCKET_CLI_COANA_LOCAL_PATH,
+  SOCKET_CLI_CONFIG,
+  SOCKET_CLI_DEBUG,
+  SOCKET_CLI_FIX,
+  SOCKET_CLI_GIT_USER_EMAIL,
+  SOCKET_CLI_GIT_USER_NAME,
+  SOCKET_CLI_GITHUB_TOKEN,
+  SOCKET_CLI_JS_PATH,
+  SOCKET_CLI_MODE,
+  SOCKET_CLI_NO_API_TOKEN,
+  SOCKET_CLI_NPM_PATH,
+  SOCKET_CLI_OPTIMIZE,
+  SOCKET_CLI_VIEW_ALL_RISKS,
+  VITEST,
+  // Additional environment variables (accessed via ENV object).
+  CI: env['CI'],
+  GITHUB_REPOSITORY: env['GITHUB_REPOSITORY'],
+  SOCKET_CLI_ORG_SLUG: env['SOCKET_CLI_ORG_SLUG'],
+  // Build metadata (inlined by rollup replace plugin).
+  INLINED_SOCKET_CLI_CDXGEN_VERSION: env['INLINED_SOCKET_CLI_CDXGEN_VERSION'],
+  INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION: env['INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION'],
+  INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION: env['INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION'],
+  INLINED_SOCKET_CLI_HOMEPAGE: env['INLINED_SOCKET_CLI_HOMEPAGE'],
+  INLINED_SOCKET_CLI_LEGACY_BUILD: env['INLINED_SOCKET_CLI_LEGACY_BUILD'],
+  INLINED_SOCKET_CLI_NAME: env['INLINED_SOCKET_CLI_NAME'],
+  INLINED_SOCKET_CLI_PUBLISHED_BUILD: env['INLINED_SOCKET_CLI_PUBLISHED_BUILD'],
+  INLINED_SOCKET_CLI_PYTHON_BUILD_TAG: env['INLINED_SOCKET_CLI_PYTHON_BUILD_TAG'],
+  INLINED_SOCKET_CLI_PYTHON_VERSION: env['INLINED_SOCKET_CLI_PYTHON_VERSION'],
+  INLINED_SOCKET_CLI_SENTRY_BUILD: env['INLINED_SOCKET_CLI_SENTRY_BUILD'],
+  INLINED_SOCKET_CLI_SYNP_VERSION: env['INLINED_SOCKET_CLI_SYNP_VERSION'],
+  INLINED_SOCKET_CLI_UNIFIED_BUILD: env['INLINED_SOCKET_CLI_UNIFIED_BUILD'],
+  INLINED_SOCKET_CLI_VERSION: env['INLINED_SOCKET_CLI_VERSION'],
+  INLINED_SOCKET_CLI_VERSION_HASH: env['INLINED_SOCKET_CLI_VERSION_HASH'],
+}
+
+// Named export for ES module imports.
+export { ENV }
 export default ENV
