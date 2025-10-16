@@ -24,7 +24,9 @@ import { fileURLToPath } from 'node:url'
 
 import cmdShim from 'cmd-shim'
 
-import constants from '../../constants.mts'
+import { WIN32 } from '@socketsecurity/registry/constants/platform'
+
+import { getDistPath } from '../../constants/paths.mts'
 import { shouldSkipShadow } from '../dlx/detection.mts'
 import {
   getNpmBinPath,
@@ -41,7 +43,7 @@ const __dirname = path.dirname(__filename)
 export async function installNpmLinks(shadowBinPath: string): Promise<string> {
   // Find npm being shadowed by this process.
   const binPath = getNpmBinPath()
-  const { WIN32 } = constants
+  const distPath = getDistPath()
 
   // Skip shadow installation when in temporary execution context or when required for Windows.
   if (shouldSkipShadow(binPath, { cwd: __dirname, win32: WIN32 })) {
@@ -53,7 +55,7 @@ export async function installNpmLinks(shadowBinPath: string): Promise<string> {
     if (WIN32) {
       try {
         await cmdShim(
-          path.join(constants.distPath, 'npm-cli.js'),
+          path.join(distPath, 'npm-cli.js'),
           path.join(shadowBinPath, 'npm'),
         )
       } catch (e) {
@@ -64,7 +66,7 @@ export async function installNpmLinks(shadowBinPath: string): Promise<string> {
       }
     }
     const { env } = process
-    env.PATH = `${shadowBinPath}${path.delimiter}${env.PATH}`
+    env['PATH'] = `${shadowBinPath}${path.delimiter}${env['PATH']}`
   }
   return binPath
 }
@@ -72,7 +74,7 @@ export async function installNpmLinks(shadowBinPath: string): Promise<string> {
 export async function installNpxLinks(shadowBinPath: string): Promise<string> {
   // Find npx being shadowed by this process.
   const binPath = getNpxBinPath()
-  const { WIN32 } = constants
+  const distPath = getDistPath()
 
   // Skip shadow installation when in temporary execution context or when required for Windows.
   if (shouldSkipShadow(binPath, { cwd: __dirname, win32: WIN32 })) {
@@ -84,7 +86,7 @@ export async function installNpxLinks(shadowBinPath: string): Promise<string> {
     if (WIN32) {
       try {
         await cmdShim(
-          path.join(constants.distPath, 'npx-cli.js'),
+          path.join(distPath, 'npx-cli.js'),
           path.join(shadowBinPath, 'npx'),
         )
       } catch (e) {
@@ -95,7 +97,7 @@ export async function installNpxLinks(shadowBinPath: string): Promise<string> {
       }
     }
     const { env } = process
-    env.PATH = `${shadowBinPath}${path.delimiter}${env.PATH}`
+    env['PATH'] = `${shadowBinPath}${path.delimiter}${env['PATH']}`
   }
   return binPath
 }
@@ -103,7 +105,7 @@ export async function installNpxLinks(shadowBinPath: string): Promise<string> {
 export async function installPnpmLinks(shadowBinPath: string): Promise<string> {
   // Find pnpm being shadowed by this process.
   const binPath = getPnpmBinPath()
-  const { WIN32 } = constants
+  const distPath = getDistPath()
 
   // Skip shadow installation when in temporary execution context or when required for Windows.
   if (shouldSkipShadow(binPath, { cwd: __dirname, win32: WIN32 })) {
@@ -117,7 +119,7 @@ export async function installPnpmLinks(shadowBinPath: string): Promise<string> {
     if (WIN32) {
       try {
         await cmdShim(
-          path.join(constants.distPath, 'pnpm-cli.js'),
+          path.join(distPath, 'pnpm-cli.js'),
           path.join(shadowBinPath, 'pnpm'),
         )
       } catch (e) {
@@ -128,7 +130,7 @@ export async function installPnpmLinks(shadowBinPath: string): Promise<string> {
       }
     }
     const { env } = process
-    env.PATH = `${shadowBinPath}${path.delimiter}${env.PATH}`
+    env['PATH'] = `${shadowBinPath}${path.delimiter}${env['PATH']}`
   }
 
   return binPath
@@ -136,7 +138,7 @@ export async function installPnpmLinks(shadowBinPath: string): Promise<string> {
 
 export async function installYarnLinks(shadowBinPath: string): Promise<string> {
   const binPath = getYarnBinPath()
-  const { WIN32 } = constants
+  const distPath = getDistPath()
 
   // Skip shadow installation when in temporary execution context or when required for Windows.
   if (shouldSkipShadow(binPath, { cwd: __dirname, win32: WIN32 })) {
@@ -149,7 +151,7 @@ export async function installYarnLinks(shadowBinPath: string): Promise<string> {
     if (WIN32) {
       try {
         await cmdShim(
-          path.join(constants.distPath, 'yarn-cli.js'),
+          path.join(distPath, 'yarn-cli.js'),
           path.join(shadowBinPath, 'yarn'),
         )
       } catch (e) {
@@ -160,7 +162,7 @@ export async function installYarnLinks(shadowBinPath: string): Promise<string> {
       }
     }
     const { env } = process
-    env.PATH = `${shadowBinPath}${path.delimiter}${env.PATH}`
+    env['PATH'] = `${shadowBinPath}${path.delimiter}${env['PATH']}`
   }
 
   return binPath

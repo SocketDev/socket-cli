@@ -18,7 +18,7 @@
  * - Ecosystem-specific URL formatting
  */
 
-import constants from '../../constants.mts'
+import { SOCKET_WEBSITE_URL } from '../../constants/socket.mjs'
 import { getPurlObject } from '../purl/parse.mts'
 
 import type { SocketArtifact } from '../alert/artifact.mts'
@@ -36,7 +36,7 @@ export function getPkgFullNameFromPurl(
 }
 
 export function getSocketDevAlertUrl(alertType: string): string {
-  return `${constants.SOCKET_WEBSITE_URL}/alerts/${alertType}`
+  return `${SOCKET_WEBSITE_URL}/alerts/${alertType}`
 }
 
 export function getSocketDevPackageOverviewUrlFromPurl(
@@ -52,7 +52,7 @@ export function getSocketDevPackageOverviewUrl(
   fullName: string,
   version?: string | undefined,
 ): string {
-  const url = `${constants.SOCKET_WEBSITE_URL}/${ecosystem}/package/${fullName}`
+  const url = `${SOCKET_WEBSITE_URL}/${ecosystem}/package/${fullName}`
   return ecosystem === 'golang'
     ? `${url}${version ? `?section=overview&version=${version}` : ''}`
     : `${url}${version ? `/overview/${version}` : ''}`

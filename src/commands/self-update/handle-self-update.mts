@@ -16,7 +16,7 @@ import { getIpcStubPath } from '@socketsecurity/registry/lib/ipc'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { outputSelfUpdate } from './output-self-update.mts'
-import constants from '../../constants.mts'
+import ENV from '../../constants/env.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { isSeaBinary } from '../../utils/executable/detect.mjs'
@@ -524,9 +524,9 @@ Examples
     importMeta,
   })
   const { flags } = cli
-  const force = Boolean(flags.force)
-  const dryRun = Boolean(flags.dryRun)
-  const currentVersion = constants.ENV.INLINED_SOCKET_CLI_VERSION || 'unknown'
+  const force = Boolean(flags['force'])
+  const dryRun = Boolean(flags['dryRun'])
+  const currentVersion = ENV.INLINED_SOCKET_CLI_VERSION || 'unknown'
   const currentBinaryPath = process.argv[0]
 
   if (!currentBinaryPath) {

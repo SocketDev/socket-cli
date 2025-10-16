@@ -1,6 +1,5 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { OUTPUT_JSON } from '../../constants.mts'
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
@@ -19,7 +18,7 @@ export async function outputPatchListResult(
     process.exitCode = result.code ?? 1
   }
 
-  if (outputKind === OUTPUT_JSON) {
+  if (outputKind === 'json') {
     logger.log(serializeResultJson(result))
     return
   }
@@ -30,11 +29,6 @@ export async function outputPatchListResult(
   }
 
   const { patches } = result.data
-
-  if (outputKind === 'json') {
-    logger.log(JSON.stringify({ patches }, null, 2))
-    return
-  }
 
   if (outputKind === 'markdown') {
     if (patches.length === 0) {

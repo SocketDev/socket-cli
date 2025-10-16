@@ -5,6 +5,7 @@ export type PatchManifest = z.infer<typeof PatchManifestSchema>
 export type PatchRecord = z.infer<typeof PatchRecordSchema>
 
 export const PatchRecordSchema = z.object({
+  description: z.string().optional(),
   exportedAt: z.string(),
   files: z.record(
     z.string(), // File path
@@ -13,6 +14,9 @@ export const PatchRecordSchema = z.object({
       afterHash: z.string(),
     }),
   ),
+  license: z.string().optional(),
+  tier: z.string().optional(),
+  uuid: z.string().optional(),
   vulnerabilities: z.record(
     z.string(), // Vulnerability ID like "GHSA-jrhj-2j3q-xf3v"
     z.object({

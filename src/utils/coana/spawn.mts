@@ -2,11 +2,11 @@
 
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
-import { getDefaultOrgSlug } from '../../commands/ci/fetch-default-org-slug.mjs'
-import constants from '../../constants.mts'
+import { getDefaultOrgSlug } from '../../commands/ci/fetch-default-org-slug.mts'
+import ENV from '../../constants/env.mts'
 import { getErrorCause } from '../error/errors.mts'
-import { runShadowCommand } from '../shadow/runner.mjs'
-import { getDefaultApiToken, getDefaultProxyUrl } from '../socket/sdk.mjs'
+import { runShadowCommand } from '../shadow/runner.mts'
+import { getDefaultApiToken, getDefaultProxyUrl } from '../socket/sdk.mts'
 
 import type { ShadowBinOptions } from '../../shadow/npm-base.mjs'
 import type { CResult } from '../../types.mjs'
@@ -40,41 +40,40 @@ export async function spawnCoana(
   } as CoanaSpawnOptions
 
   const mixinsEnv: Record<string, string> = {
-    SOCKET_CLI_VERSION: constants.ENV.INLINED_SOCKET_CLI_VERSION || '',
+    SOCKET_CLI_VERSION: ENV.INLINED_SOCKET_CLI_VERSION || '',
   }
   const defaultApiToken = getDefaultApiToken()
   if (defaultApiToken) {
-    mixinsEnv.SOCKET_CLI_API_TOKEN = defaultApiToken
+    mixinsEnv['SOCKET_CLI_API_TOKEN'] = defaultApiToken
   }
 
   if (orgSlug) {
-    mixinsEnv.SOCKET_ORG_SLUG = orgSlug
+    mixinsEnv['SOCKET_ORG_SLUG'] = orgSlug
   } else {
     const orgSlugCResult = await getDefaultOrgSlug()
     if (orgSlugCResult.ok) {
-      mixinsEnv.SOCKET_ORG_SLUG = orgSlugCResult.data
+      mixinsEnv['SOCKET_ORG_SLUG'] = orgSlugCResult.data
     }
   }
 
   const proxyUrl = getDefaultProxyUrl()
   if (proxyUrl) {
-    mixinsEnv.SOCKET_CLI_API_PROXY = proxyUrl
+    mixinsEnv['SOCKET_CLI_API_PROXY'] = proxyUrl
   }
 
   try {
-    const localCoanaPath = constants.ENV.SOCKET_CLI_COANA_LOCAL_PATH
+    const localCoanaPath = ENV.SOCKET_CLI_COANA_LOCAL_PATH
     // Use local Coana CLI if path is provided.
     if (localCoanaPath) {
       const finalEnv = {
         ...process.env,
-        ...constants.processEnv,
         ...mixinsEnv,
         ...spawnEnv,
       }
       const spawnResult = await spawn('node', [localCoanaPath, ...args], {
         cwd: shadowOptions.cwd,
         env: finalEnv,
-        stdio: spawnExtra?.stdio || 'inherit',
+        stdio: spawnExtra?.['stdio'] || 'inherit',
       })
 
       return {
@@ -84,12 +83,11 @@ export async function spawnCoana(
     }
 
     // Use npm/dlx version via runner.
-    const coanaVersion = constants.ENV.INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION
+    const coanaVersion = ENV.INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION
     const packageSpec = `@coana-tech/cli@~${coanaVersion}`
 
     const finalEnv = {
       ...process.env,
-      ...constants.processEnv,
       ...mixinsEnv,
       ...spawnEnv,
     }
@@ -102,7 +100,7 @@ export async function spawnCoana(
           : shadowOptions.cwd?.toString(),
       env: finalEnv as Record<string, string>,
       ipc,
-      stdio: (spawnExtra?.stdio as 'inherit' | 'pipe' | undefined) || 'inherit',
+      stdio: (spawnExtra?.['stdio'] as 'inherit' | 'pipe' | undefined) || 'inherit',
     })
 
     return result

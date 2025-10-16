@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 
-import constants from '../../constants.mts'
+import { homePath } from '../../constants/paths.mts'
 import {
   COMPLETION_CMD_PREFIX,
   getBashrcDetails,
@@ -20,9 +20,7 @@ export async function teardownTabCompletion(
   const { completionCommand, sourcingCommand, toAddToBashrc } = result.data
 
   // Remove from ~/.bashrc if found
-  const bashrc = constants.homePath
-    ? path.join(constants.homePath, '.bashrc')
-    : ''
+  const bashrc = homePath ? path.join(homePath, '.bashrc') : ''
 
   if (bashrc && fs.existsSync(bashrc)) {
     const content = fs.readFileSync(bashrc, 'utf8')

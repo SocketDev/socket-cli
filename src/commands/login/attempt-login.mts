@@ -1,14 +1,15 @@
+import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/registry/constants/socket'
 import { joinAnd } from '@socketsecurity/registry/lib/arrays'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { confirm, password, select } from '@socketsecurity/registry/lib/prompts'
 
 import { applyLogin } from './apply-login.mts'
-import constants, {
+import {
   CONFIG_KEY_API_BASE_URL,
   CONFIG_KEY_API_PROXY,
   CONFIG_KEY_API_TOKEN,
   CONFIG_KEY_DEFAULT_ORG,
-} from '../../constants.mts'
+} from '../../constants/config.mts'
 import {
   getConfigValueOrUndef,
   isConfigFromFlag,
@@ -41,7 +42,7 @@ export async function attemptLogin(
     return { ok: false, message: 'Canceled', cause: 'Canceled by user' }
   }
 
-  const apiToken = apiTokenInput || constants.SOCKET_PUBLIC_API_TOKEN
+  const apiToken = apiTokenInput || SOCKET_PUBLIC_API_TOKEN
 
   const sockSdkCResult = await setupSdk({ apiBaseUrl, apiProxy, apiToken })
   if (!sockSdkCResult.ok) {

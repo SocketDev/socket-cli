@@ -1,7 +1,12 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleDiffScan } from './handle-diff-scan.mts'
-import constants, { FLAG_JSON, FLAG_MARKDOWN } from '../../constants.mts'
+import {
+  DRY_RUN_BAILING_NOW,
+  FLAG_JSON,
+  FLAG_MARKDOWN,
+} from '../../constants/cli.mts'
+import { SOCKET_WEBSITE_URL } from '../../constants/socket.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import {
@@ -98,7 +103,7 @@ async function run(
     parentName,
   })
 
-  const SOCKET_SBOM_URL_PREFIX = `${constants.SOCKET_WEBSITE_URL}/dashboard/org/SocketDev/sbom/`
+  const SOCKET_SBOM_URL_PREFIX = `${SOCKET_WEBSITE_URL}/dashboard/org/SocketDev/sbom/`
   const SOCKET_SBOM_URL_PREFIX_LENGTH = SOCKET_SBOM_URL_PREFIX.length
 
   const {
@@ -117,7 +122,7 @@ async function run(
     org: string
   }
 
-  const interactive = !!cli.flags.interactive
+  const interactive = !!cli.flags['interactive']
 
   let [id1 = '', id2 = ''] = cli.input
   // Support dropping in full socket urls to an sbom.
@@ -175,7 +180,7 @@ async function run(
   }
 
   if (dryRun) {
-    logger.log(constants.DRY_RUN_BAILING_NOW)
+    logger.log(DRY_RUN_BAILING_NOW)
     return
   }
 

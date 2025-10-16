@@ -24,9 +24,9 @@
  *   - Python CLI: src/utils/python/standalone.mts
  */
 
+import { WIN32 } from '@socketsecurity/registry/constants/platform'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
-import constants from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { filterFlags } from '../../utils/process/cmd.mts'
@@ -35,8 +35,6 @@ import type {
   CliCommandConfig,
   CliCommandContext,
 } from '../../utils/cli/with-subcommands.mjs'
-
-const { WIN32 } = constants
 
 const CMD_NAME = 'pip'
 const description = 'Run pip with Socket Firewall security'

@@ -1,11 +1,12 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleAnalytics } from './handle-analytics.mts'
-import constants, {
+import {
+  DRY_RUN_BAILING_NOW,
   FLAG_JSON,
   FLAG_MARKDOWN,
-  V1_MIGRATION_GUIDE_URL,
-} from '../../constants.mts'
+} from '../../constants/cli.mts'
+import { V1_MIGRATION_GUIDE_URL } from '../../constants/socket.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import {
@@ -117,9 +118,9 @@ async function run(
     markdown,
   } = cli.flags as unknown as { file: string; json: boolean; markdown: boolean }
 
-  const dryRun = !!cli.flags.dryRun
+  const dryRun = !!cli.flags['dryRun']
 
-  const noLegacy = !cli.flags.scope && !cli.flags.repo && !cli.flags.time
+  const noLegacy = !cli.flags['scope'] && !cli.flags['repo'] && !cli.flags['time']
 
   const hasApiToken = hasDefaultApiToken()
 
@@ -176,7 +177,7 @@ async function run(
   }
 
   if (dryRun) {
-    logger.log(constants.DRY_RUN_BAILING_NOW)
+    logger.log(DRY_RUN_BAILING_NOW)
     return
   }
 

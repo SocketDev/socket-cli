@@ -17,7 +17,6 @@ async function main() {
 
   // Dynamically import ESM modules.
   const React = await import('react')
-  // @ts-expect-error - ink module not available currently
   const { render } = await import('ink')
   const { AuditLogApp } = await import(
     pathToFileURL(new URL('./AuditLogApp.js', import.meta.url).pathname).href

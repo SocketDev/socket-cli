@@ -2,13 +2,16 @@ import { existsSync } from 'node:fs'
 import Module from 'node:module'
 import path from 'node:path'
 
+import { NPM } from '@socketsecurity/registry/constants/agents'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import constants, { NODE_MODULES, NPM } from '../../constants.mts'
+import ENV from '../../constants/env.mts'
+import { SOCKET_CLI_ISSUES_URL } from '../../constants/github.mts'
+import { NODE_MODULES } from '../../constants/packages.mts'
 import {
   findBinPathDetailsSync,
   findNpmDirPathSync,
-} from '../fs/path-resolve.mjs'
+} from '../fs/path-resolve.mts'
 
 function exitWithBinPathError(binName: string): never {
   logger.fail(
@@ -47,7 +50,7 @@ export function getNpmDirPath() {
     const npmBinPath = getNpmBinPath()
     _npmDirPath = npmBinPath ? findNpmDirPathSync(npmBinPath) : undefined
     if (!_npmDirPath) {
-      _npmDirPath = constants.ENV.SOCKET_CLI_NPM_PATH || undefined
+      _npmDirPath = ENV.SOCKET_CLI_NPM_PATH || undefined
     }
     if (!_npmDirPath) {
       let message = 'Unable to find npm CLI install directory.'
@@ -56,7 +59,7 @@ export function getNpmDirPath() {
       }
       message +=
         '\n\nThis is may be a bug with socket-npm related to changes to the npm CLI.'
-      message += `\nPlease report to ${constants.SOCKET_CLI_ISSUES_URL}.`
+      message += `\nPlease report to ${SOCKET_CLI_ISSUES_URL}.`
       logger.fail(message)
       // The exit code 127 indicates that the command or binary being executed
       // could not be found.

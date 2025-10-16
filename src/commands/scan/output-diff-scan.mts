@@ -5,7 +5,7 @@ import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import constants from '../../constants.mts'
+import { SOCKET_WEBSITE_URL } from '../../constants/socket.mts'
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
 import { fileLink } from '../../utils/terminal/link.mts'
@@ -103,7 +103,7 @@ async function handleJson(
 async function handleMarkdown(
   data: SocketSdkSuccessResult<'GetOrgDiffScan'>['data'],
 ) {
-  const SOCKET_SBOM_URL_PREFIX = `${constants.SOCKET_WEBSITE_URL}/dashboard/org/SocketDev/sbom/`
+  const SOCKET_SBOM_URL_PREFIX = `${SOCKET_WEBSITE_URL}/dashboard/org/SocketDev/sbom/`
 
   logger.log('# Scan diff result')
   logger.log('')

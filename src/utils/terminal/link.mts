@@ -2,7 +2,7 @@ import path from 'node:path'
 
 import terminalLink from 'terminal-link'
 
-import { SOCKET_WEBSITE_URL } from '../../constants.mts'
+import { SOCKET_WEBSITE_URL } from '../../constants/socket.mts'
 
 /**
  * Creates a terminal link to a local file.

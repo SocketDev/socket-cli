@@ -1,20 +1,22 @@
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 
+import { UTF8 } from '@socketsecurity/registry/constants/encoding'
+import { DOT_SOCKET_DIR, MANIFEST_JSON } from '@socketsecurity/registry/constants/paths'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { normalizePath } from '@socketsecurity/registry/lib/path'
 import { pluralize } from '@socketsecurity/registry/lib/words'
 
+
 import { PatchManifestSchema } from './manifest-schema.mts'
 import { outputPatchRmResult } from './output-patch-rm-result.mts'
-import { DOT_SOCKET_DIR, MANIFEST_JSON, UTF8 } from '../../constants.mts'
-import { getErrorCause, InputError } from '../../utils/error/errors.mjs'
+import { InputError, getErrorCause } from '../../utils/error/errors.mjs'
 import {
   cleanupBackups,
   getPatchMetadata,
   restoreAllBackups,
-} from '../../utils/manifest/patches/backup.mts'
-import { removePatch } from '../../utils/manifest/patches/index.mts'
+} from '../../utils/manifest/patch-backup.mts'
+import { removePatch } from '../../utils/manifest/patches.mts'
 import { normalizePurl } from '../../utils/purl/parse.mjs'
 
 import type { OutputKind } from '../../types.mts'
@@ -66,7 +68,7 @@ export async function handlePatchRm({
       throw new InputError('Patch does not have a UUID for backup restoration')
     }
 
-    spinner.text = 'Checking for backups'
+    spinner.text('Checking for backups')
 
     const metadata = await getPatchMetadata(uuid)
     if (!metadata) {
@@ -80,31 +82,30 @@ export async function handlePatchRm({
     let filesRestored = 0
 
     if (metadata) {
-      spinner.text = 'Restoring original files from backups'
+      spinner.text('Restoring original files from backups')
 
       // Restore all backed up files.
-      const restoreResults = await restoreAllBackups(uuid, cwd)
+      const restoreResults = await restoreAllBackups(uuid)
 
-      filesRestored = restoreResults.filter(r => r.restored).length
-      const failed = restoreResults.filter(r => !r.restored)
+      filesRestored = restoreResults.restored.length
 
-      if (failed.length > 0) {
+      if (restoreResults.failed.length > 0) {
         spinner.stop()
         logger.warn(
-          `Failed to restore ${failed.length} ${pluralize('file', { count: failed.length })}:`,
+          `Failed to restore ${restoreResults.failed.length} ${pluralize('file', { count: restoreResults.failed.length })}:`,
         )
-        for (const { error, filePath } of failed) {
-          logger.log(`  - ${filePath}: ${error}`)
+        for (const filePath of restoreResults.failed) {
+          logger.log(`  - ${filePath}`)
         }
       }
 
       if (!keepBackups) {
-        spinner.text = 'Cleaning up backups'
+        spinner.text('Cleaning up backups')
         await cleanupBackups(uuid)
       }
     }
 
-    spinner.text = 'Removing patch from manifest'
+    spinner.text('Removing patch from manifest')
 
     // Remove patch from manifest.
     await removePatch(normalizedPurl, cwd)

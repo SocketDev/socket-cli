@@ -1,12 +1,14 @@
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 
+import { UTF8 } from '@socketsecurity/registry/constants/encoding'
+import { DOT_SOCKET_DIR, MANIFEST_JSON } from '@socketsecurity/registry/constants/paths'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { normalizePath } from '@socketsecurity/registry/lib/path'
 
+
 import { PatchManifestSchema } from './manifest-schema.mts'
 import { outputPatchInfoResult } from './output-patch-info-result.mts'
-import { DOT_SOCKET_DIR, MANIFEST_JSON, UTF8 } from '../../constants.mts'
 import { InputError, getErrorCause } from '../../utils/error/errors.mjs'
 import { normalizePurl } from '../../utils/purl/parse.mjs'
 

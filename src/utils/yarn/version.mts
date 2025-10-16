@@ -1,6 +1,7 @@
+import { WIN32 } from '@socketsecurity/registry/constants/platform'
 import { spawnSync } from '@socketsecurity/registry/lib/spawn'
 
-import constants, { FLAG_VERSION } from '../../constants.mts'
+import { FLAG_VERSION } from '../../constants/cli.mts'
 import { getYarnBinPath } from '../yarn/paths.mts'
 
 let _isYarnBerry: boolean | undefined
@@ -12,7 +13,7 @@ export function isYarnBerry(): boolean {
         // On Windows, yarn is often a .cmd file that requires shell execution.
         // The spawn function from @socketsecurity/registry will handle this properly
         // when shell is true.
-        shell: constants.WIN32,
+        shell: WIN32,
       })
 
       if (result.status === 0 && result.stdout) {

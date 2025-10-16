@@ -1,11 +1,13 @@
 import { debug, debugDir } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import constants, {
+import {
   FLAG_JSON,
   OUTPUT_JSON,
   OUTPUT_MARKDOWN,
-} from '../../constants.mts'
+  REDACTED,
+} from '../../constants/cli.mts'
+import ENV from '../../constants/env.mts'
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 import { mdTable } from '../../utils/output/markdown.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
@@ -86,9 +88,7 @@ export async function outputAsJson(
     ok: true,
     data: {
       desc: 'Audit logs for given query',
-      generated: constants.ENV.VITEST
-        ? constants.REDACTED
-        : new Date().toISOString(),
+      generated: ENV.VITEST ? REDACTED : new Date().toISOString(),
       logType,
       nextPage: auditLogs.data.nextPage,
       org: orgSlug,
@@ -150,7 +150,7 @@ These are the Socket.dev audit logs as per requested query.
 - page: ${page}
 - next page: ${auditLogs.nextPage}
 - per page: ${perPage}
-- generated: ${constants.ENV.VITEST ? constants.REDACTED : new Date().toISOString()}
+- generated: ${ENV.VITEST ? REDACTED : new Date().toISOString()}
 
 ${table}
 `
@@ -173,15 +173,22 @@ async function outputWithInk(
   orgSlug: string,
 ): Promise<void> {
   const React = await import('react')
-  // @ts-expect-error - tsx files treated as CJS by tsgo without package.json type:module
   const { render } = await import('ink')
-  // @ts-expect-error - tsx files treated as CJS by tsgo without package.json type:module
   const { AuditLogApp } = await import('./AuditLogApp.js')
 
   render(
     React.createElement(AuditLogApp, {
       orgSlug,
-      results: data.results,
+      results: data.results.map(entry => ({
+        created_at: entry.created_at || '',
+        event_id: entry.event_id || '',
+        formatted_created_at: entry.created_at || '',
+        ip_address: entry.ip_address || '',
+        type: entry.type || '',
+        user_agent: entry.user_agent || '',
+        user_email: entry.user_email || '',
+        payload: entry.payload ?? {},
+      })),
     }),
   )
 }

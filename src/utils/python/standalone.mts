@@ -46,17 +46,18 @@ import path from 'node:path'
 
 import semver from 'semver'
 
+import { WIN32 } from '@socketsecurity/registry/constants/platform'
 import { whichBin } from '@socketsecurity/registry/lib/bin'
 import { httpDownload } from '@socketsecurity/registry/lib/http-request'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
-import constants from '../../constants.mts'
+
+import ENV from '../../constants/env.mts'
+import { PYTHON_MIN_VERSION } from '../../constants/packages.mts'
 import { getDlxCachePath } from '../dlx/binary.mts'
 import { InputError, getErrorCause } from '../error/errors.mts'
 
 import type { CResult } from '../../types.mjs'
-
-const { ENV, PYTHON_MIN_VERSION, WIN32 } = constants
 
 /**
  * Get the download URL for python-build-standalone based on platform and architecture.
@@ -297,9 +298,14 @@ export async function spawnSocketPython(
     // Ensure socketcli is installed
     await ensureSocketCli(pythonBin)
 
-    const finalEnv = {
+    const finalEnv: Record<string, string | undefined> = {
       ...process.env,
-      ...constants.processEnv,
+      ...Object.fromEntries(
+        Object.entries(ENV).map(([key, value]) => [
+          key,
+          value === undefined ? undefined : String(value),
+        ]),
+      ),
       ...options?.env,
     }
 

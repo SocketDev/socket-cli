@@ -1,17 +1,12 @@
 import { describe, expect } from 'vitest'
 
-import constants, {
-  FLAG_CONFIG,
-  FLAG_DRY_RUN,
-  FLAG_HELP,
-  FLAG_ORG,
-} from '../../../src/constants.mts'
 import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
+import { FLAG_CONFIG, FLAG_DRY_RUN, FLAG_HELP, FLAG_ORG } from '../constants/cli.mts'
+import { getBinCliPath } from '../constants/paths.mts'
 
-describe('socket threat-feed', async () => {
-  const { binCliPath } = constants
+const binCliPath = getBinCliPath()
 
-  cmdit(
+describe('socket threat-feed', async () => {cmdit(
     ['threat-feed', FLAG_HELP, FLAG_CONFIG, '{}'],
     `should support ${FLAG_HELP}`,
     async cmd => {

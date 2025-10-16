@@ -128,7 +128,7 @@ export { logger }
  * debug('Scanning directory...') // Only logs if DEBUG=socket:cli:scan
  */
 export function createDebugLogger(namespace: string): (...args: any[]) => void {
-  const debugEnv = process.env.DEBUG
+  const debugEnv = process.env['DEBUG']
   const enabled =
     debugEnv === '*' ||
     debugEnv?.split(',').some(ns => {

@@ -47,7 +47,8 @@ import {
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 import { parseUrl } from '@socketsecurity/registry/lib/url'
 
-import constants from '../../constants.mts'
+import ENV from '../../constants/env.mts'
+import { getGithubCachePath } from '../../constants/paths.mjs'
 import { formatErrorWithDetail } from '../error/errors.mts'
 
 import type { components } from '@octokit/openapi-types'
@@ -61,7 +62,8 @@ async function readCache(
   // 5 minute in milliseconds time to live (TTL).
   ttlMs = 5 * 60 * 1000,
 ): Promise<JsonContent | undefined> {
-  const cacheJsonPath = path.join(constants.githubCachePath, `${key}.json`)
+  const githubCachePath = getGithubCachePath()
+  const cacheJsonPath = path.join(githubCachePath, `${key}.json`)
   const stat = safeStatsSync(cacheJsonPath)
   if (stat) {
     const isExpired = Date.now() - Number(stat.mtimeMs) > ttlMs
@@ -76,7 +78,7 @@ export async function writeCache(
   key: string,
   data: JsonContent,
 ): Promise<void> {
-  const { githubCachePath } = constants
+  const githubCachePath = getGithubCachePath()
   const cacheJsonPath = path.join(githubCachePath, `${key}.json`)
   if (!existsSync(githubCachePath)) {
     await fs.mkdir(githubCachePath, { recursive: true })
@@ -90,7 +92,7 @@ export async function cacheFetch<T>(
   ttlMs?: number | undefined,
 ): Promise<T> {
   // Optionally disable cache.
-  if (constants.ENV.DISABLE_GITHUB_CACHE) {
+  if (ENV.DISABLE_GITHUB_CACHE) {
     return await fetcher()
   }
   let data = (await readCache(key, ttlMs)) as T
@@ -185,15 +187,13 @@ export async function fetchGhsaDetails(
 let _octokit: Octokit | undefined
 export function getOctokit(): Octokit {
   if (_octokit === undefined) {
-    const { SOCKET_CLI_GITHUB_TOKEN } = constants.ENV
+    const { SOCKET_CLI_GITHUB_TOKEN } = ENV
     if (!SOCKET_CLI_GITHUB_TOKEN) {
       debugNs('notice', 'miss: SOCKET_CLI_GITHUB_TOKEN env var')
     }
     const octokitOptions = {
       ...(SOCKET_CLI_GITHUB_TOKEN ? { auth: SOCKET_CLI_GITHUB_TOKEN } : {}),
-      ...(constants.ENV.GITHUB_API_URL
-        ? { baseUrl: constants.ENV.GITHUB_API_URL }
-        : {}),
+      ...(ENV.GITHUB_API_URL ? { baseUrl: ENV.GITHUB_API_URL } : {}),
     }
     debugDir('inspect', { octokitOptions })
     _octokit = new Octokit(octokitOptions)
@@ -204,7 +204,7 @@ export function getOctokit(): Octokit {
 let _octokitGraphql: typeof OctokitGraphql | undefined
 export function getOctokitGraphql(): typeof OctokitGraphql {
   if (!_octokitGraphql) {
-    const { SOCKET_CLI_GITHUB_TOKEN } = constants.ENV
+    const { SOCKET_CLI_GITHUB_TOKEN } = ENV
     if (!SOCKET_CLI_GITHUB_TOKEN) {
       debugNs('notice', 'miss: SOCKET_CLI_GITHUB_TOKEN env var')
     }
@@ -284,7 +284,7 @@ export async function setGitRemoteGithubRepoUrl(
   token: string,
   cwd = process.cwd(),
 ): Promise<boolean> {
-  const { GITHUB_SERVER_URL } = constants.ENV
+  const { GITHUB_SERVER_URL } = ENV
   const urlObj = parseUrl(GITHUB_SERVER_URL || '')
   const host = urlObj?.host
   if (!host) {

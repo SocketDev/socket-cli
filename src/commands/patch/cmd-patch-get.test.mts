@@ -5,7 +5,9 @@ import trash from 'trash'
 import { afterEach, describe, expect } from 'vitest'
 
 import { cmdit, spawnSocketCli, testPath } from '../../../test/utils.mts'
-import constants, { FLAG_CONFIG, FLAG_HELP } from '../../constants.mts'
+import { FLAG_CONFIG, FLAG_HELP } from '../constants/cli.mts'
+import { getBinCliPath } from '../constants/paths.mts'
+const binCliPath = getBinCliPath()
 
 const fixtureBaseDir = path.join(testPath, 'fixtures/commands/patch')
 const pnpmFixtureDir = path.join(fixtureBaseDir, 'pnpm')
@@ -27,10 +29,7 @@ async function cleanupPatchesDir() {
   ])
 }
 
-describe('socket patch get', async () => {
-  const { binCliPath } = constants
-
-  afterEach(async () => {
+describe('socket patch get', async () => {afterEach(async () => {
     await cleanupNodeModules()
     await cleanupPatchesDir()
   })

@@ -1,5 +1,6 @@
 import path from 'node:path'
 
+import { getSpinner } from '@socketsecurity/registry/constants/process'
 import { debug, debugDir } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { pluralize } from '@socketsecurity/registry/lib/words'
@@ -10,7 +11,8 @@ import { finalizeTier1Scan } from './finalize-tier1-scan.mts'
 import { handleScanReport } from './handle-scan-report.mts'
 import { outputCreateNewScan } from './output-create-new-scan.mts'
 import { performReachabilityAnalysis } from './perform-reachability-analysis.mts'
-import constants from '../../constants.mts'
+import { DOT_SOCKET_DOT_FACTS_JSON } from '../../constants/paths.mts'
+import { FOLD_SETTING_VERSION } from '../../constants/reporting.mjs'
 import { getPackageFilesForScan } from '../../utils/fs/path-resolve.mjs'
 import { readOrDefaultSocketJson } from '../../utils/socket/json.mts'
 import { socketDocsLink } from '../../utils/terminal/link.mts'
@@ -101,8 +103,7 @@ export async function handleCreateNewScan({
     logger.info('Auto-generation finished. Proceeding with Scan creation.')
   }
 
-  const { spinner } = constants
-
+  const spinner = getSpinner()!
   const supportedFilesCResult = await fetchSupportedScanFileNames({ spinner })
   if (!supportedFilesCResult.ok) {
     debug('Failed to fetch supported scan file names')
@@ -113,7 +114,7 @@ export async function handleCreateNewScan({
     })
     return
   }
-  debug(`Fetched ${supportedFilesCResult.data.size} supported file types`)
+  debug(`Fetched ${supportedFilesCResult.data['size']} supported file types`)
 
   spinner.start('Searching for local files to include in scan...')
 
@@ -187,9 +188,7 @@ export async function handleCreateNewScan({
       ...packagePaths.filter(
         // Ensure the .socket.facts.json isn't duplicated in case it happened
         // to be in the scan folder before the analysis was run.
-        p =>
-          path.basename(p).toLowerCase() !==
-          constants.DOT_SOCKET_DOT_FACTS_JSON,
+        p => path.basename(p).toLowerCase() !== DOT_SOCKET_DOT_FACTS_JSON,
       ),
       ...(reachabilityReport ? [reachabilityReport] : []),
     ]
@@ -226,7 +225,7 @@ export async function handleCreateNewScan({
     if (scanId) {
       await handleScanReport({
         filepath: '-',
-        fold: constants.FOLD_SETTING_VERSION,
+        fold: FOLD_SETTING_VERSION,
         includeLicensePolicy: true,
         orgSlug,
         outputKind,

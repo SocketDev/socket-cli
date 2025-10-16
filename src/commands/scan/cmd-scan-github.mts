@@ -5,7 +5,8 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { handleCreateGithubScan } from './handle-create-github-scan.mts'
 import { outputScanGithub } from './output-scan-github.mts'
 import { suggestOrgSlug } from './suggest-org-slug.mts'
-import constants from '../../constants.mts'
+import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'
+import ENV from '../../constants/env.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import {
@@ -56,7 +57,7 @@ async function run(
       },
       githubToken: {
         type: 'string',
-        default: constants.ENV.SOCKET_CLI_GITHUB_TOKEN,
+        default: ENV.SOCKET_CLI_GITHUB_TOKEN,
         description:
           'Required GitHub token for authentication.\nMay set environment variable GITHUB_TOKEN or SOCKET_CLI_GITHUB_TOKEN instead.',
       },
@@ -126,7 +127,7 @@ async function run(
   })
 
   const {
-    githubToken = constants.ENV.SOCKET_CLI_GITHUB_TOKEN,
+    githubToken = ENV.SOCKET_CLI_GITHUB_TOKEN,
     interactive = true,
     json,
     markdown,
@@ -140,7 +141,7 @@ async function run(
     orgGithub: string
   }
 
-  const dryRun = !!cli.flags.dryRun
+  const dryRun = !!cli.flags['dryRun']
 
   let { all, githubApiUrl, orgGithub, repos } = cli.flags as unknown as {
     all: boolean | undefined
@@ -250,7 +251,7 @@ async function run(
 
   // Note exiting earlier to skirt a hidden auth requirement
   if (dryRun) {
-    logger.log(constants.DRY_RUN_BAILING_NOW)
+    logger.log(DRY_RUN_BAILING_NOW)
     return
   }
 

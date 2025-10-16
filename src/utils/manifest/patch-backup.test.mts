@@ -29,8 +29,8 @@ describe('patch-backup', () => {
     testDir = await mkdtemp(join(tmpdir(), 'patch-backup-test-'))
 
     // Override HOME to use test directory
-    originalHome = process.env.HOME
-    process.env.HOME = testDir
+    originalHome = process.env['HOME']
+    process.env['HOME'] = testDir
 
     // Clear cacache before each test
     await clear()
@@ -39,9 +39,9 @@ describe('patch-backup', () => {
   afterEach(async () => {
     // Restore original HOME
     if (originalHome !== undefined) {
-      process.env.HOME = originalHome
+      process.env['HOME'] = originalHome
     } else {
-      delete process.env.HOME
+      delete process.env['HOME']
     }
 
     // Clean up test directory

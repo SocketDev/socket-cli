@@ -7,16 +7,16 @@ import {
 } from '@socketsecurity/registry/lib/fs'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import constants, { REDACTED, SOCKET_JSON } from '../../constants.mts'
+import { REDACTED } from '../../constants/cli.mts'
+import ENV from '../../constants/env.mts'
+import { SOCKET_JSON } from '../../constants/socket.mts'
 import { tildify } from '../../utils/fs/home-path.mjs'
 
 export async function outputCmdJson(cwd: string) {
-  logger.info('Target cwd:', constants.ENV.VITEST ? REDACTED : tildify(cwd))
+  logger.info('Target cwd:', ENV.VITEST ? REDACTED : tildify(cwd))
 
   const sockJsonPath = path.join(cwd, SOCKET_JSON)
-  const tildeSockJsonPath = constants.ENV.VITEST
-    ? REDACTED
-    : tildify(sockJsonPath)
+  const tildeSockJsonPath = ENV.VITEST ? REDACTED : tildify(sockJsonPath)
 
   if (!existsSync(sockJsonPath)) {
     logger.fail(`Not found: ${tildeSockJsonPath}`)

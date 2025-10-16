@@ -1,6 +1,7 @@
 import semver from 'semver'
 
-import { NPM } from '../../constants.mjs'
+import { NPM } from '@socketsecurity/registry/constants/agents'
+
 import { stripPnpmPeerSuffix } from '../pnpm/lockfile.mts'
 
 import type { PackageURL } from '@socketregistry/packageurl-js'

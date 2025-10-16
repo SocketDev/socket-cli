@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { OUTPUT_JSON, OUTPUT_MARKDOWN, OUTPUT_TEXT } from '../../constants.mts'
+import { OUTPUT_JSON, OUTPUT_MARKDOWN, OUTPUT_TEXT } from '../constants/cli.mts'
 import { getOutputKind } from '../output/mode.mts'
 
 describe('getOutputKind', () => {

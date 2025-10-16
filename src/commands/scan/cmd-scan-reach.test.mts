@@ -2,19 +2,15 @@ import path from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
-import constants, {
-  FLAG_CONFIG,
-  FLAG_DRY_RUN,
-  FLAG_HELP,
-} from '../../../src/constants.mts'
 import { cmdit, spawnSocketCli, testPath } from '../../../test/utils.mts'
+import { FLAG_CONFIG, FLAG_DRY_RUN, FLAG_HELP } from '../constants/cli.mts'
+import { getBinCliPath } from '../constants/paths.mts'
+
+const binCliPath = getBinCliPath()
 
 const _fixtureBaseDir = path.join(testPath, 'fixtures/commands/scan/reach')
 
-describe('socket scan reach', async () => {
-  const { binCliPath } = constants
-
-  cmdit(
+describe('socket scan reach', async () => {cmdit(
     ['scan', 'reach', FLAG_HELP, FLAG_CONFIG, '{}'],
     `should support ${FLAG_HELP}`,
     async cmd => {

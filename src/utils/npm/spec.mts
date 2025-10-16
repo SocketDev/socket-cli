@@ -23,7 +23,7 @@
 
 import npmPackageArg from 'npm-package-arg'
 
-import { NPM } from '../../constants.mts'
+import { NPM } from '../../constants/agents.mts'
 import { createPurlObject } from '../purl/parse.mts'
 
 export type {

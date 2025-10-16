@@ -2,32 +2,34 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { isRunningInTemporaryExecutor, shouldSkipShadow } from './detection.mts'
 
+import type { default as ENV } from '../../constants/env.mts'
+
 // Mock the dependencies.
 vi.mock('@socketsecurity/registry/lib/path', () => ({
   normalizePath: vi.fn((p: string) => p.replace(/\\/g, '/')),
 }))
 
-vi.mock('../constants.mts', () => ({
+// Mock the ENV module.
+vi.mock('../../constants/env.mts', () => ({
   default: {
-    ENV: {
-      npm_config_user_agent: undefined,
-      npm_config_cache: undefined,
-    },
+    npm_config_user_agent: undefined,
+    npm_config_cache: undefined,
   },
 }))
 
 describe('detection', () => {
-  let originalEnv: any
+  let mockEnv: typeof ENV
 
   beforeEach(async () => {
     vi.clearAllMocks()
-    const constants = (await import('../constants.mts')).default
-    originalEnv = { ...constants.ENV }
+    mockEnv = (await import('../../constants/env.mts')).default
+    // Reset the mock values.
+    mockEnv.npm_config_user_agent = undefined
+    mockEnv.npm_config_cache = undefined
   })
 
-  afterEach(async () => {
-    const constants = (await import('../constants.mts')).default
-    constants.ENV = originalEnv
+  afterEach(() => {
+    vi.resetModules()
   })
 
   describe('isRunningInTemporaryExecutor', () => {
@@ -36,25 +38,22 @@ describe('detection', () => {
       expect(result).toBe(false)
     })
 
-    it('detects npm exec in user agent', async () => {
-      const constants = (await import('../constants.mts')).default
-      constants.ENV.npm_config_user_agent = 'npm/8.0.0 node/v16.0.0 darwin exec'
+    it('detects npm exec in user agent', () => {
+      mockEnv.npm_config_user_agent = 'npm/8.0.0 node/v16.0.0 darwin exec'
 
       const result = isRunningInTemporaryExecutor()
       expect(result).toBe(true)
     })
 
-    it('detects npx in user agent', async () => {
-      const constants = (await import('../constants.mts')).default
-      constants.ENV.npm_config_user_agent = 'npm/8.0.0 node/v16.0.0 darwin npx'
+    it('detects npx in user agent', () => {
+      mockEnv.npm_config_user_agent = 'npm/8.0.0 node/v16.0.0 darwin npx'
 
       const result = isRunningInTemporaryExecutor()
       expect(result).toBe(true)
     })
 
-    it('detects pnpm dlx in user agent', async () => {
-      const constants = (await import('../constants.mts')).default
-      constants.ENV.npm_config_user_agent = 'pnpm/7.0.0 node/v16.0.0 darwin dlx'
+    it('detects pnpm dlx in user agent', () => {
+      mockEnv.npm_config_user_agent = 'pnpm/7.0.0 node/v16.0.0 darwin dlx'
 
       const result = isRunningInTemporaryExecutor()
       expect(result).toBe(true)
@@ -87,33 +86,29 @@ describe('detection', () => {
       expect(result).toBe(false)
     })
 
-    it('skips when npm exec in user agent', async () => {
-      const constants = (await import('../constants.mts')).default
-      constants.ENV.npm_config_user_agent = 'npm/8.0.0 node/v16.0.0 darwin exec'
+    it('skips when npm exec in user agent', () => {
+      mockEnv.npm_config_user_agent = 'npm/8.0.0 node/v16.0.0 darwin exec'
 
       const result = shouldSkipShadow('/usr/local/bin/npm', {})
       expect(result).toBe(true)
     })
 
-    it('skips when npx in user agent', async () => {
-      const constants = (await import('../constants.mts')).default
-      constants.ENV.npm_config_user_agent = 'npm/8.0.0 node/v16.0.0 darwin npx'
+    it('skips when npx in user agent', () => {
+      mockEnv.npm_config_user_agent = 'npm/8.0.0 node/v16.0.0 darwin npx'
 
       const result = shouldSkipShadow('/usr/local/bin/npm', {})
       expect(result).toBe(true)
     })
 
-    it('skips when dlx in user agent', async () => {
-      const constants = (await import('../constants.mts')).default
-      constants.ENV.npm_config_user_agent = 'pnpm/7.0.0 node/v16.0.0 darwin dlx'
+    it('skips when dlx in user agent', () => {
+      mockEnv.npm_config_user_agent = 'pnpm/7.0.0 node/v16.0.0 darwin dlx'
 
       const result = shouldSkipShadow('/usr/local/bin/pnpm', {})
       expect(result).toBe(true)
     })
 
-    it('skips when cwd is in npm cache', async () => {
-      const constants = (await import('../constants.mts')).default
-      constants.ENV.npm_config_cache = '/Users/test/.npm'
+    it('skips when cwd is in npm cache', () => {
+      mockEnv.npm_config_cache = '/Users/test/.npm'
 
       const result = shouldSkipShadow('/usr/local/bin/npm', {
         cwd: '/Users/test/.npm/_npx/12345/node_modules/.bin',

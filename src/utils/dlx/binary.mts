@@ -31,7 +31,7 @@ import { readJson } from '@socketsecurity/registry/lib/fs'
 import { normalizePath } from '@socketsecurity/registry/lib/path'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
-import constants from '../../constants.mts'
+import { DLX_BINARY_CACHE_TTL } from '../../constants/cache.mjs'
 import { InputError } from '../error/errors.mts'
 
 import type {
@@ -77,8 +77,6 @@ export interface DlxBinaryResult {
   /** The spawn promise for the running process. */
   spawnPromise: ReturnType<typeof spawn>
 }
-
-const { DLX_BINARY_CACHE_TTL } = constants
 
 /**
  * Generate a cache directory name from URL, similar to pnpm/npx.

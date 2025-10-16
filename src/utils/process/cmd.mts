@@ -19,7 +19,7 @@
  * - stripHelpFlags: Remove help flags (-h, --help)
  */
 
-import { FLAG_CONFIG, FLAG_HELP } from '../../constants.mts'
+import { FLAG_CONFIG, FLAG_HELP } from '../../constants/cli.mjs'
 import { camelToKebab } from '../data/strings.mts'
 
 const CONFIG_FLAG_LONG_NAME = FLAG_CONFIG
@@ -49,7 +49,7 @@ export function cmdFlagsToString(args: string[] | readonly string[]): string {
   const result = []
   for (let i = 0, { length } = args; i < length; i += 1) {
     const arg = args[i]?.trim()
-    if (arg.startsWith('--')) {
+    if (arg && arg.startsWith('--')) {
       const nextArg = i + 1 < length ? args[i + 1]?.trim() : undefined
       // Check if the next item exists and is NOT another flag.
       if (nextArg && !nextArg.startsWith('--') && !nextArg.startsWith('-')) {
@@ -58,7 +58,7 @@ export function cmdFlagsToString(args: string[] | readonly string[]): string {
       } else {
         result.push(arg)
       }
-    } else {
+    } else if (arg) {
       // Include non-flag arguments (commands, package names, etc.).
       result.push(arg)
     }
@@ -152,6 +152,9 @@ export function getConfigFlag(
 ): string | undefined {
   for (let i = 0, { length } = argv; i < length; i += 1) {
     const arg = argv[i]?.trim()
+    if (!arg) {
+      continue
+    }
     // Handle --config=value format.
     if (arg.startsWith(CONFIG_FLAG_ASSIGNMENT)) {
       return arg.slice(CONFIG_FLAG_ASSIGNMENT_LENGTH)

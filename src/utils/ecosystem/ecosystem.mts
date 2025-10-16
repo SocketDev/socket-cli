@@ -21,7 +21,7 @@
  * - Ensures type safety for ecosystem operations
  */
 
-import { NPM } from '../../constants.mjs'
+import { NPM } from '@socketsecurity/registry/constants/agents'
 
 import type { components } from '@socketsecurity/sdk/types/api'
 

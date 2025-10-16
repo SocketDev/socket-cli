@@ -2,7 +2,7 @@ import fs from 'node:fs/promises'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import constants from '../../constants.mts'
+import { SOCKET_WEBSITE_URL } from '../../constants/socket.mts'
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 import { mdTable } from '../../utils/output/markdown.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
@@ -91,7 +91,7 @@ Scan ID: ${scanId}
 
 ${md}
 
-View this report at: ${constants.SOCKET_WEBSITE_URL}/dashboard/org/${orgSlug}/sbom/${scanId}
+View this report at: ${SOCKET_WEBSITE_URL}/dashboard/org/${orgSlug}/sbom/${scanId}
   `.trim()}\n`
 
   if (filePath && filePath !== '-') {

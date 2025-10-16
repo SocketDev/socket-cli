@@ -2,26 +2,22 @@ import path from 'node:path'
 
 import { afterEach, describe, expect } from 'vitest'
 
-import constants, {
-  FLAG_CONFIG,
-  FLAG_DRY_RUN,
-  FLAG_HELP,
-  FLAG_ID,
-  FLAG_JSON,
-  FLAG_MARKDOWN,
-} from '../../../src/constants.mts'
+import { WIN32 } from '@socketsecurity/registry/constants/platform'
+
 import { withTempFixture } from '../../../src/utils/test-fixtures.mts'
 import { cmdit, spawnSocketCli, testPath } from '../../../test/utils.mts'
+import { FLAG_CONFIG, FLAG_DRY_RUN, FLAG_HELP, FLAG_ID, FLAG_JSON, FLAG_MARKDOWN } from '../constants/cli.mts'
+import ENV from '../constants/env.mts'
+import { getBinCliPath } from '../constants/paths.mts'
 
+const binCliPath = getBinCliPath()
 const fixtureBaseDir = path.join(testPath, 'fixtures/commands/fix')
 
 // Track cleanup functions for each test.
 let cleanupFunctions: Array<() => Promise<void>> = []
 
-describe('socket fix', async () => {
-  const { binCliPath } = constants
-  // Increase timeout for CI environments and Windows where operations can be slower.
-  const testTimeout = constants.ENV.CI || constants.WIN32 ? 60_000 : 30_000
+describe('socket fix', async () => {// Increase timeout for CI environments and Windows where operations can be slower.
+  const testTimeout = ENV.CI || WIN32 ? 60_000 : 30_000
 
   afterEach(async () => {
     // Clean up all temporary directories after each test.

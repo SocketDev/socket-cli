@@ -17,11 +17,15 @@
  * - CI-mode configuration for non-interactive execution
  */
 
+import { NPM, PNPM } from '@socketsecurity/registry/constants/agents'
+import {
+  getNodeHardenFlags,
+  getNodeNoWarningsFlags,
+} from '@socketsecurity/registry/constants/node'
+import { WIN32 } from '@socketsecurity/registry/constants/platform'
 import { getOwn } from '@socketsecurity/registry/lib/objects'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
-
-import constants, { NPM, PNPM } from '../../constants.mts'
 import { shadowNpmInstall } from '../../shadow/npm/install.mts'
 import { cmdFlagsToString } from '../../utils/process/cmd.mts'
 
@@ -81,18 +85,17 @@ export function runAgentInstall(
   return spawn(agentExecPath, installArgs, {
     cwd: pkgPath,
     // Package managers on Windows often require shell execution.
-    shell: constants.WIN32,
+    shell: WIN32,
     spinner,
     stdio: 'inherit',
     ...spawnOpts,
     env: {
       ...process.env,
-      ...constants.processEnv,
       // Set CI mode for pnpm to ensure consistent behavior.
       ...(isPnpm ? { CI: '1' } : {}),
       NODE_OPTIONS: cmdFlagsToString([
-        ...(skipNodeHardenFlags ? [] : constants.nodeHardenFlags),
-        ...constants.nodeNoWarningsFlags,
+        ...(skipNodeHardenFlags ? [] : getNodeHardenFlags()),
+        ...getNodeNoWarningsFlags(),
       ]),
       // @ts-expect-error - getOwn may return undefined, but spread handles it
       ...getOwn(spawnOpts, 'env'),

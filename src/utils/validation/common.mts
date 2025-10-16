@@ -3,7 +3,7 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { checkCommandInput } from './check-input.mts'
-import constants from '../../constants.mts'
+import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'
 import { hasDefaultApiToken } from '../socket/sdk.mjs'
 
 import type { OutputKind } from '../../types.mjs'
@@ -138,7 +138,7 @@ export function runStandardValidations(options: ValidationOptions): boolean {
 
   // Handle dry run
   if (dryRun) {
-    logger.log(constants.DRY_RUN_BAILING_NOW)
+    logger.log(DRY_RUN_BAILING_NOW)
     return false
   }
 

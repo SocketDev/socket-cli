@@ -12,24 +12,10 @@
  * - Used for permission validation and help text
  */
 
-import { createRequire } from 'node:module'
-import path from 'node:path'
-
-import constants from '../../constants.mjs'
-
-const require = createRequire(import.meta.url)
-
-let _requirements:
-  | Readonly<typeof import('../../../data/command-api-requirements.json')>
-  | undefined
+import requirements from '../../../data/command-api-requirements.json' with { type: 'json' }
 
 export function getRequirements() {
-  if (_requirements === undefined) {
-    _requirements = /*@__PURE__*/ require(
-      path.join(constants.rootPath, 'data', 'command-api-requirements.json'),
-    )
-  }
-  return _requirements!
+  return requirements
 }
 
 /**

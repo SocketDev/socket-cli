@@ -1,5 +1,6 @@
 import { RequestError } from '@octokit/request-error'
 
+import { UNKNOWN_VALUE } from '@socketsecurity/registry/constants/core'
 import { debug, debugDir } from '@socketsecurity/registry/lib/debug'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
@@ -13,8 +14,7 @@ import {
   GQL_PR_STATE_CLOSED,
   GQL_PR_STATE_MERGED,
   GQL_PR_STATE_OPEN,
-  UNKNOWN_VALUE,
-} from '../../constants.mts'
+} from '../../constants/github.mts'
 import { formatErrorWithDetail } from '../../utils/error/errors.mjs'
 import { gitDeleteRemoteBranch } from '../../utils/git/git.mjs'
 import {

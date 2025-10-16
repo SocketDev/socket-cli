@@ -1,8 +1,10 @@
 import { createRequire } from 'node:module'
 
+import { NPX } from '@socketsecurity/registry/constants/agents'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import constants, { FLAG_DRY_RUN, FLAG_HELP, NPX } from '../../constants.mts'
+import { DRY_RUN_BAILING_NOW, FLAG_DRY_RUN, FLAG_HELP } from '../../constants/cli.mts'
+import { getShadowNpxBinPath } from '../../constants/paths.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { getFlagApiRequirementsOutput } from '../../utils/output/formatting.mts'
@@ -63,14 +65,14 @@ async function run(
     importMeta,
   })
 
-  const dryRun = !!cli.flags.dryRun
+  const dryRun = !!cli.flags['dryRun']
 
   if (dryRun) {
-    logger.log(constants.DRY_RUN_BAILING_NOW)
+    logger.log(DRY_RUN_BAILING_NOW)
     return
   }
 
-  const shadowNpxBin = /*@__PURE__*/ require(constants.shadowNpxBinPath)
+  const shadowNpxBin = /*@__PURE__*/ require(getShadowNpxBinPath())
 
   process.exitCode = 1
 

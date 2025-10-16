@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { checkCommandInput } from './check-input.mts'
-import { OUTPUT_JSON, OUTPUT_MARKDOWN, OUTPUT_TEXT } from '../../constants.mts'
+import { OUTPUT_JSON, OUTPUT_MARKDOWN, OUTPUT_TEXT } from '../constants/cli.mts'
 
 // Mock dependencies.
 vi.mock('yoctocolors-cjs', () => ({

@@ -21,11 +21,13 @@
 
 import semver from 'semver'
 
+import { NPM_REGISTRY_URL } from '@socketsecurity/registry/constants/agents'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { onExit } from '@socketsecurity/registry/lib/signal-exit'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
-import { NPM_REGISTRY_URL, UPDATE_NOTIFIER_TIMEOUT } from '../../constants.mts'
+
+import { UPDATE_NOTIFIER_TIMEOUT } from '../../constants/cache.mts'
 
 export interface AuthInfo {
   token: string
@@ -98,6 +100,7 @@ const NetworkUtils = {
     }
 
     const { authInfo } = { __proto__: null, ...options } as FetchOptions
+    // eslint-disable-next-line n/no-unsupported-features/node-builtins
     const headers = new Headers({
       Accept:
         'application/vnd.npm.install-v1+json; q=1.0, application/json; q=0.8, */*',

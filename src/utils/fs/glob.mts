@@ -6,6 +6,7 @@ import ignore from 'ignore'
 import micromatch from 'micromatch'
 import { parse as yamlParse } from 'yaml'
 
+import { NODE_MODULES } from '@socketsecurity/registry/constants/paths'
 import { safeReadFile } from '@socketsecurity/registry/lib/fs'
 import { defaultIgnore } from '@socketsecurity/registry/lib/globs'
 import { readPackageJson } from '@socketsecurity/registry/lib/packages'
@@ -13,7 +14,7 @@ import { transform } from '@socketsecurity/registry/lib/streams'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
 
-import { NODE_MODULES, PNPM } from '../../constants.mts'
+import { PNPM } from '../../constants/agents.mjs'
 
 import type { Agent } from '../ecosystem/environment.mts'
 import type { SocketYml } from '@socketsecurity/config'
@@ -76,7 +77,7 @@ function ignoreFileLinesToGlobPatterns(
   const patterns = []
   for (let i = 0, { length } = lines; i < length; i += 1) {
     const pattern = lines[i]?.trim()
-    if (pattern.length > 0 && pattern.charCodeAt(0) !== 35 /*'#'*/) {
+    if (pattern && pattern.length > 0 && pattern.charCodeAt(0) !== 35 /*'#'*/) {
       patterns.push(
         ignorePatternToMinimatch(
           pattern.length && pattern.charCodeAt(0) === 33 /*'!'*/

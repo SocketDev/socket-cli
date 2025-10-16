@@ -1,7 +1,7 @@
+import { getSpinner } from '@socketsecurity/registry/constants/process'
 import { debug, debugDir } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import constants from '../../constants.mts'
 import { formatErrorWithDetail } from '../../utils/error/errors.mjs'
 import {
   handleApiCallNoSpinner,
@@ -47,7 +47,7 @@ export async function fetchScanData(
   let scanStatus = 'requested...'
   let finishedFetching = false
 
-  const { spinner } = constants
+  const spinner = getSpinner()!
 
   function updateScan(status: string) {
     scanStatus = status

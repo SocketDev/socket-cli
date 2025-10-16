@@ -1,13 +1,15 @@
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 
+import { UTF8 } from '@socketsecurity/registry/constants/encoding'
+import { DOT_SOCKET_DIR, MANIFEST_JSON } from '@socketsecurity/registry/constants/paths'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { normalizePath } from '@socketsecurity/registry/lib/path'
 import { pluralize } from '@socketsecurity/registry/lib/words'
 
+
 import { PatchManifestSchema } from './manifest-schema.mts'
 import { outputPatchGetResult } from './output-patch-get-result.mts'
-import { DOT_SOCKET_DIR, MANIFEST_JSON, UTF8 } from '../../constants.mts'
 import { InputError, getErrorCause } from '../../utils/error/errors.mjs'
 import { normalizePurl } from '../../utils/purl/parse.mjs'
 
@@ -63,7 +65,7 @@ export async function handlePatchGet({
       await fs.mkdir(targetDir, { recursive: true })
     }
 
-    spinner.text = 'Copying patch files'
+    spinner.text('Copying patch files')
 
     const copiedFiles: string[] = []
     const blobsDir = normalizePath(path.join(dotSocketDirPath, 'blobs'))

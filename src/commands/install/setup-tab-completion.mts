@@ -4,7 +4,8 @@ import { fileURLToPath } from 'node:url'
 
 import { debug } from '@socketsecurity/registry/lib/debug'
 
-import constants from '../../constants.mts'
+import ENV from '../../constants/env.mts'
+import { homePath } from '../../constants/paths.mts'
 import { getBashrcDetails } from '../../utils/cli/completion.mjs'
 
 import type { CResult } from '../../types.mts'
@@ -43,9 +44,7 @@ export async function setupTabCompletion(targetName: string): Promise<
   let bashrcUpdated = false
 
   // Add to ~/.bashrc if not already there
-  const bashrcPath = constants.homePath
-    ? path.join(constants.homePath, '.bashrc')
-    : ''
+  const bashrcPath = homePath ? path.join(homePath, '.bashrc') : ''
 
   const foundBashrc = Boolean(bashrcPath && fs.existsSync(bashrcPath))
 
@@ -108,7 +107,7 @@ export function updateInstalledTabCompletionScript(
     targetPath,
     content.data.replaceAll(
       '%SOCKET_VERSION_TOKEN%',
-      constants.ENV.INLINED_SOCKET_CLI_VERSION_HASH || '',
+      ENV.INLINED_SOCKET_CLI_VERSION_HASH || '',
     ),
     'utf8',
   )

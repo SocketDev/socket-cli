@@ -57,7 +57,6 @@ export function mdTable<T extends Array<Record<string, string>>>(
 
   for (const log of logs) {
     for (let i = 0, { length } = cols; i < length; i += 1) {
-      // @ts-expect-error
       const val: unknown = log[cols[i] ?? ''] ?? ''
       cws[i] = Math.max(
         cws[i] ?? 0,
@@ -81,7 +80,6 @@ export function mdTable<T extends Array<Record<string, string>>>(
   for (const log of logs) {
     body += '|'
     for (let i = 0, { length } = cols; i < length; i += 1) {
-      // @ts-expect-error
       const val: unknown = log[cols[i] ?? ''] ?? ''
       body += ` ${String(val).padEnd(cws[i] ?? 0, ' ')} |`
     }

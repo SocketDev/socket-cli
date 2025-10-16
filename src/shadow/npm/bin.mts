@@ -1,4 +1,4 @@
-import { NPM } from '../../constants.mts'
+import { NPM } from '../../constants/agents.mts'
 import shadowNpmBase from '../npm-base.mts'
 
 import type { ShadowBinOptions, ShadowBinResult } from '../npm-base.mts'

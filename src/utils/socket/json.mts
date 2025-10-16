@@ -24,7 +24,7 @@ import path from 'node:path'
 import { debugDir, debugNs } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { SOCKET_JSON, SOCKET_WEBSITE_URL } from '../../constants.mts'
+import { SOCKET_JSON, SOCKET_WEBSITE_URL } from '../../constants/socket.mts'
 import { formatErrorWithDetail } from '../error/errors.mts'
 import { findUp } from '../fs/fs.mts'
 

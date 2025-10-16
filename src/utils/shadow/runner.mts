@@ -2,24 +2,38 @@
 
 import { createRequire } from 'node:module'
 
-import constants, { FLAG_SILENT } from '../../constants.mts'
+import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/registry/constants/socket'
+
+import { NPM, PNPM, YARN } from '../../constants/agents.mts'
+import { FLAG_SILENT } from '../../constants/cli.mts'
+import {
+  PACKAGE_LOCK_JSON,
+  PNPM_LOCK_YAML,
+  YARN_LOCK,
+} from '../../constants/packages.mts'
+import {
+  SOCKET_CLI_SHADOW_ACCEPT_RISKS,
+  SOCKET_CLI_SHADOW_API_TOKEN,
+  SOCKET_CLI_SHADOW_SILENT,
+  getShadowNpmBinPath,
+  getShadowNpxBinPath,
+  getShadowPnpmBinPath,
+  getShadowYarnBinPath,
+} from '../../constants/shadow.mts'
 import { getErrorCause } from '../error/errors.mts'
 import { findUp } from '../fs/fs.mts'
-import { startSpinner } from '../terminal/spinner.mjs'
+import { startSpinner } from '../terminal/spinner.mts'
 import { isYarnBerry } from '../yarn/version.mts'
 
-import type { IpcObject } from '../../constants.mts'
+import type { IpcObject } from '../../constants/types.mts'
 import type {
   ShadowBinOptions,
   ShadowBinResult,
-} from '../../shadow/npm-base.mjs'
-import type { CResult } from '../../types.mjs'
+} from '../../shadow/npm-base.mts'
+import type { CResult } from '../../types.mts'
 import type { SpawnExtra } from '@socketsecurity/registry/lib/spawn'
 
 const require = createRequire(import.meta.url)
-
-const { NPM, PACKAGE_LOCK_JSON, PNPM, PNPM_LOCK_YAML, YARN, YARN_LOCK } =
-  constants
 
 export type ShadowRunnerOptions = {
   agent?: 'npm' | 'pnpm' | 'yarn' | undefined
@@ -80,17 +94,16 @@ export async function runShadowCommand(
     cwd: opts.cwd,
     env: opts.env,
     ipc: {
-      [constants.SOCKET_CLI_SHADOW_ACCEPT_RISKS]: true,
-      [constants.SOCKET_CLI_SHADOW_API_TOKEN]:
-        constants.SOCKET_PUBLIC_API_TOKEN,
-      [constants.SOCKET_CLI_SHADOW_SILENT]: true,
+      [SOCKET_CLI_SHADOW_ACCEPT_RISKS]: true,
+      [SOCKET_CLI_SHADOW_API_TOKEN]: SOCKET_PUBLIC_API_TOKEN,
+      [SOCKET_CLI_SHADOW_SILENT]: true,
       ...opts.ipc,
     },
     stdio: opts.stdio || 'inherit',
   }
 
   const finalSpawnExtra: SpawnExtra = {
-    stdio: spawnExtra?.stdio || shadowOpts.stdio,
+    stdio: spawnExtra?.['stdio'] || shadowOpts['stdio'],
     ...spawnExtra,
   }
 
@@ -104,21 +117,21 @@ export async function runShadowCommand(
     let result: ShadowBinResult
 
     if (agent === PNPM) {
-      const shadowPnpmBin = /*@__PURE__*/ require(constants.shadowPnpmBinPath)
+      const shadowPnpmBin = /*@__PURE__*/ require(getShadowPnpmBinPath())
       result = await shadowPnpmBin(
         ['dlx', FLAG_SILENT, packageSpec, ...args],
         shadowOpts,
         finalSpawnExtra,
       )
     } else if (agent === YARN && isYarnBerry()) {
-      const shadowYarnBin = /*@__PURE__*/ require(constants.shadowYarnBinPath)
+      const shadowYarnBin = /*@__PURE__*/ require(getShadowYarnBinPath())
       result = await shadowYarnBin(
         ['dlx', '--quiet', packageSpec, ...args],
         shadowOpts,
         finalSpawnExtra,
       )
     } else {
-      const shadowNpxBin = /*@__PURE__*/ require(constants.shadowNpxBinPath)
+      const shadowNpxBin = /*@__PURE__*/ require(getShadowNpxBinPath())
       result = await shadowNpxBin(
         ['--yes', '--force', FLAG_SILENT, packageSpec, ...args],
         shadowOpts,
@@ -165,10 +178,9 @@ export async function runShadowNpm(
     cwd: opts.cwd,
     env: opts.env,
     ipc: {
-      [constants.SOCKET_CLI_SHADOW_ACCEPT_RISKS]: true,
-      [constants.SOCKET_CLI_SHADOW_API_TOKEN]:
-        constants.SOCKET_PUBLIC_API_TOKEN,
-      [constants.SOCKET_CLI_SHADOW_SILENT]: true,
+      [SOCKET_CLI_SHADOW_ACCEPT_RISKS]: true,
+      [SOCKET_CLI_SHADOW_API_TOKEN]: SOCKET_PUBLIC_API_TOKEN,
+      [SOCKET_CLI_SHADOW_SILENT]: true,
       ...opts.ipc,
     },
     stdio: opts.stdio || 'inherit',
@@ -181,7 +193,7 @@ export async function runShadowNpm(
       stopSpinner = startSpinner(opts.spinnerMessage)
     }
 
-    const shadowNpmBin = /*@__PURE__*/ require(constants.shadowNpmBinPath)
+    const shadowNpmBin = /*@__PURE__*/ require(getShadowNpmBinPath())
     const result: ShadowBinResult = await shadowNpmBin(
       args,
       shadowOpts,

@@ -7,15 +7,12 @@ import { createHash } from 'node:crypto'
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 
+import { WIN32 } from '@socketsecurity/registry/constants/platform'
 import { safeDelete } from '@socketsecurity/registry/lib/fs'
 import { httpRequest } from '@socketsecurity/registry/lib/http-request'
 import { normalizePath } from '@socketsecurity/registry/lib/path'
 import { getSocketHomePath } from '@socketsecurity/registry/lib/paths'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
-
-import constants from '../../constants.mjs'
-
-const { WIN32 } = constants
 
 export interface BuildTargetOptions {
   arch: string
@@ -137,7 +134,7 @@ export async function downloadNodeBinary(
 
   // Construct download URL.
   const baseUrl =
-    process.env.SOCKET_NODE_DOWNLOAD_URL ||
+    process.env['SOCKET_NODE_DOWNLOAD_URL'] ||
     'https://nodejs.org/download/release'
   const archMap = {
     __proto__: null,
@@ -331,7 +328,7 @@ export async function getBuildTargets(): Promise<BuildTargetOptions[]> {
  */
 export async function getDefaultNodeVersion(): Promise<string> {
   return (
-    process.env.SOCKET_SEA_NODE_VERSION || (await getLatestCurrentRelease())
+    process.env['SOCKET_SEA_NODE_VERSION'] || (await getLatestCurrentRelease())
   )
 }
 

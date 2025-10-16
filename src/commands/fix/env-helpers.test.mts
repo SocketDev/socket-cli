@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { getCiEnvInstructions } from '../../../src/commands/fix/env-helpers.mts'
+import ENV from '../constants/env.mts'
 
 describe('env-helpers', () => {
   describe('getCiEnvInstructions', () => {
@@ -32,7 +33,7 @@ describe('env-helpers', () => {
   describe('checkCiEnvVars (via integration)', () => {
     it('should identify exact env var names in missing list', () => {
       // This would test the actual checkCiEnvVars function.
-      // But since it reads from process.env which is cached in constants.ENV,
+      // But since it reads from process.env which is cached in ENV,
       // we rely on the integration tests to verify this behavior.
 
       // The function should return exact env var names:

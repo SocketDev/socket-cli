@@ -20,7 +20,7 @@
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 
-import constants from '../../constants.mts'
+import { getAbortSignal } from '@socketsecurity/registry/constants/process'
 
 export type FindUpOptions = {
   cwd?: string | undefined
@@ -34,7 +34,8 @@ export async function findUp(
   options?: FindUpOptions | undefined,
 ): Promise<string | undefined> {
   const opts = { __proto__: null, ...options }
-  const { cwd = process.cwd(), signal = constants.abortSignal } = opts
+  const abortSignal = getAbortSignal()
+  const { cwd = process.cwd(), signal = abortSignal } = opts
   let { onlyDirectories = false, onlyFiles = true } = opts
   if (onlyDirectories) {
     onlyFiles = false

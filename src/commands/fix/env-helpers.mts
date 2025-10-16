@@ -3,14 +3,14 @@ import { debug, isDebug } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { getSocketFixPrs } from './pull-request.mts'
-import constants from '../../constants.mts'
+import ENV from '../../constants/env.mts'
 import { getBaseBranch, getRepoInfo } from '../../utils/git/git.mjs'
 
 import type { PrMatch } from './pull-request.mts'
 import type { RepoInfo } from '../../utils/git/git.mjs'
 
 function ciRepoInfo(): RepoInfo | undefined {
-  const { GITHUB_REPOSITORY } = constants.ENV
+  const { GITHUB_REPOSITORY } = ENV
   if (!GITHUB_REPOSITORY) {
     debug('miss: GITHUB_REPOSITORY env var')
     return undefined
@@ -64,7 +64,7 @@ export function checkCiEnvVars(): MissingEnvVars {
     SOCKET_CLI_GIT_USER_EMAIL,
     SOCKET_CLI_GIT_USER_NAME,
     SOCKET_CLI_GITHUB_TOKEN,
-  } = constants.ENV
+  } = ENV
 
   const missing: string[] = []
   const present: string[] = []
@@ -98,15 +98,15 @@ export function checkCiEnvVars(): MissingEnvVars {
 
 export async function getFixEnv(): Promise<FixEnv> {
   const baseBranch = await getBaseBranch()
-  const gitEmail = constants.ENV.SOCKET_CLI_GIT_USER_EMAIL
-  const gitUser = constants.ENV.SOCKET_CLI_GIT_USER_NAME
-  const githubToken = constants.ENV.SOCKET_CLI_GITHUB_TOKEN
-  const isCi = !!(constants.ENV.CI && gitEmail && gitUser && githubToken)
+  const gitEmail = ENV.SOCKET_CLI_GIT_USER_EMAIL
+  const gitUser = ENV.SOCKET_CLI_GIT_USER_NAME
+  const githubToken = ENV.SOCKET_CLI_GITHUB_TOKEN
+  const isCi = !!(ENV.CI && gitEmail && gitUser && githubToken)
 
   const envCheck = checkCiEnvVars()
 
   // Provide clear feedback about missing environment variables.
-  if (constants.ENV.CI && envCheck.missing.length > 1) {
+  if (ENV.CI && envCheck.missing.length > 1) {
     // CI is set but other required vars are missing.
     const missingExceptCi = envCheck.missing.filter(v => v !== 'CI')
     if (missingExceptCi.length) {
@@ -118,7 +118,7 @@ export async function getFixEnv(): Promise<FixEnv> {
     }
   } else if (
     // If not in CI but some CI-related env vars are set.
-    !constants.ENV.CI &&
+    !ENV.CI &&
     envCheck.present.length &&
     // then log about it when in debug mode.
     isDebug()

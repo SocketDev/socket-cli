@@ -1,6 +1,6 @@
 import os from 'node:os'
 
-import constants from './constants.mts'
+import ENV from './constants/env.mts'
 import meow from './meow.mts'
 
 import type { MeowFlag as Flag } from './meow.mts'
@@ -48,8 +48,8 @@ function getRawSpaceSizeFlags(): RawSpaceSizeFlags {
       importMeta: { url: import.meta.url } as ImportMeta,
     })
     _rawSpaceSizeFlags = {
-      maxOldSpaceSize: Number(cli.flags.maxOldSpaceSize),
-      maxSemiSpaceSize: Number(cli.flags.maxSemiSpaceSize),
+      maxOldSpaceSize: Number(cli.flags['maxOldSpaceSize']),
+      maxSemiSpaceSize: Number(cli.flags['maxSemiSpaceSize']),
     }
   }
   return _rawSpaceSizeFlags!
@@ -61,7 +61,7 @@ export function getMaxOldSpaceSizeFlag(): number {
     _maxOldSpaceSizeFlag = getRawSpaceSizeFlags().maxOldSpaceSize
     if (!_maxOldSpaceSizeFlag) {
       const match = /(?<=--max-old-space-size=)\d+/.exec(
-        constants.ENV.NODE_OPTIONS || '',
+        ENV.NODE_OPTIONS || '',
       )?.[0]
       _maxOldSpaceSizeFlag = match ? Number(match) : 0
     }
@@ -90,7 +90,7 @@ export function getMaxSemiSpaceSizeFlag(): number {
     _maxSemiSpaceSizeFlag = getRawSpaceSizeFlags().maxSemiSpaceSize
     if (!_maxSemiSpaceSizeFlag) {
       const match = /(?<=--max-semi-space-size=)\d+/.exec(
-        constants.ENV.NODE_OPTIONS || '',
+        ENV.NODE_OPTIONS || '',
       )?.[0]
       _maxSemiSpaceSizeFlag = match ? Number(match) : 0
     }

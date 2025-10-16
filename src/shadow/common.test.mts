@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { FLAG_DRY_RUN } from '../constants.mts'
 import { scanPackagesAndLogAlerts } from './common.mts'
+import { FLAG_DRY_RUN } from '../constants/cli.mts'
 
 import type { PackageScanOptions } from './common.mts'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
