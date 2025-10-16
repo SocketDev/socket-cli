@@ -96,7 +96,7 @@ describe('formatTable', () => {
     const result = formatTable(data, columns)
 
     // Should contain ANSI color codes
-    // eslint-disable-next-line no-control-regex
+     
     expect(result).toMatch(/\u001b\[/)
   })
 
@@ -206,7 +206,7 @@ describe('formatSimpleTable', () => {
     const result = formatSimpleTable(data, columns)
 
     // Should contain ANSI color codes
-    // eslint-disable-next-line no-control-regex
+     
     expect(result).toMatch(/\u001b\[/)
   })
 
