@@ -18,7 +18,7 @@ const __dirname = path.dirname(__filename)
 //     - \u000B to \u001F (other non-printable control characters)
 //   * All non-ASCII characters:
 //     - \u0080 to \uFFFF (extended Unicode)
-// eslint-disable-next-line no-control-regex
+ 
 const asciiUnsafeRegexp = /[\u0000-\u0007\u0009\u000b-\u001f\u0080-\uffff]/g
 
 // Note: The fixture directory is in the same directory as this utils file.
