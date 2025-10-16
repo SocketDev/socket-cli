@@ -13,6 +13,7 @@ import path from 'node:path'
 
 import fastGlob from 'fast-glob'
 
+import { WIN32 } from '@socketsecurity/registry/constants/platform'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants from './constants.mjs'
@@ -45,8 +46,6 @@ function checkBuildArtifacts() {
  * Main test execution flow.
  */
 async function main() {
-  const { WIN32 } = constants
-
   try {
     // Validate build artifacts exist.
     if (!checkBuildArtifacts()) {

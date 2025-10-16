@@ -13,9 +13,10 @@ const { isRelative, normalizePath } = pathUtils
 
 import { findUpSync } from './fs.mjs'
 
+// eslint-disable-next-line n/no-unsupported-features/node-builtins
 const { createRequire, isBuiltin } = Module
 
-// eslint-disable-next-line no-control-regex
+ 
 const cjsPluginPrefixRegExp = /^\x00/
 const cjsPluginSuffixRegExp =
   /\?commonjs-(?:entry|es-import|exports|external|module|proxy|wrapped)$/

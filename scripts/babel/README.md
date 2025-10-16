@@ -66,15 +66,19 @@ This plugin is **always enabled** in the build pipeline (see `.config/babel.conf
 
 ---
 
-### ICU Removal Plugin
+### --with-intl=none Plugin
 
-#### `babel-plugin-remove-icu.mjs`
-Transforms ICU-dependent code into ICU-free alternatives, allowing Node.js to be built with `--without-intl`.
+#### `babel-plugin-with-intl-none.mjs`
+Transforms ICU-dependent code into ICU-free alternatives, enabling Node.js builds with `--with-intl=none`.
 
-**⚠️ Important:** This plugin is **disabled by default** because:
-1. It requires building Node.js with `--without-intl` (saves ~8-10MB)
-2. Transforms are lossy (no real locale support, just formatting)
-3. Should only be used if binary size is critical
+**Note**: `--without-intl` is deprecated, use `--with-intl=none` instead.
+
+**✅ Status:** This plugin is **ENABLED** in Socket CLI builds.
+
+**Why enabled:**
+1. Socket CLI uses `--with-intl=none` for 6-8MB size reduction
+2. Combined with runtime Intl stub polyfill for complete compatibility
+3. Transforms Socket CLI source code at build time
 
 **Transformations:**
 
@@ -125,11 +129,15 @@ new Intl.DateTimeFormat().format(date)
 // Before:
 /\p{Letter}/u
 /\p{Number}/u
+/[\p{Letter}\p{Number}]+/v  // ES2024 /v flag
 
 // After:
 /[a-zA-Z]/
 /[0-9]/
+/[a-zA-Z0-9]+/  // /v flag removed, \p{...} transformed
 ```
+
+**Note**: The `/v` flag (unicodeSets, ES2024) is automatically downgraded to `/u` or removed entirely when transforming `\p{...}` patterns.
 
 **Helper Functions Generated:**
 ```javascript
@@ -162,37 +170,33 @@ function __simpleCompare(a, b) {
 - English-only CLI tool
 - Willing to trade locale support for ~8-10MB size reduction
 
-**How to Enable:**
+**Already enabled** in `.config/babel.config.js` (line 36).
 
-1. Uncomment the plugin in `.config/babel.config.js`:
-```javascript
-plugins: [
-  // ... other plugins ...
-  path.join(babelPluginsPath, 'babel-plugin-remove-icu.mjs'),  // Uncomment this line
-]
-```
+**Build Requirements:**
 
-2. Rebuild Node.js with `--without-intl`:
+1. Node.js must be built with `--with-intl=none`:
 ```bash
-cd .custom-node-build/node-yao-pkg
-git reset --hard v24.9.0
-git clean -fdx
-patch -p1 < ../patches/node.v24.9.0.cpp.patch
+# Use our automated build script:
+node scripts/build-yao-pkg-node.mjs --clean
 
-./configure \
-  --without-intl \
-  --without-npm \
-  --without-corepack \
-  --without-inspector \
-  --without-amaro \
-  --without-sqlite \
-  --without-node-snapshot \
-  --without-node-code-cache
-
-make -j$(sysctl -n hw.ncpu)
+# This builds Node.js with:
+#   --disable-single-executable-application  (Remove SEA, -1-2 MB)
+#   --enable-lto                (Link-time optimization)
+#   --v8-disable-object-print   (Disable V8 object printing)
+#   --v8-lite-mode              (Smaller V8, -15-20 MB)
+#   --with-icu-source=none      (Don't download ICU source)
+#   --with-intl=none            (ICU removed, -6-8 MB)
+#   --without-amaro             (Remove amaro)
+#   --without-corepack          (Remove corepack)
+#   --without-inspector         (Remove inspector)
+#   --without-node-code-cache   (Remove code cache)
+#   --without-node-options      (Remove node options)
+#   --without-node-snapshot     (Remove snapshot)
+#   --without-npm               (Remove npm)
+#   --without-sqlite            (Remove sqlite)
 ```
 
-3. Rebuild Socket CLI:
+2. Rebuild Socket CLI:
 ```bash
 pnpm run build:dist
 ```
@@ -225,7 +229,7 @@ Plugins run in this order (defined in `.config/babel.config.js`):
 7. `babel-plugin-inline-require-calls.js`
 8. `transform-set-proto-plugin.mjs`
 9. `transform-url-parse-plugin.mjs`
-10. `babel-plugin-remove-icu.mjs` (disabled by default)
+10. **`babel-plugin-with-intl-none.mjs`** ⭐ (--with-intl=none compatibility, ENABLED)
 
 ---
 
@@ -282,9 +286,9 @@ pnpm run test:unit
 | Plugin | Binary Size Impact | Purpose |
 |--------|-------------------|---------|
 | `babel-plugin-strict-mode.mjs` | ~0 bytes | Code compatibility |
-| `babel-plugin-remove-icu.mjs` | **-8-10MB** | Remove ICU dependency |
+| `babel-plugin-with-intl-none.mjs` | **-6-8MB** | --with-intl=none compatibility |
 
-**Note:** The size reduction comes from building Node.js with `--without-intl`, not the plugin itself. The plugin just makes the code work without ICU.
+**Note:** The size reduction comes from building Node.js with `--with-intl=none`, not the plugin itself. The plugin transforms code to work without ICU.
 
 ---
 
