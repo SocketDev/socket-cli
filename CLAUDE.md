@@ -33,6 +33,7 @@ You are a **Principal Software Engineer** responsible for:
 - **Test multiple files**: ✅ CORRECT: `pnpm test:unit file1.test.mts file2.test.mts`
 - **Test with pattern**: ✅ CORRECT: `pnpm test:unit src/commands/specific/cmd-file.test.mts -t "pattern"`
   - ❌ WRONG: `pnpm test:unit -- src/commands/specific/cmd-file.test.mts -t "pattern"`
+- **Run E2E socket fix tests**: ✅ CORRECT: Run `pnpm run e2e-tests`
 - **Update snapshots**:
   - All tests: `pnpm testu` (builds first, then updates all snapshots)
   - Single file: ✅ CORRECT: `pnpm testu src/commands/specific/cmd-file.test.mts`
