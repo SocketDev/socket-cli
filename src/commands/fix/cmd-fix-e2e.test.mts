@@ -204,10 +204,16 @@ describe('socket fix (E2E tests)', async () => {
             'socket-fix-output.json',
           )
 
-          const { code } = await spawnSocketCli(binCliPath, cmd, {
+          const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
             cwd: tempFixture.path,
             env: getTestEnv(apiToken),
           })
+
+          if (code !== 0) {
+            logger.error(`Command failed with code ${code}`)
+            logger.error('stdout:', stdout)
+            logger.error('stderr:', stderr)
+          }
 
           expect(code, 'should exit with code 0').toBe(0)
 
@@ -264,10 +270,16 @@ describe('socket fix (E2E tests)', async () => {
 
           expect(beforeLodashVersion).toBe('4.17.20')
 
-          const { code } = await spawnSocketCli(binCliPath, cmd, {
+          const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
             cwd: tempFixture.path,
             env: getTestEnv(apiToken),
           })
+
+          if (code !== 0) {
+            logger.error(`Command failed with code ${code}`)
+            logger.error('stdout:', stdout)
+            logger.error('stderr:', stderr)
+          }
 
           expect(code, 'should exit with code 0').toBe(0)
 
@@ -307,10 +319,16 @@ describe('socket fix (E2E tests)', async () => {
 
           expect(beforeLodashVersion).toBe('4.17.20')
 
-          const { code } = await spawnSocketCli(binCliPath, cmd, {
+          const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
             cwd: tempFixture.path,
             env: getTestEnv(apiToken),
           })
+
+          if (code !== 0) {
+            logger.error(`Command failed with code ${code}`)
+            logger.error('stdout:', stdout)
+            logger.error('stderr:', stderr)
+          }
 
           expect(code, 'should exit with code 0').toBe(0)
 
@@ -355,10 +373,16 @@ describe('socket fix (E2E tests)', async () => {
           expect(beforeDjango).toBeDefined()
           expect(beforeDjango).toContain('3.0.0')
 
-          const { code } = await spawnSocketCli(binCliPath, cmd, {
+          const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
             cwd: tempFixture.path,
             env: getTestEnv(apiToken),
           })
+
+          if (code !== 0) {
+            logger.error(`Command failed with code ${code}`)
+            logger.error('stdout:', stdout)
+            logger.error('stderr:', stderr)
+          }
 
           expect(code, 'should exit with code 0').toBe(0)
 
