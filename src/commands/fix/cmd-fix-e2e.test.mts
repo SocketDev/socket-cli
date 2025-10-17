@@ -4,7 +4,6 @@ import path from 'node:path'
 import { describe, expect } from 'vitest'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import { cmdit, spawnSocketCli, testPath } from '../../../test/utils.mts'
 import constants, { FLAG_ID } from '../../constants.mts'
@@ -44,9 +43,7 @@ async function createTempFixtureCopy(
     path: tempDir,
     cleanup: async () => {
       try {
-        await spawn('pnpm', ['dlx', 'trash-cli', tempDir], {
-          stdio: 'ignore',
-        })
+        await fs.rm(tempDir, { force: true, recursive: true })
       } catch (e) {
         logger.warn(`Failed to clean up temp dir ${tempDir}:`, e)
       }
