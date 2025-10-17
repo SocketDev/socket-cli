@@ -72,6 +72,7 @@
     "prepare": "dotenvx -q run -f .env.local -- husky",
     "bs": "dotenvx -q run -f .env.local -- pnpm build:dist:src; pnpm exec socket --",
     "s": "dotenvx -q run -f .env.local -- pnpm exec socket --",
+    "e2e-tests": "dotenvx -q run -f .env.test -- vitest run --config vitest.e2e.config.mts",
     "test": "run-s check test:*",
     "test:prepare": "dotenvx -q run -f .env.test -- pnpm build && del-cli 'test/**/node_modules'",
     "test:unit": "dotenvx -q run -f .env.test -- vitest run",
