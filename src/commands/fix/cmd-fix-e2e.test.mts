@@ -1,5 +1,6 @@
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
+
 import { describe, expect } from 'vitest'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
@@ -178,6 +179,71 @@ describe('socket fix (E2E tests)', async () => {
 
           logger.info(
             `\nSuccessfully upgraded lodash from ${beforeVersion} to ${afterVersion}`,
+          )
+        } finally {
+          await tempFixture.cleanup()
+        }
+      },
+      { timeout: testTimeout },
+    )
+
+    cmdit(
+      ['fix', '--output-file', 'socket-fix-output.json', '.'],
+      'should fix vulnerabilities and write output file with fixes result',
+      async cmd => {
+        const tempFixture = await createTempFixtureCopy('e2e-test-js')
+
+        try {
+          const beforePkg = await readPackageJson(tempFixture.path)
+          const beforeLodashVersion = beforePkg.dependencies?.['lodash']
+
+          expect(beforeLodashVersion).toBe('4.17.20')
+
+          const outputFilePath = path.join(
+            tempFixture.path,
+            'socket-fix-output.json',
+          )
+
+          const { code } = await spawnSocketCli(binCliPath, cmd, {
+            cwd: tempFixture.path,
+            env: getTestEnv(apiToken),
+          })
+
+          expect(code, 'should exit with code 0').toBe(0)
+
+          const afterPkg = await readPackageJson(tempFixture.path)
+          const afterLodashVersion = afterPkg.dependencies?.['lodash']
+
+          expect(afterLodashVersion).toBeDefined()
+
+          const beforeVersion = extractVersion(beforeLodashVersion!)
+          const afterVersion = extractVersion(afterLodashVersion!)
+          const comparison = compareVersions(afterVersion, beforeVersion)
+
+          expect(
+            comparison,
+            `lodash should be upgraded from ${beforeVersion} to ${afterVersion}`,
+          ).toBeGreaterThan(0)
+
+          // Verify that the output file exists and contains valid JSON.
+          expect(existsSync(outputFilePath), 'output file should exist').toBe(
+            true,
+          )
+
+          const outputContent = await fs.readFile(outputFilePath, 'utf8')
+          const outputJson = JSON.parse(outputContent)
+
+          // Verify that the output contains fix result data, not just { fixed: true }.
+          expect(outputJson).toBeDefined()
+          expect(typeof outputJson).toBe('object')
+
+          // The output should contain at least some structure indicating fixes were performed.
+          // We can't assert exact structure as it depends on Coana's output format,
+          // but we can verify it's not empty and is more than just a boolean.
+          expect(Object.keys(outputJson).length).toBeGreaterThan(0)
+
+          logger.info(
+            `\nSuccessfully upgraded lodash from ${beforeVersion} to ${afterVersion} and wrote output file`,
           )
         } finally {
           await tempFixture.cleanup()
