@@ -13,8 +13,29 @@ permissions:
 
 jobs:
   e2e-tests:
-    uses: SocketDev/socket-registry/.github/workflows/test.yml@main
-    secrets: inherit
-    with:
-      test-script: 'pnpm run e2e-tests'
-      timeout-minutes: 20
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: true
+      matrix:
+        node-version: [20, 22, 24]
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.16.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run e2e tests
+        env:
+          SOCKET_CLI_API_TOKEN: ${{ secrets.SOCKET_CLI_API_TOKEN }}
+        run: pnpm run e2e-tests
