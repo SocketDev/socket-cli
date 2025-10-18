@@ -66,7 +66,7 @@ patchedDependencies:
     hash: 4f6ae5ec65b5537e81cd3ee7e83ae65bcc843a93cff14f147d8053e1c385ae1d
     path: patches/string_decoder@0.10.31.patch
   yoga-layout@3.2.1:
-    hash: b5aa47d97562754013db7bc61e5f1fab4f4c0bd9a8d781a6528a867838e02085
+    hash: f5459fa2d04ec82af48b4e8d8093f710e6cfce7e33aa028df72bd0fd400cfe4e
     path: patches/yoga-layout@3.2.1.patch
 
 importers:
@@ -388,7 +388,7 @@ importers:
         version: 2.1.3
       yoga-layout:
         specifier: 3.2.1
-        version: 3.2.1(patch_hash=b5aa47d97562754013db7bc61e5f1fab4f4c0bd9a8d781a6528a867838e02085)
+        version: 3.2.1(patch_hash=f5459fa2d04ec82af48b4e8d8093f710e6cfce7e33aa028df72bd0fd400cfe4e)
       zod:
         specifier: 4.1.8
         version: 4.1.8
@@ -7821,7 +7821,7 @@ snapshots:
       widest-line: 5.0.0
       wrap-ansi: 9.0.2
       ws: 8.18.3
-      yoga-layout: 3.2.1(patch_hash=b5aa47d97562754013db7bc61e5f1fab4f4c0bd9a8d781a6528a867838e02085)
+      yoga-layout: 3.2.1(patch_hash=f5459fa2d04ec82af48b4e8d8093f710e6cfce7e33aa028df72bd0fd400cfe4e)
     optionalDependencies:
       '@types/react': 19.2.2
     transitivePeerDependencies:
@@ -9723,6 +9723,6 @@ snapshots:
 
   yoctocolors@2.1.2: {}
 
-  yoga-layout@3.2.1(patch_hash=b5aa47d97562754013db7bc61e5f1fab4f4c0bd9a8d781a6528a867838e02085): {}
+  yoga-layout@3.2.1(patch_hash=f5459fa2d04ec82af48b4e8d8093f710e6cfce7e33aa028df72bd0fd400cfe4e): {}
 
   zod@4.1.8: {}
