@@ -1,11 +1,14 @@
 import { defineConfig } from 'vitest/config'
 
+import { getLocalPackageAliases } from './scripts/utils/get-local-package-aliases.mjs'
+
 const isCoverageEnabled =
   process.env.npm_lifecycle_event === 'cover' ||
   process.argv.includes('--coverage')
 
 export default defineConfig({
   resolve: {
+    alias: getLocalPackageAliases(),
     preserveSymlinks: false,
   },
   test: {

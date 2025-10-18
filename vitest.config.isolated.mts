@@ -4,6 +4,8 @@
  */
 import { defineConfig } from 'vitest/config'
 
+import { getLocalPackageAliases } from './scripts/utils/get-local-package-aliases.mjs'
+
 // Check if coverage is enabled via CLI flags or environment.
 const isCoverageEnabled =
   process.env.COVERAGE === 'true' ||
@@ -11,6 +13,10 @@ const isCoverageEnabled =
   process.argv.some(arg => arg.includes('coverage'))
 
 export default defineConfig({
+  resolve: {
+    alias: getLocalPackageAliases(),
+    preserveSymlinks: false,
+  },
   test: {
     globals: false,
     environment: 'node',
