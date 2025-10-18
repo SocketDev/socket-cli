@@ -113,6 +113,20 @@ function compareVersions(v1: string, v2: string): number {
   return 0
 }
 
+/**
+ * Helper to log command output for debugging.
+ * Logs stdout and stderr to help diagnose test failures.
+ */
+function logCommandOutput(
+  code: number,
+  stdout: string,
+  stderr: string,
+): void {
+  logger.error(`Command failed with code ${code}`)
+  logger.error('stdout:', stdout)
+  logger.error('stderr:', stderr)
+}
+
 describe('socket fix (E2E tests)', async () => {
   const { binCliPath } = constants
   const testTimeout = 120_000
@@ -131,6 +145,9 @@ describe('socket fix (E2E tests)', async () => {
       'should fix all vulnerabilities in JavaScript project',
       async cmd => {
         const tempFixture = await createTempFixtureCopy('e2e-test-js')
+        let stdout = ''
+        let stderr = ''
+        let code = -1
 
         try {
           const beforePkg = await readPackageJson(tempFixture.path)
@@ -138,19 +155,16 @@ describe('socket fix (E2E tests)', async () => {
 
           expect(beforeLodashVersion).toBe('4.17.20')
 
-          const { code, stderr, stdout } = await spawnSocketCli(
-            binCliPath,
-            cmd,
-            {
-              cwd: tempFixture.path,
-              env: getTestEnv(apiToken),
-            },
-          )
+          const result = await spawnSocketCli(binCliPath, cmd, {
+            cwd: tempFixture.path,
+            env: getTestEnv(apiToken),
+          })
+          stdout = result.stdout
+          stderr = result.stderr
+          code = result.code
 
           if (code !== 0) {
-            logger.error(`Command failed with code ${code}`)
-            logger.error('stdout:', stdout)
-            logger.error('stderr:', stderr)
+            logCommandOutput(code, stdout, stderr)
           }
 
           expect(code, 'should exit with code 0').toBe(0)
@@ -177,6 +191,11 @@ describe('socket fix (E2E tests)', async () => {
           logger.info(
             `\nSuccessfully upgraded lodash from ${beforeVersion} to ${afterVersion}`,
           )
+        } catch (e) {
+          if (code !== 0) {
+            logCommandOutput(code, stdout, stderr)
+          }
+          throw e
         } finally {
           await tempFixture.cleanup()
         }
@@ -189,6 +208,9 @@ describe('socket fix (E2E tests)', async () => {
       'should fix vulnerabilities and write output file with fixes result',
       async cmd => {
         const tempFixture = await createTempFixtureCopy('e2e-test-js')
+        let stdout = ''
+        let stderr = ''
+        let code = -1
 
         try {
           const beforePkg = await readPackageJson(tempFixture.path)
@@ -201,15 +223,16 @@ describe('socket fix (E2E tests)', async () => {
             'socket-fix-output.json',
           )
 
-          const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
+          const result = await spawnSocketCli(binCliPath, cmd, {
             cwd: tempFixture.path,
             env: getTestEnv(apiToken),
           })
+          stdout = result.stdout
+          stderr = result.stderr
+          code = result.code
 
           if (code !== 0) {
-            logger.error(`Command failed with code ${code}`)
-            logger.error('stdout:', stdout)
-            logger.error('stderr:', stderr)
+            logCommandOutput(code, stdout, stderr)
           }
 
           expect(code, 'should exit with code 0').toBe(0)
@@ -248,6 +271,11 @@ describe('socket fix (E2E tests)', async () => {
           logger.info(
             `\nSuccessfully upgraded lodash from ${beforeVersion} to ${afterVersion} and wrote output file`,
           )
+        } catch (e) {
+          if (code !== 0) {
+            logCommandOutput(code, stdout, stderr)
+          }
+          throw e
         } finally {
           await tempFixture.cleanup()
         }
@@ -260,6 +288,9 @@ describe('socket fix (E2E tests)', async () => {
       'should fix specific GHSA vulnerability in JavaScript project',
       async cmd => {
         const tempFixture = await createTempFixtureCopy('e2e-test-js')
+        let stdout = ''
+        let stderr = ''
+        let code = -1
 
         try {
           const beforePkg = await readPackageJson(tempFixture.path)
@@ -267,15 +298,16 @@ describe('socket fix (E2E tests)', async () => {
 
           expect(beforeLodashVersion).toBe('4.17.20')
 
-          const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
+          const result = await spawnSocketCli(binCliPath, cmd, {
             cwd: tempFixture.path,
             env: getTestEnv(apiToken),
           })
+          stdout = result.stdout
+          stderr = result.stderr
+          code = result.code
 
           if (code !== 0) {
-            logger.error(`Command failed with code ${code}`)
-            logger.error('stdout:', stdout)
-            logger.error('stderr:', stderr)
+            logCommandOutput(code, stdout, stderr)
           }
 
           expect(code, 'should exit with code 0').toBe(0)
@@ -297,6 +329,11 @@ describe('socket fix (E2E tests)', async () => {
           logger.info(
             `\nSuccessfully fixed GHSA-35jh-r3h4-6jhm by upgrading lodash from ${beforeVersion} to ${afterVersion}`,
           )
+        } catch (e) {
+          if (code !== 0) {
+            logCommandOutput(code, stdout, stderr)
+          }
+          throw e
         } finally {
           await tempFixture.cleanup()
         }
@@ -309,6 +346,9 @@ describe('socket fix (E2E tests)', async () => {
       'should convert CVE to GHSA and fix JavaScript project',
       async cmd => {
         const tempFixture = await createTempFixtureCopy('e2e-test-js')
+        let stdout = ''
+        let stderr = ''
+        let code = -1
 
         try {
           const beforePkg = await readPackageJson(tempFixture.path)
@@ -316,15 +356,16 @@ describe('socket fix (E2E tests)', async () => {
 
           expect(beforeLodashVersion).toBe('4.17.20')
 
-          const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
+          const result = await spawnSocketCli(binCliPath, cmd, {
             cwd: tempFixture.path,
             env: getTestEnv(apiToken),
           })
+          stdout = result.stdout
+          stderr = result.stderr
+          code = result.code
 
           if (code !== 0) {
-            logger.error(`Command failed with code ${code}`)
-            logger.error('stdout:', stdout)
-            logger.error('stderr:', stderr)
+            logCommandOutput(code, stdout, stderr)
           }
 
           expect(code, 'should exit with code 0').toBe(0)
@@ -346,6 +387,11 @@ describe('socket fix (E2E tests)', async () => {
           logger.info(
             `\nSuccessfully converted CVE-2021-23337 to GHSA and fixed by upgrading lodash from ${beforeVersion} to ${afterVersion}`,
           )
+        } catch (e) {
+          if (code !== 0) {
+            logCommandOutput(code, stdout, stderr)
+          }
+          throw e
         } finally {
           await tempFixture.cleanup()
         }
@@ -360,6 +406,9 @@ describe('socket fix (E2E tests)', async () => {
       'should fix all vulnerabilities in Python project',
       async cmd => {
         const tempFixture = await createTempFixtureCopy('e2e-test-py')
+        let stdout = ''
+        let stderr = ''
+        let code = -1
 
         try {
           const beforeReqs = await readRequirementsTxt(tempFixture.path)
@@ -370,15 +419,16 @@ describe('socket fix (E2E tests)', async () => {
           expect(beforeDjango).toBeDefined()
           expect(beforeDjango).toContain('3.0.0')
 
-          const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
+          const result = await spawnSocketCli(binCliPath, cmd, {
             cwd: tempFixture.path,
             env: getTestEnv(apiToken),
           })
+          stdout = result.stdout
+          stderr = result.stderr
+          code = result.code
 
           if (code !== 0) {
-            logger.error(`Command failed with code ${code}`)
-            logger.error('stdout:', stdout)
-            logger.error('stderr:', stderr)
+            logCommandOutput(code, stdout, stderr)
           }
 
           expect(code, 'should exit with code 0').toBe(0)
@@ -406,6 +456,11 @@ describe('socket fix (E2E tests)', async () => {
           logger.info(
             `\nSuccessfully upgraded django from ${beforeVersion} to ${afterVersion}`,
           )
+        } catch (e) {
+          if (code !== 0) {
+            logCommandOutput(code, stdout, stderr)
+          }
+          throw e
         } finally {
           await tempFixture.cleanup()
         }
