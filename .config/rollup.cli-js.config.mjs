@@ -9,7 +9,6 @@
 import { spawnSync as nodeSpawnSync } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
 import fs, { existsSync } from 'node:fs'
-// eslint-disable-next-line n/no-unsupported-features/node-builtins
 import { isBuiltin } from 'node:module'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -24,6 +23,12 @@ import { transform as esbuildTransform } from 'esbuild'
 
 import fixDebug from './rollup-plugin-fix-debug.mjs'
 import fixInk from './rollup-plugin-fix-ink.mjs'
+import fixYoga from './rollup-plugin-fix-yoga.mjs'
+import { generateReplacePatterns } from './rollup-replace-patterns.mjs'
+import {
+  createCleanupPlugins,
+  standardOnwarn,
+} from './rollup-shared-plugins.mjs'
 import constants from './rollup.cli-js.constants.mjs'
 import { rootPath } from '../scripts/constants/paths.mjs'
 import { getLocalPackageAliases } from '../scripts/utils/get-local-package-aliases.mjs'
@@ -169,6 +174,20 @@ export default {
       },
     },
 
+    // Redirect yoga-layout to our custom synchronous implementation.
+    {
+      name: 'alias-yoga-layout-to-sync',
+      resolveId(source, _importer, _options) {
+        if (source === 'yoga-layout') {
+          const resolved = path.join(constants.rootPath, 'external/yoga-sync.mjs')
+          console.log(`[alias-yoga] Resolving 'yoga-layout' to:`, resolved)
+          // Use our custom synchronous loader with yoga's WASM and wrapAssembly.
+          return { id: resolved, external: false }
+        }
+        return null
+      },
+    },
+
     // Replace iconv-lite and encoding with stubs to avoid bundling issues.
     {
       name: 'stub-problematic-packages',
@@ -196,6 +215,7 @@ export default {
     // Fix package-specific issues BEFORE replace plugin runs.
     fixDebug(),
     fixInk(),
+    fixYoga(),
 
     // Custom plugin to force bundling of socket packages.
     {
@@ -250,46 +270,11 @@ export default {
 
     // Replace environment variables and import.meta.
     replacePlugin({
+      delimiters: ['', ''],
       preventAssignment: true,
-      delimiters: ['(?<![\'"])\\b', '(?![\'"])'],
       values: {
         'process.env.NODE_ENV': JSON.stringify('production'),
-        'process.env.INLINED_SOCKET_CLI_UNIFIED_BUILD': JSON.stringify('1'),
-        'process.env.INLINED_SOCKET_CLI_VERSION': JSON.stringify(
-          getRootPkgJsonSync().version,
-        ),
-        'process.env.INLINED_SOCKET_CLI_VERSION_HASH': JSON.stringify(
-          getSocketCliVersionHash(),
-        ),
-        'process.env.INLINED_SOCKET_CLI_HOMEPAGE': JSON.stringify(
-          getRootPkgJsonSync().homepage,
-        ),
-        'process.env.INLINED_SOCKET_CLI_NAME': JSON.stringify(
-          getRootPkgJsonSync().name,
-        ),
-        'process.env.INLINED_SOCKET_CLI_PUBLISHED_BUILD': JSON.stringify(
-          !!constants.ENV.INLINED_SOCKET_CLI_PUBLISHED_BUILD,
-        ),
-        'process.env.INLINED_SOCKET_CLI_LEGACY_BUILD': JSON.stringify(
-          !!constants.ENV.INLINED_SOCKET_CLI_LEGACY_BUILD,
-        ),
-        'process.env.INLINED_SOCKET_CLI_SENTRY_BUILD': JSON.stringify(
-          !!constants.ENV.INLINED_SOCKET_CLI_SENTRY_BUILD,
-        ),
-        'process.env.INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION': JSON.stringify(
-          getRootPkgJsonSync().devDependencies['@coana-tech/cli'],
-        ),
-        'process.env.INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION':
-          JSON.stringify(
-            getRootPkgJsonSync().devDependencies['@cyclonedx/cdxgen'],
-          ),
-        'process.env.INLINED_SOCKET_CLI_SYNP_VERSION': JSON.stringify(
-          getRootPkgJsonSync().devDependencies.synp,
-        ),
-        'process.env.INLINED_SOCKET_CLI_PYTHON_VERSION':
-          JSON.stringify('3.10.18'),
-        'process.env.INLINED_SOCKET_CLI_PYTHON_BUILD_TAG':
-          JSON.stringify('20250918'),
+        ...generateReplacePatterns(),
       },
     }),
 
@@ -406,6 +391,9 @@ export default {
       },
     },
 
+    // Shared cleanup plugins (from rollup-shared-plugins.mjs).
+    ...createCleanupPlugins(),
+
     // Final cleanup plugin.
     {
       name: 'final-cleanup',
@@ -435,55 +423,48 @@ export default {
       },
     },
 
-    // Minify the final bundle with esbuild.
-    {
-      name: 'esbuild-minify',
-      async renderChunk(code) {
-        const result = await esbuildTransform(code, {
-          loader: 'js',
-          minify: true,
-          minifyWhitespace: true,
-          minifyIdentifiers: true,
-          minifySyntax: true,
-          target: 'node22',
-          format: 'cjs',
-          platform: 'node',
-          logLevel: 'silent',
-          // Preserve shebang and "use strict" from banner.
-          legalComments: 'inline',
-          // Keep function names for better stack traces.
-          keepNames: false,
-        })
+    // Minify the final bundle with esbuild (unless --no-minify is set).
+    ...(process.env.SOCKET_CLI_NO_MINIFY
+      ? []
+      : [
+          {
+            name: 'esbuild-minify',
+            async renderChunk(code) {
+              const result = await esbuildTransform(code, {
+                loader: 'js',
+                minify: true,
+                minifyWhitespace: true,
+                minifyIdentifiers: true,
+                minifySyntax: true,
+                target: 'node22',
+                format: 'cjs',
+                platform: 'node',
+                logLevel: 'silent',
+                // Preserve shebang and "use strict" from banner.
+                legalComments: 'inline',
+                // Keep function names for better stack traces.
+                keepNames: false,
+              })
 
-        const minified = result.code
-        const originalSize = Buffer.byteLength(code, 'utf8')
-        const minifiedSize = Buffer.byteLength(minified, 'utf8')
-        const savings = ((1 - minifiedSize / originalSize) * 100).toFixed(1)
+              const minified = result.code
+              const originalSize = Buffer.byteLength(code, 'utf8')
+              const minifiedSize = Buffer.byteLength(minified, 'utf8')
+              const savings = ((1 - minifiedSize / originalSize) * 100).toFixed(
+                1,
+              )
 
-        console.log(
-          `✓ Minified dist/cli.js: ${(originalSize / 1024).toFixed(1)}KB → ${(minifiedSize / 1024).toFixed(1)}KB (-${savings}%)`,
-        )
+              console.log(
+                `✓ Minified dist/cli.js: ${(originalSize / 1024).toFixed(1)}KB → ${(minifiedSize / 1024).toFixed(1)}KB (-${savings}%)`,
+              )
 
-        return minified
-      },
-    },
+              return minified
+            },
+          },
+        ]),
   ],
 
   // Suppress warnings.
-  onwarn(warning, warn) {
-    if (
-      warning.code === 'EVAL' ||
-      warning.code === 'CIRCULAR_DEPENDENCY' ||
-      warning.code === 'THIS_IS_UNDEFINED' ||
-      warning.code === 'UNRESOLVED_IMPORT' ||
-      warning.code === 'INVALID_ANNOTATION' ||
-      warning.code === 'MISSING_EXPORT' ||
-      warning.code === 'MIXED_EXPORTS'
-    ) {
-      return // Suppress these warnings.
-    }
-    warn(warning)
-  },
+  onwarn: standardOnwarn,
 
   // Watch mode configuration for development
   watch: {

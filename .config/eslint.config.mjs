@@ -16,13 +16,13 @@ import unicornPlugin from 'eslint-plugin-unicorn'
 import globals from 'globals'
 import tsEslint from 'typescript-eslint'
 
-import constants from '../scripts/constants.mjs'
+import { TSCONFIG_JSON } from '../scripts/constants/build.mjs'
+import { GITIGNORE } from '../scripts/constants/packages.mjs'
+import { LATEST, maintainedNodeVersions } from '../scripts/constants/versions.mjs'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const require = createRequire(import.meta.url)
-
-const { GITIGNORE, LATEST, TSCONFIG_JSON } = constants
 
 const { flatConfigs: origImportXFlatConfigs } = importXPlugin
 
@@ -148,7 +148,7 @@ const sharedRulesForNode = {
         'test',
         'test.describe',
       ],
-      version: constants.maintainedNodeVersions.current,
+      version: String(maintainedNodeVersions[maintainedNodeVersions.length - 1]),
     },
   ],
   'n/prefer-node-protocol': 'error',
