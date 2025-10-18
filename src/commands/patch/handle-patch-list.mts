@@ -5,22 +5,27 @@ import { UTF8 } from '@socketsecurity/registry/constants/encoding'
 import { DOT_SOCKET_DIR, MANIFEST_JSON } from '@socketsecurity/registry/constants/paths'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { normalizePath } from '@socketsecurity/registry/lib/path'
+import { select } from '@socketsecurity/registry/lib/prompts'
 import { pluralize } from '@socketsecurity/registry/lib/words'
 
 
+import { handlePatchApply } from './handle-patch-apply.mts'
 import { PatchManifestSchema } from './manifest-schema.mts'
 import { outputPatchListResult } from './output-patch-list-result.mts'
 import { getErrorCause } from '../../utils/error/errors.mjs'
+import { getPurlObject } from '../../utils/purl/parse.mjs'
 
 import type { OutputKind } from '../../types.mts'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 export interface PatchListEntry {
+  appliedAt: string | undefined
   description: string | undefined
   exportedAt: string
   fileCount: number
   license: string | undefined
   purl: string
+  status: 'downloaded' | 'applied' | 'failed' | undefined
   tier: string | undefined
   uuid: string | undefined
   vulnerabilityCount: number
@@ -28,12 +33,14 @@ export interface PatchListEntry {
 
 export interface HandlePatchListConfig {
   cwd: string
+  interactive: boolean
   outputKind: OutputKind
   spinner: Spinner
 }
 
 export async function handlePatchList({
   cwd,
+  interactive,
   outputKind,
   spinner,
 }: HandlePatchListConfig): Promise<void> {
@@ -57,11 +64,13 @@ export async function handlePatchList({
       ).length
 
       patches.push({
+        appliedAt: patch.appliedAt,
         description: patch.description,
         exportedAt: patch.exportedAt,
         fileCount,
         license: patch.license,
         purl,
+        status: patch.status,
         tier: patch.tier,
         uuid: patch.uuid,
         vulnerabilityCount,
@@ -72,12 +81,100 @@ export async function handlePatchList({
 
     if (patches.length === 0) {
       logger.log('No patches found in manifest')
-    } else {
-      logger.log(
-        `Found ${patches.length} ${pluralize('patch', { count: patches.length })} in manifest`,
-      )
+      return
     }
 
+    logger.log(
+      `Found ${patches.length} ${pluralize('patch', { count: patches.length })} in manifest`,
+    )
+
+    // Interactive mode: Let user select patches to apply.
+    if (interactive) {
+      if (patches.length === 0) {
+        logger.log('No patches available to select')
+        return
+      }
+
+      // Show list first.
+      await outputPatchListResult(
+        {
+          ok: true,
+          data: { patches },
+        },
+        outputKind,
+      )
+
+      logger.log('')
+      logger.log('Select patches to apply (use arrow keys and Enter):')
+      logger.log('')
+
+      // Create choices for selection.
+      const choices = [
+        {
+          name: '✓ Apply All Patches',
+          value: '__ALL__',
+        },
+        ...patches.map(patch => {
+          const statusIndicator = patch.status === 'applied' ? '[✓]' : patch.status === 'failed' ? '[✗]' : '[○]'
+          const vulnText = patch.vulnerabilityCount > 0
+            ? ` - ${patch.vulnerabilityCount} ${pluralize('vuln', { count: patch.vulnerabilityCount })}`
+            : ''
+
+          return {
+            name: `${statusIndicator} ${patch.purl}${vulnText}`,
+            value: patch.purl,
+            description: patch.description || 'No description',
+          }
+        }),
+        {
+          name: '✗ Cancel',
+          value: '__CANCEL__',
+        },
+      ]
+
+      const selectedValue = await select({
+        message: 'Select a patch to apply:',
+        choices,
+      })
+
+      if (selectedValue === '__CANCEL__') {
+        logger.log('Cancelled')
+        return
+      }
+
+      // Determine which patches to apply.
+      const purlsToApply: string[] = []
+
+      if (selectedValue === '__ALL__') {
+        purlsToApply.push(...patches.map(p => p.purl))
+      } else {
+        purlsToApply.push(selectedValue)
+      }
+
+      logger.log('')
+      logger.log(
+        `Applying ${purlsToApply.length} ${pluralize('patch', { count: purlsToApply.length })}...`,
+      )
+      logger.log('')
+
+      // Convert PURLs to PackageURL objects.
+      const purlObjs = purlsToApply
+        .map(purl => getPurlObject(purl, { throws: false }))
+        .filter((p): p is NonNullable<typeof p> => p !== null)
+
+      // Apply the selected patches.
+      await handlePatchApply({
+        cwd,
+        dryRun: false,
+        outputKind,
+        purlObjs,
+        spinner,
+      })
+
+      return
+    }
+
+    // Non-interactive mode: Just show the list.
     await outputPatchListResult(
       {
         ok: true,

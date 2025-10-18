@@ -1,9 +1,10 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 
+import { DOT_SOCKET_DIR } from '@socketsecurity/registry/constants/paths'
 import { getSpinner } from '@socketsecurity/registry/constants/process'
 
-import { handlePatchDiscover } from './handle-patch-discover.tsx'
+import { handlePatchDownload } from './handle-patch-download.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { InputError } from '../../utils/error/errors.mjs'
@@ -20,11 +21,11 @@ import type {
   CliSubcommand,
 } from '../../utils/cli/with-subcommands.mjs'
 
-export const CMD_NAME = 'discover'
+export const CMD_NAME = 'download'
 
-const description = 'Discover available patches for installed dependencies'
+const description = 'Download patches from Socket API'
 
-export const cmdPatchDiscover: CliSubcommand = {
+export const cmdPatchDownload: CliSubcommand = {
   description,
   hidden: false,
   run,
@@ -38,27 +39,19 @@ async function run(
   const config: CliCommandConfig = {
     commandName: CMD_NAME,
     description,
+    hidden: false,
     flags: {
       ...commonFlags,
       ...outputFlags,
-      interactive: {
-        type: 'boolean',
-        default: false,
-        shortFlag: 'i',
-        description: 'Interactively download discovered patches',
-      },
       scan: {
         type: 'string',
-        shortFlag: 's',
-        description: 'Discover patches from existing scan',
+        description: 'Download patches from scan results',
       },
     },
-    hidden: false,
     help: (command, config) => `
     Usage
-      $ ${command} [CWD=.]
-      $ ${command} -s <scan-id>
-      $ ${command} -i
+      $ ${command} <uuid...>
+      $ ${command} --scan <scan-id>
 
     API Token Requirements
       ${getFlagApiRequirementsOutput(`${parentName}:${CMD_NAME}`)}
@@ -67,12 +60,10 @@ async function run(
       ${getFlagListOutput(config.flags)}
 
     Examples
-      $ ${command}
-      $ ${command} ./path/to/project
-      $ ${command} -s scan-abc123
-      $ ${command} -i
-      $ ${command} -s scan-abc123 -i
-      $ ${command} --json
+      $ ${command} 550e8400-e29b-41d4-a716-446655440000
+      $ ${command} uuid1 uuid2 uuid3
+      $ ${command} --scan scan-abc123
+      $ ${command} --scan scan-abc123 --json
     `,
   }
 
@@ -86,8 +77,7 @@ async function run(
     { allowUnknownFlags: false },
   )
 
-  const { interactive, json, markdown, scan } = cli.flags as unknown as {
-    interactive: boolean
+  const { json, markdown, scan } = cli.flags as unknown as {
     json: boolean
     markdown: boolean
     scan?: string
@@ -105,26 +95,47 @@ async function run(
     return
   }
 
-  let [cwd = '.'] = cli.input
-  // Note: path.resolve vs .join:
-  // If given path is absolute then cwd should not affect it.
-  cwd = path.resolve(process.cwd(), cwd)
+  let uuids: string[] = []
+  let cwd: string
 
-  // Check if node_modules exists (only if not using --scan).
-  if (!scan) {
-    const nodeModulesPath = path.join(cwd, 'node_modules')
-    if (!existsSync(nodeModulesPath)) {
+  if (scan) {
+    // When using --scan, we can use current directory
+    cwd = process.cwd()
+  } else {
+    if (cli.input.length === 0) {
       throw new InputError(
-        'No node_modules directory found. Run npm/yarn/pnpm install first',
+        'Must provide patch UUIDs or use --scan flag',
       )
+    }
+
+    // First arg might be cwd if it's a directory
+    const firstArg = cli.input[0]
+    if (firstArg && !firstArg.match(/^[0-9a-f-]{36}$/i) && existsSync(firstArg)) {
+      cwd = firstArg
+      uuids = cli.input.slice(1) as string[]
+    } else {
+      cwd = process.cwd()
+      uuids = cli.input.slice() as string[]
     }
   }
 
-  await handlePatchDiscover({
+  cwd = path.resolve(cwd)
+
+  // Create .socket directory if it doesn't exist.
+  const dotSocketDirPath = path.join(cwd, DOT_SOCKET_DIR)
+  if (!existsSync(dotSocketDirPath)) {
+    throw new InputError(
+      `No ${DOT_SOCKET_DIR} directory found. Run 'socket scan create' first.`,
+    )
+  }
+
+  const spinner = getSpinner()!
+
+  await handlePatchDownload({
     cwd,
-    interactive,
     outputKind,
     ...(scan ? { scanId: scan } : {}),
-    spinner: getSpinner(),
+    spinner,
+    uuids,
   })
 }
