@@ -4,7 +4,7 @@ import { OUTPUT_JSON } from '../../constants/cli.mjs'
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
-import type { DiscoveredPatch } from './handle-patch-discover.mts'
+import type { DiscoveredPatch } from './handle-patch-discover.tsx'
 import type { CResult, OutputKind } from '../../types.mts'
 
 type PatchDiscoverResultData = {
@@ -33,11 +33,11 @@ export async function outputPatchDiscoverResult(
 
   if (outputKind === 'markdown') {
     if (patches.length === 0) {
-      logger.log('## Available Patches\n\nNo patches available.')
+      logger.log('## Discovered Patches\n\nNo patches discovered.')
       return
     }
 
-    logger.log('## Available Patches\n')
+    logger.log('## Discovered Patches\n')
     for (const patch of patches) {
       logger.log(`### ${patch.purl}\n`)
       if (patch.uuid) {
@@ -52,15 +52,45 @@ export async function outputPatchDiscoverResult(
       if (patch.license) {
         logger.log(`**License**: ${patch.license}`)
       }
-      const vulnCount = patch.vulnerabilities.length
-      logger.log(`**Vulnerabilities**: ${vulnCount}`)
-      if (vulnCount > 0) {
-        for (const vuln of patch.vulnerabilities) {
+
+      // Free CVEs.
+      const freeCveCount = patch.freeCves.length
+      if (freeCveCount > 0) {
+        logger.log(`\n**Free CVEs**: ${freeCveCount}`)
+        for (const vuln of patch.freeCves) {
           const cveStr = vuln.cve || 'Unknown'
           const severityStr = vuln.severity ? ` (${vuln.severity})` : ''
           logger.log(`  - ${cveStr}${severityStr}`)
         }
       }
+
+      // Enterprise CVEs.
+      const paidCveCount = patch.paidCves.length
+      if (paidCveCount > 0) {
+        logger.log(`\n**Enterprise CVEs**: ${paidCveCount}`)
+        for (const vuln of patch.paidCves) {
+          const cveStr = vuln.cve || 'Unknown'
+          const severityStr = vuln.severity ? ` (${vuln.severity})` : ''
+          logger.log(`  - ${cveStr}${severityStr}`)
+        }
+      }
+
+      // Free Features.
+      if (patch.freeFeatures?.length) {
+        logger.log(`\n**Free Features**:`)
+        for (const feature of patch.freeFeatures) {
+          logger.log(`  - ${feature}`)
+        }
+      }
+
+      // Enterprise Features.
+      if (patch.paidFeatures?.length) {
+        logger.log(`\n**Enterprise Features**:`)
+        for (const feature of patch.paidFeatures) {
+          logger.log(`  - ${feature}`)
+        }
+      }
+
       logger.log('')
     }
     return
@@ -87,15 +117,45 @@ export async function outputPatchDiscoverResult(
     if (patch.license) {
       logger.log(`License: ${patch.license}`)
     }
-    const vulnCount = patch.vulnerabilities.length
-    logger.log(`Vulnerabilities: ${vulnCount}`)
-    if (vulnCount > 0) {
-      for (const vuln of patch.vulnerabilities) {
+
+    // Free CVEs.
+    const freeCveCount = patch.freeCves.length
+    if (freeCveCount > 0) {
+      logger.log(`Free CVEs: ${freeCveCount}`)
+      for (const vuln of patch.freeCves) {
         const cveStr = vuln.cve || 'Unknown'
         const severityStr = vuln.severity ? ` (${vuln.severity})` : ''
         logger.log(`  - ${cveStr}${severityStr}`)
       }
     }
+
+    // Enterprise CVEs.
+    const paidCveCount = patch.paidCves.length
+    if (paidCveCount > 0) {
+      logger.log(`Enterprise CVEs: ${paidCveCount}`)
+      for (const vuln of patch.paidCves) {
+        const cveStr = vuln.cve || 'Unknown'
+        const severityStr = vuln.severity ? ` (${vuln.severity})` : ''
+        logger.log(`  - ${cveStr}${severityStr}`)
+      }
+    }
+
+    // Free Features.
+    if (patch.freeFeatures?.length) {
+      logger.log(`Free Features:`)
+      for (const feature of patch.freeFeatures) {
+        logger.log(`  - ${feature}`)
+      }
+    }
+
+    // Enterprise Features.
+    if (patch.paidFeatures?.length) {
+      logger.log(`Enterprise Features:`)
+      for (const feature of patch.paidFeatures) {
+        logger.log(`  - ${feature}`)
+      }
+    }
+
     logger.groupEnd()
   }
   logger.groupEnd()

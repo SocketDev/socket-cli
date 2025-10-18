@@ -23,6 +23,7 @@ import { outputPatchResult } from './output-patch-result.mts'
 import { getErrorCause } from '../../utils/error/errors.mjs'
 import { findUp } from '../../utils/fs/fs.mjs'
 import { createBackup } from '../../utils/manifest/patch-backup.mts'
+import { updatePatchStatus } from '../../utils/manifest/patches.mts'
 import { getPurlObject, normalizePurl } from '../../utils/purl/parse.mjs'
 
 import type { PatchRecord } from './manifest-schema.mts'
@@ -52,6 +53,7 @@ type ApplyNpmPatchesOptions = {
 type ApplyNpmPatchesResult = {
   passed: string[]
   failed: string[]
+  locations: Map<string, string[]>
 }
 
 async function applyNpmPatches(
@@ -90,6 +92,7 @@ async function applyNpmPatches(
   const result: ApplyNpmPatchesResult = {
     passed: [],
     failed: [],
+    locations: new Map(),
   }
 
   for (const nmPath of nmPaths) {
@@ -175,6 +178,10 @@ async function applyNpmPatches(
 
         if (passed) {
           result.passed.push(purl)
+          // Track the location where this patch was applied.
+          const locations = result.locations.get(purl) || []
+          locations.push(pkgPath)
+          result.locations.set(purl, locations)
         } else {
           result.failed.push(purl)
         }
@@ -448,6 +455,34 @@ export async function handlePatchApply({
         },
       )
       patched.push(...patchingResults.passed)
+
+      // Update manifest with application status for successful patches.
+      if (!dryRun) {
+        for (const purl of patchingResults.passed) {
+          const locations = patchingResults.locations.get(purl) || []
+          try {
+            // eslint-disable-next-line no-await-in-loop
+            await updatePatchStatus(purl, 'applied', {
+              appliedAt: new Date().toISOString(),
+              appliedTo: locations,
+            })
+          } catch (e) {
+            // Log error but don't fail the whole operation.
+            logger.warn(`Failed to update status for ${purl}: ${getErrorCause(e)}`)
+          }
+        }
+
+        // Update status to 'failed' for patches that didn't apply.
+        for (const purl of patchingResults.failed) {
+          try {
+            // eslint-disable-next-line no-await-in-loop
+            await updatePatchStatus(purl, 'failed', {})
+          } catch (e) {
+            // Log error but don't fail the whole operation.
+            logger.warn(`Failed to update status for ${purl}: ${getErrorCause(e)}`)
+          }
+        }
+      }
     }
 
     spinner.stop()

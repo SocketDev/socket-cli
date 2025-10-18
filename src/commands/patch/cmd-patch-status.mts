@@ -1,9 +1,10 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 
+import { DOT_SOCKET_DIR, MANIFEST_JSON } from '@socketsecurity/registry/constants/paths'
 import { getSpinner } from '@socketsecurity/registry/constants/process'
 
-import { handlePatchDiscover } from './handle-patch-discover.tsx'
+import { handlePatchStatus } from './handle-patch-status.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { InputError } from '../../utils/error/errors.mjs'
@@ -20,11 +21,11 @@ import type {
   CliSubcommand,
 } from '../../utils/cli/with-subcommands.mjs'
 
-export const CMD_NAME = 'discover'
+export const CMD_NAME = 'status'
 
-const description = 'Discover available patches for installed dependencies'
+const description = 'Show patch application status'
 
-export const cmdPatchDiscover: CliSubcommand = {
+export const cmdPatchStatus: CliSubcommand = {
   description,
   hidden: false,
   run,
@@ -38,27 +39,29 @@ async function run(
   const config: CliCommandConfig = {
     commandName: CMD_NAME,
     description,
+    hidden: false,
     flags: {
       ...commonFlags,
       ...outputFlags,
-      interactive: {
+      applied: {
         type: 'boolean',
         default: false,
-        shortFlag: 'i',
-        description: 'Interactively download discovered patches',
+        description: 'Show only applied patches',
       },
-      scan: {
-        type: 'string',
-        shortFlag: 's',
-        description: 'Discover patches from existing scan',
+      downloaded: {
+        type: 'boolean',
+        default: false,
+        description: 'Show only downloaded patches',
+      },
+      failed: {
+        type: 'boolean',
+        default: false,
+        description: 'Show only failed patches',
       },
     },
-    hidden: false,
     help: (command, config) => `
     Usage
       $ ${command} [CWD=.]
-      $ ${command} -s <scan-id>
-      $ ${command} -i
 
     API Token Requirements
       ${getFlagApiRequirementsOutput(`${parentName}:${CMD_NAME}`)}
@@ -69,9 +72,7 @@ async function run(
     Examples
       $ ${command}
       $ ${command} ./path/to/project
-      $ ${command} -s scan-abc123
-      $ ${command} -i
-      $ ${command} -s scan-abc123 -i
+      $ ${command} --applied
       $ ${command} --json
     `,
   }
@@ -86,11 +87,12 @@ async function run(
     { allowUnknownFlags: false },
   )
 
-  const { interactive, json, markdown, scan } = cli.flags as unknown as {
-    interactive: boolean
+  const { applied, downloaded, failed, json, markdown } = cli.flags as unknown as {
+    applied: boolean
+    downloaded: boolean
+    failed: boolean
     json: boolean
     markdown: boolean
-    scan?: string
   }
 
   const outputKind = getOutputKind(json, markdown)
@@ -110,21 +112,30 @@ async function run(
   // If given path is absolute then cwd should not affect it.
   cwd = path.resolve(process.cwd(), cwd)
 
-  // Check if node_modules exists (only if not using --scan).
-  if (!scan) {
-    const nodeModulesPath = path.join(cwd, 'node_modules')
-    if (!existsSync(nodeModulesPath)) {
-      throw new InputError(
-        'No node_modules directory found. Run npm/yarn/pnpm install first',
-      )
-    }
+  const dotSocketDirPath = path.join(cwd, DOT_SOCKET_DIR)
+  if (!existsSync(dotSocketDirPath)) {
+    throw new InputError(
+      `No ${DOT_SOCKET_DIR} directory found in current directory`,
+    )
   }
 
-  await handlePatchDiscover({
+  const manifestPath = path.join(dotSocketDirPath, MANIFEST_JSON)
+  if (!existsSync(manifestPath)) {
+    throw new InputError(
+      `No ${MANIFEST_JSON} found in ${DOT_SOCKET_DIR} directory`,
+    )
+  }
+
+  const spinner = getSpinner()!
+
+  await handlePatchStatus({
     cwd,
-    interactive,
+    filters: {
+      applied,
+      downloaded,
+      failed,
+    },
     outputKind,
-    ...(scan ? { scanId: scan } : {}),
-    spinner: getSpinner(),
+    spinner,
   })
 }

@@ -43,6 +43,11 @@ async function run(
     flags: {
       ...commonFlags,
       ...outputFlags,
+      interactive: {
+        type: 'boolean',
+        default: false,
+        description: 'Interactively select patches to apply',
+      },
     },
     help: (command, config) => `
     Usage
@@ -58,6 +63,7 @@ async function run(
       $ ${command}
       $ ${command} ./path/to/project
       $ ${command} --json
+      $ ${command} --interactive
     `,
   }
 
@@ -71,7 +77,8 @@ async function run(
     { allowUnknownFlags: false },
   )
 
-  const { json, markdown } = cli.flags as unknown as {
+  const { interactive, json, markdown } = cli.flags as unknown as {
+    interactive: boolean
     json: boolean
     markdown: boolean
   }
@@ -86,6 +93,12 @@ async function run(
   })
   if (!wasValidInput) {
     return
+  }
+
+  if (interactive && (json || markdown)) {
+    throw new InputError(
+      'Cannot use --interactive with --json or --markdown flags',
+    )
   }
 
   let [cwd = '.'] = cli.input
@@ -111,6 +124,7 @@ async function run(
 
   await handlePatchList({
     cwd,
+    interactive,
     outputKind,
     spinner,
   })

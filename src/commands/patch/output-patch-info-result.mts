@@ -33,9 +33,9 @@ export async function outputPatchInfoResult(
     if (patch.uuid) {
       logger.log(`**UUID**: ${patch.uuid}\n`)
     }
-    if (patch.description) {
-      logger.log(`**Description**: ${patch.description}\n`)
-    }
+    logger.log(
+      `**Description**: ${patch.description || 'No description provided'}\n`,
+    )
     logger.log(`**Exported**: ${patch.exportedAt}\n`)
     if (patch.tier) {
       logger.log(`**Tier**: ${patch.tier}\n`)
@@ -86,9 +86,7 @@ export async function outputPatchInfoResult(
   if (patch.uuid) {
     logger.log(`UUID: ${patch.uuid}`)
   }
-  if (patch.description) {
-    logger.log(`Description: ${patch.description}`)
-  }
+  logger.log(`Description: ${patch.description || 'No description provided'}`)
   logger.log(`Exported: ${patch.exportedAt}`)
   if (patch.tier) {
     logger.log(`Tier: ${patch.tier}`)
