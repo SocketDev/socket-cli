@@ -3,6 +3,7 @@ import { setupSdk } from '../../utils/socket/sdk.mjs'
 
 import type { CResult } from '../../types.mts'
 import type { SetupSdkOptions } from '../../utils/socket/sdk.mjs'
+import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export type FetchCreateOrgFullScanConfigs = {
@@ -19,6 +20,7 @@ export type FetchCreateOrgFullScanOptions = {
   defaultBranch?: boolean | undefined
   pendingHead?: boolean | undefined
   sdkOpts?: SetupSdkOptions | undefined
+  spinner?: Spinner | undefined
   tmp?: boolean | undefined
 }
 
@@ -42,6 +44,7 @@ export async function fetchCreateOrgFullScan(
     defaultBranch,
     pendingHead,
     sdkOpts,
+    spinner,
     tmp,
   } = { __proto__: null, ...options } as FetchCreateOrgFullScanOptions
 
@@ -66,6 +69,9 @@ export async function fetchCreateOrgFullScan(
         tmp: String(tmp),
       },
     }),
-    { description: 'to create a scan' },
+    {
+      description: 'to create a scan',
+      spinner,
+    },
   )
 }
