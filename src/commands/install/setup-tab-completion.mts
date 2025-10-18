@@ -1,11 +1,10 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 
 import { debug } from '@socketsecurity/registry/lib/debug'
 
 import ENV from '../../constants/env.mts'
-import { homePath } from '../../constants/paths.mts'
+import { homePath, rootPath } from '../../constants/paths.mts'
 import { getBashrcDetails } from '../../utils/cli/completion.mjs'
 
 import type { CResult } from '../../types.mts'
@@ -79,8 +78,7 @@ export async function setupTabCompletion(targetName: string): Promise<
 }
 
 function getTabCompletionScriptRaw(): CResult<string> {
-  const sourceDir = path.dirname(fileURLToPath(import.meta.url))
-  const sourcePath = path.join(sourceDir, 'socket-completion.bash')
+  const sourcePath = path.join(rootPath, 'data', 'socket-completion.bash')
 
   if (!fs.existsSync(sourcePath)) {
     return {
