@@ -11,12 +11,13 @@ export default function fixYoga() {
     name: 'fix-yoga',
 
     transform(code, id) {
-      // Only process yoga-layout's index.js file.
+      // Process only index.js from yoga-layout (not sync.js).
+      // The pnpm-patched sync.js uses YogaProxy for lazy initialization which works fine.
       if (!id.includes('yoga-layout') || !id.includes('index.js')) {
         return null
       }
 
-      // Only patch if file has await (not already patched).
+      // Handle index.js: original await pattern.
       if (!code.includes('await loadYoga')) {
         return null
       }
