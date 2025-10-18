@@ -2,6 +2,13 @@
 
 🚨 **MANDATORY**: Act as principal-level engineer with deep expertise in TypeScript, Node.js, and CLI development.
 
+## 👤 USER CONTEXT
+
+- **Primary User**: John-David Dalton (GitHub: jdalton)
+- 🚨 **When interacting with jdalton (verified by account/context)**: ALWAYS refer to them as "John-David" - NEVER use "the user" or "user"
+- When discussing jdalton's commits, work, or contributions, use "John-David" or "you/your" (if speaking to John-David directly)
+- **Other contributors**: Use their actual names or appropriate references as provided in commit history/context
+
 ## 📚 SHARED STANDARDS
 
 **See canonical reference:** `../socket-registry/CLAUDE.md`
@@ -47,8 +54,67 @@ For all shared Socket standards (git workflow, testing, code style, imports, sor
 - **Run without build**: `npm run s` or `pnpm s` (runs socket directly)
 - **Native TypeScript**: `./sd` (runs the CLI without building using Node.js native TypeScript support on Node 22+)
 
+### Unified Script Loader
+The `scripts/load.mjs` file acts as both a module loader and a convenient script wrapper:
+
+**As a wrapper (recommended):**
+```bash
+node scripts/load.mjs <script-name> [flags]
+node scripts/load.mjs build-yao-pkg-node --clean
+```
+
+**As a loader (also works):**
+```bash
+node --loader=./scripts/load.mjs scripts/build-yao-pkg-node.mjs --clean
+```
+
+**Benefits:**
+- Automatically applies alias loader for registry imports
+- Enables `logger.substep()` and other enhanced logger methods
+- Shorter, cleaner command syntax
+- Script name with or without `.mjs` extension works
+
 ### CLI-Specific Notes
 - **Dynamic imports**: Only use dynamic imports for test mocking (e.g., `vi.importActual` in Vitest). Avoid runtime dynamic imports in production code
+
+### Custom Node.js Binary (yao-pkg Patched)
+- **Testing yao-pkg binaries**: The custom-built Node.js binary has yao-pkg patches that modify argument handling
+- **🚨 CRITICAL**: Always use `PKG_EXECPATH=PKG_INVOKE_NODEJS` when testing the binary directly
+  - ✅ CORRECT: `PKG_EXECPATH=PKG_INVOKE_NODEJS .node-source/out/Release/node --version`
+  - ❌ WRONG: `.node-source/out/Release/node --version` (treats `--version` as module path)
+- **Why this happens**: yao-pkg's PKG_DUMMY_ENTRYPOINT behavior interprets the first argument as a module to load unless `PKG_EXECPATH=PKG_INVOKE_NODEJS` is set
+- **Build script wrapper**: The build script automatically sets this environment variable when testing binaries
+- **Binary locations**:
+  - `.node-source/out/Release/node` - Main build output (stripped, signed)
+  - `build/out/Release/node` - Copy for distribution
+
+### Socket Node.js Patches
+
+Socket CLI applies custom patches to Node.js during the yao-pkg build process. These patches enable critical functionality like Brotli compression, SEA support, and size optimizations.
+
+**🚨 CRITICAL REQUIREMENTS**:
+- **Patches are the ONLY way to modify Node.js source** - Direct modifications to files are forbidden.
+- **All patches MUST be created using git diff** against pristine Node.js source.
+- **Patch failures MUST stop the build** - No fallbacks or workarounds allowed.
+- **Each patch is considered critical** - All must apply cleanly or the build fails.
+
+**Standard Patch Creation Process**:
+1. Clone pristine source file from specific Node.js version.
+2. Apply modifications (using Node.js script or manual editing).
+3. Generate patch with `git diff --cached > patch-file`.
+4. Validate with `patch -p1 --dry-run < patch-file`.
+5. Add metadata header documenting creation process.
+6. Final validation to ensure patch applies cleanly.
+
+**Why This Process?**
+- Pristine and reproducible - patches generated from clean upstream source.
+- Format guaranteed - git diff produces properly formatted unified diffs.
+- Validation built-in - each step includes verification.
+- Documented - process embedded in patch headers for reference.
+
+**📚 Detailed Documentation**: See `build/patches/socket/README.md` for complete patch creation guide, troubleshooting, and examples.
+
+**📁 Patch Application**: Patches applied automatically by `scripts/build-yao-pkg-node.mjs` with validation before application.
 
 ## Architecture
 
@@ -344,6 +410,10 @@ Socket CLI integrates with various third-party tools and services:
 - **File extensions**: Use `.mts` for TypeScript module files
 - **Import order**: Node.js built-ins first, then third-party packages, then local imports
 - **Import grouping**: Group imports by source (Node.js, external packages, local modules)
+- **Node.js path module**: 🚨 ALWAYS import path as namespace `import path from 'node:path'`, NEVER cherry-pick individual functions
+  - ✅ CORRECT: `import path from 'node:path'` then use `path.join()`, `path.dirname()`, `path.basename()`
+  - ❌ FORBIDDEN: `import { join, dirname, basename } from 'node:path'`
+  - **Rationale**: Namespace imports are clearer, prevent naming conflicts, and make it obvious where utilities come from
 - **Type imports**: 🚨 ALWAYS use separate `import type` statements for TypeScript types, NEVER mix runtime imports with type imports in the same statement
   - ✅ CORRECT: `import { readPackageJson } from '@socketsecurity/registry/lib/packages'` followed by `import type { PackageJson } from '@socketsecurity/registry/lib/packages'`
   - ❌ FORBIDDEN: `import { readPackageJson, type PackageJson } from '@socketsecurity/registry/lib/packages'`
