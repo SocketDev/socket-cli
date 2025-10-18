@@ -328,7 +328,7 @@ async function extractTarball(tarballPath: string): Promise<void> {
   }
 
   // Parse tarball and extract files.
-  let files
+  let files: Awaited<ReturnType<typeof parseTarGzip>>
   try {
     files = await parseTarGzip(buffer)
   } catch (error) {
@@ -758,7 +758,11 @@ async function main(): Promise<void> {
       }
 
       // Set process.argv to include CLI path and user arguments.
-      process.argv = [process.argv[0]!, cliPath, ...process.argv.slice(1)]
+      const execPath = process.argv[0]
+      if (!execPath) {
+        throw new Error('process.argv[0] is unexpectedly undefined')
+      }
+      process.argv = [execPath, cliPath, ...process.argv.slice(1)]
       // Load and execute the CLI with embedded Node.js.
       try {
         require(cliPath)
@@ -817,7 +821,7 @@ async function main(): Promise<void> {
     // process.env.MIN_NODE_VERSION is inlined at build time.
     const minNodeVersion = Number.parseInt(
       process.env['MIN_NODE_VERSION'] ?? '0',
-      0,
+      10,
     )
 
     const systemNodeVersion = await getSystemNodeVersion(minNodeVersion)

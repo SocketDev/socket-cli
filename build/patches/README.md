@@ -776,8 +776,8 @@ node scripts/apply-socket-mods.mjs
 # pkg cache
 ~/.pkg-cache/v3.5/built-v24.10.0-darwin-arm64-signed
 
-# Socket patches
-build/patches/socket/
+# Socket and PKG patches
+build/patches/
 
 # yao-pkg patch cache
 .custom-node-build/patches/node.v24.10.0.cpp.patch
@@ -805,7 +805,7 @@ build/patches/socket/
 
 ### Layer 2: Socket Patches (Custom)
 
-**Location**: `/build/patches/socket/`
+**Location**: `/build/patches/`
 
 #### Patch 1: V8 Include Path Fixes
 

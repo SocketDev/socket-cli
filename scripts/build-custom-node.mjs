@@ -39,11 +39,12 @@
  *   - WASM performance:           Unaffected (Liftoff baseline compiler)
  *
  * Usage:
- *   node scripts/load.mjs build-yao-pkg-node              # Normal build
- *   node scripts/load.mjs build-yao-pkg-node --clean      # Force fresh build
- *   node scripts/load.mjs build-yao-pkg-node --verify     # Verify after build
- *   node scripts/load.mjs build-yao-pkg-node --test       # Build + run smoke tests
- *   node scripts/load.mjs build-yao-pkg-node --test-full  # Build + run full tests
+ *   node scripts/load.mjs build-custom-node              # Normal build
+ *   node scripts/load.mjs build-custom-node --clean      # Force fresh build
+ *   node scripts/load.mjs build-custom-node --yes        # Auto-yes to prompts
+ *   node scripts/load.mjs build-custom-node --verify     # Verify after build
+ *   node scripts/load.mjs build-custom-node --test       # Build + run smoke tests
+ *   node scripts/load.mjs build-custom-node --test-full  # Build + run full tests
  */
 
 import { existsSync } from 'node:fs'
@@ -89,6 +90,7 @@ const CLEAN_BUILD = args.includes('--clean')
 const RUN_VERIFY = args.includes('--verify')
 const RUN_TESTS = args.includes('--test')
 const RUN_FULL_TESTS = args.includes('--test-full')
+const AUTO_YES = args.includes('--yes') || args.includes('-y')
 
 // Configuration
 const NODE_VERSION = 'v24.10.0'
@@ -106,8 +108,9 @@ const YAO_PATCH_URL = `https://raw.githubusercontent.com/yao-pkg/pkg-fetch/main/
 // .node-source/out/Release/node - Node.js build output (gitignored).
 // build/out/Release/node - Copy of Release binary (gitignored).
 // build/out/Stripped/node - Stripped binary (gitignored).
-// build/out/Signed/node - Stripped + signed binary (gitignored).
-// build/out/Sea/node - Stripped + signed binary for SEA builds (gitignored).
+// build/out/Signed/node - Stripped + signed binary (macOS ARM64 only, gitignored).
+// build/out/Final/node - Final binary for distribution (gitignored).
+// build/out/Sea/node - Binary for SEA builds (gitignored).
 // build/patches/yao/ - Yao-pkg patches (tracked in git).
 // build/patches/socket/ - Socket patches (tracked in git).
 
@@ -187,6 +190,45 @@ function findSocketPatches() {
 const CPU_COUNT = cpus().length
 const IS_MACOS = platform() === 'darwin'
 const ARCH = process.arch
+
+/**
+ * Check if Node.js source has uncommitted changes.
+ */
+async function isNodeSourceDirty() {
+  try {
+    const status = await execCapture('git', ['status', '--porcelain'], {
+      cwd: NODE_DIR,
+    })
+    return status.trim().length > 0
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Reset Node.js source to pristine state.
+ */
+async function resetNodeSource() {
+  console.log('Fetching latest tags...')
+  await exec(
+    'git',
+    [
+      'fetch',
+      '--depth',
+      '1',
+      'origin',
+      `refs/tags/${NODE_VERSION}:refs/tags/${NODE_VERSION}`,
+    ],
+    {
+      cwd: NODE_DIR,
+    },
+  )
+  console.log('Resetting to clean state...')
+  await exec('git', ['reset', '--hard', NODE_VERSION], { cwd: NODE_DIR })
+  await exec('git', ['clean', '-fdx'], { cwd: NODE_DIR })
+  console.log('✅ Node.js source reset to clean state')
+  console.log()
+}
 
 /**
  * Get file size in human-readable format.
@@ -447,7 +489,9 @@ async function verifySocketModifications() {
   try {
     const content = await readFile(primordialFile, 'utf8')
     if (content.includes('Socket CLI: Polyfill localeCompare')) {
-      logger.success('primordials.js correctly modified (localeCompare polyfill)')
+      logger.success(
+        'primordials.js correctly modified (localeCompare polyfill)',
+      )
     } else {
       logger.warn('localeCompare polyfill not applied (may not be needed)')
     }
@@ -457,11 +501,19 @@ async function verifySocketModifications() {
 
   // Check 4: String.prototype.normalize polyfill for --with-intl=none.
   logger.log('Checking normalize polyfill...')
-  const bootstrapFile = join(NODE_DIR, 'lib', 'internal', 'bootstrap', 'node.js')
+  const bootstrapFile = join(
+    NODE_DIR,
+    'lib',
+    'internal',
+    'bootstrap',
+    'node.js',
+  )
   try {
     const content = await readFile(bootstrapFile, 'utf8')
     if (content.includes('Socket CLI: Polyfill String.prototype.normalize')) {
-      logger.success('bootstrap/node.js correctly modified (normalize polyfill)')
+      logger.success(
+        'bootstrap/node.js correctly modified (normalize polyfill)',
+      )
     } else {
       logger.warn('normalize polyfill not applied (may not be needed)')
     }
@@ -485,7 +537,9 @@ async function verifySocketModifications() {
     throw new Error('Socket modifications verification failed')
   }
 
-  logger.success('All Socket modifications verified for --with-intl=none compatibility')
+  logger.success(
+    'All Socket modifications verified for --with-intl=none compatibility',
+  )
   logger.logNewline()
 }
 
@@ -528,7 +582,13 @@ const { getAsset: getAssetInternal, getAssetKeys: getAssetKeysInternal } = inter
   // Modification 2: Fix String.prototype.localeCompare for --with-intl=none.
   // When compiled without ICU, localeCompare should fall back to simple comparison.
   // This ensures version sorting and other locale-aware operations work.
-  const primordialFile = join(NODE_DIR, 'lib', 'internal', 'per_context', 'primordials.js')
+  const primordialFile = join(
+    NODE_DIR,
+    'lib',
+    'internal',
+    'per_context',
+    'primordials.js',
+  )
   try {
     const { readFileSync, writeFileSync } = await import('node:fs')
     if (existsSync(primordialFile)) {
@@ -566,7 +626,9 @@ if (typeof globalThis.Intl === 'undefined') {
             '\n' +
             content.slice(insertPoint)
           writeFileSync(primordialFile, content, 'utf8')
-          console.log('   ✓ Modified: lib/internal/per_context/primordials.js (localeCompare polyfill)')
+          console.log(
+            '   ✓ Modified: lib/internal/per_context/primordials.js (localeCompare polyfill)',
+          )
         }
       }
     }
@@ -596,7 +658,9 @@ if (typeof globalThis.Intl === 'undefined' && typeof String.prototype.normalize 
 `
 
       // Insert early in bootstrap, after global setup.
-      if (!content.includes('Socket CLI: Polyfill String.prototype.normalize')) {
+      if (
+        !content.includes('Socket CLI: Polyfill String.prototype.normalize')
+      ) {
         const insertPoint = content.indexOf("'use strict';")
         if (insertPoint !== -1) {
           const endOfLine = content.indexOf('\n', insertPoint)
@@ -605,7 +669,9 @@ if (typeof globalThis.Intl === 'undefined' && typeof String.prototype.normalize 
             normalizePolyfill +
             content.slice(endOfLine + 1)
           writeFileSync(stringFile, content, 'utf8')
-          console.log('   ✓ Modified: lib/internal/bootstrap/node.js (normalize polyfill)')
+          console.log(
+            '   ✓ Modified: lib/internal/bootstrap/node.js (normalize polyfill)',
+          )
         }
       }
     }
@@ -646,7 +712,9 @@ if (typeof globalThis.Intl === 'undefined' && typeof String.prototype.normalize 
 async function _compressNodeJsWithBrotli() {
   printHeader('Minifying and Compressing Node.js JavaScript')
 
-  const { _stat, readFile, readdir, writeFile } = await import('node:fs/promises')
+  const { _stat, readFile, readdir, writeFile } = await import(
+    'node:fs/promises'
+  )
   const { relative } = await import('node:path')
   const { build } = await import('esbuild')
 
@@ -711,7 +779,8 @@ async function _compressNodeJsWithBrotli() {
       // BROTLI_MODE_TEXT: Optimized for text data like JavaScript source.
       const compressed = brotliCompressSync(minifiedCode, {
         params: {
-          [zlibConstants.BROTLI_PARAM_QUALITY]: zlibConstants.BROTLI_MAX_QUALITY, // Quality 11.
+          [zlibConstants.BROTLI_PARAM_QUALITY]:
+            zlibConstants.BROTLI_MAX_QUALITY, // Quality 11.
           [zlibConstants.BROTLI_PARAM_MODE]: zlibConstants.BROTLI_MODE_TEXT, // Text mode for JS.
         },
       })
@@ -845,12 +914,24 @@ async function createBrotliBootstrapHook() {
 `
 
   // Write the bootstrap hook to lib/internal/bootstrap/brotli-loader.js.
-  const bootstrapFile = join(NODE_DIR, 'lib', 'internal', 'bootstrap', 'brotli-loader.js')
+  const bootstrapFile = join(
+    NODE_DIR,
+    'lib',
+    'internal',
+    'bootstrap',
+    'brotli-loader.js',
+  )
   await writeFile(bootstrapFile, bootstrapCode, 'utf8')
 
   // Inject the hook into Node.js's main bootstrap sequence.
   // This ensures the decompression hook is loaded before any modules are required.
-  const mainBootstrap = join(NODE_DIR, 'lib', 'internal', 'bootstrap', 'node.js')
+  const mainBootstrap = join(
+    NODE_DIR,
+    'lib',
+    'internal',
+    'bootstrap',
+    'node.js',
+  )
   let content = await readFile(mainBootstrap, 'utf8')
 
   // Check if already injected (for idempotency).
@@ -1151,25 +1232,31 @@ async function main() {
     }
   } else {
     printHeader('Using Existing Node.js Source')
-    console.log('Fetching latest tags...')
-    await exec(
-      'git',
-      [
-        'fetch',
-        '--depth',
-        '1',
-        'origin',
-        `refs/tags/${NODE_VERSION}:refs/tags/${NODE_VERSION}`,
-      ],
-      {
-        cwd: NODE_DIR,
-      },
-    )
-    console.log('Resetting to clean state...')
-    await exec('git', ['reset', '--hard', NODE_VERSION], { cwd: NODE_DIR })
-    await exec('git', ['clean', '-fdx'], { cwd: NODE_DIR })
-    console.log('✅ Node.js source reset to clean state')
-    console.log()
+
+    // Check if source has uncommitted changes.
+    const isDirty = await isNodeSourceDirty()
+    if (isDirty && !AUTO_YES) {
+      printWarning(
+        'Node.js Source Has Uncommitted Changes',
+        'The .node-source directory has uncommitted changes from a previous build or crash.',
+        [
+          'These changes will be discarded to ensure a clean build',
+          'Press Ctrl+C now if you want to inspect the changes first',
+          'Or wait 5 seconds to continue with automatic reset...',
+        ],
+      )
+
+      // Wait 5 seconds before proceeding.
+      await new Promise(resolve => setTimeout(resolve, 5000))
+      console.log()
+    } else if (isDirty && AUTO_YES) {
+      console.log(
+        '⚠️  Node.js source has uncommitted changes (auto-resetting with --yes)',
+      )
+      console.log()
+    }
+
+    await resetNodeSource()
   }
 
   // Validate yao-pkg patch before applying.
@@ -1432,15 +1519,23 @@ async function main() {
   // Configure Node.js with optimizations.
   printHeader('Configuring Node.js Build')
   console.log('Optimization flags:')
-  console.log('  ✅ KEEP: V8 Lite Mode (baseline compiler), WASM (Liftoff), SSL/crypto')
-  console.log('  ❌ REMOVE: npm, corepack, inspector, amaro, sqlite, SEA, ICU, TurboFan JIT')
+  console.log(
+    '  ✅ KEEP: V8 Lite Mode (baseline compiler), WASM (Liftoff), SSL/crypto',
+  )
+  console.log(
+    '  ❌ REMOVE: npm, corepack, inspector, amaro, sqlite, SEA, ICU, TurboFan JIT',
+  )
   console.log('  🌍 ICU: none (no internationalization, saves ~6-8 MB)')
-  console.log('  ⚡ V8 Lite Mode: Disables TurboFan optimizer (saves ~15-20 MB)')
+  console.log(
+    '  ⚡ V8 Lite Mode: Disables TurboFan optimizer (saves ~15-20 MB)',
+  )
   console.log(
     '  💾 OPTIMIZATIONS: no-snapshot, no-code-cache, no-object-print, no-SEA, V8 Lite',
   )
   console.log()
-  console.log('  ⚠️  V8 LITE MODE: JavaScript runs 5-10x slower (CPU-bound code)')
+  console.log(
+    '  ⚠️  V8 LITE MODE: JavaScript runs 5-10x slower (CPU-bound code)',
+  )
   console.log('  ✅ WASM: Full speed (uses Liftoff compiler, unaffected)')
   console.log('  ✅ I/O: No impact (network, file operations)')
   console.log()
@@ -1450,9 +1545,9 @@ async function main() {
   console.log()
 
   const configureFlags = [
-    '--with-intl=none',  // -6-8 MB: No ICU/Intl support (use polyfill instead)
+    '--with-intl=none', // -6-8 MB: No ICU/Intl support (use polyfill instead)
     // Note: --without-intl is deprecated, use --with-intl=none instead
-    '--with-icu-source=none',  // Don't download ICU source (not needed with --with-intl=none)
+    '--with-icu-source=none', // Don't download ICU source (not needed with --with-intl=none)
     '--without-npm',
     '--without-corepack',
     '--without-inspector',
@@ -1462,8 +1557,8 @@ async function main() {
     '--without-node-code-cache',
     '--v8-disable-object-print',
     '--without-node-options',
-    '--disable-single-executable-application',  // -1-2 MB: SEA not needed for pkg
-    '--v8-lite-mode',  // -15-20 MB: Disables TurboFan JIT (JS slower, WASM unaffected)
+    '--disable-single-executable-application', // -1-2 MB: SEA not needed for pkg
+    '--v8-lite-mode', // -15-20 MB: Disables TurboFan JIT (JS slower, WASM unaffected)
     '--enable-lto',
   ]
 
@@ -1687,6 +1782,22 @@ async function main() {
   logger.success('Signed binary copied to build/out/Signed')
   logger.logNewline()
 
+  // Copy final binary to build/out/Final.
+  printHeader('Copying to Build Output (Final)')
+  logger.log('Copying final binary to build/out/Final directory...')
+  logger.logNewline()
+
+  const outputFinalDir = join(BUILD_DIR, 'out', 'Final')
+  await mkdir(outputFinalDir, { recursive: true })
+  const outputFinalBinary = join(outputFinalDir, 'node')
+  await exec('cp', [nodeBinary, outputFinalBinary])
+
+  logger.substep(`Final directory: ${outputFinalDir}`)
+  logger.substep('Binary: node (final output)')
+  logger.logNewline()
+  logger.success('Final binary copied to build/out/Final')
+  logger.logNewline()
+
   // Copy signed binary to build/out/Sea (for SEA builds).
   printHeader('Copying to Build Output (Sea)')
   logger.log(
@@ -1717,13 +1828,13 @@ async function main() {
   printHeader('Installing to pkg Cache (for yao-pkg)')
   logger.log('Installing binary to pkg cache so yao-pkg can find it...')
   logger.logNewline()
-  logger.substep(`Source: ${outputSignedBinary}`)
+  logger.substep(`Source: ${outputFinalBinary}`)
   logger.substep(`Cache directory: ${pkgCacheDir}`)
   logger.substep(`Binary name: ${targetName}`)
   logger.logNewline()
 
   await mkdir(pkgCacheDir, { recursive: true })
-  await exec('cp', [outputSignedBinary, targetPath])
+  await exec('cp', [outputFinalBinary, targetPath])
 
   // Verify it was copied.
   if (!existsSync(targetPath)) {
@@ -1777,7 +1888,7 @@ async function main() {
   const yaoOutputDir = join(BUILD_DIR, 'out', 'Yao')
   await mkdir(yaoOutputDir, { recursive: true })
   const yaoOutputBinary = join(yaoOutputDir, 'node')
-  await exec('cp', [outputSignedBinary, yaoOutputBinary])
+  await exec('cp', [outputFinalBinary, yaoOutputBinary])
 
   logger.substep(`Yao directory: ${yaoOutputDir}`)
   logger.substep('Binary: node (final yao-pkg build)')
@@ -1817,7 +1928,8 @@ async function main() {
   logger.log(`   Release:      ${outputReleaseBinary}`)
   logger.log(`   Stripped:     ${outputStrippedBinary}`)
   logger.log(`   Signed:       ${outputSignedBinary}`)
-  logger.log(`   Final (Yao):  ${yaoOutputBinary}`)
+  logger.log(`   Final:        ${outputFinalBinary}`)
+  logger.log(`   Yao:          ${yaoOutputBinary}`)
   logger.log(`   pkg cache:    ${targetPath}`)
   logger.logNewline()
 
