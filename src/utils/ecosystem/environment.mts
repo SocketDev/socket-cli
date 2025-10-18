@@ -53,9 +53,6 @@ import {
 import { getMaintainedNodeVersions } from '@socketsecurity/registry/constants/node'
 import { WIN32 } from '@socketsecurity/registry/constants/platform'
 import { whichBin } from '@socketsecurity/registry/lib/bin'
-
-
-const DOT_PACKAGE_LOCK_JSON = '.package-lock.json'
 import { debugDirNs, debugNs } from '@socketsecurity/registry/lib/debug'
 import { readFileBinary, readFileUtf8 } from '@socketsecurity/registry/lib/fs'
 import {
@@ -65,9 +62,6 @@ import {
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
-
-
-
 
 import {
   getMinimumVersionByAgent,
@@ -91,6 +85,8 @@ import type { Logger } from '@socketsecurity/registry/lib/logger'
 import type { Remap } from '@socketsecurity/registry/lib/objects'
 import type { EditablePackageJson } from '@socketsecurity/registry/lib/packages'
 import type { SemVer } from 'semver'
+
+const DOT_PACKAGE_LOCK_JSON = '.package-lock.json'
 
 export const AGENTS = [BUN, NPM, PNPM, YARN_BERRY, YARN_CLASSIC, VLT] as const
 

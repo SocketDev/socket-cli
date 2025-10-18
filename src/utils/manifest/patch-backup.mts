@@ -425,6 +425,22 @@ export async function hasBackup(
 }
 
 /**
+ * Check if any backup exists for a patch UUID.
+ *
+ * @param uuid - Patch UUID
+ * @returns True if any backup exists for this patch
+ *
+ * @example
+ * if (await hasBackupForPatch('uuid-123')) {
+ *   console.log('Backup available')
+ * }
+ */
+export async function hasBackupForPatch(uuid: string): Promise<boolean> {
+  const metadata = await getPatchMetadata(uuid)
+  return metadata !== undefined
+}
+
+/**
  * List all patch UUIDs that have backups.
  *
  * @returns Array of UUIDs

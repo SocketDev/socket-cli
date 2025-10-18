@@ -16,6 +16,7 @@ import {
   getNodeNoWarningsFlags,
 } from '@socketsecurity/registry/constants/node'
 import { DOT_SOCKET_DIR } from '@socketsecurity/registry/constants/paths'
+import { logger } from '@socketsecurity/registry/lib/logger'
 
 // Import socket constants for re-export.
 import { SOCKET_JSON } from './socket.mts'
@@ -37,7 +38,11 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 // Static Base Paths (eagerly computed)
+// In unified build, this file is bundled into dist/cli.js, so __dirname will be the dist directory.
+// In normal build, this file stays in src/constants, so __dirname is src/constants.
 export const srcPath = path.resolve(__dirname, '..')
+// If srcPath ends with 'dist', we're in the bundled CLI, so rootPath is one level up from dist.
+// Otherwise, we're in source code where srcPath is 'src', so rootPath is one level up from src.
 export const rootPath = path.resolve(srcPath, '..')
 export const distPath = path.join(rootPath, 'dist')
 export const configPath = path.join(rootPath, '.config')
@@ -161,24 +166,35 @@ export function getBlessedOptions() {
   }
 }
 
-export function getSocketAppDataPath(): string {
-  const xdgDataHome = process.env['XDG_DATA_HOME']
-  if (xdgDataHome) {
-    return path.join(xdgDataHome, 'socket')
+export function getSocketAppDataPath(): string | undefined {
+  // Get the OS app data directory:
+  // - Win: %LOCALAPPDATA% or fail?
+  // - Mac: %XDG_DATA_HOME% or fallback to "~/Library/Application Support/"
+  // - Linux: %XDG_DATA_HOME% or fallback to "~/.local/share/"
+  // Note: LOCALAPPDATA is typically: C:\Users\USERNAME\AppData
+  // Note: XDG stands for "X Desktop Group", nowadays "freedesktop.org"
+  //       On most systems that path is: $HOME/.local/share
+  // Then append `socket/settings`, so:
+  // - Win: %LOCALAPPDATA%\socket\settings or return undefined
+  // - Mac: %XDG_DATA_HOME%/socket/settings or "~/Library/Application Support/socket/settings"
+  // - Linux: %XDG_DATA_HOME%/socket/settings or "~/.local/share/socket/settings"
+  const isWin32 = process.platform === 'win32'
+  let dataHome: string | undefined = isWin32
+    ? process.env['LOCALAPPDATA']
+    : process.env['XDG_DATA_HOME']
+  if (!dataHome) {
+    if (isWin32) {
+      logger.warn('Missing %LOCALAPPDATA%.')
+      return undefined
+    }
+    const home = homedir()
+    const isDarwin = process.platform === 'darwin'
+    dataHome = path.join(
+      home,
+      isDarwin ? 'Library/Application Support' : '.local/share',
+    )
   }
-  const platform = process.platform
-  const home = homedir()
-  switch (platform) {
-    case 'darwin':
-      return path.join(home, 'Library', 'Application Support', 'Socket')
-    case 'win32':
-      return path.join(
-        process.env['LOCALAPPDATA'] || path.join(home, 'AppData', 'Local'),
-        'Socket',
-      )
-    default:
-      return path.join(home, '.local', 'share', 'socket')
-  }
+  return dataHome ? path.join(dataHome, 'socket', 'settings') : undefined
 }
 
 export function getSocketCachePath(): string {

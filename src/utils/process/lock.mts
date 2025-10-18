@@ -137,8 +137,6 @@ class ProcessLockManager {
           // Track for cleanup.
           this.activeLocks.add(lockPath)
 
-          logger.log(`Acquired lock: ${lockPath}`)
-
           // Return release function.
           return () => this.release(lockPath)
         } catch (error) {
@@ -172,7 +170,6 @@ class ProcessLockManager {
         rmSync(lockPath, { recursive: true, force: true })
       }
       this.activeLocks.delete(lockPath)
-      logger.log(`Released lock: ${lockPath}`)
     } catch (error) {
       logger.warn(
         `Failed to release lock ${lockPath}: ${error instanceof Error ? error.message : String(error)}`,

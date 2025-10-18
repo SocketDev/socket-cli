@@ -76,55 +76,51 @@ export {
 // Getter functions for build metadata.
 // Use direct process.env access (not env imports) so rollup replace plugin can inline values.
 export function getCliVersion(): string | undefined {
-  return env['INLINED_SOCKET_CLI_VERSION']
+  return process.env['INLINED_SOCKET_CLI_VERSION']
 }
 
 export function getCliVersionHash(): string | undefined {
-  return env['INLINED_SOCKET_CLI_VERSION_HASH']
+  return process.env['INLINED_SOCKET_CLI_VERSION_HASH']
 }
 
 export function getCliHomepage(): string | undefined {
-  return env['INLINED_SOCKET_CLI_HOMEPAGE']
+  return process.env['INLINED_SOCKET_CLI_HOMEPAGE']
 }
 
 export function getCliName(): string | undefined {
-  return env['INLINED_SOCKET_CLI_NAME']
+  return process.env['INLINED_SOCKET_CLI_NAME']
 }
 
 export function isPublishedBuild(): boolean {
-  return envAsBoolean(env['INLINED_SOCKET_CLI_PUBLISHED_BUILD'])
+  return envAsBoolean(process.env['INLINED_SOCKET_CLI_PUBLISHED_BUILD'])
 }
 
 export function isLegacyBuild(): boolean {
-  return envAsBoolean(env['INLINED_SOCKET_CLI_LEGACY_BUILD'])
+  return envAsBoolean(process.env['INLINED_SOCKET_CLI_LEGACY_BUILD'])
 }
 
 export function isSentryBuild(): boolean {
-  return envAsBoolean(env['INLINED_SOCKET_CLI_SENTRY_BUILD'])
-}
-
-export function isUnifiedBuild(): boolean {
-  return envAsBoolean(env['INLINED_SOCKET_CLI_UNIFIED_BUILD'])
+  return envAsBoolean(process.env['INLINED_SOCKET_CLI_SENTRY_BUILD'])
 }
 
 export function getCoanaVersion(): string | undefined {
-  return env['INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION']
+  return process.env['INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION']
 }
 
 export function getCdxgenVersion(): string | undefined {
-  return env['INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION']
+  return process.env['INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION']
 }
 
 export function getSynpVersion(): string | undefined {
-  return env['INLINED_SOCKET_CLI_SYNP_VERSION']
+  return process.env['INLINED_SOCKET_CLI_SYNP_VERSION']
 }
 
 export function getPythonVersion(): string | undefined {
-  return env['INLINED_SOCKET_CLI_PYTHON_VERSION']
+  return process.env['INLINED_SOCKET_CLI_PYTHON_VERSION']
 }
 
 export function getPythonBuildTag(): string | undefined {
-  return env['INLINED_SOCKET_CLI_PYTHON_BUILD_TAG']
+  return process.env['INLINED_SOCKET_CLI_PYTHON_BUILD_TAG']
 }
 
 // Export processEnv for backward compatibility with shadow npm integration.
@@ -169,20 +165,19 @@ const ENV = {
   GITHUB_REPOSITORY: env['GITHUB_REPOSITORY'],
   SOCKET_CLI_ORG_SLUG: env['SOCKET_CLI_ORG_SLUG'],
   // Build metadata (inlined by rollup replace plugin).
-  INLINED_SOCKET_CLI_CDXGEN_VERSION: env['INLINED_SOCKET_CLI_CDXGEN_VERSION'],
-  INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION: env['INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION'],
-  INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION: env['INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION'],
-  INLINED_SOCKET_CLI_HOMEPAGE: env['INLINED_SOCKET_CLI_HOMEPAGE'],
-  INLINED_SOCKET_CLI_LEGACY_BUILD: env['INLINED_SOCKET_CLI_LEGACY_BUILD'],
-  INLINED_SOCKET_CLI_NAME: env['INLINED_SOCKET_CLI_NAME'],
-  INLINED_SOCKET_CLI_PUBLISHED_BUILD: env['INLINED_SOCKET_CLI_PUBLISHED_BUILD'],
-  INLINED_SOCKET_CLI_PYTHON_BUILD_TAG: env['INLINED_SOCKET_CLI_PYTHON_BUILD_TAG'],
-  INLINED_SOCKET_CLI_PYTHON_VERSION: env['INLINED_SOCKET_CLI_PYTHON_VERSION'],
-  INLINED_SOCKET_CLI_SENTRY_BUILD: env['INLINED_SOCKET_CLI_SENTRY_BUILD'],
-  INLINED_SOCKET_CLI_SYNP_VERSION: env['INLINED_SOCKET_CLI_SYNP_VERSION'],
-  INLINED_SOCKET_CLI_UNIFIED_BUILD: env['INLINED_SOCKET_CLI_UNIFIED_BUILD'],
-  INLINED_SOCKET_CLI_VERSION: env['INLINED_SOCKET_CLI_VERSION'],
-  INLINED_SOCKET_CLI_VERSION_HASH: env['INLINED_SOCKET_CLI_VERSION_HASH'],
+  INLINED_SOCKET_CLI_CDXGEN_VERSION: process.env['INLINED_SOCKET_CLI_CDXGEN_VERSION'],
+  INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION: process.env['INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION'],
+  INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION: process.env['INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION'],
+  INLINED_SOCKET_CLI_HOMEPAGE: process.env['INLINED_SOCKET_CLI_HOMEPAGE'],
+  INLINED_SOCKET_CLI_LEGACY_BUILD: process.env['INLINED_SOCKET_CLI_LEGACY_BUILD'],
+  INLINED_SOCKET_CLI_NAME: process.env['INLINED_SOCKET_CLI_NAME'],
+  INLINED_SOCKET_CLI_PUBLISHED_BUILD: process.env['INLINED_SOCKET_CLI_PUBLISHED_BUILD'],
+  INLINED_SOCKET_CLI_PYTHON_BUILD_TAG: process.env['INLINED_SOCKET_CLI_PYTHON_BUILD_TAG'],
+  INLINED_SOCKET_CLI_PYTHON_VERSION: process.env['INLINED_SOCKET_CLI_PYTHON_VERSION'],
+  INLINED_SOCKET_CLI_SENTRY_BUILD: process.env['INLINED_SOCKET_CLI_SENTRY_BUILD'],
+  INLINED_SOCKET_CLI_SYNP_VERSION: process.env['INLINED_SOCKET_CLI_SYNP_VERSION'],
+  INLINED_SOCKET_CLI_VERSION: process.env['INLINED_SOCKET_CLI_VERSION'],
+  INLINED_SOCKET_CLI_VERSION_HASH: process.env['INLINED_SOCKET_CLI_VERSION_HASH'],
 }
 
 // Named export for ES module imports.

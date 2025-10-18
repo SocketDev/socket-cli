@@ -100,7 +100,7 @@ const NetworkUtils = {
     }
 
     const { authInfo } = { __proto__: null, ...options } as FetchOptions
-    // eslint-disable-next-line n/no-unsupported-features/node-builtins
+     
     const headers = new Headers({
       Accept:
         'application/vnd.npm.install-v1+json; q=1.0, application/json; q=0.8, */*',

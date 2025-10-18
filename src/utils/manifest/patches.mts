@@ -50,13 +50,18 @@ const VulnerabilitySchema = z.object({
  * Schema for a single patch record
  */
 const PatchRecordSchema = z.object({
-  uuid: z.string().uuid(),
+  uuid: z.string().uuid().optional(),
   exportedAt: z.string(),
   files: z.record(z.string(), PatchFileSchema),
-  vulnerabilities: z.record(z.string(), VulnerabilitySchema),
-  description: z.string(),
-  license: z.string(),
-  tier: z.string(),
+  vulnerabilities: z.record(z.string(), VulnerabilitySchema).optional(),
+  description: z.string().optional(),
+  license: z.string().optional(),
+  tier: z.string().optional(),
+  // Status tracking fields.
+  status: z.enum(['downloaded', 'applied', 'failed']).optional(),
+  downloadedAt: z.string().optional(),
+  appliedAt: z.string().optional(),
+  appliedTo: z.array(z.string()).optional(),
 })
 
 /**
@@ -373,4 +378,56 @@ export async function validateManifest(cwd?: string): Promise<boolean> {
   } catch (_error) {
     return false
   }
+}
+
+/**
+ * Update patch status in manifest.
+ *
+ * Updates the status tracking fields for a patch, including application status,
+ * timestamps, and locations where the patch was applied.
+ *
+ * @param purl - Package URL identifier
+ * @param status - Patch status ('downloaded', 'applied', 'failed')
+ * @param metadata - Additional metadata to update
+ * @param cwd - Working directory (defaults to process.cwd())
+ *
+ * @example
+ * await updatePatchStatus('pkg:npm/example@1.0.0', 'applied', {
+ *   appliedAt: new Date().toISOString(),
+ *   appliedTo: ['/path/to/node_modules/example']
+ * })
+ */
+export async function updatePatchStatus(
+  purl: string,
+  status: 'downloaded' | 'applied' | 'failed',
+  metadata?: {
+    appliedAt?: string
+    appliedTo?: string[]
+    downloadedAt?: string
+  },
+  cwd?: string,
+): Promise<void> {
+  const manifest = await readManifest(cwd)
+  const patch = manifest.patches[purl]
+
+  if (!patch) {
+    throw new Error(`Patch not found in manifest: ${purl}`)
+  }
+
+  // Update status.
+  patch.status = status
+
+  // Update metadata fields if provided.
+  if (metadata?.appliedAt !== undefined) {
+    patch.appliedAt = metadata.appliedAt
+  }
+  if (metadata?.appliedTo !== undefined) {
+    patch.appliedTo = metadata.appliedTo
+  }
+  if (metadata?.downloadedAt !== undefined) {
+    patch.downloadedAt = metadata.downloadedAt
+  }
+
+  // Write updated manifest.
+  await writeManifest(manifest, cwd)
 }

@@ -9,7 +9,7 @@ import { Box as InkBox, Text as InkText, render as inkRender } from 'ink'
 import ReactImport from 'react'
 
 // @ts-expect-error - No type declarations available.
-import InkTableImport from '../external/ink-table.mjs'
+import InkTableImport from '../../external/ink-table.mjs'
 
 import type { FC } from 'react'
 
