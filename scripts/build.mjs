@@ -9,6 +9,7 @@
  *   --quiet      Suppress progress output
  *   --verbose    Show detailed output
  *   --sea        Build SEA binaries (delegates to build-sea.mjs)
+ *   --no-minify  Build without minification for debugging
  */
 
 import { spawn } from 'node:child_process'
@@ -34,6 +35,12 @@ async function main() {
   const quiet = isQuiet()
   const verbose = isVerbose()
   const sea = process.argv.includes('--sea')
+  const noMinify = process.argv.includes('--no-minify')
+
+  // Pass --no-minify flag via environment variable to Rollup config.
+  if (noMinify) {
+    process.env.SOCKET_CLI_NO_MINIFY = '1'
+  }
 
   // Delegate to build-sea.mjs if --sea flag is present.
   if (sea) {
@@ -43,6 +50,7 @@ async function main() {
       ['scripts/build-sea.mjs', ...seaArgs.slice(2)],
       {
         stdio: 'inherit',
+        env: process.env,
       },
     )
     return new Promise((resolve, reject) => {

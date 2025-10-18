@@ -39,11 +39,11 @@
  *   - WASM performance:           Unaffected (Liftoff baseline compiler)
  *
  * Usage:
- *   node scripts/build-yao-pkg-node.mjs              # Normal build
- *   node scripts/build-yao-pkg-node.mjs --clean      # Force fresh build
- *   node scripts/build-yao-pkg-node.mjs --verify     # Verify after build
- *   node scripts/build-yao-pkg-node.mjs --test       # Build + run smoke tests
- *   node scripts/build-yao-pkg-node.mjs --test-full  # Build + run full tests
+ *   node scripts/load.mjs build-yao-pkg-node              # Normal build
+ *   node scripts/load.mjs build-yao-pkg-node --clean      # Force fresh build
+ *   node scripts/load.mjs build-yao-pkg-node --verify     # Verify after build
+ *   node scripts/load.mjs build-yao-pkg-node --test       # Build + run smoke tests
+ *   node scripts/load.mjs build-yao-pkg-node --test-full  # Build + run full tests
  */
 
 import { existsSync } from 'node:fs'
