@@ -4,7 +4,7 @@
  * Extracted helpers for better organization and testability.
  */
 
-// eslint-disable-next-line n/no-unsupported-features/node-builtins
+ 
 import { promises as fs, statfsSync } from 'node:fs'
 import { join } from 'node:path'
 
@@ -172,6 +172,84 @@ export async function checkCompiler() {
   }
 
   return { available: false, compiler: null }
+}
+
+/**
+ * Check if ccache is available and install if needed.
+ */
+export async function checkCcache() {
+  const ccachePaths = [
+    '/opt/homebrew/bin/ccache',
+    '/usr/local/bin/ccache',
+    '/usr/bin/ccache',
+  ]
+
+  // Check if ccache is already installed.
+  for (const ccachePath of ccachePaths) {
+    try {
+      const result = await execCapture(ccachePath, ['--version'])
+      if (result.code === 0) {
+        return { available: true, path: ccachePath, installed: false }
+      }
+    } catch {
+      // Try next path.
+    }
+  }
+
+  // Check if brew is available for installation.
+  try {
+    const brewCheck = await execCapture('brew', ['--version'])
+    if (brewCheck.code !== 0) {
+      return {
+        available: false,
+        canInstall: false,
+        path: null,
+        reason: 'Homebrew not found',
+      }
+    }
+  } catch {
+    return {
+      available: false,
+      canInstall: false,
+      path: null,
+      reason: 'Homebrew not found',
+    }
+  }
+
+  // Install ccache via brew.
+  return {
+    available: false,
+    canInstall: true,
+    path: null,
+    reason: 'Not installed but can be installed via brew',
+  }
+}
+
+/**
+ * Install ccache via Homebrew.
+ */
+export async function installCcache() {
+  try {
+    const result = await execCapture('brew', ['install', 'ccache'])
+    if (result.code === 0) {
+      // Find the installed ccache path.
+      const paths = ['/opt/homebrew/bin/ccache', '/usr/local/bin/ccache']
+      for (const ccachePath of paths) {
+        try {
+          const checkResult = await execCapture(ccachePath, ['--version'])
+          if (checkResult.code === 0) {
+            return { success: true, path: ccachePath }
+          }
+        } catch {
+          // Try next path.
+        }
+      }
+      return { success: false, error: 'Installed but ccache not found in PATH' }
+    }
+    return { success: false, error: result.stderr || 'Installation failed' }
+  } catch (e) {
+    return { success: false, error: e.message }
+  }
 }
 
 /**
@@ -378,4 +456,73 @@ export function prettyBytes(bytes) {
   }
 
   return `${size.toFixed(1)}${units[unitIndex]}`
+}
+
+/**
+ * Check if Homebrew is installed (macOS).
+ */
+export async function hasHomebrew() {
+  try {
+    const result = await execCapture('which', ['brew'])
+    return result.code === 0 && result.stdout.includes('brew')
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Install Homebrew on macOS.
+ *
+ * @param {Object} exec - The exec function to use for running commands.
+ * @returns {Promise<boolean>} True if installation succeeded.
+ */
+export async function installHomebrew(exec) {
+  console.log('📥 Homebrew not found, installing Homebrew...')
+  console.log('This will take a few minutes and may prompt for password...')
+  console.log()
+
+  try {
+    // Install Homebrew using official installation script.
+    await exec(
+      '/bin/bash',
+      [
+        '-c',
+        '$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)',
+      ],
+      { stdio: 'inherit' },
+    )
+    console.log('✅ Homebrew installed successfully')
+    console.log()
+    return true
+  } catch (e) {
+    console.error(`❌ Homebrew installation failed: ${e.message}`)
+    console.error('Install manually: https://brew.sh')
+    console.error()
+    return false
+  }
+}
+
+/**
+ * Install a Homebrew package.
+ *
+ * @param {string} packageName - The package to install.
+ * @param {Object} exec - The exec function to use for running commands.
+ * @returns {Promise<boolean>} True if installation succeeded.
+ */
+export async function installBrewPackage(packageName, exec) {
+  console.log(`📦 Installing ${packageName} via Homebrew...`)
+  console.log('This will take 1-2 minutes...')
+  console.log()
+
+  try {
+    await exec('brew', ['install', packageName], { stdio: 'inherit' })
+    console.log(`✅ ${packageName} installed successfully`)
+    console.log()
+    return true
+  } catch (e) {
+    console.error(`❌ ${packageName} installation failed: ${e.message}`)
+    console.error(`Try manually: brew install ${packageName}`)
+    console.error()
+    return false
+  }
 }

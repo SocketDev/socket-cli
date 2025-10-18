@@ -13,7 +13,7 @@ const { isRelative, normalizePath } = pathUtils
 
 import { findUpSync } from './fs.mjs'
 
-// eslint-disable-next-line n/no-unsupported-features/node-builtins
+ 
 const { createRequire, isBuiltin } = Module
 
  

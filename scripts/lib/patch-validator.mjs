@@ -268,14 +268,13 @@ export async function testPatchApplication(
   const { spawn } = await import('@socketsecurity/registry/lib/spawn')
 
   try {
-    const result = await spawn(
-      'patch',
-      [`-p${stripLevel}`, '--dry-run', '--batch', '--forward', '-i', patchPath],
-      {
-        cwd: targetDir,
-        stdio: 'pipe',
-      },
-    )
+    // Use /bin/sh wrapper to ensure patch command is found in PATH.
+    // This matches the pattern used in the build script for applying patches.
+    const patchCommand = `patch -p${stripLevel} --dry-run --batch --forward < "${patchPath}"`
+    const result = await spawn('/bin/sh', ['-c', patchCommand], {
+      cwd: targetDir,
+      stdio: 'pipe',
+    })
 
     if (result.code === 0) {
       return {
