@@ -98,7 +98,8 @@ function getConfigValues(): LocalConfig {
     _cachedConfig = {} as LocalConfig
     const socketAppDataPath = getSocketAppDataPath()
     if (socketAppDataPath) {
-      const raw = safeReadFileSync(socketAppDataPath)
+      const configFilePath = path.join(socketAppDataPath, 'config.json')
+      const raw = safeReadFileSync(configFilePath)
       if (raw) {
         try {
           const decoded =
@@ -106,10 +107,10 @@ function getConfigValues(): LocalConfig {
               ? Buffer.from(raw, 'base64').toString()
               : Buffer.from(raw.toString(), 'base64').toString()
           Object.assign(_cachedConfig, JSON.parse(decoded))
-          debugConfig(socketAppDataPath, true)
+          debugConfig(configFilePath, true)
         } catch (e) {
-          logger.warn(`Failed to parse config at ${socketAppDataPath}`)
-          debugConfig(socketAppDataPath, false, e)
+          logger.warn(`Failed to parse config at ${configFilePath}`)
+          debugConfig(configFilePath, false, e)
         }
         // Normalize apiKey to apiToken and persist it.
         // This is a one time migration per user.
@@ -119,7 +120,7 @@ function getConfigValues(): LocalConfig {
           updateConfigValue(CONFIG_KEY_API_TOKEN, token)
         }
       } else {
-        mkdirSync(path.dirname(socketAppDataPath), { recursive: true })
+        mkdirSync(socketAppDataPath, { recursive: true })
       }
     }
   }
@@ -342,8 +343,10 @@ export function updateConfigValue<Key extends keyof LocalConfig>(
       _pendingSave = false
       const socketAppDataPath = getSocketAppDataPath()
       if (socketAppDataPath) {
+        mkdirSync(socketAppDataPath, { recursive: true })
+        const configFilePath = path.join(socketAppDataPath, 'config.json')
         writeFileSync(
-          socketAppDataPath,
+          configFilePath,
           Buffer.from(JSON.stringify(localConfig)).toString('base64'),
         )
       }

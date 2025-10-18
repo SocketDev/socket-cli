@@ -46,11 +46,7 @@ function isSeaBinary(): boolean {
       // Use Node.js 24+ native SEA detection API.
       const seaModule = require('node:sea')
       _isSea = seaModule.isSea()
-      logger.log(`SEA detection result: ${_isSea}`)
-    } catch (error) {
-      logger.log(
-        `SEA detection failed (likely Node.js < 24): ${error instanceof Error ? error.message : String(error)}`,
-      )
+    } catch {
       _isSea = false
     }
   }
