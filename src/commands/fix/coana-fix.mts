@@ -182,7 +182,8 @@ export async function coanaFix(
       // Copy to outputFile if provided.
       if (outputFile) {
         logger.info(`Copying fixes result to ${outputFile}`)
-        await fs.copyFile(tmpFile, outputFile)
+        const tmpContent = await fs.readFile(tmpFile, 'utf8')
+        await fs.writeFile(outputFile, tmpContent, 'utf8')
       }
 
       return { ok: true, data: { data: fixesResultJson, fixed: true } }
