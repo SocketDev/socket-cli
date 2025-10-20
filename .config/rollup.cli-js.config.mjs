@@ -217,19 +217,6 @@ export default {
     fixInk(),
     fixYoga(),
 
-    // Skip processing for large base64-encoded files.
-    {
-      name: 'skip-external-assets',
-      load(id) {
-        // Skip any file in the external/ directory to avoid parsing huge base64 strings.
-        if (id.includes('/external/') && id.endsWith('.mjs')) {
-          const code = fs.readFileSync(id, 'utf-8')
-          return { code, map: null }
-        }
-        return null
-      },
-    },
-
     // Custom plugin to force bundling of socket packages.
     {
       name: 'force-bundle-socket-packages',
@@ -438,6 +425,40 @@ export default {
       },
     },
 
+    // FIX TEMPLATE LITERAL CORRUPTION - MUST RUN AFTER FINAL CLEANUP
+    // Rollup converts string literals to template literals during bundling,
+    // and '\r\n\r\n' becomes `\r\n\r\n` which then gets corrupted to `\r<newline>\r\n`.
+    {
+      name: 'fix-template-literal-corruption',
+      renderChunk(code) {
+        console.log('🔧 Running template literal corruption fix AFTER final-cleanup...')
+
+        // Pattern: backtick, content, \r, actual newline, more content, backtick
+        // Match: `anything\r<ACTUAL NEWLINE>anything`
+        const fixed = code.replace(/`([^`]*\\r)\n([^`]*)`/g, '`$1\\n$2`')
+
+        const fixCount = (code.length - fixed.length) / 2
+        if (fixCount > 0) {
+          console.log(`✓ Fixed ${fixCount} corrupted template literals`)
+        } else {
+          console.log('⚠️  No corrupted template literals found')
+        }
+
+        return fixed
+      },
+    },
+
+    // Inject base64-encoded WASM and model data.
+    // This runs AFTER all AST parsing, so we avoid parsing 38MB of base64 strings.
+    // TEMPORARILY DISABLED to test if corruption exists without base64 injection.
+    {
+      name: 'inject-base64-data',
+      renderChunk(code) {
+        console.log('⚠️  Base64 injection DISABLED for testing')
+        return null // Skip injection to test if corruption exists without it.
+      },
+    },
+
     // Minify the final bundle with esbuild (unless --no-minify is set).
     ...(process.env.SOCKET_CLI_NO_MINIFY
       ? []
@@ -461,7 +482,19 @@ export default {
                 keepNames: false,
               })
 
-              const minified = result.code
+              let minified = result.code
+
+              // Fix template literal corruption that can be introduced by minification.
+              // Pattern: template literal with \r followed by actual newline character.
+              const beforeFix = minified
+              minified = minified.replace(/`([^`]*\\r)\n([^`]*)`/g, '`$1\\n$2`')
+              minified = minified.replace(/`([^`]*\\r)\n([^`]*)`;/g, '`$1\\n$2`;')
+
+              const fixCount = (beforeFix.length - minified.length) / 2
+              if (fixCount > 0) {
+                console.log(`✓ Fixed ${fixCount} corrupted template literals after minification`)
+              }
+
               const originalSize = Buffer.byteLength(code, 'utf8')
               const minifiedSize = Buffer.byteLength(minified, 'utf8')
               const savings = ((1 - minifiedSize / originalSize) * 100).toFixed(
