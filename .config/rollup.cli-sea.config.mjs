@@ -30,7 +30,7 @@ export default {
   ],
   plugins: [
     nodeResolve({
-      alias: getLocalPackageAliases(rootPath),
+      alias: getLocalPackageAliases(rootDir),
       preferBuiltins: true,
       exportConditions: ['node'],
     }),
