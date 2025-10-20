@@ -16,6 +16,7 @@ Thumbs.db
 /coverage
 /external
 /npm-debug.log
+/yarn.lock
 **/.cache
 **/dist
 **/node_modules
@@ -23,15 +24,13 @@ Thumbs.db
 *.d.ts.map
 *.tsbuildinfo
 
-# Allow ambient module declarations
-!src/types/**/*.d.ts
-
 # Yarn PnP files (tests may create these)
 /.yarn
 /.pnp.cjs
 /.pnp.loader.mjs
-/yarn.lock
 
+# Allow specific files
+!src/types/**/*.d.ts
 !/.vscode/extensions.json
 pkg-binaries/
 
