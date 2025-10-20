@@ -6,8 +6,9 @@ export type FixConfig = {
   applyFixes: boolean
   cwd: string
   disableMajorUpdates: boolean
+  exclude: string[]
   ghsas: string[]
-  glob: string
+  include: string[]
   limit: number
   minimumReleaseAge: string
   minSatisfying: boolean
