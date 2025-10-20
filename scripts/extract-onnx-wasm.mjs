@@ -1,6 +1,6 @@
 /**
  * Extract ONNX Runtime WASM and create onnx-sync.mjs.
- * This runs during build to extract the WASM binary from @xenova/transformers
+ * This runs during build to extract the WASM binary from onnxruntime-web
  * and generate our custom synchronous loader wrapper.
  */
 
@@ -11,10 +11,10 @@ import { fileURLToPath } from 'node:url'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '..')
 
-// Read the ONNX Runtime WASM file (use SIMD variant for best performance).
+// Read the ONNX Runtime WASM file (use SIMD threaded variant).
 const wasmFile = path.join(
   rootPath,
-  'node_modules/@xenova/transformers/dist/ort-wasm-simd.wasm'
+  'node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.wasm'
 )
 
 const wasmBinary = readFileSync(wasmFile)
@@ -22,7 +22,7 @@ const wasmBinary = readFileSync(wasmFile)
 // Convert to base64.
 const base64Data = wasmBinary.toString('base64')
 
-console.log(`✓ Extracted ${wasmBinary.length} bytes from ort-wasm-simd.wasm`)
+console.log(`✓ Extracted ${wasmBinary.length} bytes from ort-wasm-simd-threaded.wasm`)
 console.log(`✓ Base64 size: ${base64Data.length} bytes`)
 
 // Generate onnx-sync.mjs with inlined base64.
@@ -43,7 +43,7 @@ const wasmBinary = Uint8Array.from(atob(base64Wasm), c => c.charCodeAt(0))
 
 // Configure ONNX Runtime to use our embedded WASM.
 ort.env.wasm.wasmPaths = {
-  'ort-wasm-simd.wasm': URL.createObjectURL(
+  'ort-wasm-simd-threaded.wasm': URL.createObjectURL(
     new Blob([wasmBinary], { type: 'application/wasm' })
   )
 }
