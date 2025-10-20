@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * Demo: Socket CLI Ask Mode
  *
@@ -7,8 +6,8 @@
  */
 
 import { spawn } from 'node:child_process'
-import { fileURLToPath } from 'node:url'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootDir = path.join(__dirname, '..')
@@ -54,10 +53,7 @@ const DEMO_QUERIES = [
   },
   {
     category: '🩹 Patching',
-    queries: [
-      'patch vulnerabilities',
-      'apply security patches',
-    ],
+    queries: ['patch vulnerabilities', 'apply security patches'],
   },
   {
     category: '🎯 Advanced Queries',
@@ -115,9 +111,13 @@ async function executeAsk(query) {
  * Print section header.
  */
 function printHeader(text) {
-  console.log(`\n${colors.bright}${colors.cyan}${'═'.repeat(70)}${colors.reset}`)
+  console.log(
+    `\n${colors.bright}${colors.cyan}${'═'.repeat(70)}${colors.reset}`,
+  )
   console.log(`${colors.bright}${colors.cyan}  ${text}${colors.reset}`)
-  console.log(`${colors.bright}${colors.cyan}${'═'.repeat(70)}${colors.reset}\n`)
+  console.log(
+    `${colors.bright}${colors.cyan}${'═'.repeat(70)}${colors.reset}\n`,
+  )
 }
 
 /**
@@ -137,6 +137,7 @@ function printQueryResult(query, output) {
 
   // Find the command line (look for "$ socket" pattern).
   const commandLineIndex = lines.findIndex(line => {
+    // biome-ignore lint/suspicious/noControlCharactersInRegex: ANSI escape code pattern
     const cleaned = line.replace(/\x1b\[[0-9;]*m/g, '')
     return cleaned.includes('$ socket') || cleaned.trim().startsWith('$ socket')
   })
@@ -144,13 +145,16 @@ function printQueryResult(query, output) {
   let command = ''
   if (commandLineIndex !== -1) {
     command = lines[commandLineIndex]
+      // biome-ignore lint/suspicious/noControlCharactersInRegex: ANSI escape code pattern
       .replace(/\x1b\[[0-9;]*m/g, '')
       .trim()
   }
 
   console.log(`${colors.bright}"${query}"${colors.reset}`)
   if (command) {
-    console.log(`${colors.dim}  →${colors.reset} ${colors.green}${command}${colors.reset}`)
+    console.log(
+      `${colors.dim}  →${colors.reset} ${colors.green}${command}${colors.reset}`,
+    )
   } else {
     console.log(`${colors.dim}  → [parsing...]${colors.reset}`)
   }
@@ -165,8 +169,12 @@ async function main() {
 
   printHeader('Socket CLI Ask Mode - Interactive Demo')
 
-  console.log(`${colors.dim}Ask Socket CLI what you want in plain English,${colors.reset}`)
-  console.log(`${colors.dim}and it translates to the right Socket command.${colors.reset}`)
+  console.log(
+    `${colors.dim}Ask Socket CLI what you want in plain English,${colors.reset}`,
+  )
+  console.log(
+    `${colors.dim}and it translates to the right Socket command.${colors.reset}`,
+  )
 
   for (const { category, queries } of DEMO_QUERIES) {
     printCategory(category)
@@ -183,9 +191,15 @@ async function main() {
   printHeader('Demo Complete')
 
   console.log(`${colors.bright}${colors.cyan}Try it yourself:${colors.reset}`)
-  console.log(`  ${colors.dim}$${colors.reset} socket ask "${colors.yellow}scan for vulnerabilities${colors.reset}"`)
-  console.log(`  ${colors.dim}$${colors.reset} socket ask "${colors.yellow}is express safe${colors.reset}"`)
-  console.log(`  ${colors.dim}$${colors.reset} socket ask "${colors.yellow}fix critical issues${colors.reset}" ${colors.green}--execute${colors.reset}`)
+  console.log(
+    `  ${colors.dim}$${colors.reset} socket ask "${colors.yellow}scan for vulnerabilities${colors.reset}"`,
+  )
+  console.log(
+    `  ${colors.dim}$${colors.reset} socket ask "${colors.yellow}is express safe${colors.reset}"`,
+  )
+  console.log(
+    `  ${colors.dim}$${colors.reset} socket ask "${colors.yellow}fix critical issues${colors.reset}" ${colors.green}--execute${colors.reset}`,
+  )
   console.log()
 }
 
