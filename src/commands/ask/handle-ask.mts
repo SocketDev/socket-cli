@@ -16,7 +16,7 @@ let semanticIndex: any = null
 
 // ONNX embedding pipeline for deep semantic matching (lazy-loaded, ~17MB model).
 let embeddingPipeline: any = null
-const commandEmbeddings: Record<string, number[]> = {}
+const commandEmbeddings: Record<string, Float32Array> = {}
 
 // Confidence thresholds.
 const WORD_OVERLAP_THRESHOLD = 0.3 // Minimum for word overlap match.
@@ -232,16 +232,10 @@ async function getEmbeddingPipeline() {
   try {
     logger.info('🧠 Loading semantic model (first use only)...')
 
-    // Dynamic import to avoid loading unless needed.
-    // transformers.js will automatically use onnxruntime-web (WASM)
-    // since onnxruntime-node is not installed.
-    const { pipeline } = await import('@xenova/transformers')
-
-    // Load feature-extraction pipeline with paraphrase-MiniLM model.
-    embeddingPipeline = await pipeline(
-      'feature-extraction',
-      'Xenova/paraphrase-MiniLM-L3-v2'
-    )
+    // Load our custom MiniLM inference engine.
+    // This uses direct ONNX Runtime + embedded WASM (no transformers.js).
+    const { MiniLMInference } = await import('../../utils/minilm-inference.mts')
+    embeddingPipeline = await MiniLMInference.create()
 
     logger.info('✓ Semantic model loaded')
 
@@ -254,39 +248,33 @@ async function getEmbeddingPipeline() {
 
 /**
  * Compute cosine similarity between two vectors.
+ * Since our embeddings are already normalized, this is just dot product.
  */
-function cosineSimilarity(a: number[], b: number[]): number {
+function cosineSimilarity(a: Float32Array, b: Float32Array): number {
   if (a.length !== b.length) {
     return 0
   }
 
   let dotProduct = 0
-  let normA = 0
-  let normB = 0
-
   for (let i = 0; i < a.length; i++) {
     dotProduct += a[i] * b[i]
-    normA += a[i] * a[i]
-    normB += b[i] * b[i]
   }
 
-  const magnitude = Math.sqrt(normA) * Math.sqrt(normB)
-  return magnitude === 0 ? 0 : dotProduct / magnitude
+  return dotProduct
 }
 
 /**
  * Get embedding for a text string using ONNX Runtime.
  */
-async function getEmbedding(text: string): Promise<number[] | null> {
-  const pipeline = await getEmbeddingPipeline()
-  if (!pipeline) {
+async function getEmbedding(text: string): Promise<Float32Array | null> {
+  const model = await getEmbeddingPipeline()
+  if (!model) {
     return null
   }
 
   try {
-    const result = await pipeline(text, { pooling: 'mean', normalize: true })
-    // Extract the embedding array from the tensor.
-    return Array.from(result.data)
+    const result = await model.embed(text)
+    return result.embedding
   } catch (e) {
     logger.warn('Failed to compute embedding:', e.message)
     return null
