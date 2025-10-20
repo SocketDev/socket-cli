@@ -22,9 +22,9 @@
 
 import colors from 'yoctocolors-cjs'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { onExit } from '@socketsecurity/registry/lib/signal-exit'
-import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
+import { logger } from '@socketsecurity/lib/logger'
+import { onExit } from '@socketsecurity/lib/signal-exit'
+import { isNonEmptyString } from '@socketsecurity/lib/strings'
 
 import { SEA_UPDATE_COMMAND } from '../../constants/cli.mts'
 import { getSeaBinaryPath } from '../executable/detect.mts'

@@ -1,5 +1,5 @@
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { select } from '@socketsecurity/registry/lib/prompts'
+import { logger } from '@socketsecurity/lib/logger'
+import { select } from '@socketsecurity/lib/prompts'
 
 import { isConfigFromFlag, updateConfigValue } from '../../utils/config.mts'
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'

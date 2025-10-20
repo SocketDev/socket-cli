@@ -75,7 +75,7 @@ describe('handleConfigSet', () => {
 
   it('logs debug information', async () => {
     const { debugDir, debugFn } = await import(
-      '@socketsecurity/registry/lib/debug'
+      '@socketsecurity/lib/debug'
     )
     const { updateConfigValue } = await import('../../utils/config.mts')
 
@@ -102,7 +102,7 @@ describe('handleConfigSet', () => {
   })
 
   it('logs debug information on failure', async () => {
-    const { debugFn } = await import('@socketsecurity/registry/lib/debug')
+    const { debugFn } = await import('@socketsecurity/lib/debug')
     const { updateConfigValue } = await import('../../utils/config.mts')
 
     vi.mocked(updateConfigValue).mockReturnValue(createErrorResult('Failed'))

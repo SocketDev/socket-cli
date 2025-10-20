@@ -24,7 +24,7 @@ vi.mock('node:fs', async importOriginal => {
   }
 })
 
-vi.mock('@socketsecurity/registry/lib/spawn', () => ({
+vi.mock('@socketsecurity/lib/spawn', () => ({
   spawn: mockSpawn,
 }))
 

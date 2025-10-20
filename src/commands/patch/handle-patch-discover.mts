@@ -1,5 +1,5 @@
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { pluralize } from '@socketsecurity/registry/lib/words'
+import { logger } from '@socketsecurity/lib/logger'
+import { pluralize } from '@socketsecurity/lib/words'
 
 import { handlePatchDownload } from './handle-patch-download.mts'
 import { outputPatchDiscoverResult } from './output-patch-discover-result.mts'
@@ -11,7 +11,7 @@ import { fetchCreateOrgFullScan } from '../scan/fetch-create-org-full-scan.mts'
 import { fetchSupportedScanFileNames } from '../scan/fetch-supported-scan-file-names.mts'
 
 import type { OutputKind } from '../../types.mts'
-import type { Spinner } from '@socketsecurity/registry/lib/spinner'
+import type { Spinner } from '@socketsecurity/lib/spinner'
 import type { SocketSdk } from '@socketsecurity/sdk'
 
 export type PatchVulnerability = {
@@ -36,7 +36,7 @@ export interface HandlePatchDiscoverConfig {
   interactive?: boolean
   outputKind: OutputKind
   scanId?: string
-  spinner: Spinner | null
+  spinner: Spinner | undefined
 }
 
 type CveRecord = {
@@ -123,7 +123,9 @@ export async function handlePatchDiscover({
       spinner?.text('Preparing to scan dependencies...')
 
       // Get supported files for scanning.
-      const supportedFilesResult = await fetchSupportedScanFileNames({ spinner })
+      const supportedFilesResult = await fetchSupportedScanFileNames({
+        spinner: spinner ?? undefined,
+      })
       if (!supportedFilesResult.ok) {
         spinner?.failAndStop('Failed to fetch supported file types')
         await outputPatchDiscoverResult(supportedFilesResult, outputKind)
@@ -275,13 +277,17 @@ export async function handlePatchDiscover({
         .filter((uuid): uuid is string => !!uuid)
 
       // Call download handler.
-      await handlePatchDownload({
-        cwd,
-        outputKind,
-        ...(scanId ? { scanId } : {}),
-        spinner,
-        uuids: scanIds,
-      })
+      if (spinner) {
+        await handlePatchDownload({
+          cwd,
+          outputKind,
+          ...(scanId ? { scanId } : {}),
+          spinner,
+          uuids: scanIds,
+        })
+      } else {
+        logger.error('Spinner is required for patch download')
+      }
     } else {
       await outputPatchDiscoverResult(
         {
@@ -341,9 +347,9 @@ async function getOrgSlug(sdk: SocketSdk): Promise<string | undefined> {
  * Shimmering text component with purple gradient effect.
  */
 function ShimmerText({
+  Text,
   children,
   createElement,
-  Text,
   useEffect,
   useState,
 }: {
@@ -389,8 +395,8 @@ function createPatchSelectorApp({
   }): any {
     const { exit } = useApp()
     const [selectedIndex, setSelectedIndex] = useState(0)
-    const [selectedPatches, setSelectedPatches] = useState<Set<number>>(
-      new Set(),
+    const [selectedPatches, setSelectedPatches] = useState(
+      new Set<number>(),
     )
 
     useInput((input: string, key: any) => {
@@ -399,6 +405,7 @@ function createPatchSelectorApp({
         onSelect([])
       } else if (key.ctrl && input === 'c') {
         exit()
+        // eslint-disable-next-line n/no-process-exit
         process.exit(0)
       } else if (key.upArrow || input === 'k') {
         setSelectedIndex((prev: number) => Math.max(0, prev - 1))
@@ -485,10 +492,9 @@ function createPatchSelectorApp({
           const checkbox = isSelected ? '[✓]' : '[ ]'
           const cursor = isCursor ? '▶ ' : '  '
 
+          const vulnCount = patch.freeCves.length + patch.paidCves.length
           const vulnText =
-            patch.vulnerabilities.length > 0
-              ? ` (${patch.vulnerabilities.length} vuln${patch.vulnerabilities.length > 1 ? 's' : ''})`
-              : ''
+            vulnCount > 0 ? ` (${vulnCount} vuln${vulnCount > 1 ? 's' : ''})` : ''
 
           return createElement(
             Box,
@@ -621,7 +627,7 @@ async function enrichPatchesWithPackageNames(
     // Fetch full scan data to get artifact details.
     const scanResult = await sdk.getOrgFullScanBuffered(orgSlug, scanId)
 
-    if (!scanResult.ok || !scanResult.data) {
+    if (!scanResult.success || !scanResult.data) {
       logger.error('[DEBUG] Failed to fetch scan data for enrichment')
       return patches
     }
@@ -687,7 +693,7 @@ async function streamPatchesFromScan(
       }
 
       chunkCount++
-      const record = value as ArtifactPatchRecord
+      const record = value as unknown as ArtifactPatchRecord
 
       logger.log(
         `[DEBUG] Received chunk ${chunkCount}: artifactId=${record.artifactId}, purl=${record.purlString}, patch=${record.patch ? 'available' : 'null'}`,

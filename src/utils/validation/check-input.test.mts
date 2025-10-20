@@ -11,7 +11,7 @@ vi.mock('yoctocolors-cjs', () => ({
   },
 }))
 
-vi.mock('@socketsecurity/registry/lib/logger', () => ({
+vi.mock('@socketsecurity/lib/logger', () => ({
   LOG_SYMBOLS: {
     success: '✓',
     fail: '✗',
@@ -22,7 +22,7 @@ vi.mock('@socketsecurity/registry/lib/logger', () => ({
   },
 }))
 
-vi.mock('@socketsecurity/registry/lib/strings', () => ({
+vi.mock('@socketsecurity/lib/strings', () => ({
   stripAnsi: vi.fn(str => str),
 }))
 
@@ -95,7 +95,7 @@ describe('checkCommandInput', () => {
   describe('when some checks fail', () => {
     it('returns false and sets exit code to 2', async () => {
       const { logger } = vi.mocked(
-        await import('@socketsecurity/registry/lib/logger'),
+        await import('@socketsecurity/lib/logger'),
       )
       const { failMsgWithBadge } = vi.mocked(
         await import('./fail-msg-with-badge.mts'),
@@ -131,7 +131,7 @@ describe('checkCommandInput', () => {
 
     it('handles json output kind', async () => {
       const { logger } = vi.mocked(
-        await import('@socketsecurity/registry/lib/logger'),
+        await import('@socketsecurity/lib/logger'),
       )
       const { serializeResultJson } = vi.mocked(
         await import('./result-json.mts'),
@@ -319,7 +319,7 @@ describe('checkCommandInput', () => {
 
     it('strips ANSI codes for JSON output', async () => {
       const { stripAnsi } = vi.mocked(
-        await import('@socketsecurity/registry/lib/strings'),
+        await import('@socketsecurity/lib/strings'),
       )
       const { serializeResultJson } = vi.mocked(
         await import('./result-json.mts'),

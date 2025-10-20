@@ -1,8 +1,8 @@
 import { RequestError } from '@octokit/request-error'
 
+import { debug, debugDir } from '@socketsecurity/lib/debug'
+import { isNonEmptyString } from '@socketsecurity/lib/strings'
 import { UNKNOWN_VALUE } from '@socketsecurity/registry/constants/core'
-import { debug, debugDir } from '@socketsecurity/registry/lib/debug'
-import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
 import {
   getSocketFixBranchPattern,
@@ -27,7 +27,7 @@ import {
 } from '../../utils/git/github.mts'
 
 import type { OctokitResponse } from '@octokit/types'
-import type { JsonContent } from '@socketsecurity/registry/lib/fs'
+import type { JsonContent } from '@socketsecurity/lib/fs'
 
 export type OpenSocketFixPrOptions = {
   baseBranch?: string | undefined

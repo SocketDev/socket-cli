@@ -8,7 +8,7 @@ import {
 
 import type { ArboristInstance, Diff, NodeClass } from './arborist/types.mts'
 import type { PackageDetail } from './arborist-helpers.mts'
-import type { Spinner } from '@socketsecurity/registry/lib/spinner'
+import type { Spinner } from '@socketsecurity/lib/spinner'
 
 // Mock all dependencies.
 const mockGetAlertsMapFromPurls = vi.hoisted(() => vi.fn())
@@ -24,7 +24,7 @@ vi.mock('../../utils/spec.mts', () => ({
   idToNpmPurl: mockIdToNpmPurl,
 }))
 
-vi.mock('@socketsecurity/registry/lib/url', () => ({
+vi.mock('@socketsecurity/lib/url', () => ({
   parseUrl: mockParseUrl,
 }))
 

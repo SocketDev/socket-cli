@@ -10,7 +10,7 @@ vi.mock('node:fs', () => ({
   },
 }))
 
-vi.mock('@socketsecurity/registry/lib/fs', () => ({
+vi.mock('@socketsecurity/lib/fs', () => ({
   readJson: vi.fn(),
   safeStatsSync: vi.fn(),
   writeJson: vi.fn(),
@@ -40,7 +40,7 @@ describe('github utilities', () => {
   describe('writeCache', () => {
     it('creates cache directory if it does not exist', async () => {
       const { existsSync, promises: fs } = await import('node:fs')
-      const { writeJson } = await import('@socketsecurity/registry/lib/fs')
+      const { writeJson } = await import('@socketsecurity/lib/fs')
       const mockExistsSync = vi.mocked(existsSync)
       const mockMkdir = vi.mocked(fs.mkdir)
       const mockWriteJson = vi.mocked(writeJson)
@@ -60,7 +60,7 @@ describe('github utilities', () => {
 
     it('writes cache without creating directory if it exists', async () => {
       const { existsSync, promises: fs } = await import('node:fs')
-      const { writeJson } = await import('@socketsecurity/registry/lib/fs')
+      const { writeJson } = await import('@socketsecurity/lib/fs')
       const mockExistsSync = vi.mocked(existsSync)
       const mockMkdir = vi.mocked(fs.mkdir)
       const mockWriteJson = vi.mocked(writeJson)
@@ -80,7 +80,7 @@ describe('github utilities', () => {
   describe('cacheFetch', () => {
     it('returns cached data if not expired', async () => {
       const { readJson, safeStatsSync } = await import(
-        '@socketsecurity/registry/lib/fs'
+        '@socketsecurity/lib/fs'
       )
       const mockReadJson = vi.mocked(readJson)
       const mockSafeStatsSync = vi.mocked(safeStatsSync)
@@ -100,7 +100,7 @@ describe('github utilities', () => {
 
     it('fetches fresh data if cache is expired', async () => {
       const { safeStatsSync, writeJson } = await import(
-        '@socketsecurity/registry/lib/fs'
+        '@socketsecurity/lib/fs'
       )
       const mockSafeStatsSync = vi.mocked(safeStatsSync)
       const mockWriteJson = vi.mocked(writeJson)
@@ -121,7 +121,7 @@ describe('github utilities', () => {
 
     it('fetches fresh data if no cache exists', async () => {
       const { safeStatsSync, writeJson } = await import(
-        '@socketsecurity/registry/lib/fs'
+        '@socketsecurity/lib/fs'
       )
       const mockSafeStatsSync = vi.mocked(safeStatsSync)
       const mockWriteJson = vi.mocked(writeJson)

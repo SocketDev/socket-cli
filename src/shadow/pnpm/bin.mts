@@ -2,11 +2,11 @@ import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { debug, debugDir, debugNs } from '@socketsecurity/lib/debug'
+import { logger } from '@socketsecurity/lib/logger'
+import { normalizePath } from '@socketsecurity/lib/path'
+import { spawn } from '@socketsecurity/lib/spawn'
 import { WIN32 } from '@socketsecurity/registry/constants/platform'
-import { debug, debugDir, debugNs } from '@socketsecurity/registry/lib/debug'
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { normalizePath } from '@socketsecurity/registry/lib/path'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 
 import { PNPM } from '../../constants/agents.mts'
@@ -43,7 +43,7 @@ import type {
   SpawnExtra,
   SpawnOptions,
   SpawnResult,
-} from '@socketsecurity/registry/lib/spawn'
+} from '@socketsecurity/lib/spawn'
 
 export type ShadowPnpmOptions = SpawnOptions & {
   ipc?: IpcObject | undefined

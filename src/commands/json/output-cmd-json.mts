@@ -4,8 +4,8 @@ import path from 'node:path'
 import {
   safeReadFileSync,
   safeStatsSync,
-} from '@socketsecurity/registry/lib/fs'
-import { logger } from '@socketsecurity/registry/lib/logger'
+} from '@socketsecurity/lib/fs'
+import { logger } from '@socketsecurity/lib/logger'
 
 import { REDACTED } from '../../constants/cli.mts'
 import ENV from '../../constants/env.mts'

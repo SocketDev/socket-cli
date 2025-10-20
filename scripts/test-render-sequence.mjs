@@ -4,21 +4,6 @@
 
 // Simulate terminal size.
 const rows = 50
-const cols = 120
-
-// Simulate drawing a buffer line by line.
-function createBuffer() {
-  const buffer = Array(rows).fill(null).map(() => ' '.repeat(cols))
-
-  // Add borders.
-  buffer[0] = `╔${'═'.repeat(cols - 2)}╗`
-  buffer[rows - 1] = `╚${'═'.repeat(cols - 2)}╝`
-  for (let i = 1; i < rows - 1; i++) {
-    buffer[i] = `║${' '.repeat(cols - 2)}║`
-  }
-
-  return buffer
-}
 
 // Simulate the actual problem: when we render a collapsed state,
 // there might be leftover content BELOW the buffer.

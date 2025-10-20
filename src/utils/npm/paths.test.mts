@@ -11,7 +11,7 @@ vi.mock('node:module', () => ({
   },
 }))
 
-vi.mock('@socketsecurity/registry/lib/logger', () => ({
+vi.mock('@socketsecurity/lib/logger', () => ({
   logger: {
     fail: vi.fn(),
   },
@@ -95,7 +95,7 @@ describe('npm-paths utilities', () => {
       })
 
       const { logger } = vi.mocked(
-        await import('@socketsecurity/registry/lib/logger'),
+        await import('@socketsecurity/lib/logger'),
       )
 
       expect(() => getNpmBinPath()).toThrow('process.exit(127)')
@@ -185,7 +185,7 @@ describe('npm-paths utilities', () => {
       constants.default.ENV.SOCKET_CLI_NPM_PATH = undefined
 
       const { logger } = vi.mocked(
-        await import('@socketsecurity/registry/lib/logger'),
+        await import('@socketsecurity/lib/logger'),
       )
 
       expect(() => getNpmDirPath()).toThrow('process.exit(127)')
@@ -275,7 +275,7 @@ describe('npm-paths utilities', () => {
       })
 
       const { logger } = vi.mocked(
-        await import('@socketsecurity/registry/lib/logger'),
+        await import('@socketsecurity/lib/logger'),
       )
 
       expect(() => getNpxBinPath()).toThrow('process.exit(127)')

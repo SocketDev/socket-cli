@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { determineOrgSlug } from '../socket/org-slug.mts'
 
 // Mock dependencies.
-vi.mock('@socketsecurity/registry/lib/logger', () => ({
+vi.mock('@socketsecurity/lib/logger', () => ({
   logger: {
     error: vi.fn(),
     fail: vi.fn(),
@@ -61,7 +61,7 @@ describe('determineOrgSlug', () => {
     it('handles empty string org flag', async () => {
       const { getConfigValueOrUndef } = vi.mocked(await import('../config.mts'))
       const { logger } = vi.mocked(
-        await import('@socketsecurity/registry/lib/logger'),
+        await import('@socketsecurity/lib/logger'),
       )
       getConfigValueOrUndef.mockReturnValue(undefined)
 
@@ -101,7 +101,7 @@ describe('determineOrgSlug', () => {
     it('returns empty org and logs warnings when no org available', async () => {
       const { getConfigValueOrUndef } = vi.mocked(await import('../config.mts'))
       const { logger } = vi.mocked(
-        await import('@socketsecurity/registry/lib/logger'),
+        await import('@socketsecurity/lib/logger'),
       )
       const { webLink } = vi.mocked(await import('./link.mts'))
       getConfigValueOrUndef.mockReturnValue(undefined)
@@ -133,7 +133,7 @@ describe('determineOrgSlug', () => {
     it('logs all migration guide messages', async () => {
       const { getConfigValueOrUndef } = vi.mocked(await import('../config.mts'))
       const { logger } = vi.mocked(
-        await import('@socketsecurity/registry/lib/logger'),
+        await import('@socketsecurity/lib/logger'),
       )
       getConfigValueOrUndef.mockReturnValue(undefined)
 
@@ -158,7 +158,7 @@ describe('determineOrgSlug', () => {
         await import('../commands/scan/suggest-to-persist-orgslug.mts'),
       )
       const { logger } = vi.mocked(
-        await import('@socketsecurity/registry/lib/logger'),
+        await import('@socketsecurity/lib/logger'),
       )
 
       getConfigValueOrUndef.mockReturnValue(undefined)
@@ -224,7 +224,7 @@ describe('determineOrgSlug', () => {
         await import('../commands/scan/suggest-org-slug.mts'),
       )
       const { logger } = vi.mocked(
-        await import('@socketsecurity/registry/lib/logger'),
+        await import('@socketsecurity/lib/logger'),
       )
 
       getConfigValueOrUndef.mockReturnValue(undefined)

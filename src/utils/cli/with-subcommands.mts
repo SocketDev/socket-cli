@@ -1,19 +1,19 @@
 import terminalLink from 'terminal-link'
 import colors from 'yoctocolors-cjs'
 
-import { joinAnd } from '@socketsecurity/registry/lib/arrays'
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { joinAnd } from '@socketsecurity/lib/arrays'
+import { logger } from '@socketsecurity/lib/logger'
 import {
   getOwn,
   hasOwn,
   toSortedObject,
-} from '@socketsecurity/registry/lib/objects'
-import { normalizePath } from '@socketsecurity/registry/lib/path'
-import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
+} from '@socketsecurity/lib/objects'
+import { normalizePath } from '@socketsecurity/lib/path'
+import { naturalCompare } from '@socketsecurity/lib/sorts'
 import {
   indentString,
   trimNewlines,
-} from '@socketsecurity/registry/lib/strings'
+} from '@socketsecurity/lib/strings'
 
 
 
@@ -160,10 +160,10 @@ function getTokenOrigin(): string {
 }
 
 /**
- * Get header theme from flags, environment, or config.
+ * Get header theme from flags or use default.
  */
 function getHeaderTheme(flags?: Record<string, unknown>): HeaderTheme {
-  const theme = flags?.['headerTheme'] || ENV.SOCKET_CLI_HEADER_THEME || getConfigValueOrUndef('headerTheme')
+  const theme = flags?.['headerTheme']
   const validThemes: HeaderTheme[] = ['default', 'cyberpunk', 'forest', 'ocean', 'sunset']
   return validThemes.includes(theme as HeaderTheme) ? (theme as HeaderTheme) : 'default'
 }
@@ -176,12 +176,12 @@ function shouldAnimateHeader(flags?: Record<string, unknown>): boolean {
   if (ENV.CI || ENV.VITEST || !process.stdout.isTTY || !supportsFullColor()) {
     return false
   }
-  // Check flags first, then config.
+  // Check flags first.
   if (flags && 'animateHeader' in flags) {
     return Boolean(flags['animateHeader'])
   }
-  const animateConfig = getConfigValueOrUndef('animateHeader')
-  return animateConfig !== false
+  // Default to true for animated headers.
+  return true
 }
 
 /**
@@ -208,7 +208,6 @@ function getAsciiHeader(
   const nodeVersion = redacting ? REDACTED : process.version
   const showNodeVersion = !redacting && isDebug()
   const defaultOrg = getConfigValueOrUndef(CONFIG_KEY_DEFAULT_ORG)
-  const configFromFlagDot = isConfigFromFlag() ? '*' : '.'
 
   // Token display with origin indicator.
   const tokenPrefix = getVisibleTokenPrefix()

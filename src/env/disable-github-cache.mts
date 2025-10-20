@@ -5,6 +5,6 @@
 
 import { env } from 'node:process'
 
-import { envAsBoolean } from '@socketsecurity/registry/lib/env'
+import { envAsBoolean } from '@socketsecurity/lib/env'
 
 export const DISABLE_GITHUB_CACHE = envAsBoolean(env['DISABLE_GITHUB_CACHE'])

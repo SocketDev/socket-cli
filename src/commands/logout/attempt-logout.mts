@@ -1,4 +1,4 @@
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { logger } from '@socketsecurity/lib/logger'
 
 import { applyLogout } from './apply-logout.mts'
 import { isConfigFromFlag } from '../../utils/config.mts'

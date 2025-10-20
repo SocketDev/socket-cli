@@ -30,7 +30,7 @@ vi.mock('meow', () => ({
 }))
 
 // Mock logger.
-vi.mock('@socketsecurity/registry/lib/logger', () => ({
+vi.mock('@socketsecurity/lib/logger', () => ({
   logger: {
     error: vi.fn(),
     fail: vi.fn(),
@@ -200,7 +200,7 @@ describe('meow-with-subcommands', () => {
   describe('emitBanner', () => {
     it('emits banner with name and org', async () => {
       const { logger } = vi.mocked(
-        await import('@socketsecurity/registry/lib/logger'),
+        await import('@socketsecurity/lib/logger'),
       )
 
       emitBanner('socket', 'test-org', false)
@@ -210,7 +210,7 @@ describe('meow-with-subcommands', () => {
 
     it('emits compact banner when compact mode is true', async () => {
       const { logger } = vi.mocked(
-        await import('@socketsecurity/registry/lib/logger'),
+        await import('@socketsecurity/lib/logger'),
       )
 
       emitBanner('socket', 'test-org', true)
@@ -220,7 +220,7 @@ describe('meow-with-subcommands', () => {
 
     it('handles undefined org', async () => {
       const { logger } = vi.mocked(
-        await import('@socketsecurity/registry/lib/logger'),
+        await import('@socketsecurity/lib/logger'),
       )
 
       emitBanner('socket', undefined, false)

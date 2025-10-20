@@ -6,7 +6,7 @@ import {
 } from './alerts-map.mts'
 
 // Mock dependencies.
-vi.mock('@socketsecurity/registry/lib/logger', () => ({
+vi.mock('@socketsecurity/lib/logger', () => ({
   logger: {
     error: vi.fn(),
     warn: vi.fn(),

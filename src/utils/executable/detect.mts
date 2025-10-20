@@ -27,8 +27,6 @@
 
 import { createRequire } from 'node:module'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 const require = createRequire(import.meta.url)
 
 /**

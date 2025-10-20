@@ -18,7 +18,7 @@ import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { spawn } from '@socketsecurity/registry/lib/spawn'
+import { spawn } from '@socketsecurity/lib/spawn'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -293,8 +293,8 @@ if (isSea) {
       console.error()
       process.exitCode = 1
     }
-  } catch (e) {
     console.error()
+  } catch (e) {
     console.error('❌ Integration test failed:', e.message)
     console.error()
     process.exitCode = 1

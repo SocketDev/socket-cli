@@ -2,8 +2,8 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { toFilterConfig } from './filter-config.mts'
 
-// Mock @socketsecurity/registry/lib/objects.
-vi.mock('@socketsecurity/registry/lib/objects', () => ({
+// Mock @socketsecurity/lib/objects.
+vi.mock('@socketsecurity/lib/objects', () => ({
   isObject: vi.fn(val => {
     return val !== null && typeof val === 'object' && !Array.isArray(val)
   }),
@@ -84,7 +84,7 @@ describe('filter-config utilities', () => {
 
     it('returns empty object for non-object input', async () => {
       const { isObject } = vi.mocked(
-        await import('@socketsecurity/registry/lib/objects'),
+        await import('@socketsecurity/lib/objects'),
       )
 
       isObject.mockReturnValue(false)
@@ -99,7 +99,7 @@ describe('filter-config utilities', () => {
 
     it('returns empty object for empty input object', async () => {
       const { isObject } = vi.mocked(
-        await import('@socketsecurity/registry/lib/objects'),
+        await import('@socketsecurity/lib/objects'),
       )
       isObject.mockReturnValue(true)
 

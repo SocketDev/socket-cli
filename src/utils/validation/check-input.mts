@@ -1,7 +1,7 @@
 import colors from 'yoctocolors-cjs'
 
-import { LOG_SYMBOLS, logger } from '@socketsecurity/registry/lib/logger'
-import { stripAnsi } from '@socketsecurity/registry/lib/strings'
+import { LOG_SYMBOLS, logger } from '@socketsecurity/lib/logger'
+import { stripAnsi } from '@socketsecurity/lib/strings'
 
 
 import { failMsgWithBadge } from '../error/fail-msg-with-badge.mts'

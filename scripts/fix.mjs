@@ -13,10 +13,10 @@
  *   --verbose  Show detailed output
  */
 
-import { isQuiet } from '@socketsecurity/registry/lib/argv/flags'
-import { parseArgs } from '@socketsecurity/registry/lib/argv/parse'
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { printHeader } from '@socketsecurity/registry/lib/stdio/header'
+import { isQuiet } from '@socketsecurity/lib/argv/flags'
+import { parseArgs } from '@socketsecurity/lib/argv/parse'
+import { logger } from '@socketsecurity/lib/logger'
+import { printHeader } from '@socketsecurity/lib/stdio/header'
 
 import { runCommand } from './utils/run-command.mjs'
 

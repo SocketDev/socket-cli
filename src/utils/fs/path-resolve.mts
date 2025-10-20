@@ -1,13 +1,13 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 
-import { NPM } from '@socketsecurity/registry/constants/agents'
-import { WIN32 } from '@socketsecurity/registry/constants/platform'
 import {
   resolveBinPathSync,
   whichBinSync,
-} from '@socketsecurity/registry/lib/bin'
-import { isDirSync } from '@socketsecurity/registry/lib/fs'
+} from '@socketsecurity/lib/bin'
+import { isDirSync } from '@socketsecurity/lib/fs'
+import { NPM } from '@socketsecurity/registry/constants/agents'
+import { WIN32 } from '@socketsecurity/registry/constants/platform'
 
 import {
   filterBySupportedScanFiles,

@@ -13,7 +13,7 @@ describe('fetchDiffScan', () => {
   it('fetches diff scan successfully', async () => {
     const { fetchDiffScan } = await import('./fetch-diff-scan.mts')
     const { queryApiSafeJson } = await import('../../utils/socket/api.mjs')
-    const { logger } = await import('@socketsecurity/registry/lib/logger')
+    const { logger } = await import('@socketsecurity/lib/logger')
     const mockQueryApi = vi.mocked(queryApiSafeJson)
     const mockLogger = vi.mocked(logger.info)
 
@@ -163,7 +163,7 @@ describe('fetchDiffScan', () => {
   it('handles same scan IDs gracefully', async () => {
     const { fetchDiffScan } = await import('./fetch-diff-scan.mts')
     const { queryApiSafeJson } = await import('../../utils/socket/api.mjs')
-    const { logger } = await import('@socketsecurity/registry/lib/logger')
+    const { logger } = await import('@socketsecurity/lib/logger')
     const mockQueryApi = vi.mocked(queryApiSafeJson)
     const mockLogger = vi.mocked(logger.info)
 

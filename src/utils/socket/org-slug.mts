@@ -1,4 +1,4 @@
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { logger } from '@socketsecurity/lib/logger'
 
 import { suggestOrgSlug } from '../../commands/scan/suggest-org-slug.mjs'
 import { suggestToPersistOrgSlug } from '../../commands/scan/suggest-to-persist-orgslug.mjs'

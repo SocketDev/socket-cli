@@ -14,7 +14,7 @@ import { createHash } from 'node:crypto'
 import { readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
-import { glob } from '@socketsecurity/registry/lib/fs'
+import { glob } from '@socketsecurity/lib/fs'
 
 /**
  * Verify file hash against expected value.

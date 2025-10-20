@@ -35,8 +35,8 @@ import {
 import os from 'node:os'
 import path from 'node:path'
 
-import { readFileUtf8Sync } from '@socketsecurity/registry/lib/fs'
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { readFileUtf8Sync } from '@socketsecurity/lib/fs'
+import { logger } from '@socketsecurity/lib/logger'
 
 import { UPDATE_STORE_DIR, UPDATE_STORE_FILE_NAME } from '../../constants/paths.mts'
 import { processLock } from '../process/lock.mts'

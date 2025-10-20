@@ -59,7 +59,7 @@ describe('fetchScan', () => {
     const { fetchScan } = await import('./fetch-scan.mts')
     const { queryApiSafeText } = await import('../../utils/socket/api.mjs')
     const { debugDir, debugFn } = await import(
-      '@socketsecurity/registry/lib/debug'
+      '@socketsecurity/lib/debug'
     )
     const mockQueryApiText = vi.mocked(queryApiSafeText)
     const mockDebugFn = vi.mocked(debugFn)

@@ -4,7 +4,7 @@ import { Box, Text, render, useApp, useInput, useStdout } from 'ink'
 import React, { useEffect, useMemo, useState } from 'react'
 import terminalLink from 'terminal-link'
 
-import { spawn } from '@socketsecurity/registry/lib/spawn'
+import { spawn } from '@socketsecurity/lib/spawn'
 
 
 const { createElement: h } = React
@@ -429,8 +429,8 @@ function App() {
       setTimeout(() => {
         setOutputScroll(output.length + 10)
       }, 0)
-    } catch (e) {
       setIsExecuting(false)
+    } catch (e) {
       setOutput(prev => [...prev, { type: 'error', text: `Error: ${e.message}` }, { type: 'error', text: '' }])
       setTimeout(() => {
         setOutputScroll(output.length + 2)

@@ -1,6 +1,6 @@
 import fs from 'node:fs'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { logger } from '@socketsecurity/lib/logger'
 
 import { REQUIREMENTS_TXT } from '../../constants/paths.mjs'
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'

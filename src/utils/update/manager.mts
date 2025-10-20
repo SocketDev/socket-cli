@@ -25,8 +25,8 @@
  * - User-triggered update checks
  */
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
+import { logger } from '@socketsecurity/lib/logger'
+import { isNonEmptyString } from '@socketsecurity/lib/strings'
 
 import { checkForUpdates as performUpdateCheck } from './checker.mts'
 import {

@@ -27,10 +27,10 @@
 import { HttpProxyAgent, HttpsProxyAgent } from 'hpagent'
 
 import isInteractive from '@socketregistry/is-interactive/index.cjs'
+import { password } from '@socketsecurity/lib/prompts'
+import { isNonEmptyString } from '@socketsecurity/lib/strings'
+import { isUrl } from '@socketsecurity/lib/url'
 import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/registry/constants/socket'
-import { password } from '@socketsecurity/registry/lib/prompts'
-import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
-import { isUrl } from '@socketsecurity/registry/lib/url'
 import { SocketSdk, createUserAgentFromPkgJson } from '@socketsecurity/sdk'
 
 import {

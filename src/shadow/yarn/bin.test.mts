@@ -6,7 +6,7 @@ import { FLAG_DRY_RUN } from '../../constants/cli.mts'
 // Mock readPackageJson from registry
 const mockReadPackageJson = vi.hoisted(() => vi.fn())
 
-vi.mock('@socketsecurity/registry/lib/packages', async importOriginal => {
+vi.mock('@socketsecurity/lib/packages', async importOriginal => {
   const actual = (await importOriginal()) as Record<string, any>
   return {
     ...actual,
@@ -32,7 +32,7 @@ vi.mock('../../utils/shadow/links.mts', () => ({
   installYarnLinks: mockInstallYarnLinks,
 }))
 
-vi.mock('@socketsecurity/registry/lib/spawn', () => ({
+vi.mock('@socketsecurity/lib/spawn', () => ({
   spawn: mockSpawn,
 }))
 

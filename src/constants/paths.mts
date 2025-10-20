@@ -9,6 +9,7 @@ import { homedir } from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { logger } from '@socketsecurity/lib/logger'
 import {
   getExecPath,
   getNodeDebugFlags,
@@ -16,7 +17,6 @@ import {
   getNodeNoWarningsFlags,
 } from '@socketsecurity/registry/constants/node'
 import { DOT_SOCKET_DIR } from '@socketsecurity/registry/constants/paths'
-import { logger } from '@socketsecurity/registry/lib/logger'
 
 // Import socket constants for re-export.
 import { SOCKET_JSON } from './socket.mts'
@@ -220,7 +220,11 @@ export function getSocketCachePath(): string {
 }
 
 export function getSocketRegistryPath(): string {
-  return path.join(getSocketAppDataPath(), 'registry')
+  const appDataPath = getSocketAppDataPath()
+  if (!appDataPath) {
+    throw new Error('Unable to determine Socket app data path')
+  }
+  return path.join(appDataPath, 'registry')
 }
 
 export function getGithubCachePath(): string {

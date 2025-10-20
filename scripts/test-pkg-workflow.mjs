@@ -15,8 +15,8 @@ import { platform } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
+import { logger } from '@socketsecurity/lib/logger'
+import { spawn } from '@socketsecurity/lib/spawn'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -75,8 +75,8 @@ async function main() {
         stdio: 'inherit',
       })
       logger.success('Socket CLI build completed')
-    } catch (e) {
       logger.fail('Socket CLI build failed')
+    } catch (e) {
       logger.substep(e.message)
       process.exit(1)
     }
@@ -100,8 +100,8 @@ async function main() {
         },
       )
       logger.success('pkg executable created')
-    } catch (e) {
       logger.fail('pkg creation failed')
+    } catch (e) {
       logger.substep(e.message)
       process.exit(1)
     }

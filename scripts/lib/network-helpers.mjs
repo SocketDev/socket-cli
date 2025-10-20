@@ -12,7 +12,7 @@
 
 import { writeFile } from 'node:fs/promises'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { logger } from '@socketsecurity/lib/logger'
 
 /**
  * Download file with automatic retry and optional progress tracking.

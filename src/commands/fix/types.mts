@@ -1,5 +1,5 @@
 import type { RangeStyle } from '../../utils/semver.mts'
-import type { Spinner } from '@socketsecurity/registry/lib/spinner'
+import type { Spinner } from '@socketsecurity/lib/spinner'
 
 export type FixConfig = {
   autopilot: boolean

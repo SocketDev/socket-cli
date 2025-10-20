@@ -1,9 +1,9 @@
 import path from 'node:path'
 
-import { joinAnd } from '@socketsecurity/registry/lib/arrays'
-import { debug, debugDir } from '@socketsecurity/registry/lib/debug'
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { pluralize } from '@socketsecurity/registry/lib/words'
+import { joinAnd } from '@socketsecurity/lib/arrays'
+import { debug, debugDir } from '@socketsecurity/lib/debug'
+import { logger } from '@socketsecurity/lib/logger'
+import { pluralize } from '@socketsecurity/lib/words'
 
 import {
   checkCiEnvVars,

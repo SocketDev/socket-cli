@@ -9,7 +9,7 @@ import type {
   IpcHandshake,
   IpcMessage,
   IpcStub,
-} from '@socketsecurity/registry/lib/ipc'
+} from '@socketsecurity/lib/ipc'
 
 /**
  * Check if a value is a valid IPC message.

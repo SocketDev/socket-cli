@@ -25,7 +25,7 @@ import { dirname, join } from 'node:path'
 // @ts-expect-error - No type declarations available.
 import ssri from 'ssri'
 
-import { get, put, remove } from '@socketsecurity/registry/lib/cacache'
+import { get, put, remove } from '@socketsecurity/lib/cacache'
 
 export interface BackupFileInfo {
   integrity: string // ssri format: sha256-base64

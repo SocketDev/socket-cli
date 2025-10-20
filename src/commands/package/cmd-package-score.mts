@@ -1,4 +1,4 @@
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { logger } from '@socketsecurity/lib/logger'
 
 import { handlePurlDeepScore } from './handle-purl-deep-score.mts'
 import { parsePackageSpecifiers } from './parse-package-specifiers.mts'

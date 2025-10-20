@@ -1,5 +1,5 @@
+import { spawn } from '@socketsecurity/lib/spawn'
 import { WIN32 } from '@socketsecurity/registry/constants/platform'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import { getNpxBinPath } from '../../utils/npm/paths.mts'
 

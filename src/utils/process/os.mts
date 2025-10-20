@@ -28,8 +28,8 @@
 
 import { promises as fs } from 'node:fs'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
+import { logger } from '@socketsecurity/lib/logger'
+import { spawn } from '@socketsecurity/lib/spawn'
 
 /**
  * Platform name mappings for GitHub releases.

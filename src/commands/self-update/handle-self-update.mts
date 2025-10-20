@@ -12,8 +12,8 @@ import path from 'node:path'
 
 import colors from 'yoctocolors-cjs'
 
-import { getIpcStubPath } from '@socketsecurity/registry/lib/ipc'
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { getIpcStubPath } from '@socketsecurity/lib/ipc'
+import { logger } from '@socketsecurity/lib/logger'
 
 import { outputSelfUpdate } from './output-self-update.mts'
 import ENV from '../../constants/env.mts'

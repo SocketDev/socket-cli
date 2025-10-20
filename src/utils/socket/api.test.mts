@@ -5,13 +5,13 @@ vi.mock('../config.mts', () => ({
   getConfigValueOrUndef: vi.fn(),
 }))
 
-vi.mock('@socketsecurity/registry/lib/logger', () => ({
+vi.mock('@socketsecurity/lib/logger', () => ({
   logger: {
     error: vi.fn(),
   },
 }))
 
-vi.mock('@socketsecurity/registry/lib/spinner', () => ({
+vi.mock('@socketsecurity/lib/spinner', () => ({
   Spinner: vi.fn(() => ({
     start: vi.fn(),
     stop: vi.fn(),

@@ -1,6 +1,6 @@
 import fs from 'node:fs'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { logger } from '@socketsecurity/lib/logger'
 
 export function addSocketWrapper(file: string): void {
   return fs.appendFile(

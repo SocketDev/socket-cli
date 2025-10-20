@@ -48,15 +48,16 @@
  */
 
 import { existsSync, readdirSync } from 'node:fs'
+// eslint-disable-next-line n/no-unsupported-features/node-builtins
 import { copyFile, cp, mkdir, readFile, stat, writeFile } from 'node:fs/promises'
 import { cpus, platform } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { brotliCompressSync, constants as zlibConstants } from 'node:zlib'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { logger } from '@socketsecurity/lib/logger'
 
-import { downloadWithRetry, exec, execCapture } from './lib/build-exec.mjs'
+import { exec, execCapture } from './lib/build-exec.mjs'
 import {
   checkCompiler,
   checkDiskSpace,
@@ -70,7 +71,6 @@ import {
   getLastLogLines,
   saveBuildLog,
   smokeTestBinary,
-  verifyFileIntegrity,
   verifyGitTag,
 } from './lib/build-helpers.mjs'
 import { printError, printHeader, printWarning } from './lib/build-output.mjs'

@@ -29,7 +29,7 @@ vi.mock('./fs.mts', () => ({
   findUp: vi.fn(),
 }))
 
-vi.mock('@socketsecurity/registry/lib/logger', () => ({
+vi.mock('@socketsecurity/lib/logger', () => ({
   logger: {
     warn: vi.fn(),
   },

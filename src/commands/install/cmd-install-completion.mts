@@ -1,4 +1,4 @@
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { logger } from '@socketsecurity/lib/logger'
 
 import { handleInstallCompletion } from './handle-install-completion.mts'
 import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'

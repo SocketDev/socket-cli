@@ -6,13 +6,13 @@ import { postinstallWrapper } from './postinstall-wrapper.mts'
 
 // Mock the dependencies.
 vi.mock('node:fs')
-vi.mock('@socketsecurity/registry/lib/logger', () => ({
+vi.mock('@socketsecurity/lib/logger', () => ({
   logger: {
     log: vi.fn(),
     success: vi.fn(),
   },
 }))
-vi.mock('@socketsecurity/registry/lib/prompts', () => ({
+vi.mock('@socketsecurity/lib/prompts', () => ({
   confirm: vi.fn(),
 }))
 vi.mock('./add-socket-wrapper.mts', () => ({
@@ -53,7 +53,7 @@ describe('postinstallWrapper', () => {
     const { checkSocketWrapperSetup } = await import(
       './check-socket-wrapper-setup.mts'
     )
-    const { confirm } = await import('@socketsecurity/registry/lib/prompts')
+    const { confirm } = await import('@socketsecurity/lib/prompts')
     const mockExistsSync = vi.mocked(existsSync) as any
     const mockCheckSetup = vi.mocked(checkSocketWrapperSetup)
 
@@ -72,7 +72,7 @@ describe('postinstallWrapper', () => {
     const { checkSocketWrapperSetup } = await import(
       './check-socket-wrapper-setup.mts'
     )
-    const { confirm } = await import('@socketsecurity/registry/lib/prompts')
+    const { confirm } = await import('@socketsecurity/lib/prompts')
     const mockExistsSync = vi.mocked(existsSync) as any
     const mockCheckSetup = vi.mocked(checkSocketWrapperSetup)
 
@@ -93,8 +93,8 @@ describe('postinstallWrapper', () => {
     const { checkSocketWrapperSetup } = await import(
       './check-socket-wrapper-setup.mts'
     )
-    const { confirm } = await import('@socketsecurity/registry/lib/prompts')
-    const { logger } = await import('@socketsecurity/registry/lib/logger')
+    const { confirm } = await import('@socketsecurity/lib/prompts')
+    const { logger } = await import('@socketsecurity/lib/logger')
     const mockExistsSync = vi.mocked(existsSync) as any
     const mockCheckSetup = vi.mocked(checkSocketWrapperSetup)
     const mockConfirm = vi.mocked(confirm)
@@ -123,7 +123,7 @@ describe('postinstallWrapper', () => {
     const { checkSocketWrapperSetup } = await import(
       './check-socket-wrapper-setup.mts'
     )
-    const { confirm } = await import('@socketsecurity/registry/lib/prompts')
+    const { confirm } = await import('@socketsecurity/lib/prompts')
     const mockExistsSync = vi.mocked(existsSync) as any
     const mockCheckSetup = vi.mocked(checkSocketWrapperSetup)
     const mockConfirm = vi.mocked(confirm)
@@ -145,7 +145,7 @@ describe('postinstallWrapper', () => {
     const { checkSocketWrapperSetup } = await import(
       './check-socket-wrapper-setup.mts'
     )
-    const { confirm } = await import('@socketsecurity/registry/lib/prompts')
+    const { confirm } = await import('@socketsecurity/lib/prompts')
     const mockExistsSync = vi.mocked(existsSync) as any
     const mockCheckSetup = vi.mocked(checkSocketWrapperSetup)
     const mockConfirm = vi.mocked(confirm)
@@ -165,7 +165,7 @@ describe('postinstallWrapper', () => {
     const { checkSocketWrapperSetup } = await import(
       './check-socket-wrapper-setup.mts'
     )
-    const { confirm } = await import('@socketsecurity/registry/lib/prompts')
+    const { confirm } = await import('@socketsecurity/lib/prompts')
     const mockExistsSync = vi.mocked(existsSync) as any
     const mockCheckSetup = vi.mocked(checkSocketWrapperSetup)
     const mockConfirm = vi.mocked(confirm)
@@ -185,7 +185,7 @@ describe('postinstallWrapper', () => {
 
   it('updates tab completion when it exists', async () => {
     const { getBashrcDetails } = await import('../../utils/completion.mts')
-    const { logger } = await import('@socketsecurity/registry/lib/logger')
+    const { logger } = await import('@socketsecurity/lib/logger')
     const { updateInstalledTabCompletionScript } = await import(
       '../install/setup-tab-completion.mts'
     )
@@ -219,7 +219,7 @@ describe('postinstallWrapper', () => {
 
   it('skips tab completion update when file does not exist', async () => {
     const { getBashrcDetails } = await import('../../utils/completion.mts')
-    const { logger } = await import('@socketsecurity/registry/lib/logger')
+    const { logger } = await import('@socketsecurity/lib/logger')
     const { updateInstalledTabCompletionScript } = await import(
       '../install/setup-tab-completion.mts'
     )
@@ -249,7 +249,7 @@ describe('postinstallWrapper', () => {
 
   it('handles tab completion update failure gracefully', async () => {
     const { getBashrcDetails } = await import('../../utils/completion.mts')
-    const { logger } = await import('@socketsecurity/registry/lib/logger')
+    const { logger } = await import('@socketsecurity/lib/logger')
     const mockExistsSync = vi.mocked(existsSync) as any
     const mockGetDetails = vi.mocked(getBashrcDetails)
     const { checkSocketWrapperSetup } = await import(
@@ -272,7 +272,7 @@ describe('postinstallWrapper', () => {
 
   it('handles getBashrcDetails returning not ok', async () => {
     const { getBashrcDetails } = await import('../../utils/completion.mts')
-    const { logger } = await import('@socketsecurity/registry/lib/logger')
+    const { logger } = await import('@socketsecurity/lib/logger')
     const mockExistsSync = vi.mocked(existsSync) as any
     const mockGetDetails = vi.mocked(getBashrcDetails)
     const { checkSocketWrapperSetup } = await import(

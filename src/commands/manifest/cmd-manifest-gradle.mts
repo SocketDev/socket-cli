@@ -1,7 +1,7 @@
 import path from 'node:path'
 
-import { debug } from '@socketsecurity/registry/lib/debug'
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { debug } from '@socketsecurity/lib/debug'
+import { logger } from '@socketsecurity/lib/logger'
 
 import { convertGradleToMaven } from './convert-gradle-to-maven.mts'
 import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mjs'

@@ -129,7 +129,6 @@ export class WordPieceTokenizer {
   private sepToken: string
   private padToken: string
   private clsToken: string
-  private maskToken: string
   private subwordPrefix: string
 
   constructor(config: TokenizerConfig) {
@@ -141,7 +140,6 @@ export class WordPieceTokenizer {
     this.sepToken = config.sepToken || '[SEP]'
     this.padToken = config.padToken || '[PAD]'
     this.clsToken = config.clsToken || '[CLS]'
-    this.maskToken = config.maskToken || '[MASK]'
     this.subwordPrefix = config.subwordPrefix || '##'
 
     // Create reverse mapping: ID → token.

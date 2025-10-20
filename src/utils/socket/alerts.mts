@@ -18,11 +18,11 @@
  * - Respects filter configurations from socket.yml
  */
 
-import { arrayUnique } from '@socketsecurity/registry/lib/arrays'
-import { debugDir } from '@socketsecurity/registry/lib/debug'
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { getOwn } from '@socketsecurity/registry/lib/objects'
-import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
+import { arrayUnique } from '@socketsecurity/lib/arrays'
+import { debugDir } from '@socketsecurity/lib/debug'
+import { logger } from '@socketsecurity/lib/logger'
+import { getOwn } from '@socketsecurity/lib/objects'
+import { isNonEmptyString } from '@socketsecurity/lib/strings'
 
 import { findSocketYmlSync } from '../config.mts'
 import { extractPurlsFromPnpmLockfile } from '../pnpm/lockfile.mts'
@@ -33,7 +33,7 @@ import { toFilterConfig } from '../validation/filter-config.mts'
 import type { CompactSocketArtifact } from '../alert/artifact.mts'
 import type { AlertFilter, AlertsByPurl } from '../socket/package-alert.mts'
 import type { LockfileObject } from '@pnpm/lockfile.fs'
-import type { Spinner } from '@socketsecurity/registry/lib/spinner'
+import type { Spinner } from '@socketsecurity/lib/spinner'
 
 export type GetAlertsMapFromPnpmLockfileOptions = {
   apiToken?: string | undefined

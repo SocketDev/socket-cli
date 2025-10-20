@@ -1,4 +1,4 @@
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { logger } from '@socketsecurity/lib/logger'
 
 import { outputWhoami } from './output-whoami.mts'
 import { CONFIG_KEY_API_TOKEN } from '../../constants/config.mjs'

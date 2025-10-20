@@ -3,8 +3,6 @@
  * Allows real-time tweaking of console window design.
  */
 
-import { renderShimmerFrame } from '../src/utils/terminal/ascii-header.mts'
-
 /**
  * UI State for the console window rectangle.
  */
@@ -185,7 +183,7 @@ function drawStatusBar() {
  * Render complete frame.
  */
 function renderFrame() {
-  const { cols, rows } = getTerminalSize()
+  const { cols } = getTerminalSize()
 
   // Draw base screen with console window.
   const screen = drawConsoleWindow()
@@ -317,8 +315,8 @@ function cleanup() {
     process.stdout.write('\x1B[?1049l')
     process.stdout.write('\x1B[?25h')
     process.stdout.write('\x1B[2J\x1B[H')
-  } catch (e) {
     // Ignore cleanup errors.
+  } catch {
   }
 
   console.log('\nExiting interactive TUI designer...\n')

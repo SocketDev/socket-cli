@@ -27,9 +27,9 @@
 
 import { existsSync, mkdirSync, rmSync, statSync } from 'node:fs'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-import promises from '@socketsecurity/registry/lib/promises'
-import { onExit } from '@socketsecurity/registry/lib/signal-exit'
+import { logger } from '@socketsecurity/lib/logger'
+import promises from '@socketsecurity/lib/promises'
+import { onExit } from '@socketsecurity/lib/signal-exit'
 
 /**
  * Lock acquisition options.

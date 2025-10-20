@@ -1,4 +1,4 @@
-import { debug, debugDir } from '@socketsecurity/registry/lib/debug'
+import { debug, debugDir } from '@socketsecurity/lib/debug'
 
 import { queryApiSafeText } from '../../utils/socket/api.mjs'
 

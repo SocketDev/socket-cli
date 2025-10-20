@@ -88,7 +88,7 @@ async function testUserlandDecompression() {
 
   // Try to parse as JavaScript (syntax check).
   try {
-     
+    // eslint-disable-next-line no-new
     new Function(code)
     console.log('   JavaScript syntax:', '✓ Valid')
   } catch (e) {

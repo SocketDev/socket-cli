@@ -4,7 +4,7 @@ import { handleCi } from './handle-ci.mts'
 import { UNKNOWN_ERROR } from '../constants/errors.mts'
 
 // Mock the dependencies.
-vi.mock('@socketsecurity/registry/lib/logger', () => ({
+vi.mock('@socketsecurity/lib/logger', () => ({
   logger: {
     log: vi.fn(),
   },
@@ -144,7 +144,7 @@ describe('handleCi', () => {
 
   it('handles org slug fetch failure', async () => {
     const { getDefaultOrgSlug } = await import('./fetch-default-org-slug.mts')
-    const { logger } = await import('@socketsecurity/registry/lib/logger')
+    const { logger } = await import('@socketsecurity/lib/logger')
     const { serializeResultJson } = await import(
       '../../utils/serialize/result-json.mts'
     )
@@ -169,7 +169,7 @@ describe('handleCi', () => {
 
   it('sets default exit code on org slug failure without code', async () => {
     const { getDefaultOrgSlug } = await import('./fetch-default-org-slug.mts')
-    const { logger } = await import('@socketsecurity/registry/lib/logger')
+    const { logger } = await import('@socketsecurity/lib/logger')
     const { serializeResultJson } = await import(
       '../../utils/serialize/result-json.mts'
     )
@@ -189,7 +189,7 @@ describe('handleCi', () => {
 
   it('logs debug information', async () => {
     const { debugDir, debugFn } = await import(
-      '@socketsecurity/registry/lib/debug'
+      '@socketsecurity/lib/debug'
     )
     const { getDefaultOrgSlug } = await import('./fetch-default-org-slug.mts')
     const { getRepoName, gitBranch } = await import('../../utils/git.mts')
@@ -219,7 +219,7 @@ describe('handleCi', () => {
 
   it('logs debug info on org slug failure', async () => {
     const { debugDir, debugFn } = await import(
-      '@socketsecurity/registry/lib/debug'
+      '@socketsecurity/lib/debug'
     )
     const { getDefaultOrgSlug } = await import('./fetch-default-org-slug.mts')
 

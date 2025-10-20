@@ -1,8 +1,7 @@
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import { handleAsk } from './handle-ask.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
+import { InputError } from '../../utils/error/errors.mjs'
 import {
   getFlagApiRequirementsOutput,
   getFlagListOutput,
@@ -83,13 +82,11 @@ async function run(
   const query = cli.input[0]
 
   if (!query) {
-    logger.error('Please provide a question')
-    logger.log('\nExample: socket ask "scan for vulnerabilities"')
-    process.exit(1)
+    throw new InputError('Please provide a question.\n\nExample: socket ask "scan for vulnerabilities"')
   }
 
-  const execute = !!cli.flags.execute
-  const explain = !!cli.flags.explain
+  const execute = !!cli.flags['execute']
+  const explain = !!cli.flags['explain']
 
   await handleAsk({
     query,

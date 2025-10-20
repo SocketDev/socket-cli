@@ -21,10 +21,10 @@
 
 import { messageWithCauses } from 'pony-cause'
 
+import { debug, debugDir } from '@socketsecurity/lib/debug'
+import { logger } from '@socketsecurity/lib/logger'
+import { isNonEmptyString } from '@socketsecurity/lib/strings'
 import { getSpinner } from '@socketsecurity/registry/constants/process'
-import { debug, debugDir } from '@socketsecurity/registry/lib/debug'
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
 import { getDefaultApiToken } from './sdk.mts'
 import { CONFIG_KEY_API_BASE_URL } from '../../constants/config.mts'
@@ -47,7 +47,7 @@ import {
 import { buildErrorCause } from '../error/errors.mts'
 
 import type { CResult } from '../../types.mts'
-import type { Spinner } from '@socketsecurity/registry/lib/spinner'
+import type { Spinner } from '@socketsecurity/lib/spinner'
 import type {
   SocketSdkErrorResult,
   SocketSdkOperations,

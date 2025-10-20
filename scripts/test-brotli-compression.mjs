@@ -3,7 +3,7 @@
  * This tests the compression function without requiring full build integration
  */
 
-import { readFile, readdir, writeFile } from 'node:fs/promises'
+import { readFile, readdir } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { brotliCompressSync, constants as zlibConstants } from 'node:zlib'
@@ -38,6 +38,7 @@ async function testBrotliCompression() {
   const libDir = path.join(NODE_DIR, 'lib')
 
   for await (const jsFile of walkDir(libDir)) {
+    const relativePath = path.relative(libDir, jsFile)
     try {
       const original = await readFile(jsFile, 'utf8')
       const originalSize = Buffer.byteLength(original, 'utf8')
@@ -82,7 +83,6 @@ async function testBrotliCompression() {
         totalCompressedSize += compressedSize
         filesCompressed++
 
-        const relativePath = path.relative(libDir, jsFile)
         console.log(
           `   ✓ ${relativePath.padEnd(50)} ` +
             `${(originalSize / 1024).toFixed(1)}KB → ` +
@@ -92,7 +92,6 @@ async function testBrotliCompression() {
         )
       }
     } catch (e) {
-      const relativePath = path.relative(NODE_DIR, jsFile)
       console.warn(`   ⚠️  Skipped ${relativePath}: ${e.message}`)
     }
   }

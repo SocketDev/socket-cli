@@ -18,6 +18,7 @@ if (require.main === module) {
   if (!scriptName) {
     console.error('Usage: node scripts/load <script-name> [flags]')
     console.error('Example: node scripts/load build-yao-pkg-node --clean')
+    // eslint-disable-next-line n/no-process-exit
     process.exit(1)
   }
 
@@ -37,6 +38,7 @@ if (require.main === module) {
   })
 
   child.on('exit', code => {
+    // eslint-disable-next-line n/no-process-exit
     process.exit(code ?? 0)
   })
 }

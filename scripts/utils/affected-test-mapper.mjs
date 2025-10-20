@@ -9,8 +9,8 @@ import path from 'node:path'
 import {
   getChangedFilesSync,
   getStagedFilesSync,
-} from '@socketsecurity/registry/lib/git'
-import { normalizePath } from '@socketsecurity/registry/lib/path'
+} from '@socketsecurity/lib/git'
+import { normalizePath } from '@socketsecurity/lib/path'
 
 const rootPath = path.resolve(process.cwd())
 

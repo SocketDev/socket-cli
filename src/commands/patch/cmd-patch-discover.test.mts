@@ -310,7 +310,7 @@ describe('socket patch discover - type exports', () => {
     'should export PatchVulnerability type',
     async () => {
       // Test that PatchVulnerability is exported.
-      const module = await import('./handle-patch-discover.tsx')
+      const module = await import('./handle-patch-discover.mts')
       expect(module).toHaveProperty('PatchVulnerability')
       // PatchVulnerability is a type, so it won't have a runtime value.
       // This test verifies the module structure is correct.
@@ -323,7 +323,7 @@ describe('socket patch discover - type exports', () => {
     'should export DiscoveredPatch interface',
     async () => {
       // Test that DiscoveredPatch is exported.
-      const module = await import('./handle-patch-discover.tsx')
+      const module = await import('./handle-patch-discover.mts')
       expect(module).toHaveProperty('DiscoveredPatch')
       // DiscoveredPatch is an interface, so it won't have a runtime value.
       // This test verifies the module structure is correct.

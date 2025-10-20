@@ -25,9 +25,9 @@
  * - gitBranch: Get current branch or commit hash
  */
 
-import { debug, debugDir, isDebug } from '@socketsecurity/registry/lib/debug'
-import { normalizePath } from '@socketsecurity/registry/lib/path'
-import { isSpawnError, spawn } from '@socketsecurity/registry/lib/spawn'
+import { debug, debugDir, isDebug } from '@socketsecurity/lib/debug'
+import { normalizePath } from '@socketsecurity/lib/path'
+import { isSpawnError, spawn } from '@socketsecurity/lib/spawn'
 
 import { FLAG_QUIET } from '../../constants/cli.mts'
 import ENV from '../../constants/env.mts'
@@ -36,7 +36,7 @@ import { debugGit } from '../debug.mts'
 import { extractName, extractOwner } from '../sanitize-names.mts'
 
 import type { CResult } from '../../types.mjs'
-import type { SpawnOptions } from '@socketsecurity/registry/lib/spawn'
+import type { SpawnOptions } from '@socketsecurity/lib/spawn'
 
 // Listed in order of check preference.
 const COMMON_DEFAULT_BRANCH_NAMES = [

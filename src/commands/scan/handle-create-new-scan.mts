@@ -1,9 +1,9 @@
 import path from 'node:path'
 
+import { debug, debugDir } from '@socketsecurity/lib/debug'
+import { logger } from '@socketsecurity/lib/logger'
+import { pluralize } from '@socketsecurity/lib/words'
 import { getSpinner } from '@socketsecurity/registry/constants/process'
-import { debug, debugDir } from '@socketsecurity/registry/lib/debug'
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { pluralize } from '@socketsecurity/registry/lib/words'
 
 import { fetchCreateOrgFullScan } from './fetch-create-org-full-scan.mts'
 import { fetchSupportedScanFileNames } from './fetch-supported-scan-file-names.mts'
@@ -23,7 +23,7 @@ import { generateAutoManifest } from '../manifest/generate_auto_manifest.mts'
 import type { ReachabilityOptions } from './perform-reachability-analysis.mts'
 import type { REPORT_LEVEL } from './types.mts'
 import type { OutputKind } from '../../types.mts'
-import type { Remap } from '@socketsecurity/registry/lib/objects'
+import type { Remap } from '@socketsecurity/lib/objects'
 
 export type HandleCreateNewScanConfig = {
   autoManifest: boolean

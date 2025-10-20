@@ -5,7 +5,7 @@
 
 import { env } from 'node:process'
 
-import { envAsBoolean } from '@socketsecurity/registry/lib/env'
+import { envAsBoolean } from '@socketsecurity/lib/env'
 
 // Import CLI-specific env modules.
 import { DISABLE_GITHUB_CACHE } from '../env/disable-github-cache.mts'

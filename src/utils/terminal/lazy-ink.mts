@@ -1,6 +1,6 @@
 /** @fileoverview Lazy loading utility for Ink/React components to reduce bundle size */
 
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { logger } from '@socketsecurity/lib/logger'
 
 /**
  * Lazily load Ink and React dependencies only when needed

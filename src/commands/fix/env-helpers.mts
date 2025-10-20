@@ -1,6 +1,6 @@
-import { joinAnd } from '@socketsecurity/registry/lib/arrays'
-import { debug, isDebug } from '@socketsecurity/registry/lib/debug'
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { joinAnd } from '@socketsecurity/lib/arrays'
+import { debug, isDebug } from '@socketsecurity/lib/debug'
+import { logger } from '@socketsecurity/lib/logger'
 
 import { getSocketFixPrs } from './pull-request.mts'
 import ENV from '../../constants/env.mts'

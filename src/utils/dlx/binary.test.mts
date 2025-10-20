@@ -16,7 +16,7 @@ import path from 'node:path'
 
 import { describe, expect, it, vi } from 'vitest'
 
-import { normalizePath } from '@socketsecurity/registry/lib/path'
+import { normalizePath } from '@socketsecurity/lib/path'
 
 import {
   cleanDlxCache,

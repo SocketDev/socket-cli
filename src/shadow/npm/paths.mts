@@ -1,6 +1,6 @@
 import path from 'node:path'
 
-import { normalizePath } from '@socketsecurity/registry/lib/path'
+import { normalizePath } from '@socketsecurity/lib/path'
 
 import { WIN32 } from '../../constants/types.mts'
 import { getNpmRequire } from '../../utils/npm/paths.mts'
