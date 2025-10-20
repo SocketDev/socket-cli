@@ -1,0 +1,4 @@
+version: 2
+
+projectIgnorePaths:
+  - "test/fixtures/commands/fix"
