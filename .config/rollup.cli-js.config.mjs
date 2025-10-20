@@ -217,6 +217,19 @@ export default {
     fixInk(),
     fixYoga(),
 
+    // Skip processing for large base64-encoded files.
+    {
+      name: 'skip-external-assets',
+      load(id) {
+        // Skip any file in the external/ directory to avoid parsing huge base64 strings.
+        if (id.includes('/external/') && id.endsWith('.mjs')) {
+          const code = fs.readFileSync(id, 'utf-8')
+          return { code, map: null }
+        }
+        return null
+      },
+    },
+
     // Custom plugin to force bundling of socket packages.
     {
       name: 'force-bundle-socket-packages',
@@ -334,6 +347,7 @@ export default {
         '**/dependencies.js',
         '**/iconv-lite/**',
         '**/encoding/**',
+        '**/external/**', // Skip large base64-encoded WASM/model files.
       ],
     }),
 
@@ -353,6 +367,7 @@ export default {
         '**/*.spec.*',
         '**/fixtures/**',
         '**/yargs-parser/**',
+        '**/external/**', // Skip large base64-encoded WASM/model files.
       ],
     }),
 
