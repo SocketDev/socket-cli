@@ -21,7 +21,13 @@ export function getLocalPackageAliases(rootDir) {
   // If no rootDir provided, try to infer from stack trace or use process.cwd().
   const baseDir = rootDir || process.cwd()
 
-  // Check for ../socket-registry/registry.
+  // Check for ../socket-lib for @socketsecurity/lib.
+  const libPath = path.join(baseDir, '..', 'socket-lib')
+  if (existsSync(path.join(libPath, 'package.json'))) {
+    aliases['@socketsecurity/lib'] = libPath
+  }
+
+  // Check for ../socket-registry/registry for @socketsecurity/registry.
   const registryPath = path.join(baseDir, '..', 'socket-registry', 'registry')
   if (existsSync(path.join(registryPath, 'package.json'))) {
     aliases['@socketsecurity/registry'] = registryPath

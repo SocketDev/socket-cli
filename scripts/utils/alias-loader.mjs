@@ -36,6 +36,13 @@ export function resolve(specifier, context, nextResolve) {
         path.join(localPath, 'dist', subpath),
         path.join(localPath, 'dist', `${subpath}.mjs`),
         path.join(localPath, 'dist', `${subpath}.js`),
+        // Try with lib/ prefix for @socketsecurity/registry package structure.
+        path.join(localPath, 'lib', subpath),
+        path.join(localPath, 'lib', `${subpath}.mjs`),
+        path.join(localPath, 'lib', `${subpath}.js`),
+        path.join(localPath, 'dist', 'lib', subpath),
+        path.join(localPath, 'dist', 'lib', `${subpath}.mjs`),
+        path.join(localPath, 'dist', 'lib', `${subpath}.js`),
       ]
 
       for (const candidate of candidates) {
