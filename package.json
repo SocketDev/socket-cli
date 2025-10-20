@@ -103,6 +103,7 @@
     "@socketregistry/packageurl-js": "1.3.0",
     "@socketregistry/yocto-spinner": "1.0.24",
     "@socketsecurity/config": "3.0.1",
+    "@socketsecurity/lib": "1.0.0",
     "@socketsecurity/registry": "link:../socket-registry/registry",
     "@socketsecurity/sdk": "1.11.2",
     "@types/cmd-shim": "5.0.2",
@@ -189,7 +190,7 @@
   ],
   "lint-staged": {
     "*.{cjs,cts,js,json,md,mjs,mts,ts}": [
-      "biome check --write --no-errors-on-unmatched --files-ignore-unknown=true --colors=off"
+      "biome check --write --unsafe --no-errors-on-unmatched --files-ignore-unknown=true --colors=off"
     ]
   },
   "pnpm": {
