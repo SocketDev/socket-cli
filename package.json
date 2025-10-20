@@ -252,6 +252,7 @@
     "strict": true
   },
   "dependencies": {
-    "ajv-dist": "8.17.1"
+    "ajv-dist": "8.17.1",
+    "compromise": "^14.14.4"
   }
 }
