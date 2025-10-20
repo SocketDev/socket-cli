@@ -73,6 +73,7 @@ export async function isLocalServerRunning(
   const urlsToCheck = [...customUrls, ...DEFAULT_LOCAL_SERVERS]
 
   for (const url of urlsToCheck) {
+    // eslint-disable-next-line no-await-in-loop
     const isReachable = await isUrlReachable(url)
     if (isReachable) {
       return url

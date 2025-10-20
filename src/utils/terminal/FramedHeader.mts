@@ -69,6 +69,7 @@ export async function renderFramedHeader(
   process.once('SIGINT', () => {
     clearInterval(interval)
     process.stdout.write('\x1B[?25h')
+    // eslint-disable-next-line n/no-process-exit
     process.exit(0)
   })
 
