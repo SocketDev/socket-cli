@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * TUI layout based on John-David's sketch.
  *
@@ -119,7 +118,7 @@ function drawSketchTUI() {
  * Helper to replace text at position.
  */
 function replaceAt(str, index, replacement) {
-  if (index < 0 || index >= str.length) return str
+  if (index < 0 || index >= str.length) {return str}
   const endIndex = Math.min(str.length, index + replacement.length)
   return str.slice(0, index) + replacement + str.slice(endIndex)
 }

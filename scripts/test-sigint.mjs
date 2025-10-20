@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * Simple SIGINT test script.
  */

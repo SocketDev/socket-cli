@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * Complete TUI layout with header, console window, and input block.
  */
@@ -53,7 +52,7 @@ function visibleLength(str) {
  * Replace substring at position in a string, accounting for visible length.
  */
 function replaceAt(str, index, replacement) {
-  if (index < 0) return str
+  if (index < 0) {return str}
   const replacementVisibleLen = visibleLength(replacement)
 
   // Find the actual character position accounting for ANSI codes.
@@ -132,7 +131,7 @@ function drawCompleteTUI() {
   // Header content.
   for (let i = 0; i < logoLines.length; i++) {
     const lineY = headerY + 1 + i
-    if (lineY >= rows - 1) break
+    if (lineY >= rows - 1) {break}
 
     const line = logoLines[i]
     const lineVisibleLen = visibleLength(line)

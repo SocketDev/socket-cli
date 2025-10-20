@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * Generate static previews of TUI console window designs.
  */
@@ -46,11 +45,11 @@ const BORDER_STYLES = {
  */
 function drawConsolePreview(options) {
   const {
+    borderStyle = 'double',
+    consoleHeightPercent = 30,
+    consoleWidthPercent = 40,
     terminalCols = 120,
     terminalRows = 30,
-    consoleWidthPercent = 40,
-    consoleHeightPercent = 30,
-    borderStyle = 'double',
     title = 'Console Window',
   } = options
 

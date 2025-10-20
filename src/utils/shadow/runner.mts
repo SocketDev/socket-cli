@@ -3,6 +3,7 @@
 import { createRequire } from 'node:module'
 
 import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/registry/constants/socket'
+import { Spinner as createSpinner } from '@socketsecurity/registry/lib/spinner'
 
 import { NPM, PNPM, YARN } from '../../constants/agents.mts'
 import { FLAG_SILENT } from '../../constants/cli.mts'
@@ -21,10 +22,6 @@ import {
   getShadowYarnBinPath,
 } from '../../constants/shadow.mts'
 import { getErrorCause } from '../error/errors.mts'
-import type { Spinner } from '@socketsecurity/registry/lib/spinner'
-
-import { Spinner as createSpinner } from '@socketsecurity/registry/lib/spinner'
-
 import { findUp } from '../fs/fs.mts'
 import { isYarnBerry } from '../yarn/version.mts'
 
@@ -35,6 +32,7 @@ import type {
 } from '../../shadow/npm-base.mts'
 import type { CResult } from '../../types.mts'
 import type { SpawnExtra } from '@socketsecurity/registry/lib/spawn'
+import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 const require = createRequire(import.meta.url)
 

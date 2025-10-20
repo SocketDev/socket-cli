@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * Test what happens when content overflows after collapse.
  */

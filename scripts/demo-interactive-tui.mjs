@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * Interactive TUI development session.
  * Allows real-time tweaking of console window design.

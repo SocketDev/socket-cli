@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * Test the exact sequence of what gets rendered when expanding/collapsing.
  */

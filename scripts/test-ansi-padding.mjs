@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * Test how ANSI codes affect line length and padding.
  */

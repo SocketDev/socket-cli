@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * Test what happens to scroll during expansion when user manually scrolls.
  */

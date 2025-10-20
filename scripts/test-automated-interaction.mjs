@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * Automated test that simulates user interaction with the TUI.
  * This will help identify the "jumping garbling" issue.

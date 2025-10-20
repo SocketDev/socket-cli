@@ -1,10 +1,11 @@
-#!/usr/bin/env node
 /** @fileoverview Socket CLI TUI using Ink framework - pure JS version. */
 
-import React, { useState, useEffect, useMemo } from 'react'
 import { Box, Text, render, useApp, useInput, useStdout } from 'ink'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
+import React, { useEffect, useMemo, useState } from 'react'
 import terminalLink from 'terminal-link'
+
+import { spawn } from '@socketsecurity/registry/lib/spawn'
+
 
 const { createElement: h } = React
 
@@ -90,7 +91,7 @@ function highlightLinks(text) {
 /**
  * Render a scroll indicator bar.
  */
-function ScrollIndicator({ current, total, height, theme }) {
+function ScrollIndicator({ current, height, theme, total }) {
   if (total <= height) {
     return null
   }

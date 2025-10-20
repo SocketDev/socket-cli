@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * Capture raw TUI output to analyze rendering issues.
  */

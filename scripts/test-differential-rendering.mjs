@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * Test differential rendering logic.
  */

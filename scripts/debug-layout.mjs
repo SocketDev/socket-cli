@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * Debug layout calculations to find the gap.
  */

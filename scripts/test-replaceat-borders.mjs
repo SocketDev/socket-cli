@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * Test replaceAt with border characters.
  */
@@ -8,7 +7,7 @@ function visibleLength(str) {
 }
 
 function replaceAt(str, visibleIndex, replacement) {
-  if (visibleIndex < 0) return str
+  if (visibleIndex < 0) {return str}
 
   // Find the byte index that corresponds to the visible index.
   let byteIndex = 0
@@ -40,7 +39,7 @@ function replaceAt(str, visibleIndex, replacement) {
 
   // Find where to end the replacement (skip ANSI codes in the middle).
   let endByteIndex = byteIndex
-  let replacementVisible = visibleLength(replacement)
+  const replacementVisible = visibleLength(replacement)
   visibleCount = 0
   inAnsiCode = false
 

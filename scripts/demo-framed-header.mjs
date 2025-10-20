@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * Demo script to showcase the framed ASCII header animation.
  */

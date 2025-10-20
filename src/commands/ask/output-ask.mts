@@ -26,7 +26,7 @@ interface OutputAskCommandOptions {
  * Format the ask command output.
  */
 export function outputAskCommand(options: OutputAskCommandOptions): void {
-  const { query, intent, context, explain } = options
+  const { context, explain, intent, query } = options
 
   // Show the query.
   logger.log('')
