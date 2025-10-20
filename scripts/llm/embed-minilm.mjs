@@ -1,29 +1,30 @@
 /**
  * Embed MiniLM Model as Synchronous Loader
  *
- * Follows the yoga-layout pattern:
+ * Strategy:
  * 1. Read model and vocabulary files
- * 2. Base64 encode them
- * 3. Generate external/minilm-sync.mjs with embedded data
- * 4. Provide synchronous loading interface
+ * 2. Compress with brotli (best compression)
+ * 3. Base64 encode compressed data
+ * 4. Generate external/minilm-sync.mjs with embedded data
+ * 5. Runtime: decode base64 → decompress brotli → use
  *
- * WHY BASE64:
- * - Allows embedding binary data in JavaScript files
- * - Works with bundlers (Rollup, etc.)
+ * WHY BROTLI+BASE64:
+ * - Brotli: ~40-60% compression on binary data
+ * - Base64: Safe for Rollup parser (no special chars)
+ * - Much smaller than plain base64 (23MB → ~8-10MB)
  * - Compatible with SEA (Single Executable Application)
- * - 33% size overhead acceptable for convenience
  *
  * OUTPUT:
  * external/minilm-sync.mjs containing:
- * - Base64-encoded tokenizer vocabulary (~900KB)
- * - Base64-encoded ONNX model weights (~22MB)
- * - Synchronous loading utilities
- * - Total: ~23MB (will compress to ~15MB with brotli)
+ * - Brotli+base64 tokenizer vocabulary
+ * - Brotli+base64 ONNX model weights
+ * - Synchronous decompression utilities
  */
 
 import { readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { brotliCompressSync } from 'node:zlib'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '../..')
@@ -37,17 +38,21 @@ console.log('╚═════════════════════�
 console.log('📖 Reading tokenizer.json...')
 const tokenizerPath = path.join(cacheDir, 'tokenizer.json')
 const tokenizerData = readFileSync(tokenizerPath)
-const tokenizerBase64 = tokenizerData.toString('base64')
+const tokenizerCompressed = brotliCompressSync(tokenizerData)
+const tokenizerBase64 = tokenizerCompressed.toString('base64')
 console.log(`   ✓ Read ${tokenizerData.length} bytes`)
-console.log(`   ✓ Base64 size: ${tokenizerBase64.length} bytes\n`)
+console.log(`   ✓ Brotli compressed: ${tokenizerCompressed.length} bytes (${((tokenizerCompressed.length / tokenizerData.length) * 100).toFixed(1)}%)`)
+console.log(`   ✓ Base64 encoded: ${tokenizerBase64.length} bytes\n`)
 
 // Read ONNX model.
 console.log('📖 Reading model_quantized.onnx...')
 const modelPath = path.join(cacheDir, 'model_quantized.onnx')
 const modelData = readFileSync(modelPath)
-const modelBase64 = modelData.toString('base64')
+const modelCompressed = brotliCompressSync(modelData)
+const modelBase64 = modelCompressed.toString('base64')
 console.log(`   ✓ Read ${modelData.length} bytes`)
-console.log(`   ✓ Base64 size: ${modelBase64.length} bytes\n`)
+console.log(`   ✓ Brotli compressed: ${modelCompressed.length} bytes (${((modelCompressed.length / modelData.length) * 100).toFixed(1)}%)`)
+console.log(`   ✓ Base64 encoded: ${modelBase64.length} bytes\n`)
 
 // Generate minilm-sync.mjs.
 console.log('📝 Generating external/minilm-sync.mjs...')
@@ -59,34 +64,28 @@ const syncContent = `/**
  * DO NOT EDIT MANUALLY - changes will be overwritten on next build.
  *
  * Contains:
- * - Base64-encoded tokenizer vocabulary (${(tokenizerBase64.length / 1024).toFixed(2)} KB)
- * - Base64-encoded ONNX model (${(modelBase64.length / 1024 / 1024).toFixed(2)} MB)
- * - Synchronous loading utilities
+ * - Brotli-compressed, base64-encoded tokenizer vocabulary
+ * - Brotli-compressed, base64-encoded ONNX model
+ * - Synchronous decompression utilities
+ *
+ * Original sizes:
+ * - Tokenizer: ${(tokenizerData.length / 1024).toFixed(2)} KB → ${(tokenizerBase64.length / 1024).toFixed(2)} KB (${((tokenizerCompressed.length / tokenizerData.length) * 100).toFixed(1)}% compressed)
+ * - Model: ${(modelData.length / 1024 / 1024).toFixed(2)} MB → ${(modelBase64.length / 1024 / 1024).toFixed(2)} MB (${((modelCompressed.length / modelData.length) * 100).toFixed(1)}% compressed)
  *
  * Total embedded size: ${((tokenizerBase64.length + modelBase64.length) / 1024 / 1024).toFixed(2)} MB
  */
 
+import { brotliDecompressSync } from 'node:zlib'
+
 /**
- * Embedded tokenizer vocabulary (base64-encoded).
+ * Embedded tokenizer vocabulary (brotli-compressed, base64-encoded).
  */
 const TOKENIZER_BASE64 = '${tokenizerBase64}'
 
 /**
- * Embedded ONNX model (base64-encoded).
+ * Embedded ONNX model (brotli-compressed, base64-encoded).
  */
 const MODEL_BASE64 = '${modelBase64}'
-
-/**
- * Decode base64 to Uint8Array.
- */
-function decodeBase64(base64) {
-  const binaryString = atob(base64)
-  const bytes = new Uint8Array(binaryString.length)
-  for (let i = 0; i < binaryString.length; i++) {
-    bytes[i] = binaryString.charCodeAt(i)
-  }
-  return bytes
-}
 
 /**
  * Load tokenizer vocabulary synchronously.
@@ -94,8 +93,14 @@ function decodeBase64(base64) {
  * @returns Parsed tokenizer configuration
  */
 export function loadTokenizerSync() {
-  const bytes = decodeBase64(TOKENIZER_BASE64)
-  const text = new TextDecoder().decode(bytes)
+  // Decode base64 to Buffer.
+  const compressed = Buffer.from(TOKENIZER_BASE64, 'base64')
+
+  // Decompress with brotli.
+  const decompressed = brotliDecompressSync(compressed)
+
+  // Parse JSON.
+  const text = decompressed.toString('utf-8')
   return JSON.parse(text)
 }
 
@@ -105,7 +110,14 @@ export function loadTokenizerSync() {
  * @returns ONNX model as Uint8Array
  */
 export function loadModelSync() {
-  return decodeBase64(MODEL_BASE64)
+  // Decode base64 to Buffer.
+  const compressed = Buffer.from(MODEL_BASE64, 'base64')
+
+  // Decompress with brotli.
+  const decompressed = brotliDecompressSync(compressed)
+
+  // Return as Uint8Array for ONNX Runtime.
+  return new Uint8Array(decompressed.buffer, decompressed.byteOffset, decompressed.byteLength)
 }
 
 /**
@@ -116,16 +128,19 @@ export function loadModelSync() {
 export function getEmbeddedSizes() {
   return {
     tokenizer: {
+      compressed: ${tokenizerCompressed.length},
       base64: TOKENIZER_BASE64.length,
-      binary: ${tokenizerData.length},
+      original: ${tokenizerData.length},
     },
     model: {
+      compressed: ${modelCompressed.length},
       base64: MODEL_BASE64.length,
-      binary: ${modelData.length},
+      original: ${modelData.length},
     },
     total: {
+      compressed: ${tokenizerCompressed.length + modelCompressed.length},
       base64: TOKENIZER_BASE64.length + MODEL_BASE64.length,
-      binary: ${tokenizerData.length + modelData.length},
+      original: ${tokenizerData.length + modelData.length},
     },
   }
 }
@@ -141,11 +156,16 @@ console.log('╔═════════════════════�
 console.log('║   Embedding Complete                              ║')
 console.log('╚═══════════════════════════════════════════════════╝\n')
 
-const totalMB = ((tokenizerBase64.length + modelBase64.length) / 1024 / 1024).toFixed(2)
-console.log(`Embedded size: ${totalMB} MB (base64)`)
-console.log(`Original size: ${((tokenizerData.length + modelData.length) / 1024 / 1024).toFixed(2)} MB (binary)`)
-console.log(`Overhead: ${((tokenizerBase64.length + modelBase64.length) / (tokenizerData.length + modelData.length) * 100 - 100).toFixed(1)}%`)
-console.log(`\nEstimated brotli compressed: ~${(totalMB * 0.6).toFixed(2)} MB`)
-console.log('\nNext steps:')
-console.log('  1. Implement ONNX inference in src/utils/minilm-inference.mts')
-console.log('  2. Wire up to src/commands/ask/handle-ask.mts')
+const originalSizeMB = ((tokenizerData.length + modelData.length) / 1024 / 1024).toFixed(2)
+const compressedSizeMB = ((tokenizerCompressed.length + modelCompressed.length) / 1024 / 1024).toFixed(2)
+const base64SizeMB = ((tokenizerBase64.length + modelBase64.length) / 1024 / 1024).toFixed(2)
+
+console.log(`📊 Compression Results:`)
+console.log(`   Original:    ${originalSizeMB} MB`)
+console.log(`   Compressed:  ${compressedSizeMB} MB (${((tokenizerCompressed.length + modelCompressed.length) / (tokenizerData.length + modelData.length) * 100).toFixed(1)}%)`)
+console.log(`   Base64:      ${base64SizeMB} MB`)
+console.log(``)
+console.log(`   Total savings: ${(originalSizeMB - base64SizeMB).toFixed(2)} MB (${(100 - (base64SizeMB / originalSizeMB * 100)).toFixed(1)}% reduction)`)
+console.log(`\nNext steps:`)
+console.log('  1. Run build: pnpm run build')
+console.log('  2. Test LLM features in src/commands/ask/handle-ask.mts')

@@ -1,6 +1,6 @@
 /**
  * @fileoverview Unified build script for Socket CLI.
- * Runs rollup to build distribution files.
+ * Runs esbuild to build distribution files.
  *
  * Usage:
  *   node scripts/build.mjs [options]
@@ -37,7 +37,7 @@ async function main() {
   const sea = process.argv.includes('--sea')
   const noMinify = process.argv.includes('--no-minify')
 
-  // Pass --no-minify flag via environment variable to Rollup config.
+  // Pass --no-minify flag via environment variable to esbuild config.
   if (noMinify) {
     process.env.SOCKET_CLI_NO_MINIFY = '1'
   }
@@ -78,18 +78,9 @@ async function main() {
         args: ['run', 'clean:dist'],
       },
       {
-        name: 'Rollup Bundle',
-        command: 'dotenvx',
-        args: [
-          '-q',
-          'run',
-          '-f',
-          '.env.local',
-          '--',
-          'rollup',
-          '-c',
-          '.config/rollup.cli-js.config.mjs',
-        ],
+        name: 'esbuild Bundle',
+        command: 'node',
+        args: ['.config/esbuild.cli.build.mjs'],
       },
     ]
 
