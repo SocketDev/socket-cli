@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * Test sliceAtVisibleIndex function to ensure it handles ANSI codes correctly.
  */

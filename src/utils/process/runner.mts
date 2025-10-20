@@ -1,11 +1,10 @@
 /** @fileoverview Unified process runner for external CLIs with output buffering. */
 
-import { spawn } from '@socketsecurity/registry/lib/spawn'
 
-import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
-import { Spinner as createSpinner } from '@socketsecurity/registry/lib/spinner'
 import { logger } from '@socketsecurity/registry/lib/logger'
+import { spawn } from '@socketsecurity/registry/lib/spawn'
+import { Spinner as createSpinner } from '@socketsecurity/registry/lib/spinner'
 
 import { ensureIpcInStdio } from '../../shadow/stdio-ipc.mjs'
 import { debugNs } from '../debug.mts'
@@ -18,6 +17,7 @@ import type {
   SpawnResult,
   SpawnStdioResult,
 } from '@socketsecurity/registry/lib/spawn'
+import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 export type ProcessRunnerOptions = {
   bufferOutput?: boolean | undefined

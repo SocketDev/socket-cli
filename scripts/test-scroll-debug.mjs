@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * Test script to simulate the exact scroll behavior during expand/collapse.
  */

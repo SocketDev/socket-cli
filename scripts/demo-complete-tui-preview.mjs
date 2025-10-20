@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * Static preview of complete TUI layout.
  */

@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * Test script to simulate expand/collapse and debug the gap issue.
  */
@@ -12,7 +11,7 @@ let inputLines = ['> ']
 
 console.log('=== INITIAL STATE (COLLAPSED) ===')
 let textareaHeight = inputLines.length + 2
-let textareaBottomY = rows - 3
+const textareaBottomY = rows - 3
 let textareaTopY = textareaBottomY - textareaHeight + 1
 const headerStartY = 2
 const logoLines = 4

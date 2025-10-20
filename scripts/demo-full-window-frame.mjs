@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * Demo script to showcase full-window framing with animated header.
  */

@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * Automated test: simulate 100 expand/collapse cycles.
  */
