@@ -4,6 +4,8 @@ Thumbs.db
 /.claude
 /.custom-node-build
 /.node-source
+/.node-source-test
+/.scratch
 /.env
 /.env.local
 /.pnpmfile.cjs
