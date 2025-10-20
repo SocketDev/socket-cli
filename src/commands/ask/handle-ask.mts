@@ -236,19 +236,16 @@ async function getEmbeddingPipeline() {
   }
 
   try {
-    logger.info('🧠 Loading semantic model (first use only)...')
-
     // Load our custom MiniLM inference engine.
     // This uses direct ONNX Runtime + embedded WASM (no transformers.js).
+    // Note: Model is optional - pattern matching works fine without it.
     const { MiniLMInference } = await import('../../utils/minilm-inference.mts')
     embeddingPipeline = await MiniLMInference.create()
 
-    logger.info('✓ Semantic model loaded')
-
     return embeddingPipeline
   } catch (e) {
+    // Model not available - silently fall back to pattern matching.
     embeddingPipelineFailure = true
-    logger.warn('Semantic model unavailable:', e.message)
     return null
   }
 }
@@ -283,7 +280,7 @@ async function getEmbedding(text: string): Promise<Float32Array | null> {
     const result = await model.embed(text)
     return result.embedding
   } catch (e) {
-    logger.warn('Failed to compute embedding:', e.message)
+    // Silently fail - pattern matching will handle the query.
     return null
   }
 }
