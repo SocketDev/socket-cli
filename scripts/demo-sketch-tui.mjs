@@ -208,8 +208,8 @@ function cleanup() {
     process.stdout.write('\x1B[?1049l')
     process.stdout.write('\x1B[?25h')
     process.stdout.write('\x1B[2J\x1B[H')
-  } catch (e) {
     // Ignore cleanup errors.
+  } catch {
   }
 
   console.log('\nExiting sketch TUI demo...\n')

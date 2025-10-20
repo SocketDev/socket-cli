@@ -13,13 +13,13 @@ import {
 // Mock the dependencies.
 setupHandleFunctionMocks()
 
-vi.mock('@socketsecurity/registry/lib/debug', () => ({
+vi.mock('@socketsecurity/lib/debug', () => ({
   debug: vi.fn(),
   debugDir: vi.fn(),
   debugFn: vi.fn(),
 }))
 
-vi.mock('@socketsecurity/registry/lib/logger', () => ({
+vi.mock('@socketsecurity/lib/logger', () => ({
   logger: {
     info: vi.fn(),
   },
@@ -208,7 +208,7 @@ describe('fetchScanData', () => {
       '../../utils/socket/api.mjs'
     )
     const { debug, debugDir } = await import(
-      '@socketsecurity/registry/lib/debug'
+      '@socketsecurity/lib/debug'
     )
     const mockQueryApiText = vi.mocked(queryApiSafeText)
     const mockHandleApiNoSpinner = vi.mocked(handleApiCallNoSpinner)

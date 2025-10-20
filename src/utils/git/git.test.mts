@@ -15,7 +15,7 @@ import {
 } from './git.mts'
 
 // Mock spawn.
-vi.mock('@socketsecurity/registry/lib/spawn', () => ({
+vi.mock('@socketsecurity/lib/spawn', () => ({
   spawn: vi.fn(),
   isSpawnError: vi.fn(e => e?.isSpawnError),
 }))
@@ -109,7 +109,7 @@ describe('git utilities', () => {
 
     it('calls detectDefaultBranch when no GitHub env vars', async () => {
       const { spawn } = vi.mocked(
-        await import('@socketsecurity/registry/lib/spawn'),
+        await import('@socketsecurity/lib/spawn'),
       )
       spawn.mockResolvedValue({
         status: 0,
@@ -125,7 +125,7 @@ describe('git utilities', () => {
   describe('gitBranch', () => {
     it('returns current branch name', async () => {
       const { spawn } = vi.mocked(
-        await import('@socketsecurity/registry/lib/spawn'),
+        await import('@socketsecurity/lib/spawn'),
       )
       spawn.mockResolvedValue({
         status: 0,
@@ -144,7 +144,7 @@ describe('git utilities', () => {
 
     it('handles detached HEAD state', async () => {
       const { spawn } = vi.mocked(
-        await import('@socketsecurity/registry/lib/spawn'),
+        await import('@socketsecurity/lib/spawn'),
       )
       spawn
         .mockRejectedValueOnce(new Error('Not on a branch'))
@@ -160,7 +160,7 @@ describe('git utilities', () => {
 
     it('handles spawn errors', async () => {
       const { isSpawnError, spawn } = vi.mocked(
-        await import('@socketsecurity/registry/lib/spawn'),
+        await import('@socketsecurity/lib/spawn'),
       )
       const error = { isSpawnError: true, message: 'Command failed' }
       spawn.mockRejectedValue(error)
@@ -174,7 +174,7 @@ describe('git utilities', () => {
   describe('gitCommit', () => {
     it('creates a commit with message and files', async () => {
       const { spawn } = vi.mocked(
-        await import('@socketsecurity/registry/lib/spawn'),
+        await import('@socketsecurity/lib/spawn'),
       )
       spawn.mockResolvedValue({ status: 0, stdout: '', stderr: '' } as any)
 
@@ -198,7 +198,7 @@ describe('git utilities', () => {
 
     it('handles commit without files', async () => {
       const { spawn } = vi.mocked(
-        await import('@socketsecurity/registry/lib/spawn'),
+        await import('@socketsecurity/lib/spawn'),
       )
       spawn.mockResolvedValue({ status: 0, stdout: '', stderr: '' } as any)
 
@@ -215,7 +215,7 @@ describe('git utilities', () => {
   describe('gitCheckoutBranch', () => {
     it('checks out a branch', async () => {
       const { spawn } = vi.mocked(
-        await import('@socketsecurity/registry/lib/spawn'),
+        await import('@socketsecurity/lib/spawn'),
       )
       spawn.mockResolvedValue({ status: 0, stdout: '', stderr: '' } as any)
 
@@ -232,7 +232,7 @@ describe('git utilities', () => {
   describe('gitCreateBranch', () => {
     it('creates a new branch', async () => {
       const { spawn } = vi.mocked(
-        await import('@socketsecurity/registry/lib/spawn'),
+        await import('@socketsecurity/lib/spawn'),
       )
       spawn
         .mockRejectedValueOnce(new Error('Branch does not exist')) // gitLocalBranchExists fails.
@@ -256,7 +256,7 @@ describe('git utilities', () => {
   describe('gitDeleteBranch', () => {
     it('deletes a local branch', async () => {
       const { spawn } = vi.mocked(
-        await import('@socketsecurity/registry/lib/spawn'),
+        await import('@socketsecurity/lib/spawn'),
       )
       spawn.mockResolvedValue({ status: 0, stdout: '', stderr: '' } as any)
 
@@ -273,7 +273,7 @@ describe('git utilities', () => {
   describe('gitPushBranch', () => {
     it('pushes a branch to remote', async () => {
       const { spawn } = vi.mocked(
-        await import('@socketsecurity/registry/lib/spawn'),
+        await import('@socketsecurity/lib/spawn'),
       )
       spawn.mockResolvedValue({ status: 0, stdout: '', stderr: '' } as any)
 
@@ -290,7 +290,7 @@ describe('git utilities', () => {
   describe('gitCleanFdx', () => {
     it('cleans untracked files', async () => {
       const { spawn } = vi.mocked(
-        await import('@socketsecurity/registry/lib/spawn'),
+        await import('@socketsecurity/lib/spawn'),
       )
       spawn.mockResolvedValue({ status: 0, stdout: '', stderr: '' } as any)
 
@@ -307,7 +307,7 @@ describe('git utilities', () => {
   describe('gitResetHard', () => {
     it('resets to a specific ref', async () => {
       const { spawn } = vi.mocked(
-        await import('@socketsecurity/registry/lib/spawn'),
+        await import('@socketsecurity/lib/spawn'),
       )
       spawn.mockResolvedValue({ status: 0, stdout: '', stderr: '' } as any)
 
@@ -324,7 +324,7 @@ describe('git utilities', () => {
   describe('gitEnsureIdentity', () => {
     it('sets git user name and email', async () => {
       const { spawn } = vi.mocked(
-        await import('@socketsecurity/registry/lib/spawn'),
+        await import('@socketsecurity/lib/spawn'),
       )
       spawn.mockResolvedValue({ status: 0, stdout: '', stderr: '' } as any)
 

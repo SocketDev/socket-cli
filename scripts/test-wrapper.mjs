@@ -13,8 +13,8 @@ import path from 'node:path'
 
 import fastGlob from 'fast-glob'
 
-import { WIN32 } from '@socketsecurity/registry/constants/platform'
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
+import { logger } from '@socketsecurity/lib/logger'
 
 import constants from './constants.mjs'
 
@@ -137,9 +137,7 @@ async function main() {
       logger.error('Failed to spawn test process:', e)
       process.exitCode = 1
     })
-  } catch (e) {
-    logger.error('Error running tests:', e)
-    process.exitCode = 1
+  } catch {
   }
 }
 

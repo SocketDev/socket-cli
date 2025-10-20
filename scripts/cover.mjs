@@ -95,9 +95,9 @@ async function main() {
       }
 
       if (exitCode === 0) {
-        if (!quiet) printSuccess('Coverage completed successfully')
+        if (!quiet) {printSuccess('Coverage completed successfully')}
       } else {
-        if (!quiet) printError('Coverage failed')
+        if (!quiet) {printError('Coverage failed')}
         process.exitCode = 1
       }
       return
@@ -158,9 +158,9 @@ async function main() {
       }
 
       if (exitCode === 0) {
-        if (!quiet) printSuccess('Coverage completed successfully')
+        if (!quiet) {printSuccess('Coverage completed successfully')}
       } else {
-        if (!quiet) printError('Coverage failed')
+        if (!quiet) {printError('Coverage failed')}
         process.exitCode = 1
       }
       return

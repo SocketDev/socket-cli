@@ -5,7 +5,7 @@ import { isRunningInTemporaryExecutor, shouldSkipShadow } from './detection.mts'
 import type { default as ENV } from '../../constants/env.mts'
 
 // Mock the dependencies.
-vi.mock('@socketsecurity/registry/lib/path', () => ({
+vi.mock('@socketsecurity/lib/path', () => ({
   normalizePath: vi.fn((p: string) => p.replace(/\\/g, '/')),
 }))
 

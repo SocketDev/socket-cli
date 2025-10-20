@@ -17,7 +17,7 @@ vi.mock('terminal-link', () => ({
   default: vi.fn((url, text) => `[${text}](${url})`),
 }))
 
-vi.mock('@socketsecurity/registry/lib/prompts', () => ({
+vi.mock('@socketsecurity/lib/prompts', () => ({
   confirm: vi.fn(),
 }))
 
@@ -37,7 +37,7 @@ describe('outputCreateNewScan', () => {
   })
 
   it('outputs JSON format for successful result', async () => {
-    const { logger } = await import('@socketsecurity/registry/lib/logger')
+    const { logger } = await import('@socketsecurity/lib/logger')
     const { serializeResultJson } = await import(
       '../../utils/serialize/result-json.mts'
     )
@@ -61,7 +61,7 @@ describe('outputCreateNewScan', () => {
   })
 
   it('outputs error in JSON format', async () => {
-    const { logger } = await import('@socketsecurity/registry/lib/logger')
+    const { logger } = await import('@socketsecurity/lib/logger')
     const mockLog = vi.mocked(logger.log)
 
     const result: CResult<SocketSdkSuccessResult<'CreateOrgFullScan'>['data']> =
@@ -79,7 +79,7 @@ describe('outputCreateNewScan', () => {
   })
 
   it('outputs success message with report URL in text format', async () => {
-    const { logger } = await import('@socketsecurity/registry/lib/logger')
+    const { logger } = await import('@socketsecurity/lib/logger')
     const terminalLink = await import('terminal-link')
     const mockLog = vi.mocked(logger.log)
     const mockSuccess = vi.mocked(logger.success)
@@ -107,7 +107,7 @@ describe('outputCreateNewScan', () => {
   })
 
   it('outputs markdown format with scan ID', async () => {
-    const { logger } = await import('@socketsecurity/registry/lib/logger')
+    const { logger } = await import('@socketsecurity/lib/logger')
     const mockLog = vi.mocked(logger.log)
 
     const result: CResult<SocketSdkSuccessResult<'CreateOrgFullScan'>['data']> =
@@ -130,7 +130,7 @@ describe('outputCreateNewScan', () => {
   })
 
   it('handles missing scan ID properly', async () => {
-    const { logger } = await import('@socketsecurity/registry/lib/logger')
+    const { logger } = await import('@socketsecurity/lib/logger')
     const mockFail = vi.mocked(logger.fail)
 
     const result: CResult<SocketSdkSuccessResult<'CreateOrgFullScan'>['data']> =
@@ -151,7 +151,7 @@ describe('outputCreateNewScan', () => {
   })
 
   it('outputs error in text format', async () => {
-    const { logger } = await import('@socketsecurity/registry/lib/logger')
+    const { logger } = await import('@socketsecurity/lib/logger')
     const { failMsgWithBadge } = await import(
       '../../utils/error/fail-msg-with-badge.mts'
     )
@@ -177,7 +177,7 @@ describe('outputCreateNewScan', () => {
   })
 
   it('opens browser when interactive and user confirms', async () => {
-    const { confirm } = await import('@socketsecurity/registry/lib/prompts')
+    const { confirm } = await import('@socketsecurity/lib/prompts')
     const open = await import('open')
     const mockConfirm = vi.mocked(confirm)
     const mockOpen = vi.mocked(open.default)
@@ -211,7 +211,7 @@ describe('outputCreateNewScan', () => {
   })
 
   it('does not open browser when user declines', async () => {
-    const { confirm } = await import('@socketsecurity/registry/lib/prompts')
+    const { confirm } = await import('@socketsecurity/lib/prompts')
     const open = await import('open')
     const mockConfirm = vi.mocked(confirm)
     const mockOpen = vi.mocked(open.default)
@@ -258,7 +258,7 @@ describe('outputCreateNewScan', () => {
   })
 
   it('handles missing report URL', async () => {
-    const { logger } = await import('@socketsecurity/registry/lib/logger')
+    const { logger } = await import('@socketsecurity/lib/logger')
     const mockLog = vi.mocked(logger.log)
 
     const result: CResult<SocketSdkSuccessResult<'CreateOrgFullScan'>['data']> =

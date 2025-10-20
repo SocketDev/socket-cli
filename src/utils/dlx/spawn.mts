@@ -20,10 +20,10 @@
 
 import { createRequire } from 'node:module'
 
+import { getOwn } from '@socketsecurity/lib/objects'
+import { spawn } from '@socketsecurity/lib/spawn'
 import { NPM, PNPM, YARN } from '@socketsecurity/registry/constants/agents'
 import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/registry/constants/socket'
-import { getOwn } from '@socketsecurity/registry/lib/objects'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import { getDefaultOrgSlug } from '../../commands/ci/fetch-default-org-slug.mjs'
 import { FLAG_QUIET, FLAG_SILENT } from '../../constants/cli.mts'
@@ -49,7 +49,7 @@ import type {
   ShadowBinResult,
 } from '../../shadow/npm-base.mjs'
 import type { CResult } from '../../types.mjs'
-import type { SpawnExtra } from '@socketsecurity/registry/lib/spawn'
+import type { SpawnExtra } from '@socketsecurity/lib/spawn'
 
 const require = createRequire(import.meta.url)
 

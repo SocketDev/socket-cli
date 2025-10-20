@@ -8,7 +8,7 @@ const mockLogger = vi.hoisted(() => ({
   warn: vi.fn(),
 }))
 
-vi.mock('@socketsecurity/registry/lib/logger', () => ({
+vi.mock('@socketsecurity/lib/logger', () => ({
   logger: mockLogger,
 }))
 

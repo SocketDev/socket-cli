@@ -43,7 +43,7 @@ vi.mock('../../utils/shadow/links.mts', () => ({
   installPnpmLinks: mockInstallPnpmLinks,
 }))
 
-vi.mock('@socketsecurity/registry/lib/spawn', () => ({
+vi.mock('@socketsecurity/lib/spawn', () => ({
   spawn: mockSpawn,
 }))
 

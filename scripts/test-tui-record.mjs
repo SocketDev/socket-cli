@@ -4,7 +4,7 @@
 
 import { promises as fs } from 'node:fs'
 
-import { spawn } from '@socketsecurity/registry/lib/spawn'
+import { spawn } from '@socketsecurity/lib/spawn'
 
 const TUI_TEST_SCRIPT = `#!/usr/bin/env bash
 # Automated TUI test with explicit timing.
@@ -40,7 +40,7 @@ async function main() {
   await fs.writeFile('/tmp/tui-test-auto.sh', TUI_TEST_SCRIPT, { mode: 0o755 })
 
   console.log('Recording TUI session...')
-  const { code, stderr, stdout } = await spawn('bash', ['-c', 'timeout 10s script -q /tmp/tui-test.log bash /tmp/tui-test-auto.sh'])
+  const { code, stderr } = await spawn('bash', ['-c', 'timeout 10s script -q /tmp/tui-test.log bash /tmp/tui-test-auto.sh'])
 
   console.log('Exit code:', code)
   if (stderr) {console.error('Stderr:', stderr)}

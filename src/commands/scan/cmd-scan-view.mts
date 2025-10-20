@@ -1,4 +1,4 @@
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { logger } from '@socketsecurity/lib/logger'
 
 import { handleScanView } from './handle-scan-view.mts'
 import { streamScan } from './stream-scan.mts'

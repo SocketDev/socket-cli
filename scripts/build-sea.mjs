@@ -28,11 +28,11 @@ import os from 'node:os'
 import path from 'node:path'
 import url from 'node:url'
 
-import { WIN32 } from '@socketsecurity/registry/constants/platform'
-import { safeDelete } from '@socketsecurity/registry/lib/fs'
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { normalizePath } from '@socketsecurity/registry/lib/path'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
+import { safeDelete } from '@socketsecurity/lib/fs'
+import { logger } from '@socketsecurity/lib/logger'
+import { normalizePath } from '@socketsecurity/lib/path'
+import { spawn } from '@socketsecurity/lib/spawn'
 
 import constants from './constants.mjs'
 

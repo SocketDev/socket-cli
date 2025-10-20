@@ -9,7 +9,7 @@ import {
 } from '../purl/parse.mts'
 
 // Mock dependencies.
-vi.mock('@socketsecurity/registry/lib/objects', () => ({
+vi.mock('@socketsecurity/lib/objects', () => ({
   isObjectObject: vi.fn(
     obj => obj !== null && typeof obj === 'object' && !Array.isArray(obj),
   ),

@@ -1,7 +1,7 @@
 /** @fileoverview Core types for Socket CLI command registry system. Defines command definitions, flags, validation, middleware, and execution context interfaces. */
 
 import type { CResult } from '../../types.mts'
-import type { Spinner } from '@socketsecurity/registry/lib/spinner'
+import type { Spinner } from '@socketsecurity/lib/spinner'
 
 /**
  * Flag type definitions for command arguments.

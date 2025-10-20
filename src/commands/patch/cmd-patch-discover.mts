@@ -3,7 +3,7 @@ import path from 'node:path'
 
 import { getSpinner } from '@socketsecurity/registry/constants/process'
 
-import { handlePatchDiscover } from './handle-patch-discover.tsx'
+import { handlePatchDiscover } from './handle-patch-discover.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { InputError } from '../../utils/error/errors.mjs'
@@ -125,6 +125,6 @@ async function run(
     interactive,
     outputKind,
     ...(scan ? { scanId: scan } : {}),
-    spinner: getSpinner(),
+    spinner: getSpinner() ?? undefined,
   })
 }

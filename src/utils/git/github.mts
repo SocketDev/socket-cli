@@ -38,22 +38,22 @@ import {
   debugDirNs,
   debugNs,
   isDebugNs,
-} from '@socketsecurity/registry/lib/debug'
+} from '@socketsecurity/lib/debug'
 import {
   readJson,
   safeStatsSync,
   writeJson,
-} from '@socketsecurity/registry/lib/fs'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
-import { parseUrl } from '@socketsecurity/registry/lib/url'
+} from '@socketsecurity/lib/fs'
+import { spawn } from '@socketsecurity/lib/spawn'
+import { parseUrl } from '@socketsecurity/lib/url'
 
 import ENV from '../../constants/env.mts'
 import { getGithubCachePath } from '../../constants/paths.mjs'
 import { formatErrorWithDetail } from '../error/errors.mts'
 
 import type { components } from '@octokit/openapi-types'
-import type { JsonContent } from '@socketsecurity/registry/lib/fs'
-import type { SpawnOptions } from '@socketsecurity/registry/lib/spawn'
+import type { JsonContent } from '@socketsecurity/lib/fs'
+import type { SpawnOptions } from '@socketsecurity/lib/spawn'
 
 export type Pr = components['schemas']['pull-request']
 

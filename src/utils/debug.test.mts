@@ -19,7 +19,7 @@ describe('debug utilities', () => {
 
   describe('debugApiResponse', () => {
     it('logs error when error is provided', async () => {
-      const { debugDir } = await import('@socketsecurity/registry/lib/debug')
+      const { debugDir } = await import('@socketsecurity/lib/debug')
       const error = new Error('API failed')
 
       debugApiResponse('/api/test', undefined, error)
@@ -31,7 +31,7 @@ describe('debug utilities', () => {
     })
 
     it('logs warning for HTTP error status codes', async () => {
-      const { debugFn } = await import('@socketsecurity/registry/lib/debug')
+      const { debugFn } = await import('@socketsecurity/lib/debug')
 
       debugApiResponse('/api/test', 404)
 
@@ -40,7 +40,7 @@ describe('debug utilities', () => {
 
     it('logs notice for successful responses when debug is enabled', async () => {
       const { debug, isDebug } = await import(
-        '@socketsecurity/registry/lib/debug'
+        '@socketsecurity/lib/debug'
       )
       vi.mocked(isDebug).mockReturnValue(true)
 
@@ -51,7 +51,7 @@ describe('debug utilities', () => {
 
     it('does not log for successful responses when debug is disabled', async () => {
       const { debug, isDebug } = await import(
-        '@socketsecurity/registry/lib/debug'
+        '@socketsecurity/lib/debug'
       )
       vi.mocked(isDebug).mockReturnValue(false)
 
@@ -61,7 +61,7 @@ describe('debug utilities', () => {
     })
 
     it('handles non-Error objects in error parameter', async () => {
-      const { debugDir } = await import('@socketsecurity/registry/lib/debug')
+      const { debugDir } = await import('@socketsecurity/lib/debug')
 
       debugApiResponse('/api/test', undefined, 'String error')
 
@@ -74,7 +74,7 @@ describe('debug utilities', () => {
 
   describe('debugFileOp', () => {
     it('logs warning when error occurs', async () => {
-      const { debugDir } = await import('@socketsecurity/registry/lib/debug')
+      const { debugDir } = await import('@socketsecurity/lib/debug')
       const error = new Error('File not found')
 
       debugFileOp('read', '/path/to/file', error)
@@ -88,7 +88,7 @@ describe('debug utilities', () => {
 
     it('logs silly level for successful operations when enabled', async () => {
       const { debug, isDebug } = await import(
-        '@socketsecurity/registry/lib/debug'
+        '@socketsecurity/lib/debug'
       )
       vi.mocked(isDebug).mockReturnValue(true)
 
@@ -99,7 +99,7 @@ describe('debug utilities', () => {
 
     it('does not log for successful operations when silly is disabled', async () => {
       const { debug, isDebug } = await import(
-        '@socketsecurity/registry/lib/debug'
+        '@socketsecurity/lib/debug'
       )
       vi.mocked(isDebug).mockReturnValue(false)
 
@@ -125,7 +125,7 @@ describe('debug utilities', () => {
 
   describe('debugScan', () => {
     it('logs start phase with package count', async () => {
-      const { debugFn } = await import('@socketsecurity/registry/lib/debug')
+      const { debugFn } = await import('@socketsecurity/lib/debug')
 
       debugScan('start', 42)
 
@@ -133,7 +133,7 @@ describe('debug utilities', () => {
     })
 
     it('does not log start phase without package count', async () => {
-      const { debugFn } = await import('@socketsecurity/registry/lib/debug')
+      const { debugFn } = await import('@socketsecurity/lib/debug')
 
       debugScan('start')
 
@@ -142,7 +142,7 @@ describe('debug utilities', () => {
 
     it('logs progress when silly debug is enabled', async () => {
       const { debug, isDebug } = await import(
-        '@socketsecurity/registry/lib/debug'
+        '@socketsecurity/lib/debug'
       )
       vi.mocked(isDebug).mockReturnValue(true)
 
@@ -155,7 +155,7 @@ describe('debug utilities', () => {
     })
 
     it('logs complete phase', async () => {
-      const { debugFn } = await import('@socketsecurity/registry/lib/debug')
+      const { debugFn } = await import('@socketsecurity/lib/debug')
 
       debugScan('complete', 50)
 
@@ -166,7 +166,7 @@ describe('debug utilities', () => {
     })
 
     it('logs complete phase without package count', async () => {
-      const { debugFn } = await import('@socketsecurity/registry/lib/debug')
+      const { debugFn } = await import('@socketsecurity/lib/debug')
 
       debugScan('complete')
 
@@ -174,7 +174,7 @@ describe('debug utilities', () => {
     })
 
     it('logs error phase with details', async () => {
-      const { debugDir } = await import('@socketsecurity/registry/lib/debug')
+      const { debugDir } = await import('@socketsecurity/lib/debug')
       const errorDetails = { message: 'Scan failed' }
 
       debugScan('error', undefined, errorDetails)
@@ -188,7 +188,7 @@ describe('debug utilities', () => {
 
   describe('debugConfig', () => {
     it('logs error when provided', async () => {
-      const { debugDir } = await import('@socketsecurity/registry/lib/debug')
+      const { debugDir } = await import('@socketsecurity/lib/debug')
       const error = new Error('Config invalid')
 
       debugConfig('.socketrc', false, error)
@@ -200,7 +200,7 @@ describe('debug utilities', () => {
     })
 
     it('logs notice when config is found', async () => {
-      const { debugFn } = await import('@socketsecurity/registry/lib/debug')
+      const { debugFn } = await import('@socketsecurity/lib/debug')
 
       debugConfig('.socketrc', true)
 
@@ -209,7 +209,7 @@ describe('debug utilities', () => {
 
     it('logs silly when config not found and debug enabled', async () => {
       const { debug, isDebug } = await import(
-        '@socketsecurity/registry/lib/debug'
+        '@socketsecurity/lib/debug'
       )
       vi.mocked(isDebug).mockReturnValue(true)
 
@@ -223,7 +223,7 @@ describe('debug utilities', () => {
 
     it('does not log when config not found and debug disabled', async () => {
       const { debug, isDebug } = await import(
-        '@socketsecurity/registry/lib/debug'
+        '@socketsecurity/lib/debug'
       )
       vi.mocked(isDebug).mockReturnValue(false)
 
@@ -235,7 +235,7 @@ describe('debug utilities', () => {
 
   describe('debugGit', () => {
     it('logs warning for failed operations', async () => {
-      const { debugDir } = await import('@socketsecurity/registry/lib/debug')
+      const { debugDir } = await import('@socketsecurity/lib/debug')
 
       debugGit('push', false, { branch: 'main' })
 
@@ -247,7 +247,7 @@ describe('debug utilities', () => {
 
     it('logs notice for important successful operations', async () => {
       const { debug, isDebug } = await import(
-        '@socketsecurity/registry/lib/debug'
+        '@socketsecurity/lib/debug'
       )
       vi.mocked(isDebug).mockReturnValue(true)
 
@@ -257,7 +257,7 @@ describe('debug utilities', () => {
     })
 
     it('logs commit operations', async () => {
-      const { debugFn } = await import('@socketsecurity/registry/lib/debug')
+      const { debugFn } = await import('@socketsecurity/lib/debug')
 
       debugGit('commit', true)
 
@@ -266,7 +266,7 @@ describe('debug utilities', () => {
 
     it('logs other operations only with silly debug', async () => {
       const { debug, isDebug } = await import(
-        '@socketsecurity/registry/lib/debug'
+        '@socketsecurity/lib/debug'
       )
       vi.mocked(isDebug).mockImplementation(level => level === 'silly')
 
@@ -277,7 +277,7 @@ describe('debug utilities', () => {
 
     it('does not log non-important operations without silly debug', async () => {
       const { debug, isDebug } = await import(
-        '@socketsecurity/registry/lib/debug'
+        '@socketsecurity/lib/debug'
       )
       vi.mocked(isDebug).mockReturnValue(false)
 

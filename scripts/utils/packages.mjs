@@ -5,8 +5,8 @@ import Module from 'node:module'
 import path from 'node:path'
 import vm from 'node:vm'
 
-import pkgUtils from '@socketsecurity/registry/lib/packages'
-import pathUtils from '@socketsecurity/registry/lib/path'
+import pkgUtils from '@socketsecurity/lib/packages'
+import pathUtils from '@socketsecurity/lib/path'
 
 const { isValidPackageName } = pkgUtils
 const { isRelative, normalizePath } = pathUtils

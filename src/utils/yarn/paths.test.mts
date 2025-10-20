@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock dependencies.
-vi.mock('@socketsecurity/registry/lib/logger', () => ({
+vi.mock('@socketsecurity/lib/logger', () => ({
   logger: {
     fail: vi.fn(),
   },
@@ -71,7 +71,7 @@ describe('yarn-paths utilities', () => {
       })
 
       const { logger } = vi.mocked(
-        await import('@socketsecurity/registry/lib/logger'),
+        await import('@socketsecurity/lib/logger'),
       )
 
       expect(() => getYarnBinPath()).toThrow('process.exit(127)')

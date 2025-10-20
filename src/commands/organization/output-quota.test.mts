@@ -16,7 +16,7 @@ describe('outputQuota', () => {
   setupTestEnvironment()
 
   it('outputs JSON format for successful result', async () => {
-    const { logger } = await import('@socketsecurity/registry/lib/logger')
+    const { logger } = await import('@socketsecurity/lib/logger')
     const { serializeResultJson } = await import(
       '../../utils/output/result-json.mjs'
     )
@@ -37,7 +37,7 @@ describe('outputQuota', () => {
   })
 
   it('outputs error in JSON format', async () => {
-    const { logger } = await import('@socketsecurity/registry/lib/logger')
+    const { logger } = await import('@socketsecurity/lib/logger')
     const mockLog = vi.mocked(logger.log)
 
     const result = createErrorResult('Unauthorized', {
@@ -52,7 +52,7 @@ describe('outputQuota', () => {
   })
 
   it('outputs text format with quota information', async () => {
-    const { logger } = await import('@socketsecurity/registry/lib/logger')
+    const { logger } = await import('@socketsecurity/lib/logger')
     const mockLog = vi.mocked(logger.log)
 
     const result = createSuccessResult<
@@ -71,7 +71,7 @@ describe('outputQuota', () => {
   })
 
   it('outputs markdown format with quota information', async () => {
-    const { logger } = await import('@socketsecurity/registry/lib/logger')
+    const { logger } = await import('@socketsecurity/lib/logger')
     const mockLog = vi.mocked(logger.log)
 
     const result = createSuccessResult<
@@ -92,7 +92,7 @@ describe('outputQuota', () => {
   })
 
   it('outputs error in text format', async () => {
-    const { logger } = await import('@socketsecurity/registry/lib/logger')
+    const { logger } = await import('@socketsecurity/lib/logger')
     const { failMsgWithBadge } = await import(
       '../../utils/error/fail-msg-with-badge.mts'
     )
@@ -114,7 +114,7 @@ describe('outputQuota', () => {
   })
 
   it('handles zero quota correctly', async () => {
-    const { logger } = await import('@socketsecurity/registry/lib/logger')
+    const { logger } = await import('@socketsecurity/lib/logger')
     const mockLog = vi.mocked(logger.log)
 
     const result = createSuccessResult<
@@ -131,7 +131,7 @@ describe('outputQuota', () => {
   })
 
   it('uses default text output when no format specified', async () => {
-    const { logger } = await import('@socketsecurity/registry/lib/logger')
+    const { logger } = await import('@socketsecurity/lib/logger')
     const mockLog = vi.mocked(logger.log)
 
     const result = createSuccessResult<

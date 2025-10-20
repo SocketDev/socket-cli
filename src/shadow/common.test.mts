@@ -4,7 +4,7 @@ import { scanPackagesAndLogAlerts } from './common.mts'
 import { FLAG_DRY_RUN } from '../constants/cli.mts'
 
 import type { PackageScanOptions } from './common.mts'
-import type { Spinner } from '@socketsecurity/registry/lib/spinner'
+import type { Spinner } from '@socketsecurity/lib/spinner'
 
 // Mock all dependencies.
 const mockReadPackageJson = vi.hoisted(() => vi.fn())
@@ -26,11 +26,11 @@ vi.mock('node:fs', async importOriginal => {
   }
 })
 
-vi.mock('@socketsecurity/registry/lib/packages', () => ({
+vi.mock('@socketsecurity/lib/packages', () => ({
   readPackageJson: mockReadPackageJson,
 }))
 
-vi.mock('@socketsecurity/registry/lib/logger', () => ({
+vi.mock('@socketsecurity/lib/logger', () => ({
   logger: mockLogger,
 }))
 

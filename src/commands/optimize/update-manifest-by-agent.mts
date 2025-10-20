@@ -1,3 +1,4 @@
+import { hasKeys, isObject } from '@socketsecurity/lib/objects'
 import {
   BUN,
   OVERRIDES,
@@ -7,11 +8,10 @@ import {
   YARN_BERRY,
   YARN_CLASSIC,
 } from '@socketsecurity/registry/constants/agents'
-import { hasKeys, isObject } from '@socketsecurity/registry/lib/objects'
 
 import type { Overrides } from './types.mts'
 import type { Agent } from '../../utils/ecosystem/environment.mjs'
-import type { EditablePackageJson } from '@socketsecurity/registry/lib/packages'
+import type { EditablePackageJson } from '@socketsecurity/lib/packages'
 
 const depFields = [
   'dependencies',

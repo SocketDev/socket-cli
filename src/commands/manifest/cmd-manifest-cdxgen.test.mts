@@ -1,13 +1,13 @@
 
 import { describe, expect, it } from 'vitest'
 
-import { spawn } from '@socketsecurity/registry/lib/spawn'
+import { spawn } from '@socketsecurity/lib/spawn'
 
 import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
 import { FLAG_HELP, LOG_SYMBOLS } from '../constants/cli.mts'
 import { getBinCliPath, getExecPath, getProcessEnv } from '../constants/paths.mts'
 
-import type { PromiseSpawnOptions } from '@socketsecurity/registry/lib/spawn'
+import type { PromiseSpawnOptions } from '@socketsecurity/lib/spawn'
 
 const binCliPath = getBinCliPath()
 const execPath = getExecPath()

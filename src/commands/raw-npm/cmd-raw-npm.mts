@@ -1,4 +1,4 @@
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { logger } from '@socketsecurity/lib/logger'
 
 import { runRawNpm } from './run-raw-npm.mts'
 import {

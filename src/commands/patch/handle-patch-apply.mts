@@ -5,17 +5,17 @@ import path from 'node:path'
 
 import fastGlob from 'fast-glob'
 
+import { joinAnd } from '@socketsecurity/lib/arrays'
+import { debugDirNs } from '@socketsecurity/lib/debug'
+import { readDirNames } from '@socketsecurity/lib/fs'
+import { logger } from '@socketsecurity/lib/logger'
+import { readPackageJson } from '@socketsecurity/lib/packages'
+import { normalizePath } from '@socketsecurity/lib/path'
+import { isNonEmptyString } from '@socketsecurity/lib/strings'
+import { pluralize } from '@socketsecurity/lib/words'
 import { NPM } from '@socketsecurity/registry/constants/agents'
 import { UTF8 } from '@socketsecurity/registry/constants/encoding'
 import { DOT_SOCKET_DIR, MANIFEST_JSON, NODE_MODULES } from '@socketsecurity/registry/constants/paths'
-import { joinAnd } from '@socketsecurity/registry/lib/arrays'
-import { debugDirNs } from '@socketsecurity/registry/lib/debug'
-import { readDirNames } from '@socketsecurity/registry/lib/fs'
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { readPackageJson } from '@socketsecurity/registry/lib/packages'
-import { normalizePath } from '@socketsecurity/registry/lib/path'
-import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
-import { pluralize } from '@socketsecurity/registry/lib/words'
 
 
 import { PatchManifestSchema } from './manifest-schema.mts'
@@ -29,7 +29,7 @@ import { getPurlObject, normalizePurl } from '../../utils/purl/parse.mjs'
 import type { PatchRecord } from './manifest-schema.mts'
 import type { CResult, OutputKind } from '../../types.mts'
 import type { PackageURL } from '@socketregistry/packageurl-js'
-import type { Spinner } from '@socketsecurity/registry/lib/spinner'
+import type { Spinner } from '@socketsecurity/lib/spinner'
 
 type PatchEntry = {
   key: string

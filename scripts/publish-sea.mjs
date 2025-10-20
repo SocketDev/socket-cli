@@ -11,8 +11,8 @@ import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 import url from 'node:url'
 
-import { normalizePath } from '@socketsecurity/registry/lib/path'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
+import { normalizePath } from '@socketsecurity/lib/path'
+import { spawn } from '@socketsecurity/lib/spawn'
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url))
 

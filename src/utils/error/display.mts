@@ -2,8 +2,8 @@
 
 import colors from 'yoctocolors-cjs'
 
-import { LOG_SYMBOLS } from '@socketsecurity/registry/lib/logger'
-import { stripAnsi } from '@socketsecurity/registry/lib/strings'
+import { LOG_SYMBOLS } from '@socketsecurity/lib/logger'
+import { stripAnsi } from '@socketsecurity/lib/strings'
 
 
 import { debugNs, isDebugNs } from '../debug.mts'

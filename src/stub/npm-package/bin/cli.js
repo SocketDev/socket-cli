@@ -231,7 +231,7 @@ const child = spawn(binaryPath, process.argv.slice(2), {
 // - Unix only: SIGVTALRM, SIGXCPU, SIGXFSZ, SIGUSR2, SIGTRAP, SIGSYS, SIGQUIT, SIGIOT
 // - Linux only: SIGIO, SIGPOLL, SIGPWR, SIGSTKFLT
 //
-// This pattern is based on signal-exit from @socketsecurity/registry/lib/signal-exit.
+// This pattern is based on signal-exit from @socketsecurity/lib/signal-exit.
 const WIN32 = platform === 'win32'
 const signals = ['SIGABRT', 'SIGALRM', 'SIGHUP', 'SIGINT', 'SIGTERM']
 

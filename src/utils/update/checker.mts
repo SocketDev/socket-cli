@@ -21,10 +21,10 @@
 
 import semver from 'semver'
 
+import { logger } from '@socketsecurity/lib/logger'
+import { onExit } from '@socketsecurity/lib/signal-exit'
+import { isNonEmptyString } from '@socketsecurity/lib/strings'
 import { NPM_REGISTRY_URL } from '@socketsecurity/registry/constants/agents'
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { onExit } from '@socketsecurity/registry/lib/signal-exit'
-import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
 
 import { UPDATE_NOTIFIER_TIMEOUT } from '../../constants/cache.mts'

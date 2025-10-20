@@ -1,10 +1,10 @@
 import terminalLink from 'terminal-link'
 import yargsParse from 'yargs-parser'
 
-import { joinAnd } from '@socketsecurity/registry/lib/arrays'
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { isPath } from '@socketsecurity/registry/lib/path'
-import { pluralize } from '@socketsecurity/registry/lib/words'
+import { joinAnd } from '@socketsecurity/lib/arrays'
+import { logger } from '@socketsecurity/lib/logger'
+import { isPath } from '@socketsecurity/lib/path'
+import { pluralize } from '@socketsecurity/lib/words'
 
 import { runCdxgen } from './run-cdxgen.mts'
 import { DRY_RUN_BAILING_NOW, FLAG_HELP } from '../../constants/cli.mjs'

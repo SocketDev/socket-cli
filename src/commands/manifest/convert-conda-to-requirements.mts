@@ -1,8 +1,8 @@
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { stripAnsi } from '@socketsecurity/registry/lib/strings'
+import { logger } from '@socketsecurity/lib/logger'
+import { stripAnsi } from '@socketsecurity/lib/strings'
 
 import type { CResult } from '../../types.mts'
 

@@ -6,10 +6,10 @@
 import { spawn } from 'node:child_process'
 import readline from 'node:readline'
 
-import { spinner } from '@socketsecurity/registry/lib/spinner'
+import { spinner } from '@socketsecurity/lib/spinner'
 
 // Will import from registry once built:
-// import { attachOutputMask, clearLine, writeOutput } from '@socketsecurity/registry/lib/stdio/mask'
+// import { attachOutputMask, clearLine, writeOutput } from '@socketsecurity/lib/stdio/mask'
 
 /**
  * Run a command with interactive output control.

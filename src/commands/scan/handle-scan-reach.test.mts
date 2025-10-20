@@ -7,7 +7,7 @@ import {
 } from '../../../test/helpers/mocks.mts'
 
 // Mock the dependencies.
-vi.mock('@socketsecurity/registry/lib/logger', () => ({
+vi.mock('@socketsecurity/lib/logger', () => ({
   logger: {
     success: vi.fn(),
   },

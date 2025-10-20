@@ -3,6 +3,16 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import {
+  isNpmAuditFlag,
+  isNpmLoglevelFlag,
+  isNpmNodeOptionsFlag,
+  isNpmProgressFlag,
+} from '@socketsecurity/lib/agent'
+import { isDebug } from '@socketsecurity/lib/debug'
+import { getOwn } from '@socketsecurity/lib/objects'
+import { normalizePath } from '@socketsecurity/lib/path'
+import { spawn, spawnSync } from '@socketsecurity/lib/spawn'
+import {
   getExecPath,
   getNodeDebugFlags,
   getNodeHardenFlags,
@@ -10,16 +20,6 @@ import {
   supportsNodePermissionFlag,
 } from '@socketsecurity/registry/constants/node'
 import { NODE_MODULES } from '@socketsecurity/registry/constants/paths'
-import {
-  isNpmAuditFlag,
-  isNpmLoglevelFlag,
-  isNpmNodeOptionsFlag,
-  isNpmProgressFlag,
-} from '@socketsecurity/registry/lib/agent'
-import { isDebug } from '@socketsecurity/registry/lib/debug'
-import { getOwn } from '@socketsecurity/registry/lib/objects'
-import { normalizePath } from '@socketsecurity/registry/lib/path'
-import { spawn, spawnSync } from '@socketsecurity/registry/lib/spawn'
 
 
 import { ensureIpcInStdio } from './stdio-ipc.mts'
@@ -47,7 +47,7 @@ import type {
   SpawnExtra,
   SpawnOptions,
   SpawnResult,
-} from '@socketsecurity/registry/lib/spawn'
+} from '@socketsecurity/lib/spawn'
 import type { StdioOptions } from 'node:child_process'
 
 export type ShadowBinOptions = SpawnOptions & {
@@ -89,7 +89,7 @@ export default async function shadowNpmBase(
   let npmCachePath = ''
   if (isShadowNpm && supportsNodePermissionFlag()) {
     try {
-      const { findRealNpm } = await import('@socketsecurity/registry/lib/bin')
+      const { findRealNpm } = await import('@socketsecurity/lib/bin')
       const npmBin = findRealNpm()
       // Get npm global prefix.
       const prefixResult = spawnSync(npmBin, ['prefix', '-g'], {

@@ -6,7 +6,7 @@ import { join } from 'node:path'
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { clear } from '@socketsecurity/registry/lib/cacache'
+import { clear } from '@socketsecurity/lib/cacache'
 
 import {
   cleanupBackups,

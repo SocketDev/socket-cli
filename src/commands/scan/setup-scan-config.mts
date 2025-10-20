@@ -1,8 +1,8 @@
 import fs from 'node:fs'
 import path from 'node:path'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { input, select } from '@socketsecurity/registry/lib/prompts'
+import { logger } from '@socketsecurity/lib/logger'
+import { input, select } from '@socketsecurity/lib/prompts'
 
 import ENV from '../../constants/env.mts'
 import { SOCKET_JSON } from '../../constants/paths.mts'

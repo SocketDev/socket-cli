@@ -7,7 +7,7 @@ import {
 } from '../../../test/helpers/mocks.mts'
 
 // Mock all the dependencies.
-vi.mock('@socketsecurity/registry/lib/logger', () => ({
+vi.mock('@socketsecurity/lib/logger', () => ({
   logger: {
     info: vi.fn(),
     log: vi.fn(),
@@ -15,7 +15,7 @@ vi.mock('@socketsecurity/registry/lib/logger', () => ({
     error: vi.fn(),
   },
 }))
-vi.mock('@socketsecurity/registry/lib/words', () => ({
+vi.mock('@socketsecurity/lib/words', () => ({
   pluralize: vi.fn((word, count) => (count === 1 ? word : `${word}s`)),
 }))
 vi.mock('./fetch-create-org-full-scan.mts', () => ({
@@ -213,7 +213,7 @@ describe('handleCreateNewScan', () => {
   })
 
   it('handles read-only mode', async () => {
-    const { logger } = await import('@socketsecurity/registry/lib/logger')
+    const { logger } = await import('@socketsecurity/lib/logger')
     const { fetchSupportedScanFileNames } = await import(
       './fetch-supported-scan-file-names.mts'
     )

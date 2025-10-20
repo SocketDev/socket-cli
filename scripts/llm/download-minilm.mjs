@@ -63,7 +63,6 @@ async function downloadFile(url, outputPath, description) {
     throw new Error(`Failed to download ${url}: ${response.statusText}`)
   }
 
-  const totalSize = Number.parseInt(response.headers.get('content-length') || '0')
   const buffer = await response.arrayBuffer()
 
   await fs.writeFile(outputPath, Buffer.from(buffer))

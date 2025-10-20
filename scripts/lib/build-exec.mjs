@@ -4,8 +4,8 @@
  * Centralized command execution for build script.
  */
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
+import { logger } from '@socketsecurity/lib/logger'
+import { spawn } from '@socketsecurity/lib/spawn'
 
 import { saveBuildLog } from './build-helpers.mjs'
 

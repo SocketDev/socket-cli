@@ -1,4 +1,4 @@
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { logger } from '@socketsecurity/lib/logger'
 
 import { handleDeleteRepo } from './handle-delete-repo.mts'
 import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mjs'

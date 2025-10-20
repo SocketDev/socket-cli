@@ -11,14 +11,14 @@
  *   --apply    Apply updates (default is check-only)
  */
 
-import { isQuiet, isVerbose } from '@socketsecurity/registry/lib/argv/flags'
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { isQuiet, isVerbose } from '@socketsecurity/lib/argv/flags'
+import { logger } from '@socketsecurity/lib/logger'
 import {
   printError,
   printFooter,
   printHeader,
   printSuccess,
-} from '@socketsecurity/registry/lib/stdio/header'
+} from '@socketsecurity/lib/stdio/header'
 
 import { runParallel } from './utils/run-command.mjs'
 

@@ -2,8 +2,8 @@
 
 import { createRequire } from 'node:module'
 
+import { Spinner as createSpinner } from '@socketsecurity/lib/spinner'
 import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/registry/constants/socket'
-import { Spinner as createSpinner } from '@socketsecurity/registry/lib/spinner'
 
 import { NPM, PNPM, YARN } from '../../constants/agents.mts'
 import { FLAG_SILENT } from '../../constants/cli.mts'
@@ -31,8 +31,8 @@ import type {
   ShadowBinResult,
 } from '../../shadow/npm-base.mts'
 import type { CResult } from '../../types.mts'
-import type { SpawnExtra } from '@socketsecurity/registry/lib/spawn'
-import type { Spinner } from '@socketsecurity/registry/lib/spinner'
+import type { SpawnExtra } from '@socketsecurity/lib/spawn'
+import type { Spinner } from '@socketsecurity/lib/spinner'
 
 const require = createRequire(import.meta.url)
 

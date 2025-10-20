@@ -27,9 +27,9 @@ import { existsSync, promises as fs } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-import { readJson } from '@socketsecurity/registry/lib/fs'
-import { normalizePath } from '@socketsecurity/registry/lib/path'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
+import { readJson } from '@socketsecurity/lib/fs'
+import { normalizePath } from '@socketsecurity/lib/path'
+import { spawn } from '@socketsecurity/lib/spawn'
 
 import { DLX_BINARY_CACHE_TTL } from '../../constants/cache.mjs'
 import { InputError } from '../error/errors.mts'
@@ -37,7 +37,7 @@ import { InputError } from '../error/errors.mts'
 import type {
   SpawnExtra,
   SpawnOptions,
-} from '@socketsecurity/registry/lib/spawn'
+} from '@socketsecurity/lib/spawn'
 
 /**
  * Metadata structure for cached binaries.

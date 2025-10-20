@@ -51,7 +51,7 @@
 import { WordPieceTokenizer } from './wordpiece-tokenizer.mts'
 
 import type { Vocabulary } from './wordpiece-tokenizer.mts'
-import type { InferenceSession, Tensor } from 'onnxruntime-web'
+import type { InferenceSession } from 'onnxruntime-web'
 
 /**
  * MiniLM inference result.
@@ -103,12 +103,15 @@ export class MiniLMInference {
   static async create(): Promise<MiniLMInference> {
     // Step 1: Import ONNX Runtime with embedded WASM.
     // This loads from external/onnx-sync.mjs which has the WASM inlined.
+    // @ts-expect-error - No type declarations for external ONNX bundle.
     const ort = await import('../../external/onnx-sync.mjs')
 
     // Step 2: Load embedded model and tokenizer.
-    const { loadModelSync, loadTokenizerSync } = await import(
-      '../../external/minilm-sync.mjs'
-    )
+    const {
+      loadModelSync,
+      loadTokenizerSync,
+      // @ts-expect-error - No type declarations for external MiniLM bundle.
+    } = await import('../../external/minilm-sync.mjs')
 
     const modelBytes = loadModelSync()
     const tokenizerConfig = loadTokenizerSync()
@@ -150,6 +153,7 @@ export class MiniLMInference {
     const tokenization = this.tokenizer.tokenize(text)
 
     // Step 2: Create input tensors.
+    // @ts-expect-error - No type declarations for external ONNX bundle.
     const { Tensor } = await import('../../external/onnx-sync.mjs')
 
     const inputIds = new Tensor(
@@ -171,7 +175,7 @@ export class MiniLMInference {
     })
 
     // Step 4: Extract last_hidden_state tensor.
-    const lastHiddenState = outputs.last_hidden_state
+    const lastHiddenState = outputs['last_hidden_state']
 
     if (!lastHiddenState) {
       throw new Error('Model did not return last_hidden_state')
@@ -225,17 +229,18 @@ export class MiniLMInference {
 
     // Sum embeddings weighted by attention mask.
     for (let i = 0; i < seqLen; i++) {
-      const mask = attentionMask[i]
+      const mask = attentionMask[i] ?? 0
       totalMask += mask
 
       for (let j = 0; j < embeddingDim; j++) {
-        pooled[j] += embeddings[i * embeddingDim + j] * mask
+        const embeddingValue = embeddings[i * embeddingDim + j] ?? 0
+        pooled[j] = (pooled[j] ?? 0) + embeddingValue * mask
       }
     }
 
     // Average.
     for (let j = 0; j < embeddingDim; j++) {
-      pooled[j] /= totalMask
+      pooled[j] = (pooled[j] ?? 0) / totalMask
     }
 
     return pooled
@@ -259,14 +264,15 @@ export class MiniLMInference {
     // Compute magnitude.
     let magnitude = 0
     for (let i = 0; i < vector.length; i++) {
-      magnitude += vector[i] * vector[i]
+      const val = vector[i] ?? 0
+      magnitude += val * val
     }
     magnitude = Math.sqrt(magnitude)
 
     // Normalize.
     const normalized = new Float32Array(vector.length)
     for (let i = 0; i < vector.length; i++) {
-      normalized[i] = vector[i] / magnitude
+      normalized[i] = (vector[i] ?? 0) / magnitude
     }
 
     return normalized
@@ -295,7 +301,7 @@ export class MiniLMInference {
     // Since vectors are normalized, cosine similarity = dot product.
     let dotProduct = 0
     for (let i = 0; i < a.length; i++) {
-      dotProduct += a[i] * b[i]
+      dotProduct += (a[i] ?? 0) * (b[i] ?? 0)
     }
 
     return dotProduct

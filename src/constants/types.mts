@@ -4,8 +4,8 @@
 
 import type ENV from './env.mts'
 
-export type { Remap } from '@socketsecurity/registry/lib/objects'
-export type { SpawnOptions } from '@socketsecurity/registry/lib/spawn'
+export type { Remap } from '@socketsecurity/lib/objects'
+export type { SpawnOptions } from '@socketsecurity/lib/spawn'
 export type { Agent } from '../utils/ecosystem/environment.mjs'
 
 // Re-export platform constants from registry

@@ -1,6 +1,6 @@
 import path from 'node:path'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { logger } from '@socketsecurity/lib/logger'
 
 import { DOT_SOCKET_DOT_FACTS_JSON } from '../../constants/paths.mts'
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'

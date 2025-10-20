@@ -13,7 +13,7 @@
 import { existsSync } from 'node:fs'
 import { platform } from 'node:os'
 
-import { spawn } from '@socketsecurity/registry/lib/spawn'
+import { spawn } from '@socketsecurity/lib/spawn'
 
 const IS_MACOS = platform() === 'darwin'
 const IS_LINUX = platform() === 'linux'

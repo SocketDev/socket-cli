@@ -30,7 +30,7 @@ describe('outputViewRepo', () => {
   })
 
   it('outputs JSON format for successful result', async () => {
-    const { logger } = await import('@socketsecurity/registry/lib/logger')
+    const { logger } = await import('@socketsecurity/lib/logger')
     const { serializeResultJson } = await import(
       '../../utils/serialize/result-json.mts'
     )
@@ -56,7 +56,7 @@ describe('outputViewRepo', () => {
   })
 
   it('outputs error in JSON format', async () => {
-    const { logger } = await import('@socketsecurity/registry/lib/logger')
+    const { logger } = await import('@socketsecurity/lib/logger')
     const mockLog = vi.mocked(logger.log)
 
     const result: CResult<SocketSdkSuccessResult<'createOrgRepo'>['data']> =
@@ -72,7 +72,7 @@ describe('outputViewRepo', () => {
   })
 
   it('outputs repository table in text format', async () => {
-    const { logger } = await import('@socketsecurity/registry/lib/logger')
+    const { logger } = await import('@socketsecurity/lib/logger')
     const chalkTable = await import('chalk-table')
     const mockSuccess = vi.mocked(logger.success)
     const mockChalkTable = vi.mocked(chalkTable.default)
@@ -110,7 +110,7 @@ describe('outputViewRepo', () => {
   })
 
   it('outputs error in text format', async () => {
-    const { logger } = await import('@socketsecurity/registry/lib/logger')
+    const { logger } = await import('@socketsecurity/lib/logger')
     const { failMsgWithBadge } = await import(
       '../../utils/error/fail-msg-with-badge.mts'
     )
@@ -134,7 +134,7 @@ describe('outputViewRepo', () => {
   })
 
   it('handles repository with null homepage', async () => {
-    const { logger } = await import('@socketsecurity/registry/lib/logger')
+    const { logger } = await import('@socketsecurity/lib/logger')
     const chalkTable = await import('chalk-table')
     const mockChalkTable = vi.mocked(chalkTable.default)
 

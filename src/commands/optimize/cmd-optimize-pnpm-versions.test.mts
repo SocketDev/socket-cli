@@ -3,9 +3,9 @@ import path from 'node:path'
 
 import { afterEach, describe, expect, it } from 'vitest'
 
+import { readPackageJson } from '@socketsecurity/lib/packages'
+import { spawn } from '@socketsecurity/lib/spawn'
 import { PNPM } from '@socketsecurity/registry/constants/agents'
-import { readPackageJson } from '@socketsecurity/registry/lib/packages'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import { withTempFixture } from '../../../src/utils/test-fixtures.mts'
 import { spawnSocketCli, testPath } from '../../../test/utils.mts'
@@ -14,7 +14,7 @@ import { FLAG_CONFIG, FLAG_DRY_RUN, FLAG_SILENT } from '../constants/cli.mts'
 import ENV from '../constants/env.mts'
 import { getBinCliPath } from '../constants/paths.mts'
 
-import type { JsonContent } from '@socketsecurity/registry/lib/fs'
+import type { JsonContent } from '@socketsecurity/lib/fs'
 
 const binCliPath = getBinCliPath()
 const fixtureBaseDir = path.join(testPath, 'fixtures/commands/optimize')

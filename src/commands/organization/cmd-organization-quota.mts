@@ -1,4 +1,4 @@
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { logger } from '@socketsecurity/lib/logger'
 
 import { handleQuota } from './handle-quota.mts'
 import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'

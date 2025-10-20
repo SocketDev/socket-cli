@@ -46,10 +46,10 @@ import path from 'node:path'
 
 import semver from 'semver'
 
+import { whichBin } from '@socketsecurity/lib/bin'
+import { httpDownload } from '@socketsecurity/lib/http-request'
+import { spawn } from '@socketsecurity/lib/spawn'
 import { WIN32 } from '@socketsecurity/registry/constants/platform'
-import { whichBin } from '@socketsecurity/registry/lib/bin'
-import { httpDownload } from '@socketsecurity/registry/lib/http-request'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 
 import ENV from '../../constants/env.mts'

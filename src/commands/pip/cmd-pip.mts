@@ -24,8 +24,8 @@
  *   - Python CLI: src/utils/python/standalone.mts
  */
 
+import { spawn } from '@socketsecurity/lib/spawn'
 import { WIN32 } from '@socketsecurity/registry/constants/platform'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'

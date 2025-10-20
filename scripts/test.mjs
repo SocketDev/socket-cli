@@ -7,14 +7,14 @@ import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { WIN32 } from '@socketsecurity/registry/constants/platform'
-import { isQuiet } from '@socketsecurity/registry/lib/argv/flags'
-import { parseArgs } from '@socketsecurity/registry/lib/argv/parse'
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { confirm } from '@socketsecurity/registry/lib/prompts'
-import { onExit } from '@socketsecurity/registry/lib/signal-exit'
-import { spinner } from '@socketsecurity/registry/lib/spinner'
-import { printHeader } from '@socketsecurity/registry/lib/stdio/header'
+import { isQuiet } from '@socketsecurity/lib/argv/flags'
+import { parseArgs } from '@socketsecurity/lib/argv/parse'
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
+import { logger } from '@socketsecurity/lib/logger'
+import { confirm } from '@socketsecurity/lib/prompts'
+import { onExit } from '@socketsecurity/lib/signal-exit'
+import { spinner } from '@socketsecurity/lib/spinner'
+import { printHeader } from '@socketsecurity/lib/stdio/header'
 
 // Suppress non-fatal worker termination unhandled rejections
 process.on('unhandledRejection', (reason, _promise) => {

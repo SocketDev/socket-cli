@@ -6,7 +6,7 @@ import { addSocketWrapper } from './add-socket-wrapper.mts'
 
 // Mock the dependencies.
 vi.mock('node:fs')
-vi.mock('@socketsecurity/registry/lib/logger', () => ({
+vi.mock('@socketsecurity/lib/logger', () => ({
   logger: {
     info: vi.fn(),
     log: vi.fn(),
@@ -20,7 +20,7 @@ describe('addSocketWrapper', () => {
   })
 
   it('successfully adds wrapper aliases to file', async () => {
-    const { logger } = await import('@socketsecurity/registry/lib/logger')
+    const { logger } = await import('@socketsecurity/lib/logger')
     const mockAppendFile = vi.mocked(fs.appendFile) as any
 
     mockAppendFile.mockImplementation((_file, _content, callback) => {
@@ -77,7 +77,7 @@ describe('addSocketWrapper', () => {
   })
 
   it('logs disable instructions', async () => {
-    const { logger } = await import('@socketsecurity/registry/lib/logger')
+    const { logger } = await import('@socketsecurity/lib/logger')
     const mockAppendFile = vi.mocked(fs.appendFile) as any
 
     mockAppendFile.mockImplementation((_file, _content, callback) => {

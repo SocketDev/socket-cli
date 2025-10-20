@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock dependencies.
-vi.mock('@socketsecurity/registry/lib/spawn', () => ({
+vi.mock('@socketsecurity/lib/spawn', () => ({
   spawnSync: vi.fn(),
 }))
 
@@ -35,7 +35,7 @@ describe('yarn-version utilities', () => {
       getYarnBinPath.mockReturnValue('/usr/local/bin/yarn')
 
       const { spawnSync } = vi.mocked(
-        await import('@socketsecurity/registry/lib/spawn'),
+        await import('@socketsecurity/lib/spawn'),
       )
       spawnSync.mockReturnValue({
         status: 0,
@@ -61,7 +61,7 @@ describe('yarn-version utilities', () => {
       getYarnBinPath.mockReturnValue('/usr/local/bin/yarn')
 
       const { spawnSync } = vi.mocked(
-        await import('@socketsecurity/registry/lib/spawn'),
+        await import('@socketsecurity/lib/spawn'),
       )
       spawnSync.mockReturnValue({
         status: 0,
@@ -79,7 +79,7 @@ describe('yarn-version utilities', () => {
       getYarnBinPath.mockReturnValue('/usr/local/bin/yarn')
 
       const { spawnSync } = vi.mocked(
-        await import('@socketsecurity/registry/lib/spawn'),
+        await import('@socketsecurity/lib/spawn'),
       )
       spawnSync.mockReturnValue({
         status: 0,
@@ -97,7 +97,7 @@ describe('yarn-version utilities', () => {
       getYarnBinPath.mockReturnValue('/usr/local/bin/yarn')
 
       const { spawnSync } = vi.mocked(
-        await import('@socketsecurity/registry/lib/spawn'),
+        await import('@socketsecurity/lib/spawn'),
       )
       spawnSync.mockReturnValue({
         status: 0,
@@ -115,7 +115,7 @@ describe('yarn-version utilities', () => {
       getYarnBinPath.mockReturnValue('/usr/local/bin/yarn')
 
       const { spawnSync } = vi.mocked(
-        await import('@socketsecurity/registry/lib/spawn'),
+        await import('@socketsecurity/lib/spawn'),
       )
       spawnSync.mockReturnValue({
         status: 1,
@@ -133,7 +133,7 @@ describe('yarn-version utilities', () => {
       getYarnBinPath.mockReturnValue('/usr/local/bin/yarn')
 
       const { spawnSync } = vi.mocked(
-        await import('@socketsecurity/registry/lib/spawn'),
+        await import('@socketsecurity/lib/spawn'),
       )
       spawnSync.mockReturnValue({
         status: 0,
@@ -151,7 +151,7 @@ describe('yarn-version utilities', () => {
       getYarnBinPath.mockReturnValue('/usr/local/bin/yarn')
 
       const { spawnSync } = vi.mocked(
-        await import('@socketsecurity/registry/lib/spawn'),
+        await import('@socketsecurity/lib/spawn'),
       )
       spawnSync.mockReturnValue({
         status: 0,
@@ -180,7 +180,7 @@ describe('yarn-version utilities', () => {
       getYarnBinPath.mockReturnValue('/usr/local/bin/yarn')
 
       const { spawnSync } = vi.mocked(
-        await import('@socketsecurity/registry/lib/spawn'),
+        await import('@socketsecurity/lib/spawn'),
       )
       spawnSync.mockImplementation(() => {
         throw new Error('Spawn failed')
@@ -199,7 +199,7 @@ describe('yarn-version utilities', () => {
       getYarnBinPath.mockReturnValue('C:\\Program Files\\yarn\\yarn.cmd')
 
       const { spawnSync } = vi.mocked(
-        await import('@socketsecurity/registry/lib/spawn'),
+        await import('@socketsecurity/lib/spawn'),
       )
       spawnSync.mockReturnValue({
         status: 0,
@@ -225,7 +225,7 @@ describe('yarn-version utilities', () => {
       getYarnBinPath.mockReturnValue('/usr/local/bin/yarn')
 
       const { spawnSync } = vi.mocked(
-        await import('@socketsecurity/registry/lib/spawn'),
+        await import('@socketsecurity/lib/spawn'),
       )
       spawnSync.mockReturnValue({
         status: 0,

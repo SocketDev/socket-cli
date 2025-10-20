@@ -4,7 +4,7 @@
  * Centralized output formatting for build script.
  */
 
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { logger } from '@socketsecurity/lib/logger'
 
 /**
  * Print section header.

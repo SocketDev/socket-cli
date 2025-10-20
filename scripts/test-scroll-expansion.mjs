@@ -70,7 +70,7 @@ for (let i = 0; i < 10; i++) {
 }
 showState('AFTER EXPANDING (scroll=5, BUT box shrunk!)')
 
-const layout = calculateLayout()
+calculateLayout()
 console.log(`\n⚠️  PROBLEM: Box capacity is now 25, but we're at scrollOffset=5`)
 console.log(`⚠️  Showing lines 6-30, which is fine... BUT wait...`)
 console.log(`⚠️  The box shrinkage pushed lines 31-35 OUT OF VIEW`)

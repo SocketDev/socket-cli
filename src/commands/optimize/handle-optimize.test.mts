@@ -6,7 +6,7 @@ import { setupHandleFunctionMocks } from '../../../test/helpers/mock-setup.mts'
 setupHandleFunctionMocks()
 
 // Mock the dependencies.
-vi.mock('@socketsecurity/registry/lib/logger', () => ({
+vi.mock('@socketsecurity/lib/logger', () => ({
   logger: {
     info: vi.fn(),
   },
@@ -53,7 +53,7 @@ describe('handleOptimize', () => {
     const { outputOptimizeResult } = await import(
       './output-optimize-result.mts'
     )
-    const { logger } = await import('@socketsecurity/registry/lib/logger')
+    const { logger } = await import('@socketsecurity/lib/logger')
 
     vi.mocked(detectAndValidatePackageEnvironment).mockResolvedValue({
       ok: true,
@@ -248,7 +248,7 @@ describe('handleOptimize', () => {
       '../../utils/package/environment.mts'
     )
     const { applyOptimization } = await import('./apply-optimization.mts')
-    const { logger } = await import('@socketsecurity/registry/lib/logger')
+    const { logger } = await import('@socketsecurity/lib/logger')
 
     vi.mocked(detectAndValidatePackageEnvironment).mockResolvedValue({
       ok: true,

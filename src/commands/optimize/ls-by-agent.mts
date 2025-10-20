@@ -1,3 +1,4 @@
+import { spawn } from '@socketsecurity/lib/spawn'
 import {
   BUN,
   NPM,
@@ -7,7 +8,6 @@ import {
   YARN_CLASSIC,
 } from '@socketsecurity/registry/constants/agents'
 import { WIN32 } from '@socketsecurity/registry/constants/platform'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import { FLAG_PROD } from '../../constants/cli.mts'
 

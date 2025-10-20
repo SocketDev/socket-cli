@@ -11,8 +11,8 @@
  * - JSON output for automation
  */
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { pluralize } from '@socketsecurity/registry/lib/words'
+import { logger } from '@socketsecurity/lib/logger'
+import { pluralize } from '@socketsecurity/lib/words'
 
 import { OUTPUT_JSON } from '../../constants/cli.mts'
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'

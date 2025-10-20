@@ -17,7 +17,7 @@ vi.mock('node:fs', () => ({
 }))
 
 // Mock registry modules.
-vi.mock('@socketsecurity/registry/lib/fs', () => ({
+vi.mock('@socketsecurity/lib/fs', () => ({
   readFileUtf8: vi.fn(),
 }))
 
@@ -147,7 +147,7 @@ packages: {}`
   describe('readPnpmLockfile', () => {
     it('reads existing lockfile', async () => {
       const { existsSync } = await import('node:fs')
-      const { readFileUtf8 } = await import('@socketsecurity/registry/lib/fs')
+      const { readFileUtf8 } = await import('@socketsecurity/lib/fs')
 
       vi.mocked(existsSync).mockReturnValue(true)
       vi.mocked(readFileUtf8).mockResolvedValue('lockfile content')

@@ -4,7 +4,6 @@
 
 // Simulate the calculations.
 const rows = 50 // Example terminal height.
-const cols = 120
 
 // Initial state (collapsed).
 let inputLines = ['> ']

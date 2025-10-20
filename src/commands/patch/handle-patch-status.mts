@@ -2,11 +2,11 @@ import crypto from 'node:crypto'
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 
+import { logger } from '@socketsecurity/lib/logger'
+import { normalizePath } from '@socketsecurity/lib/path'
+import { pluralize } from '@socketsecurity/lib/words'
 import { UTF8 } from '@socketsecurity/registry/constants/encoding'
 import { DOT_SOCKET_DIR, MANIFEST_JSON, NODE_MODULES } from '@socketsecurity/registry/constants/paths'
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { normalizePath } from '@socketsecurity/registry/lib/path'
-import { pluralize } from '@socketsecurity/registry/lib/words'
 
 import { PatchManifestSchema } from './manifest-schema.mts'
 import { outputPatchStatusResult } from './output-patch-status-result.mts'
@@ -16,7 +16,7 @@ import { hasBackupForPatch } from '../../utils/manifest/patch-backup.mts'
 
 import type { PatchRecord } from './manifest-schema.mts'
 import type { OutputKind } from '../../types.mts'
-import type { Spinner } from '@socketsecurity/registry/lib/spinner'
+import type { Spinner } from '@socketsecurity/lib/spinner'
 
 export interface PatchStatus {
   appliedAt: string | undefined

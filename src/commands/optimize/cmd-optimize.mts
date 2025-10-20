@@ -1,6 +1,6 @@
 import path from 'node:path'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { logger } from '@socketsecurity/lib/logger'
 
 import { handleOptimize } from './handle-optimize.mts'
 import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'

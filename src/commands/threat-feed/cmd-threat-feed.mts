@@ -1,6 +1,6 @@
+import { joinAnd } from '@socketsecurity/lib/arrays'
+import { logger } from '@socketsecurity/lib/logger'
 import { NPM } from '@socketsecurity/registry/constants/agents'
-import { joinAnd } from '@socketsecurity/registry/lib/arrays'
-import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleThreatFeed } from './handle-threat-feed.mts'
 import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'

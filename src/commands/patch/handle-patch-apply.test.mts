@@ -19,11 +19,11 @@ vi.mock('fast-glob', () => ({
   },
 }))
 
-vi.mock('@socketsecurity/registry/lib/fs', () => ({
+vi.mock('@socketsecurity/lib/fs', () => ({
   readDirNames: vi.fn(),
 }))
 
-vi.mock('@socketsecurity/registry/lib/logger', () => ({
+vi.mock('@socketsecurity/lib/logger', () => ({
   logger: {
     error: vi.fn(),
     fail: vi.fn(),
@@ -34,7 +34,7 @@ vi.mock('@socketsecurity/registry/lib/logger', () => ({
   },
 }))
 
-vi.mock('@socketsecurity/registry/lib/packages', () => ({
+vi.mock('@socketsecurity/lib/packages', () => ({
   readPackageJson: vi.fn(),
 }))
 
@@ -57,7 +57,7 @@ describe('handlePatch', () => {
   it('handles successful patch application', async () => {
     const { existsSync, promises: fs } = await import('node:fs')
     const fastGlob = await import('fast-glob')
-    const { readDirNames } = await import('@socketsecurity/registry/lib/fs')
+    const { readDirNames } = await import('@socketsecurity/lib/fs')
     const { outputPatchResult } = await import('./output-patch-result.mts')
     const { findUp } = await import('../../utils/fs.mts')
     const mockExistsSync = vi.mocked(existsSync)

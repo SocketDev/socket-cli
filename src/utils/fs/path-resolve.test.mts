@@ -4,8 +4,8 @@ import { fileURLToPath } from 'node:url'
 import mockFs from 'mock-fs'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { normalizePath } from '@socketsecurity/lib/path'
 import { NODE_MODULES } from '@socketsecurity/registry/constants/paths'
-import { normalizePath } from '@socketsecurity/registry/lib/path'
 
 
 import {
@@ -20,10 +20,10 @@ const PACKAGE_JSON = 'package.json'
 import type FileSystem from 'mock-fs/lib/filesystem'
 
 // Mock dependencies for new tests.
-vi.mock('@socketsecurity/registry/lib/bin', async () => {
+vi.mock('@socketsecurity/lib/bin', async () => {
   const actual = await vi.importActual<
-    typeof import('@socketsecurity/registry/lib/bin')
-  >('@socketsecurity/registry/lib/bin')
+    typeof import('@socketsecurity/lib/bin')
+  >('@socketsecurity/lib/bin')
   return {
     ...actual,
     resolveBinPathSync: vi.fn(p => p),
@@ -31,10 +31,10 @@ vi.mock('@socketsecurity/registry/lib/bin', async () => {
   }
 })
 
-vi.mock('@socketsecurity/registry/lib/fs', async () => {
+vi.mock('@socketsecurity/lib/fs', async () => {
   const actual = await vi.importActual<
-    typeof import('@socketsecurity/registry/lib/fs')
-  >('@socketsecurity/registry/lib/fs')
+    typeof import('@socketsecurity/lib/fs')
+  >('@socketsecurity/lib/fs')
   return {
     ...actual,
     isDirSync: vi.fn(),
@@ -344,7 +344,7 @@ describe('Path Resolve', () => {
 
     it('finds bin path when available', async () => {
       const { whichBinSync } = vi.mocked(
-        await import('@socketsecurity/registry/lib/bin'),
+        await import('@socketsecurity/lib/bin'),
       )
       whichBinSync.mockReturnValue(['/usr/local/bin/npm'])
 
@@ -361,7 +361,7 @@ describe('Path Resolve', () => {
       const constants = await import('../constants.mts')
       const shadowBinPath = constants.default.shadowBinPath
       const { whichBinSync } = vi.mocked(
-        await import('@socketsecurity/registry/lib/bin'),
+        await import('@socketsecurity/lib/bin'),
       )
       whichBinSync.mockReturnValue([
         `${shadowBinPath}/npm`,
@@ -379,7 +379,7 @@ describe('Path Resolve', () => {
 
     it('handles no bin path found', async () => {
       const { whichBinSync } = vi.mocked(
-        await import('@socketsecurity/registry/lib/bin'),
+        await import('@socketsecurity/lib/bin'),
       )
       whichBinSync.mockReturnValue(null)
 
@@ -394,7 +394,7 @@ describe('Path Resolve', () => {
 
     it('handles empty array result', async () => {
       const { whichBinSync } = vi.mocked(
-        await import('@socketsecurity/registry/lib/bin'),
+        await import('@socketsecurity/lib/bin'),
       )
       whichBinSync.mockReturnValue([])
 
@@ -409,7 +409,7 @@ describe('Path Resolve', () => {
 
     it('handles single string result', async () => {
       const { whichBinSync } = vi.mocked(
-        await import('@socketsecurity/registry/lib/bin'),
+        await import('@socketsecurity/lib/bin'),
       )
       whichBinSync.mockReturnValue('/usr/local/bin/npm' as any)
 
@@ -426,7 +426,7 @@ describe('Path Resolve', () => {
       const constants = await import('../constants.mts')
       const shadowBinPath = constants.default.shadowBinPath
       const { whichBinSync } = vi.mocked(
-        await import('@socketsecurity/registry/lib/bin'),
+        await import('@socketsecurity/lib/bin'),
       )
       whichBinSync.mockReturnValue([`${shadowBinPath}/npm`])
 
@@ -447,7 +447,7 @@ describe('Path Resolve', () => {
 
     it('finds npm directory in lib/node_modules structure', async () => {
       const { isDirSync } = vi.mocked(
-        await import('@socketsecurity/registry/lib/fs'),
+        await import('@socketsecurity/lib/fs'),
       )
 
       isDirSync.mockImplementation(p => {
@@ -468,7 +468,7 @@ describe('Path Resolve', () => {
 
     it('finds npm directory with node_modules in current path', async () => {
       const { isDirSync } = vi.mocked(
-        await import('@socketsecurity/registry/lib/fs'),
+        await import('@socketsecurity/lib/fs'),
       )
 
       isDirSync.mockImplementation(p => {
@@ -486,7 +486,7 @@ describe('Path Resolve', () => {
 
     it('finds npm directory with node_modules in parent path', async () => {
       const { isDirSync } = vi.mocked(
-        await import('@socketsecurity/registry/lib/fs'),
+        await import('@socketsecurity/lib/fs'),
       )
 
       isDirSync.mockImplementation(p => {
@@ -507,7 +507,7 @@ describe('Path Resolve', () => {
 
     it('returns undefined when no npm directory found', async () => {
       const { isDirSync } = vi.mocked(
-        await import('@socketsecurity/registry/lib/fs'),
+        await import('@socketsecurity/lib/fs'),
       )
 
       isDirSync.mockReturnValue(false)
@@ -519,7 +519,7 @@ describe('Path Resolve', () => {
 
     it('handles nvm directory structure', async () => {
       const { isDirSync } = vi.mocked(
-        await import('@socketsecurity/registry/lib/fs'),
+        await import('@socketsecurity/lib/fs'),
       )
 
       isDirSync.mockImplementation(p => {

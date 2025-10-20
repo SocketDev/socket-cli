@@ -88,7 +88,7 @@ function sanitizeTarballPath(filePath: string): string {
 
 /**
  * Remove a file or directory with safety protections.
- * Minimal inline version of @socketsecurity/registry/lib/fs remove().
+ * Minimal inline version of @socketsecurity/lib/fs remove().
  * Prevents catastrophic deletes by checking paths are within safe boundaries.
  * @throws {Error} When attempting to delete protected paths.
  */

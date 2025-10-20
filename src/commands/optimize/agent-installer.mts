@@ -17,20 +17,20 @@
  * - CI-mode configuration for non-interactive execution
  */
 
+import { getOwn } from '@socketsecurity/lib/objects'
+import { spawn } from '@socketsecurity/lib/spawn'
 import { NPM, PNPM } from '@socketsecurity/registry/constants/agents'
 import {
   getNodeHardenFlags,
   getNodeNoWarningsFlags,
 } from '@socketsecurity/registry/constants/node'
 import { WIN32 } from '@socketsecurity/registry/constants/platform'
-import { getOwn } from '@socketsecurity/registry/lib/objects'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import { shadowNpmInstall } from '../../shadow/npm/install.mts'
 import { cmdFlagsToString } from '../../utils/process/cmd.mts'
 
 import type { EnvDetails } from '../../utils/ecosystem/environment.mjs'
-import type { Spinner } from '@socketsecurity/registry/lib/spinner'
+import type { Spinner } from '@socketsecurity/lib/spinner'
 
 type SpawnOption = Exclude<Parameters<typeof spawn>[2], undefined>
 

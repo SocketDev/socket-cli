@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 
-import { debug } from '@socketsecurity/registry/lib/debug'
+import { debug } from '@socketsecurity/lib/debug'
 
 import ENV from '../../constants/env.mts'
 import { homePath, rootPath } from '../../constants/paths.mts'

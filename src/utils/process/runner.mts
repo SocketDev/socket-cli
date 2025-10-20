@@ -2,9 +2,9 @@
 
 
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
-import { Spinner as createSpinner } from '@socketsecurity/registry/lib/spinner'
+import { logger } from '@socketsecurity/lib/logger'
+import { spawn } from '@socketsecurity/lib/spawn'
+import { Spinner as createSpinner } from '@socketsecurity/lib/spinner'
 
 import { ensureIpcInStdio } from '../../shadow/stdio-ipc.mjs'
 import { debugNs } from '../debug.mts'
@@ -16,8 +16,8 @@ import type {
   SpawnExtra,
   SpawnResult,
   SpawnStdioResult,
-} from '@socketsecurity/registry/lib/spawn'
-import type { Spinner } from '@socketsecurity/registry/lib/spinner'
+} from '@socketsecurity/lib/spawn'
+import type { Spinner } from '@socketsecurity/lib/spinner'
 
 export type ProcessRunnerOptions = {
   bufferOutput?: boolean | undefined

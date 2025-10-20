@@ -1,7 +1,7 @@
+import { safeReadFile } from '@socketsecurity/lib/fs'
+import { logger } from '@socketsecurity/lib/logger'
+import { spawn } from '@socketsecurity/lib/spawn'
 import { getSpinner } from '@socketsecurity/registry/constants/process'
-import { safeReadFile } from '@socketsecurity/registry/lib/fs'
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 export async function convertSbtToMaven({
   bin,

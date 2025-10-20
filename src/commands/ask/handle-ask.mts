@@ -3,13 +3,11 @@ import path from 'node:path'
 
 import nlp from 'compromise'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
+import { logger } from '@socketsecurity/lib/logger'
+import { spawn } from '@socketsecurity/lib/spawn'
 // Import compromise for NLP text normalization.
 
 import { outputAskCommand } from './output-ask.mts'
-
-import type { CResult } from '../../utils/c-result.mts'
 
 // Semantic index for fast word-overlap matching (lazy-loaded, ~3KB).
 let semanticIndex: any = null
@@ -140,7 +138,10 @@ async function loadSemanticIndex() {
   }
 
   try {
-    const homeDir = process.env.HOME || process.env.USERPROFILE
+    const homeDir = process.env['HOME'] || process.env['USERPROFILE']
+    if (!homeDir) {
+      return null
+    }
     const indexPath = path.join(homeDir, '.claude/skills/socket-cli/semantic-index.json')
 
     const content = await fs.readFile(indexPath, 'utf-8')
@@ -149,7 +150,6 @@ async function loadSemanticIndex() {
     return semanticIndex
   } catch (e) {
     // Semantic index not available - not a critical error.
-    logger.debug('Semantic index not available:', e.message)
     return null
   }
 }
@@ -202,6 +202,9 @@ async function wordOverlapMatch(query: string): Promise<{
 
   // Match against each command's word index.
   for (const [commandName, commandData] of Object.entries(index.commands)) {
+    if (!commandData || typeof commandData !== 'object' || !('words' in commandData) || !Array.isArray(commandData.words)) {
+      continue
+    }
     const score = wordOverlap(queryWords, commandData.words)
 
     if (score > bestScore) {
@@ -261,7 +264,7 @@ function cosineSimilarity(a: Float32Array, b: Float32Array): number {
 
   let dotProduct = 0
   for (let i = 0; i < a.length; i++) {
-    dotProduct += a[i] * b[i]
+    dotProduct += (a[i] ?? 0) * (b[i] ?? 0)
   }
 
   return dotProduct
@@ -303,9 +306,12 @@ async function ensureCommandEmbeddings() {
   } as const
 
   for (const [action, description] of Object.entries(commandDescriptions)) {
-    const embedding = await getEmbedding(description)
-    if (embedding) {
-      commandEmbeddings[action] = embedding
+    if (description) {
+      // eslint-disable-next-line no-await-in-loop
+      const embedding = await getEmbedding(description)
+      if (embedding) {
+        commandEmbeddings[action] = embedding
+      }
     }
   }
 }
@@ -369,7 +375,7 @@ async function parseIntent(query: string): Promise<ParsedIntent> {
     if (pkgMatch) {
       const candidate = pkgMatch[1]
       // Only accept if it looks like a real package name (not common words).
-      if (candidate.includes('@') || candidate.includes('/') || candidate.match(/^[a-z0-9-]+$/)) {
+      if (candidate && (candidate.includes('@') || candidate.includes('/') || candidate.match(/^[a-z0-9-]+$/))) {
         // Reject common command words.
         const commonWords = ['scan', 'fix', 'patch', 'optimize', 'vulnerabilities', 'issues', 'problems', 'alerts', 'security', 'safe', 'check']
         if (!commonWords.includes(candidate)) {
@@ -382,7 +388,7 @@ async function parseIntent(query: string): Promise<ParsedIntent> {
   // Detect severity.
   let severity: string | undefined
   for (const [level, keywords] of Object.entries(SEVERITY_KEYWORDS)) {
-    if (keywords.some(kw => lowerQuery.includes(kw))) {
+    if (Array.isArray(keywords) && keywords.some(kw => lowerQuery.includes(kw))) {
       severity = level
       break
     }
@@ -391,7 +397,7 @@ async function parseIntent(query: string): Promise<ParsedIntent> {
   // Detect environment.
   let environment: string | undefined
   for (const [env, keywords] of Object.entries(ENVIRONMENT_KEYWORDS)) {
-    if (keywords.some(kw => lowerQuery.includes(kw))) {
+    if (Array.isArray(keywords) && keywords.some(kw => lowerQuery.includes(kw))) {
       environment = env
       break
     }
@@ -407,6 +413,9 @@ async function parseIntent(query: string): Promise<ParsedIntent> {
   } | null = null
 
   for (const [action, pattern] of Object.entries(PATTERNS)) {
+    if (!pattern) {
+      continue
+    }
     const matchCount = pattern.keywords.filter(kw => lowerQuery.includes(kw)).length
 
     if (matchCount > 0) {
@@ -500,16 +509,25 @@ async function parseIntent(query: string): Promise<ParsedIntent> {
     command.push('--dry-run')
   }
 
-  return {
+  const result: ParsedIntent = {
     action: bestMatch.action,
     command,
     confidence: bestMatch.confidence,
     explanation: bestMatch.explanation,
-    packageName,
-    severity,
-    environment,
     isDryRun,
   }
+
+  if (packageName !== undefined) {
+    result.packageName = packageName
+  }
+  if (severity !== undefined) {
+    result.severity = severity
+  }
+  if (environment !== undefined) {
+    result.environment = environment
+  }
+
+  return result
 }
 
 /**
@@ -566,18 +584,14 @@ export async function handleAsk(options: HandleAskOptions): Promise<void> {
   logger.log('🚀 Executing...')
   logger.log('')
 
-  try {
-    const result = await spawn('socket', intent.command, {
-      stdio: 'inherit',
-      cwd: process.cwd(),
-    })
+  const result = await spawn('socket', intent.command, {
+    stdio: 'inherit',
+    cwd: process.cwd(),
+  })
 
-    if (result.code !== 0) {
-      logger.error(`Command failed with exit code ${result.code}`)
-      process.exit(result.code)
-    }
-  } catch (e) {
-    logger.error(`Failed to execute command: ${e.message}`)
-    process.exit(1)
+  if (result.code !== 0) {
+    logger.error(`Command failed with exit code ${result.code}`)
+    // eslint-disable-next-line n/no-process-exit
+    process.exit(result.code)
   }
 }

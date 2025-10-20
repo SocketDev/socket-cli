@@ -6,10 +6,10 @@ import path from 'node:path'
 import yargsParser from 'yargs-parser'
 import colors from 'yoctocolors-cjs'
 
-import { getSpinner } from '@socketsecurity/registry/constants/process'
-import { getCodeCoverage } from '@socketsecurity/registry/lib/cover/code'
-import { getTypeCoverage } from '@socketsecurity/registry/lib/cover/type'
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { getSpinner } from '@socketsecurity/lib/constants/process'
+import { getCodeCoverage } from '@socketsecurity/lib/cover/code'
+import { getTypeCoverage } from '@socketsecurity/lib/cover/type'
+import { logger } from '@socketsecurity/lib/logger'
 
 const indent = '  '
 

@@ -7,14 +7,14 @@ import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { isQuiet } from '@socketsecurity/registry/lib/argv/flags'
-import { parseArgs } from '@socketsecurity/registry/lib/argv/parse'
+import { isQuiet } from '@socketsecurity/lib/argv/flags'
+import { parseArgs } from '@socketsecurity/lib/argv/parse'
 import {
   getChangedFiles,
   getStagedFiles,
-} from '@socketsecurity/registry/lib/git'
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { printHeader } from '@socketsecurity/registry/lib/stdio/header'
+} from '@socketsecurity/lib/git'
+import { logger } from '@socketsecurity/lib/logger'
+import { printHeader } from '@socketsecurity/lib/stdio/header'
 
 import { runCommandQuiet } from './utils/run-command.mjs'
 

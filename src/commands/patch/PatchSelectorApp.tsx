@@ -5,7 +5,7 @@ import { Box, Text, useApp, useInput } from 'ink'
 import type React from 'react'
 import { createElement, useEffect, useState } from 'react'
 
-import type { DiscoveredPatch } from './handle-patch-discover.tsx'
+import type { DiscoveredPatch } from './handle-patch-discover.mts'
 
 export type PatchSelectorAppProps = {
   patches: DiscoveredPatch[]

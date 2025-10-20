@@ -8,7 +8,7 @@
 import { promises as fs, statfsSync } from 'node:fs'
 import { join } from 'node:path'
 
-import { spawn } from '@socketsecurity/registry/lib/spawn'
+import { spawn } from '@socketsecurity/lib/spawn'
 
 /**
  * Execute and capture output.

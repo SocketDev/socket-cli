@@ -8,6 +8,7 @@ import { readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+// eslint-disable-next-line import-x/no-unresolved, n/no-missing-import
 import { pipeline } from '@xenova/transformers'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))

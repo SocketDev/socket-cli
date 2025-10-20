@@ -3,18 +3,18 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { shadowNpmInstall } from './install.mts'
 
 import type { ShadowNpmInstallOptions } from './install.mts'
-import type { Spinner } from '@socketsecurity/registry/lib/spinner'
+import type { Spinner } from '@socketsecurity/lib/spinner'
 
 // Mock all dependencies.
 const mockSpawn = vi.hoisted(() => vi.fn())
 const mockGetNpmBinPath = vi.hoisted(() => vi.fn())
 const mockResolveBinPathSync = vi.hoisted(() => vi.fn())
 
-vi.mock('@socketsecurity/registry/lib/spawn', () => ({
+vi.mock('@socketsecurity/lib/spawn', () => ({
   spawn: mockSpawn,
 }))
 
-vi.mock('@socketsecurity/registry/lib/agent', () => ({
+vi.mock('@socketsecurity/lib/agent', () => ({
   isNpmAuditFlag: vi.fn(
     (arg: string) => arg === '--audit' || arg === '--no-audit',
   ),

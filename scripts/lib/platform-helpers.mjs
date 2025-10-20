@@ -13,7 +13,7 @@
 import { stat } from 'node:fs/promises'
 import { arch, platform } from 'node:os'
 
-import { spawn } from '@socketsecurity/registry/lib/spawn'
+import { spawn } from '@socketsecurity/lib/spawn'
 
 /**
  * Get normalized platform information.

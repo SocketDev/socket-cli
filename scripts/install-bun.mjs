@@ -5,8 +5,8 @@
 import { spawn } from 'node:child_process'
 import { platform } from 'node:process'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { printHeader } from '@socketsecurity/registry/lib/stdio/header'
+import { logger } from '@socketsecurity/lib/logger'
+import { printHeader } from '@socketsecurity/lib/stdio/header'
 
 /**
  * Run command and return exit code.

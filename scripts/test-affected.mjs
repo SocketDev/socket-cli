@@ -8,9 +8,9 @@ import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { WIN32 } from '@socketsecurity/registry/constants/platform'
-import { parseArgs } from '@socketsecurity/registry/lib/argv/parse'
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { parseArgs } from '@socketsecurity/lib/argv/parse'
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
+import { logger } from '@socketsecurity/lib/logger'
 
 import { getTestsToRun } from './utils/affected-test-mapper.mjs'
 

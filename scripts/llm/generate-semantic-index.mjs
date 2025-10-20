@@ -116,19 +116,6 @@ function extractWords(text) {
   return words.map(canonicalize)
 }
 
-/**
- * Compute word overlap score between two texts.
- */
-function wordOverlap(text1, text2) {
-  const words1 = new Set(extractWords(text1))
-  const words2 = new Set(extractWords(text2))
-
-  const intersection = new Set([...words1].filter(w => words2.has(w)))
-  const union = new Set([...words1, ...words2])
-
-  return union.size === 0 ? 0 : intersection.size / union.size
-}
-
 // Build semantic index.
 const semanticIndex = {
   commands: {},

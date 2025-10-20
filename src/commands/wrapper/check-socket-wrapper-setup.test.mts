@@ -6,7 +6,7 @@ import { checkSocketWrapperSetup } from './check-socket-wrapper-setup.mts'
 
 // Mock the dependencies.
 vi.mock('node:fs')
-vi.mock('@socketsecurity/registry/lib/logger', () => ({
+vi.mock('@socketsecurity/lib/logger', () => ({
   logger: {
     log: vi.fn(),
   },
@@ -66,7 +66,7 @@ describe('checkSocketWrapperSetup', () => {
   })
 
   it('logs instructions when wrapper is set up', async () => {
-    const { logger } = await import('@socketsecurity/registry/lib/logger')
+    const { logger } = await import('@socketsecurity/lib/logger')
     const mockReadFileSync = vi.mocked(fs.readFileSync) as any
     mockReadFileSync.mockReturnValue('alias npm="socket npm"')
 

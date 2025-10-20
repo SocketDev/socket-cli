@@ -1,9 +1,9 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 
+import { arrayUnique } from '@socketsecurity/lib/arrays'
 import { DOT_SOCKET_DIR, MANIFEST_JSON } from '@socketsecurity/registry/constants/paths'
 import { getSpinner } from '@socketsecurity/registry/constants/process'
-import { arrayUnique } from '@socketsecurity/registry/lib/arrays'
 
 import { handlePatchApply } from './handle-patch-apply.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'

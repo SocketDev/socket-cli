@@ -7,12 +7,12 @@ import { createHash } from 'node:crypto'
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 
+import { safeDelete } from '@socketsecurity/lib/fs'
+import { httpRequest } from '@socketsecurity/lib/http-request'
+import { normalizePath } from '@socketsecurity/lib/path'
+import { getSocketHomePath } from '@socketsecurity/lib/paths'
+import { spawn } from '@socketsecurity/lib/spawn'
 import { WIN32 } from '@socketsecurity/registry/constants/platform'
-import { safeDelete } from '@socketsecurity/registry/lib/fs'
-import { httpRequest } from '@socketsecurity/registry/lib/http-request'
-import { normalizePath } from '@socketsecurity/registry/lib/path'
-import { getSocketHomePath } from '@socketsecurity/registry/lib/paths'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 export interface BuildTargetOptions {
   arch: string

@@ -1,5 +1,5 @@
+import { logger } from '@socketsecurity/lib/logger'
 import { getSpinner } from '@socketsecurity/registry/constants/process'
-import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { addOverrides } from './add-overrides.mts'
 import { CMD_NAME } from './shared.mts'

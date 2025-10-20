@@ -3,8 +3,8 @@
 
 import { createRequire } from 'node:module'
 
+import { logger } from '@socketsecurity/lib/logger'
 import { kInternalsSymbol } from '@socketsecurity/registry/constants/core'
-import { logger } from '@socketsecurity/registry/lib/logger'
 
 import ENV from './constants/env.mts'
 

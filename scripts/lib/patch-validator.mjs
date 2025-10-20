@@ -265,7 +265,7 @@ export async function testPatchApplication(
   targetDir,
   stripLevel = 1,
 ) {
-  const { spawn } = await import('@socketsecurity/registry/lib/spawn')
+  const { spawn } = await import('@socketsecurity/lib/spawn')
 
   try {
     // Use /bin/sh wrapper to ensure patch command is found in PATH.

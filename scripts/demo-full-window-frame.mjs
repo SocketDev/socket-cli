@@ -237,8 +237,8 @@ function cleanup(exitCode = 0) {
 
     // Clear screen.
     process.stdout.write('\x1B[2J\x1B[H')
-  } catch (e) {
     // Ignore errors during cleanup.
+  } catch {
   }
 
   if (exitCode === 0) {

@@ -2,6 +2,7 @@
  * Demo script to showcase the ASCII header with shimmer animation using built files.
  */
 
+// eslint-disable-next-line import-x/no-unresolved, n/no-missing-import
 import { renderShimmerFrame } from '../dist/utils/terminal/ascii-header.mjs'
 
 const THEMES = ['default', 'cyberpunk', 'forest', 'ocean', 'sunset']

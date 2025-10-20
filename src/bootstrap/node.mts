@@ -38,6 +38,7 @@ async function main(): Promise<void> {
     console.error('Socket CLI not installed yet.')
     console.error('Installing from npm...')
     console.error('TODO: Implement download from npm registry')
+    // eslint-disable-next-line n/no-process-exit
     process.exit(1)
   }
 
@@ -52,10 +53,12 @@ async function main(): Promise<void> {
 
   child.on('error', error => {
     console.error('Failed to spawn CLI:', error)
+    // eslint-disable-next-line n/no-process-exit
     process.exit(1)
   })
 
   child.on('exit', code => {
+    // eslint-disable-next-line n/no-process-exit
     process.exit(code ?? 0)
   })
 }
@@ -64,6 +67,7 @@ async function main(): Promise<void> {
 if (import.meta.url === `file://${process.argv[1]}`) {
   main().catch(error => {
     console.error('Bootstrap error:', error)
+    // eslint-disable-next-line n/no-process-exit
     process.exit(1)
   })
 }

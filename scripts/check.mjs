@@ -3,12 +3,12 @@
  * Runs code quality checks: ESLint and TypeScript type checking.
  */
 
-import { parseArgs } from '@socketsecurity/registry/lib/argv/parse'
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { parseArgs } from '@socketsecurity/lib/argv/parse'
+import { logger } from '@socketsecurity/lib/logger'
 import {
   printFooter,
   printHeader,
-} from '@socketsecurity/registry/lib/stdio/header'
+} from '@socketsecurity/lib/stdio/header'
 
 import { runCommandQuiet } from './utils/run-command.mjs'
 

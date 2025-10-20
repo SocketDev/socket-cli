@@ -13,7 +13,7 @@
 
 import path from 'node:path'
 
-import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
+import { escapeRegExp } from '@socketsecurity/lib/regexps'
 
 import { homePath } from '../../constants/paths.mts'
 
