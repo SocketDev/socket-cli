@@ -102,7 +102,7 @@
     "@socketregistry/packageurl-js": "1.3.0",
     "@socketregistry/yocto-spinner": "1.0.24",
     "@socketsecurity/config": "3.0.1",
-    "@socketsecurity/registry": "1.5.3",
+    "@socketsecurity/registry": "link:../socket-registry/registry",
     "@socketsecurity/sdk": "1.11.2",
     "@types/cmd-shim": "5.0.2",
     "@types/ink": "2.0.3",

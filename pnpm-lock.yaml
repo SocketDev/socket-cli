@@ -200,8 +200,8 @@ importers:
         specifier: 3.0.1
         version: 3.0.1
       '@socketsecurity/registry':
-        specifier: 1.5.3
-        version: 1.5.3
+        specifier: link:../socket-registry/registry
+        version: link:../socket-registry/registry
       '@socketsecurity/sdk':
         specifier: 1.11.2
         version: 1.11.2
