@@ -34,8 +34,8 @@
   "scripts": {
     "build": "node --loader=./scripts/load.mjs scripts/build.mjs --src-only",
     "build:sea:internal:bootstrap": "rollup -c .config/rollup.cli-sea.config.mjs",
-    "build:js": "node scripts/extract-yoga-wasm.mjs && dotenvx -q run -f .env.local -- rollup -c .config/rollup.cli-js.config.mjs",
-    "build:watch": "node scripts/extract-yoga-wasm.mjs && dotenvx -q run -f .env.local -- rollup -c .config/rollup.cli-js.config.mjs --watch",
+    "build:js": "node scripts/extract-yoga-wasm.mjs && node .config/esbuild.cli.build.mjs",
+    "build:watch": "node scripts/extract-yoga-wasm.mjs && node .config/esbuild.cli.build.mjs --watch",
     "dev": "pnpm run build:watch",
     "publish:sea": "node --loader=./scripts/load.mjs scripts/publish-sea.mjs",
     "check": "node --loader=./scripts/load.mjs scripts/check.mjs",
@@ -65,12 +65,14 @@
   },
   "devDependencies": {
     "@babel/core": "7.28.4",
+    "@babel/parser": "^7.28.4",
     "@babel/plugin-proposal-export-default-from": "7.27.1",
     "@babel/plugin-transform-export-namespace-from": "7.27.1",
     "@babel/plugin-transform-runtime": "7.28.3",
     "@babel/preset-react": "7.27.1",
     "@babel/preset-typescript": "7.27.1",
     "@babel/runtime": "7.28.4",
+    "@babel/traverse": "^7.28.4",
     "@biomejs/biome": "2.2.4",
     "@coana-tech/cli": "14.12.51",
     "@cyclonedx/cdxgen": "11.7.0",
@@ -241,8 +243,7 @@
       "lodash@4.17.21": "patches/lodash@4.17.21.patch",
       "string_decoder@0.10.31": "patches/string_decoder@0.10.31.patch",
       "ink@6.3.1": "patches/ink@6.3.1.patch",
-      "yoga-layout": "patches/yoga-layout.patch",
-      "https-proxy-agent@7.0.6": "patches/https-proxy-agent@7.0.6.patch"
+      "yoga-layout": "patches/yoga-layout.patch"
     }
   },
   "typeCoverage": {
