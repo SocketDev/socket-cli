@@ -1,6 +1,5 @@
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
-
 import { describe, expect } from 'vitest'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
@@ -117,11 +116,7 @@ function compareVersions(v1: string, v2: string): number {
  * Helper to log command output for debugging.
  * Logs stdout and stderr to help diagnose test failures.
  */
-function logCommandOutput(
-  code: number,
-  stdout: string,
-  stderr: string,
-): void {
+function logCommandOutput(code: number, stdout: string, stderr: string): void {
   logger.error(`Command failed with code ${code}`)
   logger.error('stdout:', stdout)
   logger.error('stderr:', stderr)
