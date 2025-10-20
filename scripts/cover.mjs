@@ -6,10 +6,14 @@
  *   node scripts/cover.mjs [options]
  *
  * Options:
- *   --quiet    Suppress progress output
- *   --verbose  Show detailed output
- *   --open     Open coverage report in browser
+ *   --quiet      Suppress progress output
+ *   --verbose    Show detailed output
+ *   --open       Open coverage report in browser
+ *   --code-only  Run only code coverage (skip type coverage)
+ *   --type-only  Run only type coverage (skip code coverage)
  */
+
+import { parseArgs } from 'node:util'
 
 import { isQuiet, isVerbose } from '@socketsecurity/lib/argv/flags'
 import { logger } from '@socketsecurity/lib/logger'
@@ -44,6 +48,15 @@ async function main() {
   const verbose = isVerbose()
   const open = process.argv.includes('--open')
 
+  // Parse custom coverage flags
+  const { values } = parseArgs({
+    options: {
+      'code-only': { type: 'boolean', default: false },
+      'type-only': { type: 'boolean', default: false },
+    },
+    strict: false,
+  })
+
   try {
     if (!quiet) {
       printHeader('Running Coverage')
@@ -53,17 +66,116 @@ async function main() {
     const vitestArgs = ['exec', 'vitest', 'run', '--coverage']
     const typeCoverageArgs = ['exec', 'type-coverage']
 
-    const { exitCode, stderr, stdout } = await runCommandQuiet(
-      'pnpm',
-      vitestArgs,
-    )
+    let exitCode = 0
+    let codeCoverageResult
+    let typeCoverageResult
+
+    // Handle --type-only flag
+    if (values['type-only']) {
+      typeCoverageResult = await runCommandQuiet('pnpm', typeCoverageArgs)
+      exitCode = typeCoverageResult.exitCode
+
+      if (!quiet) {
+        // Display type coverage only
+        const typeCoverageOutput = (
+          typeCoverageResult.stdout + typeCoverageResult.stderr
+        ).trim()
+        const typeCoverageMatch = typeCoverageOutput.match(
+          /\([\d\s/]+\)\s+([\d.]+)%/,
+        )
+
+        if (typeCoverageMatch) {
+          const typeCoveragePercent = Number.parseFloat(typeCoverageMatch[1])
+          console.log()
+          console.log(' Coverage Summary')
+          console.log(' ───────────────────────────────')
+          console.log(` Type Coverage: ${typeCoveragePercent.toFixed(2)}%`)
+          console.log()
+        }
+      }
+
+      if (exitCode === 0) {
+        if (!quiet) printSuccess('Coverage completed successfully')
+      } else {
+        if (!quiet) printError('Coverage failed')
+        process.exitCode = 1
+      }
+      return
+    }
+
+    // Handle --code-only flag
+    if (values['code-only']) {
+      codeCoverageResult = await runCommandQuiet('pnpm', vitestArgs)
+      exitCode = codeCoverageResult.exitCode
+
+      if (!quiet) {
+        // Process code coverage output only
+        const ansiRegex = new RegExp(
+          `${String.fromCharCode(27)}\\[[0-9;]*m`,
+          'g',
+        )
+        const output = (codeCoverageResult.stdout + codeCoverageResult.stderr)
+          .replace(ansiRegex, '')
+          .replace(/(?:✧|︎|⚡)\s*/g, '')
+          .trim()
+
+        // Extract and display test summary
+        const testSummaryMatch = output.match(
+          /Test Files\s+\d+[^\n]*\n[\s\S]*?Duration\s+[\d.]+m?s[^\n]*/,
+        )
+        if (testSummaryMatch) {
+          console.log()
+          console.log(testSummaryMatch[0])
+          console.log()
+        }
+
+        // Extract and display coverage summary
+        const coverageHeaderMatch = output.match(
+          / % Coverage report from v8\n([-|]+)\n([^\n]+)\n\1/,
+        )
+        const allFilesMatch = output.match(
+          /All files\s+\|\s+([\d.]+)\s+\|[^\n]*/,
+        )
+
+        if (coverageHeaderMatch && allFilesMatch) {
+          console.log(' % Coverage report from v8')
+          console.log(coverageHeaderMatch[1])
+          console.log(coverageHeaderMatch[2])
+          console.log(coverageHeaderMatch[1])
+          console.log(allFilesMatch[0])
+          console.log(coverageHeaderMatch[1])
+          console.log()
+
+          const codeCoveragePercent = Number.parseFloat(allFilesMatch[1])
+          console.log(' Coverage Summary')
+          console.log(' ───────────────────────────────')
+          console.log(` Code Coverage: ${codeCoveragePercent.toFixed(2)}%`)
+          console.log()
+        } else if (exitCode !== 0) {
+          console.log('\n--- Output ---')
+          console.log(output)
+        }
+      }
+
+      if (exitCode === 0) {
+        if (!quiet) printSuccess('Coverage completed successfully')
+      } else {
+        if (!quiet) printError('Coverage failed')
+        process.exitCode = 1
+      }
+      return
+    }
+
+    // Default: run both code and type coverage
+    codeCoverageResult = await runCommandQuiet('pnpm', vitestArgs)
+    exitCode = codeCoverageResult.exitCode
 
     // Run type coverage
-    const typeCoverageResult = await runCommandQuiet('pnpm', typeCoverageArgs)
+    typeCoverageResult = await runCommandQuiet('pnpm', typeCoverageArgs)
 
     // Combine and clean output - remove ANSI color codes and spinner artifacts
     const ansiRegex = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, 'g')
-    const output = (stdout + stderr)
+    const output = (codeCoverageResult.stdout + codeCoverageResult.stderr)
       .replace(ansiRegex, '') // Remove ANSI color codes
       .replace(/(?:✧|︎|⚡)\s*/g, '') // Remove spinner artifacts
       .trim()
