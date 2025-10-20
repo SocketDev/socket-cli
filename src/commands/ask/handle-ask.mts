@@ -3,6 +3,7 @@ import path from 'node:path'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
+import nlp from 'compromise'
 
 import { outputAskCommand } from './output-ask.mts'
 
@@ -95,22 +96,44 @@ const ENVIRONMENT_KEYWORDS = {
 } as const
 
 /**
+ * Normalize query using NLP to handle variations in phrasing.
+ * Converts verbs to infinitive and nouns to singular for better matching.
+ */
+function normalizeQuery(query: string): string {
+  try {
+    const doc = nlp(query)
+
+    // Normalize verbs to infinitive form: "fixing" → "fix", "scanned" → "scan".
+    doc.verbs().toInfinitive()
+
+    // Normalize nouns to singular: "vulnerabilities" → "vulnerability".
+    doc.nouns().toSingular()
+
+    return doc.out('text').toLowerCase()
+  } catch (e) {
+    // Fallback to original query if NLP fails.
+    return query.toLowerCase()
+  }
+}
+
+/**
  * Parse natural language query into structured intent.
  */
 function parseIntent(query: string): ParsedIntent {
-  const lowerQuery = query.toLowerCase()
+  // Normalize the query to handle verb tenses, plurals, etc.
+  const lowerQuery = normalizeQuery(query)
 
   // Check for dry run.
   const isDryRun = lowerQuery.includes('dry run') || lowerQuery.includes('preview')
 
-  // Extract package name (looks for quoted strings or common patterns).
+  // Extract package name from original query (not normalized).
   let packageName: string | undefined
   const quotedMatch = query.match(/['"]([^'"]+)['"]/)
   if (quotedMatch) {
     packageName = quotedMatch[1]
   } else {
     // Try to find package name after "is", "check", etc.
-    const pkgMatch = lowerQuery.match(/(?:is|check|for|about|with)\s+([a-z0-9-@/]+)/i)
+    const pkgMatch = query.toLowerCase().match(/(?:is|check|for|about|with)\s+([a-z0-9-@/]+)/i)
     if (pkgMatch) {
       packageName = pkgMatch[1]
     }
