@@ -1,0 +1,48 @@
+diff --git a/dist/index.js b/dist/index.js
+index 1857f464724e20a12760b06f194022a4fec26ad0..55c747796f74d49fe32586070c85b4a487e9b297 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -103,7 +103,7 @@ class HttpsProxyAgent extends agent_base_1.Agent {
+             ? this.proxyHeaders()
+             : { ...this.proxyHeaders };
+         const host = net.isIPv6(opts.host) ? `[${opts.host}]` : opts.host;
+-        let payload = `CONNECT ${host}:${opts.port} HTTP/1.1\r\n`;
++        let payload = `CONNECT ${host}:${opts.port} HTTP/1.1\x0d\x0a`;
+         // Inject the `Proxy-Authorization` header if necessary.
+         if (proxy.username || proxy.password) {
+             const auth = `${decodeURIComponent(proxy.username)}:${decodeURIComponent(proxy.password)}`;
+@@ -116,10 +116,10 @@ class HttpsProxyAgent extends agent_base_1.Agent {
+                 : 'close';
+         }
+         for (const name of Object.keys(headers)) {
+-            payload += `${name}: ${headers[name]}\r\n`;
++            payload += `${name}: ${headers[name]}\x0d\x0a`;
+         }
+         const proxyResponsePromise = (0, parse_proxy_response_1.parseProxyResponse)(socket);
+-        socket.write(`${payload}\r\n`);
++        socket.write(`${payload}\x0d\x0a`);
+         const { connect, buffered } = await proxyResponsePromise;
+         req.emit('proxyConnect', connect);
+         this.emit('proxyConnect', connect, req);
+diff --git a/dist/parse-proxy-response.js b/dist/parse-proxy-response.js
+index d3f506f94130667ea0f9371e284a0bfe0935448f..f15dbe5e39ddce8870ce6eaf4b9c1c9707478fac 100644
+--- a/dist/parse-proxy-response.js
++++ b/dist/parse-proxy-response.js
+@@ -40,7 +40,7 @@ function parseProxyResponse(socket) {
+             buffers.push(b);
+             buffersLength += b.length;
+             const buffered = Buffer.concat(buffers, buffersLength);
+-            const endOfHeaders = buffered.indexOf('\r\n\r\n');
++            const endOfHeaders = buffered.indexOf('\x0d\x0a\x0d\x0a');
+             if (endOfHeaders === -1) {
+                 // keep buffering
+                 debug('have not received end of HTTP headers yet...');
+@@ -50,7 +50,7 @@ function parseProxyResponse(socket) {
+             const headerParts = buffered
+                 .slice(0, endOfHeaders)
+                 .toString('ascii')
+-                .split('\r\n');
++                .split('\x0d\x0a');
+             const firstLine = headerParts.shift();
+             if (!firstLine) {
+                 socket.destroy();
