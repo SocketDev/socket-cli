@@ -18,7 +18,6 @@ export type HandleFixConfig = Remap<
   FixConfig & {
     applyFixes: boolean
     ghsas: string[]
-    glob: string
     orgSlug: string
     outputKind: OutputKind
     unknownFlags: string[]
@@ -103,8 +102,9 @@ export async function handleFix({
   autopilot,
   cwd,
   disableMajorUpdates,
+  exclude,
   ghsas,
-  glob,
+  include,
   limit,
   minSatisfying,
   minimumReleaseAge,
@@ -119,14 +119,16 @@ export async function handleFix({
 }: HandleFixConfig) {
   debugFn('notice', `Starting fix command for ${orgSlug}`)
   debugDir('inspect', {
+    applyFixes,
     autopilot,
     cwd,
     disableMajorUpdates,
+    exclude,
     ghsas,
-    glob,
+    include,
     limit,
     minSatisfying,
-    applyFixes,
+    minimumReleaseAge,
     outputFile,
     outputKind,
     prCheck,
@@ -137,23 +139,24 @@ export async function handleFix({
 
   await outputFixResult(
     await coanaFix({
-      autopilot,
       applyFixes,
+      autopilot,
       cwd,
       disableMajorUpdates,
-      // Convert mixed CVE/GHSA/PURL inputs to GHSA IDs only
+      exclude,
+      // Convert mixed CVE/GHSA/PURL inputs to GHSA IDs only.
       ghsas: await convertIdsToGhsas(ghsas),
-      glob,
+      include,
       limit,
       minimumReleaseAge,
       minSatisfying,
       orgSlug,
+      outputFile,
       prCheck,
       rangeStyle,
       showAffectedDirectDependencies,
       spinner,
       unknownFlags,
-      outputFile,
     }),
     outputKind,
   )

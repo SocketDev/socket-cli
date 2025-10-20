@@ -131,10 +131,20 @@ const hiddenFlags: MeowFlags = {
     ...generalFlags['id'],
     hidden: true,
   } as MeowFlag,
-  glob: {
+  exclude: {
     type: 'string',
-    default: '',
-    description: 'Glob pattern to filter workspaces by',
+    default: [],
+    description:
+      'Exclude workspaces matching these patterns. Can be provided as comma separated values or as multiple flags',
+    isMultiple: true,
+    hidden: true,
+  },
+  include: {
+    type: 'string',
+    default: [],
+    description:
+      'Include workspaces matching these patterns. Can be provided as comma separated values or as multiple flags',
+    isMultiple: true,
     hidden: true,
   },
   maxSatisfying: {
@@ -246,7 +256,8 @@ async function run(
   const {
     applyFixes,
     autopilot,
-    glob,
+    exclude,
+    include,
     json,
     limit,
     majorUpdates,
@@ -261,21 +272,22 @@ async function run(
     // socket-cli/patches/meow#13.2.0.patch.
     unknownFlags = [],
   } = cli.flags as {
-    autopilot: boolean
     applyFixes: boolean
-    glob: string
-    limit: number
+    autopilot: boolean
+    exclude: string[]
+    include: string[]
     json: boolean
+    limit: number
     majorUpdates: boolean
     markdown: boolean
     maxSatisfying: boolean
     minSatisfying: boolean
+    minimumReleaseAge: string
+    outputFile: string
     prCheck: boolean
     rangeStyle: RangeStyle
     showAffectedDirectDependencies: boolean
     unknownFlags?: string[]
-    outputFile: string
-    minimumReleaseAge: string
   }
 
   const dryRun = !!cli.flags['dryRun']
@@ -334,23 +346,27 @@ async function run(
     ...cmdFlagValueToArray(cli.flags['purl']),
   ])
 
+  const includePatterns = cmdFlagValueToArray(include)
+  const excludePatterns = cmdFlagValueToArray(exclude)
+
   await handleFix({
-    autopilot,
     applyFixes,
+    autopilot,
     cwd,
     disableMajorUpdates,
+    exclude: excludePatterns,
     ghsas,
-    glob,
+    include: includePatterns,
     limit,
     minimumReleaseAge,
     minSatisfying,
-    prCheck,
     orgSlug,
+    outputFile,
     outputKind,
+    prCheck,
     rangeStyle,
     showAffectedDirectDependencies,
     spinner,
     unknownFlags,
-    outputFile,
   })
 }
