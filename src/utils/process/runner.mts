@@ -2,15 +2,14 @@
 
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
+import type { Spinner } from '@socketsecurity/registry/lib/spinner'
+
+import { Spinner as createSpinner } from '@socketsecurity/registry/lib/spinner'
+import { logger } from '@socketsecurity/registry/lib/logger'
+
 import { ensureIpcInStdio } from '../../shadow/stdio-ipc.mjs'
 import { debugNs } from '../debug.mts'
 import { formatExternalCliError } from '../error/display.mts'
-import {
-  logWithSpinnerCoordination,
-  pauseSpinners,
-  resumeSpinners,
-  startSpinner,
-} from '../terminal/spinner.mjs'
 
 import type { IpcObject } from '../../constants/shadow.mts'
 import type { CResult } from '../../types.mjs'
@@ -58,12 +57,13 @@ export async function runExternalCommand(
     debugNs('stdio', 'Using IPC for secure config passing')
   }
 
-  let stopSpinner: (() => void) | undefined
+  let spinner: Spinner | undefined
 
   try {
     // Start spinner if requested.
     if (showSpinner) {
-      stopSpinner = startSpinner(spinnerMessage)
+      spinner = createSpinner()
+      spinner.start(spinnerMessage)
     }
 
     // Handle stdio with IPC support.
@@ -95,9 +95,9 @@ export async function runExternalCommand(
     }
 
     // Stop spinner before processing output.
-    if (stopSpinner) {
-      stopSpinner()
-      stopSpinner = undefined
+    if (spinner) {
+      spinner.stop()
+      spinner = undefined
     }
 
     const stdout = spawnResult.stdout ? spawnResult.stdout.toString() : ''
@@ -106,11 +106,9 @@ export async function runExternalCommand(
 
     debugNs('stdio', `Command completed with exit code: ${exitCode}`)
 
-    // If buffered and has output, log it with spinner coordination.
+    // If buffered and has output, log it.
     if (bufferOutput && stdout) {
-      pauseSpinners()
-      logWithSpinnerCoordination('log', stdout)
-      resumeSpinners()
+      logger.log(stdout)
     }
 
     return {
@@ -123,8 +121,8 @@ export async function runExternalCommand(
     }
   } catch (e) {
     // Stop spinner on error.
-    if (stopSpinner) {
-      stopSpinner()
+    if (spinner) {
+      spinner.stop()
     }
 
     debugNs('error', `Command failed: ${command}`, e)

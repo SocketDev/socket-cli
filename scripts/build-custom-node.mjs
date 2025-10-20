@@ -1,9 +1,9 @@
 /**
- * @fileoverview Build custom Node.js v24.10.0 with yao-pkg patches
+ * @fileoverview Build Node.js v24.10.0 with custom patches
  *
- * This script produces a patched Node binary for use with @yao-pkg/pkg.
- * It downloads Node.js source, applies yao-pkg patches, configures with
- * size optimizations, and builds a custom binary.
+ * This script produces a custom Node binary for Socket CLI distribution.
+ * It clones Node.js source, applies custom patches, configures with
+ * size optimizations, and builds a standalone binary.
  *
  * Binary Size Optimization Strategy:
  *
@@ -19,19 +19,19 @@
  *     + strip --strip-all:         ~22 MB  (-27 MB: Remove debug symbols)
  *
  *   Stage 3: Compression (this script)
- *     + yao-pkg Brotli (VFS):      ~20 MB  (-29 MB: Compress Socket CLI code)
+ *     + pkg Brotli (VFS):          ~20 MB  (-29 MB: Compress Socket CLI code)
  *     + Node.js lib/ minify+Brotli:~18 MB  (-31 MB: Compress built-in modules)
  *
  *   TARGET ACHIEVED: ~18 MB < 30 MB goal! 🎉
  *
  * Size Breakdown:
  *   - Node.js lib/ (compressed):   ~2.5 MB  (minified + Brotli)
- *   - Socket CLI (VFS):           ~13 MB    (yao-pkg Brotli)
+ *   - Socket CLI (VFS):           ~13 MB    (pkg Brotli)
  *   - Native code (V8, libuv):     ~2.5 MB  (stripped)
  *
  * Compression Approach:
  *   1. Node.js built-in modules:  esbuild minify → Brotli quality 11
- *   2. Socket CLI application:    yao-pkg automatic Brotli compression
+ *   2. Socket CLI application:    pkg automatic Brotli compression
  *
  * Performance Impact:
  *   - Startup overhead:           ~50-100 ms (one-time decompression)
@@ -47,8 +47,8 @@
  *   node scripts/load.mjs build-custom-node --test-full  # Build + run full tests
  */
 
-import { existsSync } from 'node:fs'
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { existsSync, readdirSync } from 'node:fs'
+import { copyFile, cp, mkdir, readFile, stat, writeFile } from 'node:fs/promises'
 import { cpus, platform } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -98,10 +98,8 @@ const ROOT_DIR = join(__dirname, '..')
 const NODE_SOURCE_DIR = join(ROOT_DIR, '.node-source')
 const NODE_DIR = NODE_SOURCE_DIR // Alias for compatibility.
 const BUILD_DIR = join(ROOT_DIR, 'build')
-const YAO_PATCHES_DIR = join(BUILD_DIR, 'patches', 'yao')
-const SOCKET_PATCHES_DIR = join(BUILD_DIR, 'patches', 'socket')
-const YAO_PATCH_FILE = join(YAO_PATCHES_DIR, `node.${NODE_VERSION}.cpp.patch`)
-const YAO_PATCH_URL = `https://raw.githubusercontent.com/yao-pkg/pkg-fetch/main/patches/node.${NODE_VERSION}.cpp.patch`
+const PATCHES_DIR = join(BUILD_DIR, 'patches')
+const ADDITIONS_DIR = join(BUILD_DIR, 'additions')
 
 // Directory structure.
 // .node-source/ - Node.js source code (gitignored).
@@ -111,80 +109,82 @@ const YAO_PATCH_URL = `https://raw.githubusercontent.com/yao-pkg/pkg-fetch/main/
 // build/out/Signed/node - Stripped + signed binary (macOS ARM64 only, gitignored).
 // build/out/Final/node - Final binary for distribution (gitignored).
 // build/out/Sea/node - Binary for SEA builds (gitignored).
-// build/patches/yao/ - Yao-pkg patches (tracked in git).
-// build/patches/socket/ - Socket patches (tracked in git).
+// build/out/Distribution/node - Final distribution binary (gitignored).
+// build/patches/ - All Node.js custom patches (tracked in git).
 
 /**
  * Find Socket patches for this Node version
  */
 function findSocketPatches() {
-  const versionString = NODE_VERSION.replace(/\./g, '-')
-
-  // IMPORTANT: v24.10.0+ doesn't need V8 include path fixes
-  // Only v24.9.0 and earlier needed those fixes
-  // Warn if we find old patches with V8 fixes
-
-  // Try versioned combined patch first
-  const combinedPatch = `socket-node-modifications-${versionString}.patch`
-  if (existsSync(join(SOCKET_PATCHES_DIR, combinedPatch))) {
-    console.log(`   Found patch: ${combinedPatch}`)
-    console.log(
-      `   ⚠️  WARNING: Verify this patch is compatible with ${NODE_VERSION}`,
-    )
-    console.log('   ⚠️  v24.10.0+ should NOT have V8 include path fixes')
-    console.log()
-    return [combinedPatch]
+  if (!existsSync(PATCHES_DIR)) {
+    return []
   }
 
-  // Fall back to individual patches
-  const individualPatches = [
-    `fix-v8-include-paths-${versionString}.patch`,
-    `enable-sea-for-pkg-binaries-${versionString}.patch`,
-  ]
+  // Get all .patch files from patches directory.
+  const allPatchFiles = readdirSync(PATCHES_DIR)
+    .filter(f => f.endsWith('.patch'))
+    .sort()
 
-  // Filter to only patches that exist
-  const existingPatches = individualPatches.filter(patch =>
-    existsSync(join(SOCKET_PATCHES_DIR, patch)),
+  if (!allPatchFiles.length) {
+    return []
+  }
+
+  console.log(`   Found ${allPatchFiles.length} patch file(s) in ${PATCHES_DIR}`)
+
+  return allPatchFiles
+}
+
+/**
+ * Copy build additions to Node.js source tree
+ */
+async function copyBuildAdditions() {
+  if (!existsSync(ADDITIONS_DIR)) {
+    console.log('   No build additions directory found, skipping')
+    return
+  }
+
+  printHeader('Copying Build Additions')
+
+  // Recursively copy entire additions directory structure to Node.js source.
+  await cp(ADDITIONS_DIR, NODE_DIR, {
+    recursive: true,
+    force: true,
+    errorOnExist: false,
+  })
+
+  console.log(`✅ Copied ${ADDITIONS_DIR.replace(ROOT_DIR + '/', '')}/ → ${NODE_DIR}/`)
+  console.log()
+}
+
+/**
+ * Copy Socket security bootstrap to Node.js lib/ for brotli encoding.
+ * The bootstrap will be compressed along with other Node.js lib/ files.
+ */
+async function copySocketSecurityBootstrap() {
+  printHeader('Copying Socket Security Bootstrap')
+
+  const bootstrapSource = join(ROOT_DIR, 'bin', 'bootstrap.js')
+  const bootstrapDest = join(
+    NODE_DIR,
+    'lib',
+    'internal',
+    'bootstrap',
+    'socketsecurity.js',
   )
 
-  if (existingPatches.length > 0) {
-    console.log(`   Found ${existingPatches.length} individual patch(es)`)
-    if (existingPatches.some(p => p.includes('fix-v8-include-paths'))) {
-      console.log('   ⚠️  WARNING: V8 include path patch found')
-      console.log(
-        '   ⚠️  This patch is NOT needed for v24.10.0+ and may break the build',
-      )
-      console.log('   ⚠️  Consider using direct modifications instead')
-      console.log()
-    }
-    return existingPatches
-  }
+  // Create parent directory if needed.
+  await mkdir(dirname(bootstrapDest), { recursive: true })
 
-  // Last resort: try generic v24 patches
-  const genericPatches = [
-    'fix-v8-include-paths-v24.patch',
-    'enable-sea-for-pkg-binaries-v24.patch',
-  ].filter(patch => existsSync(join(SOCKET_PATCHES_DIR, patch)))
+  // Copy bootstrap to Node.js source (will be brotli encoded with other lib/ files).
+  await copyFile(bootstrapSource, bootstrapDest)
 
-  if (genericPatches.length > 0) {
-    console.log(`   Found ${genericPatches.length} generic v24 patch(es)`)
-    if (genericPatches.some(p => p.includes('fix-v8-include-paths'))) {
-      printWarning(
-        'Incompatible Patch Found',
-        `Generic V8 include path patch exists but is NOT compatible with ${NODE_VERSION}`,
-        [
-          'Remove: build/patches/socket/fix-v8-include-paths-v24.patch',
-          'Or rename to prevent automatic detection',
-          'v24.10.0+ uses direct modifications without patches',
-        ],
-      )
-      // Filter out V8 include patches for v24.10.0+
-      return genericPatches.filter(p => !p.includes('fix-v8-include-paths'))
-    }
-    return genericPatches
-  }
-
-  return []
+  const stats = await stat(bootstrapSource)
+  console.log(
+    `✅ ${bootstrapSource.replace(ROOT_DIR + '/', '')} → ` +
+      `${bootstrapDest.replace(NODE_DIR + '/', '')}`,
+  )
+  console.log(`   ${(stats.size / 1024).toFixed(1)}KB (will be brotli encoded with lib/ files)`)
+  console.log()
 }
 
 const CPU_COUNT = cpus().length
@@ -386,49 +386,6 @@ async function checkBuildEnvironment() {
   logger.logNewline()
 }
 
-/**
- * Check if yao-pkg patch is available.
- */
-async function checkYaoPkgPatch() {
-  printHeader('Checking yao-pkg Patch Availability')
-
-  // Try to download patch to see if it exists.
-  logger.log(`Checking for yao-pkg patch for ${NODE_VERSION}...`)
-  logger.log(`URL: ${YAO_PATCH_URL}`)
-  logger.log('')
-
-  try {
-    const result = await execCapture('curl', ['-sI', YAO_PATCH_URL])
-    if (result.includes('404') || result.includes('Not Found')) {
-      printWarning(
-        'yao-pkg Patch Not Available',
-        `The yao-pkg project has not released patches for ${NODE_VERSION} yet.`,
-        [
-          'Check https://github.com/yao-pkg/pkg-fetch/tree/main/patches for available versions',
-          'Use a supported Node.js version (check yao-pkg releases)',
-          `Wait for yao-pkg to release patches for ${NODE_VERSION}`,
-          'Update NODE_VERSION in this script to a supported version',
-        ],
-      )
-      return false
-    }
-
-    console.log(`✅ yao-pkg patch is available for ${NODE_VERSION}`)
-    console.log()
-    return true
-  } catch {
-    printWarning(
-      'Cannot Check Patch Availability',
-      'Unable to check if yao-pkg patch exists (network issue?).',
-      [
-        'Check your internet connection',
-        'Try again in a moment',
-        'Manually verify patch exists at: https://github.com/yao-pkg/pkg-fetch/tree/main/patches',
-      ],
-    )
-    return false
-  }
-}
 
 /**
  * Verify Socket modifications were applied correctly.
@@ -530,7 +487,7 @@ async function verifySocketModifications() {
       [
         'This is a BUG in the build script',
         'The binary will NOT work correctly with pkg',
-        'Run: node scripts/build-yao-pkg-node.mjs --clean',
+        'Run: node scripts/build-custom-node.mjs --clean',
         'Report this issue if it persists',
       ],
     )
@@ -549,139 +506,9 @@ async function verifySocketModifications() {
  * These source transforms help ensure Node.js APIs work correctly
  * when compiled without ICU (International Components for Unicode).
  */
-async function applySocketModificationsDirectly() {
-  console.log('🔧 Applying Socket modifications directly to source...')
-
-  // V8 include path fixes are NOT needed for v24.10.0+.
-  // The yao-pkg patches for v24.10.0 already have correct include paths.
-  // Only v24.9.0 needed these fixes.
-  console.log(
-    '   ℹ️  V8 include paths are correct for v24.10.0 (no fixes needed)',
-  )
-
-  // Modification 1: Enable SEA for pkg binaries.
-  // Override isSea() to return true for pkg-built executables.
-  const seaFile = join(NODE_DIR, 'lib', 'sea.js')
-  try {
-    const { readFileSync, writeFileSync } = await import('node:fs')
-    let content = readFileSync(seaFile, 'utf8')
-    const oldImport =
-      "const { isSea, getAsset: getAssetInternal, getAssetKeys: getAssetKeysInternal } = internalBinding('sea');"
-    const newImport = `const isSea = () => true;
-const { getAsset: getAssetInternal, getAssetKeys: getAssetKeysInternal } = internalBinding('sea');`
-
-    if (content.includes(oldImport)) {
-      content = content.replace(oldImport, newImport)
-      writeFileSync(seaFile, content, 'utf8')
-      console.log('   ✓ Modified: lib/sea.js (SEA support for pkg)')
-    }
-  } catch (e) {
-    console.warn(`   ⚠️  Skipped lib/sea.js: ${e.message}`)
-  }
-
-  // Modification 2: Fix String.prototype.localeCompare for --with-intl=none.
-  // When compiled without ICU, localeCompare should fall back to simple comparison.
-  // This ensures version sorting and other locale-aware operations work.
-  const primordialFile = join(
-    NODE_DIR,
-    'lib',
-    'internal',
-    'per_context',
-    'primordials.js',
-  )
-  try {
-    const { readFileSync, writeFileSync } = await import('node:fs')
-    if (existsSync(primordialFile)) {
-      let content = readFileSync(primordialFile, 'utf8')
-
-      // Add polyfill check for localeCompare when Intl is missing.
-      const polyfillCheck = `
-// Socket CLI: Polyfill localeCompare for --with-intl=none builds.
-if (typeof globalThis.Intl === 'undefined') {
-  const originalLocaleCompare = StringPrototype.localeCompare;
-  primordials.StringPrototypeLocaleCompare = function(str1, str2, locales, options) {
-    // Simple fallback: ASCII comparison when Intl is unavailable.
-    // Supports numeric option for version string sorting.
-    if (options?.numeric) {
-      // Extract numbers and compare numerically.
-      const num1 = parseInt(str1, 10);
-      const num2 = parseInt(str2, 10);
-      if (!isNaN(num1) && !isNaN(num2) && num1 !== num2) {
-        return num1 - num2;
-      }
-    }
-    // Default: lexicographic comparison.
-    return str1 < str2 ? -1 : str1 > str2 ? 1 : 0;
-  };
-}
-`
-
-      // Insert after primordials setup, before module.exports.
-      if (!content.includes('Socket CLI: Polyfill localeCompare')) {
-        const insertPoint = content.lastIndexOf('module.exports = primordials')
-        if (insertPoint !== -1) {
-          content =
-            content.slice(0, insertPoint) +
-            polyfillCheck +
-            '\n' +
-            content.slice(insertPoint)
-          writeFileSync(primordialFile, content, 'utf8')
-          console.log(
-            '   ✓ Modified: lib/internal/per_context/primordials.js (localeCompare polyfill)',
-          )
-        }
-      }
-    }
-  } catch (e) {
-    console.warn(`   ⚠️  Skipped primordials.js: ${e.message}`)
-  }
-
-  // Modification 3: Ensure String.prototype.normalize works without ICU.
-  // normalize() requires ICU for full Unicode normalization.
-  // Provide identity fallback when Intl is missing.
-  const stringFile = join(NODE_DIR, 'lib', 'internal', 'bootstrap', 'node.js')
-  try {
-    const { readFileSync, writeFileSync } = await import('node:fs')
-    if (existsSync(stringFile)) {
-      let content = readFileSync(stringFile, 'utf8')
-
-      // Add normalize polyfill.
-      const normalizePolyfill = `
-// Socket CLI: Polyfill String.prototype.normalize for --with-intl=none builds.
-if (typeof globalThis.Intl === 'undefined' && typeof String.prototype.normalize === 'undefined') {
-  // Identity function: return string unchanged.
-  // Full Unicode normalization requires ICU, not available in --with-intl=none.
-  String.prototype.normalize = function(form) {
-    return this.toString();
-  };
-}
-`
-
-      // Insert early in bootstrap, after global setup.
-      if (
-        !content.includes('Socket CLI: Polyfill String.prototype.normalize')
-      ) {
-        const insertPoint = content.indexOf("'use strict';")
-        if (insertPoint !== -1) {
-          const endOfLine = content.indexOf('\n', insertPoint)
-          content =
-            content.slice(0, endOfLine + 1) +
-            normalizePolyfill +
-            content.slice(endOfLine + 1)
-          writeFileSync(stringFile, content, 'utf8')
-          console.log(
-            '   ✓ Modified: lib/internal/bootstrap/node.js (normalize polyfill)',
-          )
-        }
-      }
-    }
-  } catch (e) {
-    console.warn(`   ⚠️  Skipped bootstrap/node.js: ${e.message}`)
-  }
-
-  console.log('✅ Socket modifications applied for --with-intl=none')
-  console.log()
-}
+// Function removed: applySocketModificationsDirectly().
+// Socket modifications must be applied via patches only.
+// If patches fail, the build should fail with helpful error messages.
 
 /**
  * Minify and compress Node.js JavaScript files for maximum binary size reduction.
@@ -961,7 +788,7 @@ async function main() {
   logger.log('')
   logger.log('🔨 Socket CLI - Custom Node.js Builder')
   logger.log(
-    `   Building Node.js ${NODE_VERSION} with yao-pkg + Socket patches`,
+    `   Building Node.js ${NODE_VERSION} with custom patches`,
   )
   logger.log('')
 
@@ -973,7 +800,7 @@ async function main() {
   await saveBuildLog(BUILD_DIR, '  Socket CLI - Custom Node.js Builder')
   await saveBuildLog(
     BUILD_DIR,
-    `  Node.js ${NODE_VERSION} with yao-pkg + Socket patches`,
+    `  Node.js ${NODE_VERSION} with custom patches`,
   )
   await saveBuildLog(BUILD_DIR, `  Started: ${new Date().toISOString()}`)
   await saveBuildLog(BUILD_DIR, '━'.repeat(60))
@@ -985,145 +812,6 @@ async function main() {
   await checkBuildEnvironment()
   await saveBuildLog(BUILD_DIR, 'Pre-flight checks completed')
   await saveBuildLog(BUILD_DIR, '')
-
-  // Phase 2: Check if yao-pkg patch exists.
-  await saveBuildLog(BUILD_DIR, 'Phase 2: Patch Availability Check')
-  const patchAvailable = await checkYaoPkgPatch()
-  if (!patchAvailable) {
-    printError(
-      'Cannot Proceed',
-      `yao-pkg patch for ${NODE_VERSION} is not available.`,
-      [
-        'Update NODE_VERSION in this script to a supported version',
-        'Check https://github.com/yao-pkg/pkg-fetch/tree/main/patches',
-        'Or wait for yao-pkg to release patches for this version',
-      ],
-    )
-    throw new Error('yao-pkg patch not available')
-  }
-
-  // Ensure patches directory exists.
-  await mkdir(YAO_PATCHES_DIR, { recursive: true })
-
-  // Check patches.json for offline builds and version validation.
-  const patchesJsonPath = join(YAO_PATCHES_DIR, 'patches.json')
-  let patchesMetadata = null
-  if (existsSync(patchesJsonPath)) {
-    try {
-      const patchesContent = await readFile(patchesJsonPath, 'utf8')
-      patchesMetadata = JSON.parse(patchesContent)
-
-      // Validate that this Node version has a patch entry.
-      if (patchesMetadata[NODE_VERSION]) {
-        console.log(`✅ patches.json contains entry for ${NODE_VERSION}`)
-        console.log(`   Expected patch: ${patchesMetadata[NODE_VERSION][0]}`)
-        console.log()
-      } else {
-        console.log(
-          `⚠️  patches.json does not contain entry for ${NODE_VERSION}`,
-        )
-        console.log(
-          `   Available versions: ${Object.keys(patchesMetadata).join(', ')}`,
-        )
-        console.log('   Will attempt to download from yao-pkg...')
-        console.log()
-      }
-    } catch (e) {
-      console.warn(`⚠️  Could not read patches.json: ${e.message}`)
-      console.log()
-    }
-  }
-
-  // Download yao-pkg patch if needed.
-  if (!existsSync(YAO_PATCH_FILE)) {
-    printHeader('Downloading yao-pkg Patch')
-    console.log(`Downloading from: ${YAO_PATCH_URL}`)
-    console.log(`Saving to: ${YAO_PATCH_FILE}`)
-    console.log('Auto-retry: Up to 3 attempts with integrity verification')
-    console.log()
-
-    try {
-      await downloadWithRetry(YAO_PATCH_URL, YAO_PATCH_FILE, {
-        maxRetries: 3,
-        verifyIntegrity: true,
-      })
-      console.log('✅ Patch downloaded and verified successfully')
-      console.log()
-
-      // Update patches.json with new version.
-      if (patchesMetadata && !patchesMetadata[NODE_VERSION]) {
-        const patchFileName = `node.${NODE_VERSION}.cpp.patch`
-        patchesMetadata[NODE_VERSION] = [patchFileName]
-
-        const { writeFile } = await import('node:fs/promises')
-        await writeFile(
-          patchesJsonPath,
-          `${JSON.stringify(patchesMetadata, null, 2)}\n`,
-          'utf8',
-        )
-        console.log(`✅ Updated patches.json with ${NODE_VERSION}`)
-        console.log()
-      }
-    } catch (e) {
-      printError(
-        'Download Failed',
-        `Failed to download yao-pkg patch: ${e.message}`,
-        [
-          'Check your internet connection',
-          'Try again in a few minutes',
-          'Manually download the patch:',
-          `  curl -L ${YAO_PATCH_URL} -o ${YAO_PATCH_FILE}`,
-          'Then re-run this script',
-        ],
-      )
-      throw new Error('Failed to download patch')
-    }
-  } else {
-    console.log(`✅ yao-pkg patch already exists: ${YAO_PATCH_FILE}`)
-    console.log()
-
-    // Verify existing patch integrity.
-    console.log('Verifying existing patch integrity...')
-    const integrity = await verifyFileIntegrity(YAO_PATCH_FILE)
-    if (!integrity.valid) {
-      printWarning(
-        'Corrupted Patch File',
-        `Existing patch file is corrupted: ${integrity.reason}`,
-        ['Re-downloading patch...'],
-      )
-
-      // Delete and re-download.
-      const { unlink } = await import('node:fs/promises')
-      await unlink(YAO_PATCH_FILE)
-
-      console.log('Downloading fresh copy...')
-      console.log()
-      try {
-        await downloadWithRetry(YAO_PATCH_URL, YAO_PATCH_FILE, {
-          maxRetries: 3,
-          verifyIntegrity: true,
-        })
-        console.log('✅ Patch re-downloaded and verified successfully')
-        console.log()
-      } catch (e) {
-        printError(
-          'Download Failed',
-          `Failed to download yao-pkg patch: ${e.message}`,
-          [
-            'Check your internet connection',
-            'Try again in a few minutes',
-            'Manually download the patch:',
-            `  curl -L ${YAO_PATCH_URL} -o ${YAO_PATCH_FILE}`,
-            'Then re-run this script',
-          ],
-        )
-        throw new Error('Failed to download patch')
-      }
-    } else {
-      console.log('✅ Existing patch integrity verified')
-      console.log()
-    }
-  }
 
   // Ensure build directory exists.
   await mkdir(BUILD_DIR, { recursive: true })
@@ -1259,85 +947,13 @@ async function main() {
     await resetNodeSource()
   }
 
-  // Validate yao-pkg patch before applying.
-  printHeader('Validating yao-pkg Patch')
-  console.log('Checking patch integrity and compatibility...')
-  console.log()
+  // Copy build additions before applying patches.
+  await copyBuildAdditions()
 
-  const yaoPatchValidation = await validatePatch(YAO_PATCH_FILE, NODE_VERSION)
-  if (!yaoPatchValidation.valid) {
-    printError('yao-pkg Patch Validation Failed', yaoPatchValidation.reason, [
-      'Re-download the patch:',
-      `  curl -o "${YAO_PATCH_FILE}" "${YAO_PATCH_URL}"`,
-      'Or try with --clean flag: node scripts/build-yao-pkg-node.mjs --clean',
-      'Check yao-pkg releases for compatible Node versions',
-    ])
-    throw new Error('yao-pkg patch validation failed')
-  }
+  // Copy Socket security bootstrap to Node.js lib/ (will be brotli encoded with other lib/ files).
+  await copySocketSecurityBootstrap()
 
-  if (yaoPatchValidation.metadata?.description) {
-    console.log(`📝 Patch: ${yaoPatchValidation.metadata.description}`)
-  }
-  console.log('✅ yao-pkg patch is valid and compatible')
-  console.log()
-
-  // Test yao-pkg patch application (dry-run).
-  printHeader('Testing yao-pkg Patch Application')
-  console.log('Running dry-run to ensure patch will apply cleanly...')
-  console.log()
-
-  const yaoPatchDryRun = await testPatchApplication(YAO_PATCH_FILE, NODE_DIR, 1)
-  if (!yaoPatchDryRun.canApply) {
-    printError('yao-pkg Patch Dry-Run Failed', yaoPatchDryRun.reason, [
-      'The patch cannot be applied to this Node.js version',
-      'Try with --clean flag: node scripts/build-yao-pkg-node.mjs --clean',
-      'Verify NODE_VERSION matches yao-pkg patch version',
-      'Check if source was modified:',
-      `  cd ${NODE_DIR} && git status`,
-    ])
-    if (yaoPatchDryRun.stderr) {
-      console.error('Patch error output:')
-      console.error(yaoPatchDryRun.stderr)
-    }
-    throw new Error('yao-pkg patch dry-run failed')
-  }
-
-  console.log('✅ yao-pkg patch dry-run successful (patch will apply cleanly)')
-  console.log()
-
-  // Apply yao-pkg patch.
-  printHeader('Applying yao-pkg Patches')
-  console.log('These patches enable:')
-  console.log('  • V8 bytecode compilation without source code')
-  console.log('  • PKG bootstrap system')
-  console.log('  • BAKERY placeholder for runtime args')
-  console.log()
-
-  try {
-    // Use --batch to avoid interactive prompts (for automation).
-    // Use --forward to skip patches that appear already applied.
-    await exec(
-      'sh',
-      ['-c', `patch -p1 --batch --forward < "${YAO_PATCH_FILE}"`],
-      { cwd: NODE_DIR },
-    )
-    console.log('✅ yao-pkg patch applied successfully')
-    console.log()
-  } catch {
-    printError(
-      'yao-pkg Patch Failed',
-      'The yao-pkg patch could not be applied to Node.js source.',
-      [
-        'The patch may not be compatible with this Node.js version',
-        'Try with --clean flag: node scripts/build-yao-pkg-node.mjs --clean',
-        'Check yao-pkg releases for compatible Node versions',
-        'Verify NODE_VERSION matches yao-pkg patch version',
-      ],
-    )
-    throw new Error('Failed to apply yao-pkg patch')
-  }
-
-  // Apply Socket-specific patches (or modifications directly).
+  // Apply Socket patches.
   const socketPatches = findSocketPatches()
 
   if (socketPatches.length > 0) {
@@ -1351,7 +967,7 @@ async function main() {
     let allValid = true
 
     for (const patchFile of socketPatches) {
-      const patchPath = join(SOCKET_PATCHES_DIR, patchFile)
+      const patchPath = join(PATCHES_DIR, patchFile)
       console.log(`Validating ${patchFile}...`)
 
       const validation = await validatePatch(patchPath, NODE_VERSION)
@@ -1386,16 +1002,19 @@ async function main() {
     }
 
     if (!allValid) {
-      printError(
-        'Socket Patch Validation Failed',
-        'One or more Socket patches are invalid or incompatible.',
-        [
-          'Check patch files for corruption',
-          'Verify patches match Node.js version',
-          'Falling back to direct modifications...',
-        ],
+      throw new Error(
+        `Socket patch validation failed.\n\n` +
+          `One or more Socket patches are invalid or incompatible with Node.js ${NODE_VERSION}.\n\n` +
+          `Possible causes:\n` +
+          `  - Patch files are corrupted\n` +
+          `  - Patches don't match this Node.js version\n` +
+          `  - Node.js source has unexpected modifications\n\n` +
+          `To fix:\n` +
+          `  1. Verify patch files in ${PATCHES_DIR}\n` +
+          `  2. Regenerate patches if needed:\n` +
+          `     node scripts/regenerate-node-patches.mjs --version=${NODE_VERSION}\n` +
+          `  3. Check build/patches/README.md for patch creation guide`,
       )
-      await applySocketModificationsDirectly()
     } else {
       // Check for conflicts between patches.
       const conflicts = checkPatchConflicts(patchData, NODE_VERSION)
@@ -1413,16 +1032,22 @@ async function main() {
         console.warn()
 
         if (!allValid) {
-          printError(
-            'Critical Patch Conflicts',
-            'Patches have critical conflicts and cannot be applied.',
-            [
-              'Remove conflicting patches',
-              'Use version-specific patches',
-              'Falling back to direct modifications...',
-            ],
+          throw new Error(
+            `Critical patch conflicts detected.\n\n` +
+              `Socket patches have conflicts and cannot be applied to Node.js ${NODE_VERSION}.\n\n` +
+              `Conflicts found:\n` +
+              conflicts
+                .filter(c => c.severity === 'error')
+                .map(c => `  - ${c.message}`)
+                .join('\n') +
+              `\n\n` +
+              `To fix:\n` +
+              `  1. Remove conflicting patches\n` +
+              `  2. Use version-specific patches for ${NODE_VERSION}\n` +
+              `  3. Regenerate patches:\n` +
+              `     node scripts/regenerate-node-patches.mjs --version=${NODE_VERSION}\n` +
+              `  4. See build/patches/socket/README.md for guidance`,
           )
-          await applySocketModificationsDirectly()
         }
       } else {
         console.log('✅ All Socket patches validated successfully')
@@ -1452,15 +1077,19 @@ async function main() {
         console.log()
 
         if (!allValid) {
-          printWarning(
-            'Socket Patches Cannot Be Applied',
-            'One or more Socket patches failed dry-run test.',
-            [
-              'Patches may be outdated for this Node.js version',
-              'Falling back to direct modifications...',
-            ],
+          throw new Error(
+            `Socket patches failed dry-run test.\n\n` +
+              `One or more Socket patches cannot be applied to Node.js ${NODE_VERSION}.\n\n` +
+              `This usually means:\n` +
+              `  - Patches are outdated for this Node.js version\n` +
+              `  - Node.js source has been modified unexpectedly\n` +
+              `  - Patch files are corrupted\n\n` +
+              `To fix:\n` +
+              `  1. Verify Node.js source is clean (no manual modifications)\n` +
+              `  2. Regenerate patches for ${NODE_VERSION}:\n` +
+              `     node scripts/regenerate-node-patches.mjs --version=${NODE_VERSION}\n` +
+              `  3. See build/patches/README.md for patch creation guide`,
           )
-          await applySocketModificationsDirectly()
         }
       }
 
@@ -1479,20 +1108,23 @@ async function main() {
               { cwd: NODE_DIR },
             )
             console.log(`✅ ${name} applied`)
-          } catch {
-            printError(
-              'Socket Patch Failed',
-              `Socket patch ${name} could not be applied.`,
-              [
-                'The patch may be outdated for this Node.js version',
-                'Trying direct modifications instead...',
-                'If this persists, regenerate patches:',
-                `  node scripts/regenerate-node-patches.mjs --version=${NODE_VERSION}`,
-              ],
+          } catch (e) {
+            throw new Error(
+              `Socket patch application failed.\n\n` +
+                `Failed to apply patch: ${name}\n` +
+                `Node.js version: ${NODE_VERSION}\n` +
+                `Patch path: ${patchPath}\n\n` +
+                `Error: ${e.message}\n\n` +
+                `This usually means:\n` +
+                `  - The patch is outdated for this Node.js version\n` +
+                `  - Node.js source has unexpected modifications\n` +
+                `  - Patch file format is invalid\n\n` +
+                `To fix:\n` +
+                `  1. Verify Node.js source is clean\n` +
+                `  2. Regenerate patches:\n` +
+                `     node scripts/regenerate-node-patches.mjs --version=${NODE_VERSION}\n` +
+                `  3. See build/patches/README.md for troubleshooting`,
             )
-            // Fall back to direct modifications.
-            await applySocketModificationsDirectly()
-            break
           }
         }
         console.log('✅ All Socket patches applied successfully')
@@ -1500,17 +1132,18 @@ async function main() {
       }
     }
   } else {
-    printHeader('Applying Socket Modifications')
-    console.log(`No patches found for ${NODE_VERSION}`)
-    console.log('Applying modifications directly to source files...')
-    console.log()
-    console.log('This is normal for new Node.js versions.')
-    console.log('After build succeeds, you can generate patches:')
-    console.log(
-      `  node scripts/regenerate-node-patches.mjs --version=${NODE_VERSION}`,
+    throw new Error(
+      `No Socket patches found for Node.js ${NODE_VERSION}.\n\n` +
+        `Expected patches in: ${PATCHES_DIR}\n\n` +
+        `Socket patches are required for all Node.js builds. Patches must exist before building.\n\n` +
+        `To fix:\n` +
+        `  1. Create patches for ${NODE_VERSION}:\n` +
+        `     node scripts/regenerate-node-patches.mjs --version=${NODE_VERSION}\n` +
+        `  2. See build/patches/README.md for patch creation guide\n` +
+        `  3. Patches must be committed to the repository before building\n\n` +
+        `Note: For new Node.js versions, you must create patches following the standard\n` +
+        `patch creation process documented in build/patches/README.md`,
     )
-    console.log()
-    await applySocketModificationsDirectly()
   }
 
   // Verify modifications were applied.
@@ -1616,7 +1249,7 @@ async function main() {
         '  - Out of memory: Close other applications',
         '  - Disk full: Free up disk space',
         '  - Compiler error: Check C++ compiler version',
-        'Try again with: node scripts/build-yao-pkg-node.mjs --clean',
+        'Try again with: node scripts/build-custom-node.mjs --clean',
       ],
     )
     throw e
@@ -1724,7 +1357,7 @@ async function main() {
       `Binary failed smoke test: ${smokeTest.reason}`,
       [
         'Strip command may have corrupted the binary',
-        'Try rebuilding: node scripts/build-yao-pkg-node.mjs --clean',
+        'Try rebuilding: node scripts/build-custom-node.mjs --clean',
         'Report this issue if it persists',
       ],
     )
@@ -1816,7 +1449,7 @@ async function main() {
   logger.success('Binary copied to build/out/Sea')
   logger.logNewline()
 
-  // Copy to yao-pkg cache directory (for yao-pkg to use).
+  // Copy to pkg cache directory (for pkg to use).
   const pkgCacheDir = join(
     process.env.HOME || process.env.USERPROFILE,
     '.pkg-cache',
@@ -1825,8 +1458,8 @@ async function main() {
   const targetName = `built-${NODE_VERSION}-${platform()}-${ARCH}${IS_MACOS && ARCH === 'arm64' ? '-signed' : ''}`
   const targetPath = join(pkgCacheDir, targetName)
 
-  printHeader('Installing to pkg Cache (for yao-pkg)')
-  logger.log('Installing binary to pkg cache so yao-pkg can find it...')
+  printHeader('Installing to pkg Cache')
+  logger.log('Installing binary to pkg cache...')
   logger.logNewline()
   logger.substep(`Source: ${outputFinalBinary}`)
   logger.substep(`Cache directory: ${pkgCacheDir}`)
@@ -1870,7 +1503,7 @@ async function main() {
         'Binary may be corrupted during copy',
         'Try rebuilding with --clean flag',
         `Remove cached binary: rm ${targetPath}`,
-        'Then rebuild: node scripts/build-yao-pkg-node.mjs --clean',
+        'Then rebuild: node scripts/build-custom-node.mjs --clean',
       ],
     )
     throw new Error('Cached binary verification failed')
@@ -1880,24 +1513,24 @@ async function main() {
   console.log('✅ pkg can use this binary')
   console.log()
 
-  // Copy final binary to build/out/Yao.
-  printHeader('Copying Final Binary to build/out/Yao')
-  logger.log('Creating final yao-pkg binary location...')
+  // Copy final binary to build/out/Distribution.
+  printHeader('Copying Final Binary to build/out/Distribution')
+  logger.log('Creating final distribution binary location...')
   logger.logNewline()
 
-  const yaoOutputDir = join(BUILD_DIR, 'out', 'Yao')
-  await mkdir(yaoOutputDir, { recursive: true })
-  const yaoOutputBinary = join(yaoOutputDir, 'node')
-  await exec('cp', [outputFinalBinary, yaoOutputBinary])
+  const distributionOutputDir = join(BUILD_DIR, 'out', 'Distribution')
+  await mkdir(distributionOutputDir, { recursive: true })
+  const distributionOutputBinary = join(distributionOutputDir, 'node')
+  await exec('cp', [outputFinalBinary, distributionOutputBinary])
 
-  logger.substep(`Yao directory: ${yaoOutputDir}`)
-  logger.substep('Binary: node (final yao-pkg build)')
+  logger.substep(`Distribution directory: ${distributionOutputDir}`)
+  logger.substep('Binary: node (final distribution build)')
   logger.logNewline()
-  logger.success('Final binary copied to build/out/Yao')
+  logger.success('Final binary copied to build/out/Distribution')
   logger.logNewline()
 
   // Report build complete.
-  const binarySize = await getFileSize(yaoOutputBinary)
+  const binarySize = await getFileSize(distributionOutputBinary)
   await createCheckpoint(BUILD_DIR, 'complete')
   await cleanCheckpoint(BUILD_DIR)
 
@@ -1929,7 +1562,7 @@ async function main() {
   logger.log(`   Stripped:     ${outputStrippedBinary}`)
   logger.log(`   Signed:       ${outputSignedBinary}`)
   logger.log(`   Final:        ${outputFinalBinary}`)
-  logger.log(`   Yao:          ${yaoOutputBinary}`)
+  logger.log(`   Distribution: ${distributionOutputBinary}`)
   logger.log(`   pkg cache:    ${targetPath}`)
   logger.logNewline()
 
@@ -1946,7 +1579,6 @@ async function main() {
 
   logger.log('💡 Helpful Commands:')
   logger.log('   Verify build: node scripts/verify-node-build.mjs')
-  logger.log('   Integration test: node scripts/test-yao-pkg-integration.mjs')
   logger.logNewline()
 
   logger.log('📚 Documentation:')
@@ -2012,7 +1644,7 @@ async function main() {
         [
           'Review test output above for details',
           'The binary may have issues with Socket CLI',
-          'Consider rebuilding: node scripts/build-yao-pkg-node.mjs --clean',
+          'Consider rebuilding: node scripts/build-custom-node.mjs --clean',
           'Or run tests manually: node scripts/test-with-custom-node.mjs',
         ],
       )

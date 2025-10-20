@@ -21,8 +21,11 @@ import {
   getShadowYarnBinPath,
 } from '../../constants/shadow.mts'
 import { getErrorCause } from '../error/errors.mts'
+import type { Spinner } from '@socketsecurity/registry/lib/spinner'
+
+import { Spinner as createSpinner } from '@socketsecurity/registry/lib/spinner'
+
 import { findUp } from '../fs/fs.mts'
-import { startSpinner } from '../terminal/spinner.mts'
 import { isYarnBerry } from '../yarn/version.mts'
 
 import type { IpcObject } from '../../constants/types.mts'
@@ -107,11 +110,12 @@ export async function runShadowCommand(
     ...spawnExtra,
   }
 
-  let stopSpinner: (() => void) | undefined
+  let spinner: Spinner | undefined
 
   try {
     if (opts.showSpinner && opts.spinnerMessage) {
-      stopSpinner = startSpinner(opts.spinnerMessage)
+      spinner = createSpinner()
+      spinner.start(opts.spinnerMessage)
     }
 
     let result: ShadowBinResult
@@ -139,16 +143,16 @@ export async function runShadowCommand(
       )
     }
 
-    if (stopSpinner) {
-      stopSpinner()
-      stopSpinner = undefined
+    if (spinner) {
+      spinner.stop()
+      spinner = undefined
     }
 
     const output = await result.spawnPromise
     return { ok: true, data: output.stdout.toString() }
   } catch (e) {
-    if (stopSpinner) {
-      stopSpinner()
+    if (spinner) {
+      spinner.stop()
     }
 
     const stderr = (e as { stderr?: unknown })?.stderr
@@ -186,11 +190,12 @@ export async function runShadowNpm(
     stdio: opts.stdio || 'inherit',
   }
 
-  let stopSpinner: (() => void) | undefined
+  let spinner: Spinner | undefined
 
   try {
     if (opts.showSpinner && opts.spinnerMessage) {
-      stopSpinner = startSpinner(opts.spinnerMessage)
+      spinner = createSpinner()
+      spinner.start(opts.spinnerMessage)
     }
 
     const shadowNpmBin = /*@__PURE__*/ require(getShadowNpmBinPath())
@@ -200,16 +205,16 @@ export async function runShadowNpm(
       spawnExtra,
     )
 
-    if (stopSpinner) {
-      stopSpinner()
-      stopSpinner = undefined
+    if (spinner) {
+      spinner.stop()
+      spinner = undefined
     }
 
     const output = await result.spawnPromise
     return { ok: true, data: output.stdout.toString() }
   } catch (e) {
-    if (stopSpinner) {
-      stopSpinner()
+    if (spinner) {
+      spinner.stop()
     }
 
     const stderr = (e as { stderr?: unknown })?.stderr

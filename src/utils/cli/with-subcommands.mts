@@ -16,6 +16,8 @@ import {
 } from '@socketsecurity/registry/lib/strings'
 
 
+
+
 import { NPM, NPX } from '../../constants/agents.mts'
 import {
   DRY_RUN_LABEL,
@@ -41,10 +43,15 @@ import { tildify } from '../fs/home-path.mts'
 import { getFlagListOutput, getHelpListOutput } from '../output/formatting.mts'
 import { spawnSocketPython } from '../python/standalone.mts'
 import { getVisibleTokenPrefix } from '../socket/sdk.mjs'
+import {
+  renderLogoWithFallback,
+  supportsFullColor,
+} from '../terminal/ascii-header.mts'
 import { socketPackageLink } from '../terminal/link.mts'
 
 import type { MeowFlag, MeowFlags } from '../../flags.mts'
 import type { Options, Result } from '../../meow.mts'
+import type { HeaderTheme } from '../terminal/ascii-header.mts'
 
 export interface CliAlias {
   description: string
@@ -153,12 +160,38 @@ function getTokenOrigin(): string {
 }
 
 /**
+ * Get header theme from flags, environment, or config.
+ */
+function getHeaderTheme(flags?: Record<string, unknown>): HeaderTheme {
+  const theme = flags?.['headerTheme'] || ENV.SOCKET_CLI_HEADER_THEME || getConfigValueOrUndef('headerTheme')
+  const validThemes: HeaderTheme[] = ['default', 'cyberpunk', 'forest', 'ocean', 'sunset']
+  return validThemes.includes(theme as HeaderTheme) ? (theme as HeaderTheme) : 'default'
+}
+
+/**
+ * Determine if header should animate (shimmer effect).
+ */
+function shouldAnimateHeader(flags?: Record<string, unknown>): boolean {
+  // Disable animation in CI, tests, or when explicitly disabled.
+  if (ENV.CI || ENV.VITEST || !process.stdout.isTTY || !supportsFullColor()) {
+    return false
+  }
+  // Check flags first, then config.
+  if (flags && 'animateHeader' in flags) {
+    return Boolean(flags['animateHeader'])
+  }
+  const animateConfig = getConfigValueOrUndef('animateHeader')
+  return animateConfig !== false
+}
+
+/**
  * Generate the ASCII banner header for Socket CLI commands.
  */
 function getAsciiHeader(
   command: string,
   orgFlag: string | undefined,
   compactMode = false,
+  flags?: Record<string, unknown>,
 ) {
   // Note: In tests we return <redacted> because otherwise snapshots will fail.
   const redacting = ENV.VITEST
@@ -213,16 +246,43 @@ function getAsciiHeader(
     return `CLI: ${cliVersion} | cmd: ${command} | org: ${compactOrg} | token: ${compactToken}`
   }
 
-  // Note: We could draw these with ascii box art instead but I worry about
-  //       portability and paste-ability. "simple" ascii chars just work.
-  const body = `
-   _____         _       _        /---------------
-  |   __|___ ___| |_ ___| |_      | CLI: ${cliVersion}
-  |__   | ${configFromFlagDot} |  _| '_| -_|  _|     | ${showNodeVersion ? `Node: ${nodeVersion}, ` : ''}token: ${shownToken}, ${orgPart}
-  |_____|___|___|_,_|___|_|.dev   | Command: \`${command}\`, cwd: ${relCwd}
-  `.trim()
-  // Note: logger will auto-append a newline.
-  return `   ${body}`
+  // Get theme for header styling.
+  const theme = getHeaderTheme(flags)
+  const animate = shouldAnimateHeader(flags)
+
+  // Render animated logo if supported, otherwise static.
+  // Use frame 0 for static render in non-animated mode.
+  const frame = animate ? Math.floor(Date.now() / 100) % 20 : null
+  const logo = renderLogoWithFallback(frame, theme)
+
+  // Build info lines.
+  const infoLines = [
+    `/---------------`,
+    `| CLI: ${cliVersion}`,
+    `| ${showNodeVersion ? `Node: ${nodeVersion}, ` : ''}token: ${shownToken}, ${orgPart}`,
+    `| Command: \`${command}\`, cwd: ${relCwd}`,
+  ]
+
+  // Combine logo and info side-by-side.
+  const logoLines = logo.split('\n')
+  const combinedLines: string[] = []
+
+  for (let i = 0; i < Math.max(logoLines.length, infoLines.length); i++) {
+    const logoLine = logoLines[i] || ''
+    const infoLine = infoLines[i] || ''
+    // Pad logo line to consistent width (36 chars for the ASCII art).
+    const paddedLogo = logoLine + ' '.repeat(Math.max(0, 36 - stripAnsi(logoLine).length))
+    combinedLines.push(`  ${paddedLogo}${infoLine}`)
+  }
+
+  return combinedLines.join('\n')
+}
+
+/**
+ * Strip ANSI codes for length calculation.
+ */
+function stripAnsi(str: string): string {
+  return str.replace(/\x1b\[[0-9;]*m/g, '')
 }
 
 /**
@@ -268,6 +328,7 @@ export function emitBanner(
   name: string,
   orgFlag: string | undefined,
   compactMode = false,
+  flags?: Record<string, unknown>,
 ) {
   // Print a banner at the top of each command.
   // This helps with brand recognition and marketing.
@@ -277,7 +338,7 @@ export function emitBanner(
   //       and pipe the result to other tools. By emitting the banner over stderr
   //       you can do something like `socket scan view xyz | jq | process`.
   //       The spinner also emits over stderr for example.
-  logger.error(getAsciiHeader(name, orgFlag, compactMode))
+  logger.error(getAsciiHeader(name, orgFlag, compactMode, flags))
 }
 
 // For debugging. Whenever you call meowOrExit it will store the command here
@@ -482,7 +543,7 @@ export async function meowWithSubcommands(
 
   if (configOverrideResult?.ok === false) {
     if (!shouldSuppressBanner(cli1.flags)) {
-      emitBanner(name, orgFlag, compactMode)
+      emitBanner(name, orgFlag, compactMode, cli1.flags)
       // Add newline in stderr.
       logger.error('')
     }
@@ -785,7 +846,7 @@ export async function meowWithSubcommands(
 
   // ...else we provide basic instructions and help.
   if (!shouldSuppressBanner(cli2.flags)) {
-    emitBanner(name, orgFlag, compactMode)
+    emitBanner(name, orgFlag, compactMode, cli2.flags)
     // Meow will add newline so don't add stderr spacing here.
   }
   if (!helpFlag && !helpCategory && dryRun) {
@@ -908,7 +969,7 @@ export function meowOrExit(
   }
 
   if (!shouldSuppressBanner(cli.flags)) {
-    emitBanner(command, orgFlag, compactMode)
+    emitBanner(command, orgFlag, compactMode, cli.flags)
     // Add newline in stderr.
     // Meow help adds a newline too so we do it here.
     logger.error('')

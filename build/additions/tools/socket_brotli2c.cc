@@ -9,7 +9,9 @@
 #include <cstdarg>
 #include <cstdio>
 #include <functional>
+#include <iomanip>
 #include <map>
+#include <sstream>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -49,7 +51,7 @@ std::vector<uint8_t> CompressWithBrotli(const std::vector<char>& code,
                                          const std::string& var) {
   size_t input_size = code.size();
   size_t max_compressed_size = BrotliEncoderMaxCompressedSize(input_size);
-  std::vector<uint8_t> compressed(max_compressed_size);
+  std::vector<uint8_t> compressed_temp(max_compressed_size);
   size_t compressed_size = max_compressed_size;
 
   int result = BrotliEncoderCompress(
@@ -59,7 +61,7 @@ std::vector<uint8_t> CompressWithBrotli(const std::vector<char>& code,
       input_size,
       reinterpret_cast<const uint8_t*>(code.data()),
       &compressed_size,
-      compressed.data()
+      compressed_temp.data()
   );
 
   if (!result) {
@@ -67,14 +69,35 @@ std::vector<uint8_t> CompressWithBrotli(const std::vector<char>& code,
     return {};
   }
 
-  compressed.resize(compressed_size);
+  // Create result vector with 12-byte header + compressed data.
+  // Header format:
+  //   Offset 0-3:  Magic "BROT" (0x42, 0x52, 0x4F, 0x54)
+  //   Offset 4-11: Decompressed size (uint64_t little-endian)
+  //   Offset 12+:  Brotli-compressed data
+  const size_t header_size = 12;
+  std::vector<uint8_t> with_header(header_size + compressed_size);
+
+  // Write magic marker "BROT".
+  with_header[0] = 0x42;  // 'B'
+  with_header[1] = 0x52;  // 'R'
+  with_header[2] = 0x4F;  // 'O'
+  with_header[3] = 0x54;  // 'T'
+
+  // Write decompressed size as little-endian uint64_t.
+  uint64_t decompressed_size = static_cast<uint64_t>(input_size);
+  for (size_t i = 0; i < 8; i++) {
+    with_header[4 + i] = (decompressed_size >> (i * 8)) & 0xFF;
+  }
+
+  // Copy compressed data after header.
+  std::memcpy(with_header.data() + header_size, compressed_temp.data(), compressed_size);
 
   // Log compression stats.
-  double ratio = 100.0 * (1.0 - (double)compressed_size / input_size);
-  Debug("Compressed %s: %zu → %zu bytes (%.1f%% reduction)\n",
-        var.c_str(), input_size, compressed_size, ratio);
+  double ratio = 100.0 * (1.0 - (double)(header_size + compressed_size) / input_size);
+  Debug("Compressed %s: %zu → %zu bytes with header (%.1f%% reduction)\n",
+        var.c_str(), input_size, header_size + compressed_size, ratio);
 
-  return compressed;
+  return with_header;
 }
 
 void PrintUvError(const char* syscall, const char* filename, int error) {
@@ -651,30 +674,44 @@ bool Simplify(const std::vector<char>& code,
   return false;
 }
 
-// SOCKET MODIFICATION: Force byte array output regardless of NODE_JS2C_USE_STRING_LITERALS.
-// This wrapper ensures Brotli-compressed binary data is ALWAYS output as byte arrays,
-// never as string literals (which would break on binary data like "BR" magic bytes).
+// SOCKET MODIFICATION: Direct byte array generation for Brotli-compressed binary data.
+// Solution 2: Bypass GetDefinitionImpl entirely and generate byte arrays directly.
+// This ensures Brotli-compressed binary data is ALWAYS output as byte arrays,
+// never as string literals (which break on binary data like "BR" magic bytes).
 //
-// The key insight: We need to instantiate GetDefinitionImpl when NODE_JS2C_USE_STRING_LITERALS
-// is NOT defined. The #undef inside a function doesn't work because template instantiation
-// happens at compile time based on the preprocessor state at the point of instantiation.
-//
-// Solution: Create a separate compilation unit scope where the macro is undefined.
-#ifdef NODE_JS2C_USE_STRING_LITERALS
-#undef NODE_JS2C_USE_STRING_LITERALS
-#define SOCKET_REDEFINED_STRING_LITERALS
-#endif
+// This function generates C++ byte array definitions directly without relying on
+// the GetDefinitionImpl template or NODE_JS2C_USE_STRING_LITERALS preprocessor flag.
+Fragment GenerateByteArrayDefinition(const std::vector<char>& data, const std::string& var) {
+  // Generate the array declaration: static const uint8_t var_raw[] = {...};
+  std::stringstream ss;
+  ss << "static const uint8_t " << var << "_raw[] = {";
 
-// This function is compiled in a scope where NODE_JS2C_USE_STRING_LITERALS is NOT defined.
-// Therefore, GetDefinitionImpl will use byte array mode.
-Fragment GetDefinitionAsByteArray(const std::vector<char>& data, const std::string& var) {
-  return GetDefinitionImpl<char>(data, var, CodeType::kAscii);
+  // Generate the byte array initializer.
+  for (size_t i = 0; i < data.size(); i++) {
+    if (i > 0) {
+      ss << ",";
+    }
+    // Add newline every 16 bytes for readability.
+    if (i % 16 == 0) {
+      ss << "\n  ";
+    }
+    // Output byte as hex: 0x00 to 0xFF.
+    ss << "0x" << std::hex << std::setw(2) << std::setfill('0')
+       << (static_cast<unsigned int>(static_cast<uint8_t>(data[i])));
+  }
+  ss << "\n};\n";
+
+  // Generate the size declaration.
+  ss << "static const size_t " << var << "_raw_len = " << std::dec << data.size() << ";\n";
+
+  // Generate the resource struct (required by Node.js builtin loading).
+  ss << "static StaticExternalOneByteResource "
+     << var << "_resource(" << var << "_raw, " << data.size() << ", nullptr);\n";
+
+  // Convert stringstream to string, then to vector<char> (Fragment).
+  std::string result_str = ss.str();
+  return Fragment(result_str.begin(), result_str.end());
 }
-
-#ifdef SOCKET_REDEFINED_STRING_LITERALS
-#define NODE_JS2C_USE_STRING_LITERALS
-#undef SOCKET_REDEFINED_STRING_LITERALS
-#endif
 
 // SOCKET MODIFICATION: GetDefinition now compresses with Brotli and outputs as byte arrays.
 Fragment GetDefinition(const std::string& var, const std::vector<char>& code) {
@@ -686,15 +723,15 @@ Fragment GetDefinition(const std::string& var, const std::vector<char>& code) {
   if (compressed.empty()) {
     fprintf(stderr, "Warning: Brotli compression failed for %s, using uncompressed\n", var.c_str());
     // Fallback to uncompressed byte arrays.
-    return GetDefinitionAsByteArray(code, var);
+    return GenerateByteArrayDefinition(code, var);
   }
 
   // Convert compressed bytes to char vector.
   std::vector<char> compressed_char(compressed.begin(), compressed.end());
 
   // Binary compressed data MUST use byte arrays.
-  // Use our helper function that was compiled with byte array mode.
-  return GetDefinitionAsByteArray(compressed_char, var);
+  // Use our direct byte array generator.
+  return GenerateByteArrayDefinition(compressed_char, var);
 }
 
 int AddModule(const std::string& filename,
@@ -847,7 +884,9 @@ int AddGypi(const std::string& var,
   assert(var == "config");
 
   std::vector<char> transformed = JSONify(code);
-  definitions->emplace_back(GetDefinition(var, transformed));
+  // Socket: Do NOT compress config.gypi - it's parsed as JSON, not loaded as JS.
+  // Use direct byte array generation instead of GetDefinition (which compresses).
+  definitions->emplace_back(GenerateByteArrayDefinition(transformed, var));
   return 0;
 }
 

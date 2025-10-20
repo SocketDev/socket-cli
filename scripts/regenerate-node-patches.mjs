@@ -6,10 +6,8 @@
  *
  * Process:
  * 1. Clone fresh Node.js at specified version
- * 2. Apply yao-pkg patches
- * 3. Commit (this becomes our baseline)
- * 4. Apply Socket modifications
- * 5. Generate patches from diff
+ * 2. Apply Socket modifications
+ * 3. Generate patches from diff
  *
  * Usage:
  *   node scripts/regenerate-node-patches.mjs --version v24.10.0
@@ -45,8 +43,7 @@ if (!NODE_VERSION.startsWith('v')) {
 const ROOT_DIR = join(__dirname, '..')
 const WORK_DIR = join(ROOT_DIR, '.patch-gen')
 const NODE_DIR = join(WORK_DIR, 'node')
-const YAO_PATCH_URL = `https://raw.githubusercontent.com/yao-pkg/pkg-fetch/main/patches/node.${NODE_VERSION}.cpp.patch`
-const OUTPUT_DIR = join(ROOT_DIR, 'build', 'patches', 'socket')
+const OUTPUT_DIR = join(ROOT_DIR, 'build', 'patches')
 
 /**
  * Execute a command
@@ -227,32 +224,7 @@ async function main() {
   )
   console.log()
 
-  // Step 2: Download and apply yao-pkg patch
-  console.log('📥 Downloading yao-pkg patch...')
-  const yaoPatchFile = join(WORK_DIR, `node.${NODE_VERSION}.cpp.patch`)
-
-  try {
-    await exec('curl', ['-sL', YAO_PATCH_URL, '-o', yaoPatchFile])
-    // eslint-disable-next-line no-unused-vars
-  } catch (_e) {
-    console.error(`❌ Failed to download yao-pkg patch from: ${YAO_PATCH_URL}`)
-    console.error('   The patch may not exist yet for this Node.js version.')
-    process.exit(1)
-  }
-
-  console.log('🩹 Applying yao-pkg patch...')
-  await exec('sh', ['-c', `patch -p1 < "${yaoPatchFile}"`], { cwd: NODE_DIR })
-  console.log()
-
-  // Step 3: Commit baseline (yao-pkg patches applied)
-  console.log('📌 Creating baseline commit...')
-  await exec('git', ['add', '-A'], { cwd: NODE_DIR })
-  await exec('git', ['commit', '-m', 'Apply yao-pkg patches'], {
-    cwd: NODE_DIR,
-  })
-  console.log()
-
-  // Step 4: Apply Socket modifications
+  // Step 2: Apply Socket modifications
   await applySocketModifications()
 
   // Step 5: Generate patches

@@ -193,7 +193,6 @@
       "@octokit/graphql": "9.0.1",
       "@octokit/request-error": "7.0.0",
       "@rollup/plugin-commonjs": "28.0.6",
-      "@yao-pkg/pkg-fetch": "github:yao-pkg/pkg-fetch#4ae27c5c2af9b63f816529aa17b19f47c9d4de9d",
       "aggregate-error": "npm:@socketregistry/aggregate-error@^1.0.15",
       "ansi-regex": "6.1.0",
       "brace-expansion": "2.0.2",
@@ -237,7 +236,8 @@
       "graceful-fs@4.2.11": "patches/graceful-fs@4.2.11.patch",
       "lodash@4.17.21": "patches/lodash@4.17.21.patch",
       "string_decoder@0.10.31": "patches/string_decoder@0.10.31.patch",
-      "ink@6.3.1": "patches/ink@6.3.1.patch"
+      "ink@6.3.1": "patches/ink@6.3.1.patch",
+      "yoga-layout": "patches/yoga-layout.patch"
     }
   },
   "typeCoverage": {
