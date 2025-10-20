@@ -102,7 +102,7 @@
     "@npmcli/config": "10.4.0",
     "@octokit/graphql": "9.0.1",
     "@octokit/openapi-types": "25.1.0",
-    "@octokit/request-error": "7.0.0",
+    "@octokit/request-error": "7.0.1",
     "@octokit/rest": "22.0.0",
     "@octokit/types": "14.1.0",
     "@pnpm/dependency-path": "1001.1.0",

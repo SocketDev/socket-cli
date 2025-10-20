@@ -6,7 +6,7 @@ settings:
 
 overrides:
   '@octokit/graphql': 9.0.1
-  '@octokit/request-error': 7.0.0
+  '@octokit/request-error': 7.0.1
   '@rollup/plugin-commonjs': 28.0.6
   '@socketsecurity/registry': 1.1.17
   aggregate-error: npm:@socketregistry/aggregate-error@^1.0.14
@@ -151,8 +151,8 @@ importers:
         specifier: 25.1.0
         version: 25.1.0
       '@octokit/request-error':
-        specifier: 7.0.0
-        version: 7.0.0
+        specifier: 7.0.1
+        version: 7.0.1
       '@octokit/rest':
         specifier: 22.0.0
         version: 22.0.0
@@ -1158,8 +1158,8 @@ packages:
     peerDependencies:
       '@octokit/core': '>=6'
 
-  '@octokit/request-error@7.0.0':
-    resolution: {integrity: sha512-KRA7VTGdVyJlh0cP5Tf94hTiYVVqmt2f3I6mnimmaVz4UG3gQV/k4mDJlJv3X67iX6rmN7gSHCF8ssqeMnmhZg==}
+  '@octokit/request-error@7.0.1':
+    resolution: {integrity: sha512-CZpFwV4+1uBrxu7Cw8E5NCXDWFNf18MSY23TdxCBgjw1tXXHvTrZVsXlW8hgFTOLw8RQR1BBrMvYRtuyaijHMA==}
     engines: {node: '>= 20'}
 
   '@octokit/request@10.0.5':
@@ -3621,6 +3621,11 @@ packages:
     engines: {node: ^18.17.0 || >=20.5.0}
     hasBin: true
 
+  node-gyp@11.5.0:
+    resolution: {integrity: sha512-ra7Kvlhxn5V9Slyus0ygMa2h+UqExPqUIkfk7Pc8QTLT956JLSy51uWFwHtIYy0vI8cB4BDhc/S03+880My/LQ==}
+    engines: {node: ^18.17.0 || >=20.5.0}
+    hasBin: true
+
   node-releases@2.0.23:
     resolution: {integrity: sha512-cCmFDMSm26S6tQSDpBCg/NR8NENrVPhAJSf+XbxBG4rPFaaonlEoE9wHQmun+cls499TQGSb7ZyPBRlzgKfpeg==}
 
@@ -4906,7 +4911,7 @@ snapshots:
       node-addon-api: 8.5.0
       prebuild-install: 7.1.3
     optionalDependencies:
-      node-gyp: 11.4.2
+      node-gyp: 11.5.0
     transitivePeerDependencies:
       - supports-color
     optional: true
@@ -5687,7 +5692,7 @@ snapshots:
       '@npmcli/node-gyp': 4.0.0
       '@npmcli/package-json': 7.0.1
       '@npmcli/promise-spawn': 8.0.3
-      node-gyp: 11.4.2
+      node-gyp: 11.5.0
       proc-log: 5.0.0
       which: 5.0.0
     transitivePeerDependencies:
@@ -5711,7 +5716,7 @@ snapshots:
       '@octokit/auth-token': 6.0.0
       '@octokit/graphql': 9.0.1
       '@octokit/request': 10.0.5
-      '@octokit/request-error': 7.0.0
+      '@octokit/request-error': 7.0.1
       '@octokit/types': 15.0.0
       before-after-hook: 4.0.0
       universal-user-agent: 7.0.3
@@ -5745,14 +5750,14 @@ snapshots:
       '@octokit/core': 7.0.5
       '@octokit/types': 15.0.0
 
-  '@octokit/request-error@7.0.0':
+  '@octokit/request-error@7.0.1':
     dependencies:
-      '@octokit/types': 14.1.0
+      '@octokit/types': 15.0.0
 
   '@octokit/request@10.0.5':
     dependencies:
       '@octokit/endpoint': 11.0.1
-      '@octokit/request-error': 7.0.0
+      '@octokit/request-error': 7.0.1
       '@octokit/types': 15.0.0
       fast-content-type-parse: 3.0.0
       universal-user-agent: 7.0.3
@@ -8242,6 +8247,21 @@ snapshots:
   node-fetch-native@1.6.7: {}
 
   node-gyp@11.4.2:
+    dependencies:
+      env-paths: 2.2.1
+      exponential-backoff: 3.1.3
+      graceful-fs: 4.2.11(patch_hash=17007d43dcc01ee2047730ab13eb23c41adc01ae0f24ee872b1fe69142db5200)
+      make-fetch-happen: 14.0.3
+      nopt: 8.1.0
+      proc-log: 5.0.0
+      semver: 7.7.2
+      tar: 7.5.1
+      tinyglobby: 0.2.15
+      which: 5.0.0
+    transitivePeerDependencies:
+      - supports-color
+
+  node-gyp@11.5.0:
     dependencies:
       env-paths: 2.2.1
       exponential-backoff: 3.1.3
