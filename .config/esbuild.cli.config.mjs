@@ -4,6 +4,8 @@
  * esbuild is much faster than Rollup and doesn't have template literal corruption issues.
  */
 
+import { execSync } from 'node:child_process'
+import { randomUUID } from 'node:crypto'
 import { existsSync, readFileSync } from 'node:fs'
 import { builtinModules } from 'node:module'
 import path from 'node:path'
@@ -11,6 +13,36 @@ import { fileURLToPath } from 'node:url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '..')
+
+// Read package.json for version and metadata.
+const packageJson = JSON.parse(
+  readFileSync(path.join(rootPath, 'package.json'), 'utf-8'),
+)
+
+// Get current git commit hash.
+let gitHash = ''
+try {
+  gitHash = execSync('git rev-parse --short HEAD', {
+    cwd: rootPath,
+    encoding: 'utf-8',
+  }).trim()
+} catch {}
+
+// Get dependency versions from package.json devDependencies.
+const coanaVersion = packageJson.devDependencies?.['@coana-tech/cli'] || ''
+const cdxgenVersion = packageJson.devDependencies?.['@cyclonedx/cdxgen'] || ''
+const synpVersion = packageJson.devDependencies?.['synp'] || ''
+
+// Build-time constants that can be overridden by environment variables.
+const publishedBuild = process.env['INLINED_SOCKET_CLI_PUBLISHED_BUILD'] === '1'
+const legacyBuild = process.env['INLINED_SOCKET_CLI_LEGACY_BUILD'] === '1'
+const sentryBuild = process.env['INLINED_SOCKET_CLI_SENTRY_BUILD'] === '1'
+
+// Compute version hash (matches Rollup implementation).
+const randUuidSegment = randomUUID().split('-')[0]
+const versionHash = `${packageJson.version}:${gitHash}:${randUuidSegment}${
+  publishedBuild ? '' : ':dev'
+}`
 
 // Get local Socket package paths.
 const socketPackages = {
@@ -97,10 +129,36 @@ export default {
   define: {
     'process.env.NODE_ENV': '"production"',
     'import.meta.url': '__importMetaUrl',
+    // Inject build metadata (replaces Rollup replace plugin).
+    'process.env.INLINED_SOCKET_CLI_VERSION': JSON.stringify(
+      packageJson.version,
+    ),
+    'process.env.INLINED_SOCKET_CLI_VERSION_HASH': JSON.stringify(versionHash),
+    'process.env.INLINED_SOCKET_CLI_NAME': JSON.stringify(packageJson.name),
+    'process.env.INLINED_SOCKET_CLI_HOMEPAGE': JSON.stringify(
+      packageJson.homepage,
+    ),
+    'process.env.INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION':
+      JSON.stringify(coanaVersion),
+    'process.env.INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION':
+      JSON.stringify(cdxgenVersion),
+    'process.env.INLINED_SOCKET_CLI_SYNP_VERSION': JSON.stringify(synpVersion),
+    'process.env.INLINED_SOCKET_CLI_PUBLISHED_BUILD': JSON.stringify(
+      publishedBuild ? '1' : '',
+    ),
+    'process.env.INLINED_SOCKET_CLI_LEGACY_BUILD': JSON.stringify(
+      legacyBuild ? '1' : '',
+    ),
+    'process.env.INLINED_SOCKET_CLI_SENTRY_BUILD': JSON.stringify(
+      sentryBuild ? '1' : '',
+    ),
+    // Python version/tag are optional and typically empty for standard builds.
+    'process.env.INLINED_SOCKET_CLI_PYTHON_VERSION': JSON.stringify(''),
+    'process.env.INLINED_SOCKET_CLI_PYTHON_BUILD_TAG': JSON.stringify(''),
   },
 
   // Inject import.meta.url polyfill for CJS.
-  inject: [path.join(__dirname, 'esbuild-inject-import-meta.js')],
+  inject: [path.join(__dirname, 'esbuild-inject-import-meta.mjs')],
 
   // Handle special cases with plugins.
   plugins: [
