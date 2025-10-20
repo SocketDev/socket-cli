@@ -16,6 +16,7 @@ let semanticIndex: any = null
 
 // ONNX embedding pipeline for deep semantic matching (lazy-loaded, ~17MB model).
 let embeddingPipeline: any = null
+let embeddingPipelineFailure: boolean = false
 const commandEmbeddings: Record<string, Float32Array> = {}
 
 // Confidence thresholds.
@@ -229,6 +230,11 @@ async function getEmbeddingPipeline() {
     return embeddingPipeline
   }
 
+  // If we already failed to load, don't try again.
+  if (embeddingPipelineFailure) {
+    return null
+  }
+
   try {
     logger.info('🧠 Loading semantic model (first use only)...')
 
@@ -241,6 +247,7 @@ async function getEmbeddingPipeline() {
 
     return embeddingPipeline
   } catch (e) {
+    embeddingPipelineFailure = true
     logger.warn('Semantic model unavailable:', e.message)
     return null
   }
@@ -359,10 +366,19 @@ async function parseIntent(query: string): Promise<ParsedIntent> {
   if (quotedMatch) {
     packageName = quotedMatch[1]
   } else {
-    // Try to find package name after "is", "check", etc.
-    const pkgMatch = query.toLowerCase().match(/(?:is|check|for|about|with)\s+([a-z0-9-@/]+)/i)
+    // Try to find package name after "is", "check", "about", "with".
+    // Must look like a real package (has @, /, or contains common package patterns).
+    const pkgMatch = query.toLowerCase().match(/(?:is|check|about|with)\s+([a-z0-9-@/]+)/i)
     if (pkgMatch) {
-      packageName = pkgMatch[1]
+      const candidate = pkgMatch[1]
+      // Only accept if it looks like a real package name (not common words).
+      if (candidate.includes('@') || candidate.includes('/') || candidate.match(/^[a-z0-9-]+$/)) {
+        // Reject common command words.
+        const commonWords = ['scan', 'fix', 'patch', 'optimize', 'vulnerabilities', 'issues', 'problems', 'alerts', 'security', 'safe', 'check']
+        if (!commonWords.includes(candidate)) {
+          packageName = candidate
+        }
+      }
     }
   }
 

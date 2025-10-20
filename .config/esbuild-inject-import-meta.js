@@ -4,9 +4,7 @@
  */
 
 // Convert __filename to file:// URL format.
-module.exports = {
-  __importMetaUrl:
-    typeof __filename !== 'undefined'
-      ? `file://${__filename.replace(/\\/g, '/')}`
-      : 'file:///unknown',
-}
+export const __importMetaUrl =
+  typeof __filename !== 'undefined'
+    ? `file://${__filename.replace(/\\/g, '/')}`
+    : 'file:///unknown'
