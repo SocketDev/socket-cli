@@ -40,6 +40,7 @@
     "publish:sea": "node --loader=./scripts/load.mjs scripts/publish-sea.mjs",
     "check": "node --loader=./scripts/load.mjs scripts/check.mjs",
     "check-ci": "pnpm run check",
+    "claude": "node scripts/claude.mjs",
     "lint": "node --loader=./scripts/load.mjs scripts/lint.mjs",
     "lint-ci": "pnpm run lint",
     "type": "tsc --noEmit",
