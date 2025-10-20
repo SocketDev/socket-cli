@@ -1,0 +1,83 @@
+#!/usr/bin/expect -f
+# Test script that takes snapshots at key moments.
+
+set timeout 30
+log_user 1
+
+# Start the demo.
+spawn node scripts/load.mjs demo-final-tui
+
+# Wait for initialization.
+sleep 3
+
+puts "\n\[SNAPSHOT 1\] Initial state - 1 line textarea"
+# Take snapshot.
+send ""
+expect *
+sleep 1
+
+# Expand.
+puts "\n\[ACTION\] Expanding with Ctrl+N x5..."
+send "\x0E"
+sleep 0.5
+send "\x0E"
+sleep 0.5
+send "\x0E"
+sleep 0.5
+send "\x0E"
+sleep 0.5
+send "\x0E"
+sleep 1
+
+puts "\n\[SNAPSHOT 2\] After expansion - 6 line textarea"
+send ""
+expect *
+sleep 1
+
+# Collapse.
+puts "\n\[ACTION\] Collapsing with Enter..."
+send "\r"
+sleep 2
+
+puts "\n\[SNAPSHOT 3\] After collapse - checking for garbling"
+send ""
+expect *
+sleep 1
+
+# Expand again.
+puts "\n\[ACTION\] Expanding again with Ctrl+N x5..."
+send "\x0E"
+sleep 0.5
+send "\x0E"
+sleep 0.5
+send "\x0E"
+sleep 0.5
+send "\x0E"
+sleep 0.5
+send "\x0E"
+sleep 1
+
+puts "\n\[SNAPSHOT 4\] Second expansion"
+send ""
+expect *
+sleep 1
+
+# Collapse again.
+puts "\n\[ACTION\] Collapsing again with Enter..."
+send "\r"
+sleep 2
+
+puts "\n\[SNAPSHOT 5\] Second collapse - checking for jumping garbling"
+send ""
+expect *
+sleep 2
+
+puts "\n\n=== TEST SUMMARY ==="
+puts "The test completed 2 expand/collapse cycles."
+puts "If no garbling was visible in the snapshots, the fix is working!"
+
+# Exit.
+send "q"
+sleep 1
+
+expect eof

@@ -55,6 +55,7 @@
 #include "node_union_bytes.h"
 #include "v8.h"
 #include <brotli/decode.h>
+#include <cstdio>
 #include <cstring>
 #include <memory>
 
@@ -159,12 +160,18 @@ inline v8::MaybeLocal<v8::String> LoadBuiltinSourceWithBrotli(
   }
 
   // Step 6: Create V8 string from decompressed JavaScript.
-  return v8::String::NewFromOneByte(
+  auto maybe_string = v8::String::NewFromOneByte(
       isolate,
       decompressed.get(),
       v8::NewStringType::kNormal,
       static_cast<int>(actual_size)
   );
+
+  if (maybe_string.IsEmpty()) {
+    return source.ToStringChecked(isolate);
+  }
+
+  return maybe_string;
 }
 
 }  // namespace builtins

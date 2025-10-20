@@ -145,6 +145,13 @@ if (typeof exports === 'object' && exports !== null) {
 }
 
 export const commonFlags: MeowFlags = {
+  animateHeader: {
+    type: 'boolean',
+    default: true,
+    description: 'Disable animated header shimmer effect',
+    // Hidden to allow custom documenting of the negated `--no-animate-header` variant.
+    hidden: true,
+  },
   banner: {
     type: 'boolean',
     default: true,
@@ -157,6 +164,12 @@ export const commonFlags: MeowFlags = {
     default: false,
     description: 'Use compact single-line header format (auto-enabled in CI)',
     // Only show in root command.
+    hidden: true,
+  },
+  headerTheme: {
+    type: 'string',
+    default: 'default',
+    description: 'Header color theme (default, cyberpunk, forest, ocean, sunset)',
     hidden: true,
   },
   config: {

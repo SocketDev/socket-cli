@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 
 /**
  * @fileoverview Unified script loader with alias support.

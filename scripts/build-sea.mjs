@@ -459,7 +459,7 @@ async function buildTarget(target, options) {
 
   // Use the thin bootstrap for minimal size.
   const tsEntryPoint = normalizePath(
-    path.join(__dirname, '..', 'src', 'sea', 'bootstrap.mts'),
+    path.join(__dirname, '..', 'src', 'stub', 'bootstrap.mts'),
   )
 
   // Ensure output directory exists.

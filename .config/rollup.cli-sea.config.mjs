@@ -17,7 +17,7 @@ const rootDir = path.join(__dirname, '..')
 
 export default {
   input:
-    process.env.SEA_BOOTSTRAP || path.join(rootDir, 'src/sea/bootstrap.mts'),
+    process.env.SEA_BOOTSTRAP || path.join(rootDir, 'src/stub/bootstrap.mts'),
   output: {
     file:
       process.env.SEA_OUTPUT || path.join(rootDir, 'dist/sea/bootstrap.cjs'),
