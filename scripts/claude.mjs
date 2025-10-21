@@ -341,6 +341,242 @@ async function celebrateSuccess(costTracker, stats = {}) {
   }
 }
 
+/**
+ * Analyze error to identify root cause and suggest fix strategies.
+ */
+async function analyzeRootCause(claudeCmd, error, context = {}) {
+  const ctx = { __proto__: null, ...context }
+  const errorHash = hashError(error)
+
+  // Check cache first.
+  const cachePath = path.join(STORAGE_PATHS.cache, `analysis-${errorHash}.json`)
+  try {
+    if (existsSync(cachePath)) {
+      const cached = JSON.parse(await fs.readFile(cachePath, 'utf8'))
+      const age = Date.now() - cached.timestamp
+      // Cache valid for 1 hour.
+      if (age < 60 * 60 * 1000) {
+        log.substep(colors.gray('Using cached analysis'))
+        return cached.analysis
+      }
+    }
+  } catch {
+    // Ignore cache errors.
+  }
+
+  // Load error history for learning.
+  const history = await loadErrorHistory()
+  const similarErrors = findSimilarErrors(errorHash, history)
+
+  log.progress('Analyzing root cause with Claude')
+
+  const prompt = `You are an expert software engineer analyzing a CI/test failure.
+
+**Error Output:**
+\`\`\`
+${error}
+\`\`\`
+
+**Context:**
+- Check name: ${ctx.checkName || 'Unknown'}
+- Repository: ${ctx.repoName || 'Unknown'}
+- Previous attempts: ${ctx.attempts || 0}
+
+${similarErrors.length > 0 ? `**Similar Past Errors:**\n${similarErrors.map(e => `- ${e.description}: ${e.outcome} (${e.strategy})`).join('\n')}\n` : ''}
+
+**Task:** Analyze this error and provide a structured diagnosis.
+
+**Output Format (JSON):**
+{
+  "rootCause": "Brief description of the actual problem (not symptoms)",
+  "confidence": 85,  // 0-100% how certain you are
+  "category": "type-error|lint|test-failure|build-error|env-issue|other",
+  "isEnvironmental": false,  // true if likely GitHub runner/network/rate-limit issue
+  "strategies": [
+    {
+      "name": "Fix type assertion",
+      "probability": 90,  // 0-100% estimated success probability
+      "description": "Add type assertion to resolve type mismatch",
+      "reasoning": "Error shows TypeScript expecting string but got number"
+    },
+    {
+      "name": "Update import",
+      "probability": 60,
+      "description": "Update import path or module resolution",
+      "reasoning": "Might be module resolution issue"
+    }
+  ],
+  "environmentalFactors": [
+    "Check if GitHub runner has sufficient memory",
+    "Verify network connectivity for package downloads"
+  ],
+  "explanation": "Detailed explanation of what's happening and why"
+}
+
+**Rules:**
+- Be specific about the root cause, not just symptoms
+- Rank strategies by success probability (highest first)
+- Include 1-3 strategies maximum
+- Mark as environmental if it's likely a runner/network/external issue
+- Use confidence scores honestly (50-70% = uncertain, 80-95% = confident, 95-100% = very confident)`
+
+  try {
+    const result = await runCommandWithOutput(
+      claudeCmd,
+      [
+        'code',
+        '--non-interactive',
+        '--output-format',
+        'text',
+        '--prompt',
+        prompt,
+      ],
+      { cwd: rootPath },
+    )
+
+    if (result.exitCode !== 0) {
+      log.warn('Analysis failed, proceeding without root cause info')
+      return null
+    }
+
+    // Parse JSON response.
+    const jsonMatch = result.stdout.match(/\{[\s\S]*\}/)
+    if (!jsonMatch) {
+      log.warn('Could not parse analysis, proceeding without root cause info')
+      return null
+    }
+
+    const analysis = JSON.parse(jsonMatch[0])
+
+    // Cache the analysis.
+    try {
+      await fs.writeFile(
+        cachePath,
+        JSON.stringify(
+          {
+            analysis,
+            errorHash,
+            timestamp: Date.now(),
+          },
+          null,
+          2,
+        ),
+      )
+    } catch {
+      // Ignore cache write errors.
+    }
+
+    return analysis
+  } catch (e) {
+    log.warn(`Analysis error: ${e.message}`)
+    return null
+  }
+}
+
+/**
+ * Load error history from storage.
+ */
+async function loadErrorHistory() {
+  const historyPath = path.join(CLAUDE_HOME, 'error-history.json')
+  try {
+    if (existsSync(historyPath)) {
+      const data = JSON.parse(await fs.readFile(historyPath, 'utf8'))
+      // Only return recent history (last 100 errors).
+      return data.errors.slice(-100)
+    }
+  } catch {
+    // Ignore errors.
+  }
+  return []
+}
+
+/**
+ * Save error outcome to history for learning.
+ */
+async function saveErrorHistory(errorHash, outcome, strategy, description) {
+  const historyPath = path.join(CLAUDE_HOME, 'error-history.json')
+  try {
+    let data = { errors: [] }
+    if (existsSync(historyPath)) {
+      data = JSON.parse(await fs.readFile(historyPath, 'utf8'))
+    }
+
+    // 'success' | 'failed'
+    data.errors.push({
+      errorHash,
+      outcome,
+      strategy,
+      description,
+      timestamp: Date.now(),
+    })
+
+    // Keep only last 200 errors.
+    if (data.errors.length > 200) {
+      data.errors = data.errors.slice(-200)
+    }
+
+    await fs.writeFile(historyPath, JSON.stringify(data, null, 2))
+  } catch {
+    // Ignore errors.
+  }
+}
+
+/**
+ * Find similar errors from history.
+ */
+function findSimilarErrors(errorHash, history) {
+  return history
+    .filter(e => e.errorHash === errorHash && e.outcome === 'success')
+    .slice(-3)
+}
+
+/**
+ * Display root cause analysis to user.
+ */
+function displayAnalysis(analysis) {
+  if (!analysis) {
+    return
+  }
+
+  console.log(colors.cyan('\n🔍 Root Cause Analysis:'))
+  console.log(
+    `  Cause: ${analysis.rootCause} ${colors.gray(`(${analysis.confidence}% confident)`)}`,
+  )
+  console.log(`  Category: ${analysis.category}`)
+
+  if (analysis.isEnvironmental) {
+    console.log(
+      colors.yellow(
+        '\n  ⚠ This appears to be an environmental issue (runner/network/external)',
+      ),
+    )
+    if (analysis.environmentalFactors.length > 0) {
+      console.log(colors.yellow('  Factors to check:'))
+      analysis.environmentalFactors.forEach(factor => {
+        console.log(colors.yellow(`    - ${factor}`))
+      })
+    }
+  }
+
+  if (analysis.strategies.length > 0) {
+    console.log(
+      colors.cyan('\n💡 Fix Strategies (ranked by success probability):'),
+    )
+    analysis.strategies.forEach((strategy, i) => {
+      console.log(
+        `  ${i + 1}. ${colors.bold(strategy.name)} ${colors.gray(`(${strategy.probability}%)`)}`,
+      )
+      console.log(`     ${strategy.description}`)
+      console.log(colors.gray(`     ${strategy.reasoning}`))
+    })
+  }
+
+  if (analysis.explanation) {
+    console.log(colors.cyan('\n📖 Explanation:'))
+    console.log(colors.gray(`  ${analysis.explanation}`))
+  }
+}
+
 async function runCommand(command, args = [], options = {}) {
   const opts = { __proto__: null, ...options }
   return new Promise((resolve, reject) => {
@@ -3351,6 +3587,8 @@ async function runGreen(claudeCmd, options = {}) {
   ]
 
   let autoFixAttempts = 0
+  let lastAnalysis = null
+  let lastErrorHash = null
 
   for (const check of localChecks) {
     log.progress(`[${repoName}] ${check.name}`)
@@ -3385,6 +3623,29 @@ async function runGreen(claudeCmd, options = {}) {
       seenErrors.add(errorHash)
       autoFixAttempts++
 
+      // Analyze root cause before attempting fix.
+      const analysis = await analyzeRootCause(claudeCmd, errorOutput, {
+        checkName: check.name,
+        repoName,
+        attempts: autoFixAttempts,
+      })
+
+      // Save for history tracking.
+      lastAnalysis = analysis
+      lastErrorHash = errorHash
+
+      // Display analysis to user.
+      if (analysis) {
+        displayAnalysis(analysis)
+
+        // Warn if environmental issue.
+        if (analysis.isEnvironmental && analysis.confidence > 70) {
+          log.warn(
+            'This looks like an environmental issue - fix may not help. Consider checking runner status.',
+          )
+        }
+      }
+
       // Decide whether to auto-fix or go interactive
       const isAutoMode = autoFixAttempts <= MAX_AUTO_FIX_ATTEMPTS
 
@@ -3394,10 +3655,31 @@ async function runGreen(claudeCmd, options = {}) {
           `[${repoName}] Auto-fix attempt ${autoFixAttempts}/${MAX_AUTO_FIX_ATTEMPTS}`,
         )
 
+        // Build fix prompt with analysis if available.
         const fixPrompt = `You are fixing a CI/build issue automatically. The command "${check.cmd} ${check.args.join(' ')}" failed in the ${path.basename(rootPath)} project.
 
 Error output:
 ${errorOutput}
+
+${
+  analysis
+    ? `
+Root Cause Analysis:
+- Problem: ${analysis.rootCause}
+- Confidence: ${analysis.confidence}%
+- Category: ${analysis.category}
+
+Recommended Fix Strategy:
+${
+  analysis.strategies[0]
+    ? `- ${analysis.strategies[0].name} (${analysis.strategies[0].probability}% success probability)
+  ${analysis.strategies[0].description}
+  Reasoning: ${analysis.strategies[0].reasoning}`
+    : 'No specific strategy recommended'
+}
+`
+    : ''
+}
 
 Your task:
 1. Analyze the error
@@ -3476,6 +3758,16 @@ Fix this issue now by making the necessary changes.`
         })
 
         if (retryResult.exitCode !== 0) {
+          // Auto-fix didn't work - save failure to history.
+          if (lastAnalysis) {
+            await saveErrorHistory(
+              lastErrorHash,
+              'failed',
+              lastAnalysis.strategies[0]?.name || 'auto-fix',
+              lastAnalysis.rootCause,
+            )
+          }
+
           // Auto-fix didn't work
           if (autoFixAttempts >= MAX_AUTO_FIX_ATTEMPTS) {
             // Switch to interactive mode
@@ -3534,6 +3826,16 @@ Let's work through this together to get CI passing.`
         log.info('Please fix this issue interactively')
         return false
       }
+    }
+
+    // Fix succeeded - save success to history.
+    if (lastAnalysis) {
+      await saveErrorHistory(
+        lastErrorHash,
+        'success',
+        lastAnalysis.strategies[0]?.name || 'auto-fix',
+        lastAnalysis.rootCause,
+      )
     }
 
     log.done(`${check.name} passed`)
