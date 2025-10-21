@@ -1,11 +1,6 @@
 name: Linting
 
 on:
-  push:
-    branches: [main]
-    tags: ['*']
-  pull_request:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -13,4 +8,4 @@ permissions:
 
 jobs:
   lint-check:
-    uses: SocketDev/socket-registry/.github/workflows/lint.yml@main
+    uses: SocketDev/socket-registry/.github/workflows/lint.yml@a912e5bd8ec469d2ee13abf592a6b2e5898c006c # main

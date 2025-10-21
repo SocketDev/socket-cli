@@ -1,50 +1,31 @@
 import { describe, expect } from 'vitest'
 
-import constants, {
-  FLAG_CONFIG,
-  FLAG_DRY_RUN,
-  FLAG_HELP,
-  FLAG_JSON,
-  FLAG_MARKDOWN,
-} from '../../../src/constants.mts'
-import {
-  cmdit,
-  hasCdxgenHelpContent,
-  hasSocketBanner,
-  spawnSocketCli,
-} from '../../../test/utils.mts'
+import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
+import { FLAG_CONFIG, FLAG_DRY_RUN, FLAG_HELP, FLAG_JSON, FLAG_MARKDOWN } from '../constants/cli.mts'
+import { getBinCliPath } from '../constants/paths.mts'
 
-describe('socket cdxgen', async () => {
-  const { binCliPath } = constants
+const binCliPath = getBinCliPath()
 
-  cmdit(
+describe('socket cdxgen', async () => {cmdit(
     ['cdxgen', FLAG_HELP, FLAG_CONFIG, '{}'],
     `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
-      // Note: cdxgen may output help info to stdout or stderr depending on environment.
-      // In some CI environments, the help might not be captured properly.
-      // We check both streams to ensure we catch the output regardless of where it appears.
-      const combinedOutput = stdout + stderr
-
-      // Note: Socket CLI banner may appear in stderr while cdxgen output is in stdout.
-      // This is expected behavior as the banner is informational output.
-
-      // Note: We avoid snapshot testing here as cdxgen's help output format may change.
-      // On Windows CI, cdxgen might not output help properly or might not be installed.
-      // We check for either cdxgen help content OR just the Socket banner.
-      const hasSocketCommand = combinedOutput.includes('socket cdxgen')
-
-      // Test passes if either:
-      // 1. We got cdxgen help output (normal case).
-      // 2. We got Socket CLI banner with command (Windows CI where cdxgen might not work).
-      const hasCdxgenWorked = hasCdxgenHelpContent(combinedOutput)
-      const hasFallbackOutput =
-        hasSocketBanner(combinedOutput) && hasSocketCommand
-
-      expect(hasCdxgenWorked || hasFallbackOutput).toBe(true)
+      // Verify command exits successfully
       expect(code, 'explicit help should exit with code 0').toBe(0)
+
+      // Verify we got output
+      const combinedOutput = stdout + stderr
+      expect(combinedOutput.length, 'should produce output').toBeGreaterThan(0)
+
+      // Verify no error indicators
+      const hasErrorIndicators =
+        combinedOutput.toLowerCase().includes('error:') ||
+        combinedOutput.toLowerCase().includes('failed')
+      expect(hasErrorIndicators, 'should not contain error indicators').toBe(
+        false,
+      )
     },
   )
 

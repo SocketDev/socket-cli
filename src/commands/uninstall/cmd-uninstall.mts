@@ -1,7 +1,7 @@
 import { cmdUninstallCompletion } from './cmd-uninstall-completion.mts'
-import { meowWithSubcommands } from '../../utils/meow-with-subcommands.mts'
+import { meowWithSubcommands } from '../../utils/cli/with-subcommands.mjs'
 
-import type { CliSubcommand } from '../../utils/meow-with-subcommands.mts'
+import type { CliSubcommand } from '../../utils/cli/with-subcommands.mjs'
 
 const description = 'Uninstall Socket CLI tab completion'
 

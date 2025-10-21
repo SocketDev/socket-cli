@@ -16,11 +16,12 @@ export function parsePackageSpecifiers(
       if (!pkg) {
         valid = false
         break
-      } else if (pkg.startsWith('pkg:')) {
+      }
+      if (pkg.startsWith('pkg:')) {
         // keep
         purls.push(pkg)
       } else {
-        purls.push('pkg:' + ecosystem + '/' + pkg)
+        purls.push(`pkg:${ecosystem}/${pkg}`)
       }
     }
     if (!purls.length) {
@@ -36,10 +37,11 @@ export function parsePackageSpecifiers(
         // At least one purl did not start with `pkg:eco/x` or `eco/x`.
         valid = false
         break
-      } else if (pkg.startsWith('pkg:')) {
+      }
+      if (pkg.startsWith('pkg:')) {
         purls.push(pkg)
       } else {
-        purls.push('pkg:' + pkg)
+        purls.push(`pkg:${pkg}`)
       }
     }
 

@@ -20,30 +20,46 @@ jobs:
       id-token: write
 
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-      - uses: SocketDev/socket-registry/.github/actions/setup@1543e937143cf84e5161ad18c04cbd99c8a4c6d8
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+      - uses: SocketDev/socket-registry/.github/actions/setup@a912e5bd8ec469d2ee13abf592a6b2e5898c006c # main
         with:
           scope: '@socketsecurity'
       - run: npm install -g npm@latest
       - run: pnpm install
-      - run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 pnpm run build:dist
-      - run: npm publish --provenance --access public --no-git-checks
+
+      # Build and publish 'socket' package (default).
+      - name: Build socket package
+        run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 pnpm run build:dist
+      - name: Publish socket package
+        run: cd dist && npm publish --provenance --access public --no-git-checks
         continue-on-error: true
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
-      - run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 INLINED_SOCKET_CLI_LEGACY_BUILD=1 pnpm run build:dist
+
+      # Build and publish '@socketsecurity/cli' package (legacy).
+      - name: Build @socketsecurity/cli package
+        run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 INLINED_SOCKET_CLI_LEGACY_BUILD=1 pnpm run build:dist
         env:
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
-      - run: npm publish --provenance --access public --no-git-checks
+      - name: Publish @socketsecurity/cli package
+        run: cd dist && npm publish --provenance --access public --no-git-checks
         continue-on-error: true
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
-      - run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 INLINED_SOCKET_CLI_SENTRY_BUILD=1 pnpm run build:dist
+
+      # Build and publish '@socketsecurity/cli-with-sentry' package.
+      - name: Build @socketsecurity/cli-with-sentry package
+        run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 INLINED_SOCKET_CLI_SENTRY_BUILD=1 pnpm run build:dist
         env:
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
+<<<<<<< HEAD
       - run: npm publish --provenance --access public --no-git-checks
+=======
+      - name: Publish @socketsecurity/cli-with-sentry package
+        run: cd dist && npm publish --provenance --access public --no-git-checks
+>>>>>>> 41c75fb6 (Update actions)
         continue-on-error: true
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

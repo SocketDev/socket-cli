@@ -1,6 +1,6 @@
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { logger } from '@socketsecurity/lib/logger'
 
-import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
+import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 
 import type { CResult } from '../../types.mts'
 
@@ -42,7 +42,7 @@ export async function outputInstallCompletion(
   logger.log('')
   logger.log('1. Reload your .bashrc script (best):')
   logger.log('')
-  logger.log(`   source ~/.bashrc`)
+  logger.log('   source ~/.bashrc')
   logger.log('')
   logger.log('2. Run these commands to load the completion script:')
   logger.log('')

@@ -2,8 +2,12 @@ import { describe, expect, it } from 'vitest'
 
 import FIXTURE from './audit-fixture.json' with { type: 'json' }
 import { outputAsJson, outputAsMarkdown } from './output-audit-log.mts'
+import { setupStandardOutputMocks } from '../../../test/helpers/index.mts'
+import { createSuccessResult } from '../../../test/helpers/mocks.mts'
 
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+
+setupStandardOutputMocks()
 
 type AuditLogs = SocketSdkSuccessResult<'getAuditLogEvents'>['data']['results']
 
@@ -11,7 +15,7 @@ describe('output-audit-log', () => {
   describe('json', () => {
     it('should return formatted json string', async () => {
       const r = await outputAsJson(
-        { ok: true, data: JSON.parse(JSON.stringify(FIXTURE)) },
+        createSuccessResult(JSON.parse(JSON.stringify(FIXTURE))),
         {
           logType: '',
           orgSlug: 'noorgslug',

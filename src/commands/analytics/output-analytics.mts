@@ -1,21 +1,15 @@
 import fs from 'node:fs/promises'
-import { createRequire } from 'node:module'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { logger } from '@socketsecurity/lib/logger'
 
-import constants from '../../constants.mts'
 import { debugFileOp } from '../../utils/debug.mts'
-import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
-import { mdTableStringNumber } from '../../utils/markdown.mts'
-import { serializeResultJson } from '../../utils/serialize-result-json.mts'
-import { fileLink } from '../../utils/terminal-link.mts'
+import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
+import { mdTableStringNumber } from '../../utils/output/markdown.mts'
+import { serializeResultJson } from '../../utils/output/result-json.mjs'
+import { fileLink } from '../../utils/terminal/link.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
-import type { Widgets } from 'blessed' // Note: Widgets does not seem to actually work as code :'(
-import type { grid as ContribGrid } from 'blessed-contrib'
-
-const require = createRequire(import.meta.url)
 
 const METRICS = [
   'total_critical_alerts',
@@ -122,7 +116,7 @@ export async function outputAnalytics(
       logger.log(serialized)
     }
   } else {
-    displayAnalyticsScreen(fdata)
+    await displayAnalyticsWithInk(fdata)
   }
 }
 
@@ -147,8 +141,7 @@ export function renderMarkdown(
   days: number,
   repoSlug: string,
 ): string {
-  return (
-    `
+  return `${`
 # Socket Alert Analytics
 
 These are the Socket.dev analytics for the ${repoSlug ? `${repoSlug} repo` : 'org'} of the past ${days} days
@@ -156,35 +149,35 @@ These are the Socket.dev analytics for the ${repoSlug ? `${repoSlug} repo` : 'or
 ${[
   [
     'Total critical alerts',
-    mdTableStringNumber('Date', 'Counts', data['total_critical_alerts']),
+    mdTableStringNumber('Date', 'Counts', data.total_critical_alerts),
   ],
   [
     'Total high alerts',
-    mdTableStringNumber('Date', 'Counts', data['total_high_alerts']),
+    mdTableStringNumber('Date', 'Counts', data.total_high_alerts),
   ],
   [
     'Total critical alerts added to the main branch',
-    mdTableStringNumber('Date', 'Counts', data['total_critical_added']),
+    mdTableStringNumber('Date', 'Counts', data.total_critical_added),
   ],
   [
     'Total high alerts added to the main branch',
-    mdTableStringNumber('Date', 'Counts', data['total_high_added']),
+    mdTableStringNumber('Date', 'Counts', data.total_high_added),
   ],
   [
     'Total critical alerts prevented from the main branch',
-    mdTableStringNumber('Date', 'Counts', data['total_critical_prevented']),
+    mdTableStringNumber('Date', 'Counts', data.total_critical_prevented),
   ],
   [
     'Total high alerts prevented from the main branch',
-    mdTableStringNumber('Date', 'Counts', data['total_high_prevented']),
+    mdTableStringNumber('Date', 'Counts', data.total_high_prevented),
   ],
   [
     'Total medium alerts prevented from the main branch',
-    mdTableStringNumber('Date', 'Counts', data['total_medium_prevented']),
+    mdTableStringNumber('Date', 'Counts', data.total_medium_prevented),
   ],
   [
     'Total low alerts prevented from the main branch',
-    mdTableStringNumber('Date', 'Counts', data['total_low_prevented']),
+    mdTableStringNumber('Date', 'Counts', data.total_low_prevented),
   ],
 ]
   .map(([title, table]) =>
@@ -198,97 +191,19 @@ ${table}
 
 ## Top 5 alert types
 
-${mdTableStringNumber('Name', 'Counts', data['top_five_alert_types'])}
-`.trim() + '\n'
-  )
+${mdTableStringNumber('Name', 'Counts', data.top_five_alert_types)}
+`.trim()}\n`
 }
 
-function displayAnalyticsScreen(data: FormattedData): void {
-  const ScreenWidget = /*@__PURE__*/ require('blessed/lib/widgets/screen.js')
-  const screen: Widgets.Screen = new ScreenWidget({
-    ...constants.blessedOptions,
-  })
-  const GridLayout = /*@__PURE__*/ require('blessed-contrib/lib/layout/grid.js')
-  const grid = new GridLayout({ rows: 5, cols: 4, screen })
+/**
+ * Display analytics using Ink React components.
+ */
+async function displayAnalyticsWithInk(data: FormattedData): Promise<void> {
+  const React = await import('react')
+  const { render } = await import('ink')
+  const { AnalyticsApp } = await import('./AnalyticsApp.js')
 
-  renderLineCharts(
-    grid,
-    screen,
-    'Total critical alerts',
-    [0, 0, 1, 2],
-    data['total_critical_alerts'],
-  )
-  renderLineCharts(
-    grid,
-    screen,
-    'Total high alerts',
-    [0, 2, 1, 2],
-    data['total_high_alerts'],
-  )
-  renderLineCharts(
-    grid,
-    screen,
-    'Total critical alerts added to the main branch',
-    [1, 0, 1, 2],
-    data['total_critical_added'],
-  )
-  renderLineCharts(
-    grid,
-    screen,
-    'Total high alerts added to the main branch',
-    [1, 2, 1, 2],
-    data['total_high_added'],
-  )
-  renderLineCharts(
-    grid,
-    screen,
-    'Total critical alerts prevented from the main branch',
-    [2, 0, 1, 2],
-    data['total_critical_prevented'],
-  )
-  renderLineCharts(
-    grid,
-    screen,
-    'Total high alerts prevented from the main branch',
-    [2, 2, 1, 2],
-    data['total_high_prevented'],
-  )
-  renderLineCharts(
-    grid,
-    screen,
-    'Total medium alerts prevented from the main branch',
-    [3, 0, 1, 2],
-    data['total_medium_prevented'],
-  )
-  renderLineCharts(
-    grid,
-    screen,
-    'Total low alerts prevented from the main branch',
-    [3, 2, 1, 2],
-    data['total_low_prevented'],
-  )
-
-  const BarChart = /*@__PURE__*/ require('blessed-contrib/lib/widget/charts/bar.js')
-  const bar = grid.set(4, 0, 1, 2, BarChart, {
-    label: 'Top 5 alert types',
-    barWidth: 10,
-    barSpacing: 17,
-    xOffset: 0,
-    maxHeight: 9,
-    barBgColor: 'magenta',
-  })
-
-  // Must append before setting data.
-  screen.append(bar)
-
-  bar.setData({
-    titles: Object.keys(data.top_five_alert_types),
-    data: Object.values(data.top_five_alert_types),
-  })
-
-  screen.render()
-  // eslint-disable-next-line n/no-process-exit
-  screen.key(['escape', 'q', 'C-c'], () => process.exit(0))
+  render(React.createElement(AnalyticsApp, { data }))
 }
 
 export function formatDataRepo(
@@ -303,7 +218,7 @@ export function formatDataRepo(
   }
 
   for (const entry of data) {
-    const topFiveAlertTypes = entry['top_five_alert_types']
+    const topFiveAlertTypes = entry.top_five_alert_types
     for (const type of Object.keys(topFiveAlertTypes)) {
       const count = topFiveAlertTypes[type] ?? 0
       if (!totalTopAlerts[type]) {
@@ -315,7 +230,7 @@ export function formatDataRepo(
   }
   for (const entry of data) {
     for (const metric of METRICS) {
-      formattedData[metric]![formatDate(entry['created_at'])] = entry[metric]
+      formattedData[metric]![formatDate(entry.created_at)] = entry[metric]
     }
   }
 
@@ -344,7 +259,7 @@ export function formatDataOrg(
   }
 
   for (const entry of data) {
-    const topFiveAlertTypes = entry['top_five_alert_types']
+    const topFiveAlertTypes = entry.top_five_alert_types
     for (const type of Object.keys(topFiveAlertTypes)) {
       const count = topFiveAlertTypes[type] ?? 0
       if (totalTopAlerts[type]) {
@@ -358,7 +273,7 @@ export function formatDataOrg(
   for (const metric of METRICS) {
     const formatted = formattedData[metric]
     for (const entry of data) {
-      const date = formatDate(entry['created_at'])
+      const date = formatDate(entry.created_at)
       if (formatted[date]) {
         formatted[date] += entry[metric]!
       } else {
@@ -382,34 +297,4 @@ export function formatDataOrg(
 
 function formatDate(date: string): string {
   return `${Months[new Date(date).getMonth()]} ${new Date(date).getDate()}`
-}
-
-function renderLineCharts(
-  grid: ContribGrid,
-  screen: Widgets.Screen,
-  title: string,
-  coords: number[],
-  data: Record<string, number>,
-): void {
-  const LineChart = /*@__PURE__*/ require('blessed-contrib/lib/widget/charts/line.js')
-  const line = grid.set(...coords, LineChart, {
-    style: { line: 'cyan', text: 'cyan', baseline: 'black' },
-    xLabelPadding: 0,
-    xPadding: 0,
-    xOffset: 0,
-    wholeNumbersOnly: true,
-    legend: {
-      width: 1,
-    },
-    label: title,
-  })
-
-  screen.append(line)
-
-  const lineData = {
-    x: Object.keys(data),
-    y: Object.values(data),
-  }
-
-  line.setData([lineData])
 }

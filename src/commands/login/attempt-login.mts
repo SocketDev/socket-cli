@@ -1,30 +1,31 @@
-import { joinAnd } from '@socketsecurity/registry/lib/arrays'
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { confirm, password, select } from '@socketsecurity/registry/lib/prompts'
+import { joinAnd } from '@socketsecurity/lib/arrays'
+import { logger } from '@socketsecurity/lib/logger'
+import { confirm, password, select } from '@socketsecurity/lib/prompts'
+import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/lib/constants/socket'
 
 import { applyLogin } from './apply-login.mts'
-import constants, {
+import {
   CONFIG_KEY_API_BASE_URL,
   CONFIG_KEY_API_PROXY,
   CONFIG_KEY_API_TOKEN,
   CONFIG_KEY_DEFAULT_ORG,
-} from '../../constants.mts'
+} from '../../constants/config.mts'
 import {
   getConfigValueOrUndef,
   isConfigFromFlag,
   updateConfigValue,
 } from '../../utils/config.mts'
-import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
+import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 import { getEnterpriseOrgs, getOrgSlugs } from '../../utils/organization.mts'
-import { setupSdk } from '../../utils/sdk.mts'
-import { socketDocsLink } from '../../utils/terminal-link.mts'
+import { setupSdk } from '../../utils/socket/sdk.mjs'
+import { socketDocsLink } from '../../utils/terminal/link.mts'
 import { setupTabCompletion } from '../install/setup-tab-completion.mts'
 import { fetchOrganization } from '../organization/fetch-organization-list.mts'
 
-import type { Choice, Separator } from '@socketsecurity/registry/lib/prompts'
+import type { Choice } from '@socketsecurity/lib/prompts'
 
 type OrgChoice = Choice<string>
-type OrgChoices = Array<Separator | OrgChoice>
+type OrgChoices = OrgChoice[]
 
 export async function attemptLogin(
   apiBaseUrl: string | undefined,
@@ -41,7 +42,7 @@ export async function attemptLogin(
     return { ok: false, message: 'Canceled', cause: 'Canceled by user' }
   }
 
-  const apiToken = apiTokenInput || constants.SOCKET_PUBLIC_API_TOKEN
+  const apiToken = apiTokenInput || SOCKET_PUBLIC_API_TOKEN
 
   const sockSdkCResult = await setupSdk({ apiBaseUrl, apiProxy, apiToken })
   if (!sockSdkCResult.ok) {
@@ -165,6 +166,6 @@ export async function attemptLogin(
     }
   } catch {
     process.exitCode = 1
-    logger.fail(`API login failed`)
+    logger.fail('API login failed')
   }
 }

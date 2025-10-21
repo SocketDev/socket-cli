@@ -1,11 +1,11 @@
 import fs from 'node:fs'
 import path from 'node:path'
 
-import constants from '../../constants.mts'
+import { homePath } from '../../constants/paths.mts'
 import {
   COMPLETION_CMD_PREFIX,
   getBashrcDetails,
-} from '../../utils/completion.mts'
+} from '../../utils/cli/completion.mjs'
 
 import type { CResult } from '../../types.mts'
 
@@ -20,9 +20,7 @@ export async function teardownTabCompletion(
   const { completionCommand, sourcingCommand, toAddToBashrc } = result.data
 
   // Remove from ~/.bashrc if found
-  const bashrc = constants.homePath
-    ? path.join(constants.homePath, '.bashrc')
-    : ''
+  const bashrc = homePath ? path.join(homePath, '.bashrc') : ''
 
   if (bashrc && fs.existsSync(bashrc)) {
     const content = fs.readFileSync(bashrc, 'utf8')
@@ -45,23 +43,21 @@ export async function teardownTabCompletion(
         },
         message: 'Removed completion from ~/.bashrc',
       }
-    } else {
-      const left = findRemainingCompletionSetups(content)
-      return {
-        ok: true,
-        data: {
-          action: 'missing',
-          left,
-        },
-        message: `Completion was not found in ~/.bashrc${left.length ? ' (you may need to manually edit your .bashrc to clean this up...)' : ''}`,
-      }
     }
-  } else {
+    const left = findRemainingCompletionSetups(content)
     return {
-      ok: true, // Eh. I think this makes most sense.
-      data: { action: 'not found', left: [] },
-      message: '~/.bashrc not found, skipping',
+      ok: true,
+      data: {
+        action: 'missing',
+        left,
+      },
+      message: `Completion was not found in ~/.bashrc${left.length ? ' (you may need to manually edit your .bashrc to clean this up...)' : ''}`,
     }
+  }
+  return {
+    ok: true, // Eh. I think this makes most sense.
+    data: { action: 'not found', left: [] },
+    message: '~/.bashrc not found, skipping',
   }
 }
 

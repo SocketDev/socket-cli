@@ -1,0 +1,45 @@
+{
+  "name": "socket",
+  "version": "1.1.22",
+  "description": "Socket CLI - Security analysis for your dependencies",
+  "homepage": "https://github.com/SocketDev/socket-cli",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SocketDev/socket-cli.git"
+  },
+  "author": {
+    "name": "Socket Inc",
+    "email": "eng@socket.dev",
+    "url": "https://socket.dev"
+  },
+  "bin": {
+    "socket": "bin/cli.js"
+  },
+  "optionalDependencies": {
+    "@socketbin/cli-alpine-arm64": "1.1.22",
+    "@socketbin/cli-alpine-x64": "1.1.22",
+    "@socketbin/cli-darwin-arm64": "1.1.22",
+    "@socketbin/cli-darwin-x64": "1.1.22",
+    "@socketbin/cli-linux-arm64": "1.1.22",
+    "@socketbin/cli-linux-x64": "1.1.22",
+    "@socketbin/cli-win32-arm64": "1.1.22",
+    "@socketbin/cli-win32-x64": "1.1.22"
+  },
+  "keywords": [
+    "socket",
+    "security",
+    "dependencies",
+    "vulnerability",
+    "supply-chain",
+    "cli"
+  ],
+  "engines": {
+    "node": ">=18.18.0"
+  },
+  "preferGlobal": true,
+  "files": [
+    "bin",
+    "README.md"
+  ]
+}

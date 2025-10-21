@@ -1,21 +1,21 @@
 import terminalLink from 'terminal-link'
 import yargsParse from 'yargs-parser'
 
-import { joinAnd } from '@socketsecurity/registry/lib/arrays'
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { isPath } from '@socketsecurity/registry/lib/path'
-import { pluralize } from '@socketsecurity/registry/lib/words'
+import { joinAnd } from '@socketsecurity/lib/arrays'
+import { logger } from '@socketsecurity/lib/logger'
+import { isPath } from '@socketsecurity/lib/path'
+import { pluralize } from '@socketsecurity/lib/words'
 
 import { runCdxgen } from './run-cdxgen.mts'
-import constants, { FLAG_HELP } from '../../constants.mts'
+import { DRY_RUN_BAILING_NOW, FLAG_HELP } from '../../constants/cli.mjs'
 import { commonFlags, outputFlags } from '../../flags.mts'
-import { filterFlags, isHelpFlag } from '../../utils/cmd.mts'
-import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
+import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
+import { filterFlags, isHelpFlag } from '../../utils/process/cmd.mts'
 
 import type {
   CliCommandConfig,
   CliCommandContext,
-} from '../../utils/meow-with-subcommands.mts'
+} from '../../utils/cli/with-subcommands.mjs'
 
 // TODO: Convert yargs to meow.
 const toLower = (arg: string) => arg.toLowerCase()
@@ -251,7 +251,7 @@ async function run(
     parentName,
   })
 
-  const { dryRun } = cli.flags as { dryRun: boolean }
+  const { dryRun } = cli.flags as unknown as { dryRun: boolean }
 
   // Filter Socket flags from argv but keep --no-banner and --help for cdxgen.
   const argsToProcess = filterFlags(argv, { ...commonFlags, ...outputFlags }, [
@@ -282,13 +282,13 @@ async function run(
     // https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
     process.exitCode = 2
     logger.fail(
-      `Unknown ${pluralize('argument', unknownsCount)}: ${joinAnd(unknowns)}`,
+      `Unknown ${pluralize('argument', { count: unknownsCount })}: ${joinAnd(unknowns)}`,
     )
     return
   }
 
   if (dryRun) {
-    logger.log(constants.DRY_RUN_BAILING_NOW)
+    logger.log(DRY_RUN_BAILING_NOW)
     return
   }
 
@@ -316,15 +316,12 @@ async function run(
 
   const { spawnPromise } = await runCdxgen(yargv)
 
-  // See https://nodejs.org/api/child_process.html#event-exit.
-  spawnPromise.process.on('exit', (code, signalName) => {
-    if (signalName) {
-      process.kill(process.pid, signalName)
-    } else if (typeof code === 'number') {
-      // eslint-disable-next-line n/no-process-exit
-      process.exit(code)
-    }
-  })
-
-  await spawnPromise
+  // Wait for the spawn promise to resolve and handle the result.
+  const result = await spawnPromise
+  if (result.signal) {
+    process.kill(process.pid, result.signal)
+  } else if (typeof result.code === 'number') {
+    // eslint-disable-next-line n/no-process-exit
+    process.exit(result.code)
+  }
 }

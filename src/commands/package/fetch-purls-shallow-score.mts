@@ -1,11 +1,11 @@
-import { joinAnd } from '@socketsecurity/registry/lib/arrays'
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { joinAnd } from '@socketsecurity/lib/arrays'
+import { logger } from '@socketsecurity/lib/logger'
 
-import { handleApiCall } from '../../utils/api.mts'
-import { setupSdk } from '../../utils/sdk.mts'
+import { handleApiCall } from '../../utils/socket/api.mjs'
+import { setupSdk } from '../../utils/socket/sdk.mjs'
 
 import type { CResult } from '../../types.mts'
-import type { SetupSdkOptions } from '../../utils/sdk.mts'
+import type { SetupSdkOptions } from '../../utils/socket/sdk.mjs'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export type FetchPurlsShallowScoreOptions = {
@@ -27,8 +27,12 @@ export async function fetchPurlsShallowScore(
   }
   const sockSdk = sockSdkCResult.data
 
+  const displayPurls =
+    purls.length > 3
+      ? `${purls.slice(0, 3).join(', ')} … and ${purls.length - 3} more`
+      : joinAnd(purls)
   logger.info(
-    `Requesting shallow score data for ${purls.length} package urls (purl): ${joinAnd(purls)}`,
+    `Requesting shallow score data for ${purls.length} package urls (purl): ${displayPurls}`,
   )
 
   const batchPackageCResult = await handleApiCall(

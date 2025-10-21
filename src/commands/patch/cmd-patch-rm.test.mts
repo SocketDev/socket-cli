@@ -1,0 +1,170 @@
+import path from 'node:path'
+
+import trash from 'trash'
+import { afterEach, describe, expect } from 'vitest'
+
+import { cmdit, spawnSocketCli, testPath } from '../../../test/utils.mts'
+import { FLAG_CONFIG, FLAG_HELP } from '../constants/cli.mts'
+import { getBinCliPath } from '../constants/paths.mts'
+const binCliPath = getBinCliPath()
+
+const fixtureBaseDir = path.join(testPath, 'fixtures/commands/patch')
+const pnpmFixtureDir = path.join(fixtureBaseDir, 'pnpm')
+
+async function cleanupNodeModules() {
+  // Clean up node_modules from all package manager directories.
+  await trash([
+    path.join(pnpmFixtureDir, 'node_modules'),
+    path.join(fixtureBaseDir, 'npm/node_modules'),
+    path.join(fixtureBaseDir, 'yarn/node_modules'),
+  ])
+}
+
+describe('socket patch rm', async () => {afterEach(async () => {
+    await cleanupNodeModules()
+  })
+
+  cmdit(
+    ['patch', 'rm', FLAG_HELP, FLAG_CONFIG, '{}'],
+    `should support ${FLAG_HELP}`,
+    async cmd => {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      expect(stdout).toContain(
+        'Remove applied patch and restore original files',
+      )
+      expect(stderr).toContain('`socket patch rm`')
+      expect(code, 'explicit help should exit with code 0').toBe(0)
+    },
+  )
+
+  cmdit(
+    ['patch', 'rm', FLAG_CONFIG, '{"apiToken":"fake-token"}'],
+    'should show error when PURL is not provided',
+    async cmd => {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
+        cwd: pnpmFixtureDir,
+      })
+      const output = stdout + stderr
+      expect(output).toContain('PURL is required')
+      expect(code, 'should exit with non-zero code').not.toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'patch',
+      'rm',
+      'pkg:npm/on-headers@1.0.2',
+      path.join(fixtureBaseDir, 'nonexistent'),
+      FLAG_CONFIG,
+      '{"apiToken":"fake-token"}',
+    ],
+    'should show error when no .socket directory found',
+    async cmd => {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      const output = stdout + stderr
+      expect(output).toContain('No .socket directory found')
+      expect(code, 'should exit with non-zero code').not.toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'patch',
+      'rm',
+      'pkg:npm/nonexistent@1.0.0',
+      pnpmFixtureDir,
+      FLAG_CONFIG,
+      '{"apiToken":"fake-token"}',
+    ],
+    'should show error when patch not found',
+    async cmd => {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      const output = stdout + stderr
+      expect(output).toContain('Patch not found')
+      expect(code, 'should exit with non-zero code').not.toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'patch',
+      'rm',
+      'pkg:npm/on-headers@1.0.2',
+      pnpmFixtureDir,
+      FLAG_CONFIG,
+      '{"apiToken":"fake-token"}',
+    ],
+    'should handle removing patch without backups gracefully',
+    async cmd => {
+      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+      // Since the fixture doesn't have actual backups, it should warn.
+      expect(
+        stdout.includes('No backups found') ||
+          stdout.includes('Removed patch'),
+      ).toBe(true)
+      expect(code, 'should exit with code 0').toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'patch',
+      'rm',
+      'pkg:npm/on-headers@1.0.2',
+      pnpmFixtureDir,
+      '--json',
+      FLAG_CONFIG,
+      '{"apiToken":"fake-token"}',
+    ],
+    'should output patch rm result in JSON format',
+    async cmd => {
+      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+      const json = JSON.parse(stdout)
+      expect(json.purl).toBe('pkg:npm/on-headers@1.0.2')
+      expect(json.filesRestored).toBeDefined()
+      expect(typeof json.filesRestored).toBe('number')
+      expect(code, 'should exit with code 0').toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'patch',
+      'rm',
+      'pkg:npm/on-headers@1.0.2',
+      pnpmFixtureDir,
+      '--markdown',
+      FLAG_CONFIG,
+      '{"apiToken":"fake-token"}',
+    ],
+    'should output patch rm result in markdown format',
+    async cmd => {
+      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+      expect(stdout).toContain('## Patch Removed')
+      expect(stdout).toContain('**PURL**: pkg:npm/on-headers@1.0.2')
+      expect(stdout).toContain('**Files Restored**')
+      expect(code, 'should exit with code 0').toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'patch',
+      'rm',
+      'pkg:npm/on-headers@1.0.2',
+      pnpmFixtureDir,
+      '--json',
+      '--markdown',
+      FLAG_CONFIG,
+      '{"apiToken":"fake-token"}',
+    ],
+    'should fail when both json and markdown flags are used',
+    async cmd => {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      const output = stdout + stderr
+      expect(output).toContain('json and markdown flags cannot be both set')
+      expect(code, 'should exit with non-zero code').not.toBe(0)
+    },
+  )
+})

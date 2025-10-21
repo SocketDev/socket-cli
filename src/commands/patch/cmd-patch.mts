@@ -1,137 +1,44 @@
-import { existsSync } from 'node:fs'
-import path from 'node:path'
+import { cmdPatchApply } from './cmd-patch-apply.mts'
+import { cmdPatchCleanup } from './cmd-patch-cleanup.mts'
+import { cmdPatchDiscover } from './cmd-patch-discover.mts'
+import { cmdPatchDownload } from './cmd-patch-download.mts'
+import { cmdPatchGet } from './cmd-patch-get.mts'
+import { cmdPatchInfo } from './cmd-patch-info.mts'
+import { cmdPatchList } from './cmd-patch-list.mts'
+import { cmdPatchRm } from './cmd-patch-rm.mts'
+import { cmdPatchStatus } from './cmd-patch-status.mts'
+import { meowWithSubcommands } from '../../utils/cli/with-subcommands.mjs'
 
-import { arrayUnique } from '@socketsecurity/registry/lib/arrays'
+import type { CliSubcommand } from '../../utils/cli/with-subcommands.mjs'
 
-import { handlePatch } from './handle-patch.mts'
-import constants, { DOT_SOCKET_DIR, MANIFEST_JSON } from '../../constants.mts'
-import { commonFlags, outputFlags } from '../../flags.mts'
-import { checkCommandInput } from '../../utils/check-input.mts'
-import { cmdFlagValueToArray } from '../../utils/cmd.mts'
-import { InputError } from '../../utils/errors.mts'
-import { getOutputKind } from '../../utils/get-output-kind.mts'
-import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
-import {
-  getFlagApiRequirementsOutput,
-  getFlagListOutput,
-} from '../../utils/output-formatting.mts'
-import { getPurlObject } from '../../utils/purl.mts'
-
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/meow-with-subcommands.mts'
-import type { PurlObject } from '../../utils/purl.mts'
-import type { PackageURL } from '@socketregistry/packageurl-js'
-
-export const CMD_NAME = 'patch'
-
-const description = 'Apply CVE patches to dependencies'
+const description = 'Manage CVE patches for dependencies'
 
 const hidden = true
 
-export const cmdPatch = {
+export const cmdPatch: CliSubcommand = {
   description,
   hidden,
-  run,
-}
-
-async function run(
-  argv: string[] | readonly string[],
-  importMeta: ImportMeta,
-  { parentName }: CliCommandContext,
-): Promise<void> {
-  const config: CliCommandConfig = {
-    commandName: CMD_NAME,
-    description,
-    hidden,
-    flags: {
-      ...commonFlags,
-      ...outputFlags,
-      purl: {
-        type: 'string',
-        default: [],
-        description:
-          'Specify purls to patch, as either a comma separated value or as multiple flags',
-        isMultiple: true,
-        shortFlag: 'p',
+  async run(argv, importMeta, { parentName }) {
+    await meowWithSubcommands(
+      {
+        argv,
+        name: `${parentName} patch`,
+        importMeta,
+        subcommands: {
+          apply: cmdPatchApply,
+          cleanup: cmdPatchCleanup,
+          discover: cmdPatchDiscover,
+          download: cmdPatchDownload,
+          get: cmdPatchGet,
+          info: cmdPatchInfo,
+          list: cmdPatchList,
+          rm: cmdPatchRm,
+          status: cmdPatchStatus,
+        },
       },
-    },
-    help: (command, config) => `
-    Usage
-      $ ${command} [options] [CWD=.]
-
-    API Token Requirements
-      ${getFlagApiRequirementsOutput(`${parentName}:${CMD_NAME}`)}
-
-    Options
-      ${getFlagListOutput(config.flags)}
-
-    Examples
-      $ ${command}
-      $ ${command} --package lodash
-      $ ${command} ./path/to/project --package lodash,react
-    `,
-  }
-
-  const cli = meowOrExit(
-    {
-      argv,
-      config,
-      parentName,
-      importMeta,
-    },
-    { allowUnknownFlags: false },
-  )
-
-  const { dryRun, json, markdown } = cli.flags as {
-    dryRun: boolean
-    json: boolean
-    markdown: boolean
-  }
-
-  const outputKind = getOutputKind(json, markdown)
-
-  const wasValidInput = checkCommandInput(outputKind, {
-    nook: true,
-    test: !json || !markdown,
-    message: 'The json and markdown flags cannot be both set, pick one',
-    fail: 'omit one',
-  })
-  if (!wasValidInput) {
-    return
-  }
-
-  let [cwd = '.'] = cli.input
-  // Note: path.resolve vs .join:
-  // If given path is absolute then cwd should not affect it.
-  cwd = path.resolve(process.cwd(), cwd)
-
-  const dotSocketDirPath = path.join(cwd, DOT_SOCKET_DIR)
-  if (!existsSync(dotSocketDirPath)) {
-    throw new InputError(
-      `No ${DOT_SOCKET_DIR} directory found in current directory`,
+      {
+        description,
+      },
     )
-  }
-
-  const manifestPath = path.join(dotSocketDirPath, MANIFEST_JSON)
-  if (!existsSync(manifestPath)) {
-    throw new InputError(
-      `No ${MANIFEST_JSON} found in ${DOT_SOCKET_DIR} directory`,
-    )
-  }
-
-  const { spinner } = constants
-
-  const purlObjs = arrayUnique(cmdFlagValueToArray(cli.flags['purl']))
-    .map(p => getPurlObject(p, { throws: false }))
-    .filter(Boolean) as Array<PurlObject<PackageURL>>
-
-  await handlePatch({
-    cwd,
-    dryRun,
-    outputKind,
-    purlObjs,
-    spinner,
-  })
+  },
 }

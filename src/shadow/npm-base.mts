@@ -1,3 +1,5 @@
+import { homedir } from 'node:os'
+import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import {
@@ -5,36 +7,55 @@ import {
   isNpmLoglevelFlag,
   isNpmNodeOptionsFlag,
   isNpmProgressFlag,
-} from '@socketsecurity/registry/lib/agent'
-import { isDebug } from '@socketsecurity/registry/lib/debug'
-import { getOwn } from '@socketsecurity/registry/lib/objects'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
+} from '@socketsecurity/lib/agent'
+import { isDebug } from '@socketsecurity/lib/debug'
+import { getOwn } from '@socketsecurity/lib/objects'
+import { normalizePath } from '@socketsecurity/lib/path'
+import { spawn, spawnSync } from '@socketsecurity/lib/spawn'
+import {
+  getExecPath,
+  getNodeDebugFlags,
+  getNodeHardenFlags,
+  getNodeNoWarningsFlags,
+  supportsNodePermissionFlag,
+} from '@socketsecurity/lib/constants/node'
+import { NODE_MODULES } from '@socketsecurity/lib/constants/paths'
+
 
 import { ensureIpcInStdio } from './stdio-ipc.mts'
-import constants, {
-  FLAG_LOGLEVEL,
-  NODE_MODULES,
-  NPM,
-  NPX,
-} from '../constants.mts'
-import { cmdFlagsToString } from '../utils/cmd.mts'
-import { findUp } from '../utils/fs.mts'
-import { getPublicApiToken } from '../utils/sdk.mts'
-import { installNpmLinks, installNpxLinks } from '../utils/shadow-links.mts'
+import { NPM, NPX } from '../constants/agents.mts'
+import { FLAG_LOGLEVEL } from '../constants/cli.mts'
+import ENV from '../constants/env.mts'
+import {
+  getInstrumentWithSentryPath,
+  getShadowNpmInjectPath,
+  shadowBinPath,
+} from '../constants/paths.mts'
+import {
+  SOCKET_CLI_SHADOW_API_TOKEN,
+  SOCKET_CLI_SHADOW_BIN,
+  SOCKET_CLI_SHADOW_PROGRESS,
+  SOCKET_IPC_HANDSHAKE,
+} from '../constants/shadow.mts'
+import { findUp } from '../utils/fs/fs.mjs'
+import { cmdFlagsToString } from '../utils/process/cmd.mts'
+import { installNpmLinks, installNpxLinks } from '../utils/shadow/links.mts'
+import { getPublicApiToken } from '../utils/socket/sdk.mjs'
 
-import type { IpcObject } from '../constants.mts'
+import type { IpcObject } from '../constants/shadow.mts'
 import type {
   SpawnExtra,
   SpawnOptions,
   SpawnResult,
-} from '@socketsecurity/registry/lib/spawn'
+} from '@socketsecurity/lib/spawn'
+import type { StdioOptions } from 'node:child_process'
 
 export type ShadowBinOptions = SpawnOptions & {
   ipc?: IpcObject | undefined
 }
 
 export type ShadowBinResult = {
-  spawnPromise: SpawnResult<string, SpawnExtra | undefined>
+  spawnPromise: SpawnResult
 }
 
 export default async function shadowNpmBase(
@@ -51,7 +72,9 @@ export default async function shadowNpmBase(
 
   let cwd = getOwn(spawnOpts, 'cwd') ?? process.cwd()
   if (cwd instanceof URL) {
-    cwd = fileURLToPath(cwd)
+    cwd = normalizePath(fileURLToPath(cwd))
+  } else if (typeof cwd === 'string') {
+    cwd = normalizePath(cwd)
   }
 
   const isShadowNpm = binName === NPM
@@ -60,8 +83,40 @@ export default async function shadowNpmBase(
   const nodeOptionsArg = rawBinArgs.findLast(isNpmNodeOptionsFlag)
   const progressArg = rawBinArgs.findLast(isNpmProgressFlag) !== '--no-progress'
   const otherArgs = terminatorPos === -1 ? [] : args.slice(terminatorPos)
+
+  // Compute npm paths inline for permission flags.
+  let npmGlobalPrefix = ''
+  let npmCachePath = ''
+  if (isShadowNpm && supportsNodePermissionFlag()) {
+    try {
+      const { findRealNpm } = await import('@socketsecurity/lib/bin')
+      const npmBin = findRealNpm()
+      // Get npm global prefix.
+      const prefixResult = spawnSync(npmBin, ['prefix', '-g'], {
+        cwd: process.cwd(),
+      })
+      npmGlobalPrefix = prefixResult.stdout.toString().trim()
+      // Get npm cache path.
+      const cacheResult = spawnSync(npmBin, ['config', 'get', 'cache'], {
+        cwd: process.cwd(),
+      })
+      npmCachePath = cacheResult.stdout.toString().trim()
+    } catch {
+      // Fallback to defaults if npm commands fail.
+      const home = homedir()
+      npmGlobalPrefix =
+        process.platform === 'win32'
+          ? path.join(
+              process.env['APPDATA'] || path.join(home, 'AppData', 'Roaming'),
+              'npm',
+            )
+          : '/usr/local'
+      npmCachePath = path.join(home, '.npm')
+    }
+  }
+
   const permArgs =
-    isShadowNpm && constants.SUPPORTS_NODE_PERMISSION_FLAG
+    isShadowNpm && supportsNodePermissionFlag()
       ? [
           '--permission',
           '--allow-child-process',
@@ -71,13 +126,13 @@ export default async function shadowNpmBase(
           // and package.json files.
           '--allow-fs-read=*',
           `--allow-fs-write=${cwd}/*`,
-          `--allow-fs-write=${constants.npmGlobalPrefix}/*`,
-          `--allow-fs-write=${constants.npmCachePath}/*`,
+          `--allow-fs-write=${npmGlobalPrefix}/*`,
+          `--allow-fs-write=${npmCachePath}/*`,
         ]
       : []
 
   const useAudit = rawBinArgs.includes('--audit')
-  const useDebug = isDebug('stdio')
+  const useDebug = isDebug()
   const useNodeOptions = nodeOptionsArg || permArgs.length
   const binArgs = rawBinArgs.filter(
     a => !isNpmAuditFlag(a) && !isNpmProgressFlag(a),
@@ -87,28 +142,32 @@ export default async function shadowNpmBase(
   // two levels quieter.
   const logLevelArgs = isSilent ? [FLAG_LOGLEVEL, 'error'] : []
   const noAuditArgs =
-    useAudit || !(await findUp(NODE_MODULES, { cwd, onlyDirectories: true }))
+    useAudit ||
+    !(await findUp(NODE_MODULES, { cwd: cwd as string, onlyDirectories: true }))
       ? []
       : ['--no-audit']
 
-  const stdio = ensureIpcInStdio(getOwn(spawnOpts, 'stdio'))
+  const stdio = ensureIpcInStdio(
+    getOwn(spawnOpts, 'stdio') as StdioOptions | undefined,
+  )
 
   const realBinPath = isShadowNpm
-    ? await installNpmLinks(constants.shadowBinPath)
-    : await installNpxLinks(constants.shadowBinPath)
+    ? await installNpmLinks(shadowBinPath)
+    : await installNpxLinks(shadowBinPath)
 
   const spawnPromise = spawn(
-    constants.execPath,
+    getExecPath(),
     [
-      ...constants.nodeNoWarningsFlags,
-      ...constants.nodeDebugFlags,
-      ...constants.nodeHardenFlags,
-      ...constants.nodeMemoryFlags,
-      ...(constants.ENV.INLINED_SOCKET_CLI_SENTRY_BUILD
-        ? ['--require', constants.instrumentWithSentryPath]
+      ...getNodeNoWarningsFlags(),
+      ...getNodeDebugFlags(),
+      ...getNodeHardenFlags(),
+      // Memory flags commented out.
+      // ...constants.nodeMemoryFlags,
+      ...(ENV.INLINED_SOCKET_CLI_SENTRY_BUILD
+        ? ['--require', getInstrumentWithSentryPath()]
         : []),
       '--require',
-      constants.shadowNpmInjectPath,
+      getShadowNpmInjectPath(),
       realBinPath,
       ...noAuditArgs,
       ...(useNodeOptions
@@ -129,7 +188,6 @@ export default async function shadowNpmBase(
       ...spawnOpts,
       env: {
         ...process.env,
-        ...constants.processEnv,
         ...spawnEnv,
       },
       stdio,
@@ -138,10 +196,10 @@ export default async function shadowNpmBase(
   )
 
   spawnPromise.process.send({
-    [constants.SOCKET_IPC_HANDSHAKE]: {
-      [constants.SOCKET_CLI_SHADOW_API_TOKEN]: getPublicApiToken(),
-      [constants.SOCKET_CLI_SHADOW_BIN]: binName,
-      [constants.SOCKET_CLI_SHADOW_PROGRESS]: progressArg,
+    [SOCKET_IPC_HANDSHAKE]: {
+      [SOCKET_CLI_SHADOW_API_TOKEN]: getPublicApiToken(),
+      [SOCKET_CLI_SHADOW_BIN]: binName,
+      [SOCKET_CLI_SHADOW_PROGRESS]: progressArg,
       ...ipc,
     },
   })

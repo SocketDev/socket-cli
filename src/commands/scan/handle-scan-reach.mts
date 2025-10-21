@@ -1,12 +1,12 @@
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { pluralize } from '@socketsecurity/registry/lib/words'
+import { logger } from '@socketsecurity/lib/logger'
+import { pluralize } from '@socketsecurity/lib/words'
+import { getSpinner } from '@socketsecurity/lib/constants/process'
 
 import { fetchSupportedScanFileNames } from './fetch-supported-scan-file-names.mts'
 import { outputScanReach } from './output-scan-reach.mts'
 import { performReachabilityAnalysis } from './perform-reachability-analysis.mts'
-import constants from '../../constants.mts'
-import { checkCommandInput } from '../../utils/check-input.mts'
-import { getPackageFilesForScan } from '../../utils/path-resolve.mts'
+import { getPackageFilesForScan } from '../../utils/fs/path-resolve.mjs'
+import { checkCommandInput } from '../../utils/validation/check-input.mts'
 
 import type { ReachabilityOptions } from './perform-reachability-analysis.mts'
 import type { OutputKind } from '../../types.mts'
@@ -28,7 +28,7 @@ export async function handleScanReach({
   reachabilityOptions,
   targets,
 }: HandleScanReachConfig) {
-  const { spinner } = constants
+  const spinner = getSpinner()!
 
   // Get supported file names
   const supportedFilesCResult = await fetchSupportedScanFileNames({ spinner })
@@ -47,7 +47,7 @@ export async function handleScanReach({
   })
 
   spinner.successAndStop(
-    `Found ${packagePaths.length} ${pluralize('manifest file', packagePaths.length)} for reachability analysis.`,
+    `Found ${packagePaths.length} ${pluralize('manifest file', { count: packagePaths.length })} for reachability analysis.`,
   )
 
   const wasValidInput = checkCommandInput(outputKind, {
@@ -62,7 +62,7 @@ export async function handleScanReach({
   }
 
   logger.success(
-    `Found ${packagePaths.length} local ${pluralize('file', packagePaths.length)}`,
+    `Found ${packagePaths.length} local ${pluralize('file', { count: packagePaths.length })}`,
   )
 
   spinner.start('Running reachability analysis...')

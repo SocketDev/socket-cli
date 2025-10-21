@@ -1,15 +1,15 @@
 import open from 'open'
 import terminalLink from 'terminal-link'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { confirm } from '@socketsecurity/registry/lib/prompts'
+import { logger } from '@socketsecurity/lib/logger'
+import { confirm } from '@socketsecurity/lib/prompts'
+import { getSpinner } from '@socketsecurity/lib/constants/process'
 
-import constants from '../../constants.mts'
-import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
-import { serializeResultJson } from '../../utils/serialize-result-json.mts'
+import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
+import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
 import type { CResult, OutputKind } from '../../types.mts'
-import type { Spinner } from '@socketsecurity/registry/lib/spinner'
+import type { Spinner } from '@socketsecurity/lib/spinner'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export type CreateNewScanOptions = {
@@ -25,7 +25,7 @@ export async function outputCreateNewScan(
   const {
     interactive = false,
     outputKind = 'text',
-    spinner = constants.spinner,
+    spinner = getSpinner()!,
   } = { __proto__: null, ...options } as CreateNewScanOptions
 
   if (!result.ok) {
@@ -67,7 +67,7 @@ export async function outputCreateNewScan(
       logger.log('')
     } else {
       logger.log(
-        `The server did not return a Scan ID while trying to create a new Scan. This could be an indication something went wrong.`,
+        'The server did not return a Scan ID while trying to create a new Scan. This could be an indication something went wrong.',
       )
     }
     logger.log('')
@@ -89,13 +89,10 @@ export async function outputCreateNewScan(
 
   if (
     interactive &&
-    (await confirm(
-      {
-        message: 'Would you like to open it in your browser?',
-        default: false,
-      },
-      { spinner },
-    ))
+    (await confirm({
+      message: 'Would you like to open it in your browser?',
+      default: false,
+    }))
   ) {
     await open(`${result.data.html_report_url}`)
   }

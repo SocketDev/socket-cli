@@ -1,10 +1,10 @@
 import fs from 'node:fs'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { logger } from '@socketsecurity/lib/logger'
 
-import { REQUIREMENTS_TXT } from '../../constants.mts'
-import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
-import { serializeResultJson } from '../../utils/serialize-result-json.mts'
+import { REQUIREMENTS_TXT } from '../../constants/paths.mjs'
+import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
+import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
 import type { CResult, OutputKind } from '../../types.mts'
 

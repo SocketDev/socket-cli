@@ -3,18 +3,19 @@
     // The following options are not supported by @typescript/native-preview.
     // They are either ignored or throw an unknown option error:
     //"importsNotUsedAsValues": "remove",
-    //"incremental": true,
     "allowImportingTsExtensions": false,
     "allowJs": false,
-    "composite": true,
-    "declaration": true,
-    "declarationMap": true,
+    "composite": false,
+    "declaration": false,
+    "declarationMap": false,
     "erasableSyntaxOnly": true,
     "esModuleInterop": true,
     "exactOptionalPropertyTypes": true,
     "forceConsistentCasingInFileNames": true,
+    "incremental": false,
     "isolatedModules": true,
-    "lib": ["esnext"],
+    "jsx": "react-jsx",
+    "lib": ["ES2024"],
     "module": "nodenext",
     "noEmit": true,
     "noEmitOnError": true,
@@ -30,7 +31,7 @@
     "sourceMap": true,
     "strict": true,
     "strictNullChecks": true,
-    "target": "esnext",
+    "target": "ES2024",
     "useUnknownInCatchVariables": true,
     "verbatimModuleSyntax": true
   }

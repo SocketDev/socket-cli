@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-'use strict'
+
+/** @fileoverview Yarn CLI wrapper entry point. Forwards to Socket Firewall (sfw) for security scanning. */
 
 void (async () => {
   const Module = require('node:module')
@@ -7,23 +8,7 @@ void (async () => {
   const rootPath = path.join(__dirname, '..')
   Module.enableCompileCache?.(path.join(rootPath, '.cache'))
 
-  const shadowYarnBin = require(path.join(rootPath, 'dist/shadow-yarn-bin.js'))
+  const _yarnCli = require(path.join(rootPath, 'dist/yarn-cli.js'))
 
-  process.exitCode = 1
-
-  const { spawnPromise } = await shadowYarnBin(process.argv.slice(2), {
-    stdio: 'inherit',
-  })
-
-  // See https://nodejs.org/api/child_process.html#event-exit.
-  spawnPromise.process.on('exit', (code, signalName) => {
-    if (signalName) {
-      process.kill(process.pid, signalName)
-    } else if (typeof code === 'number') {
-      // eslint-disable-next-line n/no-process-exit
-      process.exit(code)
-    }
-  })
-
-  await spawnPromise
+  // The yarn-cli module handles exit codes internally
 })()

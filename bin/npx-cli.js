@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-'use strict'
 
 void (async () => {
   const Module = require('node:module')

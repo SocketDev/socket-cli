@@ -1,19 +1,17 @@
 import fs from 'node:fs/promises'
 
-import { joinAnd } from '@socketsecurity/registry/lib/arrays'
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { joinAnd } from '@socketsecurity/lib/arrays'
+import { logger } from '@socketsecurity/lib/logger'
+import { getSpinner } from '@socketsecurity/lib/constants/process'
 
 import { generateReport } from './generate-report.mts'
-import constants, {
-  EXT_JSON,
-  OUTPUT_JSON,
-  OUTPUT_TEXT,
-} from '../../constants.mts'
-import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
-import { mapToObject } from '../../utils/map-to-object.mts'
-import { mdTable } from '../../utils/markdown.mts'
-import { serializeResultJson } from '../../utils/serialize-result-json.mts'
-import { walkNestedMap } from '../../utils/walk-nested-map.mts'
+import { FOLD_SETTING_NONE, OUTPUT_JSON, OUTPUT_TEXT } from '../../constants/cli.mts'
+import { REPORT_LEVEL_DEFER } from '../../constants/reporting.mts'
+import { mapToObject } from '../../utils/data/map-to-object.mjs'
+import { walkNestedMap } from '../../utils/data/walk-nested-map.mjs'
+import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
+import { mdTable } from '../../utils/output/markdown.mts'
+import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
 import type { ReportLeafNode, ScanReport } from './generate-report.mts'
 import type { FOLD_SETTING, REPORT_LEVEL } from './types.mts'
@@ -61,6 +59,7 @@ export async function outputScanReport(
     return
   }
 
+  const spinner = getSpinner()!
   const scanReport = generateReport(
     result.data.scan,
     result.data.securityPolicy,
@@ -70,7 +69,7 @@ export async function outputScanReport(
       fold,
       reportLevel,
       short,
-      spinner: constants.spinner,
+      spinner,
     },
   )
 
@@ -95,7 +94,7 @@ export async function outputScanReport(
 
   if (
     outputKind === OUTPUT_JSON ||
-    (outputKind === OUTPUT_TEXT && filepath && filepath.endsWith(EXT_JSON))
+    (outputKind === OUTPUT_TEXT && filepath && filepath.endsWith('.json'))
   ) {
     const json = short
       ? serializeResultJson(scanReport)
@@ -110,7 +109,7 @@ export async function outputScanReport(
     return
   }
 
-  if (outputKind === 'markdown' || (filepath && filepath.endsWith('.md'))) {
+  if (outputKind === 'markdown' || filepath?.endsWith('.md')) {
     const md = short
       ? `healthy = ${scanReport.data.healthy}`
       : toMarkdownReport(
@@ -161,7 +160,7 @@ export function toMarkdownReport(
   const reportLevel = report.options.reportLevel
 
   const alertFolding =
-    report.options.fold === constants.FOLD_SETTING_NONE
+    report.options.fold === FOLD_SETTING_NONE
       ? 'none'
       : `up to ${report.options.fold}`
 
@@ -180,10 +179,9 @@ export function toMarkdownReport(
   )
 
   const minPolicyLevel =
-    reportLevel === constants.REPORT_LEVEL_DEFER ? 'everything' : reportLevel
+    reportLevel === REPORT_LEVEL_DEFER ? 'everything' : reportLevel
 
-  const md =
-    `
+  const md = `${`
 # Scan Policy Report
 
 This report tells you whether the results of a Socket scan results violate the
@@ -227,7 +225,7 @@ ${
         'Manifest file',
       ])
 }
-  `.trim() + '\n'
+  `.trim()}\n`
 
   return md
 }

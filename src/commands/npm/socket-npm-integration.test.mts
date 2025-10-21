@@ -2,25 +2,26 @@ import path from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
-import { isDebug } from '@socketsecurity/registry/lib/debug'
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
+import { isDebug } from '@socketsecurity/lib/debug'
+import { logger } from '@socketsecurity/lib/logger'
+import { spawn } from '@socketsecurity/lib/spawn'
 
 import { testPath } from '../../../test/utils.mts'
-import constants, {
-  FLAG_DRY_RUN,
-  FLAG_HELP,
-  FLAG_SILENT,
-} from '../../constants.mts'
+import { FLAG_DRY_RUN, FLAG_HELP, FLAG_SILENT } from '../constants/cli.mts'
+import ENV from '../constants/env.mts'
+import { getBinPath, getExecPath, getProcessEnv } from '../constants/paths.mts'
 
-import type { SpawnError } from '@socketsecurity/registry/lib/spawn'
+import type { SpawnError } from '@socketsecurity/lib/spawn'
+
+const binPath = getBinPath()
+const execPath = getExecPath()
+const processEnv = getProcessEnv()
 
 const npmFixturesPath = path.join(testPath, 'fixtures/commands/npm')
 
-// These aliases are defined in package.json.
-// Re-enabled with improved reliability.
-// TODO: Revisit after socket-registry dep is updated.
-const npmDirs = [] as string[]
+// Test with npm9, npm10, npm11 fixture directories.
+// These contain isolated package.json files for testing npm wrapper functionality.
+const npmDirs = ['npm9', 'npm10', 'npm11'] as string[]
 
 if (!npmDirs.length) {
   // Provide a placeholder test suite when no npm directories are configured.
@@ -31,11 +32,8 @@ if (!npmDirs.length) {
   })
 } else {
   for (const npmDir of npmDirs) {
-    if (constants.ENV.CI) {
-      // Skip in CI for now until we ensure stability.
-      describe('skipme', () => it('should skip', () => expect(true).toBe(true)))
-      continue
-    }
+    // Enable in CI - these tests are properly isolated in fixture directories
+    // and do not affect the main repository.
 
     const npmPath = path.join(npmFixturesPath, npmDir)
     const npmBinPath = path.join(npmPath, 'node_modules/.bin')
@@ -55,18 +53,18 @@ if (!npmDirs.length) {
             stdio: useDebug ? 'inherit' : 'ignore',
           })
 
-          const entryPath = path.join(constants.binPath, 'cli.js')
+          const entryPath = path.join(binPath, 'cli.js')
 
           try {
             const result = await spawn(
-              constants.execPath,
+              execPath,
               [entryPath, 'npm', FLAG_HELP],
               {
                 cwd: npmPath,
                 env: {
                   ...process.env,
-                  ...constants.processEnv,
-                  PATH: `${npmBinPath}:${constants.ENV.PATH}`,
+                  ...processEnv,
+                  PATH: `${npmBinPath}:${ENV.PATH}`,
                 },
               },
             )
@@ -91,11 +89,11 @@ if (!npmDirs.length) {
           timeout: 60_000, // Longer timeout for network operations.
         },
         async () => {
-          const entryPath = path.join(constants.binPath, 'cli.js')
+          const entryPath = path.join(binPath, 'cli.js')
 
           try {
-            const result = await spawn(
-              constants.execPath,
+            const _result = await spawn(
+              execPath,
               [
                 entryPath,
                 'npm',
@@ -109,8 +107,8 @@ if (!npmDirs.length) {
                 cwd: path.join(npmFixturesPath, 'lacking-typosquat'),
                 env: {
                   ...process.env,
-                  ...constants.processEnv,
-                  PATH: `${npmBinPath}:${constants.ENV.PATH}`,
+                  ...processEnv,
+                  PATH: `${npmBinPath}:${ENV.PATH}`,
                 },
               },
             )
@@ -121,7 +119,7 @@ if (!npmDirs.length) {
             )
           } catch (e) {
             const errorMessage =
-              (e as SpawnError)?.['stderr'] || (e as Error)?.['message'] || ''
+              (e as SpawnError)?.stderr || (e as Error)?.message || ''
 
             // Success cases: Socket detected an issue.
             if (

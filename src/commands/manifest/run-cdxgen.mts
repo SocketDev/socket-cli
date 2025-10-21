@@ -3,17 +3,27 @@ import path from 'node:path'
 
 import colors from 'yoctocolors-cjs'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { logger } from '@socketsecurity/lib/logger'
+import { NPM, PNPM, YARN } from '@socketsecurity/lib/constants/agents'
+import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/lib/constants/socket'
 
-import constants, { FLAG_HELP, NPM, PNPM, YARN } from '../../constants.mts'
-import { spawnCdxgenDlx, spawnSynpDlx } from '../../utils/dlx.mts'
-import { findUp } from '../../utils/fs.mts'
-import { isYarnBerry } from '../../utils/yarn-version.mts'
+import { FLAG_HELP } from '../../constants/cli.mjs'
+import {
+  PACKAGE_LOCK_JSON,
+  PNPM_LOCK_YAML,
+  YARN_LOCK,
+} from '../../constants/paths.mts'
+import {
+  SOCKET_CLI_SHADOW_ACCEPT_RISKS,
+  SOCKET_CLI_SHADOW_API_TOKEN,
+  SOCKET_CLI_SHADOW_SILENT,
+} from '../../constants/shadow.mjs'
+import { spawnCdxgenDlx, spawnSynpDlx } from '../../utils/dlx/spawn.mjs'
+import { findUp } from '../../utils/fs/fs.mjs'
+import { isYarnBerry } from '../../utils/yarn/version.mts'
 
 import type { ShadowBinResult } from '../../shadow/npm/bin.mts'
-import type { DlxOptions } from '../../utils/dlx.mts'
-
-const { PACKAGE_LOCK_JSON, PNPM_LOCK_YAML, YARN_LOCK } = constants
+import type { DlxOptions } from '../../utils/dlx/spawn.mjs'
 
 const nodejsPlatformTypes = new Set([
   'javascript',
@@ -67,10 +77,9 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
 
   const shadowOpts: DlxOptions = {
     ipc: {
-      [constants.SOCKET_CLI_SHADOW_ACCEPT_RISKS]: true,
-      [constants.SOCKET_CLI_SHADOW_API_TOKEN]:
-        constants.SOCKET_PUBLIC_API_TOKEN,
-      [constants.SOCKET_CLI_SHADOW_SILENT]: true,
+      [SOCKET_CLI_SHADOW_ACCEPT_RISKS]: true,
+      [SOCKET_CLI_SHADOW_API_TOKEN]: SOCKET_PUBLIC_API_TOKEN,
+      [SOCKET_CLI_SHADOW_SILENT]: true,
     },
     stdio: 'inherit',
   }
@@ -121,11 +130,13 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
     agent,
   })
 
-  shadowResult.spawnPromise.process.on('exit', () => {
+  // Use finally handler for cleanup instead of process.on('exit').
+  shadowResult.spawnPromise.finally(() => {
     if (cleanupPackageLock) {
       try {
-        // TODO: Consider using trash instead of rmSync for safer deletion.
         // This removes the temporary package-lock.json we created for cdxgen.
+        // Note: rmSync is appropriate here for temporary file cleanup in source code.
+        // (trash package is reserved for scripts/build files per CLAUDE.md guidelines)
         rmSync(`./${PACKAGE_LOCK_JSON}`)
       } catch {}
     }

@@ -1,6 +1,8 @@
-import { joinAnd } from '@socketsecurity/registry/lib/arrays'
+/** @fileoverview Alert severity utilities for Socket CLI security scanning. */
 
-import { createEnum, pick } from '../objects.mts'
+import { joinAnd } from '@socketsecurity/lib/arrays'
+
+import { createEnum, pick } from '../data/objects.mts'
 
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 

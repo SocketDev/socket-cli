@@ -1,0 +1,95 @@
+#!/usr/bin/expect -f
+# Expect script to interact with the TUI demo and verify the fix.
+
+set timeout 30
+
+# Start the demo.
+spawn node scripts/load.mjs demo-final-tui
+
+# Wait for initialization.
+sleep 2
+
+puts "\n=== TEST START ==="
+puts "Initial state: 1 line textarea"
+sleep 1
+
+# Cycle 1: Expand.
+puts "\n\[TEST\] Expanding textarea (Ctrl+N x5)..."
+send "\x0E"
+sleep 0.3
+send "\x0E"
+sleep 0.3
+send "\x0E"
+sleep 0.3
+send "\x0E"
+sleep 0.3
+send "\x0E"
+sleep 0.3
+
+puts "\[TEST\] Textarea expanded to 6 lines"
+sleep 1
+
+# Cycle 1: Collapse.
+puts "\n\[TEST\] Collapsing textarea (Enter)..."
+send "\r"
+sleep 1
+
+puts "\[TEST\] Textarea collapsed back to 1 line"
+puts "\[TEST\] Checking for garbling artifacts..."
+sleep 1
+
+# Cycle 2: Expand again.
+puts "\n\[TEST\] Second expand cycle (Ctrl+N x5)..."
+send "\x0E"
+sleep 0.3
+send "\x0E"
+sleep 0.3
+send "\x0E"
+sleep 0.3
+send "\x0E"
+sleep 0.3
+send "\x0E"
+sleep 0.3
+
+sleep 1
+
+# Cycle 2: Collapse.
+puts "\n\[TEST\] Second collapse (Enter)..."
+send "\r"
+sleep 1
+
+puts "\[TEST\] Checking for jumping garbling..."
+sleep 1
+
+# Cycle 3: One more time to be sure.
+puts "\n\[TEST\] Third expand cycle (Ctrl+N x7)..."
+send "\x0E"
+sleep 0.3
+send "\x0E"
+sleep 0.3
+send "\x0E"
+sleep 0.3
+send "\x0E"
+sleep 0.3
+send "\x0E"
+sleep 0.3
+send "\x0E"
+sleep 0.3
+send "\x0E"
+sleep 0.3
+
+sleep 1
+
+puts "\n\[TEST\] Third collapse (Enter)..."
+send "\r"
+sleep 2
+
+puts "\n=== TEST COMPLETE ==="
+puts "If no garbling was visible, the fix is working!"
+sleep 1
+
+# Exit.
+puts "\n\[TEST\] Exiting (q)..."
+send "q"
+
+expect eof

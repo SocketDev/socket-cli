@@ -1,10 +1,10 @@
 import path from 'node:path'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { logger } from '@socketsecurity/lib/logger'
 
-import constants from '../../constants.mts'
-import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
-import { serializeResultJson } from '../../utils/serialize-result-json.mts'
+import { DOT_SOCKET_DOT_FACTS_JSON } from '../../constants/paths.mts'
+import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
+import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
 import type { ReachabilityAnalysisResult } from './perform-reachability-analysis.mts'
 import type { CResult, OutputKind } from '../../types.mts'
@@ -29,6 +29,6 @@ export async function outputScanReach(
   logger.log('')
   logger.success('Reachability analysis completed successfully!')
   logger.info(
-    `Reachability report has been written to: ${path.join(cwd, constants.DOT_SOCKET_DOT_FACTS_JSON)}`,
+    `Reachability report has been written to: ${path.join(cwd, DOT_SOCKET_DOT_FACTS_JSON)}`,
   )
 }

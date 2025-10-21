@@ -1,17 +1,23 @@
 import { createRequire } from 'node:module'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { logger } from '@socketsecurity/lib/logger'
+import { PNPM } from '@socketsecurity/lib/constants/agents'
 
-import constants, { FLAG_DRY_RUN, FLAG_HELP, PNPM } from '../../constants.mts'
+import {
+  DRY_RUN_BAILING_NOW,
+  FLAG_DRY_RUN,
+  FLAG_HELP,
+} from '../../constants/cli.mts'
+import { getShadowPnpmBinPath } from '../../constants/paths.mts'
 import { commonFlags } from '../../flags.mts'
-import { filterFlags } from '../../utils/cmd.mts'
-import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
-import { getFlagApiRequirementsOutput } from '../../utils/output-formatting.mts'
+import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
+import { getFlagApiRequirementsOutput } from '../../utils/output/formatting.mts'
+import { filterFlags } from '../../utils/process/cmd.mts'
 
 import type {
   CliCommandConfig,
   CliCommandContext,
-} from '../../utils/meow-with-subcommands.mts'
+} from '../../utils/cli/with-subcommands.mjs'
 
 const require = createRequire(import.meta.url)
 
@@ -70,11 +76,11 @@ async function run(
   const dryRun = !!cli.flags['dryRun']
 
   if (dryRun) {
-    logger.log(constants.DRY_RUN_BAILING_NOW)
+    logger.log(DRY_RUN_BAILING_NOW)
     return
   }
 
-  const shadowPnpmBin = /*@__PURE__*/ require(constants.shadowPnpmBinPath)
+  const shadowPnpmBin = /*@__PURE__*/ require(getShadowPnpmBinPath())
 
   process.exitCode = 1
 

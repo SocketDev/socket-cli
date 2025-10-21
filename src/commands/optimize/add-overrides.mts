@@ -2,11 +2,12 @@ import path from 'node:path'
 
 import semver from 'semver'
 
+import { hasOwn, toSortedObject } from '@socketsecurity/lib/objects'
+import { fetchPackageManifest } from '@socketsecurity/lib/packages'
+import { pEach } from '@socketsecurity/lib/promises'
 import { getManifestData } from '@socketsecurity/registry'
-import { hasOwn, toSortedObject } from '@socketsecurity/registry/lib/objects'
-import { fetchPackageManifest } from '@socketsecurity/registry/lib/packages'
-import { pEach } from '@socketsecurity/registry/lib/promises'
-import { Spinner } from '@socketsecurity/registry/lib/spinner'
+import { NPM, PNPM } from '@socketsecurity/lib/constants/agents'
+
 
 import { lsStdoutIncludes } from './deps-includes-by-agent.mts'
 import { getDependencyEntries } from './get-dependency-entries.mts'
@@ -19,17 +20,17 @@ import { lockSrcIncludes } from './lockfile-includes-by-agent.mts'
 import { listPackages } from './ls-by-agent.mts'
 import { CMD_NAME } from './shared.mts'
 import { updateManifest } from './update-manifest-by-agent.mts'
-import { NPM, PNPM } from '../../constants.mts'
-import { cmdPrefixMessage } from '../../utils/cmd.mts'
-import { globWorkspace } from '../../utils/glob.mts'
-import { safeNpa } from '../../utils/npm-package-arg.mts'
+import { globWorkspace } from '../../utils/fs/glob.mts'
+import { safeNpa } from '../../utils/npm/package-arg.mts'
+import { cmdPrefixMessage } from '../../utils/process/cmd.mts'
 import { getMajor } from '../../utils/semver.mts'
 
 import type { GetOverridesResult } from './get-overrides-by-agent.mts'
-import type { AliasResult } from '../../utils/npm-package-arg.mts'
-import type { EnvDetails } from '../../utils/package-environment.mts'
-import type { Logger } from '@socketsecurity/registry/lib/logger'
-import type { PackageJson } from '@socketsecurity/registry/lib/packages'
+import type { EnvDetails } from '../../utils/ecosystem/environment.mjs'
+import type { AliasResult } from '../../utils/npm/package-arg.mts'
+import type { Logger } from '@socketsecurity/lib/logger'
+import type { PackageJson } from '@socketsecurity/lib/packages'
+import type { Spinner } from '@socketsecurity/lib/spinner'
 
 type AddOverridesOptions = {
   logger?: Logger | undefined
@@ -98,7 +99,7 @@ export async function addOverrides(
   }
 
   const overridesDataObjects = [] as GetOverridesResult[]
-  if (isWorkspace || pkgEnvDetails.editablePkgJson.content['private']) {
+  if (isWorkspace || pkgEnvDetails.editablePkgJson.content.private) {
     overridesDataObjects.push(getOverridesData(pkgEnvDetails))
   } else {
     overridesDataObjects.push(
@@ -109,13 +110,14 @@ export async function addOverrides(
 
   const depAliasMap = new Map<string, string>()
   const depEntries = getDependencyEntries(pkgEnvDetails)
-  const manifestEntries = manifestNpmOverrides.filter(({ 1: data }) =>
-    semver.satisfies(
-      // Roughly check Node range as semver.coerce will strip leading
-      // v's, carets (^), comparators (<,<=,>,>=,=), and tildes (~).
-      semver.coerce(data.engines.node)!,
-      pkgEnvDetails.pkgRequirements.node,
-    ),
+  const manifestEntries = manifestNpmOverrides.filter(
+    ({ 1: data }: { 1: any }) =>
+      semver.satisfies(
+        // Roughly check Node range as semver.coerce will strip leading
+        // v's, carets (^), comparators (<,<=,>,>=,=), and tildes (~).
+        semver.coerce(data.engines.node)!,
+        pkgEnvDetails.pkgRequirements.node,
+      ),
   )
 
   const addingText = `Adding overrides to ${workspace}...`
@@ -124,20 +126,20 @@ export async function addOverrides(
   // Chunk package names to process them in parallel 3 at a time.
   await pEach(
     manifestEntries,
-    async ({ 1: data }) => {
+    async ({ 1: data }: { 1: any }) => {
       const { name: sockRegPkgName, package: origPkgName, version } = data
       const major = getMajor(version)!
       const sockOverridePrefix = `npm:${sockRegPkgName}@`
       const sockOverrideSpec = `${sockOverridePrefix}${pin ? version : `^${major}`}`
       for (const { 1: depObj } of depEntries) {
         const sockSpec = hasOwn(depObj, sockRegPkgName)
-          ? depObj[sockRegPkgName]
+          ? (depObj[sockRegPkgName] as string)
           : undefined
         if (sockSpec) {
           depAliasMap.set(sockRegPkgName, sockSpec)
         }
         const origSpec = hasOwn(depObj, origPkgName)
-          ? depObj[origPkgName]
+          ? (depObj[origPkgName] as string)
           : undefined
         if (origSpec) {
           let thisSpec = origSpec
@@ -161,7 +163,7 @@ export async function addOverrides(
               state.addedInWorkspaces.add(workspace)
             }
             if (!loggedAddingText) {
-              spinner?.setText(addingText)
+              spinner?.text(addingText)
               loggedAddingText = true
             }
           }
@@ -222,7 +224,8 @@ export async function addOverrides(
                       )?.version ?? version,
                     ) !== major
                   ) {
-                    const otherVersion = (await fetchPackageManifest(thisSpec))
+                    const manifest = await fetchPackageManifest(thisSpec)
+                    const otherVersion = (manifest as { version?: string })
                       ?.version
                     if (otherVersion && otherVersion !== version) {
                       newSpec = `${sockOverridePrefix}${pin ? otherVersion : `^${getMajor(otherVersion)!}`}`
@@ -237,7 +240,7 @@ export async function addOverrides(
                 const addedOrUpdated = overrideExists ? 'updated' : 'added'
                 state[addedOrUpdated].add(sockRegPkgName)
                 if (!loggedAddingText) {
-                  spinner?.setText(addingText)
+                  spinner?.text(addingText)
                   loggedAddingText = true
                 }
               }

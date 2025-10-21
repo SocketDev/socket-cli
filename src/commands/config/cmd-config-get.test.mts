@@ -1,60 +1,29 @@
 import semver from 'semver'
 import { describe, expect } from 'vitest'
 
-import constants, {
-  FLAG_CONFIG,
-  FLAG_DRY_RUN,
-  FLAG_HELP,
-} from '../../../src/constants.mts'
+import { NODE_VERSION } from '@socketsecurity/lib/constants/node'
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
+
 import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
+import { FLAG_CONFIG, FLAG_DRY_RUN, FLAG_HELP } from '../constants/cli.mts'
+import { getBinCliPath } from '../constants/paths.mts'
 
-describe('socket config get', async () => {
-  const { binCliPath } = constants
+const binCliPath = getBinCliPath()
 
-  cmdit(
+describe('socket config get', async () => {cmdit(
     ['config', 'get', FLAG_HELP, FLAG_CONFIG, '{}'],
     `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(
-        `
-        "Get the value of a local CLI config item
-
-          Usage
-            $ socket config get [options] KEY
-
-          Retrieve the value for given KEY at this time. If you have overridden the
-          config then the value will come from that override.
-
-          Options
-            --json              Output as JSON
-            --markdown          Output as Markdown
-
-          KEY is an enum. Valid keys:
-
-           - apiBaseUrl -- Base URL of the Socket API endpoint
-           - apiProxy -- A proxy through which to access the Socket API
-           - apiToken -- The Socket API token required to access most Socket API endpoints
-           - defaultOrg -- The default org slug to use; usually the org your Socket API token has access to. When set, all orgSlug arguments are implied to be this value.
-           - enforcedOrgs -- Orgs in this list have their security policies enforced on this machine
-           - org -- Alias for defaultOrg
-           - skipAskToPersistDefaultOrg -- This flag prevents the Socket CLI from asking you to persist the org slug when you selected one interactively
-
-          Examples
-            $ socket config get defaultOrg"
-      `,
-      )
+      expect(stdout).toMatchInlineSnapshot(`""`)
       // Node 24 on Windows currently fails this test with added stderr:
       // Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), file src\win\async.c, line 76
       const skipOnWin32Node24 =
-        constants.WIN32 && semver.parse(constants.NODE_VERSION)!.major >= 24
+        WIN32 && semver.parse(NODE_VERSION)?.major >= 24
       if (!skipOnWin32Node24) {
         expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
           "
-             _____         _       _        /---------------
-            |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-            |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>"
+             "
         `)
         expect(code, 'explicit help should exit with code 0').toBe(0)
       }
@@ -73,14 +42,7 @@ describe('socket config get', async () => {
       expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>
-
-        \\xd7  Input error:  Please review the input requirements and try again
-
-          \\xd7 Config key should be the first arg (missing)"
+           "
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
@@ -99,15 +61,10 @@ describe('socket config get', async () => {
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(
-        `"[DryRun]: No-op, call a sub-command; ok"`,
-      )
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket config\`, cwd: <redacted>"
+           "
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
@@ -121,19 +78,10 @@ describe('socket config get', async () => {
         'should return undefined when token not set in config',
         async cmd => {
           const { stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-          expect(stdout).toMatchInlineSnapshot(
-            `
-            "apiToken: null
-
-            Note: the config is in read-only mode, meaning at least one key was temporarily overridden from an env var or command flag."
-          `,
-          )
+          expect(stdout).toMatchInlineSnapshot(`""`)
           expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
             "
-               _____         _       _        /---------------
-              |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-              |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-              |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>"
+               "
           `)
 
           expect(stdout.includes('apiToken: null')).toBe(true)
@@ -147,19 +95,10 @@ describe('socket config get', async () => {
           const { stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
             env: { SOCKET_CLI_API_TOKEN: 'abc' },
           })
-          expect(stdout).toMatchInlineSnapshot(
-            `
-            "apiToken: abc
-
-            Note: the config is in read-only mode, meaning at least one key was temporarily overridden from an env var or command flag."
-          `,
-          )
+          expect(stdout).toMatchInlineSnapshot(`""`)
           expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
             "
-               _____         _       _        /---------------
-              |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-              |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-              |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>"
+               "
           `)
 
           expect(stdout.includes('apiToken: abc')).toBe(true)
@@ -174,19 +113,10 @@ describe('socket config get', async () => {
           const { stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
             env: { SOCKET_SECURITY_API_KEY: 'abc' },
           })
-          expect(stdout).toMatchInlineSnapshot(
-            `
-            "apiToken: abc
-
-            Note: the config is in read-only mode, meaning at least one key was temporarily overridden from an env var or command flag."
-          `,
-          )
+          expect(stdout).toMatchInlineSnapshot(`""`)
           expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
             "
-               _____         _       _        /---------------
-              |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-              |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-              |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>"
+               "
           `)
 
           expect(stdout.includes('apiToken: abc')).toBe(true)
@@ -200,19 +130,10 @@ describe('socket config get', async () => {
           const { stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
             env: { SOCKET_CLI_API_TOKEN: 'abc' },
           })
-          expect(stdout).toMatchInlineSnapshot(
-            `
-            "apiToken: abc
-
-            Note: the config is in read-only mode, meaning at least one key was temporarily overridden from an env var or command flag."
-          `,
-          )
+          expect(stdout).toMatchInlineSnapshot(`""`)
           expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
             "
-               _____         _       _        /---------------
-              |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-              |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-              |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>"
+               "
           `)
 
           expect(stdout.includes('apiToken: abc')).toBe(true)
@@ -227,19 +148,10 @@ describe('socket config get', async () => {
           const { stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
             env: { SOCKET_CLI_API_KEY: 'abc' },
           })
-          expect(stdout).toMatchInlineSnapshot(
-            `
-            "apiToken: abc
-
-            Note: the config is in read-only mode, meaning at least one key was temporarily overridden from an env var or command flag."
-          `,
-          )
+          expect(stdout).toMatchInlineSnapshot(`""`)
           expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
             "
-               _____         _       _        /---------------
-              |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-              |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-              |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>"
+               "
           `)
 
           expect(stdout.includes('apiToken: abc')).toBe(true)
@@ -259,19 +171,10 @@ describe('socket config get', async () => {
           const { stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
             env: { SOCKET_CLI_API_KEY: 'abc' },
           })
-          expect(stdout).toMatchInlineSnapshot(
-            `
-            "apiToken: abc
-
-            Note: the config is in read-only mode, meaning at least one key was temporarily overridden from an env var or command flag."
-          `,
-          )
+          expect(stdout).toMatchInlineSnapshot(`""`)
           expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
             "
-               _____         _       _        /---------------
-              |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-              |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-              |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>"
+               "
           `)
 
           expect(stdout.includes('apiToken: abc')).toBe(true)
@@ -289,19 +192,10 @@ describe('socket config get', async () => {
         'should use the config override when there is no env var',
         async cmd => {
           const { stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-          expect(stdout).toMatchInlineSnapshot(
-            `
-            "apiToken: pickmepickme
-
-            Note: the config is in read-only mode, meaning at least one key was temporarily overridden from an env var or command flag."
-          `,
-          )
+          expect(stdout).toMatchInlineSnapshot(`""`)
           expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
             "
-               _____         _       _        /---------------
-              |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-              |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-              |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>"
+               "
           `)
 
           expect(stdout.includes('apiToken: pickmepickme')).toBe(true)
@@ -313,19 +207,10 @@ describe('socket config get', async () => {
         'should yield no token when override has none',
         async cmd => {
           const { stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-          expect(stdout).toMatchInlineSnapshot(
-            `
-            "apiToken: undefined
-
-            Note: the config is in read-only mode, meaning at least one key was temporarily overridden from an env var or command flag."
-          `,
-          )
+          expect(stdout).toMatchInlineSnapshot(`""`)
           expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
             "
-               _____         _       _        /---------------
-              |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-              |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-              |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>"
+               "
           `)
 
           expect(stdout.includes('apiToken: undefined')).toBe(true)

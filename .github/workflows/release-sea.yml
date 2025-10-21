@@ -1,0 +1,220 @@
+name: Build and Release SEA Binaries
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (leave empty to use package.json version)'
+        required: false
+        type: string
+      node_version:
+        description: 'Node.js version for SEA (leave empty for auto-detect)'
+        required: false
+        type: string
+  release:
+    types: [created]
+
+env:
+  # Auto-detect latest supported Node version if not specified.
+  NODE_VERSION: ${{ github.event.inputs.node_version || '' }}
+
+jobs:
+  detect-node-version:
+    runs-on: ubuntu-latest
+    outputs:
+      node_version: ${{ steps.detect.outputs.version }}
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          sparse-checkout: |
+            scripts/build-yao-pkg-node.mjs
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: '20'
+
+      - name: Detect latest yao-pkg Node version
+        id: detect
+        run: |
+          if [ -n "${{ env.NODE_VERSION }}" ]; then
+            echo "version=${{ env.NODE_VERSION }}" >> $GITHUB_OUTPUT
+          else
+            # Fetch latest supported version from yao-pkg.
+            VERSION=$(node -e "
+              fetch('https://api.github.com/repos/yao-pkg/pkg-fetch/contents/patches')
+                .then(r => r.json())
+                .then(data => {
+                  const versions = data
+                    .filter(f => f.name.startsWith('node.v'))
+                    .map(f => f.name.match(/node\.v(\d+\.\d+\.\d+)/)?.[1])
+                    .filter(Boolean)
+                    .sort((a, b) => {
+                      const [aMajor, aMinor, aPatch] = a.split('.').map(Number);
+                      const [bMajor, bMinor, bPatch] = b.split('.').map(Number);
+                      if (aMajor !== bMajor) return bMajor - aMajor;
+                      if (aMinor !== bMinor) return bMinor - aMinor;
+                      return bPatch - aPatch;
+                    });
+                  const v24 = versions.find(v => v.startsWith('24.'));
+                  const v22 = versions.find(v => v.startsWith('22.'));
+                  console.log(v24 || v22 || '24.10.0');
+                })
+                .catch(() => console.log('24.10.0'));
+            ")
+            echo "version=${VERSION}" >> $GITHUB_OUTPUT
+            echo "Detected Node version: ${VERSION}"
+          fi
+
+  build-sea:
+    needs: detect-node-version
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux
+            arch: x64
+          - os: ubuntu-latest
+            platform: linux
+            arch: arm64
+          - os: ubuntu-latest
+            platform: alpine
+            arch: x64
+          - os: ubuntu-latest
+            platform: alpine
+            arch: arm64
+          - os: macos-latest
+            platform: darwin
+            arch: x64
+          - os: macos-latest
+            platform: darwin
+            arch: arm64
+          - os: windows-latest
+            platform: win32
+            arch: x64
+          - os: windows-latest
+            platform: win32
+            arch: arm64
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+
+      - uses: SocketDev/socket-registry/.github/actions/setup@a912e5bd8ec469d2ee13abf592a6b2e5898c006c # main
+        with:
+          scope: '@socketsecurity'
+
+      - run: pnpm install
+
+      - name: Verify postject installation
+        run: pnpm exec postject --help || pnpm add -D postject
+
+      - name: Build SEA binary
+        id: build-sea
+        continue-on-error: true
+        run: pnpm run build --sea -- --platform=${{ matrix.platform }} --arch=${{ matrix.arch }}
+
+      - name: Build SEA binary (fallback with clean rebuild)
+        if: steps.build-sea.outcome == 'failure'
+        run: |
+          echo "Initial build failed, attempting clean rebuild with Node.js..."
+          node scripts/build-yao-pkg-node.mjs --clean --node-version=${{ needs.detect-node-version.outputs.node_version }}
+          pnpm run build --sea -- --platform=${{ matrix.platform }} --arch=${{ matrix.arch }}
+
+      - name: Verify binary exists
+        run: |
+          ls -la dist/sea/socket-*
+          file dist/sea/socket-* || true
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8 # v4.3.0
+        with:
+          name: socket-${{ matrix.platform }}-${{ matrix.arch }}
+          path: |
+            dist/sea/socket-*
+          retention-days: 7
+
+  upload-release:
+    needs: build-sea
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
+
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935 # v4.1.1
+        with:
+          path: dist/sea
+
+      - name: Flatten directory structure
+        run: |
+          cd dist/sea
+          find . -name "socket-*" -type f -exec mv {} . \;
+          find . -type d -empty -delete
+          ls -la
+
+      - name: Get version
+        id: version
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" = "release" ]; then
+            echo "version=${{ github.event.release.tag_name }}" >> $GITHUB_OUTPUT
+          else
+            VERSION=$(node -p "require('./src/sea/npm-package/package.json').version")
+            echo "version=v${VERSION}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Upload binaries to release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+
+          # Create release if it doesn't exist
+          if ! gh release view "$VERSION" > /dev/null 2>&1; then
+            gh release create "$VERSION" \
+              --title "$VERSION" \
+              --notes "Socket CLI $VERSION - See [CHANGELOG.md](https://github.com/SocketDev/socket-cli/blob/main/CHANGELOG.md) for details." \
+              --draft
+          fi
+
+          # Upload binaries
+          for file in dist/sea/socket-*; do
+            echo "Uploading $file..."
+            gh release upload "$VERSION" "$file" --clobber
+          done
+
+  publish-npm:
+    needs: upload-release
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release'
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+
+      - uses: SocketDev/socket-registry/.github/actions/setup@a912e5bd8ec469d2ee13abf592a6b2e5898c006c # main
+        with:
+          scope: '@socketsecurity'
+
+      - name: Update npm package version
+        run: |
+          VERSION="${{ github.event.release.tag_name }}"
+          VERSION="${VERSION#v}"  # Remove 'v' prefix if present
+          cd src/sea/npm-package
+          npm version "$VERSION" --no-git-tag-version
+
+      - name: Publish to npm
+        working-directory: src/sea/npm-package
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

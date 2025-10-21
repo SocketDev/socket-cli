@@ -1,9 +1,9 @@
 import path from 'node:path'
 
-import { normalizePath } from '@socketsecurity/registry/lib/path'
+import { normalizePath } from '@socketsecurity/lib/path'
 
-import constants from '../../constants.mts'
-import { getNpmRequire } from '../../utils/npm-paths.mts'
+import { WIN32 } from '../../constants/types.mts'
+import { getNpmRequire } from '../../utils/npm/paths.mts'
 
 let _arboristPkgPath: string | undefined
 export function getArboristPackagePath() {
@@ -16,7 +16,7 @@ export function getArboristPackagePath() {
       0,
       mainPathWithForwardSlashes.lastIndexOf(pkgName) + pkgName.length,
     )
-    _arboristPkgPath = constants.WIN32
+    _arboristPkgPath = WIN32
       ? path.normalize(arboristPkgPathWithForwardSlashes)
       : arboristPkgPathWithForwardSlashes
   }

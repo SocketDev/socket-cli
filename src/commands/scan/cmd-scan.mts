@@ -8,9 +8,9 @@ import { cmdScanReach } from './cmd-scan-reach.mts'
 import { cmdScanReport } from './cmd-scan-report.mts'
 import { cmdScanSetup } from './cmd-scan-setup.mts'
 import { cmdScanView } from './cmd-scan-view.mts'
-import { meowWithSubcommands } from '../../utils/meow-with-subcommands.mts'
+import { meowWithSubcommands } from '../../utils/cli/with-subcommands.mjs'
 
-import type { CliSubcommand } from '../../utils/meow-with-subcommands.mts'
+import type { CliSubcommand } from '../../utils/cli/with-subcommands.mjs'
 
 const description = 'Manage Socket scans'
 

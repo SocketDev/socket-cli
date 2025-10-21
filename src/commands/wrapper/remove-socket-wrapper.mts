@@ -1,6 +1,6 @@
 import { readFileSync, writeFileSync } from 'node:fs'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { logger } from '@socketsecurity/lib/logger'
 
 export function removeSocketWrapper(filepath: string): void {
   let content: string | undefined
@@ -34,6 +34,6 @@ export function removeSocketWrapper(filepath: string): void {
   )
   logger.log('')
   logger.info(
-    `Note: We cannot deactivate the alias from current terminal sessions. You have to restart existing terminal sessions to finalize this step.`,
+    'Note: We cannot deactivate the alias from current terminal sessions. You have to restart existing terminal sessions to finalize this step.',
   )
 }

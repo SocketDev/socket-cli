@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { cmdAnalytics } from './commands/analytics/cmd-analytics.mts'
+import { cmdAsk } from './commands/ask/cmd-ask.mts'
 import { cmdAuditLog } from './commands/audit-log/cmd-audit-log.mts'
 import { cmdCI } from './commands/ci/cmd-ci.mts'
 import { cmdConfig } from './commands/config/cmd-config.mts'
@@ -21,18 +22,23 @@ import { cmdOrganizationPolicySecurity } from './commands/organization/cmd-organ
 import { cmdOrganization } from './commands/organization/cmd-organization.mts'
 import { cmdPackage } from './commands/package/cmd-package.mts'
 import { cmdPatch } from './commands/patch/cmd-patch.mts'
+import { cmdPip } from './commands/pip/cmd-pip.mts'
 import { cmdPnpm } from './commands/pnpm/cmd-pnpm.mts'
 import { cmdRawNpm } from './commands/raw-npm/cmd-raw-npm.mts'
 import { cmdRawNpx } from './commands/raw-npx/cmd-raw-npx.mts'
 import { cmdRepository } from './commands/repository/cmd-repository.mts'
 import { cmdScan } from './commands/scan/cmd-scan.mts'
+import { cmdSelfUpdate } from './commands/self-update/cmd-self-update.mts'
 import { cmdThreatFeed } from './commands/threat-feed/cmd-threat-feed.mts'
 import { cmdUninstall } from './commands/uninstall/cmd-uninstall.mts'
+import { cmdWhoami } from './commands/whoami/cmd-whoami.mts'
 import { cmdWrapper } from './commands/wrapper/cmd-wrapper.mts'
 import { cmdYarn } from './commands/yarn/cmd-yarn.mts'
+import { isSeaBinary } from './utils/executable/detect.mts'
 
 export const rootCommands = {
   analytics: cmdAnalytics,
+  ask: cmdAsk,
   'audit-log': cmdAuditLog,
   ci: cmdCI,
   cdxgen: cmdManifestCdxgen,
@@ -53,13 +59,16 @@ export const rootCommands = {
   organization: cmdOrganization,
   package: cmdPackage,
   patch: cmdPatch,
+  pip: cmdPip,
   'raw-npm': cmdRawNpm,
   'raw-npx': cmdRawNpx,
   repository: cmdRepository,
   scan: cmdScan,
   security: cmdOrganizationPolicySecurity,
+  ...(isSeaBinary() ? { 'self-update': cmdSelfUpdate } : {}),
   'threat-feed': cmdThreatFeed,
   uninstall: cmdUninstall,
+  whoami: cmdWhoami,
   wrapper: cmdWrapper,
   yarn: cmdYarn,
 }
@@ -80,7 +89,7 @@ export const rootAliases = {
     hidden: true,
     argv: ['audit-log'],
   },
-  ['audit-logs']: {
+  'audit-logs': {
     description: cmdAuditLog.description,
     hidden: true,
     argv: ['audit-log'],
@@ -128,16 +137,16 @@ export const rootAliases = {
   repo: {
     description: `${cmdRepository.description} (alias)`,
     hidden: false,
-    argv: ['repos'],
+    argv: ['repository'],
   },
   repos: {
     description: cmdRepository.description,
     hidden: true,
-    argv: ['repos'],
+    argv: ['repository'],
   },
   repositories: {
     description: cmdRepository.description,
     hidden: true,
-    argv: ['repos'],
+    argv: ['repository'],
   },
 }

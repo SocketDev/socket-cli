@@ -1,10 +1,12 @@
+/** @fileoverview npm Arborist class installation and setup for Socket CLI. Provides safe Arborist wrappers that integrate security scanning into npm's dependency resolution process. */
+
 import { createRequire } from 'node:module'
 
-// @ts-ignore
+// @ts-expect-error
 import UntypedEdge from '@npmcli/arborist/lib/edge.js'
-// @ts-ignore
+// @ts-expect-error
 import UntypedNode from '@npmcli/arborist/lib/node.js'
-// @ts-ignore
+// @ts-expect-error
 import UntypedOverrideSet from '@npmcli/arborist/lib/override-set.js'
 
 import {

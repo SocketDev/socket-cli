@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
 import { toJsonReport, toMarkdownReport } from './output-scan-report.mts'
-import { SOCKET_WEBSITE_URL } from '../../constants.mjs'
+import { setupStandardOutputMocks } from '../../../test/helpers/index.mts'
+import { SOCKET_WEBSITE_URL } from '../../constants/socket.mts'
 
 import type { ScanReport } from './generate-report.mts'
+
+setupStandardOutputMocks()
 
 describe('output-scan-report', () => {
   describe('toJsonReport', () => {
