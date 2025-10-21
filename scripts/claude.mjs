@@ -8,10 +8,8 @@ import { spawn } from 'node:child_process'
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-
-import colors from 'yoctocolors-cjs'
-
 import { parseArgs } from '@socketsecurity/lib/argv/parse'
+import colors from 'yoctocolors-cjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '..')
@@ -2786,6 +2784,113 @@ Be specific and actionable.`
 }
 
 /**
+ * Generate a commit message using Claude non-interactively.
+ * @param {string} claudeCmd - Path to Claude CLI
+ * @param {string} cwd - Working directory
+ * @param {object} options - Options from parent command
+ * @returns {Promise<string>} Generated commit message
+ */
+async function generateCommitMessage(claudeCmd, cwd, options = {}) {
+  const opts = { __proto__: null, ...options }
+
+  // Get git diff of staged changes
+  const diffResult = await runCommandWithOutput('git', ['diff', '--cached'], {
+    cwd,
+  })
+
+  // Get git status
+  const statusResult = await runCommandWithOutput(
+    'git',
+    ['status', '--short'],
+    { cwd },
+  )
+
+  // Get recent commit messages for style consistency
+  const logResult = await runCommandWithOutput(
+    'git',
+    ['log', '--oneline', '-n', '5'],
+    { cwd },
+  )
+
+  const prompt = `Generate a concise commit message for these changes.
+
+Git status:
+${statusResult.stdout || 'No status output'}
+
+Git diff (staged changes):
+${diffResult.stdout || 'No diff output'}
+
+Recent commits (for style reference):
+${logResult.stdout || 'No recent commits'}
+
+Requirements:
+1. Write a clear, concise commit message (1-2 lines preferred)
+2. Follow the style of recent commits
+3. Focus on WHY the changes were made, not just WHAT changed
+4. NO AI attribution (per CLAUDE.md rules)
+5. NO emojis
+6. Output ONLY the commit message text, nothing else
+
+Commit message:`
+
+  // Run Claude non-interactively to generate commit message
+  const result = await new Promise((resolve, reject) => {
+    let stdout = ''
+    let stderr = ''
+
+    const claudeProcess = spawn(claudeCmd, prepareClaudeArgs([], opts), {
+      cwd,
+      stdio: ['pipe', 'pipe', 'pipe'],
+    })
+
+    claudeProcess.stdout.on('data', data => {
+      stdout += data.toString()
+    })
+
+    claudeProcess.stderr.on('data', data => {
+      stderr += data.toString()
+    })
+
+    claudeProcess.on('close', code => {
+      if (code === 0) {
+        resolve(stdout.trim())
+      } else {
+        reject(
+          new Error(
+            `Claude failed to generate commit message: ${stderr || 'Unknown error'}`,
+          ),
+        )
+      }
+    })
+
+    claudeProcess.stdin.write(prompt)
+    claudeProcess.stdin.end()
+  })
+
+  // Extract just the commit message (Claude might add extra text)
+  // Look for the actual message after "Commit message:" or just use the whole output
+  const lines = result.split('\n').filter(line => line.trim())
+
+  // Return the first substantial line that looks like a commit message
+  for (const line of lines) {
+    const trimmed = line.trim()
+    // Skip common Claude preamble phrases
+    if (
+      trimmed &&
+      !trimmed.toLowerCase().startsWith('here') &&
+      !trimmed.toLowerCase().startsWith('commit message:') &&
+      !trimmed.startsWith('```') &&
+      trimmed.length > 10
+    ) {
+      return trimmed
+    }
+  }
+
+  // Fallback to first non-empty line
+  return lines[0] || 'Fix local checks and update tests'
+}
+
+/**
  * Run all checks, push, and monitor CI until green.
  * NOTE: This operates on the current repo by default. Use --cross-repo for all Socket projects.
  * Multi-repo parallel execution would conflict with interactive prompts if fixes fail.
@@ -3028,8 +3133,15 @@ Let's work through this together to get CI passing.`
       // Stage all changes
       await runCommand('git', ['add', '.'], { cwd: rootPath })
 
-      // Commit with descriptive message (no AI attribution per CLAUDE.md)
-      const commitMessage = 'Fix local checks and update tests'
+      // Generate commit message using Claude (non-interactive)
+      log.progress('Generating commit message with Claude')
+      const commitMessage = await generateCommitMessage(
+        claudeCmd,
+        rootPath,
+        opts,
+      )
+      log.substep(`Commit message: ${commitMessage}`)
+
       const commitArgs = ['commit', '-m', commitMessage]
       if (useNoVerify) {
         commitArgs.push('--no-verify')
@@ -3321,7 +3433,9 @@ Let's work through this together to get CI passing.`
           }
         }
         if (filteredLogs.split('\n').length > 10) {
-          log.substep(`  ... (${filteredLogs.split('\n').length - 10} more lines)`)
+          log.substep(
+            `  ... (${filteredLogs.split('\n').length - 10} more lines)`,
+          )
         }
 
         // Check if we've seen this CI error before
@@ -3350,9 +3464,10 @@ Let's work through this together to get CI passing.`
         log.progress('Analyzing CI failure with Claude')
 
         // Keep logs under 2000 chars to avoid context issues
-        const truncatedLogs = filteredLogs.length > 2000
-          ? `${filteredLogs.substring(0, 2000)}\n... (truncated)`
-          : filteredLogs
+        const truncatedLogs =
+          filteredLogs.length > 2000
+            ? `${filteredLogs.substring(0, 2000)}\n... (truncated)`
+            : filteredLogs
 
         const fixPrompt = `Fix CI failures for commit ${currentSha.substring(0, 7)} in ${owner}/${repo}.
 
@@ -3485,69 +3600,28 @@ Fix all issues by making necessary file changes. Be direct, don't ask questions.
             .join(', ')
           log.substep(`Changed files: ${changedFiles}`)
 
-          // Use Claude to create proper commits (logical groupings, no AI attribution)
-          const commitPrompt = `Review the changes and create commits with logical groupings.
+          // Stage all changes
+          await runCommand('git', ['add', '.'], { cwd: rootPath })
 
-Changed files: ${changedFiles}
+          // Generate commit message using Claude (non-interactive)
+          log.progress('Generating CI fix commit message with Claude')
+          const commitMessage = await generateCommitMessage(
+            claudeCmd,
+            rootPath,
+            opts,
+          )
+          log.substep(`Commit message: ${commitMessage}`)
 
-Requirements:
-- Create one or more commits as needed for logical grouping
-- No AI attribution in commit messages
-- Follow conventional commit style from the repo
-- Be concise and descriptive
-
-Commit the changes now.`
-
-          const commitTmpFile = path.join(rootPath, `.claude-commit-${Date.now()}.txt`)
-          await fs.writeFile(commitTmpFile, commitPrompt, 'utf8')
-
-          const commitArgs = prepareClaudeArgs([], opts)
-          const commitArgsStr = commitArgs.join(' ')
-          const commitCommand = commitArgsStr
-            ? `${claudeCmd} ${commitArgsStr}`
-            : claudeCmd
-
-          let commitScriptCmd
-          if (WIN32) {
-            const winptyCheck = await runCommandWithOutput('where', ['winpty'])
-            if (winptyCheck.exitCode === 0) {
-              commitScriptCmd = `winpty ${commitCommand} < "${commitTmpFile}"`
-            } else {
-              commitScriptCmd = `${commitCommand} < "${commitTmpFile}"`
-            }
-          } else {
-            commitScriptCmd = `script -q /dev/null sh -c '${commitCommand} < "${commitTmpFile}"'`
+          // Commit with generated message
+          const commitArgs = ['commit', '-m', commitMessage]
+          if (useNoVerify) {
+            commitArgs.push('--no-verify')
           }
-
-          const commitExitCode = await new Promise((resolve, _reject) => {
-            const child = spawn(commitScriptCmd, [], {
-              stdio: 'inherit',
-              cwd: rootPath,
-              shell: true,
-            })
-
-            const sigintHandler = () => {
-              child.kill('SIGINT')
-              resolve(130)
-            }
-            process.on('SIGINT', sigintHandler)
-
-            child.on('exit', code => {
-              process.off('SIGINT', sigintHandler)
-              resolve(code || 0)
-            })
-
-            child.on('error', () => {
-              process.off('SIGINT', sigintHandler)
-              resolve(1)
-            })
+          const commitResult = await runCommandWithOutput('git', commitArgs, {
+            cwd: rootPath,
           })
 
-          try {
-            await fs.unlink(commitTmpFile)
-          } catch {}
-
-          if (commitExitCode === 0) {
+          if (commitResult.exitCode === 0) {
             // Push the commits
             await runCommand('git', ['push'], { cwd: rootPath })
             log.done('Pushed fix commits')
@@ -3563,7 +3637,9 @@ Commit the changes now.`
             currentSha = newShaResult.stdout.trim()
             pushTime = Date.now()
           } else {
-            log.warn(`Claude commit failed with exit code ${commitExitCode}`)
+            log.warn(
+              `Git commit failed: ${commitResult.stderr || commitResult.stdout}`,
+            )
           }
         }
 
@@ -3603,7 +3679,8 @@ Commit the changes now.`
 
           // Check for any failed or cancelled jobs
           const failedJobs = jobs.filter(
-            job => job.conclusion === 'failure' || job.conclusion === 'cancelled'
+            job =>
+              job.conclusion === 'failure' || job.conclusion === 'cancelled',
           )
 
           // Find new failures we haven't fixed yet
@@ -3648,16 +3725,19 @@ Commit the changes now.`
                 }
               }
               if (filteredLogs.split('\n').length > 10) {
-                log.substep(`  ... (${filteredLogs.split('\n').length - 10} more lines)`)
+                log.substep(
+                  `  ... (${filteredLogs.split('\n').length - 10} more lines)`,
+                )
               }
 
               // Analyze and fix with Claude
               log.progress(`Analyzing failure in ${job.name}`)
 
               // Keep logs under 2000 chars to avoid context issues
-              const truncatedLogs = filteredLogs.length > 2000
-                ? filteredLogs.substring(0, 2000) + '\n... (truncated)'
-                : filteredLogs
+              const truncatedLogs =
+                filteredLogs.length > 2000
+                  ? `${filteredLogs.substring(0, 2000)}\n... (truncated)`
+                  : filteredLogs
 
               const fixPrompt = `Fix CI failure in "${job.name}" (run ${lastRunId}, commit ${currentSha.substring(0, 7)}).
 
@@ -3688,7 +3768,10 @@ Fix the issue by making necessary file changes. Be direct, don't ask questions.`
 
               try {
                 // Write prompt to temp file
-                const tmpFile = path.join(rootPath, `.claude-fix-${Date.now()}.txt`)
+                const tmpFile = path.join(
+                  rootPath,
+                  `.claude-fix-${Date.now()}.txt`,
+                )
                 await fs.writeFile(tmpFile, fixPrompt, 'utf8')
 
                 const fixArgs = prepareClaudeArgs([], opts)
@@ -3707,7 +3790,9 @@ Fix the issue by making necessary file changes. Be direct, don't ask questions.`
                 let scriptCmd
                 if (WIN32) {
                   // Try winpty (comes with Git for Windows)
-                  const winptyCheck = await runCommandWithOutput('where', ['winpty'])
+                  const winptyCheck = await runCommandWithOutput('where', [
+                    'winpty',
+                  ])
                   if (winptyCheck.exitCode === 0) {
                     scriptCmd = `winpty ${claudeCommand} < "${tmpFile}"`
                   } else {
@@ -3791,73 +3876,40 @@ Fix the issue by making necessary file changes. Be direct, don't ask questions.`
                   .join(', ')
                 log.substep(`Changed files: ${changedFiles}`)
 
-                // Use Claude to create proper commits (logical groupings, no AI attribution)
-                const commitPrompt = `Review the changes and create commits with logical groupings.
+                // Stage all changes
+                await runCommand('git', ['add', '.'], { cwd: rootPath })
 
-Changed files: ${changedFiles}
+                // Generate commit message using Claude (non-interactive)
+                log.progress(
+                  `Generating commit message for ${job.name} fix with Claude`,
+                )
+                const commitMessage = await generateCommitMessage(
+                  claudeCmd,
+                  rootPath,
+                  opts,
+                )
+                log.substep(`Commit message: ${commitMessage}`)
 
-Requirements:
-- Create one or more commits as needed for logical grouping
-- No AI attribution in commit messages
-- Follow conventional commit style from the repo
-- Be concise and descriptive
-
-Commit the changes now.`
-
-                const commitTmpFile = path.join(rootPath, `.claude-commit-${Date.now()}.txt`)
-                await fs.writeFile(commitTmpFile, commitPrompt, 'utf8')
-
-                const commitArgs = prepareClaudeArgs([], opts)
-                const commitArgsStr = commitArgs.join(' ')
-                const commitCommand = commitArgsStr
-                  ? `${claudeCmd} ${commitArgsStr}`
-                  : claudeCmd
-
-                let commitScriptCmd
-                if (WIN32) {
-                  const winptyCheck = await runCommandWithOutput('where', ['winpty'])
-                  if (winptyCheck.exitCode === 0) {
-                    commitScriptCmd = `winpty ${commitCommand} < "${commitTmpFile}"`
-                  } else {
-                    commitScriptCmd = `${commitCommand} < "${commitTmpFile}"`
-                  }
-                } else {
-                  commitScriptCmd = `script -q /dev/null sh -c '${commitCommand} < "${commitTmpFile}"'`
+                // Commit with generated message
+                const commitArgs = ['commit', '-m', commitMessage]
+                if (useNoVerify) {
+                  commitArgs.push('--no-verify')
                 }
-
-                const commitExitCode = await new Promise((resolve, _reject) => {
-                  const child = spawn(commitScriptCmd, [], {
-                    stdio: 'inherit',
+                const commitResult = await runCommandWithOutput(
+                  'git',
+                  commitArgs,
+                  {
                     cwd: rootPath,
-                    shell: true,
-                  })
+                  },
+                )
 
-                  const sigintHandler = () => {
-                    child.kill('SIGINT')
-                    resolve(130)
-                  }
-                  process.on('SIGINT', sigintHandler)
-
-                  child.on('exit', code => {
-                    process.off('SIGINT', sigintHandler)
-                    resolve(code || 0)
-                  })
-
-                  child.on('error', () => {
-                    process.off('SIGINT', sigintHandler)
-                    resolve(1)
-                  })
-                })
-
-                try {
-                  await fs.unlink(commitTmpFile)
-                } catch {}
-
-                if (commitExitCode === 0) {
+                if (commitResult.exitCode === 0) {
                   log.done(`Committed fix for ${job.name}`)
                   hasPendingCommits = true
                 } else {
-                  log.warn(`Claude commit failed with exit code ${commitExitCode}`)
+                  log.warn(
+                    `Git commit failed: ${commitResult.stderr || commitResult.stdout}`,
+                  )
                 }
               } else {
                 log.substep(`No changes to commit for ${job.name}`)
@@ -3870,7 +3922,9 @@ Commit the changes now.`
 
           // Show current status
           if (fixedJobs.size > 0) {
-            log.substep(`Fixed ${fixedJobs.size} job(s) so far (commits pending push)`)
+            log.substep(
+              `Fixed ${fixedJobs.size} job(s) so far (commits pending push)`,
+            )
           }
         } catch (e) {
           log.warn(`Failed to parse job data: ${e.message}`)
