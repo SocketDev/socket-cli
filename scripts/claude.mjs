@@ -570,7 +570,11 @@ function hashError(errorOutput) {
     .slice(0, 500)
 
   // Use proper cryptographic hashing for consistent results
-  return crypto.createHash('sha256').update(normalized).digest('hex').slice(0, 16)
+  return crypto
+    .createHash('sha256')
+    .update(normalized)
+    .digest('hex')
+    .slice(0, 16)
 }
 
 /**
@@ -1061,7 +1065,7 @@ async function executeParallel(tasks, workers = 3) {
   }
 
   // Parallel execution with worker limit
-  log.substep(`⚡ Executing ${tasks.length} tasks with ${workers} workers`)
+  log.substep(`🚀 Executing ${tasks.length} tasks with ${workers} workers`)
   const results = []
   const executing = []
 
@@ -2920,16 +2924,16 @@ function calculatePollDelay(status, attempt, hasActiveJobs = false) {
   // If jobs are actively running, poll more frequently
   if (hasActiveJobs || status === 'in_progress') {
     // Start at 5s, gradually increase to 15s max
-    return Math.min(5000 + attempt * 2000, 15000)
+    return Math.min(5000 + attempt * 2000, 15_000)
   }
 
   // If queued or waiting, use longer intervals (30s)
   if (status === 'queued' || status === 'waiting') {
-    return 30000
+    return 30_000
   }
 
   // Default: moderate polling for unknown states (10s)
-  return 10000
+  return 10_000
 }
 
 /**
@@ -2991,24 +2995,26 @@ async function validateBeforePush(cwd) {
 
   // Check 1: No console.log statements
   if (diff.match(/^\+.*console\.log\(/m)) {
-    warnings.push('⚠️  Added console.log() statements detected')
+    warnings.push(
+      `${colors.yellow('⚠')} Added console.log() statements detected`,
+    )
   }
 
   // Check 2: No .only in tests
   if (diff.match(/^\+.*\.(only|skip)\(/m)) {
-    warnings.push('⚠️  Test .only() or .skip() detected')
+    warnings.push(`${colors.yellow('⚠')} Test .only() or .skip() detected`)
   }
 
   // Check 3: No debugger statements
   if (diff.match(/^\+.*debugger[;\s]/m)) {
-    warnings.push('⚠️  Debugger statement detected')
+    warnings.push(`${colors.yellow('⚠')} Debugger statement detected`)
   }
 
   // Check 4: No TODO/FIXME without issue link
   const todoMatches = diff.match(/^\+.*\/\/\s*(TODO|FIXME)(?!\s*\(#\d+\))/gim)
   if (todoMatches && todoMatches.length > 0) {
     warnings.push(
-      `⚠️  ${todoMatches.length} TODO/FIXME comment(s) without issue links`,
+      `${colors.yellow('⚠')} ${todoMatches.length} TODO/FIXME comment(s) without issue links`,
     )
   }
 
@@ -3019,7 +3025,7 @@ async function validateBeforePush(cwd) {
       const pkgContent = await fs.readFile(pkgPath, 'utf8')
       JSON.parse(pkgContent)
     } catch (e) {
-      warnings.push(`⚠️  Invalid package.json: ${e.message}`)
+      warnings.push(`${colors.yellow('⚠')} Invalid package.json: ${e.message}`)
     }
   }
 
@@ -3290,7 +3296,9 @@ Let's work through this together to get CI passing.`
       const validation = await validateBeforePush(rootPath)
       if (!validation.valid) {
         log.warn('Pre-push validation warnings:')
-        validation.warnings.forEach(warning => log.substep(warning))
+        validation.warnings.forEach(warning => {
+          log.substep(warning)
+        })
         log.substep('Continuing with push (warnings are non-blocking)...')
       }
 
@@ -3501,8 +3509,10 @@ Let's work through this together to get CI passing.`
 
     if (!matchingRun) {
       // Use moderate delay when no run found yet (10s)
-      const delay = 10000
-      log.substep(`No matching workflow runs found yet, waiting ${delay / 1000}s...`)
+      const delay = 10_000
+      log.substep(
+        `No matching workflow runs found yet, waiting ${delay / 1000}s...`,
+      )
       await new Promise(resolve => setTimeout(resolve, delay))
       pollAttempt++
       continue
@@ -3778,7 +3788,9 @@ Fix all issues by making necessary file changes. Be direct, don't ask questions.
           const validation = await validateBeforePush(rootPath)
           if (!validation.valid) {
             log.warn('Pre-commit validation warnings:')
-            validation.warnings.forEach(warning => log.substep(warning))
+            validation.warnings.forEach(warning => {
+              log.substep(warning)
+            })
           }
 
           // Commit with generated message
@@ -3890,7 +3902,7 @@ Fix all issues by making necessary file changes. Be direct, don't ask questions.
 
             // Fix each failed job immediately
             for (const job of sortedFailures) {
-              log.substep(`❌ ${job.name}: ${job.conclusion}`)
+              log.substep(`${colors.red('✗')} ${job.name}: ${job.conclusion}`)
 
               // Fetch logs for this specific failed job using job ID
               log.progress(`Fetching logs for ${job.name}`)
@@ -4093,7 +4105,9 @@ Fix the issue by making necessary file changes. Be direct, don't ask questions.`
                 const validation = await validateBeforePush(rootPath)
                 if (!validation.valid) {
                   log.warn('Pre-commit validation warnings:')
-                  validation.warnings.forEach(warning => log.substep(warning))
+                  validation.warnings.forEach(warning => {
+                    log.substep(warning)
+                  })
                 }
 
                 // Commit with generated message
@@ -4157,7 +4171,7 @@ async function runWatchMode(claudeCmd, options = {}) {
   const opts = { __proto__: null, ...options }
   printHeader('Watch Mode - Continuous Monitoring')
 
-  log.info('👁️ Starting continuous monitoring...')
+  log.info('Starting continuous monitoring...')
   log.substep('Press Ctrl+C to stop')
 
   const _watchPath = !opts['cross-repo'] ? rootPath : parentPath
@@ -4614,13 +4628,13 @@ async function main() {
 
     // Display execution mode
     if (executionMode.workers > 1) {
-      log.substep(`⚡ Parallel mode: ${executionMode.workers} workers`)
+      log.substep(`🚀 Parallel mode: ${executionMode.workers} workers`)
     }
     if (executionMode.watch) {
-      log.substep('👁️ Watch mode: Continuous monitoring enabled')
+      log.substep('Watch mode: Continuous monitoring enabled')
     }
     if (!executionMode.autoFix) {
-      log.substep('💬 Prompt mode: Fixes require approval')
+      log.substep('Prompt mode: Fixes require approval')
     }
 
     // Execute requested operation.
