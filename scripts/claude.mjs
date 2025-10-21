@@ -3168,13 +3168,20 @@ Fix all CI failures now by making the necessary changes.`
         }, 10_000)
 
         try {
-          // Use runClaude with interactive mode so Claude can use tools to fix files
-          await runClaude(claudeCmd, fixPrompt, {
-            ...opts,
-            interactive: true,
+          // Use --print flag to run Claude in non-interactive mode
+          // This avoids stdin raw mode issues (Ink requires TTY for raw mode)
+          const printArgs = ['--print', ...prepareClaudeArgs([], opts)]
+          const result = await runCommandWithOutput(claudeCmd, printArgs, {
             cwd: rootPath,
-            timeout: fixTimeout,
+            input: fixPrompt,
+            stdio: ['pipe', 'pipe', 'pipe'],
           })
+          if (result.exitCode !== 0) {
+            log.warn(`Claude fix exited with code ${result.exitCode}`)
+            if (result.stderr) {
+              log.warn(`Claude stderr: ${result.stderr.slice(0, 500)}`)
+            }
+          }
         } catch (error) {
           log.warn(`Claude fix error: ${error.message}`)
         } finally {
