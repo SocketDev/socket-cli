@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { cmdAnalytics } from './commands/analytics/cmd-analytics.mts'
-import { cmdAsk } from './commands/ask/cmd-ask.mts'
+// import { cmdAsk } from './commands/ask/cmd-ask.mts'
 import { cmdAuditLog } from './commands/audit-log/cmd-audit-log.mts'
 import { cmdCI } from './commands/ci/cmd-ci.mts'
 import { cmdConfig } from './commands/config/cmd-config.mts'
@@ -21,7 +21,7 @@ import { cmdOrganizationDependencies } from './commands/organization/cmd-organiz
 import { cmdOrganizationPolicyLicense } from './commands/organization/cmd-organization-policy-license.mts'
 import { cmdOrganizationPolicySecurity } from './commands/organization/cmd-organization-policy-security.mts'
 import { cmdPackage } from './commands/package/cmd-package.mts'
-import { cmdPatch } from './commands/patch/cmd-patch.mts'
+// import { cmdPatch } from './commands/patch/cmd-patch.mts'
 import { cmdPip } from './commands/pip/cmd-pip.mts'
 import { cmdPnpm } from './commands/pnpm/cmd-pnpm.mts'
 import { cmdRawNpm } from './commands/raw-npm/cmd-raw-npm.mts'
@@ -38,7 +38,7 @@ import { isSeaBinary } from './utils/executable/detect.mts'
 
 export const rootCommands = {
   analytics: cmdAnalytics,
-  ask: cmdAsk,
+  // ask: cmdAsk,
   'audit-log': cmdAuditLog,
   ci: cmdCI,
   cdxgen: cmdManifestCdxgen,
@@ -58,7 +58,7 @@ export const rootCommands = {
   optimize: cmdOptimize,
   organization: cmdOrganization,
   package: cmdPackage,
-  patch: cmdPatch,
+  // patch: cmdPatch,
   pip: cmdPip,
   'raw-npm': cmdRawNpm,
   'raw-npx': cmdRawNpx,
