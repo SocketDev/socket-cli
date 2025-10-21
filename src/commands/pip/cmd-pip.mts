@@ -25,7 +25,7 @@
  */
 
 import { spawn } from '@socketsecurity/lib/spawn'
-import { WIN32 } from '@socketsecurity/registry/constants/platform'
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
 
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'

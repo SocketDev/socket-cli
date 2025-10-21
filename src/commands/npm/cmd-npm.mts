@@ -1,7 +1,7 @@
 import { createRequire } from 'node:module'
 
 import { logger } from '@socketsecurity/lib/logger'
-import { NPM } from '@socketsecurity/registry/constants/agents'
+import { NPM } from '@socketsecurity/lib/constants/agents'
 
 import {
   DRY_RUN_BAILING_NOW,

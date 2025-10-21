@@ -13,9 +13,9 @@ import { readPackageJson } from '@socketsecurity/lib/packages'
 import { normalizePath } from '@socketsecurity/lib/path'
 import { isNonEmptyString } from '@socketsecurity/lib/strings'
 import { pluralize } from '@socketsecurity/lib/words'
-import { NPM } from '@socketsecurity/registry/constants/agents'
-import { UTF8 } from '@socketsecurity/registry/constants/encoding'
-import { DOT_SOCKET_DIR, MANIFEST_JSON, NODE_MODULES } from '@socketsecurity/registry/constants/paths'
+import { NPM } from '@socketsecurity/lib/constants/agents'
+import { UTF8 } from '@socketsecurity/lib/constants/encoding'
+import { DOT_SOCKET_DIR, MANIFEST_JSON, NODE_MODULES } from '@socketsecurity/lib/constants/paths'
 
 
 import { PatchManifestSchema } from './manifest-schema.mts'

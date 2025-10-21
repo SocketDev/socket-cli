@@ -45,7 +45,7 @@ import { setupStandardOutputMocks, createSuccessResult } from '../../../test/hel
 setupStandardOutputMocks()
 
 it('outputs JSON format', async () => {
-  const { logger } = await import('@socketsecurity/registry/lib/logger')
+  const { logger } = await import('@socketsecurity/lib/lib/logger')
   const result = createSuccessResult({ quota: 100 })
   await outputOrgQuota(result, 'json')
   expect(logger.log).toHaveBeenCalled()
@@ -96,7 +96,7 @@ Mocks logger and output utilities for output tests.
 **When to use:** All `output-*.test.mts` files (basic output)
 
 **What it mocks:**
-- `@socketsecurity/registry/lib/logger` → logger functions
+- `@socketsecurity/lib/lib/logger` → logger functions
 - `../../utils/error/fail-msg-with-badge.mts` → `failMsgWithBadge`
 - `../../utils/output/result-json.mjs` → `serializeResultJson`
 
@@ -108,7 +108,7 @@ setupStandardOutputMocks()
 
 describe('outputOrgQuota', () => {
   it('outputs JSON', async () => {
-    const { logger } = await import('@socketsecurity/registry/lib/logger')
+    const { logger } = await import('@socketsecurity/lib/lib/logger')
     // Test output logic
   })
 })
@@ -553,7 +553,7 @@ describe('outputOrgQuota', () => {
   })
 
   it('outputs JSON format for successful result', async () => {
-    const { logger } = await import('@socketsecurity/registry/lib/logger')
+    const { logger } = await import('@socketsecurity/lib/lib/logger')
     const { serializeResultJson } = await import(
       '../../utils/output/result-json.mjs'
     )
@@ -574,7 +574,7 @@ describe('outputOrgQuota', () => {
   })
 
   it('outputs error in JSON format', async () => {
-    const { logger } = await import('@socketsecurity/registry/lib/logger')
+    const { logger } = await import('@socketsecurity/lib/lib/logger')
     const mockLog = vi.mocked(logger.log)
 
     const result = createErrorResult('Unauthorized', {
@@ -589,7 +589,7 @@ describe('outputOrgQuota', () => {
   })
 
   it('outputs error in text format', async () => {
-    const { logger } = await import('@socketsecurity/registry/lib/logger')
+    const { logger } = await import('@socketsecurity/lib/lib/logger')
     const { failMsgWithBadge } = await import(
       '../../utils/error/fail-msg-with-badge.mts'
     )
@@ -644,7 +644,7 @@ describe('outputRepoList', () => {
   })
 
   it('outputs text format with table', async () => {
-    const { logger } = await import('@socketsecurity/registry/lib/logger')
+    const { logger } = await import('@socketsecurity/lib/lib/logger')
     const { mdTableOfPairs } = await import('../../utils/output/markdown.mts')
     const mockLog = vi.mocked(logger.log)
     const mockInfo = vi.mocked(logger.info)

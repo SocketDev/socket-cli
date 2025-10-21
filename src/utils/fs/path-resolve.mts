@@ -6,8 +6,8 @@ import {
   whichBinSync,
 } from '@socketsecurity/lib/bin'
 import { isDirSync } from '@socketsecurity/lib/fs'
-import { NPM } from '@socketsecurity/registry/constants/agents'
-import { WIN32 } from '@socketsecurity/registry/constants/platform'
+import { NPM } from '@socketsecurity/lib/constants/agents'
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
 
 import {
   filterBySupportedScanFiles,

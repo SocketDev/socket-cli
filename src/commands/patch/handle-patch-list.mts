@@ -5,8 +5,8 @@ import { logger } from '@socketsecurity/lib/logger'
 import { normalizePath } from '@socketsecurity/lib/path'
 import { select } from '@socketsecurity/lib/prompts'
 import { pluralize } from '@socketsecurity/lib/words'
-import { UTF8 } from '@socketsecurity/registry/constants/encoding'
-import { DOT_SOCKET_DIR, MANIFEST_JSON } from '@socketsecurity/registry/constants/paths'
+import { UTF8 } from '@socketsecurity/lib/constants/encoding'
+import { DOT_SOCKET_DIR, MANIFEST_JSON } from '@socketsecurity/lib/constants/paths'
 
 
 import { handlePatchApply } from './handle-patch-apply.mts'

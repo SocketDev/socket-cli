@@ -6,7 +6,7 @@ import trash from 'trash'
 import { describe, expect, it, vi } from 'vitest'
 
 import { spawn } from '@socketsecurity/lib/spawn'
-import { PNPM } from '@socketsecurity/registry/constants/agents'
+import { PNPM } from '@socketsecurity/lib/constants/agents'
 
 import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
 import { FLAG_CONFIG, FLAG_DRY_RUN, FLAG_HELP, FLAG_SILENT, FLAG_VERSION } from '../constants/cli.mts'

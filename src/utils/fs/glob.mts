@@ -11,7 +11,7 @@ import { defaultIgnore } from '@socketsecurity/lib/globs'
 import { readPackageJson } from '@socketsecurity/lib/packages'
 import { transform } from '@socketsecurity/lib/streams'
 import { isNonEmptyString } from '@socketsecurity/lib/strings'
-import { NODE_MODULES } from '@socketsecurity/registry/constants/paths'
+import { NODE_MODULES } from '@socketsecurity/lib/constants/paths'
 
 
 import { PNPM } from '../../constants/agents.mjs'

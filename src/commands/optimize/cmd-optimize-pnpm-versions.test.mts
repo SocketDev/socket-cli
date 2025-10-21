@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 
 import { readPackageJson } from '@socketsecurity/lib/packages'
 import { spawn } from '@socketsecurity/lib/spawn'
-import { PNPM } from '@socketsecurity/registry/constants/agents'
+import { PNPM } from '@socketsecurity/lib/constants/agents'
 
 import { withTempFixture } from '../../../src/utils/test-fixtures.mts'
 import { spawnSocketCli, testPath } from '../../../test/utils.mts'

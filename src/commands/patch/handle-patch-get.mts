@@ -4,8 +4,8 @@ import path from 'node:path'
 import { logger } from '@socketsecurity/lib/logger'
 import { normalizePath } from '@socketsecurity/lib/path'
 import { pluralize } from '@socketsecurity/lib/words'
-import { UTF8 } from '@socketsecurity/registry/constants/encoding'
-import { DOT_SOCKET_DIR, MANIFEST_JSON } from '@socketsecurity/registry/constants/paths'
+import { UTF8 } from '@socketsecurity/lib/constants/encoding'
+import { DOT_SOCKET_DIR, MANIFEST_JSON } from '@socketsecurity/lib/constants/paths'
 
 
 import { PatchManifestSchema } from './manifest-schema.mts'

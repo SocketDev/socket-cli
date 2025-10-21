@@ -1,8 +1,8 @@
 import semver from 'semver'
 import { describe, expect } from 'vitest'
 
-import { NODE_VERSION } from '@socketsecurity/registry/constants/node'
-import { WIN32 } from '@socketsecurity/registry/constants/platform'
+import { NODE_VERSION } from '@socketsecurity/lib/constants/node'
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
 
 import { FLAG_CONFIG, FLAG_DRY_RUN, FLAG_HELP } from '../../../src/constants/cli.mts'
 import { getBinCliPath } from '../../../src/constants/paths.mts'

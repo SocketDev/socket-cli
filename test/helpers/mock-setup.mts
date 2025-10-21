@@ -22,7 +22,7 @@ export function setupStandardSdkMocks() {
  * Use this for output-*.test.mts files
  */
 export function setupStandardOutputMocks() {
-  vi.mock('@socketsecurity/registry/lib/logger', () => ({
+  vi.mock('@socketsecurity/lib/logger', () => ({
     logger: {
       fail: vi.fn(),
       log: vi.fn(),

@@ -3,7 +3,7 @@
 import { createRequire } from 'node:module'
 
 import { Spinner as createSpinner } from '@socketsecurity/lib/spinner'
-import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/registry/constants/socket'
+import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/lib/constants/socket'
 
 import { NPM, PNPM, YARN } from '../../constants/agents.mts'
 import { FLAG_SILENT } from '../../constants/cli.mts'

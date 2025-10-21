@@ -3,7 +3,7 @@ import terminalLink from 'terminal-link'
 
 import { logger } from '@socketsecurity/lib/logger'
 import { confirm } from '@socketsecurity/lib/prompts'
-import { getSpinner } from '@socketsecurity/registry/constants/process'
+import { getSpinner } from '@socketsecurity/lib/constants/process'
 
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'

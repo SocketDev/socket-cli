@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { NPM, NPX } from '@socketsecurity/registry/constants/agents'
+import { NPM, NPX } from '@socketsecurity/lib/constants/agents'
 
 import shadowNpmBase from './npm-base.mts'
 

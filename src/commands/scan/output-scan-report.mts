@@ -2,7 +2,7 @@ import fs from 'node:fs/promises'
 
 import { joinAnd } from '@socketsecurity/lib/arrays'
 import { logger } from '@socketsecurity/lib/logger'
-import { getSpinner } from '@socketsecurity/registry/constants/process'
+import { getSpinner } from '@socketsecurity/lib/constants/process'
 
 import { generateReport } from './generate-report.mts'
 import { FOLD_SETTING_NONE, OUTPUT_JSON, OUTPUT_TEXT } from '../../constants/cli.mts'

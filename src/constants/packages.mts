@@ -3,7 +3,7 @@
  */
 
 // Re-export lockfile constants from registry
-export { PNPM_LOCK_YAML, YARN_LOCK, PACKAGE_LOCK_JSON } from '@socketsecurity/registry/constants/agents'
+export { PNPM_LOCK_YAML, YARN_LOCK, PACKAGE_LOCK_JSON } from '@socketsecurity/lib/constants/agents'
 
 // Package manifest files
 export const PACKAGE_JSON = 'package.json'

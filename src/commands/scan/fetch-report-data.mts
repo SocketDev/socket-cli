@@ -1,6 +1,6 @@
 import { debug, debugDir } from '@socketsecurity/lib/debug'
 import { logger } from '@socketsecurity/lib/logger'
-import { getSpinner } from '@socketsecurity/registry/constants/process'
+import { getSpinner } from '@socketsecurity/lib/constants/process'
 
 import { formatErrorWithDetail } from '../../utils/error/errors.mjs'
 import {

@@ -7,7 +7,7 @@ import {
   VLT,
   YARN_BERRY,
   YARN_CLASSIC,
-} from '@socketsecurity/registry/constants/agents'
+} from '@socketsecurity/lib/constants/agents'
 
 import type { NpmOverrides, Overrides, PnpmOrYarnOverrides } from './types.mts'
 import type { Agent, EnvDetails } from '../../utils/ecosystem/environment.mjs'

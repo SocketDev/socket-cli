@@ -1,5 +1,5 @@
 import { logger } from '@socketsecurity/lib/logger'
-import { YARN_CLASSIC } from '@socketsecurity/registry/constants/agents'
+import { YARN_CLASSIC } from '@socketsecurity/lib/constants/agents'
 
 const YARN = YARN_CLASSIC
 import { findBinPathDetailsSync } from '../fs/path-resolve.mts'

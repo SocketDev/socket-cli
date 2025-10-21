@@ -24,7 +24,7 @@ import semver from 'semver'
 import { logger } from '@socketsecurity/lib/logger'
 import { onExit } from '@socketsecurity/lib/signal-exit'
 import { isNonEmptyString } from '@socketsecurity/lib/strings'
-import { NPM_REGISTRY_URL } from '@socketsecurity/registry/constants/agents'
+import { NPM_REGISTRY_URL } from '@socketsecurity/lib/constants/agents'
 
 
 import { UPDATE_NOTIFIER_TIMEOUT } from '../../constants/cache.mts'

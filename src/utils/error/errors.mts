@@ -21,7 +21,7 @@
 import { setTimeout as wait } from 'node:timers/promises'
 
 import { debugNs } from '@socketsecurity/lib/debug'
-import { UNKNOWN_ERROR, kInternalsSymbol  } from '@socketsecurity/registry/constants/core'
+import { UNKNOWN_ERROR, kInternalsSymbol  } from '@socketsecurity/lib/constants/core'
 
 import ENV from '../../constants/env.mts'
 

@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 
-import { getSpinner } from '@socketsecurity/registry/constants/process'
+import { getSpinner } from '@socketsecurity/lib/constants/process'
 
 import { handlePatchDiscover } from './handle-patch-discover.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'

@@ -1,4 +1,4 @@
-import { UNKNOWN_VALUE } from '@socketsecurity/registry/constants/core'
+import { UNKNOWN_VALUE } from '@socketsecurity/lib/constants/core'
 
 import {
   FOLD_SETTING_FILE,

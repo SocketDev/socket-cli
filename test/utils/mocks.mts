@@ -115,7 +115,7 @@ export function setupSdkModuleMocks() {
  * Setup common module mocks for output operations
  */
 export function setupOutputModuleMocks() {
-  vi.mock('@socketsecurity/registry/lib/logger', () => ({
+  vi.mock('@socketsecurity/lib/logger', () => ({
     logger: {
       fail: vi.fn(),
       log: vi.fn(),

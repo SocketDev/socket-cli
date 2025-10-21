@@ -6,9 +6,9 @@ import colors from 'yoctocolors-cjs'
 import {
   formatSimpleTable,
   formatTable,
-} from '@socketsecurity/registry/lib/tables'
+} from '@socketsecurity/registry/tables'
 
-import type { TableColumn } from '@socketsecurity/registry/lib/tables'
+import type { TableColumn } from '@socketsecurity/registry/tables'
 
 describe('formatTable', () => {
   it('should format empty data', () => {

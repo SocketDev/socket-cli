@@ -9,7 +9,7 @@ export type { SpawnOptions } from '@socketsecurity/lib/spawn'
 export type { Agent } from '../utils/ecosystem/environment.mjs'
 
 // Re-export platform constants from registry
-export { WIN32 } from '@socketsecurity/registry/constants/platform'
+export { WIN32 } from '@socketsecurity/lib/constants/platform'
 
 export type RegistryEnv = typeof ENV
 

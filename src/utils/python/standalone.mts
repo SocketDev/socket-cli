@@ -49,7 +49,7 @@ import semver from 'semver'
 import { whichBin } from '@socketsecurity/lib/bin'
 import { httpDownload } from '@socketsecurity/lib/http-request'
 import { spawn } from '@socketsecurity/lib/spawn'
-import { WIN32 } from '@socketsecurity/registry/constants/platform'
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
 
 
 import ENV from '../../constants/env.mts'

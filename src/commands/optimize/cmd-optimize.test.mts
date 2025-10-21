@@ -7,7 +7,7 @@ import { afterAll, afterEach, beforeAll, describe, expect } from 'vitest'
 
 import { readPackageJson } from '@socketsecurity/lib/packages'
 import { spawn } from '@socketsecurity/lib/spawn'
-import { NPM, PNPM } from '@socketsecurity/registry/constants/agents'
+import { NPM, PNPM } from '@socketsecurity/lib/constants/agents'
 
 import { withTempFixture } from '../../../src/utils/test-fixtures.mts'
 import { cmdit, spawnSocketCli, testPath } from '../../../test/utils.mts'

@@ -19,12 +19,12 @@
 
 import { getOwn } from '@socketsecurity/lib/objects'
 import { spawn } from '@socketsecurity/lib/spawn'
-import { NPM, PNPM } from '@socketsecurity/registry/constants/agents'
+import { NPM, PNPM } from '@socketsecurity/lib/constants/agents'
 import {
   getNodeHardenFlags,
   getNodeNoWarningsFlags,
-} from '@socketsecurity/registry/constants/node'
-import { WIN32 } from '@socketsecurity/registry/constants/platform'
+} from '@socketsecurity/lib/constants/node'
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
 
 import { shadowNpmInstall } from '../../shadow/npm/install.mts'
 import { cmdFlagsToString } from '../../utils/process/cmd.mts'

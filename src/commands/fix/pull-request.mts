@@ -2,7 +2,7 @@ import { RequestError } from '@octokit/request-error'
 
 import { debug, debugDir } from '@socketsecurity/lib/debug'
 import { isNonEmptyString } from '@socketsecurity/lib/strings'
-import { UNKNOWN_VALUE } from '@socketsecurity/registry/constants/core'
+import { UNKNOWN_VALUE } from '@socketsecurity/lib/constants/core'
 
 import {
   getSocketFixBranchPattern,

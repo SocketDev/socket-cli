@@ -3,7 +3,7 @@ import path from 'node:path'
 import { debug, debugDir } from '@socketsecurity/lib/debug'
 import { logger } from '@socketsecurity/lib/logger'
 import { pluralize } from '@socketsecurity/lib/words'
-import { getSpinner } from '@socketsecurity/registry/constants/process'
+import { getSpinner } from '@socketsecurity/lib/constants/process'
 
 import { fetchCreateOrgFullScan } from './fetch-create-org-full-scan.mts'
 import { fetchSupportedScanFileNames } from './fetch-supported-scan-file-names.mts'
