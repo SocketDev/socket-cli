@@ -957,6 +957,12 @@ function prepareClaudeArgs(args = [], options = {}) {
   _opts._selectedMode = mode
   _opts._selectedModel = model
 
+  // Add --dangerously-skip-permissions unless --no-darkwing is specified
+  // "Let's get dangerous!" mode for automated CI fixes
+  if (!_opts['no-darkwing']) {
+    claudeArgs.push('--dangerously-skip-permissions')
+  }
+
   return claudeArgs
 }
 
