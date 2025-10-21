@@ -7,9 +7,11 @@
 import { spawn } from 'node:child_process'
 import crypto from 'node:crypto'
 import { existsSync, promises as fs } from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { deleteAsync as del } from 'del'
 import colors from 'yoctocolors-cjs'
 
 import { parseArgs } from '@socketsecurity/lib/argv/parse'
@@ -28,6 +30,59 @@ const SOCKET_PROJECTS = [
   'socket-packageurl-js',
   'socket-registry',
 ]
+
+// Storage paths.
+// User-level (cross-repo, persistent)
+const CLAUDE_HOME = path.join(os.homedir(), '.claude')
+const STORAGE_PATHS = {
+  fixMemory: path.join(CLAUDE_HOME, 'fix-memory.db'),
+  stats: path.join(CLAUDE_HOME, 'stats.json'),
+  history: path.join(CLAUDE_HOME, 'history.json'),
+  config: path.join(CLAUDE_HOME, 'config.json'),
+  cache: path.join(CLAUDE_HOME, 'cache'),
+}
+
+// Repo-level (per-project, temporary)
+const REPO_STORAGE = {
+  snapshots: path.join(claudeDir, 'snapshots'),
+  session: path.join(claudeDir, 'session.json'),
+  scratch: path.join(claudeDir, 'scratch'),
+}
+
+// Retention periods (milliseconds).
+const RETENTION = {
+  // 7 days
+  snapshots: 7 * 24 * 60 * 60 * 1000,
+  // 30 days
+  cache: 30 * 24 * 60 * 60 * 1000,
+  // 1 day
+  sessions: 24 * 60 * 60 * 1000,
+}
+
+// Claude API pricing (USD per token).
+// https://www.anthropic.com/pricing
+const PRICING = {
+  'claude-sonnet-4-5': {
+    // $3 per 1M input tokens
+    input: 3.0 / 1_000_000,
+    // $15 per 1M output tokens
+    output: 15.0 / 1_000_000,
+    // $3.75 per 1M cache write tokens
+    cache_write: 3.75 / 1_000_000,
+    // $0.30 per 1M cache read tokens
+    cache_read: 0.3 / 1_000_000,
+  },
+  'claude-sonnet-3-7': {
+    // $3 per 1M input tokens
+    input: 3.0 / 1_000_000,
+    // $15 per 1M output tokens
+    output: 15.0 / 1_000_000,
+    // $3.75 per 1M cache write tokens
+    cache_write: 3.75 / 1_000_000,
+    // $0.30 per 1M cache read tokens
+    cache_read: 0.3 / 1_000_000,
+  },
+}
 
 // Simple inline logger.
 const log = {
@@ -61,6 +116,228 @@ function printFooter(message) {
   console.log(`\n${'─'.repeat(60)}`)
   if (message) {
     console.log(`  ${colors.green('✓')} ${message}`)
+  }
+}
+
+/**
+ * Initialize storage directories.
+ */
+async function initStorage() {
+  await fs.mkdir(CLAUDE_HOME, { recursive: true })
+  await fs.mkdir(STORAGE_PATHS.cache, { recursive: true })
+  await fs.mkdir(REPO_STORAGE.snapshots, { recursive: true })
+  await fs.mkdir(REPO_STORAGE.scratch, { recursive: true })
+}
+
+/**
+ * Clean up old data using del package.
+ */
+async function cleanupOldData() {
+  const now = Date.now()
+
+  // Clean old snapshots in current repo.
+  try {
+    const snapshots = await fs.readdir(REPO_STORAGE.snapshots)
+    const toDelete = []
+    for (const snap of snapshots) {
+      const snapPath = path.join(REPO_STORAGE.snapshots, snap)
+      const stats = await fs.stat(snapPath)
+      if (now - stats.mtime.getTime() > RETENTION.snapshots) {
+        toDelete.push(snapPath)
+      }
+    }
+    if (toDelete.length > 0) {
+      // Force delete temp directories outside CWD.
+      await del(toDelete, { force: true })
+    }
+  } catch {
+    // Ignore errors if directory doesn't exist.
+  }
+
+  // Clean old cache entries in ~/.claude/cache/.
+  try {
+    const cached = await fs.readdir(STORAGE_PATHS.cache)
+    const toDelete = []
+    for (const file of cached) {
+      const filePath = path.join(STORAGE_PATHS.cache, file)
+      const stats = await fs.stat(filePath)
+      if (now - stats.mtime.getTime() > RETENTION.cache) {
+        toDelete.push(filePath)
+      }
+    }
+    if (toDelete.length > 0) {
+      // Force delete temp directories outside CWD.
+      await del(toDelete, { force: true })
+    }
+  } catch {
+    // Ignore errors if directory doesn't exist.
+  }
+}
+
+/**
+ * Cost tracking with budget controls.
+ */
+class CostTracker {
+  constructor(model = 'claude-sonnet-4-5') {
+    this.model = model
+    this.session = { input: 0, output: 0, cacheWrite: 0, cacheRead: 0, cost: 0 }
+    this.monthly = this.loadMonthlyStats()
+    this.startTime = Date.now()
+  }
+
+  loadMonthlyStats() {
+    try {
+      if (existsSync(STORAGE_PATHS.stats)) {
+        const data = JSON.parse(fs.readFileSync(STORAGE_PATHS.stats, 'utf8'))
+        // YYYY-MM
+        const currentMonth = new Date().toISOString().slice(0, 7)
+        if (data.month === currentMonth) {
+          return data
+        }
+      }
+    } catch {
+      // Ignore errors, start fresh.
+    }
+    return {
+      month: new Date().toISOString().slice(0, 7),
+      cost: 0,
+      fixes: 0,
+      sessions: 0,
+    }
+  }
+
+  saveMonthlyStats() {
+    try {
+      fs.writeFileSync(
+        STORAGE_PATHS.stats,
+        JSON.stringify(this.monthly, null, 2),
+      )
+    } catch {
+      // Ignore errors.
+    }
+  }
+
+  track(usage) {
+    const pricing = PRICING[this.model]
+    if (!pricing) {
+      return
+    }
+
+    const inputTokens = usage.input_tokens || 0
+    const outputTokens = usage.output_tokens || 0
+    const cacheWriteTokens = usage.cache_creation_input_tokens || 0
+    const cacheReadTokens = usage.cache_read_input_tokens || 0
+
+    const cost =
+      inputTokens * pricing.input +
+      outputTokens * pricing.output +
+      cacheWriteTokens * pricing.cache_write +
+      cacheReadTokens * pricing.cache_read
+
+    this.session.input += inputTokens
+    this.session.output += outputTokens
+    this.session.cacheWrite += cacheWriteTokens
+    this.session.cacheRead += cacheReadTokens
+    this.session.cost += cost
+
+    this.monthly.cost += cost
+    this.saveMonthlyStats()
+  }
+
+  showSessionSummary() {
+    const duration = Date.now() - this.startTime
+    console.log(colors.cyan('\n💰 Cost Summary:'))
+    console.log(`  Input tokens: ${this.session.input.toLocaleString()}`)
+    console.log(`  Output tokens: ${this.session.output.toLocaleString()}`)
+    if (this.session.cacheWrite > 0) {
+      console.log(`  Cache write: ${this.session.cacheWrite.toLocaleString()}`)
+    }
+    if (this.session.cacheRead > 0) {
+      console.log(`  Cache read: ${this.session.cacheRead.toLocaleString()}`)
+    }
+    console.log(
+      `  Session cost: ${colors.green(`$${this.session.cost.toFixed(4)}`)}`,
+    )
+    console.log(
+      `  Monthly total: ${colors.yellow(`$${this.monthly.cost.toFixed(2)}`)}`,
+    )
+    console.log(`  Duration: ${colors.gray(formatDuration(duration))}`)
+  }
+}
+
+/**
+ * Format duration in human-readable form.
+ */
+function formatDuration(ms) {
+  const seconds = Math.floor(ms / 1000)
+  const minutes = Math.floor(seconds / 60)
+  const hours = Math.floor(minutes / 60)
+
+  if (hours > 0) {
+    return `${hours}h ${minutes % 60}m ${seconds % 60}s`
+  }
+  if (minutes > 0) {
+    return `${minutes}m ${seconds % 60}s`
+  }
+  return `${seconds}s`
+}
+
+/**
+ * Success celebration with stats.
+ */
+async function celebrateSuccess(costTracker, stats = {}) {
+  const messages = [
+    "🎉 CI is green! You're a legend!",
+    "✨ All tests passed! Claude's got your back!",
+    '🚀 Ship it! CI is happy!',
+    '💚 Green as a well-tested cucumber!',
+    '🏆 Victory! All checks passed!',
+    '⚡ Flawless execution! CI approved!',
+  ]
+
+  const message = messages[Math.floor(Math.random() * messages.length)]
+  log.success(message)
+
+  // Show session stats.
+  if (costTracker) {
+    costTracker.showSessionSummary()
+  }
+
+  // Show fix details if available.
+  if (stats.fixCount > 0) {
+    console.log(colors.cyan('\n📊 Session Stats:'))
+    console.log(`  Fixes applied: ${stats.fixCount}`)
+    console.log(`  Retries: ${stats.retries || 0}`)
+  }
+
+  // Update success streak.
+  try {
+    const streakPath = path.join(CLAUDE_HOME, 'streak.json')
+    let streak = { current: 0, best: 0, lastSuccess: null }
+    if (existsSync(streakPath)) {
+      streak = JSON.parse(await fs.readFile(streakPath, 'utf8'))
+    }
+
+    const now = Date.now()
+    const oneDayAgo = now - 24 * 60 * 60 * 1000
+
+    // Reset streak if last success was more than 24h ago.
+    if (streak.lastSuccess && streak.lastSuccess < oneDayAgo) {
+      streak.current = 1
+    } else {
+      streak.current += 1
+    }
+
+    streak.best = Math.max(streak.best, streak.current)
+    streak.lastSuccess = now
+
+    await fs.writeFile(streakPath, JSON.stringify(streak, null, 2))
+
+    console.log(colors.cyan('\n🔥 Success Streak:'))
+    console.log(`  Current: ${streak.current}`)
+    console.log(`  Best: ${streak.best}`)
+  } catch {
+    // Ignore errors.
   }
 }
 
@@ -3047,6 +3324,14 @@ async function runGreen(claudeCmd, options = {}) {
   )
   const useNoVerify = opts['no-verify'] === true
 
+  // Initialize storage and cleanup old data.
+  await initStorage()
+  await cleanupOldData()
+
+  // Initialize cost tracker.
+  const costTracker = new CostTracker()
+  let fixCount = 0
+
   printHeader('Green CI Pipeline')
 
   // Track errors to avoid checking same error repeatedly
@@ -3291,6 +3576,7 @@ Let's work through this together to get CI passing.`
       await runCommand('git', commitArgs, {
         cwd: rootPath,
       })
+      fixCount++
 
       // Validate before pushing
       const validation = await validateBeforePush(rootPath)
@@ -3534,7 +3820,10 @@ Let's work through this together to get CI passing.`
 
     if (run.status === 'completed') {
       if (run.conclusion === 'success') {
-        log.done('CI workflow passed! 🎉')
+        await celebrateSuccess(costTracker, {
+          fixCount,
+          retries: pollAttempt,
+        })
         printFooter('Green CI Pipeline complete!')
         return true
       }
@@ -3803,6 +4092,7 @@ Fix all issues by making necessary file changes. Be direct, don't ask questions.
           })
 
           if (commitResult.exitCode === 0) {
+            fixCount++
             // Push the commits
             await runCommand('git', ['push'], { cwd: rootPath })
             log.done('Pushed fix commits')
@@ -4124,6 +4414,7 @@ Fix the issue by making necessary file changes. Be direct, don't ask questions.`
                 )
 
                 if (commitResult.exitCode === 0) {
+                  fixCount++
                   log.done(`Committed fix for ${job.name}`)
                   hasPendingCommits = true
                 } else {
