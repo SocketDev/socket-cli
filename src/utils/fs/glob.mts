@@ -6,11 +6,11 @@ import path from 'node:path'
 import { parse as yamlParse } from 'yaml'
 
 import { NODE_MODULES } from '@socketsecurity/lib/constants/paths'
-import { isDirSync, safeReadFile } from '@socketsecurity/registry/lib/fs'
-import { defaultIgnore } from '@socketsecurity/registry/lib/globs'
-import { readPackageJson } from '@socketsecurity/registry/lib/packages'
-import { transform } from '@socketsecurity/registry/lib/streams'
-import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
+import { isDirSync, safeReadFile } from '@socketsecurity/lib/fs'
+import { defaultIgnore } from '@socketsecurity/lib/globs'
+import { readPackageJson } from '@socketsecurity/lib/packages'
+import { transform } from '@socketsecurity/lib/streams'
+import { isNonEmptyString } from '@socketsecurity/lib/strings'
 
 import { PNPM } from '../../constants/agents.mjs'
 
