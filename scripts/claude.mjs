@@ -8,8 +8,10 @@ import { spawn } from 'node:child_process'
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { parseArgs } from '@socketsecurity/lib/argv/parse'
+
 import colors from 'yoctocolors-cjs'
+
+import { parseArgs } from '@socketsecurity/lib/argv/parse'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '..')
@@ -3306,15 +3308,22 @@ Fix all CI failures now by making the necessary changes.`
         }, 10_000)
 
         try {
-          // Write prompt to temp file to avoid stdin raw mode issues
+          // Write prompt to temp file
           const tmpFile = path.join(rootPath, `.claude-fix-${Date.now()}.txt`)
           await fs.writeFile(tmpFile, fixPrompt, 'utf8')
 
           const fixArgs = prepareClaudeArgs([], opts)
-          // Use shell input redirection to pass prompt without stdin pipe
-          const shellCmd = `${claudeCmd} ${fixArgs.join(' ')} < "${tmpFile}"`
+          const claudeCommand = `${claudeCmd} ${fixArgs.join(' ')}`
+
+          // Use script command to create pseudo-TTY for Ink compatibility
+          // Platform-specific script command syntax
+          // Windows doesn't have script, fall back to direct command
+          const scriptCmd = WIN32
+            ? claudeCommand
+            : `script -q /dev/null ${claudeCommand} < "${tmpFile}"`
+
           const exitCode = await new Promise((resolve, _reject) => {
-            const child = spawn(shellCmd, [], {
+            const child = spawn(scriptCmd, [], {
               stdio: 'inherit',
               cwd: rootPath,
               shell: true,
@@ -3438,8 +3447,7 @@ Fix all CI failures now by making the necessary changes.`
 
           // Check for any failed or cancelled jobs
           const failedJobs = jobs.filter(
-            job =>
-              job.conclusion === 'failure' || job.conclusion === 'cancelled',
+            job => job.conclusion === 'failure' || job.conclusion === 'cancelled'
           )
 
           // Find new failures we haven't fixed yet
@@ -3518,18 +3526,22 @@ Fix the failure now by making the necessary changes.`
               }, 10_000)
 
               try {
-                // Write prompt to temp file to avoid stdin raw mode issues
-                const tmpFile = path.join(
-                  rootPath,
-                  `.claude-fix-${Date.now()}.txt`,
-                )
+                // Write prompt to temp file
+                const tmpFile = path.join(rootPath, `.claude-fix-${Date.now()}.txt`)
                 await fs.writeFile(tmpFile, fixPrompt, 'utf8')
 
                 const fixArgs = prepareClaudeArgs([], opts)
-                // Use shell input redirection to pass prompt without stdin pipe
-                const shellCmd = `${claudeCmd} ${fixArgs.join(' ')} < "${tmpFile}"`
+                const claudeCommand = `${claudeCmd} ${fixArgs.join(' ')}`
+
+                // Use script command to create pseudo-TTY for Ink compatibility
+                // Platform-specific script command syntax
+                // Windows doesn't have script, fall back to direct command
+                const scriptCmd = WIN32
+                  ? claudeCommand
+                  : `script -q /dev/null ${claudeCommand} < "${tmpFile}"`
+
                 const exitCode = await new Promise((resolve, _reject) => {
-                  const child = spawn(shellCmd, [], {
+                  const child = spawn(scriptCmd, [], {
                     stdio: 'inherit',
                     cwd: rootPath,
                     shell: true,
@@ -3614,9 +3626,7 @@ Fix the failure now by making the necessary changes.`
 
           // Show current status
           if (fixedJobs.size > 0) {
-            log.substep(
-              `Fixed ${fixedJobs.size} job(s) so far (commits pending push)`,
-            )
+            log.substep(`Fixed ${fixedJobs.size} job(s) so far (commits pending push)`)
           }
         } catch (e) {
           log.warn(`Failed to parse job data: ${e.message}`)
