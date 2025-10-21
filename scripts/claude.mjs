@@ -5,6 +5,7 @@
  */
 
 import { spawn } from 'node:child_process'
+import crypto from 'node:crypto'
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -543,14 +544,33 @@ async function checkIfCommitIsPartOfPR(sha, owner, repo) {
 }
 
 /**
- * Create a hash of error output for tracking duplicate errors.
+ * Create a semantic hash of error output for tracking duplicate errors.
+ * Normalizes errors to catch semantically identical issues with different line numbers.
  * @param {string} errorOutput - The error output to hash
- * @returns {string} A simple hash of the error
+ * @returns {string} A hex hash of the normalized error
  */
 function hashError(errorOutput) {
-  // Simple hash: take first 200 chars of error, normalize whitespace
-  const normalized = errorOutput.trim().slice(0, 200).replace(/\s+/g, ' ')
-  return normalized
+  // Normalize error for semantic comparison
+  const normalized = errorOutput
+    .trim()
+    // Remove timestamps
+    .replace(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[^Z\s]*/g, 'TIMESTAMP')
+    .replace(/\d{2}:\d{2}:\d{2}/g, 'TIME')
+    // Remove line:column numbers (but keep file paths)
+    .replace(/:\d+:\d+/g, ':*:*')
+    .replace(/line \d+/gi, 'line *')
+    .replace(/column \d+/gi, 'column *')
+    // Remove specific SHAs and commit hashes
+    .replace(/\b[0-9a-f]{7,40}\b/g, 'SHA')
+    // Remove absolute file system paths (keep relative paths)
+    .replace(/\/[^\s]*?\/([^/\s]+)/g, '$1')
+    // Normalize whitespace
+    .replace(/\s+/g, ' ')
+    // Take first 500 chars (increased from 200 for better matching)
+    .slice(0, 500)
+
+  // Use proper cryptographic hashing for consistent results
+  return crypto.createHash('sha256').update(normalized).digest('hex').slice(0, 16)
 }
 
 /**
@@ -2893,6 +2913,120 @@ Commit message:`
 }
 
 /**
+ * Calculate adaptive poll delay based on CI state.
+ * Polls faster when jobs are running, slower when queued.
+ */
+function calculatePollDelay(status, attempt, hasActiveJobs = false) {
+  // If jobs are actively running, poll more frequently
+  if (hasActiveJobs || status === 'in_progress') {
+    // Start at 5s, gradually increase to 15s max
+    return Math.min(5000 + attempt * 2000, 15000)
+  }
+
+  // If queued or waiting, use longer intervals (30s)
+  if (status === 'queued' || status === 'waiting') {
+    return 30000
+  }
+
+  // Default: moderate polling for unknown states (10s)
+  return 10000
+}
+
+/**
+ * Priority levels for different CI job types.
+ * Higher priority jobs are fixed first since they often block other jobs.
+ */
+const JOB_PRIORITIES = {
+  build: 100,
+  compile: 100,
+  'type check': 90,
+  typecheck: 90,
+  typescript: 90,
+  tsc: 90,
+  lint: 80,
+  eslint: 80,
+  prettier: 80,
+  'unit test': 70,
+  test: 70,
+  jest: 70,
+  vitest: 70,
+  integration: 60,
+  e2e: 50,
+  coverage: 40,
+  report: 30,
+}
+
+/**
+ * Get priority for a CI job based on its name.
+ * @param {string} jobName - The name of the CI job
+ * @returns {number} Priority level (higher = more important)
+ */
+function getJobPriority(jobName) {
+  const lowerName = jobName.toLowerCase()
+
+  // Check for exact or partial matches
+  for (const [pattern, priority] of Object.entries(JOB_PRIORITIES)) {
+    if (lowerName.includes(pattern)) {
+      return priority
+    }
+  }
+
+  // Default priority for unknown job types
+  return 50
+}
+
+/**
+ * Validate changes before pushing to catch common mistakes.
+ * @param {string} cwd - Working directory
+ * @returns {Promise<{valid: boolean, warnings: string[]}>} Validation result
+ */
+async function validateBeforePush(cwd) {
+  const warnings = []
+
+  // Check for common issues in staged changes
+  const diffResult = await runCommandWithOutput('git', ['diff', '--cached'], {
+    cwd,
+  })
+  const diff = diffResult.stdout
+
+  // Check 1: No console.log statements
+  if (diff.match(/^\+.*console\.log\(/m)) {
+    warnings.push('⚠️  Added console.log() statements detected')
+  }
+
+  // Check 2: No .only in tests
+  if (diff.match(/^\+.*\.(only|skip)\(/m)) {
+    warnings.push('⚠️  Test .only() or .skip() detected')
+  }
+
+  // Check 3: No debugger statements
+  if (diff.match(/^\+.*debugger[;\s]/m)) {
+    warnings.push('⚠️  Debugger statement detected')
+  }
+
+  // Check 4: No TODO/FIXME without issue link
+  const todoMatches = diff.match(/^\+.*\/\/\s*(TODO|FIXME)(?!\s*\(#\d+\))/gim)
+  if (todoMatches && todoMatches.length > 0) {
+    warnings.push(
+      `⚠️  ${todoMatches.length} TODO/FIXME comment(s) without issue links`,
+    )
+  }
+
+  // Check 5: Package.json is valid JSON
+  if (diff.includes('package.json')) {
+    try {
+      const pkgPath = path.join(cwd, 'package.json')
+      const pkgContent = await fs.readFile(pkgPath, 'utf8')
+      JSON.parse(pkgContent)
+    } catch (e) {
+      warnings.push(`⚠️  Invalid package.json: ${e.message}`)
+    }
+  }
+
+  return { valid: warnings.length === 0, warnings }
+}
+
+/**
  * Run all checks, push, and monitor CI until green.
  * NOTE: This operates on the current repo by default. Use --cross-repo for all Socket projects.
  * Multi-repo parallel execution would conflict with interactive prompts if fixes fail.
@@ -3152,6 +3286,14 @@ Let's work through this together to get CI passing.`
         cwd: rootPath,
       })
 
+      // Validate before pushing
+      const validation = await validateBeforePush(rootPath)
+      if (!validation.valid) {
+        log.warn('Pre-push validation warnings:')
+        validation.warnings.forEach(warning => log.substep(warning))
+        log.substep('Continuing with push (warnings are non-blocking)...')
+      }
+
       // Push
       await runCommand('git', ['push'], { cwd: rootPath })
       log.done('Changes pushed to remote')
@@ -3244,11 +3386,14 @@ Let's work through this together to get CI passing.`
   let fixedJobs = new Map()
   // Track if we've made any commits during this workflow run
   let hasPendingCommits = false
+  // Track polling attempts for adaptive delays
+  let pollAttempt = 0
 
   while (retryCount < maxRetries) {
     // Reset tracking for each new CI run
     fixedJobs = new Map()
     hasPendingCommits = false
+    pollAttempt = 0
     log.progress(`Checking CI status (attempt ${retryCount + 1}/${maxRetries})`)
 
     // Wait a bit for CI to start
@@ -3355,8 +3500,11 @@ Let's work through this together to get CI passing.`
     }
 
     if (!matchingRun) {
-      log.substep('No matching workflow runs found yet, waiting...')
-      await new Promise(resolve => setTimeout(resolve, 30_000))
+      // Use moderate delay when no run found yet (10s)
+      const delay = 10000
+      log.substep(`No matching workflow runs found yet, waiting ${delay / 1000}s...`)
+      await new Promise(resolve => setTimeout(resolve, delay))
+      pollAttempt++
       continue
     }
 
@@ -3365,10 +3513,12 @@ Let's work through this together to get CI passing.`
 
     log.substep(`Workflow "${run.name}" status: ${run.status}`)
 
-    // If workflow is queued, just wait for it to start
+    // If workflow is queued, wait before checking again
     if (run.status === 'queued' || run.status === 'waiting') {
-      log.substep('Waiting for workflow to start...')
-      await new Promise(resolve => setTimeout(resolve, 30_000))
+      const delay = calculatePollDelay(run.status, pollAttempt)
+      log.substep(`Waiting for workflow to start (${delay / 1000}s)...`)
+      await new Promise(resolve => setTimeout(resolve, delay))
+      pollAttempt++
       continue
     }
 
@@ -3624,6 +3774,13 @@ Fix all issues by making necessary file changes. Be direct, don't ask questions.
           )
           log.substep(`Commit message: ${commitMessage}`)
 
+          // Validate before committing
+          const validation = await validateBeforePush(rootPath)
+          if (!validation.valid) {
+            log.warn('Pre-commit validation warnings:')
+            validation.warnings.forEach(warning => log.substep(warning))
+          }
+
           // Commit with generated message
           const commitArgs = ['commit', '-m', commitMessage]
           if (useNoVerify) {
@@ -3715,8 +3872,24 @@ Fix all issues by making necessary file changes. Be direct, don't ask questions.
           if (newFailures.length > 0) {
             log.failed(`Detected ${newFailures.length} new failed job(s)`)
 
+            // Sort by priority - fix blocking issues first (build, typecheck, lint, tests)
+            // Higher priority first
+            const sortedFailures = newFailures.sort((a, b) => {
+              const priorityA = getJobPriority(a.name)
+              const priorityB = getJobPriority(b.name)
+              return priorityB - priorityA
+            })
+
+            if (sortedFailures.length > 1) {
+              log.substep('Processing in priority order (highest first):')
+              sortedFailures.forEach(job => {
+                const priority = getJobPriority(job.name)
+                log.substep(`  [Priority ${priority}] ${job.name}`)
+              })
+            }
+
             // Fix each failed job immediately
-            for (const job of newFailures) {
+            for (const job of sortedFailures) {
               log.substep(`❌ ${job.name}: ${job.conclusion}`)
 
               // Fetch logs for this specific failed job using job ID
@@ -3916,6 +4089,13 @@ Fix the issue by making necessary file changes. Be direct, don't ask questions.`
                 )
                 log.substep(`Commit message: ${commitMessage}`)
 
+                // Validate before committing
+                const validation = await validateBeforePush(rootPath)
+                if (!validation.valid) {
+                  log.warn('Pre-commit validation warnings:')
+                  validation.warnings.forEach(warning => log.substep(warning))
+                }
+
                 // Commit with generated message
                 const commitArgs = ['commit', '-m', commitMessage]
                 if (useNoVerify) {
@@ -3957,9 +4137,12 @@ Fix the issue by making necessary file changes. Be direct, don't ask questions.`
         }
       }
 
-      // Wait and check again
-      log.substep('Waiting 30 seconds before next check...')
-      await new Promise(resolve => setTimeout(resolve, 30_000))
+      // Wait and check again with adaptive polling
+      // Jobs are running, so poll more frequently
+      const delay = calculatePollDelay('in_progress', pollAttempt, true)
+      log.substep(`Checking again in ${delay / 1000}s...`)
+      await new Promise(resolve => setTimeout(resolve, delay))
+      pollAttempt++
     }
   }
 
