@@ -3191,6 +3191,13 @@ Let's work through this together to get CI passing.`
 
     log.substep(`Workflow "${run.name}" status: ${run.status}`)
 
+    // If workflow is queued, just wait for it to start
+    if (run.status === 'queued' || run.status === 'waiting') {
+      log.substep('Waiting for workflow to start...')
+      await new Promise(resolve => setTimeout(resolve, 30_000))
+      continue
+    }
+
     if (run.status === 'completed') {
       if (run.conclusion === 'success') {
         log.done('CI workflow passed! 🎉')
