@@ -4192,7 +4192,7 @@ Let's work through this together to get CI passing.`
   progress.startPhase('commit-and-push')
   log.step('Committing and pushing changes')
 
-  // Check for changes
+  // Check for uncommitted changes
   const statusResult = await runCommandWithOutput(
     'git',
     ['status', '--porcelain'],
@@ -4200,6 +4200,16 @@ Let's work through this together to get CI passing.`
       cwd: rootPath,
     },
   )
+
+  // Check if local branch is ahead of remote (unpushed commits)
+  const revListResult = await runCommandWithOutput(
+    'git',
+    ['rev-list', '@{upstream}..HEAD', '--count'],
+    {
+      cwd: rootPath,
+    },
+  )
+  const unpushedCount = Number.parseInt(revListResult.stdout.trim() || '0', 10)
 
   if (statusResult.stdout.trim()) {
     log.progress('Changes detected, committing')
@@ -4242,8 +4252,32 @@ Let's work through this together to get CI passing.`
       await runCommand('git', ['push'], { cwd: rootPath })
       log.done('Changes pushed to remote')
     }
+  } else if (unpushedCount > 0) {
+    log.info(
+      `No uncommitted changes, but ${unpushedCount} unpushed commit(s) detected`,
+    )
+
+    if (isDryRun) {
+      log.done('[DRY RUN] Would push unpushed commits')
+    } else {
+      log.progress('Pushing unpushed commits')
+
+      // Validate before pushing
+      const validation = await validateBeforePush(rootPath)
+      if (!validation.valid) {
+        log.warn('Pre-push validation warnings:')
+        validation.warnings.forEach(warning => {
+          log.substep(warning)
+        })
+        log.substep('Continuing with push (warnings are non-blocking)...')
+      }
+
+      // Push
+      await runCommand('git', ['push'], { cwd: rootPath })
+      log.done('Unpushed commits pushed to remote')
+    }
   } else {
-    log.info('No changes to commit')
+    log.info('No changes to commit and no unpushed commits')
   }
 
   // End commit phase.
@@ -4409,13 +4443,25 @@ Let's work through this together to get CI passing.`
     // Filter runs to find one matching our commit SHA or recent push
     let matchingRun = null
 
-    // First, try exact SHA match
+    // Debug: log current SHA and available runs
+    if (pollAttempt === 0) {
+      log.substep(
+        `Looking for workflow runs for commit ${currentSha.substring(0, 7)}`,
+      )
+      if (runs.length > 0) {
+        log.substep(`Found ${runs.length} recent runs, checking for matches...`)
+      }
+    }
+
+    // First, try exact SHA match (both directions for robustness)
     for (const run of runs) {
-      if (run.headSha?.startsWith(currentSha.substring(0, 7))) {
+      if (
+        run.headSha === currentSha ||
+        run.headSha?.startsWith(currentSha.substring(0, 7)) ||
+        currentSha.startsWith(run.headSha?.substring(0, 7) || '')
+      ) {
         matchingRun = run
-        log.substep(
-          `Found exact match for commit ${currentSha.substring(0, 7)}`,
-        )
+        log.substep(`Found SHA match for commit ${currentSha.substring(0, 7)}`)
         break
       }
     }
@@ -4425,10 +4471,10 @@ Let's work through this together to get CI passing.`
       for (const run of runs) {
         if (run.createdAt) {
           const runTime = new Date(run.createdAt).getTime()
-          // Check if run was created within 2 minutes after push
+          // Check if run was created within 2 minutes BEFORE or after push
           if (runTime >= pushTime - 120_000) {
             matchingRun = run
-            log.substep(`Found workflow started after push: ${run.name}`)
+            log.substep(`Found workflow started around push time: ${run.name}`)
             break
           }
         }
@@ -4440,8 +4486,8 @@ Let's work through this together to get CI passing.`
       const newestRun = runs[0]
       if (newestRun.createdAt) {
         const runTime = new Date(newestRun.createdAt).getTime()
-        // Only consider if created within last 5 minutes
-        if (Date.now() - runTime < 5 * 60 * 1000) {
+        // Only consider if created within last 10 minutes
+        if (Date.now() - runTime < 10 * 60 * 1000) {
           matchingRun = newestRun
           log.substep(`Monitoring recent workflow: ${newestRun.name}`)
         }
