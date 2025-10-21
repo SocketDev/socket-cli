@@ -104,7 +104,7 @@
     "@socketregistry/yocto-spinner": "1.0.24",
     "@socketsecurity/config": "3.0.1",
     "@socketsecurity/lib": "1.0.4",
-    "@socketsecurity/registry": "link:../socket-registry/registry",
+    "@socketsecurity/registry": "2.0.0",
     "@socketsecurity/sdk": "2.0.1",
     "@types/cmd-shim": "5.0.2",
     "@types/ink": "2.0.3",
