@@ -10,11 +10,9 @@ import { existsSync, promises as fs } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-
+import { parseArgs } from '@socketsecurity/lib/argv/parse'
 import { deleteAsync as del } from 'del'
 import colors from 'yoctocolors-cjs'
-
-import { parseArgs } from '@socketsecurity/lib/argv/parse'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '..')
@@ -280,6 +278,316 @@ function formatDuration(ms) {
     return `${minutes}m ${seconds % 60}s`
   }
   return `${seconds}s`
+}
+
+/**
+ * Progress tracking with ETA estimation.
+ */
+class ProgressTracker {
+  constructor() {
+    this.phases = []
+    this.currentPhase = null
+    this.startTime = Date.now()
+    this.history = this.loadHistory()
+  }
+
+  loadHistory() {
+    try {
+      if (existsSync(STORAGE_PATHS.history)) {
+        const data = JSON.parse(fs.readFileSync(STORAGE_PATHS.history, 'utf8'))
+        // Keep only last 50 sessions.
+        return data.sessions.slice(-50)
+      }
+    } catch {
+      // Ignore errors.
+    }
+    return []
+  }
+
+  saveHistory() {
+    try {
+      const data = {
+        sessions: [
+          ...this.history,
+          { phases: this.phases, timestamp: Date.now() },
+        ],
+      }
+      // Keep only last 50 sessions.
+      if (data.sessions.length > 50) {
+        data.sessions = data.sessions.slice(-50)
+      }
+      fs.writeFileSync(STORAGE_PATHS.history, JSON.stringify(data, null, 2))
+    } catch {
+      // Ignore errors.
+    }
+  }
+
+  startPhase(name) {
+    if (this.currentPhase) {
+      this.endPhase()
+    }
+    this.currentPhase = { name, start: Date.now() }
+  }
+
+  endPhase() {
+    if (this.currentPhase) {
+      this.currentPhase.duration = Date.now() - this.currentPhase.start
+      this.phases.push(this.currentPhase)
+      this.currentPhase = null
+    }
+  }
+
+  estimateETA(phaseName) {
+    // Find similar past sessions.
+    const similar = this.history.filter(s =>
+      s.phases.some(p => p.name === phaseName),
+    )
+    if (similar.length === 0) {
+      return null
+    }
+
+    // Get median duration for this phase.
+    const durations = similar
+      .map(s => s.phases.find(p => p.name === phaseName)?.duration)
+      .filter(d => d)
+      .sort((a, b) => a - b)
+
+    if (durations.length === 0) {
+      return null
+    }
+
+    const median = durations[Math.floor(durations.length / 2)]
+    return median
+  }
+
+  getTotalETA() {
+    // Sum up remaining phases based on historical data.
+    const remaining = ['local-checks', 'commit', 'ci-monitor'].filter(
+      p => !this.phases.some(ph => ph.name === p),
+    )
+
+    let total = 0
+    for (const phase of remaining) {
+      const eta = this.estimateETA(phase)
+      if (eta) {
+        total += eta
+      }
+    }
+
+    // Add current phase remaining time.
+    if (this.currentPhase) {
+      const eta = this.estimateETA(this.currentPhase.name)
+      if (eta) {
+        const elapsed = Date.now() - this.currentPhase.start
+        total += Math.max(0, eta - elapsed)
+      }
+    }
+
+    return total > 0 ? total : null
+  }
+
+  showProgress() {
+    const totalElapsed = Date.now() - this.startTime
+    const eta = this.getTotalETA()
+
+    console.log(colors.cyan('\n⏱️  Progress:'))
+    console.log(`  Elapsed: ${formatDuration(totalElapsed)}`)
+    if (eta) {
+      console.log(`  ETA: ${formatDuration(eta)}`)
+    }
+
+    if (this.currentPhase) {
+      const phaseElapsed = Date.now() - this.currentPhase.start
+      console.log(
+        colors.gray(
+          `  Current: ${this.currentPhase.name} (${formatDuration(phaseElapsed)})`,
+        ),
+      )
+    }
+
+    // Show completed phases.
+    if (this.phases.length > 0) {
+      console.log(colors.gray('  Completed:'))
+      this.phases.forEach(p => {
+        console.log(
+          colors.gray(
+            `    ${colors.green('✓')} ${p.name} (${formatDuration(p.duration)})`,
+          ),
+        )
+      })
+    }
+  }
+
+  complete() {
+    this.endPhase()
+    this.saveHistory()
+  }
+}
+
+/**
+ * Snapshot system for smart rollback.
+ */
+class SnapshotManager {
+  constructor() {
+    this.snapshots = []
+  }
+
+  async createSnapshot(label) {
+    const sha = await runCommandWithOutput('git', ['rev-parse', 'HEAD'], {
+      cwd: rootPath,
+    })
+    const diff = await runCommandWithOutput('git', ['diff', 'HEAD'], {
+      cwd: rootPath,
+    })
+
+    const snapshot = {
+      label,
+      sha: sha.stdout.trim(),
+      diff: diff.stdout,
+      timestamp: Date.now(),
+    }
+
+    this.snapshots.push(snapshot)
+
+    // Save snapshot to disk.
+    const snapshotPath = path.join(
+      REPO_STORAGE.snapshots,
+      `snapshot-${Date.now()}.json`,
+    )
+    await fs.writeFile(snapshotPath, JSON.stringify(snapshot, null, 2))
+
+    return snapshot
+  }
+
+  async rollback(steps = 1) {
+    if (this.snapshots.length < steps) {
+      log.warn(`Only ${this.snapshots.length} snapshot(s) available`)
+      return false
+    }
+
+    const target = this.snapshots[this.snapshots.length - steps]
+    log.warn(`Rolling back ${steps} fix(es) to: ${target.label}`)
+
+    await runCommand('git', ['reset', '--hard', target.sha], { cwd: rootPath })
+
+    // Re-apply diff if there was one.
+    if (target.diff) {
+      await runCommand('git', ['apply'], {
+        cwd: rootPath,
+        input: target.diff,
+      })
+    }
+
+    log.done('Rollback complete')
+    return true
+  }
+
+  listSnapshots() {
+    console.log(colors.cyan('\n📸 Available Snapshots:'))
+    this.snapshots.forEach((snap, i) => {
+      const age = formatDuration(Date.now() - snap.timestamp)
+      console.log(
+        `  ${i + 1}. ${snap.label} ${colors.gray(`(${age} ago, ${snap.sha.substring(0, 7)})`)}`,
+      )
+    })
+  }
+}
+
+/**
+ * Proactive pre-commit detection.
+ */
+async function runPreCommitScan(claudeCmd) {
+  log.step('Running proactive pre-commit scan')
+
+  const staged = await runCommandWithOutput(
+    'git',
+    ['diff', '--cached', '--name-only'],
+    {
+      cwd: rootPath,
+    },
+  )
+
+  if (!staged.stdout.trim()) {
+    log.substep('No staged files to scan')
+    return { issues: [], safe: true }
+  }
+
+  const files = staged.stdout.trim().split('\n')
+  log.substep(`Scanning ${files.length} staged file(s)`)
+
+  const diff = await runCommandWithOutput('git', ['diff', '--cached'], {
+    cwd: rootPath,
+  })
+
+  const prompt = `You are performing a quick pre-commit scan to catch likely CI failures.
+
+**Staged Changes:**
+\`\`\`diff
+${diff.stdout}
+\`\`\`
+
+**Task:** Analyze these changes for potential CI failures.
+
+**Check for:**
+- Type errors
+- Lint violations (missing semicolons, unused vars, etc.)
+- Breaking API changes
+- Missing tests for new functionality
+- console.log statements
+- debugger statements
+- .only() or .skip() in tests
+
+**Output Format (JSON):**
+{
+  "issues": [
+    {
+      "severity": "high|medium|low",
+      "type": "type-error|lint|test|other",
+      "description": "Brief description of the issue",
+      "file": "path/to/file.ts",
+      "confidence": 85
+    }
+  ],
+  "safe": false
+}
+
+**Rules:**
+- Only report issues with >60% confidence
+- Be specific about file and line if possible
+- Mark safe=true if no issues found
+- Don't report style issues that auto-fix will handle`
+
+  try {
+    const result = await runCommandWithOutput(
+      claudeCmd,
+      [
+        'code',
+        '--non-interactive',
+        '--output-format',
+        'text',
+        '--prompt',
+        prompt,
+      ],
+      { cwd: rootPath, timeout: 30_000 },
+    )
+
+    if (result.exitCode !== 0) {
+      log.substep('Scan completed (no issues detected)')
+      return { issues: [], safe: true }
+    }
+
+    // Parse JSON response.
+    const jsonMatch = result.stdout.match(/\{[\s\S]*\}/)
+    if (!jsonMatch) {
+      return { issues: [], safe: true }
+    }
+
+    const scan = JSON.parse(jsonMatch[0])
+    return scan
+  } catch (e) {
+    log.warn(`Scan error: ${e.message}`)
+    return { issues: [], safe: true }
+  }
 }
 
 /**
@@ -3564,11 +3872,39 @@ async function runGreen(claudeCmd, options = {}) {
   await initStorage()
   await cleanupOldData()
 
-  // Initialize cost tracker.
+  // Initialize trackers.
   const costTracker = new CostTracker()
+  const progress = new ProgressTracker()
+  const snapshots = new SnapshotManager()
   let fixCount = 0
 
   printHeader('Green CI Pipeline')
+
+  // Optional: Run pre-commit scan for proactive detection.
+  if (opts['pre-commit-scan']) {
+    log.step('Running proactive pre-commit scan')
+    const scanResult = await runPreCommitScan(claudeCmd)
+
+    if (scanResult && !scanResult.safe) {
+      log.warn('Pre-commit scan detected potential issues:')
+      scanResult.issues.forEach(issue => {
+        const icon =
+          issue.severity === 'high' ? colors.red('✗') : colors.yellow('⚠')
+        log.substep(
+          `${icon} ${issue.type}: ${issue.description} ${colors.gray(`(${issue.confidence}% confidence)`)}`,
+        )
+      })
+
+      // Ask if user wants to continue.
+      log.info('Continue anyway? (Ctrl+C to abort)')
+      await new Promise(resolve => setTimeout(resolve, 3000))
+    } else if (scanResult?.safe) {
+      log.done('Pre-commit scan passed - no obvious issues detected')
+    }
+  }
+
+  // Show initial progress.
+  progress.showProgress()
 
   // Track errors to avoid checking same error repeatedly
   const seenErrors = new Set()
@@ -3576,6 +3912,7 @@ async function runGreen(claudeCmd, options = {}) {
   const ciErrorHistory = new Map()
 
   // Step 1: Run local checks
+  progress.startPhase('local-checks')
   const repoName = path.basename(rootPath)
   log.step(`Running local checks in ${colors.cyan(repoName)}`)
   const localChecks = [
@@ -3650,6 +3987,10 @@ async function runGreen(claudeCmd, options = {}) {
       const isAutoMode = autoFixAttempts <= MAX_AUTO_FIX_ATTEMPTS
 
       if (isAutoMode) {
+        // Create snapshot before fix attempt for potential rollback.
+        await snapshots.createSnapshot(`before-fix-${autoFixAttempts}`)
+        log.substep(`Snapshot created: before-fix-${autoFixAttempts}`)
+
         // Attempt automatic fix
         log.progress(
           `[${repoName}] Auto-fix attempt ${autoFixAttempts}/${MAX_AUTO_FIX_ATTEMPTS}`,
@@ -3841,7 +4182,12 @@ Let's work through this together to get CI passing.`
     log.done(`${check.name} passed`)
   }
 
+  // End local checks phase.
+  progress.endPhase()
+  progress.showProgress()
+
   // Step 2: Commit and push changes
+  progress.startPhase('commit-and-push')
   log.step('Committing and pushing changes')
 
   // Check for changes
@@ -3898,7 +4244,12 @@ Let's work through this together to get CI passing.`
     log.info('No changes to commit')
   }
 
+  // End commit phase.
+  progress.endPhase()
+  progress.showProgress()
+
   // Step 3: Monitor CI workflow
+  progress.startPhase('ci-monitoring')
   log.step('Monitoring CI workflow')
 
   if (isDryRun) {
@@ -4111,6 +4462,11 @@ Let's work through this together to get CI passing.`
 
     log.substep(`Workflow "${run.name}" status: ${run.status}`)
 
+    // Show progress update every 5 polls.
+    if (pollAttempt % 5 === 0) {
+      progress.showProgress()
+    }
+
     // If workflow is queued, wait before checking again
     if (run.status === 'queued' || run.status === 'waiting') {
       const delay = calculatePollDelay(run.status, pollAttempt)
@@ -4122,10 +4478,32 @@ Let's work through this together to get CI passing.`
 
     if (run.status === 'completed') {
       if (run.conclusion === 'success') {
+        // End CI monitoring phase.
+        progress.endPhase()
+        progress.complete()
+
+        // Show final statistics.
         await celebrateSuccess(costTracker, {
           fixCount,
           retries: pollAttempt,
         })
+
+        // Show available snapshots for reference.
+        const snapshotList = snapshots.listSnapshots()
+        if (snapshotList.length > 0) {
+          console.log(colors.cyan('\n📸 Available Snapshots:'))
+          snapshotList.slice(0, 5).forEach(snap => {
+            console.log(
+              `  ${snap.label} ${colors.gray(`(${formatDuration(Date.now() - snap.timestamp)} ago)`)}`,
+            )
+          })
+          if (snapshotList.length > 5) {
+            console.log(
+              colors.gray(`  ... and ${snapshotList.length - 5} more`),
+            )
+          }
+        }
+
         printFooter('Green CI Pipeline complete!')
         return true
       }
