@@ -1,0 +1,9 @@
+{
+  "name": "test-vlt",
+  "version": "1.0.0",
+  "private": true,
+  "packageManager": "vlt@0.1.0",
+  "dependencies": {
+    "vlt": "0.1.0"
+  }
+}

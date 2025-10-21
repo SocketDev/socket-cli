@@ -2,7 +2,9 @@
 
 import shadowYarnBin from './shadow/yarn/bin.mts'
 
-void (async () => {
+import type { ChildProcess } from 'node:child_process'
+
+export default async function runYarnCli() {
   process.exitCode = 1
 
   const { spawnPromise } = await shadowYarnBin(process.argv.slice(2), {
@@ -12,14 +14,26 @@ void (async () => {
   })
 
   // See https://nodejs.org/api/child_process.html#event-exit.
-  spawnPromise.process.on('exit', (code, signalName) => {
-    if (signalName) {
-      process.kill(process.pid, signalName)
-    } else if (typeof code === 'number') {
-      // eslint-disable-next-line n/no-process-exit
-      process.exit(code)
-    }
-  })
+  ;(spawnPromise.process as ChildProcess).on(
+    'exit',
+    (code: number | null, signalName: string | null) => {
+      if (signalName) {
+        process.kill(process.pid, signalName)
+      } else if (typeof code === 'number') {
+        // eslint-disable-next-line n/no-process-exit
+        process.exit(code)
+      }
+    },
+  )
 
   await spawnPromise
-})()
+}
+
+// Run if invoked directly (not as a module).
+if (import.meta.url === `file://${process.argv[1]}`) {
+  runYarnCli().catch(error => {
+    console.error('Socket yarn wrapper error:', error)
+    // eslint-disable-next-line n/no-process-exit
+    process.exit(1)
+  })
+}

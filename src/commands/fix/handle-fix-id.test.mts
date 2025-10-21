@@ -8,7 +8,7 @@ const mockLogger = vi.hoisted(() => ({
   warn: vi.fn(),
 }))
 
-vi.mock('@socketsecurity/registry/lib/logger', () => ({
+vi.mock('@socketsecurity/lib/logger', () => ({
   logger: mockLogger,
 }))
 
@@ -19,9 +19,9 @@ describe('Socket fix --id functionality', () => {
     vi.clearAllMocks()
 
     // Set up environment for GitHub API.
-    process.env.DISABLE_GITHUB_CACHE = 'true'
-    process.env.SOCKET_CLI_GITHUB_TOKEN = 'test-token'
-    process.env.GITHUB_API_URL = 'https://api.github.com'
+    process.env['DISABLE_GITHUB_CACHE'] = 'true'
+    process.env['SOCKET_CLI_GITHUB_TOKEN'] = 'test-token'
+    process.env['GITHUB_API_URL'] = 'https://api.github.com'
   })
 
   afterEach(() => {

@@ -1,0 +1,8 @@
+{
+  "name": "pnpm-v9-fixture",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "pnpm": "9.14.4"
+  }
+}

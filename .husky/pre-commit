@@ -1,11 +1,11 @@
 if [ -z "${DISABLE_PRECOMMIT_LINT}" ]; then
-  pnpm run lint-staged
+  pnpm run precommit
 else
   echo "Skipping lint due to DISABLE_PRECOMMIT_LINT env var"
 fi
 
 if [ -z "${DISABLE_PRECOMMIT_TEST}" ]; then
-  pnpm run test-pre-commit
+  dotenvx -q run -f .env.precommit -- pnpm test --staged
 else
   echo "Skipping testing due to DISABLE_PRECOMMIT_TEST env var"
 fi

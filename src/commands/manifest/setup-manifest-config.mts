@@ -1,19 +1,20 @@
 import fs from 'node:fs'
 import path from 'node:path'
 
-import { debugDir } from '@socketsecurity/registry/lib/debug'
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { input, select } from '@socketsecurity/registry/lib/prompts'
+import { debugDir } from '@socketsecurity/lib/debug'
+import { logger } from '@socketsecurity/lib/logger'
+import { input, select } from '@socketsecurity/lib/prompts'
 
 import { detectManifestActions } from './detect-manifest-actions.mts'
-import { REQUIREMENTS_TXT, SOCKET_JSON } from '../../constants.mts'
+import { REQUIREMENTS_TXT } from '../../constants/paths.mjs'
+import { SOCKET_JSON } from '../../constants/socket.mts'
 import {
   readSocketJsonSync,
   writeSocketJson,
-} from '../../utils/socket-json.mts'
+} from '../../utils/socket/json.mts'
 
 import type { CResult } from '../../types.mts'
-import type { SocketJson } from '../../utils/socket-json.mts'
+import type { SocketJson } from '../../utils/socket/json.mts'
 
 export async function setupManifestConfig(
   cwd: string,
@@ -196,7 +197,8 @@ async function setupConda(
   const on = await askForEnabled(!config.disabled)
   if (on === undefined) {
     return canceledByUser()
-  } else if (on) {
+  }
+  if (on) {
     delete config.disabled
   } else {
     config.disabled = true
@@ -205,7 +207,8 @@ async function setupConda(
   const infile = await askForInputFile(config.infile || 'environment.yml')
   if (infile === undefined) {
     return canceledByUser()
-  } else if (infile === '-') {
+  }
+  if (infile === '-') {
     config.stdin = true
   } else {
     delete config.stdin
@@ -219,7 +222,8 @@ async function setupConda(
   const stdout = await askForStdout(config.stdout)
   if (stdout === undefined) {
     return canceledByUser()
-  } else if (stdout === 'yes') {
+  }
+  if (stdout === 'yes') {
     config.stdout = true
   } else if (stdout === 'no') {
     config.stdout = false
@@ -231,7 +235,8 @@ async function setupConda(
     const out = await askForOutputFile(config.outfile || REQUIREMENTS_TXT)
     if (out === undefined) {
       return canceledByUser()
-    } else if (out === '-') {
+    }
+    if (out === '-') {
       config.stdout = true
     } else {
       delete config.stdout
@@ -246,7 +251,8 @@ async function setupConda(
   const verbose = await askForVerboseFlag(config.verbose)
   if (verbose === undefined) {
     return canceledByUser()
-  } else if (verbose === 'yes' || verbose === 'no') {
+  }
+  if (verbose === 'yes' || verbose === 'no') {
     config.verbose = verbose === 'yes'
   } else {
     delete config.verbose
@@ -263,7 +269,8 @@ async function setupGradle(
   const bin = await askForBin(config.bin || './gradlew')
   if (bin === undefined) {
     return canceledByUser()
-  } else if (bin) {
+  }
+  if (bin) {
     config.bin = bin
   } else {
     delete config.bin
@@ -277,7 +284,8 @@ async function setupGradle(
   })
   if (opts === undefined) {
     return canceledByUser()
-  } else if (opts) {
+  }
+  if (opts) {
     config.gradleOpts = opts
   } else {
     delete config.gradleOpts
@@ -286,7 +294,8 @@ async function setupGradle(
   const verbose = await askForVerboseFlag(config.verbose)
   if (verbose === undefined) {
     return canceledByUser()
-  } else if (verbose === 'yes' || verbose === 'no') {
+  }
+  if (verbose === 'yes' || verbose === 'no') {
     config.verbose = verbose === 'yes'
   } else {
     delete config.verbose
@@ -303,7 +312,8 @@ async function setupSbt(
   const bin = await askForBin(config.bin || 'sbt')
   if (bin === undefined) {
     return canceledByUser()
-  } else if (bin) {
+  }
+  if (bin) {
     config.bin = bin
   } else {
     delete config.bin
@@ -317,7 +327,8 @@ async function setupSbt(
   })
   if (opts === undefined) {
     return canceledByUser()
-  } else if (opts) {
+  }
+  if (opts) {
     config.sbtOpts = opts
   } else {
     delete config.sbtOpts
@@ -326,7 +337,8 @@ async function setupSbt(
   const stdout = await askForStdout(config.stdout)
   if (stdout === undefined) {
     return canceledByUser()
-  } else if (stdout === 'yes') {
+  }
+  if (stdout === 'yes') {
     config.stdout = true
   } else if (stdout === 'no') {
     config.stdout = false
@@ -338,7 +350,8 @@ async function setupSbt(
     const out = await askForOutputFile(config.outfile || 'sbt.pom.xml')
     if (out === undefined) {
       return canceledByUser()
-    } else if (out === '-') {
+    }
+    if (out === '-') {
       config.stdout = true
     } else {
       delete config.stdout
@@ -353,7 +366,8 @@ async function setupSbt(
   const verbose = await askForVerboseFlag(config.verbose)
   if (verbose === undefined) {
     return canceledByUser()
-  } else if (verbose === 'yes' || verbose === 'no') {
+  }
+  if (verbose === 'yes' || verbose === 'no') {
     config.verbose = verbose === 'yes'
   } else {
     delete config.verbose

@@ -1,31 +1,31 @@
 import path from 'node:path'
 
-import { joinAnd } from '@socketsecurity/registry/lib/arrays'
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { joinAnd } from '@socketsecurity/lib/arrays'
+import { logger } from '@socketsecurity/lib/logger'
 
 import { handleScanReach } from './handle-scan-reach.mts'
 import { reachabilityFlags } from './reachability-flags.mts'
 import { suggestTarget } from './suggest_target.mts'
-import constants from '../../constants.mts'
+import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
-import { checkCommandInput } from '../../utils/check-input.mts'
-import { cmdFlagValueToArray } from '../../utils/cmd.mts'
-import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
-import { getEcosystemChoicesForMeow } from '../../utils/ecosystem.mts'
-import { getOutputKind } from '../../utils/get-output-kind.mts'
-import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
+import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
+import { getEcosystemChoicesForMeow } from '../../utils/ecosystem/ecosystem.mjs'
 import {
   getFlagApiRequirementsOutput,
   getFlagListOutput,
-} from '../../utils/output-formatting.mts'
-import { hasDefaultApiToken } from '../../utils/sdk.mts'
+} from '../../utils/output/formatting.mts'
+import { getOutputKind } from '../../utils/output/mode.mjs'
+import { cmdFlagValueToArray } from '../../utils/process/cmd.mts'
+import { determineOrgSlug } from '../../utils/socket/org-slug.mjs'
+import { hasDefaultApiToken } from '../../utils/socket/sdk.mjs'
+import { checkCommandInput } from '../../utils/validation/check-input.mts'
 
 import type { MeowFlags } from '../../flags.mts'
-import type { PURL_Type } from '../../utils/ecosystem.mts'
 import type {
   CliCommandConfig,
   CliCommandContext,
-} from '../../utils/meow-with-subcommands.mts'
+} from '../../utils/cli/with-subcommands.mjs'
+import type { PURL_Type } from '../../utils/ecosystem/ecosystem.mjs'
 
 export const CMD_NAME = 'reach'
 
@@ -124,7 +124,7 @@ async function run(
     reachAnalysisTimeout,
     reachDisableAnalytics,
     reachSkipCache,
-  } = cli.flags as {
+  } = cli.flags as unknown as {
     cwd: string
     interactive: boolean
     json: boolean
@@ -162,7 +162,7 @@ async function run(
       : processCwd
 
   // Accept zero or more paths. Default to cwd() if none given.
-  let targets = cli.input || [cwd]
+  let targets: string[] = cli.input ? [...cli.input] : [cwd]
 
   // Use suggestTarget if no targets specified and in interactive mode
   if (!targets.length && !dryRun && interactive) {
@@ -207,7 +207,7 @@ async function run(
   }
 
   if (dryRun) {
-    logger.log(constants.DRY_RUN_BAILING_NOW)
+    logger.log(DRY_RUN_BAILING_NOW)
     return
   }
 

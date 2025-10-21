@@ -1,17 +1,17 @@
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { logger } from '@socketsecurity/lib/logger'
 
 import { outputConfigList } from './output-config-list.mts'
-import constants, { FLAG_JSON, FLAG_MARKDOWN } from '../../constants.mts'
+import { DRY_RUN_BAILING_NOW, FLAG_JSON, FLAG_MARKDOWN } from '../../constants/cli.mjs'
 import { commonFlags, outputFlags } from '../../flags.mts'
-import { checkCommandInput } from '../../utils/check-input.mts'
-import { getOutputKind } from '../../utils/get-output-kind.mts'
-import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
-import { getFlagListOutput } from '../../utils/output-formatting.mts'
+import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
+import { getFlagListOutput } from '../../utils/output/formatting.mts'
+import { getOutputKind } from '../../utils/output/mode.mjs'
+import { checkCommandInput } from '../../utils/validation/check-input.mts'
 
 import type {
   CliCommandConfig,
   CliCommandContext,
-} from '../../utils/meow-with-subcommands.mts'
+} from '../../utils/cli/with-subcommands.mjs'
 
 const config: CliCommandConfig = {
   commandName: 'list',
@@ -73,7 +73,7 @@ async function run(
   }
 
   if (dryRun) {
-    logger.log(constants.DRY_RUN_BAILING_NOW)
+    logger.log(DRY_RUN_BAILING_NOW)
     return
   }
 

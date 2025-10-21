@@ -3,9 +3,9 @@ import { cmdConfigGet } from './cmd-config-get.mts'
 import { cmdConfigList } from './cmd-config-list.mts'
 import { cmdConfigSet } from './cmd-config-set.mts'
 import { cmdConfigUnset } from './cmd-config-unset.mts'
-import { meowWithSubcommands } from '../../utils/meow-with-subcommands.mts'
+import { meowWithSubcommands } from '../../utils/cli/with-subcommands.mjs'
 
-import type { CliSubcommand } from '../../utils/meow-with-subcommands.mts'
+import type { CliSubcommand } from '../../utils/cli/with-subcommands.mjs'
 
 const description = 'Manage Socket CLI configuration'
 

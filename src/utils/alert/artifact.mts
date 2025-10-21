@@ -1,6 +1,13 @@
-import constants from '../../constants.mts'
+/** @fileoverview Socket artifact and alert type definitions. */
 
-import type { Remap } from '@socketsecurity/registry/lib/objects'
+import {
+  ALERT_TYPE_CRITICAL_CVE,
+  ALERT_TYPE_CVE,
+  ALERT_TYPE_MEDIUM_CVE,
+  ALERT_TYPE_MILD_CVE,
+} from '../../constants/alerts.mts'
+
+import type { Remap } from '@socketsecurity/lib/objects'
 import type {
   ALERT_ACTION,
   ALERT_TYPE,
@@ -51,9 +58,9 @@ export function isArtifactAlertCve(
 ): alert is ArtifactAlertCve {
   const { type } = alert
   return (
-    type === constants.ALERT_TYPE_CVE ||
-    type === constants.ALERT_TYPE_MEDIUM_CVE ||
-    type === constants.ALERT_TYPE_MILD_CVE ||
-    type === constants.ALERT_TYPE_CRITICAL_CVE
+    type === ALERT_TYPE_CVE ||
+    type === ALERT_TYPE_MEDIUM_CVE ||
+    type === ALERT_TYPE_MILD_CVE ||
+    type === ALERT_TYPE_CRITICAL_CVE
   )
 }

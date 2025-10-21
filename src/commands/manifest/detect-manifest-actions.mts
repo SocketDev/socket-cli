@@ -4,15 +4,12 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 
-import { debugLog } from '@socketsecurity/registry/lib/debug'
+import { debugLog } from '@socketsecurity/lib/debug'
 
-import {
-  ENVIRONMENT_YAML,
-  ENVIRONMENT_YML,
-  SOCKET_JSON,
-} from '../../constants.mts'
+import { ENVIRONMENT_YAML, ENVIRONMENT_YML } from '../../constants/paths.mjs'
+import { SOCKET_JSON } from '../../constants/socket.mts'
 
-import type { SocketJson } from '../../utils/socket-json.mts'
+import type { SocketJson } from '../../utils/socket/json.mts'
 
 export interface GeneratableManifests {
   cdxgen: boolean

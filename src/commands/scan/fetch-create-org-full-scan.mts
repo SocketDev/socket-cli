@@ -1,8 +1,9 @@
-import { handleApiCall } from '../../utils/api.mts'
-import { setupSdk } from '../../utils/sdk.mts'
+import { handleApiCall } from '../../utils/socket/api.mjs'
+import { setupSdk } from '../../utils/socket/sdk.mjs'
 
 import type { CResult } from '../../types.mts'
-import type { SetupSdkOptions } from '../../utils/sdk.mts'
+import type { SetupSdkOptions } from '../../utils/socket/sdk.mjs'
+import type { Spinner } from '@socketsecurity/lib/spinner'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export type FetchCreateOrgFullScanConfigs = {
@@ -19,6 +20,7 @@ export type FetchCreateOrgFullScanOptions = {
   defaultBranch?: boolean | undefined
   pendingHead?: boolean | undefined
   sdkOpts?: SetupSdkOptions | undefined
+  spinner?: Spinner | undefined
   tmp?: boolean | undefined
 }
 
@@ -42,6 +44,7 @@ export async function fetchCreateOrgFullScan(
     defaultBranch,
     pendingHead,
     sdkOpts,
+    spinner,
     tmp,
   } = { __proto__: null, ...options } as FetchCreateOrgFullScanOptions
 
@@ -52,17 +55,23 @@ export async function fetchCreateOrgFullScan(
   const sockSdk = sockSdkCResult.data
 
   return await handleApiCall(
-    sockSdk.createOrgFullScan(orgSlug, packagePaths, cwd, {
-      ...(branchName ? { branch: branchName } : {}),
-      ...(commitHash ? { commit_hash: commitHash } : {}),
-      ...(commitMessage ? { commit_message: commitMessage } : {}),
-      ...(committers ? { committers } : {}),
-      make_default_branch: String(defaultBranch),
-      ...(pullRequest ? { pull_request: String(pullRequest) } : {}),
-      repo: repoName,
-      set_as_pending_head: String(pendingHead),
-      tmp: String(tmp),
+    sockSdk.createOrgFullScan(orgSlug, packagePaths, {
+      pathsRelativeTo: cwd,
+      queryParams: {
+        ...(branchName ? { branch: branchName } : {}),
+        ...(commitHash ? { commit_hash: commitHash } : {}),
+        ...(commitMessage ? { commit_message: commitMessage } : {}),
+        ...(committers ? { committers } : {}),
+        make_default_branch: String(defaultBranch),
+        ...(pullRequest ? { pull_request: String(pullRequest) } : {}),
+        repo: repoName,
+        set_as_pending_head: String(pendingHead),
+        tmp: String(tmp),
+      },
     }),
-    { description: 'to create a scan' },
+    {
+      description: 'to create a scan',
+      spinner,
+    },
   )
 }

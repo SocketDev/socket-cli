@@ -1,18 +1,23 @@
 import { fileURLToPath } from 'node:url'
 
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { readPackageJson } from '@socketsecurity/registry/lib/packages'
+import { debug, debugDir } from '@socketsecurity/lib/debug'
+import { logger } from '@socketsecurity/lib/logger'
+import { readPackageJson } from '@socketsecurity/lib/packages'
 
-import constants, { FLAG_DRY_RUN, PACKAGE_JSON } from '../constants.mts'
-import { getAlertsMapFromPurls } from '../utils/alerts-map.mts'
-import { isAddCommand } from '../utils/cmd.mts'
+import { FLAG_DRY_RUN } from '../constants/cli.mts'
+import { PACKAGE_JSON } from '../constants/packages.mts'
+import {
+  SOCKET_CLI_ACCEPT_RISKS,
+  SOCKET_CLI_VIEW_ALL_RISKS,
+} from '../constants/shadow.mts'
 import { debugScan } from '../utils/debug.mts'
-import { safeNpmSpecToPurl } from '../utils/npm-spec.mts'
-import { logAlertsMap } from '../utils/socket-package-alert.mts'
+import { safeNpmSpecToPurl } from '../utils/npm/spec.mts'
+import { isAddCommand } from '../utils/process/cmd.mts'
+import { getAlertsMapFromPurls } from '../utils/socket/alerts.mts'
+import { logAlertsMap } from '../utils/socket/package-alert.mts'
 
-import type { AlertsByPurl } from '../utils/socket-package-alert.mts'
-import type { Spinner } from '@socketsecurity/registry/lib/spinner'
+import type { AlertsByPurl } from '../utils/socket/package-alert.mts'
+import type { Spinner } from '@socketsecurity/lib/spinner'
 
 /**
  * Extract package PURLs from command arguments for add/dlx commands where
@@ -51,6 +56,10 @@ async function extractPackagePurlsFromPackageJson(
   try {
     const pkgJson = await readPackageJson(cwd)
 
+    if (!pkgJson) {
+      return packagePurls
+    }
+
     const allDeps = {
       ...pkgJson.dependencies,
       ...pkgJson.devDependencies,
@@ -69,11 +78,8 @@ async function extractPackagePurlsFromPackageJson(
 
     debugScan('start', packagePurls.length)
   } catch (e) {
-    debugFn(
-      'warn',
-      `${PACKAGE_JSON} not found or invalid during dependency scanning`,
-    )
-    debugDir('error', e)
+    debug(`${PACKAGE_JSON} not found or invalid during dependency scanning`)
+    debugDir(e)
   }
 
   return packagePurls
@@ -167,11 +173,11 @@ export async function scanPackagesAndLogAlerts(
       const errorMessage = `Socket ${managerName} exiting due to risks.${
         viewAllRisks
           ? ''
-          : `\nView all risks - Rerun with environment variable ${constants.SOCKET_CLI_VIEW_ALL_RISKS}=1.`
+          : `\nView all risks - Rerun with environment variable ${SOCKET_CLI_VIEW_ALL_RISKS}=1.`
       }${
         acceptRisks
           ? ''
-          : `\nAccept risks - Rerun with environment variable ${constants.SOCKET_CLI_ACCEPT_RISKS}=1.`
+          : `\nAccept risks - Rerun with environment variable ${SOCKET_CLI_ACCEPT_RISKS}=1.`
       }`.trim()
 
       logger.error(errorMessage)

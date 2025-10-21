@@ -39,9 +39,8 @@ export function mockInteractiveLogin(options?: { shouldSucceed?: boolean }) {
           name: MOCK_ORG_NAME,
         },
       }
-    } else {
-      throw new Error('Authentication failed')
     }
+    throw new Error('Authentication failed')
   })
 }
 
@@ -118,9 +117,8 @@ export function mockOAuthPoller(options?: {
         pending: false,
         token: MOCK_API_TOKEN,
       }
-    } else {
-      throw new Error('OAuth timeout')
     }
+    throw new Error('OAuth timeout')
   })
 }
 

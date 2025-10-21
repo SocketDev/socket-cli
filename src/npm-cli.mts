@@ -2,7 +2,7 @@
 
 import shadowNpmBin from './shadow/npm/bin.mts'
 
-void (async () => {
+export default async function runNpmCli() {
   process.exitCode = 1
 
   const { spawnPromise } = await shadowNpmBin(process.argv.slice(2), {
@@ -11,15 +11,21 @@ void (async () => {
     env: { ...process.env },
   })
 
-  // See https://nodejs.org/api/child_process.html#event-exit.
-  spawnPromise.process.on('exit', (code, signalName) => {
-    if (signalName) {
-      process.kill(process.pid, signalName)
-    } else if (typeof code === 'number') {
-      // eslint-disable-next-line n/no-process-exit
-      process.exit(code)
-    }
-  })
+  // Wait for the spawn promise to resolve and handle the result.
+  const result = await spawnPromise
+  if (result.signal) {
+    process.kill(process.pid, result.signal)
+  } else if (typeof result.code === 'number') {
+    // eslint-disable-next-line n/no-process-exit
+    process.exit(result.code)
+  }
+}
 
-  await spawnPromise
-})()
+// Run if invoked directly (not as a module).
+if (import.meta.url === `file://${process.argv[1]}`) {
+  runNpmCli().catch(error => {
+    console.error('Socket npm wrapper error:', error)
+    // eslint-disable-next-line n/no-process-exit
+    process.exit(1)
+  })
+}

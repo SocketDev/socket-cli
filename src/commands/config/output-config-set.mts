@@ -1,7 +1,7 @@
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { logger } from '@socketsecurity/lib/logger'
 
-import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
-import { serializeResultJson } from '../../utils/serialize-result-json.mts'
+import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
+import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
 import type { CResult, OutputKind } from '../../types.mts'
 
@@ -23,7 +23,7 @@ export async function outputConfigSet(
   }
 
   if (outputKind === 'markdown') {
-    logger.log(`# Update config`)
+    logger.log('# Update config')
     logger.log('')
     logger.log(result.message)
     if (result.data) {
@@ -31,7 +31,7 @@ export async function outputConfigSet(
       logger.log(result.data)
     }
   } else {
-    logger.log(`OK`)
+    logger.log('OK')
     logger.log(result.message)
     if (result.data) {
       logger.log('')

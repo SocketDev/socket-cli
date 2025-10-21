@@ -1,21 +1,23 @@
 import path from 'node:path'
 
-import { debugFn } from '@socketsecurity/registry/lib/debug'
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { debug } from '@socketsecurity/lib/debug'
+import { logger } from '@socketsecurity/lib/logger'
 
-import { convertSbtToMaven } from './convert_sbt_to_maven.mts'
-import constants, { REQUIREMENTS_TXT, SOCKET_JSON } from '../../constants.mts'
+import { convertSbtToMaven } from './convert-sbt-to-maven.mts'
+import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mjs'
+import { REQUIREMENTS_TXT } from '../../constants/paths.mjs'
+import { SOCKET_JSON } from '../../constants/socket.mts'
 import { commonFlags } from '../../flags.mts'
-import { checkCommandInput } from '../../utils/check-input.mts'
-import { getOutputKind } from '../../utils/get-output-kind.mts'
-import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
-import { getFlagListOutput } from '../../utils/output-formatting.mts'
-import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
+import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
+import { getFlagListOutput } from '../../utils/output/formatting.mts'
+import { getOutputKind } from '../../utils/output/mode.mjs'
+import { readOrDefaultSocketJson } from '../../utils/socket/json.mts'
+import { checkCommandInput } from '../../utils/validation/check-input.mts'
 
 import type {
   CliCommandConfig,
   CliCommandContext,
-} from '../../utils/meow-with-subcommands.mts'
+} from '../../utils/cli/with-subcommands.mjs'
 
 const config: CliCommandConfig = {
   commandName: 'scala',
@@ -117,13 +119,15 @@ async function run(
 
   const sockJson = readOrDefaultSocketJson(cwd)
 
-  debugFn(
-    'inspect',
-    `override: ${SOCKET_JSON} sbt`,
-    sockJson?.defaults?.manifest?.sbt,
-  )
+  debug(`override: ${SOCKET_JSON} sbt: ${sockJson?.defaults?.manifest?.sbt}`)
 
-  let { bin, out, sbtOpts, stdout, verbose } = cli.flags
+  let { bin, out, sbtOpts, stdout, verbose } = cli.flags as unknown as {
+    bin: string | undefined
+    out: string | undefined
+    sbtOpts: string | undefined
+    stdout: boolean | undefined
+    verbose: boolean | undefined
+  }
 
   // Set defaults for any flag/arg that is not given. Check socket.json first.
   if (!bin) {
@@ -185,7 +189,7 @@ async function run(
     nook: true,
     test: cli.input.length <= 1,
     message: 'Can only accept one DIR (make sure to escape spaces!)',
-    fail: 'received ' + cli.input.length,
+    fail: `received ${cli.input.length}`,
   })
   if (!wasValidInput) {
     return
@@ -200,7 +204,7 @@ async function run(
   }
 
   if (dryRun) {
-    logger.log(constants.DRY_RUN_BAILING_NOW)
+    logger.log(DRY_RUN_BAILING_NOW)
     return
   }
 

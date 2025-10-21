@@ -1,8 +1,8 @@
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { logger } from '@socketsecurity/lib/logger'
 
 import { isConfigFromFlag } from '../../utils/config.mts'
-import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
-import { serializeResultJson } from '../../utils/serialize-result-json.mts'
+import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
+import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
 import type { CResult, OutputKind } from '../../types.mts'
 import type { LocalConfig } from '../../utils/config.mts'
@@ -28,7 +28,7 @@ export async function outputConfigGet(
   const readOnly = isConfigFromFlag()
 
   if (outputKind === 'markdown') {
-    logger.log(`# Config Value`)
+    logger.log('# Config Value')
     logger.log('')
     logger.log(`Config key '${key}' has value '${result.data}`)
     if (readOnly) {

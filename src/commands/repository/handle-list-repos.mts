@@ -25,7 +25,15 @@ export async function handleListRepos({
   if (all) {
     const data = await fetchListAllRepos(orgSlug, { direction, sort })
 
-    await outputListRepos(data, outputKind, 0, 0, sort, Infinity, direction)
+    await outputListRepos(
+      data,
+      outputKind,
+      0,
+      0,
+      sort,
+      Number.POSITIVE_INFINITY,
+      direction,
+    )
   } else {
     const data = await fetchListRepos({
       direction,

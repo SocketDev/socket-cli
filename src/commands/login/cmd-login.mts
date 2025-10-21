@@ -1,20 +1,20 @@
 import isInteractive from '@socketregistry/is-interactive/index.cjs'
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { logger } from '@socketsecurity/lib/logger'
 
 import { attemptLogin } from './attempt-login.mts'
-import constants from '../../constants.mts'
+import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'
 import { commonFlags } from '../../flags.mts'
-import { InputError } from '../../utils/errors.mts'
-import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
+import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
+import { InputError } from '../../utils/error/errors.mjs'
 import {
   getFlagApiRequirementsOutput,
   getFlagListOutput,
-} from '../../utils/output-formatting.mts'
+} from '../../utils/output/formatting.mts'
 
 import type {
   CliCommandConfig,
   CliCommandContext,
-} from '../../utils/meow-with-subcommands.mts'
+} from '../../utils/cli/with-subcommands.mjs'
 
 export const CMD_NAME = 'login'
 
@@ -78,7 +78,7 @@ async function run(
   const dryRun = !!cli.flags['dryRun']
 
   if (dryRun) {
-    logger.log(constants.DRY_RUN_BAILING_NOW)
+    logger.log(DRY_RUN_BAILING_NOW)
     return
   }
 
@@ -88,7 +88,7 @@ async function run(
     )
   }
 
-  const { apiBaseUrl, apiProxy } = cli.flags as {
+  const { apiBaseUrl, apiProxy } = cli.flags as unknown as {
     apiBaseUrl?: string | undefined
     apiProxy?: string | undefined
   }

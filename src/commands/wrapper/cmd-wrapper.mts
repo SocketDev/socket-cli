@@ -1,22 +1,26 @@
 import { existsSync } from 'node:fs'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { logger } from '@socketsecurity/lib/logger'
 
 import { addSocketWrapper } from './add-socket-wrapper.mts'
 import { checkSocketWrapperSetup } from './check-socket-wrapper-setup.mts'
 import { postinstallWrapper } from './postinstall-wrapper.mts'
 import { removeSocketWrapper } from './remove-socket-wrapper.mts'
-import constants from '../../constants.mts'
+import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mjs'
+import {
+  getBashRcPath,
+  getZshRcPath,
+} from '../../constants/paths.mjs'
 import { commonFlags } from '../../flags.mts'
-import { checkCommandInput } from '../../utils/check-input.mts'
-import { getOutputKind } from '../../utils/get-output-kind.mts'
-import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
-import { getFlagListOutput } from '../../utils/output-formatting.mts'
+import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
+import { getFlagListOutput } from '../../utils/output/formatting.mts'
+import { getOutputKind } from '../../utils/output/mode.mjs'
+import { checkCommandInput } from '../../utils/validation/check-input.mts'
 
 import type {
   CliCommandConfig,
   CliCommandContext,
-} from '../../utils/meow-with-subcommands.mts'
+} from '../../utils/cli/with-subcommands.mjs'
 
 const config: CliCommandConfig = {
   commandName: 'wrapper',
@@ -95,7 +99,7 @@ async function run(
       nook: true,
       test: cli.input.length <= 1,
       message: 'expecting exactly one argument',
-      fail: `got multiple`,
+      fail: 'got multiple',
     },
   )
   if (!wasValidInput) {
@@ -103,11 +107,12 @@ async function run(
   }
 
   if (dryRun) {
-    logger.log(constants.DRY_RUN_BAILING_NOW)
+    logger.log(DRY_RUN_BAILING_NOW)
     return
   }
 
-  const { bashRcPath, zshRcPath } = constants
+  const bashRcPath = getBashRcPath()
+  const zshRcPath = getZshRcPath()
   if (enable) {
     if (existsSync(bashRcPath) && !checkSocketWrapperSetup(bashRcPath)) {
       addSocketWrapper(bashRcPath)

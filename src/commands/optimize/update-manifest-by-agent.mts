@@ -1,21 +1,17 @@
-import { hasKeys, isObject } from '@socketsecurity/registry/lib/objects'
-
-import constants from '../../constants.mts'
-
-import type { Overrides } from './types.mts'
-import type { Agent } from '../../utils/package-environment.mts'
-import type { EditablePackageJson } from '@socketsecurity/registry/lib/packages'
-
-const {
+import { hasKeys, isObject } from '@socketsecurity/lib/objects'
+import {
   BUN,
-  NPM,
   OVERRIDES,
   PNPM,
   RESOLUTIONS,
   VLT,
   YARN_BERRY,
   YARN_CLASSIC,
-} = constants
+} from '@socketsecurity/lib/constants/agents'
+
+import type { Overrides } from './types.mts'
+import type { Agent } from '../../utils/ecosystem/environment.mjs'
+import type { EditablePackageJson } from '@socketsecurity/lib/packages'
 
 const depFields = [
   'dependencies',
@@ -184,7 +180,6 @@ export function updateManifest(
     case YARN_CLASSIC:
       updateResolutionsField(editablePkgJson, overrides)
       return
-    case NPM:
     default:
       updateOverridesField(editablePkgJson, overrides)
       return

@@ -1,15 +1,15 @@
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { logger } from '@socketsecurity/lib/logger'
 
-import constants from '../../constants.mts'
+import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
-import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
-import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
-import { serializeResultJson } from '../../utils/serialize-result-json.mts'
+import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
+import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
+import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
 import type {
   CliCommandConfig,
   CliCommandContext,
-} from '../../utils/meow-with-subcommands.mts'
+} from '../../utils/cli/with-subcommands.mjs'
 
 const config: CliCommandConfig = {
   commandName: 'oops',
@@ -56,7 +56,7 @@ async function run(
   const dryRun = !!cli.flags['dryRun']
 
   if (dryRun) {
-    logger.log(constants.DRY_RUN_BAILING_NOW)
+    logger.log(DRY_RUN_BAILING_NOW)
     return
   }
 

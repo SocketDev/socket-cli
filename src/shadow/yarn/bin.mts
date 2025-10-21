@@ -1,28 +1,37 @@
 import { fileURLToPath } from 'node:url'
 
-import { debugFn } from '@socketsecurity/registry/lib/debug'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
+import { debugNs } from '@socketsecurity/lib/debug'
+import { spawn } from '@socketsecurity/lib/spawn'
+import { YARN } from '@socketsecurity/lib/constants/agents'
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
 
-import constants, { YARN } from '../../constants.mts'
-import { cmdFlagsToString } from '../../utils/cmd.mts'
-import { getPublicApiToken } from '../../utils/sdk.mts'
-import { installYarnLinks } from '../../utils/shadow-links.mts'
+import ENV from '../../constants/env.mts'
+import { shadowBinPath } from '../../constants/paths.mts'
+import {
+  SOCKET_CLI_SHADOW_API_TOKEN,
+  SOCKET_CLI_SHADOW_BIN,
+  SOCKET_CLI_SHADOW_PROGRESS,
+  SOCKET_IPC_HANDSHAKE,
+} from '../../constants/shadow.mts'
+import { cmdFlagsToString } from '../../utils/process/cmd.mts'
+import { installYarnLinks } from '../../utils/shadow/links.mts'
+import { getPublicApiToken } from '../../utils/socket/sdk.mjs'
 import { scanPackagesAndLogAlerts } from '../common.mts'
 import { ensureIpcInStdio } from '../stdio-ipc.mts'
 
-import type { IpcObject } from '../../constants.mts'
+import type { IpcObject } from '../../constants/shadow.mts'
 import type {
   SpawnExtra,
   SpawnOptions,
   SpawnResult,
-} from '@socketsecurity/registry/lib/spawn'
+} from '@socketsecurity/lib/spawn'
 
 export type ShadowYarnOptions = SpawnOptions & {
   ipc?: IpcObject | undefined
 }
 
 export type ShadowYarnResult = {
-  spawnPromise: SpawnResult<string, SpawnExtra | undefined>
+  spawnPromise: SpawnResult
 }
 
 const DLX_COMMANDS = new Set(['dlx'])
@@ -59,7 +68,7 @@ export default async function shadowYarnBin(
   // Check for package scanning.
   const command = rawYarnArgs[0]
   const scanResult = await scanPackagesAndLogAlerts({
-    acceptRisks: !!constants.ENV.SOCKET_CLI_ACCEPT_RISKS,
+    acceptRisks: !!ENV.SOCKET_CLI_ACCEPT_RISKS,
     command,
     cwd,
     dlxCommands: DLX_COMMANDS,
@@ -67,7 +76,7 @@ export default async function shadowYarnBin(
     managerName: YARN,
     rawArgs: rawYarnArgs,
     spinner,
-    viewAllRisks: !!constants.ENV.SOCKET_CLI_VIEW_ALL_RISKS,
+    viewAllRisks: !!ENV.SOCKET_CLI_VIEW_ALL_RISKS,
   })
 
   if (scanResult.shouldExit) {
@@ -77,12 +86,12 @@ export default async function shadowYarnBin(
     throw new Error('process.exit called')
   }
 
-  const realYarnPath = await installYarnLinks(constants.shadowBinPath)
+  const realYarnPath = await installYarnLinks(shadowBinPath)
 
   const otherArgs = terminatorPos === -1 ? [] : args.slice(terminatorPos)
   const suffixArgs = [...rawYarnArgs, ...otherArgs]
 
-  debugFn(
+  debugNs(
     'notice',
     `spawn: ${YARN} shadow bin ${realYarnPath} ${cmdFlagsToString(suffixArgs)}`,
   )
@@ -108,17 +117,17 @@ export default async function shadowYarnBin(
       // On Windows, yarn is often a .cmd file that requires shell execution.
       // The spawn function from @socketsecurity/registry will handle this properly
       // when shell is true.
-      shell: constants.WIN32,
+      shell: WIN32,
     },
     extra,
   )
 
   // Send IPC handshake.
   spawnPromise.process.send({
-    [constants.SOCKET_IPC_HANDSHAKE]: {
-      [constants.SOCKET_CLI_SHADOW_API_TOKEN]: getPublicApiToken(),
-      [constants.SOCKET_CLI_SHADOW_BIN]: YARN,
-      [constants.SOCKET_CLI_SHADOW_PROGRESS]: true,
+    [SOCKET_IPC_HANDSHAKE]: {
+      [SOCKET_CLI_SHADOW_API_TOKEN]: getPublicApiToken(),
+      [SOCKET_CLI_SHADOW_BIN]: YARN,
+      [SOCKET_CLI_SHADOW_PROGRESS]: true,
       ...ipc,
     },
   })

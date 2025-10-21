@@ -3,19 +3,22 @@
   "files": {
     "includes": [
       "**",
+      "!**/.cache",
       "!**/.DS_Store",
       "!**/._.DS_Store",
       "!**/.env",
       "!**/.git",
       "!**/.github",
       "!**/.husky",
-      "!**/.nvm",
-      "!**/.rollup.cache",
       "!**/.type-coverage",
       "!**/.vscode",
       "!**/coverage",
+      "!**/dist",
+      "!**/external",
       "!**/package.json",
-      "!**/package-lock.json"
+      "!**/pnpm-lock.yaml",
+      "!test/**/fixtures",
+      "!test/**/packages"
     ],
     "maxSize": 8388608
   },
@@ -55,6 +58,9 @@
   },
   "linter": {
     "rules": {
+      "complexity": {
+        "useLiteralKeys": "off"
+      },
       "style": {
         "noParameterAssign": "error",
         "useAsConstAssertion": "error",

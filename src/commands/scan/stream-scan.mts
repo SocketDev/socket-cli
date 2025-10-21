@@ -1,9 +1,9 @@
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { logger } from '@socketsecurity/lib/logger'
 
-import { handleApiCall } from '../../utils/api.mts'
-import { setupSdk } from '../../utils/sdk.mts'
+import { handleApiCall } from '../../utils/socket/api.mjs'
+import { setupSdk } from '../../utils/socket/sdk.mjs'
 
-import type { SetupSdkOptions } from '../../utils/sdk.mts'
+import type { SetupSdkOptions } from '../../utils/socket/sdk.mjs'
 
 export type StreamScanOptions = {
   file?: string | undefined
@@ -27,9 +27,11 @@ export async function streamScan(
 
   logger.info('Requesting data from API...')
 
-  // Note: this will write to stdout or target file. It's not a noop
+  // Note: This will write to stdout or target file. It is not a noop.
   return await handleApiCall(
-    sockSdk.getOrgFullScan(orgSlug, scanId, file === '-' ? undefined : file),
+    sockSdk.streamOrgFullScan(orgSlug, scanId, {
+      output: file === '-' ? undefined : file,
+    }),
     { description: 'a scan' },
   )
 }

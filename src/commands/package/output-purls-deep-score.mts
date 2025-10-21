@@ -1,8 +1,8 @@
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { logger } from '@socketsecurity/lib/logger'
 
-import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
-import { mdTable } from '../../utils/markdown.mts'
-import { serializeResultJson } from '../../utils/serialize-result-json.mts'
+import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
+import { mdTable } from '../../utils/output/markdown.mts'
+import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
 import type { PurlDataResponse } from './fetch-purl-deep-score.mts'
 import type { CResult, OutputKind } from '../../types.mts'
@@ -70,11 +70,11 @@ export function createMarkdownReport(data: PurlDataResponse): string {
   o.push('')
   if (dependencyCount) {
     o.push(
-      `It will show you the shallow score for just the package itself and a deep score for all the transitives combined. Additionally you can see which capabilities were found and the top alerts as well as a package that was responsible for it.`,
+      'It will show you the shallow score for just the package itself and a deep score for all the transitives combined. Additionally you can see which capabilities were found and the top alerts as well as a package that was responsible for it.',
     )
   } else {
     o.push(
-      `It will show you the shallow score for the package itself, which capabilities were found, and its top alerts.`,
+      'It will show you the shallow score for the package itself, which capabilities were found, and its top alerts.',
     )
     o.push('')
     o.push(

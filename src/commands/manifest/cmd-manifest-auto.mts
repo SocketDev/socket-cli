@@ -1,21 +1,21 @@
 import path from 'node:path'
 
-import { debugDir } from '@socketsecurity/registry/lib/debug'
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { debugDir } from '@socketsecurity/lib/debug'
+import { logger } from '@socketsecurity/lib/logger'
 
 import { detectManifestActions } from './detect-manifest-actions.mts'
 import { generateAutoManifest } from './generate_auto_manifest.mts'
-import constants from '../../constants.mts'
+import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mjs'
 import { commonFlags } from '../../flags.mts'
-import { getOutputKind } from '../../utils/get-output-kind.mts'
-import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
-import { getFlagListOutput } from '../../utils/output-formatting.mts'
-import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
+import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
+import { getFlagListOutput } from '../../utils/output/formatting.mts'
+import { getOutputKind } from '../../utils/output/mode.mjs'
+import { readOrDefaultSocketJson } from '../../utils/socket/json.mts'
 
 import type {
   CliCommandConfig,
   CliCommandContext,
-} from '../../utils/meow-with-subcommands.mts'
+} from '../../utils/cli/with-subcommands.mjs'
 
 const config: CliCommandConfig = {
   commandName: 'auto',
@@ -97,7 +97,7 @@ async function run(
   debugDir('inspect', { detected })
 
   if (dryRun) {
-    logger.log(constants.DRY_RUN_BAILING_NOW)
+    logger.log(DRY_RUN_BAILING_NOW)
     return
   }
 

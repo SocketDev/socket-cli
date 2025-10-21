@@ -1,22 +1,26 @@
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { logger } from '@socketsecurity/lib/logger'
 
 import { handleConfigAuto } from './handle-config-auto.mts'
-import constants, { FLAG_JSON, FLAG_MARKDOWN } from '../../constants.mts'
+import {
+  DRY_RUN_BAILING_NOW,
+  FLAG_JSON,
+  FLAG_MARKDOWN,
+} from '../../constants/cli.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
-import { checkCommandInput } from '../../utils/check-input.mts'
+import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import {
   getSupportedConfigEntries,
   isSupportedConfigKey,
 } from '../../utils/config.mts'
-import { getOutputKind } from '../../utils/get-output-kind.mts'
-import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
-import { getFlagListOutput } from '../../utils/output-formatting.mts'
+import { getFlagListOutput } from '../../utils/output/formatting.mts'
+import { getOutputKind } from '../../utils/output/mode.mjs'
+import { checkCommandInput } from '../../utils/validation/check-input.mts'
 
-import type { LocalConfig } from '../../utils/config.mts'
 import type {
   CliCommandConfig,
   CliCommandContext,
-} from '../../utils/meow-with-subcommands.mts'
+} from '../../utils/cli/with-subcommands.mjs'
+import type { LocalConfig } from '../../utils/config.mts'
 
 export const CMD_NAME = 'auto'
 
@@ -70,7 +74,10 @@ ${getSupportedConfigEntries()
     parentName,
   })
 
-  const { json, markdown } = cli.flags as { json: boolean; markdown: boolean }
+  const { json, markdown } = cli.flags as unknown as {
+    json: boolean
+    markdown: boolean
+  }
 
   const dryRun = !!cli.flags['dryRun']
 
@@ -97,7 +104,7 @@ ${getSupportedConfigEntries()
   }
 
   if (dryRun) {
-    logger.log(constants.DRY_RUN_BAILING_NOW)
+    logger.log(DRY_RUN_BAILING_NOW)
     return
   }
 

@@ -1,11 +1,11 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 
-import { debugFn } from '@socketsecurity/registry/lib/debug'
+import { debug } from '@socketsecurity/lib/debug'
 
-import constants from '../../constants.mts'
-import { getBashrcDetails } from '../../utils/completion.mts'
+import ENV from '../../constants/env.mts'
+import { homePath, rootPath } from '../../constants/paths.mts'
+import { getBashrcDetails } from '../../utils/cli/completion.mjs'
 
 import type { CResult } from '../../types.mts'
 
@@ -31,10 +31,10 @@ export async function setupTabCompletion(targetName: string): Promise<
 
   // Target dir is something like ~/.local/share/socket/settings/completion (linux)
   const targetDir = path.dirname(targetPath)
-  debugFn('notice', 'target: path + dir', targetPath, targetDir)
+  debug(`target: path + dir ${targetPath} ${targetDir}`)
 
   if (!fs.existsSync(targetDir)) {
-    debugFn('notice', 'create: target dir')
+    debug('create: target dir')
     fs.mkdirSync(targetDir, { recursive: true })
   }
 
@@ -43,9 +43,7 @@ export async function setupTabCompletion(targetName: string): Promise<
   let bashrcUpdated = false
 
   // Add to ~/.bashrc if not already there
-  const bashrcPath = constants.homePath
-    ? path.join(constants.homePath, '.bashrc')
-    : ''
+  const bashrcPath = homePath ? path.join(homePath, '.bashrc') : ''
 
   const foundBashrc = Boolean(bashrcPath && fs.existsSync(bashrcPath))
 
@@ -80,8 +78,7 @@ export async function setupTabCompletion(targetName: string): Promise<
 }
 
 function getTabCompletionScriptRaw(): CResult<string> {
-  const sourceDir = path.dirname(fileURLToPath(import.meta.url))
-  const sourcePath = path.join(sourceDir, 'socket-completion.bash')
+  const sourcePath = path.join(rootPath, 'data', 'socket-completion.bash')
 
   if (!fs.existsSync(sourcePath)) {
     return {
@@ -108,7 +105,7 @@ export function updateInstalledTabCompletionScript(
     targetPath,
     content.data.replaceAll(
       '%SOCKET_VERSION_TOKEN%',
-      constants.ENV.INLINED_SOCKET_CLI_VERSION_HASH,
+      ENV.INLINED_SOCKET_CLI_VERSION_HASH || '',
     ),
     'utf8',
   )

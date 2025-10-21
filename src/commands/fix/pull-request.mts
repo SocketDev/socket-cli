@@ -1,7 +1,8 @@
 import { RequestError } from '@octokit/request-error'
 
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
-import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
+import { debug, debugDir } from '@socketsecurity/lib/debug'
+import { isNonEmptyString } from '@socketsecurity/lib/strings'
+import { UNKNOWN_VALUE } from '@socketsecurity/lib/constants/core'
 
 import {
   getSocketFixBranchPattern,
@@ -13,10 +14,9 @@ import {
   GQL_PR_STATE_CLOSED,
   GQL_PR_STATE_MERGED,
   GQL_PR_STATE_OPEN,
-  UNKNOWN_VALUE,
-} from '../../constants.mts'
-import { formatErrorWithDetail } from '../../utils/errors.mts'
-import { gitDeleteRemoteBranch } from '../../utils/git.mts'
+} from '../../constants/github.mts'
+import { formatErrorWithDetail } from '../../utils/error/errors.mjs'
+import { gitDeleteRemoteBranch } from '../../utils/git/git.mjs'
 import {
   type GhsaDetails,
   type Pr,
@@ -24,10 +24,10 @@ import {
   getOctokit,
   getOctokitGraphql,
   writeCache,
-} from '../../utils/github.mts'
+} from '../../utils/git/github.mts'
 
 import type { OctokitResponse } from '@octokit/types'
-import type { JsonContent } from '@socketsecurity/registry/lib/fs'
+import type { JsonContent } from '@socketsecurity/lib/fs'
 
 export type OpenSocketFixPrOptions = {
   baseBranch?: string | undefined
@@ -58,14 +58,12 @@ export async function openSocketFixPr(
       base: baseBranch,
       body: getSocketFixPullRequestBody(ghsaIds, ghsaDetails),
     }
-    debugDir('inspect', { octokitPullsCreateParams })
+    debugDir({ octokitPullsCreateParams })
     return await octokit.pulls.create(octokitPullsCreateParams)
   } catch (e) {
-    let message = `Failed to open pull request`
+    let message = 'Failed to open pull request'
     const errors =
-      e instanceof RequestError
-        ? (e.response?.data as any)?.['errors']
-        : undefined
+      e instanceof RequestError ? (e.response?.data as any)?.errors : undefined
     if (Array.isArray(errors) && errors.length) {
       const details = errors
         .map(
@@ -75,7 +73,7 @@ export async function openSocketFixPr(
         .join('\n')
       message += `:\n${details}`
     }
-    debugFn('error', message)
+    debug(message)
   }
   return undefined
 }
@@ -135,17 +133,14 @@ export async function cleanupSocketFixPrs(
             // The target branch (source).
             head: match.baseRefName,
           })
-          debugFn('notice', `pr: updating stale ${prRef}`)
+          debug(`pr: updating stale ${prRef}`)
           // Update cache entry - only GraphQL is used now.
           context.entry.mergeStateStatus = 'CLEAN'
           // Mark cache to be saved.
           cachesToSave.set(context.cacheKey, context.data)
         } catch (e) {
-          debugFn(
-            'error',
-            formatErrorWithDetail(`pr: failed to update ${prRef}`, e),
-          )
-          debugDir('error', e)
+          debug(formatErrorWithDetail(`pr: failed to update ${prRef}`, e))
+          debugDir(e)
         }
       }
 
@@ -156,26 +151,21 @@ export async function cleanupSocketFixPrs(
         try {
           const success = await gitDeleteRemoteBranch(match.headRefName)
           if (success) {
-            debugFn(
-              'notice',
-              `pr: deleted merged branch ${match.headRefName} for ${prRef}`,
-            )
+            debug(`pr: deleted merged branch ${match.headRefName} for ${prRef}`)
           } else {
-            debugFn(
-              'warn',
+            debug(
               `pr: failed to delete branch ${match.headRefName} for ${prRef}`,
             )
           }
         } catch (e) {
           // Don't treat this as a hard error - branch might already be deleted.
-          debugFn(
-            'warn',
+          debug(
             formatErrorWithDetail(
               `pr: failed to delete branch ${match.headRefName} for ${prRef}`,
               e,
             ),
           )
-          debugDir('error', e)
+          debugDir(e)
         }
       }
 
@@ -358,8 +348,7 @@ async function getSocketFixPrsWithContext(
 
       // Safety limit to prevent infinite loops.
       if (pageIndex === GQL_PAGE_SENTINEL) {
-        debugFn(
-          'warn',
+        debug(
           `GraphQL pagination reached safety limit (${GQL_PAGE_SENTINEL} pages) for ${owner}/${repo}`,
         )
         break
@@ -372,8 +361,8 @@ async function getSocketFixPrsWithContext(
       }
     }
   } catch (e) {
-    debugFn('error', `GraphQL pagination failed for ${owner}/${repo}`)
-    debugDir('error', e)
+    debug(`GraphQL pagination failed for ${owner}/${repo}`)
+    debugDir(e)
   }
 
   return contextualMatches

@@ -1,17 +1,21 @@
 import path from 'node:path'
 
-import constants, { DOT_SOCKET_DOT_FACTS_JSON } from '../../constants.mts'
-import { handleApiCall } from '../../utils/api.mts'
-import { extractTier1ReachabilityScanId } from '../../utils/coana.mts'
-import { spawnCoanaDlx } from '../../utils/dlx.mts'
+import { DOT_SOCKET_DOT_FACTS_JSON } from '../../constants/paths.mts'
+import {
+  SOCKET_DEFAULT_BRANCH,
+  SOCKET_DEFAULT_REPOSITORY,
+} from '../../constants/socket.mts'
+import { extractTier1ReachabilityScanId } from '../../utils/coana/extract-scan-id.mjs'
+import { spawnCoanaDlx } from '../../utils/dlx/spawn.mjs'
 import { hasEnterpriseOrgPlan } from '../../utils/organization.mts'
-import { setupSdk } from '../../utils/sdk.mts'
-import { socketDevLink } from '../../utils/terminal-link.mts'
+import { handleApiCall } from '../../utils/socket/api.mjs'
+import { setupSdk } from '../../utils/socket/sdk.mjs'
+import { socketDevLink } from '../../utils/terminal/link.mts'
 import { fetchOrganization } from '../organization/fetch-organization-list.mts'
 
 import type { CResult } from '../../types.mts'
-import type { PURL_Type } from '../../utils/ecosystem.mts'
-import type { Spinner } from '@socketsecurity/registry/lib/spinner'
+import type { PURL_Type } from '../../utils/ecosystem/ecosystem.mjs'
+import type { Spinner } from '@socketsecurity/lib/spinner'
 
 export type ReachabilityOptions = {
   reachAnalysisTimeout: number
@@ -91,8 +95,7 @@ export async function performReachabilityAnalysis(
     // Exclude any .socket.facts.json files that happen to be in the scan
     // folder before the analysis was run.
     const filepathsToUpload = packagePaths.filter(
-      p =>
-        path.basename(p).toLowerCase() !== constants.DOT_SOCKET_DOT_FACTS_JSON,
+      p => path.basename(p).toLowerCase() !== DOT_SOCKET_DOT_FACTS_JSON,
     )
 
     spinner?.start('Uploading manifests for reachability analysis...')
@@ -169,10 +172,10 @@ export async function performReachabilityAnalysis(
   const coanaEnv: Record<string, string> = {}
   // do not pass default repo and branch name to coana to avoid mixing
   // buckets (cached configuration) from projects that are likely very different.
-  if (repoName && repoName !== constants.SOCKET_DEFAULT_REPOSITORY) {
+  if (repoName && repoName !== SOCKET_DEFAULT_REPOSITORY) {
     coanaEnv['SOCKET_REPO_NAME'] = repoName
   }
-  if (branchName && branchName !== constants.SOCKET_DEFAULT_BRANCH) {
+  if (branchName && branchName !== SOCKET_DEFAULT_BRANCH) {
     coanaEnv['SOCKET_BRANCH_NAME'] = branchName
   }
 

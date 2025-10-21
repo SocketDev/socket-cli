@@ -1,8 +1,8 @@
-import { joinAnd } from '@socketsecurity/registry/lib/arrays'
+import { joinAnd } from '@socketsecurity/lib/arrays'
 
-import constants from '../../constants.mts'
+import { SOCKET_WEBSITE_URL } from '../../constants/socket.mts'
 
-import type { GhsaDetails } from '../../utils/github.mts'
+import type { GhsaDetails } from '../../utils/git/github.mts'
 
 const GITHUB_ADVISORIES_URL = 'https://github.com/advisories'
 
@@ -56,7 +56,7 @@ export function getSocketFixPullRequestBody(
   if (vulnCount === 1) {
     const ghsaId = ghsaIds[0]!
     const details = ghsaDetails?.get(ghsaId)
-    const body = `[Socket](${constants.SOCKET_WEBSITE_URL}) fix for [${ghsaId}](${GITHUB_ADVISORIES_URL}/${ghsaId}).`
+    const body = `[Socket](${SOCKET_WEBSITE_URL}) fix for [${ghsaId}](${GITHUB_ADVISORIES_URL}/${ghsaId}).`
     if (!details) {
       return body
     }
@@ -75,7 +75,7 @@ export function getSocketFixPullRequestBody(
     ].join('\n')
   }
   return [
-    `[Socket](${constants.SOCKET_WEBSITE_URL}) fixes for ${vulnCount} GHSAs.`,
+    `[Socket](${SOCKET_WEBSITE_URL}) fixes for ${vulnCount} GHSAs.`,
     '',
     '**Fixed Vulnerabilities:**',
     ...ghsaIds.map(id => {

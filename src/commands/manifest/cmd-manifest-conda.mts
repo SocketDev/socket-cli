@@ -1,27 +1,26 @@
 import path from 'node:path'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { logger } from '@socketsecurity/lib/logger'
 
 import { handleManifestConda } from './handle-manifest-conda.mts'
-import constants, {
+import { DRY_RUN_BAILING_NOW, FLAG_JSON, FLAG_MARKDOWN } from '../../constants/cli.mjs'
+import {
   ENVIRONMENT_YAML,
   ENVIRONMENT_YML,
-  FLAG_JSON,
-  FLAG_MARKDOWN,
   REQUIREMENTS_TXT,
-  SOCKET_JSON,
-} from '../../constants.mts'
+} from '../../constants/paths.mjs'
+import { SOCKET_JSON } from '../../constants/socket.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
-import { checkCommandInput } from '../../utils/check-input.mts'
-import { getOutputKind } from '../../utils/get-output-kind.mts'
-import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
-import { getFlagListOutput } from '../../utils/output-formatting.mts'
-import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
+import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
+import { getFlagListOutput } from '../../utils/output/formatting.mts'
+import { getOutputKind } from '../../utils/output/mode.mjs'
+import { readOrDefaultSocketJson } from '../../utils/socket/json.mts'
+import { checkCommandInput } from '../../utils/validation/check-input.mts'
 
 import type {
   CliCommandConfig,
   CliCommandContext,
-} from '../../utils/meow-with-subcommands.mts'
+} from '../../utils/cli/with-subcommands.mjs'
 
 const config: CliCommandConfig = {
   commandName: 'conda',
@@ -94,7 +93,7 @@ async function run(
     parentName,
   })
 
-  const { dryRun, json, markdown } = cli.flags as {
+  const { dryRun, json, markdown } = cli.flags as unknown as {
     dryRun: boolean
     json: boolean
     markdown: boolean
@@ -113,7 +112,7 @@ async function run(
     stdin,
     stdout,
     verbose,
-  } = cli.flags as {
+  } = cli.flags as unknown as {
     file: string
     out: string
     stdin: boolean | undefined
@@ -201,7 +200,7 @@ async function run(
   )
 
   if (dryRun) {
-    logger.log(constants.DRY_RUN_BAILING_NOW)
+    logger.log(DRY_RUN_BAILING_NOW)
     return
   }
 

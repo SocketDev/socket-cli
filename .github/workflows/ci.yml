@@ -1,0 +1,24 @@
+name: 🚀 CI Pipeline
+
+# Dependencies:
+#   - SocketDev/socket-registry/.github/workflows/ci.yml
+
+on:
+  push:
+    branches: [main]
+    tags: ['*']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    name: Run CI Pipeline
+    uses: SocketDev/socket-registry/.github/workflows/ci.yml@a912e5bd8ec469d2ee13abf592a6b2e5898c006c # main
+    with:
+      coverage-script: 'pnpm run test:unit:coverage'
+      coverage-report-script: 'pnpm run coverage:percent --json'
+      test-setup-script: 'pnpm run pretest:unit'

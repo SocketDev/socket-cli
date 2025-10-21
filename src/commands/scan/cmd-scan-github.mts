@@ -1,27 +1,28 @@
 import path from 'node:path'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { logger } from '@socketsecurity/lib/logger'
 
 import { handleCreateGithubScan } from './handle-create-github-scan.mts'
 import { outputScanGithub } from './output-scan-github.mts'
 import { suggestOrgSlug } from './suggest-org-slug.mts'
-import constants from '../../constants.mts'
+import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'
+import ENV from '../../constants/env.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
-import { checkCommandInput } from '../../utils/check-input.mts'
-import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
-import { getOutputKind } from '../../utils/get-output-kind.mts'
-import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
+import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import {
   getFlagApiRequirementsOutput,
   getFlagListOutput,
-} from '../../utils/output-formatting.mts'
-import { hasDefaultApiToken } from '../../utils/sdk.mts'
-import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
+} from '../../utils/output/formatting.mts'
+import { getOutputKind } from '../../utils/output/mode.mjs'
+import { readOrDefaultSocketJson } from '../../utils/socket/json.mts'
+import { determineOrgSlug } from '../../utils/socket/org-slug.mjs'
+import { hasDefaultApiToken } from '../../utils/socket/sdk.mjs'
+import { checkCommandInput } from '../../utils/validation/check-input.mts'
 
 import type {
   CliCommandConfig,
   CliCommandContext,
-} from '../../utils/meow-with-subcommands.mts'
+} from '../../utils/cli/with-subcommands.mjs'
 
 export const CMD_NAME = 'github'
 
@@ -56,7 +57,7 @@ async function run(
       },
       githubToken: {
         type: 'string',
-        default: constants.ENV.SOCKET_CLI_GITHUB_TOKEN,
+        default: ENV.SOCKET_CLI_GITHUB_TOKEN,
         description:
           'Required GitHub token for authentication.\nMay set environment variable GITHUB_TOKEN or SOCKET_CLI_GITHUB_TOKEN instead.',
       },
@@ -126,12 +127,12 @@ async function run(
   })
 
   const {
-    githubToken = constants.ENV.SOCKET_CLI_GITHUB_TOKEN,
+    githubToken = ENV.SOCKET_CLI_GITHUB_TOKEN,
     interactive = true,
     json,
     markdown,
     org: orgFlag,
-  } = cli.flags as {
+  } = cli.flags as unknown as {
     githubToken: string
     interactive: boolean
     json: boolean
@@ -142,7 +143,7 @@ async function run(
 
   const dryRun = !!cli.flags['dryRun']
 
-  let { all, githubApiUrl, orgGithub, repos } = cli.flags as {
+  let { all, githubApiUrl, orgGithub, repos } = cli.flags as unknown as {
     all: boolean | undefined
     githubApiUrl: string
     orgGithub: string
@@ -250,14 +251,14 @@ async function run(
 
   // Note exiting earlier to skirt a hidden auth requirement
   if (dryRun) {
-    logger.log(constants.DRY_RUN_BAILING_NOW)
+    logger.log(DRY_RUN_BAILING_NOW)
     return
   }
 
   await handleCreateGithubScan({
     all: Boolean(all),
     githubApiUrl,
-    githubToken,
+    githubToken: githubToken || '',
     interactive: Boolean(interactive),
     orgSlug,
     orgGithub,

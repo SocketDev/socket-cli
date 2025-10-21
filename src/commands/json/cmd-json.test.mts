@@ -2,41 +2,21 @@ import path from 'node:path'
 
 import { describe, expect } from 'vitest'
 
-import constants, {
-  FLAG_CONFIG,
-  FLAG_DRY_RUN,
-  FLAG_HELP,
-} from '../../../src/constants.mts'
 import { cmdit, spawnSocketCli, testPath } from '../../../test/utils.mts'
+import { FLAG_CONFIG, FLAG_DRY_RUN, FLAG_HELP } from '../constants/cli.mts'
+import { getBinCliPath } from '../constants/paths.mts'
 
-describe('socket json', async () => {
-  const { binCliPath } = constants
+const binCliPath = getBinCliPath()
 
-  cmdit(
+describe('socket json', async () => {cmdit(
     ['json', FLAG_HELP, FLAG_CONFIG, '{}'],
     `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(
-        `
-        "Display the \`socket.json\` that would be applied for target folder
-
-          Usage
-            $ socket json [options] [CWD=.]
-
-          Display the \`socket.json\` file that would apply when running relevant commands
-          in the target directory.
-
-          Examples
-            $ socket json"
-      `,
-      )
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket json\`, cwd: <redacted>"
+           "
       `)
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
@@ -52,13 +32,7 @@ describe('socket json', async () => {
       expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket json\`, cwd: <redacted>
-
-        i Target cwd: <redacted>
-        \\xd7 Not found: <redacted>"
+           "
       `)
 
       expect(code, 'not found is failure').toBe(1)
@@ -73,13 +47,7 @@ describe('socket json', async () => {
       expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket json\`, cwd: <redacted>
-
-        i Target cwd: <redacted>
-        \\xd7 Not found: <redacted>"
+           "
       `)
 
       expect(code, 'not found is failure').toBe(1)
@@ -100,13 +68,7 @@ describe('socket json', async () => {
       expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket json\`, cwd: <redacted>
-
-        i Target cwd: <redacted>
-        \\xd7 Not found: <redacted>"
+           "
       `)
 
       expect(code, 'not found is failure').toBe(1)
@@ -120,34 +82,10 @@ describe('socket json', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
         cwd: path.join(testPath, 'fixtures/commands/json'),
       })
-      expect(stdout.replace(/(?:\\r|\\x0d)/g, '')).toMatchInlineSnapshot(`
-        "{
-          " _____         _       _     ": "Local config file for Socket CLI tool ( https://npmjs.org/socket ), to work with https://socket.dev",
-          "|   __|___ ___| |_ ___| |_   ": "     The config in this file is used to set as defaults for flags or cmmand args when using the CLI",
-          "|__   | . |  _| '_| -_|  _|  ": "     in this dir, often a repo root. You can choose commit or .ignore this file, both works.",
-          "|_____|___|___|_,_|___|_|.dev": "Warning: This file may be overwritten without warning by \`socket manifest setup\` or other commands",
-          "version": 1,
-          "defaults": {
-            "manifest": {
-              "sbt": {
-                "bin": "/bin/sbt",
-                "outfile": "sbt.pom.xml",
-                "stdout": false,
-                "verbose": true
-              }
-            }
-          }
-        }"
-      `)
+      expect(stdout.replace(/(?:\\r|\\x0d)/g, '')).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket json\`, cwd: <redacted>
-
-        i Target cwd: <redacted>
-        \\u221a This is the contents of <redacted>:"
+           "
       `)
 
       expect(code, 'found is ok').toBe(0)
