@@ -957,6 +957,12 @@ function prepareClaudeArgs(args = [], options = {}) {
   _opts._selectedMode = mode
   _opts._selectedModel = model
 
+  // Add --dangerously-skip-permissions unless --no-darkwing is specified
+  // "Let's get dangerous!" mode for automated CI fixes
+  if (!_opts['no-darkwing']) {
+    claudeArgs.push('--dangerously-skip-permissions')
+  }
+
   return claudeArgs
 }
 
@@ -3185,6 +3191,13 @@ Let's work through this together to get CI passing.`
 
     log.substep(`Workflow "${run.name}" status: ${run.status}`)
 
+    // If workflow is queued, just wait for it to start
+    if (run.status === 'queued' || run.status === 'waiting') {
+      log.substep('Waiting for workflow to start...')
+      await new Promise(resolve => setTimeout(resolve, 30_000))
+      continue
+    }
+
     if (run.status === 'completed') {
       if (run.conclusion === 'success') {
         log.done('CI workflow passed! 🎉')
@@ -3313,7 +3326,10 @@ Fix all CI failures now by making the necessary changes.`
           await fs.writeFile(tmpFile, fixPrompt, 'utf8')
 
           const fixArgs = prepareClaudeArgs([], opts)
-          const claudeCommand = `${claudeCmd} ${fixArgs.join(' ')}`
+          const claudeArgs = fixArgs.join(' ')
+          const claudeCommand = claudeArgs
+            ? `${claudeCmd} ${claudeArgs}`
+            : claudeCmd
 
           // Use script command to create pseudo-TTY for Ink compatibility
           // Platform-specific script command syntax
@@ -3328,8 +3344,8 @@ Fix all CI failures now by making the necessary changes.`
               scriptCmd = `${claudeCommand} < "${tmpFile}"`
             }
           } else {
-            // Unix/macOS: use script command
-            scriptCmd = `script -q /dev/null ${claudeCommand} < "${tmpFile}"`
+            // Unix/macOS: use script command with quoted command
+            scriptCmd = `script -q /dev/null sh -c '${claudeCommand} < "${tmpFile}"'`
           }
 
           const exitCode = await new Promise((resolve, _reject) => {
@@ -3470,17 +3486,18 @@ Fix all CI failures now by making the necessary changes.`
             for (const job of newFailures) {
               log.substep(`❌ ${job.name}: ${job.conclusion}`)
 
-              // Fetch logs for this specific failed job
+              // Fetch logs for this specific failed job using job ID
               log.progress(`Fetching logs for ${job.name}`)
               const logsResult = await runCommandWithOutput(
                 'gh',
                 [
                   'run',
                   'view',
-                  lastRunId.toString(),
+                  '--job',
+                  job.databaseId.toString(),
                   '--repo',
                   `${owner}/${repo}`,
-                  '--log-failed',
+                  '--log',
                 ],
                 {
                   cwd: rootPath,
@@ -3541,7 +3558,10 @@ Fix the failure now by making the necessary changes.`
                 await fs.writeFile(tmpFile, fixPrompt, 'utf8')
 
                 const fixArgs = prepareClaudeArgs([], opts)
-                const claudeCommand = `${claudeCmd} ${fixArgs.join(' ')}`
+                const claudeArgs = fixArgs.join(' ')
+                const claudeCommand = claudeArgs
+                  ? `${claudeCmd} ${claudeArgs}`
+                  : claudeCmd
 
                 // Use script command to create pseudo-TTY for Ink compatibility
                 // Platform-specific script command syntax
@@ -3556,8 +3576,8 @@ Fix the failure now by making the necessary changes.`
                     scriptCmd = `${claudeCommand} < "${tmpFile}"`
                   }
                 } else {
-                  // Unix/macOS: use script command
-                  scriptCmd = `script -q /dev/null ${claudeCommand} < "${tmpFile}"`
+                  // Unix/macOS: use script command with quoted command
+                  scriptCmd = `script -q /dev/null sh -c '${claudeCommand} < "${tmpFile}"'`
                 }
 
                 const exitCode = await new Promise((resolve, _reject) => {
@@ -4097,7 +4117,6 @@ async function main() {
       process.exitCode = 1
       return
     }
-    log.done(`Found Claude Code CLI: ${claudeCmd}`)
 
     // Ensure Claude is authenticated
     const isClaudeAuthenticated = await ensureClaudeAuthenticated(claudeCmd)
