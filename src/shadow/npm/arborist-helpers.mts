@@ -1,19 +1,20 @@
-import { debugFn } from '@socketsecurity/registry/lib/debug'
-import { getOwn } from '@socketsecurity/registry/lib/objects'
-import { parseUrl } from '@socketsecurity/registry/lib/url'
+import { debug } from '@socketsecurity/lib/debug'
+import { getOwn } from '@socketsecurity/lib/objects'
+import { parseUrl } from '@socketsecurity/lib/url'
 
-import constants from '../../constants.mts'
 import { DiffAction } from './arborist/types.mts'
-import { getAlertsMapFromPurls } from '../../utils/alerts-map.mts'
-import { toFilterConfig } from '../../utils/filter-config.mts'
-import { idToNpmPurl } from '../../utils/spec.mts'
+import { LOOP_SENTINEL } from '../../constants/errors.mts'
+import { NPM_REGISTRY_URL } from '../../constants/http.mts'
+import { idToNpmPurl } from '../../utils/ecosystem/spec.mjs'
+import { getAlertsMapFromPurls } from '../../utils/socket/alerts.mts'
+import { toFilterConfig } from '../../utils/validation/filter-config.mts'
 
 import type { ArboristInstance, Diff, NodeClass } from './arborist/types.mts'
 import type {
   AlertFilter,
   AlertsByPurl,
-} from '../../utils/socket-package-alert.mts'
-import type { Spinner } from '@socketsecurity/registry/lib/spinner'
+} from '../../utils/socket/package-alert.mts'
+import type { Spinner } from '@socketsecurity/lib/spinner'
 
 function getUrlOrigin(input: string): string {
   // TODO: URL.parse is available in Node 22.1.0. We can use it when we drop Node 18.
@@ -86,15 +87,14 @@ export function getDetailsFromDiff(
   const details: PackageDetail[] = []
   // `diff` is `null` when `npm install --package-lock-only` is passed.
   if (!diff) {
-    debugFn('notice', `miss: diff is ${diff}`)
+    debug(`miss: diff is ${diff}`)
     return details
   }
-
-  const { NPM_REGISTRY_URL } = constants
 
   const filterConfig = toFilterConfig({
     existing: false,
     unknownOrigin: true,
+    // @ts-expect-error - getOwn may return undefined, but spread handles it
     ...getOwn(options, 'filter'),
   }) as DiffQueryFilter
 
@@ -102,7 +102,7 @@ export function getDetailsFromDiff(
   let pos = 0
   let { length: queueLength } = queue
   while (pos < queueLength) {
-    if (pos === constants.LOOP_SENTINEL) {
+    if (pos === LOOP_SENTINEL) {
       throw new Error('Detected infinite loop while walking Arborist diff.')
     }
     const currDiff = queue[pos++]!

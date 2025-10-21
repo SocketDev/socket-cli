@@ -1,21 +1,18 @@
 import os from 'node:os'
 
-import meow from 'meow'
+import ENV from './constants/env.mts'
+import meow from './meow.mts'
 
-import constants from './constants.mts'
-
-import type { Flag } from 'meow'
+import type { MeowFlag as Flag } from './meow.mts'
 
 // Meow doesn't expose this.
 export type AnyFlag = StringFlag | BooleanFlag | NumberFlag
 
-export type BooleanFlag =
-  | Flag<'boolean', boolean>
-  | Flag<'boolean', boolean[], true>
+export type BooleanFlag = Flag & { type: 'boolean' }
 
-export type NumberFlag = Flag<'number', number> | Flag<'number', number[], true>
+export type NumberFlag = Flag & { type: 'number' }
 
-export type StringFlag = Flag<'string', string> | Flag<'string', string[], true>
+export type StringFlag = Flag & { type: 'string' }
 
 export type MeowFlag = AnyFlag & {
   description: string
@@ -51,11 +48,11 @@ function getRawSpaceSizeFlags(): RawSpaceSizeFlags {
       importMeta: { url: import.meta.url } as ImportMeta,
     })
     _rawSpaceSizeFlags = {
-      maxOldSpaceSize: cli.flags['maxOldSpaceSize'],
-      maxSemiSpaceSize: cli.flags['maxSemiSpaceSize'],
+      maxOldSpaceSize: Number(cli.flags['maxOldSpaceSize']),
+      maxSemiSpaceSize: Number(cli.flags['maxSemiSpaceSize']),
     }
   }
-  return _rawSpaceSizeFlags
+  return _rawSpaceSizeFlags!
 }
 
 let _maxOldSpaceSizeFlag: number | undefined
@@ -64,7 +61,7 @@ export function getMaxOldSpaceSizeFlag(): number {
     _maxOldSpaceSizeFlag = getRawSpaceSizeFlags().maxOldSpaceSize
     if (!_maxOldSpaceSizeFlag) {
       const match = /(?<=--max-old-space-size=)\d+/.exec(
-        constants.ENV.NODE_OPTIONS,
+        ENV.NODE_OPTIONS || '',
       )?.[0]
       _maxOldSpaceSizeFlag = match ? Number(match) : 0
     }
@@ -93,7 +90,7 @@ export function getMaxSemiSpaceSizeFlag(): number {
     _maxSemiSpaceSizeFlag = getRawSpaceSizeFlags().maxSemiSpaceSize
     if (!_maxSemiSpaceSizeFlag) {
       const match = /(?<=--max-semi-space-size=)\d+/.exec(
-        constants.ENV.NODE_OPTIONS,
+        ENV.NODE_OPTIONS || '',
       )?.[0]
       _maxSemiSpaceSizeFlag = match ? Number(match) : 0
     }
@@ -148,6 +145,13 @@ if (typeof exports === 'object' && exports !== null) {
 }
 
 export const commonFlags: MeowFlags = {
+  animateHeader: {
+    type: 'boolean',
+    default: true,
+    description: 'Disable animated header shimmer effect',
+    // Hidden to allow custom documenting of the negated `--no-animate-header` variant.
+    hidden: true,
+  },
   banner: {
     type: 'boolean',
     default: true,
@@ -160,6 +164,12 @@ export const commonFlags: MeowFlags = {
     default: false,
     description: 'Use compact single-line header format (auto-enabled in CI)',
     // Only show in root command.
+    hidden: true,
+  },
+  headerTheme: {
+    type: 'string',
+    default: 'default',
+    description: 'Header color theme (default, cyberpunk, forest, ocean, sunset)',
     hidden: true,
   },
   config: {

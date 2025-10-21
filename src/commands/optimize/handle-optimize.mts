@@ -1,16 +1,14 @@
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { debug, debugDir } from '@socketsecurity/lib/debug'
+import { logger } from '@socketsecurity/lib/logger'
+import { VLT } from '@socketsecurity/lib/constants/agents'
 
 import { applyOptimization } from './apply-optimization.mts'
 import { outputOptimizeResult } from './output-optimize-result.mts'
 import { CMD_NAME } from './shared.mts'
-import constants from '../../constants.mts'
-import { cmdPrefixMessage } from '../../utils/cmd.mts'
-import { detectAndValidatePackageEnvironment } from '../../utils/package-environment.mts'
+import { detectAndValidatePackageEnvironment } from '../../utils/ecosystem/environment.mjs'
+import { cmdPrefixMessage } from '../../utils/process/cmd.mts'
 
 import type { OutputKind } from '../../types.mts'
-
-const { VLT } = constants
 
 export async function handleOptimize({
   cwd,
@@ -23,8 +21,8 @@ export async function handleOptimize({
   pin: boolean
   prod: boolean
 }) {
-  debugFn('notice', `Starting optimization for ${cwd}`)
-  debugDir('inspect', { cwd, outputKind, pin, prod })
+  debug(`Starting optimization for ${cwd}`)
+  debugDir({ cwd, outputKind, pin, prod })
 
   const pkgEnvCResult = await detectAndValidatePackageEnvironment(cwd, {
     cmdName: CMD_NAME,
@@ -33,8 +31,8 @@ export async function handleOptimize({
   })
   if (!pkgEnvCResult.ok) {
     process.exitCode = pkgEnvCResult.code ?? 1
-    debugFn('warn', 'Package environment validation failed')
-    debugDir('inspect', { pkgEnvCResult })
+    debug('Package environment validation failed')
+    debugDir({ pkgEnvCResult })
     await outputOptimizeResult(pkgEnvCResult, outputKind)
     return
   }
@@ -42,7 +40,7 @@ export async function handleOptimize({
   const pkgEnvDetails = pkgEnvCResult.data
   if (!pkgEnvDetails) {
     process.exitCode = 1
-    debugFn('warn', 'No package environment details found')
+    debug('No package environment details found')
     await outputOptimizeResult(
       {
         ok: false,
@@ -54,16 +52,15 @@ export async function handleOptimize({
     return
   }
 
-  debugFn(
-    'notice',
+  debug(
     `Detected package manager: ${pkgEnvDetails.agent} v${pkgEnvDetails.agentVersion}`,
   )
-  debugDir('inspect', { pkgEnvDetails })
+  debugDir({ pkgEnvDetails })
 
   const { agent, agentVersion } = pkgEnvDetails
   if (agent === VLT) {
     process.exitCode = 1
-    debugFn('warn', `${agent} does not support overrides`)
+    debug(`${agent} does not support overrides`)
     await outputOptimizeResult(
       {
         ok: false,
@@ -80,7 +77,7 @@ export async function handleOptimize({
 
   logger.info(`Optimizing packages for ${agent} v${agentVersion}.\n`)
 
-  debugFn('notice', 'Applying optimization')
+  debug('Applying optimization')
   const optimizationResult = await applyOptimization(pkgEnvDetails, {
     pin,
     prod,
@@ -89,10 +86,7 @@ export async function handleOptimize({
   if (!optimizationResult.ok) {
     process.exitCode = optimizationResult.code ?? 1
   }
-  debugFn(
-    'notice',
-    `Optimization ${optimizationResult.ok ? 'succeeded' : 'failed'}`,
-  )
-  debugDir('inspect', { optimizationResult })
+  debug(`Optimization ${optimizationResult.ok ? 'succeeded' : 'failed'}`)
+  debugDir({ optimizationResult })
   await outputOptimizeResult(optimizationResult, outputKind)
 }

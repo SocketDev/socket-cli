@@ -1,22 +1,24 @@
 import fs from 'node:fs'
 import path from 'node:path'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { input, select } from '@socketsecurity/registry/lib/prompts'
+import { logger } from '@socketsecurity/lib/logger'
+import { input, select } from '@socketsecurity/lib/prompts'
 
-import constants, { SOCKET_JSON } from '../../constants.mts'
+import ENV from '../../constants/env.mts'
+import { SOCKET_JSON } from '../../constants/paths.mts'
 import {
   detectDefaultBranch,
   getRepoName,
   gitBranch,
-} from '../../utils/git.mts'
+} from '../../utils/git/git.mjs'
 import {
   readSocketJsonSync,
   writeSocketJson,
-} from '../../utils/socket-json.mts'
+} from '../../utils/socket/json.mts'
 
 import type { CResult } from '../../types.mts'
-import type { SocketJson } from '../../utils/socket-json.mts'
+import type { SocketJson } from '../../utils/socket/json.mts'
+
 
 export async function setupScanConfig(
   cwd: string,
@@ -298,7 +300,7 @@ async function configureGithub(
       default: config.repos,
       required: false,
       // validate: async string => bool
-    })
+    } as any)
     if (defaultRepos === undefined) {
       return canceledByUser()
     }
@@ -313,17 +315,14 @@ async function configureGithub(
     message:
       '(--github-api-url) Do you want to override the default github url?',
 
-    default: config.githubApiUrl || constants.ENV.GITHUB_API_URL,
+    default: config.githubApiUrl || ENV.GITHUB_API_URL || '',
     required: false,
     // validate: async string => bool
   })
   if (defaultGithubApiUrl === undefined) {
     return canceledByUser()
   }
-  if (
-    defaultGithubApiUrl &&
-    defaultGithubApiUrl !== constants.ENV.GITHUB_API_URL
-  ) {
+  if (defaultGithubApiUrl && defaultGithubApiUrl !== ENV.GITHUB_API_URL) {
     config.githubApiUrl = defaultGithubApiUrl
   } else {
     delete config.githubApiUrl

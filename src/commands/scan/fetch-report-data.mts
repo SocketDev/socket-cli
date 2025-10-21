@@ -1,14 +1,17 @@
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { debug, debugDir } from '@socketsecurity/lib/debug'
+import { logger } from '@socketsecurity/lib/logger'
+import { getSpinner } from '@socketsecurity/lib/constants/process'
 
-import constants from '../../constants.mts'
-import { handleApiCallNoSpinner, queryApiSafeText } from '../../utils/api.mts'
-import { formatErrorWithDetail } from '../../utils/errors.mts'
-import { setupSdk } from '../../utils/sdk.mts'
+import { formatErrorWithDetail } from '../../utils/error/errors.mjs'
+import {
+  handleApiCallNoSpinner,
+  queryApiSafeText,
+} from '../../utils/socket/api.mjs'
+import { setupSdk } from '../../utils/socket/sdk.mjs'
 
 import type { CResult } from '../../types.mts'
 import type { SocketArtifact } from '../../utils/alert/artifact.mts'
-import type { SetupSdkOptions } from '../../utils/sdk.mts'
+import type { SetupSdkOptions } from '../../utils/socket/sdk.mjs'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export type FetchScanData = {
@@ -44,7 +47,7 @@ export async function fetchScanData(
   let scanStatus = 'requested...'
   let finishedFetching = false
 
-  const { spinner } = constants
+  const spinner = getSpinner()!
 
   function updateScan(status: string) {
     scanStatus = status
@@ -74,7 +77,7 @@ export async function fetchScanData(
       `orgs/${orgSlug}/full-scans/${encodeURIComponent(scanId)}${includeLicensePolicy ? '?include_license_details=true' : ''}`,
     )
 
-    updateScan(`response received`)
+    updateScan('response received')
 
     if (!result.ok) {
       return result
@@ -90,8 +93,8 @@ export async function fetchScanData(
         return JSON.parse(line)
       } catch (e) {
         ok = false
-        debugFn('error', 'Failed to parse report data line as JSON')
-        debugDir('error', { error: e, line })
+        debug('Failed to parse report data line as JSON')
+        debugDir({ error: e, line })
         return
       }
     }) as unknown as SocketArtifact[]

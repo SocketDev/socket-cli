@@ -1,18 +1,19 @@
-import { joinAnd } from '@socketsecurity/registry/lib/arrays'
-import { debugFn, isDebug } from '@socketsecurity/registry/lib/debug'
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { joinAnd } from '@socketsecurity/lib/arrays'
+import { debug, isDebug } from '@socketsecurity/lib/debug'
+import { logger } from '@socketsecurity/lib/logger'
 
 import { getSocketFixPrs } from './pull-request.mts'
-import constants from '../../constants.mts'
-import { getBaseBranch, getRepoInfo } from '../../utils/git.mts'
+import ENV from '../../constants/env.mts'
+import { getBaseBranch, getRepoInfo } from '../../utils/git/git.mjs'
 
 import type { PrMatch } from './pull-request.mts'
-import type { RepoInfo } from '../../utils/git.mts'
+import type { RepoInfo } from '../../utils/git/git.mjs'
 
 function ciRepoInfo(): RepoInfo | undefined {
-  const { GITHUB_REPOSITORY } = constants.ENV
+  const { GITHUB_REPOSITORY } = ENV
   if (!GITHUB_REPOSITORY) {
-    debugFn('notice', 'miss: GITHUB_REPOSITORY env var')
+    debug('miss: GITHUB_REPOSITORY env var')
+    return undefined
   }
   const ownerSlashRepo = GITHUB_REPOSITORY
   const slashIndex = ownerSlashRepo.indexOf('/')
@@ -27,9 +28,9 @@ function ciRepoInfo(): RepoInfo | undefined {
 
 export interface FixEnv {
   baseBranch: string
-  gitEmail: string
-  githubToken: string
-  gitUser: string
+  gitEmail: string | undefined
+  githubToken: string | undefined
+  gitUser: string | undefined
   isCi: boolean
   prs: PrMatch[]
   repoInfo: RepoInfo | undefined
@@ -63,7 +64,7 @@ export function checkCiEnvVars(): MissingEnvVars {
     SOCKET_CLI_GIT_USER_EMAIL,
     SOCKET_CLI_GIT_USER_NAME,
     SOCKET_CLI_GITHUB_TOKEN,
-  } = constants.ENV
+  } = ENV
 
   const missing: string[] = []
   const present: string[] = []
@@ -97,33 +98,32 @@ export function checkCiEnvVars(): MissingEnvVars {
 
 export async function getFixEnv(): Promise<FixEnv> {
   const baseBranch = await getBaseBranch()
-  const gitEmail = constants.ENV.SOCKET_CLI_GIT_USER_EMAIL
-  const gitUser = constants.ENV.SOCKET_CLI_GIT_USER_NAME
-  const githubToken = constants.ENV.SOCKET_CLI_GITHUB_TOKEN
-  const isCi = !!(constants.ENV.CI && gitEmail && gitUser && githubToken)
+  const gitEmail = ENV.SOCKET_CLI_GIT_USER_EMAIL
+  const gitUser = ENV.SOCKET_CLI_GIT_USER_NAME
+  const githubToken = ENV.SOCKET_CLI_GITHUB_TOKEN
+  const isCi = !!(ENV.CI && gitEmail && gitUser && githubToken)
 
   const envCheck = checkCiEnvVars()
 
   // Provide clear feedback about missing environment variables.
-  if (constants.ENV.CI && envCheck.missing.length > 1) {
+  if (ENV.CI && envCheck.missing.length > 1) {
     // CI is set but other required vars are missing.
     const missingExceptCi = envCheck.missing.filter(v => v !== 'CI')
     if (missingExceptCi.length) {
       logger.warn(
-        `CI mode detected, but pull request creation is disabled due to missing environment variables:\n` +
+        'CI mode detected, but pull request creation is disabled due to missing environment variables:\n' +
           `  Missing: ${joinAnd(missingExceptCi)}\n` +
-          `  Set these variables to enable automatic pull request creation.`,
+          '  Set these variables to enable automatic pull request creation.',
       )
     }
   } else if (
     // If not in CI but some CI-related env vars are set.
-    !constants.ENV.CI &&
+    !ENV.CI &&
     envCheck.present.length &&
     // then log about it when in debug mode.
-    isDebug('notice')
+    isDebug()
   ) {
-    debugFn(
-      'notice',
+    debug(
       `miss: fixEnv.isCi is false, expected ${joinAnd(envCheck.missing)} to be set`,
     )
   }
@@ -134,7 +134,7 @@ export async function getFixEnv(): Promise<FixEnv> {
   }
   if (!repoInfo) {
     if (isCi) {
-      debugFn('notice', 'falling back to `git remote get-url origin`')
+      debug('falling back to `git remote get-url origin`')
     }
     repoInfo = await getRepoInfo()
   }

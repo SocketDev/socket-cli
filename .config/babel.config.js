@@ -1,5 +1,3 @@
-'use strict'
-
 const path = require('node:path')
 
 const rootPath = path.join(__dirname, '..')
@@ -7,7 +5,15 @@ const scriptsPath = path.join(rootPath, 'scripts')
 const babelPluginsPath = path.join(scriptsPath, 'babel')
 
 module.exports = {
-  presets: ['@babel/preset-typescript'],
+  presets: [
+    '@babel/preset-typescript',
+    [
+      '@babel/preset-react',
+      {
+        runtime: 'automatic',
+      },
+    ],
+  ],
   plugins: [
     '@babel/plugin-proposal-export-default-from',
     '@babel/plugin-transform-export-namespace-from',
@@ -21,7 +27,12 @@ module.exports = {
         version: '^7.27.1',
       },
     ],
-    path.join(babelPluginsPath, 'transform-set-proto-plugin.js'),
-    path.join(babelPluginsPath, 'transform-url-parse-plugin.js'),
+    // Run strict-mode transformations first to fix loose-mode code.
+    path.join(babelPluginsPath, 'babel-plugin-strict-mode.mjs'),
+    path.join(babelPluginsPath, 'babel-plugin-inline-require-calls.js'),
+    path.join(babelPluginsPath, 'transform-set-proto-plugin.mjs'),
+    path.join(babelPluginsPath, 'transform-url-parse-plugin.mjs'),
+    // Run --with-intl=none transforms last to handle Intl/locale APIs.
+    path.join(babelPluginsPath, 'babel-plugin-with-intl-none.mjs'),
   ],
 }

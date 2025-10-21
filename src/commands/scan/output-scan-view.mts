@@ -1,12 +1,12 @@
 import fs from 'node:fs/promises'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { logger } from '@socketsecurity/lib/logger'
 
-import constants from '../../constants.mts'
-import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
-import { mdTable } from '../../utils/markdown.mts'
-import { serializeResultJson } from '../../utils/serialize-result-json.mts'
-import { fileLink } from '../../utils/terminal-link.mts'
+import { SOCKET_WEBSITE_URL } from '../../constants/socket.mts'
+import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
+import { mdTable } from '../../utils/output/markdown.mts'
+import { serializeResultJson } from '../../utils/output/result-json.mjs'
+import { fileLink } from '../../utils/terminal/link.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketArtifact } from '../../utils/alert/artifact.mts'
@@ -82,8 +82,7 @@ export async function outputScanView(
     'score',
   ])
 
-  const report =
-    `
+  const report = `${`
 # Scan Details
 
 These are the artifacts and their scores found.
@@ -92,8 +91,8 @@ Scan ID: ${scanId}
 
 ${md}
 
-View this report at: ${constants.SOCKET_WEBSITE_URL}/dashboard/org/${orgSlug}/sbom/${scanId}
-  `.trim() + '\n'
+View this report at: ${SOCKET_WEBSITE_URL}/dashboard/org/${orgSlug}/sbom/${scanId}
+  `.trim()}\n`
 
   if (filePath && filePath !== '-') {
     try {

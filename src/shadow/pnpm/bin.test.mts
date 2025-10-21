@@ -1,9 +1,7 @@
-import { promises as fs } from 'node:fs'
-
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import shadowPnpm from './bin.mts'
-import { FLAG_DRY_RUN } from '../../constants.mts'
+import { FLAG_DRY_RUN } from '../../constants/cli.mts'
 
 // Mock fs module
 vi.mock('node:fs', async importOriginal => {
@@ -27,7 +25,7 @@ const mockReadPnpmLockfile = vi.hoisted(() => vi.fn())
 const mockLogAlertsMap = vi.hoisted(() => vi.fn())
 const mockExistsSync = vi.hoisted(() => vi.fn())
 
-vi.mock('../../utils/alerts-map.mts', () => ({
+vi.mock('../../utils/socket/alerts.mts', () => ({
   getAlertsMapFromPnpmLockfile: mockGetAlertsMapFromPnpmLockfile,
   getAlertsMapFromPurls: mockGetAlertsMapFromPurls,
 }))
@@ -37,15 +35,15 @@ vi.mock('../../utils/pnpm.mts', () => ({
   readPnpmLockfile: mockReadPnpmLockfile,
 }))
 
-vi.mock('../../utils/socket-package-alert.mts', () => ({
+vi.mock('../../utils/socket/package-alert.mts', () => ({
   logAlertsMap: mockLogAlertsMap,
 }))
 
-vi.mock('../../utils/shadow-links.mts', () => ({
+vi.mock('../../utils/shadow/links.mts', () => ({
   installPnpmLinks: mockInstallPnpmLinks,
 }))
 
-vi.mock('@socketsecurity/registry/lib/spawn', () => ({
+vi.mock('@socketsecurity/lib/spawn', () => ({
   spawn: mockSpawn,
 }))
 
@@ -61,10 +59,10 @@ vi.mock('../../constants.mts', async importOriginal => {
         {
           get(_target, prop) {
             if (prop === 'SOCKET_CLI_ACCEPT_RISKS') {
-              return process.env.SOCKET_CLI_ACCEPT_RISKS || ''
+              return process.env['SOCKET_CLI_ACCEPT_RISKS'] || ''
             }
             if (prop === 'SOCKET_CLI_VIEW_ALL_RISKS') {
-              return process.env.SOCKET_CLI_VIEW_ALL_RISKS || ''
+              return process.env['SOCKET_CLI_VIEW_ALL_RISKS'] || ''
             }
             return ''
           },
@@ -98,13 +96,13 @@ describe('shadowPnpm', () => {
     mockExistsSync.mockReturnValue(false)
 
     // Mock process.env
-    process.env.SOCKET_CLI_ACCEPT_RISKS = ''
-    process.env.SOCKET_CLI_VIEW_ALL_RISKS = ''
+    process.env['SOCKET_CLI_ACCEPT_RISKS'] = ''
+    process.env['SOCKET_CLI_VIEW_ALL_RISKS'] = ''
   })
 
   afterEach(() => {
-    delete process.env.SOCKET_CLI_ACCEPT_RISKS
-    delete process.env.SOCKET_CLI_VIEW_ALL_RISKS
+    delete process.env['SOCKET_CLI_ACCEPT_RISKS']
+    delete process.env['SOCKET_CLI_VIEW_ALL_RISKS']
   })
 
   it('should handle pnpm add with single package', async () => {
@@ -196,7 +194,7 @@ describe('shadowPnpm', () => {
   })
 
   it('should respect SOCKET_CLI_ACCEPT_RISKS environment variable', async () => {
-    process.env.SOCKET_CLI_ACCEPT_RISKS = '1'
+    process.env['SOCKET_CLI_ACCEPT_RISKS'] = '1'
 
     await shadowPnpm(['add', 'lodash'])
 

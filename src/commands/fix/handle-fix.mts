@@ -1,15 +1,15 @@
-import { joinAnd } from '@socketsecurity/registry/lib/arrays'
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { joinAnd } from '@socketsecurity/lib/arrays'
+import { debug, debugDir } from '@socketsecurity/lib/debug'
+import { logger } from '@socketsecurity/lib/logger'
 
 import { coanaFix } from './coana-fix.mts'
 import { outputFixResult } from './output-fix-result.mts'
 import { convertCveToGhsa } from '../../utils/cve-to-ghsa.mts'
-import { convertPurlToGhsas } from '../../utils/purl-to-ghsa.mts'
+import { convertPurlToGhsas } from '../../utils/purl/to-ghsa.mts'
 
 import type { FixConfig } from './types.mts'
 import type { OutputKind } from '../../types.mts'
-import type { Remap } from '@socketsecurity/registry/lib/objects'
+import type { Remap } from '@socketsecurity/lib/objects'
 
 const GHSA_FORMAT_REGEXP = /^GHSA-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}$/
 const CVE_FORMAT_REGEXP = /^CVE-\d{4}-\d{4,}$/
@@ -32,8 +32,8 @@ export type HandleFixConfig = Remap<
  * Filters out invalid IDs and logs conversion results.
  */
 export async function convertIdsToGhsas(ids: string[]): Promise<string[]> {
-  debugFn('notice', `Converting ${ids.length} IDs to GHSA format`)
-  debugDir('inspect', { ids })
+  debug(`Converting ${ids.length} IDs to GHSA format`)
+  debugDir({ ids })
 
   const validGhsas: string[] = []
   const errors: string[] = []
@@ -69,8 +69,12 @@ export async function convertIdsToGhsas(ids: string[]): Promise<string[]> {
       const conversionResult = await convertPurlToGhsas(trimmedId)
       if (conversionResult.ok && conversionResult.data.length) {
         validGhsas.push(...conversionResult.data)
+        const displayGhsas =
+          conversionResult.data.length > 3
+            ? `${conversionResult.data.slice(0, 3).join(', ')} … and ${conversionResult.data.length - 3} more`
+            : joinAnd(conversionResult.data)
         logger.info(
-          `Converted ${trimmedId} to ${conversionResult.data.length} GHSA(s): ${joinAnd(conversionResult.data)}`,
+          `Converted ${trimmedId} to ${conversionResult.data.length} GHSA(s): ${displayGhsas}`,
         )
       } else {
         errors.push(
@@ -89,11 +93,11 @@ export async function convertIdsToGhsas(ids: string[]): Promise<string[]> {
     logger.warn(
       `Skipped ${errors.length} invalid IDs:\n${errors.map(e => `  - ${e}`).join('\n')}`,
     )
-    debugDir('inspect', { errors })
+    debugDir({ errors })
   }
 
-  debugFn('notice', `Converted to ${validGhsas.length} valid GHSA IDs`)
-  debugDir('inspect', { validGhsas })
+  debug(`Converted to ${validGhsas.length} valid GHSA IDs`)
+  debugDir({ validGhsas })
 
   return validGhsas
 }
@@ -117,8 +121,8 @@ export async function handleFix({
   spinner,
   unknownFlags,
 }: HandleFixConfig) {
-  debugFn('notice', `Starting fix command for ${orgSlug}`)
-  debugDir('inspect', {
+  debug(`Starting fix command for ${orgSlug}`)
+  debugDir({
     autopilot,
     cwd,
     disableMajorUpdates,

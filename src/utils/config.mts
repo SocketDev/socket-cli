@@ -25,25 +25,25 @@ import { mkdirSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 
 import config from '@socketsecurity/config'
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
-import { safeReadFileSync } from '@socketsecurity/registry/lib/fs'
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
+import { debugDirNs, debugNs } from '@socketsecurity/lib/debug'
+import { safeReadFileSync } from '@socketsecurity/lib/fs'
+import { logger } from '@socketsecurity/lib/logger'
+import { naturalCompare } from '@socketsecurity/lib/sorts'
 
 import { debugConfig } from './debug.mts'
-import constants, {
+import {
   CONFIG_KEY_API_BASE_URL,
   CONFIG_KEY_API_PROXY,
   CONFIG_KEY_API_TOKEN,
   CONFIG_KEY_DEFAULT_ORG,
   CONFIG_KEY_ENFORCED_ORGS,
   CONFIG_KEY_ORG,
-  SOCKET_YAML,
-  SOCKET_YML,
-} from '../constants.mts'
-import { getErrorCause } from './errors.mts'
+} from '../constants/config.mts'
+import { getSocketAppDataPath } from '../constants/paths.mts'
+import { SOCKET_YAML, SOCKET_YML } from '../constants/socket.mts'
+import { getErrorCause } from './error/errors.mjs'
 
-import type { CResult } from '../types.mts'
+import type { CResult } from '../types.mjs'
 import type { SocketYml } from '@socketsecurity/config'
 
 export interface LocalConfig {
@@ -96,29 +96,31 @@ function getConfigValues(): LocalConfig {
   if (_cachedConfig === undefined) {
     // Order: env var > --config flag > file
     _cachedConfig = {} as LocalConfig
-    const { socketAppDataPath } = constants
+    const socketAppDataPath = getSocketAppDataPath()
     if (socketAppDataPath) {
-      const raw = safeReadFileSync(socketAppDataPath)
+      const configFilePath = path.join(socketAppDataPath, 'config.json')
+      const raw = safeReadFileSync(configFilePath)
       if (raw) {
         try {
-          Object.assign(
-            _cachedConfig,
-            JSON.parse(Buffer.from(raw, 'base64').toString()),
-          )
-          debugConfig(socketAppDataPath, true)
+          const decoded =
+            typeof raw === 'string'
+              ? Buffer.from(raw, 'base64').toString()
+              : Buffer.from(raw.toString(), 'base64').toString()
+          Object.assign(_cachedConfig, JSON.parse(decoded))
+          debugConfig(configFilePath, true)
         } catch (e) {
-          logger.warn(`Failed to parse config at ${socketAppDataPath}`)
-          debugConfig(socketAppDataPath, false, e)
+          logger.warn(`Failed to parse config at ${configFilePath}`)
+          debugConfig(configFilePath, false, e)
         }
         // Normalize apiKey to apiToken and persist it.
         // This is a one time migration per user.
-        if (_cachedConfig['apiKey']) {
-          const token = _cachedConfig['apiKey']
-          delete _cachedConfig['apiKey']
+        if (_cachedConfig.apiKey) {
+          const token = _cachedConfig.apiKey
+          delete _cachedConfig.apiKey
           updateConfigValue(CONFIG_KEY_API_TOKEN, token)
         }
       } else {
-        mkdirSync(path.dirname(socketAppDataPath), { recursive: true })
+        mkdirSync(socketAppDataPath, { recursive: true })
       }
     }
   }
@@ -173,8 +175,8 @@ export function findSocketYmlSync(
           },
         }
       } catch (e) {
-        debugFn('error', `Failed to parse config file: ${ymlPath}`)
-        debugDir('error', e)
+        debugNs('error', `Failed to parse config file: ${ymlPath}`)
+        debugDirNs('error', e)
         return {
           ok: false,
           message: `Found file but was unable to parse ${ymlPath}`,
@@ -244,7 +246,7 @@ let _cachedConfig: LocalConfig | undefined
 let _configFromFlag = false
 
 export function overrideCachedConfig(jsonConfig: unknown): CResult<undefined> {
-  debugFn('notice', 'override: full config (not stored)')
+  debugNs('notice', 'override: full config (not stored)')
 
   let config
   try {
@@ -272,29 +274,28 @@ export function overrideCachedConfig(jsonConfig: unknown): CResult<undefined> {
     }
   }
 
-  // @ts-ignore Override an illegal object.
   _cachedConfig = config as LocalConfig
   _configFromFlag = true
 
   // Normalize apiKey to apiToken.
-  if (_cachedConfig['apiKey']) {
-    if (_cachedConfig['apiToken']) {
+  if (_cachedConfig.apiKey) {
+    if (_cachedConfig.apiToken) {
       logger.warn(
         'Note: The config override had both apiToken and apiKey. Using the apiToken value. Remove the apiKey to get rid of this message.',
       )
     }
-    _cachedConfig['apiToken'] = _cachedConfig['apiKey']
-    delete _cachedConfig['apiKey']
+    _cachedConfig.apiToken = _cachedConfig.apiKey
+    delete _cachedConfig.apiKey
   }
 
   return { ok: true, data: undefined }
 }
 
 export function overrideConfigApiToken(apiToken: unknown) {
-  debugFn('notice', 'override: Socket API token (not stored)')
+  debugNs('notice', 'override: Socket API token (not stored)')
   // Set token to the local cached config and mark it read-only so it doesn't persist.
   _cachedConfig = {
-    ...config,
+    ..._cachedConfig,
     ...(apiToken === undefined ? {} : { apiToken: String(apiToken) }),
   } as LocalConfig
   _configFromFlag = true
@@ -315,9 +316,9 @@ export function updateConfigValue<Key extends keyof LocalConfig>(
   let wasDeleted = value === undefined
   if (key === 'skipAskToPersistDefaultOrg') {
     if (value === 'true' || value === 'false') {
-      localConfig['skipAskToPersistDefaultOrg'] = value === 'true'
+      localConfig.skipAskToPersistDefaultOrg = value === 'true'
     } else {
-      delete localConfig['skipAskToPersistDefaultOrg']
+      delete localConfig.skipAskToPersistDefaultOrg
       wasDeleted = true
     }
   } else {
@@ -331,7 +332,7 @@ export function updateConfigValue<Key extends keyof LocalConfig>(
   if (_configFromFlag) {
     return {
       ok: true,
-      message: `Config key '${key}' was ${wasDeleted ? 'deleted' : `updated`}`,
+      message: `Config key '${key}' was ${wasDeleted ? 'deleted' : 'updated'}`,
       data: 'Change applied but not persisted; current config is overridden through env var or flag',
     }
   }
@@ -340,10 +341,12 @@ export function updateConfigValue<Key extends keyof LocalConfig>(
     _pendingSave = true
     process.nextTick(() => {
       _pendingSave = false
-      const { socketAppDataPath } = constants
+      const socketAppDataPath = getSocketAppDataPath()
       if (socketAppDataPath) {
+        mkdirSync(socketAppDataPath, { recursive: true })
+        const configFilePath = path.join(socketAppDataPath, 'config.json')
         writeFileSync(
-          socketAppDataPath,
+          configFilePath,
           Buffer.from(JSON.stringify(localConfig)).toString('base64'),
         )
       }
@@ -352,7 +355,7 @@ export function updateConfigValue<Key extends keyof LocalConfig>(
 
   return {
     ok: true,
-    message: `Config key '${key}' was ${wasDeleted ? 'deleted' : `updated`}`,
+    message: `Config key '${key}' was ${wasDeleted ? 'deleted' : 'updated'}`,
     data: undefined,
   }
 }

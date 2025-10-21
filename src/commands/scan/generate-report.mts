@@ -1,10 +1,23 @@
-import constants, { UNKNOWN_VALUE } from '../../constants.mts'
-import { getSocketDevPackageOverviewUrlFromPurl } from '../../utils/socket-url.mts'
+import { UNKNOWN_VALUE } from '@socketsecurity/lib/constants/core'
+
+import {
+  FOLD_SETTING_FILE,
+  FOLD_SETTING_PKG,
+  FOLD_SETTING_VERSION,
+} from '../../constants/cli.mts'
+import {
+  REPORT_LEVEL_DEFER,
+  REPORT_LEVEL_ERROR,
+  REPORT_LEVEL_IGNORE,
+  REPORT_LEVEL_MONITOR,
+  REPORT_LEVEL_WARN,
+} from '../../constants/reporting.mts'
+import { getSocketDevPackageOverviewUrlFromPurl } from '../../utils/socket/url.mts'
 
 import type { FOLD_SETTING, REPORT_LEVEL } from './types.mts'
 import type { CResult } from '../../types.mts'
 import type { SocketArtifact } from '../../utils/alert/artifact.mts'
-import type { Spinner } from '@socketsecurity/registry/lib/spinner'
+import type { Spinner } from '@socketsecurity/lib/spinner'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 type AlertKey = string
@@ -106,9 +119,10 @@ export function generateReport(
       alerts?.forEach(
         (alert: NonNullable<SocketArtifact['alerts']>[number]) => {
           const alertName = alert.type as keyof typeof securityRules // => policy[type]
-          const action = securityRules[alertName]?.action || ''
+          const action = (securityRules[alertName]?.action ||
+            '') as REPORT_LEVEL
           switch (action) {
-            case constants.REPORT_LEVEL_ERROR: {
+            case REPORT_LEVEL_ERROR: {
               healthy = false
               if (!short) {
                 addAlert(
@@ -124,8 +138,8 @@ export function generateReport(
               }
               break
             }
-            case constants.REPORT_LEVEL_WARN: {
-              if (!short && reportLevel !== constants.REPORT_LEVEL_ERROR) {
+            case REPORT_LEVEL_WARN: {
+              if (!short && reportLevel !== REPORT_LEVEL_ERROR) {
                 addAlert(
                   artifact,
                   violations,
@@ -139,11 +153,11 @@ export function generateReport(
               }
               break
             }
-            case constants.REPORT_LEVEL_MONITOR: {
+            case REPORT_LEVEL_MONITOR: {
               if (
                 !short &&
-                reportLevel !== constants.REPORT_LEVEL_WARN &&
-                reportLevel !== constants.REPORT_LEVEL_ERROR
+                reportLevel !== REPORT_LEVEL_WARN &&
+                reportLevel !== REPORT_LEVEL_ERROR
               ) {
                 addAlert(
                   artifact,
@@ -159,12 +173,12 @@ export function generateReport(
               break
             }
 
-            case constants.REPORT_LEVEL_IGNORE: {
+            case REPORT_LEVEL_IGNORE: {
               if (
                 !short &&
-                reportLevel !== constants.REPORT_LEVEL_MONITOR &&
-                reportLevel !== constants.REPORT_LEVEL_WARN &&
-                reportLevel !== constants.REPORT_LEVEL_ERROR
+                reportLevel !== REPORT_LEVEL_MONITOR &&
+                reportLevel !== REPORT_LEVEL_WARN &&
+                reportLevel !== REPORT_LEVEL_ERROR
               ) {
                 addAlert(
                   artifact,
@@ -180,9 +194,9 @@ export function generateReport(
               break
             }
 
-            case constants.REPORT_LEVEL_DEFER: {
+            case REPORT_LEVEL_DEFER: {
               // Not sure but ignore for now. Defer to later ;)
-              if (!short && reportLevel === constants.REPORT_LEVEL_DEFER) {
+              if (!short && reportLevel === REPORT_LEVEL_DEFER) {
                 addAlert(
                   artifact,
                   violations,
@@ -266,7 +280,7 @@ function addAlert(
     violations.set(ecosystem, new Map())
   }
   const ecoMap: EcoMap = violations.get(ecosystem)!
-  if (fold === constants.FOLD_SETTING_PKG) {
+  if (fold === FOLD_SETTING_PKG) {
     const existing = ecoMap.get(pkgName) as ReportLeafNode | undefined
     if (!existing || isStricterPolicy(existing.policy, policyAction)) {
       ecoMap.set(pkgName, createLeaf(art, alert, policyAction))
@@ -276,7 +290,7 @@ function addAlert(
       ecoMap.set(pkgName, new Map())
     }
     const pkgMap = ecoMap.get(pkgName) as PackageMap
-    if (fold === constants.FOLD_SETTING_VERSION) {
+    if (fold === FOLD_SETTING_VERSION) {
       const existing = pkgMap.get(version) as ReportLeafNode | undefined
       if (!existing || isStricterPolicy(existing.policy, policyAction)) {
         pkgMap.set(version, createLeaf(art, alert, policyAction))
@@ -288,7 +302,7 @@ function addAlert(
       const file = alert.file || UNKNOWN_VALUE
       const verMap = pkgMap.get(version) as VersionMap
 
-      if (fold === constants.FOLD_SETTING_FILE) {
+      if (fold === FOLD_SETTING_FILE) {
         const existing = verMap.get(file) as ReportLeafNode | undefined
         if (!existing || isStricterPolicy(existing.policy, policyAction)) {
           verMap.set(file, createLeaf(art, alert, policyAction))
@@ -310,34 +324,34 @@ function addAlert(
 
 function isStricterPolicy(was: REPORT_LEVEL, is: REPORT_LEVEL): boolean {
   // error > warn > monitor > ignore > defer > {unknown}
-  if (was === constants.REPORT_LEVEL_ERROR) {
+  if (was === REPORT_LEVEL_ERROR) {
     return false
   }
-  if (is === constants.REPORT_LEVEL_ERROR) {
+  if (is === REPORT_LEVEL_ERROR) {
     return true
   }
-  if (was === constants.REPORT_LEVEL_WARN) {
+  if (was === REPORT_LEVEL_WARN) {
     return false
   }
-  if (is === constants.REPORT_LEVEL_WARN) {
+  if (is === REPORT_LEVEL_WARN) {
     return false
   }
-  if (was === constants.REPORT_LEVEL_MONITOR) {
+  if (was === REPORT_LEVEL_MONITOR) {
     return false
   }
-  if (is === constants.REPORT_LEVEL_MONITOR) {
+  if (is === REPORT_LEVEL_MONITOR) {
     return false
   }
-  if (was === constants.REPORT_LEVEL_IGNORE) {
+  if (was === REPORT_LEVEL_IGNORE) {
     return false
   }
-  if (is === constants.REPORT_LEVEL_IGNORE) {
+  if (is === REPORT_LEVEL_IGNORE) {
     return false
   }
-  if (was === constants.REPORT_LEVEL_DEFER) {
+  if (was === REPORT_LEVEL_DEFER) {
     return false
   }
-  if (is === constants.REPORT_LEVEL_DEFER) {
+  if (is === REPORT_LEVEL_DEFER) {
     return false
   }
   // unreachable?

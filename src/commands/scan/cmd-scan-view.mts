@@ -1,24 +1,28 @@
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { logger } from '@socketsecurity/lib/logger'
 
 import { handleScanView } from './handle-scan-view.mts'
 import { streamScan } from './stream-scan.mts'
-import constants, { FLAG_JSON, FLAG_MARKDOWN } from '../../constants.mts'
+import {
+  DRY_RUN_BAILING_NOW,
+  FLAG_JSON,
+  FLAG_MARKDOWN,
+} from '../../constants/cli.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
-import { checkCommandInput } from '../../utils/check-input.mts'
-import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
-import { getOutputKind } from '../../utils/get-output-kind.mts'
-import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
+import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import {
   getFlagApiRequirementsOutput,
   getFlagListOutput,
-} from '../../utils/output-formatting.mts'
-import { hasDefaultApiToken } from '../../utils/sdk.mts'
+} from '../../utils/output/formatting.mts'
+import { getOutputKind } from '../../utils/output/mode.mjs'
+import { determineOrgSlug } from '../../utils/socket/org-slug.mjs'
+import { hasDefaultApiToken } from '../../utils/socket/sdk.mjs'
+import { checkCommandInput } from '../../utils/validation/check-input.mts'
 
 import type {
   CliCommandConfig,
   CliCommandContext,
   CliSubcommand,
-} from '../../utils/meow-with-subcommands.mts'
+} from '../../utils/cli/with-subcommands.mjs'
 
 export const CMD_NAME = 'view'
 
@@ -142,7 +146,7 @@ async function run(
   }
 
   if (dryRun) {
-    logger.log(constants.DRY_RUN_BAILING_NOW)
+    logger.log(DRY_RUN_BAILING_NOW)
     return
   }
 

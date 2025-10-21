@@ -1,12 +1,12 @@
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { logger } from '@socketsecurity/lib/logger'
+import { getSpinner } from '@socketsecurity/lib/constants/process'
 
 import { addOverrides } from './add-overrides.mts'
 import { CMD_NAME } from './shared.mts'
-import { updateLockfile } from './update-lockfile.mts'
-import constants from '../../constants.mts'
+import { updateDependencies } from './update-dependencies.mts'
 
 import type { CResult } from '../../types.mts'
-import type { EnvDetails } from '../../utils/package-environment.mts'
+import type { EnvDetails } from '../../utils/ecosystem/environment.mjs'
 
 export type OptimizeConfig = {
   pin: boolean
@@ -25,15 +25,15 @@ export async function applyOptimization(
     addedInWorkspaces: number
   }>
 > {
-  const { spinner } = constants
+  const spinner = getSpinner()
 
-  spinner.start()
+  spinner?.start()
 
   const state = await addOverrides(pkgEnvDetails, pkgEnvDetails.pkgPath, {
     logger,
     pin,
     prod,
-    spinner,
+    spinner: spinner ?? undefined,
   })
 
   const addedCount = state.added.size
@@ -41,19 +41,19 @@ export async function applyOptimization(
   const pkgJsonChanged = addedCount > 0 || updatedCount > 0
 
   if (pkgJsonChanged || pkgEnvDetails.features.npmBuggyOverrides) {
-    const result = await updateLockfile(pkgEnvDetails, {
+    const result = await updateDependencies(pkgEnvDetails, {
       cmdName: CMD_NAME,
       logger,
-      spinner,
+      spinner: spinner ?? undefined,
     })
 
     if (!result.ok) {
-      spinner.stop()
+      spinner?.stop()
       return result
     }
   }
 
-  spinner.stop()
+  spinner?.stop()
   return {
     ok: true,
     data: {

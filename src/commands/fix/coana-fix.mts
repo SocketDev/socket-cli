@@ -1,9 +1,9 @@
 import path from 'node:path'
 
-import { joinAnd } from '@socketsecurity/registry/lib/arrays'
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { pluralize } from '@socketsecurity/registry/lib/words'
+import { joinAnd } from '@socketsecurity/lib/arrays'
+import { debug, debugDir } from '@socketsecurity/lib/debug'
+import { logger } from '@socketsecurity/lib/logger'
+import { pluralize } from '@socketsecurity/lib/words'
 
 import {
   checkCiEnvVars,
@@ -12,11 +12,11 @@ import {
 } from './env-helpers.mts'
 import { getSocketFixBranchName, getSocketFixCommitMessage } from './git.mts'
 import { getSocketFixPrs, openSocketFixPr } from './pull-request.mts'
-import { FLAG_DRY_RUN, GQL_PR_STATE_OPEN } from '../../constants.mts'
-import { handleApiCall } from '../../utils/api.mts'
-import { cmdFlagValueToArray } from '../../utils/cmd.mts'
-import { spawnCoanaDlx } from '../../utils/dlx.mts'
-import { getErrorCause } from '../../utils/errors.mts'
+import { FLAG_DRY_RUN } from '../../constants/cli.mts'
+import { GQL_PR_STATE_OPEN } from '../../constants/github.mts'
+import { spawnCoanaDlx } from '../../utils/dlx/spawn.mjs'
+import { getErrorCause } from '../../utils/error/errors.mjs'
+import { getPackageFilesForScan } from '../../utils/fs/path-resolve.mjs'
 import {
   gitCheckoutBranch,
   gitCommit,
@@ -26,14 +26,15 @@ import {
   gitRemoteBranchExists,
   gitResetAndClean,
   gitUnstagedModifiedFiles,
-} from '../../utils/git.mts'
+} from '../../utils/git/git.mjs'
 import {
   enablePrAutoMerge,
   fetchGhsaDetails,
   setGitRemoteGithubRepoUrl,
-} from '../../utils/github.mts'
-import { getPackageFilesForScan } from '../../utils/path-resolve.mts'
-import { setupSdk } from '../../utils/sdk.mts'
+} from '../../utils/git/github.mts'
+import { cmdFlagValueToArray } from '../../utils/process/cmd.mts'
+import { handleApiCall } from '../../utils/socket/api.mjs'
+import { setupSdk } from '../../utils/socket/sdk.mjs'
 import { fetchSupportedScanFileNames } from '../scan/fetch-supported-scan-file-names.mts'
 
 import type { FixConfig } from './types.mts'
@@ -58,7 +59,7 @@ export async function coanaFix(
   } = fixConfig
 
   const fixEnv = await getFixEnv()
-  debugDir('inspect', { fixEnv })
+  debugDir({ fixEnv })
 
   spinner?.start()
 
@@ -179,14 +180,13 @@ export async function coanaFix(
       // Reduce limit by number of open PRs to avoid creating too many.
       adjustedLimit = Math.max(0, limit - openPrCount)
       if (openPrCount > 0) {
-        debugFn(
-          'notice',
-          `limit: adjusted from ${limit} to ${adjustedLimit} (${openPrCount} open Socket Fix ${pluralize('PR', openPrCount)}`,
+        debug(
+          `limit: adjusted from ${limit} to ${adjustedLimit} (${openPrCount} open Socket Fix ${pluralize('PR', { count: openPrCount })}`,
         )
       }
     } catch (e) {
-      debugFn('warn', 'Failed to count open PRs, using original limit')
-      debugDir('error', e)
+      debug('Failed to count open PRs, using original limit')
+      debugDir(e)
     }
   }
 
@@ -228,11 +228,11 @@ export async function coanaFix(
   }
 
   if (!ids?.length) {
-    debugFn('notice', 'miss: no GHSA IDs to process')
+    debug('miss: no GHSA IDs to process')
   }
 
   if (!fixEnv.repoInfo) {
-    debugFn('notice', 'miss: no repo info detected')
+    debug('miss: no repo info detected')
   }
 
   if (!ids?.length || !fixEnv.repoInfo) {
@@ -240,20 +240,24 @@ export async function coanaFix(
     return { ok: true, data: { fixed: false } }
   }
 
-  debugFn('notice', `fetch: ${ids.length} GHSA details for ${joinAnd(ids)}`)
+  const displayIds =
+    ids.length > 3
+      ? `${ids.slice(0, 3).join(', ')} … and ${ids.length - 3} more`
+      : joinAnd(ids)
+  debug(`fetch: ${ids.length} GHSA details for ${displayIds}`)
 
   const ghsaDetails = await fetchGhsaDetails(ids)
   const scanBaseNames = new Set(scanFilepaths.map(p => path.basename(p)))
 
-  debugFn('notice', `found: ${ghsaDetails.size} GHSA details`)
+  debug(`found: ${ghsaDetails.size} GHSA details`)
 
   let count = 0
   let overallFixed = false
 
   // Process each GHSA ID individually.
-  ghsaLoop: for (let i = 0, { length } = ids; i < length; i += 1) {
+  for (let i = 0, { length } = ids; i < length; i += 1) {
     const ghsaId = ids[i]!
-    debugFn('notice', `check: ${ghsaId}`)
+    debug(`check: ${ghsaId}`)
 
     // Apply fix for single GHSA ID.
     // eslint-disable-next-line no-await-in-loop
@@ -284,7 +288,7 @@ export async function coanaFix(
 
     if (!fixCResult.ok) {
       logger.error(`Update failed for ${ghsaId}: ${getErrorCause(fixCResult)}`)
-      continue ghsaLoop
+      continue
     }
 
     // Check for modified files after applying the fix.
@@ -297,8 +301,8 @@ export async function coanaFix(
       : []
 
     if (!modifiedFiles.length) {
-      debugFn('notice', `skip: no changes for ${ghsaId}`)
-      continue ghsaLoop
+      debug(`skip: no changes for ${ghsaId}`)
+      continue
     }
 
     overallFixed = true
@@ -309,17 +313,14 @@ export async function coanaFix(
       // Check if branch already exists.
       // eslint-disable-next-line no-await-in-loop
       if (await gitRemoteBranchExists(branch, cwd)) {
-        debugFn('notice', `skip: remote branch "${branch}" exists`)
-        continue ghsaLoop
+        debug(`skip: remote branch "${branch}" exists`)
+        continue
       }
 
-      debugFn('notice', `pr: creating for ${ghsaId}`)
+      debug(`pr: creating for ${ghsaId}`)
 
       const details = ghsaDetails.get(ghsaId)
-      debugFn(
-        'notice',
-        `ghsa: ${ghsaId} details ${details ? 'found' : 'missing'}`,
-      )
+      debug(`ghsa: ${ghsaId} details ${details ? 'found' : 'missing'}`)
 
       const pushed =
         // eslint-disable-next-line no-await-in-loop
@@ -347,7 +348,7 @@ export async function coanaFix(
         await gitCheckoutBranch(fixEnv.baseBranch, cwd)
         // eslint-disable-next-line no-await-in-loop
         await gitDeleteBranch(branch, cwd)
-        continue ghsaLoop
+        continue
       }
 
       // Set up git remote.
@@ -362,7 +363,7 @@ export async function coanaFix(
         await gitCheckoutBranch(fixEnv.baseBranch, cwd)
         // eslint-disable-next-line no-await-in-loop
         await gitDeleteBranch(branch, cwd)
-        continue ghsaLoop
+        continue
       }
       // eslint-disable-next-line no-await-in-loop
       await setGitRemoteGithubRepoUrl(
@@ -419,7 +420,7 @@ export async function coanaFix(
       logger.warn(
         `Unexpected condition: Push failed for ${ghsaId}, skipping PR creation.`,
       )
-      debugDir('error', e)
+      debugDir(e)
       // eslint-disable-next-line no-await-in-loop
       await gitResetAndClean(fixEnv.baseBranch, cwd)
       // eslint-disable-next-line no-await-in-loop
@@ -427,12 +428,9 @@ export async function coanaFix(
     }
 
     count += 1
-    debugFn(
-      'notice',
-      `increment: count ${count}/${Math.min(adjustedLimit, ids.length)}`,
-    )
+    debug(`increment: count ${count}/${Math.min(adjustedLimit, ids.length)}`)
     if (count >= adjustedLimit) {
-      break ghsaLoop
+      break
     }
   }
 

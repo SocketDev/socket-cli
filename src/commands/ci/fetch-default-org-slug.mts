@@ -1,6 +1,6 @@
-import { debugFn } from '@socketsecurity/registry/lib/debug'
+import { debug } from '@socketsecurity/lib/debug'
 
-import constants from '../../constants.mts'
+import ENV from '../../constants/env.mts'
 import { getConfigValueOrUndef } from '../../utils/config.mts'
 import { fetchOrganization } from '../organization/fetch-organization-list.mts'
 
@@ -10,20 +10,16 @@ import type { CResult } from '../../types.mts'
 export async function getDefaultOrgSlug(): Promise<CResult<string>> {
   const defaultOrgResult = getConfigValueOrUndef('defaultOrg')
   if (defaultOrgResult) {
-    debugFn(
-      'notice',
-      'use: org from "defaultOrg" value of socket/settings local app data',
-      defaultOrgResult,
+    debug(
+      `use: org from "defaultOrg" value of socket/settings local app data: ${defaultOrgResult}`,
     )
     return { ok: true, data: defaultOrgResult }
   }
 
-  const envOrgSlug = constants.ENV.SOCKET_CLI_ORG_SLUG
+  const envOrgSlug = ENV.SOCKET_CLI_ORG_SLUG
   if (envOrgSlug) {
-    debugFn(
-      'notice',
-      'use: org from SOCKET_CLI_ORG_SLUG environment variable',
-      envOrgSlug,
+    debug(
+      `use: org from SOCKET_CLI_ORG_SLUG environment variable: ${envOrgSlug}`,
     )
     return { ok: true, data: envOrgSlug }
   }
@@ -39,7 +35,7 @@ export async function getDefaultOrgSlug(): Promise<CResult<string>> {
     return {
       ok: false,
       message: 'Failed to establish identity',
-      data: `No organization associated with the Socket API token. Unable to continue.`,
+      data: 'No organization associated with the Socket API token. Unable to continue.',
     }
   }
 
@@ -48,11 +44,11 @@ export async function getDefaultOrgSlug(): Promise<CResult<string>> {
     return {
       ok: false,
       message: 'Failed to establish identity',
-      data: `Cannot determine the default organization for the API token. Unable to continue.`,
+      data: 'Cannot determine the default organization for the API token. Unable to continue.',
     }
   }
 
-  debugFn('notice', 'resolve: org from Socket API', slug)
+  debug(`resolve: org from Socket API: ${slug}`)
 
   return {
     ok: true,

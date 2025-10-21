@@ -1,27 +1,28 @@
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { logger } from '@socketsecurity/lib/logger'
 
 import { handleAuditLog } from './handle-audit-log.mts'
-import constants, {
+import {
+  DRY_RUN_BAILING_NOW,
   FLAG_JSON,
   FLAG_MARKDOWN,
-  V1_MIGRATION_GUIDE_URL,
-} from '../../constants.mts'
+} from '../../constants/cli.mts'
+import { V1_MIGRATION_GUIDE_URL } from '../../constants/socket.mjs'
 import { commonFlags, outputFlags } from '../../flags.mts'
-import { checkCommandInput } from '../../utils/check-input.mts'
-import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
-import { getOutputKind } from '../../utils/get-output-kind.mts'
-import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
+import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import {
   getFlagApiRequirementsOutput,
   getFlagListOutput,
-} from '../../utils/output-formatting.mts'
-import { hasDefaultApiToken } from '../../utils/sdk.mts'
-import { webLink } from '../../utils/terminal-link.mts'
+} from '../../utils/output/formatting.mts'
+import { getOutputKind } from '../../utils/output/mode.mjs'
+import { determineOrgSlug } from '../../utils/socket/org-slug.mjs'
+import { hasDefaultApiToken } from '../../utils/socket/sdk.mjs'
+import { webLink } from '../../utils/terminal/link.mts'
+import { checkCommandInput } from '../../utils/validation/check-input.mts'
 
 import type {
   CliCommandConfig,
   CliCommandContext,
-} from '../../utils/meow-with-subcommands.mts'
+} from '../../utils/cli/with-subcommands.mjs'
 
 export const CMD_NAME = 'audit-log'
 
@@ -76,7 +77,7 @@ async function run(
       ${getFlagApiRequirementsOutput(`${parentName}:${CMD_NAME}`)}
 
     This feature requires an Enterprise Plan. To learn more about getting access
-    to this feature and many more, please visit the ${webLink(`${constants.SOCKET_WEBSITE_URL}/pricing`, 'Socket pricing page')}.
+    to this feature and many more, please visit the ${webLink(`${'https://socket.dev'}/pricing`, 'Socket pricing page')}.
 
     The type FILTER arg is an enum. Defaults to any. It should be one of these:
       associateLabel, cancelInvitation, changeMemberRole, changePlanSubscriptionSeats,
@@ -113,7 +114,7 @@ async function run(
     org: orgFlag,
     page,
     perPage,
-  } = cli.flags as {
+  } = cli.flags as unknown as {
     interactive: boolean
     json: boolean
     markdown: boolean
@@ -146,7 +147,7 @@ async function run(
       nook: true,
       test: noLegacy,
       message: `Legacy flags are no longer supported. See the ${webLink(V1_MIGRATION_GUIDE_URL, 'v1 migration guide')}.`,
-      fail: `received legacy flags`,
+      fail: 'received legacy flags',
     },
     {
       nook: true,
@@ -178,7 +179,7 @@ async function run(
   }
 
   if (dryRun) {
-    logger.log(constants.DRY_RUN_BAILING_NOW)
+    logger.log(DRY_RUN_BAILING_NOW)
     return
   }
 

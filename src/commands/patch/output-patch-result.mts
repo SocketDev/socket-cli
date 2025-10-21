@@ -1,9 +1,9 @@
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { pluralize } from '@socketsecurity/registry/lib/words'
+import { logger } from '@socketsecurity/lib/logger'
+import { pluralize } from '@socketsecurity/lib/words'
 
-import { OUTPUT_JSON } from '../../constants.mts'
-import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
-import { serializeResultJson } from '../../utils/serialize-result-json.mts'
+import { OUTPUT_JSON } from '../../constants/cli.mts'
+import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
+import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
 import type { CResult, OutputKind } from '../../types.mts'
 
@@ -31,7 +31,7 @@ export async function outputPatchResult(
 
   if (patched.length) {
     logger.group(
-      `Successfully processed patches for ${patched.length} ${pluralize('package', patched.length)}:`,
+      `Successfully processed patches for ${patched.length} ${pluralize('package', { count: patched.length })}:`,
     )
     for (const pkg of patched) {
       logger.success(pkg)

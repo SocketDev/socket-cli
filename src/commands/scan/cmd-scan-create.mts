@@ -1,42 +1,44 @@
 import path from 'node:path'
 
-import { joinAnd } from '@socketsecurity/registry/lib/arrays'
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { joinAnd } from '@socketsecurity/lib/arrays'
+import { logger } from '@socketsecurity/lib/logger'
 
 import { handleCreateNewScan } from './handle-create-new-scan.mts'
 import { outputCreateNewScan } from './output-create-new-scan.mts'
 import { reachabilityFlags } from './reachability-flags.mts'
 import { suggestOrgSlug } from './suggest-org-slug.mts'
 import { suggestTarget } from './suggest_target.mts'
-import constants, { REQUIREMENTS_TXT, SOCKET_JSON } from '../../constants.mts'
+import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'
+import { REQUIREMENTS_TXT, SOCKET_JSON } from '../../constants/paths.mts'
+import { REPORT_LEVEL_ERROR } from '../../constants/reporting.mjs'
 import { commonFlags, outputFlags } from '../../flags.mts'
-import { checkCommandInput } from '../../utils/check-input.mts'
-import { cmdFlagValueToArray } from '../../utils/cmd.mts'
-import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
-import { getEcosystemChoicesForMeow } from '../../utils/ecosystem.mts'
-import { getOutputKind } from '../../utils/get-output-kind.mts'
+import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
+import { getEcosystemChoicesForMeow } from '../../utils/ecosystem/ecosystem.mjs'
 import {
   detectDefaultBranch,
   getRepoName,
   gitBranch,
-} from '../../utils/git.mts'
-import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
+} from '../../utils/git/git.mjs'
 import {
   getFlagApiRequirementsOutput,
   getFlagListOutput,
-} from '../../utils/output-formatting.mts'
-import { hasDefaultApiToken } from '../../utils/sdk.mts'
-import { readOrDefaultSocketJsonUp } from '../../utils/socket-json.mts'
-import { socketDashboardLink } from '../../utils/terminal-link.mts'
+} from '../../utils/output/formatting.mts'
+import { getOutputKind } from '../../utils/output/mode.mjs'
+import { cmdFlagValueToArray } from '../../utils/process/cmd.mts'
+import { readOrDefaultSocketJsonUp } from '../../utils/socket/json.mts'
+import { determineOrgSlug } from '../../utils/socket/org-slug.mjs'
+import { hasDefaultApiToken } from '../../utils/socket/sdk.mjs'
+import { socketDashboardLink } from '../../utils/terminal/link.mts'
+import { checkCommandInput } from '../../utils/validation/check-input.mts'
 import { detectManifestActions } from '../manifest/detect-manifest-actions.mts'
 
 import type { REPORT_LEVEL } from './types.mts'
 import type { MeowFlags } from '../../flags.mts'
-import type { PURL_Type } from '../../utils/ecosystem.mts'
 import type {
   CliCommandConfig,
   CliCommandContext,
-} from '../../utils/meow-with-subcommands.mts'
+} from '../../utils/cli/with-subcommands.mjs'
+import type { PURL_Type } from '../../utils/ecosystem/ecosystem.mjs'
 
 export const CMD_NAME = 'create'
 
@@ -128,8 +130,8 @@ const generalFlags: MeowFlags = {
   },
   reportLevel: {
     type: 'string',
-    default: constants.REPORT_LEVEL_ERROR,
-    description: `Which policy level alerts should be reported (default '${constants.REPORT_LEVEL_ERROR}')`,
+    default: REPORT_LEVEL_ERROR,
+    description: `Which policy level alerts should be reported (default '${REPORT_LEVEL_ERROR}')`,
   },
   setAsAlertsPage: {
     type: 'boolean',
@@ -244,7 +246,7 @@ async function run(
     reportLevel,
     setAsAlertsPage: pendingHeadFlag,
     tmp,
-  } = cli.flags as {
+  } = cli.flags as unknown as {
     cwd: string
     commitHash: string
     commitMessage: string
@@ -287,7 +289,7 @@ async function run(
     branch: branchName,
     repo: repoName,
     report,
-  } = cli.flags as {
+  } = cli.flags as unknown as {
     autoManifest?: boolean | undefined
     branch: string
     repo: string
@@ -350,7 +352,7 @@ async function run(
   let updatedInput = false
 
   // Accept zero or more paths. Default to cwd() if none given.
-  let targets = cli.input || [cwd]
+  let targets: string[] = cli.input ? [...cli.input] : [cwd]
 
   if (!targets.length && !dryRun && interactive) {
     targets = await suggestTarget()
@@ -406,7 +408,7 @@ async function run(
     )
     logger.error('```')
     logger.error(
-      `    socket scan create [other flags...] ${orgSlug} ${targets.join(' ')}`,
+      `    socket scan create [other flags…] ${orgSlug} ${targets.join(' ')}`,
     )
     logger.error('```')
     logger.error('')
@@ -431,8 +433,7 @@ async function run(
     reachAnalysisTimeout !== reachabilityFlags['reachAnalysisTimeout']?.default
 
   const isUsingNonDefaultAnalytics =
-    reachDisableAnalytics !==
-    reachabilityFlags['reachDisableAnalytics']?.default
+    reachDisableAnalytics !== reachabilityFlags['reachDisableAnalytics']?.default
 
   const isUsingAnyReachabilityFlags =
     isUsingNonDefaultMemoryLimit ||
@@ -491,7 +492,7 @@ async function run(
   }
 
   if (dryRun) {
-    logger.log(constants.DRY_RUN_BAILING_NOW)
+    logger.log(DRY_RUN_BAILING_NOW)
     return
   }
 

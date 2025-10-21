@@ -1,14 +1,15 @@
 import colors from 'yoctocolors-cjs'
 
-import { joinAnd } from '@socketsecurity/registry/lib/arrays'
-import { debugFn } from '@socketsecurity/registry/lib/debug'
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { joinAnd } from '@socketsecurity/lib/arrays'
+import { debug } from '@socketsecurity/lib/debug'
+import { logger } from '@socketsecurity/lib/logger'
 
-import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
-import { serializeResultJson } from '../../utils/serialize-result-json.mts'
+import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
+import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
 import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketArtifact } from '../../utils/alert/artifact.mts'
+
 
 // This is a simplified view of an artifact. Potentially merged with other artifacts.
 interface DedupedArtifact {
@@ -75,9 +76,9 @@ function formatReportCard(
   }
   const alertString = getAlertString(artifact.alerts, { colorize })
   if (!artifact.ecosystem) {
-    debugFn('notice', 'miss: artifact ecosystem', artifact)
+    debug(`miss: artifact ecosystem ${JSON.stringify(artifact)}`)
   }
-  const purl = `pkg:${artifact.ecosystem}/${artifact.name}${artifact.version ? '@' + artifact.version : ''}`
+  const purl = `pkg:${artifact.ecosystem}/${artifact.name}${artifact.version ? `@${artifact.version}` : ''}`
 
   // Calculate proper padding based on longest label.
   const maxLabelLength = Math.max(
@@ -86,7 +87,7 @@ function formatReportCard(
   const labelPadding = maxLabelLength + 2 // +2 for ": "
 
   return [
-    'Package: ' + (colorize ? colors.bold(purl) : purl),
+    `Package: ${colorize ? colors.bold(purl) : purl}`,
     '',
     ...Object.entries(scoreResult).map(
       score =>

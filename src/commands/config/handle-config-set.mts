@@ -1,4 +1,4 @@
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
+import { debug, debugDir } from '@socketsecurity/lib/debug'
 
 import { outputConfigSet } from './output-config-set.mts'
 import { updateConfigValue } from '../../utils/config.mts'
@@ -15,13 +15,13 @@ export async function handleConfigSet({
   outputKind: OutputKind
   value: string
 }) {
-  debugFn('notice', `Setting config ${key} = ${value}`)
-  debugDir('inspect', { key, value, outputKind })
+  debug(`Setting config ${key} = ${value}`)
+  debugDir({ key, value, outputKind })
 
   const result = updateConfigValue(key, value)
 
-  debugFn('notice', `Config update ${result.ok ? 'succeeded' : 'failed'}`)
-  debugDir('inspect', { result })
+  debug(`Config update ${result.ok ? 'succeeded' : 'failed'}`)
+  debugDir({ result })
 
   await outputConfigSet(result, outputKind)
 }

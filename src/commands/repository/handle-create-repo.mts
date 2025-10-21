@@ -1,4 +1,4 @@
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
+import { debug, debugDir } from '@socketsecurity/lib/debug'
 
 import { fetchCreateRepo } from './fetch-create-repo.mts'
 import { outputCreateRepo } from './output-create-repo.mts'
@@ -23,8 +23,8 @@ export async function handleCreateRepo(
   },
   outputKind: OutputKind,
 ): Promise<void> {
-  debugFn('notice', `Creating repository ${orgSlug}/${repoName}`)
-  debugDir('inspect', {
+  debug(`Creating repository ${orgSlug}/${repoName}`)
+  debugDir({
     defaultBranch,
     description,
     homepage,
@@ -43,8 +43,8 @@ export async function handleCreateRepo(
     visibility,
   })
 
-  debugFn('notice', `Repository creation ${data.ok ? 'succeeded' : 'failed'}`)
-  debugDir('inspect', { data })
+  debug(`Repository creation ${data.ok ? 'succeeded' : 'failed'}`)
+  debugDir({ data })
 
   outputCreateRepo(data, repoName, outputKind)
 }

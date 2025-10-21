@@ -1,24 +1,24 @@
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { debug, debugDir } from '@socketsecurity/lib/debug'
+import { logger } from '@socketsecurity/lib/logger'
 
 import { getDefaultOrgSlug } from './fetch-default-org-slug.mts'
-import constants from '../../constants.mts'
+import { REPORT_LEVEL_ERROR } from '../../constants/reporting.mts'
 import {
   detectDefaultBranch,
   getRepoName,
   gitBranch,
-} from '../../utils/git.mts'
-import { serializeResultJson } from '../../utils/serialize-result-json.mts'
+} from '../../utils/git/git.mjs'
+import { serializeResultJson } from '../../utils/output/result-json.mjs'
 import { handleCreateNewScan } from '../scan/handle-create-new-scan.mts'
 
 export async function handleCi(autoManifest: boolean): Promise<void> {
-  debugFn('notice', 'Starting CI scan')
-  debugDir('inspect', { autoManifest })
+  debug('Starting CI scan')
+  debugDir({ autoManifest })
 
   const orgSlugCResult = await getDefaultOrgSlug()
   if (!orgSlugCResult.ok) {
-    debugFn('warn', 'Failed to get default org slug')
-    debugDir('inspect', { orgSlugCResult })
+    debug('Failed to get default org slug')
+    debugDir({ orgSlugCResult })
     process.exitCode = orgSlugCResult.code ?? 1
     // Always assume json mode.
     logger.log(serializeResultJson(orgSlugCResult))
@@ -30,11 +30,8 @@ export async function handleCi(autoManifest: boolean): Promise<void> {
   const branchName = (await gitBranch(cwd)) || (await detectDefaultBranch(cwd))
   const repoName = await getRepoName(cwd)
 
-  debugFn(
-    'notice',
-    `CI scan for ${orgSlug}/${repoName} on branch ${branchName}`,
-  )
-  debugDir('inspect', { orgSlug, cwd, branchName, repoName })
+  debug(`CI scan for ${orgSlug}/${repoName} on branch ${branchName}`)
+  debugDir({ orgSlug, cwd, branchName, repoName })
 
   await handleCreateNewScan({
     autoManifest,
@@ -62,7 +59,7 @@ export async function handleCi(autoManifest: boolean): Promise<void> {
     repoName,
     readOnly: false,
     report: true,
-    reportLevel: constants.REPORT_LEVEL_ERROR,
+    reportLevel: REPORT_LEVEL_ERROR,
     targets: ['.'],
     // Don't set 'tmp' when 'pendingHead' is true.
     tmp: false,

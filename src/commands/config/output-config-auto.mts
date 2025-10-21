@@ -1,9 +1,9 @@
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { select } from '@socketsecurity/registry/lib/prompts'
+import { logger } from '@socketsecurity/lib/logger'
+import { select } from '@socketsecurity/lib/prompts'
 
 import { isConfigFromFlag, updateConfigValue } from '../../utils/config.mts'
-import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
-import { serializeResultJson } from '../../utils/serialize-result-json.mts'
+import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
+import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
 import type { CResult, OutputKind } from '../../types.mts'
 import type { LocalConfig } from '../../utils/config.mts'
@@ -27,7 +27,7 @@ export async function outputConfigAuto(
   }
 
   if (outputKind === 'markdown') {
-    logger.log(`# Auto discover config value`)
+    logger.log('# Auto discover config value')
     logger.log('')
     logger.log(
       `Attempted to automatically discover the value for config key: "${key}"`,
@@ -59,7 +59,7 @@ export async function outputConfigAuto(
           'Would you like to update the default org in local config to this value?',
         choices: (Array.isArray(result.data) ? result.data : [result.data])
           .map(slug => ({
-            name: 'Yes [' + slug + ']',
+            name: `Yes [${slug}]`,
             value: slug,
             description: `Use "${slug}" as the default organization`,
           }))
@@ -88,7 +88,7 @@ export async function outputConfigAuto(
           'Would you like to update the enforced orgs in local config to this value?',
         choices: (Array.isArray(result.data) ? result.data : [result.data])
           .map(slug => ({
-            name: 'Yes [' + slug + ']',
+            name: `Yes [${slug}]`,
             value: slug,
             description: `Enforce the security policy of "${slug}" on this machine`,
           }))

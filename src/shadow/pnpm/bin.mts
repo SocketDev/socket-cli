@@ -2,41 +2,55 @@ import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
+import { debug, debugDir, debugNs } from '@socketsecurity/lib/debug'
+import { logger } from '@socketsecurity/lib/logger'
+import { normalizePath } from '@socketsecurity/lib/path'
+import { spawn } from '@socketsecurity/lib/spawn'
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
 
-import constants, {
-  FLAG_DRY_RUN,
-  PNPM,
-  PNPM_LOCK_YAML,
-} from '../../constants.mts'
-import { getAlertsMapFromPnpmLockfile } from '../../utils/alerts-map.mts'
+
+import { PNPM } from '../../constants/agents.mts'
+import { FLAG_DRY_RUN } from '../../constants/cli.mts'
+import ENV from '../../constants/env.mts'
+import { PNPM_LOCK_YAML } from '../../constants/packages.mts'
+import { shadowBinPath } from '../../constants/paths.mts'
+import {
+  SOCKET_CLI_ACCEPT_RISKS,
+  SOCKET_CLI_SHADOW_API_TOKEN,
+  SOCKET_CLI_SHADOW_BIN,
+  SOCKET_CLI_SHADOW_PROGRESS,
+  SOCKET_CLI_VIEW_ALL_RISKS,
+  SOCKET_IPC_HANDSHAKE,
+} from '../../constants/shadow.mts'
+import {
+  parsePnpmLockfile,
+  readPnpmLockfile,
+} from '../../utils/pnpm/lockfile.mts'
 import {
   cmdFlagsToString,
   isAddCommand,
   isPnpmLockfileScanCommand,
-} from '../../utils/cmd.mts'
-import { parsePnpmLockfile, readPnpmLockfile } from '../../utils/pnpm.mts'
-import { getPublicApiToken } from '../../utils/sdk.mts'
-import { installPnpmLinks } from '../../utils/shadow-links.mts'
-import { logAlertsMap } from '../../utils/socket-package-alert.mts'
+} from '../../utils/process/cmd.mts'
+import { installPnpmLinks } from '../../utils/shadow/links.mts'
+import { getAlertsMapFromPnpmLockfile } from '../../utils/socket/alerts.mts'
+import { logAlertsMap } from '../../utils/socket/package-alert.mts'
+import { getPublicApiToken } from '../../utils/socket/sdk.mjs'
 import { scanPackagesAndLogAlerts } from '../common.mts'
 import { ensureIpcInStdio } from '../stdio-ipc.mts'
 
-import type { IpcObject } from '../../constants.mts'
+import type { IpcObject } from '../../constants/shadow.mts'
 import type {
   SpawnExtra,
   SpawnOptions,
   SpawnResult,
-} from '@socketsecurity/registry/lib/spawn'
+} from '@socketsecurity/lib/spawn'
 
 export type ShadowPnpmOptions = SpawnOptions & {
   ipc?: IpcObject | undefined
 }
 
 export type ShadowPnpmResult = {
-  spawnPromise: SpawnResult<string, SpawnExtra | undefined>
+  spawnPromise: SpawnResult
 }
 
 const DLX_COMMANDS = new Set(['dlx'])
@@ -79,8 +93,8 @@ export default async function shadowPnpmBin(
   spinner?.start()
 
   if (needsScanning && !rawPnpmArgs.includes(FLAG_DRY_RUN)) {
-    const acceptRisks = !!constants.ENV.SOCKET_CLI_ACCEPT_RISKS
-    const viewAllRisks = !!constants.ENV.SOCKET_CLI_VIEW_ALL_RISKS
+    const acceptRisks = !!ENV.SOCKET_CLI_ACCEPT_RISKS
+    const viewAllRisks = !!ENV.SOCKET_CLI_VIEW_ALL_RISKS
 
     // Handle add and dlx commands with shared utility.
     if (isDlxCommand || isAddCommand(command)) {
@@ -104,7 +118,7 @@ export default async function shadowPnpmBin(
       }
     } else if (isPnpmLockfileScanCommand(command)) {
       // For install/update, scan all dependencies from pnpm-lock.yaml
-      const pnpmLockPath = path.join(cwd, PNPM_LOCK_YAML)
+      const pnpmLockPath = normalizePath(path.join(cwd, PNPM_LOCK_YAML))
       if (existsSync(pnpmLockPath)) {
         try {
           const lockfileContent = await readPnpmLockfile(pnpmLockPath)
@@ -112,10 +126,7 @@ export default async function shadowPnpmBin(
             const lockfile = parsePnpmLockfile(lockfileContent)
             if (lockfile) {
               // Use existing function to scan the entire lockfile
-              debugFn(
-                'notice',
-                `scanning: all dependencies from ${PNPM_LOCK_YAML}`,
-              )
+              debug(`scanning: all dependencies from ${PNPM_LOCK_YAML}`)
 
               const alertsMap = await getAlertsMapFromPnpmLockfile(lockfile, {
                 nothrow: true,
@@ -136,11 +147,11 @@ export default async function shadowPnpmBin(
                 const errorMessage = `Socket ${PNPM} exiting due to risks.${
                   viewAllRisks
                     ? ''
-                    : `\nView all risks - Rerun with environment variable ${constants.SOCKET_CLI_VIEW_ALL_RISKS}=1.`
+                    : `\nView all risks - Rerun with environment variable ${SOCKET_CLI_VIEW_ALL_RISKS}=1.`
                 }${
                   acceptRisks
                     ? ''
-                    : `\nAccept risks - Rerun with environment variable ${constants.SOCKET_CLI_ACCEPT_RISKS}=1.`
+                    : `\nAccept risks - Rerun with environment variable ${SOCKET_CLI_ACCEPT_RISKS}=1.`
                 }`.trim()
 
                 logger.error(errorMessage)
@@ -151,33 +162,29 @@ export default async function shadowPnpmBin(
               }
 
               // Return early since we've already done the scanning
-              debugFn(
-                'notice',
-                'complete: lockfile scanning, proceeding with install',
-              )
+              debug('complete: lockfile scanning, proceeding with install')
             }
           }
         } catch (e) {
-          debugFn('error', `${PNPM} lockfile scanning failed`)
-          debugDir('error', e)
+          debug(`${PNPM} lockfile scanning failed`)
+          debugDir(e)
         }
       } else {
-        debugFn(
-          'notice',
+        debug(
           `skip: no ${PNPM_LOCK_YAML} found, skipping bulk install scanning`,
         )
       }
     }
 
-    debugFn('notice', 'complete: scanning, proceeding with install')
+    debug('complete: scanning, proceeding with install')
   }
 
-  const realPnpmPath = await installPnpmLinks(constants.shadowBinPath)
+  const realPnpmPath = await installPnpmLinks(shadowBinPath)
 
   const otherArgs = terminatorPos === -1 ? [] : args.slice(terminatorPos)
   const suffixArgs = [...rawPnpmArgs, ...otherArgs]
 
-  debugFn(
+  debugNs(
     'notice',
     `spawn: ${PNPM} shadow bin ${realPnpmPath} ${cmdFlagsToString(suffixArgs)}`,
   )
@@ -203,17 +210,17 @@ export default async function shadowPnpmBin(
       // On Windows, pnpm is often a .cmd file that requires shell execution.
       // The spawn function from @socketsecurity/registry will handle this properly
       // when shell is true.
-      shell: constants.WIN32,
+      shell: WIN32,
     },
     extra,
   )
 
   // Send IPC handshake.
   spawnPromise.process.send({
-    [constants.SOCKET_IPC_HANDSHAKE]: {
-      [constants.SOCKET_CLI_SHADOW_API_TOKEN]: getPublicApiToken(),
-      [constants.SOCKET_CLI_SHADOW_BIN]: PNPM,
-      [constants.SOCKET_CLI_SHADOW_PROGRESS]: true,
+    [SOCKET_IPC_HANDSHAKE]: {
+      [SOCKET_CLI_SHADOW_API_TOKEN]: getPublicApiToken(),
+      [SOCKET_CLI_SHADOW_BIN]: PNPM,
+      [SOCKET_CLI_SHADOW_PROGRESS]: true,
       ...ipc,
     },
   })

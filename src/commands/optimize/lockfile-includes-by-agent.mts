@@ -1,10 +1,14 @@
-import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
+import { escapeRegExp } from '@socketsecurity/lib/regexps'
+import {
+  BUN,
+  PNPM,
+  VLT,
+  YARN_BERRY,
+  YARN_CLASSIC,
+} from '@socketsecurity/lib/constants/agents'
+import { EXT_LOCK } from '@socketsecurity/lib/constants/paths'
 
-import constants from '../../constants.mts'
-
-import type { EnvDetails } from '../../utils/package-environment.mts'
-
-const { BUN, EXT_LOCK, NPM, PNPM, VLT, YARN_BERRY, YARN_CLASSIC } = constants
+import type { EnvDetails } from '../../utils/ecosystem/environment.mjs'
 
 export function npmLockSrcIncludes(lockSrc: string, name: string) {
   // Detects the package name in the following cases:
@@ -78,7 +82,6 @@ export function lockSrcIncludes(
       return yarnLockSrcIncludes(lockSrc, name)
     case YARN_CLASSIC:
       return yarnLockSrcIncludes(lockSrc, name)
-    case NPM:
     default:
       return npmLockSrcIncludes(lockSrc, name)
   }

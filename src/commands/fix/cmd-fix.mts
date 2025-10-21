@@ -2,31 +2,29 @@ import path from 'node:path'
 
 import terminalLink from 'terminal-link'
 
-import { arrayUnique, joinOr } from '@socketsecurity/registry/lib/arrays'
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { arrayUnique, joinOr } from '@socketsecurity/lib/arrays'
+import { logger } from '@socketsecurity/lib/logger'
 
 import { handleFix } from './handle-fix.mts'
-import constants, {
-  ERROR_UNABLE_RESOLVE_ORG,
-  FLAG_ID,
-} from '../../constants.mts'
+import { DRY_RUN_NOT_SAVING, FLAG_ID  } from '../../constants/cli.mts'
+import { ERROR_UNABLE_RESOLVE_ORG } from '../../constants/errors.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
-import { checkCommandInput } from '../../utils/check-input.mts'
-import { cmdFlagValueToArray } from '../../utils/cmd.mts'
-import { getOutputKind } from '../../utils/get-output-kind.mts'
-import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
+import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import {
   getFlagApiRequirementsOutput,
   getFlagListOutput,
-} from '../../utils/output-formatting.mts'
+} from '../../utils/output/formatting.mts'
+import { getOutputKind } from '../../utils/output/mode.mjs'
+import { cmdFlagValueToArray } from '../../utils/process/cmd.mts'
 import { RangeStyles } from '../../utils/semver.mts'
+import { checkCommandInput } from '../../utils/validation/check-input.mts'
 import { getDefaultOrgSlug } from '../ci/fetch-default-org-slug.mts'
 
 import type { MeowFlag, MeowFlags } from '../../flags.mts'
 import type {
   CliCommandConfig,
   CliCommandContext,
-} from '../../utils/meow-with-subcommands.mts'
+} from '../../utils/cli/with-subcommands.mjs'
 import type { RangeStyle } from '../../utils/semver.mts'
 
 export const CMD_NAME = 'fix'
@@ -240,7 +238,7 @@ async function run(
       parentName,
       importMeta,
     },
-    { allowUnknownFlags: false },
+    { allowUnknownFlags: true },
   )
 
   const {
@@ -260,7 +258,7 @@ async function run(
     // We patched in this feature with `npx custompatch meow` at
     // socket-cli/patches/meow#13.2.0.patch.
     unknownFlags = [],
-  } = cli.flags as {
+  } = cli.flags as unknown as {
     autopilot: boolean
     applyFixes: boolean
     glob: string
@@ -281,7 +279,7 @@ async function run(
   const dryRun = !!cli.flags['dryRun']
 
   const minSatisfying =
-    (cli.flags['minSatisfying'] as boolean) || !maxSatisfying
+    (cli.flags['minSatisfying'] as unknown as boolean) || !maxSatisfying
 
   const disableMajorUpdates = !majorUpdates
 
@@ -306,7 +304,7 @@ async function run(
   }
 
   if (dryRun) {
-    logger.log(constants.DRY_RUN_NOT_SAVING)
+    logger.log(DRY_RUN_NOT_SAVING)
     return
   }
 
@@ -326,7 +324,7 @@ async function run(
   // If given path is absolute then cwd should not affect it.
   cwd = path.resolve(process.cwd(), cwd)
 
-  const { spinner } = constants
+  const spinner = undefined
 
   const ghsas = arrayUnique([
     ...cmdFlagValueToArray(cli.flags['id']),

@@ -3,12 +3,12 @@ import util from 'node:util'
 
 import colors from 'yoctocolors-cjs'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { logger } from '@socketsecurity/lib/logger'
 
-import constants from '../../constants.mts'
-import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
-import { serializeResultJson } from '../../utils/serialize-result-json.mts'
-import { fileLink } from '../../utils/terminal-link.mts'
+import { SOCKET_WEBSITE_URL } from '../../constants/socket.mts'
+import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
+import { serializeResultJson } from '../../utils/output/result-json.mjs'
+import { fileLink } from '../../utils/terminal/link.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
@@ -69,7 +69,7 @@ export async function outputDiffScan(
     }),
   )
   logger.info(
-    `\n 📝 To display the detailed report in the terminal, use the --json flag. For a friendlier report, use the --markdown flag.\n`,
+    '\n 📝 To display the detailed report in the terminal, use the --json flag. For a friendlier report, use the --markdown flag.\n',
   )
   logger.info(dashboardMessage)
 }
@@ -94,7 +94,7 @@ async function handleJson(
     })
   } else {
     // only .log goes to stdout
-    logger.info(`\n Diff scan result: \n`)
+    logger.info('\n Diff scan result: \n')
     logger.log(json)
     logger.info(dashboardMessage)
   }
@@ -103,7 +103,7 @@ async function handleJson(
 async function handleMarkdown(
   data: SocketSdkSuccessResult<'GetOrgDiffScan'>['data'],
 ) {
-  const SOCKET_SBOM_URL_PREFIX = `${constants.SOCKET_WEBSITE_URL}/dashboard/org/SocketDev/sbom/`
+  const SOCKET_SBOM_URL_PREFIX = `${SOCKET_WEBSITE_URL}/dashboard/org/SocketDev/sbom/`
 
   logger.log('# Scan diff result')
   logger.log('')
@@ -127,7 +127,7 @@ async function handleMarkdown(
       logger.log(`  - ${artifact.type} ${artifact.name}@${artifact.version}`)
     })
     if (data.artifacts.added.length > 10) {
-      logger.log(`  ... and ${data.artifacts.added.length - 10} more`)
+      logger.log(`  … and ${data.artifacts.added.length - 10} more`)
     }
   }
 
@@ -137,7 +137,7 @@ async function handleMarkdown(
       logger.log(`  - ${artifact.type} ${artifact.name}@${artifact.version}`)
     })
     if (data.artifacts.removed.length > 10) {
-      logger.log(`  ... and ${data.artifacts.removed.length - 10} more`)
+      logger.log(`  … and ${data.artifacts.removed.length - 10} more`)
     }
   }
 
@@ -147,7 +147,7 @@ async function handleMarkdown(
       logger.log(`  - ${artifact.type} ${artifact.name}@${artifact.version}`)
     })
     if (data.artifacts.replaced.length > 10) {
-      logger.log(`  ... and ${data.artifacts.replaced.length - 10} more`)
+      logger.log(`  … and ${data.artifacts.replaced.length - 10} more`)
     }
   }
 
@@ -157,7 +157,7 @@ async function handleMarkdown(
       logger.log(`  - ${artifact.type} ${artifact.name}@${artifact.version}`)
     })
     if (data.artifacts.updated.length > 10) {
-      logger.log(`  ... and ${data.artifacts.updated.length - 10} more`)
+      logger.log(`  … and ${data.artifacts.updated.length - 10} more`)
     }
   }
 
@@ -169,7 +169,7 @@ async function handleMarkdown(
       logger.log(`  - ${artifact.type} ${artifact.name}@${artifact.version}`)
     }
     if (unchanged.length > 10) {
-      logger.log(`  ... and ${unchanged.length - 10} more`)
+      logger.log(`  … and ${unchanged.length - 10} more`)
     }
   }
 

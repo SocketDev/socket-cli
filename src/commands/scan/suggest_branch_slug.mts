@@ -1,12 +1,16 @@
-import { select } from '@socketsecurity/registry/lib/prompts'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
-import { stripAnsi } from '@socketsecurity/registry/lib/strings'
+import { select } from '@socketsecurity/lib/prompts'
+import { spawn } from '@socketsecurity/lib/spawn'
+import { stripAnsi } from '@socketsecurity/lib/strings'
 
 export async function suggestBranchSlug(
   repoDefaultBranch: string | undefined,
-): Promise<string | void> {
+): Promise<string | undefined> {
   const spawnResult = await spawn('git', ['branch', '--show-current'])
-  const currentBranch = stripAnsi(spawnResult.stdout.trim())
+  const stdoutStr =
+    typeof spawnResult.stdout === 'string'
+      ? spawnResult.stdout
+      : spawnResult.stdout.toString('utf8')
+  const currentBranch = stripAnsi(stdoutStr.trim())
   if (currentBranch && spawnResult.code === 0) {
     const proceed = await select<string>({
       message: 'Use the current git branch as target branch name?',

@@ -1,7 +1,14 @@
 .DS_Store
 ._.DS_Store
 Thumbs.db
+/.claude
+/.custom-node-build
+/.node-source
+/.node-source-test
+/.scratch
 /.env
+/.env.local
+/.pnpmfile.cjs
 /.nvm
 /.rollup.cache
 /.type-coverage
@@ -9,6 +16,7 @@ Thumbs.db
 /coverage
 /external
 /npm-debug.log
+/yarn.lock
 **/.cache
 **/dist
 **/node_modules
@@ -16,4 +24,25 @@ Thumbs.db
 *.d.ts.map
 *.tsbuildinfo
 
+# Yarn PnP files (tests may create these)
+/.yarn
+/.pnp.cjs
+/.pnp.loader.mjs
+
+# Allow specific files
+!src/types/**/*.d.ts
 !/.vscode/extensions.json
+pkg-binaries/
+
+# pkg/yao-pkg built binaries
+/socket
+/socket-*
+
+# Build directory for temporary artifacts
+/build/*
+!/build/out
+/build/out/*
+!/build/out/Yao
+/build/out/Yao/*
+!/build/out/Yao/yao-wrapper.js
+/binaries
