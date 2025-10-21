@@ -12,7 +12,7 @@ import { httpRequest } from '@socketsecurity/lib/http-request'
 import { normalizePath } from '@socketsecurity/lib/path'
 import { getSocketHomePath } from '@socketsecurity/lib/paths'
 import { spawn } from '@socketsecurity/lib/spawn'
-import { WIN32 } from '@socketsecurity/registry/constants/platform'
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
 
 export interface BuildTargetOptions {
   arch: string

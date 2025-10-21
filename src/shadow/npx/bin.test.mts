@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { NPX } from '@socketsecurity/registry/constants/agents'
+import { NPX } from '@socketsecurity/lib/constants/agents'
 
 import shadowNpxBin from './bin.mts'
 

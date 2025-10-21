@@ -2,8 +2,8 @@ import { fileURLToPath } from 'node:url'
 
 import { debugNs } from '@socketsecurity/lib/debug'
 import { spawn } from '@socketsecurity/lib/spawn'
-import { YARN } from '@socketsecurity/registry/constants/agents'
-import { WIN32 } from '@socketsecurity/registry/constants/platform'
+import { YARN } from '@socketsecurity/lib/constants/agents'
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
 
 import ENV from '../../constants/env.mts'
 import { shadowBinPath } from '../../constants/paths.mts'

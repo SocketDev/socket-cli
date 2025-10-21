@@ -59,9 +59,9 @@ import {
   YARN_BERRY,
   YARN_CLASSIC,
   YARN_LOCK,
-} from '@socketsecurity/registry/constants/agents'
-import { getMaintainedNodeVersions } from '@socketsecurity/registry/constants/node'
-import { WIN32 } from '@socketsecurity/registry/constants/platform'
+} from '@socketsecurity/lib/constants/agents'
+import { getMaintainedNodeVersions } from '@socketsecurity/lib/constants/node'
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
 
 import {
   getMinimumVersionByAgent,

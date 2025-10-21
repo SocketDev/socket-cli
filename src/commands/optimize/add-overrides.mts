@@ -6,7 +6,7 @@ import { hasOwn, toSortedObject } from '@socketsecurity/lib/objects'
 import { fetchPackageManifest } from '@socketsecurity/lib/packages'
 import { pEach } from '@socketsecurity/lib/promises'
 import { getManifestData } from '@socketsecurity/registry'
-import { NPM, PNPM } from '@socketsecurity/registry/constants/agents'
+import { NPM, PNPM } from '@socketsecurity/lib/constants/agents'
 
 
 import { lsStdoutIncludes } from './deps-includes-by-agent.mts'

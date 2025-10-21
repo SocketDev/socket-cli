@@ -15,7 +15,7 @@ import path from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
-import { normalizePath } from '@socketsecurity/registry/lib/path'
+import { normalizePath } from '@socketsecurity/lib/path'
 
 import constants from '../scripts/constants.mjs'
 

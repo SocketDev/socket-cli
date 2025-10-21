@@ -18,8 +18,8 @@ import {
   getNodeHardenFlags,
   getNodeNoWarningsFlags,
   supportsNodePermissionFlag,
-} from '@socketsecurity/registry/constants/node'
-import { NODE_MODULES } from '@socketsecurity/registry/constants/paths'
+} from '@socketsecurity/lib/constants/node'
+import { NODE_MODULES } from '@socketsecurity/lib/constants/paths'
 
 
 import { ensureIpcInStdio } from './stdio-ipc.mts'

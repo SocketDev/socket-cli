@@ -9,10 +9,7 @@ import { fileURLToPath } from 'node:url'
 
 import { isQuiet } from '@socketsecurity/lib/argv/flags'
 import { parseArgs } from '@socketsecurity/lib/argv/parse'
-import {
-  getChangedFiles,
-  getStagedFiles,
-} from '@socketsecurity/lib/git'
+import { getChangedFiles, getStagedFiles } from '@socketsecurity/lib/git'
 import { logger } from '@socketsecurity/lib/logger'
 import { printHeader } from '@socketsecurity/lib/stdio/header'
 
@@ -89,7 +86,7 @@ function filterLintableFiles(files) {
 }
 
 /**
- * Run ESLint on specific files.
+ * Run linters on specific files.
  */
 async function runLintOnFiles(files, options = {}) {
   const { fix = false, quiet = false } = options
@@ -103,45 +100,70 @@ async function runLintOnFiles(files, options = {}) {
     logger.progress(`Linting ${files.length} file(s)`)
   }
 
-  const args = [
-    'exec',
-    'eslint',
-    '-c',
-    '.config/eslint.config.mjs',
-    '--report-unused-disable-directives',
-    '--ignore-pattern',
-    'build/',
-    '--ignore-pattern',
-    'binaries/',
-    '--ignore-pattern',
-    'dist/',
-    '--ignore-pattern',
-    'external/',
-    '--ignore-pattern',
-    '.cache/',
-    '--ignore-pattern',
-    '.claude/',
-    '--ignore-pattern',
-    'pkg-binaries/',
-    ...(fix ? ['--fix'] : []),
-    ...files,
+  // Build the linter configurations.
+  const linters = [
+    {
+      args: [
+        'exec',
+        'biome',
+        'check',
+        '--log-level=none',
+        ...(fix ? ['--write', '--unsafe'] : []),
+        ...files,
+      ],
+      name: 'biome',
+      enabled: true,
+    },
+    {
+      args: [
+        'exec',
+        'eslint',
+        '-c',
+        '.config/eslint.config.mjs',
+        '--report-unused-disable-directives',
+        '--ignore-pattern',
+        'build/',
+        '--ignore-pattern',
+        'binaries/',
+        '--ignore-pattern',
+        'dist/',
+        '--ignore-pattern',
+        'external/',
+        '--ignore-pattern',
+        '.cache/',
+        '--ignore-pattern',
+        '.claude/',
+        '--ignore-pattern',
+        'pkg-binaries/',
+        ...(fix ? ['--fix'] : []),
+        ...files,
+      ],
+      name: 'eslint',
+      enabled: true,
+    },
   ]
 
-  const result = await runCommandQuiet('pnpm', args)
+  for (const { args, enabled } of linters) {
+    if (!enabled) {
+      continue
+    }
 
-  if (result.exitCode !== 0) {
-    // When fixing, non-zero exit codes are normal if fixes were applied
-    if (!fix || (result.stderr && result.stderr.trim().length > 0)) {
-      if (!quiet) {
-        logger.error('Linting failed')
+    const result = await runCommandQuiet('pnpm', args)
+
+    if (result.exitCode !== 0) {
+      // When fixing, non-zero exit codes are normal if fixes were applied.
+      if (!fix || (result.stderr && result.stderr.trim().length > 0)) {
+        if (!quiet) {
+          logger.error('Linting failed')
+        }
+        if (result.stderr) {
+          console.error(result.stderr)
+        }
+        if (result.stdout && !fix) {
+          console.log(result.stdout)
+        }
+        return result.exitCode
       }
-      if (result.stderr) {
-        console.error(result.stderr)
-      }
-      if (result.stdout && !fix) {
-        console.log(result.stdout)
-      }
-      return result.exitCode
     }
   }
 
@@ -154,7 +176,7 @@ async function runLintOnFiles(files, options = {}) {
 }
 
 /**
- * Run ESLint on all files.
+ * Run linters on all files.
  */
 async function runLintOnAll(options = {}) {
   const { fix = false, quiet = false } = options
@@ -163,49 +185,66 @@ async function runLintOnAll(options = {}) {
     logger.progress('Linting all files')
   }
 
-  const args = [
-    'exec',
-    'eslint',
-    '-c',
-    '.config/eslint.config.mjs',
-    '--report-unused-disable-directives',
-    '--no-warn-ignored',
-    '--ignore-pattern',
-    'build/',
-    '--ignore-pattern',
-    'binaries/',
-    '--ignore-pattern',
-    'dist/',
-    '--ignore-pattern',
-    'external/',
-    '--ignore-pattern',
-    '.cache/',
-    '--ignore-pattern',
-    '.claude/',
-    '--ignore-pattern',
-    'pkg-binaries/',
-    ...(fix ? ['--fix'] : []),
-    'src/',
-    'scripts/',
-    'test/',
-    '.config/',
+  const linters = [
+    {
+      args: [
+        'exec',
+        'biome',
+        'check',
+        ...(fix ? ['--write', '--unsafe'] : []),
+        '.',
+      ],
+      name: 'biome',
+    },
+    {
+      args: [
+        'exec',
+        'eslint',
+        '-c',
+        '.config/eslint.config.mjs',
+        '--report-unused-disable-directives',
+        '--no-warn-ignored',
+        '--ignore-pattern',
+        'build/',
+        '--ignore-pattern',
+        'binaries/',
+        '--ignore-pattern',
+        'dist/',
+        '--ignore-pattern',
+        'external/',
+        '--ignore-pattern',
+        '.cache/',
+        '--ignore-pattern',
+        '.claude/',
+        '--ignore-pattern',
+        'pkg-binaries/',
+        ...(fix ? ['--fix'] : []),
+        'src/',
+        'scripts/',
+        'test/',
+        '.config/',
+      ],
+      name: 'eslint',
+    },
   ]
 
-  const result = await runCommandQuiet('pnpm', args)
+  for (const { args } of linters) {
+    const result = await runCommandQuiet('pnpm', args)
 
-  if (result.exitCode !== 0) {
-    // When fixing, non-zero exit codes are normal if fixes were applied
-    if (!fix || (result.stderr && result.stderr.trim().length > 0)) {
-      if (!quiet) {
-        logger.error('Linting failed')
+    if (result.exitCode !== 0) {
+      // When fixing, non-zero exit codes are normal if fixes were applied.
+      if (!fix || (result.stderr && result.stderr.trim().length > 0)) {
+        if (!quiet) {
+          logger.error('Linting failed')
+        }
+        if (result.stderr) {
+          console.error(result.stderr)
+        }
+        if (result.stdout && !fix) {
+          console.log(result.stdout)
+        }
+        return result.exitCode
       }
-      if (result.stderr) {
-        console.error(result.stderr)
-      }
-      if (result.stdout && !fix) {
-        console.log(result.stdout)
-      }
-      return result.exitCode
     }
   }
 

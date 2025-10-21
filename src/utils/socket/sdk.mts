@@ -30,7 +30,7 @@ import isInteractive from '@socketregistry/is-interactive/index.cjs'
 import { password } from '@socketsecurity/lib/prompts'
 import { isNonEmptyString } from '@socketsecurity/lib/strings'
 import { isUrl } from '@socketsecurity/lib/url'
-import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/registry/constants/socket'
+import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/lib/constants/socket'
 import { SocketSdk, createUserAgentFromPkgJson } from '@socketsecurity/sdk'
 
 import {

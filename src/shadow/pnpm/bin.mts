@@ -6,7 +6,7 @@ import { debug, debugDir, debugNs } from '@socketsecurity/lib/debug'
 import { logger } from '@socketsecurity/lib/logger'
 import { normalizePath } from '@socketsecurity/lib/path'
 import { spawn } from '@socketsecurity/lib/spawn'
-import { WIN32 } from '@socketsecurity/registry/constants/platform'
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
 
 
 import { PNPM } from '../../constants/agents.mts'

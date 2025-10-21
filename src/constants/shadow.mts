@@ -9,7 +9,7 @@ import { distPath } from './paths.mts'
 import type { RegistryInternals } from './types.mts'
 
 // Re-export SOCKET_IPC_HANDSHAKE from registry
-export { SOCKET_IPC_HANDSHAKE } from '@socketsecurity/registry/constants/socket'
+export { SOCKET_IPC_HANDSHAKE } from '@socketsecurity/lib/constants/socket'
 
 // Shadow Binary Names
 export const SHADOW_NPM_BIN = 'shadow-npm-bin'

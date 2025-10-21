@@ -5,7 +5,7 @@ import mockFs from 'mock-fs'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { normalizePath } from '@socketsecurity/lib/path'
-import { NODE_MODULES } from '@socketsecurity/registry/constants/paths'
+import { NODE_MODULES } from '@socketsecurity/lib/constants/paths'
 
 
 import {

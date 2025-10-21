@@ -22,8 +22,8 @@ import { createRequire } from 'node:module'
 
 import { getOwn } from '@socketsecurity/lib/objects'
 import { spawn } from '@socketsecurity/lib/spawn'
-import { NPM, PNPM, YARN } from '@socketsecurity/registry/constants/agents'
-import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/registry/constants/socket'
+import { NPM, PNPM, YARN } from '@socketsecurity/lib/constants/agents'
+import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/lib/constants/socket'
 
 import { getDefaultOrgSlug } from '../../commands/ci/fetch-default-org-slug.mjs'
 import { FLAG_QUIET, FLAG_SILENT } from '../../constants/cli.mts'

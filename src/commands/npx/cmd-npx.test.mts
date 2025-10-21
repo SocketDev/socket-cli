@@ -1,6 +1,6 @@
 import { describe, expect } from 'vitest'
 
-import { NPX } from '@socketsecurity/registry/constants/agents'
+import { NPX } from '@socketsecurity/lib/constants/agents'
 
 import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
 import { FLAG_CONFIG, FLAG_DRY_RUN, FLAG_HELP, FLAG_SILENT } from '../constants/cli.mts'

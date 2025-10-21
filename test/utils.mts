@@ -3,8 +3,8 @@ import { fileURLToPath } from 'node:url'
 
 import { it } from 'vitest'
 
-import { type SpawnOptions, spawn } from '@socketsecurity/registry/lib/spawn'
-import { stripAnsi } from '@socketsecurity/registry/lib/strings'
+import { type SpawnOptions, spawn } from '@socketsecurity/lib/spawn'
+import { stripAnsi } from '@socketsecurity/lib/strings'
 
 import constants, { FLAG_HELP, FLAG_VERSION } from '../src/constants.mts'
 

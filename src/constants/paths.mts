@@ -15,8 +15,8 @@ import {
   getNodeDebugFlags,
   getNodeHardenFlags,
   getNodeNoWarningsFlags,
-} from '@socketsecurity/registry/constants/node'
-import { DOT_SOCKET_DIR } from '@socketsecurity/registry/constants/paths'
+} from '@socketsecurity/lib/constants/node'
+import { DOT_SOCKET_DIR } from '@socketsecurity/lib/constants/paths'
 
 // Import socket constants for re-export.
 import { SOCKET_JSON } from './socket.mts'

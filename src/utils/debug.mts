@@ -26,7 +26,7 @@ import {
   isDebug,
   isDebugNs,
 } from '@socketsecurity/lib/debug'
-import { UNKNOWN_ERROR } from '@socketsecurity/registry/constants/core'
+import { UNKNOWN_ERROR } from '@socketsecurity/lib/constants/core'
 
 /**
  * Debug an API response.

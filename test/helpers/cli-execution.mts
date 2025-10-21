@@ -3,7 +3,7 @@
 import constants from '../../src/constants.mts'
 import { spawnSocketCli } from '../utils.mts'
 
-import type { SpawnOptions } from '@socketsecurity/registry/lib/spawn'
+import type { SpawnOptions } from '@socketsecurity/lib/spawn'
 
 /**
  * Result from CLI execution with enhanced utilities

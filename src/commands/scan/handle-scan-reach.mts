@@ -1,6 +1,6 @@
 import { logger } from '@socketsecurity/lib/logger'
 import { pluralize } from '@socketsecurity/lib/words'
-import { getSpinner } from '@socketsecurity/registry/constants/process'
+import { getSpinner } from '@socketsecurity/lib/constants/process'
 
 import { fetchSupportedScanFileNames } from './fetch-supported-scan-file-names.mts'
 import { outputScanReach } from './output-scan-reach.mts'

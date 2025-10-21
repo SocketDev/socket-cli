@@ -9,8 +9,8 @@ vi.mock('node:fs', () => ({
   existsSync: vi.fn(),
 }))
 
-// Mock @socketsecurity/registry/lib/fs.
-vi.mock('@socketsecurity/registry/lib/fs', () => ({
+// Mock @socketsecurity/lib/fs.
+vi.mock('@socketsecurity/lib/fs', () => ({
   readFileUtf8: vi.fn(),
 }))
 
@@ -29,7 +29,7 @@ describe('lockfile utilities', () => {
 
       vi.mocked(existsSync).mockReturnValue(true)
       const { readFileUtf8 } = vi.mocked(
-        await import('@socketsecurity/registry/lib/fs'),
+        await import('@socketsecurity/lib/fs'),
       )
       readFileUtf8.mockResolvedValue(mockContent)
 
@@ -43,7 +43,7 @@ describe('lockfile utilities', () => {
     it('returns undefined when lockfile does not exist', async () => {
       vi.mocked(existsSync).mockReturnValue(false)
       const { readFileUtf8 } = vi.mocked(
-        await import('@socketsecurity/registry/lib/fs'),
+        await import('@socketsecurity/lib/fs'),
       )
 
       const result = await readLockfile('/path/to/missing-lock.json')
@@ -65,7 +65,7 @@ express@^4.18.0:
 
       vi.mocked(existsSync).mockReturnValue(true)
       const { readFileUtf8 } = vi.mocked(
-        await import('@socketsecurity/registry/lib/fs'),
+        await import('@socketsecurity/lib/fs'),
       )
       readFileUtf8.mockResolvedValue(yarnLockContent)
 
@@ -86,7 +86,7 @@ dependencies:
 
       vi.mocked(existsSync).mockReturnValue(true)
       const { readFileUtf8 } = vi.mocked(
-        await import('@socketsecurity/registry/lib/fs'),
+        await import('@socketsecurity/lib/fs'),
       )
       readFileUtf8.mockResolvedValue(pnpmLockContent)
 
@@ -98,7 +98,7 @@ dependencies:
     it('handles empty lockfile', async () => {
       vi.mocked(existsSync).mockReturnValue(true)
       const { readFileUtf8 } = vi.mocked(
-        await import('@socketsecurity/registry/lib/fs'),
+        await import('@socketsecurity/lib/fs'),
       )
       readFileUtf8.mockResolvedValue('')
 
@@ -110,7 +110,7 @@ dependencies:
     it('propagates read errors', async () => {
       vi.mocked(existsSync).mockReturnValue(true)
       const { readFileUtf8 } = vi.mocked(
-        await import('@socketsecurity/registry/lib/fs'),
+        await import('@socketsecurity/lib/fs'),
       )
       readFileUtf8.mockRejectedValue(new Error('Permission denied'))
 
@@ -122,7 +122,7 @@ dependencies:
     it('handles different lockfile paths', async () => {
       vi.mocked(existsSync).mockReturnValue(true)
       const { readFileUtf8 } = vi.mocked(
-        await import('@socketsecurity/registry/lib/fs'),
+        await import('@socketsecurity/lib/fs'),
       )
       readFileUtf8.mockResolvedValue('content')
 

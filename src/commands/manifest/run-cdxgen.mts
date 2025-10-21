@@ -4,8 +4,8 @@ import path from 'node:path'
 import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/lib/logger'
-import { NPM, PNPM, YARN } from '@socketsecurity/registry/constants/agents'
-import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/registry/constants/socket'
+import { NPM, PNPM, YARN } from '@socketsecurity/lib/constants/agents'
+import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/lib/constants/socket'
 
 import { FLAG_HELP } from '../../constants/cli.mjs'
 import {

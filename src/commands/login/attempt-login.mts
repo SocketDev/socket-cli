@@ -1,7 +1,7 @@
 import { joinAnd } from '@socketsecurity/lib/arrays'
 import { logger } from '@socketsecurity/lib/logger'
 import { confirm, password, select } from '@socketsecurity/lib/prompts'
-import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/registry/constants/socket'
+import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/lib/constants/socket'
 
 import { applyLogin } from './apply-login.mts'
 import {
