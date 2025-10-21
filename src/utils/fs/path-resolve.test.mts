@@ -1,19 +1,22 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { NODE_MODULES } from '@socketsecurity/lib/constants/paths'
-import { normalizePath } from '@socketsecurity/lib/path'
+
 import mockFs from 'mock-fs'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import {
-  PACKAGE_LOCK_JSON,
-  PNPM_LOCK_YAML,
-  YARN_LOCK,
-} from '../../constants/packages.mts'
+
+import { NODE_MODULES } from '@socketsecurity/lib/constants/paths'
+import { normalizePath } from '@socketsecurity/lib/path'
+
 import {
   findBinPathDetailsSync,
   findNpmDirPathSync,
   getPackageFilesForScan,
 } from './resolve.mts'
+import {
+  PACKAGE_LOCK_JSON,
+  PNPM_LOCK_YAML,
+  YARN_LOCK,
+} from '../../constants/packages.mts'
 
 const PACKAGE_JSON = 'package.json'
 
@@ -175,6 +178,27 @@ describe('Path Resolve', () => {
         `${mockFixturePath}/bar/package.json`,
         `${mockFixturePath}/foo/package-lock.json`,
         `${mockFixturePath}/foo/package.json`,
+      ])
+    })
+
+    it('should handle a directory path input', async () => {
+      const subDirPath = normalizePath(path.join(mockFixturePath, 'subdir'))
+      mockTestFs({
+        [`${mockFixturePath}/package.json`]: '{}',
+        [`${subDirPath}/package.json`]: '{}',
+        [`${subDirPath}/nested/package.json`]: '{}',
+      })
+
+      const actual = await sortedGetPackageFilesFullScans(
+        [subDirPath],
+        globPatterns,
+        {
+          cwd: mockFixturePath,
+        },
+      )
+      expect(actual.map(normalizePath)).toEqual([
+        `${subDirPath}/nested/package.json`,
+        `${subDirPath}/package.json`,
       ])
     })
 

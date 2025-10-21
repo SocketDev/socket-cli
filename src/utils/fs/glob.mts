@@ -1,20 +1,25 @@
 import os from 'node:os'
 import path from 'node:path'
-import type { SocketYml } from '@socketsecurity/config'
-import { NODE_MODULES } from '@socketsecurity/lib/constants/paths'
-import { safeReadFile } from '@socketsecurity/lib/fs'
-import { defaultIgnore } from '@socketsecurity/lib/globs'
-import { readPackageJson } from '@socketsecurity/lib/packages'
-import { transform } from '@socketsecurity/lib/streams'
-import { isNonEmptyString } from '@socketsecurity/lib/strings'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
-import type { Options as GlobOptions } from 'fast-glob'
+
 import fastGlob from 'fast-glob'
 import ignore from 'ignore'
 import micromatch from 'micromatch'
 import { parse as yamlParse } from 'yaml'
+
+import { NODE_MODULES } from '@socketsecurity/lib/constants/paths'
+import { isDirSync, safeReadFile } from '@socketsecurity/lib/fs'
+import { defaultIgnore } from '@socketsecurity/lib/globs'
+import { readPackageJson } from '@socketsecurity/lib/packages'
+import { transform } from '@socketsecurity/lib/streams'
+import { isNonEmptyString } from '@socketsecurity/lib/strings'
+
+
 import { PNPM } from '../../constants/agents.mjs'
+
 import type { Agent } from '../ecosystem/environment.mts'
+import type { SocketYml } from '@socketsecurity/config'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+import type { Options as GlobOptions } from 'fast-glob'
 
 const DEFAULT_IGNORE_FOR_GIT_IGNORE = defaultIgnore.filter(
   p => !p.endsWith('.gitignore'),
@@ -42,7 +47,7 @@ async function getWorkspaceGlobs(
   agent: Agent,
   cwd = process.cwd(),
 ): Promise<string[]> {
-  let workspacePatterns
+  let workspacePatterns: string[] | undefined
   if (agent === PNPM) {
     const workspacePath = path.join(cwd, 'pnpm-workspace.yaml')
     const yml = await safeReadFile(workspacePath)
@@ -305,6 +310,13 @@ export function pathsToGlobPatterns(
     // Expand tilde paths.
     const expanded = expandTildePath(p)
     // Convert current directory references to glob patterns.
-    return expanded === '.' || expanded === './' ? '**/*' : expanded
+    if (expanded === '.' || expanded === './') {
+      return '**/*'
+    }
+    // If the path is a directory, scan it recursively for all files.
+    if (isDirSync(expanded)) {
+      return `${expanded}/**/*`
+    }
+    return expanded
   })
 }
