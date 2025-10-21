@@ -154,13 +154,15 @@ jobs:
           echo "Downloaded binaries:"
           ls -la dist/sea/
 
-      - name: Generate and publish Linux x64
-        if: ${{ !inputs.dry-run }}
+      - name: Generate and validate Linux x64
         run: |
           node scripts/generate-binary-package.mjs \
             --platform=linux --arch=x64 \
             --version=${{ steps.version.outputs.version }}
 
+      - name: Publish Linux x64
+        if: ${{ !inputs.dry-run }}
+        run: |
           cd packages/binaries/cli-linux-x64
           npm publish --provenance --access public
 
@@ -306,6 +308,15 @@ jobs:
 
           # Show the updated package.json
           cat package.json
+
+      - name: Validate main package
+        run: |
+          cd src/sea/npm-package
+          # Basic validation
+          test -f package.json || exit 1
+          test -f bin/socket.js || exit 1
+          test -f README.md || exit 1
+          echo "✓ Package structure validated"
 
       - name: Publish main package
         if: ${{ !inputs.dry-run }}

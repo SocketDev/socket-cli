@@ -1,7 +1,6 @@
-import { existsSync } from 'node:fs'
+import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 
-import trash from 'trash'
 import { afterEach, describe, expect } from 'vitest'
 
 import { cmdit, spawnSocketCli, testPath } from '../../../test/utils.mts'
@@ -15,18 +14,33 @@ const pnpmFixtureDir = path.join(fixtureBaseDir, 'pnpm')
 
 async function cleanupNodeModules() {
   // Clean up node_modules from all package manager directories.
-  await trash([
-    path.join(pnpmFixtureDir, 'node_modules'),
-    path.join(fixtureBaseDir, 'npm/node_modules'),
-    path.join(fixtureBaseDir, 'yarn/node_modules'),
+  await Promise.all([
+    fs.rm(path.join(pnpmFixtureDir, 'node_modules'), {
+      force: true,
+      recursive: true,
+    }),
+    fs.rm(path.join(fixtureBaseDir, 'npm/node_modules'), {
+      force: true,
+      recursive: true,
+    }),
+    fs.rm(path.join(fixtureBaseDir, 'yarn/node_modules'), {
+      force: true,
+      recursive: true,
+    }),
   ])
 }
 
 async function cleanupPatchesDir() {
   // Clean up generated patches directories.
-  await trash([
-    path.join(pnpmFixtureDir, 'patches'),
-    path.join(process.cwd(), 'patches'),
+  await Promise.all([
+    fs.rm(path.join(pnpmFixtureDir, 'patches'), {
+      force: true,
+      recursive: true,
+    }),
+    fs.rm(path.join(process.cwd(), 'patches'), {
+      force: true,
+      recursive: true,
+    }),
   ])
 }
 

@@ -3,7 +3,6 @@ import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { PNPM } from '@socketsecurity/lib/constants/agents'
 import { spawn } from '@socketsecurity/lib/spawn'
-import trash from 'trash'
 import { describe, expect, it, vi } from 'vitest'
 
 import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
@@ -391,7 +390,7 @@ describe('socket pnpm', async () => {
       expect(stdout).toContain('Socket CLI executed successfully')
     } finally {
       // Clean up the temporary directory.
-      await trash(tmpDir)
+      await fs.rm(tmpDir, { force: true, recursive: true })
     }
   })
 })

@@ -170,6 +170,35 @@ jobs:
             echo "version=v${VERSION}" >> $GITHUB_OUTPUT
           fi
 
+      - name: Validate binaries
+        run: |
+          cd dist/sea
+          echo "Validating binaries..."
+
+          # Check that all expected binaries exist
+          expected_count=8
+          actual_count=$(ls -1 socket-* 2>/dev/null | wc -l | tr -d ' ')
+
+          if [ "$actual_count" -lt "$expected_count" ]; then
+            echo "✗ Error: Expected $expected_count binaries, found $actual_count"
+            exit 1
+          fi
+
+          # Check binary sizes (should be > 20MB)
+          for binary in socket-*; do
+            size=$(stat -f%z "$binary" 2>/dev/null || stat -c%s "$binary" 2>/dev/null || echo 0)
+            size_mb=$((size / 1024 / 1024))
+
+            if [ "$size_mb" -lt 20 ]; then
+              echo "✗ Error: Binary $binary is too small ($size_mb MB)"
+              exit 1
+            fi
+
+            echo "✓ $binary validated ($size_mb MB)"
+          done
+
+          echo "✓ All binaries validated"
+
       - name: Upload binaries to release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

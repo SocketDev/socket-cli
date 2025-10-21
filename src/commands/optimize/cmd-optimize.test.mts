@@ -4,7 +4,6 @@ import path from 'node:path'
 import { NPM, PNPM } from '@socketsecurity/lib/constants/agents'
 import { readPackageJson } from '@socketsecurity/lib/packages'
 import { spawn } from '@socketsecurity/lib/spawn'
-import trash from 'trash'
 import { afterAll, afterEach, beforeAll, describe, expect } from 'vitest'
 
 import { withTempFixture } from '../../../src/utils/test-fixtures.mts'
@@ -151,7 +150,7 @@ describe('socket optimize', async () => {
     ['optimize', FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fakeToken"}'],
     'should require args with just dry-run',
     async cmd => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      const { code, stderr } = await spawnSocketCli(binCliPath, cmd)
       // For dry-run, should not modify files.
       const packageJsonPath = path.join(pnpmFixtureDir, PACKAGE_JSON)
       const packageJson = await readPackageJson(packageJsonPath)
@@ -205,7 +204,7 @@ describe('socket optimize', async () => {
     ],
     'should accept --prod flag',
     async cmd => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      const { code, stderr } = await spawnSocketCli(binCliPath, cmd)
       // For dry-run, should not modify files.
       const packageJsonPath = path.join(pnpmFixtureDir, PACKAGE_JSON)
       const packageJson = await readPackageJson(packageJsonPath)
@@ -232,7 +231,7 @@ describe('socket optimize', async () => {
     ],
     'should accept both --pin and --prod flags together',
     async cmd => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      const { code, stderr } = await spawnSocketCli(binCliPath, cmd)
       // For dry-run, should not modify files.
       const packageJsonPath = path.join(pnpmFixtureDir, PACKAGE_JSON)
       const packageJson = await readPackageJson(packageJsonPath)
@@ -258,7 +257,7 @@ describe('socket optimize', async () => {
     ],
     'should accept --json output format',
     async cmd => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      const { code, stderr } = await spawnSocketCli(binCliPath, cmd)
       // For dry-run, should not modify files.
       const packageJsonPath = path.join(pnpmFixtureDir, PACKAGE_JSON)
       const packageJson = await readPackageJson(packageJsonPath)
@@ -279,7 +278,7 @@ describe('socket optimize', async () => {
     ],
     'should accept --markdown output format',
     async cmd => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      const { code, stderr } = await spawnSocketCli(binCliPath, cmd)
       // For dry-run, should not modify files.
       const packageJsonPath = path.join(pnpmFixtureDir, PACKAGE_JSON)
       const packageJson = await readPackageJson(packageJsonPath)
@@ -403,13 +402,9 @@ describe('socket optimize', async () => {
       async cmd => {
         const tempDir = await createTempFixture(pnpmFixtureDir)
         try {
-          const { code, stderr, stdout } = await spawnSocketCli(
-            binCliPath,
-            cmd,
-            {
-              cwd: tempDir,
-            },
-          )
+          const { code } = await spawnSocketCli(binCliPath, cmd, {
+            cwd: tempDir,
+          })
 
           expect(code).toBe(0)
 
@@ -427,7 +422,7 @@ describe('socket optimize', async () => {
           expect(output).toMatch(/Optimizing|Adding overrides/i)
         } finally {
           // Clean up the temp directory safely.
-          await trash(tempDir)
+          await promises.rm(tempDir, { force: true, recursive: true })
         }
       },
     )
@@ -438,13 +433,9 @@ describe('socket optimize', async () => {
       async cmd => {
         const tempDir = await createTempFixture(pnpmFixtureDir)
         try {
-          const { code, stderr, stdout } = await spawnSocketCli(
-            binCliPath,
-            cmd,
-            {
-              cwd: tempDir,
-            },
-          )
+          const { code } = await spawnSocketCli(binCliPath, cmd, {
+            cwd: tempDir,
+          })
 
           expect(code).toBe(0)
 
@@ -462,7 +453,7 @@ describe('socket optimize', async () => {
           expect(output).toMatch(/Optimizing|Adding overrides/i)
         } finally {
           // Clean up the temp directory safely.
-          await trash(tempDir)
+          await promises.rm(tempDir, { force: true, recursive: true })
         }
       },
     )
@@ -473,13 +464,9 @@ describe('socket optimize', async () => {
       async cmd => {
         const tempDir = await createTempFixture(pnpmFixtureDir)
         try {
-          const { code, stderr, stdout } = await spawnSocketCli(
-            binCliPath,
-            cmd,
-            {
-              cwd: tempDir,
-            },
-          )
+          const { code } = await spawnSocketCli(binCliPath, cmd, {
+            cwd: tempDir,
+          })
 
           expect(code).toBe(0)
 
@@ -494,7 +481,7 @@ describe('socket optimize', async () => {
           expect(output).toMatch(/Optimizing|Adding overrides|Finished/i)
         } finally {
           // Clean up the temp directory safely.
-          await trash(tempDir)
+          await promises.rm(tempDir, { force: true, recursive: true })
         }
       },
       { timeout: 120_000 },
@@ -514,13 +501,9 @@ describe('socket optimize', async () => {
         // Create temp fixture for this test.
         const { cleanup, tempDir } = await withTempFixture(pnpmFixtureDir)
         try {
-          const { code, stderr, stdout } = await spawnSocketCli(
-            binCliPath,
-            cmd,
-            {
-              cwd: tempDir,
-            },
-          )
+          const { code } = await spawnSocketCli(binCliPath, cmd, {
+            cwd: tempDir,
+          })
 
           expect(code).toBe(0)
 
@@ -551,13 +534,9 @@ describe('socket optimize', async () => {
         // Create temp fixture for this test.
         const { cleanup, tempDir } = await withTempFixture(pnpmFixtureDir)
         try {
-          const { code, stderr, stdout } = await spawnSocketCli(
-            binCliPath,
-            cmd,
-            {
-              cwd: tempDir,
-            },
-          )
+          const { code } = await spawnSocketCli(binCliPath, cmd, {
+            cwd: tempDir,
+          })
 
           expect(code).toBe(0)
 
@@ -588,13 +567,9 @@ describe('socket optimize', async () => {
         // Create temp fixture for this test.
         const { cleanup, tempDir } = await withTempFixture(pnpmFixtureDir)
         try {
-          const { code, stderr, stdout } = await spawnSocketCli(
-            binCliPath,
-            cmd,
-            {
-              cwd: tempDir,
-            },
-          )
+          const { code } = await spawnSocketCli(binCliPath, cmd, {
+            cwd: tempDir,
+          })
 
           expect(code).toBe(0)
 
@@ -661,7 +636,7 @@ describe('socket optimize', async () => {
           expect(output).toMatch(/Optimizing|Adding overrides/i)
         } finally {
           // Clean up the temp directory safely.
-          await trash(tempDir)
+          await promises.rm(tempDir, { force: true, recursive: true })
         }
       },
     )

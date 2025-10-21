@@ -30,6 +30,8 @@ jobs:
       # Build and publish 'socket' package (default).
       - name: Build socket package
         run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 pnpm run build:dist
+      - name: Validate socket package
+        run: node scripts/pre-publish-validate.mjs
       - name: Publish socket package
         run: cd dist && npm publish --provenance --access public --no-git-checks
         continue-on-error: true
@@ -42,6 +44,8 @@ jobs:
         run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 INLINED_SOCKET_CLI_LEGACY_BUILD=1 pnpm run build:dist
         env:
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
+      - name: Validate @socketsecurity/cli package
+        run: node scripts/pre-publish-validate.mjs
       - name: Publish @socketsecurity/cli package
         run: cd dist && npm publish --provenance --access public --no-git-checks
         continue-on-error: true
@@ -54,6 +58,8 @@ jobs:
         run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 INLINED_SOCKET_CLI_SENTRY_BUILD=1 pnpm run build:dist
         env:
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
+      - name: Validate @socketsecurity/cli-with-sentry package
+        run: node scripts/pre-publish-validate.mjs
       - name: Publish @socketsecurity/cli-with-sentry package
         run: cd dist && npm publish --provenance --access public --no-git-checks
         continue-on-error: true
