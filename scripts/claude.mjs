@@ -2752,7 +2752,7 @@ Fix this issue now by making the necessary changes.`
 
         const claudeProcess = spawn(claudeCmd, prepareClaudeArgs([], opts), {
           cwd: rootPath,
-          stdio: ['pipe', 'pipe', 'pipe'],
+          stdio: ['pipe', 'inherit', 'inherit'],
         })
 
         claudeProcess.stdin.write(fixPrompt)
@@ -3168,10 +3168,10 @@ Fix all CI failures now by making the necessary changes.`
         }, 10_000)
 
         try {
-          // Use runClaude with non-interactive mode for proper handling
+          // Use runClaude with interactive mode so Claude can use tools to fix files
           await runClaude(claudeCmd, fixPrompt, {
             ...opts,
-            interactive: false,
+            interactive: true,
             cwd: rootPath,
             timeout: fixTimeout,
           })
