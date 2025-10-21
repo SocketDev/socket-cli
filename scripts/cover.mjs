@@ -14,9 +14,8 @@
  *   --summary    Show only coverage summary (hide detailed output)
  */
 
-import { parseArgs } from 'node:util'
-
 import { isQuiet, isVerbose } from '@socketsecurity/lib/argv/flags'
+import { parseArgs } from '@socketsecurity/lib/argv/parse'
 import { logger } from '@socketsecurity/lib/logger'
 
 import { runCommandQuiet } from './utils/run-command.mjs'
