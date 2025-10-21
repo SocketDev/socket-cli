@@ -8,7 +8,6 @@ import { spawn } from 'node:child_process'
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-
 import { parseArgs } from '@socketsecurity/lib/argv/parse'
 import colors from 'yoctocolors-cjs'
 
@@ -496,6 +495,60 @@ async function ensureGitHubAuthenticated() {
   }
 
   return false
+}
+
+/**
+ * Check if a commit SHA is part of a pull request.
+ * @param {string} sha - The commit SHA to check
+ * @param {string} owner - The repository owner
+ * @param {string} repo - The repository name
+ * @returns {Promise<{isPR: boolean, prNumber?: number, prTitle?: string}>}
+ */
+async function checkIfCommitIsPartOfPR(sha, owner, repo) {
+  try {
+    const result = await runCommandWithOutput('gh', [
+      'pr',
+      'list',
+      '--repo',
+      `${owner}/${repo}`,
+      '--state',
+      'all',
+      '--search',
+      sha,
+      '--json',
+      'number,title,state',
+      '--limit',
+      '1',
+    ])
+
+    if (result.exitCode === 0 && result.stdout) {
+      const prs = JSON.parse(result.stdout)
+      if (prs.length > 0) {
+        const pr = prs[0]
+        return {
+          isPR: true,
+          prNumber: pr.number,
+          prTitle: pr.title,
+          prState: pr.state,
+        }
+      }
+    }
+  } catch (e) {
+    log.warn(`Failed to check if commit is part of PR: ${e.message}`)
+  }
+
+  return { isPR: false }
+}
+
+/**
+ * Create a hash of error output for tracking duplicate errors.
+ * @param {string} errorOutput - The error output to hash
+ * @returns {string} A simple hash of the error
+ */
+function hashError(errorOutput) {
+  // Simple hash: take first 200 chars of error, normalize whitespace
+  const normalized = errorOutput.trim().slice(0, 200).replace(/\s+/g, ' ')
+  return normalized
 }
 
 /**
@@ -2677,8 +2730,14 @@ async function runGreen(claudeCmd, options = {}) {
     opts['max-auto-fixes'] || '10',
     10,
   )
+  const useNoVerify = opts['no-verify'] === true
 
   printHeader('Green CI Pipeline')
+
+  // Track errors to avoid checking same error repeatedly
+  const seenErrors = new Set()
+  // Track CI errors by run ID
+  const ciErrorHistory = new Map()
 
   // Step 1: Run local checks
   const repoName = path.basename(rootPath)
@@ -2710,12 +2769,24 @@ async function runGreen(claudeCmd, options = {}) {
 
     if (result.exitCode !== 0) {
       log.failed(`${check.name} failed`)
+
+      // Track error to avoid repeated attempts on same error
+      const errorOutput =
+        result.stderr || result.stdout || 'No error output available'
+      const errorHash = hashError(errorOutput)
+
+      if (seenErrors.has(errorHash)) {
+        log.error(`Detected same error again for "${check.name}"`)
+        log.substep('Skipping auto-fix to avoid infinite loop')
+        log.substep('Error appears unchanged from previous attempt')
+        return false
+      }
+
+      seenErrors.add(errorHash)
       autoFixAttempts++
 
       // Decide whether to auto-fix or go interactive
       const isAutoMode = autoFixAttempts <= MAX_AUTO_FIX_ATTEMPTS
-      const errorOutput =
-        result.stderr || result.stdout || 'No error output available'
 
       if (isAutoMode) {
         // Attempt automatic fix
@@ -2889,9 +2960,13 @@ Let's work through this together to get CI passing.`
       // Stage all changes
       await runCommand('git', ['add', '.'], { cwd: rootPath })
 
-      // Commit
-      const commitMessage = 'Fix CI issues and update tests'
-      await runCommand('git', ['commit', '-m', commitMessage, '--no-verify'], {
+      // Commit with descriptive message (no AI attribution per CLAUDE.md)
+      const commitMessage = 'Fix local checks and update tests'
+      const commitArgs = ['commit', '-m', commitMessage]
+      if (useNoVerify) {
+        commitArgs.push('--no-verify')
+      }
+      await runCommand('git', commitArgs, {
         cwd: rootPath,
       })
 
@@ -2968,12 +3043,30 @@ Let's work through this together to get CI passing.`
   const [, owner, repoNameMatch] = repoMatch
   const repo = repoNameMatch.replace('.git', '')
 
+  // Check if commit is part of a PR
+  const prInfo = await checkIfCommitIsPartOfPR(currentSha, owner, repo)
+  if (prInfo.isPR) {
+    log.info(
+      `Commit is part of PR #${prInfo.prNumber}: ${colors.cyan(prInfo.prTitle)}`,
+    )
+    log.substep(`PR state: ${prInfo.prState}`)
+  } else {
+    log.info('Commit is a direct push (not part of a PR)')
+  }
+
   // Monitor workflow with retries
   let retryCount = 0
   let lastRunId = null
   let pushTime = Date.now()
+  // Track which jobs we've already fixed (jobName -> true)
+  let fixedJobs = new Map()
+  // Track if we've made any commits during this workflow run
+  let hasPendingCommits = false
 
   while (retryCount < maxRetries) {
+    // Reset tracking for each new CI run
+    fixedJobs = new Map()
+    hasPendingCommits = false
     log.progress(`Checking CI status (attempt ${retryCount + 1}/${maxRetries})`)
 
     // Wait a bit for CI to start
@@ -3098,6 +3191,28 @@ Let's work through this together to get CI passing.`
       }
       log.failed(`CI workflow failed with conclusion: ${run.conclusion}`)
 
+      // If we have pending commits from fixing jobs during execution, push them now
+      if (hasPendingCommits) {
+        log.progress('Pushing all fix commits')
+        await runCommand('git', ['push'], { cwd: rootPath })
+        log.done(`Pushed ${fixedJobs.size} fix commit(s)`)
+
+        // Update SHA and push time for next check
+        const newShaResult = await runCommandWithOutput(
+          'git',
+          ['rev-parse', 'HEAD'],
+          {
+            cwd: rootPath,
+          },
+        )
+        currentSha = newShaResult.stdout.trim()
+        pushTime = Date.now()
+
+        retryCount++
+        continue
+      }
+
+      // No fixes were made during execution, handle as traditional completed workflow
       if (retryCount < maxRetries - 1) {
         // Fetch failure logs
         log.progress('Fetching failure logs')
@@ -3118,6 +3233,29 @@ Let's work through this together to get CI passing.`
         )
         // Add newline after progress indicator before next output
         console.log('')
+
+        // Check if we've seen this CI error before
+        const ciErrorOutput = logsResult.stdout || 'No logs available'
+        const ciErrorHash = hashError(ciErrorOutput)
+
+        if (ciErrorHistory.has(lastRunId)) {
+          log.error(`Already attempted fix for run ${lastRunId}`)
+          log.substep('Skipping to avoid repeated attempts on same CI run')
+          retryCount++
+          continue
+        }
+
+        if (seenErrors.has(ciErrorHash)) {
+          log.error('Detected same CI error pattern as previous attempt')
+          log.substep('Error appears unchanged after push')
+          log.substep(
+            `View run at: https://github.com/${owner}/${repo}/actions/runs/${lastRunId}`,
+          )
+          return false
+        }
+
+        ciErrorHistory.set(lastRunId, ciErrorHash)
+        seenErrors.add(ciErrorHash)
 
         // Analyze and fix with Claude
         log.progress('Analyzing CI failure with Claude')
@@ -3168,19 +3306,36 @@ Fix all CI failures now by making the necessary changes.`
         }, 10_000)
 
         try {
-          // Use --print flag to run Claude in non-interactive mode
-          // This avoids stdin raw mode issues (Ink requires TTY for raw mode)
-          const printArgs = ['--print', ...prepareClaudeArgs([], opts)]
-          const result = await runCommandWithOutput(claudeCmd, printArgs, {
-            cwd: rootPath,
-            input: fixPrompt,
-            stdio: ['pipe', 'pipe', 'pipe'],
+          // Write prompt to temp file to avoid stdin raw mode issues
+          const tmpFile = path.join(rootPath, `.claude-fix-${Date.now()}.txt`)
+          await fs.writeFile(tmpFile, fixPrompt, 'utf8')
+
+          const fixArgs = prepareClaudeArgs([], opts)
+          // Use shell input redirection to pass prompt without stdin pipe
+          const shellCmd = `${claudeCmd} ${fixArgs.join(' ')} < "${tmpFile}"`
+          const exitCode = await new Promise((resolve, _reject) => {
+            const child = spawn(shellCmd, [], {
+              stdio: 'inherit',
+              cwd: rootPath,
+              shell: true,
+            })
+
+            child.on('exit', code => {
+              resolve(code || 0)
+            })
+
+            child.on('error', () => {
+              resolve(1)
+            })
           })
-          if (result.exitCode !== 0) {
-            log.warn(`Claude fix exited with code ${result.exitCode}`)
-            if (result.stderr) {
-              log.warn(`Claude stderr: ${result.stderr.slice(0, 500)}`)
-            }
+
+          // Clean up temp file
+          try {
+            await fs.unlink(tmpFile)
+          } catch {}
+
+          if (exitCode !== 0) {
+            log.warn(`Claude fix exited with code ${exitCode}`)
           }
         } catch (error) {
           log.warn(`Claude fix error: ${error.message}`)
@@ -3224,17 +3379,16 @@ Fix all CI failures now by making the necessary changes.`
           log.substep(`Changed files: ${changedFiles}`)
 
           await runCommand('git', ['add', '.'], { cwd: rootPath })
-          await runCommand(
-            'git',
-            [
-              'commit',
-              '-m',
-              `Fix CI failures (attempt ${retryCount + 1})`,
-              '--no-verify',
-            ],
-            { cwd: rootPath },
-          )
+
+          // Commit with descriptive message (no AI attribution per CLAUDE.md)
+          const ciFixMessage = `Fix CI failures from run ${lastRunId}`
+          const ciCommitArgs = ['commit', '-m', ciFixMessage]
+          if (useNoVerify) {
+            ciCommitArgs.push('--no-verify')
+          }
+          await runCommand('git', ciCommitArgs, { cwd: rootPath })
           await runCommand('git', ['push'], { cwd: rootPath })
+          log.done(`Pushed fix commit: ${ciFixMessage}`)
 
           // Update SHA and push time for next check
           const newShaResult = await runCommandWithOutput(
@@ -3257,8 +3411,220 @@ Fix all CI failures now by making the necessary changes.`
         return false
       }
     } else {
-      // Workflow still running, wait and check again
-      log.substep('Workflow still running, waiting 30 seconds...')
+      // Workflow still running - check for failed jobs and fix them immediately
+      log.substep('Workflow still running, checking for failed jobs...')
+
+      // Fetch jobs for this workflow run
+      const jobsResult = await runCommandWithOutput(
+        'gh',
+        [
+          'run',
+          'view',
+          lastRunId.toString(),
+          '--repo',
+          `${owner}/${repo}`,
+          '--json',
+          'jobs',
+        ],
+        {
+          cwd: rootPath,
+        },
+      )
+
+      if (jobsResult.exitCode === 0 && jobsResult.stdout) {
+        try {
+          const runData = JSON.parse(jobsResult.stdout)
+          const jobs = runData.jobs || []
+
+          // Check for any failed or cancelled jobs
+          const failedJobs = jobs.filter(
+            job =>
+              job.conclusion === 'failure' || job.conclusion === 'cancelled',
+          )
+
+          // Find new failures we haven't fixed yet
+          const newFailures = failedJobs.filter(job => !fixedJobs.has(job.name))
+
+          if (newFailures.length > 0) {
+            log.failed(`Detected ${newFailures.length} new failed job(s)`)
+
+            // Fix each failed job immediately
+            for (const job of newFailures) {
+              log.substep(`❌ ${job.name}: ${job.conclusion}`)
+
+              // Fetch logs for this specific failed job
+              log.progress(`Fetching logs for ${job.name}`)
+              const logsResult = await runCommandWithOutput(
+                'gh',
+                [
+                  'run',
+                  'view',
+                  lastRunId.toString(),
+                  '--repo',
+                  `${owner}/${repo}`,
+                  '--log-failed',
+                ],
+                {
+                  cwd: rootPath,
+                },
+              )
+              console.log('')
+
+              // Analyze and fix with Claude
+              log.progress(`Analyzing failure in ${job.name}`)
+              const fixPrompt = `You are automatically fixing CI failures. The job "${job.name}" failed in workflow run ${lastRunId} for commit ${currentSha} in ${owner}/${repo}.
+
+Job: ${job.name}
+Status: ${job.conclusion}
+
+Failure logs:
+${logsResult.stdout || 'No logs available'}
+
+Your task:
+1. Analyze these CI logs for the "${job.name}" job
+2. Identify the root cause of the failure
+3. Apply fixes directly to resolve the issue
+
+Focus on:
+- Test failures: Update snapshots, fix test logic, or correct test data
+- Lint errors: Fix code style and formatting issues
+- Type checking: Fix type errors and missing type annotations
+- Build problems: Fix import errors, missing pinned dependencies, or syntax issues
+
+IMPORTANT:
+- Be direct and apply fixes immediately
+- Don't ask for clarification or permission
+- Make all necessary file changes to fix this specific failure
+- Focus ONLY on fixing the "${job.name}" job
+
+Fix the failure now by making the necessary changes.`
+
+              // Run Claude non-interactively to apply fixes
+              log.substep(`Applying fix for ${job.name}...`)
+
+              const fixStartTime = Date.now()
+              const fixTimeout = 180_000
+
+              const progressInterval = setInterval(() => {
+                const elapsed = Date.now() - fixStartTime
+                if (elapsed > fixTimeout) {
+                  log.warn('Claude fix timeout, proceeding...')
+                  clearInterval(progressInterval)
+                } else {
+                  log.progress(
+                    `Claude fixing ${job.name}... (${Math.round(elapsed / 1000)}s)`,
+                  )
+                }
+              }, 10_000)
+
+              try {
+                // Write prompt to temp file to avoid stdin raw mode issues
+                const tmpFile = path.join(
+                  rootPath,
+                  `.claude-fix-${Date.now()}.txt`,
+                )
+                await fs.writeFile(tmpFile, fixPrompt, 'utf8')
+
+                const fixArgs = prepareClaudeArgs([], opts)
+                // Use shell input redirection to pass prompt without stdin pipe
+                const shellCmd = `${claudeCmd} ${fixArgs.join(' ')} < "${tmpFile}"`
+                const exitCode = await new Promise((resolve, _reject) => {
+                  const child = spawn(shellCmd, [], {
+                    stdio: 'inherit',
+                    cwd: rootPath,
+                    shell: true,
+                  })
+
+                  child.on('exit', code => {
+                    resolve(code || 0)
+                  })
+
+                  child.on('error', () => {
+                    resolve(1)
+                  })
+                })
+
+                // Clean up temp file
+                try {
+                  await fs.unlink(tmpFile)
+                } catch {}
+
+                if (exitCode !== 0) {
+                  log.warn(`Claude fix exited with code ${exitCode}`)
+                }
+              } catch (error) {
+                log.warn(`Claude fix error: ${error.message}`)
+              } finally {
+                clearInterval(progressInterval)
+                log.done(`Fix attempt for ${job.name} completed`)
+              }
+
+              // Give Claude's changes a moment to complete
+              await new Promise(resolve => setTimeout(resolve, 2000))
+
+              // Run local checks
+              log.progress('Running local checks after fix')
+              console.log('')
+              for (const check of localChecks) {
+                await runCommandWithOutput(check.cmd, check.args, {
+                  cwd: rootPath,
+                  stdio: 'inherit',
+                })
+              }
+
+              // Check if there are changes to commit
+              const fixStatusResult = await runCommandWithOutput(
+                'git',
+                ['status', '--porcelain'],
+                {
+                  cwd: rootPath,
+                },
+              )
+
+              if (fixStatusResult.stdout.trim()) {
+                log.progress(`Committing fix for ${job.name}`)
+
+                const changedFiles = fixStatusResult.stdout
+                  .trim()
+                  .split('\n')
+                  .map(line => line.substring(3))
+                  .join(', ')
+                log.substep(`Changed files: ${changedFiles}`)
+
+                await runCommand('git', ['add', '.'], { cwd: rootPath })
+
+                // Commit with descriptive message (no AI attribution per CLAUDE.md)
+                const ciFixMessage = `Fix CI failure in ${job.name} (run ${lastRunId})`
+                const ciCommitArgs = ['commit', '-m', ciFixMessage]
+                if (useNoVerify) {
+                  ciCommitArgs.push('--no-verify')
+                }
+                await runCommand('git', ciCommitArgs, { cwd: rootPath })
+                log.done(`Committed fix for ${job.name}`)
+
+                hasPendingCommits = true
+              } else {
+                log.substep(`No changes to commit for ${job.name}`)
+              }
+
+              // Mark this job as fixed
+              fixedJobs.set(job.name, true)
+            }
+          }
+
+          // Show current status
+          if (fixedJobs.size > 0) {
+            log.substep(
+              `Fixed ${fixedJobs.size} job(s) so far (commits pending push)`,
+            )
+          }
+        } catch (e) {
+          log.warn(`Failed to parse job data: ${e.message}`)
+        }
+      }
+
+      // Wait and check again
+      log.substep('Waiting 30 seconds before next check...')
       await new Promise(resolve => setTimeout(resolve, 30_000))
     }
   }
