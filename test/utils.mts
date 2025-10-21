@@ -1,8 +1,10 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+
+import { it } from 'vitest'
+
 import { type SpawnOptions, spawn } from '@socketsecurity/lib/spawn'
 import { stripAnsi } from '@socketsecurity/lib/strings'
-import { it } from 'vitest'
 
 import constants, { FLAG_HELP, FLAG_VERSION } from '../src/constants.mts'
 import {
