@@ -82,5 +82,8 @@
         "useIterableCallbackReturn": "off"
       }
     }
+  },
+  "assist": {
+    "enabled": false
   }
 }
