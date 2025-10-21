@@ -52,6 +52,9 @@ patchedDependencies:
   '@rollup/plugin-commonjs@28.0.6':
     hash: 4d412c02fa3df1b1f5b29b135bd3f0997f85248ceb3a578d01e7f40fba27c21b
     path: patches/@rollup__plugin-commonjs@28.0.6.patch
+  '@socketsecurity/sdk@2.0.1':
+    hash: 28eaf8b7b7bf0c71965d039e2de73611e26417d83720ca8e1e16f8eccf80028a
+    path: patches/@socketsecurity__sdk@2.0.1.patch
   brace-expansion@2.0.2:
     hash: eac47f4a81cd7be766bd391c6bf91ac462816eb2f3c5f99270419ac752d6f02d
     path: patches/brace-expansion@2.0.2.patch
@@ -207,7 +210,7 @@ importers:
         version: 2.0.0(typescript@5.9.3)
       '@socketsecurity/sdk':
         specifier: 2.0.1
-        version: 2.0.1
+        version: 2.0.1(patch_hash=28eaf8b7b7bf0c71965d039e2de73611e26417d83720ca8e1e16f8eccf80028a)
       '@types/cmd-shim':
         specifier: 5.0.2
         version: 5.0.2
@@ -6458,7 +6461,7 @@ snapshots:
     optionalDependencies:
       typescript: 5.9.3
 
-  '@socketsecurity/sdk@2.0.1': {}
+  '@socketsecurity/sdk@2.0.1(patch_hash=28eaf8b7b7bf0c71965d039e2de73611e26417d83720ca8e1e16f8eccf80028a)': {}
 
   '@stroncium/procfs@1.2.1': {}
 
