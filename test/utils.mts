@@ -5,6 +5,10 @@ import { stripAnsi } from '@socketsecurity/lib/strings'
 import { it } from 'vitest'
 
 import constants, { FLAG_HELP, FLAG_VERSION } from '../src/constants.mts'
+import {
+  type ScrubOptions,
+  scrubSnapshotData,
+} from './utils/scrub-snapshot-data.mts'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -116,14 +120,42 @@ function sanitizeTokens(str: string): string {
 }
 
 export function cleanOutput(output: string): string {
-  return toAsciiSafeString(
-    normalizeLogSymbols(
-      normalizeNewlines(
-        stripZeroWidthSpace(
-          sanitizeTokens(stripTokenErrorMessages(stripAnsi(output.trim()))),
+  return scrubSnapshotData(
+    toAsciiSafeString(
+      normalizeLogSymbols(
+        normalizeNewlines(
+          stripZeroWidthSpace(
+            sanitizeTokens(stripTokenErrorMessages(stripAnsi(output.trim()))),
+          ),
         ),
       ),
     ),
+  )
+}
+
+/**
+ * Scrub snapshot with custom options.
+ * Use when you need to preserve certain data in snapshots.
+ *
+ * @param output - The output string to clean
+ * @param scrubOptions - Options to control what gets scrubbed
+ * @returns The cleaned and scrubbed output
+ */
+export function cleanOutputWithOptions(
+  output: string,
+  scrubOptions: ScrubOptions = {},
+): string {
+  return scrubSnapshotData(
+    toAsciiSafeString(
+      normalizeLogSymbols(
+        normalizeNewlines(
+          stripZeroWidthSpace(
+            sanitizeTokens(stripTokenErrorMessages(stripAnsi(output.trim()))),
+          ),
+        ),
+      ),
+    ),
+    scrubOptions,
   )
 }
 
