@@ -3317,10 +3317,20 @@ Fix all CI failures now by making the necessary changes.`
 
           // Use script command to create pseudo-TTY for Ink compatibility
           // Platform-specific script command syntax
-          // Windows doesn't have script, fall back to direct command
-          const scriptCmd = WIN32
-            ? claudeCommand
-            : `script -q /dev/null ${claudeCommand} < "${tmpFile}"`
+          let scriptCmd
+          if (WIN32) {
+            // Try winpty (comes with Git for Windows)
+            const winptyCheck = await runCommandWithOutput('where', ['winpty'])
+            if (winptyCheck.exitCode === 0) {
+              scriptCmd = `winpty ${claudeCommand} < "${tmpFile}"`
+            } else {
+              // No winpty, try direct (may fail with raw mode error)
+              scriptCmd = `${claudeCommand} < "${tmpFile}"`
+            }
+          } else {
+            // Unix/macOS: use script command
+            scriptCmd = `script -q /dev/null ${claudeCommand} < "${tmpFile}"`
+          }
 
           const exitCode = await new Promise((resolve, _reject) => {
             const child = spawn(scriptCmd, [], {
@@ -3535,10 +3545,20 @@ Fix the failure now by making the necessary changes.`
 
                 // Use script command to create pseudo-TTY for Ink compatibility
                 // Platform-specific script command syntax
-                // Windows doesn't have script, fall back to direct command
-                const scriptCmd = WIN32
-                  ? claudeCommand
-                  : `script -q /dev/null ${claudeCommand} < "${tmpFile}"`
+                let scriptCmd
+                if (WIN32) {
+                  // Try winpty (comes with Git for Windows)
+                  const winptyCheck = await runCommandWithOutput('where', ['winpty'])
+                  if (winptyCheck.exitCode === 0) {
+                    scriptCmd = `winpty ${claudeCommand} < "${tmpFile}"`
+                  } else {
+                    // No winpty, try direct (may fail with raw mode error)
+                    scriptCmd = `${claudeCommand} < "${tmpFile}"`
+                  }
+                } else {
+                  // Unix/macOS: use script command
+                  scriptCmd = `script -q /dev/null ${claudeCommand} < "${tmpFile}"`
+                }
 
                 const exitCode = await new Promise((resolve, _reject) => {
                   const child = spawn(scriptCmd, [], {
