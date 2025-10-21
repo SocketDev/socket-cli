@@ -3319,7 +3319,10 @@ Fix all CI failures now by making the necessary changes.`
           await fs.writeFile(tmpFile, fixPrompt, 'utf8')
 
           const fixArgs = prepareClaudeArgs([], opts)
-          const claudeCommand = `${claudeCmd} ${fixArgs.join(' ')}`
+          const claudeArgs = fixArgs.join(' ')
+          const claudeCommand = claudeArgs
+            ? `${claudeCmd} ${claudeArgs}`
+            : claudeCmd
 
           // Use script command to create pseudo-TTY for Ink compatibility
           // Platform-specific script command syntax
@@ -3334,8 +3337,8 @@ Fix all CI failures now by making the necessary changes.`
               scriptCmd = `${claudeCommand} < "${tmpFile}"`
             }
           } else {
-            // Unix/macOS: use script command
-            scriptCmd = `script -q /dev/null ${claudeCommand} < "${tmpFile}"`
+            // Unix/macOS: use script command with quoted command
+            scriptCmd = `script -q /dev/null sh -c '${claudeCommand} < "${tmpFile}"'`
           }
 
           const exitCode = await new Promise((resolve, _reject) => {
@@ -3476,17 +3479,18 @@ Fix all CI failures now by making the necessary changes.`
             for (const job of newFailures) {
               log.substep(`❌ ${job.name}: ${job.conclusion}`)
 
-              // Fetch logs for this specific failed job
+              // Fetch logs for this specific failed job using job ID
               log.progress(`Fetching logs for ${job.name}`)
               const logsResult = await runCommandWithOutput(
                 'gh',
                 [
                   'run',
                   'view',
-                  lastRunId.toString(),
+                  '--job',
+                  job.databaseId.toString(),
                   '--repo',
                   `${owner}/${repo}`,
-                  '--log-failed',
+                  '--log',
                 ],
                 {
                   cwd: rootPath,
@@ -3547,7 +3551,10 @@ Fix the failure now by making the necessary changes.`
                 await fs.writeFile(tmpFile, fixPrompt, 'utf8')
 
                 const fixArgs = prepareClaudeArgs([], opts)
-                const claudeCommand = `${claudeCmd} ${fixArgs.join(' ')}`
+                const claudeArgs = fixArgs.join(' ')
+                const claudeCommand = claudeArgs
+                  ? `${claudeCmd} ${claudeArgs}`
+                  : claudeCmd
 
                 // Use script command to create pseudo-TTY for Ink compatibility
                 // Platform-specific script command syntax
@@ -3562,8 +3569,8 @@ Fix the failure now by making the necessary changes.`
                     scriptCmd = `${claudeCommand} < "${tmpFile}"`
                   }
                 } else {
-                  // Unix/macOS: use script command
-                  scriptCmd = `script -q /dev/null ${claudeCommand} < "${tmpFile}"`
+                  // Unix/macOS: use script command with quoted command
+                  scriptCmd = `script -q /dev/null sh -c '${claudeCommand} < "${tmpFile}"'`
                 }
 
                 const exitCode = await new Promise((resolve, _reject) => {
