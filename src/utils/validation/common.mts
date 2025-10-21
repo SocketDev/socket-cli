@@ -1,12 +1,10 @@
 /** @fileoverview Common validation patterns to DRY out repetitive checks */
 
 import { logger } from '@socketsecurity/lib/logger'
-
-import { checkCommandInput } from './check-input.mts'
 import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'
-import { hasDefaultApiToken } from '../socket/sdk.mjs'
-
 import type { OutputKind } from '../../types.mjs'
+import { hasDefaultApiToken } from '../socket/sdk.mjs'
+import { checkCommandInput } from './check-input.mts'
 
 /**
  * Common validation checks

@@ -1,10 +1,9 @@
 import { describe, expect, it, vi } from 'vitest'
-
-import { handleScanReach } from './handle-scan-reach.mts'
 import {
   createErrorResult,
   createSuccessResult,
 } from '../../../test/helpers/mocks.mts'
+import { handleScanReach } from './handle-scan-reach.mts'
 
 // Mock the dependencies.
 vi.mock('@socketsecurity/lib/logger', () => ({

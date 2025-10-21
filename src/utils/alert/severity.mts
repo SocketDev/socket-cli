@@ -1,10 +1,8 @@
 /** @fileoverview Alert severity utilities for Socket CLI security scanning. */
 
 import { joinAnd } from '@socketsecurity/lib/arrays'
-
-import { createEnum, pick } from '../data/objects.mts'
-
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+import { createEnum, pick } from '../data/objects.mts'
 
 export const ALERT_SEVERITY = createEnum({
   critical: 'critical',

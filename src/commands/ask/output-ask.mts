@@ -1,6 +1,5 @@
-import colors from 'yoctocolors-cjs'
-
 import { logger } from '@socketsecurity/lib/logger'
+import colors from 'yoctocolors-cjs'
 
 interface OutputAskCommandOptions {
   query: string
@@ -67,7 +66,9 @@ export function outputAskCommand(options: OutputAskCommandOptions): void {
   if (intent.confidence < 0.6) {
     logger.log('')
     logger.log(
-      colors.yellow('⚠️  Low confidence - the command might not match your intent exactly')
+      colors.yellow(
+        '⚠️  Low confidence - the command might not match your intent exactly',
+      ),
     )
   }
 
@@ -75,7 +76,9 @@ export function outputAskCommand(options: OutputAskCommandOptions): void {
 
   // Show the command.
   logger.log(colors.bold(colors.magenta('📝 Command:')))
-  logger.log(`  ${colors.green('$')} socket ${colors.cyan(intent.command.join(' '))}`)
+  logger.log(
+    `  ${colors.green('$')} socket ${colors.cyan(intent.command.join(' '))}`,
+  )
 
   // Show explanation if requested.
   if (explain) {
@@ -113,10 +116,14 @@ function explainCommand(intent: {
       parts.push('  • Analyzes all dependencies for vulnerabilities')
       parts.push('  • Checks for supply chain attacks, typosquatting, etc.')
       if (intent.severity) {
-        parts.push(`  • Filters results to show only ${intent.severity} severity issues`)
+        parts.push(
+          `  • Filters results to show only ${intent.severity} severity issues`,
+        )
       }
       if (intent.environment === 'production') {
-        parts.push('  • Scans only production dependencies (not dev dependencies)')
+        parts.push(
+          '  • Scans only production dependencies (not dev dependencies)',
+        )
       }
       break
 
@@ -130,9 +137,13 @@ function explainCommand(intent: {
       parts.push('  • Applies package updates to fix GitHub security alerts')
       parts.push('  • Updates vulnerable packages to safe versions')
       if (intent.isDryRun) {
-        parts.push('  • Preview mode: shows what would change without making changes')
+        parts.push(
+          '  • Preview mode: shows what would change without making changes',
+        )
       } else {
-        parts.push('  • WARNING: This will modify your package.json and lockfile')
+        parts.push(
+          '  • WARNING: This will modify your package.json and lockfile',
+        )
       }
       if (intent.severity) {
         parts.push(`  • Only fixes ${intent.severity} severity issues`)
@@ -144,16 +155,22 @@ function explainCommand(intent: {
       parts.push('  • Applies surgical fixes to vulnerable code paths')
       parts.push('  • Creates patch files in your project')
       if (intent.isDryRun) {
-        parts.push('  • Preview mode: shows available patches without applying them')
+        parts.push(
+          '  • Preview mode: shows available patches without applying them',
+        )
       }
       break
 
     case 'optimize':
       parts.push('  • Replaces dependencies with Socket registry alternatives')
-      parts.push('  • Uses enhanced versions with better security and performance')
+      parts.push(
+        '  • Uses enhanced versions with better security and performance',
+      )
       parts.push('  • Adds overrides to your package.json')
       if (intent.isDryRun) {
-        parts.push('  • Preview mode: shows recommendations without making changes')
+        parts.push(
+          '  • Preview mode: shows recommendations without making changes',
+        )
       }
       break
 

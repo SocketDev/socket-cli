@@ -1,17 +1,13 @@
+import type { StdioOptions } from 'node:child_process'
 import { homedir } from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-
 import {
   isNpmAuditFlag,
   isNpmLoglevelFlag,
   isNpmNodeOptionsFlag,
   isNpmProgressFlag,
 } from '@socketsecurity/lib/agent'
-import { isDebug } from '@socketsecurity/lib/debug'
-import { getOwn } from '@socketsecurity/lib/objects'
-import { normalizePath } from '@socketsecurity/lib/path'
-import { spawn, spawnSync } from '@socketsecurity/lib/spawn'
 import {
   getExecPath,
   getNodeDebugFlags,
@@ -20,10 +16,16 @@ import {
   supportsNodePermissionFlag,
 } from '@socketsecurity/lib/constants/node'
 import { NODE_MODULES } from '@socketsecurity/lib/constants/paths'
-
-
-import { ensureIpcInStdio } from './stdio-ipc.mts'
-import { NPM, NPX } from '../constants/agents.mts'
+import { isDebug } from '@socketsecurity/lib/debug'
+import { getOwn } from '@socketsecurity/lib/objects'
+import { normalizePath } from '@socketsecurity/lib/path'
+import type {
+  SpawnExtra,
+  SpawnOptions,
+  SpawnResult,
+} from '@socketsecurity/lib/spawn'
+import { spawn, spawnSync } from '@socketsecurity/lib/spawn'
+import { NPM, type NPX } from '../constants/agents.mts'
 import { FLAG_LOGLEVEL } from '../constants/cli.mts'
 import ENV from '../constants/env.mts'
 import {
@@ -31,6 +33,7 @@ import {
   getShadowNpmInjectPath,
   shadowBinPath,
 } from '../constants/paths.mts'
+import type { IpcObject } from '../constants/shadow.mts'
 import {
   SOCKET_CLI_SHADOW_API_TOKEN,
   SOCKET_CLI_SHADOW_BIN,
@@ -41,14 +44,7 @@ import { findUp } from '../utils/fs/fs.mjs'
 import { cmdFlagsToString } from '../utils/process/cmd.mts'
 import { installNpmLinks, installNpxLinks } from '../utils/shadow/links.mts'
 import { getPublicApiToken } from '../utils/socket/sdk.mjs'
-
-import type { IpcObject } from '../constants/shadow.mts'
-import type {
-  SpawnExtra,
-  SpawnOptions,
-  SpawnResult,
-} from '@socketsecurity/lib/spawn'
-import type { StdioOptions } from 'node:child_process'
+import { ensureIpcInStdio } from './stdio-ipc.mts'
 
 export type ShadowBinOptions = SpawnOptions & {
   ipc?: IpcObject | undefined

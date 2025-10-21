@@ -6,7 +6,8 @@ import { getBinCliPath } from '../constants/paths.mts'
 
 const binCliPath = getBinCliPath()
 
-describe('socket config auto', async () => {cmdit(
+describe('socket config auto', async () => {
+  cmdit(
     ['config', 'auto', FLAG_HELP, FLAG_CONFIG, '{}'],
     `should support ${FLAG_HELP}`,
     async cmd => {

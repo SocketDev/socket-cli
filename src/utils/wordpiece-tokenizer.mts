@@ -400,7 +400,7 @@ export class WordPieceTokenizer {
       token =>
         token !== this.clsToken &&
         token !== this.sepToken &&
-        token !== this.padToken
+        token !== this.padToken,
     )
 
     // Join subwords and tokens.

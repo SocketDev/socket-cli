@@ -19,13 +19,12 @@
  * - Version compatibility checks
  */
 
-import semver from 'semver'
+import { NPM_REGISTRY_URL } from '@socketsecurity/lib/constants/agents'
 
 import { logger } from '@socketsecurity/lib/logger'
 import { onExit } from '@socketsecurity/lib/signal-exit'
 import { isNonEmptyString } from '@socketsecurity/lib/strings'
-import { NPM_REGISTRY_URL } from '@socketsecurity/lib/constants/agents'
-
+import semver from 'semver'
 
 import { UPDATE_NOTIFIER_TIMEOUT } from '../../constants/cache.mts'
 
@@ -100,7 +99,7 @@ const NetworkUtils = {
     }
 
     const { authInfo } = { __proto__: null, ...options } as FetchOptions
-     
+
     const headers = new Headers({
       Accept:
         'application/vnd.npm.install-v1+json; q=1.0, application/json; q=0.8, */*',

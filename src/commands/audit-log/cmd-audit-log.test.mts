@@ -12,7 +12,6 @@ import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
 const binCliPath = getBinCliPath()
 
 describe('socket audit-log', async () => {
-
   cmdit(
     ['audit-log', FLAG_HELP, FLAG_CONFIG, '{}'],
     `should support ${FLAG_HELP}`,

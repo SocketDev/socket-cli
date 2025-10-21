@@ -1,10 +1,9 @@
 import { describe, expect, it, vi } from 'vitest'
-
-import { fetchThreatFeed } from './fetch-threat-feed.mts'
 import {
   createErrorResult,
   createSuccessResult,
 } from '../../../test/helpers/mocks.mts'
+import { fetchThreatFeed } from './fetch-threat-feed.mts'
 
 // Mock the dependencies.
 vi.mock('../../utils/socket/api.mjs', () => ({

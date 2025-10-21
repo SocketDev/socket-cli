@@ -367,7 +367,10 @@ export default function babelPluginWithIntlNone({ template, types: t }) {
         }
 
         // Check for unicode property escapes (\p{...}).
-        if ((node.flags.includes('u') || node.flags.includes('v')) && node.pattern.includes('\\p{')) {
+        if (
+          (node.flags.includes('u') || node.flags.includes('v')) &&
+          node.pattern.includes('\\p{')
+        ) {
           let pattern = node.pattern
           let transformed = false
 

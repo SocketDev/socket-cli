@@ -1,9 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-import { outputThreatFeed } from './output-threat-feed.mts'
-
-import type { ThreadFeedResponse, ThreatResult } from './types.mts'
 import type { CResult } from '../../types.mts'
+import { outputThreatFeed } from './output-threat-feed.mts'
+import type { ThreadFeedResponse, ThreatResult } from './types.mts'
 
 // Mock the dependencies.
 vi.mock('@socketsecurity/lib/logger', () => ({

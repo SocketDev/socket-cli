@@ -32,7 +32,11 @@ import { glob } from '@socketsecurity/lib/fs'
  *   logger.error(`Hash mismatch: expected ${result.expected}, got ${result.actual}`)
  * }
  */
-export async function verifyFileHash(filePath, expectedHash, algorithm = 'sha256') {
+export async function verifyFileHash(
+  filePath,
+  expectedHash,
+  algorithm = 'sha256',
+) {
   try {
     const content = await readFile(filePath)
     const actualHash = createHash(algorithm).update(content).digest('hex')

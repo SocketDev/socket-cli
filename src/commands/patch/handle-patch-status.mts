@@ -1,22 +1,24 @@
 import crypto from 'node:crypto'
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
-
+import { UTF8 } from '@socketsecurity/lib/constants/encoding'
+import {
+  DOT_SOCKET_DIR,
+  MANIFEST_JSON,
+  NODE_MODULES,
+} from '@socketsecurity/lib/constants/paths'
 import { logger } from '@socketsecurity/lib/logger'
 import { normalizePath } from '@socketsecurity/lib/path'
+import type { Spinner } from '@socketsecurity/lib/spinner'
 import { pluralize } from '@socketsecurity/lib/words'
-import { UTF8 } from '@socketsecurity/lib/constants/encoding'
-import { DOT_SOCKET_DIR, MANIFEST_JSON, NODE_MODULES } from '@socketsecurity/lib/constants/paths'
-
-import { PatchManifestSchema } from './manifest-schema.mts'
-import { outputPatchStatusResult } from './output-patch-status-result.mts'
+import type { OutputKind } from '../../types.mts'
 import { getErrorCause } from '../../utils/error/errors.mjs'
 import { findUp } from '../../utils/fs/fs.mjs'
 import { hasBackupForPatch } from '../../utils/manifest/patch-backup.mts'
 
 import type { PatchRecord } from './manifest-schema.mts'
-import type { OutputKind } from '../../types.mts'
-import type { Spinner } from '@socketsecurity/lib/spinner'
+import { PatchManifestSchema } from './manifest-schema.mts'
+import { outputPatchStatusResult } from './output-patch-status-result.mts'
 
 export interface PatchStatus {
   appliedAt: string | undefined
@@ -63,7 +65,7 @@ async function findPackageLocations(
   cwd: string,
   packageName: string,
 ): Promise<string[]> {
-  const locations: string[]  = []
+  const locations: string[] = []
 
   const rootNmPath = await findUp(NODE_MODULES, { cwd, onlyDirectories: true })
   if (!rootNmPath) {
@@ -199,15 +201,12 @@ export async function handlePatchStatus({
     const statuses: PatchStatus[] = []
 
     for (const { 0: purl, 1: patch } of Object.entries(validated.patches)) {
-
       const { appliedLocations, backupAvailable, status } =
         // eslint-disable-next-line no-await-in-loop
         await determinePatchStatus(cwd, purl, patch)
 
       const fileCount = Object.keys(patch.files).length
-      const vulnerabilityCount = Object.keys(
-        patch.vulnerabilities || {},
-      ).length
+      const vulnerabilityCount = Object.keys(patch.vulnerabilities || {}).length
 
       statuses.push({
         appliedAt: patch.appliedAt,
@@ -231,9 +230,7 @@ export async function handlePatchStatus({
     if (filters.applied) {
       filteredStatuses = filteredStatuses.filter(s => s.status === 'applied')
     } else if (filters.downloaded) {
-      filteredStatuses = filteredStatuses.filter(
-        s => s.status === 'downloaded',
-      )
+      filteredStatuses = filteredStatuses.filter(s => s.status === 'downloaded')
     } else if (filters.failed) {
       filteredStatuses = filteredStatuses.filter(s => s.status === 'failed')
     }
@@ -241,7 +238,7 @@ export async function handlePatchStatus({
     if (statuses.length === 0) {
       logger.log('No patches found in manifest')
     } else if (filteredStatuses.length === 0) {
-      logger.log(`No patches match the filter criteria`)
+      logger.log('No patches match the filter criteria')
     } else {
       logger.log(
         `Found ${filteredStatuses.length} ${pluralize('patch', { count: filteredStatuses.length })}`,

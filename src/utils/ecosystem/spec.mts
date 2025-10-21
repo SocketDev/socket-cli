@@ -1,10 +1,8 @@
-import semver from 'semver'
+import type { PackageURL } from '@socketregistry/packageurl-js'
 
 import { NPM } from '@socketsecurity/lib/constants/agents'
-
+import semver from 'semver'
 import { stripPnpmPeerSuffix } from '../pnpm/lockfile.mts'
-
-import type { PackageURL } from '@socketregistry/packageurl-js'
 
 export function idToNpmPurl(id: string): string {
   return `pkg:${NPM}/${id}`

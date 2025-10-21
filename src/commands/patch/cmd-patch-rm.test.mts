@@ -6,6 +6,7 @@ import { afterEach, describe, expect } from 'vitest'
 import { cmdit, spawnSocketCli, testPath } from '../../../test/utils.mts'
 import { FLAG_CONFIG, FLAG_HELP } from '../constants/cli.mts'
 import { getBinCliPath } from '../constants/paths.mts'
+
 const binCliPath = getBinCliPath()
 
 const fixtureBaseDir = path.join(testPath, 'fixtures/commands/patch')
@@ -20,7 +21,8 @@ async function cleanupNodeModules() {
   ])
 }
 
-describe('socket patch rm', async () => {afterEach(async () => {
+describe('socket patch rm', async () => {
+  afterEach(async () => {
     await cleanupNodeModules()
   })
 
@@ -100,8 +102,7 @@ describe('socket patch rm', async () => {afterEach(async () => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
       // Since the fixture doesn't have actual backups, it should warn.
       expect(
-        stdout.includes('No backups found') ||
-          stdout.includes('Removed patch'),
+        stdout.includes('No backups found') || stdout.includes('Removed patch'),
       ).toBe(true)
       expect(code, 'should exit with code 0').toBe(0)
     },

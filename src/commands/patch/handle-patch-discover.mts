@@ -1,18 +1,16 @@
 import { logger } from '@socketsecurity/lib/logger'
+import type { Spinner } from '@socketsecurity/lib/spinner'
 import { pluralize } from '@socketsecurity/lib/words'
-
-import { handlePatchDownload } from './handle-patch-download.mts'
-import { outputPatchDiscoverResult } from './output-patch-discover-result.mts'
+import type { SocketSdk } from '@socketsecurity/sdk'
 import ENV from '../../constants/env.mts'
+import type { OutputKind } from '../../types.mts'
 import { getErrorCause } from '../../utils/error/errors.mjs'
 import { getPackageFilesForScan } from '../../utils/fs/path-resolve.mjs'
 import { setupSdk } from '../../utils/socket/sdk.mts'
 import { fetchCreateOrgFullScan } from '../scan/fetch-create-org-full-scan.mts'
 import { fetchSupportedScanFileNames } from '../scan/fetch-supported-scan-file-names.mts'
-
-import type { OutputKind } from '../../types.mts'
-import type { Spinner } from '@socketsecurity/lib/spinner'
-import type { SocketSdk } from '@socketsecurity/sdk'
+import { handlePatchDownload } from './handle-patch-download.mts'
+import { outputPatchDiscoverResult } from './output-patch-discover-result.mts'
 
 export type PatchVulnerability = {
   cve?: string
@@ -154,7 +152,9 @@ export async function handlePatchDiscover({
         return
       }
 
-      spinner?.text(`Creating scan with ${packagePaths.length} package ${pluralize('file', { count: packagePaths.length })}...`)
+      spinner?.text(
+        `Creating scan with ${packagePaths.length} package ${pluralize('file', { count: packagePaths.length })}...`,
+      )
 
       logger.log(`[DEBUG] Package files to scan: ${packagePaths.join(', ')}`)
 
@@ -199,7 +199,7 @@ export async function handlePatchDiscover({
         return
       }
 
-      spinner?.successAndStop(`Scan created successfully`)
+      spinner?.successAndStop('Scan created successfully')
     }
 
     // Validate scan ID before streaming.
@@ -371,7 +371,11 @@ function ShimmerText({
   const colors = ['#8B5CF6', '#A78BFA', '#C4B5FD', '#DDD6FE']
   const colorIndex = Math.floor(frame / 5) % colors.length
 
-  return createElement(Text, { bold: true, color: colors[colorIndex] }, children)
+  return createElement(
+    Text,
+    { bold: true, color: colors[colorIndex] },
+    children,
+  )
 }
 
 /**
@@ -395,9 +399,7 @@ function createPatchSelectorApp({
   }): any {
     const { exit } = useApp()
     const [selectedIndex, setSelectedIndex] = useState(0)
-    const [selectedPatches, setSelectedPatches] = useState(
-      new Set<number>(),
-    )
+    const [selectedPatches, setSelectedPatches] = useState(new Set<number>())
 
     useInput((input: string, key: any) => {
       if (input === 'q' || key.escape) {
@@ -494,7 +496,9 @@ function createPatchSelectorApp({
 
           const vulnCount = patch.freeCves.length + patch.paidCves.length
           const vulnText =
-            vulnCount > 0 ? ` (${vulnCount} vuln${vulnCount > 1 ? 's' : ''})` : ''
+            vulnCount > 0
+              ? ` (${vulnCount} vuln${vulnCount > 1 ? 's' : ''})`
+              : ''
 
           return createElement(
             Box,
@@ -642,7 +646,9 @@ async function enrichPatchesWithPackageNames(
       if (artifact.id && (artifact.name || artifact.purl)) {
         artifactMap.set(artifact.id, {
           name: artifact.name || artifact.purl || 'unknown',
-          purl: artifact.purl || `pkg:${artifact.type}/${artifact.name}@${artifact.version}`,
+          purl:
+            artifact.purl ||
+            `pkg:${artifact.type}/${artifact.name}@${artifact.version}`,
         })
       }
     }

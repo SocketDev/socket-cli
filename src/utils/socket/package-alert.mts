@@ -20,27 +20,15 @@
  * - Colorized terminal output
  */
 
-import semver from 'semver'
-import colors from 'yoctocolors-cjs'
-
+import type { SocketYml } from '@socketsecurity/config'
 import { debugDirNs, debugNs } from '@socketsecurity/lib/debug'
 import { getOwn, hasOwn } from '@socketsecurity/lib/objects'
 import { resolvePackageName } from '@socketsecurity/lib/packages'
 import { naturalCompare } from '@socketsecurity/lib/sorts'
+import type { Spinner } from '@socketsecurity/lib/spinner'
 import { getManifestData } from '@socketsecurity/registry'
-
-
-import { getSocketDevPackageOverviewUrl } from './url.mts'
-import { isArtifactAlertCve } from '../alert/artifact.mts'
-import { ALERT_FIX_TYPE } from '../alert/fix.mts'
-import { ALERT_SEVERITY } from '../alert/severity.mts'
-import { getTranslations } from '../alert/translations.mts'
-import { createEnum } from '../data/objects.mts'
-import { createPurlObject, getPurlObject } from '../purl/parse.mts'
-import { getMajor } from '../semver.mts'
-import { ColorOrMarkdown } from '../terminal/colors.mts'
-import { toFilterConfig } from '../validation/filter-config.mts'
-
+import semver from 'semver'
+import colors from 'yoctocolors-cjs'
 import type {
   ALERT_ACTION,
   ALERT_TYPE,
@@ -48,9 +36,17 @@ import type {
   CompactSocketArtifactAlert,
   CveProps,
 } from '../alert/artifact.mts'
+import { isArtifactAlertCve } from '../alert/artifact.mts'
+import { ALERT_FIX_TYPE } from '../alert/fix.mts'
+import { ALERT_SEVERITY } from '../alert/severity.mts'
+import { getTranslations } from '../alert/translations.mts'
+import { createEnum } from '../data/objects.mts'
 import type { PURL_Type } from '../ecosystem/ecosystem.mjs'
-import type { SocketYml } from '@socketsecurity/config'
-import type { Spinner } from '@socketsecurity/lib/spinner'
+import { createPurlObject, getPurlObject } from '../purl/parse.mts'
+import { getMajor } from '../semver.mts'
+import { ColorOrMarkdown } from '../terminal/colors.mts'
+import { toFilterConfig } from '../validation/filter-config.mts'
+import { getSocketDevPackageOverviewUrl } from './url.mts'
 
 export const ALERT_SEVERITY_COLOR = createEnum({
   critical: 'magenta',

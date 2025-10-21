@@ -2,14 +2,14 @@
 
 // @ts-expect-error
 import UntypedArborist from '@npmcli/arborist/lib/arborist/index.js'
-
-import { logger } from '@socketsecurity/lib/logger'
 import { getSpinner } from '@socketsecurity/lib/constants/process'
+import { logger } from '@socketsecurity/lib/logger'
 
 import { NPX } from '../../../../../constants/agents.mts'
 import ENV from '../../../../../constants/env.mts'
 import { NODE_MODULES } from '../../../../../constants/packages.mts'
 import {
+  getInternals,
   SOCKET_CLI_ACCEPT_RISKS,
   SOCKET_CLI_SHADOW_ACCEPT_RISKS,
   SOCKET_CLI_SHADOW_API_TOKEN,
@@ -17,7 +17,6 @@ import {
   SOCKET_CLI_SHADOW_PROGRESS,
   SOCKET_CLI_SHADOW_SILENT,
   SOCKET_CLI_VIEW_ALL_RISKS,
-  getInternals,
 } from '../../../../../constants/shadow.mts'
 import { findUp } from '../../../../../utils/fs/fs.mjs'
 import { logAlertsMap } from '../../../../../utils/socket/package-alert.mts'
@@ -128,10 +127,11 @@ export class SafeArborist extends Arborist {
     const shadowSilent = !!ipc?.[SOCKET_CLI_SHADOW_SILENT]
 
     const acceptRisks = shadowAcceptRisks || ENV.SOCKET_CLI_ACCEPT_RISKS
-    const reportOnlyBlocking = acceptRisks || options['dryRun'] || options['yes']
+    const reportOnlyBlocking =
+      acceptRisks || options['dryRun'] || options['yes']
     const silent = !!options['silent']
     const spinnerInstance =
-      silent || !shadowProgress ? undefined : getSpinner() ?? undefined
+      silent || !shadowProgress ? undefined : (getSpinner() ?? undefined)
 
     const isShadowNpx = binName === NPX
     const hasExisting = await findUp(NODE_MODULES, {

@@ -1,6 +1,5 @@
-import { sendApiRequest } from '../../utils/socket/api.mjs'
-
 import type { CResult } from '../../types.mts'
+import { sendApiRequest } from '../../utils/socket/api.mjs'
 
 export type FinalizeTier1ScanOptions = {
   tier1_reachability_scan_id: string

@@ -6,7 +6,8 @@ import { getBinCliPath } from '../constants/paths.mts'
 
 const binCliPath = getBinCliPath()
 
-describe('socket logout', async () => {cmdit(
+describe('socket logout', async () => {
+  cmdit(
     ['logout', FLAG_HELP, FLAG_CONFIG, '{}'],
     `should support ${FLAG_HELP}`,
     async cmd => {

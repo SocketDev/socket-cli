@@ -31,29 +31,22 @@ import {
   GraphqlResponseError,
   graphql as OctokitGraphql,
 } from '@octokit/graphql'
+import type { components } from '@octokit/openapi-types'
 import { Octokit } from '@octokit/rest'
-
 import {
   debugDir,
   debugDirNs,
   debugNs,
   isDebugNs,
 } from '@socketsecurity/lib/debug'
-import {
-  readJson,
-  safeStatsSync,
-  writeJson,
-} from '@socketsecurity/lib/fs'
+import type { JsonContent } from '@socketsecurity/lib/fs'
+import { readJson, safeStatsSync, writeJson } from '@socketsecurity/lib/fs'
+import type { SpawnOptions } from '@socketsecurity/lib/spawn'
 import { spawn } from '@socketsecurity/lib/spawn'
 import { parseUrl } from '@socketsecurity/lib/url'
-
 import ENV from '../../constants/env.mts'
 import { getGithubCachePath } from '../../constants/paths.mjs'
 import { formatErrorWithDetail } from '../error/errors.mts'
-
-import type { components } from '@octokit/openapi-types'
-import type { JsonContent } from '@socketsecurity/lib/fs'
-import type { SpawnOptions } from '@socketsecurity/lib/spawn'
 
 export type Pr = components['schemas']['pull-request']
 

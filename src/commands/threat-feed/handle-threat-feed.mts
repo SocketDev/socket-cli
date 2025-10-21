@@ -1,7 +1,6 @@
+import type { OutputKind } from '../../types.mts'
 import { fetchThreatFeed } from './fetch-threat-feed.mts'
 import { outputThreatFeed } from './output-threat-feed.mts'
-
-import type { OutputKind } from '../../types.mts'
 
 export async function handleThreatFeed({
   direction,

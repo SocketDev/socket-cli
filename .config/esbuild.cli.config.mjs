@@ -46,6 +46,7 @@ const versionHash = `${packageJson.version}:${gitHash}:${randUuidSegment}${
 
 // Get local Socket package paths.
 const socketPackages = {
+  '@socketsecurity/lib': path.join(rootPath, '..', 'socket-lib'),
   '@socketsecurity/registry': path.join(
     rootPath,
     '..',
@@ -199,6 +200,52 @@ export default {
               return null
             },
           )
+        }
+      },
+    },
+
+    {
+      name: 'resolve-socket-lib-internals',
+      setup(build) {
+        // Resolve relative imports from socket-lib dist files.
+        const socketLibPath = path.join(rootPath, '..', 'socket-lib')
+        if (existsSync(socketLibPath)) {
+          build.onResolve({ filter: /^\.\.\/constants\// }, args => {
+            // Only handle imports from socket-lib's dist directory.
+            if (args.importer.includes('/socket-lib/dist/')) {
+              const constantName = args.path.replace(/^\.\.\/constants\//, '')
+              const resolvedPath = path.join(
+                socketLibPath,
+                'dist',
+                'constants',
+                `${constantName}.js`,
+              )
+              if (existsSync(resolvedPath)) {
+                return { path: resolvedPath }
+              }
+            }
+            return null
+          })
+
+          build.onResolve({ filter: /^\.\.\/\.\.\/constants\// }, args => {
+            // Handle ../../constants/ imports.
+            if (args.importer.includes('/socket-lib/dist/')) {
+              const constantName = args.path.replace(
+                /^\.\.\/\.\.\/constants\//,
+                '',
+              )
+              const resolvedPath = path.join(
+                socketLibPath,
+                'dist',
+                'constants',
+                `${constantName}.js`,
+              )
+              if (existsSync(resolvedPath)) {
+                return { path: resolvedPath }
+              }
+            }
+            return null
+          })
         }
       },
     },

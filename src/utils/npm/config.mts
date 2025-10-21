@@ -5,12 +5,10 @@ import {
   shorthands as npmConfigShorthands,
   // @ts-expect-error: TypeScript types unavailable.
 } from '@npmcli/config/lib/definitions'
-
-import { getNpmDirPath } from './paths.mts'
-
-import type { ArboristOptions } from '../../shadow/npm/arborist/types.mjs'
 import type { SemVer } from 'semver'
 
+import type { ArboristOptions } from '../../shadow/npm/arborist/types.mjs'
+import { getNpmDirPath } from './paths.mts'
 
 export type NpmConfigOptions = {
   cwd?: string | undefined

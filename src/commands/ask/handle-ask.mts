@@ -1,10 +1,8 @@
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
-
-import nlp from 'compromise'
-
 import { logger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
+import nlp from 'compromise'
 // Import compromise for NLP text normalization.
 
 import { outputAskCommand } from './output-ask.mts'
@@ -14,7 +12,7 @@ let semanticIndex: any = null
 
 // ONNX embedding pipeline for deep semantic matching (lazy-loaded, ~17MB model).
 let embeddingPipeline: any = null
-let embeddingPipelineFailure: boolean = false
+let embeddingPipelineFailure = false
 const commandEmbeddings: Record<string, Float32Array> = {}
 
 // Confidence thresholds.
@@ -59,21 +57,44 @@ const PATTERNS = {
   },
   // Optimize patterns (high priority - action words).
   optimize: {
-    keywords: ['optimize', 'enhance', 'improve', 'replace', 'alternative', 'better'],
+    keywords: [
+      'optimize',
+      'enhance',
+      'improve',
+      'replace',
+      'alternative',
+      'better',
+    ],
     command: ['optimize'],
     explanation: 'Replacing dependencies with Socket registry alternatives',
     priority: 3,
   },
   // Package safety patterns (medium priority).
   package: {
-    keywords: ['safe', 'trust', 'score', 'rating', 'quality', 'package', 'dependency'],
+    keywords: [
+      'safe',
+      'trust',
+      'score',
+      'rating',
+      'quality',
+      'package',
+      'dependency',
+    ],
     command: ['package', 'score'],
     explanation: 'Checking package security score',
     priority: 2,
   },
   // Scan patterns (medium priority).
   scan: {
-    keywords: ['scan', 'check', 'vulnerabilit', 'audit', 'analyze', 'inspect', 'review'],
+    keywords: [
+      'scan',
+      'check',
+      'vulnerabilit',
+      'audit',
+      'analyze',
+      'inspect',
+      'review',
+    ],
     command: ['scan', 'create'],
     explanation: 'Scanning your project for security vulnerabilities',
     priority: 2,
@@ -142,7 +163,10 @@ async function loadSemanticIndex() {
     if (!homeDir) {
       return null
     }
-    const indexPath = path.join(homeDir, '.claude/skills/socket-cli/semantic-index.json')
+    const indexPath = path.join(
+      homeDir,
+      '.claude/skills/socket-cli/semantic-index.json',
+    )
 
     const content = await fs.readFile(indexPath, 'utf-8')
     semanticIndex = JSON.parse(content)
@@ -202,7 +226,12 @@ async function wordOverlapMatch(query: string): Promise<{
 
   // Match against each command's word index.
   for (const [commandName, commandData] of Object.entries(index.commands)) {
-    if (!commandData || typeof commandData !== 'object' || !('words' in commandData) || !Array.isArray(commandData.words)) {
+    if (
+      !commandData ||
+      typeof commandData !== 'object' ||
+      !('words' in commandData) ||
+      !Array.isArray(commandData.words)
+    ) {
       continue
     }
     const score = wordOverlap(queryWords, commandData.words)
@@ -300,7 +329,8 @@ async function ensureCommandEmbeddings() {
     __proto__: null,
     fix: 'fix vulnerabilities by updating packages to secure versions',
     patch: 'apply patches to remove CVEs from code',
-    optimize: 'replace dependencies with better alternatives from Socket registry',
+    optimize:
+      'replace dependencies with better alternatives from Socket registry',
     package: 'check safety score and rating of a package',
     scan: 'scan project for security vulnerabilities and issues',
   } as const
@@ -361,7 +391,8 @@ async function parseIntent(query: string): Promise<ParsedIntent> {
   const lowerQuery = normalizeQuery(query)
 
   // Check for dry run.
-  const isDryRun = lowerQuery.includes('dry run') || lowerQuery.includes('preview')
+  const isDryRun =
+    lowerQuery.includes('dry run') || lowerQuery.includes('preview')
 
   // Extract package name from original query (not normalized).
   let packageName: string | undefined
@@ -371,13 +402,32 @@ async function parseIntent(query: string): Promise<ParsedIntent> {
   } else {
     // Try to find package name after "is", "check", "about", "with".
     // Must look like a real package (has @, /, or contains common package patterns).
-    const pkgMatch = query.toLowerCase().match(/(?:is|check|about|with)\s+([a-z0-9-@/]+)/i)
+    const pkgMatch = query
+      .toLowerCase()
+      .match(/(?:is|check|about|with)\s+([a-z0-9-@/]+)/i)
     if (pkgMatch) {
       const candidate = pkgMatch[1]
       // Only accept if it looks like a real package name (not common words).
-      if (candidate && (candidate.includes('@') || candidate.includes('/') || candidate.match(/^[a-z0-9-]+$/))) {
+      if (
+        candidate &&
+        (candidate.includes('@') ||
+          candidate.includes('/') ||
+          candidate.match(/^[a-z0-9-]+$/))
+      ) {
         // Reject common command words.
-        const commonWords = ['scan', 'fix', 'patch', 'optimize', 'vulnerabilities', 'issues', 'problems', 'alerts', 'security', 'safe', 'check']
+        const commonWords = [
+          'scan',
+          'fix',
+          'patch',
+          'optimize',
+          'vulnerabilities',
+          'issues',
+          'problems',
+          'alerts',
+          'security',
+          'safe',
+          'check',
+        ]
         if (!commonWords.includes(candidate)) {
           packageName = candidate
         }
@@ -388,7 +438,10 @@ async function parseIntent(query: string): Promise<ParsedIntent> {
   // Detect severity.
   let severity: string | undefined
   for (const [level, keywords] of Object.entries(SEVERITY_KEYWORDS)) {
-    if (Array.isArray(keywords) && keywords.some(kw => lowerQuery.includes(kw))) {
+    if (
+      Array.isArray(keywords) &&
+      keywords.some(kw => lowerQuery.includes(kw))
+    ) {
       severity = level
       break
     }
@@ -397,7 +450,10 @@ async function parseIntent(query: string): Promise<ParsedIntent> {
   // Detect environment.
   let environment: string | undefined
   for (const [env, keywords] of Object.entries(ENVIRONMENT_KEYWORDS)) {
-    if (Array.isArray(keywords) && keywords.some(kw => lowerQuery.includes(kw))) {
+    if (
+      Array.isArray(keywords) &&
+      keywords.some(kw => lowerQuery.includes(kw))
+    ) {
       environment = env
       break
     }
@@ -416,7 +472,9 @@ async function parseIntent(query: string): Promise<ParsedIntent> {
     if (!pattern) {
       continue
     }
-    const matchCount = pattern.keywords.filter(kw => lowerQuery.includes(kw)).length
+    const matchCount = pattern.keywords.filter(kw =>
+      lowerQuery.includes(kw),
+    ).length
 
     if (matchCount > 0) {
       const confidence = matchCount / pattern.keywords.length
@@ -505,7 +563,10 @@ async function parseIntent(query: string): Promise<ParsedIntent> {
   }
 
   // Add dry run flag for destructive commands.
-  if (isDryRun || (bestMatch.action === 'fix' && !lowerQuery.includes('execute'))) {
+  if (
+    isDryRun ||
+    (bestMatch.action === 'fix' && !lowerQuery.includes('execute'))
+  ) {
     command.push('--dry-run')
   }
 

@@ -1,22 +1,11 @@
-import terminalLink from 'terminal-link'
-import colors from 'yoctocolors-cjs'
-
 import { joinAnd } from '@socketsecurity/lib/arrays'
 import { logger } from '@socketsecurity/lib/logger'
-import {
-  getOwn,
-  hasOwn,
-  toSortedObject,
-} from '@socketsecurity/lib/objects'
+import { getOwn, hasOwn, toSortedObject } from '@socketsecurity/lib/objects'
 import { normalizePath } from '@socketsecurity/lib/path'
 import { naturalCompare } from '@socketsecurity/lib/sorts'
-import {
-  indentString,
-  trimNewlines,
-} from '@socketsecurity/lib/strings'
-
-
-
+import { indentString, trimNewlines } from '@socketsecurity/lib/strings'
+import terminalLink from 'terminal-link'
+import colors from 'yoctocolors-cjs'
 
 import { NPM, NPX } from '../../constants/agents.mts'
 import {
@@ -27,10 +16,15 @@ import {
   FLAG_ORG,
   REDACTED,
 } from '../../constants/cli.mts'
-import { CONFIG_KEY_API_TOKEN, CONFIG_KEY_DEFAULT_ORG } from '../../constants/config.mts'
+import {
+  CONFIG_KEY_API_TOKEN,
+  CONFIG_KEY_DEFAULT_ORG,
+} from '../../constants/config.mts'
 import ENV, { getCliVersion, getCliVersionHash } from '../../constants/env.mts'
 import { API_V0_URL } from '../../constants/socket.mts'
+import type { MeowFlag, MeowFlags } from '../../flags.mts'
 import { commonFlags } from '../../flags.mts'
+import type { Options, Result } from '../../meow.mts'
 import meow from '../../meow.mts'
 import {
   getConfigValueOrUndef,
@@ -43,15 +37,12 @@ import { tildify } from '../fs/home-path.mts'
 import { getFlagListOutput, getHelpListOutput } from '../output/formatting.mts'
 import { spawnSocketPython } from '../python/standalone.mts'
 import { getVisibleTokenPrefix } from '../socket/sdk.mjs'
+import type { HeaderTheme } from '../terminal/ascii-header.mts'
 import {
   renderLogoWithFallback,
   supportsFullColor,
 } from '../terminal/ascii-header.mts'
 import { socketPackageLink } from '../terminal/link.mts'
-
-import type { MeowFlag, MeowFlags } from '../../flags.mts'
-import type { Options, Result } from '../../meow.mts'
-import type { HeaderTheme } from '../terminal/ascii-header.mts'
 
 export interface CliAlias {
   description: string
@@ -164,8 +155,16 @@ function getTokenOrigin(): string {
  */
 function getHeaderTheme(flags?: Record<string, unknown>): HeaderTheme {
   const theme = flags?.['headerTheme']
-  const validThemes: HeaderTheme[] = ['default', 'cyberpunk', 'forest', 'ocean', 'sunset']
-  return validThemes.includes(theme as HeaderTheme) ? (theme as HeaderTheme) : 'default'
+  const validThemes: HeaderTheme[] = [
+    'default',
+    'cyberpunk',
+    'forest',
+    'ocean',
+    'sunset',
+  ]
+  return validThemes.includes(theme as HeaderTheme)
+    ? (theme as HeaderTheme)
+    : 'default'
 }
 
 /**
@@ -256,7 +255,7 @@ function getAsciiHeader(
 
   // Build info lines.
   const infoLines = [
-    `/---------------`,
+    '/---------------',
     `| CLI: ${cliVersion}`,
     `| ${showNodeVersion ? `Node: ${nodeVersion}, ` : ''}token: ${shownToken}, ${orgPart}`,
     `| Command: \`${command}\`, cwd: ${relCwd}`,
@@ -270,7 +269,8 @@ function getAsciiHeader(
     const logoLine = logoLines[i] || ''
     const infoLine = infoLines[i] || ''
     // Pad logo line to consistent width (36 chars for the ASCII art).
-    const paddedLogo = logoLine + ' '.repeat(Math.max(0, 36 - stripAnsi(logoLine).length))
+    const paddedLogo =
+      logoLine + ' '.repeat(Math.max(0, 36 - stripAnsi(logoLine).length))
     combinedLines.push(`  ${paddedLogo}${infoLine}`)
   }
 
@@ -317,7 +317,9 @@ function levenshteinDistance(a: string, b: string): number {
  * Determine if the banner should be suppressed based on output flags.
  */
 function shouldSuppressBanner(flags: Record<string, unknown>): boolean {
-  return Boolean(flags['json'] || flags['markdown'] || flags['banner'] === false)
+  return Boolean(
+    flags['json'] || flags['markdown'] || flags['banner'] === false,
+  )
 }
 
 /**
@@ -505,8 +507,7 @@ export async function meowWithSubcommands(
     spinner: boolean
   }
 
-  const compactMode =
-    !!compactHeaderFlag || !!(ENV.CI && !ENV.VITEST)
+  const compactMode = !!compactHeaderFlag || !!(ENV.CI && !ENV.VITEST)
   const noSpinner = spinnerFlag === false || isDebug()
 
   // Use CI spinner style when --no-spinner is passed or debug mode is enabled.
@@ -954,8 +955,7 @@ export function meowOrExit(
     version: boolean | undefined
   }
 
-  const compactMode =
-    !!compactHeaderFlag || !!(ENV.CI && !ENV.VITEST)
+  const compactMode = !!compactHeaderFlag || !!(ENV.CI && !ENV.VITEST)
   const noSpinner = spinnerFlag === false || isDebug()
 
   // Use CI spinner style when --no-spinner is passed.

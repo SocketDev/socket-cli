@@ -1,20 +1,18 @@
 import isInteractive from '@socketregistry/is-interactive/index.cjs'
 import { logger } from '@socketsecurity/lib/logger'
-
-import { attemptLogin } from './attempt-login.mts'
 import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'
 import { commonFlags } from '../../flags.mts'
+import type {
+  CliCommandConfig,
+  CliCommandContext,
+} from '../../utils/cli/with-subcommands.mjs'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { InputError } from '../../utils/error/errors.mjs'
 import {
   getFlagApiRequirementsOutput,
   getFlagListOutput,
 } from '../../utils/output/formatting.mts'
-
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
+import { attemptLogin } from './attempt-login.mts'
 
 export const CMD_NAME = 'login'
 

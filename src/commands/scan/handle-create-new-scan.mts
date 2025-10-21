@@ -1,29 +1,26 @@
 import path from 'node:path'
-
+import { getSpinner } from '@socketsecurity/lib/constants/process'
 import { debug, debugDir } from '@socketsecurity/lib/debug'
 import { logger } from '@socketsecurity/lib/logger'
+import type { Remap } from '@socketsecurity/lib/objects'
 import { pluralize } from '@socketsecurity/lib/words'
-import { getSpinner } from '@socketsecurity/lib/constants/process'
-
-import { fetchCreateOrgFullScan } from './fetch-create-org-full-scan.mts'
-import { fetchSupportedScanFileNames } from './fetch-supported-scan-file-names.mts'
-import { finalizeTier1Scan } from './finalize-tier1-scan.mts'
-import { handleScanReport } from './handle-scan-report.mts'
-import { outputCreateNewScan } from './output-create-new-scan.mts'
-import { performReachabilityAnalysis } from './perform-reachability-analysis.mts'
 import { DOT_SOCKET_DOT_FACTS_JSON } from '../../constants/paths.mts'
 import { FOLD_SETTING_VERSION } from '../../constants/reporting.mjs'
+import type { OutputKind } from '../../types.mts'
 import { getPackageFilesForScan } from '../../utils/fs/path-resolve.mjs'
 import { readOrDefaultSocketJson } from '../../utils/socket/json.mts'
 import { socketDocsLink } from '../../utils/terminal/link.mts'
 import { checkCommandInput } from '../../utils/validation/check-input.mts'
 import { detectManifestActions } from '../manifest/detect-manifest-actions.mts'
 import { generateAutoManifest } from '../manifest/generate_auto_manifest.mts'
-
+import { fetchCreateOrgFullScan } from './fetch-create-org-full-scan.mts'
+import { fetchSupportedScanFileNames } from './fetch-supported-scan-file-names.mts'
+import { finalizeTier1Scan } from './finalize-tier1-scan.mts'
+import { handleScanReport } from './handle-scan-report.mts'
+import { outputCreateNewScan } from './output-create-new-scan.mts'
 import type { ReachabilityOptions } from './perform-reachability-analysis.mts'
+import { performReachabilityAnalysis } from './perform-reachability-analysis.mts'
 import type { REPORT_LEVEL } from './types.mts'
-import type { OutputKind } from '../../types.mts'
-import type { Remap } from '@socketsecurity/lib/objects'
 
 export type HandleCreateNewScanConfig = {
   autoManifest: boolean

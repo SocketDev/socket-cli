@@ -296,7 +296,7 @@ describe('socket patch discover', async () => {
 
       // If more than 1 patch found, should say "patches" not "patch".
       const multiMatch = stdout.match(/Found (\d+)/)
-      if (multiMatch && parseInt(multiMatch[1]) > 1) {
+      if (multiMatch && Number.parseInt(multiMatch[1]) > 1) {
         expect(stdout).toContain('available patches')
         expect(stdout).not.toMatch(/\d+ available patch[^e]/)
       }

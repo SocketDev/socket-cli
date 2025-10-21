@@ -1,6 +1,5 @@
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-import { outputDeleteRepo } from './output-delete-repo.mts'
 import {
   createErrorResult,
   createSuccessResult,
@@ -8,7 +7,7 @@ import {
 } from '../../../test/helpers/index.mts'
 
 import type { CResult } from '../../types.mts'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+import { outputDeleteRepo } from './output-delete-repo.mts'
 
 setupStandardOutputMocks()
 

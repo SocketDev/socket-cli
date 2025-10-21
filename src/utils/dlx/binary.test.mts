@@ -13,18 +13,15 @@
 import { existsSync, promises as fs } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-
-import { describe, expect, it, vi } from 'vitest'
-
 import { normalizePath } from '@socketsecurity/lib/path'
-
+import { describe, expect, it, vi } from 'vitest'
+import { InputError } from '../error/errors.mts'
 import {
   cleanDlxCache,
   getDlxCachePath,
   getSocketHomePath,
   listDlxCache,
 } from './binary.mts'
-import { InputError } from '../error/errors.mts'
 
 describe('binary', () => {
   describe('getSocketHomePath', () => {

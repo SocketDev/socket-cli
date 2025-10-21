@@ -37,39 +37,51 @@ function testScenario() {
   console.log('')
 
   console.log('🔴 THE PROBLEM:')
-  console.log(`  In Frame 2 (expanded), the textarea was at rows 35-47.`)
-  console.log(`  In Frame 3 (collapsed), the textarea is at rows 45-47.`)
-  console.log(`  Rows 35-44 were filled with textarea content in Frame 2.`)
-  console.log(`  In Frame 3, rows 35-44 are now output box content.`)
+  console.log('  In Frame 2 (expanded), the textarea was at rows 35-47.')
+  console.log('  In Frame 3 (collapsed), the textarea is at rows 45-47.')
+  console.log('  Rows 35-44 were filled with textarea content in Frame 2.')
+  console.log('  In Frame 3, rows 35-44 are now output box content.')
   console.log(`  BUT: If we don't clear, the old textarea content from Frame 2`)
-  console.log(`  remains visible BELOW the new buffer!`)
+  console.log('  remains visible BELOW the new buffer!')
   console.log('')
 
   console.log('💡 WHY \\x1B[K does not help:')
-  console.log(`  \\x1B[K clears to END OF LINE, not beyond the buffer.`)
+  console.log('  \\x1B[K clears to END OF LINE, not beyond the buffer.')
   console.log(`  The buffer is rows 0-${rows - 1}, but the terminal still has`)
-  console.log(`  content from previous frames BELOW where our cursor stops.`)
+  console.log('  content from previous frames BELOW where our cursor stops.')
   console.log('')
 
   console.log('✅ THE FIX:')
-  console.log(`  Use \\x1B[J (clear from cursor to end of screen) after the buffer.`)
-  console.log(`  OR use \\x1B[2J (clear entire screen) when layout changes.`)
+  console.log(
+    '  Use \\x1B[J (clear from cursor to end of screen) after the buffer.',
+  )
+  console.log('  OR use \\x1B[2J (clear entire screen) when layout changes.')
   console.log(`  We're already doing \\x1B[2J when needsClear=true.`)
   console.log('')
 
   console.log('🔍 WHY IT STILL FAILS:')
-  console.log(`  When we call renderFrame() immediately after setting needsClear,`)
-  console.log(`  the frame counter increments, so the shimmer animation changes.`)
+  console.log(
+    '  When we call renderFrame() immediately after setting needsClear,',
+  )
+  console.log(
+    '  the frame counter increments, so the shimmer animation changes.',
+  )
   console.log(`  But more importantly: we're rendering TWICE per keypress:`)
-  console.log(`  1. The immediate renderFrame() call`)
-  console.log(`  2. The normal animation loop (66ms later)`)
-  console.log(`  Between these two renders, if user types fast, artifacts persist.`)
+  console.log('  1. The immediate renderFrame() call')
+  console.log('  2. The normal animation loop (66ms later)')
+  console.log(
+    '  Between these two renders, if user types fast, artifacts persist.',
+  )
   console.log('')
 
   console.log('🎯 REAL FIX:')
-  console.log(`  After rendering the buffer, add \\x1B[J to clear everything below.`)
-  console.log(`  This ensures no leftover content from previous frames, WITHOUT`)
-  console.log(`  needing to clear the entire screen (which causes flicker).`)
+  console.log(
+    '  After rendering the buffer, add \\x1B[J to clear everything below.',
+  )
+  console.log(
+    '  This ensures no leftover content from previous frames, WITHOUT',
+  )
+  console.log('  needing to clear the entire screen (which causes flicker).')
 }
 
 testScenario()

@@ -1,11 +1,10 @@
 import { describe, expect, it, vi } from 'vitest'
-
-import { fetchPurlsShallowScore } from './fetch-purls-shallow-score.mts'
 import {
   setupSdkMockError,
   setupSdkMockSuccess,
   setupSdkSetupFailure,
 } from '../../../test/helpers/sdk-test-helpers.mts'
+import { fetchPurlsShallowScore } from './fetch-purls-shallow-score.mts'
 
 // Mock the dependencies.
 vi.mock('../../utils/socket/api.mjs', () => ({

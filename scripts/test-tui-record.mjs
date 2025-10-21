@@ -40,10 +40,15 @@ async function main() {
   await fs.writeFile('/tmp/tui-test-auto.sh', TUI_TEST_SCRIPT, { mode: 0o755 })
 
   console.log('Recording TUI session...')
-  const { code, stderr } = await spawn('bash', ['-c', 'timeout 10s script -q /tmp/tui-test.log bash /tmp/tui-test-auto.sh'])
+  const { code, stderr } = await spawn('bash', [
+    '-c',
+    'timeout 10s script -q /tmp/tui-test.log bash /tmp/tui-test-auto.sh',
+  ])
 
   console.log('Exit code:', code)
-  if (stderr) {console.error('Stderr:', stderr)}
+  if (stderr) {
+    console.error('Stderr:', stderr)
+  }
 
   console.log('\nRecorded output:')
   const content = await fs.readFile('/tmp/tui-test.log', 'utf8')

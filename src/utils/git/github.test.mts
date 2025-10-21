@@ -79,9 +79,7 @@ describe('github utilities', () => {
 
   describe('cacheFetch', () => {
     it('returns cached data if not expired', async () => {
-      const { readJson, safeStatsSync } = await import(
-        '@socketsecurity/lib/fs'
-      )
+      const { readJson, safeStatsSync } = await import('@socketsecurity/lib/fs')
       const mockReadJson = vi.mocked(readJson)
       const mockSafeStatsSync = vi.mocked(safeStatsSync)
 

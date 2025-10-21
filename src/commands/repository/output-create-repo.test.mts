@@ -1,10 +1,9 @@
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-import { outputCreateRepo } from './output-create-repo.mts'
 import { setupStandardOutputMocks } from '../../../test/helpers/index.mts'
 
 import type { CResult } from '../../types.mts'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+import { outputCreateRepo } from './output-create-repo.mts'
 
 setupStandardOutputMocks()
 

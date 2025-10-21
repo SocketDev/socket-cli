@@ -1,15 +1,19 @@
 import { promises as fs } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
-
+import { PNPM } from '@socketsecurity/lib/constants/agents'
+import { spawn } from '@socketsecurity/lib/spawn'
 import trash from 'trash'
 import { describe, expect, it, vi } from 'vitest'
 
-import { spawn } from '@socketsecurity/lib/spawn'
-import { PNPM } from '@socketsecurity/lib/constants/agents'
-
 import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
-import { FLAG_CONFIG, FLAG_DRY_RUN, FLAG_HELP, FLAG_SILENT, FLAG_VERSION } from '../constants/cli.mts'
+import {
+  FLAG_CONFIG,
+  FLAG_DRY_RUN,
+  FLAG_HELP,
+  FLAG_SILENT,
+  FLAG_VERSION,
+} from '../constants/cli.mts'
 import { getBinCliPath } from '../constants/paths.mts'
 
 const binCliPath = getBinCliPath()
@@ -17,7 +21,8 @@ const binCliPath = getBinCliPath()
 import type { SpawnOptions } from '@socketsecurity/lib/spawn'
 
 // TODO: Several exec/install tests fail due to config flag handling.
-describe('socket pnpm', async () => {cmdit(
+describe('socket pnpm', async () => {
+  cmdit(
     [PNPM, FLAG_HELP, FLAG_CONFIG, '{}'],
     `should support ${FLAG_HELP}`,
     async cmd => {

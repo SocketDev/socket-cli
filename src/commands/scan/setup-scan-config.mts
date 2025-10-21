@@ -6,19 +6,17 @@ import { input, select } from '@socketsecurity/lib/prompts'
 
 import ENV from '../../constants/env.mts'
 import { SOCKET_JSON } from '../../constants/paths.mts'
+import type { CResult } from '../../types.mts'
 import {
   detectDefaultBranch,
   getRepoName,
   gitBranch,
 } from '../../utils/git/git.mjs'
+import type { SocketJson } from '../../utils/socket/json.mts'
 import {
   readSocketJsonSync,
   writeSocketJson,
 } from '../../utils/socket/json.mts'
-
-import type { CResult } from '../../types.mts'
-import type { SocketJson } from '../../utils/socket/json.mts'
-
 
 export async function setupScanConfig(
   cwd: string,

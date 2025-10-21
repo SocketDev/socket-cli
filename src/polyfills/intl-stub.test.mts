@@ -62,13 +62,17 @@ describe('Intl stub polyfill', () => {
       const dtf = new Intl.DateTimeFormat()
 
       // Date object.
-      expect(dtf.format(new Date('2025-10-15T00:00:00.000Z'))).toContain('2025-10-15')
+      expect(dtf.format(new Date('2025-10-15T00:00:00.000Z'))).toContain(
+        '2025-10-15',
+      )
 
       // Timestamp number.
       expect(dtf.format(1729036800000)).toContain('2024-10-16')
 
       // Undefined (current date).
-      expect(dtf.format()).toMatch(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z/)
+      expect(dtf.format()).toMatch(
+        /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z/,
+      )
     })
 
     it('should provide formatToParts method', () => {
@@ -497,7 +501,11 @@ describe('Intl stub polyfill', () => {
       expect(Intl.supportedValuesOf('currency')).toEqual(['USD'])
       expect(Intl.supportedValuesOf('numberingSystem')).toEqual(['latn'])
       expect(Intl.supportedValuesOf('timeZone')).toEqual(['UTC'])
-      expect(Intl.supportedValuesOf('unit')).toEqual(['meter', 'second', 'byte'])
+      expect(Intl.supportedValuesOf('unit')).toEqual([
+        'meter',
+        'second',
+        'byte',
+      ])
     })
 
     it('should return empty array for unknown keys', () => {

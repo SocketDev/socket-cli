@@ -49,7 +49,14 @@
 
 import { existsSync, readdirSync } from 'node:fs'
 // eslint-disable-next-line n/no-unsupported-features/node-builtins
-import { copyFile, cp, mkdir, readFile, stat, writeFile } from 'node:fs/promises'
+import {
+  copyFile,
+  cp,
+  mkdir,
+  readFile,
+  stat,
+  writeFile,
+} from 'node:fs/promises'
 import { cpus, platform } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -129,7 +136,9 @@ function findSocketPatches() {
     return []
   }
 
-  console.log(`   Found ${allPatchFiles.length} patch file(s) in ${PATCHES_DIR}`)
+  console.log(
+    `   Found ${allPatchFiles.length} patch file(s) in ${PATCHES_DIR}`,
+  )
 
   return allPatchFiles
 }
@@ -152,7 +161,9 @@ async function copyBuildAdditions() {
     errorOnExist: false,
   })
 
-  console.log(`✅ Copied ${ADDITIONS_DIR.replace(ROOT_DIR + '/', '')}/ → ${NODE_DIR}/`)
+  console.log(
+    `✅ Copied ${ADDITIONS_DIR.replace(ROOT_DIR + '/', '')}/ → ${NODE_DIR}/`,
+  )
   console.log()
 }
 
@@ -183,7 +194,9 @@ async function copySocketSecurityBootstrap() {
     `✅ ${bootstrapSource.replace(ROOT_DIR + '/', '')} → ` +
       `${bootstrapDest.replace(NODE_DIR + '/', '')}`,
   )
-  console.log(`   ${(stats.size / 1024).toFixed(1)}KB (will be brotli encoded with lib/ files)`)
+  console.log(
+    `   ${(stats.size / 1024).toFixed(1)}KB (will be brotli encoded with lib/ files)`,
+  )
   console.log()
 }
 
@@ -385,7 +398,6 @@ async function checkBuildEnvironment() {
   logger.success('Build environment is ready')
   logger.logNewline()
 }
-
 
 /**
  * Verify Socket modifications were applied correctly.
@@ -787,9 +799,7 @@ async function createBrotliBootstrapHook() {
 async function main() {
   logger.log('')
   logger.log('🔨 Socket CLI - Custom Node.js Builder')
-  logger.log(
-    `   Building Node.js ${NODE_VERSION} with custom patches`,
-  )
+  logger.log(`   Building Node.js ${NODE_VERSION} with custom patches`)
   logger.log('')
 
   // Start timing total build.
@@ -798,10 +808,7 @@ async function main() {
   // Initialize build log.
   await saveBuildLog(BUILD_DIR, '━'.repeat(60))
   await saveBuildLog(BUILD_DIR, '  Socket CLI - Custom Node.js Builder')
-  await saveBuildLog(
-    BUILD_DIR,
-    `  Node.js ${NODE_VERSION} with custom patches`,
-  )
+  await saveBuildLog(BUILD_DIR, `  Node.js ${NODE_VERSION} with custom patches`)
   await saveBuildLog(BUILD_DIR, `  Started: ${new Date().toISOString()}`)
   await saveBuildLog(BUILD_DIR, '━'.repeat(60))
   await saveBuildLog(BUILD_DIR, '')
@@ -1003,146 +1010,145 @@ async function main() {
 
     if (!allValid) {
       throw new Error(
-        `Socket patch validation failed.\n\n` +
+        'Socket patch validation failed.\n\n' +
           `One or more Socket patches are invalid or incompatible with Node.js ${NODE_VERSION}.\n\n` +
-          `Possible causes:\n` +
-          `  - Patch files are corrupted\n` +
+          'Possible causes:\n' +
+          '  - Patch files are corrupted\n' +
           `  - Patches don't match this Node.js version\n` +
-          `  - Node.js source has unexpected modifications\n\n` +
-          `To fix:\n` +
+          '  - Node.js source has unexpected modifications\n\n' +
+          'To fix:\n' +
           `  1. Verify patch files in ${PATCHES_DIR}\n` +
-          `  2. Regenerate patches if needed:\n` +
+          '  2. Regenerate patches if needed:\n' +
           `     node scripts/regenerate-node-patches.mjs --version=${NODE_VERSION}\n` +
-          `  3. Check build/patches/README.md for patch creation guide`,
+          '  3. Check build/patches/README.md for patch creation guide',
       )
+    }
+    // Check for conflicts between patches.
+    const conflicts = checkPatchConflicts(patchData, NODE_VERSION)
+    if (conflicts.length > 0) {
+      console.warn('⚠️  Patch Conflicts Detected:')
+      console.warn()
+      for (const conflict of conflicts) {
+        if (conflict.severity === 'error') {
+          console.error(`  ❌ ERROR: ${conflict.message}`)
+          allValid = false
+        } else {
+          console.warn(`  ⚠️  WARNING: ${conflict.message}`)
+        }
+      }
+      console.warn()
+
+      if (!allValid) {
+        throw new Error(
+          'Critical patch conflicts detected.\n\n' +
+            `Socket patches have conflicts and cannot be applied to Node.js ${NODE_VERSION}.\n\n` +
+            'Conflicts found:\n' +
+            conflicts
+              .filter(c => c.severity === 'error')
+              .map(c => `  - ${c.message}`)
+              .join('\n') +
+            '\n\n' +
+            'To fix:\n' +
+            '  1. Remove conflicting patches\n' +
+            `  2. Use version-specific patches for ${NODE_VERSION}\n` +
+            '  3. Regenerate patches:\n' +
+            `     node scripts/regenerate-node-patches.mjs --version=${NODE_VERSION}\n` +
+            '  4. See build/patches/socket/README.md for guidance',
+        )
+      }
     } else {
-      // Check for conflicts between patches.
-      const conflicts = checkPatchConflicts(patchData, NODE_VERSION)
-      if (conflicts.length > 0) {
-        console.warn('⚠️  Patch Conflicts Detected:')
-        console.warn()
-        for (const conflict of conflicts) {
-          if (conflict.severity === 'error') {
-            console.error(`  ❌ ERROR: ${conflict.message}`)
-            allValid = false
-          } else {
-            console.warn(`  ⚠️  WARNING: ${conflict.message}`)
-          }
-        }
-        console.warn()
+      console.log('✅ All Socket patches validated successfully')
+      console.log('✅ No conflicts detected')
+      console.log()
+    }
 
-        if (!allValid) {
+    // Test Socket patches (dry-run) before applying.
+    if (allValid) {
+      printHeader('Testing Socket Patch Application')
+      console.log('Running dry-run to ensure patches will apply cleanly...')
+      console.log()
+
+      for (const { name, path: patchPath } of patchData) {
+        console.log(`Testing ${name}...`)
+        const dryRun = await testPatchApplication(patchPath, NODE_DIR, 1)
+        if (!dryRun.canApply) {
+          console.error(`  ❌ Cannot apply: ${dryRun.reason}`)
+          if (dryRun.stderr) {
+            console.error(`  Error: ${dryRun.stderr}`)
+          }
+          allValid = false
+        } else {
+          console.log('  ✅ Will apply cleanly')
+        }
+      }
+      console.log()
+
+      if (!allValid) {
+        throw new Error(
+          'Socket patches failed dry-run test.\n\n' +
+            `One or more Socket patches cannot be applied to Node.js ${NODE_VERSION}.\n\n` +
+            'This usually means:\n' +
+            '  - Patches are outdated for this Node.js version\n' +
+            '  - Node.js source has been modified unexpectedly\n' +
+            '  - Patch files are corrupted\n\n' +
+            'To fix:\n' +
+            '  1. Verify Node.js source is clean (no manual modifications)\n' +
+            `  2. Regenerate patches for ${NODE_VERSION}:\n` +
+            `     node scripts/regenerate-node-patches.mjs --version=${NODE_VERSION}\n` +
+            '  3. See build/patches/README.md for patch creation guide',
+        )
+      }
+    }
+
+    // Apply patches if validation and dry-run passed.
+    if (allValid) {
+      printHeader('Applying Socket Patches')
+      for (const { name, path: patchPath } of patchData) {
+        console.log(`Applying ${name}...`)
+        try {
+          // Use -p1 to match Git patch format (strips a/ and b/ prefixes).
+          // Use --batch to avoid interactive prompts.
+          // Use --forward to skip if already applied.
+          await exec(
+            'sh',
+            ['-c', `patch -p1 --batch --forward < "${patchPath}"`],
+            { cwd: NODE_DIR },
+          )
+          console.log(`✅ ${name} applied`)
+        } catch (e) {
           throw new Error(
-            `Critical patch conflicts detected.\n\n` +
-              `Socket patches have conflicts and cannot be applied to Node.js ${NODE_VERSION}.\n\n` +
-              `Conflicts found:\n` +
-              conflicts
-                .filter(c => c.severity === 'error')
-                .map(c => `  - ${c.message}`)
-                .join('\n') +
-              `\n\n` +
-              `To fix:\n` +
-              `  1. Remove conflicting patches\n` +
-              `  2. Use version-specific patches for ${NODE_VERSION}\n` +
-              `  3. Regenerate patches:\n` +
+            'Socket patch application failed.\n\n' +
+              `Failed to apply patch: ${name}\n` +
+              `Node.js version: ${NODE_VERSION}\n` +
+              `Patch path: ${patchPath}\n\n` +
+              `Error: ${e.message}\n\n` +
+              'This usually means:\n' +
+              '  - The patch is outdated for this Node.js version\n' +
+              '  - Node.js source has unexpected modifications\n' +
+              '  - Patch file format is invalid\n\n' +
+              'To fix:\n' +
+              '  1. Verify Node.js source is clean\n' +
+              '  2. Regenerate patches:\n' +
               `     node scripts/regenerate-node-patches.mjs --version=${NODE_VERSION}\n` +
-              `  4. See build/patches/socket/README.md for guidance`,
+              '  3. See build/patches/README.md for troubleshooting',
           )
         }
-      } else {
-        console.log('✅ All Socket patches validated successfully')
-        console.log('✅ No conflicts detected')
-        console.log()
       }
-
-      // Test Socket patches (dry-run) before applying.
-      if (allValid) {
-        printHeader('Testing Socket Patch Application')
-        console.log('Running dry-run to ensure patches will apply cleanly...')
-        console.log()
-
-        for (const { name, path: patchPath } of patchData) {
-          console.log(`Testing ${name}...`)
-          const dryRun = await testPatchApplication(patchPath, NODE_DIR, 1)
-          if (!dryRun.canApply) {
-            console.error(`  ❌ Cannot apply: ${dryRun.reason}`)
-            if (dryRun.stderr) {
-              console.error(`  Error: ${dryRun.stderr}`)
-            }
-            allValid = false
-          } else {
-            console.log('  ✅ Will apply cleanly')
-          }
-        }
-        console.log()
-
-        if (!allValid) {
-          throw new Error(
-            `Socket patches failed dry-run test.\n\n` +
-              `One or more Socket patches cannot be applied to Node.js ${NODE_VERSION}.\n\n` +
-              `This usually means:\n` +
-              `  - Patches are outdated for this Node.js version\n` +
-              `  - Node.js source has been modified unexpectedly\n` +
-              `  - Patch files are corrupted\n\n` +
-              `To fix:\n` +
-              `  1. Verify Node.js source is clean (no manual modifications)\n` +
-              `  2. Regenerate patches for ${NODE_VERSION}:\n` +
-              `     node scripts/regenerate-node-patches.mjs --version=${NODE_VERSION}\n` +
-              `  3. See build/patches/README.md for patch creation guide`,
-          )
-        }
-      }
-
-      // Apply patches if validation and dry-run passed.
-      if (allValid) {
-        printHeader('Applying Socket Patches')
-        for (const { name, path: patchPath } of patchData) {
-          console.log(`Applying ${name}...`)
-          try {
-            // Use -p1 to match Git patch format (strips a/ and b/ prefixes).
-            // Use --batch to avoid interactive prompts.
-            // Use --forward to skip if already applied.
-            await exec(
-              'sh',
-              ['-c', `patch -p1 --batch --forward < "${patchPath}"`],
-              { cwd: NODE_DIR },
-            )
-            console.log(`✅ ${name} applied`)
-          } catch (e) {
-            throw new Error(
-              `Socket patch application failed.\n\n` +
-                `Failed to apply patch: ${name}\n` +
-                `Node.js version: ${NODE_VERSION}\n` +
-                `Patch path: ${patchPath}\n\n` +
-                `Error: ${e.message}\n\n` +
-                `This usually means:\n` +
-                `  - The patch is outdated for this Node.js version\n` +
-                `  - Node.js source has unexpected modifications\n` +
-                `  - Patch file format is invalid\n\n` +
-                `To fix:\n` +
-                `  1. Verify Node.js source is clean\n` +
-                `  2. Regenerate patches:\n` +
-                `     node scripts/regenerate-node-patches.mjs --version=${NODE_VERSION}\n` +
-                `  3. See build/patches/README.md for troubleshooting`,
-            )
-          }
-        }
-        console.log('✅ All Socket patches applied successfully')
-        console.log()
-      }
+      console.log('✅ All Socket patches applied successfully')
+      console.log()
     }
   } else {
     throw new Error(
       `No Socket patches found for Node.js ${NODE_VERSION}.\n\n` +
         `Expected patches in: ${PATCHES_DIR}\n\n` +
-        `Socket patches are required for all Node.js builds. Patches must exist before building.\n\n` +
-        `To fix:\n` +
+        'Socket patches are required for all Node.js builds. Patches must exist before building.\n\n' +
+        'To fix:\n' +
         `  1. Create patches for ${NODE_VERSION}:\n` +
         `     node scripts/regenerate-node-patches.mjs --version=${NODE_VERSION}\n` +
-        `  2. See build/patches/README.md for patch creation guide\n` +
-        `  3. Patches must be committed to the repository before building\n\n` +
-        `Note: For new Node.js versions, you must create patches following the standard\n` +
-        `patch creation process documented in build/patches/README.md`,
+        '  2. See build/patches/README.md for patch creation guide\n' +
+        '  3. Patches must be committed to the repository before building\n\n' +
+        'Note: For new Node.js versions, you must create patches following the standard\n' +
+        'patch creation process documented in build/patches/README.md',
     )
   }
 

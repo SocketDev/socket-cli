@@ -1,11 +1,9 @@
 import { logger } from '@socketsecurity/lib/logger'
 import { pluralize } from '@socketsecurity/lib/words'
-
+import type { CResult, OutputKind } from '../../types.mts'
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
-
 import type { PatchInfoData } from './handle-patch-info.mts'
-import type { CResult, OutputKind } from '../../types.mts'
 
 export async function outputPatchInfoResult(
   result: CResult<PatchInfoData>,
@@ -28,7 +26,7 @@ export async function outputPatchInfoResult(
   const patch = result.data
 
   if (outputKind === 'markdown') {
-    logger.log(`## Patch Information\n`)
+    logger.log('## Patch Information\n')
     logger.log(`**PURL**: ${patch.purl}\n`)
     if (patch.uuid) {
       logger.log(`**UUID**: ${patch.uuid}\n`)
@@ -112,9 +110,7 @@ export async function outputPatchInfoResult(
   if (patch.vulnerabilities) {
     const vulnCount = Object.keys(patch.vulnerabilities).length
     const vulnWord = vulnCount === 1 ? 'vulnerability' : 'vulnerabilities'
-    logger.log(
-      `\nVulnerabilities (${vulnCount} ${vulnWord}):`,
-    )
+    logger.log(`\nVulnerabilities (${vulnCount} ${vulnWord}):`)
     logger.group()
     for (const { 0: ghsaId, 1: vuln } of Object.entries(
       patch.vulnerabilities,
@@ -131,11 +127,11 @@ export async function outputPatchInfoResult(
         logger.log(`Summary: ${vuln.summary}`)
       }
       if (vuln.description) {
-        logger.log(`\nDescription:`)
+        logger.log('\nDescription:')
         logger.log(vuln.description)
       }
       if (vuln.patchExplanation) {
-        logger.log(`\nPatch Explanation:`)
+        logger.log('\nPatch Explanation:')
         logger.log(vuln.patchExplanation)
       }
       logger.groupEnd()

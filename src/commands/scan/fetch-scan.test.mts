@@ -58,9 +58,7 @@ describe('fetchScan', () => {
   it('handles invalid JSON in scan data', async () => {
     const { fetchScan } = await import('./fetch-scan.mts')
     const { queryApiSafeText } = await import('../../utils/socket/api.mjs')
-    const { debugDir, debugFn } = await import(
-      '@socketsecurity/lib/debug'
-    )
+    const { debugDir, debugFn } = await import('@socketsecurity/lib/debug')
     const mockQueryApiText = vi.mocked(queryApiSafeText)
     const mockDebugFn = vi.mocked(debugFn)
     const mockDebugDir = vi.mocked(debugDir)

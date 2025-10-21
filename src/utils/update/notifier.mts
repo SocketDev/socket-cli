@@ -20,11 +20,10 @@
  * - User experience messaging
  */
 
-import colors from 'yoctocolors-cjs'
-
 import { logger } from '@socketsecurity/lib/logger'
 import { onExit } from '@socketsecurity/lib/signal-exit'
 import { isNonEmptyString } from '@socketsecurity/lib/strings'
+import colors from 'yoctocolors-cjs'
 
 import { SEA_UPDATE_COMMAND } from '../../constants/cli.mts'
 import { getSeaBinaryPath } from '../executable/detect.mts'

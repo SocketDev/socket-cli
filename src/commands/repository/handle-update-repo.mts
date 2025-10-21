@@ -1,7 +1,6 @@
+import type { OutputKind } from '../../types.mts'
 import { fetchUpdateRepo } from './fetch-update-repo.mts'
 import { outputUpdateRepo } from './output-update-repo.mts'
-
-import type { OutputKind } from '../../types.mts'
 
 export async function handleUpdateRepo(
   {

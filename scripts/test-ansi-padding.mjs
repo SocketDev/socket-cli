@@ -26,9 +26,11 @@ console.log('Bytes:', Buffer.from(padded).length)
 console.log('')
 
 console.log('🔴 THE PROBLEM:')
-console.log(`We want 120 visible chars, we got ${visibleLength(padded)} visible chars. ✅`)
+console.log(
+  `We want 120 visible chars, we got ${visibleLength(padded)} visible chars. ✅`,
+)
 console.log(`But the actual string is ${padded.length} bytes long!`)
-console.log(`When terminal renders this, it sees:`)
+console.log('When terminal renders this, it sees:')
 console.log(`  - ANSI codes (control sequences, don't move cursor)`)
 console.log(`  - ${visibleLength(line)} visible chars from original`)
 console.log(`  - ${cols - visible} spaces`)

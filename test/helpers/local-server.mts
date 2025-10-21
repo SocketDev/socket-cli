@@ -29,10 +29,7 @@ import { ENV } from '../../src/constants/env.mts'
  * The depscan API server runs on port 8866 by default.
  * See: depscan/workspaces/api-v0/e2e-tests/common.js
  */
-const DEFAULT_LOCAL_SERVERS = [
-  'http://localhost:8866',
-  'http://127.0.0.1:8866',
-]
+const DEFAULT_LOCAL_SERVERS = ['http://localhost:8866', 'http://127.0.0.1:8866']
 
 /**
  * Check if a URL is reachable by making a HEAD request.

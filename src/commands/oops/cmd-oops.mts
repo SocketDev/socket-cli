@@ -2,14 +2,13 @@ import { logger } from '@socketsecurity/lib/logger'
 
 import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
-import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
-import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
-import { serializeResultJson } from '../../utils/output/result-json.mjs'
-
 import type {
   CliCommandConfig,
   CliCommandContext,
 } from '../../utils/cli/with-subcommands.mjs'
+import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
+import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
+import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
 const config: CliCommandConfig = {
   commandName: 'oops',

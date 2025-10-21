@@ -1,6 +1,5 @@
-import semver from 'semver'
-
 import type { SemVer } from 'semver'
+import semver from 'semver'
 
 export const RangeStyles = ['pin', 'preserve']
 

@@ -1,4 +1,3 @@
-import { escapeRegExp } from '@socketsecurity/lib/regexps'
 import {
   BUN,
   PNPM,
@@ -7,6 +6,7 @@ import {
   YARN_CLASSIC,
 } from '@socketsecurity/lib/constants/agents'
 import { EXT_LOCK } from '@socketsecurity/lib/constants/paths'
+import { escapeRegExp } from '@socketsecurity/lib/regexps'
 
 import type { EnvDetails } from '../../utils/ecosystem/environment.mjs'
 

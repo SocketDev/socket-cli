@@ -6,7 +6,8 @@ import { getBinCliPath } from '../constants/paths.mts'
 
 const binCliPath = getBinCliPath()
 
-describe('socket organization quota', async () => {cmdit(
+describe('socket organization quota', async () => {
+  cmdit(
     ['organization', 'quota', FLAG_HELP, FLAG_CONFIG, '{}'],
     `should support ${FLAG_HELP}`,
     async cmd => {

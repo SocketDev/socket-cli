@@ -1,11 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
+import meow from '../../meow.mts'
 import {
   emitBanner,
   getLastSeenCommand,
   meowOrExit,
 } from './with-subcommands.mjs'
-import meow from '../../meow.mts'
 
 // Mock meow.
 vi.mock('meow', () => ({
@@ -199,9 +198,7 @@ describe('meow-with-subcommands', () => {
 
   describe('emitBanner', () => {
     it('emits banner with name and org', async () => {
-      const { logger } = vi.mocked(
-        await import('@socketsecurity/lib/logger'),
-      )
+      const { logger } = vi.mocked(await import('@socketsecurity/lib/logger'))
 
       emitBanner('socket', 'test-org', false)
 
@@ -209,9 +206,7 @@ describe('meow-with-subcommands', () => {
     })
 
     it('emits compact banner when compact mode is true', async () => {
-      const { logger } = vi.mocked(
-        await import('@socketsecurity/lib/logger'),
-      )
+      const { logger } = vi.mocked(await import('@socketsecurity/lib/logger'))
 
       emitBanner('socket', 'test-org', true)
 
@@ -219,9 +214,7 @@ describe('meow-with-subcommands', () => {
     })
 
     it('handles undefined org', async () => {
-      const { logger } = vi.mocked(
-        await import('@socketsecurity/lib/logger'),
-      )
+      const { logger } = vi.mocked(await import('@socketsecurity/lib/logger'))
 
       emitBanner('socket', undefined, false)
 

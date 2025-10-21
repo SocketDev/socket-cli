@@ -1,7 +1,6 @@
+import type { OutputKind } from '../../types.mts'
 import { fetchDiffScan } from './fetch-diff-scan.mts'
 import { outputDiffScan } from './output-diff-scan.mts'
-
-import type { OutputKind } from '../../types.mts'
 
 export async function handleDiffScan({
   depth,

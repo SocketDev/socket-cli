@@ -27,18 +27,15 @@
 
 import { logger } from '@socketsecurity/lib/logger'
 import { isNonEmptyString } from '@socketsecurity/lib/strings'
-
+import { UPDATE_CHECK_TTL } from '../../constants/cache.mts'
+import type { AuthInfo } from './checker.mts'
 import { checkForUpdates as performUpdateCheck } from './checker.mts'
 import {
   scheduleExitNotification,
   showUpdateNotification,
 } from './notifier.mts'
-import { updateStore } from './store.mts'
-import { UPDATE_CHECK_TTL } from '../../constants/cache.mts'
-
-import type { AuthInfo } from './checker.mts'
 import type { StoreRecord } from './store.mts'
-
+import { updateStore } from './store.mts'
 
 interface UpdateManagerOptions {
   authInfo?: AuthInfo | undefined

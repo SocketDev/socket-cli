@@ -1,11 +1,10 @@
 import { describe, expect, it, vi } from 'vitest'
-
-import { fetchCreateRepo } from './fetch-create-repo.mts'
 import { createSuccessResult } from '../../../test/helpers/mocks.mts'
 import {
   setupSdkMockError,
   setupSdkSetupFailure,
 } from '../../../test/helpers/sdk-test-helpers.mts'
+import { fetchCreateRepo } from './fetch-create-repo.mts'
 
 // Mock the dependencies.
 vi.mock('../../utils/socket/api.mjs', () => ({

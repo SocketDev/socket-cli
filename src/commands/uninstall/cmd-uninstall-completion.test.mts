@@ -6,7 +6,8 @@ import { getBinCliPath } from '../constants/paths.mts'
 
 const binCliPath = getBinCliPath()
 
-describe('socket uninstall completion', async () => {cmdit(
+describe('socket uninstall completion', async () => {
+  cmdit(
     ['uninstall', 'completion', FLAG_HELP, FLAG_CONFIG, '{}'],
     `should support ${FLAG_HELP}`,
     async cmd => {

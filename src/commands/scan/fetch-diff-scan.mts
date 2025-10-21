@@ -1,10 +1,8 @@
 import { logger } from '@socketsecurity/lib/logger'
-
-import { queryApiSafeJson } from '../../utils/socket/api.mjs'
-
-import type { CResult } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
+import type { CResult } from '../../types.mts'
+import { queryApiSafeJson } from '../../utils/socket/api.mjs'
 
 export async function fetchDiffScan({
   id1,

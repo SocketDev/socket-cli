@@ -11,7 +11,12 @@ const state = {
   // Console window (top-right).
   consoleWidth: 40,
   consoleHeight: 30,
-  consoleLines: ['Socket CLI Output', '', '✓ Package scanned', '✓ No issues found'],
+  consoleLines: [
+    'Socket CLI Output',
+    '',
+    '✓ Package scanned',
+    '✓ No issues found',
+  ],
   // Input block (bottom).
   inputText: '> ',
   cursorPosition: 2,
@@ -52,7 +57,9 @@ function visibleLength(str) {
  * Replace substring at position in a string, accounting for visible length.
  */
 function replaceAt(str, index, replacement) {
-  if (index < 0) {return str}
+  if (index < 0) {
+    return str
+  }
   const replacementVisibleLen = visibleLength(replacement)
 
   // Find the actual character position accounting for ANSI codes.
@@ -74,7 +81,10 @@ function replaceAt(str, index, replacement) {
   // Find end position for visible length.
   let endVisiblePos = visiblePos
   let endActualPos = actualPos
-  while (endVisiblePos < index + replacementVisibleLen && endActualPos < str.length) {
+  while (
+    endVisiblePos < index + replacementVisibleLen &&
+    endActualPos < str.length
+  ) {
     if (str[endActualPos] === '\x1B') {
       // Skip ANSI code.
       while (endActualPos < str.length && str[endActualPos] !== 'm') {
@@ -131,7 +141,9 @@ function drawCompleteTUI() {
   // Header content.
   for (let i = 0; i < logoLines.length; i++) {
     const lineY = headerY + 1 + i
-    if (lineY >= rows - 1) {break}
+    if (lineY >= rows - 1) {
+      break
+    }
 
     const line = logoLines[i]
     const lineVisibleLen = visibleLength(line)
@@ -148,7 +160,11 @@ function drawCompleteTUI() {
   const headerBottomY = headerY + logoLines.length + 1
   const headerBottomBorder = `╰${'─'.repeat(headerWidth - 2)}╯`
   if (headerBottomY < rows - 1) {
-    buffer[headerBottomY] = replaceAt(buffer[headerBottomY], headerX, headerBottomBorder)
+    buffer[headerBottomY] = replaceAt(
+      buffer[headerBottomY],
+      headerX,
+      headerBottomBorder,
+    )
   }
 
   // Draw console window (top-right, double border).
@@ -158,20 +174,30 @@ function drawCompleteTUI() {
   // Console content lines.
   for (let i = 0; i < rect.height - 2 && i < state.consoleLines.length; i++) {
     const lineY = rect.y + 1 + i
-    const content = state.consoleLines[i].slice(0, rect.width - 4).padEnd(rect.width - 4)
+    const content = state.consoleLines[i]
+      .slice(0, rect.width - 4)
+      .padEnd(rect.width - 4)
     buffer[lineY] = replaceAt(buffer[lineY], rect.x, `║ ${content} ║`)
   }
 
   // Fill remaining console lines.
   for (let i = state.consoleLines.length; i < rect.height - 2; i++) {
     const lineY = rect.y + 1 + i
-    buffer[lineY] = replaceAt(buffer[lineY], rect.x, `║${' '.repeat(rect.width - 2)}║`)
+    buffer[lineY] = replaceAt(
+      buffer[lineY],
+      rect.x,
+      `║${' '.repeat(rect.width - 2)}║`,
+    )
   }
 
   // Console bottom border.
   const consoleBottomY = rect.y + rect.height - 1
   const consoleBottomBorder = `╚${'═'.repeat(rect.width - 2)}╝`
-  buffer[consoleBottomY] = replaceAt(buffer[consoleBottomY], rect.x, consoleBottomBorder)
+  buffer[consoleBottomY] = replaceAt(
+    buffer[consoleBottomY],
+    rect.x,
+    consoleBottomBorder,
+  )
 
   // Draw input text block (bottom, above outer border) - same width as console window.
   const inputBlockHeight = 3
@@ -181,12 +207,18 @@ function drawCompleteTUI() {
 
   // Input block top border.
   const inputTopBorder = `┌${'─'.repeat(inputBlockWidth - 2)}┐`
-  buffer[inputBlockY] = replaceAt(buffer[inputBlockY], inputBlockX, inputTopBorder)
+  buffer[inputBlockY] = replaceAt(
+    buffer[inputBlockY],
+    inputBlockX,
+    inputTopBorder,
+  )
 
   // Input text line with cursor.
   const inputLineY = inputBlockY + 1
   const maxInputWidth = inputBlockWidth - 4
-  const displayText = state.inputText.slice(0, maxInputWidth).padEnd(maxInputWidth)
+  const displayText = state.inputText
+    .slice(0, maxInputWidth)
+    .padEnd(maxInputWidth)
   const cursorChar = '█'
   const cursorPos = Math.min(state.cursorPosition, maxInputWidth - 1)
   const textWithCursor =
@@ -194,21 +226,27 @@ function drawCompleteTUI() {
     cursorChar +
     displayText.slice(cursorPos + 1)
 
-  buffer[inputLineY] = replaceAt(buffer[inputLineY], inputBlockX, `│ ${textWithCursor} │`)
+  buffer[inputLineY] = replaceAt(
+    buffer[inputLineY],
+    inputBlockX,
+    `│ ${textWithCursor} │`,
+  )
 
   // Input block bottom border.
   const inputBottomY = inputBlockY + 2
   const inputBottomBorder = `└${'─'.repeat(inputBlockWidth - 2)}┘`
-  buffer[inputBottomY] = replaceAt(buffer[inputBottomY], inputBlockX, inputBottomBorder)
+  buffer[inputBottomY] = replaceAt(
+    buffer[inputBottomY],
+    inputBlockX,
+    inputBottomBorder,
+  )
 
   // Status bar (below input block).
   const statusY = rows - 2
   const statusText = `  Connected • Socket CLI • Theme: ${state.theme} • Frame: ${state.frame} • Press q to exit`
   const statusPadded = statusText.padEnd(cols - 2)
   buffer[statusY] =
-    buffer[statusY].slice(0, 1) +
-    statusPadded +
-    buffer[statusY].slice(cols - 1)
+    buffer[statusY].slice(0, 1) + statusPadded + buffer[statusY].slice(cols - 1)
 
   return buffer.join('\n')
 }
@@ -300,8 +338,7 @@ function cleanup() {
     process.stdout.write('\x1B[?25h')
     process.stdout.write('\x1B[2J\x1B[H')
     // Ignore cleanup errors.
-  } catch {
-  }
+  } catch {}
 
   console.log('\nExiting complete TUI demo...\n')
   process.exit(0)

@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
-import shadowYarn from './bin.mts'
 import { FLAG_DRY_RUN } from '../../constants/cli.mts'
+import shadowYarn from './bin.mts'
 
 // Mock readPackageJson from registry
 const mockReadPackageJson = vi.hoisted(() => vi.fn())

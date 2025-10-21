@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
-import { checkCommandInput } from './check-input.mts'
 import { OUTPUT_JSON, OUTPUT_MARKDOWN, OUTPUT_TEXT } from '../constants/cli.mts'
+import { checkCommandInput } from './check-input.mts'
 
 // Mock dependencies.
 vi.mock('yoctocolors-cjs', () => ({
@@ -94,9 +93,7 @@ describe('checkCommandInput', () => {
 
   describe('when some checks fail', () => {
     it('returns false and sets exit code to 2', async () => {
-      const { logger } = vi.mocked(
-        await import('@socketsecurity/lib/logger'),
-      )
+      const { logger } = vi.mocked(await import('@socketsecurity/lib/logger'))
       const { failMsgWithBadge } = vi.mocked(
         await import('./fail-msg-with-badge.mts'),
       )
@@ -130,9 +127,7 @@ describe('checkCommandInput', () => {
     })
 
     it('handles json output kind', async () => {
-      const { logger } = vi.mocked(
-        await import('@socketsecurity/lib/logger'),
-      )
+      const { logger } = vi.mocked(await import('@socketsecurity/lib/logger'))
       const { serializeResultJson } = vi.mocked(
         await import('./result-json.mts'),
       )

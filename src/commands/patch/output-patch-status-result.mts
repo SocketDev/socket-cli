@@ -1,10 +1,8 @@
 import { logger } from '@socketsecurity/lib/logger'
-
+import type { CResult, OutputKind } from '../../types.mts'
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
-
 import type { PatchStatus } from './handle-patch-status.mts'
-import type { CResult, OutputKind } from '../../types.mts'
 
 type PatchStatusResultData = {
   statuses: PatchStatus[]
@@ -81,13 +79,15 @@ export async function outputPatchStatusResult(
       logger.log(`**Vulnerabilities**: ${status.vulnerabilityCount}`)
 
       if (status.appliedLocations.length > 0) {
-        logger.log(`**Locations**:`)
+        logger.log('**Locations**:')
         for (const location of status.appliedLocations) {
           logger.log(`- ${location}`)
         }
       }
 
-      logger.log(`**Backup Available**: ${status.backupAvailable ? 'Yes' : 'No'}`)
+      logger.log(
+        `**Backup Available**: ${status.backupAvailable ? 'Yes' : 'No'}`,
+      )
       logger.log('')
     }
 
@@ -145,7 +145,9 @@ export async function outputPatchStatusResult(
       logger.groupEnd()
     }
 
-    logger.log(`Backup: ${status.backupAvailable ? 'Available' : 'Not available'}`)
+    logger.log(
+      `Backup: ${status.backupAvailable ? 'Available' : 'Not available'}`,
+    )
 
     logger.groupEnd()
   }

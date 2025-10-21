@@ -1,9 +1,8 @@
+import type { OutputKind } from '../../types.mts'
 import { fetchListAllRepos } from './fetch-list-all-repos.mts'
 import { fetchListRepos } from './fetch-list-repos.mts'
 import { outputListRepos } from './output-list-repos.mts'
-
 import type { Direction } from './types.mts'
-import type { OutputKind } from '../../types.mts'
 
 export async function handleListRepos({
   all,

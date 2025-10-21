@@ -28,7 +28,11 @@ function ShimmerText({ children }: { children: string }): React.ReactElement {
   const colors = ['#8B5CF6', '#A78BFA', '#C4B5FD', '#DDD6FE']
   const colorIndex = Math.floor(frame / 5) % colors.length
 
-  return createElement(Text, { color: colors[colorIndex], bold: true }, children)
+  return createElement(
+    Text,
+    { color: colors[colorIndex], bold: true },
+    children,
+  )
 }
 
 /**
@@ -102,7 +106,11 @@ export function PatchSelectorApp({
         createElement(
           Box,
           { justifyContent: 'center' },
-          createElement(Text, { dimColor: true }, 'Select patches to apply to your project'),
+          createElement(
+            Text,
+            { dimColor: true },
+            'Select patches to apply to your project',
+          ),
         ),
       ),
     ),
@@ -152,7 +160,11 @@ export function PatchSelectorApp({
               checkbox,
             ),
             ' ',
-            createElement(Text, { color: 'cyan' }, patch.purl || 'Unknown package'),
+            createElement(
+              Text,
+              { color: 'cyan' },
+              patch.purl || 'Unknown package',
+            ),
             createElement(Text, { color: 'yellow' }, vulnText),
           ),
           // Show features if available.

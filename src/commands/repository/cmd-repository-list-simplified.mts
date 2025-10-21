@@ -1,8 +1,7 @@
 /** @fileoverview Simplified repository list command demonstrating DRY principles */
 
-import colors from 'yoctocolors-cjs'
-
 import { logger } from '@socketsecurity/lib/logger'
+import colors from 'yoctocolors-cjs'
 
 import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'
 import { buildCommand } from '../../utils/command/builder.mts'

@@ -1,3 +1,5 @@
+import type { CliSubcommand } from '../../utils/cli/with-subcommands.mjs'
+import { meowWithSubcommands } from '../../utils/cli/with-subcommands.mjs'
 import { cmdPatchApply } from './cmd-patch-apply.mts'
 import { cmdPatchCleanup } from './cmd-patch-cleanup.mts'
 import { cmdPatchDiscover } from './cmd-patch-discover.mts'
@@ -7,9 +9,6 @@ import { cmdPatchInfo } from './cmd-patch-info.mts'
 import { cmdPatchList } from './cmd-patch-list.mts'
 import { cmdPatchRm } from './cmd-patch-rm.mts'
 import { cmdPatchStatus } from './cmd-patch-status.mts'
-import { meowWithSubcommands } from '../../utils/cli/with-subcommands.mjs'
-
-import type { CliSubcommand } from '../../utils/cli/with-subcommands.mjs'
 
 const description = 'Manage CVE patches for dependencies'
 

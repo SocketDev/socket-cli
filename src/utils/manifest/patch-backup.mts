@@ -21,11 +21,9 @@
 import crypto from 'node:crypto'
 import { promises as fs } from 'node:fs'
 import { dirname, join } from 'node:path'
-
+import { get, put, remove } from '@socketsecurity/lib/cacache'
 // @ts-expect-error - No type declarations available.
 import ssri from 'ssri'
-
-import { get, put, remove } from '@socketsecurity/lib/cacache'
 
 export interface BackupFileInfo {
   integrity: string // ssri format: sha256-base64

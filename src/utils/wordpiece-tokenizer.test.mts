@@ -6,10 +6,8 @@
  */
 
 import { describe, expect, it } from 'vitest'
-
-import { WordPieceTokenizer } from './wordpiece-tokenizer.mts'
-
 import type { Vocabulary } from './wordpiece-tokenizer.mts'
+import { WordPieceTokenizer } from './wordpiece-tokenizer.mts'
 
 /**
  * Create a minimal test vocabulary.
@@ -25,12 +23,12 @@ function createTestVocab(): Vocabulary {
     '[MASK]': 103,
 
     // Common words.
-    'fix': 8081,
-    'scan': 15772,
-    'vulnerability': 23829,
-    'package': 7427,
-    'security': 3036,
-    'dependency': 16621,
+    fix: 8081,
+    scan: 15772,
+    vulnerability: 23829,
+    package: 7427,
+    security: 3036,
+    dependency: 16621,
 
     // Subwords.
     '##ing': 2075,
@@ -142,7 +140,9 @@ describe('WordPieceTokenizer', () => {
       const vocab = createTestVocab()
       const tokenizer = new WordPieceTokenizer({ vocab, maxLength: 5 })
 
-      const result = tokenizer.tokenize('fix scan vulnerability package security')
+      const result = tokenizer.tokenize(
+        'fix scan vulnerability package security',
+      )
 
       expect(result.tokens.length).toBeLessThanOrEqual(5)
       expect(result.tokens[0]).toBe('[CLS]')
@@ -207,11 +207,7 @@ describe('WordPieceTokenizer', () => {
       const vocab = createTestVocab()
       const tokenizer = new WordPieceTokenizer({ vocab })
 
-      const queries = [
-        'fix vulnerabilities',
-        'scan packages',
-        'check security',
-      ]
+      const queries = ['fix vulnerabilities', 'scan packages', 'check security']
 
       for (const query of queries) {
         const result = tokenizer.tokenize(query)

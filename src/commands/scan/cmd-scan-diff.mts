@@ -1,6 +1,4 @@
 import { logger } from '@socketsecurity/lib/logger'
-
-import { handleDiffScan } from './handle-diff-scan.mts'
 import {
   DRY_RUN_BAILING_NOW,
   FLAG_JSON,
@@ -8,6 +6,10 @@ import {
 } from '../../constants/cli.mts'
 import { SOCKET_WEBSITE_URL } from '../../constants/socket.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
+import type {
+  CliCommandConfig,
+  CliCommandContext,
+} from '../../utils/cli/with-subcommands.mjs'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import {
   getFlagApiRequirementsOutput,
@@ -17,11 +19,7 @@ import { getOutputKind } from '../../utils/output/mode.mjs'
 import { determineOrgSlug } from '../../utils/socket/org-slug.mjs'
 import { hasDefaultApiToken } from '../../utils/socket/sdk.mjs'
 import { checkCommandInput } from '../../utils/validation/check-input.mts'
-
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
+import { handleDiffScan } from './handle-diff-scan.mts'
 
 export const CMD_NAME = 'diff'
 

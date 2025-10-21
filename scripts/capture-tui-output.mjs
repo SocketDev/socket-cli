@@ -12,20 +12,20 @@ const outputStream = await fs.open(outputFile, 'w')
 
 // Start the demo.
 const demo = spawn('node', ['scripts/load.mjs', 'demo-final-tui'], {
-  stdio: ['pipe', 'pipe', 'inherit']
+  stdio: ['pipe', 'pipe', 'inherit'],
 })
 
 let frameCount = 0
 const frames = []
 
-demo.stdout.on('data', (data) => {
+demo.stdout.on('data', data => {
   frameCount++
   const str = data.toString()
   frames.push({
     number: frameCount,
     data: str,
     length: str.length,
-    lines: str.split('\n').length
+    lines: str.split('\n').length,
   })
 
   // Write to file.
@@ -66,10 +66,10 @@ setTimeout(async () => {
     setTimeout(async () => {
       await outputStream.close()
 
-      console.log(`\nCapture complete!`)
+      console.log('\nCapture complete!')
       console.log(`Frames captured: ${frameCount}`)
       console.log(`Output saved to: ${outputFile}`)
-      console.log(`\nFrame summary:`)
+      console.log('\nFrame summary:')
       frames.slice(0, 5).forEach(f => {
         console.log(`  Frame ${f.number}: ${f.length} bytes, ${f.lines} lines`)
       })

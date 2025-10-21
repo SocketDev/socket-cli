@@ -41,8 +41,12 @@ describe('Patches API Integration', () => {
     it('should skip if local server not running', async () => {
       if (!localServerUrl) {
         console.log('⊘ Skipping test: local depscan API server not running')
-        console.log('  Start server with: cd ../depscan/workspaces/api-v0 && pnpm test')
-        console.log('  API server runs on port 8866 (not the web server on port 3000)')
+        console.log(
+          '  Start server with: cd ../depscan/workspaces/api-v0 && pnpm test',
+        )
+        console.log(
+          '  API server runs on port 8866 (not the web server on port 3000)',
+        )
         return
       }
 

@@ -59,7 +59,7 @@ async function cycleThemes() {
 
   clearScreen()
   console.log('\n✓ Demo complete!\n')
-  console.log('The ASCII header now uses socket-registry\'s applyShimmer')
+  console.log("The ASCII header now uses socket-registry's applyShimmer")
   console.log('for smooth, themeable gradient animations.\n')
   process.exit(0)
 }

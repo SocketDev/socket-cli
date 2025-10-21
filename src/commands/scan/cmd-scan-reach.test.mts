@@ -10,7 +10,8 @@ const binCliPath = getBinCliPath()
 
 const _fixtureBaseDir = path.join(testPath, 'fixtures/commands/scan/reach')
 
-describe('socket scan reach', async () => {cmdit(
+describe('socket scan reach', async () => {
+  cmdit(
     ['scan', 'reach', FLAG_HELP, FLAG_CONFIG, '{}'],
     `should support ${FLAG_HELP}`,
     async cmd => {

@@ -1,9 +1,7 @@
 /** @fileoverview Rich progress indicators for better CLI UX. */
 
-import colors from 'yoctocolors-cjs'
-
 import type { Writable } from 'node:stream'
-
+import colors from 'yoctocolors-cjs'
 
 interface MultiProgressOptions {
   stream?: Writable

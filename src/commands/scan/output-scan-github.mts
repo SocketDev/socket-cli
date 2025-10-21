@@ -1,9 +1,7 @@
 import { logger } from '@socketsecurity/lib/logger'
-
+import type { CResult, OutputKind } from '../../types.mts'
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
-
-import type { CResult, OutputKind } from '../../types.mts'
 
 export async function outputScanGithub(
   result: CResult<unknown>,

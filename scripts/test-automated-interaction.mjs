@@ -19,9 +19,13 @@ console.log('Observing for garbling artifacts...\n')
 console.log('---\n')
 
 // Spawn the TUI demo.
-const child = spawn('node', ['/Users/jdalton/projects/socket-cli/scripts/demo-final-tui.mjs'], {
-  stdio: ['pipe', 'inherit', 'inherit']
-})
+const child = spawn(
+  'node',
+  ['/Users/jdalton/projects/socket-cli/scripts/demo-final-tui.mjs'],
+  {
+    stdio: ['pipe', 'inherit', 'inherit'],
+  },
+)
 
 // Helper to send keys.
 function sendKey(key, delay = 100) {
@@ -74,7 +78,7 @@ async function runTest() {
 
 runTest().catch(console.error)
 
-child.on('exit', (code) => {
+child.on('exit', code => {
   console.log(`\n[TEST] Demo exited with code ${code}`)
   console.log('\n=== TEST COMPLETE ===')
 })

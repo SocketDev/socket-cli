@@ -1,7 +1,6 @@
+import type { OutputKind } from '../../types.mts'
 import { fetchDeleteRepo } from './fetch-delete-repo.mts'
 import { outputDeleteRepo } from './output-delete-repo.mts'
-
-import type { OutputKind } from '../../types.mts'
 
 export async function handleDeleteRepo(
   orgSlug: string,

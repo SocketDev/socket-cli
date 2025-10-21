@@ -1,10 +1,8 @@
 import { LATEST } from '@socketsecurity/lib/constants/packages'
-
+import type { CResult } from '../../types.mjs'
 import { getErrorCause } from '../error/errors.mts'
 import { cacheFetch, getOctokit } from '../git/github.mts'
 import { getPurlObject } from '../purl/parse.mts'
-
-import type { CResult } from '../../types.mjs'
 
 const PURL_TO_GITHUB_ECOSYSTEM_MAPPING = {
   __proto__: null,

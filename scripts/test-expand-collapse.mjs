@@ -7,7 +7,9 @@ console.log('=== TESTING EXPAND/COLLAPSE LOGIC ===\n')
 // Simulate state.
 const state = {
   inputLines: ['> '],
-  outputLines: Array(10).fill(null).map((_, i) => `Output line ${i + 1}`),
+  outputLines: Array(10)
+    .fill(null)
+    .map((_, i) => `Output line ${i + 1}`),
   scrollOffset: 0,
 }
 
@@ -21,7 +23,9 @@ for (let cycle = 1; cycle <= 100; cycle++) {
 
   // Check state.
   if (state.inputLines.length !== 6) {
-    console.error(`❌ Cycle ${cycle}: After expand, inputLines = ${state.inputLines.length}, expected 6`)
+    console.error(
+      `❌ Cycle ${cycle}: After expand, inputLines = ${state.inputLines.length}, expected 6`,
+    )
     errors++
   }
 
@@ -33,17 +37,21 @@ for (let cycle = 1; cycle <= 100; cycle++) {
 
   // Check state.
   if (state.inputLines.length !== 1) {
-    console.error(`❌ Cycle ${cycle}: After collapse, inputLines = ${state.inputLines.length}, expected 1`)
+    console.error(
+      `❌ Cycle ${cycle}: After collapse, inputLines = ${state.inputLines.length}, expected 1`,
+    )
     errors++
   }
 
   if (state.scrollOffset !== 0) {
-    console.error(`❌ Cycle ${cycle}: After collapse, scrollOffset = ${state.scrollOffset}, expected 0`)
+    console.error(
+      `❌ Cycle ${cycle}: After collapse, scrollOffset = ${state.scrollOffset}, expected 0`,
+    )
     errors++
   }
 }
 
-console.log(`✅ Completed 100 cycles`)
+console.log('✅ Completed 100 cycles')
 console.log(`   Total errors: ${errors}`)
 console.log(`   Output lines accumulated: ${state.outputLines.length}`)
 console.log('')

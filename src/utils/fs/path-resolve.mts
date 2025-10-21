@@ -1,24 +1,18 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
-
-import {
-  resolveBinPathSync,
-  whichBinSync,
-} from '@socketsecurity/lib/bin'
-import { isDirSync } from '@socketsecurity/lib/fs'
+import type { SocketYml } from '@socketsecurity/config'
+import { resolveBinPathSync, whichBinSync } from '@socketsecurity/lib/bin'
 import { NPM } from '@socketsecurity/lib/constants/agents'
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
-
+import { isDirSync } from '@socketsecurity/lib/fs'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+import { NODE_MODULES } from '../../constants/packages.mts'
+import { shadowBinPath } from '../../constants/paths.mts'
 import {
   filterBySupportedScanFiles,
   globWithGitIgnore,
   pathsToGlobPatterns,
 } from './glob.mts'
-import { NODE_MODULES } from '../../constants/packages.mts'
-import { shadowBinPath } from '../../constants/paths.mts'
-
-import type { SocketYml } from '@socketsecurity/config'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export function findBinPathDetailsSync(binName: string): {
   name: string

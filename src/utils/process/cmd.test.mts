@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
 import {
-  cmdFlagValueToArray,
   cmdFlagsToString,
+  cmdFlagValueToArray,
   cmdPrefixMessage,
   filterFlags,
   getConfigFlag,

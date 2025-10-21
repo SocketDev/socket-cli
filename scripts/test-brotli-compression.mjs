@@ -3,7 +3,7 @@
  * This tests the compression function without requiring full build integration
  */
 
-import { readFile, readdir } from 'node:fs/promises'
+import { readdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { brotliCompressSync, constants as zlibConstants } from 'node:zlib'
@@ -69,7 +69,8 @@ async function testBrotliCompression() {
       // Compress
       const compressed = brotliCompressSync(minifiedCode, {
         params: {
-          [zlibConstants.BROTLI_PARAM_QUALITY]: zlibConstants.BROTLI_MAX_QUALITY,
+          [zlibConstants.BROTLI_PARAM_QUALITY]:
+            zlibConstants.BROTLI_MAX_QUALITY,
           [zlibConstants.BROTLI_PARAM_MODE]: zlibConstants.BROTLI_MODE_TEXT,
         },
       })
@@ -108,7 +109,9 @@ async function testBrotliCompression() {
     `   Compressed:   ${(totalCompressedSize / 1024 / 1024).toFixed(2)} MB (-${((1 - totalCompressedSize / totalOriginalSize) * 100).toFixed(1)}%)`,
   )
   console.log()
-  console.log(`💾 Total savings: ${((totalOriginalSize - totalCompressedSize) / 1024 / 1024).toFixed(2)} MB`)
+  console.log(
+    `💾 Total savings: ${((totalOriginalSize - totalCompressedSize) / 1024 / 1024).toFixed(2)} MB`,
+  )
 }
 
 testBrotliCompression().catch(console.error)

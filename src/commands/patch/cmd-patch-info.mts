@@ -1,11 +1,17 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 
-import { DOT_SOCKET_DIR, MANIFEST_JSON } from '@socketsecurity/lib/constants/paths'
+import {
+  DOT_SOCKET_DIR,
+  MANIFEST_JSON,
+} from '@socketsecurity/lib/constants/paths'
 import { getSpinner } from '@socketsecurity/lib/constants/process'
-
-import { handlePatchInfo } from './handle-patch-info.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
+import type {
+  CliCommandConfig,
+  CliCommandContext,
+  CliSubcommand,
+} from '../../utils/cli/with-subcommands.mjs'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { InputError } from '../../utils/error/errors.mjs'
 import {
@@ -14,12 +20,7 @@ import {
 } from '../../utils/output/formatting.mts'
 import { getOutputKind } from '../../utils/output/mode.mjs'
 import { checkCommandInput } from '../../utils/validation/check-input.mts'
-
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-  CliSubcommand,
-} from '../../utils/cli/with-subcommands.mjs'
+import { handlePatchInfo } from './handle-patch-info.mts'
 
 export const CMD_NAME = 'info'
 

@@ -1,25 +1,20 @@
 import os from 'node:os'
 import path from 'node:path'
-
-import fastGlob from 'fast-glob'
-import ignore from 'ignore'
-import micromatch from 'micromatch'
-import { parse as yamlParse } from 'yaml'
-
+import type { SocketYml } from '@socketsecurity/config'
+import { NODE_MODULES } from '@socketsecurity/lib/constants/paths'
 import { safeReadFile } from '@socketsecurity/lib/fs'
 import { defaultIgnore } from '@socketsecurity/lib/globs'
 import { readPackageJson } from '@socketsecurity/lib/packages'
 import { transform } from '@socketsecurity/lib/streams'
 import { isNonEmptyString } from '@socketsecurity/lib/strings'
-import { NODE_MODULES } from '@socketsecurity/lib/constants/paths'
-
-
-import { PNPM } from '../../constants/agents.mjs'
-
-import type { Agent } from '../ecosystem/environment.mts'
-import type { SocketYml } from '@socketsecurity/config'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 import type { Options as GlobOptions } from 'fast-glob'
+import fastGlob from 'fast-glob'
+import ignore from 'ignore'
+import micromatch from 'micromatch'
+import { parse as yamlParse } from 'yaml'
+import { PNPM } from '../../constants/agents.mjs'
+import type { Agent } from '../ecosystem/environment.mts'
 
 const DEFAULT_IGNORE_FOR_GIT_IGNORE = defaultIgnore.filter(
   p => !p.endsWith('.gitignore'),

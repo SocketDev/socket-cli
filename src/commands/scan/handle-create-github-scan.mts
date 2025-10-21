@@ -1,7 +1,6 @@
+import type { OutputKind } from '../../types.mts'
 import { createScanFromGithub } from './create-scan-from-github.mts'
 import { outputScanGithub } from './output-scan-github.mts'
-
-import type { OutputKind } from '../../types.mts'
 
 export async function handleCreateGithubScan({
   all,

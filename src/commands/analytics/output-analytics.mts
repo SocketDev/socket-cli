@@ -1,15 +1,13 @@
 import fs from 'node:fs/promises'
 
 import { logger } from '@socketsecurity/lib/logger'
-
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+import type { CResult, OutputKind } from '../../types.mts'
 import { debugFileOp } from '../../utils/debug.mts'
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 import { mdTableStringNumber } from '../../utils/output/markdown.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
 import { fileLink } from '../../utils/terminal/link.mts'
-
-import type { CResult, OutputKind } from '../../types.mts'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 const METRICS = [
   'total_critical_alerts',

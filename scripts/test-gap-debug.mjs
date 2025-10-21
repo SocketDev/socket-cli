@@ -28,7 +28,9 @@ console.log(`GAP: ${textareaTopY - outputBoxEndY}`)
 
 // Expand (press Ctrl+N 10 times).
 console.log('\n=== AFTER EXPANDING (10 LINES) ===')
-inputLines = Array(11).fill('').map((_, i) => i === 0 ? '> ' : '')
+inputLines = Array(11)
+  .fill('')
+  .map((_, i) => (i === 0 ? '> ' : ''))
 
 textareaHeight = inputLines.length + 2
 textareaTopY = textareaBottomY - textareaHeight + 1

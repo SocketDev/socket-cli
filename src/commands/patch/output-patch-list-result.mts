@@ -1,10 +1,8 @@
 import { logger } from '@socketsecurity/lib/logger'
-
+import type { CResult, OutputKind } from '../../types.mts'
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
-
 import type { PatchListEntry } from './handle-patch-list.mts'
-import type { CResult, OutputKind } from '../../types.mts'
 
 type CleanedPatchEntry = {
   appliedAt?: string
@@ -105,7 +103,8 @@ export async function outputPatchListResult(
       const indicator = getStatusIndicator(patch.status)
       logger.log(`### ${indicator} ${patch.purl}\n`)
       if (patch.status) {
-        const statusName = patch.status.charAt(0).toUpperCase() + patch.status.slice(1)
+        const statusName =
+          patch.status.charAt(0).toUpperCase() + patch.status.slice(1)
         logger.log(`**Status**: ${statusName}\n`)
       }
       if (patch.uuid) {
@@ -143,15 +142,14 @@ export async function outputPatchListResult(
     logger.log(`${indicator} ${patch.purl}`)
     logger.group()
     if (patch.status) {
-      const statusName = patch.status.charAt(0).toUpperCase() + patch.status.slice(1)
+      const statusName =
+        patch.status.charAt(0).toUpperCase() + patch.status.slice(1)
       logger.log(`Status: ${statusName}`)
     }
     if (patch.uuid) {
       logger.log(`UUID: ${patch.uuid}`)
     }
-    logger.log(
-      `Description: ${patch.description || 'No description provided'}`,
-    )
+    logger.log(`Description: ${patch.description || 'No description provided'}`)
     logger.log(`Exported: ${patch.exportedAt}`)
     if (patch.appliedAt) {
       logger.log(`Applied: ${patch.appliedAt}`)

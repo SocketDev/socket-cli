@@ -33,17 +33,12 @@ import semver from 'semver'
 
 const require = createRequire(import.meta.url)
 // Type definition is incorrect - exports object with parse method, not namespace.
-const { parse: parseBunLockb } = require('@socketregistry/hyrious__bun.lockb/index.cjs') as { parse: (buf: Uint8Array | ArrayBuffer) => string }
+const { parse: parseBunLockb } =
+  require('@socketregistry/hyrious__bun.lockb/index.cjs') as {
+    parse: (buf: Uint8Array | ArrayBuffer) => string
+  }
+
 import { whichBin } from '@socketsecurity/lib/bin'
-import { debugDirNs, debugNs } from '@socketsecurity/lib/debug'
-import { readFileBinary, readFileUtf8 } from '@socketsecurity/lib/fs'
-import {
-  readPackageJson,
-  toEditablePackageJson,
-} from '@socketsecurity/lib/packages'
-import { naturalCompare } from '@socketsecurity/lib/sorts'
-import { spawn } from '@socketsecurity/lib/spawn'
-import { isNonEmptyString } from '@socketsecurity/lib/strings'
 import {
   BUN,
   BUN_LOCK,
@@ -62,7 +57,19 @@ import {
 } from '@socketsecurity/lib/constants/agents'
 import { getMaintainedNodeVersions } from '@socketsecurity/lib/constants/node'
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
-
+import { debugDirNs, debugNs } from '@socketsecurity/lib/debug'
+import { readFileBinary, readFileUtf8 } from '@socketsecurity/lib/fs'
+import type { Logger } from '@socketsecurity/lib/logger'
+import type { Remap } from '@socketsecurity/lib/objects'
+import type { EditablePackageJson } from '@socketsecurity/lib/packages'
+import {
+  readPackageJson,
+  toEditablePackageJson,
+} from '@socketsecurity/lib/packages'
+import { naturalCompare } from '@socketsecurity/lib/sorts'
+import { spawn } from '@socketsecurity/lib/spawn'
+import { isNonEmptyString } from '@socketsecurity/lib/strings'
+import type { SemVer } from 'semver'
 import {
   getMinimumVersionByAgent,
   getNpmExecPath,
@@ -77,14 +84,9 @@ import {
   NPM_BUGGY_OVERRIDES_PATCHED_VERSION,
   PACKAGE_JSON,
 } from '../../constants/packages.mts'
+import type { CResult } from '../../types.mjs'
 import { findUp } from '../fs/fs.mts'
 import { cmdPrefixMessage } from '../process/cmd.mts'
-
-import type { CResult } from '../../types.mjs'
-import type { Logger } from '@socketsecurity/lib/logger'
-import type { Remap } from '@socketsecurity/lib/objects'
-import type { EditablePackageJson } from '@socketsecurity/lib/packages'
-import type { SemVer } from 'semver'
 
 const DOT_PACKAGE_LOCK_JSON = '.package-lock.json'
 

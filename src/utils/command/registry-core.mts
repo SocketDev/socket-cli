@@ -1,5 +1,6 @@
 /** @fileoverview Command registry implementation for Socket CLI. Manages command registration, execution, middleware, and plugin support. */
 
+import type { CResult } from '../../types.mts'
 import type {
   CommandContext,
   CommandDefinition,
@@ -8,7 +9,6 @@ import type {
   CommandRegistry as ICommandRegistry,
   MiddlewareFn,
 } from './registry-types.mjs'
-import type { CResult } from '../../types.mts'
 
 /**
  * Central registry for CLI commands.

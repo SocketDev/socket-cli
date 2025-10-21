@@ -69,7 +69,10 @@ function drawFullWindowFrame(content, title = '') {
   if (topVisibleLength > cols) {
     topBorder = topBorder.slice(0, cols - 1) + '╮'
   } else if (topVisibleLength < cols) {
-    topBorder = topBorder.slice(0, -1) + getCachedString('─', cols - topVisibleLength) + '╮'
+    topBorder =
+      topBorder.slice(0, -1) +
+      getCachedString('─', cols - topVisibleLength) +
+      '╮'
   }
 
   const bottomBorder = `╰${getCachedString('─', innerWidth)}╯`
@@ -105,7 +108,8 @@ function drawFullWindowFrame(content, title = '') {
     const strippedLength = getVisibleLength(line)
     const leftPadding = Math.floor((innerWidth - strippedLength) / 2)
     const rightPadding = innerWidth - strippedLength - leftPadding
-    framedContent[lineIndex++] = `│${getCachedString(' ', leftPadding)}${line}${getCachedString(' ', rightPadding)}│`
+    framedContent[lineIndex++] =
+      `│${getCachedString(' ', leftPadding)}${line}${getCachedString(' ', rightPadding)}│`
   }
 
   // Add bottom padding to fill exactly to terminal height.
@@ -238,8 +242,7 @@ function cleanup(exitCode = 0) {
     // Clear screen.
     process.stdout.write('\x1B[2J\x1B[H')
     // Ignore errors during cleanup.
-  } catch {
-  }
+  } catch {}
 
   if (exitCode === 0) {
     console.log('\nExiting...\n')
@@ -259,12 +262,12 @@ process.on('SIGTERM', () => {
 })
 
 // Add comprehensive error handlers.
-process.on('uncaughtException', (e) => {
+process.on('uncaughtException', e => {
   console.error('\nUncaught exception:', e.message)
   cleanup(1)
 })
 
-process.on('unhandledRejection', (reason) => {
+process.on('unhandledRejection', reason => {
   console.error('\nUnhandled rejection:', reason)
   cleanup(1)
 })
@@ -274,7 +277,7 @@ if (process.stdin.isTTY) {
   try {
     process.stdin.setRawMode(true)
     process.stdin.resume()
-    process.stdin.on('data', (chunk) => {
+    process.stdin.on('data', chunk => {
       // Check for Ctrl+C (character code 3) or q key.
       if (chunk[0] === 3 || chunk[0] === 113) {
         cleanup()

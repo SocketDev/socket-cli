@@ -1,10 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-
-import { it } from 'vitest'
-
 import { type SpawnOptions, spawn } from '@socketsecurity/lib/spawn'
 import { stripAnsi } from '@socketsecurity/lib/strings'
+import { it } from 'vitest'
 
 import constants, { FLAG_HELP, FLAG_VERSION } from '../src/constants.mts'
 
@@ -18,7 +16,7 @@ const __dirname = path.dirname(__filename)
 //     - \u000B to \u001F (other non-printable control characters)
 //   * All non-ASCII characters:
 //     - \u0080 to \uFFFF (extended Unicode)
- 
+
 const asciiUnsafeRegexp = /[\u0000-\u0007\u0009\u000b-\u001f\u0080-\uffff]/g
 
 // Note: The fixture directory is in the same directory as this utils file.

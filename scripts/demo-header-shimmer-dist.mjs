@@ -48,7 +48,7 @@ async function cycleThemes() {
 
   process.stdout.write('\x1B[2J\x1B[H')
   console.log('\n✅ Demo complete!\n')
-  console.log('The ASCII header now uses socket-registry\'s applyShimmer')
+  console.log("The ASCII header now uses socket-registry's applyShimmer")
   console.log('for smooth, themeable gradient animations.\n')
   console.log('Available themes:')
   for (const theme of THEMES) {

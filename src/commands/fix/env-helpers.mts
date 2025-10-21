@@ -1,13 +1,12 @@
 import { joinAnd } from '@socketsecurity/lib/arrays'
 import { debug, isDebug } from '@socketsecurity/lib/debug'
 import { logger } from '@socketsecurity/lib/logger'
-
-import { getSocketFixPrs } from './pull-request.mts'
 import ENV from '../../constants/env.mts'
+import type { RepoInfo } from '../../utils/git/git.mjs'
 import { getBaseBranch, getRepoInfo } from '../../utils/git/git.mjs'
 
 import type { PrMatch } from './pull-request.mts'
-import type { RepoInfo } from '../../utils/git/git.mjs'
+import { getSocketFixPrs } from './pull-request.mts'
 
 function ciRepoInfo(): RepoInfo | undefined {
   const { GITHUB_REPOSITORY } = ENV

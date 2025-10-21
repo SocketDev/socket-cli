@@ -6,6 +6,7 @@ import { afterEach, describe, expect } from 'vitest'
 import { cmdit, spawnSocketCli, testPath } from '../../../test/utils.mts'
 import { FLAG_CONFIG, FLAG_HELP } from '../constants/cli.mts'
 import { getBinCliPath } from '../constants/paths.mts'
+
 const binCliPath = getBinCliPath()
 
 const fixtureBaseDir = path.join(testPath, 'fixtures/commands/patch')
@@ -18,7 +19,8 @@ async function cleanupNodeModules() {
   await trash(path.join(fixtureBaseDir, 'yarn/node_modules'))
 }
 
-describe('socket patch', async () => {afterEach(async () => {
+describe('socket patch', async () => {
+  afterEach(async () => {
     await cleanupNodeModules()
   })
 

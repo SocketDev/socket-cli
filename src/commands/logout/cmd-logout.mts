@@ -1,14 +1,12 @@
 import { logger } from '@socketsecurity/lib/logger'
-
-import { attemptLogout } from './attempt-logout.mts'
 import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'
 import { commonFlags } from '../../flags.mts'
-import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
-
 import type {
   CliCommandConfig,
   CliCommandContext,
 } from '../../utils/cli/with-subcommands.mjs'
+import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
+import { attemptLogout } from './attempt-logout.mts'
 
 const config: CliCommandConfig = {
   commandName: 'logout',

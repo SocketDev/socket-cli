@@ -316,8 +316,7 @@ function cleanup() {
     process.stdout.write('\x1B[?25h')
     process.stdout.write('\x1B[2J\x1B[H')
     // Ignore cleanup errors.
-  } catch {
-  }
+  } catch {}
 
   console.log('\nExiting interactive TUI designer...\n')
   process.exit(0)
@@ -346,7 +345,7 @@ function init() {
   // Set up signal handlers.
   process.on('SIGINT', cleanup)
   process.on('SIGTERM', cleanup)
-  process.on('uncaughtException', (e) => {
+  process.on('uncaughtException', e => {
     console.error('Error:', e.message)
     cleanup()
   })

@@ -1,11 +1,10 @@
 import { describe, expect, it, vi } from 'vitest'
-
-import { fetchPurlDeepScore } from './fetch-purl-deep-score.mts'
 import { setupStandardOutputMocks } from '../../../test/helpers/mock-setup.mts'
 import {
   createErrorResult,
   createSuccessResult,
 } from '../../../test/helpers/mocks.mts'
+import { fetchPurlDeepScore } from './fetch-purl-deep-score.mts'
 
 // Mock the dependencies.
 setupStandardOutputMocks()

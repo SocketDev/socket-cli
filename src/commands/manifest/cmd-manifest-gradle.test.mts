@@ -6,7 +6,8 @@ import { getBinCliPath } from '../constants/paths.mts'
 
 const binCliPath = getBinCliPath()
 
-describe('socket manifest gradle', async () => {cmdit(
+describe('socket manifest gradle', async () => {
+  cmdit(
     ['manifest', 'gradle', FLAG_HELP, FLAG_CONFIG, '{}'],
     `should support ${FLAG_HELP}`,
     async cmd => {

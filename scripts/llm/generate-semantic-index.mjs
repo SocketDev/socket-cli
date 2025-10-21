@@ -60,11 +60,45 @@ const commands = JSON.parse(readFileSync(commandsPath, 'utf-8'))
  * with ZERO runtime cost and ZERO model size.
  */
 const SYNONYMS = {
-  fix: ['repair', 'resolve', 'remediate', 'correct', 'address', 'mend', 'heal', 'cure'],
+  fix: [
+    'repair',
+    'resolve',
+    'remediate',
+    'correct',
+    'address',
+    'mend',
+    'heal',
+    'cure',
+  ],
   patch: ['hotfix', 'bandaid', 'workaround', 'apply'],
-  optimize: ['enhance', 'improve', 'upgrade', 'better', 'faster', 'streamline', 'refine'],
-  scan: ['check', 'inspect', 'examine', 'audit', 'review', 'analyze', 'investigate'],
-  vulnerability: ['vuln', 'issue', 'problem', 'flaw', 'weakness', 'bug', 'security issue', 'cve'],
+  optimize: [
+    'enhance',
+    'improve',
+    'upgrade',
+    'better',
+    'faster',
+    'streamline',
+    'refine',
+  ],
+  scan: [
+    'check',
+    'inspect',
+    'examine',
+    'audit',
+    'review',
+    'analyze',
+    'investigate',
+  ],
+  vulnerability: [
+    'vuln',
+    'issue',
+    'problem',
+    'flaw',
+    'weakness',
+    'bug',
+    'security issue',
+    'cve',
+  ],
   package: ['dependency', 'module', 'library', 'dep', 'pkg'],
   safe: ['secure', 'trusted', 'reliable', 'trustworthy', 'clean'],
   score: ['rating', 'grade', 'quality', 'safety'],
@@ -160,5 +194,7 @@ writeFileSync(outputPath, JSON.stringify(semanticIndex, null, 2), 'utf-8')
 
 console.log(`\n✓ Generated ${outputPath}`)
 console.log(`✓ Indexed ${Object.keys(semanticIndex.commands).length} commands`)
-console.log(`✓ File size: ${(JSON.stringify(semanticIndex).length / 1024).toFixed(2)} KB`)
+console.log(
+  `✓ File size: ${(JSON.stringify(semanticIndex).length / 1024).toFixed(2)} KB`,
+)
 console.log('✓ Zero runtime overhead - pure JavaScript!')

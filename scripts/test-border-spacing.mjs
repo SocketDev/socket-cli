@@ -34,7 +34,12 @@ console.log('')
 
 console.log('OLD BROKEN empty line (for comparison):')
 console.log(brokenEmptyLine)
-console.log('Length:', brokenEmptyLine.length, '| Visible:', brokenEmptyLine.length)
+console.log(
+  'Length:',
+  brokenEmptyLine.length,
+  '| Visible:',
+  brokenEmptyLine.length,
+)
 
 console.log('')
 

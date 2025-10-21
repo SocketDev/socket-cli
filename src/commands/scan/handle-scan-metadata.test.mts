@@ -1,10 +1,9 @@
 import { describe, expect, it, vi } from 'vitest'
-
-import { handleOrgScanMetadata } from './handle-scan-metadata.mts'
 import {
   createErrorResult,
   createSuccessResult,
 } from '../../../test/helpers/mocks.mts'
+import { handleOrgScanMetadata } from './handle-scan-metadata.mts'
 
 // Mock the dependencies.
 vi.mock('./fetch-scan-metadata.mts', () => ({

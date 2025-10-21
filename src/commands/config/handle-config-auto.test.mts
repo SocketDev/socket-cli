@@ -1,10 +1,9 @@
 import { describe, expect, it, vi } from 'vitest'
-
-import { handleConfigAuto } from './handle-config-auto.mts'
 import {
   createErrorResult,
   createSuccessResult,
 } from '../../../test/helpers/mocks.mts'
+import { handleConfigAuto } from './handle-config-auto.mts'
 
 // Mock the dependencies.
 vi.mock('./discover-config-value.mts', () => ({

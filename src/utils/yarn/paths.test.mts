@@ -70,9 +70,7 @@ describe('yarn-paths utilities', () => {
         shadowed: false,
       })
 
-      const { logger } = vi.mocked(
-        await import('@socketsecurity/lib/logger'),
-      )
+      const { logger } = vi.mocked(await import('@socketsecurity/lib/logger'))
 
       expect(() => getYarnBinPath()).toThrow('process.exit(127)')
       expect(logger.fail).toHaveBeenCalledWith(

@@ -1,12 +1,10 @@
 import { describe, expect, it } from 'vitest'
-
+import type { Organizations } from '../commands/organization/fetch-organization-list.mts'
 import {
   getEnterpriseOrgs,
   getOrgSlugs,
   hasEnterpriseOrgPlan,
 } from './organization.mts'
-
-import type { Organizations } from '../commands/organization/fetch-organization-list.mts'
 
 describe('organization utilities', () => {
   const mockOrgs: Organizations = [

@@ -10,11 +10,9 @@
 import { spawn } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import path from 'node:path'
-
-import fastGlob from 'fast-glob'
-
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { logger } from '@socketsecurity/lib/logger'
+import fastGlob from 'fast-glob'
 
 import constants from './constants.mjs'
 
@@ -137,8 +135,7 @@ async function main() {
       logger.error('Failed to spawn test process:', e)
       process.exitCode = 1
     })
-  } catch {
-  }
+  } catch {}
 }
 
 main().catch(e => {

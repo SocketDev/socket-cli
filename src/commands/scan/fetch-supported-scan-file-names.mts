@@ -1,13 +1,10 @@
-import { handleApiCall } from '../../utils/socket/api.mjs'
-import { setupSdk } from '../../utils/socket/sdk.mjs'
-
-import type { CResult } from '../../types.mts'
-import type { SetupSdkOptions } from '../../utils/socket/sdk.mjs'
 import type { Spinner } from '@socketsecurity/lib/spinner'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
-
-
+import type { CResult } from '../../types.mts'
+import { handleApiCall } from '../../utils/socket/api.mjs'
+import type { SetupSdkOptions } from '../../utils/socket/sdk.mjs'
+import { setupSdk } from '../../utils/socket/sdk.mjs'
 
 export type FetchSupportedScanFileNamesOptions = {
   sdkOpts?: SetupSdkOptions | undefined

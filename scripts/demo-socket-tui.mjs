@@ -1,11 +1,9 @@
 /** @fileoverview Socket CLI TUI using Ink framework - pure JS version. */
 
-import { Box, Text, render, useApp, useInput, useStdout } from 'ink'
+import { spawn } from '@socketsecurity/lib/spawn'
+import { Box, render, Text, useApp, useInput, useStdout } from 'ink'
 import React, { useEffect, useMemo, useState } from 'react'
 import terminalLink from 'terminal-link'
-
-import { spawn } from '@socketsecurity/lib/spawn'
-
 
 const { createElement: h } = React
 
@@ -13,7 +11,7 @@ const { createElement: h } = React
 const SOCKET_LOGO = [
   '   _____         _       _       ',
   '  |   __|___ ___| |_ ___| |_     ',
-  '  |__   | . |  _| \'_| -_|  _|    ',
+  "  |__   | . |  _| '_| -_|  _|    ",
   '  |_____|___|___|_,_|___|_|.dev  ',
 ]
 
@@ -104,9 +102,12 @@ function ScrollIndicator({ current, height, theme, total }) {
     bars.push(
       h(
         Text,
-        { key: `scroll-${i}`, color: i === indicatorPosition ? theme.accent : theme.scrollbar },
-        i === indicatorPosition ? '█' : '│'
-      )
+        {
+          key: `scroll-${i}`,
+          color: i === indicatorPosition ? theme.accent : theme.scrollbar,
+        },
+        i === indicatorPosition ? '█' : '│',
+      ),
     )
   }
 
@@ -128,7 +129,10 @@ function App() {
     { type: 'info', text: 'Welcome to Socket CLI!' },
     { type: 'info', text: 'Type commands below...' },
     { type: 'info', text: '' },
-    { type: 'info', text: 'Try shell commands like: ls, echo "hello", node --version' },
+    {
+      type: 'info',
+      text: 'Try shell commands like: ls, echo "hello", node --version',
+    },
   ])
   const [commandHistory, setCommandHistory] = useState([])
   const [historyIndex, setHistoryIndex] = useState(-1)
@@ -282,7 +286,9 @@ function App() {
         setOutputScroll(prev => Math.max(0, prev - 1))
       } else if (commandHistory.length > 0 && !multilineMode) {
         const newIndex =
-          historyIndex === -1 ? commandHistory.length - 1 : Math.max(0, historyIndex - 1)
+          historyIndex === -1
+            ? commandHistory.length - 1
+            : Math.max(0, historyIndex - 1)
         setHistoryIndex(newIndex)
         setInput(commandHistory[newIndex])
       }
@@ -291,7 +297,9 @@ function App() {
 
     if (key.downArrow) {
       if (focusedPanel === 'output') {
-        setOutputScroll(prev => Math.max(0, Math.min(output.length - maxOutputLines, prev + 1)))
+        setOutputScroll(prev =>
+          Math.max(0, Math.min(output.length - maxOutputLines, prev + 1)),
+        )
       } else if (historyIndex !== -1 && !multilineMode) {
         const newIndex = historyIndex + 1
         if (newIndex >= commandHistory.length) {
@@ -312,7 +320,9 @@ function App() {
     }
 
     if (key.pageDown && focusedPanel === 'output') {
-      setOutputScroll(prev => Math.max(0, Math.min(output.length - maxOutputLines, prev + 5)))
+      setOutputScroll(prev =>
+        Math.max(0, Math.min(output.length - maxOutputLines, prev + 5)),
+      )
       return
     }
 
@@ -354,7 +364,11 @@ function App() {
 
     // Handle built-in commands.
     if (cmd === 'clear') {
-      setOutput([{ type: 'info', text: 'Socket CLI v1.0.80' }, { type: 'info', text: '' }, { type: 'info', text: 'Output cleared.' }])
+      setOutput([
+        { type: 'info', text: 'Socket CLI v1.0.80' },
+        { type: 'info', text: '' },
+        { type: 'info', text: 'Output cleared.' },
+      ])
       setOutputScroll(0)
       return
     }
@@ -367,7 +381,10 @@ function App() {
         { type: 'info', text: '  clear - Clear output' },
         { type: 'info', text: '  help - Show this help' },
         { type: 'info', text: '' },
-        { type: 'info', text: 'All other commands are executed as shell commands.' },
+        {
+          type: 'info',
+          text: 'All other commands are executed as shell commands.',
+        },
         { type: 'info', text: '' },
       ])
       setTimeout(() => setOutputScroll(output.length + 10), 0)
@@ -383,7 +400,8 @@ function App() {
    */
   async function executeCommand(cmd) {
     // Pick a random executing verb.
-    const verb = EXECUTING_VERBS[Math.floor(Math.random() * EXECUTING_VERBS.length)]
+    const verb =
+      EXECUTING_VERBS[Math.floor(Math.random() * EXECUTING_VERBS.length)]
     setExecutingVerb(verb)
     setIsExecuting(true)
 
@@ -405,7 +423,11 @@ function App() {
       // Add stdout to output (green, with links).
       if (result.stdout) {
         const lines = result.stdout.trim().split('\n')
-        setOutput(prev => [...prev, ...lines.map(line => ({ type: 'stdout', text: line })), { type: 'stdout', text: '' }])
+        setOutput(prev => [
+          ...prev,
+          ...lines.map(line => ({ type: 'stdout', text: line })),
+          { type: 'stdout', text: '' },
+        ])
       }
 
       // Add stderr to output (collapsible).
@@ -414,7 +436,12 @@ function App() {
         const lines = result.stderr.trim().split('\n')
         setOutput(prev => [
           ...prev,
-          { type: 'error', text: `[stderr] ${lines[0]}`, id: errorId, fullText: lines },
+          {
+            type: 'error',
+            text: `[stderr] ${lines[0]}`,
+            id: errorId,
+            fullText: lines,
+          },
           { type: 'stderr', text: '' },
         ])
         setCollapsedErrors(prev => new Set([...prev, errorId]))
@@ -422,7 +449,11 @@ function App() {
 
       // Show exit code if non-zero.
       if (result.code !== 0) {
-        setOutput(prev => [...prev, { type: 'error', text: `[exit code: ${result.code}]` }, { type: 'error', text: '' }])
+        setOutput(prev => [
+          ...prev,
+          { type: 'error', text: `[exit code: ${result.code}]` },
+          { type: 'error', text: '' },
+        ])
       }
 
       // Auto-scroll to bottom.
@@ -431,7 +462,11 @@ function App() {
       }, 0)
       setIsExecuting(false)
     } catch (e) {
-      setOutput(prev => [...prev, { type: 'error', text: `Error: ${e.message}` }, { type: 'error', text: '' }])
+      setOutput(prev => [
+        ...prev,
+        { type: 'error', text: `Error: ${e.message}` },
+        { type: 'error', text: '' },
+      ])
       setTimeout(() => {
         setOutputScroll(output.length + 2)
       }, 0)
@@ -441,14 +476,26 @@ function App() {
   // Calculate visible output lines.
   const expandedOutput = []
   for (const item of output) {
-    if (item.type === 'error' && item.id && !collapsedErrors.has(item.id) && item.fullText) {
+    if (
+      item.type === 'error' &&
+      item.id &&
+      !collapsedErrors.has(item.id) &&
+      item.fullText
+    ) {
       // Expand error.
       for (const line of item.fullText) {
         expandedOutput.push({ type: 'error', text: `[stderr] ${line}` })
       }
-    } else if (item.type === 'error' && item.id && collapsedErrors.has(item.id)) {
+    } else if (
+      item.type === 'error' &&
+      item.id &&
+      collapsedErrors.has(item.id)
+    ) {
       // Show collapsed with indicator.
-      expandedOutput.push({ type: 'error', text: `${item.text} (Ctrl+O to expand)` })
+      expandedOutput.push({
+        type: 'error',
+        text: `${item.text} (Ctrl+O to expand)`,
+      })
     } else {
       expandedOutput.push(item)
     }
@@ -456,7 +503,7 @@ function App() {
 
   const visibleOutput = expandedOutput.slice(
     Math.max(0, outputScroll),
-    Math.max(0, outputScroll) + maxOutputLines
+    Math.max(0, outputScroll) + maxOutputLines,
   )
 
   // Render logo with emoji.
@@ -465,12 +512,14 @@ function App() {
   // Add emoji after .dev if theme has one (last line of logo).
   if (currentTheme.emoji && logoLines.length > 0) {
     const lastLineIndex = logoLines.length - 1
-    logoLines[lastLineIndex] = logoLines[lastLineIndex] + `  ${currentTheme.emoji}`
+    logoLines[lastLineIndex] =
+      logoLines[lastLineIndex] + `  ${currentTheme.emoji}`
   }
 
   // Spinner frames.
   const spinnerFrames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
-  const spinnerFrame = spinnerFrames[Math.floor(frameCount / 2) % spinnerFrames.length]
+  const spinnerFrame =
+    spinnerFrames[Math.floor(frameCount / 2) % spinnerFrames.length]
 
   // Info bar text with spinner.
   const infoText = isExecuting
@@ -487,7 +536,8 @@ function App() {
   let statusBarText = statusMessage
   if (!statusMessage) {
     if (multilineMode) {
-      statusBarText = 'Multi-line Mode (Enter to submit) │ Ctrl+T: Theme │ Tab: Switch │ Ctrl+C: Quit'
+      statusBarText =
+        'Multi-line Mode (Enter to submit) │ Ctrl+T: Theme │ Tab: Switch │ Ctrl+C: Quit'
     } else if (focusedPanel === 'output') {
       statusBarText = `↑↓ Scroll │ PgUp/PgDn: Fast Scroll │ Tab: Switch to Input │ ${historyText} │ Ctrl+C: Quit`
     } else {
@@ -513,9 +563,13 @@ function App() {
         paddingX: 1,
       },
       ...logoLines.map((line, i) =>
-        h(Text, { key: `logo-${i}`, color: currentTheme.accent, bold: true }, line)
+        h(
+          Text,
+          { key: `logo-${i}`, color: currentTheme.accent, bold: true },
+          line,
+        ),
       ),
-      h(Text, { color: currentTheme.accent }, infoText)
+      h(Text, { color: currentTheme.accent }, infoText),
     ),
     // Output panel with scrollbar.
     h(
@@ -524,7 +578,8 @@ function App() {
         flexDirection: 'row',
         height: maxOutputLines + 2,
         borderStyle: 'round',
-        borderColor: focusedPanel === 'output' ? currentTheme.accent : currentTheme.dim,
+        borderColor:
+          focusedPanel === 'output' ? currentTheme.accent : currentTheme.dim,
       },
       // Output content.
       h(
@@ -537,8 +592,13 @@ function App() {
         },
         h(
           Text,
-          { color: focusedPanel === 'output' ? currentTheme.accent : currentTheme.dim },
-          '[ $ output ]'
+          {
+            color:
+              focusedPanel === 'output'
+                ? currentTheme.accent
+                : currentTheme.dim,
+          },
+          '[ $ output ]',
         ),
         h(
           Box,
@@ -557,14 +617,14 @@ function App() {
             }
 
             return h(Text, { key: `output-${outputScroll}-${i}`, color }, text)
-          })
+          }),
         ),
         expandedOutput.length > maxOutputLines &&
           h(
             Text,
             { color: currentTheme.dim },
-            `[${Math.min(outputScroll + maxOutputLines, expandedOutput.length)}/${expandedOutput.length}]`
-          )
+            `[${Math.min(outputScroll + maxOutputLines, expandedOutput.length)}/${expandedOutput.length}]`,
+          ),
       ),
       // Scroll indicator.
       h(
@@ -575,8 +635,8 @@ function App() {
           total: expandedOutput.length,
           height: maxOutputLines,
           theme: currentTheme,
-        })
-      )
+        }),
+      ),
     ),
     // Input textarea.
     h(
@@ -586,16 +646,21 @@ function App() {
         paddingX: 1,
         paddingY: 0,
         borderStyle: 'round',
-        borderColor: focusedPanel === 'input' ? currentTheme.accent : currentTheme.dim,
+        borderColor:
+          focusedPanel === 'input' ? currentTheme.accent : currentTheme.dim,
         borderTop: false,
       },
       ...inputLines.map((line, i) =>
         h(
           Text,
-          { key: `input-${i}`, color: focusedPanel === 'input' ? currentTheme.accent : currentTheme.dim },
-          i === inputLines.length - 1 ? `> ${line}▌` : `> ${line}`
-        )
-      )
+          {
+            key: `input-${i}`,
+            color:
+              focusedPanel === 'input' ? currentTheme.accent : currentTheme.dim,
+          },
+          i === inputLines.length - 1 ? `> ${line}▌` : `> ${line}`,
+        ),
+      ),
     ),
     // Status bar.
     h(
@@ -603,10 +668,13 @@ function App() {
       { paddingX: 1 },
       h(
         Text,
-        { color: statusMessage ? '#FBBF24' : currentTheme.dim, bold: !!statusMessage },
-        statusBarText
-      )
-    )
+        {
+          color: statusMessage ? '#FBBF24' : currentTheme.dim,
+          bold: !!statusMessage,
+        },
+        statusBarText,
+      ),
+    ),
   )
 }
 

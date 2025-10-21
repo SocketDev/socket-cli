@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
+import ENV from '../constants/env.mts'
 import {
   commonFlags,
   getMaxOldSpaceSizeFlag,
@@ -7,7 +7,6 @@ import {
   outputFlags,
   validationFlags,
 } from './flags.mts'
-import ENV from '../constants/env.mts'
 
 // Mock dependencies.
 vi.mock('meow', () => ({

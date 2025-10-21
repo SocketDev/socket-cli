@@ -1,12 +1,18 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
-
+import type { PackageURL } from '@socketregistry/packageurl-js'
 import { arrayUnique } from '@socketsecurity/lib/arrays'
-import { DOT_SOCKET_DIR, MANIFEST_JSON } from '@socketsecurity/lib/constants/paths'
+import {
+  DOT_SOCKET_DIR,
+  MANIFEST_JSON,
+} from '@socketsecurity/lib/constants/paths'
 import { getSpinner } from '@socketsecurity/lib/constants/process'
-
-import { handlePatchApply } from './handle-patch-apply.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
+import type {
+  CliCommandConfig,
+  CliCommandContext,
+  CliSubcommand,
+} from '../../utils/cli/with-subcommands.mjs'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { InputError } from '../../utils/error/errors.mjs'
 import {
@@ -15,16 +21,10 @@ import {
 } from '../../utils/output/formatting.mts'
 import { getOutputKind } from '../../utils/output/mode.mjs'
 import { cmdFlagValueToArray } from '../../utils/process/cmd.mts'
+import type { PurlObject } from '../../utils/purl/parse.mjs'
 import { getPurlObject } from '../../utils/purl/parse.mjs'
 import { checkCommandInput } from '../../utils/validation/check-input.mts'
-
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-  CliSubcommand,
-} from '../../utils/cli/with-subcommands.mjs'
-import type { PurlObject } from '../../utils/purl/parse.mjs'
-import type { PackageURL } from '@socketregistry/packageurl-js'
+import { handlePatchApply } from './handle-patch-apply.mts'
 
 export const CMD_NAME = 'apply'
 

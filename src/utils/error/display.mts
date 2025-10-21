@@ -1,23 +1,19 @@
 /** @fileoverview Error display utilities with polished formatting. */
 
-import colors from 'yoctocolors-cjs'
-
 import { LOG_SYMBOLS } from '@socketsecurity/lib/logger'
 import { stripAnsi } from '@socketsecurity/lib/strings'
-
-
+import colors from 'yoctocolors-cjs'
+import type { CResult } from '../../types.mjs'
 import { debugNs, isDebugNs } from '../debug.mts'
 import {
   AuthError,
   ConfigError,
   FileSystemError,
+  getRecoverySuggestions,
   InputError,
   NetworkError,
   RateLimitError,
-  getRecoverySuggestions,
 } from './errors.mts'
-
-import type { CResult } from '../../types.mjs'
 
 export type ErrorDisplayOptions = {
   cause?: string | undefined

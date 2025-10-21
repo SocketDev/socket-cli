@@ -1,8 +1,6 @@
-import { describe, expect, it } from 'vitest'
-
-import { ensureIpcInStdio } from './stdio-ipc.mts'
-
 import type { StdioOptions } from 'node:child_process'
+import { describe, expect, it } from 'vitest'
+import { ensureIpcInStdio } from './stdio-ipc.mts'
 
 describe('ensureIpcInStdio', () => {
   it('should convert string stdio to array with ipc', () => {

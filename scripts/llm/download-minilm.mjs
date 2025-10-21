@@ -96,7 +96,9 @@ async function main() {
     try {
       await fs.access(outputPath)
       const stats = await fs.stat(outputPath)
-      console.log(`✓ ${file.description} already exists (${(stats.size / 1024 / 1024).toFixed(2)} MB)`)
+      console.log(
+        `✓ ${file.description} already exists (${(stats.size / 1024 / 1024).toFixed(2)} MB)`,
+      )
       console.log(`   ${outputPath}\n`)
       totalBytes += stats.size
       continue
@@ -114,7 +116,9 @@ async function main() {
   console.log(`Total size: ${(totalBytes / 1024 / 1024).toFixed(2)} MB`)
   console.log('\nNext steps:')
   console.log('  1. Run: node scripts/llm/embed-minilm.mjs')
-  console.log('  2. This will create external/minilm-sync.mjs with embedded model')
+  console.log(
+    '  2. This will create external/minilm-sync.mjs with embedded model',
+  )
 }
 
 main().catch(error => {

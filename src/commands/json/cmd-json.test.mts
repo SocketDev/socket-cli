@@ -8,7 +8,8 @@ import { getBinCliPath } from '../constants/paths.mts'
 
 const binCliPath = getBinCliPath()
 
-describe('socket json', async () => {cmdit(
+describe('socket json', async () => {
+  cmdit(
     ['json', FLAG_HELP, FLAG_CONFIG, '{}'],
     `should support ${FLAG_HELP}`,
     async cmd => {

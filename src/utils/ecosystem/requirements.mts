@@ -12,7 +12,9 @@
  * - Used for permission validation and help text
  */
 
-import requirements from '../../../data/command-api-requirements.json' with { type: 'json' }
+import requirements from '../../../data/command-api-requirements.json' with {
+  type: 'json',
+}
 
 export function getRequirements() {
   return requirements

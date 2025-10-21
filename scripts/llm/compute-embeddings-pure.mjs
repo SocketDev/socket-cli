@@ -3,7 +3,7 @@
  * Uses ONNX Runtime directly - no sharp, no image processing dependencies.
  */
 
-import { promises as fs, mkdirSync, readFileSync, writeFileSync  } from 'node:fs'
+import { promises as fs, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -11,10 +11,15 @@ import { fileURLToPath } from 'node:url'
 import * as ort from 'onnxruntime-node'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const skillDir = path.join(path.dirname(__dirname), '../.claude/skills/socket-cli')
+const skillDir = path.join(
+  path.dirname(__dirname),
+  '../.claude/skills/socket-cli',
+)
 const cacheDir = path.join(path.dirname(__dirname), '.cache/models')
 
-console.log('🧠 Computing semantic embeddings (pure ONNX, no transformers.js)...')
+console.log(
+  '🧠 Computing semantic embeddings (pure ONNX, no transformers.js)...',
+)
 
 // Ensure cache directory exists.
 mkdirSync(cacheDir, { recursive: true })
@@ -31,7 +36,8 @@ async function downloadModel() {
     console.log('📦 Downloading paraphrase-MiniLM-L3-v2 model...')
 
     // Hugging Face model URL (quantized ONNX).
-    const modelUrl = 'https://huggingface.co/Xenova/paraphrase-MiniLM-L3-v2/resolve/main/onnx/model_quantized.onnx'
+    const modelUrl =
+      'https://huggingface.co/Xenova/paraphrase-MiniLM-L3-v2/resolve/main/onnx/model_quantized.onnx'
 
     const response = await fetch(modelUrl)
     if (!response.ok) {
@@ -56,7 +62,8 @@ async function downloadTokenizer() {
   } catch {
     console.log('📦 Downloading tokenizer...')
 
-    const tokenizerUrl = 'https://huggingface.co/Xenova/paraphrase-MiniLM-L3-v2/resolve/main/tokenizer.json'
+    const tokenizerUrl =
+      'https://huggingface.co/Xenova/paraphrase-MiniLM-L3-v2/resolve/main/tokenizer.json'
 
     const response = await fetch(tokenizerUrl)
     if (!response.ok) {
@@ -77,7 +84,7 @@ class SimpleTokenizer {
   constructor(vocab) {
     this.vocab = vocab
     this.idsToTokens = Object.fromEntries(
-      Object.entries(vocab).map(([k, v]) => [v, k])
+      Object.entries(vocab).map(([k, v]) => [v, k]),
     )
   }
 
@@ -147,8 +154,16 @@ async function getEmbedding(session, tokenizer, text) {
   const { attention_mask, input_ids } = tokenizer.encode(text)
 
   // Create tensors.
-  const inputIdsTensor = new ort.Tensor('int64', BigInt64Array.from(input_ids.map(BigInt)), [1, input_ids.length])
-  const attentionMaskTensor = new ort.Tensor('int64', BigInt64Array.from(attention_mask.map(BigInt)), [1, attention_mask.length])
+  const inputIdsTensor = new ort.Tensor(
+    'int64',
+    BigInt64Array.from(input_ids.map(BigInt)),
+    [1, input_ids.length],
+  )
+  const attentionMaskTensor = new ort.Tensor(
+    'int64',
+    BigInt64Array.from(attention_mask.map(BigInt)),
+    [1, attention_mask.length],
+  )
 
   // Run inference.
   const outputs = await session.run({
@@ -165,7 +180,7 @@ async function getEmbedding(session, tokenizer, text) {
   const embeddingsArray = []
   for (let i = 0; i < seqLen; i++) {
     embeddingsArray.push(
-      Array.from(embeddings.slice(i * hiddenSize, (i + 1) * hiddenSize))
+      Array.from(embeddings.slice(i * hiddenSize, (i + 1) * hiddenSize)),
     )
   }
 
@@ -207,7 +222,11 @@ console.log('🔢 Computing command embeddings...')
 for (const [commandName, commandData] of Object.entries(commands.commands)) {
   console.log(`  → ${commandName}`)
 
-  const embedding = await getEmbedding(session, tokenizer, commandData.description)
+  const embedding = await getEmbedding(
+    session,
+    tokenizer,
+    commandData.description,
+  )
 
   embeddings.commands[commandName] = {
     description: commandData.description,
@@ -234,5 +253,9 @@ writeFileSync(outputPath, JSON.stringify(embeddings, null, 2), 'utf-8')
 
 console.log(`\n✓ Generated ${outputPath}`)
 console.log(`✓ Embedded ${Object.keys(embeddings.commands).length} commands`)
-console.log(`✓ Embedded ${Object.keys(embeddings.examples).length} example queries`)
-console.log(`✓ File size: ${(JSON.stringify(embeddings).length / 1024).toFixed(2)} KB`)
+console.log(
+  `✓ Embedded ${Object.keys(embeddings.examples).length} example queries`,
+)
+console.log(
+  `✓ File size: ${(JSON.stringify(embeddings).length / 1024).toFixed(2)} KB`,
+)

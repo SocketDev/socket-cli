@@ -11,7 +11,8 @@ import { getBinCliPath } from '../constants/paths.mts'
 
 const binCliPath = getBinCliPath()
 
-describe('socket manifest conda', async () => {cmdit(
+describe('socket manifest conda', async () => {
+  cmdit(
     ['manifest', 'conda', FLAG_HELP, FLAG_CONFIG, '{}'],
     `should support ${FLAG_HELP}`,
     async cmd => {

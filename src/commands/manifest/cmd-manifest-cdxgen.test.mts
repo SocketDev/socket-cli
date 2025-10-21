@@ -1,13 +1,14 @@
-
-import { describe, expect, it } from 'vitest'
+import type { PromiseSpawnOptions } from '@socketsecurity/lib/spawn'
 
 import { spawn } from '@socketsecurity/lib/spawn'
-
+import { describe, expect, it } from 'vitest'
 import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
 import { FLAG_HELP, LOG_SYMBOLS } from '../constants/cli.mts'
-import { getBinCliPath, getExecPath, getProcessEnv } from '../constants/paths.mts'
-
-import type { PromiseSpawnOptions } from '@socketsecurity/lib/spawn'
+import {
+  getBinCliPath,
+  getExecPath,
+  getProcessEnv,
+} from '../constants/paths.mts'
 
 const binCliPath = getBinCliPath()
 const execPath = getExecPath()
@@ -90,11 +91,7 @@ describe('socket manifest cdxgen', async () => {
     it('should not forward an unknown short flag to cdxgen', async () => {
       const command = '-u'
       await expect(
-        spawn(
-          execPath,
-          [binCliPath, 'manifest', 'cdxgen', command],
-          spawnOpts,
-        ),
+        spawn(execPath, [binCliPath, 'manifest', 'cdxgen', command], spawnOpts),
         // @ts-expect-error toHaveStderrInclude is defined above.
       ).rejects.toHaveStderrInclude(
         `${LOG_SYMBOLS.fail} Unknown argument: ${command}`,
@@ -104,11 +101,7 @@ describe('socket manifest cdxgen', async () => {
     it('should not forward an unknown flag to cdxgen', async () => {
       const command = '--unknown'
       await expect(
-        spawn(
-          execPath,
-          [binCliPath, 'manifest', 'cdxgen', command],
-          spawnOpts,
-        ),
+        spawn(execPath, [binCliPath, 'manifest', 'cdxgen', command], spawnOpts),
         // @ts-expect-error toHaveStderrInclude is defined above
       ).rejects.toHaveStderrInclude(
         `${LOG_SYMBOLS.fail} Unknown argument: ${command}`,

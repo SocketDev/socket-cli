@@ -25,12 +25,11 @@ process.emitWarning = function (warning, ...args) {
   return Reflect.apply(originalEmitWarning, this, [warning, ...args])
 }
 
+import { debug, debugDir } from '@socketsecurity/lib/debug'
+import { logger } from '@socketsecurity/lib/logger'
 import { messageWithCauses, stackWithCauses } from 'pony-cause'
 import lookupRegistryAuthToken from 'registry-auth-token'
 import lookupRegistryUrl from 'registry-url'
-
-import { debug, debugDir } from '@socketsecurity/lib/debug'
-import { logger } from '@socketsecurity/lib/logger'
 
 import { rootAliases, rootCommands } from './commands.mts'
 import ENV from './constants/env.mts'
@@ -39,8 +38,8 @@ import meow from './meow.mts'
 import { meowWithSubcommands } from './utils/cli/with-subcommands.mts'
 import {
   AuthError,
-  InputError,
   captureException,
+  InputError,
 } from './utils/error/errors.mts'
 import { failMsgWithBadge } from './utils/error/fail-msg-with-badge.mts'
 import { isSeaBinary } from './utils/executable/detect.mts'

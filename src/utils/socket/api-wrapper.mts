@@ -1,10 +1,9 @@
 /** @fileoverview Simplified API wrapper to DRY out repetitive fetch-*.mts files */
 
+import type { SocketSdk } from '@socketsecurity/sdk'
+import type { BaseFetchOptions, CResult } from '../../types.mts'
 import { handleApiCall } from './api.mts'
 import { setupSdk } from './sdk.mts'
-
-import type { BaseFetchOptions, CResult } from '../../types.mts'
-import type { SocketSdk } from '@socketsecurity/sdk'
 
 /**
  * Generic API call wrapper that eliminates the need for separate fetch-*.mts files

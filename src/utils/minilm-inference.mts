@@ -48,10 +48,10 @@
  * ```
  */
 
-import { WordPieceTokenizer } from './wordpiece-tokenizer.mts'
+import type { InferenceSession } from 'onnxruntime-web'
 
 import type { Vocabulary } from './wordpiece-tokenizer.mts'
-import type { InferenceSession } from 'onnxruntime-web'
+import { WordPieceTokenizer } from './wordpiece-tokenizer.mts'
 
 /**
  * MiniLM inference result.

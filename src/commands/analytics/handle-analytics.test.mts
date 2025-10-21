@@ -1,10 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-import { handleAnalytics } from './handle-analytics.mts'
 import {
   createErrorResult,
   createSuccessResult,
 } from '../../../test/helpers/mocks.mts'
+import { handleAnalytics } from './handle-analytics.mts'
 
 // Mock the dependencies.
 vi.mock('./fetch-org-analytics.mts', () => ({

@@ -15,10 +15,8 @@ import os from 'node:os'
 import path from 'node:path'
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-
-import { UpdateStore } from './store.mts'
-
 import type { StoreRecord } from './store.mts'
+import { UpdateStore } from './store.mts'
 
 describe('store', () => {
   let testStore: UpdateStore

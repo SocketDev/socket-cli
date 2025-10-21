@@ -3,9 +3,12 @@ import path from 'node:path'
 
 import { DOT_SOCKET_DIR } from '@socketsecurity/lib/constants/paths'
 import { getSpinner } from '@socketsecurity/lib/constants/process'
-
-import { handlePatchDownload } from './handle-patch-download.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
+import type {
+  CliCommandConfig,
+  CliCommandContext,
+  CliSubcommand,
+} from '../../utils/cli/with-subcommands.mjs'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { InputError } from '../../utils/error/errors.mjs'
 import {
@@ -14,12 +17,7 @@ import {
 } from '../../utils/output/formatting.mts'
 import { getOutputKind } from '../../utils/output/mode.mjs'
 import { checkCommandInput } from '../../utils/validation/check-input.mts'
-
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-  CliSubcommand,
-} from '../../utils/cli/with-subcommands.mjs'
+import { handlePatchDownload } from './handle-patch-download.mts'
 
 export const CMD_NAME = 'download'
 
@@ -103,14 +101,16 @@ async function run(
     cwd = process.cwd()
   } else {
     if (cli.input.length === 0) {
-      throw new InputError(
-        'Must provide patch UUIDs or use --scan flag',
-      )
+      throw new InputError('Must provide patch UUIDs or use --scan flag')
     }
 
     // First arg might be cwd if it's a directory
     const firstArg = cli.input[0]
-    if (firstArg && !firstArg.match(/^[0-9a-f-]{36}$/i) && existsSync(firstArg)) {
+    if (
+      firstArg &&
+      !firstArg.match(/^[0-9a-f-]{36}$/i) &&
+      existsSync(firstArg)
+    ) {
       cwd = firstArg
       uuids = cli.input.slice(1) as string[]
     } else {

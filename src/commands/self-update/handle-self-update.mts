@@ -9,15 +9,12 @@ import crypto from 'node:crypto'
 import { existsSync, promises as fs } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-
-import colors from 'yoctocolors-cjs'
-
 import { getIpcStubPath } from '@socketsecurity/lib/ipc'
 import { logger } from '@socketsecurity/lib/logger'
-
-import { outputSelfUpdate } from './output-self-update.mts'
+import colors from 'yoctocolors-cjs'
 import ENV from '../../constants/env.mts'
 import { commonFlags } from '../../flags.mts'
+import type { CliCommandConfig } from '../../utils/cli/with-subcommands.mjs'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { isSeaBinary } from '../../utils/executable/detect.mjs'
 import {
@@ -25,8 +22,7 @@ import {
   ensureExecutable,
   getExpectedAssetName,
 } from '../../utils/process/os.mjs'
-
-import type { CliCommandConfig } from '../../utils/cli/with-subcommands.mjs'
+import { outputSelfUpdate } from './output-self-update.mts'
 
 // Helper functions for updater paths.
 function getSocketCliUpdaterDownloadsDir(): string {

@@ -1,12 +1,10 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
-
-import { afterEach, describe, expect, it } from 'vitest'
-
+import { PNPM } from '@socketsecurity/lib/constants/agents'
+import type { JsonContent } from '@socketsecurity/lib/fs'
 import { readPackageJson } from '@socketsecurity/lib/packages'
 import { spawn } from '@socketsecurity/lib/spawn'
-import { PNPM } from '@socketsecurity/lib/constants/agents'
-
+import { afterEach, describe, expect, it } from 'vitest'
 import { withTempFixture } from '../../../src/utils/test-fixtures.mts'
 import { spawnSocketCli, testPath } from '../../../test/utils.mts'
 import { PNPM_LOCK_YAML } from '../../constants/packages.mts'
@@ -14,15 +12,14 @@ import { FLAG_CONFIG, FLAG_DRY_RUN, FLAG_SILENT } from '../constants/cli.mts'
 import ENV from '../constants/env.mts'
 import { getBinCliPath } from '../constants/paths.mts'
 
-import type { JsonContent } from '@socketsecurity/lib/fs'
-
 const binCliPath = getBinCliPath()
 const fixtureBaseDir = path.join(testPath, 'fixtures/commands/optimize')
 
 // Track cleanup functions for each test.
 let cleanupFunctions: Array<() => Promise<void>> = []
 
-describe('socket optimize - pnpm versions', { timeout: 60_000 }, async () => {afterEach(async () => {
+describe('socket optimize - pnpm versions', { timeout: 60_000 }, async () => {
+  afterEach(async () => {
     // Clean up all temporary directories after each test.
     await Promise.all(cleanupFunctions.map(cleanup => cleanup()))
     cleanupFunctions = []

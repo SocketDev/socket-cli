@@ -6,11 +6,9 @@
  */
 
 import { Box as InkBox, Text as InkText, render as inkRender } from 'ink'
-import ReactImport from 'react'
-
-import InkTableImport from '../../external/ink-table.mjs'
-
 import type { FC } from 'react'
+import ReactImport from 'react'
+import InkTableImport from '../../external/ink-table.mjs'
 
 export const Box: typeof InkBox = InkBox
 export const Text: typeof InkText = InkText

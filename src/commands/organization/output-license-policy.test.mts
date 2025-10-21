@@ -1,11 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-import { outputLicensePolicy } from './output-license-policy.mts'
 import {
   createErrorResult,
   createSuccessResult,
   setupOutputWithTableMocks,
 } from '../../../test/helpers/index.mts'
+import { outputLicensePolicy } from './output-license-policy.mts'
 
 // Mock the dependencies.
 setupOutputWithTableMocks()

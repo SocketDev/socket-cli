@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
-import { handleCi } from './handle-ci.mts'
 import { UNKNOWN_ERROR } from '../constants/errors.mts'
+import { handleCi } from './handle-ci.mts'
 
 // Mock the dependencies.
 vi.mock('@socketsecurity/lib/logger', () => ({
@@ -188,9 +187,7 @@ describe('handleCi', () => {
   })
 
   it('logs debug information', async () => {
-    const { debugDir, debugFn } = await import(
-      '@socketsecurity/lib/debug'
-    )
+    const { debugDir, debugFn } = await import('@socketsecurity/lib/debug')
     const { getDefaultOrgSlug } = await import('./fetch-default-org-slug.mts')
     const { getRepoName, gitBranch } = await import('../../utils/git.mts')
 
@@ -218,9 +215,7 @@ describe('handleCi', () => {
   })
 
   it('logs debug info on org slug failure', async () => {
-    const { debugDir, debugFn } = await import(
-      '@socketsecurity/lib/debug'
-    )
+    const { debugDir, debugFn } = await import('@socketsecurity/lib/debug')
     const { getDefaultOrgSlug } = await import('./fetch-default-org-slug.mts')
 
     const error = {

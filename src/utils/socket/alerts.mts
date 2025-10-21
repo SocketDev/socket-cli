@@ -18,22 +18,20 @@
  * - Respects filter configurations from socket.yml
  */
 
+import type { LockfileObject } from '@pnpm/lockfile.fs'
 import { arrayUnique } from '@socketsecurity/lib/arrays'
 import { debugDir } from '@socketsecurity/lib/debug'
 import { logger } from '@socketsecurity/lib/logger'
 import { getOwn } from '@socketsecurity/lib/objects'
+import type { Spinner } from '@socketsecurity/lib/spinner'
 import { isNonEmptyString } from '@socketsecurity/lib/strings'
-
+import type { CompactSocketArtifact } from '../alert/artifact.mts'
 import { findSocketYmlSync } from '../config.mts'
 import { extractPurlsFromPnpmLockfile } from '../pnpm/lockfile.mts'
+import type { AlertFilter, AlertsByPurl } from '../socket/package-alert.mts'
 import { addArtifactToAlertsMap } from '../socket/package-alert.mts'
 import { getPublicApiToken, setupSdk } from '../socket/sdk.mjs'
 import { toFilterConfig } from '../validation/filter-config.mts'
-
-import type { CompactSocketArtifact } from '../alert/artifact.mts'
-import type { AlertFilter, AlertsByPurl } from '../socket/package-alert.mts'
-import type { LockfileObject } from '@pnpm/lockfile.fs'
-import type { Spinner } from '@socketsecurity/lib/spinner'
 
 export type GetAlertsMapFromPnpmLockfileOptions = {
   apiToken?: string | undefined

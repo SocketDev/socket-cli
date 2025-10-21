@@ -83,7 +83,9 @@ console.log('Test 3: Slice "TextBold" at 8 chars')
 console.log(`  Input: "TextBold" with ANSI`)
 console.log(`  Result visible: "${visibleLength(result3)}" chars`)
 console.log(`  Has reset code: ${result3.includes('\x1B[0m') ? '✅' : '❌'}`)
-console.log(`  Result ends properly: ${result3.endsWith('\x1B[0m') ? '✅' : '❌'}`)
+console.log(
+  `  Result ends properly: ${result3.endsWith('\x1B[0m') ? '✅' : '❌'}`,
+)
 console.log('')
 
 // Test 4: Plain string (no ANSI).

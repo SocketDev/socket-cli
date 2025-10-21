@@ -1,8 +1,6 @@
-import { describe, expect, it } from 'vitest'
-
-import { generateReport } from './generate-report.mts'
-
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+import { describe, expect, it } from 'vitest'
+import { generateReport } from './generate-report.mts'
 
 type SecurityPolicyData = SocketSdkSuccessResult<'getOrgSecurityPolicy'>['data']
 

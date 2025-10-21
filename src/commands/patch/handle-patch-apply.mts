@@ -1,35 +1,34 @@
 import crypto from 'node:crypto'
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
-
-
-import fastGlob from 'fast-glob'
+import type { PackageURL } from '@socketregistry/packageurl-js'
 
 import { joinAnd } from '@socketsecurity/lib/arrays'
+import { NPM } from '@socketsecurity/lib/constants/agents'
+import { UTF8 } from '@socketsecurity/lib/constants/encoding'
+import {
+  DOT_SOCKET_DIR,
+  MANIFEST_JSON,
+  NODE_MODULES,
+} from '@socketsecurity/lib/constants/paths'
 import { debugDirNs } from '@socketsecurity/lib/debug'
 import { readDirNames } from '@socketsecurity/lib/fs'
 import { logger } from '@socketsecurity/lib/logger'
 import { readPackageJson } from '@socketsecurity/lib/packages'
 import { normalizePath } from '@socketsecurity/lib/path'
+import type { Spinner } from '@socketsecurity/lib/spinner'
 import { isNonEmptyString } from '@socketsecurity/lib/strings'
 import { pluralize } from '@socketsecurity/lib/words'
-import { NPM } from '@socketsecurity/lib/constants/agents'
-import { UTF8 } from '@socketsecurity/lib/constants/encoding'
-import { DOT_SOCKET_DIR, MANIFEST_JSON, NODE_MODULES } from '@socketsecurity/lib/constants/paths'
-
-
-import { PatchManifestSchema } from './manifest-schema.mts'
-import { outputPatchResult } from './output-patch-result.mts'
+import fastGlob from 'fast-glob'
+import type { CResult, OutputKind } from '../../types.mts'
 import { getErrorCause } from '../../utils/error/errors.mjs'
 import { findUp } from '../../utils/fs/fs.mjs'
 import { createBackup } from '../../utils/manifest/patch-backup.mts'
 import { updatePatchStatus } from '../../utils/manifest/patches.mts'
 import { getPurlObject, normalizePurl } from '../../utils/purl/parse.mjs'
-
 import type { PatchRecord } from './manifest-schema.mts'
-import type { CResult, OutputKind } from '../../types.mts'
-import type { PackageURL } from '@socketregistry/packageurl-js'
-import type { Spinner } from '@socketsecurity/lib/spinner'
+import { PatchManifestSchema } from './manifest-schema.mts'
+import { outputPatchResult } from './output-patch-result.mts'
 
 type PatchEntry = {
   key: string
@@ -468,7 +467,9 @@ export async function handlePatchApply({
             })
           } catch (e) {
             // Log error but don't fail the whole operation.
-            logger.warn(`Failed to update status for ${purl}: ${getErrorCause(e)}`)
+            logger.warn(
+              `Failed to update status for ${purl}: ${getErrorCause(e)}`,
+            )
           }
         }
 
@@ -479,7 +480,9 @@ export async function handlePatchApply({
             await updatePatchStatus(purl, 'failed', {})
           } catch (e) {
             // Log error but don't fail the whole operation.
-            logger.warn(`Failed to update status for ${purl}: ${getErrorCause(e)}`)
+            logger.warn(
+              `Failed to update status for ${purl}: ${getErrorCause(e)}`,
+            )
           }
         }
       }

@@ -1,7 +1,8 @@
-import { logger } from '@socketsecurity/lib/logger'
 import { YARN_CLASSIC } from '@socketsecurity/lib/constants/agents'
+import { logger } from '@socketsecurity/lib/logger'
 
 const YARN = YARN_CLASSIC
+
 import { findBinPathDetailsSync } from '../fs/path-resolve.mts'
 
 function exitWithBinPathError(binName: string): never {

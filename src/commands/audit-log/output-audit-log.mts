@@ -1,6 +1,6 @@
 import { debug, debugDir } from '@socketsecurity/lib/debug'
 import { logger } from '@socketsecurity/lib/logger'
-
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 import {
   FLAG_JSON,
   OUTPUT_JSON,
@@ -8,12 +8,10 @@ import {
   REDACTED,
 } from '../../constants/cli.mts'
 import ENV from '../../constants/env.mts'
+import type { CResult, OutputKind } from '../../types.mts'
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 import { mdTable } from '../../utils/output/markdown.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
-
-import type { CResult, OutputKind } from '../../types.mts'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export async function outputAuditLog(
   result: CResult<SocketSdkSuccessResult<'getAuditLogEvents'>['data']>,

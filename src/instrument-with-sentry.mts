@@ -2,9 +2,8 @@
 // Otherwise the Sentry dependency won't even be present in the manifest.
 
 import { createRequire } from 'node:module'
-
-import { logger } from '@socketsecurity/lib/logger'
 import { kInternalsSymbol } from '@socketsecurity/lib/constants/core'
+import { logger } from '@socketsecurity/lib/logger'
 
 import ENV from './constants/env.mts'
 

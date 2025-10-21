@@ -1,10 +1,8 @@
 import { debug, debugDir } from '@socketsecurity/lib/debug'
-
-import { outputConfigSet } from './output-config-set.mts'
-import { updateConfigValue } from '../../utils/config.mts'
-
 import type { OutputKind } from '../../types.mts'
 import type { LocalConfig } from '../../utils/config.mts'
+import { updateConfigValue } from '../../utils/config.mts'
+import { outputConfigSet } from './output-config-set.mts'
 
 export async function handleConfigSet({
   key,

@@ -1,9 +1,7 @@
 import { debug, debugDir } from '@socketsecurity/lib/debug'
-
-import { queryApiSafeText } from '../../utils/socket/api.mjs'
-
 import type { CResult } from '../../types.mts'
 import type { SocketArtifact } from '../../utils/alert/artifact.mts'
+import { queryApiSafeText } from '../../utils/socket/api.mjs'
 
 export async function fetchScan(
   orgSlug: string,

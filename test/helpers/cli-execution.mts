@@ -1,9 +1,8 @@
 /** @fileoverview CLI execution test helpers for Socket CLI. Provides high-level utilities for executing CLI commands with comprehensive output validation and assertion capabilities. */
 
+import type { SpawnOptions } from '@socketsecurity/lib/spawn'
 import constants from '../../src/constants.mts'
 import { spawnSocketCli } from '../utils.mts'
-
-import type { SpawnOptions } from '@socketsecurity/lib/spawn'
 
 /**
  * Result from CLI execution with enhanced utilities

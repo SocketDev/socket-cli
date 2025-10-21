@@ -1,10 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-import { handleConfigUnset } from './handle-config-unset.mts'
 import {
   createErrorResult,
   createSuccessResult,
 } from '../../../test/helpers/mocks.mts'
+import { handleConfigUnset } from './handle-config-unset.mts'
 
 // Mock the dependencies.
 vi.mock('./output-config-unset.mts', () => ({

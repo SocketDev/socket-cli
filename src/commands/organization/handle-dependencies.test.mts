@@ -1,12 +1,11 @@
 import { describe, expect, it, vi } from 'vitest'
-
-import { fetchDependencies } from './fetch-dependencies.mts'
-import { handleDependencies } from './handle-dependencies.mts'
-import { outputDependencies } from './output-dependencies.mts'
 import {
   createSuccessResult,
   setupTestEnvironment,
 } from '../../../test/helpers/index.mts'
+import { fetchDependencies } from './fetch-dependencies.mts'
+import { handleDependencies } from './handle-dependencies.mts'
+import { outputDependencies } from './output-dependencies.mts'
 
 vi.mock('./fetch-dependencies.mts', () => ({
   fetchDependencies: vi.fn(),

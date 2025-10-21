@@ -18,5 +18,5 @@ import { fileURLToPath } from 'node:url'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 // Register the alias loader using absolute path.
- 
+
 register(path.join(__dirname, 'utils', 'alias-loader.mjs'), import.meta.url)

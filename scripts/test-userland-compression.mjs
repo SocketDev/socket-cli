@@ -1,4 +1,3 @@
-
 /**
  * Test script for Socket CLI userland compression.
  * Verifies that compressSocketUserland() creates valid BROT-encoded files.
@@ -7,7 +6,7 @@
 import { existsSync } from 'node:fs'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
-import { brotliCompressSync, constants as zlibConstants  } from 'node:zlib'
+import { brotliCompressSync, constants as zlibConstants } from 'node:zlib'
 
 import { build } from 'esbuild'
 
@@ -24,7 +23,13 @@ async function compressSocketUserland() {
 
   // Paths.
   const cliJsPath = path.join(ROOT_DIR, 'dist', 'cli.js')
-  const bootstrapDir = path.join(ROOT_DIR, '.node-source', 'lib', 'internal', 'bootstrap')
+  const bootstrapDir = path.join(
+    ROOT_DIR,
+    '.node-source',
+    'lib',
+    'internal',
+    'bootstrap',
+  )
   const outputPath = path.join(bootstrapDir, 'socketsecurity.js')
 
   // Check if dist/cli.js exists.
@@ -97,7 +102,9 @@ async function compressSocketUserland() {
   // Step 4: Combine header + compressed data.
   const finalData = Buffer.concat([header, compressed])
   const finalSize = finalData.length
-  console.log(`   Final size with header: ${(finalSize / 1024 / 1024).toFixed(2)} MB`)
+  console.log(
+    `   Final size with header: ${(finalSize / 1024 / 1024).toFixed(2)} MB`,
+  )
 
   // Step 5: Create userland directory and write file.
   await mkdir(bootstrapDir, { recursive: true })

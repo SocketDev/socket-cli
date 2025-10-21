@@ -1,11 +1,9 @@
 import { logger } from '@socketsecurity/lib/logger'
-
+import type { CResult, OutputKind } from '../../types.mts'
+import type { LocalConfig } from '../../utils/config.mts'
 import { isConfigFromFlag } from '../../utils/config.mts'
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
-
-import type { CResult, OutputKind } from '../../types.mts'
-import type { LocalConfig } from '../../utils/config.mts'
 
 export async function outputConfigGet(
   key: keyof LocalConfig,

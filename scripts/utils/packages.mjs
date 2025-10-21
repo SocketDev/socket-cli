@@ -13,10 +13,8 @@ const { isRelative, normalizePath } = pathUtils
 
 import { findUpSync } from './fs.mjs'
 
- 
 const { createRequire, isBuiltin } = Module
 
- 
 const cjsPluginPrefixRegExp = /^\x00/
 const cjsPluginSuffixRegExp =
   /\?commonjs-(?:entry|es-import|exports|external|module|proxy|wrapped)$/

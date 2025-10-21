@@ -24,14 +24,12 @@ import { isObject } from '@socketsecurity/lib/objects'
 import { naturalCompare } from '@socketsecurity/lib/sorts'
 import { indentString } from '@socketsecurity/lib/strings'
 import { pluralize } from '@socketsecurity/lib/words'
-
+import type { MeowFlags } from '../../flags.mts'
 import { camelToKebab } from '../data/strings.mts'
 import {
   getRequirements,
   getRequirementsKey,
 } from '../ecosystem/requirements.mts'
-
-import type { MeowFlags } from '../../flags.mts'
 
 type ApiRequirementsOptions = {
   indent?: number | undefined

@@ -1,10 +1,9 @@
 import { debug } from '@socketsecurity/lib/debug'
 
 import ENV from '../../constants/env.mts'
+import type { CResult } from '../../types.mts'
 import { getConfigValueOrUndef } from '../../utils/config.mts'
 import { fetchOrganization } from '../organization/fetch-organization-list.mts'
-
-import type { CResult } from '../../types.mts'
 
 // Use the config defaultOrg when set, otherwise discover from remote.
 export async function getDefaultOrgSlug(): Promise<CResult<string>> {

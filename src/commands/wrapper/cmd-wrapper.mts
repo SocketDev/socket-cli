@@ -1,26 +1,21 @@
 import { existsSync } from 'node:fs'
 
 import { logger } from '@socketsecurity/lib/logger'
-
-import { addSocketWrapper } from './add-socket-wrapper.mts'
-import { checkSocketWrapperSetup } from './check-socket-wrapper-setup.mts'
-import { postinstallWrapper } from './postinstall-wrapper.mts'
-import { removeSocketWrapper } from './remove-socket-wrapper.mts'
 import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mjs'
-import {
-  getBashRcPath,
-  getZshRcPath,
-} from '../../constants/paths.mjs'
+import { getBashRcPath, getZshRcPath } from '../../constants/paths.mjs'
 import { commonFlags } from '../../flags.mts'
-import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
-import { getFlagListOutput } from '../../utils/output/formatting.mts'
-import { getOutputKind } from '../../utils/output/mode.mjs'
-import { checkCommandInput } from '../../utils/validation/check-input.mts'
-
 import type {
   CliCommandConfig,
   CliCommandContext,
 } from '../../utils/cli/with-subcommands.mjs'
+import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
+import { getFlagListOutput } from '../../utils/output/formatting.mts'
+import { getOutputKind } from '../../utils/output/mode.mjs'
+import { checkCommandInput } from '../../utils/validation/check-input.mts'
+import { addSocketWrapper } from './add-socket-wrapper.mts'
+import { checkSocketWrapperSetup } from './check-socket-wrapper-setup.mts'
+import { postinstallWrapper } from './postinstall-wrapper.mts'
+import { removeSocketWrapper } from './remove-socket-wrapper.mts'
 
 const config: CliCommandConfig = {
   commandName: 'wrapper',

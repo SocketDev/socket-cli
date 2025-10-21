@@ -1,18 +1,16 @@
 import { logger } from '@socketsecurity/lib/logger'
-
-import { handleQuota } from './handle-quota.mts'
 import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
+import type {
+  CliCommandConfig,
+  CliCommandContext,
+} from '../../utils/cli/with-subcommands.mjs'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { getFlagListOutput } from '../../utils/output/formatting.mts'
 import { getOutputKind } from '../../utils/output/mode.mjs'
 import { hasDefaultApiToken } from '../../utils/socket/sdk.mjs'
 import { checkCommandInput } from '../../utils/validation/check-input.mts'
-
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
+import { handleQuota } from './handle-quota.mts'
 
 const config: CliCommandConfig = {
   commandName: 'quota',

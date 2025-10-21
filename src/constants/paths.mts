@@ -8,8 +8,6 @@ import { createRequire } from 'node:module'
 import { homedir } from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-
-import { logger } from '@socketsecurity/lib/logger'
 import {
   getExecPath,
   getNodeDebugFlags,
@@ -17,6 +15,7 @@ import {
   getNodeNoWarningsFlags,
 } from '@socketsecurity/lib/constants/node'
 import { DOT_SOCKET_DIR } from '@socketsecurity/lib/constants/paths'
+import { logger } from '@socketsecurity/lib/logger'
 
 // Import socket constants for re-export.
 import { SOCKET_JSON } from './socket.mts'
@@ -25,7 +24,12 @@ import { SOCKET_JSON } from './socket.mts'
 export { SOCKET_JSON }
 
 // Re-export node-related constants from registry for convenience.
-export { getExecPath, getNodeDebugFlags, getNodeHardenFlags, getNodeNoWarningsFlags }
+export {
+  getExecPath,
+  getNodeDebugFlags,
+  getNodeHardenFlags,
+  getNodeNoWarningsFlags,
+}
 
 // Export as non-function constants for backward compatibility.
 export const execPath = getExecPath()
@@ -128,7 +132,10 @@ export function getInstrumentWithSentryPath(): string {
 
 // Export as constants for backward compatibility.
 export const shadowNpmInjectPath = path.join(distPath, 'shadow-npm-inject.js')
-export const instrumentWithSentryPath = path.join(distPath, 'instrument-with-sentry.js')
+export const instrumentWithSentryPath = path.join(
+  distPath,
+  'instrument-with-sentry.js',
+)
 
 export function getShadowNpxBinPath(): string {
   return path.join(distPath, 'shadow-npx-bin.js')

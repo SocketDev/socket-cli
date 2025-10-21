@@ -3,13 +3,12 @@ import fs, { existsSync } from 'node:fs'
 import { debug, debugDir } from '@socketsecurity/lib/debug'
 import { logger } from '@socketsecurity/lib/logger'
 import { confirm } from '@socketsecurity/lib/prompts'
-
-import { addSocketWrapper } from './add-socket-wrapper.mts'
-import { checkSocketWrapperSetup } from './check-socket-wrapper-setup.mts'
 import { getBashRcPath, getZshRcPath } from '../../constants/paths.mts'
 import { getBashrcDetails } from '../../utils/cli/completion.mjs'
 import { getErrorCause } from '../../utils/error/errors.mjs'
 import { updateInstalledTabCompletionScript } from '../install/setup-tab-completion.mts'
+import { addSocketWrapper } from './add-socket-wrapper.mts'
+import { checkSocketWrapperSetup } from './check-socket-wrapper-setup.mts'
 
 export async function postinstallWrapper() {
   const bashRcPath = getBashRcPath()

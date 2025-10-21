@@ -1,15 +1,11 @@
 /** @fileoverview Simplified output formatter to DRY out repetitive output-*.mts files */
 
+import { logger } from '@socketsecurity/lib/logger'
 // @ts-expect-error - No type declarations available.
 import chalkTable from 'chalk-table'
 import colors from 'yoctocolors-cjs'
-
-import { logger } from '@socketsecurity/lib/logger'
-
-import { serializeResultJson } from '../output/result-json.mjs'
-
 import type { CResult, OutputKind } from '../../types.mjs'
-
+import { serializeResultJson } from '../output/result-json.mjs'
 
 // Simple outputResult implementation
 function outputResult<T>(

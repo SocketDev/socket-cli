@@ -1,6 +1,5 @@
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 import { describe, expect, it, vi } from 'vitest'
-
-import { outputDependencies } from './output-dependencies.mts'
 import {
   createErrorResult,
   createSuccessResult,
@@ -9,7 +8,7 @@ import {
 } from '../../../test/helpers/index.mts'
 
 import type { CResult } from '../../types.mts'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+import { outputDependencies } from './output-dependencies.mts'
 
 setupStandardOutputMocks()
 

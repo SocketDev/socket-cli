@@ -1,14 +1,19 @@
+import { NPX } from '@socketsecurity/lib/constants/agents'
 import { describe, expect } from 'vitest'
 
-import { NPX } from '@socketsecurity/lib/constants/agents'
-
 import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
-import { FLAG_CONFIG, FLAG_DRY_RUN, FLAG_HELP, FLAG_SILENT } from '../constants/cli.mts'
+import {
+  FLAG_CONFIG,
+  FLAG_DRY_RUN,
+  FLAG_HELP,
+  FLAG_SILENT,
+} from '../constants/cli.mts'
 import { getBinCliPath } from '../constants/paths.mts'
 
 const binCliPath = getBinCliPath()
 
-describe('socket npx', async () => {cmdit(
+describe('socket npx', async () => {
+  cmdit(
     [NPX, FLAG_HELP, FLAG_CONFIG, '{}'],
     `should support ${FLAG_HELP}`,
     async cmd => {

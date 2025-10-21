@@ -3,23 +3,22 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { describe, expect, it } from 'vitest'
-
+import { UNKNOWN_ERROR } from '../constants/errors.mts'
 import {
   AuthError,
   ConfigError,
   FileSystemError,
-  InputError,
-  NetworkError,
-  RateLimitError,
   formatErrorWithDetail,
   getErrorCause,
   getErrorMessage,
   getErrorMessageOr,
   getRecoverySuggestions,
   hasRecoverySuggestions,
+  InputError,
   isErrnoException,
+  NetworkError,
+  RateLimitError,
 } from './errors.mts'
-import { UNKNOWN_ERROR } from '../constants/errors.mts'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)

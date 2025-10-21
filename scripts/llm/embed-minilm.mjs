@@ -41,7 +41,9 @@ const tokenizerData = readFileSync(tokenizerPath)
 const tokenizerCompressed = brotliCompressSync(tokenizerData)
 const tokenizerBase64 = tokenizerCompressed.toString('base64')
 console.log(`   ✓ Read ${tokenizerData.length} bytes`)
-console.log(`   ✓ Brotli compressed: ${tokenizerCompressed.length} bytes (${((tokenizerCompressed.length / tokenizerData.length) * 100).toFixed(1)}%)`)
+console.log(
+  `   ✓ Brotli compressed: ${tokenizerCompressed.length} bytes (${((tokenizerCompressed.length / tokenizerData.length) * 100).toFixed(1)}%)`,
+)
 console.log(`   ✓ Base64 encoded: ${tokenizerBase64.length} bytes\n`)
 
 // Read ONNX model.
@@ -51,7 +53,9 @@ const modelData = readFileSync(modelPath)
 const modelCompressed = brotliCompressSync(modelData)
 const modelBase64 = modelCompressed.toString('base64')
 console.log(`   ✓ Read ${modelData.length} bytes`)
-console.log(`   ✓ Brotli compressed: ${modelCompressed.length} bytes (${((modelCompressed.length / modelData.length) * 100).toFixed(1)}%)`)
+console.log(
+  `   ✓ Brotli compressed: ${modelCompressed.length} bytes (${((modelCompressed.length / modelData.length) * 100).toFixed(1)}%)`,
+)
 console.log(`   ✓ Base64 encoded: ${modelBase64.length} bytes\n`)
 
 // Generate minilm-sync.mjs.
@@ -150,22 +154,40 @@ const outputPath = path.join(rootPath, 'external/minilm-sync.mjs')
 writeFileSync(outputPath, syncContent, 'utf-8')
 
 console.log(`   ✓ Generated ${outputPath}`)
-console.log(`   ✓ File size: ${(syncContent.length / 1024 / 1024).toFixed(2)} MB\n`)
+console.log(
+  `   ✓ File size: ${(syncContent.length / 1024 / 1024).toFixed(2)} MB\n`,
+)
 
 console.log('╔═══════════════════════════════════════════════════╗')
 console.log('║   Embedding Complete                              ║')
 console.log('╚═══════════════════════════════════════════════════╝\n')
 
-const originalSizeMB = ((tokenizerData.length + modelData.length) / 1024 / 1024).toFixed(2)
-const compressedSizeMB = ((tokenizerCompressed.length + modelCompressed.length) / 1024 / 1024).toFixed(2)
-const base64SizeMB = ((tokenizerBase64.length + modelBase64.length) / 1024 / 1024).toFixed(2)
+const originalSizeMB = (
+  (tokenizerData.length + modelData.length) /
+  1024 /
+  1024
+).toFixed(2)
+const compressedSizeMB = (
+  (tokenizerCompressed.length + modelCompressed.length) /
+  1024 /
+  1024
+).toFixed(2)
+const base64SizeMB = (
+  (tokenizerBase64.length + modelBase64.length) /
+  1024 /
+  1024
+).toFixed(2)
 
-console.log(`📊 Compression Results:`)
+console.log('📊 Compression Results:')
 console.log(`   Original:    ${originalSizeMB} MB`)
-console.log(`   Compressed:  ${compressedSizeMB} MB (${((tokenizerCompressed.length + modelCompressed.length) / (tokenizerData.length + modelData.length) * 100).toFixed(1)}%)`)
+console.log(
+  `   Compressed:  ${compressedSizeMB} MB (${(((tokenizerCompressed.length + modelCompressed.length) / (tokenizerData.length + modelData.length)) * 100).toFixed(1)}%)`,
+)
 console.log(`   Base64:      ${base64SizeMB} MB`)
-console.log(``)
-console.log(`   Total savings: ${(originalSizeMB - base64SizeMB).toFixed(2)} MB (${(100 - (base64SizeMB / originalSizeMB * 100)).toFixed(1)}% reduction)`)
-console.log(`\nNext steps:`)
+console.log('')
+console.log(
+  `   Total savings: ${(originalSizeMB - base64SizeMB).toFixed(2)} MB (${(100 - (base64SizeMB / originalSizeMB) * 100).toFixed(1)}% reduction)`,
+)
+console.log('\nNext steps:')
 console.log('  1. Run build: pnpm run build')
 console.log('  2. Test LLM features in src/commands/ask/handle-ask.mts')

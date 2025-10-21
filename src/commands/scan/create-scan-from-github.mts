@@ -12,15 +12,13 @@ import { pipeline } from 'node:stream/promises'
 import { debug, debugDir } from '@socketsecurity/lib/debug'
 import { logger } from '@socketsecurity/lib/logger'
 import { confirm, select } from '@socketsecurity/lib/prompts'
-
-import { fetchSupportedScanFileNames } from './fetch-supported-scan-file-names.mts'
-import { handleCreateNewScan } from './handle-create-new-scan.mts'
 import { REPORT_LEVEL_ERROR } from '../../constants/reporting.mjs'
+import type { CResult, OutputKind } from '../../types.mts'
 import { formatErrorWithDetail } from '../../utils/error/errors.mjs'
 import { isReportSupportedFile } from '../../utils/fs/glob.mts'
 import { fetchListAllRepos } from '../repository/fetch-list-all-repos.mts'
-
-import type { CResult, OutputKind } from '../../types.mts'
+import { fetchSupportedScanFileNames } from './fetch-supported-scan-file-names.mts'
+import { handleCreateNewScan } from './handle-create-new-scan.mts'
 
 export async function createScanFromGithub({
   all,

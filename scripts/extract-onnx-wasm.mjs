@@ -14,7 +14,7 @@ const rootPath = path.join(__dirname, '..')
 // Read the ONNX Runtime WASM file (use SIMD threaded variant).
 const wasmFile = path.join(
   rootPath,
-  'node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.wasm'
+  'node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.wasm',
 )
 
 const wasmBinary = readFileSync(wasmFile)
@@ -22,7 +22,9 @@ const wasmBinary = readFileSync(wasmFile)
 // Convert to base64.
 const base64Data = wasmBinary.toString('base64')
 
-console.log(`✓ Extracted ${wasmBinary.length} bytes from ort-wasm-simd-threaded.wasm`)
+console.log(
+  `✓ Extracted ${wasmBinary.length} bytes from ort-wasm-simd-threaded.wasm`,
+)
 console.log(`✓ Base64 size: ${base64Data.length} bytes`)
 
 // Generate onnx-sync.mjs with inlined base64.

@@ -152,12 +152,11 @@ function drawCompleteTUIPreview() {
 
   // Status bar (below input block).
   const statusY = rows - 2
-  const statusText = '  Connected • Socket CLI v1.0.80 • Theme: default • Press q to exit'
+  const statusText =
+    '  Connected • Socket CLI v1.0.80 • Theme: default • Press q to exit'
   const statusPadded = statusText.padEnd(cols - 2)
   buffer[statusY] =
-    buffer[statusY].slice(0, 1) +
-    statusPadded +
-    buffer[statusY].slice(cols - 1)
+    buffer[statusY].slice(0, 1) + statusPadded + buffer[statusY].slice(cols - 1)
 
   return buffer.join('\n')
 }
@@ -172,7 +171,9 @@ console.log('\n')
 console.log('═'.repeat(120))
 console.log('Components:')
 console.log('  • Double border around entire screen')
-console.log('  • Header frame (centered) with Socket CLI logo and shimmer animation')
+console.log(
+  '  • Header frame (centered) with Socket CLI logo and shimmer animation',
+)
 console.log('  • Console output window (top-right, 40% × 30%)')
 console.log('  • Input text block (bottom, 60% width) with cursor')
 console.log('═'.repeat(120))

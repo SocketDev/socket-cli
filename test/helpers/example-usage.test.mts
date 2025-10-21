@@ -26,14 +26,13 @@ import {
   expectResult,
   expectSuccess,
 } from './result-assertions.mts'
+import type { Workspace } from './workspace-helper.mts'
 import {
   createTestWorkspace,
   createWorkspaceWithLockfile,
   createWorkspaceWithSocketConfig,
   withTestWorkspace,
 } from './workspace-helper.mts'
-
-import type { Workspace } from './workspace-helper.mts'
 
 /**
  * Example test suite demonstrating CLI execution helpers

@@ -6,7 +6,8 @@ import { getBinCliPath } from '../constants/paths.mts'
 
 const binCliPath = getBinCliPath()
 
-describe('socket manifest scala', async () => {cmdit(
+describe('socket manifest scala', async () => {
+  cmdit(
     ['manifest', 'scala', FLAG_HELP, FLAG_CONFIG, '{}'],
     `should support ${FLAG_HELP}`,
     async cmd => {

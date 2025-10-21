@@ -1,18 +1,29 @@
 import { existsSync, promises } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
-
+import { NPM, PNPM } from '@socketsecurity/lib/constants/agents'
+import { readPackageJson } from '@socketsecurity/lib/packages'
+import { spawn } from '@socketsecurity/lib/spawn'
 import trash from 'trash'
 import { afterAll, afterEach, beforeAll, describe, expect } from 'vitest'
 
-import { readPackageJson } from '@socketsecurity/lib/packages'
-import { spawn } from '@socketsecurity/lib/spawn'
-import { NPM, PNPM } from '@socketsecurity/lib/constants/agents'
-
 import { withTempFixture } from '../../../src/utils/test-fixtures.mts'
 import { cmdit, spawnSocketCli, testPath } from '../../../test/utils.mts'
-import { PACKAGE_JSON, PACKAGE_LOCK_JSON, PNPM_LOCK_YAML } from '../../constants/packages.mts'
-import { FLAG_CONFIG, FLAG_DRY_RUN, FLAG_HELP, FLAG_JSON, FLAG_MARKDOWN, FLAG_PIN, FLAG_PROD, FLAG_VERSION } from '../constants/cli.mts'
+import {
+  PACKAGE_JSON,
+  PACKAGE_LOCK_JSON,
+  PNPM_LOCK_YAML,
+} from '../../constants/packages.mts'
+import {
+  FLAG_CONFIG,
+  FLAG_DRY_RUN,
+  FLAG_HELP,
+  FLAG_JSON,
+  FLAG_MARKDOWN,
+  FLAG_PIN,
+  FLAG_PROD,
+  FLAG_VERSION,
+} from '../constants/cli.mts'
 import { getBinCliPath } from '../constants/paths.mts'
 
 const binCliPath = getBinCliPath()
@@ -80,7 +91,8 @@ async function createTempFixture(sourceDir: string): Promise<string> {
   return tempDir
 }
 
-describe('socket optimize', async () => {beforeAll(async () => {
+describe('socket optimize', async () => {
+  beforeAll(async () => {
     // Ensure fixtures are in clean state before tests.
     await revertFixtureChanges()
   })

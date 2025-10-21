@@ -1,9 +1,8 @@
 import { existsSync } from 'node:fs'
 import Module from 'node:module'
 import path from 'node:path'
-
-import { logger } from '@socketsecurity/lib/logger'
 import { NPM } from '@socketsecurity/lib/constants/agents'
+import { logger } from '@socketsecurity/lib/logger'
 
 import ENV from '../../constants/env.mts'
 import { SOCKET_CLI_ISSUES_URL } from '../../constants/github.mts'

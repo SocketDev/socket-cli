@@ -1,6 +1,4 @@
 import { logger } from '@socketsecurity/lib/logger'
-
-import { handleViewRepo } from './handle-view-repo.mts'
 import {
   DRY_RUN_BAILING_NOW,
   FLAG_JSON,
@@ -8,6 +6,10 @@ import {
 } from '../../constants/cli.mts'
 import { V1_MIGRATION_GUIDE_URL } from '../../constants/socket.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
+import type {
+  CliCommandConfig,
+  CliCommandContext,
+} from '../../utils/cli/with-subcommands.mjs'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import {
   getFlagApiRequirementsOutput,
@@ -18,11 +20,7 @@ import { determineOrgSlug } from '../../utils/socket/org-slug.mjs'
 import { hasDefaultApiToken } from '../../utils/socket/sdk.mjs'
 import { webLink } from '../../utils/terminal/link.mts'
 import { checkCommandInput } from '../../utils/validation/check-input.mts'
-
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
+import { handleViewRepo } from './handle-view-repo.mts'
 
 export const CMD_NAME = 'view'
 

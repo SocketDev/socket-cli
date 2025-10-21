@@ -43,21 +43,17 @@
 import { existsSync, promises as fs } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-
-import semver from 'semver'
-
 import { whichBin } from '@socketsecurity/lib/bin'
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { httpDownload } from '@socketsecurity/lib/http-request'
 import { spawn } from '@socketsecurity/lib/spawn'
-import { WIN32 } from '@socketsecurity/lib/constants/platform'
-
+import semver from 'semver'
 
 import ENV from '../../constants/env.mts'
 import { PYTHON_MIN_VERSION } from '../../constants/packages.mts'
-import { getDlxCachePath } from '../dlx/binary.mts'
-import { InputError, getErrorCause } from '../error/errors.mts'
-
 import type { CResult } from '../../types.mjs'
+import { getDlxCachePath } from '../dlx/binary.mts'
+import { getErrorCause, InputError } from '../error/errors.mts'
 
 /**
  * Get the download URL for python-build-standalone based on platform and architecture.

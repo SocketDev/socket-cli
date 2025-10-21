@@ -1,14 +1,19 @@
+import { YARN } from '@socketsecurity/lib/constants/agents'
 import { describe, expect } from 'vitest'
 
-import { YARN } from '@socketsecurity/lib/constants/agents'
-
 import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
-import { FLAG_CONFIG, FLAG_DRY_RUN, FLAG_HELP, FLAG_QUIET } from '../constants/cli.mts'
+import {
+  FLAG_CONFIG,
+  FLAG_DRY_RUN,
+  FLAG_HELP,
+  FLAG_QUIET,
+} from '../constants/cli.mts'
 import { getBinCliPath } from '../constants/paths.mts'
 
 const binCliPath = getBinCliPath()
 
-describe('socket yarn', async () => {cmdit(
+describe('socket yarn', async () => {
+  cmdit(
     [YARN, FLAG_HELP, FLAG_CONFIG, '{}'],
     `should support ${FLAG_HELP}`,
     async cmd => {

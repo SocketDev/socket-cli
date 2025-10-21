@@ -19,9 +19,11 @@
  */
 
 import { setTimeout as wait } from 'node:timers/promises'
-
+import {
+  kInternalsSymbol,
+  UNKNOWN_ERROR,
+} from '@socketsecurity/lib/constants/core'
 import { debugNs } from '@socketsecurity/lib/debug'
-import { UNKNOWN_ERROR, kInternalsSymbol  } from '@socketsecurity/lib/constants/core'
 
 import ENV from '../../constants/env.mts'
 

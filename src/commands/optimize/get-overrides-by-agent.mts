@@ -8,10 +8,9 @@ import {
   YARN_BERRY,
   YARN_CLASSIC,
 } from '@socketsecurity/lib/constants/agents'
-
-import type { NpmOverrides, Overrides, PnpmOrYarnOverrides } from './types.mts'
-import type { Agent, EnvDetails } from '../../utils/ecosystem/environment.mjs'
 import type { PackageJson } from '@socketsecurity/lib/packages'
+import type { Agent, EnvDetails } from '../../utils/ecosystem/environment.mjs'
+import type { NpmOverrides, Overrides, PnpmOrYarnOverrides } from './types.mts'
 
 export function getOverridesDataBun(
   pkgEnvDetails: EnvDetails,

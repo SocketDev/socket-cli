@@ -18,7 +18,10 @@ import tsEslint from 'typescript-eslint'
 
 import { TSCONFIG_JSON } from '../scripts/constants/build.mjs'
 import { GITIGNORE } from '../scripts/constants/packages.mjs'
-import { LATEST, maintainedNodeVersions } from '../scripts/constants/versions.mjs'
+import {
+  LATEST,
+  maintainedNodeVersions,
+} from '../scripts/constants/versions.mjs'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -74,6 +77,7 @@ const sharedRules = {
   'no-new': 'error',
   'no-proto': 'error',
   'no-undef': 'error',
+  'no-unexpected-multiline': 'off',
   'no-unused-vars': [
     'error',
     {
@@ -86,7 +90,7 @@ const sharedRules = {
   'no-warning-comments': ['warn', { terms: ['fixme'] }],
   'prefer-const': 'error',
   'sort-destructure-keys/sort-destructure-keys': 'error',
-  'sort-imports': ['error', { ignoreDeclarationSort: true }],
+  'sort-imports': 'off',
 }
 
 const sharedRulesForImportX = {
@@ -148,7 +152,9 @@ const sharedRulesForNode = {
         'test',
         'test.describe',
       ],
-      version: String(maintainedNodeVersions[maintainedNodeVersions.length - 1]),
+      version: String(
+        maintainedNodeVersions[maintainedNodeVersions.length - 1],
+      ),
     },
   ],
   'n/prefer-node-protocol': 'error',

@@ -15,11 +15,10 @@ import { logger } from '@socketsecurity/lib/logger'
 import { pluralize } from '@socketsecurity/lib/words'
 
 import { OUTPUT_JSON } from '../../constants/cli.mts'
+import type { CResult, OutputKind } from '../../types.mts'
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
-
 import type { PatchDownloadResult } from './handle-patch-download.mts'
-import type { CResult, OutputKind } from '../../types.mts'
 
 type OutputOptions = {
   outputKind: OutputKind

@@ -1,17 +1,19 @@
+import { NODE_VERSION } from '@socketsecurity/lib/constants/node'
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import semver from 'semver'
 import { describe, expect } from 'vitest'
 
-import { NODE_VERSION } from '@socketsecurity/lib/constants/node'
-import { WIN32 } from '@socketsecurity/lib/constants/platform'
-
-import { FLAG_CONFIG, FLAG_DRY_RUN, FLAG_HELP } from '../../../src/constants/cli.mts'
+import {
+  FLAG_CONFIG,
+  FLAG_DRY_RUN,
+  FLAG_HELP,
+} from '../../../src/constants/cli.mts'
 import { getBinCliPath } from '../../../src/constants/paths.mts'
 import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
 
 const binCliPath = getBinCliPath()
 
 describe('socket analytics', async () => {
-
   cmdit(
     ['analytics', FLAG_HELP, FLAG_CONFIG, '{}'],
     `should support ${FLAG_HELP}`,
@@ -20,8 +22,7 @@ describe('socket analytics', async () => {
       expect(stdout).toMatchInlineSnapshot(`""`)
       // Node 24 on Windows currently fails this test with added stderr:
       // Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), file src\win\async.c, line 76
-      const skipOnWin32Node24 =
-        WIN32 && semver.parse(NODE_VERSION)?.major >= 24
+      const skipOnWin32Node24 = WIN32 && semver.parse(NODE_VERSION)?.major >= 24
       if (!skipOnWin32Node24) {
         expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
           "

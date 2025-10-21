@@ -1,21 +1,18 @@
-import terminalLink from 'terminal-link'
-import yargsParse from 'yargs-parser'
-
 import { joinAnd } from '@socketsecurity/lib/arrays'
 import { logger } from '@socketsecurity/lib/logger'
 import { isPath } from '@socketsecurity/lib/path'
 import { pluralize } from '@socketsecurity/lib/words'
-
-import { runCdxgen } from './run-cdxgen.mts'
+import terminalLink from 'terminal-link'
+import yargsParse from 'yargs-parser'
 import { DRY_RUN_BAILING_NOW, FLAG_HELP } from '../../constants/cli.mjs'
 import { commonFlags, outputFlags } from '../../flags.mts'
-import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
-import { filterFlags, isHelpFlag } from '../../utils/process/cmd.mts'
-
 import type {
   CliCommandConfig,
   CliCommandContext,
 } from '../../utils/cli/with-subcommands.mjs'
+import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
+import { filterFlags, isHelpFlag } from '../../utils/process/cmd.mts'
+import { runCdxgen } from './run-cdxgen.mts'
 
 // TODO: Convert yargs to meow.
 const toLower = (arg: string) => arg.toLowerCase()

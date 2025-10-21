@@ -29,15 +29,10 @@ import path from 'node:path'
 
 import { readJson } from '@socketsecurity/lib/fs'
 import { normalizePath } from '@socketsecurity/lib/path'
+import type { SpawnExtra, SpawnOptions } from '@socketsecurity/lib/spawn'
 import { spawn } from '@socketsecurity/lib/spawn'
-
 import { DLX_BINARY_CACHE_TTL } from '../../constants/cache.mjs'
 import { InputError } from '../error/errors.mts'
-
-import type {
-  SpawnExtra,
-  SpawnOptions,
-} from '@socketsecurity/lib/spawn'
 
 /**
  * Metadata structure for cached binaries.

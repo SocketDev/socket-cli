@@ -81,16 +81,26 @@ function drawSketchTUI() {
   // Scroll hint (right side).
   const scrollHintY = 5
   const scrollHintX = cols - state.scrollHint.length - 4
-  buffer[scrollHintY] = replaceAt(buffer[scrollHintY], scrollHintX, state.scrollHint)
+  buffer[scrollHintY] = replaceAt(
+    buffer[scrollHintY],
+    scrollHintX,
+    state.scrollHint,
+  )
 
   // Console output area (right side, below scroll hint).
   const consoleStartY = 7
   const consoleX = Math.floor(cols / 2) + 2
   const consoleWidth = cols - consoleX - 3
 
-  for (let i = 0; i < state.consoleLines.length && i < rows - consoleStartY - 5; i++) {
+  for (
+    let i = 0;
+    i < state.consoleLines.length && i < rows - consoleStartY - 5;
+    i++
+  ) {
     const lineY = consoleStartY + i
-    const line = state.consoleLines[i].slice(0, consoleWidth).padEnd(consoleWidth)
+    const line = state.consoleLines[i]
+      .slice(0, consoleWidth)
+      .padEnd(consoleWidth)
     buffer[lineY] = replaceAt(buffer[lineY], consoleX, line)
   }
 
@@ -118,7 +128,9 @@ function drawSketchTUI() {
  * Helper to replace text at position.
  */
 function replaceAt(str, index, replacement) {
-  if (index < 0 || index >= str.length) {return str}
+  if (index < 0 || index >= str.length) {
+    return str
+  }
   const endIndex = Math.min(str.length, index + replacement.length)
   return str.slice(0, index) + replacement + str.slice(endIndex)
 }
@@ -209,8 +221,7 @@ function cleanup() {
     process.stdout.write('\x1B[?25h')
     process.stdout.write('\x1B[2J\x1B[H')
     // Ignore cleanup errors.
-  } catch {
-  }
+  } catch {}
 
   console.log('\nExiting sketch TUI demo...\n')
   process.exit(0)

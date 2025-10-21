@@ -1,6 +1,4 @@
 import { logger } from '@socketsecurity/lib/logger'
-
-import { handleAnalytics } from './handle-analytics.mts'
 import {
   DRY_RUN_BAILING_NOW,
   FLAG_JSON,
@@ -8,6 +6,10 @@ import {
 } from '../../constants/cli.mts'
 import { V1_MIGRATION_GUIDE_URL } from '../../constants/socket.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
+import type {
+  CliCommandConfig,
+  CliCommandContext,
+} from '../../utils/cli/with-subcommands.mjs'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import {
   getFlagApiRequirementsOutput,
@@ -17,11 +19,7 @@ import { getOutputKind } from '../../utils/output/mode.mjs'
 import { hasDefaultApiToken } from '../../utils/socket/sdk.mjs'
 import { webLink } from '../../utils/terminal/link.mts'
 import { checkCommandInput } from '../../utils/validation/check-input.mts'
-
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
+import { handleAnalytics } from './handle-analytics.mts'
 
 export const CMD_NAME = 'analytics'
 
@@ -120,7 +118,8 @@ async function run(
 
   const dryRun = !!cli.flags['dryRun']
 
-  const noLegacy = !cli.flags['scope'] && !cli.flags['repo'] && !cli.flags['time']
+  const noLegacy =
+    !cli.flags['scope'] && !cli.flags['repo'] && !cli.flags['time']
 
   const hasApiToken = hasDefaultApiToken()
 

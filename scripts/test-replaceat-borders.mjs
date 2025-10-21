@@ -7,7 +7,9 @@ function visibleLength(str) {
 }
 
 function replaceAt(str, visibleIndex, replacement) {
-  if (visibleIndex < 0) {return str}
+  if (visibleIndex < 0) {
+    return str
+  }
 
   // Find the byte index that corresponds to the visible index.
   let byteIndex = 0
@@ -43,7 +45,11 @@ function replaceAt(str, visibleIndex, replacement) {
   visibleCount = 0
   inAnsiCode = false
 
-  for (let i = byteIndex; i < str.length && visibleCount < replacementVisible; i++) {
+  for (
+    let i = byteIndex;
+    i < str.length && visibleCount < replacementVisible;
+    i++
+  ) {
     if (str[i] === '\x1B') {
       inAnsiCode = true
     }
@@ -100,7 +106,11 @@ console.log('')
 // Check if we see double borders.
 const resultVisible = result.replace(/\x1B\[[0-9;]*m/g, '')
 const pipeCount = (resultVisible.match(/[│║]/g) || []).length
-console.log('Pipe characters in result:', pipeCount, '(should be 4: 2 outer ║, 2 inner │)')
+console.log(
+  'Pipe characters in result:',
+  pipeCount,
+  '(should be 4: 2 outer ║, 2 inner │)',
+)
 
 // Visual check - mark positions.
 console.log('\nVisual check:')

@@ -1,8 +1,6 @@
-import { describe, expect, it, vi } from 'vitest'
-
-import { handlePatch } from './handle-patch.mts'
-
 import type { PackageURL } from '@socketregistry/packageurl-js'
+import { describe, expect, it, vi } from 'vitest'
+import { handlePatch } from './handle-patch.mts'
 
 // Mock the dependencies.
 vi.mock('node:fs', () => ({

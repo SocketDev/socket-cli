@@ -1,5 +1,6 @@
 import { UNKNOWN_VALUE } from '@socketsecurity/lib/constants/core'
-
+import type { Spinner } from '@socketsecurity/lib/spinner'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 import {
   FOLD_SETTING_FILE,
   FOLD_SETTING_PKG,
@@ -12,13 +13,10 @@ import {
   REPORT_LEVEL_MONITOR,
   REPORT_LEVEL_WARN,
 } from '../../constants/reporting.mts'
-import { getSocketDevPackageOverviewUrlFromPurl } from '../../utils/socket/url.mts'
-
-import type { FOLD_SETTING, REPORT_LEVEL } from './types.mts'
 import type { CResult } from '../../types.mts'
 import type { SocketArtifact } from '../../utils/alert/artifact.mts'
-import type { Spinner } from '@socketsecurity/lib/spinner'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+import { getSocketDevPackageOverviewUrlFromPurl } from '../../utils/socket/url.mts'
+import type { FOLD_SETTING, REPORT_LEVEL } from './types.mts'
 
 type AlertKey = string
 type EcoMap = Map<string, ReportLeafNode | PackageMap>

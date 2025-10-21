@@ -1,60 +1,3 @@
-/**
- * Intl Stub Implementation for --with-intl=none builds.
- *
- * When Node.js is compiled with `--with-intl=none`, the `Intl` global object
- * doesn't exist, causing ReferenceError crashes in any code that uses Intl APIs.
- * This polyfill provides minimal fallback implementations that:
- * - Prevent crashes by providing stub Intl APIs
- * - Return basic English-only formatting (ignore locale parameters)
- * - Add only ~2-5 KB to bundle size
- *
- * ## Why This is Needed
- *
- * Socket CLI uses Intl APIs in several places:
- * - `Intl.RelativeTimeFormat` in src/utils/home-cache-time.mts
- * - `String.localeCompare()` in src/utils/executable/build.mts (uses Intl internally)
- *
- * Dependencies may also use Intl APIs, so this polyfill ensures compatibility.
- *
- * ## Behavior Differences
- *
- * ### Real Intl (with ICU support):
- * ```javascript
- * new Intl.DateTimeFormat('fr-FR').format(new Date('2025-10-15'))
- * // "15/10/2025" (French format: day/month/year)
- *
- * new Intl.NumberFormat('de-DE').format(1234.56)
- * // "1.234,56" (German format: period for thousands, comma for decimal)
- * ```
- *
- * ### Stub Intl (without ICU):
- * ```javascript
- * new Intl.DateTimeFormat('fr-FR').format(new Date('2025-10-15'))
- * // "2025-10-15T00:00:00.000Z" (ISO-8601, ignores locale)
- *
- * new Intl.NumberFormat('de-DE').format(1234.56)
- * // "1234.56" (plain English format, ignores locale)
- * ```
- *
- * ## Trade-offs
- *
- * ✅ Advantages:
- * - Binary size reduction: -6-8 MB (ICU library removed)
- * - No crashes when Intl APIs are called
- * - Minimal overhead: ~2-5 KB stub code
- * - Acceptable for CLI tools (English-only output is fine)
- *
- * ⚠️ Limitations:
- * - All formatting is English-only (ignores locale parameter)
- * - Number/date formatting is simplified
- * - Collation is ASCII-based (no locale-aware sorting)
- * - Not suitable for internationalized user-facing applications
- *
- * @see .claude/intl-stub-implementation.md for detailed implementation notes
- */
-
-'use strict'
-
 if (typeof globalThis.Intl === 'undefined') {
   /**
    * Base class for all Intl stub implementations.
@@ -219,14 +162,18 @@ if (typeof globalThis.Intl === 'undefined') {
 
     compare(a: string, b: string): number {
       // Simple ASCII comparison (no locale rules).
-      if (a < b) {return -1}
-      if (a > b) {return 1}
+      if (a < b) {
+        return -1
+      }
+      if (a > b) {
+        return 1
+      }
       return 0
     }
 
     resolvedOptions(): Intl.ResolvedCollatorOptions {
       return {
-        caseFirst: 'false' as 'false',
+        caseFirst: 'false' as const,
         collation: 'default',
         ignorePunctuation: false,
         locale: 'en-US',
@@ -255,7 +202,10 @@ if (typeof globalThis.Intl === 'undefined') {
   class PluralRules extends IntlBase {
     locale: string
 
-    constructor(_locales?: string | string[], _options?: Intl.PluralRulesOptions) {
+    constructor(
+      _locales?: string | string[],
+      _options?: Intl.PluralRulesOptions,
+    ) {
       super()
       this.locale = 'en-US'
     }
@@ -307,10 +257,7 @@ if (typeof globalThis.Intl === 'undefined') {
       this.numeric = options?.numeric || 'always'
     }
 
-    format(
-      value: number,
-      unit: Intl.RelativeTimeFormatUnit,
-    ): string {
+    format(value: number, unit: Intl.RelativeTimeFormatUnit): string {
       // Simple English relative time.
       const abs = Math.abs(value)
       const prefix = value < 0 ? '' : 'in '
@@ -365,9 +312,15 @@ if (typeof globalThis.Intl === 'undefined') {
     }
 
     format(list: string[]): string {
-      if (!Array.isArray(list) || list.length === 0) {return ''}
-      if (list.length === 1) {return String(list[0])}
-      if (list.length === 2) {return `${list[0]} and ${list[1]}`}
+      if (!Array.isArray(list) || list.length === 0) {
+        return ''
+      }
+      if (list.length === 1) {
+        return String(list[0])
+      }
+      if (list.length === 2) {
+        return `${list[0]} and ${list[1]}`
+      }
 
       // 3+ items: "a, b, and c"
       const last = list[list.length - 1]
@@ -375,7 +328,9 @@ if (typeof globalThis.Intl === 'undefined') {
       return `${rest}, and ${last}`
     }
 
-    formatToParts(list: string[]): Array<{ type: 'element' | 'literal'; value: string }> {
+    formatToParts(
+      list: string[],
+    ): Array<{ type: 'element' | 'literal'; value: string }> {
       return [{ type: 'element', value: this.format(list) }]
     }
 
@@ -407,7 +362,10 @@ if (typeof globalThis.Intl === 'undefined') {
     locale: string
     type: string
 
-    constructor(_locales: string | string[], options: Intl.DisplayNamesOptions) {
+    constructor(
+      _locales: string | string[],
+      options: Intl.DisplayNamesOptions,
+    ) {
       super()
       this.locale = 'en-US'
       this.type = options?.type || 'language'
@@ -506,7 +464,6 @@ if (typeof globalThis.Intl === 'undefined') {
       }
     }
   }
-
   // Create Intl global object.
   ;(globalThis as typeof globalThis & { Intl: typeof Intl }).Intl = {
     Collator: Collator as unknown as typeof Intl.Collator,
@@ -529,7 +486,15 @@ if (typeof globalThis.Intl === 'undefined') {
       return locales ? ['en-US'] : []
     },
 
-    supportedValuesOf(key: 'calendar' | 'collation' | 'currency' | 'numberingSystem' | 'timeZone' | 'unit'): string[] {
+    supportedValuesOf(
+      key:
+        | 'calendar'
+        | 'collation'
+        | 'currency'
+        | 'numberingSystem'
+        | 'timeZone'
+        | 'unit',
+    ): string[] {
       // Return minimal support.
       const values: Record<string, string[]> = {
         calendar: ['gregory'],
@@ -547,9 +512,7 @@ if (typeof globalThis.Intl === 'undefined') {
   Object.defineProperty(globalThis, 'Intl', {
     configurable: false,
     enumerable: false,
-    value: (
-      globalThis as typeof globalThis & { Intl: typeof Intl }
-    ).Intl,
+    value: (globalThis as typeof globalThis & { Intl: typeof Intl }).Intl,
     writable: false,
   })
 }

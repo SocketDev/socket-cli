@@ -14,7 +14,7 @@ const rootPath = path.join(__dirname, '..')
 // Read the Emscripten-generated file.
 const emscriptenFile = path.join(
   rootPath,
-  'node_modules/yoga-layout/dist/binaries/yoga-wasm-base64-esm.js'
+  'node_modules/yoga-layout/dist/binaries/yoga-wasm-base64-esm.js',
 )
 
 const content = readFileSync(emscriptenFile, 'utf-8')
@@ -29,7 +29,9 @@ if (!match) {
 
 const base64Data = match[1]
 
-console.log(`✓ Extracted ${base64Data.length} bytes of base64 WASM data from yoga-layout`)
+console.log(
+  `✓ Extracted ${base64Data.length} bytes of base64 WASM data from yoga-layout`,
+)
 
 // Generate yoga-sync.mjs with inlined base64.
 const yogaSyncContent = `/**

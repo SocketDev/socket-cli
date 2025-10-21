@@ -1,9 +1,8 @@
 /** @fileoverview Test mock helpers for Socket CLI. Provides utilities for mocking SDK, API, logger, and output functions consistently across test files. */
 
-import { vi } from 'vitest'
-
-import type { CResult } from '../../src/types.mts'
 import type { SocketSdk } from '@socketsecurity/sdk'
+import { vi } from 'vitest'
+import type { CResult } from '../../src/types.mts'
 
 /**
  * Error options for creating error results

@@ -200,7 +200,9 @@ export function compareBinarySizes(before, after) {
  * formatBytes(1048576) // '1.00 MB'
  */
 export function formatBytes(bytes, decimals = 2) {
-  if (bytes === 0) {return '0 Bytes'}
+  if (bytes === 0) {
+    return '0 Bytes'
+  }
 
   const k = 1024
   const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB']

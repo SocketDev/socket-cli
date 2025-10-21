@@ -389,7 +389,6 @@ export function expectValidJson<T = unknown>(output: string): T {
  * ```
  */
 export function expectNoAnsiCodes(output: string): void {
-   
   const ansiPattern = /\u001b\[\d+m/
   expect(output).not.toMatch(ansiPattern)
 }

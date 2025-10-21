@@ -1,13 +1,11 @@
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 import { describe, expect, it } from 'vitest'
-
+import type { ScanReport } from './generate-report.mts'
+import { generateReport } from './generate-report.mts'
 import {
   getScanWithEnvVars,
   getSimpleCleanScan,
 } from './generate-report-test-helpers.mts'
-import { generateReport } from './generate-report.mts'
-
-import type { ScanReport } from './generate-report.mts'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 type SecurityPolicyData = SocketSdkSuccessResult<'getOrgSecurityPolicy'>['data']
 

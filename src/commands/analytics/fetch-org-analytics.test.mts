@@ -1,11 +1,10 @@
 import { describe, expect, it, vi } from 'vitest'
-
-import { fetchOrgAnalyticsData } from './fetch-org-analytics.mts'
 import {
   setupSdkMockError,
   setupSdkMockSuccess,
   setupSdkSetupFailure,
 } from '../../../test/helpers/sdk-test-helpers.mts'
+import { fetchOrgAnalyticsData } from './fetch-org-analytics.mts'
 
 // Mock the dependencies.
 vi.mock('../../utils/socket/api.mjs', () => ({

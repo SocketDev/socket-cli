@@ -27,16 +27,17 @@
 
 import { debug, debugDir, isDebug } from '@socketsecurity/lib/debug'
 import { normalizePath } from '@socketsecurity/lib/path'
+import type { SpawnOptions } from '@socketsecurity/lib/spawn'
 import { isSpawnError, spawn } from '@socketsecurity/lib/spawn'
-
 import { FLAG_QUIET } from '../../constants/cli.mts'
 import ENV from '../../constants/env.mts'
-import { SOCKET_DEFAULT_BRANCH, SOCKET_DEFAULT_REPOSITORY } from '../../constants/socket.mts'
+import {
+  SOCKET_DEFAULT_BRANCH,
+  SOCKET_DEFAULT_REPOSITORY,
+} from '../../constants/socket.mts'
+import type { CResult } from '../../types.mjs'
 import { debugGit } from '../debug.mts'
 import { extractName, extractOwner } from '../sanitize-names.mts'
-
-import type { CResult } from '../../types.mjs'
-import type { SpawnOptions } from '@socketsecurity/lib/spawn'
 
 // Listed in order of check preference.
 const COMMON_DEFAULT_BRANCH_NAMES = [
@@ -110,9 +111,7 @@ export async function getRepoInfo(
 
 export async function getRepoName(cwd = process.cwd()): Promise<string> {
   const repoInfo = await getRepoInfo(cwd)
-  return repoInfo?.repo
-    ? extractName(repoInfo.repo)
-    : SOCKET_DEFAULT_REPOSITORY
+  return repoInfo?.repo ? extractName(repoInfo.repo) : SOCKET_DEFAULT_REPOSITORY
 }
 
 export async function getRepoOwner(

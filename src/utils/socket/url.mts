@@ -18,12 +18,12 @@
  * - Ecosystem-specific URL formatting
  */
 
+import type { PackageURL } from '@socketregistry/packageurl-js'
 import { SOCKET_WEBSITE_URL } from '../../constants/socket.mjs'
-import { getPurlObject } from '../purl/parse.mts'
 
 import type { SocketArtifact } from '../alert/artifact.mts'
 import type { PURL_Type } from '../ecosystem/ecosystem.mjs'
-import type { PackageURL } from '@socketregistry/packageurl-js'
+import { getPurlObject } from '../purl/parse.mts'
 
 export function getPkgFullNameFromPurl(
   purl: string | PackageURL | SocketArtifact,

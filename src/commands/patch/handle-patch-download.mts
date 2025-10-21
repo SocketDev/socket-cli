@@ -30,23 +30,19 @@
  */
 
 import crypto from 'node:crypto'
-
-// @ts-expect-error - No type declarations available.
-import ssri from 'ssri'
-
 import * as cacache from '@socketsecurity/lib/cacache'
 import { logger } from '@socketsecurity/lib/logger'
+import type { Spinner } from '@socketsecurity/lib/spinner'
 import { pluralize } from '@socketsecurity/lib/words'
-
-import { outputPatchDownloadResult } from './output-patch-download-result.mts'
+import type { SocketSdk } from '@socketsecurity/sdk'
+// @ts-expect-error - No type declarations available.
+import ssri from 'ssri'
 import ENV from '../../constants/env.mts'
-import { addPatch } from '../../utils/manifest/patches.mts'
-import { setupSdk } from '../../utils/socket/sdk.mts'
-
 import type { OutputKind } from '../../types.mts'
 import type { PatchRecord } from '../../utils/manifest/patches.mts'
-import type { Spinner } from '@socketsecurity/lib/spinner'
-import type { SocketSdk } from '@socketsecurity/sdk'
+import { addPatch } from '../../utils/manifest/patches.mts'
+import { setupSdk } from '../../utils/socket/sdk.mts'
+import { outputPatchDownloadResult } from './output-patch-download-result.mts'
 
 export type HandlePatchDownloadConfig = {
   cwd: string
@@ -375,17 +371,15 @@ async function downloadPatch(
     tier: patchDetails.tier,
     vulnerabilities: patchDetails.vulnerabilities
       ? Object.fromEntries(
-          Object.entries(patchDetails.vulnerabilities).map(
-            ([ghsaId, vuln]) => [
-              ghsaId,
-              {
-                cves: vuln.cves,
-                summary: vuln.summary,
-                severity: vuln.severity,
-                description: vuln.description,
-              },
-            ],
-          ),
+          Object.entries(patchDetails.vulnerabilities).map(([ghsaId, vuln]) => [
+            ghsaId,
+            {
+              cves: vuln.cves,
+              summary: vuln.summary,
+              severity: vuln.severity,
+              description: vuln.description,
+            },
+          ]),
         )
       : undefined,
     status: 'downloaded',

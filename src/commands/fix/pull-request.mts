@@ -1,14 +1,9 @@
 import { RequestError } from '@octokit/request-error'
-
-import { debug, debugDir } from '@socketsecurity/lib/debug'
-import { isNonEmptyString } from '@socketsecurity/lib/strings'
+import type { OctokitResponse } from '@octokit/types'
 import { UNKNOWN_VALUE } from '@socketsecurity/lib/constants/core'
-
-import {
-  getSocketFixBranchPattern,
-  getSocketFixPullRequestBody,
-  getSocketFixPullRequestTitle,
-} from './git.mts'
+import { debug, debugDir } from '@socketsecurity/lib/debug'
+import type { JsonContent } from '@socketsecurity/lib/fs'
+import { isNonEmptyString } from '@socketsecurity/lib/strings'
 import {
   GQL_PAGE_SENTINEL,
   GQL_PR_STATE_CLOSED,
@@ -18,16 +13,18 @@ import {
 import { formatErrorWithDetail } from '../../utils/error/errors.mjs'
 import { gitDeleteRemoteBranch } from '../../utils/git/git.mjs'
 import {
-  type GhsaDetails,
-  type Pr,
   cacheFetch,
+  type GhsaDetails,
   getOctokit,
   getOctokitGraphql,
+  type Pr,
   writeCache,
 } from '../../utils/git/github.mts'
-
-import type { OctokitResponse } from '@octokit/types'
-import type { JsonContent } from '@socketsecurity/lib/fs'
+import {
+  getSocketFixBranchPattern,
+  getSocketFixPullRequestBody,
+  getSocketFixPullRequestTitle,
+} from './git.mts'
 
 export type OpenSocketFixPrOptions = {
   baseBranch?: string | undefined

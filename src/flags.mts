@@ -1,9 +1,8 @@
 import os from 'node:os'
 
 import ENV from './constants/env.mts'
-import meow from './meow.mts'
-
 import type { MeowFlag as Flag } from './meow.mts'
+import meow from './meow.mts'
 
 // Meow doesn't expose this.
 export type AnyFlag = StringFlag | BooleanFlag | NumberFlag
@@ -169,7 +168,8 @@ export const commonFlags: MeowFlags = {
   headerTheme: {
     type: 'string',
     default: 'default',
-    description: 'Header color theme (default, cyberpunk, forest, ocean, sunset)',
+    description:
+      'Header color theme (default, cyberpunk, forest, ocean, sunset)',
     hidden: true,
   },
   config: {

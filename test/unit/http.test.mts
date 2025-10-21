@@ -16,9 +16,8 @@ vi.mock('node:https', () => ({
   },
 }))
 
-import { httpGetJson, httpGetText, httpRequest } from './http.mts'
-
 import type { IncomingMessage } from 'node:http'
+import { httpGetJson, httpGetText, httpRequest } from './http.mts'
 
 describe('HTTP utilities', () => {
   beforeEach(() => {

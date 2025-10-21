@@ -144,11 +144,7 @@ export async function checkConnectivity(host, timeout = 5000) {
  * const releases = await fetchJsonWithRetry('https://nodejs.org/dist/index.json')
  */
 export async function fetchJsonWithRetry(url, options = {}) {
-  const {
-    maxRetries = 3,
-    retryDelay = 2000,
-    timeout = 10_000,
-  } = options
+  const { maxRetries = 3, retryDelay = 2000, timeout = 10_000 } = options
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {

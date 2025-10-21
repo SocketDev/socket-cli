@@ -1,8 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
-import { isRunningInTemporaryExecutor, shouldSkipShadow } from './detection.mts'
-
 import type { default as ENV } from '../../constants/env.mts'
+import { isRunningInTemporaryExecutor, shouldSkipShadow } from './detection.mts'
 
 // Mock the dependencies.
 vi.mock('@socketsecurity/lib/path', () => ({

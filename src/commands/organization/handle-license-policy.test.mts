@@ -1,10 +1,9 @@
 import { describe, expect, it, vi } from 'vitest'
-
-import { handleLicensePolicy } from './handle-license-policy.mts'
 import {
   createErrorResult,
   createSuccessResult,
 } from '../../../test/helpers/mocks.mts'
+import { handleLicensePolicy } from './handle-license-policy.mts'
 
 // Mock the dependencies.
 

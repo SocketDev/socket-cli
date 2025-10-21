@@ -1,18 +1,12 @@
 import { existsSync } from 'node:fs'
-
-import yaml from 'js-yaml'
-import semver from 'semver'
-
+import type { LockfileObject, PackageSnapshot } from '@pnpm/lockfile.fs'
 import { readFileUtf8 } from '@socketsecurity/lib/fs'
 import { isObjectObject } from '@socketsecurity/lib/objects'
 import { stripBom } from '@socketsecurity/lib/strings'
-
-
-
-import { idToNpmPurl } from '../ecosystem/spec.mjs'
-
-import type { LockfileObject, PackageSnapshot } from '@pnpm/lockfile.fs'
+import yaml from 'js-yaml'
 import type { SemVer } from 'semver'
+import semver from 'semver'
+import { idToNpmPurl } from '../ecosystem/spec.mjs'
 
 export function extractOverridesFromPnpmLockSrc(lockfileContent: any): string {
   let match

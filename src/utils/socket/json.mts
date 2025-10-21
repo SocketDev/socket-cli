@@ -25,10 +25,9 @@ import { debugDir, debugNs } from '@socketsecurity/lib/debug'
 import { logger } from '@socketsecurity/lib/logger'
 
 import { SOCKET_JSON, SOCKET_WEBSITE_URL } from '../../constants/socket.mts'
+import type { CResult } from '../../types.mjs'
 import { formatErrorWithDetail } from '../error/errors.mts'
 import { findUp } from '../fs/fs.mts'
-
-import type { CResult } from '../../types.mjs'
 
 export interface SocketJson {
   ' _____         _       _     ': string

@@ -5,10 +5,7 @@
 
 import { parseArgs } from '@socketsecurity/lib/argv/parse'
 import { logger } from '@socketsecurity/lib/logger'
-import {
-  printFooter,
-  printHeader,
-} from '@socketsecurity/lib/stdio/header'
+import { printFooter, printHeader } from '@socketsecurity/lib/stdio/header'
 
 import { runCommandQuiet } from './utils/run-command.mjs'
 

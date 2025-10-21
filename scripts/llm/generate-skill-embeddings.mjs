@@ -12,7 +12,10 @@ import { fileURLToPath } from 'node:url'
 import { pipeline } from '@xenova/transformers'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const skillDir = path.join(path.dirname(__dirname), '../.claude/skills/socket-cli')
+const skillDir = path.join(
+  path.dirname(__dirname),
+  '../.claude/skills/socket-cli',
+)
 
 console.log('🧠 Computing semantic embeddings for Socket CLI commands...')
 
@@ -24,7 +27,7 @@ const commands = JSON.parse(readFileSync(commandsPath, 'utf-8'))
 console.log('📦 Loading paraphrase-MiniLM-L3-v2 model...')
 const embedder = await pipeline(
   'feature-extraction',
-  'Xenova/paraphrase-MiniLM-L3-v2'
+  'Xenova/paraphrase-MiniLM-L3-v2',
 )
 
 /**
@@ -79,5 +82,9 @@ writeFileSync(outputPath, JSON.stringify(embeddings, null, 2), 'utf-8')
 
 console.log(`✓ Generated ${outputPath}`)
 console.log(`✓ Embedded ${Object.keys(embeddings.commands).length} commands`)
-console.log(`✓ Embedded ${Object.keys(embeddings.examples).length} example queries`)
-console.log(`✓ File size: ${(JSON.stringify(embeddings).length / 1024).toFixed(2)} KB`)
+console.log(
+  `✓ Embedded ${Object.keys(embeddings.examples).length} example queries`,
+)
+console.log(
+  `✓ File size: ${(JSON.stringify(embeddings).length / 1024).toFixed(2)} KB`,
+)

@@ -207,9 +207,7 @@ describe('fetchScanData', () => {
     const { handleApiCallNoSpinner, queryApiSafeText } = await import(
       '../../utils/socket/api.mjs'
     )
-    const { debug, debugDir } = await import(
-      '@socketsecurity/lib/debug'
-    )
+    const { debug, debugDir } = await import('@socketsecurity/lib/debug')
     const mockQueryApiText = vi.mocked(queryApiSafeText)
     const mockHandleApiNoSpinner = vi.mocked(handleApiCallNoSpinner)
     const mockDebug = vi.mocked(debug)

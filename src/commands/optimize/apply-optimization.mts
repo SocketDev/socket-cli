@@ -1,12 +1,10 @@
-import { logger } from '@socketsecurity/lib/logger'
 import { getSpinner } from '@socketsecurity/lib/constants/process'
-
+import { logger } from '@socketsecurity/lib/logger'
+import type { CResult } from '../../types.mts'
+import type { EnvDetails } from '../../utils/ecosystem/environment.mjs'
 import { addOverrides } from './add-overrides.mts'
 import { CMD_NAME } from './shared.mts'
 import { updateDependencies } from './update-dependencies.mts'
-
-import type { CResult } from '../../types.mts'
-import type { EnvDetails } from '../../utils/ecosystem/environment.mjs'
 
 export type OptimizeConfig = {
   pin: boolean

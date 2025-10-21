@@ -1,16 +1,15 @@
-import { handleAsk } from './handle-ask.mts'
 import { commonFlags } from '../../flags.mts'
+import type {
+  CliCommandConfig,
+  CliCommandContext,
+} from '../../utils/cli/with-subcommands.mjs'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { InputError } from '../../utils/error/errors.mjs'
 import {
   getFlagApiRequirementsOutput,
   getFlagListOutput,
 } from '../../utils/output/formatting.mts'
-
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
+import { handleAsk } from './handle-ask.mts'
 
 export const CMD_NAME = 'ask'
 
@@ -82,7 +81,9 @@ async function run(
   const query = cli.input[0]
 
   if (!query) {
-    throw new InputError('Please provide a question.\n\nExample: socket ask "scan for vulnerabilities"')
+    throw new InputError(
+      'Please provide a question.\n\nExample: socket ask "scan for vulnerabilities"',
+    )
   }
 
   const execute = !!cli.flags['execute']

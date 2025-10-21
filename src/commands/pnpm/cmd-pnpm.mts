@@ -1,7 +1,6 @@
 import { createRequire } from 'node:module'
-
-import { logger } from '@socketsecurity/lib/logger'
 import { PNPM } from '@socketsecurity/lib/constants/agents'
+import { logger } from '@socketsecurity/lib/logger'
 
 import {
   DRY_RUN_BAILING_NOW,
@@ -10,14 +9,13 @@ import {
 } from '../../constants/cli.mts'
 import { getShadowPnpmBinPath } from '../../constants/paths.mts'
 import { commonFlags } from '../../flags.mts'
-import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
-import { getFlagApiRequirementsOutput } from '../../utils/output/formatting.mts'
-import { filterFlags } from '../../utils/process/cmd.mts'
-
 import type {
   CliCommandConfig,
   CliCommandContext,
 } from '../../utils/cli/with-subcommands.mjs'
+import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
+import { getFlagApiRequirementsOutput } from '../../utils/output/formatting.mts'
+import { filterFlags } from '../../utils/process/cmd.mts'
 
 const require = createRequire(import.meta.url)
 

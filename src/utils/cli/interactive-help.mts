@@ -4,11 +4,9 @@
 
 import { stdin, stdout } from 'node:process'
 import readline from 'node:readline/promises'
-
-import colors from 'yoctocolors-cjs'
-
 import isInteractive from '@socketregistry/is-interactive/index.cjs'
 import { logger } from '@socketsecurity/lib/logger'
+import colors from 'yoctocolors-cjs'
 
 interface HelpCategory {
   title: string

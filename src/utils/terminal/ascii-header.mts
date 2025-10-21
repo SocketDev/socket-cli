@@ -5,20 +5,23 @@
  * Supports both static (fast) rendering and animated (shimmer) rendering modes.
  */
 
-import colors from 'yoctocolors-cjs'
-
-import { applyShimmer } from '@socketsecurity/lib/effects/text-shimmer'
-
 import type {
   ShimmerColorGradient,
   ShimmerState,
 } from '@socketsecurity/lib/effects/text-shimmer'
 
+import { applyShimmer } from '@socketsecurity/lib/effects/text-shimmer'
+import colors from 'yoctocolors-cjs'
 
 /**
  * Color themes for header styling.
  */
-export type HeaderTheme = 'default' | 'cyberpunk' | 'forest' | 'ocean' | 'sunset'
+export type HeaderTheme =
+  | 'default'
+  | 'cyberpunk'
+  | 'forest'
+  | 'ocean'
+  | 'sunset'
 
 /**
  * Theme color definitions with gradient support (RGB tuples).
@@ -75,7 +78,7 @@ const THEME_COLORS_HEX = {
 const ASCII_LOGO = [
   '   _____         _       _       ',
   '  |   __|___ ___| |_ ___| |_     ',
-  '  |__   | . |  _| \'_| -_|  _|    ',
+  "  |__   | . |  _| '_| -_|  _|    ",
   '  |_____|___|___|_,_|___|_|.dev  ',
 ] as const
 
@@ -98,7 +101,9 @@ export function renderShimmerFrame(
   frame: number,
   theme: HeaderTheme = 'default',
 ): string {
-  const themeGradient = THEME_COLORS_RGB[theme] as unknown as ShimmerColorGradient
+  const themeGradient = THEME_COLORS_RGB[
+    theme
+  ] as unknown as ShimmerColorGradient
 
   // Apply shimmer to each line of the ASCII logo with slanted offset.
   const lines: string[] = []
@@ -152,9 +157,7 @@ export function renderShimmerFrame(
 export function renderStaticLogo(theme: HeaderTheme = 'default'): string {
   const themeColors = THEME_COLORS_HEX[theme]
   const primaryColor = themeColors[0]!
-  return ASCII_LOGO.map(line =>
-    applyHexColor(line, primaryColor)
-  ).join('\n')
+  return ASCII_LOGO.map(line => applyHexColor(line, primaryColor)).join('\n')
 }
 
 /**

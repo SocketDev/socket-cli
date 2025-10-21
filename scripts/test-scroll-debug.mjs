@@ -44,8 +44,12 @@ function showState(label) {
   console.log(`textareaTopY: ${layout.textareaTopY}`)
   console.log(`outputBoxHeight: ${layout.outputBoxHeight}`)
   console.log(`outputBoxContentHeight: ${layout.outputBoxContentHeight}`)
-  console.log(`visibleLines: ${Math.min(layout.outputBoxContentHeight, state.outputLines.length - state.scrollOffset)}`)
-  console.log(`emptySpaceInBox: ${layout.outputBoxContentHeight - Math.min(layout.outputBoxContentHeight, state.outputLines.length - state.scrollOffset)}`)
+  console.log(
+    `visibleLines: ${Math.min(layout.outputBoxContentHeight, state.outputLines.length - state.scrollOffset)}`,
+  )
+  console.log(
+    `emptySpaceInBox: ${layout.outputBoxContentHeight - Math.min(layout.outputBoxContentHeight, state.outputLines.length - state.scrollOffset)}`,
+  )
 }
 
 // Initial state.
@@ -75,7 +79,9 @@ if (state.outputLines.length <= layout.outputBoxContentHeight) {
   console.log('Setting scrollOffset = 0 (content fits)')
 } else {
   state.scrollOffset = state.outputLines.length - layout.outputBoxContentHeight
-  console.log(`Setting scrollOffset = ${state.scrollOffset} (content too long, show bottom)`)
+  console.log(
+    `Setting scrollOffset = ${state.scrollOffset} (content too long, show bottom)`,
+  )
 }
 
 showState('AFTER COLLAPSING')

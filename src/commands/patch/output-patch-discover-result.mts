@@ -1,11 +1,10 @@
 import { logger } from '@socketsecurity/lib/logger'
 
 import { OUTPUT_JSON } from '../../constants/cli.mjs'
+import type { CResult, OutputKind } from '../../types.mts'
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
-
 import type { DiscoveredPatch } from './handle-patch-discover.mts'
-import type { CResult, OutputKind } from '../../types.mts'
 
 type PatchDiscoverResultData = {
   patches: DiscoveredPatch[]
@@ -77,7 +76,7 @@ export async function outputPatchDiscoverResult(
 
       // Free Features.
       if (patch.freeFeatures?.length) {
-        logger.log(`\n**Free Features**:`)
+        logger.log('\n**Free Features**:')
         for (const feature of patch.freeFeatures) {
           logger.log(`  - ${feature}`)
         }
@@ -85,7 +84,7 @@ export async function outputPatchDiscoverResult(
 
       // Enterprise Features.
       if (patch.paidFeatures?.length) {
-        logger.log(`\n**Enterprise Features**:`)
+        logger.log('\n**Enterprise Features**:')
         for (const feature of patch.paidFeatures) {
           logger.log(`  - ${feature}`)
         }
@@ -142,7 +141,7 @@ export async function outputPatchDiscoverResult(
 
     // Free Features.
     if (patch.freeFeatures?.length) {
-      logger.log(`Free Features:`)
+      logger.log('Free Features:')
       for (const feature of patch.freeFeatures) {
         logger.log(`  - ${feature}`)
       }
@@ -150,7 +149,7 @@ export async function outputPatchDiscoverResult(
 
     // Enterprise Features.
     if (patch.paidFeatures?.length) {
-      logger.log(`Enterprise Features:`)
+      logger.log('Enterprise Features:')
       for (const feature of patch.paidFeatures) {
         logger.log(`  - ${feature}`)
       }
