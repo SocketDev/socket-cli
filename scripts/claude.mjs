@@ -927,6 +927,66 @@ async function buildEnhancedPrompt(template, basePrompt, options = {}) {
 }
 
 /**
+ * Filter CI logs to extract only relevant failure information
+ * Removes runner setup noise and focuses on actual errors
+ */
+function filterCILogs(rawLogs) {
+  const lines = rawLogs.split('\n')
+  const relevantLines = []
+  let inErrorSection = false
+
+  for (const line of lines) {
+    // Skip runner metadata and setup
+    if (
+      line.includes('Current runner version:') ||
+      line.includes('Runner Image') ||
+      line.includes('Operating System') ||
+      line.includes('GITHUB_TOKEN') ||
+      line.includes('Prepare workflow') ||
+      line.includes('Prepare all required') ||
+      line.includes('##[group]') ||
+      line.includes('##[endgroup]') ||
+      line.includes('Post job cleanup') ||
+      line.includes('git config') ||
+      line.includes('git submodule') ||
+      line.includes('Cleaning up orphan') ||
+      line.includes('secret source:') ||
+      line.includes('[command]/usr/bin/git')
+    ) {
+      continue
+    }
+
+    // Detect error sections
+    if (
+      line.includes('##[error]') ||
+      line.includes('Error:') ||
+      line.includes('error TS') ||
+      line.includes('FAIL') ||
+      line.includes('✗') ||
+      line.includes('❌') ||
+      line.includes('failed') ||
+      line.includes('ELIFECYCLE')
+    ) {
+      inErrorSection = true
+      relevantLines.push(line)
+    } else if (inErrorSection && line.trim() !== '') {
+      relevantLines.push(line)
+      // Keep context for 5 lines after error
+      if (relevantLines.length > 100) {
+        inErrorSection = false
+      }
+    }
+  }
+
+  // If no errors found, return last 50 lines (might contain useful context)
+  if (relevantLines.length === 0) {
+    return lines.slice(-50).join('\n')
+  }
+
+  return relevantLines.join('\n')
+}
+
+/**
  * Prepare Claude command arguments for Claude Code.
  * Claude Code uses natural language prompts, not the same flags.
  * We'll translate our flags into appropriate context.
@@ -3249,9 +3309,23 @@ Let's work through this together to get CI passing.`
         // Add newline after progress indicator before next output
         console.log('')
 
+        // Filter and show summary of logs
+        const rawLogs = logsResult.stdout || 'No logs available'
+        const filteredLogs = filterCILogs(rawLogs)
+
+        const logLines = filteredLogs.split('\n').slice(0, 10)
+        log.substep('Error summary:')
+        for (const line of logLines) {
+          if (line.trim()) {
+            log.substep(`  ${line.trim().substring(0, 100)}`)
+          }
+        }
+        if (filteredLogs.split('\n').length > 10) {
+          log.substep(`  ... (${filteredLogs.split('\n').length - 10} more lines)`)
+        }
+
         // Check if we've seen this CI error before
-        const ciErrorOutput = logsResult.stdout || 'No logs available'
-        const ciErrorHash = hashError(ciErrorOutput)
+        const ciErrorHash = hashError(filteredLogs)
 
         if (ciErrorHistory.has(lastRunId)) {
           log.error(`Already attempted fix for run ${lastRunId}`)
@@ -3274,29 +3348,18 @@ Let's work through this together to get CI passing.`
 
         // Analyze and fix with Claude
         log.progress('Analyzing CI failure with Claude')
-        const fixPrompt = `You are automatically fixing CI failures. The CI workflow failed for commit ${currentSha} in ${owner}/${repo}.
 
-Failure logs:
-${logsResult.stdout || 'No logs available'}
+        // Keep logs under 2000 chars to avoid context issues
+        const truncatedLogs = filteredLogs.length > 2000
+          ? filteredLogs.substring(0, 2000) + '\n... (truncated)'
+          : filteredLogs
 
-Your task:
-1. Analyze these CI logs
-2. Identify the root cause of failures
-3. Apply fixes directly to resolve the issues
+        const fixPrompt = `Fix CI failures for commit ${currentSha.substring(0, 7)} in ${owner}/${repo}.
 
-Focus on:
-- Test failures: Update snapshots, fix test logic, or correct test data
-- Lint errors: Fix code style and formatting issues
-- Type checking: Fix type errors and missing type annotations
-- Build problems: Fix import errors, missing pinned dependencies, or syntax issues
+Error logs:
+${truncatedLogs}
 
-IMPORTANT:
-- Be direct and apply fixes immediately
-- Don't ask for clarification or permission
-- Make all necessary file changes to fix the CI
-- If multiple issues exist, fix them all
-
-Fix all CI failures now by making the necessary changes.`
+Fix all issues by making necessary file changes. Be direct, don't ask questions.`
 
         // Run Claude non-interactively to apply fixes
         log.substep('Applying CI fixes...')
@@ -3355,11 +3418,20 @@ Fix all CI failures now by making the necessary changes.`
               shell: true,
             })
 
+            // Handle Ctrl+C gracefully
+            const sigintHandler = () => {
+              child.kill('SIGINT')
+              resolve(130)
+            }
+            process.on('SIGINT', sigintHandler)
+
             child.on('exit', code => {
+              process.off('SIGINT', sigintHandler)
               resolve(code || 0)
             })
 
             child.on('error', () => {
+              process.off('SIGINT', sigintHandler)
               resolve(1)
             })
           })
@@ -3505,34 +3577,38 @@ Fix all CI failures now by making the necessary changes.`
               )
               console.log('')
 
+              // Filter logs to extract relevant errors
+              const rawLogs = logsResult.stdout || 'No logs available'
+              const filteredLogs = filterCILogs(rawLogs)
+
+              // Show summary to user (not full logs)
+              const logLines = filteredLogs.split('\n').slice(0, 10)
+              log.substep('Error summary:')
+              for (const line of logLines) {
+                if (line.trim()) {
+                  log.substep(`  ${line.trim().substring(0, 100)}`)
+                }
+              }
+              if (filteredLogs.split('\n').length > 10) {
+                log.substep(`  ... (${filteredLogs.split('\n').length - 10} more lines)`)
+              }
+
               // Analyze and fix with Claude
               log.progress(`Analyzing failure in ${job.name}`)
-              const fixPrompt = `You are automatically fixing CI failures. The job "${job.name}" failed in workflow run ${lastRunId} for commit ${currentSha} in ${owner}/${repo}.
 
-Job: ${job.name}
+              // Keep logs under 2000 chars to avoid context issues
+              const truncatedLogs = filteredLogs.length > 2000
+                ? filteredLogs.substring(0, 2000) + '\n... (truncated)'
+                : filteredLogs
+
+              const fixPrompt = `Fix CI failure in "${job.name}" (run ${lastRunId}, commit ${currentSha.substring(0, 7)}).
+
 Status: ${job.conclusion}
 
-Failure logs:
-${logsResult.stdout || 'No logs available'}
+Error logs:
+${truncatedLogs}
 
-Your task:
-1. Analyze these CI logs for the "${job.name}" job
-2. Identify the root cause of the failure
-3. Apply fixes directly to resolve the issue
-
-Focus on:
-- Test failures: Update snapshots, fix test logic, or correct test data
-- Lint errors: Fix code style and formatting issues
-- Type checking: Fix type errors and missing type annotations
-- Build problems: Fix import errors, missing pinned dependencies, or syntax issues
-
-IMPORTANT:
-- Be direct and apply fixes immediately
-- Don't ask for clarification or permission
-- Make all necessary file changes to fix this specific failure
-- Focus ONLY on fixing the "${job.name}" job
-
-Fix the failure now by making the necessary changes.`
+Fix the issue by making necessary file changes. Be direct, don't ask questions.`
 
               // Run Claude non-interactively to apply fixes
               log.substep(`Applying fix for ${job.name}...`)
@@ -3563,6 +3639,11 @@ Fix the failure now by making the necessary changes.`
                   ? `${claudeCmd} ${claudeArgs}`
                   : claudeCmd
 
+                // Debug: Show command being run
+                if (claudeArgs) {
+                  log.substep(`Running: claude ${claudeArgs}`)
+                }
+
                 // Use script command to create pseudo-TTY for Ink compatibility
                 // Platform-specific script command syntax
                 let scriptCmd
@@ -3587,11 +3668,20 @@ Fix the failure now by making the necessary changes.`
                     shell: true,
                   })
 
+                  // Handle Ctrl+C gracefully
+                  const sigintHandler = () => {
+                    child.kill('SIGINT')
+                    resolve(130)
+                  }
+                  process.on('SIGINT', sigintHandler)
+
                   child.on('exit', code => {
+                    process.off('SIGINT', sigintHandler)
                     resolve(code || 0)
                   })
 
                   child.on('error', () => {
+                    process.off('SIGINT', sigintHandler)
                     resolve(1)
                   })
                 })
