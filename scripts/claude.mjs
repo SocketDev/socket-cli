@@ -34,7 +34,10 @@ const log = {
   success: msg => console.log(`${colors.green('✓')} ${msg}`),
   step: msg => console.log(`\n${msg}`),
   substep: msg => console.log(`  ${msg}`),
-  progress: msg => process.stdout.write(`  ∴ ${msg}`),
+  progress: msg => {
+    process.stdout.write('\r\x1b[K')
+    process.stdout.write(`  ∴ ${msg}`)
+  },
   done: msg => {
     process.stdout.write('\r\x1b[K')
     console.log(`  ${colors.green('✓')} ${msg}`)
@@ -2698,6 +2701,8 @@ async function runGreen(claudeCmd, options = {}) {
       continue
     }
 
+    // Add newline after progress indicator before command output
+    console.log('')
     const result = await runCommandWithOutput(check.cmd, check.args, {
       cwd: rootPath,
       stdio: 'inherit',
@@ -3180,6 +3185,8 @@ Fix all CI failures now by making the necessary changes.`
 
         // Run local checks again
         log.progress('Running local checks after fixes')
+        // Add newline after progress indicator before command output
+        console.log('')
         for (const check of localChecks) {
           await runCommandWithOutput(check.cmd, check.args, {
             cwd: rootPath,
