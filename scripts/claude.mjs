@@ -3351,7 +3351,7 @@ Let's work through this together to get CI passing.`
 
         // Keep logs under 2000 chars to avoid context issues
         const truncatedLogs = filteredLogs.length > 2000
-          ? filteredLogs.substring(0, 2000) + '\n... (truncated)'
+          ? `${filteredLogs.substring(0, 2000)}\n... (truncated)`
           : filteredLogs
 
         const fixPrompt = `Fix CI failures for commit ${currentSha.substring(0, 7)} in ${owner}/${repo}.
@@ -3485,28 +3485,86 @@ Fix all issues by making necessary file changes. Be direct, don't ask questions.
             .join(', ')
           log.substep(`Changed files: ${changedFiles}`)
 
-          await runCommand('git', ['add', '.'], { cwd: rootPath })
+          // Use Claude to create proper commits (logical groupings, no AI attribution)
+          const commitPrompt = `Review the changes and create commits with logical groupings.
 
-          // Commit with descriptive message (no AI attribution per CLAUDE.md)
-          const ciFixMessage = `Fix CI failures from run ${lastRunId}`
-          const ciCommitArgs = ['commit', '-m', ciFixMessage]
-          if (useNoVerify) {
-            ciCommitArgs.push('--no-verify')
+Changed files: ${changedFiles}
+
+Requirements:
+- Create one or more commits as needed for logical grouping
+- No AI attribution in commit messages
+- Follow conventional commit style from the repo
+- Be concise and descriptive
+
+Commit the changes now.`
+
+          const commitTmpFile = path.join(rootPath, `.claude-commit-${Date.now()}.txt`)
+          await fs.writeFile(commitTmpFile, commitPrompt, 'utf8')
+
+          const commitArgs = prepareClaudeArgs([], opts)
+          const commitArgsStr = commitArgs.join(' ')
+          const commitCommand = commitArgsStr
+            ? `${claudeCmd} ${commitArgsStr}`
+            : claudeCmd
+
+          let commitScriptCmd
+          if (WIN32) {
+            const winptyCheck = await runCommandWithOutput('where', ['winpty'])
+            if (winptyCheck.exitCode === 0) {
+              commitScriptCmd = `winpty ${commitCommand} < "${commitTmpFile}"`
+            } else {
+              commitScriptCmd = `${commitCommand} < "${commitTmpFile}"`
+            }
+          } else {
+            commitScriptCmd = `script -q /dev/null sh -c '${commitCommand} < "${commitTmpFile}"'`
           }
-          await runCommand('git', ciCommitArgs, { cwd: rootPath })
-          await runCommand('git', ['push'], { cwd: rootPath })
-          log.done(`Pushed fix commit: ${ciFixMessage}`)
 
-          // Update SHA and push time for next check
-          const newShaResult = await runCommandWithOutput(
-            'git',
-            ['rev-parse', 'HEAD'],
-            {
+          const commitExitCode = await new Promise((resolve, _reject) => {
+            const child = spawn(commitScriptCmd, [], {
+              stdio: 'inherit',
               cwd: rootPath,
-            },
-          )
-          currentSha = newShaResult.stdout.trim()
-          pushTime = Date.now()
+              shell: true,
+            })
+
+            const sigintHandler = () => {
+              child.kill('SIGINT')
+              resolve(130)
+            }
+            process.on('SIGINT', sigintHandler)
+
+            child.on('exit', code => {
+              process.off('SIGINT', sigintHandler)
+              resolve(code || 0)
+            })
+
+            child.on('error', () => {
+              process.off('SIGINT', sigintHandler)
+              resolve(1)
+            })
+          })
+
+          try {
+            await fs.unlink(commitTmpFile)
+          } catch {}
+
+          if (commitExitCode === 0) {
+            // Push the commits
+            await runCommand('git', ['push'], { cwd: rootPath })
+            log.done('Pushed fix commits')
+
+            // Update SHA and push time for next check
+            const newShaResult = await runCommandWithOutput(
+              'git',
+              ['rev-parse', 'HEAD'],
+              {
+                cwd: rootPath,
+              },
+            )
+            currentSha = newShaResult.stdout.trim()
+            pushTime = Date.now()
+          } else {
+            log.warn(`Claude commit failed with exit code ${commitExitCode}`)
+          }
         }
 
         retryCount++
@@ -3733,18 +3791,74 @@ Fix the issue by making necessary file changes. Be direct, don't ask questions.`
                   .join(', ')
                 log.substep(`Changed files: ${changedFiles}`)
 
-                await runCommand('git', ['add', '.'], { cwd: rootPath })
+                // Use Claude to create proper commits (logical groupings, no AI attribution)
+                const commitPrompt = `Review the changes and create commits with logical groupings.
 
-                // Commit with descriptive message (no AI attribution per CLAUDE.md)
-                const ciFixMessage = `Fix CI failure in ${job.name} (run ${lastRunId})`
-                const ciCommitArgs = ['commit', '-m', ciFixMessage]
-                if (useNoVerify) {
-                  ciCommitArgs.push('--no-verify')
+Changed files: ${changedFiles}
+
+Requirements:
+- Create one or more commits as needed for logical grouping
+- No AI attribution in commit messages
+- Follow conventional commit style from the repo
+- Be concise and descriptive
+
+Commit the changes now.`
+
+                const commitTmpFile = path.join(rootPath, `.claude-commit-${Date.now()}.txt`)
+                await fs.writeFile(commitTmpFile, commitPrompt, 'utf8')
+
+                const commitArgs = prepareClaudeArgs([], opts)
+                const commitArgsStr = commitArgs.join(' ')
+                const commitCommand = commitArgsStr
+                  ? `${claudeCmd} ${commitArgsStr}`
+                  : claudeCmd
+
+                let commitScriptCmd
+                if (WIN32) {
+                  const winptyCheck = await runCommandWithOutput('where', ['winpty'])
+                  if (winptyCheck.exitCode === 0) {
+                    commitScriptCmd = `winpty ${commitCommand} < "${commitTmpFile}"`
+                  } else {
+                    commitScriptCmd = `${commitCommand} < "${commitTmpFile}"`
+                  }
+                } else {
+                  commitScriptCmd = `script -q /dev/null sh -c '${commitCommand} < "${commitTmpFile}"'`
                 }
-                await runCommand('git', ciCommitArgs, { cwd: rootPath })
-                log.done(`Committed fix for ${job.name}`)
 
-                hasPendingCommits = true
+                const commitExitCode = await new Promise((resolve, _reject) => {
+                  const child = spawn(commitScriptCmd, [], {
+                    stdio: 'inherit',
+                    cwd: rootPath,
+                    shell: true,
+                  })
+
+                  const sigintHandler = () => {
+                    child.kill('SIGINT')
+                    resolve(130)
+                  }
+                  process.on('SIGINT', sigintHandler)
+
+                  child.on('exit', code => {
+                    process.off('SIGINT', sigintHandler)
+                    resolve(code || 0)
+                  })
+
+                  child.on('error', () => {
+                    process.off('SIGINT', sigintHandler)
+                    resolve(1)
+                  })
+                })
+
+                try {
+                  await fs.unlink(commitTmpFile)
+                } catch {}
+
+                if (commitExitCode === 0) {
+                  log.done(`Committed fix for ${job.name}`)
+                  hasPendingCommits = true
+                } else {
+                  log.warn(`Claude commit failed with exit code ${commitExitCode}`)
+                }
               } else {
                 log.substep(`No changes to commit for ${job.name}`)
               }
