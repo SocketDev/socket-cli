@@ -101,12 +101,10 @@ async function testUserlandDecompression() {
   console.log('✅ Userland module decompression successful')
   console.log(
     '   Compression ratio:',
-    ((1 - fileData.length / actualSize) * 100).toFixed(1) + '%',
+    `${((1 - fileData.length / actualSize) * 100).toFixed(1)}%`,
   )
-  console.log('   Original: ' + (actualSize / 1024 / 1024).toFixed(2) + ' MB')
-  console.log(
-    '   Compressed: ' + (fileData.length / 1024 / 1024).toFixed(2) + ' MB',
-  )
+  console.log(`   Original: ${(actualSize / 1024 / 1024).toFixed(2)} MB`)
+  console.log(`   Compressed: ${(fileData.length / 1024 / 1024).toFixed(2)} MB`)
   console.log()
   console.log('✅ Ready for Node.js builtin loader integration')
   console.log()

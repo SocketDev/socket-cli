@@ -162,7 +162,7 @@ async function copyBuildAdditions() {
   })
 
   console.log(
-    `✅ Copied ${ADDITIONS_DIR.replace(ROOT_DIR + '/', '')}/ → ${NODE_DIR}/`,
+    `✅ Copied ${ADDITIONS_DIR.replace(`${ROOT_DIR}/`, '')}/ → ${NODE_DIR}/`,
   )
   console.log()
 }
@@ -191,8 +191,8 @@ async function copySocketSecurityBootstrap() {
 
   const stats = await stat(bootstrapSource)
   console.log(
-    `✅ ${bootstrapSource.replace(ROOT_DIR + '/', '')} → ` +
-      `${bootstrapDest.replace(NODE_DIR + '/', '')}`,
+    `✅ ${bootstrapSource.replace(`${ROOT_DIR}/`, '')} → ` +
+      `${bootstrapDest.replace(`${NODE_DIR}/`, '')}`,
   )
   console.log(
     `   ${(stats.size / 1024).toFixed(1)}KB (will be brotli encoded with lib/ files)`,

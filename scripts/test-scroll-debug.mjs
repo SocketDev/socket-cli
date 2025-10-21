@@ -64,7 +64,7 @@ showState('AFTER EXPANDING')
 
 // Simulate pressing Enter (submit and collapse).
 console.log('\n>>> User presses Enter (submit)...')
-state.outputLines.push('> ' + state.inputLines.join('\\n'))
+state.outputLines.push(`> ${state.inputLines.join('\\n')}`)
 state.outputLines.push('')
 
 // Reset textarea.

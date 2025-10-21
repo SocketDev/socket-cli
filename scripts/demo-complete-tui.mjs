@@ -150,8 +150,7 @@ function drawCompleteTUI() {
     const leftPad = Math.floor((headerWidth - 2 - lineVisibleLen) / 2)
     const rightPad = headerWidth - 2 - lineVisibleLen - leftPad
 
-    const framedLine =
-      '│' + ' '.repeat(leftPad) + line + ' '.repeat(Math.max(0, rightPad)) + '│'
+    const framedLine = `│${' '.repeat(leftPad)}${line}${' '.repeat(Math.max(0, rightPad))}│`
 
     buffer[lineY] = replaceAt(buffer[lineY], headerX, framedLine)
   }
@@ -256,7 +255,7 @@ function drawCompleteTUI() {
  */
 function renderFrame() {
   const screen = drawCompleteTUI()
-  process.stdout.write('\x1B[H' + screen)
+  process.stdout.write(`\x1B[H${screen}`)
 
   state.frame++
 

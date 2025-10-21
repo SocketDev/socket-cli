@@ -111,7 +111,7 @@ export function renderShimmerFrame(
     const line = ASCII_LOGO[i]!
 
     // Apply bold formatting first so applyShimmer can detect and preserve it.
-    const boldLine = '\x1b[1m' + line + '\x1b[0m'
+    const boldLine = `\x1b[1m${line}\x1b[0m`
 
     // Create slanted shimmer by offsetting each line's frame position.
     // This creates a diagonal wave effect across the logo.

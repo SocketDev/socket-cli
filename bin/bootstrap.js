@@ -1,11 +1,11 @@
 // eslint-disable-next-line no-restricted-syntax, n/prefer-global/process
-const { existsSync } = require('fs')
+const { existsSync } = require('node:fs')
 // eslint-disable-next-line no-restricted-syntax, n/prefer-global/process
-const { homedir } = require('os')
+const { homedir } = require('node:os')
 // eslint-disable-next-line no-restricted-syntax, n/prefer-global/process
-const { join } = require('path')
+const { join } = require('node:path')
 // eslint-disable-next-line no-restricted-syntax, n/prefer-global/process
-const { spawnSync } = require('child_process')
+const { spawnSync } = require('node:child_process')
 
 const SOCKET_DLX_DIR = join(homedir(), '.socket', '_dlx')
 const CLI_PACKAGE_DIR = join(SOCKET_DLX_DIR, 'cli')

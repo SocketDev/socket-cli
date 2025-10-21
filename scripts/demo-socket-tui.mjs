@@ -513,7 +513,7 @@ function App() {
   if (currentTheme.emoji && logoLines.length > 0) {
     const lastLineIndex = logoLines.length - 1
     logoLines[lastLineIndex] =
-      logoLines[lastLineIndex] + `  ${currentTheme.emoji}`
+      `${logoLines[lastLineIndex]}  ${currentTheme.emoji}`
   }
 
   // Spinner frames.

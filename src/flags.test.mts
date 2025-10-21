@@ -47,7 +47,7 @@ describe('flags', () => {
     })
 
     it('respects NODE_OPTIONS', async () => {
-      const constants = vi.mocked(await import('./constants.mts')).default
+      const _constants = vi.mocked(await import('./constants.mts')).default
       ENV.NODE_OPTIONS = '--max-old-space-size=512'
 
       // Need to reset the module to clear cached value.
@@ -93,7 +93,7 @@ describe('flags', () => {
     })
 
     it('respects NODE_OPTIONS', async () => {
-      const constants = vi.mocked(await import('./constants.mts')).default
+      const _constants = vi.mocked(await import('./constants.mts')).default
       ENV.NODE_OPTIONS = '--max-semi-space-size=16'
 
       vi.resetModules()

@@ -140,7 +140,7 @@ function replaceAt(str, index, replacement) {
  */
 function renderFrame() {
   const screen = drawSketchTUI()
-  process.stdout.write('\x1B[H' + screen)
+  process.stdout.write(`\x1B[H${screen}`)
   state.frame++
 
   // Blink cursor.

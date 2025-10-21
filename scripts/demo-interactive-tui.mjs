@@ -201,8 +201,8 @@ function renderFrame() {
     output += help
   }
 
-  output += screen + '\n'
-  output += '─'.repeat(cols) + '\n'
+  output += `${screen}\n`
+  output += `${'─'.repeat(cols)}\n`
   output += statusBar
 
   process.stdout.write(output)

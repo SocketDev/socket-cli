@@ -206,8 +206,8 @@ importers:
         specifier: link:../socket-registry/registry
         version: link:../socket-registry/registry
       '@socketsecurity/sdk':
-        specifier: 1.11.2
-        version: 1.11.2
+        specifier: 2.0.1
+        version: 2.0.1
       '@types/cmd-shim':
         specifier: 5.0.2
         version: 5.0.2
@@ -1727,12 +1727,8 @@ packages:
       typescript:
         optional: true
 
-  '@socketsecurity/registry@1.5.3':
-    resolution: {integrity: sha512-0/o4RFTgqqIl5bKBuacp4HiYq0KttXkvGti2fN4lXqGh7FEe39gcX/dxFlhk2eoTuZ21Nbx/I3GPe5EDdMaYVA==}
-    engines: {node: '>=18', pnpm: '>=10.16.0'}
-
-  '@socketsecurity/sdk@1.11.2':
-    resolution: {integrity: sha512-iSddZUH+xruNaEV3q/TWc94R9K6yKOWdgLjTtNfPsMi3EJtK1C2ZZwdeRaNKQZ+8452xuuUCO74JOmtXqm4p/g==}
+  '@socketsecurity/sdk@2.0.1':
+    resolution: {integrity: sha512-eETnWsQrP4j5ibXawGNu80HS2i2U12R4qU1VyS22AcHkWyOIQ9em7x/XAMYtAX8gHm8bTAr31D5fZ8tM0LahcQ==}
     engines: {node: '>=18', pnpm: '>=10.16.0'}
 
   '@stroncium/procfs@1.2.1':
@@ -6449,11 +6445,7 @@ snapshots:
     optionalDependencies:
       typescript: 5.9.3
 
-  '@socketsecurity/registry@1.5.3': {}
-
-  '@socketsecurity/sdk@1.11.2':
-    dependencies:
-      '@socketsecurity/registry': 1.5.3
+  '@socketsecurity/sdk@2.0.1': {}
 
   '@stroncium/procfs@1.2.1': {}
 

@@ -74,7 +74,7 @@ const contentX = 3 // Position where content starts (after left border + padding
 const contentWidth = cols - 6 // Total width minus outer borders and padding.
 
 // Initial buffer line (simulating outer frame with ║).
-const bufferLine = '║ ' + ' '.repeat(cols - 4) + ' ║'
+const bufferLine = `║ ${' '.repeat(cols - 4)} ║`
 
 // Output box line to insert (with │ borders and spacing).
 const outputBoxLine = `│ ${' '.repeat(contentWidth - 4)} │`

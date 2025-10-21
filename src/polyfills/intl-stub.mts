@@ -3,11 +3,7 @@ if (typeof globalThis.Intl === 'undefined') {
    * Base class for all Intl stub implementations.
    * Accepts any constructor arguments but ignores them.
    */
-  class IntlBase {
-    constructor() {
-      // Accept any arguments, ignore them.
-    }
-  }
+  class IntlBase {}
 
   /**
    * Intl.DateTimeFormat stub - Formats dates as ISO-8601 strings.

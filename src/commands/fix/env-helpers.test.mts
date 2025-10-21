@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
 import { getCiEnvInstructions } from '../../../src/commands/fix/env-helpers.mts'
-import ENV from '../constants/env.mts'
 
 describe('env-helpers', () => {
   describe('getCiEnvInstructions', () => {

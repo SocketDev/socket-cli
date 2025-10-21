@@ -45,18 +45,18 @@ console.log('')
 
 // Visual comparison.
 console.log('=== VISUAL COMPARISON ===')
-console.log('┌' + '─'.repeat(width - 2) + '┐')
+console.log(`┌${'─'.repeat(width - 2)}┐`)
 console.log(contentLine)
 console.log(emptyLine)
 console.log(emptyLine)
 console.log(contentLine)
-console.log('└' + '─'.repeat(width - 2) + '┘')
+console.log(`└${'─'.repeat(width - 2)}┘`)
 
 console.log('')
 console.log('=== OLD BROKEN VERSION ===')
-console.log('┌' + '─'.repeat(width - 2) + '┐')
+console.log(`┌${'─'.repeat(width - 2)}┐`)
 console.log(contentLine)
 console.log(brokenEmptyLine) // This one doesn't match!
 console.log(brokenEmptyLine)
 console.log(contentLine)
-console.log('└' + '─'.repeat(width - 2) + '┘')
+console.log(`└${'─'.repeat(width - 2)}┘`)

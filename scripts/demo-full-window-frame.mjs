@@ -67,7 +67,7 @@ function drawFullWindowFrame(content, title = '') {
   // Ensure top border is exactly cols characters (visible).
   const topVisibleLength = getVisibleLength(topBorder)
   if (topVisibleLength > cols) {
-    topBorder = topBorder.slice(0, cols - 1) + '╮'
+    topBorder = `${topBorder.slice(0, cols - 1)}╮`
   } else if (topVisibleLength < cols) {
     topBorder =
       topBorder.slice(0, -1) +
@@ -142,7 +142,7 @@ async function renderFullWindowWithDuration(theme, duration) {
     const framedWindow = drawFullWindowFrame(logo, title)
 
     // Move to home position and clear, then render.
-    process.stdout.write('\x1B[H\x1B[J' + framedWindow)
+    process.stdout.write(`\x1B[H\x1B[J${framedWindow}`)
 
     frame++
     resizeRequested = false

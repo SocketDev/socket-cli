@@ -68,7 +68,7 @@ console.log(`  Has reset code: ${result1.includes('\x1B[0m') ? '✅' : '❌'}`)
 console.log('')
 
 // Test 2: String exactly at width.
-const test2 = '║  \x1B[1mSocket\x1B[0m' + ' '.repeat(110) + '║'
+const test2 = `║  \x1B[1mSocket\x1B[0m${' '.repeat(110)}║`
 const result2 = sliceAtVisibleIndex(test2, 120)
 console.log('Test 2: Slice border line at 120 chars')
 console.log(`  Input visible: "${visibleLength(test2)}" chars`)

@@ -49,7 +49,7 @@ export function cmdFlagsToString(args: string[] | readonly string[]): string {
   const result = []
   for (let i = 0, { length } = args; i < length; i += 1) {
     const arg = args[i]?.trim()
-    if (arg && arg.startsWith('--')) {
+    if (arg?.startsWith('--')) {
       const nextArg = i + 1 < length ? args[i + 1]?.trim() : undefined
       // Check if the next item exists and is NOT another flag.
       if (nextArg && !nextArg.startsWith('--') && !nextArg.startsWith('-')) {

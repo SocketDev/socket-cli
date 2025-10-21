@@ -20,10 +20,10 @@ const content4 = 'Type commands below...'.padEnd(width, ' ')
 const emptyLine = ' '.repeat(width)
 
 // Outer frame for context.
-const outerTop = '╔' + '═'.repeat(width + 4) + '╗'
+const outerTop = `╔${'═'.repeat(width + 4)}╗`
 const outerSide = '║  '
 const outerEnd = '  ║'
-const outerBottom = '╚' + '═'.repeat(width + 4) + '╝'
+const outerBottom = `╚${'═'.repeat(width + 4)}╝`
 
 console.log('\nBorderless Output Box Design:\n')
 console.log(outerTop)

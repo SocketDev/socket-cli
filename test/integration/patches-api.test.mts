@@ -73,8 +73,8 @@ describe('Patches API Integration', () => {
 
       // Example: Fetch patches for a scan.
       // Replace with actual test org slug and scan ID.
-      const orgSlug = 'test-org'
-      const scanId = 'test-scan-id'
+      const _orgSlug = 'test-org'
+      const _scanId = 'test-scan-id'
 
       // TODO: Implement actual API call when endpoint is ready.
       // const response = await sdk.get(`/orgs/${orgSlug}/patches/scan/${scanId}`)

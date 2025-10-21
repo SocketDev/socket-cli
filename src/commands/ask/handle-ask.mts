@@ -143,7 +143,7 @@ function normalizeQuery(query: string): string {
     doc.nouns().toSingular()
 
     return doc.out('text').toLowerCase()
-  } catch (e) {
+  } catch (_e) {
     // Fallback to original query if NLP fails.
     return query.toLowerCase()
   }
@@ -172,7 +172,7 @@ async function loadSemanticIndex() {
     semanticIndex = JSON.parse(content)
 
     return semanticIndex
-  } catch (e) {
+  } catch (_e) {
     // Semantic index not available - not a critical error.
     return null
   }
@@ -275,7 +275,7 @@ async function getEmbeddingPipeline() {
     embeddingPipeline = await MiniLMInference.create()
 
     return embeddingPipeline
-  } catch (e) {
+  } catch (_e) {
     // Model not available - silently fall back to pattern matching.
     embeddingPipelineFailure = true
     return null
@@ -311,7 +311,7 @@ async function getEmbedding(text: string): Promise<Float32Array | null> {
   try {
     const result = await model.embed(text)
     return result.embedding
-  } catch (e) {
+  } catch (_e) {
     // Silently fail - pattern matching will handle the query.
     return null
   }
@@ -608,7 +608,7 @@ async function getProjectContext(cwd: string): Promise<{
       dependencies: pkg.dependencies || {},
       devDependencies: pkg.devDependencies || {},
     }
-  } catch (e) {
+  } catch (_e) {
     return { hasPackageJson: false }
   }
 }
