@@ -4110,7 +4110,6 @@ async function main() {
       process.exitCode = 1
       return
     }
-    log.done(`Found Claude Code CLI: ${claudeCmd}`)
 
     // Ensure Claude is authenticated
     const isClaudeAuthenticated = await ensureClaudeAuthenticated(claudeCmd)
