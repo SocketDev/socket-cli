@@ -6,13 +6,20 @@
 
 import { spawn } from 'node:child_process'
 import crypto from 'node:crypto'
-import { existsSync, promises as fs } from 'node:fs'
+import {
+  existsSync,
+  readFileSync,
+  writeFileSync,
+  promises as fs,
+} from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { parseArgs } from '@socketsecurity/lib/argv/parse'
+
 import { deleteAsync as del } from 'del'
 import colors from 'yoctocolors-cjs'
+
+import { parseArgs } from '@socketsecurity/lib/argv/parse'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '..')
@@ -186,7 +193,7 @@ class CostTracker {
   loadMonthlyStats() {
     try {
       if (existsSync(STORAGE_PATHS.stats)) {
-        const data = JSON.parse(fs.readFileSync(STORAGE_PATHS.stats, 'utf8'))
+        const data = JSON.parse(readFileSync(STORAGE_PATHS.stats, 'utf8'))
         // YYYY-MM
         const currentMonth = new Date().toISOString().slice(0, 7)
         if (data.month === currentMonth) {
@@ -206,10 +213,7 @@ class CostTracker {
 
   saveMonthlyStats() {
     try {
-      fs.writeFileSync(
-        STORAGE_PATHS.stats,
-        JSON.stringify(this.monthly, null, 2),
-      )
+      writeFileSync(STORAGE_PATHS.stats, JSON.stringify(this.monthly, null, 2))
     } catch {
       // Ignore errors.
     }
@@ -294,7 +298,7 @@ class ProgressTracker {
   loadHistory() {
     try {
       if (existsSync(STORAGE_PATHS.history)) {
-        const data = JSON.parse(fs.readFileSync(STORAGE_PATHS.history, 'utf8'))
+        const data = JSON.parse(readFileSync(STORAGE_PATHS.history, 'utf8'))
         // Keep only last 50 sessions.
         return data.sessions.slice(-50)
       }
@@ -316,7 +320,7 @@ class ProgressTracker {
       if (data.sessions.length > 50) {
         data.sessions = data.sessions.slice(-50)
       }
-      fs.writeFileSync(STORAGE_PATHS.history, JSON.stringify(data, null, 2))
+      writeFileSync(STORAGE_PATHS.history, JSON.stringify(data, null, 2))
     } catch {
       // Ignore errors.
     }
