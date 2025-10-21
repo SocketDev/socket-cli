@@ -11,6 +11,7 @@
  *   --open       Open coverage report in browser
  *   --code-only  Run only code coverage (skip type coverage)
  *   --type-only  Run only type coverage (skip code coverage)
+ *   --summary    Show only coverage summary (hide detailed output)
  */
 
 import { parseArgs } from 'node:util'
@@ -53,17 +54,27 @@ async function main() {
     options: {
       'code-only': { type: 'boolean', default: false },
       'type-only': { type: 'boolean', default: false },
+      summary: { type: 'boolean', default: false },
     },
     strict: false,
   })
 
   try {
     if (!quiet) {
-      printHeader('Running Coverage')
+      printHeader('Test Coverage')
+      console.log('')
     }
 
     // Run vitest with coverage enabled, capturing output
-    const vitestArgs = ['exec', 'vitest', 'run', '--coverage']
+    // Filter out custom flags that vitest doesn't understand
+    const customFlags = ['--code-only', '--type-only', '--summary']
+    const vitestArgs = [
+      'exec',
+      'vitest',
+      'run',
+      '--coverage',
+      ...process.argv.slice(2).filter(arg => !customFlags.includes(arg)),
+    ]
     const typeCoverageArgs = ['exec', 'type-coverage']
 
     let exitCode = 0
@@ -95,9 +106,13 @@ async function main() {
       }
 
       if (exitCode === 0) {
-        if (!quiet) {printSuccess('Coverage completed successfully')}
+        if (!quiet) {
+          printSuccess('Coverage completed successfully')
+        }
       } else {
-        if (!quiet) {printError('Coverage failed')}
+        if (!quiet) {
+          printError('Coverage failed')
+        }
         process.exitCode = 1
       }
       return
@@ -123,7 +138,7 @@ async function main() {
         const testSummaryMatch = output.match(
           /Test Files\s+\d+[^\n]*\n[\s\S]*?Duration\s+[\d.]+m?s[^\n]*/,
         )
-        if (testSummaryMatch) {
+        if (!values.summary && testSummaryMatch) {
           console.log()
           console.log(testSummaryMatch[0])
           console.log()
@@ -138,13 +153,15 @@ async function main() {
         )
 
         if (coverageHeaderMatch && allFilesMatch) {
-          console.log(' % Coverage report from v8')
-          console.log(coverageHeaderMatch[1])
-          console.log(coverageHeaderMatch[2])
-          console.log(coverageHeaderMatch[1])
-          console.log(allFilesMatch[0])
-          console.log(coverageHeaderMatch[1])
-          console.log()
+          if (!values.summary) {
+            console.log(' % Coverage report from v8')
+            console.log(coverageHeaderMatch[1])
+            console.log(coverageHeaderMatch[2])
+            console.log(coverageHeaderMatch[1])
+            console.log(allFilesMatch[0])
+            console.log(coverageHeaderMatch[1])
+            console.log()
+          }
 
           const codeCoveragePercent = Number.parseFloat(allFilesMatch[1])
           console.log(' Coverage Summary')
@@ -158,9 +175,13 @@ async function main() {
       }
 
       if (exitCode === 0) {
-        if (!quiet) {printSuccess('Coverage completed successfully')}
+        if (!quiet) {
+          printSuccess('Coverage completed successfully')
+        }
       } else {
-        if (!quiet) {printError('Coverage failed')}
+        if (!quiet) {
+          printError('Coverage failed')
+        }
         process.exitCode = 1
       }
       return
@@ -202,20 +223,22 @@ async function main() {
 
     // Display clean output
     if (!quiet) {
-      if (testSummaryMatch) {
+      if (!values.summary && testSummaryMatch) {
         console.log()
         console.log(testSummaryMatch[0])
         console.log()
       }
 
       if (coverageHeaderMatch && allFilesMatch) {
-        console.log(' % Coverage report from v8')
-        console.log(coverageHeaderMatch[1]) // Top border
-        console.log(coverageHeaderMatch[2]) // Header row
-        console.log(coverageHeaderMatch[1]) // Middle border
-        console.log(allFilesMatch[0]) // All files row
-        console.log(coverageHeaderMatch[1]) // Bottom border
-        console.log()
+        if (!values.summary) {
+          console.log(' % Coverage report from v8')
+          console.log(coverageHeaderMatch[1]) // Top border
+          console.log(coverageHeaderMatch[2]) // Header row
+          console.log(coverageHeaderMatch[1]) // Middle border
+          console.log(allFilesMatch[0]) // All files row
+          console.log(coverageHeaderMatch[1]) // Bottom border
+          console.log()
+        }
 
         // Display type coverage and cumulative summary
         if (typeCoverageMatch) {
