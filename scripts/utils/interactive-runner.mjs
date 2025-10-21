@@ -70,14 +70,13 @@ export async function runWithOutput(command, args = [], options = {}) {
               isSpinning = false
             }
 
-            // Clear spinner line and show buffer
+            // Clear line and show buffer
             process.stdout.write('\r\x1b[K')
-            // Dump all buffered output
             if (outputBuffer.length > 0) {
+              console.log('--- Showing output ---')
               outputBuffer.forEach(line => process.stdout.write(line))
-              // DON'T clear the buffer - keep it for potential toggle back
+              outputBuffer = []
             }
-            // Now output continues to stream live to stdout
           } else {
             // Hide output and restart spinner
             process.stdout.write('\r\x1b[K')
@@ -85,7 +84,6 @@ export async function runWithOutput(command, args = [], options = {}) {
               spinner.start(`${message} (ctrl+o ${toggleText})`)
               isSpinning = true
             }
-            // Output will now buffer again
           }
         }
         // ctrl+c to cancel
@@ -205,10 +203,12 @@ export async function runWithOutput(command, args = [], options = {}) {
 
       if (isSpinning) {
         if (finalCode === 0) {
+          spinner.stop()
           spinner.success(`${message} completed`)
           // Ensure spinner is fully cleared and we're on a fresh line
           process.stdout.write('\r\x1b[K')
         } else {
+          spinner.stop()
           spinner.fail(`${message} failed`)
           // Ensure spinner is fully cleared and we're on a fresh line
           process.stdout.write('\r\x1b[K')
@@ -229,6 +229,7 @@ export async function runWithOutput(command, args = [], options = {}) {
       }
 
       if (isSpinning) {
+        spinner.stop()
         spinner.fail(`${message} error: ${error.message}`)
         // Ensure spinner is fully cleared and we're on a fresh line
         process.stdout.write('\r\x1b[K')
@@ -244,7 +245,7 @@ export async function runWithOutput(command, args = [], options = {}) {
 export async function runTests(command, args, options = {}) {
   return runWithOutput(command, args, {
     message: 'Running tests',
-    toggleText: 'to see output',
+    toggleText: 'to see test output',
     ...options,
   })
 }
@@ -255,7 +256,7 @@ export async function runTests(command, args, options = {}) {
 export async function runLint(command, args, options = {}) {
   return runWithOutput(command, args, {
     message: 'Running linter',
-    toggleText: 'to see output',
+    toggleText: 'to see lint results',
     ...options,
   })
 }
@@ -266,7 +267,7 @@ export async function runLint(command, args, options = {}) {
 export async function runBuild(command, args, options = {}) {
   return runWithOutput(command, args, {
     message: 'Building',
-    toggleText: 'to see output',
+    toggleText: 'to see build output',
     ...options,
   })
 }

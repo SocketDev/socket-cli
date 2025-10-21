@@ -5,7 +5,6 @@
 
 import { existsSync } from 'node:fs'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 
 import { isQuiet } from '@socketsecurity/lib/argv/flags'
 import { parseArgs } from '@socketsecurity/lib/argv/parse'
@@ -15,18 +14,16 @@ import { printHeader } from '@socketsecurity/lib/stdio/header'
 
 import { runCommandQuiet } from './utils/run-command.mjs'
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
-
 // Files that trigger a full lint when changed
 const CORE_FILES = new Set([
-  'src/logger.ts',
-  'src/spawn.ts',
-  'src/fs.ts',
-  'src/promises.ts',
+  'src/constants.ts',
+  'src/error.ts',
+  'src/helpers.ts',
+  'src/lang.ts',
   'src/objects.ts',
-  'src/arrays.ts',
   'src/strings.ts',
-  'src/types.ts',
+  'src/validate.ts',
+  'src/purl-type.ts',
 ])
 
 // Config patterns that trigger a full lint
@@ -36,7 +33,6 @@ const CONFIG_PATTERNS = [
   'pnpm-lock.yaml',
   'tsconfig*.json',
   'eslint.config.*',
-  '.config/biome.json',
 ]
 
 /**
@@ -121,20 +117,6 @@ async function runLintOnFiles(files, options = {}) {
         '-c',
         '.config/eslint.config.mjs',
         '--report-unused-disable-directives',
-        '--ignore-pattern',
-        'build/',
-        '--ignore-pattern',
-        'binaries/',
-        '--ignore-pattern',
-        'dist/',
-        '--ignore-pattern',
-        'external/',
-        '--ignore-pattern',
-        '.cache/',
-        '--ignore-pattern',
-        '.claude/',
-        '--ignore-pattern',
-        'pkg-binaries/',
         ...(fix ? ['--fix'] : []),
         ...files,
       ],
@@ -169,7 +151,8 @@ async function runLintOnFiles(files, options = {}) {
 
   if (!quiet) {
     logger.clearLine().done('Linting passed')
-    console.log()
+    // Add newline after message (use error to write to same stream)
+    logger.error('')
   }
 
   return 0
@@ -203,26 +186,8 @@ async function runLintOnAll(options = {}) {
         '-c',
         '.config/eslint.config.mjs',
         '--report-unused-disable-directives',
-        '--no-warn-ignored',
-        '--ignore-pattern',
-        'build/',
-        '--ignore-pattern',
-        'binaries/',
-        '--ignore-pattern',
-        'dist/',
-        '--ignore-pattern',
-        'external/',
-        '--ignore-pattern',
-        '.cache/',
-        '--ignore-pattern',
-        '.claude/',
-        '--ignore-pattern',
-        'pkg-binaries/',
         ...(fix ? ['--fix'] : []),
-        'src/',
-        'scripts/',
-        'test/',
-        '.config/',
+        '.',
       ],
       name: 'eslint',
     },
@@ -250,7 +215,8 @@ async function runLintOnAll(options = {}) {
 
   if (!quiet) {
     logger.clearLine().done('Linting passed')
-    console.log()
+    // Add newline after message (use error to write to same stream)
+    logger.error('')
   }
 
   return 0
@@ -373,6 +339,7 @@ async function main() {
 
     if (!quiet) {
       printHeader('Lint Runner')
+      console.log('')
     }
 
     let exitCode = 0
@@ -419,13 +386,13 @@ async function main() {
 
     if (exitCode !== 0) {
       if (!quiet) {
-        console.log()
+        logger.error('')
         console.log('Lint failed')
       }
       process.exitCode = exitCode
     } else {
       if (!quiet) {
-        console.log()
+        console.log('')
         logger.success('All lint checks passed!')
       }
     }
