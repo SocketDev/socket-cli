@@ -291,7 +291,7 @@ async function testAndDownloadManifestFiles({
   )
   logger.group()
   let fileCount = 0
-  let firstFailureResult: unknown
+  let firstFailureResult: any
   for (const file of files) {
     // eslint-disable-next-line no-await-in-loop
     const result = await testAndDownloadManifestFile({
@@ -397,7 +397,7 @@ async function downloadManifestFile({
   const downloadUrlText = await downloadUrlResponse.text()
   debug(`response: raw download url ${downloadUrlText}`)
 
-  let downloadUrl: unknown
+  let downloadUrl: any
   try {
     downloadUrl = JSON.parse(downloadUrlText).download_url
   } catch {
@@ -541,7 +541,7 @@ async function getLastCommitDetails({
   const commitText = await commitResponse.text()
   debug(`response: commit ${commitText}`)
 
-  let lastCommit: unknown
+  let lastCommit: any
   try {
     lastCommit = JSON.parse(commitText)?.[0]
   } catch {
@@ -647,7 +647,7 @@ async function getRepoDetails({
   const repoDetailsText = await repoDetailsResponse.text()
   debug(`response: repo ${repoDetailsText}`)
 
-  let repoDetails: unknown
+  let repoDetails: any
   try {
     repoDetails = JSON.parse(repoDetailsText)
   } catch {
@@ -702,7 +702,7 @@ async function getRepoBranchTree({
   const treeText = await treeResponse.text()
   debug(`response: tree ${treeText}`)
 
-  let treeDetails: unknown
+  let treeDetails: any
   try {
     treeDetails = JSON.parse(treeText)
   } catch {

@@ -523,7 +523,7 @@ export async function meowWithSubcommands(
   // Hard override the config if instructed to do so.
   // The env var overrides the --flag, which overrides the persisted config
   // Also, when either of these are used, config updates won't persist.
-  let configOverrideResult: unknown
+  let configOverrideResult: any
   if (ENV.SOCKET_CLI_CONFIG) {
     configOverrideResult = overrideCachedConfig(ENV.SOCKET_CLI_CONFIG)
   } else if (configFlag) {

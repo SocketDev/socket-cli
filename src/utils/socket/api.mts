@@ -360,7 +360,7 @@ export async function queryApiSafeText(
     spinner?.start(`Requesting ${description} from API...`)
   }
 
-  let result: unknown
+  let result: any
   try {
     result = await queryApi(path, apiToken)
     if (description) {
@@ -495,7 +495,7 @@ export async function sendApiRequest<T>(
     spinner?.start(`Requesting ${description} from API...`)
   }
 
-  let result: unknown
+  let result: any
   try {
     const fetchOptions = {
       method,

@@ -134,7 +134,7 @@ async function checkForUpdates(
   }
 
   const isFresh = updateStore.isFresh(record, ttl)
-  let updateResult: unknown
+  let updateResult: any
 
   if (!isFresh) {
     // Need to fetch fresh data from registry.

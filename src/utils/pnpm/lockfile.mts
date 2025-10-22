@@ -13,7 +13,7 @@ import type { LockfileObject, PackageSnapshot } from '@pnpm/lockfile.fs'
 import type { SemVer } from 'semver'
 
 export function extractOverridesFromPnpmLockSrc(lockfileContent: any): string {
-  let match: unknown
+  let match: any
   if (typeof lockfileContent === 'string') {
     match = /^overrides:(?:\r?\n {2}.+)+(?:\r?\n)*/m.exec(lockfileContent)?.[0]
   }
@@ -64,7 +64,7 @@ export function isPnpmDepPath(maybeDepPath: string): boolean {
 export function parsePnpmLockfile(
   lockfileContent: unknown,
 ): LockfileObject | null {
-  let result: unknown
+  let result: any
   if (typeof lockfileContent === 'string') {
     try {
       result = yaml.load(stripBom(lockfileContent))

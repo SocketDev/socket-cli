@@ -153,7 +153,7 @@ export async function readSocketJson(
     }
   }
 
-  let obj: unknown
+  let obj: any
   try {
     obj = JSON.parse(json)
   } catch (e) {
@@ -213,7 +213,7 @@ export function readSocketJsonSync(
     }
   }
 
-  let jsonObj: unknown
+  let jsonObj: any
   try {
     jsonObj = JSON.parse(jsonContent)
   } catch (e) {

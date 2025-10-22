@@ -248,7 +248,7 @@ let _configFromFlag = false
 export function overrideCachedConfig(jsonConfig: unknown): CResult<undefined> {
   debugNs('notice', 'override: full config (not stored)')
 
-  let config: unknown
+  let config: any
   try {
     config = JSON.parse(String(jsonConfig))
     if (!config || typeof config !== 'object') {

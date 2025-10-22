@@ -92,7 +92,7 @@ export type RepoInfo = {
 export async function getRepoInfo(
   cwd = process.cwd(),
 ): Promise<RepoInfo | undefined> {
-  let info: unknown
+  let info: any
   try {
     const result = await spawn('git', ['remote', 'get-url', 'origin'], { cwd })
     const remoteUrl =
@@ -375,7 +375,7 @@ export async function gitEnsureIdentity(
   ]
   await Promise.all(
     identEntries.map(async ({ 0: prop, 1: value }) => {
-      let configValue: unknown
+      let configValue: any
       try {
         // Will throw with exit code 1 if the config property is not set.
         const gitConfigResult = await spawn(
