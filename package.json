@@ -105,7 +105,7 @@
     "@socketsecurity/config": "3.0.1",
     "@socketsecurity/lib": "1.0.4",
     "@socketsecurity/registry": "2.0.0",
-    "@socketsecurity/sdk": "2.0.1",
+    "@socketsecurity/sdk": "link:../socket-sdk-js",
     "@types/cmd-shim": "5.0.2",
     "@types/ink": "2.0.3",
     "@types/js-yaml": "4.0.9",
@@ -245,8 +245,7 @@
       "lodash@4.17.21": "patches/lodash@4.17.21.patch",
       "string_decoder@0.10.31": "patches/string_decoder@0.10.31.patch",
       "ink@6.3.1": "patches/ink@6.3.1.patch",
-      "yoga-layout": "patches/yoga-layout.patch",
-      "@socketsecurity/sdk@2.0.1": "patches/@socketsecurity__sdk@2.0.1.patch"
+      "yoga-layout": "patches/yoga-layout.patch"
     }
   },
   "typeCoverage": {
