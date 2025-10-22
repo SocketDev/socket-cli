@@ -62,7 +62,10 @@
     "test:wrapper": "node --loader=./scripts/load.mjs scripts/test-wrapper.mjs",
     "test-ci": "run-s test:*",
     "test-pre-commit": "dotenvx -q run -f .env.precommit -- pnpm test",
-    "update": "node --loader=./scripts/load.mjs scripts/update.mjs"
+    "update": "node --loader=./scripts/load.mjs scripts/update.mjs",
+    "wasm": "node scripts/wasm.mjs",
+    "wasm:build": "node scripts/wasm.mjs --build",
+    "wasm:download": "node scripts/wasm.mjs --download"
   },
   "devDependencies": {
     "@babel/core": "7.28.4",
