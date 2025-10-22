@@ -1,4 +1,3 @@
-
 import { logger } from '@socketsecurity/lib/logger'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 import chalkTable from 'chalk-table'

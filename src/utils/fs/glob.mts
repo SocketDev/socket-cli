@@ -13,7 +13,6 @@ import { readPackageJson } from '@socketsecurity/lib/packages'
 import { transform } from '@socketsecurity/lib/streams'
 import { isNonEmptyString } from '@socketsecurity/lib/strings'
 
-
 import { PNPM } from '../../constants/agents.mjs'
 
 import type { Agent } from '../ecosystem/environment.mts'
