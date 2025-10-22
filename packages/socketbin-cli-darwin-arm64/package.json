@@ -1,0 +1,21 @@
+{
+  "bin": {
+    "socket": "./bin/socket"
+  },
+  "cpu": [
+    "arm64"
+  ],
+  "description": "Socket CLI native binary for macOS ARM64 (Apple Silicon)",
+  "files": [
+    "bin/socket"
+  ],
+  "license": "MIT",
+  "name": "@socketbin/cli-darwin-arm64",
+  "os": [
+    "darwin"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "version": "1.0.0"
+}

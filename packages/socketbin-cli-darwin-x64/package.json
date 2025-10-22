@@ -1,0 +1,21 @@
+{
+  "bin": {
+    "socket": "./bin/socket"
+  },
+  "cpu": [
+    "x64"
+  ],
+  "description": "Socket CLI native binary for macOS x64 (Intel)",
+  "files": [
+    "bin/socket"
+  ],
+  "license": "MIT",
+  "name": "@socketbin/cli-darwin-x64",
+  "os": [
+    "darwin"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "version": "1.0.0"
+}

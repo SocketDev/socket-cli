@@ -1,0 +1,23 @@
+{
+  "bin": {
+    "socket": "./bin/socket.js"
+  },
+  "description": "Thin Socket CLI wrapper that downloads and delegates to @socketsecurity/cli",
+  "files": [
+    "bin/",
+    "dist/"
+  ],
+  "license": "MIT",
+  "name": "socket",
+  "optionalDependencies": {
+    "@socketbin/cli-alpine-arm64": "^1.0.0",
+    "@socketbin/cli-alpine-x64": "^1.0.0",
+    "@socketbin/cli-darwin-arm64": "^1.0.0",
+    "@socketbin/cli-darwin-x64": "^1.0.0",
+    "@socketbin/cli-linux-arm64": "^1.0.0",
+    "@socketbin/cli-linux-x64": "^1.0.0",
+    "@socketbin/cli-win32-arm64": "^1.0.0",
+    "@socketbin/cli-win32-x64": "^1.0.0"
+  },
+  "version": "1.0.0"
+}

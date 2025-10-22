@@ -1,4 +1,75 @@
 {
+  "name": "@socketsecurity/cli",
+  "version": "1.1.25",
+  "description": "CLI for Socket.dev",
+  "homepage": "https://github.com/SocketDev/socket-cli",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SocketDev/socket-cli.git"
+  },
+  "author": {
+    "name": "Socket Inc",
+    "email": "eng@socket.dev",
+    "url": "https://socket.dev"
+  },
+  "bin": {
+    "socket": "bin/cli.js",
+    "socket-npm": "bin/npm-cli.js",
+    "socket-npx": "bin/npx-cli.js",
+    "socket-pnpm": "bin/pnpm-cli.js",
+    "socket-yarn": "bin/yarn-cli.js"
+  },
+  "exports": {
+    "./bin/cli.js": "./dist/cli.js",
+    "./bin/npm-cli.js": "./dist/npm-cli.js",
+    "./bin/npx-cli.js": "./dist/npx-cli.js",
+    "./bin/pnpm-cli.js": "./dist/pnpm-cli.js",
+    "./bin/yarn-cli.js": "./dist/yarn-cli.js",
+    "./package.json": "./package.json",
+    "./data/alert-translations.json": "./data/alert-translations.json",
+    "./data/command-api-requirements.json": "./data/command-api-requirements.json"
+  },
+  "scripts": {
+    "build": "node --import=./scripts/load.mjs scripts/build.mjs --src-only",
+    "build:sea:internal:bootstrap": "rollup -c .config/rollup.cli-sea.config.mjs",
+    "build:js": "node scripts/extract-yoga-wasm.mjs && node .config/esbuild.cli.build.mjs",
+    "build:watch": "node scripts/extract-yoga-wasm.mjs && node .config/esbuild.cli.build.mjs --watch",
+    "dev": "pnpm run build:watch",
+    "publish:sea": "node --import=./scripts/load.mjs scripts/publish-sea.mjs",
+    "check": "node --import=./scripts/load.mjs scripts/check.mjs",
+    "check-ci": "pnpm run check",
+    "claude": "node scripts/claude.mjs",
+    "lint": "node --import=./scripts/load.mjs scripts/lint.mjs",
+    "lint-ci": "pnpm run lint",
+    "type": "tsc --noEmit",
+    "type-ci": "pnpm run type",
+    "cover": "node --import=./scripts/load.mjs scripts/cover.mjs",
+    "clean": "run-p -c --aggregate-output clean:*",
+    "clean:cache": "del-cli '**/.cache'",
+    "clean:dist": "del-cli 'dist'",
+    "clean:node_modules": "del-cli '**/node_modules'",
+    "fix": "node --import=./scripts/load.mjs scripts/fix.mjs",
+    "lint-staged": "dotenvx -q run -f .env.local -- lint-staged",
+    "precommit": "dotenvx -q run -f .env.local -- lint-staged",
+    "prepare": "dotenvx -q run -f .env.local -- husky",
+    "bs": "dotenvx -q run -f .env.local -- pnpm run build --src-only; pnpm exec socket --",
+    "s": "dotenvx -q run -f .env.local -- pnpm exec socket --",
+    "e2e-tests": "dotenvx -q run -f .env.test -- vitest run --config vitest.e2e.config.mts",
+    "test": "run-s check test:*",
+    "test:prepare": "dotenvx -q run -f .env.test -- pnpm build && del-cli 'test/**/node_modules'",
+    "test:unit": "dotenvx -q run -f .env.test -- vitest run",
+    "test:unit:update": "dotenvx -q run -f .env.test -- vitest run --update",
+    "test:unit:coverage": "dotenvx -q run -f .env.test -- vitest run --coverage",
+    "test:validate": "node --import=./scripts/load.mjs scripts/validate-tests.mjs",
+    "test:wrapper": "node --import=./scripts/load.mjs scripts/test-wrapper.mjs",
+    "test-ci": "run-s test:*",
+    "test-pre-commit": "dotenvx -q run -f .env.precommit -- pnpm test",
+    "update": "node --import=./scripts/load.mjs scripts/update.mjs",
+    "wasm": "node scripts/wasm.mjs",
+    "wasm:build": "node scripts/wasm.mjs --build",
+    "wasm:download": "node scripts/wasm.mjs --download"
+  },
   "devDependencies": {
     "@babel/core": "7.28.4",
     "@babel/parser": "^7.28.4",
@@ -114,12 +185,20 @@
     "node": ">=18",
     "pnpm": ">=10.16.0"
   },
+  "files": [
+    "bin/**",
+    "data/**",
+    "dist/**",
+    "shadow-bin/**",
+    "CHANGELOG.md",
+    "logo-dark.png",
+    "logo-light.png"
+  ],
   "lint-staged": {
     "*.{cjs,cts,js,json,md,mjs,mts,ts}": [
       "biome check --write --unsafe --no-errors-on-unmatched --files-ignore-unknown=true --colors=off"
     ]
   },
-  "name": "socket-cli-monorepo",
   "pnpm": {
     "overrides": {
       "@octokit/graphql": "9.0.1",
@@ -175,18 +254,6 @@
       "yoga-layout": "patches/yoga-layout.patch"
     }
   },
-  "private": true,
-  "scripts": {
-    "build": "pnpm --filter \"./packages/**\" run build",
-    "build:cli": "pnpm --filter @socketsecurity/cli run build",
-    "build:socket": "pnpm --filter socket run build",
-    "check": "pnpm --filter @socketsecurity/cli run check",
-    "clean": "pnpm --filter \"./packages/**\" run clean",
-    "lint": "pnpm --filter @socketsecurity/cli run lint",
-    "prepare": "dotenvx -q run -f .env.local -- husky",
-    "test": "pnpm --filter @socketsecurity/cli run test",
-    "type": "pnpm --filter @socketsecurity/cli run type"
-  },
   "typeCoverage": {
     "cache": true,
     "atLeast": 95,
@@ -198,5 +265,9 @@
     "ignore-files": "test/*",
     "strict": true
   },
-  "version": "1.1.25"
+  "dependencies": {
+    "ajv-dist": "8.17.1",
+    "compromise": "^14.14.4",
+    "onnxruntime-web": "^1.23.0"
+  }
 }

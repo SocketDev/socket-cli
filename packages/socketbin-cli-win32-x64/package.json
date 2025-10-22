@@ -1,0 +1,21 @@
+{
+  "bin": {
+    "socket": "./bin/socket.exe"
+  },
+  "cpu": [
+    "x64"
+  ],
+  "description": "Socket CLI native binary for Windows x64",
+  "files": [
+    "bin/socket.exe"
+  ],
+  "license": "MIT",
+  "name": "@socketbin/cli-win32-x64",
+  "os": [
+    "win32"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "version": "1.0.0"
+}
