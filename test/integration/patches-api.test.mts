@@ -70,34 +70,19 @@ describe('Patches API Integration', () => {
       }
 
       const sdk = sdkResult.data
-
-      // Example: Fetch patches for a scan.
-      // Replace with actual test org slug and scan ID.
-      const _orgSlug = 'test-org'
-      const _scanId = 'test-scan-id'
-
-      // TODO: Implement actual API call when endpoint is ready.
-      // const response = await sdk.get(`/orgs/${orgSlug}/patches/scan/${scanId}`)
-
-      // Expected response structure:
-      // {
-      //   artifactId: string
-      //   purl: { type, name, version?, namespace?, subpath?, artifactId? }
-      //   purlString: string
-      //   patch: {
-      //     uuid: string
-      //     publishedAt: string
-      //     description: string
-      //     license: string
-      //     tier: 'free' | 'enterprise'
-      //     freeCves: Array<{ cveId, ghsaId, summary, severity }>
-      //     paidCves: Array<{ cveId, ghsaId, summary, severity }>
-      //     freeFeatures: string[]
-      //     paidFeatures: string[]
-      //   } | null
-      // }
-
       expect(sdk).toBeDefined()
+
+      // Note: Requires depscan API endpoint implementation.
+      // Expected endpoint: GET /orgs/:org_slug/patches/scan/:scan_id
+      //
+      // When implemented, test should verify:
+      // - artifactId is a string
+      // - purl object contains { type, name, version?, namespace?, subpath?, artifactId? }
+      // - purlString is formatted correctly (e.g., "pkg:npm/lodash@4.20.0")
+      // - patch object contains uuid, publishedAt, description, license, tier
+      // - patch.tier is either 'free' or 'enterprise'
+      // - freeCves and paidCves are arrays with CVE metadata
+      // - freeFeatures and paidFeatures are string arrays
     })
 
     it('should stream patches with upgrade messaging for free tier org', async () => {
@@ -115,11 +100,11 @@ describe('Patches API Integration', () => {
       }
 
       const sdk = sdkResult.data
-
-      // TODO: Implement test to verify paidFeatures contains upgrade messaging.
-      // Expected: paidFeatures: ["Upgrade tier for X additional vulnerabilities"]
-
       expect(sdk).toBeDefined()
+
+      // Note: Requires depscan API endpoint implementation.
+      // When implemented, test should verify paidFeatures contains upgrade messaging.
+      // Expected format: ["Upgrade tier for X additional vulnerabilities"]
     })
 
     it('should stream latest patch per PURL for enterprise tier org', async () => {
@@ -137,13 +122,13 @@ describe('Patches API Integration', () => {
       }
 
       const sdk = sdkResult.data
-
-      // TODO: Implement test to verify:
-      // - Only one patch per PURL
-      // - Latest patch selected based on tier
-      // - paidCves are non-overlapping with freeCves
-
       expect(sdk).toBeDefined()
+
+      // Note: Requires depscan API endpoint implementation.
+      // When implemented, test should verify:
+      // - Only one patch per PURL is returned
+      // - Latest patch is selected based on tier
+      // - paidCves do not overlap with freeCves
     })
   })
 
@@ -153,7 +138,8 @@ describe('Patches API Integration', () => {
         return
       }
 
-      // TODO: Verify PURL object structure:
+      // Note: Requires depscan API endpoint implementation.
+      // When implemented, verify PURL object structure:
       // - type: string (npm, pypi, maven, etc.)
       // - name: string (required)
       // - version?: string (optional)
@@ -167,7 +153,8 @@ describe('Patches API Integration', () => {
         return
       }
 
-      // TODO: Verify purlString format:
+      // Note: Requires depscan API endpoint implementation.
+      // When implemented, verify purlString format matches Package URL spec.
       // Example: "pkg:npm/lodash@4.20.0"
     })
   })
@@ -178,7 +165,8 @@ describe('Patches API Integration', () => {
         return
       }
 
-      // TODO: Verify:
+      // Note: Requires depscan API endpoint implementation.
+      // When implemented, verify:
       // - freeCves: CVEs fixed by free patch
       // - paidCves: CVEs fixed ONLY by paid patch (not in freeCves)
       // - No duplicates between arrays
@@ -189,13 +177,12 @@ describe('Patches API Integration', () => {
         return
       }
 
-      // TODO: Verify CVE record structure:
-      // {
-      //   cveId: string | null
-      //   ghsaId: string | null
-      //   summary: string
-      //   severity: string
-      // }
+      // Note: Requires depscan API endpoint implementation.
+      // When implemented, verify CVE record structure includes:
+      // - cveId: string | null
+      // - ghsaId: string | null
+      // - summary: string
+      // - severity: string
     })
   })
 
@@ -205,7 +192,8 @@ describe('Patches API Integration', () => {
         return
       }
 
-      // TODO: Verify freeFeatures format:
+      // Note: Requires depscan API endpoint implementation.
+      // When implemented, verify freeFeatures format.
       // Example: ["Fixes 2 vulnerabilities"]
     })
 
@@ -214,7 +202,8 @@ describe('Patches API Integration', () => {
         return
       }
 
-      // TODO: Verify paidFeatures format:
+      // Note: Requires depscan API endpoint implementation.
+      // When implemented, verify paidFeatures contains upgrade messaging.
       // Example: ["Upgrade tier for 3 additional vulnerabilities"]
     })
 
@@ -223,7 +212,8 @@ describe('Patches API Integration', () => {
         return
       }
 
-      // TODO: Verify paidFeatures for enterprise:
+      // Note: Requires depscan API endpoint implementation.
+      // When implemented, verify paidFeatures shows total fixes for enterprise.
       // Example: ["Fixes 5 vulnerabilities"]
     })
   })
