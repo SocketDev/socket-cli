@@ -12,13 +12,15 @@ import { pipeline } from 'node:stream/promises'
 import { debug, debugDir } from '@socketsecurity/lib/debug'
 import { logger } from '@socketsecurity/lib/logger'
 import { confirm, select } from '@socketsecurity/lib/prompts'
+
+import { fetchSupportedScanFileNames } from './fetch-supported-scan-file-names.mts'
+import { handleCreateNewScan } from './handle-create-new-scan.mts'
 import { REPORT_LEVEL_ERROR } from '../../constants/reporting.mjs'
-import type { CResult, OutputKind } from '../../types.mts'
 import { formatErrorWithDetail } from '../../utils/error/errors.mjs'
 import { isReportSupportedFile } from '../../utils/fs/glob.mts'
 import { fetchListAllRepos } from '../repository/fetch-list-all-repos.mts'
-import { fetchSupportedScanFileNames } from './fetch-supported-scan-file-names.mts'
-import { handleCreateNewScan } from './handle-create-new-scan.mts'
+
+import type { CResult, OutputKind } from '../../types.mts'
 
 export async function createScanFromGithub({
   all,
@@ -289,7 +291,7 @@ async function testAndDownloadManifestFiles({
   )
   logger.group()
   let fileCount = 0
-  let firstFailureResult
+  let firstFailureResult: unknown
   for (const file of files) {
     // eslint-disable-next-line no-await-in-loop
     const result = await testAndDownloadManifestFile({
@@ -395,7 +397,7 @@ async function downloadManifestFile({
   const downloadUrlText = await downloadUrlResponse.text()
   debug(`response: raw download url ${downloadUrlText}`)
 
-  let downloadUrl
+  let downloadUrl: unknown
   try {
     downloadUrl = JSON.parse(downloadUrlText).download_url
   } catch {
@@ -433,7 +435,7 @@ async function streamDownloadWithFetch(
   localPath: string,
   downloadUrl: string,
 ): Promise<CResult<string>> {
-  let response // Declare response here to access it in catch if needed
+  let response: unknown // Declare response here to access it in catch if needed
 
   try {
     response = await fetch(downloadUrl)
@@ -539,7 +541,7 @@ async function getLastCommitDetails({
   const commitText = await commitResponse.text()
   debug(`response: commit ${commitText}`)
 
-  let lastCommit
+  let lastCommit: unknown
   try {
     lastCommit = JSON.parse(commitText)?.[0]
   } catch {
@@ -645,7 +647,7 @@ async function getRepoDetails({
   const repoDetailsText = await repoDetailsResponse.text()
   debug(`response: repo ${repoDetailsText}`)
 
-  let repoDetails
+  let repoDetails: unknown
   try {
     repoDetails = JSON.parse(repoDetailsText)
   } catch {
@@ -700,7 +702,7 @@ async function getRepoBranchTree({
   const treeText = await treeResponse.text()
   debug(`response: tree ${treeText}`)
 
-  let treeDetails
+  let treeDetails: unknown
   try {
     treeDetails = JSON.parse(treeText)
   } catch {

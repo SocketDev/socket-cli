@@ -25,9 +25,10 @@ import { debugDir, debugNs } from '@socketsecurity/lib/debug'
 import { logger } from '@socketsecurity/lib/logger'
 
 import { SOCKET_JSON, SOCKET_WEBSITE_URL } from '../../constants/socket.mts'
-import type { CResult } from '../../types.mjs'
 import { formatErrorWithDetail } from '../error/errors.mts'
 import { findUp } from '../fs/fs.mts'
+
+import type { CResult } from '../../types.mjs'
 
 export interface SocketJson {
   ' _____         _       _     ': string
@@ -152,7 +153,7 @@ export async function readSocketJson(
     }
   }
 
-  let obj
+  let obj: unknown
   try {
     obj = JSON.parse(json)
   } catch (e) {
@@ -212,7 +213,7 @@ export function readSocketJsonSync(
     }
   }
 
-  let jsonObj
+  let jsonObj: unknown
   try {
     jsonObj = JSON.parse(jsonContent)
   } catch (e) {

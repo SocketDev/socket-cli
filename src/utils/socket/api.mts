@@ -19,19 +19,14 @@
  * - Falls back to configured apiBaseUrl or default API_V0_URL
  */
 
-import { getSpinner } from '@socketsecurity/lib/constants/process'
+import { messageWithCauses } from 'pony-cause'
 
+import { getSpinner } from '@socketsecurity/lib/constants/process'
 import { debug, debugDir } from '@socketsecurity/lib/debug'
 import { logger } from '@socketsecurity/lib/logger'
-import type { Spinner } from '@socketsecurity/lib/spinner'
 import { isNonEmptyString } from '@socketsecurity/lib/strings'
-import type {
-  SocketSdkErrorResult,
-  SocketSdkOperations,
-  SocketSdkResult,
-  SocketSdkSuccessResult,
-} from '@socketsecurity/sdk'
-import { messageWithCauses } from 'pony-cause'
+
+import { getDefaultApiToken } from './sdk.mts'
 import { CONFIG_KEY_API_BASE_URL } from '../../constants/config.mts'
 import ENV from '../../constants/env.mts'
 import {
@@ -43,7 +38,6 @@ import {
   HTTP_STATUS_UNAUTHORIZED,
 } from '../../constants/http.mts'
 import { API_V0_URL } from '../../constants/socket.mts'
-import type { CResult } from '../../types.mts'
 import { getConfigValueOrUndef } from '../config.mts'
 import { debugApiResponse } from '../debug.mts'
 import {
@@ -51,7 +45,15 @@ import {
   getRequirementsKey,
 } from '../ecosystem/requirements.mts'
 import { buildErrorCause } from '../error/errors.mts'
-import { getDefaultApiToken } from './sdk.mts'
+
+import type { CResult } from '../../types.mts'
+import type { Spinner } from '@socketsecurity/lib/spinner'
+import type {
+  SocketSdkErrorResult,
+  SocketSdkOperations,
+  SocketSdkResult,
+  SocketSdkSuccessResult,
+} from '@socketsecurity/sdk'
 
 const NO_ERROR_MESSAGE = 'No error message returned'
 
@@ -358,7 +360,7 @@ export async function queryApiSafeText(
     spinner?.start(`Requesting ${description} from API...`)
   }
 
-  let result
+  let result: unknown
   try {
     result = await queryApi(path, apiToken)
     if (description) {
@@ -493,7 +495,7 @@ export async function sendApiRequest<T>(
     spinner?.start(`Requesting ${description} from API...`)
   }
 
-  let result
+  let result: unknown
   try {
     const fetchOptions = {
       method,

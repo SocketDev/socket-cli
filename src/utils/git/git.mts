@@ -27,17 +27,19 @@
 
 import { debug, debugDir, isDebug } from '@socketsecurity/lib/debug'
 import { normalizePath } from '@socketsecurity/lib/path'
-import type { SpawnOptions } from '@socketsecurity/lib/spawn'
 import { isSpawnError, spawn } from '@socketsecurity/lib/spawn'
+
 import { FLAG_QUIET } from '../../constants/cli.mts'
 import ENV from '../../constants/env.mts'
 import {
   SOCKET_DEFAULT_BRANCH,
   SOCKET_DEFAULT_REPOSITORY,
 } from '../../constants/socket.mts'
-import type { CResult } from '../../types.mjs'
 import { debugGit } from '../debug.mts'
 import { extractName, extractOwner } from '../sanitize-names.mts'
+
+import type { CResult } from '../../types.mjs'
+import type { SpawnOptions } from '@socketsecurity/lib/spawn'
 
 // Listed in order of check preference.
 const COMMON_DEFAULT_BRANCH_NAMES = [
@@ -90,7 +92,7 @@ export type RepoInfo = {
 export async function getRepoInfo(
   cwd = process.cwd(),
 ): Promise<RepoInfo | undefined> {
-  let info
+  let info: unknown
   try {
     const result = await spawn('git', ['remote', 'get-url', 'origin'], { cwd })
     const remoteUrl =
@@ -373,7 +375,7 @@ export async function gitEnsureIdentity(
   ]
   await Promise.all(
     identEntries.map(async ({ 0: prop, 1: value }) => {
-      let configValue
+      let configValue: unknown
       try {
         // Will throw with exit code 1 if the config property is not set.
         const gitConfigResult = await spawn(

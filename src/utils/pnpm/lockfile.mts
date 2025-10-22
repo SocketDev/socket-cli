@@ -1,15 +1,19 @@
 import { existsSync } from 'node:fs'
-import type { LockfileObject, PackageSnapshot } from '@pnpm/lockfile.fs'
+
+import yaml from 'js-yaml'
+import semver from 'semver'
+
 import { readFileUtf8 } from '@socketsecurity/lib/fs'
 import { isObjectObject } from '@socketsecurity/lib/objects'
 import { stripBom } from '@socketsecurity/lib/strings'
-import yaml from 'js-yaml'
-import type { SemVer } from 'semver'
-import semver from 'semver'
+
 import { idToNpmPurl } from '../ecosystem/spec.mjs'
 
+import type { LockfileObject, PackageSnapshot } from '@pnpm/lockfile.fs'
+import type { SemVer } from 'semver'
+
 export function extractOverridesFromPnpmLockSrc(lockfileContent: any): string {
-  let match
+  let match: unknown
   if (typeof lockfileContent === 'string') {
     match = /^overrides:(?:\r?\n {2}.+)+(?:\r?\n)*/m.exec(lockfileContent)?.[0]
   }
@@ -60,7 +64,7 @@ export function isPnpmDepPath(maybeDepPath: string): boolean {
 export function parsePnpmLockfile(
   lockfileContent: unknown,
 ): LockfileObject | null {
-  let result
+  let result: unknown
   if (typeof lockfileContent === 'string') {
     try {
       result = yaml.load(stripBom(lockfileContent))

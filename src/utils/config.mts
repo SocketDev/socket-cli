@@ -23,12 +23,14 @@
 
 import { mkdirSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
-import type { SocketYml } from '@socketsecurity/config'
+
 import config from '@socketsecurity/config'
 import { debugDirNs, debugNs } from '@socketsecurity/lib/debug'
 import { safeReadFileSync } from '@socketsecurity/lib/fs'
 import { logger } from '@socketsecurity/lib/logger'
 import { naturalCompare } from '@socketsecurity/lib/sorts'
+
+import { debugConfig } from './debug.mts'
 import {
   CONFIG_KEY_API_BASE_URL,
   CONFIG_KEY_API_PROXY,
@@ -39,9 +41,10 @@ import {
 } from '../constants/config.mts'
 import { getSocketAppDataPath } from '../constants/paths.mts'
 import { SOCKET_YAML, SOCKET_YML } from '../constants/socket.mts'
-import type { CResult } from '../types.mjs'
-import { debugConfig } from './debug.mts'
 import { getErrorCause } from './error/errors.mjs'
+
+import type { CResult } from '../types.mjs'
+import type { SocketYml } from '@socketsecurity/config'
 
 export interface LocalConfig {
   apiBaseUrl?: string | null | undefined
@@ -245,7 +248,7 @@ let _configFromFlag = false
 export function overrideCachedConfig(jsonConfig: unknown): CResult<undefined> {
   debugNs('notice', 'override: full config (not stored)')
 
-  let config
+  let config: unknown
   try {
     config = JSON.parse(String(jsonConfig))
     if (!config || typeof config !== 'object') {

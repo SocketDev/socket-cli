@@ -1,11 +1,12 @@
+import terminalLink from 'terminal-link'
+import colors from 'yoctocolors-cjs'
+
 import { joinAnd } from '@socketsecurity/lib/arrays'
 import { logger } from '@socketsecurity/lib/logger'
 import { getOwn, hasOwn, toSortedObject } from '@socketsecurity/lib/objects'
 import { normalizePath } from '@socketsecurity/lib/path'
 import { naturalCompare } from '@socketsecurity/lib/sorts'
 import { indentString, trimNewlines } from '@socketsecurity/lib/strings'
-import terminalLink from 'terminal-link'
-import colors from 'yoctocolors-cjs'
 
 import { NPM, NPX } from '../../constants/agents.mts'
 import {
@@ -22,9 +23,7 @@ import {
 } from '../../constants/config.mts'
 import ENV, { getCliVersion, getCliVersionHash } from '../../constants/env.mts'
 import { API_V0_URL } from '../../constants/socket.mts'
-import type { MeowFlag, MeowFlags } from '../../flags.mts'
 import { commonFlags } from '../../flags.mts'
-import type { Options, Result } from '../../meow.mts'
 import meow from '../../meow.mts'
 import {
   getConfigValueOrUndef,
@@ -37,12 +36,15 @@ import { tildify } from '../fs/home-path.mts'
 import { getFlagListOutput, getHelpListOutput } from '../output/formatting.mts'
 import { spawnSocketPython } from '../python/standalone.mts'
 import { getVisibleTokenPrefix } from '../socket/sdk.mjs'
-import type { HeaderTheme } from '../terminal/ascii-header.mts'
 import {
   renderLogoWithFallback,
   supportsFullColor,
 } from '../terminal/ascii-header.mts'
 import { socketPackageLink } from '../terminal/link.mts'
+
+import type { MeowFlag, MeowFlags } from '../../flags.mts'
+import type { Options, Result } from '../../meow.mts'
+import type { HeaderTheme } from '../terminal/ascii-header.mts'
 
 export interface CliAlias {
   description: string
@@ -521,7 +523,7 @@ export async function meowWithSubcommands(
   // Hard override the config if instructed to do so.
   // The env var overrides the --flag, which overrides the persisted config
   // Also, when either of these are used, config updates won't persist.
-  let configOverrideResult
+  let configOverrideResult: unknown
   if (ENV.SOCKET_CLI_CONFIG) {
     configOverrideResult = overrideCachedConfig(ENV.SOCKET_CLI_CONFIG)
   } else if (configFlag) {

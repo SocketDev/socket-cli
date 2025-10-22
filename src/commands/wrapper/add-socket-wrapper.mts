@@ -3,7 +3,7 @@ import fs from 'node:fs'
 import { logger } from '@socketsecurity/lib/logger'
 
 export function addSocketWrapper(file: string): void {
-  return fs.appendFile(
+  fs.appendFile(
     file,
     'alias npm="socket npm"\nalias npx="socket npx"\n',
     err => {
