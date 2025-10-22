@@ -64,16 +64,18 @@ console.log('╚═════════════════════�
 console.log('Step 1: Checking Python installation...\n')
 
 let pythonCmd = 'python3'
+let pythonVersion = ''
 try {
   const pythonResult = await exec(pythonCmd, ['--version'])
-  const pythonVersion = pythonResult.stdout.trim()
-  console.log(`✓ Found ${pythonVersion}\n`)
+  pythonVersion = pythonResult.stdout.trim()
+  console.log(`✓ Found ${pythonVersion}`)
 } catch (_e) {
   // Try 'python' as fallback.
   try {
-    await exec('python', ['--version'])
+    const pythonResult = await exec('python', ['--version'])
+    pythonVersion = pythonResult.stdout.trim()
     pythonCmd = 'python'
-    console.log('✓ Found Python\n')
+    console.log(`✓ Found ${pythonVersion}`)
   } catch {
     console.error('❌ Python 3 not found')
     console.error(
@@ -82,6 +84,20 @@ try {
     process.exit(1)
   }
 }
+
+// Check Python version (need 3.8+).
+const versionMatch = pythonVersion.match(/Python (\d+)\.(\d+)/)
+if (versionMatch) {
+  const major = Number.parseInt(versionMatch[1], 10)
+  const minor = Number.parseInt(versionMatch[2], 10)
+
+  if (major < 3 || (major === 3 && minor < 8)) {
+    console.error(`❌ Python 3.8+ required, found ${pythonVersion}`)
+    console.error('   Please upgrade: https://www.python.org/downloads/')
+    process.exit(1)
+  }
+}
+console.log()
 
 // Step 2: Check and install required packages.
 console.log('Step 2: Checking required packages...\n')

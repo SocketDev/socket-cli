@@ -31,6 +31,21 @@ const GITHUB_REPO = 'SocketDev/socket-cli'
 const WASM_ASSET_NAME = 'socket-ai-sync.mjs'
 
 /**
+ * Check Node.js version requirement.
+ */
+function checkNodeVersion() {
+  const nodeVersion = process.versions.node
+  const major = Number.parseInt(nodeVersion.split('.')[0], 10)
+
+  if (major < 18) {
+    console.error('❌ Node.js version 18 or higher is required')
+    console.error(`   Current version: ${nodeVersion}`)
+    console.error('   Please upgrade: https://nodejs.org/')
+    process.exit(1)
+  }
+}
+
+/**
  * Show help message.
  */
 function showHelp() {
@@ -41,8 +56,8 @@ function showHelp() {
 
 Commands:
   --build     Build WASM bundle from source
-              Requirements: Python 3.8+, Rust, wasm-pack, Homebrew (macOS)
-              Time: ~10-20 minutes
+              Requirements: Python 3.8+ (auto-installs packages, Rust, wasm-pack, binaryen)
+              Time: ~10-20 minutes (first run), ~5 minutes (subsequent)
               Size: ~115MB output
 
   --download  Download pre-built WASM bundle from GitHub releases
@@ -279,6 +294,9 @@ async function downloadWasm() {
  * Main entry point.
  */
 async function main() {
+  // Check Node.js version first.
+  checkNodeVersion()
+
   const args = process.argv.slice(2)
 
   if (args.length === 0 || args.includes('--help') || args.includes('-h')) {
