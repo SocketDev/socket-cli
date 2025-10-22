@@ -25,6 +25,7 @@ import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { logger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 
 import { checkRustToolchain, getRustPaths } from './check-rust-toolchain.mjs'
@@ -68,47 +69,46 @@ async function installBinaryen() {
   const isMacOS = process.platform === 'darwin'
   const isLinux = process.platform === 'linux'
 
-  console.log('📦 Installing binaryen (wasm-opt)...')
-  console.log('   This may take a few minutes...\\n')
+  logger.progress('Installing binaryen (wasm-opt) - this may take a few minutes')
 
   try {
     if (isMacOS) {
       // macOS: Try Homebrew first.
-      console.log('   Trying Homebrew installation...')
+      logger.substep('Trying Homebrew installation')
       try {
         await exec('brew', ['--version'])
         await exec('brew', ['install', 'binaryen'], { stdio: 'inherit' })
-        console.log('   ✓ binaryen installed via Homebrew\\n')
+        logger.done('binaryen installed via Homebrew')
         return true
       } catch {
-        console.log('   ⚠ Homebrew not available, trying GitHub releases...')
+        logger.warn('Homebrew not available, trying GitHub releases')
       }
     } else if (isLinux) {
       // Linux: Try apt-get first (Ubuntu/Debian).
-      console.log('   Trying apt-get installation...')
+      logger.substep('Trying apt-get installation')
       try {
         await exec('sudo', ['apt-get', 'update'], { stdio: 'pipe' })
         await exec('sudo', ['apt-get', 'install', '-y', 'binaryen'], { stdio: 'inherit' })
-        console.log('   ✓ binaryen installed via apt-get\\n')
+        logger.done('binaryen installed via apt-get')
         return true
       } catch {
-        console.log('   ⚠ apt-get not available or failed, trying GitHub releases...')
+        logger.warn('apt-get not available or failed, trying GitHub releases')
       }
     } else if (isWindows) {
       // Windows: Try chocolatey first.
-      console.log('   Trying Chocolatey installation...')
+      logger.substep('Trying Chocolatey installation')
       try {
         await exec('choco', ['--version'])
         await exec('choco', ['install', 'binaryen', '-y'], { stdio: 'inherit' })
-        console.log('   ✓ binaryen installed via Chocolatey\\n')
+        logger.done('binaryen installed via Chocolatey')
         return true
       } catch {
-        console.log('   ⚠ Chocolatey not available, trying GitHub releases...')
+        logger.warn('Chocolatey not available, trying GitHub releases')
       }
     }
 
     // Fallback: Download from GitHub releases (all platforms).
-    console.log('   Downloading pre-built binaryen from GitHub...')
+    logger.substep('Downloading pre-built binaryen from GitHub')
     const version = 'version_119' // Latest stable as of implementation.
     let platformSuffix = ''
 
@@ -121,15 +121,15 @@ async function installBinaryen() {
     }
 
     const url = `https://github.com/WebAssembly/binaryen/releases/download/${version}/binaryen-${version}-${platformSuffix}.tar.gz`
-    console.log(`   URL: ${url}`)
+    logger.substep(`URL: ${url}`)
 
     // For CI/automation, we'll gracefully degrade if GitHub releases download fails.
-    console.log('   ⚠ GitHub releases download not yet implemented')
-    console.log('   ⚠ wasm-opt will be skipped (install manually for smaller bundles)')
+    logger.warn('GitHub releases download not yet implemented')
+    logger.warn('wasm-opt will be skipped (install manually for smaller bundles)')
     return false
   } catch (e) {
-    console.error(`   ✗ Failed to install binaryen: ${e.message}`)
-    console.error('   ⚠ wasm-opt will be skipped (install manually for optimal bundle size)')
+    logger.error(`Failed to install binaryen: ${e.message}`)
+    logger.warn('wasm-opt will be skipped (install manually for optimal bundle size)')
     return false
   }
 }
@@ -139,53 +139,49 @@ const rootPath = path.join(__dirname, '../..')
 const wasmBundleDir = path.join(rootPath, 'wasm-bundle')
 const externalDir = path.join(rootPath, 'external')
 
-console.log('╔═══════════════════════════════════════════════════╗')
-console.log('║   Build Unified WASM Bundle                       ║')
-console.log('╚═══════════════════════════════════════════════════╝\n')
+logger.step('Build Unified WASM Bundle')
 
 // Step 1: Check Rust toolchain.
-console.log('Step 1: Checking Rust toolchain...\n')
+logger.substep('Step 1: Checking Rust toolchain')
 const hasRust = await checkRustToolchain()
 if (!hasRust) {
-  console.error('❌ Rust toolchain setup failed')
-  console.error('   Please install manually: https://rustup.rs/')
+  logger.error('Rust toolchain setup failed')
+  logger.error('Please install manually: https://rustup.rs/')
   process.exit(1)
 }
 
 // Step 2: Download models.
-console.log('Step 2: Downloading model files...\n')
+logger.substep('Step 2: Downloading model files')
 const hasModels = await downloadModels()
 if (!hasModels) {
-  console.error('❌ Model download incomplete')
-  console.error('   Please run: node scripts/wasm/convert-codet5.mjs')
+  logger.error('Model download incomplete')
+  logger.error('Please run: node scripts/wasm/convert-codet5.mjs')
   process.exit(1)
 }
 
 // Step 2.5: Check and install binaryen for wasm-opt.
-console.log('Step 2.5: Checking binaryen (wasm-opt)...\n')
+logger.substep('Step 2.5: Checking binaryen (wasm-opt)')
 const hasBinaryen = await checkBinaryenInstalled()
 if (!hasBinaryen) {
-  console.log('❌ binaryen (wasm-opt) not found\n')
+  logger.warn('binaryen (wasm-opt) not found')
 
   const binaryenInstalled = await installBinaryen()
   if (!binaryenInstalled) {
-    console.log(
-      '⚠ wasm-opt not available - bundle will be slightly larger\n',
-    )
+    logger.warn('wasm-opt not available - bundle will be slightly larger')
   }
 } else {
-  console.log('✓ binaryen (wasm-opt) found\n')
+  logger.info('binaryen (wasm-opt) found')
 }
 
 // Step 3: Build WASM with wasm-pack.
-console.log('Step 3: Building WASM bundle...\n')
+logger.substep('Step 3: Building WASM bundle')
 
 const { wasmPack } = getRustPaths()
 const pkgDir = path.join(wasmBundleDir, 'pkg')
 
-console.log('📦 Running wasm-pack build...')
-console.log(`   Source: ${wasmBundleDir}`)
-console.log(`   Output: ${pkgDir}\n`)
+logger.progress('Running wasm-pack build')
+logger.substep(`Source: ${wasmBundleDir}`)
+logger.substep(`Output: ${pkgDir}`)
 
 // Force wasm-pack to use rustup's toolchain by modifying PATH.
 const { homedir } = await import('node:os')
@@ -216,28 +212,28 @@ const buildResult = await exec(
 )
 
 if (buildResult.code !== 0) {
-  console.error('❌ wasm-pack build failed')
+  logger.error('wasm-pack build failed')
   process.exit(1)
 }
 
-console.log('✓ wasm-pack build complete\n')
+logger.done('wasm-pack build complete')
 
 // Step 4: Check size and optionally optimize.
 const wasmFile = path.join(pkgDir, 'socket_ai_bg.wasm')
 if (!existsSync(wasmFile)) {
-  console.error(`❌ WASM file not found: ${wasmFile}`)
+  logger.error(`WASM file not found: ${wasmFile}`)
   process.exit(1)
 }
 
 let stats = await fs.stat(wasmFile)
 const originalSize = stats.size
-console.log(
-  `📊 WASM bundle size: ${(originalSize / 1024 / 1024).toFixed(2)} MB`,
+logger.info(
+  `WASM bundle size: ${(originalSize / 1024 / 1024).toFixed(2)} MB`,
 )
 
 // Try to optimize with wasm-opt if available.
 try {
-  console.log('\n🔧 Optimizing with wasm-opt...')
+  logger.progress('Optimizing with wasm-opt')
   const optResult = await exec('wasm-opt', ['-Oz', wasmFile, '-o', wasmFile], {
     stdio: 'inherit',
   })
@@ -246,26 +242,24 @@ try {
     stats = await fs.stat(wasmFile)
     const optimizedSize = stats.size
     const savings = ((1 - optimizedSize / originalSize) * 100).toFixed(1)
-    console.log(
-      `✓ Optimized size: ${(optimizedSize / 1024 / 1024).toFixed(2)} MB (${savings}% smaller)\n`,
+    logger.done(
+      `Optimized size: ${(optimizedSize / 1024 / 1024).toFixed(2)} MB (${savings}% smaller)`,
     )
   } else {
-    console.log(
-      '⚠ wasm-opt optimization failed (continuing with unoptimized)\n',
-    )
+    logger.warn('wasm-opt optimization failed (continuing with unoptimized)')
   }
 } catch (_e) {
-  console.log('⚠ wasm-opt not available (install binaryen for optimization)\n')
+  logger.warn('wasm-opt not available (install binaryen for optimization)')
 }
 
 // Step 5: Embed as base64 in JavaScript.
-console.log('Step 5: Embedding WASM as base64...\n')
+logger.substep('Step 5: Embedding WASM as base64')
 
-console.log('📖 Reading WASM binary...')
+logger.progress('Reading WASM binary')
 const wasmData = await fs.readFile(wasmFile)
-console.log(`   ✓ Read ${wasmData.length} bytes`)
+logger.done(`Read ${wasmData.length} bytes`)
 
-console.log('🗜️  Compressing with brotli (quality 11 - maximum)...')
+logger.progress('Compressing with brotli (quality 11 - maximum)')
 const { constants } = await import('node:zlib')
 const wasmCompressed = brotliCompressSync(wasmData, {
   params: {
@@ -278,16 +272,16 @@ const compressionRatio = (
   (wasmCompressed.length / wasmData.length) *
   100
 ).toFixed(1)
-console.log(
-  `   ✓ Compressed: ${wasmCompressed.length} bytes (${compressionRatio}% of original)`,
+logger.done(
+  `Compressed: ${wasmCompressed.length} bytes (${compressionRatio}% of original)`,
 )
 
-console.log('🔤 Encoding as base64...')
+logger.progress('Encoding as base64')
 const wasmBase64 = wasmCompressed.toString('base64')
-console.log(`   ✓ Encoded: ${wasmBase64.length} bytes\n`)
+logger.done(`Encoded: ${wasmBase64.length} bytes`)
 
 // Generate socket-ai-sync.mjs.
-console.log('📝 Generating external/socket-ai-sync.mjs...')
+logger.progress('Generating external/socket-ai-sync.mjs')
 
 const syncContent = `/**
  * Unified WASM Loader for Socket CLI AI Features
@@ -451,27 +445,25 @@ export function getEmbeddedSizes() {
 const outputPath = path.join(externalDir, 'socket-ai-sync.mjs')
 await fs.writeFile(outputPath, syncContent, 'utf-8')
 
-console.log(`   ✓ Generated ${outputPath}`)
-console.log(
-  `   ✓ File size: ${(syncContent.length / 1024 / 1024).toFixed(2)} MB\n`,
+logger.done(`Generated ${outputPath}`)
+logger.done(
+  `File size: ${(syncContent.length / 1024 / 1024).toFixed(2)} MB`,
 )
 
-console.log('╔═══════════════════════════════════════════════════╗')
-console.log('║   Build Complete                                  ║')
-console.log('╚═══════════════════════════════════════════════════╝\n')
+logger.success('Build Complete')
 
-console.log('📊 Summary:')
-console.log(
-  `   Original WASM: ${(wasmData.length / 1024 / 1024).toFixed(2)} MB`,
+logger.info('Summary:')
+logger.info(
+  `  Original WASM: ${(wasmData.length / 1024 / 1024).toFixed(2)} MB`,
 )
-console.log(
-  `   Compressed: ${(wasmCompressed.length / 1024 / 1024).toFixed(2)} MB`,
+logger.info(
+  `  Compressed: ${(wasmCompressed.length / 1024 / 1024).toFixed(2)} MB`,
 )
-console.log(`   Base64: ${(wasmBase64.length / 1024 / 1024).toFixed(2)} MB`)
-console.log(
-  `\n   Total savings: ${((1 - wasmCompressed.length / wasmData.length) * 100).toFixed(1)}%`,
+logger.info(`  Base64: ${(wasmBase64.length / 1024 / 1024).toFixed(2)} MB`)
+logger.info(
+  `  Total savings: ${((1 - wasmCompressed.length / wasmData.length) * 100).toFixed(1)}%`,
 )
-console.log('\nNext steps:')
-console.log('  1. This file will be bundled into dist/cli.js by Rollup')
-console.log('  2. Rollup output will be compressed to dist/cli.js.bz')
-console.log('  3. Native stub or index.js will decompress and execute')
+logger.info('Next steps:')
+logger.info('  1. This file will be bundled into dist/cli.js by Rollup')
+logger.info('  2. Rollup output will be compressed to dist/cli.js.bz')
+logger.info('  3. Native stub or index.js will decompress and execute')
