@@ -52,8 +52,9 @@ export async function coanaFix(
     autopilot,
     cwd,
     disableMajorUpdates,
+    exclude,
     ghsas,
-    glob,
+    include,
     limit,
     minimumReleaseAge,
     orgSlug,
@@ -158,7 +159,8 @@ export async function coanaFix(
           ...(minimumReleaseAge
             ? ['--minimum-release-age', minimumReleaseAge]
             : []),
-          ...(glob ? ['--glob', glob] : []),
+          ...(include.length ? ['--include', ...include] : []),
+          ...(exclude.length ? ['--exclude', ...exclude] : []),
           ...(!applyFixes ? [FLAG_DRY_RUN] : []),
           '--output-file',
           tmpFile,
@@ -239,7 +241,8 @@ export async function coanaFix(
         ...(minimumReleaseAge
           ? ['--minimum-release-age', minimumReleaseAge]
           : []),
-        ...(glob ? ['--glob', glob] : []),
+        ...(include.length ? ['--include', ...include] : []),
+        ...(exclude.length ? ['--exclude', ...exclude] : []),
         ...(disableMajorUpdates ? ['--disable-major-updates'] : []),
         ...(showAffectedDirectDependencies
           ? ['--show-affected-direct-dependencies']
@@ -307,7 +310,8 @@ export async function coanaFix(
         ...(minimumReleaseAge
           ? ['--minimum-release-age', minimumReleaseAge]
           : []),
-        ...(glob ? ['--glob', glob] : []),
+        ...(include.length ? ['--include', ...include] : []),
+        ...(exclude.length ? ['--exclude', ...exclude] : []),
         ...(disableMajorUpdates ? ['--disable-major-updates'] : []),
         ...(showAffectedDirectDependencies
           ? ['--show-affected-direct-dependencies']
