@@ -23,7 +23,6 @@ const __dirname = path.dirname(__filename)
 //   * All non-ASCII characters:
 //     - \u0080 to \uFFFF (extended Unicode)
 
-// biome-ignore lint/suspicious/noControlCharactersInRegex: Intentionally matching control characters for test output cleanup.
 const asciiUnsafeRegexp = /[\u0000-\u0007\u0009\u000b-\u001f\u0080-\uffff]/g
 
 // Note: The fixture directory is in the same directory as this utils file.

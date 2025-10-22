@@ -39,7 +39,9 @@ describe('debug utilities', () => {
     })
 
     it('logs notice for successful responses when debug is enabled', async () => {
-      const { debug, isDebug } = await import('@socketsecurity/lib/debug')
+      const { debug: _debug, isDebug } = await import(
+        '@socketsecurity/lib/debug'
+      )
       vi.mocked(isDebug).mockReturnValue(true)
 
       debugApiResponse('/api/test', 200)
@@ -48,7 +50,9 @@ describe('debug utilities', () => {
     })
 
     it('does not log for successful responses when debug is disabled', async () => {
-      const { debug, isDebug } = await import('@socketsecurity/lib/debug')
+      const { debug: _debug, isDebug } = await import(
+        '@socketsecurity/lib/debug'
+      )
       vi.mocked(isDebug).mockReturnValue(false)
 
       debugApiResponse('/api/test', 200)
@@ -83,7 +87,9 @@ describe('debug utilities', () => {
     })
 
     it('logs silly level for successful operations when enabled', async () => {
-      const { debug, isDebug } = await import('@socketsecurity/lib/debug')
+      const { debug: _debug, isDebug } = await import(
+        '@socketsecurity/lib/debug'
+      )
       vi.mocked(isDebug).mockReturnValue(true)
 
       debugFileOp('write', '/path/to/file')
@@ -92,7 +98,9 @@ describe('debug utilities', () => {
     })
 
     it('does not log for successful operations when silly is disabled', async () => {
-      const { debug, isDebug } = await import('@socketsecurity/lib/debug')
+      const { debug: _debug, isDebug } = await import(
+        '@socketsecurity/lib/debug'
+      )
       vi.mocked(isDebug).mockReturnValue(false)
 
       debugFileOp('create', '/path/to/file')
@@ -133,7 +141,9 @@ describe('debug utilities', () => {
     })
 
     it('logs progress when silly debug is enabled', async () => {
-      const { debug, isDebug } = await import('@socketsecurity/lib/debug')
+      const { debug: _debug, isDebug } = await import(
+        '@socketsecurity/lib/debug'
+      )
       vi.mocked(isDebug).mockReturnValue(true)
 
       debugScan('progress', 10)
@@ -198,7 +208,9 @@ describe('debug utilities', () => {
     })
 
     it('logs silly when config not found and debug enabled', async () => {
-      const { debug, isDebug } = await import('@socketsecurity/lib/debug')
+      const { debug: _debug, isDebug } = await import(
+        '@socketsecurity/lib/debug'
+      )
       vi.mocked(isDebug).mockReturnValue(true)
 
       debugConfig('.socketrc', false)
@@ -210,7 +222,9 @@ describe('debug utilities', () => {
     })
 
     it('does not log when config not found and debug disabled', async () => {
-      const { debug, isDebug } = await import('@socketsecurity/lib/debug')
+      const { debug: _debug, isDebug } = await import(
+        '@socketsecurity/lib/debug'
+      )
       vi.mocked(isDebug).mockReturnValue(false)
 
       debugConfig('.socketrc', false)
@@ -232,7 +246,9 @@ describe('debug utilities', () => {
     })
 
     it('logs notice for important successful operations', async () => {
-      const { debug, isDebug } = await import('@socketsecurity/lib/debug')
+      const { debug: _debug, isDebug } = await import(
+        '@socketsecurity/lib/debug'
+      )
       vi.mocked(isDebug).mockReturnValue(true)
 
       debugGit('push', true)
@@ -249,7 +265,9 @@ describe('debug utilities', () => {
     })
 
     it('logs other operations only with silly debug', async () => {
-      const { debug, isDebug } = await import('@socketsecurity/lib/debug')
+      const { debug: _debug, isDebug } = await import(
+        '@socketsecurity/lib/debug'
+      )
       vi.mocked(isDebug).mockImplementation(level => level === 'silly')
 
       debugGit('status', true)
@@ -258,7 +276,9 @@ describe('debug utilities', () => {
     })
 
     it('does not log non-important operations without silly debug', async () => {
-      const { debug, isDebug } = await import('@socketsecurity/lib/debug')
+      const { debug: _debug, isDebug } = await import(
+        '@socketsecurity/lib/debug'
+      )
       vi.mocked(isDebug).mockReturnValue(false)
 
       debugGit('status', true)

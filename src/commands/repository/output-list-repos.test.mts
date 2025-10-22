@@ -1,5 +1,6 @@
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { outputListRepos } from './output-list-repos.mts'
 import {
   createErrorResult,
   createSuccessResult,
@@ -7,7 +8,7 @@ import {
 } from '../../../test/helpers/index.mts'
 
 import type { CResult } from '../../types.mts'
-import { outputListRepos } from './output-list-repos.mts'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 setupStandardOutputMocks()
 
@@ -208,7 +209,7 @@ describe('outputListRepos', () => {
   })
 
   it('handles empty repository list', async () => {
-    const { logger } = await import('@socketsecurity/lib/logger')
+    const { logger: _logger } = await import('@socketsecurity/lib/logger')
     const chalkTable = await import('chalk-table')
     const mockChalkTable = vi.mocked(chalkTable.default)
 

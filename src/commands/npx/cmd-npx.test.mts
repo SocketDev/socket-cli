@@ -1,5 +1,6 @@
-import { NPX } from '@socketsecurity/lib/constants/agents'
 import { describe, expect } from 'vitest'
+
+import { NPX } from '@socketsecurity/lib/constants/agents'
 
 import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
 import {
@@ -17,7 +18,11 @@ describe('socket npx', async () => {
     [NPX, FLAG_HELP, FLAG_CONFIG, '{}'],
     `should support ${FLAG_HELP}`,
     async cmd => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      const {
+        code,
+        stderr: _stderr,
+        stdout,
+      } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -33,7 +38,11 @@ describe('socket npx', async () => {
     [NPX, FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fakeToken"}'],
     'should require args with just dry-run',
     async cmd => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      const {
+        code,
+        stderr: _stderr,
+        stdout,
+      } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -56,7 +65,11 @@ describe('socket npx', async () => {
     ],
     'should handle npx with version',
     async cmd => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      const {
+        code,
+        stderr: _stderr,
+        stdout: _stdout,
+      } = await spawnSocketCli(binCliPath, cmd)
       expect(code, 'dry-run npx should exit with code 0').toBe(0)
     },
   )

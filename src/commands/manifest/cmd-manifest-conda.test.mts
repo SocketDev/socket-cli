@@ -16,7 +16,11 @@ describe('socket manifest conda', async () => {
     ['manifest', 'conda', FLAG_HELP, FLAG_CONFIG, '{}'],
     `should support ${FLAG_HELP}`,
     async cmd => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
+      const {
+        code,
+        stderr: _stderr,
+        stdout,
+      } = await spawnSocketCli(binCliPath, cmd, {
         cwd: testPath,
       })
       expect(stdout).toMatchInlineSnapshot(`""`)
@@ -36,7 +40,11 @@ describe('socket manifest conda', async () => {
     ['manifest', 'conda', FLAG_DRY_RUN, FLAG_CONFIG, '{}'],
     'should require args with just dry-run',
     async cmd => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
+      const {
+        code,
+        stderr: _stderr,
+        stdout,
+      } = await spawnSocketCli(binCliPath, cmd, {
         cwd: testPath,
       })
       expect(stdout).toMatchInlineSnapshot(`""`)
@@ -61,7 +69,11 @@ describe('socket manifest conda', async () => {
       ],
       'should print raw text without flags',
       async cmd => {
-        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
+        const {
+          code: _code,
+          stderr: _stderr,
+          stdout,
+        } = await spawnSocketCli(binCliPath, cmd, {
           cwd: testPath,
         })
         expect(stdout).toMatchInlineSnapshot(`""`)
@@ -107,7 +119,11 @@ describe('socket manifest conda', async () => {
       ],
       'should print a markdown blurb with --markdown flag',
       async cmd => {
-        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
+        const {
+          code: _code,
+          stderr: _stderr,
+          stdout,
+        } = await spawnSocketCli(binCliPath, cmd, {
           cwd: testPath,
         })
         expect(cleanOutput(stdout)).toMatchInlineSnapshot(`""`)

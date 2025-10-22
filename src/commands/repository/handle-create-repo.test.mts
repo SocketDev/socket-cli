@@ -187,7 +187,9 @@ describe('handleCreateRepo', () => {
 
   it('handles different visibility types', async () => {
     const { fetchCreateRepo } = await import('./fetch-create-repo.mts')
-    const { outputCreateRepo } = await import('./output-create-repo.mts')
+    const { outputCreateRepo: _outputCreateRepo } = await import(
+      './output-create-repo.mts'
+    )
 
     const visibilities = ['public', 'private', 'internal']
 
@@ -218,7 +220,9 @@ describe('handleCreateRepo', () => {
 
   it('handles empty optional fields', async () => {
     const { fetchCreateRepo } = await import('./fetch-create-repo.mts')
-    const { outputCreateRepo } = await import('./output-create-repo.mts')
+    const { outputCreateRepo: _outputCreateRepo } = await import(
+      './output-create-repo.mts'
+    )
 
     vi.mocked(fetchCreateRepo).mockResolvedValue({
       ok: true,

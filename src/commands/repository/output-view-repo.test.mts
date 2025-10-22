@@ -1,5 +1,6 @@
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { outputViewRepo } from './output-view-repo.mts'
 import {
   createErrorResult,
   createSuccessResult,
@@ -7,7 +8,7 @@ import {
 } from '../../../test/helpers/index.mts'
 
 import type { CResult } from '../../types.mts'
-import { outputViewRepo } from './output-view-repo.mts'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 // Mock the dependencies.
 setupStandardOutputMocks()
@@ -133,7 +134,7 @@ describe('outputViewRepo', () => {
   })
 
   it('handles repository with null homepage', async () => {
-    const { logger } = await import('@socketsecurity/lib/logger')
+    const { logger: _logger } = await import('@socketsecurity/lib/logger')
     const chalkTable = await import('chalk-table')
     const mockChalkTable = vi.mocked(chalkTable.default)
 

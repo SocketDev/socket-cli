@@ -16,7 +16,11 @@ describe('socket organization policy security', async () => {
     ['organization', 'policy', 'security', FLAG_HELP, FLAG_CONFIG, '{}'],
     `should support ${FLAG_HELP}`,
     async cmd => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      const {
+        code: _code,
+        stderr: _stderr,
+        stdout,
+      } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -34,7 +38,11 @@ describe('socket organization policy security', async () => {
     ['organization', 'policy', 'security', FLAG_DRY_RUN, FLAG_CONFIG, '{}'],
     'should reject dry run without proper args',
     async cmd => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      const {
+        code,
+        stderr: _stderr,
+        stdout,
+      } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`""`)
       // expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       //   "
@@ -68,7 +76,11 @@ describe('socket organization policy security', async () => {
     ],
     'should accept default org in v1',
     async cmd => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      const {
+        code,
+        stderr: _stderr,
+        stdout,
+      } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -92,7 +104,11 @@ describe('socket organization policy security', async () => {
     ],
     'should accept --org flag in v1',
     async cmd => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      const {
+        code,
+        stderr: _stderr,
+        stdout,
+      } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "

@@ -93,7 +93,9 @@ describe('handleThreatFeed', () => {
 
   it('handles specific package and version filter', async () => {
     const { fetchThreatFeed } = await import('./fetch-threat-feed.mts')
-    const { outputThreatFeed } = await import('./output-threat-feed.mts')
+    const { outputThreatFeed: _outputThreatFeed } = await import(
+      './output-threat-feed.mts'
+    )
 
     const mockData = {
       ok: true,
@@ -155,7 +157,9 @@ describe('handleThreatFeed', () => {
 
   it('handles different ecosystems', async () => {
     const { fetchThreatFeed } = await import('./fetch-threat-feed.mts')
-    const { outputThreatFeed } = await import('./output-threat-feed.mts')
+    const { outputThreatFeed: _outputThreatFeed } = await import(
+      './output-threat-feed.mts'
+    )
 
     const ecosystems = ['npm', 'pypi', 'rubygems', 'maven', 'nuget']
 
@@ -216,7 +220,9 @@ describe('handleThreatFeed', () => {
 
   it('handles pagination', async () => {
     const { fetchThreatFeed } = await import('./fetch-threat-feed.mts')
-    const { outputThreatFeed } = await import('./output-threat-feed.mts')
+    const { outputThreatFeed: _outputThreatFeed } = await import(
+      './output-threat-feed.mts'
+    )
 
     vi.mocked(fetchThreatFeed).mockResolvedValue({
       ok: true,
