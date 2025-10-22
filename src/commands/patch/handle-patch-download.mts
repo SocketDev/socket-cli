@@ -31,6 +31,7 @@
 
 import crypto from 'node:crypto'
 
+// @ts-expect-error - No type declarations available.
 import ssri from 'ssri'
 
 import * as cacache from '@socketsecurity/lib/cacache'
@@ -46,8 +47,6 @@ import type { OutputKind } from '../../types.mts'
 import type { PatchRecord } from '../../utils/manifest/patches.mts'
 import type { Spinner } from '@socketsecurity/lib/spinner'
 import type { SocketSdk } from '@socketsecurity/sdk'
-
-// @ts-expect-error - No type declarations available.
 
 export type HandlePatchDownloadConfig = {
   cwd: string

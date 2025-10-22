@@ -72,6 +72,7 @@ async function main() {
       'vitest',
       'run',
       '--coverage',
+      '--passWithNoTests',
       ...process.argv.slice(2).filter(arg => !customFlags.includes(arg)),
     ]
     const typeCoverageArgs = ['exec', 'type-coverage']

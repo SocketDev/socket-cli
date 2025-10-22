@@ -15,6 +15,9 @@ import { serializeResultJson } from '../../utils/output/result-json.mjs'
 import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
+type AuditLogEvent =
+  SocketSdkSuccessResult<'getAuditLogEvents'>['data']['results'][number]
+
 export async function outputAuditLog(
   result: CResult<SocketSdkSuccessResult<'getAuditLogEvents'>['data']>,
   {
@@ -94,7 +97,7 @@ export async function outputAsJson(
       org: orgSlug,
       page,
       perPage,
-      logs: auditLogs.data.results.map(log => {
+      logs: auditLogs.data.results.map((log: AuditLogEvent) => {
         // Note: The subset is pretty arbitrary
         const {
           created_at,
@@ -179,7 +182,7 @@ async function outputWithInk(
   render(
     React.createElement(AuditLogApp, {
       orgSlug,
-      results: data.results.map(entry => ({
+      results: data.results.map((entry: AuditLogEvent) => ({
         created_at: entry.created_at || '',
         event_id: entry.event_id || '',
         formatted_created_at: entry.created_at || '',

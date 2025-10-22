@@ -46,7 +46,7 @@ type AddOverridesState = {
   warnedPnpmWorkspaceRequiresNpm: boolean
 }
 
-const manifestNpmOverrides = getManifestData(NPM)
+const manifestNpmOverrides = getManifestData(NPM) ?? []
 
 export async function addOverrides(
   pkgEnvDetails: EnvDetails,
