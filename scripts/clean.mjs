@@ -207,4 +207,7 @@ async function main() {
   }
 }
 
-main().catch(console.error)
+main().catch(e => {
+  logger.error(e)
+  process.exitCode = 1
+})

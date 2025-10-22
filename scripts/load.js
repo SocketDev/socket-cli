@@ -28,8 +28,8 @@ if (require.main === module) {
   const scriptPath = path.join(__dirname, scriptFile)
 
   // Run the script with the alias loader.
-  const loaderPath = path.join(__dirname, 'load.mjs')
-  const args = [`--loader=${loaderPath}`, scriptPath, ...flags]
+  const registerPath = path.join(__dirname, 'register.mjs')
+  const args = [`--import=${registerPath}`, scriptPath, ...flags]
 
   const child = spawn(process.execPath, args, {
     stdio: 'inherit',

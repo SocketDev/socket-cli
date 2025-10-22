@@ -5,7 +5,7 @@
  * This file should be copied or imported from socket-registry to other repos.
  *
  * Usage:
- *   node --loader=./scripts/utils/alias-loader.mjs script.mjs
+ *   node --import=./scripts/register.mjs script.mjs
  */
 
 import { existsSync } from 'node:fs'

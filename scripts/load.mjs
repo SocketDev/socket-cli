@@ -1,11 +1,11 @@
 /**
- * @fileoverview ESM loader that provides alias resolution.
+ * @fileoverview Deprecated - use register.mjs instead.
  *
- * This is the actual loader used by Node.js with --loader flag.
- * For convenience, use scripts/load.js which wraps this automatically.
+ * This file is kept for backward compatibility but should not be used.
+ * Use register.mjs with --import flag instead.
  *
- * Direct usage:
- *   node --loader=./scripts/load.mjs script.mjs
+ * New usage:
+ *   node --import=./scripts/register.mjs script.mjs
  *
  * Wrapper usage (recommended):
  *   node scripts/load script-name
