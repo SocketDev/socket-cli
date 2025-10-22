@@ -1,6 +1,8 @@
+import { mkdtempSync, promises as fs } from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { testPath } from '../../test/utils.mts'
 import {
@@ -47,15 +49,39 @@ describe('utils/config', () => {
   })
 
   describe('findSocketYmlSync', () => {
-    it('should handle when no socket.yml exists (regression test for .parsed access)', () => {
+    it('should find socket.yml when walking up directory tree', () => {
+      // This test verifies that findSocketYmlSync correctly walks up the directory
+      // tree and finds socket.yml at the repository root.
+      const result = findSocketYmlSync(path.join(fixtureBaseDir, 'nonexistent'))
+
+      // The result should be ok and find the root socket.yml.
+      expect(result.ok).toBe(true)
+      expect(result.data).toBeDefined()
+      expect(result.data?.parsed).toBeDefined()
+      expect(result.data?.path).toContain('socket.yml')
+    })
+
+    it('should handle when no socket.yml exists (regression test for .parsed access)', async () => {
       // This test ensures we don't regress on the error:
       // "Cannot read properties of undefined (reading 'parsed')"
       // when socketYmlResult.data is undefined.
-      const result = findSocketYmlSync(path.join(fixtureBaseDir, 'nonexistent'))
+      //
+      // Create an isolated temporary directory outside the repository.
+      // This ensures no parent directories contain socket.yml.
+      const tmpDir = mkdtempSync(path.join(os.tmpdir(), 'socket-test-'))
+      const isolatedDir = path.join(tmpDir, 'deep', 'nested', 'directory')
+      await fs.mkdir(isolatedDir, { recursive: true })
 
-      // The result should be ok but with undefined data.
-      expect(result.ok).toBe(true)
-      expect(result.data).toBe(undefined)
+      try {
+        const result = findSocketYmlSync(isolatedDir)
+
+        // The result should be ok but with undefined data.
+        expect(result.ok).toBe(true)
+        expect(result.data).toBe(undefined)
+      } finally {
+        // Clean up the temporary directory.
+        await fs.rm(tmpDir, { force: true, recursive: true })
+      }
     })
   })
 })

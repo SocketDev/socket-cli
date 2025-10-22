@@ -1,11 +1,16 @@
+import { promises as fs } from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 
 import { joinAnd } from '@socketsecurity/lib/arrays'
 import { debug, debugDir } from '@socketsecurity/lib/debug'
+import { readJsonSync } from '@socketsecurity/lib/fs'
 import { logger } from '@socketsecurity/lib/logger'
 import { pluralize } from '@socketsecurity/lib/words'
+
 import { FLAG_DRY_RUN } from '../../constants/cli.mts'
 import { GQL_PR_STATE_OPEN } from '../../constants/github.mts'
+
 import type { CResult } from '../../types.mts'
 import { spawnCoanaDlx } from '../../utils/dlx/spawn.mjs'
 import { getErrorCause } from '../../utils/error/errors.mjs'
@@ -36,11 +41,12 @@ import {
 } from './env-helpers.mts'
 import { getSocketFixBranchName, getSocketFixCommitMessage } from './git.mts'
 import { getSocketFixPrs, openSocketFixPr } from './pull-request.mts'
+
 import type { FixConfig } from './types.mts'
 
 export async function coanaFix(
   fixConfig: FixConfig,
-): Promise<CResult<{ fixed: boolean }>> {
+): Promise<CResult<{ data?: unknown; fixed: boolean }>> {
   const {
     applyFixes,
     autopilot,
@@ -133,36 +139,64 @@ export async function coanaFix(
       return { ok: true, data: { fixed: false } }
     }
 
-    const fixCResult = await spawnCoanaDlx(
-      [
-        'compute-fixes-and-upgrade-purls',
-        cwd,
-        '--manifests-tar-hash',
-        tarHash,
-        '--apply-fixes-to',
-        ...(isAll ? ['all'] : ghsas),
-        ...(fixConfig.rangeStyle
-          ? ['--range-style', fixConfig.rangeStyle]
-          : []),
-        ...(minimumReleaseAge
-          ? ['--minimum-release-age', minimumReleaseAge]
-          : []),
-        ...(glob ? ['--glob', glob] : []),
-        ...(!applyFixes ? [FLAG_DRY_RUN] : []),
-        ...(outputFile ? ['--output-file', outputFile] : []),
-        ...(disableMajorUpdates ? ['--disable-major-updates'] : []),
-        ...(showAffectedDirectDependencies
-          ? ['--show-affected-direct-dependencies']
-          : []),
-        ...fixConfig.unknownFlags,
-      ],
-      fixConfig.orgSlug,
-      { cwd, spinner, stdio: 'inherit' },
-    )
+    // Create a temporary file for the output.
+    const tmpDir = os.tmpdir()
+    const tmpFile = path.join(tmpDir, `socket-fix-${Date.now()}.json`)
 
-    spinner?.stop()
+    try {
+      const fixCResult = await spawnCoanaDlx(
+        [
+          'compute-fixes-and-upgrade-purls',
+          cwd,
+          '--manifests-tar-hash',
+          tarHash,
+          '--apply-fixes-to',
+          ...(isAll ? ['all'] : ghsas),
+          ...(fixConfig.rangeStyle
+            ? ['--range-style', fixConfig.rangeStyle]
+            : []),
+          ...(minimumReleaseAge
+            ? ['--minimum-release-age', minimumReleaseAge]
+            : []),
+          ...(glob ? ['--glob', glob] : []),
+          ...(!applyFixes ? [FLAG_DRY_RUN] : []),
+          '--output-file',
+          tmpFile,
+          ...(disableMajorUpdates ? ['--disable-major-updates'] : []),
+          ...(showAffectedDirectDependencies
+            ? ['--show-affected-direct-dependencies']
+            : []),
+          ...fixConfig.unknownFlags,
+        ],
+        fixConfig.orgSlug,
+        { cwd, spinner, stdio: 'inherit' },
+      )
 
-    return fixCResult.ok ? { ok: true, data: { fixed: true } } : fixCResult
+      spinner?.stop()
+
+      if (!fixCResult.ok) {
+        return fixCResult
+      }
+
+      // Read the temporary file to get the actual fixes result.
+      const fixesResultJson = readJsonSync(tmpFile, { throws: false })
+
+      // Copy to outputFile if provided.
+      if (outputFile) {
+        logger.info(`Copying fixes result to ${outputFile}`)
+        const tmpContent = await fs.readFile(tmpFile, 'utf8')
+        await fs.writeFile(outputFile, tmpContent, 'utf8')
+      }
+
+      return { ok: true, data: { data: fixesResultJson, fixed: true } }
+    } finally {
+      // Clean up the temporary file.
+      try {
+        await fs.unlink(tmpFile)
+      } catch (e) {
+        // Ignore cleanup errors.
+      }
+    }
   }
 
   // Adjust limit based on open Socket Fix PRs.
