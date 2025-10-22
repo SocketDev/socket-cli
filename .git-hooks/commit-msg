@@ -1,0 +1,48 @@
+#!/bin/bash
+# Socket Security Commit-msg Hook
+# Additional security layer - validates commit even if pre-commit was bypassed.
+
+set -e
+
+# Colors for output.
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NC='\033[0m'
+
+# Allowed public API key (used in socket-lib).
+ALLOWED_PUBLIC_KEY="sktsec_t_--RAN5U4ivauy4w37-6aoKyYPDt5ZbaT5JBVMqiwKo_api"
+
+# Get files in this commit.
+COMMITTED_FILES=$(git diff --cached --name-only --diff-filter=ACM)
+
+if [ -z "$COMMITTED_FILES" ]; then
+  exit 0
+fi
+
+ERRORS=0
+
+# Quick checks for critical issues.
+for file in $COMMITTED_FILES; do
+  if [ -f "$file" ]; then
+    # Check for Socket API keys (except allowed).
+    if grep -E 'sktsec_[a-zA-Z0-9_-]+' "$file" 2>/dev/null | grep -v "$ALLOWED_PUBLIC_KEY" | grep -v 'your_api_key_here' | grep -v 'fake-token' | grep -v 'test-token' | grep -v '\.example' | grep -q .; then
+      echo "${RED}✗ SECURITY: Potential API key detected in commit!${NC}"
+      echo "File: $file"
+      ERRORS=$((ERRORS + 1))
+    fi
+
+    # Check for .env files.
+    if echo "$file" | grep -qE '^\.env(\.local)?$'; then
+      echo "${RED}✗ SECURITY: .env file in commit!${NC}"
+      ERRORS=$((ERRORS + 1))
+    fi
+  fi
+done
+
+if [ $ERRORS -gt 0 ]; then
+  echo "${RED}✗ Commit blocked by security validation${NC}"
+  echo "Run: git reset HEAD~1"
+  exit 1
+fi
+
+exit 0

@@ -16,6 +16,9 @@ Thumbs.db
 /coverage
 /external
 /npm-debug.log
+/yarn.log
+*.log
+**/build/*.log
 /yarn.lock
 **/.cache
 **/dist

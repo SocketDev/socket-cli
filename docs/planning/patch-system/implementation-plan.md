@@ -379,16 +379,16 @@ interface SocketSdk {
 
 ### Key Files Examined
 
-1. **`/Users/jdalton/projects/depscan/workspaces/lib/src/security-patch/autopatcher/manifest-schema.ts`**
+1. **`../depscan/workspaces/lib/src/security-patch/autopatcher/manifest-schema.ts`**
    - Official manifest schema
 
-2. **`/Users/jdalton/projects/socket-registry/registry/src/lib/paths.ts`**
+2. **`../socket-registry/registry/src/lib/paths.ts`**
    - Socket directory structure
 
-3. **`/Users/jdalton/projects/socket-registry/registry/src/lib/cacache.ts`**
+3. **`../socket-registry/registry/src/lib/cacache.ts`**
    - Cacache integration patterns
 
-4. **`/Users/jdalton/projects/socket-cli/src/commands/fix/coana-fix.mts`**
+4. **`$(pwd)/src/commands/fix/coana-fix.mts`**
    - Internal scan pattern (model for patch command)
 
 ### Related Documentation

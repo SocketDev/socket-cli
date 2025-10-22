@@ -245,7 +245,7 @@ Socket CLI applies additional optimizations to reduce binary size. This step is 
 The `scripts/build-yao-pkg-node.sh` script applies optimizations automatically:
 
 ```bash
-cd /Users/jdalton/projects/socket-cli
+cd $(pwd)
 pnpm run build:yao-pkg:node
 ```
 
@@ -387,14 +387,14 @@ For App Store or distribution, use your Developer ID certificate instead of `-`.
 Update `pkg.json` to point to your custom Node binary:
 
 ```bash
-cd /Users/jdalton/projects/socket-cli
+cd $(pwd)
 ```
 
 Edit `pkg.json`:
 
 ```json
 {
-  "node": "/Users/jdalton/projects/socket-cli/.custom-node-build/node-yao-pkg/out/Release/node",
+  "node": "$(pwd)/.custom-node-build/node-yao-pkg/out/Release/node",
   "targets": [
     "node24-macos-arm64"
   ],
@@ -426,7 +426,7 @@ Edit `pkg.json`:
 Build the rollup distribution:
 
 ```bash
-cd /Users/jdalton/projects/socket-cli
+cd $(pwd)
 
 # Build distribution files
 pnpm run build:dist:src
@@ -443,7 +443,7 @@ This creates the CommonJS distribution in `dist/` that pkg will bundle.
 Finally, build the pkg executable:
 
 ```bash
-cd /Users/jdalton/projects/socket-cli
+cd $(pwd)
 
 # Build pkg binary with yao-pkg
 pnpm run build:yao-pkg

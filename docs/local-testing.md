@@ -9,7 +9,7 @@ This guide explains how to test socket-cli against a local depscan API server.
 In one terminal:
 
 ```bash
-cd /Users/jdalton/projects/depscan/workspaces/api-v0
+cd ../depscan/workspaces/api-v0
 pnpm test
 ```
 
@@ -156,11 +156,11 @@ If port 8866 is already in use:
 
 ```bash
 # Terminal 1: Start depscan API server
-cd /Users/jdalton/projects/depscan/workspaces/api-v0
+cd ../depscan/workspaces/api-v0
 pnpm test
 
 # Terminal 2: Build and run socket-cli
-cd /Users/jdalton/projects/socket-cli
+cd $(pwd)
 pnpm run build
 pnpm s patch discover
 
@@ -178,11 +178,11 @@ Keep socket-cli auto-rebuilding as you make changes:
 
 ```bash
 # Terminal 1: Depscan server
-cd /Users/jdalton/projects/depscan/workspaces/api-v0
+cd ../depscan/workspaces/api-v0
 pnpm test
 
 # Terminal 2: Socket CLI watch mode
-cd /Users/jdalton/projects/socket-cli
+cd $(pwd)
 pnpm run dev  # Alias for build:watch
 
 # Terminal 3: Test commands
@@ -195,11 +195,11 @@ Run integration tests against local server:
 
 ```bash
 # Start depscan server first (terminal 1)
-cd /Users/jdalton/projects/depscan/workspaces/api-v0
+cd ../depscan/workspaces/api-v0
 pnpm test
 
 # Run integration tests (terminal 2)
-cd /Users/jdalton/projects/socket-cli
+cd $(pwd)
 pnpm test:unit test/integration/patches-api.test.mts
 ```
 

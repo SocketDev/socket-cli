@@ -2,6 +2,8 @@
 # Script to record terminal session testing the TUI demo.
 # This will create a typescript file showing the exact behavior.
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
 echo "=== Starting TUI Demo Test Recording ==="
 echo "This will record:"
 echo "1. Initial state (1 line textarea)"
@@ -15,9 +17,9 @@ echo "Starting in 3 seconds..."
 sleep 3
 
 # Use script to record the session.
-script -q /tmp/tui-test-recording.txt << 'EOF'
+script -q /tmp/tui-test-recording.txt << EOF
 # Run the demo.
-node /Users/jdalton/projects/socket-cli/scripts/demo-final-tui.mjs
+node "$SCRIPT_DIR/demo-final-tui.mjs"
 
 # The demo will start...
 # I'll send keystrokes programmatically to simulate the test:

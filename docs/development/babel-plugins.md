@@ -386,7 +386,7 @@ make -j$(sysctl -n hw.ncpu)
 #### Step 3: Rebuild Socket CLI
 
 ```bash
-cd /Users/jdalton/projects/socket-cli
+cd $(pwd)
 pnpm run build:dist
 ```
 
