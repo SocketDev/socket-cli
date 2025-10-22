@@ -4,6 +4,7 @@
     "includes": [
       "**",
       "!**/.cache",
+      "!**/.claude",
       "!**/.DS_Store",
       "!**/._.DS_Store",
       "!**/.env",
@@ -15,6 +16,7 @@
       "!**/coverage",
       "!**/dist",
       "!**/external",
+      "!**/node_modules",
       "!**/package.json",
       "!**/pnpm-lock.yaml",
       "!test/**/fixtures",
@@ -78,7 +80,10 @@
       "suspicious": {
         "noAssignInExpressions": "off",
         "noAsyncPromiseExecutor": "off",
+        "noControlCharactersInRegex": "off",
         "noExplicitAny": "off",
+        "noMisleadingInstantiator": "off",
+        "noThenProperty": "off",
         "useIterableCallbackReturn": "off"
       }
     }
