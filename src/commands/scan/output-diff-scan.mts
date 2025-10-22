@@ -13,6 +13,9 @@ import { fileLink } from '../../utils/terminal/link.mts'
 import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
+type DiffScanArtifact =
+  SocketSdkSuccessResult<'GetOrgDiffScan'>['data']['artifacts']['added'][number]
+
 export async function outputDiffScan(
   result: CResult<SocketSdkSuccessResult<'GetOrgDiffScan'>['data']>,
   {
@@ -123,7 +126,7 @@ async function handleMarkdown(
   logger.log(`- Added packages: ${data.artifacts.added.length}`)
 
   if (data.artifacts.added.length > 0) {
-    data.artifacts.added.slice(0, 10).forEach(artifact => {
+    data.artifacts.added.slice(0, 10).forEach((artifact: DiffScanArtifact) => {
       logger.log(`  - ${artifact.type} ${artifact.name}@${artifact.version}`)
     })
     if (data.artifacts.added.length > 10) {
@@ -133,9 +136,11 @@ async function handleMarkdown(
 
   logger.log(`- Removed packages: ${data.artifacts.removed.length}`)
   if (data.artifacts.removed.length > 0) {
-    data.artifacts.removed.slice(0, 10).forEach(artifact => {
-      logger.log(`  - ${artifact.type} ${artifact.name}@${artifact.version}`)
-    })
+    data.artifacts.removed
+      .slice(0, 10)
+      .forEach((artifact: DiffScanArtifact) => {
+        logger.log(`  - ${artifact.type} ${artifact.name}@${artifact.version}`)
+      })
     if (data.artifacts.removed.length > 10) {
       logger.log(`  … and ${data.artifacts.removed.length - 10} more`)
     }
@@ -143,9 +148,11 @@ async function handleMarkdown(
 
   logger.log(`- Replaced packages: ${data.artifacts.replaced.length}`)
   if (data.artifacts.replaced.length > 0) {
-    data.artifacts.replaced.slice(0, 10).forEach(artifact => {
-      logger.log(`  - ${artifact.type} ${artifact.name}@${artifact.version}`)
-    })
+    data.artifacts.replaced
+      .slice(0, 10)
+      .forEach((artifact: DiffScanArtifact) => {
+        logger.log(`  - ${artifact.type} ${artifact.name}@${artifact.version}`)
+      })
     if (data.artifacts.replaced.length > 10) {
       logger.log(`  … and ${data.artifacts.replaced.length - 10} more`)
     }
@@ -153,9 +160,11 @@ async function handleMarkdown(
 
   logger.log(`- Updated packages: ${data.artifacts.updated.length}`)
   if (data.artifacts.updated.length > 0) {
-    data.artifacts.updated.slice(0, 10).forEach(artifact => {
-      logger.log(`  - ${artifact.type} ${artifact.name}@${artifact.version}`)
-    })
+    data.artifacts.updated
+      .slice(0, 10)
+      .forEach((artifact: DiffScanArtifact) => {
+        logger.log(`  - ${artifact.type} ${artifact.name}@${artifact.version}`)
+      })
     if (data.artifacts.updated.length > 10) {
       logger.log(`  … and ${data.artifacts.updated.length - 10} more`)
     }

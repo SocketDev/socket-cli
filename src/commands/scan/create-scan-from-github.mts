@@ -21,6 +21,10 @@ import { isReportSupportedFile } from '../../utils/fs/glob.mts'
 import { fetchListAllRepos } from '../repository/fetch-list-all-repos.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+
+type RepoListItem =
+  SocketSdkSuccessResult<'getOrgRepoList'>['data']['results'][number]
 
 export async function createScanFromGithub({
   all,
@@ -55,7 +59,7 @@ export async function createScanFromGithub({
     if (!result.ok) {
       return result
     }
-    targetRepos = result.data.results.map(obj => obj.slug || '')
+    targetRepos = result.data.results.map((obj: RepoListItem) => obj.slug || '')
   }
 
   targetRepos = targetRepos.map(s => s.trim()).filter(Boolean)
@@ -435,7 +439,8 @@ async function streamDownloadWithFetch(
   localPath: string,
   downloadUrl: string,
 ): Promise<CResult<string>> {
-  let response: unknown // Declare response here to access it in catch if needed
+  // Declare response here to access it in catch if needed.
+  let response: Response | undefined
 
   try {
     response = await fetch(downloadUrl)

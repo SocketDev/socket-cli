@@ -261,7 +261,7 @@ function createLeaf(
     type: alert.type,
     policy: policyAction,
     url: getSocketDevPackageOverviewUrlFromPurl(art),
-    manifest: art.manifestFiles?.map(o => o.file) ?? [],
+    manifest: art.manifestFiles?.map((o: { file: string }) => o.file) ?? [],
   }
   return leaf
 }

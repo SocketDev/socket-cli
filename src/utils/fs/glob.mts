@@ -57,8 +57,12 @@ async function getWorkspaceGlobs(
       } catch {}
     }
   } else {
-    workspacePatterns = (await readPackageJson(cwd, { throws: false }))
+    const pkgWorkspaces = (await readPackageJson(cwd, { throws: false }))
       ?.workspaces
+    // Workspaces can be an array or an object with a packages property.
+    workspacePatterns = Array.isArray(pkgWorkspaces)
+      ? pkgWorkspaces
+      : pkgWorkspaces?.packages
   }
   return Array.isArray(workspacePatterns)
     ? workspacePatterns
@@ -172,8 +176,12 @@ export function getSupportedFilePatterns(
   const patterns: string[] = []
   for (const key of Object.keys(supportedFiles)) {
     const supported = supportedFiles[key]
-    if (supported) {
-      patterns.push(...Object.values(supported).map(p => `**/${p.pattern}`))
+    if (supported && typeof supported === 'object') {
+      patterns.push(
+        ...(Object.values(supported) as Array<{ pattern: string }>).map(
+          p => `**/${p.pattern}`,
+        ),
+      )
     }
   }
   return patterns

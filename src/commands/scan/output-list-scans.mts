@@ -9,6 +9,9 @@ import { serializeResultJson } from '../../utils/output/result-json.mjs'
 import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
+type ScanListItem =
+  SocketSdkSuccessResult<'getOrgFullScanList'>['data']['results'][number]
+
 export async function outputListScans(
   result: CResult<SocketSdkSuccessResult<'getOrgFullScanList'>['data']>,
   outputKind: OutputKind,
@@ -36,7 +39,7 @@ export async function outputListScans(
     ],
   }
 
-  const formattedResults = result.data.results.map(d => {
+  const formattedResults = result.data.results.map((d: ScanListItem) => {
     return {
       id: d.id,
       report_url: colors.underline(`${d.html_report_url}`),
