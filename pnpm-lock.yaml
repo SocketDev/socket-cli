@@ -200,8 +200,8 @@ importers:
         specifier: 3.0.1
         version: 3.0.1
       '@socketsecurity/lib':
-        specifier: 1.0.4
-        version: 1.0.4(typescript@5.9.3)
+        specifier: 1.0.5
+        version: 1.0.5(typescript@5.9.3)
       '@socketsecurity/registry':
         specifier: 2.0.0
         version: 2.0.0(typescript@5.9.3)
@@ -1718,8 +1718,8 @@ packages:
     resolution: {integrity: sha512-kLKdSqi4W7SDSm5z+wYnfVRnZCVhxzbzuKcdOZSrcHoEGOT4Gl844uzoaML+f5eiQMxY+nISiETwRph/aXrIaQ==}
     engines: {node: 18.20.7 || ^20.18.3 || >=22.14.0}
 
-  '@socketsecurity/lib@1.0.4':
-    resolution: {integrity: sha512-VfIPLOVNKmW/Hkq8wqyIwQSp8GzhtG3cQj5dglcb5gDRnz1QWJjpSFxqqwXbr7+TiPT5qcRpa7p3mujGga9low==}
+  '@socketsecurity/lib@1.0.5':
+    resolution: {integrity: sha512-TwDt9TGBc36s7dWfFLrkpF982BSI4KCM3RCLx0KHxPWEh0oskoYOIaAWrsAW11i7fuk90PZ48tL2WAY/O1WOQg==}
     engines: {node: '>=22'}
     peerDependencies:
       typescript: '>=5.0.0'
@@ -6450,7 +6450,7 @@ snapshots:
       pony-cause: 2.1.11
       yaml: 2.8.1
 
-  '@socketsecurity/lib@1.0.4(typescript@5.9.3)':
+  '@socketsecurity/lib@1.0.5(typescript@5.9.3)':
     optionalDependencies:
       typescript: 5.9.3
 
