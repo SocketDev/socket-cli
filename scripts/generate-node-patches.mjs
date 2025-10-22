@@ -97,7 +97,6 @@ async function generateV8IncludePathsPatch() {
         },
       )
       patchContent += `\n${diff}`
-      // eslint-disable-next-line no-unused-vars
     } catch (_e) {
       // git diff returns non-zero for differences, which is expected.
       console.warn(`   Skipping ${file} (no changes or error)`)

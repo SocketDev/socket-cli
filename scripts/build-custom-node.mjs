@@ -1604,7 +1604,6 @@ async function main() {
           cwd: ROOT_DIR,
         },
       )
-      // eslint-disable-next-line no-unused-vars
     } catch (_e) {
       printWarning(
         'Verification Failed',
@@ -1641,7 +1640,6 @@ async function main() {
       logger.logNewline()
       logger.success('Tests passed with custom Node.js binary!')
       logger.logNewline()
-      // eslint-disable-next-line no-unused-vars
     } catch (_e) {
       printError(
         'Tests Failed',

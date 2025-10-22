@@ -10,7 +10,6 @@
  * Compatible with Node.js 18.19+, 20.6+, and 22+
  */
 
-// eslint-disable-next-line n/no-unsupported-features/node-builtins
 import { register } from 'node:module'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
