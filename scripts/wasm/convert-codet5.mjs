@@ -29,6 +29,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { spawn } from '@socketsecurity/lib/spawn'
+import { logger } from '@socketsecurity/lib/logger'
 
 /**
  * Execute command and wait for completion.
@@ -56,29 +57,26 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '../..')
 const modelsPath = path.join(rootPath, '.cache', 'models')
 
-console.log('╔═══════════════════════════════════════════════════╗')
-console.log('║   Convert CodeT5 Models to ONNX int4             ║')
-console.log('╚═══════════════════════════════════════════════════╝\n')
 
 // Step 1: Check Python.
-console.log('Step 1: Checking Python installation...\n')
+logger.substep('Step Checking Python installation...\n')
 
 let pythonCmd = 'python3'
 let pythonVersion = ''
 try {
   const pythonResult = await exec(pythonCmd, ['--version'])
   pythonVersion = pythonResult.stdout.trim()
-  console.log(`✓ Found ${pythonVersion}`)
+  logger.info(`✓ Found ${pythonVersion}`)
 } catch (_e) {
   // Try 'python' as fallback.
   try {
     const pythonResult = await exec('python', ['--version'])
     pythonVersion = pythonResult.stdout.trim()
     pythonCmd = 'python'
-    console.log(`✓ Found ${pythonVersion}`)
+    logger.info(`✓ Found ${pythonVersion}`)
   } catch {
-    console.error('❌ Python 3 not found')
-    console.error(
+    logger.error(' Python 3 not found')
+    logger.error(
       '   Please install Python 3.8+: https://www.python.org/downloads/',
     )
     process.exit(1)
@@ -92,15 +90,15 @@ if (versionMatch) {
   const minor = Number.parseInt(versionMatch[2], 10)
 
   if (major < 3 || (major === 3 && minor < 8)) {
-    console.error(`❌ Python 3.8+ required, found ${pythonVersion}`)
-    console.error('   Please upgrade: https://www.python.org/downloads/')
+    logger.error(`❌ Python 3.8+ required, found ${pythonVersion}`)
+    logger.error('Please upgrade: https://www.python.org/downloads/')
     process.exit(1)
   }
 }
-console.log()
+logger.info()
 
 // Step 2: Check and install required packages.
-console.log('Step 2: Checking required packages...\n')
+logger.substep('Step Checking required packages...\n')
 
 const REQUIRED_PACKAGES = [
   { import: 'optimum', package: 'optimum[onnxruntime]' },
@@ -116,49 +114,49 @@ const missingPackages = []
 for (const { import: importName, package: packageName } of REQUIRED_PACKAGES) {
   try {
     await exec(pythonCmd, ['-c', `import ${importName}`])
-    console.log(`✓ ${importName} installed`)
+    logger.info(`✓ ${importName} installed`)
   } catch {
-    console.log(`❌ ${importName} not found`)
+    logger.info(`❌ ${importName} not found`)
     missingPackages.push(packageName)
   }
 }
 
 // Install missing packages.
 if (missingPackages.length > 0) {
-  console.log(`\n📦 Installing missing packages: ${missingPackages.join(', ')}`)
-  console.log('   This may take a few minutes...\n')
+  logger.info(`\n📦 Installing missing packages: ${missingPackages.join(', ')}`)
+  logger.substep('This may take a few minutes...\n')
 
   try {
     const pipCmd = pythonCmd === 'python3' ? 'pip3' : 'pip'
     await exec(pipCmd, ['install', ...missingPackages], { stdio: 'inherit' })
-    console.log('\n✓ Packages installed successfully\n')
+    logger.info('\n✓ Packages installed successfully\n')
 
     // Check for NumPy 2.x compatibility issue.
     try {
       await exec(pythonCmd, ['-c', 'import numpy; import torch'])
     } catch {
-      console.log(
+      logger.info(
         '⚠ NumPy 2.x detected, downgrading to 1.x for PyTorch compatibility...',
       )
       await exec(pipCmd, ['install', 'numpy<2'], { stdio: 'inherit' })
-      console.log('✓ NumPy downgraded\n')
+      logger.done(' NumPy downgraded\n')
     }
   } catch (e) {
-    console.error('\n❌ Package installation failed')
-    console.error(`   Error: ${e.message}`)
-    console.error(
+    logger.error('\n❌ Package installation failed')
+    logger.error(`Error: ${e.message}`)
+    logger.error(
       '   Please install manually: pip install optimum[onnxruntime] torch transformers onnx onnxruntime',
     )
     process.exit(1)
   }
 } else {
-  console.log('\n✓ All required packages are installed\n')
+  logger.info('\n✓ All required packages are installed\n')
 }
 
 // Step 3: Create output directory.
-console.log('Step 3: Creating output directory...\n')
+logger.substep('Step Creating output directory...\n')
 await fs.mkdir(modelsPath, { recursive: true })
-console.log(`✓ Created ${modelsPath}\n`)
+logger.info(`✓ Created ${modelsPath}\n`)
 
 // Step 4: Check if models already exist.
 const encoderPath = path.join(modelsPath, 'codet5-encoder-int4.onnx')
@@ -170,26 +168,26 @@ if (
   existsSync(decoderPath) &&
   existsSync(tokenizerPath)
 ) {
-  console.log('✓ CodeT5 models already exist:')
-  console.log(`   - ${encoderPath}`)
-  console.log(`   - ${decoderPath}`)
-  console.log(`   - ${tokenizerPath}\n`)
+  logger.done(' CodeT5 models already exist:')
+  logger.substep(`- ${encoderPath}`)
+  logger.substep(`- ${decoderPath}`)
+  logger.substep(`- ${tokenizerPath}\n`)
 
   const stats = await fs.stat(encoderPath)
-  console.log(`   Encoder size: ${(stats.size / 1024 / 1024).toFixed(2)} MB`)
+  logger.substep(`Encoder size: ${(stats.size / 1024 / 1024).toFixed(2)} MB`)
   const decoderStats = await fs.stat(decoderPath)
-  console.log(
+  logger.info(
     `   Decoder size: ${(decoderStats.size / 1024 / 1024).toFixed(2)} MB\n`,
   )
 
-  console.log('✓ Conversion not needed (models already exist)\n')
+  logger.done(' Conversion not needed (models already exist)\n')
   process.exit(0)
 }
 
 // Step 5: Convert models using Python script.
-console.log('Step 4: Converting CodeT5 models...\n')
-console.log('📦 This will download ~240MB from HuggingFace')
-console.log(
+logger.substep('Step Converting CodeT5 models...\n')
+logger.progress(' This will download ~240MB from HuggingFace')
+logger.info(
   '   and convert to ~90MB ONNX int4 format (50% smaller than int8)\n',
 )
 
@@ -285,26 +283,26 @@ print("\\n   Expected size: ~90MB total (50% smaller than INT8)")
 try {
   await exec(pythonCmd, ['-c', pythonScript], { stdio: 'inherit' })
 } catch (_e) {
-  console.error('\n❌ Conversion failed')
-  console.error('   Please check the error messages above\n')
+  logger.error('\n❌ Conversion failed')
+  logger.error('Please check the error messages above\n')
   process.exit(1)
 }
 
 // Step 6: Verify output files.
-console.log('\nStep 5: Verifying output files...\n')
+logger.info('\nStep 5: Verifying output files...\n')
 
 if (!existsSync(encoderPath)) {
-  console.error(`❌ Encoder not found: ${encoderPath}`)
+  logger.error(`❌ Encoder not found: ${encoderPath}`)
   process.exit(1)
 }
 
 if (!existsSync(decoderPath)) {
-  console.error(`❌ Decoder not found: ${decoderPath}`)
+  logger.error(`❌ Decoder not found: ${decoderPath}`)
   process.exit(1)
 }
 
 if (!existsSync(tokenizerPath)) {
-  console.error(`❌ Tokenizer not found: ${tokenizerPath}`)
+  logger.error(`❌ Tokenizer not found: ${tokenizerPath}`)
   process.exit(1)
 }
 
@@ -312,15 +310,12 @@ const encoderStats = await fs.stat(encoderPath)
 const decoderStats = await fs.stat(decoderPath)
 const tokenizerStats = await fs.stat(tokenizerPath)
 
-console.log('✓ All files created successfully:')
-console.log(`   Encoder: ${(encoderStats.size / 1024 / 1024).toFixed(2)} MB`)
-console.log(`   Decoder: ${(decoderStats.size / 1024 / 1024).toFixed(2)} MB`)
-console.log(`   Tokenizer: ${(tokenizerStats.size / 1024).toFixed(2)} KB\n`)
+logger.done(' All files created successfully:')
+logger.substep(`Encoder: ${(encoderStats.size / 1024 / 1024).toFixed(2)} MB`)
+logger.substep(`Decoder: ${(decoderStats.size / 1024 / 1024).toFixed(2)} MB`)
+logger.substep(`Tokenizer: ${(tokenizerStats.size / 1024).toFixed(2)} KB\n`)
 
-console.log('╔═══════════════════════════════════════════════════╗')
-console.log('║   Conversion Complete                             ║')
-console.log('╚═══════════════════════════════════════════════════╝\n')
 
-console.log('Next steps:')
-console.log('  1. Run: node scripts/wasm/build-unified-wasm.mjs')
-console.log('  2. The models will be embedded in the unified WASM bundle\n')
+logger.info('Next steps:')
+logger.info('  1. Run: node scripts/wasm/build-unified-wasm.mjs')
+logger.info('  2. The models will be embedded in the unified WASM bundle\n')
