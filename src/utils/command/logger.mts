@@ -146,28 +146,26 @@ export function createDebugLogger(namespace: string): (...args: any[]) => void {
 }
 
 /**
- * Logger factory for creating consistent command loggers
+ * Logger factory for creating consistent command loggers.
  */
-export class LoggerFactory {
-  private static instances = new Map<string, CommandLogger>()
+const instances = new Map<string, CommandLogger>()
 
-  /**
-   * Get or create a command logger
-   *
-   * @param commandName - The command name
-   * @returns A cached or new command logger
-   */
-  static getLogger(commandName: string): CommandLogger {
-    if (!LoggerFactory.instances.has(commandName)) {
-      LoggerFactory.instances.set(commandName, createCommandLogger(commandName))
-    }
-    return LoggerFactory.instances.get(commandName)!
+/**
+ * Get or create a command logger.
+ *
+ * @param commandName - The command name
+ * @returns A cached or new command logger
+ */
+export function getLogger(commandName: string): CommandLogger {
+  if (!instances.has(commandName)) {
+    instances.set(commandName, createCommandLogger(commandName))
   }
+  return instances.get(commandName)!
+}
 
-  /**
-   * Clear all cached loggers
-   */
-  static clear(): void {
-    LoggerFactory.instances.clear()
-  }
+/**
+ * Clear all cached loggers.
+ */
+export function clearLoggers(): void {
+  instances.clear()
 }
