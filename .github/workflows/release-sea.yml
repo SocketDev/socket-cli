@@ -1,4 +1,4 @@
-name: Build and Release SEA Binaries
+name: 📦 Build and Release SEA Binaries
 
 on:
   workflow_dispatch:

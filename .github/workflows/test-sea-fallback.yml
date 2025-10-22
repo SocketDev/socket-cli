@@ -1,4 +1,4 @@
-name: Test SEA Fallback Build
+name: 🧪 Test SEA Fallback Build
 
 on:
   workflow_dispatch:

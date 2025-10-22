@@ -1,4 +1,4 @@
-name: Publish @socketbin Packages
+name: 📦 Publish @socketbin Packages
 
 on:
   workflow_dispatch:

@@ -1,4 +1,4 @@
-name: Claude Auto Review
+name: 🤖 Claude Auto Review
 
 on:
   pull_request:
