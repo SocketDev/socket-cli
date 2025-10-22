@@ -5,11 +5,11 @@ Single WASM file containing all AI models and execution engines for Socket CLI.
 ## Architecture
 
 ```
-socket-ai.wasm (~145MB)
+socket-ai.wasm (~115MB)
   ├─ ONNX Runtime (~2-5MB) - ML execution engine
   ├─ MiniLM model (~17MB int8) - Semantic understanding
-  ├─ CodeT5 encoder (~60MB int8) - Code generation (encoder)
-  ├─ CodeT5 decoder (~60MB int8) - Code generation (decoder)
+  ├─ CodeT5 encoder (~30MB int4) - Code generation (encoder)
+  ├─ CodeT5 decoder (~60MB int4) - Code generation (decoder)
   ├─ Tokenizers (~1MB) - Text tokenization
   └─ Yoga Layout (~95KB) - Flexbox layout engine
 ```
@@ -41,8 +41,8 @@ node scripts/wasm/download-models.mjs
 - Yoga Layout WASM (from node_modules)
 
 **What needs conversion** (see next step):
-- CodeT5 encoder (PyTorch → ONNX int8)
-- CodeT5 decoder (PyTorch → ONNX int8)
+- CodeT5 encoder (PyTorch → ONNX int4)
+- CodeT5 decoder (PyTorch → ONNX int4)
 
 ### 3. Convert CodeT5 Models (One-Time)
 
@@ -57,7 +57,7 @@ node scripts/wasm/convert-codet5.mjs
 **What it does**:
 - Downloads `Salesforce/codet5-small` from HuggingFace
 - Exports PyTorch → ONNX format
-- Quantizes fp32 → int8
+- Quantizes fp32 → int4 (4-bit weights, 50% smaller than int8)
 - Saves to `.cache/models/`
 
 ### 4. Build Unified WASM
@@ -74,7 +74,7 @@ node scripts/wasm/build-unified-wasm.mjs
 5. Generates `external/socket-ai-sync.mjs`
 
 **Output**:
-- `wasm-bundle/pkg/socket_ai_bg.wasm` (~145MB)
+- `wasm-bundle/pkg/socket_ai_bg.wasm` (~115MB)
 - `external/socket-ai-sync.mjs` (brotli+base64 embedded)
 
 ## Distribution Pipeline
@@ -169,8 +169,8 @@ external/
 .cache/models/              # Downloaded models (gitignored)
 ├── minilm-int8.onnx
 ├── minilm-tokenizer.json
-├── codet5-encoder-int8.onnx
-├── codet5-decoder-int8.onnx
+├── codet5-encoder-int4.onnx
+├── codet5-decoder-int4.onnx
 ├── codet5-tokenizer.json
 ├── ort-wasm-simd-threaded.wasm
 └── yoga.wasm
@@ -181,8 +181,8 @@ external/
 ### 1. Create CodeT5 Conversion Script
 
 ```bash
-# TODO: Create scripts/wasm/convert-codet5.mjs
-# Uses Python + optimum-cli to convert PyTorch → ONNX int8
+# NOTE: Already created - see scripts/wasm/convert-codet5.mjs
+# Uses Python + optimum to convert PyTorch → ONNX int4
 ```
 
 ### 2. Update Native Stub for .bz Detection
@@ -261,7 +261,7 @@ node bin/bootstrap.js --version
 | **Initialization** | ~150-200ms | ~50-100ms |
 | **Memory layout** | Fragmented | Contiguous |
 | **Distribution** | Complex | Simple |
-| **Size (raw)** | ~140MB total | ~145MB (+5MB overhead) |
+| **Size (raw)** | ~140MB total | ~115MB (30MB savings with int4) |
 | **Size (brotli)** | N/A | ~50-70MB base64 |
 | **Size (final)** | ~10MB | ~20-30MB (estimated) |
 
@@ -299,10 +299,10 @@ node scripts/wasm/convert-codet5.mjs
 
 ### WASM Too Large
 
-The WASM file is ~145MB which is expected given:
-- CodeT5 encoder: 60MB
-- CodeT5 decoder: 60MB
-- MiniLM: 17MB
+The WASM file is ~115MB which is expected given:
+- CodeT5 encoder: 30MB (int4)
+- CodeT5 decoder: 60MB (int4)
+- MiniLM: 17MB (int8)
 - ONNX Runtime: 2-5MB
 - Yoga: <1MB
 

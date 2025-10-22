@@ -4,8 +4,8 @@
  * WHAT THIS DOWNLOADS:
  * 1. MiniLM model (int8 quantized, ~17MB)
  * 2. MiniLM tokenizer (~500KB)
- * 3. CodeT5 encoder (int8 quantized, ~60MB)
- * 4. CodeT5 decoder (int8 quantized, ~60MB)
+ * 3. CodeT5 encoder (int4 quantized, ~30MB)
+ * 4. CodeT5 decoder (int4 quantized, ~60MB)
  * 5. CodeT5 tokenizer (~500KB)
  * 6. ONNX Runtime WASM (~2-5MB)
  * 7. Yoga Layout WASM (~95KB) - copied from node_modules
@@ -50,14 +50,14 @@ const FILES = [
   // CodeT5 (needs manual conversion first - see convert-codet5.mjs).
   {
     copyFrom: null, // Set after conversion
-    description: 'CodeT5 encoder (int8)',
-    name: 'codet5-encoder-int8.onnx',
+    description: 'CodeT5 encoder (int4)',
+    name: 'codet5-encoder-int4.onnx',
     url: null, // Needs conversion first
   },
   {
     copyFrom: null,
-    description: 'CodeT5 decoder (int8)',
-    name: 'codet5-decoder-int8.onnx',
+    description: 'CodeT5 decoder (int4)',
+    name: 'codet5-decoder-int4.onnx',
     url: null, // Needs conversion first
   },
   {
