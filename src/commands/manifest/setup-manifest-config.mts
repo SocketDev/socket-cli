@@ -111,7 +111,6 @@ export async function setupManifestConfig(
     description: 'Exit setup',
   })
 
-  // TODO: Use detected to list those first.
   const targetEco = (await select({
     message: 'Select ecosystem manifest generator to configure',
     choices,

@@ -365,10 +365,38 @@ export default [
   },
   {
     // Relax rules for script files
-    files: ['scripts/**/*.mjs'],
+    files: ['scripts/**/*.{mjs,js}', 'bin/**/*.{mjs,js}'],
     rules: {
       'n/no-process-exit': 'off',
+      'n/no-unsupported-features/node-builtins': 'off',
+      'n/no-missing-import': 'off',
+      'import-x/no-unresolved': 'off',
       'no-await-in-loop': 'off',
+      'no-unused-vars': 'off',
+    },
+  },
+  {
+    // Relax rules for test files
+    files: ['**/*.test.{mts,ts,mjs,js}', 'test/**/*.{mts,ts,mjs,js}'],
+    languageOptions: {
+      globals: {
+        // Vitest globals
+        afterAll: 'readonly',
+        afterEach: 'readonly',
+        beforeAll: 'readonly',
+        beforeEach: 'readonly',
+        describe: 'readonly',
+        expect: 'readonly',
+        it: 'readonly',
+        test: 'readonly',
+        vi: 'readonly',
+      },
+    },
+    rules: {
+      // Allow undefined variables in test files (mocked functions)
+      'no-undef': 'off',
+      // Allow console in tests
+      'no-console': 'off',
     },
   },
 ]

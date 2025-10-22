@@ -26,7 +26,7 @@ export async function detectManifestActions(
   cwd = process.cwd(),
 ): Promise<GeneratableManifests> {
   const output = {
-    cdxgen: false, // TODO
+    cdxgen: false,
     count: 0,
     conda: false,
     gradle: false,

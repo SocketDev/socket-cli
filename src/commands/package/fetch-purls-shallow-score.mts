@@ -48,8 +48,7 @@ export async function fetchPurlsShallowScore(
     return batchPackageCResult
   }
 
-  // TODO: Seems like there's a bug in the typing since we absolutely have to
-  // return the .data here.
+  // Type assertion needed due to SDK result type mismatch.
   return {
     ok: true,
     data: batchPackageCResult.data as SocketSdkSuccessResult<'batchPackageFetch'>,

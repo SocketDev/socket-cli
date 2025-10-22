@@ -566,7 +566,6 @@ export function logAlertsMap(
       const title = info?.title ?? type
       const maybeDesc = info?.description ? ` - ${info.description}` : ''
       const content = `${title}${maybeAttributes}${maybeDesc}`
-      // TODO: An added emoji seems to mis-align terminals sometimes.
       lines.add(`  ${content}`)
     }
     const purlObj = getPurlObject(purl)
