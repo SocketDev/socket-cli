@@ -30,19 +30,24 @@
  */
 
 import crypto from 'node:crypto'
+
+import ssri from 'ssri'
+
 import * as cacache from '@socketsecurity/lib/cacache'
 import { logger } from '@socketsecurity/lib/logger'
-import type { Spinner } from '@socketsecurity/lib/spinner'
 import { pluralize } from '@socketsecurity/lib/words'
-import type { SocketSdk } from '@socketsecurity/sdk'
-// @ts-expect-error - No type declarations available.
-import ssri from 'ssri'
+
+import { outputPatchDownloadResult } from './output-patch-download-result.mts'
 import ENV from '../../constants/env.mts'
-import type { OutputKind } from '../../types.mts'
-import type { PatchRecord } from '../../utils/manifest/patches.mts'
 import { addPatch } from '../../utils/manifest/patches.mts'
 import { setupSdk } from '../../utils/socket/sdk.mts'
-import { outputPatchDownloadResult } from './output-patch-download-result.mts'
+
+import type { OutputKind } from '../../types.mts'
+import type { PatchRecord } from '../../utils/manifest/patches.mts'
+import type { Spinner } from '@socketsecurity/lib/spinner'
+import type { SocketSdk } from '@socketsecurity/sdk'
+
+// @ts-expect-error - No type declarations available.
 
 export type HandlePatchDownloadConfig = {
   cwd: string

@@ -1,6 +1,7 @@
-import type { OutputKind } from '../../types.mts'
 import { convertCondaToRequirements } from './convert-conda-to-requirements.mts'
 import { outputRequirements } from './output-requirements.mts'
+
+import type { OutputKind } from '../../types.mts'
 
 export async function handleManifestConda({
   cwd,

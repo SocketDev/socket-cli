@@ -1,19 +1,21 @@
 import path from 'node:path'
 
 import { logger } from '@socketsecurity/lib/logger'
+
+import { handleOptimize } from './handle-optimize.mts'
 import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'
 import { commonFlags } from '../../flags.mts'
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import {
   getFlagApiRequirementsOutput,
   getFlagListOutput,
 } from '../../utils/output/formatting.mts'
 import { getOutputKind } from '../../utils/output/mode.mjs'
-import { handleOptimize } from './handle-optimize.mts'
+
+import type {
+  CliCommandConfig,
+  CliCommandContext,
+} from '../../utils/cli/with-subcommands.mjs'
 
 export const CMD_NAME = 'optimize'
 

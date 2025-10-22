@@ -1,15 +1,14 @@
 import path from 'node:path'
+
+import terminalLink from 'terminal-link'
+
 import { arrayUnique, joinOr } from '@socketsecurity/lib/arrays'
 import { logger } from '@socketsecurity/lib/logger'
-import terminalLink from 'terminal-link'
+
+import { handleFix } from './handle-fix.mts'
 import { DRY_RUN_NOT_SAVING, FLAG_ID } from '../../constants/cli.mts'
 import { ERROR_UNABLE_RESOLVE_ORG } from '../../constants/errors.mts'
-import type { MeowFlag, MeowFlags } from '../../flags.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import {
   getFlagApiRequirementsOutput,
@@ -17,11 +16,16 @@ import {
 } from '../../utils/output/formatting.mts'
 import { getOutputKind } from '../../utils/output/mode.mjs'
 import { cmdFlagValueToArray } from '../../utils/process/cmd.mts'
-import type { RangeStyle } from '../../utils/semver.mts'
 import { RangeStyles } from '../../utils/semver.mts'
 import { checkCommandInput } from '../../utils/validation/check-input.mts'
 import { getDefaultOrgSlug } from '../ci/fetch-default-org-slug.mts'
-import { handleFix } from './handle-fix.mts'
+
+import type { MeowFlag, MeowFlags } from '../../flags.mts'
+import type {
+  CliCommandConfig,
+  CliCommandContext,
+} from '../../utils/cli/with-subcommands.mjs'
+import type { RangeStyle } from '../../utils/semver.mts'
 
 export const CMD_NAME = 'fix'
 

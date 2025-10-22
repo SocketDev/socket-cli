@@ -5,8 +5,9 @@ import { debug } from '@socketsecurity/lib/debug'
 
 import ENV from '../../constants/env.mts'
 import { homePath, rootPath } from '../../constants/paths.mts'
-import type { CResult } from '../../types.mts'
 import { getBashrcDetails } from '../../utils/cli/completion.mjs'
+
+import type { CResult } from '../../types.mts'
 
 export async function setupTabCompletion(targetName: string): Promise<
   CResult<{

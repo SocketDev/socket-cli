@@ -1,5 +1,7 @@
 import { debug, debugDir } from '@socketsecurity/lib/debug'
 import { logger } from '@socketsecurity/lib/logger'
+
+import { getDefaultOrgSlug } from './fetch-default-org-slug.mts'
 import { REPORT_LEVEL_ERROR } from '../../constants/reporting.mts'
 import {
   detectDefaultBranch,
@@ -8,7 +10,6 @@ import {
 } from '../../utils/git/git.mjs'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
 import { handleCreateNewScan } from '../scan/handle-create-new-scan.mts'
-import { getDefaultOrgSlug } from './fetch-default-org-slug.mts'
 
 export async function handleCi(autoManifest: boolean): Promise<void> {
   debug('Starting CI scan')

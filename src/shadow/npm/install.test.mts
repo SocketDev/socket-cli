@@ -1,8 +1,9 @@
-import type { Spinner } from '@socketsecurity/lib/spinner'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { ShadowNpmInstallOptions } from './install.mts'
 import { shadowNpmInstall } from './install.mts'
+
+import type { ShadowNpmInstallOptions } from './install.mts'
+import type { Spinner } from '@socketsecurity/lib/spinner'
 
 // Mock all dependencies.
 const mockSpawn = vi.hoisted(() => vi.fn())

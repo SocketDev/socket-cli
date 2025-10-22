@@ -1,14 +1,15 @@
 import { getSpinner } from '@socketsecurity/lib/constants/process'
 import { logger } from '@socketsecurity/lib/logger'
 import { pluralize } from '@socketsecurity/lib/words'
-import type { OutputKind } from '../../types.mts'
-import { getPackageFilesForScan } from '../../utils/fs/path-resolve.mjs'
-import { checkCommandInput } from '../../utils/validation/check-input.mts'
+
 import { fetchSupportedScanFileNames } from './fetch-supported-scan-file-names.mts'
 import { outputScanReach } from './output-scan-reach.mts'
+import { performReachabilityAnalysis } from './perform-reachability-analysis.mts'
+import { getPackageFilesForScan } from '../../utils/fs/path-resolve.mjs'
+import { checkCommandInput } from '../../utils/validation/check-input.mts'
 
 import type { ReachabilityOptions } from './perform-reachability-analysis.mts'
-import { performReachabilityAnalysis } from './perform-reachability-analysis.mts'
+import type { OutputKind } from '../../types.mts'
 
 export type HandleScanReachConfig = {
   cwd: string

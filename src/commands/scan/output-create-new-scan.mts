@@ -1,14 +1,16 @@
-import { getSpinner } from '@socketsecurity/lib/constants/process'
-import { logger } from '@socketsecurity/lib/logger'
-import { confirm } from '@socketsecurity/lib/prompts'
-import type { Spinner } from '@socketsecurity/lib/spinner'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 import open from 'open'
 import terminalLink from 'terminal-link'
 
-import type { CResult, OutputKind } from '../../types.mts'
+import { getSpinner } from '@socketsecurity/lib/constants/process'
+import { logger } from '@socketsecurity/lib/logger'
+import { confirm } from '@socketsecurity/lib/prompts'
+
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
+
+import type { CResult, OutputKind } from '../../types.mts'
+import type { Spinner } from '@socketsecurity/lib/spinner'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export type CreateNewScanOptions = {
   interactive?: boolean | undefined

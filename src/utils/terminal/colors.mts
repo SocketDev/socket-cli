@@ -22,9 +22,10 @@
  * - Handles hyperlink fallbacks for terminals without link support
  */
 
-import indentString from '@socketregistry/indent-string/index.cjs'
 import terminalLink from 'terminal-link'
 import colors from 'yoctocolors-cjs'
+
+import indentString from '@socketregistry/indent-string/index.cjs'
 
 // Helper function for testing compatibility.
 export function colorOrMarkdown(

@@ -1,13 +1,15 @@
 /** @fileoverview Command builder to DRY out repetitive cmd-*.mts command definitions */
 
 import { logger } from '@socketsecurity/lib/logger'
-import type { MeowFlags } from '../../flags.mts'
+
 import { commonFlags, outputFlags } from '../../flags.mts'
+import { meowOrExit } from '../cli/with-subcommands.mjs'
+
+import type { MeowFlags } from '../../flags.mts'
 import type {
   CliCommandConfig,
   CliSubcommand,
 } from '../cli/with-subcommands.mjs'
-import { meowOrExit } from '../cli/with-subcommands.mjs'
 
 /**
  * Options for building a CLI command

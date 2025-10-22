@@ -1,5 +1,12 @@
 /** @fileoverview Socket artifact and alert type definitions. */
 
+import {
+  ALERT_TYPE_CRITICAL_CVE,
+  ALERT_TYPE_CVE,
+  ALERT_TYPE_MEDIUM_CVE,
+  ALERT_TYPE_MILD_CVE,
+} from '../../constants/alerts.mts'
+
 import type { Remap } from '@socketsecurity/lib/objects'
 import type {
   ALERT_ACTION,
@@ -9,12 +16,6 @@ import type {
   SocketArtifact,
   SocketArtifactAlert,
 } from '@socketsecurity/sdk'
-import {
-  ALERT_TYPE_CRITICAL_CVE,
-  ALERT_TYPE_CVE,
-  ALERT_TYPE_MEDIUM_CVE,
-  ALERT_TYPE_MILD_CVE,
-} from '../../constants/alerts.mts'
 
 export type {
   ALERT_ACTION,

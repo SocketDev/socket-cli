@@ -1,11 +1,3 @@
-import { REQUIREMENTS_TXT } from '../../constants/paths.mjs'
-import { commonFlags } from '../../flags.mts'
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
-import { meowWithSubcommands } from '../../utils/cli/with-subcommands.mjs'
-import { getFlagListOutput } from '../../utils/output/formatting.mts'
 import { cmdManifestAuto } from './cmd-manifest-auto.mts'
 import { cmdManifestCdxgen } from './cmd-manifest-cdxgen.mts'
 import { cmdManifestConda } from './cmd-manifest-conda.mts'
@@ -13,6 +5,15 @@ import { cmdManifestGradle } from './cmd-manifest-gradle.mts'
 import { cmdManifestKotlin } from './cmd-manifest-kotlin.mts'
 import { cmdManifestScala } from './cmd-manifest-scala.mts'
 import { cmdManifestSetup } from './cmd-manifest-setup.mts'
+import { REQUIREMENTS_TXT } from '../../constants/paths.mjs'
+import { commonFlags } from '../../flags.mts'
+import { meowWithSubcommands } from '../../utils/cli/with-subcommands.mjs'
+import { getFlagListOutput } from '../../utils/output/formatting.mts'
+
+import type {
+  CliCommandConfig,
+  CliCommandContext,
+} from '../../utils/cli/with-subcommands.mjs'
 
 const config: CliCommandConfig = {
   commandName: 'manifest',

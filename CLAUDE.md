@@ -101,9 +101,9 @@ node scripts/load.mjs <script-name> [flags]
 node scripts/load.mjs build-yao-pkg-node --clean
 ```
 
-**As a loader (also works):**
+**As an import (also works):**
 ```bash
-node --loader=./scripts/load.mjs scripts/build-yao-pkg-node.mjs --clean
+node --import=./scripts/load.mjs scripts/build-yao-pkg-node.mjs --clean
 ```
 
 **Benefits:**

@@ -1,4 +1,5 @@
 import { createRequire } from 'node:module'
+
 import { NPX } from '@socketsecurity/lib/constants/agents'
 import { logger } from '@socketsecurity/lib/logger'
 
@@ -9,12 +10,13 @@ import {
 } from '../../constants/cli.mts'
 import { getShadowNpxBinPath } from '../../constants/paths.mts'
 import { commonFlags } from '../../flags.mts'
+import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
+import { getFlagApiRequirementsOutput } from '../../utils/output/formatting.mts'
+
 import type {
   CliCommandConfig,
   CliCommandContext,
 } from '../../utils/cli/with-subcommands.mjs'
-import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
-import { getFlagApiRequirementsOutput } from '../../utils/output/formatting.mts'
 
 const require = createRequire(import.meta.url)
 

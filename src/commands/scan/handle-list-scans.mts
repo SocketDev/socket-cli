@@ -1,6 +1,7 @@
-import type { OutputKind } from '../../types.mts'
 import { fetchOrgFullScanList } from './fetch-list-scans.mts'
 import { outputListScans } from './output-list-scans.mts'
+
+import type { OutputKind } from '../../types.mts'
 
 export async function handleListScans({
   branch,

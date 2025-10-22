@@ -1,12 +1,13 @@
 import npmPackageArg from 'npm-package-arg'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { createPurlObject } from '../purl/parse.mts'
+
 import {
   npmSpecToPurl,
   safeNpa,
   safeNpmSpecToPurl,
   safeParseNpmSpec,
 } from './spec.mts'
+import { createPurlObject } from '../purl/parse.mts'
 
 // Mock dependencies.
 vi.mock('npm-package-arg', () => ({

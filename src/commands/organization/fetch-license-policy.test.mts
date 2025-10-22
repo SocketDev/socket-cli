@@ -1,10 +1,11 @@
 import { describe, expect, it, vi } from 'vitest'
+
+import { fetchLicensePolicy } from './fetch-license-policy.mts'
 import {
   setupSdkMockError,
   setupSdkMockSuccess,
   setupSdkSetupFailure,
 } from '../../../test/helpers/sdk-test-helpers.mts'
-import { fetchLicensePolicy } from './fetch-license-policy.mts'
 
 // Mock the dependencies.
 vi.mock('../../utils/socket/api.mjs', () => ({

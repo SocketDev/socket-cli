@@ -6,9 +6,8 @@ import {
 } from '@socketsecurity/lib/agent'
 import { isDebug } from '@socketsecurity/lib/debug'
 import { getOwn, isObject } from '@socketsecurity/lib/objects'
-import type { SpawnResult } from '@socketsecurity/lib/spawn'
 import { spawn } from '@socketsecurity/lib/spawn'
-import type { Spinner } from '@socketsecurity/lib/spinner'
+
 import { NPM } from '../../constants/agents.mts'
 import { FLAG_LOGLEVEL } from '../../constants/cli.mts'
 import ENV, { processEnv } from '../../constants/env.mts'
@@ -26,6 +25,9 @@ import {
   SOCKET_IPC_HANDSHAKE,
 } from '../../constants/shadow.mts'
 import { getNpmBinPath } from '../../utils/npm/paths.mts'
+
+import type { SpawnResult } from '@socketsecurity/lib/spawn'
+import type { Spinner } from '@socketsecurity/lib/spinner'
 
 type SpawnOption = Exclude<Parameters<typeof spawn>[2], undefined>
 

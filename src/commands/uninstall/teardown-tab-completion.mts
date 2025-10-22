@@ -2,11 +2,12 @@ import fs from 'node:fs'
 import path from 'node:path'
 
 import { homePath } from '../../constants/paths.mts'
-import type { CResult } from '../../types.mts'
 import {
   COMPLETION_CMD_PREFIX,
   getBashrcDetails,
 } from '../../utils/cli/completion.mjs'
+
+import type { CResult } from '../../types.mts'
 
 export async function teardownTabCompletion(
   targetName: string,

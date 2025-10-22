@@ -48,7 +48,6 @@
  */
 
 import { existsSync, readdirSync } from 'node:fs'
-// eslint-disable-next-line n/no-unsupported-features/node-builtins
 import {
   copyFile,
   cp,

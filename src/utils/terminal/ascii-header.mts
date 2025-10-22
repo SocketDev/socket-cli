@@ -5,13 +5,14 @@
  * Supports both static (fast) rendering and animated (shimmer) rendering modes.
  */
 
+import colors from 'yoctocolors-cjs'
+
+import { applyShimmer } from '@socketsecurity/lib/effects/text-shimmer'
+
 import type {
   ShimmerColorGradient,
   ShimmerState,
 } from '@socketsecurity/lib/effects/text-shimmer'
-
-import { applyShimmer } from '@socketsecurity/lib/effects/text-shimmer'
-import colors from 'yoctocolors-cjs'
 
 /**
  * Color themes for header styling.

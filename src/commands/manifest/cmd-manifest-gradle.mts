@@ -2,20 +2,22 @@ import path from 'node:path'
 
 import { debug } from '@socketsecurity/lib/debug'
 import { logger } from '@socketsecurity/lib/logger'
+
+import { convertGradleToMaven } from './convert-gradle-to-maven.mts'
 import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mjs'
 import { REQUIREMENTS_TXT } from '../../constants/paths.mjs'
 import { SOCKET_JSON } from '../../constants/socket.mts'
 import { commonFlags } from '../../flags.mts'
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { getFlagListOutput } from '../../utils/output/formatting.mts'
 import { getOutputKind } from '../../utils/output/mode.mjs'
 import { readOrDefaultSocketJson } from '../../utils/socket/json.mts'
 import { checkCommandInput } from '../../utils/validation/check-input.mts'
-import { convertGradleToMaven } from './convert-gradle-to-maven.mts'
+
+import type {
+  CliCommandConfig,
+  CliCommandContext,
+} from '../../utils/cli/with-subcommands.mjs'
 
 const config: CliCommandConfig = {
   commandName: 'gradle',

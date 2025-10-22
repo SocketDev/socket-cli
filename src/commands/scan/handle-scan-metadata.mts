@@ -1,6 +1,7 @@
-import type { OutputKind } from '../../types.mts'
 import { fetchScanMetadata } from './fetch-scan-metadata.mts'
 import { outputScanMetadata } from './output-scan-metadata.mts'
+
+import type { OutputKind } from '../../types.mts'
 
 export async function handleOrgScanMetadata(
   orgSlug: string,

@@ -16,9 +16,11 @@ import os from 'node:os'
 import path from 'node:path'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { StoreRecord } from './store.mts'
+
 import { UpdateStore } from './store.mts'
 import { checkForUpdates } from './update-manager.mts'
+
+import type { StoreRecord } from './store.mts'
 
 describe('update-manager', () => {
   let testStore: UpdateStore

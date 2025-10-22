@@ -1,8 +1,9 @@
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
-import type { CResult } from '../../types.mts'
 import { handleApiCall } from '../../utils/socket/api.mjs'
-import type { SetupSdkOptions } from '../../utils/socket/sdk.mjs'
 import { setupSdk } from '../../utils/socket/sdk.mjs'
+
+import type { CResult } from '../../types.mts'
+import type { SetupSdkOptions } from '../../utils/socket/sdk.mjs'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export type FetchUpdateRepoConfig = {
   defaultBranch: string

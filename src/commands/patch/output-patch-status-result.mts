@@ -1,8 +1,10 @@
 import { logger } from '@socketsecurity/lib/logger'
-import type { CResult, OutputKind } from '../../types.mts'
+
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
+
 import type { PatchStatus } from './handle-patch-status.mts'
+import type { CResult, OutputKind } from '../../types.mts'
 
 type PatchStatusResultData = {
   statuses: PatchStatus[]

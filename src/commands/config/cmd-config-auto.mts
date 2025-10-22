@@ -1,16 +1,13 @@
 import { logger } from '@socketsecurity/lib/logger'
+
+import { handleConfigAuto } from './handle-config-auto.mts'
 import {
   DRY_RUN_BAILING_NOW,
   FLAG_JSON,
   FLAG_MARKDOWN,
 } from '../../constants/cli.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
-import type { LocalConfig } from '../../utils/config.mts'
 import {
   getSupportedConfigEntries,
   isSupportedConfigKey,
@@ -18,7 +15,12 @@ import {
 import { getFlagListOutput } from '../../utils/output/formatting.mts'
 import { getOutputKind } from '../../utils/output/mode.mjs'
 import { checkCommandInput } from '../../utils/validation/check-input.mts'
-import { handleConfigAuto } from './handle-config-auto.mts'
+
+import type {
+  CliCommandConfig,
+  CliCommandContext,
+} from '../../utils/cli/with-subcommands.mjs'
+import type { LocalConfig } from '../../utils/config.mts'
 
 export const CMD_NAME = 'auto'
 

@@ -1,7 +1,8 @@
 import crypto from 'node:crypto'
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
-import type { PackageURL } from '@socketregistry/packageurl-js'
+
+import fastGlob from 'fast-glob'
 
 import { joinAnd } from '@socketsecurity/lib/arrays'
 import { NPM } from '@socketsecurity/lib/constants/agents'
@@ -16,19 +17,21 @@ import { readDirNames } from '@socketsecurity/lib/fs'
 import { logger } from '@socketsecurity/lib/logger'
 import { readPackageJson } from '@socketsecurity/lib/packages'
 import { normalizePath } from '@socketsecurity/lib/path'
-import type { Spinner } from '@socketsecurity/lib/spinner'
 import { isNonEmptyString } from '@socketsecurity/lib/strings'
 import { pluralize } from '@socketsecurity/lib/words'
-import fastGlob from 'fast-glob'
-import type { CResult, OutputKind } from '../../types.mts'
+
+import { PatchManifestSchema } from './manifest-schema.mts'
+import { outputPatchResult } from './output-patch-result.mts'
 import { getErrorCause } from '../../utils/error/errors.mjs'
 import { findUp } from '../../utils/fs/fs.mjs'
 import { createBackup } from '../../utils/manifest/patch-backup.mts'
 import { updatePatchStatus } from '../../utils/manifest/patches.mts'
 import { getPurlObject, normalizePurl } from '../../utils/purl/parse.mjs'
+
 import type { PatchRecord } from './manifest-schema.mts'
-import { PatchManifestSchema } from './manifest-schema.mts'
-import { outputPatchResult } from './output-patch-result.mts'
+import type { CResult, OutputKind } from '../../types.mts'
+import type { PackageURL } from '@socketregistry/packageurl-js'
+import type { Spinner } from '@socketsecurity/lib/spinner'
 
 type PatchEntry = {
   key: string

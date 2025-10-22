@@ -19,6 +19,7 @@
  */
 
 import { setTimeout as wait } from 'node:timers/promises'
+
 import {
   kInternalsSymbol,
   UNKNOWN_ERROR,

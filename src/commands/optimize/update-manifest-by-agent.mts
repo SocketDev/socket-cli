@@ -8,9 +8,10 @@ import {
   YARN_CLASSIC,
 } from '@socketsecurity/lib/constants/agents'
 import { hasKeys, isObject } from '@socketsecurity/lib/objects'
-import type { EditablePackageJson } from '@socketsecurity/lib/packages'
-import type { Agent } from '../../utils/ecosystem/environment.mjs'
+
 import type { Overrides } from './types.mts'
+import type { Agent } from '../../utils/ecosystem/environment.mjs'
+import type { EditablePackageJson } from '@socketsecurity/lib/packages'
 
 const depFields = [
   'dependencies',

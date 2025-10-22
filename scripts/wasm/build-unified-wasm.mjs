@@ -19,11 +19,10 @@
  * - external/socket-ai-sync.mjs (brotli-compressed, base64-encoded WASM)
  */
 
-import { brotliCompressSync } from 'node:zlib'
-import { existsSync } from 'node:fs'
-import { promises as fs } from 'node:fs'
+import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { brotliCompressSync } from 'node:zlib'
 
 import { logger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
@@ -69,7 +68,9 @@ async function installBinaryen() {
   const isMacOS = process.platform === 'darwin'
   const isLinux = process.platform === 'linux'
 
-  logger.progress('Installing binaryen (wasm-opt) - this may take a few minutes')
+  logger.progress(
+    'Installing binaryen (wasm-opt) - this may take a few minutes',
+  )
 
   try {
     if (isMacOS) {
@@ -88,7 +89,9 @@ async function installBinaryen() {
       logger.substep('Trying apt-get installation')
       try {
         await exec('sudo', ['apt-get', 'update'], { stdio: 'pipe' })
-        await exec('sudo', ['apt-get', 'install', '-y', 'binaryen'], { stdio: 'inherit' })
+        await exec('sudo', ['apt-get', 'install', '-y', 'binaryen'], {
+          stdio: 'inherit',
+        })
         logger.done('binaryen installed via apt-get')
         return true
       } catch {
@@ -125,18 +128,22 @@ async function installBinaryen() {
 
     // For CI/automation, we'll gracefully degrade if GitHub releases download fails.
     logger.warn('GitHub releases download not yet implemented')
-    logger.warn('wasm-opt will be skipped (install manually for smaller bundles)')
+    logger.warn(
+      'wasm-opt will be skipped (install manually for smaller bundles)',
+    )
     return false
   } catch (e) {
     logger.error(`Failed to install binaryen: ${e.message}`)
-    logger.warn('wasm-opt will be skipped (install manually for optimal bundle size)')
+    logger.warn(
+      'wasm-opt will be skipped (install manually for optimal bundle size)',
+    )
     return false
   }
 }
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '../..')
-const wasmBundleDir = path.join(rootPath, 'wasm-bundle')
+const wasmBundleDir = path.join(rootPath, 'build/wasm-bundle')
 const externalDir = path.join(rootPath, 'external')
 
 logger.step('Build Unified WASM Bundle')
@@ -227,9 +234,7 @@ if (!existsSync(wasmFile)) {
 
 let stats = await fs.stat(wasmFile)
 const originalSize = stats.size
-logger.info(
-  `WASM bundle size: ${(originalSize / 1024 / 1024).toFixed(2)} MB`,
-)
+logger.info(`WASM bundle size: ${(originalSize / 1024 / 1024).toFixed(2)} MB`)
 
 // Try to optimize with wasm-opt if available.
 try {
@@ -446,16 +451,12 @@ const outputPath = path.join(externalDir, 'socket-ai-sync.mjs')
 await fs.writeFile(outputPath, syncContent, 'utf-8')
 
 logger.done(`Generated ${outputPath}`)
-logger.done(
-  `File size: ${(syncContent.length / 1024 / 1024).toFixed(2)} MB`,
-)
+logger.done(`File size: ${(syncContent.length / 1024 / 1024).toFixed(2)} MB`)
 
 logger.success('Build Complete')
 
 logger.info('Summary:')
-logger.info(
-  `  Original WASM: ${(wasmData.length / 1024 / 1024).toFixed(2)} MB`,
-)
+logger.info(`  Original WASM: ${(wasmData.length / 1024 / 1024).toFixed(2)} MB`)
 logger.info(
   `  Compressed: ${(wasmCompressed.length / 1024 / 1024).toFixed(2)} MB`,
 )

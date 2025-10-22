@@ -1,12 +1,14 @@
-import type { Spinner } from '@socketsecurity/lib/spinner'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { ArboristInstance, Diff, NodeClass } from './arborist/types.mts'
+
 import { DiffAction } from './arborist/types.mts'
-import type { PackageDetail } from './arborist-helpers.mts'
 import {
   getAlertsMapFromArborist,
   getDetailsFromDiff,
 } from './arborist-helpers.mts'
+
+import type { ArboristInstance, Diff, NodeClass } from './arborist/types.mts'
+import type { PackageDetail } from './arborist-helpers.mts'
+import type { Spinner } from '@socketsecurity/lib/spinner'
 
 // Mock all dependencies.
 const mockGetAlertsMapFromPurls = vi.hoisted(() => vi.fn())

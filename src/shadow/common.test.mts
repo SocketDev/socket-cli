@@ -1,9 +1,10 @@
-import type { Spinner } from '@socketsecurity/lib/spinner'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { scanPackagesAndLogAlerts } from './common.mts'
 import { FLAG_DRY_RUN } from '../constants/cli.mts'
 
 import type { PackageScanOptions } from './common.mts'
-import { scanPackagesAndLogAlerts } from './common.mts'
+import type { Spinner } from '@socketsecurity/lib/spinner'
 
 // Mock all dependencies.
 const mockReadPackageJson = vi.hoisted(() => vi.fn())

@@ -1,13 +1,17 @@
 import fs from 'node:fs'
 import util from 'node:util'
-import { logger } from '@socketsecurity/lib/logger'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+
 import colors from 'yoctocolors-cjs'
+
+import { logger } from '@socketsecurity/lib/logger'
+
 import { SOCKET_WEBSITE_URL } from '../../constants/socket.mts'
-import type { CResult, OutputKind } from '../../types.mts'
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
 import { fileLink } from '../../utils/terminal/link.mts'
+
+import type { CResult, OutputKind } from '../../types.mts'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export async function outputDiffScan(
   result: CResult<SocketSdkSuccessResult<'GetOrgDiffScan'>['data']>,

@@ -1,9 +1,10 @@
 import { describe, expect, it, vi } from 'vitest'
+
+import { handleManifestConda } from './handle-manifest-conda.mts'
 import {
   createErrorResult,
   createSuccessResult,
 } from '../../../test/helpers/mocks.mts'
-import { handleManifestConda } from './handle-manifest-conda.mts'
 
 // Mock the dependencies.
 vi.mock('./convert-conda-to-requirements.mts', () => ({

@@ -1,5 +1,6 @@
-import { logger } from '@socketsecurity/lib/logger'
 import colors from 'yoctocolors-cjs'
+
+import { logger } from '@socketsecurity/lib/logger'
 
 interface OutputAskCommandOptions {
   query: string

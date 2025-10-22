@@ -25,11 +25,12 @@ process.emitWarning = function (warning, ...args) {
   return Reflect.apply(originalEmitWarning, this, [warning, ...args])
 }
 
-import { debug, debugDir } from '@socketsecurity/lib/debug'
-import { logger } from '@socketsecurity/lib/logger'
 import { messageWithCauses, stackWithCauses } from 'pony-cause'
 import lookupRegistryAuthToken from 'registry-auth-token'
 import lookupRegistryUrl from 'registry-url'
+
+import { debug, debugDir } from '@socketsecurity/lib/debug'
+import { logger } from '@socketsecurity/lib/logger'
 
 import { rootAliases, rootCommands } from './commands.mts'
 import ENV from './constants/env.mts'

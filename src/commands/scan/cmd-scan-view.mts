@@ -1,15 +1,13 @@
 import { logger } from '@socketsecurity/lib/logger'
+
+import { handleScanView } from './handle-scan-view.mts'
+import { streamScan } from './stream-scan.mts'
 import {
   DRY_RUN_BAILING_NOW,
   FLAG_JSON,
   FLAG_MARKDOWN,
 } from '../../constants/cli.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-  CliSubcommand,
-} from '../../utils/cli/with-subcommands.mjs'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import {
   getFlagApiRequirementsOutput,
@@ -19,8 +17,12 @@ import { getOutputKind } from '../../utils/output/mode.mjs'
 import { determineOrgSlug } from '../../utils/socket/org-slug.mjs'
 import { hasDefaultApiToken } from '../../utils/socket/sdk.mjs'
 import { checkCommandInput } from '../../utils/validation/check-input.mts'
-import { handleScanView } from './handle-scan-view.mts'
-import { streamScan } from './stream-scan.mts'
+
+import type {
+  CliCommandConfig,
+  CliCommandContext,
+  CliSubcommand,
+} from '../../utils/cli/with-subcommands.mjs'
 
 export const CMD_NAME = 'view'
 

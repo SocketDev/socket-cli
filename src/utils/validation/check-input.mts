@@ -1,9 +1,12 @@
+import colors from 'yoctocolors-cjs'
+
 import { LOG_SYMBOLS, logger } from '@socketsecurity/lib/logger'
 import { stripAnsi } from '@socketsecurity/lib/strings'
-import colors from 'yoctocolors-cjs'
-import type { OutputKind } from '../../types.mjs'
+
 import { failMsgWithBadge } from '../error/fail-msg-with-badge.mts'
 import { serializeResultJson } from '../output/result-json.mts'
+
+import type { OutputKind } from '../../types.mjs'
 
 export function checkCommandInput(
   outputKind: OutputKind,

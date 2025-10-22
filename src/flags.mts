@@ -1,8 +1,9 @@
 import os from 'node:os'
 
 import ENV from './constants/env.mts'
-import type { MeowFlag as Flag } from './meow.mts'
 import meow from './meow.mts'
+
+import type { MeowFlag as Flag } from './meow.mts'
 
 // Meow doesn't expose this.
 export type AnyFlag = StringFlag | BooleanFlag | NumberFlag

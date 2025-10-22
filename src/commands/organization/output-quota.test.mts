@@ -1,12 +1,14 @@
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 import { describe, expect, it, vi } from 'vitest'
+
+import { outputQuota } from './output-quota.mts'
 import {
   createErrorResult,
   createSuccessResult,
   setupStandardOutputMocks,
   setupTestEnvironment,
 } from '../../../test/helpers/index.mts'
-import { outputQuota } from './output-quota.mts'
+
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 setupStandardOutputMocks()
 

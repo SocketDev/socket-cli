@@ -6,8 +6,10 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import type { Vocabulary } from './wordpiece-tokenizer.mts'
+
 import { WordPieceTokenizer } from './wordpiece-tokenizer.mts'
+
+import type { Vocabulary } from './wordpiece-tokenizer.mts'
 
 /**
  * Create a minimal test vocabulary.

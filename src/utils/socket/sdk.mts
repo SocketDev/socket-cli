@@ -24,13 +24,14 @@
  * - Includes CLI version and platform information
  */
 
+import { HttpProxyAgent, HttpsProxyAgent } from 'hpagent'
+
 import isInteractive from '@socketregistry/is-interactive/index.cjs'
 import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/lib/constants/socket'
 import { password } from '@socketsecurity/lib/prompts'
 import { isNonEmptyString } from '@socketsecurity/lib/strings'
 import { isUrl } from '@socketsecurity/lib/url'
 import { createUserAgentFromPkgJson, SocketSdk } from '@socketsecurity/sdk'
-import { HttpProxyAgent, HttpsProxyAgent } from 'hpagent'
 
 import {
   CONFIG_KEY_API_BASE_URL,
@@ -39,8 +40,9 @@ import {
 } from '../../constants/config.mjs'
 import ENV from '../../constants/env.mts'
 import { TOKEN_PREFIX_LENGTH } from '../../constants/socket.mts'
-import type { CResult } from '../../types.mts'
 import { getConfigValueOrUndef } from '../config.mts'
+
+import type { CResult } from '../../types.mts'
 
 const TOKEN_VISIBLE_LENGTH = 5
 

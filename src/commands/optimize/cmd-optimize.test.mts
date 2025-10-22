@@ -1,10 +1,12 @@
 import { existsSync, promises } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
+
+import { afterAll, afterEach, beforeAll, describe, expect } from 'vitest'
+
 import { NPM, PNPM } from '@socketsecurity/lib/constants/agents'
 import { readPackageJson } from '@socketsecurity/lib/packages'
 import { spawn } from '@socketsecurity/lib/spawn'
-import { afterAll, afterEach, beforeAll, describe, expect } from 'vitest'
 
 import { withTempFixture } from '../../../src/utils/test-fixtures.mts'
 import { cmdit, spawnSocketCli, testPath } from '../../../test/utils.mts'

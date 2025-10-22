@@ -2,6 +2,7 @@
 
 // @ts-expect-error
 import UntypedArborist from '@npmcli/arborist/lib/arborist/index.js'
+
 import { getSpinner } from '@socketsecurity/lib/constants/process'
 import { logger } from '@socketsecurity/lib/logger'
 

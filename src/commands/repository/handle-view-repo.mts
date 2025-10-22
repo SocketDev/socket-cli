@@ -1,6 +1,7 @@
-import type { OutputKind } from '../../types.mts'
 import { fetchViewRepo } from './fetch-view-repo.mts'
 import { outputViewRepo } from './output-view-repo.mts'
+
+import type { OutputKind } from '../../types.mts'
 
 export async function handleViewRepo(
   orgSlug: string,

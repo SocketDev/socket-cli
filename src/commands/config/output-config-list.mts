@@ -1,5 +1,5 @@
 import { logger } from '@socketsecurity/lib/logger'
-import type { OutputKind } from '../../types.mts'
+
 import {
   getConfigValue,
   getSupportedConfigKeys,
@@ -7,6 +7,8 @@ import {
   isSensitiveConfigKey,
 } from '../../utils/config.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
+
+import type { OutputKind } from '../../types.mts'
 
 export async function outputConfigList({
   full,

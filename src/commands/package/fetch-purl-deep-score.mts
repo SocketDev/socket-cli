@@ -1,6 +1,8 @@
 import { logger } from '@socketsecurity/lib/logger'
-import type { CResult } from '../../types.mts'
+
 import { queryApiSafeJson } from '../../utils/socket/api.mjs'
+
+import type { CResult } from '../../types.mts'
 
 export interface PurlDataResponse {
   purl: string

@@ -1,16 +1,18 @@
 import { logger } from '@socketsecurity/lib/logger'
-import type { Spinner } from '@socketsecurity/lib/spinner'
 import { pluralize } from '@socketsecurity/lib/words'
-import type { SocketSdk } from '@socketsecurity/sdk'
+
+import { handlePatchDownload } from './handle-patch-download.mts'
+import { outputPatchDiscoverResult } from './output-patch-discover-result.mts'
 import ENV from '../../constants/env.mts'
-import type { OutputKind } from '../../types.mts'
 import { getErrorCause } from '../../utils/error/errors.mjs'
 import { getPackageFilesForScan } from '../../utils/fs/path-resolve.mjs'
 import { setupSdk } from '../../utils/socket/sdk.mts'
 import { fetchCreateOrgFullScan } from '../scan/fetch-create-org-full-scan.mts'
 import { fetchSupportedScanFileNames } from '../scan/fetch-supported-scan-file-names.mts'
-import { handlePatchDownload } from './handle-patch-download.mts'
-import { outputPatchDiscoverResult } from './output-patch-discover-result.mts'
+
+import type { OutputKind } from '../../types.mts'
+import type { Spinner } from '@socketsecurity/lib/spinner'
+import type { SocketSdk } from '@socketsecurity/sdk'
 
 export type PatchVulnerability = {
   cve?: string

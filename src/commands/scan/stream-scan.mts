@@ -1,8 +1,9 @@
 import { logger } from '@socketsecurity/lib/logger'
 
 import { handleApiCall } from '../../utils/socket/api.mjs'
-import type { SetupSdkOptions } from '../../utils/socket/sdk.mjs'
 import { setupSdk } from '../../utils/socket/sdk.mjs'
+
+import type { SetupSdkOptions } from '../../utils/socket/sdk.mjs'
 
 export type StreamScanOptions = {
   file?: string | undefined

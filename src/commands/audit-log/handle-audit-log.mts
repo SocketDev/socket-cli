@@ -1,6 +1,7 @@
-import type { OutputKind } from '../../types.mts'
 import { fetchAuditLog } from './fetch-audit-log.mts'
 import { outputAuditLog } from './output-audit-log.mts'
+
+import type { OutputKind } from '../../types.mts'
 
 export async function handleAuditLog({
   logType,

@@ -1,15 +1,16 @@
+import { handleAsk } from './handle-ask.mts'
 import { commonFlags } from '../../flags.mts'
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { InputError } from '../../utils/error/errors.mjs'
 import {
   getFlagApiRequirementsOutput,
   getFlagListOutput,
 } from '../../utils/output/formatting.mts'
-import { handleAsk } from './handle-ask.mts'
+
+import type {
+  CliCommandConfig,
+  CliCommandContext,
+} from '../../utils/cli/with-subcommands.mjs'
 
 export const CMD_NAME = 'ask'
 

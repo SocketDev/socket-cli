@@ -1,12 +1,10 @@
 import { logger } from '@socketsecurity/lib/logger'
+
+import { outputWhoami } from './output-whoami.mts'
 import { CONFIG_KEY_API_TOKEN } from '../../constants/config.mjs'
 import ENV from '../../constants/env.mts'
 import { TOKEN_PREFIX } from '../../constants/socket.mjs'
 import { commonFlags } from '../../flags.mts'
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { getConfigValueOrUndef } from '../../utils/config.mts'
 import { getFlagListOutput } from '../../utils/output/formatting.mts'
@@ -14,7 +12,11 @@ import {
   getDefaultApiToken,
   getVisibleTokenPrefix,
 } from '../../utils/socket/sdk.mjs'
-import { outputWhoami } from './output-whoami.mts'
+
+import type {
+  CliCommandConfig,
+  CliCommandContext,
+} from '../../utils/cli/with-subcommands.mjs'
 
 export async function handleWhoami(
   argv: string[] | readonly string[],

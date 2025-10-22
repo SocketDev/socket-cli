@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs'
 import Module from 'node:module'
 import path from 'node:path'
+
 import { NPM } from '@socketsecurity/lib/constants/agents'
 import { logger } from '@socketsecurity/lib/logger'
 

@@ -1,10 +1,11 @@
 import { describe, expect, it, vi } from 'vitest'
+
+import { fetchDeleteOrgFullScan } from './fetch-delete-org-full-scan.mts'
 import {
   setupSdkMockError,
   setupSdkMockSuccess,
   setupSdkSetupFailure,
 } from '../../../test/helpers/sdk-test-helpers.mts'
-import { fetchDeleteOrgFullScan } from './fetch-delete-org-full-scan.mts'
 
 // Mock the dependencies.
 vi.mock('../../utils/socket/api.mts', () => ({

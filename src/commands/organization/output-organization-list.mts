@@ -1,10 +1,13 @@
-import { logger } from '@socketsecurity/lib/logger'
 import colors from 'yoctocolors-cjs'
-import type { OutputKind } from '../../types.mts'
+
+import { logger } from '@socketsecurity/lib/logger'
+
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
 import { getVisibleTokenPrefix } from '../../utils/socket/sdk.mjs'
+
 import type { OrganizationsCResult } from './fetch-organization-list.mts'
+import type { OutputKind } from '../../types.mts'
 
 export async function outputOrganizationList(
   orgsCResult: OrganizationsCResult,

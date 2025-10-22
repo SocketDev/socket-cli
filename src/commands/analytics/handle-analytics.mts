@@ -1,8 +1,9 @@
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
-import type { CResult, OutputKind } from '../../types.mts'
 import { fetchOrgAnalyticsData } from './fetch-org-analytics.mts'
 import { fetchRepoAnalyticsData } from './fetch-repo-analytics.mts'
 import { outputAnalytics } from './output-analytics.mts'
+
+import type { CResult, OutputKind } from '../../types.mts'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export type HandleAnalyticsConfig = {
   filepath: string

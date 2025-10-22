@@ -11,8 +11,7 @@
  * Uses stable Rust toolchain (auto-updated via rustup).
  */
 
-import { existsSync } from 'node:fs'
-import { promises as fs } from 'node:fs'
+import { existsSync, promises as fs } from 'node:fs'
 import { homedir } from 'node:os'
 import path from 'node:path'
 
@@ -76,7 +75,9 @@ async function checkRustInstalled() {
  * Install Rust via rustup (cross-platform).
  */
 async function installRust() {
-  logger.progress('Installing Rust toolchain via rustup (this may take a few minutes)')
+  logger.progress(
+    'Installing Rust toolchain via rustup (this may take a few minutes)',
+  )
 
   const isWindows = WIN32
 
@@ -101,7 +102,13 @@ async function installRust() {
       logger.substep('Running rustup-init.exe')
       const result = await exec(
         exePath,
-        ['-y', '--default-toolchain', 'stable', '--default-host', 'x86_64-pc-windows-msvc'],
+        [
+          '-y',
+          '--default-toolchain',
+          'stable',
+          '--default-host',
+          'x86_64-pc-windows-msvc',
+        ],
         {
           stdio: 'inherit',
           env: {

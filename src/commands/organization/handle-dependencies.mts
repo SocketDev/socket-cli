@@ -1,7 +1,9 @@
 import { debug, debugDir } from '@socketsecurity/lib/debug'
-import type { OutputKind } from '../../types.mts'
+
 import { fetchDependencies } from './fetch-dependencies.mts'
 import { outputDependencies } from './output-dependencies.mts'
+
+import type { OutputKind } from '../../types.mts'
 
 export async function handleDependencies({
   limit,

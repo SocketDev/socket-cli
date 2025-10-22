@@ -1,9 +1,11 @@
 import { existsSync, rmSync } from 'node:fs'
 import path from 'node:path'
+
+import colors from 'yoctocolors-cjs'
+
 import { NPM, PNPM, YARN } from '@socketsecurity/lib/constants/agents'
 import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/lib/constants/socket'
 import { logger } from '@socketsecurity/lib/logger'
-import colors from 'yoctocolors-cjs'
 
 import { FLAG_HELP } from '../../constants/cli.mjs'
 import {
@@ -16,11 +18,12 @@ import {
   SOCKET_CLI_SHADOW_API_TOKEN,
   SOCKET_CLI_SHADOW_SILENT,
 } from '../../constants/shadow.mjs'
-import type { ShadowBinResult } from '../../shadow/npm/bin.mts'
-import type { DlxOptions } from '../../utils/dlx/spawn.mjs'
 import { spawnCdxgenDlx, spawnSynpDlx } from '../../utils/dlx/spawn.mjs'
 import { findUp } from '../../utils/fs/fs.mjs'
 import { isYarnBerry } from '../../utils/yarn/version.mts'
+
+import type { ShadowBinResult } from '../../shadow/npm/bin.mts'
+import type { DlxOptions } from '../../utils/dlx/spawn.mjs'
 
 const nodejsPlatformTypes = new Set([
   'javascript',

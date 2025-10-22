@@ -3,12 +3,13 @@ import fs from 'node:fs/promises'
 import { logger } from '@socketsecurity/lib/logger'
 
 import { SOCKET_WEBSITE_URL } from '../../constants/socket.mts'
-import type { CResult, OutputKind } from '../../types.mts'
-import type { SocketArtifact } from '../../utils/alert/artifact.mts'
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 import { mdTable } from '../../utils/output/markdown.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
 import { fileLink } from '../../utils/terminal/link.mts'
+
+import type { CResult, OutputKind } from '../../types.mts'
+import type { SocketArtifact } from '../../utils/alert/artifact.mts'
 
 export async function outputScanView(
   result: CResult<SocketArtifact[]>,

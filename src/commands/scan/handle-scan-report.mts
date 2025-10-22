@@ -1,7 +1,8 @@
-import type { OutputKind } from '../../types.mts'
 import { fetchScanData } from './fetch-report-data.mts'
 import { outputScanReport } from './output-scan-report.mts'
+
 import type { FOLD_SETTING, REPORT_LEVEL } from './types.mts'
+import type { OutputKind } from '../../types.mts'
 
 export type HandleScanReportConfig = {
   orgSlug: string

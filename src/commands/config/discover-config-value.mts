@@ -1,8 +1,9 @@
-import type { CResult } from '../../types.mts'
 import { isSupportedConfigKey } from '../../utils/config.mts'
 import { getOrgSlugs } from '../../utils/organization.mts'
 import { hasDefaultApiToken } from '../../utils/socket/sdk.mjs'
 import { fetchOrganization } from '../organization/fetch-organization-list.mts'
+
+import type { CResult } from '../../types.mts'
 
 export async function discoverConfigValue(
   key: string,

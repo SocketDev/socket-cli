@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { setupHandleFunctionMocks } from '../../../test/helpers/mock-setup.mts'
+
 import { handleOptimize } from './handle-optimize.mts'
+import { setupHandleFunctionMocks } from '../../../test/helpers/mock-setup.mts'
 
 setupHandleFunctionMocks()
 

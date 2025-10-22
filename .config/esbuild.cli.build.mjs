@@ -2,8 +2,9 @@
  * esbuild build script for Socket CLI.
  */
 
-import { brotliCompressSync } from 'node:zlib'
 import { readFileSync, writeFileSync } from 'node:fs'
+import { brotliCompressSync } from 'node:zlib'
+
 import { build } from 'esbuild'
 
 import config from './esbuild.cli.config.mjs'
@@ -28,9 +29,8 @@ try {
   const jsCode = readFileSync(config.outfile)
   const compressed = brotliCompressSync(jsCode, {
     params: {
-      // eslint-disable-next-line n/prefer-global/buffer
       [require('node:zlib').constants.BROTLI_PARAM_QUALITY]: 11,
-      // eslint-disable-next-line n/prefer-global/buffer
+
       [require('node:zlib').constants.BROTLI_PARAM_SIZE_HINT]: jsCode.length,
     },
   })

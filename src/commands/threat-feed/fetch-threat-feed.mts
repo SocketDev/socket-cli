@@ -1,6 +1,7 @@
-import type { CResult } from '../../types.mts'
 import { queryApiSafeJson } from '../../utils/socket/api.mjs'
+
 import type { ThreadFeedResponse } from './types.mts'
+import type { CResult } from '../../types.mts'
 
 export async function fetchThreatFeed({
   direction,

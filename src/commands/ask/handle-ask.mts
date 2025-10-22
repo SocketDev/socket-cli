@@ -1,8 +1,10 @@
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
+
+import nlp from 'compromise'
+
 import { logger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
-import nlp from 'compromise'
 // Import compromise for NLP text normalization.
 
 import { outputAskCommand } from './output-ask.mts'

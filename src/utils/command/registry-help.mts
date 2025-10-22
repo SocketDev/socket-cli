@@ -1,7 +1,7 @@
 /** @fileoverview Help text generation for Socket CLI commands. Automatically generates formatted help output from CommandDefinition metadata. */
 
-import type { CommandRegistry } from './registry.mts'
 import type { CommandDefinition, FlagDefinition } from './registry-types.mjs'
+import type { CommandRegistry } from './registry.mts'
 
 /**
  * Generate help text for a command.

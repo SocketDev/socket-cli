@@ -6,12 +6,9 @@ import {
   MANIFEST_JSON,
 } from '@socketsecurity/lib/constants/paths'
 import { getSpinner } from '@socketsecurity/lib/constants/process'
+
+import { handlePatchGet } from './handle-patch-get.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-  CliSubcommand,
-} from '../../utils/cli/with-subcommands.mjs'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { InputError } from '../../utils/error/errors.mjs'
 import {
@@ -20,7 +17,12 @@ import {
 } from '../../utils/output/formatting.mts'
 import { getOutputKind } from '../../utils/output/mode.mjs'
 import { checkCommandInput } from '../../utils/validation/check-input.mts'
-import { handlePatchGet } from './handle-patch-get.mts'
+
+import type {
+  CliCommandConfig,
+  CliCommandContext,
+  CliSubcommand,
+} from '../../utils/cli/with-subcommands.mjs'
 
 export const CMD_NAME = 'get'
 

@@ -1,12 +1,7 @@
-// eslint-disable-next-line no-restricted-syntax, n/prefer-global/process
-const { existsSync, readFileSync, writeFileSync } = require('node:fs')
-// eslint-disable-next-line no-restricted-syntax, n/prefer-global/process
-const { homedir, tmpdir } = require('node:os')
-// eslint-disable-next-line no-restricted-syntax, n/prefer-global/process
-const { join } = require('node:path')
-// eslint-disable-next-line no-restricted-syntax, n/prefer-global/process
 const { spawnSync } = require('node:child_process')
-// eslint-disable-next-line no-restricted-syntax, n/prefer-global/process
+const { existsSync, readFileSync, writeFileSync } = require('node:fs')
+const { homedir, tmpdir } = require('node:os')
+const { join } = require('node:path')
 const { brotliDecompressSync } = require('node:zlib')
 
 const SOCKET_DLX_DIR = join(homedir(), '.socket', '_dlx')
@@ -42,7 +37,6 @@ if (existsSync(CLI_ENTRY_BZ)) {
 
   // Clean up temp file.
   try {
-    // eslint-disable-next-line no-restricted-syntax, n/prefer-global/process
     const { unlinkSync } = require('node:fs')
     unlinkSync(tempCliPath)
   } catch {

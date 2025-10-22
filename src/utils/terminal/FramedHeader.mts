@@ -4,8 +4,9 @@
  * Provides a bordered container for the animated Socket CLI header using ANSI escape codes.
  */
 
-import type { HeaderTheme } from './ascii-header.mts'
 import { renderShimmerFrame } from './ascii-header.mts'
+
+import type { HeaderTheme } from './ascii-header.mts'
 
 export type FramedHeaderProps = {
   animate?: boolean | undefined

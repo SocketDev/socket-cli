@@ -1,6 +1,8 @@
 import { logger } from '@socketsecurity/lib/logger'
-import type { CResult } from '../../types.mts'
+
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
+
+import type { CResult } from '../../types.mts'
 
 export async function outputManifestSetup(result: CResult<unknown>) {
   if (!result.ok) {

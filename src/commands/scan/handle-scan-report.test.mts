@@ -1,9 +1,10 @@
 import { describe, expect, it, vi } from 'vitest'
+
+import { handleScanReport } from './handle-scan-report.mts'
 import {
   createErrorResult,
   createSuccessResult,
 } from '../../../test/helpers/mocks.mts'
-import { handleScanReport } from './handle-scan-report.mts'
 
 // Mock the dependencies.
 vi.mock('./fetch-report-data.mts', () => ({

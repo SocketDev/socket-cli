@@ -21,8 +21,10 @@
 
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { WIN32 } from '@socketsecurity/lib/constants/platform'
+
 import cmdShim from 'cmd-shim'
+
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
 
 import { getDistPath } from '../../constants/paths.mts'
 import { shouldSkipShadow } from '../dlx/detection.mts'

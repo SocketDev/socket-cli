@@ -3,23 +3,25 @@ import fs from 'node:fs/promises'
 import { joinAnd } from '@socketsecurity/lib/arrays'
 import { getSpinner } from '@socketsecurity/lib/constants/process'
 import { logger } from '@socketsecurity/lib/logger'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+
+import { generateReport } from './generate-report.mts'
 import {
   FOLD_SETTING_NONE,
   OUTPUT_JSON,
   OUTPUT_TEXT,
 } from '../../constants/cli.mts'
 import { REPORT_LEVEL_DEFER } from '../../constants/reporting.mts'
-import type { CResult, OutputKind } from '../../types.mts'
-import type { SocketArtifact } from '../../utils/alert/artifact.mts'
 import { mapToObject } from '../../utils/data/map-to-object.mjs'
 import { walkNestedMap } from '../../utils/data/walk-nested-map.mjs'
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 import { mdTable } from '../../utils/output/markdown.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
+
 import type { ReportLeafNode, ScanReport } from './generate-report.mts'
-import { generateReport } from './generate-report.mts'
 import type { FOLD_SETTING, REPORT_LEVEL } from './types.mts'
+import type { CResult, OutputKind } from '../../types.mts'
+import type { SocketArtifact } from '../../utils/alert/artifact.mts'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export type OutputScanReportConfig = {
   orgSlug: string

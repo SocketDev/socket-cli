@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { handleConfigSet } from './handle-config-set.mts'
 import {
   createErrorResult,
   createSuccessResult,
 } from '../../../test/helpers/mocks.mts'
-import { handleConfigSet } from './handle-config-set.mts'
 
 // Mock the dependencies.
 vi.mock('./output-config-set.mts', () => ({
@@ -20,7 +21,9 @@ describe('handleConfigSet', () => {
 
   it('sets config value successfully', async () => {
     const { updateConfigValue } = await import('../../utils/config.mts')
-    const { outputConfigSet } = await import('./output-config-set.mts')
+    const { outputConfigSet: _outputConfigSet } = await import(
+      './output-config-set.mts'
+    )
 
     const mockResult = createSuccessResult('new-value')
     vi.mocked(updateConfigValue).mockReturnValue(mockResult)
@@ -40,7 +43,9 @@ describe('handleConfigSet', () => {
 
   it('handles config update failure', async () => {
     const { updateConfigValue } = await import('../../utils/config.mts')
-    const { outputConfigSet } = await import('./output-config-set.mts')
+    const { outputConfigSet: _outputConfigSet } = await import(
+      './output-config-set.mts'
+    )
 
     const mockResult = createErrorResult('Config update failed')
     vi.mocked(updateConfigValue).mockReturnValue(mockResult)
@@ -57,7 +62,9 @@ describe('handleConfigSet', () => {
 
   it('handles markdown output', async () => {
     const { updateConfigValue } = await import('../../utils/config.mts')
-    const { outputConfigSet } = await import('./output-config-set.mts')
+    const { outputConfigSet: _outputConfigSet } = await import(
+      './output-config-set.mts'
+    )
 
     const mockResult = createSuccessResult('markdown-value')
     vi.mocked(updateConfigValue).mockReturnValue(mockResult)
@@ -115,7 +122,9 @@ describe('handleConfigSet', () => {
 
   it('handles different config keys', async () => {
     const { updateConfigValue } = await import('../../utils/config.mts')
-    const { outputConfigSet } = await import('./output-config-set.mts')
+    const { outputConfigSet: _outputConfigSet } = await import(
+      './output-config-set.mts'
+    )
 
     const keys = ['apiToken', 'org', 'repoName', 'apiBaseUrl', 'apiProxy']
 

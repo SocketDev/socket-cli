@@ -1,19 +1,21 @@
 /** @fileoverview Unified process runner for external CLIs with output buffering. */
 
 import { logger } from '@socketsecurity/lib/logger'
+import { spawn } from '@socketsecurity/lib/spawn'
+import { Spinner as createSpinner } from '@socketsecurity/lib/spinner'
+
+import { ensureIpcInStdio } from '../../shadow/stdio-ipc.mjs'
+import { debugNs } from '../debug.mts'
+import { formatExternalCliError } from '../error/display.mts'
+
+import type { IpcObject } from '../../constants/shadow.mts'
+import type { CResult } from '../../types.mjs'
 import type {
   SpawnExtra,
   SpawnResult,
   SpawnStdioResult,
 } from '@socketsecurity/lib/spawn'
-import { spawn } from '@socketsecurity/lib/spawn'
 import type { Spinner } from '@socketsecurity/lib/spinner'
-import { Spinner as createSpinner } from '@socketsecurity/lib/spinner'
-import type { IpcObject } from '../../constants/shadow.mts'
-import { ensureIpcInStdio } from '../../shadow/stdio-ipc.mjs'
-import type { CResult } from '../../types.mjs'
-import { debugNs } from '../debug.mts'
-import { formatExternalCliError } from '../error/display.mts'
 
 export type ProcessRunnerOptions = {
   bufferOutput?: boolean | undefined

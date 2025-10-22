@@ -1,8 +1,9 @@
 import { joinAnd } from '@socketsecurity/lib/arrays'
 import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/lib/constants/socket'
 import { logger } from '@socketsecurity/lib/logger'
-import type { Choice } from '@socketsecurity/lib/prompts'
 import { confirm, password, select } from '@socketsecurity/lib/prompts'
+
+import { applyLogin } from './apply-login.mts'
 import {
   CONFIG_KEY_API_BASE_URL,
   CONFIG_KEY_API_PROXY,
@@ -20,7 +21,8 @@ import { setupSdk } from '../../utils/socket/sdk.mjs'
 import { socketDocsLink } from '../../utils/terminal/link.mts'
 import { setupTabCompletion } from '../install/setup-tab-completion.mts'
 import { fetchOrganization } from '../organization/fetch-organization-list.mts'
-import { applyLogin } from './apply-login.mts'
+
+import type { Choice } from '@socketsecurity/lib/prompts'
 
 type OrgChoice = Choice<string>
 type OrgChoices = OrgChoice[]

@@ -1,12 +1,10 @@
 import { joinAnd } from '@socketsecurity/lib/arrays'
 import { NPM } from '@socketsecurity/lib/constants/agents'
 import { logger } from '@socketsecurity/lib/logger'
+
+import { handleThreatFeed } from './handle-threat-feed.mts'
 import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import {
   getFlagApiRequirementsOutput,
@@ -17,7 +15,11 @@ import { determineOrgSlug } from '../../utils/socket/org-slug.mjs'
 import { hasDefaultApiToken } from '../../utils/socket/sdk.mjs'
 import { mailtoLink } from '../../utils/terminal/link.mts'
 import { checkCommandInput } from '../../utils/validation/check-input.mts'
-import { handleThreatFeed } from './handle-threat-feed.mts'
+
+import type {
+  CliCommandConfig,
+  CliCommandContext,
+} from '../../utils/cli/with-subcommands.mjs'
 
 export const CMD_NAME = 'threat-feed'
 

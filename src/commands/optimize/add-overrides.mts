@@ -1,23 +1,15 @@
 import path from 'node:path'
+
+import semver from 'semver'
+
 import { NPM, PNPM } from '@socketsecurity/lib/constants/agents'
-import type { Logger } from '@socketsecurity/lib/logger'
 import { hasOwn, toSortedObject } from '@socketsecurity/lib/objects'
-import type { PackageJson } from '@socketsecurity/lib/packages'
 import { fetchPackageManifest } from '@socketsecurity/lib/packages'
 import { pEach } from '@socketsecurity/lib/promises'
-import type { Spinner } from '@socketsecurity/lib/spinner'
 import { getManifestData } from '@socketsecurity/registry'
-import semver from 'semver'
-import type { EnvDetails } from '../../utils/ecosystem/environment.mjs'
-import { globWorkspace } from '../../utils/fs/glob.mts'
-import type { AliasResult } from '../../utils/npm/package-arg.mts'
-import { safeNpa } from '../../utils/npm/package-arg.mts'
-import { cmdPrefixMessage } from '../../utils/process/cmd.mts'
-import { getMajor } from '../../utils/semver.mts'
+
 import { lsStdoutIncludes } from './deps-includes-by-agent.mts'
 import { getDependencyEntries } from './get-dependency-entries.mts'
-
-import type { GetOverridesResult } from './get-overrides-by-agent.mts'
 import {
   getOverridesData,
   getOverridesDataNpm,
@@ -27,6 +19,17 @@ import { lockSrcIncludes } from './lockfile-includes-by-agent.mts'
 import { listPackages } from './ls-by-agent.mts'
 import { CMD_NAME } from './shared.mts'
 import { updateManifest } from './update-manifest-by-agent.mts'
+import { globWorkspace } from '../../utils/fs/glob.mts'
+import { safeNpa } from '../../utils/npm/package-arg.mts'
+import { cmdPrefixMessage } from '../../utils/process/cmd.mts'
+import { getMajor } from '../../utils/semver.mts'
+
+import type { GetOverridesResult } from './get-overrides-by-agent.mts'
+import type { EnvDetails } from '../../utils/ecosystem/environment.mjs'
+import type { AliasResult } from '../../utils/npm/package-arg.mts'
+import type { Logger } from '@socketsecurity/lib/logger'
+import type { PackageJson } from '@socketsecurity/lib/packages'
+import type { Spinner } from '@socketsecurity/lib/spinner'
 
 type AddOverridesOptions = {
   logger?: Logger | undefined

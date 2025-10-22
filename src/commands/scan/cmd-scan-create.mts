@@ -2,17 +2,17 @@ import path from 'node:path'
 
 import { joinAnd } from '@socketsecurity/lib/arrays'
 import { logger } from '@socketsecurity/lib/logger'
+
+import { handleCreateNewScan } from './handle-create-new-scan.mts'
+import { outputCreateNewScan } from './output-create-new-scan.mts'
+import { reachabilityFlags } from './reachability-flags.mts'
+import { suggestOrgSlug } from './suggest-org-slug.mts'
+import { suggestTarget } from './suggest_target.mts'
 import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'
 import { REQUIREMENTS_TXT, SOCKET_JSON } from '../../constants/paths.mts'
 import { REPORT_LEVEL_ERROR } from '../../constants/reporting.mjs'
-import type { MeowFlags } from '../../flags.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
-import type { PURL_Type } from '../../utils/ecosystem/ecosystem.mjs'
 import { getEcosystemChoicesForMeow } from '../../utils/ecosystem/ecosystem.mjs'
 import {
   detectDefaultBranch,
@@ -31,12 +31,14 @@ import { hasDefaultApiToken } from '../../utils/socket/sdk.mjs'
 import { socketDashboardLink } from '../../utils/terminal/link.mts'
 import { checkCommandInput } from '../../utils/validation/check-input.mts'
 import { detectManifestActions } from '../manifest/detect-manifest-actions.mts'
-import { handleCreateNewScan } from './handle-create-new-scan.mts'
-import { outputCreateNewScan } from './output-create-new-scan.mts'
-import { reachabilityFlags } from './reachability-flags.mts'
-import { suggestTarget } from './suggest_target.mts'
-import { suggestOrgSlug } from './suggest-org-slug.mts'
+
 import type { REPORT_LEVEL } from './types.mts'
+import type { MeowFlags } from '../../flags.mts'
+import type {
+  CliCommandConfig,
+  CliCommandContext,
+} from '../../utils/cli/with-subcommands.mjs'
+import type { PURL_Type } from '../../utils/ecosystem/ecosystem.mjs'
 
 export const CMD_NAME = 'create'
 

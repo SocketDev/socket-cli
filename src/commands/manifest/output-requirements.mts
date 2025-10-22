@@ -3,9 +3,10 @@ import fs from 'node:fs'
 import { logger } from '@socketsecurity/lib/logger'
 
 import { REQUIREMENTS_TXT } from '../../constants/paths.mjs'
-import type { CResult, OutputKind } from '../../types.mts'
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
+
+import type { CResult, OutputKind } from '../../types.mts'
 
 export async function outputRequirements(
   result: CResult<{ content: string; pip: string }>,

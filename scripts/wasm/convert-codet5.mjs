@@ -28,8 +28,8 @@ import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { spawn } from '@socketsecurity/lib/spawn'
 import { logger } from '@socketsecurity/lib/logger'
+import { spawn } from '@socketsecurity/lib/spawn'
 
 /**
  * Execute command and wait for completion.
@@ -56,7 +56,6 @@ async function exec(command, args, options = {}) {
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '../..')
 const modelsPath = path.join(rootPath, '.cache', 'models')
-
 
 // Step 1: Check Python.
 logger.substep('Step Checking Python installation...\n')
@@ -314,7 +313,6 @@ logger.done(' All files created successfully:')
 logger.substep(`Encoder: ${(encoderStats.size / 1024 / 1024).toFixed(2)} MB`)
 logger.substep(`Decoder: ${(decoderStats.size / 1024 / 1024).toFixed(2)} MB`)
 logger.substep(`Tokenizer: ${(tokenizerStats.size / 1024).toFixed(2)} KB\n`)
-
 
 logger.info('Next steps:')
 logger.info('  1. Run: node scripts/wasm/build-unified-wasm.mjs')

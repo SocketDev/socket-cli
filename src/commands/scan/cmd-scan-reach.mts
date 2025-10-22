@@ -2,15 +2,13 @@ import path from 'node:path'
 
 import { joinAnd } from '@socketsecurity/lib/arrays'
 import { logger } from '@socketsecurity/lib/logger'
+
+import { handleScanReach } from './handle-scan-reach.mts'
+import { reachabilityFlags } from './reachability-flags.mts'
+import { suggestTarget } from './suggest_target.mts'
 import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'
-import type { MeowFlags } from '../../flags.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
-import type { PURL_Type } from '../../utils/ecosystem/ecosystem.mjs'
 import { getEcosystemChoicesForMeow } from '../../utils/ecosystem/ecosystem.mjs'
 import {
   getFlagApiRequirementsOutput,
@@ -21,9 +19,13 @@ import { cmdFlagValueToArray } from '../../utils/process/cmd.mts'
 import { determineOrgSlug } from '../../utils/socket/org-slug.mjs'
 import { hasDefaultApiToken } from '../../utils/socket/sdk.mjs'
 import { checkCommandInput } from '../../utils/validation/check-input.mts'
-import { handleScanReach } from './handle-scan-reach.mts'
-import { reachabilityFlags } from './reachability-flags.mts'
-import { suggestTarget } from './suggest_target.mts'
+
+import type { MeowFlags } from '../../flags.mts'
+import type {
+  CliCommandConfig,
+  CliCommandContext,
+} from '../../utils/cli/with-subcommands.mjs'
+import type { PURL_Type } from '../../utils/ecosystem/ecosystem.mjs'
 
 export const CMD_NAME = 'reach'
 

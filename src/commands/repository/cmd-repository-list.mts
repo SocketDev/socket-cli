@@ -1,14 +1,12 @@
 import { logger } from '@socketsecurity/lib/logger'
+
+import { handleListRepos } from './handle-list-repos.mts'
 import {
   DRY_RUN_BAILING_NOW,
   FLAG_JSON,
   FLAG_MARKDOWN,
 } from '../../constants/cli.mjs'
 import { commonFlags, outputFlags } from '../../flags.mts'
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import {
   getFlagApiRequirementsOutput,
@@ -18,8 +16,12 @@ import { getOutputKind } from '../../utils/output/mode.mjs'
 import { determineOrgSlug } from '../../utils/socket/org-slug.mjs'
 import { hasDefaultApiToken } from '../../utils/socket/sdk.mjs'
 import { checkCommandInput } from '../../utils/validation/check-input.mts'
-import { handleListRepos } from './handle-list-repos.mts'
+
 import type { Direction } from './types.mts'
+import type {
+  CliCommandConfig,
+  CliCommandContext,
+} from '../../utils/cli/with-subcommands.mjs'
 
 export const CMD_NAME = 'list'
 

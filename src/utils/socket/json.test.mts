@@ -2,8 +2,7 @@ import { existsSync, promises as fs, readFileSync } from 'node:fs'
 import path from 'node:path'
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { SOCKET_WEBSITE_URL } from '../constants/api.mts'
-import { SOCKET_JSON } from '../constants/shadow.mts'
+
 import {
   findSocketJsonUp,
   getDefaultSocketJson,
@@ -13,6 +12,8 @@ import {
   readSocketJsonSync,
   writeSocketJson,
 } from './json.mts'
+import { SOCKET_WEBSITE_URL } from '../constants/api.mts'
+import { SOCKET_JSON } from '../constants/shadow.mts'
 
 // Mock dependencies.
 vi.mock('node:fs', () => ({

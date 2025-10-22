@@ -1,10 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import meow from '../../meow.mts'
+
 import {
   emitBanner,
   getLastSeenCommand,
   meowOrExit,
 } from './with-subcommands.mjs'
+import meow from '../../meow.mts'
 
 // Mock meow.
 vi.mock('meow', () => ({

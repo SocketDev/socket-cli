@@ -1,7 +1,10 @@
-import { NPM, NPX } from '@socketsecurity/lib/constants/agents'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { ShadowBinOptions } from './npm-base.mts'
+
+import { NPM, NPX } from '@socketsecurity/lib/constants/agents'
+
 import shadowNpmBase from './npm-base.mts'
+
+import type { ShadowBinOptions } from './npm-base.mts'
 
 // Mock all dependencies.
 const mockSpawn = vi.hoisted(() => vi.fn())

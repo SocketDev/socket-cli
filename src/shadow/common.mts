@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url'
 import { debug, debugDir } from '@socketsecurity/lib/debug'
 import { logger } from '@socketsecurity/lib/logger'
 import { readPackageJson } from '@socketsecurity/lib/packages'
-import type { Spinner } from '@socketsecurity/lib/spinner'
+
 import { FLAG_DRY_RUN } from '../constants/cli.mts'
 import { PACKAGE_JSON } from '../constants/packages.mts'
 import {
@@ -14,9 +14,10 @@ import { debugScan } from '../utils/debug.mts'
 import { safeNpmSpecToPurl } from '../utils/npm/spec.mts'
 import { isAddCommand } from '../utils/process/cmd.mts'
 import { getAlertsMapFromPurls } from '../utils/socket/alerts.mts'
+import { logAlertsMap } from '../utils/socket/package-alert.mts'
 
 import type { AlertsByPurl } from '../utils/socket/package-alert.mts'
-import { logAlertsMap } from '../utils/socket/package-alert.mts'
+import type { Spinner } from '@socketsecurity/lib/spinner'
 
 /**
  * Extract package PURLs from command arguments for add/dlx commands where

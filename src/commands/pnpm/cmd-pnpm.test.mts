@@ -1,9 +1,11 @@
 import { promises as fs } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
+
+import { describe, expect, it, vi } from 'vitest'
+
 import { PNPM } from '@socketsecurity/lib/constants/agents'
 import { spawn } from '@socketsecurity/lib/spawn'
-import { describe, expect, it, vi } from 'vitest'
 
 import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
 import {

@@ -12,8 +12,10 @@
 
 import { existsSync } from 'node:fs'
 import path from 'node:path'
-import { normalizePath } from '@socketsecurity/lib/path'
+
 import { describe, expect, it } from 'vitest'
+
+import { normalizePath } from '@socketsecurity/lib/path'
 
 import constants from '../scripts/constants.mjs'
 

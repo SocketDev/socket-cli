@@ -1,16 +1,12 @@
 import { fileURLToPath } from 'node:url'
+
 import { YARN } from '@socketsecurity/lib/constants/agents'
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { debugNs } from '@socketsecurity/lib/debug'
-import type {
-  SpawnExtra,
-  SpawnOptions,
-  SpawnResult,
-} from '@socketsecurity/lib/spawn'
 import { spawn } from '@socketsecurity/lib/spawn'
+
 import ENV from '../../constants/env.mts'
 import { shadowBinPath } from '../../constants/paths.mts'
-import type { IpcObject } from '../../constants/shadow.mts'
 import {
   SOCKET_CLI_SHADOW_API_TOKEN,
   SOCKET_CLI_SHADOW_BIN,
@@ -22,6 +18,13 @@ import { installYarnLinks } from '../../utils/shadow/links.mts'
 import { getPublicApiToken } from '../../utils/socket/sdk.mjs'
 import { scanPackagesAndLogAlerts } from '../common.mts'
 import { ensureIpcInStdio } from '../stdio-ipc.mts'
+
+import type { IpcObject } from '../../constants/shadow.mts'
+import type {
+  SpawnExtra,
+  SpawnOptions,
+  SpawnResult,
+} from '@socketsecurity/lib/spawn'
 
 export type ShadowYarnOptions = SpawnOptions & {
   ipc?: IpcObject | undefined

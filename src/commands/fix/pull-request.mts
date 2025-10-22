@@ -1,9 +1,14 @@
 import { RequestError } from '@octokit/request-error'
-import type { OctokitResponse } from '@octokit/types'
+
 import { UNKNOWN_VALUE } from '@socketsecurity/lib/constants/core'
 import { debug, debugDir } from '@socketsecurity/lib/debug'
-import type { JsonContent } from '@socketsecurity/lib/fs'
 import { isNonEmptyString } from '@socketsecurity/lib/strings'
+
+import {
+  getSocketFixBranchPattern,
+  getSocketFixPullRequestBody,
+  getSocketFixPullRequestTitle,
+} from './git.mts'
 import {
   GQL_PAGE_SENTINEL,
   GQL_PR_STATE_CLOSED,
@@ -20,11 +25,9 @@ import {
   type Pr,
   writeCache,
 } from '../../utils/git/github.mts'
-import {
-  getSocketFixBranchPattern,
-  getSocketFixPullRequestBody,
-  getSocketFixPullRequestTitle,
-} from './git.mts'
+
+import type { OctokitResponse } from '@octokit/types'
+import type { JsonContent } from '@socketsecurity/lib/fs'
 
 export type OpenSocketFixPrOptions = {
   baseBranch?: string | undefined

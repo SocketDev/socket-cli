@@ -23,7 +23,7 @@ describe('handlePurlDeepScore', () => {
 
   it('fetches and outputs deep score successfully', async () => {
     const { fetchPurlDeepScore } = await import('./fetch-purl-deep-score.mts')
-    const { outputPurlsDeepScore } = await import(
+    const { outputPurlsDeepScore: _outputPurlsDeepScore } = await import(
       './output-purls-deep-score.mts'
     )
 
@@ -47,7 +47,7 @@ describe('handlePurlDeepScore', () => {
 
   it('handles fetch failure', async () => {
     const { fetchPurlDeepScore } = await import('./fetch-purl-deep-score.mts')
-    const { outputPurlsDeepScore } = await import(
+    const { outputPurlsDeepScore: _outputPurlsDeepScore } = await import(
       './output-purls-deep-score.mts'
     )
 
@@ -66,7 +66,7 @@ describe('handlePurlDeepScore', () => {
 
   it('handles markdown output', async () => {
     const { fetchPurlDeepScore } = await import('./fetch-purl-deep-score.mts')
-    const { outputPurlsDeepScore } = await import(
+    const { outputPurlsDeepScore: _outputPurlsDeepScore } = await import(
       './output-purls-deep-score.mts'
     )
 
@@ -135,7 +135,7 @@ describe('handlePurlDeepScore', () => {
 
   it('handles different purl formats', async () => {
     const { fetchPurlDeepScore } = await import('./fetch-purl-deep-score.mts')
-    const { outputPurlsDeepScore } = await import(
+    const { outputPurlsDeepScore: _outputPurlsDeepScore } = await import(
       './output-purls-deep-score.mts'
     )
 
@@ -160,7 +160,7 @@ describe('handlePurlDeepScore', () => {
 
   it('handles text output', async () => {
     const { fetchPurlDeepScore } = await import('./fetch-purl-deep-score.mts')
-    const { outputPurlsDeepScore } = await import(
+    const { outputPurlsDeepScore: _outputPurlsDeepScore } = await import(
       './output-purls-deep-score.mts'
     )
 

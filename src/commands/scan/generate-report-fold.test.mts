@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import type { ScanReport } from './generate-report.mts'
-import { generateReport } from './generate-report.mts'
+
 import {
   getScanWithEnvVars,
   getScanWithMultiplePackages,
 } from './generate-report-test-helpers.mts'
+import { generateReport } from './generate-report.mts'
+
+import type { ScanReport } from './generate-report.mts'
 
 describe('generate-report - fold functionality', () => {
   describe('fold=none', () => {

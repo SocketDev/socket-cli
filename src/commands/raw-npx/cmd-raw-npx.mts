@@ -1,16 +1,18 @@
 import { logger } from '@socketsecurity/lib/logger'
+
+import { runRawNpx } from './run-raw-npx.mts'
 import {
   DRY_RUN_BAILING_NOW,
   FLAG_DRY_RUN,
   FLAG_HELP,
 } from '../../constants/cli.mts'
 import { commonFlags } from '../../flags.mts'
+import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
+
 import type {
   CliCommandConfig,
   CliCommandContext,
 } from '../../utils/cli/with-subcommands.mjs'
-import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
-import { runRawNpx } from './run-raw-npx.mts'
 
 const config: CliCommandConfig = {
   commandName: 'raw-npx',

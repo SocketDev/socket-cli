@@ -1,16 +1,18 @@
 import { getSpinner } from '@socketsecurity/lib/constants/process'
 import { debug, debugDir } from '@socketsecurity/lib/debug'
 import { logger } from '@socketsecurity/lib/logger'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
-import type { CResult } from '../../types.mts'
-import type { SocketArtifact } from '../../utils/alert/artifact.mts'
+
 import { formatErrorWithDetail } from '../../utils/error/errors.mjs'
 import {
   handleApiCallNoSpinner,
   queryApiSafeText,
 } from '../../utils/socket/api.mjs'
-import type { SetupSdkOptions } from '../../utils/socket/sdk.mjs'
 import { setupSdk } from '../../utils/socket/sdk.mjs'
+
+import type { CResult } from '../../types.mts'
+import type { SocketArtifact } from '../../utils/alert/artifact.mts'
+import type { SetupSdkOptions } from '../../utils/socket/sdk.mjs'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export type FetchScanData = {
   includeLicensePolicy?: boolean | undefined

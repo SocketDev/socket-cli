@@ -19,11 +19,12 @@
  */
 
 import { createRequire } from 'node:module'
+
 import { NPM, PNPM, YARN } from '@socketsecurity/lib/constants/agents'
 import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/lib/constants/socket'
 import { getOwn } from '@socketsecurity/lib/objects'
-import type { SpawnExtra } from '@socketsecurity/lib/spawn'
 import { spawn } from '@socketsecurity/lib/spawn'
+
 import { getDefaultOrgSlug } from '../../commands/ci/fetch-default-org-slug.mjs'
 import { FLAG_QUIET, FLAG_SILENT } from '../../constants/cli.mts'
 import ENV from '../../constants/env.mts'
@@ -42,15 +43,17 @@ import {
   SOCKET_CLI_SHADOW_API_TOKEN,
   SOCKET_CLI_SHADOW_SILENT,
 } from '../../constants/shadow.mts'
+import { getErrorCause } from '../error/errors.mts'
+import { findUp } from '../fs/fs.mts'
+import { getDefaultApiToken, getDefaultProxyUrl } from '../socket/sdk.mjs'
+import { isYarnBerry } from '../yarn/version.mts'
+
 import type {
   ShadowBinOptions,
   ShadowBinResult,
 } from '../../shadow/npm-base.mjs'
 import type { CResult } from '../../types.mjs'
-import { getErrorCause } from '../error/errors.mts'
-import { findUp } from '../fs/fs.mts'
-import { getDefaultApiToken, getDefaultProxyUrl } from '../socket/sdk.mjs'
-import { isYarnBerry } from '../yarn/version.mts'
+import type { SpawnExtra } from '@socketsecurity/lib/spawn'
 
 const require = createRequire(import.meta.url)
 

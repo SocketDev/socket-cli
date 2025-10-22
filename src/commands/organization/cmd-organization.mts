@@ -1,11 +1,12 @@
-import type { CliSubcommand } from '../../utils/cli/with-subcommands.mjs'
-import { meowWithSubcommands } from '../../utils/cli/with-subcommands.mjs'
 import { cmdOrganizationDependencies } from './cmd-organization-dependencies.mts'
 import { cmdOrganizationList } from './cmd-organization-list.mts'
-import { cmdOrganizationPolicy } from './cmd-organization-policy.mts'
 import { cmdOrganizationPolicyLicense } from './cmd-organization-policy-license.mts'
 import { cmdOrganizationPolicySecurity } from './cmd-organization-policy-security.mts'
+import { cmdOrganizationPolicy } from './cmd-organization-policy.mts'
 import { cmdOrganizationQuota } from './cmd-organization-quota.mts'
+import { meowWithSubcommands } from '../../utils/cli/with-subcommands.mjs'
+
+import type { CliSubcommand } from '../../utils/cli/with-subcommands.mjs'
 
 const description = 'Manage Socket organization account details'
 

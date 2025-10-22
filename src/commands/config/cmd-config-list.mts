@@ -1,19 +1,21 @@
 import { logger } from '@socketsecurity/lib/logger'
+
+import { outputConfigList } from './output-config-list.mts'
 import {
   DRY_RUN_BAILING_NOW,
   FLAG_JSON,
   FLAG_MARKDOWN,
 } from '../../constants/cli.mjs'
 import { commonFlags, outputFlags } from '../../flags.mts'
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { getFlagListOutput } from '../../utils/output/formatting.mts'
 import { getOutputKind } from '../../utils/output/mode.mjs'
 import { checkCommandInput } from '../../utils/validation/check-input.mts'
-import { outputConfigList } from './output-config-list.mts'
+
+import type {
+  CliCommandConfig,
+  CliCommandContext,
+} from '../../utils/cli/with-subcommands.mjs'
 
 const config: CliCommandConfig = {
   commandName: 'list',

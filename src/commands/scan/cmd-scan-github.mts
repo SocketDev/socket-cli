@@ -1,13 +1,13 @@
 import path from 'node:path'
 
 import { logger } from '@socketsecurity/lib/logger'
+
+import { handleCreateGithubScan } from './handle-create-github-scan.mts'
+import { outputScanGithub } from './output-scan-github.mts'
+import { suggestOrgSlug } from './suggest-org-slug.mts'
 import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'
 import ENV from '../../constants/env.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import {
   getFlagApiRequirementsOutput,
@@ -18,9 +18,11 @@ import { readOrDefaultSocketJson } from '../../utils/socket/json.mts'
 import { determineOrgSlug } from '../../utils/socket/org-slug.mjs'
 import { hasDefaultApiToken } from '../../utils/socket/sdk.mjs'
 import { checkCommandInput } from '../../utils/validation/check-input.mts'
-import { handleCreateGithubScan } from './handle-create-github-scan.mts'
-import { outputScanGithub } from './output-scan-github.mts'
-import { suggestOrgSlug } from './suggest-org-slug.mts'
+
+import type {
+  CliCommandConfig,
+  CliCommandContext,
+} from '../../utils/cli/with-subcommands.mjs'
 
 export const CMD_NAME = 'github'
 

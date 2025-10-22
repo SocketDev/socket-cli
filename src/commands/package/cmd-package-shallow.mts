@@ -1,10 +1,9 @@
 import { logger } from '@socketsecurity/lib/logger'
+
+import { handlePurlsShallowScore } from './handle-purls-shallow-score.mts'
+import { parsePackageSpecifiers } from './parse-package-specifiers.mts'
 import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import {
   getFlagApiRequirementsOutput,
@@ -12,8 +11,11 @@ import {
 } from '../../utils/output/formatting.mts'
 import { getOutputKind } from '../../utils/output/mode.mjs'
 import { checkCommandInput } from '../../utils/validation/check-input.mts'
-import { handlePurlsShallowScore } from './handle-purls-shallow-score.mts'
-import { parsePackageSpecifiers } from './parse-package-specifiers.mts'
+
+import type {
+  CliCommandConfig,
+  CliCommandContext,
+} from '../../utils/cli/with-subcommands.mjs'
 
 export const CMD_NAME = 'shallow'
 

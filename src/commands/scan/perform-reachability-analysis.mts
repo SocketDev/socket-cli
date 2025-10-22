@@ -1,19 +1,21 @@
 import path from 'node:path'
-import type { Spinner } from '@socketsecurity/lib/spinner'
+
 import { DOT_SOCKET_DOT_FACTS_JSON } from '../../constants/paths.mts'
 import {
   SOCKET_DEFAULT_BRANCH,
   SOCKET_DEFAULT_REPOSITORY,
 } from '../../constants/socket.mts'
-import type { CResult } from '../../types.mts'
 import { extractTier1ReachabilityScanId } from '../../utils/coana/extract-scan-id.mjs'
 import { spawnCoanaDlx } from '../../utils/dlx/spawn.mjs'
-import type { PURL_Type } from '../../utils/ecosystem/ecosystem.mjs'
 import { hasEnterpriseOrgPlan } from '../../utils/organization.mts'
 import { handleApiCall } from '../../utils/socket/api.mjs'
 import { setupSdk } from '../../utils/socket/sdk.mjs'
 import { socketDevLink } from '../../utils/terminal/link.mts'
 import { fetchOrganization } from '../organization/fetch-organization-list.mts'
+
+import type { CResult } from '../../types.mts'
+import type { PURL_Type } from '../../utils/ecosystem/ecosystem.mjs'
+import type { Spinner } from '@socketsecurity/lib/spinner'
 
 export type ReachabilityOptions = {
   reachAnalysisTimeout: number

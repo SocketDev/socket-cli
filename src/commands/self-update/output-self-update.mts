@@ -2,8 +2,9 @@
  * Output formatting for self-update command.
  */
 
-import { logger } from '@socketsecurity/lib/logger'
 import colors from 'yoctocolors-cjs'
+
+import { logger } from '@socketsecurity/lib/logger'
 
 /**
  * Self-update output options.

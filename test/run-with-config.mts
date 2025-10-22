@@ -21,8 +21,8 @@
  * const json = JSON.parse(result.stdout)
  */
 
-import constants from '../src/constants.mts'
 import { spawnSocketCli } from './utils.mts'
+import constants from '../src/constants.mts'
 
 /**
  * Run Socket CLI command with isolated configuration.

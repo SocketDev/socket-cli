@@ -25,11 +25,12 @@ import {
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { getOwn } from '@socketsecurity/lib/objects'
 import { spawn } from '@socketsecurity/lib/spawn'
-import type { Spinner } from '@socketsecurity/lib/spinner'
+
 import { shadowNpmInstall } from '../../shadow/npm/install.mts'
+import { cmdFlagsToString } from '../../utils/process/cmd.mts'
 
 import type { EnvDetails } from '../../utils/ecosystem/environment.mjs'
-import { cmdFlagsToString } from '../../utils/process/cmd.mts'
+import type { Spinner } from '@socketsecurity/lib/spinner'
 
 type SpawnOption = Exclude<Parameters<typeof spawn>[2], undefined>
 

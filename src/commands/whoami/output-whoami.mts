@@ -1,6 +1,8 @@
 import { logger } from '@socketsecurity/lib/logger'
-import type { CResult } from '../../types.mts'
+
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
+
+import type { CResult } from '../../types.mts'
 
 export interface WhoamiStatus {
   authenticated: boolean

@@ -1,5 +1,6 @@
-import { YARN } from '@socketsecurity/lib/constants/agents'
 import { describe, expect } from 'vitest'
+
+import { YARN } from '@socketsecurity/lib/constants/agents'
 
 import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
 import {

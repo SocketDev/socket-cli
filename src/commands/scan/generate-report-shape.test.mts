@@ -1,12 +1,15 @@
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 import { describe, expect, it } from 'vitest'
-import type { ScanReport } from './generate-report.mts'
-import { generateReport } from './generate-report.mts'
+
 import {
   getScanWithEnvVars,
   getSimpleCleanScan,
 } from './generate-report-test-helpers.mts'
+import { generateReport } from './generate-report.mts'
 
+import type { ScanReport } from './generate-report.mts'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+
+// biome-ignore lint/correctness/noUnusedVariables: Destructuring import for test setup
 type SecurityPolicyData = SocketSdkSuccessResult<'getOrgSecurityPolicy'>['data']
 
 describe('generate-report - report shape', () => {

@@ -1,12 +1,14 @@
 import { VLT } from '@socketsecurity/lib/constants/agents'
 import { debug, debugDir } from '@socketsecurity/lib/debug'
 import { logger } from '@socketsecurity/lib/logger'
-import type { OutputKind } from '../../types.mts'
-import { detectAndValidatePackageEnvironment } from '../../utils/ecosystem/environment.mjs'
-import { cmdPrefixMessage } from '../../utils/process/cmd.mts'
+
 import { applyOptimization } from './apply-optimization.mts'
 import { outputOptimizeResult } from './output-optimize-result.mts'
 import { CMD_NAME } from './shared.mts'
+import { detectAndValidatePackageEnvironment } from '../../utils/ecosystem/environment.mjs'
+import { cmdPrefixMessage } from '../../utils/process/cmd.mts'
+
+import type { OutputKind } from '../../types.mts'
 
 export async function handleOptimize({
   cwd,

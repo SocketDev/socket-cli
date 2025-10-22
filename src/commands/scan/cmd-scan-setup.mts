@@ -1,16 +1,18 @@
 import path from 'node:path'
 
 import { logger } from '@socketsecurity/lib/logger'
+
+import { handleScanConfig } from './handle-scan-config.mts'
 import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'
 import { SOCKET_JSON } from '../../constants/paths.mts'
 import { commonFlags } from '../../flags.mts'
+import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
+import { getFlagListOutput } from '../../utils/output/formatting.mts'
+
 import type {
   CliCommandConfig,
   CliCommandContext,
 } from '../../utils/cli/with-subcommands.mjs'
-import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
-import { getFlagListOutput } from '../../utils/output/formatting.mts'
-import { handleScanConfig } from './handle-scan-config.mts'
 
 const config: CliCommandConfig = {
   commandName: 'setup',

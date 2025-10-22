@@ -1,10 +1,10 @@
 /** @fileoverview Shadow bin runner with IPC support and error handling. */
 
 import { createRequire } from 'node:module'
+
 import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/lib/constants/socket'
-import type { SpawnExtra } from '@socketsecurity/lib/spawn'
-import type { Spinner } from '@socketsecurity/lib/spinner'
 import { Spinner as createSpinner } from '@socketsecurity/lib/spinner'
+
 import { NPM, PNPM, YARN } from '../../constants/agents.mts'
 import { FLAG_SILENT } from '../../constants/cli.mts'
 import {
@@ -21,15 +21,18 @@ import {
   SOCKET_CLI_SHADOW_API_TOKEN,
   SOCKET_CLI_SHADOW_SILENT,
 } from '../../constants/shadow.mts'
+import { getErrorCause } from '../error/errors.mts'
+import { findUp } from '../fs/fs.mts'
+import { isYarnBerry } from '../yarn/version.mts'
+
 import type { IpcObject } from '../../constants/types.mts'
 import type {
   ShadowBinOptions,
   ShadowBinResult,
 } from '../../shadow/npm-base.mts'
 import type { CResult } from '../../types.mts'
-import { getErrorCause } from '../error/errors.mts'
-import { findUp } from '../fs/fs.mts'
-import { isYarnBerry } from '../yarn/version.mts'
+import type { SpawnExtra } from '@socketsecurity/lib/spawn'
+import type { Spinner } from '@socketsecurity/lib/spinner'
 
 const require = createRequire(import.meta.url)
 

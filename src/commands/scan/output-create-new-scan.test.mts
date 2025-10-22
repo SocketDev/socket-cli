@@ -1,9 +1,10 @@
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { outputCreateNewScan } from './output-create-new-scan.mts'
 import { setupStandardOutputMocks } from '../../../test/helpers/index.mts'
 
 import type { CResult } from '../../types.mts'
-import { outputCreateNewScan } from './output-create-new-scan.mts'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 // Mock the dependencies.
 setupStandardOutputMocks()

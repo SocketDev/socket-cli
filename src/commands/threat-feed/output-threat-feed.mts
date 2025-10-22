@@ -1,9 +1,11 @@
 import { logger } from '@socketsecurity/lib/logger'
-import type { CResult, OutputKind } from '../../types.mts'
+
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
 import { getPurlObject } from '../../utils/purl/parse.mts'
+
 import type { ThreadFeedResponse } from './types.mts'
+import type { CResult, OutputKind } from '../../types.mts'
 
 export async function outputThreatFeed(
   result: CResult<ThreadFeedResponse>,

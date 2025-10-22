@@ -2,18 +2,20 @@ import path from 'node:path'
 
 import { debugDir } from '@socketsecurity/lib/debug'
 import { logger } from '@socketsecurity/lib/logger'
+
+import { detectManifestActions } from './detect-manifest-actions.mts'
+import { generateAutoManifest } from './generate_auto_manifest.mts'
 import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mjs'
 import { commonFlags } from '../../flags.mts'
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
 import { getFlagListOutput } from '../../utils/output/formatting.mts'
 import { getOutputKind } from '../../utils/output/mode.mjs'
 import { readOrDefaultSocketJson } from '../../utils/socket/json.mts'
-import { detectManifestActions } from './detect-manifest-actions.mts'
-import { generateAutoManifest } from './generate_auto_manifest.mts'
+
+import type {
+  CliCommandConfig,
+  CliCommandContext,
+} from '../../utils/cli/with-subcommands.mjs'
 
 const config: CliCommandConfig = {
   commandName: 'auto',

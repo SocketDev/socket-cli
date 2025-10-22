@@ -1,14 +1,16 @@
 /** @fileoverview Coana CLI spawn utilities for Socket CLI. */
 
-import type { SpawnExtra } from '@socketsecurity/lib/spawn'
 import { spawn } from '@socketsecurity/lib/spawn'
+
 import { getDefaultOrgSlug } from '../../commands/ci/fetch-default-org-slug.mts'
 import ENV from '../../constants/env.mts'
-import type { ShadowBinOptions } from '../../shadow/npm-base.mjs'
-import type { CResult } from '../../types.mjs'
 import { getErrorCause } from '../error/errors.mts'
 import { runShadowCommand } from '../shadow/runner.mts'
 import { getDefaultApiToken, getDefaultProxyUrl } from '../socket/sdk.mts'
+
+import type { ShadowBinOptions } from '../../shadow/npm-base.mjs'
+import type { CResult } from '../../types.mjs'
+import type { SpawnExtra } from '@socketsecurity/lib/spawn'
 
 export type CoanaSpawnOptions = ShadowBinOptions & {
   agent?: 'npm' | 'pnpm' | 'yarn' | undefined

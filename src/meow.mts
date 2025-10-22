@@ -3,9 +3,10 @@
  * Uses socket-registry's parseArgs for argument parsing.
  */
 
-import type { ParseArgsConfig } from '@socketsecurity/lib/argv/parse'
 import { parseArgs } from '@socketsecurity/lib/argv/parse'
 import { readPackageJsonSync } from '@socketsecurity/lib/packages'
+
+import type { ParseArgsConfig } from '@socketsecurity/lib/argv/parse'
 
 export interface MeowFlag {
   readonly type?: 'string' | 'boolean' | 'number'

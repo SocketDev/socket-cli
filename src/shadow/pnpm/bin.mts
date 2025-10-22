@@ -1,22 +1,18 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { debug, debugDir, debugNs } from '@socketsecurity/lib/debug'
 import { logger } from '@socketsecurity/lib/logger'
 import { normalizePath } from '@socketsecurity/lib/path'
-import type {
-  SpawnExtra,
-  SpawnOptions,
-  SpawnResult,
-} from '@socketsecurity/lib/spawn'
 import { spawn } from '@socketsecurity/lib/spawn'
+
 import { PNPM } from '../../constants/agents.mts'
 import { FLAG_DRY_RUN } from '../../constants/cli.mts'
 import ENV from '../../constants/env.mts'
 import { PNPM_LOCK_YAML } from '../../constants/packages.mts'
 import { shadowBinPath } from '../../constants/paths.mts'
-import type { IpcObject } from '../../constants/shadow.mts'
 import {
   SOCKET_CLI_ACCEPT_RISKS,
   SOCKET_CLI_SHADOW_API_TOKEN,
@@ -40,6 +36,13 @@ import { logAlertsMap } from '../../utils/socket/package-alert.mts'
 import { getPublicApiToken } from '../../utils/socket/sdk.mjs'
 import { scanPackagesAndLogAlerts } from '../common.mts'
 import { ensureIpcInStdio } from '../stdio-ipc.mts'
+
+import type { IpcObject } from '../../constants/shadow.mts'
+import type {
+  SpawnExtra,
+  SpawnOptions,
+  SpawnResult,
+} from '@socketsecurity/lib/spawn'
 
 export type ShadowPnpmOptions = SpawnOptions & {
   ipc?: IpcObject | undefined

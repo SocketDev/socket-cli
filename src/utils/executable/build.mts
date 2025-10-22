@@ -6,6 +6,7 @@
 import { createHash } from 'node:crypto'
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
+
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { safeDelete } from '@socketsecurity/lib/fs'
 import { httpRequest } from '@socketsecurity/lib/http-request'

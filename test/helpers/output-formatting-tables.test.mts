@@ -1,9 +1,11 @@
 /** @fileoverview Tests for table formatting utilities. */
 
-import type { TableColumn } from '@socketsecurity/registry/tables'
-import { formatSimpleTable, formatTable } from '@socketsecurity/registry/tables'
 import { describe, expect, it } from 'vitest'
 import colors from 'yoctocolors-cjs'
+
+import { formatSimpleTable, formatTable } from '@socketsecurity/registry/tables'
+
+import type { TableColumn } from '@socketsecurity/registry/tables'
 
 describe('formatTable', () => {
   it('should format empty data', () => {
@@ -92,7 +94,7 @@ describe('formatTable', () => {
 
     // Should contain ANSI color codes
 
-    expect(result).toMatch(/\u001b\[/)
+    expect(result).toContain('\u001b[')
   })
 
   it('should handle missing values', () => {
@@ -202,7 +204,7 @@ describe('formatSimpleTable', () => {
 
     // Should contain ANSI color codes
 
-    expect(result).toMatch(/\u001b\[/)
+    expect(result).toContain('\u001b[')
   })
 
   it('should handle missing values in simple tables', () => {

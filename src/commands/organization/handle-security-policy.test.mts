@@ -1,9 +1,10 @@
 import { describe, expect, it, vi } from 'vitest'
+
+import { handleSecurityPolicy } from './handle-security-policy.mts'
 import {
   createErrorResult,
   createSuccessResult,
 } from '../../../test/helpers/mocks.mts'
-import { handleSecurityPolicy } from './handle-security-policy.mts'
 
 // Mock the dependencies.
 vi.mock('./fetch-security-policy.mts', () => ({
