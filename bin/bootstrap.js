@@ -9,6 +9,9 @@ const CLI_PACKAGE_DIR = join(SOCKET_DLX_DIR, 'cli')
 const CLI_ENTRY = join(CLI_PACKAGE_DIR, 'dist', 'cli.js')
 const CLI_ENTRY_BZ = join(CLI_PACKAGE_DIR, 'dist', 'cli.js.bz')
 
+// Get command-line arguments, defaulting to empty array if not yet available.
+const args = process.argv ? process.argv.slice(2) : []
+
 // Check for brotli-compressed CLI first.
 if (existsSync(CLI_ENTRY_BZ)) {
   // Read compressed file.
@@ -23,17 +26,13 @@ if (existsSync(CLI_ENTRY_BZ)) {
   writeFileSync(tempCliPath, decompressed)
 
   // Delegate to decompressed CLI.
-  const result = spawnSync(
-    process.execPath,
-    [tempCliPath, ...process.argv.slice(2)],
-    {
-      stdio: 'inherit',
-      env: {
-        ...process.env,
-        PKG_EXECPATH: process.env.PKG_EXECPATH || 'PKG_INVOKE_NODEJS',
-      },
+  const result = spawnSync(process.execPath, [tempCliPath, ...args], {
+    stdio: 'inherit',
+    env: {
+      ...process.env,
+      PKG_EXECPATH: process.env.PKG_EXECPATH || 'PKG_INVOKE_NODEJS',
     },
-  )
+  })
 
   // Clean up temp file.
   try {
@@ -46,17 +45,13 @@ if (existsSync(CLI_ENTRY_BZ)) {
   process.exit(result.status || 0)
 } else if (existsSync(CLI_ENTRY)) {
   // Fallback to uncompressed CLI.
-  const result = spawnSync(
-    process.execPath,
-    [CLI_ENTRY, ...process.argv.slice(2)],
-    {
-      stdio: 'inherit',
-      env: {
-        ...process.env,
-        PKG_EXECPATH: process.env.PKG_EXECPATH || 'PKG_INVOKE_NODEJS',
-      },
+  const result = spawnSync(process.execPath, [CLI_ENTRY, ...args], {
+    stdio: 'inherit',
+    env: {
+      ...process.env,
+      PKG_EXECPATH: process.env.PKG_EXECPATH || 'PKG_INVOKE_NODEJS',
     },
-  )
+  })
   process.exit(result.status || 0)
 } else {
   // Download and install.
