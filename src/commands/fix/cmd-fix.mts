@@ -269,7 +269,7 @@ async function run(
     // We patched in this feature with `npx custompatch meow` at
     // socket-cli/patches/meow#13.2.0.patch.
     unknownFlags = [],
-  } = cli.flags as {
+  } = cli.flags as unknown as {
     applyFixes: boolean
     autopilot: boolean
     exclude: string[]
