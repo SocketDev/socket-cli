@@ -49,38 +49,6 @@ async function exec(command, args, options = {}) {
 }
 
 /**
- * Check if Homebrew is installed.
- */
-async function checkBrewInstalled() {
-  try {
-    await exec('brew', ['--version'])
-    return true
-  } catch {
-    return false
-  }
-}
-
-/**
- * Install Homebrew.
- */
-async function installBrew() {
-  console.log('📦 Installing Homebrew...')
-  console.log('   This may take a few minutes...\\n')
-
-  try {
-    const installScript =
-      '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
-    await exec('bash', ['-c', installScript], { stdio: 'inherit' })
-    console.log('   ✓ Homebrew installed successfully\\n')
-    return true
-  } catch (e) {
-    console.error(`   ✗ Failed to install Homebrew: ${e.message}`)
-    console.error('   Please install manually: https://brew.sh/')
-    return false
-  }
-}
-
-/**
  * Check if binaryen (wasm-opt) is installed.
  */
 async function checkBinaryenInstalled() {
@@ -93,17 +61,75 @@ async function checkBinaryenInstalled() {
 }
 
 /**
- * Install binaryen via Homebrew.
+ * Install binaryen (wasm-opt) cross-platform.
  */
 async function installBinaryen() {
+  const isWindows = process.platform === 'win32'
+  const isMacOS = process.platform === 'darwin'
+  const isLinux = process.platform === 'linux'
+
   console.log('📦 Installing binaryen (wasm-opt)...')
+  console.log('   This may take a few minutes...\\n')
 
   try {
-    await exec('brew', ['install', 'binaryen'], { stdio: 'inherit' })
-    console.log('   ✓ binaryen installed successfully\\n')
-    return true
+    if (isMacOS) {
+      // macOS: Try Homebrew first.
+      console.log('   Trying Homebrew installation...')
+      try {
+        await exec('brew', ['--version'])
+        await exec('brew', ['install', 'binaryen'], { stdio: 'inherit' })
+        console.log('   ✓ binaryen installed via Homebrew\\n')
+        return true
+      } catch {
+        console.log('   ⚠ Homebrew not available, trying GitHub releases...')
+      }
+    } else if (isLinux) {
+      // Linux: Try apt-get first (Ubuntu/Debian).
+      console.log('   Trying apt-get installation...')
+      try {
+        await exec('sudo', ['apt-get', 'update'], { stdio: 'pipe' })
+        await exec('sudo', ['apt-get', 'install', '-y', 'binaryen'], { stdio: 'inherit' })
+        console.log('   ✓ binaryen installed via apt-get\\n')
+        return true
+      } catch {
+        console.log('   ⚠ apt-get not available or failed, trying GitHub releases...')
+      }
+    } else if (isWindows) {
+      // Windows: Try chocolatey first.
+      console.log('   Trying Chocolatey installation...')
+      try {
+        await exec('choco', ['--version'])
+        await exec('choco', ['install', 'binaryen', '-y'], { stdio: 'inherit' })
+        console.log('   ✓ binaryen installed via Chocolatey\\n')
+        return true
+      } catch {
+        console.log('   ⚠ Chocolatey not available, trying GitHub releases...')
+      }
+    }
+
+    // Fallback: Download from GitHub releases (all platforms).
+    console.log('   Downloading pre-built binaryen from GitHub...')
+    const version = 'version_119' // Latest stable as of implementation.
+    let platformSuffix = ''
+
+    if (isWindows) {
+      platformSuffix = 'x86_64-windows'
+    } else if (isMacOS) {
+      platformSuffix = process.arch === 'arm64' ? 'arm64-macos' : 'x86_64-macos'
+    } else if (isLinux) {
+      platformSuffix = 'x86_64-linux'
+    }
+
+    const url = `https://github.com/WebAssembly/binaryen/releases/download/${version}/binaryen-${version}-${platformSuffix}.tar.gz`
+    console.log(`   URL: ${url}`)
+
+    // For CI/automation, we'll gracefully degrade if GitHub releases download fails.
+    console.log('   ⚠ GitHub releases download not yet implemented')
+    console.log('   ⚠ wasm-opt will be skipped (install manually for smaller bundles)')
+    return false
   } catch (e) {
     console.error(`   ✗ Failed to install binaryen: ${e.message}`)
+    console.error('   ⚠ wasm-opt will be skipped (install manually for optimal bundle size)')
     return false
   }
 }
@@ -141,25 +167,11 @@ const hasBinaryen = await checkBinaryenInstalled()
 if (!hasBinaryen) {
   console.log('❌ binaryen (wasm-opt) not found\n')
 
-  // Check if Homebrew is installed.
-  const hasBrew = await checkBrewInstalled()
-  if (!hasBrew) {
-    console.log('❌ Homebrew not found\n')
-    const brewInstalled = await installBrew()
-    if (!brewInstalled) {
-      console.error(
-        '⚠ Skipping wasm-opt optimization (install manually for smaller bundle)',
-      )
-    }
-  }
-
-  if (hasBrew || (await checkBrewInstalled())) {
-    const binaryenInstalled = await installBinaryen()
-    if (!binaryenInstalled) {
-      console.error(
-        '⚠ Skipping wasm-opt optimization (install manually for smaller bundle)',
-      )
-    }
+  const binaryenInstalled = await installBinaryen()
+  if (!binaryenInstalled) {
+    console.log(
+      '⚠ wasm-opt not available - bundle will be slightly larger\n',
+    )
   }
 } else {
   console.log('✓ binaryen (wasm-opt) found\n')

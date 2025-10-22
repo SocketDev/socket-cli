@@ -72,52 +72,90 @@ async function checkRustInstalled() {
 }
 
 /**
- * Install Rust via rustup.
+ * Install Rust via rustup (cross-platform).
  */
 async function installRust() {
   console.log('📦 Installing Rust toolchain via rustup...')
   console.log('   This may take a few minutes...\n')
 
-  const rustupUrl = 'https://sh.rustup.rs'
+  const isWindows = WIN32
 
   try {
-    // Download rustup installer.
-    console.log(`   Downloading rustup from ${rustupUrl}...`)
-    const response = await fetch(rustupUrl)
-    if (!response.ok) {
-      throw new Error(`Failed to download rustup: ${response.statusText}`)
-    }
+    if (isWindows) {
+      // Windows: Download and run rustup-init.exe.
+      const rustupUrl = 'https://win.rustup.rs/x86_64'
+      console.log(`   Downloading rustup-init.exe from ${rustupUrl}...`)
 
-    const script = await response.text()
+      const response = await fetch(rustupUrl)
+      if (!response.ok) {
+        throw new Error(`Failed to download rustup: ${response.statusText}`)
+      }
 
-    // Save to temp file.
-    const tmpDir = path.join(CARGO_HOME, '.tmp')
-    await fs.mkdir(tmpDir, { recursive: true })
-    const scriptPath = path.join(tmpDir, 'rustup-init.sh')
-    await fs.writeFile(scriptPath, script, 'utf-8')
+      const buffer = await response.arrayBuffer()
 
-    // Run installer.
-    console.log('   Running rustup installer...')
-    const result = await exec(
-      'sh',
-      [scriptPath, '-y', '--default-toolchain', 'stable'],
-      {
-        stdio: 'inherit',
-        env: {
-          ...process.env,
-          CARGO_HOME,
-          RUSTUP_HOME:
-            process.env.RUSTUP_HOME || path.join(homedir(), '.rustup'),
+      const tmpDir = path.join(CARGO_HOME, '.tmp')
+      await fs.mkdir(tmpDir, { recursive: true })
+      const exePath = path.join(tmpDir, 'rustup-init.exe')
+      await fs.writeFile(exePath, Buffer.from(buffer))
+
+      console.log('   Running rustup-init.exe...')
+      const result = await exec(
+        exePath,
+        ['-y', '--default-toolchain', 'stable', '--default-host', 'x86_64-pc-windows-msvc'],
+        {
+          stdio: 'inherit',
+          env: {
+            ...process.env,
+            CARGO_HOME,
+            RUSTUP_HOME:
+              process.env.RUSTUP_HOME || path.join(homedir(), '.rustup'),
+          },
         },
-      },
-    )
+      )
 
-    if (result.code !== 0) {
-      throw new Error('rustup installation failed')
+      if (result.code !== 0) {
+        throw new Error('rustup installation failed')
+      }
+
+      await fs.unlink(exePath)
+    } else {
+      // Linux/macOS: Download and run shell script.
+      const rustupUrl = 'https://sh.rustup.rs'
+      console.log(`   Downloading rustup from ${rustupUrl}...`)
+
+      const response = await fetch(rustupUrl)
+      if (!response.ok) {
+        throw new Error(`Failed to download rustup: ${response.statusText}`)
+      }
+
+      const script = await response.text()
+
+      const tmpDir = path.join(CARGO_HOME, '.tmp')
+      await fs.mkdir(tmpDir, { recursive: true })
+      const scriptPath = path.join(tmpDir, 'rustup-init.sh')
+      await fs.writeFile(scriptPath, script, 'utf-8')
+
+      console.log('   Running rustup installer...')
+      const result = await exec(
+        'sh',
+        [scriptPath, '-y', '--default-toolchain', 'stable'],
+        {
+          stdio: 'inherit',
+          env: {
+            ...process.env,
+            CARGO_HOME,
+            RUSTUP_HOME:
+              process.env.RUSTUP_HOME || path.join(homedir(), '.rustup'),
+          },
+        },
+      )
+
+      if (result.code !== 0) {
+        throw new Error('rustup installation failed')
+      }
+
+      await fs.unlink(scriptPath)
     }
-
-    // Cleanup.
-    await fs.unlink(scriptPath)
 
     console.log('   ✓ Rust installed successfully\n')
     return true
