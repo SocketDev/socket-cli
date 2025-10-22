@@ -17,6 +17,6 @@ permissions:
 jobs:
   ci:
     name: Run CI Pipeline
-    uses: SocketDev/socket-registry/.github/workflows/ci.yml@7ae88e3722a152788568bdcc84a42cc59261e46e # main
+    uses: SocketDev/socket-registry/.github/workflows/ci.yml@600bfd38a550656b8015c92242e6d4cec5a25cb1 # main
     with:
       test-setup-script: 'pnpm run pretest:unit'
