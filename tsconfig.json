@@ -1,6 +1,6 @@
 {
   "extends": "./.config/tsconfig.base.json",
-  "include": ["src/**/*.mts"],
+  "include": ["src/**/*.mts", "src/**/*.d.ts"],
   "exclude": [
     "src/**/*.test.mts",
     "src/**/*.tsx",

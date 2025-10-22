@@ -1,4 +1,3 @@
-// @ts-expect-error
 
 import { logger } from '@socketsecurity/lib/logger'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
