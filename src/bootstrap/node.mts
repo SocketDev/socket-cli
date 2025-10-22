@@ -15,9 +15,15 @@
  */
 
 import { spawn } from 'node:child_process'
-import { existsSync } from 'node:fs'
+import { existsSync, promises as fs } from 'node:fs'
+import path from 'node:path'
 
-import { getCliEntryPoint, getCliPackageDir } from './shared/paths.mjs'
+import {
+  getCliEntryPoint,
+  getCliPackageDir,
+  getCliPackageName,
+  getDlxDir,
+} from './shared/paths.mjs'
 
 /**
  * Check if CLI is installed.
@@ -29,17 +35,93 @@ function isCliInstalled(): boolean {
 }
 
 /**
+ * Download CLI using npm pack command.
+ * This delegates to npm which handles downloading and extracting the latest version.
+ */
+async function downloadCli(): Promise<void> {
+  const packageName = getCliPackageName()
+  const dlxDir = getDlxDir()
+  const cliDir = getCliPackageDir()
+
+  await fs.mkdir(dlxDir, { recursive: true })
+
+  console.error(`Downloading ${packageName}...`)
+
+  return new Promise((resolve, reject) => {
+    const npmPackProcess = spawn(
+      'npm',
+      ['pack', packageName, '--pack-destination', dlxDir],
+      {
+        stdio: ['ignore', 'pipe', 'inherit'],
+      },
+    )
+
+    let tarballName = ''
+    npmPackProcess.stdout?.on('data', data => {
+      tarballName += data.toString()
+    })
+
+    npmPackProcess.on('error', e => {
+      reject(new Error(`Failed to run npm pack: ${e}`))
+    })
+
+    npmPackProcess.on('exit', async code => {
+      if (code !== 0) {
+        reject(new Error(`npm pack exited with code ${code}`))
+        return
+      }
+
+      try {
+        const tarballPath = path.join(dlxDir, tarballName.trim())
+
+        await fs.mkdir(cliDir, { recursive: true })
+
+        const tarExtractProcess = spawn(
+          'tar',
+          ['-xzf', tarballPath, '-C', cliDir, '--strip-components=1'],
+          {
+            stdio: 'inherit',
+          },
+        )
+
+        tarExtractProcess.on('error', e => {
+          reject(new Error(`Failed to extract tarball: ${e}`))
+        })
+
+        tarExtractProcess.on('exit', async extractCode => {
+          if (extractCode !== 0) {
+            reject(new Error(`tar extraction exited with code ${extractCode}`))
+            return
+          }
+
+          await fs.unlink(tarballPath).catch(() => {
+            // Ignore cleanup errors.
+          })
+
+          console.error('Socket CLI installed successfully')
+          resolve()
+        })
+      } catch (e) {
+        reject(e)
+      }
+    })
+  })
+}
+
+/**
  * Main entry point.
  */
 async function main(): Promise<void> {
   // Check if CLI is already installed.
   if (!isCliInstalled()) {
-    // TODO: Implement download logic using shared utilities.
     console.error('Socket CLI not installed yet.')
-    console.error('Installing from npm...')
-    console.error('TODO: Implement download from npm registry')
-    // eslint-disable-next-line n/no-process-exit
-    process.exit(1)
+    try {
+      await downloadCli()
+    } catch (error) {
+      console.error('Failed to download Socket CLI:', error)
+      // eslint-disable-next-line n/no-process-exit
+      process.exit(1)
+    }
   }
 
   // CLI is installed, delegate to it.
