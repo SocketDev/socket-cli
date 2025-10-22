@@ -21,7 +21,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
-      - uses: SocketDev/socket-registry/.github/actions/setup@a912e5bd8ec469d2ee13abf592a6b2e5898c006c # main
+      - uses: SocketDev/socket-registry/.github/actions/setup@7ae88e3722a152788568bdcc84a42cc59261e46e # main
         with:
           scope: '@socketsecurity'
       - run: npm install -g npm@latest
