@@ -1,5 +1,4 @@
 import path from 'node:path'
-
 import { describe, expect, it } from 'vitest'
 
 import { cmdit, spawnSocketCli, testPath } from '../../../test/utils.mts'
@@ -670,6 +669,131 @@ describe('socket scan reach', async () => {
         expect(code).toBeGreaterThan(0)
         const output = stdout + stderr
         expect(output.length).toBeGreaterThan(0)
+      },
+    )
+  })
+
+  describe('output path tests', () => {
+    cmdit(
+      [
+        'scan',
+        'reach',
+        FLAG_DRY_RUN,
+        '--output',
+        'custom-report.json',
+        '--org',
+        'fakeOrg',
+        FLAG_CONFIG,
+        '{"apiToken":"fakeToken"}',
+      ],
+      'should accept --output flag with .json extension',
+      async cmd => {
+        const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+        expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+        expect(code, 'should exit with code 0').toBe(0)
+      },
+    )
+
+    cmdit(
+      [
+        'scan',
+        'reach',
+        FLAG_DRY_RUN,
+        '-o',
+        'report.json',
+        '--org',
+        'fakeOrg',
+        FLAG_CONFIG,
+        '{"apiToken":"fakeToken"}',
+      ],
+      'should accept -o short flag with .json extension',
+      async cmd => {
+        const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+        expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+        expect(code, 'should exit with code 0').toBe(0)
+      },
+    )
+
+    cmdit(
+      [
+        'scan',
+        'reach',
+        FLAG_DRY_RUN,
+        '--output',
+        './reports/analysis.json',
+        '--org',
+        'fakeOrg',
+        FLAG_CONFIG,
+        '{"apiToken":"fakeToken"}',
+      ],
+      'should accept --output flag with path',
+      async cmd => {
+        const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+        expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+        expect(code, 'should exit with code 0').toBe(0)
+      },
+    )
+
+    cmdit(
+      [
+        'scan',
+        'reach',
+        FLAG_DRY_RUN,
+        '--output',
+        'report.txt',
+        '--org',
+        'fakeOrg',
+        FLAG_CONFIG,
+        '{"apiToken":"fakeToken"}',
+      ],
+      'should fail when --output does not end with .json',
+      async cmd => {
+        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+        const output = stdout + stderr
+        expect(output).toContain('The --output path must end with .json')
+        expect(code, 'should exit with non-zero code').not.toBe(0)
+      },
+    )
+
+    cmdit(
+      [
+        'scan',
+        'reach',
+        FLAG_DRY_RUN,
+        '--output',
+        'report',
+        '--org',
+        'fakeOrg',
+        FLAG_CONFIG,
+        '{"apiToken":"fakeToken"}',
+      ],
+      'should fail when --output has no extension',
+      async cmd => {
+        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+        const output = stdout + stderr
+        expect(output).toContain('The --output path must end with .json')
+        expect(code, 'should exit with non-zero code').not.toBe(0)
+      },
+    )
+
+    cmdit(
+      [
+        'scan',
+        'reach',
+        FLAG_DRY_RUN,
+        '--output',
+        'report.JSON',
+        '--org',
+        'fakeOrg',
+        FLAG_CONFIG,
+        '{"apiToken":"fakeToken"}',
+      ],
+      'should fail when --output ends with .JSON (uppercase)',
+      async cmd => {
+        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+        const output = stdout + stderr
+        expect(output).toContain('The --output path must end with .json')
+        expect(code, 'should exit with non-zero code').not.toBe(0)
       },
     )
   })

@@ -4,16 +4,9 @@ import { joinAnd } from '@socketsecurity/lib/arrays'
 import { debug, debugDir } from '@socketsecurity/lib/debug'
 import { logger } from '@socketsecurity/lib/logger'
 import { pluralize } from '@socketsecurity/lib/words'
-
-import {
-  checkCiEnvVars,
-  getCiEnvInstructions,
-  getFixEnv,
-} from './env-helpers.mts'
-import { getSocketFixBranchName, getSocketFixCommitMessage } from './git.mts'
-import { getSocketFixPrs, openSocketFixPr } from './pull-request.mts'
 import { FLAG_DRY_RUN } from '../../constants/cli.mts'
 import { GQL_PR_STATE_OPEN } from '../../constants/github.mts'
+import type { CResult } from '../../types.mts'
 import { spawnCoanaDlx } from '../../utils/dlx/spawn.mjs'
 import { getErrorCause } from '../../utils/error/errors.mjs'
 import { getPackageFilesForScan } from '../../utils/fs/path-resolve.mjs'
@@ -36,9 +29,14 @@ import { cmdFlagValueToArray } from '../../utils/process/cmd.mts'
 import { handleApiCall } from '../../utils/socket/api.mjs'
 import { setupSdk } from '../../utils/socket/sdk.mjs'
 import { fetchSupportedScanFileNames } from '../scan/fetch-supported-scan-file-names.mts'
-
+import {
+  checkCiEnvVars,
+  getCiEnvInstructions,
+  getFixEnv,
+} from './env-helpers.mts'
+import { getSocketFixBranchName, getSocketFixCommitMessage } from './git.mts'
+import { getSocketFixPrs, openSocketFixPr } from './pull-request.mts'
 import type { FixConfig } from './types.mts'
-import type { CResult } from '../../types.mts'
 
 export async function coanaFix(
   fixConfig: FixConfig,
@@ -392,6 +390,7 @@ export async function coanaFix(
         const prRef = `PR #${data.number}`
 
         logger.success(`Opened ${prRef} for ${ghsaId}.`)
+        logger.info(`PR URL: ${data.html_url}`)
 
         if (autopilot) {
           logger.indent()
