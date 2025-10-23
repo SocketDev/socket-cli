@@ -30,7 +30,10 @@
     "./package.json": "./package.json"
   },
   "scripts": {
-    "build": "echo 'Sentry-enabled build not yet implemented' && exit 1"
+    "build": "node scripts/build.mjs",
+    "clean:dist": "del-cli 'dist'",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "keywords": [
     "socket",
@@ -46,7 +49,10 @@
     "@socketsecurity/cli": "workspace:*"
   },
   "devDependencies": {
-    "@sentry/node": "^8.0.0"
+    "@sentry/node": "^8.0.0",
+    "del-cli": "6.0.0",
+    "esbuild": "0.25.10",
+    "vitest": "^3.0.0"
   },
   "publishConfig": {
     "access": "public",
