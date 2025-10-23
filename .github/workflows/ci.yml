@@ -7,9 +7,35 @@ on:
   push:
     branches: [main]
     tags: ['*']
+    paths:
+      - 'packages/cli/**'
+      - 'pnpm-lock.yaml'
+      - 'package.json'
+      - '.github/workflows/ci.yml'
   pull_request:
     branches: [main]
+    paths:
+      - 'packages/cli/**'
+      - 'pnpm-lock.yaml'
+      - 'package.json'
+      - '.github/workflows/ci.yml'
   workflow_dispatch:
+    inputs:
+      skip-tests:
+        description: 'Skip test execution'
+        required: false
+        type: boolean
+        default: false
+      skip-coverage:
+        description: 'Skip coverage reporting'
+        required: false
+        type: boolean
+        default: false
+      node-versions:
+        description: 'Node.js versions to test (JSON array)'
+        required: false
+        type: string
+        default: '[20, 22, 24]'
 
 permissions:
   contents: read
@@ -19,4 +45,13 @@ jobs:
     name: Run CI Pipeline
     uses: SocketDev/socket-registry/.github/workflows/ci.yml@600bfd38a550656b8015c92242e6d4cec5a25cb1 # main
     with:
-      test-setup-script: 'pnpm run pretest:unit'
+      working-directory: 'packages/cli'
+      test-setup-script: 'cd packages/cli && pnpm run build'
+      lint-script: 'cd packages/cli && pnpm run check'
+      type-check-script: 'cd packages/cli && pnpm run type'
+      test-script: ${{ inputs.skip-tests && 'echo "Tests skipped"' || 'cd packages/cli && pnpm run test:unit' }}
+      coverage-script: ${{ inputs.skip-coverage && '' || 'cd packages/cli && pnpm run test:unit:coverage' }}
+      coverage-report-script: ${{ inputs.skip-coverage && '' || 'cd packages/cli && pnpm run coverage:percent --json' }}
+      node-versions: ${{ inputs.node-versions || '[20, 22, 24]' }}
+      os-versions: '["ubuntu-latest", "macos-latest", "windows-latest"]'
+      fail-fast: false

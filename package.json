@@ -180,12 +180,22 @@
     "build": "pnpm --filter \"./packages/**\" run build",
     "build:cli": "pnpm --filter @socketsecurity/cli run build",
     "build:socket": "pnpm --filter socket run build",
+    "build:custom-node": "node scripts/build-custom-node.mjs",
+    "build:sea": "node scripts/build-sea.mjs",
     "check": "pnpm --filter @socketsecurity/cli run check",
+    "check-ci": "pnpm --filter @socketsecurity/cli run check-ci",
     "clean": "pnpm --filter \"./packages/**\" run clean",
     "lint": "pnpm --filter @socketsecurity/cli run lint",
+    "lint-ci": "pnpm --filter @socketsecurity/cli run lint-ci",
     "prepare": "dotenvx -q run -f .env.local -- husky",
+    "pretest:unit": "pnpm run build:cli",
     "test": "pnpm --filter @socketsecurity/cli run test",
-    "type": "pnpm --filter @socketsecurity/cli run type"
+    "test:unit": "pnpm --filter @socketsecurity/cli run test:unit",
+    "test:unit:coverage": "pnpm --filter @socketsecurity/cli run test:unit:coverage",
+    "test-ci": "pnpm --filter @socketsecurity/cli run test-ci",
+    "type": "pnpm --filter @socketsecurity/cli run type",
+    "type-ci": "pnpm --filter @socketsecurity/cli run type-ci",
+    "coverage:percent": "pnpm --filter @socketsecurity/cli run coverage:percent"
   },
   "typeCoverage": {
     "cache": true,
