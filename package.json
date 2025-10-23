@@ -76,6 +76,7 @@
     "magic-string": "0.30.19",
     "micromatch": "4.0.8",
     "mock-fs": "5.5.0",
+    "nanotar": "0.2.0",
     "nock": "14.0.10",
     "npm-package-arg": "13.0.0",
     "npm-run-all2": "8.0.4",
@@ -153,7 +154,8 @@
       "vite": "7.1.11",
       "xml2js": "0.6.2",
       "yaml": "2.8.1",
-      "yargs-parser": "21.1.1"
+      "yargs-parser": "21.1.1",
+      "@socketsecurity/lib": "link:../socket-lib"
     },
     "patchedDependencies": {
       "brace-expansion@2.0.2": "patches/brace-expansion@2.0.2.patch",
