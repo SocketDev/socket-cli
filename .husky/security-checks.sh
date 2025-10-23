@@ -10,7 +10,9 @@ YELLOW='\033[1;33m'
 GREEN='\033[0;32m'
 NC='\033[0m'
 
-# Allowed public API key (used in socket-lib).
+# Allowed public API key (used in socket-lib and across all Socket repos).
+# This is Socket's official public test API key - safe to commit.
+# NOTE: This value is intentionally identical across all Socket repos.
 ALLOWED_PUBLIC_KEY="sktsec_t_--RAN5U4ivauy4w37-6aoKyYPDt5ZbaT5JBVMqiwKo_api"
 
 echo "${GREEN}Running Socket Security checks...${NC}"
