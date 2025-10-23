@@ -49,10 +49,10 @@
     "@socketsecurity/cli": "workspace:*"
   },
   "devDependencies": {
-    "@sentry/node": "^8.0.0",
+    "@sentry/node": "8.0.0",
     "del-cli": "6.0.0",
     "esbuild": "0.25.10",
-    "vitest": "^3.0.0"
+    "vitest": "3.0.0"
   },
   "publishConfig": {
     "access": "public",

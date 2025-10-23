@@ -72,14 +72,14 @@
   },
   "devDependencies": {
     "@babel/core": "7.28.4",
-    "@babel/parser": "^7.28.4",
+    "@babel/parser": "7.28.4",
     "@babel/plugin-proposal-export-default-from": "7.27.1",
     "@babel/plugin-transform-export-namespace-from": "7.27.1",
     "@babel/plugin-transform-runtime": "7.28.3",
     "@babel/preset-react": "7.27.1",
     "@babel/preset-typescript": "7.27.1",
     "@babel/runtime": "7.28.4",
-    "@babel/traverse": "^7.28.4",
+    "@babel/traverse": "7.28.4",
     "@biomejs/biome": "2.2.4",
     "@coana-tech/cli": "14.12.51",
     "@cyclonedx/cdxgen": "11.7.0",
@@ -164,7 +164,7 @@
     "registry-auth-token": "5.1.0",
     "registry-url": "7.2.0",
     "rollup": "4.50.1",
-    "rollup-plugin-visualizer": "^6.0.5",
+    "rollup-plugin-visualizer": "6.0.5",
     "semver": "7.7.2",
     "ssri": "12.0.0",
     "synp": "1.9.14",
@@ -267,7 +267,7 @@
   },
   "dependencies": {
     "ajv-dist": "8.17.1",
-    "compromise": "^14.14.4",
-    "onnxruntime-web": "^1.23.0"
+    "compromise": "14.14.4",
+    "onnxruntime-web": "1.23.0"
   }
 }
