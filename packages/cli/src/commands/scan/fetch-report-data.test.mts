@@ -25,6 +25,13 @@ vi.mock('@socketsecurity/lib/logger', () => ({
   },
 }))
 
+vi.mock('@socketsecurity/lib/constants/process', () => ({
+  getSpinner: vi.fn(() => ({
+    start: vi.fn(),
+    stop: vi.fn(),
+  })),
+}))
+
 vi.mock('../../constants.mts', () => {
   const kInternalsSymbol = Symbol.for('kInternalsSymbol')
   const mockConstants = {
