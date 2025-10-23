@@ -11,10 +11,18 @@ import process from 'node:process'
 const TARGET_PACKAGES = {
   __proto__: null,
   all: './packages/**',
+  'alpine-arm64': '@socketbin/cli-alpine-arm64',
+  'alpine-x64': '@socketbin/cli-alpine-x64',
   cli: '@socketsecurity/cli',
+  'darwin-arm64': '@socketbin/cli-darwin-arm64',
+  'darwin-x64': '@socketbin/cli-darwin-x64',
+  'linux-arm64': '@socketbin/cli-linux-arm64',
+  'linux-x64': '@socketbin/cli-linux-x64',
   node: '@socketbin/custom-node',
   sea: '@socketbin/sea',
-  socket: 'socket'
+  socket: 'socket',
+  'win32-arm64': '@socketbin/cli-win32-arm64',
+  'win32-x64': '@socketbin/cli-win32-x64'
 }
 
 const args = process.argv.slice(2)
