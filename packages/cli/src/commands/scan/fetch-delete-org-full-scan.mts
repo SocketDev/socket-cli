@@ -13,7 +13,7 @@ export async function fetchDeleteOrgFullScan(
   orgSlug: string,
   scanId: string,
   options?: FetchDeleteOrgFullScanOptions | undefined,
-): Promise<CResult<SocketSdkSuccessResult<'deleteOrgFullScan'>['data']>> {
+): Promise<CResult<SocketSdkSuccessResult<'deleteFullScan'>['data']>> {
   const { sdkOpts } = {
     __proto__: null,
     ...options,
@@ -25,7 +25,7 @@ export async function fetchDeleteOrgFullScan(
   }
   const sockSdk = sockSdkCResult.data
 
-  return await handleApiCall(sockSdk.deleteOrgFullScan(orgSlug, scanId), {
+  return await handleApiCall(sockSdk.deleteFullScan(orgSlug, scanId), {
     description: 'to delete a scan',
   })
 }
