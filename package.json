@@ -177,12 +177,7 @@
   },
   "private": true,
   "scripts": {
-    "build": "pnpm --filter @socketsecurity/cli run build --",
-    "build:all": "pnpm --filter \"./packages/**\" run build",
-    "build:cli": "pnpm run build --",
-    "build:node": "pnpm --filter @socketbin/custom-node run build --",
-    "build:sea": "pnpm --filter @socketbin/sea run build --",
-    "build:socket": "pnpm --filter socket run build --",
+    "build": "node scripts/build.mjs",
     "check": "pnpm --filter @socketsecurity/cli run check --",
     "check-ci": "pnpm run check -- --ci",
     "clean": "pnpm --filter \"./packages/**\" run clean",
