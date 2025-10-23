@@ -1,0 +1,56 @@
+{
+  "name": "@socketsecurity/cli-with-sentry",
+  "version": "1.1.25",
+  "description": "Socket CLI with Sentry telemetry for enhanced error reporting",
+  "homepage": "https://github.com/SocketDev/socket-cli",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SocketDev/socket-cli.git",
+    "directory": "packages/cli-with-sentry"
+  },
+  "author": {
+    "name": "Socket Inc",
+    "email": "eng@socket.dev",
+    "url": "https://socket.dev"
+  },
+  "bin": {
+    "socket": "bin/cli.js",
+    "socket-npm": "bin/npm-cli.js",
+    "socket-npx": "bin/npx-cli.js",
+    "socket-pnpm": "bin/pnpm-cli.js",
+    "socket-yarn": "bin/yarn-cli.js"
+  },
+  "exports": {
+    "./bin/cli.js": "./dist/cli.js",
+    "./bin/npm-cli.js": "./dist/npm-cli.js",
+    "./bin/npx-cli.js": "./dist/npx-cli.js",
+    "./bin/pnpm-cli.js": "./dist/pnpm-cli.js",
+    "./bin/yarn-cli.js": "./dist/yarn-cli.js",
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "echo 'Sentry-enabled build not yet implemented' && exit 1"
+  },
+  "keywords": [
+    "socket",
+    "security",
+    "cli",
+    "sentry",
+    "telemetry"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@socketsecurity/cli": "workspace:*"
+  },
+  "devDependencies": {
+    "@sentry/node": "^8.0.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "private": true
+}

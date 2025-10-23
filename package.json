@@ -178,6 +178,7 @@
   "private": true,
   "scripts": {
     "build": "node scripts/build.mjs",
+    "build:platforms": "node scripts/build-platforms.mjs",
     "check": "pnpm --filter @socketsecurity/cli run check --",
     "check-ci": "pnpm run check -- --ci",
     "clean": "pnpm --filter \"./packages/**\" run clean",
@@ -186,6 +187,7 @@
     "lint-ci": "pnpm run lint -- --ci",
     "prepare": "dotenvx -q run -f .env.local -- husky",
     "pretest": "pnpm run build",
+    "publish": "node scripts/publish.mjs",
     "test": "pnpm --filter @socketsecurity/cli run test:unit --",
     "test-ci": "pnpm run test -- --ci",
     "type": "pnpm --filter @socketsecurity/cli run type --",
