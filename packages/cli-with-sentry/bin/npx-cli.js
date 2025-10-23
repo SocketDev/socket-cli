@@ -1,0 +1,27 @@
+#!/usr/bin/env node
+
+void (async () => {
+  const Module = require('node:module')
+  const path = require('node:path')
+  const rootPath = path.join(__dirname, '..')
+  Module.enableCompileCache?.(path.join(rootPath, '.cache'))
+
+  const shadowNpmBin = require(path.join(rootPath, 'dist/shadow-npm-bin.js'))
+
+  process.exitCode = 1
+
+  const { spawnPromise } = await shadowNpmBin('npx', process.argv.slice(2), {
+    stdio: 'inherit',
+  })
+
+  // See https://nodejs.org/api/child_process.html#event-exit.
+  spawnPromise.process.on('exit', (code, signalName) => {
+    if (signalName) {
+      process.kill(process.pid, signalName)
+    } else if (typeof code === 'number') {
+      process.exit(code)
+    }
+  })
+
+  await spawnPromise
+})()
