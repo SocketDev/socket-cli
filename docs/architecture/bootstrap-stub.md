@@ -331,7 +331,7 @@ if (stubPath && existsSync(stubPath)) {
 - Uses same atomic replacement logic as CLI binary updates
 - Creates backups with rollback capability on failure
 - Currently relies on HTTPS + GitHub releases for security
-- TODO: Add cryptographic signature verification for stub binaries
+- Future enhancement: Add cryptographic signature verification for stub binaries
 
 ### Atomic Stub Replacement
 

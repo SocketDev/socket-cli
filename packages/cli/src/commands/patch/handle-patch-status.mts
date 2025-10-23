@@ -80,8 +80,8 @@ async function findPackageLocations(
     locations.push(rootPkgPath)
   }
 
-  // TODO: Recursively check nested node_modules if needed.
-  // For now, just check the root level.
+  // Note: Currently only checks root-level node_modules.
+  // Nested node_modules scanning could be added if needed for complex dependency trees.
 
   return locations
 }

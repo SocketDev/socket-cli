@@ -10,15 +10,16 @@
 
 initscript {
     repositories {
-        // We need these repositories for Gradle's plugin resolution system
-        // TODO: It's not clear if we actually need them.
+        // Note: These repositories are declared for potential plugin resolution,
+        // but currently unused since we only rely on built-in plugins.
+        // Kept for compatibility with projects that may need them.
         gradlePluginPortal()
         mavenCentral()
         google()
     }
 
     dependencies {
-        // No external dependencies needed as we only use Gradle's built-in maven-publish plugin
+        // No external dependencies needed as we only use Gradle's built-in maven-publish plugin.
     }
 }
 
@@ -93,9 +94,9 @@ gradle.allprojects { project ->
             // Store all dependencies we find here
             def projectDependencies = []
 
-            // Find all relevant dependency configurations
-            // We care about implementation, api, compile, and runtime configurations
-            // TODO: Anything we're missing here? Tests maybe?
+            // Find all relevant dependency configurations.
+            // We target production dependencies (implementation, api, compile, runtime).
+            // Test configurations are intentionally excluded via the filter below.
             def relevantConfigs = p.configurations.findAll { config ->
                 !config.name.toLowerCase().contains('test') &&
                 (config.name.endsWith('Implementation') ||

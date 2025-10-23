@@ -17,7 +17,10 @@ import type {
   CliCommandContext,
 } from '../../utils/cli/with-subcommands.mjs'
 
-// TODO: Convert yargs to meow.
+// Technical debt: cdxgen uses yargs for arg parsing internally. Converting to
+// Socket CLI's custom meow implementation would provide consistency with other
+// commands but requires significant work to map all cdxgen flags and maintain
+// compatibility with cdxgen's complex option structure.
 const toLower = (arg: string) => arg.toLowerCase()
 const arrayToLower = (arg: string[]) => arg.map(toLower)
 
@@ -222,8 +225,8 @@ const config: CliCommandConfig = {
   commandName: 'cdxgen',
   description: 'Run cdxgen for SBOM generation',
   hidden: false,
-  // Stub out flags and help.
-  // TODO: Convert yargs to meow.
+  // Stub out flags and help since cdxgen uses yargs internally.
+  // Socket CLI uses custom meow - see note above about conversion complexity.
   flags: {},
   help: () => '',
 }

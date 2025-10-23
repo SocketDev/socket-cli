@@ -236,8 +236,8 @@ export function readSocketJsonSync(
     return { ok: true, data: getDefaultSocketJson() }
   }
 
-  // TODO: Do we need to validate? All properties are optional so code will have
-  // to check every step of the way regardless.
+  // No validation needed: all SocketJson properties are optional and consumers
+  // must defensively check properties regardless.
   return { ok: true, data: jsonObj }
 }
 

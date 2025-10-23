@@ -21,7 +21,8 @@ const binCliPath = getBinCliPath()
 
 import type { SpawnOptions } from '@socketsecurity/lib/spawn'
 
-// TODO: Several exec/install tests fail due to config flag handling.
+// Known issue: Several exec/install tests currently fail due to config flag handling.
+// Needs investigation and fix for proper config isolation in pnpm wrapper tests.
 describe('socket pnpm', async () => {
   cmdit(
     [PNPM, FLAG_HELP, FLAG_CONFIG, '{}'],

@@ -515,10 +515,9 @@ export async function meowWithSubcommands(
   // Use CI spinner style when --no-spinner is passed or debug mode is enabled.
   // This prevents the spinner from interfering with debug output.
   if (noSpinner) {
-    // Note: We need to access the spinner object but cannot use constants barrel.
-    // The spinner is initialized in terminal/spinner and accessed via state.
-    // For now, we'll skip setting the spinner here as it's not critical.
-    // TODO: refactor spinner handling to avoid constants barrel dependency.
+    // Note: Spinner configuration skipped here to avoid circular dependency with
+    // constants barrel. Spinner is managed via terminal/spinner state.
+    // Refactoring opportunity: Extract spinner to standalone module.
   }
   // Hard override the config if instructed to do so.
   // The env var overrides the --flag, which overrides the persisted config
@@ -963,10 +962,9 @@ export function meowOrExit(
   // Use CI spinner style when --no-spinner is passed.
   // This prevents the spinner from interfering with debug output.
   if (noSpinner) {
-    // Note: We need to access the spinner object but cannot use constants barrel.
-    // The spinner is initialized in terminal/spinner and accessed via state.
-    // For now, we'll skip setting the spinner here as it's not critical.
-    // TODO: refactor spinner handling to avoid constants barrel dependency.
+    // Note: Spinner configuration skipped here to avoid circular dependency with
+    // constants barrel. Spinner is managed via terminal/spinner state.
+    // Refactoring opportunity: Extract spinner to standalone module.
   }
 
   if (!shouldSuppressBanner(cli.flags)) {

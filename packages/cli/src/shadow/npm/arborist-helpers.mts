@@ -17,9 +17,9 @@ import type {
 import type { Spinner } from '@socketsecurity/lib/spinner'
 
 function getUrlOrigin(input: string): string {
-  // TODO: URL.parse is available in Node 22.1.0. We can use it when we drop Node 18.
+  // Using parseUrl for compatibility with Node 18+.
+  // Consider URL.parse() when minimum Node version is 22.1.0+.
   // https://nodejs.org/docs/latest-v22.x/api/url.html#urlparseinput-base
-  // return URL.parse(input)?.origin ?? ''
   return parseUrl(input)?.origin ?? ''
 }
 
