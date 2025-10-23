@@ -43,7 +43,7 @@ permissions:
 jobs:
   ci:
     name: Run CI Pipeline
-    uses: SocketDev/socket-registry/.github/workflows/ci.yml@600bfd38a550656b8015c92242e6d4cec5a25cb1 # main
+    uses: SocketDev/socket-registry/.github/workflows/ci.yml@d8ff3b0581d799466cfbf150f715c1a4bf9f84a5 # main
     with:
       working-directory: 'packages/cli'
       test-setup-script: 'cd packages/cli && pnpm run build'
