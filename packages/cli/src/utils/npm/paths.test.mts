@@ -35,12 +35,12 @@ vi.mock('../constants.mts', () => ({
 
 describe('npm-paths utilities', () => {
   let originalExit: typeof process.exit
-  let getNpmBinPath: typeof import('./npm-paths.mts')['getNpmBinPath']
-  let getNpmDirPath: typeof import('./npm-paths.mts')['getNpmDirPath']
-  let getNpmRequire: typeof import('./npm-paths.mts')['getNpmRequire']
-  let getNpxBinPath: typeof import('./npm-paths.mts')['getNpxBinPath']
-  let isNpmBinPathShadowed: typeof import('./npm-paths.mts')['isNpmBinPathShadowed']
-  let isNpxBinPathShadowed: typeof import('./npm-paths.mts')['isNpxBinPathShadowed']
+  let getNpmBinPath: typeof import('./paths.mts')['getNpmBinPath']
+  let getNpmDirPath: typeof import('./paths.mts')['getNpmDirPath']
+  let getNpmRequire: typeof import('./paths.mts')['getNpmRequire']
+  let getNpxBinPath: typeof import('./paths.mts')['getNpxBinPath']
+  let isNpmBinPathShadowed: typeof import('./paths.mts')['isNpmBinPathShadowed']
+  let isNpxBinPathShadowed: typeof import('./paths.mts')['isNpxBinPathShadowed']
 
   beforeEach(async () => {
     vi.clearAllMocks()
@@ -54,7 +54,7 @@ describe('npm-paths utilities', () => {
     }) as any
 
     // Re-import functions after module reset to clear caches
-    const npmPaths = await import('./npm-paths.mts')
+    const npmPaths = await import('./paths.mts')
     getNpmBinPath = npmPaths.getNpmBinPath
     getNpmDirPath = npmPaths.getNpmDirPath
     getNpmRequire = npmPaths.getNpmRequire
@@ -162,7 +162,7 @@ describe('npm-paths utilities', () => {
 
       // Re-import after setting up mocks
       const { getNpmDirPath: localGetNpmDirPath } = await import(
-        './npm-paths.mts'
+        './paths.mts'
       )
       const result = localGetNpmDirPath()
 

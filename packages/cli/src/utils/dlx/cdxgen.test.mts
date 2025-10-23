@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { spawnCdxgenDlx } from '.../dlx.mts'
+import { spawnCdxgenDlx } from './spawn.mts'
 
 // Mock spawnDlx function.
-vi.mock('.../dlx.mts', () => {
+vi.mock('./spawn.mts', () => {
   const mockSpawnDlx = vi.fn()
 
   // Return the actual implementation for spawnCdxgenDlx.
@@ -28,10 +28,10 @@ describe('spawnCdxgenDlx', () => {
     vi.clearAllMocks()
     // Get the mocked function.
     mockSpawnDlx =
-      vi.mocked((vi as any).importActual('../dlx.mts')).spawnDlx || vi.fn()
+      vi.mocked((vi as any).importActual('./spawn.mts')).spawnDlx || vi.fn()
 
     // Access the mock from the module.
-    const dlxModule = vi.mocked(import('../dlx.mts'))
+    const dlxModule = vi.mocked(import('./spawn.mts'))
     dlxModule.then(m => {
       mockSpawnDlx = m.spawnDlx as any
       mockSpawnDlx.mockResolvedValue({
@@ -44,7 +44,7 @@ describe('spawnCdxgenDlx', () => {
   })
 
   it('calls spawnDlx with cdxgen package', async () => {
-    const { spawnDlx } = await import('../dlx.mts')
+    const { spawnDlx } = await import('./spawn.mts')
     const mockFn = vi.mocked(spawnDlx)
 
     mockFn.mockResolvedValueOnce({
@@ -65,7 +65,7 @@ describe('spawnCdxgenDlx', () => {
   })
 
   it('passes options through to spawnDlx', async () => {
-    const { spawnDlx } = await import('../dlx.mts')
+    const { spawnDlx } = await import('./spawn.mts')
     const mockFn = vi.mocked(spawnDlx)
 
     mockFn.mockResolvedValueOnce({
@@ -97,7 +97,7 @@ describe('spawnCdxgenDlx', () => {
   })
 
   it('returns spawnDlx result', async () => {
-    const { spawnDlx } = await import('../dlx.mts')
+    const { spawnDlx } = await import('./spawn.mts')
     const mockFn = vi.mocked(spawnDlx)
 
     const expectedResult = {
@@ -114,7 +114,7 @@ describe('spawnCdxgenDlx', () => {
   })
 
   it('handles SBOM generation arguments', async () => {
-    const { spawnDlx } = await import('../dlx.mts')
+    const { spawnDlx } = await import('./spawn.mts')
     const mockFn = vi.mocked(spawnDlx)
 
     mockFn.mockResolvedValueOnce({
@@ -146,7 +146,7 @@ describe('spawnCdxgenDlx', () => {
   })
 
   it('handles recursive scanning arguments', async () => {
-    const { spawnDlx } = await import('../dlx.mts')
+    const { spawnDlx } = await import('./spawn.mts')
     const mockFn = vi.mocked(spawnDlx)
 
     mockFn.mockResolvedValueOnce({
