@@ -775,9 +775,17 @@ importers:
 
   packages/socketbin-cli-win32-x64: {}
 
-  packages/socketbin-custom-node-from-source: {}
+  packages/socketbin-custom-node-from-source:
+    devDependencies:
+      vitest:
+        specifier: ^3.0.0
+        version: 3.2.4(@types/debug@4.1.12)(@types/node@24.3.1)(jiti@2.6.1)(yaml@2.8.1)
 
-  packages/socketbin-native-node-sea: {}
+  packages/socketbin-native-node-sea:
+    devDependencies:
+      vitest:
+        specifier: ^3.0.0
+        version: 3.2.4(@types/debug@4.1.12)(@types/node@24.3.1)(jiti@2.6.1)(yaml@2.8.1)
 
 packages:
 

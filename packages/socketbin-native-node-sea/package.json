@@ -1,12 +1,17 @@
 {
   "description": "Native Node.js SEA binary builder (fallback)",
+  "devDependencies": {
+    "vitest": "^3.0.0"
+  },
   "license": "MIT",
   "name": "@socketbin/sea",
   "private": true,
   "scripts": {
     "build": "node scripts/build.mjs",
     "build:all": "node scripts/build.mjs --all-platforms",
-    "publish": "node scripts/publish.mjs"
+    "publish": "node scripts/publish.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "version": "1.0.0"
 }
