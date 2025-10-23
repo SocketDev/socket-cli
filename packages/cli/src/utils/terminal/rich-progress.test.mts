@@ -5,7 +5,7 @@
 
 import { Writable } from 'node:stream'
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { FileProgress, MultiProgress, Spinner } from './rich-progress.mts'
 
@@ -37,8 +37,14 @@ describe('rich-progress', () => {
     let progress: MultiProgress
 
     beforeEach(() => {
+      vi.useFakeTimers()
       mockStream = new MockWritable()
       progress = new MultiProgress({ stream: mockStream, hideCursor: false })
+    })
+
+    afterEach(() => {
+      vi.restoreAllMocks()
+      vi.useRealTimers()
     })
 
     it('should create instance with default options', () => {
@@ -54,6 +60,7 @@ describe('rich-progress', () => {
     it('should update task progress', () => {
       progress.addTask('task1', 'Processing files', 100)
       progress.updateTask('task1', 50)
+      vi.advanceTimersByTime(100) // Trigger render
       progress.stop()
 
       const output = mockStream.getOutput()
@@ -64,6 +71,7 @@ describe('rich-progress', () => {
     it('should mark task as done when reaching total', () => {
       progress.addTask('task1', 'Processing files', 100)
       progress.updateTask('task1', 100)
+      vi.advanceTimersByTime(100) // Trigger render
       progress.stop()
 
       const output = mockStream.getOutput()
@@ -74,6 +82,7 @@ describe('rich-progress', () => {
     it('should handle task failure', () => {
       progress.addTask('task1', 'Processing files', 100)
       progress.failTask('task1', 'Error occurred')
+      vi.advanceTimersByTime(100) // Trigger render
       progress.stop()
 
       const output = mockStream.getOutput()
@@ -86,6 +95,7 @@ describe('rich-progress', () => {
       progress.addTask('task2', 'Task 2', 75)
       progress.updateTask('task1', 25)
       progress.updateTask('task2', 50)
+      vi.advanceTimersByTime(100) // Trigger render
       progress.stop()
 
       const output = mockStream.getOutput()
@@ -96,6 +106,7 @@ describe('rich-progress', () => {
     it('should update task with custom tokens', () => {
       progress.addTask('task1', 'Download', 100)
       progress.updateTask('task1', 50, { file: 'package.json' })
+      vi.advanceTimersByTime(100) // Trigger render
       progress.stop()
 
       const output = mockStream.getOutput()
@@ -124,6 +135,7 @@ describe('rich-progress', () => {
     it('should calculate progress percentage correctly', () => {
       progress.addTask('task1', 'Test', 200)
       progress.updateTask('task1', 50)
+      vi.advanceTimersByTime(100) // Trigger render
       progress.stop()
 
       const output = mockStream.getOutput()
@@ -133,6 +145,7 @@ describe('rich-progress', () => {
     it('should handle zero total gracefully', () => {
       progress.addTask('task1', 'Test', 0)
       progress.updateTask('task1', 0)
+      vi.advanceTimersByTime(100) // Trigger render
       progress.stop()
 
       const output = mockStream.getOutput()
@@ -143,11 +156,8 @@ describe('rich-progress', () => {
     it('should display elapsed time', () => {
       progress.addTask('task1', 'Test', 100)
       progress.updateTask('task1', 50)
-      // Wait a bit for time to elapse
-      const start = Date.now()
-      while (Date.now() - start < 50) {
-        // Busy wait
-      }
+      // Advance time to simulate elapsed time
+      vi.advanceTimersByTime(100) // Trigger render
       progress.stop()
 
       const output = mockStream.getOutput()
@@ -157,6 +167,7 @@ describe('rich-progress', () => {
     it('should render progress bar with correct fill', () => {
       progress.addTask('task1', 'Test', 100)
       progress.updateTask('task1', 50)
+      vi.advanceTimersByTime(100) // Trigger render
       progress.stop()
 
       const output = mockStream.getOutput()
@@ -167,24 +178,28 @@ describe('rich-progress', () => {
     it('should display status symbols', () => {
       const p1 = new MultiProgress({ stream: mockStream })
       p1.addTask('pending', 'Pending', 100)
+      vi.advanceTimersByTime(100) // Trigger render
       p1.stop()
       mockStream.clear()
 
       const p2 = new MultiProgress({ stream: mockStream })
       p2.addTask('running', 'Running', 100)
       p2.updateTask('running', 50)
+      vi.advanceTimersByTime(100) // Trigger render
       p2.stop()
       mockStream.clear()
 
       const p3 = new MultiProgress({ stream: mockStream })
       p3.addTask('done', 'Done', 100)
       p3.updateTask('done', 100)
+      vi.advanceTimersByTime(100) // Trigger render
       p3.stop()
       mockStream.clear()
 
       const p4 = new MultiProgress({ stream: mockStream })
       p4.addTask('failed', 'Failed', 100)
       p4.failTask('failed')
+      vi.advanceTimersByTime(100) // Trigger render
       p4.stop()
 
       // At least one output should contain status symbols
@@ -436,12 +451,22 @@ describe('rich-progress', () => {
   })
 
   describe('CI and VITEST mode', () => {
+    beforeEach(() => {
+      vi.useFakeTimers()
+    })
+
+    afterEach(() => {
+      vi.restoreAllMocks()
+      vi.useRealTimers()
+    })
+
     it('should handle progress indicators in test environment', () => {
       // Progress indicators should work in test mode but not display animations
       const mockStream = new MockWritable()
       const progress = new MultiProgress({ stream: mockStream })
       progress.addTask('test', 'Test task', 100)
       progress.updateTask('test', 50)
+      vi.advanceTimersByTime(100) // Trigger render
       progress.stop()
 
       // Should not throw and should produce output
@@ -449,7 +474,6 @@ describe('rich-progress', () => {
     })
 
     it('should handle spinners in test environment', () => {
-      vi.useFakeTimers()
       const mockStream = new MockWritable()
       const spinner = new Spinner('Test', mockStream)
       spinner.start()
@@ -458,7 +482,6 @@ describe('rich-progress', () => {
 
       // Should not throw
       expect(mockStream.getOutput()).toBeTruthy()
-      vi.restoreAllMocks()
     })
   })
 })
