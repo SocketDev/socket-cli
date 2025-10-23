@@ -330,8 +330,8 @@ if (stubPath && existsSync(stubPath)) {
 - Works even if CLI is already up-to-date (checks stub independently)
 - Uses same atomic replacement logic as CLI binary updates
 - Creates backups with rollback capability on failure
-- Currently relies on HTTPS + GitHub releases for security
-- Future enhancement: Add cryptographic signature verification for stub binaries
+- Verifies stub integrity using SHA256 checksums from release metadata
+- Downloads from HTTPS + GitHub releases with cryptographic hash verification
 
 ### Atomic Stub Replacement
 
