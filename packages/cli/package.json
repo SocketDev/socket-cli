@@ -32,7 +32,7 @@
   },
   "scripts": {
     "build": "node --import=./scripts/load.mjs scripts/build.mjs",
-    "build:sea:internal:bootstrap": "rollup -c .config/rollup.cli-sea.config.mjs",
+    "build:sea:internal:bootstrap": "node .config/esbuild.sea-bootstrap.build.mjs",
     "build:js": "node scripts/extract-yoga-wasm.mjs && node .config/esbuild.cli.build.mjs",
     "build:watch": "node scripts/extract-yoga-wasm.mjs && node .config/esbuild.cli.build.mjs --watch",
     "dev": "pnpm run build:watch",

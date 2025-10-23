@@ -74,7 +74,7 @@ export {
 }
 
 // Getter functions for build metadata.
-// Use direct process.env access (not env imports) so rollup replace plugin can inline values.
+// Use direct process.env access (not env imports) so esbuild define can inline values.
 export function getCliVersion(): string | undefined {
   return process.env['INLINED_SOCKET_CLI_VERSION']
 }
@@ -164,7 +164,7 @@ const ENV = {
   CI: env['CI'],
   GITHUB_REPOSITORY: env['GITHUB_REPOSITORY'],
   SOCKET_CLI_ORG_SLUG: env['SOCKET_CLI_ORG_SLUG'],
-  // Build metadata (inlined by rollup replace plugin).
+  // Build metadata (inlined by esbuild define).
   INLINED_SOCKET_CLI_CDXGEN_VERSION:
     process.env['INLINED_SOCKET_CLI_CDXGEN_VERSION'],
   INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION:
