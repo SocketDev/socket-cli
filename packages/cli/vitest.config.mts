@@ -15,15 +15,14 @@ export default defineConfig({
     globals: false,
     environment: 'node',
     include: [
-      // Temporarily exclude all tests - too many failures
-      // Re-enable once test infrastructure is fixed
+      'test/**/*.test.{mts,ts}',
+      'src/**/*.test.{mts,ts}',
     ],
     exclude: [
       '**/node_modules/**',
       '**/dist/**',
       '**/.{idea,git,cache,output,temp}/**',
       '**/{karma,rollup,webpack,vite,vitest,jest,ava,babel,nyc,cypress,tsup,build,eslint,prettier}.config.*',
-      '**/*.test.{js,ts,mjs,cjs,mts}',
       // Exclude E2E tests from regular test runs.
       '**/*-e2e.test.mts',
     ],
