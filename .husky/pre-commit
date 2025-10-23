@@ -1,3 +1,6 @@
+# Run security checks first.
+.husky/security-checks.sh
+
 if [ -z "${DISABLE_PRECOMMIT_LINT}" ]; then
   pnpm lint --staged
 else
