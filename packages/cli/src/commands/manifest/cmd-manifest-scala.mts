@@ -4,6 +4,7 @@ import { debug } from '@socketsecurity/lib/debug'
 import { logger } from '@socketsecurity/lib/logger'
 
 import { convertSbtToMaven } from './convert-sbt-to-maven.mts'
+import { outputManifest } from './output-manifest.mts'
 import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mjs'
 import { REQUIREMENTS_TXT } from '../../constants/paths.mjs'
 import { SOCKET_JSON } from '../../constants/socket.mts'
@@ -114,7 +115,7 @@ async function run(
   // If given path is absolute then cwd should not affect it.
   cwd = path.resolve(process.cwd(), cwd)
 
-  // TODO: Implement json/md further.
+  // Feature request: Pass outputKind to convertSbtToMaven for json/md output support.
   const outputKind = getOutputKind(json, markdown)
 
   const sockJson = readOrDefaultSocketJson(cwd)
@@ -181,9 +182,9 @@ async function run(
     logger.groupEnd()
   }
 
-  // TODO: We're not sure it's feasible to parse source file from stdin. We could
-  //       try, store contents in a file in some folder, target that folder... what
-  //       would the file name be?
+  // Note: stdin input not supported. SBT manifest generation requires a directory
+  // context with build files (build.sbt, project/, etc.) that can't be meaningfully
+  // provided via stdin.
 
   const wasValidInput = checkCommandInput(outputKind, {
     nook: true,
@@ -208,14 +209,21 @@ async function run(
     return
   }
 
-  await convertSbtToMaven({
+  const result = await convertSbtToMaven({
     bin: String(bin),
     cwd: cwd,
     out: String(out),
+    outputKind,
     sbtOpts: String(sbtOpts)
       .split(' ')
       .map(s => s.trim())
       .filter(Boolean),
     verbose: Boolean(verbose),
   })
+
+  // In text mode, output is already handled by convertSbtToMaven.
+  // For json/markdown modes, we need to call the output helper.
+  if (outputKind !== 'text') {
+    await outputManifest(result, outputKind, String(out))
+  }
 }

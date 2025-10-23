@@ -67,7 +67,7 @@ async function run(
     parentName,
   })
 
-  // TODO: Implement json/md further.
+  // Feature request: Implement json/markdown output for wrapper command status.
   const { json, markdown } = cli.flags
 
   const dryRun = !!cli.flags['dryRun']
@@ -110,22 +110,82 @@ async function run(
 
   const bashRcPath = getBashRcPath()
   const zshRcPath = getZshRcPath()
+  const modifiedFiles: string[] = []
+  const skippedFiles: string[] = []
+
   if (enable) {
-    if (existsSync(bashRcPath) && !checkSocketWrapperSetup(bashRcPath)) {
-      addSocketWrapper(bashRcPath)
+    if (existsSync(bashRcPath)) {
+      if (!checkSocketWrapperSetup(bashRcPath)) {
+        addSocketWrapper(bashRcPath)
+        modifiedFiles.push(bashRcPath)
+      } else {
+        skippedFiles.push(bashRcPath)
+      }
     }
-    if (existsSync(zshRcPath) && !checkSocketWrapperSetup(zshRcPath)) {
-      addSocketWrapper(zshRcPath)
+    if (existsSync(zshRcPath)) {
+      if (!checkSocketWrapperSetup(zshRcPath)) {
+        addSocketWrapper(zshRcPath)
+        modifiedFiles.push(zshRcPath)
+      } else {
+        skippedFiles.push(zshRcPath)
+      }
     }
   } else {
     if (existsSync(bashRcPath)) {
       removeSocketWrapper(bashRcPath)
+      modifiedFiles.push(bashRcPath)
     }
     if (existsSync(zshRcPath)) {
       removeSocketWrapper(zshRcPath)
+      modifiedFiles.push(zshRcPath)
     }
   }
+
   if (!existsSync(bashRcPath) && !existsSync(zshRcPath)) {
     logger.fail('There was an issue setting up the alias in your bash profile')
+    return
   }
+
+  // Output results in requested format.
+  if (outputKind === 'json') {
+    const result = {
+      action: enable ? 'enabled' : 'disabled',
+      modifiedFiles,
+      skippedFiles,
+      success: modifiedFiles.length > 0 || skippedFiles.length > 0,
+    }
+    logger.log(JSON.stringify(result, null, 2))
+  } else if (outputKind === 'markdown') {
+    const arr = []
+    arr.push(`# Socket Wrapper ${enable ? 'Enabled' : 'Disabled'}`)
+    arr.push('')
+
+    if (modifiedFiles.length > 0) {
+      arr.push('## Modified Files')
+      arr.push('')
+      for (const file of modifiedFiles) {
+        arr.push(`- \`${file}\``)
+      }
+      arr.push('')
+    }
+
+    if (skippedFiles.length > 0) {
+      arr.push('## Skipped Files (already configured)')
+      arr.push('')
+      for (const file of skippedFiles) {
+        arr.push(`- \`${file}\``)
+      }
+      arr.push('')
+    }
+
+    arr.push('## Status')
+    arr.push('')
+    arr.push(
+      `Socket npm/npx wrapper has been **${enable ? 'enabled' : 'disabled'}**.`,
+    )
+    arr.push('')
+
+    logger.log(arr.join('\n'))
+  }
+  // Text mode output is already handled by add/remove functions.
 }

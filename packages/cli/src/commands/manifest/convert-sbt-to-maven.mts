@@ -3,27 +3,35 @@ import { safeReadFile } from '@socketsecurity/lib/fs'
 import { logger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 
+import type { CResult, OutputKind } from '../../types.mts'
+import type { ManifestResult } from './output-manifest.mts'
+
 export async function convertSbtToMaven({
   bin,
   cwd,
   out,
+  outputKind = 'text',
   sbtOpts,
   verbose,
 }: {
   bin: string
   cwd: string
   out: string
+  outputKind?: OutputKind | undefined
   sbtOpts: string[]
   verbose: boolean
-}) {
-  // TODO: Implement json/md.
+}): Promise<CResult<ManifestResult>> {
 
-  logger.group('sbt2maven:')
-  logger.info(`- executing: \`${bin}\``)
-  logger.info(`- src dir: \`${cwd}\``)
-  logger.groupEnd()
+  const isTextMode = outputKind === 'text'
 
-  const spinner = getSpinner()
+  if (isTextMode) {
+    logger.group('sbt2maven:')
+    logger.info(`- executing: \`${bin}\``)
+    logger.info(`- src dir: \`${cwd}\``)
+    logger.groupEnd()
+  }
+
+  const spinner = isTextMode ? getSpinner() : undefined
   try {
     spinner?.start(`Converting sbt to maven from \`${bin}\` on \`${cwd}\`...`)
 
@@ -36,21 +44,30 @@ export async function convertSbtToMaven({
 
     spinner?.stop()
 
-    if (verbose) {
+    if (verbose && isTextMode) {
       logger.group('[VERBOSE] sbt stdout:')
       logger.log(output)
       logger.groupEnd()
     }
     if (output.stderr) {
-      process.exitCode = 1
-      logger.fail('There were errors while running sbt')
-      // (In verbose mode, stderr was printed above, no need to repeat it)
-      if (!verbose) {
-        logger.group('[VERBOSE] stderr:')
-        logger.error(output.stderr)
-        logger.groupEnd()
+      if (isTextMode) {
+        process.exitCode = 1
+        logger.fail('There were errors while running sbt')
+        // (In verbose mode, stderr was printed above, no need to repeat it)
+        if (!verbose) {
+          logger.group('[VERBOSE] stderr:')
+          logger.error(output.stderr)
+          logger.groupEnd()
+        }
       }
-      return
+      return {
+        ok: false,
+        message: 'There were errors while running sbt',
+        cause:
+          typeof output.stderr === 'string'
+            ? output.stderr
+            : output.stderr.toString('utf8'),
+      }
     }
     const poms: string[] = []
     const stdoutStr =
@@ -62,62 +79,80 @@ export async function convertSbtToMaven({
       return fn
     })
     if (!poms.length) {
-      process.exitCode = 1
-      logger.fail(
-        'There were no errors from sbt but it seems to not have generated any poms either',
-      )
-      return
+      const message =
+        'There were no errors from sbt but it seems to not have generated any poms either'
+      if (isTextMode) {
+        process.exitCode = 1
+        logger.fail(message)
+      }
+      return {
+        ok: false,
+        message,
+      }
     }
-    // Move the pom file to ...? initial cwd? loc will be an absolute path, or dump to stdout
-    // TODO: What do we do with multiple output files? Do we want to dump them to stdout? Raw or with separators or ?
-    // TODO: Maybe we can add an option to target a specific file to dump to stdout.
-    if (out === '-' && poms.length === 1) {
+    // Handle stdout output: Only supported for single file output.
+    // Note: Multiple file stdout output could be supported in the future with separators
+    // or a flag to select specific files, but currently errors out for clarity.
+    if (out === '-' && poms.length === 1 && isTextMode) {
       logger.log('Result:\n```')
       logger.log(await safeReadFile(poms[0]!))
       logger.log('```')
       logger.success('OK')
     } else if (out === '-') {
-      process.exitCode = 1
-      logger.error('')
-      logger.fail(
-        'Requested output target was stdout but there are multiple generated files',
-      )
-      logger.error('')
-      poms.forEach(fn => logger.info('-', fn))
-      if (poms.length > 10) {
+      const message =
+        'Requested output target was stdout but there are multiple generated files'
+      if (isTextMode) {
+        process.exitCode = 1
         logger.error('')
-        logger.fail(
-          'Requested output target was stdout but there are multiple generated files',
-        )
+        logger.fail(message)
+        logger.error('')
+        poms.forEach(fn => logger.info('-', fn))
+        if (poms.length > 10) {
+          logger.error('')
+          logger.fail(message)
+        }
+        logger.error('')
+        logger.info('Exiting now...')
       }
-      logger.error('')
-      logger.info('Exiting now...')
-      return
-    } else {
-      // if (verbose) {
-      //   logger.log(
-      //     `Moving manifest file from \`${loc.replace(/^\/home\/[^/]*?\//, '~/')}\` to \`${out}\``
-      //   )
-      // } else {
-      //   logger.log('Moving output pom file')
-      // }
-      // TODO: Do we prefer fs-extra? Renaming can be gnarly on windows and fs-extra's version is better.
-      // await renamep(loc, out)
+      return {
+        ok: false,
+        message,
+        data: { files: poms },
+      }
+    } else if (isTextMode) {
       logger.success(`Generated ${poms.length} pom files`)
       poms.forEach(fn => logger.log('-', fn))
       logger.success('OK')
     }
+
+    return {
+      ok: true,
+      data: {
+        files: poms,
+        type: 'sbt',
+        success: true,
+      },
+    }
   } catch (e) {
-    process.exitCode = 1
-    spinner?.stop()
-    logger.fail(
+    const errorMessage =
       'There was an unexpected error while running this' +
-        (verbose ? '' : ' (use --verbose for details)'),
-    )
-    if (verbose) {
-      logger.group('[VERBOSE] error:')
-      logger.log(e)
-      logger.groupEnd()
+      (verbose ? '' : ' (use --verbose for details)')
+
+    if (isTextMode) {
+      process.exitCode = 1
+      spinner?.stop()
+      logger.fail(errorMessage)
+      if (verbose) {
+        logger.group('[VERBOSE] error:')
+        logger.log(e)
+        logger.groupEnd()
+      }
+    }
+
+    return {
+      ok: false,
+      message: errorMessage,
+      cause: e instanceof Error ? e.message : String(e),
     }
   }
 }

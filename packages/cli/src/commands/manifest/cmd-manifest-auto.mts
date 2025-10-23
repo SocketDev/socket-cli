@@ -68,7 +68,7 @@ async function run(
     importMeta,
     parentName,
   })
-  // TODO: Implement json/md further.
+  // Feature request: Pass outputKind to manifest generators for json/md output support.
   const { json, markdown, verbose: verboseFlag } = cli.flags
 
   const dryRun = !!cli.flags['dryRun']

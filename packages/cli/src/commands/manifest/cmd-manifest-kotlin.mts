@@ -4,6 +4,7 @@ import { debug } from '@socketsecurity/lib/debug'
 import { logger } from '@socketsecurity/lib/logger'
 
 import { convertGradleToMaven } from './convert-gradle-to-maven.mts'
+import { outputManifest } from './output-manifest.mts'
 import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mjs'
 import { REQUIREMENTS_TXT } from '../../constants/paths.mjs'
 import { SOCKET_JSON } from '../../constants/socket.mts'
@@ -19,11 +20,11 @@ import type {
   CliCommandContext,
 } from '../../utils/cli/with-subcommands.mjs'
 
-// TODO: We may want to dedupe some pieces for all gradle languages. I think it
-//       makes sense to have separate commands for them and I think it makes
-//       sense for the help panels to note the requested language, rather than
-//       `socket manifest kotlin` to print help screens with `gradle` as the
-//       command. Room for improvement.
+// Design note: Gradle language commands (gradle, kotlin, scala) share similar code
+// but maintain separate commands for clarity. This allows language-specific help text
+// and clearer user experience (e.g., "socket manifest kotlin" shows Kotlin-specific
+// help rather than generic gradle help). Future refactoring could extract shared logic
+// while preserving separate command interfaces.
 const config: CliCommandConfig = {
   commandName: 'kotlin',
   description:
@@ -101,7 +102,7 @@ async function run(
 
   const dryRun = !!cli.flags['dryRun']
 
-  // TODO: Implement json/md further.
+  // Feature request: Pass outputKind to convertGradleToMaven for json/md output support.
   const outputKind = getOutputKind(json, markdown)
 
   let [cwd = '.'] = cli.input
@@ -158,9 +159,9 @@ async function run(
     logger.groupEnd()
   }
 
-  // TODO: We're not sure it's feasible to parse source file from stdin. We could
-  //       try, store contents in a file in some folder, target that folder... what
-  //       would the file name be?
+  // Note: stdin input not supported. Gradle manifest generation requires a directory
+  // context with build files (build.gradle.kts, settings.gradle.kts, etc.) that can't be
+  // meaningfully provided via stdin.
 
   const wasValidInput = checkCommandInput(outputKind, {
     nook: true,
@@ -184,13 +185,20 @@ async function run(
     return
   }
 
-  await convertGradleToMaven({
+  const result = await convertGradleToMaven({
     bin: String(bin),
     cwd,
     gradleOpts: String(gradleOpts || '')
       .split(' ')
       .map(s => s.trim())
       .filter(Boolean),
+    outputKind,
     verbose: Boolean(verbose),
   })
+
+  // In text mode, output is already handled by convertGradleToMaven.
+  // For json/markdown modes, we need to call the output helper.
+  if (outputKind !== 'text') {
+    await outputManifest(result, outputKind, '-')
+  }
 }

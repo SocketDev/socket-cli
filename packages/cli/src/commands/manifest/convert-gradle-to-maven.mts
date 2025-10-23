@@ -7,39 +7,49 @@ import { spawn } from '@socketsecurity/lib/spawn'
 
 import { distPath } from '../../constants/paths.mjs'
 
+import type { CResult, OutputKind } from '../../types.mts'
+import type { ManifestResult } from './output-manifest.mts'
+
 export async function convertGradleToMaven({
   bin,
   cwd,
   gradleOpts,
+  outputKind = 'text',
   verbose,
 }: {
   bin: string
   cwd: string
-  verbose: boolean
   gradleOpts: string[]
-}) {
-  // TODO: Implement json/md.
+  outputKind?: OutputKind | undefined
+  verbose: boolean
+}): Promise<CResult<ManifestResult>> {
 
-  // Note: use resolve because the bin could be an absolute path, away from cwd
-  // TODO: what about $PATH resolved commands? (`gradlew` without dir prefix)
+  // Note: Resolve bin relative to cwd (or use absolute path if provided).
+  // We don't resolve against $PATH since gradlew is typically a local wrapper script.
+  // Users can provide absolute paths if they need to reference system-wide installations.
   const rBin = path.resolve(cwd, bin)
   const binExists = fs.existsSync(rBin)
   const cwdExists = fs.existsSync(cwd)
 
-  logger.group('gradle2maven:')
-  logger.info(`- executing: \`${rBin}\``)
-  if (!binExists) {
-    logger.warn(
-      'Warning: It appears the executable could not be found. An error might be printed later because of that.',
-    )
+  // Only show logging in text mode.
+  const isTextMode = outputKind === 'text'
+
+  if (isTextMode) {
+    logger.group('gradle2maven:')
+    logger.info(`- executing: \`${rBin}\``)
+    if (!binExists) {
+      logger.warn(
+        'Warning: It appears the executable could not be found. An error might be printed later because of that.',
+      )
+    }
+    logger.info(`- src dir: \`${cwd}\``)
+    if (!cwdExists) {
+      logger.warn(
+        'Warning: It appears the src dir could not be found. An error might be printed later because of that.',
+      )
+    }
+    logger.groupEnd()
   }
-  logger.info(`- src dir: \`${cwd}\``)
-  if (!cwdExists) {
-    logger.warn(
-      'Warning: It appears the src dir could not be found. An error might be printed later because of that.',
-    )
-  }
-  logger.groupEnd()
 
   try {
     // Run gradlew with the init script we provide which should yield zero or more
@@ -50,50 +60,92 @@ export async function convertGradleToMaven({
     // Note: init.gradle will be exported by .config/rollup.cli-js.config.mjs
     const initLocation = path.join(distPath, 'init.gradle')
     const commandArgs = ['--init-script', initLocation, ...gradleOpts, 'pom']
-    if (verbose) {
+    if (verbose && isTextMode) {
       logger.log('[VERBOSE] Executing:', [bin], ', args:', commandArgs)
     }
-    logger.log(`Converting gradle to maven from \`${bin}\` on \`${cwd}\` ...`)
-    const output = await execGradleWithSpinner(rBin, commandArgs, cwd)
-    if (verbose) {
+    if (isTextMode) {
+      logger.log(`Converting gradle to maven from \`${bin}\` on \`${cwd}\` ...`)
+    }
+    const output = await execGradleWithSpinner(
+      rBin,
+      commandArgs,
+      cwd,
+      isTextMode,
+    )
+    if (verbose && isTextMode) {
       logger.group('[VERBOSE] gradle stdout:')
       logger.log(output)
       logger.groupEnd()
     }
     if (output.code) {
-      process.exitCode = 1
-      logger.fail(`Gradle exited with exit code ${output.code}`)
-      // (In verbose mode, stderr was printed above, no need to repeat it)
-      if (!verbose) {
-        logger.group('stderr:')
-        logger.error(output.stderr)
-        logger.groupEnd()
+      if (isTextMode) {
+        process.exitCode = 1
+        logger.fail(`Gradle exited with exit code ${output.code}`)
+        // (In verbose mode, stderr was printed above, no need to repeat it)
+        if (!verbose) {
+          logger.group('stderr:')
+          logger.error(output.stderr)
+          logger.groupEnd()
+        }
       }
-      return
+      return {
+        ok: false,
+        code: output.code,
+        message: `Gradle exited with exit code ${output.code}`,
+        cause: output.stderr,
+      }
     }
-    logger.success('Executed gradle successfully')
-    logger.log('Reported exports:')
+
+    // Extract file paths from output.
+    const files: string[] = []
     output.stdout.replace(
       /^POM file copied to: (.*)/gm,
       (_all: string, fn: string) => {
-        logger.log('- ', fn)
+        files.push(fn)
+        if (isTextMode) {
+          logger.log('- ', fn)
+        }
         return fn
       },
     )
-    logger.log('')
-    logger.log(
-      'Next step is to generate a Scan by running the `socket scan create` command on the same directory',
-    )
+
+    if (isTextMode) {
+      logger.success('Executed gradle successfully')
+      logger.log('Reported exports:')
+      files.forEach(fn => logger.log('- ', fn))
+      logger.log('')
+      logger.log(
+        'Next step is to generate a Scan by running the `socket scan create` command on the same directory',
+      )
+    }
+
+    return {
+      ok: true,
+      data: {
+        files,
+        type: 'gradle',
+        success: true,
+      },
+    }
   } catch (e) {
-    process.exitCode = 1
-    logger.fail(
+    const errorMessage =
       'There was an unexpected error while generating manifests' +
-        (verbose ? '' : '  (use --verbose for details)'),
-    )
-    if (verbose) {
-      logger.group('[VERBOSE] error:')
-      logger.log(e)
-      logger.groupEnd()
+      (verbose ? '' : '  (use --verbose for details)')
+
+    if (isTextMode) {
+      process.exitCode = 1
+      logger.fail(errorMessage)
+      if (verbose) {
+        logger.group('[VERBOSE] error:')
+        logger.log(e)
+        logger.groupEnd()
+      }
+    }
+
+    return {
+      ok: false,
+      message: errorMessage,
+      cause: e instanceof Error ? e.message : String(e),
     }
   }
 }
@@ -102,17 +154,20 @@ async function execGradleWithSpinner(
   bin: string,
   commandArgs: string[],
   cwd: string,
+  showSpinner: boolean,
 ): Promise<{ code: number; stdout: string; stderr: string }> {
   let pass = false
-  const spinner = getSpinner()
+  const spinner = showSpinner ? getSpinner() : undefined
   try {
-    logger.info(
-      '(Running gradle can take a while, it depends on how long gradlew has to run)',
-    )
-    logger.info(
-      '(It will show no output, you can use --verbose to see its output)',
-    )
-    spinner?.start('Running gradlew...')
+    if (showSpinner) {
+      logger.info(
+        '(Running gradle can take a while, it depends on how long gradlew has to run)',
+      )
+      logger.info(
+        '(It will show no output, you can use --verbose to see its output)',
+      )
+      spinner?.start('Running gradlew...')
+    }
 
     const output = await spawn(bin, commandArgs, {
       // We can pipe the output through to have the user see the result
