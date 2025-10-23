@@ -20,17 +20,17 @@ vi.mock('../constants.mts', () => ({
 vi.mock('./dlx-detection.mts', () => ({
   shouldSkipShadow: vi.fn(),
 }))
-vi.mock('./npm-paths.mts', () => ({
+vi.mock('../npm/paths.mts', () => ({
   getNpmBinPath: vi.fn(),
   getNpxBinPath: vi.fn(),
   isNpmBinPathShadowed: vi.fn(),
   isNpxBinPathShadowed: vi.fn(),
 }))
-vi.mock('./pnpm-paths.mts', () => ({
+vi.mock('../pnpm/paths.mts', () => ({
   getPnpmBinPath: vi.fn(),
   isPnpmBinPathShadowed: vi.fn(),
 }))
-vi.mock('./yarn-paths.mts', () => ({
+vi.mock('../yarn/paths.mts', () => ({
   getYarnBinPath: vi.fn(),
   isYarnBinPathShadowed: vi.fn(),
 }))
@@ -50,7 +50,7 @@ describe('shadow-links', () => {
   describe('installNpmLinks', () => {
     it('should return bin path when shouldSkipShadow is true', async () => {
       const { shouldSkipShadow } = await import('./dlx-detection.mts')
-      const { getNpmBinPath } = await import('./npm-paths.mts')
+      const { getNpmBinPath } = await import('../npm/paths.mts')
       const mockShouldSkip = vi.mocked(shouldSkipShadow)
       const mockGetBin = vi.mocked(getNpmBinPath)
 
@@ -66,7 +66,7 @@ describe('shadow-links', () => {
     it('should install shadow when not already shadowed', async () => {
       const { shouldSkipShadow } = await import('./dlx-detection.mts')
       const { getNpmBinPath, isNpmBinPathShadowed } = await import(
-        './npm-paths.mts'
+        '../npm/paths.mts'
       )
       const mockShouldSkip = vi.mocked(shouldSkipShadow)
       const mockGetBin = vi.mocked(getNpmBinPath)
@@ -85,7 +85,7 @@ describe('shadow-links', () => {
     it('should skip PATH modification when already shadowed', async () => {
       const { shouldSkipShadow } = await import('./dlx-detection.mts')
       const { getNpmBinPath, isNpmBinPathShadowed } = await import(
-        './npm-paths.mts'
+        '../npm/paths.mts'
       )
       const mockShouldSkip = vi.mocked(shouldSkipShadow)
       const mockGetBin = vi.mocked(getNpmBinPath)
@@ -105,7 +105,7 @@ describe('shadow-links', () => {
       const cmdShim = (await import('cmd-shim')).default
       const { shouldSkipShadow } = await import('./dlx-detection.mts')
       const { getNpmBinPath, isNpmBinPathShadowed } = await import(
-        './npm-paths.mts'
+        '../npm/paths.mts'
       )
       const constants = (await import('../constants.mts')).default
       const mockCmdShim = vi.mocked(cmdShim)
@@ -134,7 +134,7 @@ describe('shadow-links', () => {
   describe('installNpxLinks', () => {
     it('should return bin path when shouldSkipShadow is true', async () => {
       const { shouldSkipShadow } = await import('./dlx-detection.mts')
-      const { getNpxBinPath } = await import('./npm-paths.mts')
+      const { getNpxBinPath } = await import('../npm/paths.mts')
       const mockShouldSkip = vi.mocked(shouldSkipShadow)
       const mockGetBin = vi.mocked(getNpxBinPath)
 
@@ -150,7 +150,7 @@ describe('shadow-links', () => {
     it('should install shadow when not already shadowed', async () => {
       const { shouldSkipShadow } = await import('./dlx-detection.mts')
       const { getNpxBinPath, isNpxBinPathShadowed } = await import(
-        './npm-paths.mts'
+        '../npm/paths.mts'
       )
       const mockShouldSkip = vi.mocked(shouldSkipShadow)
       const mockGetBin = vi.mocked(getNpxBinPath)

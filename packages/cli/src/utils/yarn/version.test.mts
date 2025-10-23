@@ -5,7 +5,7 @@ vi.mock('@socketsecurity/lib/spawn', () => ({
   spawnSync: vi.fn(),
 }))
 
-vi.mock('./yarn-paths.mts', () => ({
+vi.mock('./paths.mts', () => ({
   getYarnBinPath: vi.fn(),
 }))
 
@@ -31,7 +31,7 @@ describe('yarn-version utilities', () => {
 
   describe('isYarnBerry', () => {
     it('returns true for Yarn 2.x', async () => {
-      const { getYarnBinPath } = vi.mocked(await import('./yarn-paths.mts'))
+      const { getYarnBinPath } = vi.mocked(await import('./paths.mts'))
       getYarnBinPath.mockReturnValue('/usr/local/bin/yarn')
 
       const { spawnSync } = vi.mocked(await import('@socketsecurity/lib/spawn'))
@@ -55,7 +55,7 @@ describe('yarn-version utilities', () => {
     })
 
     it('returns true for Yarn 3.x', async () => {
-      const { getYarnBinPath } = vi.mocked(await import('./yarn-paths.mts'))
+      const { getYarnBinPath } = vi.mocked(await import('./paths.mts'))
       getYarnBinPath.mockReturnValue('/usr/local/bin/yarn')
 
       const { spawnSync } = vi.mocked(await import('@socketsecurity/lib/spawn'))
@@ -71,7 +71,7 @@ describe('yarn-version utilities', () => {
     })
 
     it('returns true for Yarn 4.x', async () => {
-      const { getYarnBinPath } = vi.mocked(await import('./yarn-paths.mts'))
+      const { getYarnBinPath } = vi.mocked(await import('./paths.mts'))
       getYarnBinPath.mockReturnValue('/usr/local/bin/yarn')
 
       const { spawnSync } = vi.mocked(await import('@socketsecurity/lib/spawn'))
@@ -87,7 +87,7 @@ describe('yarn-version utilities', () => {
     })
 
     it('returns false for Yarn Classic (1.x)', async () => {
-      const { getYarnBinPath } = vi.mocked(await import('./yarn-paths.mts'))
+      const { getYarnBinPath } = vi.mocked(await import('./paths.mts'))
       getYarnBinPath.mockReturnValue('/usr/local/bin/yarn')
 
       const { spawnSync } = vi.mocked(await import('@socketsecurity/lib/spawn'))
@@ -103,7 +103,7 @@ describe('yarn-version utilities', () => {
     })
 
     it('returns false when yarn command fails', async () => {
-      const { getYarnBinPath } = vi.mocked(await import('./yarn-paths.mts'))
+      const { getYarnBinPath } = vi.mocked(await import('./paths.mts'))
       getYarnBinPath.mockReturnValue('/usr/local/bin/yarn')
 
       const { spawnSync } = vi.mocked(await import('@socketsecurity/lib/spawn'))
@@ -119,7 +119,7 @@ describe('yarn-version utilities', () => {
     })
 
     it('returns false when yarn returns no output', async () => {
-      const { getYarnBinPath } = vi.mocked(await import('./yarn-paths.mts'))
+      const { getYarnBinPath } = vi.mocked(await import('./paths.mts'))
       getYarnBinPath.mockReturnValue('/usr/local/bin/yarn')
 
       const { spawnSync } = vi.mocked(await import('@socketsecurity/lib/spawn'))
@@ -135,7 +135,7 @@ describe('yarn-version utilities', () => {
     })
 
     it('handles malformed version strings', async () => {
-      const { getYarnBinPath } = vi.mocked(await import('./yarn-paths.mts'))
+      const { getYarnBinPath } = vi.mocked(await import('./paths.mts'))
       getYarnBinPath.mockReturnValue('/usr/local/bin/yarn')
 
       const { spawnSync } = vi.mocked(await import('@socketsecurity/lib/spawn'))
@@ -151,7 +151,7 @@ describe('yarn-version utilities', () => {
     })
 
     it('returns false when getYarnBinPath throws', async () => {
-      const { getYarnBinPath } = vi.mocked(await import('./yarn-paths.mts'))
+      const { getYarnBinPath } = vi.mocked(await import('./paths.mts'))
       getYarnBinPath.mockImplementation(() => {
         throw new Error('Yarn not found')
       })
@@ -162,7 +162,7 @@ describe('yarn-version utilities', () => {
     })
 
     it('returns false when spawnSync throws', async () => {
-      const { getYarnBinPath } = vi.mocked(await import('./yarn-paths.mts'))
+      const { getYarnBinPath } = vi.mocked(await import('./paths.mts'))
       getYarnBinPath.mockReturnValue('/usr/local/bin/yarn')
 
       const { spawnSync } = vi.mocked(await import('@socketsecurity/lib/spawn'))
@@ -179,7 +179,7 @@ describe('yarn-version utilities', () => {
       const constants = vi.mocked(await import('../constants.mts'))
       constants.default.WIN32 = true
 
-      const { getYarnBinPath } = vi.mocked(await import('./yarn-paths.mts'))
+      const { getYarnBinPath } = vi.mocked(await import('./paths.mts'))
       getYarnBinPath.mockReturnValue('C:\\Program Files\\yarn\\yarn.cmd')
 
       const { spawnSync } = vi.mocked(await import('@socketsecurity/lib/spawn'))
@@ -203,7 +203,7 @@ describe('yarn-version utilities', () => {
     })
 
     it('caches the result', async () => {
-      const { getYarnBinPath } = vi.mocked(await import('./yarn-paths.mts'))
+      const { getYarnBinPath } = vi.mocked(await import('./paths.mts'))
       getYarnBinPath.mockReturnValue('/usr/local/bin/yarn')
 
       const { spawnSync } = vi.mocked(await import('@socketsecurity/lib/spawn'))

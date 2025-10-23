@@ -22,7 +22,7 @@ vi.mock('@npmcli/config/lib/definitions', () => ({
 }))
 
 // Mock npm-paths.
-vi.mock('./npm-paths.mts', () => ({
+vi.mock('./paths.mts', () => ({
   getNpmDirPath: vi.fn(() => '/usr/local/lib/node_modules/npm'),
 }))
 

@@ -2,10 +2,10 @@ import { execSync } from 'node:child_process'
 
 import { beforeAll, describe, expect, it } from 'vitest'
 
-import ENV from '../constants/env.mts'
-import { spawnDlx } from '../dlx/spawn.mts'
+import ENV from '../../constants/env.mts'
+import { spawnDlx } from './spawn.mts'
 import { findUp } from '../fs/fs.mts'
-import { getDefaultApiToken } from '../socket/sdk.mjs'
+import { getDefaultApiToken } from '../socket/sdk.mts'
 
 describe('dlx e2e tests', () => {
   let hasAuth = false
@@ -142,7 +142,7 @@ describe('dlx e2e tests', () => {
     it.skipIf(!ENV.RUN_E2E_TESTS || !hasAuth)(
       'executes coana-tech/cli via dlx',
       async () => {
-        const { spawnCoanaDlx } = await import('./dlx.mts')
+        const { spawnCoanaDlx } = await import('./spawn.mts')
         const result = await spawnCoanaDlx(['--help'])
 
         // Coana might fail due to network issues or package availability
@@ -166,7 +166,7 @@ describe('dlx e2e tests', () => {
     it.skipIf(!ENV.RUN_E2E_TESTS || !hasAuth)(
       'handles error from spawn',
       async () => {
-        const { spawnCoanaDlx } = await import('./dlx.mts')
+        const { spawnCoanaDlx } = await import('./spawn.mts')
         // Pass invalid args to trigger an error.
         const result = await spawnCoanaDlx([
           '--invalid-flag-that-does-not-exist',
@@ -185,7 +185,7 @@ describe('dlx e2e tests', () => {
     it.skipIf(!ENV.RUN_E2E_TESTS || !hasAuth)(
       'executes synp via dlx',
       async () => {
-        const { spawnSynpDlx } = await import('./dlx.mts')
+        const { spawnSynpDlx } = await import('./spawn.mts')
         const result = await spawnSynpDlx(['--help'])
 
         expect(result.spawnPromise).toBeDefined()
@@ -201,7 +201,7 @@ describe('dlx e2e tests', () => {
     it.skipIf(!ENV.RUN_E2E_TESTS || !hasAuth)(
       'handles error from spawn',
       async () => {
-        const { spawnSynpDlx } = await import('./dlx.mts')
+        const { spawnSynpDlx } = await import('./spawn.mts')
         // Pass invalid args to trigger an error.
         const result = await spawnSynpDlx([
           '--invalid-flag-that-does-not-exist',
