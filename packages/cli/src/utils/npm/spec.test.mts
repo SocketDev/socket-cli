@@ -14,7 +14,7 @@ vi.mock('npm-package-arg', () => ({
   default: vi.fn(),
 }))
 
-vi.mock('./purl.mts', () => ({
+vi.mock('../purl/parse.mts', () => ({
   createPurlObject: vi.fn(),
 }))
 
