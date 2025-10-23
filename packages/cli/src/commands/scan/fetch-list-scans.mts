@@ -23,7 +23,7 @@ export type FetchOrgFullScanListOptions = {
 export async function fetchOrgFullScanList(
   config: FetchOrgFullScanListConfig,
   options?: FetchOrgFullScanListOptions | undefined,
-): Promise<CResult<SocketSdkSuccessResult<'getOrgFullScanList'>['data']>> {
+): Promise<CResult<SocketSdkSuccessResult<'listFullScans'>['data']>> {
   const { sdkOpts } = {
     __proto__: null,
     ...options,
@@ -41,7 +41,7 @@ export async function fetchOrgFullScanList(
   } as FetchOrgFullScanListConfig
 
   return await handleApiCall(
-    sockSdk.getOrgFullScanList(orgSlug, {
+    sockSdk.listFullScans(orgSlug, {
       ...(branch ? { branch } : {}),
       ...(repo ? { repo } : {}),
       sort,

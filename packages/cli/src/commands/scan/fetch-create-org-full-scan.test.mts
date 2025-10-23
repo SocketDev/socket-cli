@@ -22,7 +22,7 @@ describe('fetchCreateOrgFullScan', () => {
     )
 
     const { mockHandleApi, mockSdk } = await setupSdkMockSuccess(
-      'createOrgFullScan',
+      'createFullScan',
       {
         scanId: 'scan-123',
         status: 'pending',
@@ -105,7 +105,7 @@ describe('fetchCreateOrgFullScan', () => {
       './fetch-create-org-full-scan.mts'
     )
 
-    await setupSdkMockError('createOrgFullScan', 'Failed to create scan', 500)
+    await setupSdkMockError('createFullScan', 'Failed to create scan', 500)
 
     const config = {
       branchName: 'main',
@@ -132,7 +132,7 @@ describe('fetchCreateOrgFullScan', () => {
     )
 
     const { mockSdk, mockSetupSdk } = await setupSdkMockSuccess(
-      'createOrgFullScan',
+      'createFullScan',
       {},
     )
 
@@ -189,7 +189,7 @@ describe('fetchCreateOrgFullScan', () => {
       './fetch-create-org-full-scan.mts'
     )
 
-    const { mockSdk } = await setupSdkMockSuccess('createOrgFullScan', {})
+    const { mockSdk } = await setupSdkMockSuccess('createFullScan', {})
 
     const config = {
       branchName: '',
@@ -222,7 +222,7 @@ describe('fetchCreateOrgFullScan', () => {
       './fetch-create-org-full-scan.mts'
     )
 
-    const { mockSdk } = await setupSdkMockSuccess('createOrgFullScan', {})
+    const { mockSdk } = await setupSdkMockSuccess('createFullScan', {})
 
     const config = {
       branchName: 'main',
@@ -256,7 +256,7 @@ describe('fetchCreateOrgFullScan', () => {
       './fetch-create-org-full-scan.mts'
     )
 
-    const { mockSdk } = await setupSdkMockSuccess('createOrgFullScan', {})
+    const { mockSdk } = await setupSdkMockSuccess('createFullScan', {})
 
     const config = {
       branchName: 'main',
@@ -279,7 +279,7 @@ describe('fetchCreateOrgFullScan', () => {
       './fetch-create-org-full-scan.mts'
     )
 
-    const { mockSdk } = await setupSdkMockSuccess('createOrgFullScan', {})
+    const { mockSdk } = await setupSdkMockSuccess('createFullScan', {})
 
     const testCases = [
       ['org-with-dashes', 'repo-with-dashes'],

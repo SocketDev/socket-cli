@@ -10,10 +10,10 @@ import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 type ScanListItem =
-  SocketSdkSuccessResult<'getOrgFullScanList'>['data']['results'][number]
+  SocketSdkSuccessResult<'listFullScans'>['data']['results'][number]
 
 export async function outputListScans(
-  result: CResult<SocketSdkSuccessResult<'getOrgFullScanList'>['data']>,
+  result: CResult<SocketSdkSuccessResult<'listFullScans'>['data']>,
   outputKind: OutputKind,
 ): Promise<void> {
   if (!result.ok) {

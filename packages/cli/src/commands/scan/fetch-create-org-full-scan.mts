@@ -55,7 +55,7 @@ export async function fetchCreateOrgFullScan(
   const sockSdk = sockSdkCResult.data
 
   return await handleApiCall(
-    sockSdk.createOrgFullScan(orgSlug, packagePaths, {
+    sockSdk.createFullScan(orgSlug, packagePaths, {
       pathsRelativeTo: cwd,
       queryParams: {
         ...(branchName ? { branch: branchName } : {}),
