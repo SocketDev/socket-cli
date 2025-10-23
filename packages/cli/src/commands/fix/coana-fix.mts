@@ -84,6 +84,8 @@ export async function coanaFix(
   const scanFilepaths = await getPackageFilesForScan(['.'], supportedFiles, {
     cwd,
   })
+
+  // SDK v3.0 automatically validates file readability via onFileValidation callback.
   const uploadCResult = await handleApiCall(
     sockSdk.uploadManifestFiles(orgSlug, scanFilepaths),
     {
@@ -195,7 +197,7 @@ export async function coanaFix(
       // Clean up the temporary file.
       try {
         await fs.unlink(tmpFile)
-      } catch (e) {
+      } catch (_e) {
         // Ignore cleanup errors.
       }
     }
