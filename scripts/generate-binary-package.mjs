@@ -12,6 +12,20 @@ import { parseArgs } from '@socketsecurity/lib/argv/parse'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootDir = path.join(__dirname, '..')
 
+/**
+ * Generates a datetime-based version string.
+ */
+function generateDatetimeVersion() {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  const hours = String(now.getHours()).padStart(2, '0')
+  const minutes = String(now.getMinutes()).padStart(2, '0')
+  const seconds = String(now.getSeconds()).padStart(2, '0')
+  return `${year}.${month}.${day}.${hours}${minutes}${seconds}`
+}
+
 const { values } = parseArgs({
   options: {
     platform: { type: 'string' },
@@ -37,18 +51,6 @@ if (!platform || !arch) {
     'Usage: generate-binary-package.mjs --platform=darwin --arch=arm64 [--version=2025.01.22.143052] [--method=smol]',
   )
   process.exit(1)
-}
-
-// Generate datetime version if not provided
-const generateDatetimeVersion = () => {
-  const now = new Date()
-  const year = now.getFullYear()
-  const month = String(now.getMonth() + 1).padStart(2, '0')
-  const day = String(now.getDate()).padStart(2, '0')
-  const hours = String(now.getHours()).padStart(2, '0')
-  const minutes = String(now.getMinutes()).padStart(2, '0')
-  const seconds = String(now.getSeconds()).padStart(2, '0')
-  return `${year}.${month}.${day}.${hours}${minutes}${seconds}`
 }
 
 // Clean version (remove 'v' prefix if present) or generate if not provided
