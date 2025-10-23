@@ -1,7 +1,7 @@
 {
   "description": "Custom Node.js binary builder with Socket security patches",
   "devDependencies": {
-    "vitest": "3.0.0"
+    "vitest": "3.0.5"
   },
   "license": "MIT",
   "name": "@socketbin/custom-node",
