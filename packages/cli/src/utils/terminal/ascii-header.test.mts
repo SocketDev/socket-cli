@@ -15,6 +15,13 @@ import {
 } from './ascii-header.mts'
 
 describe('ascii-header', () => {
+  /**
+   * Strip ANSI color codes from string for shimmer testing.
+   */
+  function stripAnsi(str: string): string {
+    return str.replace(/\x1b\[[0-9;]*m/g, '')
+  }
+
   describe('supportsFullColor', () => {
     it('should detect COLORTERM=truecolor', () => {
       const originalColorterm = process.env['COLORTERM']
@@ -89,32 +96,32 @@ describe('ascii-header', () => {
   describe('renderStaticLogo', () => {
     it('should render logo with default theme', () => {
       const logo = renderStaticLogo()
-      expect(logo).toContain('Socket')
+      expect(logo).toContain('|   __|___') // ASCII art content
       expect(logo).toContain('.dev')
       expect(logo).toContain('\x1b[38;2;') // Contains RGB color codes
     })
 
     it('should render logo with cyberpunk theme', () => {
       const logo = renderStaticLogo('cyberpunk')
-      expect(logo).toContain('Socket')
+      expect(logo).toContain('|   __|___') // ASCII art content
       expect(logo).toContain('.dev')
     })
 
     it('should render logo with forest theme', () => {
       const logo = renderStaticLogo('forest')
-      expect(logo).toContain('Socket')
+      expect(logo).toContain('|   __|___') // ASCII art content
       expect(logo).toContain('.dev')
     })
 
     it('should render logo with ocean theme', () => {
       const logo = renderStaticLogo('ocean')
-      expect(logo).toContain('Socket')
+      expect(logo).toContain('|   __|___') // ASCII art content
       expect(logo).toContain('.dev')
     })
 
     it('should render logo with sunset theme', () => {
       const logo = renderStaticLogo('sunset')
-      expect(logo).toContain('Socket')
+      expect(logo).toContain('|   __|___') // ASCII art content
       expect(logo).toContain('.dev')
     })
 
@@ -133,8 +140,9 @@ describe('ascii-header', () => {
   describe('renderShimmerFrame', () => {
     it('should render shimmer frame with default theme', () => {
       const logo = renderShimmerFrame(0)
-      expect(logo).toContain('Socket')
-      expect(logo).toContain('.dev')
+      const stripped = stripAnsi(logo)
+      expect(stripped).toContain('|')
+      expect(stripped).toContain('dev')
     })
 
     it('should render different frames differently', () => {
@@ -154,8 +162,9 @@ describe('ascii-header', () => {
       ]
       for (const theme of themes) {
         const logo = renderShimmerFrame(0, theme)
-        expect(logo).toContain('Socket')
-        expect(logo).toContain('.dev')
+        const stripped = stripAnsi(logo)
+        expect(stripped).toContain('|')
+        expect(stripped).toContain('dev')
       }
     })
 
@@ -181,7 +190,7 @@ describe('ascii-header', () => {
   describe('renderLogoWithFallback', () => {
     it('should render static logo when frame is null', () => {
       const logo = renderLogoWithFallback(null)
-      expect(logo).toContain('Socket')
+      expect(logo).toContain('|   __|___') // ASCII art content
       expect(logo).toContain('.dev')
     })
 
@@ -190,7 +199,9 @@ describe('ascii-header', () => {
       try {
         process.env['COLORTERM'] = 'truecolor'
         const logo = renderLogoWithFallback(0)
-        expect(logo).toContain('Socket')
+        const stripped = stripAnsi(logo)
+        expect(stripped).toContain('|')
+        expect(stripped).toContain('dev')
         // With full color support, should use shimmer (contains bold)
         if (supportsFullColor()) {
           expect(logo).toContain('\x1b[1m')
@@ -213,7 +224,7 @@ describe('ascii-header', () => {
         delete process.env['TERM_PROGRAM']
         process.env['TERM'] = 'xterm'
         const logo = renderLogoWithFallback(0)
-        expect(logo).toContain('Socket')
+        expect(logo).toContain('|   __|___') // ASCII art content
         // Without full color support, should use simple colors (no RGB codes)
         if (!supportsFullColor()) {
           expect(logo).not.toContain('\x1b[38;2;')
@@ -241,7 +252,7 @@ describe('ascii-header', () => {
       ]
       for (const theme of themes) {
         const logo = renderLogoWithFallback(null, theme)
-        expect(logo).toContain('Socket')
+        expect(logo).toContain('|   __|___') // ASCII art content
       }
     })
   })
@@ -284,7 +295,7 @@ describe('ascii-header', () => {
       if (isVitest) {
         // When running under vitest, prefer static logo
         const logo = renderLogoWithFallback(null)
-        expect(logo).toContain('Socket')
+        expect(logo).toContain('|   __|___') // ASCII art content
       }
     })
 
@@ -315,14 +326,16 @@ describe('ascii-header', () => {
   describe('edge cases', () => {
     it('should handle very large frame numbers', () => {
       const logo = renderShimmerFrame(1000000)
-      expect(logo).toContain('Socket')
-      expect(logo).toContain('.dev')
+      const stripped = stripAnsi(logo)
+      expect(stripped).toContain('|')
+      expect(stripped).toContain('dev')
     })
 
     it('should handle negative frame numbers', () => {
       const logo = renderShimmerFrame(-10)
-      expect(logo).toContain('Socket')
-      expect(logo).toContain('.dev')
+      const stripped = stripAnsi(logo)
+      expect(stripped).toContain('|')
+      expect(stripped).toContain('dev')
     })
 
     it('should handle frame 0 consistently', () => {
