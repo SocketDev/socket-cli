@@ -28,10 +28,14 @@ import { HttpProxyAgent, HttpsProxyAgent } from 'hpagent'
 
 import isInteractive from '@socketregistry/is-interactive/index.cjs'
 import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/lib/constants/socket'
+import { logger } from '@socketsecurity/lib/logger'
 import { password } from '@socketsecurity/lib/prompts'
 import { isNonEmptyString } from '@socketsecurity/lib/strings'
 import { isUrl } from '@socketsecurity/lib/url'
+import { pluralize } from '@socketsecurity/lib/words'
 import { createUserAgentFromPkgJson, SocketSdk } from '@socketsecurity/sdk'
+
+import type { FileValidationResult } from '@socketsecurity/sdk'
 
 import {
   CONFIG_KEY_API_BASE_URL,
@@ -152,6 +156,29 @@ export async function setupSdk(
       ...(apiProxy ? { agent: new ProxyAgent({ proxy: apiProxy }) } : {}),
       ...(apiBaseUrl ? { baseUrl: apiBaseUrl } : {}),
       ...(timeout ? { timeout } : {}),
+      onFileValidation: (
+        _validPaths: string[],
+        invalidPaths: string[],
+        _context: {
+          operation:
+            | 'createDependenciesSnapshot'
+            | 'createOrgFullScan'
+            | 'uploadManifestFiles'
+          orgSlug?: string | undefined
+          [key: string]: unknown
+        },
+      ): FileValidationResult => {
+        if (invalidPaths.length > 0) {
+          logger.warn(
+            `Skipped ${invalidPaths.length} ${pluralize('file', { count: invalidPaths.length })} that could not be read`,
+          )
+          logger.substep(
+            'This may occur with Yarn Berry PnP virtual filesystem or pnpm symlinks',
+          )
+        }
+        // Continue with valid files.
+        return { shouldContinue: true }
+      },
       userAgent: createUserAgentFromPkgJson({
         name: ENV.INLINED_SOCKET_CLI_NAME || 'socket',
         version: ENV.INLINED_SOCKET_CLI_VERSION || '0.0.0',
