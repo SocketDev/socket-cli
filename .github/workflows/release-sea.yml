@@ -1,4 +1,4 @@
-name: 📦 Build and Release SEA Binaries
+name: 📦 Publish SEA binaries to npm registry
 
 on:
   workflow_dispatch:

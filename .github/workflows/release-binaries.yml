@@ -1,4 +1,4 @@
-name: 📦 Build and Release yao-pkg Binaries
+name: 🚀 Release binaries to GitHub
 
 on:
   workflow_dispatch:
