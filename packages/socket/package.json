@@ -3,6 +3,12 @@
     "socket": "./bin/socket.js"
   },
   "description": "Thin Socket CLI wrapper that downloads and delegates to @socketsecurity/cli",
+  "devDependencies": {
+    "vitest": "^3.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  },
   "files": [
     "bin/",
     "dist/"
@@ -18,6 +24,11 @@
     "@socketbin/cli-linux-x64": "^1.0.0",
     "@socketbin/cli-win32-arm64": "^1.0.0",
     "@socketbin/cli-win32-x64": "^1.0.0"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest"
   },
   "version": "1.0.0"
 }
