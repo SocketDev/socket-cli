@@ -123,9 +123,7 @@ export async function handleCreateNewScan({
     cwd,
   })
 
-  spinner.successAndStop(
-    `Found ${packagePaths.length} ${pluralize('file', { count: packagePaths.length })} to include in scan.`,
-  )
+  spinner.successAndStop('Finished searching for local files.')
 
   const wasValidInput = checkCommandInput(outputKind, {
     nook: true,
@@ -138,10 +136,6 @@ export async function handleCreateNewScan({
     debug('No eligible files found to scan')
     return
   }
-
-  logger.success(
-    `Found ${packagePaths.length} local ${pluralize('file', { count: packagePaths.length })}`,
-  )
 
   debugDir({ packagePaths })
 
@@ -195,6 +189,11 @@ export async function handleCreateNewScan({
 
     tier1ReachabilityScanId = reachResult.data?.tier1ReachabilityScanId
   }
+
+  // Display final file count after all modifications.
+  logger.success(
+    `Found ${scanPaths.length} ${pluralize('file', { count: scanPaths.length })} to include in scan`,
+  )
 
   const fullScanCResult = await fetchCreateOrgFullScan(
     scanPaths,

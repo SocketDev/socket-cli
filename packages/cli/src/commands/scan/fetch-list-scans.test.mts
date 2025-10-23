@@ -16,7 +16,7 @@ describe('fetchOrgFullScanList', () => {
     const { fetchOrgFullScanList } = await import('./fetch-list-scans.mts')
 
     const { mockHandleApi, mockSdk } = await setupSdkMockSuccess(
-      'getOrgFullScanList',
+      'listFullScans',
       {
         scans: [
           { id: 'scan-123', status: 'completed' },
@@ -87,7 +87,7 @@ describe('fetchOrgFullScanList', () => {
       '../../../test/helpers/sdk-test-helpers.mts'
     )
 
-    await setupSdkMockError('getOrgFullScanList', 'API error', 500)
+    await setupSdkMockError('listFullScans', 'API error', 500)
 
     const config = {
       branch: 'main',
@@ -110,7 +110,7 @@ describe('fetchOrgFullScanList', () => {
     const { fetchOrgFullScanList } = await import('./fetch-list-scans.mts')
 
     const { mockSdk, mockSetupSdk } = await setupSdkMockSuccess(
-      'getOrgFullScanList',
+      'listFullScans',
       {},
     )
 
@@ -149,7 +149,7 @@ describe('fetchOrgFullScanList', () => {
   it('handles empty optional config values', async () => {
     const { fetchOrgFullScanList } = await import('./fetch-list-scans.mts')
 
-    const { mockSdk } = await setupSdkMockSuccess('getOrgFullScanList', {})
+    const { mockSdk } = await setupSdkMockSuccess('listFullScans', {})
 
     const config = {
       branch: '',
@@ -176,7 +176,7 @@ describe('fetchOrgFullScanList', () => {
   it('handles different pagination parameters', async () => {
     const { fetchOrgFullScanList } = await import('./fetch-list-scans.mts')
 
-    const { mockSdk } = await setupSdkMockSuccess('getOrgFullScanList', {})
+    const { mockSdk } = await setupSdkMockSuccess('listFullScans', {})
 
     const testCases = [
       { page: 1, perPage: 10 },
@@ -215,7 +215,7 @@ describe('fetchOrgFullScanList', () => {
   it('handles different sort and direction combinations', async () => {
     const { fetchOrgFullScanList } = await import('./fetch-list-scans.mts')
 
-    const { mockSdk } = await setupSdkMockSuccess('getOrgFullScanList', {})
+    const { mockSdk } = await setupSdkMockSuccess('listFullScans', {})
 
     const testCases = [
       { sort: 'created_at', direction: 'asc' },
@@ -254,7 +254,7 @@ describe('fetchOrgFullScanList', () => {
   it('uses null prototype for config and options', async () => {
     const { fetchOrgFullScanList } = await import('./fetch-list-scans.mts')
 
-    const { mockSdk } = await setupSdkMockSuccess('getOrgFullScanList', {})
+    const { mockSdk } = await setupSdkMockSuccess('listFullScans', {})
 
     const config = {
       branch: 'main',
