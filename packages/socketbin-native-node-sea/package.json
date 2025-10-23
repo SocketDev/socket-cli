@@ -1,7 +1,7 @@
 {
   "description": "Native Node.js SEA binary builder (fallback)",
   "devDependencies": {
-    "vitest": "^3.0.0"
+    "vitest": "3.0.0"
   },
   "license": "MIT",
   "name": "@socketbin/sea",
