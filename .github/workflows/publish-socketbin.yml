@@ -4,9 +4,18 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to publish (without v prefix)'
+        description: 'Version to publish (datetime format: 2025.01.22.143052)'
         required: true
         type: string
+      method:
+        description: 'Build method to use'
+        required: false
+        type: choice
+        options:
+          - smol
+          - sea
+          - smol-sea
+        default: smol
       dry-run:
         description: 'Dry run (build but do not publish)'
         required: false
@@ -158,7 +167,8 @@ jobs:
         run: |
           node scripts/generate-binary-package.mjs \
             --platform=linux --arch=x64 \
-            --version=${{ steps.version.outputs.version }}
+            --version=${{ steps.version.outputs.version }} \
+            --method=${{ inputs.method }}
 
       - name: Publish Linux x64
         if: ${{ !inputs.dry-run }}
@@ -171,7 +181,8 @@ jobs:
         run: |
           node scripts/generate-binary-package.mjs \
             --platform=linux --arch=arm64 \
-            --version=${{ steps.version.outputs.version }}
+            --version=${{ steps.version.outputs.version }} \
+            --method=${{ inputs.method }}
 
           cd packages/binaries/cli-linux-arm64
           npm publish --provenance --access public
@@ -181,7 +192,8 @@ jobs:
         run: |
           node scripts/generate-binary-package.mjs \
             --platform=alpine --arch=x64 \
-            --version=${{ steps.version.outputs.version }}
+            --version=${{ steps.version.outputs.version }} \
+            --method=${{ inputs.method }}
 
           cd packages/binaries/cli-alpine-x64
           npm publish --provenance --access public
@@ -191,7 +203,8 @@ jobs:
         run: |
           node scripts/generate-binary-package.mjs \
             --platform=alpine --arch=arm64 \
-            --version=${{ steps.version.outputs.version }}
+            --version=${{ steps.version.outputs.version }} \
+            --method=${{ inputs.method }}
 
           cd packages/binaries/cli-alpine-arm64
           npm publish --provenance --access public
@@ -201,7 +214,8 @@ jobs:
         run: |
           node scripts/generate-binary-package.mjs \
             --platform=darwin --arch=x64 \
-            --version=${{ steps.version.outputs.version }}
+            --version=${{ steps.version.outputs.version }} \
+            --method=${{ inputs.method }}
 
           cd packages/binaries/cli-darwin-x64
           npm publish --provenance --access public
@@ -211,7 +225,8 @@ jobs:
         run: |
           node scripts/generate-binary-package.mjs \
             --platform=darwin --arch=arm64 \
-            --version=${{ steps.version.outputs.version }}
+            --version=${{ steps.version.outputs.version }} \
+            --method=${{ inputs.method }}
 
           cd packages/binaries/cli-darwin-arm64
           npm publish --provenance --access public
@@ -221,7 +236,8 @@ jobs:
         run: |
           node scripts/generate-binary-package.mjs \
             --platform=win32 --arch=x64 \
-            --version=${{ steps.version.outputs.version }}
+            --version=${{ steps.version.outputs.version }} \
+            --method=${{ inputs.method }}
 
           cd packages/binaries/cli-win32-x64
           npm publish --provenance --access public
@@ -231,7 +247,8 @@ jobs:
         run: |
           node scripts/generate-binary-package.mjs \
             --platform=win32 --arch=arm64 \
-            --version=${{ steps.version.outputs.version }}
+            --version=${{ steps.version.outputs.version }} \
+            --method=${{ inputs.method }}
 
           cd packages/binaries/cli-win32-arm64
           npm publish --provenance --access public

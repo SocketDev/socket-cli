@@ -19,20 +19,42 @@ const { values } = parseArgs({
     version: { type: 'string' },
     tool: { type: 'string', default: 'cli' },
     outdir: { type: 'string' },
+    method: { type: 'string', default: 'smol' },
   },
 })
 
-const { arch, outdir, platform, tool = 'cli', version } = values
+const {
+  arch,
+  outdir,
+  platform,
+  tool = 'cli',
+  version: providedVersion,
+  method: buildMethod = 'smol',
+} = values
 
-if (!platform || !arch || !version) {
+if (!platform || !arch) {
   console.error(
-    'Usage: generate-binary-package.mjs --platform=darwin --arch=arm64 --version=1.1.24',
+    'Usage: generate-binary-package.mjs --platform=darwin --arch=arm64 [--version=2025.01.22.143052] [--method=smol]',
   )
   process.exit(1)
 }
 
-// Clean version (remove 'v' prefix if present)
-const cleanVersion = version.replace(/^v/, '')
+// Generate datetime version if not provided
+const generateDatetimeVersion = () => {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  const hours = String(now.getHours()).padStart(2, '0')
+  const minutes = String(now.getMinutes()).padStart(2, '0')
+  const seconds = String(now.getSeconds()).padStart(2, '0')
+  return `${year}.${month}.${day}.${hours}${minutes}${seconds}`
+}
+
+// Clean version (remove 'v' prefix if present) or generate if not provided
+const cleanVersion = providedVersion
+  ? providedVersion.replace(/^v/, '')
+  : generateDatetimeVersion()
 
 // Determine output directory
 const packageDir =
@@ -59,6 +81,7 @@ const packageJson = {
   name: `@socketbin/${tool}-${platform}-${arch}`,
   version: cleanVersion,
   description: `Socket ${tool.toUpperCase()} binary for ${platformNames[platform]} ${archNames[arch]}`,
+  buildMethod,
   keywords: [
     'socket',
     tool,
@@ -103,6 +126,7 @@ Platform-specific binary for Socket ${tool.toUpperCase()}.
 ## Platform
 - **OS**: ${platformNames[platform]}
 - **Architecture**: ${archNames[arch]}
+- **Build Method**: ${buildMethod}
 
 ## Installation
 
