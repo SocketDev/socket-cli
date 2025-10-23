@@ -6,7 +6,9 @@ import { it } from 'vitest'
 import { type SpawnOptions, spawn } from '@socketsecurity/lib/spawn'
 import { stripAnsi } from '@socketsecurity/lib/strings'
 
-import constants, { FLAG_HELP, FLAG_VERSION } from '../src/constants.mts'
+import { FLAG_HELP, FLAG_VERSION } from '../src/constants/cli.mts'
+import ENV from '../src/constants/env.mts'
+import { execPath } from '../src/constants/paths.mts'
 import {
   type ScrubOptions,
   scrubSnapshotData,
@@ -14,6 +16,12 @@ import {
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
+
+// Backward compatibility object for tests.
+const constants = {
+  execPath,
+  processEnv: process.env,
+}
 
 // The asciiUnsafeRegexp match characters that are:
 //   * Control characters in the Unicode range:

@@ -4,6 +4,7 @@
  * esbuild is much faster than Rollup and doesn't have template literal corruption issues.
  */
 
+import { build } from 'esbuild'
 import { execSync } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
 import { existsSync, readFileSync } from 'node:fs'
@@ -46,16 +47,20 @@ const versionHash = `${packageJson.version}:${gitHash}:${randUuidSegment}${
 
 // Get local Socket package paths.
 const socketPackages = {
-  '@socketsecurity/lib': path.join(rootPath, '..', 'socket-lib'),
+  '@socketsecurity/lib': path.join(rootPath, '..', '..', '..', 'socket-lib'),
   '@socketsecurity/registry': path.join(
     rootPath,
+    '..',
+    '..',
     '..',
     'socket-registry',
     'registry',
   ),
-  '@socketsecurity/sdk': path.join(rootPath, '..', 'socket-sdk-js'),
+  '@socketsecurity/sdk': path.join(rootPath, '..', '..', '..', 'socket-sdk-js'),
   '@socketregistry/packageurl-js': path.join(
     rootPath,
+    '..',
+    '..',
     '..',
     'socket-packageurl-js',
   ),
@@ -101,7 +106,7 @@ function resolvePackageSubpath(packagePath, subpath) {
   return null
 }
 
-export default {
+const config = {
   entryPoints: [path.join(rootPath, 'src/cli-dispatch.mts')],
   bundle: true,
   outfile: path.join(rootPath, 'dist/cli.js'),
@@ -208,7 +213,7 @@ export default {
       name: 'resolve-socket-lib-internals',
       setup(build) {
         // Resolve relative imports from socket-lib dist files.
-        const socketLibPath = path.join(rootPath, '..', 'socket-lib')
+        const socketLibPath = path.join(rootPath, '..', '..', '..', 'socket-lib')
         if (existsSync(socketLibPath)) {
           build.onResolve({ filter: /^\.\.\/constants\// }, args => {
             // Only handle imports from socket-lib's dist directory.
@@ -293,3 +298,13 @@ export default {
     },
   ],
 }
+
+// Run build if invoked directly.
+if (import.meta.url === `file://${process.argv[1]}`) {
+  build(config).catch(error => {
+    console.error('Build failed:', error)
+    process.exitCode = 1
+  })
+}
+
+export default config

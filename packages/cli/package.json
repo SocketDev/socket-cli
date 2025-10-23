@@ -31,7 +31,7 @@
     "./data/command-api-requirements.json": "./data/command-api-requirements.json"
   },
   "scripts": {
-    "build": "node --import=./scripts/load.mjs scripts/build.mjs --src-only",
+    "build": "node --import=./scripts/load.mjs scripts/build.mjs",
     "build:sea:internal:bootstrap": "rollup -c .config/rollup.cli-sea.config.mjs",
     "build:js": "node scripts/extract-yoga-wasm.mjs && node .config/esbuild.cli.build.mjs",
     "build:watch": "node scripts/extract-yoga-wasm.mjs && node .config/esbuild.cli.build.mjs --watch",
@@ -53,7 +53,7 @@
     "lint-staged": "dotenvx -q run -f .env.local -- lint-staged",
     "precommit": "dotenvx -q run -f .env.local -- lint-staged",
     "prepare": "dotenvx -q run -f .env.local -- husky",
-    "bs": "dotenvx -q run -f .env.local -- pnpm run build --src-only; pnpm exec socket --",
+    "bs": "dotenvx -q run -f .env.local -- pnpm run build; pnpm exec socket --",
     "s": "dotenvx -q run -f .env.local -- pnpm exec socket --",
     "e2e-tests": "dotenvx -q run -f .env.test -- vitest run --config vitest.e2e.config.mts",
     "test": "run-s check test:*",
