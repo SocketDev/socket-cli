@@ -12,7 +12,7 @@ describe('SEA build validation', () => {
     const bootstrapPath = path.join(
       process.cwd(),
       'src',
-      'sea',
+      'stub',
       'bootstrap.mts',
     )
     expect(existsSync(bootstrapPath)).toBe(true)
@@ -22,7 +22,7 @@ describe('SEA build validation', () => {
     const configPath = path.join(
       process.cwd(),
       '.config',
-      'rollup.cli-sea.config.mjs',
+      'esbuild.sea-bootstrap.build.mjs',
     )
     expect(existsSync(configPath)).toBe(true)
   })
