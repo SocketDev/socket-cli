@@ -16,7 +16,6 @@ import { createRequire } from 'node:module'
 import os from 'node:os'
 import path from 'node:path'
 
-// @ts-expect-error - nanotar module not available currently
 import { parseTarGzip } from 'nanotar'
 
 const require = createRequire(import.meta.url)

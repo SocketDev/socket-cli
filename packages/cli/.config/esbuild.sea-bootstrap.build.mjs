@@ -37,8 +37,8 @@ const config = {
   target: 'node18',
   sourcemap: false,
   minify: false,
-  // Only externalize Node.js built-ins and nanotar (vendored at runtime).
-  external: ['node:*', 'nanotar'],
+  // Only externalize Node.js built-ins for the thin wrapper.
+  external: ['node:*'],
   alias: aliasEntries,
   logLevel: 'info',
   banner: {
