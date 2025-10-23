@@ -190,8 +190,8 @@ importers:
         specifier: 3.0.1
         version: 3.0.1
       '@socketsecurity/lib':
-        specifier: 1.0.5
-        version: 1.0.5(typescript@5.9.3)
+        specifier: 1.1.0
+        version: 1.1.0(typescript@5.9.3)
       '@socketsecurity/registry':
         specifier: 2.0.0
         version: 2.0.0(typescript@5.9.3)
@@ -752,6 +752,15 @@ importers:
       '@sentry/node':
         specifier: ^8.0.0
         version: 8.55.0
+      del-cli:
+        specifier: 6.0.0
+        version: 6.0.0
+      esbuild:
+        specifier: 0.25.10
+        version: 0.25.10
+      vitest:
+        specifier: ^3.0.0
+        version: 3.2.4(@types/debug@4.1.12)(@types/node@24.3.1)(jiti@2.6.1)(yaml@2.8.1)
 
   packages/socket:
     devDependencies:
@@ -2340,6 +2349,15 @@ packages:
 
   '@socketsecurity/lib@1.0.5':
     resolution: {integrity: sha512-TwDt9TGBc36s7dWfFLrkpF982BSI4KCM3RCLx0KHxPWEh0oskoYOIaAWrsAW11i7fuk90PZ48tL2WAY/O1WOQg==}
+    engines: {node: '>=22'}
+    peerDependencies:
+      typescript: '>=5.0.0'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
+
+  '@socketsecurity/lib@1.1.0':
+    resolution: {integrity: sha512-UxyLrFay3RFFLFQO+OxxcYY3qSB0SU0WUWvStGrPsoo7XHdA6oV9atqP8BhzxgtcXEzCAfYEWYcAGDYVUMNGIg==}
     engines: {node: '>=22'}
     peerDependencies:
       typescript: '>=5.0.0'
@@ -7497,6 +7515,10 @@ snapshots:
       yaml: 2.8.1
 
   '@socketsecurity/lib@1.0.5(typescript@5.9.3)':
+    optionalDependencies:
+      typescript: 5.9.3
+
+  '@socketsecurity/lib@1.1.0(typescript@5.9.3)':
     optionalDependencies:
       typescript: 5.9.3
 
