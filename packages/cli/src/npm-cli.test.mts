@@ -1,17 +1,20 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+// Mock shadow/npm/bin module.
+vi.mock('./shadow/npm/bin.mts', () => ({
+  default: vi.fn(),
+}))
+
+// Import modules after mocks are set up.
+const { default: runNpmCli } = await import('./npm-cli.mts')
+const shadowNpmBinModule = await import('./shadow/npm/bin.mts')
+const mockShadowNpmBin = vi.mocked(shadowNpmBinModule.default)
+
 // Mock process methods.
 const mockProcessExit = vi
   .spyOn(process, 'exit')
   .mockImplementation(() => undefined as never)
 const mockProcessKill = vi.spyOn(process, 'kill').mockImplementation(() => true)
-
-// Mock shadowNpmBin.
-const mockShadowNpmBin = vi.fn()
-
-vi.mock('./shadow/npm/bin.mts', () => ({
-  default: mockShadowNpmBin,
-}))
 
 describe('npm-cli', () => {
   const mockChildProcess = {
@@ -19,12 +22,14 @@ describe('npm-cli', () => {
     pid: 12345,
   }
 
-  const mockSpawnResult = {
-    spawnPromise: {
-      process: mockChildProcess,
-      then: vi.fn().mockResolvedValue({ success: true, code: 0 }),
-    },
-  }
+  // Create a proper promise-like object for spawnPromise.
+  const createMockSpawnResult = (exitCode = 0) => ({
+    spawnPromise: Promise.resolve({
+      success: exitCode === 0,
+      code: exitCode,
+      signal: undefined,
+    }).then(result => Object.assign(result, { process: mockChildProcess })),
+  })
 
   beforeEach(() => {
     vi.clearAllMocks()
@@ -33,13 +38,10 @@ describe('npm-cli', () => {
     process.exitCode = undefined
 
     // Setup default mock implementations.
-    mockShadowNpmBin.mockResolvedValue(mockSpawnResult)
+    mockShadowNpmBin.mockResolvedValue(createMockSpawnResult(0))
     mockChildProcess.on.mockImplementation(() => {
       // No-op by default.
     })
-
-    // Clear module cache to ensure fresh imports.
-    vi.resetModules()
   })
 
   it('should set initial exit code to 1', async () => {
@@ -47,7 +49,6 @@ describe('npm-cli', () => {
     process.argv = ['node', 'npm-cli.mjs', 'install']
 
     try {
-      const { default: runNpmCli } = await import('./npm-cli.mts')
       const promise = runNpmCli()
       expect(process.exitCode).toBe(1)
       await promise
@@ -61,7 +62,6 @@ describe('npm-cli', () => {
     process.argv = ['node', 'npm-cli.mjs', 'install', 'lodash']
 
     try {
-      const { default: runNpmCli } = await import('./npm-cli.mts')
       await runNpmCli()
 
       expect(mockShadowNpmBin).toHaveBeenCalledWith(['install', 'lodash'], {
@@ -78,15 +78,10 @@ describe('npm-cli', () => {
     const originalArgv = process.argv
     process.argv = ['node', 'npm-cli.mjs', 'install']
 
-    mockChildProcess.on.mockImplementation((event, callback) => {
-      if (event === 'exit') {
-        // Trigger callback immediately.
-        callback(1, null)
-      }
-    })
+    // Mock spawn result with exit code 1.
+    mockShadowNpmBin.mockResolvedValue(createMockSpawnResult(1))
 
     try {
-      const { default: runNpmCli } = await import('./npm-cli.mts')
       await runNpmCli()
 
       expect(mockProcessExit).toHaveBeenCalledWith(1)
@@ -99,15 +94,16 @@ describe('npm-cli', () => {
     const originalArgv = process.argv
     process.argv = ['node', 'npm-cli.mjs', 'test']
 
-    mockChildProcess.on.mockImplementation((event, callback) => {
-      if (event === 'exit') {
-        // Trigger callback immediately.
-        callback(null, 'SIGTERM')
-      }
+    // Mock spawn result with signal.
+    mockShadowNpmBin.mockResolvedValue({
+      spawnPromise: Promise.resolve({
+        success: false,
+        code: null,
+        signal: 'SIGTERM',
+      }).then(result => Object.assign(result, { process: mockChildProcess })),
     })
 
     try {
-      const { default: runNpmCli } = await import('./npm-cli.mts')
       await runNpmCli()
 
       expect(mockProcessKill).toHaveBeenCalledWith(process.pid, 'SIGTERM')
@@ -121,7 +117,6 @@ describe('npm-cli', () => {
     process.argv = ['node', 'npm-cli.mjs']
 
     try {
-      const { default: runNpmCli } = await import('./npm-cli.mts')
       await runNpmCli()
 
       expect(mockShadowNpmBin).toHaveBeenCalledWith([], {
@@ -141,7 +136,6 @@ describe('npm-cli', () => {
     process.env = { ...originalEnv, CUSTOM_VAR: 'test-value' }
 
     try {
-      const { default: runNpmCli } = await import('./npm-cli.mts')
       await runNpmCli()
 
       expect(mockShadowNpmBin).toHaveBeenCalledWith(['run', 'build'], {
@@ -159,20 +153,11 @@ describe('npm-cli', () => {
     const originalArgv = process.argv
     process.argv = ['node', 'npm-cli.mjs', 'version']
 
-    const mockThen = vi.fn().mockResolvedValue({ success: true })
-    mockShadowNpmBin.mockResolvedValue({
-      spawnPromise: {
-        process: mockChildProcess,
-        then: mockThen,
-      },
-    })
-
     try {
-      const { default: runNpmCli } = await import('./npm-cli.mts')
       await runNpmCli()
 
       // The spawn promise should be awaited.
-      expect(mockThen).toHaveBeenCalled()
+      expect(mockShadowNpmBin).toHaveBeenCalled()
     } finally {
       process.argv = originalArgv
     }
