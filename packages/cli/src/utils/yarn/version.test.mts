@@ -9,23 +9,26 @@ vi.mock('./paths.mts', () => ({
   getYarnBinPath: vi.fn(),
 }))
 
-vi.mock('../constants.mts', () => ({
+vi.mock('../../constants/env.mts', () => ({
   default: {
     WIN32: false,
   },
+}))
+
+vi.mock('../../constants/system.mts', () => ({
   FLAG_VERSION: '--version',
   UTF8: 'utf8',
 }))
 
 describe('yarn-version utilities', () => {
-  let isYarnBerry: typeof import('./yarn-version.mts')['isYarnBerry']
+  let isYarnBerry: typeof import('./version.mts')['isYarnBerry']
 
   beforeEach(async () => {
     vi.clearAllMocks()
     vi.resetModules()
 
-    // Re-import function after module reset to clear cache
-    const yarnVersion = await import('./yarn-version.mts')
+    // Re-import function after module reset to clear cache.
+    const yarnVersion = await import('./version.mts')
     isYarnBerry = yarnVersion.isYarnBerry
   })
 
@@ -48,7 +51,6 @@ describe('yarn-version utilities', () => {
         '/usr/local/bin/yarn',
         ['--version'],
         {
-          encoding: 'utf8',
           shell: false,
         },
       )
@@ -176,8 +178,11 @@ describe('yarn-version utilities', () => {
     })
 
     it('uses shell on Windows', async () => {
-      const constants = vi.mocked(await import('../constants.mts'))
-      constants.default.WIN32 = true
+      // Reset modules and set WIN32 before re-importing.
+      vi.resetModules()
+      vi.doMock('@socketsecurity/lib/constants/platform', () => ({
+        WIN32: true,
+      }))
 
       const { getYarnBinPath } = vi.mocked(await import('./paths.mts'))
       getYarnBinPath.mockReturnValue('C:\\Program Files\\yarn\\yarn.cmd')
@@ -189,14 +194,15 @@ describe('yarn-version utilities', () => {
         stderr: '',
       } as any)
 
-      const result = isYarnBerry()
+      // Re-import after setting WIN32.
+      const { isYarnBerry: isYarnBerryWindows } = await import('./version.mts')
+      const result = isYarnBerryWindows()
 
       expect(result).toBe(true)
       expect(spawnSync).toHaveBeenCalledWith(
         'C:\\Program Files\\yarn\\yarn.cmd',
         ['--version'],
         {
-          encoding: 'utf8',
           shell: true,
         },
       )
