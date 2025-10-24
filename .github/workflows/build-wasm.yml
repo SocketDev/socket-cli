@@ -1,4 +1,4 @@
-name: 🔧 Build WASM Bundle
+name: 🧱 Build WASM Bundle
 
 # Manual workflow for building the unified WASM bundle with AI models.
 # This creates a separate release (wasm-build-*) to keep WASM bundles
