@@ -115,18 +115,11 @@ describe('fs utilities', () => {
     })
 
     it('uses current working directory by default', async () => {
-      const originalCwd = process.cwd()
-      try {
-        process.chdir(testDir)
-        const result = await findUp('package.json')
-        // Handle macOS /private symlink.
-        const _expectedPath = path.join(testDir, 'package.json')
-        expect(result).toMatch(
-          new RegExp(`${path.basename(testDir)}/package\\.json$`),
-        )
-      } finally {
-        process.chdir(originalCwd)
-      }
+      // Use cwd option instead of process.chdir() to avoid global state mutation.
+      const result = await findUp('package.json', { cwd: testDir })
+      // Handle macOS /private symlink.
+      const expectedPath = path.join(testDir, 'package.json')
+      expect(result).toBe(expectedPath)
     })
 
     it('stops at filesystem root', async () => {

@@ -47,8 +47,10 @@ describe('pnpm-cli', () => {
     process.argv = ['node', 'pnpm-cli.mjs', 'install']
 
     try {
-      await import('./pnpm-cli.mts')
+      const { default: runPnpmCli } = await import('./pnpm-cli.mts')
+      const promise = runPnpmCli()
       expect(process.exitCode).toBe(1)
+      await promise
     } finally {
       process.argv = originalArgv
     }
@@ -59,7 +61,8 @@ describe('pnpm-cli', () => {
     process.argv = ['node', 'pnpm-cli.mjs', 'add', 'lodash']
 
     try {
-      await import('./pnpm-cli.mts')
+      const { default: runPnpmCli } = await import('./pnpm-cli.mts')
+      await runPnpmCli()
 
       expect(mockShadowPnpmBin).toHaveBeenCalledWith(['add', 'lodash'], {
         stdio: 'inherit',
@@ -83,7 +86,8 @@ describe('pnpm-cli', () => {
     })
 
     try {
-      await import('./pnpm-cli.mts')
+      const { default: runPnpmCli } = await import('./pnpm-cli.mts')
+      await runPnpmCli()
 
       expect(mockProcessExit).toHaveBeenCalledWith(2)
     } finally {
@@ -103,7 +107,8 @@ describe('pnpm-cli', () => {
     })
 
     try {
-      await import('./pnpm-cli.mts')
+      const { default: runPnpmCli } = await import('./pnpm-cli.mts')
+      await runPnpmCli()
 
       expect(mockProcessKill).toHaveBeenCalledWith(process.pid, 'SIGKILL')
     } finally {
@@ -116,7 +121,8 @@ describe('pnpm-cli', () => {
     process.argv = ['node', 'pnpm-cli.mjs']
 
     try {
-      await import('./pnpm-cli.mts')
+      const { default: runPnpmCli } = await import('./pnpm-cli.mts')
+      await runPnpmCli()
 
       expect(mockShadowPnpmBin).toHaveBeenCalledWith([], {
         stdio: 'inherit',
@@ -135,7 +141,8 @@ describe('pnpm-cli', () => {
     process.env = { ...originalEnv, PNPM_HOME: '/custom/path' }
 
     try {
-      await import('./pnpm-cli.mts')
+      const { default: runPnpmCli } = await import('./pnpm-cli.mts')
+      await runPnpmCli()
 
       expect(mockShadowPnpmBin).toHaveBeenCalledWith(['run', 'lint'], {
         stdio: 'inherit',
@@ -161,7 +168,8 @@ describe('pnpm-cli', () => {
     })
 
     try {
-      await import('./pnpm-cli.mts')
+      const { default: runPnpmCli } = await import('./pnpm-cli.mts')
+      await runPnpmCli()
 
       // The spawn promise should be awaited.
       expect(mockThen).toHaveBeenCalled()

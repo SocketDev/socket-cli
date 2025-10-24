@@ -16,21 +16,15 @@ vi.mock('@socketsecurity/lib/fs', () => ({
   writeJson: vi.fn(),
 }))
 
-vi.mock('../constants.mts', () => {
-  const kInternalsSymbol = Symbol.for('kInternalsSymbol')
-  return {
-    default: {
-      githubCachePath: '/cache/github',
-      ENV: {
-        DISABLE_GITHUB_CACHE: false,
-      },
-      kInternalsSymbol,
-      [kInternalsSymbol]: {
-        getSentry: vi.fn(() => undefined),
-      },
-    },
-  }
-})
+vi.mock('../../constants/paths.mjs', () => ({
+  getGithubCachePath: vi.fn(() => '/cache/github'),
+}))
+
+vi.mock('../../constants/env.mts', () => ({
+  default: {
+    DISABLE_GITHUB_CACHE: false,
+  },
+}))
 
 describe('github utilities', () => {
   beforeEach(() => {
@@ -137,17 +131,9 @@ describe('github utilities', () => {
     })
 
     it('bypasses cache when DISABLE_GITHUB_CACHE is true', async () => {
-      const kInternalsSymbol = Symbol.for('kInternalsSymbol')
-      vi.doMock('../constants.mts', () => ({
+      vi.doMock('../../constants/env.mts', () => ({
         default: {
-          githubCachePath: '/cache/github',
-          ENV: {
-            DISABLE_GITHUB_CACHE: true,
-          },
-          kInternalsSymbol,
-          [kInternalsSymbol]: {
-            getSentry: vi.fn(() => undefined),
-          },
+          DISABLE_GITHUB_CACHE: true,
         },
       }))
 
@@ -161,7 +147,7 @@ describe('github utilities', () => {
       expect(fetcher).toHaveBeenCalled()
 
       // Reset mock.
-      vi.doUnmock('../constants.mts')
+      vi.doUnmock('../../constants/env.mts')
     })
   })
 })
