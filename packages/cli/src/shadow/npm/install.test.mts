@@ -31,31 +31,36 @@ vi.mock('../../utils/npm/paths.mts', () => ({
   getNpmBinPath: mockGetNpmBinPath,
 }))
 
-vi.mock('../../constants.mts', async importOriginal => {
-  const actual = (await importOriginal()) as Record<string, any>
-  return {
-    ...actual,
-    default: {
-      ...actual?.default,
-      execPath: '/usr/bin/node',
-      shadowNpmInjectPath: '/mock/inject.js',
-      instrumentWithSentryPath: '/mock/sentry.js',
-      nodeNoWarningsFlags: ['--no-warnings'],
-      nodeDebugFlags: ['--inspect=0'],
-      nodeHardenFlags: ['--frozen-intrinsics'],
-      nodeMemoryFlags: [],
-      processEnv: { SOCKET_ENV: 'test' },
-      ENV: {
-        INLINED_SOCKET_CLI_SENTRY_BUILD: false,
-      },
-      SOCKET_IPC_HANDSHAKE: 'SOCKET_IPC_HANDSHAKE',
-      SOCKET_CLI_SHADOW_BIN: 'SOCKET_CLI_SHADOW_BIN',
-      SOCKET_CLI_SHADOW_PROGRESS: 'SOCKET_CLI_SHADOW_PROGRESS',
-    },
-    NPM: 'npm',
-    FLAG_LOGLEVEL: '--loglevel',
-  }
-})
+vi.mock('../../constants/paths.mts', () => ({
+  execPath: '/usr/bin/node',
+  instrumentWithSentryPath: '/mock/sentry.js',
+  nodeDebugFlags: ['--inspect=0'],
+  nodeHardenFlags: ['--frozen-intrinsics'],
+  nodeMemoryFlags: [],
+  nodeNoWarningsFlags: ['--no-warnings'],
+  shadowNpmInjectPath: '/mock/inject.js',
+}))
+
+vi.mock('../../constants/env.mts', () => ({
+  default: {
+    INLINED_SOCKET_CLI_SENTRY_BUILD: false,
+  },
+  processEnv: { SOCKET_ENV: 'test' },
+}))
+
+vi.mock('../../constants/shadow.mts', () => ({
+  SOCKET_CLI_SHADOW_BIN: 'SOCKET_CLI_SHADOW_BIN',
+  SOCKET_CLI_SHADOW_PROGRESS: 'SOCKET_CLI_SHADOW_PROGRESS',
+  SOCKET_IPC_HANDSHAKE: 'SOCKET_IPC_HANDSHAKE',
+}))
+
+vi.mock('../../constants/agents.mts', () => ({
+  NPM: 'npm',
+}))
+
+vi.mock('../../constants/cli.mts', () => ({
+  FLAG_LOGLEVEL: '--loglevel',
+}))
 
 describe('shadowNpmInstall', () => {
   const mockProcess = {
