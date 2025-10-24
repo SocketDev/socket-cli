@@ -752,6 +752,31 @@ importers:
       vitest:
         specifier: 3.0.0
         version: 3.0.0(@types/node@24.3.1)(jiti@2.6.1)(yaml@2.8.1)
+    optionalDependencies:
+      '@socketbin/cli-alpine-arm64':
+        specifier: 0.0.0
+        version: 0.0.0
+      '@socketbin/cli-alpine-x64':
+        specifier: 0.0.0
+        version: 0.0.0
+      '@socketbin/cli-darwin-arm64':
+        specifier: 0.0.0
+        version: 0.0.0
+      '@socketbin/cli-darwin-x64':
+        specifier: 0.0.0
+        version: 0.0.0
+      '@socketbin/cli-linux-arm64':
+        specifier: 0.0.0
+        version: 0.0.0
+      '@socketbin/cli-linux-x64':
+        specifier: 0.0.0
+        version: 0.0.0
+      '@socketbin/cli-win32-arm64':
+        specifier: 0.0.0
+        version: 0.0.0
+      '@socketbin/cli-win32-x64':
+        specifier: 0.0.0
+        version: 0.0.0
 
   packages/socketbin-cli-alpine-arm64: {}
 
@@ -2329,6 +2354,48 @@ packages:
   '@sindresorhus/merge-streams@2.3.0':
     resolution: {integrity: sha512-LtoMMhxAlorcGhmFYI+LhPgbPZCkgP6ra1YL604EeF6U98pLlQ3iWIGMdWSC+vWmPBWBNgmDBAhnAobLROJmwg==}
     engines: {node: '>=18'}
+
+  '@socketbin/cli-alpine-arm64@0.0.0':
+    resolution: {integrity: sha512-HRdC7gBOnyrh3+pzfFL67qpJGOv/K7wkApODZrEygj+TyT2tTfD/Om0W5hQiYjenfUzcFVCdUE7V53apO7l+wQ==}
+    engines: {node: '>=18.0.0'}
+    cpu: [arm64]
+    os: [linux]
+
+  '@socketbin/cli-alpine-x64@0.0.0':
+    resolution: {integrity: sha512-bLBho6au0ZhYOXUYRvKoprbk14TxWEbikqHUL22PNtG+BAGEkB+YA6Dyi1cxLIdD0h6sTxwYzpRWhwJigdHpDw==}
+    engines: {node: '>=18.0.0'}
+    cpu: [x64]
+    os: [linux]
+
+  '@socketbin/cli-darwin-arm64@0.0.0':
+    resolution: {integrity: sha512-zR6Kj+8B4cDY4ljdJ5MfEq2hxaXBqhW/zN6WBufTOU9o0EWlJE6c7tITsedfEcF6UoOz0Mk11kwmMHaROPM9Sw==}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@socketbin/cli-darwin-x64@0.0.0':
+    resolution: {integrity: sha512-mKZwAGytcHHXxloLP4SF3MFovR97DSaiiEQPyI+ukfxVeA8O3rBzwOeB/8S9UHLWRVXqxY/aIA/L1axezEaVeg==}
+    cpu: [x64]
+    os: [darwin]
+
+  '@socketbin/cli-linux-arm64@0.0.0':
+    resolution: {integrity: sha512-oU95eKE8xYswUAir67mGgzKJ4OzH3DDEAbhWDdJ+OjlQbVrZuyjZ1ISPwh33bm+mxr52TjKaOZwfSooEB3+LRQ==}
+    cpu: [arm64]
+    os: [linux]
+
+  '@socketbin/cli-linux-x64@0.0.0':
+    resolution: {integrity: sha512-xi1rrbFsALSGSPyym0ZN/XqNojCTyCF8B3PShLrB9nNkSzElBkutbSsaEFsR1M+F3jVAHyPTAxRnne5tlna94A==}
+    cpu: [x64]
+    os: [linux]
+
+  '@socketbin/cli-win32-arm64@0.0.0':
+    resolution: {integrity: sha512-ZjbB1ysELpOPrUTwZW3fyBucs0v1RdB/6hbAV6XNO/dWJdzGfDnAFE+pXOLztx7J4LPyyvXc/RLjgRaRPppGRQ==}
+    cpu: [arm64]
+    os: [win32]
+
+  '@socketbin/cli-win32-x64@0.0.0':
+    resolution: {integrity: sha512-f/z8Ecex16zcg/sYac1UcLX7j9K0EstuB/1PsEJu0gwP8ReJy/g2xfeV1+8Qs45Fcra+L1Co77gKchFZYiOPiQ==}
+    cpu: [x64]
+    os: [win32]
 
   '@socketregistry/es-set-tostringtag@1.0.10':
     resolution: {integrity: sha512-btXmvw1JpA8WtSoXx9mTapo9NAyIDKRRzK84i48d8zc0X09M6ORfobVnHbgwhXf7CFhkRzhYrHG9dqbI9vpELQ==}
@@ -7760,6 +7827,30 @@ snapshots:
   '@sindresorhus/is@7.1.0': {}
 
   '@sindresorhus/merge-streams@2.3.0': {}
+
+  '@socketbin/cli-alpine-arm64@0.0.0':
+    optional: true
+
+  '@socketbin/cli-alpine-x64@0.0.0':
+    optional: true
+
+  '@socketbin/cli-darwin-arm64@0.0.0':
+    optional: true
+
+  '@socketbin/cli-darwin-x64@0.0.0':
+    optional: true
+
+  '@socketbin/cli-linux-arm64@0.0.0':
+    optional: true
+
+  '@socketbin/cli-linux-x64@0.0.0':
+    optional: true
+
+  '@socketbin/cli-win32-arm64@0.0.0':
+    optional: true
+
+  '@socketbin/cli-win32-x64@0.0.0':
+    optional: true
 
   '@socketregistry/es-set-tostringtag@1.0.10': {}
 
