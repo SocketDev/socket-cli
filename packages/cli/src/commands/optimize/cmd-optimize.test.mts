@@ -24,8 +24,8 @@ import {
   FLAG_PIN,
   FLAG_PROD,
   FLAG_VERSION,
-} from '../constants/cli.mts'
-import { getBinCliPath } from '../constants/paths.mts'
+} from '../../constants/cli.mts'
+import { getBinCliPath } from '../../constants/paths.mts'
 
 const binCliPath = getBinCliPath()
 
