@@ -1,0 +1,15 @@
+# @node-versions: v24.10.0+
+# @description: Load Socket security bootstrap at startup
+#
+# Ensures internal/bootstrap/socketsecurity is loaded during Node.js initialization
+
+--- a/src/node.cc
++++ b/src/node.cc
+@@ -356,6 +356,8 @@ MaybeLocal<Value> StartExecution(Environment* env, StartExecutionCallback cb) {
+   }
+
++  StartExecution(env, "internal/bootstrap/socketsecurity");
++
+   if (env->worker_context() != nullptr) {
+     return StartExecution(env, "internal/main/worker_thread");
+   }

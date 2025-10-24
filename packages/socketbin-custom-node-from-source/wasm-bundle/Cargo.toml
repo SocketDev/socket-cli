@@ -1,0 +1,23 @@
+[package]
+name = "socket-ai"
+version = "0.1.0"
+edition = "2021"
+authors = ["Socket Security <hello@socket.dev>"]
+description = "Unified WASM bundle for Socket CLI AI features"
+license = "MIT"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+wasm-bindgen = "0.2"
+
+[profile.release]
+# Optimize for size.
+lto = true
+opt-level = "z"
+codegen-units = 1
+
+# Strip debug info.
+[profile.release.package."*"]
+opt-level = "z"

@@ -14,15 +14,17 @@ Thumbs.db
 /.vscode
 /external
 /npm-debug.log
+/yarn.lock
 /yarn.log
 *.log
 **/build/*.log
-/yarn.lock
 **/.cache
 **/coverage
 **/.type-coverage
 **/dist
 **/node_modules
+**/pkg
+**/target
 *.d.ts
 *.d.ts.map
 *.tsbuildinfo
@@ -35,17 +37,11 @@ Thumbs.db
 # Allow specific files
 !src/types/**/*.d.ts
 !/.vscode/extensions.json
-pkg-binaries/
 
-# pkg/yao-pkg built binaries
-/socket
-/socket-*
-
-# Build directory for temporary artifacts
-/build/*
+uild directory for temporary artifacts
+**/build/*
 !/build/out
 /build/out/*
 !/build/out/Yao
 /build/out/Yao/*
-!/build/out/Yao/yao-wrapper.js
 /binaries

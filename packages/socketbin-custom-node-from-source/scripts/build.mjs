@@ -104,8 +104,8 @@ const ROOT_DIR = join(__dirname, '..')
 const NODE_SOURCE_DIR = join(ROOT_DIR, '.node-source')
 const NODE_DIR = NODE_SOURCE_DIR // Alias for compatibility.
 const BUILD_DIR = join(ROOT_DIR, 'build')
-const PATCHES_DIR = join(BUILD_DIR, 'patches')
-const ADDITIONS_DIR = join(BUILD_DIR, 'additions')
+const PATCHES_DIR = join(ROOT_DIR, 'patches')
+const ADDITIONS_DIR = join(ROOT_DIR, 'additions')
 
 // Directory structure.
 // .node-source/ - Node.js source code (gitignored).
