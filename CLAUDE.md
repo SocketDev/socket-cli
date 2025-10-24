@@ -4,10 +4,12 @@
 
 ## 👤 USER CONTEXT
 
-- **Primary User**: John-David Dalton (GitHub: jdalton)
-- 🚨 **When interacting with jdalton (verified by account/context)**: ALWAYS refer to them as "John-David" - NEVER use "the user" or "user"
-- When discussing jdalton's commits, work, or contributions, use "John-David" or "you/your" (if speaking to John-David directly)
-- **Other contributors**: Use their actual names or appropriate references as provided in commit history/context
+- **Identify users by git credentials**: Extract name from git commit author, GitHub account, or context
+- 🚨 **When identity is verified**: ALWAYS use their actual name - NEVER use "the user" or "user"
+- **Direct communication**: Use "you/your" when speaking directly to the verified user
+- **Discussing their work**: Use their actual name when referencing their commits/contributions
+- **Example**: If git shows "John-David Dalton <jdalton@example.com>", refer to them as "John-David"
+- **Other contributors**: Use their actual names from commit history/context
 
 ## 📚 SHARED STANDARDS
 
@@ -15,7 +17,11 @@
 
 For all shared Socket standards (git workflow, testing, code style, imports, sorting, error handling, cross-platform, CI, etc.), refer to socket-registry/CLAUDE.md.
 
-**Git Workflow Reminder**: When user says "commit changes" → create actual commits, use small atomic commits, follow all CLAUDE.md rules (NO AI attribution).
+**Git Workflow Reminder**: When user says "commit changes" → create actual commits, use small atomic commits, follow all CLAUDE.md rules:
+- Use [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) style: `<type>(<scope>): <description>`
+- NO AI attribution in commit messages
+
+**Package.json Scripts**: Prefer `pnpm run foo --<flag>` over multiple `foo:bar` scripts (see socket-registry/CLAUDE.md)
 
 ---
 
