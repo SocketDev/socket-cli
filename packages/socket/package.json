@@ -13,9 +13,7 @@
     "email": "eng@socket.dev",
     "url": "https://socket.dev"
   },
-  "devDependencies": {
-    "vitest": "3.0.0"
-  },
+  "devDependencies": {},
   "engines": {
     "node": ">=18"
   },
