@@ -13,6 +13,11 @@ vi.mock('./output-config-set.mts', () => ({
 vi.mock('../../utils/config.mts', () => ({
   updateConfigValue: vi.fn(),
 }))
+vi.mock('@socketsecurity/lib/debug', () => ({
+  debug: vi.fn(),
+  debugDir: vi.fn(),
+  isDebug: vi.fn(() => false),
+}))
 
 describe('handleConfigSet', () => {
   beforeEach(() => {
@@ -74,7 +79,7 @@ describe('handleConfigSet', () => {
   })
 
   it('logs debug information', async () => {
-    const { debugDir, debugFn } = await import('@socketsecurity/lib/debug')
+    const { debug, debugDir } = await import('@socketsecurity/lib/debug')
     const { updateConfigValue } = await import('../../utils/config.mts')
 
     vi.mocked(updateConfigValue).mockReturnValue(
@@ -87,20 +92,19 @@ describe('handleConfigSet', () => {
       value: 'https://api.example.com',
     })
 
-    expect(debugFn).toHaveBeenCalledWith(
-      'notice',
+    expect(debug).toHaveBeenCalledWith(
       'Setting config apiBaseUrl = https://api.example.com',
     )
-    expect(debugDir).toHaveBeenCalledWith('inspect', {
+    expect(debugDir).toHaveBeenCalledWith({
       key: 'apiBaseUrl',
       value: 'https://api.example.com',
       outputKind: 'json',
     })
-    expect(debugFn).toHaveBeenCalledWith('notice', 'Config update succeeded')
+    expect(debug).toHaveBeenCalledWith('Config update succeeded')
   })
 
   it('logs debug information on failure', async () => {
-    const { debugFn } = await import('@socketsecurity/lib/debug')
+    const { debug } = await import('@socketsecurity/lib/debug')
     const { updateConfigValue } = await import('../../utils/config.mts')
 
     vi.mocked(updateConfigValue).mockReturnValue(createErrorResult('Failed'))
@@ -111,7 +115,7 @@ describe('handleConfigSet', () => {
       value: 'bad-token',
     })
 
-    expect(debugFn).toHaveBeenCalledWith('notice', 'Config update failed')
+    expect(debug).toHaveBeenCalledWith('Config update failed')
   })
 
   it('handles different config keys', async () => {
