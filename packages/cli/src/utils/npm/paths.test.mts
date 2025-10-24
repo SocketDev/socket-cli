@@ -5,11 +5,17 @@ vi.mock('node:fs', () => ({
   existsSync: vi.fn(),
 }))
 
-vi.mock('node:module', () => ({
-  default: {
+vi.mock('node:module', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:module')>()
+  return {
+    ...actual,
     createRequire: vi.fn(),
-  },
-}))
+    default: {
+      ...actual.default,
+      createRequire: vi.fn(),
+    },
+  }
+})
 
 vi.mock('@socketsecurity/lib/logger', () => ({
   logger: {
@@ -17,20 +23,23 @@ vi.mock('@socketsecurity/lib/logger', () => ({
   },
 }))
 
-vi.mock('./path-resolve.mts', () => ({
+vi.mock('../fs/path-resolve.mts', () => ({
   findBinPathDetailsSync: vi.fn(),
   findNpmDirPathSync: vi.fn(),
 }))
 
-vi.mock('../constants.mts', () => ({
+vi.mock('../../constants/env.mts', () => ({
   default: {
-    ENV: {
-      SOCKET_CLI_NPM_PATH: undefined,
-    },
-    SOCKET_CLI_ISSUES_URL: 'https://github.com/SocketDev/socket-cli/issues',
+    SOCKET_CLI_NPM_PATH: undefined,
   },
+}))
+
+vi.mock('../../constants/github.mts', () => ({
+  SOCKET_CLI_ISSUES_URL: 'https://github.com/SocketDev/socket-cli/issues',
+}))
+
+vi.mock('../../constants/packages.mts', () => ({
   NODE_MODULES: 'node_modules',
-  NPM: 'npm',
 }))
 
 describe('npm-paths utilities', () => {
@@ -72,7 +81,7 @@ describe('npm-paths utilities', () => {
   describe('getNpmBinPath', () => {
     it('returns npm bin path when found', async () => {
       const { findBinPathDetailsSync } = vi.mocked(
-        await import('./path-resolve.mts'),
+        await import('../fs/path-resolve.mts'),
       )
       findBinPathDetailsSync.mockReturnValue({
         path: '/usr/local/bin/npm',
@@ -87,7 +96,7 @@ describe('npm-paths utilities', () => {
 
     it('exits with error when npm not found', async () => {
       const { findBinPathDetailsSync } = vi.mocked(
-        await import('./path-resolve.mts'),
+        await import('../fs/path-resolve.mts'),
       )
       findBinPathDetailsSync.mockReturnValue({
         path: undefined,
@@ -104,7 +113,7 @@ describe('npm-paths utilities', () => {
 
     it('caches the result', async () => {
       const { findBinPathDetailsSync } = vi.mocked(
-        await import('./path-resolve.mts'),
+        await import('../fs/path-resolve.mts'),
       )
       findBinPathDetailsSync.mockReturnValue({
         path: '/usr/local/bin/npm',
@@ -122,7 +131,7 @@ describe('npm-paths utilities', () => {
   describe('getNpmDirPath', () => {
     it('returns npm directory path when found', async () => {
       const { findBinPathDetailsSync, findNpmDirPathSync } = vi.mocked(
-        await import('./path-resolve.mts'),
+        await import('../fs/path-resolve.mts'),
       )
       findBinPathDetailsSync.mockReturnValue({
         path: '/usr/local/bin/npm',
@@ -137,22 +146,16 @@ describe('npm-paths utilities', () => {
     })
 
     it('uses SOCKET_CLI_NPM_PATH when npm dir not found', async () => {
-      // Set up the environment variable mock before importing
+      // Set up the environment variable mock before importing.
       vi.resetModules()
-      vi.doMock('../constants.mts', () => ({
+      vi.doMock('../../constants/env.mts', () => ({
         default: {
-          ENV: {
-            SOCKET_CLI_NPM_PATH: '/custom/npm/path',
-          },
-          SOCKET_CLI_ISSUES_URL:
-            'https://github.com/SocketDev/socket-cli/issues',
+          SOCKET_CLI_NPM_PATH: '/custom/npm/path',
         },
-        NODE_MODULES: 'node_modules',
-        NPM: 'npm',
       }))
 
       const { findBinPathDetailsSync, findNpmDirPathSync } = vi.mocked(
-        await import('./path-resolve.mts'),
+        await import('../fs/path-resolve.mts'),
       )
       findBinPathDetailsSync.mockReturnValue({
         path: '/usr/local/bin/npm',
@@ -160,7 +163,7 @@ describe('npm-paths utilities', () => {
       })
       findNpmDirPathSync.mockReturnValue(undefined)
 
-      // Re-import after setting up mocks
+      // Re-import after setting up mocks.
       const { getNpmDirPath: localGetNpmDirPath } = await import(
         './paths.mts'
       )
@@ -171,7 +174,7 @@ describe('npm-paths utilities', () => {
 
     it('exits with error when npm directory not found', async () => {
       const { findBinPathDetailsSync, findNpmDirPathSync } = vi.mocked(
-        await import('./path-resolve.mts'),
+        await import('../fs/path-resolve.mts'),
       )
       findBinPathDetailsSync.mockReturnValue({
         path: '/usr/local/bin/npm',
@@ -179,8 +182,8 @@ describe('npm-paths utilities', () => {
       })
       findNpmDirPathSync.mockReturnValue(undefined)
 
-      const constants = vi.mocked(await import('../constants.mts'))
-      constants.default.ENV.SOCKET_CLI_NPM_PATH = undefined
+      const ENV = vi.mocked(await import('../../constants/env.mts')).default
+      ENV.SOCKET_CLI_NPM_PATH = undefined
 
       const { logger } = vi.mocked(await import('@socketsecurity/lib/logger'))
 
@@ -194,7 +197,7 @@ describe('npm-paths utilities', () => {
   describe('getNpmRequire', () => {
     it('creates require function for npm directory', async () => {
       const { findBinPathDetailsSync, findNpmDirPathSync } = vi.mocked(
-        await import('./path-resolve.mts'),
+        await import('../fs/path-resolve.mts'),
       )
       findBinPathDetailsSync.mockReturnValue({
         path: '/usr/local/bin/npm',
@@ -221,7 +224,7 @@ describe('npm-paths utilities', () => {
 
     it('handles missing node_modules/npm subdirectory', async () => {
       const { findBinPathDetailsSync, findNpmDirPathSync } = vi.mocked(
-        await import('./path-resolve.mts'),
+        await import('../fs/path-resolve.mts'),
       )
       findBinPathDetailsSync.mockReturnValue({
         path: '/usr/local/bin/npm',
@@ -248,7 +251,7 @@ describe('npm-paths utilities', () => {
   describe('getNpxBinPath', () => {
     it('returns npx bin path when found', async () => {
       const { findBinPathDetailsSync } = vi.mocked(
-        await import('./path-resolve.mts'),
+        await import('../fs/path-resolve.mts'),
       )
       findBinPathDetailsSync.mockReturnValue({
         path: '/usr/local/bin/npx',
@@ -263,7 +266,7 @@ describe('npm-paths utilities', () => {
 
     it('exits with error when npx not found', async () => {
       const { findBinPathDetailsSync } = vi.mocked(
-        await import('./path-resolve.mts'),
+        await import('../fs/path-resolve.mts'),
       )
       findBinPathDetailsSync.mockReturnValue({
         path: undefined,
@@ -280,7 +283,7 @@ describe('npm-paths utilities', () => {
 
     it('caches the result', async () => {
       const { findBinPathDetailsSync } = vi.mocked(
-        await import('./path-resolve.mts'),
+        await import('../fs/path-resolve.mts'),
       )
       findBinPathDetailsSync.mockReturnValue({
         path: '/usr/local/bin/npx',
@@ -298,7 +301,7 @@ describe('npm-paths utilities', () => {
   describe('isNpmBinPathShadowed', () => {
     it('returns true when npm is shadowed', async () => {
       const { findBinPathDetailsSync } = vi.mocked(
-        await import('./path-resolve.mts'),
+        await import('../fs/path-resolve.mts'),
       )
       findBinPathDetailsSync.mockReturnValue({
         path: '/usr/local/bin/npm',
@@ -312,7 +315,7 @@ describe('npm-paths utilities', () => {
 
     it('returns false when npm is not shadowed', async () => {
       const { findBinPathDetailsSync } = vi.mocked(
-        await import('./path-resolve.mts'),
+        await import('../fs/path-resolve.mts'),
       )
       findBinPathDetailsSync.mockReturnValue({
         path: '/usr/local/bin/npm',
@@ -328,7 +331,7 @@ describe('npm-paths utilities', () => {
   describe('isNpxBinPathShadowed', () => {
     it('returns true when npx is shadowed', async () => {
       const { findBinPathDetailsSync } = vi.mocked(
-        await import('./path-resolve.mts'),
+        await import('../fs/path-resolve.mts'),
       )
       findBinPathDetailsSync.mockReturnValue({
         path: '/usr/local/bin/npx',
@@ -342,7 +345,7 @@ describe('npm-paths utilities', () => {
 
     it('returns false when npx is not shadowed', async () => {
       const { findBinPathDetailsSync } = vi.mocked(
-        await import('./path-resolve.mts'),
+        await import('../fs/path-resolve.mts'),
       )
       findBinPathDetailsSync.mockReturnValue({
         path: '/usr/local/bin/npx',
