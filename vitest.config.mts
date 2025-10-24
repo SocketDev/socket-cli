@@ -15,8 +15,9 @@ export default defineConfig({
     globals: false,
     environment: 'node',
     include: [
-      // Temporarily exclude all tests - too many failures
-      // Re-enable once test infrastructure is fixed
+      // NOTE: No root-level tests exist. All tests are in individual packages.
+      // Each package (e.g., packages/cli/) has its own vitest.config.mts.
+      // This root config serves as a fallback default configuration only.
     ],
     exclude: [
       '**/node_modules/**',

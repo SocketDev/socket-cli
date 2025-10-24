@@ -28,7 +28,7 @@ describe('fetchDeleteOrgFullScan', () => {
 
     const result = await fetchDeleteOrgFullScan('test-org', 'scan-123')
 
-    expect(mockSdk.deleteOrgFullScan).toHaveBeenCalledWith(
+    expect(mockSdk.deleteFullScan).toHaveBeenCalledWith(
       'test-org',
       'scan-123',
     )
@@ -87,7 +87,7 @@ describe('fetchDeleteOrgFullScan', () => {
     for (const [org, scanId] of testCases) {
       // eslint-disable-next-line no-await-in-loop
       await fetchDeleteOrgFullScan(org, scanId)
-      expect(mockSdk.deleteOrgFullScan).toHaveBeenCalledWith(org, scanId)
+      expect(mockSdk.deleteFullScan).toHaveBeenCalledWith(org, scanId)
     }
   })
 
@@ -98,6 +98,6 @@ describe('fetchDeleteOrgFullScan', () => {
     await fetchDeleteOrgFullScan('org', 'scan')
 
     // The function should work without prototype pollution issues.
-    expect(mockSdk.deleteOrgFullScan).toHaveBeenCalled()
+    expect(mockSdk.deleteFullScan).toHaveBeenCalled()
   })
 })
