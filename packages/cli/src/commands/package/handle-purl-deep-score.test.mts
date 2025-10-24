@@ -9,10 +9,9 @@ vi.mock('./fetch-purl-deep-score.mts', () => ({
 vi.mock('./output-purls-deep-score.mts', () => ({
   outputPurlsDeepScore: vi.fn(),
 }))
-vi.mock('../../utils/debug.mts', () => ({
+vi.mock('@socketsecurity/lib/debug', () => ({
+  debug: vi.fn(),
   debugDir: vi.fn(),
-  debugFn: vi.fn(),
-  debugLog: vi.fn(),
   isDebug: vi.fn(() => false),
 }))
 
@@ -23,7 +22,7 @@ describe('handlePurlDeepScore', () => {
 
   it('fetches and outputs deep score successfully', async () => {
     const { fetchPurlDeepScore } = await import('./fetch-purl-deep-score.mts')
-    const { outputPurlsDeepScore: _outputPurlsDeepScore } = await import(
+    const { outputPurlsDeepScore } = await import(
       './output-purls-deep-score.mts'
     )
 
@@ -47,7 +46,7 @@ describe('handlePurlDeepScore', () => {
 
   it('handles fetch failure', async () => {
     const { fetchPurlDeepScore } = await import('./fetch-purl-deep-score.mts')
-    const { outputPurlsDeepScore: _outputPurlsDeepScore } = await import(
+    const { outputPurlsDeepScore } = await import(
       './output-purls-deep-score.mts'
     )
 
@@ -66,7 +65,7 @@ describe('handlePurlDeepScore', () => {
 
   it('handles markdown output', async () => {
     const { fetchPurlDeepScore } = await import('./fetch-purl-deep-score.mts')
-    const { outputPurlsDeepScore: _outputPurlsDeepScore } = await import(
+    const { outputPurlsDeepScore } = await import(
       './output-purls-deep-score.mts'
     )
 
@@ -91,7 +90,7 @@ describe('handlePurlDeepScore', () => {
   })
 
   it('logs debug information', async () => {
-    const { debugDir, debugFn } = await import('../../utils/debug.mts')
+    const { debug, debugDir } = await import('@socketsecurity/lib/debug')
     const { fetchPurlDeepScore } = await import('./fetch-purl-deep-score.mts')
 
     const mockData = {
@@ -103,23 +102,19 @@ describe('handlePurlDeepScore', () => {
     const purl = 'pkg:npm/package1@1.0.0'
     await handlePurlDeepScore(purl, 'json')
 
-    expect(debugFn).toHaveBeenCalledWith(
-      'notice',
+    expect(debug).toHaveBeenCalledWith(
       'Fetching deep score for pkg:npm/package1@1.0.0',
     )
-    expect(debugDir).toHaveBeenCalledWith('inspect', {
+    expect(debugDir).toHaveBeenCalledWith({
       purl,
       outputKind: 'json',
     })
-    expect(debugFn).toHaveBeenCalledWith(
-      'notice',
-      'Deep score fetched successfully',
-    )
-    expect(debugDir).toHaveBeenCalledWith('inspect', { result: mockData })
+    expect(debug).toHaveBeenCalledWith('Deep score fetched successfully')
+    expect(debugDir).toHaveBeenCalledWith({ result: mockData })
   })
 
   it('logs debug information on failure', async () => {
-    const { debugFn } = await import('../../utils/debug.mts')
+    const { debug } = await import('@socketsecurity/lib/debug')
     const { fetchPurlDeepScore } = await import('./fetch-purl-deep-score.mts')
 
     const mockError = {
@@ -130,12 +125,12 @@ describe('handlePurlDeepScore', () => {
 
     await handlePurlDeepScore('pkg:npm/package1@1.0.0', 'json')
 
-    expect(debugFn).toHaveBeenCalledWith('notice', 'Deep score fetch failed')
+    expect(debug).toHaveBeenCalledWith('Deep score fetch failed')
   })
 
   it('handles different purl formats', async () => {
     const { fetchPurlDeepScore } = await import('./fetch-purl-deep-score.mts')
-    const { outputPurlsDeepScore: _outputPurlsDeepScore } = await import(
+    const { outputPurlsDeepScore } = await import(
       './output-purls-deep-score.mts'
     )
 
@@ -160,7 +155,7 @@ describe('handlePurlDeepScore', () => {
 
   it('handles text output', async () => {
     const { fetchPurlDeepScore } = await import('./fetch-purl-deep-score.mts')
-    const { outputPurlsDeepScore: _outputPurlsDeepScore } = await import(
+    const { outputPurlsDeepScore } = await import(
       './output-purls-deep-score.mts'
     )
 
