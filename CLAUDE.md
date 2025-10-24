@@ -21,6 +21,7 @@ All shared standards (git, testing, code style, cross-platform, CI) defined in s
 - Commits: [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) `<type>(<scope>): <description>` - NO AI attribution
 - Scripts: Prefer `pnpm run foo --flag` over `foo:bar` scripts
 - Docs: Use `docs/` folder, lowercase-with-hyphens.md filenames, pithy writing with visuals
+- Dependencies: After `package.json` edits, run `pnpm install` to update `pnpm-lock.yaml`
 
 ---
 
