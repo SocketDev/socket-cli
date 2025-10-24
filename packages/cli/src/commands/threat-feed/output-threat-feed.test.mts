@@ -18,7 +18,7 @@ vi.mock('../../utils/error/fail-msg-with-badge.mts', () => ({
   failMsgWithBadge: vi.fn((msg, cause) => `${msg}: ${cause}`),
 }))
 
-vi.mock('../../utils/serialize/result-json.mts', () => ({
+vi.mock('../../utils/output/result-json.mts', () => ({
   serializeResultJson: vi.fn(result => JSON.stringify(result)),
 }))
 
@@ -90,7 +90,7 @@ describe('outputThreatFeed', () => {
   it('outputs JSON format for successful result', async () => {
     const { logger } = await import('@socketsecurity/lib/logger')
     const { serializeResultJson } = await import(
-      '../../utils/serialize/result-json.mts'
+      '../../utils/output/result-json.mts'
     )
     const mockLog = vi.mocked(logger.log)
     const mockSerialize = vi.mocked(serializeResultJson)
