@@ -8,8 +8,8 @@ import {
   FLAG_DRY_RUN,
   FLAG_HELP,
   FLAG_SILENT,
-} from '../constants/cli.mts'
-import { getBinCliPath } from '../constants/paths.mts'
+} from '../../constants/cli.mts'
+import { getBinCliPath } from '../../constants/paths.mts'
 
 const binCliPath = getBinCliPath()
 

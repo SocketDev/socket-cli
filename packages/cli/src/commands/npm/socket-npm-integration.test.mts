@@ -7,9 +7,9 @@ import { logger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 
 import { testPath } from '../../../test/utils.mts'
-import { FLAG_DRY_RUN, FLAG_HELP, FLAG_SILENT } from '../constants/cli.mts'
-import ENV from '../constants/env.mts'
-import { getBinPath, getExecPath, getProcessEnv } from '../constants/paths.mts'
+import { FLAG_DRY_RUN, FLAG_HELP, FLAG_SILENT } from '../../constants/cli.mts'
+import ENV from '../../constants/env.mts'
+import { getBinPath, getExecPath, getProcessEnv } from '../../constants/paths.mts'
 
 import type { SpawnError } from '@socketsecurity/lib/spawn'
 
