@@ -3,22 +3,22 @@ import { describe, expect, it, vi } from 'vitest'
 import { convertPurlToGhsas } from './to-ghsa.mts'
 
 // Mock the dependencies.
-vi.mock('./github.mts', () => ({
+vi.mock('../git/github.mts', () => ({
   cacheFetch: vi.fn(),
   getOctokit: vi.fn(),
 }))
 
-vi.mock('./purl.mts', () => ({
+vi.mock('../purl/parse.mts', () => ({
   getPurlObject: vi.fn(),
 }))
 
-vi.mock('./errors.mts', () => ({
+vi.mock('../error/errors.mts', () => ({
   getErrorCause: vi.fn(e => e?.message || String(e)),
 }))
 
 describe('convertPurlToGhsas', () => {
   it('returns error for invalid PURL format', async () => {
-    const { getPurlObject } = await import('./purl.mts')
+    const { getPurlObject } = await import('../purl/parse.mts')
     const mockGetPurl = vi.mocked(getPurlObject)
 
     mockGetPurl.mockReturnValue(null)
@@ -32,7 +32,7 @@ describe('convertPurlToGhsas', () => {
   })
 
   it('returns error for unsupported ecosystem', async () => {
-    const { getPurlObject } = await import('./purl.mts')
+    const { getPurlObject } = await import('../purl/parse.mts')
     const mockGetPurl = vi.mocked(getPurlObject)
 
     mockGetPurl.mockReturnValue({
@@ -52,8 +52,8 @@ describe('convertPurlToGhsas', () => {
   })
 
   it('converts npm PURL to GHSA IDs', async () => {
-    const { getPurlObject } = await import('./purl.mts')
-    const { cacheFetch, getOctokit } = await import('./github.mts')
+    const { getPurlObject } = await import('../purl/parse.mts')
+    const { cacheFetch, getOctokit } = await import('../git/github.mts')
     const mockGetPurl = vi.mocked(getPurlObject)
     const mockCacheFetch = vi.mocked(cacheFetch)
     const mockGetOctokit = vi.mocked(getOctokit)
@@ -95,8 +95,8 @@ describe('convertPurlToGhsas', () => {
   })
 
   it('converts pypi PURL to pip ecosystem', async () => {
-    const { getPurlObject } = await import('./purl.mts')
-    const { cacheFetch, getOctokit } = await import('./github.mts')
+    const { getPurlObject } = await import('../purl/parse.mts')
+    const { cacheFetch, getOctokit } = await import('../git/github.mts')
     const mockGetPurl = vi.mocked(getPurlObject)
     const mockCacheFetch = vi.mocked(cacheFetch)
     const mockGetOctokit = vi.mocked(getOctokit)
@@ -133,8 +133,8 @@ describe('convertPurlToGhsas', () => {
   })
 
   it('handles PURL without version', async () => {
-    const { getPurlObject } = await import('./purl.mts')
-    const { cacheFetch, getOctokit } = await import('./github.mts')
+    const { getPurlObject } = await import('../purl/parse.mts')
+    const { cacheFetch, getOctokit } = await import('../git/github.mts')
     const mockGetPurl = vi.mocked(getPurlObject)
     const mockCacheFetch = vi.mocked(cacheFetch)
     const mockGetOctokit = vi.mocked(getOctokit)
@@ -174,8 +174,8 @@ describe('convertPurlToGhsas', () => {
   })
 
   it('maps cargo to rust ecosystem', async () => {
-    const { getPurlObject } = await import('./purl.mts')
-    const { cacheFetch, getOctokit } = await import('./github.mts')
+    const { getPurlObject } = await import('../purl/parse.mts')
+    const { cacheFetch, getOctokit } = await import('../git/github.mts')
     const mockGetPurl = vi.mocked(getPurlObject)
     const mockCacheFetch = vi.mocked(cacheFetch)
     const mockGetOctokit = vi.mocked(getOctokit)
@@ -211,8 +211,8 @@ describe('convertPurlToGhsas', () => {
   })
 
   it('maps gem to rubygems ecosystem', async () => {
-    const { getPurlObject } = await import('./purl.mts')
-    const { cacheFetch, getOctokit } = await import('./github.mts')
+    const { getPurlObject } = await import('../purl/parse.mts')
+    const { cacheFetch, getOctokit } = await import('../git/github.mts')
     const mockGetPurl = vi.mocked(getPurlObject)
     const mockCacheFetch = vi.mocked(cacheFetch)
     const mockGetOctokit = vi.mocked(getOctokit)
@@ -248,8 +248,8 @@ describe('convertPurlToGhsas', () => {
   })
 
   it('handles API errors gracefully', async () => {
-    const { getPurlObject } = await import('./purl.mts')
-    const { cacheFetch, getOctokit } = await import('./github.mts')
+    const { getPurlObject } = await import('../purl/parse.mts')
+    const { cacheFetch, getOctokit } = await import('../git/github.mts')
     const mockGetPurl = vi.mocked(getPurlObject)
     const mockCacheFetch = vi.mocked(cacheFetch)
     const mockGetOctokit = vi.mocked(getOctokit)
@@ -272,8 +272,8 @@ describe('convertPurlToGhsas', () => {
   })
 
   it('returns empty array when no advisories found', async () => {
-    const { getPurlObject } = await import('./purl.mts')
-    const { cacheFetch, getOctokit } = await import('./github.mts')
+    const { getPurlObject } = await import('../purl/parse.mts')
+    const { cacheFetch, getOctokit } = await import('../git/github.mts')
     const mockGetPurl = vi.mocked(getPurlObject)
     const mockCacheFetch = vi.mocked(cacheFetch)
     const mockGetOctokit = vi.mocked(getOctokit)
@@ -296,8 +296,8 @@ describe('convertPurlToGhsas', () => {
   })
 
   it('supports all ecosystem mappings', async () => {
-    const { getPurlObject } = await import('./purl.mts')
-    const { cacheFetch, getOctokit } = await import('./github.mts')
+    const { getPurlObject } = await import('../purl/parse.mts')
+    const { cacheFetch, getOctokit } = await import('../git/github.mts')
     const mockGetPurl = vi.mocked(getPurlObject)
     const mockCacheFetch = vi.mocked(cacheFetch)
     const mockGetOctokit = vi.mocked(getOctokit)
