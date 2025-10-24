@@ -112,8 +112,8 @@ importers:
         specifier: 14.12.51
         version: 14.12.51
       '@cyclonedx/cdxgen':
-        specifier: 11.7.0
-        version: 11.7.0
+        specifier: 11.10.0
+        version: 11.10.0
       '@dotenvx/dotenvx':
         specifier: 1.49.0
         version: 1.49.0
@@ -628,6 +628,9 @@ importers:
       ink-table:
         specifier: 3.1.0
         version: 3.1.0(ink@6.3.1(patch_hash=03cccf82711216d0fa8283ea4716ed803a132ae8c31293f0f5a6677e2bdb4a64)(@types/react@19.2.2)(react@19.2.0))(react@19.2.0)
+      ink-text-input:
+        specifier: 6.0.0
+        version: 6.0.0(ink@6.3.1(patch_hash=03cccf82711216d0fa8283ea4716ed803a132ae8c31293f0f5a6677e2bdb4a64)(@types/react@19.2.2)(react@19.2.0))(react@19.2.0)
       js-yaml:
         specifier: npm:@zkochan/js-yaml@0.0.10
         version: '@zkochan/js-yaml@0.0.10'
@@ -802,6 +805,11 @@ packages:
 
   '@appthreat/atom@2.3.0':
     resolution: {integrity: sha512-7oXgrKASyRnPc/ILrCxpfkBxeBRYE7Okw5DvUzXrIQP1DiJ7oJ1AI9MXgfhU1Sjv1ikb0hMi5F/QoutrBfq2aw==}
+    engines: {node: '>=16.0.0'}
+    hasBin: true
+
+  '@appthreat/atom@2.4.2':
+    resolution: {integrity: sha512-z9PkDrSydnuP+VoBeHcF4evVE98S1+ZASWfMR0ryBFUEDsZCWw3/bs8bpZNqwBYSo5/58ilEJRUcHQs7HwtbTA==}
     engines: {node: '>=16.0.0'}
     hasBin: true
 
@@ -1059,6 +1067,9 @@ packages:
   '@bufbuild/protobuf@2.6.3':
     resolution: {integrity: sha512-w/gJKME9mYN7ZoUAmSMAWXk4hkVpxRKvEJCb3dV5g9wwWdxTJJ0ayOJAVcNxtdqaxDyFuC0uz4RSGVacJ030PQ==}
 
+  '@bufbuild/protobuf@2.9.0':
+    resolution: {integrity: sha512-rnJenoStJ8nvmt9Gzye8nkYd6V22xUAnu4086ER7h1zJ508vStko4pMvDeQ446ilDTFpV5wnoc5YS7XvMwwMqA==}
+
   '@coana-tech/cli@14.12.51':
     resolution: {integrity: sha512-EyMo/RBN/qqH23UjiqP96xlv/C7J6MQ2KnxChssTU+1kaDnoVA8pZH2dzwdjecL82p6E2COWtQLtjQUIKCdWTA==}
     hasBin: true
@@ -1068,8 +1079,18 @@ packages:
     cpu: [x64]
     os: [darwin]
 
+  '@cyclonedx/cdxgen-plugins-bin-darwin-amd64@1.7.0':
+    resolution: {integrity: sha512-evJAEetfhKU7N9tCaOl/CZcs4upoEIKvLdhV9ogzk9QIur+HtZX5F9LddGNoQuzhB1Umy2tAyFAKhl+EX63BFQ==}
+    cpu: [x64]
+    os: [darwin]
+
   '@cyclonedx/cdxgen-plugins-bin-darwin-arm64@1.6.12':
     resolution: {integrity: sha512-m9uObp61BQb+34YDFoITmB8xQiX7mRx8a2EoEEsgcL26I9h2454cXri4ZqfzMej3loCUlJHxspptzXmYrS8cug==}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@cyclonedx/cdxgen-plugins-bin-darwin-arm64@1.7.0':
+    resolution: {integrity: sha512-gnQqfDNd8RXKH3n/BUtSi1aJghPLSVpAScaM0iiuGvdfOVuwqBEMAKx/SC0v5yXdCtThC45W5/Zz8Lc9eNoNAw==}
     cpu: [arm64]
     os: [darwin]
 
@@ -1078,8 +1099,18 @@ packages:
     cpu: [x64]
     os: [linux]
 
+  '@cyclonedx/cdxgen-plugins-bin-linux-amd64@1.7.0':
+    resolution: {integrity: sha512-Nitd3y1yb8Xv2e7ODqki3M8DO6SzWe/gGsioRiA6iNXcQ/JYzg03CyHEaTjCAhJXFO4qraCn4N6OPN2H7c8bew==}
+    cpu: [x64]
+    os: [linux]
+
   '@cyclonedx/cdxgen-plugins-bin-linux-arm64@1.6.12':
     resolution: {integrity: sha512-xd9A25e+4SwHwm9FRglMdsfRsTAROTj3C5eiQ501FI+FOxEbnCODNkDFkplqKqDjDDSIPOgc4llmk9Wk+91c/Q==}
+    cpu: [arm64]
+    os: [linux]
+
+  '@cyclonedx/cdxgen-plugins-bin-linux-arm64@1.7.0':
+    resolution: {integrity: sha512-/96YdFdwASQVr+MDO1IbUMYbLoHawTDIsGlhyMV4AI47qKZ59Ein5dvdibqqmnxgmWvG4Vqp941gRaCBlCLWag==}
     cpu: [arm64]
     os: [linux]
 
@@ -1088,8 +1119,18 @@ packages:
     cpu: [arm]
     os: [linux]
 
+  '@cyclonedx/cdxgen-plugins-bin-linux-arm@1.7.0':
+    resolution: {integrity: sha512-eNnS9Kd+j4YDiIotCA3EQWyiHKjx7iZqh5+gyF38zmSJQRssEWvCdv+IPvXPyZw8hh5g9/8IQWPYMFpB3fpopg==}
+    cpu: [arm]
+    os: [linux]
+
   '@cyclonedx/cdxgen-plugins-bin-linux-ppc64@1.6.12':
     resolution: {integrity: sha512-JaRY6F+3VBHZMZ51DhC8NhHJkwtLOM1Lnh//iAPw5pAxpQdron+YwfcVIKWhBlFx5zxbz2NI5L7QtiEV/iO4PA==}
+    cpu: [ppc64]
+    os: [linux]
+
+  '@cyclonedx/cdxgen-plugins-bin-linux-ppc64@1.7.0':
+    resolution: {integrity: sha512-AWLQ33x/mUtYLfIfCq8tZ8TykXUzzNo6ZLvf1eOmEeEyYw/9Yx6E7KzzaAakGl886lJW/1gzmhvFPXD+ZKEIpA==}
     cpu: [ppc64]
     os: [linux]
 
@@ -1098,8 +1139,18 @@ packages:
     cpu: [x64]
     os: [linux]
 
+  '@cyclonedx/cdxgen-plugins-bin-linuxmusl-amd64@1.7.0':
+    resolution: {integrity: sha512-miYABkiNS+0m0z9L5lfIyiAQezuYthkzzPqX6DgPeMgFT8SfoUng2dtRzkCPLtCUBj8lMyBntXTjZrmH7QOMoA==}
+    cpu: [x64]
+    os: [linux]
+
   '@cyclonedx/cdxgen-plugins-bin-linuxmusl-arm64@1.6.12':
     resolution: {integrity: sha512-smaxqZ2ZmVm04elK9Dydk1IjEcyRuRt9pSBZxK/RhgJojsJGQaeY/boKR0P/46avoNNiZbVkIDAIbBjfJ5Z7RA==}
+    cpu: [arm64]
+    os: [linux]
+
+  '@cyclonedx/cdxgen-plugins-bin-linuxmusl-arm64@1.7.0':
+    resolution: {integrity: sha512-Rh8ChTldyY/01EWrciyhnUltC2YNLmdkwaPDZsJT/as1Bu0Q4iOnepMw2WpqwzkaGbZG5PgFtzeuV1kBKjo07Q==}
     cpu: [arm64]
     os: [linux]
 
@@ -1108,14 +1159,33 @@ packages:
     cpu: [x64]
     os: [win32]
 
+  '@cyclonedx/cdxgen-plugins-bin-windows-amd64@1.7.0':
+    resolution: {integrity: sha512-sCeTnlDq3Wojit2+MqErsYhD/Mv7VickLU2PazmamQc4LVZHakZPGxoG4CFUt4oFVux9CoY1+RxkE+Ia+E+fsA==}
+    cpu: [x64]
+    os: [win32]
+
   '@cyclonedx/cdxgen-plugins-bin-windows-arm64@1.6.12':
     resolution: {integrity: sha512-MnYmZXiIZNCPZl3F9KGtKdCjOBfBBI866hdKMojdbgL9u5VMfQBrGA8xTAnAoXPK4MAVRelz42NswieW4OCN+Q==}
+    cpu: [arm64]
+    os: [win32]
+
+  '@cyclonedx/cdxgen-plugins-bin-windows-arm64@1.7.0':
+    resolution: {integrity: sha512-AzQrY0H1A7JduJTBr/Ub7ppt9RKXjc2+AXV38dvekXYvKSnwnR4715gEZ0mwRnn/BZ4az0uQwMlJCpY8qttJIg==}
     cpu: [arm64]
     os: [win32]
 
   '@cyclonedx/cdxgen-plugins-bin@1.6.12':
     resolution: {integrity: sha512-bw+sdaGO54LE5CX+keXXZRNqt6tkwzNctLUmUrNagSP5AWD3U1q3CgWUD55QKOMZcIIrusaFO2vhQZMsTdp0jQ==}
     cpu: [x64]
+
+  '@cyclonedx/cdxgen-plugins-bin@1.7.0':
+    resolution: {integrity: sha512-pgPMY2vHKMTcW24qtcql0uIck3t66U+QmUrO7C6E8kg06tJqBgo8PtT58FhI4B41lPrpq8rAQzo2jLCLu1JnCw==}
+    cpu: [x64]
+
+  '@cyclonedx/cdxgen@11.10.0':
+    resolution: {integrity: sha512-3+RVurTMCNPqEIDNc9jnzFx7fk49VabtUEFNsgc7xErTLQe33LfrzRghfdtHKGkzxWB+GoSr8GH2ihryO0U52g==}
+    engines: {node: '>=20', pnpm: '>=10'}
+    hasBin: true
 
   '@cyclonedx/cdxgen@11.7.0':
     resolution: {integrity: sha512-k4kthndGHjFCGX2N1HP+o/5qnd5a+3kHPSrNIcflgAow90xQ7X68yFUsPxKU4KTdTHvvDlpo3ovVl19d1OgG7A==}
@@ -1485,6 +1555,10 @@ packages:
   '@npmcli/map-workspaces@4.0.2':
     resolution: {integrity: sha512-mnuMuibEbkaBTYj9HQ3dMe6L0ylYW+s/gfz7tBDMFY/la0w9Kf44P9aLn4/+/t3aTR3YUHKoT6XQL9rlicIe3Q==}
     engines: {node: ^18.17.0 || >=20.5.0}
+
+  '@npmcli/map-workspaces@5.0.0':
+    resolution: {integrity: sha512-+YJN6+BIQEC5QL4EqffJ2I1S9ySspwn7GP7uQINtZhf3uy7P0KnnIg+Ab5WeSUTZYpg+jn3GSfMme2FutB7qEQ==}
+    engines: {node: ^20.17.0 || >=22.9.0}
 
   '@npmcli/metavuln-calculator@9.0.2':
     resolution: {integrity: sha512-eESzlCRLuD30qYefT2jYZTUepgu9DNJQdXABGGxjkir055x2UtnpNfDZCA6OJxButQNgxNKc9AeTchYxSgbMCw==}
@@ -3930,6 +4004,13 @@ packages:
       ink: '>=3.0.0'
       react: '>=16.8.0'
 
+  ink-text-input@6.0.0:
+    resolution: {integrity: sha512-Fw64n7Yha5deb1rHY137zHTAbSTNelUKuB5Kkk2HACXEtwIHBCf9OH2tP/LQ9fRYTl1F0dZgbW0zPnZk6FA9Lw==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      ink: '>=5'
+      react: '>=18'
+
   ink@6.3.1:
     resolution: {integrity: sha512-3wGwITGrzL6rkWsi2gEKzgwdafGn4ZYd3u4oRp+sOPvfoxEHlnoB5Vnk9Uy5dMRUhDOqF3hqr4rLQ4lEzBc2sQ==}
     engines: {node: '>=20'}
@@ -5926,6 +6007,12 @@ snapshots:
       '@appthreat/atom-parsetools': 1.0.11
     optional: true
 
+  '@appthreat/atom@2.4.2':
+    dependencies:
+      '@appthreat/atom-common': 1.0.11
+      '@appthreat/atom-parsetools': 1.0.11
+    optional: true
+
   '@appthreat/cdx-proto@1.1.4':
     dependencies:
       '@bufbuild/protobuf': 2.6.3
@@ -6244,40 +6331,160 @@ snapshots:
   '@bufbuild/protobuf@2.6.3':
     optional: true
 
+  '@bufbuild/protobuf@2.9.0':
+    optional: true
+
   '@coana-tech/cli@14.12.51': {}
 
   '@cyclonedx/cdxgen-plugins-bin-darwin-amd64@1.6.12':
     optional: true
 
+  '@cyclonedx/cdxgen-plugins-bin-darwin-amd64@1.7.0':
+    optional: true
+
   '@cyclonedx/cdxgen-plugins-bin-darwin-arm64@1.6.12':
+    optional: true
+
+  '@cyclonedx/cdxgen-plugins-bin-darwin-arm64@1.7.0':
     optional: true
 
   '@cyclonedx/cdxgen-plugins-bin-linux-amd64@1.6.12':
     optional: true
 
+  '@cyclonedx/cdxgen-plugins-bin-linux-amd64@1.7.0':
+    optional: true
+
   '@cyclonedx/cdxgen-plugins-bin-linux-arm64@1.6.12':
+    optional: true
+
+  '@cyclonedx/cdxgen-plugins-bin-linux-arm64@1.7.0':
     optional: true
 
   '@cyclonedx/cdxgen-plugins-bin-linux-arm@1.6.12':
     optional: true
 
+  '@cyclonedx/cdxgen-plugins-bin-linux-arm@1.7.0':
+    optional: true
+
   '@cyclonedx/cdxgen-plugins-bin-linux-ppc64@1.6.12':
+    optional: true
+
+  '@cyclonedx/cdxgen-plugins-bin-linux-ppc64@1.7.0':
     optional: true
 
   '@cyclonedx/cdxgen-plugins-bin-linuxmusl-amd64@1.6.12':
     optional: true
 
+  '@cyclonedx/cdxgen-plugins-bin-linuxmusl-amd64@1.7.0':
+    optional: true
+
   '@cyclonedx/cdxgen-plugins-bin-linuxmusl-arm64@1.6.12':
+    optional: true
+
+  '@cyclonedx/cdxgen-plugins-bin-linuxmusl-arm64@1.7.0':
     optional: true
 
   '@cyclonedx/cdxgen-plugins-bin-windows-amd64@1.6.12':
     optional: true
 
+  '@cyclonedx/cdxgen-plugins-bin-windows-amd64@1.7.0':
+    optional: true
+
   '@cyclonedx/cdxgen-plugins-bin-windows-arm64@1.6.12':
+    optional: true
+
+  '@cyclonedx/cdxgen-plugins-bin-windows-arm64@1.7.0':
     optional: true
 
   '@cyclonedx/cdxgen-plugins-bin@1.6.12':
     optional: true
+
+  '@cyclonedx/cdxgen-plugins-bin@1.7.0':
+    optional: true
+
+  '@cyclonedx/cdxgen@11.10.0':
+    dependencies:
+      '@babel/parser': 7.28.4
+      '@babel/traverse': 7.28.4
+      '@iarna/toml': 2.2.5
+      '@isaacs/string-locale-compare': 1.1.0
+      '@npmcli/fs': 4.0.0
+      '@npmcli/installed-package-contents': 3.0.0
+      '@npmcli/map-workspaces': 5.0.0
+      '@npmcli/name-from-folder': 3.0.0
+      '@npmcli/package-json': 7.0.1
+      '@npmcli/query': 4.0.1
+      '@npmcli/redact': 3.2.2
+      ajv: 8.17.1
+      ajv-formats: 3.0.1(ajv@8.17.1)
+      bin-links: 5.0.0
+      cheerio: 1.1.2
+      common-ancestor-path: 1.0.1
+      edn-data: 1.1.2
+      encoding: 0.1.13
+      glob: 11.0.3
+      global-agent: 3.0.0
+      got: 14.5.0
+      hosted-git-info: 9.0.2
+      iconv-lite: 0.7.0
+      json-stringify-nice: 1.1.4
+      jws: 4.0.0
+      minimatch: 10.0.3
+      node-stream-zip: 1.15.0
+      npm-install-checks: 7.1.2
+      npm-package-arg: 13.0.0
+      npm-pick-manifest: 11.0.1
+      packageurl-js: '@socketregistry/packageurl-js@1.3.0'
+      parse-conflict-json: 4.0.0
+      prettify-xml: 1.2.0
+      proc-log: 5.0.0
+      proggy: 3.0.0
+      promise-all-reject-late: 1.0.1
+      promise-call-limit: 3.0.2
+      properties-reader: 2.3.0
+      read-package-json-fast: 4.0.0
+      semver: 7.7.2
+      ssri: 12.0.0
+      table: 6.9.0
+      tar: 7.5.1
+      treeverse: 3.0.0
+      uuid: 11.1.0
+      walk-up-path: 4.0.0
+      xml-js: 1.6.11
+      yaml: 2.8.1
+      yargs: 17.7.2
+      yoctocolors: 2.1.2
+    optionalDependencies:
+      '@appthreat/atom': 2.4.2
+      '@appthreat/cdx-proto': 1.1.4
+      '@bufbuild/protobuf': 2.9.0
+      '@cyclonedx/cdxgen-plugins-bin': 1.7.0
+      '@cyclonedx/cdxgen-plugins-bin-darwin-amd64': 1.7.0
+      '@cyclonedx/cdxgen-plugins-bin-darwin-arm64': 1.7.0
+      '@cyclonedx/cdxgen-plugins-bin-linux-amd64': 1.7.0
+      '@cyclonedx/cdxgen-plugins-bin-linux-arm': 1.7.0
+      '@cyclonedx/cdxgen-plugins-bin-linux-arm64': 1.7.0
+      '@cyclonedx/cdxgen-plugins-bin-linux-ppc64': 1.7.0
+      '@cyclonedx/cdxgen-plugins-bin-linuxmusl-amd64': 1.7.0
+      '@cyclonedx/cdxgen-plugins-bin-linuxmusl-arm64': 1.7.0
+      '@cyclonedx/cdxgen-plugins-bin-windows-amd64': 1.7.0
+      '@cyclonedx/cdxgen-plugins-bin-windows-arm64': 1.7.0
+      body-parser: 2.2.0
+      compression: 1.8.1
+      connect: 3.7.0
+      jsonata: 2.1.0
+      sequelize: 6.37.7(@appthreat/sqlite3@6.0.9)
+      sqlite3: '@appthreat/sqlite3@6.0.9'
+    transitivePeerDependencies:
+      - ibm_db
+      - mariadb
+      - mysql2
+      - oracledb
+      - pg
+      - pg-hstore
+      - snowflake-sdk
+      - supports-color
+      - tedious
 
   '@cyclonedx/cdxgen@11.7.0':
     dependencies:
@@ -6717,6 +6924,13 @@ snapshots:
       '@npmcli/package-json': 6.2.0
       glob: 10.4.5
       minimatch: 9.0.5
+
+  '@npmcli/map-workspaces@5.0.0':
+    dependencies:
+      '@npmcli/name-from-folder': 3.0.0
+      '@npmcli/package-json': 7.0.1
+      glob: 11.0.3
+      minimatch: 10.0.3
 
   '@npmcli/metavuln-calculator@9.0.2':
     dependencies:
@@ -8772,7 +8986,6 @@ snapshots:
   encoding@0.1.13:
     dependencies:
       iconv-lite: 0.6.3
-    optional: true
 
   end-of-stream@1.4.5:
     dependencies:
@@ -9333,7 +9546,6 @@ snapshots:
   iconv-lite@0.7.0:
     dependencies:
       safer-buffer: '@socketregistry/safer-buffer@1.0.10'
-    optional: true
 
   ieee754@1.2.1: {}
 
@@ -9390,6 +9602,13 @@ snapshots:
       ink: 6.3.1(patch_hash=03cccf82711216d0fa8283ea4716ed803a132ae8c31293f0f5a6677e2bdb4a64)(@types/react@19.2.2)(react@19.2.0)
       object-hash: 2.2.0
       react: 19.2.0
+
+  ink-text-input@6.0.0(ink@6.3.1(patch_hash=03cccf82711216d0fa8283ea4716ed803a132ae8c31293f0f5a6677e2bdb4a64)(@types/react@19.2.2)(react@19.2.0))(react@19.2.0):
+    dependencies:
+      chalk: 5.6.2
+      ink: 6.3.1(patch_hash=03cccf82711216d0fa8283ea4716ed803a132ae8c31293f0f5a6677e2bdb4a64)(@types/react@19.2.2)(react@19.2.0)
+      react: 19.2.0
+      type-fest: 4.41.0
 
   ink@6.3.1(patch_hash=03cccf82711216d0fa8283ea4716ed803a132ae8c31293f0f5a6677e2bdb4a64)(@types/react@19.2.2)(react@19.2.0):
     dependencies:
