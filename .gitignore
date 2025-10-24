@@ -27,6 +27,7 @@ Thumbs.db
 **/target
 *.d.ts
 *.d.ts.map
+**/*.tmp
 *.tsbuildinfo
 
 # Yarn PnP files (tests may create these)
