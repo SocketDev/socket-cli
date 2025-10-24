@@ -35,24 +35,23 @@ export default defineConfig({
         singleThread: false,
         maxThreads: isCoverageEnabled ? 1 : 16,
         minThreads: isCoverageEnabled ? 1 : 4,
-        // IMPORTANT: isolate: false for performance and test compatibility
+        // IMPORTANT: Changed to isolate: true to fix worker thread termination issues.
+        //
+        // Previous configuration (isolate: false) caused "Terminating worker thread"
+        // errors due to resource cleanup issues when tests completed.
         //
         // Tradeoff Analysis:
-        // - isolate: true  = Full isolation, slower, breaks nock/module mocking
-        // - isolate: false = Shared worker context, faster, mocking works
+        // - isolate: true  = Full isolation, slower, but reliable cleanup
+        // - isolate: false = Shared worker context, faster, but cleanup issues
         //
-        // We choose isolate: false because:
-        // 1. Significant performance improvement (faster test runs)
-        // 2. Nock HTTP mocking works correctly across all test files
-        // 3. Vi.mock() module mocking functions properly
-        // 4. Test state pollution is prevented through proper beforeEach/afterEach
-        // 5. Our tests are designed to clean up after themselves
+        // We choose isolate: true to ensure:
+        // 1. Clean worker thread termination without errors
+        // 2. Reliable test execution in CI environments
+        // 3. Proper resource cleanup between tests
+        // 4. No "Terminating worker thread" errors
         //
-        // Tests requiring true isolation should use pool: 'forks' or be marked
-        // with { pool: 'forks' } in the test file itself.
-        isolate: false,
-        // Use worker threads for better performance
-        useAtomics: true,
+        // Performance impact is acceptable for reliability.
+        isolate: true,
       },
     },
     testTimeout: 30_000,
