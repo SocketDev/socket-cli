@@ -180,8 +180,8 @@ importers:
         specifier: 2.0.0
         version: 2.0.0(typescript@5.9.3)
       '@socketsecurity/sdk':
-        specifier: 3.0.3
-        version: 3.0.3
+        specifier: 3.0.4
+        version: 3.0.4
       '@types/cmd-shim':
         specifier: 5.0.2
         version: 5.0.2
@@ -517,8 +517,8 @@ importers:
         specifier: 2.0.0
         version: 2.0.0(typescript@5.9.3)
       '@socketsecurity/sdk':
-        specifier: 3.0.3
-        version: 3.0.3
+        specifier: 3.0.4
+        version: 3.0.4
       '@types/cmd-shim':
         specifier: 5.0.2
         version: 5.0.2
@@ -2411,8 +2411,8 @@ packages:
       typescript:
         optional: true
 
-  '@socketsecurity/sdk@3.0.3':
-    resolution: {integrity: sha512-l4kLQ3spuTpDo++tZTjyWRQRe7rhVwSMNNxTCY69NsRya7G57y55ge2xQD8qsjbW4TF3WN0/eYax4aMKsy27lA==}
+  '@socketsecurity/sdk@3.0.4':
+    resolution: {integrity: sha512-5tG+eBqXG7ExlHin/RkBA6R+cB2s4AehQPtRvZLAFonCmOJTBeWgwfT6Z6yYzN6WtGeq5FYm2FAqZxctVeEVdA==}
     engines: {node: '>=18', pnpm: '>=10.16.0'}
 
   '@stroncium/procfs@1.2.1':
@@ -7742,7 +7742,7 @@ snapshots:
     optionalDependencies:
       typescript: 5.9.3
 
-  '@socketsecurity/sdk@3.0.3': {}
+  '@socketsecurity/sdk@3.0.4': {}
 
   '@stroncium/procfs@1.2.1': {}
 
