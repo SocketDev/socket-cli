@@ -4,8 +4,8 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to publish (datetime format: 2025.01.22.143052)'
-        required: true
+        description: 'Version to publish (datetime format: 2025.01.22.143052, auto-generated if omitted)'
+        required: false
         type: string
       method:
         description: 'Build method to use'
@@ -134,8 +134,15 @@ jobs:
         id: version
         run: |
           VERSION="${{ inputs.version }}"
-          # Remove 'v' prefix if present
-          VERSION="${VERSION#v}"
+          if [ -z "$VERSION" ]; then
+            # Auto-generate version in datetime format: YYYY.MM.DD.HHmmss
+            VERSION=$(date -u +'%Y.%m.%d.%H%M%S')
+            echo "Generated version: $VERSION"
+          else
+            # Remove 'v' prefix if present
+            VERSION="${VERSION#v}"
+            echo "Using provided version: $VERSION"
+          fi
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
 
       - name: Check version consistency
@@ -283,8 +290,15 @@ jobs:
         id: version
         run: |
           VERSION="${{ inputs.version }}"
-          # Remove 'v' prefix if present
-          VERSION="${VERSION#v}"
+          if [ -z "$VERSION" ]; then
+            # Auto-generate version in datetime format: YYYY.MM.DD.HHmmss
+            VERSION=$(date -u +'%Y.%m.%d.%H%M%S')
+            echo "Generated version: $VERSION"
+          else
+            # Remove 'v' prefix if present
+            VERSION="${VERSION#v}"
+            echo "Using provided version: $VERSION"
+          fi
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
 
       - name: Update package.json for @socketbin
