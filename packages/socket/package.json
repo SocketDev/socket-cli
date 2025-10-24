@@ -16,14 +16,14 @@
   "license": "MIT",
   "name": "socket",
   "optionalDependencies": {
-    "@socketbin/cli-alpine-arm64": "1.0.0",
-    "@socketbin/cli-alpine-x64": "1.0.0",
-    "@socketbin/cli-darwin-arm64": "1.0.0",
-    "@socketbin/cli-darwin-x64": "1.0.0",
-    "@socketbin/cli-linux-arm64": "1.0.0",
-    "@socketbin/cli-linux-x64": "1.0.0",
-    "@socketbin/cli-win32-arm64": "1.0.0",
-    "@socketbin/cli-win32-x64": "1.0.0"
+    "@socketbin/cli-alpine-arm64": "0.0.0",
+    "@socketbin/cli-alpine-x64": "0.0.0",
+    "@socketbin/cli-darwin-arm64": "0.0.0",
+    "@socketbin/cli-darwin-x64": "0.0.0",
+    "@socketbin/cli-linux-arm64": "0.0.0",
+    "@socketbin/cli-linux-x64": "0.0.0",
+    "@socketbin/cli-win32-arm64": "0.0.0",
+    "@socketbin/cli-win32-x64": "0.0.0"
   },
   "scripts": {
     "test": "vitest run",
