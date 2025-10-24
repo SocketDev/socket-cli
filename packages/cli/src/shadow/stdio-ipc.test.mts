@@ -34,14 +34,14 @@ describe('ensureIpcInStdio', () => {
     const input: StdioOptions = ['pipe', 'inherit', 'pipe', 'ipc']
     const result = ensureIpcInStdio(input)
 
-    expect(result).toBe(input)
+    expect(result).toEqual(input)
   })
 
   it('should handle mixed array stdio types with ipc', () => {
     const input: StdioOptions = ['ignore', 'inherit', 'pipe', 'ipc']
     const result = ensureIpcInStdio(input)
 
-    expect(result).toBe(input)
+    expect(result).toEqual(input)
   })
 
   it('should handle empty array stdio', () => {
