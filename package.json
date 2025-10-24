@@ -154,8 +154,7 @@
       "vite": "7.1.11",
       "xml2js": "0.6.2",
       "yaml": "2.8.1",
-      "yargs-parser": "21.1.1",
-      "@socketsecurity/lib": "link:../socket-lib"
+      "yargs-parser": "21.1.1"
     },
     "patchedDependencies": {
       "brace-expansion@2.0.2": "patches/brace-expansion@2.0.2.patch",
