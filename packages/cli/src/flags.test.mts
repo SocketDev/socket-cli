@@ -7,7 +7,7 @@ import {
   outputFlags,
   validationFlags,
 } from './flags.mts'
-import ENV from '../constants/env.mts'
+import ENV from './constants/env.mts'
 
 // Mock dependencies.
 vi.mock('meow', () => ({
