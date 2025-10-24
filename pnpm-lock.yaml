@@ -174,14 +174,14 @@ importers:
         specifier: 3.0.1
         version: 3.0.1
       '@socketsecurity/lib':
-        specifier: 1.3.1
-        version: 1.3.1(typescript@5.9.3)
+        specifier: 1.3.2
+        version: 1.3.2(typescript@5.9.3)
       '@socketsecurity/registry':
         specifier: 2.0.0
         version: 2.0.0(typescript@5.9.3)
       '@socketsecurity/sdk':
-        specifier: 3.0.2
-        version: 3.0.2
+        specifier: 3.0.3
+        version: 3.0.3
       '@types/cmd-shim':
         specifier: 5.0.2
         version: 5.0.2
@@ -2466,6 +2466,15 @@ packages:
       typescript:
         optional: true
 
+  '@socketsecurity/lib@1.3.2':
+    resolution: {integrity: sha512-E2Vb/9+VFQH3ck5jCQ8ozJou8pNu9xTpbUpiYBPZBxplHqkd6Lm9blPR/0WcamG1viUcxCRxmxpTViWmfC0IfA==}
+    engines: {node: '>=22'}
+    peerDependencies:
+      typescript: '>=5.0.0'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
+
   '@socketsecurity/registry@2.0.0':
     resolution: {integrity: sha512-R83d1uhaWZa0t+x+q340QrWBWCoX7Q5blJf5XaKmfVVlRfp4/2aRvPjrPMTULnPUbeKx5GLd9OEBFb0nlMSrMg==}
     engines: {node: '>=18'}
@@ -2477,6 +2486,10 @@ packages:
 
   '@socketsecurity/sdk@3.0.2':
     resolution: {integrity: sha512-DbjVxr99j9RLP3VGDwtTSeCghnm1cSPL4+Q/ymLR6S/NN4CUVcHgUMy72Pm3L+K9K4AJw1u7VBUGed/kvmlRDQ==}
+    engines: {node: '>=18', pnpm: '>=10.16.0'}
+
+  '@socketsecurity/sdk@3.0.3':
+    resolution: {integrity: sha512-l4kLQ3spuTpDo++tZTjyWRQRe7rhVwSMNNxTCY69NsRya7G57y55ge2xQD8qsjbW4TF3WN0/eYax4aMKsy27lA==}
     engines: {node: '>=18', pnpm: '>=10.16.0'}
 
   '@stroncium/procfs@1.2.1':
@@ -7901,11 +7914,17 @@ snapshots:
     optionalDependencies:
       typescript: 5.9.3
 
+  '@socketsecurity/lib@1.3.2(typescript@5.9.3)':
+    optionalDependencies:
+      typescript: 5.9.3
+
   '@socketsecurity/registry@2.0.0(typescript@5.9.3)':
     optionalDependencies:
       typescript: 5.9.3
 
   '@socketsecurity/sdk@3.0.2': {}
+
+  '@socketsecurity/sdk@3.0.3': {}
 
   '@stroncium/procfs@1.2.1': {}
 
