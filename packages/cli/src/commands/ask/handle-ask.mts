@@ -27,7 +27,7 @@ export interface HandleAskOptions {
   explain: boolean
 }
 
-interface ParsedIntent {
+export interface ParsedIntent {
   action: string
   command: string[]
   confidence: number
@@ -388,7 +388,7 @@ async function onnxSemanticMatch(query: string): Promise<{
 /**
  * Parse natural language query into structured intent.
  */
-async function parseIntent(query: string): Promise<ParsedIntent> {
+export async function parseIntent(query: string): Promise<ParsedIntent> {
   // Normalize the query to handle verb tenses, plurals, etc.
   const lowerQuery = normalizeQuery(query)
 

@@ -36,6 +36,7 @@ async function run(
       banner: {
         type: 'boolean',
         default: false,
+        description: 'Hide the banner at startup.',
         hidden: true,
       },
     },

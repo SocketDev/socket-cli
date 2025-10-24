@@ -36,6 +36,7 @@ import type { CResult } from '../../types.mjs'
 import type { SpawnExtra } from '@socketsecurity/lib/spawn'
 
 export type DlxOptions = ShadowBinOptions & {
+  agent?: 'npm' | 'pnpm' | 'yarn' | undefined
   force?: boolean | undefined
   silent?: boolean | undefined
 }
@@ -67,7 +68,6 @@ export async function spawnDlx(
   }, spawnExtra)
 
   return {
-    binaryPath: result.binaryPath,
     spawnPromise: result.spawnPromise,
   }
 }

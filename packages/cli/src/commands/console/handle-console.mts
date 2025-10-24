@@ -1,10 +1,9 @@
 import { render } from 'ink'
 import { createElement } from 'react'
 
-import type { ParsedIntent } from '../ask/handle-ask.mts'
 import { parseIntent } from '../ask/handle-ask.mts'
 import type { ConsoleMessage } from './InteractiveConsoleApp.js'
-import { createFileDiff, createPackageChangeDiff, InteractiveConsoleApp } from './InteractiveConsoleApp.js'
+import { createFileDiff, InteractiveConsoleApp } from './InteractiveConsoleApp.js'
 import { spawn } from '@socketsecurity/lib/spawn'
 
 import colors from 'yoctocolors-cjs'
@@ -190,7 +189,7 @@ export async function handleConsole(): Promise<void> {
 
         // Add stdout output.
         if (result.stdout) {
-          const lines = result.stdout.trim().split('\n')
+          const lines = (typeof result.stdout === 'string' ? result.stdout : result.stdout.toString()).trim().split('\n')
           for (const line of lines) {
             addMessage(line)
           }
@@ -198,7 +197,7 @@ export async function handleConsole(): Promise<void> {
 
         // Add stderr output.
         if (result.stderr) {
-          const lines = result.stderr.trim().split('\n')
+          const lines = (typeof result.stderr === 'string' ? result.stderr : result.stderr.toString()).trim().split('\n')
           for (const line of lines) {
             addMessage(`${colors.red('✗')} ${line}`)
           }
@@ -220,7 +219,7 @@ export async function handleConsole(): Promise<void> {
 
         // Add stdout output.
         if (result.stdout) {
-          const lines = result.stdout.trim().split('\n')
+          const lines = (typeof result.stdout === 'string' ? result.stdout : result.stdout.toString()).trim().split('\n')
           for (const line of lines) {
             addMessage(line)
           }
@@ -228,7 +227,7 @@ export async function handleConsole(): Promise<void> {
 
         // Add stderr output.
         if (result.stderr) {
-          const lines = result.stderr.trim().split('\n')
+          const lines = (typeof result.stderr === 'string' ? result.stderr : result.stderr.toString()).trim().split('\n')
           for (const line of lines) {
             addMessage(`${colors.red('✗')} ${line}`)
           }

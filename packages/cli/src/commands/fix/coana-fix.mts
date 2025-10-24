@@ -35,7 +35,6 @@ import {
   fetchGhsaDetails,
   setGitRemoteGithubRepoUrl,
 } from '../../utils/git/github.mts'
-import { cmdFlagValueToArray } from '../../utils/process/cmd.mts'
 import { handleApiCall } from '../../utils/socket/api.mjs'
 import { setupSdk } from '../../utils/socket/sdk.mjs'
 import { fetchSupportedScanFileNames } from '../scan/fetch-supported-scan-file-names.mts'
@@ -270,7 +269,7 @@ export async function coanaFix(
         // Extract GHSA IDs from the discovery result.
         // When compute-fixes-and-upgrade-purls is called without --apply-fixes-to,
         // it returns { type: 'no-ghsas-fix-requested', ghsas: [...] }
-        const discoveredIds = discoverResult?.ghsas ?? []
+        const discoveredIds = (Array.isArray((discoverResult as any)?.ghsas) ? (discoverResult as any).ghsas : [])
         ids = discoveredIds.slice(0, adjustedLimit)
       }
 
