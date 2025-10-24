@@ -1,3 +1,5 @@
+import os from 'node:os'
+
 import { defineConfig } from 'vitest/config'
 
 import { getLocalPackageAliases } from './scripts/utils/get-local-package-aliases.mjs'
@@ -33,8 +35,10 @@ export default defineConfig({
     poolOptions: {
       threads: {
         singleThread: false,
-        maxThreads: isCoverageEnabled ? 1 : 16,
-        minThreads: isCoverageEnabled ? 1 : 4,
+        // Maximize parallel execution to offset isolate: true performance cost.
+        // Use CPU count for better hardware utilization.
+        maxThreads: isCoverageEnabled ? 1 : os.cpus().length,
+        minThreads: isCoverageEnabled ? 1 : Math.min(4, os.cpus().length),
         // IMPORTANT: Changed to isolate: true to fix worker thread termination issues.
         //
         // Previous configuration (isolate: false) caused "Terminating worker thread"
