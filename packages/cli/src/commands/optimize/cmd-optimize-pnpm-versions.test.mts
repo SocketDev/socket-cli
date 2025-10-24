@@ -10,9 +10,9 @@ import { spawn } from '@socketsecurity/lib/spawn'
 import { withTempFixture } from '../../../src/utils/test-fixtures.mts'
 import { spawnSocketCli, testPath } from '../../../test/utils.mts'
 import { PNPM_LOCK_YAML } from '../../constants/packages.mts'
-import { FLAG_CONFIG, FLAG_DRY_RUN, FLAG_SILENT } from '../constants/cli.mts'
-import ENV from '../constants/env.mts'
-import { getBinCliPath } from '../constants/paths.mts'
+import { FLAG_CONFIG, FLAG_DRY_RUN, FLAG_SILENT } from '../../constants/cli.mts'
+import ENV from '../../constants/env.mts'
+import { getBinCliPath } from '../../constants/paths.mts'
 
 import type { JsonContent } from '@socketsecurity/lib/fs'
 

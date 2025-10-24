@@ -5,8 +5,8 @@ import { NODE_VERSION } from '@socketsecurity/lib/constants/node'
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
 
 import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
-import { FLAG_CONFIG, FLAG_DRY_RUN, FLAG_HELP } from '../constants/cli.mts'
-import { getBinCliPath } from '../constants/paths.mts'
+import { FLAG_CONFIG, FLAG_DRY_RUN, FLAG_HELP } from '../../constants/cli.mts'
+import { getBinCliPath } from '../../constants/paths.mts'
 
 const binCliPath = getBinCliPath()
 

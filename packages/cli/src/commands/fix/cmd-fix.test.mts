@@ -13,9 +13,9 @@ import {
   FLAG_ID,
   FLAG_JSON,
   FLAG_MARKDOWN,
-} from '../constants/cli.mts'
-import ENV from '../constants/env.mts'
-import { getBinCliPath } from '../constants/paths.mts'
+} from '../../constants/cli.mts'
+import ENV from '../../constants/env.mts'
+import { getBinCliPath } from '../../constants/paths.mts'
 
 const binCliPath = getBinCliPath()
 const fixtureBaseDir = path.join(testPath, 'fixtures/commands/fix')

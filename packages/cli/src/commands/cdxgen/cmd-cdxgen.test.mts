@@ -7,8 +7,8 @@ import {
   FLAG_HELP,
   FLAG_JSON,
   FLAG_MARKDOWN,
-} from '../constants/cli.mts'
-import { getBinCliPath } from '../constants/paths.mts'
+} from '../../constants/cli.mts'
+import { getBinCliPath } from '../../constants/paths.mts'
 
 const binCliPath = getBinCliPath()
 
