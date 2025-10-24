@@ -20,7 +20,10 @@ if (existsSync(outputPath)) {
   try {
     const existing = readFileSync(outputPath, 'utf-8')
     // Verify it's the expected content (not corrupted).
-    if (existing.includes('loadModelSync') && existing.includes('loadTokenizerSync')) {
+    if (
+      existing.includes('loadModelSync') &&
+      existing.includes('loadTokenizerSync')
+    ) {
       console.log(`✓ Using cached ${outputPath}`)
       process.exit(0)
     }
@@ -76,4 +79,6 @@ writeFileSync(outputPath, minilmSyncContent, 'utf-8')
 
 console.log(`✓ Generated ${outputPath}`)
 console.log(`✓ minilm-sync.mjs size: ${minilmSyncContent.length} bytes`)
-console.log('ℹ Note: minilm-sync.mjs is a placeholder. Production builds should embed the actual model data.')
+console.log(
+  'ℹ Note: minilm-sync.mjs is a placeholder. Production builds should embed the actual model data.',
+)

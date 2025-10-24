@@ -1,0 +1,18 @@
+{
+  "_comment": "Tests that require isolated module execution due to vi.mock(), vi.doMock(), or vi.resetModules() usage. These tests manipulate module state and need to run in isolation to avoid cross-test contamination.",
+  "tests": [
+    "packages/cli/src/flags.test.mts",
+    "packages/cli/src/npm-cli.test.mts",
+    "packages/cli/src/npx-cli.test.mts",
+    "packages/cli/src/pnpm-cli.test.mts",
+    "packages/cli/src/shadow/npm/paths.test.mts",
+    "packages/cli/src/utils/alert/translations.test.mts",
+    "packages/cli/src/utils/dlx/detection.test.mts",
+    "packages/cli/src/utils/git/github.test.mts",
+    "packages/cli/src/utils/npm/paths.test.mts",
+    "packages/cli/src/utils/pnpm/paths.test.mts",
+    "packages/cli/src/utils/yarn/paths.test.mts",
+    "packages/cli/src/utils/yarn/version.test.mts",
+    "packages/cli/src/yarn-cli.test.mts"
+  ]
+}
