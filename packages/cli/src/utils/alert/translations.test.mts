@@ -1,142 +1,104 @@
-import { createRequire } from 'node:module'
-import path from 'node:path'
-
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Mock node:module.
-vi.mock('node:module', () => ({
-  createRequire: vi.fn(() => vi.fn()),
-}))
-
-// Mock constants.
-vi.mock('../constants.mts', () => ({
+// Mock the JSON import.
+vi.mock('../../../data/alert-translations.json', () => ({
   default: {
-    rootPath: '/mock/root/path',
+    alerts: {
+      badEncoding: {
+        description:
+          'Source files are encoded using a non-standard text encoding.',
+        emoji: '⚠️',
+        suggestion:
+          'Ensure all published files are encoded using a standard encoding such as UTF8, UTF16, UTF32, SHIFT-JIS, etc.',
+        title: 'Bad text encoding',
+      },
+      badSemver: {
+        description:
+          'Package version is not a valid semantic version (semver).',
+        emoji: '⚠️',
+        suggestion:
+          'All versions of all packages on npm should use use a valid semantic version. Publish a new version of the package with a valid semantic version. Semantic version ranges do not work with invalid semantic versions.',
+        title: 'Bad semver',
+      },
+    },
   },
 }))
 
 describe('translations utilities', () => {
-  let mockRequire: ReturnType<typeof vi.fn>
-  let mockTranslations: Record<string, any>
-
   beforeEach(() => {
     vi.clearAllMocks()
-    // Reset the module-level cache by clearing the module from cache.
-    vi.resetModules()
-
-    mockTranslations = {
-      messages: {
-        hello: 'Hello',
-        goodbye: 'Goodbye',
-      },
-      errors: {
-        notFound: 'Not found',
-        unauthorized: 'Unauthorized',
-      },
-    }
-
-    mockRequire = vi.fn(() => mockTranslations)
-    vi.mocked(createRequire).mockReturnValue(mockRequire)
   })
 
   describe('getTranslations', () => {
-    it('loads translations from the correct path', async () => {
-      // Re-import to get fresh module with reset cache.
-      const { getTranslations: getTranslationsFresh } = await import(
-        './translations.mts'
-      )
+    it('returns the translations object', async () => {
+      const { getTranslations } = await import('./translations.mts')
 
-      const result = getTranslationsFresh()
+      const result = getTranslations()
 
-      expect(mockRequire).toHaveBeenCalledWith(
-        path.join('/mock/root/path', 'translations.json'),
-      )
-      expect(result).toBe(mockTranslations)
+      expect(result).toHaveProperty('alerts')
+      expect(result.alerts).toHaveProperty('badEncoding')
+      expect(result.alerts).toHaveProperty('badSemver')
     })
 
-    it('caches translations after first load', async () => {
-      // Re-import to get fresh module with reset cache.
-      const { getTranslations: getTranslationsFresh } = await import(
-        './translations.mts'
-      )
+    it('returns consistent results on multiple calls', async () => {
+      const { getTranslations } = await import('./translations.mts')
 
-      const result1 = getTranslationsFresh()
-      const result2 = getTranslationsFresh()
-      const result3 = getTranslationsFresh()
+      const result1 = getTranslations()
+      const result2 = getTranslations()
+      const result3 = getTranslations()
 
-      // Should only require once.
-      expect(mockRequire).toHaveBeenCalledTimes(1)
-      // Should return the same object.
+      // Should return the same object reference.
       expect(result1).toBe(result2)
       expect(result2).toBe(result3)
-      expect(result1).toBe(mockTranslations)
     })
 
-    it('returns the translations object', async () => {
-      // Re-import to get fresh module with reset cache.
-      const { getTranslations: getTranslationsFresh } = await import(
-        './translations.mts'
-      )
+    it('includes alert properties', async () => {
+      const { getTranslations } = await import('./translations.mts')
 
-      const result = getTranslationsFresh()
+      const result = getTranslations()
 
-      expect(result).toHaveProperty('messages')
-      expect(result).toHaveProperty('errors')
-      expect(result.messages.hello).toBe('Hello')
-      expect(result.errors.notFound).toBe('Not found')
+      expect(result.alerts.badEncoding).toEqual({
+        description:
+          'Source files are encoded using a non-standard text encoding.',
+        emoji: '⚠️',
+        suggestion:
+          'Ensure all published files are encoded using a standard encoding such as UTF8, UTF16, UTF32, SHIFT-JIS, etc.',
+        title: 'Bad text encoding',
+      })
     })
 
-    it('uses createRequire with import.meta.url', async () => {
-      // Re-import to get fresh module with reset cache.
-      const { getTranslations: getTranslationsFresh } = await import(
-        './translations.mts'
-      )
+    it('has correct structure for alert entries', async () => {
+      const { getTranslations } = await import('./translations.mts')
 
-      getTranslationsFresh()
+      const result = getTranslations()
+      const { badSemver } = result.alerts
 
-      expect(createRequire).toHaveBeenCalledWith(
-        expect.stringContaining('.mts'),
-      )
+      expect(badSemver).toHaveProperty('description')
+      expect(badSemver).toHaveProperty('emoji')
+      expect(badSemver).toHaveProperty('suggestion')
+      expect(badSemver).toHaveProperty('title')
+      expect(typeof badSemver.description).toBe('string')
+      expect(typeof badSemver.title).toBe('string')
     })
 
-    it('handles empty translations object', async () => {
-      mockTranslations = {}
-      mockRequire = vi.fn(() => mockTranslations)
-      vi.mocked(createRequire).mockReturnValue(mockRequire)
+    it('returns alerts object with multiple entries', async () => {
+      const { getTranslations } = await import('./translations.mts')
 
-      // Re-import to get fresh module with reset cache.
-      const { getTranslations: getTranslationsFresh } = await import(
-        './translations.mts'
-      )
+      const result = getTranslations()
 
-      const result = getTranslationsFresh()
-
-      expect(result).toEqual({})
+      expect(Object.keys(result.alerts).length).toBeGreaterThanOrEqual(2)
+      expect(result.alerts.badEncoding).toBeDefined()
+      expect(result.alerts.badSemver).toBeDefined()
     })
 
-    it('handles complex nested translations', async () => {
-      mockTranslations = {
-        level1: {
-          level2: {
-            level3: {
-              message: 'Deeply nested message',
-            },
-          },
-        },
-        arrays: ['item1', 'item2'],
-      }
-      mockRequire = vi.fn(() => mockTranslations)
-      vi.mocked(createRequire).mockReturnValue(mockRequire)
+    it('handles nested alert structure', async () => {
+      const { getTranslations } = await import('./translations.mts')
 
-      // Re-import to get fresh module with reset cache.
-      const { getTranslations: getTranslationsFresh } = await import(
-        './translations.mts'
-      )
+      const result = getTranslations()
 
-      const result = getTranslationsFresh()
-
-      expect(result.level1.level2.level3.message).toBe('Deeply nested message')
-      expect(result.arrays).toEqual(['item1', 'item2'])
+      // Verify we can access nested properties.
+      expect(result.alerts.badEncoding.title).toBe('Bad text encoding')
+      expect(result.alerts.badSemver.title).toBe('Bad semver')
     })
   })
 })
