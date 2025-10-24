@@ -21,19 +21,23 @@ vi.mock('@socketsecurity/lib/spawn', () => ({
 }))
 
 // Mock constants.
-vi.mock('../constants.mts', () => ({
+vi.mock('../../constants/env.mts', () => ({
   default: {
-    ENV: {
-      GITHUB_BASE_REF: undefined,
-      GITHUB_REF_NAME: undefined,
-      GITHUB_REF_TYPE: undefined,
-      SOCKET_CLI_GIT_USER_EMAIL: undefined,
-      SOCKET_CLI_GIT_USER_NAME: undefined,
-    },
-    SOCKET_DEFAULT_BRANCH: 'main',
-    SOCKET_DEFAULT_REPOSITORY: 'default-repo',
+    GITHUB_BASE_REF: undefined,
+    GITHUB_REF_NAME: undefined,
+    GITHUB_REF_TYPE: undefined,
+    SOCKET_CLI_GIT_USER_EMAIL: undefined,
+    SOCKET_CLI_GIT_USER_NAME: undefined,
   },
+}))
+
+vi.mock('../../constants/cli.mts', () => ({
   FLAG_QUIET: '--quiet',
+}))
+
+vi.mock('../../constants/socket.mts', () => ({
+  SOCKET_DEFAULT_BRANCH: 'main',
+  SOCKET_DEFAULT_REPOSITORY: 'default-repo',
 }))
 
 // Mock debug.
@@ -86,25 +90,25 @@ describe('git utilities', () => {
 
   describe('getBaseBranch', () => {
     it('returns GITHUB_BASE_REF when in PR', async () => {
-      const constants = await import('../constants.mts')
-      constants.default.ENV.GITHUB_BASE_REF = 'main'
+      const ENV = vi.mocked(await import('../../constants/env.mts')).default
+      ENV.GITHUB_BASE_REF = 'main'
 
       const result = await getBaseBranch()
       expect(result).toBe('main')
 
-      constants.default.ENV.GITHUB_BASE_REF = undefined
+      ENV.GITHUB_BASE_REF = undefined
     })
 
     it('returns GITHUB_REF_NAME when it is a branch', async () => {
-      const constants = await import('../constants.mts')
-      constants.default.ENV.GITHUB_REF_TYPE = 'branch'
-      constants.default.ENV.GITHUB_REF_NAME = 'feature-branch'
+      const ENV = vi.mocked(await import('../../constants/env.mts')).default
+      ENV.GITHUB_REF_TYPE = 'branch'
+      ENV.GITHUB_REF_NAME = 'feature-branch'
 
       const result = await getBaseBranch()
       expect(result).toBe('feature-branch')
 
-      constants.default.ENV.GITHUB_REF_TYPE = undefined
-      constants.default.ENV.GITHUB_REF_NAME = undefined
+      ENV.GITHUB_REF_TYPE = undefined
+      ENV.GITHUB_REF_NAME = undefined
     })
 
     it('calls detectDefaultBranch when no GitHub env vars', async () => {
