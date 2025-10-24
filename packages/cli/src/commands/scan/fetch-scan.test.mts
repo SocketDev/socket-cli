@@ -6,6 +6,12 @@ vi.mock('../../utils/socket/api.mjs', () => ({
   queryApiSafeText: vi.fn(),
 }))
 
+vi.mock('@socketsecurity/lib/debug', () => ({
+  debug: vi.fn(),
+  debugDir: vi.fn(),
+  isDebug: vi.fn(() => false),
+}))
+
 describe('fetchScan', () => {
   it('fetches scan successfully', async () => {
     const { fetchScan } = await import('./fetch-scan.mts')
@@ -58,9 +64,9 @@ describe('fetchScan', () => {
   it('handles invalid JSON in scan data', async () => {
     const { fetchScan } = await import('./fetch-scan.mts')
     const { queryApiSafeText } = await import('../../utils/socket/api.mjs')
-    const { debugDir, debugFn } = await import('@socketsecurity/lib/debug')
+    const { debug, debugDir } = await import('@socketsecurity/lib/debug')
     const mockQueryApiText = vi.mocked(queryApiSafeText)
-    const mockDebugFn = vi.mocked(debugFn)
+    const mockDebug = vi.mocked(debug)
     const mockDebugDir = vi.mocked(debugDir)
 
     const invalidJson = [
@@ -76,11 +82,10 @@ describe('fetchScan', () => {
 
     const result = await fetchScan('test-org', 'scan-123')
 
-    expect(mockDebugFn).toHaveBeenCalledWith(
-      'error',
+    expect(mockDebug).toHaveBeenCalledWith(
       'Failed to parse scan result line as JSON',
     )
-    expect(mockDebugDir).toHaveBeenCalledWith('error', {
+    expect(mockDebugDir).toHaveBeenCalledWith({
       error: expect.any(SyntaxError),
       line: '{"invalid":json}',
     })
