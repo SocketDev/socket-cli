@@ -21,26 +21,17 @@ vi.mock('./add-socket-wrapper.mts', () => ({
 vi.mock('./check-socket-wrapper-setup.mts', () => ({
   checkSocketWrapperSetup: vi.fn(),
 }))
-vi.mock('../../constants.mts', () => {
-  const kInternalsSymbol = Symbol.for('kInternalsSymbol')
-  return {
-    default: {
-      bashRcPath: '/home/user/.bashrc',
-      zshRcPath: '/home/user/.zshrc',
-      kInternalsSymbol,
-      [kInternalsSymbol as any]: {
-        getSentry: vi.fn().mockReturnValue(undefined),
-      },
-    },
-  }
-})
-vi.mock('../../utils/completion.mts', () => ({
+vi.mock('../../constants/paths.mts', () => ({
+  getBashRcPath: vi.fn(() => '/home/user/.bashrc'),
+  getZshRcPath: vi.fn(() => '/home/user/.zshrc'),
+}))
+vi.mock('../../utils/cli/completion.mjs', () => ({
   getBashrcDetails: vi.fn(),
 }))
 vi.mock('../install/setup-tab-completion.mts', () => ({
   updateInstalledTabCompletionScript: vi.fn(),
 }))
-vi.mock('../../utils/errors.mts', () => ({
+vi.mock('../../utils/error/errors.mjs', () => ({
   getErrorCause: vi.fn(e => e?.message || String(e)),
 }))
 
@@ -184,7 +175,7 @@ describe('postinstallWrapper', () => {
   })
 
   it('updates tab completion when it exists', async () => {
-    const { getBashrcDetails } = await import('../../utils/completion.mts')
+    const { getBashrcDetails } = await import('../../utils/cli/completion.mjs')
     const { logger } = await import('@socketsecurity/lib/logger')
     const { updateInstalledTabCompletionScript } = await import(
       '../install/setup-tab-completion.mts'
@@ -218,7 +209,7 @@ describe('postinstallWrapper', () => {
   })
 
   it('skips tab completion update when file does not exist', async () => {
-    const { getBashrcDetails } = await import('../../utils/completion.mts')
+    const { getBashrcDetails } = await import('../../utils/cli/completion.mjs')
     const { logger } = await import('@socketsecurity/lib/logger')
     const { updateInstalledTabCompletionScript } = await import(
       '../install/setup-tab-completion.mts'
@@ -248,7 +239,7 @@ describe('postinstallWrapper', () => {
   })
 
   it('handles tab completion update failure gracefully', async () => {
-    const { getBashrcDetails } = await import('../../utils/completion.mts')
+    const { getBashrcDetails } = await import('../../utils/cli/completion.mjs')
     const { logger } = await import('@socketsecurity/lib/logger')
     const mockExistsSync = vi.mocked(existsSync) as any
     const mockGetDetails = vi.mocked(getBashrcDetails)
@@ -271,7 +262,7 @@ describe('postinstallWrapper', () => {
   })
 
   it('handles getBashrcDetails returning not ok', async () => {
-    const { getBashrcDetails } = await import('../../utils/completion.mts')
+    const { getBashrcDetails } = await import('../../utils/cli/completion.mjs')
     const { logger } = await import('@socketsecurity/lib/logger')
     const mockExistsSync = vi.mocked(existsSync) as any
     const mockGetDetails = vi.mocked(getBashrcDetails)
