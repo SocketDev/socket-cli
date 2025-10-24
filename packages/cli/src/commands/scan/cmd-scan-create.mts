@@ -1,5 +1,7 @@
 import path from 'node:path'
 
+import { existsSync, promises as fs } from 'node:fs'
+
 import { joinAnd } from '@socketsecurity/lib/arrays'
 import { logger } from '@socketsecurity/lib/logger'
 
@@ -444,6 +446,32 @@ async function run(
     hasReachExcludePaths ||
     reachSkipCache
 
+  // Validate target constraints when --reach is enabled.
+  let reachTargetValid = true
+  let reachTargetIsDirectory = false
+  let reachTargetExists = false
+  let reachTargetInsideCwd = false
+
+  if (reach) {
+    // Resolve target path to absolute for validation.
+    const targetPath = path.isAbsolute(targets[0]!)
+      ? targets[0]!
+      : path.resolve(cwd, targets[0]!)
+
+    // Check if target is inside cwd.
+    const relativePath = path.relative(cwd, targetPath)
+    reachTargetInsideCwd =
+      !relativePath.startsWith('..') && !path.isAbsolute(relativePath)
+
+    reachTargetExists = existsSync(targetPath)
+    if (reachTargetExists) {
+      const targetStat = await fs.stat(targetPath)
+      reachTargetIsDirectory = targetStat.isDirectory()
+    }
+
+    reachTargetValid = targets.length === 1
+  }
+
   const wasValidInput = checkCommandInput(
     outputKind,
     {
@@ -486,6 +514,33 @@ async function run(
       test: reach || !isUsingAnyReachabilityFlags,
       message: 'Reachability analysis flags require --reach to be enabled',
       fail: 'add --reach flag to use --reach-* options',
+    },
+    {
+      nook: true,
+      test: !reach || reachTargetValid,
+      message:
+        'Reachability analysis requires exactly one target directory when --reach is enabled',
+      fail: 'provide exactly one directory path',
+    },
+    {
+      nook: true,
+      test: !reach || reachTargetIsDirectory,
+      message:
+        'Reachability analysis target must be a directory when --reach is enabled',
+      fail: 'provide a directory path, not a file',
+    },
+    {
+      nook: true,
+      test: !reach || reachTargetExists,
+      message: 'Target directory must exist when --reach is enabled',
+      fail: 'provide an existing directory path',
+    },
+    {
+      nook: true,
+      test: !reach || reachTargetInsideCwd,
+      message:
+        'Target directory must be inside the current working directory when --reach is enabled',
+      fail: 'provide a path inside the working directory',
     },
   )
   if (!wasValidInput) {
