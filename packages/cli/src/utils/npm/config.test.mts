@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { getNpmConfig } from '../config.mts'
+import { getNpmConfig } from './config.mts'
 
 // Mock @npmcli/config.
 vi.mock('@npmcli/config', () => ({
