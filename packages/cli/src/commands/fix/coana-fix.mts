@@ -8,10 +8,15 @@ import { readJsonSync } from '@socketsecurity/lib/fs'
 import { logger } from '@socketsecurity/lib/logger'
 import { pluralize } from '@socketsecurity/lib/words'
 
+import {
+  checkCiEnvVars,
+  getCiEnvInstructions,
+  getFixEnv,
+} from './env-helpers.mts'
+import { getSocketFixBranchName, getSocketFixCommitMessage } from './git.mts'
+import { getSocketFixPrs, openSocketFixPr } from './pull-request.mts'
 import { FLAG_DRY_RUN } from '../../constants/cli.mts'
 import { GQL_PR_STATE_OPEN } from '../../constants/github.mts'
-
-import type { CResult } from '../../types.mts'
 import { spawnCoanaDlx } from '../../utils/dlx/spawn.mjs'
 import { getErrorCause } from '../../utils/error/errors.mjs'
 import { getPackageFilesForScan } from '../../utils/fs/path-resolve.mjs'
@@ -34,15 +39,9 @@ import { cmdFlagValueToArray } from '../../utils/process/cmd.mts'
 import { handleApiCall } from '../../utils/socket/api.mjs'
 import { setupSdk } from '../../utils/socket/sdk.mjs'
 import { fetchSupportedScanFileNames } from '../scan/fetch-supported-scan-file-names.mts'
-import {
-  checkCiEnvVars,
-  getCiEnvInstructions,
-  getFixEnv,
-} from './env-helpers.mts'
-import { getSocketFixBranchName, getSocketFixCommitMessage } from './git.mts'
-import { getSocketFixPrs, openSocketFixPr } from './pull-request.mts'
 
 import type { FixConfig } from './types.mts'
+import type { CResult } from '../../types.mts'
 
 export async function coanaFix(
   fixConfig: FixConfig,
@@ -59,9 +58,15 @@ export async function coanaFix(
     minimumReleaseAge,
     orgSlug,
     outputFile,
+    outputKind,
     showAffectedDirectDependencies,
     spinner,
   } = fixConfig
+
+  // Determine stdio based on output mode:
+  // - 'ignore' when outputKind === 'json': suppress all coana output, return clean JSON response
+  // - 'inherit' otherwise: user sees coana progress in real-time
+  const coanaStdio = outputKind === 'json' ? 'ignore' : 'inherit'
 
   const fixEnv = await getFixEnv()
   debugDir({ fixEnv })
@@ -173,7 +178,7 @@ export async function coanaFix(
           ...fixConfig.unknownFlags,
         ],
         fixConfig.orgSlug,
-        { cwd, spinner, stdio: 'inherit' },
+        { cwd, spinner, stdio: coanaStdio },
       )
 
       spinner?.stop()
@@ -230,35 +235,54 @@ export async function coanaFix(
 
   let ids: string[] | undefined
 
+  // When isAll is true, discover vulnerabilities by running coana with --output-file.
+  // This gives us the GHSA IDs needed to create individual PRs in CI mode.
   if (shouldSpawnCoana && isAll) {
-    const foundCResult = await spawnCoanaDlx(
-      [
-        'compute-fixes-and-upgrade-purls',
-        cwd,
-        '--manifests-tar-hash',
-        tarHash,
-        ...(fixConfig.rangeStyle
-          ? ['--range-style', fixConfig.rangeStyle]
-          : []),
-        ...(minimumReleaseAge
-          ? ['--minimum-release-age', minimumReleaseAge]
-          : []),
-        ...(include.length ? ['--include', ...include] : []),
-        ...(exclude.length ? ['--exclude', ...exclude] : []),
-        ...(disableMajorUpdates ? ['--disable-major-updates'] : []),
-        ...(showAffectedDirectDependencies
-          ? ['--show-affected-direct-dependencies']
-          : []),
-        ...fixConfig.unknownFlags,
-      ],
-      fixConfig.orgSlug,
-      { cwd, spinner },
-    )
-    if (foundCResult.ok) {
-      const foundIds = cmdFlagValueToArray(
-        /(?<=Vulnerabilities found:).*/.exec(foundCResult.data),
+    const discoverTmpFile = path.join(os.tmpdir(), `socket-discover-${Date.now()}.json`)
+
+    try {
+      const discoverCResult = await spawnCoanaDlx(
+        [
+          'compute-fixes-and-upgrade-purls',
+          cwd,
+          '--manifests-tar-hash',
+          tarHash,
+          '--show-affected-direct-dependencies',
+          '--output-file',
+          discoverTmpFile,
+          ...(fixConfig.rangeStyle
+            ? ['--range-style', fixConfig.rangeStyle]
+            : []),
+          ...(minimumReleaseAge
+            ? ['--minimum-release-age', minimumReleaseAge]
+            : []),
+          ...(include.length ? ['--include', ...include] : []),
+          ...(exclude.length ? ['--exclude', ...exclude] : []),
+          ...(disableMajorUpdates ? ['--disable-major-updates'] : []),
+          ...fixConfig.unknownFlags,
+        ],
+        fixConfig.orgSlug,
+        { cwd, spinner, stdio: coanaStdio },
       )
-      ids = foundIds.slice(0, adjustedLimit)
+
+      if (discoverCResult.ok) {
+        const discoverResult = readJsonSync(discoverTmpFile, { throws: false })
+        // Extract GHSA IDs from the discovery result.
+        // When compute-fixes-and-upgrade-purls is called without --apply-fixes-to,
+        // it returns { type: 'no-ghsas-fix-requested', ghsas: [...] }
+        const discoveredIds = discoverResult?.ghsas ?? []
+        ids = discoveredIds.slice(0, adjustedLimit)
+      }
+
+      // Clean up discovery temp file.
+      try {
+        await fs.unlink(discoverTmpFile)
+      } catch (_e) {
+        // Ignore cleanup errors.
+      }
+    } catch (e) {
+      debug('Failed to discover vulnerabilities')
+      debugDir(e)
     }
   } else if (shouldSpawnCoana) {
     ids = ghsas.slice(0, adjustedLimit)
@@ -321,7 +345,7 @@ export async function coanaFix(
         ...fixConfig.unknownFlags,
       ],
       fixConfig.orgSlug,
-      { cwd, spinner, stdio: 'inherit' },
+      { cwd, spinner, stdio: coanaStdio },
     )
 
     if (!fixCResult.ok) {

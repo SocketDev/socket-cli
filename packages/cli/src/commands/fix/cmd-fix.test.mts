@@ -4,7 +4,7 @@ import { afterEach, describe, expect } from 'vitest'
 
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
 
-import { withTempFixture } from '../../../src/utils/test-fixtures.mts'
+import { withTempFixture } from '../../../test/helpers/test-fixtures.mts'
 import { cmdit, spawnSocketCli, testPath } from '../../../test/utils.mts'
 import {
   FLAG_CONFIG,
