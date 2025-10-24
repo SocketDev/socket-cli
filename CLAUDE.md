@@ -13,15 +13,13 @@
 
 ## 📚 SHARED STANDARDS
 
-**See canonical reference:** `../socket-registry/CLAUDE.md`
+**Canonical reference**: `../socket-registry/CLAUDE.md`
 
-For all shared Socket standards (git workflow, testing, code style, imports, sorting, error handling, cross-platform, CI, etc.), refer to socket-registry/CLAUDE.md.
+All shared standards (git, testing, code style, cross-platform, CI) defined in socket-registry/CLAUDE.md.
 
-**Git Workflow Reminder**: When user says "commit changes" → create actual commits, use small atomic commits, follow all CLAUDE.md rules:
-- Use [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) style: `<type>(<scope>): <description>`
-- NO AI attribution in commit messages
-
-**Package.json Scripts**: Prefer `pnpm run foo --<flag>` over multiple `foo:bar` scripts (see socket-registry/CLAUDE.md)
+**Quick references**:
+- Commits: [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) `<type>(<scope>): <description>` - NO AI attribution
+- Scripts: Prefer `pnpm run foo --flag` over `foo:bar` scripts
 
 ---
 
