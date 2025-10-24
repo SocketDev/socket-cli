@@ -59,6 +59,10 @@ export default defineConfig({
     },
     testTimeout: 30_000,
     hookTimeout: 30_000,
+    bail: process.env.CI ? 1 : 0, // Exit on first failure in CI for faster feedback.
+    sequence: {
+      concurrent: true // Run tests concurrently within suites for better parallelism.
+    },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html', 'lcov', 'clover'],
