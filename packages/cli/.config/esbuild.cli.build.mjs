@@ -12,6 +12,8 @@ import { builtinModules } from 'node:module'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { getLocalPackageAliases } from '../scripts/utils/get-local-package-aliases.mjs'
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '..')
 
@@ -45,25 +47,15 @@ const versionHash = `${packageJson.version}:${gitHash}:${randUuidSegment}${
   publishedBuild ? '' : ':dev'
 }`
 
-// Get local Socket package paths.
-const socketPackages = {
-  '@socketsecurity/lib': path.join(rootPath, '..', '..', '..', 'socket-lib'),
-  '@socketsecurity/registry': path.join(
-    rootPath,
-    '..',
-    '..',
-    '..',
-    'socket-registry',
-    'registry',
-  ),
-  '@socketsecurity/sdk': path.join(rootPath, '..', '..', '..', 'socket-sdk-js'),
-  '@socketregistry/packageurl-js': path.join(
-    rootPath,
-    '..',
-    '..',
-    '..',
-    'socket-packageurl-js',
-  ),
+// Get local Socket package paths using canonical helper.
+// rootPath is packages/cli, so go up to socket-cli root for getLocalPackageAliases.
+const socketCliRoot = path.join(rootPath, '..', '..')
+const distAliases = getLocalPackageAliases(socketCliRoot)
+
+// Convert dist paths to package roots (remove /dist suffix).
+const socketPackages = {}
+for (const [packageName, distPath] of Object.entries(distAliases)) {
+  socketPackages[packageName] = path.dirname(distPath)
 }
 
 // Resolve subpath from package.json exports.
