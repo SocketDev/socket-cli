@@ -2,14 +2,31 @@
  * Extract yoga-layout WASM base64 and create yoga-sync.mjs
  * This runs during build to extract the WASM binary from yoga-layout
  * and generate our custom synchronous loader wrapper.
+ *
+ * Idempotent: Skips regeneration if file already exists (supports CI caching).
  */
 
-import { readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '..')
+
+const outputPath = path.join(rootPath, 'external/yoga-sync.mjs')
+
+// Check if file already exists (supports CI cache).
+if (existsSync(outputPath)) {
+  try {
+    const existing = readFileSync(outputPath, 'utf-8')
+    // Verify it's the expected content (not corrupted).
+    if (existing.includes('yoga-layout') && existing.includes('instantiateWasm')) {
+      console.log(`✓ Using cached ${outputPath}`)
+      process.exit(0)
+    }
+  } catch {}
+  // Fall through to regenerate if verification failed.
+}
 
 // Read the Emscripten-generated file.
 const emscriptenFile = path.join(
@@ -78,7 +95,6 @@ const yoga = wrapAssembly(moduleObj)
 export default yoga
 `
 
-const outputPath = path.join(rootPath, 'external/yoga-sync.mjs')
 writeFileSync(outputPath, yogaSyncContent, 'utf-8')
 
 console.log(`✓ Generated ${outputPath}`)
