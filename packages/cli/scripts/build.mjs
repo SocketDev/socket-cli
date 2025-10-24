@@ -78,6 +78,21 @@ async function main() {
         args: ['run', 'clean:dist'],
       },
       {
+        name: 'Extract MiniLM Model',
+        command: 'node',
+        args: ['scripts/extract-minilm-model.mjs'],
+      },
+      {
+        name: 'Extract ONNX Runtime',
+        command: 'node',
+        args: ['scripts/extract-onnx-runtime.mjs'],
+      },
+      {
+        name: 'Extract Yoga WASM',
+        command: 'node',
+        args: ['scripts/extract-yoga-wasm.mjs'],
+      },
+      {
         name: 'esbuild Bundle',
         command: 'node',
         args: ['.config/esbuild.cli.build.mjs'],
