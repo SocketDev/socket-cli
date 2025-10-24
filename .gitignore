@@ -11,9 +11,7 @@ Thumbs.db
 /.pnpmfile.cjs
 /.nvm
 /.rollup.cache
-/.type-coverage
 /.vscode
-/coverage
 /external
 /npm-debug.log
 /yarn.log
@@ -21,6 +19,8 @@ Thumbs.db
 **/build/*.log
 /yarn.lock
 **/.cache
+**/coverage
+**/.type-coverage
 **/dist
 **/node_modules
 *.d.ts
