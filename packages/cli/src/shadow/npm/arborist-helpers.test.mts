@@ -20,7 +20,7 @@ vi.mock('../../utils/socket/alerts.mts', () => ({
   getAlertsMapFromPurls: mockGetAlertsMapFromPurls,
 }))
 
-vi.mock('../../utils/spec.mts', () => ({
+vi.mock('../../utils/ecosystem/spec.mts', () => ({
   idToNpmPurl: mockIdToNpmPurl,
 }))
 
