@@ -5,7 +5,7 @@ vi.mock('node:fs', () => ({
   existsSync: vi.fn(),
 }))
 
-vi.mock('node:module', async (importOriginal) => {
+vi.mock('node:module', async importOriginal => {
   const actual = await importOriginal<typeof import('node:module')>()
   return {
     ...actual,
@@ -164,9 +164,7 @@ describe('npm-paths utilities', () => {
       findNpmDirPathSync.mockReturnValue(undefined)
 
       // Re-import after setting up mocks.
-      const { getNpmDirPath: localGetNpmDirPath } = await import(
-        './paths.mts'
-      )
+      const { getNpmDirPath: localGetNpmDirPath } = await import('./paths.mts')
       const result = localGetNpmDirPath()
 
       expect(result).toBe('/custom/npm/path')

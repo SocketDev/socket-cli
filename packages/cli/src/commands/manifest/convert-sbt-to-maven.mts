@@ -21,7 +21,6 @@ export async function convertSbtToMaven({
   sbtOpts: string[]
   verbose: boolean
 }): Promise<CResult<ManifestResult>> {
-
   const isTextMode = outputKind === 'text'
 
   if (isTextMode) {

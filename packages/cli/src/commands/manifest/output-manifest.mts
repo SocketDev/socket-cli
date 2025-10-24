@@ -50,7 +50,9 @@ export async function outputManifest(
 
     arr.push(`# ${typeName} Manifest Generation`)
     arr.push('')
-    arr.push(`Successfully generated ${files.length} POM file${files.length === 1 ? '' : 's'} from ${typeName} project:`)
+    arr.push(
+      `Successfully generated ${files.length} POM file${files.length === 1 ? '' : 's'} from ${typeName} project:`,
+    )
     arr.push('')
 
     for (const file of files) {

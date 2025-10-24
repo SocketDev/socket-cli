@@ -12,12 +12,16 @@
 import { Box, Static, Text, useApp, useInput, useStdout } from 'ink'
 import TextInput from 'ink-text-input'
 import type React from 'react'
-import { createElement, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-
-import colors from 'yoctocolors-cjs'
+import {
+  createElement,
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react'
 
 import { getAsciiHeader } from '../../utils/terminal/ascii-header-banner.mts'
-
 
 const TOP_SPACER_HEIGHT = 0 // Lines of spacing at top
 const HEADER_HEIGHT = 6 // Logo (4) + info lines (2: divider + CLI info)
@@ -25,11 +29,11 @@ const MIN_CONSOLE_HEIGHT = 5 // Minimum lines to show in console
 const STATUS_HEIGHT = 1 // Status content (1)
 const MIN_INPUT_HEIGHT = 1 // Minimum visible lines for input
 const MAX_INPUT_HEIGHT_RATIO = 0.4 // Max 40% of terminal height
-const GAP_HEIGHT = 0 // No gaps - boxes touch each other
+const _GAP_HEIGHT = 0 // No gaps - boxes touch each other
 
 // Disable shimmer until Ink rendering issues resolved.
-const shouldDisableAnimations = true
-const SHIMMER_INTERVAL = 100 // ms between frames (smooth animation)
+const _shouldDisableAnimations = true
+const _SHIMMER_INTERVAL = 100 // ms between frames (smooth animation)
 
 type FocusArea = 'console' | 'input'
 
@@ -48,12 +52,14 @@ export interface ConsoleMessage {
 /**
  * Create diff lines for package changes (legacy format).
  */
-export function createPackageChangeDiff(changes: {
-  package: string
-  before: string
-  after: string
-  reason?: string
-}[]): DiffLine[] {
+export function createPackageChangeDiff(
+  changes: {
+    package: string
+    before: string
+    after: string
+    reason?: string
+  }[],
+): DiffLine[] {
   const lines: DiffLine[] = []
 
   for (const change of changes) {
@@ -100,7 +106,7 @@ export function createPackageChangeDiff(changes: {
 export function createFileDiff(
   beforeContent: string,
   afterContent: string,
-  contextLines: number = 3,
+  _contextLines = 3,
 ): DiffLine[] {
   const beforeLines = beforeContent.split('\n')
   const afterLines = afterContent.split('\n')
@@ -145,14 +151,17 @@ export function createFileDiff(
 export interface InteractiveConsoleAppProps {
   buildHash?: string
   devMode?: boolean
-  onCommand?: (command: string, addMessage: (textOrMessage: string | ConsoleMessage) => void) => Promise<void>
+  onCommand?: (
+    command: string,
+    addMessage: (textOrMessage: string | ConsoleMessage) => void,
+  ) => Promise<void>
   version?: string
 }
 
 /**
  * Header component - renders once, never updates.
  */
-const StaticHeader = memo(
+const _StaticHeader = memo(
   function StaticHeader({
     buildHash,
     devMode,
@@ -162,15 +171,15 @@ const StaticHeader = memo(
     buildHash?: string
     devMode?: boolean
   }): React.ReactElement {
-    const headerContent = useMemo(() =>
-      getAsciiHeader('console', undefined, false, {}),
-      []
+    const headerContent = useMemo(
+      () => getAsciiHeader('console', undefined, false, {}),
+      [],
     )
 
     return createElement(
       Box,
       { flexDirection: 'column', flexShrink: 0, paddingX: 2 },
-      createElement(Text, {}, headerContent)
+      createElement(Text, {}, headerContent),
     )
   },
   () => true, // Never re-render
@@ -179,7 +188,7 @@ const StaticHeader = memo(
 /**
  * Console output area - simplified.
  */
-const ConsoleOutput = memo(function ConsoleOutput({
+const _ConsoleOutput = memo(function ConsoleOutput({
   messages,
 }: {
   messages: ConsoleMessage[]
@@ -200,12 +209,22 @@ const ConsoleOutput = memo(function ConsoleOutput({
         const elements = []
 
         // Main message text with subtle green tint for console feel.
-        const isCommandOutput = !msg.text.startsWith('>') && !msg.text.includes('→') && !msg.text.includes('✓') && !msg.text.includes('✗')
-        elements.push(createElement(Text, {
-          key: `msg-${i}`,
-          color: isCommandOutput ? '#86EFAC' : undefined,
-          dimColor: msg.dimmed || false,
-        }, msg.text))
+        const isCommandOutput =
+          !msg.text.startsWith('>') &&
+          !msg.text.includes('→') &&
+          !msg.text.includes('✓') &&
+          !msg.text.includes('✗')
+        elements.push(
+          createElement(
+            Text,
+            {
+              key: `msg-${i}`,
+              color: isCommandOutput ? '#86EFAC' : undefined,
+              dimColor: msg.dimmed || false,
+            },
+            msg.text,
+          ),
+        )
 
         // Render diff if present with line numbers and background highlighting.
         if (msg.diff) {
@@ -257,7 +276,11 @@ const ConsoleOutput = memo(function ConsoleOutput({
         }
 
         // Return Box with all elements.
-        return createElement(Box, { key: i, flexDirection: 'column' }, ...elements)
+        return createElement(
+          Box,
+          { key: i, flexDirection: 'column' },
+          ...elements,
+        )
       },
     ),
   )
@@ -280,83 +303,92 @@ const InputArea = memo(
     onHeightChange: (lineCount: number) => void
     onSubmit: (command: string) => void
   }): React.ReactElement {
-  // Internal state - isolated from parent.
-  const [value, setValue] = useState('')
-  const [historyIndex, setHistoryIndex] = useState(-1)
+    // Internal state - isolated from parent.
+    const [value, setValue] = useState('')
+    const [historyIndex, setHistoryIndex] = useState(-1)
 
-  // Notify parent of height changes once on mount (always 1 line).
-  useEffect(() => {
-    onHeightChange(1)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+    // Notify parent of height changes once on mount (always 1 line).
+    useEffect(() => {
+      onHeightChange(1)
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
 
-  // Handle up/down arrow navigation for command history.
-  useInput((input, key) => {
-    // Only accept input when this area is focused.
-    if (!isFocused) {
-      return
-    }
+    // Handle up/down arrow navigation for command history.
+    useInput((_input, key) => {
+      // Only accept input when this area is focused.
+      if (!isFocused) {
+        return
+      }
 
-    // Up arrow: Navigate backward in history.
-    if (key.upArrow) {
-      if (commandHistory.length > 0) {
-        const newIndex = historyIndex + 1
-        if (newIndex < commandHistory.length) {
-          setHistoryIndex(newIndex)
-          const historicalCommand = commandHistory[commandHistory.length - 1 - newIndex]!
-          setValue(historicalCommand)
+      // Up arrow: Navigate backward in history.
+      if (key.upArrow) {
+        if (commandHistory.length > 0) {
+          const newIndex = historyIndex + 1
+          if (newIndex < commandHistory.length) {
+            setHistoryIndex(newIndex)
+            const historicalCommand =
+              commandHistory[commandHistory.length - 1 - newIndex]!
+            setValue(historicalCommand)
+          }
         }
+        return
       }
-      return
-    }
 
-    // Down arrow: Navigate forward in history.
-    if (key.downArrow) {
-      if (historyIndex > 0) {
-        const newIndex = historyIndex - 1
-        setHistoryIndex(newIndex)
-        const historicalCommand = commandHistory[commandHistory.length - 1 - newIndex]!
-        setValue(historicalCommand)
-      } else if (historyIndex === 0) {
-        setHistoryIndex(-1)
-        setValue('')
+      // Down arrow: Navigate forward in history.
+      if (key.downArrow) {
+        if (historyIndex > 0) {
+          const newIndex = historyIndex - 1
+          setHistoryIndex(newIndex)
+          const historicalCommand =
+            commandHistory[commandHistory.length - 1 - newIndex]!
+          setValue(historicalCommand)
+        } else if (historyIndex === 0) {
+          setHistoryIndex(-1)
+          setValue('')
+        }
+        return
       }
-      return
-    }
-  })
+    })
 
-  // Handle command submission.
-  const handleSubmit = useCallback((submittedValue: string) => {
-    const command = submittedValue.trim()
-    if (command) {
-      onSubmit(command)
-      setHistoryIndex(-1)
-      setValue('')
-    }
-  }, [onSubmit])
+    // Handle command submission.
+    const handleSubmit = useCallback(
+      (submittedValue: string) => {
+        const command = submittedValue.trim()
+        if (command) {
+          onSubmit(command)
+          setHistoryIndex(-1)
+          setValue('')
+        }
+      },
+      [onSubmit],
+    )
 
-  return createElement(
-    Box,
-    {
-      borderBottom: true,
-      borderColor: isFocused ? '#7B5FBF' : '#3F3F3F',
-      borderLeft: true,
-      borderRight: true,
-      borderStyle: 'single',
-      borderTop: true,
-      flexDirection: 'row',
-      flexShrink: 0,
-      paddingX: 1,
-    },
-    createElement(Text, { color: isFocused ? '#B0B0B0' : '#5A5A5A' }, '> '),
-    isFocused
-      ? createElement(TextInput, {
-          onChange: setValue,
-          onSubmit: handleSubmit,
-          value,
-        })
-      : createElement(Text, { color: isFocused ? '#B0B0B0' : '#5A5A5A' }, value),
-  )
+    return createElement(
+      Box,
+      {
+        borderBottom: true,
+        borderColor: isFocused ? '#7B5FBF' : '#3F3F3F',
+        borderLeft: true,
+        borderRight: true,
+        borderStyle: 'single',
+        borderTop: true,
+        flexDirection: 'row',
+        flexShrink: 0,
+        paddingX: 1,
+      },
+      createElement(Text, { color: isFocused ? '#B0B0B0' : '#5A5A5A' }, '> '),
+      isFocused
+        ? createElement(TextInput, {
+            onChange: setValue,
+            onSubmit: handleSubmit,
+            value,
+          })
+        : createElement(
+            Text,
+            { color: isFocused ? '#B0B0B0' : '#5A5A5A' },
+            value,
+          ),
+    )
   },
   (prevProps, nextProps) => prevProps.isFocused === nextProps.isFocused, // Re-render if focus state changes
 )
@@ -364,7 +396,7 @@ const InputArea = memo(
 /**
  * Readonly gray input area for displaying latest message.
  */
-function InputAreaGray({ message }: { message: string }): React.ReactElement {
+function _InputAreaGray({ message }: { message: string }): React.ReactElement {
   const [displayMessage, setDisplayMessage] = useState(message)
 
   useEffect(() => {
@@ -392,7 +424,11 @@ function InputAreaGray({ message }: { message: string }): React.ReactElement {
  * Status bar - shows status and Ctrl+C exit prompt.
  */
 const StatusBar = memo(
-  function StatusBar({ ctrlCPressed }: { ctrlCPressed: boolean }): React.ReactElement {
+  function StatusBar({
+    ctrlCPressed,
+  }: {
+    ctrlCPressed: boolean
+  }): React.ReactElement {
     const statusText = ctrlCPressed ? 'Press Ctrl+C again to exit' : '◇ Ready'
     const statusColor = ctrlCPressed ? 'gray' : 'gray'
 
@@ -405,7 +441,11 @@ const StatusBar = memo(
         justifyContent: 'flex-start',
         paddingX: 1,
       },
-      createElement(Text, { color: statusColor, dimColor: !ctrlCPressed }, statusText),
+      createElement(
+        Text,
+        { color: statusColor, dimColor: !ctrlCPressed },
+        statusText,
+      ),
     )
   },
   (prevProps, nextProps) => prevProps.ctrlCPressed === nextProps.ctrlCPressed, // Re-render if ctrlCPressed changes
@@ -435,7 +475,10 @@ const InteractiveConsoleAppComponent = function InteractiveConsoleApp({
   // Callback to add messages to console (memoized to prevent creating new function on every render).
   const addMessage = useCallback((textOrMessage: string | ConsoleMessage) => {
     if (typeof textOrMessage === 'string') {
-      setMessages(prev => [...prev, { text: textOrMessage, timestamp: new Date() }])
+      setMessages(prev => [
+        ...prev,
+        { text: textOrMessage, timestamp: new Date() },
+      ])
     } else {
       setMessages(prev => [...prev, textOrMessage])
     }
@@ -451,7 +494,10 @@ const InteractiveConsoleAppComponent = function InteractiveConsoleApp({
     const maxInputHeight = Math.floor(termHeight * MAX_INPUT_HEIGHT_RATIO)
 
     // Input height = number of lines (no borders).
-    const inputHeight = Math.max(MIN_INPUT_HEIGHT, Math.min(inputLineCount, maxInputHeight))
+    const inputHeight = Math.max(
+      MIN_INPUT_HEIGHT,
+      Math.min(inputLineCount, maxInputHeight),
+    )
 
     // Total fixed heights.
     const fixedHeights = TOP_SPACER_HEIGHT + HEADER_HEIGHT + STATUS_HEIGHT
@@ -460,7 +506,10 @@ const InteractiveConsoleAppComponent = function InteractiveConsoleApp({
     const dynamicSpace = termHeight - fixedHeights
 
     // Console gets remainder after input.
-    const consoleHeight = Math.max(MIN_CONSOLE_HEIGHT, dynamicSpace - inputHeight)
+    const consoleHeight = Math.max(
+      MIN_CONSOLE_HEIGHT,
+      dynamicSpace - inputHeight,
+    )
 
     return { consoleHeight, inputHeight }
   }, [inputLineCount, termHeight])
@@ -494,34 +543,37 @@ const InteractiveConsoleAppComponent = function InteractiveConsoleApp({
     })
   }, [])
 
-  const handleInputSubmit = useCallback((command: string) => {
-    // Mark that we've executed a command (show gray box now).
-    setHasExecutedCommand(true)
+  const handleInputSubmit = useCallback(
+    (command: string) => {
+      // Mark that we've executed a command (show gray box now).
+      setHasExecutedCommand(true)
 
-    // Handle clear command.
-    if (command.toLowerCase().trim() === 'clear') {
-      setMessages([])
+      // Handle clear command.
+      if (command.toLowerCase().trim() === 'clear') {
+        setMessages([])
+        setCommandHistory(prev => [...prev, command])
+        return
+      }
+
+      // Add to history (always append, never mutate).
       setCommandHistory(prev => [...prev, command])
-      return
-    }
 
-    // Add to history (always append, never mutate).
-    setCommandHistory(prev => [...prev, command])
+      // Echo command.
+      addMessage(`> ${command}`)
 
-    // Echo command.
-    addMessage(`> ${command}`)
-
-    // Execute.
-    if (onCommand) {
-      onCommand(command, addMessage)
-    }
-  }, [onCommand, addMessage])
+      // Execute.
+      if (onCommand) {
+        onCommand(command, addMessage)
+      }
+    },
+    [onCommand, addMessage],
+  )
 
   // Keyboard input handling.
   useInput((input, key) => {
     // Tab: Cycle focus between input and gray box.
     if (key.tab) {
-      setFocused(prev => prev === 'input' ? 'gray' : 'input')
+      setFocused(prev => (prev === 'input' ? 'gray' : 'input'))
       // Reset scroll offset when switching to grey box.
       setGrayBoxScrollOffset(0)
       return
@@ -582,9 +634,9 @@ const InteractiveConsoleAppComponent = function InteractiveConsoleApp({
   }, [ctrlCPressed])
 
   // Get ASCII header with all version and org info.
-  const headerContent = useMemo(() =>
-    getAsciiHeader('console', undefined, false, {}),
-    []
+  const headerContent = useMemo(
+    () => getAsciiHeader('console', undefined, false, {}),
+    [],
   )
 
   // Combine header, welcome messages, and command messages into one Static items array.
@@ -601,11 +653,15 @@ const InteractiveConsoleAppComponent = function InteractiveConsoleApp({
   // Messages without wrapping - just show as-is
   const wrappedMessages: Array<{ text: string; isCommandOutput: boolean }> = []
   for (const msg of messages) {
-    const isCommandOutput = !msg.text.startsWith('>') && !msg.text.includes('→') && !msg.text.includes('✓') && !msg.text.includes('✗')
+    const isCommandOutput =
+      !msg.text.startsWith('>') &&
+      !msg.text.includes('→') &&
+      !msg.text.includes('✓') &&
+      !msg.text.includes('✗')
     wrappedMessages.push({ isCommandOutput, text: msg.text })
   }
 
-  const allItems = [...headerItems, ...wrappedMessages]
+  const _allItems = [...headerItems, ...wrappedMessages]
 
   return createElement(
     Box,
@@ -628,12 +684,16 @@ const InteractiveConsoleAppComponent = function InteractiveConsoleApp({
         (item: string, i: number) => {
           const isHeaderLine = i < headerLines.length
           const isWelcomeMessage = !isHeaderLine
-          return createElement(Text, {
-            key: i,
-            color: isWelcomeMessage ? '#86EFAC' : undefined,
-          }, item)
-        }
-      )
+          return createElement(
+            Text,
+            {
+              key: i,
+              color: isWelcomeMessage ? '#86EFAC' : undefined,
+            },
+            item,
+          )
+        },
+      ),
     ),
 
     // Readonly gray input box with command log (shown only after first command executed).
@@ -658,35 +718,87 @@ const InteractiveConsoleAppComponent = function InteractiveConsoleApp({
           (() => {
             const nonEmptyMessages = messages.filter(msg => msg.text.length > 0)
             if (nonEmptyMessages.length === 0) {
-              return createElement(Text, { color: focused === 'gray' ? '#B0B0B0' : '#5A5A5A' }, 'Waiting for command output…')
+              return createElement(
+                Text,
+                { color: focused === 'gray' ? '#B0B0B0' : '#5A5A5A' },
+                'Waiting for command output…',
+              )
             }
 
             // Apply scroll offset: show messages from start up to (length - offset).
             // Limit to max 21 visible messages to prevent height overflow.
             const maxVisibleMessages = 21
-            const visibleMessages = nonEmptyMessages.slice(Math.max(0, nonEmptyMessages.length - maxVisibleMessages - grayBoxScrollOffset), nonEmptyMessages.length - grayBoxScrollOffset)
-            const currentPosition = Math.max(1, nonEmptyMessages.length - grayBoxScrollOffset)
+            const visibleMessages = nonEmptyMessages.slice(
+              Math.max(
+                0,
+                nonEmptyMessages.length -
+                  maxVisibleMessages -
+                  grayBoxScrollOffset,
+              ),
+              nonEmptyMessages.length - grayBoxScrollOffset,
+            )
+            const currentPosition = Math.max(
+              1,
+              nonEmptyMessages.length - grayBoxScrollOffset,
+            )
             const totalMessages = nonEmptyMessages.length
 
-            return createElement(Box, { flexDirection: 'column', flexShrink: 0, height: '100%', minWidth: 0 },
+            return createElement(
+              Box,
+              {
+                flexDirection: 'column',
+                flexShrink: 0,
+                height: '100%',
+                minWidth: 0,
+              },
               // Scrollable content area (grows to fill available space).
-              createElement(Box, { flexDirection: 'column', flexGrow: 1, minWidth: 0 },
+              createElement(
+                Box,
+                { flexDirection: 'column', flexGrow: 1, minWidth: 0 },
                 ...visibleMessages.map((msg, i) => {
-                  const isCommandOutput = !msg.text.startsWith('>') && !msg.text.includes('→') && !msg.text.includes('✓') && !msg.text.includes('✗')
+                  const isCommandOutput =
+                    !msg.text.startsWith('>') &&
+                    !msg.text.includes('→') &&
+                    !msg.text.includes('✓') &&
+                    !msg.text.includes('✗')
                   const isFocused = focused === 'gray'
-                  return createElement(Text, {
-                    key: i,
-                    color: isFocused ? (isCommandOutput ? '#86EFAC' : '#B0B0B0') : (isCommandOutput ? '#86EFAC' : '#5A5A5A'),
-                  }, msg.text)
-                })
+                  return createElement(
+                    Text,
+                    {
+                      key: i,
+                      color: isFocused
+                        ? isCommandOutput
+                          ? '#86EFAC'
+                          : '#B0B0B0'
+                        : isCommandOutput
+                          ? '#86EFAC'
+                          : '#5A5A5A',
+                    },
+                    msg.text,
+                  )
+                }),
               ),
               // Footer with scroll position indicator and navigation hint (stays at bottom).
-              createElement(Box, { flexDirection: 'row', justifyContent: 'space-between', width: '100%' },
-                createElement(Text, { color: focused === 'gray' ? '#7B5FBF' : '#3A3A3A' }, `[${currentPosition}/${totalMessages}]`),
-                createElement(Text, { color: focused === 'gray' ? '#7B5FBF' : '#3A3A3A' }, '↑/↓')
-              )
+              createElement(
+                Box,
+                {
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  width: '100%',
+                },
+                createElement(
+                  Text,
+                  { color: focused === 'gray' ? '#7B5FBF' : '#3A3A3A' },
+                  `[${currentPosition}/${totalMessages}]`,
+                ),
+                createElement(
+                  Text,
+                  { color: focused === 'gray' ? '#7B5FBF' : '#3A3A3A' },
+                  '↑/↓',
+                ),
+              ),
             )
-          })()
+          })(),
         )
       : null,
 

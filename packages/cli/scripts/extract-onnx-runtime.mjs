@@ -19,7 +19,10 @@ if (existsSync(outputPath)) {
   try {
     const existing = readFileSync(outputPath, 'utf-8')
     // Verify it's the expected content (not corrupted).
-    if (existing.includes('onnxruntime-web') && existing.includes('InferenceSession')) {
+    if (
+      existing.includes('onnxruntime-web') &&
+      existing.includes('InferenceSession')
+    ) {
       console.log(`✓ Using cached ${outputPath}`)
       process.exit(0)
     }

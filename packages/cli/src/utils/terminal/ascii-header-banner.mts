@@ -2,10 +2,7 @@ import colors from 'yoctocolors-cjs'
 
 import { normalizePath } from '@socketsecurity/lib/path'
 
-import {
-  FLAG_ORG,
-  REDACTED,
-} from '../../constants/cli.mts'
+import { FLAG_ORG, REDACTED } from '../../constants/cli.mts'
 import {
   CONFIG_KEY_API_TOKEN,
   CONFIG_KEY_DEFAULT_ORG,
@@ -14,10 +11,7 @@ import ENV, { getCliVersion, getCliVersionHash } from '../../constants/env.mts'
 import { isDebug } from '../debug.mts'
 import { tildify } from '../fs/home-path.mts'
 import { getVisibleTokenPrefix } from '../socket/sdk.mjs'
-import {
-  renderLogoWithFallback,
-  supportsFullColor,
-} from './ascii-header.mts'
+import { renderLogoWithFallback, supportsFullColor } from './ascii-header.mts'
 
 import type { HeaderTheme } from './ascii-header.mts'
 import { getConfigValueOrUndef, isConfigFromFlag } from '../config.mts'
@@ -113,7 +107,11 @@ export function getAsciiHeader(
   const shownToken = redacting
     ? REDACTED
     : inCI
-      ? (noApiToken ? '(disabled)' : (tokenPrefix ? `${tokenPrefix}***${tokenOrigin ? ` ${tokenOrigin}` : ''}` : '(not set)'))
+      ? noApiToken
+        ? '(disabled)'
+        : tokenPrefix
+          ? `${tokenPrefix}***${tokenOrigin ? ` ${tokenOrigin}` : ''}`
+          : '(not set)'
       : noApiToken
         ? colors.red('(disabled)')
         : tokenPrefix
@@ -126,7 +124,11 @@ export function getAsciiHeader(
   const orgPart = redacting
     ? `org: ${REDACTED}`
     : inCI
-      ? (orgFlag ? `org: ${orgFlag} (${FLAG_ORG} flag)` : (defaultOrg && defaultOrg !== 'null' ? `org: ${defaultOrg} (config)` : 'org: (not set)'))
+      ? orgFlag
+        ? `org: ${orgFlag} (${FLAG_ORG} flag)`
+        : defaultOrg && defaultOrg !== 'null'
+          ? `org: ${defaultOrg} (config)`
+          : 'org: (not set)'
       : orgFlag
         ? `org: ${colors.cyan(orgFlag)} (${FLAG_ORG} flag)`
         : defaultOrg && defaultOrg !== 'null'
@@ -161,7 +163,13 @@ export function getAsciiHeader(
   // Render animated logo if supported, otherwise static.
   // Use frame 0 for static render in non-animated mode.
   // In CI/VITEST, always use plain text logo without colors.
-  const logo = inCI || redacting ? plainLogo : renderLogoWithFallback(animate ? Math.floor(Date.now() / 100) % 20 : null, theme)
+  const logo =
+    inCI || redacting
+      ? plainLogo
+      : renderLogoWithFallback(
+          animate ? Math.floor(Date.now() / 100) % 20 : null,
+          theme,
+        )
 
   // Build info lines.
   const infoLines = [

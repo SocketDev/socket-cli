@@ -23,7 +23,6 @@ export async function convertGradleToMaven({
   outputKind?: OutputKind | undefined
   verbose: boolean
 }): Promise<CResult<ManifestResult>> {
-
   // Note: Resolve bin relative to cwd (or use absolute path if provided).
   // We don't resolve against $PATH since gradlew is typically a local wrapper script.
   // Users can provide absolute paths if they need to reference system-wide installations.

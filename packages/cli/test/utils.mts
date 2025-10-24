@@ -7,7 +7,6 @@ import { type SpawnOptions, spawn } from '@socketsecurity/lib/spawn'
 import { stripAnsi } from '@socketsecurity/lib/strings'
 
 import { FLAG_HELP, FLAG_VERSION } from '../src/constants/cli.mts'
-import ENV from '../src/constants/env.mts'
 import { execPath } from '../src/constants/paths.mts'
 import {
   type ScrubOptions,

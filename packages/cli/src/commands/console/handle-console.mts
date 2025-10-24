@@ -3,7 +3,10 @@ import { createElement } from 'react'
 
 import { parseIntent } from '../ask/handle-ask.mts'
 import type { ConsoleMessage } from './InteractiveConsoleApp.js'
-import { createFileDiff, InteractiveConsoleApp } from './InteractiveConsoleApp.js'
+import {
+  createFileDiff,
+  InteractiveConsoleApp,
+} from './InteractiveConsoleApp.js'
 import { spawn } from '@socketsecurity/lib/spawn'
 
 import colors from 'yoctocolors-cjs'
@@ -66,7 +69,10 @@ export async function handleConsole(): Promise<void> {
   const versionInfo = await getVersionInfo()
 
   // Command handler - executes both console commands and socket commands.
-  const handleCommand = async (command: string, addMessage: (textOrMessage: string | ConsoleMessage) => void) => {
+  const handleCommand = async (
+    command: string,
+    addMessage: (textOrMessage: string | ConsoleMessage) => void,
+  ) => {
     try {
       // Special demo commands.
       if (command.trim() === 'demo diff') {
@@ -105,9 +111,21 @@ export async function handleConsole(): Promise<void> {
         })
 
         addMessage('')
-        addMessage({ dimmed: true, text: `  ${colors.dim('lodash → lodash-es (tree-shakeable, saves ~45KB)')}`, timestamp: new Date() })
-        addMessage({ dimmed: true, text: `  ${colors.dim('moment → date-fns (smaller bundle, better tree-shaking)')}`, timestamp: new Date() })
-        addMessage({ dimmed: true, text: `  ${colors.dim('chalk → @socketsecurity/registry#chalk (Socket registry, verified safe)')}`, timestamp: new Date() })
+        addMessage({
+          dimmed: true,
+          text: `  ${colors.dim('lodash → lodash-es (tree-shakeable, saves ~45KB)')}`,
+          timestamp: new Date(),
+        })
+        addMessage({
+          dimmed: true,
+          text: `  ${colors.dim('moment → date-fns (smaller bundle, better tree-shaking)')}`,
+          timestamp: new Date(),
+        })
+        addMessage({
+          dimmed: true,
+          text: `  ${colors.dim('chalk → @socketsecurity/registry#chalk (Socket registry, verified safe)')}`,
+          timestamp: new Date(),
+        })
         addMessage('')
         addMessage(`${colors.green('✓')} Demo completed`)
         addMessage('')
@@ -152,10 +170,37 @@ export async function handleConsole(): Promise<void> {
 
       // Common console commands that should execute directly.
       const consoleCommands = [
-        'ls', 'pwd', 'cd', 'echo', 'cat', 'grep', 'find', 'ps', 'top',
-        'kill', 'env', 'export', 'alias', 'history', 'clear', 'exit',
-        'mkdir', 'rm', 'cp', 'mv', 'touch', 'chmod', 'chown', 'which',
-        'curl', 'wget', 'git', 'node', 'npm', 'pnpm', 'yarn',
+        'ls',
+        'pwd',
+        'cd',
+        'echo',
+        'cat',
+        'grep',
+        'find',
+        'ps',
+        'top',
+        'kill',
+        'env',
+        'export',
+        'alias',
+        'history',
+        'clear',
+        'exit',
+        'mkdir',
+        'rm',
+        'cp',
+        'mv',
+        'touch',
+        'chmod',
+        'chown',
+        'which',
+        'curl',
+        'wget',
+        'git',
+        'node',
+        'npm',
+        'pnpm',
+        'yarn',
       ]
 
       let isSocketCommand = socketCommands.includes(firstArg)
@@ -167,13 +212,15 @@ export async function handleConsole(): Promise<void> {
           const intent = await parseIntent(command)
           // Only use AI if confidence is high.
           if (intent && intent.confidence > 0.6) {
-            addMessage(`${colors.blue('ℹ')} Interpreted as: ${intent.explanation} (${Math.round(intent.confidence * 100)}% confident)`)
+            addMessage(
+              `${colors.blue('ℹ')} Interpreted as: ${intent.explanation} (${Math.round(intent.confidence * 100)}% confident)`,
+            )
             isSocketCommand = true
             // Use AI-parsed command.
             args.length = 0
             args.push(...intent.command)
           }
-        } catch (e) {
+        } catch (_e) {
           // AI parsing failed, continue with direct command.
         }
       }
@@ -189,7 +236,13 @@ export async function handleConsole(): Promise<void> {
 
         // Add stdout output.
         if (result.stdout) {
-          const lines = (typeof result.stdout === 'string' ? result.stdout : result.stdout.toString()).trim().split('\n')
+          const lines = (
+            typeof result.stdout === 'string'
+              ? result.stdout
+              : result.stdout.toString()
+          )
+            .trim()
+            .split('\n')
           for (const line of lines) {
             addMessage(line)
           }
@@ -197,14 +250,22 @@ export async function handleConsole(): Promise<void> {
 
         // Add stderr output.
         if (result.stderr) {
-          const lines = (typeof result.stderr === 'string' ? result.stderr : result.stderr.toString()).trim().split('\n')
+          const lines = (
+            typeof result.stderr === 'string'
+              ? result.stderr
+              : result.stderr.toString()
+          )
+            .trim()
+            .split('\n')
           for (const line of lines) {
             addMessage(`${colors.red('✗')} ${line}`)
           }
         }
 
         if (result.code !== 0) {
-          addMessage(`${colors.red('✗')} Command failed with exit code ${result.code}`)
+          addMessage(
+            `${colors.red('✗')} Command failed with exit code ${result.code}`,
+          )
         } else {
           addMessage(`${colors.green('✓')} Command completed successfully`)
         }
@@ -219,7 +280,13 @@ export async function handleConsole(): Promise<void> {
 
         // Add stdout output.
         if (result.stdout) {
-          const lines = (typeof result.stdout === 'string' ? result.stdout : result.stdout.toString()).trim().split('\n')
+          const lines = (
+            typeof result.stdout === 'string'
+              ? result.stdout
+              : result.stdout.toString()
+          )
+            .trim()
+            .split('\n')
           for (const line of lines) {
             addMessage(line)
           }
@@ -227,14 +294,22 @@ export async function handleConsole(): Promise<void> {
 
         // Add stderr output.
         if (result.stderr) {
-          const lines = (typeof result.stderr === 'string' ? result.stderr : result.stderr.toString()).trim().split('\n')
+          const lines = (
+            typeof result.stderr === 'string'
+              ? result.stderr
+              : result.stderr.toString()
+          )
+            .trim()
+            .split('\n')
           for (const line of lines) {
             addMessage(`${colors.red('✗')} ${line}`)
           }
         }
 
         if (result.code !== 0) {
-          addMessage(`${colors.red('✗')} Command failed with exit code ${result.code}`)
+          addMessage(
+            `${colors.red('✗')} Command failed with exit code ${result.code}`,
+          )
         } else {
           addMessage(`${colors.green('✓')} Command completed`)
         }
@@ -243,7 +318,9 @@ export async function handleConsole(): Promise<void> {
       // Add spacing after command output.
       addMessage('')
     } catch (e) {
-      addMessage(`${colors.red('✗')} Error executing command: ${(e as Error).message}`)
+      addMessage(
+        `${colors.red('✗')} Error executing command: ${(e as Error).message}`,
+      )
       addMessage('')
     }
   }

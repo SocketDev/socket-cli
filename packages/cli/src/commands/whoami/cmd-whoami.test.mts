@@ -3,7 +3,7 @@
  * Validates authentication status display with various token sources.
  */
 
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect } from 'vitest'
 
 import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
 import { FLAG_CONFIG, FLAG_HELP, FLAG_JSON } from '../../constants/cli.mts'

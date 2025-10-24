@@ -1,3 +1,4 @@
+import path from 'node:path'
 import { defineConfig } from 'vitest/config'
 
 /**
@@ -24,7 +25,10 @@ const isCoverageEnabled =
   process.env.npm_lifecycle_event === 'cover' ||
   process.argv.includes('--coverage')
 
+const projectRoot = path.resolve(import.meta.dirname, '..')
+
 export default defineConfig({
+  cacheDir: path.resolve(projectRoot, '.cache/vitest'), // Explicit cache directory for consistent behavior.
   test: {
     globals: false,
     environment: 'node',

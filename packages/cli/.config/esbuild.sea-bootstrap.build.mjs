@@ -4,7 +4,6 @@
  */
 
 import { build } from 'esbuild'
-import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -13,8 +12,10 @@ import { getLocalPackageAliases } from '../scripts/utils/get-local-package-alias
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootDir = path.join(__dirname, '..')
 
-const inputFile = process.env['SEA_BOOTSTRAP'] || path.join(rootDir, 'src/stub/bootstrap.mts')
-const outputFile = process.env['SEA_OUTPUT'] || path.join(rootDir, 'dist/sea/bootstrap.cjs')
+const inputFile =
+  process.env['SEA_BOOTSTRAP'] || path.join(rootDir, 'src/stub/bootstrap.mts')
+const outputFile =
+  process.env['SEA_OUTPUT'] || path.join(rootDir, 'dist/sea/bootstrap.cjs')
 
 const isWatch = process.argv.includes('--watch')
 
@@ -42,7 +43,7 @@ const config = {
   alias: aliasEntries,
   logLevel: 'info',
   banner: {
-    js: `// SEA Bootstrap - esbuild generated\n`,
+    js: '// SEA Bootstrap - esbuild generated\n',
   },
 }
 
