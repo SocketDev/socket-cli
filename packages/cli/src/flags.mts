@@ -28,6 +28,17 @@ type RawSpaceSizeFlags = {
 }
 
 let _rawSpaceSizeFlags: RawSpaceSizeFlags | undefined
+
+/**
+ * Reset cached flag values for testing purposes.
+ * @internal
+ */
+export function resetFlagCache(): void {
+  _rawSpaceSizeFlags = undefined
+  _maxOldSpaceSizeFlag = undefined
+  _maxSemiSpaceSizeFlag = undefined
+}
+
 function getRawSpaceSizeFlags(): RawSpaceSizeFlags {
   if (_rawSpaceSizeFlags === undefined) {
     const cli = meow({
