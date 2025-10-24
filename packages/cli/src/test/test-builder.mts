@@ -33,15 +33,22 @@ export function setupCommandTest(options: TestSetupOptions) {
   const stubs = {
     // spawn: spawn as Mock, // Commented out - stub not available.
     loggerLog: null as Mock | null,
-    sdk: null as any,
+    sdk: {} as any,
     config: mockConfig,
   }
+
+  // Expose mock SDK globally for tests to access
+  ;(global as any).mockSdk = stubs.sdk
 
   beforeEach(() => {
     // Reset environment
     for (const [key, value] of Object.entries(env)) {
       process.env[key] = value
     }
+
+    // Reset mock SDK for each test
+    stubs.sdk = {} as any
+    ;(global as any).mockSdk = stubs.sdk
 
     // Mock logger - commented out, stub not available.
     // stubs.loggerLog = stubLoggerLog()
