@@ -1,8 +1,14 @@
 import os from 'node:os'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 import { defineConfig } from 'vitest/config'
 
 import { getLocalPackageAliases } from './scripts/utils/get-local-package-aliases.mjs'
+
+// Get the socket-cli repo root directory.
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const repoRoot = path.resolve(__dirname, '../..')
 
 const isCoverageEnabled =
   process.env.npm_lifecycle_event === 'cover' ||
@@ -10,7 +16,7 @@ const isCoverageEnabled =
 
 export default defineConfig({
   resolve: {
-    alias: getLocalPackageAliases(),
+    alias: getLocalPackageAliases(repoRoot),
     preserveSymlinks: false,
   },
   test: {
