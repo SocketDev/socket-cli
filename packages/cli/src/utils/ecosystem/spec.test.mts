@@ -10,7 +10,7 @@ vi.mock('semver', () => ({
 }))
 
 // Mock pnpm utilities.
-vi.mock('./pnpm.mts', () => ({
+vi.mock('../pnpm/lockfile.mts', () => ({
   stripPnpmPeerSuffix: vi.fn(v => v.replace(/_.*$/, '')),
 }))
 
@@ -81,7 +81,9 @@ describe('spec utilities', () => {
       const result = resolvePackageVersion(purlObj)
       expect(result).toBe('4.18.0')
 
-      const { stripPnpmPeerSuffix } = vi.mocked(await import('./pnpm.mts'))
+      const { stripPnpmPeerSuffix } = vi.mocked(
+        await import('../pnpm/lockfile.mts'),
+      )
       expect(stripPnpmPeerSuffix).toHaveBeenCalledWith('4.18.0_peer@1.0.0')
       expect(semver.coerce).toHaveBeenCalledWith('4.18.0')
     })
@@ -99,7 +101,9 @@ describe('spec utilities', () => {
       const result = resolvePackageVersion(purlObj)
       expect(result).toBe('2.0.0')
 
-      const { stripPnpmPeerSuffix } = vi.mocked(await import('./pnpm.mts'))
+      const { stripPnpmPeerSuffix } = vi.mocked(
+        await import('../pnpm/lockfile.mts'),
+      )
       expect(stripPnpmPeerSuffix).not.toHaveBeenCalled()
       expect(semver.coerce).toHaveBeenCalledWith('2.0.0')
     })
@@ -131,7 +135,9 @@ describe('spec utilities', () => {
       const result = resolvePackageVersion(purlObj)
       expect(result).toBe('18.2.0')
 
-      const { stripPnpmPeerSuffix } = vi.mocked(await import('./pnpm.mts'))
+      const { stripPnpmPeerSuffix } = vi.mocked(
+        await import('../pnpm/lockfile.mts'),
+      )
       expect(stripPnpmPeerSuffix).toHaveBeenCalledWith(
         '18.2.0_react-dom@18.2.0',
       )

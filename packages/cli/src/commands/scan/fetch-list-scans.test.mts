@@ -38,7 +38,7 @@ describe('fetchOrgFullScanList', () => {
 
     const result = await fetchOrgFullScanList(config)
 
-    expect(mockSdk.getOrgFullScanList).toHaveBeenCalledWith('test-org', {
+    expect(mockSdk.listFullScans).toHaveBeenCalledWith('test-org', {
       branch: 'main',
       repo: 'test-repo',
       sort: 'created_at',
@@ -135,7 +135,7 @@ describe('fetchOrgFullScanList', () => {
     await fetchOrgFullScanList(config, options)
 
     expect(mockSetupSdk).toHaveBeenCalledWith(options.sdkOpts)
-    expect(mockSdk.getOrgFullScanList).toHaveBeenCalledWith('custom-org', {
+    expect(mockSdk.listFullScans).toHaveBeenCalledWith('custom-org', {
       branch: 'develop',
       repo: 'custom-repo',
       sort: 'updated_at',
@@ -164,7 +164,7 @@ describe('fetchOrgFullScanList', () => {
 
     await fetchOrgFullScanList(config)
 
-    expect(mockSdk.getOrgFullScanList).toHaveBeenCalledWith('test-org', {
+    expect(mockSdk.listFullScans).toHaveBeenCalledWith('test-org', {
       sort: 'created_at',
       direction: 'desc',
       from: '2023-01-01',
@@ -200,7 +200,7 @@ describe('fetchOrgFullScanList', () => {
       // eslint-disable-next-line no-await-in-loop
       await fetchOrgFullScanList(config)
 
-      expect(mockSdk.getOrgFullScanList).toHaveBeenCalledWith('test-org', {
+      expect(mockSdk.listFullScans).toHaveBeenCalledWith('test-org', {
         branch: 'main',
         repo: 'test-repo',
         sort: 'created_at',
@@ -239,7 +239,7 @@ describe('fetchOrgFullScanList', () => {
       // eslint-disable-next-line no-await-in-loop
       await fetchOrgFullScanList(config)
 
-      expect(mockSdk.getOrgFullScanList).toHaveBeenCalledWith('test-org', {
+      expect(mockSdk.listFullScans).toHaveBeenCalledWith('test-org', {
         branch: 'main',
         repo: 'test-repo',
         sort,
@@ -271,6 +271,6 @@ describe('fetchOrgFullScanList', () => {
     await fetchOrgFullScanList(config)
 
     // The function should work without prototype pollution issues.
-    expect(mockSdk.getOrgFullScanList).toHaveBeenCalled()
+    expect(mockSdk.listFullScans).toHaveBeenCalled()
   })
 })

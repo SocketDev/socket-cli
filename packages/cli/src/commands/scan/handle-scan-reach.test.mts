@@ -13,6 +13,14 @@ vi.mock('@socketsecurity/lib/logger', () => ({
   },
 }))
 
+vi.mock('@socketsecurity/lib/constants/process', () => ({
+  getSpinner: vi.fn(() => ({
+    start: vi.fn(),
+    stop: vi.fn(),
+    successAndStop: vi.fn(),
+  })),
+}))
+
 vi.mock('./fetch-supported-scan-file-names.mts', () => ({
   fetchSupportedScanFileNames: vi.fn(),
 }))
@@ -29,27 +37,9 @@ vi.mock('../../utils/validation/check-input.mts', () => ({
   checkCommandInput: vi.fn(),
 }))
 
-vi.mock('../../utils/path/resolve.mts', () => ({
+vi.mock('../../utils/fs/path-resolve.mjs', () => ({
   getPackageFilesForScan: vi.fn(),
 }))
-
-vi.mock('../../constants.mts', () => {
-  const kInternalsSymbol = Symbol.for('kInternalsSymbol')
-  return {
-    NODE_MODULES: 'node_modules',
-    default: {
-      spinner: {
-        start: vi.fn(),
-        stop: vi.fn(),
-        successAndStop: vi.fn(),
-      },
-      kInternalsSymbol,
-      [kInternalsSymbol]: {
-        getSentry: vi.fn(() => undefined),
-      },
-    },
-  }
-})
 
 describe('handleScanReach', () => {
   it('performs reachability analysis successfully', async () => {
@@ -64,7 +54,7 @@ describe('handleScanReach', () => {
       '../../utils/validation/check-input.mts'
     )
     const { getPackageFilesForScan } = await import(
-      '../../utils/path/resolve.mts'
+      '../../utils/fs/path-resolve.mjs'
     )
 
     const mockFetchSupported = vi.mocked(fetchSupportedScanFileNames)
@@ -143,7 +133,7 @@ describe('handleScanReach', () => {
       '../../utils/validation/check-input.mts'
     )
     const { getPackageFilesForScan } = await import(
-      '../../utils/path/resolve.mts'
+      '../../utils/fs/path-resolve.mjs'
     )
 
     const mockFetchSupported = vi.mocked(fetchSupportedScanFileNames)
@@ -183,7 +173,7 @@ describe('handleScanReach', () => {
       '../../utils/validation/check-input.mts'
     )
     const { getPackageFilesForScan } = await import(
-      '../../utils/path/resolve.mts'
+      '../../utils/fs/path-resolve.mjs'
     )
 
     const mockFetchSupported = vi.mocked(fetchSupportedScanFileNames)
