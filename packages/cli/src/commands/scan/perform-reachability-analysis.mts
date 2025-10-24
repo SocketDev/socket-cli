@@ -35,6 +35,7 @@ export type ReachabilityAnalysisOptions = {
   reachabilityOptions: ReachabilityOptions
   repoName?: string | undefined
   spinner?: Spinner | undefined
+  target: string
   uploadManifests?: boolean | undefined
 }
 
@@ -55,8 +56,15 @@ export async function performReachabilityAnalysis(
     reachabilityOptions,
     repoName,
     spinner,
+    target,
     uploadManifests = true,
   } = { __proto__: null, ...options } as ReachabilityAnalysisOptions
+
+  // Determine the analysis target - make it relative to cwd if absolute.
+  let analysisTarget = target
+  if (path.isAbsolute(analysisTarget)) {
+    analysisTarget = path.relative(cwd, analysisTarget) || '.'
+  }
 
   // Check if user has enterprise plan for reachability analysis.
   const orgsCResult = await fetchOrganization()
@@ -140,7 +148,7 @@ export async function performReachabilityAnalysis(
   // Build Coana arguments.
   const coanaArgs = [
     'run',
-    cwd,
+    analysisTarget,
     '--output-dir',
     path.dirname(outputFilePath),
     '--socket-mode',
