@@ -1,8 +1,18 @@
 {
-  "bin": {
-    "socket": "./bin/socket.js"
+  "name": "socket",
+  "version": "1.2.0",
+  "description": "CLI for Socket.dev",
+  "homepage": "https://github.com/SocketDev/socket-cli",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SocketDev/socket-cli.git"
   },
-  "description": "Thin Socket CLI wrapper that downloads and delegates to @socketsecurity/cli",
+  "author": {
+    "name": "Socket Inc",
+    "email": "eng@socket.dev",
+    "url": "https://socket.dev"
+  },
   "devDependencies": {
     "vitest": "3.0.0"
   },
@@ -13,8 +23,6 @@
     "bin/",
     "dist/"
   ],
-  "license": "MIT",
-  "name": "socket",
   "optionalDependencies": {
     "@socketbin/cli-alpine-arm64": "0.0.0",
     "@socketbin/cli-alpine-x64": "0.0.0",
@@ -29,6 +37,5 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest"
-  },
-  "version": "1.0.0"
+  }
 }
