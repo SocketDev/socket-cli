@@ -148,8 +148,15 @@ describe('ascii-header', () => {
     it('should render different frames differently', () => {
       const frame0 = renderShimmerFrame(0)
       const frame10 = renderShimmerFrame(10)
-      // Shimmer animation should produce different output for different frames
-      expect(frame0).not.toBe(frame10)
+      // Shimmer animation should produce different output for different frames.
+      // In CI environments, applyShimmer renders static output for deterministic tests.
+      if (process.env['CI']) {
+        // In CI, frames should be identical (static rendering).
+        expect(frame0).toBe(frame10)
+      } else {
+        // Outside CI, frames should differ (animated rendering).
+        expect(frame0).not.toBe(frame10)
+      }
     })
 
     it('should render shimmer with all themes', () => {

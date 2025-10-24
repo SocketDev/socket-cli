@@ -30,7 +30,7 @@ import constants from '../src/constants.mts'
  * @returns Object containing exitCode, stdout, and stderr.
  */
 export async function runWithConfig(...args: string[]) {
-  const { binCliPath } = constants
+  const binCliPath = constants.getBinCliPath()
   // Add --config {} if not present.
   if (!args.includes('--config')) {
     args.push('--config', '{}')
