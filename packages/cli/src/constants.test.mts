@@ -135,7 +135,7 @@ describe('constants', () => {
     const constants = (await import('./constants.mts')).default
 
     expect(constants.shadowBinPath).toBeDefined()
-    expect(constants.shadowBinPath).toContain('shadow-npm-bin')
+    expect(constants.shadowBinPath).toContain('shadow-bin')
   })
 
   it('ENV object contains expected environment variables', async () => {
