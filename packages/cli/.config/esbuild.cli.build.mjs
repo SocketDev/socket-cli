@@ -8,7 +8,6 @@ import { build } from 'esbuild'
 import { execSync } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
 import { existsSync, readFileSync } from 'node:fs'
-import { builtinModules } from 'node:module'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -102,12 +101,16 @@ const config = {
   entryPoints: [path.join(rootPath, 'src/cli-dispatch.mts')],
   bundle: true,
   outfile: path.join(rootPath, 'dist/cli.js'),
+  // Target Node.js environment (not browser).
   platform: 'node',
-  target: 'node20',
+  // Target Node.js 18+ features.
+  target: 'node18',
   format: 'cjs',
 
-  // Externalize Node.js built-ins.
-  external: [...builtinModules, ...builtinModules.map(m => `node:${m}`)],
+  // With platform: 'node', esbuild automatically externalizes all Node.js
+  // built-ins. The explicit external array with builtinModules is redundant
+  // (but doesn't hurt as extra safety).
+  external: [],
 
   // Add shebang.
   banner: {
