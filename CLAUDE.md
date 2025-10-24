@@ -502,6 +502,12 @@ Socket CLI integrates with various third-party tools and services:
 - **Catch parameter naming**: Use `catch (e)` instead of `catch (error)` for consistency across the codebase
 - **Node.js fs imports**: 🚨 MANDATORY pattern - `import { someSyncThing, promises as fs } from 'node:fs'`
 - **Process spawning**: 🚨 FORBIDDEN to use Node.js built-in `child_process.spawn` - MUST use `spawn` from `@socketsecurity/registry/lib/spawn`
+- **Working directory**: 🚨 ABSOLUTELY FORBIDDEN - NEVER use `process.chdir()` - it's a global state mutation anti-pattern that breaks tests and causes race conditions
+  - ✅ CORRECT: Use `{ cwd: '/absolute/path' }` option in spawn, exec, fs operations
+  - ✅ CORRECT: Always use absolute paths with `path.resolve()` or `path.join(baseDir, relative)`
+  - ❌ FORBIDDEN: `process.chdir(someDir)` (mutates global state, breaks parallel tests, not supported in worker threads)
+  - **Why it's forbidden**: Breaks Vitest worker threads, creates race conditions in parallel tests, makes debugging harder, violates functional programming principles
+  - **For tests**: Always pass `{ cwd: testDir }` to functions instead of changing process.cwd()
 - **Number formatting**: 🚨 REQUIRED - Use underscore separators (e.g., `20_000`) for large numeric literals. 🚨 FORBIDDEN - Do NOT modify number values inside strings
 
 ### Error Handling

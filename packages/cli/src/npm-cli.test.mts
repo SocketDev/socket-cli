@@ -47,8 +47,10 @@ describe('npm-cli', () => {
     process.argv = ['node', 'npm-cli.mjs', 'install']
 
     try {
-      await import('./npm-cli.mts')
+      const { default: runNpmCli } = await import('./npm-cli.mts')
+      const promise = runNpmCli()
       expect(process.exitCode).toBe(1)
+      await promise
     } finally {
       process.argv = originalArgv
     }
@@ -59,7 +61,8 @@ describe('npm-cli', () => {
     process.argv = ['node', 'npm-cli.mjs', 'install', 'lodash']
 
     try {
-      await import('./npm-cli.mts')
+      const { default: runNpmCli } = await import('./npm-cli.mts')
+      await runNpmCli()
 
       expect(mockShadowNpmBin).toHaveBeenCalledWith(['install', 'lodash'], {
         stdio: 'inherit',
@@ -83,7 +86,8 @@ describe('npm-cli', () => {
     })
 
     try {
-      await import('./npm-cli.mts')
+      const { default: runNpmCli } = await import('./npm-cli.mts')
+      await runNpmCli()
 
       expect(mockProcessExit).toHaveBeenCalledWith(1)
     } finally {
@@ -103,7 +107,8 @@ describe('npm-cli', () => {
     })
 
     try {
-      await import('./npm-cli.mts')
+      const { default: runNpmCli } = await import('./npm-cli.mts')
+      await runNpmCli()
 
       expect(mockProcessKill).toHaveBeenCalledWith(process.pid, 'SIGTERM')
     } finally {
@@ -116,7 +121,8 @@ describe('npm-cli', () => {
     process.argv = ['node', 'npm-cli.mjs']
 
     try {
-      await import('./npm-cli.mts')
+      const { default: runNpmCli } = await import('./npm-cli.mts')
+      await runNpmCli()
 
       expect(mockShadowNpmBin).toHaveBeenCalledWith([], {
         stdio: 'inherit',
@@ -135,7 +141,8 @@ describe('npm-cli', () => {
     process.env = { ...originalEnv, CUSTOM_VAR: 'test-value' }
 
     try {
-      await import('./npm-cli.mts')
+      const { default: runNpmCli } = await import('./npm-cli.mts')
+      await runNpmCli()
 
       expect(mockShadowNpmBin).toHaveBeenCalledWith(['run', 'build'], {
         stdio: 'inherit',
@@ -161,7 +168,8 @@ describe('npm-cli', () => {
     })
 
     try {
-      await import('./npm-cli.mts')
+      const { default: runNpmCli } = await import('./npm-cli.mts')
+      await runNpmCli()
 
       // The spawn promise should be awaited.
       expect(mockThen).toHaveBeenCalled()

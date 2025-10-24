@@ -47,8 +47,10 @@ describe('yarn-cli', () => {
     process.argv = ['node', 'yarn-cli.mjs', 'install']
 
     try {
-      await import('./yarn-cli.mts')
+      const { default: runYarnCli } = await import('./yarn-cli.mts')
+      const promise = runYarnCli()
       expect(process.exitCode).toBe(1)
+      await promise
     } finally {
       process.argv = originalArgv
     }
@@ -59,7 +61,8 @@ describe('yarn-cli', () => {
     process.argv = ['node', 'yarn-cli.mjs', 'add', 'react', 'react-dom']
 
     try {
-      await import('./yarn-cli.mts')
+      const { default: runYarnCli } = await import('./yarn-cli.mts')
+      await runYarnCli()
 
       expect(mockShadowYarnBin).toHaveBeenCalledWith(
         ['add', 'react', 'react-dom'],
@@ -86,7 +89,8 @@ describe('yarn-cli', () => {
     })
 
     try {
-      await import('./yarn-cli.mts')
+      const { default: runYarnCli } = await import('./yarn-cli.mts')
+      await runYarnCli()
 
       expect(mockProcessExit).toHaveBeenCalledWith(1)
     } finally {
@@ -106,7 +110,8 @@ describe('yarn-cli', () => {
     })
 
     try {
-      await import('./yarn-cli.mts')
+      const { default: runYarnCli } = await import('./yarn-cli.mts')
+      await runYarnCli()
 
       expect(mockProcessKill).toHaveBeenCalledWith(process.pid, 'SIGTERM')
     } finally {
@@ -119,7 +124,8 @@ describe('yarn-cli', () => {
     process.argv = ['node', 'yarn-cli.mjs']
 
     try {
-      await import('./yarn-cli.mts')
+      const { default: runYarnCli } = await import('./yarn-cli.mts')
+      await runYarnCli()
 
       expect(mockShadowYarnBin).toHaveBeenCalledWith([], {
         stdio: 'inherit',
@@ -138,7 +144,8 @@ describe('yarn-cli', () => {
     process.env = { ...originalEnv, YARN_CACHE_FOLDER: '/tmp/yarn-cache' }
 
     try {
-      await import('./yarn-cli.mts')
+      const { default: runYarnCli } = await import('./yarn-cli.mts')
+      await runYarnCli()
 
       expect(mockShadowYarnBin).toHaveBeenCalledWith(['workspace', 'list'], {
         stdio: 'inherit',
@@ -164,7 +171,8 @@ describe('yarn-cli', () => {
     })
 
     try {
-      await import('./yarn-cli.mts')
+      const { default: runYarnCli } = await import('./yarn-cli.mts')
+      await runYarnCli()
 
       // The spawn promise should be awaited.
       expect(mockThen).toHaveBeenCalled()

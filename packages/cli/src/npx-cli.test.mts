@@ -47,8 +47,10 @@ describe('npx-cli', () => {
     process.argv = ['node', 'npx-cli.mjs', 'create-react-app', 'my-app']
 
     try {
-      await import('./npx-cli.mts')
+      const { default: runNpxCli } = await import('./npx-cli.mts')
+      const promise = runNpxCli()
       expect(process.exitCode).toBe(1)
+      await promise
     } finally {
       process.argv = originalArgv
     }
@@ -59,7 +61,8 @@ describe('npx-cli', () => {
     process.argv = ['node', 'npx-cli.mjs', 'create-next-app@latest', 'my-app']
 
     try {
-      await import('./npx-cli.mts')
+      const { default: runNpxCli } = await import('./npx-cli.mts')
+      await runNpxCli()
 
       expect(mockShadowNpxBin).toHaveBeenCalledWith(
         ['create-next-app@latest', 'my-app'],
@@ -84,7 +87,8 @@ describe('npx-cli', () => {
     })
 
     try {
-      await import('./npx-cli.mts')
+      const { default: runNpxCli } = await import('./npx-cli.mts')
+      await runNpxCli()
 
       expect(mockProcessExit).toHaveBeenCalledWith(1)
     } finally {
@@ -104,7 +108,8 @@ describe('npx-cli', () => {
     })
 
     try {
-      await import('./npx-cli.mts')
+      const { default: runNpxCli } = await import('./npx-cli.mts')
+      await runNpxCli()
 
       expect(mockProcessKill).toHaveBeenCalledWith(process.pid, 'SIGINT')
     } finally {
@@ -117,7 +122,8 @@ describe('npx-cli', () => {
     process.argv = ['node', 'npx-cli.mjs']
 
     try {
-      await import('./npx-cli.mts')
+      const { default: runNpxCli } = await import('./npx-cli.mts')
+      await runNpxCli()
 
       expect(mockShadowNpxBin).toHaveBeenCalledWith([], {
         stdio: 'inherit',
@@ -132,7 +138,8 @@ describe('npx-cli', () => {
     process.argv = ['node', 'npx-cli.mjs', 'typescript', '--version']
 
     try {
-      await import('./npx-cli.mts')
+      const { default: runNpxCli } = await import('./npx-cli.mts')
+      await runNpxCli()
 
       expect(mockShadowNpxBin).toHaveBeenCalledWith(
         ['typescript', '--version'],
@@ -158,7 +165,8 @@ describe('npx-cli', () => {
     })
 
     try {
-      await import('./npx-cli.mts')
+      const { default: runNpxCli } = await import('./npx-cli.mts')
+      await runNpxCli()
 
       // The spawn promise should be awaited.
       expect(mockThen).toHaveBeenCalled()
