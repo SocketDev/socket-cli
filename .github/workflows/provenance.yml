@@ -11,6 +11,11 @@ on:
         options:
           - '0'
           - '1'
+      js-fallback:
+        description: 'Publish JS-only fallback version (no native binaries)'
+        required: false
+        type: boolean
+        default: false
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -66,3 +71,27 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
+
+      # Build and publish JS-only fallback version (when native binaries fail).
+      - name: Build JS-only fallback package
+        if: ${{ inputs.js-fallback }}
+        working-directory: packages/cli
+        run: pnpm run build:js
+      - name: Validate JS-only fallback package
+        if: ${{ inputs.js-fallback }}
+        working-directory: packages/cli
+        run: |
+          # Verify build artifacts exist
+          test -f dist/cli.js || exit 1
+          test -f dist/npm-cli.js || exit 1
+          test -f dist/npx-cli.js || exit 1
+          test -f dist/pnpm-cli.js || exit 1
+          test -f dist/yarn-cli.js || exit 1
+          echo "✓ JS-only fallback package built successfully"
+      - name: Publish JS-only fallback package
+        if: ${{ inputs.js-fallback }}
+        working-directory: packages/cli
+        run: npm publish --provenance --access public --no-git-checks
+        continue-on-error: true
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
