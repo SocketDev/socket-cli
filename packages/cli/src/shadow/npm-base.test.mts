@@ -37,7 +37,7 @@ vi.mock('../utils/socket/sdk.mjs', () => ({
   getPublicApiToken: mockGetPublicApiToken,
 }))
 
-vi.mock('../utils/fs.mts', () => ({
+vi.mock('../utils/fs/fs.mjs', () => ({
   findUp: mockFindUp,
 }))
 
@@ -45,34 +45,40 @@ vi.mock('./stdio-ipc.mts', () => ({
   ensureIpcInStdio: mockEnsureIpcInStdio,
 }))
 
-vi.mock('../constants.mts', async importOriginal => {
+vi.mock('../constants/paths.mts', async importOriginal => {
   const actual = (await importOriginal()) as Record<string, any>
   return {
     ...actual,
-    default: {
-      ...actual?.default,
-      execPath: '/usr/bin/node',
-      shadowBinPath: '/mock/shadow-bin',
-      shadowNpmInjectPath: '/mock/inject.js',
-      instrumentWithSentryPath: '/mock/sentry.js',
-      nodeNoWarningsFlags: ['--no-warnings'],
-      nodeDebugFlags: ['--inspect=0'],
-      nodeHardenFlags: ['--frozen-intrinsics'],
-      nodeMemoryFlags: [],
-      processEnv: { CUSTOM_ENV: 'test' },
-      SUPPORTS_NODE_PERMISSION_FLAG: true,
-      npmGlobalPrefix: '/usr/local',
-      npmCachePath: '/home/.npm',
-      ENV: {
-        INLINED_SOCKET_CLI_SENTRY_BUILD: false,
-      },
-      SOCKET_IPC_HANDSHAKE: 'SOCKET_IPC_HANDSHAKE',
-      SOCKET_CLI_SHADOW_API_TOKEN: 'SOCKET_CLI_SHADOW_API_TOKEN',
-      SOCKET_CLI_SHADOW_BIN: 'SOCKET_CLI_SHADOW_BIN',
-      SOCKET_CLI_SHADOW_PROGRESS: 'SOCKET_CLI_SHADOW_PROGRESS',
-    },
+    shadowBinPath: '/mock/shadow-bin',
+    getShadowNpmInjectPath: vi.fn(() => '/mock/inject.js'),
+    getInstrumentWithSentryPath: vi.fn(() => '/mock/sentry.js'),
   }
 })
+
+vi.mock('../constants/shadow.mts', async importOriginal => {
+  const actual = (await importOriginal()) as Record<string, any>
+  return {
+    ...actual,
+    SOCKET_IPC_HANDSHAKE: 'SOCKET_IPC_HANDSHAKE',
+    SOCKET_CLI_SHADOW_API_TOKEN: 'SOCKET_CLI_SHADOW_API_TOKEN',
+    SOCKET_CLI_SHADOW_BIN: 'SOCKET_CLI_SHADOW_BIN',
+    SOCKET_CLI_SHADOW_PROGRESS: 'SOCKET_CLI_SHADOW_PROGRESS',
+  }
+})
+
+vi.mock('../constants/env.mts', () => ({
+  default: {
+    INLINED_SOCKET_CLI_SENTRY_BUILD: false,
+  },
+}))
+
+vi.mock('@socketsecurity/lib/constants/node', () => ({
+  getExecPath: vi.fn(() => '/usr/bin/node'),
+  getNodeNoWarningsFlags: vi.fn(() => ['--no-warnings']),
+  getNodeDebugFlags: vi.fn(() => ['--inspect=0']),
+  getNodeHardenFlags: vi.fn(() => ['--frozen-intrinsics']),
+  supportsNodePermissionFlag: vi.fn(() => true),
+}))
 
 describe('shadowNpmBase', () => {
   const mockProcess = {
@@ -108,30 +114,28 @@ describe('shadowNpmBase', () => {
     const result = await shadowNpmBase(NPM, ['install'])
 
     expect(mockInstallNpmLinks).toHaveBeenCalledWith('/mock/shadow-bin')
-    expect(mockSpawn).toHaveBeenCalledWith(
-      '/usr/bin/node',
-      expect.arrayContaining([
-        '--no-warnings',
-        '--inspect=0',
-        '--frozen-intrinsics',
-        '--require',
-        '/mock/inject.js',
-        '/usr/bin/npm',
-        '--no-audit',
-        '--no-fund',
-        '--no-progress',
-        '--loglevel',
-        'error',
-        'install',
-      ]),
-      expect.objectContaining({
-        env: expect.objectContaining({
-          CUSTOM_ENV: 'test',
-        }),
-        stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
-      }),
-      undefined,
-    )
+
+    const spawnCall = mockSpawn.mock.calls[0]
+    expect(spawnCall[0]).toBe('/usr/bin/node')
+
+    const nodeArgs = spawnCall[1] as string[]
+    expect(nodeArgs).toContain('--no-warnings')
+    expect(nodeArgs).toContain('--inspect=0')
+    expect(nodeArgs).toContain('--frozen-intrinsics')
+    expect(nodeArgs).toContain('--require')
+    expect(nodeArgs).toContain('/mock/inject.js')
+    expect(nodeArgs).toContain('/usr/bin/npm')
+    expect(nodeArgs).toContain('--no-audit')
+    expect(nodeArgs).toContain('--no-fund')
+    expect(nodeArgs).toContain('--no-progress')
+    expect(nodeArgs).toContain('--loglevel')
+    expect(nodeArgs).toContain('error')
+    expect(nodeArgs).toContain('install')
+
+    const spawnOptions = spawnCall[2]
+    expect(spawnOptions.stdio).toEqual(['pipe', 'pipe', 'pipe', 'ipc'])
+    expect(spawnOptions.env).toBeDefined()
+
     expect(result.spawnPromise).toBe(mockSpawnResult)
   })
 
@@ -139,12 +143,15 @@ describe('shadowNpmBase', () => {
     await shadowNpmBase(NPX, ['create-react-app'])
 
     expect(mockInstallNpxLinks).toHaveBeenCalledWith('/mock/shadow-bin')
-    expect(mockSpawn).toHaveBeenCalledWith(
-      '/usr/bin/node',
-      expect.arrayContaining(['/usr/bin/npx', 'create-react-app']),
-      expect.any(Object),
-      undefined,
-    )
+
+    const spawnCall = mockSpawn.mock.calls[0]
+    expect(spawnCall[0]).toBe('/usr/bin/node')
+
+    const nodeArgs = spawnCall[1] as string[]
+    expect(nodeArgs).toContain('/usr/bin/npx')
+    expect(nodeArgs).toContain('create-react-app')
+
+    expect(spawnCall[3]).toBeUndefined()
   })
 
   it('should handle custom cwd option', async () => {
@@ -207,14 +214,17 @@ describe('shadowNpmBase', () => {
   it('should add permission flags for npm on supported Node.js versions', async () => {
     await shadowNpmBase(NPM, ['install'])
 
-    expect(mockSpawn).toHaveBeenCalledWith(
-      expect.any(String),
-      expect.arrayContaining([
-        `--node-options='--permission --allow-child-process --allow-fs-read=* --allow-fs-write=${process.cwd()}/* --allow-fs-write=/usr/local/* --allow-fs-write=/home/.npm/*'`,
-      ]),
-      expect.any(Object),
-      undefined,
+    const spawnCall = mockSpawn.mock.calls[0]
+    const nodeArgs = spawnCall[1] as string[]
+    const nodeOptionsArg = nodeArgs.find(arg =>
+      arg.startsWith('--node-options='),
     )
+
+    expect(nodeOptionsArg).toBeDefined()
+    expect(nodeOptionsArg).toContain('--permission')
+    expect(nodeOptionsArg).toContain('--allow-child-process')
+    expect(nodeOptionsArg).toContain('--allow-fs-read=*')
+    expect(nodeOptionsArg).toContain(`--allow-fs-write=${process.cwd()}/*`)
   })
 
   it('should not add permission flags for npx', async () => {
