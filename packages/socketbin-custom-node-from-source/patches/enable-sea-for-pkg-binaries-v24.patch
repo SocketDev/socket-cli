@@ -1,0 +1,21 @@
+# @node-versions: v24.10.0+
+# @description: Enable SEA detection for pkg binaries
+# @requires: yao-pkg-patches
+#
+# Overrides the isSea binding to always return true, making pkg binaries
+# report as Single Executable Applications for consistency.
+#
+# This is required for pkg to properly detect and load embedded code.
+
+--- a/lib/sea.js
++++ b/lib/sea.js
+@@ -3,7 +3,8 @@ const {
+   ArrayBufferPrototypeSlice,
+ } = primordials;
+
+-const { isSea, getAsset: getAssetInternal, getAssetKeys: getAssetKeysInternal } = internalBinding('sea');
++const isSea = () => true;
++const { getAsset: getAssetInternal, getAssetKeys: getAssetKeysInternal } = internalBinding('sea');
+ const { TextDecoder } = require('internal/encoding');
+ const { validateString } = require('internal/validators');
+ const {

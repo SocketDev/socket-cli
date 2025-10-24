@@ -21,7 +21,7 @@ pnpm run build
 
 The build process:
 1. Downloads Node.js v24.10.0 source
-2. Applies Socket security patches from `build/patches/`
+2. Applies Socket security patches from `patches/`
 3. Configures and compiles Node.js
 4. Copies bootstrap code to internal modules
 5. Signs the binary (macOS)

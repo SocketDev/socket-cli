@@ -1,0 +1,35 @@
+# @node-versions: v24+
+# @description: Enable Socket Brotli builtin loading (minimal touch)
+# @phase: 3
+#
+# MINIMAL PATCH: Only 3 lines modified in node_builtins.cc
+#
+# This patch integrates the external Socket Brotli loader into Node.js's
+# builtin loading path. Changes:
+# 1. Include external Brotli loader header
+# 2. Replace ToStringChecked() call with Brotli-aware loader
+#
+# All decompression logic is in socket_brotli_builtin_loader.h (external).
+# The loader automatically falls back to standard loading for uncompressed
+# modules, so this is a transparent, zero-overhead change.
+
+--- a/src/node_builtins.cc
++++ b/src/node_builtins.cc
+@@ -6,6 +6,7 @@
+ #include "node_threadsafe_cow-inl.h"
+ #include "simdutf.h"
+ #include "util-inl.h"
++#include "socket_brotli_builtin_loader.h"  // Socket: External Brotli loader
+
+ namespace node {
+ namespace builtins {
+@@ -201,7 +202,8 @@ MaybeLocal<String> BuiltinLoader::LoadBuiltinSource(Isolate* isolate,
+     fprintf(stderr, "Cannot find native builtin: \"%s\".\n", id);
+     ABORT();
+   }
+-  return source_it->second.ToStringChecked(isolate);
++  // Socket: Use external Brotli loader (falls back to standard loading).
++  return ::socketsecurity::builtins::LoadBuiltinSourceWithBrotli(isolate, id, source_it->second);
+ #else   // !NODE_BUILTIN_MODULES_PATH
+   std::string filename = OnDiskFileName(id);
+

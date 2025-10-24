@@ -107,12 +107,12 @@ describe('@socketbin/custom-node package', () => {
     })
 
     it('should have wasm-bundle subdirectory', () => {
-      const wasmBundleDir = path.join(buildDir, 'wasm-bundle')
+      const wasmBundleDir = path.join(packageDir, 'wasm-bundle')
       expect(existsSync(wasmBundleDir)).toBe(true)
     })
 
     it('wasm-bundle should have Cargo.toml', () => {
-      const cargoPath = path.join(buildDir, 'wasm-bundle', 'Cargo.toml')
+      const cargoPath = path.join(packageDir, 'wasm-bundle', 'Cargo.toml')
       expect(existsSync(cargoPath)).toBe(true)
     })
   })
