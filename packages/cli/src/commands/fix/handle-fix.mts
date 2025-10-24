@@ -156,6 +156,7 @@ export async function handleFix({
       minSatisfying,
       orgSlug,
       outputFile,
+      outputKind,
       prCheck,
       rangeStyle,
       showAffectedDirectDependencies,

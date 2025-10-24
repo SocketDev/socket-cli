@@ -1,9 +1,10 @@
 import type { RangeStyle } from '../../utils/semver.mts'
+import type { OutputKind } from '../../types.mts'
 import type { Spinner } from '@socketsecurity/lib/spinner'
 
 export type FixConfig = {
-  autopilot: boolean
   applyFixes: boolean
+  autopilot: boolean
   cwd: string
   disableMajorUpdates: boolean
   exclude: string[]
@@ -13,10 +14,11 @@ export type FixConfig = {
   minimumReleaseAge: string
   minSatisfying: boolean
   orgSlug: string
+  outputFile: string
+  outputKind: OutputKind
   prCheck: boolean
   rangeStyle: RangeStyle
   showAffectedDirectDependencies: boolean
   spinner: Spinner | undefined
   unknownFlags: string[]
-  outputFile: string
 }
