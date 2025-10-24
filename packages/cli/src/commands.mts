@@ -22,7 +22,7 @@ import { cmdOrganizationPolicyLicense } from './commands/organization/cmd-organi
 import { cmdOrganizationPolicySecurity } from './commands/organization/cmd-organization-policy-security.mts'
 import { cmdOrganization } from './commands/organization/cmd-organization.mts'
 import { cmdPackage } from './commands/package/cmd-package.mts'
-// import { cmdPatch } from './commands/patch/cmd-patch.mts'
+import { cmdPatch } from './commands/patch/cmd-patch.mts'
 import { cmdPip } from './commands/pip/cmd-pip.mts'
 import { cmdPnpm } from './commands/pnpm/cmd-pnpm.mts'
 import { cmdRawNpm } from './commands/raw-npm/cmd-raw-npm.mts'
@@ -60,7 +60,7 @@ export const rootCommands = {
   optimize: cmdOptimize,
   organization: cmdOrganization,
   package: cmdPackage,
-  // patch: cmdPatch,
+  patch: cmdPatch,
   pip: cmdPip,
   'raw-npm': cmdRawNpm,
   'raw-npx': cmdRawNpx,

@@ -13,7 +13,7 @@ import type { CliSubcommand } from '../../utils/cli/with-subcommands.mjs'
 
 const description = 'Manage CVE patches for dependencies'
 
-const hidden = true
+const hidden = false
 
 export const cmdPatch: CliSubcommand = {
   description,
