@@ -12,8 +12,8 @@ describe('cmd-repository-list', () => {
   it('should have required command structure', async () => {
     const module = await import('./cmd-repository-list-simplified.mts')
     const cmd = module.default
-    expect(cmd.builder).toBeDefined()
+    expect(cmd.run).toBeDefined()
     expect(cmd.description).toBeDefined()
-    expect(cmd.handler).toBeDefined()
+    expect(typeof cmd.run).toBe('function')
   })
 })

@@ -149,3 +149,5 @@ export const cmdRepositoryListSimplified = buildCommand({
     )
   },
 })
+
+export default cmdRepositoryListSimplified

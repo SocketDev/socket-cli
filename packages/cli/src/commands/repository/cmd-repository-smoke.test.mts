@@ -103,7 +103,7 @@ describe('socket repos - smoke test scenarios', () => {
         '--config',
         fakeOrgConfig,
       )
-      expect(result.exitCode).toBe(2)
+      expect(result.exitCode).toBe(1)
 
       const jsonResponse = validateSocketJson(result.stdout, result.exitCode)
       expect(jsonResponse.ok).toBe(false)
@@ -118,7 +118,7 @@ describe('socket repos - smoke test scenarios', () => {
         '--config',
         fakeOrgConfig,
       )
-      expect(result.exitCode).toBe(2)
+      expect(result.exitCode).toBe(1)
 
       const jsonResponse = validateSocketJson(result.stdout, result.exitCode)
       expect(jsonResponse.ok).toBe(false)
@@ -133,7 +133,7 @@ describe('socket repos - smoke test scenarios', () => {
         '--config',
         fakeOrgConfig,
       )
-      expect(result.exitCode).toBe(2)
+      expect(result.exitCode).toBe(1)
 
       const jsonResponse = validateSocketJson(result.stdout, result.exitCode)
       expect(jsonResponse.ok).toBe(false)
@@ -147,7 +147,7 @@ describe('socket repos - smoke test scenarios', () => {
         '--config',
         fakeOrgConfig,
       )
-      expect(result.exitCode).toBe(2)
+      expect(result.exitCode).toBe(1)
 
       const jsonResponse = validateSocketJson(result.stdout, result.exitCode)
       expect(jsonResponse.ok).toBe(false)
@@ -164,7 +164,7 @@ describe('socket repos - smoke test scenarios', () => {
         '--config',
         fakeOrgConfig,
       )
-      expect(result.exitCode).toBe(2)
+      expect(result.exitCode).toBe(1)
 
       const jsonResponse = validateSocketJson(result.stdout, result.exitCode)
       expect(jsonResponse.ok).toBe(false)
