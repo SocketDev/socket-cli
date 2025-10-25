@@ -1,12 +1,24 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { outputCreateRepo } from './output-create-repo.mts'
-import { setupStandardOutputMocks } from '../../../test/helpers/index.mts'
-
 import type { CResult } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
-setupStandardOutputMocks()
+// Mock the dependencies.
+vi.mock('@socketsecurity/lib/logger', () => ({
+  logger: {
+    fail: vi.fn(),
+    log: vi.fn(),
+    success: vi.fn(),
+  },
+}))
+
+vi.mock('../../utils/output/result-json.mjs', () => ({
+  serializeResultJson: vi.fn(result => JSON.stringify(result)),
+}))
+
+vi.mock('../../utils/error/fail-msg-with-badge.mts', () => ({
+  failMsgWithBadge: vi.fn((msg, cause) => `${msg}: ${cause}`),
+}))
 
 describe('outputCreateRepo', () => {
   beforeEach(() => {
@@ -15,9 +27,10 @@ describe('outputCreateRepo', () => {
   })
 
   it('outputs JSON format for successful result', async () => {
-    const { logger } = await import('@socketsecurity/lib/logger')
-    const { serializeResultJson } = await import(
-      '../../utils/serialize-result-json.mts'
+    const { outputCreateRepo } = await import('./output-create-repo.mts')
+    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
+    const { serializeResultJson } = await vi.importMock(
+      '../../utils/output/result-json.mjs'
     )
     const mockLog = vi.mocked(logger.log)
     const mockSerialize = vi.mocked(serializeResultJson)
@@ -37,7 +50,8 @@ describe('outputCreateRepo', () => {
   })
 
   it('outputs error in JSON format', async () => {
-    const { logger } = await import('@socketsecurity/lib/logger')
+    const { outputCreateRepo } = await import('./output-create-repo.mts')
+    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
     const mockLog = vi.mocked(logger.log)
 
     const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> = {
@@ -54,7 +68,8 @@ describe('outputCreateRepo', () => {
   })
 
   it('outputs success message when slug matches requested name', async () => {
-    const { logger } = await import('@socketsecurity/lib/logger')
+    const { outputCreateRepo } = await import('./output-create-repo.mts')
+    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
     const mockSuccess = vi.mocked(logger.success)
 
     const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> = {
@@ -73,7 +88,8 @@ describe('outputCreateRepo', () => {
   })
 
   it('outputs success message with warning when slug differs from requested name', async () => {
-    const { logger } = await import('@socketsecurity/lib/logger')
+    const { outputCreateRepo } = await import('./output-create-repo.mts')
+    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
     const mockSuccess = vi.mocked(logger.success)
 
     const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> = {
@@ -92,9 +108,10 @@ describe('outputCreateRepo', () => {
   })
 
   it('outputs error in text format', async () => {
-    const { logger } = await import('@socketsecurity/lib/logger')
-    const { failMsgWithBadge } = await import(
-      '../../utils/fail-msg-with-badge.mts'
+    const { outputCreateRepo } = await import('./output-create-repo.mts')
+    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
+    const { failMsgWithBadge } = await vi.importMock(
+      '../../utils/error/fail-msg-with-badge.mts'
     )
     const mockFail = vi.mocked(logger.fail)
     const mockFailMsg = vi.mocked(failMsgWithBadge)
@@ -117,7 +134,8 @@ describe('outputCreateRepo', () => {
   })
 
   it('handles markdown output format', async () => {
-    const { logger } = await import('@socketsecurity/lib/logger')
+    const { outputCreateRepo } = await import('./output-create-repo.mts')
+    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
     const mockSuccess = vi.mocked(logger.success)
 
     const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> = {
@@ -135,7 +153,8 @@ describe('outputCreateRepo', () => {
   })
 
   it('handles empty slug properly', async () => {
-    const { logger } = await import('@socketsecurity/lib/logger')
+    const { outputCreateRepo } = await import('./output-create-repo.mts')
+    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
     const mockSuccess = vi.mocked(logger.success)
 
     const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> = {
@@ -153,6 +172,7 @@ describe('outputCreateRepo', () => {
   })
 
   it('sets default exit code when code is undefined', async () => {
+    const { outputCreateRepo } = await import('./output-create-repo.mts')
     const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> = {
       ok: false,
       message: 'Error without code',

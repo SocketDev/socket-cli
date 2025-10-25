@@ -1,17 +1,29 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { outputUpdateRepo } from './output-update-repo.mts'
 import {
   createErrorResult,
   createSuccessResult,
-  setupStandardOutputMocks,
 } from '../../../test/helpers/index.mts'
 
 import type { CResult } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 // Mock the dependencies.
-setupStandardOutputMocks()
+vi.mock('@socketsecurity/lib/logger', () => ({
+  logger: {
+    fail: vi.fn(),
+    log: vi.fn(),
+    success: vi.fn(),
+  },
+}))
+
+vi.mock('../../utils/output/result-json.mjs', () => ({
+  serializeResultJson: vi.fn(result => JSON.stringify(result)),
+}))
+
+vi.mock('../../utils/error/fail-msg-with-badge.mts', () => ({
+  failMsgWithBadge: vi.fn((msg, cause) => `${msg}: ${cause}`),
+}))
 
 describe('outputUpdateRepo', () => {
   beforeEach(() => {
@@ -20,9 +32,10 @@ describe('outputUpdateRepo', () => {
   })
 
   it('outputs JSON format for successful result', async () => {
-    const { logger } = await import('@socketsecurity/lib/logger')
-    const { serializeResultJson } = await import(
-      '../../utils/serialize/result-json.mts'
+    const { outputUpdateRepo } = await import('./output-update-repo.mts')
+    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
+    const { serializeResultJson } = await vi.importMock(
+      '../../utils/output/result-json.mjs'
     )
     const mockLog = vi.mocked(logger.log)
     const mockSerialize = vi.mocked(serializeResultJson)
@@ -40,7 +53,8 @@ describe('outputUpdateRepo', () => {
   })
 
   it('outputs error in JSON format', async () => {
-    const { logger } = await import('@socketsecurity/lib/logger')
+    const { outputUpdateRepo } = await import('./output-update-repo.mts')
+    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
     const mockLog = vi.mocked(logger.log)
 
     const result: CResult<SocketSdkSuccessResult<'updateRepository'>['data']> =
@@ -56,7 +70,8 @@ describe('outputUpdateRepo', () => {
   })
 
   it('outputs success message for successful update', async () => {
-    const { logger } = await import('@socketsecurity/lib/logger')
+    const { outputUpdateRepo } = await import('./output-update-repo.mts')
+    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
     const mockSuccess = vi.mocked(logger.success)
 
     const result: CResult<SocketSdkSuccessResult<'updateRepository'>['data']> =
@@ -73,8 +88,9 @@ describe('outputUpdateRepo', () => {
   })
 
   it('outputs error in text format', async () => {
-    const { logger } = await import('@socketsecurity/lib/logger')
-    const { failMsgWithBadge } = await import(
+    const { outputUpdateRepo } = await import('./output-update-repo.mts')
+    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
+    const { failMsgWithBadge } = await vi.importMock(
       '../../utils/error/fail-msg-with-badge.mts'
     )
     const mockFail = vi.mocked(logger.fail)
@@ -97,7 +113,8 @@ describe('outputUpdateRepo', () => {
   })
 
   it('handles markdown output format', async () => {
-    const { logger } = await import('@socketsecurity/lib/logger')
+    const { outputUpdateRepo } = await import('./output-update-repo.mts')
+    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
     const mockSuccess = vi.mocked(logger.success)
 
     const result: CResult<SocketSdkSuccessResult<'updateRepository'>['data']> =
@@ -113,7 +130,8 @@ describe('outputUpdateRepo', () => {
   })
 
   it('handles repository name with special characters', async () => {
-    const { logger } = await import('@socketsecurity/lib/logger')
+    const { outputUpdateRepo } = await import('./output-update-repo.mts')
+    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
     const mockSuccess = vi.mocked(logger.success)
 
     const result: CResult<SocketSdkSuccessResult<'updateRepository'>['data']> =
@@ -129,7 +147,8 @@ describe('outputUpdateRepo', () => {
   })
 
   it('handles empty repository name', async () => {
-    const { logger } = await import('@socketsecurity/lib/logger')
+    const { outputUpdateRepo } = await import('./output-update-repo.mts')
+    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
     const mockSuccess = vi.mocked(logger.success)
 
     const result: CResult<SocketSdkSuccessResult<'updateRepository'>['data']> =
@@ -145,6 +164,7 @@ describe('outputUpdateRepo', () => {
   })
 
   it('sets default exit code when code is undefined', async () => {
+    const { outputUpdateRepo } = await import('./output-update-repo.mts')
     const result: CResult<SocketSdkSuccessResult<'updateRepository'>['data']> =
       createErrorResult('Error without code')
 
