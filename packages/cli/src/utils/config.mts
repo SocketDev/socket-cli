@@ -165,13 +165,14 @@ export function findSocketYmlSync(
       ymlPath = path.join(dir, SOCKET_YAML)
       yml = safeReadFileSync(ymlPath)
     }
-    if (typeof yml === 'string') {
+    if (typeof yml === 'string' || Buffer.isBuffer(yml)) {
       try {
+        const ymlString = typeof yml === 'string' ? yml : yml.toString('utf8')
         return {
           ok: true,
           data: {
             path: ymlPath,
-            parsed: config.parseSocketConfig(yml),
+            parsed: config.parseSocketConfig(ymlString),
           },
         }
       } catch (e) {
