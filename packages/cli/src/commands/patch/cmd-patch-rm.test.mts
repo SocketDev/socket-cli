@@ -131,9 +131,10 @@ describe('socket patch rm', async () => {
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
       const json = JSON.parse(stdout)
-      expect(json.purl).toBe('pkg:npm/on-headers@1.0.2')
-      expect(json.filesRestored).toBeDefined()
-      expect(typeof json.filesRestored).toBe('number')
+      expect(json.ok).toBe(true)
+      expect(json.data?.purl).toBe('pkg:npm/on-headers@1.0.2')
+      expect(json.data?.filesRestored).toBeDefined()
+      expect(typeof json.data.filesRestored).toBe('number')
       expect(code, 'should exit with code 0').toBe(0)
     },
   )

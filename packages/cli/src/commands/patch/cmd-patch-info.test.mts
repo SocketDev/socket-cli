@@ -130,11 +130,12 @@ describe('socket patch info', async () => {
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
       const json = JSON.parse(stdout)
-      expect(json.purl).toBe('pkg:npm/on-headers@1.0.2')
-      expect(json.files).toBeDefined()
-      expect(json.files['index.js']).toBeDefined()
-      expect(json.vulnerabilities).toBeDefined()
-      expect(json.vulnerabilities['GHSA-76c9-3jph-rj3q']).toBeDefined()
+      expect(json.ok).toBe(true)
+      expect(json.data?.purl).toBe('pkg:npm/on-headers@1.0.2')
+      expect(json.data?.files).toBeDefined()
+      expect(json.data.files['index.js']).toBeDefined()
+      expect(json.data?.vulnerabilities).toBeDefined()
+      expect(json.data.vulnerabilities['GHSA-76c9-3jph-rj3q']).toBeDefined()
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
