@@ -13,9 +13,9 @@ vi.mock('./output-organization-list.mts', () => ({
   outputOrganizationList: vi.fn(),
 }))
 
-vi.mock('../../utils/debug.mts', () => ({
+vi.mock('@socketsecurity/lib/debug', () => ({
+  debug: vi.fn(),
   debugDir: vi.fn(),
-  debugFn: vi.fn(),
   debugLog: vi.fn(),
   isDebug: vi.fn(() => false),
 }))
@@ -107,42 +107,33 @@ describe('handleOrganizationList', () => {
   })
 
   it('passes debug messages correctly', async () => {
-    const { debugDir, debugFn } = await import('../../utils/debug.mts')
+    const { debug, debugDir } = await import('@socketsecurity/lib/debug')
     const { fetchOrganization } = await import('./fetch-organization-list.mts')
+    const mockDebug = vi.mocked(debug)
     const mockDebugDir = vi.mocked(debugDir)
-    const mockDebugFn = vi.mocked(debugFn)
     const mockFetch = vi.mocked(fetchOrganization)
 
     mockFetch.mockResolvedValue({ ok: true, data: [] })
 
     await handleOrganizationList('json')
 
-    expect(mockDebugFn).toHaveBeenCalledWith(
-      'notice',
-      'Fetching organization list',
-    )
-    expect(mockDebugDir).toHaveBeenCalledWith('inspect', {
-      outputKind: 'json',
-    })
-    expect(mockDebugFn).toHaveBeenCalledWith(
-      'notice',
+    expect(mockDebug).toHaveBeenCalledWith('Fetching organization list')
+    expect(mockDebugDir).toHaveBeenCalledWith({ outputKind: 'json' })
+    expect(mockDebug).toHaveBeenCalledWith(
       'Organization list fetched successfully',
     )
   })
 
   it('handles error case with debug messages', async () => {
-    const { debugFn } = await import('../../utils/debug.mts')
+    const { debug } = await import('@socketsecurity/lib/debug')
     const { fetchOrganization } = await import('./fetch-organization-list.mts')
-    const mockDebugFn = vi.mocked(debugFn)
+    const mockDebug = vi.mocked(debug)
     const mockFetch = vi.mocked(fetchOrganization)
 
     mockFetch.mockResolvedValue({ ok: false, error: 'Network error' })
 
     await handleOrganizationList('text')
 
-    expect(mockDebugFn).toHaveBeenCalledWith(
-      'notice',
-      'Organization list fetch failed',
-    )
+    expect(mockDebug).toHaveBeenCalledWith('Organization list fetch failed')
   })
 })
