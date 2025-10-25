@@ -45,21 +45,21 @@ export async function handlePatchCleanup({
 
     if (uuid) {
       // Clean up specific UUID.
-      spinner.start(`Cleaning up backups for ${uuid}`)
+      spinner?.start(`Cleaning up backups for ${uuid}`)
       await cleanupBackups(uuid)
       cleaned.push(uuid)
-      spinner.stop()
+      spinner?.stop()
       logger.log(`Cleaned up backups for ${uuid}`)
     } else if (all) {
       // Clean up all backups.
-      spinner.start('Finding all patch backups')
+      spinner?.start('Finding all patch backups')
       const allPatchUuids = await listAllPatches()
 
       if (allPatchUuids.length === 0) {
-        spinner.stop()
+        spinner?.stop()
         logger.log('No patch backups found')
       } else {
-        spinner.text(
+        spinner?.text(
           `Cleaning up ${allPatchUuids.length} ${pluralize('patch', { count: allPatchUuids.length })}`,
         )
 
@@ -69,14 +69,14 @@ export async function handlePatchCleanup({
           cleaned.push(patchUuid)
         }
 
-        spinner.stop()
+        spinner?.stop()
         logger.log(
           `Cleaned up backups for ${cleaned.length} ${pluralize('patch', { count: cleaned.length })}`,
         )
       }
     } else {
       // Clean up orphaned backups (not in manifest).
-      spinner.start('Reading patch manifest')
+      spinner?.start('Reading patch manifest')
 
       const dotSocketDirPath = normalizePath(path.join(cwd, DOT_SOCKET_DIR))
       const manifestPath = normalizePath(
@@ -94,7 +94,7 @@ export async function handlePatchCleanup({
         }
       }
 
-      spinner.text('Finding all patch backups')
+      spinner?.text('Finding all patch backups')
       const allPatchUuids = await listAllPatches()
 
       // Find orphaned UUIDs (in backups but not in manifest).
@@ -103,10 +103,10 @@ export async function handlePatchCleanup({
       )
 
       if (orphanedUuids.length === 0) {
-        spinner.stop()
+        spinner?.stop()
         logger.log('No orphaned patch backups found')
       } else {
-        spinner.text(
+        spinner?.text(
           `Cleaning up ${orphanedUuids.length} orphaned ${pluralize('backup', { count: orphanedUuids.length })}`,
         )
 
@@ -116,7 +116,7 @@ export async function handlePatchCleanup({
           cleaned.push(patchUuid)
         }
 
-        spinner.stop()
+        spinner?.stop()
         logger.log(
           `Cleaned up ${cleaned.length} orphaned ${pluralize('backup', { count: cleaned.length })}`,
         )
@@ -131,7 +131,7 @@ export async function handlePatchCleanup({
       outputKind,
     )
   } catch (e) {
-    spinner.stop()
+    spinner?.stop()
 
     let message = 'Failed to clean up patch backups'
     let cause = getErrorCause(e)
