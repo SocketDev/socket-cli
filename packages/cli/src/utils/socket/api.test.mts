@@ -100,17 +100,20 @@ describe('api utilities', () => {
 
     it('returns message for 404 Not Found', async () => {
       const result = await getErrorMessageForHttpStatusCode(404)
-      expect(result).toContain('not found')
+      expect(result).toContain('Not found')
+      expect(result).toContain("doesn't exist")
     })
 
     it('returns message for 500 Internal Server Error', async () => {
       const result = await getErrorMessageForHttpStatusCode(500)
-      expect(result).toContain('server side problem')
+      expect(result).toContain('Server error')
+      expect(result).toContain('internal problem')
     })
 
     it('returns generic message for unknown status code', async () => {
       const result = await getErrorMessageForHttpStatusCode(418)
-      expect(result).toContain('status code 418')
+      expect(result).toContain('HTTP 418')
+      expect(result).toContain('unexpected status code')
     })
   })
 
