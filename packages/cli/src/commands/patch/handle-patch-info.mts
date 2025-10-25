@@ -43,7 +43,7 @@ export async function handlePatchInfo({
   spinner,
 }: HandlePatchInfoConfig): Promise<void> {
   try {
-    spinner.start('Reading patch manifest')
+    spinner?.start('Reading patch manifest')
 
     const dotSocketDirPath = normalizePath(path.join(cwd, DOT_SOCKET_DIR))
     const manifestPath = normalizePath(
@@ -57,11 +57,11 @@ export async function handlePatchInfo({
     const patch = validated.patches[normalizedPurl]
 
     if (!patch) {
-      spinner.stop()
+      spinner?.stop()
       throw new InputError(`Patch not found for PURL: ${purl}`)
     }
 
-    spinner.stop()
+    spinner?.stop()
 
     logger.log(`Patch information for: ${normalizedPurl}`)
 
@@ -84,7 +84,7 @@ export async function handlePatchInfo({
       outputKind,
     )
   } catch (e) {
-    spinner.stop()
+    spinner?.stop()
 
     if (e instanceof InputError) {
       throw e
