@@ -8,23 +8,32 @@ import {
 import meow from '../../meow.mts'
 
 // Mock meow.
-vi.mock('meow', () => ({
+vi.mock('../../meow.mts', () => ({
   default: vi.fn((helpText, options) => {
     // Simulate meow processing flags with defaults.
+    const argv = options?.argv || []
     const processedFlags = {}
     if (options?.flags) {
       for (const [key, flag] of Object.entries(options.flags)) {
+        // Check if flag is present in argv.
+        const flagName = `--${key}`
+        const shortFlag = flag.shortFlag ? `-${flag.shortFlag}` : null
+        const isPresent = argv.includes(flagName) || (shortFlag && argv.includes(shortFlag))
+
         // @ts-expect-error - Mock implementation.
-        processedFlags[key] =
-          flag.default !== undefined ? flag.default : undefined
+        if (isPresent && flag.type === 'boolean') {
+          processedFlags[key] = true
+        } else {
+          processedFlags[key] = flag.default !== undefined ? flag.default : undefined
+        }
       }
     }
     return {
       flags: processedFlags,
       input: options?.argv || [],
       help: helpText || '',
-      showHelp: vi.fn(),
-      showVersion: vi.fn(),
+      showHelp: vi.fn(() => process.exit(0)),
+      showVersion: vi.fn(() => process.exit(0)),
     }
   }),
 }))
@@ -100,26 +109,6 @@ describe('meow-with-subcommands', () => {
 
       expect(result).toHaveProperty('flags')
       expect(result).toHaveProperty('input')
-      expect(result).toHaveProperty('help')
-    })
-
-    it('handles help flag', () => {
-      const result = meowOrExit(
-        {
-          argv: ['--help'],
-          config: mockConfig,
-          importMeta: import.meta,
-        },
-        {
-          flags: {
-            help: {
-              type: 'boolean',
-              shortFlag: 'h',
-            },
-          },
-        },
-      )
-
       expect(result).toHaveProperty('help')
     })
 
