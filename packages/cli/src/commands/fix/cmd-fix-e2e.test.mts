@@ -37,7 +37,7 @@ async function createTempFixtureCopy(
   const sourceDir = path.join(fixtureBaseDir, fixtureName)
   const tempDir = path.join(fixtureBaseDir, `${fixtureName}-temp-${Date.now()}`)
 
-  await fs.cp(sourceDir, tempDir, { recursive: true })
+  fs.cp(sourceDir, tempDir, { recursive: true })
 
   return {
     path: tempDir,

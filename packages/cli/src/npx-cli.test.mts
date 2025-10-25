@@ -46,7 +46,7 @@ describe('npx-cli', () => {
 
   it('should set initial exit code to 1', async () => {
     const originalArgv = process.argv
-    process.argv = ['node', 'npx-cli.mjs', 'create-react-app', 'my-app']
+    process.argv = ['node', 'npx-cli.mts', 'create-react-app', 'my-app']
 
     try {
       const promise = runNpxCli()
@@ -59,7 +59,7 @@ describe('npx-cli', () => {
 
   it('should call shadowNpxBin with correct arguments', async () => {
     const originalArgv = process.argv
-    process.argv = ['node', 'npx-cli.mjs', 'create-next-app@latest', 'my-app']
+    process.argv = ['node', 'npx-cli.mts', 'create-next-app@latest', 'my-app']
 
     try {
       await runNpxCli()
@@ -77,7 +77,7 @@ describe('npx-cli', () => {
 
   it('should handle process exit with numeric code', async () => {
     const originalArgv = process.argv
-    process.argv = ['node', 'npx-cli.mjs', 'eslint', '.']
+    process.argv = ['node', 'npx-cli.mts', 'eslint', '.']
 
     // Mock spawn result with exit code 1.
     mockShadowNpxBin.mockResolvedValue(createMockSpawnResult(1))
@@ -93,7 +93,7 @@ describe('npx-cli', () => {
 
   it('should handle process exit with signal', async () => {
     const originalArgv = process.argv
-    process.argv = ['node', 'npx-cli.mjs', 'webpack-dev-server']
+    process.argv = ['node', 'npx-cli.mts', 'webpack-dev-server']
 
     // Mock spawn result with signal.
     mockShadowNpxBin.mockResolvedValue({
@@ -115,7 +115,7 @@ describe('npx-cli', () => {
 
   it('should handle empty arguments array', async () => {
     const originalArgv = process.argv
-    process.argv = ['node', 'npx-cli.mjs']
+    process.argv = ['node', 'npx-cli.mts']
 
     try {
       await runNpxCli()
@@ -130,7 +130,7 @@ describe('npx-cli', () => {
 
   it('should use stdio inherit for process communication', async () => {
     const originalArgv = process.argv
-    process.argv = ['node', 'npx-cli.mjs', 'typescript', '--version']
+    process.argv = ['node', 'npx-cli.mts', 'typescript', '--version']
 
     try {
       await runNpxCli()
@@ -148,7 +148,7 @@ describe('npx-cli', () => {
 
   it('should wait for spawn promise completion', async () => {
     const originalArgv = process.argv
-    process.argv = ['node', 'npx-cli.mjs', 'jest', '--version']
+    process.argv = ['node', 'npx-cli.mts', 'jest', '--version']
 
     try {
       await runNpxCli()

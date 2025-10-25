@@ -37,7 +37,7 @@ vi.mock('../../utils/validation/check-input.mts', () => ({
   checkCommandInput: vi.fn(),
 }))
 
-vi.mock('../../utils/fs/path-resolve.mjs', () => ({
+vi.mock('../../utils/fs/path-resolve.mts', () => ({
   getPackageFilesForScan: vi.fn(),
 }))
 
@@ -54,7 +54,7 @@ describe('handleScanReach', () => {
       '../../utils/validation/check-input.mts'
     )
     const { getPackageFilesForScan } = await import(
-      '../../utils/fs/path-resolve.mjs'
+      '../../utils/fs/path-resolve.mts'
     )
 
     const mockFetchSupported = vi.mocked(fetchSupportedScanFileNames)
@@ -133,7 +133,7 @@ describe('handleScanReach', () => {
       '../../utils/validation/check-input.mts'
     )
     const { getPackageFilesForScan } = await import(
-      '../../utils/fs/path-resolve.mjs'
+      '../../utils/fs/path-resolve.mts'
     )
 
     const mockFetchSupported = vi.mocked(fetchSupportedScanFileNames)
@@ -173,7 +173,7 @@ describe('handleScanReach', () => {
       '../../utils/validation/check-input.mts'
     )
     const { getPackageFilesForScan } = await import(
-      '../../utils/fs/path-resolve.mjs'
+      '../../utils/fs/path-resolve.mts'
     )
 
     const mockFetchSupported = vi.mocked(fetchSupportedScanFileNames)

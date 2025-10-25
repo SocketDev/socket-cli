@@ -18,7 +18,7 @@ describe('outputQuota', () => {
   it('outputs JSON format for successful result', async () => {
     const { logger } = await import('@socketsecurity/lib/logger')
     const { serializeResultJson } = await import(
-      '../../utils/output/result-json.mjs'
+      '../../utils/output/result-json.mts'
     )
     const mockLog = vi.mocked(logger.log)
     const mockSerialize = vi.mocked(serializeResultJson)

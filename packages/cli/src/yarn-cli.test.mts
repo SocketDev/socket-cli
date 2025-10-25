@@ -58,7 +58,7 @@ describe('yarn-cli', () => {
 
   it('should set initial exit code to 1', async () => {
     const originalArgv = process.argv
-    process.argv = ['node', 'yarn-cli.mjs', 'install']
+    process.argv = ['node', 'yarn-cli.mts', 'install']
 
     try {
       const promise = runYarnCli()
@@ -71,7 +71,7 @@ describe('yarn-cli', () => {
 
   it('should call shadowYarnBin with correct arguments', async () => {
     const originalArgv = process.argv
-    process.argv = ['node', 'yarn-cli.mjs', 'add', 'react', 'react-dom']
+    process.argv = ['node', 'yarn-cli.mts', 'add', 'react', 'react-dom']
 
     try {
       await runYarnCli()
@@ -91,7 +91,7 @@ describe('yarn-cli', () => {
 
   it('should handle process exit with numeric code', async () => {
     const originalArgv = process.argv
-    process.argv = ['node', 'yarn-cli.mjs', 'build']
+    process.argv = ['node', 'yarn-cli.mts', 'build']
 
     // Mock spawn result with exit code 1.
     mockShadowYarnBin.mockResolvedValue(createMockSpawnResult(1))
@@ -115,7 +115,7 @@ describe('yarn-cli', () => {
 
   it('should handle process exit with signal', async () => {
     const originalArgv = process.argv
-    process.argv = ['node', 'yarn-cli.mjs', 'start']
+    process.argv = ['node', 'yarn-cli.mts', 'start']
 
     // Mock spawn result with signal.
     const promise = Promise.resolve({
@@ -148,7 +148,7 @@ describe('yarn-cli', () => {
 
   it('should handle empty arguments array', async () => {
     const originalArgv = process.argv
-    process.argv = ['node', 'yarn-cli.mjs']
+    process.argv = ['node', 'yarn-cli.mts']
 
     try {
       await runYarnCli()
@@ -166,7 +166,7 @@ describe('yarn-cli', () => {
   it('should preserve environment variables in spawn options', async () => {
     const originalArgv = process.argv
     const originalEnv = process.env
-    process.argv = ['node', 'yarn-cli.mjs', 'workspace', 'list']
+    process.argv = ['node', 'yarn-cli.mts', 'workspace', 'list']
     process.env = { ...originalEnv, YARN_CACHE_FOLDER: '/tmp/yarn-cache' }
 
     try {
@@ -185,7 +185,7 @@ describe('yarn-cli', () => {
 
   it('should wait for spawn promise completion', async () => {
     const originalArgv = process.argv
-    process.argv = ['node', 'yarn-cli.mjs', 'info', 'lodash']
+    process.argv = ['node', 'yarn-cli.mts', 'info', 'lodash']
 
     try {
       await runYarnCli()

@@ -41,9 +41,9 @@ import {
 } from '../constants/config.mts'
 import { getSocketAppDataPath } from '../constants/paths.mts'
 import { SOCKET_YAML, SOCKET_YML } from '../constants/socket.mts'
-import { getErrorCause } from './error/errors.mjs'
+import { getErrorCause } from './error/errors.mts'
 
-import type { CResult } from '../types.mjs'
+import type { CResult } from '../types.mts'
 import type { SocketYml } from '@socketsecurity/config'
 
 export interface LocalConfig {
