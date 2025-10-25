@@ -1,0 +1,29 @@
+{
+  "name": "@socketsecurity/sbom-generator",
+  "version": "1.0.0",
+  "description": "Type-safe CycloneDX SBOM generator for multi-ecosystem projects",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": "./src/index.mts",
+    "./types": "./src/types/index.mts",
+    "./parsers": "./src/parsers/index.mts",
+    "./enrichment": "./src/enrichment/index.mts",
+    "./formatters": "./src/formatters/index.mts"
+  },
+  "scripts": {
+    "test": "vitest",
+    "test:watch": "vitest watch",
+    "type": "tsgo"
+  },
+  "dependencies": {
+    "@iarna/toml": "^2.2.5",
+    "@socketsecurity/lib": "workspace:*",
+    "@yarnpkg/parsers": "^3.0.0",
+    "fast-xml-parser": "^4.3.2",
+    "yaml": "^2.3.4"
+  },
+  "devDependencies": {
+    "vitest": "^2.0.0"
+  }
+}
