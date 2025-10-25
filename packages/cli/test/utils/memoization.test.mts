@@ -7,7 +7,7 @@ import {
   memoizeAsync,
   memoizeWeak,
   once,
-} from '../../../src/utils/memoization.mts'
+} from '../../src/utils/memoization.mts'
 
 describe('memoize', () => {
   beforeEach(() => {

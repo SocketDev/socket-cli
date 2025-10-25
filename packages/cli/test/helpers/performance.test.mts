@@ -12,7 +12,7 @@ import {
   perfCheckpoint,
   perfTimer,
   trackMemory,
-} from '../../../src/utils/performance.mts'
+} from '../../src/utils/performance.mts'
 
 describe('performance utilities', () => {
   beforeEach(() => {

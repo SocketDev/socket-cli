@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { extractName, extractOwner } from '../sanitize-names.mts'
+import { extractName, extractOwner } from './sanitize-names.mts'
 
 // Mock constants.
 vi.mock('../constants.mts', () => ({
