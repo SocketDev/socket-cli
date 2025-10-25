@@ -36,7 +36,7 @@ describe('outputListRepos', () => {
     const mockLog = vi.mocked(logger.log)
     const mockSerialize = vi.mocked(serializeResultJson)
 
-    const result: CResult<SocketSdkSuccessResult<'getOrgRepoList'>['data']> =
+    const result: CResult<SocketSdkSuccessResult<'listRepositories'>['data']> =
       createSuccessResult({
         results: [
           {
@@ -70,7 +70,7 @@ describe('outputListRepos', () => {
     const { logger } = await import('@socketsecurity/lib/logger')
     const mockLog = vi.mocked(logger.log)
 
-    const result: CResult<SocketSdkSuccessResult<'getOrgRepoList'>['data']> =
+    const result: CResult<SocketSdkSuccessResult<'listRepositories'>['data']> =
       createErrorResult('Unauthorized', {
         cause: 'Invalid API token',
         code: 2,
@@ -106,7 +106,7 @@ describe('outputListRepos', () => {
       },
     ]
 
-    const result: CResult<SocketSdkSuccessResult<'getOrgRepoList'>['data']> =
+    const result: CResult<SocketSdkSuccessResult<'listRepositories'>['data']> =
       createSuccessResult({
         results: repos,
       })
@@ -144,7 +144,7 @@ describe('outputListRepos', () => {
     const mockFail = vi.mocked(logger.fail)
     const mockFailMsg = vi.mocked(failMsgWithBadge)
 
-    const result: CResult<SocketSdkSuccessResult<'getOrgRepoList'>['data']> =
+    const result: CResult<SocketSdkSuccessResult<'listRepositories'>['data']> =
       createErrorResult('Failed to fetch repositories', {
         cause: 'Network error',
         code: 1,
@@ -164,7 +164,7 @@ describe('outputListRepos', () => {
     const { logger } = await import('@socketsecurity/lib/logger')
     const mockInfo = vi.mocked(logger.info)
 
-    const result: CResult<SocketSdkSuccessResult<'getOrgRepoList'>['data']> =
+    const result: CResult<SocketSdkSuccessResult<'listRepositories'>['data']> =
       createSuccessResult({
         results: [
           {
@@ -188,7 +188,7 @@ describe('outputListRepos', () => {
     const { logger } = await import('@socketsecurity/lib/logger')
     const mockInfo = vi.mocked(logger.info)
 
-    const result: CResult<SocketSdkSuccessResult<'getOrgRepoList'>['data']> =
+    const result: CResult<SocketSdkSuccessResult<'listRepositories'>['data']> =
       createSuccessResult({
         results: [],
       })
@@ -213,7 +213,7 @@ describe('outputListRepos', () => {
     const chalkTable = await import('chalk-table')
     const mockChalkTable = vi.mocked(chalkTable.default)
 
-    const result: CResult<SocketSdkSuccessResult<'getOrgRepoList'>['data']> =
+    const result: CResult<SocketSdkSuccessResult<'listRepositories'>['data']> =
       createSuccessResult({
         results: [],
       })
@@ -224,7 +224,7 @@ describe('outputListRepos', () => {
   })
 
   it('sets default exit code when code is undefined', async () => {
-    const result: CResult<SocketSdkSuccessResult<'getOrgRepoList'>['data']> =
+    const result: CResult<SocketSdkSuccessResult<'listRepositories'>['data']> =
       createErrorResult('Error without code')
 
     await outputListRepos(result, 'json', 1, null, 'name', 10, 'asc')

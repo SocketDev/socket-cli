@@ -24,7 +24,7 @@ describe('fetchCreateRepo', () => {
     const mockSetupSdk = vi.mocked(setupSdk)
 
     const mockSdk = {
-      createOrgRepo: vi.fn().mockResolvedValue({
+      createRepository: vi.fn().mockResolvedValue({
         success: true,
         data: {
           id: 'repo-123',
@@ -55,7 +55,7 @@ describe('fetchCreateRepo', () => {
       visibility: 'private',
     })
 
-    expect(mockSdk.createOrgRepo).toHaveBeenCalledWith('test-org', {
+    expect(mockSdk.createRepository).toHaveBeenCalledWith('test-org', {
       name: 'my-new-repo',
       homepage: 'https://github.com/test-org/my-new-repo',
       description: 'A new repository',
@@ -88,7 +88,7 @@ describe('fetchCreateRepo', () => {
 
   it('handles API call failure', async () => {
     await setupSdkMockError(
-      'createOrgRepo',
+      'createRepository',
       new Error('Repository already exists'),
       409,
     )
@@ -113,7 +113,7 @@ describe('fetchCreateRepo', () => {
     const mockHandleApi = vi.mocked(handleApiCall)
 
     const mockSdk = {
-      createOrgRepo: vi.fn().mockResolvedValue({}),
+      createRepository: vi.fn().mockResolvedValue({}),
     }
 
     mockSetupSdk.mockResolvedValue(createSuccessResult(mockSdk))
@@ -146,7 +146,7 @@ describe('fetchCreateRepo', () => {
     const mockHandleApi = vi.mocked(handleApiCall)
 
     const mockSdk = {
-      createOrgRepo: vi.fn().mockResolvedValue({}),
+      createRepository: vi.fn().mockResolvedValue({}),
     }
 
     mockSetupSdk.mockResolvedValue(createSuccessResult(mockSdk))
@@ -161,7 +161,7 @@ describe('fetchCreateRepo', () => {
       visibility: 'private',
     })
 
-    expect(mockSdk.createOrgRepo).toHaveBeenCalledWith('simple-org', {
+    expect(mockSdk.createRepository).toHaveBeenCalledWith('simple-org', {
       name: 'simple-repo',
       description: '',
       homepage: '',
@@ -177,7 +177,7 @@ describe('fetchCreateRepo', () => {
     const mockHandleApi = vi.mocked(handleApiCall)
 
     const mockSdk = {
-      createOrgRepo: vi.fn().mockResolvedValue({}),
+      createRepository: vi.fn().mockResolvedValue({}),
     }
 
     mockSetupSdk.mockResolvedValue(createSuccessResult(mockSdk))
@@ -194,7 +194,7 @@ describe('fetchCreateRepo', () => {
 
     await fetchCreateRepo(fullConfig)
 
-    expect(mockSdk.createOrgRepo).toHaveBeenCalledWith('config-org', {
+    expect(mockSdk.createRepository).toHaveBeenCalledWith('config-org', {
       name: 'full-config-repo',
       homepage: 'https://github.com/org/full-config-repo',
       description: 'Repository with full configuration',
@@ -210,7 +210,7 @@ describe('fetchCreateRepo', () => {
     const mockHandleApi = vi.mocked(handleApiCall)
 
     const mockSdk = {
-      createOrgRepo: vi.fn().mockResolvedValue({}),
+      createRepository: vi.fn().mockResolvedValue({}),
     }
 
     mockSetupSdk.mockResolvedValue(createSuccessResult(mockSdk))
@@ -227,6 +227,6 @@ describe('fetchCreateRepo', () => {
     })
 
     // The function should work without prototype pollution issues.
-    expect(mockSdk.createOrgRepo).toHaveBeenCalled()
+    expect(mockSdk.createRepository).toHaveBeenCalled()
   })
 })
