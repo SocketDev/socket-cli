@@ -101,11 +101,11 @@ export function createOutputMocks() {
  * Setup common module mocks for SDK operations
  */
 export function setupSdkModuleMocks() {
-  vi.mock('../../utils/api.mts', () => ({
+  vi.mock('../../src/utils/socket/api.mts', () => ({
     handleApiCall: vi.fn(),
   }))
 
-  vi.mock('../../utils/sdk.mts', () => ({
+  vi.mock('../../src/utils/socket/sdk.mts', () => ({
     setupSdk: vi.fn(),
     withSdk: vi.fn(),
   }))
@@ -126,11 +126,11 @@ export function setupOutputModuleMocks() {
     },
   }))
 
-  vi.mock('../../utils/fail-msg-with-badge.mts', () => ({
+  vi.mock('../../src/utils/error/fail-msg-with-badge.mts', () => ({
     failMsgWithBadge: vi.fn((msg, cause) => `${msg}: ${cause}`),
   }))
 
-  vi.mock('../../utils/serialize-result-json.mts', () => ({
+  vi.mock('../../src/utils/output/result-json.mts', () => ({
     serializeResultJson: vi.fn(result => JSON.stringify(result)),
   }))
 }
