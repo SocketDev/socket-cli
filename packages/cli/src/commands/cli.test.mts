@@ -42,9 +42,7 @@ describe('socket root command', async () => {
       `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           \\xd7 Received an unknown command: ask
-        \\xd7 Received an unknown command: console
-             _____         _       _          /---------------
+           _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
             |_____|___|___|_,_|___|_|.dev     | Command: \`socket\`, cwd: <redacted>"
