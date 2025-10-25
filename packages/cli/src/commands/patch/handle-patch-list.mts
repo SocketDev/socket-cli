@@ -80,13 +80,17 @@ export async function handlePatchList({
     spinner?.stop()
 
     if (patches.length === 0) {
-      logger.log('No patches found in manifest')
+      if (outputKind === 'text') {
+        logger.log('No patches found in manifest')
+      }
       return
     }
 
-    logger.log(
-      `Found ${patches.length} ${pluralize('patch', { count: patches.length })} in manifest`,
-    )
+    if (outputKind === 'text') {
+      logger.log(
+        `Found ${patches.length} ${pluralize('patch', { count: patches.length })} in manifest`,
+      )
+    }
 
     // Interactive mode: Let user select patches to apply.
     if (interactive) {
