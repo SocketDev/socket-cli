@@ -13,7 +13,7 @@ export async function fetchScanMetadata(
   orgSlug: string,
   scanId: string,
   options?: FetchScanMetadataOptions | undefined,
-): Promise<CResult<SocketSdkSuccessResult<'getOrgFullScanMetadata'>['data']>> {
+): Promise<CResult<SocketSdkSuccessResult<'getFullScanMetadata'>['data']>> {
   const { sdkOpts } = {
     __proto__: null,
     ...options,
@@ -25,7 +25,7 @@ export async function fetchScanMetadata(
   }
   const sockSdk = sockSdkCResult.data
 
-  return await handleApiCall(sockSdk.getOrgFullScanMetadata(orgSlug, scanId), {
+  return await handleApiCall(sockSdk.getFullScanMetadata(orgSlug, scanId), {
     description: 'meta data for a full scan',
   })
 }
