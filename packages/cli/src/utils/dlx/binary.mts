@@ -395,7 +395,7 @@ export async function listDlxCache(): Promise<
       const metadata = (await readJson(metaPath, {
         throws: false,
       })) as DlxMetadata | null
-      if (!metadata) {
+      if (!metadata || !metadata.url || !metadata.timestamp) {
         continue
       }
 
