@@ -47,7 +47,7 @@ export async function handlePatchList({
   spinner,
 }: HandlePatchListConfig): Promise<void> {
   try {
-    spinner.start('Reading patch manifest')
+    spinner?.start('Reading patch manifest')
 
     const dotSocketDirPath = normalizePath(path.join(cwd, DOT_SOCKET_DIR))
     const manifestPath = normalizePath(
@@ -77,7 +77,7 @@ export async function handlePatchList({
       })
     }
 
-    spinner.stop()
+    spinner?.stop()
 
     if (patches.length === 0) {
       logger.log('No patches found in manifest')
@@ -189,7 +189,7 @@ export async function handlePatchList({
       outputKind,
     )
   } catch (e) {
-    spinner.stop()
+    spinner?.stop()
 
     let message = 'Failed to list patches'
     let cause = getErrorCause(e)

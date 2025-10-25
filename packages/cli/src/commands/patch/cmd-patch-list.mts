@@ -123,7 +123,7 @@ async function run(
     )
   }
 
-  const spinner = getSpinner()!
+  const spinner = getSpinner()
 
   await handlePatchList({
     cwd,

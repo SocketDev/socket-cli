@@ -124,7 +124,7 @@ async function run(
     )
   }
 
-  const spinner = getSpinner()!
+  const spinner = getSpinner()
 
   const purlObjs = arrayUnique(cmdFlagValueToArray(cli.flags['purl']))
     .map(p => getPurlObject(p, { throws: false }))
