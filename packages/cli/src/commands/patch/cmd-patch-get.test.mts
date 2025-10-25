@@ -178,11 +178,12 @@ describe('socket patch get', async () => {
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
       const json = JSON.parse(stdout)
-      expect(json.purl).toBe('pkg:npm/on-headers@1.0.2')
-      expect(json.files).toBeDefined()
-      expect(Array.isArray(json.files)).toBe(true)
-      expect(json.files).toContain('index.js')
-      expect(json.outputDir).toBeDefined()
+      expect(json.ok).toBe(true)
+      expect(json.data?.purl).toBe('pkg:npm/on-headers@1.0.2')
+      expect(json.data?.files).toBeDefined()
+      expect(Array.isArray(json.data.files)).toBe(true)
+      expect(json.data.files).toContain('index.js')
+      expect(json.data?.outputDir).toBeDefined()
       expect(code, 'should exit with code 0').toBe(0)
     },
   )

@@ -114,8 +114,9 @@ describe('socket patch cleanup', async () => {
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
       const json = JSON.parse(stdout)
-      expect(json.cleaned).toBeDefined()
-      expect(Array.isArray(json.cleaned)).toBe(true)
+      expect(json.ok).toBe(true)
+      expect(json.data?.cleaned).toBeDefined()
+      expect(Array.isArray(json.data.cleaned)).toBe(true)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
