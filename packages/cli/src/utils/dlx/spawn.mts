@@ -61,11 +61,15 @@ export async function spawnDlx(
   const packageString = `${packageSpec.name}@${packageSpec.version}`
 
   // Use Socket's dlxPackage to install and execute.
-  const result = await dlxPackage(args, {
-    force,
-    package: packageString,
-    spawnOptions: shadowOptions,
-  }, spawnExtra)
+  const result = await dlxPackage(
+    args,
+    {
+      force,
+      package: packageString,
+      spawnOptions: shadowOptions,
+    },
+    spawnExtra,
+  )
 
   return {
     spawnPromise: result.spawnPromise,

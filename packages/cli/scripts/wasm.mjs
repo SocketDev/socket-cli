@@ -6,11 +6,13 @@
  *
  * COMMANDS:
  * - --build:    Build WASM bundle from source (requires Python, Rust, wasm-pack)
+ * - --dev:      Fast dev build (3-5x faster, use with --build)
  * - --download: Download pre-built WASM bundle from GitHub releases
  * - --help:     Show this help message
  *
  * USAGE:
- *   node scripts/wasm.mjs --build
+ *   node scripts/wasm.mjs --build                 # Production build
+ *   node scripts/wasm.mjs --build --dev           # Fast dev build
  *   node scripts/wasm.mjs --download
  *   node scripts/wasm.mjs --help
  */
@@ -56,9 +58,14 @@ function showHelp() {
 
 Commands:
   --build     Build WASM bundle from source
-              Requirements: Python 3.8+ (auto-installs packages, Rust, wasm-pack, binaryen)
+              Requirements: Python 3.8+, Rust, wasm-pack, binaryen
               Time: ~10-20 minutes (first run), ~5 minutes (subsequent)
               Size: ~115MB output
+
+  --dev       Fast dev build (use with --build)
+              Optimizations: Minimal (opt-level=1, no LTO)
+              Time: ~2-5 minutes (3-5x faster than production)
+              Size: Similar to production (stripped)
 
   --download  Download pre-built WASM bundle from GitHub releases
               Requirements: Internet connection
@@ -68,16 +75,27 @@ Commands:
   --help      Show this help message
 
 Usage:
-  node scripts/wasm.mjs --build
+  node scripts/wasm.mjs --build           # Production build
+  node scripts/wasm.mjs --build --dev     # Fast dev build
   node scripts/wasm.mjs --download
   node scripts/wasm.mjs --help
 
 Examples:
-  # Build from source (for development)
+  # Build from source for production
   node scripts/wasm.mjs --build
+
+  # Fast dev build for iteration (3-5x faster)
+  node scripts/wasm.mjs --build --dev
 
   # Download pre-built bundle (for quick setup)
   node scripts/wasm.mjs --download
+
+Optimizations:
+  - Cargo profiles: dev-wasm (fast) vs release (optimized)
+  - Thin LTO: 5-10% faster builds than full LTO
+  - Strip symbols: 5-10% size reduction
+  - wasm-opt -Oz: 5-15% additional size reduction
+  - Brotli compression: ~70% final size reduction
 
 Notes:
   - The WASM bundle contains all AI models with INT4 quantization
@@ -112,8 +130,15 @@ async function exec(command, args, options = {}) {
  * Build WASM bundle from source.
  */
 async function buildWasm() {
+  const isDev = process.argv.includes('--dev')
+
   logger.info('╔═══════════════════════════════════════════════════╗')
-  logger.info('║   Building WASM Bundle from Source               ║')
+  if (isDev) {
+    logger.info('║   Building WASM Bundle (Dev Mode)                ║')
+    logger.info('║   3-5x faster builds with minimal optimization   ║')
+  } else {
+    logger.info('║   Building WASM Bundle from Source               ║')
+  }
   logger.info('╚═══════════════════════════════════════════════════╝\n')
 
   const convertScript = path.join(__dirname, 'wasm', 'convert-codet5.mjs')
@@ -132,7 +157,11 @@ async function buildWasm() {
   // Step 2: Build unified WASM bundle.
   logger.info('\nStep 2: Building unified WASM bundle...\n')
   try {
-    await exec('node', [buildScript], { stdio: 'inherit' })
+    const buildArgs = [buildScript]
+    if (isDev) {
+      buildArgs.push('--dev')
+    }
+    await exec('node', buildArgs, { stdio: 'inherit' })
   } catch (e) {
     logger.error('\n❌ WASM bundle build failed')
     logger.error(`Error: ${e.message}`)

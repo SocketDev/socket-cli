@@ -1,0 +1,16 @@
+{
+  "name": "@socketsecurity/yoga-layout",
+  "version": "1.0.0",
+  "description": "Custom Yoga Layout WASM build optimized for Socket CLI",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "build:force": "node scripts/build.mjs --force",
+    "clean": "node scripts/clean.mjs"
+  },
+  "dependencies": {
+    "@socketsecurity/build-infra": "workspace:*",
+    "@socketsecurity/lib": "workspace:*"
+  }
+}

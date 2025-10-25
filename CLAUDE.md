@@ -4,18 +4,24 @@
 
 ## 👤 USER CONTEXT
 
-- **Primary User**: John-David Dalton (GitHub: jdalton)
-- 🚨 **When interacting with jdalton (verified by account/context)**: ALWAYS refer to them as "John-David" - NEVER use "the user" or "user"
-- When discussing jdalton's commits, work, or contributions, use "John-David" or "you/your" (if speaking to John-David directly)
-- **Other contributors**: Use their actual names or appropriate references as provided in commit history/context
+- **Identify users by git credentials**: Extract name from git commit author, GitHub account, or context
+- 🚨 **When identity is verified**: ALWAYS use their actual name - NEVER use "the user" or "user"
+- **Direct communication**: Use "you/your" when speaking directly to the verified user
+- **Discussing their work**: Use their actual name when referencing their commits/contributions
+- **Example**: If git shows "John-David Dalton <jdalton@example.com>", refer to them as "John-David"
+- **Other contributors**: Use their actual names from commit history/context
 
 ## 📚 SHARED STANDARDS
 
-**See canonical reference:** `../socket-registry/CLAUDE.md`
+**Canonical reference**: `../socket-registry/CLAUDE.md`
 
-For all shared Socket standards (git workflow, testing, code style, imports, sorting, error handling, cross-platform, CI, etc.), refer to socket-registry/CLAUDE.md.
+All shared standards (git, testing, code style, cross-platform, CI) defined in socket-registry/CLAUDE.md.
 
-**Git Workflow Reminder**: When user says "commit changes" → create actual commits, use small atomic commits, follow all CLAUDE.md rules (NO AI attribution).
+**Quick references**:
+- Commits: [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) `<type>(<scope>): <description>` - NO AI attribution
+- Scripts: Prefer `pnpm run foo --flag` over `foo:bar` scripts
+- Docs: Use `docs/` folder, lowercase-with-hyphens.md filenames, pithy writing with visuals
+- Dependencies: After `package.json` edits, run `pnpm install` to update `pnpm-lock.yaml`
 
 ---
 
@@ -496,6 +502,12 @@ Socket CLI integrates with various third-party tools and services:
 - **Catch parameter naming**: Use `catch (e)` instead of `catch (error)` for consistency across the codebase
 - **Node.js fs imports**: 🚨 MANDATORY pattern - `import { someSyncThing, promises as fs } from 'node:fs'`
 - **Process spawning**: 🚨 FORBIDDEN to use Node.js built-in `child_process.spawn` - MUST use `spawn` from `@socketsecurity/registry/lib/spawn`
+- **Working directory**: 🚨 ABSOLUTELY FORBIDDEN - NEVER use `process.chdir()` - it's a global state mutation anti-pattern that breaks tests and causes race conditions
+  - ✅ CORRECT: Use `{ cwd: '/absolute/path' }` option in spawn, exec, fs operations
+  - ✅ CORRECT: Always use absolute paths with `path.resolve()` or `path.join(baseDir, relative)`
+  - ❌ FORBIDDEN: `process.chdir(someDir)` (mutates global state, breaks parallel tests, not supported in worker threads)
+  - **Why it's forbidden**: Breaks Vitest worker threads, creates race conditions in parallel tests, makes debugging harder, violates functional programming principles
+  - **For tests**: Always pass `{ cwd: testDir }` to functions instead of changing process.cwd()
 - **Number formatting**: 🚨 REQUIRED - Use underscore separators (e.g., `20_000`) for large numeric literals. 🚨 FORBIDDEN - Do NOT modify number values inside strings
 
 ### Error Handling

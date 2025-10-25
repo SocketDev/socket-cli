@@ -1,15 +1,15 @@
-import { mkdtempSync, promises as fs } from 'node:fs'
+import { mkdirSync, mkdtempSync, promises as fs, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 import { testPath } from '../../test/utils.mts'
 import {
   findSocketYmlSync,
   overrideCachedConfig,
   updateConfigValue,
-} from '../config.mts'
+} from './config.mts'
 
 const fixtureBaseDir = path.join(testPath, 'fixtures/utils/config')
 
@@ -49,16 +49,35 @@ describe('utils/config', () => {
   })
 
   describe('findSocketYmlSync', () => {
-    it('should find socket.yml when walking up directory tree', () => {
-      // This test verifies that findSocketYmlSync correctly walks up the directory
-      // tree and finds socket.yml at the repository root.
-      const result = findSocketYmlSync(path.join(fixtureBaseDir, 'nonexistent'))
+    it('should find socket.yml when walking up directory tree', async () => {
+      // Create an isolated tmpdir with a socket.yml fixture.
+      const tmpDir = path.resolve(mkdtempSync(path.join(os.tmpdir(), 'socket-test-')))
+      const socketYmlPath = path.join(tmpDir, 'socket.yml')
+      const nestedDir = path.join(tmpDir, 'deep', 'nested', 'directory')
 
-      // The result should be ok and find the root socket.yml.
-      expect(result.ok).toBe(true)
-      expect(result.data).toBeDefined()
-      expect(result.data?.parsed).toBeDefined()
-      expect(result.data?.path).toContain('socket.yml')
+      try {
+        // Create nested directories.
+        mkdirSync(nestedDir, { recursive: true })
+
+        // Create socket.yml in the tmpdir root.
+        writeFileSync(
+          socketYmlPath,
+          'version: 2\n\nprojectIgnorePaths:\n  - node_modules\n',
+          'utf8',
+        )
+
+        // Call findSocketYmlSync from the nested directory - it should walk up and find socket.yml.
+        const result = findSocketYmlSync(nestedDir)
+
+        // The result should be ok and find the socket.yml.
+        expect(result.ok).toBe(true)
+        expect(result.data).toBeDefined()
+        expect(result.data?.parsed).toBeDefined()
+        expect(result.data?.path).toBe(socketYmlPath)
+      } finally {
+        // Clean up the temporary directory.
+        await fs.rm(tmpDir, { force: true, recursive: true })
+      }
     })
 
     it('should handle when no socket.yml exists (regression test for .parsed access)', async () => {

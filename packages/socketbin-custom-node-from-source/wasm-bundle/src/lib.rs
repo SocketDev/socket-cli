@@ -2,7 +2,7 @@
  * Socket CLI Unified WASM Bundle
  *
  * Embeds all AI models and WASM modules:
- * - ONNX Runtime (~2-5MB)
+ * - ONNX Runtime (~3MB SIMD-only, single-threaded)
  * - MiniLM model (~17MB int8)
  * - CodeT5 encoder (~30MB int4)
  * - CodeT5 decoder (~60MB int4)
@@ -27,7 +27,17 @@ static CODET5_ENCODER: &[u8] = include_bytes!("../../.cache/models/codet5-encode
 static CODET5_DECODER: &[u8] = include_bytes!("../../.cache/models/codet5-decoder-int4.onnx");
 static CODET5_TOKENIZER: &[u8] = include_bytes!("../../.cache/models/codet5-tokenizer.json");
 
-static ONNX_RUNTIME: &[u8] = include_bytes!("../../.cache/models/ort-wasm-simd-threaded.wasm");
+// Use optimized SIMD-only WASM (single-threaded).
+// We don't use multi-threading (no session options, sequential batching).
+// SIMD-only saves ~2 MB vs threaded version.
+#[cfg(not(feature = "unoptimized-wasm"))]
+static ONNX_RUNTIME: &[u8] = include_bytes!("../../.cache/models/ort-wasm-simd-optimized.wasm");
+#[cfg(feature = "unoptimized-wasm")]
+static ONNX_RUNTIME: &[u8] = include_bytes!("../../.cache/models/ort-wasm-simd.wasm");
+
+#[cfg(not(feature = "unoptimized-wasm"))]
+static YOGA_LAYOUT: &[u8] = include_bytes!("../../.cache/models/yoga-optimized.wasm");
+#[cfg(feature = "unoptimized-wasm")]
 static YOGA_LAYOUT: &[u8] = include_bytes!("../../.cache/models/yoga.wasm");
 
 // =============================================================================

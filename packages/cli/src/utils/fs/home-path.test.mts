@@ -5,10 +5,8 @@ import { describe, expect, it, vi } from 'vitest'
 import { tildify } from '../fs/home-path.mts'
 
 // Mock constants.
-vi.mock('../constants.mts', () => ({
-  default: {
-    homePath: '/Users/testuser',
-  },
+vi.mock('../../constants/paths.mts', () => ({
+  homePath: '/Users/testuser',
 }))
 
 describe('tildify utilities', () => {

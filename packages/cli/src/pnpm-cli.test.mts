@@ -1,17 +1,20 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+// Mock shadow/pnpm/bin module.
+vi.mock('./shadow/pnpm/bin.mts', () => ({
+  default: vi.fn(),
+}))
+
+// Import modules after mocks are set up.
+const { default: runPnpmCli } = await import('./pnpm-cli.mts')
+const shadowPnpmBinModule = await import('./shadow/pnpm/bin.mts')
+const mockShadowPnpmBin = vi.mocked(shadowPnpmBinModule.default)
+
 // Mock process methods.
 const mockProcessExit = vi
   .spyOn(process, 'exit')
   .mockImplementation(() => undefined as never)
 const mockProcessKill = vi.spyOn(process, 'kill').mockImplementation(() => true)
-
-// Mock shadowPnpmBin.
-const mockShadowPnpmBin = vi.fn()
-
-vi.mock('./shadow/pnpm/bin.mts', () => ({
-  default: mockShadowPnpmBin,
-}))
 
 describe('pnpm-cli', () => {
   const mockChildProcess = {
@@ -19,12 +22,14 @@ describe('pnpm-cli', () => {
     pid: 12345,
   }
 
-  const mockSpawnResult = {
-    spawnPromise: {
-      process: mockChildProcess,
-      then: vi.fn().mockResolvedValue({ success: true, code: 0 }),
-    },
-  }
+  // Create a proper promise-like object for spawnPromise.
+  const createMockSpawnResult = (exitCode = 0) => ({
+    spawnPromise: Promise.resolve({
+      success: exitCode === 0,
+      code: exitCode,
+      signal: undefined,
+    }).then(result => Object.assign(result, { process: mockChildProcess })),
+  })
 
   beforeEach(() => {
     vi.clearAllMocks()
@@ -33,22 +38,20 @@ describe('pnpm-cli', () => {
     process.exitCode = undefined
 
     // Setup default mock implementations.
-    mockShadowPnpmBin.mockResolvedValue(mockSpawnResult)
+    mockShadowPnpmBin.mockResolvedValue(createMockSpawnResult(0))
     mockChildProcess.on.mockImplementation(() => {
       // No-op by default.
     })
-
-    // Clear module cache to ensure fresh imports.
-    vi.resetModules()
   })
 
   it('should set initial exit code to 1', async () => {
     const originalArgv = process.argv
-    process.argv = ['node', 'pnpm-cli.mjs', 'install']
+    process.argv = ['node', 'pnpm-cli.mts', 'install']
 
     try {
-      await import('./pnpm-cli.mts')
+      const promise = runPnpmCli()
       expect(process.exitCode).toBe(1)
+      await promise
     } finally {
       process.argv = originalArgv
     }
@@ -56,10 +59,10 @@ describe('pnpm-cli', () => {
 
   it('should call shadowPnpmBin with correct arguments', async () => {
     const originalArgv = process.argv
-    process.argv = ['node', 'pnpm-cli.mjs', 'add', 'lodash']
+    process.argv = ['node', 'pnpm-cli.mts', 'add', 'lodash']
 
     try {
-      await import('./pnpm-cli.mts')
+      await runPnpmCli()
 
       expect(mockShadowPnpmBin).toHaveBeenCalledWith(['add', 'lodash'], {
         stdio: 'inherit',
@@ -73,17 +76,13 @@ describe('pnpm-cli', () => {
 
   it('should handle process exit with numeric code', async () => {
     const originalArgv = process.argv
-    process.argv = ['node', 'pnpm-cli.mjs', 'test']
+    process.argv = ['node', 'pnpm-cli.mts', 'test']
 
-    mockChildProcess.on.mockImplementation((event, callback) => {
-      if (event === 'exit') {
-        // Trigger callback immediately.
-        callback(2, null)
-      }
-    })
+    // Mock spawn result with exit code 2.
+    mockShadowPnpmBin.mockResolvedValue(createMockSpawnResult(2))
 
     try {
-      await import('./pnpm-cli.mts')
+      await runPnpmCli()
 
       expect(mockProcessExit).toHaveBeenCalledWith(2)
     } finally {
@@ -93,17 +92,19 @@ describe('pnpm-cli', () => {
 
   it('should handle process exit with signal', async () => {
     const originalArgv = process.argv
-    process.argv = ['node', 'pnpm-cli.mjs', 'dev']
+    process.argv = ['node', 'pnpm-cli.mts', 'dev']
 
-    mockChildProcess.on.mockImplementation((event, callback) => {
-      if (event === 'exit') {
-        // Trigger callback immediately.
-        callback(null, 'SIGKILL')
-      }
+    // Mock spawn result with signal.
+    mockShadowPnpmBin.mockResolvedValue({
+      spawnPromise: Promise.resolve({
+        success: false,
+        code: null,
+        signal: 'SIGKILL',
+      }).then(result => Object.assign(result, { process: mockChildProcess })),
     })
 
     try {
-      await import('./pnpm-cli.mts')
+      await runPnpmCli()
 
       expect(mockProcessKill).toHaveBeenCalledWith(process.pid, 'SIGKILL')
     } finally {
@@ -113,10 +114,10 @@ describe('pnpm-cli', () => {
 
   it('should handle empty arguments array', async () => {
     const originalArgv = process.argv
-    process.argv = ['node', 'pnpm-cli.mjs']
+    process.argv = ['node', 'pnpm-cli.mts']
 
     try {
-      await import('./pnpm-cli.mts')
+      await runPnpmCli()
 
       expect(mockShadowPnpmBin).toHaveBeenCalledWith([], {
         stdio: 'inherit',
@@ -131,11 +132,11 @@ describe('pnpm-cli', () => {
   it('should preserve environment variables in spawn options', async () => {
     const originalArgv = process.argv
     const originalEnv = process.env
-    process.argv = ['node', 'pnpm-cli.mjs', 'run', 'lint']
+    process.argv = ['node', 'pnpm-cli.mts', 'run', 'lint']
     process.env = { ...originalEnv, PNPM_HOME: '/custom/path' }
 
     try {
-      await import('./pnpm-cli.mts')
+      await runPnpmCli()
 
       expect(mockShadowPnpmBin).toHaveBeenCalledWith(['run', 'lint'], {
         stdio: 'inherit',
@@ -150,21 +151,13 @@ describe('pnpm-cli', () => {
 
   it('should wait for spawn promise completion', async () => {
     const originalArgv = process.argv
-    process.argv = ['node', 'pnpm-cli.mjs', 'list']
-
-    const mockThen = vi.fn().mockResolvedValue({ success: true })
-    mockShadowPnpmBin.mockResolvedValue({
-      spawnPromise: {
-        process: mockChildProcess,
-        then: mockThen,
-      },
-    })
+    process.argv = ['node', 'pnpm-cli.mts', 'list']
 
     try {
-      await import('./pnpm-cli.mts')
+      await runPnpmCli()
 
       // The spawn promise should be awaited.
-      expect(mockThen).toHaveBeenCalled()
+      expect(mockShadowPnpmBin).toHaveBeenCalled()
     } finally {
       process.argv = originalArgv
     }

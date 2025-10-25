@@ -38,10 +38,10 @@ permissions:
 jobs:
   ci:
     name: Run CI Pipeline
-    uses: SocketDev/socket-registry/.github/workflows/ci.yml@d8ff3b0581d799466cfbf150f715c1a4bf9f84a5 # main
+    uses: SocketDev/socket-registry/.github/workflows/ci.yml@d8ff3b0581d799466cfbf150f715c1a4bf9f84a5 # 2025-10-23
     with:
       working-directory: 'packages/cli'
-      test-setup-script: 'cd packages/cli && pnpm run build'
+      test-setup-script: 'cd packages/cli && rm -rf node_modules/.vite && pnpm run build'
       lint-script: 'cd packages/cli && pnpm run check'
       type-check-script: 'cd packages/cli && pnpm run type'
       test-script: ${{ inputs.skip-tests && 'echo "Tests skipped"' || 'cd packages/cli && pnpm run test:unit' }}

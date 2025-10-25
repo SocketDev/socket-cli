@@ -20,7 +20,10 @@ if (existsSync(outputPath)) {
   try {
     const existing = readFileSync(outputPath, 'utf-8')
     // Verify it's the expected content (not corrupted).
-    if (existing.includes('yoga-layout') && existing.includes('instantiateWasm')) {
+    if (
+      existing.includes('yoga-layout') &&
+      existing.includes('instantiateWasm')
+    ) {
       console.log(`✓ Using cached ${outputPath}`)
       process.exit(0)
     }

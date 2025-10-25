@@ -4,8 +4,8 @@ import path from 'node:path'
 import { afterEach, describe, expect } from 'vitest'
 
 import { cmdit, spawnSocketCli, testPath } from '../../../test/utils.mts'
-import { FLAG_CONFIG, FLAG_HELP } from '../constants/cli.mts'
-import { getBinCliPath } from '../constants/paths.mts'
+import { FLAG_CONFIG, FLAG_HELP } from '../../constants/cli.mts'
+import { getBinCliPath } from '../../constants/paths.mts'
 
 const binCliPath = getBinCliPath()
 
@@ -14,7 +14,7 @@ const pnpmFixtureDir = path.join(fixtureBaseDir, 'pnpm')
 
 async function cleanupNodeModules() {
   // Clean up node_modules from all package manager directories.
-  await Promise.all([
+  Promise.all([
     fs.rm(path.join(pnpmFixtureDir, 'node_modules'), {
       force: true,
       recursive: true,
@@ -32,7 +32,7 @@ async function cleanupNodeModules() {
 
 async function cleanupPatchesDir() {
   // Clean up generated patches directories.
-  await Promise.all([
+  Promise.all([
     fs.rm(path.join(pnpmFixtureDir, 'patches'), {
       force: true,
       recursive: true,

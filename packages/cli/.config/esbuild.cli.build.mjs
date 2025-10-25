@@ -8,9 +8,10 @@ import { build } from 'esbuild'
 import { execSync } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
 import { existsSync, readFileSync } from 'node:fs'
-import { builtinModules } from 'node:module'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+
+import { getLocalPackageAliases } from '../scripts/utils/get-local-package-aliases.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '..')
@@ -45,25 +46,15 @@ const versionHash = `${packageJson.version}:${gitHash}:${randUuidSegment}${
   publishedBuild ? '' : ':dev'
 }`
 
-// Get local Socket package paths.
-const socketPackages = {
-  '@socketsecurity/lib': path.join(rootPath, '..', '..', '..', 'socket-lib'),
-  '@socketsecurity/registry': path.join(
-    rootPath,
-    '..',
-    '..',
-    '..',
-    'socket-registry',
-    'registry',
-  ),
-  '@socketsecurity/sdk': path.join(rootPath, '..', '..', '..', 'socket-sdk-js'),
-  '@socketregistry/packageurl-js': path.join(
-    rootPath,
-    '..',
-    '..',
-    '..',
-    'socket-packageurl-js',
-  ),
+// Get local Socket package paths using canonical helper.
+// rootPath is packages/cli, so go up to socket-cli root for getLocalPackageAliases.
+const socketCliRoot = path.join(rootPath, '..', '..')
+const distAliases = getLocalPackageAliases(socketCliRoot)
+
+// Convert dist paths to package roots (remove /dist suffix).
+const socketPackages = {}
+for (const [packageName, distPath] of Object.entries(distAliases)) {
+  socketPackages[packageName] = path.dirname(distPath)
 }
 
 // Resolve subpath from package.json exports.
@@ -110,12 +101,16 @@ const config = {
   entryPoints: [path.join(rootPath, 'src/cli-dispatch.mts')],
   bundle: true,
   outfile: path.join(rootPath, 'dist/cli.js'),
+  // Target Node.js environment (not browser).
   platform: 'node',
-  target: 'node20',
+  // Target Node.js 18+ features.
+  target: 'node18',
   format: 'cjs',
 
-  // Externalize Node.js built-ins.
-  external: [...builtinModules, ...builtinModules.map(m => `node:${m}`)],
+  // With platform: 'node', esbuild automatically externalizes all Node.js
+  // built-ins. The explicit external array with builtinModules is redundant
+  // (but doesn't hurt as extra safety).
+  external: [],
 
   // Add shebang.
   banner: {
@@ -212,46 +207,122 @@ const config = {
     {
       name: 'resolve-socket-lib-internals',
       setup(build) {
-        // Resolve relative imports from socket-lib dist files.
-        const socketLibPath = path.join(rootPath, '..', '..', '..', 'socket-lib')
-        if (existsSync(socketLibPath)) {
-          build.onResolve({ filter: /^\.\.\/constants\// }, args => {
-            // Only handle imports from socket-lib's dist directory.
-            if (args.importer.includes('/socket-lib/dist/')) {
-              const constantName = args.path.replace(/^\.\.\/constants\//, '')
-              const resolvedPath = path.join(
-                socketLibPath,
-                'dist',
-                'constants',
-                `${constantName}.js`,
-              )
-              if (existsSync(resolvedPath)) {
-                return { path: resolvedPath }
-              }
-            }
-            return null
-          })
+        // Helper to find socket-lib directory (either local sibling or node_modules).
+        function findSocketLibPath(importerPath) {
+          // Try to extract socket-lib base path from the importer.
+          const match = importerPath.match(/^(.*\/@socketsecurity\/lib)\b/)
+          if (match) {
+            return match[1]
+          }
 
-          build.onResolve({ filter: /^\.\.\/\.\.\/constants\// }, args => {
-            // Handle ../../constants/ imports.
-            if (args.importer.includes('/socket-lib/dist/')) {
-              const constantName = args.path.replace(
-                /^\.\.\/\.\.\/constants\//,
-                '',
-              )
-              const resolvedPath = path.join(
-                socketLibPath,
-                'dist',
-                'constants',
-                `${constantName}.js`,
-              )
-              if (existsSync(resolvedPath)) {
-                return { path: resolvedPath }
-              }
-            }
-            return null
-          })
+          // Fallback to local sibling directory.
+          const localPath = path.join(rootPath, '..', '..', '..', 'socket-lib')
+          if (existsSync(localPath)) {
+            return localPath
+          }
+
+          return null
         }
+
+        build.onResolve({ filter: /^\.\.\/constants\// }, args => {
+          // Only handle imports from socket-lib's dist directory.
+          if (!args.importer.includes('/socket-lib/dist/')) {
+            return null
+          }
+
+          const socketLibPath = findSocketLibPath(args.importer)
+          if (!socketLibPath) {
+            return null
+          }
+
+          const constantName = args.path.replace(/^\.\.\/constants\//, '')
+          const resolvedPath = path.join(
+            socketLibPath,
+            'dist',
+            'constants',
+            `${constantName}.js`,
+          )
+          if (existsSync(resolvedPath)) {
+            return { path: resolvedPath }
+          }
+          return null
+        })
+
+        build.onResolve({ filter: /^\.\.\/\.\.\/constants\// }, args => {
+          // Handle ../../constants/ imports.
+          if (!args.importer.includes('/socket-lib/dist/')) {
+            return null
+          }
+
+          const socketLibPath = findSocketLibPath(args.importer)
+          if (!socketLibPath) {
+            return null
+          }
+
+          const constantName = args.path.replace(/^\.\.\/\.\.\/constants\//, '')
+          const resolvedPath = path.join(
+            socketLibPath,
+            'dist',
+            'constants',
+            `${constantName}.js`,
+          )
+          if (existsSync(resolvedPath)) {
+            return { path: resolvedPath }
+          }
+          return null
+        })
+
+        // Resolve external dependencies that socket-lib bundles in dist/external/.
+        // Automatically handles any bundled dependency (e.g., @inquirer/*, zod, semver).
+        build.onResolve({ filter: /^(@[^/]+\/[^/]+|[^./][^/]*)/ }, args => {
+          if (!args.importer.includes('/socket-lib/dist/')) {
+            return null
+          }
+
+          const socketLibPath = findSocketLibPath(args.importer)
+          if (!socketLibPath) {
+            return null
+          }
+
+          // Extract package name (handle scoped packages).
+          const packageName = args.path.startsWith('@')
+            ? args.path.split('/').slice(0, 2).join('/')
+            : args.path.split('/')[0]
+
+          // Check if this package has a bundled version in dist/external/.
+          let resolvedPath = null
+          if (packageName.startsWith('@')) {
+            // Scoped package like @inquirer/confirm.
+            const [scope, name] = packageName.split('/')
+            const scopedPath = path.join(
+              socketLibPath,
+              'dist',
+              'external',
+              scope,
+              `${name}.js`,
+            )
+            if (existsSync(scopedPath)) {
+              resolvedPath = scopedPath
+            }
+          } else {
+            // Regular package like zod, semver, etc.
+            const regularPath = path.join(
+              socketLibPath,
+              'dist',
+              'external',
+              `${packageName}.js`,
+            )
+            if (existsSync(regularPath)) {
+              resolvedPath = regularPath
+            }
+          }
+
+          if (resolvedPath) {
+            return { path: resolvedPath }
+          }
+
+          return null
+        })
       },
     },
 

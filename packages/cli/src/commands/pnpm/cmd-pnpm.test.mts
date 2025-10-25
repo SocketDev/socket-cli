@@ -14,8 +14,8 @@ import {
   FLAG_HELP,
   FLAG_SILENT,
   FLAG_VERSION,
-} from '../constants/cli.mts'
-import { getBinCliPath } from '../constants/paths.mts'
+} from '../../constants/cli.mts'
+import { getBinCliPath } from '../../constants/paths.mts'
 
 const binCliPath = getBinCliPath()
 
@@ -34,29 +34,29 @@ describe('socket pnpm', async () => {
         "Wraps pnpm with Socket security scanning
 
           Usage
-            $ socket pnpm ...
-
-          API Token Requirements
-            (none)
-
-          Note: Everything after "pnpm" is passed to the pnpm command.
-                Only the \`--dry-run\` and \`--help\` flags are caught here.
-
-          Use \`socket wrapper on\` to alias this command as \`pnpm\`.
-
-          Examples
-            $ socket pnpm
-            $ socket pnpm install
-            $ socket pnpm add package-name
-            $ socket pnpm dlx package-name"
+                $ socket pnpm ...
+          
+              API Token Requirements
+                (none)
+          
+              Note: Everything after "pnpm" is passed to the pnpm command.
+                    Only the \`--dry-run\` and \`--help\` flags are caught here.
+          
+              Use \`socket wrapper on\` to alias this command as \`pnpm\`.
+          
+              Examples
+                $ socket pnpm
+                $ socket pnpm install
+                $ socket pnpm add package-name
+                $ socket pnpm dlx package-name"
       `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
-          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket pnpm\`, cwd: <redacted>"
+           _____         _       _          /---------------
+            |   __|___ ___| |_ ___| |_        | CLI: <redacted>
+            |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket pnpm\`, cwd: <redacted>"
       `)
 
       expect(code, 'explicit help should exit with code 0').toBe(0)

@@ -12,12 +12,33 @@ crate-type = ["cdylib"]
 [dependencies]
 wasm-bindgen = "0.2"
 
-[profile.release]
-# Optimize for size.
-lto = true
-opt-level = "z"
-codegen-units = 1
+[features]
+default = []
+unoptimized-wasm = []  # Use original unoptimized WASM files
 
-# Strip debug info.
+[profile.release]
+# Optimize for size (no backward compat concerns).
+lto = "thin"              # Thin LTO is faster than full, still effective (5-10% faster builds)
+opt-level = "z"           # Optimize for size (critical for WASM)
+codegen-units = 1         # Single unit for maximum optimization
+strip = true              # Strip symbols for smaller WASM (saves 5-10%)
+panic = "abort"           # Reduce binary size by not including unwinding code
+overflow-checks = false   # Disable overflow checks in release (slight perf boost)
+debug-assertions = false  # Disable debug assertions (smaller binary)
+
+# OPTIMIZATION: Fast dev builds for WASM (3-5x faster iteration)
+# Use: cargo build --target wasm32-unknown-unknown --profile dev-wasm
+[profile.dev-wasm]
+inherits = "dev"
+opt-level = 1           # Minimal optimization for faster builds
+lto = false             # Disable LTO in dev
+codegen-units = 16      # More units = faster parallel compilation
+incremental = false     # Disable incremental for WASM (conflicts with embed-bitcode)
+debug = false           # Disable debug info to reduce WASM size
+strip = true            # Strip symbols even in dev for smaller WASM
+panic = "abort"         # Reduce binary size
+
+# Strip debug info from dependencies.
 [profile.release.package."*"]
 opt-level = "z"
+strip = true

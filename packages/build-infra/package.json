@@ -1,0 +1,19 @@
+{
+  "name": "@socketsecurity/build-infra",
+  "version": "1.0.0",
+  "description": "Shared build infrastructure for building third-party dependencies from source",
+  "type": "module",
+  "private": true,
+  "exports": {
+    "./lib/build-exec": "./lib/build-exec.mjs",
+    "./lib/build-helpers": "./lib/build-helpers.mjs",
+    "./lib/build-output": "./lib/build-output.mjs",
+    "./lib/cmake-builder": "./lib/cmake-builder.mjs",
+    "./lib/emscripten-builder": "./lib/emscripten-builder.mjs",
+    "./lib/patch-validator": "./lib/patch-validator.mjs",
+    "./lib/checkpoint-manager": "./lib/checkpoint-manager.mjs"
+  },
+  "dependencies": {
+    "@socketsecurity/lib": "workspace:*"
+  }
+}

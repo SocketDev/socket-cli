@@ -15,8 +15,9 @@ export default defineConfig({
     globals: false,
     environment: 'node',
     include: [
-      // Temporarily exclude all tests - too many failures
-      // Re-enable once test infrastructure is fixed
+      // NOTE: No root-level tests exist. All tests are in individual packages.
+      // Each package (e.g., packages/cli/) has its own vitest.config.mts.
+      // This root config serves as a fallback default configuration only.
     ],
     exclude: [
       '**/node_modules/**',
@@ -58,6 +59,10 @@ export default defineConfig({
     },
     testTimeout: 30_000,
     hookTimeout: 30_000,
+    bail: process.env.CI ? 1 : 0, // Exit on first failure in CI for faster feedback.
+    sequence: {
+      concurrent: true // Run tests concurrently within suites for better parallelism.
+    },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html', 'lcov', 'clover'],

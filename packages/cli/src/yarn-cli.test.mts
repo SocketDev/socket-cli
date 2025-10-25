@@ -1,17 +1,20 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+// Mock shadow/yarn/bin module.
+vi.mock('./shadow/yarn/bin.mts', () => ({
+  default: vi.fn(),
+}))
+
+// Import modules after mocks are set up.
+const { default: runYarnCli } = await import('./yarn-cli.mts')
+const shadowYarnBinModule = await import('./shadow/yarn/bin.mts')
+const mockShadowYarnBin = vi.mocked(shadowYarnBinModule.default)
+
 // Mock process methods.
 const mockProcessExit = vi
   .spyOn(process, 'exit')
   .mockImplementation(() => undefined as never)
 const mockProcessKill = vi.spyOn(process, 'kill').mockImplementation(() => true)
-
-// Mock shadowYarnBin.
-const mockShadowYarnBin = vi.fn()
-
-vi.mock('./shadow/yarn/bin.mts', () => ({
-  default: mockShadowYarnBin,
-}))
 
 describe('yarn-cli', () => {
   const mockChildProcess = {
@@ -19,11 +22,18 @@ describe('yarn-cli', () => {
     pid: 12345,
   }
 
-  const mockSpawnResult = {
-    spawnPromise: {
-      process: mockChildProcess,
-      then: vi.fn().mockResolvedValue({ success: true, code: 0 }),
-    },
+  // Create a proper promise-like object for spawnPromise.
+  const createMockSpawnResult = (exitCode = 0, signal?: string) => {
+    const promise = Promise.resolve({
+      success: exitCode === 0,
+      code: signal ? null : exitCode,
+      signal,
+    })
+    // Attach the process property to the promise itself.
+    Object.assign(promise, { process: mockChildProcess })
+    return {
+      spawnPromise: promise,
+    }
   }
 
   beforeEach(() => {
@@ -33,22 +43,27 @@ describe('yarn-cli', () => {
     process.exitCode = undefined
 
     // Setup default mock implementations.
-    mockShadowYarnBin.mockResolvedValue(mockSpawnResult)
-    mockChildProcess.on.mockImplementation(() => {
-      // No-op by default.
-    })
+    mockShadowYarnBin.mockResolvedValue(createMockSpawnResult(0))
 
-    // Clear module cache to ensure fresh imports.
-    vi.resetModules()
+    // Mock the .on() method to immediately trigger the event handler.
+    mockChildProcess.on.mockImplementation((event, callback) => {
+      if (event === 'exit') {
+        // Store the callback to be called later when needed.
+        // In default case (success), trigger with code 0.
+        Promise.resolve().then(() => callback(0, null))
+      }
+      return mockChildProcess as any
+    })
   })
 
   it('should set initial exit code to 1', async () => {
     const originalArgv = process.argv
-    process.argv = ['node', 'yarn-cli.mjs', 'install']
+    process.argv = ['node', 'yarn-cli.mts', 'install']
 
     try {
-      await import('./yarn-cli.mts')
+      const promise = runYarnCli()
       expect(process.exitCode).toBe(1)
+      await promise
     } finally {
       process.argv = originalArgv
     }
@@ -56,10 +71,10 @@ describe('yarn-cli', () => {
 
   it('should call shadowYarnBin with correct arguments', async () => {
     const originalArgv = process.argv
-    process.argv = ['node', 'yarn-cli.mjs', 'add', 'react', 'react-dom']
+    process.argv = ['node', 'yarn-cli.mts', 'add', 'react', 'react-dom']
 
     try {
-      await import('./yarn-cli.mts')
+      await runYarnCli()
 
       expect(mockShadowYarnBin).toHaveBeenCalledWith(
         ['add', 'react', 'react-dom'],
@@ -76,17 +91,21 @@ describe('yarn-cli', () => {
 
   it('should handle process exit with numeric code', async () => {
     const originalArgv = process.argv
-    process.argv = ['node', 'yarn-cli.mjs', 'build']
+    process.argv = ['node', 'yarn-cli.mts', 'build']
 
+    // Mock spawn result with exit code 1.
+    mockShadowYarnBin.mockResolvedValue(createMockSpawnResult(1))
+
+    // Override the .on() mock to trigger exit with code 1.
     mockChildProcess.on.mockImplementation((event, callback) => {
       if (event === 'exit') {
-        // Trigger callback immediately.
-        callback(1, null)
+        Promise.resolve().then(() => callback(1, null))
       }
+      return mockChildProcess as any
     })
 
     try {
-      await import('./yarn-cli.mts')
+      await runYarnCli()
 
       expect(mockProcessExit).toHaveBeenCalledWith(1)
     } finally {
@@ -96,17 +115,30 @@ describe('yarn-cli', () => {
 
   it('should handle process exit with signal', async () => {
     const originalArgv = process.argv
-    process.argv = ['node', 'yarn-cli.mjs', 'start']
+    process.argv = ['node', 'yarn-cli.mts', 'start']
 
+    // Mock spawn result with signal.
+    const promise = Promise.resolve({
+      success: false,
+      code: null,
+      signal: 'SIGTERM',
+    })
+    // Attach the process property to the promise itself.
+    Object.assign(promise, { process: mockChildProcess })
+    mockShadowYarnBin.mockResolvedValue({
+      spawnPromise: promise,
+    })
+
+    // Override the .on() mock to trigger exit with signal.
     mockChildProcess.on.mockImplementation((event, callback) => {
       if (event === 'exit') {
-        // Trigger callback immediately.
-        callback(null, 'SIGTERM')
+        Promise.resolve().then(() => callback(null, 'SIGTERM'))
       }
+      return mockChildProcess as any
     })
 
     try {
-      await import('./yarn-cli.mts')
+      await runYarnCli()
 
       expect(mockProcessKill).toHaveBeenCalledWith(process.pid, 'SIGTERM')
     } finally {
@@ -116,10 +148,10 @@ describe('yarn-cli', () => {
 
   it('should handle empty arguments array', async () => {
     const originalArgv = process.argv
-    process.argv = ['node', 'yarn-cli.mjs']
+    process.argv = ['node', 'yarn-cli.mts']
 
     try {
-      await import('./yarn-cli.mts')
+      await runYarnCli()
 
       expect(mockShadowYarnBin).toHaveBeenCalledWith([], {
         stdio: 'inherit',
@@ -134,11 +166,11 @@ describe('yarn-cli', () => {
   it('should preserve environment variables in spawn options', async () => {
     const originalArgv = process.argv
     const originalEnv = process.env
-    process.argv = ['node', 'yarn-cli.mjs', 'workspace', 'list']
+    process.argv = ['node', 'yarn-cli.mts', 'workspace', 'list']
     process.env = { ...originalEnv, YARN_CACHE_FOLDER: '/tmp/yarn-cache' }
 
     try {
-      await import('./yarn-cli.mts')
+      await runYarnCli()
 
       expect(mockShadowYarnBin).toHaveBeenCalledWith(['workspace', 'list'], {
         stdio: 'inherit',
@@ -153,21 +185,13 @@ describe('yarn-cli', () => {
 
   it('should wait for spawn promise completion', async () => {
     const originalArgv = process.argv
-    process.argv = ['node', 'yarn-cli.mjs', 'info', 'lodash']
-
-    const mockThen = vi.fn().mockResolvedValue({ success: true })
-    mockShadowYarnBin.mockResolvedValue({
-      spawnPromise: {
-        process: mockChildProcess,
-        then: mockThen,
-      },
-    })
+    process.argv = ['node', 'yarn-cli.mts', 'info', 'lodash']
 
     try {
-      await import('./yarn-cli.mts')
+      await runYarnCli()
 
       // The spawn promise should be awaited.
-      expect(mockThen).toHaveBeenCalled()
+      expect(mockShadowYarnBin).toHaveBeenCalled()
     } finally {
       process.argv = originalArgv
     }

@@ -176,14 +176,14 @@ export function getBlessedOptions() {
 
 export function getSocketAppDataPath(): string | undefined {
   // Get the OS app data directory:
-  // - Win: %LOCALAPPDATA% or fail?
+  // - Win: %LOCALAPPDATA% or fallback to %USERPROFILE%/AppData/Local
   // - Mac: %XDG_DATA_HOME% or fallback to "~/Library/Application Support/"
   // - Linux: %XDG_DATA_HOME% or fallback to "~/.local/share/"
-  // Note: LOCALAPPDATA is typically: C:\Users\USERNAME\AppData
+  // Note: LOCALAPPDATA typically points to user's AppData\Local directory.
   // Note: XDG stands for "X Desktop Group", nowadays "freedesktop.org"
   //       On most systems that path is: $HOME/.local/share
   // Then append `socket/settings`, so:
-  // - Win: %LOCALAPPDATA%\socket\settings or return undefined
+  // - Win: %LOCALAPPDATA%\socket\settings or %USERPROFILE%\AppData\Local\socket\settings
   // - Mac: %XDG_DATA_HOME%/socket/settings or "~/Library/Application Support/socket/settings"
   // - Linux: %XDG_DATA_HOME%/socket/settings or "~/.local/share/socket/settings"
   const isWin32 = process.platform === 'win32'
@@ -191,16 +191,18 @@ export function getSocketAppDataPath(): string | undefined {
     ? process.env['LOCALAPPDATA']
     : process.env['XDG_DATA_HOME']
   if (!dataHome) {
-    if (isWin32) {
-      logger.warn('Missing %LOCALAPPDATA%.')
-      return undefined
-    }
     const home = homedir()
-    const isDarwin = process.platform === 'darwin'
-    dataHome = path.join(
-      home,
-      isDarwin ? 'Library/Application Support' : '.local/share',
-    )
+    if (isWin32) {
+      // Fallback: Use USERPROFILE or HOME when LOCALAPPDATA is missing.
+      dataHome = path.join(home, 'AppData', 'Local')
+      logger.warn('LOCALAPPDATA not set, using fallback path.')
+    } else {
+      const isDarwin = process.platform === 'darwin'
+      dataHome = path.join(
+        home,
+        isDarwin ? 'Library/Application Support' : '.local/share',
+      )
+    }
   }
   return dataHome ? path.join(dataHome, 'socket', 'settings') : undefined
 }

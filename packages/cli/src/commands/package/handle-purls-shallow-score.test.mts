@@ -9,11 +9,10 @@ vi.mock('./fetch-purls-shallow-score.mts', () => ({
 vi.mock('./output-purls-shallow-score.mts', () => ({
   outputPurlsShallowScore: vi.fn(),
 }))
-vi.mock('../../utils/debug.mts', () => ({
+vi.mock('@socketsecurity/lib/debug', () => ({
+  _debug: vi.fn(),
+  debug: vi.fn(),
   debugDir: vi.fn(),
-  debugFn: vi.fn(),
-  debugLog: vi.fn(),
-  isDebug: vi.fn(() => false),
 }))
 
 describe('handlePurlsShallowScore', () => {
@@ -131,7 +130,7 @@ describe('handlePurlsShallowScore', () => {
   })
 
   it('logs debug information', async () => {
-    const { debugDir, debugFn } = await import('../../utils/debug.mts')
+    const { debug, debugDir } = await import('@socketsecurity/lib/debug')
     const { fetchPurlsShallowScore } = await import(
       './fetch-purls-shallow-score.mts'
     )
@@ -148,23 +147,17 @@ describe('handlePurlsShallowScore', () => {
       purls,
     })
 
-    expect(debugFn).toHaveBeenCalledWith(
-      'notice',
-      'Fetching shallow scores for 1 packages',
-    )
-    expect(debugDir).toHaveBeenCalledWith('inspect', {
+    expect(debug).toHaveBeenCalledWith('Fetching shallow scores for 1 packages')
+    expect(debugDir).toHaveBeenCalledWith({
       purls,
       outputKind: 'json',
     })
-    expect(debugFn).toHaveBeenCalledWith(
-      'notice',
-      'Shallow scores fetched successfully',
-    )
-    expect(debugDir).toHaveBeenCalledWith('inspect', { packageData: mockData })
+    expect(debug).toHaveBeenCalledWith('Shallow scores fetched successfully')
+    expect(debugDir).toHaveBeenCalledWith({ packageData: mockData })
   })
 
   it('logs debug information on failure', async () => {
-    const { debugFn } = await import('../../utils/debug.mts')
+    const { debug } = await import('@socketsecurity/lib/debug')
     const { fetchPurlsShallowScore } = await import(
       './fetch-purls-shallow-score.mts'
     )
@@ -180,10 +173,7 @@ describe('handlePurlsShallowScore', () => {
       purls: ['pkg:npm/package1@1.0.0'],
     })
 
-    expect(debugFn).toHaveBeenCalledWith(
-      'notice',
-      'Shallow scores fetch failed',
-    )
+    expect(debug).toHaveBeenCalledWith('Shallow scores fetch failed')
   })
 
   it('handles multiple purls', async () => {

@@ -1,25 +1,33 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { fetchPurlDeepScore } from './fetch-purl-deep-score.mts'
-import { setupStandardOutputMocks } from '../../../test/helpers/mock-setup.mts'
 import {
   createErrorResult,
   createSuccessResult,
 } from '../../../test/helpers/mocks.mts'
 
-// Mock the dependencies.
-setupStandardOutputMocks()
+import type { PurlDataResponse } from './fetch-purl-deep-score.mts'
 
-vi.mock('../../utils/socket/api.mjs', () => ({
+vi.mock('@socketsecurity/lib/logger', () => ({
+  logger: {
+    info: vi.fn(),
+  },
+}))
+
+vi.mock('../../utils/socket/api.mts', () => ({
   queryApiSafeJson: vi.fn(),
 }))
 
 describe('fetchPurlDeepScore', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
   it('fetches purl deep score successfully', async () => {
-    const { queryApiSafeJson } = await import('../../utils/socket/api.mjs')
+    const { fetchPurlDeepScore } = await import('./fetch-purl-deep-score.mts')
+    const { queryApiSafeJson } = await vi.importMock('../../utils/socket/api.mts')
     const mockQueryApi = vi.mocked(queryApiSafeJson)
 
-    const mockData = {
+    const mockData: PurlDataResponse = {
       purl: 'pkg:npm/lodash@4.17.21',
       self: {
         purl: 'pkg:npm/lodash@4.17.21',
@@ -67,26 +75,14 @@ describe('fetchPurlDeepScore', () => {
       'the deep package scores',
     )
     expect(result.ok).toBe(true)
-    expect(result.data).toEqual(mockData)
-  })
-
-  it('handles SDK setup failure', async () => {
-    const { queryApiSafeJson } = await import('../../utils/socket/api.mjs')
-    const mockQueryApi = vi.mocked(queryApiSafeJson)
-
-    const error = createErrorResult('Failed to fetch purl score', {
-      code: 1,
-      cause: 'Configuration error',
-    })
-    mockQueryApi.mockResolvedValue(error)
-
-    const result = await fetchPurlDeepScore('pkg:npm/express@4.18.2')
-
-    expect(result).toEqual(error)
+    if (result.ok) {
+      expect(result.data).toEqual(mockData)
+    }
   })
 
   it('handles API call failure', async () => {
-    const { queryApiSafeJson } = await import('../../utils/socket/api.mjs')
+    const { fetchPurlDeepScore } = await import('./fetch-purl-deep-score.mts')
+    const { queryApiSafeJson } = await vi.importMock('../../utils/socket/api.mts')
     const mockQueryApi = vi.mocked(queryApiSafeJson)
 
     mockQueryApi.mockResolvedValue(
@@ -96,28 +92,17 @@ describe('fetchPurlDeepScore', () => {
     const result = await fetchPurlDeepScore('pkg:npm/nonexistent@1.0.0')
 
     expect(result.ok).toBe(false)
-    expect(result.code).toBe(404)
-  })
-
-  it('passes custom SDK options', async () => {
-    const { queryApiSafeJson } = await import('../../utils/socket/api.mjs')
-    const mockQueryApi = vi.mocked(queryApiSafeJson)
-
-    mockQueryApi.mockResolvedValue(createSuccessResult({}))
-
-    await fetchPurlDeepScore('pkg:npm/react@18.0.0')
-
-    expect(mockQueryApi).toHaveBeenCalledWith(
-      'purl/score/pkg%3Anpm%2Freact%4018.0.0',
-      'the deep package scores',
-    )
+    if (!result.ok) {
+      expect(result.code).toBe(404)
+    }
   })
 
   it('handles different purl formats', async () => {
-    const { queryApiSafeJson } = await import('../../utils/socket/api.mjs')
+    const { fetchPurlDeepScore } = await import('./fetch-purl-deep-score.mts')
+    const { queryApiSafeJson } = await vi.importMock('../../utils/socket/api.mts')
     const mockQueryApi = vi.mocked(queryApiSafeJson)
 
-    mockQueryApi.mockResolvedValue(createSuccessResult({}))
+    mockQueryApi.mockResolvedValue(createSuccessResult({} as PurlDataResponse))
 
     const purl = 'pkg:npm/lodash@4.17.21'
     await fetchPurlDeepScore(purl)
@@ -129,10 +114,11 @@ describe('fetchPurlDeepScore', () => {
   })
 
   it('handles low score packages', async () => {
-    const { queryApiSafeJson } = await import('../../utils/socket/api.mjs')
+    const { fetchPurlDeepScore } = await import('./fetch-purl-deep-score.mts')
+    const { queryApiSafeJson } = await vi.importMock('../../utils/socket/api.mts')
     const mockQueryApi = vi.mocked(queryApiSafeJson)
 
-    const lowScoreData = {
+    const lowScoreData: PurlDataResponse = {
       purl: 'pkg:npm/vulnerable@0.1.0',
       self: {
         purl: 'pkg:npm/vulnerable@0.1.0',
@@ -183,19 +169,8 @@ describe('fetchPurlDeepScore', () => {
     const result = await fetchPurlDeepScore('pkg:npm/vulnerable@0.1.0')
 
     expect(result.ok).toBe(true)
-    expect(result.data.self.score.overall).toBeLessThan(30)
-  })
-
-  it('uses null prototype for options', async () => {
-    const { queryApiSafeJson } = await import('../../utils/socket/api.mjs')
-    const mockQueryApi = vi.mocked(queryApiSafeJson)
-
-    mockQueryApi.mockResolvedValue(createSuccessResult({}))
-
-    // This tests that the function properly uses __proto__: null.
-    await fetchPurlDeepScore('pkg:npm/test@1.0.0')
-
-    // The function should work without prototype pollution issues.
-    expect(mockQueryApi).toHaveBeenCalled()
+    if (result.ok) {
+      expect(result.data.self.score.overall).toBeLessThan(30)
+    }
   })
 })

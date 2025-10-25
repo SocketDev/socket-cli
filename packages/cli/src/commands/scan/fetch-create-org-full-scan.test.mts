@@ -44,7 +44,7 @@ describe('fetchCreateOrgFullScan', () => {
       config,
     )
 
-    expect(mockSdk.createOrgFullScan).toHaveBeenCalledWith(
+    expect(mockSdk.createFullScan).toHaveBeenCalledWith(
       'test-org',
       ['/path/to/package.json'],
       {
@@ -164,7 +164,7 @@ describe('fetchCreateOrgFullScan', () => {
     )
 
     expect(mockSetupSdk).toHaveBeenCalledWith(options.sdkOpts)
-    expect(mockSdk.createOrgFullScan).toHaveBeenCalledWith(
+    expect(mockSdk.createFullScan).toHaveBeenCalledWith(
       'custom-org',
       ['/path/to/package.json'],
       {
@@ -202,7 +202,7 @@ describe('fetchCreateOrgFullScan', () => {
 
     await fetchCreateOrgFullScan(['/path/to/package.json'], 'test-org', config)
 
-    expect(mockSdk.createOrgFullScan).toHaveBeenCalledWith(
+    expect(mockSdk.createFullScan).toHaveBeenCalledWith(
       'test-org',
       ['/path/to/package.json'],
       {
@@ -241,7 +241,7 @@ describe('fetchCreateOrgFullScan', () => {
 
     await fetchCreateOrgFullScan(packagePaths, 'mono-org', config)
 
-    expect(mockSdk.createOrgFullScan).toHaveBeenCalledWith(
+    expect(mockSdk.createFullScan).toHaveBeenCalledWith(
       'mono-org',
       packagePaths,
       expect.objectContaining({
@@ -271,7 +271,7 @@ describe('fetchCreateOrgFullScan', () => {
     await fetchCreateOrgFullScan(['/path/to/package.json'], 'test-org', config)
 
     // The function should work without prototype pollution issues.
-    expect(mockSdk.createOrgFullScan).toHaveBeenCalled()
+    expect(mockSdk.createFullScan).toHaveBeenCalled()
   })
 
   it('handles edge cases for different org slugs and repo names', async () => {
@@ -300,7 +300,7 @@ describe('fetchCreateOrgFullScan', () => {
       // eslint-disable-next-line no-await-in-loop
       await fetchCreateOrgFullScan(['/path/to/package.json'], org, config)
 
-      expect(mockSdk.createOrgFullScan).toHaveBeenCalledWith(
+      expect(mockSdk.createFullScan).toHaveBeenCalledWith(
         org,
         ['/path/to/package.json'],
         expect.objectContaining({

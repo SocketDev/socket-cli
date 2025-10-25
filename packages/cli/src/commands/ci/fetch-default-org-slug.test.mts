@@ -7,11 +7,9 @@ vi.mock('../../utils/config.mts', () => ({
   getConfigValueOrUndef: vi.fn(),
 }))
 
-vi.mock('../../constants.mts', () => ({
+vi.mock('../../constants/env.mts', () => ({
   default: {
-    ENV: {
-      SOCKET_CLI_ORG_SLUG: undefined,
-    },
+    SOCKET_CLI_ORG_SLUG: undefined,
   },
 }))
 
@@ -37,8 +35,8 @@ describe('getDefaultOrgSlug', () => {
     const { getConfigValueOrUndef } = await import('../../utils/config.mts')
     vi.mocked(getConfigValueOrUndef).mockReturnValue(undefined)
 
-    const constants = await import('../../constants.mts')
-    constants.default.ENV.SOCKET_CLI_ORG_SLUG = 'env-org-slug'
+    const ENV = await import('../../constants/env.mts')
+    ENV.default.SOCKET_CLI_ORG_SLUG = 'env-org-slug'
 
     const result = await getDefaultOrgSlug()
 
@@ -55,8 +53,8 @@ describe('getDefaultOrgSlug', () => {
     )
 
     vi.mocked(getConfigValueOrUndef).mockReturnValue(undefined)
-    const constants = await import('../../constants.mts')
-    constants.default.ENV.SOCKET_CLI_ORG_SLUG = undefined
+    const ENV = await import('../../constants/env.mts')
+    ENV.default.SOCKET_CLI_ORG_SLUG = undefined
 
     vi.mocked(fetchOrganization).mockResolvedValue({
       ok: true,
@@ -87,8 +85,8 @@ describe('getDefaultOrgSlug', () => {
     )
 
     vi.mocked(getConfigValueOrUndef).mockReturnValue(undefined)
-    const constants = await import('../../constants.mts')
-    constants.default.ENV.SOCKET_CLI_ORG_SLUG = undefined
+    const ENV = await import('../../constants/env.mts')
+    ENV.default.SOCKET_CLI_ORG_SLUG = undefined
 
     const error = {
       ok: false,
@@ -109,8 +107,8 @@ describe('getDefaultOrgSlug', () => {
     )
 
     vi.mocked(getConfigValueOrUndef).mockReturnValue(undefined)
-    const constants = await import('../../constants.mts')
-    constants.default.ENV.SOCKET_CLI_ORG_SLUG = undefined
+    const ENV = await import('../../constants/env.mts')
+    ENV.default.SOCKET_CLI_ORG_SLUG = undefined
 
     vi.mocked(fetchOrganization).mockResolvedValue({
       ok: true,
@@ -135,8 +133,8 @@ describe('getDefaultOrgSlug', () => {
     )
 
     vi.mocked(getConfigValueOrUndef).mockReturnValue(undefined)
-    const constants = await import('../../constants.mts')
-    constants.default.ENV.SOCKET_CLI_ORG_SLUG = undefined
+    const ENV = await import('../../constants/env.mts')
+    ENV.default.SOCKET_CLI_ORG_SLUG = undefined
 
     vi.mocked(fetchOrganization).mockResolvedValue({
       ok: true,

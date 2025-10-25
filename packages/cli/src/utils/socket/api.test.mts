@@ -20,26 +20,6 @@ vi.mock('@socketsecurity/lib/spinner', () => ({
   })),
 }))
 
-// Mock constants module.
-const mockEnv = {
-  SOCKET_CLI_API_BASE_URL: undefined as string | undefined,
-}
-
-vi.mock('../constants.mts', async () => {
-  const actual =
-    await vi.importActual<typeof import('../constants.mts')>('../constants.mts')
-  return {
-    ...actual,
-    default: {
-      ...actual.default,
-      get ENV() {
-        return mockEnv
-      },
-      API_V0_URL: 'https://api.socket.dev/v0/',
-    },
-  }
-})
-
 import {
   getDefaultApiBaseUrl,
   getErrorMessageForHttpStatusCode,
@@ -50,17 +30,22 @@ import {
 describe('api utilities', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    // Reset environment variables.
-    mockEnv.SOCKET_CLI_API_BASE_URL = undefined
+    vi.unstubAllEnvs()
   })
 
   afterEach(() => {
     vi.restoreAllMocks()
+    vi.unstubAllEnvs()
   })
 
   describe('getDefaultApiBaseUrl', () => {
     it('returns environment variable when set', async () => {
-      mockEnv.SOCKET_CLI_API_BASE_URL = 'https://custom.api.url'
+      // Use vi.stubEnv to properly mock environment variable.
+      vi.stubEnv('SOCKET_CLI_API_BASE_URL', 'https://custom.api.url')
+      // Reset modules to pick up the new environment variable.
+      await vi.resetModules()
+      // Re-import to get the freshly loaded module with the stubbed env var.
+      const { getDefaultApiBaseUrl } = await import('./api.mts')
       const result = getDefaultApiBaseUrl()
       expect(result).toBe('https://custom.api.url')
     })
@@ -100,17 +85,20 @@ describe('api utilities', () => {
 
     it('returns message for 404 Not Found', async () => {
       const result = await getErrorMessageForHttpStatusCode(404)
-      expect(result).toContain('not found')
+      expect(result).toContain('Not found')
+      expect(result).toContain("doesn't exist")
     })
 
     it('returns message for 500 Internal Server Error', async () => {
       const result = await getErrorMessageForHttpStatusCode(500)
-      expect(result).toContain('server side problem')
+      expect(result).toContain('Server error')
+      expect(result).toContain('internal problem')
     })
 
     it('returns generic message for unknown status code', async () => {
       const result = await getErrorMessageForHttpStatusCode(418)
-      expect(result).toContain('status code 418')
+      expect(result).toContain('HTTP 418')
+      expect(result).toContain('unexpected status code')
     })
   })
 

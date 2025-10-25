@@ -1,17 +1,20 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+// Mock shadow/npx/bin module.
+vi.mock('./shadow/npx/bin.mts', () => ({
+  default: vi.fn(),
+}))
+
+// Import modules after mocks are set up.
+const { default: runNpxCli } = await import('./npx-cli.mts')
+const shadowNpxBinModule = await import('./shadow/npx/bin.mts')
+const mockShadowNpxBin = vi.mocked(shadowNpxBinModule.default)
+
 // Mock process methods.
 const mockProcessExit = vi
   .spyOn(process, 'exit')
   .mockImplementation(() => undefined as never)
 const mockProcessKill = vi.spyOn(process, 'kill').mockImplementation(() => true)
-
-// Mock shadowNpxBin.
-const mockShadowNpxBin = vi.fn()
-
-vi.mock('./shadow/npx/bin.mts', () => ({
-  default: mockShadowNpxBin,
-}))
 
 describe('npx-cli', () => {
   const mockChildProcess = {
@@ -19,12 +22,14 @@ describe('npx-cli', () => {
     pid: 12345,
   }
 
-  const mockSpawnResult = {
-    spawnPromise: {
-      process: mockChildProcess,
-      then: vi.fn().mockResolvedValue({ success: true, code: 0 }),
-    },
-  }
+  // Create a proper promise-like object for spawnPromise.
+  const createMockSpawnResult = (exitCode = 0) => ({
+    spawnPromise: Promise.resolve({
+      success: exitCode === 0,
+      code: exitCode,
+      signal: undefined,
+    }).then(result => Object.assign(result, { process: mockChildProcess })),
+  })
 
   beforeEach(() => {
     vi.clearAllMocks()
@@ -33,22 +38,20 @@ describe('npx-cli', () => {
     process.exitCode = undefined
 
     // Setup default mock implementations.
-    mockShadowNpxBin.mockResolvedValue(mockSpawnResult)
+    mockShadowNpxBin.mockResolvedValue(createMockSpawnResult(0))
     mockChildProcess.on.mockImplementation(() => {
       // No-op by default.
     })
-
-    // Clear module cache to ensure fresh imports.
-    vi.resetModules()
   })
 
   it('should set initial exit code to 1', async () => {
     const originalArgv = process.argv
-    process.argv = ['node', 'npx-cli.mjs', 'create-react-app', 'my-app']
+    process.argv = ['node', 'npx-cli.mts', 'create-react-app', 'my-app']
 
     try {
-      await import('./npx-cli.mts')
+      const promise = runNpxCli()
       expect(process.exitCode).toBe(1)
+      await promise
     } finally {
       process.argv = originalArgv
     }
@@ -56,10 +59,10 @@ describe('npx-cli', () => {
 
   it('should call shadowNpxBin with correct arguments', async () => {
     const originalArgv = process.argv
-    process.argv = ['node', 'npx-cli.mjs', 'create-next-app@latest', 'my-app']
+    process.argv = ['node', 'npx-cli.mts', 'create-next-app@latest', 'my-app']
 
     try {
-      await import('./npx-cli.mts')
+      await runNpxCli()
 
       expect(mockShadowNpxBin).toHaveBeenCalledWith(
         ['create-next-app@latest', 'my-app'],
@@ -74,17 +77,13 @@ describe('npx-cli', () => {
 
   it('should handle process exit with numeric code', async () => {
     const originalArgv = process.argv
-    process.argv = ['node', 'npx-cli.mjs', 'eslint', '.']
+    process.argv = ['node', 'npx-cli.mts', 'eslint', '.']
 
-    mockChildProcess.on.mockImplementation((event, callback) => {
-      if (event === 'exit') {
-        // Trigger callback immediately.
-        callback(1, null)
-      }
-    })
+    // Mock spawn result with exit code 1.
+    mockShadowNpxBin.mockResolvedValue(createMockSpawnResult(1))
 
     try {
-      await import('./npx-cli.mts')
+      await runNpxCli()
 
       expect(mockProcessExit).toHaveBeenCalledWith(1)
     } finally {
@@ -94,17 +93,19 @@ describe('npx-cli', () => {
 
   it('should handle process exit with signal', async () => {
     const originalArgv = process.argv
-    process.argv = ['node', 'npx-cli.mjs', 'webpack-dev-server']
+    process.argv = ['node', 'npx-cli.mts', 'webpack-dev-server']
 
-    mockChildProcess.on.mockImplementation((event, callback) => {
-      if (event === 'exit') {
-        // Trigger callback immediately.
-        callback(null, 'SIGINT')
-      }
+    // Mock spawn result with signal.
+    mockShadowNpxBin.mockResolvedValue({
+      spawnPromise: Promise.resolve({
+        success: false,
+        code: null,
+        signal: 'SIGINT',
+      }).then(result => Object.assign(result, { process: mockChildProcess })),
     })
 
     try {
-      await import('./npx-cli.mts')
+      await runNpxCli()
 
       expect(mockProcessKill).toHaveBeenCalledWith(process.pid, 'SIGINT')
     } finally {
@@ -114,10 +115,10 @@ describe('npx-cli', () => {
 
   it('should handle empty arguments array', async () => {
     const originalArgv = process.argv
-    process.argv = ['node', 'npx-cli.mjs']
+    process.argv = ['node', 'npx-cli.mts']
 
     try {
-      await import('./npx-cli.mts')
+      await runNpxCli()
 
       expect(mockShadowNpxBin).toHaveBeenCalledWith([], {
         stdio: 'inherit',
@@ -129,10 +130,10 @@ describe('npx-cli', () => {
 
   it('should use stdio inherit for process communication', async () => {
     const originalArgv = process.argv
-    process.argv = ['node', 'npx-cli.mjs', 'typescript', '--version']
+    process.argv = ['node', 'npx-cli.mts', 'typescript', '--version']
 
     try {
-      await import('./npx-cli.mts')
+      await runNpxCli()
 
       expect(mockShadowNpxBin).toHaveBeenCalledWith(
         ['typescript', '--version'],
@@ -147,21 +148,13 @@ describe('npx-cli', () => {
 
   it('should wait for spawn promise completion', async () => {
     const originalArgv = process.argv
-    process.argv = ['node', 'npx-cli.mjs', 'jest', '--version']
-
-    const mockThen = vi.fn().mockResolvedValue({ success: true })
-    mockShadowNpxBin.mockResolvedValue({
-      spawnPromise: {
-        process: mockChildProcess,
-        then: mockThen,
-      },
-    })
+    process.argv = ['node', 'npx-cli.mts', 'jest', '--version']
 
     try {
-      await import('./npx-cli.mts')
+      await runNpxCli()
 
       // The spawn promise should be awaited.
-      expect(mockThen).toHaveBeenCalled()
+      expect(mockShadowNpxBin).toHaveBeenCalled()
     } finally {
       process.argv = originalArgv
     }

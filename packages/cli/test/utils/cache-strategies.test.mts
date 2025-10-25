@@ -8,7 +8,7 @@ import {
   getRecommendedTtl,
   isVolatileData,
   shouldWarmCache,
-} from '../../../src/utils/cache-strategies.mts'
+} from '../../src/utils/cache-strategies.mts'
 
 describe('getCacheStrategy', () => {
   it('should return strategy for package info', () => {

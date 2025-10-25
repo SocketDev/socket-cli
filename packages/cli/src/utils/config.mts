@@ -41,9 +41,9 @@ import {
 } from '../constants/config.mts'
 import { getSocketAppDataPath } from '../constants/paths.mts'
 import { SOCKET_YAML, SOCKET_YML } from '../constants/socket.mts'
-import { getErrorCause } from './error/errors.mjs'
+import { getErrorCause } from './error/errors.mts'
 
-import type { CResult } from '../types.mjs'
+import type { CResult } from '../types.mts'
 import type { SocketYml } from '@socketsecurity/config'
 
 export interface LocalConfig {
@@ -165,13 +165,14 @@ export function findSocketYmlSync(
       ymlPath = path.join(dir, SOCKET_YAML)
       yml = safeReadFileSync(ymlPath)
     }
-    if (typeof yml === 'string') {
+    if (typeof yml === 'string' || Buffer.isBuffer(yml)) {
       try {
+        const ymlString = typeof yml === 'string' ? yml : yml.toString('utf8')
         return {
           ok: true,
           data: {
             path: ymlPath,
-            parsed: config.parseSocketConfig(yml),
+            parsed: config.parseSocketConfig(ymlString),
           },
         }
       } catch (e) {
