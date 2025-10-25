@@ -1,5 +1,7 @@
 import path from 'node:path'
 
+import { existsSync, promises as fs } from 'node:fs'
+
 import { joinAnd } from '@socketsecurity/lib/arrays'
 import { logger } from '@socketsecurity/lib/logger'
 
@@ -175,6 +177,22 @@ async function run(
 
   const outputKind = getOutputKind(json, markdown)
 
+  // Resolve target path to absolute for validation.
+  const targetPath = path.isAbsolute(targets[0]!)
+    ? targets[0]!
+    : path.resolve(cwd, targets[0]!)
+
+  // Check if target is inside cwd.
+  const relativePath = path.relative(cwd, targetPath)
+  const isInsideCwd =
+    !relativePath.startsWith('..') && !path.isAbsolute(relativePath)
+
+  let isDirectory = false
+  if (existsSync(targetPath)) {
+    const targetStat = await fs.stat(targetPath)
+    isDirectory = targetStat.isDirectory()
+  }
+
   const wasValidInput = checkCommandInput(
     outputKind,
     {
@@ -200,6 +218,30 @@ async function run(
       test: !outputPath || outputPath.endsWith('.json'),
       message: 'The --output path must end with .json',
       fail: 'use a path ending with .json',
+    },
+    {
+      nook: true,
+      test: targets.length === 1,
+      message: 'Reachability analysis requires exactly one target directory',
+      fail: 'provide exactly one directory path',
+    },
+    {
+      nook: true,
+      test: isDirectory,
+      message: 'Reachability analysis target must be a directory',
+      fail: 'provide a directory path, not a file',
+    },
+    {
+      nook: true,
+      test: existsSync(targetPath),
+      message: 'Target directory must exist',
+      fail: 'provide an existing directory path',
+    },
+    {
+      nook: true,
+      test: isInsideCwd,
+      message: 'Target directory must be inside the current working directory',
+      fail: 'provide a path inside the working directory',
     },
   )
   if (!wasValidInput) {

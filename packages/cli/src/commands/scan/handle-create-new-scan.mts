@@ -165,6 +165,7 @@ export async function handleCreateNewScan({
       reachabilityOptions: reach,
       repoName,
       spinner,
+      target: targets[0]!,
     })
 
     spinner.stop()
