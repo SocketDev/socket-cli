@@ -24,7 +24,7 @@ describe('fetchUpdateRepo', () => {
     const mockSetupSdk = vi.mocked(setupSdk)
 
     const mockSdk = {
-      updateOrgRepo: vi.fn().mockResolvedValue({
+      updateRepository: vi.fn().mockResolvedValue({
         success: true,
         data: {
           id: 'repo-123',
@@ -55,7 +55,7 @@ describe('fetchUpdateRepo', () => {
 
     const result = await fetchUpdateRepo(config)
 
-    expect(mockSdk.updateOrgRepo).toHaveBeenCalledWith(
+    expect(mockSdk.updateRepository).toHaveBeenCalledWith(
       'test-org',
       'updated-repo',
       {
@@ -95,7 +95,7 @@ describe('fetchUpdateRepo', () => {
 
   it('handles API call failure', async () => {
     await setupSdkMockError(
-      'updateOrgRepo',
+      'updateRepository',
       new Error('Repository not found'),
       404,
     )
@@ -122,7 +122,7 @@ describe('fetchUpdateRepo', () => {
     const mockHandleApi = vi.mocked(handleApiCall)
 
     const mockSdk = {
-      updateOrgRepo: vi.fn().mockResolvedValue({}),
+      updateRepository: vi.fn().mockResolvedValue({}),
     }
 
     mockSetupSdk.mockResolvedValue(createSuccessResult(mockSdk))
@@ -154,7 +154,7 @@ describe('fetchUpdateRepo', () => {
     const mockHandleApi = vi.mocked(handleApiCall)
 
     const mockSdk = {
-      updateOrgRepo: vi.fn().mockResolvedValue({}),
+      updateRepository: vi.fn().mockResolvedValue({}),
     }
 
     mockSetupSdk.mockResolvedValue(createSuccessResult(mockSdk))
@@ -171,7 +171,7 @@ describe('fetchUpdateRepo', () => {
 
     await fetchUpdateRepo(config)
 
-    expect(mockSdk.updateOrgRepo).toHaveBeenCalledWith(
+    expect(mockSdk.updateRepository).toHaveBeenCalledWith(
       'secure-org',
       'secret-repo',
       {
@@ -192,7 +192,7 @@ describe('fetchUpdateRepo', () => {
     const mockHandleApi = vi.mocked(handleApiCall)
 
     const mockSdk = {
-      updateOrgRepo: vi.fn().mockResolvedValue({}),
+      updateRepository: vi.fn().mockResolvedValue({}),
     }
 
     mockSetupSdk.mockResolvedValue(createSuccessResult(mockSdk))
@@ -209,7 +209,7 @@ describe('fetchUpdateRepo', () => {
 
     await fetchUpdateRepo(config)
 
-    expect(mockSdk.updateOrgRepo).toHaveBeenCalledWith(
+    expect(mockSdk.updateRepository).toHaveBeenCalledWith(
       'branch-org',
       'branch-test',
       {
@@ -230,7 +230,7 @@ describe('fetchUpdateRepo', () => {
     const mockHandleApi = vi.mocked(handleApiCall)
 
     const mockSdk = {
-      updateOrgRepo: vi.fn().mockResolvedValue({}),
+      updateRepository: vi.fn().mockResolvedValue({}),
     }
 
     mockSetupSdk.mockResolvedValue(createSuccessResult(mockSdk))
@@ -247,7 +247,7 @@ describe('fetchUpdateRepo', () => {
 
     await fetchUpdateRepo(config)
 
-    expect(mockSdk.updateOrgRepo).toHaveBeenCalledWith(
+    expect(mockSdk.updateRepository).toHaveBeenCalledWith(
       'minimal-org',
       'minimal-repo',
       {
@@ -268,7 +268,7 @@ describe('fetchUpdateRepo', () => {
     const mockHandleApi = vi.mocked(handleApiCall)
 
     const mockSdk = {
-      updateOrgRepo: vi.fn().mockResolvedValue({}),
+      updateRepository: vi.fn().mockResolvedValue({}),
     }
 
     mockSetupSdk.mockResolvedValue(createSuccessResult(mockSdk))
@@ -287,6 +287,6 @@ describe('fetchUpdateRepo', () => {
     await fetchUpdateRepo(config)
 
     // The function should work without prototype pollution issues.
-    expect(mockSdk.updateOrgRepo).toHaveBeenCalled()
+    expect(mockSdk.updateRepository).toHaveBeenCalled()
   })
 })
