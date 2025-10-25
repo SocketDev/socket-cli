@@ -37,6 +37,7 @@ export const cmdPatch: CliSubcommand = {
         },
       },
       {
+        defaultSub: 'discover',
         description,
       },
     )
