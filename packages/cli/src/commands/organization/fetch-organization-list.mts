@@ -18,7 +18,7 @@ export type EnterpriseOrganization = Omit<Organization, 'plan'> & {
 export type EnterpriseOrganizations = EnterpriseOrganization[]
 
 export type Organization =
-  SocketSdkSuccessResult<'getOrganizations'>['data']['organizations'][string]
+  SocketSdkSuccessResult<'listOrganizations'>['data']['organizations'][string]
 
 export type Organizations = Organization[]
 
@@ -47,7 +47,7 @@ export async function fetchOrganization(
     sockSdk = sockSdkCResult.data
   }
 
-  const orgsCResult = await handleApiCall(sockSdk.getOrganizations(), {
+  const orgsCResult = await handleApiCall(sockSdk.listOrganizations(), {
     description,
   })
   if (!orgsCResult.ok) {

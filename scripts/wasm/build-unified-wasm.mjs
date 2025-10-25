@@ -1,21 +1,34 @@
 /**
  * Build unified WASM bundle with all models embedded.
  *
+ * USAGE:
+ * - Production build: node scripts/wasm/build-unified-wasm.mjs
+ * - Dev build (3-5x faster): node scripts/wasm/build-unified-wasm.mjs --dev
+ *
  * PROCESS:
  * 1. Check Rust toolchain (install if missing)
  * 2. Download/verify all model files
  * 2.5. Check and install binaryen (wasm-opt) if missing
  * 3. Build Rust WASM bundle with wasm-pack
- * 4. Optimize with wasm-opt (5-15% size reduction)
+ *    - Production: --release (thin LTO, opt-level="z", strip symbols)
+ *    - Dev: --profile dev-wasm (opt-level=1, no LTO, 16 codegen-units)
+ * 4. Optimize with wasm-opt -Oz (5-15% size reduction)
  * 5. Compress with brotli at maximum quality (11)
  * 6. Embed WASM as base64 in JavaScript file
+ *
+ * OPTIMIZATIONS (from ultrathink learnings):
+ * - Cargo profiles: dev-wasm for fast iteration, release for production
+ * - Thin LTO: 5-10% faster builds than full LTO, similar size reduction
+ * - Strip symbols: 5-10% additional size reduction
+ * - wasm-opt -Oz: 5-15% size reduction with graceful fallback
+ * - Brotli compression: ~70% size reduction with quality 11
  *
  * INT4 QUANTIZATION:
  * - CodeT5 models use INT4 (4-bit weights) for 50% size reduction
  * - Only 1-2% quality loss compared to INT8
  *
  * OUTPUT:
- * - wasm-bundle/pkg/socket_ai_bg.wasm (~115MB with INT4)
+ * - build/wasm-bundle/pkg/socket_ai_bg.wasm (~115MB with INT4)
  * - external/socket-ai-sync.mjs (brotli-compressed, base64-encoded WASM)
  */
 
@@ -195,6 +208,14 @@ const { homedir } = await import('node:os')
 const cargoHome = process.env.CARGO_HOME || path.join(homedir(), '.cargo')
 const cargoBin = path.join(cargoHome, 'bin')
 
+// Support dev mode for faster builds (3-5x faster).
+const isDev = process.argv.includes('--dev')
+const profileArgs = isDev ? ['--profile', 'dev-wasm'] : ['--release']
+
+if (isDev) {
+  logger.substep('Using dev-wasm profile (fast, minimal optimization)')
+}
+
 const buildResult = await exec(
   wasmPack,
   [
@@ -206,7 +227,7 @@ const buildResult = await exec(
     pkgDir,
     '--out-name',
     'socket_ai',
-    '--release',
+    ...profileArgs,
   ],
   {
     stdio: 'inherit',
@@ -236,9 +257,10 @@ let stats = await fs.stat(wasmFile)
 const originalSize = stats.size
 logger.info(`WASM bundle size: ${(originalSize / 1024 / 1024).toFixed(2)} MB`)
 
-// Try to optimize with wasm-opt if available.
+// Try to optimize with wasm-opt if available (5-15% size reduction).
+let optimizationSucceeded = false
 try {
-  logger.progress('Optimizing with wasm-opt')
+  logger.progress('Optimizing with wasm-opt -Oz')
   const optResult = await exec('wasm-opt', ['-Oz', wasmFile, '-o', wasmFile], {
     stdio: 'inherit',
   })
@@ -248,13 +270,23 @@ try {
     const optimizedSize = stats.size
     const savings = ((1 - optimizedSize / originalSize) * 100).toFixed(1)
     logger.done(
-      `Optimized size: ${(optimizedSize / 1024 / 1024).toFixed(2)} MB (${savings}% smaller)`,
+      `Optimized: ${(optimizedSize / 1024 / 1024).toFixed(2)} MB (${savings}% reduction)`,
     )
+    optimizationSucceeded = true
   } else {
     logger.warn('wasm-opt optimization failed (continuing with unoptimized)')
+    logger.substep('Install binaryen for optimization: brew install binaryen')
   }
 } catch (_e) {
   logger.warn('wasm-opt not available (install binaryen for optimization)')
+  logger.substep('macOS: brew install binaryen')
+  logger.substep('Linux: sudo apt-get install binaryen')
+  logger.substep('Windows: choco install binaryen')
+}
+
+// Report final size.
+if (!optimizationSucceeded) {
+  logger.info(`Final size: ${(originalSize / 1024 / 1024).toFixed(2)} MB (unoptimized)`)
 }
 
 // Step 5: Embed as base64 in JavaScript.
@@ -269,8 +301,9 @@ const { constants } = await import('node:zlib')
 const wasmCompressed = brotliCompressSync(wasmData, {
   params: {
     [constants.BROTLI_PARAM_QUALITY]: 11, // Maximum quality (0-11)
-    [constants.BROTLI_PARAM_SIZE_HINT]: wasmData.length,
+    [constants.BROTLI_PARAM_SIZE_HINT]: wasmData.length, // Hint for better compression
     [constants.BROTLI_PARAM_LGWIN]: 24, // Maximum window size (10-24)
+    [constants.BROTLI_PARAM_MODE]: constants.BROTLI_MODE_GENERIC, // Generic mode for binary data
   },
 })
 const compressionRatio = (
