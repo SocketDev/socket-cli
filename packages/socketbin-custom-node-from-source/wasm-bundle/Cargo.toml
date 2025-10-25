@@ -14,6 +14,9 @@ wasm-bindgen = "0.2"
 
 [features]
 default = []
+no-models = []         # Build without embedding models (for testing build scripts)
+minilm-only = []       # Build with only MiniLM model (~17 MB)
+codet5-only = []       # Build with only CodeT5 model (~90 MB)
 unoptimized-wasm = []  # Use original unoptimized WASM files
 
 [profile.release]

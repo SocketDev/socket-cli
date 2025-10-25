@@ -19,26 +19,54 @@ use wasm_bindgen::prelude::*;
 
 // Embed all models at compile time using include_bytes!().
 // These files are read during compilation and embedded in the .wasm file's data section.
+//
+// Feature flags:
+// - `no-models`: Build without embedding models (for testing build scripts).
+// - `minilm-only`: Build with only MiniLM model (~17 MB).
+// - `codet5-only`: Build with only CodeT5 model (~90 MB).
+// - `unoptimized-wasm`: Use unoptimized WASM files for faster iteration.
 
-static MINILM_MODEL: &[u8] = include_bytes!("../../.cache/models/minilm-int8.onnx");
-static MINILM_TOKENIZER: &[u8] = include_bytes!("../../.cache/models/minilm-tokenizer.json");
+#[cfg(all(not(feature = "no-models"), not(feature = "codet5-only")))]
+static MINILM_MODEL: &[u8] = include_bytes!("../../../../.cache/models/minilm-int4.onnx");
+#[cfg(any(feature = "no-models", feature = "codet5-only"))]
+static MINILM_MODEL: &[u8] = &[];
 
-static CODET5_ENCODER: &[u8] = include_bytes!("../../.cache/models/codet5-encoder-int4.onnx");
-static CODET5_DECODER: &[u8] = include_bytes!("../../.cache/models/codet5-decoder-int4.onnx");
-static CODET5_TOKENIZER: &[u8] = include_bytes!("../../.cache/models/codet5-tokenizer.json");
+#[cfg(all(not(feature = "no-models"), not(feature = "codet5-only")))]
+static MINILM_TOKENIZER: &[u8] = include_bytes!("../../../../.cache/models/minilm-tokenizer.json");
+#[cfg(any(feature = "no-models", feature = "codet5-only"))]
+static MINILM_TOKENIZER: &[u8] = &[];
+
+#[cfg(all(not(feature = "no-models"), not(feature = "minilm-only")))]
+static CODET5_ENCODER: &[u8] = include_bytes!("../../../../.cache/models/codet5-encoder-int4.onnx");
+#[cfg(any(feature = "no-models", feature = "minilm-only"))]
+static CODET5_ENCODER: &[u8] = &[];
+
+#[cfg(all(not(feature = "no-models"), not(feature = "minilm-only")))]
+static CODET5_DECODER: &[u8] = include_bytes!("../../../../.cache/models/codet5-decoder-int4.onnx");
+#[cfg(any(feature = "no-models", feature = "minilm-only"))]
+static CODET5_DECODER: &[u8] = &[];
+
+#[cfg(all(not(feature = "no-models"), not(feature = "minilm-only")))]
+static CODET5_TOKENIZER: &[u8] = include_bytes!("../../../../.cache/models/codet5-tokenizer.json");
+#[cfg(any(feature = "no-models", feature = "minilm-only"))]
+static CODET5_TOKENIZER: &[u8] = &[];
 
 // Use optimized SIMD-only WASM (single-threaded).
 // We don't use multi-threading (no session options, sequential batching).
 // SIMD-only saves ~2 MB vs threaded version.
-#[cfg(not(feature = "unoptimized-wasm"))]
-static ONNX_RUNTIME: &[u8] = include_bytes!("../../.cache/models/ort-wasm-simd-optimized.wasm");
-#[cfg(feature = "unoptimized-wasm")]
-static ONNX_RUNTIME: &[u8] = include_bytes!("../../.cache/models/ort-wasm-simd.wasm");
+#[cfg(all(not(feature = "unoptimized-wasm"), not(feature = "no-models")))]
+static ONNX_RUNTIME: &[u8] = include_bytes!("../../../../.cache/models/ort-wasm-simd-threaded.wasm");
+#[cfg(all(feature = "unoptimized-wasm", not(feature = "no-models")))]
+static ONNX_RUNTIME: &[u8] = include_bytes!("../../../../.cache/models/ort-wasm-simd-threaded.wasm");
+#[cfg(feature = "no-models")]
+static ONNX_RUNTIME: &[u8] = &[];
 
-#[cfg(not(feature = "unoptimized-wasm"))]
-static YOGA_LAYOUT: &[u8] = include_bytes!("../../.cache/models/yoga-optimized.wasm");
-#[cfg(feature = "unoptimized-wasm")]
-static YOGA_LAYOUT: &[u8] = include_bytes!("../../.cache/models/yoga.wasm");
+#[cfg(all(not(feature = "unoptimized-wasm"), not(feature = "no-models")))]
+static YOGA_LAYOUT: &[u8] = include_bytes!("../../../../.cache/models/yoga.wasm");
+#[cfg(all(feature = "unoptimized-wasm", not(feature = "no-models")))]
+static YOGA_LAYOUT: &[u8] = include_bytes!("../../../../.cache/models/yoga.wasm");
+#[cfg(feature = "no-models")]
+static YOGA_LAYOUT: &[u8] = &[];
 
 // =============================================================================
 // MiniLM Model

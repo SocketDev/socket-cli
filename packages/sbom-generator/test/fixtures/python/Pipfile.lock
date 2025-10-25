@@ -1,0 +1,39 @@
+{
+    "_meta": {
+        "hash": {
+            "sha256": "abc123def456"
+        },
+        "pipfile-spec": 6,
+        "requires": {
+            "python_version": "3.8"
+        }
+    },
+    "default": {
+        "certifi": {
+            "version": "==2023.7.22",
+            "hashes": [
+                "sha256:example123"
+            ]
+        },
+        "requests": {
+            "version": "==2.31.0",
+            "hashes": [
+                "sha256:example456"
+            ]
+        },
+        "urllib3": {
+            "version": "==2.0.4",
+            "hashes": [
+                "sha256:example789"
+            ]
+        }
+    },
+    "develop": {
+        "pytest": {
+            "version": "==7.4.0",
+            "hashes": [
+                "sha256:exampleabc"
+            ]
+        }
+    }
+}
