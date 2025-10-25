@@ -1,0 +1,25 @@
+{
+  "name": "@socketsecurity/lockfile-analyzer",
+  "version": "1.0.0",
+  "description": "Multi-ecosystem lockfile and manifest parser with security enrichment",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": "./src/index.mjs",
+    "./parsers": "./src/parsers/index.mjs",
+    "./enrichment": "./src/enrichment/index.mjs",
+    "./formatters": "./src/formatters/index.mjs"
+  },
+  "scripts": {
+    "test": "vitest",
+    "type": "tsgo"
+  },
+  "dependencies": {
+    "@socketsecurity/lib": "workspace:*",
+    "@yarnpkg/parsers": "^3.0.0",
+    "yaml": "^2.3.4"
+  },
+  "devDependencies": {
+    "vitest": "^2.0.0"
+  }
+}

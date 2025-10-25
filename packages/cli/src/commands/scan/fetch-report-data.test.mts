@@ -24,7 +24,7 @@ vi.mock('@socketsecurity/lib/constants/process', () => ({
   })),
 }))
 
-vi.mock('../../utils/socket/api.mjs', () => ({
+vi.mock('../../utils/socket/api.mts', () => ({
   handleApiCallNoSpinner: vi.fn(),
   queryApiSafeText: vi.fn(),
 }))
@@ -46,7 +46,7 @@ describe('fetchScanData', () => {
     const { fetchScanData } = await import('./fetch-report-data.mts')
     const { setupSdk } = await vi.importMock('../../utils/socket/sdk.mjs')
     const { handleApiCallNoSpinner, queryApiSafeText } = await vi.importMock(
-      '../../utils/socket/api.mjs',
+      '../../utils/socket/api.mts',
     )
 
     const mockSetupSdk = vi.mocked(setupSdk)
@@ -117,7 +117,7 @@ describe('fetchScanData', () => {
   it('handles scan fetch failure', async () => {
     const { fetchScanData } = await import('./fetch-report-data.mts')
     const { setupSdk } = await vi.importMock('../../utils/socket/sdk.mjs')
-    const { queryApiSafeText } = await vi.importMock('../../utils/socket/api.mjs')
+    const { queryApiSafeText } = await vi.importMock('../../utils/socket/api.mts')
 
     const mockSetupSdk = vi.mocked(setupSdk)
     const mockQueryApiText = vi.mocked(queryApiSafeText)
@@ -150,7 +150,7 @@ describe('fetchScanData', () => {
     const { fetchScanData } = await import('./fetch-report-data.mts')
     const { setupSdk } = await vi.importMock('../../utils/socket/sdk.mjs')
     const { handleApiCallNoSpinner, queryApiSafeText } = await vi.importMock(
-      '../../utils/socket/api.mjs',
+      '../../utils/socket/api.mts',
     )
 
     const mockSetupSdk = vi.mocked(setupSdk)

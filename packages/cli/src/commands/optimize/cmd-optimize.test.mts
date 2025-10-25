@@ -68,12 +68,12 @@ async function createTempFixture(sourceDir: string): Promise<string> {
   )
 
   // Copy the fixture files to the temp directory.
-  promises.mkdir(tempDir, { recursive: true })
+  await promises.mkdir(tempDir, { recursive: true })
 
   // Copy package.json.
   const sourcePackageJson = path.join(sourceDir, PACKAGE_JSON)
   const destPackageJson = path.join(tempDir, PACKAGE_JSON)
-  promises.copyFile(sourcePackageJson, destPackageJson)
+  await promises.copyFile(sourcePackageJson, destPackageJson)
 
   // Copy lockfile if it exists.
   const sourceLockFile = path.join(sourceDir, PNPM_LOCK_YAML)

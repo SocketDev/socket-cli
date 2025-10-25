@@ -1,0 +1,16 @@
+{
+  "name": "@socketsecurity/codet5-models",
+  "version": "1.0.0",
+  "description": "CodeT5 model conversion and optimization for Socket CLI",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "build:force": "node scripts/build.mjs --force",
+    "clean": "node scripts/clean.mjs"
+  },
+  "dependencies": {
+    "@socketsecurity/build-infra": "workspace:*",
+    "@socketsecurity/lib": "workspace:*"
+  }
+}

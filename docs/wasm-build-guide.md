@@ -325,7 +325,7 @@ ls -lh socket_ai_bg.wasm*
 - **wasm-pack**: https://rustwasm.github.io/wasm-pack/
 - **wasm-opt (Binaryen)**: https://github.com/WebAssembly/binaryen
 - **sccache**: https://github.com/mozilla/sccache
-- **Ultrathink learnings**: `.claude/wasm-optimization-summary.md`
+- **Implementation details**: `.claude/wasm-optimization-summary.md`
 
 ---
 

@@ -197,6 +197,8 @@
     "// WASM": "",
     "wasm:build": "node scripts/wasm/build-unified-wasm.mjs",
     "wasm:build:dev": "node scripts/wasm/build-unified-wasm.mjs --dev",
+    "wasm:optimize": "node scripts/wasm/optimize-embedded-wasm.mjs",
+    "wasm:optimize:aggressive": "node scripts/wasm/optimize-embedded-wasm.mjs --aggressive",
     "wasm:benchmark": "node scripts/wasm/benchmark-build.mjs",
     "wasm:setup": "node scripts/wasm/setup-build-env.mjs",
     "// Maintenance": "",
