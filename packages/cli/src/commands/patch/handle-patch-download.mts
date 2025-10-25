@@ -253,7 +253,7 @@ async function getOrgSlug(sdk: SocketSdk): Promise<string | undefined> {
 
   // Otherwise, try to fetch from API.
   try {
-    const orgs = await sdk.getOrganizations()
+    const orgs = await sdk.listOrganizations()
     if (Array.isArray(orgs) && orgs.length > 0) {
       return orgs[0]?.slug
     }
