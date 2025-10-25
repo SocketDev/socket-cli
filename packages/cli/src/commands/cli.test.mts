@@ -13,32 +13,61 @@ describe('socket root command', async () => {
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`
-        "\\u26a1 Socket CLI - Secure your supply chain
-
-        What can I help you with?
-
-          [1] \\ud83d\\udd0d  Security Scanning
-              Scan projects for vulnerabilities
-          [2] \\ud83d\\udd27  Fix & Patch
-              Fix vulnerabilities and apply patches
-          [3] \\ud83d\\udce6  Package Managers
-              Enhanced package manager commands
-          [4] \\ud83d\\udcca  Package Analysis
-              Analyze package security
-          [5] \\ud83c\\udfe2  Organizations & Repos
-              Manage organizations and repositories
-          [6] \\u2699\\ufe0f  Configuration
-              Settings and environment variables
-          [7] \\ud83d\\udcac  Natural Language
-              Use plain English commands
-          [8] \\ud83d\\udcda  All Commands
-              Show complete command list
-          [9] \\ud83d\\ude80  Quick Start
-              Get started quickly
-
-        Run with an interactive terminal to select a category
-        Or use: socket --help=<category>
-        Categories: scan, fix, pm, pkg, org, config, ask, all, quick"
+        "Usage
+              $ socket <command>
+              $ socket scan create --json
+              $ socket package score npm lodash --markdown
+          
+            Note: All commands have their own --help
+          
+            Main commands
+              socket login                Setup Socket CLI with an API token and defaults
+              socket scan create          Create a new Socket scan and report
+              socket npm/lodash@4.17.21   Request the Socket score of a package
+              socket fix                  Fix CVEs in dependencies
+              socket optimize             Optimize dependencies with @socketregistry overrides
+              socket cdxgen               Run cdxgen for SBOM generation
+              socket ci                   Alias for \`socket scan create --report\` (creates report and exits with error if unhealthy)
+          
+            Socket API
+              analytics                   Look up analytics data
+              audit-log                   Look up the audit log for an organization
+              organization                Manage Socket organization account details
+              package                     Look up published package details
+              repository                  Manage registered repositories
+              scan                        Manage Socket scans
+              threat-feed                 [Beta] View the threat-feed
+          
+            Local tools
+              manifest                    Generate a dependency manifest for certain ecosystems
+              npm                         Wraps npm with Socket security scanning
+              npx                         Wraps npx with Socket security scanning
+              raw-npm                     Run npm without the Socket wrapper
+              raw-npx                     Run npx without the Socket wrapper
+          
+            CLI configuration
+              config                      Manage Socket CLI configuration
+              install                     Install Socket CLI tab completion
+              login                       Socket API login and CLI setup
+              logout                      Socket API logout
+              uninstall                   Uninstall Socket CLI tab completion
+              whoami                      Check Socket CLI authentication status
+              wrapper                     Enable or disable the Socket npm/npx wrapper
+          
+            Options
+              Note: All commands have these flags even when not displayed in their help
+          
+              --compact-header            Use compact single-line header format (auto-enabled in CI)
+              --config                    Override the local config with this JSON
+              --dry-run                   Run without uploading
+              --help                      Show help
+              --help-full                 Show full help including environment variables
+              --no-banner                 Hide the Socket banner
+              --no-spinner                Hide the console spinner
+              --version                   Print the app version
+          
+            Environment variables [more\\u2026]
+              Use --help-full to view all environment variables"
       `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
