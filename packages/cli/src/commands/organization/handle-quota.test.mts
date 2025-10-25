@@ -1,12 +1,15 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { handleQuota } from './handle-quota.mts'
-import {
-  setupStandardHandleMocks,
-  setupTestEnvironment,
-} from '../../../test/helpers/index.mts'
+import { setupTestEnvironment } from '../../../test/helpers/index.mts'
 
-setupStandardHandleMocks('./fetch-quota.mts', './output-quota.mts')
+vi.mock('./fetch-quota.mts', () => ({
+  fetchQuota: vi.fn(),
+}))
+
+vi.mock('./output-quota.mts', () => ({
+  outputQuota: vi.fn(),
+}))
 
 describe('handleQuota', () => {
   setupTestEnvironment()
