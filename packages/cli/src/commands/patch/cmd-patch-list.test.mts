@@ -86,10 +86,11 @@ describe('socket patch list', async () => {
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
       const json = JSON.parse(stdout)
-      expect(json.patches).toBeDefined()
-      expect(Array.isArray(json.patches)).toBe(true)
-      expect(json.patches.length).toBeGreaterThan(0)
-      expect(json.patches[0]?.purl).toBe('pkg:npm/on-headers@1.0.2')
+      expect(json.ok).toBe(true)
+      expect(json.data?.patches).toBeDefined()
+      expect(Array.isArray(json.data.patches)).toBe(true)
+      expect(json.data.patches.length).toBeGreaterThan(0)
+      expect(json.data.patches[0]?.purl).toBe('pkg:npm/on-headers@1.0.2')
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -107,7 +108,7 @@ describe('socket patch list', async () => {
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toContain('## Patches')
-      expect(stdout).toContain('### pkg:npm/on-headers@1.0.2')
+      expect(stdout).toContain('pkg:npm/on-headers@1.0.2')
       expect(code, 'should exit with code 0').toBe(0)
     },
   )

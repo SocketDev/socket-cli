@@ -75,10 +75,12 @@ export async function handlePatchRm({
     const metadata = await getPatchMetadata(uuid)
     if (!metadata) {
       spinner?.stop()
-      logger.warn(
-        'No backups found for this patch. Original files cannot be restored.',
-      )
-      logger.log('Removing patch from manifest only.')
+      if (outputKind === 'text') {
+        logger.warn(
+          'No backups found for this patch. Original files cannot be restored.',
+        )
+        logger.log('Removing patch from manifest only.')
+      }
     }
 
     let filesRestored = 0
@@ -93,11 +95,13 @@ export async function handlePatchRm({
 
       if (restoreResults.failed.length > 0) {
         spinner?.stop()
-        logger.warn(
-          `Failed to restore ${restoreResults.failed.length} ${pluralize('file', { count: restoreResults.failed.length })}:`,
-        )
-        for (const filePath of restoreResults.failed) {
-          logger.log(`  - ${filePath}`)
+        if (outputKind === 'text') {
+          logger.warn(
+            `Failed to restore ${restoreResults.failed.length} ${pluralize('file', { count: restoreResults.failed.length })}:`,
+          )
+          for (const filePath of restoreResults.failed) {
+            logger.log(`  - ${filePath}`)
+          }
         }
       }
 
@@ -114,11 +118,13 @@ export async function handlePatchRm({
 
     spinner?.stop()
 
-    logger.log(`Removed patch for ${normalizedPurl}`)
-    if (filesRestored > 0) {
-      logger.log(
-        `Restored ${filesRestored} ${pluralize('file', { count: filesRestored })} from backups`,
-      )
+    if (outputKind === 'text') {
+      logger.log(`Removed patch for ${normalizedPurl}`)
+      if (filesRestored > 0) {
+        logger.log(
+          `Restored ${filesRestored} ${pluralize('file', { count: filesRestored })} from backups`,
+        )
+      }
     }
 
     await outputPatchRmResult(

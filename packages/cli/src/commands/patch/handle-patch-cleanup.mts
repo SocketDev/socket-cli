@@ -49,7 +49,9 @@ export async function handlePatchCleanup({
       await cleanupBackups(uuid)
       cleaned.push(uuid)
       spinner?.stop()
-      logger.log(`Cleaned up backups for ${uuid}`)
+      if (outputKind === 'text') {
+        logger.log(`Cleaned up backups for ${uuid}`)
+      }
     } else if (all) {
       // Clean up all backups.
       spinner?.start('Finding all patch backups')
@@ -57,7 +59,9 @@ export async function handlePatchCleanup({
 
       if (allPatchUuids.length === 0) {
         spinner?.stop()
-        logger.log('No patch backups found')
+        if (outputKind === 'text') {
+          logger.log('No patch backups found')
+        }
       } else {
         spinner?.text(
           `Cleaning up ${allPatchUuids.length} ${pluralize('patch', { count: allPatchUuids.length })}`,
@@ -70,9 +74,11 @@ export async function handlePatchCleanup({
         }
 
         spinner?.stop()
-        logger.log(
-          `Cleaned up backups for ${cleaned.length} ${pluralize('patch', { count: cleaned.length })}`,
-        )
+        if (outputKind === 'text') {
+          logger.log(
+            `Cleaned up backups for ${cleaned.length} ${pluralize('patch', { count: cleaned.length })}`,
+          )
+        }
       }
     } else {
       // Clean up orphaned backups (not in manifest).
@@ -104,7 +110,9 @@ export async function handlePatchCleanup({
 
       if (orphanedUuids.length === 0) {
         spinner?.stop()
-        logger.log('No orphaned patch backups found')
+        if (outputKind === 'text') {
+          logger.log('No orphaned patch backups found')
+        }
       } else {
         spinner?.text(
           `Cleaning up ${orphanedUuids.length} orphaned ${pluralize('backup', { count: orphanedUuids.length })}`,
@@ -117,9 +125,11 @@ export async function handlePatchCleanup({
         }
 
         spinner?.stop()
-        logger.log(
-          `Cleaned up ${cleaned.length} orphaned ${pluralize('backup', { count: cleaned.length })}`,
-        )
+        if (outputKind === 'text') {
+          logger.log(
+            `Cleaned up ${cleaned.length} orphaned ${pluralize('backup', { count: cleaned.length })}`,
+          )
+        }
       }
     }
 
