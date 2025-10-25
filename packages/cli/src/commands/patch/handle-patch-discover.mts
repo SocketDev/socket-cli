@@ -631,7 +631,7 @@ async function enrichPatchesWithPackageNames(
 ): Promise<DiscoveredPatch[]> {
   try {
     // Fetch full scan data to get artifact details.
-    const scanResult = await sdk.getOrgFullScanBuffered(orgSlug, scanId)
+    const scanResult = await sdk.getFullScan(orgSlug, scanId)
 
     if (!scanResult.success || !scanResult.data) {
       logger.error('[DEBUG] Failed to fetch scan data for enrichment')
