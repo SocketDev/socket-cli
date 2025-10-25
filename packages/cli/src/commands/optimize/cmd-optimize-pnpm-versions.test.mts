@@ -7,7 +7,7 @@ import { PNPM } from '@socketsecurity/lib/constants/agents'
 import { readPackageJson } from '@socketsecurity/lib/packages'
 import { spawn } from '@socketsecurity/lib/spawn'
 
-import { withTempFixture } from '../../../src/utils/test-fixtures.mts'
+import { withTempFixture } from '../../../test/helpers/test-fixtures.mts'
 import { spawnSocketCli, testPath } from '../../../test/utils.mts'
 import { PNPM_LOCK_YAML } from '../../constants/packages.mts'
 import { FLAG_CONFIG, FLAG_DRY_RUN, FLAG_SILENT } from '../../constants/cli.mts'

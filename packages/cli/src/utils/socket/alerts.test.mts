@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   getAlertsMapFromPnpmLockfile,
   getAlertsMapFromPurls,
-} from './alerts-map.mts'
+} from './alerts.mts'
 
 // Mock dependencies.
 vi.mock('@socketsecurity/lib/logger', () => ({
