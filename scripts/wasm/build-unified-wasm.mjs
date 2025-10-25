@@ -216,6 +216,31 @@ if (isDev) {
   logger.substep('Using dev-wasm profile (fast, minimal optimization)')
 }
 
+// Set up build environment with optimizations.
+const buildEnv = {
+  ...process.env,
+  // Put cargo/bin first in PATH to prioritize rustup's toolchain.
+  PATH: `${cargoBin}${path.delimiter}${process.env.PATH}`,
+}
+
+// Add RUSTFLAGS for additional optimizations (if not already set).
+if (!buildEnv.RUSTFLAGS) {
+  const rustFlags = [
+    '-C target-feature=+simd128', // Enable WASM SIMD (73% browser support)
+  ]
+
+  // Production-only optimizations.
+  if (!isDev) {
+    rustFlags.push(
+      '-C link-arg=--strip-debug', // Strip debug info
+      '-C link-arg=--strip-all', // Strip all symbols
+    )
+  }
+
+  buildEnv.RUSTFLAGS = rustFlags.join(' ')
+  logger.substep(`RUSTFLAGS: ${buildEnv.RUSTFLAGS}`)
+}
+
 const buildResult = await exec(
   wasmPack,
   [
@@ -231,11 +256,7 @@ const buildResult = await exec(
   ],
   {
     stdio: 'inherit',
-    env: {
-      ...process.env,
-      // Put cargo/bin first in PATH to prioritize rustup's toolchain.
-      PATH: `${cargoBin}${path.delimiter}${process.env.PATH}`,
-    },
+    env: buildEnv,
   },
 )
 

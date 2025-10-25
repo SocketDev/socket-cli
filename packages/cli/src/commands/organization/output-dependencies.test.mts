@@ -27,9 +27,9 @@ describe('outputDependencies', () => {
   setupTestEnvironment()
 
   it('outputs JSON format for successful result', async () => {
-    const { logger: _logger } = await import('@socketsecurity/lib/logger')
+    const { logger } = await import('@socketsecurity/lib/logger')
     const { serializeResultJson } = await import(
-      '../../utils/serialize/result-json.mts'
+      '../../utils/output/result-json.mjs'
     )
     const mockLog = vi.mocked(logger.log)
     const mockSerialize = vi.mocked(serializeResultJson)
@@ -63,7 +63,7 @@ describe('outputDependencies', () => {
   })
 
   it('outputs error in JSON format', async () => {
-    const { logger: _logger } = await import('@socketsecurity/lib/logger')
+    const { logger } = await import('@socketsecurity/lib/logger')
     const mockLog = vi.mocked(logger.log)
 
     const result: CResult<
@@ -84,7 +84,7 @@ describe('outputDependencies', () => {
   })
 
   it('outputs markdown format with table', async () => {
-    const { logger: _logger } = await import('@socketsecurity/lib/logger')
+    const { logger } = await import('@socketsecurity/lib/logger')
     const chalkTable = await import('chalk-table')
     const mockLog = vi.mocked(logger.log)
     const mockChalkTable = vi.mocked(chalkTable.default)
@@ -136,7 +136,7 @@ describe('outputDependencies', () => {
   })
 
   it('outputs error in markdown format', async () => {
-    const { logger: _logger } = await import('@socketsecurity/lib/logger')
+    const { logger } = await import('@socketsecurity/lib/logger')
     const { failMsgWithBadge } = await import(
       '../../utils/error/fail-msg-with-badge.mts'
     )
@@ -165,7 +165,7 @@ describe('outputDependencies', () => {
   })
 
   it('shows proper pagination info when more data is available', async () => {
-    const { logger: _logger } = await import('@socketsecurity/lib/logger')
+    const { logger } = await import('@socketsecurity/lib/logger')
     const mockLog = vi.mocked(logger.log)
 
     const result: CResult<
@@ -198,7 +198,7 @@ describe('outputDependencies', () => {
   })
 
   it('handles empty dependencies list', async () => {
-    const { logger: _logger } = await import('@socketsecurity/lib/logger')
+    const { logger } = await import('@socketsecurity/lib/logger')
     const chalkTable = await import('chalk-table')
     const mockChalkTable = vi.mocked(chalkTable.default)
 

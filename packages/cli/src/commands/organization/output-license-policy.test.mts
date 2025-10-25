@@ -17,9 +17,9 @@ describe('outputLicensePolicy', () => {
   })
 
   it('outputs JSON format for successful result', async () => {
-    const { logger: _logger } = await import('@socketsecurity/lib/logger')
+    const { logger } = await import('@socketsecurity/lib/logger')
     const { serializeResultJson } = await import(
-      '../../utils/serialize/result-json.mts'
+      '../../utils/output/result-json.mjs'
     )
     const mockLog = vi.mocked(logger.log)
     const mockSerialize = vi.mocked(serializeResultJson)
@@ -40,7 +40,7 @@ describe('outputLicensePolicy', () => {
   })
 
   it('outputs error in JSON format', async () => {
-    const { logger: _logger } = await import('@socketsecurity/lib/logger')
+    const { logger } = await import('@socketsecurity/lib/logger')
     const mockLog = vi.mocked(logger.log)
 
     const result = createErrorResult('Unauthorized', {
@@ -55,7 +55,7 @@ describe('outputLicensePolicy', () => {
   })
 
   it('outputs text format with license table', async () => {
-    const { logger: _logger } = await import('@socketsecurity/lib/logger')
+    const { logger } = await import('@socketsecurity/lib/logger')
     const { mdTableOfPairs } = await import('../../utils/output/markdown.mts')
     const mockLog = vi.mocked(logger.log)
     const mockInfo = vi.mocked(logger.info)
@@ -84,7 +84,7 @@ describe('outputLicensePolicy', () => {
   })
 
   it('outputs error in text format', async () => {
-    const { logger: _logger } = await import('@socketsecurity/lib/logger')
+    const { logger } = await import('@socketsecurity/lib/logger')
     const { failMsgWithBadge } = await import(
       '../../utils/error/fail-msg-with-badge.mts'
     )
@@ -107,7 +107,7 @@ describe('outputLicensePolicy', () => {
   })
 
   it('handles markdown output format', async () => {
-    const { logger: _logger } = await import('@socketsecurity/lib/logger')
+    const { logger } = await import('@socketsecurity/lib/logger')
     const mockLog = vi.mocked(logger.log)
 
     const result = createSuccessResult({
@@ -123,7 +123,7 @@ describe('outputLicensePolicy', () => {
   })
 
   it('handles empty license policy', async () => {
-    const { logger: _logger } = await import('@socketsecurity/lib/logger')
+    const { logger } = await import('@socketsecurity/lib/logger')
     const { mdTableOfPairs } = await import('../../utils/output/markdown.mts')
     const mockTable = vi.mocked(mdTableOfPairs)
 
@@ -137,7 +137,7 @@ describe('outputLicensePolicy', () => {
   })
 
   it('handles null license policy', async () => {
-    const { logger: _logger } = await import('@socketsecurity/lib/logger')
+    const { logger } = await import('@socketsecurity/lib/logger')
     const { mdTableOfPairs } = await import('../../utils/output/markdown.mts')
     const mockTable = vi.mocked(mdTableOfPairs)
 
