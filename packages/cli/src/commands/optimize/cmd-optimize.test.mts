@@ -404,7 +404,7 @@ describe('socket optimize', async () => {
       async cmd => {
         const tempDir = await createTempFixture(pnpmFixtureDir)
         try {
-          const { code } = await spawnSocketCli(binCliPath, cmd, {
+          const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
             cwd: tempDir,
           })
 
@@ -435,7 +435,7 @@ describe('socket optimize', async () => {
       async cmd => {
         const tempDir = await createTempFixture(pnpmFixtureDir)
         try {
-          const { code } = await spawnSocketCli(binCliPath, cmd, {
+          const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
             cwd: tempDir,
           })
 
@@ -466,7 +466,7 @@ describe('socket optimize', async () => {
       async cmd => {
         const tempDir = await createTempFixture(pnpmFixtureDir)
         try {
-          const { code } = await spawnSocketCli(binCliPath, cmd, {
+          const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
             cwd: tempDir,
           })
 
@@ -503,7 +503,7 @@ describe('socket optimize', async () => {
         // Create temp fixture for this test.
         const { cleanup, tempDir } = await withTempFixture(pnpmFixtureDir)
         try {
-          const { code } = await spawnSocketCli(binCliPath, cmd, {
+          const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
             cwd: tempDir,
           })
 
@@ -569,7 +569,7 @@ describe('socket optimize', async () => {
         // Create temp fixture for this test.
         const { cleanup, tempDir } = await withTempFixture(pnpmFixtureDir)
         try {
-          const { code } = await spawnSocketCli(binCliPath, cmd, {
+          const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
             cwd: tempDir,
           })
 
