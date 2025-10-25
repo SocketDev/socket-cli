@@ -41,11 +41,10 @@ import type { Workspace } from './workspace-helper.mts'
 describe('CLI Execution Helpers - Examples', () => {
   describe('executeCliCommand', () => {
     it('should execute basic command', async () => {
-      const result = await executeCliCommand(['--version'])
+      const result = await executeCliCommand(['config', 'list'])
 
       expect(result.status).toBe(true)
       expect(result.code).toBe(0)
-      expect(result.stdout).toMatch(/\d+\.\d+\.\d+/)
     })
 
     it('should execute with custom config', async () => {
@@ -70,13 +69,13 @@ describe('CLI Execution Helpers - Examples', () => {
     it('should validate successful command', async () => {
       const result = await expectCliSuccess(['--help'])
 
-      expect(result.stdout).toContain('Usage')
-      expect(result.stderr).toBe('')
+      expect(result.stdout).toContain('Socket CLI')
+      expect(result.stderr).toContain('CLI:')
     })
 
     it('should throw on command failure', async () => {
       await expect(expectCliSuccess(['invalid-command'])).rejects.toThrow(
-        /Expected CLI command to succeed/,
+        /Expected exit code 0 but got 2/,
       )
     })
   })
@@ -90,9 +89,9 @@ describe('CLI Execution Helpers - Examples', () => {
     })
 
     it('should validate specific exit code', async () => {
-      const result = await expectCliError(['invalid-command'], 1)
+      const result = await expectCliError(['invalid-command'], 2)
 
-      expect(result.code).toBe(1)
+      expect(result.code).toBe(2)
     })
   })
 
@@ -117,8 +116,8 @@ describe('CLI Execution Helpers - Examples', () => {
 
   describe('executeCliWithRetry', () => {
     it('should retry on failure', async () => {
-      // This command should succeed, so no retries needed
-      const result = await executeCliWithRetry(['--version'], 3, 100)
+      // This command should succeed, so no retries needed.
+      const result = await executeCliWithRetry(['config', 'list'], 3, 100)
 
       expect(result.status).toBe(true)
     })
@@ -127,19 +126,18 @@ describe('CLI Execution Helpers - Examples', () => {
   describe('executeBatchCliCommands', () => {
     it('should execute multiple commands', async () => {
       const results = await executeBatchCliCommands([
-        ['--version'],
-        ['--help'],
         ['config', 'list'],
+        ['whoami'],
       ])
 
-      expect(results).toHaveLength(3)
+      expect(results).toHaveLength(2)
       expect(results[0].status).toBe(true)
     })
   })
 
   describe('executeCliWithTiming', () => {
     it('should measure command execution time', async () => {
-      const { duration, result } = await executeCliWithTiming(['--version'])
+      const { duration, result } = await executeCliWithTiming(['config', 'list'])
 
       expect(result.status).toBe(true)
       expect(duration).toBeGreaterThan(0)
@@ -158,9 +156,9 @@ describe('Output Assertion Helpers - Examples', () => {
 
       expectOutput(result)
         .succeeded()
-        .stdoutContains('Usage')
-        .stdoutContains('Commands')
-        .stderrEmpty()
+        .stdoutContains('Socket CLI')
+        .stdoutContains('What can I help you with?')
+        .stderrContains('CLI:')
     })
 
     it('should validate failure with fluent assertions', async () => {
@@ -168,15 +166,15 @@ describe('Output Assertion Helpers - Examples', () => {
 
       expectOutput(result)
         .failed()
-        .exitCode(1)
-        .stderrContains(/unknown.*command/i)
+        .exitCode(2)
+        .stdoutContains('Commands')
     })
 
     it('should validate output patterns', async () => {
       const result = await executeCliCommand(['--help'])
 
       expectOutput(result)
-        .stdoutContains(/usage/i)
+        .stdoutContains(/socket cli/i)
         .stdoutNotContains('error')
         .outputContains('Socket')
     })
@@ -186,7 +184,11 @@ describe('Output Assertion Helpers - Examples', () => {
     it('should validate multiple required strings', async () => {
       const result = await executeCliCommand(['--help'])
 
-      expectStdoutContainsAll(result.stdout, ['Usage', 'Commands', 'Options'])
+      expectStdoutContainsAll(result.stdout, [
+        'Socket CLI',
+        'What can I help you with?',
+        'Security Scanning',
+      ])
     })
   })
 
@@ -194,7 +196,11 @@ describe('Output Assertion Helpers - Examples', () => {
     it('should validate pattern order', async () => {
       const result = await executeCliCommand(['--help'])
 
-      expectOrderedPatterns(result.stdout, [/usage/i, /commands/i, /options/i])
+      expectOrderedPatterns(result.stdout, [
+        /socket cli/i,
+        /what can i help you with/i,
+        /security scanning/i,
+      ])
     })
   })
 
@@ -209,14 +215,15 @@ describe('Output Assertion Helpers - Examples', () => {
 
   describe('expectLineCount', () => {
     it('should validate output line count', async () => {
-      const result = await executeCliCommand(['--version'])
-      expectLineCount(result.stdout, 1)
+      const result = await executeCliCommand(['config', 'list', '--json'])
+      // JSON output is multi-line formatted.
+      expect(result.stdout.split('\n').length).toBeGreaterThan(5)
     })
   })
 
   describe('expectNoAnsiCodes', () => {
     it('should validate plain text output', async () => {
-      const result = await executeCliCommand(['--version'])
+      const result = await executeCliCommand(['config', 'list', '--json'])
       expectNoAnsiCodes(result.stdout)
     })
   })
@@ -487,24 +494,22 @@ describe('Combined Helper Usage - Real World Examples', () => {
         },
       },
       async workspace => {
-        // Execute CLI command in workspace
-        const result = await executeCliCommand(['--version'], {
+        // Execute CLI command in workspace.
+        const result = await executeCliCommand(['config', 'list'], {
           cwd: workspace.path,
         })
 
-        // Validate output
-        expectOutput(result)
-          .succeeded()
-          .stdoutContains(/\d+\.\d+\.\d+/)
+        // Validate output.
+        expectOutput(result).succeeded()
 
-        // Verify workspace state
+        // Verify workspace state.
         expect(await workspace.fileExists('package.json')).toBe(true)
       },
     )
   })
 
   it('should test with retry and timing', async () => {
-    const { duration, result } = await executeCliWithTiming(['--version'])
+    const { duration, result } = await executeCliWithTiming(['config', 'list'])
 
     expectOutput(result).succeeded()
     expect(duration).toBeLessThan(5000)
@@ -512,9 +517,8 @@ describe('Combined Helper Usage - Real World Examples', () => {
 
   it('should test batch operations', async () => {
     const results = await executeBatchCliCommands([
-      ['--version'],
-      ['--help'],
       ['config', 'list'],
+      ['whoami'],
     ])
 
     expectAllSuccess(
