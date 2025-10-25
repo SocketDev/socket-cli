@@ -2,7 +2,7 @@
  * Benchmark WASM Build Performance
  *
  * Measures and compares build times for dev vs production builds.
- * Helps validate optimization improvements from ultrathink learnings.
+ * Helps validate optimization improvements.
  *
  * USAGE:
  *   node scripts/wasm/benchmark-build.mjs

@@ -90,7 +90,7 @@ Examples:
   # Download pre-built bundle (for quick setup)
   node scripts/wasm.mjs --download
 
-Optimizations (from ultrathink):
+Optimizations:
   - Cargo profiles: dev-wasm (fast) vs release (optimized)
   - Thin LTO: 5-10% faster builds than full LTO
   - Strip symbols: 5-10% size reduction

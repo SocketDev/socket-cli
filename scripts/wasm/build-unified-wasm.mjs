@@ -16,11 +16,13 @@
  * 5. Compress with brotli at maximum quality (11)
  * 6. Embed WASM as base64 in JavaScript file
  *
- * OPTIMIZATIONS (from ultrathink learnings):
+ * OPTIMIZATIONS (aggressive, no backward compat):
  * - Cargo profiles: dev-wasm for fast iteration, release for production
  * - Thin LTO: 5-10% faster builds than full LTO, similar size reduction
  * - Strip symbols: 5-10% additional size reduction
- * - wasm-opt -Oz: 5-15% size reduction with graceful fallback
+ * - Disabled overflow checks and debug assertions (smaller, faster)
+ * - WASM features: SIMD, bulk-memory, sign-ext, mutable-globals, reference-types
+ * - wasm-opt aggressive: Multiple optimization passes, modern features
  * - Brotli compression: ~70% size reduction with quality 11
  *
  * INT4 QUANTIZATION:
@@ -179,6 +181,24 @@ if (!hasModels) {
   process.exit(1)
 }
 
+// Step 2.5: Optimize embedded WASM files (the big wins).
+logger.substep('Step 2.5: Optimizing embedded WASM files')
+logger.info('This optimizes the third-party WASM (ONNX, Yoga) BEFORE embedding')
+const optimizeScript = path.join(__dirname, 'optimize-embedded-wasm.mjs')
+try {
+  const optimizeArgs = [optimizeScript]
+  if (!isDev) {
+    optimizeArgs.push('--aggressive')
+  }
+  const optimizeResult = await exec('node', optimizeArgs, { stdio: 'inherit' })
+  if (optimizeResult.code !== 0) {
+    logger.warn('WASM optimization failed, using original files')
+  }
+} catch (e) {
+  logger.warn(`WASM optimization skipped: ${e.message}`)
+  logger.warn('Will use original unoptimized WASM files')
+}
+
 // Step 2.5: Check and install binaryen for wasm-opt.
 logger.substep('Step 2.5: Checking binaryen (wasm-opt)')
 const hasBinaryen = await checkBinaryenInstalled()
@@ -227,6 +247,9 @@ const buildEnv = {
 if (!buildEnv.RUSTFLAGS) {
   const rustFlags = [
     '-C target-feature=+simd128', // Enable WASM SIMD (73% browser support)
+    '-C target-feature=+bulk-memory', // Bulk memory operations (faster copies)
+    '-C target-feature=+mutable-globals', // Mutable globals support
+    '-C target-feature=+sign-ext', // Sign extension operations
   ]
 
   // Production-only optimizations.
@@ -234,6 +257,8 @@ if (!buildEnv.RUSTFLAGS) {
     rustFlags.push(
       '-C link-arg=--strip-debug', // Strip debug info
       '-C link-arg=--strip-all', // Strip all symbols
+      '-C link-arg=-zstack-size=131072', // Smaller stack size (128KB)
+      '-C embed-bitcode=yes', // Embed bitcode for LTO
     )
   }
 
@@ -281,8 +306,24 @@ logger.info(`WASM bundle size: ${(originalSize / 1024 / 1024).toFixed(2)} MB`)
 // Try to optimize with wasm-opt if available (5-15% size reduction).
 let optimizationSucceeded = false
 try {
-  logger.progress('Optimizing with wasm-opt -Oz')
-  const optResult = await exec('wasm-opt', ['-Oz', wasmFile, '-o', wasmFile], {
+  logger.progress('Optimizing with wasm-opt (aggressive)')
+
+  // Aggressive optimization flags (no backward compat needed).
+  const wasmOptFlags = [
+    '-Oz', // Optimize for size
+    '--enable-simd', // Enable SIMD operations
+    '--enable-bulk-memory', // Enable bulk memory
+    '--enable-sign-ext', // Enable sign extension
+    '--enable-mutable-globals', // Enable mutable globals
+    '--enable-nontrapping-float-to-int', // Non-trapping float conversions
+    '--enable-reference-types', // Enable reference types
+    '--low-memory-unused', // Optimize for low memory usage
+    '--flatten', // Flatten IR for better optimization
+    '--rereloop', // Optimize control flow
+    '--vacuum', // Remove unused code
+  ]
+
+  const optResult = await exec('wasm-opt', [...wasmOptFlags, wasmFile, '-o', wasmFile], {
     stdio: 'inherit',
   })
 
