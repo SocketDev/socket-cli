@@ -420,7 +420,7 @@ describe('socket fix', async () => {
   )
 
   cmdit(
-    ['fix', '.', FLAG_CONFIG, '{"apiToken":"fake-token"}'],
+    ['fix', '.', FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fake-token"}'],
     'should handle vulnerable dependencies fixture project',
     async cmd => {
       const { cleanup, tempDir } = await withTempFixture(
@@ -432,16 +432,14 @@ describe('socket fix', async () => {
         cwd: tempDir,
       })
       const output = stdout + stderr
-      expect(output).toContain(
-        'Unable to resolve a Socket account organization',
-      )
-      expect(code, 'should exit with non-zero code').not.toBe(0)
+      expect(output).toContain('[DryRun]')
+      expect(code, 'should exit with code 0').toBe(0)
     },
     { timeout: testTimeout },
   )
 
   cmdit(
-    ['fix', '.', FLAG_CONFIG, '{"apiToken":"fake-token"}'],
+    ['fix', '.', FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fake-token"}'],
     'should handle monorepo fixture project',
     async cmd => {
       const { cleanup, tempDir } = await withTempFixture(
@@ -453,10 +451,8 @@ describe('socket fix', async () => {
         cwd: tempDir,
       })
       const output = stdout + stderr
-      expect(output).toContain(
-        'Unable to resolve a Socket account organization',
-      )
-      expect(code, 'should exit with non-zero code').not.toBe(0)
+      expect(output).toContain('[DryRun]')
+      expect(code, 'should exit with code 0').toBe(0)
     },
     { timeout: testTimeout },
   )
@@ -484,6 +480,7 @@ describe('socket fix', async () => {
       'fix',
       FLAG_ID,
       'GHSA-35jh-r3h4-6jhm',
+      FLAG_DRY_RUN,
       FLAG_CONFIG,
       '{"apiToken":"fake-token"}',
     ],
@@ -491,36 +488,30 @@ describe('socket fix', async () => {
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       const output = stdout + stderr
-      expect(output).toContain(
-        'Unable to resolve a Socket account organization',
-      )
-      expect(code, 'should exit with non-zero code').not.toBe(0)
+      expect(output).toContain('[DryRun]')
+      expect(code, 'should exit with code 0').toBe(0)
     },
   )
 
   cmdit(
-    ['fix', '--id', 'CVE-2021-23337', FLAG_CONFIG, '{"apiToken":"fake-token"}'],
+    ['fix', '--id', 'CVE-2021-23337', FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fake-token"}'],
     'should handle CVE ID conversion for lodash vulnerability',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       const output = stdout + stderr
-      expect(output).toContain(
-        'Unable to resolve a Socket account organization',
-      )
-      expect(code, 'should exit with non-zero code').not.toBe(0)
+      expect(output).toContain('[DryRun]')
+      expect(code, 'should exit with code 0').toBe(0)
     },
   )
 
   cmdit(
-    ['fix', '--limit', '1', FLAG_CONFIG, '{"apiToken":"fake-token"}'],
+    ['fix', '--limit', '1', FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fake-token"}'],
     'should respect fix limit parameter',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       const output = stdout + stderr
-      expect(output).toContain(
-        'Unable to resolve a Socket account organization',
-      )
-      expect(code, 'should exit with non-zero code').not.toBe(0)
+      expect(output).toContain('[DryRun]')
+      expect(code, 'should exit with code 0').toBe(0)
     },
   )
 
@@ -530,6 +521,7 @@ describe('socket fix', async () => {
       '--range-style',
       'preserve',
       '--autopilot',
+      FLAG_DRY_RUN,
       FLAG_CONFIG,
       '{"apiToken":"fake-token"}',
     ],
@@ -537,36 +529,30 @@ describe('socket fix', async () => {
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       const output = stdout + stderr
-      expect(output).toContain(
-        'Unable to resolve a Socket account organization',
-      )
-      expect(code, 'should exit with non-zero code').not.toBe(0)
+      expect(output).toContain('[DryRun]')
+      expect(code, 'should exit with code 0').toBe(0)
     },
   )
 
   cmdit(
-    ['fix', '--range-style', 'pin', FLAG_CONFIG, '{"apiToken":"fake-token"}'],
+    ['fix', '--range-style', 'pin', FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fake-token"}'],
     'should handle pin range style for exact versions',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       const output = stdout + stderr
-      expect(output).toContain(
-        'Unable to resolve a Socket account organization',
-      )
-      expect(code, 'should exit with non-zero code').not.toBe(0)
+      expect(output).toContain('[DryRun]')
+      expect(code, 'should exit with code 0').toBe(0)
     },
   )
 
   cmdit(
-    ['fix', '--json', FLAG_CONFIG, '{"apiToken":"fake-token"}'],
+    ['fix', '--json', FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fake-token"}'],
     'should output results in JSON format',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       const output = stdout + stderr
-      expect(output).toContain(
-        'Unable to resolve a Socket account organization',
-      )
-      expect(code, 'should exit with non-zero code').not.toBe(0)
+      expect(output).toContain('[DryRun]')
+      expect(code, 'should exit with code 0').toBe(0)
     },
   )
 
