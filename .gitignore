@@ -46,3 +46,7 @@ uild directory for temporary artifacts
 !/build/out/Yao
 /build/out/Yao/*
 /binaries
+
+# Ignore socketbin package build artifacts (binaries and wasm files)
+# These are generated during build and should not be committed
+packages/socketbin-*/bin/
