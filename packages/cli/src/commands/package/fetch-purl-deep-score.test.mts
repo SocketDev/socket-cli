@@ -13,7 +13,7 @@ vi.mock('@socketsecurity/lib/logger', () => ({
   },
 }))
 
-vi.mock('../../utils/socket/api.mjs', () => ({
+vi.mock('../../utils/socket/api.mts', () => ({
   queryApiSafeJson: vi.fn(),
 }))
 
@@ -24,7 +24,7 @@ describe('fetchPurlDeepScore', () => {
 
   it('fetches purl deep score successfully', async () => {
     const { fetchPurlDeepScore } = await import('./fetch-purl-deep-score.mts')
-    const { queryApiSafeJson } = await vi.importMock('../../utils/socket/api.mjs')
+    const { queryApiSafeJson } = await vi.importMock('../../utils/socket/api.mts')
     const mockQueryApi = vi.mocked(queryApiSafeJson)
 
     const mockData: PurlDataResponse = {
@@ -82,7 +82,7 @@ describe('fetchPurlDeepScore', () => {
 
   it('handles API call failure', async () => {
     const { fetchPurlDeepScore } = await import('./fetch-purl-deep-score.mts')
-    const { queryApiSafeJson } = await vi.importMock('../../utils/socket/api.mjs')
+    const { queryApiSafeJson } = await vi.importMock('../../utils/socket/api.mts')
     const mockQueryApi = vi.mocked(queryApiSafeJson)
 
     mockQueryApi.mockResolvedValue(
@@ -99,7 +99,7 @@ describe('fetchPurlDeepScore', () => {
 
   it('handles different purl formats', async () => {
     const { fetchPurlDeepScore } = await import('./fetch-purl-deep-score.mts')
-    const { queryApiSafeJson } = await vi.importMock('../../utils/socket/api.mjs')
+    const { queryApiSafeJson } = await vi.importMock('../../utils/socket/api.mts')
     const mockQueryApi = vi.mocked(queryApiSafeJson)
 
     mockQueryApi.mockResolvedValue(createSuccessResult({} as PurlDataResponse))
@@ -115,7 +115,7 @@ describe('fetchPurlDeepScore', () => {
 
   it('handles low score packages', async () => {
     const { fetchPurlDeepScore } = await import('./fetch-purl-deep-score.mts')
-    const { queryApiSafeJson } = await vi.importMock('../../utils/socket/api.mjs')
+    const { queryApiSafeJson } = await vi.importMock('../../utils/socket/api.mts')
     const mockQueryApi = vi.mocked(queryApiSafeJson)
 
     const lowScoreData: PurlDataResponse = {

@@ -2,7 +2,6 @@
  * Setup WASM Build Environment
  *
  * Configures optimal build settings for WASM compilation.
- * Based on ultrathink/acorn learnings for maximum performance.
  *
  * OPTIMIZATIONS:
  * - sccache: Shared compilation cache (40-60% faster clean builds)
