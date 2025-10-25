@@ -572,6 +572,18 @@ export async function meowWithSubcommands(
       })
     }
 
+    // If no command found but defaultSub exists, use it as the command.
+    // This treats the first arg as an argument to the default subcommand.
+    if (!commandDefinition && defaultSub && subcommands[defaultSub]) {
+      return await subcommands[defaultSub].run(
+        [commandOrAliasName, ...rawCommandArgv],
+        importMeta,
+        {
+          parentName: name,
+        },
+      )
+    }
+
     // Suggest similar commands for typos.
     if (commandName && !commandDefinition) {
       const suggestion = findBestCommandMatch(commandName, subcommands, aliases)
