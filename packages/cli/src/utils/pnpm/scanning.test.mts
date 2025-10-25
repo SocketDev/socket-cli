@@ -13,20 +13,21 @@ const mockFindSocketYmlSync = vi.hoisted(() => vi.fn())
 const mockAddArtifactToAlertsMap = vi.hoisted(() => vi.fn())
 const mockBatchPackageStream = vi.hoisted(() => vi.fn())
 
-vi.mock('./sdk.mts', () => ({
+vi.mock('../socket/sdk.mts', () => ({
   getPublicApiToken: mockGetPublicApiToken,
   setupSdk: mockSetupSdk,
 }))
 
 vi.mock('../config.mts', () => ({
   findSocketYmlSync: mockFindSocketYmlSync,
+  getConfigValueOrUndef: vi.fn(() => undefined),
 }))
 
-vi.mock('./socket-package-alert.mts', () => ({
+vi.mock('../socket/package-alert.mts', () => ({
   addArtifactToAlertsMap: mockAddArtifactToAlertsMap,
 }))
 
-vi.mock('./filter-config.mts', () => ({
+vi.mock('../validation/filter-config.mts', () => ({
   toFilterConfig: vi.fn(filter => filter || {}),
 }))
 
