@@ -18,7 +18,7 @@ describe('socket manifest conda', async () => {
     async cmd => {
       const {
         code,
-        stderr: _stderr,
+        stderr,
         stdout,
       } = await spawnSocketCli(binCliPath, cmd, {
         cwd: testPath,
@@ -28,16 +28,16 @@ describe('socket manifest conda', async () => {
 
           Usage
                 $ socket manifest conda [options] [CWD=.]
-          
+
               Warning: While we don't support Conda necessarily, this tool extracts the pip
                        block from an environment.yml and outputs it as a requirements.txt
                        which you can scan as if it were a PyPI package.
-          
+
               USE AT YOUR OWN RISK
-          
+
               Note: FILE can be a dash (-) to indicate stdin. This way you can pipe the
                     contents of a file to have it processed.
-          
+
               Options
                 --file              Input file name (by default for Conda this is "environment.yml"), relative to cwd
                 --json              Output as JSON
@@ -46,9 +46,9 @@ describe('socket manifest conda', async () => {
                 --stdin             Read the input from stdin (supersedes --file)
                 --stdout            Print resulting requirements.txt to stdout (supersedes --out)
                 --verbose           Print debug messages
-          
+
               Examples
-          
+
                 $ socket manifest conda
                 $ socket manifest conda ./project/foo --file environment.yaml"
       `)
@@ -70,7 +70,7 @@ describe('socket manifest conda', async () => {
     async cmd => {
       const {
         code,
-        stderr: _stderr,
+        stderr,
         stdout,
       } = await spawnSocketCli(binCliPath, cmd, {
         cwd: testPath,
@@ -99,7 +99,7 @@ describe('socket manifest conda', async () => {
       async cmd => {
         const {
           code: _code,
-          stderr: _stderr,
+          stderr,
           stdout,
         } = await spawnSocketCli(binCliPath, cmd, {
           cwd: testPath,
@@ -162,7 +162,7 @@ describe('socket manifest conda', async () => {
       async cmd => {
         const {
           code: _code,
-          stderr: _stderr,
+          stderr,
           stdout,
         } = await spawnSocketCli(binCliPath, cmd, {
           cwd: testPath,
