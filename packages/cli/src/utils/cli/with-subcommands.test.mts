@@ -4,7 +4,7 @@ import {
   emitBanner,
   getLastSeenCommand,
   meowOrExit,
-} from './with-subcommands.mjs'
+} from './with-subcommands.mts'
 import meow from '../../meow.mts'
 
 // Mock meow.

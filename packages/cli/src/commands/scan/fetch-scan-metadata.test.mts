@@ -3,11 +3,11 @@ import { describe, expect, it, vi } from 'vitest'
 import { setupSdkMockSuccess } from '../../../test/helpers/sdk-test-helpers.mts'
 
 // Mock the dependencies.
-vi.mock('../../utils/socket/api.mjs', () => ({
+vi.mock('../../utils/socket/api.mts', () => ({
   handleApiCall: vi.fn(),
 }))
 
-vi.mock('../../utils/socket/sdk.mjs', () => ({
+vi.mock('../../utils/socket/sdk.mts', () => ({
   setupSdk: vi.fn(),
 }))
 
@@ -39,7 +39,7 @@ describe('fetchScanMetadata', () => {
 
   it('handles SDK setup failure', async () => {
     const { fetchScanMetadata } = await import('./fetch-scan-metadata.mts')
-    const { setupSdkSetupFailure } = await import(
+    const { await setupSdkSetupFailure } = await import(
       '../../../test/helpers/sdk-test-helpers.mts'
     )
 
@@ -56,7 +56,7 @@ describe('fetchScanMetadata', () => {
 
   it('handles API call failure', async () => {
     const { fetchScanMetadata } = await import('./fetch-scan-metadata.mts')
-    const { setupSdkMockError } = await import(
+    const { await setupSdkMockError } = await import(
       '../../../test/helpers/sdk-test-helpers.mts'
     )
 

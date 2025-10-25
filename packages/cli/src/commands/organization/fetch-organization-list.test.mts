@@ -8,11 +8,11 @@ import {
 } from '../../../test/helpers/sdk-test-helpers.mts'
 
 // Mock the dependencies.
-vi.mock('../../utils/socket/api.mjs', () => ({
+vi.mock('../../utils/socket/api.mts', () => ({
   handleApiCall: vi.fn(),
 }))
 
-vi.mock('../../utils/socket/sdk.mjs', () => ({
+vi.mock('../../utils/socket/sdk.mts', () => ({
   setupSdk: vi.fn(),
 }))
 
@@ -88,7 +88,7 @@ describe('fetchOrganizationList', () => {
   })
 
   it('uses provided SDK instance', async () => {
-    const { handleApiCall } = await import('../../utils/socket/api.mjs')
+    const { handleApiCall } = await import('../../utils/socket/api.mts')
     const { createSuccessResult } = await import(
       '../../../test/helpers/mocks.mts'
     )

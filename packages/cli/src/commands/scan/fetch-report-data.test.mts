@@ -59,17 +59,17 @@ vi.mock('../../constants.mts', () => {
   }
 })
 
-vi.mock('../../utils/socket/api.mjs', () => ({
+vi.mock('../../utils/socket/api.mts', () => ({
   handleApiCall: vi.fn(),
   handleApiCallNoSpinner: vi.fn(),
   queryApiSafeText: vi.fn(),
 }))
 
-vi.mock('../../utils/socket/sdk.mjs', () => ({
+vi.mock('../../utils/socket/sdk.mts', () => ({
   setupSdk: vi.fn(),
 }))
 
-vi.mock('../../utils/error/errors.mjs', () => ({
+vi.mock('../../utils/error/errors.mts', () => ({
   formatErrorWithDetail: vi.fn(),
 }))
 
@@ -81,7 +81,7 @@ describe('fetchScanData', () => {
   it('fetches scan data successfully', async () => {
     const { fetchScanData } = await import('./fetch-report-data.mts')
     const { handleApiCallNoSpinner, queryApiSafeText } = await import(
-      '../../utils/socket/api.mjs'
+      '../../utils/socket/api.mts'
     )
     const mockQueryApiText = vi.mocked(queryApiSafeText)
     const mockHandleApiNoSpinner = vi.mocked(handleApiCallNoSpinner)
@@ -149,7 +149,7 @@ describe('fetchScanData', () => {
 
   it('handles scan fetch failure', async () => {
     const { fetchScanData } = await import('./fetch-report-data.mts')
-    const { queryApiSafeText } = await import('../../utils/socket/api.mjs')
+    const { queryApiSafeText } = await import('../../utils/socket/api.mts')
     const mockQueryApiText = vi.mocked(queryApiSafeText)
 
     await setupSdkMockWithCustomSdk(
@@ -178,7 +178,7 @@ describe('fetchScanData', () => {
   it('handles security policy fetch failure', async () => {
     const { fetchScanData } = await import('./fetch-report-data.mts')
     const { handleApiCallNoSpinner, queryApiSafeText } = await import(
-      '../../utils/socket/api.mjs'
+      '../../utils/socket/api.mts'
     )
     const mockQueryApiText = vi.mocked(queryApiSafeText)
     const mockHandleApiNoSpinner = vi.mocked(handleApiCallNoSpinner)
@@ -212,7 +212,7 @@ describe('fetchScanData', () => {
   it('handles invalid JSON in scan data', async () => {
     const { fetchScanData } = await import('./fetch-report-data.mts')
     const { handleApiCallNoSpinner, queryApiSafeText } = await import(
-      '../../utils/socket/api.mjs'
+      '../../utils/socket/api.mts'
     )
     const { debug, debugDir } = await import('@socketsecurity/lib/debug')
     const mockQueryApiText = vi.mocked(queryApiSafeText)
@@ -251,7 +251,7 @@ describe('fetchScanData', () => {
   it('includes license policy when requested', async () => {
     const { fetchScanData } = await import('./fetch-report-data.mts')
     const { handleApiCallNoSpinner, queryApiSafeText } = await import(
-      '../../utils/socket/api.mjs'
+      '../../utils/socket/api.mts'
     )
     const mockQueryApiText = vi.mocked(queryApiSafeText)
     const mockHandleApiNoSpinner = vi.mocked(handleApiCallNoSpinner)
@@ -285,7 +285,7 @@ describe('fetchScanData', () => {
   it('handles custom SDK options', async () => {
     const { fetchScanData } = await import('./fetch-report-data.mts')
     const { handleApiCallNoSpinner, queryApiSafeText } = await import(
-      '../../utils/socket/api.mjs'
+      '../../utils/socket/api.mts'
     )
     const mockQueryApiText = vi.mocked(queryApiSafeText)
     const mockHandleApiNoSpinner = vi.mocked(handleApiCallNoSpinner)
@@ -319,7 +319,7 @@ describe('fetchScanData', () => {
 
   it('handles non-array scan data', async () => {
     const { fetchScanData } = await import('./fetch-report-data.mts')
-    const { queryApiSafeText } = await import('../../utils/socket/api.mjs')
+    const { queryApiSafeText } = await import('../../utils/socket/api.mts')
     const mockQueryApiText = vi.mocked(queryApiSafeText)
 
     await setupSdkMockWithCustomSdk(
@@ -346,7 +346,7 @@ describe('fetchScanData', () => {
   it('uses null prototype for options', async () => {
     const { fetchScanData } = await import('./fetch-report-data.mts')
     const { handleApiCallNoSpinner, queryApiSafeText } = await import(
-      '../../utils/socket/api.mjs'
+      '../../utils/socket/api.mts'
     )
     const mockQueryApiText = vi.mocked(queryApiSafeText)
     const mockHandleApiNoSpinner = vi.mocked(handleApiCallNoSpinner)

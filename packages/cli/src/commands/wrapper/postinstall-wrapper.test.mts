@@ -25,13 +25,13 @@ vi.mock('../../constants/paths.mts', () => ({
   getBashRcPath: vi.fn(() => '/home/user/.bashrc'),
   getZshRcPath: vi.fn(() => '/home/user/.zshrc'),
 }))
-vi.mock('../../utils/cli/completion.mjs', () => ({
+vi.mock('../../utils/cli/completion.mts', () => ({
   getBashrcDetails: vi.fn(),
 }))
 vi.mock('../install/setup-tab-completion.mts', () => ({
   updateInstalledTabCompletionScript: vi.fn(),
 }))
-vi.mock('../../utils/error/errors.mjs', () => ({
+vi.mock('../../utils/error/errors.mts', () => ({
   getErrorCause: vi.fn(e => e?.message || String(e)),
 }))
 
@@ -175,7 +175,7 @@ describe('postinstallWrapper', () => {
   })
 
   it('updates tab completion when it exists', async () => {
-    const { getBashrcDetails } = await import('../../utils/cli/completion.mjs')
+    const { getBashrcDetails } = await import('../../utils/cli/completion.mts')
     const { logger } = await import('@socketsecurity/lib/logger')
     const { updateInstalledTabCompletionScript } = await import(
       '../install/setup-tab-completion.mts'
@@ -209,7 +209,7 @@ describe('postinstallWrapper', () => {
   })
 
   it('skips tab completion update when file does not exist', async () => {
-    const { getBashrcDetails } = await import('../../utils/cli/completion.mjs')
+    const { getBashrcDetails } = await import('../../utils/cli/completion.mts')
     const { logger } = await import('@socketsecurity/lib/logger')
     const { updateInstalledTabCompletionScript } = await import(
       '../install/setup-tab-completion.mts'
@@ -239,7 +239,7 @@ describe('postinstallWrapper', () => {
   })
 
   it('handles tab completion update failure gracefully', async () => {
-    const { getBashrcDetails } = await import('../../utils/cli/completion.mjs')
+    const { getBashrcDetails } = await import('../../utils/cli/completion.mts')
     const { logger } = await import('@socketsecurity/lib/logger')
     const mockExistsSync = vi.mocked(existsSync) as any
     const mockGetDetails = vi.mocked(getBashrcDetails)
@@ -262,7 +262,7 @@ describe('postinstallWrapper', () => {
   })
 
   it('handles getBashrcDetails returning not ok', async () => {
-    const { getBashrcDetails } = await import('../../utils/cli/completion.mjs')
+    const { getBashrcDetails } = await import('../../utils/cli/completion.mts')
     const { logger } = await import('@socketsecurity/lib/logger')
     const mockExistsSync = vi.mocked(existsSync) as any
     const mockGetDetails = vi.mocked(getBashrcDetails)

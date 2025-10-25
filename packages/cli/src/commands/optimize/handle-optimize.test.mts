@@ -31,7 +31,7 @@ vi.mock('./shared.mts', () => ({
 vi.mock('../../utils/process/cmd.mts', () => ({
   cmdPrefixMessage: vi.fn((cmd, msg) => `${cmd}: ${msg}`),
 }))
-vi.mock('../../utils/ecosystem/environment.mjs', () => ({
+vi.mock('../../utils/ecosystem/environment.mts', () => ({
   detectAndValidatePackageEnvironment: vi.fn(),
 }))
 
@@ -49,7 +49,7 @@ describe('handleOptimize', () => {
 
   it('optimizes packages successfully', async () => {
     const { detectAndValidatePackageEnvironment } = await import(
-      '../../utils/ecosystem/environment.mjs'
+      '../../utils/ecosystem/environment.mts'
     )
     const { applyOptimization } = await import('./apply-optimization.mts')
     const { outputOptimizeResult } = await import(
@@ -104,7 +104,7 @@ describe('handleOptimize', () => {
 
   it('handles package environment validation failure', async () => {
     const { detectAndValidatePackageEnvironment } = await import(
-      '../../utils/ecosystem/environment.mjs'
+      '../../utils/ecosystem/environment.mts'
     )
     const { outputOptimizeResult } = await import(
       './output-optimize-result.mts'
@@ -134,7 +134,7 @@ describe('handleOptimize', () => {
 
   it('handles missing package environment details', async () => {
     const { detectAndValidatePackageEnvironment } = await import(
-      '../../utils/ecosystem/environment.mjs'
+      '../../utils/ecosystem/environment.mts'
     )
     const { outputOptimizeResult } = await import(
       './output-optimize-result.mts'
@@ -166,7 +166,7 @@ describe('handleOptimize', () => {
 
   it('handles unsupported vlt package manager', async () => {
     const { detectAndValidatePackageEnvironment } = await import(
-      '../../utils/ecosystem/environment.mjs'
+      '../../utils/ecosystem/environment.mts'
     )
     const { outputOptimizeResult } = await import(
       './output-optimize-result.mts'
@@ -204,7 +204,7 @@ describe('handleOptimize', () => {
 
   it('handles optimization failure', async () => {
     const { detectAndValidatePackageEnvironment } = await import(
-      '../../utils/ecosystem/environment.mjs'
+      '../../utils/ecosystem/environment.mts'
     )
     const { applyOptimization } = await import('./apply-optimization.mts')
     const { outputOptimizeResult } = await import(
@@ -246,7 +246,7 @@ describe('handleOptimize', () => {
 
   it('handles pnpm package manager', async () => {
     const { detectAndValidatePackageEnvironment } = await import(
-      '../../utils/ecosystem/environment.mjs'
+      '../../utils/ecosystem/environment.mts'
     )
     const { applyOptimization } = await import('./apply-optimization.mts')
     const { logger } = await import('@socketsecurity/lib/logger')
@@ -284,7 +284,7 @@ describe('handleOptimize', () => {
   it('logs debug information', async () => {
     const { debug, debugDir } = await import('@socketsecurity/lib/debug')
     const { detectAndValidatePackageEnvironment } = await import(
-      '../../utils/ecosystem/environment.mjs'
+      '../../utils/ecosystem/environment.mts'
     )
     const { applyOptimization } = await import('./apply-optimization.mts')
 
