@@ -19,7 +19,11 @@ const __dirname = path.dirname(__filename)
 // Backward compatibility object for tests.
 const constants = {
   execPath,
-  processEnv: process.env,
+  processEnv: {
+    ...process.env,
+    // Disable interactive help menu in spawned CLI processes during tests.
+    VITEST: '1',
+  },
 }
 
 // The asciiUnsafeRegexp match characters that are:

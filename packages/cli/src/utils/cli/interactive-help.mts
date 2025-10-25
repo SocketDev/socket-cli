@@ -273,6 +273,11 @@ const helpCategories: HelpCategory[] = [
 ]
 
 export async function showInteractiveHelp(): Promise<void> {
+  // Skip interactive help in test/CI environments
+  if (process.env.VITEST === '1' || process.env.CI === 'true') {
+    return
+  }
+
   // Show header
   logger.log('')
   logger.log(
