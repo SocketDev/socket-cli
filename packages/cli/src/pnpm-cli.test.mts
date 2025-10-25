@@ -46,7 +46,7 @@ describe('pnpm-cli', () => {
 
   it('should set initial exit code to 1', async () => {
     const originalArgv = process.argv
-    process.argv = ['node', 'pnpm-cli.mjs', 'install']
+    process.argv = ['node', 'pnpm-cli.mts', 'install']
 
     try {
       const promise = runPnpmCli()
@@ -59,7 +59,7 @@ describe('pnpm-cli', () => {
 
   it('should call shadowPnpmBin with correct arguments', async () => {
     const originalArgv = process.argv
-    process.argv = ['node', 'pnpm-cli.mjs', 'add', 'lodash']
+    process.argv = ['node', 'pnpm-cli.mts', 'add', 'lodash']
 
     try {
       await runPnpmCli()
@@ -76,7 +76,7 @@ describe('pnpm-cli', () => {
 
   it('should handle process exit with numeric code', async () => {
     const originalArgv = process.argv
-    process.argv = ['node', 'pnpm-cli.mjs', 'test']
+    process.argv = ['node', 'pnpm-cli.mts', 'test']
 
     // Mock spawn result with exit code 2.
     mockShadowPnpmBin.mockResolvedValue(createMockSpawnResult(2))
@@ -92,7 +92,7 @@ describe('pnpm-cli', () => {
 
   it('should handle process exit with signal', async () => {
     const originalArgv = process.argv
-    process.argv = ['node', 'pnpm-cli.mjs', 'dev']
+    process.argv = ['node', 'pnpm-cli.mts', 'dev']
 
     // Mock spawn result with signal.
     mockShadowPnpmBin.mockResolvedValue({
@@ -114,7 +114,7 @@ describe('pnpm-cli', () => {
 
   it('should handle empty arguments array', async () => {
     const originalArgv = process.argv
-    process.argv = ['node', 'pnpm-cli.mjs']
+    process.argv = ['node', 'pnpm-cli.mts']
 
     try {
       await runPnpmCli()
@@ -132,7 +132,7 @@ describe('pnpm-cli', () => {
   it('should preserve environment variables in spawn options', async () => {
     const originalArgv = process.argv
     const originalEnv = process.env
-    process.argv = ['node', 'pnpm-cli.mjs', 'run', 'lint']
+    process.argv = ['node', 'pnpm-cli.mts', 'run', 'lint']
     process.env = { ...originalEnv, PNPM_HOME: '/custom/path' }
 
     try {
@@ -151,7 +151,7 @@ describe('pnpm-cli', () => {
 
   it('should wait for spawn promise completion', async () => {
     const originalArgv = process.argv
-    process.argv = ['node', 'pnpm-cli.mjs', 'list']
+    process.argv = ['node', 'pnpm-cli.mts', 'list']
 
     try {
       await runPnpmCli()

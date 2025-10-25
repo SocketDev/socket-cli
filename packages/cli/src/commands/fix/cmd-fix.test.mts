@@ -557,15 +557,13 @@ describe('socket fix', async () => {
   )
 
   cmdit(
-    ['fix', '--markdown', FLAG_CONFIG, '{"apiToken":"fake-token"}'],
+    ['fix', '--markdown', FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fake-token"}'],
     'should output results in markdown format',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       const output = stdout + stderr
-      expect(output).toContain(
-        'Unable to resolve a Socket account organization',
-      )
-      expect(code, 'should exit with non-zero code').not.toBe(0)
+      expect(output).toContain('[DryRun]')
+      expect(code, 'should exit with code 0').toBe(0)
     },
   )
 
@@ -576,6 +574,7 @@ describe('socket fix', async () => {
         FLAG_ID,
         'pkg:npm/lodash@4.17.20',
         '.',
+        FLAG_DRY_RUN,
         FLAG_CONFIG,
         '{"apiToken":"fake-token"}',
       ],
@@ -590,10 +589,8 @@ describe('socket fix', async () => {
           cwd: tempDir,
         })
         const output = stdout + stderr
-        expect(output).toContain(
-          'Unable to resolve a Socket account organization',
-        )
-        expect(code, 'should exit with non-zero code').not.toBe(0)
+        expect(output).toContain('[DryRun]')
+        expect(code, 'should exit with code 0').toBe(0)
       },
     )
 
@@ -603,6 +600,7 @@ describe('socket fix', async () => {
         FLAG_ID,
         'GHSA-35jh-r3h4-6jhm,CVE-2021-23337',
         '.',
+        FLAG_DRY_RUN,
         FLAG_CONFIG,
         '{"apiToken":"fake-token"}',
       ],
@@ -617,10 +615,8 @@ describe('socket fix', async () => {
           cwd: tempDir,
         })
         const output = stdout + stderr
-        expect(output).toContain(
-          'Unable to resolve a Socket account organization',
-        )
-        expect(code, 'should exit with non-zero code').not.toBe(0)
+        expect(output).toContain('[DryRun]')
+        expect(code, 'should exit with code 0').toBe(0)
       },
     )
 

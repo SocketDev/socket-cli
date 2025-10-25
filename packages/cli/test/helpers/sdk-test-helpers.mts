@@ -9,27 +9,15 @@ import {
   createSuccessResult,
 } from './mocks.mts'
 
-// Type-safe mock function references that will be populated by vi.mock() in test files.
-let mockHandleApiCall: Mock
-let mockSetupSdk: Mock
-let mockWithSdk: Mock
-
 /**
  * Get the mocked handleApiCall function.
  * This must be called after vi.mock() has been executed in the test file.
  *
  * @returns The mocked handleApiCall function
  */
-function getMockHandleApiCall(): Mock {
-  if (!mockHandleApiCall) {
-    // Get the mocked module from the Vitest module registry.
-    const module = vi.mocked(
-      // @ts-expect-error - Dynamic module access for mock retrieval.
-      require('../../src/utils/socket/api.mjs'),
-    )
-    mockHandleApiCall = module.handleApiCall as Mock
-  }
-  return mockHandleApiCall
+async function getMockHandleApiCall(): Promise<Mock> {
+  const module = await vi.importMock<typeof import('../../src/utils/socket/api.mts')>('../../src/utils/socket/api.mts')
+  return vi.mocked(module.handleApiCall)
 }
 
 /**
@@ -38,16 +26,9 @@ function getMockHandleApiCall(): Mock {
  *
  * @returns The mocked setupSdk function
  */
-function getMockSetupSdk(): Mock {
-  if (!mockSetupSdk) {
-    // Get the mocked module from the Vitest module registry.
-    const module = vi.mocked(
-      // @ts-expect-error - Dynamic module access for mock retrieval.
-      require('../../src/utils/socket/sdk.mjs'),
-    )
-    mockSetupSdk = module.setupSdk as Mock
-  }
-  return mockSetupSdk
+async function getMockSetupSdk(): Promise<Mock> {
+  const module = await vi.importMock<typeof import('../../src/utils/socket/sdk.mts')>('../../src/utils/socket/sdk.mts')
+  return vi.mocked(module.setupSdk)
 }
 
 /**
@@ -56,16 +37,9 @@ function getMockSetupSdk(): Mock {
  *
  * @returns The mocked withSdk function
  */
-function getMockWithSdk(): Mock {
-  if (!mockWithSdk) {
-    // Get the mocked module from the Vitest module registry.
-    const module = vi.mocked(
-      // @ts-expect-error - Dynamic module access for mock retrieval.
-      require('../../src/utils/socket/sdk.mjs'),
-    )
-    mockWithSdk = module.withSdk as Mock
-  }
-  return mockWithSdk
+async function getMockWithSdk(): Promise<Mock> {
+  const module = await vi.importMock<typeof import('../../src/utils/socket/sdk.mts')>('../../src/utils/socket/sdk.mts')
+  return vi.mocked(module.withSdk)
 }
 
 /**
@@ -76,13 +50,13 @@ function getMockWithSdk(): Mock {
  * @param mockData - The data to return in the success response
  * @returns Object with mockSdk, mockHandleApi, and mockSetupSdk references
  */
-export function setupSdkMockSuccess(sdkMethod: string, mockData: any) {
+export async function setupSdkMockSuccess(sdkMethod: string, mockData: any) {
   const mockSdk = createMockSdk({
     [sdkMethod]: vi.fn().mockResolvedValue({ success: true, data: mockData }),
   })
 
-  const setupSdk = getMockSetupSdk()
-  const handleApiCall = getMockHandleApiCall()
+  const setupSdk = await getMockSetupSdk()
+  const handleApiCall = await getMockHandleApiCall()
 
   setupSdk.mockResolvedValue(createSuccessResult(mockSdk))
   handleApiCall.mockResolvedValue(createSuccessResult(mockData))
@@ -103,7 +77,7 @@ export function setupSdkMockSuccess(sdkMethod: string, mockData: any) {
  * @param code - HTTP status code (default: 404)
  * @returns Object with mockSdk and mockHandleApi references
  */
-export function setupSdkMockError(
+export async function setupSdkMockError(
   sdkMethod: string,
   error: string | Error,
   code = 404,
@@ -113,8 +87,8 @@ export function setupSdkMockError(
     [sdkMethod]: vi.fn().mockRejectedValue(errorObj),
   })
 
-  const setupSdk = getMockSetupSdk()
-  const handleApiCall = getMockHandleApiCall()
+  const setupSdk = await getMockSetupSdk()
+  const handleApiCall = await getMockHandleApiCall()
 
   setupSdk.mockResolvedValue(createSuccessResult(mockSdk))
   handleApiCall.mockResolvedValue(createErrorResult(errorObj.message, { code }))
@@ -132,11 +106,11 @@ export function setupSdkMockError(
  * @param message - Error message
  * @param options - Error options (code, cause)
  */
-export function setupSdkSetupFailure(
+export async function setupSdkSetupFailure(
   message: string,
   options?: { code?: number; cause?: string },
 ) {
-  const setupSdk = getMockSetupSdk()
+  const setupSdk = await getMockSetupSdk()
   setupSdk.mockResolvedValue(createErrorResult(message, options))
 }
 
@@ -149,14 +123,14 @@ export function setupSdkSetupFailure(
  * @param mockApiData - Data to return from handleApiCall
  * @returns Object with mockSdk, mockHandleApi, and mockSetupSdk
  */
-export function setupSdkMockWithCustomSdk(
+export async function setupSdkMockWithCustomSdk(
   mockSdkMethods: Record<string, any>,
   mockApiData: any,
 ) {
   const mockSdk = createMockSdk(mockSdkMethods)
 
-  const setupSdk = getMockSetupSdk()
-  const handleApiCall = getMockHandleApiCall()
+  const setupSdk = await getMockSetupSdk()
+  const handleApiCall = await getMockHandleApiCall()
 
   setupSdk.mockResolvedValue(createSuccessResult(mockSdk))
   handleApiCall.mockResolvedValue(createSuccessResult(mockApiData))
@@ -177,12 +151,12 @@ export function setupSdkMockWithCustomSdk(
  * @param mockSdkMethods - Object with SDK methods to mock
  * @returns Mock SDK object
  */
-export function setupWithSdkMock(
+export async function setupWithSdkMock(
   _callback: (sdk: any) => any,
   mockSdkMethods: Record<string, any> = {},
 ) {
   const mockSdk = createMockSdk(mockSdkMethods)
-  const withSdk = getMockWithSdk()
+  const withSdk = await getMockWithSdk()
 
   withSdk.mockImplementation(async cb => {
     return cb(mockSdk)

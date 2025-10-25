@@ -46,7 +46,7 @@ describe('npm-cli', () => {
 
   it('should set initial exit code to 1', async () => {
     const originalArgv = process.argv
-    process.argv = ['node', 'npm-cli.mjs', 'install']
+    process.argv = ['node', 'npm-cli.mts', 'install']
 
     try {
       const promise = runNpmCli()
@@ -59,7 +59,7 @@ describe('npm-cli', () => {
 
   it('should call shadowNpmBin with correct arguments', async () => {
     const originalArgv = process.argv
-    process.argv = ['node', 'npm-cli.mjs', 'install', 'lodash']
+    process.argv = ['node', 'npm-cli.mts', 'install', 'lodash']
 
     try {
       await runNpmCli()
@@ -76,7 +76,7 @@ describe('npm-cli', () => {
 
   it('should handle process exit with numeric code', async () => {
     const originalArgv = process.argv
-    process.argv = ['node', 'npm-cli.mjs', 'install']
+    process.argv = ['node', 'npm-cli.mts', 'install']
 
     // Mock spawn result with exit code 1.
     mockShadowNpmBin.mockResolvedValue(createMockSpawnResult(1))
@@ -92,7 +92,7 @@ describe('npm-cli', () => {
 
   it('should handle process exit with signal', async () => {
     const originalArgv = process.argv
-    process.argv = ['node', 'npm-cli.mjs', 'test']
+    process.argv = ['node', 'npm-cli.mts', 'test']
 
     // Mock spawn result with signal.
     mockShadowNpmBin.mockResolvedValue({
@@ -114,7 +114,7 @@ describe('npm-cli', () => {
 
   it('should handle empty arguments array', async () => {
     const originalArgv = process.argv
-    process.argv = ['node', 'npm-cli.mjs']
+    process.argv = ['node', 'npm-cli.mts']
 
     try {
       await runNpmCli()
@@ -132,7 +132,7 @@ describe('npm-cli', () => {
   it('should preserve environment variables in spawn options', async () => {
     const originalArgv = process.argv
     const originalEnv = process.env
-    process.argv = ['node', 'npm-cli.mjs', 'run', 'build']
+    process.argv = ['node', 'npm-cli.mts', 'run', 'build']
     process.env = { ...originalEnv, CUSTOM_VAR: 'test-value' }
 
     try {
@@ -151,7 +151,7 @@ describe('npm-cli', () => {
 
   it('should wait for spawn promise completion', async () => {
     const originalArgv = process.argv
-    process.argv = ['node', 'npm-cli.mjs', 'version']
+    process.argv = ['node', 'npm-cli.mts', 'version']
 
     try {
       await runNpmCli()

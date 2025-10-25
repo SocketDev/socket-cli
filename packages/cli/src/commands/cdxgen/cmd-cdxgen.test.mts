@@ -19,7 +19,7 @@ describe('socket cdxgen', async () => {
     async cmd => {
       const {
         code,
-        stderr: _stderr,
+        stderr,
         stdout,
       } = await spawnSocketCli(binCliPath, cmd)
 
@@ -46,7 +46,7 @@ describe('socket cdxgen', async () => {
     async cmd => {
       const {
         code,
-        stderr: _stderr,
+        stderr,
         stdout,
       } = await spawnSocketCli(binCliPath, cmd)
       // With dry-run, cdxgen exits early.
@@ -61,7 +61,7 @@ describe('socket cdxgen', async () => {
     async cmd => {
       const {
         code,
-        stderr: _stderr,
+        stderr,
         stdout,
       } = await spawnSocketCli(binCliPath, cmd)
       // With dry-run, should bail before actually running cdxgen.
@@ -76,7 +76,7 @@ describe('socket cdxgen', async () => {
     async cmd => {
       const {
         code,
-        stderr: _stderr,
+        stderr,
         stdout,
       } = await spawnSocketCli(binCliPath, cmd)
       // With dry-run, should bail before actually running cdxgen.
@@ -91,7 +91,7 @@ describe('socket cdxgen', async () => {
     async cmd => {
       const {
         code,
-        stderr: _stderr,
+        stderr,
         stdout,
       } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toContain('[DryRun]: Bailing now')

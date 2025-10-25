@@ -16,7 +16,7 @@ vi.mock('@socketsecurity/lib/fs', () => ({
   writeJson: vi.fn(),
 }))
 
-vi.mock('../../constants/paths.mjs', () => ({
+vi.mock('../../constants/paths.mts', () => ({
   getGithubCachePath: vi.fn(() => '/cache/github'),
 }))
 

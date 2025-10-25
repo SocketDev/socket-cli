@@ -33,11 +33,11 @@ vi.mock('../utils/shadow/links.mts', () => ({
   installNpxLinks: mockInstallNpxLinks,
 }))
 
-vi.mock('../utils/socket/sdk.mjs', () => ({
+vi.mock('../utils/socket/sdk.mts', () => ({
   getPublicApiToken: mockGetPublicApiToken,
 }))
 
-vi.mock('../utils/fs/fs.mjs', () => ({
+vi.mock('../utils/fs/fs.mts', () => ({
   findUp: mockFindUp,
 }))
 
