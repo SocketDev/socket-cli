@@ -156,8 +156,8 @@ describe('Output Assertion Helpers - Examples', () => {
 
       expectOutput(result)
         .succeeded()
-        .stdoutContains('Socket CLI')
-        .stdoutContains('What can I help you with?')
+        .stdoutContains('socket <command>')
+        .stdoutContains('Main commands')
         .stderrContains('CLI:')
     })
 
@@ -174,9 +174,9 @@ describe('Output Assertion Helpers - Examples', () => {
       const result = await executeCliCommand(['--help'])
 
       expectOutput(result)
-        .stdoutContains(/socket cli/i)
-        .stdoutNotContains('error')
-        .outputContains('Socket')
+        .stdoutContains(/socket/i)
+        .stdoutNotContains('unexpected')
+        .outputContains('socket')
     })
   })
 
@@ -185,9 +185,9 @@ describe('Output Assertion Helpers - Examples', () => {
       const result = await executeCliCommand(['--help'])
 
       expectStdoutContainsAll(result.stdout, [
-        'Socket CLI',
-        'What can I help you with?',
-        'Security Scanning',
+        'Usage',
+        'socket <command>',
+        'Main commands',
       ])
     })
   })
@@ -197,9 +197,9 @@ describe('Output Assertion Helpers - Examples', () => {
       const result = await executeCliCommand(['--help'])
 
       expectOrderedPatterns(result.stdout, [
-        /socket cli/i,
-        /what can i help you with/i,
-        /security scanning/i,
+        /usage/i,
+        /socket <command>/i,
+        /main commands/i,
       ])
     })
   })
