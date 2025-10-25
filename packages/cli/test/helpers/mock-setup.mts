@@ -1,77 +1,54 @@
-/** @fileoverview Standard mock setup utilities for Socket CLI tests. Provides reusable mock configurations for SDK, logger, output utilities, and debug functions. */
-
-import { vi } from 'vitest'
-
 /**
- * Setup standard SDK and API mocks
- * Use this for tests that need to mock SDK setup and API calls
+ * @fileoverview Mock setup utilities for Socket CLI tests.
+ *
+ * IMPORTANT: Mock setup helper functions DO NOT WORK with Vitest.
+ *
+ * Vitest requires vi.mock() to be called at the top level of test files for proper hoisting.
+ * When vi.mock() is called from within a function, the mock declarations are not hoisted
+ * correctly, resulting in "No export defined on mock" errors.
+ *
+ * Instead of using helper functions, explicitly declare mocks at the top of each test file.
+ *
+ * @example Correct pattern for mocking
+ * ```typescript
+ * import { beforeEach, describe, expect, it, vi } from 'vitest'
+ *
+ * // Mock declarations MUST be at top level
+ * vi.mock('@socketsecurity/lib/logger', () => ({
+ *   logger: {
+ *     fail: vi.fn(),
+ *     log: vi.fn(),
+ *   },
+ * }))
+ *
+ * vi.mock('../../utils/socket/api.mjs', () => ({
+ *   queryApiSafeJson: vi.fn(),
+ * }))
+ *
+ * describe('myTest', () => {
+ *   beforeEach(() => {
+ *     vi.clearAllMocks()
+ *   })
+ *
+ *   it('test name', async () => {
+ *     // Use dynamic imports for function under test
+ *     const { functionUnderTest } = await import('./module-under-test.mts')
+ *
+ *     // Use vi.importMock for mocked dependencies
+ *     const { logger } = await vi.importMock('@socketsecurity/lib/logger')
+ *     const { queryApiSafeJson } = await vi.importMock('../../utils/socket/api.mjs')
+ *
+ *     const mockLog = vi.mocked(logger.log)
+ *     const mockQueryApi = vi.mocked(queryApiSafeJson)
+ *
+ *     // ... test code
+ *   })
+ * })
+ * ```
+ *
+ * @see https://vitest.dev/api/vi.html#vi-mock
  */
-export function setupStandardSdkMocks() {
-  vi.mock('../../src/utils/socket/api.mts', () => ({
-    handleApiCall: vi.fn(),
-  }))
 
-  vi.mock('../../src/utils/socket/sdk.mts', () => ({
-    setupSdk: vi.fn(),
-    withSdk: vi.fn(),
-  }))
-}
-
-/**
- * Setup standard output utility mocks
- * Use this for output-*.test.mts files
- */
-export function setupStandardOutputMocks() {
-  vi.mock('@socketsecurity/lib/logger', () => ({
-    logger: {
-      fail: vi.fn(),
-      log: vi.fn(),
-      info: vi.fn(),
-      warn: vi.fn(),
-      error: vi.fn(),
-      success: vi.fn(),
-    },
-  }))
-
-  vi.mock('../../src/utils/error/fail-msg-with-badge.mts', () => ({
-    failMsgWithBadge: vi.fn((msg, cause) => `${msg}: ${cause}`),
-  }))
-
-  vi.mock('../../src/utils/output/result-json.mts', () => ({
-    serializeResultJson: vi.fn(result => JSON.stringify(result)),
-  }))
-}
-
-/**
- * Setup output mocks with additional table formatting
- * Use this for output files that render tables
- */
-export function setupOutputWithTableMocks() {
-  setupStandardOutputMocks()
-
-  vi.mock('../../src/utils/output/markdown.mts', () => ({
-    mdTableOfPairs: vi.fn(pairs => `Table with ${pairs.length} rows`),
-  }))
-}
-
-/**
- * Setup debug utility mocks
- * Use this for handle-*.test.mts files
- */
-export function setupDebugMocks() {
-  vi.mock('../../src/utils/debug.mts', () => ({
-    debugDir: vi.fn(),
-    debugFn: vi.fn(),
-    debugLog: vi.fn(),
-    isDebug: vi.fn(() => false),
-  }))
-}
-
-/**
- * Setup combined mocks for handle functions
- * Use this for handle-*.test.mts files that orchestrate fetch + output
- */
-export function setupHandleFunctionMocks() {
-  setupStandardSdkMocks()
-  setupDebugMocks()
-}
+// This file intentionally left empty.
+// All previous mock setup helper functions have been removed because they don't work with Vitest.
+// See the file-level documentation above for the correct pattern.
