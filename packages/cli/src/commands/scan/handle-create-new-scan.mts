@@ -103,7 +103,7 @@ export async function handleCreateNewScan({
     logger.info('Auto-generation finished. Proceeding with Scan creation.')
   }
 
-  const spinner = getSpinner()!
+  const spinner = getSpinner()
   const supportedFilesCResult = await fetchSupportedScanFileNames({ spinner })
   if (!supportedFilesCResult.ok) {
     debug('Failed to fetch supported scan file names')
@@ -116,14 +116,14 @@ export async function handleCreateNewScan({
   }
   debug(`Fetched ${supportedFilesCResult.data['size']} supported file types`)
 
-  spinner.start('Searching for local files to include in scan...')
+  spinner?.start('Searching for local files to include in scan...')
 
   const supportedFiles = supportedFilesCResult.data
   const packagePaths = await getPackageFilesForScan(targets, supportedFiles, {
     cwd,
   })
 
-  spinner.successAndStop('Finished searching for local files.')
+  spinner?.successAndStop('Finished searching for local files.')
 
   const wasValidInput = checkCommandInput(outputKind, {
     nook: true,
@@ -155,7 +155,7 @@ export async function handleCreateNewScan({
     debug('Reachability analysis enabled')
     debugDir({ reachabilityOptions: reach })
 
-    spinner.start()
+    spinner?.start()
 
     const reachResult = await performReachabilityAnalysis({
       branchName,
@@ -167,7 +167,7 @@ export async function handleCreateNewScan({
       spinner,
     })
 
-    spinner.stop()
+    spinner?.stop()
 
     if (!reachResult.ok) {
       await outputCreateNewScan(reachResult, { interactive, outputKind })

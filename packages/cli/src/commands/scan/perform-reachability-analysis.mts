@@ -112,7 +112,7 @@ export async function performReachabilityAnalysis(
 
     if (!uploadCResult.ok) {
       if (wasSpinning) {
-        spinner.start()
+        spinner?.start()
       }
       return uploadCResult
     }
@@ -120,7 +120,7 @@ export async function performReachabilityAnalysis(
     tarHash = (uploadCResult.data as { tarHash?: string })?.tarHash
     if (!tarHash) {
       if (wasSpinning) {
-        spinner.start()
+        spinner?.start()
       }
       return {
         ok: false,
@@ -188,7 +188,7 @@ export async function performReachabilityAnalysis(
   })
 
   if (wasSpinning) {
-    spinner.start()
+    spinner?.start()
   }
 
   return coanaResult.ok

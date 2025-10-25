@@ -25,7 +25,7 @@ export async function outputCreateNewScan(
   const {
     interactive = false,
     outputKind = 'text',
-    spinner = getSpinner()!,
+    spinner = getSpinner(),
   } = { __proto__: null, ...options } as CreateNewScanOptions
 
   if (!result.ok) {
@@ -39,7 +39,7 @@ export async function outputCreateNewScan(
   if (outputKind === 'json') {
     logger.log(serializeResultJson(result))
     if (wasSpinning) {
-      spinner.start()
+      spinner?.start()
     }
     return
   }
@@ -47,7 +47,7 @@ export async function outputCreateNewScan(
   if (!result.ok) {
     logger.fail(failMsgWithBadge(result.message, result.cause))
     if (wasSpinning) {
-      spinner.start()
+      spinner?.start()
     }
     return
   }
@@ -72,7 +72,7 @@ export async function outputCreateNewScan(
     }
     logger.log('')
     if (wasSpinning) {
-      spinner.start()
+      spinner?.start()
     }
     return
   }
@@ -98,6 +98,6 @@ export async function outputCreateNewScan(
   }
 
   if (wasSpinning) {
-    spinner.start()
+    spinner?.start()
   }
 }
