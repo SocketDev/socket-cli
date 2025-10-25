@@ -19,7 +19,7 @@ import {
   NetworkError,
   RateLimitError,
 } from './errors.mts'
-import { UNKNOWN_ERROR } from '../constants/errors.mts'
+import { UNKNOWN_ERROR } from '../../constants/errors.mts'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)

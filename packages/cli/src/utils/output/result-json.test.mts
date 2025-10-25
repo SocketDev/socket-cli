@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { serializeResultJson } from '../data/result-json.mts'
+import { serializeResultJson } from './result-json.mts'
 
 describe('serializeResultJson', () => {
   it('serializes simple objects', () => {
