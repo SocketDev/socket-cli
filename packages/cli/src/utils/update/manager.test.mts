@@ -18,7 +18,7 @@ import path from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { UpdateStore } from './store.mts'
-import { checkForUpdates } from './update-manager.mts'
+import { checkForUpdates } from './manager.mts'
 
 import type { StoreRecord } from './store.mts'
 

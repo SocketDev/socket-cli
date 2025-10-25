@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { handlePatch } from './handle-patch.mts'
+import { handlePatchApply } from './handle-patch-apply.mts'
 
 import type { PackageURL } from '@socketregistry/packageurl-js'
 
@@ -102,7 +102,7 @@ describe('handlePatch', () => {
       stop: vi.fn(),
     }
 
-    await handlePatch({
+    await handlePatchApply({
       cwd: '/project',
       dryRun: false,
       outputKind: 'json',
@@ -138,7 +138,7 @@ describe('handlePatch', () => {
       stop: vi.fn(),
     }
 
-    await handlePatch({
+    await handlePatchApply({
       cwd: '/project',
       dryRun: true,
       outputKind: 'text',
@@ -169,7 +169,7 @@ describe('handlePatch', () => {
       stop: vi.fn(),
     }
 
-    await handlePatch({
+    await handlePatchApply({
       cwd: '/project',
       dryRun: false,
       outputKind: 'json',
@@ -230,7 +230,7 @@ describe('handlePatch', () => {
       } as PackageURL,
     ]
 
-    await handlePatch({
+    await handlePatchApply({
       cwd: '/project',
       dryRun: false,
       outputKind: 'json',
@@ -265,7 +265,7 @@ describe('handlePatch', () => {
       stop: vi.fn(),
     }
 
-    await handlePatch({
+    await handlePatchApply({
       cwd: '/project',
       dryRun: false,
       outputKind: 'json',
@@ -300,7 +300,7 @@ describe('handlePatch', () => {
       stop: vi.fn(),
     }
 
-    await handlePatch({
+    await handlePatchApply({
       cwd: '/project',
       dryRun: false,
       outputKind: 'markdown',
@@ -325,7 +325,7 @@ describe('handlePatch', () => {
       stop: vi.fn(),
     }
 
-    await handlePatch({
+    await handlePatchApply({
       cwd: '/project',
       dryRun: false,
       outputKind: 'json',

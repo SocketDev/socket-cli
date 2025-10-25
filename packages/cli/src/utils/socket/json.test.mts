@@ -12,7 +12,7 @@ import {
   readSocketJsonSync,
   writeSocketJson,
 } from './json.mts'
-import { SOCKET_WEBSITE_URL } from '../../constants/api.mts'
+import { SOCKET_WEBSITE_URL } from '../../constants/socket.mts'
 import { SOCKET_JSON } from '../../constants/shadow.mts'
 
 // Mock dependencies.

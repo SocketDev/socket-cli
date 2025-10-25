@@ -8,7 +8,7 @@ import {
   validateGitSha,
   validateHash,
   validateSsri,
-} from './hash.mts'
+} from './patch-hash.mts'
 
 describe('detectHashFormat', () => {
   it('detects ssri sha256 format', () => {

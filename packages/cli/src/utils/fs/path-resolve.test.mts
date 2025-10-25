@@ -11,7 +11,7 @@ import {
   findBinPathDetailsSync,
   findNpmDirPathSync,
   getPackageFilesForScan,
-} from './resolve.mts'
+} from './path-resolve.mts'
 import {
   PACKAGE_LOCK_JSON,
   PNPM_LOCK_YAML,

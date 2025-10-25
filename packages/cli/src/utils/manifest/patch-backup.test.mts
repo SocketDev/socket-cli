@@ -18,7 +18,7 @@ import {
   listBackups,
   restoreAllBackups,
   restoreBackup,
-} from './backup.mts'
+} from './patch-backup.mts'
 
 describe('patch-backup', () => {
   let testDir: string
