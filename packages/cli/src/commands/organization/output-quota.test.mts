@@ -1,24 +1,37 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { outputQuota } from './output-quota.mts'
 import {
   createErrorResult,
   createSuccessResult,
-  setupStandardOutputMocks,
   setupTestEnvironment,
 } from '../../../test/helpers/index.mts'
 
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
-setupStandardOutputMocks()
+// Mock the dependencies.
+vi.mock('@socketsecurity/lib/logger', () => ({
+  logger: {
+    fail: vi.fn(),
+    log: vi.fn(),
+  },
+}))
+
+vi.mock('../../utils/output/result-json.mjs', () => ({
+  serializeResultJson: vi.fn(result => JSON.stringify(result)),
+}))
+
+vi.mock('../../utils/error/fail-msg-with-badge.mts', () => ({
+  failMsgWithBadge: vi.fn((msg, cause) => `${msg}: ${cause}`),
+}))
 
 describe('outputQuota', () => {
   setupTestEnvironment()
 
   it('outputs JSON format for successful result', async () => {
-    const { logger } = await import('@socketsecurity/lib/logger')
-    const { serializeResultJson } = await import(
-      '../../utils/output/result-json.mts'
+    const { outputQuota } = await import('./output-quota.mts')
+    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
+    const { serializeResultJson } = await vi.importMock(
+      '../../utils/output/result-json.mjs'
     )
     const mockLog = vi.mocked(logger.log)
     const mockSerialize = vi.mocked(serializeResultJson)
@@ -37,7 +50,8 @@ describe('outputQuota', () => {
   })
 
   it('outputs error in JSON format', async () => {
-    const { logger } = await import('@socketsecurity/lib/logger')
+    const { outputQuota } = await import('./output-quota.mts')
+    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
     const mockLog = vi.mocked(logger.log)
 
     const result = createErrorResult('Unauthorized', {
@@ -52,7 +66,8 @@ describe('outputQuota', () => {
   })
 
   it('outputs text format with quota information', async () => {
-    const { logger } = await import('@socketsecurity/lib/logger')
+    const { outputQuota } = await import('./output-quota.mts')
+    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
     const mockLog = vi.mocked(logger.log)
 
     const result = createSuccessResult<
@@ -71,7 +86,8 @@ describe('outputQuota', () => {
   })
 
   it('outputs markdown format with quota information', async () => {
-    const { logger } = await import('@socketsecurity/lib/logger')
+    const { outputQuota } = await import('./output-quota.mts')
+    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
     const mockLog = vi.mocked(logger.log)
 
     const result = createSuccessResult<
@@ -92,8 +108,9 @@ describe('outputQuota', () => {
   })
 
   it('outputs error in text format', async () => {
-    const { logger } = await import('@socketsecurity/lib/logger')
-    const { failMsgWithBadge } = await import(
+    const { outputQuota } = await import('./output-quota.mts')
+    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
+    const { failMsgWithBadge } = await vi.importMock(
       '../../utils/error/fail-msg-with-badge.mts'
     )
     const mockFail = vi.mocked(logger.fail)
@@ -114,7 +131,8 @@ describe('outputQuota', () => {
   })
 
   it('handles zero quota correctly', async () => {
-    const { logger } = await import('@socketsecurity/lib/logger')
+    const { outputQuota } = await import('./output-quota.mts')
+    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
     const mockLog = vi.mocked(logger.log)
 
     const result = createSuccessResult<
@@ -131,7 +149,8 @@ describe('outputQuota', () => {
   })
 
   it('uses default text output when no format specified', async () => {
-    const { logger } = await import('@socketsecurity/lib/logger')
+    const { outputQuota } = await import('./output-quota.mts')
+    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
     const mockLog = vi.mocked(logger.log)
 
     const result = createSuccessResult<
@@ -149,6 +168,7 @@ describe('outputQuota', () => {
   })
 
   it('sets default exit code when code is undefined', async () => {
+    const { outputQuota } = await import('./output-quota.mts')
     const result = createErrorResult('Error without code')
 
     await outputQuota(result, 'json')
