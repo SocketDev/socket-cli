@@ -22,7 +22,7 @@ describe('outputCreateRepo', () => {
     const mockLog = vi.mocked(logger.log)
     const mockSerialize = vi.mocked(serializeResultJson)
 
-    const result: CResult<SocketSdkSuccessResult<'createOrgRepo'>['data']> = {
+    const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> = {
       ok: true,
       data: {
         slug: 'my-repo',
@@ -40,7 +40,7 @@ describe('outputCreateRepo', () => {
     const { logger } = await import('@socketsecurity/lib/logger')
     const mockLog = vi.mocked(logger.log)
 
-    const result: CResult<SocketSdkSuccessResult<'createOrgRepo'>['data']> = {
+    const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> = {
       ok: false,
       code: 2,
       message: 'Unauthorized',
@@ -57,7 +57,7 @@ describe('outputCreateRepo', () => {
     const { logger } = await import('@socketsecurity/lib/logger')
     const mockSuccess = vi.mocked(logger.success)
 
-    const result: CResult<SocketSdkSuccessResult<'createOrgRepo'>['data']> = {
+    const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> = {
       ok: true,
       data: {
         slug: 'my-awesome-repo',
@@ -76,7 +76,7 @@ describe('outputCreateRepo', () => {
     const { logger } = await import('@socketsecurity/lib/logger')
     const mockSuccess = vi.mocked(logger.success)
 
-    const result: CResult<SocketSdkSuccessResult<'createOrgRepo'>['data']> = {
+    const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> = {
       ok: true,
       data: {
         slug: 'my-repo-sanitized',
@@ -99,7 +99,7 @@ describe('outputCreateRepo', () => {
     const mockFail = vi.mocked(logger.fail)
     const mockFailMsg = vi.mocked(failMsgWithBadge)
 
-    const result: CResult<SocketSdkSuccessResult<'createOrgRepo'>['data']> = {
+    const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> = {
       ok: false,
       code: 1,
       message: 'Repository already exists',
@@ -120,7 +120,7 @@ describe('outputCreateRepo', () => {
     const { logger } = await import('@socketsecurity/lib/logger')
     const mockSuccess = vi.mocked(logger.success)
 
-    const result: CResult<SocketSdkSuccessResult<'createOrgRepo'>['data']> = {
+    const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> = {
       ok: true,
       data: {
         slug: 'markdown-repo',
@@ -138,7 +138,7 @@ describe('outputCreateRepo', () => {
     const { logger } = await import('@socketsecurity/lib/logger')
     const mockSuccess = vi.mocked(logger.success)
 
-    const result: CResult<SocketSdkSuccessResult<'createOrgRepo'>['data']> = {
+    const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> = {
       ok: true,
       data: {
         slug: '',
@@ -153,7 +153,7 @@ describe('outputCreateRepo', () => {
   })
 
   it('sets default exit code when code is undefined', async () => {
-    const result: CResult<SocketSdkSuccessResult<'createOrgRepo'>['data']> = {
+    const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> = {
       ok: false,
       message: 'Error without code',
     }

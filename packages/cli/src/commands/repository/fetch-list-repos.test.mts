@@ -24,7 +24,7 @@ describe('fetchListRepos', () => {
     const mockSetupSdk = vi.mocked(setupSdk)
 
     const mockSdk = {
-      getOrgRepoList: vi.fn().mockResolvedValue({
+      listRepositories: vi.fn().mockResolvedValue({
         success: true,
         data: {
           results: [
@@ -57,7 +57,7 @@ describe('fetchListRepos', () => {
 
     const result = await fetchListRepos(config)
 
-    expect(mockSdk.getOrgRepoList).toHaveBeenCalledWith('test-org', {
+    expect(mockSdk.listRepositories).toHaveBeenCalledWith('test-org', {
       sort: 'created_at',
       direction: 'desc',
       per_page: '10',
@@ -90,7 +90,7 @@ describe('fetchListRepos', () => {
 
   it('handles API call failure', async () => {
     await setupSdkMockError(
-      'getOrgRepoList',
+      'listRepositories',
       new Error('Invalid page number'),
       400,
     )
@@ -116,7 +116,7 @@ describe('fetchListRepos', () => {
     const mockHandleApi = vi.mocked(handleApiCall)
 
     const mockSdk = {
-      getOrgRepoList: vi.fn().mockResolvedValue({}),
+      listRepositories: vi.fn().mockResolvedValue({}),
     }
 
     mockSetupSdk.mockResolvedValue(createSuccessResult(mockSdk))
@@ -149,7 +149,7 @@ describe('fetchListRepos', () => {
     const mockHandleApi = vi.mocked(handleApiCall)
 
     const mockSdk = {
-      getOrgRepoList: vi.fn().mockResolvedValue({}),
+      listRepositories: vi.fn().mockResolvedValue({}),
     }
 
     mockSetupSdk.mockResolvedValue(createSuccessResult(mockSdk))
@@ -167,7 +167,7 @@ describe('fetchListRepos', () => {
 
     await fetchListRepos(config)
 
-    expect(mockSdk.getOrgRepoList).toHaveBeenCalledWith('large-org', {
+    expect(mockSdk.listRepositories).toHaveBeenCalledWith('large-org', {
       sort: 'stars',
       direction: 'desc',
       per_page: '100',
@@ -182,7 +182,7 @@ describe('fetchListRepos', () => {
     const mockHandleApi = vi.mocked(handleApiCall)
 
     const mockSdk = {
-      getOrgRepoList: vi.fn().mockResolvedValue({}),
+      listRepositories: vi.fn().mockResolvedValue({}),
     }
 
     mockSetupSdk.mockResolvedValue(createSuccessResult(mockSdk))
@@ -200,7 +200,7 @@ describe('fetchListRepos', () => {
 
     await fetchListRepos(config)
 
-    expect(mockSdk.getOrgRepoList).toHaveBeenCalledWith('sort-org', {
+    expect(mockSdk.listRepositories).toHaveBeenCalledWith('sort-org', {
       sort: 'alphabetical',
       direction: 'asc',
       per_page: '25',
@@ -215,7 +215,7 @@ describe('fetchListRepos', () => {
     const mockHandleApi = vi.mocked(handleApiCall)
 
     const mockSdk = {
-      getOrgRepoList: vi.fn().mockResolvedValue({}),
+      listRepositories: vi.fn().mockResolvedValue({}),
     }
 
     mockSetupSdk.mockResolvedValue(createSuccessResult(mockSdk))
@@ -246,7 +246,7 @@ describe('fetchListRepos', () => {
     const mockHandleApi = vi.mocked(handleApiCall)
 
     const mockSdk = {
-      getOrgRepoList: vi.fn().mockResolvedValue({}),
+      listRepositories: vi.fn().mockResolvedValue({}),
     }
 
     mockSetupSdk.mockResolvedValue(createSuccessResult(mockSdk))
@@ -266,6 +266,6 @@ describe('fetchListRepos', () => {
     await fetchListRepos(config)
 
     // The function should work without prototype pollution issues.
-    expect(mockSdk.getOrgRepoList).toHaveBeenCalled()
+    expect(mockSdk.listRepositories).toHaveBeenCalled()
   })
 })

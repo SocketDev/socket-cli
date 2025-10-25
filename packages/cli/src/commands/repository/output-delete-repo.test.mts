@@ -26,7 +26,7 @@ describe('outputDeleteRepo', () => {
     const mockLog = vi.mocked(logger.log)
     const mockSerialize = vi.mocked(serializeResultJson)
 
-    const result: CResult<SocketSdkSuccessResult<'deleteOrgRepo'>['data']> =
+    const result: CResult<SocketSdkSuccessResult<'deleteRepository'>['data']> =
       createSuccessResult({
         success: true,
       })
@@ -42,7 +42,7 @@ describe('outputDeleteRepo', () => {
     const { logger } = await import('@socketsecurity/lib/logger')
     const mockLog = vi.mocked(logger.log)
 
-    const result: CResult<SocketSdkSuccessResult<'deleteOrgRepo'>['data']> =
+    const result: CResult<SocketSdkSuccessResult<'deleteRepository'>['data']> =
       createErrorResult('Unauthorized', {
         cause: 'Invalid API token',
         code: 2,
@@ -58,7 +58,7 @@ describe('outputDeleteRepo', () => {
     const { logger } = await import('@socketsecurity/lib/logger')
     const mockSuccess = vi.mocked(logger.success)
 
-    const result: CResult<SocketSdkSuccessResult<'deleteOrgRepo'>['data']> =
+    const result: CResult<SocketSdkSuccessResult<'deleteRepository'>['data']> =
       createSuccessResult({
         success: true,
       })
@@ -79,7 +79,7 @@ describe('outputDeleteRepo', () => {
     const mockFail = vi.mocked(logger.fail)
     const mockFailMsg = vi.mocked(failMsgWithBadge)
 
-    const result: CResult<SocketSdkSuccessResult<'deleteOrgRepo'>['data']> =
+    const result: CResult<SocketSdkSuccessResult<'deleteRepository'>['data']> =
       createErrorResult('Repository not found', {
         cause: 'Not found error',
         code: 1,
@@ -99,7 +99,7 @@ describe('outputDeleteRepo', () => {
     const { logger } = await import('@socketsecurity/lib/logger')
     const mockSuccess = vi.mocked(logger.success)
 
-    const result: CResult<SocketSdkSuccessResult<'deleteOrgRepo'>['data']> =
+    const result: CResult<SocketSdkSuccessResult<'deleteRepository'>['data']> =
       createSuccessResult({
         success: true,
       })
@@ -115,7 +115,7 @@ describe('outputDeleteRepo', () => {
     const { logger } = await import('@socketsecurity/lib/logger')
     const mockSuccess = vi.mocked(logger.success)
 
-    const result: CResult<SocketSdkSuccessResult<'deleteOrgRepo'>['data']> =
+    const result: CResult<SocketSdkSuccessResult<'deleteRepository'>['data']> =
       createSuccessResult({
         success: true,
       })
@@ -131,7 +131,7 @@ describe('outputDeleteRepo', () => {
     const { logger } = await import('@socketsecurity/lib/logger')
     const mockSuccess = vi.mocked(logger.success)
 
-    const result: CResult<SocketSdkSuccessResult<'deleteOrgRepo'>['data']> =
+    const result: CResult<SocketSdkSuccessResult<'deleteRepository'>['data']> =
       createSuccessResult({
         success: true,
       })
@@ -144,7 +144,7 @@ describe('outputDeleteRepo', () => {
   })
 
   it('sets default exit code when code is undefined', async () => {
-    const result: CResult<SocketSdkSuccessResult<'deleteOrgRepo'>['data']> =
+    const result: CResult<SocketSdkSuccessResult<'deleteRepository'>['data']> =
       createErrorResult('Error without code')
 
     await outputDeleteRepo(result, 'test-repo', 'json')
