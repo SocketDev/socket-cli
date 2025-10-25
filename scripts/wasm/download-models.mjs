@@ -66,10 +66,12 @@ const FILES = [
   },
 
   // ONNX Runtime WASM (from node_modules).
+  // Using SIMD-only (no threading) variant - saves ~2 MB.
+  // Our inference code doesn't use multi-threading features.
   {
-    copyFrom: 'node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.wasm',
-    description: 'ONNX Runtime WASM',
-    name: 'ort-wasm-simd-threaded.wasm',
+    copyFrom: 'node_modules/onnxruntime-web/dist/ort-wasm-simd.wasm',
+    description: 'ONNX Runtime WASM (SIMD only)',
+    name: 'ort-wasm-simd.wasm',
     url: null,
   },
 
