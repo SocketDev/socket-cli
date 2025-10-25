@@ -6,6 +6,8 @@ import { OUTPUT_JSON, OUTPUT_MARKDOWN, OUTPUT_TEXT } from '../../constants/cli.m
 // Mock dependencies.
 vi.mock('yoctocolors-cjs', () => ({
   default: {
+    bgRedBright: vi.fn(str => `bgRedBright(${str})`),
+    bold: vi.fn(str => `bold(${str})`),
     green: vi.fn(str => `green(${str})`),
     red: vi.fn(str => `red(${str})`),
   },
