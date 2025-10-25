@@ -28,16 +28,16 @@ describe('socket manifest conda', async () => {
 
           Usage
                 $ socket manifest conda [options] [CWD=.]
-
+          
               Warning: While we don't support Conda necessarily, this tool extracts the pip
                        block from an environment.yml and outputs it as a requirements.txt
                        which you can scan as if it were a PyPI package.
-
+          
               USE AT YOUR OWN RISK
-
+          
               Note: FILE can be a dash (-) to indicate stdin. This way you can pipe the
                     contents of a file to have it processed.
-
+          
               Options
                 --file              Input file name (by default for Conda this is "environment.yml"), relative to cwd
                 --json              Output as JSON
@@ -46,15 +46,18 @@ describe('socket manifest conda', async () => {
                 --stdin             Read the input from stdin (supersedes --file)
                 --stdout            Print resulting requirements.txt to stdout (supersedes --out)
                 --verbose           Print debug messages
-
+          
               Examples
-
+          
                 $ socket manifest conda
                 $ socket manifest conda ./project/foo --file environment.yaml"
       `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           "
+           _____         _       _          /---------------
+            |   __|___ ___| |_ ___| |_        | CLI: <redacted>
+            |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket manifest conda\`, cwd: <redacted>"
       `)
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
@@ -78,7 +81,12 @@ describe('socket manifest conda', async () => {
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           "
+           _____         _       _          /---------------
+            |   __|___ ___| |_ ___| |_        | CLI: <redacted>
+            |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket manifest conda\`, cwd: <redacted>
+
+        \\u203c Warning: This will approximate your Conda dependencies using PyPI. We do not yet officially support Conda. Use at your own risk."
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
@@ -112,7 +120,12 @@ describe('socket manifest conda', async () => {
         `)
         expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
           "
-             "
+             _____         _       _          /---------------
+              |   __|___ ___| |_ ___| |_        | CLI: <redacted>
+              |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
+              |_____|___|___|_,_|___|_|.dev     | Command: \`socket manifest conda\`, cwd: <redacted>
+
+          \\u203c Warning: This will approximate your Conda dependencies using PyPI. We do not yet officially support Conda. Use at your own risk."
         `)
       },
     )
@@ -181,7 +194,7 @@ describe('socket manifest conda', async () => {
         `)
         expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
           "
-             "
+             \\u203c Warning: This will approximate your Conda dependencies using PyPI. We do not yet officially support Conda. Use at your own risk."
         `)
       },
     )
