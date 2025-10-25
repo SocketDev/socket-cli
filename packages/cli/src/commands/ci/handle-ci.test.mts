@@ -4,6 +4,12 @@ import { handleCi } from './handle-ci.mts'
 import { UNKNOWN_ERROR } from '../../constants/errors.mts'
 
 // Mock the dependencies.
+vi.mock('@socketsecurity/lib/debug', () => ({
+  debug: vi.fn(),
+  debugDir: vi.fn(),
+  debugLog: vi.fn(),
+  isDebug: vi.fn(() => false),
+}))
 vi.mock('@socketsecurity/lib/logger', () => ({
   logger: {
     log: vi.fn(),
@@ -17,13 +23,13 @@ vi.mock('../../constants.mts', () => ({
     REPORT_LEVEL_ERROR: 'error',
   },
 }))
-vi.mock('../../utils/git.mts', () => ({
+vi.mock('../../utils/git/git.mjs', () => ({
   detectDefaultBranch: vi.fn(),
   getRepoName: vi.fn(),
   gitBranch: vi.fn(),
 }))
-vi.mock('../../utils/serialize/result-json.mts', () => ({
-  serializeResultJson: vi.fn(),
+vi.mock('../../utils/output/result-json.mjs', () => ({
+  serializeResultJson: vi.fn((result) => JSON.stringify(result)),
 }))
 vi.mock('../scan/handle-create-new-scan.mts', () => ({
   handleCreateNewScan: vi.fn(),
@@ -47,7 +53,7 @@ describe('handleCi', () => {
   it('handles CI scan successfully', async () => {
     const { getDefaultOrgSlug } = await import('./fetch-default-org-slug.mts')
     const { detectDefaultBranch, getRepoName, gitBranch } = await import(
-      '../../utils/git.mts'
+      '../../utils/git/git.mjs'
     )
     const { handleCreateNewScan } = await import(
       '../scan/handle-create-new-scan.mts'
@@ -94,7 +100,7 @@ describe('handleCi', () => {
   it('uses default branch when git branch is not available', async () => {
     const { getDefaultOrgSlug } = await import('./fetch-default-org-slug.mts')
     const { detectDefaultBranch, getRepoName, gitBranch } = await import(
-      '../../utils/git.mts'
+      '../../utils/git/git.mjs'
     )
     const { handleCreateNewScan } = await import(
       '../scan/handle-create-new-scan.mts'
@@ -121,7 +127,7 @@ describe('handleCi', () => {
 
   it('handles auto-manifest mode', async () => {
     const { getDefaultOrgSlug } = await import('./fetch-default-org-slug.mts')
-    const { getRepoName, gitBranch } = await import('../../utils/git.mts')
+    const { getRepoName, gitBranch } = await import('../../utils/git/git.mjs')
     const { handleCreateNewScan } = await import(
       '../scan/handle-create-new-scan.mts'
     )
@@ -146,7 +152,7 @@ describe('handleCi', () => {
     const { getDefaultOrgSlug } = await import('./fetch-default-org-slug.mts')
     const { logger } = await import('@socketsecurity/lib/logger')
     const { serializeResultJson } = await import(
-      '../../utils/serialize/result-json.mts'
+      '../../utils/output/result-json.mjs'
     )
     const { handleCreateNewScan } = await import(
       '../scan/handle-create-new-scan.mts'
@@ -155,15 +161,15 @@ describe('handleCi', () => {
     const error = {
       ok: false as const,
       code: 401,
-      error: new Error('Unauthorized'),
+      error: {},
     }
     vi.mocked(getDefaultOrgSlug).mockResolvedValue(error)
-    vi.mocked(serializeResultJson).mockReturnValue('{"error":"Unauthorized"}')
 
     await handleCi(false)
 
     expect(process.exitCode).toBe(401)
-    expect(logger.log).toHaveBeenCalledWith('{"error":"Unauthorized"}')
+    expect(serializeResultJson).toHaveBeenCalledWith(error)
+    expect(logger.log).toHaveBeenCalledWith(JSON.stringify(error))
     expect(handleCreateNewScan).not.toHaveBeenCalled()
   })
 
@@ -171,7 +177,7 @@ describe('handleCi', () => {
     const { getDefaultOrgSlug } = await import('./fetch-default-org-slug.mts')
     const { logger } = await import('@socketsecurity/lib/logger')
     const { serializeResultJson } = await import(
-      '../../utils/serialize/result-json.mts'
+      '../../utils/output/result-json.mjs'
     )
 
     const error = {
@@ -188,9 +194,9 @@ describe('handleCi', () => {
   })
 
   it('logs debug information', async () => {
-    const { debugDir, debugFn } = await import('@socketsecurity/lib/debug')
+    const { debug, debugDir } = await import('@socketsecurity/lib/debug')
     const { getDefaultOrgSlug } = await import('./fetch-default-org-slug.mts')
-    const { getRepoName, gitBranch } = await import('../../utils/git.mts')
+    const { getRepoName, gitBranch } = await import('../../utils/git/git.mjs')
 
     vi.mocked(getDefaultOrgSlug).mockResolvedValue({
       ok: true,
@@ -201,13 +207,12 @@ describe('handleCi', () => {
 
     await handleCi(false)
 
-    expect(debugFn).toHaveBeenCalledWith('notice', 'Starting CI scan')
-    expect(debugDir).toHaveBeenCalledWith('inspect', { autoManifest: false })
-    expect(debugFn).toHaveBeenCalledWith(
-      'notice',
+    expect(debug).toHaveBeenCalledWith('Starting CI scan')
+    expect(debugDir).toHaveBeenCalledWith({ autoManifest: false })
+    expect(debug).toHaveBeenCalledWith(
       'CI scan for debug-org/debug-repo on branch debug-branch',
     )
-    expect(debugDir).toHaveBeenCalledWith('inspect', {
+    expect(debugDir).toHaveBeenCalledWith({
       orgSlug: 'debug-org',
       cwd: '/test/project',
       branchName: 'debug-branch',
@@ -216,7 +221,7 @@ describe('handleCi', () => {
   })
 
   it('logs debug info on org slug failure', async () => {
-    const { debugDir, debugFn } = await import('@socketsecurity/lib/debug')
+    const { debug, debugDir } = await import('@socketsecurity/lib/debug')
     const { getDefaultOrgSlug } = await import('./fetch-default-org-slug.mts')
 
     const error = {
@@ -227,10 +232,7 @@ describe('handleCi', () => {
 
     await handleCi(false)
 
-    expect(debugFn).toHaveBeenCalledWith(
-      'warn',
-      'Failed to get default org slug',
-    )
-    expect(debugDir).toHaveBeenCalledWith('inspect', { orgSlugCResult: error })
+    expect(debug).toHaveBeenCalledWith('Failed to get default org slug')
+    expect(debugDir).toHaveBeenCalledWith({ orgSlugCResult: error })
   })
 })
