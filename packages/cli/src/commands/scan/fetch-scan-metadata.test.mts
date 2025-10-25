@@ -39,7 +39,7 @@ describe('fetchScanMetadata', () => {
 
   it('handles SDK setup failure', async () => {
     const { fetchScanMetadata } = await import('./fetch-scan-metadata.mts')
-    const { await setupSdkSetupFailure } = await import(
+    const { setupSdkSetupFailure } = await import(
       '../../../test/helpers/sdk-test-helpers.mts'
     )
 
@@ -56,7 +56,7 @@ describe('fetchScanMetadata', () => {
 
   it('handles API call failure', async () => {
     const { fetchScanMetadata } = await import('./fetch-scan-metadata.mts')
-    const { await setupSdkMockError } = await import(
+    const { setupSdkMockError } = await import(
       '../../../test/helpers/sdk-test-helpers.mts'
     )
 
