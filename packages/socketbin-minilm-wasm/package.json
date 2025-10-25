@@ -1,0 +1,23 @@
+{
+  "name": "@socketbin/minilm-wasm",
+  "version": "0.0.0-20251025.1",
+  "description": "MiniLM embeddings model for semantic package search (WASM)",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "bin/minilm.wasm"
+  ],
+  "bin": {
+    "minilm-wasm": "./bin/minilm.wasm"
+  },
+  "keywords": [
+    "embeddings",
+    "machine-learning",
+    "minilm",
+    "ml",
+    "semantic-search",
+    "wasm"
+  ]
+}
