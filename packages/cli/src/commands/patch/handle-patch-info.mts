@@ -63,7 +63,9 @@ export async function handlePatchInfo({
 
     spinner?.stop()
 
-    logger.log(`Patch information for: ${normalizedPurl}`)
+    if (outputKind === 'text') {
+      logger.log(`Patch information for: ${normalizedPurl}`)
+    }
 
     const patchInfo: PatchInfoData = {
       description: patch.description,

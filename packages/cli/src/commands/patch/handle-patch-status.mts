@@ -237,14 +237,16 @@ export async function handlePatchStatus({
       filteredStatuses = filteredStatuses.filter(s => s.status === 'failed')
     }
 
-    if (statuses.length === 0) {
-      logger.log('No patches found in manifest')
-    } else if (filteredStatuses.length === 0) {
-      logger.log('No patches match the filter criteria')
-    } else {
-      logger.log(
-        `Found ${filteredStatuses.length} ${pluralize('patch', { count: filteredStatuses.length })}`,
-      )
+    if (outputKind === 'text') {
+      if (statuses.length === 0) {
+        logger.log('No patches found in manifest')
+      } else if (filteredStatuses.length === 0) {
+        logger.log('No patches match the filter criteria')
+      } else {
+        logger.log(
+          `Found ${filteredStatuses.length} ${pluralize('patch', { count: filteredStatuses.length })}`,
+        )
+      }
     }
 
     await outputPatchStatusResult(
