@@ -216,7 +216,7 @@ describe('determineOrgSlug', () => {
     it('skips auto-discovery in dry-run mode', async () => {
       const { getConfigValueOrUndef } = vi.mocked(await import('../config.mts'))
       const { suggestOrgSlug } = vi.mocked(
-        await import('../commands/scan/suggest-org-slug.mts'),
+        await import('../../commands/scan/suggest-org-slug.mjs'),
       )
       const { logger } = vi.mocked(await import('@socketsecurity/lib/logger'))
 
@@ -272,10 +272,10 @@ describe('determineOrgSlug', () => {
     it('handles empty string suggestion from suggestOrgSlug', async () => {
       const { getConfigValueOrUndef } = vi.mocked(await import('../config.mts'))
       const { suggestOrgSlug } = vi.mocked(
-        await import('../commands/scan/suggest-org-slug.mts'),
+        await import('../../commands/scan/suggest-org-slug.mjs'),
       )
       const { suggestToPersistOrgSlug } = vi.mocked(
-        await import('../commands/scan/suggest-to-persist-orgslug.mts'),
+        await import('../../commands/scan/suggest-to-persist-orgslug.mjs'),
       )
 
       getConfigValueOrUndef.mockReturnValue(undefined)
@@ -301,7 +301,7 @@ describe('determineOrgSlug', () => {
     it('prioritizes org flag over everything else', async () => {
       const { getConfigValueOrUndef } = vi.mocked(await import('../config.mts'))
       const { suggestOrgSlug } = vi.mocked(
-        await import('../commands/scan/suggest-org-slug.mts'),
+        await import('../../commands/scan/suggest-org-slug.mjs'),
       )
 
       getConfigValueOrUndef.mockReturnValue('default-org')
@@ -316,7 +316,7 @@ describe('determineOrgSlug', () => {
     it('uses default when available in interactive mode', async () => {
       const { getConfigValueOrUndef } = vi.mocked(await import('../config.mts'))
       const { suggestOrgSlug } = vi.mocked(
-        await import('../commands/scan/suggest-org-slug.mts'),
+        await import('../../commands/scan/suggest-org-slug.mjs'),
       )
 
       getConfigValueOrUndef.mockReturnValue('configured-org')
