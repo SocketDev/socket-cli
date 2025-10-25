@@ -7,20 +7,17 @@ import { FLAG_HELP, LOG_SYMBOLS } from '../../constants/cli.mts'
 import {
   getBinCliPath,
   getExecPath,
-  getProcessEnv,
 } from '../../constants/paths.mts'
 
 import type { PromiseSpawnOptions } from '@socketsecurity/lib/spawn'
 
 const binCliPath = getBinCliPath()
 const execPath = getExecPath()
-const processEnv = getProcessEnv()
 
 describe('socket manifest cdxgen', async () => {
   const spawnOpts: PromiseSpawnOptions = {
     env: {
       ...process.env,
-      ...processEnv,
       SOCKET_CLI_CONFIG: '{}',
     },
   }
