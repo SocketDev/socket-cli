@@ -28,11 +28,11 @@ vi.mock('../config.mts', () => ({
   findSocketYmlSync: vi.fn(),
 }))
 
-vi.mock('./filter-config.mts', () => ({
+vi.mock('../validation/filter-config.mts', () => ({
   toFilterConfig: vi.fn(),
 }))
 
-vi.mock('./pnpm.mts', () => ({
+vi.mock('../pnpm/lockfile.mts', () => ({
   extractPurlsFromPnpmLockfile: vi.fn(),
 }))
 
@@ -43,7 +43,7 @@ vi.mock('./package-alert.mts', () => ({
 describe('alerts-map utilities', () => {
   describe('getAlertsMapFromPnpmLockfile', () => {
     it('calls extractPurlsFromPnpmLockfile with lockfile', async () => {
-      const { extractPurlsFromPnpmLockfile } = await import('./pnpm.mts')
+      const { extractPurlsFromPnpmLockfile } = await import('../pnpm/lockfile.mts')
       const { setupSdk } = await import('./sdk.mts')
       const { findSocketYmlSync } = await import('../config.mts')
 
