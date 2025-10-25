@@ -1,11 +1,10 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { fetchListRepos } from './fetch-list-repos.mts'
-import { createSuccessResult } from '../../../test/helpers/mocks.mts'
 import {
-  setupSdkMockError,
-  setupSdkSetupFailure,
-} from '../../../test/helpers/sdk-test-helpers.mts'
+  createErrorResult,
+  createSuccessResult,
+} from '../../../test/helpers/mocks.mts'
 
 // Mock the dependencies.
 vi.mock('../../utils/socket/api.mts', () => ({
@@ -17,6 +16,10 @@ vi.mock('../../utils/socket/sdk.mts', () => ({
 }))
 
 describe('fetchListRepos', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
   it('lists repositories with pagination successfully', async () => {
     const { handleApiCall } = await vi.importMock('../../utils/socket/api.mts')
     const { setupSdk } = await vi.importMock('../../utils/socket/sdk.mts')
@@ -70,10 +73,15 @@ describe('fetchListRepos', () => {
   })
 
   it('handles SDK setup failure', async () => {
-    await setupSdkSetupFailure('Failed to setup SDK', {
-      code: 1,
-      cause: 'Missing API token',
-    })
+    const { setupSdk } = await vi.importMock('../../utils/socket/sdk.mts')
+    const mockSetupSdk = vi.mocked(setupSdk)
+
+    mockSetupSdk.mockResolvedValue(
+      createErrorResult('Failed to setup SDK', {
+        code: 1,
+        cause: 'Missing API token',
+      }),
+    )
 
     const config = {
       direction: 'asc',
@@ -89,10 +97,18 @@ describe('fetchListRepos', () => {
   })
 
   it('handles API call failure', async () => {
-    await setupSdkMockError(
-      'listRepositories',
-      new Error('Invalid page number'),
-      400,
+    const { setupSdk } = await vi.importMock('../../utils/socket/sdk.mts')
+    const { handleApiCall } = await vi.importMock('../../utils/socket/api.mts')
+    const mockSetupSdk = vi.mocked(setupSdk)
+    const mockHandleApi = vi.mocked(handleApiCall)
+
+    const mockSdk = {
+      listRepositories: vi.fn().mockRejectedValue(new Error('Invalid page number')),
+    }
+
+    mockSetupSdk.mockResolvedValue(createSuccessResult(mockSdk))
+    mockHandleApi.mockResolvedValue(
+      createErrorResult('Invalid page number', { code: 400 }),
     )
 
     const config = {
@@ -106,7 +122,9 @@ describe('fetchListRepos', () => {
     const result = await fetchListRepos(config)
 
     expect(result.ok).toBe(false)
-    expect(result.code).toBe(400)
+    if (!result.ok) {
+      expect(result.code).toBe(400)
+    }
   })
 
   it('passes custom SDK options', async () => {
