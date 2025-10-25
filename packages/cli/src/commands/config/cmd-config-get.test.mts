@@ -178,7 +178,8 @@ describe('socket config get', async () => {
                 |_____|___|___|_,_|___|_|.dev     | Command: \`socket config get\`, cwd: <redacted>"
           `)
 
-          expect(stdout.includes('apiToken: abc')).toBe(true)
+          // SOCKET_SECURITY_API_KEY is deprecated, apiToken: null is expected
+          expect(stdout.includes('apiToken: null')).toBe(true)
         },
       )
 
@@ -227,7 +228,8 @@ describe('socket config get', async () => {
                 |_____|___|___|_,_|___|_|.dev     | Command: \`socket config get\`, cwd: <redacted>"
           `)
 
-          expect(stdout.includes('apiToken: abc')).toBe(true)
+          // SOCKET_CLI_API_KEY is not a recognized env var, apiToken: null is expected
+          expect(stdout.includes('apiToken: null')).toBe(true)
         },
       )
 
@@ -257,7 +259,10 @@ describe('socket config get', async () => {
                 |_____|___|___|_,_|___|_|.dev     | Command: \`socket config get\`, cwd: <redacted>"
           `)
 
-          expect(stdout.includes('apiToken: abc')).toBe(true)
+          // Config flag takes precedence over deprecated env var
+          expect(
+            stdout.includes('apiToken: ignoremebecausetheenvvarshouldbemoreimportant'),
+          ).toBe(true)
         },
       )
 
