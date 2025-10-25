@@ -1,6 +1,7 @@
 {
   "patches": {
     "pkg:npm/on-headers@1.0.2": {
+      "uuid": "00000000-0000-0000-0000-000000000000",
       "exportedAt": "2025-09-10T20:10:19.407Z",
       "files": {
         "index.js": {
