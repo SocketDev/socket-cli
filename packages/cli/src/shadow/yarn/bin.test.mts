@@ -218,7 +218,8 @@ describe('shadowYarn', () => {
     expect(mockGetAlertsMapFromPurls).toHaveBeenCalledWith(
       ['pkg:npm/lodash'],
       expect.objectContaining({
-        filter: { actions: ['error'], blocked: true },
+        filter: { actions: ['error', 'monitor', 'warn'] },
+        nothrow: true,
       }),
     )
   })
