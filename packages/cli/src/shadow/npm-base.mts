@@ -11,6 +11,7 @@ import {
 import {
   getExecPath,
   getNodeDebugFlags,
+  getNodeDisableSigusr1Flags,
   getNodeHardenFlags,
   getNodeNoWarningsFlags,
   supportsNodePermissionFlag,
@@ -160,6 +161,7 @@ export default async function shadowNpmBase(
       ...getNodeNoWarningsFlags(),
       ...getNodeDebugFlags(),
       ...getNodeHardenFlags(),
+      ...getNodeDisableSigusr1Flags(),
       // Memory flags commented out.
       // ...constants.nodeMemoryFlags,
       ...(ENV.INLINED_SOCKET_CLI_SENTRY_BUILD
