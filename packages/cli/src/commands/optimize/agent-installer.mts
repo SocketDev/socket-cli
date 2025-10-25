@@ -19,6 +19,7 @@
 
 import { NPM, PNPM } from '@socketsecurity/lib/constants/agents'
 import {
+  getNodeDisableSigusr1Flags,
   getNodeHardenFlags,
   getNodeNoWarningsFlags,
 } from '@socketsecurity/lib/constants/node'
@@ -96,6 +97,7 @@ export function runAgentInstall(
       NODE_OPTIONS: cmdFlagsToString([
         ...(skipNodeHardenFlags ? [] : getNodeHardenFlags()),
         ...getNodeNoWarningsFlags(),
+        ...getNodeDisableSigusr1Flags(),
       ]),
       // @ts-expect-error - getOwn may return undefined, but spread handles it
       ...getOwn(spawnOpts, 'env'),

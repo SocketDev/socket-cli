@@ -24,6 +24,7 @@ import {
   getCliPackageName,
   getDlxDir,
 } from './shared/paths.mjs'
+import { getNodeDisableSigusr1Flags } from './shared/node-flags.mjs'
 
 /**
  * Check if CLI is installed.
@@ -128,10 +129,14 @@ async function main(): Promise<void> {
   const cliPath = getCliEntryPoint()
   const args = process.argv.slice(2)
 
-  const child = spawn(process.execPath, [cliPath, ...args], {
-    stdio: 'inherit',
-    env: process.env,
-  })
+  const child = spawn(
+    process.execPath,
+    [...getNodeDisableSigusr1Flags(), cliPath, ...args],
+    {
+      stdio: 'inherit',
+      env: process.env,
+    },
+  )
 
   child.on('error', error => {
     console.error('Failed to spawn CLI:', error)
