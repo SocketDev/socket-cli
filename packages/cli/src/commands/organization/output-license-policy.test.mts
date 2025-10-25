@@ -1,14 +1,30 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { outputLicensePolicy } from './output-license-policy.mts'
 import {
   createErrorResult,
   createSuccessResult,
-  setupOutputWithTableMocks,
 } from '../../../test/helpers/index.mts'
 
 // Mock the dependencies.
-setupOutputWithTableMocks()
+vi.mock('@socketsecurity/lib/logger', () => ({
+  logger: {
+    fail: vi.fn(),
+    info: vi.fn(),
+    log: vi.fn(),
+  },
+}))
+
+vi.mock('../../utils/output/result-json.mjs', () => ({
+  serializeResultJson: vi.fn(result => JSON.stringify(result)),
+}))
+
+vi.mock('../../utils/error/fail-msg-with-badge.mts', () => ({
+  failMsgWithBadge: vi.fn((msg, cause) => `${msg}: ${cause}`),
+}))
+
+vi.mock('../../utils/output/markdown.mts', () => ({
+  mdTableOfPairs: vi.fn(pairs => `Table with ${pairs.length} rows`),
+}))
 
 describe('outputLicensePolicy', () => {
   beforeEach(() => {
@@ -17,8 +33,9 @@ describe('outputLicensePolicy', () => {
   })
 
   it('outputs JSON format for successful result', async () => {
-    const { logger } = await import('@socketsecurity/lib/logger')
-    const { serializeResultJson } = await import(
+    const { outputLicensePolicy } = await import('./output-license-policy.mts')
+    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
+    const { serializeResultJson } = await vi.importMock(
       '../../utils/output/result-json.mjs'
     )
     const mockLog = vi.mocked(logger.log)
@@ -40,7 +57,8 @@ describe('outputLicensePolicy', () => {
   })
 
   it('outputs error in JSON format', async () => {
-    const { logger } = await import('@socketsecurity/lib/logger')
+    const { outputLicensePolicy } = await import('./output-license-policy.mts')
+    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
     const mockLog = vi.mocked(logger.log)
 
     const result = createErrorResult('Unauthorized', {
@@ -55,8 +73,9 @@ describe('outputLicensePolicy', () => {
   })
 
   it('outputs text format with license table', async () => {
-    const { logger } = await import('@socketsecurity/lib/logger')
-    const { mdTableOfPairs } = await import('../../utils/output/markdown.mts')
+    const { outputLicensePolicy } = await import('./output-license-policy.mts')
+    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
+    const { mdTableOfPairs } = await vi.importMock('../../utils/output/markdown.mts')
     const mockLog = vi.mocked(logger.log)
     const mockInfo = vi.mocked(logger.info)
     const mockTable = vi.mocked(mdTableOfPairs)
@@ -84,8 +103,9 @@ describe('outputLicensePolicy', () => {
   })
 
   it('outputs error in text format', async () => {
-    const { logger } = await import('@socketsecurity/lib/logger')
-    const { failMsgWithBadge } = await import(
+    const { outputLicensePolicy } = await import('./output-license-policy.mts')
+    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
+    const { failMsgWithBadge } = await vi.importMock(
       '../../utils/error/fail-msg-with-badge.mts'
     )
     const mockFail = vi.mocked(logger.fail)
@@ -107,7 +127,8 @@ describe('outputLicensePolicy', () => {
   })
 
   it('handles markdown output format', async () => {
-    const { logger } = await import('@socketsecurity/lib/logger')
+    const { outputLicensePolicy } = await import('./output-license-policy.mts')
+    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
     const mockLog = vi.mocked(logger.log)
 
     const result = createSuccessResult({
@@ -123,8 +144,9 @@ describe('outputLicensePolicy', () => {
   })
 
   it('handles empty license policy', async () => {
-    const { logger } = await import('@socketsecurity/lib/logger')
-    const { mdTableOfPairs } = await import('../../utils/output/markdown.mts')
+    const { outputLicensePolicy } = await import('./output-license-policy.mts')
+    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
+    const { mdTableOfPairs } = await vi.importMock('../../utils/output/markdown.mts')
     const mockTable = vi.mocked(mdTableOfPairs)
 
     const result = createSuccessResult({
@@ -137,8 +159,9 @@ describe('outputLicensePolicy', () => {
   })
 
   it('handles null license policy', async () => {
-    const { logger } = await import('@socketsecurity/lib/logger')
-    const { mdTableOfPairs } = await import('../../utils/output/markdown.mts')
+    const { outputLicensePolicy } = await import('./output-license-policy.mts')
+    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
+    const { mdTableOfPairs } = await vi.importMock('../../utils/output/markdown.mts')
     const mockTable = vi.mocked(mdTableOfPairs)
 
     const result = createSuccessResult({
@@ -151,6 +174,7 @@ describe('outputLicensePolicy', () => {
   })
 
   it('sets default exit code when code is undefined', async () => {
+    const { outputLicensePolicy } = await import('./output-license-policy.mts')
     const result = createErrorResult('Error')
 
     await outputLicensePolicy(result as any, 'json')
