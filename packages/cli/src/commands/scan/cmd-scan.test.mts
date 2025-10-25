@@ -13,32 +13,25 @@ describe('socket scan', async () => {
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`
-        "\\u26a1 Socket CLI - Secure your supply chain
+        "Manage Socket scans
 
-        What can I help you with?
-
-          [1] \\ud83d\\udd0d  Security Scanning
-              Scan projects for vulnerabilities
-          [2] \\ud83d\\udd27  Fix & Patch
-              Fix vulnerabilities and apply patches
-          [3] \\ud83d\\udce6  Package Managers
-              Enhanced package manager commands
-          [4] \\ud83d\\udcca  Package Analysis
-              Analyze package security
-          [5] \\ud83c\\udfe2  Organizations & Repos
-              Manage organizations and repositories
-          [6] \\u2699\\ufe0f  Configuration
-              Settings and environment variables
-          [7] \\ud83d\\udcac  Natural Language
-              Use plain English commands
-          [8] \\ud83d\\udcda  All Commands
-              Show complete command list
-          [9] \\ud83d\\ude80  Quick Start
-              Get started quickly
-
-        Run with an interactive terminal to select a category
-        Or use: socket --help=<category>
-        Categories: scan, fix, pm, pkg, org, config, ask, all, quick"
+          Usage
+              $ socket scan <command>
+          
+            Commands
+              create                      Create a new Socket scan and report
+              del                         Delete a scan
+              diff                        See what changed between two Scans
+              list                        List the scans for an organization
+              metadata                    Get a scan's metadata
+              report                      Check whether a scan result passes the organizational policies (security, license)
+              setup                       Start interactive configurator to customize default flag values for \`socket scan\` in this dir
+              view                        View the raw results of a scan
+          
+            Options
+          
+              --no-banner                 Hide the Socket banner
+              --no-spinner                Hide the console spinner"
       `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
