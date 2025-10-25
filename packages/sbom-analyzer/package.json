@@ -1,0 +1,24 @@
+{
+  "name": "@socketsecurity/sbom-analyzer",
+  "version": "1.0.0",
+  "description": "SBOM generation and analysis with cdxgen, Socket.dev enrichment, and CodeT5 integration",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": "./src/index.mjs",
+    "./generator": "./src/generator.mjs",
+    "./enrichment": "./src/enrichment/socket-sbom-enricher.mjs",
+    "./formatters": "./src/formatters/sbom-codet5-formatter.mjs"
+  },
+  "scripts": {
+    "test": "vitest",
+    "type": "tsgo"
+  },
+  "dependencies": {
+    "@cyclonedx/cdxgen": "^10.10.7",
+    "@socketsecurity/lib": "workspace:*"
+  },
+  "devDependencies": {
+    "vitest": "^2.0.0"
+  }
+}
