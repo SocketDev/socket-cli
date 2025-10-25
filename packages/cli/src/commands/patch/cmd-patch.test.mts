@@ -65,10 +65,13 @@ describe('socket patch', async () => {
     ['patch', '.', FLAG_CONFIG, '{"apiToken":"fake-token"}'],
     'should scan for available patches when no node_modules found',
     async cmd => {
-      const { code } = await spawnSocketCli(binCliPath, cmd, {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
         cwd: pnpmFixtureDir,
       })
-      expect(code, 'should exit with code 0 when no packages to patch').toBe(0)
+      const output = stdout + stderr
+      // Discovery requires node_modules, so should error when it's missing.
+      expect(output).toContain('No node_modules directory found')
+      expect(code, 'should exit with non-zero code').not.toBe(0)
     },
   )
 
