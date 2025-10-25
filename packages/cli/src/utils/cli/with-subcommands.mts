@@ -621,10 +621,12 @@ export async function meowWithSubcommands(
     // "Bucket" some commands for easier usage.
     const commands = new Set([
       'analytics',
+      'ask',
       'audit-log',
       'ci',
       'cdxgen',
       'config',
+      'console',
       'dependencies',
       'fix',
       'install',
@@ -638,7 +640,7 @@ export async function meowWithSubcommands(
       'optimize',
       'organization',
       'package',
-      //'patch',
+      'patch',
       'pip',
       // PNPM,
       'raw-npm',
