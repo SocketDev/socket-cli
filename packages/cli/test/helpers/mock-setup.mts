@@ -7,11 +7,11 @@ import { vi } from 'vitest'
  * Use this for tests that need to mock SDK setup and API calls
  */
 export function setupStandardSdkMocks() {
-  vi.mock('../../utils/socket/api.mjs', () => ({
+  vi.mock('../../src/utils/socket/api.mts', () => ({
     handleApiCall: vi.fn(),
   }))
 
-  vi.mock('../../utils/socket/sdk.mjs', () => ({
+  vi.mock('../../src/utils/socket/sdk.mts', () => ({
     setupSdk: vi.fn(),
     withSdk: vi.fn(),
   }))
@@ -33,11 +33,11 @@ export function setupStandardOutputMocks() {
     },
   }))
 
-  vi.mock('../../utils/error/fail-msg-with-badge.mts', () => ({
+  vi.mock('../../src/utils/error/fail-msg-with-badge.mts', () => ({
     failMsgWithBadge: vi.fn((msg, cause) => `${msg}: ${cause}`),
   }))
 
-  vi.mock('../../utils/output/result-json.mjs', () => ({
+  vi.mock('../../src/utils/output/result-json.mts', () => ({
     serializeResultJson: vi.fn(result => JSON.stringify(result)),
   }))
 }
@@ -49,7 +49,7 @@ export function setupStandardOutputMocks() {
 export function setupOutputWithTableMocks() {
   setupStandardOutputMocks()
 
-  vi.mock('../../utils/output/markdown.mts', () => ({
+  vi.mock('../../src/utils/output/markdown.mts', () => ({
     mdTableOfPairs: vi.fn(pairs => `Table with ${pairs.length} rows`),
   }))
 }
@@ -59,7 +59,7 @@ export function setupOutputWithTableMocks() {
  * Use this for handle-*.test.mts files
  */
 export function setupDebugMocks() {
-  vi.mock('../../utils/debug.mts', () => ({
+  vi.mock('../../src/utils/debug.mts', () => ({
     debugDir: vi.fn(),
     debugFn: vi.fn(),
     debugLog: vi.fn(),
