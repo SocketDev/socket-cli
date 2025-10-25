@@ -16,7 +16,7 @@ describe('fetchScanMetadata', () => {
     const { fetchScanMetadata } = await import('./fetch-scan-metadata.mts')
 
     const { mockHandleApi, mockSdk } = await setupSdkMockSuccess(
-      'getOrgFullScanMetadata',
+      'getFullScanMetadata',
       {
         id: 'scan-123',
         status: 'completed',
@@ -26,7 +26,7 @@ describe('fetchScanMetadata', () => {
 
     const result = await fetchScanMetadata('test-org', 'scan-123')
 
-    expect(mockSdk.getOrgFullScanMetadata).toHaveBeenCalledWith(
+    expect(mockSdk.getFullScanMetadata).toHaveBeenCalledWith(
       'test-org',
       'scan-123',
     )
@@ -60,7 +60,7 @@ describe('fetchScanMetadata', () => {
       '../../../test/helpers/sdk-test-helpers.mts'
     )
 
-    await setupSdkMockError('getOrgFullScanMetadata', 'Not found', 404)
+    await setupSdkMockError('getFullScanMetadata', 'Not found', 404)
 
     const result = await fetchScanMetadata('test-org', 'nonexistent-scan')
 
@@ -72,7 +72,7 @@ describe('fetchScanMetadata', () => {
     const { fetchScanMetadata } = await import('./fetch-scan-metadata.mts')
 
     const { mockSdk, mockSetupSdk } = await setupSdkMockSuccess(
-      'getOrgFullScanMetadata',
+      'getFullScanMetadata',
       {},
     )
 
@@ -86,7 +86,7 @@ describe('fetchScanMetadata', () => {
     await fetchScanMetadata('custom-org', 'scan-456', options)
 
     expect(mockSetupSdk).toHaveBeenCalledWith(options.sdkOpts)
-    expect(mockSdk.getOrgFullScanMetadata).toHaveBeenCalledWith(
+    expect(mockSdk.getFullScanMetadata).toHaveBeenCalledWith(
       'custom-org',
       'scan-456',
     )
@@ -95,7 +95,7 @@ describe('fetchScanMetadata', () => {
   it('handles different org slugs and scan IDs', async () => {
     const { fetchScanMetadata } = await import('./fetch-scan-metadata.mts')
 
-    const { mockSdk } = await setupSdkMockSuccess('getOrgFullScanMetadata', {})
+    const { mockSdk } = await setupSdkMockSuccess('getFullScanMetadata', {})
 
     const testCases = [
       ['org-with-dashes', 'scan-123'],
@@ -107,14 +107,14 @@ describe('fetchScanMetadata', () => {
     for (const [org, scanId] of testCases) {
       // eslint-disable-next-line no-await-in-loop
       await fetchScanMetadata(org, scanId)
-      expect(mockSdk.getOrgFullScanMetadata).toHaveBeenCalledWith(org, scanId)
+      expect(mockSdk.getFullScanMetadata).toHaveBeenCalledWith(org, scanId)
     }
   })
 
   it('handles empty metadata response', async () => {
     const { fetchScanMetadata } = await import('./fetch-scan-metadata.mts')
 
-    await setupSdkMockSuccess('getOrgFullScanMetadata', null)
+    await setupSdkMockSuccess('getFullScanMetadata', null)
 
     const result = await fetchScanMetadata('test-org', 'empty-scan')
 
@@ -125,7 +125,7 @@ describe('fetchScanMetadata', () => {
   it('handles pending scan metadata', async () => {
     const { fetchScanMetadata } = await import('./fetch-scan-metadata.mts')
 
-    await setupSdkMockSuccess('getOrgFullScanMetadata', {
+    await setupSdkMockSuccess('getFullScanMetadata', {
       id: 'scan-pending',
       status: 'pending',
       progress: 45,
@@ -141,7 +141,7 @@ describe('fetchScanMetadata', () => {
   it('handles special characters in scan IDs', async () => {
     const { fetchScanMetadata } = await import('./fetch-scan-metadata.mts')
 
-    const { mockSdk } = await setupSdkMockSuccess('getOrgFullScanMetadata', {
+    const { mockSdk } = await setupSdkMockSuccess('getFullScanMetadata', {
       id: 'scan-with-special-chars',
     })
 
@@ -149,7 +149,7 @@ describe('fetchScanMetadata', () => {
 
     await fetchScanMetadata('test-org', specialScanId)
 
-    expect(mockSdk.getOrgFullScanMetadata).toHaveBeenCalledWith(
+    expect(mockSdk.getFullScanMetadata).toHaveBeenCalledWith(
       'test-org',
       specialScanId,
     )
@@ -158,12 +158,12 @@ describe('fetchScanMetadata', () => {
   it('uses null prototype for options', async () => {
     const { fetchScanMetadata } = await import('./fetch-scan-metadata.mts')
 
-    const { mockSdk } = await setupSdkMockSuccess('getOrgFullScanMetadata', {})
+    const { mockSdk } = await setupSdkMockSuccess('getFullScanMetadata', {})
 
     // This tests that the function properly uses __proto__: null.
     await fetchScanMetadata('test-org', 'scan-123')
 
     // The function should work without prototype pollution issues.
-    expect(mockSdk.getOrgFullScanMetadata).toHaveBeenCalled()
+    expect(mockSdk.getFullScanMetadata).toHaveBeenCalled()
   })
 })
