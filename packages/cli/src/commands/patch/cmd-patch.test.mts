@@ -55,7 +55,8 @@ describe('socket patch', async () => {
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       const output = stdout + stderr
-      expect(output).toContain('No .socket directory found')
+      // Command now falls back to discovery when no .socket dir exists.
+      expect(output).toContain('No node_modules directory found')
       expect(code, 'should exit with non-zero code').not.toBe(0)
     },
   )
