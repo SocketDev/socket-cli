@@ -80,7 +80,8 @@
     "del": "8.0.1",
     "ink-text-input": "6.0.0",
     "rollup": "4.50.1",
-    "rollup-plugin-visualizer": "6.0.5"
+    "rollup-plugin-visualizer": "6.0.5",
+    "tar-stream": "3.1.7"
   },
   "engines": {
     "node": ">=18",
