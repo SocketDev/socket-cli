@@ -19,6 +19,8 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { spawn } from '@socketsecurity/lib/spawn'
+import { logger } from '@socketsecurity/lib/logger'
+import colors from 'yoctocolors-cjs'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -37,7 +39,7 @@ const TEST_DIR = join(tmpdir(), `socket-cli-integration-test-${Date.now()}`)
 async function exec(command, args = [], options = {}) {
   const { cwd = process.cwd(), env = process.env } = options
 
-  console.log(`$ ${command} ${args.join(' ')}`)
+  logger.log(`$ ${command} ${args.join(' ')}`)
 
   const result = await spawn(command, args, {
     cwd,
@@ -57,20 +59,20 @@ async function exec(command, args = [], options = {}) {
  * Main test function.
  */
 async function main() {
-  console.log()
-  console.log('🧪 Socket CLI - yao-pkg Integration Test')
-  console.log(`   Testing Node.js ${NODE_VERSION} binary with pkg`)
-  console.log()
+  logger.log()
+  logger.log('🧪 Socket CLI - yao-pkg Integration Test')
+  logger.log(`   Testing Node.js ${NODE_VERSION} binary with pkg`)
+  logger.log()
 
   let testsFailed = 0
   const testResults = []
 
   try {
     // Test 1: Verify custom Node.js binary exists in cache.
-    console.log('━'.repeat(60))
-    console.log('TEST 1: Custom Node.js Binary in Cache')
-    console.log('━'.repeat(60))
-    console.log()
+    logger.log('━'.repeat(60))
+    logger.log('TEST 1: Custom Node.js Binary in Cache')
+    logger.log('━'.repeat(60))
+    logger.log()
 
     const platform = process.platform
     const arch = process.arch
@@ -84,48 +86,48 @@ async function main() {
     )
 
     if (!existsSync(binaryPath)) {
-      console.error(`❌ Custom Node.js binary not found: ${binaryPath}`)
-      console.error('   Run: node scripts/build-yao-pkg-node.mjs')
+      logger.error(`${colors.red('✗')} Custom Node.js binary not found: ${binaryPath}`)
+      logger.error('   Run: node scripts/build-yao-pkg-node.mjs')
       testsFailed++
       testResults.push({ name: 'Binary in cache', passed: false })
     } else {
-      console.log(`✅ Custom Node.js binary found: ${binaryPath}`)
+      logger.log(`${colors.green('✓')} Custom Node.js binary found: ${binaryPath}`)
       testResults.push({ name: 'Binary in cache', passed: true })
     }
 
-    console.log()
+    logger.log()
 
     // Test 2: Build Socket CLI.
-    console.log('━'.repeat(60))
-    console.log('TEST 2: Build Socket CLI')
-    console.log('━'.repeat(60))
-    console.log()
+    logger.log('━'.repeat(60))
+    logger.log('TEST 2: Build Socket CLI')
+    logger.log('━'.repeat(60))
+    logger.log()
 
-    console.log('Building Socket CLI distribution...')
+    logger.log('Building Socket CLI distribution...')
     const buildResult = await exec('pnpm', ['run', 'build:dist:src'], {
       cwd: ROOT_DIR,
     })
 
     if (buildResult.code !== 0) {
-      console.error('❌ Socket CLI build failed')
-      console.error(buildResult.stderr)
+      logger.error(`${colors.red('✗')} Socket CLI build failed`)
+      logger.error(buildResult.stderr)
       testsFailed++
       testResults.push({ name: 'Build Socket CLI', passed: false })
       throw new Error('Socket CLI build failed')
     }
 
-    console.log('✅ Socket CLI built successfully')
+    logger.log(`${colors.green('✓')} Socket CLI built successfully`)
     testResults.push({ name: 'Build Socket CLI', passed: true })
-    console.log()
+    logger.log()
 
     // Test 3: Create test directory.
-    console.log('━'.repeat(60))
-    console.log('TEST 3: Setup Test Environment')
-    console.log('━'.repeat(60))
-    console.log()
+    logger.log('━'.repeat(60))
+    logger.log('TEST 3: Setup Test Environment')
+    logger.log('━'.repeat(60))
+    logger.log()
 
     await mkdir(TEST_DIR, { recursive: true })
-    console.log(`Created test directory: ${TEST_DIR}`)
+    logger.log(`Created test directory: ${TEST_DIR}`)
 
     // Create minimal test package.json.
     const testPackageJson = {
@@ -149,44 +151,44 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 // Test 1: Basic execution.
-console.log('Test executable running!');
+logger.log('Test executable running!');
 
 // Test 2: SEA detection.
 const isSea = sea.isSea();
-console.log('SEA detection:', isSea ? 'YES' : 'NO');
+logger.log('SEA detection:', isSea ? 'YES' : 'NO');
 
 // Test 3: File system access.
 const cwd = process.cwd();
-console.log('CWD:', cwd);
+logger.log('CWD:', cwd);
 
 // Test 4: Module loading.
 const pathModule = require('node:path');
-console.log('Path module:', pathModule ? 'OK' : 'FAIL');
+logger.log('Path module:', pathModule ? 'OK' : 'FAIL');
 
 // Exit with appropriate code.
 if (isSea) {
-  console.log('✅ All tests passed');
+  logger.log(`${colors.green('✓')} All tests passed`);
   process.exit(0);
 } else {
-  console.error('❌ SEA detection failed');
+  logger.error(`${colors.red('✗')} SEA detection failed`);
   process.exit(1);
 }
 `
 
     await writeFile(join(TEST_DIR, 'test-cli.js'), testCliScript)
-    console.log('✅ Test environment setup complete')
+    logger.log(`${colors.green('✓')} Test environment setup complete`)
     testResults.push({ name: 'Setup test environment', passed: true })
-    console.log()
+    logger.log()
 
     // Test 4: Create pkg executable.
-    console.log('━'.repeat(60))
-    console.log('TEST 4: Create pkg Executable')
-    console.log('━'.repeat(60))
-    console.log()
+    logger.log('━'.repeat(60))
+    logger.log('TEST 4: Create pkg Executable')
+    logger.log('━'.repeat(60))
+    logger.log()
 
-    console.log('Running pkg to create executable...')
-    console.log(`Using custom Node.js binary: ${targetName}`)
-    console.log()
+    logger.log('Running pkg to create executable...')
+    logger.log(`Using custom Node.js binary: ${targetName}`)
+    logger.log()
 
     const pkgResult = await exec(
       'pnpm',
@@ -205,8 +207,8 @@ if (isSea) {
     )
 
     if (pkgResult.code !== 0) {
-      console.error('❌ pkg failed to create executable')
-      console.error(pkgResult.stderr)
+      logger.error(`${colors.red('✗')} pkg failed to create executable`)
+      logger.error(pkgResult.stderr)
       testsFailed++
       testResults.push({ name: 'Create pkg executable', passed: false })
       throw new Error('pkg failed')
@@ -217,109 +219,109 @@ if (isSea) {
       `socket-test${platform === 'win32' ? '.exe' : ''}`,
     )
     if (!existsSync(executablePath)) {
-      console.error(`❌ Executable not created: ${executablePath}`)
+      logger.error(`${colors.red('✗')} Executable not created: ${executablePath}`)
       testsFailed++
       testResults.push({ name: 'Create pkg executable', passed: false })
       throw new Error('Executable not created')
     }
 
-    console.log(`✅ Executable created: ${executablePath}`)
+    logger.log(`${colors.green('✓')} Executable created: ${executablePath}`)
     testResults.push({ name: 'Create pkg executable', passed: true })
-    console.log()
+    logger.log()
 
     // Test 5: Run the executable.
-    console.log('━'.repeat(60))
-    console.log('TEST 5: Run and Verify Executable')
-    console.log('━'.repeat(60))
-    console.log()
+    logger.log('━'.repeat(60))
+    logger.log('TEST 5: Run and Verify Executable')
+    logger.log('━'.repeat(60))
+    logger.log()
 
-    console.log('Executing test binary...')
-    console.log()
+    logger.log('Executing test binary...')
+    logger.log()
 
     const execResult = await exec(executablePath, [], {
       cwd: TEST_DIR,
     })
 
-    console.log('Output:')
-    console.log(execResult.stdout)
-    console.log()
+    logger.log('Output:')
+    logger.log(execResult.stdout)
+    logger.log()
 
     if (execResult.code !== 0) {
-      console.error('❌ Executable failed with exit code:', execResult.code)
-      console.error('STDERR:', execResult.stderr)
+      logger.error(`${colors.red('✗')} Executable failed with exit code:`, execResult.code)
+      logger.error('STDERR:', execResult.stderr)
       testsFailed++
       testResults.push({ name: 'Run executable', passed: false })
       testResults.push({ name: 'SEA detection', passed: false })
     } else {
-      console.log('✅ Executable ran successfully')
+      logger.log(`${colors.green('✓')} Executable ran successfully`)
       testResults.push({ name: 'Run executable', passed: true })
 
       // Verify SEA detection.
       if (execResult.stdout.includes('SEA detection: YES')) {
-        console.log('✅ SEA detection working correctly')
+        logger.log(`${colors.green('✓')} SEA detection working correctly`)
         testResults.push({ name: 'SEA detection', passed: true })
       } else {
-        console.error('❌ SEA detection failed (reported as NO)')
+        logger.error(`${colors.red('✗')} SEA detection failed (reported as NO)`)
         testsFailed++
         testResults.push({ name: 'SEA detection', passed: false })
       }
     }
 
-    console.log()
+    logger.log()
 
     // Summary.
-    console.log('━'.repeat(60))
-    console.log('TEST SUMMARY')
-    console.log('━'.repeat(60))
-    console.log()
+    logger.log('━'.repeat(60))
+    logger.log('TEST SUMMARY')
+    logger.log('━'.repeat(60))
+    logger.log()
 
     for (const { name, passed } of testResults) {
-      console.log(`${passed ? '✅' : '❌'} ${name}`)
+      logger.log(`${passed ? `${colors.green('✓')}` : `${colors.red('✗')}`} ${name}`)
     }
 
-    console.log()
+    logger.log()
 
     if (testsFailed === 0) {
-      console.log('🎉 ALL TESTS PASSED')
-      console.log()
-      console.log('Your custom Node.js binary is working correctly with pkg!')
-      console.log()
+      logger.log('🎉 ALL TESTS PASSED')
+      logger.log()
+      logger.log('Your custom Node.js binary is working correctly with pkg!')
+      logger.log()
     } else {
-      console.error(`❌ ${testsFailed} TEST(S) FAILED`)
-      console.error()
-      console.error('The custom Node.js binary has issues.')
-      console.error('Review the errors above and rebuild:')
-      console.error('  node scripts/build-yao-pkg-node.mjs --clean')
-      console.error()
+      logger.error(`${colors.red('✗')} ${testsFailed} TEST(S) FAILED`)
+      logger.error()
+      logger.error('The custom Node.js binary has issues.')
+      logger.error('Review the errors above and rebuild:')
+      logger.error('  node scripts/build-yao-pkg-node.mjs --clean')
+      logger.error()
       process.exitCode = 1
     }
-    console.error()
+    logger.error()
   } catch (e) {
-    console.error('❌ Integration test failed:', e.message)
-    console.error()
+    logger.error(`${colors.red('✗')} Integration test failed:`, e.message)
+    logger.error()
     process.exitCode = 1
   } finally {
     // Cleanup.
-    console.log('━'.repeat(60))
-    console.log('CLEANUP')
-    console.log('━'.repeat(60))
-    console.log()
+    logger.log('━'.repeat(60))
+    logger.log('CLEANUP')
+    logger.log('━'.repeat(60))
+    logger.log()
 
-    console.log(`Removing test directory: ${TEST_DIR}`)
+    logger.log(`Removing test directory: ${TEST_DIR}`)
     try {
       await rm(TEST_DIR, { recursive: true, force: true })
-      console.log('✅ Test directory cleaned up')
+      logger.log(`${colors.green('✓')} Test directory cleaned up`)
     } catch (e) {
-      console.warn(`⚠️  Could not clean up test directory: ${e.message}`)
-      console.warn(`   Manually remove: rm -rf ${TEST_DIR}`)
+      logger.warn(`${colors.yellow('⚠')}  Could not clean up test directory: ${e.message}`)
+      logger.warn(`   Manually remove: rm -rf ${TEST_DIR}`)
     }
 
-    console.log()
+    logger.log()
   }
 }
 
 // Run main function.
 main().catch(error => {
-  console.error('❌ Integration test crashed:', error.message)
+  logger.error(`${colors.red('✗')} Integration test crashed:`, error.message)
   process.exitCode = 1
 })

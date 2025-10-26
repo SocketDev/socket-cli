@@ -31,20 +31,20 @@ async function runPackageTypeCheck(pkg, quiet = false) {
   if (result.exitCode !== 0) {
     if (!quiet) {
       logger.clearLine()
-      console.log(`${colors.red('✗')} ${displayName}`)
+      logger.log(`${colors.red('✗')} ${displayName}`)
     }
     if (result.stdout) {
-      console.log(result.stdout)
+      logger.log(result.stdout)
     }
     if (result.stderr) {
-      console.error(result.stderr)
+      logger.error(result.stderr)
     }
     return result.exitCode
   }
 
   if (!quiet) {
     logger.clearLine()
-    console.log(`${colors.green('✓')} ${displayName}`)
+    logger.log(`${colors.green('✓')} ${displayName}`)
   }
 
   return 0
@@ -65,15 +65,15 @@ async function main() {
 
     // Show help if requested.
     if (values.help) {
-      console.log('Monorepo Type Checker')
-      console.log('\nUsage: pnpm type [options]')
-      console.log('\nOptions:')
-      console.log('  --help         Show this help message')
-      console.log('  --quiet, --silent  Suppress progress messages')
-      console.log('\nExamples:')
-      console.log('  pnpm type      # Type check all packages')
-      console.log('\nNote: Type checking always runs on all packages due to')
-      console.log('      cross-package TypeScript dependencies.')
+      logger.log('Monorepo Type Checker')
+      logger.log('\nUsage: pnpm type [options]')
+      logger.log('\nOptions:')
+      logger.log('  --help         Show this help message')
+      logger.log('  --quiet, --silent  Suppress progress messages')
+      logger.log('\nExamples:')
+      logger.log('  pnpm type      # Type check all packages')
+      logger.log('\nNote: Type checking always runs on all packages due to')
+      logger.log('      cross-package TypeScript dependencies.')
       process.exitCode = 0
       return
     }
@@ -82,7 +82,7 @@ async function main() {
 
     if (!quiet) {
       printHeader('Monorepo Type Checker')
-      console.log('')
+      logger.log('')
     }
 
     // Get all packages with type script.
@@ -117,7 +117,7 @@ async function main() {
     if (exitCode !== 0) {
       if (!quiet) {
         logger.error('')
-        console.log('Type checking failed')
+        logger.log('Type checking failed')
       }
       process.exitCode = exitCode
     } else {
