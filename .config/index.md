@@ -4,7 +4,7 @@ Comprehensive index of all shared configuration files and documentation for the 
 
 ## Quick Links
 
-- [Quick Reference](./QUICK_REFERENCE.md) - Copy-paste examples for common use cases
+- [Quick Reference](./quick-reference.md) - Copy-paste examples for common use cases
 - [Usage Guide](./README.md) - Detailed usage documentation and examples
 - [Architecture](../docs/shared-configuration-architecture.md) - Design principles and rationale
 - [Migration Guide](../docs/configuration-migration.md) - Step-by-step migration instructions
@@ -65,8 +65,8 @@ Comprehensive index of all shared configuration files and documentation for the 
 | File | Lines | Purpose |
 |------|-------|---------|
 | `README.md` | 145 | Usage documentation with examples |
-| `QUICK_REFERENCE.md` | 280 | Quick copy-paste reference |
-| `INDEX.md` | This file | Index of all configuration files |
+| `quick-reference.md` | 280 | Quick copy-paste reference |
+| `index.md` | This file | Index of all configuration files |
 
 ### In docs/
 
@@ -84,7 +84,7 @@ Comprehensive index of all shared configuration files and documentation for the 
 2. Create `vitest.config.mts` merging base config
 3. No ESLint config needed (root config applies)
 
-See: [Quick Reference](./QUICK_REFERENCE.md) for examples
+See: [Quick Reference](./quick-reference.md) for examples
 
 ### Existing Package Migration
 
@@ -115,9 +115,9 @@ See: [README.md](./README.md) - "Vitest - Package Config"
 
 ```
 .config/
-├── INDEX.md                      # This file
+├── index.md                      # This file
 ├── README.md                     # Usage guide
-├── QUICK_REFERENCE.md            # Quick reference
+├── quick-reference.md            # Quick reference
 ├── tsconfig.base.json            # Base TypeScript
 ├── tsconfig.build.json           # Build TypeScript
 ├── tsconfig.test.json            # Test TypeScript
@@ -200,7 +200,7 @@ docs/
 
 ### For Usage Questions
 
-1. Check [Quick Reference](./QUICK_REFERENCE.md) for common patterns
+1. Check [Quick Reference](./quick-reference.md) for common patterns
 2. Review [README.md](./README.md) for detailed examples
 3. Compare with similar packages
 
