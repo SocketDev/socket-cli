@@ -132,7 +132,7 @@ async function main() {
   if (isExportMode) {
     // Export mode: output shell commands.
     for (const [key, value] of Object.entries(envVars)) {
-      console.log(`export ${key}="${value}"`)
+      logger.log(`export ${key}="${value}"`)
     }
     return
   }
