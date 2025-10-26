@@ -49,6 +49,25 @@ const archNameByArch = new Map([
 ])
 
 /**
+ * Platform name mappings for npm @socketbin packages.
+ * Uses Node.js platform names directly (darwin, linux, win32).
+ */
+const npmPlatformByOs = new Map([
+  ['darwin', 'darwin'],
+  ['linux', 'linux'],
+  ['win32', 'win32'],
+])
+
+/**
+ * Architecture name mappings for npm @socketbin packages.
+ * Uses Node.js arch names directly (arm64, x64).
+ */
+const npmArchByArch = new Map([
+  ['arm64', 'arm64'],
+  ['x64', 'x64'],
+])
+
+/**
  * Map Node.js platform names to GitHub release names.
  */
 function getPlatformName(): string {
@@ -73,6 +92,50 @@ function getExpectedAssetName(): string {
   const archName = getArchName()
   const extension = process.platform === 'win32' ? '.exe' : ''
   return `socket-${platformName}-${archName}${extension}`
+}
+
+/**
+ * Get npm platform name for @socketbin packages.
+ * Uses Node.js platform names (darwin, linux, win32).
+ */
+function getNpmPlatform(): string {
+  const platform = process.platform
+  return npmPlatformByOs.get(platform) ?? platform
+}
+
+/**
+ * Get npm arch name for @socketbin packages.
+ * Uses Node.js arch names (arm64, x64).
+ */
+function getNpmArch(): string {
+  const arch = process.arch
+  return npmArchByArch.get(arch) ?? arch
+}
+
+/**
+ * Get the @socketbin package name for the current platform.
+ * Returns package name like "@socketbin/cli-darwin-arm64".
+ */
+function getSocketbinPackageName(): string {
+  const platform = getNpmPlatform()
+  const arch = getNpmArch()
+  return `@socketbin/cli-${platform}-${arch}`
+}
+
+/**
+ * Get the binary name for the current platform.
+ * Returns "socket" on Unix, "socket.exe" on Windows.
+ */
+function getBinaryName(): string {
+  return process.platform === 'win32' ? 'socket.exe' : 'socket'
+}
+
+/**
+ * Get the relative path to the binary within @socketbin package.
+ * Returns "bin/socket" or "bin/socket.exe".
+ */
+function getBinaryRelativePath(): string {
+  return `bin/${getBinaryName()}`
 }
 
 /**
@@ -147,7 +210,12 @@ export {
   clearQuarantine,
   ensureExecutable,
   getArchName,
+  getBinaryName,
+  getBinaryRelativePath,
   getExpectedAssetName,
+  getNpmArch,
+  getNpmPlatform,
   getPlatformName,
+  getSocketbinPackageName,
   isPlatformSupported,
 }
