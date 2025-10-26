@@ -74,6 +74,7 @@ vi.mock('../constants/env.mts', () => ({
 
 vi.mock('@socketsecurity/lib/constants/node', () => ({
   getExecPath: vi.fn(() => '/usr/bin/node'),
+  getNodeDisableSigusr1Flags: vi.fn(() => ['--no-inspect']),
   getNodeNoWarningsFlags: vi.fn(() => ['--no-warnings']),
   getNodeDebugFlags: vi.fn(() => ['--inspect=0']),
   getNodeHardenFlags: vi.fn(() => ['--frozen-intrinsics']),
