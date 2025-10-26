@@ -187,6 +187,7 @@ export default async function shadowNpmBase(
     ],
     {
       ...spawnOpts,
+      cwd,
       env: {
         ...process.env,
         ...spawnEnv,
