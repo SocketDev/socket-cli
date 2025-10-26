@@ -39,6 +39,8 @@ if (!npmDirs.length) {
 
     describe(`Socket npm wrapper for ${npmDir}`, () => {
       const useDebug = isDebug('stdio')
+      // Use platform-specific path separator for PATH construction.
+      const pathSep = process.platform === 'win32' ? ';' : ':'
 
       it(
         'should intercept npm commands and show Socket output',
@@ -62,7 +64,7 @@ if (!npmDirs.length) {
                 cwd: npmPath,
                 env: {
                   ...process.env,
-                  PATH: `${npmBinPath}:${ENV.PATH}`,
+                  PATH: `${npmBinPath}${pathSep}${ENV.PATH}`,
                 },
               },
             )
@@ -105,7 +107,7 @@ if (!npmDirs.length) {
                 cwd: path.join(npmFixturesPath, 'lacking-typosquat'),
                 env: {
                   ...process.env,
-                  PATH: `${npmBinPath}:${ENV.PATH}`,
+                  PATH: `${npmBinPath}${pathSep}${ENV.PATH}`,
                 },
               },
             )
