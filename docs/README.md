@@ -41,6 +41,7 @@
 - [Shared configuration architecture](configuration/shared-configuration-architecture.md)
 
 ### Development
+- [Getting started](development/getting-started.md) - Complete onboarding guide for new contributors
 - [Babel plugins](development/babel-plugins.md)
 - [Development linking](development/linking.md)
 - [Platform support](development/platform-support.md)
