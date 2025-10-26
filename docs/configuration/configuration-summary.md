@@ -110,12 +110,12 @@ A comprehensive shared configuration architecture has been implemented for the s
 
 Migrate packages with minimal custom configuration:
 
-1. **packages/socketbin-custom-node-from-source**
+1. **packages/node-smol-builder**
    - Impact: Low risk
    - Effort: 15-30 minutes
    - Files: tsconfig.json, vitest.config.mts
 
-2. **packages/socketbin-native-node-sea**
+2. **packages/node-sea-builder**
    - Impact: Low risk
    - Effort: 15-30 minutes
    - Files: tsconfig.json, vitest.config.mts

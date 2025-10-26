@@ -164,7 +164,7 @@ socket_macho_decompress build/out/Compressed/node -e "console.log('Hello')"
 ### Build from Source
 
 ```bash
-cd packages/socketbin-custom-node-from-source/additions/tools
+cd packages/node-smol-builder/additions/tools
 make all
 ```
 
@@ -177,7 +177,7 @@ make all
 The Node.js integration script handles building and running the tools:
 
 ```bash
-node packages/socketbin-custom-node-from-source/scripts/compress-macho.mjs \
+node packages/node-smol-builder/scripts/compress-macho.mjs \
   build/out/Signed/node \
   build/out/Compressed/node \
   --quality=lzfse
@@ -425,6 +425,6 @@ codesign --sign - --force build/out/Compressed/node
 - [Code Signing Guide](https://developer.apple.com/library/archive/documentation/Security/Conceptual/CodeSigningGuide/)
 - [UPX (for comparison)](https://upx.github.io/)
 - Socket CLI Build Documentation:
-  - `packages/socketbin-custom-node-from-source/scripts/build.mjs`
+  - `packages/node-smol-builder/scripts/build.mjs`
   - `docs/wasm-build-guide.md`
   - `docs/guides/yao-pkg-build.md`

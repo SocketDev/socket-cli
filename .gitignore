@@ -22,6 +22,7 @@ Thumbs.db
 **/coverage
 **/.type-coverage
 **/dist
+**/build
 **/node_modules
 **/pkg
 **/target
@@ -39,15 +40,5 @@ Thumbs.db
 !src/types/**/*.d.ts
 !/.vscode/extensions.json
 
-uild directory for temporary artifacts
-**/build/*
-!/build/out
-/build/out/*
-!/build/out/Yao
-/build/out/Yao/*
-/binaries
-
-# Ignore socketbin package build artifacts (binaries and wasm files)
-# These are generated during build and should not be committed
+# Ignore platform binary build artifacts
 packages/socketbin-*/bin/
-packages/socketbin-*/build/

@@ -1,4 +1,4 @@
-# @socketbin/custom-node
+# @socketbin/node-smol-builder-builder
 
 Custom Node.js binary builder with Socket security patches.
 
@@ -15,7 +15,7 @@ Builds a custom Node.js v24.10.0 binary from source with:
 ## Building
 
 ```bash
-cd packages/socketbin-custom-node-from-source
+cd packages/node-smol-builder
 pnpm run build
 ```
 

@@ -22,7 +22,7 @@ import { fileURLToPath } from 'node:url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '../..')
-const wasmBundlePath = path.join(rootPath, 'packages/socketbin-custom-node-from-source/wasm-bundle')
+const wasmBundlePath = path.join(rootPath, 'packages/node-smol-builder/wasm-bundle')
 const packagesPath = path.join(rootPath, 'packages')
 
 // Parse command line arguments.
