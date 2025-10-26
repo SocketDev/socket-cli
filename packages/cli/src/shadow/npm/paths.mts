@@ -26,9 +26,8 @@ export function getArboristPackagePath() {
 let _arboristClassPath: string | undefined
 export function getArboristClassPath() {
   if (_arboristClassPath === undefined) {
-    _arboristClassPath = path.join(
-      getArboristPackagePath(),
-      'lib/arborist/index.js',
+    _arboristClassPath = normalizePath(
+      path.join(getArboristPackagePath(), 'lib/arborist/index.js'),
     )
   }
   return _arboristClassPath
@@ -37,7 +36,9 @@ export function getArboristClassPath() {
 let _arboristEdgeClassPath: string | undefined
 export function getArboristEdgeClassPath() {
   if (_arboristEdgeClassPath === undefined) {
-    _arboristEdgeClassPath = path.join(getArboristPackagePath(), 'lib/edge.js')
+    _arboristEdgeClassPath = normalizePath(
+      path.join(getArboristPackagePath(), 'lib/edge.js'),
+    )
   }
   return _arboristEdgeClassPath
 }
@@ -45,7 +46,9 @@ export function getArboristEdgeClassPath() {
 let _arboristNodeClassPath: string | undefined
 export function getArboristNodeClassPath() {
   if (_arboristNodeClassPath === undefined) {
-    _arboristNodeClassPath = path.join(getArboristPackagePath(), 'lib/node.js')
+    _arboristNodeClassPath = normalizePath(
+      path.join(getArboristPackagePath(), 'lib/node.js'),
+    )
   }
   return _arboristNodeClassPath
 }
@@ -53,9 +56,8 @@ export function getArboristNodeClassPath() {
 let _arboristOverrideSetClassPath: string | undefined
 export function getArboristOverrideSetClassPath() {
   if (_arboristOverrideSetClassPath === undefined) {
-    _arboristOverrideSetClassPath = path.join(
-      getArboristPackagePath(),
-      'lib/override-set.js',
+    _arboristOverrideSetClassPath = normalizePath(
+      path.join(getArboristPackagePath(), 'lib/override-set.js'),
     )
   }
   return _arboristOverrideSetClassPath
