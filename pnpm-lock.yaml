@@ -420,6 +420,9 @@ importers:
       '@rollup/pluginutils':
         specifier: 5.3.0
         version: 5.3.0(rollup@4.50.1)
+      del:
+        specifier: 8.0.1
+        version: 8.0.1
       ink-text-input:
         specifier: 6.0.0
         version: 6.0.0(ink@6.3.1(patch_hash=03cccf82711216d0fa8283ea4716ed803a132ae8c31293f0f5a6677e2bdb4a64)(@types/react@19.2.2)(react@19.2.0))(react@19.2.0)
