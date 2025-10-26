@@ -90,7 +90,7 @@ jobs:
           exit 1
 
       - name: Build WASM bundle
-        run: node scripts/wasm.mjs --build
+        run: pnpm run wasm:build
         env:
           CI: true
 
@@ -145,12 +145,12 @@ jobs:
 
           ### Download
           \`\`\`bash
-          node scripts/wasm.mjs --download
+          node scripts/wasm/download-models.mjs
           \`\`\`
 
           ### Build from Source
           \`\`\`bash
-          node scripts/wasm.mjs --build
+          pnpm run wasm:build
           \`\`\`
 
           ---
@@ -181,5 +181,5 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Download" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
-          echo "node scripts/wasm.mjs --download" >> $GITHUB_STEP_SUMMARY
+          echo "node scripts/wasm/download-models.mjs" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY

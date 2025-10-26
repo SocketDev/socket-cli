@@ -2,7 +2,6 @@
 ._.DS_Store
 Thumbs.db
 /.claude
-/.custom-node-build
 /.node-source
 /.node-source-test
 /.scratch

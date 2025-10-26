@@ -1,7 +1,7 @@
 {
   "name": "socket",
   "bin": "dist/cli.js",
-  "node": ".custom-node-build/node-yao-pkg/out/Release/node",
+  "node": "build/node-smol/out/Release/node",
   "targets": ["node24-macos-arm64"],
   "outputPath": "pkg-binaries",
   "compress": "Brotli",
