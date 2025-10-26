@@ -90,13 +90,19 @@ Supports version 2 format with `projectIgnorePaths` for excluding files from rep
 
 ## Contributing
 
-Run locally:
+**New to Socket CLI development?** Start with our [Getting Started Guide](docs/development/getting-started.md) for complete setup instructions.
+
+**Quick setup:**
 
 ```bash
+git clone https://github.com/SocketDev/socket-cli.git
+cd socket-cli
 pnpm install
 pnpm run build
-pnpm exec socket
+pnpm exec socket --version
 ```
+
+See [docs/development/](docs/development/) for detailed development guides.
 
 ### Development environment variables
 
