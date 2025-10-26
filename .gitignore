@@ -50,5 +50,6 @@ packages/socketbin-*/bin/
 
 # Ignore downloaded build sources
 packages/*/.yoga-source
+packages/*/.yoga-tests
 packages/*/.onnx-source
 packages/*/.minilm-source
