@@ -6,3 +6,6 @@ dist/
 
 # Node modules.
 node_modules/
+
+# Auto-generated Python scripts.
+python/
