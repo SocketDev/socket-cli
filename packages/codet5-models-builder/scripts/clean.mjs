@@ -8,6 +8,8 @@ import { fileURLToPath } from 'node:url'
 import { cleanCheckpoint } from '@socketsecurity/build-infra/lib/checkpoint-manager'
 import { exec } from '@socketsecurity/build-infra/lib/build-exec'
 import { printHeader, printSuccess } from '@socketsecurity/build-infra/lib/build-output'
+import { logger } from '@socketsecurity/lib/logger'
+import colors from 'yoctocolors-cjs'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -32,6 +34,6 @@ async function main() {
 }
 
 main().catch((e) => {
-  console.error('Clean failed:', e.message)
+  logger.error('Clean failed:', e.message)
   process.exit(1)
 })

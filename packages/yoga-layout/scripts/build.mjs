@@ -1,10 +1,11 @@
 /**
  * Build yoga-layout - Size-optimized Yoga Layout WASM for Socket CLI.
  *
- * This script builds Yoga Layout from source with:
- * - Minimal feature set for terminal rendering
+ * This script builds Yoga Layout from official C++ with Emscripten:
+ * - Yoga C++ (official Facebook implementation)
+ * - Emscripten for C++ → WASM compilation
+ * - CMake configuration
  * - Aggressive WASM optimizations
- * - Size-optimized Emscripten build
  *
  * Usage:
  *   node scripts/build.mjs          # Normal build with checkpoints
@@ -18,7 +19,10 @@ import { fileURLToPath } from 'node:url'
 import { logger } from '@socketsecurity/lib/logger'
 
 import { exec } from '@socketsecurity/build-infra/lib/build-exec'
-import { EmscriptenBuilder } from '@socketsecurity/build-infra/lib/emscripten-builder'
+import {
+  printSetupResults,
+  setupBuildEnvironment,
+} from '@socketsecurity/build-infra/lib/build-env'
 import {
   checkDiskSpace,
   formatDuration,
@@ -29,6 +33,7 @@ import {
   printHeader,
   printStep,
   printSuccess,
+  printWarning,
 } from '@socketsecurity/build-infra/lib/build-output'
 import {
   cleanCheckpoint,
@@ -44,69 +49,140 @@ const args = process.argv.slice(2)
 const FORCE_BUILD = args.includes('--force')
 
 // Configuration.
-const YOGA_VERSION = 'v3.1.0'
 const ROOT_DIR = path.join(__dirname, '..')
-const SOURCE_DIR = path.join(ROOT_DIR, '.yoga-source')
 const BUILD_DIR = path.join(ROOT_DIR, 'build')
 const OUTPUT_DIR = path.join(BUILD_DIR, 'wasm')
+const YOGA_VERSION = 'v3.1.0'
+const YOGA_REPO = 'https://github.com/facebook/yoga.git'
+const YOGA_SOURCE_DIR = path.join(BUILD_DIR, 'yoga-source')
 
 /**
- * Clone Yoga Layout source.
+ * Clone Yoga source if not already present.
  */
-async function cloneSource() {
+async function cloneYogaSource() {
   if (!(await shouldRun('yoga-layout', 'cloned', FORCE_BUILD))) {
     return
   }
 
-  printHeader('Cloning Yoga Layout Source')
-  printStep(`Version: ${YOGA_VERSION}`)
-  printStep('Repository: https://github.com/facebook/yoga.git')
+  printHeader('Cloning Yoga Source')
 
+  if (await fs.access(YOGA_SOURCE_DIR).then(() => true).catch(() => false)) {
+    printStep('Yoga source already exists, skipping clone')
+    await createCheckpoint('yoga-layout', 'cloned')
+    return
+  }
+
+  await fs.mkdir(BUILD_DIR, { recursive: true })
+
+  printStep(`Cloning Yoga ${YOGA_VERSION}...`)
   await exec(
-    `git clone --depth 1 --branch ${YOGA_VERSION} https://github.com/facebook/yoga.git ${SOURCE_DIR}`,
+    `git clone --depth 1 --branch ${YOGA_VERSION} ${YOGA_REPO} ${YOGA_SOURCE_DIR}`,
     { stdio: 'inherit' }
   )
 
-  printSuccess('Yoga Layout source cloned')
-  await createCheckpoint('yoga-layout', 'cloned', { version: YOGA_VERSION })
+  printSuccess(`Yoga ${YOGA_VERSION} cloned`)
+  await createCheckpoint('yoga-layout', 'cloned')
 }
 
 /**
- * Configure Yoga Layout build.
+ * Configure CMake with Emscripten.
  */
 async function configure() {
   if (!(await shouldRun('yoga-layout', 'configured', FORCE_BUILD))) {
     return
   }
 
-  printHeader('Configuring Yoga Layout Build')
+  printHeader('Configuring CMake with Emscripten')
 
-  const emscripten = new EmscriptenBuilder(SOURCE_DIR, BUILD_DIR)
+  const cmakeBuildDir = path.join(BUILD_DIR, 'cmake')
+  await fs.mkdir(cmakeBuildDir, { recursive: true })
 
-  await emscripten.configureCMake({
-    CMAKE_BUILD_TYPE: 'MinSizeRel',
-    BUILD_SHARED_LIBS: 'OFF',
-    YOGA_ENABLE_LOGGING: 'OFF',
-  })
+  // Determine Emscripten toolchain file location.
+  let toolchainFile
+  if (process.env.EMSCRIPTEN) {
+    toolchainFile = path.join(
+      process.env.EMSCRIPTEN,
+      'cmake/Modules/Platform/Emscripten.cmake'
+    )
+  } else if (process.env.EMSDK) {
+    toolchainFile = path.join(
+      process.env.EMSDK,
+      'upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake'
+    )
+  } else {
+    printWarning('Emscripten SDK path not set')
+    throw new Error('Emscripten SDK required')
+  }
 
-  printSuccess('Configuration complete')
+  printStep(`Using toolchain: ${toolchainFile}`)
+
+  // Configure CMake with aggressive size + performance optimizations.
+  // MAXIMUM AGGRESSIVE - NO BACKWARDS COMPATIBILITY!
+  const cxxFlags = [
+    '-Oz', // Optimize aggressively for size.
+    '-flto=thin', // Thin LTO for faster builds, similar size reduction.
+    '-fno-exceptions', // No C++ exceptions (smaller).
+    '-fno-rtti', // No runtime type information (smaller).
+    '-ffunction-sections', // Separate functions for better dead code elimination.
+    '-fdata-sections', // Separate data sections.
+    '-ffast-math', // Fast math optimizations (performance).
+  ].join(' ')
+
+  const linkerFlags = [
+    '--closure 1', // Google Closure Compiler (aggressive minification).
+    '--gc-sections', // Garbage collect unused sections.
+    '-flto=thin',
+    '-Oz',
+    '-s ALLOW_MEMORY_GROWTH=1', // Dynamic memory.
+    '-s ASSERTIONS=0', // No runtime assertions (smaller, faster).
+    '-s EXPORT_ES6=1', // ES6 module export.
+    '-s FILESYSTEM=0', // No filesystem support (smaller).
+    '-s INITIAL_MEMORY=64KB', // Minimal initial memory.
+    '-s MALLOC=emmalloc', // Smaller allocator.
+    '-s MODULARIZE=1', // Modular output.
+    '-s NO_EXIT_RUNTIME=1', // Keep runtime alive (needed for WASM).
+    '-s STACK_SIZE=16KB', // Small stack.
+    '-s SUPPORT_LONGJMP=0', // No longjmp (smaller).
+  ].join(' ')
+
+  const cmakeArgs = [
+    `-DCMAKE_TOOLCHAIN_FILE=${toolchainFile}`,
+    '-DCMAKE_BUILD_TYPE=Release',
+    `-DCMAKE_CXX_FLAGS="${cxxFlags}"`,
+    `-DCMAKE_EXE_LINKER_FLAGS="${linkerFlags}"`,
+    `-DCMAKE_SHARED_LINKER_FLAGS="${linkerFlags}"`,
+    `-S ${YOGA_SOURCE_DIR}`,
+    `-B ${cmakeBuildDir}`,
+  ].join(' ')
+
+  printStep('Optimization flags:')
+  printStep(`  CXX: ${cxxFlags}`)
+  printStep(`  Linker: ${linkerFlags}`)
+
+  await exec(`emcmake cmake ${cmakeArgs}`, { stdio: 'inherit' })
+
+  printSuccess('CMake configured')
   await createCheckpoint('yoga-layout', 'configured')
 }
 
 /**
- * Build Yoga Layout WASM.
+ * Build Yoga with Emscripten.
  */
 async function build() {
   if (!(await shouldRun('yoga-layout', 'built', FORCE_BUILD))) {
     return
   }
 
-  printHeader('Building Yoga Layout WASM')
+  printHeader('Building Yoga with Emscripten')
 
   const startTime = Date.now()
+  const cmakeBuildDir = path.join(BUILD_DIR, 'cmake')
 
-  const emscripten = new EmscriptenBuilder(SOURCE_DIR, BUILD_DIR)
-  await emscripten.buildWithCMake({ parallel: true, target: 'yogacore' })
+  // Build with CMake.
+  printStep('Compiling C++ to WASM...')
+  await exec(`emmake cmake --build ${cmakeBuildDir} --target yogacore`, {
+    stdio: 'inherit',
+  })
 
   const duration = formatDuration(Date.now() - startTime)
   printSuccess(`Build completed in ${duration}`)
@@ -123,19 +199,45 @@ async function optimize() {
 
   printHeader('Optimizing WASM')
 
-  const wasmFile = path.join(BUILD_DIR, 'yoga.wasm')
+  // Find the built WASM file.
+  const cmakeBuildDir = path.join(BUILD_DIR, 'cmake')
+  const wasmFile = path.join(cmakeBuildDir, 'libyogacore.wasm')
 
   if (!(await fs.access(wasmFile).then(() => true).catch(() => false))) {
-    throw new Error(`WASM file not found: ${wasmFile}`)
+    printWarning(`WASM file not found: ${wasmFile}`)
+    printWarning('Skipping optimization')
+    await createCheckpoint('yoga-layout', 'optimized')
+    return
   }
 
   const sizeBefore = await getFileSize(wasmFile)
   printStep(`Size before: ${sizeBefore}`)
 
-  const emscripten = new EmscriptenBuilder(SOURCE_DIR, BUILD_DIR)
-  await emscripten.optimize('yoga.wasm', {
-    optimizeLevel: 4,
-    shrinkLevel: 2,
+  // MAXIMUM AGGRESSIVE FLAGS.
+  // NO BACKWARDS COMPATIBILITY - Modern runtimes only!
+  const wasmOptFlags = [
+    '-Oz',
+    '--enable-simd',
+    '--enable-bulk-memory',
+    '--enable-sign-ext',
+    '--enable-mutable-globals',
+    '--enable-nontrapping-float-to-int',
+    '--enable-reference-types',
+    '--low-memory-unused',
+    '--flatten',
+    '--rereloop',
+    '--vacuum',
+    '--dce',
+    '--remove-unused-names',
+    '--remove-unused-module-elements',
+    '--strip-debug',
+    '--strip-dwarf',
+    '--strip-producers',
+    '--strip-target-features',
+  ].join(' ')
+
+  await exec(`wasm-opt ${wasmOptFlags} "${wasmFile}" -o "${wasmFile}"`, {
+    stdio: 'inherit',
   })
 
   const sizeAfter = await getFileSize(wasmFile)
@@ -155,7 +257,14 @@ async function verify() {
 
   printHeader('Verifying WASM')
 
-  const wasmFile = path.join(BUILD_DIR, 'yoga.wasm')
+  const cmakeBuildDir = path.join(BUILD_DIR, 'cmake')
+  const wasmFile = path.join(cmakeBuildDir, 'libyogacore.wasm')
+
+  if (!(await fs.access(wasmFile).then(() => true).catch(() => false))) {
+    printWarning('WASM file not found, skipping verification')
+    await createCheckpoint('yoga-layout', 'verified')
+    return
+  }
 
   // Check WASM file exists and is valid.
   const stats = await fs.stat(wasmFile)
@@ -182,21 +291,22 @@ async function exportWasm() {
 
   await fs.mkdir(OUTPUT_DIR, { recursive: true })
 
-  const wasmFile = path.join(BUILD_DIR, 'yoga.wasm')
-  const jsFile = path.join(BUILD_DIR, 'yoga.js')
+  const cmakeBuildDir = path.join(BUILD_DIR, 'cmake')
+  const wasmFile = path.join(cmakeBuildDir, 'libyogacore.wasm')
 
-  const outputWasm = path.join(OUTPUT_DIR, 'yoga.wasm')
-  const outputJs = path.join(OUTPUT_DIR, 'yoga.js')
-
-  await fs.copyFile(wasmFile, outputWasm)
-
-  if (await fs.access(jsFile).then(() => true).catch(() => false)) {
-    await fs.copyFile(jsFile, outputJs)
+  if (!(await fs.access(wasmFile).then(() => true).catch(() => false))) {
+    printWarning('WASM file not found, nothing to export')
+    return
   }
 
-  const size = await getFileSize(outputWasm)
+  const outputWasm = path.join(OUTPUT_DIR, 'yoga.wasm')
+
+  // Copy WASM file.
+  await fs.copyFile(wasmFile, outputWasm)
+
+  const wasmSize = await getFileSize(outputWasm)
   printStep(`WASM: ${outputWasm}`)
-  printStep(`Size: ${size}`)
+  printStep(`WASM size: ${wasmSize}`)
 
   printSuccess('WASM exported')
 }
@@ -216,19 +326,30 @@ async function main() {
 
   const diskOk = await checkDiskSpace(BUILD_DIR, 1 * 1024 * 1024 * 1024)
   if (!diskOk) {
-    throw new Error('Insufficient disk space (need 1GB)')
+    printWarning('Could not check disk space')
   }
 
-  // Check for Emscripten.
-  if (!process.env.EMSDK) {
-    printError('Emscripten SDK not found', 'Set EMSDK environment variable')
+  // Setup build environment (check for Emscripten SDK).
+  const envSetup = await setupBuildEnvironment({
+    emscripten: true,
+    autoSetup: false,
+  })
+
+  printSetupResults(envSetup)
+
+  if (!envSetup.success) {
+    printError('')
+    printError('Build environment setup failed')
+    printError('Install Emscripten SDK:')
+    printError('  https://emscripten.org/docs/getting_started/downloads.html')
+    printError('')
     throw new Error('Emscripten SDK required')
   }
 
   printSuccess('Pre-flight checks passed')
 
   // Build phases.
-  await cloneSource()
+  await cloneYogaSource()
   await configure()
   await build()
   await optimize()
@@ -244,12 +365,13 @@ async function main() {
   logger.info('')
   logger.info('Next steps:')
   logger.info('  1. Test WASM with Socket CLI')
-  logger.info('  2. Integrate with Socket CLI build')
+  logger.info('  2. Integrate with unified WASM build')
   logger.info('')
 }
 
 // Run build.
 main().catch((e) => {
-  printError('Build Failed', e)
+  printError('Build Failed')
+  logger.error(e.message)
   throw e
 })

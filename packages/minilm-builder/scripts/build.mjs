@@ -18,6 +18,8 @@
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { logger } from '@socketsecurity/lib/logger'
+import colors from 'yoctocolors-cjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const packageDir = path.join(__dirname, '..')
@@ -31,8 +33,8 @@ const force = args.includes('--force')
  * Main entry point.
  */
 async function main() {
-  console.log('🤖 MiniLM Model Builder')
-  console.log('='.repeat(50))
+  logger.log('🤖 MiniLM Model Builder')
+  logger.log('='.repeat(50))
 
   // Create build directories.
   const buildDir = path.join(packageDir, 'build')
@@ -40,16 +42,16 @@ async function main() {
 
   await fs.mkdir(modelsDir, { recursive: true })
 
-  console.log('\n✓ Build directories created')
+  logger.log('\n✓ Build directories created')
 
   // TODO: Implement model download, conversion, quantization, and optimization.
-  console.log('\n⚠ Model building not yet implemented')
-  console.log('   This is a placeholder package')
+  logger.log('\n⚠ Model building not yet implemented')
+  logger.log('   This is a placeholder package')
 
-  console.log('\n✅ Build complete!')
+  logger.log(`\n${colors.green('✓')} Build complete!`)
 }
 
 main().catch(error => {
-  console.error('\n✗ Build failed:', error.message)
+  logger.error('\n✗ Build failed:', error.message)
   process.exit(1)
 })

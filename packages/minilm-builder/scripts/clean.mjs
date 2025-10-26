@@ -11,6 +11,8 @@
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { logger } from '@socketsecurity/lib/logger'
+import colors from 'yoctocolors-cjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const packageDir = path.join(__dirname, '..')
@@ -19,23 +21,23 @@ const packageDir = path.join(__dirname, '..')
  * Main entry point.
  */
 async function main() {
-  console.log('🧹 Cleaning MiniLM Builder')
-  console.log('='.repeat(50))
+  logger.log('🧹 Cleaning MiniLM Builder')
+  logger.log('='.repeat(50))
 
   const buildDir = path.join(packageDir, 'build')
 
   if (existsSync(buildDir)) {
-    console.log(`\nRemoving: ${buildDir}`)
+    logger.log(`\nRemoving: ${buildDir}`)
     await fs.rm(buildDir, { recursive: true, force: true })
-    console.log('✓ Build directory removed')
+    logger.log('✓ Build directory removed')
   } else {
-    console.log('\n✓ Nothing to clean')
+    logger.log('\n✓ Nothing to clean')
   }
 
-  console.log('\n✅ Clean complete!')
+  logger.log(`\n${colors.green('✓')} Clean complete!`)
 }
 
 main().catch(error => {
-  console.error('\n✗ Clean failed:', error.message)
+  logger.error('\n✗ Clean failed:', error.message)
   process.exit(1)
 })

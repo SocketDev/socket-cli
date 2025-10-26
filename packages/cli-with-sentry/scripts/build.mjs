@@ -6,6 +6,8 @@
 import { spawn } from 'node:child_process'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { logger } from '@socketsecurity/lib/logger'
+import colors from 'yoctocolors-cjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '..')
@@ -49,7 +51,7 @@ async function main() {
       },
     })
   } catch (error) {
-    console.error(`Build failed: ${error.message}`)
+    logger.error(`Build failed: ${error.message}`)
     process.exitCode = 1
   }
 }

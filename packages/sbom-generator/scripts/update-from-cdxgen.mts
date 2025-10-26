@@ -23,6 +23,8 @@ import path from 'node:path'
 import { pipeline } from 'node:stream/promises'
 import { fileURLToPath } from 'node:url'
 import { extract } from 'tar'
+import { logger } from '@socketsecurity/lib/logger'
+import colors from 'yoctocolors-cjs'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -65,7 +67,7 @@ interface MigrationTask {
  * Fetch the latest cdxgen release from GitHub.
  */
 async function fetchLatestCdxgenRelease(): Promise<CdxgenRelease> {
-  console.log('Fetching latest cdxgen release from GitHub...')
+  logger.log('Fetching latest cdxgen release from GitHub...')
 
   const apiUrl = `https://api.github.com/repos/${CDXGEN_REPO}/releases/latest`
 
@@ -117,15 +119,15 @@ function compareVersions(v1: string, v2: string): number {
  * Download and extract cdxgen release tarball.
  */
 async function downloadCdxgenRelease(release: CdxgenRelease): Promise<string> {
-  console.log(`Downloading cdxgen v${release.version}...`)
+  logger.log(`Downloading cdxgen v${release.version}...`)
 
   // Create temp directory.
   const tempDir = await mkdtemp(path.join(tmpdir(), 'cdxgen-'))
-  console.log(`Created temp directory: ${tempDir}`)
+  logger.log(`Created temp directory: ${tempDir}`)
 
   try {
     // Download tarball.
-    console.log('Downloading tarball...')
+    logger.log('Downloading tarball...')
     const response = await fetch(release.tarballUrl)
 
     if (!response.ok) {
@@ -137,7 +139,7 @@ async function downloadCdxgenRelease(release: CdxgenRelease): Promise<string> {
     }
 
     // Extract tarball directly from stream.
-    console.log('Extracting tarball...')
+    logger.log('Extracting tarball...')
 
     // GitHub tarballs have a top-level directory (e.g., CycloneDX-cdxgen-abc1234).
     // We need to extract and find that directory.
@@ -160,7 +162,7 @@ async function downloadCdxgenRelease(release: CdxgenRelease): Promise<string> {
     }
 
     const cdxgenPath = path.join(tempDir, extractedDir)
-    console.log(`Extracted to: ${cdxgenPath}`)
+    logger.log(`Extracted to: ${cdxgenPath}`)
 
     return cdxgenPath
   } catch (e) {
@@ -174,7 +176,7 @@ async function downloadCdxgenRelease(release: CdxgenRelease): Promise<string> {
  * Analyze cdxgen parser modules.
  */
 async function analyzeCdxgenParsers(cdxgenPath: string): Promise<ParserModule[]> {
-  console.log('Analyzing cdxgen parsers...')
+  logger.log('Analyzing cdxgen parsers...')
 
   const parsersDir = path.join(cdxgenPath, 'lib/parsers')
   const modules: ParserModule[] = []
@@ -214,12 +216,12 @@ async function analyzeCdxgenParsers(cdxgenPath: string): Promise<ParserModule[]>
       })
     }
   } catch (e) {
-    console.warn(`Warning: Could not read parsers directory: ${e}`)
+    logger.warn(`Warning: Could not read parsers directory: ${e}`)
     // Return empty array if directory doesn't exist.
     return []
   }
 
-  console.log(`Found ${modules.length} parser modules`)
+  logger.log(`Found ${modules.length} parser modules`)
   return modules
 }
 
@@ -229,7 +231,7 @@ async function analyzeCdxgenParsers(cdxgenPath: string): Promise<ParserModule[]>
 async function compareImplementations(
   cdxgenParsers: ParserModule[]
 ): Promise<MigrationTask[]> {
-  console.log('Comparing implementations...')
+  logger.log('Comparing implementations...')
 
   const tasks: MigrationTask[] = []
 
@@ -326,11 +328,11 @@ function generateMigrationReport(
   report += `## Summary\n\n`
 
   if (compareVersions(latestRelease.version, currentVersion) <= 0) {
-    report += `✅ **Up to date** - No migration needed.\n\n`
+    report += `${colors.green('✓')} **Up to date** - No migration needed.\n\n`
     return report
   }
 
-  report += `⚠️ **Update available** - ${tasks.length} migration tasks identified.\n\n`
+  report += `${colors.yellow('⚠')} **Update available** - ${tasks.length} migration tasks identified.\n\n`
 
   // Group by priority.
   const byPriority = {
@@ -391,7 +393,7 @@ function generateMigrationReport(
  * Update LOCK-STEP-COMPLIANCE.md with new baseline version.
  */
 async function updateLockStepCompliance(newVersion: string): Promise<void> {
-  console.log(`Updating LOCK-STEP-COMPLIANCE.md with baseline v${newVersion}...`)
+  logger.log(`Updating LOCK-STEP-COMPLIANCE.md with baseline v${newVersion}...`)
 
   const content = await fs.readFile(LOCK_STEP_COMPLIANCE_PATH, 'utf8')
 
@@ -409,14 +411,14 @@ async function updateLockStepCompliance(newVersion: string): Promise<void> {
   )
 
   await fs.writeFile(LOCK_STEP_COMPLIANCE_PATH, finalContent, 'utf8')
-  console.log('✓ Updated LOCK-STEP-COMPLIANCE.md')
+  logger.log('✓ Updated LOCK-STEP-COMPLIANCE.md')
 }
 
 /**
  * Main execution.
  */
 async function main() {
-  console.log('🔍 Checking for cdxgen updates...\n')
+  logger.log('🔍 Checking for cdxgen updates...\n')
 
   try {
     // Parse command-line arguments.
@@ -431,7 +433,7 @@ async function main() {
     let latestRelease: CdxgenRelease
 
     if (targetVersion) {
-      console.log(`Using target version: v${targetVersion}\n`)
+      logger.log(`Using target version: v${targetVersion}\n`)
       // TODO: Fetch specific version from GitHub.
       throw new Error('Target version not yet implemented')
     } else {
@@ -442,18 +444,18 @@ async function main() {
     const comparison = compareVersions(latestRelease.version, CURRENT_BASELINE)
 
     if (comparison <= 0) {
-      console.log(
-        `✅ Up to date! Current baseline v${CURRENT_BASELINE} is the latest.\n`
+      logger.log(
+        `${colors.green('✓')} Up to date! Current baseline v${CURRENT_BASELINE} is the latest.\n`
       )
       return
     }
 
-    console.log(
-      `⚠️  Update available: v${CURRENT_BASELINE} → v${latestRelease.version}\n`
+    logger.log(
+      `${colors.yellow('⚠')}  Update available: v${CURRENT_BASELINE} → v${latestRelease.version}\n`
     )
 
     if (checkOnly) {
-      console.log('--check-only flag detected. Exiting without analysis.\n')
+      logger.log('--check-only flag detected. Exiting without analysis.\n')
       return
     }
 
@@ -475,7 +477,7 @@ async function main() {
       'cdxgen-migration-report.md'
     )
     await fs.writeFile(reportPath, report, 'utf8')
-    console.log(`\n✓ Migration report written to: ${reportPath}`)
+    logger.log(`\n✓ Migration report written to: ${reportPath}`)
 
     // Generate migration tasks.
     const tasksMarkdown = tasks
@@ -491,17 +493,17 @@ async function main() {
       `# cdxgen Migration Tasks\n\n${tasksMarkdown}\n`,
       'utf8'
     )
-    console.log(`✓ Migration tasks written to: ${tasksPath}`)
+    logger.log(`✓ Migration tasks written to: ${tasksPath}`)
 
     // Ask user if they want to update baseline.
-    console.log(
+    logger.log(
       `\n📝 Review migration tasks and update LOCK-STEP-COMPLIANCE.md manually.`
     )
-    console.log(
+    logger.log(
       `   Or run: pnpm run update-from-cdxgen --update-baseline v${latestRelease.version}`
     )
   } catch (e) {
-    console.error('\n❌ Error:', e instanceof Error ? e.message : String(e))
+    logger.error(`\n${colors.red('✗')} Error:`, e instanceof Error ? e.message : String(e))
     process.exit(1)
   }
 }
