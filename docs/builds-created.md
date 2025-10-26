@@ -71,13 +71,13 @@ Created comprehensive, self-healing build infrastructure for Socket CLI with:
    - Verification steps
    - Common issues and fixes
 
-9. **`docs/BUILD_QUICK_START.md`** (NEW - ~350 lines)
+9. **`docs/build-quick-start.md`** (NEW - ~350 lines)
    - Quick start guide
    - Common build scenarios
    - Output structure
    - Speed optimization tips
 
-10. **`docs/BUILDS_CREATED.md`** (THIS FILE)
+10. **`docs/builds-created.md`** (THIS FILE)
     - Summary of what was built
     - Complete file list
     - Usage instructions
