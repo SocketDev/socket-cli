@@ -27,6 +27,8 @@
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { logger } from '@socketsecurity/lib/logger'
+import colors from 'yoctocolors-cjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '../..')
@@ -54,8 +56,8 @@ const FILES = [
  * Download file with progress.
  */
 async function downloadFile(url, outputPath, description) {
-  console.log(`📦 Downloading ${description}...`)
-  console.log(`   URL: ${url}`)
+  logger.log(`📦 Downloading ${description}...`)
+  logger.log(`   URL: ${url}`)
 
   const response = await fetch(url)
 
@@ -68,8 +70,8 @@ async function downloadFile(url, outputPath, description) {
   await fs.writeFile(outputPath, Buffer.from(buffer))
 
   const sizeMB = (buffer.byteLength / 1024 / 1024).toFixed(2)
-  console.log(`   ✓ Downloaded ${sizeMB} MB`)
-  console.log(`   ✓ Saved to ${outputPath}\n`)
+  logger.log(`   ✓ Downloaded ${sizeMB} MB`)
+  logger.log(`   ✓ Saved to ${outputPath}\n`)
 
   return buffer.byteLength
 }
@@ -78,13 +80,13 @@ async function downloadFile(url, outputPath, description) {
  * Main download logic.
  */
 async function main() {
-  console.log('╔═══════════════════════════════════════════════════╗')
-  console.log('║   Download MiniLM Model for Socket CLI           ║')
-  console.log('╚═══════════════════════════════════════════════════╝\n')
+  logger.log('╔═══════════════════════════════════════════════════╗')
+  logger.log('║   Download MiniLM Model for Socket CLI           ║')
+  logger.log('╚═══════════════════════════════════════════════════╝\n')
 
   // Create cache directory.
   await fs.mkdir(cacheDir, { recursive: true })
-  console.log(`✓ Cache directory: ${cacheDir}\n`)
+  logger.log(`✓ Cache directory: ${cacheDir}\n`)
 
   let totalBytes = 0
 
@@ -96,10 +98,10 @@ async function main() {
     try {
       await fs.access(outputPath)
       const stats = await fs.stat(outputPath)
-      console.log(
+      logger.log(
         `✓ ${file.description} already exists (${(stats.size / 1024 / 1024).toFixed(2)} MB)`,
       )
-      console.log(`   ${outputPath}\n`)
+      logger.log(`   ${outputPath}\n`)
       totalBytes += stats.size
       continue
     } catch {
@@ -110,18 +112,18 @@ async function main() {
     totalBytes += bytes
   }
 
-  console.log('╔═══════════════════════════════════════════════════╗')
-  console.log('║   Download Complete                               ║')
-  console.log('╚═══════════════════════════════════════════════════╝\n')
-  console.log(`Total size: ${(totalBytes / 1024 / 1024).toFixed(2)} MB`)
-  console.log('\nNext steps:')
-  console.log('  1. Run: node scripts/llm/embed-minilm.mjs')
-  console.log(
+  logger.log('╔═══════════════════════════════════════════════════╗')
+  logger.log('║   Download Complete                               ║')
+  logger.log('╚═══════════════════════════════════════════════════╝\n')
+  logger.log(`Total size: ${(totalBytes / 1024 / 1024).toFixed(2)} MB`)
+  logger.log('\nNext steps:')
+  logger.log('  1. Run: node scripts/llm/embed-minilm.mjs')
+  logger.log(
     '  2. This will create external/minilm-sync.mjs with embedded model',
   )
 }
 
 main().catch(error => {
-  console.error('❌ Download failed:', error.message)
+  logger.error(`${colors.red('✗')} Download failed:`, error.message)
   process.exit(1)
 })
