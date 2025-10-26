@@ -266,13 +266,17 @@ export async function spawnSocketCli(
   const commandArgs = isJsFile ? [entryPath, ...args] : args
 
   try {
+    // Only pass env if we have custom environment variables.
+    // The spawn function from @socketsecurity/lib/spawn ALWAYS spreads
+    // process.env first (line 622), then spreads our env on top.
+    // If we pass env with spread process.env, it gets spread multiple times
+    // losing Windows Proxy behavior. By passing undefined, spawn uses
+    // process.env directly without any spreading.
+    const env = spawnEnv ? { ...constants.processEnv, ...spawnEnv } : undefined
+
     const output = await spawn(command, commandArgs, {
       cwd,
-      env: {
-        ...process.env,
-        ...constants.processEnv,
-        ...spawnEnv,
-      },
+      env,
       ...restOptions,
       // Close stdin to prevent tests from hanging
       // when commands wait for input. Must be after restOptions
