@@ -54,6 +54,7 @@ import { spawn } from '@socketsecurity/lib/spawn'
 import ENV from '../../constants/env.mts'
 import { PYTHON_MIN_VERSION } from '../../constants/packages.mts'
 import { getDlxCachePath } from '../dlx/binary.mts'
+import { resolvePyCli } from '../dlx/resolve-binary.mjs'
 import { getErrorCause, InputError } from '../error/errors.mts'
 
 import type { CResult } from '../../types.mjs'
@@ -281,6 +282,8 @@ export async function ensureSocketCli(pythonBin: string): Promise<void> {
 
 /**
  * Run socketcli with arguments using managed or system Python.
+ * If SOCKET_CLI_PYCLI_LOCAL_PATH environment variable is set, uses the local
+ * Python CLI binary at that path instead of downloading Python and socketsecurity.
  */
 export async function spawnSocketPython(
   args: string[] | readonly string[],
@@ -291,11 +294,7 @@ export async function spawnSocketPython(
   },
 ): Promise<CResult<string>> {
   try {
-    // Ensure Python is available
-    const pythonBin = await ensurePython()
-
-    // Ensure socketcli is installed
-    await ensureSocketCli(pythonBin)
+    const resolution = resolvePyCli()
 
     const finalEnv: Record<string, string | undefined> = {
       ...process.env,
@@ -307,6 +306,27 @@ export async function spawnSocketPython(
       ),
       ...options?.env,
     }
+
+    // Use local Python CLI if available.
+    if (resolution.type === 'local') {
+      const spawnResult = await spawn('node', [resolution.path, ...args], {
+        cwd: options?.cwd,
+        env: finalEnv,
+        shell: WIN32,
+        stdio: options?.stdio || 'inherit',
+      })
+
+      return {
+        ok: true,
+        data: spawnResult.stdout ? spawnResult.stdout.toString() : '',
+      }
+    }
+
+    // Ensure Python is available
+    const pythonBin = await ensurePython()
+
+    // Ensure socketcli is installed
+    await ensureSocketCli(pythonBin)
 
     // Run socketcli via python -m
     const spawnResult = await spawn(
