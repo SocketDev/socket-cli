@@ -1,6 +1,13 @@
 /**
  * Shared path resolution for all bootstrap implementations.
  * This file is bundled into each bootstrap, not imported at runtime.
+ *
+ * IMPORTANT: This bootstrap code runs BEFORE the main CLI loads.
+ * We CANNOT use the centralized ENV module here because:
+ * 1. Bootstrap needs to set up paths before ENV module can be imported
+ * 2. ENV module depends on constants that need these paths
+ * 3. This creates a circular dependency
+ * Therefore, we use direct process.env access for bootstrap-specific env vars.
  */
 
 import { homedir } from 'node:os'
@@ -9,6 +16,7 @@ import path from 'node:path'
 /**
  * Get the Socket home directory path.
  * Supports SOCKET_HOME environment variable override.
+ * Direct process.env access required - bootstrap runs before ENV module loads.
  */
 export function getSocketHome(): string {
   return process.env['SOCKET_HOME'] || path.join(homedir(), '.socket')
@@ -46,6 +54,7 @@ export function getCliEntryPoint(): string {
 
 /**
  * Get npm registry URL with environment variable support.
+ * Direct process.env access required - bootstrap runs before ENV module loads.
  */
 export function getRegistryUrl(): string {
   return (
@@ -57,6 +66,7 @@ export function getRegistryUrl(): string {
 
 /**
  * Get package name to download.
+ * Direct process.env access required - bootstrap runs before ENV module loads.
  */
 export function getCliPackageName(): string {
   return process.env['SOCKET_CLI_PACKAGE'] || '@socketsecurity/cli'
