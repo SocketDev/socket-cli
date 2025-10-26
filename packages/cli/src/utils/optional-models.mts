@@ -104,7 +104,9 @@ interface ModelInfo {
 export async function loadOptionalModel(
   packageName: string,
 ): Promise<{ modelPaths: string[]; downloaded: boolean }> {
-  const modelInfo = (MODEL_REGISTRY as unknown as Record<string, ModelInfo | undefined>)[packageName]
+  const modelInfo = (
+    MODEL_REGISTRY as unknown as Record<string, ModelInfo | undefined>
+  )[packageName]
   if (!modelInfo) {
     throw new Error(`Unknown optional model: ${packageName}`)
   }
@@ -143,7 +145,9 @@ export async function loadOptionalModel(
  * @returns True if all model files exist in cache
  */
 export function isModelCached(packageName: string): boolean {
-  const modelInfo = (MODEL_REGISTRY as unknown as Record<string, ModelInfo | undefined>)[packageName]
+  const modelInfo = (
+    MODEL_REGISTRY as unknown as Record<string, ModelInfo | undefined>
+  )[packageName]
   if (!modelInfo) {
     return false
   }
@@ -178,6 +182,8 @@ export function listAvailableModels(): string[] {
  * @returns Model information or null if not found
  */
 export function getModelInfo(packageName: string): ModelInfo | null {
-  const modelInfo = (MODEL_REGISTRY as unknown as Record<string, ModelInfo | undefined>)[packageName]
+  const modelInfo = (
+    MODEL_REGISTRY as unknown as Record<string, ModelInfo | undefined>
+  )[packageName]
   return modelInfo || null
 }

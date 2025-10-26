@@ -184,7 +184,7 @@ function mapSourceToTests(filepath) {
     if (normalized.includes('src/utils/dlx/spawn.mts')) {
       return ['src/utils/dlx/spawn.e2e.test.mts']
     }
-    if (normalized.includes('src/utils/ecosystem/ecosystem.mts')) {
+    if (normalized.includes('src/utils/ecosystem/types.mts')) {
       return ['src/utils/ecosystem/ecosystem.test.mts']
     }
     if (normalized.includes('src/utils/ecosystem/environment.mts')) {
@@ -214,7 +214,7 @@ function mapSourceToTests(filepath) {
     if (normalized.includes('src/utils/fs/path-resolve.mts')) {
       return ['src/utils/fs/path-resolve.test.mts']
     }
-    if (normalized.includes('src/utils/git/git.mts')) {
+    if (normalized.includes('src/utils/git/operations.mts')) {
       return ['src/utils/git/git.test.mts']
     }
     if (normalized.includes('src/utils/git/github.mts')) {

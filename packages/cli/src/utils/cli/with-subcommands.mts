@@ -1,6 +1,7 @@
 import terminalLink from 'terminal-link'
 import colors from 'yoctocolors-cjs'
 
+import isInteractive from '@socketregistry/is-interactive/index.cjs'
 import { joinAnd } from '@socketsecurity/lib/arrays'
 import { logger } from '@socketsecurity/lib/logger'
 import { getOwn, hasOwn, toSortedObject } from '@socketsecurity/lib/objects'
@@ -875,6 +876,7 @@ export async function meowWithSubcommands(
       (helpFlag || helpCategory !== null) &&
       !cli2.flags['helpFull'] &&
       !helpCategory &&
+      isInteractive() &&
       process.env['VITEST'] !== '1' &&
       process.env['CI'] !== 'true'
 

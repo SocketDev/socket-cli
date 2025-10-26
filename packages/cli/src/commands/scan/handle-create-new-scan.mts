@@ -104,7 +104,9 @@ export async function handleCreateNewScan({
   }
 
   const spinner = getSpinner()
-  const supportedFilesCResult = await fetchSupportedScanFileNames({ spinner: spinner ?? undefined })
+  const supportedFilesCResult = await fetchSupportedScanFileNames({
+    spinner: spinner ?? undefined,
+  })
   if (!supportedFilesCResult.ok) {
     debug('Failed to fetch supported scan file names')
     debugDir({ supportedFilesCResult })

@@ -19,7 +19,7 @@ import {
   SOCKET_CLI_SHADOW_SILENT,
   SOCKET_CLI_VIEW_ALL_RISKS,
 } from '../../../../../constants/shadow.mts'
-import { findUp } from '../../../../../utils/fs/fs.mjs'
+import { findUp } from '../../../../../utils/fs/find-up.mjs'
 import { logAlertsMap } from '../../../../../utils/socket/package-alert.mts'
 import {
   getAlertsMapFromArborist,

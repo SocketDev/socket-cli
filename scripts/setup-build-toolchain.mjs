@@ -362,6 +362,128 @@ async function installRust() {
 }
 
 /**
+ * Check package manager.
+ */
+function checkPackageManager() {
+  logInfo('Checking package manager...')
+
+  if (PLATFORM === 'darwin') {
+    if (commandExists('brew')) {
+      const version = getOutput('brew --version')
+      const match = version.match(/Homebrew (\d+\.\d+\.\d+)/)
+      if (match) {
+        logSuccess(`Homebrew ${match[1]} found`)
+        return { installed: true, manager: 'brew', version: match[1] }
+      }
+      logSuccess('Homebrew found')
+      return { installed: true, manager: 'brew' }
+    }
+    logWarn('Homebrew not found')
+    return { installed: false, manager: 'brew', needsInstall: true }
+  }
+
+  if (PLATFORM === 'linux') {
+    if (commandExists('apt-get')) {
+      logSuccess('apt-get found')
+      return { installed: true, manager: 'apt-get' }
+    }
+    if (commandExists('yum')) {
+      logSuccess('yum found')
+      return { installed: true, manager: 'yum' }
+    }
+    logWarn('No package manager found (apt-get or yum)')
+    return { installed: false }
+  }
+
+  if (PLATFORM === 'win32') {
+    if (commandExists('choco')) {
+      const version = getOutput('choco --version')
+      logSuccess(`Chocolatey ${version} found`)
+      return { installed: true, manager: 'choco', version }
+    }
+    if (commandExists('winget')) {
+      logSuccess('winget found')
+      return { installed: true, manager: 'winget' }
+    }
+    logWarn('No package manager found (Chocolatey or winget)')
+    return { installed: false, manager: 'choco', needsInstall: true }
+  }
+
+  return { installed: false }
+}
+
+/**
+ * Install package manager.
+ */
+async function installPackageManager() {
+  if (CHECK_ONLY) {
+    logInfo('Skipping package manager installation (check-only mode)')
+    return false
+  }
+
+  try {
+    if (PLATFORM === 'darwin') {
+      logInfo('Installing Homebrew...')
+      logInfo('This will prompt for your password')
+      log('')
+
+      // Install Homebrew using official installation script.
+      const installCmd = '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
+
+      if (!exec(installCmd)) {
+        logError('Failed to install Homebrew')
+        logInfo('Visit https://brew.sh/ for manual installation instructions')
+        return false
+      }
+
+      // Add Homebrew to PATH for Apple Silicon Macs.
+      if (process.arch === 'arm64') {
+        const brewPath = '/opt/homebrew/bin'
+        if (existsSync(brewPath)) {
+          process.env.PATH = `${brewPath}:${process.env.PATH}`
+        }
+      }
+
+      logSuccess('Homebrew installed successfully')
+      return true
+    }
+
+    if (PLATFORM === 'win32') {
+      logInfo('Installing Chocolatey...')
+      logInfo('This requires administrator privileges')
+      log('')
+
+      // Install Chocolatey using official PowerShell script.
+      const installCmd = 'powershell -NoProfile -ExecutionPolicy Bypass -Command "Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString(\'https://community.chocolatey.org/install.ps1\'))"'
+
+      if (!exec(installCmd)) {
+        logError('Failed to install Chocolatey')
+        logInfo('Visit https://chocolatey.org/install for manual installation instructions')
+        return false
+      }
+
+      // Refresh environment to pick up choco.
+      exec('refreshenv', { stdio: 'pipe' })
+
+      logSuccess('Chocolatey installed successfully')
+      return true
+    }
+
+    if (PLATFORM === 'linux') {
+      logError('Linux package managers (apt-get/yum) should be pre-installed')
+      logInfo('Please install your distribution\'s package manager manually')
+      return false
+    }
+
+    logError(`Unsupported platform: ${PLATFORM}`)
+    return false
+  } catch (error) {
+    logError(`Failed to install package manager: ${error.message}`)
+    return false
+  }
+}
+
+/**
  * Check Python.
  */
 function checkPython() {
@@ -618,7 +740,23 @@ async function main() {
   if (IS_DOCKER) logInfo('Docker environment detected')
   log('')
 
+  // Check package manager FIRST - required for all subsequent installations.
+  const packageManagerCheck = checkPackageManager()
+
+  // Install package manager if missing and needed.
+  if (packageManagerCheck.needsInstall && !CHECK_ONLY) {
+    log('')
+    const installed = await installPackageManager()
+    if (!installed) {
+      logError('Package manager installation failed')
+      logInfo('Please install manually and run this script again')
+      process.exit(1)
+    }
+    log('')
+  }
+
   const checks = {
+    packageManager: packageManagerCheck,
     emscripten: checkEmscripten(),
     rust: checkRust(),
     python: checkPython(),

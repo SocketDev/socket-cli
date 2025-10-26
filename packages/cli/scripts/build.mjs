@@ -16,7 +16,6 @@ import { spawn } from 'node:child_process'
 
 import { runCommandQuiet } from './utils/run-command.mjs'
 import { logger } from '@socketsecurity/lib/logger'
-import colors from 'yoctocolors-cjs'
 
 // Simple CLI helpers without registry dependencies.
 const isQuiet = () => process.argv.includes('--quiet')

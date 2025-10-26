@@ -4,10 +4,10 @@ import { logger } from '@socketsecurity/lib/logger'
 
 import { getSocketFixPrs } from './pull-request.mts'
 import ENV from '../../constants/env.mts'
-import { getBaseBranch, getRepoInfo } from '../../utils/git/git.mjs'
+import { getBaseBranch, getRepoInfo } from '../../utils/git/operations.mjs'
 
 import type { PrMatch } from './pull-request.mts'
-import type { RepoInfo } from '../../utils/git/git.mjs'
+import type { RepoInfo } from '../../utils/git/operations.mjs'
 
 function ciRepoInfo(): RepoInfo | undefined {
   const { GITHUB_REPOSITORY } = ENV
