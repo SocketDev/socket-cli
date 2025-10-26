@@ -32,7 +32,7 @@ export default defineConfig({
       '**/.{idea,git,cache,output,temp}/**',
       '**/{karma,rollup,webpack,vite,vitest,jest,ava,babel,nyc,cypress,tsup,build,eslint,prettier}.config.*',
       // Exclude E2E tests from regular test runs.
-      '**/*-e2e.test.mts',
+      '**/*.e2e.test.mts',
     ],
     reporters: ['default'],
     setupFiles: ['./test/setup.mts'],
