@@ -266,13 +266,50 @@ export async function spawnSocketCli(
   const commandArgs = isJsFile ? [entryPath, ...args] : args
 
   try {
+    // In test mode, use a Proxy to preserve Windows process.env Proxy behavior.
+    // In production, use a static snapshot for performance.
+    const env = process.env['VITEST']
+      ? new Proxy(
+          {},
+          {
+            get(_target, prop) {
+              // Priority: spawnEnv > constants.processEnv
+              if (spawnEnv && prop in spawnEnv) {
+                return spawnEnv[prop]
+              }
+              return constants.processEnv[prop]
+            },
+            ownKeys(_target) {
+              const keys = new Set([
+                ...Object.keys(constants.processEnv),
+                ...(spawnEnv ? Object.keys(spawnEnv) : []),
+              ])
+              return [...keys]
+            },
+            getOwnPropertyDescriptor(_target, prop) {
+              const value =
+                (spawnEnv && prop in spawnEnv
+                  ? spawnEnv[prop]
+                  : constants.processEnv[prop]) ?? undefined
+              return value !== undefined
+                ? {
+                    enumerable: true,
+                    configurable: true,
+                    value,
+                  }
+                : undefined
+            },
+          },
+        )
+      : {
+          ...process.env,
+          ...constants.processEnv,
+          ...spawnEnv,
+        }
+
     const output = await spawn(command, commandArgs, {
       cwd,
-      env: {
-        ...process.env,
-        ...constants.processEnv,
-        ...spawnEnv,
-      },
+      env,
       ...restOptions,
       // Close stdin to prevent tests from hanging
       // when commands wait for input. Must be after restOptions
