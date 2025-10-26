@@ -318,9 +318,7 @@ describe('handleOptimize', () => {
       pin: true,
       prod: false,
     })
-    expect(debug).toHaveBeenCalledWith(
-      'Detected package manager: npm v10.0.0',
-    )
+    expect(debug).toHaveBeenCalledWith('Detected package manager: npm v10.0.0')
     expect(debug).toHaveBeenCalledWith('Applying optimization')
     expect(debug).toHaveBeenCalledWith('Optimization succeeded')
   })

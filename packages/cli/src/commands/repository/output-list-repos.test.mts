@@ -45,7 +45,7 @@ describe('outputListRepos', () => {
     const { outputListRepos } = await import('./output-list-repos.mts')
     const { logger } = await vi.importMock('@socketsecurity/lib/logger')
     const { serializeResultJson } = await vi.importMock(
-      '../../utils/output/result-json.mjs'
+      '../../utils/output/result-json.mjs',
     )
     const mockLog = vi.mocked(logger.log)
     const mockSerialize = vi.mocked(serializeResultJson)
@@ -156,7 +156,7 @@ describe('outputListRepos', () => {
     const { outputListRepos } = await import('./output-list-repos.mts')
     const { logger } = await vi.importMock('@socketsecurity/lib/logger')
     const { failMsgWithBadge } = await vi.importMock(
-      '../../utils/error/fail-msg-with-badge.mts'
+      '../../utils/error/fail-msg-with-badge.mts',
     )
     const mockFail = vi.mocked(logger.fail)
     const mockFailMsg = vi.mocked(failMsgWithBadge)
@@ -229,7 +229,9 @@ describe('outputListRepos', () => {
 
   it('handles empty repository list', async () => {
     const { outputListRepos } = await import('./output-list-repos.mts')
-    const { logger: _logger } = await vi.importMock('@socketsecurity/lib/logger')
+    const { logger: _logger } = await vi.importMock(
+      '@socketsecurity/lib/logger',
+    )
     const chalkTable = await vi.importMock('chalk-table')
     const mockChalkTable = vi.mocked(chalkTable.default)
 

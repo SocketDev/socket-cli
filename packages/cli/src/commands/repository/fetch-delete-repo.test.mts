@@ -81,7 +81,9 @@ describe('fetchDeleteRepo', () => {
     const mockHandleApi = vi.mocked(handleApiCall)
 
     const mockSdk = {
-      deleteRepository: vi.fn().mockRejectedValue(new Error('Repository not found')),
+      deleteRepository: vi
+        .fn()
+        .mockRejectedValue(new Error('Repository not found')),
     }
 
     mockSetupSdk.mockResolvedValue(createSuccessResult(mockSdk as any))
@@ -127,7 +129,9 @@ describe('fetchDeleteRepo', () => {
     const mockHandleApi = vi.mocked(handleApiCall)
 
     const mockSdk = {
-      deleteRepository: vi.fn().mockRejectedValue(new Error('Insufficient permissions')),
+      deleteRepository: vi
+        .fn()
+        .mockRejectedValue(new Error('Insufficient permissions')),
     }
 
     mockSetupSdk.mockResolvedValue(createSuccessResult(mockSdk as any))

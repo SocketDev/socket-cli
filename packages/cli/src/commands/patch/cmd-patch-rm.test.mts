@@ -28,7 +28,8 @@ const originalManifest = {
       vulnerabilities: {
         'GHSA-76c9-3jph-rj3q': {
           cves: ['CVE-2025-7339'],
-          summary: 'on-headers is vulnerable to http response header manipulation',
+          summary:
+            'on-headers is vulnerable to http response header manipulation',
           severity: 'LOW',
           description:
             '### Impact\n\nA bug in on-headers versions `< 1.1.0` may result in response headers being inadvertently modified when an array is passed to `response.writeHead()`\n\n### Patches\n\nUsers should upgrade to `1.1.0`\n\n### Workarounds\n\nUses are encouraged to upgrade to `1.1.0`, but this issue can be worked around by passing an object to `response.writeHead()` rather than an array.',

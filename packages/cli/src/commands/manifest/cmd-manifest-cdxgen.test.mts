@@ -1,14 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
-import { LOG_SYMBOLS } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 
 import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
 import { FLAG_HELP } from '../../constants/cli.mts'
-import {
-  getBinCliPath,
-  getExecPath,
-} from '../../constants/paths.mts'
+import { getBinCliPath, getExecPath } from '../../constants/paths.mts'
 
 import type { PromiseSpawnOptions } from '@socketsecurity/lib/spawn'
 

@@ -152,9 +152,7 @@ describe('handleCreateRepo', () => {
         repoName: 'debug-repo',
       }),
     )
-    expect(debug).toHaveBeenCalledWith(
-      'Repository creation succeeded',
-    )
+    expect(debug).toHaveBeenCalledWith('Repository creation succeeded')
   })
 
   it('logs debug information on failure', async () => {

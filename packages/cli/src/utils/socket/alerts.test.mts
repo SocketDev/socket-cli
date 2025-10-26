@@ -43,7 +43,9 @@ vi.mock('./package-alert.mts', () => ({
 describe('alerts-map utilities', () => {
   describe('getAlertsMapFromPnpmLockfile', () => {
     it('calls extractPurlsFromPnpmLockfile with lockfile', async () => {
-      const { extractPurlsFromPnpmLockfile } = await import('../pnpm/lockfile.mts')
+      const { extractPurlsFromPnpmLockfile } = await import(
+        '../pnpm/lockfile.mts'
+      )
       const { setupSdk } = await import('./sdk.mts')
       const { findSocketYmlSync } = await import('../config.mts')
 

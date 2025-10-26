@@ -311,4 +311,3 @@ describe('socket patch discover', async () => {
     },
   )
 })
-
