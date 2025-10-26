@@ -33,7 +33,7 @@ export interface HandlePatchInfoConfig {
   cwd: string
   outputKind: OutputKind
   purl: string
-  spinner: Spinner
+  spinner: Spinner | null
 }
 
 export async function handlePatchInfo({

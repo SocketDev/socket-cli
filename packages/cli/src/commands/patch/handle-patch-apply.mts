@@ -196,7 +196,7 @@ async function applyNpmPatches(
   logger.groupEnd()
 
   if (wasSpinning) {
-    spinner.start()
+    spinner?.start()
   }
   return result
 }
@@ -388,7 +388,7 @@ export interface HandlePatchApplyConfig {
   dryRun: boolean
   outputKind: OutputKind
   purlObjs: PackageURL[]
-  spinner: Spinner
+  spinner: Spinner | null
 }
 
 export async function handlePatchApply({
@@ -437,9 +437,9 @@ export async function handlePatchApply({
         purls.length > 3
           ? `${purls.slice(0, 3).join(', ')} … and ${purls.length - 3} more`
           : joinAnd(purls)
-      spinner.start(`Checking patches for: ${displayPurls}`)
+      spinner?.start(`Checking patches for: ${displayPurls}`)
     } else {
-      spinner.start('Scanning all dependencies for available patches')
+      spinner?.start('Scanning all dependencies for available patches')
     }
 
     const patched = []
@@ -453,7 +453,7 @@ export async function handlePatchApply({
           cwd,
           dryRun,
           purlObjs,
-          spinner,
+          spinner: spinner ?? undefined,
         },
       )
       patched.push(...patchingResults.passed)
@@ -491,7 +491,7 @@ export async function handlePatchApply({
       }
     }
 
-    spinner.stop()
+    spinner?.stop()
 
     await outputPatchResult(
       {
@@ -503,7 +503,7 @@ export async function handlePatchApply({
       outputKind,
     )
   } catch (e) {
-    spinner.stop()
+    spinner?.stop()
 
     let message = 'Failed to apply patches'
     let cause = getErrorCause(e)
