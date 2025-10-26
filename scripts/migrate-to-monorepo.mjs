@@ -177,7 +177,7 @@ import './bootstrap.js'
   const customNodePackageJson = {
     description: 'Custom Node.js binary builder with Socket security patches',
     license: 'MIT',
-    name: '@socketbin/custom-node',
+    name: '@socketbin/node-smol-builder-builder',
     private: true,
     scripts: {
       build: 'node scripts/build.mjs',
@@ -191,19 +191,19 @@ import './bootstrap.js'
     JSON.stringify(customNodePackageJson, null, 2) + '\n',
   )
 
-  // 4. Create packages/socketbin-native-node-sea/ for SEA builder.
-  console.log('\n4. Creating packages/socketbin-native-node-sea/...')
-  const seaDir = await createPackageDir('socketbin-native-node-sea', ['scripts', 'dist'])
+  // 4. Create packages/socketbin-native-node-sea-builder/ for SEA builder.
+  console.log('\n4. Creating packages/socketbin-native-node-sea-builder/...')
+  const seaDir = await createPackageDir('socketbin-native-node-sea-builder', ['scripts', 'dist'])
 
   console.log('Moving SEA build scripts...')
-  gitMove('scripts/build-sea.mjs', 'packages/socketbin-native-node-sea/scripts/build.mjs')
-  gitMove('scripts/publish-sea.mjs', 'packages/socketbin-native-node-sea/scripts/publish.mjs')
+  gitMove('scripts/build-sea.mjs', 'packages/socketbin-native-node-sea-builder/scripts/build.mjs')
+  gitMove('scripts/publish-sea.mjs', 'packages/socketbin-native-node-sea-builder/scripts/publish.mjs')
 
   // Create minimal package.json for SEA builder.
   const seaPackageJson = {
     description: 'Native Node.js SEA binary builder (fallback)',
     license: 'MIT',
-    name: '@socketbin/sea',
+    name: '@socketbin/node-sea-builder-builder',
     private: true,
     scripts: {
       build: 'node scripts/build.mjs',

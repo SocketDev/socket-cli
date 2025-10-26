@@ -217,11 +217,11 @@ Start with packages that have minimal custom configuration:
    - Simple vitest config (just timeout overrides)
    - Should extend base config easily
 
-2. **packages/socketbin-custom-node-from-source**
+2. **packages/node-smol-builder**
    - Simple vitest config (just timeout overrides)
    - Should extend base config easily
 
-3. **packages/socketbin-native-node-sea**
+3. **packages/node-sea-builder**
    - Simple vitest config (just timeout overrides)
    - Should extend base config easily
 

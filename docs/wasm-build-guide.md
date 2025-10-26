@@ -285,7 +285,7 @@ If you need fine-grained control:
 ### 1. Direct Cargo Build
 
 ```bash
-cd packages/socketbin-custom-node-from-source/wasm-bundle
+cd packages/node-smol-builder/wasm-bundle
 
 # Dev build
 cargo build --target wasm32-unknown-unknown --profile dev-wasm

@@ -1,0 +1,12 @@
+# Build artifacts (unstacked - contains node-source).
+build/
+
+# Distribution artifacts (optimized binaries).
+dist/
+
+# Node modules.
+node_modules/
+
+# WASM build artifacts.
+wasm-bundle/pkg/
+wasm-bundle/target/
