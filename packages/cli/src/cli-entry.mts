@@ -53,7 +53,7 @@ void (async () => {
   const registryUrl = lookupRegistryUrl()
 
   // Skip update checks in test environments.
-  if (process.env['VITEST'] !== '1' && process.env['CI'] !== 'true') {
+  if (ENV.VITEST !== '1' && ENV.CI !== 'true') {
     // Unified update notifier handles both SEA and npm automatically.
     await scheduleUpdateCheck({
       authInfo: lookupRegistryAuthToken(registryUrl, { recursive: true }),

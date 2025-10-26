@@ -18,6 +18,8 @@ import {
 import { DOT_SOCKET_DIR } from '@socketsecurity/lib/constants/paths'
 import { logger } from '@socketsecurity/lib/logger'
 
+import ENV from './env.mts'
+
 // Import socket constants for re-export.
 import { SOCKET_JSON } from './socket.mts'
 
@@ -89,7 +91,7 @@ export function getBinPath(): string {
 
 export function getBinCliPath(): string {
   // Allow overriding CLI binary path for testing built binaries (SEA, yao-pkg, etc).
-  const binPath = process.env['SOCKET_CLI_BIN_PATH']
+  const binPath = ENV.SOCKET_CLI_BIN_PATH
   if (binPath) {
     return binPath
   }
@@ -159,7 +161,7 @@ export function getBlessedContribPath(): string {
 }
 
 export function getBlessedOptions() {
-  const blessedColorDepth = (process.env['TERM'] ?? '').includes('256color')
+  const blessedColorDepth = (ENV.TERM ?? '').includes('256color')
     ? 256
     : 8
   return {
@@ -188,8 +190,8 @@ export function getSocketAppDataPath(): string | undefined {
   // - Linux: %XDG_DATA_HOME%/socket/settings or "~/.local/share/socket/settings"
   const isWin32 = process.platform === 'win32'
   let dataHome: string | undefined = isWin32
-    ? process.env['LOCALAPPDATA']
-    : process.env['XDG_DATA_HOME']
+    ? ENV.LOCALAPPDATA
+    : ENV.XDG_DATA_HOME
   if (!dataHome) {
     const home = homedir()
     if (isWin32) {
@@ -208,7 +210,7 @@ export function getSocketAppDataPath(): string | undefined {
 }
 
 export function getSocketCachePath(): string {
-  const xdgCacheHome = process.env['XDG_CACHE_HOME']
+  const xdgCacheHome = ENV.XDG_CACHE_HOME
   if (xdgCacheHome) {
     return path.join(xdgCacheHome, 'socket')
   }
@@ -219,8 +221,8 @@ export function getSocketCachePath(): string {
       return path.join(home, 'Library', 'Caches', 'socket')
     case 'win32': {
       const tempDir =
-        process.env['TEMP'] ||
-        process.env['TMP'] ||
+        ENV.TEMP ||
+        ENV.TMP ||
         path.join(home, 'AppData', 'Local', 'Temp')
       return path.join(tempDir, 'socket')
     }
