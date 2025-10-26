@@ -371,7 +371,8 @@ const config = {
 }
 
 // Run build if invoked directly.
-if (import.meta.url === `file://${process.argv[1]}`) {
+// Use fileURLToPath to handle Windows paths correctly.
+if (fileURLToPath(import.meta.url) === process.argv[1]) {
   build(config).catch(error => {
     console.error('Build failed:', error)
     process.exitCode = 1
