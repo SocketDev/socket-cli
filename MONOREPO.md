@@ -27,8 +27,8 @@ Optional platform-specific native binaries:
 
 ### Private Build Tools (2 total)
 
-- `@socketbin/custom-node` - Builds custom Node.js from source with Socket patches
-- `@socketbin/sea` - Builds Socket CLI as native Node.js SEA binaries (fallback)
+- `@socketbin/node-smol-builder-builder` - Builds custom Node.js from source with Socket patches
+- `@socketbin/node-sea-builder-builder` - Builds Socket CLI as native Node.js SEA binaries (fallback)
 
 ## Directory Structure
 
@@ -56,7 +56,7 @@ socket-cli/
 │   │   │   └── build.mjs                       # Build script
 │   │   └── package.json
 │   │
-│   ├── socketbin-native-node-sea/              # SEA builder
+│   ├── socketbin-native-node-sea-builder/              # SEA builder
 │   │   ├── scripts/
 │   │   │   ├── build.mjs                       # SEA build script
 │   │   │   └── publish.mjs                     # Publish script

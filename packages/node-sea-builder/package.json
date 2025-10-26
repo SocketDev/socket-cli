@@ -4,7 +4,7 @@
     "vitest": "3.0.0"
   },
   "license": "MIT",
-  "name": "@socketbin/sea",
+  "name": "@socketbin/node-sea-builder",
   "private": true,
   "scripts": {
     "build": "node scripts/build.mjs",

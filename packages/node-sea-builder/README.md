@@ -1,4 +1,4 @@
-# @socketbin/sea
+# @socketbin/node-sea-builder-builder
 
 Native Node.js SEA (Single Executable Application) binary builder.
 
@@ -13,7 +13,7 @@ This is a fallback option when custom Node.js builds encounter issues.
 ## Building
 
 ```bash
-cd packages/socketbin-native-node-sea
+cd packages/node-sea-builder
 pnpm run build
 ```
 

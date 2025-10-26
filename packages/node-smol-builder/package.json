@@ -4,7 +4,7 @@
     "vitest": "3.0.0"
   },
   "license": "MIT",
-  "name": "@socketbin/custom-node",
+  "name": "@socketbin/node-smol-builder",
   "private": true,
   "scripts": {
     "build": "node scripts/build.mjs",

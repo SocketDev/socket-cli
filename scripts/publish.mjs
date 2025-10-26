@@ -19,8 +19,8 @@ const TARGET_PACKAGES = {
   'darwin-x64': '@socketbin/cli-darwin-x64',
   'linux-arm64': '@socketbin/cli-linux-arm64',
   'linux-x64': '@socketbin/cli-linux-x64',
-  node: '@socketbin/custom-node',
-  sea: '@socketbin/sea',
+  node: '@socketbin/node-smol-builder-builder',
+  sea: '@socketbin/node-sea-builder-builder',
   socket: 'socket',
   'win32-arm64': '@socketbin/cli-win32-arm64',
   'win32-x64': '@socketbin/cli-win32-x64'

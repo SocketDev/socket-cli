@@ -150,7 +150,7 @@ Use LZ4:
 ### Quick Test
 ```bash
 # Build tools
-cd packages/socketbin-custom-node-from-source/additions/tools
+cd packages/node-smol-builder/additions/tools
 make all
 
 # Compress with LZMA (maximum)
@@ -168,7 +168,7 @@ codesign --verify build/out/Compressed/node
 
 ### Via Node.js Script
 ```bash
-node packages/socketbin-custom-node-from-source/scripts/compress-macho.mjs \
+node packages/node-smol-builder/scripts/compress-macho.mjs \
   build/out/Signed/node \
   build/out/Compressed/node \
   --quality=lzma

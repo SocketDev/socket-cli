@@ -14,7 +14,7 @@ A complete macOS binary compression system that works with code signing (unlike 
 ### 1. Build the Tools
 
 ```bash
-cd packages/socketbin-custom-node-from-source/additions/tools
+cd packages/node-smol-builder/additions/tools
 make all
 ```
 
@@ -77,7 +77,7 @@ Linux/Windows with UPX:           ~22 MB  (50% smaller, but can't work on macOS)
 
 ### Option 1: Add to Build Script
 
-Edit `packages/socketbin-custom-node-from-source/scripts/build.mjs`:
+Edit `packages/node-smol-builder/scripts/build.mjs`:
 
 ```javascript
 // After signing (around line 1420)
@@ -109,7 +109,7 @@ if (IS_MACOS && ARCH === 'arm64') {
 
 ```bash
 # After building Node.js
-node packages/socketbin-custom-node-from-source/scripts/compress-macho.mjs \
+node packages/node-smol-builder/scripts/compress-macho.mjs \
   build/out/Signed/node \
   build/out/Compressed/node
 
@@ -125,7 +125,7 @@ Add to your GitHub Actions workflow:
 - name: Compress macOS Binary
   if: matrix.os == 'macos-latest'
   run: |
-    node packages/socketbin-custom-node-from-source/scripts/compress-macho.mjs \
+    node packages/node-smol-builder/scripts/compress-macho.mjs \
       build/out/Signed/node \
       build/out/Compressed/node \
       --quality=lzfse
@@ -170,9 +170,9 @@ Users run: `./socket-macos-arm64 --version`
 
 ## Documentation
 
-- **Full Guide**: `packages/socketbin-custom-node-from-source/docs/macho-compression.md`
-- **Tool README**: `packages/socketbin-custom-node-from-source/additions/tools/README.md`
-- **Build Script**: `packages/socketbin-custom-node-from-source/scripts/build.mjs`
+- **Full Guide**: `packages/node-smol-builder/docs/macho-compression.md`
+- **Tool README**: `packages/node-smol-builder/additions/tools/README.md`
+- **Build Script**: `packages/node-smol-builder/scripts/build.mjs`
 
 ## Troubleshooting
 
@@ -223,5 +223,5 @@ For issues or questions:
 ---
 
 **Created:** 2025-10-25
-**Location:** `packages/socketbin-custom-node-from-source/`
+**Location:** `packages/node-smol-builder/`
 **Status:** ✅ Complete and tested

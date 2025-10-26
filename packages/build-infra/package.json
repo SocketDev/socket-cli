@@ -14,6 +14,6 @@
     "./lib/checkpoint-manager": "./lib/checkpoint-manager.mjs"
   },
   "dependencies": {
-    "@socketsecurity/lib": "workspace:*"
+    "@socketsecurity/lib": "1.3.3"
   }
 }

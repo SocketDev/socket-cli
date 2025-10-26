@@ -3,7 +3,7 @@
  *
  * Orchestrates building all from-source packages in the correct order:
  * 1. build-infra (shared utilities)
- * 2. smol-node (custom Node.js)
+ * 2. node-smol-builder (custom Node.js)
  * 3. onnx-runtime (ONNX Runtime WASM)
  * 4. codet5-models (CodeT5 model optimization)
  * 5. yoga-layout (Yoga Layout WASM)
@@ -11,7 +11,7 @@
  * Usage:
  *   node scripts/build-all-from-source.mjs           # Build all packages
  *   node scripts/build-all-from-source.mjs --force   # Force rebuild all
- *   node scripts/build-all-from-source.mjs smol-node # Build specific package
+ *   node scripts/build-all-from-source.mjs node-smol-builder # Build specific package
  */
 
 import path from 'node:path'
@@ -39,9 +39,9 @@ const PACKAGES = [
     build: false, // No build needed (utilities only)
   },
   {
-    name: 'smol-node',
+    name: 'node-smol-builder',
     description: 'Custom Node.js runtime',
-    path: 'packages/smol-node',
+    path: 'packages/node-smol-builder',
     build: true,
   },
   {
@@ -167,7 +167,7 @@ async function main() {
   logger.info(`Total time: ${totalMinutes}m ${totalSeconds}s`)
   logger.log('')
   logger.info('Build artifacts:')
-  logger.info('  smol-node:      packages/smol-node/build/out/Release/node')
+  logger.info('  node-smol-builder:      packages/node-smol-builder/build/out/Release/node')
   logger.info('  onnx-runtime:   packages/onnx-runtime/build/wasm/')
   logger.info('  codet5-models:  packages/codet5-models/build/models/')
   logger.info('  yoga-layout:    packages/yoga-layout/build/wasm/')
