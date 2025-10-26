@@ -1,10 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { getAlertsMapFromPnpmLockfile } from '../socket/alerts.mts'
-import {
-  extractPurlsFromPnpmLockfile,
-  parsePnpmLockfile,
-} from './lockfile.mts'
+import { extractPurlsFromPnpmLockfile, parsePnpmLockfile } from './lockfile.mts'
 
 // Mock all dependencies with vi.hoisted for better type safety
 const mockGetPublicApiToken = vi.hoisted(() => vi.fn())

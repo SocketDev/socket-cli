@@ -103,7 +103,9 @@ describe('fetchListRepos', () => {
     const mockHandleApi = vi.mocked(handleApiCall)
 
     const mockSdk = {
-      listRepositories: vi.fn().mockRejectedValue(new Error('Invalid page number')),
+      listRepositories: vi
+        .fn()
+        .mockRejectedValue(new Error('Invalid page number')),
     }
 
     mockSetupSdk.mockResolvedValue(createSuccessResult(mockSdk))

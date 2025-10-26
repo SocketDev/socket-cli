@@ -8,7 +8,6 @@ import { NPM, PNPM } from '@socketsecurity/lib/constants/agents'
 import { readPackageJson } from '@socketsecurity/lib/packages'
 import { spawn } from '@socketsecurity/lib/spawn'
 
-import { withTempFixture } from '../../../test/helpers/test-fixtures.mts'
 import { cmdit, spawnSocketCli, testPath } from '../../../test/utils.mts'
 import {
   PACKAGE_JSON,
@@ -30,7 +29,7 @@ import { getBinCliPath } from '../../constants/paths.mts'
 const binCliPath = getBinCliPath()
 
 const fixtureBaseDir = path.join(testPath, 'fixtures/commands/optimize')
-const npmFixtureDir = path.join(fixtureBaseDir, NPM)
+const _npmFixtureDir = path.join(fixtureBaseDir, NPM)
 const pnpmFixtureDir = path.join(fixtureBaseDir, PNPM)
 
 async function revertFixtureChanges() {
@@ -60,7 +59,7 @@ async function revertFixtureChanges() {
   } catch {}
 }
 
-async function createTempFixture(sourceDir: string): Promise<string> {
+async function _createTempFixture(sourceDir: string): Promise<string> {
   // Create a temporary directory with a unique name.
   const tempDir = path.join(
     tmpdir(),

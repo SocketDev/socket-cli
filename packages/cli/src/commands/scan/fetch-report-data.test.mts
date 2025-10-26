@@ -1,9 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import {
-  createErrorResult,
-  createSuccessResult,
-} from '../../../test/helpers/mocks.mts'
+import { createErrorResult } from '../../../test/helpers/mocks.mts'
 
 vi.mock('@socketsecurity/lib/debug', () => ({
   debug: vi.fn(),

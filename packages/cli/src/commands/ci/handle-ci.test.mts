@@ -29,7 +29,7 @@ vi.mock('../../utils/git/git.mjs', () => ({
   gitBranch: vi.fn(),
 }))
 vi.mock('../../utils/output/result-json.mjs', () => ({
-  serializeResultJson: vi.fn((result) => JSON.stringify(result)),
+  serializeResultJson: vi.fn(result => JSON.stringify(result)),
 }))
 vi.mock('../scan/handle-create-new-scan.mts', () => ({
   handleCreateNewScan: vi.fn(),

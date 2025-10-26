@@ -47,7 +47,9 @@ describe('socket package', async () => {
     'should be ok with org name and id',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: No-op, call a sub-command; ok"`)
+      expect(stdout).toMatchInlineSnapshot(
+        `"[DryRun]: No-op, call a sub-command; ok"`,
+      )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------

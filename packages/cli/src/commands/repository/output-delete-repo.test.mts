@@ -35,7 +35,7 @@ describe('outputDeleteRepo', () => {
     const { outputDeleteRepo } = await import('./output-delete-repo.mts')
     const { logger } = await vi.importMock('@socketsecurity/lib/logger')
     const { serializeResultJson } = await vi.importMock(
-      '../../utils/output/result-json.mjs'
+      '../../utils/output/result-json.mjs',
     )
     const mockLog = vi.mocked(logger.log)
     const mockSerialize = vi.mocked(serializeResultJson)
@@ -91,7 +91,7 @@ describe('outputDeleteRepo', () => {
     const { outputDeleteRepo } = await import('./output-delete-repo.mts')
     const { logger } = await vi.importMock('@socketsecurity/lib/logger')
     const { failMsgWithBadge } = await vi.importMock(
-      '../../utils/error/fail-msg-with-badge.mts'
+      '../../utils/error/fail-msg-with-badge.mts',
     )
     const mockFail = vi.mocked(logger.fail)
     const mockFailMsg = vi.mocked(failMsgWithBadge)

@@ -100,12 +100,7 @@ describe('WordPieceTokenizer', () => {
       const result = tokenizer.tokenize('vulnerabilities')
 
       // "vulnerabilities" = "vulnerabilit" + "##ies".
-      expect(result.tokens).toEqual([
-        '[CLS]',
-        'vulnerabilit',
-        '##ies',
-        '[SEP]',
-      ])
+      expect(result.tokens).toEqual(['[CLS]', 'vulnerabilit', '##ies', '[SEP]'])
     })
 
     it('should use UNK token for unknown words', () => {

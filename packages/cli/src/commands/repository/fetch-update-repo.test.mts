@@ -108,7 +108,9 @@ describe('fetchUpdateRepo', () => {
     const mockHandleApi = vi.mocked(handleApiCall)
 
     const mockSdk = {
-      updateRepository: vi.fn().mockRejectedValue(new Error('Repository not found')),
+      updateRepository: vi
+        .fn()
+        .mockRejectedValue(new Error('Repository not found')),
     }
 
     mockSetupSdk.mockResolvedValue(createSuccessResult(mockSdk as any))

@@ -35,10 +35,12 @@ describe('outputSecurityPolicy', () => {
   })
 
   it('outputs JSON format for successful result', async () => {
-    const { outputSecurityPolicy } = await import('./output-security-policy.mts')
+    const { outputSecurityPolicy } = await import(
+      './output-security-policy.mts'
+    )
     const { logger } = await vi.importMock('@socketsecurity/lib/logger')
     const { serializeResultJson } = await vi.importMock(
-      '../../utils/output/result-json.mjs'
+      '../../utils/output/result-json.mjs',
     )
     const mockLog = vi.mocked(logger.log)
     const mockSerialize = vi.mocked(serializeResultJson)
@@ -62,7 +64,9 @@ describe('outputSecurityPolicy', () => {
   })
 
   it('outputs error in JSON format', async () => {
-    const { outputSecurityPolicy } = await import('./output-security-policy.mts')
+    const { outputSecurityPolicy } = await import(
+      './output-security-policy.mts'
+    )
     const { logger } = await vi.importMock('@socketsecurity/lib/logger')
     const mockLog = vi.mocked(logger.log)
 
@@ -80,9 +84,13 @@ describe('outputSecurityPolicy', () => {
   })
 
   it('outputs text format with security policy table', async () => {
-    const { outputSecurityPolicy } = await import('./output-security-policy.mts')
+    const { outputSecurityPolicy } = await import(
+      './output-security-policy.mts'
+    )
     const { logger } = await vi.importMock('@socketsecurity/lib/logger')
-    const { mdTableOfPairs } = await vi.importMock('../../utils/output/markdown.mts')
+    const { mdTableOfPairs } = await vi.importMock(
+      '../../utils/output/markdown.mts',
+    )
     const mockLog = vi.mocked(logger.log)
     const mockTable = vi.mocked(mdTableOfPairs)
 
@@ -118,10 +126,12 @@ describe('outputSecurityPolicy', () => {
   })
 
   it('outputs error in text format', async () => {
-    const { outputSecurityPolicy } = await import('./output-security-policy.mts')
+    const { outputSecurityPolicy } = await import(
+      './output-security-policy.mts'
+    )
     const { logger } = await vi.importMock('@socketsecurity/lib/logger')
     const { failMsgWithBadge } = await vi.importMock(
-      '../../utils/error/fail-msg-with-badge.mts'
+      '../../utils/error/fail-msg-with-badge.mts',
     )
     const mockFail = vi.mocked(logger.fail)
     const mockFailMsg = vi.mocked(failMsgWithBadge)
@@ -144,9 +154,13 @@ describe('outputSecurityPolicy', () => {
   })
 
   it('handles empty security policy rules', async () => {
-    const { outputSecurityPolicy } = await import('./output-security-policy.mts')
+    const { outputSecurityPolicy } = await import(
+      './output-security-policy.mts'
+    )
     const { logger } = await vi.importMock('@socketsecurity/lib/logger')
-    const { mdTableOfPairs } = await vi.importMock('../../utils/output/markdown.mts')
+    const { mdTableOfPairs } = await vi.importMock(
+      '../../utils/output/markdown.mts',
+    )
     const mockLog = vi.mocked(logger.log)
     const mockTable = vi.mocked(mdTableOfPairs)
 
@@ -166,9 +180,13 @@ describe('outputSecurityPolicy', () => {
   })
 
   it('handles null security policy rules', async () => {
-    const { outputSecurityPolicy } = await import('./output-security-policy.mts')
+    const { outputSecurityPolicy } = await import(
+      './output-security-policy.mts'
+    )
     const { logger } = await vi.importMock('@socketsecurity/lib/logger')
-    const { mdTableOfPairs } = await vi.importMock('../../utils/output/markdown.mts')
+    const { mdTableOfPairs } = await vi.importMock(
+      '../../utils/output/markdown.mts',
+    )
     const mockTable = vi.mocked(mdTableOfPairs)
 
     const result: CResult<
@@ -184,8 +202,12 @@ describe('outputSecurityPolicy', () => {
   })
 
   it('sorts policy rules alphabetically', async () => {
-    const { outputSecurityPolicy } = await import('./output-security-policy.mts')
-    const { mdTableOfPairs } = await vi.importMock('../../utils/output/markdown.mts')
+    const { outputSecurityPolicy } = await import(
+      './output-security-policy.mts'
+    )
+    const { mdTableOfPairs } = await vi.importMock(
+      '../../utils/output/markdown.mts',
+    )
     const mockTable = vi.mocked(mdTableOfPairs)
 
     const result: CResult<
@@ -213,7 +235,9 @@ describe('outputSecurityPolicy', () => {
   })
 
   it('sets default exit code when code is undefined', async () => {
-    const { outputSecurityPolicy } = await import('./output-security-policy.mts')
+    const { outputSecurityPolicy } = await import(
+      './output-security-policy.mts'
+    )
     const result: CResult<
       SocketSdkSuccessResult<'getOrgSecurityPolicy'>['data']
     > = createErrorResult('Error without code')

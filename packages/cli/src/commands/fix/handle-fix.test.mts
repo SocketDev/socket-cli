@@ -131,7 +131,9 @@ describe('convertIdsToGhsas', () => {
       expect.stringContaining('Skipped 1 invalid IDs:'),
     )
     expect(logger.warn).toHaveBeenCalledWith(
-      expect.stringContaining('CVE-2021-99999: No GHSA found for CVE CVE-2021-99999'),
+      expect.stringContaining(
+        'CVE-2021-99999: No GHSA found for CVE CVE-2021-99999',
+      ),
     )
   })
 

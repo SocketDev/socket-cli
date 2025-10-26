@@ -18,13 +18,15 @@ vi.mock('../../meow.mts', () => ({
         // Check if flag is present in argv.
         const flagName = `--${key}`
         const shortFlag = flag.shortFlag ? `-${flag.shortFlag}` : null
-        const isPresent = argv.includes(flagName) || (shortFlag && argv.includes(shortFlag))
+        const isPresent =
+          argv.includes(flagName) || (shortFlag && argv.includes(shortFlag))
 
         // @ts-expect-error - Mock implementation.
         if (isPresent && flag.type === 'boolean') {
           processedFlags[key] = true
         } else {
-          processedFlags[key] = flag.default !== undefined ? flag.default : undefined
+          processedFlags[key] =
+            flag.default !== undefined ? flag.default : undefined
         }
       }
     }

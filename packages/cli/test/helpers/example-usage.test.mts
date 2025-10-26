@@ -12,7 +12,6 @@ import {
   expectCliSuccess,
 } from './cli-execution.mts'
 import {
-  expectLineCount,
   expectNoAnsiCodes,
   expectOrderedPatterns,
   expectOutput,
@@ -137,7 +136,10 @@ describe('CLI Execution Helpers - Examples', () => {
 
   describe('executeCliWithTiming', () => {
     it('should measure command execution time', async () => {
-      const { duration, result } = await executeCliWithTiming(['config', 'list'])
+      const { duration, result } = await executeCliWithTiming([
+        'config',
+        'list',
+      ])
 
       expect(result.status).toBe(true)
       expect(duration).toBeGreaterThan(0)
@@ -164,10 +166,7 @@ describe('Output Assertion Helpers - Examples', () => {
     it('should validate failure with fluent assertions', async () => {
       const result = await executeCliCommand(['invalid-command'])
 
-      expectOutput(result)
-        .failed()
-        .exitCode(2)
-        .stdoutContains('Commands')
+      expectOutput(result).failed().exitCode(2).stdoutContains('Commands')
     })
 
     it('should validate output patterns', async () => {
