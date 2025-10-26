@@ -1,11 +1,15 @@
 #!/usr/bin/env sh
 
-# Node 20 does not support strip types (yet) so we have go the slow path.
-# Note that we don't rebuild here... this will be annoying later, but this
-# is only for dev where we don't need to run Node 20.
-# Should we emit a warning anyways? Maybe.
-if [ "$(node -v | cut -d'v' -f2 | cut -d'.' -f1)" -lt 22 ]; then
-  npm run s -- "$@"
+# Node 22+ supports native TypeScript via --experimental-strip-types.
+# Node 20 and below use the build artifacts via pnpm run s.
+# Note: This doesn't rebuild - use `pnpm run build` first if you changed code.
+
+NODE_MAJOR=$(node -v | cut -d'v' -f2 | cut -d'.' -f1)
+
+if [ "$NODE_MAJOR" -lt 22 ]; then
+  # Node 20 or older - use built artifacts.
+  pnpm --filter @socketsecurity/cli run s -- "$@"
 else
-  node --experimental-strip-types --no-warnings src/cli.mts "$@"
+  # Node 22+ - use native TypeScript support.
+  cd "$(dirname "$0")" && node --experimental-strip-types --no-warnings packages/cli/src/cli.mts "$@"
 fi

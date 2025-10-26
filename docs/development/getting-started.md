@@ -74,6 +74,8 @@ CLI: v1.2.0
 
 If you see the version number, congratulations! Your setup is working.
 
+**Note:** You may see a banner with token/org info - this is normal and comes from your local config. Most commands work without an API token during development.
+
 ## Detailed Setup
 
 ### Step 1: Clone the Repository
@@ -150,14 +152,8 @@ ls -la packages/cli/dist
 ### Step 4: Run the CLI Locally
 
 ```bash
-# Run using pnpm exec
+# Run using pnpm exec (recommended)
 pnpm exec socket --version
-
-# Or run directly
-./bin/cli.js --version
-
-# Or use the convenience script
-pnpm run s -- --version
 ```
 
 **Try some commands:**
@@ -165,11 +161,13 @@ pnpm run s -- --version
 # Show help
 pnpm exec socket --help
 
-# Test package analysis (requires API token)
-pnpm exec socket package lodash --view
-
-# Or configure without token for basic commands
+# These work without API token
 pnpm exec socket --version
+pnpm exec socket --help-full
+
+# Commands that require API token
+pnpm exec socket package lodash --view
+pnpm exec socket scan create
 ```
 
 ### Step 5: Run Tests
@@ -178,11 +176,11 @@ pnpm exec socket --version
 # Run all tests (lint, type-check, unit tests)
 pnpm run test
 
-# Or run just unit tests
-pnpm run test:unit
+# Or run just unit tests (from CLI package)
+pnpm --filter @socketsecurity/cli run test:unit
 
 # Or run specific test file
-pnpm run test:unit packages/cli/src/commands/scan/cmd-scan.test.mts
+pnpm --filter @socketsecurity/cli run test:unit src/commands/scan/cmd-scan.test.mts
 ```
 
 **Expected output:**
@@ -231,21 +229,32 @@ echo $?
 
 ### Common Development Tasks
 
-**Run CLI after building:**
+**Build the CLI:**
 ```bash
-# Build first
 pnpm run build
+```
 
-# Then run the CLI
-pnpm exec socket <command>
+**Run the CLI:**
+```bash
+# After building
+pnpm exec socket --help
+pnpm exec socket --version
+
+# Test basic commands (no API token required)
+pnpm exec socket --version
 pnpm exec socket --help
 ```
 
-**Native TypeScript (Node 22+):**
+**Run tests:**
 ```bash
-# Runs TypeScript directly without building
-./sd <command>
-./sd --help
+# All tests (includes build step)
+pnpm run test
+
+# Just unit tests
+pnpm --filter @socketsecurity/cli run test:unit
+
+# Specific test file
+pnpm --filter @socketsecurity/cli run test:unit src/commands/scan/cmd-scan.test.mts
 ```
 
 **Fix linting issues:**
@@ -256,17 +265,6 @@ pnpm run fix
 **Type checking:**
 ```bash
 pnpm run type
-```
-
-**Quick scripts (packages/cli only):**
-```bash
-cd packages/cli
-
-# Build + run (requires .env.local)
-pnpm run bs scan --help
-
-# Run without build (requires .env.local)
-pnpm run s --version
 ```
 
 **Update test snapshots:**
@@ -282,23 +280,22 @@ pnpm run testu packages/cli/src/commands/scan/cmd-scan.test.mts
 
 **Test a single file (fast):**
 ```bash
-pnpm test:unit packages/cli/src/utils/config.test.mts
+pnpm --filter @socketsecurity/cli run test:unit src/utils/config.test.mts
 ```
 
 **Test with pattern matching:**
 ```bash
-pnpm test:unit packages/cli/src/commands/scan/cmd-scan.test.mts -t "should handle errors"
+pnpm --filter @socketsecurity/cli run test:unit src/commands/scan/cmd-scan.test.mts -t "should handle errors"
 ```
 
 **Test with coverage:**
 ```bash
-pnpm run test:unit:coverage
-pnpm run coverage:percent
+pnpm --filter @socketsecurity/cli run test:unit:coverage
 ```
 
 **Watch mode (auto-rerun on changes):**
 ```bash
-pnpm test:unit --watch
+pnpm --filter @socketsecurity/cli run test:unit -- --watch
 ```
 
 ## Project Structure
@@ -403,6 +400,25 @@ See: [Development Linking](./linking.md)
 
 ## Troubleshooting
 
+### Issue: Banner shows "token: iToke*** (config)"
+
+This is **normal** - Socket CLI reads your local config file (`.socketrc.json` or environment variables). Most commands work without an API token during development:
+
+```bash
+# These work without API token
+pnpm exec socket --version
+pnpm exec socket --help
+
+# These require API token
+pnpm exec socket package lodash --view
+pnpm exec socket scan create
+```
+
+To suppress config, use `--config '{}'`:
+```bash
+pnpm exec socket --config '{}' --version
+```
+
 ### Issue: "pnpm: command not found"
 
 ```bash
@@ -457,12 +473,12 @@ pnpm run type
 ### Issue: Build is very slow
 
 ```bash
-# Use native TypeScript (Node 22+)
-./sd --version  # No build needed!
-
-# Or clean and rebuild
+# Clean and rebuild
 pnpm run clean
 pnpm run build
+
+# Or build just what you need
+pnpm --filter @socketsecurity/cli run build
 ```
 
 ### Issue: Can't run CLI after build
@@ -532,11 +548,10 @@ If you encounter issues not covered here:
 | Install dependencies | `pnpm install` |
 | Build CLI | `pnpm run build` |
 | Run CLI | `pnpm exec socket <command>` |
-| Run with native TS | `./sd <command>` (Node 22+) |
-| Run tests | `pnpm run test:unit` |
+| Run all tests | `pnpm run test` |
+| Run unit tests | `pnpm --filter @socketsecurity/cli run test:unit` |
 | Fix linting | `pnpm run fix` |
 | Type check | `pnpm run type` |
-| Update snapshots | `pnpm run testu` (CLI package) |
 | Clean build artifacts | `pnpm run clean` |
 
 ## Verification Checklist
