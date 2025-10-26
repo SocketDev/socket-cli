@@ -19,6 +19,8 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { spawn } from '@socketsecurity/lib/spawn'
+import { logger } from '@socketsecurity/lib/logger'
+import colors from 'yoctocolors-cjs'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -27,8 +29,8 @@ const __dirname = dirname(__filename)
 const args = process.argv.slice(2)
 const versionArg = args.find(arg => arg.startsWith('--version='))
 if (!versionArg) {
-  console.error('❌ Missing --version argument')
-  console.error(
+  logger.error(`${colors.red('✗')} Missing --version argument`)
+  logger.error(
     'Usage: node scripts/regenerate-node-patches.mjs --version=v24.10.0',
   )
   process.exit(1)
@@ -36,7 +38,7 @@ if (!versionArg) {
 
 const NODE_VERSION = versionArg.split('=')[1]
 if (!NODE_VERSION.startsWith('v')) {
-  console.error('❌ Version must start with "v" (e.g., v24.10.0)')
+  logger.error(`${colors.red('✗')} Version must start with "v" (e.g., v24.10.0)`)
   process.exit(1)
 }
 
@@ -51,7 +53,7 @@ const OUTPUT_DIR = join(ROOT_DIR, 'build', 'patches')
 async function exec(command, args = [], options = {}) {
   const { cwd = process.cwd(), stdio = 'inherit' } = options
 
-  console.log(`$ ${command} ${args.join(' ')}`)
+  logger.log(`$ ${command} ${args.join(' ')}`)
 
   const result = await spawn(command, args, {
     cwd,
@@ -91,7 +93,7 @@ async function execCapture(command, args = [], options = {}) {
  * Apply Socket modifications
  */
 async function applySocketModifications() {
-  console.log('🔧 Applying Socket modifications...')
+  logger.log('🔧 Applying Socket modifications...')
 
   // Fix 1: V8 include paths
   const v8Fixes = [
@@ -129,10 +131,10 @@ async function applySocketModifications() {
       if (content.includes(from)) {
         content = content.replace(from, to)
         await writeFile(filePath, content, 'utf8')
-        console.log(`   ✓ Fixed: ${file}`)
+        logger.log(`   ✓ Fixed: ${file}`)
       }
     } catch (e) {
-      console.warn(`   ⚠️  Skipped ${file}: ${e.message}`)
+      logger.warn(`   ${colors.yellow('⚠')}  Skipped ${file}: ${e.message}`)
     }
   }
 
@@ -148,26 +150,26 @@ const { getAsset: getAssetInternal, getAssetKeys: getAssetKeysInternal } = inter
     if (content.includes(oldImport)) {
       content = content.replace(oldImport, newImport)
       await writeFile(seaFile, content, 'utf8')
-      console.log('   ✓ Modified: lib/sea.js')
+      logger.log('   ✓ Modified: lib/sea.js')
     }
   } catch (e) {
-    console.warn(`   ⚠️  Skipped lib/sea.js: ${e.message}`)
+    logger.warn(`   ${colors.yellow('⚠')}  Skipped lib/sea.js: ${e.message}`)
   }
 
-  console.log('✅ Socket modifications applied')
-  console.log()
+  logger.log(`${colors.green('✓')} Socket modifications applied`)
+  logger.log()
 }
 
 /**
  * Generate patch file
  */
 async function generatePatch(name, description) {
-  console.log(`📝 Generating ${name} patch...`)
+  logger.log(`📝 Generating ${name} patch...`)
 
   const diff = await execCapture('git', ['diff', 'HEAD'], { cwd: NODE_DIR })
 
   if (!diff) {
-    console.log('   ℹ️  No changes to generate patch')
+    logger.log('   ℹ️  No changes to generate patch')
     return null
   }
 
@@ -186,7 +188,7 @@ async function generatePatch(name, description) {
   )
 
   await writeFile(patchFile, patchContent)
-  console.log(`✅ Generated: ${patchFile}`)
+  logger.log(`${colors.green('✓')} Generated: ${patchFile}`)
 
   return patchFile
 }
@@ -195,12 +197,12 @@ async function generatePatch(name, description) {
  * Main function
  */
 async function main() {
-  console.log(`🔨 Regenerating Socket patches for Node.js ${NODE_VERSION}`)
-  console.log()
+  logger.log(`🔨 Regenerating Socket patches for Node.js ${NODE_VERSION}`)
+  logger.log()
 
   // Clean up old work directory
   if (existsSync(WORK_DIR)) {
-    console.log('🧹 Cleaning up old work directory...')
+    logger.log('🧹 Cleaning up old work directory...')
     await rm(WORK_DIR, { recursive: true, force: true })
   }
 
@@ -208,7 +210,7 @@ async function main() {
   await mkdir(OUTPUT_DIR, { recursive: true })
 
   // Step 1: Clone Node.js
-  console.log(`📥 Cloning Node.js ${NODE_VERSION}...`)
+  logger.log(`📥 Cloning Node.js ${NODE_VERSION}...`)
   await exec(
     'git',
     [
@@ -222,14 +224,14 @@ async function main() {
     ],
     { cwd: WORK_DIR },
   )
-  console.log()
+  logger.log()
 
   // Step 2: Apply Socket modifications
   await applySocketModifications()
 
   // Step 5: Generate patches
-  console.log('📝 Generating patch files...')
-  console.log()
+  logger.log('📝 Generating patch files...')
+  logger.log()
 
   const patches = []
 
@@ -247,34 +249,34 @@ async function main() {
     patches.push(combinedPatch)
   }
 
-  console.log()
-  console.log('🎉 Patch regeneration complete!')
-  console.log()
+  logger.log()
+  logger.log('🎉 Patch regeneration complete!')
+  logger.log()
 
   if (patches.length > 0) {
-    console.log('Generated patches:')
+    logger.log('Generated patches:')
     for (const patch of patches) {
-      console.log(`   - ${patch}`)
+      logger.log(`   - ${patch}`)
     }
-    console.log()
-    console.log('📝 Next steps:')
-    console.log('   1. Review the generated patches')
-    console.log(
+    logger.log()
+    logger.log('📝 Next steps:')
+    logger.log('   1. Review the generated patches')
+    logger.log(
       '   2. Update scripts/build-yao-pkg-node.mjs to use new patch files',
     )
-    console.log('   3. Update SOCKET_PATCHES array with new filenames')
-    console.log('   4. Test the build')
+    logger.log('   3. Update SOCKET_PATCHES array with new filenames')
+    logger.log('   4. Test the build')
   } else {
-    console.log('⚠️  No patches were generated (no changes detected)')
+    logger.log(`${colors.yellow('⚠')}  No patches were generated (no changes detected)`)
   }
 
-  console.log()
-  console.log('🧹 Cleanup:')
-  console.log(`   rm -rf ${WORK_DIR}`)
+  logger.log()
+  logger.log('🧹 Cleanup:')
+  logger.log(`   rm -rf ${WORK_DIR}`)
 }
 
 // Run main function
 main().catch(error => {
-  console.error('❌ Patch regeneration failed:', error.message)
+  logger.error(`${colors.red('✗')} Patch regeneration failed:`, error.message)
   process.exitCode = 1
 })

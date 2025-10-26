@@ -125,20 +125,20 @@ export async function runPackageScript(pkg, scriptName, args = [], quiet = false
   if (result.exitCode !== 0) {
     if (!quiet) {
       logger.clearLine()
-      console.log(`${colors.red('✗')} ${displayName}`)
+      logger.log(`${colors.red('✗')} ${displayName}`)
     }
     if (result.stdout) {
-      console.log(result.stdout)
+      logger.log(result.stdout)
     }
     if (result.stderr) {
-      console.error(result.stderr)
+      logger.error(result.stderr)
     }
     return result.exitCode
   }
 
   if (!quiet) {
     logger.clearLine()
-    console.log(`${colors.green('✓')} ${displayName}`)
+    logger.log(`${colors.green('✓')} ${displayName}`)
   }
 
   return 0

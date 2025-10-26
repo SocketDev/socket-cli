@@ -7,6 +7,8 @@
 
 import { spawnSync } from 'node:child_process'
 import process from 'node:process'
+import { logger } from '@socketsecurity/lib/logger'
+import colors from 'yoctocolors-cjs'
 
 const TARGET_PACKAGES = {
   __proto__: null,
@@ -41,15 +43,15 @@ for (let i = 0; i < args.length; i++) {
 
 const packageFilter = TARGET_PACKAGES[target]
 if (!packageFilter) {
-  console.error(`Unknown publish target: ${target}`)
-  console.error(`Available targets: ${Object.keys(TARGET_PACKAGES).join(', ')}`)
+  logger.error(`Unknown publish target: ${target}`)
+  logger.error(`Available targets: ${Object.keys(TARGET_PACKAGES).join(', ')}`)
   process.exit(1)
 }
 
 // Special handling for 'all' target.
 if (target === 'all') {
-  console.log('Publishing all packages...')
-  console.log('Note: Packages are published in dependency order by pnpm')
+  logger.log('Publishing all packages...')
+  logger.log('Note: Packages are published in dependency order by pnpm')
 }
 
 const pnpmArgs = [
@@ -59,9 +61,9 @@ const pnpmArgs = [
   ...publishArgs
 ]
 
-console.log(`Publishing ${target}...`)
-console.log(`Command: pnpm ${pnpmArgs.join(' ')}`)
-console.log('')
+logger.log(`Publishing ${target}...`)
+logger.log(`Command: pnpm ${pnpmArgs.join(' ')}`)
+logger.log('')
 
 const result = spawnSync('pnpm', pnpmArgs, {
   encoding: 'utf8',
@@ -70,9 +72,9 @@ const result = spawnSync('pnpm', pnpmArgs, {
 })
 
 if (result.status === 0) {
-  console.log(`\n✓ Successfully published ${target}`)
+  logger.log(`\n✓ Successfully published ${target}`)
 } else {
-  console.error(`\n✗ Failed to publish ${target}`)
+  logger.error(`\n✗ Failed to publish ${target}`)
 }
 
 process.exit(result.status ?? 1)

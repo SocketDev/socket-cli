@@ -85,20 +85,20 @@ async function runPackageTest(pkg, testArgs = [], quiet = false) {
   if (result.exitCode !== 0) {
     if (!quiet) {
       logger.clearLine()
-      console.log(`${colors.red('✗')} ${displayName}`)
+      logger.log(`${colors.red('✗')} ${displayName}`)
     }
     if (result.stdout) {
-      console.log(result.stdout)
+      logger.log(result.stdout)
     }
     if (result.stderr) {
-      console.error(result.stderr)
+      logger.error(result.stderr)
     }
     return result.exitCode
   }
 
   if (!quiet) {
     logger.clearLine()
-    console.log(`${colors.green('✓')} ${displayName}`)
+    logger.log(`${colors.green('✓')} ${displayName}`)
   }
 
   return 0
@@ -122,19 +122,19 @@ async function main() {
 
     // Show help if requested.
     if (values.help) {
-      console.log('Monorepo Test Runner')
-      console.log('\nUsage: pnpm test [options] [test-args...]')
-      console.log('\nOptions:')
-      console.log('  --help         Show this help message')
-      console.log('  --all          Test all packages')
-      console.log('  --changed      Test packages with changed files (default)')
-      console.log('  --staged       Test packages with staged files')
-      console.log('  --quiet, --silent  Suppress progress messages')
-      console.log('\nExamples:')
-      console.log('  pnpm test                # Test changed packages (default)')
-      console.log('  pnpm test --all          # Test all packages')
-      console.log('  pnpm test --staged       # Test staged packages')
-      console.log('  pnpm test -- --coverage  # Pass args to test runner')
+      logger.log('Monorepo Test Runner')
+      logger.log('\nUsage: pnpm test [options] [test-args...]')
+      logger.log('\nOptions:')
+      logger.log('  --help         Show this help message')
+      logger.log('  --all          Test all packages')
+      logger.log('  --changed      Test packages with changed files (default)')
+      logger.log('  --staged       Test packages with staged files')
+      logger.log('  --quiet, --silent  Suppress progress messages')
+      logger.log('\nExamples:')
+      logger.log('  pnpm test                # Test changed packages (default)')
+      logger.log('  pnpm test --all          # Test all packages')
+      logger.log('  pnpm test --staged       # Test staged packages')
+      logger.log('  pnpm test -- --coverage  # Pass args to test runner')
       process.exitCode = 0
       return
     }
@@ -143,7 +143,7 @@ async function main() {
 
     if (!quiet) {
       printHeader('Monorepo Test Runner')
-      console.log('')
+      logger.log('')
     }
 
     // Get packages to test.
@@ -180,7 +180,7 @@ async function main() {
     if (exitCode !== 0) {
       if (!quiet) {
         logger.error('')
-        console.log('Tests failed')
+        logger.log('Tests failed')
       }
       process.exitCode = exitCode
     } else {

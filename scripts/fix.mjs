@@ -39,7 +39,7 @@ async function main() {
   try {
     if (!quiet) {
       printHeader('Running Auto-fix')
-      console.log()
+      logger.log()
     }
 
     // Build lint command arguments.
@@ -69,7 +69,7 @@ async function main() {
       process.exitCode = 1
     } else {
       if (!quiet) {
-        console.log()
+        logger.log()
         logger.success('Auto-fix completed!')
       }
     }
@@ -78,7 +78,7 @@ async function main() {
       logger.error(`Fix failed: ${error.message}`)
     }
     if (verbose) {
-      console.error(error)
+      logger.error(error)
     }
     process.exitCode = 1
   }

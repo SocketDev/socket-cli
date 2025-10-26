@@ -84,20 +84,20 @@ async function main() {
 
     // Show help if requested.
     if (values.help) {
-      console.log('Monorepo Lint Runner')
-      console.log('\nUsage: pnpm lint [options]')
-      console.log('\nOptions:')
-      console.log('  --help         Show this help message')
-      console.log('  --fix          Automatically fix problems')
-      console.log('  --all          Lint all packages')
-      console.log('  --changed      Lint packages with changed files (default)')
-      console.log('  --staged       Lint packages with staged files')
-      console.log('  --quiet, --silent  Suppress progress messages')
-      console.log('\nExamples:')
-      console.log('  pnpm lint                # Lint changed packages (default)')
-      console.log('  pnpm lint --fix          # Fix issues in changed packages')
-      console.log('  pnpm lint --all          # Lint all packages')
-      console.log('  pnpm lint --staged --fix # Fix issues in staged packages')
+      logger.log('Monorepo Lint Runner')
+      logger.log('\nUsage: pnpm lint [options]')
+      logger.log('\nOptions:')
+      logger.log('  --help         Show this help message')
+      logger.log('  --fix          Automatically fix problems')
+      logger.log('  --all          Lint all packages')
+      logger.log('  --changed      Lint packages with changed files (default)')
+      logger.log('  --staged       Lint packages with staged files')
+      logger.log('  --quiet, --silent  Suppress progress messages')
+      logger.log('\nExamples:')
+      logger.log('  pnpm lint                # Lint changed packages (default)')
+      logger.log('  pnpm lint --fix          # Fix issues in changed packages')
+      logger.log('  pnpm lint --all          # Lint all packages')
+      logger.log('  pnpm lint --staged --fix # Fix issues in staged packages')
       process.exitCode = 0
       return
     }
@@ -106,7 +106,7 @@ async function main() {
 
     if (!quiet) {
       printHeader('Monorepo Lint Runner')
-      console.log('')
+      logger.log('')
     }
 
     // Get files to lint and affected packages.
@@ -135,7 +135,7 @@ async function main() {
     if (exitCode !== 0) {
       if (!quiet) {
         logger.error('')
-        console.log('Lint failed')
+        logger.log('Lint failed')
       }
       process.exitCode = exitCode
     } else {

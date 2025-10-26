@@ -4,6 +4,8 @@ import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 
 import { spawn } from '@socketsecurity/lib/spawn'
+import { logger } from '@socketsecurity/lib/logger'
+import colors from 'yoctocolors-cjs'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -81,7 +83,7 @@ async function isExecutable(filePath) {
  * Validate package.json fields.
  */
 async function validatePackageJson() {
-  console.log(info('Validating package.json...'))
+  logger.log(info('Validating package.json...'))
 
   const errors = []
   const warnings = []
@@ -129,7 +131,7 @@ async function validatePackageJson() {
   }
 
   if (errors.length === 0 && warnings.length === 0) {
-    console.log(success('Package.json validation passed'))
+    logger.log(success('Package.json validation passed'))
   }
 
   return { errors, warnings }
@@ -139,7 +141,7 @@ async function validatePackageJson() {
  * Validate dist directory structure.
  */
 async function validateDistStructure() {
-  console.log(info('Validating dist directory structure...'))
+  logger.log(info('Validating dist directory structure...'))
 
   const errors = []
   const warnings = []
@@ -173,14 +175,14 @@ async function validateDistStructure() {
         `CLI bundle is larger than expected: ${sizeMB.toFixed(2)} MB`,
       )
     } else {
-      console.log(info(`CLI bundle size: ${sizeMB.toFixed(2)} MB`))
+      logger.log(info(`CLI bundle size: ${sizeMB.toFixed(2)} MB`))
     }
   }
 
   if (errors.length === 0 && warnings.length === 0) {
-    console.log(success('Dist directory structure validation passed'))
+    logger.log(success('Dist directory structure validation passed'))
   } else if (errors.length === 0) {
-    console.log(
+    logger.log(
       success('Dist directory structure validation passed (with warnings)'),
     )
   }
@@ -192,7 +194,7 @@ async function validateDistStructure() {
  * Validate binary files.
  */
 async function validateBinaries() {
-  console.log(info('Validating binary files...'))
+  logger.log(info('Validating binary files...'))
 
   const errors = []
   const warnings = []
@@ -236,9 +238,9 @@ async function validateBinaries() {
   }
 
   if (errors.length === 0 && warnings.length === 0) {
-    console.log(success('Binary files validation passed'))
+    logger.log(success('Binary files validation passed'))
   } else if (errors.length === 0) {
-    console.log(success('Binary files validation passed (with warnings)'))
+    logger.log(success('Binary files validation passed (with warnings)'))
   }
 
   return { errors, warnings }
@@ -248,7 +250,7 @@ async function validateBinaries() {
  * Validate required data files.
  */
 async function validateDataFiles() {
-  console.log(info('Validating data files...'))
+  logger.log(info('Validating data files...'))
 
   const errors = []
   const warnings = []
@@ -273,7 +275,7 @@ async function validateDataFiles() {
   }
 
   if (errors.length === 0) {
-    console.log(success('Data files validation passed'))
+    logger.log(success('Data files validation passed'))
   }
 
   return { errors, warnings }
@@ -283,7 +285,7 @@ async function validateDataFiles() {
  * Check for uncommitted changes.
  */
 async function checkGitStatus() {
-  console.log(info('Checking for uncommitted changes...'))
+  logger.log(info('Checking for uncommitted changes...'))
 
   const errors = []
   const warnings = []
@@ -301,10 +303,10 @@ async function checkGitStatus() {
     const output = result.stdout.trim()
     if (output) {
       warnings.push('Repository has uncommitted changes')
-      console.log(warning('Uncommitted changes detected:'))
-      console.log(output)
+      logger.log(warning('Uncommitted changes detected:'))
+      logger.log(output)
     } else {
-      console.log(success('No uncommitted changes'))
+      logger.log(success('No uncommitted changes'))
     }
   } catch (e) {
     warnings.push(`Git check failed: ${e.message}`)
@@ -317,7 +319,7 @@ async function checkGitStatus() {
  * Validate Git tag matches version.
  */
 async function validateGitTag() {
-  console.log(info('Validating Git tag...'))
+  logger.log(info('Validating Git tag...'))
 
   const errors = []
   const warnings = []
@@ -341,7 +343,7 @@ async function validateGitTag() {
 
     const output = result.stdout.trim()
     if (output === tagName) {
-      console.log(success(`Git tag ${tagName} exists`))
+      logger.log(success(`Git tag ${tagName} exists`))
     } else {
       warnings.push(
         `Git tag ${tagName} does not exist (create tag before publishing)`,
@@ -358,7 +360,7 @@ async function validateGitTag() {
  * Validate dependencies are installed.
  */
 async function validateDependencies() {
-  console.log(info('Validating dependencies...'))
+  logger.log(info('Validating dependencies...'))
 
   const errors = []
   const warnings = []
@@ -377,7 +379,7 @@ async function validateDependencies() {
   }
 
   if (errors.length === 0) {
-    console.log(success('Dependencies validation passed'))
+    logger.log(success('Dependencies validation passed'))
   }
 
   return { errors, warnings }
@@ -387,7 +389,7 @@ async function validateDependencies() {
  * Validate no dev dependencies in production.
  */
 async function validateProductionDependencies() {
-  console.log(info('Validating production dependencies...'))
+  logger.log(info('Validating production dependencies...'))
 
   const errors = []
   const warnings = []
@@ -411,7 +413,7 @@ async function validateProductionDependencies() {
   }
 
   if (errors.length === 0) {
-    console.log(success('Production dependencies validation passed'))
+    logger.log(success('Production dependencies validation passed'))
   }
 
   return { errors, warnings }
@@ -421,11 +423,11 @@ async function validateProductionDependencies() {
  * Main validation function.
  */
 async function validate() {
-  console.log('')
-  console.log('='.repeat(60))
-  console.log(`${colors.blue}Pre-Publish Validation${colors.reset}`)
-  console.log('='.repeat(60))
-  console.log('')
+  logger.log('')
+  logger.log('='.repeat(60))
+  logger.log(`${colors.blue}Pre-Publish Validation${colors.reset}`)
+  logger.log('='.repeat(60))
+  logger.log('')
 
   const allErrors = []
   const allWarnings = []
@@ -446,48 +448,48 @@ async function validate() {
     const { errors, warnings } = await check()
     allErrors.push(...errors)
     allWarnings.push(...warnings)
-    console.log('')
+    logger.log('')
   }
 
   // Print summary.
-  console.log('='.repeat(60))
-  console.log(`${colors.blue}Validation Summary${colors.reset}`)
-  console.log('='.repeat(60))
-  console.log('')
+  logger.log('='.repeat(60))
+  logger.log(`${colors.blue}Validation Summary${colors.reset}`)
+  logger.log('='.repeat(60))
+  logger.log('')
 
   if (allWarnings.length > 0) {
-    console.log(`${colors.yellow}Warnings:${colors.reset}`)
+    logger.log(`${colors.yellow}Warnings:${colors.reset}`)
     for (const warn of allWarnings) {
-      console.log(`  ${warning(warn)}`)
+      logger.log(`  ${warning(warn)}`)
     }
-    console.log('')
+    logger.log('')
   }
 
   if (allErrors.length > 0) {
-    console.log(`${colors.red}Errors:${colors.reset}`)
+    logger.log(`${colors.red}Errors:${colors.reset}`)
     for (const err of allErrors) {
-      console.log(`  ${error(err)}`)
+      logger.log(`  ${error(err)}`)
     }
-    console.log('')
-    console.log(error('Pre-publish validation FAILED'))
-    console.log('')
+    logger.log('')
+    logger.log(error('Pre-publish validation FAILED'))
+    logger.log('')
     process.exit(1)
   }
 
-  console.log(success('Pre-publish validation PASSED'))
+  logger.log(success('Pre-publish validation PASSED'))
   if (allWarnings.length > 0) {
-    console.log(
+    logger.log(
       info(`${allWarnings.length} warning(s) - review before publishing`),
     )
   }
-  console.log('')
+  logger.log('')
   process.exit(0)
 }
 
 // Run validation.
 validate().catch(e => {
-  console.error('')
-  console.error(error(`Unexpected error: ${e.message}`))
-  console.error('')
+  logger.error('')
+  logger.error(error(`Unexpected error: ${e.message}`))
+  logger.error('')
   process.exit(1)
 })

@@ -2,6 +2,8 @@ import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
+import { logger } from '@socketsecurity/lib/logger'
+import colors from 'yoctocolors-cjs'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -14,16 +16,16 @@ async function checkVersionConsistency() {
   const expectedVersion = process.argv[2]
 
   if (!expectedVersion) {
-    console.error('❌ Error: Version argument is required')
-    console.error('Usage: node scripts/check-version-consistency.mjs <version>')
+    logger.error(`${colors.red('✗')} Error: Version argument is required`)
+    logger.error('Usage: node scripts/check-version-consistency.mjs <version>')
     process.exit(1)
   }
 
   // Remove 'v' prefix if present.
   const cleanVersion = expectedVersion.replace(/^v/, '')
 
-  console.log(`🔍 Checking version consistency for v${cleanVersion}...`)
-  console.log('')
+  logger.log(`🔍 Checking version consistency for v${cleanVersion}...`)
+  logger.log('')
 
   const errors = []
   const warnings = []
@@ -72,40 +74,40 @@ async function checkVersionConsistency() {
   }
 
   // Print results.
-  console.log('Checked versions:')
+  logger.log('Checked versions:')
   for (const check of checked) {
     const icon = check.matches ? '✓' : '✗'
     const color = check.matches ? '\x1b[32m' : '\x1b[31m'
     const reset = '\x1b[0m'
-    console.log(`  ${color}${icon}${reset} ${check.file}: ${check.version}`)
+    logger.log(`  ${color}${icon}${reset} ${check.file}: ${check.version}`)
   }
-  console.log('')
+  logger.log('')
 
   // Print warnings.
   if (warnings.length > 0) {
-    console.log('⚠️  Warnings:')
+    logger.log(`${colors.yellow('⚠')}  Warnings:`)
     for (const warning of warnings) {
-      console.log(`  ${warning}`)
+      logger.log(`  ${warning}`)
     }
-    console.log('')
+    logger.log('')
   }
 
   // Print errors and exit.
   if (errors.length > 0) {
-    console.log('❌ Errors:')
+    logger.log(`${colors.red('✗')} Errors:`)
     for (const error of errors) {
-      console.log(`  ${error}`)
+      logger.log(`  ${error}`)
     }
-    console.log('')
-    console.log('Version consistency check failed!')
+    logger.log('')
+    logger.log('Version consistency check failed!')
     process.exit(1)
   }
 
-  console.log('✅ Version consistency check passed!')
+  logger.log(`${colors.green('✓')} Version consistency check passed!`)
   process.exit(0)
 }
 
 checkVersionConsistency().catch(e => {
-  console.error('❌ Unexpected error:', e)
+  logger.error(`${colors.red('✗')} Unexpected error:`, e)
   process.exit(1)
 })
