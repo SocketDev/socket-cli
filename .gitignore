@@ -21,16 +21,21 @@ Thumbs.db
 **/.cache
 **/coverage
 **/.type-coverage
-**/dist
 **/build
 **/node_modules
 .build-checkpoints
-**/pkg
-**/target
 *.d.ts
 *.d.ts.map
 **/*.tmp
 *.tsbuildinfo
+
+# Build artifacts (inside build/ only).
+**/build/target/
+**/build/pkg/
+**/build/out/
+**/build/cmake/
+**/build/_deps/
+**/build/wasm/
 
 # Yarn PnP files (tests may create these)
 /.yarn

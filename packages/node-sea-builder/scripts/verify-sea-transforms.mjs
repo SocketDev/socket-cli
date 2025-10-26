@@ -82,8 +82,8 @@ function verifyPolyfill(code) {
 async function main() {
   const modifiedCliPath = path.join(
     __dirname,
-    '../../..',
-    'packages/dist/sea/cli-modified.js',
+    '..',
+    'build/sea/cli-modified.js',
   )
 
   logger.log('SEA Transformation Verification')
