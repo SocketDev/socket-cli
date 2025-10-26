@@ -8,6 +8,8 @@
  */
 
 import ort from 'onnxruntime-web'
+import { logger } from '@socketsecurity/lib/logger'
+import colors from 'yoctocolors-cjs'
 
 export const InferenceSession = ort.InferenceSession
 export const Tensor = ort.Tensor

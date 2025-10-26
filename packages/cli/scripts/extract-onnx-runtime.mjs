@@ -10,6 +10,8 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { logger } from '@socketsecurity/lib/logger'
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '..')
 const outputPath = path.join(rootPath, 'external/onnx-sync.mjs')
