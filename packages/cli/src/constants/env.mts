@@ -44,6 +44,7 @@ import { SOCKET_CLI_OPTIMIZE } from '../env/socket-cli-optimize.mts'
 import { SOCKET_CLI_PYCLI_LOCAL_PATH } from '../env/socket-cli-pycli-local-path.mts'
 import { SOCKET_CLI_SFW_LOCAL_PATH } from '../env/socket-cli-sfw-local-path.mts'
 import { SOCKET_CLI_VIEW_ALL_RISKS } from '../env/socket-cli-view-all-risks.mts'
+import { RUN_E2E_TESTS } from '../env/run-e2e-tests.mts'
 import { TEMP } from '../env/temp.mts'
 import { TERM } from '../env/term.mts'
 import { TMP } from '../env/tmp.mts'
@@ -90,6 +91,7 @@ export {
   SOCKET_CLI_PYCLI_LOCAL_PATH,
   SOCKET_CLI_SFW_LOCAL_PATH,
   SOCKET_CLI_VIEW_ALL_RISKS,
+  RUN_E2E_TESTS,
   TEMP,
   TERM,
   TMP,
@@ -200,6 +202,7 @@ const envSnapshot = {
   SOCKET_CLI_PYCLI_LOCAL_PATH,
   SOCKET_CLI_SFW_LOCAL_PATH,
   SOCKET_CLI_VIEW_ALL_RISKS,
+  RUN_E2E_TESTS,
   TEMP,
   TERM,
   TMP,
