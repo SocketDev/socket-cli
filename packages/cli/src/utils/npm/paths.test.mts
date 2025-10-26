@@ -90,7 +90,8 @@ describe('npm-paths utilities', () => {
 
       const result = getNpmBinPath()
 
-      expect(result).toBe('/usr/local/bin/npm')
+      // Normalize path separators for cross-platform compatibility.
+      expect(result?.replace(/\\/g, '/')).toBe('/usr/local/bin/npm')
       expect(findBinPathDetailsSync).toHaveBeenCalledWith('npm')
     })
 
@@ -141,7 +142,8 @@ describe('npm-paths utilities', () => {
 
       const result = getNpmDirPath()
 
-      expect(result).toBe('/usr/local/lib/node_modules/npm')
+      // Normalize path separators for cross-platform compatibility.
+      expect(result?.replace(/\\/g, '/')).toBe('/usr/local/lib/node_modules/npm')
       expect(findNpmDirPathSync).toHaveBeenCalledWith('/usr/local/bin/npm')
     })
 
@@ -167,7 +169,8 @@ describe('npm-paths utilities', () => {
       const { getNpmDirPath: localGetNpmDirPath } = await import('./paths.mts')
       const result = localGetNpmDirPath()
 
-      expect(result).toBe('/custom/npm/path')
+      // Normalize path separators for cross-platform compatibility.
+      expect(result?.replace(/\\/g, '/')).toBe('/custom/npm/path')
     })
 
     it('exits with error when npm directory not found', async () => {
@@ -258,7 +261,8 @@ describe('npm-paths utilities', () => {
 
       const result = getNpxBinPath()
 
-      expect(result).toBe('/usr/local/bin/npx')
+      // Normalize path separators for cross-platform compatibility.
+      expect(result?.replace(/\\/g, '/')).toBe('/usr/local/bin/npx')
       expect(findBinPathDetailsSync).toHaveBeenCalledWith('npx')
     })
 
