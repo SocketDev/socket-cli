@@ -33,7 +33,7 @@ export async function handleScanReach({
   const spinner = getSpinner()
 
   // Get supported file names
-  const supportedFilesCResult = await fetchSupportedScanFileNames({ spinner })
+  const supportedFilesCResult = await fetchSupportedScanFileNames({ spinner: spinner ?? undefined })
   if (!supportedFilesCResult.ok) {
     await outputScanReach(supportedFilesCResult, {
       cwd,
@@ -79,11 +79,11 @@ export async function handleScanReach({
     outputPath,
     packagePaths,
     reachabilityOptions,
-    spinner,
+    spinner: spinner ?? undefined,
     uploadManifests: true,
   })
 
-  spinner.stop()
+  spinner?.stop()
 
   await outputScanReach(result, { cwd, outputKind, outputPath })
 }

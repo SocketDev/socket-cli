@@ -34,7 +34,7 @@ export interface HandlePatchRmConfig {
   keepBackups: boolean
   outputKind: OutputKind
   purl: string
-  spinner: Spinner
+  spinner: Spinner | null
 }
 
 export async function handlePatchRm({

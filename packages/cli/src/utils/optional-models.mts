@@ -104,7 +104,7 @@ interface ModelInfo {
 export async function loadOptionalModel(
   packageName: string,
 ): Promise<{ modelPaths: string[]; downloaded: boolean }> {
-  const modelInfo = MODEL_REGISTRY[packageName] as ModelInfo | undefined
+  const modelInfo = (MODEL_REGISTRY as unknown as Record<string, ModelInfo | undefined>)[packageName]
   if (!modelInfo) {
     throw new Error(`Unknown optional model: ${packageName}`)
   }
@@ -119,10 +119,11 @@ export async function loadOptionalModel(
 
   for (const file of modelInfo.files) {
     // Download via dlx (uses cache if available).
+    const checksumValue = file.checksum || undefined
     const result = await dlxBinary([], {
       url: file.url,
       name: file.name,
-      checksum: file.checksum || undefined,
+      ...(checksumValue && { checksum: checksumValue }),
       cacheTtl: 30 * 24 * 60 * 60 * 1000, // 30 days.
     })
 
@@ -142,7 +143,7 @@ export async function loadOptionalModel(
  * @returns True if all model files exist in cache
  */
 export function isModelCached(packageName: string): boolean {
-  const modelInfo = MODEL_REGISTRY[packageName] as ModelInfo | undefined
+  const modelInfo = (MODEL_REGISTRY as unknown as Record<string, ModelInfo | undefined>)[packageName]
   if (!modelInfo) {
     return false
   }
@@ -177,6 +178,6 @@ export function listAvailableModels(): string[] {
  * @returns Model information or null if not found
  */
 export function getModelInfo(packageName: string): ModelInfo | null {
-  const modelInfo = MODEL_REGISTRY[packageName] as ModelInfo | undefined
+  const modelInfo = (MODEL_REGISTRY as unknown as Record<string, ModelInfo | undefined>)[packageName]
   return modelInfo || null
 }
