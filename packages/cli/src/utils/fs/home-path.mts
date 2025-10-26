@@ -11,18 +11,16 @@
  * - Common Unix convention for home directory
  */
 
-import path from 'node:path'
-
 import { escapeRegExp } from '@socketsecurity/lib/regexps'
+import { normalizePath } from '@socketsecurity/lib/path'
 
 import { homePath } from '../../constants/paths.mts'
 
 export function tildify(cwd: string) {
-  // On Windows, accept both forward and back slashes as separators
-  // since paths can be mixed (Git Bash, WSL, etc.).
-  const sepPattern = path.sep === '\\' ? '[\\\\/]' : '/'
-  return cwd.replace(
-    new RegExp(`^${escapeRegExp(homePath)}(?:${sepPattern}|$)`, 'i'),
+  // Normalize to forward slashes for consistent matching across platforms.
+  const normalizedCwd = normalizePath(cwd)
+  return normalizedCwd.replace(
+    new RegExp(`^${escapeRegExp(homePath)}(?:/|$)`, 'i'),
     '~/',
   )
 }
