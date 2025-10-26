@@ -30,6 +30,16 @@ Thumbs.db
 **/*.tmp
 *.tsbuildinfo
 
+# Backup and temporary files.
+*.backup
+*.bak
+*.old
+*~
+*.swp
+*.swo
+*.sw?
+.*.sw?
+
 # Build artifacts: build/ = gitignored (workspace + archive), dist/ = tracked (blessed releases).
 # Exceptions:
 #   - packages/cli/dist/ is Rollup output (ephemeral), gitignored by packages/cli/.gitignore
