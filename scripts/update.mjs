@@ -1,6 +1,6 @@
 /**
- * @fileoverview Unified dependency update script - checks and updates dependencies.
- * Standardized across all socket-* repositories.
+ * @fileoverview Monorepo-aware dependency update script - checks and updates dependencies.
+ * Uses taze to check for updates across all packages in the monorepo.
  *
  * Usage:
  *   node scripts/update.mjs [options]
@@ -20,7 +20,7 @@ import {
   printSuccess,
 } from '@socketsecurity/lib/stdio/header'
 
-import { runParallel } from './utils/run-command.mjs'
+import { runCommand, runParallel } from './utils/run-command.mjs'
 
 async function main() {
   const quiet = isQuiet()
@@ -29,52 +29,68 @@ async function main() {
 
   try {
     if (!quiet) {
-      printHeader('Checking Dependencies')
+      printHeader('Monorepo Dependency Update')
     }
 
-    // Build taze command with appropriate flags.
-    const tazeArgs = ['exec', 'taze']
+    // Build taze command with appropriate flags for monorepo.
+    const tazeArgs = ['exec', 'taze', '-r']
 
     if (apply) {
       tazeArgs.push('-w')
       if (!quiet) {
-        logger.progress('Updating dependencies...')
+        logger.progress('Updating dependencies across monorepo...')
       }
     } else {
       if (!quiet) {
-        logger.progress('Checking for updates...')
+        logger.progress('Checking for updates across monorepo...')
       }
     }
 
-    // Run both taze and Socket package updates in parallel.
-    const commands = [
-      {
-        args: tazeArgs,
-        command: 'pnpm',
-        options: { stdio: quiet ? 'pipe' : 'inherit' },
-      },
-    ]
-
-    // Add Socket package update command if applying updates.
-    if (apply) {
-      commands.push({
-        args: [
-          'update',
-          '@socketsecurity/*',
-          '@socketregistry/*',
-          '--latest',
-          '--no-workspace',
-        ],
-        command: 'pnpm',
-        options: { stdio: quiet ? 'pipe' : 'inherit' },
-      })
-    }
-
-    const exitCode = await runParallel(commands)
+    // Run taze at root level (recursive flag will check all packages).
+    const exitCode = await runCommand('pnpm', tazeArgs, {
+      stdio: quiet ? 'pipe' : 'inherit',
+    })
 
     // Clear progress line.
     if (!quiet) {
       process.stdout.write('\r\x1b[K')
+    }
+
+    // If applying updates, also update Socket packages.
+    if (apply && exitCode === 0) {
+      if (!quiet) {
+        logger.progress('Updating Socket packages...')
+      }
+
+      const commands = [
+        {
+          args: [
+            'update',
+            '@socketsecurity/*',
+            '@socketregistry/*',
+            '--latest',
+            '-r',
+          ],
+          command: 'pnpm',
+          options: { stdio: quiet ? 'pipe' : 'inherit' },
+        },
+      ]
+
+      const results = await runParallel(commands)
+      const socketExitCode = results[0]
+
+      // Clear progress line.
+      if (!quiet) {
+        process.stdout.write('\r\x1b[K')
+      }
+
+      if (socketExitCode !== 0) {
+        if (!quiet) {
+          printError('Failed to update Socket packages')
+        }
+        process.exitCode = 1
+        return
+      }
     }
 
     if (exitCode !== 0) {
@@ -89,9 +105,9 @@ async function main() {
     } else {
       if (!quiet) {
         if (apply) {
-          printSuccess('Dependencies updated')
+          printSuccess('Dependencies updated across all packages')
         } else {
-          printSuccess('Dependencies up to date')
+          printSuccess('All packages up to date')
         }
         printFooter()
       }
