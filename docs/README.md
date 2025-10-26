@@ -2,6 +2,8 @@
 
 ## Organization
 
+📚 **[Documentation Organization Guide](documentation-organization.md)** - Complete guide to Socket CLI's 3-tier documentation hierarchy
+
 - **architecture/** - System design documents and flow diagrams
 - **build/** - Node.js build system and patching documentation
 - **configuration/** - Shared configuration architecture
