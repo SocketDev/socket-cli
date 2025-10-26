@@ -81,8 +81,8 @@ function sanitizeTarballPath(filePath: string): string {
   const segments = withoutPrefix
     .split('/')
     .filter(seg => seg && seg !== '.' && seg !== '..')
-  // Normalize path separators for the current platform.
-  return segments.join(path.sep)
+  // Use path.join for proper path construction, then normalize to forward slashes.
+  return path.join(...segments).replace(/\\/g, '/')
 }
 
 /**
@@ -106,11 +106,11 @@ async function remove(
     }
 
     // Check if trying to delete outside SOCKET_HOME (catastrophic delete protection).
-    const relation = path.relative(SOCKET_HOME, absolutePath)
+    const relation = path.relative(SOCKET_HOME, absolutePath).replace(/\\/g, '/')
     const isInside = Boolean(
       relation &&
         relation !== '..' &&
-        !relation.startsWith(`..${path.sep}`) &&
+        !relation.startsWith('../') &&
         !path.isAbsolute(relation),
     )
 
