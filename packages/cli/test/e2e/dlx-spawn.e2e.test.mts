@@ -2,10 +2,10 @@ import { execSync } from 'node:child_process'
 
 import { beforeAll, describe, expect, it } from 'vitest'
 
-import ENV from '../../constants/env.mts'
-import { spawnDlx } from './spawn.mts'
-import { findUp } from '../fs/find-up.mts'
-import { getDefaultApiToken } from '../socket/sdk.mts'
+import ENV from '../../src/constants/env.mts'
+import { findUp } from '../../src/utils/fs/find-up.mts'
+import { getDefaultApiToken } from '../../src/utils/socket/sdk.mts'
+import { spawnDlx } from '../../src/utils/dlx/spawn.mts'
 
 describe('dlx e2e tests', () => {
   let hasAuth = false
