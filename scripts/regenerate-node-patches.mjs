@@ -262,7 +262,7 @@ async function main() {
     logger.log('📝 Next steps:')
     logger.log('   1. Review the generated patches')
     logger.log(
-      '   2. Update scripts/build-yao-pkg-node.mjs to use new patch files',
+      '   2. Update packages/node-smol-builder/scripts/build.mjs to use new patch files',
     )
     logger.log('   3. Update SOCKET_PATCHES array with new filenames')
     logger.log('   4. Test the build')

@@ -1,5 +1,5 @@
 /**
- * @fileoverview End-to-end integration test for yao-pkg Node.js binary
+ * @fileoverview End-to-end integration test for smol Node.js binary
  *
  * This script performs a complete end-to-end test:
  * 1. Builds Socket CLI with the custom Node.js binary
@@ -9,7 +9,7 @@
  * 5. Cleans up test artifacts
  *
  * Usage:
- *   node scripts/test-yao-pkg-integration.mjs [--node-version v24.10.0]
+ *   node scripts/test-smol-integration.mjs [--node-version v24.10.0]
  */
 
 import { existsSync } from 'node:fs'
@@ -60,7 +60,7 @@ async function exec(command, args = [], options = {}) {
  */
 async function main() {
   logger.log()
-  logger.log('🧪 Socket CLI - yao-pkg Integration Test')
+  logger.log('🧪 Socket CLI - Smol Integration Test')
   logger.log(`   Testing Node.js ${NODE_VERSION} binary with pkg`)
   logger.log()
 
@@ -87,7 +87,7 @@ async function main() {
 
     if (!existsSync(binaryPath)) {
       logger.error(`${colors.red('✗')} Custom Node.js binary not found: ${binaryPath}`)
-      logger.error('   Run: node scripts/build-yao-pkg-node.mjs')
+      logger.error('   Run: node packages/node-smol-builder/scripts/build.mjs')
       testsFailed++
       testResults.push({ name: 'Binary in cache', passed: false })
     } else {
@@ -291,7 +291,7 @@ if (isSea) {
       logger.error()
       logger.error('The custom Node.js binary has issues.')
       logger.error('Review the errors above and rebuild:')
-      logger.error('  node scripts/build-yao-pkg-node.mjs --clean')
+      logger.error('  node packages/node-smol-builder/scripts/build.mjs --clean')
       logger.error()
       process.exitCode = 1
     }

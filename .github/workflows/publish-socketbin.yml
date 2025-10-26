@@ -97,7 +97,7 @@ jobs:
         if: steps.build-binary.outcome == 'failure'
         run: |
           echo "Initial build failed, attempting clean rebuild with Node.js..."
-          node scripts/build-yao-pkg-node.mjs --clean
+          node packages/node-smol-builder/scripts/build.mjs --clean
           pnpm run build --sea -- \
             --platform=${{ matrix.platform }} \
             --arch=${{ matrix.arch }}

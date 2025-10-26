@@ -2,7 +2,7 @@
  * @fileoverview Generate Socket-specific patches for Node.js
  *
  * This script generates patches for Socket CLI's custom Node.js modifications.
- * Run this after applying yao-pkg patches but before building to capture
+ * Run this after applying patches but before building to capture
  * Socket-specific changes.
  *
  * Usage:
@@ -27,8 +27,8 @@ const versionArg = args.find(arg => arg.startsWith('--version='))
 const NODE_VERSION = versionArg ? versionArg.split('=')[1] : 'v24.10.0'
 
 const ROOT_DIR = join(__dirname, '..')
-const BUILD_DIR = join(ROOT_DIR, '.custom-node-build')
-const NODE_DIR = join(BUILD_DIR, 'node-yao-pkg')
+const BUILD_DIR = join(ROOT_DIR, 'build')
+const NODE_DIR = join(BUILD_DIR, 'node-smol')
 const PATCHES_OUTPUT_DIR = join(ROOT_DIR, 'build', 'patches', 'socket')
 
 /**

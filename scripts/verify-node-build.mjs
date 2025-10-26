@@ -31,8 +31,8 @@ const versionArg = args.find(arg => arg.startsWith('--node-version='))
 const NODE_VERSION = versionArg ? versionArg.split('=')[1] : 'v24.10.0'
 
 const ROOT_DIR = join(__dirname, '..')
-const BUILD_DIR = join(ROOT_DIR, '.custom-node-build')
-const NODE_DIR = join(BUILD_DIR, 'node-yao-pkg')
+const BUILD_DIR = join(ROOT_DIR, 'build')
+const NODE_DIR = join(BUILD_DIR, 'node-smol')
 const ARCH = process.arch
 const IS_MACOS = platform() === 'darwin'
 
@@ -96,7 +96,7 @@ function verifyNodeSourceExists() {
   info('Checking Node.js source directory...')
   if (!existsSync(NODE_DIR)) {
     error(`Node.js source directory not found: ${NODE_DIR}`)
-    error('Run: node scripts/build-yao-pkg-node.mjs')
+    error('Run: node packages/node-smol-builder/scripts/build.mjs')
     return false
   }
   success('Node.js source directory exists')
@@ -129,14 +129,14 @@ async function verifySeaModification() {
     error('lib/sea.js is NOT modified correctly')
     error('Expected: const isSea = () => true;')
     error('This is CRITICAL - pkg binaries will not detect as SEA!')
-    error('Run: node scripts/build-yao-pkg-node.mjs --clean')
+    error('Run: node packages/node-smol-builder/scripts/build.mjs --clean')
     return false
   }
 
   if (hasOriginalImport) {
     error('lib/sea.js still has original isSea import')
     error('Socket modification was not applied correctly')
-    error('Run: node scripts/build-yao-pkg-node.mjs --clean')
+    error('Run: node packages/node-smol-builder/scripts/build.mjs --clean')
     return false
   }
 
@@ -245,7 +245,7 @@ async function verifyV8IncludeFixes() {
 
   if (!allCorrect) {
     error('V8 include paths are incorrect for this Node.js version!')
-    error('Run: node scripts/build-yao-pkg-node.mjs --clean')
+    error('Run: node packages/node-smol-builder/scripts/build.mjs --clean')
     return false
   }
 
@@ -310,7 +310,7 @@ async function testBinary() {
   }
 
   // Test 1: Version check.
-  // For yao-pkg patched binaries, set PKG_EXECPATH to empty string to run as regular Node.js
+  // For smol patched binaries, set PKG_EXECPATH to empty string to run as regular Node.js.
   // See: https://github.com/yao-pkg/pkg#detect-if-the-app-is-running-as-packaged
   const versionResult = await execCapture(nodeBinary, ['--version'], {
     env: { ...process.env, PKG_EXECPATH: '' },
@@ -368,7 +368,7 @@ async function testBinary() {
   } else if (seaResult.stdout === 'SEA_NO') {
     error('Binary reports isSea() = false - Socket modification not applied!')
     error('This is CRITICAL - pkg binaries will not work correctly')
-    error('Run: node scripts/build-yao-pkg-node.mjs --clean')
+    error('Run: node packages/node-smol-builder/scripts/build.mjs --clean')
     return false
   } else {
     error(`SEA detection returned unexpected output: ${seaResult.stdout}`)
@@ -468,7 +468,7 @@ async function main() {
     )
     logger.error('')
     logger.error('To rebuild:')
-    logger.error('  node scripts/build-yao-pkg-node.mjs')
+    logger.error('  node packages/node-smol-builder/scripts/build.mjs')
     logger.error('')
     process.exitCode = 1
   } else if (hasWarnings) {
