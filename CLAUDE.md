@@ -200,12 +200,22 @@ Each command follows a consistent pattern:
 
 #### Build Artifact Standards
 **MANDATORY**: All packages follow this structure:
-- **`build/`** - Scratch location for intermediate build artifacts (GITIGNORED)
-  - Contains: `target/`, `pkg/`, `out/`, `cmake/`, `_deps/`, `wasm/`
-  - Purpose: Temporary files during build process
-- **`dist/`** - Final distribution artifacts (TRACKED when containing deliverables)
-  - Purpose: Built files ready for distribution or consumption
+- **`build/`** - Build output location for all packages (GITIGNORED)
+  - Contains build artifacts like WASM files, models, binaries, intermediate files
+  - Subdirectories: `wasm/`, `models/`, `sea/`, `out/`, `target/`, `pkg/`, `cmake/`, `_deps/`
+  - Purpose: All build outputs, both intermediate and final deliverables
+- **`dist/`** - TypeScript/Rollup compilation output (GITIGNORED)
+  - Contains: Transpiled JavaScript files from TypeScript source
+  - Purpose: Runtime-generated files for development and testing
 - **No standalone** `target/`, `pkg/`, or `out/` at package root - these belong inside `build/`
+
+**Current Build Output Locations**:
+- `packages/yoga-layout` → `build/wasm/` (WASM bindings)
+- `packages/onnx-runtime-builder` → `build/wasm/` (ONNX Runtime WASM)
+- `packages/minilm-builder` → `build/models/` (ONNX models)
+- `packages/node-sea-builder` → `build/sea/` (SEA binaries)
+- `packages/node-smol-builder` → `build/out/Release/` (Node.js binary)
+- `packages/cli` → `dist/` (TypeScript transpiled to JS)
 
 #### Documentation Hierarchy (3-Tier)
 

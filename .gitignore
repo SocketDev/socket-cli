@@ -21,6 +21,7 @@ Thumbs.db
 **/.cache
 **/coverage
 **/.type-coverage
+**/dist
 **/build
 **/node_modules
 .build-checkpoints
