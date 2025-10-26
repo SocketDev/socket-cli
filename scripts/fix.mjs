@@ -1,15 +1,15 @@
 /**
- * @fileoverview Unified auto-fix script - runs linters with auto-fix enabled.
- * Standardized across all socket-* repositories.
+ * @fileoverview Monorepo-aware auto-fix script - runs linters with auto-fix enabled.
+ * Delegates to lint.mjs with --fix flag.
  *
  * Usage:
  *   node scripts/fix.mjs [options]
  *
  * Options:
- *   --all      Fix all files (skip file filtering)
- *   --changed  Fix changed files (default behavior)
+ *   --all      Fix all packages
+ *   --changed  Fix packages with changed files (default)
  *   --quiet    Suppress progress output
- *   --staged   Fix staged files
+ *   --staged   Fix packages with staged files
  *   --verbose  Show detailed output
  */
 
@@ -52,6 +52,9 @@ async function main() {
     }
     if (values.staged) {
       lintArgs.push('--staged')
+    }
+    if (quiet) {
+      lintArgs.push('--quiet')
     }
 
     // Run lint with --fix flag.

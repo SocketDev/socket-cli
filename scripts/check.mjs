@@ -1,16 +1,23 @@
 /**
- * @fileoverview Unified check runner with flag-based configuration.
- * Runs code quality checks: ESLint and TypeScript type checking.
+ * @fileoverview Monorepo-aware check runner with flag-based configuration.
+ * Runs code quality checks: ESLint and TypeScript type checking across packages.
  */
 
 import { parseArgs } from '@socketsecurity/lib/argv/parse'
+import { getChangedFiles, getStagedFiles } from '@socketsecurity/lib/git'
 import { logger } from '@socketsecurity/lib/logger'
 import { printFooter, printHeader } from '@socketsecurity/lib/stdio/header'
+import colors from 'yoctocolors-cjs'
 
+import {
+  getAffectedPackages,
+  getPackagesWithScript,
+  runPackageScript,
+} from './utils/monorepo-helper.mjs'
 import { runCommandQuiet } from './utils/run-command.mjs'
 
 /**
- * Run ESLint check via lint script.
+ * Run ESLint check via lint script on affected packages.
  */
 async function runEslintCheck(options = {}) {
   const {
@@ -21,36 +28,54 @@ async function runEslintCheck(options = {}) {
   } = options
 
   if (!quiet) {
-    logger.progress('Checking ESLint')
+    logger.step('Running ESLint checks')
   }
 
-  const args = ['run', 'lint']
+  // Determine which packages to check.
+  let packages = []
+
   if (all) {
-    args.push('--all')
-  } else if (staged) {
-    args.push('--staged')
-  } else if (changed) {
-    args.push('--changed')
+    packages = getPackagesWithScript('lint')
+  } else {
+    // Get changed files to determine affected packages.
+    let changedFiles = []
+
+    if (staged) {
+      changedFiles = await getStagedFiles({ absolute: false })
+    } else if (changed) {
+      changedFiles = await getChangedFiles({ absolute: false })
+    } else {
+      changedFiles = await getChangedFiles({ absolute: false })
+    }
+
+    if (!changedFiles.length) {
+      if (!quiet) {
+        logger.substep('No changed files, skipping ESLint')
+        logger.error('')
+      }
+      return 0
+    }
+
+    packages = getAffectedPackages(changedFiles)
+
+    if (!packages.length) {
+      if (!quiet) {
+        logger.substep('No affected packages, skipping ESLint')
+        logger.error('')
+      }
+      return 0
+    }
   }
 
-  const result = await runCommandQuiet('pnpm', args)
-
-  if (result.exitCode !== 0) {
-    if (!quiet) {
-      logger.error('ESLint check failed')
+  // Run lint on each package.
+  for (const pkg of packages) {
+    const exitCode = await runPackageScript(pkg, 'lint', [], quiet)
+    if (exitCode !== 0) {
+      return exitCode
     }
-    if (result.stdout) {
-      console.log(result.stdout)
-    }
-    if (result.stderr) {
-      console.error(result.stderr)
-    }
-    return result.exitCode
   }
 
   if (!quiet) {
-    logger.clearLine().done('ESLint check passed')
-    // Add newline after message (use error to write to same stream)
     logger.error('')
   }
 
@@ -58,33 +83,60 @@ async function runEslintCheck(options = {}) {
 }
 
 /**
- * Run TypeScript type check.
+ * Run TypeScript type check across all packages with type script.
  */
 async function runTypeCheck(options = {}) {
   const { quiet = false } = options
 
   if (!quiet) {
-    logger.progress('Checking TypeScript')
+    logger.step('Running TypeScript checks')
   }
 
-  const result = await runCommandQuiet('pnpm', ['run', 'type'])
+  const packages = getPackagesWithScript('type')
 
-  if (result.exitCode !== 0) {
+  if (!packages.length) {
     if (!quiet) {
-      logger.error('TypeScript check failed')
+      logger.substep('No packages with type checking')
+      logger.error('')
     }
-    if (result.stdout) {
-      console.log(result.stdout)
+    return 0
+  }
+
+  // Run type check on each package.
+  for (const pkg of packages) {
+    const displayName = pkg.displayName || pkg.name
+
+    if (!quiet) {
+      logger.progress(`${displayName}: checking types`)
     }
-    if (result.stderr) {
-      console.error(result.stderr)
+
+    const result = await runCommandQuiet(
+      'pnpm',
+      ['--filter', pkg.name, 'run', 'type'],
+      { cwd: process.cwd() },
+    )
+
+    if (result.exitCode !== 0) {
+      if (!quiet) {
+        logger.clearLine()
+        console.log(`${colors.red('✗')} ${displayName}`)
+      }
+      if (result.stdout) {
+        console.log(result.stdout)
+      }
+      if (result.stderr) {
+        console.error(result.stderr)
+      }
+      return result.exitCode
     }
-    return result.exitCode
+
+    if (!quiet) {
+      logger.clearLine()
+      console.log(`${colors.green('✓')} ${displayName}`)
+    }
   }
 
   if (!quiet) {
-    logger.clearLine().done('TypeScript check passed')
-    // Add newline after message (use error to write to same stream)
     logger.error('')
   }
 
@@ -93,64 +145,40 @@ async function runTypeCheck(options = {}) {
 
 async function main() {
   try {
-    // Parse arguments
+    // Parse arguments.
     const { values } = parseArgs({
       options: {
-        help: {
-          type: 'boolean',
-          default: false,
-        },
-        lint: {
-          type: 'boolean',
-          default: false,
-        },
-        types: {
-          type: 'boolean',
-          default: false,
-        },
-        all: {
-          type: 'boolean',
-          default: false,
-        },
-        staged: {
-          type: 'boolean',
-          default: false,
-        },
-        changed: {
-          type: 'boolean',
-          default: false,
-        },
-        quiet: {
-          type: 'boolean',
-          default: false,
-        },
-        silent: {
-          type: 'boolean',
-          default: false,
-        },
+        help: { type: 'boolean', default: false },
+        lint: { type: 'boolean', default: false },
+        types: { type: 'boolean', default: false },
+        all: { type: 'boolean', default: false },
+        staged: { type: 'boolean', default: false },
+        changed: { type: 'boolean', default: false },
+        quiet: { type: 'boolean', default: false },
+        silent: { type: 'boolean', default: false },
       },
       allowPositionals: false,
       strict: false,
     })
 
-    // Show help if requested
+    // Show help if requested.
     if (values.help) {
-      console.log('Check Runner')
+      console.log('Monorepo Check Runner')
       console.log('\nUsage: pnpm check [options]')
       console.log('\nOptions:')
       console.log('  --help         Show this help message')
       console.log('  --lint         Run ESLint check only')
       console.log('  --types        Run TypeScript check only')
-      console.log('  --all          Check all files (passes to lint)')
-      console.log('  --staged       Check staged files (passes to lint)')
-      console.log('  --changed      Check changed files (passes to lint)')
+      console.log('  --all          Check all packages')
+      console.log('  --staged       Check packages with staged files')
+      console.log('  --changed      Check packages with changed files')
       console.log('  --quiet, --silent  Suppress progress messages')
       console.log('\nExamples:')
-      console.log('  pnpm check             # Run all checks on changed files')
-      console.log('  pnpm check --all       # Run all checks on all files')
+      console.log('  pnpm check             # Run all checks on changed packages')
+      console.log('  pnpm check --all       # Run all checks on all packages')
       console.log('  pnpm check --lint      # Run ESLint only')
       console.log('  pnpm check --types     # Run TypeScript only')
-      console.log('  pnpm check --lint --staged  # Run ESLint on staged files')
+      console.log('  pnpm check --lint --staged  # Run ESLint on staged packages')
       process.exitCode = 0
       return
     }
@@ -159,13 +187,13 @@ async function main() {
     const runAll = !values.lint && !values.types
 
     if (!quiet) {
-      printHeader('Check Runner')
-      logger.step('Running code quality checks')
+      printHeader('Monorepo Check Runner')
+      console.log('')
     }
 
     let exitCode = 0
 
-    // Run ESLint check if requested or running all
+    // Run ESLint check if requested or running all.
     if (runAll || values.lint) {
       exitCode = await runEslintCheck({
         all: values.all,
@@ -182,7 +210,7 @@ async function main() {
       }
     }
 
-    // Run TypeScript check if requested or running all
+    // Run TypeScript check if requested or running all.
     if (runAll || values.types) {
       exitCode = await runTypeCheck({ quiet })
       if (exitCode !== 0) {
