@@ -43,7 +43,7 @@ export interface HandlePatchStatusConfig {
     failed: boolean
   }
   outputKind: OutputKind
-  spinner: Spinner
+  spinner: Spinner | null
 }
 
 /**
@@ -188,7 +188,7 @@ export async function handlePatchStatus({
   spinner,
 }: HandlePatchStatusConfig): Promise<void> {
   try {
-    spinner.start('Reading patch manifest')
+    spinner?.start('Reading patch manifest')
 
     const dotSocketDirPath = normalizePath(path.join(cwd, DOT_SOCKET_DIR))
     const manifestPath = normalizePath(
@@ -198,7 +198,7 @@ export async function handlePatchStatus({
     const manifestData = JSON.parse(manifestContent)
     const validated = PatchManifestSchema.parse(manifestData)
 
-    spinner.text('Checking patch status')
+    spinner?.start('Checking patch status')
 
     const statuses: PatchStatus[] = []
 
@@ -224,7 +224,7 @@ export async function handlePatchStatus({
       })
     }
 
-    spinner.stop()
+    spinner?.stop()
 
     // Apply filters.
     let filteredStatuses = statuses
@@ -257,7 +257,7 @@ export async function handlePatchStatus({
       outputKind,
     )
   } catch (e) {
-    spinner.stop()
+    spinner?.stop()
 
     let message = 'Failed to get patch status'
     let cause = getErrorCause(e)

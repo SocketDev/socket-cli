@@ -104,7 +104,7 @@ export async function handleCreateNewScan({
   }
 
   const spinner = getSpinner()
-  const supportedFilesCResult = await fetchSupportedScanFileNames({ spinner })
+  const supportedFilesCResult = await fetchSupportedScanFileNames({ spinner: spinner ?? undefined })
   if (!supportedFilesCResult.ok) {
     debug('Failed to fetch supported scan file names')
     debugDir({ supportedFilesCResult })
@@ -164,7 +164,7 @@ export async function handleCreateNewScan({
       packagePaths,
       reachabilityOptions: reach,
       repoName,
-      spinner,
+      spinner: spinner ?? undefined,
     })
 
     spinner?.stop()
@@ -247,7 +247,7 @@ export async function handleCreateNewScan({
       )
     }
   } else {
-    spinner.stop()
+    spinner?.stop()
 
     await outputCreateNewScan(fullScanCResult, { interactive, outputKind })
   }

@@ -29,7 +29,7 @@ export interface HandlePatchGetConfig {
   outputDir: string | undefined
   outputKind: OutputKind
   purl: string
-  spinner: Spinner
+  spinner: Spinner | null
 }
 
 export async function handlePatchGet({

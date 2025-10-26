@@ -37,7 +37,7 @@ export interface HandlePatchListConfig {
   cwd: string
   interactive: boolean
   outputKind: OutputKind
-  spinner: Spinner
+  spinner: Spinner | null
 }
 
 export async function handlePatchList({

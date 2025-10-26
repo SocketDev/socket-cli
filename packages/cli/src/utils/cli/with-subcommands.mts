@@ -875,8 +875,8 @@ export async function meowWithSubcommands(
       (helpFlag || helpCategory !== null) &&
       !cli2.flags['helpFull'] &&
       !helpCategory &&
-      process.env.VITEST !== '1' &&
-      process.env.CI !== 'true'
+      process.env['VITEST'] !== '1' &&
+      process.env['CI'] !== 'true'
 
     if (shouldShowInteractive) {
       // Show interactive help for root --help command

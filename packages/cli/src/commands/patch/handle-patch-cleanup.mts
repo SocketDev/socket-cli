@@ -29,7 +29,7 @@ export interface HandlePatchCleanupConfig {
   all: boolean
   cwd: string
   outputKind: OutputKind
-  spinner: Spinner
+  spinner: Spinner | null
   uuid: string | undefined
 }
 

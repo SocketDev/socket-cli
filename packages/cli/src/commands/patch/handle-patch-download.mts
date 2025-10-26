@@ -52,7 +52,7 @@ export type HandlePatchDownloadConfig = {
   cwd: string
   outputKind: OutputKind
   scanId?: string
-  spinner: Spinner
+  spinner: Spinner | null
   uuids: string[]
 }
 
@@ -124,7 +124,7 @@ export async function handlePatchDownload({
   // Setup SDK.
   const sdkResult = await setupSdk()
   if (!sdkResult.ok) {
-    spinner.failAndStop('Failed to initialize Socket SDK')
+    spinner?.failAndStop('Failed to initialize Socket SDK')
     await outputPatchDownloadResult(
       {
         ok: false,
@@ -141,7 +141,7 @@ export async function handlePatchDownload({
   // Get organization slug.
   const orgSlug = await getOrgSlug(sdk)
   if (!orgSlug) {
-    spinner.failAndStop('Failed to determine organization')
+    spinner?.failAndStop('Failed to determine organization')
 
     // Check if SOCKET_CLI_API_TOKEN is set to provide helpful guidance.
     const hasEnvToken = !!ENV.SOCKET_CLI_API_TOKEN
@@ -164,10 +164,10 @@ export async function handlePatchDownload({
   let patchUuids = uuids
 
   if (scanId) {
-    spinner.start('Fetching patches from scan...')
+    spinner?.start('Fetching patches from scan...')
     const scanUuids = await collectPatchesFromScan(sdk, orgSlug, scanId)
     if (!scanUuids.length) {
-      spinner.failAndStop('No patches found in scan')
+      spinner?.failAndStop('No patches found in scan')
       await outputPatchDownloadResult(
         {
           ok: false,
@@ -179,13 +179,13 @@ export async function handlePatchDownload({
       return
     }
     patchUuids = scanUuids
-    spinner.successAndStop(
+    spinner?.successAndStop(
       `Found ${patchUuids.length} ${pluralize('patch', { count: patchUuids.length })} in scan`,
     )
   }
 
   if (!patchUuids.length) {
-    spinner.failAndStop('No patches to download')
+    spinner?.failAndStop('No patches to download')
     await outputPatchDownloadResult(
       {
         ok: false,
@@ -205,7 +205,7 @@ export async function handlePatchDownload({
 
   for (const uuid of patchUuids) {
     try {
-      spinner.start(`Downloading patch ${uuid}...`)
+      spinner?.start(`Downloading patch ${uuid}...`)
       // eslint-disable-next-line no-await-in-loop
       await downloadPatch(sdk, orgSlug, uuid, cwd)
       // eslint-disable-next-line no-await-in-loop
@@ -214,9 +214,9 @@ export async function handlePatchDownload({
         purl: patchDetails.purl,
         uuid,
       })
-      spinner.successAndStop(`Downloaded patch ${uuid}`)
+      spinner?.successAndStop(`Downloaded patch ${uuid}`)
     } catch (e: any) {
-      spinner.failAndStop(`Failed to download patch ${uuid}`)
+      spinner?.failAndStop(`Failed to download patch ${uuid}`)
       results.failed.push({
         error: e.message,
         uuid,
