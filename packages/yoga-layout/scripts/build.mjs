@@ -126,6 +126,7 @@ async function configure() {
     '-ffunction-sections', // Separate functions for better dead code elimination.
     '-fdata-sections', // Separate data sections.
     '-ffast-math', // Fast math optimizations (performance).
+    '-fno-finite-math-only', // Re-enable infinity checks (Yoga needs this).
   ].join(' ')
 
   const linkerFlags = [

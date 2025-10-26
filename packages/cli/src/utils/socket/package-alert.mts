@@ -47,7 +47,7 @@ import type {
   CompactSocketArtifactAlert,
   CveProps,
 } from '../alert/artifact.mts'
-import type { PURL_Type } from '../ecosystem/ecosystem.mjs'
+import type { PURL_Type } from '../ecosystem/types.mjs'
 import type { SocketYml } from '@socketsecurity/config'
 import type { Spinner } from '@socketsecurity/lib/spinner'
 
