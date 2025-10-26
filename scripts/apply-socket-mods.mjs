@@ -18,8 +18,8 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
 const ROOT_DIR = join(__dirname, '..')
-const BUILD_DIR = join(ROOT_DIR, '.custom-node-build')
-const NODE_DIR = join(BUILD_DIR, 'node-yao-pkg')
+const BUILD_DIR = join(ROOT_DIR, 'build')
+const NODE_DIR = join(BUILD_DIR, 'node-smol')
 
 /**
  * Fix V8 include paths
@@ -146,7 +146,7 @@ async function main() {
   logger.log('🎉 All modifications applied!')
   logger.log()
   logger.log('📝 To generate patches:')
-  logger.log('   cd .custom-node-build/node-yao-pkg')
+  logger.log('   cd build/node-smol')
   logger.log('   git diff > ../../build/patches/socket/my-changes.patch')
   logger.log()
 }

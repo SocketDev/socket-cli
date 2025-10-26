@@ -40,13 +40,13 @@ jobs:
         with:
           autocrlf: false
           sparse-checkout: |
-            scripts/build-yao-pkg-node.mjs
+            packages/node-smol-builder/scripts/build.mjs
 
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version: '20'
 
-      - name: Detect latest yao-pkg Node version
+      - name: Detect latest smol Node version
         id: detect
         run: |
           if [ -n "${{ env.NODE_VERSION }}" ]; then
@@ -118,8 +118,8 @@ jobs:
         run: |
           echo "=== Testing fallback mechanism by corrupting Node build ==="
           # Create a corrupted/incomplete Node build to trigger fallback.
-          mkdir -p .custom-node-build/node-yao-pkg/out/Release
-          echo "corrupt" > .custom-node-build/node-yao-pkg/out/Release/node
+          mkdir -p build/node-smol/out/Release
+          echo "corrupt" > build/node-smol/out/Release/node
 
           # Initial build should fail.
           set +e
@@ -136,7 +136,7 @@ jobs:
           echo "Now testing fallback with clean rebuild..."
 
           # Fallback with clean rebuild should succeed.
-          node scripts/build-yao-pkg-node.mjs --clean --node-version=${{ needs.detect-node-version.outputs.node_version }}
+          node packages/node-smol-builder/scripts/build.mjs --clean --node-version=${{ needs.detect-node-version.outputs.node_version }}
           pnpm run build --sea -- --platform=${{ matrix.platform }} --arch=${{ matrix.arch }}
 
           echo "Fallback build succeeded!"

@@ -139,7 +139,7 @@ function verifyCustomNode() {
 
   if (!existsSync(CUSTOM_NODE_PATH)) {
     logger.fail(`Custom Node binary not found: ${CUSTOM_NODE_PATH}`)
-    logger.substep('Run: node scripts/build-yao-pkg-node.mjs')
+    logger.substep('Run: node packages/node-smol-builder/scripts/build.mjs')
     process.exit(1)
   }
 
@@ -257,7 +257,7 @@ async function main() {
   logger.fail('Custom Node binary has issues')
   logger.substep('Review test output above for details')
   logger.substep(
-    'Consider rebuilding: node scripts/build-yao-pkg-node.mjs --clean',
+    'Consider rebuilding: node packages/node-smol-builder/scripts/build.mjs --clean',
   )
   logger.logNewline()
   process.exit(1)

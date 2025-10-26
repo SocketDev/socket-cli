@@ -1,5 +1,5 @@
 /**
- * @fileoverview Check and optionally install build dependencies for yao-pkg
+ * @fileoverview Check and optionally install build dependencies for smol
  *
  * This script verifies that all required build dependencies are available:
  * - Build tools (gcc, g++, make, python)
@@ -246,11 +246,11 @@ async function main() {
 
   // Check existing build
   const nodeBuilt = existsSync(
-    '.custom-node-build/node-yao-pkg/out/Release/node',
+    'build/node-smol/out/Release/node',
   )
   if (nodeBuilt) {
     logger.log(`${colors.green('✓')} Custom Node.js binary already built`)
-    logger.log('   Location: .custom-node-build/node-yao-pkg/out/Release/node')
+    logger.log('   Location: build/node-smol/out/Release/node')
     logger.log()
   }
 
