@@ -199,23 +199,49 @@ Each command follows a consistent pattern:
 ### Repository Structure & Documentation
 
 #### Build Artifact Standards
-**MANDATORY**: All packages follow this structure:
-- **`build/`** - Build output location for all packages (GITIGNORED)
-  - Contains build artifacts like WASM files, models, binaries, intermediate files
-  - Subdirectories: `wasm/`, `models/`, `sea/`, `out/`, `target/`, `pkg/`, `cmake/`, `_deps/`
-  - Purpose: All build outputs, both intermediate and final deliverables
-- **`dist/`** - TypeScript/Rollup compilation output (GITIGNORED)
-  - Contains: Transpiled JavaScript files from TypeScript source
-  - Purpose: Runtime-generated files for development and testing
-- **No standalone** `target/`, `pkg/`, or `out/` at package root - these belong inside `build/`
 
-**Current Build Output Locations**:
-- `packages/yoga-layout` → `build/wasm/` (WASM bindings)
-- `packages/onnx-runtime-builder` → `build/wasm/` (ONNX Runtime WASM)
-- `packages/minilm-builder` → `build/models/` (ONNX models)
-- `packages/node-sea-builder` → `build/sea/` (SEA binaries)
-- `packages/node-smol-builder` → `build/out/Release/` (Node.js binary)
-- `packages/cli` → `dist/` (TypeScript transpiled to JS)
+**MANDATORY**: All packages follow the build/dist pattern with archive support.
+
+**Philosophy**:
+- **`build/`** (gitignored) = Workspace + archive of historical builds
+- **`dist/`** (tracked) = Blessed canonical releases that ship
+
+**Structure**:
+```
+packages/<package>/
+├── build/                    # Gitignored workspace + archive
+│   ├── tmp/                  # Current build intermediates (cmake, obj files, etc.)
+│   ├── cache/                # Download caches, source clones
+│   └── archive/              # Historical completed builds
+│       ├── YYYY-MM-DD-NNN-description/
+│       └── latest/           # Symlink to most recent build
+└── dist/                     # Tracked canonical releases
+    └── <final-artifacts>
+```
+
+**Benefits**:
+- **Experimentation**: Try different optimization levels without losing previous builds
+- **Comparison**: Easy A/B testing of build configurations
+- **Rollback**: Keep working builds when experimenting
+- **History**: Understand what changed between builds
+- **Debugging**: Compare artifacts when tracking down issues
+
+**Package-Specific Patterns**:
+- `packages/yoga-layout` → `build/archive/*/` (WASM builds), `dist/` (blessed yoga.wasm + yoga.js)
+- `packages/minilm-builder` → `build/archive/*/` (model variants), `dist/` (blessed model.onnx)
+- `packages/node-sea-builder` → `build/archive/*/` (SEA variants), `dist/` (blessed SEA binaries)
+- `packages/node-smol-builder` → `build/archive/*/` (Node.js variants), `dist/` (blessed node binary)
+- `packages/cli` → `dist/` (ephemeral Rollup output, gitignored via packages/cli/.gitignore)
+
+**Promotion Workflow**:
+1. Build → `build/tmp/` (intermediates)
+2. Success → `build/archive/<timestamp-config>/` (completed build)
+3. Update → `build/archive/latest` symlink
+4. Test and validate
+5. Promote → Copy `build/archive/latest/*` → `dist/` (blessed release)
+6. Commit `dist/` changes to git
+
+**See**: `docs/build/build-dist-structure.md` for complete documentation
 
 #### Documentation Hierarchy (3-Tier)
 
