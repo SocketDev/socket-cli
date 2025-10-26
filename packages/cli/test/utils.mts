@@ -16,14 +16,18 @@ import {
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
+// Set VITEST environment variable for test runs.
+// This disables interactive help menus in spawned CLI processes.
+// Must be set on process.env directly (not spread) to preserve
+// Windows environment variable proxy behavior.
+if (!process.env['VITEST']) {
+  process.env['VITEST'] = '1'
+}
+
 // Backward compatibility object for tests.
 const constants = {
   execPath,
-  processEnv: {
-    ...process.env,
-    // Disable interactive help menu in spawned CLI processes during tests.
-    VITEST: '1',
-  },
+  processEnv: process.env,
 }
 
 // The asciiUnsafeRegexp match characters that are:
