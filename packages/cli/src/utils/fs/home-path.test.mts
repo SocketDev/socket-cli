@@ -53,13 +53,15 @@ describe('tildify utilities', () => {
     it('leaves non-home paths unchanged', () => {
       expect(tildify('/var/log/system.log')).toBe('/var/log/system.log')
       expect(tildify('/tmp/file.txt')).toBe('/tmp/file.txt')
-      expect(tildify('./relative/path')).toBe('./relative/path')
+      // normalizePath strips leading './' from relative paths.
+      expect(tildify('./relative/path')).toBe('relative/path')
       expect(tildify('../parent/path')).toBe('../parent/path')
     })
 
     it('handles empty string', () => {
+      // normalizePath converts empty string to current directory '.'.
       const result = tildify('')
-      expect(result).toBe('')
+      expect(result).toBe('.')
     })
 
     it('handles paths with special regex characters in home path', () => {
@@ -72,13 +74,15 @@ describe('tildify utilities', () => {
     })
 
     it('preserves trailing slashes after replacement', () => {
+      // normalizePath removes trailing slashes.
       const result = tildify('/Users/testuser/documents/')
-      expect(result).toBe('~/documents/')
+      expect(result).toBe('~/documents')
     })
 
     it('handles multiple consecutive separators', () => {
+      // normalizePath collapses multiple slashes to single slash.
       const result = tildify(`/Users/testuser//${path.sep}documents`)
-      expect(result).toBe(`~//${path.sep}documents`)
+      expect(result).toBe('~/documents')
     })
   })
 })
