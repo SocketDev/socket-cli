@@ -174,8 +174,8 @@ importers:
         specifier: 3.0.1
         version: 3.0.1
       '@socketsecurity/lib':
-        specifier: 1.3.4
-        version: 1.3.4(typescript@5.9.3)
+        specifier: link:../socket-lib
+        version: link:../socket-lib
       '@socketsecurity/registry':
         specifier: 2.0.0
         version: 2.0.0(typescript@5.9.3)
@@ -2142,15 +2142,6 @@ packages:
 
   '@socketsecurity/lib@1.3.3':
     resolution: {integrity: sha512-KxtVlsJCuaTLGZaQmdRpFUDe+X5/yj9fpGzA8ymMyytu1LF++01okg/Swgwco6kGT+XMtQSkiblfDuKJAdIdTQ==}
-    engines: {node: '>=22'}
-    peerDependencies:
-      typescript: '>=5.0.0'
-    peerDependenciesMeta:
-      typescript:
-        optional: true
-
-  '@socketsecurity/lib@1.3.4':
-    resolution: {integrity: sha512-v0+8naHDbbj3ia83oZrgLWBTnr8U5Nw8UY2wFbsMvTu7+Of5NPAIVfHTNMTg+2MaxVjWelrEdNj3ubMkVAUY4Q==}
     engines: {node: '>=22'}
     peerDependencies:
       typescript: '>=5.0.0'
@@ -7580,10 +7571,6 @@ snapshots:
       yaml: 2.8.1
 
   '@socketsecurity/lib@1.3.3(typescript@5.9.3)':
-    optionalDependencies:
-      typescript: 5.9.3
-
-  '@socketsecurity/lib@1.3.4(typescript@5.9.3)':
     optionalDependencies:
       typescript: 5.9.3
 
