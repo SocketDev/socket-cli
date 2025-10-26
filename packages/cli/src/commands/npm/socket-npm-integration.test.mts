@@ -51,10 +51,6 @@ if (!npmDirs.length) {
           // Ensure npm is installed in the fixture.
           await spawn('npm', ['install', ...(useDebug ? [] : [FLAG_SILENT])], {
             cwd: npmPath,
-            env: {
-              ...process.env,
-              PATH: `${npmBinPath}${pathSep}${ENV.PATH}`,
-            },
             stdio: useDebug ? 'inherit' : 'ignore',
           })
 
