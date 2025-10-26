@@ -62,7 +62,7 @@ async function execCapture(command, args = [], options = {}) {
  * Log error.
  */
 function error(message) {
-  logger.error(`❌ ${message}`)
+  logger.error(`${colors.red('✗')} ${message}`)
   hasErrors = true
 }
 
@@ -70,7 +70,7 @@ function error(message) {
  * Log warning.
  */
 function warn(message) {
-  logger.warn(`⚠️  ${message}`)
+  logger.warn(`${colors.yellow('⚠')}  ${message}`)
   hasWarnings = true
 }
 
@@ -78,7 +78,7 @@ function warn(message) {
  * Log success.
  */
 function success(message) {
-  logger.log(`✅ ${message}`)
+  logger.log(`${colors.green('✓')} ${message}`)
 }
 
 /**
@@ -332,7 +332,7 @@ async function testBinary() {
   // Test 2: Execute simple script.
   const execResult = await execCapture(
     nodeBinary,
-    ['-e', 'console.log("OK")'],
+    ['-e', 'logger.log("OK")'],
     {
       env: { ...process.env, PKG_EXECPATH: '' },
     },
@@ -349,7 +349,7 @@ async function testBinary() {
   // Test 3: SEA detection.
   const seaScript = `
     const sea = require('node:sea');
-    console.log(sea.isSea() ? 'SEA_YES' : 'SEA_NO');
+    logger.log(sea.isSea() ? 'SEA_YES' : 'SEA_NO');
   `
 
   const seaResult = await execCapture(nodeBinary, ['-e', seaScript], {
@@ -460,7 +460,7 @@ async function main() {
   logger.log('')
 
   if (hasErrors) {
-    logger.error('❌ VERIFICATION FAILED')
+    logger.error(`${colors.red('✗')} VERIFICATION FAILED`)
     logger.error('')
     logger.error(
       'Critical issues were found. Please fix them before using this build.',
@@ -471,12 +471,12 @@ async function main() {
     logger.error('')
     process.exitCode = 1
   } else if (hasWarnings) {
-    logger.warn('⚠️  VERIFICATION PASSED WITH WARNINGS')
+    logger.warn(`${colors.yellow('⚠')}  VERIFICATION PASSED WITH WARNINGS`)
     logger.warn('')
     logger.warn('Build is functional but has non-critical issues.')
     logger.warn('')
   } else {
-    logger.log('✅ ALL VERIFICATIONS PASSED')
+    logger.log(`${colors.green('✓')} ALL VERIFICATIONS PASSED`)
     logger.log('')
     logger.log('Node.js binary is correctly built and ready for use with pkg.')
     logger.log('')
@@ -485,6 +485,6 @@ async function main() {
 
 // Run main function.
 main().catch(e => {
-  logger.error('❌ Verification failed:', e.message)
+  logger.error(`${colors.red('✗')} Verification failed:`, e.message)
   process.exitCode = 1
 })

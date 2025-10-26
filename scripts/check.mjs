@@ -119,20 +119,20 @@ async function runTypeCheck(options = {}) {
     if (result.exitCode !== 0) {
       if (!quiet) {
         logger.clearLine()
-        console.log(`${colors.red('✗')} ${displayName}`)
+        logger.log(`${colors.red('✗')} ${displayName}`)
       }
       if (result.stdout) {
-        console.log(result.stdout)
+        logger.log(result.stdout)
       }
       if (result.stderr) {
-        console.error(result.stderr)
+        logger.error(result.stderr)
       }
       return result.exitCode
     }
 
     if (!quiet) {
       logger.clearLine()
-      console.log(`${colors.green('✓')} ${displayName}`)
+      logger.log(`${colors.green('✓')} ${displayName}`)
     }
   }
 
@@ -163,22 +163,22 @@ async function main() {
 
     // Show help if requested.
     if (values.help) {
-      console.log('Monorepo Check Runner')
-      console.log('\nUsage: pnpm check [options]')
-      console.log('\nOptions:')
-      console.log('  --help         Show this help message')
-      console.log('  --lint         Run ESLint check only')
-      console.log('  --types        Run TypeScript check only')
-      console.log('  --all          Check all packages')
-      console.log('  --staged       Check packages with staged files')
-      console.log('  --changed      Check packages with changed files')
-      console.log('  --quiet, --silent  Suppress progress messages')
-      console.log('\nExamples:')
-      console.log('  pnpm check             # Run all checks on changed packages')
-      console.log('  pnpm check --all       # Run all checks on all packages')
-      console.log('  pnpm check --lint      # Run ESLint only')
-      console.log('  pnpm check --types     # Run TypeScript only')
-      console.log('  pnpm check --lint --staged  # Run ESLint on staged packages')
+      logger.log('Monorepo Check Runner')
+      logger.log('\nUsage: pnpm check [options]')
+      logger.log('\nOptions:')
+      logger.log('  --help         Show this help message')
+      logger.log('  --lint         Run ESLint check only')
+      logger.log('  --types        Run TypeScript check only')
+      logger.log('  --all          Check all packages')
+      logger.log('  --staged       Check packages with staged files')
+      logger.log('  --changed      Check packages with changed files')
+      logger.log('  --quiet, --silent  Suppress progress messages')
+      logger.log('\nExamples:')
+      logger.log('  pnpm check             # Run all checks on changed packages')
+      logger.log('  pnpm check --all       # Run all checks on all packages')
+      logger.log('  pnpm check --lint      # Run ESLint only')
+      logger.log('  pnpm check --types     # Run TypeScript only')
+      logger.log('  pnpm check --lint --staged  # Run ESLint on staged packages')
       process.exitCode = 0
       return
     }
@@ -188,7 +188,7 @@ async function main() {
 
     if (!quiet) {
       printHeader('Monorepo Check Runner')
-      console.log('')
+      logger.log('')
     }
 
     let exitCode = 0

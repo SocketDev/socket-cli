@@ -7,6 +7,8 @@
 
 import { spawnSync } from 'node:child_process'
 import process from 'node:process'
+import { logger } from '@socketsecurity/lib/logger'
+import colors from 'yoctocolors-cjs'
 
 const TARGET_PACKAGES = {
   __proto__: null,
@@ -41,8 +43,8 @@ for (let i = 0; i < args.length; i++) {
 
 const packageFilter = TARGET_PACKAGES[target]
 if (!packageFilter) {
-  console.error(`Unknown build target: ${target}`)
-  console.error(`Available targets: ${Object.keys(TARGET_PACKAGES).join(', ')}`)
+  logger.error(`Unknown build target: ${target}`)
+  logger.error(`Available targets: ${Object.keys(TARGET_PACKAGES).join(', ')}`)
   process.exit(1)
 }
 

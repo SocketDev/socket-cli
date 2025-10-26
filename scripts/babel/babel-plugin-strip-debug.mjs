@@ -14,7 +14,7 @@
  *
  * Usage in code:
  *   if (DEBUG) {
- *     console.log('debug info')
+ *     logger.log('debug info')
  *   }
  *   // In production build: entire block removed
  *

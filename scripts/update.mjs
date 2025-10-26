@@ -117,7 +117,7 @@ async function main() {
       printError(`Update failed: ${error.message}`)
     }
     if (verbose) {
-      console.error(error)
+      logger.error(error)
     }
     process.exitCode = 1
   }
