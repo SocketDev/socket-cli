@@ -4716,7 +4716,7 @@ Fix all issues by making necessary file changes. Be direct, don't ask questions.
             const child = spawn(scriptCmd, [], {
               stdio: 'inherit',
               cwd: rootPath,
-              shell: true,
+              ...(WIN32 && { shell: true }),
             })
 
             // Handle Ctrl+C gracefully
@@ -5036,7 +5036,7 @@ Fix the issue by making necessary file changes. Be direct, don't ask questions.`
                   const child = spawn(scriptCmd, [], {
                     stdio: 'inherit',
                     cwd: rootPath,
-                    shell: true,
+                    ...(WIN32 && { shell: true }),
                   })
 
                   // Handle Ctrl+C gracefully
