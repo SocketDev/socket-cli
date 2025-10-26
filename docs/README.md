@@ -21,11 +21,16 @@
 - [Unified binary design](architecture/unified-binary.md)
 
 ### Build System
+- [Build process overview](build/build-process.md)
+- [Build quick start](build/build-quick-start.md)
 - [Build system summary](build/build-system-summary.md)
+- [Build toolchain setup](build/build-toolchain-setup.md)
+- [Builds created](build/builds-created.md)
 - [Node.js build order](build/node-build-order-explained.md)
 - [Node.js build quick reference](build/node-build-quick-reference.md)
 - [Node.js patch creation guide](build/node-patch-creation-guide.md)
 - [Node.js patch metadata](build/node-patch-metadata.md)
+- [WASM build guide](build/wasm-build-guide.md)
 
 ### Configuration
 - [Configuration migration guide](configuration/configuration-migration.md)
