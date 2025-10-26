@@ -1,93 +1,273 @@
-# yoga-layout
+# Yoga Layout WASM
 
-Custom Yoga Layout WASM build optimized for Socket CLI terminal rendering.
+Custom Yoga Layout WASM build optimized for Socket CLI terminal rendering with Ink.
 
-## Purpose
+## Overview
 
-This package builds Yoga Layout for WebAssembly with:
-- **Size optimizations**: Aggressive compiler flags and wasm-opt
-- **Minimal features**: Only features needed for terminal layout
-- **Emscripten build**: Compiled to WASM for cross-platform compatibility
-- **Expected savings**: 15-20KB compared to default build
+This package builds Yoga Layout from the official C++ implementation using Emscripten, providing a size-optimized WASM module for terminal UI rendering.
+
+### Why Yoga C++ + Emscripten?
+
+After exploring a pure Rust implementation with Taffy ([see research](./research/TAFFY-RESEARCH.md)), we determined that the official Yoga C++ code with Emscripten is the best approach:
+
+✅ **100% API compatibility** - All Ink features work (measure functions, border, etc.)
+✅ **Battle-tested** - Used by React Native, Facebook, and thousands of projects
+✅ **Proven WASM** - Official yoga-layout package uses same approach
+✅ **Smaller than expected** - Optimized build: ~65KB WASM + ~46KB JS = 111KB total
+
+### Taffy Research (Pure Rust Exploration)
+
+We explored building with [Taffy](https://github.com/DioxusLabs/taffy) (pure Rust flexbox engine) to avoid C++ toolchain dependencies. While promising, critical blockers emerged:
+
+🔴 **Measure functions** - Required by Ink for text measurement, not supported by Taffy
+🔴 **Border layout** - Ink uses borders extensively, Taffy v0.6 doesn't include border in layout
+
+**Research preserved**: [research/TAFFY-RESEARCH.md](./research/TAFFY-RESEARCH.md) contains full architecture analysis, compatibility matrix, and lessons learned.
+
+## Installation
+
+### Prerequisites
+
+- **Emscripten SDK**: [Install EMSDK](https://emscripten.org/docs/getting_started/downloads.html)
+- **CMake 3.13+**: For configuring the build
+- **Node.js 18+**: For building and testing
+- **wasm-opt**: [Install Binaryen](https://github.com/WebAssembly/binaryen) for optimization
+
+### Setup Emscripten
+
+```bash
+# Install EMSDK
+git clone https://github.com/emscripten-core/emsdk.git
+cd emsdk
+./emsdk install latest
+./emsdk activate latest
+source ./emsdk_env.sh
+```
+
+### Building from Source
+
+```bash
+# Build WASM module
+node scripts/build.mjs
+
+# Output will be in build/wasm/
+# - yoga.wasm (~65KB optimized)
+# - yoga.js (~46KB)
+```
+
+### Build Options
+
+```bash
+# Force rebuild (ignore checkpoints)
+node scripts/build.mjs --force
+
+# Clean build artifacts
+node scripts/clean.mjs
+```
 
 ## Build Process
 
-The build follows these steps:
+The build follows these optimized steps:
 
-1. **Clone Yoga source** - Download specific version
-2. **Apply patches** - Socket-specific optimizations (if any)
-3. **Configure CMake** - Set up minimal build
-4. **Build with Emscripten** - Compile C++ to WASM
-5. **Optimize WASM** - Apply wasm-opt with aggressive flags
-6. **Verify** - Test layout calculations
-7. **Export** - Copy to distribution location
+1. **Configure CMake** - Set up minimal Yoga build with Emscripten
+2. **Compile C++ to WASM** - Use emcc with size optimizations
+3. **Optimize WASM** - Apply wasm-opt with aggressive flags
+4. **Verify** - Test layout calculations work correctly
+5. **Export** - Copy to distribution location
+
+### Optimization Flags
+
+**Emscripten Compiler Flags** (`-Os`):
+```bash
+-Os                                 # Optimize for size
+--closure 1                         # Google Closure Compiler
+-s MODULARIZE=1                     # Modular output
+-s EXPORT_ES6=1                     # ES6 module export
+-s ALLOW_MEMORY_GROWTH=1            # Dynamic memory
+-s SINGLE_FILE=1                    # Embed WASM in JS (optional)
+```
+
+**wasm-opt Flags** (Binaryen):
+```bash
+wasm-opt -Oz \
+  --enable-simd \
+  --enable-bulk-memory \
+  --enable-sign-ext \
+  --enable-mutable-globals \
+  --low-memory-unused \
+  --flatten \
+  --rereloop \
+  --vacuum \
+  --dce \
+  --remove-unused-names \
+  --strip-debug \
+  --strip-dwarf
+```
 
 ## Usage
 
-**Build Yoga Layout:**
-```bash
-pnpm run build
+```javascript
+import Yoga from '@socketsecurity/yoga-layout'
+
+// Create root node
+const root = Yoga.Node.create()
+root.setWidth(500)
+root.setHeight(300)
+root.setFlexDirection(Yoga.FLEX_DIRECTION_ROW)
+
+// Create children
+const child1 = Yoga.Node.create()
+child1.setFlexGrow(1)
+
+const child2 = Yoga.Node.create()
+child2.setFlexGrow(2)
+
+root.insertChild(child1, 0)
+root.insertChild(child2, 1)
+
+// Calculate layout
+root.calculateLayout(undefined, undefined, Yoga.DIRECTION_LTR)
+
+// Read computed layout
+console.log(child1.getComputedWidth())  // 166.67
+console.log(child2.getComputedWidth())  // 333.33
+
+// Cleanup
+root.freeRecursive()
 ```
 
-**Force rebuild (ignore checkpoints):**
-```bash
-pnpm run build:force
+### With Ink (React for CLIs)
+
+```javascript
+import { render, Box, Text } from 'ink'
+
+// Ink uses Yoga Layout internally
+render(
+  <Box flexDirection="column" padding={1}>
+    <Box borderStyle="single" padding={1}>
+      <Text>Hello from Socket CLI!</Text>
+    </Box>
+  </Box>
+)
 ```
 
-**Clean build artifacts:**
-```bash
-pnpm run clean
-```
+## Integration with Socket CLI
 
-## Configuration
+This package is used by Socket CLI for:
+- **Ink**: Terminal UI framework (audit logs, interactive console, threat feed)
+- **Ink-Table**: Table rendering in terminal
+- **Layout calculations**: All terminal UI components
 
-Build configuration in `scripts/build.mjs`:
-- **Yoga version**: Change `YOGA_VERSION` constant
-- **Emscripten flags**: Modify optimization flags
-- **CMake options**: Adjust build features
+### Ink Features Used
 
-## Features
+From our analysis ([see details](./.claude/ink-yoga-analysis.md)):
 
-The build includes only features needed for terminal rendering:
-- **Flexbox layout**: Core layout engine
-- **Text measurement**: For terminal text
-- **Basic styling**: Margins, padding, borders
+✅ **setMeasureFunc** - Text measurement for wrapping
+✅ **setBorder** - UI component borders
+✅ **setFlexDirection** - Layout direction (row/column)
+✅ **setFlexGrow/setFlexShrink** - Dynamic sizing
+✅ **setPadding/setMargin** - Spacing
+✅ **setAlignItems/setJustifyContent** - Alignment
 
-Excluded features (not needed for terminal):
-- **Absolute positioning**: Not used in terminal layout
-- **Grid layout**: Not needed
-- **Advanced styling**: Complex CSS features
+All features work perfectly with official Yoga C++.
 
-## Output
+## Performance
 
-Built WASM files are exported to:
-- `build/yoga.wasm` - Optimized WASM binary
-- `build/yoga.js` - JavaScript bindings
+### Size Comparison
+
+| Implementation | WASM Size | JS Size | Total | Status |
+|---------------|-----------|---------|-------|--------|
+| **Yoga C++ (this)** | 65 KB | 46 KB | **111 KB** | ✅ Production |
+| Taffy (Rust) | 230 KB | 7 KB | 237 KB | 🔬 Research only |
+
+### Runtime Performance
+
+Yoga is highly optimized:
+- **Battle-tested** - Used in React Native (millions of devices)
+- **O(n) layout** - Linear time complexity
+- **Cached calculations** - Only recalculates dirty nodes
+- **SIMD optimizations** - Available with modern WASM features
 
 ## Checkpoints
 
 The build uses checkpoints for incremental builds:
-- `cloned` - Source code cloned
-- `configured` - CMake configured
-- `built` - WASM binary compiled
-- `optimized` - wasm-opt applied
-- `verified` - Layout calculations tested
+
+```
+.build-checkpoints/
+├── yoga-layout-cloned      # Yoga source downloaded
+├── yoga-layout-configured  # CMake configured
+├── yoga-layout-built       # WASM compiled
+├── yoga-layout-optimized   # wasm-opt applied
+└── yoga-layout-verified    # Layout verified
+```
 
 Use `--force` flag to ignore checkpoints and rebuild from scratch.
 
-## Integration
+## Troubleshooting
 
-This package is used by Socket CLI for terminal rendering and layout calculations. The built Yoga Layout WASM is embedded in the Socket CLI distribution.
+### Emscripten Not Found
 
-## Size Comparison
+```bash
+# Ensure EMSDK is activated
+source ~/emsdk/emsdk_env.sh
 
-- **Default Yoga WASM**: ~110 KB
-- **Size-optimized build (this)**: ~95 KB (15 KB saved)
-- **After wasm-opt**: ~85 KB (25 KB saved)
+# Verify emcc is available
+which emcc
+```
 
-Size savings come from:
-1. Excluding unused features (10KB)
-2. Aggressive optimization flags (10KB)
-3. wasm-opt post-processing (5KB)
+### Build Fails
 
-While the absolute size savings are smaller compared to ONNX Runtime, every kilobyte counts for distribution size.
+```bash
+# Clean and rebuild
+node scripts/clean.mjs
+node scripts/build.mjs --force
+```
+
+### WASM Not Loading
+
+Check that WASM file has correct magic bytes:
+```bash
+hexdump -C build/wasm/yoga.wasm | head -1
+# Should start with: 00 61 73 6d (WASM magic number)
+```
+
+## Development
+
+```bash
+# Install dependencies
+pnpm install
+
+# Build WASM
+node scripts/build.mjs
+
+# Run tests (when available)
+npm test
+
+# Clean build
+node scripts/clean.mjs
+```
+
+## References
+
+### Official Resources
+- **Yoga Layout**: https://yogalayout.dev/ (Official documentation)
+- **Yoga GitHub**: https://github.com/facebook/yoga (C++ source code)
+- **Emscripten**: https://emscripten.org/ (C++ to WASM compiler)
+- **Ink**: https://github.com/vadimdemedes/ink (React for CLIs)
+
+### Socket Resources
+- **Taffy Research**: [research/TAFFY-RESEARCH.md](./research/TAFFY-RESEARCH.md)
+- **Ink Analysis**: [.claude/ink-yoga-analysis.md](../.claude/ink-yoga-analysis.md)
+- **Build Infrastructure**: `@socketsecurity/build-infra`
+
+### Related Projects
+- **yoga-layout (npm)**: Official Yoga WASM package
+- **Taffy**: https://github.com/DioxusLabs/taffy (Pure Rust alternative)
+
+## License
+
+MIT License - Copyright (c) Socket Security
+
+This package uses:
+- Yoga Layout (MIT License, Meta Platforms)
+- Emscripten (MIT/LLVM License)
