@@ -215,7 +215,7 @@ describe('npm-paths utilities', () => {
       expect(result).toBe(mockRequire)
       expect(Module.createRequire).toHaveBeenCalledWith(
         expect.stringMatching(
-          /\/node_modules\/npm\/node_modules\/npm\/<dummy-basename>$/,
+          /[/\\]node_modules[/\\]npm[/\\]node_modules[/\\]npm[/\\]<dummy-basename>$/,
         ),
       )
     })
@@ -241,7 +241,7 @@ describe('npm-paths utilities', () => {
 
       expect(result).toBe(mockRequire)
       expect(Module.createRequire).toHaveBeenCalledWith(
-        expect.stringMatching(/\/node_modules\/npm\/<dummy-basename>$/),
+        expect.stringMatching(/[/\\]node_modules[/\\]npm[/\\]<dummy-basename>$/),
       )
     })
   })
