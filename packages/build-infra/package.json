@@ -5,15 +5,17 @@
   "type": "module",
   "private": true,
   "exports": {
+    "./lib/build-env": "./lib/build-env.mjs",
     "./lib/build-exec": "./lib/build-exec.mjs",
     "./lib/build-helpers": "./lib/build-helpers.mjs",
     "./lib/build-output": "./lib/build-output.mjs",
+    "./lib/checkpoint-manager": "./lib/checkpoint-manager.mjs",
     "./lib/cmake-builder": "./lib/cmake-builder.mjs",
     "./lib/emscripten-builder": "./lib/emscripten-builder.mjs",
     "./lib/patch-validator": "./lib/patch-validator.mjs",
-    "./lib/checkpoint-manager": "./lib/checkpoint-manager.mjs"
+    "./lib/rust-builder": "./lib/rust-builder.mjs"
   },
   "dependencies": {
-    "@socketsecurity/lib": "1.3.3"
+    "@socketsecurity/lib": "1.3.5"
   }
 }

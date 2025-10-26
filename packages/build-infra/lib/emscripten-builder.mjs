@@ -92,7 +92,7 @@ export class EmscriptenBuilder {
     const wasmPath = path.join(this.buildDir, wasmFile)
 
     await exec(
-      `wasm-opt -O${optimizeLevel} -o${shrinkLevel} ${wasmPath} -o ${wasmPath}`,
+      `wasm-opt -O${optimizeLevel} -s ${shrinkLevel} ${wasmPath} -o ${wasmPath}`,
       { stdio: 'inherit' }
     )
   }
@@ -120,8 +120,20 @@ export class EmscriptenBuilder {
   async configureCMake(options = {}) {
     printStep('Configuring CMake for Emscripten')
 
+    // Determine toolchain file path based on installation type.
+    // Homebrew: /opt/homebrew/Cellar/emscripten/VERSION/libexec/cmake/Modules/Platform/Emscripten.cmake
+    // Standard EMSDK: $EMSDK/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake
+    let toolchainFile
+    if (process.env.EMSCRIPTEN) {
+      // Homebrew installation.
+      toolchainFile = `${process.env.EMSCRIPTEN}/cmake/Modules/Platform/Emscripten.cmake`
+    } else {
+      // Standard EMSDK installation.
+      toolchainFile = `${process.env.EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake`
+    }
+
     const cmakeArgs = Object.entries({
-      CMAKE_TOOLCHAIN_FILE: `${process.env.EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake`,
+      CMAKE_TOOLCHAIN_FILE: toolchainFile,
       ...options,
     })
       .map(([key, value]) => `-D${key}=${value}`)

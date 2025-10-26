@@ -76,18 +76,123 @@ await cmake.build({ parallel: true })
 ```
 
 ### Emscripten Builder
+
+Build C/C++ projects to WebAssembly using Emscripten.
+
 ```javascript
 import { EmscriptenBuilder } from '@socketsecurity/build-infra/lib/emscripten-builder'
 
 const emcc = new EmscriptenBuilder(sourceDir, buildDir)
 
+// Simple compilation
 await emcc.build({
   sources: ['src/**/*.cpp'],
   output: 'output.wasm',
   flags: ['-Oz', '-flto', '--no-entry'],
   includes: ['-Iinclude'],
 })
+
+// Full CMake build pipeline
+await emcc.configureCMake({
+  'CMAKE_BUILD_TYPE': 'Release',
+  'CMAKE_CXX_FLAGS': '-Oz',
+})
+await emcc.buildWithCMake({ parallel: true })
+await emcc.optimize('build/output.wasm', { output: 'build/optimized.wasm' })
 ```
+
+**Use cases**: Yoga Layout (C++), onnxruntime (C++), legacy C/C++ libraries.
+
+**Prerequisites**: Emscripten SDK (EMSDK), CMake, wasm-opt (Binaryen).
+
+### Rust Builder
+
+Build pure Rust projects to WebAssembly using Cargo and wasm-bindgen.
+
+```javascript
+import {
+  RustBuilder,
+  MODERN_WASM_RUSTFLAGS,
+  WASM_OPT_SIZE_FLAGS,
+} from '@socketsecurity/build-infra/lib/rust-builder'
+
+const rust = new RustBuilder(projectDir, buildDir)
+
+// Check toolchain
+if (!await rust.checkRustInstalled()) {
+  throw new Error('Rust toolchain not found')
+}
+if (!await rust.checkWasmBindgenInstalled()) {
+  throw new Error('wasm-bindgen-cli not installed')
+}
+
+// Full build pipeline (recommended)
+await rust.buildPipeline({
+  packageName: 'my_wasm_pkg',  // Cargo package name
+  profile: 'release',          // or custom profile like 'release-wasm-fast'
+  features: ['simd'],          // optional Cargo features
+  outDir: 'build/pkg',         // output directory
+  target: 'nodejs',            // or 'web', 'bundler', 'no-modules'
+  optimize: true,              // run wasm-opt
+})
+
+// Or step-by-step for advanced control
+await rust.installWasmTarget()
+
+await rust.build({
+  profile: 'release-wasm-fast',
+  features: ['simd', 'parallel'],
+  rustflags: MODERN_WASM_RUSTFLAGS,  // SIMD, bulk-memory, etc.
+  parallel: true,
+})
+
+await rust.generateBindings({
+  input: 'target/wasm32-unknown-unknown/release-wasm-fast/my_pkg.wasm',
+  outDir: 'build/pkg',
+  target: 'nodejs',
+  typescript: true,
+  debug: false,
+})
+
+await rust.optimize('build/pkg/my_pkg_bg.wasm', {
+  flags: WASM_OPT_SIZE_FLAGS,  // aggressive size optimization
+  output: 'build/pkg/my_pkg_bg.wasm',
+})
+```
+
+**Modern WASM Features** (enabled by default via `MODERN_WASM_RUSTFLAGS`):
+- SIMD (20-30% performance boost)
+- Bulk memory operations
+- Mutable globals
+- Sign extension
+- Non-trapping float-to-int conversion
+- Reference types
+
+**Optimization Flags** (applied via `WASM_OPT_SIZE_FLAGS`):
+- `-Oz` - Aggressive size optimization
+- `--enable-simd` - SIMD support
+- `--enable-bulk-memory` - Bulk memory operations
+- `--strip-debug` - Remove debug info
+- `--strip-dwarf` - Remove DWARF data
+- `--dce` - Dead code elimination
+- Plus 10+ additional flags for maximum size reduction
+
+**Use cases**: Acorn parser (pure Rust), Taffy layout (pure Rust), any Rust crate.
+
+**Prerequisites**: Rust toolchain, wasm-bindgen-cli, wasm-opt (Binaryen).
+
+**Comparison with Emscripten**:
+- ✅ No C++ toolchain required
+- ✅ Pure Rust, memory-safe
+- ✅ Smaller JS glue code (~7KB vs ~46KB)
+- ⚠️ WASM size varies by project (some Rust implementations are smaller, some larger)
+- ⚠️ Limited to Rust ecosystem
+
+**Size comparison example** (Yoga Layout):
+- Emscripten (C++): 65KB WASM + 46KB JS = 111KB total
+- Rust (Taffy): 230KB WASM + 7KB JS = 237KB total (2.1x total size)
+
+Results vary significantly based on codebase complexity and optimization opportunities.
 
 ### Patch Validator
 ```javascript

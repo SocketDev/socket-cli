@@ -23,11 +23,14 @@ export async function exec(command, options = {}) {
     ...options,
   })
 
-  if (result.status !== 0) {
-    const error = new Error(`Command failed with exit code ${result.status}: ${command}`)
+  // Treat undefined or null status as success (0).
+  const exitCode = result.status ?? 0
+
+  if (exitCode !== 0) {
+    const error = new Error(`Command failed with exit code ${exitCode}: ${command}`)
     error.stdout = result.stdout
     error.stderr = result.stderr
-    error.code = result.status
+    error.code = exitCode
     throw error
   }
 
