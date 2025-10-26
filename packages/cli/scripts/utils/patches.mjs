@@ -10,7 +10,6 @@ import path from 'node:path'
 import { parse } from '@babel/core'
 import MagicString from 'magic-string'
 import { logger } from '@socketsecurity/lib/logger'
-import colors from 'yoctocolors-cjs'
 
 /**
  * Parse JavaScript/TypeScript code into a Babel AST.

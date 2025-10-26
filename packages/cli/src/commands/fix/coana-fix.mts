@@ -29,7 +29,7 @@ import {
   gitRemoteBranchExists,
   gitResetAndClean,
   gitUnstagedModifiedFiles,
-} from '../../utils/git/git.mjs'
+} from '../../utils/git/operations.mjs'
 import {
   enablePrAutoMerge,
   fetchGhsaDetails,

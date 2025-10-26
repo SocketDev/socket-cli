@@ -42,11 +42,11 @@ vi.mock('./output-patch-result.mts', () => ({
   outputPatchResult: vi.fn(),
 }))
 
-vi.mock('../../utils/fs.mts', () => ({
+vi.mock('../../utils/fs/find-up.mts', () => ({
   findUp: vi.fn(),
 }))
 
-vi.mock('../../utils/purl.mts', () => ({
+vi.mock('../../utils/purl/parse.mts', () => ({
   getPurlObject: vi.fn(),
   normalizePurl: vi.fn(purl =>
     purl.startsWith('pkg:') ? purl : `pkg:${purl}`,
@@ -59,7 +59,7 @@ describe('handlePatch', () => {
     const fastGlob = await import('fast-glob')
     const { readDirNames } = await import('@socketsecurity/lib/fs')
     const { outputPatchResult } = await import('./output-patch-result.mts')
-    const { findUp } = await import('../../utils/fs.mts')
+    const { findUp } = await import('../../utils/fs/find-up.mts')
     const mockExistsSync = vi.mocked(existsSync)
     const mockReadFile = vi.mocked(fs.readFile)
     const mockOutput = vi.mocked(outputPatchResult)
@@ -188,7 +188,7 @@ describe('handlePatch', () => {
 
   it('filters patches by specified PURLs', async () => {
     const { promises: fs } = await import('node:fs')
-    const { getPurlObject } = await import('../../utils/purl.mts')
+    const { getPurlObject } = await import('../../utils/purl/parse.mts')
     const mockReadFile = vi.mocked(fs.readFile)
     const mockGetPurlObject = vi.mocked(getPurlObject)
 

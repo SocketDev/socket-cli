@@ -37,7 +37,7 @@ vi.mock('../utils/socket/sdk.mts', () => ({
   getPublicApiToken: mockGetPublicApiToken,
 }))
 
-vi.mock('../utils/fs/fs.mts', () => ({
+vi.mock('../utils/fs/find-up.mts', () => ({
   findUp: mockFindUp,
 }))
 
