@@ -40,7 +40,7 @@ jobs:
     name: Run CI Pipeline
     uses: SocketDev/socket-registry/.github/workflows/ci.yml@d8ff3b0581d799466cfbf150f715c1a4bf9f84a5 # 2025-10-23
     with:
-      test-setup-script: 'pnpm exec del-cli packages/cli/node_modules/.vite packages/cli/dist && pnpm install --frozen-lockfile && pnpm --filter @socketsecurity/cli run build'
+      test-setup-script: 'pnpm exec del-cli packages/cli/node_modules/.vite packages/cli/dist && pnpm --filter @socketsecurity/cli run build'
       lint-script: 'pnpm --filter @socketsecurity/cli run check'
       type-check-script: 'pnpm --filter @socketsecurity/cli run type'
       test-script: ${{ inputs.skip-tests && 'echo "Tests skipped"' || 'pnpm --filter @socketsecurity/cli run test:unit' }}
