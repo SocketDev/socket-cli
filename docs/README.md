@@ -23,6 +23,7 @@
 - [Unified binary design](architecture/unified-binary.md)
 
 ### Build System
+- [Build/dist structure and archiving](build/build-dist-structure.md)
 - [Build process overview](build/build-process.md)
 - [Build quick start](build/build-quick-start.md)
 - [Build system summary](build/build-system-summary.md)

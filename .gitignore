@@ -21,7 +21,6 @@ Thumbs.db
 **/.cache
 **/coverage
 **/.type-coverage
-**/dist
 **/build
 **/node_modules
 .build-checkpoints
@@ -30,13 +29,8 @@ Thumbs.db
 **/*.tmp
 *.tsbuildinfo
 
-# Build artifacts (inside build/ only).
-**/build/target/
-**/build/pkg/
-**/build/out/
-**/build/cmake/
-**/build/_deps/
-**/build/wasm/
+# Build artifacts: build/ = gitignored (workspace + archive), dist/ = tracked (blessed releases).
+# Exception: packages/cli/dist/ is Rollup output (ephemeral), gitignored by packages/cli/.gitignore.
 
 # Yarn PnP files (tests may create these)
 /.yarn
