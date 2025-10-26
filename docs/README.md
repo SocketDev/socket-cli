@@ -1,8 +1,21 @@
 # Socket CLI Documentation
 
-## Organization
+## New to Socket CLI Development?
+
+**Start here:** [Getting Started Guide](development/getting-started.md)
+
+Complete end-to-end onboarding for new contributors:
+- Prerequisites and installation
+- 5-minute quick start
+- Development workflow
+- Testing strategies
+- Troubleshooting guide
+
+## Documentation Organization
 
 📚 **[Documentation Organization Guide](documentation-organization.md)** - Complete guide to Socket CLI's 3-tier documentation hierarchy
+
+### Categories
 
 - **architecture/** - System design documents and flow diagrams
 - **build/** - Node.js build system and patching documentation
