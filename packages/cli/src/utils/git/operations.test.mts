@@ -12,7 +12,7 @@ import {
   gitPushBranch,
   gitResetHard,
   parseGitRemoteUrl,
-} from './git.mts'
+} from './operations.mts'
 
 // Mock spawn.
 vi.mock('@socketsecurity/lib/spawn', () => ({
