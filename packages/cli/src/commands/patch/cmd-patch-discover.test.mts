@@ -1,4 +1,5 @@
 import { promises as fs } from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 
 import { afterEach, describe, expect } from 'vitest'
@@ -50,12 +51,19 @@ describe('socket patch discover', async () => {
     ['patch', 'discover', FLAG_CONFIG, '{"apiToken":"fake-token"}'],
     'should show error when no node_modules directory found',
     async cmd => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
-        cwd: path.join(fixtureBaseDir, 'nonexistent-dir'),
-      })
-      const output = stdout + stderr
-      expect(output).toContain('No node_modules directory found')
-      expect(code, 'should exit with non-zero code').not.toBe(0)
+      // Create a temporary directory without node_modules.
+      const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'socket-test-'))
+      try {
+        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
+          cwd: tmpDir,
+        })
+        const output = stdout + stderr
+        expect(output).toContain('No node_modules directory found')
+        expect(code, 'should exit with non-zero code').not.toBe(0)
+      } finally {
+        // Clean up temporary directory.
+        await fs.rm(tmpDir, { force: true, recursive: true })
+      }
     },
   )
 
