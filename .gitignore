@@ -24,6 +24,7 @@ Thumbs.db
 **/dist
 **/build
 **/node_modules
+.build-checkpoints
 **/pkg
 **/target
 *.d.ts
@@ -42,3 +43,8 @@ Thumbs.db
 
 # Ignore platform binary build artifacts
 packages/socketbin-*/bin/
+
+# Ignore downloaded build sources
+packages/*/.yoga-source
+packages/*/.onnx-source
+packages/*/.minilm-source
