@@ -77,7 +77,7 @@ fi
       completionCommand,
       toAddToBashrc: bashrcContent,
       targetName: targetCommandName,
-      targetPath: completionScriptPath,
+      targetPath: bashCompletionPath,
     },
   }
 }
