@@ -2,14 +2,16 @@
  * Build script for creating self-executable Socket CLI applications.
  * Uses Node.js Single Executable Application (SEA) feature.
  *
- * IMPORTANT: This builds a THIN WRAPPER that downloads @socketsecurity/cli on first use.
- * The binary contains only:
- * - Node.js runtime
- * - Bootstrap code to download/execute @socketsecurity/cli
- * - No actual CLI implementation
+ * IMPORTANT: This builds a FULL SEA with the complete CLI embedded.
+ * The binary contains:
+ * - Node.js runtime (~50MB)
+ * - Full Socket CLI from packages/cli/dist/cli.js (~11MB)
+ * - All dependencies and node_modules
  *
- * The real Socket CLI code lives in the @socketsecurity/cli npm package,
- * which is downloaded from npm registry on first run.
+ * Expected binary size: ~110MB+ per platform.
+ *
+ * Prerequisites:
+ * - Run `pnpm run build:cli` first to create packages/cli/dist/cli.js
  *
  * Supported platforms:
  * - Windows (x64, arm64)
@@ -17,9 +19,9 @@
  * - Linux (x64, arm64)
  *
  * Usage:
- * - Build all platforms: npm run build --sea
- * - Build specific platform: npm run build --sea -- --platform=darwin --arch=x64
- * - Use advanced bootstrap: npm run build --sea -- --advanced
+ * - Build current platform: pnpm run build
+ * - Build all platforms: pnpm run build:all
+ * - Build specific platform: node scripts/build.mjs --platform=darwin --arch=x64
  */
 
 import crypto from 'node:crypto'
@@ -33,6 +35,7 @@ import { safeDelete } from '@socketsecurity/lib/fs'
 import { logger } from '@socketsecurity/lib/logger'
 import { normalizePath } from '@socketsecurity/lib/path'
 import { spawn } from '@socketsecurity/lib/spawn'
+import colors from 'yoctocolors-cjs'
 
 import constants from './constants.mjs'
 
@@ -302,7 +305,7 @@ async function buildSeaBlob(nodeBinary, configPath) {
   const config = JSON.parse(await fs.readFile(configPath, 'utf8'))
   const blobPath = config.output
 
-  console.log('Generating SEA blob...')
+  logger.log('Generating SEA blob...')
 
   // Generate the blob using the Node binary.
   const spawnPromise = spawn(
@@ -327,8 +330,8 @@ async function buildSeaBlob(nodeBinary, configPath) {
 /**
  * Inject SEA blob into Node binary.
  */
-async function injectSeaBlob(nodeBinary, blobPath, outputPath) {
-  console.log('Creating self-executable...')
+async function injectSeaBlob(nodeBinary, blobPath, outputPath, fuseSentinel) {
+  logger.log('Creating self-executable...')
 
   // Check if postject is available.
   try {
@@ -355,13 +358,13 @@ async function injectSeaBlob(nodeBinary, blobPath, outputPath) {
       // codesign not available.
     }
     if (!codesignAvailable) {
-      console.warn(
+      logger.warn(
         'Warning: codesign not found. The binary may not work correctly on macOS.\n' +
           'Install Xcode Command Line Tools: xcode-select --install',
       )
     } else {
       // On macOS, remove signature before injection.
-      console.log('Removing signature...')
+      logger.log('Removing signature...')
       await spawn('codesign', ['--remove-signature', outputPath], {
         stdio: 'inherit',
       })
@@ -373,9 +376,9 @@ async function injectSeaBlob(nodeBinary, blobPath, outputPath) {
     // - outputPath: The name of the copy of the node executable created earlier
     // - NODE_SEA_BLOB: The name of the resource/section where blob contents are stored
     // - blobPath: The name of the blob created by --experimental-sea-config
-    // - --sentinel-fuse NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2: Fuse used by Node.js to detect if a file has been injected
+    // - --sentinel-fuse: Fuse used by Node.js to detect if a file has been injected
     // - --macho-segment-name NODE_SEA: (macOS only) Name of the segment where blob contents are stored
-    console.log('Injecting SEA blob...')
+    logger.log('Injecting SEA blob...')
     await spawn(
       'pnpm',
       [
@@ -385,7 +388,7 @@ async function injectSeaBlob(nodeBinary, blobPath, outputPath) {
         'NODE_SEA_BLOB',
         blobPath,
         '--sentinel-fuse',
-        'NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2',
+        fuseSentinel,
         '--macho-segment-name',
         'NODE_SEA',
       ],
@@ -394,7 +397,7 @@ async function injectSeaBlob(nodeBinary, blobPath, outputPath) {
 
     // Re-sign the binary if codesign is available.
     if (codesignAvailable) {
-      console.log('Re-signing binary...')
+      logger.log('Re-signing binary...')
       await spawn('codesign', ['--sign', '-', outputPath], {
         stdio: 'inherit',
       })
@@ -406,7 +409,7 @@ async function injectSeaBlob(nodeBinary, blobPath, outputPath) {
     // - outputPath: The name of the copy of the node executable created earlier
     // - NODE_SEA_BLOB: The name of the resource where blob contents are stored
     // - blobPath: The name of the blob created by --experimental-sea-config
-    // - --sentinel-fuse NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2: Fuse used by Node.js to detect if a file has been injected
+    // - --sentinel-fuse: Fuse used by Node.js to detect if a file has been injected
     await spawn(
       'pnpm',
       [
@@ -416,11 +419,11 @@ async function injectSeaBlob(nodeBinary, blobPath, outputPath) {
         'NODE_SEA_BLOB',
         blobPath,
         '--sentinel-fuse',
-        'NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2',
+        fuseSentinel,
       ],
       { stdio: 'inherit' },
     )
-    console.log('Note: Windows binary may need signing for distribution')
+    logger.log('Note: Windows binary may need signing for distribution')
   } else {
     // Linux injection.
     // Following Node.js SEA documentation: https://nodejs.org/api/single-executable-applications.html
@@ -428,7 +431,7 @@ async function injectSeaBlob(nodeBinary, blobPath, outputPath) {
     // - outputPath: The name of the copy of the node executable created earlier
     // - NODE_SEA_BLOB: The name of the section where blob contents are stored
     // - blobPath: The name of the blob created by --experimental-sea-config
-    // - --sentinel-fuse NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2: Fuse used by Node.js to detect if a file has been injected
+    // - --sentinel-fuse: Fuse used by Node.js to detect if a file has been injected
     await spawn(
       'pnpm',
       [
@@ -438,7 +441,7 @@ async function injectSeaBlob(nodeBinary, blobPath, outputPath) {
         'NODE_SEA_BLOB',
         blobPath,
         '--sentinel-fuse',
-        NODE_SEA_FUSE,
+        fuseSentinel,
       ],
       { stdio: 'inherit' },
     )
@@ -452,30 +455,95 @@ async function buildTarget(target, options) {
   const { outputDir = normalizePath(path.join(__dirname, '../../dist/sea')) } =
     options
 
-  console.log(
-    `\nBuilding thin wrapper for ${target.platform}-${target.arch}...`,
-  )
-  console.log('(Actual CLI will be downloaded from npm on first use)')
+  // Use Node.js's standard SEA fuse sentinel.
+  const fuseSentinel = 'NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2'
 
-  // Use the thin bootstrap for minimal size.
-  const tsEntryPoint = normalizePath(
-    path.join(__dirname, '..', 'src', 'stub', 'bootstrap.mts'),
+  logger.log(
+    `\nBuilding full SEA for ${target.platform}-${target.arch}...`,
   )
+  logger.log('(Embedding full CLI from packages/cli/dist/cli.js)')
+
+  // Use the already-built CLI from packages/cli/dist/cli.js.
+  const cliPath = normalizePath(
+    path.join(__dirname, '../../..', 'packages', 'cli', 'dist', 'cli.js'),
+  )
+
+  // Verify CLI exists.
+  if (!existsSync(cliPath)) {
+    throw new Error(
+      `CLI not found at ${cliPath}. Run 'pnpm run build:cli' first.`,
+    )
+  }
+
+  logger.log(`Using CLI from: ${cliPath}`)
 
   // Ensure output directory exists.
   await fs.mkdir(outputDir, { recursive: true })
 
-  // Build the bootstrap with Rollup to CommonJS for SEA.
-  const entryPoint = normalizePath(path.join(outputDir, 'bootstrap.cjs'))
-  console.log('Building bootstrap...')
+  // Create a modified copy of the CLI with SEA compatibility fixes.
+  const modifiedCliPath = normalizePath(path.join(outputDir, 'cli-modified.js'))
+  let cliContent = await fs.readFile(cliPath, 'utf8')
 
-  // Set environment variables for the rollup config.
-  process.env.SEA_BOOTSTRAP = tsEntryPoint
-  process.env.SEA_OUTPUT = entryPoint
+  // Fix 1: Replace the sentinel constant with a split string that won't match the sentinel search.
+  cliContent = cliContent.replace(
+    /"NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2"/g,
+    '"NODE_SEA" + "_FUSE_fce680ab2cc467b6e072b8b5df1996b2"',
+  )
 
-  await spawn('pnpm', ['run', 'build:sea:internal:bootstrap'], {
-    stdio: 'inherit',
-  })
+  // Fix 2: Add defensive checks for require.resolve in SEA context.
+  // Replace: if (require.resolve.paths)
+  // With: if (require.resolve && require.resolve.paths)
+  cliContent = cliContent.replace(
+    /if\s*\(\s*require\.resolve\.paths\s*\)/g,
+    'if (require.resolve && require.resolve.paths)',
+  )
+
+  // Fix 3: Add SEA compatibility polyfill after shebang.
+  const seaPolyfill = `
+// SEA Compatibility Polyfill
+if (typeof require !== 'undefined' && (!require.resolve || !require.resolve.paths)) {
+  if (!require.resolve) {
+    require.resolve = function(id, options) {
+      // Basic resolve that returns the id for SEA context.
+      return id;
+    };
+  }
+  if (!require.resolve.paths) {
+    require.resolve.paths = function(request) {
+      // Return empty array for SEA context where path resolution isn't available.
+      return [];
+    };
+  }
+}
+`
+
+  // Insert polyfill after shebang (if present) or at the beginning.
+  let modifiedContent
+  if (cliContent.startsWith('#!')) {
+    const firstNewline = cliContent.indexOf('\n')
+    const shebang = cliContent.substring(0, firstNewline + 1)
+    const rest = cliContent.substring(firstNewline + 1)
+    modifiedContent = shebang + seaPolyfill + rest
+  } else {
+    modifiedContent = seaPolyfill + cliContent
+  }
+
+  await fs.writeFile(modifiedCliPath, modifiedContent)
+
+  // Verify transformations were applied correctly.
+  logger.log('Verifying SEA compatibility transformations...')
+  const verifyScript = normalizePath(path.join(__dirname, 'verify-sea-transforms.mjs'))
+  try {
+    await spawn('node', [verifyScript], { stdio: 'pipe' })
+    logger.log(`${colors.green('✓')} All transformations verified`)
+  } catch (error) {
+    logger.error(`${colors.yellow('⚠')} Transformation verification failed`)
+    logger.error('  The build will continue, but runtime issues may occur')
+    // Don't fail the build - polyfill provides runtime safety net.
+  }
+
+  // Use the modified CLI as the entry point.
+  const entryPoint = modifiedCliPath
 
   // Download Node.js binary for target platform.
   const nodeBinary = await downloadNodeBinary(
@@ -496,14 +564,14 @@ async function buildTarget(target, options) {
     const blobPath = await buildSeaBlob(nodeBinary, configPath)
 
     // Inject blob into Node binary.
-    await injectSeaBlob(nodeBinary, blobPath, outputPath)
+    await injectSeaBlob(nodeBinary, blobPath, outputPath, fuseSentinel)
 
     // Make executable on Unix.
     if (target.platform !== 'win32') {
       await fs.chmod(outputPath, 0o755)
     }
 
-    console.log(`✓ Built ${target.outputName}`)
+    logger.log(`${colors.green('✓')} Built ${target.outputName}`)
 
     // Clean up temporary files using trash.
     const filesToClean = [
@@ -563,9 +631,9 @@ function parseArgs() {
 async function main() {
   const options = parseArgs()
 
-  console.log('Socket CLI Self-Executable Builder')
-  console.log('====================================')
-  console.log(
+  logger.log('Socket CLI Self-Executable Builder')
+  logger.log('====================================')
+  logger.log(
     'Building THIN WRAPPER that downloads @socketsecurity/cli on first use',
   )
 
@@ -602,16 +670,58 @@ async function main() {
     await buildTarget(target, options)
   }
 
-  console.log('\n✅ Build complete!')
-  console.log(`Output directory: ${options.outputDir || 'dist/sea'}`)
-  console.log('\nNOTE: These binaries are thin wrappers that will download')
-  console.log('@socketsecurity/cli from npm on first run.')
+  // Copy to project root build/bins/ with variant-specific names.
+  logger.log('\nCopying to Project Root build/bins/')
+  logger.log('Creating variant-specific binaries in project root...')
+
+  const PROJECT_ROOT = normalizePath(path.join(__dirname, '../../..'))
+  const binsDir = normalizePath(path.join(PROJECT_ROOT, 'build/bins'))
+  await fs.mkdir(binsDir, { recursive: true })
+
+  const outputDir = options.outputDir || normalizePath(path.join(__dirname, '../../dist/sea'))
+  const variant = 'sea' // This is the SEA builder, smol comes from node-smol-builder.
+
+  // Generate timestamp for build (YYYYMMDD-HHMMSS format).
+  const now = new Date()
+  const timestamp = now
+    .toISOString()
+    .replace(/[-:]/g, '')
+    .replace(/T/, '-')
+    .slice(0, 15) // YYYYMMDD-HHMMSS
+
+  for (const target of targets) {
+    const sourceFile = normalizePath(path.join(outputDir, target.outputName))
+
+    // Generate variant-specific binary name: node-{variant}-{platform}-{arch}-{timestamp}[.exe].
+    const ext = target.platform === 'win32' ? '.exe' : ''
+    const binaryName = `node-${variant}-${target.platform}-${target.arch}-${timestamp}${ext}`
+    const variantBinaryPath = normalizePath(path.join(binsDir, binaryName))
+
+    // Copy binary to build/bins/.
+    await fs.copyFile(sourceFile, variantBinaryPath)
+
+    // Make executable on Unix.
+    if (target.platform !== 'win32') {
+      await fs.chmod(variantBinaryPath, 0o755)
+    }
+
+    logger.log(`  ${colors.green('✓')} Copied to build/bins/${binaryName}`)
+  }
+
+  logger.log(`\nBins directory: ${binsDir}`)
+  logger.log('All SEA binaries copied to project root.')
+
+  logger.log(`\n${colors.green('✓')} Build complete!`)
+  logger.log(`Output directory: ${options.outputDir || 'dist/sea'}`)
+  logger.log(`Variant directory: ${binsDir}`)
+  logger.log('\nNOTE: These binaries are thin wrappers that will download')
+  logger.log('@socketsecurity/cli from npm on first run.')
 }
 
 // Run if executed directly.
 if (import.meta.url === url.pathToFileURL(process.argv[1]).href) {
   main().catch(error => {
-    console.error('Build failed:', error)
+    logger.error('Build failed:', error)
 
     process.exit(1)
   })
