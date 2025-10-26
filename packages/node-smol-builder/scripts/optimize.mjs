@@ -20,6 +20,8 @@ import { existsSync, promises as fs } from 'node:fs'
 import { platform as osPlatform } from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { logger } from '@socketsecurity/lib/logger'
+import colors from 'yoctocolors-cjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const packageDir = path.join(__dirname, '..')
@@ -66,7 +68,7 @@ function commandExists(cmd) {
  * Execute a command with error handling.
  */
 function exec(command, args, options = {}) {
-  console.log(`  $ ${command} ${args.join(' ')}`)
+  logger.log(`  $ ${command} ${args.join(' ')}`)
   try {
     execSync(`${command} ${args.join(' ')}`, {
       stdio: 'inherit',
@@ -74,7 +76,7 @@ function exec(command, args, options = {}) {
     })
     return true
   } catch (e) {
-    console.error(`  ✗ Command failed: ${e.message}`)
+    logger.error(`  ✗ Command failed: ${e.message}`)
     return false
   }
 }
@@ -83,38 +85,38 @@ function exec(command, args, options = {}) {
  * Optimize binary for macOS (darwin).
  */
 async function optimizeDarwin(binaryPath) {
-  console.log('\n🍎 Optimizing macOS binary...')
+  logger.log('\n🍎 Optimizing macOS binary...')
 
   const beforeSize = await getFileSizeMB(binaryPath)
-  console.log(`  Before: ${beforeSize} MB`)
+  logger.log(`  Before: ${beforeSize} MB`)
 
   // Phase 1: Basic stripping.
   if (commandExists('strip')) {
-    console.log('\n  Phase 1: Basic stripping')
+    logger.log('\n  Phase 1: Basic stripping')
     exec('strip', [binaryPath])
   }
 
   // Phase 2: Aggressive stripping with llvm-strip (often better than strip on macOS).
   if (commandExists('llvm-strip')) {
-    console.log('\n  Phase 2: LLVM aggressive stripping')
+    logger.log('\n  Phase 2: LLVM aggressive stripping')
     exec('llvm-strip', [binaryPath])
   } else {
-    console.log('\n  Phase 2: Aggressive stripping (strip --strip-all)')
+    logger.log('\n  Phase 2: Aggressive stripping (strip --strip-all)')
     exec('strip', ['--strip-all', binaryPath])
   }
 
   // Phase 3: Remove unnecessary Mach-O sections.
-  console.log('\n  Phase 3: Remove unnecessary sections')
+  logger.log('\n  Phase 3: Remove unnecessary sections')
   // Note: Most Mach-O section removal requires specialized tools.
   // strip and llvm-strip already handle this well.
 
   const afterSize = await getFileSizeMB(binaryPath)
   const savings = ((beforeSize - afterSize) / beforeSize * 100).toFixed(1)
-  console.log(`\n  After: ${afterSize} MB (${savings}% reduction)`)
+  logger.log(`\n  After: ${afterSize} MB (${savings}% reduction)`)
 
   // Re-sign binary if on macOS ARM64 (required).
   if (osPlatform() === 'darwin' && process.arch === 'arm64') {
-    console.log('\n  Phase 4: Code signing')
+    logger.log('\n  Phase 4: Code signing')
     exec('codesign', ['--force', '--sign', '-', binaryPath])
   }
 
@@ -125,18 +127,18 @@ async function optimizeDarwin(binaryPath) {
  * Optimize binary for Linux.
  */
 async function optimizeLinux(binaryPath) {
-  console.log('\n🐧 Optimizing Linux binary...')
+  logger.log('\n🐧 Optimizing Linux binary...')
 
   const beforeSize = await getFileSizeMB(binaryPath)
-  console.log(`  Before: ${beforeSize} MB`)
+  logger.log(`  Before: ${beforeSize} MB`)
 
   // Phase 1: Aggressive stripping.
-  console.log('\n  Phase 1: Aggressive stripping')
+  logger.log('\n  Phase 1: Aggressive stripping')
   exec('strip', ['--strip-all', binaryPath])
 
   // Phase 2: Remove unnecessary ELF sections.
   if (commandExists('objcopy')) {
-    console.log('\n  Phase 2: Remove unnecessary ELF sections')
+    logger.log('\n  Phase 2: Remove unnecessary ELF sections')
     const sections = [
       '.note.ABI-tag',
       '.note.gnu.build-id',
@@ -151,13 +153,13 @@ async function optimizeLinux(binaryPath) {
 
   // Phase 3: Super strip (sstrip) if available.
   if (commandExists('sstrip')) {
-    console.log('\n  Phase 3: Super strip (removes section headers)')
+    logger.log('\n  Phase 3: Super strip (removes section headers)')
     exec('sstrip', [binaryPath])
   }
 
   const afterSize = await getFileSizeMB(binaryPath)
   const savings = ((beforeSize - afterSize) / beforeSize * 100).toFixed(1)
-  console.log(`\n  After: ${afterSize} MB (${savings}% reduction)`)
+  logger.log(`\n  After: ${afterSize} MB (${savings}% reduction)`)
 
   return { before: parseFloat(beforeSize), after: parseFloat(afterSize), savings: parseFloat(savings) }
 }
@@ -166,14 +168,14 @@ async function optimizeLinux(binaryPath) {
  * Optimize binary for Windows.
  */
 async function optimizeWindows(binaryPath) {
-  console.log('\n🪟 Optimizing Windows binary...')
+  logger.log('\n🪟 Optimizing Windows binary...')
 
   const beforeSize = await getFileSizeMB(binaryPath)
-  console.log(`  Before: ${beforeSize} MB`)
+  logger.log(`  Before: ${beforeSize} MB`)
 
   // Phase 1: Aggressive stripping.
   // Note: Windows binaries are typically cross-compiled on Linux/macOS with mingw.
-  console.log('\n  Phase 1: Aggressive stripping')
+  logger.log('\n  Phase 1: Aggressive stripping')
 
   // Try mingw-strip for Windows binaries.
   if (commandExists('x86_64-w64-mingw32-strip')) {
@@ -184,7 +186,7 @@ async function optimizeWindows(binaryPath) {
 
   const afterSize = await getFileSizeMB(binaryPath)
   const savings = ((beforeSize - afterSize) / beforeSize * 100).toFixed(1)
-  console.log(`\n  After: ${afterSize} MB (${savings}% reduction)`)
+  logger.log(`\n  After: ${afterSize} MB (${savings}% reduction)`)
 
   return { before: parseFloat(beforeSize), after: parseFloat(afterSize), savings: parseFloat(savings) }
 }
@@ -200,40 +202,40 @@ async function optimizeBinary(binaryPath, platform) {
     } else if (binaryPath.includes('linux') || binaryPath.includes('alpine')) {
       platform = 'linux'
     } else if (binaryPath.includes('win32') || binaryPath.endsWith('.exe')) {
-      platform = 'win32'
+      platform = 'win32`
     } else {
       platform = osPlatform()
     }
   }
 
-  console.log(`\n📦 Optimizing: ${path.basename(binaryPath)}`)
-  console.log(`   Platform: ${platform}`)
+  logger.log(`\n📦 Optimizing: ${path.basename(binaryPath)}`)
+  logger.log(`   Platform: ${platform}`)
 
   // Check binary exists.
   if (!existsSync(binaryPath)) {
-    console.error(`\n❌ Binary not found: ${binaryPath}`)
+    logger.error(`\n${colors.red('✗')} Binary not found: ${binaryPath}`)
     return null
   }
 
   // Apply platform-specific optimizations.
   let result
   switch (platform) {
-    case 'darwin':
+    case `darwin':
       result = await optimizeDarwin(binaryPath)
       break
     case 'linux':
     case 'alpine':
       result = await optimizeLinux(binaryPath)
       break
-    case 'win32':
+    case 'win32`:
       result = await optimizeWindows(binaryPath)
       break
     default:
-      console.error(`\n❌ Unsupported platform: ${platform}`)
+      logger.error(`\n${colors.red('✗')} Unsupported platform: ${platform}`)
       return null
   }
 
-  console.log(`\n✅ Optimization complete!`)
+  logger.log(`\n${colors.green('✓')} Optimization complete!`)
   return result
 }
 
@@ -241,7 +243,7 @@ async function optimizeBinary(binaryPath, platform) {
  * Find and optimize all platform binaries.
  */
 async function optimizeAllBinaries() {
-  console.log('🔍 Finding all platform binaries...\n')
+  logger.log(`🔍 Finding all platform binaries...\n')
 
   const packagesDir = path.join(rootDir, 'packages')
   const binaryPatterns = [
@@ -269,13 +271,13 @@ async function optimizeAllBinaries() {
   }
 
   if (binaries.length === 0) {
-    console.log('⚠️  No binaries found to optimize')
-    console.log('   Run build first: pnpm run build:platforms')
+    logger.log(`${colors.yellow('⚠')}  No binaries found to optimize`)
+    logger.log('   Run build first: pnpm run build:platforms')
     return []
   }
 
-  console.log(`Found ${binaries.length} binaries to optimize:\n`)
-  binaries.forEach(b => console.log(`  - ${path.relative(rootDir, b)}`))
+  logger.log(`Found ${binaries.length} binaries to optimize:\n`)
+  binaries.forEach(b => logger.log(`  - ${path.relative(rootDir, b)}`))
 
   const results = []
   for (const binaryPath of binaries) {
@@ -292,8 +294,8 @@ async function optimizeAllBinaries() {
  * Main entry point.
  */
 async function main() {
-  console.log('⚡ Node.js Binary Size Optimizer')
-  console.log('=' .repeat(50))
+  logger.log('⚡ Node.js Binary Size Optimizer')
+  logger.log('=' .repeat(50))
 
   let results = []
 
@@ -304,15 +306,15 @@ async function main() {
     if (!binaryPath) {
       binaryPath = path.join(packageDir, 'build/out/Release/node')
       if (!existsSync(binaryPath)) {
-        console.error('\n❌ Error: No binary found at default path')
-        console.log('\nUsage:')
-        console.log('  node packages/node-smol-builder/scripts/optimize.mjs [binary-path] [--platform=<platform>]')
-        console.log('  node packages/node-smol-builder/scripts/optimize.mjs --all')
-        console.log('\nExamples:')
-        console.log('  node packages/node-smol-builder/scripts/optimize.mjs')
-        console.log('  node packages/node-smol-builder/scripts/optimize.mjs build/out/Release/node')
-        console.log('  node packages/node-smol-builder/scripts/optimize.mjs --all')
-        console.log(`\nDefault path: ${binaryPath}`)
+        logger.error(`\n${colors.red('✗')} Error: No binary found at default path`)
+        logger.log('\nUsage:')
+        logger.log('  node packages/node-smol-builder/scripts/optimize.mjs [binary-path] [--platform=<platform>]')
+        logger.log('  node packages/node-smol-builder/scripts/optimize.mjs --all')
+        logger.log('\nExamples:')
+        logger.log('  node packages/node-smol-builder/scripts/optimize.mjs')
+        logger.log('  node packages/node-smol-builder/scripts/optimize.mjs build/out/Release/node')
+        logger.log('  node packages/node-smol-builder/scripts/optimize.mjs --all')
+        logger.log(`\nDefault path: ${binaryPath}`)
         process.exit(1)
       }
     }
@@ -325,10 +327,10 @@ async function main() {
 
   // Summary.
   if (results.length > 0) {
-    console.log('\n' + '='.repeat(50))
-    console.log('📊 Optimization Summary')
-    console.log('='.repeat(50))
-    console.log('')
+    logger.log('\n' + '='.repeat(50))
+    logger.log('📊 Optimization Summary')
+    logger.log('='.repeat(50))
+    logger.log('')
 
     let totalBefore = 0
     let totalAfter = 0
@@ -336,26 +338,26 @@ async function main() {
     for (const { path: binPath, before, after, savings } of results) {
       totalBefore += before
       totalAfter += after
-      console.log(`  ${path.basename(binPath)}:`)
-      console.log(`    Before: ${before.toFixed(2)} MB`)
-      console.log(`    After:  ${after.toFixed(2)} MB`)
-      console.log(`    Saved:  ${(before - after).toFixed(2)} MB (${savings.toFixed(1)}%)`)
-      console.log('')
+      logger.log(`  ${path.basename(binPath)}:`)
+      logger.log(`    Before: ${before.toFixed(2)} MB`)
+      logger.log(`    After:  ${after.toFixed(2)} MB`)
+      logger.log(`    Saved:  ${(before - after).toFixed(2)} MB (${savings.toFixed(1)}%)`)
+      logger.log('')
     }
 
     if (results.length > 1) {
       const totalSavings = ((totalBefore - totalAfter) / totalBefore * 100).toFixed(1)
-      console.log('  Total:')
-      console.log(`    Before: ${totalBefore.toFixed(2)} MB`)
-      console.log(`    After:  ${totalAfter.toFixed(2)} MB`)
-      console.log(`    Saved:  ${(totalBefore - totalAfter).toFixed(2)} MB (${totalSavings}%)`)
+      logger.log('  Total:')
+      logger.log(`    Before: ${totalBefore.toFixed(2)} MB`)
+      logger.log(`    After:  ${totalAfter.toFixed(2)} MB`)
+      logger.log(`    Saved:  ${(totalBefore - totalAfter).toFixed(2)} MB (${totalSavings}%)`)
     }
 
-    console.log('\n✅ All optimizations complete!')
+    logger.log(`\n${colors.green('✓')} All optimizations complete!`)
   }
 }
 
 main().catch(error => {
-  console.error('\n❌ Optimization failed:', error.message)
+  logger.error(`\n${colors.red('✗')} Optimization failed:`, error.message)
   process.exit(1)
 })

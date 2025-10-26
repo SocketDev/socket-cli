@@ -16,6 +16,8 @@ import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
+import { logger } from '@socketsecurity/lib/logger'
+import colors from 'yoctocolors-cjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const TOOLS_DIR = path.resolve(__dirname, '../additions/tools')
@@ -55,11 +57,11 @@ function parseArgs() {
   const args = process.argv.slice(2)
 
   if (args.length < 2) {
-    console.error('Usage: compress-binary.mjs <input> <output> [--quality=lzma|lzfse|xpress]')
-    console.error('')
-    console.error('Examples:')
-    console.error('  node scripts/compress-binary.mjs ./node ./node.compressed')
-    console.error('  node scripts/compress-binary.mjs ./node ./node.compressed --quality=lzma')
+    logger.error('Usage: compress-binary.mjs <input> <output> [--quality=lzma|lzfse|xpress]')
+    logger.error('')
+    logger.error('Examples:')
+    logger.error('  node scripts/compress-binary.mjs ./node ./node.compressed')
+    logger.error('  node scripts/compress-binary.mjs ./node ./node.compressed --quality=lzma')
     process.exit(1)
   }
 
@@ -102,9 +104,9 @@ async function ensureToolBuilt(config) {
     return existsSync(toolPathExe) ? toolPathExe : toolPath
   }
 
-  console.log(`Building ${config.binaryFormat} compression tool...`)
-  console.log(`  Command: ${config.buildCommand}`)
-  console.log('')
+  logger.log(`Building ${config.binaryFormat} compression tool...`)
+  logger.log(`  Command: ${config.buildCommand}`)
+  logger.log('')
 
   const result = await spawn(config.buildCommand, {
     cwd: TOOLS_DIR,
@@ -144,11 +146,11 @@ async function compressBinary(toolPath, inputPath, outputPath, quality, config) 
   // Get input file size.
   const inputSizeMB = await getFileSizeMB(inputPath)
 
-  console.log(`Compressing ${config.binaryFormat} binary...`)
-  console.log(`  Input: ${inputPath} (${inputSizeMB.toFixed(2)} MB)`)
-  console.log(`  Output: ${outputPath}`)
-  console.log(`  Quality: ${quality || config.defaultQuality}`)
-  console.log('')
+  logger.log(`Compressing ${config.binaryFormat} binary...`)
+  logger.log(`  Input: ${inputPath} (${inputSizeMB.toFixed(2)} MB)`)
+  logger.log(`  Output: ${outputPath}`)
+  logger.log(`  Quality: ${quality || config.defaultQuality}`)
+  logger.log('')
 
   // Build command arguments.
   const args = [inputPath, outputPath]
@@ -174,12 +176,12 @@ async function compressBinary(toolPath, inputPath, outputPath, quality, config) 
   const outputSizeMB = await getFileSizeMB(outputPath)
   const reduction = ((inputSizeMB - outputSizeMB) / inputSizeMB) * 100
 
-  console.log('')
-  console.log(`✓ Compression complete!`)
-  console.log(`  Original: ${inputSizeMB.toFixed(2)} MB`)
-  console.log(`  Compressed: ${outputSizeMB.toFixed(2)} MB`)
-  console.log(`  Reduction: ${reduction.toFixed(1)}%`)
-  console.log(`  Saved: ${(inputSizeMB - outputSizeMB).toFixed(2)} MB`)
+  logger.log('')
+  logger.log(`✓ Compression complete!`)
+  logger.log(`  Original: ${inputSizeMB.toFixed(2)} MB`)
+  logger.log(`  Compressed: ${outputSizeMB.toFixed(2)} MB`)
+  logger.log(`  Reduction: ${reduction.toFixed(1)}%`)
+  logger.log(`  Saved: ${(inputSizeMB - outputSizeMB).toFixed(2)} MB`)
 }
 
 /**
@@ -190,10 +192,10 @@ async function main() {
     const { inputPath, outputPath, quality } = parseArgs()
     const config = getPlatformConfig()
 
-    console.log('Socket Binary Compression')
-    console.log('=========================')
-    console.log(`Platform: ${config.binaryFormat} (${process.platform})`)
-    console.log('')
+    logger.log('Socket Binary Compression')
+    logger.log('=========================')
+    logger.log(`Platform: ${config.binaryFormat} (${process.platform})`)
+    logger.log('')
 
     // Ensure tool is built.
     const toolPath = await ensureToolBuilt(config)
@@ -202,7 +204,7 @@ async function main() {
     await compressBinary(toolPath, inputPath, outputPath, quality, config)
 
   } catch (e) {
-    console.error(`Error: ${e.message}`)
+    logger.error(`Error: ${e.message}`)
     process.exit(1)
   }
 }
