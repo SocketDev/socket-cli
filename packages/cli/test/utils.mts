@@ -266,19 +266,22 @@ export async function spawnSocketCli(
   const commandArgs = isJsFile ? [entryPath, ...args] : args
 
   try {
-    // Build env without spreading process.env to preserve Windows proxy behavior.
+    // Build options conditionally to avoid passing env when not needed.
+    // This preserves Windows process.env proxy behavior.
     // Spreading process.env breaks case-insensitive env var access on Windows.
-    const env = spawnEnv ? { ...constants.processEnv, ...spawnEnv } : constants.processEnv
-
-    const output = await spawn(command, commandArgs, {
+    const spawnOptions = {
       cwd,
-      env,
       ...restOptions,
       // Close stdin to prevent tests from hanging
       // when commands wait for input. Must be after restOptions
       // to ensure it's not overridden.
       stdio: restOptions.stdio ?? ['ignore', 'pipe', 'pipe'],
-    })
+      // Only add env if custom environment variables are provided.
+      // This avoids breaking Windows process.env proxy behavior.
+      ...(spawnEnv ? { env: { ...constants.processEnv, ...spawnEnv } } : {}),
+    }
+
+    const output = await spawn(command, commandArgs, spawnOptions)
     return {
       status: true,
       code: 0,
