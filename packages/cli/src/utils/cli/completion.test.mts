@@ -44,9 +44,13 @@ describe('completion utilities', () => {
         data: 'source /mock/dist/path/data/socket-completion.bash',
       })
 
-      expect(fs.existsSync).toHaveBeenCalledWith(
-        '/mock/dist/path/data/socket-completion.bash',
-      )
+      // Note: On Windows, path.join returns backslashes, which are then checked by existsSync.
+      // The implementation normalizes the path display but checks existence with the actual path.
+      const expectedPath =
+        path.sep === '\\'
+          ? '\\mock\\dist\\path\\data\\socket-completion.bash'
+          : '/mock/dist/path/data/socket-completion.bash'
+      expect(fs.existsSync).toHaveBeenCalledWith(expectedPath)
     })
 
     it('returns error when completion script does not exist', () => {
@@ -138,12 +142,9 @@ describe('completion utilities', () => {
 
       expect(result.ok).toBe(true)
       if (result.ok) {
+        // Note: The implementation normalizes paths to forward slashes for bash compatibility.
         expect(result.data.targetPath).toBe(
-          path.join(
-            path.dirname('/mock/app/data'),
-            'completion',
-            'socket-completion.bash',
-          ),
+          '/mock/app/completion/socket-completion.bash',
         )
       }
     })

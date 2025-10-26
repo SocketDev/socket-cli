@@ -22,8 +22,6 @@
  * - Ensures package manager commands work correctly
  */
 
-import path from 'node:path'
-
 import { normalizePath } from '@socketsecurity/lib/path'
 
 import ENV from '../../constants/env.mts'
@@ -59,14 +57,13 @@ export function isRunningInTemporaryExecutor(): boolean {
   }
 
   // Check common temporary execution path patterns.
+  // Note: Always use forward slashes since we normalize paths to forward slashes.
   const tempPatterns = [
     '_npx', // npm's npx cache directory
     '.pnpm-store', // pnpm dlx temporary store
     'dlx-', // Common dlx directory prefix
     '.yarn/$$', // Yarn Berry PnP virtual packages
-    path.sep === '\\'
-      ? 'AppData\\Local\\Temp\\xfs-'
-      : 'AppData/Local/Temp/xfs-', // Yarn on Windows
+    'AppData/Local/Temp/xfs-', // Yarn on Windows
   ]
 
   return tempPatterns.some(pattern => normalizedDirname.includes(pattern))
@@ -135,14 +132,13 @@ export function shouldSkipShadow(
   }
 
   // Check common temporary execution path patterns.
+  // Note: Always use forward slashes since we normalize paths to forward slashes.
   const tempPatterns = [
     '_npx', // npm's npx cache directory
     '.pnpm-store', // pnpm dlx temporary store
     'dlx-', // Common dlx directory prefix
     '.yarn/$$', // Yarn Berry PnP virtual packages
-    path.sep === '\\'
-      ? 'AppData\\Local\\Temp\\xfs-'
-      : 'AppData/Local/Temp/xfs-', // Yarn on Windows
+    'AppData/Local/Temp/xfs-', // Yarn on Windows
   ]
 
   return tempPatterns.some(pattern => normalizedCwd.includes(pattern))
