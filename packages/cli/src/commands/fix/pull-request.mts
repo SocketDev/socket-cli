@@ -16,7 +16,7 @@ import {
   GQL_PR_STATE_OPEN,
 } from '../../constants/github.mts'
 import { formatErrorWithDetail } from '../../utils/error/errors.mjs'
-import { gitDeleteRemoteBranch } from '../../utils/git/git.mjs'
+import { gitDeleteRemoteBranch } from '../../utils/git/operations.mjs'
 import {
   cacheFetch,
   type GhsaDetails,

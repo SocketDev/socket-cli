@@ -9,7 +9,6 @@ import { build } from 'esbuild'
 
 import config from './esbuild.cli.config.mjs'
 import { logger } from '@socketsecurity/lib/logger'
-import colors from 'yoctocolors-cjs'
 
 logger.log('Building Socket CLI with esbuild...\n')
 

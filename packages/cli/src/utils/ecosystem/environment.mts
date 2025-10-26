@@ -81,7 +81,7 @@ import {
   NPM_BUGGY_OVERRIDES_PATCHED_VERSION,
   PACKAGE_JSON,
 } from '../../constants/packages.mts'
-import { findUp } from '../fs/fs.mts'
+import { findUp } from '../fs/find-up.mts'
 import { cmdPrefixMessage } from '../process/cmd.mts'
 
 import type { CResult } from '../../types.mjs'

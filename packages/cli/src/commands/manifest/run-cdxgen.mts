@@ -19,7 +19,7 @@ import {
   SOCKET_CLI_SHADOW_SILENT,
 } from '../../constants/shadow.mjs'
 import { spawnCdxgenDlx, spawnSynpDlx } from '../../utils/dlx/spawn.mjs'
-import { findUp } from '../../utils/fs/fs.mjs'
+import { findUp } from '../../utils/fs/find-up.mjs'
 import { isYarnBerry } from '../../utils/yarn/version.mts'
 
 import type { ShadowBinResult } from '../../shadow/npm/bin.mts'

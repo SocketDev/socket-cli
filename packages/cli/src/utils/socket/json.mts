@@ -26,7 +26,7 @@ import { logger } from '@socketsecurity/lib/logger'
 
 import { SOCKET_JSON, SOCKET_WEBSITE_URL } from '../../constants/socket.mts'
 import { formatErrorWithDetail } from '../error/errors.mts'
-import { findUp } from '../fs/fs.mts'
+import { findUp } from '../fs/find-up.mts'
 
 import type { CResult } from '../../types.mjs'
 

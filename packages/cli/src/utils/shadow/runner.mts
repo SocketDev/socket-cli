@@ -22,7 +22,7 @@ import {
   SOCKET_CLI_SHADOW_SILENT,
 } from '../../constants/shadow.mts'
 import { getErrorCause } from '../error/errors.mts'
-import { findUp } from '../fs/fs.mts'
+import { findUp } from '../fs/find-up.mts'
 import { isYarnBerry } from '../yarn/version.mts'
 
 import type { IpcObject } from '../../constants/types.mts'

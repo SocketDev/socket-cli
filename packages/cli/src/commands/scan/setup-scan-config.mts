@@ -10,7 +10,7 @@ import {
   detectDefaultBranch,
   getRepoName,
   gitBranch,
-} from '../../utils/git/git.mjs'
+} from '../../utils/git/operations.mjs'
 import {
   readSocketJsonSync,
   writeSocketJson,

@@ -1,0 +1,27 @@
+
+[1m[36m⚡ Socket CLI - Secure your supply chain[39m[22m
+
+What can I help you with?
+
+  [2m[1][22m 🔍  [1mSecurity Scanning[22m
+      [90mScan projects for vulnerabilities[39m
+  [2m[2][22m 🔧  [1mFix & Patch[22m
+      [90mFix vulnerabilities and apply patches[39m
+  [2m[3][22m 📦  [1mPackage Managers[22m
+      [90mEnhanced package manager commands[39m
+  [2m[4][22m 📊  [1mPackage Analysis[22m
+      [90mAnalyze package security[39m
+  [2m[5][22m 🏢  [1mOrganizations & Repos[22m
+      [90mManage organizations and repositories[39m
+  [2m[6][22m ⚙️  [1mConfiguration[22m
+      [90mSettings and environment variables[39m
+  [2m[7][22m 💬  [1mNatural Language[22m
+      [90mUse plain English commands[39m
+  [2m[8][22m 📚  [1mAll Commands[22m
+      [90mShow complete command list[39m
+  [2m[9][22m 🚀  [1mQuick Start[22m
+      [90mGet started quickly[39m
+
+[90mRun with an interactive terminal to select a category[39m
+[90mOr use: socket --help=<category>[39m
+[90mCategories: scan, fix, pm, pkg, org, config, ask, all, quick[39m

@@ -3,16 +3,19 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { getNpmConfig } from './config.mts'
 
 // Mock @npmcli/config.
-vi.mock('@npmcli/config', () => ({
-  default: vi.fn(() => ({
+vi.mock('@npmcli/config', () => {
+  const MockNpmConfig = vi.fn().mockImplementation(() => ({
     load: vi.fn().mockResolvedValue(undefined),
     flat: {
       registry: 'https://registry.npmjs.org/',
       cache: '/home/user/.npm',
       prefix: '/usr/local',
     },
-  })),
-}))
+  }))
+  return {
+    default: MockNpmConfig,
+  }
+})
 
 // Mock @npmcli/config/lib/definitions.
 vi.mock('@npmcli/config/lib/definitions', () => ({

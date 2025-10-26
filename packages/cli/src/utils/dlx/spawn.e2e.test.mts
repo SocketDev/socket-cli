@@ -4,7 +4,7 @@ import { beforeAll, describe, expect, it } from 'vitest'
 
 import ENV from '../../constants/env.mts'
 import { spawnDlx } from './spawn.mts'
-import { findUp } from '../fs/fs.mts'
+import { findUp } from '../fs/find-up.mts'
 import { getDefaultApiToken } from '../socket/sdk.mts'
 
 describe('dlx e2e tests', () => {

@@ -5,7 +5,6 @@ import { spawnCdxgenDlx } from './spawn.mts'
 // Mock spawnDlx function.
 vi.mock('./spawn.mts', () => {
   const mockSpawnDlx = vi.fn()
-
   // Return the actual implementation for spawnCdxgenDlx.
   return {
     spawnDlx: mockSpawnDlx,
@@ -22,32 +21,23 @@ vi.mock('./spawn.mts', () => {
 })
 
 describe('spawnCdxgenDlx', () => {
-  let mockSpawnDlx: any
+  let mockSpawnDlx: ReturnType<typeof vi.fn>
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks()
-    // Get the mocked function.
-    mockSpawnDlx =
-      vi.mocked((vi as any).importActual('./spawn.mts')).spawnDlx || vi.fn()
-
-    // Access the mock from the module.
-    const dlxModule = vi.mocked(import('./spawn.mts'))
-    dlxModule.then(m => {
-      mockSpawnDlx = m.spawnDlx as any
-      mockSpawnDlx.mockResolvedValue({
-        spawnPromise: Promise.resolve({
-          stdout: 'cdxgen output',
-          stderr: '',
-        }),
-      })
+    const { spawnDlx } = await import('./spawn.mts')
+    mockSpawnDlx = vi.mocked(spawnDlx)
+    // Setup default resolved value for the mock.
+    mockSpawnDlx.mockResolvedValue({
+      spawnPromise: Promise.resolve({
+        stdout: 'cdxgen output',
+        stderr: '',
+      }),
     })
   })
 
   it('calls spawnDlx with cdxgen package', async () => {
-    const { spawnDlx } = await import('./spawn.mts')
-    const mockFn = vi.mocked(spawnDlx)
-
-    mockFn.mockResolvedValueOnce({
+    mockSpawnDlx.mockResolvedValueOnce({
       spawnPromise: Promise.resolve({
         stdout: 'cdxgen output',
         stderr: '',
@@ -56,7 +46,7 @@ describe('spawnCdxgenDlx', () => {
 
     await spawnCdxgenDlx(['--help'])
 
-    expect(mockFn).toHaveBeenCalledWith(
+    expect(mockSpawnDlx).toHaveBeenCalledWith(
       { name: '@cyclonedx/cdxgen', version: 'undefined' },
       ['--help'],
       { force: false, silent: true },
@@ -65,10 +55,7 @@ describe('spawnCdxgenDlx', () => {
   })
 
   it('passes options through to spawnDlx', async () => {
-    const { spawnDlx } = await import('./spawn.mts')
-    const mockFn = vi.mocked(spawnDlx)
-
-    mockFn.mockResolvedValueOnce({
+    mockSpawnDlx.mockResolvedValueOnce({
       spawnPromise: Promise.resolve({
         stdout: 'cdxgen output',
         stderr: '',
@@ -83,7 +70,7 @@ describe('spawnCdxgenDlx', () => {
 
     await spawnCdxgenDlx(['--output', 'sbom.json'], options)
 
-    expect(mockFn).toHaveBeenCalledWith(
+    expect(mockSpawnDlx).toHaveBeenCalledWith(
       { name: '@cyclonedx/cdxgen', version: 'undefined' },
       ['--output', 'sbom.json'],
       {
@@ -114,10 +101,7 @@ describe('spawnCdxgenDlx', () => {
   })
 
   it('handles SBOM generation arguments', async () => {
-    const { spawnDlx } = await import('./spawn.mts')
-    const mockFn = vi.mocked(spawnDlx)
-
-    mockFn.mockResolvedValueOnce({
+    mockSpawnDlx.mockResolvedValueOnce({
       spawnPromise: Promise.resolve({
         stdout: 'cdxgen output',
         stderr: '',
@@ -137,7 +121,7 @@ describe('spawnCdxgenDlx', () => {
 
     await spawnCdxgenDlx(sbomArgs)
 
-    expect(mockFn).toHaveBeenCalledWith(
+    expect(mockSpawnDlx).toHaveBeenCalledWith(
       { name: '@cyclonedx/cdxgen', version: 'undefined' },
       sbomArgs,
       { force: false, silent: true },
@@ -146,10 +130,7 @@ describe('spawnCdxgenDlx', () => {
   })
 
   it('handles recursive scanning arguments', async () => {
-    const { spawnDlx } = await import('./spawn.mts')
-    const mockFn = vi.mocked(spawnDlx)
-
-    mockFn.mockResolvedValueOnce({
+    mockSpawnDlx.mockResolvedValueOnce({
       spawnPromise: Promise.resolve({
         stdout: 'cdxgen output',
         stderr: '',
@@ -158,7 +139,7 @@ describe('spawnCdxgenDlx', () => {
 
     await spawnCdxgenDlx(['-r', '/path/to/scan'])
 
-    expect(mockFn).toHaveBeenCalledWith(
+    expect(mockSpawnDlx).toHaveBeenCalledWith(
       { name: '@cyclonedx/cdxgen', version: 'undefined' },
       ['-r', '/path/to/scan'],
       { force: false, silent: true },

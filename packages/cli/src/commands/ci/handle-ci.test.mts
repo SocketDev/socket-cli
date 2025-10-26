@@ -23,7 +23,7 @@ vi.mock('../../constants.mts', () => ({
     REPORT_LEVEL_ERROR: 'error',
   },
 }))
-vi.mock('../../utils/git/git.mjs', () => ({
+vi.mock('../../utils/git/operations.mjs', () => ({
   detectDefaultBranch: vi.fn(),
   getRepoName: vi.fn(),
   gitBranch: vi.fn(),
@@ -53,7 +53,7 @@ describe('handleCi', () => {
   it('handles CI scan successfully', async () => {
     const { getDefaultOrgSlug } = await import('./fetch-default-org-slug.mts')
     const { detectDefaultBranch, getRepoName, gitBranch } = await import(
-      '../../utils/git/git.mjs'
+      '../../utils/git/operations.mjs'
     )
     const { handleCreateNewScan } = await import(
       '../scan/handle-create-new-scan.mts'
@@ -100,7 +100,7 @@ describe('handleCi', () => {
   it('uses default branch when git branch is not available', async () => {
     const { getDefaultOrgSlug } = await import('./fetch-default-org-slug.mts')
     const { detectDefaultBranch, getRepoName, gitBranch } = await import(
-      '../../utils/git/git.mjs'
+      '../../utils/git/operations.mjs'
     )
     const { handleCreateNewScan } = await import(
       '../scan/handle-create-new-scan.mts'
@@ -127,7 +127,9 @@ describe('handleCi', () => {
 
   it('handles auto-manifest mode', async () => {
     const { getDefaultOrgSlug } = await import('./fetch-default-org-slug.mts')
-    const { getRepoName, gitBranch } = await import('../../utils/git/git.mjs')
+    const { getRepoName, gitBranch } = await import(
+      '../../utils/git/operations.mjs'
+    )
     const { handleCreateNewScan } = await import(
       '../scan/handle-create-new-scan.mts'
     )
@@ -196,7 +198,9 @@ describe('handleCi', () => {
   it('logs debug information', async () => {
     const { debug, debugDir } = await import('@socketsecurity/lib/debug')
     const { getDefaultOrgSlug } = await import('./fetch-default-org-slug.mts')
-    const { getRepoName, gitBranch } = await import('../../utils/git/git.mjs')
+    const { getRepoName, gitBranch } = await import(
+      '../../utils/git/operations.mjs'
+    )
 
     vi.mocked(getDefaultOrgSlug).mockResolvedValue({
       ok: true,

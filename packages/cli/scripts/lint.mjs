@@ -395,9 +395,7 @@ async function main() {
       logger.log('  --staged       Lint staged files')
       logger.log('  --quiet, --silent  Suppress progress messages')
       logger.log('\nExamples:')
-      logger.log(
-        '  pnpm lint                   # Lint changed files (default)',
-      )
+      logger.log('  pnpm lint                   # Lint changed files (default)')
       logger.log('  pnpm lint --fix             # Fix issues in changed files')
       logger.log('  pnpm lint --all             # Lint all files')
       logger.log('  pnpm lint --staged --fix    # Fix issues in staged files')

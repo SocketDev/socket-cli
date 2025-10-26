@@ -37,7 +37,7 @@ import {
   SOCKET_CLI_SHADOW_PROGRESS,
   SOCKET_IPC_HANDSHAKE,
 } from '../constants/shadow.mts'
-import { findUp } from '../utils/fs/fs.mjs'
+import { findUp } from '../utils/fs/find-up.mjs'
 import { cmdFlagsToString } from '../utils/process/cmd.mts'
 import { installNpmLinks, installNpxLinks } from '../utils/shadow/links.mts'
 import { getPublicApiToken } from '../utils/socket/sdk.mjs'

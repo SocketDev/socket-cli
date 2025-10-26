@@ -17,7 +17,6 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { deleteAsync as del } from 'del'
-import colors from 'yoctocolors-cjs'
 
 import { parseArgs } from '@socketsecurity/lib/argv/parse'
 import { logger } from '@socketsecurity/lib/logger'
@@ -1316,9 +1315,7 @@ async function ensureGitHubAuthenticated() {
       logger.log(colors.red('\nLogin failed. Please try again.'))
 
       if (attempts < maxAttempts) {
-        logger.log(
-          colors.yellow(`\nAttempt ${attempts + 1} of ${maxAttempts}`),
-        )
+        logger.log(colors.yellow(`\nAttempt ${attempts + 1} of ${maxAttempts}`))
         await new Promise(resolve => setTimeout(resolve, 1000))
       }
     }
@@ -4550,9 +4547,7 @@ Let's work through this together to get CI passing.`
             )
           })
           if (snapshotList.length > 5) {
-            logger.log(
-              colors.gray(`  ... and ${snapshotList.length - 5} more`),
-            )
+            logger.log(colors.gray(`  ... and ${snapshotList.length - 5} more`))
           }
         }
 
@@ -5544,9 +5539,7 @@ async function main() {
       logger.log(
         '  --max-auto-fixes N  Max auto-fix attempts (--green, default: 10)',
       )
-      logger.log(
-        '  --max-retries N  Max CI fix attempts (--green, default: 3)',
-      )
+      logger.log('  --max-retries N  Max CI fix attempts (--green, default: 3)')
       logger.log('  --no-darkwing    Disable "Let\'s get dangerous!" mode')
       logger.log('  --no-report      Skip generating scan report (--fix)')
       logger.log('  --no-verify      Use --no-verify when committing')
@@ -5581,9 +5574,7 @@ async function main() {
       logger.log(
         '  pnpm claude --test lib/utils.js  # Generate tests for a file',
       )
-      logger.log(
-        '  pnpm claude --refactor src/index.js  # Suggest refactoring',
-      )
+      logger.log('  pnpm claude --refactor src/index.js  # Suggest refactoring')
       logger.log('  pnpm claude --push           # Commit and push changes')
       logger.log('  pnpm claude --help           # Show this help')
       logger.log('\nRequires:')

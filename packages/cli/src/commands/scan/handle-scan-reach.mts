@@ -33,7 +33,9 @@ export async function handleScanReach({
   const spinner = getSpinner()
 
   // Get supported file names
-  const supportedFilesCResult = await fetchSupportedScanFileNames({ spinner: spinner ?? undefined })
+  const supportedFilesCResult = await fetchSupportedScanFileNames({
+    spinner: spinner ?? undefined,
+  })
   if (!supportedFilesCResult.ok) {
     await outputScanReach(supportedFilesCResult, {
       cwd,

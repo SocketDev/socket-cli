@@ -15,7 +15,7 @@ import { pluralize } from '@socketsecurity/lib/words'
 import { PatchManifestSchema } from './manifest-schema.mts'
 import { outputPatchStatusResult } from './output-patch-status-result.mts'
 import { getErrorCause } from '../../utils/error/errors.mjs'
-import { findUp } from '../../utils/fs/fs.mjs'
+import { findUp } from '../../utils/fs/find-up.mjs'
 import { hasBackupForPatch } from '../../utils/manifest/patch-backup.mts'
 
 import type { PatchRecord } from './manifest-schema.mts'

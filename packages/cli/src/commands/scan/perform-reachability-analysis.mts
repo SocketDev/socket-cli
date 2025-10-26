@@ -14,7 +14,7 @@ import { socketDevLink } from '../../utils/terminal/link.mts'
 import { fetchOrganization } from '../organization/fetch-organization-list.mts'
 
 import type { CResult } from '../../types.mts'
-import type { PURL_Type } from '../../utils/ecosystem/ecosystem.mjs'
+import type { PURL_Type } from '../../utils/ecosystem/types.mjs'
 import type { Spinner } from '@socketsecurity/lib/spinner'
 
 export type ReachabilityOptions = {

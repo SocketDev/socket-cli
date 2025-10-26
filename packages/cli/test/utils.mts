@@ -29,9 +29,7 @@ if (!process.env['VITEST']) {
 // In VITEST mode, use a Proxy to keep env vars live and handle case-sensitivity.
 const constants = {
   execPath,
-  processEnv: process.env['VITEST']
-    ? createEnvProxy(process.env)
-    : process.env,
+  processEnv: process.env['VITEST'] ? createEnvProxy(process.env) : process.env,
 }
 
 // The asciiUnsafeRegexp match characters that are:

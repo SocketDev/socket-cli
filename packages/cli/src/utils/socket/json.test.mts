@@ -24,7 +24,7 @@ vi.mock('node:fs', () => ({
   },
 }))
 
-vi.mock('../fs/fs.mts', () => ({
+vi.mock('../fs/find-up.mts', () => ({
   findUp: vi.fn(),
 }))
 
@@ -90,7 +90,7 @@ describe('socket-json utilities', () => {
 
   describe('findSocketJsonUp', () => {
     it('calls findUp with correct parameters', async () => {
-      const { findUp } = await import('../fs/fs.mts')
+      const { findUp } = await import('../fs/find-up.mts')
       vi.mocked(findUp).mockResolvedValue('/path/to/socket.json')
 
       const result = await findSocketJsonUp('/test/dir')
@@ -102,7 +102,7 @@ describe('socket-json utilities', () => {
     })
 
     it('returns undefined when socket.json not found', async () => {
-      const { findUp } = await import('../fs/fs.mts')
+      const { findUp } = await import('../fs/find-up.mts')
       vi.mocked(findUp).mockResolvedValue(undefined)
 
       const result = await findSocketJsonUp('/test/dir')
@@ -112,7 +112,7 @@ describe('socket-json utilities', () => {
 
   describe('readOrDefaultSocketJsonUp', () => {
     it('reads socket.json when found up the tree', async () => {
-      const { findUp } = await import('../fs/fs.mts')
+      const { findUp } = await import('../fs/find-up.mts')
       const mockJson = { version: 1, custom: 'data' }
       vi.mocked(findUp).mockResolvedValue('/parent/socket.json')
       vi.mocked(existsSync).mockReturnValue(true)
@@ -123,7 +123,7 @@ describe('socket-json utilities', () => {
     })
 
     it('returns default when socket.json not found up the tree', async () => {
-      const { findUp } = await import('../fs/fs.mts')
+      const { findUp } = await import('../fs/find-up.mts')
       vi.mocked(findUp).mockResolvedValue(undefined)
 
       const result = await readOrDefaultSocketJsonUp('/test/dir')
