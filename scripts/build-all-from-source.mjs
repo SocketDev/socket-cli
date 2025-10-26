@@ -4,9 +4,10 @@
  * Orchestrates building all from-source packages in the correct order:
  * 1. build-infra (shared utilities)
  * 2. node-smol-builder (custom Node.js)
- * 3. onnx-runtime (ONNX Runtime WASM)
- * 4. codet5-models (CodeT5 model optimization)
- * 5. yoga-layout (Yoga Layout WASM)
+ * 3. onnx-runtime-builder (ONNX Runtime WASM)
+ * 4. codet5-models-builder (CodeT5 model optimization)
+ * 5. minilm-builder (MiniLM model optimization)
+ * 6. yoga-layout (Yoga Layout WASM)
  *
  * Usage:
  *   node scripts/build-all-from-source.mjs           # Build all packages
@@ -45,15 +46,21 @@ const PACKAGES = [
     build: true,
   },
   {
-    name: 'onnx-runtime',
+    name: 'onnx-runtime-builder',
     description: 'ONNX Runtime WASM',
-    path: 'packages/onnx-runtime',
+    path: 'packages/onnx-runtime-builder',
     build: true,
   },
   {
-    name: 'codet5-models',
+    name: 'codet5-models-builder',
     description: 'CodeT5 model optimization',
-    path: 'packages/codet5-models',
+    path: 'packages/codet5-models-builder',
+    build: true,
+  },
+  {
+    name: 'minilm-builder',
+    description: 'MiniLM model optimization',
+    path: 'packages/minilm-builder',
     build: true,
   },
   {

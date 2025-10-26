@@ -13,7 +13,7 @@ import { printStep, printSubstep } from './build-output.mjs'
 /**
  * Get checkpoint directory for a package.
  *
- * @param {string} packageName - Package name (e.g., 'onnx-runtime')
+ * @param {string} packageName - Package name (e.g., 'onnx-runtime-builder')
  * @returns {string} Checkpoint directory path
  */
 function getCheckpointDir(packageName) {

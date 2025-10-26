@@ -1,5 +1,5 @@
 {
-  "name": "@socketsecurity/codet5-models",
+  "name": "@socketsecurity/codet5-models-builder",
   "version": "1.0.0",
   "description": "CodeT5 model conversion and optimization for Socket CLI",
   "type": "module",

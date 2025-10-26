@@ -1,5 +1,5 @@
 {
-  "name": "@socketsecurity/onnx-runtime",
+  "name": "@socketsecurity/onnx-runtime-builder",
   "version": "1.0.0",
   "description": "Custom ONNX Runtime WASM build with minimal operators for CodeT5 models",
   "type": "module",
