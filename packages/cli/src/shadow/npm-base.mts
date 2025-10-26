@@ -65,12 +65,13 @@ export default async function shadowNpmBase(
   extra?: SpawnExtra | undefined,
 ): Promise<ShadowBinResult> {
   const {
+    cwd: cwdOption,
     env: spawnEnv,
     ipc,
     ...spawnOpts
   } = { __proto__: null, ...options } as ShadowBinOptions
 
-  let cwd = getOwn(spawnOpts, 'cwd') ?? process.cwd()
+  let cwd = cwdOption ?? process.cwd()
   if (cwd instanceof URL) {
     cwd = normalizePath(fileURLToPath(cwd))
   } else if (typeof cwd === 'string') {
@@ -143,7 +144,7 @@ export default async function shadowNpmBase(
   const logLevelArgs = isSilent ? [FLAG_LOGLEVEL, 'error'] : []
   const noAuditArgs =
     useAudit ||
-    !(await findUp(NODE_MODULES, { cwd: cwd as string, onlyDirectories: true }))
+    !(await findUp(NODE_MODULES, { cwd, onlyDirectories: true }))
       ? []
       : ['--no-audit']
 
