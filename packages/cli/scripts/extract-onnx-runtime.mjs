@@ -23,7 +23,7 @@ if (existsSync(outputPath)) {
       existing.includes('onnxruntime-web') &&
       existing.includes('InferenceSession')
     ) {
-      console.log(`✓ Using cached ${outputPath}`)
+      logger.log(`✓ Using cached ${outputPath}`)
       process.exit(0)
     }
   } catch {}
@@ -41,6 +41,8 @@ const onnxSyncContent = `/**
  */
 
 import ort from 'onnxruntime-web'
+import { logger } from '@socketsecurity/lib/logger'
+import colors from 'yoctocolors-cjs'
 
 export const InferenceSession = ort.InferenceSession
 export const Tensor = ort.Tensor
@@ -50,5 +52,5 @@ export default ort
 
 writeFileSync(outputPath, onnxSyncContent, 'utf-8')
 
-console.log(`✓ Generated ${outputPath}`)
-console.log(`✓ onnx-sync.mjs size: ${onnxSyncContent.length} bytes`)
+logger.log(`✓ Generated ${outputPath}`)
+logger.log(`✓ onnx-sync.mjs size: ${onnxSyncContent.length} bytes`)

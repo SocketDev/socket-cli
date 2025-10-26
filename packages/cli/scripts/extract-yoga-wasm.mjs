@@ -24,7 +24,7 @@ if (existsSync(outputPath)) {
       existing.includes('yoga-layout') &&
       existing.includes('instantiateWasm')
     ) {
-      console.log(`✓ Using cached ${outputPath}`)
+      logger.log(`✓ Using cached ${outputPath}`)
       process.exit(0)
     }
   } catch {}
@@ -49,7 +49,7 @@ if (!match) {
 
 const base64Data = match[1]
 
-console.log(
+logger.log(
   `✓ Extracted ${base64Data.length} bytes of base64 WASM data from yoga-layout`,
 )
 
@@ -64,6 +64,8 @@ const yogaSyncContent = `/**
 // Import the REAL Emscripten-generated loader and wrapper.
 import loadYogaImpl from 'yoga-layout/dist/binaries/yoga-wasm-base64-esm.js'
 import wrapAssembly from 'yoga-layout/dist/src/wrapAssembly.js'
+import { logger } from '@socketsecurity/lib/logger'
+import colors from 'yoctocolors-cjs'
 
 // Inlined base64 WASM from yoga-layout (extracted at build time).
 const base64Wasm = '${base64Data}'
@@ -100,5 +102,5 @@ export default yoga
 
 writeFileSync(outputPath, yogaSyncContent, 'utf-8')
 
-console.log(`✓ Generated ${outputPath}`)
-console.log(`✓ yoga-sync.mjs size: ${yogaSyncContent.length} bytes`)
+logger.log(`✓ Generated ${outputPath}`)
+logger.log(`✓ yoga-sync.mjs size: ${yogaSyncContent.length} bytes`)

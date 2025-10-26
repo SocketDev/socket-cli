@@ -15,21 +15,23 @@
 import { spawn } from 'node:child_process'
 
 import { runCommandQuiet } from './utils/run-command.mjs'
+import { logger } from '@socketsecurity/lib/logger'
+import colors from 'yoctocolors-cjs'
 
 // Simple CLI helpers without registry dependencies.
 const isQuiet = () => process.argv.includes('--quiet')
 const isVerbose = () => process.argv.includes('--verbose')
 const log = {
-  info: msg => console.log(`ℹ ${msg}`),
-  step: msg => console.log(`→ ${msg}`),
-  success: msg => console.log(`✓ ${msg}`),
-  error: msg => console.error(`✖ ${msg}`),
+  info: msg => logger.log(`ℹ ${msg}`),
+  step: msg => logger.log(`→ ${msg}`),
+  success: msg => logger.log(`✓ ${msg}`),
+  error: msg => logger.error(`✖ ${msg}`),
 }
 const printHeader = title =>
-  console.log(`\n${title}\n${'='.repeat(title.length)}\n`)
-const printFooter = () => console.log('')
-const printSuccess = msg => console.log(`\n✓ ${msg}\n`)
-const printError = msg => console.error(`\n✖ ${msg}\n`)
+  logger.log(`\n${title}\n${'='.repeat(title.length)}\n`)
+const printFooter = () => logger.log('')
+const printSuccess = msg => logger.log(`\n✓ ${msg}\n`)
+const printError = msg => logger.error(`\n✖ ${msg}\n`)
 
 async function main() {
   const quiet = isQuiet()
@@ -120,10 +122,10 @@ async function main() {
         }
         // Always show output on failure.
         if (result.stdout) {
-          console.log(result.stdout)
+          logger.log(result.stdout)
         }
         if (result.stderr) {
-          console.error(result.stderr)
+          logger.error(result.stderr)
         }
         if (!quiet) {
           printError('Build failed')
@@ -135,7 +137,7 @@ async function main() {
       // Show output in verbose mode.
       if (!quiet && verbose) {
         if (result.stdout) {
-          console.log(result.stdout)
+          logger.log(result.stdout)
         }
         log.success(`${name} completed`)
       }
@@ -150,13 +152,13 @@ async function main() {
       printError(`Build failed: ${error.message}`)
     }
     if (verbose) {
-      console.error(error)
+      logger.error(error)
     }
     process.exitCode = 1
   }
 }
 
 main().catch(e => {
-  console.error(e)
+  logger.error(e)
   process.exitCode = 1
 })

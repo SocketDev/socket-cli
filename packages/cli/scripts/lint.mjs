@@ -201,10 +201,10 @@ async function runLintOnFiles(files, options = {}) {
           logger.error('Linting failed')
         }
         if (result.stderr) {
-          console.error(result.stderr)
+          logger.error(result.stderr)
         }
         if (result.stdout && !fix) {
-          console.log(result.stdout)
+          logger.log(result.stdout)
         }
         return result.exitCode
       }
@@ -274,10 +274,10 @@ async function runLintOnAll(options = {}) {
           logger.error('Linting failed')
         }
         if (result.stderr) {
-          console.error(result.stderr)
+          logger.error(result.stderr)
         }
         if (result.stdout && !fix) {
-          console.log(result.stdout)
+          logger.log(result.stdout)
         }
         return result.exitCode
       }
@@ -385,23 +385,23 @@ async function main() {
 
     // Show help if requested
     if (values.help) {
-      console.log('Lint Runner')
-      console.log('\nUsage: pnpm lint [options] [files...]')
-      console.log('\nOptions:')
-      console.log('  --help         Show this help message')
-      console.log('  --fix          Automatically fix problems')
-      console.log('  --all          Lint all files')
-      console.log('  --changed      Lint changed files (default behavior)')
-      console.log('  --staged       Lint staged files')
-      console.log('  --quiet, --silent  Suppress progress messages')
-      console.log('\nExamples:')
-      console.log(
+      logger.log('Lint Runner')
+      logger.log('\nUsage: pnpm lint [options] [files...]')
+      logger.log('\nOptions:')
+      logger.log('  --help         Show this help message')
+      logger.log('  --fix          Automatically fix problems')
+      logger.log('  --all          Lint all files')
+      logger.log('  --changed      Lint changed files (default behavior)')
+      logger.log('  --staged       Lint staged files')
+      logger.log('  --quiet, --silent  Suppress progress messages')
+      logger.log('\nExamples:')
+      logger.log(
         '  pnpm lint                   # Lint changed files (default)',
       )
-      console.log('  pnpm lint --fix             # Fix issues in changed files')
-      console.log('  pnpm lint --all             # Lint all files')
-      console.log('  pnpm lint --staged --fix    # Fix issues in staged files')
-      console.log('  pnpm lint src/index.ts      # Lint specific file(s)')
+      logger.log('  pnpm lint --fix             # Fix issues in changed files')
+      logger.log('  pnpm lint --all             # Lint all files')
+      logger.log('  pnpm lint --staged --fix    # Fix issues in staged files')
+      logger.log('  pnpm lint src/index.ts      # Lint specific file(s)')
       process.exitCode = 0
       return
     }
@@ -410,7 +410,7 @@ async function main() {
 
     if (!quiet) {
       printHeader('Lint Runner')
-      console.log('')
+      logger.log('')
     }
 
     let exitCode = 0
@@ -458,12 +458,12 @@ async function main() {
     if (exitCode !== 0) {
       if (!quiet) {
         logger.error('')
-        console.log('Lint failed')
+        logger.log('Lint failed')
       }
       process.exitCode = exitCode
     } else {
       if (!quiet) {
-        console.log('')
+        logger.log('')
         logger.success('All lint checks passed!')
       }
     }

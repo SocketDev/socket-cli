@@ -10,6 +10,8 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { logger } from '@socketsecurity/lib/logger'
+import colors from 'yoctocolors-cjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '..')
@@ -24,7 +26,7 @@ if (existsSync(outputPath)) {
       existing.includes('loadModelSync') &&
       existing.includes('loadTokenizerSync')
     ) {
-      console.log(`✓ Using cached ${outputPath}`)
+      logger.log(`✓ Using cached ${outputPath}`)
       process.exit(0)
     }
   } catch {}
@@ -77,8 +79,8 @@ export function loadTokenizerSync() {
 
 writeFileSync(outputPath, minilmSyncContent, 'utf-8')
 
-console.log(`✓ Generated ${outputPath}`)
-console.log(`✓ minilm-sync.mjs size: ${minilmSyncContent.length} bytes`)
-console.log(
+logger.log(`✓ Generated ${outputPath}`)
+logger.log(`✓ minilm-sync.mjs size: ${minilmSyncContent.length} bytes`)
+logger.log(
   'ℹ Note: minilm-sync.mjs is a placeholder. Production builds should embed the actual model data.',
 )
