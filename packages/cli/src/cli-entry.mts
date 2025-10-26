@@ -52,15 +52,18 @@ const __filename = fileURLToPath(import.meta.url)
 void (async () => {
   const registryUrl = lookupRegistryUrl()
 
-  // Unified update notifier handles both SEA and npm automatically.
-  await scheduleUpdateCheck({
-    authInfo: lookupRegistryAuthToken(registryUrl, { recursive: true }),
-    name: isSeaBinary()
-      ? SOCKET_CLI_BIN_NAME
-      : ENV.INLINED_SOCKET_CLI_NAME || SOCKET_CLI_BIN_NAME,
-    registryUrl,
-    version: ENV.INLINED_SOCKET_CLI_VERSION || '0.0.0',
-  })
+  // Skip update checks in test environments.
+  if (process.env['VITEST'] !== '1' && process.env['CI'] !== 'true') {
+    // Unified update notifier handles both SEA and npm automatically.
+    await scheduleUpdateCheck({
+      authInfo: lookupRegistryAuthToken(registryUrl, { recursive: true }),
+      name: isSeaBinary()
+        ? SOCKET_CLI_BIN_NAME
+        : ENV.INLINED_SOCKET_CLI_NAME || SOCKET_CLI_BIN_NAME,
+      registryUrl,
+      version: ENV.INLINED_SOCKET_CLI_VERSION || '0.0.0',
+    })
+  }
 
   try {
     await meowWithSubcommands(

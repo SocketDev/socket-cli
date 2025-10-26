@@ -18,6 +18,10 @@ import { fileURLToPath } from 'node:url'
 import { logger } from '@socketsecurity/lib/logger'
 
 import { exec, execCapture } from '@socketsecurity/build-infra/lib/build-exec'
+import {
+  printSetupResults,
+  setupBuildEnvironment,
+} from '@socketsecurity/build-infra/lib/build-env'
 import { EmscriptenBuilder } from '@socketsecurity/build-infra/lib/emscripten-builder'
 import {
   checkCompiler,
@@ -279,9 +283,20 @@ async function main() {
     throw new Error('Python 3.8+ required')
   }
 
-  // Check for Emscripten.
-  if (!process.env.EMSDK) {
-    printError('Emscripten SDK not found', 'Set EMSDK environment variable')
+  // Setup build environment (check for Emscripten SDK).
+  const envSetup = await setupBuildEnvironment({
+    emscripten: true,
+    autoSetup: false,
+  })
+
+  printSetupResults(envSetup)
+
+  if (!envSetup.success) {
+    printError('')
+    printError('Build environment setup failed')
+    printError('Install Emscripten SDK:')
+    printError('  https://emscripten.org/docs/getting_started/downloads.html')
+    printError('')
     throw new Error('Emscripten SDK required')
   }
 

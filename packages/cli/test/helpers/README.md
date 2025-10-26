@@ -364,12 +364,12 @@ pnpm run test test/helpers/example-usage.test.mts
 
 ## Migration Guide
 
-See [EXAMPLES.md](./EXAMPLES.md) for detailed migration examples and before/after comparisons.
+See [examples.md](./examples.md) for detailed migration examples and before/after comparisons.
 
 ## API Documentation
 
 Full API documentation with examples is available in:
-- [EXAMPLES.md](./EXAMPLES.md) - Comprehensive usage examples
+- [examples.md](./examples.md) - Comprehensive usage examples
 - Individual module files - JSDoc documentation
 
 ## Contributing
@@ -380,7 +380,7 @@ When adding new helpers:
 2. **Add JSDoc comments** - Document parameters and return types
 3. **Include examples** - Show usage in JSDoc
 4. **Write tests** - Add to `example-usage.test.mts`
-5. **Update EXAMPLES.md** - Add comprehensive examples
+5. **Update examples.md** - Add comprehensive examples
 6. **Export from index** - Add to `index.mts`
 
 ## License
@@ -390,6 +390,6 @@ Same as Socket CLI (MIT)
 ## Support
 
 For issues or questions:
-- Check [EXAMPLES.md](./EXAMPLES.md) for usage patterns
+- Check [examples.md](./examples.md) for usage patterns
 - Review existing tests in `test/` directory
 - Open an issue in the Socket CLI repository

@@ -992,5 +992,5 @@ What are you testing?
 ## See Also
 
 - [README.md](./README.md) - CLI execution and workspace helpers
-- [EXAMPLES.md](./EXAMPLES.md) - Comprehensive examples
+- [examples.md](./examples.md) - Comprehensive examples
 - Individual helper files - JSDoc documentation
