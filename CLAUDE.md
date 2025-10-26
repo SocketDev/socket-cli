@@ -196,6 +196,59 @@ Each command follows a consistent pattern:
 - Dual linting with oxlint and eslint
 - Formatting with Biome
 
+### Repository Structure & Documentation
+
+#### Build Artifact Standards
+**MANDATORY**: All packages follow this structure:
+- **`build/`** - Scratch location for intermediate build artifacts (GITIGNORED)
+  - Contains: `target/`, `pkg/`, `out/`, `cmake/`, `_deps/`, `wasm/`
+  - Purpose: Temporary files during build process
+- **`dist/`** - Final distribution artifacts (TRACKED when containing deliverables)
+  - Purpose: Built files ready for distribution or consumption
+- **No standalone** `target/`, `pkg/`, or `out/` at package root - these belong inside `build/`
+
+#### Documentation Hierarchy (3-Tier)
+
+**Tier 1: Monorepo Documentation** (`/docs/`)
+- **Purpose**: Cross-package architecture, build systems, development guides
+- **Structure**:
+  - `architecture/` - System design documents and flow diagrams
+  - `build/` - Build system, Node.js patching, WASM compilation
+  - `configuration/` - Shared configuration architecture
+  - `development/` - Development tools and workflow
+  - `guides/` - User-facing how-to guides
+  - `performance/` - Performance optimization strategies
+  - `technical/` - Low-level implementation details
+  - `testing/` - Testing strategies and guides
+- **Index**: `docs/README.md` - Complete documentation map
+
+**Tier 2: Package Documentation** (`packages/<pkg>/docs/`)
+- **Purpose**: Package-specific technical documentation and implementation details
+- **Contents**:
+  - `README.md` - Package documentation index with quick links
+  - `build-process.md` - Detailed build process and optimization
+  - `upstream-tracking.md` - Version tracking and update process
+  - `api-reference.md` - Package API documentation (if applicable)
+  - Implementation-specific technical docs
+- **Examples**:
+  - `packages/yoga-layout/docs/` - Yoga Layout WASM builder docs
+  - `packages/onnx-runtime-builder/docs/` - ONNX Runtime build docs
+  - `packages/minilm-builder/docs/` - ML model conversion pipeline docs
+  - `packages/node-sea-builder/docs/` - SEA build and transformation docs
+  - `packages/node-smol-builder/docs/` - Binary compression docs
+
+**Tier 3: Sub-package Documentation** (`packages/<pkg>/*/docs/`)
+- **Purpose**: Language-specific or submodule implementation details
+- **Contents**: Implementation-specific design docs, optimization reports
+- **Example**: `packages/node-smol-builder/wasm-bundle/docs/` - Rust WASM compression module
+
+#### Documentation Best Practices
+- **Naming**: Use lowercase-with-hyphens.md filenames
+- **Organization**: Create docs/ directories for packages with complex implementations
+- **Linking**: Always provide relative links to related documentation
+- **Index Files**: Maintain README.md in each docs/ directory with complete contents
+- **Upstream Tracking**: Document source repositories, versions, and licenses
+
 ### Testing
 
 Socket CLI uses Vitest for unit testing with comprehensive test helpers for consistent patterns.
