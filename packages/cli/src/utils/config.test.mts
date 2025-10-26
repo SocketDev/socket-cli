@@ -11,7 +11,7 @@ import {
   updateConfigValue,
 } from './config.mts'
 
-const fixtureBaseDir = path.join(testPath, 'fixtures/utils/config')
+const _fixtureBaseDir = path.join(testPath, 'fixtures/utils/config')
 
 describe('utils/config', () => {
   describe('updateConfigValue', () => {
@@ -51,7 +51,9 @@ describe('utils/config', () => {
   describe('findSocketYmlSync', () => {
     it('should find socket.yml when walking up directory tree', async () => {
       // Create an isolated tmpdir with a socket.yml fixture.
-      const tmpDir = path.resolve(mkdtempSync(path.join(os.tmpdir(), 'socket-test-')))
+      const tmpDir = path.resolve(
+        mkdtempSync(path.join(os.tmpdir(), 'socket-test-')),
+      )
       const socketYmlPath = path.join(tmpDir, 'socket.yml')
       const nestedDir = path.join(tmpDir, 'deep', 'nested', 'directory')
 

@@ -494,7 +494,14 @@ describe('socket fix', async () => {
   )
 
   cmdit(
-    ['fix', '--id', 'CVE-2021-23337', FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fake-token"}'],
+    [
+      'fix',
+      '--id',
+      'CVE-2021-23337',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
+      '{"apiToken":"fake-token"}',
+    ],
     'should handle CVE ID conversion for lodash vulnerability',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -505,7 +512,14 @@ describe('socket fix', async () => {
   )
 
   cmdit(
-    ['fix', '--limit', '1', FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fake-token"}'],
+    [
+      'fix',
+      '--limit',
+      '1',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
+      '{"apiToken":"fake-token"}',
+    ],
     'should respect fix limit parameter',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -535,7 +549,14 @@ describe('socket fix', async () => {
   )
 
   cmdit(
-    ['fix', '--range-style', 'pin', FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fake-token"}'],
+    [
+      'fix',
+      '--range-style',
+      'pin',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
+      '{"apiToken":"fake-token"}',
+    ],
     'should handle pin range style for exact versions',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -557,7 +578,13 @@ describe('socket fix', async () => {
   )
 
   cmdit(
-    ['fix', '--markdown', FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fake-token"}'],
+    [
+      'fix',
+      '--markdown',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
+      '{"apiToken":"fake-token"}',
+    ],
     'should output results in markdown format',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)

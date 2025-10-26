@@ -101,7 +101,9 @@ describe('fetchCreateRepo', () => {
     const mockHandleApi = vi.mocked(handleApiCall)
 
     const mockSdk = {
-      createRepository: vi.fn().mockRejectedValue(new Error('Repository already exists')),
+      createRepository: vi
+        .fn()
+        .mockRejectedValue(new Error('Repository already exists')),
     }
 
     mockSetupSdk.mockResolvedValue(createSuccessResult(mockSdk))

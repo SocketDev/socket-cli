@@ -96,7 +96,9 @@ describe('socket config get', async () => {
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: No-op, call a sub-command; ok"`)
+      expect(stdout).toMatchInlineSnapshot(
+        `"[DryRun]: No-op, call a sub-command; ok"`,
+      )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
@@ -261,7 +263,9 @@ describe('socket config get', async () => {
 
           // Config flag takes precedence over deprecated env var
           expect(
-            stdout.includes('apiToken: ignoremebecausetheenvvarshouldbemoreimportant'),
+            stdout.includes(
+              'apiToken: ignoremebecausetheenvvarshouldbemoreimportant',
+            ),
           ).toBe(true)
         },
       )

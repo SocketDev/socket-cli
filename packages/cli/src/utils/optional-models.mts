@@ -102,7 +102,7 @@ interface ModelInfo {
  * @returns Model paths and download status
  */
 export async function loadOptionalModel(
-  packageName: string
+  packageName: string,
 ): Promise<{ modelPaths: string[]; downloaded: boolean }> {
   const modelInfo = MODEL_REGISTRY[packageName] as ModelInfo | undefined
   if (!modelInfo) {
@@ -111,7 +111,7 @@ export async function loadOptionalModel(
 
   logger.info(`${modelInfo.description}`)
   logger.info(
-    `Total size: ${(modelInfo.totalSize / 1024 / 1024).toFixed(1)} MB`
+    `Total size: ${(modelInfo.totalSize / 1024 / 1024).toFixed(1)} MB`,
   )
 
   const modelPaths: string[] = []
