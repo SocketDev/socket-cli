@@ -5,9 +5,10 @@ Shared build utilities for building third-party dependencies from source.
 ## Purpose
 
 This package provides reusable build infrastructure used by all from-source packages:
-- `smol-node` - Custom Node.js runtime
-- `onnx-runtime` - ONNX Runtime WASM
-- `codet5-models` - CodeT5 model conversion/optimization
+- `node-smol-builder` - Custom Node.js runtime
+- `onnx-runtime-builder` - ONNX Runtime WASM
+- `codet5-models-builder` - CodeT5 model conversion/optimization
+- `minilm-builder` - MiniLM model conversion/optimization
 - `yoga-layout` - Yoga Layout WASM
 
 ## Exports
@@ -114,15 +115,15 @@ import {
 } from '@socketsecurity/build-infra/lib/checkpoint-manager'
 
 // Save build state
-await createCheckpoint('onnx-runtime', 'configured', { version: '1.20.1' })
+await createCheckpoint('onnx-runtime-builder', 'configured', { version: '1.20.1' })
 
 // Check if step already done
-if (await hasCheckpoint('onnx-runtime', 'built')) {
+if (await hasCheckpoint('onnx-runtime-builder', 'built')) {
   console.log('Already built, skipping...')
 }
 
 // Clean checkpoints
-await cleanCheckpoint('onnx-runtime')
+await cleanCheckpoint('onnx-runtime-builder')
 ```
 
 ## Pattern
