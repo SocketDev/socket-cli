@@ -577,6 +577,100 @@ async function installPython() {
 }
 
 /**
+ * Check Python ML dependencies.
+ */
+function checkPythonMLDeps() {
+  logInfo('Checking Python ML dependencies...')
+
+  const pythonCmd = commandExists('python3') ? 'python3' : 'python'
+
+  if (!commandExists(pythonCmd)) {
+    logWarn('Python not found')
+    return { installed: false }
+  }
+
+  const requiredPackages = {
+    transformers: 'transformers',
+    optimum: 'optimum',
+    onnx: 'onnx',
+    onnxruntime: 'onnxruntime',
+  }
+
+  const missing = []
+  const installed = []
+
+  for (const [key, pkg] of Object.entries(requiredPackages)) {
+    const checkCmd = `${pythonCmd} -c "import ${key}" 2>/dev/null`
+    if (exec(checkCmd, { stdio: 'pipe' })) {
+      installed.push(pkg)
+    } else {
+      missing.push(pkg)
+    }
+  }
+
+  if (!missing.length) {
+    logSuccess(`All ML dependencies installed: ${installed.join(', ')}`)
+    return { installed: true, packages: installed }
+  }
+
+  logWarn(`Missing ML dependencies: ${missing.join(', ')}`)
+  return { installed: false, missing, hasPartial: !!installed.length }
+}
+
+/**
+ * Install Python ML dependencies.
+ */
+async function installPythonMLDeps() {
+  if (CHECK_ONLY) {
+    logInfo('Skipping Python ML dependencies installation (check-only mode)')
+    return false
+  }
+
+  logInfo('Installing Python ML dependencies...')
+
+  const pythonCmd = commandExists('python3') ? 'python3' : 'python'
+
+  if (!commandExists(pythonCmd)) {
+    logError('Python not found. Install Python first.')
+    return false
+  }
+
+  try {
+    // Check for pip.
+    const pipCmd = commandExists('pip3') ? 'pip3' : 'pip'
+
+    if (!commandExists(pipCmd)) {
+      logError('pip not found. Install pip first.')
+      return false
+    }
+
+    logInfo('Installing transformers...')
+    if (!exec(`${pipCmd} install transformers`)) {
+      logError('Failed to install transformers')
+      return false
+    }
+
+    logInfo('Installing optimum with onnxruntime...')
+    if (!exec(`${pipCmd} install "optimum[onnxruntime]"`)) {
+      logError('Failed to install optimum[onnxruntime]')
+      return false
+    }
+
+    logInfo('Installing onnx...')
+    if (!exec(`${pipCmd} install onnx`)) {
+      logError('Failed to install onnx')
+      return false
+    }
+
+    logSuccess('Python ML dependencies installed successfully')
+    return true
+  } catch (error) {
+    logError(`Failed to install Python ML dependencies: ${error.message}`)
+    return false
+  }
+}
+
+/**
  * Check C++ compiler.
  */
 function checkCompiler() {
@@ -760,6 +854,7 @@ async function main() {
     emscripten: checkEmscripten(),
     rust: checkRust(),
     python: checkPython(),
+    pythonMLDeps: checkPythonMLDeps(),
     compiler: checkCompiler(),
   }
 
@@ -812,6 +907,15 @@ async function main() {
   if (needsInstall.python) {
     await installPython()
     log('')
+  }
+
+  // Install Python ML dependencies if Python is available.
+  if (checks.python.installed || needsInstall.python) {
+    const mlDepsCheck = checkPythonMLDeps()
+    if (!mlDepsCheck.installed) {
+      await installPythonMLDeps()
+      log('')
+    }
   }
 
   if (needsInstall.compiler) {

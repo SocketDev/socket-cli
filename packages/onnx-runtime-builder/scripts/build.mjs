@@ -292,12 +292,20 @@ async function main() {
   printSetupResults(envSetup)
 
   if (!envSetup.success) {
-    printError('')
-    printError('Build environment setup failed')
-    printError('Install Emscripten SDK:')
-    printError('  https://emscripten.org/docs/getting_started/downloads.html')
-    printError('')
-    throw new Error('Emscripten SDK required')
+    // Fallback: Check if emcc is in PATH (e.g., Homebrew installation).
+    printStep('Checking for emcc in PATH...')
+    const emccCheck = await checkCompiler('emcc')
+
+    if (emccCheck) {
+      printSuccess('Emscripten (emcc) found in PATH')
+    } else {
+      printError('')
+      printError('Build environment setup failed')
+      printError('Install Emscripten SDK:')
+      printError('  https://emscripten.org/docs/getting_started/downloads.html')
+      printError('')
+      throw new Error('Emscripten SDK required')
+    }
   }
 
   printSuccess('Pre-flight checks passed')

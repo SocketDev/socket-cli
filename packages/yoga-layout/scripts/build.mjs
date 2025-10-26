@@ -24,6 +24,7 @@ import {
   setupBuildEnvironment,
 } from '@socketsecurity/build-infra/lib/build-env'
 import {
+  checkCompiler,
   checkDiskSpace,
   formatDuration,
   getFileSize,
@@ -179,11 +180,60 @@ async function build() {
   const startTime = Date.now()
   const cmakeBuildDir = path.join(BUILD_DIR, 'cmake')
 
-  // Build with CMake.
-  printStep('Compiling C++ to WASM...')
+  // Build static library with CMake.
+  printStep('Compiling C++ to static library...')
   await exec(`emmake cmake --build ${cmakeBuildDir} --target yogacore`, {
     stdio: 'inherit',
   })
+
+  // Link WASM module with Emscripten bindings.
+  printStep('Linking WASM module with Emscripten bindings...')
+
+  const bindingsFile = path.join(__dirname, '..', 'src', 'yoga-wasm.cpp')
+  const staticLib = path.join(cmakeBuildDir, 'yoga', 'libyogacore.a')
+  const wasmOutput = path.join(cmakeBuildDir, 'yoga.wasm')
+  const jsOutput = path.join(cmakeBuildDir, 'yoga.js')
+
+  // Use optimization flags (note: bindings require RTTI and exceptions).
+  const cxxFlags = [
+    '-Oz',
+    '-flto=thin',
+    '-ffunction-sections',
+    '-fdata-sections',
+    '-ffast-math',
+    '-fno-finite-math-only',
+  ].join(' ')
+
+  const linkerFlags = [
+    '--closure 1',
+    '-Wl,--gc-sections',
+    '-flto=thin',
+    '-Oz',
+    '-s ALLOW_MEMORY_GROWTH=1',
+    '-s ASSERTIONS=0',
+    '-s EXPORT_ES6=1',
+    '-s FILESYSTEM=0',
+    '-s INITIAL_MEMORY=64KB',
+    '-s MALLOC=emmalloc',
+    '-s MODULARIZE=1',
+    '-s NO_EXIT_RUNTIME=1',
+    '-s STACK_SIZE=16KB',
+    '-s SUPPORT_LONGJMP=0',
+    '--bind',
+  ].join(' ')
+
+  // Compile and link in one step.
+  await exec(
+    `em++ ` +
+      `-I ${path.join(BUILD_DIR, 'yoga-source')} ` +
+      `${cxxFlags} ${bindingsFile} ${staticLib} ` +
+      `${linkerFlags} ` +
+      `-o ${jsOutput}`,
+    { stdio: 'inherit' }
+  )
+
+  printSuccess(`JS glue code created: ${jsOutput}`)
+  printSuccess(`WASM module created: ${wasmOutput}`)
 
   const duration = formatDuration(Date.now() - startTime)
   printSuccess(`Build completed in ${duration}`)
@@ -202,7 +252,7 @@ async function optimize() {
 
   // Find the built WASM file.
   const cmakeBuildDir = path.join(BUILD_DIR, 'cmake')
-  const wasmFile = path.join(cmakeBuildDir, 'libyogacore.wasm')
+  const wasmFile = path.join(cmakeBuildDir, 'yoga.wasm')
 
   if (!(await fs.access(wasmFile).then(() => true).catch(() => false))) {
     printWarning(`WASM file not found: ${wasmFile}`)
@@ -259,7 +309,7 @@ async function verify() {
   printHeader('Verifying WASM')
 
   const cmakeBuildDir = path.join(BUILD_DIR, 'cmake')
-  const wasmFile = path.join(cmakeBuildDir, 'libyogacore.wasm')
+  const wasmFile = path.join(cmakeBuildDir, 'yoga.wasm')
 
   if (!(await fs.access(wasmFile).then(() => true).catch(() => false))) {
     printWarning('WASM file not found, skipping verification')
@@ -293,7 +343,8 @@ async function exportWasm() {
   await fs.mkdir(OUTPUT_DIR, { recursive: true })
 
   const cmakeBuildDir = path.join(BUILD_DIR, 'cmake')
-  const wasmFile = path.join(cmakeBuildDir, 'libyogacore.wasm')
+  const wasmFile = path.join(cmakeBuildDir, 'yoga.wasm')
+  const jsFile = path.join(cmakeBuildDir, 'yoga.js')
 
   if (!(await fs.access(wasmFile).then(() => true).catch(() => false))) {
     printWarning('WASM file not found, nothing to export')
@@ -301,9 +352,16 @@ async function exportWasm() {
   }
 
   const outputWasm = path.join(OUTPUT_DIR, 'yoga.wasm')
+  const outputJs = path.join(OUTPUT_DIR, 'yoga.js')
 
   // Copy WASM file.
   await fs.copyFile(wasmFile, outputWasm)
+
+  // Copy JS glue code if exists.
+  if (await fs.access(jsFile).then(() => true).catch(() => false)) {
+    await fs.copyFile(jsFile, outputJs)
+    printStep(`JS: ${outputJs}`)
+  }
 
   const wasmSize = await getFileSize(outputWasm)
   printStep(`WASM: ${outputWasm}`)
@@ -339,12 +397,20 @@ async function main() {
   printSetupResults(envSetup)
 
   if (!envSetup.success) {
-    printError('')
-    printError('Build environment setup failed')
-    printError('Install Emscripten SDK:')
-    printError('  https://emscripten.org/docs/getting_started/downloads.html')
-    printError('')
-    throw new Error('Emscripten SDK required')
+    // Fallback: Check if emcc is in PATH (e.g., Homebrew installation).
+    printStep('Checking for emcc in PATH...')
+    const emccCheck = await checkCompiler('emcc')
+
+    if (emccCheck) {
+      printSuccess('Emscripten (emcc) found in PATH')
+    } else {
+      printError('')
+      printError('Build environment setup failed')
+      printError('Install Emscripten SDK:')
+      printError('  https://emscripten.org/docs/getting_started/downloads.html')
+      printError('')
+      throw new Error('Emscripten SDK required')
+    }
   }
 
   printSuccess('Pre-flight checks passed')
