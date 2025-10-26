@@ -174,8 +174,8 @@ importers:
         specifier: 3.0.1
         version: 3.0.1
       '@socketsecurity/lib':
-        specifier: link:../socket-lib
-        version: link:../socket-lib
+        specifier: 1.3.5
+        version: 1.3.5(typescript@5.9.3)
       '@socketsecurity/registry':
         specifier: 2.0.0
         version: 2.0.0(typescript@5.9.3)
