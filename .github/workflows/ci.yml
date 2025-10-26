@@ -40,7 +40,7 @@ jobs:
     name: Run CI Pipeline
     uses: SocketDev/socket-registry/.github/workflows/ci.yml@d8ff3b0581d799466cfbf150f715c1a4bf9f84a5 # 2025-10-23
     with:
-      test-setup-script: 'echo "=== Build Setup Debug ===" && pwd && echo "Before build:" && ls -la packages/cli/ 2>/dev/null || dir packages\\cli\\ && pnpm --filter @socketsecurity/cli run build && echo "After build:" && ls -la packages/cli/dist/ 2>/dev/null || dir packages\\cli\\dist\\ && echo "Checking cli.js:" && ls -la packages/cli/dist/cli.js 2>/dev/null || dir packages\\cli\\dist\\cli.js && echo "=== Build Setup Complete ==="'
+      test-setup-script: 'echo "=== Build Setup Debug ===" && pwd && echo "Before build:" && (ls -la packages/cli/ 2>/dev/null || dir packages\\cli\\ || true) && pnpm --filter @socketsecurity/cli run build && echo "After build:" && (ls -la packages/cli/dist/ 2>/dev/null || dir packages\\cli\\dist\\ || true) && echo "Checking cli.js:" && (ls -la packages/cli/dist/cli.js 2>/dev/null || dir packages\\cli\\dist\\cli.js || true) && echo "=== Build Setup Complete ==="'
       lint-script: 'pnpm --filter @socketsecurity/cli run check'
       type-check-script: 'pnpm --filter @socketsecurity/cli run type'
       test-script: ${{ inputs.skip-tests && 'echo "Tests skipped"' || 'pnpm --filter @socketsecurity/cli run test:unit' }}
