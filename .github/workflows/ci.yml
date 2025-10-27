@@ -36,10 +36,72 @@ permissions:
   contents: read
 
 jobs:
+  prepare-wasm:
+    name: Prepare WASM Assets
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+
+      - uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Generate WASM cache keys
+        id: wasm-cache-keys
+        run: |
+          YOGA_HASH=$(find packages/yoga-layout -type f \( -name "*.cpp" -o -name "*.h" -o -name "*.mjs" -o -name "CMakeLists.txt" \) | sort | xargs shasum -a 256 | shasum -a 256 | cut -d' ' -f1)
+          echo "yoga-hash=$YOGA_HASH" >> $GITHUB_OUTPUT
+
+          AI_HASH=$(find packages/socketbin-cli-ai -type f \( -name "*.mjs" -o -name "*.ts" \) | sort | xargs shasum -a 256 | shasum -a 256 | cut -d' ' -f1)
+          echo "ai-hash=$AI_HASH" >> $GITHUB_OUTPUT
+
+          ONNX_HASH=$(find packages/onnx-runtime-builder -type f \( -name "*.mjs" -o -name "*.patch" \) | sort | xargs shasum -a 256 | shasum -a 256 | cut -d' ' -f1)
+          echo "onnx-hash=$ONNX_HASH" >> $GITHUB_OUTPUT
+
+      - name: Restore Yoga Layout WASM cache
+        id: yoga-cache
+        uses: actions/cache/restore@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
+        with:
+          path: packages/yoga-layout/build/wasm
+          key: yoga-wasm-${{ steps.wasm-cache-keys.outputs.yoga-hash }}
+          restore-keys: yoga-wasm-
+
+      - name: Restore AI models cache
+        id: ai-cache
+        uses: actions/cache/restore@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
+        with:
+          path: packages/socketbin-cli-ai/dist
+          key: ai-models-${{ steps.wasm-cache-keys.outputs.ai-hash }}
+          restore-keys: ai-models-
+
+      - name: Restore ONNX Runtime cache
+        id: onnx-cache
+        uses: actions/cache/restore@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
+        with:
+          path: packages/onnx-runtime-builder/dist
+          key: onnx-runtime-${{ steps.wasm-cache-keys.outputs.onnx-hash }}
+          restore-keys: onnx-runtime-
+
+      - name: Upload WASM artifacts for CI
+        uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
+        with:
+          name: wasm-assets
+          path: |
+            packages/yoga-layout/build/wasm/
+            packages/socketbin-cli-ai/dist/
+            packages/onnx-runtime-builder/dist/
+          retention-days: 1
+
   ci:
     name: Run CI Pipeline
+    needs: prepare-wasm
     uses: SocketDev/socket-registry/.github/workflows/ci.yml@d8ff3b0581d799466cfbf150f715c1a4bf9f84a5 # 2025-10-23
     with:
+      setup-script: 'mkdir -p packages/yoga-layout/build/wasm packages/socketbin-cli-ai/dist packages/onnx-runtime-builder/dist'
       test-setup-script: 'echo "=== Build Setup Debug ===" && pwd && echo "Before build:" && (ls -la packages/cli/ 2>/dev/null || dir packages\\cli\\ || true) && pnpm --filter @socketsecurity/cli run build && echo "After build:" && (ls -la packages/cli/dist/ 2>/dev/null || dir packages\\cli\\dist\\ || true) && echo "Checking cli.js:" && (ls -la packages/cli/dist/cli.js 2>/dev/null || dir packages\\cli\\dist\\cli.js || true) && echo "=== Build Setup Complete ==="'
       lint-script: 'pnpm --filter @socketsecurity/cli run check'
       type-check-script: 'pnpm --filter @socketsecurity/cli run type'
@@ -47,6 +109,8 @@ jobs:
       node-versions: ${{ inputs.node-versions || '[20, 22, 24]' }}
       os-versions: '["ubuntu-latest", "macos-latest", "windows-latest"]'
       fail-fast: false
+      artifacts-to-download: 'wasm-assets'
+      artifacts-path: '.'
 
   e2e:
     name: E2E Tests
