@@ -100,6 +100,9 @@ export async function checkPythonVersion(minVersion = '3.6') {
         { shell: true, stdio: 'pipe', stdioString: true }
       )
 
+      // Debug: Log what we got back.
+      printSubstep(`Tried ${pythonCmd}: status=${result?.status}, stdout="${result?.stdout?.trim()}", stderr="${result?.stderr?.trim()}"`)
+
       // Check if spawn failed or returned undefined status.
       if (!result || result.status === undefined || result.status === null) {
         continue
@@ -128,7 +131,8 @@ export async function checkPythonVersion(minVersion = '3.6') {
         version,
       }
     } catch (e) {
-      // Try next command.
+      // Debug: Log the error.
+      printSubstep(`${pythonCmd} threw error: ${e.message}`)
       continue
     }
   }
