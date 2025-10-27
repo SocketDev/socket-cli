@@ -10,7 +10,9 @@ import path from 'node:path'
 
 import { whichBinSync } from '@socketsecurity/lib/bin'
 
-import { exec, execCapture } from './build-exec.mjs'
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
+import { spawn } from '@socketsecurity/lib/spawn'
+
 import { printError, printStep, printWarning } from './build-output.mjs'
 
 /**
@@ -24,8 +26,12 @@ export async function checkDiskSpace(dir, requiredGB = 5) {
   printStep('Checking disk space')
 
   try {
-    const { stdout } = await execCapture(`df -k "${dir}"`)
-    const lines = stdout.trim().split('\n')
+    const result = await spawn(`df -k "${dir}"`, [], {
+      shell: WIN32,
+      stdio: 'pipe',
+      stdioString: true,
+    })
+    const lines = (result.stdout ?? '').trim().split('\n')
     if (lines.length < 2) {
       printWarning('Could not determine disk space')
       return { availableGB: null, sufficient: true }
@@ -83,10 +89,12 @@ export async function checkPythonVersion(minVersion = '3.6') {
   printStep('Checking Python version')
 
   try {
-    const { stdout } = await execCapture(
-      'python3 -c "import sys; print(f\'{sys.version_info.major}.{sys.version_info.minor}\')"'
+    const result = await spawn(
+      'python3 -c "import sys; print(f\'{sys.version_info.major}.{sys.version_info.minor}\')"',
+      [],
+      { shell: WIN32, stdio: 'pipe', stdioString: true }
     )
-    const version = stdout.trim()
+    const version = (result.stdout ?? '').trim()
     const [major, minor] = version.split('.').map(Number)
     const [minMajor, minMinor] = minVersion.split('.').map(Number)
 
@@ -159,9 +167,13 @@ export async function smokeTestBinary(binaryPath, args = ['--version']) {
 
   try {
     await fs.access(binaryPath)
-    const { code } = await execCapture(`${binaryPath} ${args.join(' ')}`)
+    const result = await spawn(`${binaryPath} ${args.join(' ')}`, [], {
+      shell: WIN32,
+      stdio: 'pipe',
+      stdioString: true,
+    })
 
-    if (code !== 0) {
+    if ((result.status ?? 0) !== 0) {
       printError(`Binary failed smoke test: ${binaryPath}`)
       return false
     }
@@ -303,11 +315,13 @@ export async function cleanCheckpoint(buildDir) {
 export async function checkNetworkConnectivity() {
   try {
     // Try to reach GitHub (where we clone from).
-    const result = await execCapture(
-      'curl -s -o /dev/null -w "%{http_code}" --connect-timeout 5 https://github.com'
+    const result = await spawn(
+      'curl -s -o /dev/null -w "%{http_code}" --connect-timeout 5 https://github.com',
+      [],
+      { shell: WIN32, stdio: 'pipe', stdioString: true }
     )
 
-    const statusCode = result.stdout.trim()
+    const statusCode = (result.stdout ?? '').trim()
     return {
       connected:
         statusCode === '200' || statusCode === '301' || statusCode === '302',
@@ -326,12 +340,14 @@ export async function checkNetworkConnectivity() {
  */
 export async function verifyGitTag(version) {
   try {
-    const result = await execCapture(
-      `git ls-remote --tags https://github.com/nodejs/node.git ${version}`
+    const result = await spawn(
+      `git ls-remote --tags https://github.com/nodejs/node.git ${version}`,
+      [],
+      { shell: WIN32, stdio: 'pipe', stdioString: true }
     )
 
     return {
-      exists: result.stdout.includes(version),
+      exists: (result.stdout ?? '').includes(version),
       output: result.stdout,
     }
   } catch {
