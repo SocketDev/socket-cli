@@ -65,6 +65,7 @@ import { whichBinSync } from '@socketsecurity/lib/bin'
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { logger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
+import colors from 'yoctocolors-cjs'
 
 import {
   checkCompiler,
@@ -1293,24 +1294,24 @@ async function main() {
   printHeader('Configuring Node.js Build')
   logger.log('Optimization flags:')
   logger.log(
-    '  ✅ KEEP: V8 Lite Mode (baseline compiler), WASM (Liftoff), SSL/crypto',
+    `  ${colors.green('✓')} KEEP: V8 Lite Mode (baseline compiler), WASM (Liftoff), SSL/crypto`,
   )
   logger.log(
-    '  ❌ REMOVE: npm, corepack, inspector, amaro, sqlite, SEA, ICU, TurboFan JIT',
+    `  ${colors.red('✗')} REMOVE: npm, corepack, inspector, amaro, sqlite, SEA, ICU, TurboFan JIT`,
   )
-  logger.log('  🌍 ICU: none (no internationalization, saves ~6-8 MB)')
+  logger.log(`  ${colors.blue('ℹ')} ICU: none (no internationalization, saves ~6-8 MB)`)
   logger.log(
-    '  ⚡ V8 Lite Mode: Disables TurboFan optimizer (saves ~15-20 MB)',
+    `  ${colors.blue('ℹ')} V8 Lite Mode: Disables TurboFan optimizer (saves ~15-20 MB)`,
   )
   logger.log(
-    '  💾 OPTIMIZATIONS: no-snapshot, no-code-cache, no-object-print, no-SEA, V8 Lite',
+    `  ${colors.blue('ℹ')} OPTIMIZATIONS: no-snapshot, no-code-cache, no-object-print, no-SEA, V8 Lite`,
   )
   logger.log('')
   logger.log(
-    '  ⚠️  V8 LITE MODE: JavaScript runs 5-10x slower (CPU-bound code)',
+    `  ${colors.yellow('⚠')} V8 LITE MODE: JavaScript runs 5-10x slower (CPU-bound code)`,
   )
-  logger.log('  ✅ WASM: Full speed (uses Liftoff compiler, unaffected)')
-  logger.log('  ✅ I/O: No impact (network, file operations)')
+  logger.log(`  ${colors.green('✓')} WASM: Full speed (uses Liftoff compiler, unaffected)`)
+  logger.log(`  ${colors.green('✓')} I/O: No impact (network, file operations)`)
   logger.log('')
   logger.log(
     'Expected binary size: ~60MB (before stripping), ~23-27MB (after)',
