@@ -132,7 +132,7 @@ jobs:
       - name: Install Python dependencies
         run: |
           pip install --upgrade pip
-          pip install transformers torch optimum[exporters] onnxruntime
+          pip install transformers torch optimum[onnx] onnxruntime
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile

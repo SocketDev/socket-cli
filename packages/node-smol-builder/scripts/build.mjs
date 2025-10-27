@@ -1052,6 +1052,7 @@ async function main() {
             'clone',
             '--depth',
             '1',
+            '--single-branch',
             '--branch',
             NODE_VERSION,
             'https://github.com/nodejs/node.git',

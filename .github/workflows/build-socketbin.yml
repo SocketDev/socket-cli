@@ -307,7 +307,7 @@ jobs:
           if [ "${{ steps.ai-cache.outputs.cache-hit }}" != "true" ]; then
             echo "Installing Python dependencies..."
             python3 -m pip install --upgrade pip
-            python3 -m pip install transformers torch optimum[exporters] onnxruntime
+            python3 -m pip install transformers torch optimum[onnx] onnxruntime
           fi
 
           # Build missing WASM assets.
