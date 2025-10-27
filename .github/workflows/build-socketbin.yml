@@ -136,7 +136,7 @@ jobs:
 
       - name: Build smol binary
         if: steps.smol-cache.outputs.cache-hit != 'true' || inputs.force
-        run: pnpm --filter @socketsecurity/node-smol-builder run build
+        run: pnpm --filter @socketbin/node-smol-builder run build
 
       - name: Verify smol binary
         shell: bash
@@ -228,7 +228,7 @@ jobs:
         id: sea-cache-key
         shell: bash
         run: |
-          HASH=$(find packages/node-sea-builder packages/cli/dist -type f \( -name "*.mjs" -o -name "*.js" \) | sort | xargs shasum -a 256 | shasum -a 256 | cut -d' ' -f1)
+          HASH=$(find packages/node-sea-builder packages/cli/src -type f \( -name "*.mts" -o -name "*.ts" -o -name "*.mjs" -o -name "*.js" \) | sort | xargs shasum -a 256 | shasum -a 256 | cut -d' ' -f1)
           echo "hash=$HASH" >> $GITHUB_OUTPUT
 
       - name: Restore SEA binary cache
@@ -245,7 +245,7 @@ jobs:
 
       - name: Build SEA binary
         if: steps.sea-cache.outputs.cache-hit != 'true' || inputs.force
-        run: pnpm --filter @socketsecurity/node-sea-builder run build
+        run: pnpm --filter @socketbin/node-sea-builder run build
 
       - name: Verify SEA binary
         shell: bash
