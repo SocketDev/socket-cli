@@ -25,40 +25,48 @@ on:
 jobs:
   build-binaries:
     name: Build ${{ matrix.platform }}-${{ matrix.arch }}
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          # Linux builds
-          - os: ubuntu-latest
+          # Linux builds (8-core runners for faster compilation)
+          - runner: ubuntu-latest-8-cores
+            os: linux
             platform: linux
             arch: x64
-          - os: ubuntu-latest
+          - runner: ubuntu-latest-8-cores
+            os: linux
             platform: linux
             arch: arm64
 
           # Alpine Linux builds
-          - os: ubuntu-latest
+          - runner: ubuntu-latest-8-cores
+            os: linux
             platform: alpine
             arch: x64
-          - os: ubuntu-latest
+          - runner: ubuntu-latest-8-cores
+            os: linux
             platform: alpine
             arch: arm64
 
-          # macOS builds
-          - os: macos-latest
+          # macOS builds (8-core runners for faster compilation)
+          - runner: macos-latest-xlarge
+            os: darwin
             platform: darwin
             arch: x64
-          - os: macos-latest
+          - runner: macos-latest-xlarge
+            os: darwin
             platform: darwin
             arch: arm64
 
-          # Windows builds
-          - os: windows-latest
+          # Windows builds (8-core runners for faster compilation)
+          - runner: windows-latest-8-cores
+            os: windows
             platform: win32
             arch: x64
-          - os: windows-latest
+          - runner: windows-latest-8-cores
+            os: windows
             platform: win32
             arch: arm64
 
@@ -82,12 +90,51 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Setup ccache (Linux/macOS)
+        if: matrix.os != 'windows'
+        uses: hendrikmuhs/ccache-action@ed74d11c0b343532753ecead8a951bb09bb34bc9 # v1.2.14
+        with:
+          key: build-${{ matrix.platform }}-${{ matrix.arch }}
+          max-size: 2G
+
+      - name: Generate build cache key
+        id: build-cache-key
+        shell: bash
+        run: |
+          # Generate hash from build-affecting files
+          if [ "${{ matrix.os }}" = "windows" ]; then
+            HASH=$(find build/patches scripts -type f -name "*.patch" -o -name "*.mjs" | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
+          else
+            HASH=$(find build/patches scripts -type f \( -name "*.patch" -o -name "*.mjs" \) | sort | xargs shasum -a 256 | shasum -a 256 | cut -d' ' -f1)
+          fi
+          echo "hash=$HASH" >> $GITHUB_OUTPUT
+          echo "Build hash: $HASH"
+
+      - name: Cache compiled Node.js binary
+        uses: actions/cache@6849a6489940f00c2f30c0fb92c6274307ccb58a # v4.2.0
+        id: binary-cache
+        with:
+          path: |
+            .node-source/out/Release/node
+            .node-source/out/Release/node.exe
+          key: node-binary-${{ matrix.platform }}-${{ matrix.arch }}-${{ steps.build-cache-key.outputs.hash }}
+          restore-keys: |
+            node-binary-${{ matrix.platform }}-${{ matrix.arch }}-
+
       - name: Build stub
         run: pnpm run build:sea:stub
 
       - name: Build binary
         id: build-binary
         continue-on-error: true
+        env:
+          # Enable ccache for C++ compilation (Linux/macOS)
+          CC: ${{ matrix.os != 'windows' && 'ccache gcc' || '' }}
+          CXX: ${{ matrix.os != 'windows' && 'ccache g++' || '' }}
+          # Use mold linker for faster linking (Linux only)
+          LDFLAGS: ${{ matrix.os == 'linux' && '-fuse-ld=mold' || '' }}
+          # Use ninja build system if available
+          GYP_GENERATORS: ninja
         run: |
           pnpm run build --sea -- \
             --platform=${{ matrix.platform }} \
@@ -95,6 +142,14 @@ jobs:
 
       - name: Build binary (fallback with clean rebuild)
         if: steps.build-binary.outcome == 'failure'
+        env:
+          # Enable ccache for C++ compilation (Linux/macOS)
+          CC: ${{ matrix.os != 'windows' && 'ccache gcc' || '' }}
+          CXX: ${{ matrix.os != 'windows' && 'ccache g++' || '' }}
+          # Use mold linker for faster linking (Linux only)
+          LDFLAGS: ${{ matrix.os == 'linux' && '-fuse-ld=mold' || '' }}
+          # Use ninja build system if available
+          GYP_GENERATORS: ninja
         run: |
           echo "Initial build failed, attempting clean rebuild with Node.js..."
           node packages/node-smol-builder/scripts/build.mjs --clean
