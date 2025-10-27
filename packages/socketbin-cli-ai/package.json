@@ -2,6 +2,7 @@
   "name": "@socketbin/cli-ai",
   "version": "0.0.0",
   "description": "Socket CLI binary assets",
+  "private": true,
   "license": "MIT",
   "type": "module",
   "main": "dist/ai.js",
@@ -15,7 +16,11 @@
   "scripts": {
     "build": "node scripts/build.mjs"
   },
+  "dependencies": {
+    "@socketsecurity/build-infra": "workspace:*",
+    "@socketsecurity/lib": "catalog:"
+  },
   "devDependencies": {
-    "esbuild": "workspace:*"
+    "esbuild": "0.25.10"
   }
 }
