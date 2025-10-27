@@ -22,7 +22,19 @@ import { promisify } from 'node:util'
 
 import { logger } from '@socketsecurity/lib/logger'
 
+import {
+  cleanCheckpoint,
+  createCheckpoint,
+  getCheckpointData,
+  shouldRun,
+} from '@socketsecurity/build-infra/lib/checkpoint-manager'
+
 const execAsync = promisify(exec)
+
+// Parse arguments.
+const args = process.argv.slice(2)
+const FORCE_BUILD = args.includes('--force')
+const CLEAN_BUILD = args.includes('--clean')
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -30,12 +42,16 @@ const ROOT = join(__dirname, '..')
 const DIST = join(ROOT, 'dist')
 const BUILD = join(ROOT, 'build')
 const MODELS = join(BUILD, 'models')
+const PACKAGE_NAME = 'socketbin-cli-ai'
 
-// Model sources (with fallbacks).
+// Model sources (with fallbacks and versions).
 const MODEL_SOURCES = {
   // MiniLM-L6 for embeddings (primary model).
   'minilm-l6': {
     primary: 'sentence-transformers/all-MiniLM-L6-v2',
+    // Pin to specific revision for reproducible builds.
+    // Update this SHA when upgrading to new model version.
+    revision: '7dbbc90392e2f80f3d3c277d6e90027e55de9125',
     fallbacks: [
       'microsoft/all-MiniLM-L6-v2',
       'optimum/all-MiniLM-L6-v2'
@@ -45,6 +61,7 @@ const MODEL_SOURCES = {
   // CodeT5 for code analysis (optional, larger).
   'codet5': {
     primary: 'Salesforce/codet5-base',
+    revision: 'main', // Use latest from main branch.
     fallbacks: [
       'Salesforce/codet5-small'
     ],
@@ -56,36 +73,53 @@ const MODEL_SOURCES = {
  * Download model from Hugging Face.
  */
 async function downloadModel(modelKey) {
+  if (!(await shouldRun(PACKAGE_NAME, `downloaded-${modelKey}`, FORCE_BUILD))) {
+    return
+  }
+
   logger.log(`\n📥 Downloading ${modelKey} model...`)
 
   const config = MODEL_SOURCES[modelKey]
   const sources = [config.primary, ...config.fallbacks]
+  const revision = config.revision
 
   for (const source of sources) {
     try {
-      logger.log(`  Trying: ${source}`)
+      logger.log(`  Trying: ${source}@${revision}`)
 
       await mkdir(MODELS, { recursive: true })
 
       // Download using huggingface-cli (fastest) or fallback to Python.
       try {
         // Try huggingface-cli first.
+        const revisionFlag = revision ? `--revision=${revision}` : ''
         await execAsync(
-          `huggingface-cli download ${source} --local-dir ${MODELS}/${modelKey}`,
+          `huggingface-cli download ${source} ${revisionFlag} --local-dir ${MODELS}/${modelKey}`,
           { stdio: 'inherit' }
         )
         logger.log(`  ✓ Downloaded from ${source}`)
+        await createCheckpoint(PACKAGE_NAME, `downloaded-${modelKey}`, {
+          source,
+          revision,
+          modelKey,
+        })
         return
       } catch {
         // Fallback to Python transformers.
+        const revisionParam = revision ? `, revision='${revision}'` : ''
         await execAsync(
           `python3 -c "from transformers import AutoTokenizer, AutoModel; ` +
-          `tokenizer = AutoTokenizer.from_pretrained('${source}'); ` +
-          `model = AutoModel.from_pretrained('${source}'); ` +
+          `tokenizer = AutoTokenizer.from_pretrained('${source}'${revisionParam}); ` +
+          `model = AutoModel.from_pretrained('${source}'${revisionParam}); ` +
           `tokenizer.save_pretrained('${MODELS}/${modelKey}'); ` +
           `model.save_pretrained('${MODELS}/${modelKey}')"`
         )
         logger.log(`  ✓ Downloaded from ${source}`)
+        await createCheckpoint(PACKAGE_NAME, `downloaded-${modelKey}`, {
+          source,
+          revision,
+          modelKey,
+        })
         return
       }
     } catch (e) {
@@ -101,6 +135,10 @@ async function downloadModel(modelKey) {
  * Convert model to ONNX if needed.
  */
 async function convertToOnnx(modelKey) {
+  if (!(await shouldRun(PACKAGE_NAME, `converted-${modelKey}`, FORCE_BUILD))) {
+    return
+  }
+
   logger.log(`\n🔄 Converting ${modelKey} to ONNX...`)
 
   const modelDir = join(MODELS, modelKey)
@@ -108,6 +146,7 @@ async function convertToOnnx(modelKey) {
 
   if (existsSync(onnxPath)) {
     logger.log('  ✓ Already in ONNX format')
+    await createCheckpoint(PACKAGE_NAME, `converted-${modelKey}`, { modelKey })
     return
   }
 
@@ -118,6 +157,7 @@ async function convertToOnnx(modelKey) {
       { stdio: 'inherit' }
     )
     logger.log('  ✓ Converted to ONNX')
+    await createCheckpoint(PACKAGE_NAME, `converted-${modelKey}`, { modelKey })
   } catch (e) {
     logger.error('  ✗ Conversion failed:', e.message)
     throw e
@@ -128,6 +168,12 @@ async function convertToOnnx(modelKey) {
  * Apply INT4 quantization for maximum compression.
  */
 async function quantizeInt4(modelKey) {
+  if (!(await shouldRun(PACKAGE_NAME, `quantized-${modelKey}`, FORCE_BUILD))) {
+    // Return existing quantized path.
+    const modelDir = join(MODELS, modelKey)
+    return join(modelDir, 'model.int4.onnx')
+  }
+
   logger.log(`\n⚙️  Applying INT4 quantization to ${modelKey}...`)
 
   const modelDir = join(MODELS, modelKey)
@@ -163,6 +209,12 @@ async function quantizeInt4(modelKey) {
     logger.log(`  Savings: ${savings}%`)
 
     logger.log('  ✓ Quantized to INT4')
+    await createCheckpoint(PACKAGE_NAME, `quantized-${modelKey}`, {
+      modelKey,
+      method: 'INT4',
+      originalSize,
+      quantizedSize: quantSize,
+    })
     return quantPath
   } catch (e) {
     logger.log('  ⚠️  INT4 quantization failed, falling back to INT8...')
@@ -183,6 +235,12 @@ async function quantizeInt4(modelKey) {
     logger.log(`  Savings: ${savings}%`)
 
     logger.log('  ✓ Quantized to INT8')
+    await createCheckpoint(PACKAGE_NAME, `quantized-${modelKey}`, {
+      modelKey,
+      method: 'INT8',
+      originalSize,
+      quantizedSize: quantSize,
+    })
     return quantPath
   }
 }
@@ -190,7 +248,11 @@ async function quantizeInt4(modelKey) {
 /**
  * Compress WASM with maximum brotli compression.
  */
-async function compressWasm(wasmPath) {
+async function compressWasm(wasmPath, modelKey) {
+  if (!(await shouldRun(PACKAGE_NAME, `compressed-${modelKey}`, FORCE_BUILD))) {
+    return
+  }
+
   logger.log('\n🗜️  Compressing with maximum brotli...')
 
   const wasmBuffer = await readFile(wasmPath)
@@ -226,6 +288,12 @@ async function compressWasm(wasmPath) {
   await writeFile(join(DIST, 'ai.bz'), base64, 'utf8')
 
   logger.log('  ✓ Compressed and encoded')
+  await createCheckpoint(PACKAGE_NAME, `compressed-${modelKey}`, {
+    modelKey,
+    originalSize,
+    compressedSize,
+    base64Size,
+  })
 }
 
 /**
@@ -259,6 +327,12 @@ async function main() {
 
   const startTime = Date.now()
 
+  // Clean checkpoints if requested.
+  if (CLEAN_BUILD) {
+    logger.log('\n🧹 Cleaning build checkpoints...')
+    await cleanCheckpoint(PACKAGE_NAME)
+  }
+
   // Create directories.
   await mkdir(DIST, { recursive: true })
   await mkdir(BUILD, { recursive: true })
@@ -277,7 +351,7 @@ async function main() {
     const quantPath = await quantizeInt4(modelKey)
 
     // Compress with maximum brotli.
-    await compressWasm(quantPath)
+    await compressWasm(quantPath, modelKey)
 
     // Build TypeScript API.
     await buildTypeScript()
