@@ -53,6 +53,12 @@ async function buildBinary(binaryType: keyof typeof BINARIES): Promise<boolean> 
   console.log(`Building ${binary.name}...`)
   console.log(`Running: ${binary.buildCommand.join(' ')}`)
 
+  if (binaryType === 'smol') {
+    console.log('Note: smol build may take 30-60 minutes on first build')
+    console.log('      (subsequent builds are faster with caching)')
+  }
+  console.log()
+
   try {
     const result = await spawn(binary.buildCommand[0], binary.buildCommand.slice(1), {
       cwd: MONOREPO_ROOT,
@@ -106,11 +112,7 @@ function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
           console.log()
           console.error(`Failed to build ${binary.name}. Tests will be skipped.`)
           console.log(`To build this binary manually, run:`)
-          if (binaryType === 'smol') {
-            console.log(`  pnpm run build:smol`)
-          } else if (binaryType === 'sea') {
-            console.log(`  pnpm run build:sea`)
-          }
+          console.log(`  ${binary.buildCommand.join(' ')}`)
           console.log()
           return
         }

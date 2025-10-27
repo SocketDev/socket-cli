@@ -8,6 +8,8 @@
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 
+import { whichBinSync } from '@socketsecurity/lib/bin'
+
 import { exec, execCapture } from './build-exec.mjs'
 import { printError, printStep, printWarning } from './build-output.mjs'
 
@@ -15,10 +17,10 @@ import { printError, printStep, printWarning } from './build-output.mjs'
  * Check available disk space.
  *
  * @param {string} dir - Directory to check
- * @param {number} requiredBytes - Required bytes
- * @returns {Promise<boolean>}
+ * @param {number} [requiredGB=5] - Required GB (defaults to 5GB)
+ * @returns {Promise<{availableGB: number|null, sufficient: boolean}>}
  */
-export async function checkDiskSpace(dir, requiredBytes) {
+export async function checkDiskSpace(dir, requiredGB = 5) {
   printStep('Checking disk space')
 
   try {
@@ -26,54 +28,58 @@ export async function checkDiskSpace(dir, requiredBytes) {
     const lines = stdout.trim().split('\n')
     if (lines.length < 2) {
       printWarning('Could not determine disk space')
-      return true
+      return { availableGB: null, sufficient: true }
     }
 
     const stats = lines[1].split(/\s+/)
     const availableKB = Number.parseInt(stats[3], 10)
     const availableBytes = availableKB * 1024
+    const availableGBValue = Number((availableBytes / (1024 * 1024 * 1024)).toFixed(2))
+    const sufficient = availableGBValue >= requiredGB
 
-    if (availableBytes < requiredBytes) {
-      const requiredGB = (requiredBytes / (1024 * 1024 * 1024)).toFixed(2)
-      const availableGB = (availableBytes / (1024 * 1024 * 1024)).toFixed(2)
-      printError(
-        `Insufficient disk space. Required: ${requiredGB} GB, Available: ${availableGB} GB`
-      )
-      return false
+    return {
+      availableGB: availableGBValue,
+      sufficient,
     }
-
-    return true
   } catch {
     printWarning('Could not check disk space')
-    return true
+    return { availableGB: null, sufficient: true }
   }
 }
 
 /**
  * Check if compiler is available.
+ * Tries multiple compilers if none specified.
  *
- * @param {string} compiler - Compiler command (e.g., 'clang++', 'gcc')
- * @returns {Promise<boolean>}
+ * @param {string|string[]} [compilers] - Compiler command(s) to check (e.g., 'clang++', ['clang++', 'g++', 'c++'])
+ * @returns {Promise<{available: boolean, compiler: string|undefined}>}
  */
-export async function checkCompiler(compiler) {
-  printStep(`Checking for ${compiler}`)
+export async function checkCompiler(compilers) {
+  const compilerList = Array.isArray(compilers)
+    ? compilers
+    : compilers
+      ? [compilers]
+      : ['clang++', 'g++', 'c++']
 
-  try {
-    await execCapture(`which ${compiler}`)
-    return true
-  } catch {
-    printError(`${compiler} not found. Please install ${compiler}.`)
-    return false
+  for (const compiler of compilerList) {
+    printStep(`Checking for ${compiler}`)
+
+    const binPath = whichBinSync(compiler, { nothrow: true })
+    if (binPath) {
+      return { available: true, compiler }
+    }
   }
+
+  return { available: false, compiler: undefined }
 }
 
 /**
  * Check Python version.
  *
- * @param {string} minVersion - Minimum required version (e.g., '3.8')
- * @returns {Promise<boolean>}
+ * @param {string} [minVersion='3.6'] - Minimum required version (e.g., '3.8')
+ * @returns {Promise<{available: boolean, sufficient: boolean, version: string|null}>}
  */
-export async function checkPythonVersion(minVersion) {
+export async function checkPythonVersion(minVersion = '3.6') {
   printStep('Checking Python version')
 
   try {
@@ -84,17 +90,19 @@ export async function checkPythonVersion(minVersion) {
     const [major, minor] = version.split('.').map(Number)
     const [minMajor, minMinor] = minVersion.split('.').map(Number)
 
-    if (major < minMajor || (major === minMajor && minor < minMinor)) {
-      printError(
-        `Python ${minVersion}+ required, but found ${version}`
-      )
-      return false
-    }
+    const sufficient = major > minMajor || (major === minMajor && minor >= minMinor)
 
-    return true
+    return {
+      available: true,
+      sufficient,
+      version,
+    }
   } catch {
-    printError('Python 3 not found. Please install Python 3.')
-    return false
+    return {
+      available: false,
+      sufficient: false,
+      version: null,
+    }
   }
 }
 
@@ -295,18 +303,11 @@ export async function cleanCheckpoint(buildDir) {
 export async function checkNetworkConnectivity() {
   try {
     // Try to reach GitHub (where we clone from).
-    const result = await execCapture('curl', [
-      '-s',
-      '-o',
-      '/dev/null',
-      '-w',
-      '%{http_code}',
-      '--connect-timeout',
-      '5',
-      'https://github.com',
-    ])
+    const result = await execCapture(
+      'curl -s -o /dev/null -w "%{http_code}" --connect-timeout 5 https://github.com'
+    )
 
-    const statusCode = result.stdout
+    const statusCode = result.stdout.trim()
     return {
       connected:
         statusCode === '200' || statusCode === '301' || statusCode === '302',
@@ -325,12 +326,9 @@ export async function checkNetworkConnectivity() {
  */
 export async function verifyGitTag(version) {
   try {
-    const result = await execCapture('git', [
-      'ls-remote',
-      '--tags',
-      'https://github.com/nodejs/node.git',
-      version,
-    ])
+    const result = await execCapture(
+      `git ls-remote --tags https://github.com/nodejs/node.git ${version}`
+    )
 
     return {
       exists: result.stdout.includes(version),

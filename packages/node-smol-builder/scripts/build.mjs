@@ -61,6 +61,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { brotliCompressSync, constants as zlibConstants } from 'node:zlib'
 
+import { whichBinSync } from '@socketsecurity/lib/bin'
 import { logger } from '@socketsecurity/lib/logger'
 
 import { exec, execCapture } from '@socketsecurity/build-infra/lib/build-exec'
@@ -169,11 +170,21 @@ async function copyBuildAdditions() {
 /**
  * Copy Socket security bootstrap to Node.js lib/ for brotli encoding.
  * The bootstrap will be compressed along with other Node.js lib/ files.
+ * (Optional - only runs if bootstrap file exists)
  */
 async function copySocketSecurityBootstrap() {
+  const bootstrapSource = join(ROOT_DIR, 'bin', 'bootstrap.js')
+
+  // Skip if bootstrap file doesn't exist yet (future enhancement).
+  if (!existsSync(bootstrapSource)) {
+    logger.log('')
+    logger.log('ℹ️  Skipping Socket security bootstrap (bin/bootstrap.js not found)')
+    logger.log('')
+    return
+  }
+
   printHeader('Copying Socket Security Bootstrap')
 
-  const bootstrapSource = join(ROOT_DIR, 'bin', 'bootstrap.js')
   const bootstrapDest = join(
     NODE_DIR,
     'lib',
@@ -208,10 +219,10 @@ const ARCH = process.arch
  */
 async function isNodeSourceDirty() {
   try {
-    const status = await execCapture('git', ['status', '--porcelain'], {
+    const status = await execCapture('git status --porcelain', {
       cwd: NODE_DIR,
     })
-    return status.trim().length > 0
+    return status.stdout.trim().length > 0
   } catch {
     return false
   }
@@ -246,8 +257,8 @@ async function resetNodeSource() {
  * Get file size in human-readable format.
  */
 async function getFileSize(filePath) {
-  const result = await execCapture('du', ['-h', filePath])
-  return result.split('\t')[0]
+  const result = await execCapture(`du -h "${filePath}"`)
+  return result.stdout.split('\t')[0]
 }
 
 /**
@@ -281,15 +292,20 @@ async function checkRequiredTools() {
     try {
       if (checkExists) {
         // Just check if command exists (for tools that don't support --version).
-        const result = await execCapture('which', [cmd])
-        if (result.includes(cmd)) {
+        const binPath = whichBinSync(cmd, { nothrow: true })
+        if (binPath) {
           logger.log(`✅ ${name} is available`)
         } else {
           throw new Error('Not found')
         }
       } else {
-        await execCapture(cmd, args)
-        logger.log(`✅ ${name} is available`)
+        const cmdString = `${cmd} ${args.join(' ')}`
+        const result = await execCapture(cmdString)
+        if (result.code === 0) {
+          logger.log(`✅ ${name} is available`)
+        } else {
+          throw new Error('Not available')
+        }
       }
     } catch {
       logger.error(`❌ ${name} is NOT available`)
@@ -1395,10 +1411,10 @@ async function main() {
     logger.logNewline()
     await exec('codesign', ['--sign', '-', '--force', nodeBinary])
 
-    const sigInfo = await execCapture('codesign', ['-dv', nodeBinary], {
+    const sigInfo = await execCapture(`codesign -dv "${nodeBinary}"`, {
       env: { ...process.env, STDERR: '>&1' },
     })
-    logger.log(sigInfo)
+    logger.log(sigInfo.stdout || sigInfo.stderr)
     logger.logNewline()
     logger.success('Binary signed successfully')
     logger.logNewline()

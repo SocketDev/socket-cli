@@ -8,26 +8,31 @@
 import { spawn } from '@socketsecurity/lib/spawn'
 
 /**
- * Execute command and inherit stdio.
+ * Execute command with arguments.
  *
  * @param {string} command - Command to execute
- * @param {object} options - Spawn options
- * @returns {Promise<void>}
+ * @param {string[]|object} argsOrOptions - Arguments array or options object
+ * @param {object} [options] - Spawn options (if args provided)
+ * @returns {Promise<object>}
  */
-export async function exec(command, options = {}) {
-  const result = await spawn(command, [], {
-    shell: true,
-    stdio: options.stdio || 'pipe',
+export async function exec(command, argsOrOptions = [], options = {}) {
+  // Handle both signatures: exec(cmd, opts) and exec(cmd, args, opts).
+  const args = Array.isArray(argsOrOptions) ? argsOrOptions : []
+  const opts = Array.isArray(argsOrOptions) ? options : argsOrOptions
+
+  const result = await spawn(command, args, {
+    stdio: opts.stdio || 'inherit',
     stdioString: true,
     stripAnsi: false,
-    ...options,
+    ...opts,
   })
 
   // Treat undefined or null status as success (0).
   const exitCode = result.status ?? 0
 
   if (exitCode !== 0) {
-    const error = new Error(`Command failed with exit code ${exitCode}: ${command}`)
+    const cmdString = args.length ? `${command} ${args.join(' ')}` : command
+    const error = new Error(`Command failed with exit code ${exitCode}: ${cmdString}`)
     error.stdout = result.stdout
     error.stderr = result.stderr
     error.code = exitCode
@@ -38,9 +43,10 @@ export async function exec(command, options = {}) {
 }
 
 /**
- * Execute command and capture output.
+ * Execute shell command and capture output.
+ * Always uses shell for proper command execution with redirections and pipes.
  *
- * @param {string} command - Command to execute
+ * @param {string} command - Shell command to execute
  * @param {object} options - Spawn options
  * @returns {Promise<{stdout: string, stderr: string, code: number}>}
  */
