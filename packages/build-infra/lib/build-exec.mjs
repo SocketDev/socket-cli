@@ -5,6 +5,7 @@
  * output capture, and logging.
  */
 
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { spawn } from '@socketsecurity/lib/spawn'
 
 /**
@@ -20,12 +21,19 @@ export async function exec(command, argsOrOptions = [], options = {}) {
   const args = Array.isArray(argsOrOptions) ? argsOrOptions : []
   const opts = Array.isArray(argsOrOptions) ? options : argsOrOptions
 
-  const result = await spawn(command, args, {
+  // When shell option is provided, normalize it to WIN32.
+  const spawnOpts = {
     stdio: opts.stdio || 'inherit',
     stdioString: true,
     stripAnsi: false,
     ...opts,
-  })
+  }
+
+  if (spawnOpts.shell === true || spawnOpts.shell === WIN32) {
+    spawnOpts.shell = WIN32
+  }
+
+  const result = await spawn(command, args, spawnOpts)
 
   // Treat undefined or null status as success (0).
   const exitCode = result.status ?? 0
@@ -52,7 +60,7 @@ export async function exec(command, argsOrOptions = [], options = {}) {
  */
 export async function execCapture(command, options = {}) {
   const result = await spawn(command, [], {
-    shell: true,
+    shell: WIN32,
     stdio: 'pipe',
     stdioString: true,
     stripAnsi: false,

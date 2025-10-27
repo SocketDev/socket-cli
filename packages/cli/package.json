@@ -81,11 +81,13 @@
     "@rollup/plugin-node-resolve": "16.0.1",
     "@rollup/plugin-replace": "6.0.2",
     "@rollup/pluginutils": "5.3.0",
+    "@socketsecurity/build-infra": "workspace:*",
     "del": "8.0.1",
     "ink-text-input": "6.0.0",
     "rollup": "4.50.1",
     "rollup-plugin-visualizer": "6.0.5",
-    "tar-stream": "3.1.7"
+    "tar-stream": "3.1.7",
+    "yoga-layout": "3.2.1"
   },
   "engines": {
     "node": ">=18",
