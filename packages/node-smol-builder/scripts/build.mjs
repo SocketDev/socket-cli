@@ -80,6 +80,10 @@ import {
   smokeTestBinary,
   verifyGitTag,
 } from '@socketsecurity/build-infra/lib/build-helpers'
+import {
+  generateHashComment,
+  shouldExtract,
+} from '@socketsecurity/build-infra/lib/extraction-cache'
 import { printError, printHeader, printWarning } from '@socketsecurity/build-infra/lib/build-output'
 import {
   analyzePatchContent,
@@ -124,6 +128,44 @@ const ADDITIONS_DIR = join(ROOT_DIR, 'additions')
 // build/out/Sea/node - Binary for SEA builds (gitignored).
 // build/out/Distribution/node - Final distribution binary (gitignored).
 // build/patches/ - All Node.js custom patches (tracked in git).
+
+/**
+ * Collect all source files that contribute to the smol build.
+ * Used for hash-based caching to detect when rebuild is needed.
+ *
+ * @returns {string[]} Array of absolute paths to all source files
+ */
+function collectBuildSourceFiles() {
+  const sources = []
+
+  // Add all patch files.
+  if (existsSync(PATCHES_DIR)) {
+    const patchFiles = readdirSync(PATCHES_DIR)
+      .filter(f => f.endsWith('.patch'))
+      .map(f => join(PATCHES_DIR, f))
+    sources.push(...patchFiles)
+  }
+
+  // Add all addition files recursively.
+  if (existsSync(ADDITIONS_DIR)) {
+    const addFiles = readdirSync(ADDITIONS_DIR, { recursive: true })
+      .filter(f => {
+        const fullPath = join(ADDITIONS_DIR, f)
+        try {
+          return existsSync(fullPath) && !readdirSync(fullPath, { withFileTypes: true }).length
+        } catch {
+          return true // It's a file, not a directory.
+        }
+      })
+      .map(f => join(ADDITIONS_DIR, f))
+    sources.push(...addFiles)
+  }
+
+  // Add this build script itself (changes to build logic should trigger rebuild).
+  sources.push(__filename)
+
+  return sources
+}
 
 /**
  * Find Socket patches for this Node version
@@ -873,6 +915,44 @@ async function main() {
 
   // Ensure build directory exists.
   await mkdir(BUILD_DIR, { recursive: true })
+
+  // Check if we can use cached build (skip if --clean).
+  if (!CLEAN_BUILD) {
+    const distributionOutputBinary = join(BUILD_DIR, 'out', 'Distribution', platform === 'win32' ? 'node.exe' : 'node')
+    const distBinary = join(ROOT_DIR, 'dist', 'socket-smol')
+
+    // Collect all source files that affect the build.
+    const sourcePaths = collectBuildSourceFiles()
+
+    // Check if build is needed based on source file hashes.
+    // Store hash in centralized build/.cache/ directory.
+    const cacheDir = join(BUILD_DIR, '.cache')
+    const hashFilePath = join(cacheDir, 'node.hash')
+    const needsExtraction = await shouldExtract({
+      sourcePaths,
+      outputPath: hashFilePath,
+      validateOutput: () => {
+        // Verify both distribution binary, hash file, and dist binary exist.
+        return existsSync(distributionOutputBinary) &&
+               existsSync(hashFilePath) &&
+               existsSync(distBinary)
+      },
+    })
+
+    if (!needsExtraction) {
+      // Cache hit! Binary is up to date.
+      logger.log('')
+      printHeader('✅ Using Cached Build')
+      logger.log('All source files unchanged since last build.')
+      logger.log('')
+      logger.substep(`Distribution binary: ${distributionOutputBinary}`)
+      logger.substep(`E2E binary: ${distBinary}`)
+      logger.log('')
+      logger.success('Cached build is ready to use')
+      logger.log('')
+      return
+    }
+  }
 
   // Phase 3: Verify Git tag exists before cloning.
   printHeader('Verifying Node.js Version')
@@ -1689,6 +1769,16 @@ async function main() {
   logger.substep('Test command: pnpm --filter @socketsecurity/cli run e2e:smol')
   logger.logNewline()
   logger.success('Binary copied to dist/socket-smol for e2e testing')
+  logger.logNewline()
+
+  // Write source hash to cache file for future builds.
+  const sourcePaths = collectBuildSourceFiles()
+  const sourceHashComment = await generateHashComment(sourcePaths)
+  const cacheDir = join(BUILD_DIR, '.cache')
+  await mkdir(cacheDir, { recursive: true })
+  const hashFilePath = join(cacheDir, 'node.hash')
+  await writeFile(hashFilePath, sourceHashComment, 'utf-8')
+  logger.substep(`Cache hash: ${hashFilePath}`)
   logger.logNewline()
 
   // Report build complete.
