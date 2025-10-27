@@ -1425,7 +1425,7 @@ async function main() {
 
   await exec(
     nodeBinary,
-    ['-e', `logger.log("${colors.green('✓')} Binary can execute JavaScript")`],
+    ['-e', `console.log("${colors.green('✓')} Binary can execute JavaScript")`],
     {
       env: { ...process.env, PKG_EXECPATH: 'PKG_INVOKE_NODEJS' },
     },
