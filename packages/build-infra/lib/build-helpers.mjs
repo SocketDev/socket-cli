@@ -89,6 +89,7 @@ export async function checkPythonVersion(minVersion = '3.6') {
   printStep('Checking Python version')
 
   // Try multiple Python command names.
+  // Use shell on all platforms to ensure PATH resolution works with setup-python.
   const pythonCommands = ['python3', 'python']
 
   for (const pythonCmd of pythonCommands) {
@@ -96,7 +97,7 @@ export async function checkPythonVersion(minVersion = '3.6') {
       const result = await spawn(
         pythonCmd,
         ['-c', "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')"],
-        { shell: WIN32, stdio: 'pipe', stdioString: true }
+        { shell: true, stdio: 'pipe', stdioString: true }
       )
 
       // Check if spawn failed or returned undefined status.
