@@ -85,13 +85,13 @@ jobs:
         id: wasm-cache-keys
         shell: bash
         run: |
-          YOGA_HASH=$(find packages/yoga-layout -type f \( -name "*.cpp" -o -name "*.h" -o -name "*.mjs" -o -name "CMakeLists.txt" \) | sort | xargs shasum -a 256 | shasum -a 256 | cut -d' ' -f1)
+          YOGA_HASH=$(find packages/yoga-layout -type f \( -name "*.cpp" -o -name "*.h" -o -name "*.mjs" -o -name "CMakeLists.txt" \) | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
           echo "yoga-hash=$YOGA_HASH" >> $GITHUB_OUTPUT
 
-          AI_HASH=$(find packages/socketbin-cli-ai -type f \( -name "*.mjs" -o -name "*.ts" \) | sort | xargs shasum -a 256 | shasum -a 256 | cut -d' ' -f1)
+          AI_HASH=$(find packages/socketbin-cli-ai -type f \( -name "*.mjs" -o -name "*.ts" \) | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
           echo "ai-hash=$AI_HASH" >> $GITHUB_OUTPUT
 
-          ONNX_HASH=$(find packages/onnx-runtime-builder -type f \( -name "*.mjs" -o -name "*.patch" \) | sort | xargs shasum -a 256 | shasum -a 256 | cut -d' ' -f1)
+          ONNX_HASH=$(find packages/onnx-runtime-builder -type f \( -name "*.mjs" -o -name "*.patch" \) | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
           echo "onnx-hash=$ONNX_HASH" >> $GITHUB_OUTPUT
 
       - name: Restore Yoga Layout WASM cache
@@ -181,7 +181,7 @@ jobs:
         id: sea-cache-key
         shell: bash
         run: |
-          HASH=$(find packages/node-sea-builder packages/cli/src -type f \( -name "*.mts" -o -name "*.ts" -o -name "*.mjs" -o -name "*.js" \) | sort | xargs shasum -a 256 | shasum -a 256 | cut -d' ' -f1)
+          HASH=$(find packages/node-sea-builder packages/cli/src -type f \( -name "*.mts" -o -name "*.ts" -o -name "*.mjs" -o -name "*.js" \) | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
           echo "hash=$HASH" >> $GITHUB_OUTPUT
 
       - name: Restore SEA binary cache
