@@ -101,14 +101,22 @@ jobs:
         id: build-cache-key
         shell: bash
         run: |
-          # Generate hash from build-affecting files
+          # Generate hash from build-affecting files (matches build-binaries.yml).
           if [ "${{ matrix.os }}" = "windows" ]; then
-            HASH=$(find build/patches scripts -type f -name "*.patch" -o -name "*.mjs" | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
+            HASH=$(find build/patches packages/node-smol-builder scripts -type f -name "*.patch" -o -name "*.mjs" | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
           else
-            HASH=$(find build/patches scripts -type f \( -name "*.patch" -o -name "*.mjs" \) | sort | xargs shasum -a 256 | shasum -a 256 | cut -d' ' -f1)
+            HASH=$(find build/patches packages/node-smol-builder scripts -type f \( -name "*.patch" -o -name "*.mjs" \) | sort | xargs shasum -a 256 | shasum -a 256 | cut -d' ' -f1)
           fi
           echo "hash=$HASH" >> $GITHUB_OUTPUT
           echo "Build hash: $HASH"
+
+      - name: Restore smol binary from build-socketbin.yml cache
+        uses: actions/cache/restore@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
+        id: smol-cache
+        with:
+          path: packages/node-smol-builder/dist/socket-smol-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.os == 'windows' && '.exe' || '' }}
+          key: node-smol-${{ matrix.platform }}-${{ matrix.arch }}-${{ steps.build-cache-key.outputs.hash }}
+          restore-keys: node-smol-${{ matrix.platform }}-${{ matrix.arch }}-
 
       - name: Cache compiled Node.js binary
         uses: actions/cache@6849a6489940f00c2f30c0fb92c6274307ccb58a # v4.2.0
