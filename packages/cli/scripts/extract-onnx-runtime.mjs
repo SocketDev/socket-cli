@@ -3,34 +3,43 @@
  * This runs during build to create a wrapper around onnxruntime-web
  * for use in the MiniLM semantic inference engine.
  *
- * Idempotent: Skips regeneration if file already exists (supports CI caching).
+ * Idempotent: Skips regeneration if source hasn't changed (supports CI caching).
  */
 
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import {
+  ensureOutputDir,
+  generateHashComment,
+  shouldExtract,
+} from '@socketsecurity/build-infra/lib/extraction-cache'
 import { logger } from '@socketsecurity/lib/logger'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '..')
-const outputPath = path.join(rootPath, 'external/onnx-sync.mjs')
+const outputPath = path.join(rootPath, 'build/onnx-sync.mjs')
 
-// Check if file already exists (supports CI cache).
-if (existsSync(outputPath)) {
-  try {
-    const existing = readFileSync(outputPath, 'utf-8')
-    // Verify it's the expected content (not corrupted).
-    if (
-      existing.includes('onnxruntime-web') &&
-      existing.includes('InferenceSession')
-    ) {
-      logger.log(`✓ Using cached ${outputPath}`)
-      process.exit(0)
-    }
-  } catch {}
-  // Fall through to regenerate if verification failed.
+// Get onnxruntime-web package.json path for version tracking.
+const onnxPackageJsonPath = path.join(
+  rootPath,
+  'node_modules/onnxruntime-web/package.json',
+)
+
+// Check if extraction needed (hash-based caching).
+if (!await shouldExtract({
+  sourcePaths: onnxPackageJsonPath,
+  outputPath,
+  validateOutput: (content) =>
+    content.includes('onnxruntime-web') &&
+    content.includes('InferenceSession'),
+})) {
+  process.exit(0)
 }
+
+// Compute source hash for cache validation.
+const sourceHashComment = await generateHashComment(onnxPackageJsonPath)
 
 // Generate onnx-sync.mjs as a simple re-export of onnxruntime-web.
 const onnxSyncContent = `/**
@@ -40,6 +49,8 @@ const onnxSyncContent = `/**
  * DO NOT EDIT MANUALLY - changes will be overwritten on next build.
  *
  * Re-exports onnxruntime-web for use in MiniLM embedding pipeline.
+ *
+ * ${sourceHashComment}
  */
 
 import ort from 'onnxruntime-web'
@@ -52,6 +63,7 @@ export const Tensor = ort.Tensor
 export default ort
 `
 
+ensureOutputDir(outputPath)
 writeFileSync(outputPath, onnxSyncContent, 'utf-8')
 
 logger.log(`✓ Generated ${outputPath}`)

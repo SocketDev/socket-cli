@@ -335,7 +335,7 @@ const config = {
         // Redirect yoga-layout to our custom synchronous implementation.
         build.onResolve({ filter: /^yoga-layout$/ }, () => {
           return {
-            path: path.join(rootPath, 'external/yoga-sync.mjs'),
+            path: path.join(rootPath, 'build/yoga-sync.mjs'),
           }
         })
       },
