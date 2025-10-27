@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-/** @fileoverview Socket CLI entry point. Executes the unified CLI bundle. */
+/** @fileoverview Socket CLI entry point. */
 
 void (async () => {
   const Module = require('node:module')
@@ -8,7 +8,6 @@ void (async () => {
   const rootPath = path.join(__dirname, '..')
   Module.enableCompileCache?.(path.join(rootPath, '.cache'))
 
-  // Execute the unified CLI bundle directly.
-  // The unified CLI (dist/cli.js) handles all commands and detects how it was invoked.
+  // Execute the CLI bundle.
   require(path.join(rootPath, 'dist/cli.js'))
 })()
