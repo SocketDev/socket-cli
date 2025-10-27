@@ -54,7 +54,7 @@ export interface FormatOptions {
  */
 export function formatSbomForCodeT5(
   sbom: EnrichedSbom,
-  options: FormatOptions = {}
+  options: FormatOptions = {},
 ): string {
   const task = options.task || 'security-analysis'
   const maxComponents = options.maxComponents || 50
@@ -77,7 +77,7 @@ export function formatSbomForCodeT5(
   // Component summary (prioritize high-risk packages).
   const prioritizedComponents = prioritizeComponents(
     sbom.components || [],
-    maxComponents
+    maxComponents,
   )
   sections.push(buildComponentSummary(prioritizedComponents))
 
@@ -96,7 +96,7 @@ export function formatSbomForCodeT5(
  * Build task-specific prompt.
  */
 function buildTaskPrompt(task: string): string {
-  const TASK_PROMPTS: Record<string, string> = {
+  const TASK_PROMPTS = {
     __proto__: null,
     'security-analysis':
       'TASK: Perform comprehensive security analysis of this project.',
@@ -106,9 +106,12 @@ function buildTaskPrompt(task: string): string {
       'TASK: Audit dependencies for security and supply chain risks.',
     'license-compliance':
       'TASK: Analyze license compliance and identify potential issues.',
-  } as Record<string, string>
+  } as const
 
-  return TASK_PROMPTS[task] || TASK_PROMPTS['security-analysis']
+  return (
+    TASK_PROMPTS[task as keyof typeof TASK_PROMPTS] ??
+    TASK_PROMPTS['security-analysis']
+  )
 }
 
 /**
@@ -134,7 +137,7 @@ function buildProjectOverview(sbom: EnrichedSbom): string {
  */
 function extractCriticalIssues(
   sbom: EnrichedSbom,
-  minSeverity: string
+  minSeverity: string,
 ): Array<{
   component: string
   version: string
@@ -146,15 +149,15 @@ function extractCriticalIssues(
     cvss?: number
   }
 }> {
-  const SEVERITY_RANK: Record<string, number> = {
+  const SEVERITY_RANK = {
     __proto__: null,
     low: 1,
     medium: 2,
     high: 3,
     critical: 4,
-  } as Record<string, number>
+  } as const
 
-  const minRank = SEVERITY_RANK[minSeverity] || 1
+  const minRank = SEVERITY_RANK[minSeverity as keyof typeof SEVERITY_RANK] ?? 1
   const criticalIssues: Array<{
     component: string
     version: string
@@ -173,7 +176,7 @@ function extractCriticalIssues(
     }
 
     for (const issue of component.socket.issues) {
-      const issueRank = SEVERITY_RANK[issue.severity] || 1
+      const issueRank = SEVERITY_RANK[issue.severity as keyof typeof SEVERITY_RANK] ?? 1
       if (issueRank >= minRank) {
         criticalIssues.push({
           component: component.name,
@@ -182,8 +185,8 @@ function extractCriticalIssues(
             type: issue.type,
             severity: issue.severity,
             title: issue.title,
-            cve: issue.cve,
-            cvss: issue.cvss,
+            ...(issue.cve && { cve: issue.cve }),
+            ...(issue.cvss !== undefined && { cvss: issue.cvss }),
           },
         })
       }
@@ -192,8 +195,8 @@ function extractCriticalIssues(
 
   // Sort by severity (critical first).
   criticalIssues.sort((a, b) => {
-    const rankA = SEVERITY_RANK[a.issue.severity] || 0
-    const rankB = SEVERITY_RANK[b.issue.severity] || 0
+    const rankA = SEVERITY_RANK[a.issue.severity as keyof typeof SEVERITY_RANK] ?? 0
+    const rankB = SEVERITY_RANK[b.issue.severity as keyof typeof SEVERITY_RANK] ?? 0
     return rankB - rankA
   })
 
@@ -214,7 +217,7 @@ function buildCriticalIssuesSection(
       cve?: string
       cvss?: number
     }
-  }>
+  }>,
 ): string {
   const lines = ['CRITICAL ISSUES:']
 
@@ -222,7 +225,7 @@ function buildCriticalIssuesSection(
     const cveInfo = issue.cve ? ` [${issue.cve}]` : ''
     const cvssInfo = issue.cvss ? ` CVSS ${issue.cvss}` : ''
     lines.push(
-      `- ${issue.severity.toUpperCase()}: ${component}@${version}${cveInfo}${cvssInfo}`
+      `- ${issue.severity.toUpperCase()}: ${component}@${version}${cveInfo}${cvssInfo}`,
     )
     lines.push(`  ${issue.title}`)
   }
@@ -235,7 +238,7 @@ function buildCriticalIssuesSection(
  */
 function prioritizeComponents(
   components: EnrichedComponent[],
-  maxComponents: number
+  maxComponents: number,
 ): EnrichedComponent[] {
   // Calculate risk score for each component.
   const scored = components.map(component => {
@@ -288,7 +291,9 @@ function buildComponentSummary(components: EnrichedComponent[]): string {
 
     if (socketInfo && component.socket!.issues.length > 0) {
       const topIssue = component.socket!.issues[0]
-      lines.push(`  ${topIssue.severity.toUpperCase()}: ${topIssue.title}`)
+      if (topIssue) {
+        lines.push(`  ${topIssue.severity.toUpperCase()}: ${topIssue.title}`)
+      }
     }
   }
 
@@ -307,18 +312,20 @@ function buildDependencyGraph(sbom: EnrichedSbom): string {
 
     // Find root dependencies.
     const rootDeps = sbom.dependencies?.find(
-      dep => dep.ref === rootComponent['bom-ref']
+      dep => dep.ref === rootComponent['bom-ref'],
     )
 
     if (rootDeps?.dependsOn) {
       for (const depRef of rootDeps.dependsOn.slice(0, 20)) {
         const depComponent = (sbom.components as EnrichedComponent[])?.find(
-          c => c['bom-ref'] === depRef
+          c => c['bom-ref'] === depRef,
         )
         if (depComponent) {
           const issueCount = depComponent.socket?.issues.length || 0
           const issueInfo = issueCount > 0 ? ` (${issueCount} issues)` : ''
-          lines.push(`  - ${depComponent.name}@${depComponent.version}${issueInfo}`)
+          lines.push(
+            `  - ${depComponent.name}@${depComponent.version}${issueInfo}`,
+          )
         }
       }
     }
@@ -331,7 +338,7 @@ function buildDependencyGraph(sbom: EnrichedSbom): string {
  * Build analysis instructions.
  */
 function buildAnalysisInstructions(task: string): string {
-  const INSTRUCTIONS: Record<string, string> = {
+  const INSTRUCTIONS = {
     __proto__: null,
     'security-analysis': [
       'ANALYSIS REQUIREMENTS:',
@@ -361,10 +368,10 @@ function buildAnalysisInstructions(task: string): string {
       '- Flag copyleft licenses',
       '- Recommend compliance actions',
     ].join('\n'),
-  } as Record<string, string>
+  } as const
 
   return (
-    INSTRUCTIONS[task] ||
+    INSTRUCTIONS[task as keyof typeof INSTRUCTIONS] ??
     INSTRUCTIONS['security-analysis']
   )
 }

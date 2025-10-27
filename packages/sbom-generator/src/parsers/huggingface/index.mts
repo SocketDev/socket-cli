@@ -26,7 +26,10 @@ export class HuggingfaceParser implements Parser {
     return false
   }
 
-  async parse(projectPath: string, options: ParseOptions = {}): Promise<ParseResult> {
+  async parse(
+    projectPath: string,
+    options: ParseOptions = {},
+  ): Promise<ParseResult> {
     // Placeholder implementation.
     // Full implementation would:
     // 1. Scan for model references in code (e.g., from_pretrained calls)

@@ -140,7 +140,10 @@ export class CargoParser implements Parser {
    *
    * @see https://github.com/CycloneDX/cdxgen/blob/v11.11.0/lib/parsers/rust.js#L80-L130
    */
-  async parse(projectPath: string, options: ParseOptions = {}): Promise<ParseResult> {
+  async parse(
+    projectPath: string,
+    options: ParseOptions = {},
+  ): Promise<ParseResult> {
     // Read project metadata from Cargo.toml.
     const metadata = await this.extractMetadata(projectPath)
 
@@ -149,7 +152,10 @@ export class CargoParser implements Parser {
 
     // Convert to CycloneDX format.
     const components = this.buildComponents(lockfileData.dependencies, options)
-    const dependencies = this.buildDependencyGraph(metadata, lockfileData.dependencies)
+    const dependencies = this.buildDependencyGraph(
+      metadata,
+      lockfileData.dependencies,
+    )
 
     return {
       ecosystem: this.ecosystem,
@@ -212,7 +218,7 @@ export class CargoParser implements Parser {
    */
   private async parseCargoLock(
     projectPath: string,
-    options: ParseOptions
+    options: ParseOptions,
   ): Promise<LockfileData> {
     const dependencies = new Map<string, CargoDependencyInfo>()
 
@@ -264,7 +270,7 @@ export class CargoParser implements Parser {
    */
   private buildComponents(
     dependencies: Map<string, CargoDependencyInfo>,
-    options: ParseOptions
+    options: ParseOptions,
   ): Component[] {
     const components: Component[] = []
 
@@ -296,7 +302,7 @@ export class CargoParser implements Parser {
    */
   private buildDependencyGraph(
     metadata: ProjectMetadata,
-    dependencies: Map<string, CargoDependencyInfo>
+    dependencies: Map<string, CargoDependencyInfo>,
   ): Dependency[] {
     const graph: Dependency[] = []
 
@@ -323,7 +329,9 @@ export class CargoParser implements Parser {
           // Find matching dependency in map.
           const transitiveDep = dependencies.get(depName)
           if (transitiveDep) {
-            dependsOn.push(`pkg:cargo/${transitiveDep.name}@${transitiveDep.version}`)
+            dependsOn.push(
+              `pkg:cargo/${transitiveDep.name}@${transitiveDep.version}`,
+            )
           }
         }
       }

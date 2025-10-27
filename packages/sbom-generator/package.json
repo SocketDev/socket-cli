@@ -14,7 +14,7 @@
   "scripts": {
     "test": "vitest",
     "test:watch": "vitest watch",
-    "type": "tsgo"
+    "type": "tsc --noEmit"
   },
   "dependencies": {
     "@iarna/toml": "^2.2.5",

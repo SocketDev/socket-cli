@@ -32,7 +32,10 @@ export class ActionsParser implements Parser {
     }
   }
 
-  async parse(projectPath: string, options: ParseOptions = {}): Promise<ParseResult> {
+  async parse(
+    projectPath: string,
+    options: ParseOptions = {},
+  ): Promise<ParseResult> {
     const metadata: ProjectMetadata = {
       name: path.basename(projectPath),
       version: '0.0.0',
@@ -50,7 +53,9 @@ export class ActionsParser implements Parser {
       const workflow = parseYaml(content)
 
       if (workflow.jobs) {
-        for (const job of Object.values(workflow.jobs) as Array<{ steps?: Array<{ uses?: string }> }>) {
+        for (const job of Object.values(workflow.jobs) as Array<{
+          steps?: Array<{ uses?: string }>
+        }>) {
           if (job.steps) {
             for (const step of job.steps) {
               if (step.uses) {
@@ -65,19 +70,23 @@ export class ActionsParser implements Parser {
       }
     }
 
-    const components: Component[] = Array.from(actions.values()).map(action => ({
-      type: 'library',
-      'bom-ref': `pkg:github/${action.name}@${action.version}`,
-      name: action.name,
-      version: action.version,
-      purl: `pkg:github/${action.name}@${action.version}`,
-      scope: 'required',
-    }))
+    const components: Component[] = Array.from(actions.values()).map(
+      action => ({
+        type: 'library',
+        'bom-ref': `pkg:github/${action.name}@${action.version}`,
+        name: action.name,
+        version: action.version,
+        purl: `pkg:github/${action.name}@${action.version}`,
+        scope: 'required',
+      }),
+    )
 
-    const graph: Dependency[] = [{
-      ref: `pkg:github/${metadata.name}@${metadata.version}`,
-      dependsOn: components.map(c => c.purl || ''),
-    }]
+    const graph: Dependency[] = [
+      {
+        ref: `pkg:github/${metadata.name}@${metadata.version}`,
+        dependsOn: components.map(c => c.purl || ''),
+      },
+    ]
 
     return {
       ecosystem: this.ecosystem,

@@ -63,7 +63,7 @@ describe('NpmParser', () => {
 
     // With dev dependencies should have more components.
     expect(withDev.components.length).toBeGreaterThanOrEqual(
-      withoutDev.components.length
+      withoutDev.components.length,
     )
   })
 })

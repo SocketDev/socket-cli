@@ -33,7 +33,10 @@ export class MavenParser implements Parser {
     }
   }
 
-  async parse(projectPath: string, options: ParseOptions = {}): Promise<ParseResult> {
+  async parse(
+    projectPath: string,
+    options: ParseOptions = {},
+  ): Promise<ParseResult> {
     const pomPath = path.join(projectPath, 'pom.xml')
     const content = await fs.readFile(pomPath, 'utf8')
     const parsed = this.xmlParser.parse(content)
@@ -45,7 +48,10 @@ export class MavenParser implements Parser {
       description: project.description,
     }
 
-    const dependencies = new Map<string, { groupId: string; artifactId: string; version: string }>()
+    const dependencies = new Map<
+      string,
+      { groupId: string; artifactId: string; version: string }
+    >()
 
     if (project.dependencies?.dependency) {
       const deps = Array.isArray(project.dependencies.dependency)
@@ -62,19 +68,23 @@ export class MavenParser implements Parser {
       }
     }
 
-    const components: Component[] = Array.from(dependencies.values()).map(dep => ({
-      type: 'library',
-      'bom-ref': `pkg:maven/${dep.groupId}/${dep.artifactId}@${dep.version}`,
-      name: `${dep.groupId}:${dep.artifactId}`,
-      version: dep.version,
-      purl: `pkg:maven/${dep.groupId}/${dep.artifactId}@${dep.version}`,
-      scope: 'required',
-    }))
+    const components: Component[] = Array.from(dependencies.values()).map(
+      dep => ({
+        type: 'library',
+        'bom-ref': `pkg:maven/${dep.groupId}/${dep.artifactId}@${dep.version}`,
+        name: `${dep.groupId}:${dep.artifactId}`,
+        version: dep.version,
+        purl: `pkg:maven/${dep.groupId}/${dep.artifactId}@${dep.version}`,
+        scope: 'required',
+      }),
+    )
 
-    const graph: Dependency[] = [{
-      ref: `pkg:maven/${project.groupId}/${metadata.name}@${metadata.version}`,
-      dependsOn: components.map(c => c.purl || ''),
-    }]
+    const graph: Dependency[] = [
+      {
+        ref: `pkg:maven/${project.groupId}/${metadata.name}@${metadata.version}`,
+        dependsOn: components.map(c => c.purl || ''),
+      },
+    ]
 
     return {
       ecosystem: this.ecosystem,
