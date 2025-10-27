@@ -614,7 +614,13 @@ Socket CLI integrates with various third-party tools and services:
 - **Array length checks**: Use `!array.length` instead of `array.length === 0`. For `array.length > 0`, use `!!array.length` when function must return boolean, or `array.length` when used in conditional contexts
 - **Catch parameter naming**: Use `catch (e)` instead of `catch (error)` for consistency across the codebase
 - **Node.js fs imports**: 🚨 MANDATORY pattern - `import { someSyncThing, promises as fs } from 'node:fs'`
-- **Process spawning**: 🚨 FORBIDDEN to use Node.js built-in `child_process.spawn` - MUST use `spawn` from `@socketsecurity/registry/lib/spawn`
+- **Process spawning**: 🚨 MANDATORY - ALWAYS use `{ spawn }` from `@socketsecurity/lib/spawn` (NEVER use Node.js built-in `child_process.spawn`)
+- **Shell execution**: 🚨 MANDATORY - ALWAYS use `shell: WIN32` from `@socketsecurity/lib/constants` (NEVER use `shell: true`)
+  - ✅ CORRECT: `import { WIN32 } from '@socketsecurity/lib/constants'` then `spawn('cmd', [], { shell: WIN32 })`
+  - ❌ FORBIDDEN: `{ shell: true }` (not cross-platform safe)
+- **Logging in scripts**: 🚨 MANDATORY - ALWAYS use `logger` from `@socketsecurity/lib/logger` in all build scripts and utilities
+  - ✅ CORRECT: `import { logger } from '@socketsecurity/lib/logger'` then `logger.log()`, `logger.substep()`, etc.
+  - ❌ FORBIDDEN: `console.log()` (use logger for consistency and enhanced output)
 - **Working directory**: 🚨 ABSOLUTELY FORBIDDEN - NEVER use `process.chdir()` - it's a global state mutation anti-pattern that breaks tests and causes race conditions
   - ✅ CORRECT: Use `{ cwd: '/absolute/path' }` option in spawn, exec, fs operations
   - ✅ CORRECT: Always use absolute paths with `path.resolve()` or `path.join(baseDir, relative)`

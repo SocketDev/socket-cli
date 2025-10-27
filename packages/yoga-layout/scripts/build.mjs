@@ -16,6 +16,7 @@ import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { WIN32 } from '@socketsecurity/lib/constants'
 import { logger } from '@socketsecurity/lib/logger'
 
 import { exec } from '@socketsecurity/build-infra/lib/build-exec'
@@ -78,7 +79,7 @@ async function cloneYogaSource() {
   printStep(`Cloning Yoga ${YOGA_VERSION}...`)
   await exec(
     `git clone --depth 1 --branch ${YOGA_VERSION} ${YOGA_REPO} ${YOGA_SOURCE_DIR}`,
-    { stdio: 'inherit' }
+    { shell: WIN32, stdio: 'inherit' }
   )
 
   printSuccess(`Yoga ${YOGA_VERSION} cloned`)
@@ -145,6 +146,7 @@ async function configure() {
     '-s NO_EXIT_RUNTIME=1', // Keep runtime alive (needed for WASM).
     '-s STACK_SIZE=16KB', // Small stack.
     '-s SUPPORT_LONGJMP=0', // No longjmp (smaller).
+    '-s WASM_ASYNC_COMPILATION=0', // CRITICAL: Synchronous instantiation for bundling.
   ].join(' ')
 
   const cmakeArgs = [
@@ -161,7 +163,7 @@ async function configure() {
   printStep(`  CXX: ${cxxFlags}`)
   printStep(`  Linker: ${linkerFlags}`)
 
-  await exec(`emcmake cmake ${cmakeArgs}`, { stdio: 'inherit' })
+  await exec(`emcmake cmake ${cmakeArgs}`, { shell: WIN32, stdio: 'inherit' })
 
   printSuccess('CMake configured')
   await createCheckpoint('yoga-layout', 'configured')
@@ -183,6 +185,7 @@ async function build() {
   // Build static library with CMake.
   printStep('Compiling C++ to static library...')
   await exec(`emmake cmake --build ${cmakeBuildDir} --target yogacore`, {
+    shell: WIN32,
     stdio: 'inherit',
   })
 
@@ -229,7 +232,7 @@ async function build() {
       `${cxxFlags} ${bindingsFile} ${staticLib} ` +
       `${linkerFlags} ` +
       `-o ${jsOutput}`,
-    { stdio: 'inherit' }
+    { shell: WIN32, stdio: 'inherit' }
   )
 
   printSuccess(`JS glue code created: ${jsOutput}`)
@@ -288,6 +291,7 @@ async function optimize() {
   ].join(' ')
 
   await exec(`wasm-opt ${wasmOptFlags} "${wasmFile}" -o "${wasmFile}"`, {
+    shell: WIN32,
     stdio: 'inherit',
   })
 
