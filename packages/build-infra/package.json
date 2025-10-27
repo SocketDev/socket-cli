@@ -16,6 +16,6 @@
     "./lib/rust-builder": "./lib/rust-builder.mjs"
   },
   "dependencies": {
-    "@socketsecurity/lib": "1.3.5"
+    "@socketsecurity/lib": "catalog:"
   }
 }
