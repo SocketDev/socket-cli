@@ -94,7 +94,30 @@ export async function checkPythonVersion(minVersion = '3.6') {
       [],
       { shell: WIN32, stdio: 'pipe', stdioString: true }
     )
+
+    // Check if spawn failed.
+    if (result.status !== 0) {
+      printWarning(`Python check failed with status ${result.status}`)
+      if (result.stderr) {
+        printWarning(`stderr: ${result.stderr}`)
+      }
+      return {
+        available: false,
+        sufficient: false,
+        version: null,
+      }
+    }
+
     const version = (result.stdout ?? '').trim()
+    if (!version) {
+      printWarning('Python returned empty version')
+      return {
+        available: false,
+        sufficient: false,
+        version: null,
+      }
+    }
+
     const [major, minor] = version.split('.').map(Number)
     const [minMajor, minMinor] = minVersion.split('.').map(Number)
 
@@ -105,7 +128,8 @@ export async function checkPythonVersion(minVersion = '3.6') {
       sufficient,
       version,
     }
-  } catch {
+  } catch (e) {
+    printWarning(`Python check exception: ${e.message}`)
     return {
       available: false,
       sufficient: false,
