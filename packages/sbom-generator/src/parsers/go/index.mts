@@ -81,7 +81,10 @@ export class GoParser implements Parser {
    *
    * @see https://github.com/CycloneDX/cdxgen/blob/v11.11.0/lib/parsers/go.js#L80-L130
    */
-  async parse(projectPath: string, options: ParseOptions = {}): Promise<ParseResult> {
+  async parse(
+    projectPath: string,
+    options: ParseOptions = {},
+  ): Promise<ParseResult> {
     // Read project metadata from go.mod.
     const metadata = await this.extractMetadata(projectPath)
 
@@ -90,7 +93,10 @@ export class GoParser implements Parser {
 
     // Convert to CycloneDX format.
     const components = this.buildComponents(lockfileData.dependencies, options)
-    const dependencies = this.buildDependencyGraph(metadata, lockfileData.dependencies)
+    const dependencies = this.buildDependencyGraph(
+      metadata,
+      lockfileData.dependencies,
+    )
 
     return {
       ecosystem: this.ecosystem,
@@ -158,7 +164,7 @@ export class GoParser implements Parser {
    */
   private async parseGoMod(
     projectPath: string,
-    options: ParseOptions
+    options: ParseOptions,
   ): Promise<LockfileData> {
     const dependencies = new Map<string, GoDependencyInfo>()
 
@@ -194,7 +200,8 @@ export class GoParser implements Parser {
       }
 
       // Parse single-line require directives.
-      const singleRequireRegex = /^require\s+(\S+)\s+(\S+)(?:\s+\/\/\s*(.*))?$/gm
+      const singleRequireRegex =
+        /^require\s+(\S+)\s+(\S+)(?:\s+\/\/\s*(.*))?$/gm
       let singleMatch: RegExpExecArray | null
       while ((singleMatch = singleRequireRegex.exec(content)) !== null) {
         const [, name, version, comment] = singleMatch
@@ -210,7 +217,8 @@ export class GoParser implements Parser {
       }
 
       // Parse replace directives.
-      const replaceRegex = /^replace\s+(\S+)(?:\s+(\S+))?\s+=>\s+(\S+)(?:\s+(\S+))?$/gm
+      const replaceRegex =
+        /^replace\s+(\S+)(?:\s+(\S+))?\s+=>\s+(\S+)(?:\s+(\S+))?$/gm
       let replaceMatch: RegExpExecArray | null
       while ((replaceMatch = replaceRegex.exec(content)) !== null) {
         const [, oldName, oldVersion, newName, newVersion] = replaceMatch
@@ -243,7 +251,7 @@ export class GoParser implements Parser {
    */
   private buildComponents(
     dependencies: Map<string, GoDependencyInfo>,
-    options: ParseOptions
+    options: ParseOptions,
   ): Component[] {
     const components: Component[] = []
 
@@ -281,7 +289,7 @@ export class GoParser implements Parser {
    */
   private buildDependencyGraph(
     metadata: ProjectMetadata,
-    dependencies: Map<string, GoDependencyInfo>
+    dependencies: Map<string, GoDependencyInfo>,
   ): Dependency[] {
     const graph: Dependency[] = []
 

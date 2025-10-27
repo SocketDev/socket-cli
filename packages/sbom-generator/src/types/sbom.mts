@@ -11,7 +11,7 @@
 export interface Sbom {
   bomFormat: 'CycloneDX'
   specVersion: '1.5'
-  serialNumber?: string  // urn:uuid format
+  serialNumber?: string // urn:uuid format
   version: number
   metadata?: Metadata
   components?: Component[]
@@ -26,10 +26,10 @@ export interface Sbom {
  * SBOM metadata.
  */
 export interface Metadata {
-  timestamp?: string  // ISO 8601
+  timestamp?: string // ISO 8601
   tools?: Tool[]
   authors?: OrganizationalContact[]
-  component?: Component  // Main project component
+  component?: Component // Main project component
   manufacture?: OrganizationalEntity
   supplier?: OrganizationalEntity
   licenses?: LicenseChoice[]
@@ -52,11 +52,11 @@ export interface Tool {
  */
 export interface Component {
   type: ComponentType
-  'bom-ref'?: string  // Unique identifier
+  'bom-ref'?: string // Unique identifier
   supplier?: OrganizationalEntity
   author?: string
   publisher?: string
-  group?: string  // Namespace/organization
+  group?: string // Namespace/organization
   name: string
   version: string
   description?: string
@@ -64,13 +64,13 @@ export interface Component {
   hashes?: Hash[]
   licenses?: LicenseChoice[]
   copyright?: string
-  purl?: string  // Package URL
-  cpe?: string  // Common Platform Enumeration
+  purl?: string // Package URL
+  cpe?: string // Common Platform Enumeration
   swid?: Swid
   modified?: boolean
   pedigree?: Pedigree
   externalReferences?: ExternalReference[]
-  components?: Component[]  // Nested components
+  components?: Component[] // Nested components
   evidence?: ComponentEvidence
   properties?: Property[]
   signature?: Signature
@@ -107,15 +107,15 @@ export interface Service {
   licenses?: LicenseChoice[]
   externalReferences?: ExternalReference[]
   properties?: Property[]
-  services?: Service[]  // Nested services
+  services?: Service[] // Nested services
 }
 
 /**
  * Dependency relationship.
  */
 export interface Dependency {
-  ref: string  // bom-ref of the component
-  dependsOn?: string[]  // Array of bom-refs
+  ref: string // bom-ref of the component
+  dependsOn?: string[] // Array of bom-refs
 }
 
 /**
@@ -123,8 +123,8 @@ export interface Dependency {
  */
 export interface Composition {
   aggregate: AggregateType
-  assemblies?: string[]  // bom-refs
-  dependencies?: string[]  // bom-refs
+  assemblies?: string[] // bom-refs
+  dependencies?: string[] // bom-refs
   signature?: Signature
 }
 
@@ -141,11 +141,11 @@ export type AggregateType =
  */
 export interface Vulnerability {
   'bom-ref'?: string
-  id?: string  // CVE, GHSA, etc.
+  id?: string // CVE, GHSA, etc.
   source?: VulnerabilitySource
   references?: VulnerabilityReference[]
   ratings?: VulnerabilityRating[]
-  cwes?: number[]  // CWE IDs
+  cwes?: number[] // CWE IDs
   description?: string
   detail?: string
   recommendation?: string
@@ -239,7 +239,7 @@ export type AnalysisResponse =
   | 'workaround_available'
 
 export interface VulnerabilityAffect {
-  ref: string  // bom-ref
+  ref: string // bom-ref
   versions?: VulnerabilityAffectedVersionRange[]
 }
 
@@ -278,11 +278,11 @@ export type HashAlgorithm =
  */
 export interface LicenseChoice {
   license?: License
-  expression?: string  // SPDX expression
+  expression?: string // SPDX expression
 }
 
 export interface License {
-  id?: string  // SPDX ID
+  id?: string // SPDX ID
   name?: string
   text?: AttachedText
   url?: string
@@ -442,7 +442,7 @@ export interface Copyright {
 
 export interface Identity {
   field?: IdentityField
-  confidence?: number  // 0.0 to 1.0
+  confidence?: number // 0.0 to 1.0
   methods?: IdentityMethod[]
   tools?: Tool[]
 }
@@ -489,11 +489,7 @@ export interface DataClassification {
   classification: string
 }
 
-export type DataFlow =
-  | 'inbound'
-  | 'outbound'
-  | 'bi-directional'
-  | 'unknown'
+export type DataFlow = 'inbound' | 'outbound' | 'bi-directional' | 'unknown'
 
 /**
  * Generic property (name-value pair).

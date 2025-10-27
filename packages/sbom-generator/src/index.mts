@@ -5,8 +5,15 @@
  */
 
 import { randomUUID } from 'node:crypto'
-import type { Component, Dependency, Sbom } from './types/sbom.mts'
+
+import type {
+  Component,
+  Dependency,
+  ExternalReference,
+  Sbom,
+} from './types/sbom.mts'
 import type { Ecosystem, ParseOptions, Parser } from './types/parser.mts'
+
 import { NpmParser } from './parsers/index.mts'
 
 /**
@@ -33,7 +40,7 @@ const PARSERS: Parser[] = [new NpmParser()]
  */
 export async function generateSbom(
   projectPath: string,
-  options: GenerateOptions = {}
+  options: GenerateOptions = {},
 ): Promise<Sbom> {
   // Auto-detect applicable parsers.
   const parsers = await detectParsers(projectPath, options.ecosystems)
@@ -44,7 +51,7 @@ export async function generateSbom(
 
   // Parse each ecosystem.
   const results = await Promise.all(
-    parsers.map(p => p.parse(projectPath, options))
+    parsers.map(p => p.parse(projectPath, options)),
   )
 
   // Combine into single SBOM.
@@ -56,7 +63,7 @@ export async function generateSbom(
  */
 async function detectParsers(
   projectPath: string,
-  ecosystems?: Ecosystem[]
+  ecosystems?: Ecosystem[],
 ): Promise<Parser[]> {
   const applicable: Parser[] = []
 
@@ -94,7 +101,7 @@ function combineSbom(
     }
     components: Component[]
     dependencies: Dependency[]
-  }>
+  }>,
 ): Sbom {
   // Use first result as primary metadata (typically root project).
   const primary = results[0]
@@ -173,20 +180,20 @@ function deduplicateComponents(components: Component[]): Component[] {
 function buildExternalReferences(metadata: {
   homepage?: string
   repository?: string
-}): Array<{ url: string; type: string }> | undefined {
-  const refs: Array<{ url: string; type: string }> = []
+}): ExternalReference[] | undefined {
+  const refs: ExternalReference[] = []
 
   if (metadata.homepage) {
     refs.push({
       url: metadata.homepage,
-      type: 'website',
+      type: 'website' as const,
     })
   }
 
   if (metadata.repository) {
     refs.push({
       url: metadata.repository,
-      type: 'vcs',
+      type: 'vcs' as const,
     })
   }
 
