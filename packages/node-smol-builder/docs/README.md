@@ -8,6 +8,9 @@ This package builds a custom Node.js v24.10.0 binary from source with Socket sec
 
 ## Contents
 
+- **[compression-quick-start.md](./compression-quick-start.md)** - Quick start guide for macOS binary compression
+- **[compression-test-results.md](./compression-test-results.md)** - Real-world compression performance benchmarks
+
 Future package-level documentation will be added here for:
 - Build process overview and configuration
 - Socket patch architecture and versioning
@@ -23,9 +26,8 @@ Future package-level documentation will be added here for:
 ## Quick Links
 
 - **Main README**: `../README.md`
-- **Quickstart**: `../QUICKSTART-COMPRESSION.md`
-- **Test Results**: `../TEST-RESULTS.md`
 - **Build Scripts**: `../scripts/`
+- **Socket Patches**: `../patches/socket/`
 
 ## Build Output
 

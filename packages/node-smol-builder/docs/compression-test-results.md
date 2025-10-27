@@ -260,10 +260,10 @@ macOS is now SMALLER than Linux/Windows! 🎉
 - ✅ `additions/tools/socket_macho_compress` (78 KB, tested)
 - ✅ `additions/tools/socket_macho_decompress` (58 KB, tested)
 - ✅ `scripts/compress-macho.mjs` (integration script)
-- ✅ `docs/macho-compression.md` (comprehensive guide)
+- ✅ `wasm-bundle/docs/macho-compression.md` (comprehensive guide)
 - ✅ `additions/tools/README.md` (tool documentation)
-- ✅ `QUICKSTART-COMPRESSION.md` (quick start guide)
-- ✅ `TEST-RESULTS.md` (this file)
+- ✅ `docs/compression-quick-start.md` (quick start guide)
+- ✅ `docs/compression-test-results.md` (this file)
 
 ## Next Steps
 
