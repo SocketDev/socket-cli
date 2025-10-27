@@ -62,9 +62,10 @@ import { fileURLToPath } from 'node:url'
 import { brotliCompressSync, constants as zlibConstants } from 'node:zlib'
 
 import { whichBinSync } from '@socketsecurity/lib/bin'
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { logger } from '@socketsecurity/lib/logger'
+import { spawn } from '@socketsecurity/lib/spawn'
 
-import { exec, execCapture } from '@socketsecurity/build-infra/lib/build-exec'
 import {
   checkCompiler,
   checkDiskSpace,
@@ -100,6 +101,49 @@ import {
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
+
+/**
+ * Execute command using spawn (replacement for exec).
+ *
+ * @param {string} command - Command to execute
+ * @param {string[]} args - Command arguments
+ * @param {object} options - Spawn options
+ * @returns {Promise<void>}
+ */
+async function exec(command, args = [], options = {}) {
+  const result = await spawn(
+    Array.isArray(args) ? command : `${command} ${args}`,
+    Array.isArray(args) ? args : [],
+    {
+      stdio: 'inherit',
+      shell: WIN32,
+      ...options,
+    }
+  )
+  if (result.status !== 0) {
+    throw new Error(`Command failed with exit code ${result.status}: ${command}`)
+  }
+}
+
+/**
+ * Execute command and capture output (replacement for execCapture).
+ *
+ * @param {string} command - Command to execute
+ * @param {object} options - Spawn options
+ * @returns {Promise<string>} Command output
+ */
+async function execCapture(command, options = {}) {
+  const result = await spawn(command, [], {
+    stdio: 'pipe',
+    stdioString: true,
+    shell: WIN32,
+    ...options,
+  })
+  if (result.status !== 0) {
+    throw new Error(`Command failed with exit code ${result.status}: ${command}`)
+  }
+  return (result.stdout ?? '').trim()
+}
 
 // Parse arguments.
 const args = process.argv.slice(2)
