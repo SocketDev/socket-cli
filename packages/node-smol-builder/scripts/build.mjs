@@ -63,7 +63,7 @@ import { brotliCompressSync, constants as zlibConstants } from 'node:zlib'
 
 import { logger } from '@socketsecurity/lib/logger'
 
-import { exec, execCapture } from './lib/build-exec.mjs'
+import { exec, execCapture } from '@socketsecurity/build-infra/lib/build-exec'
 import {
   checkCompiler,
   checkDiskSpace,
@@ -78,14 +78,12 @@ import {
   saveBuildLog,
   smokeTestBinary,
   verifyGitTag,
-} from './lib/build-helpers.mjs'
-import { printError, printHeader, printWarning } from './lib/build-output.mjs'
+} from '@socketsecurity/build-infra/lib/build-helpers'
+import { printError, printHeader, printWarning } from '@socketsecurity/build-infra/lib/build-output'
 import {
-  analyzePatchContent,
-  checkPatchConflicts,
   testPatchApplication,
   validatePatch,
-} from './lib/patch-validator.mjs'
+} from '@socketsecurity/build-infra/lib/patch-validator'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -983,25 +981,16 @@ async function main() {
         continue
       }
 
-      const content = await readFile(patchPath, 'utf8')
       const metadata = validation.metadata
-      const analysis = analyzePatchContent(content)
 
       patchData.push({
         name: patchFile,
         path: patchPath,
         metadata,
-        analysis,
       })
 
       if (metadata?.description) {
         logger.log(`  📝 ${metadata.description}`)
-      }
-      if (analysis.modifiesV8Includes) {
-        logger.log('  ⚠️  Modifies V8 includes')
-      }
-      if (analysis.modifiesSEA) {
-        logger.log('  ✓ Modifies SEA detection')
       }
       logger.log('  ✅ Valid')
       logger.log()
@@ -1022,20 +1011,8 @@ async function main() {
           '  3. Check build/patches/README.md for patch creation guide',
       )
     }
-    // Check for conflicts between patches.
-    const conflicts = checkPatchConflicts(patchData, NODE_VERSION)
-    if (conflicts.length > 0) {
-      logger.warn('⚠️  Patch Conflicts Detected:')
-      logger.warn()
-      for (const conflict of conflicts) {
-        if (conflict.severity === 'error') {
-          logger.error(`  ❌ ERROR: ${conflict.message}`)
-          allValid = false
-        } else {
-          logger.warn(`  ⚠️  WARNING: ${conflict.message}`)
-        }
-      }
-      logger.warn()
+    // Note: Advanced patch conflict detection is not yet implemented.
+    // TODO: Implement analyzePatchContent and checkPatchConflicts in build-infra package.
 
       if (!allValid) {
         throw new Error(
