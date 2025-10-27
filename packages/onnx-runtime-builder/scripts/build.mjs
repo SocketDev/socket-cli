@@ -15,9 +15,9 @@ import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { logger } from '@socketsecurity/lib/logger'
-
-import { exec, execCapture } from '@socketsecurity/build-infra/lib/build-exec'
+import { spawn } from '@socketsecurity/lib/spawn'
 import {
   printSetupResults,
   setupBuildEnvironment,
@@ -93,10 +93,14 @@ async function cloneSource() {
   printStep(`Version: ${ONNX_VERSION}`)
   printStep('Repository: https://github.com/microsoft/onnxruntime.git')
 
-  await exec(
+  const result = await spawn(
     `git clone --depth 1 --branch ${ONNX_VERSION} --recursive https://github.com/microsoft/onnxruntime.git ${SOURCE_DIR}`,
-    { stdio: 'inherit' }
+    [],
+    { stdio: 'inherit', shell: WIN32 }
   )
+  if (result.code !== 0) {
+    throw new Error(`git clone failed with exit code ${result.code}`)
+  }
 
   printSuccess('ONNX Runtime source cloned')
   await createCheckpoint('onnx-runtime', 'cloned', { version: ONNX_VERSION })
