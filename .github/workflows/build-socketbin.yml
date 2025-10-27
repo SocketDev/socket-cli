@@ -183,37 +183,37 @@ jobs:
     name: 🧱 Build SEA binary - ${{ matrix.platform }}-${{ matrix.arch }}
     if: ${{ inputs.method == 'sea' || inputs.method == 'smol-sea' || github.event_name != 'workflow_dispatch' }}
     runs-on: ${{ matrix.runner }}
-    timeout-minutes: 90
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
         include:
-          # Linux builds (8-core runners for faster compilation).
-          - runner: ubuntu-latest-8-cores
+          # Linux builds (standard runners - SEA is just bundling).
+          - runner: ubuntu-latest
             os: linux
             platform: linux
             arch: x64
-          - runner: ubuntu-latest-8-cores
+          - runner: ubuntu-latest
             os: linux
             platform: linux
             arch: arm64
 
-          # macOS builds (8-core runners for faster compilation).
-          - runner: macos-latest-xlarge
+          # macOS builds (standard runners - SEA is just bundling).
+          - runner: macos-latest-large
             os: darwin
             platform: darwin
             arch: x64
-          - runner: macos-latest-xlarge
+          - runner: macos-latest-large
             os: darwin
             platform: darwin
             arch: arm64
 
-          # Windows builds (8-core runners for faster compilation).
-          - runner: windows-latest-8-cores
+          # Windows builds (standard runners - SEA is just bundling).
+          - runner: windows-latest
             os: windows
             platform: win32
             arch: x64
-          - runner: windows-latest-8-cores
+          - runner: windows-latest
             os: windows
             platform: win32
             arch: arm64

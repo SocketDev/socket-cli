@@ -1318,6 +1318,7 @@ async function main() {
   logger.log('')
 
   const configureFlags = [
+    '--ninja', // Use Ninja build system (faster parallel builds than make)
     '--with-intl=none', // -6-8 MB: No ICU/Intl support (use polyfill instead)
     // Note: --without-intl is deprecated, use --with-intl=none instead
     '--with-icu-source=none', // Don't download ICU source (not needed with --with-intl=none)
@@ -1370,10 +1371,10 @@ async function main() {
   const buildStart = Date.now()
 
   // Use GitHub Actions grouping to collapse compiler output.
-  logger.log('::group::Compiling Node.js (this will take a while...)')
+  logger.log('::group::Compiling Node.js with Ninja (this will take a while...)')
 
   try {
-    await exec('make', [`-j${CPU_COUNT}`], { cwd: NODE_DIR })
+    await exec('ninja', ['-C', 'out/Release', `-j${CPU_COUNT}`], { cwd: NODE_DIR })
     logger.log('::endgroup::')
   } catch (e) {
     logger.log('::endgroup::')
