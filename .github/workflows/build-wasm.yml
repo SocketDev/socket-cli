@@ -96,7 +96,7 @@ jobs:
           retention-days: 7
 
   build-ai-models:
-    name: 🤖 Build AI Models
+    name: 🤖 Build AI Models WASM
     runs-on: ubuntu-latest-4-cores
     timeout-minutes: 60
     steps:
