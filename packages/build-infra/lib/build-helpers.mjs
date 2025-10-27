@@ -95,7 +95,16 @@ export async function checkPythonVersion(minVersion = '3.6') {
       { shell: WIN32, stdio: 'pipe', stdioString: true }
     )
 
-    // Check if spawn failed.
+    // Check if spawn failed or returned undefined status.
+    if (!result || result.status === undefined || result.status === null) {
+      printWarning('Python check returned invalid result')
+      return {
+        available: false,
+        sufficient: false,
+        version: null,
+      }
+    }
+
     if (result.status !== 0) {
       printWarning(`Python check failed with status ${result.status}`)
       if (result.stderr) {
