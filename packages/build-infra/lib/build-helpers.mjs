@@ -26,7 +26,7 @@ export async function checkDiskSpace(dir, requiredGB = 5) {
   printStep('Checking disk space')
 
   try {
-    const result = await spawn(`df -k "${dir}"`, [], {
+    const result = await spawn('df', ['-k', dir], {
       shell: WIN32,
       stdio: 'pipe',
       stdioString: true,
@@ -191,7 +191,7 @@ export async function smokeTestBinary(binaryPath, args = ['--version']) {
 
   try {
     await fs.access(binaryPath)
-    const result = await spawn(`${binaryPath} ${args.join(' ')}`, [], {
+    const result = await spawn(binaryPath, args, {
       shell: WIN32,
       stdio: 'pipe',
       stdioString: true,
@@ -340,8 +340,8 @@ export async function checkNetworkConnectivity() {
   try {
     // Try to reach GitHub (where we clone from).
     const result = await spawn(
-      'curl -s -o /dev/null -w "%{http_code}" --connect-timeout 5 https://github.com',
-      [],
+      'curl',
+      ['-s', '-o', '/dev/null', '-w', '%{http_code}', '--connect-timeout', '5', 'https://github.com'],
       { shell: WIN32, stdio: 'pipe', stdioString: true }
     )
 
@@ -365,8 +365,8 @@ export async function checkNetworkConnectivity() {
 export async function verifyGitTag(version) {
   try {
     const result = await spawn(
-      `git ls-remote --tags https://github.com/nodejs/node.git ${version}`,
-      [],
+      'git',
+      ['ls-remote', '--tags', 'https://github.com/nodejs/node.git', version],
       { shell: WIN32, stdio: 'pipe', stdioString: true }
     )
 
