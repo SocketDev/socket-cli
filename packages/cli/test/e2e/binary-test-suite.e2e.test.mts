@@ -4,6 +4,7 @@ import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { spawn } from '@socketsecurity/lib/spawn'
 import { beforeAll, describe, expect, it } from 'vitest'
 
 import ENV from '../../src/constants/env.mts'
@@ -12,6 +13,7 @@ import { executeCliCommand } from '../helpers/cli-execution.mts'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const ROOT_DIR = path.resolve(__dirname, '../..')
+const MONOREPO_ROOT = path.resolve(ROOT_DIR, '../..')
 
 /**
  * Binary types and their paths.
@@ -19,20 +21,55 @@ const ROOT_DIR = path.resolve(__dirname, '../..')
 const BINARIES = {
   __proto__: null,
   js: {
+    buildCommand: null,
     enabled: true,
     name: 'JS Binary (dist/cli.js)',
     path: path.join(ROOT_DIR, 'bin/cli.js'),
   },
   sea: {
+    buildCommand: ['pnpm', '--filter', '@socketbin/node-sea-builder', 'run', 'build'],
     enabled: !!process.env.TEST_SEA_BINARY,
     name: 'SEA Binary (Single Executable Application)',
     path: path.join(ROOT_DIR, 'dist/socket-sea'),
   },
   smol: {
+    buildCommand: ['pnpm', '--filter', '@socketbin/node-smol-builder', 'run', 'build'],
     enabled: !!process.env.TEST_SMOL_BINARY,
     name: 'Smol Node.js Binary',
     path: path.join(ROOT_DIR, 'dist/socket-smol'),
   },
+}
+
+/**
+ * Build a binary if needed.
+ */
+async function buildBinary(binaryType: keyof typeof BINARIES): Promise<boolean> {
+  const binary = BINARIES[binaryType]
+
+  if (!binary.buildCommand) {
+    return false
+  }
+
+  console.log(`Building ${binary.name}...`)
+  console.log(`Running: ${binary.buildCommand.join(' ')}`)
+
+  try {
+    const result = await spawn(binary.buildCommand[0], binary.buildCommand.slice(1), {
+      cwd: MONOREPO_ROOT,
+      stdio: 'inherit',
+    })
+
+    if (result.code !== 0) {
+      console.error(`Failed to build ${binary.name}`)
+      return false
+    }
+
+    console.log(`Successfully built ${binary.name}`)
+    return true
+  } catch (e) {
+    console.error(`Error building ${binary.name}:`, e)
+    return false
+  }
 }
 
 /**
@@ -56,16 +93,30 @@ function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
       if (!binaryExists) {
         console.log()
         console.warn(
-          `Binary not found: ${binary.path}. Tests will be skipped.`,
+          `Binary not found: ${binary.path}. Attempting to build...`,
         )
-        console.log(`To build this binary, run:`)
-        if (binaryType === 'smol') {
-          console.log(`  pnpm run build:smol`)
-        } else if (binaryType === 'sea') {
-          console.log(`  pnpm run build:sea`)
+
+        const buildSuccess = await buildBinary(binaryType)
+
+        if (buildSuccess) {
+          binaryExists = existsSync(binary.path)
         }
+
+        if (!binaryExists) {
+          console.log()
+          console.error(`Failed to build ${binary.name}. Tests will be skipped.`)
+          console.log(`To build this binary manually, run:`)
+          if (binaryType === 'smol') {
+            console.log(`  pnpm run build:smol`)
+          } else if (binaryType === 'sea') {
+            console.log(`  pnpm run build:sea`)
+          }
+          console.log()
+          return
+        }
+
+        console.log(`Binary built successfully: ${binary.path}`)
         console.log()
-        return
       }
 
       // Check authentication.
