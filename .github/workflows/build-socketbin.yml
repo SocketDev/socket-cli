@@ -122,8 +122,8 @@ jobs:
           key: node-smol-${{ matrix.platform }}-${{ matrix.arch }}-${{ steps.smol-cache-key.outputs.hash }}
           restore-keys: node-smol-${{ matrix.platform }}-${{ matrix.arch }}-
 
-      - name: Setup Python (Linux/macOS)
-        if: (steps.smol-cache.outputs.cache-hit != 'true' || inputs.force) && matrix.os != 'windows'
+      - name: Setup Python
+        if: steps.smol-cache.outputs.cache-hit != 'true' || inputs.force
         uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
         with:
           python-version: '3.11'
