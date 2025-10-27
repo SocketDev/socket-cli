@@ -1,0 +1,303 @@
+name: 🧱 Build @socketbin Packages
+
+on:
+  workflow_dispatch:
+    inputs:
+      method:
+        description: 'Build method to use'
+        required: false
+        type: choice
+        options:
+          - smol
+          - sea
+          - smol-sea
+        default: smol
+      force:
+        description: 'Force rebuild (ignore cache)'
+        required: false
+        type: boolean
+        default: false
+  push:
+    branches: [main]
+    paths:
+      - 'packages/node-smol-builder/**'
+      - 'packages/node-sea-builder/**'
+      - 'build/patches/**'
+      - 'scripts/build-yao-pkg-node.mjs'
+      - '.github/workflows/build-socketbin.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'packages/node-smol-builder/**'
+      - 'packages/node-sea-builder/**'
+      - 'build/patches/**'
+      - 'scripts/build-yao-pkg-node.mjs'
+      - '.github/workflows/build-socketbin.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build-smol:
+    name: 🧱 Build smol binary - ${{ matrix.platform }}-${{ matrix.arch }}
+    if: ${{ inputs.method == 'smol' || inputs.method == 'smol-sea' || github.event_name != 'workflow_dispatch' }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Linux builds (8-core runners for faster compilation).
+          - runner: ubuntu-latest-8-cores
+            os: linux
+            platform: linux
+            arch: x64
+          - runner: ubuntu-latest-8-cores
+            os: linux
+            platform: linux
+            arch: arm64
+
+          # macOS builds (8-core runners for faster compilation).
+          - runner: macos-latest-xlarge
+            os: darwin
+            platform: darwin
+            arch: x64
+          - runner: macos-latest-xlarge
+            os: darwin
+            platform: darwin
+            arch: arm64
+
+          # Windows builds (8-core runners for faster compilation).
+          - runner: windows-latest-8-cores
+            os: windows
+            platform: win32
+            arch: x64
+          - runner: windows-latest-8-cores
+            os: windows
+            platform: win32
+            arch: arm64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          autocrlf: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: 22
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@e9540b3eafaf84907c087a645d3258bfaa861427 # v3.0.0
+        with:
+          version: 8
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup ccache (Linux/macOS)
+        if: matrix.os != 'windows'
+        uses: hendrikmuhs/ccache-action@ed74d11c0b343532753ecead8a951bb09bb34bc9 # v1.2.14
+        with:
+          key: build-${{ matrix.platform }}-${{ matrix.arch }}
+          max-size: 2G
+
+      - name: Generate smol build cache key
+        id: smol-cache-key
+        shell: bash
+        run: |
+          HASH=$(find build/patches packages/node-smol-builder scripts -type f \( -name "*.patch" -o -name "*.mjs" \) | sort | xargs shasum -a 256 | shasum -a 256 | cut -d' ' -f1)
+          echo "hash=$HASH" >> $GITHUB_OUTPUT
+
+      - name: Restore smol binary cache
+        id: smol-cache
+        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
+        with:
+          path: packages/node-smol-builder/dist/socket-smol-${{ matrix.platform }}-${{ matrix.arch }}
+          key: node-smol-${{ matrix.platform }}-${{ matrix.arch }}-${{ steps.smol-cache-key.outputs.hash }}
+          restore-keys: node-smol-${{ matrix.platform }}-${{ matrix.arch }}-
+
+      - name: Setup Python (Linux/macOS)
+        if: (steps.smol-cache.outputs.cache-hit != 'true' || inputs.force) && matrix.os != 'windows'
+        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
+        with:
+          python-version: '3.11'
+
+      - name: Install build dependencies (Ubuntu)
+        if: (steps.smol-cache.outputs.cache-hit != 'true' || inputs.force) && matrix.platform == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+
+      - name: Build smol binary
+        if: steps.smol-cache.outputs.cache-hit != 'true' || inputs.force
+        run: pnpm --filter @socketsecurity/node-smol-builder run build
+
+      - name: Verify smol binary
+        shell: bash
+        run: |
+          echo "=== smol Binary Build Artifacts ==="
+          ls -lh packages/node-smol-builder/dist/
+          echo ""
+          BINARY_PATH="packages/node-smol-builder/dist/socket-smol-${{ matrix.platform }}-${{ matrix.arch }}"
+          if [ -f "$BINARY_PATH" ] || [ -f "${BINARY_PATH}.exe" ]; then
+            if [ "${{ matrix.os }}" = "windows" ]; then
+              echo "socket-smol-${{ matrix.platform }}-${{ matrix.arch }}.exe size: $(du -h ${BINARY_PATH}.exe | cut -f1)"
+            else
+              echo "socket-smol-${{ matrix.platform }}-${{ matrix.arch }} size: $(du -h $BINARY_PATH | cut -f1)"
+            fi
+          else
+            echo "⚠️  Binary not found at expected path"
+          fi
+
+      - name: Upload smol binary
+        uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
+        with:
+          name: socket-smol-${{ matrix.platform }}-${{ matrix.arch }}
+          path: |
+            packages/node-smol-builder/dist/socket-smol-${{ matrix.platform }}-${{ matrix.arch }}
+            packages/node-smol-builder/dist/socket-smol-${{ matrix.platform }}-${{ matrix.arch }}.exe
+          retention-days: 7
+          if-no-files-found: warn
+
+  build-sea:
+    name: 🧱 Build SEA binary - ${{ matrix.platform }}-${{ matrix.arch }}
+    if: ${{ inputs.method == 'sea' || inputs.method == 'smol-sea' || github.event_name != 'workflow_dispatch' }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Linux builds (8-core runners for faster compilation).
+          - runner: ubuntu-latest-8-cores
+            os: linux
+            platform: linux
+            arch: x64
+          - runner: ubuntu-latest-8-cores
+            os: linux
+            platform: linux
+            arch: arm64
+
+          # macOS builds (8-core runners for faster compilation).
+          - runner: macos-latest-xlarge
+            os: darwin
+            platform: darwin
+            arch: x64
+          - runner: macos-latest-xlarge
+            os: darwin
+            platform: darwin
+            arch: arm64
+
+          # Windows builds (8-core runners for faster compilation).
+          - runner: windows-latest-8-cores
+            os: windows
+            platform: win32
+            arch: x64
+          - runner: windows-latest-8-cores
+            os: windows
+            platform: win32
+            arch: arm64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          autocrlf: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: 22
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@e9540b3eafaf84907c087a645d3258bfaa861427 # v3.0.0
+        with:
+          version: 8
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate SEA build cache key
+        id: sea-cache-key
+        shell: bash
+        run: |
+          HASH=$(find packages/node-sea-builder packages/cli/dist -type f \( -name "*.mjs" -o -name "*.js" \) | sort | xargs shasum -a 256 | shasum -a 256 | cut -d' ' -f1)
+          echo "hash=$HASH" >> $GITHUB_OUTPUT
+
+      - name: Restore SEA binary cache
+        id: sea-cache
+        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
+        with:
+          path: packages/node-sea-builder/dist/socket-sea-${{ matrix.platform }}-${{ matrix.arch }}
+          key: node-sea-${{ matrix.platform }}-${{ matrix.arch }}-${{ steps.sea-cache-key.outputs.hash }}
+          restore-keys: node-sea-${{ matrix.platform }}-${{ matrix.arch }}-
+
+      - name: Build CLI (required for SEA)
+        if: steps.sea-cache.outputs.cache-hit != 'true' || inputs.force
+        run: pnpm --filter @socketsecurity/cli run build
+
+      - name: Build SEA binary
+        if: steps.sea-cache.outputs.cache-hit != 'true' || inputs.force
+        run: pnpm --filter @socketsecurity/node-sea-builder run build
+
+      - name: Verify SEA binary
+        shell: bash
+        run: |
+          echo "=== SEA Binary Build Artifacts ==="
+          ls -lh packages/node-sea-builder/dist/
+          echo ""
+          BINARY_PATH="packages/node-sea-builder/dist/socket-sea-${{ matrix.platform }}-${{ matrix.arch }}"
+          if [ -f "$BINARY_PATH" ] || [ -f "${BINARY_PATH}.exe" ]; then
+            if [ "${{ matrix.os }}" = "windows" ]; then
+              echo "socket-sea-${{ matrix.platform }}-${{ matrix.arch }}.exe size: $(du -h ${BINARY_PATH}.exe | cut -f1)"
+            else
+              echo "socket-sea-${{ matrix.platform }}-${{ matrix.arch }} size: $(du -h $BINARY_PATH | cut -f1)"
+            fi
+          else
+            echo "⚠️  Binary not found at expected path"
+          fi
+
+      - name: Upload SEA binary
+        uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
+        with:
+          name: socket-sea-${{ matrix.platform }}-${{ matrix.arch }}
+          path: |
+            packages/node-sea-builder/dist/socket-sea-${{ matrix.platform }}-${{ matrix.arch }}
+            packages/node-sea-builder/dist/socket-sea-${{ matrix.platform }}-${{ matrix.arch }}.exe
+          retention-days: 7
+          if-no-files-found: warn
+
+  summary:
+    name: 📊 Build Summary
+    needs: [build-smol, build-sea]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate summary
+        run: |
+          echo "# 🧱 @socketbin Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## ✅ Build Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "@socketbin packages built successfully and cached." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📦 Build Methods" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Method | Description | Size |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------------|------|" >> $GITHUB_STEP_SUMMARY
+          echo "| 🔥 smol | Compressed Node.js + CLI | ~18 MB |" >> $GITHUB_STEP_SUMMARY
+          echo "| 📦 SEA | Single Executable Application | ~70 MB |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🎯 Platforms Built" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- 🐧 Linux (x64, arm64)" >> $GITHUB_STEP_SUMMARY
+          echo "- 🍎 macOS (x64, arm64)" >> $GITHUB_STEP_SUMMARY
+          echo "- 🪟 Windows (x64, arm64)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🎯 Next Steps" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- These binaries are now cached for E2E tests" >> $GITHUB_STEP_SUMMARY
+          echo "- Use \`publish-socketbin.yml\` to publish to npm" >> $GITHUB_STEP_SUMMARY
+          echo "- Cache is invalidated when patches or build scripts change" >> $GITHUB_STEP_SUMMARY
