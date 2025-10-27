@@ -189,3 +189,154 @@ export async function getFileSize(filePath) {
 
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`
 }
+
+/**
+ * Get build log path.
+ *
+ * @param {string} buildDir - Build directory
+ * @returns {string} Log file path
+ */
+export function getBuildLogPath(buildDir) {
+  return path.join(buildDir, 'build.log')
+}
+
+/**
+ * Save build output to log file.
+ *
+ * @param {string} buildDir - Build directory
+ * @param {string} content - Content to log
+ * @returns {Promise<void>}
+ */
+export async function saveBuildLog(buildDir, content) {
+  const logPath = getBuildLogPath(buildDir)
+  try {
+    await fs.appendFile(logPath, `${content}\n`)
+  } catch {
+    // Don't fail build if logging fails.
+  }
+}
+
+/**
+ * Get last N lines from build log.
+ *
+ * @param {string} buildDir - Build directory
+ * @param {number} lines - Number of lines to get
+ * @returns {Promise<string|null>} Last lines or null
+ */
+export async function getLastLogLines(buildDir, lines = 50) {
+  const logPath = getBuildLogPath(buildDir)
+  try {
+    const content = await fs.readFile(logPath, 'utf8')
+    const allLines = content.split('\n')
+    return allLines.slice(-lines).join('\n')
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Create checkpoint for build resume.
+ *
+ * @param {string} buildDir - Build directory
+ * @param {string} step - Checkpoint step name
+ * @returns {Promise<void>}
+ */
+export async function createCheckpoint(buildDir, step) {
+  const checkpointFile = path.join(buildDir, '.build-checkpoint')
+  try {
+    await fs.writeFile(
+      checkpointFile,
+      JSON.stringify({
+        step,
+        timestamp: Date.now(),
+      }),
+    )
+  } catch {
+    // Don't fail if checkpoint creation fails.
+  }
+}
+
+/**
+ * Read checkpoint.
+ *
+ * @param {string} buildDir - Build directory
+ * @returns {Promise<object|null>} Checkpoint data or null
+ */
+export async function readCheckpoint(buildDir) {
+  const checkpointFile = path.join(buildDir, '.build-checkpoint')
+  try {
+    const content = await fs.readFile(checkpointFile, 'utf8')
+    return JSON.parse(content)
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Clean checkpoint.
+ *
+ * @param {string} buildDir - Build directory
+ * @returns {Promise<void>}
+ */
+export async function cleanCheckpoint(buildDir) {
+  const checkpointFile = path.join(buildDir, '.build-checkpoint')
+  try {
+    await fs.unlink(checkpointFile)
+  } catch {
+    // Ignore errors.
+  }
+}
+
+/**
+ * Check network connectivity.
+ *
+ * @returns {Promise<object>} Connection status
+ */
+export async function checkNetworkConnectivity() {
+  try {
+    // Try to reach GitHub (where we clone from).
+    const result = await execCapture('curl', [
+      '-s',
+      '-o',
+      '/dev/null',
+      '-w',
+      '%{http_code}',
+      '--connect-timeout',
+      '5',
+      'https://github.com',
+    ])
+
+    const statusCode = result.stdout
+    return {
+      connected:
+        statusCode === '200' || statusCode === '301' || statusCode === '302',
+      statusCode,
+    }
+  } catch {
+    return { connected: false, statusCode: null }
+  }
+}
+
+/**
+ * Verify git tag exists.
+ *
+ * @param {string} version - Git tag version
+ * @returns {Promise<object>} Tag verification result
+ */
+export async function verifyGitTag(version) {
+  try {
+    const result = await execCapture('git', [
+      'ls-remote',
+      '--tags',
+      'https://github.com/nodejs/node.git',
+      version,
+    ])
+
+    return {
+      exists: result.stdout.includes(version),
+      output: result.stdout,
+    }
+  } catch {
+    return { exists: false, output: null }
+  }
+}
