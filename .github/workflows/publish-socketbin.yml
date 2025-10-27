@@ -103,9 +103,9 @@ jobs:
         run: |
           # Generate hash from build-affecting files (matches build-binaries.yml).
           if [ "${{ matrix.os }}" = "windows" ]; then
-            HASH=$(find build/patches packages/node-smol-builder scripts -type f -name "*.patch" -o -name "*.mjs" | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
+            HASH=$(find patches packages/node-smol-builder scripts -type f -name "*.patch" -o -name "*.mjs" | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
           else
-            HASH=$(find build/patches packages/node-smol-builder scripts -type f \( -name "*.patch" -o -name "*.mjs" \) | sort | xargs shasum -a 256 | shasum -a 256 | cut -d' ' -f1)
+            HASH=$(find patches packages/node-smol-builder scripts -type f \( -name "*.patch" -o -name "*.mjs" \) | sort | xargs shasum -a 256 | shasum -a 256 | cut -d' ' -f1)
           fi
           echo "hash=$HASH" >> $GITHUB_OUTPUT
           echo "Build hash: $HASH"
