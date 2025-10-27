@@ -11,7 +11,8 @@ on:
           - smol
           - sea
           - smol-sea
-        default: smol
+          - wasm
+        default: smol-sea
       force:
         description: 'Force rebuild (ignore cache)'
         required: false
@@ -22,21 +23,33 @@ on:
     paths:
       - 'packages/node-smol-builder/**'
       - 'packages/node-sea-builder/**'
+      - 'packages/yoga-layout/**'
+      - 'packages/socketbin-cli-ai/**'
+      - 'packages/onnx-runtime-builder/**'
       - 'patches/**'
       - 'packages/node-smol-builder/patches/**'
       - 'packages/node-smol-builder/additions/**'
       - 'scripts/build-yao-pkg-node.mjs'
       - '.github/workflows/build-socketbin.yml'
+      - '.github/workflows/build-smol.yml'
+      - '.github/workflows/build-sea.yml'
+      - '.github/workflows/build-wasm.yml'
   pull_request:
     branches: [main]
     paths:
       - 'packages/node-smol-builder/**'
       - 'packages/node-sea-builder/**'
+      - 'packages/yoga-layout/**'
+      - 'packages/socketbin-cli-ai/**'
+      - 'packages/onnx-runtime-builder/**'
       - 'patches/**'
       - 'packages/node-smol-builder/patches/**'
       - 'packages/node-smol-builder/additions/**'
       - 'scripts/build-yao-pkg-node.mjs'
       - '.github/workflows/build-socketbin.yml'
+      - '.github/workflows/build-smol.yml'
+      - '.github/workflows/build-sea.yml'
+      - '.github/workflows/build-wasm.yml'
 
 permissions:
   contents: read
@@ -46,376 +59,34 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-smol:
-    name: 🧱 Build smol binary - ${{ matrix.platform }}-${{ matrix.arch }}
-    if: ${{ inputs.method == 'smol' || inputs.method == 'smol-sea' || github.event_name != 'workflow_dispatch' }}
-    runs-on: ${{ matrix.runner }}
-    timeout-minutes: 120
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          # Linux builds (8-core runners for faster compilation).
-          - runner: ubuntu-latest-8-cores
-            os: linux
-            platform: linux
-            arch: x64
-          - runner: ubuntu-latest-8-cores
-            os: linux
-            platform: linux
-            arch: arm64
+  # Build WASM assets first (fastest, needed by SEA).
+  build-wasm:
+    name: 🧱 Build WASM Assets
+    if: ${{ inputs.method == 'wasm' || inputs.method == 'sea' || inputs.method == 'smol-sea' || github.event_name != 'workflow_dispatch' }}
+    uses: ./.github/workflows/build-wasm.yml
+    with:
+      force: ${{ inputs.force || false }}
 
-          # macOS builds (8-core runners for faster compilation).
-          - runner: macos-latest-xlarge
-            os: darwin
-            platform: darwin
-            arch: x64
-          - runner: macos-latest-xlarge
-            os: darwin
-            platform: darwin
-            arch: arm64
-
-          # Windows builds (8-core runners for faster compilation).
-          - runner: windows-latest-8-cores
-            os: windows
-            platform: win32
-            arch: x64
-          - runner: windows-latest-8-cores
-            os: windows
-            platform: win32
-            arch: arm64
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
-
-      - name: Setup Node.js
-        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
-        with:
-          node-version: 22
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
-        with:
-          version: ^10.16.0
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Setup ccache (Linux/macOS)
-        if: matrix.os != 'windows'
-        uses: hendrikmuhs/ccache-action@ed74d11c0b343532753ecead8a951bb09bb34bc9 # v1.2.14
-        with:
-          key: build-${{ matrix.platform }}-${{ matrix.arch }}
-          max-size: 2G
-
-      - name: Generate smol build cache key
-        id: smol-cache-key
-        shell: bash
-        run: |
-          HASH=$(find patches packages/node-smol-builder/patches packages/node-smol-builder/additions scripts -type f \( -name "*.patch" -o -name "*.mjs" -o -name "*.h" -o -name "*.c" -o -name "*.cc" \) | sort | xargs shasum -a 256 | shasum -a 256 | cut -d' ' -f1)
-          echo "hash=$HASH" >> $GITHUB_OUTPUT
-
-      - name: Restore smol binary cache
-        id: smol-cache
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        with:
-          path: packages/node-smol-builder/dist/socket-smol-${{ matrix.platform }}-${{ matrix.arch }}
-          key: node-smol-${{ matrix.platform }}-${{ matrix.arch }}-${{ steps.smol-cache-key.outputs.hash }}
-          restore-keys: node-smol-${{ matrix.platform }}-${{ matrix.arch }}-
-
-      - name: Setup Python
-        if: steps.smol-cache.outputs.cache-hit != 'true' || inputs.force
-        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
-        with:
-          python-version: '3.11'
-
-      - name: Verify Python installation
-        if: steps.smol-cache.outputs.cache-hit != 'true' || inputs.force
-        shell: bash
-        run: |
-          echo "Python version:"
-          python3 --version
-          which python3
-          echo "PATH=$PATH"
-
-      - name: Install build dependencies (Ubuntu)
-        if: (steps.smol-cache.outputs.cache-hit != 'true' || inputs.force) && matrix.platform == 'linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
-
-      - name: Cache Ninja (Ubuntu)
-        if: (steps.smol-cache.outputs.cache-hit != 'true' || inputs.force) && matrix.platform == 'linux'
-        id: ninja-cache-ubuntu
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        with:
-          path: /usr/bin/ninja
-          key: ninja-ubuntu-${{ runner.os }}-${{ runner.arch }}
-
-      - name: Install Ninja (Ubuntu)
-        if: (steps.smol-cache.outputs.cache-hit != 'true' || inputs.force) && matrix.platform == 'linux' && steps.ninja-cache-ubuntu.outputs.cache-hit != 'true'
-        run: sudo apt-get install -y ninja-build
-
-      - name: Cache Ninja (macOS)
-        if: (steps.smol-cache.outputs.cache-hit != 'true' || inputs.force) && matrix.platform == 'darwin'
-        id: ninja-cache-macos
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        with:
-          path: |
-            /usr/local/bin/ninja
-            /opt/homebrew/bin/ninja
-          key: ninja-macos-${{ runner.os }}-${{ runner.arch }}
-
-      - name: Install Ninja (macOS)
-        if: (steps.smol-cache.outputs.cache-hit != 'true' || inputs.force) && matrix.platform == 'darwin' && steps.ninja-cache-macos.outputs.cache-hit != 'true'
-        run: brew install ninja
-
-      - name: Cache Ninja (Windows)
-        if: (steps.smol-cache.outputs.cache-hit != 'true' || inputs.force) && matrix.platform == 'win32'
-        id: ninja-cache-windows
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        with:
-          path: C:\ProgramData\chocolatey\bin\ninja.exe
-          key: ninja-windows-${{ runner.os }}-${{ runner.arch }}
-
-      - name: Install Ninja (Windows)
-        if: (steps.smol-cache.outputs.cache-hit != 'true' || inputs.force) && matrix.platform == 'win32' && steps.ninja-cache-windows.outputs.cache-hit != 'true'
-        run: choco install ninja
-
-      - name: Build smol binary
-        if: steps.smol-cache.outputs.cache-hit != 'true' || inputs.force
-        run: pnpm --filter @socketbin/node-smol-builder run build
-
-      - name: Verify smol binary
-        shell: bash
-        run: |
-          echo "=== smol Binary Build Artifacts ==="
-          mkdir -p packages/node-smol-builder/dist
-          ls -lh packages/node-smol-builder/dist/
-          echo ""
-          BINARY_PATH="packages/node-smol-builder/dist/socket-smol-${{ matrix.platform }}-${{ matrix.arch }}"
-          if [ -f "$BINARY_PATH" ] || [ -f "${BINARY_PATH}.exe" ]; then
-            if [ "${{ matrix.os }}" = "windows" ]; then
-              echo "socket-smol-${{ matrix.platform }}-${{ matrix.arch }}.exe size: $(du -h ${BINARY_PATH}.exe | cut -f1)"
-            else
-              echo "socket-smol-${{ matrix.platform }}-${{ matrix.arch }} size: $(du -h $BINARY_PATH | cut -f1)"
-            fi
-          else
-            echo "⚠️  Binary not found at expected path"
-          fi
-
-      - name: Upload smol binary
-        uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
-        with:
-          name: socket-smol-${{ matrix.platform }}-${{ matrix.arch }}
-          path: |
-            packages/node-smol-builder/dist/socket-smol-${{ matrix.platform }}-${{ matrix.arch }}
-            packages/node-smol-builder/dist/socket-smol-${{ matrix.platform }}-${{ matrix.arch }}.exe
-          retention-days: 7
-          if-no-files-found: warn
-
+  # Build SEA binaries (fast, depends on WASM).
   build-sea:
-    name: 🧱 Build SEA binary - ${{ matrix.platform }}-${{ matrix.arch }}
+    name: 🌊 Build SEA Node Binaries
     if: ${{ inputs.method == 'sea' || inputs.method == 'smol-sea' || github.event_name != 'workflow_dispatch' }}
-    runs-on: ${{ matrix.runner }}
-    timeout-minutes: 60
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          # Linux builds (standard runners - SEA is just bundling).
-          - runner: ubuntu-latest
-            os: linux
-            platform: linux
-            arch: x64
-          - runner: ubuntu-latest
-            os: linux
-            platform: linux
-            arch: arm64
+    needs: [build-wasm]
+    uses: ./.github/workflows/build-sea.yml
+    with:
+      force: ${{ inputs.force || false }}
 
-          # macOS builds (standard runners - SEA is just bundling).
-          - runner: macos-latest-large
-            os: darwin
-            platform: darwin
-            arch: x64
-          - runner: macos-latest-large
-            os: darwin
-            platform: darwin
-            arch: arm64
-
-          # Windows builds (standard runners - SEA is just bundling).
-          - runner: windows-latest
-            os: windows
-            platform: win32
-            arch: x64
-          - runner: windows-latest
-            os: windows
-            platform: win32
-            arch: arm64
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
-
-      - name: Setup Node.js
-        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
-        with:
-          node-version: 22
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
-        with:
-          version: ^10.16.0
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Generate WASM cache keys
-        id: wasm-cache-keys
-        shell: bash
-        run: |
-          YOGA_HASH=$(find packages/yoga-layout -type f \( -name "*.cpp" -o -name "*.h" -o -name "*.mjs" -o -name "CMakeLists.txt" \) | sort | xargs shasum -a 256 | shasum -a 256 | cut -d' ' -f1)
-          echo "yoga-hash=$YOGA_HASH" >> $GITHUB_OUTPUT
-
-          AI_HASH=$(find packages/socketbin-cli-ai -type f \( -name "*.mjs" -o -name "*.ts" \) | sort | xargs shasum -a 256 | shasum -a 256 | cut -d' ' -f1)
-          echo "ai-hash=$AI_HASH" >> $GITHUB_OUTPUT
-
-          ONNX_HASH=$(find packages/onnx-runtime-builder -type f \( -name "*.mjs" -o -name "*.patch" \) | sort | xargs shasum -a 256 | shasum -a 256 | cut -d' ' -f1)
-          echo "onnx-hash=$ONNX_HASH" >> $GITHUB_OUTPUT
-
-      - name: Restore Yoga Layout WASM cache
-        id: yoga-cache
-        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        with:
-          path: packages/yoga-layout/build/wasm
-          key: yoga-wasm-${{ steps.wasm-cache-keys.outputs.yoga-hash }}
-          restore-keys: yoga-wasm-
-
-      - name: Restore AI models cache
-        id: ai-cache
-        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        with:
-          path: packages/socketbin-cli-ai/dist
-          key: ai-models-${{ steps.wasm-cache-keys.outputs.ai-hash }}
-          restore-keys: ai-models-
-
-      - name: Restore ONNX Runtime cache
-        id: onnx-cache
-        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        with:
-          path: packages/onnx-runtime-builder/dist
-          key: onnx-runtime-${{ steps.wasm-cache-keys.outputs.onnx-hash }}
-          restore-keys: onnx-runtime-
-
-      - name: Setup Python for WASM builds
-        if: steps.yoga-cache.outputs.cache-hit != 'true' || steps.ai-cache.outputs.cache-hit != 'true' || steps.onnx-cache.outputs.cache-hit != 'true'
-        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
-        with:
-          python-version: '3.11'
-
-      - name: Build WASM assets on cache miss
-        if: steps.yoga-cache.outputs.cache-hit != 'true' || steps.ai-cache.outputs.cache-hit != 'true' || steps.onnx-cache.outputs.cache-hit != 'true'
-        run: |
-          echo "⚠️  WASM cache miss detected - building from source"
-          echo "This will take 30-60 minutes. Consider running build-wasm.yml workflow to prime cache."
-          echo ""
-          echo "Cache status:"
-          echo "  Yoga Layout: ${{ steps.yoga-cache.outputs.cache-hit == 'true' && '✓ cached' || '✗ missing' }}"
-          echo "  AI Models: ${{ steps.ai-cache.outputs.cache-hit == 'true' && '✓ cached' || '✗ missing' }}"
-          echo "  ONNX Runtime: ${{ steps.onnx-cache.outputs.cache-hit == 'true' && '✓ cached' || '✗ missing' }}"
-          echo ""
-
-          # Install Emscripten if needed for Yoga/ONNX.
-          if [ "${{ steps.yoga-cache.outputs.cache-hit }}" != "true" ] || [ "${{ steps.onnx-cache.outputs.cache-hit }}" != "true" ]; then
-            echo "Installing Emscripten..."
-            git clone https://github.com/emscripten-core/emsdk.git
-            cd emsdk
-            ./emsdk install latest
-            ./emsdk activate latest
-            source ./emsdk_env.sh
-            cd ..
-          fi
-
-          # Install Python deps if needed for AI models.
-          if [ "${{ steps.ai-cache.outputs.cache-hit }}" != "true" ]; then
-            echo "Installing Python dependencies..."
-            python3 -m pip install --upgrade pip
-            python3 -m pip install transformers torch optimum[onnx] "onnxruntime>=1.20.0"
-          fi
-
-          # Build missing WASM assets.
-          if [ "${{ steps.yoga-cache.outputs.cache-hit }}" != "true" ]; then
-            echo "Building Yoga Layout WASM..."
-            pnpm --filter @socketsecurity/yoga-layout run build
-          fi
-
-          if [ "${{ steps.ai-cache.outputs.cache-hit }}" != "true" ]; then
-            echo "Building AI models..."
-            pnpm --filter @socketbin/cli-ai run build
-          fi
-
-          if [ "${{ steps.onnx-cache.outputs.cache-hit }}" != "true" ]; then
-            echo "Building ONNX Runtime..."
-            pnpm --filter @socketsecurity/onnx-runtime-builder run build
-          fi
-
-          echo "✓ WASM assets built successfully"
-
-      - name: Generate SEA build cache key
-        id: sea-cache-key
-        shell: bash
-        run: |
-          HASH=$(find packages/node-sea-builder packages/cli/src -type f \( -name "*.mts" -o -name "*.ts" -o -name "*.mjs" -o -name "*.js" \) | sort | xargs shasum -a 256 | shasum -a 256 | cut -d' ' -f1)
-          echo "hash=$HASH" >> $GITHUB_OUTPUT
-
-      - name: Restore SEA binary cache
-        id: sea-cache
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        with:
-          path: packages/node-sea-builder/dist/socket-sea-${{ matrix.platform }}-${{ matrix.arch }}
-          key: node-sea-${{ matrix.platform }}-${{ matrix.arch }}-${{ steps.sea-cache-key.outputs.hash }}
-          restore-keys: node-sea-${{ matrix.platform }}-${{ matrix.arch }}-
-
-      - name: Build CLI (required for SEA)
-        if: steps.sea-cache.outputs.cache-hit != 'true' || inputs.force
-        run: pnpm --filter @socketsecurity/cli run build
-
-      - name: Build SEA binary
-        if: steps.sea-cache.outputs.cache-hit != 'true' || inputs.force
-        run: pnpm --filter @socketbin/node-sea-builder run build
-
-      - name: Verify SEA binary
-        shell: bash
-        run: |
-          echo "=== SEA Binary Build Artifacts ==="
-          mkdir -p packages/node-sea-builder/dist
-          ls -lh packages/node-sea-builder/dist/
-          echo ""
-          BINARY_PATH="packages/node-sea-builder/dist/socket-sea-${{ matrix.platform }}-${{ matrix.arch }}"
-          if [ -f "$BINARY_PATH" ] || [ -f "${BINARY_PATH}.exe" ]; then
-            if [ "${{ matrix.os }}" = "windows" ]; then
-              echo "socket-sea-${{ matrix.platform }}-${{ matrix.arch }}.exe size: $(du -h ${BINARY_PATH}.exe | cut -f1)"
-            else
-              echo "socket-sea-${{ matrix.platform }}-${{ matrix.arch }} size: $(du -h $BINARY_PATH | cut -f1)"
-            fi
-          else
-            echo "⚠️  Binary not found at expected path"
-          fi
-
-      - name: Upload SEA binary
-        uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
-        with:
-          name: socket-sea-${{ matrix.platform }}-${{ matrix.arch }}
-          path: |
-            packages/node-sea-builder/dist/socket-sea-${{ matrix.platform }}-${{ matrix.arch }}
-            packages/node-sea-builder/dist/socket-sea-${{ matrix.platform }}-${{ matrix.arch }}.exe
-          retention-days: 7
-          if-no-files-found: warn
+  # Build smol binaries last (slowest, 1-2 hours).
+  build-smol:
+    name: 🤏 Build Smol Node Binaries
+    if: ${{ inputs.method == 'smol' || inputs.method == 'smol-sea' || github.event_name != 'workflow_dispatch' }}
+    uses: ./.github/workflows/build-smol.yml
+    with:
+      force: ${{ inputs.force || false }}
 
   summary:
     name: 📊 Build Summary
-    needs: [build-smol, build-sea]
+    needs: [build-wasm, build-sea, build-smol]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -429,10 +100,11 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 📦 Build Methods" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Method | Description | Size |" >> $GITHUB_STEP_SUMMARY
-          echo "|--------|-------------|------|" >> $GITHUB_STEP_SUMMARY
-          echo "| 🔥 smol | Compressed Node.js + CLI | ~18 MB |" >> $GITHUB_STEP_SUMMARY
-          echo "| 📦 SEA | Single Executable Application | ~70 MB |" >> $GITHUB_STEP_SUMMARY
+          echo "| Method | Description | Size | Time |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------------|------|------|" >> $GITHUB_STEP_SUMMARY
+          echo "| 🧱 WASM | Yoga, AI models, ONNX Runtime | ~5 MB | 30-60 min |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🌊 SEA | Single Executable Application | ~70 MB | 10-15 min |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🤏 smol | Compressed Node.js + CLI | ~18 MB | 60-120 min |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 🎯 Platforms Built" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -440,8 +112,14 @@ jobs:
           echo "- 🍎 macOS (x64, arm64)" >> $GITHUB_STEP_SUMMARY
           echo "- 🪟 Windows (x64, arm64)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### ⚡ Build Order" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "1. **WASM Assets** - Built first, cached for SEA builds" >> $GITHUB_STEP_SUMMARY
+          echo "2. **SEA Binaries** - Built second, fast bundling process" >> $GITHUB_STEP_SUMMARY
+          echo "3. **Smol Binaries** - Built last, long Node.js compilation" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 🎯 Next Steps" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "- These binaries are now cached for E2E tests" >> $GITHUB_STEP_SUMMARY
           echo "- Use \`publish-socketbin.yml\` to publish to npm" >> $GITHUB_STEP_SUMMARY
-          echo "- Cache is invalidated when patches or build scripts change" >> $GITHUB_STEP_SUMMARY
+          echo "- Cache is invalidated when source files change" >> $GITHUB_STEP_SUMMARY
