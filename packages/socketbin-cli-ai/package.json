@@ -3,10 +3,19 @@
   "version": "0.0.0",
   "description": "Socket CLI binary assets",
   "license": "MIT",
+  "type": "module",
+  "main": "dist/ai.js",
+  "types": "dist/ai.d.ts",
   "publishConfig": {
     "access": "public"
   },
   "files": [
     "dist"
-  ]
+  ],
+  "scripts": {
+    "build": "node scripts/build.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "workspace:*"
+  }
 }
