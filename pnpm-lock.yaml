@@ -4,6 +4,12 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+catalogs:
+  default:
+    '@socketsecurity/lib':
+      specifier: 2.0.0
+      version: 2.0.0
+
 overrides:
   '@octokit/graphql': 9.0.1
   '@octokit/request-error': 7.0.0
@@ -387,8 +393,8 @@ importers:
   packages/build-infra:
     dependencies:
       '@socketsecurity/lib':
-        specifier: 1.3.5
-        version: 1.3.5(typescript@5.9.3)
+        specifier: 'catalog:'
+        version: 2.0.0(typescript@5.9.3)
 
   packages/cli:
     dependencies:
@@ -452,8 +458,8 @@ importers:
         specifier: workspace:*
         version: link:../build-infra
       '@socketsecurity/lib':
-        specifier: 1.3.3
-        version: 1.3.3(typescript@5.9.3)
+        specifier: 'catalog:'
+        version: 2.0.0(typescript@5.9.3)
 
   packages/minilm-builder:
     dependencies:
@@ -461,8 +467,8 @@ importers:
         specifier: workspace:*
         version: link:../build-infra
       '@socketsecurity/lib':
-        specifier: 1.3.3
-        version: 1.3.3(typescript@5.9.3)
+        specifier: 'catalog:'
+        version: 2.0.0(typescript@5.9.3)
 
   packages/node-sea-builder:
     devDependencies:
@@ -476,7 +482,7 @@ importers:
         specifier: workspace:*
         version: link:../build-infra
       '@socketsecurity/lib':
-        specifier: 2.0.0
+        specifier: 'catalog:'
         version: 2.0.0(typescript@5.9.3)
     devDependencies:
       vitest:
@@ -489,8 +495,8 @@ importers:
         specifier: workspace:*
         version: link:../build-infra
       '@socketsecurity/lib':
-        specifier: 1.3.3
-        version: 1.3.3(typescript@5.9.3)
+        specifier: 'catalog:'
+        version: 2.0.0(typescript@5.9.3)
 
   packages/sbom-generator:
     dependencies:
@@ -498,8 +504,8 @@ importers:
         specifier: ^2.2.5
         version: 2.2.5
       '@socketsecurity/lib':
-        specifier: 1.3.3
-        version: 1.3.3(typescript@5.9.3)
+        specifier: 'catalog:'
+        version: 2.0.0(typescript@5.9.3)
       '@yarnpkg/parsers':
         specifier: ^3.0.0
         version: 3.0.3
@@ -567,8 +573,8 @@ importers:
         specifier: workspace:*
         version: link:../build-infra
       '@socketsecurity/lib':
-        specifier: 1.3.5
-        version: 1.3.5(typescript@5.9.3)
+        specifier: 'catalog:'
+        version: 2.0.0(typescript@5.9.3)
 
 packages:
 
@@ -2149,24 +2155,6 @@ packages:
   '@socketsecurity/config@3.0.1':
     resolution: {integrity: sha512-kLKdSqi4W7SDSm5z+wYnfVRnZCVhxzbzuKcdOZSrcHoEGOT4Gl844uzoaML+f5eiQMxY+nISiETwRph/aXrIaQ==}
     engines: {node: 18.20.7 || ^20.18.3 || >=22.14.0}
-
-  '@socketsecurity/lib@1.3.3':
-    resolution: {integrity: sha512-KxtVlsJCuaTLGZaQmdRpFUDe+X5/yj9fpGzA8ymMyytu1LF++01okg/Swgwco6kGT+XMtQSkiblfDuKJAdIdTQ==}
-    engines: {node: '>=22'}
-    peerDependencies:
-      typescript: '>=5.0.0'
-    peerDependenciesMeta:
-      typescript:
-        optional: true
-
-  '@socketsecurity/lib@1.3.5':
-    resolution: {integrity: sha512-nVQYBMvuBnh0urP3WWPqraXuke64tVqAVhW8G3P3yyGCBwA6cBowwdMWz4qFWhAxAUS5MT85yszHckLnfa0E1w==}
-    engines: {node: '>=22'}
-    peerDependencies:
-      typescript: '>=5.0.0'
-    peerDependenciesMeta:
-      typescript:
-        optional: true
 
   '@socketsecurity/lib@2.0.0':
     resolution: {integrity: sha512-/PM92K2Xp9SIeOM8C/rxPzZzbZXkMCInEtsceVKQd5oRgTrNGS0VIHIgIIxCShC5IeGwMJKsgYezunv1NshdMw==}
@@ -7597,14 +7585,6 @@ snapshots:
       ajv: 8.17.1
       pony-cause: 2.1.11
       yaml: 2.8.1
-
-  '@socketsecurity/lib@1.3.3(typescript@5.9.3)':
-    optionalDependencies:
-      typescript: 5.9.3
-
-  '@socketsecurity/lib@1.3.5(typescript@5.9.3)':
-    optionalDependencies:
-      typescript: 5.9.3
 
   '@socketsecurity/lib@2.0.0(typescript@5.9.3)':
     optionalDependencies:
