@@ -67,7 +67,7 @@ jobs:
 
       - name: Restore yoga build cache
         id: yoga-cache
-        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: packages/yoga-layout/build/wasm
           key: yoga-wasm-${{ steps.yoga-cache-key.outputs.hash }}
@@ -141,7 +141,7 @@ jobs:
 
       - name: Restore AI models cache
         id: ai-cache
-        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: packages/socketbin-cli-ai/dist
           key: ai-models-${{ steps.ai-cache-key.outputs.hash }}
@@ -195,7 +195,7 @@ jobs:
 
       - name: Restore ONNX Runtime cache
         id: onnx-cache
-        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: packages/onnx-runtime-builder/dist
           key: onnx-runtime-${{ steps.onnx-cache-key.outputs.hash }}

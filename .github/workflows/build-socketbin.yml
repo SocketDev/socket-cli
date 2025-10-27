@@ -112,7 +112,7 @@ jobs:
 
       - name: Restore smol binary cache
         id: smol-cache
-        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: packages/node-smol-builder/dist/socket-smol-${{ matrix.platform }}-${{ matrix.arch }}
           key: node-smol-${{ matrix.platform }}-${{ matrix.arch }}-${{ steps.smol-cache-key.outputs.hash }}
@@ -228,7 +228,7 @@ jobs:
 
       - name: Restore SEA binary cache
         id: sea-cache
-        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: packages/node-sea-builder/dist/socket-sea-${{ matrix.platform }}-${{ matrix.arch }}
           key: node-sea-${{ matrix.platform }}-${{ matrix.arch }}-${{ steps.sea-cache-key.outputs.hash }}
