@@ -122,7 +122,7 @@ node --import=./scripts/load.mjs scripts/build-yao-pkg-node.mjs --clean
 ### CLI-Specific Notes
 - **Dynamic imports**: Only use dynamic imports for test mocking (e.g., `vi.importActual` in Vitest). Avoid runtime dynamic imports in production code
 
-### Custom Node.js Binary
+### Smol Node.js Binary
 - **Binary locations**:
   - `.node-source/out/Release/node` - Main build output (stripped, signed)
   - `build/out/Release/node` - Copy for distribution

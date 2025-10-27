@@ -15,24 +15,8 @@ on:
         required: false
         type: boolean
         default: false
-  push:
-    branches: [main]
-    paths:
-      - 'packages/node-smol-builder/**'
-      - 'patches/**'
-      - 'packages/node-smol-builder/patches/**'
-      - 'packages/node-smol-builder/additions/**'
-      - 'scripts/build-yao-pkg-node.mjs'
-      - '.github/workflows/build-smol.yml'
-  pull_request:
-    branches: [main]
-    paths:
-      - 'packages/node-smol-builder/**'
-      - 'patches/**'
-      - 'packages/node-smol-builder/patches/**'
-      - 'packages/node-smol-builder/additions/**'
-      - 'scripts/build-yao-pkg-node.mjs'
-      - '.github/workflows/build-smol.yml'
+  # Removed push/pull_request triggers to prevent automatic builds.
+  # Run manually via workflow_dispatch or via workflow_call from build-socketbin.yml.
 
 permissions:
   contents: read
