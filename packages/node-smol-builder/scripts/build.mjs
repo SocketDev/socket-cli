@@ -1342,7 +1342,9 @@ async function main() {
     configureFlags.unshift('--dest-cpu=x64')
   }
 
+  logger.log('::group::Running ./configure')
   await exec('./configure', configureFlags, { cwd: NODE_DIR })
+  logger.log('::endgroup::')
   logger.log('✅ Configuration complete')
   logger.log('')
 
@@ -1367,9 +1369,14 @@ async function main() {
 
   const buildStart = Date.now()
 
+  // Use GitHub Actions grouping to collapse compiler output.
+  logger.log('::group::Compiling Node.js (this will take a while...)')
+
   try {
     await exec('make', [`-j${CPU_COUNT}`], { cwd: NODE_DIR })
+    logger.log('::endgroup::')
   } catch (e) {
+    logger.log('::endgroup::')
     // Build failed - show last 50 lines of build log.
     const lastLines = await getLastLogLines(BUILD_DIR, 50)
     if (lastLines) {
