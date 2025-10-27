@@ -23,13 +23,7 @@
  *   - Auto-cleanup: Standard npm prune/clean
  */
 
-import { createHash } from 'node:crypto'
-import { existsSync } from 'node:fs'
-import path from 'node:path'
-
 import { logger } from '@socketsecurity/lib/logger'
-
-import { dlxBinary, getDlxCachePath } from './dlx/binary.mts'
 
 /**
  * Model registry mapping package names to npm packages.
