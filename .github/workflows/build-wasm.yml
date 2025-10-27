@@ -67,9 +67,12 @@ jobs:
         run: |
           if [ -f "packages/yoga-layout/build/wasm/yoga.wasm" ] && [ -f "packages/yoga-layout/build/wasm/yoga.js" ]; then
             echo "valid=true" >> $GITHUB_OUTPUT
+            echo "Cache hit: artifacts found"
+            ls -lh packages/yoga-layout/build/wasm/
           else
             echo "valid=false" >> $GITHUB_OUTPUT
-            echo "Cache restored but artifacts missing, forcing rebuild"
+            echo "Cache miss or incomplete: forcing rebuild"
+            ls -lh packages/yoga-layout/build/wasm/ 2>/dev/null || echo "Directory does not exist"
           fi
 
       - name: Install Emscripten
@@ -88,6 +91,10 @@ jobs:
           echo "::group::Building Yoga Layout WASM"
           source emsdk/emsdk_env.sh
           pnpm --filter @socketsecurity/yoga-layout run build
+          echo "Build exit code: $?"
+          echo "Checking for build artifacts..."
+          ls -lh packages/yoga-layout/build/wasm/ || echo "wasm directory not found"
+          ls -lh packages/yoga-layout/build/cmake/ || echo "cmake directory not found"
           echo "::endgroup::"
 
       - name: Verify build artifacts
@@ -162,9 +169,12 @@ jobs:
         run: |
           if [ -f "packages/socketbin-cli-ai/dist/ai.bz" ] && [ -f "packages/socketbin-cli-ai/dist/ai.js" ]; then
             echo "valid=true" >> $GITHUB_OUTPUT
+            echo "Cache hit: artifacts found"
+            ls -lh packages/socketbin-cli-ai/dist/
           else
             echo "valid=false" >> $GITHUB_OUTPUT
-            echo "Cache restored but artifacts missing, forcing rebuild"
+            echo "Cache miss or incomplete: forcing rebuild"
+            ls -lh packages/socketbin-cli-ai/dist/ 2>/dev/null || echo "Directory does not exist"
           fi
 
       - name: Build AI models
@@ -172,6 +182,9 @@ jobs:
         run: |
           echo "::group::Building AI models (this will take 10-15 minutes)"
           pnpm --filter @socketbin/cli-ai run build
+          echo "Build exit code: $?"
+          echo "Checking for build artifacts..."
+          ls -lh packages/socketbin-cli-ai/dist/ || echo "dist directory not found"
           echo "::endgroup::"
 
       - name: Verify build artifacts
@@ -234,9 +247,12 @@ jobs:
         run: |
           if [ -f "packages/onnx-runtime-builder/dist/onnxruntime-web.wasm" ]; then
             echo "valid=true" >> $GITHUB_OUTPUT
+            echo "Cache hit: artifacts found"
+            ls -lh packages/onnx-runtime-builder/dist/
           else
             echo "valid=false" >> $GITHUB_OUTPUT
-            echo "Cache restored but artifacts missing, forcing rebuild"
+            echo "Cache miss or incomplete: forcing rebuild"
+            ls -lh packages/onnx-runtime-builder/dist/ 2>/dev/null || echo "Directory does not exist"
           fi
 
       - name: Install Emscripten
@@ -255,6 +271,9 @@ jobs:
           echo "::group::Building ONNX Runtime WASM (this will take 20-30 minutes)"
           source emsdk/emsdk_env.sh
           pnpm --filter @socketsecurity/onnx-runtime-builder run build
+          echo "Build exit code: $?"
+          echo "Checking for build artifacts..."
+          ls -lh packages/onnx-runtime-builder/dist/ || echo "dist directory not found"
           echo "::endgroup::"
 
       - name: Verify build artifacts
