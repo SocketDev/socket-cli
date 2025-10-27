@@ -1,6 +1,13 @@
 name: 🧱 Build WASM Assets
 
 on:
+  workflow_call:
+    inputs:
+      force:
+        description: 'Force rebuild (ignore cache)'
+        required: false
+        type: boolean
+        default: false
   workflow_dispatch:
     inputs:
       force:
