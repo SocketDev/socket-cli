@@ -3,6 +3,6 @@
  * Overrides GitHub token for Socket CLI operations.
  */
 
-import { env } from 'node:process'
+import { getSocketCliGithubToken } from '@socketsecurity/lib/env/socket-cli'
 
-export const SOCKET_CLI_GITHUB_TOKEN = env['SOCKET_CLI_GITHUB_TOKEN']
+export const SOCKET_CLI_GITHUB_TOKEN = getSocketCliGithubToken()

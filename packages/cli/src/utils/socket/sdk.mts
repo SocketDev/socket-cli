@@ -146,9 +146,7 @@ export async function setupSdk(
     ? HttpProxyAgent
     : HttpsProxyAgent
 
-  const timeout = ENV.SOCKET_CLI_API_TIMEOUT
-    ? Number.parseInt(ENV.SOCKET_CLI_API_TIMEOUT, 10)
-    : undefined
+  const timeout = ENV.SOCKET_CLI_API_TIMEOUT || undefined
 
   return {
     ok: true,

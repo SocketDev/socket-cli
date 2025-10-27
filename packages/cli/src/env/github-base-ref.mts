@@ -1,5 +1,5 @@
 /** @fileoverview GITHUB_BASE_REF environment variable. */
 
-import { env } from 'node:process'
+import { getGithubBaseRef } from '@socketsecurity/lib/env/github'
 
-export const GITHUB_BASE_REF = env['GITHUB_BASE_REF']
+export const GITHUB_BASE_REF = getGithubBaseRef()

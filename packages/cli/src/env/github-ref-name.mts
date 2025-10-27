@@ -1,5 +1,5 @@
 /** @fileoverview GITHUB_REF_NAME environment variable. */
 
-import { env } from 'node:process'
+import { getGithubRefName } from '@socketsecurity/lib/env/github'
 
-export const GITHUB_REF_NAME = env['GITHUB_REF_NAME']
+export const GITHUB_REF_NAME = getGithubRefName()

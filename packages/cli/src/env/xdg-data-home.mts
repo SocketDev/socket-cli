@@ -3,6 +3,6 @@
  * User-specific data directory following XDG Base Directory specification (Unix systems).
  */
 
-import { env } from 'node:process'
+import { getXdgDataHome } from '@socketsecurity/lib/env/xdg'
 
-export const XDG_DATA_HOME = env['XDG_DATA_HOME']
+export const XDG_DATA_HOME = getXdgDataHome()

@@ -1,9 +1,5 @@
 /** @fileoverview SOCKET_CLI_NO_API_TOKEN environment variable. */
 
-import { env } from 'node:process'
+import { getSocketCliNoApiToken } from '@socketsecurity/lib/env/socket-cli'
 
-import { envAsBoolean } from '@socketsecurity/lib/env'
-
-export const SOCKET_CLI_NO_API_TOKEN = envAsBoolean(
-  env['SOCKET_CLI_NO_API_TOKEN'],
-)
+export const SOCKET_CLI_NO_API_TOKEN = getSocketCliNoApiToken()
