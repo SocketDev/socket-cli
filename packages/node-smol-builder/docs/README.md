@@ -8,11 +8,19 @@ This package builds a custom Node.js v24.10.0 binary from source with Socket sec
 
 ## Contents
 
+### Binary Compression
+
+- **[binary-compression-distribution.md](./binary-compression-distribution.md)** - Complete guide to binary compression distribution strategy
 - **[compression-quick-start.md](./compression-quick-start.md)** - Quick start guide for macOS binary compression
 - **[compression-test-results.md](./compression-test-results.md)** - Real-world compression performance benchmarks
 
+### Build Process
+
+- Build compression is now integrated into the main build script
+- Enable with: `COMPRESS_BINARY=1 node scripts/build.mjs`
+- Cross-platform support: macOS (LZFSE/LZMA), Linux (LZMA), Windows (LZMS)
+
 Future package-level documentation will be added here for:
-- Build process overview and configuration
 - Socket patch architecture and versioning
 - Cross-platform build considerations
 - Upstream Node.js tracking and update process
