@@ -128,7 +128,7 @@ async function configure() {
     '-fdata-sections', // Separate data sections.
     '-ffast-math', // Fast math optimizations (performance).
     '-fno-finite-math-only', // Re-enable infinity checks (Yoga needs this).
-  ].join(' ')
+  ]
 
   const linkerFlags = [
     '--closure 1', // Google Closure Compiler (aggressive minification).
@@ -146,15 +146,15 @@ async function configure() {
     '-s STACK_SIZE=16KB', // Small stack.
     '-s SUPPORT_LONGJMP=0', // No longjmp (smaller).
     '-s WASM_ASYNC_COMPILATION=0', // CRITICAL: Synchronous instantiation for bundling.
-  ].join(' ')
+  ]
 
   const cmakeArgs = [
     'cmake',
     `-DCMAKE_TOOLCHAIN_FILE=${toolchainFile}`,
     '-DCMAKE_BUILD_TYPE=Release',
-    `-DCMAKE_CXX_FLAGS=${cxxFlags}`,
-    `-DCMAKE_EXE_LINKER_FLAGS=${linkerFlags}`,
-    `-DCMAKE_SHARED_LINKER_FLAGS=${linkerFlags}`,
+    `-DCMAKE_CXX_FLAGS=${cxxFlags.join(' ')}`,
+    `-DCMAKE_EXE_LINKER_FLAGS=${linkerFlags.join(' ')}`,
+    `-DCMAKE_SHARED_LINKER_FLAGS=${linkerFlags.join(' ')}`,
     `-S`,
     YOGA_SOURCE_DIR,
     `-B`,
@@ -162,8 +162,8 @@ async function configure() {
   ]
 
   printStep('Optimization flags:')
-  printStep(`  CXX: ${cxxFlags}`)
-  printStep(`  Linker: ${linkerFlags}`)
+  printStep(`  CXX: ${cxxFlags.join(' ')}`)
+  printStep(`  Linker: ${linkerFlags.join(' ')}`)
 
   await spawn('emcmake', cmakeArgs, { shell: WIN32, stdio: 'inherit' })
 
@@ -207,7 +207,7 @@ async function build() {
     '-fdata-sections',
     '-ffast-math',
     '-fno-finite-math-only',
-  ].join(' ')
+  ]
 
   const linkerFlags = [
     '--closure 1',
@@ -225,15 +225,15 @@ async function build() {
     '-s STACK_SIZE=16KB',
     '-s SUPPORT_LONGJMP=0',
     '--bind',
-  ].join(' ')
+  ]
 
   // Compile and link in one step.
   const emArgs = [
     `-I${path.join(BUILD_DIR, 'yoga-source')}`,
-    ...cxxFlags.split(' '),
+    ...cxxFlags,
     bindingsFile,
     staticLib,
-    ...linkerFlags.split(' '),
+    ...linkerFlags,
     '-o',
     jsOutput,
   ]
@@ -296,9 +296,9 @@ async function optimize() {
     '--strip-dwarf',
     '--strip-producers',
     '--strip-target-features',
-  ].join(' ')
+  ]
 
-  await spawn('wasm-opt', [...wasmOptFlags.split(' '), wasmFile, '-o', wasmFile], {
+  await spawn('wasm-opt', [...wasmOptFlags, wasmFile, '-o', wasmFile], {
     shell: WIN32,
     stdio: 'inherit',
   })
