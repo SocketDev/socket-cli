@@ -32,7 +32,7 @@ export async function validatePatch(patchFile, targetDir) {
       stdioString: true,
     })
 
-    const exitCode = result.status ?? 0
+    const exitCode = result.code ?? 0
     if (exitCode !== 0) {
       printError(`Patch validation failed: ${patchFile}`)
       return false
@@ -62,7 +62,7 @@ export async function applyPatch(patchFile, targetDir) {
     stdio: 'inherit',
   })
 
-  const exitCode = result.status ?? 0
+  const exitCode = result.code ?? 0
   if (exitCode !== 0) {
     throw new Error(`Failed to apply patch: ${patchFile}`)
   }
@@ -135,7 +135,7 @@ export async function testPatchApplication(patchFile, targetDir) {
     )
 
     // If reverse patch succeeds, the patch has been applied.
-    return (result.status ?? 0) === 0
+    return (result.code ?? 0) === 0
   } catch {
     return false
   }
@@ -195,7 +195,7 @@ export async function revertPatch(patchFile, targetDir) {
     stdio: 'inherit',
   })
 
-  const exitCode = result.status ?? 0
+  const exitCode = result.code ?? 0
   if (exitCode !== 0) {
     throw new Error(`Failed to revert patch: ${patchFile}`)
   }

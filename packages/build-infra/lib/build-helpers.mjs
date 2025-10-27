@@ -100,15 +100,13 @@ export async function checkPythonVersion(minVersion = '3.6') {
         { shell: true, stdio: 'pipe', stdioString: true }
       )
 
-      // Debug: Log what we got back.
-      printSubstep(`Tried ${pythonCmd}: status=${result?.status}, stdout="${result?.stdout?.trim()}", stderr="${result?.stderr?.trim()}"`)
-
-      // Check if spawn failed or returned undefined status.
-      if (!result || result.status === undefined || result.status === null) {
+      // Check if spawn failed or returned undefined code.
+      // promise-spawn returns 'code' not 'status'.
+      if (!result || result.code === undefined || result.code === null) {
         continue
       }
 
-      if (result.status !== 0) {
+      if (result.code !== 0) {
         if (result.stderr) {
           printWarning(`${pythonCmd} failed: ${result.stderr}`)
         }
@@ -131,8 +129,7 @@ export async function checkPythonVersion(minVersion = '3.6') {
         version,
       }
     } catch (e) {
-      // Debug: Log the error.
-      printSubstep(`${pythonCmd} threw error: ${e.message}`)
+      // Try next command.
       continue
     }
   }
@@ -204,7 +201,7 @@ export async function smokeTestBinary(binaryPath, args = ['--version']) {
       stdioString: true,
     })
 
-    if ((result.status ?? 0) !== 0) {
+    if ((result.code ?? 0) !== 0) {
       printError(`Binary failed smoke test: ${binaryPath}`)
       return false
     }

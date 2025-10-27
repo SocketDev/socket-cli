@@ -208,7 +208,7 @@ export async function installPackageManager(managerName, { autoYes = false } = {
       stdio: 'inherit',
     })
 
-    const exitCode = result.status ?? 0
+    const exitCode = result.code ?? 0
     if (exitCode !== 0) {
       printError(`Failed to install ${managerConfig.name}`)
       return false
@@ -418,7 +418,7 @@ export async function installTool(tool, packageManager, { autoYes = false } = {}
       stdio: 'inherit',
     })
 
-    const exitCode = result.status ?? 0
+    const exitCode = result.code ?? 0
     if (exitCode !== 0) {
       printError(`Failed to install ${tool} via ${packageManager}`)
       return false
