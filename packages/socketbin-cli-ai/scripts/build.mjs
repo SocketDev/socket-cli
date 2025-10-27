@@ -20,6 +20,8 @@ import { brotliCompressSync, constants as zlibConstants } from 'node:zlib'
 import { exec } from 'node:child_process'
 import { promisify } from 'node:util'
 
+import { createInterface } from 'node:readline'
+
 import { logger } from '@socketsecurity/lib/logger'
 
 import {
@@ -30,6 +32,14 @@ import {
 } from '@socketsecurity/build-infra/lib/checkpoint-manager'
 
 const execAsync = promisify(exec)
+
+// Check if running in CI.
+const IS_CI = !!(
+  process.env['CI'] ||
+  process.env['GITHUB_ACTIONS'] ||
+  process.env['GITLAB_CI'] ||
+  process.env['CIRCLECI']
+)
 
 // Parse arguments.
 const args = process.argv.slice(2)
@@ -66,6 +76,83 @@ const MODEL_SOURCES = {
       'Salesforce/codet5-small'
     ],
     files: ['encoder_model.onnx', 'decoder_model.onnx', 'tokenizer.json']
+  }
+}
+
+/**
+ * Prompt user for input.
+ */
+async function prompt(question) {
+  const rl = createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  })
+
+  return new Promise(resolve => {
+    rl.question(question, answer => {
+      rl.close()
+      resolve(answer)
+    })
+  })
+}
+
+/**
+ * Check for model updates on Hugging Face.
+ * Prompts user to update if newer version available (local builds only).
+ */
+async function checkModelUpdates(modelKey) {
+  if (IS_CI) {
+    // Skip update checks in CI.
+    return
+  }
+
+  const config = MODEL_SOURCES[modelKey]
+  const currentRevision = config.revision
+
+  try {
+    logger.log('\n🔍 Checking for model updates...')
+
+    // Fetch latest commit SHA from Hugging Face API.
+    const response = await fetch(
+      `https://huggingface.co/api/models/${config.primary}/revision/main`
+    )
+
+    if (!response.ok) {
+      // API call failed, skip update check.
+      return
+    }
+
+    const data = await response.json()
+    const latestRevision = data.sha
+
+    if (latestRevision === currentRevision) {
+      logger.log(`  ✓ Using latest version (${currentRevision.slice(0, 8)})`)
+      return
+    }
+
+    // Newer version available!
+    logger.log(`  ⚠️  New model version available!`)
+    logger.log(`     Current: ${currentRevision.slice(0, 8)}`)
+    logger.log(`     Latest:  ${latestRevision.slice(0, 8)}`)
+    logger.log('')
+
+    const answer = await prompt('  Update to latest version? (Y/n): ')
+
+    if (answer.toLowerCase() === 'n') {
+      logger.log('  Keeping current version')
+      return
+    }
+
+    // User wants to update - show instructions.
+    logger.log('')
+    logger.log('  To update, change the revision in scripts/build.mjs:')
+    logger.log(`     revision: '${latestRevision}',`)
+    logger.log('')
+    logger.log('  Then run build again.')
+    process.exit(0)
+  } catch (e) {
+    // Update check failed, continue with build.
+    logger.log('  ⚠️  Could not check for updates')
   }
 }
 
@@ -327,6 +414,12 @@ async function main() {
 
   const startTime = Date.now()
 
+  // Use MiniLM-L6 as primary model (good balance of size/accuracy).
+  const modelKey = 'minilm-l6'
+
+  // Check for model updates (local builds only).
+  await checkModelUpdates(modelKey)
+
   // Clean checkpoints if requested.
   if (CLEAN_BUILD) {
     logger.log('\n🧹 Cleaning build checkpoints...')
@@ -336,9 +429,6 @@ async function main() {
   // Create directories.
   await mkdir(DIST, { recursive: true })
   await mkdir(BUILD, { recursive: true })
-
-  // Use MiniLM-L6 as primary model (good balance of size/accuracy).
-  const modelKey = 'minilm-l6'
 
   try {
     // Download model.
