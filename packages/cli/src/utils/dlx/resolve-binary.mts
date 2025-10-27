@@ -29,7 +29,7 @@ export function resolveCoana(): BinaryResolution {
     type: 'dlx',
     packageSpec: {
       name: '@coana-tech/cli',
-      version: `~${ENV.INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION}`,
+      version: `~${ENV.INLINED_SOCKET_CLI_COANA_VERSION}`,
     },
   }
 }

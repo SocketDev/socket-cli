@@ -83,7 +83,7 @@ export async function spawnCoana(
     }
 
     // Use npm/dlx version via runner.
-    const coanaVersion = ENV.INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION
+    const coanaVersion = ENV.INLINED_SOCKET_CLI_COANA_VERSION
     const packageSpec = `@coana-tech/cli@~${coanaVersion}`
 
     const finalEnv = {

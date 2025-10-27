@@ -139,7 +139,10 @@ const config = {
     'process.env.INLINED_SOCKET_CLI_HOMEPAGE': JSON.stringify(
       packageJson.homepage,
     ),
-    'process.env.INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION':
+    'process.env.INLINED_SOCKET_CLI_AI_VERSION': JSON.stringify(
+      packageJson.version,
+    ),
+    'process.env.INLINED_SOCKET_CLI_COANA_VERSION':
       JSON.stringify(coanaVersion),
     'process.env.INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION':
       JSON.stringify(cdxgenVersion),
