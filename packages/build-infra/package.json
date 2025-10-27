@@ -13,7 +13,8 @@
     "./lib/cmake-builder": "./lib/cmake-builder.mjs",
     "./lib/emscripten-builder": "./lib/emscripten-builder.mjs",
     "./lib/patch-validator": "./lib/patch-validator.mjs",
-    "./lib/rust-builder": "./lib/rust-builder.mjs"
+    "./lib/rust-builder": "./lib/rust-builder.mjs",
+    "./lib/tool-installer": "./lib/tool-installer.mjs"
   },
   "dependencies": {
     "@socketsecurity/lib": "catalog:"
