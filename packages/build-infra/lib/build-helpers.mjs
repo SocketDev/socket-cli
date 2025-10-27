@@ -88,62 +88,55 @@ export async function checkCompiler(compilers) {
 export async function checkPythonVersion(minVersion = '3.6') {
   printStep('Checking Python version')
 
-  try {
-    const result = await spawn(
-      'python3',
-      ['-c', "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')"],
-      { shell: WIN32, stdio: 'pipe', stdioString: true }
-    )
+  // Try multiple Python command names.
+  const pythonCommands = ['python3', 'python']
 
-    // Check if spawn failed or returned undefined status.
-    if (!result || result.status === undefined || result.status === null) {
-      printWarning('Python check returned invalid result')
+  for (const pythonCmd of pythonCommands) {
+    try {
+      const result = await spawn(
+        pythonCmd,
+        ['-c', "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')"],
+        { shell: WIN32, stdio: 'pipe', stdioString: true }
+      )
+
+      // Check if spawn failed or returned undefined status.
+      if (!result || result.status === undefined || result.status === null) {
+        continue
+      }
+
+      if (result.status !== 0) {
+        if (result.stderr) {
+          printWarning(`${pythonCmd} failed: ${result.stderr}`)
+        }
+        continue
+      }
+
+      const version = (result.stdout ?? '').trim()
+      if (!version) {
+        continue
+      }
+
+      const [major, minor] = version.split('.').map(Number)
+      const [minMajor, minMinor] = minVersion.split('.').map(Number)
+
+      const sufficient = major > minMajor || (major === minMajor && minor >= minMinor)
+
       return {
-        available: false,
-        sufficient: false,
-        version: null,
+        available: true,
+        sufficient,
+        version,
       }
+    } catch (e) {
+      // Try next command.
+      continue
     }
+  }
 
-    if (result.status !== 0) {
-      printWarning(`Python check failed with status ${result.status}`)
-      if (result.stderr) {
-        printWarning(`stderr: ${result.stderr}`)
-      }
-      return {
-        available: false,
-        sufficient: false,
-        version: null,
-      }
-    }
-
-    const version = (result.stdout ?? '').trim()
-    if (!version) {
-      printWarning('Python returned empty version')
-      return {
-        available: false,
-        sufficient: false,
-        version: null,
-      }
-    }
-
-    const [major, minor] = version.split('.').map(Number)
-    const [minMajor, minMinor] = minVersion.split('.').map(Number)
-
-    const sufficient = major > minMajor || (major === minMajor && minor >= minMinor)
-
-    return {
-      available: true,
-      sufficient,
-      version,
-    }
-  } catch (e) {
-    printWarning(`Python check exception: ${e.message}`)
-    return {
-      available: false,
-      sufficient: false,
-      version: null,
-    }
+  // None of the Python commands worked.
+  return {
+    available: false,
+    sufficient: false,
+    version: null,
   }
 }
 
