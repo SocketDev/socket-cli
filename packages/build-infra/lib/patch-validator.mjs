@@ -164,3 +164,30 @@ export async function revertPatch(patchFile, targetDir) {
     stdio: 'inherit',
   })
 }
+
+/**
+ * Analyze patch file content for specific modifications.
+ *
+ * @param {string} content - Patch file content
+ * @returns {object} Analysis result
+ */
+export function analyzePatchContent(content) {
+  return {
+    modifiesV8Includes: content.includes('v8.h') || content.includes('v8-'),
+    modifiesSEA: content.includes('SEA') || content.includes('sea_'),
+    modifiesBrotli: content.includes('brotli') || content.includes('Brotli'),
+  }
+}
+
+/**
+ * Check for conflicts between patches.
+ *
+ * @param {Array} patchData - Array of patch data objects
+ * @param {string} version - Node.js version
+ * @returns {Array} Array of conflict objects
+ */
+export function checkPatchConflicts(patchData, version) {
+  // Stub implementation - no conflicts detected by default.
+  // In a full implementation, this would analyze patch overlaps.
+  return []
+}
