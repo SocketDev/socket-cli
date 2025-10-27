@@ -31,7 +31,7 @@
  *
  * OUTPUT:
  * - build/wasm-bundle/pkg/socket_ai_bg.wasm (~115MB with INT4)
- * - external/socket-ai-sync.mjs (brotli-compressed, base64-encoded WASM)
+ * - packages/cli/build/unified-wasm.mjs (brotli-compressed, base64-encoded WASM)
  */
 
 import { existsSync, promises as fs } from 'node:fs'
@@ -159,7 +159,7 @@ async function installBinaryen() {
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '../..')
 const wasmBundleDir = path.join(rootPath, 'build/wasm-bundle')
-const externalDir = path.join(rootPath, 'external')
+const cliBuildDir = path.join(rootPath, 'packages/cli/build')
 
 logger.step('Build Unified WASM Bundle')
 
@@ -380,8 +380,8 @@ logger.progress('Encoding as base64')
 const wasmBase64 = wasmCompressed.toString('base64')
 logger.done(`Encoded: ${wasmBase64.length} bytes`)
 
-// Generate socket-ai-sync.mjs.
-logger.progress('Generating external/socket-ai-sync.mjs')
+// Generate unified-wasm.mjs.
+logger.progress('Generating packages/cli/build/unified-wasm.mjs')
 
 const syncContent = `/**
  * Unified WASM Loader for Socket CLI AI Features
@@ -542,7 +542,10 @@ export function getEmbeddedSizes() {
 }
 `
 
-const outputPath = path.join(externalDir, 'socket-ai-sync.mjs')
+// Ensure build directory exists.
+await fs.mkdir(cliBuildDir, { recursive: true })
+
+const outputPath = path.join(cliBuildDir, 'unified-wasm.mjs')
 await fs.writeFile(outputPath, syncContent, 'utf-8')
 
 logger.done(`Generated ${outputPath}`)
