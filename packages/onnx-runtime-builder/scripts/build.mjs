@@ -94,8 +94,17 @@ async function cloneSource() {
   printStep('Repository: https://github.com/microsoft/onnxruntime.git')
 
   const result = await spawn(
-    `git clone --depth 1 --branch ${ONNX_VERSION} --recursive https://github.com/microsoft/onnxruntime.git ${SOURCE_DIR}`,
-    [],
+    'git',
+    [
+      'clone',
+      '--depth',
+      '1',
+      '--branch',
+      ONNX_VERSION,
+      '--recursive',
+      'https://github.com/microsoft/onnxruntime.git',
+      SOURCE_DIR,
+    ],
     { stdio: 'inherit', shell: WIN32 }
   )
   if (result.code !== 0) {
