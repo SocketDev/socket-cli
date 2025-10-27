@@ -11,6 +11,20 @@ import { spawn } from '@socketsecurity/lib/spawn'
 
 import { printStep } from './build-output.mjs'
 
+/**
+ * Execute command using spawn with shell.
+ */
+async function exec(command, options = {}) {
+  const result = await spawn(command, [], {
+    stdio: 'inherit',
+    shell: WIN32,
+    ...options,
+  })
+  if (result.code !== 0) {
+    throw new Error(`Command failed with exit code ${result.code}: ${command}`)
+  }
+}
+
 export class CMakeBuilder {
   constructor(sourceDir, buildDir) {
     this.sourceDir = sourceDir

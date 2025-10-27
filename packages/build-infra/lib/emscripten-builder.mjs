@@ -9,8 +9,22 @@ import path from 'node:path'
 
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { spawn } from '@socketsecurity/lib/spawn'
-// Removed exec from './build-exec.mjs'
+
 import { printStep } from './build-output.mjs'
+
+/**
+ * Execute command using spawn with shell.
+ */
+async function exec(command, options = {}) {
+  const result = await spawn(command, [], {
+    stdio: 'inherit',
+    shell: WIN32,
+    ...options,
+  })
+  if (result.code !== 0) {
+    throw new Error(`Command failed with exit code ${result.code}: ${command}`)
+  }
+}
 
 /**
  * Aggressive WASM optimization flags.
