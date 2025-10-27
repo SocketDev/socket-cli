@@ -1,0 +1,257 @@
+name: 🧱 Build WASM Assets
+
+on:
+  workflow_dispatch:
+    inputs:
+      force:
+        description: 'Force rebuild (ignore cache)'
+        required: false
+        type: boolean
+        default: false
+  push:
+    branches: [main]
+    paths:
+      - 'packages/yoga-layout/**'
+      - 'packages/socketbin-cli-ai/**'
+      - 'packages/onnx-runtime-builder/**'
+      - 'packages/minilm-builder/**'
+      - 'scripts/wasm/**'
+      - '.github/workflows/build-wasm.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'packages/yoga-layout/**'
+      - 'packages/socketbin-cli-ai/**'
+      - 'packages/onnx-runtime-builder/**'
+      - 'packages/minilm-builder/**'
+      - 'scripts/wasm/**'
+      - '.github/workflows/build-wasm.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build-yoga-layout:
+    name: 🧘 Build Yoga Layout WASM
+    runs-on: ubuntu-latest-8-cores
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: 22
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@e9540b3eafaf84907c087a645d3258bfaa861427 # v3.0.0
+        with:
+          version: 8
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate yoga build cache key
+        id: yoga-cache-key
+        run: |
+          HASH=$(find packages/yoga-layout -type f \( -name "*.cpp" -o -name "*.h" -o -name "*.mjs" -o -name "CMakeLists.txt" \) | sort | xargs shasum -a 256 | shasum -a 256 | cut -d' ' -f1)
+          echo "hash=$HASH" >> $GITHUB_OUTPUT
+
+      - name: Restore yoga build cache
+        id: yoga-cache
+        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
+        with:
+          path: packages/yoga-layout/build/wasm
+          key: yoga-wasm-${{ steps.yoga-cache-key.outputs.hash }}
+          restore-keys: yoga-wasm-
+
+      - name: Install Emscripten
+        if: steps.yoga-cache.outputs.cache-hit != 'true' || inputs.force
+        run: |
+          git clone https://github.com/emscripten-core/emsdk.git
+          cd emsdk
+          ./emsdk install latest
+          ./emsdk activate latest
+
+      - name: Build Yoga Layout WASM
+        if: steps.yoga-cache.outputs.cache-hit != 'true' || inputs.force
+        run: |
+          source emsdk/emsdk_env.sh
+          pnpm --filter @socketsecurity/yoga-layout run build
+
+      - name: Verify build artifacts
+        run: |
+          echo "=== Yoga Layout Build Artifacts ==="
+          ls -lh packages/yoga-layout/build/wasm/
+          echo ""
+          echo "yoga.wasm size: $(du -h packages/yoga-layout/build/wasm/yoga.wasm | cut -f1)"
+          echo "yoga.js size: $(du -h packages/yoga-layout/build/wasm/yoga.js | cut -f1)"
+
+      - name: Upload yoga artifacts
+        uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
+        with:
+          name: yoga-wasm
+          path: packages/yoga-layout/build/wasm/
+          retention-days: 7
+
+  build-ai-models:
+    name: 🤖 Build AI Models
+    runs-on: ubuntu-latest-8-cores
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: 22
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@e9540b3eafaf84907c087a645d3258bfaa861427 # v3.0.0
+        with:
+          version: 8
+
+      - name: Setup Python
+        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
+        with:
+          python-version: '3.11'
+
+      - name: Install Python dependencies
+        run: |
+          pip install --upgrade pip
+          pip install transformers torch optimum[exporters] onnxruntime
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate AI models cache key
+        id: ai-cache-key
+        run: |
+          HASH=$(find packages/socketbin-cli-ai -type f \( -name "*.mjs" -o -name "*.ts" \) | sort | xargs shasum -a 256 | shasum -a 256 | cut -d' ' -f1)
+          echo "hash=$HASH" >> $GITHUB_OUTPUT
+
+      - name: Restore AI models cache
+        id: ai-cache
+        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
+        with:
+          path: packages/socketbin-cli-ai/dist
+          key: ai-models-${{ steps.ai-cache-key.outputs.hash }}
+          restore-keys: ai-models-
+
+      - name: Build AI models
+        if: steps.ai-cache.outputs.cache-hit != 'true' || inputs.force
+        run: pnpm --filter @socketbin/cli-ai run build
+
+      - name: Verify build artifacts
+        run: |
+          echo "=== AI Models Build Artifacts ==="
+          ls -lh packages/socketbin-cli-ai/dist/
+          echo ""
+          echo "ai.bz size: $(du -h packages/socketbin-cli-ai/dist/ai.bz | cut -f1)"
+          echo "ai.js size: $(du -h packages/socketbin-cli-ai/dist/ai.js | cut -f1)"
+
+      - name: Upload AI artifacts
+        uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
+        with:
+          name: ai-models
+          path: packages/socketbin-cli-ai/dist/
+          retention-days: 7
+
+  build-onnx-runtime:
+    name: ⚡ Build ONNX Runtime WASM
+    runs-on: ubuntu-latest-8-cores
+    timeout-minutes: 90
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: 22
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@e9540b3eafaf84907c087a645d3258bfaa861427 # v3.0.0
+        with:
+          version: 8
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate ONNX Runtime cache key
+        id: onnx-cache-key
+        run: |
+          HASH=$(find packages/onnx-runtime-builder -type f \( -name "*.mjs" -o -name "*.patch" \) | sort | xargs shasum -a 256 | shasum -a 256 | cut -d' ' -f1)
+          echo "hash=$HASH" >> $GITHUB_OUTPUT
+
+      - name: Restore ONNX Runtime cache
+        id: onnx-cache
+        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
+        with:
+          path: packages/onnx-runtime-builder/dist
+          key: onnx-runtime-${{ steps.onnx-cache-key.outputs.hash }}
+          restore-keys: onnx-runtime-
+
+      - name: Install Emscripten
+        if: steps.onnx-cache.outputs.cache-hit != 'true' || inputs.force
+        run: |
+          git clone https://github.com/emscripten-core/emsdk.git
+          cd emsdk
+          ./emsdk install latest
+          ./emsdk activate latest
+
+      - name: Build ONNX Runtime WASM
+        if: steps.onnx-cache.outputs.cache-hit != 'true' || inputs.force
+        run: |
+          source emsdk/emsdk_env.sh
+          pnpm --filter @socketsecurity/onnx-runtime-builder run build
+
+      - name: Verify build artifacts
+        run: |
+          echo "=== ONNX Runtime Build Artifacts ==="
+          ls -lh packages/onnx-runtime-builder/dist/
+          echo ""
+          if [ -f packages/onnx-runtime-builder/dist/ort-wasm.wasm ]; then
+            echo "ort-wasm.wasm size: $(du -h packages/onnx-runtime-builder/dist/ort-wasm.wasm | cut -f1)"
+          fi
+
+      - name: Upload ONNX Runtime artifacts
+        uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
+        with:
+          name: onnx-runtime
+          path: packages/onnx-runtime-builder/dist/
+          retention-days: 7
+
+  summary:
+    name: 📊 Build Summary
+    needs: [build-yoga-layout, build-ai-models, build-onnx-runtime]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+        with:
+          path: artifacts
+
+      - name: Generate summary
+        run: |
+          echo "# 🧱 WASM Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## ✅ Build Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "All WASM assets built successfully and cached." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📦 Artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Asset | Files |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| 🧘 Yoga Layout | \`yoga.wasm\`, \`yoga.js\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🤖 AI Models | \`ai.bz\`, \`ai.js\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| ⚡ ONNX Runtime | \`ort-wasm.wasm\` |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🎯 Next Steps" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- These artifacts are now cached for CI builds" >> $GITHUB_STEP_SUMMARY
+          echo "- CLI builds will use these cached WASM assets" >> $GITHUB_STEP_SUMMARY
+          echo "- Cache is invalidated when source files change" >> $GITHUB_STEP_SUMMARY
