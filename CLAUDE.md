@@ -615,8 +615,8 @@ Socket CLI integrates with various third-party tools and services:
 - **Catch parameter naming**: Use `catch (e)` instead of `catch (error)` for consistency across the codebase
 - **Node.js fs imports**: 🚨 MANDATORY pattern - `import { someSyncThing, promises as fs } from 'node:fs'`
 - **Process spawning**: 🚨 MANDATORY - ALWAYS use `{ spawn }` from `@socketsecurity/lib/spawn` (NEVER use Node.js built-in `child_process.spawn`)
-- **Shell execution**: 🚨 MANDATORY - ALWAYS use `shell: WIN32` from `@socketsecurity/lib/constants` (NEVER use `shell: true`)
-  - ✅ CORRECT: `import { WIN32 } from '@socketsecurity/lib/constants'` then `spawn('cmd', [], { shell: WIN32 })`
+- **Shell execution**: 🚨 MANDATORY - ALWAYS use `shell: WIN32` from `@socketsecurity/lib/constants/platform` (NEVER use `shell: true`)
+  - ✅ CORRECT: `import { WIN32 } from '@socketsecurity/lib/constants/platform'` then `spawn('cmd', [], { shell: WIN32 })`
   - ❌ FORBIDDEN: `{ shell: true }` (not cross-platform safe)
 - **Logging in scripts**: 🚨 MANDATORY - ALWAYS use `logger` from `@socketsecurity/lib/logger` in all build scripts and utilities
   - ✅ CORRECT: `import { logger } from '@socketsecurity/lib/logger'` then `logger.log()`, `logger.substep()`, etc.

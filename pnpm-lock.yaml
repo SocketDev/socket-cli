@@ -426,6 +426,9 @@ importers:
       '@rollup/pluginutils':
         specifier: 5.3.0
         version: 5.3.0(rollup@4.50.1)
+      '@socketsecurity/build-infra':
+        specifier: workspace:*
+        version: link:../build-infra
       del:
         specifier: 8.0.1
         version: 8.0.1
@@ -441,6 +444,9 @@ importers:
       tar-stream:
         specifier: 3.1.7
         version: 3.1.7
+      yoga-layout:
+        specifier: 3.2.1
+        version: 3.2.1(patch_hash=d871a99118cca5542a9e634397107abf6f42ada4397bf992451543c540db9f90)
 
   packages/cli-with-sentry:
     dependencies:
