@@ -45,7 +45,7 @@ jobs:
           python-version: '3.11'
 
       - name: Setup Rust
-        uses: dtolnay/rust-toolchain@7b1c307e0dcbda6122208f10795a713336a9b35a # stable
+        uses: dtolnay/rust-toolchain@6d653acede28d24f02e3cd41383119e8b1b35921 # stable
         with:
           toolchain: stable
           targets: wasm32-unknown-unknown
