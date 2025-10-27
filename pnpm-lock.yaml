@@ -144,8 +144,8 @@ importers:
         specifier: 14.1.0
         version: 14.1.0
       '@pnpm/dependency-path':
-        specifier: 1001.1.0
-        version: 1001.1.0
+        specifier: 1001.1.2
+        version: 1001.1.2
       '@pnpm/lockfile.detect-dep-types':
         specifier: 1001.0.13
         version: 1001.0.13
@@ -1600,12 +1600,20 @@ packages:
     resolution: {integrity: sha512-L22sQHDC4VM9cPSbOFi0e+C7JSt3isl/biV1jShz8MG9QjemiwTUMog4h0k0C5HoB1ycUjGkXTqAE4RJu3jLQA==}
     engines: {node: '>=18.12'}
 
+  '@pnpm/crypto.hash@1000.2.1':
+    resolution: {integrity: sha512-Kgo3bgYbdKkC5xFvvQshbHa+Nru7k50D91+yyq7enp4Ur2EMp4wg5oXleaC5xu5hC9A/1eSCRI8npCioplxG4A==}
+    engines: {node: '>=18.12'}
+
   '@pnpm/crypto.polyfill@1000.1.0':
     resolution: {integrity: sha512-tNe7a6U4rCpxLMBaR0SIYTdjxGdL0Vwb3G1zY8++sPtHSvy7qd54u8CIB0Z+Y6t5tc9pNYMYCMwhE/wdSY7ltg==}
     engines: {node: '>=18.12'}
 
   '@pnpm/dependency-path@1001.1.0':
     resolution: {integrity: sha512-hOVNtEu25HTNOdi0PkvDd27AQHXBke18njbGSYJ02J4GbyoufazqP8+YDiC/wQ+28rKOpgUylT7pVlZoTmdUsg==}
+    engines: {node: '>=18.12'}
+
+  '@pnpm/dependency-path@1001.1.2':
+    resolution: {integrity: sha512-fih99/lY+HRRak0U0KMKAO7+nacilWMcvFTH6YDKzjCBTOhxDr6Eeap2mF7uf4ED4dnKsQVNUGmFpvaSXSuFCQ==}
     engines: {node: '>=18.12'}
 
   '@pnpm/error@1000.0.4':
@@ -1618,6 +1626,10 @@ packages:
 
   '@pnpm/graceful-fs@1000.0.0':
     resolution: {integrity: sha512-RvMEliAmcfd/4UoaYQ93DLQcFeqit78jhYmeJJVPxqFGmj0jEcb9Tu0eAOXr7tGP3eJHpgvPbTU4o6pZ1bJhxg==}
+    engines: {node: '>=18.12'}
+
+  '@pnpm/graceful-fs@1000.0.1':
+    resolution: {integrity: sha512-JnzaAVFJIEgwTcB55eww8N3h5B6qJdZqDA2wYkSK+OcTvvMSQb9c2STMhBP6GfkWygG1fs3w8D7JRx9SPZnxJg==}
     engines: {node: '>=18.12'}
 
   '@pnpm/lockfile.detect-dep-types@1001.0.13':
@@ -1675,6 +1687,10 @@ packages:
 
   '@pnpm/types@1000.7.0':
     resolution: {integrity: sha512-1s7FvDqmOEIeFGLUj/VO8sF5lGFxeE/1WALrBpfZhDnMXY/x8FbmuygTTE5joWifebcZ8Ww8Kw2CgBoStsIevQ==}
+    engines: {node: '>=18.12'}
+
+  '@pnpm/types@1000.8.0':
+    resolution: {integrity: sha512-yx86CGHHquWAI0GgKIuV/RnYewcf5fVFZemC45C/K2cX0uV8GB8TUP541ZrokWola2fZx5sn1vL7xzbceRZfoQ==}
     engines: {node: '>=18.12'}
 
   '@pnpm/util.lex-comparator@3.0.2':
@@ -7117,12 +7133,24 @@ snapshots:
       '@pnpm/graceful-fs': 1000.0.0
       ssri: 10.0.5
 
+  '@pnpm/crypto.hash@1000.2.1':
+    dependencies:
+      '@pnpm/crypto.polyfill': 1000.1.0
+      '@pnpm/graceful-fs': 1000.0.1
+      ssri: 10.0.5
+
   '@pnpm/crypto.polyfill@1000.1.0': {}
 
   '@pnpm/dependency-path@1001.1.0':
     dependencies:
       '@pnpm/crypto.hash': 1000.2.0
       '@pnpm/types': 1000.7.0
+      semver: 7.7.2
+
+  '@pnpm/dependency-path@1001.1.2':
+    dependencies:
+      '@pnpm/crypto.hash': 1000.2.1
+      '@pnpm/types': 1000.8.0
       semver: 7.7.2
 
   '@pnpm/error@1000.0.4':
@@ -7134,6 +7162,10 @@ snapshots:
       execa: safe-execa@0.1.2
 
   '@pnpm/graceful-fs@1000.0.0':
+    dependencies:
+      graceful-fs: 4.2.11(patch_hash=17007d43dcc01ee2047730ab13eb23c41adc01ae0f24ee872b1fe69142db5200)
+
+  '@pnpm/graceful-fs@1000.0.1':
     dependencies:
       graceful-fs: 4.2.11(patch_hash=17007d43dcc01ee2047730ab13eb23c41adc01ae0f24ee872b1fe69142db5200)
 
@@ -7219,6 +7251,8 @@ snapshots:
       '@pnpm/types': 1000.7.0
 
   '@pnpm/types@1000.7.0': {}
+
+  '@pnpm/types@1000.8.0': {}
 
   '@pnpm/util.lex-comparator@3.0.2': {}
 
