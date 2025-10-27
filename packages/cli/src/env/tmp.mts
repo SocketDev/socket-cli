@@ -3,6 +3,6 @@
  * Alternative temporary directory path (Windows/Unix systems).
  */
 
-import { env } from 'node:process'
+import { getTmp } from '@socketsecurity/lib/env/temp-dir'
 
-export const TMP = env['TMP']
+export const TMP = getTmp()

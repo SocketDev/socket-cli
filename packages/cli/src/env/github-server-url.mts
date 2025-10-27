@@ -1,5 +1,5 @@
 /** @fileoverview GITHUB_SERVER_URL environment variable. */
 
-import { env } from 'node:process'
+import { getGithubServerUrl } from '@socketsecurity/lib/env/github'
 
-export const GITHUB_SERVER_URL = env['GITHUB_SERVER_URL']
+export const GITHUB_SERVER_URL = getGithubServerUrl()

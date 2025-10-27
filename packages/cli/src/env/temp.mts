@@ -3,6 +3,6 @@
  * Temporary directory path (Windows systems).
  */
 
-import { env } from 'node:process'
+import { getTemp } from '@socketsecurity/lib/env/temp-dir'
 
-export const TEMP = env['TEMP']
+export const TEMP = getTemp()

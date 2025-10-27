@@ -1,5 +1,5 @@
 /** @fileoverview SOCKET_CLI_API_TIMEOUT environment variable. */
 
-import { env } from 'node:process'
+import { getSocketCliApiTimeout } from '@socketsecurity/lib/env/socket-cli'
 
-export const SOCKET_CLI_API_TIMEOUT = env['SOCKET_CLI_API_TIMEOUT']
+export const SOCKET_CLI_API_TIMEOUT = getSocketCliApiTimeout()
