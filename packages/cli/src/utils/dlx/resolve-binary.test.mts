@@ -47,7 +47,7 @@ describe('resolve-binary', () => {
 
     it('should prefer local path over dlx when both available', () => {
       process.env['SOCKET_CLI_COANA_LOCAL_PATH'] = '/local/coana'
-      process.env['INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION'] = '1.0.0'
+      process.env['INLINED_SOCKET_CLI_COANA_VERSION'] = '1.0.0'
 
       const result = resolveCoana()
 

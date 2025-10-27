@@ -5,7 +5,7 @@
   "cpu": [
     "x64"
   ],
-  "description": "Socket CLI native binary for Alpine Linux x64 (musl)",
+  "description": "Socket CLI binary",
   "files": [
     "bin/socket"
   ],

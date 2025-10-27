@@ -233,6 +233,30 @@ packages/<package>/
 - `packages/node-smol-builder` → `build/archive/*/` (Node.js variants), `dist/` (blessed node binary)
 - `packages/cli` → `dist/` (ephemeral Rollup output, gitignored via packages/cli/.gitignore)
 
+**@socketbin Package Conventions**:
+
+🚨 **MANDATORY**: Different directory conventions for executables vs. library assets:
+
+**Executable Binary Packages** (`bin/` directory):
+- `packages/socketbin-cli-<platform>-<arch>/bin/socket` (Linux, Darwin, Windows executables)
+- Contains platform-specific native executables
+- Uses npm `bin` field: `{ "socket": "./bin/socket" }`
+- Gitignore: `bin/` only
+- Published files: `["bin/socket"]`
+
+**Library/Asset Packages** (`dist/` directory):
+- `packages/socketbin-cli-ai/dist/` (WASM binaries + JS wrappers)
+- Contains library assets (WASM, models, JS loaders)
+- Build process: `build/` (intermediates) → `dist/` (final artifacts)
+- Gitignore: `dist/` and `build/`
+- Published files: `["dist"]`
+
+**Rationale**:
+- **Semantic clarity**: `bin/` = npm executables, `dist/` = library distribution assets
+- **npm convention**: Binary packages follow standard npm `bin` field pattern
+- **Build separation**: Asset packages use `build/` for intermediates, `dist/` for blessed output
+- **Monorepo consistency**: Aligns with other package patterns (yoga-layout, minilm-builder)
+
 **Promotion Workflow**:
 1. Build → `build/tmp/` (intermediates)
 2. Success → `build/archive/<timestamp-config>/` (completed build)
