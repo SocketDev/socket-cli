@@ -16,6 +16,7 @@ Thumbs.db
 /npm-debug.log
 /yarn.lock
 /yarn.log
+/.yarnrc.yml
 *.log
 **/build/*.log
 **/.cache
