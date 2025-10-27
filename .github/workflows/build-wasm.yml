@@ -93,6 +93,11 @@ jobs:
       - name: Verify build artifacts
         run: |
           echo "=== Yoga Layout Build Artifacts ==="
+          if [ ! -f "packages/yoga-layout/build/wasm/yoga.wasm" ] || [ ! -f "packages/yoga-layout/build/wasm/yoga.js" ]; then
+            echo "ERROR: Required WASM artifacts not found!"
+            ls -lh packages/yoga-layout/build/wasm/ || echo "Directory does not exist"
+            exit 1
+          fi
           ls -lh packages/yoga-layout/build/wasm/
           echo ""
           echo "yoga.wasm size: $(du -h packages/yoga-layout/build/wasm/yoga.wasm | cut -f1)"
@@ -172,6 +177,11 @@ jobs:
       - name: Verify build artifacts
         run: |
           echo "=== AI Models Build Artifacts ==="
+          if [ ! -f "packages/socketbin-cli-ai/dist/ai.bz" ] || [ ! -f "packages/socketbin-cli-ai/dist/ai.js" ]; then
+            echo "ERROR: Required AI model artifacts not found!"
+            ls -lh packages/socketbin-cli-ai/dist/ || echo "Directory does not exist"
+            exit 1
+          fi
           ls -lh packages/socketbin-cli-ai/dist/
           echo ""
           echo "ai.bz size: $(du -h packages/socketbin-cli-ai/dist/ai.bz | cut -f1)"
@@ -250,11 +260,14 @@ jobs:
       - name: Verify build artifacts
         run: |
           echo "=== ONNX Runtime Build Artifacts ==="
+          if [ ! -f "packages/onnx-runtime-builder/dist/onnxruntime-web.wasm" ]; then
+            echo "ERROR: Required ONNX Runtime WASM artifact not found!"
+            ls -lh packages/onnx-runtime-builder/dist/ || echo "Directory does not exist"
+            exit 1
+          fi
           ls -lh packages/onnx-runtime-builder/dist/
           echo ""
-          if [ -f packages/onnx-runtime-builder/dist/ort-wasm.wasm ]; then
-            echo "ort-wasm.wasm size: $(du -h packages/onnx-runtime-builder/dist/ort-wasm.wasm | cut -f1)"
-          fi
+          echo "onnxruntime-web.wasm size: $(du -h packages/onnx-runtime-builder/dist/onnxruntime-web.wasm | cut -f1)"
 
       - name: Upload ONNX Runtime artifacts
         uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
