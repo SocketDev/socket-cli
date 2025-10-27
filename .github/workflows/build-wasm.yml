@@ -65,16 +65,20 @@ jobs:
       - name: Install Emscripten
         if: steps.yoga-cache.outputs.cache-hit != 'true' || inputs.force
         run: |
+          echo "::group::Installing Emscripten"
           git clone https://github.com/emscripten-core/emsdk.git
           cd emsdk
           ./emsdk install latest
           ./emsdk activate latest
+          echo "::endgroup::"
 
       - name: Build Yoga Layout WASM
         if: steps.yoga-cache.outputs.cache-hit != 'true' || inputs.force
         run: |
+          echo "::group::Building Yoga Layout WASM"
           source emsdk/emsdk_env.sh
           pnpm --filter @socketsecurity/yoga-layout run build
+          echo "::endgroup::"
 
       - name: Verify build artifacts
         run: |
@@ -116,8 +120,10 @@ jobs:
 
       - name: Install Python dependencies
         run: |
+          echo "::group::Installing Python dependencies"
           pip install --upgrade pip
           pip install transformers torch optimum[onnx] "onnxruntime>=1.20.0"
+          echo "::endgroup::"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -138,7 +144,10 @@ jobs:
 
       - name: Build AI models
         if: steps.ai-cache.outputs.cache-hit != 'true' || inputs.force
-        run: pnpm --filter @socketbin/cli-ai run build
+        run: |
+          echo "::group::Building AI models (this will take 10-15 minutes)"
+          pnpm --filter @socketbin/cli-ai run build
+          echo "::endgroup::"
 
       - name: Verify build artifacts
         run: |
@@ -193,16 +202,20 @@ jobs:
       - name: Install Emscripten
         if: steps.onnx-cache.outputs.cache-hit != 'true' || inputs.force
         run: |
+          echo "::group::Installing Emscripten"
           git clone https://github.com/emscripten-core/emsdk.git
           cd emsdk
           ./emsdk install latest
           ./emsdk activate latest
+          echo "::endgroup::"
 
       - name: Build ONNX Runtime WASM
         if: steps.onnx-cache.outputs.cache-hit != 'true' || inputs.force
         run: |
+          echo "::group::Building ONNX Runtime WASM (this will take 20-30 minutes)"
           source emsdk/emsdk_env.sh
           pnpm --filter @socketsecurity/onnx-runtime-builder run build
+          echo "::endgroup::"
 
       - name: Verify build artifacts
         run: |
