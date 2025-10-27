@@ -1,5 +1,5 @@
 /** @fileoverview SOCKET_CLI_API_PROXY environment variable. */
 
-import { env } from 'node:process'
+import { getSocketCliApiProxy } from '@socketsecurity/lib/env/socket-cli'
 
-export const SOCKET_CLI_API_PROXY = env['SOCKET_CLI_API_PROXY']
+export const SOCKET_CLI_API_PROXY = getSocketCliApiProxy()

@@ -1,5 +1,5 @@
 /** @fileoverview npm_config_user_agent environment variable. */
 
-import { env } from 'node:process'
+import { getNpmConfigUserAgent } from '@socketsecurity/lib/env/npm'
 
-export const npm_config_user_agent = env['npm_config_user_agent']
+export const npm_config_user_agent = getNpmConfigUserAgent()

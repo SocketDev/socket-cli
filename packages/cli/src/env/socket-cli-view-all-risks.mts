@@ -1,9 +1,5 @@
 /** @fileoverview SOCKET_CLI_VIEW_ALL_RISKS environment variable. */
 
-import { env } from 'node:process'
+import { getSocketCliViewAllRisks } from '@socketsecurity/lib/env/socket-cli'
 
-import { envAsBoolean } from '@socketsecurity/lib/env'
-
-export const SOCKET_CLI_VIEW_ALL_RISKS = envAsBoolean(
-  env['SOCKET_CLI_VIEW_ALL_RISKS'],
-)
+export const SOCKET_CLI_VIEW_ALL_RISKS = getSocketCliViewAllRisks()

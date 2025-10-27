@@ -3,8 +3,6 @@
  * Enables automatic optimization mode in Socket CLI.
  */
 
-import { env } from 'node:process'
+import { getSocketCliOptimize } from '@socketsecurity/lib/env/socket-cli'
 
-import { envAsBoolean } from '@socketsecurity/lib/env'
-
-export const SOCKET_CLI_OPTIMIZE = envAsBoolean(env['SOCKET_CLI_OPTIMIZE'])
+export const SOCKET_CLI_OPTIMIZE = getSocketCliOptimize()
