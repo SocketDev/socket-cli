@@ -37,6 +37,11 @@ import { normalizePath } from '@socketsecurity/lib/path'
 import { spawn } from '@socketsecurity/lib/spawn'
 import colors from 'yoctocolors-cjs'
 
+import {
+  generateHashComment,
+  shouldExtract,
+} from '@socketsecurity/build-infra/lib/extraction-cache'
+
 import constants from './constants.mjs'
 
 // Inline NODE_SEA_FUSE constant (not exported from constants.mjs).
@@ -480,6 +485,38 @@ async function buildTarget(target, options) {
   // Ensure output directory exists.
   await fs.mkdir(outputDir, { recursive: true })
 
+  // Generate output path.
+  const outputPath = normalizePath(path.join(outputDir, target.outputName))
+
+  // Check if we can use cached SEA build.
+  // Hash the CLI bundle and build script since those are the inputs.
+  const sourcePaths = [cliPath, url.fileURLToPath(import.meta.url)]
+
+  // Store hash in centralized build/.cache/ directory.
+  const cacheDir = normalizePath(path.join(__dirname, '../build/.cache'))
+  await fs.mkdir(cacheDir, { recursive: true })
+  const hashFilePath = normalizePath(path.join(cacheDir, `${target.outputName}.hash`))
+
+  const needsExtraction = await shouldExtract({
+    sourcePaths,
+    outputPath: hashFilePath,
+    validateOutput: () => {
+      // Verify both SEA binary and hash file exist.
+      return existsSync(outputPath) && existsSync(hashFilePath)
+    },
+  })
+
+  if (!needsExtraction) {
+    // Cache hit! SEA binary is up to date.
+    logger.log('')
+    logger.log(`${colors.green('✓')} Using cached SEA binary`)
+    logger.log('CLI bundle unchanged since last build.')
+    logger.log('')
+    logger.log(`Binary: ${outputPath}`)
+    logger.log('')
+    return
+  }
+
   // Create a modified copy of the CLI with SEA compatibility fixes.
   const modifiedCliPath = normalizePath(path.join(outputDir, 'cli-modified.js'))
   let cliContent = await fs.readFile(cliPath, 'utf8')
@@ -552,10 +589,6 @@ if (typeof require !== 'undefined' && (!require.resolve || !require.resolve.path
     target.arch,
   )
 
-  // Generate output path.
-  const outputPath = normalizePath(path.join(outputDir, target.outputName))
-  await fs.mkdir(outputDir, { recursive: true })
-
   // Generate SEA configuration.
   const configPath = await generateSeaConfig(entryPoint, outputPath)
 
@@ -572,6 +605,10 @@ if (typeof require !== 'undefined' && (!require.resolve || !require.resolve.path
     }
 
     logger.log(`${colors.green('✓')} Built ${target.outputName}`)
+
+    // Write source hash to cache file for future builds.
+    const sourceHashComment = await generateHashComment(sourcePaths)
+    await fs.writeFile(hashFilePath, sourceHashComment, 'utf-8')
 
     // Clean up temporary files using trash.
     const filesToClean = [
