@@ -62,8 +62,18 @@ jobs:
           key: yoga-wasm-${{ steps.yoga-cache-key.outputs.hash }}
           restore-keys: yoga-wasm-
 
+      - name: Verify cached artifacts
+        id: yoga-cache-valid
+        run: |
+          if [ -f "packages/yoga-layout/build/wasm/yoga.wasm" ] && [ -f "packages/yoga-layout/build/wasm/yoga.js" ]; then
+            echo "valid=true" >> $GITHUB_OUTPUT
+          else
+            echo "valid=false" >> $GITHUB_OUTPUT
+            echo "Cache restored but artifacts missing, forcing rebuild"
+          fi
+
       - name: Install Emscripten
-        if: steps.yoga-cache.outputs.cache-hit != 'true' || inputs.force
+        if: steps.yoga-cache-valid.outputs.valid != 'true' || inputs.force
         run: |
           echo "::group::Installing Emscripten"
           git clone https://github.com/emscripten-core/emsdk.git
@@ -73,7 +83,7 @@ jobs:
           echo "::endgroup::"
 
       - name: Build Yoga Layout WASM
-        if: steps.yoga-cache.outputs.cache-hit != 'true' || inputs.force
+        if: steps.yoga-cache-valid.outputs.valid != 'true' || inputs.force
         run: |
           echo "::group::Building Yoga Layout WASM"
           source emsdk/emsdk_env.sh
@@ -142,8 +152,18 @@ jobs:
           key: ai-models-${{ steps.ai-cache-key.outputs.hash }}
           restore-keys: ai-models-
 
+      - name: Verify cached artifacts
+        id: ai-cache-valid
+        run: |
+          if [ -f "packages/socketbin-cli-ai/dist/ai.bz" ] && [ -f "packages/socketbin-cli-ai/dist/ai.js" ]; then
+            echo "valid=true" >> $GITHUB_OUTPUT
+          else
+            echo "valid=false" >> $GITHUB_OUTPUT
+            echo "Cache restored but artifacts missing, forcing rebuild"
+          fi
+
       - name: Build AI models
-        if: steps.ai-cache.outputs.cache-hit != 'true' || inputs.force
+        if: steps.ai-cache-valid.outputs.valid != 'true' || inputs.force
         run: |
           echo "::group::Building AI models (this will take 10-15 minutes)"
           pnpm --filter @socketbin/cli-ai run build
@@ -199,8 +219,18 @@ jobs:
           key: onnx-runtime-${{ steps.onnx-cache-key.outputs.hash }}
           restore-keys: onnx-runtime-
 
+      - name: Verify cached artifacts
+        id: onnx-cache-valid
+        run: |
+          if [ -f "packages/onnx-runtime-builder/dist/onnxruntime-web.wasm" ]; then
+            echo "valid=true" >> $GITHUB_OUTPUT
+          else
+            echo "valid=false" >> $GITHUB_OUTPUT
+            echo "Cache restored but artifacts missing, forcing rebuild"
+          fi
+
       - name: Install Emscripten
-        if: steps.onnx-cache.outputs.cache-hit != 'true' || inputs.force
+        if: steps.onnx-cache-valid.outputs.valid != 'true' || inputs.force
         run: |
           echo "::group::Installing Emscripten"
           git clone https://github.com/emscripten-core/emsdk.git
@@ -210,7 +240,7 @@ jobs:
           echo "::endgroup::"
 
       - name: Build ONNX Runtime WASM
-        if: steps.onnx-cache.outputs.cache-hit != 'true' || inputs.force
+        if: steps.onnx-cache-valid.outputs.valid != 'true' || inputs.force
         run: |
           echo "::group::Building ONNX Runtime WASM (this will take 20-30 minutes)"
           source emsdk/emsdk_env.sh
