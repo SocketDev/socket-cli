@@ -4,6 +4,10 @@
   "description": "Custom Yoga Layout WASM build optimized for Socket CLI",
   "type": "module",
   "private": true,
+  "exports": {
+    "./build/yoga.js": "./build/yoga.js",
+    "./build/yoga.wasm": "./build/yoga.wasm"
+  },
   "scripts": {
     "build": "node scripts/build.mjs",
     "build:force": "node scripts/build.mjs --force",
