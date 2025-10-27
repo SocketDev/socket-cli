@@ -40,15 +40,15 @@ describe('flags', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     resetFlagCache()
-    // Save original argv and reset ENV for clean state.
+    // Save original argv and reset NODE_OPTIONS for clean state.
     originalArgv = process.argv
-    ENV.NODE_OPTIONS = ''
+    process.env.NODE_OPTIONS = ''
   })
 
   afterEach(() => {
     // Restore original state.
     process.argv = originalArgv
-    ENV.NODE_OPTIONS = ''
+    delete process.env.NODE_OPTIONS
   })
 
   describe('getMaxOldSpaceSizeFlag', () => {
@@ -61,14 +61,14 @@ describe('flags', () => {
     })
 
     it('respects NODE_OPTIONS', () => {
-      ENV.NODE_OPTIONS = '--max-old-space-size=512'
+      process.env.NODE_OPTIONS = '--max-old-space-size=512'
       resetFlagCache()
 
       const result = getMaxOldSpaceSizeFlag()
       expect(result).toBe(512)
 
       // Cleanup.
-      ENV.NODE_OPTIONS = ''
+      delete process.env.NODE_OPTIONS
     })
 
     it('respects user-provided flag', () => {
@@ -106,14 +106,14 @@ describe('flags', () => {
     })
 
     it('respects NODE_OPTIONS', () => {
-      ENV.NODE_OPTIONS = '--max-semi-space-size=16'
+      process.env.NODE_OPTIONS = '--max-semi-space-size=16'
       resetFlagCache()
 
       const result = getMaxSemiSpaceSizeFlag()
       expect(result).toBe(16)
 
       // Cleanup.
-      ENV.NODE_OPTIONS = ''
+      delete process.env.NODE_OPTIONS
     })
 
     it('respects user-provided flag', () => {
