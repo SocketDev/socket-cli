@@ -148,36 +148,41 @@ jobs:
 
           # Install Emscripten if needed for Yoga/ONNX.
           if [ "${{ steps.yoga-cache.outputs.cache-hit }}" != "true" ] || [ "${{ steps.onnx-cache.outputs.cache-hit }}" != "true" ]; then
-            echo "Installing Emscripten..."
+            echo "::group::Installing Emscripten"
             git clone https://github.com/emscripten-core/emsdk.git
             cd emsdk
             ./emsdk install latest
             ./emsdk activate latest
             source ./emsdk_env.sh
             cd ..
+            echo "::endgroup::"
           fi
 
           # Install Python deps if needed for AI models.
           if [ "${{ steps.ai-cache.outputs.cache-hit }}" != "true" ]; then
-            echo "Installing Python dependencies..."
+            echo "::group::Installing Python dependencies"
             python3 -m pip install --upgrade pip
             python3 -m pip install transformers torch optimum[onnx] "onnxruntime>=1.20.0"
+            echo "::endgroup::"
           fi
 
           # Build missing WASM assets.
           if [ "${{ steps.yoga-cache.outputs.cache-hit }}" != "true" ]; then
-            echo "Building Yoga Layout WASM..."
+            echo "::group::Building Yoga Layout WASM"
             pnpm --filter @socketsecurity/yoga-layout run build
+            echo "::endgroup::"
           fi
 
           if [ "${{ steps.ai-cache.outputs.cache-hit }}" != "true" ]; then
-            echo "Building AI models..."
+            echo "::group::Building AI models (10-15 minutes)"
             pnpm --filter @socketbin/cli-ai run build
+            echo "::endgroup::"
           fi
 
           if [ "${{ steps.onnx-cache.outputs.cache-hit }}" != "true" ]; then
-            echo "Building ONNX Runtime..."
+            echo "::group::Building ONNX Runtime (20-30 minutes)"
             pnpm --filter @socketsecurity/onnx-runtime-builder run build
+            echo "::endgroup::"
           fi
 
           echo "✓ WASM assets built successfully"
