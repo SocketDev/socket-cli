@@ -41,6 +41,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: build-socketbin-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-smol:
     name: 🧱 Build smol binary - ${{ matrix.platform }}-${{ matrix.arch }}
