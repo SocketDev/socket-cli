@@ -122,20 +122,14 @@ node --import=./scripts/load.mjs scripts/build-yao-pkg-node.mjs --clean
 ### CLI-Specific Notes
 - **Dynamic imports**: Only use dynamic imports for test mocking (e.g., `vi.importActual` in Vitest). Avoid runtime dynamic imports in production code
 
-### Custom Node.js Binary (yao-pkg Patched)
-- **Testing yao-pkg binaries**: The custom-built Node.js binary has yao-pkg patches that modify argument handling
-- **🚨 CRITICAL**: Always use `PKG_EXECPATH=PKG_INVOKE_NODEJS` when testing the binary directly
-  - ✅ CORRECT: `PKG_EXECPATH=PKG_INVOKE_NODEJS .node-source/out/Release/node --version`
-  - ❌ WRONG: `.node-source/out/Release/node --version` (treats `--version` as module path)
-- **Why this happens**: yao-pkg's PKG_DUMMY_ENTRYPOINT behavior interprets the first argument as a module to load unless `PKG_EXECPATH=PKG_INVOKE_NODEJS` is set
-- **Build script wrapper**: The build script automatically sets this environment variable when testing binaries
+### Custom Node.js Binary
 - **Binary locations**:
   - `.node-source/out/Release/node` - Main build output (stripped, signed)
   - `build/out/Release/node` - Copy for distribution
 
 ### Socket Node.js Patches
 
-Socket CLI applies custom patches to Node.js during the yao-pkg build process. These patches enable critical functionality like Brotli compression, SEA support, and size optimizations.
+Socket CLI applies custom patches to Node.js during the build process. These patches enable critical functionality like Brotli compression, SEA support, and size optimizations.
 
 **🚨 CRITICAL REQUIREMENTS**:
 - **Patches are the ONLY way to modify Node.js source** - Direct modifications to files are forbidden.
