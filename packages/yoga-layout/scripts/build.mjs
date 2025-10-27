@@ -18,8 +18,7 @@ import { fileURLToPath } from 'node:url'
 
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { logger } from '@socketsecurity/lib/logger'
-
-import { exec } from '@socketsecurity/build-infra/lib/build-exec'
+import { spawn } from '@socketsecurity/lib/spawn'
 import {
   printSetupResults,
   setupBuildEnvironment,
@@ -77,10 +76,10 @@ async function cloneYogaSource() {
   await fs.mkdir(BUILD_DIR, { recursive: true })
 
   printStep(`Cloning Yoga ${YOGA_VERSION}...`)
-  await exec(
-    `git clone --depth 1 --branch ${YOGA_VERSION} ${YOGA_REPO} ${YOGA_SOURCE_DIR}`,
-    { shell: WIN32, stdio: 'inherit' }
-  )
+  await spawn('git', ['clone', '--depth', '1', '--branch', YOGA_VERSION, YOGA_REPO, YOGA_SOURCE_DIR], {
+    shell: WIN32,
+    stdio: 'inherit',
+  })
 
   printSuccess(`Yoga ${YOGA_VERSION} cloned`)
   await createCheckpoint('yoga-layout', 'cloned')
@@ -150,20 +149,23 @@ async function configure() {
   ].join(' ')
 
   const cmakeArgs = [
+    'cmake',
     `-DCMAKE_TOOLCHAIN_FILE=${toolchainFile}`,
     '-DCMAKE_BUILD_TYPE=Release',
-    `-DCMAKE_CXX_FLAGS="${cxxFlags}"`,
-    `-DCMAKE_EXE_LINKER_FLAGS="${linkerFlags}"`,
-    `-DCMAKE_SHARED_LINKER_FLAGS="${linkerFlags}"`,
-    `-S ${YOGA_SOURCE_DIR}`,
-    `-B ${cmakeBuildDir}`,
-  ].join(' ')
+    `-DCMAKE_CXX_FLAGS=${cxxFlags}`,
+    `-DCMAKE_EXE_LINKER_FLAGS=${linkerFlags}`,
+    `-DCMAKE_SHARED_LINKER_FLAGS=${linkerFlags}`,
+    `-S`,
+    YOGA_SOURCE_DIR,
+    `-B`,
+    cmakeBuildDir,
+  ]
 
   printStep('Optimization flags:')
   printStep(`  CXX: ${cxxFlags}`)
   printStep(`  Linker: ${linkerFlags}`)
 
-  await exec(`emcmake cmake ${cmakeArgs}`, { shell: WIN32, stdio: 'inherit' })
+  await spawn('emcmake', cmakeArgs, { shell: WIN32, stdio: 'inherit' })
 
   printSuccess('CMake configured')
   await createCheckpoint('yoga-layout', 'configured')
@@ -184,7 +186,7 @@ async function build() {
 
   // Build static library with CMake.
   printStep('Compiling C++ to static library...')
-  await exec(`emmake cmake --build ${cmakeBuildDir} --target yogacore`, {
+  await spawn('emmake', ['cmake', '--build', cmakeBuildDir, '--target', 'yogacore'], {
     shell: WIN32,
     stdio: 'inherit',
   })
@@ -226,14 +228,20 @@ async function build() {
   ].join(' ')
 
   // Compile and link in one step.
-  await exec(
-    `em++ ` +
-      `-I ${path.join(BUILD_DIR, 'yoga-source')} ` +
-      `${cxxFlags} ${bindingsFile} ${staticLib} ` +
-      `${linkerFlags} ` +
-      `-o ${jsOutput}`,
-    { shell: WIN32, stdio: 'inherit' }
-  )
+  const emArgs = [
+    `-I${path.join(BUILD_DIR, 'yoga-source')}`,
+    ...cxxFlags.split(' '),
+    bindingsFile,
+    staticLib,
+    ...linkerFlags.split(' '),
+    '-o',
+    jsOutput,
+  ]
+
+  await spawn('em++', emArgs, {
+    shell: WIN32,
+    stdio: 'inherit',
+  })
 
   printSuccess(`JS glue code created: ${jsOutput}`)
   printSuccess(`WASM module created: ${wasmOutput}`)
@@ -290,7 +298,7 @@ async function optimize() {
     '--strip-target-features',
   ].join(' ')
 
-  await exec(`wasm-opt ${wasmOptFlags} "${wasmFile}" -o "${wasmFile}"`, {
+  await spawn('wasm-opt', [...wasmOptFlags.split(' '), wasmFile, '-o', wasmFile], {
     shell: WIN32,
     stdio: 'inherit',
   })

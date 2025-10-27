@@ -6,7 +6,6 @@
   "private": true,
   "exports": {
     "./lib/build-env": "./lib/build-env.mjs",
-    "./lib/build-exec": "./lib/build-exec.mjs",
     "./lib/build-helpers": "./lib/build-helpers.mjs",
     "./lib/build-output": "./lib/build-output.mjs",
     "./lib/checkpoint-manager": "./lib/checkpoint-manager.mjs",
