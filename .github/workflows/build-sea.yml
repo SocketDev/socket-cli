@@ -15,18 +15,8 @@ on:
         required: false
         type: boolean
         default: false
-  push:
-    branches: [main]
-    paths:
-      - 'packages/node-sea-builder/**'
-      - 'packages/cli/src/**'
-      - '.github/workflows/build-sea.yml'
-  pull_request:
-    branches: [main]
-    paths:
-      - 'packages/node-sea-builder/**'
-      - 'packages/cli/src/**'
-      - '.github/workflows/build-sea.yml'
+  # Removed push/pull_request triggers to prevent automatic builds.
+  # Run manually via workflow_dispatch or via workflow_call from build-socketbin.yml.
 
 permissions:
   contents: read
