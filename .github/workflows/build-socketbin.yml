@@ -22,7 +22,7 @@ on:
     paths:
       - 'packages/node-smol-builder/**'
       - 'packages/node-sea-builder/**'
-      - 'build/patches/**'
+      - 'patches/**'
       - 'scripts/build-yao-pkg-node.mjs'
       - '.github/workflows/build-socketbin.yml'
   pull_request:
@@ -30,7 +30,7 @@ on:
     paths:
       - 'packages/node-smol-builder/**'
       - 'packages/node-sea-builder/**'
-      - 'build/patches/**'
+      - 'patches/**'
       - 'scripts/build-yao-pkg-node.mjs'
       - '.github/workflows/build-socketbin.yml'
 
@@ -107,7 +107,7 @@ jobs:
         id: smol-cache-key
         shell: bash
         run: |
-          HASH=$(find build/patches packages/node-smol-builder scripts -type f \( -name "*.patch" -o -name "*.mjs" \) | sort | xargs shasum -a 256 | shasum -a 256 | cut -d' ' -f1)
+          HASH=$(find patches packages/node-smol-builder scripts -type f \( -name "*.patch" -o -name "*.mjs" \) | sort | xargs shasum -a 256 | shasum -a 256 | cut -d' ' -f1)
           echo "hash=$HASH" >> $GITHUB_OUTPUT
 
       - name: Restore smol binary cache
