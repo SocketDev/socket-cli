@@ -9,7 +9,9 @@ import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { whichBinSync } from '@socketsecurity/lib/bin'
 import { spawn } from '@socketsecurity/lib/spawn'
 
-import { execCapture } from './build-exec.mjs'
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
+import { spawn } from '@socketsecurity/lib/spawn'
+// Removed execCapture from './build-exec.mjs'
 import { printError, printStep, printSubstep, printWarning } from './build-output.mjs'
 
 /**

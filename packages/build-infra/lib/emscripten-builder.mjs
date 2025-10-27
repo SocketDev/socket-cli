@@ -7,7 +7,9 @@
 import { cpus } from 'node:os'
 import path from 'node:path'
 
-import { exec } from './build-exec.mjs'
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
+import { spawn } from '@socketsecurity/lib/spawn'
+// Removed exec from './build-exec.mjs'
 import { printStep } from './build-output.mjs'
 
 /**

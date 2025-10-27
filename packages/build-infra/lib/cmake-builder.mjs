@@ -6,7 +6,9 @@
 
 import { cpus } from 'node:os'
 
-import { exec } from './build-exec.mjs'
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
+import { spawn } from '@socketsecurity/lib/spawn'
+
 import { printStep } from './build-output.mjs'
 
 export class CMakeBuilder {
@@ -28,9 +30,10 @@ export class CMakeBuilder {
       .map(([key, value]) => `-D${key}=${value}`)
       .join(' ')
 
-    await exec(
+    await spawn(
       `cmake -S ${this.sourceDir} -B ${this.buildDir} ${cmakeArgs}`,
-      { stdio: 'inherit' }
+      [],
+      { shell: WIN32, stdio: 'inherit' }
     )
   }
 
@@ -46,9 +49,10 @@ export class CMakeBuilder {
     printStep('Building with CMake')
 
     const jobs = parallel ? cpus().length : 1
-    await exec(
+    await spawn(
       `cmake --build ${this.buildDir} --target ${target} -j ${jobs}`,
-      { stdio: 'inherit' }
+      [],
+      { shell: WIN32, stdio: 'inherit' }
     )
   }
 
@@ -59,6 +63,10 @@ export class CMakeBuilder {
    */
   async clean() {
     printStep('Cleaning CMake build')
-    await exec(`cmake --build ${this.buildDir} --target clean`)
+    await spawn(
+      `cmake --build ${this.buildDir} --target clean`,
+      [],
+      { shell: WIN32, stdio: 'inherit' }
+    )
   }
 }
