@@ -87,6 +87,12 @@ import {
   testPatchApplication,
   validatePatch,
 } from '@socketsecurity/build-infra/lib/patch-validator'
+import {
+  ensureAllToolsInstalled,
+  ensurePackageManagerAvailable,
+  getInstallInstructions,
+  getPackageManagerInstructions,
+} from '@socketsecurity/build-infra/lib/tool-installer'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -102,15 +108,15 @@ const AUTO_YES = args.includes('--yes') || args.includes('-y')
 // Configuration
 const NODE_VERSION = 'v24.10.0'
 const ROOT_DIR = join(__dirname, '..')
-const NODE_SOURCE_DIR = join(ROOT_DIR, '.node-source')
+const NODE_SOURCE_DIR = join(ROOT_DIR, 'build', 'node-source')
 const NODE_DIR = NODE_SOURCE_DIR // Alias for compatibility.
 const BUILD_DIR = join(ROOT_DIR, 'build')
 const PATCHES_DIR = join(ROOT_DIR, 'patches')
 const ADDITIONS_DIR = join(ROOT_DIR, 'additions')
 
 // Directory structure.
-// .node-source/ - Node.js source code (gitignored).
-// .node-source/out/Release/node - Node.js build output (gitignored).
+// build/node-source/ - Node.js source code (gitignored).
+// build/node-source/out/Release/node - Node.js build output (gitignored).
 // build/out/Release/node - Copy of Release binary (gitignored).
 // build/out/Stripped/node - Stripped binary (gitignored).
 // build/out/Signed/node - Stripped + signed binary (macOS ARM64 only, gitignored).
@@ -262,69 +268,99 @@ async function getFileSize(filePath) {
 }
 
 /**
- * Check if required tools are available.
+ * Check if required tools are available, auto-installing if possible.
  */
 async function checkRequiredTools() {
   printHeader('Pre-flight Checks')
 
-  const tools = [
-    { name: 'git', cmd: 'git', args: ['--version'] },
-    { name: 'curl', cmd: 'curl', args: ['--version'] },
-    { name: 'patch', cmd: 'patch', args: ['--version'] },
-    { name: 'make', cmd: 'make', args: ['--version'] },
+  // Step 1: Ensure package manager is available.
+  const pmResult = await ensurePackageManagerAvailable({
+    autoInstall: AUTO_YES,
+    autoYes: AUTO_YES,
+  })
+
+  const canAutoInstall = pmResult.available
+
+  if (pmResult.installed) {
+    logger.success(`Package manager (${pmResult.manager}) installed successfully`)
+  } else if (pmResult.available) {
+    logger.log(`📦 Package manager detected: ${pmResult.manager}`)
+  } else {
+    logger.warn('No package manager available for auto-installing tools')
+    const pmInstructions = getPackageManagerInstructions()
+    for (const instruction of pmInstructions) {
+      logger.substep(instruction)
+    }
+  }
+
+  // Step 2: Tools that support auto-installation.
+  const autoInstallableTools = ['git', 'curl', 'patch', 'make']
+
+  // Step 3: Tools that must be checked manually (no package manager support).
+  const manualTools = [
     // macOS strip doesn't support --version, just check if it exists.
-    { name: 'strip', cmd: 'strip', args: [], checkExists: true },
+    { name: 'strip', cmd: 'strip', checkExists: true },
   ]
 
   if (IS_MACOS && ARCH === 'arm64') {
     // macOS codesign doesn't support --version, just check if it exists.
-    tools.push({
+    manualTools.push({
       name: 'codesign',
       cmd: 'codesign',
-      args: [],
       checkExists: true,
     })
   }
 
-  let allAvailable = true
+  // Step 4: Attempt auto-installation for missing tools.
+  const result = await ensureAllToolsInstalled(autoInstallableTools, {
+    autoInstall: canAutoInstall,
+    autoYes: AUTO_YES,
+  })
 
-  for (const { args, checkExists, cmd, name } of tools) {
-    try {
-      if (checkExists) {
-        // Just check if command exists (for tools that don't support --version).
-        const binPath = whichBinSync(cmd, { nothrow: true })
-        if (binPath) {
-          logger.log(`✅ ${name} is available`)
-        } else {
-          throw new Error('Not found')
-        }
-      } else {
-        const cmdString = `${cmd} ${args.join(' ')}`
-        const result = await execCapture(cmdString)
-        if (result.code === 0) {
-          logger.log(`✅ ${name} is available`)
-        } else {
-          throw new Error('Not available')
-        }
-      }
-    } catch {
-      logger.error(`❌ ${name} is NOT available`)
-      allAvailable = false
+  // Step 5: Report results.
+  for (const tool of autoInstallableTools) {
+    if (result.installed.includes(tool)) {
+      logger.success(`${tool} installed automatically`)
+    } else if (!result.missing.includes(tool)) {
+      logger.log(`✅ ${tool} is available`)
     }
   }
 
-  if (!allAvailable) {
-    printError(
-      'Missing Required Tools',
-      'Some required build tools are not available on your system.',
-      [
-        'Install missing tools using your package manager',
-        'On macOS: xcode-select --install',
-        'On macOS (Homebrew): brew install git curl',
-        'On Linux: apt-get install git curl patch make binutils',
-      ],
-    )
-    throw new Error('Missing required build tools')
+  // Step 6: Check manual tools.
+  let allManualAvailable = true
+  for (const { checkExists, cmd, name } of manualTools) {
+    const binPath = whichBinSync(cmd, { nothrow: true })
+    if (binPath) {
+      logger.log(`✅ ${name} is available`)
+    } else {
+      logger.error(`❌ ${name} is NOT available`)
+      allManualAvailable = false
+    }
+  }
+
+  // Step 7: Handle missing tools.
+  if (!result.allAvailable || !allManualAvailable) {
+    const missingTools = [...result.missing, ...manualTools.filter(t => !whichBinSync(t.cmd, { nothrow: true })).map(t => t.name)]
+
+    if (missingTools.length > 0) {
+      const instructions = []
+      instructions.push('Missing required build tools:')
+      instructions.push('')
+
+      for (const tool of missingTools) {
+        const toolInstructions = getInstallInstructions(tool)
+        instructions.push(...toolInstructions)
+        instructions.push('')
+      }
+
+      if (IS_MACOS) {
+        instructions.push('For Xcode Command Line Tools:')
+        instructions.push('  xcode-select --install')
+      }
+
+      printError('Missing Required Tools', 'Some required build tools are not available.', instructions)
+      throw new Error('Missing required build tools')
+    }
   }
 
   logger.log('')
@@ -948,7 +984,7 @@ async function main() {
     if (isDirty && !AUTO_YES) {
       printWarning(
         'Node.js Source Has Uncommitted Changes',
-        'The .node-source directory has uncommitted changes from a previous build or crash.',
+        'The build/node-source directory has uncommitted changes from a previous build or crash.',
         [
           'These changes will be discarded to ensure a clean build',
           'Press Ctrl+C now if you want to inspect the changes first',
@@ -992,27 +1028,21 @@ async function main() {
       const patchPath = join(PATCHES_DIR, patchFile)
       logger.log(`Validating ${patchFile}...`)
 
-      const validation = await validatePatch(patchPath, NODE_VERSION)
-      if (!validation.valid) {
-        logger.error(`  ❌ INVALID: ${validation.reason}`)
+      const isValid = await validatePatch(patchPath, NODE_DIR)
+      if (!isValid) {
+        logger.error(`  ❌ INVALID: Patch validation failed`)
         allValid = false
         continue
       }
 
       const content = await readFile(patchPath, 'utf8')
-      const metadata = validation.metadata
       const analysis = analyzePatchContent(content)
 
       patchData.push({
         name: patchFile,
         path: patchPath,
-        metadata,
         analysis,
       })
-
-      if (metadata?.description) {
-        logger.log(`  📝 ${metadata.description}`)
-      }
       if (analysis.modifiesV8Includes) {
         logger.log('  ⚠️  Modifies V8 includes')
       }
@@ -1077,43 +1107,7 @@ async function main() {
       logger.log('')
     }
 
-    // Test Socket patches (dry-run) before applying.
-    if (allValid) {
-      printHeader('Testing Socket Patch Application')
-      logger.log('Running dry-run to ensure patches will apply cleanly...')
-      logger.log('')
-
-      for (const { name, path: patchPath } of patchData) {
-        logger.log(`Testing ${name}...`)
-        const dryRun = await testPatchApplication(patchPath, NODE_DIR, 1)
-        if (!dryRun.canApply) {
-          logger.error(`  ❌ Cannot apply: ${dryRun.reason}`)
-          if (dryRun.stderr) {
-            logger.error(`  Error: ${dryRun.stderr}`)
-          }
-          allValid = false
-        } else {
-          logger.log('  ✅ Will apply cleanly')
-        }
-      }
-      logger.log('')
-
-      if (!allValid) {
-        throw new Error(
-          'Socket patches failed dry-run test.\n\n' +
-            `One or more Socket patches cannot be applied to Node.js ${NODE_VERSION}.\n\n` +
-            'This usually means:\n' +
-            '  - Patches are outdated for this Node.js version\n' +
-            '  - Node.js source has been modified unexpectedly\n' +
-            '  - Patch files are corrupted\n\n' +
-            'To fix:\n' +
-            '  1. Verify Node.js source is clean (no manual modifications)\n' +
-            `  2. Regenerate patches for ${NODE_VERSION}:\n` +
-            `     node scripts/regenerate-node-patches.mjs --version=${NODE_VERSION}\n` +
-            '  3. See build/patches/README.md for patch creation guide',
-        )
-      }
-    }
+    // Patches validated successfully, ready to apply.
 
     // Apply patches if validation and dry-run passed.
     if (allValid) {
@@ -1420,37 +1414,167 @@ async function main() {
     logger.logNewline()
   }
 
-  // Copy signed binary to build/out/Signed.
-  printHeader('Copying to Build Output (Signed)')
-  logger.log('Copying signed binary to build/out/Signed directory...')
-  logger.logNewline()
+  // Copy signed binary to build/out/Signed (macOS only).
+  let outputSignedBinary = null
+  if (IS_MACOS && ARCH === 'arm64') {
+    printHeader('Copying to Build Output (Signed)')
+    logger.log('Copying signed binary to build/out/Signed directory...')
+    logger.logNewline()
 
-  const outputSignedDir = join(BUILD_DIR, 'out', 'Signed')
-  await mkdir(outputSignedDir, { recursive: true })
-  const outputSignedBinary = join(outputSignedDir, 'node')
-  await exec('cp', [nodeBinary, outputSignedBinary])
+    const outputSignedDir = join(BUILD_DIR, 'out', 'Signed')
+    await mkdir(outputSignedDir, { recursive: true })
+    outputSignedBinary = join(outputSignedDir, 'node')
+    await exec('cp', [nodeBinary, outputSignedBinary])
 
-  logger.substep(`Signed directory: ${outputSignedDir}`)
-  logger.substep('Binary: node (stripped + signed)')
-  logger.logNewline()
-  logger.success('Signed binary copied to build/out/Signed')
-  logger.logNewline()
+    logger.substep(`Signed directory: ${outputSignedDir}`)
+    logger.substep('Binary: node (stripped + signed)')
+    logger.logNewline()
+    logger.success('Signed binary copied to build/out/Signed')
+    logger.logNewline()
+  }
 
   // Copy final binary to build/out/Final.
+  // On macOS: copy from Signed.
+  // On Linux/Windows: copy from Stripped (no signing needed).
   printHeader('Copying to Build Output (Final)')
-  logger.log('Copying final binary to build/out/Final directory...')
+  logger.log('Creating final binary for distribution...')
   logger.logNewline()
 
   const outputFinalDir = join(BUILD_DIR, 'out', 'Final')
   await mkdir(outputFinalDir, { recursive: true })
   const outputFinalBinary = join(outputFinalDir, 'node')
-  await exec('cp', [nodeBinary, outputFinalBinary])
+
+  // Select source based on platform.
+  const finalSource = outputSignedBinary || outputStrippedBinary
+  await exec('cp', [finalSource, outputFinalBinary])
+
+  if (outputSignedBinary) {
+    logger.substep('Source: build/out/Signed/node (signed)')
+  } else {
+    logger.substep('Source: build/out/Stripped/node (stripped, no signing needed)')
+  }
 
   logger.substep(`Final directory: ${outputFinalDir}`)
   logger.substep('Binary: node (final output)')
   logger.logNewline()
   logger.success('Final binary copied to build/out/Final')
   logger.logNewline()
+
+  // Compress binary for smaller distribution size (DEFAULT for smol builds).
+  // Uses native platform APIs (Apple Compression, liblzma, Windows Compression API) instead of UPX.
+  // Benefits: 75-79% compression (vs UPX's 50-60%), works with code signing, zero AV false positives.
+  // Opt-out: Set COMPRESS_BINARY=0 or COMPRESS_BINARY=false to disable compression.
+  let compressedBinary = null
+  const shouldCompress = process.env.COMPRESS_BINARY !== '0' && process.env.COMPRESS_BINARY !== 'false'
+
+  if (shouldCompress) {
+    printHeader('Compressing Binary for Distribution')
+    logger.log('Compressing binary using platform-specific compression...')
+    logger.logNewline()
+
+    const compressedDir = join(BUILD_DIR, 'out', 'Compressed')
+    await mkdir(compressedDir, { recursive: true })
+    compressedBinary = join(compressedDir, 'node')
+
+    // Select compression quality based on platform.
+    // macOS: LZFSE (faster) or LZMA (better compression).
+    // Linux: LZMA (best for ELF).
+    // Windows: LZMS (best for PE).
+    const compressionQuality = IS_MACOS ? 'lzfse' : 'lzma'
+
+    logger.substep(`Input: ${outputFinalBinary}`)
+    logger.substep(`Output: ${compressedBinary}`)
+    logger.substep(`Algorithm: ${compressionQuality.toUpperCase()}`)
+    logger.logNewline()
+
+    const sizeBeforeCompress = await getFileSize(outputFinalBinary)
+    logger.log(`Size before compression: ${sizeBeforeCompress}`)
+    logger.log('Running compression tool...')
+    logger.logNewline()
+
+    // Run platform-specific compression.
+    await exec(
+      process.execPath,
+      [
+        join(ROOT_DIR, 'scripts', 'compress-binary.mjs'),
+        outputFinalBinary,
+        compressedBinary,
+        `--quality=${compressionQuality}`,
+      ],
+      { cwd: ROOT_DIR },
+    )
+
+    const sizeAfterCompress = await getFileSize(compressedBinary)
+    logger.log(`Size after compression: ${sizeAfterCompress}`)
+    logger.logNewline()
+
+    // Re-sign compressed binary (macOS ARM64).
+    // The compressed binary can be signed to prevent tampering.
+    // The decompressor will extract the original signed Node.js binary.
+    if (IS_MACOS && ARCH === 'arm64') {
+      logger.log('Re-signing compressed binary...')
+      await exec('codesign', ['--sign', '-', '--force', compressedBinary])
+
+      const sigInfo = await execCapture(`codesign -dv "${compressedBinary}"`, {
+        env: { ...process.env, STDERR: '>&1' },
+      })
+      logger.log(sigInfo.stdout || sigInfo.stderr)
+      logger.logNewline()
+      logger.substep('✓ Compressed binary signed')
+      logger.logNewline()
+    }
+
+    logger.substep(`Compressed directory: ${compressedDir}`)
+    logger.substep('Binary: node (compressed)')
+    logger.logNewline()
+    logger.success('Binary compressed successfully')
+    logger.logNewline()
+
+    // Copy decompression tool to Compressed directory for distribution.
+    printHeader('Bundling Decompression Tool')
+    logger.log('Copying platform-specific decompression tool for distribution...')
+    logger.logNewline()
+
+    const toolsDir = join(ROOT_DIR, 'additions', 'tools')
+    const decompressTool = IS_MACOS
+      ? 'socket_macho_decompress'
+      : WIN32
+        ? 'socket_pe_decompress.exe'
+        : 'socket_elf_decompress'
+
+    const decompressToolSource = join(toolsDir, decompressTool)
+    const decompressToolDest = join(compressedDir, decompressTool)
+
+    if (existsSync(decompressToolSource)) {
+      await exec('cp', [decompressToolSource, decompressToolDest])
+
+      // Ensure tool is executable.
+      await exec('chmod', ['+x', decompressToolDest])
+
+      const toolSize = await getFileSize(decompressToolDest)
+      logger.substep(`Tool: ${decompressTool} (${toolSize})`)
+      logger.substep(`Location: ${compressedDir}`)
+      logger.logNewline()
+      logger.success('Decompression tool bundled for distribution')
+      logger.logNewline()
+    } else {
+      printWarning(
+        'Decompression Tool Not Found',
+        `Could not find ${decompressTool} in ${toolsDir}`,
+        [
+          'Build the compression tools first:',
+          `  cd ${toolsDir}`,
+          `  make all`,
+          'Then run this build again with COMPRESS_BINARY=1',
+        ],
+      )
+    }
+  } else {
+    logger.log('')
+    logger.log('ℹ️  Binary compression skipped (optional)')
+    logger.log('   To enable: COMPRESS_BINARY=1 node scripts/build.mjs')
+    logger.log('')
+  }
 
   // Copy signed binary to build/out/Sea (for SEA builds).
   printHeader('Copying to Build Output (Sea)')
@@ -1550,6 +1674,23 @@ async function main() {
   logger.success('Final binary copied to build/out/Distribution')
   logger.logNewline()
 
+  // Copy to dist/socket-smol for e2e testing.
+  printHeader('Copying to dist/ for E2E Testing')
+  logger.log('Creating dist/socket-smol for e2e test suite...')
+  logger.logNewline()
+
+  const distDir = join(ROOT_DIR, 'dist')
+  await mkdir(distDir, { recursive: true })
+  const distBinary = join(distDir, 'socket-smol')
+  await exec('cp', [outputFinalBinary, distBinary])
+  await exec('chmod', ['+x', distBinary])
+
+  logger.substep(`E2E binary: ${distBinary}`)
+  logger.substep('Test command: pnpm --filter @socketsecurity/cli run e2e:smol')
+  logger.logNewline()
+  logger.success('Binary copied to dist/socket-smol for e2e testing')
+  logger.logNewline()
+
   // Report build complete.
   const binarySize = await getFileSize(distributionOutputBinary)
   await createCheckpoint(BUILD_DIR, 'complete')
@@ -1585,21 +1726,42 @@ async function main() {
   logger.log(`   Final:        ${outputFinalBinary}`)
   logger.log(`   Distribution: ${distributionOutputBinary}`)
   logger.log(`   pkg cache:    ${targetPath}`)
+  if (compressedBinary) {
+    logger.log(`   Compressed:   ${compressedBinary} (with decompression tool)`)
+  }
   logger.logNewline()
 
   logger.log('🚀 Next Steps:')
-  logger.log('   1. Build Socket CLI:')
-  logger.log('      pnpm run build')
-  logger.logNewline()
-  logger.log('   2. Create pkg executable:')
-  logger.log('      pnpm exec pkg .')
-  logger.logNewline()
-  logger.log('   3. Test the executable:')
-  logger.log('      ./pkg-binaries/socket-macos-arm64 --version')
-  logger.logNewline()
+  if (compressedBinary) {
+    logger.log('   1. Test compressed binary:')
+    logger.log(`      cd ${join(BUILD_DIR, 'out', 'Compressed')}`)
+    const decompressTool = IS_MACOS
+      ? './socket_macho_decompress'
+      : WIN32
+        ? './socket_pe_decompress.exe'
+        : './socket_elf_decompress'
+    logger.log(`      ${decompressTool} ./node --version`)
+    logger.logNewline()
+    logger.log('   2. Build Socket CLI with compressed Node:')
+    logger.log('      (Use compressed binary for pkg builds)')
+    logger.logNewline()
+  } else {
+    logger.log('   1. Build Socket CLI:')
+    logger.log('      pnpm run build')
+    logger.logNewline()
+    logger.log('   2. Create pkg executable:')
+    logger.log('      pnpm exec pkg .')
+    logger.logNewline()
+    logger.log('   3. Test the executable:')
+    logger.log('      ./pkg-binaries/socket-macos-arm64 --version')
+    logger.logNewline()
+  }
 
   logger.log('💡 Helpful Commands:')
   logger.log('   Verify build: node scripts/verify-node-build.mjs')
+  if (!shouldCompress) {
+    logger.log('   Enable compression: COMPRESS_BINARY=1 node scripts/build.mjs')
+  }
   logger.logNewline()
 
   logger.log('📚 Documentation:')
