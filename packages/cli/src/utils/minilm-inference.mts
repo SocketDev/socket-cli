@@ -92,8 +92,8 @@ export class MiniLMInference {
    * Create MiniLM inference engine.
    *
    * INITIALIZATION PROCESS:
-   * 1. Load ONNX Runtime WASM (from external/onnx-sync.mjs)
-   * 2. Load MiniLM model (from external/minilm-sync.mjs)
+   * 1. Load ONNX Runtime WASM (from build/onnx-sync.mjs)
+   * 2. Load MiniLM model (from build/minilm-sync.mjs)
    * 3. Load tokenizer vocabulary
    * 4. Create ONNX inference session
    * 5. Initialize tokenizer
@@ -102,16 +102,16 @@ export class MiniLMInference {
    */
   static async create(): Promise<MiniLMInference> {
     // Step 1: Import ONNX Runtime with embedded WASM.
-    // This loads from external/onnx-sync.mjs which has the WASM inlined.
+    // This loads from build/onnx-sync.mjs which has the WASM inlined.
     // @ts-expect-error - No type declarations for external ONNX bundle.
-    const ort = await import('../../external/onnx-sync.mjs')
+    const ort = await import('../../build/onnx-sync.mjs')
 
     // Step 2: Load embedded model and tokenizer.
     const {
       loadModelSync,
       loadTokenizerSync,
       // @ts-expect-error - No type declarations for external MiniLM bundle.
-    } = await import('../../external/minilm-sync.mjs')
+    } = await import('../../build/minilm-sync.mjs')
 
     const modelBytes = loadModelSync()
     const tokenizerConfig = loadTokenizerSync()
@@ -154,7 +154,7 @@ export class MiniLMInference {
 
     // Step 2: Create input tensors.
     // @ts-expect-error - No type declarations for external ONNX bundle.
-    const { Tensor } = await import('../../external/onnx-sync.mjs')
+    const { Tensor } = await import('../../build/onnx-sync.mjs')
 
     const inputIds = new Tensor(
       'int64',
