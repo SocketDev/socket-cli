@@ -13,7 +13,7 @@ import { whichBinSync } from '@socketsecurity/lib/bin'
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { spawn } from '@socketsecurity/lib/spawn'
 
-import { printError, printStep, printWarning } from './build-output.mjs'
+import { printError, printStep, printSubstep, printWarning } from './build-output.mjs'
 
 /**
  * Check available disk space.
