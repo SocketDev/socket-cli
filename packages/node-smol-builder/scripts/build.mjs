@@ -120,8 +120,8 @@ async function exec(command, args = [], options = {}) {
       ...options,
     }
   )
-  if (result.status !== 0) {
-    throw new Error(`Command failed with exit code ${result.status}: ${command}`)
+  if (result.code !== 0) {
+    throw new Error(`Command failed with exit code ${result.code}: ${command}`)
   }
 }
 
@@ -139,8 +139,8 @@ async function execCapture(command, options = {}) {
     shell: WIN32,
     ...options,
   })
-  if (result.status !== 0) {
-    throw new Error(`Command failed with exit code ${result.status}: ${command}`)
+  if (result.code !== 0) {
+    throw new Error(`Command failed with exit code ${result.code}: ${command}`)
   }
   return (result.stdout ?? '').trim()
 }
