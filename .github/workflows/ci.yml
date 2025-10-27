@@ -63,26 +63,111 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
-      - name: Generate build cache key
+      - name: Generate WASM cache keys
+        id: wasm-cache-keys
+        shell: bash
+        run: |
+          YOGA_HASH=$(find packages/yoga-layout -type f \( -name "*.cpp" -o -name "*.h" -o -name "*.mjs" -o -name "CMakeLists.txt" \) | sort | xargs shasum -a 256 | shasum -a 256 | cut -d' ' -f1)
+          echo "yoga-hash=$YOGA_HASH" >> $GITHUB_OUTPUT
+
+          AI_HASH=$(find packages/socketbin-cli-ai -type f \( -name "*.mjs" -o -name "*.ts" \) | sort | xargs shasum -a 256 | shasum -a 256 | cut -d' ' -f1)
+          echo "ai-hash=$AI_HASH" >> $GITHUB_OUTPUT
+
+          ONNX_HASH=$(find packages/onnx-runtime-builder -type f \( -name "*.mjs" -o -name "*.patch" \) | sort | xargs shasum -a 256 | shasum -a 256 | cut -d' ' -f1)
+          echo "onnx-hash=$ONNX_HASH" >> $GITHUB_OUTPUT
+
+      - name: Restore Yoga Layout WASM cache
+        id: yoga-cache
+        uses: actions/cache/restore@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
+        with:
+          path: packages/yoga-layout/build/wasm
+          key: yoga-wasm-${{ steps.wasm-cache-keys.outputs.yoga-hash }}
+          restore-keys: yoga-wasm-
+
+      - name: Restore AI models cache
+        id: ai-cache
+        uses: actions/cache/restore@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
+        with:
+          path: packages/socketbin-cli-ai/dist
+          key: ai-models-${{ steps.wasm-cache-keys.outputs.ai-hash }}
+          restore-keys: ai-models-
+
+      - name: Restore ONNX Runtime cache
+        id: onnx-cache
+        uses: actions/cache/restore@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
+        with:
+          path: packages/onnx-runtime-builder/dist
+          key: onnx-runtime-${{ steps.wasm-cache-keys.outputs.onnx-hash }}
+          restore-keys: onnx-runtime-
+
+      - name: Build WASM assets on cache miss
+        if: steps.yoga-cache.outputs.cache-hit != 'true' || steps.ai-cache.outputs.cache-hit != 'true' || steps.onnx-cache.outputs.cache-hit != 'true'
+        run: |
+          echo "⚠️  WASM cache miss detected - building from source"
+          echo "This will take 30-60 minutes. Consider running build-wasm.yml workflow to prime cache."
+          echo ""
+          echo "Cache status:"
+          echo "  Yoga Layout: ${{ steps.yoga-cache.outputs.cache-hit == 'true' && '✓ cached' || '✗ missing' }}"
+          echo "  AI Models: ${{ steps.ai-cache.outputs.cache-hit == 'true' && '✓ cached' || '✗ missing' }}"
+          echo "  ONNX Runtime: ${{ steps.onnx-cache.outputs.cache-hit == 'true' && '✓ cached' || '✗ missing' }}"
+          echo ""
+
+          # Install Emscripten if needed for Yoga/ONNX
+          if [ "${{ steps.yoga-cache.outputs.cache-hit }}" != "true" ] || [ "${{ steps.onnx-cache.outputs.cache-hit }}" != "true" ]; then
+            echo "Installing Emscripten..."
+            git clone https://github.com/emscripten-core/emsdk.git
+            cd emsdk
+            ./emsdk install latest
+            ./emsdk activate latest
+            source ./emsdk_env.sh
+            cd ..
+          fi
+
+          # Install Python deps if needed for AI models
+          if [ "${{ steps.ai-cache.outputs.cache-hit }}" != "true" ]; then
+            echo "Installing Python dependencies..."
+            pip install --upgrade pip
+            pip install transformers torch optimum[exporters] onnxruntime
+          fi
+
+          # Build missing WASM assets
+          if [ "${{ steps.yoga-cache.outputs.cache-hit }}" != "true" ]; then
+            echo "Building Yoga Layout WASM..."
+            pnpm --filter @socketsecurity/yoga-layout run build
+          fi
+
+          if [ "${{ steps.ai-cache.outputs.cache-hit }}" != "true" ]; then
+            echo "Building AI models..."
+            pnpm --filter @socketbin/cli-ai run build
+          fi
+
+          if [ "${{ steps.onnx-cache.outputs.cache-hit }}" != "true" ]; then
+            echo "Building ONNX Runtime..."
+            pnpm --filter @socketsecurity/onnx-runtime-builder run build
+          fi
+
+          echo "✓ WASM assets built successfully"
+
+      - name: Generate binary build cache key
         id: build-cache-key
         shell: bash
         run: |
-          HASH=$(find build/patches scripts -type f \( -name "*.patch" -o -name "*.mjs" \) | sort | xargs shasum -a 256 | shasum -a 256 | cut -d' ' -f1)
+          HASH=$(find build/patches packages/node-smol-builder scripts -type f \( -name "*.patch" -o -name "*.mjs" \) | sort | xargs shasum -a 256 | shasum -a 256 | cut -d' ' -f1)
           echo "hash=$HASH" >> $GITHUB_OUTPUT
 
       - name: Restore smol binary cache
         uses: actions/cache/restore@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
         with:
-          path: packages/node-smol-builder/dist/socket-smol
-          key: node-binary-linux-x64-${{ steps.build-cache-key.outputs.hash }}
-          restore-keys: node-binary-linux-x64-
+          path: packages/node-smol-builder/dist/socket-smol-linux-x64
+          key: node-smol-linux-x64-${{ steps.build-cache-key.outputs.hash }}
+          restore-keys: node-smol-linux-x64-
 
       - name: Restore SEA binary cache
         uses: actions/cache/restore@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
         with:
-          path: packages/node-sea-builder/dist/socket-sea
-          key: sea-binary-linux-x64-${{ steps.build-cache-key.outputs.hash }}
-          restore-keys: sea-binary-linux-x64-
+          path: packages/node-sea-builder/dist/socket-sea-linux-x64
+          key: node-sea-linux-x64-${{ steps.build-cache-key.outputs.hash }}
+          restore-keys: node-sea-linux-x64-
 
       - name: Build CLI
         working-directory: packages/cli
