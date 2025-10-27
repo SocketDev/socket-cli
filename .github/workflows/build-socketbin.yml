@@ -142,6 +142,7 @@ jobs:
         shell: bash
         run: |
           echo "=== smol Binary Build Artifacts ==="
+          mkdir -p packages/node-smol-builder/dist
           ls -lh packages/node-smol-builder/dist/
           echo ""
           BINARY_PATH="packages/node-smol-builder/dist/socket-smol-${{ matrix.platform }}-${{ matrix.arch }}"
@@ -250,6 +251,7 @@ jobs:
         shell: bash
         run: |
           echo "=== SEA Binary Build Artifacts ==="
+          mkdir -p packages/node-sea-builder/dist
           ls -lh packages/node-sea-builder/dist/
           echo ""
           BINARY_PATH="packages/node-sea-builder/dist/socket-sea-${{ matrix.platform }}-${{ matrix.arch }}"
