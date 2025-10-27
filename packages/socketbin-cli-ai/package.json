@@ -1,0 +1,12 @@
+{
+  "name": "@socketbin/cli-ai",
+  "version": "0.0.0",
+  "description": "Socket CLI binary assets",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist"
+  ]
+}

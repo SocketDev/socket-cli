@@ -45,6 +45,7 @@ import {
 import { failMsgWithBadge } from './utils/error/fail-msg-with-badge.mts'
 import { isSeaBinary } from './utils/executable/detect.mts'
 import { serializeResultJson } from './utils/output/result-json.mts'
+import { runPreflightDownloads } from './utils/preflight/downloads.mts'
 import { scheduleUpdateCheck } from './utils/update/manager.mts'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -63,6 +64,11 @@ void (async () => {
       registryUrl,
       version: ENV.INLINED_SOCKET_CLI_VERSION || '0.0.0',
     })
+
+    // Background preflight downloads for optional dependencies.
+    // This silently downloads @coana-tech/cli and @socketbin/cli-ai in the
+    // background to ensure they're cached for future use.
+    runPreflightDownloads()
   }
 
   try {

@@ -50,7 +50,7 @@ export type ShadowRunnerOptions = {
 /**
  * Auto-detect package manager based on lockfiles.
  */
-async function detectPackageManager(
+export async function detectPackageManager(
   cwd?: string | undefined,
 ): Promise<'npm' | 'pnpm' | 'yarn'> {
   const pnpmLockPath = await findUp(PNPM_LOCK_YAML, {

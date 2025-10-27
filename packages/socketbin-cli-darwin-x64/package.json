@@ -5,7 +5,7 @@
   "cpu": [
     "x64"
   ],
-  "description": "Socket CLI native binary for macOS x64 (Intel)",
+  "description": "Socket CLI binary",
   "files": [
     "bin/socket"
   ],

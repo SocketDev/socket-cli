@@ -5,7 +5,7 @@
   "cpu": [
     "x64"
   ],
-  "description": "Socket CLI native binary for Linux x64",
+  "description": "Socket CLI binary",
   "files": [
     "bin/socket"
   ],

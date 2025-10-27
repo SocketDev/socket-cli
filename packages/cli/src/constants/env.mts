@@ -134,8 +134,12 @@ export function isSentryBuild(): boolean {
   return envAsBoolean(process.env['INLINED_SOCKET_CLI_SENTRY_BUILD'])
 }
 
+export function getCliAiVersion(): string | undefined {
+  return process.env['INLINED_SOCKET_CLI_AI_VERSION']
+}
+
 export function getCoanaVersion(): string | undefined {
-  return process.env['INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION']
+  return process.env['INLINED_SOCKET_CLI_COANA_VERSION']
 }
 
 export function getCdxgenVersion(): string | undefined {
@@ -214,10 +218,11 @@ const envSnapshot = {
   GITHUB_REPOSITORY: env['GITHUB_REPOSITORY'],
   SOCKET_CLI_ORG_SLUG: env['SOCKET_CLI_ORG_SLUG'],
   // Build metadata (inlined by esbuild define).
+  INLINED_SOCKET_CLI_AI_VERSION: process.env['INLINED_SOCKET_CLI_AI_VERSION'],
   INLINED_SOCKET_CLI_CDXGEN_VERSION:
     process.env['INLINED_SOCKET_CLI_CDXGEN_VERSION'],
-  INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION:
-    process.env['INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION'],
+  INLINED_SOCKET_CLI_COANA_VERSION:
+    process.env['INLINED_SOCKET_CLI_COANA_VERSION'],
   INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION:
     process.env['INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION'],
   INLINED_SOCKET_CLI_HOMEPAGE: process.env['INLINED_SOCKET_CLI_HOMEPAGE'],
