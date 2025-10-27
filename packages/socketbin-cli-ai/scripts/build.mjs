@@ -371,20 +371,23 @@ async function compressWasm(wasmPath, modelKey) {
   const originalSize = wasmBuffer.length
 
   logger.substep(`Original: ${(originalSize / 1024 / 1024).toFixed(2)} MB`)
+  logger.substep('This will take 2-3 minutes for large models...')
 
   // Compress with maximum brotli quality (level 11).
   // BROTLI_MODE_GENERIC: Optimized for binary data.
+  const startTime = Date.now()
   const compressed = brotliCompressSync(wasmBuffer, {
     params: {
       [zlibConstants.BROTLI_PARAM_QUALITY]: zlibConstants.BROTLI_MAX_QUALITY,
       [zlibConstants.BROTLI_PARAM_MODE]: zlibConstants.BROTLI_MODE_GENERIC,
     },
   })
+  const compressionTime = ((Date.now() - startTime) / 1000).toFixed(1)
 
   const compressedSize = compressed.length
   const ratio = ((1 - compressedSize / originalSize) * 100).toFixed(1)
 
-  logger.substep(`Compressed: ${(compressedSize / 1024 / 1024).toFixed(2)} MB`)
+  logger.substep(`Compressed: ${(compressedSize / 1024 / 1024).toFixed(2)} MB (${compressionTime}s)`)
   logger.substep(`Ratio: ${ratio}% savings`)
 
   // Base64 encode.
