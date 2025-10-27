@@ -69,11 +69,11 @@ interface EnrichedArtifact {
   artifact: SocketFactArtifact
   reachableVulns: Array<{
     vuln: Reachability
-    metadata: SocketFactArtifact['vulnerabilities'][number]
+    metadata: NonNullable<SocketFactArtifact['vulnerabilities']>[number]
   }>
   unreachableVulns: Array<{
     vuln: Reachability
-    metadata: SocketFactArtifact['vulnerabilities'][number]
+    metadata: NonNullable<SocketFactArtifact['vulnerabilities']>[number]
   }>
   riskScore: number
 }
@@ -92,7 +92,7 @@ interface EnrichedArtifact {
 export function formatSocketFactsForCodeT5(
   socketFacts: SocketFacts,
   sbom?: EnrichedSbom,
-  options: SocketFactsFormatOptions = {}
+  options: SocketFactsFormatOptions = {},
 ): string {
   const task = options.task || 'security-analysis'
   const prioritizeReachable = options.prioritizeReachable ?? true
@@ -114,7 +114,7 @@ export function formatSocketFactsForCodeT5(
   // Enrich artifacts with reachability data.
   const enrichedArtifacts = enrichArtifactsWithReachability(
     socketFacts.components,
-    minConfidence
+    minConfidence,
   )
 
   // Prioritize by reachability and risk.
@@ -123,17 +123,14 @@ export function formatSocketFactsForCodeT5(
     : enrichedArtifacts
 
   // Critical issues (reachable vulnerabilities).
-  const reachableIssues = extractReachableIssues(
-    prioritized,
-    maxReachableVulns
-  )
+  const reachableIssues = extractReachableIssues(prioritized, maxReachableVulns)
   if (reachableIssues.length > 0) {
     sections.push(
       buildReachableIssuesSection(
         reachableIssues,
         includeCallStacks,
-        maxCallStackDepth
-      )
+        maxCallStackDepth,
+      ),
     )
   }
 
@@ -141,7 +138,7 @@ export function formatSocketFactsForCodeT5(
   if (includeUnreachable) {
     const unreachableIssues = extractUnreachableIssues(
       prioritized,
-      maxUnreachableVulns
+      maxUnreachableVulns,
     )
     if (unreachableIssues.length > 0) {
       sections.push(buildUnreachableIssuesSection(unreachableIssues))
@@ -166,7 +163,7 @@ export function formatSocketFactsForCodeT5(
  * Build task-specific prompt with reachability awareness.
  */
 function buildTaskPrompt(task: string): string {
-  const TASK_PROMPTS: Record<string, string> = {
+  const TASK_PROMPTS = {
     __proto__: null,
     'security-analysis':
       'TASK: Perform reachability-aware security analysis of this project.\n\n' +
@@ -192,9 +189,12 @@ function buildTaskPrompt(task: string): string {
       'REACHABILITY CONTEXT:\n' +
       '- Focus on licenses of actively used dependencies\n' +
       '- Dead code dependencies have lower compliance risk',
-  } as Record<string, string>
+  } as const
 
-  return TASK_PROMPTS[task] || TASK_PROMPTS['security-analysis']
+  return (
+    TASK_PROMPTS[task as keyof typeof TASK_PROMPTS] ??
+    TASK_PROMPTS['security-analysis']
+  )
 }
 
 /**
@@ -202,11 +202,11 @@ function buildTaskPrompt(task: string): string {
  */
 function buildProjectOverview(
   socketFacts: SocketFacts,
-  sbom?: EnrichedSbom
+  sbom?: EnrichedSbom,
 ): string {
   const totalComponents = socketFacts.components.length
   const reachableCount = socketFacts.components.filter(c =>
-    c.reachability?.some(r => r.state === 'reachable')
+    c.reachability?.some(r => r.state === 'reachable'),
   ).length
 
   const lines = ['PROJECT OVERVIEW:']
@@ -218,7 +218,7 @@ function buildProjectOverview(
 
   lines.push(`Total Dependencies: ${totalComponents}`)
   lines.push(
-    `Reachability Analysis: ${socketFacts.tier1ReachabilityScanId ? 'Complete' : 'Partial'}`
+    `Reachability Analysis: ${socketFacts.tier1ReachabilityScanId ? 'Complete' : 'Partial'}`,
   )
   lines.push(`Components with Reachable Vulnerabilities: ${reachableCount}`)
 
@@ -230,7 +230,7 @@ function buildProjectOverview(
  */
 function enrichArtifactsWithReachability(
   components: SocketFactArtifact[],
-  minConfidence: number
+  minConfidence: number,
 ): EnrichedArtifact[] {
   return components
     .map(artifact => {
@@ -247,7 +247,7 @@ function enrichArtifactsWithReachability(
         }
 
         const metadata = artifact.vulnerabilities?.find(
-          v => v.ghsaId === reachability.vulnerability
+          v => v.ghsaId === reachability.vulnerability,
         )
 
         if (metadata) {
@@ -266,7 +266,7 @@ function enrichArtifactsWithReachability(
         riskScore += reachableVulns.length * 100
         riskScore += reachableVulns.reduce(
           (sum, { vuln }) => sum + (vuln.confidence || 0) * 50,
-          0
+          0,
         )
       }
 
@@ -292,7 +292,7 @@ function enrichArtifactsWithReachability(
  * Prioritize artifacts by reachability and risk.
  */
 function prioritizeByReachability(
-  enriched: EnrichedArtifact[]
+  enriched: EnrichedArtifact[],
 ): EnrichedArtifact[] {
   return enriched.sort((a, b) => {
     // Reachable vulnerabilities first.
@@ -310,16 +310,16 @@ function prioritizeByReachability(
  */
 function extractReachableIssues(
   enriched: EnrichedArtifact[],
-  maxCount: number
+  maxCount: number,
 ): Array<{
   artifact: SocketFactArtifact
   vuln: Reachability
-  metadata: SocketFactArtifact['vulnerabilities'][number]
+  metadata: NonNullable<SocketFactArtifact['vulnerabilities']>[number]
 }> {
   const issues: Array<{
     artifact: SocketFactArtifact
     vuln: Reachability
-    metadata: SocketFactArtifact['vulnerabilities'][number]
+    metadata: NonNullable<SocketFactArtifact['vulnerabilities']>[number]
   }> = []
 
   for (const { artifact, reachableVulns } of enriched) {
@@ -339,16 +339,16 @@ function extractReachableIssues(
  */
 function extractUnreachableIssues(
   enriched: EnrichedArtifact[],
-  maxCount: number
+  maxCount: number,
 ): Array<{
   artifact: SocketFactArtifact
   vuln: Reachability
-  metadata: SocketFactArtifact['vulnerabilities'][number]
+  metadata: NonNullable<SocketFactArtifact['vulnerabilities']>[number]
 }> {
   const issues: Array<{
     artifact: SocketFactArtifact
     vuln: Reachability
-    metadata: SocketFactArtifact['vulnerabilities'][number]
+    metadata: NonNullable<SocketFactArtifact['vulnerabilities']>[number]
   }> = []
 
   for (const { artifact, unreachableVulns } of enriched) {
@@ -367,10 +367,10 @@ function buildReachableIssuesSection(
   issues: Array<{
     artifact: SocketFactArtifact
     vuln: Reachability
-    metadata: SocketFactArtifact['vulnerabilities'][number]
+    metadata: NonNullable<SocketFactArtifact['vulnerabilities']>[number]
   }>,
   includeCallStacks: boolean,
-  maxCallStackDepth: number
+  maxCallStackDepth: number,
 ): string {
   const lines = ['CRITICAL ISSUES (REACHABLE):']
 
@@ -379,7 +379,7 @@ function buildReachableIssuesSection(
     const ghsaId = metadata.ghsaId
 
     lines.push(
-      `\n🔴 REACHABLE (confidence: ${confidence}): ${artifact.name}@${artifact.version} [${ghsaId}]`
+      `\n🔴 REACHABLE (confidence: ${confidence}): ${artifact.name}@${artifact.version} [${ghsaId}]`,
     )
 
     if (metadata.reachabilityData?.publicComment) {
@@ -388,13 +388,10 @@ function buildReachableIssuesSection(
 
     if (includeCallStacks && vuln.callStack && vuln.callStack.length > 0) {
       lines.push(
-        `   Call Stack (${Math.min(vuln.callStack.length, maxCallStackDepth)} hops):`
+        `   Call Stack (${Math.min(vuln.callStack.length, maxCallStackDepth)} hops):`,
       )
 
-      for (const [
-        index,
-        entry,
-      ] of vuln.callStack
+      for (const [index, entry] of vuln.callStack
         .slice(0, maxCallStackDepth)
         .entries()) {
         const location = formatSourceLocation(entry)
@@ -415,8 +412,8 @@ function buildUnreachableIssuesSection(
   issues: Array<{
     artifact: SocketFactArtifact
     vuln: Reachability
-    metadata: SocketFactArtifact['vulnerabilities'][number]
-  }>
+    metadata: NonNullable<SocketFactArtifact['vulnerabilities']>[number]
+  }>,
 ): string {
   const lines = ['VULNERABILITIES (UNREACHABLE):']
 
@@ -425,7 +422,7 @@ function buildUnreachableIssuesSection(
     const ghsaId = metadata.ghsaId
 
     lines.push(
-      `\n⚪ UNREACHABLE (confidence: ${confidence}): ${artifact.name}@${artifact.version} [${ghsaId}]`
+      `\n⚪ UNREACHABLE (confidence: ${confidence}): ${artifact.name}@${artifact.version} [${ghsaId}]`,
     )
 
     if (vuln.reason) {
@@ -477,7 +474,7 @@ function buildComponentSummary(enriched: EnrichedArtifact[]): string {
       const topVuln = reachableVulns[0]
       const confidence = topVuln.vuln.confidence?.toFixed(2) || '?'
       lines.push(
-        `   Confidence: ${confidence} - ${topVuln.metadata.reachabilityData?.publicComment || topVuln.metadata.ghsaId}`
+        `   Confidence: ${confidence} - ${topVuln.metadata.reachabilityData?.publicComment || topVuln.metadata.ghsaId}`,
       )
     }
   }
@@ -490,7 +487,7 @@ function buildComponentSummary(enriched: EnrichedArtifact[]): string {
  */
 function buildDependencyGraph(
   enriched: EnrichedArtifact[],
-  sbom: EnrichedSbom
+  sbom: EnrichedSbom,
 ): string {
   const lines = ['DEPENDENCY GRAPH (REACHABILITY-AWARE):']
 
@@ -503,7 +500,7 @@ function buildDependencyGraph(
       enriched.map(e => [
         `pkg:${e.artifact.type}/${e.artifact.name}@${e.artifact.version}`,
         e,
-      ])
+      ]),
     )
 
     // Show direct dependencies with reachability status.
@@ -515,7 +512,7 @@ function buildDependencyGraph(
           : ''
 
       lines.push(
-        `  - ${e.artifact.name}@${e.artifact.version} ${statusBadge}${vulnCount}`
+        `  - ${e.artifact.name}@${e.artifact.version} ${statusBadge}${vulnCount}`,
       )
     }
   }
@@ -527,7 +524,7 @@ function buildDependencyGraph(
  * Build analysis instructions.
  */
 function buildAnalysisInstructions(task: string): string {
-  const INSTRUCTIONS: Record<string, string> = {
+  const INSTRUCTIONS = {
     __proto__: null,
     'security-analysis': [
       'ANALYSIS REQUIREMENTS:',
@@ -559,9 +556,12 @@ function buildAnalysisInstructions(task: string): string {
       '- Flag copyleft licenses in production code',
       '- Recommend compliance actions for active dependencies',
     ].join('\n'),
-  } as Record<string, string>
+  } as const
 
-  return INSTRUCTIONS[task] || INSTRUCTIONS['security-analysis']
+  return (
+    INSTRUCTIONS[task as keyof typeof INSTRUCTIONS] ??
+    INSTRUCTIONS['security-analysis']
+  )
 }
 
 /**

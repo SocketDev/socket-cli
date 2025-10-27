@@ -55,7 +55,9 @@ describe('CargoParser', () => {
       expect(result.metadata.version).toBe('0.1.0')
       expect(result.metadata.description).toBe('A test Rust application')
       expect(result.metadata.homepage).toBe('https://example.com')
-      expect(result.metadata.repository).toBe('https://github.com/example/test-rust-app')
+      expect(result.metadata.repository).toBe(
+        'https://github.com/example/test-rust-app',
+      )
       expect(result.metadata.license).toBe('MIT')
     })
 
@@ -66,14 +68,14 @@ describe('CargoParser', () => {
 
       // Root component should exist.
       const rootDep = result.dependencies.find(d =>
-        d.ref.includes('test-rust-app@0.1.0')
+        d.ref.includes('test-rust-app@0.1.0'),
       )
       expect(rootDep).toBeDefined()
       expect(rootDep?.dependsOn.length).toBeGreaterThan(0)
 
       // serde should have dependencies.
       const serdeDep = result.dependencies.find(d =>
-        d.ref.includes('serde@1.0.188')
+        d.ref.includes('serde@1.0.188'),
       )
       expect(serdeDep).toBeDefined()
       expect(serdeDep?.dependsOn).toContain('pkg:cargo/serde_derive@1.0.188')
@@ -84,7 +86,7 @@ describe('CargoParser', () => {
 
       // serde_json has transitive dependencies (itoa, ryu, serde).
       const serdeJsonDep = result.dependencies.find(d =>
-        d.ref.includes('serde_json@1.0.107')
+        d.ref.includes('serde_json@1.0.107'),
       )
       expect(serdeJsonDep).toBeDefined()
       expect(serdeJsonDep?.dependsOn).toContain('pkg:cargo/serde@1.0.188')
@@ -124,7 +126,7 @@ describe('CargoParser', () => {
 
       await writeFile(
         path.join(tempDir, 'Cargo.toml'),
-        '[package]\nname = "no-lock"\nversion = "0.0.0"'
+        '[package]\nname = "no-lock"\nversion = "0.0.0"',
       )
 
       const result = await parser.parse(tempDir)
@@ -142,9 +144,12 @@ describe('CargoParser', () => {
 
       await writeFile(
         path.join(tempDir, 'Cargo.toml'),
-        '[package]\nname = "empty"\nversion = "0.0.0"'
+        '[package]\nname = "empty"\nversion = "0.0.0"',
       )
-      await writeFile(path.join(tempDir, 'Cargo.lock'), '# Cargo.lock\nversion = 3')
+      await writeFile(
+        path.join(tempDir, 'Cargo.lock'),
+        '# Cargo.lock\nversion = 3',
+      )
 
       const result = await parser.parse(tempDir)
 
@@ -160,9 +165,12 @@ describe('CargoParser', () => {
 
       await writeFile(
         path.join(tempDir, 'Cargo.toml'),
-        '[workspace]\nmembers = ["crate1", "crate2"]'
+        '[workspace]\nmembers = ["crate1", "crate2"]',
       )
-      await writeFile(path.join(tempDir, 'Cargo.lock'), '# Cargo.lock\nversion = 3')
+      await writeFile(
+        path.join(tempDir, 'Cargo.lock'),
+        '# Cargo.lock\nversion = 3',
+      )
 
       const result = await parser.parse(tempDir)
 

@@ -25,7 +25,10 @@ export class ChromeParser implements Parser {
     return false
   }
 
-  async parse(projectPath: string, options: ParseOptions = {}): Promise<ParseResult> {
+  async parse(
+    projectPath: string,
+    options: ParseOptions = {},
+  ): Promise<ParseResult> {
     // Placeholder implementation.
     // Full implementation would:
     // 1. Parse manifest.json for extension ID

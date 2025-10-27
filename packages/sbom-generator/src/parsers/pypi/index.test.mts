@@ -56,7 +56,9 @@ describe('PypiParser', () => {
       expect(result.metadata.version).toBe('1.0.0')
       expect(result.metadata.description).toBe('A test Python application')
       expect(result.metadata.homepage).toBe('https://example.com')
-      expect(result.metadata.repository).toBe('https://github.com/example/test-python-app')
+      expect(result.metadata.repository).toBe(
+        'https://github.com/example/test-python-app',
+      )
       expect(result.metadata.license).toBe('MIT')
     })
 
@@ -82,14 +84,14 @@ describe('PypiParser', () => {
 
       // Root component should exist.
       const rootDep = result.dependencies.find(d =>
-        d.ref.includes('test-python-app@1.0.0')
+        d.ref.includes('test-python-app@1.0.0'),
       )
       expect(rootDep).toBeDefined()
       expect(rootDep?.dependsOn.length).toBeGreaterThan(0)
 
       // requests should have dependencies.
       const requestsDep = result.dependencies.find(d =>
-        d.ref.includes('requests@2.31.0')
+        d.ref.includes('requests@2.31.0'),
       )
       expect(requestsDep).toBeDefined()
       expect(requestsDep?.dependsOn).toContain('pkg:pypi/certifi@2023.7.22')
@@ -108,14 +110,14 @@ describe('PypiParser', () => {
       // Copy Pipfile.lock to temp directory.
       const pipfileLock = await readFile(
         path.join(fixturesPath, 'Pipfile.lock'),
-        'utf8'
+        'utf8',
       )
       await writeFile(path.join(tempDir, 'Pipfile.lock'), pipfileLock)
 
       // Create minimal pyproject.toml.
       await writeFile(
         path.join(tempDir, 'pyproject.toml'),
-        '[project]\nname = "pipfile-test"\nversion = "1.0.0"'
+        '[project]\nname = "pipfile-test"\nversion = "1.0.0"',
       )
     })
 
@@ -154,14 +156,14 @@ describe('PypiParser', () => {
       // Copy requirements.txt to temp directory.
       const requirementsTxt = await readFile(
         path.join(fixturesPath, 'requirements.txt'),
-        'utf8'
+        'utf8',
       )
       await writeFile(path.join(tempDir, 'requirements.txt'), requirementsTxt)
 
       // Create minimal pyproject.toml.
       await writeFile(
         path.join(tempDir, 'pyproject.toml'),
-        '[project]\nname = "requirements-test"\nversion = "1.0.0"'
+        '[project]\nname = "requirements-test"\nversion = "1.0.0"',
       )
     })
 
@@ -236,14 +238,14 @@ describe('PypiParser', () => {
       // Copy PEP 621 pyproject.toml.
       const pyprojectToml = await readFile(
         path.join(fixturesPath, 'pyproject-pep621.toml'),
-        'utf8'
+        'utf8',
       )
       await writeFile(path.join(tempDir, 'pyproject.toml'), pyprojectToml)
 
       // Copy poetry.lock for dependencies.
       const poetryLock = await readFile(
         path.join(fixturesPath, 'poetry.lock'),
-        'utf8'
+        'utf8',
       )
       await writeFile(path.join(tempDir, 'poetry.lock'), poetryLock)
     })
@@ -268,8 +270,14 @@ describe('PypiParser', () => {
       const tempDir = path.join('/tmp', `pypi-test-${Date.now()}`)
       await mkdir(tempDir, { recursive: true })
 
-      await writeFile(path.join(tempDir, 'pyproject.toml'), '[project]\nname = "empty"\nversion = "0.0.0"')
-      await writeFile(path.join(tempDir, 'poetry.lock'), '[metadata]\npython-versions = "^3.8"')
+      await writeFile(
+        path.join(tempDir, 'pyproject.toml'),
+        '[project]\nname = "empty"\nversion = "0.0.0"',
+      )
+      await writeFile(
+        path.join(tempDir, 'poetry.lock'),
+        '[metadata]\npython-versions = "^3.8"',
+      )
 
       const result = await parser.parse(tempDir)
 
@@ -283,7 +291,10 @@ describe('PypiParser', () => {
       const tempDir = path.join('/tmp', `pypi-test-${Date.now()}`)
       await mkdir(tempDir, { recursive: true })
 
-      await writeFile(path.join(tempDir, 'pyproject.toml'), '[project]\nname = "no-lock"\nversion = "0.0.0"')
+      await writeFile(
+        path.join(tempDir, 'pyproject.toml'),
+        '[project]\nname = "no-lock"\nversion = "0.0.0"',
+      )
 
       const result = await parser.parse(tempDir)
 
@@ -298,10 +309,13 @@ describe('PypiParser', () => {
       const tempDir = path.join('/tmp', `pypi-test-${Date.now()}`)
       await mkdir(tempDir, { recursive: true })
 
-      await writeFile(path.join(tempDir, 'pyproject.toml'), '[project]\nname = "malformed"\nversion = "0.0.0"')
+      await writeFile(
+        path.join(tempDir, 'pyproject.toml'),
+        '[project]\nname = "malformed"\nversion = "0.0.0"',
+      )
       await writeFile(
         path.join(tempDir, 'requirements.txt'),
-        '# Valid\nrequests==2.31.0\n\n# Invalid lines\ngit+https://github.com/user/repo.git\nhttp://example.com/package.tar.gz\n'
+        '# Valid\nrequests==2.31.0\n\n# Invalid lines\ngit+https://github.com/user/repo.git\nhttp://example.com/package.tar.gz\n',
       )
 
       const result = await parser.parse(tempDir)

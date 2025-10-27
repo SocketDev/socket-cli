@@ -46,7 +46,10 @@ interface PoetryLock {
     description?: string
     category?: string
     optional?: boolean
-    dependencies?: Record<string, string | { version: string; markers?: string }>
+    dependencies?: Record<
+      string,
+      string | { version: string; markers?: string }
+    >
   }>
   metadata?: {
     'python-versions'?: string
@@ -114,8 +117,14 @@ interface PyprojectToml {
       repository?: string
       documentation?: string
       keywords?: string[]
-      dependencies?: Record<string, string | { version: string; extras?: string[] }>
-      'dev-dependencies'?: Record<string, string | { version: string; extras?: string[] }>
+      dependencies?: Record<
+        string,
+        string | { version: string; extras?: string[] }
+      >
+      'dev-dependencies'?: Record<
+        string,
+        string | { version: string; extras?: string[] }
+      >
       group?: Record<string, { dependencies?: Record<string, string> }>
     }
   }
@@ -187,7 +196,10 @@ export class PypiParser implements Parser {
    *
    * Reference: cdxgen's parsePythonProject() in lib/parsers/python.js
    */
-  async parse(projectPath: string, options: ParseOptions = {}): Promise<ParseResult> {
+  async parse(
+    projectPath: string,
+    options: ParseOptions = {},
+  ): Promise<ParseResult> {
     // Read project metadata.
     const metadata = await this.extractMetadata(projectPath)
 
@@ -196,7 +208,10 @@ export class PypiParser implements Parser {
 
     // Convert to CycloneDX format.
     const components = this.buildComponents(lockfileData.dependencies, options)
-    const dependencies = this.buildDependencyGraph(metadata, lockfileData.dependencies)
+    const dependencies = this.buildDependencyGraph(
+      metadata,
+      lockfileData.dependencies,
+    )
 
     return {
       ecosystem: this.ecosystem,
@@ -228,9 +243,16 @@ export class PypiParser implements Parser {
           version: pyproject.project.version || '0.0.0',
           description: pyproject.project.description,
           homepage: pyproject.project.urls?.Homepage,
-          repository: pyproject.project.urls?.Repository || pyproject.project.urls?.Source,
-          license: typeof pyproject.project.license === 'string' ? pyproject.project.license : pyproject.project.license?.text,
-          authors: pyproject.project.authors?.map(a => `${a.name || ''} <${a.email || ''}>`),
+          repository:
+            pyproject.project.urls?.Repository ||
+            pyproject.project.urls?.Source,
+          license:
+            typeof pyproject.project.license === 'string'
+              ? pyproject.project.license
+              : pyproject.project.license?.text,
+          authors: pyproject.project.authors?.map(
+            a => `${a.name || ''} <${a.email || ''}>`,
+          ),
           keywords: pyproject.project.keywords,
         }
       }
@@ -284,7 +306,7 @@ export class PypiParser implements Parser {
    */
   private async detectAndParseLockfile(
     projectPath: string,
-    options: ParseOptions
+    options: ParseOptions,
   ): Promise<LockfileData> {
     // Try poetry.lock first (most complete).
     try {
@@ -330,7 +352,7 @@ export class PypiParser implements Parser {
    */
   private async parsePoetryLock(
     lockfilePath: string,
-    options: ParseOptions
+    options: ParseOptions,
   ): Promise<LockfileData> {
     const content = await fs.readFile(lockfilePath, 'utf8')
     const lockfile = parseToml(content) as PoetryLock
@@ -373,7 +395,7 @@ export class PypiParser implements Parser {
    */
   private async parsePipfileLock(
     lockfilePath: string,
-    options: ParseOptions
+    options: ParseOptions,
   ): Promise<LockfileData> {
     const content = await fs.readFile(lockfilePath, 'utf8')
     const lockfile = JSON.parse(content) as PipfileLock
@@ -425,7 +447,7 @@ export class PypiParser implements Parser {
    */
   private async parseRequirementsTxt(
     lockfilePath: string,
-    options: ParseOptions
+    options: ParseOptions,
   ): Promise<LockfileData> {
     const content = await fs.readFile(lockfilePath, 'utf8')
     const lines = content.split('\n')
@@ -534,7 +556,7 @@ export class PypiParser implements Parser {
    */
   private buildComponents(
     dependencies: Map<string, PypiDependencyInfo>,
-    options: ParseOptions
+    options: ParseOptions,
   ): Component[] {
     const components: Component[] = []
 
@@ -571,7 +593,7 @@ export class PypiParser implements Parser {
    */
   private buildDependencyGraph(
     metadata: ProjectMetadata,
-    dependencies: Map<string, PypiDependencyInfo>
+    dependencies: Map<string, PypiDependencyInfo>,
   ): Dependency[] {
     const graph: Dependency[] = []
 
@@ -597,7 +619,9 @@ export class PypiParser implements Parser {
         // Find matching dependency in map.
         const transitiveDep = dependencies.get(depName)
         if (transitiveDep) {
-          dependsOn.push(`pkg:pypi/${transitiveDep.name}@${transitiveDep.version}`)
+          dependsOn.push(
+            `pkg:pypi/${transitiveDep.name}@${transitiveDep.version}`,
+          )
         }
       }
 

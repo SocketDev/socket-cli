@@ -32,7 +32,10 @@ export class NugetParser implements Parser {
     }
   }
 
-  async parse(projectPath: string, options: ParseOptions = {}): Promise<ParseResult> {
+  async parse(
+    projectPath: string,
+    options: ParseOptions = {},
+  ): Promise<ParseResult> {
     const metadata: ProjectMetadata = {
       name: path.basename(projectPath),
       version: '0.0.0',
@@ -51,7 +54,9 @@ export class NugetParser implements Parser {
       // Extract PackageReference elements.
       const project = parsed.Project
       if (project?.ItemGroup) {
-        const itemGroups = Array.isArray(project.ItemGroup) ? project.ItemGroup : [project.ItemGroup]
+        const itemGroups = Array.isArray(project.ItemGroup)
+          ? project.ItemGroup
+          : [project.ItemGroup]
         for (const group of itemGroups) {
           const refs = group.PackageReference
           if (refs) {
@@ -68,19 +73,23 @@ export class NugetParser implements Parser {
       }
     }
 
-    const components: Component[] = Array.from(dependencies.values()).map(dep => ({
-      type: 'library',
-      'bom-ref': `pkg:nuget/${dep.name}@${dep.version}`,
-      name: dep.name,
-      version: dep.version,
-      purl: `pkg:nuget/${dep.name}@${dep.version}`,
-      scope: 'required',
-    }))
+    const components: Component[] = Array.from(dependencies.values()).map(
+      dep => ({
+        type: 'library',
+        'bom-ref': `pkg:nuget/${dep.name}@${dep.version}`,
+        name: dep.name,
+        version: dep.version,
+        purl: `pkg:nuget/${dep.name}@${dep.version}`,
+        scope: 'required',
+      }),
+    )
 
-    const graph: Dependency[] = [{
-      ref: `pkg:nuget/${metadata.name}@${metadata.version}`,
-      dependsOn: components.map(c => c.purl || ''),
-    }]
+    const graph: Dependency[] = [
+      {
+        ref: `pkg:nuget/${metadata.name}@${metadata.version}`,
+        dependsOn: components.map(c => c.purl || ''),
+      },
+    ]
 
     return {
       ecosystem: this.ecosystem,

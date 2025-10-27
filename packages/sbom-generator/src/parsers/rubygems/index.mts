@@ -69,7 +69,10 @@ export class RubygemsParser implements Parser {
    * cdxgen reference: parseRubyProject() reads Gemfile.lock.
    * @see https://github.com/CycloneDX/cdxgen/blob/v11.11.0/lib/parsers/ruby.js#L80-L130
    */
-  async parse(projectPath: string, options: ParseOptions = {}): Promise<ParseResult> {
+  async parse(
+    projectPath: string,
+    options: ParseOptions = {},
+  ): Promise<ParseResult> {
     const metadata = await this.extractMetadata(projectPath)
     const dependencies = await this.parseGemfileLock(projectPath)
 
@@ -112,7 +115,9 @@ export class RubygemsParser implements Parser {
    *
    * @see https://github.com/CycloneDX/cdxgen/blob/v11.11.0/lib/parsers/ruby.js#L200-L250
    */
-  private async parseGemfileLock(projectPath: string): Promise<Map<string, GemDependencyInfo>> {
+  private async parseGemfileLock(
+    projectPath: string,
+  ): Promise<Map<string, GemDependencyInfo>> {
     const dependencies = new Map<string, GemDependencyInfo>()
 
     try {
@@ -180,7 +185,7 @@ export class RubygemsParser implements Parser {
    */
   private buildComponents(
     dependencies: Map<string, GemDependencyInfo>,
-    options: ParseOptions
+    options: ParseOptions,
   ): Component[] {
     const components: Component[] = []
 
@@ -206,12 +211,14 @@ export class RubygemsParser implements Parser {
    */
   private buildDependencyGraph(
     metadata: ProjectMetadata,
-    dependencies: Map<string, GemDependencyInfo>
+    dependencies: Map<string, GemDependencyInfo>,
   ): Dependency[] {
     const graph: Dependency[] = []
 
     const rootRef = `pkg:gem/${metadata.name}@${metadata.version}`
-    const directDeps = Array.from(dependencies.values()).map(d => `pkg:gem/${d.name}@${d.version}`)
+    const directDeps = Array.from(dependencies.values()).map(
+      d => `pkg:gem/${d.name}@${d.version}`,
+    )
 
     graph.push({
       ref: rootRef,
@@ -223,7 +230,9 @@ export class RubygemsParser implements Parser {
       const dependsOn = dep.dependencies
         .map(depName => {
           const transitive = dependencies.get(depName)
-          return transitive ? `pkg:gem/${transitive.name}@${transitive.version}` : null
+          return transitive
+            ? `pkg:gem/${transitive.name}@${transitive.version}`
+            : null
         })
         .filter((purl): purl is string => purl !== null)
 
