@@ -15,24 +15,9 @@ on:
         required: false
         type: boolean
         default: false
-  push:
-    branches: [main]
-    paths:
-      - 'packages/yoga-layout/**'
-      - 'packages/socketbin-cli-ai/**'
-      - 'packages/onnx-runtime-builder/**'
-      - 'packages/minilm-builder/**'
-      - 'scripts/wasm/**'
-      - '.github/workflows/build-wasm.yml'
-  pull_request:
-    branches: [main]
-    paths:
-      - 'packages/yoga-layout/**'
-      - 'packages/socketbin-cli-ai/**'
-      - 'packages/onnx-runtime-builder/**'
-      - 'packages/minilm-builder/**'
-      - 'scripts/wasm/**'
-      - '.github/workflows/build-wasm.yml'
+  # Removed push/pull_request triggers to avoid runner contention.
+  # WASM assets are cached and used by socketbin builds.
+  # Run manually via workflow_dispatch when WASM sources change.
 
 permissions:
   contents: read
