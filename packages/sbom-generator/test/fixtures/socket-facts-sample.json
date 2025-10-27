@@ -1,0 +1,252 @@
+{
+  "tier1ReachabilityScanId": "scan_abc123",
+  "components": [
+    {
+      "type": "npm",
+      "name": "lodash",
+      "version": "4.17.15",
+      "id": "pkg:npm/lodash@4.17.15",
+      "direct": true,
+      "dev": false,
+      "dead": false,
+      "dependencies": [],
+      "manifestFiles": [
+        {
+          "file": "package.json",
+          "lineNumber": 15
+        }
+      ],
+      "vulnerabilities": [
+        {
+          "ghsaId": "GHSA-29mw-wpgm-hmr9",
+          "range": "<4.17.21",
+          "reachabilityData": {
+            "publicComment": "Prototype pollution in lodash.merge",
+            "pattern": [
+              "your-app/src/index.js:42:lodash.merge()",
+              "node_modules/lodash/merge.js:120:baseAssign()",
+              "node_modules/lodash/_baseAssign.js:15"
+            ],
+            "undeterminableReachability": false
+          }
+        },
+        {
+          "ghsaId": "CVE-2020-28500",
+          "range": "<4.17.21",
+          "reachabilityData": {
+            "publicComment": "ReDoS in lodash",
+            "pattern": [
+              "your-app/src/utils.js:88:lodash.template()",
+              "node_modules/lodash/template.js:45"
+            ],
+            "undeterminableReachability": false
+          }
+        }
+      ],
+      "reachability": [
+        {
+          "vulnerability": "GHSA-29mw-wpgm-hmr9",
+          "state": "reachable",
+          "confidence": 0.95,
+          "callStack": [
+            {
+              "package": "lodash",
+              "sourceLocation": {
+                "file": "your-app/src/index.js",
+                "start": { "line": 42, "column": 10 },
+                "end": { "line": 42, "column": 25 }
+              },
+              "confidence": 0.95
+            },
+            {
+              "package": "lodash",
+              "sourceLocation": {
+                "file": "node_modules/lodash/merge.js",
+                "start": { "line": 120, "column": 5 }
+              },
+              "confidence": 0.95
+            }
+          ]
+        },
+        {
+          "vulnerability": "CVE-2020-28500",
+          "state": "reachable",
+          "confidence": 0.87,
+          "callStack": [
+            {
+              "package": "lodash",
+              "sourceLocation": {
+                "file": "your-app/src/utils.js",
+                "start": { "line": 88, "column": 15 }
+              },
+              "confidence": 0.87
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "npm",
+      "name": "axios",
+      "version": "0.21.0",
+      "id": "pkg:npm/axios@0.21.0",
+      "direct": true,
+      "dev": false,
+      "dead": false,
+      "dependencies": [],
+      "manifestFiles": [
+        {
+          "file": "package.json",
+          "lineNumber": 18
+        }
+      ],
+      "vulnerabilities": [
+        {
+          "ghsaId": "CVE-2021-3749",
+          "range": "<0.21.4",
+          "reachabilityData": {
+            "publicComment": "Server-side request forgery (SSRF)",
+            "pattern": [
+              "your-app/src/api.js:15:axios.get()",
+              "node_modules/axios/lib/core/Axios.js:50"
+            ],
+            "undeterminableReachability": false
+          }
+        }
+      ],
+      "reachability": [
+        {
+          "vulnerability": "CVE-2021-3749",
+          "state": "reachable",
+          "confidence": 0.87,
+          "callStack": [
+            {
+              "package": "axios",
+              "sourceLocation": {
+                "file": "your-app/src/api.js",
+                "start": { "line": 15, "column": 20 }
+              },
+              "confidence": 0.87
+            },
+            {
+              "package": "axios",
+              "sourceLocation": {
+                "file": "node_modules/axios/lib/core/Axios.js",
+                "start": { "line": 50, "column": 10 }
+              },
+              "confidence": 0.87
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "npm",
+      "name": "xmldom",
+      "version": "0.5.0",
+      "id": "pkg:npm/xmldom@0.5.0",
+      "direct": false,
+      "dev": true,
+      "dead": true,
+      "dependencies": [],
+      "manifestFiles": [
+        {
+          "file": "package.json",
+          "lineNumber": 45
+        }
+      ],
+      "toplevelAncestors": ["pkg:npm/jest@27.0.0"],
+      "vulnerabilities": [
+        {
+          "ghsaId": "CVE-2021-32796",
+          "range": "<0.6.0",
+          "reachabilityData": {
+            "publicComment": "Prototype pollution via parseFromString",
+            "pattern": [],
+            "undeterminableReachability": false
+          }
+        }
+      ],
+      "reachability": [
+        {
+          "vulnerability": "CVE-2021-32796",
+          "state": "unreachable",
+          "confidence": 0.92,
+          "reason": "Dead code - transitive dependency of testing library, never imported"
+        }
+      ]
+    },
+    {
+      "type": "npm",
+      "name": "yargs-parser",
+      "version": "15.0.0",
+      "id": "pkg:npm/yargs-parser@15.0.0",
+      "direct": false,
+      "dev": true,
+      "dead": true,
+      "dependencies": [],
+      "manifestFiles": [
+        {
+          "file": "package.json",
+          "lineNumber": 52
+        }
+      ],
+      "toplevelAncestors": ["pkg:npm/jest@27.0.0"],
+      "vulnerabilities": [
+        {
+          "ghsaId": "CVE-2020-7608",
+          "range": "<18.1.2",
+          "reachabilityData": {
+            "publicComment": "Prototype pollution vulnerability",
+            "pattern": [],
+            "undeterminableReachability": false
+          }
+        }
+      ],
+      "reachability": [
+        {
+          "vulnerability": "CVE-2020-7608",
+          "state": "unreachable",
+          "confidence": 0.88,
+          "reason": "Dev dependency, not bundled in production"
+        }
+      ]
+    },
+    {
+      "type": "npm",
+      "name": "debug",
+      "version": "4.1.0",
+      "id": "pkg:npm/debug@4.1.0",
+      "direct": false,
+      "dev": false,
+      "dead": true,
+      "dependencies": [],
+      "manifestFiles": [
+        {
+          "file": "package.json",
+          "lineNumber": 22
+        }
+      ],
+      "toplevelAncestors": ["pkg:npm/express@4.17.1"],
+      "vulnerabilities": [
+        {
+          "ghsaId": "CVE-2020-7698",
+          "range": "<4.3.1",
+          "reachabilityData": {
+            "publicComment": "ReDoS vulnerability in debug",
+            "pattern": [],
+            "undeterminableReachability": false
+          }
+        }
+      ],
+      "reachability": [
+        {
+          "vulnerability": "CVE-2020-7698",
+          "state": "unreachable",
+          "confidence": 0.92,
+          "reason": "Transitive dependency, never imported in user code"
+        }
+      ]
+    }
+  ]
+}

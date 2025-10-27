@@ -30,10 +30,12 @@ export async function handleScanReach({
   reachabilityOptions,
   targets,
 }: HandleScanReachConfig) {
-  const spinner = getSpinner()!
+  const spinner = getSpinner()
 
   // Get supported file names
-  const supportedFilesCResult = await fetchSupportedScanFileNames({ spinner })
+  const supportedFilesCResult = await fetchSupportedScanFileNames({
+    spinner: spinner ?? undefined,
+  })
   if (!supportedFilesCResult.ok) {
     await outputScanReach(supportedFilesCResult, {
       cwd,
@@ -43,7 +45,7 @@ export async function handleScanReach({
     return
   }
 
-  spinner.start(
+  spinner?.start(
     'Searching for local manifest files to include in reachability analysis...',
   )
 
@@ -52,7 +54,7 @@ export async function handleScanReach({
     cwd,
   })
 
-  spinner.successAndStop(
+  spinner?.successAndStop(
     `Found ${packagePaths.length} ${pluralize('manifest file', { count: packagePaths.length })} for reachability analysis.`,
   )
 
@@ -71,7 +73,7 @@ export async function handleScanReach({
     `Found ${packagePaths.length} local ${pluralize('file', { count: packagePaths.length })}`,
   )
 
-  spinner.start('Running reachability analysis...')
+  spinner?.start('Running reachability analysis...')
 
   const result = await performReachabilityAnalysis({
     cwd,
@@ -79,12 +81,12 @@ export async function handleScanReach({
     outputPath,
     packagePaths,
     reachabilityOptions,
-    spinner,
+    spinner: spinner ?? undefined,
     target: targets[0]!,
     uploadManifests: true,
   })
 
-  spinner.stop()
+  spinner?.stop()
 
   await outputScanReach(result, { cwd, outputKind, outputPath })
 }

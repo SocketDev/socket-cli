@@ -17,9 +17,10 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { deleteAsync as del } from 'del'
-import colors from 'yoctocolors-cjs'
 
 import { parseArgs } from '@socketsecurity/lib/argv/parse'
+import { logger } from '@socketsecurity/lib/logger'
+import colors from 'yoctocolors-cjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '..')
@@ -91,36 +92,36 @@ const PRICING = {
 
 // Simple inline logger.
 const log = {
-  info: msg => console.log(msg),
-  error: msg => console.error(`${colors.red('✗')} ${msg}`),
-  success: msg => console.log(`${colors.green('✓')} ${msg}`),
-  step: msg => console.log(`\n${msg}`),
-  substep: msg => console.log(`  ${msg}`),
+  info: msg => logger.log(msg),
+  error: msg => logger.error(`${colors.red('✗')} ${msg}`),
+  success: msg => logger.log(`${colors.green('✓')} ${msg}`),
+  step: msg => logger.log(`\n${msg}`),
+  substep: msg => logger.log(`  ${msg}`),
   progress: msg => {
     process.stdout.write('\r\x1b[K')
     process.stdout.write(`  ∴ ${msg}`)
   },
   done: msg => {
     process.stdout.write('\r\x1b[K')
-    console.log(`  ${colors.green('✓')} ${msg}`)
+    logger.log(`  ${colors.green('✓')} ${msg}`)
   },
   failed: msg => {
     process.stdout.write('\r\x1b[K')
-    console.log(`  ${colors.red('✗')} ${msg}`)
+    logger.log(`  ${colors.red('✗')} ${msg}`)
   },
-  warn: msg => console.log(`${colors.yellow('⚠')} ${msg}`),
+  warn: msg => logger.log(`${colors.yellow('⚠')} ${msg}`),
 }
 
 function printHeader(title) {
-  console.log(`\n${'─'.repeat(60)}`)
-  console.log(`  ${title}`)
-  console.log(`${'─'.repeat(60)}`)
+  logger.log(`\n${'─'.repeat(60)}`)
+  logger.log(`  ${title}`)
+  logger.log(`${'─'.repeat(60)}`)
 }
 
 function printFooter(message) {
-  console.log(`\n${'─'.repeat(60)}`)
+  logger.log(`\n${'─'.repeat(60)}`)
   if (message) {
-    console.log(`  ${colors.green('✓')} ${message}`)
+    logger.log(`  ${colors.green('✓')} ${message}`)
   }
 }
 
@@ -248,22 +249,22 @@ class CostTracker {
 
   showSessionSummary() {
     const duration = Date.now() - this.startTime
-    console.log(colors.cyan('\n💰 Cost Summary:'))
-    console.log(`  Input tokens: ${this.session.input.toLocaleString()}`)
-    console.log(`  Output tokens: ${this.session.output.toLocaleString()}`)
+    logger.log(colors.cyan('\n💰 Cost Summary:'))
+    logger.log(`  Input tokens: ${this.session.input.toLocaleString()}`)
+    logger.log(`  Output tokens: ${this.session.output.toLocaleString()}`)
     if (this.session.cacheWrite > 0) {
-      console.log(`  Cache write: ${this.session.cacheWrite.toLocaleString()}`)
+      logger.log(`  Cache write: ${this.session.cacheWrite.toLocaleString()}`)
     }
     if (this.session.cacheRead > 0) {
-      console.log(`  Cache read: ${this.session.cacheRead.toLocaleString()}`)
+      logger.log(`  Cache read: ${this.session.cacheRead.toLocaleString()}`)
     }
-    console.log(
+    logger.log(
       `  Session cost: ${colors.green(`$${this.session.cost.toFixed(4)}`)}`,
     )
-    console.log(
+    logger.log(
       `  Monthly total: ${colors.yellow(`$${this.monthly.cost.toFixed(2)}`)}`,
     )
-    console.log(`  Duration: ${colors.gray(formatDuration(duration))}`)
+    logger.log(`  Duration: ${colors.gray(formatDuration(duration))}`)
   }
 }
 
@@ -394,15 +395,15 @@ class ProgressTracker {
     const totalElapsed = Date.now() - this.startTime
     const eta = this.getTotalETA()
 
-    console.log(colors.cyan('\n⏱️  Progress:'))
-    console.log(`  Elapsed: ${formatDuration(totalElapsed)}`)
+    logger.log(colors.cyan('\n⏱️  Progress:'))
+    logger.log(`  Elapsed: ${formatDuration(totalElapsed)}`)
     if (eta) {
-      console.log(`  ETA: ${formatDuration(eta)}`)
+      logger.log(`  ETA: ${formatDuration(eta)}`)
     }
 
     if (this.currentPhase) {
       const phaseElapsed = Date.now() - this.currentPhase.start
-      console.log(
+      logger.log(
         colors.gray(
           `  Current: ${this.currentPhase.name} (${formatDuration(phaseElapsed)})`,
         ),
@@ -411,9 +412,9 @@ class ProgressTracker {
 
     // Show completed phases.
     if (this.phases.length > 0) {
-      console.log(colors.gray('  Completed:'))
+      logger.log(colors.gray('  Completed:'))
       this.phases.forEach(p => {
-        console.log(
+        logger.log(
           colors.gray(
             `    ${colors.green('✓')} ${p.name} (${formatDuration(p.duration)})`,
           ),
@@ -487,10 +488,10 @@ class SnapshotManager {
   }
 
   listSnapshots() {
-    console.log(colors.cyan('\n📸 Available Snapshots:'))
+    logger.log(colors.cyan('\n📸 Available Snapshots:'))
     this.snapshots.forEach((snap, i) => {
       const age = formatDuration(Date.now() - snap.timestamp)
-      console.log(
+      logger.log(
         `  ${i + 1}. ${snap.label} ${colors.gray(`(${age} ago, ${snap.sha.substring(0, 7)})`)}`,
       )
     })
@@ -617,9 +618,9 @@ async function celebrateSuccess(costTracker, stats = {}) {
 
   // Show fix details if available.
   if (stats.fixCount > 0) {
-    console.log(colors.cyan('\n📊 Session Stats:'))
-    console.log(`  Fixes applied: ${stats.fixCount}`)
-    console.log(`  Retries: ${stats.retries || 0}`)
+    logger.log(colors.cyan('\n📊 Session Stats:'))
+    logger.log(`  Fixes applied: ${stats.fixCount}`)
+    logger.log(`  Retries: ${stats.retries || 0}`)
   }
 
   // Update success streak.
@@ -645,9 +646,9 @@ async function celebrateSuccess(costTracker, stats = {}) {
 
     await fs.writeFile(streakPath, JSON.stringify(streak, null, 2))
 
-    console.log(colors.cyan('\n🔥 Success Streak:'))
-    console.log(`  Current: ${streak.current}`)
-    console.log(`  Best: ${streak.best}`)
+    logger.log(colors.cyan('\n🔥 Success Streak:'))
+    logger.log(`  Current: ${streak.current}`)
+    logger.log(`  Best: ${streak.best}`)
   } catch {
     // Ignore errors.
   }
@@ -850,42 +851,42 @@ function displayAnalysis(analysis) {
     return
   }
 
-  console.log(colors.cyan('\n🔍 Root Cause Analysis:'))
-  console.log(
+  logger.log(colors.cyan('\n🔍 Root Cause Analysis:'))
+  logger.log(
     `  Cause: ${analysis.rootCause} ${colors.gray(`(${analysis.confidence}% confident)`)}`,
   )
-  console.log(`  Category: ${analysis.category}`)
+  logger.log(`  Category: ${analysis.category}`)
 
   if (analysis.isEnvironmental) {
-    console.log(
+    logger.log(
       colors.yellow(
         '\n  ⚠ This appears to be an environmental issue (runner/network/external)',
       ),
     )
     if (analysis.environmentalFactors.length > 0) {
-      console.log(colors.yellow('  Factors to check:'))
+      logger.log(colors.yellow('  Factors to check:'))
       analysis.environmentalFactors.forEach(factor => {
-        console.log(colors.yellow(`    - ${factor}`))
+        logger.log(colors.yellow(`    - ${factor}`))
       })
     }
   }
 
   if (analysis.strategies.length > 0) {
-    console.log(
+    logger.log(
       colors.cyan('\n💡 Fix Strategies (ranked by success probability):'),
     )
     analysis.strategies.forEach((strategy, i) => {
-      console.log(
+      logger.log(
         `  ${i + 1}. ${colors.bold(strategy.name)} ${colors.gray(`(${strategy.probability}%)`)}`,
       )
-      console.log(`     ${strategy.description}`)
-      console.log(colors.gray(`     ${strategy.reasoning}`))
+      logger.log(`     ${strategy.description}`)
+      logger.log(colors.gray(`     ${strategy.reasoning}`))
     })
   }
 
   if (analysis.explanation) {
-    console.log(colors.cyan('\n📖 Explanation:'))
-    console.log(colors.gray(`  ${analysis.explanation}`))
+    logger.log(colors.cyan('\n📖 Explanation:'))
+    logger.log(colors.gray(`  ${analysis.explanation}`))
   }
 }
 
@@ -1245,12 +1246,12 @@ async function ensureClaudeAuthenticated(claudeCmd) {
 
     // Not authenticated, provide instructions for manual authentication
     log.warn('Claude Code login required')
-    console.log(colors.yellow('\nClaude Code needs to be authenticated.'))
-    console.log('\nTo authenticate:')
-    console.log('  1. Open a new terminal')
-    console.log(`  2. Run: ${colors.green('claude')}`)
-    console.log('  3. Follow the browser authentication prompts')
-    console.log(
+    logger.log(colors.yellow('\nClaude Code needs to be authenticated.'))
+    logger.log('\nTo authenticate:')
+    logger.log('  1. Open a new terminal')
+    logger.log(`  2. Run: ${colors.green('claude')}`)
+    logger.log('  3. Follow the browser authentication prompts')
+    logger.log(
       '  4. Once authenticated, return here and press Enter to continue',
     )
 
@@ -1296,8 +1297,8 @@ async function ensureGitHubAuthenticated() {
 
     // Not authenticated, prompt for login
     log.warn('GitHub authentication required')
-    console.log(colors.yellow('\nYou need to authenticate with GitHub.'))
-    console.log('Follow the prompts to complete authentication.\n')
+    logger.log(colors.yellow('\nYou need to authenticate with GitHub.'))
+    logger.log('Follow the prompts to complete authentication.\n')
 
     // Run gh auth login interactively
     log.progress('Starting GitHub login process')
@@ -1311,12 +1312,10 @@ async function ensureGitHubAuthenticated() {
       await new Promise(resolve => setTimeout(resolve, 2000))
     } else {
       log.failed('Login process failed')
-      console.log(colors.red('\nLogin failed. Please try again.'))
+      logger.log(colors.red('\nLogin failed. Please try again.'))
 
       if (attempts < maxAttempts) {
-        console.log(
-          colors.yellow(`\nAttempt ${attempts + 1} of ${maxAttempts}`),
-        )
+        logger.log(colors.yellow(`\nAttempt ${attempts + 1} of ${maxAttempts}`))
         await new Promise(resolve => setTimeout(resolve, 1000))
       }
     }
@@ -1812,7 +1811,7 @@ function filterCILogs(rawLogs) {
       line.includes('error TS') ||
       line.includes('FAIL') ||
       line.includes('✗') ||
-      line.includes('❌') ||
+      line.includes(`${colors.red('✗')}`) ||
       line.includes('failed') ||
       line.includes('ELIFECYCLE')
     ) {
@@ -2606,11 +2605,11 @@ async function autonomousFixSession(
   const totalIssues = critical.length + high.length + medium.length + low.length
 
   log.info('🎯 Auto-fix mode: Carefully fixing issues with double-checking')
-  console.log('\nIssues found:')
-  console.log(`  ${colors.red(`Critical: ${critical.length}`)}`)
-  console.log(`  ${colors.yellow(`High: ${high.length}`)}`)
-  console.log(`  ${colors.cyan(`Medium: ${medium.length}`)}`)
-  console.log(`  ${colors.gray(`Low: ${low.length}`)}`)
+  logger.log('\nIssues found:')
+  logger.log(`  ${colors.red(`Critical: ${critical.length}`)}`)
+  logger.log(`  ${colors.yellow(`High: ${high.length}`)}`)
+  logger.log(`  ${colors.cyan(`Medium: ${medium.length}`)}`)
+  logger.log(`  ${colors.gray(`Low: ${low.length}`)}`)
 
   if (totalIssues === 0) {
     log.success('No issues found!')
@@ -2679,13 +2678,13 @@ Apply the fix and return ONLY the fixed code snippet.`
 
   // Report issues that need review
   if (toReview.length > 0) {
-    console.log(`\n${colors.yellow('Issues requiring manual review:')}`)
+    logger.log(`\n${colors.yellow('Issues requiring manual review:')}`)
     toReview.forEach((issue, i) => {
-      console.log(
+      logger.log(
         `${i + 1}. [${issue.severity}] ${issue.file}:${issue.line} - ${issue.description}`,
       )
     })
-    console.log('\nRun with --prompt to fix these interactively')
+    logger.log('\nRun with --prompt to fix these interactively')
   }
 
   log.success('Autonomous fix session complete!')
@@ -2731,12 +2730,12 @@ async function interactiveFixSession(
 
   const totalIssues = critical.length + high.length + medium.length + low.length
 
-  console.log('\nScan Results:')
-  console.log(`  ${colors.red(`Critical: ${critical.length}`)}`)
-  console.log(`  ${colors.yellow(`High: ${high.length}`)}`)
-  console.log(`  ${colors.cyan(`Medium: ${medium.length}`)}`)
-  console.log(`  ${colors.gray(`Low: ${low.length}`)}`)
-  console.log(`  Total: ${totalIssues} issues found`)
+  logger.log('\nScan Results:')
+  logger.log(`  ${colors.red(`Critical: ${critical.length}`)}`)
+  logger.log(`  ${colors.yellow(`High: ${high.length}`)}`)
+  logger.log(`  ${colors.cyan(`Medium: ${medium.length}`)}`)
+  logger.log(`  ${colors.gray(`Low: ${low.length}`)}`)
+  logger.log(`  Total: ${totalIssues} issues found`)
 
   if (totalIssues === 0) {
     log.success('No issues found!')
@@ -2744,11 +2743,11 @@ async function interactiveFixSession(
   }
 
   // Start interactive session.
-  console.log(
+  logger.log(
     `\n${colors.blue('Starting interactive fix session with Claude...')}`,
   )
-  console.log('Claude will help you fix these issues.')
-  console.log('Commands: fix <issue-number>, commit, push, exit\n')
+  logger.log('Claude will help you fix these issues.')
+  logger.log('Commands: fix <issue-number>, commit, push, exit\n')
 
   // Create a comprehensive prompt for Claude.
   const sessionPrompt = `You are helping fix security and quality issues in Socket projects.
@@ -3821,7 +3820,7 @@ async function validateBeforePush(cwd) {
   // Check 1: No console.log statements
   if (diff.match(/^\+.*console\.log\(/m)) {
     warnings.push(
-      `${colors.yellow('⚠')} Added console.log() statements detected`,
+      `${colors.yellow('⚠')} Added logger.log() statements detected`,
     )
   }
 
@@ -3940,7 +3939,7 @@ async function runGreen(claudeCmd, options = {}) {
     }
 
     // Add newline after progress indicator before command output
-    console.log('')
+    logger.log('')
     const result = await runCommandWithOutput(check.cmd, check.args, {
       cwd: rootPath,
       stdio: 'inherit',
@@ -4301,18 +4300,18 @@ Let's work through this together to get CI passing.`
   const ghCheck = await runCommandWithOutput(ghCheckCommand, ['gh'])
   if (ghCheck.exitCode !== 0) {
     log.error('GitHub CLI (gh) is required for CI monitoring')
-    console.log(`\n${colors.cyan('Installation Instructions:')}`)
-    console.log(`  macOS:   ${colors.green('brew install gh')}`)
-    console.log(`  Ubuntu:  ${colors.green('sudo apt install gh')}`)
-    console.log(`  Fedora:  ${colors.green('sudo dnf install gh')}`)
-    console.log(`  Windows: ${colors.green('winget install --id GitHub.cli')}`)
-    console.log(
+    logger.log(`\n${colors.cyan('Installation Instructions:')}`)
+    logger.log(`  macOS:   ${colors.green('brew install gh')}`)
+    logger.log(`  Ubuntu:  ${colors.green('sudo apt install gh')}`)
+    logger.log(`  Fedora:  ${colors.green('sudo dnf install gh')}`)
+    logger.log(`  Windows: ${colors.green('winget install --id GitHub.cli')}`)
+    logger.log(
       `  Other:   ${colors.gray('https://github.com/cli/cli/blob/trunk/docs/install_linux.md')}`,
     )
-    console.log(`\n${colors.yellow('After installation:')}`)
-    console.log(`  1. Run: ${colors.green('gh auth login')}`)
-    console.log('  2. Follow the prompts to authenticate')
-    console.log(`  3. Try again: ${colors.green('pnpm claude --green')}`)
+    logger.log(`\n${colors.yellow('After installation:')}`)
+    logger.log(`  1. Run: ${colors.green('gh auth login')}`)
+    logger.log('  2. Follow the prompts to authenticate')
+    logger.log(`  3. Try again: ${colors.green('pnpm claude --green')}`)
     return false
   }
 
@@ -4320,10 +4319,10 @@ Let's work through this together to get CI passing.`
   const isGitHubAuthenticated = await ensureGitHubAuthenticated()
   if (!isGitHubAuthenticated) {
     log.error('Unable to authenticate with GitHub')
-    console.log(
+    logger.log(
       colors.red('\nGitHub authentication is required for CI monitoring.'),
     )
-    console.log('Please ensure you can login to GitHub CLI and try again.')
+    logger.log('Please ensure you can login to GitHub CLI and try again.')
     return false
   }
 
@@ -4410,24 +4409,24 @@ Let's work through this together to get CI passing.`
 
       // Provide debugging information
       if (runsResult.stderr) {
-        console.log(colors.red('\nError details:'))
-        console.log(runsResult.stderr)
+        logger.log(colors.red('\nError details:'))
+        logger.log(runsResult.stderr)
       }
 
       // Common troubleshooting steps
-      console.log(colors.yellow('\nTroubleshooting:'))
-      console.log('1. Check GitHub CLI authentication:')
-      console.log(`   ${colors.green('gh auth status')}`)
-      console.log('\n2. If not authenticated, login:')
-      console.log(`   ${colors.green('gh auth login')}`)
-      console.log('\n3. Test repository access:')
-      console.log(`   ${colors.green(`gh api repos/${owner}/${repo}`)}`)
-      console.log('\n4. Check if workflows exist:')
-      console.log(
+      logger.log(colors.yellow('\nTroubleshooting:'))
+      logger.log('1. Check GitHub CLI authentication:')
+      logger.log(`   ${colors.green('gh auth status')}`)
+      logger.log('\n2. If not authenticated, login:')
+      logger.log(`   ${colors.green('gh auth login')}`)
+      logger.log('\n3. Test repository access:')
+      logger.log(`   ${colors.green(`gh api repos/${owner}/${repo}`)}`)
+      logger.log('\n4. Check if workflows exist:')
+      logger.log(
         `   ${colors.green(`gh workflow list --repo ${owner}/${repo}`)}`,
       )
-      console.log('\n5. View recent runs manually:')
-      console.log(
+      logger.log('\n5. View recent runs manually:')
+      logger.log(
         `   ${colors.green(`gh run list --repo ${owner}/${repo} --limit 5`)}`,
       )
 
@@ -4541,16 +4540,14 @@ Let's work through this together to get CI passing.`
         // Show available snapshots for reference.
         const snapshotList = snapshots.listSnapshots()
         if (snapshotList.length > 0) {
-          console.log(colors.cyan('\n📸 Available Snapshots:'))
+          logger.log(colors.cyan('\n📸 Available Snapshots:'))
           snapshotList.slice(0, 5).forEach(snap => {
-            console.log(
+            logger.log(
               `  ${snap.label} ${colors.gray(`(${formatDuration(Date.now() - snap.timestamp)} ago)`)}`,
             )
           })
           if (snapshotList.length > 5) {
-            console.log(
-              colors.gray(`  ... and ${snapshotList.length - 5} more`),
-            )
+            logger.log(colors.gray(`  ... and ${snapshotList.length - 5} more`))
           }
         }
 
@@ -4608,7 +4605,7 @@ Let's work through this together to get CI passing.`
           },
         )
         // Add newline after progress indicator before next output
-        console.log('')
+        logger.log('')
 
         // Filter and show summary of logs
         const rawLogs = logsResult.stdout || 'No logs available'
@@ -4719,7 +4716,7 @@ Fix all issues by making necessary file changes. Be direct, don't ask questions.
             const child = spawn(scriptCmd, [], {
               stdio: 'inherit',
               cwd: rootPath,
-              shell: true,
+              ...(WIN32 && { shell: true }),
             })
 
             // Handle Ctrl+C gracefully
@@ -4761,7 +4758,7 @@ Fix all issues by making necessary file changes. Be direct, don't ask questions.
         // Run local checks again
         log.progress('Running local checks after fixes')
         // Add newline after progress indicator before command output
-        console.log('')
+        logger.log('')
         for (const check of localChecks) {
           await runCommandWithOutput(check.cmd, check.args, {
             cwd: rootPath,
@@ -4941,7 +4938,7 @@ Fix all issues by making necessary file changes. Be direct, don't ask questions.
                   cwd: rootPath,
                 },
               )
-              console.log('')
+              logger.log('')
 
               // Filter logs to extract relevant errors
               const rawLogs = logsResult.stdout || 'No logs available'
@@ -5039,7 +5036,7 @@ Fix the issue by making necessary file changes. Be direct, don't ask questions.`
                   const child = spawn(scriptCmd, [], {
                     stdio: 'inherit',
                     cwd: rootPath,
-                    shell: true,
+                    ...(WIN32 && { shell: true }),
                   })
 
                   // Handle Ctrl+C gracefully
@@ -5080,7 +5077,7 @@ Fix the issue by making necessary file changes. Be direct, don't ask questions.`
 
               // Run local checks
               log.progress('Running local checks after fix')
-              console.log('')
+              logger.log('')
               for (const check of localChecks) {
                 await runCommandWithOutput(check.cmd, check.args, {
                   cwd: rootPath,
@@ -5314,7 +5311,7 @@ async function runWatchMode(claudeCmd, options = {}) {
 
   // Handle graceful shutdown
   process.on('SIGINT', () => {
-    console.log(`\n${colors.yellow('Stopping watch mode...')}`)
+    logger.log(`\n${colors.yellow('Stopping watch mode...')}`)
 
     // Clean up watchers
     for (const watcher of watchers) {
@@ -5340,32 +5337,32 @@ async function runWatchMode(claudeCmd, options = {}) {
  * Show available Claude operations.
  */
 function showOperations() {
-  console.log('\nCore operations:')
-  console.log('  --commit       Create commits with Claude assistance')
-  console.log(
+  logger.log('\nCore operations:')
+  logger.log('  --commit       Create commits with Claude assistance')
+  logger.log(
     '  --green        Ensure all tests pass, push, monitor CI until green',
   )
-  console.log('  --push         Create commits and push to remote')
-  console.log('  --sync         Synchronize CLAUDE.md files across projects')
+  logger.log('  --push         Create commits and push to remote')
+  logger.log('  --sync         Synchronize CLAUDE.md files across projects')
 
-  console.log('\nCode quality:')
-  console.log('  --audit        Security and quality audit')
-  console.log('  --clean        Find unused code and imports')
-  console.log('  --fix          Scan for bugs and security issues')
-  console.log('  --optimize     Performance optimization analysis')
-  console.log('  --refactor     Suggest code improvements')
-  console.log('  --review       Review staged changes before committing')
+  logger.log('\nCode quality:')
+  logger.log('  --audit        Security and quality audit')
+  logger.log('  --clean        Find unused code and imports')
+  logger.log('  --fix          Scan for bugs and security issues')
+  logger.log('  --optimize     Performance optimization analysis')
+  logger.log('  --refactor     Suggest code improvements')
+  logger.log('  --review       Review staged changes before committing')
 
-  console.log('\nDevelopment:')
-  console.log('  --debug        Help debug errors')
-  console.log('  --deps         Analyze dependencies')
-  console.log('  --docs         Generate documentation')
-  console.log('  --explain      Explain code or concepts')
-  console.log('  --migrate      Migration assistance')
-  console.log('  --test         Generate test cases')
+  logger.log('\nDevelopment:')
+  logger.log('  --debug        Help debug errors')
+  logger.log('  --deps         Analyze dependencies')
+  logger.log('  --docs         Generate documentation')
+  logger.log('  --explain      Explain code or concepts')
+  logger.log('  --migrate      Migration assistance')
+  logger.log('  --test         Generate test cases')
 
-  console.log('\nUtility:')
-  console.log('  --help         Show this help message')
+  logger.log('\nUtility:')
+  logger.log('  --help         Show this help message')
 }
 
 async function main() {
@@ -5531,62 +5528,58 @@ async function main() {
 
     // Show help if requested or no operation specified.
     if (values.help || !hasOperation) {
-      console.log('\nUsage: pnpm claude [operation] [options] [files...]')
-      console.log('\nClaude-powered utilities for Socket projects.')
+      logger.log('\nUsage: pnpm claude [operation] [options] [files...]')
+      logger.log('\nClaude-powered utilities for Socket projects.')
       showOperations()
-      console.log('\nOptions:')
-      console.log(
+      logger.log('\nOptions:')
+      logger.log(
         '  --cross-repo     Operate on all Socket projects (default: current only)',
       )
-      console.log('  --dry-run        Preview changes without writing files')
-      console.log(
+      logger.log('  --dry-run        Preview changes without writing files')
+      logger.log(
         '  --max-auto-fixes N  Max auto-fix attempts (--green, default: 10)',
       )
-      console.log(
-        '  --max-retries N  Max CI fix attempts (--green, default: 3)',
-      )
-      console.log('  --no-darkwing    Disable "Let\'s get dangerous!" mode')
-      console.log('  --no-report      Skip generating scan report (--fix)')
-      console.log('  --no-verify      Use --no-verify when committing')
-      console.log('  --pinky          Use default model (Claude 3.5 Sonnet)')
-      console.log('  --prompt         Prompt for approval before fixes (--fix)')
-      console.log('  --seq            Run sequentially (default: parallel)')
-      console.log("  --skip-commit    Update files but don't commit")
-      console.log(
+      logger.log('  --max-retries N  Max CI fix attempts (--green, default: 3)')
+      logger.log('  --no-darkwing    Disable "Let\'s get dangerous!" mode')
+      logger.log('  --no-report      Skip generating scan report (--fix)')
+      logger.log('  --no-verify      Use --no-verify when committing')
+      logger.log('  --pinky          Use default model (Claude 3.5 Sonnet)')
+      logger.log('  --prompt         Prompt for approval before fixes (--fix)')
+      logger.log('  --seq            Run sequentially (default: parallel)')
+      logger.log("  --skip-commit    Update files but don't commit")
+      logger.log(
         '  --the-brain      Use ultrathink mode - "Try to take over the world!"',
       )
-      console.log('  --watch          Continuous monitoring mode')
-      console.log('  --workers N      Number of parallel workers (default: 3)')
-      console.log('\nExamples:')
-      console.log(
+      logger.log('  --watch          Continuous monitoring mode')
+      logger.log('  --workers N      Number of parallel workers (default: 3)')
+      logger.log('\nExamples:')
+      logger.log(
         '  pnpm claude --fix            # Auto-fix issues (careful mode)',
       )
-      console.log(
+      logger.log(
         '  pnpm claude --fix --prompt   # Prompt for approval on each fix',
       )
-      console.log(
+      logger.log(
         '  pnpm claude --fix --watch    # Continuous monitoring & fixing',
       )
-      console.log('  pnpm claude --review         # Review staged changes')
-      console.log('  pnpm claude --green          # Ensure CI passes')
-      console.log(
+      logger.log('  pnpm claude --review         # Review staged changes')
+      logger.log('  pnpm claude --green          # Ensure CI passes')
+      logger.log(
         '  pnpm claude --green --dry-run  # Test green without real CI',
       )
-      console.log(
+      logger.log(
         '  pnpm claude --fix --the-brain  # Deep analysis with ultrathink mode',
       )
-      console.log('  pnpm claude --fix --workers 5  # Use 5 parallel workers')
-      console.log(
+      logger.log('  pnpm claude --fix --workers 5  # Use 5 parallel workers')
+      logger.log(
         '  pnpm claude --test lib/utils.js  # Generate tests for a file',
       )
-      console.log(
-        '  pnpm claude --refactor src/index.js  # Suggest refactoring',
-      )
-      console.log('  pnpm claude --push           # Commit and push changes')
-      console.log('  pnpm claude --help           # Show this help')
-      console.log('\nRequires:')
-      console.log('  - Claude Code CLI (claude) installed')
-      console.log('  - GitHub CLI (gh) for --green command')
+      logger.log('  pnpm claude --refactor src/index.js  # Suggest refactoring')
+      logger.log('  pnpm claude --push           # Commit and push changes')
+      logger.log('  pnpm claude --help           # Show this help')
+      logger.log('\nRequires:')
+      logger.log('  - Claude Code CLI (claude) installed')
+      logger.log('  - GitHub CLI (gh) for --green command')
       process.exitCode = 0
       return
     }
@@ -5598,24 +5591,24 @@ async function main() {
     if (!claudeCmd) {
       log.failed('Claude Code CLI not found')
       log.error('Please install Claude Code to use these utilities')
-      console.log(`\n${colors.cyan('Installation Instructions:')}`)
-      console.log('  1. Visit: https://docs.claude.com/en/docs/claude-code')
-      console.log('  2. Or install via npm:')
-      console.log(
+      logger.log(`\n${colors.cyan('Installation Instructions:')}`)
+      logger.log('  1. Visit: https://docs.claude.com/en/docs/claude-code')
+      logger.log('  2. Or install via npm:')
+      logger.log(
         `     ${colors.green('npm install -g @anthropic/claude-desktop')}`,
       )
-      console.log('  3. Or download directly:')
-      console.log(`     macOS: ${colors.gray('brew install claude')}`)
-      console.log(
+      logger.log('  3. Or download directly:')
+      logger.log(`     macOS: ${colors.gray('brew install claude')}`)
+      logger.log(
         `     Linux: ${colors.gray('curl -fsSL https://docs.claude.com/install.sh | sh')}`,
       )
-      console.log(
+      logger.log(
         `     Windows: ${colors.gray('Download from https://claude.ai/download')}`,
       )
-      console.log(`\n${colors.yellow('After installation:')}`)
-      console.log(`  1. Run: ${colors.green('claude')}`)
-      console.log('  2. Sign in with your Anthropic account when prompted')
-      console.log(`  3. Try again: ${colors.green('pnpm claude --help')}`)
+      logger.log(`\n${colors.yellow('After installation:')}`)
+      logger.log(`  1. Run: ${colors.green('claude')}`)
+      logger.log('  2. Sign in with your Anthropic account when prompted')
+      logger.log(`  3. Try again: ${colors.green('pnpm claude --help')}`)
       process.exitCode = 1
       return
     }
@@ -5624,10 +5617,10 @@ async function main() {
     const isClaudeAuthenticated = await ensureClaudeAuthenticated(claudeCmd)
     if (!isClaudeAuthenticated) {
       log.error('Unable to authenticate with Claude Code')
-      console.log(
+      logger.log(
         colors.red('\nAuthentication is required to use Claude utilities.'),
       )
-      console.log(
+      logger.log(
         'Please ensure Claude Code is properly authenticated and try again.',
       )
       process.exitCode = 1
@@ -5718,6 +5711,6 @@ async function main() {
 }
 
 main().catch(e => {
-  console.error(e)
+  logger.error(e)
   process.exitCode = 1
 })

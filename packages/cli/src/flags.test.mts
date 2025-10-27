@@ -1,13 +1,14 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
   commonFlags,
   getMaxOldSpaceSizeFlag,
   getMaxSemiSpaceSizeFlag,
   outputFlags,
+  resetFlagCache,
   validationFlags,
 } from './flags.mts'
-import ENV from '../constants/env.mts'
+import ENV from './constants/env.mts'
 
 // Mock dependencies.
 vi.mock('meow', () => ({
@@ -34,8 +35,20 @@ vi.mock('./constants.mts', () => ({
 }))
 
 describe('flags', () => {
+  let originalArgv: string[]
+
   beforeEach(() => {
     vi.clearAllMocks()
+    resetFlagCache()
+    // Save original argv and reset ENV for clean state.
+    originalArgv = process.argv
+    ENV.NODE_OPTIONS = ''
+  })
+
+  afterEach(() => {
+    // Restore original state.
+    process.argv = originalArgv
+    ENV.NODE_OPTIONS = ''
   })
 
   describe('getMaxOldSpaceSizeFlag', () => {
@@ -47,41 +60,40 @@ describe('flags', () => {
       expect(result).toBe(6144)
     })
 
-    it('respects NODE_OPTIONS', async () => {
-      const _constants = vi.mocked(await import('./constants.mts')).default
+    it('respects NODE_OPTIONS', () => {
       ENV.NODE_OPTIONS = '--max-old-space-size=512'
+      resetFlagCache()
 
-      // Need to reset the module to clear cached value.
-      vi.resetModules()
-      const { getMaxOldSpaceSizeFlag: freshGetMaxOldSpaceSizeFlag } =
-        await import('./flags.mts')
-
-      const result = freshGetMaxOldSpaceSizeFlag()
+      const result = getMaxOldSpaceSizeFlag()
       expect(result).toBe(512)
+
+      // Cleanup.
+      ENV.NODE_OPTIONS = ''
     })
 
-    it('respects user-provided flag', async () => {
-      const meow = vi.mocked(await import('meow')).default
-      meow.mockReturnValue({
-        flags: {
-          maxOldSpaceSize: 1024,
-          maxSemiSpaceSize: 0,
-        },
-      } as any)
+    it('respects user-provided flag', () => {
+      const originalArgv = process.argv
+      process.argv = ['node', 'script.js', '--max-old-space-size=1024']
+      resetFlagCache()
 
-      vi.resetModules()
-      const { getMaxOldSpaceSizeFlag: freshGetMaxOldSpaceSizeFlag } =
-        await import('./flags.mts')
-
-      const result = freshGetMaxOldSpaceSizeFlag()
+      const result = getMaxOldSpaceSizeFlag()
       expect(result).toBe(1024)
+
+      // Cleanup.
+      process.argv = originalArgv
     })
 
-    it('handles low memory systems', async () => {
-      // The test is failing because the module-level cache is not being cleared properly.
-      // We need to be careful about caching in flags.mts.
-      // Since this test requires a clean state, skip it for now.
-      expect(true).toBe(true)
+    it('handles low memory systems', () => {
+      const originalArgv = process.argv
+      process.argv = ['node', 'script.js', '--max-old-space-size=256']
+      resetFlagCache()
+
+      const result = getMaxOldSpaceSizeFlag()
+      // Should respect the explicitly set low value.
+      expect(result).toBe(256)
+
+      // Cleanup.
+      process.argv = originalArgv
     })
   })
 
@@ -93,43 +105,53 @@ describe('flags', () => {
       expect(result).toBe(64)
     })
 
-    it('respects NODE_OPTIONS', async () => {
-      const _constants = vi.mocked(await import('./constants.mts')).default
+    it('respects NODE_OPTIONS', () => {
       ENV.NODE_OPTIONS = '--max-semi-space-size=16'
+      resetFlagCache()
 
-      vi.resetModules()
-      const { getMaxSemiSpaceSizeFlag: freshGetMaxSemiSpaceSizeFlag } =
-        await import('./flags.mts')
-
-      const result = freshGetMaxSemiSpaceSizeFlag()
+      const result = getMaxSemiSpaceSizeFlag()
       expect(result).toBe(16)
+
+      // Cleanup.
+      ENV.NODE_OPTIONS = ''
     })
 
-    it('respects user-provided flag', async () => {
-      const meow = vi.mocked(await import('meow')).default
-      meow.mockReturnValue({
-        flags: {
-          maxOldSpaceSize: 0,
-          maxSemiSpaceSize: 32,
-        },
-      } as any)
+    it('respects user-provided flag', () => {
+      const originalArgv = process.argv
+      process.argv = ['node', 'script.js', '--max-semi-space-size=32']
+      resetFlagCache()
 
-      vi.resetModules()
-      const { getMaxSemiSpaceSizeFlag: freshGetMaxSemiSpaceSizeFlag } =
-        await import('./flags.mts')
-
-      const result = freshGetMaxSemiSpaceSizeFlag()
+      const result = getMaxSemiSpaceSizeFlag()
       expect(result).toBe(32)
+
+      // Cleanup.
+      process.argv = originalArgv
     })
 
-    it('scales for very small heaps', async () => {
-      // Skipping due to module caching issues.
-      expect(true).toBe(true)
+    it('scales for very small heaps', () => {
+      const originalArgv = process.argv
+      process.argv = ['node', 'script.js', '--max-old-space-size=512']
+      resetFlagCache()
+
+      const result = getMaxSemiSpaceSizeFlag()
+      // 512 MiB heap should use 4 MiB semi-space.
+      expect(result).toBe(4)
+
+      // Cleanup.
+      process.argv = originalArgv
     })
 
-    it('scales for large heaps', async () => {
-      // Skipping due to module caching issues.
-      expect(true).toBe(true)
+    it('scales for large heaps', () => {
+      const originalArgv = process.argv
+      process.argv = ['node', 'script.js', '--max-old-space-size=16384']
+      resetFlagCache()
+
+      const result = getMaxSemiSpaceSizeFlag()
+      // 16384 MiB (16 GiB) heap: log2(16384) = 14, 14 * 8 = 112.
+      expect(result).toBe(112)
+
+      // Cleanup.
+      process.argv = originalArgv
     })
   })
 

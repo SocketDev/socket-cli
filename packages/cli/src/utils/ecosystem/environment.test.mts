@@ -29,8 +29,10 @@ vi.mock('@socketsecurity/lib/fs', () => ({
 }))
 
 const mockReadPackageJson = vi.hoisted(() => vi.fn())
+const mockToEditablePackageJson = vi.hoisted(() => vi.fn())
 vi.mock('@socketsecurity/lib/packages', () => ({
   readPackageJson: mockReadPackageJson,
+  toEditablePackageJson: mockToEditablePackageJson,
 }))
 
 const mockSpawn = vi.hoisted(() => vi.fn())
@@ -39,7 +41,7 @@ vi.mock('@socketsecurity/lib/spawn', () => ({
 }))
 
 const mockFindUp = vi.hoisted(() => vi.fn())
-vi.mock('./fs.mts', () => ({
+vi.mock('../fs/find-up.mts', () => ({
   findUp: mockFindUp,
 }))
 
@@ -65,6 +67,11 @@ describe('package-environment', () => {
     vi.clearAllMocks()
     // Default mock behavior for spawn to get package manager version.
     mockSpawn.mockResolvedValue({ stdout: '10.0.0', stderr: '', code: 0 })
+    // Default mock behavior for toEditablePackageJson.
+    mockToEditablePackageJson.mockImplementation(async pkgJson => ({
+      content: pkgJson,
+      path: '/project/package.json',
+    }))
   })
 
   describe('AGENTS', () => {
@@ -79,7 +86,7 @@ describe('package-environment', () => {
 
   describe('detectPackageEnvironment', () => {
     it('detects npm environment with package-lock.json', async () => {
-      const { findUp } = await import('./fs.mts')
+      const { findUp } = await import('../fs/find-up.mts')
       const mockFindUpImported = vi.mocked(findUp)
 
       // Mock finding package-lock.json.
@@ -102,8 +109,11 @@ describe('package-environment', () => {
     })
 
     it('detects pnpm environment with pnpm-lock.yaml', async () => {
+      const { findUp } = await import('../fs/find-up.mts')
+      const mockFindUpImported = vi.mocked(findUp)
+
       // Mock finding pnpm-lock.yaml.
-      mockFindUp.mockImplementation(async files => {
+      mockFindUpImported.mockImplementation(async files => {
         // When called with an array of lock file names, return the pnpm lock.
         if (Array.isArray(files) && files.includes('pnpm-lock.yaml')) {
           return '/project/pnpm-lock.yaml'
@@ -132,8 +142,11 @@ describe('package-environment', () => {
     })
 
     it('detects yarn environment with yarn.lock', async () => {
+      const { findUp } = await import('../fs/find-up.mts')
+      const mockFindUpImported = vi.mocked(findUp)
+
       // Mock finding yarn.lock.
-      mockFindUp.mockImplementation(async files => {
+      mockFindUpImported.mockImplementation(async files => {
         // When called with an array of lock file names, return the yarn lock.
         if (Array.isArray(files) && files.includes('yarn.lock')) {
           return '/project/yarn.lock'
@@ -162,8 +175,11 @@ describe('package-environment', () => {
     })
 
     it('detects bun environment with bun.lockb', async () => {
+      const { findUp } = await import('../fs/find-up.mts')
+      const mockFindUpImported = vi.mocked(findUp)
+
       // Mock finding bun.lockb.
-      mockFindUp.mockImplementation(async files => {
+      mockFindUpImported.mockImplementation(async files => {
         // When called with an array of lock file names, return the bun lock.
         if (Array.isArray(files) && files.includes('bun.lockb')) {
           return '/project/bun.lockb'
@@ -262,7 +278,7 @@ describe('package-environment', () => {
       const result = await detectPackageEnvironment({ cwd: '/project' })
 
       // Node version info is in the pkgRequirements property.
-      expect(result.pkgRequirements?.node).toBe('>=20')
+      expect(result.pkgRequirements?.node).toBe('>=18.0.0')
     })
 
     it('detects browser targets from browserslist', async () => {

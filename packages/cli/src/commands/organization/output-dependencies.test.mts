@@ -1,17 +1,29 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { outputDependencies } from './output-dependencies.mts'
 import {
   createErrorResult,
   createSuccessResult,
-  setupStandardOutputMocks,
   setupTestEnvironment,
 } from '../../../test/helpers/index.mts'
 
 import type { CResult } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
-setupStandardOutputMocks()
+// Mock the dependencies.
+vi.mock('@socketsecurity/lib/logger', () => ({
+  logger: {
+    fail: vi.fn(),
+    log: vi.fn(),
+  },
+}))
+
+vi.mock('../../utils/output/result-json.mjs', () => ({
+  serializeResultJson: vi.fn(result => JSON.stringify(result)),
+}))
+
+vi.mock('../../utils/error/fail-msg-with-badge.mts', () => ({
+  failMsgWithBadge: vi.fn((msg, cause) => `${msg}: ${cause}`),
+}))
 
 vi.mock('chalk-table', () => ({
   default: vi.fn((_options, data) => `Table with ${data.length} rows`),
@@ -19,7 +31,12 @@ vi.mock('chalk-table', () => ({
 
 vi.mock('yoctocolors-cjs', () => ({
   default: {
+    bgRedBright: vi.fn(text => text),
+    bold: vi.fn(text => text),
     cyan: vi.fn(text => text),
+    green: vi.fn(text => text),
+    red: vi.fn(text => text),
+    yellow: vi.fn(text => text),
   },
 }))
 
@@ -27,9 +44,10 @@ describe('outputDependencies', () => {
   setupTestEnvironment()
 
   it('outputs JSON format for successful result', async () => {
-    const { logger: _logger } = await import('@socketsecurity/lib/logger')
-    const { serializeResultJson } = await import(
-      '../../utils/serialize/result-json.mts'
+    const { outputDependencies } = await import('./output-dependencies.mts')
+    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
+    const { serializeResultJson } = await vi.importMock(
+      '../../utils/output/result-json.mjs',
     )
     const mockLog = vi.mocked(logger.log)
     const mockSerialize = vi.mocked(serializeResultJson)
@@ -63,7 +81,8 @@ describe('outputDependencies', () => {
   })
 
   it('outputs error in JSON format', async () => {
-    const { logger: _logger } = await import('@socketsecurity/lib/logger')
+    const { outputDependencies } = await import('./output-dependencies.mts')
+    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
     const mockLog = vi.mocked(logger.log)
 
     const result: CResult<
@@ -84,8 +103,9 @@ describe('outputDependencies', () => {
   })
 
   it('outputs markdown format with table', async () => {
-    const { logger: _logger } = await import('@socketsecurity/lib/logger')
-    const chalkTable = await import('chalk-table')
+    const { outputDependencies } = await import('./output-dependencies.mts')
+    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
+    const chalkTable = await vi.importMock('chalk-table')
     const mockLog = vi.mocked(logger.log)
     const mockChalkTable = vi.mocked(chalkTable.default)
 
@@ -136,9 +156,10 @@ describe('outputDependencies', () => {
   })
 
   it('outputs error in markdown format', async () => {
-    const { logger: _logger } = await import('@socketsecurity/lib/logger')
-    const { failMsgWithBadge } = await import(
-      '../../utils/error/fail-msg-with-badge.mts'
+    const { outputDependencies } = await import('./output-dependencies.mts')
+    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
+    const { failMsgWithBadge } = await vi.importMock(
+      '../../utils/error/fail-msg-with-badge.mts',
     )
     const mockFail = vi.mocked(logger.fail)
     const mockFailMsg = vi.mocked(failMsgWithBadge)
@@ -165,7 +186,8 @@ describe('outputDependencies', () => {
   })
 
   it('shows proper pagination info when more data is available', async () => {
-    const { logger: _logger } = await import('@socketsecurity/lib/logger')
+    const { outputDependencies } = await import('./output-dependencies.mts')
+    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
     const mockLog = vi.mocked(logger.log)
 
     const result: CResult<
@@ -198,8 +220,9 @@ describe('outputDependencies', () => {
   })
 
   it('handles empty dependencies list', async () => {
-    const { logger: _logger } = await import('@socketsecurity/lib/logger')
-    const chalkTable = await import('chalk-table')
+    const { outputDependencies } = await import('./output-dependencies.mts')
+    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
+    const chalkTable = await vi.importMock('chalk-table')
     const mockChalkTable = vi.mocked(chalkTable.default)
 
     const result: CResult<
@@ -219,6 +242,7 @@ describe('outputDependencies', () => {
   })
 
   it('sets default exit code when code is undefined', async () => {
+    const { outputDependencies } = await import('./output-dependencies.mts')
     const result: CResult<
       SocketSdkSuccessResult<'searchDependencies'>['data']
     > = createErrorResult('Error without code')

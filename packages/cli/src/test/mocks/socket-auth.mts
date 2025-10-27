@@ -80,7 +80,7 @@ export function mockAuthenticatedApiClient(options?: {
     setToken: vi.fn(),
     clearToken: vi.fn(),
     validateToken: vi.fn().mockResolvedValue(isAuthenticated),
-    getOrganizations: vi
+    listOrganizations: vi
       .fn()
       .mockResolvedValue(
         isAuthenticated ? [{ id: MOCK_ORG_ID, name: MOCK_ORG_NAME }] : [],

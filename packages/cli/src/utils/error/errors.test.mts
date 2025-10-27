@@ -4,6 +4,8 @@ import { fileURLToPath } from 'node:url'
 
 import { describe, expect, it } from 'vitest'
 
+import { UNKNOWN_ERROR } from '@socketsecurity/lib/constants/core'
+
 import {
   AuthError,
   ConfigError,
@@ -19,7 +21,6 @@ import {
   NetworkError,
   RateLimitError,
 } from './errors.mts'
-import { UNKNOWN_ERROR } from '../constants/errors.mts'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)

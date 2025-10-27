@@ -7,7 +7,7 @@ import {
   detectDefaultBranch,
   getRepoName,
   gitBranch,
-} from '../../utils/git/git.mjs'
+} from '../../utils/git/operations.mjs'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
 import { handleCreateNewScan } from '../scan/handle-create-new-scan.mts'
 

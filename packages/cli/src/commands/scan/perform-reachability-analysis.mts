@@ -14,7 +14,7 @@ import { socketDevLink } from '../../utils/terminal/link.mts'
 import { fetchOrganization } from '../organization/fetch-organization-list.mts'
 
 import type { CResult } from '../../types.mts'
-import type { PURL_Type } from '../../utils/ecosystem/ecosystem.mjs'
+import type { PURL_Type } from '../../utils/ecosystem/types.mjs'
 import type { Spinner } from '@socketsecurity/lib/spinner'
 
 export type ReachabilityOptions = {
@@ -120,7 +120,7 @@ export async function performReachabilityAnalysis(
 
     if (!uploadCResult.ok) {
       if (wasSpinning) {
-        spinner.start()
+        spinner?.start()
       }
       return uploadCResult
     }
@@ -128,7 +128,7 @@ export async function performReachabilityAnalysis(
     tarHash = (uploadCResult.data as { tarHash?: string })?.tarHash
     if (!tarHash) {
       if (wasSpinning) {
-        spinner.start()
+        spinner?.start()
       }
       return {
         ok: false,
@@ -196,7 +196,7 @@ export async function performReachabilityAnalysis(
   })
 
   if (wasSpinning) {
-    spinner.start()
+    spinner?.start()
   }
 
   return coanaResult.ok

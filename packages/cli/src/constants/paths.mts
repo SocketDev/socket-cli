@@ -18,6 +18,8 @@ import {
 import { DOT_SOCKET_DIR } from '@socketsecurity/lib/constants/paths'
 import { logger } from '@socketsecurity/lib/logger'
 
+import ENV from './env.mts'
+
 // Import socket constants for re-export.
 import { SOCKET_JSON } from './socket.mts'
 
@@ -89,7 +91,7 @@ export function getBinPath(): string {
 
 export function getBinCliPath(): string {
   // Allow overriding CLI binary path for testing built binaries (SEA, yao-pkg, etc).
-  const binPath = process.env['SOCKET_CLI_BIN_PATH']
+  const binPath = ENV.SOCKET_CLI_BIN_PATH
   if (binPath) {
     return binPath
   }
@@ -159,7 +161,7 @@ export function getBlessedContribPath(): string {
 }
 
 export function getBlessedOptions() {
-  const blessedColorDepth = (process.env['TERM'] ?? '').includes('256color')
+  const blessedColorDepth = (ENV.TERM ?? '').includes('256color')
     ? 256
     : 8
   return {
@@ -176,37 +178,39 @@ export function getBlessedOptions() {
 
 export function getSocketAppDataPath(): string | undefined {
   // Get the OS app data directory:
-  // - Win: %LOCALAPPDATA% or fail?
+  // - Win: %LOCALAPPDATA% or fallback to %USERPROFILE%/AppData/Local
   // - Mac: %XDG_DATA_HOME% or fallback to "~/Library/Application Support/"
   // - Linux: %XDG_DATA_HOME% or fallback to "~/.local/share/"
-  // Note: LOCALAPPDATA is typically: C:\Users\USERNAME\AppData
+  // Note: LOCALAPPDATA typically points to user's AppData\Local directory.
   // Note: XDG stands for "X Desktop Group", nowadays "freedesktop.org"
   //       On most systems that path is: $HOME/.local/share
   // Then append `socket/settings`, so:
-  // - Win: %LOCALAPPDATA%\socket\settings or return undefined
+  // - Win: %LOCALAPPDATA%\socket\settings or %USERPROFILE%\AppData\Local\socket\settings
   // - Mac: %XDG_DATA_HOME%/socket/settings or "~/Library/Application Support/socket/settings"
   // - Linux: %XDG_DATA_HOME%/socket/settings or "~/.local/share/socket/settings"
   const isWin32 = process.platform === 'win32'
   let dataHome: string | undefined = isWin32
-    ? process.env['LOCALAPPDATA']
-    : process.env['XDG_DATA_HOME']
+    ? ENV.LOCALAPPDATA
+    : ENV.XDG_DATA_HOME
   if (!dataHome) {
-    if (isWin32) {
-      logger.warn('Missing %LOCALAPPDATA%.')
-      return undefined
-    }
     const home = homedir()
-    const isDarwin = process.platform === 'darwin'
-    dataHome = path.join(
-      home,
-      isDarwin ? 'Library/Application Support' : '.local/share',
-    )
+    if (isWin32) {
+      // Fallback: Use USERPROFILE or HOME when LOCALAPPDATA is missing.
+      dataHome = path.join(home, 'AppData', 'Local')
+      logger.warn('LOCALAPPDATA not set, using fallback path.')
+    } else {
+      const isDarwin = process.platform === 'darwin'
+      dataHome = path.join(
+        home,
+        isDarwin ? 'Library/Application Support' : '.local/share',
+      )
+    }
   }
   return dataHome ? path.join(dataHome, 'socket', 'settings') : undefined
 }
 
 export function getSocketCachePath(): string {
-  const xdgCacheHome = process.env['XDG_CACHE_HOME']
+  const xdgCacheHome = ENV.XDG_CACHE_HOME
   if (xdgCacheHome) {
     return path.join(xdgCacheHome, 'socket')
   }
@@ -217,8 +221,8 @@ export function getSocketCachePath(): string {
       return path.join(home, 'Library', 'Caches', 'socket')
     case 'win32': {
       const tempDir =
-        process.env['TEMP'] ||
-        process.env['TMP'] ||
+        ENV.TEMP ||
+        ENV.TMP ||
         path.join(home, 'AppData', 'Local', 'Temp')
       return path.join(tempDir, 'socket')
     }

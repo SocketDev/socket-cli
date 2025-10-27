@@ -1,4 +1,5 @@
 import { promises as fs } from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 
 import { afterEach, describe, expect } from 'vitest'
@@ -14,7 +15,7 @@ const pnpmFixtureDir = path.join(fixtureBaseDir, 'pnpm')
 
 async function cleanupNodeModules() {
   // Clean up node_modules from all package manager directories.
-  await Promise.all([
+  Promise.all([
     fs.rm(path.join(pnpmFixtureDir, 'node_modules'), {
       force: true,
       recursive: true,
@@ -50,12 +51,19 @@ describe('socket patch discover', async () => {
     ['patch', 'discover', FLAG_CONFIG, '{"apiToken":"fake-token"}'],
     'should show error when no node_modules directory found',
     async cmd => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
-        cwd: path.join(fixtureBaseDir, 'nonexistent-dir'),
-      })
-      const output = stdout + stderr
-      expect(output).toContain('No node_modules directory found')
-      expect(code, 'should exit with non-zero code').not.toBe(0)
+      // Create a temporary directory without node_modules.
+      const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'socket-test-'))
+      try {
+        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
+          cwd: tmpDir,
+        })
+        const output = stdout + stderr
+        expect(output).toContain('No node_modules directory found')
+        expect(code, 'should exit with non-zero code').not.toBe(0)
+      } finally {
+        // Clean up temporary directory.
+        await fs.rm(tmpDir, { force: true, recursive: true })
+      }
     },
   )
 
@@ -309,33 +317,5 @@ describe('socket patch discover', async () => {
         expect(stdout).not.toMatch(/\d+ available patch[^e]/)
       }
     },
-  )
-})
-
-describe('socket patch discover - type exports', () => {
-  cmdit(
-    [],
-    'should export PatchVulnerability type',
-    async () => {
-      // Test that PatchVulnerability is exported.
-      const module = await import('./handle-patch-discover.mts')
-      expect(module).toHaveProperty('PatchVulnerability')
-      // PatchVulnerability is a type, so it won't have a runtime value.
-      // This test verifies the module structure is correct.
-    },
-    { concurrent: true },
-  )
-
-  cmdit(
-    [],
-    'should export DiscoveredPatch interface',
-    async () => {
-      // Test that DiscoveredPatch is exported.
-      const module = await import('./handle-patch-discover.mts')
-      expect(module).toHaveProperty('DiscoveredPatch')
-      // DiscoveredPatch is an interface, so it won't have a runtime value.
-      // This test verifies the module structure is correct.
-    },
-    { concurrent: true },
   )
 })

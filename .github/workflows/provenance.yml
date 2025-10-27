@@ -26,6 +26,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          autocrlf: false
       - uses: SocketDev/socket-registry/.github/actions/setup@d8ff3b0581d799466cfbf150f715c1a4bf9f84a5 # main
         with:
           scope: '@socketsecurity'

@@ -1,18 +1,29 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { getNpmConfig } from '../config.mts'
-
-// Mock @npmcli/config.
-vi.mock('@npmcli/config', () => ({
-  default: vi.fn(() => ({
+// Create mock constructor and instance in hoisted scope
+const { MockNpmConfig, mockNpmConfigInstance } = vi.hoisted(() => {
+  const mockNpmConfigInstance = {
     load: vi.fn().mockResolvedValue(undefined),
     flat: {
       registry: 'https://registry.npmjs.org/',
       cache: '/home/user/.npm',
       prefix: '/usr/local',
     },
-  })),
+  }
+
+  const MockNpmConfig = vi.fn().mockImplementation(function () {
+    return mockNpmConfigInstance
+  })
+
+  return { MockNpmConfig, mockNpmConfigInstance }
+})
+
+// Mock @npmcli/config.
+vi.mock('@npmcli/config', () => ({
+  default: MockNpmConfig,
 }))
+
+import { getNpmConfig } from './config.mts'
 
 // Mock @npmcli/config/lib/definitions.
 vi.mock('@npmcli/config/lib/definitions', () => ({
@@ -28,7 +39,9 @@ vi.mock('./paths.mts', () => ({
 
 describe('npm-config utilities', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
+    // Clear only the mock calls, not the implementation
+    MockNpmConfig.mockClear()
+    vi.mocked(mockNpmConfigInstance.load).mockClear()
   })
 
   describe('getNpmConfig', () => {
@@ -45,11 +58,11 @@ describe('npm-config utilities', () => {
     })
 
     it('uses custom cwd option', async () => {
-      const NpmConfig = (await import('@npmcli/config')).default
+      // Use MockNpmConfig directly
 
       await getNpmConfig({ cwd: '/custom/path' })
 
-      expect(NpmConfig).toHaveBeenCalledWith(
+      expect(MockNpmConfig).toHaveBeenCalledWith(
         expect.objectContaining({
           cwd: '/custom/path',
         }),
@@ -57,12 +70,12 @@ describe('npm-config utilities', () => {
     })
 
     it('uses custom env option', async () => {
-      const NpmConfig = (await import('@npmcli/config')).default
+      // Use MockNpmConfig directly
       const customEnv = { NODE_ENV: 'test', FOO: 'bar' }
 
       await getNpmConfig({ env: customEnv })
 
-      expect(NpmConfig).toHaveBeenCalledWith(
+      expect(MockNpmConfig).toHaveBeenCalledWith(
         expect.objectContaining({
           env: customEnv,
         }),
@@ -70,11 +83,11 @@ describe('npm-config utilities', () => {
     })
 
     it('uses custom npmPath option', async () => {
-      const NpmConfig = (await import('@npmcli/config')).default
+      // Use MockNpmConfig directly
 
       await getNpmConfig({ npmPath: '/custom/npm/path' })
 
-      expect(NpmConfig).toHaveBeenCalledWith(
+      expect(MockNpmConfig).toHaveBeenCalledWith(
         expect.objectContaining({
           npmPath: '/custom/npm/path',
         }),
@@ -82,11 +95,11 @@ describe('npm-config utilities', () => {
     })
 
     it('uses custom platform option', async () => {
-      const NpmConfig = (await import('@npmcli/config')).default
+      // Use MockNpmConfig directly
 
       await getNpmConfig({ platform: 'win32' })
 
-      expect(NpmConfig).toHaveBeenCalledWith(
+      expect(MockNpmConfig).toHaveBeenCalledWith(
         expect.objectContaining({
           platform: 'win32',
         }),
@@ -110,11 +123,11 @@ describe('npm-config utilities', () => {
     })
 
     it('handles execPath option', async () => {
-      const NpmConfig = (await import('@npmcli/config')).default
+      // Use MockNpmConfig directly
 
       await getNpmConfig({ execPath: '/usr/bin/node' })
 
-      expect(NpmConfig).toHaveBeenCalledWith(
+      expect(MockNpmConfig).toHaveBeenCalledWith(
         expect.objectContaining({
           execPath: '/usr/bin/node',
         }),
@@ -124,11 +137,12 @@ describe('npm-config utilities', () => {
     it('calls config.load()', async () => {
       const mockLoad = vi.fn().mockResolvedValue(undefined)
       vi.mocked((await import('@npmcli/config')).default).mockImplementation(
-        () =>
-          ({
+        function () {
+          return {
             load: mockLoad,
             flat: { test: 'value' },
-          }) as any,
+          }
+        } as any,
       )
 
       await getNpmConfig()

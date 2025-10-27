@@ -12,7 +12,7 @@
  * Cache Management:
  * - Stores binaries in ~/.socket/cache/dlx-bin (POSIX)
  * - Stores binaries in %USERPROFILE%\.socket\cache\dlx-bin (Windows)
- * - Uses content-addressed storage with SHA256 hashes
+ * - Uses content-addressed storage (SHA-256 for keys, SHA-512 for content)
  * - Supports TTL-based cache expiration
  * - Verifies checksums for security
  *
@@ -52,7 +52,7 @@ export interface DlxBinaryOptions {
   url: string
   /** Optional name for the cached binary (defaults to URL hash). */
   name?: string
-  /** Expected checksum (sha256) for verification. */
+  /** Expected checksum (sha512) for verification. */
   checksum?: string
   /** Cache TTL in milliseconds (default: 7 days). */
   cacheTtl?: number
@@ -76,8 +76,9 @@ export interface DlxBinaryResult {
 }
 
 /**
- * Generate a cache directory name from URL, similar to pnpm/npx.
- * Uses SHA256 hash to create content-addressed storage.
+ * Generate a cache directory name from URL, similar to npm/cacache.
+ * Uses SHA-256 hash for cache keys (like npm's index keys).
+ * Content verification uses SHA-512 (like npm's content hashes).
  */
 function generateCacheKey(url: string): string {
   return createHash('sha256').update(url).digest('hex')
@@ -135,7 +136,7 @@ async function downloadBinary(
 
   // Create a temporary file first.
   const tempPath = `${destPath}.download`
-  const hasher = createHash('sha256')
+  const hasher = createHash('sha512')
 
   try {
     // Ensure directory exists.
@@ -394,7 +395,7 @@ export async function listDlxCache(): Promise<
       const metadata = (await readJson(metaPath, {
         throws: false,
       })) as DlxMetadata | null
-      if (!metadata) {
+      if (!metadata || !metadata.url || !metadata.timestamp) {
         continue
       }
 

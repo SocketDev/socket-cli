@@ -1,13 +1,24 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { outputCreateNewScan } from './output-create-new-scan.mts'
-import { setupStandardOutputMocks } from '../../../test/helpers/index.mts'
-
 import type { CResult } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 // Mock the dependencies.
-setupStandardOutputMocks()
+vi.mock('@socketsecurity/lib/logger', () => ({
+  logger: {
+    fail: vi.fn(),
+    log: vi.fn(),
+    success: vi.fn(),
+  },
+}))
+
+vi.mock('../../utils/output/result-json.mjs', () => ({
+  serializeResultJson: vi.fn(result => JSON.stringify(result)),
+}))
+
+vi.mock('../../utils/error/fail-msg-with-badge.mts', () => ({
+  failMsgWithBadge: vi.fn((msg, cause) => `${msg}: ${cause}`),
+}))
 
 vi.mock('open', () => ({
   default: vi.fn(),
@@ -37,9 +48,10 @@ describe('outputCreateNewScan', () => {
   })
 
   it('outputs JSON format for successful result', async () => {
-    const { logger } = await import('@socketsecurity/lib/logger')
-    const { serializeResultJson } = await import(
-      '../../utils/serialize/result-json.mts'
+    const { outputCreateNewScan } = await import('./output-create-new-scan.mts')
+    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
+    const { serializeResultJson } = await vi.importMock(
+      '../../utils/output/result-json.mjs',
     )
     const mockLog = vi.mocked(logger.log)
     const mockSerialize = vi.mocked(serializeResultJson)
@@ -61,7 +73,8 @@ describe('outputCreateNewScan', () => {
   })
 
   it('outputs error in JSON format', async () => {
-    const { logger } = await import('@socketsecurity/lib/logger')
+    const { outputCreateNewScan } = await import('./output-create-new-scan.mts')
+    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
     const mockLog = vi.mocked(logger.log)
 
     const result: CResult<SocketSdkSuccessResult<'CreateOrgFullScan'>['data']> =
@@ -79,8 +92,9 @@ describe('outputCreateNewScan', () => {
   })
 
   it('outputs success message with report URL in text format', async () => {
-    const { logger } = await import('@socketsecurity/lib/logger')
-    const terminalLink = await import('terminal-link')
+    const { outputCreateNewScan } = await import('./output-create-new-scan.mts')
+    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
+    const terminalLink = await vi.importMock('terminal-link')
     const mockLog = vi.mocked(logger.log)
     const mockSuccess = vi.mocked(logger.success)
     const mockTerminalLink = vi.mocked(terminalLink.default)
@@ -107,7 +121,8 @@ describe('outputCreateNewScan', () => {
   })
 
   it('outputs markdown format with scan ID', async () => {
-    const { logger } = await import('@socketsecurity/lib/logger')
+    const { outputCreateNewScan } = await import('./output-create-new-scan.mts')
+    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
     const mockLog = vi.mocked(logger.log)
 
     const result: CResult<SocketSdkSuccessResult<'CreateOrgFullScan'>['data']> =
@@ -130,7 +145,8 @@ describe('outputCreateNewScan', () => {
   })
 
   it('handles missing scan ID properly', async () => {
-    const { logger } = await import('@socketsecurity/lib/logger')
+    const { outputCreateNewScan } = await import('./output-create-new-scan.mts')
+    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
     const mockFail = vi.mocked(logger.fail)
 
     const result: CResult<SocketSdkSuccessResult<'CreateOrgFullScan'>['data']> =
@@ -151,9 +167,10 @@ describe('outputCreateNewScan', () => {
   })
 
   it('outputs error in text format', async () => {
-    const { logger } = await import('@socketsecurity/lib/logger')
-    const { failMsgWithBadge } = await import(
-      '../../utils/error/fail-msg-with-badge.mts'
+    const { outputCreateNewScan } = await import('./output-create-new-scan.mts')
+    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
+    const { failMsgWithBadge } = await vi.importMock(
+      '../../utils/error/fail-msg-with-badge.mts',
     )
     const mockFail = vi.mocked(logger.fail)
     const mockFailMsg = vi.mocked(failMsgWithBadge)
@@ -177,8 +194,9 @@ describe('outputCreateNewScan', () => {
   })
 
   it('opens browser when interactive and user confirms', async () => {
-    const { confirm } = await import('@socketsecurity/lib/prompts')
-    const open = await import('open')
+    const { outputCreateNewScan } = await import('./output-create-new-scan.mts')
+    const { confirm } = await vi.importMock('@socketsecurity/lib/prompts')
+    const open = await vi.importMock('open')
     const mockConfirm = vi.mocked(confirm)
     const mockOpen = vi.mocked(open.default)
 
@@ -198,21 +216,19 @@ describe('outputCreateNewScan', () => {
       outputKind: 'text',
     })
 
-    expect(mockConfirm).toHaveBeenCalledWith(
-      {
-        default: false,
-        message: 'Would you like to open it in your browser?',
-      },
-      { spinner: expect.any(Object) },
-    )
+    expect(mockConfirm).toHaveBeenCalledWith({
+      default: false,
+      message: 'Would you like to open it in your browser?',
+    })
     expect(mockOpen).toHaveBeenCalledWith(
       'https://socket.dev/report/browser-test',
     )
   })
 
   it('does not open browser when user declines', async () => {
-    const { confirm } = await import('@socketsecurity/lib/prompts')
-    const open = await import('open')
+    const { outputCreateNewScan } = await import('./output-create-new-scan.mts')
+    const { confirm } = await vi.importMock('@socketsecurity/lib/prompts')
+    const open = await vi.importMock('open')
     const mockConfirm = vi.mocked(confirm)
     const mockOpen = vi.mocked(open.default)
 
@@ -237,6 +253,7 @@ describe('outputCreateNewScan', () => {
   })
 
   it('handles spinner lifecycle correctly', async () => {
+    const { outputCreateNewScan } = await import('./output-create-new-scan.mts')
     mockSpinner.isSpinning = true
 
     const result: CResult<SocketSdkSuccessResult<'CreateOrgFullScan'>['data']> =
@@ -258,7 +275,8 @@ describe('outputCreateNewScan', () => {
   })
 
   it('handles missing report URL', async () => {
-    const { logger } = await import('@socketsecurity/lib/logger')
+    const { outputCreateNewScan } = await import('./output-create-new-scan.mts')
+    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
     const mockLog = vi.mocked(logger.log)
 
     const result: CResult<SocketSdkSuccessResult<'CreateOrgFullScan'>['data']> =
@@ -276,6 +294,7 @@ describe('outputCreateNewScan', () => {
   })
 
   it('sets default exit code when code is undefined', async () => {
+    const { outputCreateNewScan } = await import('./output-create-new-scan.mts')
     const result: CResult<SocketSdkSuccessResult<'CreateOrgFullScan'>['data']> =
       {
         ok: false,

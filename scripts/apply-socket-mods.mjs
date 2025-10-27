@@ -11,19 +11,21 @@
 import { readFile, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { logger } from '@socketsecurity/lib/logger'
+import colors from 'yoctocolors-cjs'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
 const ROOT_DIR = join(__dirname, '..')
-const BUILD_DIR = join(ROOT_DIR, '.custom-node-build')
-const NODE_DIR = join(BUILD_DIR, 'node-yao-pkg')
+const BUILD_DIR = join(ROOT_DIR, 'build')
+const NODE_DIR = join(BUILD_DIR, 'node-smol')
 
 /**
  * Fix V8 include paths
  */
 async function fixV8IncludePaths() {
-  console.log('🔧 Fixing V8 include paths...')
+  logger.log('🔧 Fixing V8 include paths...')
 
   const fixes = [
     {
@@ -83,7 +85,7 @@ async function fixV8IncludePaths() {
         if (content.includes(from)) {
           content = content.replace(from, to)
           modified = true
-          console.log(`   ✓ Fixed: ${file}`)
+          logger.log(`   ✓ Fixed: ${file}`)
         }
       }
 
@@ -91,19 +93,19 @@ async function fixV8IncludePaths() {
         await writeFile(filePath, content, 'utf8')
       }
     } catch (e) {
-      console.warn(`   ⚠️  Could not fix ${file}: ${e.message}`)
+      logger.warn(`   ${colors.yellow('⚠')}  Could not fix ${file}: ${e.message}`)
     }
   }
 
-  console.log('✅ V8 include paths fixed')
-  console.log()
+  logger.log(`${colors.green('✓')} V8 include paths fixed`)
+  logger.log()
 }
 
 /**
  * Enable SEA detection for pkg binaries
  */
 async function enableSeaForPkg() {
-  console.log('🔧 Enabling SEA detection for pkg binaries...')
+  logger.log('🔧 Enabling SEA detection for pkg binaries...')
 
   const filePath = join(NODE_DIR, 'lib', 'sea.js')
 
@@ -119,38 +121,38 @@ const { getAsset: getAssetInternal, getAssetKeys: getAssetKeysInternal } = inter
     if (content.includes(oldImport)) {
       content = content.replace(oldImport, newImport)
       await writeFile(filePath, content, 'utf8')
-      console.log('   ✓ Modified: lib/sea.js')
+      logger.log('   ✓ Modified: lib/sea.js')
     } else {
-      console.log('   ℹ️  lib/sea.js already modified or structure changed')
+      logger.log('   ℹ️  lib/sea.js already modified or structure changed')
     }
   } catch (e) {
-    console.warn(`   ⚠️  Could not modify lib/sea.js: ${e.message}`)
+    logger.warn(`   ${colors.yellow('⚠')}  Could not modify lib/sea.js: ${e.message}`)
   }
 
-  console.log('✅ SEA detection enabled')
-  console.log()
+  logger.log(`${colors.green('✓')} SEA detection enabled`)
+  logger.log()
 }
 
 /**
  * Main function
  */
 async function main() {
-  console.log('🔨 Applying Socket modifications to Node.js source')
-  console.log()
+  logger.log('🔨 Applying Socket modifications to Node.js source')
+  logger.log()
 
   await fixV8IncludePaths()
   await enableSeaForPkg()
 
-  console.log('🎉 All modifications applied!')
-  console.log()
-  console.log('📝 To generate patches:')
-  console.log('   cd .custom-node-build/node-yao-pkg')
-  console.log('   git diff > ../../build/patches/socket/my-changes.patch')
-  console.log()
+  logger.log('🎉 All modifications applied!')
+  logger.log()
+  logger.log('📝 To generate patches:')
+  logger.log('   cd build/node-smol')
+  logger.log('   git diff > ../../build/patches/socket/my-changes.patch')
+  logger.log()
 }
 
 // Run main function
 main().catch(error => {
-  console.error('❌ Failed to apply modifications:', error.message)
+  logger.error(`${colors.red('✗')} Failed to apply modifications:`, error.message)
   process.exitCode = 1
 })

@@ -29,7 +29,7 @@ export interface HandlePatchGetConfig {
   outputDir: string | undefined
   outputKind: OutputKind
   purl: string
-  spinner: Spinner
+  spinner: Spinner | null
 }
 
 export async function handlePatchGet({
@@ -40,7 +40,7 @@ export async function handlePatchGet({
   spinner,
 }: HandlePatchGetConfig): Promise<void> {
   try {
-    spinner.start('Reading patch manifest')
+    spinner?.start('Reading patch manifest')
 
     const dotSocketDirPath = normalizePath(path.join(cwd, DOT_SOCKET_DIR))
     const manifestPath = normalizePath(
@@ -54,7 +54,7 @@ export async function handlePatchGet({
     const patch = validated.patches[normalizedPurl]
 
     if (!patch) {
-      spinner.stop()
+      spinner?.stop()
       throw new InputError(`Patch not found for PURL: ${purl}`)
     }
 
@@ -67,7 +67,7 @@ export async function handlePatchGet({
       await fs.mkdir(targetDir, { recursive: true })
     }
 
-    spinner.text('Copying patch files')
+    spinner?.text('Copying patch files')
 
     const copiedFiles: string[] = []
     const blobsDir = normalizePath(path.join(dotSocketDirPath, 'blobs'))
@@ -75,7 +75,7 @@ export async function handlePatchGet({
     for (const { 0: fileName, 1: fileInfo } of Object.entries(patch.files)) {
       const blobPath = normalizePath(path.join(blobsDir, fileInfo.afterHash))
       if (!existsSync(blobPath)) {
-        spinner.stop()
+        spinner?.stop()
         throw new InputError(
           `Patch file not found: ${fileInfo.afterHash} for ${fileName}`,
         )
@@ -95,11 +95,13 @@ export async function handlePatchGet({
       copiedFiles.push(fileName)
     }
 
-    spinner.stop()
+    spinner?.stop()
 
-    logger.log(
-      `Copied ${copiedFiles.length} patch ${pluralize('file', { count: copiedFiles.length })} to ${targetDir}`,
-    )
+    if (outputKind === 'text') {
+      logger.log(
+        `Copied ${copiedFiles.length} patch ${pluralize('file', { count: copiedFiles.length })} to ${targetDir}`,
+      )
+    }
 
     await outputPatchGetResult(
       {
@@ -113,7 +115,7 @@ export async function handlePatchGet({
       outputKind,
     )
   } catch (e) {
-    spinner.stop()
+    spinner?.stop()
 
     if (e instanceof InputError) {
       throw e

@@ -7,6 +7,13 @@
  * - Spawns the CLI in a subprocess (system Node.js or embedded runtime)
  * - Handles tarball extraction using inlined nanotar (no system tar dependency)
  * - Supports IPC handshake for self-update mechanism
+ *
+ * IMPORTANT: This bootstrap code runs BEFORE the main CLI loads.
+ * We CANNOT use the centralized ENV module here because:
+ * 1. Bootstrap needs to set up paths before ENV module can be imported
+ * 2. ENV module depends on constants that need these paths
+ * 3. This creates a circular dependency
+ * Therefore, we use direct process.env access for bootstrap-specific env vars.
  */
 
 import { spawn } from 'node:child_process'
@@ -21,6 +28,7 @@ import { parseTarGzip } from 'nanotar'
 const require = createRequire(import.meta.url)
 
 // Configurable constants with environment variable overrides.
+// Direct process.env access required - bootstrap runs before ENV module loads.
 // os.homedir() can throw if no home directory is available.
 let SOCKET_HOME: string
 try {
@@ -39,6 +47,7 @@ const IPC_HANDSHAKE_TIMEOUT_MS = 5_000
 // 30 seconds total.
 const LOCK_MAX_RETRIES = 60
 const LOCK_RETRY_DELAY_MS = 500
+// Bootstrap-specific env vars (direct process.env access - runs before ENV module loads).
 const NPM_REGISTRY =
   process.env['SOCKET_NPM_REGISTRY'] ||
   process.env['NPM_REGISTRY'] ||
@@ -81,8 +90,8 @@ function sanitizeTarballPath(filePath: string): string {
   const segments = withoutPrefix
     .split('/')
     .filter(seg => seg && seg !== '.' && seg !== '..')
-  // Normalize path separators for the current platform.
-  return segments.join(path.sep)
+  // Use path.join for proper path construction, then normalize to forward slashes.
+  return path.join(...segments).replace(/\\/g, '/')
 }
 
 /**
@@ -106,11 +115,11 @@ async function remove(
     }
 
     // Check if trying to delete outside SOCKET_HOME (catastrophic delete protection).
-    const relation = path.relative(SOCKET_HOME, absolutePath)
+    const relation = path.relative(SOCKET_HOME, absolutePath).replace(/\\/g, '/')
     const isInside = Boolean(
       relation &&
         relation !== '..' &&
-        !relation.startsWith(`..${path.sep}`) &&
+        !relation.startsWith('../') &&
         !path.isAbsolute(relation),
     )
 

@@ -27,6 +27,7 @@ function createTestVocab(): Vocabulary {
     // Common words.
     fix: 8081,
     scan: 15772,
+    vulnerabilit: 23828,
     vulnerability: 23829,
     package: 7427,
     security: 3036,
@@ -73,10 +74,10 @@ describe('WordPieceTokenizer', () => {
       const vocab = createTestVocab()
       const tokenizer = new WordPieceTokenizer({ vocab })
 
-      const result = tokenizer.tokenize('fix vulnerabilities!')
+      const result = tokenizer.tokenize('fix security!')
 
       expect(result.tokens).toContain('!')
-      expect(result.tokens).toContain('vulnerability')
+      expect(result.tokens).toContain('security')
     })
   })
 
@@ -98,13 +99,8 @@ describe('WordPieceTokenizer', () => {
 
       const result = tokenizer.tokenize('vulnerabilities')
 
-      // "vulnerabilities" = "vulnerability" + "##ies"
-      expect(result.tokens).toEqual([
-        '[CLS]',
-        'vulnerability',
-        '##ies',
-        '[SEP]',
-      ])
+      // "vulnerabilities" = "vulnerabilit" + "##ies".
+      expect(result.tokens).toEqual(['[CLS]', 'vulnerabilit', '##ies', '[SEP]'])
     })
 
     it('should use UNK token for unknown words', () => {
@@ -174,6 +170,7 @@ describe('WordPieceTokenizer', () => {
       // Decode.
       const decoded = tokenizer.decode(encoded.inputIds)
 
+      // Both words are successfully tokenized and decoded.
       expect(decoded).toBe('fixing vulnerabilities')
     })
 

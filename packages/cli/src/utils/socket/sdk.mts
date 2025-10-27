@@ -41,7 +41,7 @@ import {
   CONFIG_KEY_API_BASE_URL,
   CONFIG_KEY_API_PROXY,
   CONFIG_KEY_API_TOKEN,
-} from '../../constants/config.mjs'
+} from '../../constants/config.mts'
 import ENV from '../../constants/env.mts'
 import { TOKEN_PREFIX_LENGTH } from '../../constants/socket.mts'
 import { getConfigValueOrUndef } from '../config.mts'
@@ -162,7 +162,7 @@ export async function setupSdk(
         _context: {
           operation:
             | 'createDependenciesSnapshot'
-            | 'createOrgFullScan'
+            | 'createFullScan'
             | 'uploadManifestFiles'
           orgSlug?: string | undefined
           [key: string]: unknown

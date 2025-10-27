@@ -1,5 +1,6 @@
 /** @fileoverview SDK test helpers for Socket CLI. Provides utilities for setting up SDK mocks with common success/error patterns. */
 
+import type { Mock } from 'vitest'
 import { vi } from 'vitest'
 
 import {
@@ -9,32 +10,73 @@ import {
 } from './mocks.mts'
 
 /**
- * Setup SDK mock for successful API call
+ * Get the mocked handleApiCall function.
+ * This must be called after vi.mock() has been executed in the test file.
+ *
+ * @returns The mocked handleApiCall function
+ */
+async function getMockHandleApiCall(): Promise<Mock> {
+  const module = await vi.importMock<
+    typeof import('../../src/utils/socket/api.mts')
+  >('../../src/utils/socket/api.mts')
+  return vi.mocked(module.handleApiCall)
+}
+
+/**
+ * Get the mocked setupSdk function.
+ * This must be called after vi.mock() has been executed in the test file.
+ *
+ * @returns The mocked setupSdk function
+ */
+async function getMockSetupSdk(): Promise<Mock> {
+  const module = await vi.importMock<
+    typeof import('../../src/utils/socket/sdk.mts')
+  >('../../src/utils/socket/sdk.mts')
+  return vi.mocked(module.setupSdk)
+}
+
+/**
+ * Get the mocked withSdk function.
+ * This must be called after vi.mock() has been executed in the test file.
+ *
+ * @returns The mocked withSdk function
+ */
+async function getMockWithSdk(): Promise<Mock> {
+  const module = await vi.importMock<
+    typeof import('../../src/utils/socket/sdk.mts')
+  >('../../src/utils/socket/sdk.mts')
+  return vi.mocked(module.withSdk)
+}
+
+/**
+ * Setup SDK mock for successful API call.
+ * Note: Test files must call vi.mock() for the SDK modules before using this helper.
  *
  * @param sdkMethod - The SDK method to mock (e.g., 'getOrgQuotaOverview')
  * @param mockData - The data to return in the success response
  * @returns Object with mockSdk, mockHandleApi, and mockSetupSdk references
  */
 export async function setupSdkMockSuccess(sdkMethod: string, mockData: any) {
-  const { handleApiCall } = await import('../../src/utils/socket/api.mjs')
-  const { setupSdk } = await import('../../src/utils/socket/sdk.mjs')
-
   const mockSdk = createMockSdk({
     [sdkMethod]: vi.fn().mockResolvedValue({ success: true, data: mockData }),
   })
 
-  vi.mocked(setupSdk).mockResolvedValue(createSuccessResult(mockSdk))
-  vi.mocked(handleApiCall).mockResolvedValue(createSuccessResult(mockData))
+  const setupSdk = await getMockSetupSdk()
+  const handleApiCall = await getMockHandleApiCall()
+
+  setupSdk.mockResolvedValue(createSuccessResult(mockSdk))
+  handleApiCall.mockResolvedValue(createSuccessResult(mockData))
 
   return {
+    mockHandleApi: handleApiCall,
     mockSdk,
-    mockHandleApi: vi.mocked(handleApiCall),
-    mockSetupSdk: vi.mocked(setupSdk),
+    mockSetupSdk: setupSdk,
   }
 }
 
 /**
- * Setup SDK mock for API call error
+ * Setup SDK mock for API call error.
+ * Note: Test files must call vi.mock() for the SDK modules before using this helper.
  *
  * @param sdkMethod - The SDK method to mock
  * @param error - Error message or Error object
@@ -46,27 +88,26 @@ export async function setupSdkMockError(
   error: string | Error,
   code = 404,
 ) {
-  const { handleApiCall } = await import('../../src/utils/socket/api.mjs')
-  const { setupSdk } = await import('../../src/utils/socket/sdk.mjs')
-
   const errorObj = typeof error === 'string' ? new Error(error) : error
   const mockSdk = createMockSdk({
     [sdkMethod]: vi.fn().mockRejectedValue(errorObj),
   })
 
-  vi.mocked(setupSdk).mockResolvedValue(createSuccessResult(mockSdk))
-  vi.mocked(handleApiCall).mockResolvedValue(
-    createErrorResult(errorObj.message, { code }),
-  )
+  const setupSdk = await getMockSetupSdk()
+  const handleApiCall = await getMockHandleApiCall()
+
+  setupSdk.mockResolvedValue(createSuccessResult(mockSdk))
+  handleApiCall.mockResolvedValue(createErrorResult(errorObj.message, { code }))
 
   return {
+    mockHandleApi: handleApiCall,
     mockSdk,
-    mockHandleApi: vi.mocked(handleApiCall),
   }
 }
 
 /**
- * Setup SDK setup failure (before API call)
+ * Setup SDK setup failure (before API call).
+ * Note: Test files must call vi.mock() for the SDK modules before using this helper.
  *
  * @param message - Error message
  * @param options - Error options (code, cause)
@@ -75,14 +116,14 @@ export async function setupSdkSetupFailure(
   message: string,
   options?: { code?: number; cause?: string },
 ) {
-  const { setupSdk } = await import('../../src/utils/socket/sdk.mjs')
-
-  vi.mocked(setupSdk).mockResolvedValue(createErrorResult(message, options))
+  const setupSdk = await getMockSetupSdk()
+  setupSdk.mockResolvedValue(createErrorResult(message, options))
 }
 
 /**
- * Setup SDK mock with custom SDK object
- * For tests that need fine-grained control over SDK methods
+ * Setup SDK mock with custom SDK object.
+ * For tests that need fine-grained control over SDK methods.
+ * Note: Test files must call vi.mock() for the SDK modules before using this helper.
  *
  * @param mockSdkMethods - Object with SDK methods to mock
  * @param mockApiData - Data to return from handleApiCall
@@ -92,24 +133,25 @@ export async function setupSdkMockWithCustomSdk(
   mockSdkMethods: Record<string, any>,
   mockApiData: any,
 ) {
-  const { handleApiCall } = await import('../../src/utils/socket/api.mjs')
-  const { setupSdk } = await import('../../src/utils/socket/sdk.mjs')
-
   const mockSdk = createMockSdk(mockSdkMethods)
 
-  vi.mocked(setupSdk).mockResolvedValue(createSuccessResult(mockSdk))
-  vi.mocked(handleApiCall).mockResolvedValue(createSuccessResult(mockApiData))
+  const setupSdk = await getMockSetupSdk()
+  const handleApiCall = await getMockHandleApiCall()
+
+  setupSdk.mockResolvedValue(createSuccessResult(mockSdk))
+  handleApiCall.mockResolvedValue(createSuccessResult(mockApiData))
 
   return {
+    mockHandleApi: handleApiCall,
     mockSdk,
-    mockHandleApi: vi.mocked(handleApiCall),
-    mockSetupSdk: vi.mocked(setupSdk),
+    mockSetupSdk: setupSdk,
   }
 }
 
 /**
- * Setup SDK mock for withSdk pattern
- * For tests using the withSdk utility instead of setupSdk
+ * Setup SDK mock for withSdk pattern.
+ * For tests using the withSdk utility instead of setupSdk.
+ * Note: Test files must call vi.mock() for the SDK modules before using this helper.
  *
  * @param callback - The function to execute with the SDK
  * @param mockSdkMethods - Object with SDK methods to mock
@@ -119,11 +161,10 @@ export async function setupWithSdkMock(
   _callback: (sdk: any) => any,
   mockSdkMethods: Record<string, any> = {},
 ) {
-  const { withSdk } = await import('../../src/utils/socket/sdk.mjs')
-
   const mockSdk = createMockSdk(mockSdkMethods)
+  const withSdk = await getMockWithSdk()
 
-  vi.mocked(withSdk).mockImplementation(async cb => {
+  withSdk.mockImplementation(async cb => {
     return cb(mockSdk)
   })
 

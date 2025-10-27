@@ -2,10 +2,10 @@
 ._.DS_Store
 Thumbs.db
 /.claude
-/.custom-node-build
 /.node-source
 /.node-source-test
 /.scratch
+!/docs/build
 /.env
 /.env.local
 /.pnpmfile.cjs
@@ -21,13 +21,29 @@ Thumbs.db
 **/.cache
 **/coverage
 **/.type-coverage
-**/dist
+**/build
 **/node_modules
-**/pkg
-**/target
+.build-checkpoints
 *.d.ts
 *.d.ts.map
+**/*.tmp
 *.tsbuildinfo
+
+# Backup and temporary files.
+*.backup
+*.bak
+*.old
+*~
+*.swp
+*.swo
+*.sw?
+.*.sw?
+
+# Build artifacts: build/ = gitignored (workspace + archive), dist/ = tracked (blessed releases).
+# Exceptions:
+#   - packages/cli/dist/ is Rollup output (ephemeral), gitignored by packages/cli/.gitignore
+#   - !/docs/build allows tracking docs/build/ (documentation directory, not build artifacts)
+#   - Note: New files in docs/build/ require `git add -f` due to **/build pattern
 
 # Yarn PnP files (tests may create these)
 /.yarn
@@ -38,10 +54,11 @@ Thumbs.db
 !src/types/**/*.d.ts
 !/.vscode/extensions.json
 
-uild directory for temporary artifacts
-**/build/*
-!/build/out
-/build/out/*
-!/build/out/Yao
-/build/out/Yao/*
-/binaries
+# Ignore platform binary build artifacts
+packages/socketbin-*/bin/
+
+# Ignore downloaded build sources
+packages/*/.yoga-source
+packages/*/.yoga-tests
+packages/*/.onnx-source
+packages/*/.minilm-source

@@ -29,7 +29,7 @@ import {
   gitRemoteBranchExists,
   gitResetAndClean,
   gitUnstagedModifiedFiles,
-} from '../../utils/git/git.mjs'
+} from '../../utils/git/operations.mjs'
 import {
   enablePrAutoMerge,
   fetchGhsaDetails,
@@ -237,7 +237,10 @@ export async function coanaFix(
   // When isAll is true, discover vulnerabilities by running coana with --output-file.
   // This gives us the GHSA IDs needed to create individual PRs in CI mode.
   if (shouldSpawnCoana && isAll) {
-    const discoverTmpFile = path.join(os.tmpdir(), `socket-discover-${Date.now()}.json`)
+    const discoverTmpFile = path.join(
+      os.tmpdir(),
+      `socket-discover-${Date.now()}.json`,
+    )
 
     try {
       const discoverCResult = await spawnCoanaDlx(
@@ -269,7 +272,9 @@ export async function coanaFix(
         // Extract GHSA IDs from the discovery result.
         // When compute-fixes-and-upgrade-purls is called without --apply-fixes-to,
         // it returns { type: 'no-ghsas-fix-requested', ghsas: [...] }
-        const discoveredIds = (Array.isArray((discoverResult as any)?.ghsas) ? (discoverResult as any).ghsas : [])
+        const discoveredIds = Array.isArray((discoverResult as any)?.ghsas)
+          ? (discoverResult as any).ghsas
+          : []
         ids = discoveredIds.slice(0, adjustedLimit)
       }
 

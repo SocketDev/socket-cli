@@ -1,0 +1,11 @@
+# Build artifacts.
+build/
+
+# Distribution artifacts.
+dist/
+
+# Node modules.
+node_modules/
+
+# Auto-generated Python scripts.
+python/

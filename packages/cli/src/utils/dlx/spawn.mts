@@ -27,6 +27,7 @@ import {
 } from '../../constants/shadow.mts'
 import { getErrorCause } from '../error/errors.mts'
 import { getDefaultApiToken, getDefaultProxyUrl } from '../socket/sdk.mjs'
+import { resolveCdxgen, resolveCoana } from './resolve-binary.mjs'
 
 import type {
   ShadowBinOptions,
@@ -61,11 +62,15 @@ export async function spawnDlx(
   const packageString = `${packageSpec.name}@${packageSpec.version}`
 
   // Use Socket's dlxPackage to install and execute.
-  const result = await dlxPackage(args, {
-    force,
-    package: packageString,
-    spawnOptions: shadowOptions,
-  }, spawnExtra)
+  const result = await dlxPackage(
+    args,
+    {
+      force,
+      package: packageString,
+      spawnOptions: shadowOptions,
+    },
+    spawnExtra,
+  )
 
   return {
     spawnPromise: result.spawnPromise,
@@ -117,15 +122,16 @@ export async function spawnCoanaDlx(
   }
 
   try {
-    const localCoanaPath = ENV.SOCKET_CLI_COANA_LOCAL_PATH
-    // Use local Coana CLI if path is provided.
-    if (localCoanaPath) {
+    const resolution = resolveCoana()
+
+    // Use local Coana CLI if available.
+    if (resolution.type === 'local') {
       const finalEnv = {
         ...process.env,
         ...mixinsEnv,
         ...spawnEnv,
       }
-      const spawnResult = await spawn('node', [localCoanaPath, ...args], {
+      const spawnResult = await spawn('node', [resolution.path, ...args], {
         cwd: dlxOptions.cwd,
         env: finalEnv,
         stdio: spawnExtra?.['stdio'] || 'inherit',
@@ -142,10 +148,7 @@ export async function spawnCoanaDlx(
 
     // Use dlx version.
     const result = await spawnDlx(
-      {
-        name: '@coana-tech/cli',
-        version: `~${ENV.INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION}`,
-      },
+      resolution.packageSpec,
       args,
       {
         force: true,
@@ -186,17 +189,40 @@ export async function spawnCoanaDlx(
 
 /**
  * Helper to spawn cdxgen with dlx.
+ * If SOCKET_CLI_CDXGEN_LOCAL_PATH environment variable is set, uses the local
+ * cdxgen binary at that path instead of downloading from npm.
  */
 export async function spawnCdxgenDlx(
   args: string[] | readonly string[],
   options?: DlxOptions | undefined,
   spawnExtra?: SpawnExtra | undefined,
 ): Promise<ShadowBinResult> {
+  const resolution = resolveCdxgen()
+
+  // Use local cdxgen if available.
+  if (resolution.type === 'local') {
+    const { env: spawnEnv, ...dlxOptions } = {
+      __proto__: null,
+      ...options,
+    } as DlxOptions
+
+    const spawnResult = spawn('node', [resolution.path, ...args], {
+      cwd: dlxOptions.cwd,
+      env: {
+        ...process.env,
+        ...spawnEnv,
+      },
+      stdio: spawnExtra?.['stdio'] || 'inherit',
+    })
+
+    return {
+      spawnPromise: spawnResult,
+    }
+  }
+
+  // Use dlx version.
   return await spawnDlx(
-    {
-      name: '@cyclonedx/cdxgen',
-      version: `${ENV.INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION}`,
-    },
+    resolution.packageSpec,
     args,
     { force: false, ...options },
     spawnExtra,

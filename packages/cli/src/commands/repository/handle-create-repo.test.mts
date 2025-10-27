@@ -9,10 +9,9 @@ vi.mock('./fetch-create-repo.mts', () => ({
 vi.mock('./output-create-repo.mts', () => ({
   outputCreateRepo: vi.fn(),
 }))
-vi.mock('../../utils/debug.mts', () => ({
+vi.mock('@socketsecurity/lib/debug', () => ({
+  debug: vi.fn(),
   debugDir: vi.fn(),
-  debugFn: vi.fn(),
-  debugLog: vi.fn(),
   isDebug: vi.fn(() => false),
 }))
 
@@ -123,7 +122,7 @@ describe('handleCreateRepo', () => {
   })
 
   it('logs debug information', async () => {
-    const { debugDir, debugFn } = await import('../../utils/debug.mts')
+    const { debug, debugDir } = await import('@socketsecurity/lib/debug')
     const { fetchCreateRepo } = await import('./fetch-create-repo.mts')
 
     const mockData = {
@@ -144,25 +143,20 @@ describe('handleCreateRepo', () => {
       'json',
     )
 
-    expect(debugFn).toHaveBeenCalledWith(
-      'notice',
+    expect(debug).toHaveBeenCalledWith(
       'Creating repository debug-org/debug-repo',
     )
     expect(debugDir).toHaveBeenCalledWith(
-      'inspect',
       expect.objectContaining({
         orgSlug: 'debug-org',
         repoName: 'debug-repo',
       }),
     )
-    expect(debugFn).toHaveBeenCalledWith(
-      'notice',
-      'Repository creation succeeded',
-    )
+    expect(debug).toHaveBeenCalledWith('Repository creation succeeded')
   })
 
   it('logs debug information on failure', async () => {
-    const { debugFn } = await import('../../utils/debug.mts')
+    const { debug } = await import('@socketsecurity/lib/debug')
     const { fetchCreateRepo } = await import('./fetch-create-repo.mts')
 
     vi.mocked(fetchCreateRepo).mockResolvedValue({
@@ -182,7 +176,7 @@ describe('handleCreateRepo', () => {
       'json',
     )
 
-    expect(debugFn).toHaveBeenCalledWith('notice', 'Repository creation failed')
+    expect(debug).toHaveBeenCalledWith('Repository creation failed')
   })
 
   it('handles different visibility types', async () => {

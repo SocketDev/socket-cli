@@ -1,0 +1,2 @@
+# Rollup bundled output (ephemeral build artifact, not a blessed release).
+dist/

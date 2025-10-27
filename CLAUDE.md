@@ -4,18 +4,24 @@
 
 ## 👤 USER CONTEXT
 
-- **Primary User**: John-David Dalton (GitHub: jdalton)
-- 🚨 **When interacting with jdalton (verified by account/context)**: ALWAYS refer to them as "John-David" - NEVER use "the user" or "user"
-- When discussing jdalton's commits, work, or contributions, use "John-David" or "you/your" (if speaking to John-David directly)
-- **Other contributors**: Use their actual names or appropriate references as provided in commit history/context
+- **Identify users by git credentials**: Extract name from git commit author, GitHub account, or context
+- 🚨 **When identity is verified**: ALWAYS use their actual name - NEVER use "the user" or "user"
+- **Direct communication**: Use "you/your" when speaking directly to the verified user
+- **Discussing their work**: Use their actual name when referencing their commits/contributions
+- **Example**: If git shows "John-David Dalton <jdalton@example.com>", refer to them as "John-David"
+- **Other contributors**: Use their actual names from commit history/context
 
 ## 📚 SHARED STANDARDS
 
-**See canonical reference:** `../socket-registry/CLAUDE.md`
+**Canonical reference**: `../socket-registry/CLAUDE.md`
 
-For all shared Socket standards (git workflow, testing, code style, imports, sorting, error handling, cross-platform, CI, etc.), refer to socket-registry/CLAUDE.md.
+All shared standards (git, testing, code style, cross-platform, CI) defined in socket-registry/CLAUDE.md.
 
-**Git Workflow Reminder**: When user says "commit changes" → create actual commits, use small atomic commits, follow all CLAUDE.md rules (NO AI attribution).
+**Quick references**:
+- Commits: [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) `<type>(<scope>): <description>` - NO AI attribution
+- Scripts: Prefer `pnpm run foo --flag` over `foo:bar` scripts
+- Docs: Use `docs/` folder, lowercase-with-hyphens.md filenames, pithy writing with visuals
+- Dependencies: After `package.json` edits, run `pnpm install` to update `pnpm-lock.yaml`
 
 ---
 
@@ -189,6 +195,95 @@ Each command follows a consistent pattern:
 - Multiple environment configs (.env.local, .env.test, .env.dist)
 - Dual linting with oxlint and eslint
 - Formatting with Biome
+
+### Repository Structure & Documentation
+
+#### Build Artifact Standards
+
+**MANDATORY**: All packages follow the build/dist pattern with archive support.
+
+**Philosophy**:
+- **`build/`** (gitignored) = Workspace + archive of historical builds
+- **`dist/`** (tracked) = Blessed canonical releases that ship
+
+**Structure**:
+```
+packages/<package>/
+├── build/                    # Gitignored workspace + archive
+│   ├── tmp/                  # Current build intermediates (cmake, obj files, etc.)
+│   ├── cache/                # Download caches, source clones
+│   └── archive/              # Historical completed builds
+│       ├── YYYY-MM-DD-NNN-description/
+│       └── latest/           # Symlink to most recent build
+└── dist/                     # Tracked canonical releases
+    └── <final-artifacts>
+```
+
+**Benefits**:
+- **Experimentation**: Try different optimization levels without losing previous builds
+- **Comparison**: Easy A/B testing of build configurations
+- **Rollback**: Keep working builds when experimenting
+- **History**: Understand what changed between builds
+- **Debugging**: Compare artifacts when tracking down issues
+
+**Package-Specific Patterns**:
+- `packages/yoga-layout` → `build/archive/*/` (WASM builds), `dist/` (blessed yoga.wasm + yoga.js)
+- `packages/minilm-builder` → `build/archive/*/` (model variants), `dist/` (blessed model.onnx)
+- `packages/node-sea-builder` → `build/archive/*/` (SEA variants), `dist/` (blessed SEA binaries)
+- `packages/node-smol-builder` → `build/archive/*/` (Node.js variants), `dist/` (blessed node binary)
+- `packages/cli` → `dist/` (ephemeral Rollup output, gitignored via packages/cli/.gitignore)
+
+**Promotion Workflow**:
+1. Build → `build/tmp/` (intermediates)
+2. Success → `build/archive/<timestamp-config>/` (completed build)
+3. Update → `build/archive/latest` symlink
+4. Test and validate
+5. Promote → Copy `build/archive/latest/*` → `dist/` (blessed release)
+6. Commit `dist/` changes to git
+
+**See**: `docs/build/build-dist-structure.md` for complete documentation
+
+#### Documentation Hierarchy (3-Tier)
+
+**Tier 1: Monorepo Documentation** (`/docs/`)
+- **Purpose**: Cross-package architecture, build systems, development guides
+- **Structure**:
+  - `architecture/` - System design documents and flow diagrams
+  - `build/` - Build system, Node.js patching, WASM compilation
+  - `configuration/` - Shared configuration architecture
+  - `development/` - Development tools and workflow
+  - `guides/` - User-facing how-to guides
+  - `performance/` - Performance optimization strategies
+  - `technical/` - Low-level implementation details
+  - `testing/` - Testing strategies and guides
+- **Index**: `docs/README.md` - Complete documentation map
+
+**Tier 2: Package Documentation** (`packages/<pkg>/docs/`)
+- **Purpose**: Package-specific technical documentation and implementation details
+- **Contents**:
+  - `README.md` - Package documentation index with quick links
+  - `build-process.md` - Detailed build process and optimization
+  - `upstream-tracking.md` - Version tracking and update process
+  - `api-reference.md` - Package API documentation (if applicable)
+  - Implementation-specific technical docs
+- **Examples**:
+  - `packages/yoga-layout/docs/` - Yoga Layout WASM builder docs
+  - `packages/onnx-runtime-builder/docs/` - ONNX Runtime build docs
+  - `packages/minilm-builder/docs/` - ML model conversion pipeline docs
+  - `packages/node-sea-builder/docs/` - SEA build and transformation docs
+  - `packages/node-smol-builder/docs/` - Binary compression docs
+
+**Tier 3: Sub-package Documentation** (`packages/<pkg>/*/docs/`)
+- **Purpose**: Language-specific or submodule implementation details
+- **Contents**: Implementation-specific design docs, optimization reports
+- **Example**: `packages/node-smol-builder/wasm-bundle/docs/` - Rust WASM compression module
+
+#### Documentation Best Practices
+- **Naming**: Use lowercase-with-hyphens.md filenames
+- **Organization**: Create docs/ directories for packages with complex implementations
+- **Linking**: Always provide relative links to related documentation
+- **Index Files**: Maintain README.md in each docs/ directory with complete contents
+- **Upstream Tracking**: Document source repositories, versions, and licenses
 
 ### Testing
 
@@ -496,6 +591,12 @@ Socket CLI integrates with various third-party tools and services:
 - **Catch parameter naming**: Use `catch (e)` instead of `catch (error)` for consistency across the codebase
 - **Node.js fs imports**: 🚨 MANDATORY pattern - `import { someSyncThing, promises as fs } from 'node:fs'`
 - **Process spawning**: 🚨 FORBIDDEN to use Node.js built-in `child_process.spawn` - MUST use `spawn` from `@socketsecurity/registry/lib/spawn`
+- **Working directory**: 🚨 ABSOLUTELY FORBIDDEN - NEVER use `process.chdir()` - it's a global state mutation anti-pattern that breaks tests and causes race conditions
+  - ✅ CORRECT: Use `{ cwd: '/absolute/path' }` option in spawn, exec, fs operations
+  - ✅ CORRECT: Always use absolute paths with `path.resolve()` or `path.join(baseDir, relative)`
+  - ❌ FORBIDDEN: `process.chdir(someDir)` (mutates global state, breaks parallel tests, not supported in worker threads)
+  - **Why it's forbidden**: Breaks Vitest worker threads, creates race conditions in parallel tests, makes debugging harder, violates functional programming principles
+  - **For tests**: Always pass `{ cwd: testDir }` to functions instead of changing process.cwd()
 - **Number formatting**: 🚨 REQUIRED - Use underscore separators (e.g., `20_000`) for large numeric literals. 🚨 FORBIDDEN - Do NOT modify number values inside strings
 
 ### Error Handling

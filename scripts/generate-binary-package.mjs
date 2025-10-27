@@ -8,6 +8,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { parseArgs } from '@socketsecurity/lib/argv/parse'
+import { logger } from '@socketsecurity/lib/logger'
+import colors from 'yoctocolors-cjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootDir = path.join(__dirname, '..')
@@ -47,7 +49,7 @@ const {
 } = values
 
 if (!platform || !arch) {
-  console.error(
+  logger.error(
     'Usage: generate-binary-package.mjs --platform=darwin --arch=arm64 [--version=2025.01.22.143052] [--method=smol]',
   )
   process.exit(1)
@@ -167,11 +169,11 @@ async function generatePackage() {
       path.join(packageDir, 'package.json'),
       `${JSON.stringify(packageJson, null, 2)}\n`,
     )
-    console.log(`Created: ${packageDir}/package.json`)
+    logger.log(`Created: ${packageDir}/package.json`)
 
     // Write README
     await fs.writeFile(path.join(packageDir, 'README.md'), readme)
-    console.log(`Created: ${packageDir}/README.md`)
+    logger.log(`Created: ${packageDir}/README.md`)
 
     // Check if binary exists and copy it
     const sourceBinary = path.join(
@@ -188,18 +190,18 @@ async function generatePackage() {
       if (platform !== 'win32') {
         await fs.chmod(targetBinary, 0o755)
       }
-      console.log(`Copied binary: ${sourceBinary} -> ${targetBinary}`)
+      logger.log(`Copied binary: ${sourceBinary} -> ${targetBinary}`)
     } catch {
-      console.warn(`Warning: Binary not found at ${sourceBinary}`)
-      console.warn('Binary should be copied manually or in CI')
+      logger.warn(`Warning: Binary not found at ${sourceBinary}`)
+      logger.warn('Binary should be copied manually or in CI')
     }
 
-    console.log(`\nPackage generated successfully at: ${packageDir}`)
-    console.log(
+    logger.log(`\nPackage generated successfully at: ${packageDir}`)
+    logger.log(
       `\nTo publish:\n  cd ${packageDir}\n  npm publish --provenance --access public`,
     )
   } catch (error) {
-    console.error('Error generating package:', error)
+    logger.error('Error generating package:', error)
     process.exit(1)
   }
 }

@@ -19,11 +19,12 @@ export function getCompletionSourcingCommand(): CResult<string> {
     return {
       ok: false,
       message: 'Tab Completion script not found',
-      cause: `Expected to find completion script at \`${completionScriptPath}\` but it was not there`,
+      cause: `Expected to find completion script at \`${completionScriptPath.replace(/\\/g, '/')}\` but it was not there`,
     }
   }
 
-  return { ok: true, data: `source ${completionScriptPath}` }
+  // Bash scripts always use forward slashes, even on Windows.
+  return { ok: true, data: `source ${completionScriptPath.replace(/\\/g, '/')}` }
 }
 
 export function getBashrcDetails(targetCommandName: string): CResult<{
@@ -57,10 +58,13 @@ export function getBashrcDetails(targetCommandName: string): CResult<{
     'socket-completion.bash',
   )
 
+  // Bash scripts always use forward slashes, even on Windows.
+  const bashCompletionPath = completionScriptPath.replace(/\\/g, '/')
+
   const bashrcContent = `# Socket CLI completion for "${targetCommandName}"
-if [ -f "${completionScriptPath}" ]; then
+if [ -f "${bashCompletionPath}" ]; then
     # Load the tab completion script
-    source "${completionScriptPath}"
+    source "${bashCompletionPath}"
     # Tell bash to use this function for tab completion of this function
     ${completionCommand}
 fi
@@ -73,7 +77,7 @@ fi
       completionCommand,
       toAddToBashrc: bashrcContent,
       targetName: targetCommandName,
-      targetPath: completionScriptPath,
+      targetPath: bashCompletionPath,
     },
   }
 }

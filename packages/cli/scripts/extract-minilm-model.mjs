@@ -10,6 +10,7 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { logger } from '@socketsecurity/lib/logger'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '..')
@@ -20,8 +21,11 @@ if (existsSync(outputPath)) {
   try {
     const existing = readFileSync(outputPath, 'utf-8')
     // Verify it's the expected content (not corrupted).
-    if (existing.includes('loadModelSync') && existing.includes('loadTokenizerSync')) {
-      console.log(`✓ Using cached ${outputPath}`)
+    if (
+      existing.includes('loadModelSync') &&
+      existing.includes('loadTokenizerSync')
+    ) {
+      logger.log(`✓ Using cached ${outputPath}`)
       process.exit(0)
     }
   } catch {}
@@ -74,6 +78,8 @@ export function loadTokenizerSync() {
 
 writeFileSync(outputPath, minilmSyncContent, 'utf-8')
 
-console.log(`✓ Generated ${outputPath}`)
-console.log(`✓ minilm-sync.mjs size: ${minilmSyncContent.length} bytes`)
-console.log('ℹ Note: minilm-sync.mjs is a placeholder. Production builds should embed the actual model data.')
+logger.log(`✓ Generated ${outputPath}`)
+logger.log(`✓ minilm-sync.mjs size: ${minilmSyncContent.length} bytes`)
+logger.log(
+  'ℹ Note: minilm-sync.mjs is a placeholder. Production builds should embed the actual model data.',
+)

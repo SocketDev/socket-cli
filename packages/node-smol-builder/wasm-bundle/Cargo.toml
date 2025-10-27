@@ -1,0 +1,47 @@
+[package]
+name = "socket-ai"
+version = "0.1.0"
+edition = "2021"
+authors = ["Socket Security <hello@socket.dev>"]
+description = "Unified WASM bundle for Socket CLI AI features"
+license = "MIT"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+wasm-bindgen = "0.2"
+
+[features]
+default = []
+no-models = []         # Build without embedding models (for testing build scripts)
+minilm-only = []       # Build with only MiniLM model (~17 MB)
+codet5-only = []       # Build with only CodeT5 model (~90 MB)
+unoptimized-wasm = []  # Use original unoptimized WASM files
+
+[profile.release]
+# Optimize for size (no backward compat concerns).
+lto = "thin"              # Thin LTO is faster than full, still effective (5-10% faster builds)
+opt-level = "z"           # Optimize for size (critical for WASM)
+codegen-units = 1         # Single unit for maximum optimization
+strip = true              # Strip symbols for smaller WASM (saves 5-10%)
+panic = "abort"           # Reduce binary size by not including unwinding code
+overflow-checks = false   # Disable overflow checks in release (slight perf boost)
+debug-assertions = false  # Disable debug assertions (smaller binary)
+
+# OPTIMIZATION: Fast dev builds for WASM (3-5x faster iteration)
+# Use: cargo build --target wasm32-unknown-unknown --profile dev-wasm
+[profile.dev-wasm]
+inherits = "dev"
+opt-level = 1           # Minimal optimization for faster builds
+lto = false             # Disable LTO in dev
+codegen-units = 16      # More units = faster parallel compilation
+incremental = false     # Disable incremental for WASM (conflicts with embed-bitcode)
+debug = false           # Disable debug info to reduce WASM size
+strip = true            # Strip symbols even in dev for smaller WASM
+panic = "abort"         # Reduce binary size
+
+# Strip debug info from dependencies.
+[profile.release.package."*"]
+opt-level = "z"
+strip = true

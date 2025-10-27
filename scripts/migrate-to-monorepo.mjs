@@ -13,6 +13,8 @@ import { execSync } from 'node:child_process'
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { logger } from '@socketsecurity/lib/logger'
+import colors from 'yoctocolors-cjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootDir = path.join(__dirname, '..')
@@ -26,7 +28,7 @@ function gitExec(command) {
     execSync(command, { cwd: rootDir, stdio: 'inherit' })
     return true
   } catch (e) {
-    console.error(`Git command failed: ${command}`)
+    logger.error(`Git command failed: ${command}`)
     return false
   }
 }
@@ -36,7 +38,7 @@ function gitExec(command) {
  */
 async function createPackageDir(name, subdirs = []) {
   const packageDir = path.join(packagesDir, name)
-  console.log(`Creating ${name}...`)
+  logger.log(`Creating ${name}...`)
 
   await fs.mkdir(packageDir, { recursive: true })
 
@@ -44,7 +46,7 @@ async function createPackageDir(name, subdirs = []) {
     await fs.mkdir(path.join(packageDir, subdir), { recursive: true })
   }
 
-  console.log(`  ✓ ${packageDir}`)
+  logger.log(`  ✓ ${packageDir}`)
   return packageDir
 }
 
@@ -56,11 +58,11 @@ function gitMove(source, dest) {
   const destAbs = path.join(rootDir, dest)
 
   if (!existsSync(sourceAbs)) {
-    console.log(`  ⊘ ${source} does not exist, skipping`)
+    logger.log(`  ⊘ ${source} does not exist, skipping`)
     return false
   }
 
-  console.log(`  → ${source} → ${dest}`)
+  logger.log(`  → ${source} → ${dest}`)
 
   // Ensure destination parent exists.
   const destParent = path.dirname(destAbs)
@@ -79,11 +81,11 @@ async function copyDir(source, dest) {
   const destAbs = path.join(rootDir, dest)
 
   if (!existsSync(sourceAbs)) {
-    console.log(`  ⊘ ${source} does not exist, skipping`)
+    logger.log(`  ⊘ ${source} does not exist, skipping`)
     return false
   }
 
-  console.log(`  → ${source} → ${dest}`)
+  logger.log(`  → ${source} → ${dest}`)
 
   await fs.cp(sourceAbs, destAbs, { recursive: true })
   return true
@@ -93,13 +95,13 @@ async function copyDir(source, dest) {
  * Main migration.
  */
 async function main() {
-  console.log('Migrating Socket CLI to monorepo structure...\n')
+  logger.log('Migrating Socket CLI to monorepo structure...\n')
 
   // 1. Create packages/cli/ and move core CLI code.
-  console.log('\n1. Creating packages/cli/...')
+  logger.log('\n1. Creating packages/cli/...')
   const cliDir = await createPackageDir('cli', ['scripts'])
 
-  console.log('Moving CLI source code...')
+  logger.log('Moving CLI source code...')
   gitMove('src', 'packages/cli/src')
   gitMove('bin', 'packages/cli/bin')
   gitMove('data', 'packages/cli/data')
@@ -107,22 +109,22 @@ async function main() {
   gitMove('test', 'packages/cli/test')
   gitMove('dist', 'packages/cli/dist')
 
-  console.log('Copying CLI config files...')
+  logger.log('Copying CLI config files...')
   await copyDir('tsconfig.json', 'packages/cli/tsconfig.json')
   await copyDir('vitest.config.mts', 'packages/cli/vitest.config.mts')
 
   // Copy current package.json to cli/ (will be updated later).
   await copyDir('package.json', 'packages/cli/package.json')
 
-  console.log('Moving CLI build scripts...')
+  logger.log('Moving CLI build scripts...')
   gitMove('scripts/build.mjs', 'packages/cli/scripts/build.mjs')
   gitMove('.config/esbuild.cli.build.mjs', 'packages/cli/scripts/esbuild.config.mjs')
 
   // 2. Create packages/socket/ and move bootstrap code.
-  console.log('\n2. Creating packages/socket/...')
+  logger.log('\n2. Creating packages/socket/...')
   const socketDir = await createPackageDir('socket', ['bin', 'src/bootstrap/shared', 'scripts'])
 
-  console.log('Moving bootstrap code...')
+  logger.log('Moving bootstrap code...')
   gitMove('bin/bootstrap.js', 'packages/socket/bin/bootstrap.js')
   gitMove('src/bootstrap', 'packages/socket/src/bootstrap')
 
@@ -163,12 +165,12 @@ import './bootstrap.js'
   await fs.chmod(path.join(socketDir, 'bin', 'socket.js'), 0o755)
 
   // 3. Create packages/socketbin-custom-node-from-source/ and move Node.js build.
-  console.log('\n3. Creating packages/socketbin-custom-node-from-source/...')
+  logger.log('\n3. Creating packages/socketbin-custom-node-from-source/...')
   const customNodeDir = await createPackageDir('socketbin-custom-node-from-source', [
     'scripts',
   ])
 
-  console.log('Moving custom Node.js build...')
+  logger.log('Moving custom Node.js build...')
   gitMove('build', 'packages/socketbin-custom-node-from-source/build')
   gitMove('.node-source', 'packages/socketbin-custom-node-from-source/.node-source')
   gitMove('scripts/build-custom-node.mjs', 'packages/socketbin-custom-node-from-source/scripts/build.mjs')
@@ -177,7 +179,7 @@ import './bootstrap.js'
   const customNodePackageJson = {
     description: 'Custom Node.js binary builder with Socket security patches',
     license: 'MIT',
-    name: '@socketbin/custom-node',
+    name: '@socketbin/node-smol-builder-builder',
     private: true,
     scripts: {
       build: 'node scripts/build.mjs',
@@ -191,19 +193,19 @@ import './bootstrap.js'
     JSON.stringify(customNodePackageJson, null, 2) + '\n',
   )
 
-  // 4. Create packages/socketbin-native-node-sea/ for SEA builder.
-  console.log('\n4. Creating packages/socketbin-native-node-sea/...')
-  const seaDir = await createPackageDir('socketbin-native-node-sea', ['scripts', 'dist'])
+  // 4. Create packages/socketbin-native-node-sea-builder/ for SEA builder.
+  logger.log('\n4. Creating packages/socketbin-native-node-sea-builder/...')
+  const seaDir = await createPackageDir('socketbin-native-node-sea-builder', ['scripts', 'dist'])
 
-  console.log('Moving SEA build scripts...')
-  gitMove('scripts/build-sea.mjs', 'packages/socketbin-native-node-sea/scripts/build.mjs')
-  gitMove('scripts/publish-sea.mjs', 'packages/socketbin-native-node-sea/scripts/publish.mjs')
+  logger.log('Moving SEA build scripts...')
+  gitMove('scripts/build-sea.mjs', 'packages/socketbin-native-node-sea-builder/scripts/build.mjs')
+  gitMove('scripts/publish-sea.mjs', 'packages/socketbin-native-node-sea-builder/scripts/publish.mjs')
 
   // Create minimal package.json for SEA builder.
   const seaPackageJson = {
     description: 'Native Node.js SEA binary builder (fallback)',
     license: 'MIT',
-    name: '@socketbin/sea',
+    name: '@socketbin/node-sea-builder-builder',
     private: true,
     scripts: {
       build: 'node scripts/build.mjs',
@@ -219,7 +221,7 @@ import './bootstrap.js'
   )
 
   // 5. Update root package.json to be workspace-only.
-  console.log('\n5. Updating root package.json...')
+  logger.log('\n5. Updating root package.json...')
   const rootPackageJson = JSON.parse(
     await fs.readFile(path.join(rootDir, 'package.json'), 'utf-8'),
   )
@@ -252,16 +254,16 @@ import './bootstrap.js'
     JSON.stringify(workspacePackageJson, null, 2) + '\n',
   )
 
-  console.log('\n✓ Migration complete!\n')
-  console.log('Next steps:')
-  console.log('  1. Review git status: git status')
-  console.log('  2. Update import paths in packages/cli/src/')
-  console.log('  3. Run: pnpm install')
-  console.log('  4. Test builds: pnpm run build')
-  console.log('  5. Commit changes: git add . && git commit\n')
+  logger.log('\n✓ Migration complete!\n')
+  logger.log('Next steps:')
+  logger.log('  1. Review git status: git status')
+  logger.log('  2. Update import paths in packages/cli/src/')
+  logger.log('  3. Run: pnpm install')
+  logger.log('  4. Test builds: pnpm run build')
+  logger.log('  5. Commit changes: git add . && git commit\n')
 }
 
 main().catch(error => {
-  console.error('Migration failed:', error)
+  logger.error('Migration failed:', error)
   process.exit(1)
 })

@@ -1,13 +1,6 @@
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
-import { extractName, extractOwner } from '../sanitize-names.mts'
-
-// Mock constants.
-vi.mock('../constants.mts', () => ({
-  default: {
-    SOCKET_DEFAULT_REPOSITORY: 'default-repo',
-  },
-}))
+import { extractName, extractOwner } from './sanitize-names.mts'
 
 describe('extract-names utilities', () => {
   describe('extractName', () => {
@@ -64,19 +57,19 @@ describe('extract-names utilities', () => {
     })
 
     it('returns default repository for empty string', () => {
-      expect(extractName('')).toBe('default-repo')
+      expect(extractName('')).toBe('socket-default-repository')
     })
 
     it('returns default repository when sanitization results in empty string', () => {
-      expect(extractName('...')).toBe('default-repo')
-      expect(extractName('---')).toBe('default-repo')
-      expect(extractName('___')).toBe('default-repo')
-      expect(extractName('!@#$%^&*()')).toBe('default-repo')
+      expect(extractName('...')).toBe('socket-default-repository')
+      expect(extractName('---')).toBe('socket-default-repository')
+      expect(extractName('___')).toBe('socket-default-repository')
+      expect(extractName('!@#$%^&*()')).toBe('socket-default-repository')
     })
 
     it('handles Unicode characters', () => {
       expect(extractName('emoji-🚀-name')).toBe('emoji_name')
-      expect(extractName('中文名称')).toBe('default-repo')
+      expect(extractName('中文名称')).toBe('socket-default-repository')
       expect(extractName('name-with-émojis')).toBe('name-with_mojis')
     })
 

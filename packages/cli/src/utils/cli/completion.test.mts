@@ -16,12 +16,10 @@ vi.mock('node:fs', () => ({
   },
 }))
 
-// Mock constants.
-vi.mock('../constants.mts', () => ({
-  default: {
-    distPath: '/mock/dist/path',
-    socketAppDataPath: '/mock/app/data',
-  },
+// Mock constants/paths.
+vi.mock('../../constants/paths.mts', () => ({
+  rootPath: '/mock/dist/path',
+  getSocketAppDataPath: vi.fn(() => '/mock/app/data'),
 }))
 
 describe('completion utilities', () => {
@@ -43,12 +41,16 @@ describe('completion utilities', () => {
 
       expect(result).toEqual({
         ok: true,
-        data: 'source /mock/dist/path/socket-completion.bash',
+        data: 'source /mock/dist/path/data/socket-completion.bash',
       })
 
-      expect(fs.existsSync).toHaveBeenCalledWith(
-        '/mock/dist/path/socket-completion.bash',
-      )
+      // Note: On Windows, path.join returns backslashes, which are then checked by existsSync.
+      // The implementation normalizes the path display but checks existence with the actual path.
+      const expectedPath =
+        path.sep === '\\'
+          ? '\\mock\\dist\\path\\data\\socket-completion.bash'
+          : '/mock/dist/path/data/socket-completion.bash'
+      expect(fs.existsSync).toHaveBeenCalledWith(expectedPath)
     })
 
     it('returns error when completion script does not exist', () => {
@@ -60,7 +62,7 @@ describe('completion utilities', () => {
         ok: false,
         message: 'Tab Completion script not found',
         cause:
-          'Expected to find completion script at `/mock/dist/path/socket-completion.bash` but it was not there',
+          'Expected to find completion script at `/mock/dist/path/data/socket-completion.bash` but it was not there',
       })
     })
   })
@@ -77,7 +79,7 @@ describe('completion utilities', () => {
           'complete -F _socket_completion socket',
         )
         expect(result.data.sourcingCommand).toBe(
-          'source /mock/dist/path/socket-completion.bash',
+          'source /mock/dist/path/data/socket-completion.bash',
         )
         expect(result.data.targetName).toBe('socket')
         expect(result.data.targetPath).toBe(
@@ -104,7 +106,7 @@ describe('completion utilities', () => {
         ok: false,
         message: 'Tab Completion script not found',
         cause:
-          'Expected to find completion script at `/mock/dist/path/socket-completion.bash` but it was not there',
+          'Expected to find completion script at `/mock/dist/path/data/socket-completion.bash` but it was not there',
       })
     })
 
@@ -140,12 +142,9 @@ describe('completion utilities', () => {
 
       expect(result.ok).toBe(true)
       if (result.ok) {
+        // Note: The implementation normalizes paths to forward slashes for bash compatibility.
         expect(result.data.targetPath).toBe(
-          path.join(
-            path.dirname('/mock/app/data'),
-            'completion',
-            'socket-completion.bash',
-          ),
+          '/mock/app/completion/socket-completion.bash',
         )
       }
     })

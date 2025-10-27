@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { fetchThreatFeed } from './fetch-threat-feed.mts'
 import {
@@ -7,13 +7,19 @@ import {
 } from '../../../test/helpers/mocks.mts'
 
 // Mock the dependencies.
-vi.mock('../../utils/socket/api.mjs', () => ({
+vi.mock('../../utils/socket/api.mts', () => ({
   queryApiSafeJson: vi.fn(),
 }))
 
 describe('fetchThreatFeed', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
   it('fetches threat feed successfully', async () => {
-    const { queryApiSafeJson } = await import('../../utils/socket/api.mjs')
+    const { queryApiSafeJson } = await vi.importMock(
+      '../../utils/socket/api.mts',
+    )
     const mockQueryApi = vi.mocked(queryApiSafeJson)
 
     const mockData = {
@@ -61,7 +67,9 @@ describe('fetchThreatFeed', () => {
   })
 
   it('handles SDK setup failure', async () => {
-    const { queryApiSafeJson } = await import('../../utils/socket/api.mjs')
+    const { queryApiSafeJson } = await vi.importMock(
+      '../../utils/socket/api.mts',
+    )
     const mockQueryApi = vi.mocked(queryApiSafeJson)
 
     const error = createErrorResult('Failed to fetch threat feed', {
@@ -85,7 +93,9 @@ describe('fetchThreatFeed', () => {
   })
 
   it('handles API call failure', async () => {
-    const { queryApiSafeJson } = await import('../../utils/socket/api.mjs')
+    const { queryApiSafeJson } = await vi.importMock(
+      '../../utils/socket/api.mts',
+    )
     const mockQueryApi = vi.mocked(queryApiSafeJson)
 
     mockQueryApi.mockResolvedValue(
@@ -108,7 +118,9 @@ describe('fetchThreatFeed', () => {
   })
 
   it('passes custom SDK options', async () => {
-    const { queryApiSafeJson } = await import('../../utils/socket/api.mjs')
+    const { queryApiSafeJson } = await vi.importMock(
+      '../../utils/socket/api.mts',
+    )
     const mockQueryApi = vi.mocked(queryApiSafeJson)
 
     mockQueryApi.mockResolvedValue(createSuccessResult({}))
@@ -131,7 +143,9 @@ describe('fetchThreatFeed', () => {
   })
 
   it('handles filtering by severity levels', async () => {
-    const { queryApiSafeJson } = await import('../../utils/socket/api.mjs')
+    const { queryApiSafeJson } = await vi.importMock(
+      '../../utils/socket/api.mts',
+    )
     const mockQueryApi = vi.mocked(queryApiSafeJson)
 
     mockQueryApi.mockResolvedValue(createSuccessResult({ threats: [] }))
@@ -154,7 +168,9 @@ describe('fetchThreatFeed', () => {
   })
 
   it('handles pagination parameters', async () => {
-    const { queryApiSafeJson } = await import('../../utils/socket/api.mjs')
+    const { queryApiSafeJson } = await vi.importMock(
+      '../../utils/socket/api.mts',
+    )
     const mockQueryApi = vi.mocked(queryApiSafeJson)
 
     mockQueryApi.mockResolvedValue(createSuccessResult({ threats: [] }))
@@ -177,7 +193,9 @@ describe('fetchThreatFeed', () => {
   })
 
   it('handles date range filtering', async () => {
-    const { queryApiSafeJson } = await import('../../utils/socket/api.mjs')
+    const { queryApiSafeJson } = await vi.importMock(
+      '../../utils/socket/api.mts',
+    )
     const mockQueryApi = vi.mocked(queryApiSafeJson)
 
     mockQueryApi.mockResolvedValue(createSuccessResult({ threats: [] }))
@@ -200,7 +218,9 @@ describe('fetchThreatFeed', () => {
   })
 
   it('uses null prototype for options', async () => {
-    const { queryApiSafeJson } = await import('../../utils/socket/api.mjs')
+    const { queryApiSafeJson } = await vi.importMock(
+      '../../utils/socket/api.mts',
+    )
     const mockQueryApi = vi.mocked(queryApiSafeJson)
 
     mockQueryApi.mockResolvedValue(createSuccessResult({}))

@@ -3,11 +3,11 @@ import { fileURLToPath } from 'node:url'
 
 import { it } from 'vitest'
 
+import { createEnvProxy } from '@socketsecurity/lib/env'
 import { type SpawnOptions, spawn } from '@socketsecurity/lib/spawn'
 import { stripAnsi } from '@socketsecurity/lib/strings'
 
 import { FLAG_HELP, FLAG_VERSION } from '../src/constants/cli.mts'
-import ENV from '../src/constants/env.mts'
 import { execPath } from '../src/constants/paths.mts'
 import {
   type ScrubOptions,
@@ -17,10 +17,19 @@ import {
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
+// Set VITEST environment variable for test runs.
+// This disables interactive help menus in spawned CLI processes.
+// Must be set on process.env directly (not spread) to preserve
+// Windows environment variable proxy behavior.
+if (!process.env['VITEST']) {
+  process.env['VITEST'] = '1'
+}
+
 // Backward compatibility object for tests.
+// In VITEST mode, use a Proxy to keep env vars live and handle case-sensitivity.
 const constants = {
   execPath,
-  processEnv: process.env,
+  processEnv: process.env['VITEST'] ? createEnvProxy(process.env) : process.env,
 }
 
 // The asciiUnsafeRegexp match characters that are:
@@ -259,13 +268,17 @@ export async function spawnSocketCli(
   const commandArgs = isJsFile ? [entryPath, ...args] : args
 
   try {
+    // Create a Proxy env that handles Windows case-insensitivity issues.
+    // This ensures PATH, TEMP, and other Windows env vars work regardless
+    // of case (PATH vs Path vs path).
+    const env = createEnvProxy(
+      constants.processEnv,
+      spawnEnv as Record<string, string | undefined>,
+    )
+
     const output = await spawn(command, commandArgs, {
       cwd,
-      env: {
-        ...process.env,
-        ...constants.processEnv,
-        ...spawnEnv,
-      },
+      env,
       ...restOptions,
       // Close stdin to prevent tests from hanging
       // when commands wait for input. Must be after restOptions

@@ -7,6 +7,8 @@
 
 import { spawn } from 'node:child_process'
 import process from 'node:process'
+import { logger } from '@socketsecurity/lib/logger'
+import colors from 'yoctocolors-cjs'
 
 const PLATFORMS = [
   'alpine-arm64',
@@ -43,18 +45,18 @@ if (!platforms.length) {
 // Validate platforms.
 for (const platform of platforms) {
   if (!PLATFORMS.includes(platform)) {
-    console.error(`Unknown platform: ${platform}`)
-    console.error(`Available platforms: ${PLATFORMS.join(', ')}`)
+    logger.error(`Unknown platform: ${platform}`)
+    logger.error(`Available platforms: ${PLATFORMS.join(', ')}`)
     process.exit(1)
   }
 }
 
-console.log(`Building ${platforms.length} platform(s): ${platforms.join(', ')}`)
-console.log(`Mode: ${parallel ? 'parallel' : 'sequential'}`)
+logger.log(`Building ${platforms.length} platform(s): ${platforms.join(', ')}`)
+logger.log(`Mode: ${parallel ? 'parallel' : 'sequential'}`)
 if (buildFlags.length) {
-  console.log(`Build flags: ${buildFlags.join(' ')}`)
+  logger.log(`Build flags: ${buildFlags.join(' ')}`)
 }
-console.log('')
+logger.log('')
 
 /**
  * Build a single platform.
@@ -62,7 +64,7 @@ console.log('')
 function buildPlatform(platform) {
   return new Promise((resolve, reject) => {
     const startTime = Date.now()
-    console.log(`[${platform}] Starting build...`)
+    logger.log(`[${platform}] Starting build...`)
 
     const pnpmArgs = ['run', 'build', '--', '--target', platform, ...buildFlags]
     const child = spawn('pnpm', pnpmArgs, {
@@ -86,20 +88,20 @@ function buildPlatform(platform) {
       const duration = ((Date.now() - startTime) / 1000).toFixed(2)
 
       if (code === 0) {
-        console.log(`[${platform}] ✓ Build succeeded (${duration}s)`)
+        logger.log(`[${platform}] ✓ Build succeeded (${duration}s)`)
         resolve({ platform, code, duration, stdout, stderr })
       } else {
-        console.error(`[${platform}] ✗ Build failed (${duration}s)`)
+        logger.error(`[${platform}] ✗ Build failed (${duration}s)`)
         if (stderr) {
-          console.error(`[${platform}] Error output:`)
-          console.error(stderr)
+          logger.error(`[${platform}] Error output:`)
+          logger.error(stderr)
         }
         reject(new Error(`Platform ${platform} build failed with code ${code}`))
       }
     })
 
     child.on('error', error => {
-      console.error(`[${platform}] ✗ Build error:`, error)
+      logger.error(`[${platform}] ✗ Build error:`, error)
       reject(error)
     })
   })
@@ -115,7 +117,7 @@ async function buildSequential() {
       const result = await buildPlatform(platform)
       results.push(result)
     } catch (error) {
-      console.error(`\nBuild failed at platform: ${platform}`)
+      logger.error(`\nBuild failed at platform: ${platform}`)
       process.exit(1)
     }
   }
@@ -130,7 +132,7 @@ async function buildParallel() {
   try {
     return await Promise.all(promises)
   } catch (error) {
-    console.error('\nOne or more platform builds failed')
+    logger.error('\nOne or more platform builds failed')
     process.exit(1)
   }
 }
@@ -142,10 +144,10 @@ const startTime = Date.now()
 buildFn()
   .then(results => {
     const totalDuration = ((Date.now() - startTime) / 1000).toFixed(2)
-    console.log(`\n✓ All ${results.length} platform(s) built successfully in ${totalDuration}s`)
+    logger.log(`\n✓ All ${results.length} platform(s) built successfully in ${totalDuration}s`)
     process.exit(0)
   })
   .catch(error => {
-    console.error('\nBuild orchestration failed:', error.message)
+    logger.error('\nBuild orchestration failed:', error.message)
     process.exit(1)
   })

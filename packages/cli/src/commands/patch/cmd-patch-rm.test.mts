@@ -4,17 +4,45 @@ import path from 'node:path'
 import { afterEach, describe, expect } from 'vitest'
 
 import { cmdit, spawnSocketCli, testPath } from '../../../test/utils.mts'
-import { FLAG_CONFIG, FLAG_HELP } from '../constants/cli.mts'
-import { getBinCliPath } from '../constants/paths.mts'
+import { FLAG_CONFIG, FLAG_HELP } from '../../constants/cli.mts'
+import { getBinCliPath } from '../../constants/paths.mts'
 
 const binCliPath = getBinCliPath()
 
 const fixtureBaseDir = path.join(testPath, 'fixtures/commands/patch')
 const pnpmFixtureDir = path.join(fixtureBaseDir, 'pnpm')
 
+const originalManifest = {
+  patches: {
+    'pkg:npm/on-headers@1.0.2': {
+      uuid: '00000000-0000-0000-0000-000000000000',
+      exportedAt: '2025-09-10T20:10:19.407Z',
+      files: {
+        'index.js': {
+          beforeHash:
+            'c8327f00a843dbcfa6476286110d33bca8f0cc0e82bbe6f7d7171e0606e5dfe5',
+          afterHash:
+            '76682a9fc3bbe62975176e2541f39a8168877d828d5cad8b56461fc36ac2b856',
+        },
+      },
+      vulnerabilities: {
+        'GHSA-76c9-3jph-rj3q': {
+          cves: ['CVE-2025-7339'],
+          summary:
+            'on-headers is vulnerable to http response header manipulation',
+          severity: 'LOW',
+          description:
+            '### Impact\n\nA bug in on-headers versions `< 1.1.0` may result in response headers being inadvertently modified when an array is passed to `response.writeHead()`\n\n### Patches\n\nUsers should upgrade to `1.1.0`\n\n### Workarounds\n\nUses are encouraged to upgrade to `1.1.0`, but this issue can be worked around by passing an object to `response.writeHead()` rather than an array.',
+          patchExplanation: '',
+        },
+      },
+    },
+  },
+}
+
 async function cleanupNodeModules() {
   // Clean up node_modules from all package manager directories.
-  await Promise.all([
+  Promise.all([
     fs.rm(path.join(pnpmFixtureDir, 'node_modules'), {
       force: true,
       recursive: true,
@@ -30,9 +58,16 @@ async function cleanupNodeModules() {
   ])
 }
 
+async function restoreManifest() {
+  // Restore the manifest.json fixture to its original state.
+  const manifestPath = path.join(pnpmFixtureDir, '.socket/manifest.json')
+  await fs.writeFile(manifestPath, JSON.stringify(originalManifest, null, 2))
+}
+
 describe('socket patch rm', async () => {
   afterEach(async () => {
     await cleanupNodeModules()
+    await restoreManifest()
   })
 
   cmdit(
@@ -131,9 +166,10 @@ describe('socket patch rm', async () => {
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
       const json = JSON.parse(stdout)
-      expect(json.purl).toBe('pkg:npm/on-headers@1.0.2')
-      expect(json.filesRestored).toBeDefined()
-      expect(typeof json.filesRestored).toBe('number')
+      expect(json.ok).toBe(true)
+      expect(json.data?.purl).toBe('pkg:npm/on-headers@1.0.2')
+      expect(json.data?.filesRestored).toBeDefined()
+      expect(typeof json.data.filesRestored).toBe('number')
       expect(code, 'should exit with code 0').toBe(0)
     },
   )

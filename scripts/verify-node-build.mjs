@@ -20,6 +20,7 @@ import { fileURLToPath } from 'node:url'
 
 import { logger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
+import colors from 'yoctocolors-cjs'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -30,8 +31,8 @@ const versionArg = args.find(arg => arg.startsWith('--node-version='))
 const NODE_VERSION = versionArg ? versionArg.split('=')[1] : 'v24.10.0'
 
 const ROOT_DIR = join(__dirname, '..')
-const BUILD_DIR = join(ROOT_DIR, '.custom-node-build')
-const NODE_DIR = join(BUILD_DIR, 'node-yao-pkg')
+const BUILD_DIR = join(ROOT_DIR, 'build')
+const NODE_DIR = join(BUILD_DIR, 'node-smol')
 const ARCH = process.arch
 const IS_MACOS = platform() === 'darwin'
 
@@ -62,7 +63,7 @@ async function execCapture(command, args = [], options = {}) {
  * Log error.
  */
 function error(message) {
-  logger.error(`❌ ${message}`)
+  logger.error(`${colors.red('✗')} ${message}`)
   hasErrors = true
 }
 
@@ -70,7 +71,7 @@ function error(message) {
  * Log warning.
  */
 function warn(message) {
-  logger.warn(`⚠️  ${message}`)
+  logger.warn(`${colors.yellow('⚠')}  ${message}`)
   hasWarnings = true
 }
 
@@ -78,7 +79,7 @@ function warn(message) {
  * Log success.
  */
 function success(message) {
-  logger.log(`✅ ${message}`)
+  logger.log(`${colors.green('✓')} ${message}`)
 }
 
 /**
@@ -95,7 +96,7 @@ function verifyNodeSourceExists() {
   info('Checking Node.js source directory...')
   if (!existsSync(NODE_DIR)) {
     error(`Node.js source directory not found: ${NODE_DIR}`)
-    error('Run: node scripts/build-yao-pkg-node.mjs')
+    error('Run: node packages/node-smol-builder/scripts/build.mjs')
     return false
   }
   success('Node.js source directory exists')
@@ -128,14 +129,14 @@ async function verifySeaModification() {
     error('lib/sea.js is NOT modified correctly')
     error('Expected: const isSea = () => true;')
     error('This is CRITICAL - pkg binaries will not detect as SEA!')
-    error('Run: node scripts/build-yao-pkg-node.mjs --clean')
+    error('Run: node packages/node-smol-builder/scripts/build.mjs --clean')
     return false
   }
 
   if (hasOriginalImport) {
     error('lib/sea.js still has original isSea import')
     error('Socket modification was not applied correctly')
-    error('Run: node scripts/build-yao-pkg-node.mjs --clean')
+    error('Run: node packages/node-smol-builder/scripts/build.mjs --clean')
     return false
   }
 
@@ -244,7 +245,7 @@ async function verifyV8IncludeFixes() {
 
   if (!allCorrect) {
     error('V8 include paths are incorrect for this Node.js version!')
-    error('Run: node scripts/build-yao-pkg-node.mjs --clean')
+    error('Run: node packages/node-smol-builder/scripts/build.mjs --clean')
     return false
   }
 
@@ -309,7 +310,7 @@ async function testBinary() {
   }
 
   // Test 1: Version check.
-  // For yao-pkg patched binaries, set PKG_EXECPATH to empty string to run as regular Node.js
+  // For smol patched binaries, set PKG_EXECPATH to empty string to run as regular Node.js.
   // See: https://github.com/yao-pkg/pkg#detect-if-the-app-is-running-as-packaged
   const versionResult = await execCapture(nodeBinary, ['--version'], {
     env: { ...process.env, PKG_EXECPATH: '' },
@@ -332,7 +333,7 @@ async function testBinary() {
   // Test 2: Execute simple script.
   const execResult = await execCapture(
     nodeBinary,
-    ['-e', 'console.log("OK")'],
+    ['-e', 'logger.log("OK")'],
     {
       env: { ...process.env, PKG_EXECPATH: '' },
     },
@@ -349,7 +350,7 @@ async function testBinary() {
   // Test 3: SEA detection.
   const seaScript = `
     const sea = require('node:sea');
-    console.log(sea.isSea() ? 'SEA_YES' : 'SEA_NO');
+    logger.log(sea.isSea() ? 'SEA_YES' : 'SEA_NO');
   `
 
   const seaResult = await execCapture(nodeBinary, ['-e', seaScript], {
@@ -367,7 +368,7 @@ async function testBinary() {
   } else if (seaResult.stdout === 'SEA_NO') {
     error('Binary reports isSea() = false - Socket modification not applied!')
     error('This is CRITICAL - pkg binaries will not work correctly')
-    error('Run: node scripts/build-yao-pkg-node.mjs --clean')
+    error('Run: node packages/node-smol-builder/scripts/build.mjs --clean')
     return false
   } else {
     error(`SEA detection returned unexpected output: ${seaResult.stdout}`)
@@ -460,23 +461,23 @@ async function main() {
   logger.log('')
 
   if (hasErrors) {
-    logger.error('❌ VERIFICATION FAILED')
+    logger.error(`${colors.red('✗')} VERIFICATION FAILED`)
     logger.error('')
     logger.error(
       'Critical issues were found. Please fix them before using this build.',
     )
     logger.error('')
     logger.error('To rebuild:')
-    logger.error('  node scripts/build-yao-pkg-node.mjs')
+    logger.error('  node packages/node-smol-builder/scripts/build.mjs')
     logger.error('')
     process.exitCode = 1
   } else if (hasWarnings) {
-    logger.warn('⚠️  VERIFICATION PASSED WITH WARNINGS')
+    logger.warn(`${colors.yellow('⚠')}  VERIFICATION PASSED WITH WARNINGS`)
     logger.warn('')
     logger.warn('Build is functional but has non-critical issues.')
     logger.warn('')
   } else {
-    logger.log('✅ ALL VERIFICATIONS PASSED')
+    logger.log(`${colors.green('✓')} ALL VERIFICATIONS PASSED`)
     logger.log('')
     logger.log('Node.js binary is correctly built and ready for use with pkg.')
     logger.log('')
@@ -485,6 +486,6 @@ async function main() {
 
 // Run main function.
 main().catch(e => {
-  logger.error('❌ Verification failed:', e.message)
+  logger.error(`${colors.red('✗')} Verification failed:`, e.message)
   process.exitCode = 1
 })

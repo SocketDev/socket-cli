@@ -29,6 +29,7 @@ import { spawn } from '@socketsecurity/lib/spawn'
 
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
+import { resolveSfw } from '../../utils/dlx/resolve-binary.mjs'
 import { filterFlags } from '../../utils/process/cmd.mts'
 
 import type {
@@ -101,11 +102,20 @@ async function run(
   // Filter out Socket CLI flags before forwarding to sfw
   const argsToForward = filterFlags(argv, commonFlags, [])
 
-  // Forward arguments to sfw (Socket Firewall) via npx.
-  const result = await spawn('npx', ['sfw', 'pip', ...argsToForward], {
-    shell: WIN32,
-    stdio: 'inherit',
-  })
+  const resolution = resolveSfw()
+
+  // Forward arguments to sfw (Socket Firewall).
+  // Use local sfw if available, otherwise use npx.
+  const result =
+    resolution.type === 'local'
+      ? await spawn('node', [resolution.path, 'pip', ...argsToForward], {
+          shell: WIN32,
+          stdio: 'inherit',
+        })
+      : await spawn('npx', ['sfw', 'pip', ...argsToForward], {
+          shell: WIN32,
+          stdio: 'inherit',
+        })
 
   if (result.code !== 0) {
     process.exitCode = result.code || 1

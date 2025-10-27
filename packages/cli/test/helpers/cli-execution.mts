@@ -69,7 +69,7 @@ export async function executeCliCommand(
     ...options,
   } as CliExecutionOptions
 
-  const { binCliPath } = constants
+  const binCliPath = constants.getBinCliPath()
   const finalArgs = [...args]
 
   // Add config isolation if requested

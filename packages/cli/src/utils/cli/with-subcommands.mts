@@ -1,6 +1,7 @@
 import terminalLink from 'terminal-link'
 import colors from 'yoctocolors-cjs'
 
+import isInteractive from '@socketregistry/is-interactive/index.cjs'
 import { joinAnd } from '@socketsecurity/lib/arrays'
 import { logger } from '@socketsecurity/lib/logger'
 import { getOwn, hasOwn, toSortedObject } from '@socketsecurity/lib/objects'
@@ -572,6 +573,18 @@ export async function meowWithSubcommands(
       })
     }
 
+    // If no command found but defaultSub exists, use it as the command.
+    // This treats the first arg as an argument to the default subcommand.
+    if (!commandDefinition && defaultSub && subcommands[defaultSub]) {
+      return await subcommands[defaultSub].run(
+        [commandOrAliasName, ...rawCommandArgv],
+        importMeta,
+        {
+          parentName: name,
+        },
+      )
+    }
+
     // Suggest similar commands for typos.
     if (commandName && !commandDefinition) {
       const suggestion = findBestCommandMatch(commandName, subcommands, aliases)
@@ -621,10 +634,12 @@ export async function meowWithSubcommands(
     // "Bucket" some commands for easier usage.
     const commands = new Set([
       'analytics',
+      'ask',
       'audit-log',
       'ci',
       'cdxgen',
       'config',
+      'console',
       'dependencies',
       'fix',
       'install',
@@ -638,7 +653,7 @@ export async function meowWithSubcommands(
       'optimize',
       'organization',
       'package',
-      //'patch',
+      'patch',
       'pip',
       // PNPM,
       'raw-npm',
@@ -860,7 +875,10 @@ export async function meowWithSubcommands(
     const shouldShowInteractive =
       (helpFlag || helpCategory !== null) &&
       !cli2.flags['helpFull'] &&
-      !helpCategory
+      !helpCategory &&
+      isInteractive() &&
+      process.env['VITEST'] !== '1' &&
+      process.env['CI'] !== 'true'
 
     if (shouldShowInteractive) {
       // Show interactive help for root --help command

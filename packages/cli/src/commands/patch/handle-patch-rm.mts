@@ -34,7 +34,7 @@ export interface HandlePatchRmConfig {
   keepBackups: boolean
   outputKind: OutputKind
   purl: string
-  spinner: Spinner
+  spinner: Spinner | null
 }
 
 export async function handlePatchRm({
@@ -45,7 +45,7 @@ export async function handlePatchRm({
   spinner,
 }: HandlePatchRmConfig): Promise<void> {
   try {
-    spinner.start('Reading patch manifest')
+    spinner?.start('Reading patch manifest')
 
     const dotSocketDirPath = normalizePath(path.join(cwd, DOT_SOCKET_DIR))
     const manifestPath = normalizePath(
@@ -59,32 +59,34 @@ export async function handlePatchRm({
     const patch = validated.patches[normalizedPurl]
 
     if (!patch) {
-      spinner.stop()
+      spinner?.stop()
       throw new InputError(`Patch not found for PURL: ${purl}`)
     }
 
     // Check if patch has backups.
     const uuid = patch.uuid
     if (!uuid) {
-      spinner.stop()
+      spinner?.stop()
       throw new InputError('Patch does not have a UUID for backup restoration')
     }
 
-    spinner.text('Checking for backups')
+    spinner?.text('Checking for backups')
 
     const metadata = await getPatchMetadata(uuid)
     if (!metadata) {
-      spinner.stop()
-      logger.warn(
-        'No backups found for this patch. Original files cannot be restored.',
-      )
-      logger.log('Removing patch from manifest only.')
+      spinner?.stop()
+      if (outputKind === 'text') {
+        logger.warn(
+          'No backups found for this patch. Original files cannot be restored.',
+        )
+        logger.log('Removing patch from manifest only.')
+      }
     }
 
     let filesRestored = 0
 
     if (metadata) {
-      spinner.text('Restoring original files from backups')
+      spinner?.text('Restoring original files from backups')
 
       // Restore all backed up files.
       const restoreResults = await restoreAllBackups(uuid)
@@ -92,33 +94,37 @@ export async function handlePatchRm({
       filesRestored = restoreResults.restored.length
 
       if (restoreResults.failed.length > 0) {
-        spinner.stop()
-        logger.warn(
-          `Failed to restore ${restoreResults.failed.length} ${pluralize('file', { count: restoreResults.failed.length })}:`,
-        )
-        for (const filePath of restoreResults.failed) {
-          logger.log(`  - ${filePath}`)
+        spinner?.stop()
+        if (outputKind === 'text') {
+          logger.warn(
+            `Failed to restore ${restoreResults.failed.length} ${pluralize('file', { count: restoreResults.failed.length })}:`,
+          )
+          for (const filePath of restoreResults.failed) {
+            logger.log(`  - ${filePath}`)
+          }
         }
       }
 
       if (!keepBackups) {
-        spinner.text('Cleaning up backups')
+        spinner?.text('Cleaning up backups')
         await cleanupBackups(uuid)
       }
     }
 
-    spinner.text('Removing patch from manifest')
+    spinner?.text('Removing patch from manifest')
 
     // Remove patch from manifest.
     await removePatch(normalizedPurl, cwd)
 
-    spinner.stop()
+    spinner?.stop()
 
-    logger.log(`Removed patch for ${normalizedPurl}`)
-    if (filesRestored > 0) {
-      logger.log(
-        `Restored ${filesRestored} ${pluralize('file', { count: filesRestored })} from backups`,
-      )
+    if (outputKind === 'text') {
+      logger.log(`Removed patch for ${normalizedPurl}`)
+      if (filesRestored > 0) {
+        logger.log(
+          `Restored ${filesRestored} ${pluralize('file', { count: filesRestored })} from backups`,
+        )
+      }
     }
 
     await outputPatchRmResult(
@@ -132,7 +138,7 @@ export async function handlePatchRm({
       outputKind,
     )
   } catch (e) {
-    spinner.stop()
+    spinner?.stop()
 
     if (e instanceof InputError) {
       throw e

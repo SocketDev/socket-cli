@@ -11,7 +11,7 @@ import { suggestTarget } from './suggest_target.mts'
 import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
-import { getEcosystemChoicesForMeow } from '../../utils/ecosystem/ecosystem.mjs'
+import { getEcosystemChoicesForMeow } from '../../utils/ecosystem/types.mjs'
 import {
   getFlagApiRequirementsOutput,
   getFlagListOutput,
@@ -27,7 +27,7 @@ import type {
   CliCommandConfig,
   CliCommandContext,
 } from '../../utils/cli/with-subcommands.mjs'
-import type { PURL_Type } from '../../utils/ecosystem/ecosystem.mjs'
+import type { PURL_Type } from '../../utils/ecosystem/types.mjs'
 
 export const CMD_NAME = 'reach'
 

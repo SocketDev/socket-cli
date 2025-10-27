@@ -15,12 +15,12 @@ import { REQUIREMENTS_TXT, SOCKET_JSON } from '../../constants/paths.mts'
 import { REPORT_LEVEL_ERROR } from '../../constants/reporting.mjs'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
-import { getEcosystemChoicesForMeow } from '../../utils/ecosystem/ecosystem.mjs'
+import { getEcosystemChoicesForMeow } from '../../utils/ecosystem/types.mjs'
 import {
   detectDefaultBranch,
   getRepoName,
   gitBranch,
-} from '../../utils/git/git.mjs'
+} from '../../utils/git/operations.mjs'
 import {
   getFlagApiRequirementsOutput,
   getFlagListOutput,
@@ -40,7 +40,7 @@ import type {
   CliCommandConfig,
   CliCommandContext,
 } from '../../utils/cli/with-subcommands.mjs'
-import type { PURL_Type } from '../../utils/ecosystem/ecosystem.mjs'
+import type { PURL_Type } from '../../utils/ecosystem/types.mjs'
 
 export const CMD_NAME = 'create'
 

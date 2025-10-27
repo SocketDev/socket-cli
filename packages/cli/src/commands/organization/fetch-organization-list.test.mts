@@ -8,11 +8,11 @@ import {
 } from '../../../test/helpers/sdk-test-helpers.mts'
 
 // Mock the dependencies.
-vi.mock('../../utils/socket/api.mjs', () => ({
+vi.mock('../../utils/socket/api.mts', () => ({
   handleApiCall: vi.fn(),
 }))
 
-vi.mock('../../utils/socket/sdk.mjs', () => ({
+vi.mock('../../utils/socket/sdk.mts', () => ({
   setupSdk: vi.fn(),
 }))
 
@@ -36,13 +36,13 @@ describe('fetchOrganizationList', () => {
     }
 
     const { mockHandleApi, mockSdk } = await setupSdkMockSuccess(
-      'getOrganizations',
+      'listOrganizations',
       mockData,
     )
 
     const result = await fetchOrganization()
 
-    expect(mockSdk.getOrganizations).toHaveBeenCalledWith()
+    expect(mockSdk.listOrganizations).toHaveBeenCalledWith()
     expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
       description: 'organization list',
     })
@@ -64,7 +64,7 @@ describe('fetchOrganizationList', () => {
   })
 
   it('handles API call failure', async () => {
-    await setupSdkMockError('getOrganizations', 'Network error', 500)
+    await setupSdkMockError('listOrganizations', 'Network error', 500)
 
     const result = await fetchOrganization()
 
@@ -73,7 +73,7 @@ describe('fetchOrganizationList', () => {
   })
 
   it('passes custom SDK options', async () => {
-    const { mockSetupSdk } = await setupSdkMockSuccess('getOrganizations', {
+    const { mockSetupSdk } = await setupSdkMockSuccess('listOrganizations', {
       organizations: {},
     })
 
@@ -88,13 +88,13 @@ describe('fetchOrganizationList', () => {
   })
 
   it('uses provided SDK instance', async () => {
-    const { handleApiCall } = await import('../../utils/socket/api.mjs')
+    const { handleApiCall } = await import('../../utils/socket/api.mts')
     const { createSuccessResult } = await import(
       '../../../test/helpers/mocks.mts'
     )
 
     const mockSdk = {
-      getOrganizations: vi.fn().mockResolvedValue({}),
+      listOrganizations: vi.fn().mockResolvedValue({}),
     } as any
 
     vi.mocked(handleApiCall).mockResolvedValue(
@@ -103,11 +103,11 @@ describe('fetchOrganizationList', () => {
 
     await fetchOrganization({ sdk: mockSdk })
 
-    expect(mockSdk.getOrganizations).toHaveBeenCalled()
+    expect(mockSdk.listOrganizations).toHaveBeenCalled()
   })
 
   it('uses null prototype for options', async () => {
-    const { mockSdk } = await setupSdkMockSuccess('getOrganizations', {
+    const { mockSdk } = await setupSdkMockSuccess('listOrganizations', {
       organizations: {},
     })
 
@@ -115,6 +115,6 @@ describe('fetchOrganizationList', () => {
     await fetchOrganization()
 
     // The function should work without prototype pollution issues.
-    expect(mockSdk.getOrganizations).toHaveBeenCalled()
+    expect(mockSdk.listOrganizations).toHaveBeenCalled()
   })
 })

@@ -6,8 +6,8 @@ import {
   FLAG_DRY_RUN,
   FLAG_HELP,
   FLAG_ORG,
-} from '../constants/cli.mts'
-import { getBinCliPath } from '../constants/paths.mts'
+} from '../../constants/cli.mts'
+import { getBinCliPath } from '../../constants/paths.mts'
 
 const binCliPath = getBinCliPath()
 
@@ -18,13 +18,38 @@ describe('socket organization policy security', async () => {
     async cmd => {
       const {
         code: _code,
-        stderr: _stderr,
+        stderr,
         stdout,
       } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`
+        "Retrieve the security policy of an organization
+
+          Usage
+                $ socket organization policy security [options]
+          
+              API Token Requirements
+                - Quota: 1 unit
+                - Permissions: security-policy:read
+          
+              Options
+                --interactive       Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.
+                --json              Output as JSON
+                --markdown          Output as Markdown
+                --org               Force override the organization slug, overrides the default org from config
+          
+              Your API token will need the \`security-policy:read\` permission otherwise
+              the request will fail with an authentication error.
+          
+              Examples
+                $ socket organization policy security
+                $ socket organization policy security --json"
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           "
+           _____         _       _          /---------------
+            |   __|___ ___| |_ ___| |_        | CLI: <redacted>
+            |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket organization policy security\`, cwd: <redacted>"
       `)
 
       //expect(code, 'explicit help should exit with code 0').toBe(0)
@@ -38,11 +63,7 @@ describe('socket organization policy security', async () => {
     ['organization', 'policy', 'security', FLAG_DRY_RUN, FLAG_CONFIG, '{}'],
     'should reject dry run without proper args',
     async cmd => {
-      const {
-        code,
-        stderr: _stderr,
-        stdout,
-      } = await spawnSocketCli(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`""`)
       // expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       //   "
@@ -76,15 +97,14 @@ describe('socket organization policy security', async () => {
     ],
     'should accept default org in v1',
     async cmd => {
-      const {
-        code,
-        stderr: _stderr,
-        stdout,
-      } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           "
+           _____         _       _          /---------------
+            |   __|___ ___| |_ ___| |_        | CLI: <redacted>
+            |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket organization policy security\`, cwd: <redacted>"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
@@ -104,15 +124,14 @@ describe('socket organization policy security', async () => {
     ],
     'should accept --org flag in v1',
     async cmd => {
-      const {
-        code,
-        stderr: _stderr,
-        stdout,
-      } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           "
+           _____         _       _          /---------------
+            |   __|___ ___| |_ ___| |_        | CLI: <redacted>
+            |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket organization policy security\`, cwd: <redacted>"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

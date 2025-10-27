@@ -8,7 +8,7 @@ import {
   getRecommendedTtl,
   isVolatileData,
   shouldWarmCache,
-} from '../../../src/utils/cache-strategies.mts'
+} from '../../src/utils/cache-strategies.mts'
 
 describe('getCacheStrategy', () => {
   it('should return strategy for package info', () => {
@@ -48,8 +48,8 @@ describe('getCacheStrategy', () => {
 
   it('should return default strategy for unknown path', () => {
     const strategy = getCacheStrategy('/unknown/endpoint')
-    // Default 5 minutes
-    expect(strategy.ttl).toBe(5 * 60 * 1000)
+    // Default 60 seconds
+    expect(strategy.ttl).toBe(60 * 1000)
     expect(strategy.warmOnStartup).toBe(false)
     expect(strategy.volatile).toBe(false)
   })

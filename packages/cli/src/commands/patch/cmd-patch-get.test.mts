@@ -4,8 +4,8 @@ import path from 'node:path'
 import { afterEach, describe, expect } from 'vitest'
 
 import { cmdit, spawnSocketCli, testPath } from '../../../test/utils.mts'
-import { FLAG_CONFIG, FLAG_HELP } from '../constants/cli.mts'
-import { getBinCliPath } from '../constants/paths.mts'
+import { FLAG_CONFIG, FLAG_HELP } from '../../constants/cli.mts'
+import { getBinCliPath } from '../../constants/paths.mts'
 
 const binCliPath = getBinCliPath()
 
@@ -14,7 +14,7 @@ const pnpmFixtureDir = path.join(fixtureBaseDir, 'pnpm')
 
 async function cleanupNodeModules() {
   // Clean up node_modules from all package manager directories.
-  await Promise.all([
+  Promise.all([
     fs.rm(path.join(pnpmFixtureDir, 'node_modules'), {
       force: true,
       recursive: true,
@@ -32,7 +32,7 @@ async function cleanupNodeModules() {
 
 async function cleanupPatchesDir() {
   // Clean up generated patches directories.
-  await Promise.all([
+  Promise.all([
     fs.rm(path.join(pnpmFixtureDir, 'patches'), {
       force: true,
       recursive: true,
@@ -178,11 +178,12 @@ describe('socket patch get', async () => {
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
       const json = JSON.parse(stdout)
-      expect(json.purl).toBe('pkg:npm/on-headers@1.0.2')
-      expect(json.files).toBeDefined()
-      expect(Array.isArray(json.files)).toBe(true)
-      expect(json.files).toContain('index.js')
-      expect(json.outputDir).toBeDefined()
+      expect(json.ok).toBe(true)
+      expect(json.data?.purl).toBe('pkg:npm/on-headers@1.0.2')
+      expect(json.data?.files).toBeDefined()
+      expect(Array.isArray(json.data.files)).toBe(true)
+      expect(json.data.files).toContain('index.js')
+      expect(json.data?.outputDir).toBeDefined()
       expect(code, 'should exit with code 0').toBe(0)
     },
   )

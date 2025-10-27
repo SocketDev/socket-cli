@@ -27,7 +27,7 @@ import { PackageURL } from '@socketregistry/packageurl-js'
 import { isObjectObject } from '@socketsecurity/lib/objects'
 
 import type { SocketArtifact } from '../alert/artifact.mjs'
-import type { PURL_Type } from '../ecosystem/ecosystem.mjs'
+import type { PURL_Type } from '../ecosystem/types.mjs'
 
 export type PurlObject<T> = T & { type: PURL_Type }
 

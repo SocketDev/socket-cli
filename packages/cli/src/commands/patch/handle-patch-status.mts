@@ -15,7 +15,7 @@ import { pluralize } from '@socketsecurity/lib/words'
 import { PatchManifestSchema } from './manifest-schema.mts'
 import { outputPatchStatusResult } from './output-patch-status-result.mts'
 import { getErrorCause } from '../../utils/error/errors.mjs'
-import { findUp } from '../../utils/fs/fs.mjs'
+import { findUp } from '../../utils/fs/find-up.mjs'
 import { hasBackupForPatch } from '../../utils/manifest/patch-backup.mts'
 
 import type { PatchRecord } from './manifest-schema.mts'
@@ -43,7 +43,7 @@ export interface HandlePatchStatusConfig {
     failed: boolean
   }
   outputKind: OutputKind
-  spinner: Spinner
+  spinner: Spinner | null
 }
 
 /**
@@ -188,7 +188,7 @@ export async function handlePatchStatus({
   spinner,
 }: HandlePatchStatusConfig): Promise<void> {
   try {
-    spinner.start('Reading patch manifest')
+    spinner?.start('Reading patch manifest')
 
     const dotSocketDirPath = normalizePath(path.join(cwd, DOT_SOCKET_DIR))
     const manifestPath = normalizePath(
@@ -198,7 +198,7 @@ export async function handlePatchStatus({
     const manifestData = JSON.parse(manifestContent)
     const validated = PatchManifestSchema.parse(manifestData)
 
-    spinner.text('Checking patch status')
+    spinner?.start('Checking patch status')
 
     const statuses: PatchStatus[] = []
 
@@ -224,7 +224,7 @@ export async function handlePatchStatus({
       })
     }
 
-    spinner.stop()
+    spinner?.stop()
 
     // Apply filters.
     let filteredStatuses = statuses
@@ -237,14 +237,16 @@ export async function handlePatchStatus({
       filteredStatuses = filteredStatuses.filter(s => s.status === 'failed')
     }
 
-    if (statuses.length === 0) {
-      logger.log('No patches found in manifest')
-    } else if (filteredStatuses.length === 0) {
-      logger.log('No patches match the filter criteria')
-    } else {
-      logger.log(
-        `Found ${filteredStatuses.length} ${pluralize('patch', { count: filteredStatuses.length })}`,
-      )
+    if (outputKind === 'text') {
+      if (statuses.length === 0) {
+        logger.log('No patches found in manifest')
+      } else if (filteredStatuses.length === 0) {
+        logger.log('No patches match the filter criteria')
+      } else {
+        logger.log(
+          `Found ${filteredStatuses.length} ${pluralize('patch', { count: filteredStatuses.length })}`,
+        )
+      }
     }
 
     await outputPatchStatusResult(
@@ -255,7 +257,7 @@ export async function handlePatchStatus({
       outputKind,
     )
   } catch (e) {
-    spinner.stop()
+    spinner?.stop()
 
     let message = 'Failed to get patch status'
     let cause = getErrorCause(e)

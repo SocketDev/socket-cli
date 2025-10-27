@@ -55,7 +55,7 @@ const removeExitHandler = onExit((_code, signal) => {
   }
 
   if (signal) {
-    console.log(`\nReceived ${signal}, cleaning up...`)
+    logger.log(`\nReceived ${signal}, cleaning up...`)
     // Let onExit handle the exit with proper code
     process.exitCode = 128 + (signal === 'SIGINT' ? 2 : 15)
   }
@@ -359,30 +359,30 @@ async function main() {
 
     // Show help if requested
     if (values.help) {
-      console.log('Test Runner')
-      console.log('\nUsage: pnpm test [options] [-- vitest-args...]')
-      console.log('\nOptions:')
-      console.log('  --help              Show this help message')
-      console.log(
+      logger.log('Test Runner')
+      logger.log('\nUsage: pnpm test [options] [-- vitest-args...]')
+      logger.log('\nOptions:')
+      logger.log('  --help              Show this help message')
+      logger.log(
         '  --fast, --quick     Skip lint/type checks for faster execution',
       )
-      console.log('  --cover, --coverage Run tests with code coverage')
-      console.log('  --update            Update test snapshots')
-      console.log('  --all, --force      Run all tests regardless of changes')
-      console.log('  --staged            Run tests affected by staged changes')
-      console.log('  --skip-build        Skip the build step')
-      console.log('\nExamples:')
-      console.log(
+      logger.log('  --cover, --coverage Run tests with code coverage')
+      logger.log('  --update            Update test snapshots')
+      logger.log('  --all, --force      Run all tests regardless of changes')
+      logger.log('  --staged            Run tests affected by staged changes')
+      logger.log('  --skip-build        Skip the build step')
+      logger.log('\nExamples:')
+      logger.log(
         '  pnpm test                  # Run checks, build, and tests for changed files',
       )
-      console.log('  pnpm test --all            # Run all tests')
-      console.log(
+      logger.log('  pnpm test --all            # Run all tests')
+      logger.log(
         '  pnpm test --fast           # Skip checks for quick testing',
       )
-      console.log('  pnpm test --cover          # Run with coverage report')
-      console.log('  pnpm test --fast --cover   # Quick test with coverage')
-      console.log('  pnpm test --update         # Update test snapshots')
-      console.log('  pnpm test -- --reporter=dot # Pass args to vitest')
+      logger.log('  pnpm test --cover          # Run with coverage report')
+      logger.log('  pnpm test --fast --cover   # Quick test with coverage')
+      logger.log('  pnpm test --update         # Update test snapshots')
+      logger.log('  pnpm test -- --reporter=dot # Pass args to vitest')
       process.exitCode = 0
       return
     }

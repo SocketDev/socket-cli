@@ -7,19 +7,20 @@
  *
  * Usage:
  * - Shortens absolute paths for display
- * - Converts /Users/name/... to ~/...
+ * - Converts absolute home paths to ~/...
  * - Common Unix convention for home directory
  */
 
-import path from 'node:path'
-
 import { escapeRegExp } from '@socketsecurity/lib/regexps'
+import { normalizePath } from '@socketsecurity/lib/path'
 
 import { homePath } from '../../constants/paths.mts'
 
 export function tildify(cwd: string) {
-  return cwd.replace(
-    new RegExp(`^${escapeRegExp(homePath)}(?:${path.sep}|$)`, 'i'),
+  // Normalize to forward slashes for consistent matching across platforms.
+  const normalizedCwd = normalizePath(cwd)
+  return normalizedCwd.replace(
+    new RegExp(`^${escapeRegExp(homePath)}(?:/|$)`, 'i'),
     '~/',
   )
 }

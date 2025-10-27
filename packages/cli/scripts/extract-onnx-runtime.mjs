@@ -10,6 +10,8 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { logger } from '@socketsecurity/lib/logger'
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '..')
 const outputPath = path.join(rootPath, 'external/onnx-sync.mjs')
@@ -19,8 +21,11 @@ if (existsSync(outputPath)) {
   try {
     const existing = readFileSync(outputPath, 'utf-8')
     // Verify it's the expected content (not corrupted).
-    if (existing.includes('onnxruntime-web') && existing.includes('InferenceSession')) {
-      console.log(`✓ Using cached ${outputPath}`)
+    if (
+      existing.includes('onnxruntime-web') &&
+      existing.includes('InferenceSession')
+    ) {
+      logger.log(`✓ Using cached ${outputPath}`)
       process.exit(0)
     }
   } catch {}
@@ -38,6 +43,8 @@ const onnxSyncContent = `/**
  */
 
 import ort from 'onnxruntime-web'
+import { logger } from '@socketsecurity/lib/logger'
+import colors from 'yoctocolors-cjs'
 
 export const InferenceSession = ort.InferenceSession
 export const Tensor = ort.Tensor
@@ -47,5 +54,5 @@ export default ort
 
 writeFileSync(outputPath, onnxSyncContent, 'utf-8')
 
-console.log(`✓ Generated ${outputPath}`)
-console.log(`✓ onnx-sync.mjs size: ${onnxSyncContent.length} bytes`)
+logger.log(`✓ Generated ${outputPath}`)
+logger.log(`✓ onnx-sync.mjs size: ${onnxSyncContent.length} bytes`)

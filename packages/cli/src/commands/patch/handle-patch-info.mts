@@ -33,7 +33,7 @@ export interface HandlePatchInfoConfig {
   cwd: string
   outputKind: OutputKind
   purl: string
-  spinner: Spinner
+  spinner: Spinner | null
 }
 
 export async function handlePatchInfo({
@@ -43,7 +43,7 @@ export async function handlePatchInfo({
   spinner,
 }: HandlePatchInfoConfig): Promise<void> {
   try {
-    spinner.start('Reading patch manifest')
+    spinner?.start('Reading patch manifest')
 
     const dotSocketDirPath = normalizePath(path.join(cwd, DOT_SOCKET_DIR))
     const manifestPath = normalizePath(
@@ -57,13 +57,15 @@ export async function handlePatchInfo({
     const patch = validated.patches[normalizedPurl]
 
     if (!patch) {
-      spinner.stop()
+      spinner?.stop()
       throw new InputError(`Patch not found for PURL: ${purl}`)
     }
 
-    spinner.stop()
+    spinner?.stop()
 
-    logger.log(`Patch information for: ${normalizedPurl}`)
+    if (outputKind === 'text') {
+      logger.log(`Patch information for: ${normalizedPurl}`)
+    }
 
     const patchInfo: PatchInfoData = {
       description: patch.description,
@@ -84,7 +86,7 @@ export async function handlePatchInfo({
       outputKind,
     )
   } catch (e) {
-    spinner.stop()
+    spinner?.stop()
 
     if (e instanceof InputError) {
       throw e

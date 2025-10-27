@@ -11,6 +11,7 @@ import {
 import {
   getExecPath,
   getNodeDebugFlags,
+  getNodeDisableSigusr1Flags,
   getNodeHardenFlags,
   getNodeNoWarningsFlags,
   supportsNodePermissionFlag,
@@ -36,7 +37,7 @@ import {
   SOCKET_CLI_SHADOW_PROGRESS,
   SOCKET_IPC_HANDSHAKE,
 } from '../constants/shadow.mts'
-import { findUp } from '../utils/fs/fs.mjs'
+import { findUp } from '../utils/fs/find-up.mjs'
 import { cmdFlagsToString } from '../utils/process/cmd.mts'
 import { installNpmLinks, installNpxLinks } from '../utils/shadow/links.mts'
 import { getPublicApiToken } from '../utils/socket/sdk.mjs'
@@ -64,12 +65,13 @@ export default async function shadowNpmBase(
   extra?: SpawnExtra | undefined,
 ): Promise<ShadowBinResult> {
   const {
+    cwd: cwdOption,
     env: spawnEnv,
     ipc,
     ...spawnOpts
   } = { __proto__: null, ...options } as ShadowBinOptions
 
-  let cwd = getOwn(spawnOpts, 'cwd') ?? process.cwd()
+  let cwd = cwdOption ?? process.cwd()
   if (cwd instanceof URL) {
     cwd = normalizePath(fileURLToPath(cwd))
   } else if (typeof cwd === 'string') {
@@ -142,7 +144,7 @@ export default async function shadowNpmBase(
   const logLevelArgs = isSilent ? [FLAG_LOGLEVEL, 'error'] : []
   const noAuditArgs =
     useAudit ||
-    !(await findUp(NODE_MODULES, { cwd: cwd as string, onlyDirectories: true }))
+    !(await findUp(NODE_MODULES, { cwd, onlyDirectories: true }))
       ? []
       : ['--no-audit']
 
@@ -160,6 +162,7 @@ export default async function shadowNpmBase(
       ...getNodeNoWarningsFlags(),
       ...getNodeDebugFlags(),
       ...getNodeHardenFlags(),
+      ...getNodeDisableSigusr1Flags(),
       // Memory flags commented out.
       // ...constants.nodeMemoryFlags,
       ...(ENV.INLINED_SOCKET_CLI_SENTRY_BUILD
@@ -185,6 +188,7 @@ export default async function shadowNpmBase(
     ],
     {
       ...spawnOpts,
+      cwd,
       env: {
         ...process.env,
         ...spawnEnv,
