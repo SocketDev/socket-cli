@@ -271,7 +271,7 @@ async function copySocketSecurityBootstrap() {
   // Skip if bootstrap file doesn't exist yet (future enhancement).
   if (!existsSync(bootstrapSource)) {
     logger.log('')
-    logger.log('ℹ️  Skipping Socket security bootstrap (bin/bootstrap.js not found)')
+    logger.log(`${colors.blue('ℹ')} Skipping Socket security bootstrap (bin/bootstrap.js not found)`)
     logger.log('')
     return
   }
@@ -342,7 +342,7 @@ async function resetNodeSource() {
   logger.log('Resetting to clean state...')
   await exec('git', ['reset', '--hard', NODE_VERSION], { cwd: NODE_DIR })
   await exec('git', ['clean', '-fdx'], { cwd: NODE_DIR })
-  logger.log('✅ Node.js source reset to clean state')
+  logger.log(`${colors.green('✓')} Node.js source reset to clean state`)
   logger.log('')
 }
 
@@ -409,7 +409,7 @@ async function checkRequiredTools() {
     if (result.installed.includes(tool)) {
       logger.success(`${tool} installed automatically`)
     } else if (!result.missing.includes(tool)) {
-      logger.log(`✅ ${tool} is available`)
+      logger.log(`${colors.green('✓')} ${tool} is available`)
     }
   }
 
@@ -418,9 +418,9 @@ async function checkRequiredTools() {
   for (const { checkExists, cmd, name } of manualTools) {
     const binPath = whichBinSync(cmd, { nothrow: true })
     if (binPath) {
-      logger.log(`✅ ${name} is available`)
+      logger.log(`${colors.green('✓')} ${name} is available`)
     } else {
-      logger.error(`❌ ${name} is NOT available`)
+      logger.error(`${colors.red('✗')} ${name} is NOT available`)
       allManualAvailable = false
     }
   }
@@ -781,7 +781,7 @@ async function _compressNodeJsWithBrotli() {
         // Log individual file processing results.
         const relativePath = relative(libDir, jsFile)
         logger.log(
-          `   ✓ ${relativePath.padEnd(50)} ` +
+          `   ${colors.green('✓')} ${relativePath.padEnd(50)} ` +
             `${(originalSize / 1024).toFixed(1)}KB → ` +
             `${(minifiedSize / 1024).toFixed(1)}KB → ` +
             `${(compressedSize / 1024).toFixed(1)}KB ` +
@@ -790,12 +790,12 @@ async function _compressNodeJsWithBrotli() {
       }
     } catch (e) {
       // Skip files that can't be minified/compressed (permissions, syntax errors, etc.).
-      logger.warn(`   ⚠️  Skipped ${relative(NODE_DIR, jsFile)}: ${e.message}`)
+      logger.warn(`   ${colors.yellow('⚠')} Skipped ${relative(NODE_DIR, jsFile)}: ${e.message}`)
     }
   }
 
   logger.log('')
-  logger.log(`✅ Processed ${filesCompressed} files`)
+  logger.log(`${colors.green('✓')} Processed ${filesCompressed} files`)
   logger.log(
     `   Original:     ${(totalOriginalSize / 1024 / 1024).toFixed(2)} MB`,
   )
@@ -923,11 +923,11 @@ async function createBrotliBootstrapHook() {
         "\nrequire('internal/bootstrap/brotli-loader');\n" +
         content.slice(endOfLine + 1)
       await writeFile(mainBootstrap, content, 'utf8')
-      logger.log('   ✓ Injected Brotli loader into bootstrap')
+      logger.log(`   ${colors.green('✓')} Injected Brotli loader into bootstrap`)
     }
   }
 
-  logger.log('✅ Brotli bootstrap hook created')
+  logger.log(`${colors.green('✓')} Brotli bootstrap hook created`)
   logger.log('')
 }
 
@@ -1015,7 +1015,7 @@ async function main() {
     )
     throw new Error('Invalid Node.js version')
   }
-  logger.log(`✅ ${NODE_VERSION} exists in Node.js repository`)
+  logger.log(`${colors.green('✓')} ${NODE_VERSION} exists in Node.js repository`)
   logger.log('')
 
   // Clone or reset Node.js repository.
@@ -1026,7 +1026,7 @@ async function main() {
       const { rm } = await import('node:fs/promises')
       await rm(NODE_DIR, { recursive: true, force: true })
       await cleanCheckpoint(BUILD_DIR)
-      logger.log('✅ Cleaned build directory')
+      logger.log(`${colors.green('✓')} Cleaned build directory`)
       logger.log('')
     }
 
@@ -1034,7 +1034,7 @@ async function main() {
     logger.log(`Version: ${NODE_VERSION}`)
     logger.log('Repository: https://github.com/nodejs/node.git')
     logger.log('')
-    logger.log('⏱️  This will download ~200-300 MB (shallow clone)...')
+    logger.log(`${colors.blue('ℹ')} This will download ~200-300 MB (shallow clone)...`)
     logger.log('Retry: Up to 3 attempts if clone fails')
     logger.log('')
 
@@ -1079,7 +1079,7 @@ async function main() {
           throw new Error('Git clone failed after retries')
         }
 
-        logger.warn(`⚠️  Clone attempt ${attempt} failed: ${e.message}`)
+        logger.warn(`${colors.yellow('⚠')} Clone attempt ${attempt} failed: ${e.message}`)
 
         // Clean up partial clone.
         try {
@@ -1091,14 +1091,14 @@ async function main() {
 
         // Wait before retry.
         const waitTime = 2000 * attempt
-        logger.log(`⏱️  Waiting ${waitTime}ms before retry...`)
+        logger.log(`${colors.blue('ℹ')} Waiting ${waitTime}ms before retry...`)
         logger.log('')
         await new Promise(resolve => setTimeout(resolve, waitTime))
       }
     }
 
     if (cloneSuccess) {
-      logger.log('✅ Node.js source cloned successfully')
+      logger.log(`${colors.green('✓')} Node.js source cloned successfully`)
       await createCheckpoint(BUILD_DIR, 'cloned')
       logger.log('')
     }
@@ -1156,7 +1156,7 @@ async function main() {
 
       const isValid = await validatePatch(patchPath, NODE_DIR)
       if (!isValid) {
-        logger.error(`  ❌ INVALID: Patch validation failed`)
+        logger.error(`  ${colors.red('✗')} INVALID: Patch validation failed`)
         allValid = false
         continue
       }
@@ -1170,12 +1170,12 @@ async function main() {
         analysis,
       })
       if (analysis.modifiesV8Includes) {
-        logger.log('  ⚠️  Modifies V8 includes')
+        logger.log(`  ${colors.green('✓')} Modifies V8 includes`)
       }
       if (analysis.modifiesSEA) {
-        logger.log('  ✓ Modifies SEA detection')
+        logger.log(`  ${colors.green('✓')} Modifies SEA detection`)
       }
-      logger.log('  ✅ Valid')
+      logger.log(`  ${colors.green('✓')} Valid`)
       logger.log('')
     }
 
@@ -1197,14 +1197,14 @@ async function main() {
     // Check for conflicts between patches.
     const conflicts = checkPatchConflicts(patchData, NODE_VERSION)
     if (conflicts.length > 0) {
-      logger.warn('⚠️  Patch Conflicts Detected:')
+      logger.warn(`${colors.yellow('⚠')} Patch Conflicts Detected:`)
       logger.warn()
       for (const conflict of conflicts) {
         if (conflict.severity === 'error') {
-          logger.error(`  ❌ ERROR: ${conflict.message}`)
+          logger.error(`  ${colors.red('✗')} ERROR: ${conflict.message}`)
           allValid = false
         } else {
-          logger.warn(`  ⚠️  WARNING: ${conflict.message}`)
+          logger.warn(`  ${colors.yellow('⚠')} WARNING: ${conflict.message}`)
         }
       }
       logger.warn()
@@ -1228,8 +1228,8 @@ async function main() {
         )
       }
     } else {
-      logger.log('✅ All Socket patches validated successfully')
-      logger.log('✅ No conflicts detected')
+      logger.log(`${colors.green('✓')} All Socket patches validated successfully`)
+      logger.log(`${colors.green('✓')} No conflicts detected`)
       logger.log('')
     }
 
@@ -1249,7 +1249,7 @@ async function main() {
             ['-c', `patch -p1 --batch --forward < "${patchPath}"`],
             { cwd: NODE_DIR },
           )
-          logger.log(`✅ ${name} applied`)
+          logger.log(`${colors.green('✓')} ${name} applied`)
         } catch (e) {
           throw new Error(
             'Socket patch application failed.\n\n' +
@@ -1269,7 +1269,7 @@ async function main() {
           )
         }
       }
-      logger.log('✅ All Socket patches applied successfully')
+      logger.log(`${colors.green('✓')} All Socket patches applied successfully`)
       logger.log('')
     }
   } else {
@@ -1347,7 +1347,7 @@ async function main() {
   logger.log('::group::Running ./configure')
   await exec('./configure', configureFlags, { cwd: NODE_DIR })
   logger.log('::endgroup::')
-  logger.log('✅ Configuration complete')
+  logger.log(`${colors.green('✓')} Configuration complete`)
   logger.log('')
 
   // Build Node.js.
@@ -1408,7 +1408,7 @@ async function main() {
   const buildTime = formatDuration(buildDuration)
 
   logger.log('')
-  logger.log(`✅ Build completed in ${buildTime}`)
+  logger.log(`${colors.green('✓')} Build completed in ${buildTime}`)
   await createCheckpoint(BUILD_DIR, 'built')
   logger.log('')
 
@@ -1425,14 +1425,14 @@ async function main() {
 
   await exec(
     nodeBinary,
-    ['-e', 'logger.log("✅ Binary can execute JavaScript")'],
+    ['-e', `logger.log("${colors.green('✓')} Binary can execute JavaScript")`],
     {
       env: { ...process.env, PKG_EXECPATH: 'PKG_INVOKE_NODEJS' },
     },
   )
 
   logger.log('')
-  logger.log('✅ Binary is functional')
+  logger.log(`${colors.green('✓')} Binary is functional`)
   logger.log('')
 
   // Copy unmodified binary to build/out/Release.
@@ -1468,7 +1468,7 @@ async function main() {
     const unit = sizeMatch[2]
 
     if (unit === 'M' && size >= 20 && size <= 30) {
-      logger.log('✅ Binary size is optimal (20-30MB with V8 Lite Mode)')
+      logger.log(`${colors.green('✓')} Binary size is optimal (20-30MB with V8 Lite Mode)`)
     } else if (unit === 'M' && size < 20) {
       printWarning(
         'Binary Smaller Than Expected',
@@ -1513,7 +1513,7 @@ async function main() {
     throw new Error('Binary corrupted after stripping')
   }
 
-  logger.log('✅ Binary functional after stripping')
+  logger.log(`${colors.green('✓')} Binary functional after stripping`)
   logger.log('')
 
   // Copy stripped binary to build/out/Stripped.
@@ -1705,7 +1705,7 @@ async function main() {
     }
   } else {
     logger.log('')
-    logger.log('ℹ️  Binary compression skipped (optional)')
+    logger.log(`${colors.blue('ℹ')} Binary compression skipped (optional)`)
     logger.log('   To enable: COMPRESS_BINARY=1 node scripts/build.mjs')
     logger.log('')
   }
@@ -1761,7 +1761,7 @@ async function main() {
     throw new Error('Failed to install binary to pkg cache')
   }
 
-  logger.log('✅ Binary installed to pkg cache successfully')
+  logger.log(`${colors.green('✓')} Binary installed to pkg cache successfully`)
   logger.log('')
 
   // Verify the cached binary works.
@@ -1788,8 +1788,8 @@ async function main() {
     throw new Error('Cached binary verification failed')
   }
 
-  logger.log('✅ Cached binary passed smoke test')
-  logger.log('✅ pkg can use this binary')
+  logger.log(`${colors.green('✓')} Cached binary passed smoke test`)
+  logger.log(`${colors.green('✓')} pkg can use this binary`)
   logger.log('')
 
   // Copy final binary to build/out/Distribution.
