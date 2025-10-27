@@ -562,6 +562,15 @@ Socket CLI integrates with various third-party tools and services:
 - **Individual workflows**: Keep lint.yml, types.yml, test.yml for targeted runs; ci.yml runs all together
 - **Cross-project consistency**: All Socket projects should use identical CI orchestration pattern
 
+### Long-Running Build Guidelines
+- **🚨 CRITICAL**: For long-running builds (>30 minutes), DO NOT push commits until explicitly authorized
+- **Concurrency control**: Workflows with `cancel-in-progress: true` will terminate running builds when new commits are pushed
+- **When builds are running**:
+  - Wait for explicit "push" command from user before pushing
+  - User can manually re-run canceled builds from GitHub Actions UI if needed
+  - Consider temporarily disabling concurrency cancel for critical long builds
+- **Examples of long builds**: Node.js compilation (1-2 hours), WASM builds (30-60 minutes), native binary compilation
+
 ## 🔧 Code Style (MANDATORY)
 
 ### 📁 File Organization
