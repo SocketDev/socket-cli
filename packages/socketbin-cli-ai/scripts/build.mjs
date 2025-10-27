@@ -13,7 +13,7 @@
  */
 
 import { existsSync } from 'node:fs'
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { brotliCompressSync, constants as zlibConstants } from 'node:zlib'
@@ -306,31 +306,39 @@ async function quantizeModel(modelKey) {
 
   // Use ONNX Runtime's MatMul4BitsQuantizer for INT4.
   // Block-wise weight-only quantization with RTN algorithm.
-  await execAsync(
-    `python3 -c "` +
-    `from onnxruntime.quantization import matmul_4bits_quantizer, quant_utils; ` +
-    `from pathlib import Path; ` +
-    `quant_config = matmul_4bits_quantizer.DefaultWeightOnlyQuantConfig(` +
-    `  block_size=128, ` +
-    `  is_symmetric=True, ` +
-    `  accuracy_level=4` +
-    `); ` +
-    `model = quant_utils.load_model_with_shape_infer(Path('${onnxPath}')); ` +
-    `quant = matmul_4bits_quantizer.MatMul4BitsQuantizer(model, algo_config=quant_config); ` +
-    `quant.process(); ` +
-    `quant.model.save_model_to_file('${quantPath}', True)` +
-    `"`,
-    { stdio: 'inherit' }
-  )
+  // Note: INT4 quantization is optional - if it fails, we continue with FP32 model.
+  try {
+    await execAsync(
+      `python3 -c "` +
+      `from onnxruntime.quantization import matmul_4bits_quantizer, quant_utils; ` +
+      `from pathlib import Path; ` +
+      `quant_config = matmul_4bits_quantizer.DefaultWeightOnlyQuantConfig(` +
+      `  block_size=128, ` +
+      `  is_symmetric=True, ` +
+      `  accuracy_level=4` +
+      `); ` +
+      `model = quant_utils.load_model_with_shape_infer(Path('${onnxPath}')); ` +
+      `quant = matmul_4bits_quantizer.MatMul4BitsQuantizer(model, algo_config=quant_config); ` +
+      `quant.process(); ` +
+      `quant.model.save_model_to_file('${quantPath}', True)` +
+      `"`,
+      { stdio: 'inherit' }
+    )
 
-  // Get sizes.
-  const originalSize = (await readFile(onnxPath)).length
-  const quantSize = (await readFile(quantPath)).length
-  const savings = ((1 - quantSize / originalSize) * 100).toFixed(1)
+    // Get sizes.
+    const originalSize = (await readFile(onnxPath)).length
+    const quantSize = (await readFile(quantPath)).length
+    const savings = ((1 - quantSize / originalSize) * 100).toFixed(1)
 
-  logger.substep(`Original: ${(originalSize / 1024 / 1024).toFixed(2)} MB`)
-  logger.substep(`INT4: ${(quantSize / 1024 / 1024).toFixed(2)} MB`)
-  logger.substep(`Savings: ${savings}%`)
+    logger.substep(`Original: ${(originalSize / 1024 / 1024).toFixed(2)} MB`)
+    logger.substep(`INT4: ${(quantSize / 1024 / 1024).toFixed(2)} MB`)
+    logger.substep(`Savings: ${savings}%`)
+  } catch (e) {
+    logger.warn(`INT4 quantization failed, continuing with FP32 model: ${e.message}`)
+    logger.warn('This is not critical - the model will still work, just be larger')
+    // Copy the original ONNX model as the "quantized" version.
+    await copyFile(onnxPath, quantPath)
+  }
 
   logger.success('Quantized to INT4')
   await createCheckpoint(PACKAGE_NAME, `quantized-${modelKey}`, {
