@@ -711,7 +711,7 @@ async function main() {
   logger.log(`\nBins directory: ${binsDir}`)
   logger.log('All SEA binaries copied to project root.')
 
-  // Also copy current platform binary to cli/dist/socket-sea for e2e testing.
+  // Also copy current platform binary to dist/socket-sea for e2e testing.
   const currentPlatform = os.platform()
   const currentArch = os.arch()
   const currentTarget = targets.find(
@@ -719,16 +719,16 @@ async function main() {
   )
 
   if (currentTarget) {
-    const cliDistDir = normalizePath(path.join(PROJECT_ROOT, 'packages/cli/dist'))
-    await fs.mkdir(cliDistDir, { recursive: true })
+    const distDir = normalizePath(path.join(__dirname, '..', 'dist'))
+    await fs.mkdir(distDir, { recursive: true })
 
     const sourceFile = normalizePath(path.join(outputDir, currentTarget.outputName))
-    const e2eTestBinary = normalizePath(path.join(cliDistDir, 'socket-sea'))
+    const e2eTestBinary = normalizePath(path.join(distDir, 'socket-sea'))
 
     await fs.copyFile(sourceFile, e2eTestBinary)
     await fs.chmod(e2eTestBinary, 0o755)
 
-    logger.log(`\n${colors.green('✓')} Copied ${currentTarget.outputName} to packages/cli/dist/socket-sea for e2e testing`)
+    logger.log(`\n${colors.green('✓')} Copied ${currentTarget.outputName} to dist/socket-sea for e2e testing`)
   }
 
   logger.log(`\n${colors.green('✓')} Build complete!`)
