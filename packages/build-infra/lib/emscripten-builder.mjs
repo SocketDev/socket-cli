@@ -13,20 +13,6 @@ import { spawn } from '@socketsecurity/lib/spawn'
 import { printStep } from './build-output.mjs'
 
 /**
- * Execute command using spawn with shell.
- */
-async function exec(command, options = {}) {
-  const result = await spawn(command, [], {
-    stdio: 'inherit',
-    shell: WIN32,
-    ...options,
-  })
-  if (result.code !== 0) {
-    throw new Error(`Command failed with exit code ${result.code}: ${command}`)
-  }
-}
-
-/**
  * Aggressive WASM optimization flags.
  */
 export const WASM_OPT_FLAGS = [
@@ -90,7 +76,14 @@ export class EmscriptenBuilder {
       emccCommand += ` ${WASM_OPT_FLAGS}`
     }
 
-    await exec(emccCommand, { cwd: this.sourceDir, stdio: 'inherit' })
+    const result = await spawn(emccCommand, [], {
+      cwd: this.sourceDir,
+      shell: true,
+      stdio: 'inherit',
+    })
+    if (result.code !== 0) {
+      throw new Error(`emcc build failed with exit code ${result.code}`)
+    }
   }
 
   /**
@@ -107,10 +100,14 @@ export class EmscriptenBuilder {
 
     const wasmPath = path.join(this.buildDir, wasmFile)
 
-    await exec(
-      `wasm-opt -O${optimizeLevel} -s ${shrinkLevel} ${wasmPath} -o ${wasmPath}`,
-      { stdio: 'inherit' }
+    const result = await spawn(
+      'wasm-opt',
+      [`-O${optimizeLevel}`, '-s', shrinkLevel.toString(), wasmPath, '-o', wasmPath],
+      { shell: WIN32, stdio: 'inherit' }
     )
+    if (result.code !== 0) {
+      throw new Error(`wasm-opt failed with exit code ${result.code}`)
+    }
   }
 
   /**
@@ -124,7 +121,13 @@ export class EmscriptenBuilder {
 
     const wasmPath = path.join(this.buildDir, wasmFile)
 
-    await exec(`wasm-strip ${wasmPath}`, { stdio: 'inherit' })
+    const result = await spawn('wasm-strip', [wasmPath], {
+      shell: WIN32,
+      stdio: 'inherit',
+    })
+    if (result.code !== 0) {
+      throw new Error(`wasm-strip failed with exit code ${result.code}`)
+    }
   }
 
   /**
@@ -155,10 +158,14 @@ export class EmscriptenBuilder {
       .map(([key, value]) => `-D${key}=${value}`)
       .join(' ')
 
-    await exec(
+    const result = await spawn(
       `emcmake cmake -S ${this.sourceDir} -B ${this.buildDir} ${cmakeArgs}`,
-      { stdio: 'inherit' }
+      [],
+      { shell: true, stdio: 'inherit' }
     )
+    if (result.code !== 0) {
+      throw new Error(`emcmake configure failed with exit code ${result.code}`)
+    }
   }
 
   /**
@@ -173,9 +180,13 @@ export class EmscriptenBuilder {
     printStep('Building with emmake')
 
     const jobs = parallel ? cpus().length : 1
-    await exec(
+    const result = await spawn(
       `emmake cmake --build ${this.buildDir} --target ${target} -j ${jobs}`,
-      { stdio: 'inherit' }
+      [],
+      { shell: true, stdio: 'inherit' }
     )
+    if (result.code !== 0) {
+      throw new Error(`emmake build failed with exit code ${result.code}`)
+    }
   }
 }
