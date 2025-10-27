@@ -5,4 +5,6 @@
 
 import { env } from 'node:process'
 
-export const CI = env['CI']
+import { envAsBoolean } from '@socketsecurity/lib/env'
+
+export const CI = envAsBoolean(env['CI'])
