@@ -47,3 +47,28 @@ jobs:
       node-versions: ${{ inputs.node-versions || '[20, 22, 24]' }}
       os-versions: '["ubuntu-latest", "macos-latest", "windows-latest"]'
       fail-fast: false
+
+  e2e:
+    name: E2E Tests
+    needs: ci
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: true
+      matrix:
+        node-version: ${{ fromJSON(inputs.node-versions || '[20, 22, 24]') }}
+        os: [ubuntu-latest]
+    steps:
+      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@51be85d39d3b4a42dd9d4712948b9d30a2e04794
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Build CLI
+        working-directory: packages/cli
+        run: pnpm run build
+
+      - name: Run e2e tests
+        working-directory: packages/cli
+        env:
+          SOCKET_CLI_API_TOKEN: ${{ secrets.SOCKET_CLI_API_TOKEN }}
+        run: pnpm run e2e-tests
