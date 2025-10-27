@@ -307,6 +307,10 @@ async function quantizeModel(modelKey) {
   // Use ONNX Runtime's MatMul4BitsQuantizer for INT4.
   // Block-wise weight-only quantization with RTN algorithm.
   // Note: INT4 quantization is optional - if it fails, we continue with FP32 model.
+  let originalSize
+  let quantSize
+  let method = 'INT4'
+
   try {
     await execAsync(
       `python3 -c "` +
@@ -326,8 +330,8 @@ async function quantizeModel(modelKey) {
     )
 
     // Get sizes.
-    const originalSize = (await readFile(onnxPath)).length
-    const quantSize = (await readFile(quantPath)).length
+    originalSize = (await readFile(onnxPath)).length
+    quantSize = (await readFile(quantPath)).length
     const savings = ((1 - quantSize / originalSize) * 100).toFixed(1)
 
     logger.substep(`Original: ${(originalSize / 1024 / 1024).toFixed(2)} MB`)
@@ -338,12 +342,15 @@ async function quantizeModel(modelKey) {
     logger.warn('This is not critical - the model will still work, just be larger')
     // Copy the original ONNX model as the "quantized" version.
     await copyFile(onnxPath, quantPath)
+    method = 'FP32'
+    originalSize = (await readFile(onnxPath)).length
+    quantSize = originalSize
   }
 
-  logger.success('Quantized to INT4')
+  logger.success(`Quantized to ${method}`)
   await createCheckpoint(PACKAGE_NAME, `quantized-${modelKey}`, {
     modelKey,
-    method: 'INT4',
+    method,
     originalSize,
     quantizedSize: quantSize,
   })
