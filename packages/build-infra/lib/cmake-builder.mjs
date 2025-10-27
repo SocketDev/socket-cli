@@ -27,12 +27,12 @@ export class CMakeBuilder {
     printStep('Configuring CMake')
 
     const cmakeArgs = Object.entries(options)
-      .map(([key, value]) => `-D${key}=${value}`)
-      .join(' ')
+      .map(([key, value]) => [`-D${key}=${value}`])
+      .flat()
 
     await spawn(
-      `cmake -S ${this.sourceDir} -B ${this.buildDir} ${cmakeArgs}`,
-      [],
+      'cmake',
+      ['-S', this.sourceDir, '-B', this.buildDir, ...cmakeArgs],
       { shell: WIN32, stdio: 'inherit' }
     )
   }
@@ -50,8 +50,8 @@ export class CMakeBuilder {
 
     const jobs = parallel ? cpus().length : 1
     await spawn(
-      `cmake --build ${this.buildDir} --target ${target} -j ${jobs}`,
-      [],
+      'cmake',
+      ['--build', this.buildDir, '--target', target, '-j', String(jobs)],
       { shell: WIN32, stdio: 'inherit' }
     )
   }
@@ -64,8 +64,8 @@ export class CMakeBuilder {
   async clean() {
     printStep('Cleaning CMake build')
     await spawn(
-      `cmake --build ${this.buildDir} --target clean`,
-      [],
+      'cmake',
+      ['--build', this.buildDir, '--target', 'clean'],
       { shell: WIN32, stdio: 'inherit' }
     )
   }
