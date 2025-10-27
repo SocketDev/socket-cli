@@ -221,7 +221,7 @@ jobs:
           retention-days: 7
 
   summary:
-    name: 📊 Build Summary
+    name: 📊 🧱 WASM Build Summary
     needs: [build-yoga-layout, build-ai-models, build-onnx-runtime]
     runs-on: ubuntu-latest
     steps:
