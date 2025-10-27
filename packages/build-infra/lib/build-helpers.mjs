@@ -92,7 +92,7 @@ export async function checkPythonVersion(minVersion = '3.6') {
     const result = await spawn(
       'python3',
       ['-c', "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')"],
-      { stdio: 'pipe', stdioString: true }
+      { shell: WIN32, stdio: 'pipe', stdioString: true }
     )
 
     // Check if spawn failed.
