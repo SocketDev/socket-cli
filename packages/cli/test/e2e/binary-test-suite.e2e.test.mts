@@ -30,13 +30,13 @@ const BINARIES = {
     buildCommand: ['pnpm', '--filter', '@socketbin/node-sea-builder', 'run', 'build'],
     enabled: !!process.env.TEST_SEA_BINARY,
     name: 'SEA Binary (Single Executable Application)',
-    path: path.join(ROOT_DIR, 'dist/socket-sea'),
+    path: path.join(MONOREPO_ROOT, 'packages/node-sea-builder/dist/socket-sea'),
   },
   smol: {
     buildCommand: ['pnpm', '--filter', '@socketbin/node-smol-builder', 'run', 'build'],
     enabled: !!process.env.TEST_SMOL_BINARY,
     name: 'Smol Node.js Binary',
-    path: path.join(ROOT_DIR, 'dist/socket-smol'),
+    path: path.join(MONOREPO_ROOT, 'packages/node-smol-builder/dist/socket-smol'),
   },
 }
 
