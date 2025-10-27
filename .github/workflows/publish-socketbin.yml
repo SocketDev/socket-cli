@@ -17,7 +17,7 @@ on:
           - smol-sea
         default: smol
       dry-run:
-        description: 'Dry run (build but do not publish)'
+        description: 'Dry run (build but do not publish) - primes cache for CI e2e tests'
         required: false
         type: boolean
         default: false

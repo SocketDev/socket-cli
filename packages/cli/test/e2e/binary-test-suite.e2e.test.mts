@@ -4,6 +4,8 @@ import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { logger } from '@socketsecurity/lib/logger'
+import { confirm } from '@socketsecurity/lib/prompts'
 import { spawn } from '@socketsecurity/lib/spawn'
 import { beforeAll, describe, expect, it } from 'vitest'
 
@@ -50,14 +52,14 @@ async function buildBinary(binaryType: keyof typeof BINARIES): Promise<boolean> 
     return false
   }
 
-  console.log(`Building ${binary.name}...`)
-  console.log(`Running: ${binary.buildCommand.join(' ')}`)
+  logger.log(`Building ${binary.name}...`)
+  logger.log(`Running: ${binary.buildCommand.join(' ')}`)
 
   if (binaryType === 'smol') {
-    console.log('Note: smol build may take 30-60 minutes on first build')
-    console.log('      (subsequent builds are faster with caching)')
+    logger.log('Note: smol build may take 30-60 minutes on first build')
+    logger.log('      (subsequent builds are faster with caching)')
   }
-  console.log()
+  logger.log('')
 
   try {
     const result = await spawn(binary.buildCommand[0], binary.buildCommand.slice(1), {
@@ -66,14 +68,14 @@ async function buildBinary(binaryType: keyof typeof BINARIES): Promise<boolean> 
     })
 
     if (result.code !== 0) {
-      console.error(`Failed to build ${binary.name}`)
+      logger.error(`Failed to build ${binary.name}`)
       return false
     }
 
-    console.log(`Successfully built ${binary.name}`)
+    logger.log(`Successfully built ${binary.name}`)
     return true
   } catch (e) {
-    console.error(`Error building ${binary.name}:`, e)
+    logger.error(`Error building ${binary.name}:`, e)
     return false
   }
 }
@@ -97,11 +99,31 @@ function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
       binaryExists = existsSync(binary.path)
 
       if (!binaryExists) {
-        console.log()
-        console.warn(
-          `Binary not found: ${binary.path}. Attempting to build...`,
-        )
+        logger.log('')
+        logger.warn(`Binary not found: ${binary.path}`)
 
+        // In CI: Skip building (rely on cache).
+        if (process.env.CI) {
+          logger.log('Running in CI - skipping build (binary not in cache)')
+          logger.log('To prime cache, run: gh workflow run publish-socketbin.yml --field dry-run=true')
+          logger.log('')
+          return
+        }
+
+        // Locally: Prompt user to build.
+        const shouldBuild = await confirm({
+          default: true,
+          message: `Build ${binary.name}? (may take 30-60 min for smol)`,
+        })
+
+        if (!shouldBuild) {
+          logger.log('Skipping build. Tests will be skipped.')
+          logger.log(`To build manually, run: ${binary.buildCommand.join(' ')}`)
+          logger.log('')
+          return
+        }
+
+        logger.log('Building binary...')
         const buildSuccess = await buildBinary(binaryType)
 
         if (buildSuccess) {
@@ -109,16 +131,16 @@ function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
         }
 
         if (!binaryExists) {
-          console.log()
-          console.error(`Failed to build ${binary.name}. Tests will be skipped.`)
-          console.log(`To build this binary manually, run:`)
-          console.log(`  ${binary.buildCommand.join(' ')}`)
-          console.log()
+          logger.log('')
+          logger.error(`Failed to build ${binary.name}. Tests will be skipped.`)
+          logger.log('To build this binary manually, run:')
+          logger.log(`  ${binary.buildCommand.join(' ')}`)
+          logger.log('')
           return
         }
 
-        console.log(`Binary built successfully: ${binary.path}`)
-        console.log()
+        logger.log(`Binary built successfully: ${binary.path}`)
+        logger.log('')
       }
 
       // Check authentication.
@@ -126,15 +148,15 @@ function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
         const apiToken = await getDefaultApiToken()
         hasAuth = !!apiToken
         if (!apiToken) {
-          console.log()
-          console.warn('E2E tests require Socket authentication.')
-          console.log('Please run one of the following:')
-          console.log('  1. socket login (to authenticate with Socket)')
-          console.log('  2. Set SOCKET_SECURITY_API_KEY environment variable')
-          console.log('  3. Skip E2E tests by not setting RUN_E2E_TESTS\n')
-          console.log(
-            'E2E tests will be skipped due to missing authentication.\n',
-          )
+          logger.log('')
+          logger.warn('E2E tests require Socket authentication.')
+          logger.log('Please run one of the following:')
+          logger.log('  1. socket login (to authenticate with Socket)')
+          logger.log('  2. Set SOCKET_SECURITY_API_KEY environment variable')
+          logger.log('  3. Skip E2E tests by not setting RUN_E2E_TESTS')
+          logger.log('')
+          logger.log('E2E tests will be skipped due to missing authentication.')
+          logger.log('')
         }
       }
     })
