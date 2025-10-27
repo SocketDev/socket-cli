@@ -762,6 +762,7 @@ function checkBuildTools() {
   const tools = {
     cmake: 'CMake',
     ninja: 'Ninja',
+    mold: 'Mold Linker',
     make: 'Make',
     git: 'Git',
   }
@@ -779,6 +780,117 @@ function checkBuildTools() {
   }
 
   return results
+}
+
+/**
+ * Install build tools (ninja and mold).
+ */
+async function installBuildTools() {
+  if (CHECK_ONLY) {
+    logInfo('Skipping build tools installation (check-only mode)')
+    return false
+  }
+
+  logInfo('Installing build tools (ninja, mold)...')
+
+  try {
+    if (PLATFORM === 'darwin') {
+      if (!commandExists('brew')) {
+        logError('Homebrew not found. Install from: https://brew.sh/')
+        return false
+      }
+
+      // Install ninja.
+      if (!commandExists('ninja')) {
+        logInfo('Installing ninja...')
+        if (!exec('brew install ninja')) {
+          logWarn('Failed to install ninja via brew')
+        }
+      }
+
+      // Install mold (not available on macOS via brew, use lld instead).
+      if (!commandExists('mold') && !commandExists('ld64.lld')) {
+        logInfo('Installing llvm (includes lld linker)...')
+        if (!exec('brew install llvm')) {
+          logWarn('Failed to install llvm via brew')
+        }
+      }
+
+      return true
+    }
+
+    if (PLATFORM === 'linux') {
+      // Try apt-get first.
+      if (commandExists('apt-get')) {
+        const packages = []
+        if (!commandExists('ninja')) {
+          packages.push('ninja-build')
+        }
+        if (!commandExists('mold')) {
+          packages.push('mold')
+        }
+
+        if (packages.length) {
+          logInfo(`Installing ${packages.join(', ')}...`)
+          return (
+            exec('sudo apt-get update') &&
+            exec(`sudo apt-get install -y ${packages.join(' ')}`)
+          )
+        }
+        return true
+      }
+
+      // Try yum.
+      if (commandExists('yum')) {
+        const packages = []
+        if (!commandExists('ninja')) {
+          packages.push('ninja-build')
+        }
+        // mold not available in default yum repos, user needs to build from source.
+
+        if (packages.length) {
+          logInfo(`Installing ${packages.join(', ')}...`)
+          return exec(`sudo yum install -y ${packages.join(' ')}`)
+        }
+        return true
+      }
+
+      logError('No supported package manager found')
+      return false
+    }
+
+    if (PLATFORM === 'win32') {
+      if (commandExists('choco')) {
+        if (!commandExists('ninja')) {
+          logInfo('Installing ninja...')
+          if (!exec('choco install -y ninja')) {
+            logWarn('Failed to install ninja via choco')
+          }
+        }
+        // mold not available on Windows, will use MSVC linker.
+        return true
+      }
+
+      if (commandExists('winget')) {
+        if (!commandExists('ninja')) {
+          logInfo('Installing ninja...')
+          if (!exec('winget install Ninja-build.ninja')) {
+            logWarn('Failed to install ninja via winget')
+          }
+        }
+        return true
+      }
+
+      logError('No supported package manager found')
+      return false
+    }
+
+    logError(`Unsupported platform: ${PLATFORM}`)
+    return false
+  } catch (error) {
+    logError(`Failed to install build tools: ${error.message}`)
+    return false
+  }
 }
 
 /**
@@ -920,6 +1032,13 @@ async function main() {
 
   if (needsInstall.compiler) {
     await installCompiler()
+    log('')
+  }
+
+  // Install build tools (ninja, mold) after platform installers are ready.
+  const buildToolsCheck = checkBuildTools()
+  if (!buildToolsCheck.ninja || !buildToolsCheck.mold) {
+    await installBuildTools()
     log('')
   }
 
