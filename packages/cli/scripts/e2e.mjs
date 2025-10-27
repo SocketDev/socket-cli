@@ -29,22 +29,6 @@ const BINARY_FLAGS = {
   },
 }
 
-async function runPreE2E() {
-  logger.log(`${colors.blue('ℹ')} Running pre-e2e build check...`)
-  logger.log('')
-
-  const result = await spawn('node', ['scripts/pre-e2e-build.mjs'], {
-    stdio: 'inherit',
-  })
-
-  if (result.code !== 0) {
-    logger.error('Pre-e2e build check failed')
-    process.exit(1)
-  }
-
-  return true
-}
-
 async function runVitest(binaryType) {
   const envVars = BINARY_FLAGS[binaryType]
   logger.log(`${colors.blue('ℹ')} Running e2e tests for ${binaryType} binary...`)
@@ -92,7 +76,6 @@ async function main() {
     process.exit(1)
   }
 
-  await runPreE2E()
   await runVitest(flag)
 }
 
