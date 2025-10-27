@@ -111,9 +111,10 @@ function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
         }
 
         // Locally: Prompt user to build.
+        const timeWarning = binaryType === 'smol' ? ' (may take 30-60 min)' : ''
         const shouldBuild = await confirm({
           default: true,
-          message: `Build ${binary.name}? (may take 30-60 min for smol)`,
+          message: `Build ${binary.name}?${timeWarning}`,
         })
 
         if (!shouldBuild) {
@@ -278,16 +279,12 @@ function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
 
 // Run test suite for each binary type.
 describe('Socket CLI Binary Test Suite', () => {
-  // Always register the JS binary test suite.
+  // Always run JS binary test suite.
   runBinaryTestSuite('js')
 
-  // Only register smol test suite if environment variable is set.
-  if (process.env.TEST_SMOL_BINARY) {
-    runBinaryTestSuite('smol')
-  }
+  // Run smol test suite (will prompt locally, skip in CI if not cached).
+  runBinaryTestSuite('smol')
 
-  // Only register SEA test suite if environment variable is set.
-  if (process.env.TEST_SEA_BINARY) {
-    runBinaryTestSuite('sea')
-  }
+  // Run SEA test suite (will prompt locally, skip in CI if not cached).
+  runBinaryTestSuite('sea')
 })
