@@ -1419,17 +1419,12 @@ async function main() {
   logger.log('Running basic functionality tests...')
   logger.log('')
 
-  await exec(nodeBinary, ['--version'], {
-    env: { ...process.env, PKG_EXECPATH: 'PKG_INVOKE_NODEJS' },
-  })
+  await exec(nodeBinary, ['--version'])
 
-  await exec(
-    nodeBinary,
-    ['-e', `console.log("${colors.green('✓')} Binary can execute JavaScript")`],
-    {
-      env: { ...process.env, PKG_EXECPATH: 'PKG_INVOKE_NODEJS' },
-    },
-  )
+  await exec(nodeBinary, [
+    '-e',
+    `console.log("${colors.green('✓')} Binary can execute JavaScript")`,
+  ])
 
   logger.log('')
   logger.log(`${colors.green('✓')} Binary is functional`)
@@ -1495,10 +1490,7 @@ async function main() {
 
   // Smoke test binary after stripping (ensure strip didn't corrupt it).
   logger.log('Testing binary after stripping...')
-  const smokeTest = await smokeTestBinary(nodeBinary, {
-    ...process.env,
-    PKG_EXECPATH: 'PKG_INVOKE_NODEJS',
-  })
+  const smokeTest = await smokeTestBinary(nodeBinary, process.env)
 
   if (!smokeTest.passed) {
     printError(
@@ -1769,10 +1761,7 @@ async function main() {
   logger.log('Testing that pkg can use the installed binary...')
   logger.log('')
 
-  const cacheTest = await smokeTestBinary(targetPath, {
-    ...process.env,
-    PKG_EXECPATH: 'PKG_INVOKE_NODEJS',
-  })
+  const cacheTest = await smokeTestBinary(targetPath, process.env)
 
   if (!cacheTest.passed) {
     printError(
