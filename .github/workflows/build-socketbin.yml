@@ -18,38 +18,8 @@ on:
         required: false
         type: boolean
         default: false
-  push:
-    branches: [main]
-    paths:
-      - 'packages/node-smol-builder/**'
-      - 'packages/node-sea-builder/**'
-      - 'packages/yoga-layout/**'
-      - 'packages/socketbin-cli-ai/**'
-      - 'packages/onnx-runtime-builder/**'
-      - 'patches/**'
-      - 'packages/node-smol-builder/patches/**'
-      - 'packages/node-smol-builder/additions/**'
-      - 'scripts/build-yao-pkg-node.mjs'
-      - '.github/workflows/build-socketbin.yml'
-      - '.github/workflows/build-smol.yml'
-      - '.github/workflows/build-sea.yml'
-      - '.github/workflows/build-wasm.yml'
-  pull_request:
-    branches: [main]
-    paths:
-      - 'packages/node-smol-builder/**'
-      - 'packages/node-sea-builder/**'
-      - 'packages/yoga-layout/**'
-      - 'packages/socketbin-cli-ai/**'
-      - 'packages/onnx-runtime-builder/**'
-      - 'patches/**'
-      - 'packages/node-smol-builder/patches/**'
-      - 'packages/node-smol-builder/additions/**'
-      - 'scripts/build-yao-pkg-node.mjs'
-      - '.github/workflows/build-socketbin.yml'
-      - '.github/workflows/build-smol.yml'
-      - '.github/workflows/build-sea.yml'
-      - '.github/workflows/build-wasm.yml'
+  # Removed push/pull_request triggers to prevent automatic builds.
+  # These workflows should only run via workflow_dispatch (manual trigger).
 
 permissions:
   contents: read
