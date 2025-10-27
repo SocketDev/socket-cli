@@ -131,21 +131,21 @@ async function configure() {
   ]
 
   const linkerFlags = [
-    '--closure 1', // Google Closure Compiler (aggressive minification).
+    '--closure=1', // Google Closure Compiler (aggressive minification).
     '--gc-sections', // Garbage collect unused sections.
     '-flto=thin',
     '-Oz',
-    '-s ALLOW_MEMORY_GROWTH=1', // Dynamic memory.
-    '-s ASSERTIONS=0', // No runtime assertions (smaller, faster).
-    '-s EXPORT_ES6=1', // ES6 module export.
-    '-s FILESYSTEM=0', // No filesystem support (smaller).
-    '-s INITIAL_MEMORY=64KB', // Minimal initial memory.
-    '-s MALLOC=emmalloc', // Smaller allocator.
-    '-s MODULARIZE=1', // Modular output.
-    '-s NO_EXIT_RUNTIME=1', // Keep runtime alive (needed for WASM).
-    '-s STACK_SIZE=16KB', // Small stack.
-    '-s SUPPORT_LONGJMP=0', // No longjmp (smaller).
-    '-s WASM_ASYNC_COMPILATION=0', // CRITICAL: Synchronous instantiation for bundling.
+    '-sALLOW_MEMORY_GROWTH=1', // Dynamic memory.
+    '-sASSERTIONS=0', // No runtime assertions (smaller, faster).
+    '-sEXPORT_ES6=1', // ES6 module export.
+    '-sFILESYSTEM=0', // No filesystem support (smaller).
+    '-sINITIAL_MEMORY=64KB', // Minimal initial memory.
+    '-sMALLOC=emmalloc', // Smaller allocator.
+    '-sMODULARIZE=1', // Modular output.
+    '-sNO_EXIT_RUNTIME=1', // Keep runtime alive (needed for WASM).
+    '-sSTACK_SIZE=16KB', // Small stack.
+    '-sSUPPORT_LONGJMP=0', // No longjmp (smaller).
+    '-sWASM_ASYNC_COMPILATION=0', // CRITICAL: Synchronous instantiation for bundling.
   ]
 
   const cmakeArgs = [
@@ -210,20 +210,20 @@ async function build() {
   ]
 
   const linkerFlags = [
-    '--closure 1',
+    '--closure=1',
     '-Wl,--gc-sections',
     '-flto=thin',
     '-Oz',
-    '-s ALLOW_MEMORY_GROWTH=1',
-    '-s ASSERTIONS=0',
-    '-s EXPORT_ES6=1',
-    '-s FILESYSTEM=0',
-    '-s INITIAL_MEMORY=64KB',
-    '-s MALLOC=emmalloc',
-    '-s MODULARIZE=1',
-    '-s NO_EXIT_RUNTIME=1',
-    '-s STACK_SIZE=16KB',
-    '-s SUPPORT_LONGJMP=0',
+    '-sALLOW_MEMORY_GROWTH=1',
+    '-sASSERTIONS=0',
+    '-sEXPORT_ES6=1',
+    '-sFILESYSTEM=0',
+    '-sINITIAL_MEMORY=64KB',
+    '-sMALLOC=emmalloc',
+    '-sMODULARIZE=1',
+    '-sNO_EXIT_RUNTIME=1',
+    '-sSTACK_SIZE=16KB',
+    '-sSUPPORT_LONGJMP=0',
     '--bind',
   ]
 
@@ -369,9 +369,12 @@ async function exportWasm() {
   // Copy WASM file.
   await fs.copyFile(wasmFile, outputWasm)
 
-  // Copy JS glue code if exists.
+  // Copy JS glue code and strip export statement.
   if (await fs.access(jsFile).then(() => true).catch(() => false)) {
-    await fs.copyFile(jsFile, outputJs)
+    const jsContent = await fs.readFile(jsFile, 'utf-8')
+    // Strip the export statement at the end of the file.
+    const withoutExport = jsContent.replace(/;?\s*export\s+default\s+\w+\s*;\s*$/, '')
+    await fs.writeFile(outputJs, withoutExport, 'utf-8')
     printStep(`JS: ${outputJs}`)
   }
 
