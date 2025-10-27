@@ -147,6 +147,44 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y build-essential gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
 
+      - name: Cache Ninja (Ubuntu)
+        if: (steps.smol-cache.outputs.cache-hit != 'true' || inputs.force) && matrix.platform == 'linux'
+        id: ninja-cache-ubuntu
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: /usr/bin/ninja
+          key: ninja-ubuntu-${{ runner.os }}-${{ runner.arch }}
+
+      - name: Install Ninja (Ubuntu)
+        if: (steps.smol-cache.outputs.cache-hit != 'true' || inputs.force) && matrix.platform == 'linux' && steps.ninja-cache-ubuntu.outputs.cache-hit != 'true'
+        run: sudo apt-get install -y ninja-build
+
+      - name: Cache Ninja (macOS)
+        if: (steps.smol-cache.outputs.cache-hit != 'true' || inputs.force) && matrix.platform == 'darwin'
+        id: ninja-cache-macos
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: |
+            /usr/local/bin/ninja
+            /opt/homebrew/bin/ninja
+          key: ninja-macos-${{ runner.os }}-${{ runner.arch }}
+
+      - name: Install Ninja (macOS)
+        if: (steps.smol-cache.outputs.cache-hit != 'true' || inputs.force) && matrix.platform == 'darwin' && steps.ninja-cache-macos.outputs.cache-hit != 'true'
+        run: brew install ninja
+
+      - name: Cache Ninja (Windows)
+        if: (steps.smol-cache.outputs.cache-hit != 'true' || inputs.force) && matrix.platform == 'win32'
+        id: ninja-cache-windows
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: C:\ProgramData\chocolatey\bin\ninja.exe
+          key: ninja-windows-${{ runner.os }}-${{ runner.arch }}
+
+      - name: Install Ninja (Windows)
+        if: (steps.smol-cache.outputs.cache-hit != 'true' || inputs.force) && matrix.platform == 'win32' && steps.ninja-cache-windows.outputs.cache-hit != 'true'
+        run: choco install ninja
+
       - name: Build smol binary
         if: steps.smol-cache.outputs.cache-hit != 'true' || inputs.force
         run: pnpm --filter @socketbin/node-smol-builder run build
