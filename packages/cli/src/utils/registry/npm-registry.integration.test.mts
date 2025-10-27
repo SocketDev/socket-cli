@@ -92,9 +92,12 @@ describe('integration-lite: tarball extraction', () => {
       expect(result).toBe(outputPath)
       expect(await fs.readFile(outputPath, 'utf8')).toContain('console.log')
 
-      // Check permissions (executable bit).
-      const stats = await fs.stat(outputPath)
-      expect(stats.mode & 0o111).toBeTruthy() // Has execute permission.
+      // Check permissions (executable bit) - Unix only.
+      // Windows doesn't preserve Unix execute bits the same way.
+      if (process.platform !== 'win32') {
+        const stats = await fs.stat(outputPath)
+        expect(stats.mode & 0o111).toBeTruthy() // Has execute permission.
+      }
     })
 
     it('should handle package/ prefix correctly', async () => {
@@ -136,12 +139,15 @@ describe('integration-lite: tarball extraction', () => {
       const outputPath = path.join(tempDir, 'socket')
       await extractBinaryFromTarball(tarballPath, 'bin/socket', outputPath)
 
-      const stats = await fs.stat(outputPath)
+      // Check all execute bits (owner, group, others) - Unix only.
+      // Windows doesn't preserve Unix execute bits the same way.
+      if (process.platform !== 'win32') {
+        const stats = await fs.stat(outputPath)
 
-      // Check all execute bits (owner, group, others).
-      expect(stats.mode & 0o100).toBeTruthy() // Owner execute.
-      expect(stats.mode & 0o010).toBeTruthy() // Group execute.
-      expect(stats.mode & 0o001).toBeTruthy() // Others execute.
+        expect(stats.mode & 0o100).toBeTruthy() // Owner execute.
+        expect(stats.mode & 0o010).toBeTruthy() // Group execute.
+        expect(stats.mode & 0o001).toBeTruthy() // Others execute.
+      }
     })
 
     it('should handle nested directories', async () => {
@@ -282,18 +288,22 @@ describe('integration-lite: tarball extraction', () => {
 
       await extractTarball(tarballPath, extractDir)
 
-      const readonlyStats = await fs.stat(
-        path.join(extractDir, 'readonly.txt'),
-      )
-      const executableStats = await fs.stat(
-        path.join(extractDir, 'executable.sh'),
-      )
+      // Check file permissions - Unix only.
+      // Windows doesn't preserve Unix permissions the same way.
+      if (process.platform !== 'win32') {
+        const readonlyStats = await fs.stat(
+          path.join(extractDir, 'readonly.txt'),
+        )
+        const executableStats = await fs.stat(
+          path.join(extractDir, 'executable.sh'),
+        )
 
-      // Read-only file.
-      expect(readonlyStats.mode & 0o200).toBe(0) // No write permission.
+        // Read-only file.
+        expect(readonlyStats.mode & 0o200).toBe(0) // No write permission.
 
-      // Executable file.
-      expect(executableStats.mode & 0o111).toBeTruthy() // Execute permission.
+        // Executable file.
+        expect(executableStats.mode & 0o111).toBeTruthy() // Execute permission.
+      }
     })
 
     it('should create parent directories', async () => {
