@@ -261,6 +261,12 @@ jobs:
           key: onnx-runtime-${{ steps.wasm-cache-keys.outputs.onnx-hash }}
           restore-keys: onnx-runtime-
 
+      - name: Setup Python for WASM builds
+        if: steps.yoga-cache.outputs.cache-hit != 'true' || steps.ai-cache.outputs.cache-hit != 'true' || steps.onnx-cache.outputs.cache-hit != 'true'
+        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
+        with:
+          python-version: '3.11'
+
       - name: Build WASM assets on cache miss
         if: steps.yoga-cache.outputs.cache-hit != 'true' || steps.ai-cache.outputs.cache-hit != 'true' || steps.onnx-cache.outputs.cache-hit != 'true'
         run: |
@@ -287,8 +293,8 @@ jobs:
           # Install Python deps if needed for AI models.
           if [ "${{ steps.ai-cache.outputs.cache-hit }}" != "true" ]; then
             echo "Installing Python dependencies..."
-            pip install --upgrade pip
-            pip install transformers torch optimum[exporters] onnxruntime
+            python3 -m pip install --upgrade pip
+            python3 -m pip install transformers torch optimum[exporters] onnxruntime
           fi
 
           # Build missing WASM assets.
