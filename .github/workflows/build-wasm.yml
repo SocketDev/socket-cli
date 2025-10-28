@@ -66,9 +66,7 @@ jobs:
         id: yoga-build-cache
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
-          path: |
-            packages/yoga-layout/build
-            packages/yoga-layout/.yoga-source
+          path: packages/yoga-layout/build
           key: yoga-build-${{ steps.yoga-cache-key.outputs.hash }}
           restore-keys: |
             yoga-build-
@@ -259,9 +257,7 @@ jobs:
         id: onnx-build-cache
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
-          path: |
-            packages/onnx-runtime-builder/build
-            packages/onnx-runtime-builder/.onnx-source
+          path: packages/onnx-runtime-builder/build
           key: onnx-runtime-build-${{ steps.onnx-cache-key.outputs.hash }}
           restore-keys: |
             onnx-runtime-build-
@@ -304,9 +300,7 @@ jobs:
         if: always() && (steps.onnx-cache-valid.outputs.valid != 'true' || inputs.force)
         uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
-          path: |
-            packages/onnx-runtime-builder/build
-            packages/onnx-runtime-builder/.onnx-source
+          path: packages/onnx-runtime-builder/build
           key: onnx-runtime-build-${{ steps.onnx-cache-key.outputs.hash }}-${{ github.run_id }}
 
       - name: Verify build artifacts
