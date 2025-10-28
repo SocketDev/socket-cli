@@ -32,6 +32,7 @@ jobs:
     timeout-minutes: 120
     strategy:
       fail-fast: false
+      max-parallel: 6
       matrix:
         include:
           # Linux builds (8-core runners for faster compilation).
