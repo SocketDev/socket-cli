@@ -4,6 +4,6 @@ packages:
 catalog:
   # Socket shared dependencies - define versions once, reference with catalog: protocol.
   '@socketsecurity/config': 3.0.1
-  '@socketsecurity/lib': 2.0.0
+  '@socketsecurity/lib': 2.1.0
   '@socketsecurity/registry': 2.0.0
   '@socketsecurity/sdk': 3.0.7
