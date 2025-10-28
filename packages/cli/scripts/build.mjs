@@ -20,16 +20,28 @@ import { spawn } from '@socketsecurity/lib/spawn'
 const isQuiet = () => process.argv.includes('--quiet')
 const isVerbose = () => process.argv.includes('--verbose')
 const log = {
-  info: msg => logger.log(`ℹ ${msg}`),
-  step: msg => logger.log(`→ ${msg}`),
-  success: msg => logger.log(`✓ ${msg}`),
-  error: msg => logger.error(`✖ ${msg}`),
+  info: msg => logger.info(msg),
+  step: msg => logger.step(msg),
+  success: msg => logger.success(msg),
+  error: msg => logger.error(msg),
 }
-const printHeader = title =>
-  logger.log(`\n${title}\n${'='.repeat(title.length)}\n`)
-const printFooter = () => logger.log('')
-const printSuccess = msg => logger.log(`\n✓ ${msg}\n`)
-const printError = msg => logger.error(`\n✖ ${msg}\n`)
+const printHeader = title => {
+  logger.log()
+  logger.log(title)
+  logger.log('='.repeat(title.length))
+  logger.log()
+}
+const printFooter = () => logger.log()
+const printSuccess = msg => {
+  logger.log()
+  logger.success(msg)
+  logger.log()
+}
+const printError = msg => {
+  logger.log()
+  logger.error(msg)
+  logger.log()
+}
 
 async function main() {
   const quiet = isQuiet()
