@@ -1,10 +1,6 @@
 /**
- * Bootstrap loader for Socket CLI npm wrapper package.
- *
- * This script handles three scenarios:
- * 1. Brotli-compressed CLI exists -> decompress and execute
- * 2. Uncompressed CLI exists -> execute directly
- * 3. CLI not found -> download from npm using dlxPackage, then execute
+ * Shared bootstrap utilities for Socket CLI.
+ * Used by both npm wrapper and smol binary.
  */
 
 import { spawnSync } from 'node:child_process'
@@ -13,26 +9,19 @@ import { homedir, tmpdir } from 'node:os'
 import path from 'node:path'
 import { brotliDecompressSync } from 'node:zlib'
 
-import type { DlxPackageResult } from '@socketsecurity/lib/dlx-package'
-
 import { dlxPackage } from '@socketsecurity/lib/dlx-package'
 
-const SOCKET_DLX_DIR = path.join(homedir(), '.socket', '_dlx')
-
-// Note: CLI_PACKAGE_DIR will be dynamically determined by dlxPackage.
-let cliPackageDir: string | undefined
-let cliEntry: string | undefined
-let cliEntryBz: string | undefined
+export const SOCKET_DLX_DIR = path.join(homedir(), '.socket', '_dlx')
 
 /**
- * Get paths for CLI package.
+ * Get CLI package paths.
  */
-function getCliPaths(): { cliEntry: string; cliEntryBz: string } {
+export function getCliPaths(cliPackageDir) {
   if (!cliPackageDir) {
     throw new Error('CLI package directory not initialized')
   }
   return {
-    cliEntry: path.join(cliPackageDir, 'node_modules', '@socketsecurity', 'cli', 'dist', 'cli.js'),
+    cliEntry: path.join(cliPackageDir, 'node_modules', '@socketsecurity', 'cli', 'dist', 'index.js'),
     cliEntryBz: path.join(cliPackageDir, 'node_modules', '@socketsecurity', 'cli', 'dist', 'cli.js.bz'),
   }
 }
@@ -40,14 +29,28 @@ function getCliPaths(): { cliEntry: string; cliEntryBz: string } {
 /**
  * Get command-line arguments.
  */
-function getArgs(): string[] {
+export function getArgs() {
   return process.argv ? process.argv.slice(2) : []
+}
+
+/**
+ * Check if system has modern Node.js (>=24.10.0).
+ */
+export function hasModernNode() {
+  const version = process.version // e.g., 'v24.10.0'.
+  const match = version.match(/^v(\d+)\.(\d+)\.(\d+)/)
+  if (!match) {
+    return false
+  }
+
+  const [, major, minor] = match.map(Number)
+  return major > 24 || (major === 24 && minor >= 10)
 }
 
 /**
  * Execute the CLI with the given arguments.
  */
-function executeCli(cliPath: string, args: string[]): never {
+export function executeCli(cliPath, args) {
   const result = spawnSync(process.execPath, [cliPath, ...args], {
     env: {
       ...process.env,
@@ -61,7 +64,7 @@ function executeCli(cliPath: string, args: string[]): never {
 /**
  * Execute brotli-compressed CLI.
  */
-function executeCompressedCli(bzPath: string, args: string[]): never {
+export function executeCompressedCli(bzPath, args) {
   // Read compressed file.
   const compressed = readFileSync(bzPath)
 
@@ -88,7 +91,7 @@ function executeCompressedCli(bzPath: string, args: string[]): never {
 /**
  * Download and install CLI using dlxPackage.
  */
-async function downloadCli(): Promise<DlxPackageResult> {
+export async function downloadCli() {
   process.stderr.write('📦 Socket CLI not found, downloading...\n')
   process.stderr.write('\n')
 
@@ -108,10 +111,7 @@ async function downloadCli(): Promise<DlxPackageResult> {
       },
     )
 
-    // Save the package directory for later use.
-    cliPackageDir = result.packageDir
-
-    process.stderr.write(`   Installed to: ${cliPackageDir}\n`)
+    process.stderr.write(`   Installed to: ${result.packageDir}\n`)
 
     // Wait for installation to complete (but the spawn will fail since we don't have a command).
     // That's okay - we just need the package installed.
@@ -133,17 +133,15 @@ async function downloadCli(): Promise<DlxPackageResult> {
 }
 
 /**
- * Main bootstrap logic.
+ * Find and execute the CLI from the downloaded package.
  */
-async function main(): Promise<void> {
-  const args = getArgs()
+export async function findAndExecuteCli(args) {
+  // Download CLI if needed.
+  const result = await downloadCli()
+  const cliPackageDir = result.packageDir
 
-  // Check if CLI is already installed by trying to locate it in dlx cache.
-  // We need to download it first to find out where it is.
-  await downloadCli()
-
-  // Now get the paths.
-  const { cliEntry, cliEntryBz } = getCliPaths()
+  // Get paths.
+  const { cliEntry, cliEntryBz } = getCliPaths(cliPackageDir)
 
   // Check for brotli-compressed CLI first.
   if (existsSync(cliEntryBz)) {
@@ -161,9 +159,3 @@ async function main(): Promise<void> {
   process.stderr.write(`   Looked in: ${cliEntry}\n`)
   process.exit(1)
 }
-
-// Run the bootstrap.
-main().catch((e) => {
-  process.stderr.write(`❌ Bootstrap error: ${e instanceof Error ? e.message : String(e)}\n`)
-  process.exit(1)
-})
