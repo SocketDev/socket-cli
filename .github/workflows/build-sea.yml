@@ -81,6 +81,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Build socket package bootstrap
+        run: pnpm --filter socket run build
+
       - name: Generate WASM cache keys
         id: wasm-cache-keys
         shell: bash
