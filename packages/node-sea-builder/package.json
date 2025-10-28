@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@socketsecurity/bootstrap": "workspace:*",
     "@socketsecurity/build-infra": "workspace:*"
   },
   "description": "Native Node.js SEA binary builder (fallback)",

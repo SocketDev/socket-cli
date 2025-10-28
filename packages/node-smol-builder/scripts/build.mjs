@@ -66,6 +66,7 @@ import { whichBinSync } from '@socketsecurity/lib/bin'
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { logger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
+import { NODE_VERSION } from '@socketsecurity/bootstrap/.config/node-version.mjs'
 import colors from 'yoctocolors-cjs'
 
 import {
@@ -170,7 +171,6 @@ const RUN_FULL_TESTS = !!values['test-full'] || !!values.testFull
 const AUTO_YES = !!values.yes
 
 // Configuration
-const NODE_VERSION = 'v24.10.0'
 const ROOT_DIR = join(__dirname, '..')
 const NODE_SOURCE_DIR = join(ROOT_DIR, 'build', 'node-source')
 const NODE_DIR = NODE_SOURCE_DIR // Alias for compatibility.
