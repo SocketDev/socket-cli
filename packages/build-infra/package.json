@@ -14,6 +14,7 @@
     "./lib/extraction-cache": "./lib/extraction-cache.mjs",
     "./lib/patch-validator": "./lib/patch-validator.mjs",
     "./lib/rust-builder": "./lib/rust-builder.mjs",
+    "./lib/script-runner": "./lib/script-runner.mjs",
     "./lib/tool-installer": "./lib/tool-installer.mjs"
   },
   "dependencies": {
