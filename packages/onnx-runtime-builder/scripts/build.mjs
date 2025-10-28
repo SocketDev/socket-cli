@@ -55,7 +55,7 @@ const ONNX_VERSION = 'v1.23.2'
 const ROOT_DIR = path.join(__dirname, '..')
 const SOURCE_DIR = path.join(ROOT_DIR, '.onnx-source')
 const BUILD_DIR = path.join(ROOT_DIR, 'build')
-const OUTPUT_DIR = path.join(BUILD_DIR, 'wasm')
+const OUTPUT_DIR = path.join(ROOT_DIR, 'dist')
 
 // Required operators for CodeT5 models.
 const REQUIRED_OPS = [
