@@ -114,6 +114,34 @@ Does the build compile C/C++?
 - Intermediate state doesn't speed up rebuilds
 - Simple caching is sufficient
 
+**Why no directory cache?**
+
+**AI Models:**
+- Single-pass conversion process (PyTorch → ONNX → Quantize)
+- No incremental compilation (can't resume partway)
+- Intermediate files are temporary and immediately deleted
+- If conversion fails, must restart from beginning anyway
+- Total time: ~10-15 minutes (not long enough to justify cache overhead)
+
+**SEA (Single Executable Application):**
+- Just bundling JavaScript + injecting into pre-built Node.js binary
+- Total time: ~30 seconds (already very fast)
+- Uses pre-built Node.js from pkg cache (no compilation)
+- JavaScript bundling regenerates instantly (~10 seconds)
+- Cache download time would exceed rebuild time
+
+**When directory caching is valuable:**
+- ✅ Compilation is slow (>5 minutes)
+- ✅ Builds can fail partway through long compilation
+- ✅ Intermediate state is reusable (compiled objects, CMake cache)
+- ✅ Resuming from cache is faster than rebuilding
+
+**When directory caching is NOT valuable:**
+- ❌ No compilation (just scripting, bundling, copying)
+- ❌ Builds are already fast (<1 minute)
+- ❌ No reusable intermediate state (temp files, single-pass operations)
+- ❌ Cache overhead exceeds time saved
+
 ## Cache Key Strategy
 
 All caches use **content-based hashing** for invalidation:
