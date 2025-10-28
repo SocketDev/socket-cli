@@ -25,7 +25,7 @@ describe('generateSbom', () => {
     expect(sbom.metadata?.tools).toHaveLength(1)
     expect(sbom.metadata?.tools?.[0].vendor).toBe('Socket.dev')
     expect(sbom.metadata?.tools?.[0].name).toBe(
-      '@socketsecurity/sbom-generator'
+      '@socketsecurity/sbom-generator',
     )
 
     // Validate main component.
@@ -55,9 +55,9 @@ describe('generateSbom', () => {
   })
 
   it('should throw error for unsupported projects', async () => {
-    await expect(
-      generateSbom('/non-existent-path')
-    ).rejects.toThrow('No supported ecosystems detected')
+    await expect(generateSbom('/non-existent-path')).rejects.toThrow(
+      'No supported ecosystems detected',
+    )
   })
 
   it('should deduplicate components', async () => {
@@ -87,7 +87,7 @@ describe('generateSbom', () => {
     const sbom = await generateSbom(projectPath)
 
     expect(sbom.serialNumber).toMatch(
-      /^urn:uuid:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
+      /^urn:uuid:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
     )
   })
 

@@ -20,7 +20,8 @@ import {
   printSuccess,
 } from '@socketsecurity/lib/stdio/header'
 
-import { runCommand, runParallel } from './utils/run-command.mjs'
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
+import { spawn } from '@socketsecurity/lib/spawn'
 
 async function main() {
   const quiet = isQuiet()
@@ -47,7 +48,8 @@ async function main() {
     }
 
     // Run taze at root level (recursive flag will check all packages).
-    const exitCode = await runCommand('pnpm', tazeArgs, {
+    const exitCode = await spawn('pnpm', tazeArgs, {
+      shell: WIN32,
       stdio: quiet ? 'pipe' : 'inherit',
     })
 
@@ -93,7 +95,7 @@ async function main() {
       }
     }
 
-    if (exitCode !== 0) {
+    if (code !== 0) {
       if (!quiet) {
         if (apply) {
           printError('Failed to update dependencies')

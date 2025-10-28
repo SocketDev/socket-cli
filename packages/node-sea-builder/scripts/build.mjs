@@ -30,12 +30,18 @@ import os from 'node:os'
 import path from 'node:path'
 import url from 'node:url'
 
+import { parseArgs } from '@socketsecurity/lib/argv/parse'
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { safeDelete } from '@socketsecurity/lib/fs'
 import { logger } from '@socketsecurity/lib/logger'
 import { normalizePath } from '@socketsecurity/lib/path'
 import { spawn } from '@socketsecurity/lib/spawn'
 import colors from 'yoctocolors-cjs'
+
+import {
+  generateHashComment,
+  shouldExtract,
+} from '@socketsecurity/build-infra/lib/extraction-cache'
 
 import constants from './constants.mjs'
 
@@ -480,6 +486,38 @@ async function buildTarget(target, options) {
   // Ensure output directory exists.
   await fs.mkdir(outputDir, { recursive: true })
 
+  // Generate output path.
+  const outputPath = normalizePath(path.join(outputDir, target.outputName))
+
+  // Check if we can use cached SEA build.
+  // Hash the CLI bundle and build script since those are the inputs.
+  const sourcePaths = [cliPath, url.fileURLToPath(import.meta.url)]
+
+  // Store hash in centralized build/.cache/ directory.
+  const cacheDir = normalizePath(path.join(__dirname, '../build/.cache'))
+  await fs.mkdir(cacheDir, { recursive: true })
+  const hashFilePath = normalizePath(path.join(cacheDir, `${target.outputName}.hash`))
+
+  const needsExtraction = await shouldExtract({
+    sourcePaths,
+    outputPath: hashFilePath,
+    validateOutput: () => {
+      // Verify both SEA binary and hash file exist.
+      return existsSync(outputPath) && existsSync(hashFilePath)
+    },
+  })
+
+  if (!needsExtraction) {
+    // Cache hit! SEA binary is up to date.
+    logger.log('')
+    logger.log(`${colors.green('✓')} Using cached SEA binary`)
+    logger.log('CLI bundle unchanged since last build.')
+    logger.log('')
+    logger.log(`Binary: ${outputPath}`)
+    logger.log('')
+    return
+  }
+
   // Create a modified copy of the CLI with SEA compatibility fixes.
   const modifiedCliPath = normalizePath(path.join(outputDir, 'cli-modified.js'))
   let cliContent = await fs.readFile(cliPath, 'utf8')
@@ -552,10 +590,6 @@ if (typeof require !== 'undefined' && (!require.resolve || !require.resolve.path
     target.arch,
   )
 
-  // Generate output path.
-  const outputPath = normalizePath(path.join(outputDir, target.outputName))
-  await fs.mkdir(outputDir, { recursive: true })
-
   // Generate SEA configuration.
   const configPath = await generateSeaConfig(entryPoint, outputPath)
 
@@ -572,6 +606,10 @@ if (typeof require !== 'undefined' && (!require.resolve || !require.resolve.path
     }
 
     logger.log(`${colors.green('✓')} Built ${target.outputName}`)
+
+    // Write source hash to cache file for future builds.
+    const sourceHashComment = await generateHashComment(sourcePaths)
+    await fs.writeFile(hashFilePath, sourceHashComment, 'utf-8')
 
     // Clean up temporary files using trash.
     const filesToClean = [
@@ -592,44 +630,19 @@ if (typeof require !== 'undefined' && (!require.resolve || !require.resolve.path
 }
 
 /**
- * Parse command-line arguments.
- */
-function parseArgs() {
-  const args = process.argv.slice(2)
-  const options = {}
-
-  for (const arg of args) {
-    if (arg.startsWith('--platform=')) {
-      const platform = arg.split('=')[1]
-      if (platform) {
-        options.platform = platform
-      }
-    } else if (arg.startsWith('--arch=')) {
-      const arch = arg.split('=')[1]
-      if (arch) {
-        options.arch = arch
-      }
-    } else if (arg.startsWith('--node-version=')) {
-      const nodeVersion = arg.split('=')[1]
-      if (nodeVersion) {
-        options.nodeVersion = nodeVersion
-      }
-    } else if (arg.startsWith('--output-dir=')) {
-      const outputDir = arg.split('=')[1]
-      if (outputDir) {
-        options.outputDir = outputDir
-      }
-    }
-  }
-
-  return options
-}
-
-/**
  * Main build function.
  */
 async function main() {
-  const options = parseArgs()
+  // Parse command-line arguments.
+  const { values: options } = parseArgs({
+    options: {
+      arch: { type: 'string' },
+      'node-version': { type: 'string' },
+      'output-dir': { type: 'string' },
+      platform: { type: 'string' },
+    },
+    strict: false,
+  })
 
   logger.log('Socket CLI Self-Executable Builder')
   logger.log('====================================')
@@ -710,6 +723,26 @@ async function main() {
 
   logger.log(`\nBins directory: ${binsDir}`)
   logger.log('All SEA binaries copied to project root.')
+
+  // Also copy current platform binary to dist/socket-sea for e2e testing.
+  const currentPlatform = os.platform()
+  const currentArch = os.arch()
+  const currentTarget = targets.find(
+    t => t.platform === currentPlatform && t.arch === currentArch
+  )
+
+  if (currentTarget) {
+    const distDir = normalizePath(path.join(__dirname, '..', 'dist'))
+    await fs.mkdir(distDir, { recursive: true })
+
+    const sourceFile = normalizePath(path.join(outputDir, currentTarget.outputName))
+    const e2eTestBinary = normalizePath(path.join(distDir, 'socket-sea'))
+
+    await fs.copyFile(sourceFile, e2eTestBinary)
+    await fs.chmod(e2eTestBinary, 0o755)
+
+    logger.log(`\n${colors.green('✓')} Copied ${currentTarget.outputName} to dist/socket-sea for e2e testing`)
+  }
 
   logger.log(`\n${colors.green('✓')} Build complete!`)
   logger.log(`Output directory: ${options.outputDir || 'dist/sea'}`)

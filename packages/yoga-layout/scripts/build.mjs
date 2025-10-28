@@ -12,13 +12,13 @@
  *   node scripts/build.mjs --force  # Force rebuild (ignore checkpoints)
  */
 
-import { promises as fs } from 'node:fs'
+import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { logger } from '@socketsecurity/lib/logger'
-
-import { exec } from '@socketsecurity/build-infra/lib/build-exec'
+import { spawn } from '@socketsecurity/lib/spawn'
 import {
   printSetupResults,
   setupBuildEnvironment,
@@ -48,6 +48,7 @@ const __dirname = path.dirname(__filename)
 // Parse arguments.
 const args = process.argv.slice(2)
 const FORCE_BUILD = args.includes('--force')
+const CLEAN_BUILD = args.includes('--clean')
 
 // Configuration.
 const ROOT_DIR = path.join(__dirname, '..')
@@ -67,7 +68,7 @@ async function cloneYogaSource() {
 
   printHeader('Cloning Yoga Source')
 
-  if (await fs.access(YOGA_SOURCE_DIR).then(() => true).catch(() => false)) {
+  if (existsSync(YOGA_SOURCE_DIR)) {
     printStep('Yoga source already exists, skipping clone')
     await createCheckpoint('yoga-layout', 'cloned')
     return
@@ -76,10 +77,10 @@ async function cloneYogaSource() {
   await fs.mkdir(BUILD_DIR, { recursive: true })
 
   printStep(`Cloning Yoga ${YOGA_VERSION}...`)
-  await exec(
-    `git clone --depth 1 --branch ${YOGA_VERSION} ${YOGA_REPO} ${YOGA_SOURCE_DIR}`,
-    { stdio: 'inherit' }
-  )
+  await spawn('git', ['clone', '--depth', '1', '--branch', YOGA_VERSION, YOGA_REPO, YOGA_SOURCE_DIR], {
+    shell: WIN32,
+    stdio: 'inherit',
+  })
 
   printSuccess(`Yoga ${YOGA_VERSION} cloned`)
   await createCheckpoint('yoga-layout', 'cloned')
@@ -128,40 +129,44 @@ async function configure() {
     '-fdata-sections', // Separate data sections.
     '-ffast-math', // Fast math optimizations (performance).
     '-fno-finite-math-only', // Re-enable infinity checks (Yoga needs this).
-  ].join(' ')
+  ]
 
   const linkerFlags = [
-    '--closure 1', // Google Closure Compiler (aggressive minification).
+    '--closure=1', // Google Closure Compiler (aggressive minification).
     '--gc-sections', // Garbage collect unused sections.
     '-flto=thin',
     '-Oz',
-    '-s ALLOW_MEMORY_GROWTH=1', // Dynamic memory.
-    '-s ASSERTIONS=0', // No runtime assertions (smaller, faster).
-    '-s EXPORT_ES6=1', // ES6 module export.
-    '-s FILESYSTEM=0', // No filesystem support (smaller).
-    '-s INITIAL_MEMORY=64KB', // Minimal initial memory.
-    '-s MALLOC=emmalloc', // Smaller allocator.
-    '-s MODULARIZE=1', // Modular output.
-    '-s NO_EXIT_RUNTIME=1', // Keep runtime alive (needed for WASM).
-    '-s STACK_SIZE=16KB', // Small stack.
-    '-s SUPPORT_LONGJMP=0', // No longjmp (smaller).
-  ].join(' ')
+    '-sALLOW_MEMORY_GROWTH=1', // Dynamic memory.
+    '-sASSERTIONS=0', // No runtime assertions (smaller, faster).
+    '-sEXPORT_ES6=1', // ES6 module export.
+    '-sFILESYSTEM=0', // No filesystem support (smaller).
+    '-sINITIAL_MEMORY=64KB', // Minimal initial memory.
+    '-sMALLOC=emmalloc', // Smaller allocator.
+    '-sMODULARIZE=1', // Modular output.
+    '-sNO_EXIT_RUNTIME=1', // Keep runtime alive (needed for WASM).
+    '-sSTACK_SIZE=16KB', // Small stack.
+    '-sSUPPORT_LONGJMP=0', // No longjmp (smaller).
+    '-sWASM_ASYNC_COMPILATION=0', // CRITICAL: Synchronous instantiation for bundling.
+  ]
 
   const cmakeArgs = [
+    'cmake',
     `-DCMAKE_TOOLCHAIN_FILE=${toolchainFile}`,
     '-DCMAKE_BUILD_TYPE=Release',
-    `-DCMAKE_CXX_FLAGS="${cxxFlags}"`,
-    `-DCMAKE_EXE_LINKER_FLAGS="${linkerFlags}"`,
-    `-DCMAKE_SHARED_LINKER_FLAGS="${linkerFlags}"`,
-    `-S ${YOGA_SOURCE_DIR}`,
-    `-B ${cmakeBuildDir}`,
-  ].join(' ')
+    `-DCMAKE_CXX_FLAGS=${cxxFlags.join(' ')}`,
+    `-DCMAKE_EXE_LINKER_FLAGS=${linkerFlags.join(' ')}`,
+    `-DCMAKE_SHARED_LINKER_FLAGS=${linkerFlags.join(' ')}`,
+    `-S`,
+    YOGA_SOURCE_DIR,
+    `-B`,
+    cmakeBuildDir,
+  ]
 
   printStep('Optimization flags:')
-  printStep(`  CXX: ${cxxFlags}`)
-  printStep(`  Linker: ${linkerFlags}`)
+  printStep(`  CXX: ${cxxFlags.join(' ')}`)
+  printStep(`  Linker: ${linkerFlags.join(' ')}`)
 
-  await exec(`emcmake cmake ${cmakeArgs}`, { stdio: 'inherit' })
+  await spawn('emcmake', cmakeArgs, { shell: WIN32, stdio: 'inherit' })
 
   printSuccess('CMake configured')
   await createCheckpoint('yoga-layout', 'configured')
@@ -182,7 +187,8 @@ async function build() {
 
   // Build static library with CMake.
   printStep('Compiling C++ to static library...')
-  await exec(`emmake cmake --build ${cmakeBuildDir} --target yogacore`, {
+  await spawn('emmake', ['cmake', '--build', cmakeBuildDir, '--target', 'yogacore'], {
+    shell: WIN32,
     stdio: 'inherit',
   })
 
@@ -202,35 +208,41 @@ async function build() {
     '-fdata-sections',
     '-ffast-math',
     '-fno-finite-math-only',
-  ].join(' ')
+  ]
 
   const linkerFlags = [
-    '--closure 1',
+    '--closure=1',
     '-Wl,--gc-sections',
     '-flto=thin',
     '-Oz',
-    '-s ALLOW_MEMORY_GROWTH=1',
-    '-s ASSERTIONS=0',
-    '-s EXPORT_ES6=1',
-    '-s FILESYSTEM=0',
-    '-s INITIAL_MEMORY=64KB',
-    '-s MALLOC=emmalloc',
-    '-s MODULARIZE=1',
-    '-s NO_EXIT_RUNTIME=1',
-    '-s STACK_SIZE=16KB',
-    '-s SUPPORT_LONGJMP=0',
+    '-sALLOW_MEMORY_GROWTH=1',
+    '-sASSERTIONS=0',
+    '-sEXPORT_ES6=1',
+    '-sFILESYSTEM=0',
+    '-sINITIAL_MEMORY=64KB',
+    '-sMALLOC=emmalloc',
+    '-sMODULARIZE=1',
+    '-sNO_EXIT_RUNTIME=1',
+    '-sSTACK_SIZE=16KB',
+    '-sSUPPORT_LONGJMP=0',
     '--bind',
-  ].join(' ')
+  ]
 
   // Compile and link in one step.
-  await exec(
-    `em++ ` +
-      `-I ${path.join(BUILD_DIR, 'yoga-source')} ` +
-      `${cxxFlags} ${bindingsFile} ${staticLib} ` +
-      `${linkerFlags} ` +
-      `-o ${jsOutput}`,
-    { stdio: 'inherit' }
-  )
+  const emArgs = [
+    `-I${path.join(BUILD_DIR, 'yoga-source')}`,
+    ...cxxFlags,
+    bindingsFile,
+    staticLib,
+    ...linkerFlags,
+    '-o',
+    jsOutput,
+  ]
+
+  await spawn('em++', emArgs, {
+    shell: WIN32,
+    stdio: 'inherit',
+  })
 
   printSuccess(`JS glue code created: ${jsOutput}`)
   printSuccess(`WASM module created: ${wasmOutput}`)
@@ -254,11 +266,9 @@ async function optimize() {
   const cmakeBuildDir = path.join(BUILD_DIR, 'cmake')
   const wasmFile = path.join(cmakeBuildDir, 'yoga.wasm')
 
-  if (!(await fs.access(wasmFile).then(() => true).catch(() => false))) {
-    printWarning(`WASM file not found: ${wasmFile}`)
-    printWarning('Skipping optimization')
-    await createCheckpoint('yoga-layout', 'optimized')
-    return
+  if (!existsSync(wasmFile)) {
+    printError(`WASM file not found: ${wasmFile}`)
+    throw new Error('Cannot optimize - WASM file missing from build')
   }
 
   const sizeBefore = await getFileSize(wasmFile)
@@ -285,11 +295,26 @@ async function optimize() {
     '--strip-dwarf',
     '--strip-producers',
     '--strip-target-features',
-  ].join(' ')
+  ]
 
-  await exec(`wasm-opt ${wasmOptFlags} "${wasmFile}" -o "${wasmFile}"`, {
+  // Find wasm-opt in Emscripten SDK or system PATH.
+  // Emscripten SDK has wasm-opt in: $EMSDK/upstream/bin/wasm-opt
+  let wasmOptCmd = 'wasm-opt'
+  if (process.env.EMSDK) {
+    const emsdkWasmOpt = path.join(process.env.EMSDK, 'upstream', 'bin', 'wasm-opt')
+    if (existsSync(emsdkWasmOpt)) {
+      wasmOptCmd = emsdkWasmOpt
+      printStep(`Using wasm-opt from EMSDK: ${wasmOptCmd}`)
+    }
+  }
+
+  const result = await spawn(wasmOptCmd, [...wasmOptFlags, wasmFile, '-o', wasmFile], {
+    shell: WIN32,
     stdio: 'inherit',
   })
+  if (result.code !== 0) {
+    throw new Error(`wasm-opt failed with exit code ${result.code}`)
+  }
 
   const sizeAfter = await getFileSize(wasmFile)
   printStep(`Size after: ${sizeAfter}`)
@@ -311,7 +336,7 @@ async function verify() {
   const cmakeBuildDir = path.join(BUILD_DIR, 'cmake')
   const wasmFile = path.join(cmakeBuildDir, 'yoga.wasm')
 
-  if (!(await fs.access(wasmFile).then(() => true).catch(() => false))) {
+  if (!existsSync(wasmFile)) {
     printWarning('WASM file not found, skipping verification')
     await createCheckpoint('yoga-layout', 'verified')
     return
@@ -346,9 +371,9 @@ async function exportWasm() {
   const wasmFile = path.join(cmakeBuildDir, 'yoga.wasm')
   const jsFile = path.join(cmakeBuildDir, 'yoga.js')
 
-  if (!(await fs.access(wasmFile).then(() => true).catch(() => false))) {
-    printWarning('WASM file not found, nothing to export')
-    return
+  if (!existsSync(wasmFile)) {
+    printError('WASM file not found - build failed')
+    throw new Error(`Required WASM file not found: ${wasmFile}`)
   }
 
   const outputWasm = path.join(OUTPUT_DIR, 'yoga.wasm')
@@ -357,9 +382,12 @@ async function exportWasm() {
   // Copy WASM file.
   await fs.copyFile(wasmFile, outputWasm)
 
-  // Copy JS glue code if exists.
-  if (await fs.access(jsFile).then(() => true).catch(() => false)) {
-    await fs.copyFile(jsFile, outputJs)
+  // Copy JS glue code and strip export statement.
+  if (existsSync(jsFile)) {
+    const jsContent = await fs.readFile(jsFile, 'utf-8')
+    // Strip the export statement at the end of the file.
+    const withoutExport = jsContent.replace(/;?\s*export\s+default\s+\w+\s*;\s*$/, '')
+    await fs.writeFile(outputJs, withoutExport, 'utf-8')
     printStep(`JS: ${outputJs}`)
   }
 
@@ -380,10 +408,22 @@ async function main() {
   logger.info(`Yoga Layout ${YOGA_VERSION} minimal build`)
   logger.info('')
 
+  // Clean checkpoints if requested or if output is missing.
+  const outputWasm = path.join(OUTPUT_DIR, 'yoga.wasm')
+  const outputJs = path.join(OUTPUT_DIR, 'yoga.js')
+  const outputMissing = !existsSync(outputWasm) || !existsSync(outputJs)
+
+  if (CLEAN_BUILD || outputMissing) {
+    if (outputMissing) {
+      printStep('Output artifacts missing - cleaning stale checkpoints')
+    }
+    await cleanCheckpoint('yoga-layout')
+  }
+
   // Pre-flight checks.
   printHeader('Pre-flight Checks')
 
-  const diskOk = await checkDiskSpace(BUILD_DIR, 1 * 1024 * 1024 * 1024)
+  const diskOk = await checkDiskSpace(BUILD_DIR, 1)
   if (!diskOk) {
     printWarning('Could not check disk space')
   }

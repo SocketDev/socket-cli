@@ -17,7 +17,7 @@ on:
           - smol-sea
         default: smol
       dry-run:
-        description: 'Dry run (build but do not publish)'
+        description: 'Dry run (build but do not publish) - primes cache for CI e2e tests'
         required: false
         type: boolean
         default: false
@@ -72,7 +72,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           autocrlf: false
 
@@ -83,9 +83,9 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@e9540b3eafaf84907c087a645d3258bfaa861427 # v3.0.0
+        uses: pnpm/action-setup@9fd676a19091d4595eefd76e4bd31c97133911f1 # v4.2.0
         with:
-          version: 8
+          version: ^10.16.0
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -101,59 +101,57 @@ jobs:
         id: build-cache-key
         shell: bash
         run: |
-          # Generate hash from build-affecting files
+          # Generate hash from build-affecting files (matches build-binaries.yml).
           if [ "${{ matrix.os }}" = "windows" ]; then
-            HASH=$(find build/patches scripts -type f -name "*.patch" -o -name "*.mjs" | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
+            HASH=$(find patches packages/node-smol-builder/patches packages/node-smol-builder/additions scripts -type f -name "*.patch" -o -name "*.mjs" -o -name "*.h" -o -name "*.c" -o -name "*.cc" | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
           else
-            HASH=$(find build/patches scripts -type f \( -name "*.patch" -o -name "*.mjs" \) | sort | xargs shasum -a 256 | shasum -a 256 | cut -d' ' -f1)
+            HASH=$(find patches packages/node-smol-builder/patches packages/node-smol-builder/additions scripts -type f \( -name "*.patch" -o -name "*.mjs" -o -name "*.h" -o -name "*.c" -o -name "*.cc" \) | sort | xargs shasum -a 256 | shasum -a 256 | cut -d' ' -f1)
           fi
           echo "hash=$HASH" >> $GITHUB_OUTPUT
           echo "Build hash: $HASH"
+
+      - name: Restore smol binary from build-socketbin.yml cache
+        uses: actions/cache/restore@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
+        id: smol-cache
+        with:
+          path: packages/node-smol-builder/dist/socket-smol-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.os == 'windows' && '.exe' || '' }}
+          key: node-smol-${{ matrix.platform }}-${{ matrix.arch }}-${{ steps.build-cache-key.outputs.hash }}
+          restore-keys: node-smol-${{ matrix.platform }}-${{ matrix.arch }}-
 
       - name: Cache compiled Node.js binary
         uses: actions/cache@6849a6489940f00c2f30c0fb92c6274307ccb58a # v4.2.0
         id: binary-cache
         with:
           path: |
-            .node-source/out/Release/node
-            .node-source/out/Release/node.exe
+            packages/node-smol-builder/build/out/Release/node
+            packages/node-smol-builder/build/out/Release/node.exe
           key: node-binary-${{ matrix.platform }}-${{ matrix.arch }}-${{ steps.build-cache-key.outputs.hash }}
           restore-keys: |
             node-binary-${{ matrix.platform }}-${{ matrix.arch }}-
 
-      - name: Build stub
-        run: pnpm run build:sea:stub
-
-      - name: Build binary
-        id: build-binary
+      - name: Build smol Node.js binary
+        id: build-smol
         continue-on-error: true
-        env:
-          # Enable ccache for C++ compilation (Linux/macOS)
-          CC: ${{ matrix.os != 'windows' && 'ccache gcc' || '' }}
-          CXX: ${{ matrix.os != 'windows' && 'ccache g++' || '' }}
-          # Use mold linker for faster linking (Linux only)
-          LDFLAGS: ${{ matrix.os == 'linux' && '-fuse-ld=mold' || '' }}
-          # Use ninja build system if available
-          GYP_GENERATORS: ninja
         run: |
-          pnpm run build --sea -- \
+          echo "Building smol Node.js binary..."
+          pnpm --filter @socketsecurity/node-smol-builder run build -- \
             --platform=${{ matrix.platform }} \
             --arch=${{ matrix.arch }}
 
-      - name: Build binary (fallback with clean rebuild)
-        if: steps.build-binary.outcome == 'failure'
-        env:
-          # Enable ccache for C++ compilation (Linux/macOS)
-          CC: ${{ matrix.os != 'windows' && 'ccache gcc' || '' }}
-          CXX: ${{ matrix.os != 'windows' && 'ccache g++' || '' }}
-          # Use mold linker for faster linking (Linux only)
-          LDFLAGS: ${{ matrix.os == 'linux' && '-fuse-ld=mold' || '' }}
-          # Use ninja build system if available
-          GYP_GENERATORS: ninja
+      - name: Build smol binary (fallback with clean rebuild)
+        if: steps.build-smol.outcome == 'failure'
         run: |
-          echo "Initial build failed, attempting clean rebuild with Node.js..."
-          node packages/node-smol-builder/scripts/build.mjs --clean
-          pnpm run build --sea -- \
+          echo "Initial smol build failed, attempting clean rebuild..."
+          pnpm --filter @socketsecurity/node-smol-builder run build -- \
+            --platform=${{ matrix.platform }} \
+            --arch=${{ matrix.arch }} \
+            --clean
+
+      - name: Build SEA binary
+        id: build-sea
+        run: |
+          echo "Building SEA binary..."
+          pnpm --filter @socketsecurity/node-sea-builder run build -- \
             --platform=${{ matrix.platform }} \
             --arch=${{ matrix.arch }}
 
@@ -179,7 +177,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           autocrlf: false
 
@@ -210,7 +208,7 @@ jobs:
           node scripts/check-version-consistency.mjs ${{ steps.version.outputs.version }}
 
       - name: Download all binaries
-        uses: actions/download-artifact@cc203385981b70ca67e1cc392babf9cc229d5806 # v4.1.9
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
         with:
           path: dist/sea
           pattern: binary-*
@@ -319,6 +317,63 @@ jobs:
           cd packages/binaries/cli-win32-arm64
           npm publish --provenance --access public
 
+      - name: Build binaries for @socketbin/cli-ai
+        id: build-binaries
+        continue-on-error: true
+        run: |
+          if [ -d "packages/cli-ai-builder" ]; then
+            echo "Building binaries..."
+            cd packages/cli-ai-builder
+            pnpm run build
+            cd ../..
+
+            echo "Copying binaries to @socketbin/cli-ai..."
+            mkdir -p packages/socketbin-cli-ai/dist
+            cp packages/cli-ai-builder/dist/*.bz packages/socketbin-cli-ai/dist/ || true
+            cp packages/cli-ai-builder/dist/*.js packages/socketbin-cli-ai/dist/ || true
+
+            echo "✓ Binaries built and copied"
+            echo "has-binaries=true" >> $GITHUB_OUTPUT
+          else
+            echo "⚠️  Binary builder not found, publishing placeholder package"
+            echo "has-binaries=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Update and publish @socketbin/cli-ai version
+        if: ${{ !inputs.dry-run }}
+        run: |
+          cd packages/socketbin-cli-ai
+          npm version ${{ steps.version.outputs.version }} --no-git-tag-version
+
+          if [ "${{ steps.build-binaries.outputs.has-binaries }}" = "true" ]; then
+            echo "Publishing @socketbin/cli-ai with binaries"
+          else
+            echo "Publishing @socketbin/cli-ai placeholder (no binaries)"
+          fi
+
+          npm publish --provenance --access public
+
+      - name: Prime npm cache for CI (dry-run)
+        if: ${{ inputs.dry-run }}
+        run: |
+          echo "🔄 Priming npm cache for CI e2e tests..."
+
+          # Prime cache for @socketbin/cli-ai (if binaries were built)
+          if [ "${{ steps.build-binaries.outputs.has-binaries }}" = "true" ]; then
+            echo "Priming @socketbin/cli-ai with binaries..."
+            npm pack packages/socketbin-cli-ai
+          else
+            echo "Skipping @socketbin/cli-ai cache prime (no binaries built)"
+          fi
+
+          # Prime cache for @coana-tech/cli
+          if [ -n "$INLINED_SOCKET_CLI_COANA_VERSION" ]; then
+            echo "Priming @coana-tech/cli@~$INLINED_SOCKET_CLI_COANA_VERSION..."
+            npx --yes @coana-tech/cli@~$INLINED_SOCKET_CLI_COANA_VERSION --help || true
+          fi
+
+          echo "✓ Cache priming complete"
+
       - name: Dry run summary
         if: ${{ inputs.dry-run }}
         run: |
@@ -326,6 +381,11 @@ jobs:
           echo ""
           echo "Generated packages:"
           find packages/binaries -name package.json -exec echo {} \; -exec jq -r '.name + "@" + .version' {} \;
+          echo ""
+          echo "Would have published:"
+          echo "  @socketbin/cli-ai@${{ steps.version.outputs.version }}"
+          echo ""
+          echo "💾 Cache primed for CI e2e tests"
 
   publish-main:
     name: Publish main socket package
@@ -337,7 +397,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           autocrlf: false
 

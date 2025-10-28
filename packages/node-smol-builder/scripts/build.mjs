@@ -61,9 +61,13 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { brotliCompressSync, constants as zlibConstants } from 'node:zlib'
 
+import { parseArgs } from '@socketsecurity/lib/argv/parse'
+import { whichBinSync } from '@socketsecurity/lib/bin'
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { logger } from '@socketsecurity/lib/logger'
+import { spawn } from '@socketsecurity/lib/spawn'
+import colors from 'yoctocolors-cjs'
 
-import { exec, execCapture } from './lib/build-exec.mjs'
 import {
   checkCompiler,
   checkDiskSpace,
@@ -78,38 +82,105 @@ import {
   saveBuildLog,
   smokeTestBinary,
   verifyGitTag,
-} from './lib/build-helpers.mjs'
-import { printError, printHeader, printWarning } from './lib/build-output.mjs'
+} from '@socketsecurity/build-infra/lib/build-helpers'
+import {
+  generateHashComment,
+  shouldExtract,
+} from '@socketsecurity/build-infra/lib/extraction-cache'
+import { printError, printHeader, printWarning } from '@socketsecurity/build-infra/lib/build-output'
 import {
   analyzePatchContent,
   checkPatchConflicts,
   testPatchApplication,
   validatePatch,
-} from './lib/patch-validator.mjs'
+} from '@socketsecurity/build-infra/lib/patch-validator'
+import {
+  ensureAllToolsInstalled,
+  ensurePackageManagerAvailable,
+  getInstallInstructions,
+  getPackageManagerInstructions,
+} from '@socketsecurity/build-infra/lib/tool-installer'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
+/**
+ * Execute command using spawn (replacement for exec).
+ *
+ * @param {string} command - Command to execute
+ * @param {string[]} args - Command arguments
+ * @param {object} options - Spawn options
+ * @returns {Promise<void>}
+ */
+async function exec(command, args = [], options = {}) {
+  const result = await spawn(
+    Array.isArray(args) ? command : `${command} ${args}`,
+    Array.isArray(args) ? args : [],
+    {
+      stdio: 'inherit',
+      shell: WIN32,
+      ...options,
+    }
+  )
+  if (result.code !== 0) {
+    throw new Error(`Command failed with exit code ${result.code}: ${command}`)
+  }
+}
+
+/**
+ * Execute command and capture output (replacement for execCapture).
+ *
+ * @param {string} command - Command to execute
+ * @param {object} options - Spawn options
+ * @returns {Promise<string>} Command output
+ */
+async function execCapture(command, options = {}) {
+  const result = await spawn(command, [], {
+    stdio: 'pipe',
+    stdioString: true,
+    shell: WIN32,
+    ...options,
+  })
+  if (result.code !== 0) {
+    throw new Error(`Command failed with exit code ${result.code}: ${command}`)
+  }
+  return (result.stdout ?? '').trim()
+}
+
 // Parse arguments.
-const args = process.argv.slice(2)
-const CLEAN_BUILD = args.includes('--clean')
-const RUN_VERIFY = args.includes('--verify')
-const RUN_TESTS = args.includes('--test')
-const RUN_FULL_TESTS = args.includes('--test-full')
-const AUTO_YES = args.includes('--yes') || args.includes('-y')
+const { values } = parseArgs({
+  options: {
+    arch: { type: 'string' },
+    clean: { type: 'boolean' },
+    platform: { type: 'string' },
+    test: { type: 'boolean' },
+    'test-full': { type: 'boolean' },
+    verify: { type: 'boolean' },
+    yes: { type: 'boolean', short: 'y' },
+  },
+  strict: false,
+})
+
+const TARGET_PLATFORM = values.platform || platform()
+const TARGET_ARCH = values.arch || process.arch
+const CLEAN_BUILD = !!values.clean
+const RUN_VERIFY = !!values.verify
+const RUN_TESTS = !!values.test
+const RUN_FULL_TESTS = !!values['test-full'] || !!values.testFull
+const AUTO_YES = !!values.yes
 
 // Configuration
 const NODE_VERSION = 'v24.10.0'
 const ROOT_DIR = join(__dirname, '..')
-const NODE_SOURCE_DIR = join(ROOT_DIR, '.node-source')
+const NODE_SOURCE_DIR = join(ROOT_DIR, 'build', 'node-source')
 const NODE_DIR = NODE_SOURCE_DIR // Alias for compatibility.
 const BUILD_DIR = join(ROOT_DIR, 'build')
 const PATCHES_DIR = join(ROOT_DIR, 'patches')
 const ADDITIONS_DIR = join(ROOT_DIR, 'additions')
 
 // Directory structure.
-// .node-source/ - Node.js source code (gitignored).
-// .node-source/out/Release/node - Node.js build output (gitignored).
+// build/node-source/ - Node.js source code (gitignored).
+// build/node-source/out/Release/node - Node.js build output (gitignored).
 // build/out/Release/node - Copy of Release binary (gitignored).
 // build/out/Stripped/node - Stripped binary (gitignored).
 // build/out/Signed/node - Stripped + signed binary (macOS ARM64 only, gitignored).
@@ -117,6 +188,44 @@ const ADDITIONS_DIR = join(ROOT_DIR, 'additions')
 // build/out/Sea/node - Binary for SEA builds (gitignored).
 // build/out/Distribution/node - Final distribution binary (gitignored).
 // build/patches/ - All Node.js custom patches (tracked in git).
+
+/**
+ * Collect all source files that contribute to the smol build.
+ * Used for hash-based caching to detect when rebuild is needed.
+ *
+ * @returns {string[]} Array of absolute paths to all source files
+ */
+function collectBuildSourceFiles() {
+  const sources = []
+
+  // Add all patch files.
+  if (existsSync(PATCHES_DIR)) {
+    const patchFiles = readdirSync(PATCHES_DIR)
+      .filter(f => f.endsWith('.patch'))
+      .map(f => join(PATCHES_DIR, f))
+    sources.push(...patchFiles)
+  }
+
+  // Add all addition files recursively.
+  if (existsSync(ADDITIONS_DIR)) {
+    const addFiles = readdirSync(ADDITIONS_DIR, { recursive: true })
+      .filter(f => {
+        const fullPath = join(ADDITIONS_DIR, f)
+        try {
+          return existsSync(fullPath) && !readdirSync(fullPath, { withFileTypes: true }).length
+        } catch {
+          return true // It's a file, not a directory.
+        }
+      })
+      .map(f => join(ADDITIONS_DIR, f))
+    sources.push(...addFiles)
+  }
+
+  // Add this build script itself (changes to build logic should trigger rebuild).
+  sources.push(__filename)
+
+  return sources
+}
 
 /**
  * Find Socket patches for this Node version
@@ -163,17 +272,27 @@ async function copyBuildAdditions() {
   logger.log(
     `✅ Copied ${ADDITIONS_DIR.replace(`${ROOT_DIR}/`, '')}/ → ${NODE_DIR}/`,
   )
-  logger.log()
+  logger.log('')
 }
 
 /**
  * Copy Socket security bootstrap to Node.js lib/ for brotli encoding.
  * The bootstrap will be compressed along with other Node.js lib/ files.
+ * (Optional - only runs if bootstrap file exists)
  */
 async function copySocketSecurityBootstrap() {
+  const bootstrapSource = join(ROOT_DIR, 'bin', 'bootstrap.js')
+
+  // Skip if bootstrap file doesn't exist yet (future enhancement).
+  if (!existsSync(bootstrapSource)) {
+    logger.log('')
+    logger.log(`${colors.blue('ℹ')} Skipping Socket security bootstrap (bin/bootstrap.js not found)`)
+    logger.log('')
+    return
+  }
+
   printHeader('Copying Socket Security Bootstrap')
 
-  const bootstrapSource = join(ROOT_DIR, 'bin', 'bootstrap.js')
   const bootstrapDest = join(
     NODE_DIR,
     'lib',
@@ -196,22 +315,23 @@ async function copySocketSecurityBootstrap() {
   logger.log(
     `   ${(stats.size / 1024).toFixed(1)}KB (will be brotli encoded with lib/ files)`,
   )
-  logger.log()
+  logger.log('')
 }
 
 const CPU_COUNT = cpus().length
-const IS_MACOS = platform() === 'darwin'
-const ARCH = process.arch
+const IS_MACOS = TARGET_PLATFORM === 'darwin'
+const IS_WINDOWS = TARGET_PLATFORM === 'win32'
+const ARCH = TARGET_ARCH
 
 /**
  * Check if Node.js source has uncommitted changes.
  */
 async function isNodeSourceDirty() {
   try {
-    const status = await execCapture('git', ['status', '--porcelain'], {
+    const status = await execCapture('git status --porcelain', {
       cwd: NODE_DIR,
     })
-    return status.trim().length > 0
+    return status.stdout.trim().length > 0
   } catch {
     return false
   }
@@ -238,77 +358,112 @@ async function resetNodeSource() {
   logger.log('Resetting to clean state...')
   await exec('git', ['reset', '--hard', NODE_VERSION], { cwd: NODE_DIR })
   await exec('git', ['clean', '-fdx'], { cwd: NODE_DIR })
-  logger.log('✅ Node.js source reset to clean state')
-  logger.log()
+  logger.log(`${colors.green('✓')} Node.js source reset to clean state`)
+  logger.log('')
 }
 
 /**
  * Get file size in human-readable format.
  */
 async function getFileSize(filePath) {
-  const result = await execCapture('du', ['-h', filePath])
-  return result.split('\t')[0]
+  const result = await execCapture(`du -h "${filePath}"`)
+  return result.stdout.split('\t')[0]
 }
 
 /**
- * Check if required tools are available.
+ * Check if required tools are available, auto-installing if possible.
  */
 async function checkRequiredTools() {
   printHeader('Pre-flight Checks')
 
-  const tools = [
-    { name: 'git', cmd: 'git', args: ['--version'] },
-    { name: 'curl', cmd: 'curl', args: ['--version'] },
-    { name: 'patch', cmd: 'patch', args: ['--version'] },
-    { name: 'make', cmd: 'make', args: ['--version'] },
+  // Step 1: Ensure package manager is available.
+  const pmResult = await ensurePackageManagerAvailable({
+    autoInstall: AUTO_YES,
+    autoYes: AUTO_YES,
+  })
+
+  const canAutoInstall = pmResult.available
+
+  if (pmResult.installed) {
+    logger.success(`Package manager (${pmResult.manager}) installed successfully`)
+  } else if (pmResult.available) {
+    logger.log(`📦 Package manager detected: ${pmResult.manager}`)
+  } else {
+    logger.warn('No package manager available for auto-installing tools')
+    const pmInstructions = getPackageManagerInstructions()
+    for (const instruction of pmInstructions) {
+      logger.substep(instruction)
+    }
+  }
+
+  // Step 2: Tools that support auto-installation.
+  const autoInstallableTools = ['git', 'curl', 'patch', 'make']
+
+  // Step 3: Tools that must be checked manually (no package manager support).
+  const manualTools = [
     // macOS strip doesn't support --version, just check if it exists.
-    { name: 'strip', cmd: 'strip', args: [], checkExists: true },
+    { name: 'strip', cmd: 'strip', checkExists: true },
   ]
 
   if (IS_MACOS && ARCH === 'arm64') {
     // macOS codesign doesn't support --version, just check if it exists.
-    tools.push({
+    manualTools.push({
       name: 'codesign',
       cmd: 'codesign',
-      args: [],
       checkExists: true,
     })
   }
 
-  let allAvailable = true
+  // Step 4: Attempt auto-installation for missing tools.
+  const result = await ensureAllToolsInstalled(autoInstallableTools, {
+    autoInstall: canAutoInstall,
+    autoYes: AUTO_YES,
+  })
 
-  for (const { args, checkExists, cmd, name } of tools) {
-    try {
-      if (checkExists) {
-        // Just check if command exists (for tools that don't support --version).
-        const result = await execCapture('which', [cmd])
-        if (result.includes(cmd)) {
-          logger.log(`✅ ${name} is available`)
-        } else {
-          throw new Error('Not found')
-        }
-      } else {
-        await execCapture(cmd, args)
-        logger.log(`✅ ${name} is available`)
-      }
-    } catch {
-      logger.error(`❌ ${name} is NOT available`)
-      allAvailable = false
+  // Step 5: Report results.
+  for (const tool of autoInstallableTools) {
+    if (result.installed.includes(tool)) {
+      logger.success(`${tool} installed automatically`)
+    } else if (!result.missing.includes(tool)) {
+      logger.log(`${colors.green('✓')} ${tool} is available`)
     }
   }
 
-  if (!allAvailable) {
-    printError(
-      'Missing Required Tools',
-      'Some required build tools are not available on your system.',
-      [
-        'Install missing tools using your package manager',
-        'On macOS: xcode-select --install',
-        'On macOS (Homebrew): brew install git curl',
-        'On Linux: apt-get install git curl patch make binutils',
-      ],
-    )
-    throw new Error('Missing required build tools')
+  // Step 6: Check manual tools.
+  let allManualAvailable = true
+  for (const { checkExists, cmd, name } of manualTools) {
+    const binPath = whichBinSync(cmd, { nothrow: true })
+    if (binPath) {
+      logger.log(`${colors.green('✓')} ${name} is available`)
+    } else {
+      logger.error(`${colors.red('✗')} ${name} is NOT available`)
+      allManualAvailable = false
+    }
+  }
+
+  // Step 7: Handle missing tools.
+  if (!result.allAvailable || !allManualAvailable) {
+    const missingTools = [...result.missing, ...manualTools.filter(t => !whichBinSync(t.cmd, { nothrow: true })).map(t => t.name)]
+
+    if (missingTools.length > 0) {
+      const instructions = []
+      instructions.push('Missing required build tools:')
+      instructions.push('')
+
+      for (const tool of missingTools) {
+        const toolInstructions = getInstallInstructions(tool)
+        instructions.push(...toolInstructions)
+        instructions.push('')
+      }
+
+      if (IS_MACOS) {
+        instructions.push('For Xcode Command Line Tools:')
+        instructions.push('  xcode-select --install')
+      }
+
+      printError('Missing Required Tools', 'Some required build tools are not available.', instructions)
+      throw new Error('Missing required build tools')
+    }
   }
 
   logger.log('')
@@ -576,7 +731,7 @@ async function _compressNodeJsWithBrotli() {
   }
 
   logger.log('Minifying and compressing JavaScript files...')
-  logger.log()
+  logger.log('')
 
   const libDir = join(NODE_DIR, 'lib')
 
@@ -642,7 +797,7 @@ async function _compressNodeJsWithBrotli() {
         // Log individual file processing results.
         const relativePath = relative(libDir, jsFile)
         logger.log(
-          `   ✓ ${relativePath.padEnd(50)} ` +
+          `   ${colors.green('✓')} ${relativePath.padEnd(50)} ` +
             `${(originalSize / 1024).toFixed(1)}KB → ` +
             `${(minifiedSize / 1024).toFixed(1)}KB → ` +
             `${(compressedSize / 1024).toFixed(1)}KB ` +
@@ -651,12 +806,12 @@ async function _compressNodeJsWithBrotli() {
       }
     } catch (e) {
       // Skip files that can't be minified/compressed (permissions, syntax errors, etc.).
-      logger.warn(`   ⚠️  Skipped ${relative(NODE_DIR, jsFile)}: ${e.message}`)
+      logger.warn(`   ${colors.yellow('⚠')} Skipped ${relative(NODE_DIR, jsFile)}: ${e.message}`)
     }
   }
 
-  logger.log()
-  logger.log(`✅ Processed ${filesCompressed} files`)
+  logger.log('')
+  logger.log(`${colors.green('✓')} Processed ${filesCompressed} files`)
   logger.log(
     `   Original:     ${(totalOriginalSize / 1024 / 1024).toFixed(2)} MB`,
   )
@@ -669,7 +824,7 @@ async function _compressNodeJsWithBrotli() {
   logger.log(
     `   Final savings: ${((totalOriginalSize - totalCompressedSize) / 1024 / 1024).toFixed(2)} MB`,
   )
-  logger.log()
+  logger.log('')
 
   // Create decompression bootstrap hook.
   await createBrotliBootstrapHook()
@@ -784,12 +939,12 @@ async function createBrotliBootstrapHook() {
         "\nrequire('internal/bootstrap/brotli-loader');\n" +
         content.slice(endOfLine + 1)
       await writeFile(mainBootstrap, content, 'utf8')
-      logger.log('   ✓ Injected Brotli loader into bootstrap')
+      logger.log(`   ${colors.green('✓')} Injected Brotli loader into bootstrap`)
     }
   }
 
-  logger.log('✅ Brotli bootstrap hook created')
-  logger.log()
+  logger.log(`${colors.green('✓')} Brotli bootstrap hook created`)
+  logger.log('')
 }
 
 /**
@@ -822,6 +977,44 @@ async function main() {
   // Ensure build directory exists.
   await mkdir(BUILD_DIR, { recursive: true })
 
+  // Check if we can use cached build (skip if --clean).
+  if (!CLEAN_BUILD) {
+    const distributionOutputBinary = join(BUILD_DIR, 'out', 'Distribution', IS_WINDOWS ? 'node.exe' : 'node')
+    const distBinary = join(ROOT_DIR, 'dist', 'socket-smol')
+
+    // Collect all source files that affect the build.
+    const sourcePaths = collectBuildSourceFiles()
+
+    // Check if build is needed based on source file hashes.
+    // Store hash in centralized build/.cache/ directory.
+    const cacheDir = join(BUILD_DIR, '.cache')
+    const hashFilePath = join(cacheDir, 'node.hash')
+    const needsExtraction = await shouldExtract({
+      sourcePaths,
+      outputPath: hashFilePath,
+      validateOutput: () => {
+        // Verify both distribution binary, hash file, and dist binary exist.
+        return existsSync(distributionOutputBinary) &&
+               existsSync(hashFilePath) &&
+               existsSync(distBinary)
+      },
+    })
+
+    if (!needsExtraction) {
+      // Cache hit! Binary is up to date.
+      logger.log('')
+      printHeader('✅ Using Cached Build')
+      logger.log('All source files unchanged since last build.')
+      logger.log('')
+      logger.substep(`Distribution binary: ${distributionOutputBinary}`)
+      logger.substep(`E2E binary: ${distBinary}`)
+      logger.log('')
+      logger.success('Cached build is ready to use')
+      logger.log('')
+      return
+    }
+  }
+
   // Phase 3: Verify Git tag exists before cloning.
   printHeader('Verifying Node.js Version')
   logger.log(`Checking if ${NODE_VERSION} exists in Node.js repository...`)
@@ -838,8 +1031,8 @@ async function main() {
     )
     throw new Error('Invalid Node.js version')
   }
-  logger.log(`✅ ${NODE_VERSION} exists in Node.js repository`)
-  logger.log()
+  logger.log(`${colors.green('✓')} ${NODE_VERSION} exists in Node.js repository`)
+  logger.log('')
 
   // Clone or reset Node.js repository.
   if (!existsSync(NODE_DIR) || CLEAN_BUILD) {
@@ -849,17 +1042,17 @@ async function main() {
       const { rm } = await import('node:fs/promises')
       await rm(NODE_DIR, { recursive: true, force: true })
       await cleanCheckpoint(BUILD_DIR)
-      logger.log('✅ Cleaned build directory')
-      logger.log()
+      logger.log(`${colors.green('✓')} Cleaned build directory`)
+      logger.log('')
     }
 
     printHeader('Cloning Node.js Source')
     logger.log(`Version: ${NODE_VERSION}`)
     logger.log('Repository: https://github.com/nodejs/node.git')
-    logger.log()
-    logger.log('⏱️  This will download ~200-300 MB (shallow clone)...')
+    logger.log('')
+    logger.log(`${colors.blue('ℹ')} This will download ~200-300 MB (shallow clone)...`)
     logger.log('Retry: Up to 3 attempts if clone fails')
-    logger.log()
+    logger.log('')
 
     // Git clone with retry (network can fail during long downloads).
     let cloneSuccess = false
@@ -867,7 +1060,7 @@ async function main() {
       try {
         if (attempt > 1) {
           logger.log(`Retry attempt ${attempt}/3...`)
-          logger.log()
+          logger.log('')
         }
 
         await exec(
@@ -876,6 +1069,7 @@ async function main() {
             'clone',
             '--depth',
             '1',
+            '--single-branch',
             '--branch',
             NODE_VERSION,
             'https://github.com/nodejs/node.git',
@@ -901,7 +1095,7 @@ async function main() {
           throw new Error('Git clone failed after retries')
         }
 
-        logger.warn(`⚠️  Clone attempt ${attempt} failed: ${e.message}`)
+        logger.warn(`${colors.yellow('⚠')} Clone attempt ${attempt} failed: ${e.message}`)
 
         // Clean up partial clone.
         try {
@@ -913,16 +1107,16 @@ async function main() {
 
         // Wait before retry.
         const waitTime = 2000 * attempt
-        logger.log(`⏱️  Waiting ${waitTime}ms before retry...`)
-        logger.log()
+        logger.log(`${colors.blue('ℹ')} Waiting ${waitTime}ms before retry...`)
+        logger.log('')
         await new Promise(resolve => setTimeout(resolve, waitTime))
       }
     }
 
     if (cloneSuccess) {
-      logger.log('✅ Node.js source cloned successfully')
+      logger.log(`${colors.green('✓')} Node.js source cloned successfully`)
       await createCheckpoint(BUILD_DIR, 'cloned')
-      logger.log()
+      logger.log('')
     }
   } else {
     printHeader('Using Existing Node.js Source')
@@ -932,7 +1126,7 @@ async function main() {
     if (isDirty && !AUTO_YES) {
       printWarning(
         'Node.js Source Has Uncommitted Changes',
-        'The .node-source directory has uncommitted changes from a previous build or crash.',
+        'The build/node-source directory has uncommitted changes from a previous build or crash.',
         [
           'These changes will be discarded to ensure a clean build',
           'Press Ctrl+C now if you want to inspect the changes first',
@@ -942,12 +1136,12 @@ async function main() {
 
       // Wait 5 seconds before proceeding.
       await new Promise(resolve => setTimeout(resolve, 5000))
-      logger.log()
+      logger.log('')
     } else if (isDirty && AUTO_YES) {
       logger.log(
         '⚠️  Node.js source has uncommitted changes (auto-resetting with --yes)',
       )
-      logger.log()
+      logger.log('')
     }
 
     await resetNodeSource()
@@ -967,7 +1161,7 @@ async function main() {
     printHeader('Validating Socket Patches')
     logger.log(`Found ${socketPatches.length} patch(es) for ${NODE_VERSION}`)
     logger.log('Checking integrity, compatibility, and conflicts...')
-    logger.log()
+    logger.log('')
 
     const patchData = []
     let allValid = true
@@ -976,35 +1170,29 @@ async function main() {
       const patchPath = join(PATCHES_DIR, patchFile)
       logger.log(`Validating ${patchFile}...`)
 
-      const validation = await validatePatch(patchPath, NODE_VERSION)
-      if (!validation.valid) {
-        logger.error(`  ❌ INVALID: ${validation.reason}`)
+      const isValid = await validatePatch(patchPath, NODE_DIR)
+      if (!isValid) {
+        logger.error(`  ${colors.red('✗')} INVALID: Patch validation failed`)
         allValid = false
         continue
       }
 
       const content = await readFile(patchPath, 'utf8')
-      const metadata = validation.metadata
       const analysis = analyzePatchContent(content)
 
       patchData.push({
         name: patchFile,
         path: patchPath,
-        metadata,
         analysis,
       })
-
-      if (metadata?.description) {
-        logger.log(`  📝 ${metadata.description}`)
-      }
       if (analysis.modifiesV8Includes) {
-        logger.log('  ⚠️  Modifies V8 includes')
+        logger.log(`  ${colors.green('✓')} Modifies V8 includes`)
       }
       if (analysis.modifiesSEA) {
-        logger.log('  ✓ Modifies SEA detection')
+        logger.log(`  ${colors.green('✓')} Modifies SEA detection`)
       }
-      logger.log('  ✅ Valid')
-      logger.log()
+      logger.log(`  ${colors.green('✓')} Valid`)
+      logger.log('')
     }
 
     if (!allValid) {
@@ -1025,14 +1213,14 @@ async function main() {
     // Check for conflicts between patches.
     const conflicts = checkPatchConflicts(patchData, NODE_VERSION)
     if (conflicts.length > 0) {
-      logger.warn('⚠️  Patch Conflicts Detected:')
+      logger.warn(`${colors.yellow('⚠')} Patch Conflicts Detected:`)
       logger.warn()
       for (const conflict of conflicts) {
         if (conflict.severity === 'error') {
-          logger.error(`  ❌ ERROR: ${conflict.message}`)
+          logger.error(`  ${colors.red('✗')} ERROR: ${conflict.message}`)
           allValid = false
         } else {
-          logger.warn(`  ⚠️  WARNING: ${conflict.message}`)
+          logger.warn(`  ${colors.yellow('⚠')} WARNING: ${conflict.message}`)
         }
       }
       logger.warn()
@@ -1056,48 +1244,12 @@ async function main() {
         )
       }
     } else {
-      logger.log('✅ All Socket patches validated successfully')
-      logger.log('✅ No conflicts detected')
-      logger.log()
+      logger.log(`${colors.green('✓')} All Socket patches validated successfully`)
+      logger.log(`${colors.green('✓')} No conflicts detected`)
+      logger.log('')
     }
 
-    // Test Socket patches (dry-run) before applying.
-    if (allValid) {
-      printHeader('Testing Socket Patch Application')
-      logger.log('Running dry-run to ensure patches will apply cleanly...')
-      logger.log()
-
-      for (const { name, path: patchPath } of patchData) {
-        logger.log(`Testing ${name}...`)
-        const dryRun = await testPatchApplication(patchPath, NODE_DIR, 1)
-        if (!dryRun.canApply) {
-          logger.error(`  ❌ Cannot apply: ${dryRun.reason}`)
-          if (dryRun.stderr) {
-            logger.error(`  Error: ${dryRun.stderr}`)
-          }
-          allValid = false
-        } else {
-          logger.log('  ✅ Will apply cleanly')
-        }
-      }
-      logger.log()
-
-      if (!allValid) {
-        throw new Error(
-          'Socket patches failed dry-run test.\n\n' +
-            `One or more Socket patches cannot be applied to Node.js ${NODE_VERSION}.\n\n` +
-            'This usually means:\n' +
-            '  - Patches are outdated for this Node.js version\n' +
-            '  - Node.js source has been modified unexpectedly\n' +
-            '  - Patch files are corrupted\n\n' +
-            'To fix:\n' +
-            '  1. Verify Node.js source is clean (no manual modifications)\n' +
-            `  2. Regenerate patches for ${NODE_VERSION}:\n` +
-            `     node scripts/regenerate-node-patches.mjs --version=${NODE_VERSION}\n` +
-            '  3. See build/patches/README.md for patch creation guide',
-        )
-      }
-    }
+    // Patches validated successfully, ready to apply.
 
     // Apply patches if validation and dry-run passed.
     if (allValid) {
@@ -1113,7 +1265,7 @@ async function main() {
             ['-c', `patch -p1 --batch --forward < "${patchPath}"`],
             { cwd: NODE_DIR },
           )
-          logger.log(`✅ ${name} applied`)
+          logger.log(`${colors.green('✓')} ${name} applied`)
         } catch (e) {
           throw new Error(
             'Socket patch application failed.\n\n' +
@@ -1133,8 +1285,8 @@ async function main() {
           )
         }
       }
-      logger.log('✅ All Socket patches applied successfully')
-      logger.log()
+      logger.log(`${colors.green('✓')} All Socket patches applied successfully`)
+      logger.log('')
     }
   } else {
     throw new Error(
@@ -1158,31 +1310,32 @@ async function main() {
   printHeader('Configuring Node.js Build')
   logger.log('Optimization flags:')
   logger.log(
-    '  ✅ KEEP: V8 Lite Mode (baseline compiler), WASM (Liftoff), SSL/crypto',
+    `  ${colors.green('✓')} KEEP: V8 Lite Mode (baseline compiler), WASM (Liftoff), SSL/crypto`,
   )
   logger.log(
-    '  ❌ REMOVE: npm, corepack, inspector, amaro, sqlite, SEA, ICU, TurboFan JIT',
+    `  ${colors.red('✗')} REMOVE: npm, corepack, inspector, amaro, sqlite, SEA, ICU, TurboFan JIT`,
   )
-  logger.log('  🌍 ICU: none (no internationalization, saves ~6-8 MB)')
+  logger.log(`  ${colors.blue('ℹ')} ICU: none (no internationalization, saves ~6-8 MB)`)
   logger.log(
-    '  ⚡ V8 Lite Mode: Disables TurboFan optimizer (saves ~15-20 MB)',
+    `  ${colors.blue('ℹ')} V8 Lite Mode: Disables TurboFan optimizer (saves ~15-20 MB)`,
   )
   logger.log(
-    '  💾 OPTIMIZATIONS: no-snapshot, no-code-cache, no-object-print, no-SEA, V8 Lite',
+    `  ${colors.blue('ℹ')} OPTIMIZATIONS: no-snapshot, no-code-cache, no-object-print, no-SEA, V8 Lite`,
   )
-  logger.log()
+  logger.log('')
   logger.log(
-    '  ⚠️  V8 LITE MODE: JavaScript runs 5-10x slower (CPU-bound code)',
+    `  ${colors.yellow('⚠')} V8 LITE MODE: JavaScript runs 5-10x slower (CPU-bound code)`,
   )
-  logger.log('  ✅ WASM: Full speed (uses Liftoff compiler, unaffected)')
-  logger.log('  ✅ I/O: No impact (network, file operations)')
-  logger.log()
+  logger.log(`  ${colors.green('✓')} WASM: Full speed (uses Liftoff compiler, unaffected)`)
+  logger.log(`  ${colors.green('✓')} I/O: No impact (network, file operations)`)
+  logger.log('')
   logger.log(
     'Expected binary size: ~60MB (before stripping), ~23-27MB (after)',
   )
-  logger.log()
+  logger.log('')
 
   const configureFlags = [
+    '--ninja', // Use Ninja build system (faster parallel builds than make)
     '--with-intl=none', // -6-8 MB: No ICU/Intl support (use polyfill instead)
     // Note: --without-intl is deprecated, use --with-intl=none instead
     '--with-icu-source=none', // Don't download ICU source (not needed with --with-intl=none)
@@ -1207,9 +1360,11 @@ async function main() {
     configureFlags.unshift('--dest-cpu=x64')
   }
 
+  logger.log('::group::Running ./configure')
   await exec('./configure', configureFlags, { cwd: NODE_DIR })
-  logger.log('✅ Configuration complete')
-  logger.log()
+  logger.log('::endgroup::')
+  logger.log(`${colors.green('✓')} Configuration complete`)
+  logger.log('')
 
   // Build Node.js.
   printHeader('Building Node.js')
@@ -1219,22 +1374,27 @@ async function main() {
     `⏱️  Estimated time: ${timeEstimate.estimatedMinutes} minutes (${timeEstimate.minMinutes}-${timeEstimate.maxMinutes} min range)`,
   )
   logger.log(`🚀 Using ${CPU_COUNT} CPU cores for parallel compilation`)
-  logger.log()
+  logger.log('')
   logger.log('You can:')
   logger.log('  • Grab coffee ☕')
   logger.log('  • Work on other tasks')
   logger.log('  • Watch progress in this terminal')
-  logger.log()
+  logger.log('')
   logger.log(`Build log: ${getBuildLogPath(BUILD_DIR)}`)
-  logger.log()
+  logger.log('')
   logger.log('Starting build...')
-  logger.log()
+  logger.log('')
 
   const buildStart = Date.now()
 
+  // Use GitHub Actions grouping to collapse compiler output.
+  logger.log('::group::Compiling Node.js with Ninja (this will take a while...)')
+
   try {
-    await exec('make', [`-j${CPU_COUNT}`], { cwd: NODE_DIR })
+    await exec('ninja', ['-C', 'out/Release', `-j${CPU_COUNT}`], { cwd: NODE_DIR })
+    logger.log('::endgroup::')
   } catch (e) {
+    logger.log('::endgroup::')
     // Build failed - show last 50 lines of build log.
     const lastLines = await getLastLogLines(BUILD_DIR, 50)
     if (lastLines) {
@@ -1263,33 +1423,28 @@ async function main() {
   const buildDuration = Date.now() - buildStart
   const buildTime = formatDuration(buildDuration)
 
-  logger.log()
-  logger.log(`✅ Build completed in ${buildTime}`)
+  logger.log('')
+  logger.log(`${colors.green('✓')} Build completed in ${buildTime}`)
   await createCheckpoint(BUILD_DIR, 'built')
-  logger.log()
+  logger.log('')
 
   // Test the binary.
   printHeader('Testing Binary')
   const nodeBinary = join(NODE_DIR, 'out', 'Release', 'node')
 
   logger.log('Running basic functionality tests...')
-  logger.log()
+  logger.log('')
 
-  await exec(nodeBinary, ['--version'], {
-    env: { ...process.env, PKG_EXECPATH: 'PKG_INVOKE_NODEJS' },
-  })
+  await exec(nodeBinary, ['--version'])
 
-  await exec(
-    nodeBinary,
-    ['-e', 'logger.log("✅ Binary can execute JavaScript")'],
-    {
-      env: { ...process.env, PKG_EXECPATH: 'PKG_INVOKE_NODEJS' },
-    },
-  )
+  await exec(nodeBinary, [
+    '-e',
+    `console.log("${colors.green('✓')} Binary can execute JavaScript")`,
+  ])
 
-  logger.log()
-  logger.log('✅ Binary is functional')
-  logger.log()
+  logger.log('')
+  logger.log(`${colors.green('✓')} Binary is functional`)
+  logger.log('')
 
   // Copy unmodified binary to build/out/Release.
   printHeader('Copying to Build Output (Release)')
@@ -1312,7 +1467,7 @@ async function main() {
   const sizeBeforeStrip = await getFileSize(nodeBinary)
   logger.log(`Size before stripping: ${sizeBeforeStrip}`)
   logger.log('Removing debug symbols and unnecessary sections...')
-  logger.log()
+  logger.log('')
   await exec('strip', ['--strip-all', nodeBinary])
   const sizeAfterStrip = await getFileSize(nodeBinary)
   logger.log(`Size after stripping: ${sizeAfterStrip}`)
@@ -1324,7 +1479,7 @@ async function main() {
     const unit = sizeMatch[2]
 
     if (unit === 'M' && size >= 20 && size <= 30) {
-      logger.log('✅ Binary size is optimal (20-30MB with V8 Lite Mode)')
+      logger.log(`${colors.green('✓')} Binary size is optimal (20-30MB with V8 Lite Mode)`)
     } else if (unit === 'M' && size < 20) {
       printWarning(
         'Binary Smaller Than Expected',
@@ -1347,14 +1502,11 @@ async function main() {
     }
   }
 
-  logger.log()
+  logger.log('')
 
   // Smoke test binary after stripping (ensure strip didn't corrupt it).
   logger.log('Testing binary after stripping...')
-  const smokeTest = await smokeTestBinary(nodeBinary, {
-    ...process.env,
-    PKG_EXECPATH: 'PKG_INVOKE_NODEJS',
-  })
+  const smokeTest = await smokeTestBinary(nodeBinary, process.env)
 
   if (!smokeTest.passed) {
     printError(
@@ -1369,8 +1521,8 @@ async function main() {
     throw new Error('Binary corrupted after stripping')
   }
 
-  logger.log('✅ Binary functional after stripping')
-  logger.log()
+  logger.log(`${colors.green('✓')} Binary functional after stripping`)
+  logger.log('')
 
   // Copy stripped binary to build/out/Stripped.
   printHeader('Copying to Build Output (Stripped)')
@@ -1395,46 +1547,220 @@ async function main() {
     logger.logNewline()
     await exec('codesign', ['--sign', '-', '--force', nodeBinary])
 
-    const sigInfo = await execCapture('codesign', ['-dv', nodeBinary], {
+    const sigInfo = await execCapture(`codesign -dv "${nodeBinary}"`, {
       env: { ...process.env, STDERR: '>&1' },
     })
-    logger.log(sigInfo)
+    logger.log(sigInfo.stdout || sigInfo.stderr)
     logger.logNewline()
     logger.success('Binary signed successfully')
     logger.logNewline()
   }
 
-  // Copy signed binary to build/out/Signed.
-  printHeader('Copying to Build Output (Signed)')
-  logger.log('Copying signed binary to build/out/Signed directory...')
-  logger.logNewline()
+  // Copy signed binary to build/out/Signed (macOS only).
+  let outputSignedBinary = null
+  if (IS_MACOS && ARCH === 'arm64') {
+    printHeader('Copying to Build Output (Signed)')
+    logger.log('Copying signed binary to build/out/Signed directory...')
+    logger.logNewline()
 
-  const outputSignedDir = join(BUILD_DIR, 'out', 'Signed')
-  await mkdir(outputSignedDir, { recursive: true })
-  const outputSignedBinary = join(outputSignedDir, 'node')
-  await exec('cp', [nodeBinary, outputSignedBinary])
+    const outputSignedDir = join(BUILD_DIR, 'out', 'Signed')
+    await mkdir(outputSignedDir, { recursive: true })
+    outputSignedBinary = join(outputSignedDir, 'node')
+    await exec('cp', [nodeBinary, outputSignedBinary])
 
-  logger.substep(`Signed directory: ${outputSignedDir}`)
-  logger.substep('Binary: node (stripped + signed)')
-  logger.logNewline()
-  logger.success('Signed binary copied to build/out/Signed')
-  logger.logNewline()
+    logger.substep(`Signed directory: ${outputSignedDir}`)
+    logger.substep('Binary: node (stripped + signed)')
+    logger.logNewline()
+    logger.success('Signed binary copied to build/out/Signed')
+    logger.logNewline()
+  }
 
   // Copy final binary to build/out/Final.
-  printHeader('Copying to Build Output (Final)')
-  logger.log('Copying final binary to build/out/Final directory...')
+  // This creates an initial uncompressed version, which will be replaced with
+  // compressed version + decompressor if compression is enabled (default).
+  printHeader('Copying to Build Output (Final - Initial)')
+  logger.log('Creating initial distribution binary...')
   logger.logNewline()
 
   const outputFinalDir = join(BUILD_DIR, 'out', 'Final')
   await mkdir(outputFinalDir, { recursive: true })
   const outputFinalBinary = join(outputFinalDir, 'node')
-  await exec('cp', [nodeBinary, outputFinalBinary])
 
-  logger.substep(`Final directory: ${outputFinalDir}`)
-  logger.substep('Binary: node (final output)')
+  // Select source based on platform.
+  const finalSource = outputSignedBinary || outputStrippedBinary
+  await exec('cp', [finalSource, outputFinalBinary])
+
+  if (outputSignedBinary) {
+    logger.substep('Source: build/out/Signed/node (signed)')
+  } else {
+    logger.substep('Source: build/out/Stripped/node (stripped, no signing needed)')
+  }
+
+  logger.substep(`Destination: ${outputFinalDir}`)
+  logger.substep('Note: Will be replaced with compressed version if compression enabled')
   logger.logNewline()
-  logger.success('Final binary copied to build/out/Final')
+  logger.success('Initial binary copied to build/out/Final')
   logger.logNewline()
+
+  // Compress binary for smaller distribution size (DEFAULT for smol builds).
+  // Uses native platform APIs (Apple Compression, liblzma, Windows Compression API) instead of UPX.
+  // Benefits: 75-79% compression (vs UPX's 50-60%), works with code signing, zero AV false positives.
+  // Opt-out: Set COMPRESS_BINARY=0 or COMPRESS_BINARY=false to disable compression.
+  let compressedBinary = null
+  const shouldCompress = process.env.COMPRESS_BINARY !== '0' && process.env.COMPRESS_BINARY !== 'false'
+
+  if (shouldCompress) {
+    printHeader('Compressing Binary for Distribution')
+    logger.log('Compressing binary using platform-specific compression...')
+    logger.logNewline()
+
+    const compressedDir = join(BUILD_DIR, 'out', 'Compressed')
+    await mkdir(compressedDir, { recursive: true })
+    compressedBinary = join(compressedDir, 'node')
+
+    // Select compression quality based on platform.
+    // macOS: LZFSE (faster) or LZMA (better compression).
+    // Linux: LZMA (best for ELF).
+    // Windows: LZMS (best for PE).
+    const compressionQuality = IS_MACOS ? 'lzfse' : 'lzma'
+
+    logger.substep(`Input: ${outputFinalBinary}`)
+    logger.substep(`Output: ${compressedBinary}`)
+    logger.substep(`Algorithm: ${compressionQuality.toUpperCase()}`)
+    logger.logNewline()
+
+    const sizeBeforeCompress = await getFileSize(outputFinalBinary)
+    logger.log(`Size before compression: ${sizeBeforeCompress}`)
+    logger.log('Running compression tool...')
+    logger.logNewline()
+
+    // Run platform-specific compression.
+    await exec(
+      process.execPath,
+      [
+        join(ROOT_DIR, 'scripts', 'compress-binary.mjs'),
+        outputFinalBinary,
+        compressedBinary,
+        `--quality=${compressionQuality}`,
+      ],
+      { cwd: ROOT_DIR },
+    )
+
+    const sizeAfterCompress = await getFileSize(compressedBinary)
+    logger.log(`Size after compression: ${sizeAfterCompress}`)
+    logger.logNewline()
+
+    // Re-sign compressed binary (macOS ARM64).
+    // The compressed binary can be signed to prevent tampering.
+    // The decompressor will extract the original signed Node.js binary.
+    if (IS_MACOS && ARCH === 'arm64') {
+      logger.log('Re-signing compressed binary...')
+      await exec('codesign', ['--sign', '-', '--force', compressedBinary])
+
+      const sigInfo = await execCapture(`codesign -dv "${compressedBinary}"`, {
+        env: { ...process.env, STDERR: '>&1' },
+      })
+      logger.log(sigInfo.stdout || sigInfo.stderr)
+      logger.logNewline()
+      logger.substep('✓ Compressed binary signed')
+      logger.logNewline()
+    }
+
+    logger.substep(`Compressed directory: ${compressedDir}`)
+    logger.substep('Binary: node (compressed)')
+    logger.logNewline()
+    logger.success('Binary compressed successfully')
+    logger.logNewline()
+
+    // Copy decompression tool to Compressed directory for distribution.
+    printHeader('Bundling Decompression Tool')
+    logger.log('Copying platform-specific decompression tool for distribution...')
+    logger.logNewline()
+
+    const toolsDir = join(ROOT_DIR, 'additions', 'tools')
+    const decompressTool = IS_MACOS
+      ? 'socket_macho_decompress'
+      : WIN32
+        ? 'socket_pe_decompress.exe'
+        : 'socket_elf_decompress'
+
+    const decompressToolSource = join(toolsDir, decompressTool)
+    const decompressToolDest = join(compressedDir, decompressTool)
+
+    if (existsSync(decompressToolSource)) {
+      await exec('cp', [decompressToolSource, decompressToolDest])
+
+      // Ensure tool is executable.
+      await exec('chmod', ['+x', decompressToolDest])
+
+      const toolSize = await getFileSize(decompressToolDest)
+      logger.substep(`Tool: ${decompressTool} (${toolSize})`)
+      logger.substep(`Location: ${compressedDir}`)
+      logger.logNewline()
+      logger.success('Decompression tool bundled for distribution')
+      logger.logNewline()
+    } else {
+      printWarning(
+        'Decompression Tool Not Found',
+        `Could not find ${decompressTool} in ${toolsDir}`,
+        [
+          'Build the compression tools first:',
+          `  cd ${toolsDir}`,
+          `  make all`,
+          'Then run this build again with COMPRESS_BINARY=1',
+        ],
+      )
+    }
+  } else {
+    logger.log('')
+    logger.log(`${colors.blue('ℹ')} Binary compression skipped (optional)`)
+    logger.log('   To enable: COMPRESS_BINARY=1 node scripts/build.mjs')
+    logger.log('')
+  }
+
+  // Replace Final directory with compressed version if compression succeeded.
+  if (compressedBinary && existsSync(compressedBinary)) {
+    printHeader('Updating Final Distribution with Compressed Binary')
+    logger.log('Replacing Final directory with compressed distribution package...')
+    logger.logNewline()
+
+    const finalDir = join(BUILD_DIR, 'out', 'Final')
+    const compressedDir = join(BUILD_DIR, 'out', 'Compressed')
+
+    // Remove old uncompressed binary from Final.
+    const oldFinalBinary = join(finalDir, 'node')
+    if (existsSync(oldFinalBinary)) {
+      await fs.unlink(oldFinalBinary)
+    }
+
+    // Copy compressed binary to Final.
+    const finalCompressedBinary = join(finalDir, 'node')
+    await exec('cp', [compressedBinary, finalCompressedBinary])
+
+    // Copy decompressor tool to Final.
+    const decompressTool = IS_MACOS
+      ? 'socket_macho_decompress'
+      : WIN32 ? 'socket_pe_decompress.exe' : 'socket_elf_decompress'
+    const decompressToolSource = join(compressedDir, decompressTool)
+    const decompressToolDest = join(finalDir, decompressTool)
+
+    if (existsSync(decompressToolSource)) {
+      await exec('cp', [decompressToolSource, decompressToolDest])
+      await exec('chmod', ['+x', decompressToolDest])
+    }
+
+    const compressedSize = await getFileSize(finalCompressedBinary)
+    const decompressToolSize = existsSync(decompressToolDest)
+      ? await getFileSize(decompressToolDest)
+      : 'N/A'
+
+    logger.substep(`Binary: ${compressedSize} (compressed)`)
+    logger.substep(`Decompressor: ${decompressToolSize}`)
+    logger.substep(`Location: ${finalDir}`)
+    logger.logNewline()
+    logger.success('Final distribution updated with compressed package')
+    logger.logNewline()
+  }
 
   // Copy signed binary to build/out/Sea (for SEA builds).
   printHeader('Copying to Build Output (Sea)')
@@ -1460,7 +1786,7 @@ async function main() {
     '.pkg-cache',
     'v3.5',
   )
-  const targetName = `built-${NODE_VERSION}-${platform()}-${ARCH}${IS_MACOS && ARCH === 'arm64' ? '-signed' : ''}`
+  const targetName = `built-${NODE_VERSION}-${TARGET_PLATFORM}-${ARCH}${IS_MACOS && ARCH === 'arm64' ? '-signed' : ''}`
   const targetPath = join(pkgCacheDir, targetName)
 
   printHeader('Installing to pkg Cache')
@@ -1487,18 +1813,15 @@ async function main() {
     throw new Error('Failed to install binary to pkg cache')
   }
 
-  logger.log('✅ Binary installed to pkg cache successfully')
-  logger.log()
+  logger.log(`${colors.green('✓')} Binary installed to pkg cache successfully`)
+  logger.log('')
 
   // Verify the cached binary works.
   printHeader('Verifying Cached Binary')
   logger.log('Testing that pkg can use the installed binary...')
-  logger.log()
+  logger.log('')
 
-  const cacheTest = await smokeTestBinary(targetPath, {
-    ...process.env,
-    PKG_EXECPATH: 'PKG_INVOKE_NODEJS',
-  })
+  const cacheTest = await smokeTestBinary(targetPath, process.env)
 
   if (!cacheTest.passed) {
     printError(
@@ -1514,9 +1837,9 @@ async function main() {
     throw new Error('Cached binary verification failed')
   }
 
-  logger.log('✅ Cached binary passed smoke test')
-  logger.log('✅ pkg can use this binary')
-  logger.log()
+  logger.log(`${colors.green('✓')} Cached binary passed smoke test`)
+  logger.log(`${colors.green('✓')} pkg can use this binary`)
+  logger.log('')
 
   // Copy final binary to build/out/Distribution.
   printHeader('Copying Final Binary to build/out/Distribution')
@@ -1532,6 +1855,33 @@ async function main() {
   logger.substep('Binary: node (final distribution build)')
   logger.logNewline()
   logger.success('Final binary copied to build/out/Distribution')
+  logger.logNewline()
+
+  // Copy to dist/socket-smol for e2e testing.
+  printHeader('Copying to dist/ for E2E Testing')
+  logger.log('Creating dist/socket-smol for e2e test suite...')
+  logger.logNewline()
+
+  const distDir = join(ROOT_DIR, 'dist')
+  await mkdir(distDir, { recursive: true })
+  const distBinary = join(distDir, 'socket-smol')
+  await exec('cp', [outputFinalBinary, distBinary])
+  await exec('chmod', ['+x', distBinary])
+
+  logger.substep(`E2E binary: ${distBinary}`)
+  logger.substep('Test command: pnpm --filter @socketsecurity/cli run e2e:smol')
+  logger.logNewline()
+  logger.success('Binary copied to dist/socket-smol for e2e testing')
+  logger.logNewline()
+
+  // Write source hash to cache file for future builds.
+  const sourcePaths = collectBuildSourceFiles()
+  const sourceHashComment = await generateHashComment(sourcePaths)
+  const cacheDir = join(BUILD_DIR, '.cache')
+  await mkdir(cacheDir, { recursive: true })
+  const hashFilePath = join(cacheDir, 'node.hash')
+  await writeFile(hashFilePath, sourceHashComment, 'utf-8')
+  logger.substep(`Cache hash: ${hashFilePath}`)
   logger.logNewline()
 
   // Report build complete.
@@ -1569,21 +1919,42 @@ async function main() {
   logger.log(`   Final:        ${outputFinalBinary}`)
   logger.log(`   Distribution: ${distributionOutputBinary}`)
   logger.log(`   pkg cache:    ${targetPath}`)
+  if (compressedBinary) {
+    logger.log(`   Compressed:   ${compressedBinary} (with decompression tool)`)
+  }
   logger.logNewline()
 
   logger.log('🚀 Next Steps:')
-  logger.log('   1. Build Socket CLI:')
-  logger.log('      pnpm run build')
-  logger.logNewline()
-  logger.log('   2. Create pkg executable:')
-  logger.log('      pnpm exec pkg .')
-  logger.logNewline()
-  logger.log('   3. Test the executable:')
-  logger.log('      ./pkg-binaries/socket-macos-arm64 --version')
-  logger.logNewline()
+  if (compressedBinary) {
+    logger.log('   1. Test compressed binary:')
+    logger.log(`      cd ${join(BUILD_DIR, 'out', 'Compressed')}`)
+    const decompressTool = IS_MACOS
+      ? './socket_macho_decompress'
+      : WIN32
+        ? './socket_pe_decompress.exe'
+        : './socket_elf_decompress'
+    logger.log(`      ${decompressTool} ./node --version`)
+    logger.logNewline()
+    logger.log('   2. Build Socket CLI with compressed Node:')
+    logger.log('      (Use compressed binary for pkg builds)')
+    logger.logNewline()
+  } else {
+    logger.log('   1. Build Socket CLI:')
+    logger.log('      pnpm run build')
+    logger.logNewline()
+    logger.log('   2. Create pkg executable:')
+    logger.log('      pnpm exec pkg .')
+    logger.logNewline()
+    logger.log('   3. Test the executable:')
+    logger.log('      ./pkg-binaries/socket-macos-arm64 --version')
+    logger.logNewline()
+  }
 
   logger.log('💡 Helpful Commands:')
   logger.log('   Verify build: node scripts/verify-node-build.mjs')
+  if (!shouldCompress) {
+    logger.log('   Enable compression: COMPRESS_BINARY=1 node scripts/build.mjs')
+  }
   logger.logNewline()
 
   logger.log('📚 Documentation:')

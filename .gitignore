@@ -16,6 +16,7 @@ Thumbs.db
 /npm-debug.log
 /yarn.lock
 /yarn.log
+/.yarnrc.yml
 *.log
 **/build/*.log
 **/.cache
@@ -62,3 +63,4 @@ packages/*/.yoga-source
 packages/*/.yoga-tests
 packages/*/.onnx-source
 packages/*/.minilm-source
+/.node-source

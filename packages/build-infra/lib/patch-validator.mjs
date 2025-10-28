@@ -7,8 +7,11 @@
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 
-import { exec, execCapture } from './build-exec.mjs'
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
+import { spawn } from '@socketsecurity/lib/spawn'
+
 import { printError, printStep, printSubstep } from './build-output.mjs'
+
 
 /**
  * Validate a patch file can be applied cleanly.
@@ -21,12 +24,16 @@ export async function validatePatch(patchFile, targetDir) {
   printSubstep(`Validating ${path.basename(patchFile)}`)
 
   try {
-    const { code } = await execCapture(
-      `patch -p1 --dry-run < ${patchFile}`,
-      { cwd: targetDir }
-    )
+    const result = await spawn('patch', ['-p1', '--dry-run', '-i', patchFile], {
+      cwd: targetDir,
+      env: process.env,
+      shell: WIN32,
+      stdio: 'pipe',
+      stdioString: true,
+    })
 
-    if (code !== 0) {
+    const exitCode = result.code ?? 0
+    if (exitCode !== 0) {
       printError(`Patch validation failed: ${patchFile}`)
       return false
     }
@@ -48,10 +55,17 @@ export async function validatePatch(patchFile, targetDir) {
 export async function applyPatch(patchFile, targetDir) {
   printSubstep(`Applying ${path.basename(patchFile)}`)
 
-  await exec(`patch -p1 < ${patchFile}`, {
+  const result = await spawn('patch', ['-p1', '-i', patchFile], {
     cwd: targetDir,
+    env: process.env,
+    shell: WIN32,
     stdio: 'inherit',
   })
+
+  const exitCode = result.code ?? 0
+  if (exitCode !== 0) {
+    throw new Error(`Failed to apply patch: ${patchFile}`)
+  }
 }
 
 /**
@@ -108,13 +122,20 @@ export async function applyPatchDirectory(
  */
 export async function testPatchApplication(patchFile, targetDir) {
   try {
-    const { code } = await execCapture(
-      `patch -p1 --dry-run --reverse < ${patchFile}`,
-      { cwd: targetDir }
+    const result = await spawn(
+      'patch',
+      ['-p1', '--dry-run', '--reverse', '-i', patchFile],
+      {
+        cwd: targetDir,
+        env: process.env,
+        shell: WIN32,
+        stdio: 'pipe',
+        stdioString: true,
+      },
     )
 
     // If reverse patch succeeds, the patch has been applied.
-    return code === 0
+    return (result.code ?? 0) === 0
   } catch {
     return false
   }
@@ -136,10 +157,18 @@ export async function createPatchFromGit(
 ) {
   printStep('Creating patch from git diff')
 
-  const diffCommand = staged ? 'git diff --cached' : 'git diff'
+  const args = ['diff']
+  if (staged) {
+    args.push('--cached')
+  }
 
-  const { stdout } = await execCapture(diffCommand, { cwd: repoDir })
+  const result = await spawn('git', args, {
+    cwd: repoDir,
+    stdio: 'pipe',
+    stdioString: true,
+  })
 
+  const stdout = result.stdout ?? ''
   if (!stdout.trim()) {
     throw new Error('No changes to create patch from')
   }
@@ -159,8 +188,42 @@ export async function createPatchFromGit(
 export async function revertPatch(patchFile, targetDir) {
   printSubstep(`Reverting ${path.basename(patchFile)}`)
 
-  await exec(`patch -p1 --reverse < ${patchFile}`, {
+  const result = await spawn('patch', ['-p1', '--reverse', '-i', patchFile], {
     cwd: targetDir,
+    env: process.env,
+    shell: WIN32,
     stdio: 'inherit',
   })
+
+  const exitCode = result.code ?? 0
+  if (exitCode !== 0) {
+    throw new Error(`Failed to revert patch: ${patchFile}`)
+  }
+}
+
+/**
+ * Analyze patch file content for specific modifications.
+ *
+ * @param {string} content - Patch file content
+ * @returns {object} Analysis result
+ */
+export function analyzePatchContent(content) {
+  return {
+    modifiesV8Includes: content.includes('v8.h') || content.includes('v8-'),
+    modifiesSEA: content.includes('SEA') || content.includes('sea_'),
+    modifiesBrotli: content.includes('brotli') || content.includes('Brotli'),
+  }
+}
+
+/**
+ * Check for conflicts between patches.
+ *
+ * @param {Array} patchData - Array of patch data objects
+ * @param {string} version - Node.js version
+ * @returns {Array} Array of conflict objects
+ */
+export function checkPatchConflicts(patchData, version) {
+  // Stub implementation - no conflicts detected by default.
+  // In a full implementation, this would analyze patch overlaps.
+  return []
 }

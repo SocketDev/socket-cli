@@ -49,26 +49,20 @@ export class NpmParser implements Parser {
    */
   async parse(
     projectPath: string,
-    options: ParseOptions = {}
+    options: ParseOptions = {},
   ): Promise<ParseResult> {
     // Read package.json for metadata.
     const packageJson = await this.readPackageJson(projectPath)
     const metadata = this.extractMetadata(packageJson)
 
     // Detect and parse lockfile.
-    const lockfileData = await this.detectAndParseLockfile(
-      projectPath,
-      options
-    )
+    const lockfileData = await this.detectAndParseLockfile(projectPath, options)
 
     // Convert to CycloneDX format.
-    const components = this.buildComponents(
-      lockfileData.dependencies,
-      options
-    )
+    const components = this.buildComponents(lockfileData.dependencies, options)
     const dependencies = this.buildDependencyGraph(
       packageJson,
-      lockfileData.dependencies
+      lockfileData.dependencies,
     )
 
     return {
@@ -92,15 +86,17 @@ export class NpmParser implements Parser {
    * Extract project metadata from package.json.
    */
   private extractMetadata(packageJson: PackageJson): ProjectMetadata {
+    const repository = this.normalizeRepository(packageJson.repository)
+    const authors = this.extractAuthors(packageJson)
     return {
       name: packageJson.name || 'unknown',
       version: packageJson.version || '0.0.0',
-      description: packageJson.description,
-      homepage: packageJson.homepage,
-      repository: this.normalizeRepository(packageJson.repository),
-      license: packageJson.license,
-      authors: this.extractAuthors(packageJson),
-      keywords: packageJson.keywords,
+      ...(packageJson.description && { description: packageJson.description }),
+      ...(packageJson.homepage && { homepage: packageJson.homepage }),
+      ...(repository && { repository }),
+      ...(packageJson.license && { license: packageJson.license }),
+      ...(authors && { authors }),
+      ...(packageJson.keywords && { keywords: packageJson.keywords }),
     }
   }
 
@@ -108,7 +104,7 @@ export class NpmParser implements Parser {
    * Normalize repository field to URL string.
    */
   private normalizeRepository(
-    repository: string | { type: string; url: string } | undefined
+    repository: string | { type: string; url: string } | undefined,
   ): string | undefined {
     if (!repository) {
       return undefined
@@ -129,7 +125,7 @@ export class NpmParser implements Parser {
       authors.push(
         typeof packageJson.author === 'string'
           ? packageJson.author
-          : packageJson.author.name || packageJson.author.email || 'unknown'
+          : packageJson.author.name || packageJson.author.email || 'unknown',
       )
     }
 
@@ -138,7 +134,7 @@ export class NpmParser implements Parser {
         authors.push(
           typeof contributor === 'string'
             ? contributor
-            : contributor.name || contributor.email || 'unknown'
+            : contributor.name || contributor.email || 'unknown',
         )
       }
     }
@@ -151,7 +147,7 @@ export class NpmParser implements Parser {
    */
   private async detectAndParseLockfile(
     projectPath: string,
-    options: ParseOptions
+    options: ParseOptions,
   ): Promise<LockfileData> {
     // Try package-lock.json first.
     const packageLockPath = path.join(projectPath, 'package-lock.json')
@@ -198,7 +194,7 @@ export class NpmParser implements Parser {
    */
   private async parsePackageLock(
     lockfilePath: string,
-    options: ParseOptions
+    options: ParseOptions,
   ): Promise<LockfileData> {
     const content = await fs.readFile(lockfilePath, 'utf8')
     const lockfile = JSON.parse(content) as PackageLock
@@ -238,11 +234,7 @@ export class NpmParser implements Parser {
     }
     // package-lock.json v1 uses "dependencies" field.
     else if (lockfile.dependencies) {
-      this.flattenDependencies(
-        lockfile.dependencies,
-        dependencies,
-        options
-      )
+      this.flattenDependencies(lockfile.dependencies, dependencies, options)
     }
 
     return { dependencies }
@@ -272,7 +264,7 @@ export class NpmParser implements Parser {
     deps: Record<string, PackageLockDependency>,
     result: Map<string, DependencyInfo>,
     options: ParseOptions,
-    parentKey?: string
+    parentKey?: string,
   ): void {
     for (const [name, data] of Object.entries(deps)) {
       // Skip dev dependencies if not included.
@@ -299,12 +291,7 @@ export class NpmParser implements Parser {
 
       // Recursively flatten nested dependencies.
       if (data.dependencies) {
-        this.flattenDependencies(
-          data.dependencies,
-          result,
-          options,
-          key
-        )
+        this.flattenDependencies(data.dependencies, result, options, key)
       }
     }
   }
@@ -317,7 +304,7 @@ export class NpmParser implements Parser {
    */
   private async parsePnpmLock(
     lockfilePath: string,
-    options: ParseOptions
+    options: ParseOptions,
   ): Promise<LockfileData> {
     const content = await fs.readFile(lockfilePath, 'utf8')
     const lockfile = parseYaml(content) as PnpmLock
@@ -387,7 +374,7 @@ export class NpmParser implements Parser {
    */
   private async parseYarnLock(
     lockfilePath: string,
-    options: ParseOptions
+    options: ParseOptions,
   ): Promise<LockfileData> {
     const content = await fs.readFile(lockfilePath, 'utf8')
     const lockfile = parseSyml(content) as YarnLock
@@ -440,7 +427,7 @@ export class NpmParser implements Parser {
    */
   private buildComponents(
     dependencies: Map<string, DependencyInfo>,
-    options: ParseOptions
+    options: ParseOptions,
   ): Component[] {
     const components: Component[] = []
 
@@ -500,16 +487,16 @@ export class NpmParser implements Parser {
     // Integrity format: "sha512-base64hash" or "sha384-base64hash".
     const [alg, content] = integrity.split('-')
 
-    const algMap: Record<string, 'SHA-256' | 'SHA-384' | 'SHA-512'> = {
+    const algMap = {
       __proto__: null,
       sha256: 'SHA-256',
       sha384: 'SHA-384',
       sha512: 'SHA-512',
-    } as Record<string, 'SHA-256' | 'SHA-384' | 'SHA-512'>
+    } as const
 
     return {
-      alg: algMap[alg] || 'SHA-512',
-      content,
+      alg: algMap[alg as keyof typeof algMap] ?? 'SHA-512',
+      content: content ?? '',
     }
   }
 
@@ -521,7 +508,7 @@ export class NpmParser implements Parser {
    */
   private buildDependencyGraph(
     packageJson: PackageJson,
-    dependencies: Map<string, DependencyInfo>
+    dependencies: Map<string, DependencyInfo>,
   ): Dependency[] {
     const graph: Dependency[] = []
 
@@ -552,7 +539,9 @@ export class NpmParser implements Parser {
       for (const depName of dep.dependencies) {
         const transitiveDep = this.findDependency(depName, dependencies)
         if (transitiveDep) {
-          dependsOn.push(`pkg:npm/${transitiveDep.name}@${transitiveDep.version}`)
+          dependsOn.push(
+            `pkg:npm/${transitiveDep.name}@${transitiveDep.version}`,
+          )
         }
       }
 
@@ -570,7 +559,7 @@ export class NpmParser implements Parser {
    */
   private findDependency(
     name: string,
-    dependencies: Map<string, DependencyInfo>
+    dependencies: Map<string, DependencyInfo>,
   ): DependencyInfo | undefined {
     for (const [key, dep] of dependencies.entries()) {
       if (dep.name === name) {

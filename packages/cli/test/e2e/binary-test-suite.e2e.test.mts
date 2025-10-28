@@ -4,6 +4,9 @@ import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { logger } from '@socketsecurity/lib/logger'
+import { confirm } from '@socketsecurity/lib/prompts'
+import { spawn } from '@socketsecurity/lib/spawn'
 import { beforeAll, describe, expect, it } from 'vitest'
 
 import ENV from '../../src/constants/env.mts'
@@ -12,6 +15,7 @@ import { executeCliCommand } from '../helpers/cli-execution.mts'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const ROOT_DIR = path.resolve(__dirname, '../..')
+const MONOREPO_ROOT = path.resolve(ROOT_DIR, '../..')
 
 /**
  * Binary types and their paths.
@@ -19,20 +23,61 @@ const ROOT_DIR = path.resolve(__dirname, '../..')
 const BINARIES = {
   __proto__: null,
   js: {
+    buildCommand: null,
     enabled: true,
     name: 'JS Binary (dist/cli.js)',
     path: path.join(ROOT_DIR, 'bin/cli.js'),
   },
   sea: {
+    buildCommand: ['pnpm', '--filter', '@socketbin/node-sea-builder', 'run', 'build'],
     enabled: !!process.env.TEST_SEA_BINARY,
     name: 'SEA Binary (Single Executable Application)',
-    path: path.join(ROOT_DIR, 'dist/socket-sea'),
+    path: path.join(MONOREPO_ROOT, 'packages/node-sea-builder/dist/socket-sea'),
   },
   smol: {
+    buildCommand: ['pnpm', '--filter', '@socketbin/node-smol-builder', 'run', 'build'],
     enabled: !!process.env.TEST_SMOL_BINARY,
     name: 'Smol Node.js Binary',
-    path: path.join(ROOT_DIR, 'dist/socket-smol'),
+    path: path.join(MONOREPO_ROOT, 'packages/node-smol-builder/dist/socket-smol'),
   },
+}
+
+/**
+ * Build a binary if needed.
+ */
+async function buildBinary(binaryType: keyof typeof BINARIES): Promise<boolean> {
+  const binary = BINARIES[binaryType]
+
+  if (!binary.buildCommand) {
+    return false
+  }
+
+  logger.log(`Building ${binary.name}...`)
+  logger.log(`Running: ${binary.buildCommand.join(' ')}`)
+
+  if (binaryType === 'smol') {
+    logger.log('Note: smol build may take 30-60 minutes on first build')
+    logger.log('      (subsequent builds are faster with caching)')
+  }
+  logger.log('')
+
+  try {
+    const result = await spawn(binary.buildCommand[0], binary.buildCommand.slice(1), {
+      cwd: MONOREPO_ROOT,
+      stdio: 'inherit',
+    })
+
+    if (result.code !== 0) {
+      logger.error(`Failed to build ${binary.name}`)
+      return false
+    }
+
+    logger.log(`Successfully built ${binary.name}`)
+    return true
+  } catch (e) {
+    logger.error(`Error building ${binary.name}:`, e)
+    return false
+  }
 }
 
 /**
@@ -54,18 +99,49 @@ function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
       binaryExists = existsSync(binary.path)
 
       if (!binaryExists) {
-        console.log()
-        console.warn(
-          `Binary not found: ${binary.path}. Tests will be skipped.`,
-        )
-        console.log(`To build this binary, run:`)
-        if (binaryType === 'smol') {
-          console.log(`  pnpm run build:smol`)
-        } else if (binaryType === 'sea') {
-          console.log(`  pnpm run build:sea`)
+        logger.log('')
+        logger.warn(`Binary not found: ${binary.path}`)
+
+        // In CI: Skip building (rely on cache).
+        if (process.env.CI) {
+          logger.log('Running in CI - skipping build (binary not in cache)')
+          logger.log('To prime cache, run: gh workflow run publish-socketbin.yml --field dry-run=true')
+          logger.log('')
+          return
         }
-        console.log()
-        return
+
+        // Locally: Prompt user to build.
+        const timeWarning = binaryType === 'smol' ? ' (may take 30-60 min)' : ''
+        const shouldBuild = await confirm({
+          default: true,
+          message: `Build ${binary.name}?${timeWarning}`,
+        })
+
+        if (!shouldBuild) {
+          logger.log('Skipping build. Tests will be skipped.')
+          logger.log(`To build manually, run: ${binary.buildCommand.join(' ')}`)
+          logger.log('')
+          return
+        }
+
+        logger.log('Building binary...')
+        const buildSuccess = await buildBinary(binaryType)
+
+        if (buildSuccess) {
+          binaryExists = existsSync(binary.path)
+        }
+
+        if (!binaryExists) {
+          logger.log('')
+          logger.error(`Failed to build ${binary.name}. Tests will be skipped.`)
+          logger.log('To build this binary manually, run:')
+          logger.log(`  ${binary.buildCommand.join(' ')}`)
+          logger.log('')
+          return
+        }
+
+        logger.log(`Binary built successfully: ${binary.path}`)
+        logger.log('')
       }
 
       // Check authentication.
@@ -73,15 +149,15 @@ function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
         const apiToken = await getDefaultApiToken()
         hasAuth = !!apiToken
         if (!apiToken) {
-          console.log()
-          console.warn('E2E tests require Socket authentication.')
-          console.log('Please run one of the following:')
-          console.log('  1. socket login (to authenticate with Socket)')
-          console.log('  2. Set SOCKET_SECURITY_API_KEY environment variable')
-          console.log('  3. Skip E2E tests by not setting RUN_E2E_TESTS\n')
-          console.log(
-            'E2E tests will be skipped due to missing authentication.\n',
-          )
+          logger.log('')
+          logger.warn('E2E tests require Socket authentication.')
+          logger.log('Please run one of the following:')
+          logger.log('  1. socket login (to authenticate with Socket)')
+          logger.log('  2. Set SOCKET_SECURITY_API_KEY environment variable')
+          logger.log('  3. Skip E2E tests by not setting RUN_E2E_TESTS')
+          logger.log('')
+          logger.log('E2E tests will be skipped due to missing authentication.')
+          logger.log('')
         }
       }
     })
@@ -203,16 +279,12 @@ function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
 
 // Run test suite for each binary type.
 describe('Socket CLI Binary Test Suite', () => {
-  // Always register the JS binary test suite.
+  // Always run JS binary test suite.
   runBinaryTestSuite('js')
 
-  // Only register smol test suite if environment variable is set.
-  if (process.env.TEST_SMOL_BINARY) {
-    runBinaryTestSuite('smol')
-  }
+  // Run smol test suite (will prompt locally, skip in CI if not cached).
+  runBinaryTestSuite('smol')
 
-  // Only register SEA test suite if environment variable is set.
-  if (process.env.TEST_SEA_BINARY) {
-    runBinaryTestSuite('sea')
-  }
+  // Run SEA test suite (will prompt locally, skip in CI if not cached).
+  runBinaryTestSuite('sea')
 })

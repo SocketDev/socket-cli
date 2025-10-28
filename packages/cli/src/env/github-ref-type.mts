@@ -1,5 +1,5 @@
 /** @fileoverview GITHUB_REF_TYPE environment variable. */
 
-import { env } from 'node:process'
+import { getGithubRefType } from '@socketsecurity/lib/env/github'
 
-export const GITHUB_REF_TYPE = env['GITHUB_REF_TYPE']
+export const GITHUB_REF_TYPE = getGithubRefType()

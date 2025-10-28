@@ -15,10 +15,10 @@
 
 import { isQuiet } from '@socketsecurity/lib/argv/flags'
 import { parseArgs } from '@socketsecurity/lib/argv/parse'
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { logger } from '@socketsecurity/lib/logger'
+import { spawn } from '@socketsecurity/lib/spawn'
 import { printHeader } from '@socketsecurity/lib/stdio/header'
-
-import { runCommand } from './utils/run-command.mjs'
 
 async function main() {
   const { values } = parseArgs({
@@ -58,11 +58,12 @@ async function main() {
     }
 
     // Run lint with --fix flag.
-    const exitCode = await runCommand('pnpm', lintArgs, {
+    const result = await spawn('pnpm', lintArgs, {
+      shell: WIN32,
       stdio: quiet ? 'pipe' : 'inherit',
     })
 
-    if (exitCode !== 0) {
+    if (result.code !== 0) {
       if (!quiet) {
         logger.error('Some fixes could not be applied')
       }

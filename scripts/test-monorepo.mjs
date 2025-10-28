@@ -14,7 +14,8 @@ import {
   getAffectedPackages,
   getPackagesWithScript,
 } from './utils/monorepo-helper.mjs'
-import { runCommandQuiet } from './utils/run-command.mjs'
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
+import { spawn } from '@socketsecurity/lib/spawn'
 
 /**
  * Get packages to test and determine affected packages.
@@ -82,7 +83,7 @@ async function runPackageTest(pkg, testArgs = [], quiet = false) {
     { cwd: process.cwd() },
   )
 
-  if (result.exitCode !== 0) {
+  if (result.code !== 0) {
     if (!quiet) {
       logger.clearLine()
       logger.log(`${colors.red('✗')} ${displayName}`)
@@ -93,7 +94,7 @@ async function runPackageTest(pkg, testArgs = [], quiet = false) {
     if (result.stderr) {
       logger.error(result.stderr)
     }
-    return result.exitCode
+    return result.code
   }
 
   if (!quiet) {
@@ -177,7 +178,7 @@ async function main() {
       }
     }
 
-    if (exitCode !== 0) {
+    if (code !== 0) {
       if (!quiet) {
         logger.error('')
         logger.log('Tests failed')

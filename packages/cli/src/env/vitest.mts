@@ -3,8 +3,6 @@
  * Indicates whether code is running under Vitest test runner.
  */
 
-import { env } from 'node:process'
+import { getVitest } from '@socketsecurity/lib/env/test'
 
-import { envAsBoolean } from '@socketsecurity/lib/env'
-
-export const VITEST = envAsBoolean(env['VITEST'])
+export const VITEST = getVitest()

@@ -3,6 +3,6 @@
  * Default organization slug for Socket CLI operations.
  */
 
-import { env } from 'node:process'
+import { getSocketCliOrgSlug } from '@socketsecurity/lib/env/socket-cli'
 
-export const SOCKET_CLI_ORG_SLUG = env['SOCKET_CLI_ORG_SLUG']
+export const SOCKET_CLI_ORG_SLUG = getSocketCliOrgSlug()

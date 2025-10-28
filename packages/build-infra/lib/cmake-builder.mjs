@@ -6,7 +6,9 @@
 
 import { cpus } from 'node:os'
 
-import { exec } from './build-exec.mjs'
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
+import { spawn } from '@socketsecurity/lib/spawn'
+
 import { printStep } from './build-output.mjs'
 
 export class CMakeBuilder {
@@ -25,13 +27,17 @@ export class CMakeBuilder {
     printStep('Configuring CMake')
 
     const cmakeArgs = Object.entries(options)
-      .map(([key, value]) => `-D${key}=${value}`)
-      .join(' ')
+      .map(([key, value]) => [`-D${key}=${value}`])
+      .flat()
 
-    await exec(
-      `cmake -S ${this.sourceDir} -B ${this.buildDir} ${cmakeArgs}`,
-      { stdio: 'inherit' }
+    const result = await spawn(
+      'cmake',
+      ['-S', this.sourceDir, '-B', this.buildDir, ...cmakeArgs],
+      { shell: WIN32, stdio: 'inherit' }
     )
+    if (result.code !== 0) {
+      throw new Error(`cmake configure failed with exit code ${result.code}`)
+    }
   }
 
   /**
@@ -46,10 +52,14 @@ export class CMakeBuilder {
     printStep('Building with CMake')
 
     const jobs = parallel ? cpus().length : 1
-    await exec(
-      `cmake --build ${this.buildDir} --target ${target} -j ${jobs}`,
-      { stdio: 'inherit' }
+    const result = await spawn(
+      'cmake',
+      ['--build', this.buildDir, '--target', target, '-j', String(jobs)],
+      { shell: WIN32, stdio: 'inherit' }
     )
+    if (result.code !== 0) {
+      throw new Error(`cmake build failed with exit code ${result.code}`)
+    }
   }
 
   /**
@@ -59,6 +69,13 @@ export class CMakeBuilder {
    */
   async clean() {
     printStep('Cleaning CMake build')
-    await exec(`cmake --build ${this.buildDir} --target clean`)
+    const result = await spawn(
+      'cmake',
+      ['--build', this.buildDir, '--target', 'clean'],
+      { shell: WIN32, stdio: 'inherit' }
+    )
+    if (result.code !== 0) {
+      throw new Error(`cmake clean failed with exit code ${result.code}`)
+    }
   }
 }

@@ -7,7 +7,9 @@
 import { cpus } from 'node:os'
 import path from 'node:path'
 
-import { exec } from './build-exec.mjs'
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
+import { spawn } from '@socketsecurity/lib/spawn'
+
 import { printStep } from './build-output.mjs'
 
 /**
@@ -64,7 +66,14 @@ export class RustBuilder {
    */
   async installWasmTarget() {
     printStep('Installing wasm32-unknown-unknown target')
-    await exec('rustup target add wasm32-unknown-unknown', { stdio: 'inherit' })
+    const result = await spawn(
+      'rustup',
+      ['target', 'add', 'wasm32-unknown-unknown'],
+      { shell: WIN32, stdio: 'inherit' }
+    )
+    if (result.code !== 0) {
+      throw new Error(`rustup target add failed with exit code ${result.code}`)
+    }
   }
 
   /**
@@ -94,10 +103,14 @@ export class RustBuilder {
       RUSTFLAGS: rustflags,
     }
 
-    await exec(
+    const result = await spawn(
       `cargo build --target wasm32-unknown-unknown ${profileFlag} ${featuresFlag} -j ${jobs}`,
-      { cwd: this.projectDir, env, stdio: 'inherit' }
+      [],
+      { cwd: this.projectDir, env, shell: true, stdio: 'inherit' }
     )
+    if (result.code !== 0) {
+      throw new Error(`cargo build failed with exit code ${result.code}`)
+    }
   }
 
   /**
@@ -124,10 +137,14 @@ export class RustBuilder {
     const tsFlag = typescript ? '--typescript' : '--no-typescript'
     const outputPath = path.join(this.projectDir, outDir)
 
-    await exec(
+    const result = await spawn(
       `wasm-bindgen --target ${target} ${tsFlag} ${debugFlag} --out-dir ${outputPath} ${input}`,
-      { cwd: this.projectDir, stdio: 'inherit' }
+      [],
+      { cwd: this.projectDir, shell: true, stdio: 'inherit' }
     )
+    if (result.code !== 0) {
+      throw new Error(`wasm-bindgen failed with exit code ${result.code}`)
+    }
   }
 
   /**
@@ -145,9 +162,14 @@ export class RustBuilder {
     const inputPath = path.join(this.projectDir, wasmFile)
     const outputPath = output ? path.join(this.projectDir, output) : inputPath
 
-    await exec(`wasm-opt ${flags} "${inputPath}" -o "${outputPath}"`, {
-      stdio: 'inherit',
-    })
+    const result = await spawn(
+      `wasm-opt ${flags} "${inputPath}" -o "${outputPath}"`,
+      [],
+      { shell: true, stdio: 'inherit' }
+    )
+    if (result.code !== 0) {
+      throw new Error(`wasm-opt failed with exit code ${result.code}`)
+    }
   }
 
   /**
@@ -157,8 +179,11 @@ export class RustBuilder {
    */
   async checkRustInstalled() {
     try {
-      await exec('rustc --version', { stdio: 'pipe' })
-      return true
+      const result = await spawn('rustc', ['--version'], {
+        shell: WIN32,
+        stdio: 'pipe',
+      })
+      return result.code === 0
     } catch {
       return false
     }
@@ -171,8 +196,11 @@ export class RustBuilder {
    */
   async checkWasmBindgenInstalled() {
     try {
-      await exec('wasm-bindgen --version', { stdio: 'pipe' })
-      return true
+      const result = await spawn('wasm-bindgen', ['--version'], {
+        shell: WIN32,
+        stdio: 'pipe',
+      })
+      return result.code === 0
     } catch {
       return false
     }
@@ -185,8 +213,11 @@ export class RustBuilder {
    */
   async checkWasmOptInstalled() {
     try {
-      await exec('wasm-opt --version', { stdio: 'pipe' })
-      return true
+      const result = await spawn('wasm-opt', ['--version'], {
+        shell: WIN32,
+        stdio: 'pipe',
+      })
+      return result.code === 0
     } catch {
       return false
     }

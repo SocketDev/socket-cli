@@ -1,185 +1,354 @@
-name: 🧱 Build WASM Bundle
-
-# Manual workflow for building the unified WASM bundle with AI models.
-# This creates a separate release (wasm-build-*) to keep WASM bundles
-# separate from regular Socket CLI releases.
+name: 🧱 Build WASM Assets
 
 on:
-  workflow_dispatch:
+  workflow_call:
     inputs:
-      force-rebuild:
-        description: 'Force rebuild even if build already exists for this commit'
+      force:
+        description: 'Force rebuild (ignore cache)'
         required: false
         type: boolean
         default: false
+  workflow_dispatch:
+    inputs:
+      force:
+        description: 'Force rebuild (ignore cache)'
+        required: false
+        type: boolean
+        default: false
+  # Removed push/pull_request triggers to avoid runner contention.
+  # WASM assets are cached and used by socketbin builds.
+  # Run manually via workflow_dispatch when WASM sources change.
 
 permissions:
-  contents: write # Required for creating releases and uploading assets
+  contents: read
+
+concurrency:
+  group: build-wasm-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  build-wasm:
-    name: Build WASM Bundle
+  build-yoga-layout:
+    name: 🧘 Build Yoga Layout WASM
     runs-on: ubuntu-latest
-    timeout-minutes: 60
-
+    timeout-minutes: 30
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-        with:
-          autocrlf: false
 
       - name: Setup Node.js
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
-          node-version: '22'
+          node-version: 22
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
+        uses: pnpm/action-setup@9fd676a19091d4595eefd76e4bd31c97133911f1 # v4.2.0
+        with:
+          version: ^10.16.0
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Generate yoga build cache key
+        id: yoga-cache-key
+        run: |
+          HASH=$(find packages/yoga-layout -type f \( -name "*.cpp" -o -name "*.h" -o -name "*.mjs" -o -name "CMakeLists.txt" \) | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
+          echo "hash=$HASH" >> $GITHUB_OUTPUT
+
+      - name: Restore yoga output cache
+        id: yoga-cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: packages/yoga-layout/build/wasm
+          key: yoga-wasm-${{ steps.yoga-cache-key.outputs.hash }}
+          restore-keys: yoga-wasm-
+
+      - name: Restore yoga build cache
+        id: yoga-build-cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: packages/yoga-layout/build
+          key: yoga-build-${{ steps.yoga-cache-key.outputs.hash }}
+          restore-keys: |
+            yoga-build-
+
+      - name: Verify cached artifacts
+        id: yoga-cache-valid
+        run: |
+          if [ -f "packages/yoga-layout/build/wasm/yoga.wasm" ] && [ -f "packages/yoga-layout/build/wasm/yoga.js" ]; then
+            echo "valid=true" >> $GITHUB_OUTPUT
+            echo "Cache hit: artifacts found"
+            ls -lh packages/yoga-layout/build/wasm/
+          else
+            echo "valid=false" >> $GITHUB_OUTPUT
+            echo "Cache miss or incomplete: forcing rebuild"
+            ls -lh packages/yoga-layout/build/wasm/ 2>/dev/null || echo "Directory does not exist"
+          fi
+
+      - name: Install Emscripten
+        if: steps.yoga-cache-valid.outputs.valid != 'true' || inputs.force
+        run: |
+          echo "::group::Installing Emscripten"
+          git clone https://github.com/emscripten-core/emsdk.git
+          cd emsdk
+          ./emsdk install latest
+          ./emsdk activate latest
+          echo "::endgroup::"
+
+      - name: Build Yoga Layout WASM
+        if: steps.yoga-cache-valid.outputs.valid != 'true' || inputs.force
+        run: |
+          echo "::group::Building Yoga Layout WASM"
+          source emsdk/emsdk_env.sh
+          pnpm --filter @socketsecurity/yoga-layout run build
+          echo "Build exit code: $?"
+          echo "Checking for build artifacts..."
+          ls -lh packages/yoga-layout/build/wasm/ || echo "wasm directory not found"
+          ls -lh packages/yoga-layout/build/cmake/ || echo "cmake directory not found"
+          echo "::endgroup::"
+
+      - name: Verify build artifacts
+        run: |
+          echo "=== Yoga Layout Build Artifacts ==="
+          if [ ! -f "packages/yoga-layout/build/wasm/yoga.wasm" ] || [ ! -f "packages/yoga-layout/build/wasm/yoga.js" ]; then
+            echo "ERROR: Required WASM artifacts not found!"
+            ls -lh packages/yoga-layout/build/wasm/ || echo "Directory does not exist"
+            exit 1
+          fi
+          ls -lh packages/yoga-layout/build/wasm/
+          echo ""
+          echo "yoga.wasm size: $(du -h packages/yoga-layout/build/wasm/yoga.wasm | cut -f1)"
+          echo "yoga.js size: $(du -h packages/yoga-layout/build/wasm/yoga.js | cut -f1)"
+
+      - name: Upload yoga artifacts
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: yoga-wasm
+          path: packages/yoga-layout/build/wasm/
+          retention-days: 7
+
+  build-ai-models:
+    name: 🤖 Build AI Models WASM
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: 22
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@9fd676a19091d4595eefd76e4bd31c97133911f1 # v4.2.0
+        with:
+          version: ^10.16.0
 
       - name: Setup Python
         uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
         with:
           python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: 'packages/socketbin-cli-ai/requirements.txt'
 
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@7b1c307e0dcbda6122208f10795a713336a9b35a # stable
+      - name: Install Python dependencies
+        run: |
+          echo "::group::Installing Python dependencies"
+          pip install -r packages/socketbin-cli-ai/requirements.txt
+          echo "::endgroup::"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate AI models cache key
+        id: ai-cache-key
+        run: |
+          HASH=$(find packages/socketbin-cli-ai -type f \( -name "*.mjs" -o -name "*.ts" \) | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
+          echo "hash=$HASH" >> $GITHUB_OUTPUT
+
+      - name: Restore AI models cache
+        id: ai-cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
-          toolchain: stable
-          targets: wasm32-unknown-unknown
+          path: packages/socketbin-cli-ai/dist
+          key: ai-models-${{ steps.ai-cache-key.outputs.hash }}
+          restore-keys: ai-models-
 
-      - name: Install wasm-pack
-        run: cargo install wasm-pack
-
-      - name: Install wasm-opt (binaryen)
+      - name: Verify cached artifacts
+        id: ai-cache-valid
         run: |
-          sudo apt-get update
-          sudo apt-get install -y binaryen
-
-      - name: Generate build tag
-        id: build-tag
-        run: |
-          BUILD_DATE=$(date +'%Y%m%d')
-          SHORT_SHA=$(git rev-parse --short HEAD)
-          BUILD_TAG="wasm-build-${BUILD_DATE}-${SHORT_SHA}"
-          echo "tag=${BUILD_TAG}" >> $GITHUB_OUTPUT
-          echo "date=${BUILD_DATE}" >> $GITHUB_OUTPUT
-          echo "sha=${SHORT_SHA}" >> $GITHUB_OUTPUT
-
-      - name: Check if release exists
-        id: check-release
-        run: |
-          TAG="${{ steps.build-tag.outputs.tag }}"
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            echo "exists=true" >> $GITHUB_OUTPUT
-            echo "Release $TAG already exists"
+          if [ -f "packages/socketbin-cli-ai/dist/ai.bz" ] && [ -f "packages/socketbin-cli-ai/dist/ai.js" ]; then
+            echo "valid=true" >> $GITHUB_OUTPUT
+            echo "Cache hit: artifacts found"
+            ls -lh packages/socketbin-cli-ai/dist/
           else
-            echo "exists=false" >> $GITHUB_OUTPUT
-            echo "Release $TAG does not exist"
+            echo "valid=false" >> $GITHUB_OUTPUT
+            echo "Cache miss or incomplete: forcing rebuild"
+            ls -lh packages/socketbin-cli-ai/dist/ 2>/dev/null || echo "Directory does not exist"
           fi
-        env:
-          GH_TOKEN: ${{ github.token }}
 
-      - name: Exit if release exists and not force rebuild
-        if: steps.check-release.outputs.exists == 'true' && !inputs.force-rebuild
+      - name: Build AI models
+        if: steps.ai-cache-valid.outputs.valid != 'true' || inputs.force
         run: |
-          echo "❌ Release ${{ steps.build-tag.outputs.tag }} already exists"
-          echo "   Use 'force-rebuild' option to rebuild anyway"
-          exit 1
+          echo "::group::Building AI models (this will take 10-15 minutes)"
+          pnpm --filter @socketbin/cli-ai run build
+          echo "Build exit code: $?"
+          echo "Checking for build artifacts..."
+          ls -lh packages/socketbin-cli-ai/dist/ || echo "dist directory not found"
+          echo "::endgroup::"
 
-      - name: Build WASM bundle
-        run: pnpm run wasm:build
-        env:
-          CI: true
-
-      - name: Verify build output
+      - name: Verify build artifacts
         run: |
-          if [ ! -f external/socket-ai-sync.mjs ]; then
-            echo "❌ Build output not found: external/socket-ai-sync.mjs"
+          echo "=== AI Models Build Artifacts ==="
+          if [ ! -f "packages/socketbin-cli-ai/dist/ai.bz" ] || [ ! -f "packages/socketbin-cli-ai/dist/ai.js" ]; then
+            echo "ERROR: Required AI model artifacts not found!"
+            ls -lh packages/socketbin-cli-ai/dist/ || echo "Directory does not exist"
             exit 1
           fi
+          ls -lh packages/socketbin-cli-ai/dist/
+          echo ""
+          echo "ai.bz size: $(du -h packages/socketbin-cli-ai/dist/ai.bz | cut -f1)"
+          echo "ai.js size: $(du -h packages/socketbin-cli-ai/dist/ai.js | cut -f1)"
 
-          FILE_SIZE=$(stat -f%z external/socket-ai-sync.mjs 2>/dev/null || stat -c%s external/socket-ai-sync.mjs)
-          FILE_SIZE_MB=$((FILE_SIZE / 1024 / 1024))
-
-          echo "✓ Build output verified"
-          echo "  Size: ${FILE_SIZE_MB} MB"
-
-          if [ "$FILE_SIZE_MB" -lt 50 ]; then
-            echo "❌ Build output too small (expected ~115MB)"
-            exit 1
-          fi
-
-      - name: Create release
-        if: steps.check-release.outputs.exists == 'false' || inputs.force-rebuild
-        run: |
-          TAG="${{ steps.build-tag.outputs.tag }}"
-          DATE="${{ steps.build-tag.outputs.date }}"
-          SHA="${{ steps.build-tag.outputs.sha }}"
-
-          gh release create "$TAG" \
-            --title "WASM Bundle Build ${DATE}" \
-            --notes "## WASM Bundle Build
-
-          **Automated build of unified WASM bundle for Socket CLI AI features.**
-
-          ### Build Information
-          - **Date**: $(date +'%Y-%m-%d %H:%M:%S UTC')
-          - **Commit**: ${SHA}
-          - **Tag**: ${TAG}
-
-          ### Contents
-          - ONNX Runtime (~2-5MB)
-          - MiniLM model (~17MB int8)
-          - CodeT5 encoder (~30MB int4)
-          - CodeT5 decoder (~60MB int4)
-          - Tokenizers (~1MB)
-          - Yoga Layout (~95KB)
-
-          ### INT4 Quantization
-          - CodeT5 models use INT4 (4-bit weights) for 50% size reduction
-          - Only 1-2% quality loss compared to INT8
-          - Total bundle size: ~115MB (vs ~145MB with INT8)
-
-          ### Download
-          \`\`\`bash
-          node scripts/wasm/download-models.mjs
-          \`\`\`
-
-          ### Build from Source
-          \`\`\`bash
-          pnpm run wasm:build
-          \`\`\`
-
-          ---
-
-          This is a pre-release for internal development use." \
-            --prerelease \
-            external/socket-ai-sync.mjs
-        env:
-          GH_TOKEN: ${{ github.token }}
-
-      - name: Upload artifact (for debugging)
-        uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
+      - name: Upload AI artifacts
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: wasm-bundle-${{ steps.build-tag.outputs.tag }}
-          path: external/socket-ai-sync.mjs
+          name: ai-models
+          path: packages/socketbin-cli-ai/dist/
           retention-days: 7
 
-      - name: Build summary
-        run: |
-          FILE_SIZE=$(stat -f%z external/socket-ai-sync.mjs 2>/dev/null || stat -c%s external/socket-ai-sync.mjs)
-          FILE_SIZE_MB=$((FILE_SIZE / 1024 / 1024))
+  build-onnx-runtime:
+    name: 🌐 Build ONNX Runtime WASM
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
-          echo "## ✅ WASM Bundle Build Complete" >> $GITHUB_STEP_SUMMARY
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: 22
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@9fd676a19091d4595eefd76e4bd31c97133911f1 # v4.2.0
+        with:
+          version: ^10.16.0
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate ONNX Runtime cache key
+        id: onnx-cache-key
+        run: |
+          HASH=$(find packages/onnx-runtime-builder -type f \( -name "*.mjs" -o -name "*.patch" \) | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
+          echo "hash=$HASH" >> $GITHUB_OUTPUT
+
+      - name: Restore ONNX Runtime output cache
+        id: onnx-cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: packages/onnx-runtime-builder/dist
+          key: onnx-runtime-${{ steps.onnx-cache-key.outputs.hash }}
+          restore-keys: onnx-runtime-
+
+      - name: Restore ONNX Runtime build cache
+        id: onnx-build-cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: packages/onnx-runtime-builder/build
+          key: onnx-runtime-build-${{ steps.onnx-cache-key.outputs.hash }}
+          restore-keys: |
+            onnx-runtime-build-
+
+      - name: Verify cached artifacts
+        id: onnx-cache-valid
+        run: |
+          if [ -f "packages/onnx-runtime-builder/dist/onnxruntime-web.wasm" ]; then
+            echo "valid=true" >> $GITHUB_OUTPUT
+            echo "Cache hit: artifacts found"
+            ls -lh packages/onnx-runtime-builder/dist/
+          else
+            echo "valid=false" >> $GITHUB_OUTPUT
+            echo "Cache miss or incomplete: forcing rebuild"
+            ls -lh packages/onnx-runtime-builder/dist/ 2>/dev/null || echo "Directory does not exist"
+          fi
+
+      - name: Install Emscripten
+        if: steps.onnx-cache-valid.outputs.valid != 'true' || inputs.force
+        run: |
+          echo "::group::Installing Emscripten"
+          git clone https://github.com/emscripten-core/emsdk.git
+          cd emsdk
+          ./emsdk install latest
+          ./emsdk activate latest
+          echo "::endgroup::"
+
+      - name: Build ONNX Runtime WASM
+        if: steps.onnx-cache-valid.outputs.valid != 'true' || inputs.force
+        run: |
+          echo "::group::Building ONNX Runtime WASM (this will take 20-30 minutes)"
+          source emsdk/emsdk_env.sh
+          pnpm --filter @socketsecurity/onnx-runtime-builder run build
+          echo "Build exit code: $?"
+          echo "Checking for build artifacts..."
+          ls -lh packages/onnx-runtime-builder/dist/ || echo "dist directory not found"
+          echo "::endgroup::"
+
+      - name: Save ONNX Runtime build cache
+        if: always() && (steps.onnx-cache-valid.outputs.valid != 'true' || inputs.force)
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: packages/onnx-runtime-builder/build
+          key: onnx-runtime-build-${{ steps.onnx-cache-key.outputs.hash }}-${{ github.run_id }}
+
+      - name: Verify build artifacts
+        run: |
+          echo "=== ONNX Runtime Build Artifacts ==="
+          if [ ! -f "packages/onnx-runtime-builder/dist/onnxruntime-web.wasm" ]; then
+            echo "ERROR: Required ONNX Runtime WASM artifact not found!"
+            ls -lh packages/onnx-runtime-builder/dist/ || echo "Directory does not exist"
+            exit 1
+          fi
+          ls -lh packages/onnx-runtime-builder/dist/
+          echo ""
+          echo "onnxruntime-web.wasm size: $(du -h packages/onnx-runtime-builder/dist/onnxruntime-web.wasm | cut -f1)"
+
+      - name: Upload ONNX Runtime artifacts
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: onnx-runtime
+          path: packages/onnx-runtime-builder/dist/
+          retention-days: 7
+
+  summary:
+    name: 📊 🧱 WASM Build Summary
+    needs: [build-yoga-layout, build-ai-models, build-onnx-runtime]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+        with:
+          path: artifacts
+
+      - name: Generate summary
+        run: |
+          echo "# 🧱 WASM Build Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Tag**: \`${{ steps.build-tag.outputs.tag }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "**Size**: ${FILE_SIZE_MB} MB" >> $GITHUB_STEP_SUMMARY
-          echo "**Date**: $(date +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "## ✅ Build Complete" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Download" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
-          echo "node scripts/wasm/download-models.mjs" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "All WASM assets built successfully and cached." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📦 Artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Asset | Files |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| 🧘 Yoga Layout | \`yoga.wasm\`, \`yoga.js\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🤖 AI Models | \`ai.bz\`, \`ai.js\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🌐 ONNX Runtime | \`ort-wasm.wasm\` |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🎯 Next Steps" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- These artifacts are now cached for CI builds" >> $GITHUB_STEP_SUMMARY
+          echo "- CLI builds will use these cached WASM assets" >> $GITHUB_STEP_SUMMARY
+          echo "- Cache is invalidated when source files change" >> $GITHUB_STEP_SUMMARY

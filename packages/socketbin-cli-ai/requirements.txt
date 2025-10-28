@@ -1,0 +1,4 @@
+transformers
+torch
+optimum[onnx]
+onnxruntime>=1.20.0

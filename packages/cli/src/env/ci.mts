@@ -3,8 +3,6 @@
  * Set to true/1 when running in a continuous integration environment.
  */
 
-import { env } from 'node:process'
+import { getCI } from '@socketsecurity/lib/env/ci'
 
-import { envAsBoolean } from '@socketsecurity/lib/env'
-
-export const CI = envAsBoolean(env['CI'])
+export const CI = getCI()

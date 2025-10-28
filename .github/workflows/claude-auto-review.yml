@@ -12,6 +12,6 @@ permissions:
 
 jobs:
   auto-review:
-    uses: SocketDev/socket-registry/.github/workflows/claude-auto-review.yml@d8ff3b0581d799466cfbf150f715c1a4bf9f84a5 # 2025-10-23
+    uses: SocketDev/socket-registry/.github/workflows/claude-auto-review.yml@e7f70a7eb857a85b4f30677f9fc2c38bc9c4d56e # 2025-10-28
     secrets:
       anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}

@@ -1,105 +1,71 @@
 /**
  * Optional Model Distribution System.
  *
- * Manages lazy-loading of AI models via dlx (no npm/pnpm/yarn required).
- * Models are downloaded from models.socket.dev and cached locally.
+ * Manages lazy-loading of AI models via npm packages (installed on first use).
+ * Models are published to npm registry under @socketbin/ scope.
  *
  * Architecture:
  * - Core CLI (~13.6 MB): Embedded in binary, works immediately
- * - Optional models: Downloaded via dlx on first use, cached for future runs
- * - optionalDependencies in package.json: Manifest/registry only
+ *   - Includes: yoga-layout, onnx-runtime, MiniLM model + tokenizer
+ * - Optional models: Installed via npm on first use, cached in node_modules
+ * - optionalDependencies in package.json: Auto-installed when available
  *
  * Usage:
- *   const { modelPaths, downloaded } = await loadOptionalModel('@socketsecurity/cli-embeddings')
- *   // modelPaths[0] = minilm-model.onnx
- *   // modelPaths[1] = minilm-tokenizer.json
+ *   const { modelPaths, downloaded } = await loadOptionalModel('@socketbin/cli-ai')
+ *   // modelPaths[0] = codet5-encoder.onnx
+ *   // modelPaths[1] = codet5-decoder.onnx
+ *   // modelPaths[2] = codet5-tokenizer.json
  *
  * Cache management:
- *   - Location: ~/.socket/cache/dlx/<sha256>/
- *   - TTL: 30 days (configurable)
- *   - Verification: SHA-512 checksums (npm/cacache pattern)
- *   - Auto-cleanup: Old cache entries removed automatically
+ *   - Location: node_modules/@socketbin/cli-ai/
+ *   - TTL: Follows npm cache behavior
+ *   - Verification: npm integrity checks
+ *   - Auto-cleanup: Standard npm prune/clean
  */
-
-import { createHash } from 'node:crypto'
-import { existsSync } from 'node:fs'
-import path from 'node:path'
 
 import { logger } from '@socketsecurity/lib/logger'
 
-import { dlxBinary, getDlxCachePath } from './dlx/binary.mts'
-
 /**
- * Model registry mapping package names to download URLs.
+ * Model registry mapping package names to npm packages.
  * This serves as the "manifest" for available optional models.
+ *
+ * NOTE: MiniLM model + tokenizer are already bundled in dist/cli.js.
+ * Only advanced code analysis models require separate installation.
  */
 const MODEL_REGISTRY = {
   __proto__: null,
-  '@socketsecurity/cli-embeddings': {
+  '@socketbin/cli-ai': {
     version: '1.0.0',
-    description: 'Semantic package search and similarity detection',
-    totalSize: 8_500_000,
+    description: 'Advanced code analysis and vulnerability detection',
+    totalSize: 90_500_000,
+    packageName: '@socketbin/cli-ai',
     files: [
-      {
-        url: 'https://models.socket.dev/minilm-int4-v1.0.0.onnx',
-        name: 'minilm-model.onnx',
-        checksum: '', // TODO: Generate SHA-512 after models are built.
-        size: 8_000_000,
-      },
-      {
-        url: 'https://models.socket.dev/minilm-tokenizer-v1.0.0.json',
-        name: 'minilm-tokenizer.json',
-        checksum: '', // TODO: Generate SHA-512 after models are built.
-        size: 500_000,
-      },
-    ],
-  },
-  '@socketsecurity/cli-code-analysis': {
-    version: '1.0.0',
-    description: 'Code vulnerability analysis and explanations',
-    totalSize: 85_500_000,
-    files: [
-      {
-        url: 'https://models.socket.dev/codet5-encoder-int4-v1.0.0.onnx',
-        name: 'codet5-encoder.onnx',
-        checksum: '', // TODO: Generate SHA-512 after models are built.
-        size: 28_000_000,
-      },
-      {
-        url: 'https://models.socket.dev/codet5-decoder-int4-v1.0.0.onnx',
-        name: 'codet5-decoder.onnx',
-        checksum: '', // TODO: Generate SHA-512 after models are built.
-        size: 57_000_000,
-      },
-      {
-        url: 'https://models.socket.dev/codet5-tokenizer-v1.0.0.json',
-        name: 'codet5-tokenizer.json',
-        checksum: '', // TODO: Generate SHA-512 after models are built.
-        size: 500_000,
-      },
+      'codet5-encoder.onnx',
+      'codet5-decoder.onnx',
+      'codet5-tokenizer.json',
     ],
   },
 } as const
-
-interface ModelFile {
-  url: string
-  name: string
-  checksum: string
-  size: number
-}
 
 interface ModelInfo {
   version: string
   description: string
   totalSize: number
-  files: ModelFile[]
+  packageName: string
+  files: string[]
 }
 
 /**
- * Download and cache optional models via dlx.
+ * Load optional models from npm package.
+ *
+ * TODO: Implement dlx-based loading (follow @coana-tech/cli pattern).
+ * - Use runShadowCommand() with package manager dlx (npm/pnpm/yarn)
+ * - Package manager caches in node_modules for future use
+ * - Resolve package location after dlx execution
+ * - Return paths to model files
  *
  * @param packageName - Package name from MODEL_REGISTRY
- * @returns Model paths and download status
+ * @returns Model paths and installation status
  */
 export async function loadOptionalModel(
   packageName: string,
@@ -116,33 +82,15 @@ export async function loadOptionalModel(
     `Total size: ${(modelInfo.totalSize / 1024 / 1024).toFixed(1)} MB`,
   )
 
-  const modelPaths: string[] = []
-  let anyDownloaded = false
-
-  for (const file of modelInfo.files) {
-    // Download via dlx (uses cache if available).
-    const checksumValue = file.checksum || undefined
-    const result = await dlxBinary([], {
-      url: file.url,
-      name: file.name,
-      ...(checksumValue && { checksum: checksumValue }),
-      cacheTtl: 30 * 24 * 60 * 60 * 1000, // 30 days.
-    })
-
-    modelPaths.push(result.binaryPath)
-    if (result.downloaded) {
-      anyDownloaded = true
-    }
-  }
-
-  return { modelPaths, downloaded: anyDownloaded }
+  // TODO: Implement dlx-based loading (follow @coana-tech/cli pattern).
+  throw new Error('dlx-based model loading not yet implemented')
 }
 
 /**
- * Check if optional model is cached.
+ * Check if optional model package is installed.
  *
  * @param packageName - Package name from MODEL_REGISTRY
- * @returns True if all model files exist in cache
+ * @returns True if package exists in node_modules
  */
 export function isModelCached(packageName: string): boolean {
   const modelInfo = (
@@ -152,18 +100,9 @@ export function isModelCached(packageName: string): boolean {
     return false
   }
 
-  // Check if all model files exist in cache.
-  const cacheDir = getDlxCachePath()
-
-  for (const file of modelInfo.files) {
-    const cacheKey = createHash('sha256').update(file.url).digest('hex')
-    const cachePath = path.join(cacheDir, cacheKey, file.name)
-    if (!existsSync(cachePath)) {
-      return false
-    }
-  }
-
-  return true
+  // TODO: Check if package is cached by package manager.
+  // Can use isPackageCached() from preflight/downloads.mts or similar pattern.
+  return false
 }
 
 /**

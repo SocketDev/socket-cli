@@ -13,12 +13,10 @@
     "email": "eng@socket.dev",
     "url": "https://socket.dev"
   },
-  "devDependencies": {},
   "engines": {
     "node": ">=18"
   },
   "files": [
-    "bin/",
     "dist/"
   ],
   "optionalDependencies": {
@@ -32,8 +30,16 @@
     "@socketbin/cli-win32-x64": "0.0.0"
   },
   "scripts": {
+    "build": "node scripts/build-bootstrap.mjs",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest"
+  },
+  "bin": {
+    "socket": "./dist/bootstrap.js"
+  },
+  "devDependencies": {
+    "@socketsecurity/lib": "^2.0.0",
+    "esbuild": "^0.24.0"
   }
 }

@@ -132,7 +132,7 @@ export interface SocketIssue {
  */
 export async function enrichSbomWithSocket(
   sbom: Sbom,
-  options: EnrichOptions
+  options: EnrichOptions,
 ): Promise<EnrichedSbom> {
   if (!options.apiToken) {
     throw new Error('Socket.dev API token is required')
@@ -158,7 +158,7 @@ export async function enrichSbomWithSocket(
  */
 async function enrichComponent(
   component: Component,
-  options: EnrichOptions
+  options: EnrichOptions,
 ): Promise<EnrichedComponent> {
   // Extract ecosystem and package info from PURL.
   const packageInfo = parsePurl(component.purl)
@@ -177,7 +177,7 @@ async function enrichComponent(
   } catch (e) {
     // If Socket API fails, return component without enrichment.
     console.error(
-      `Failed to enrich ${component.name}@${component.version}: ${e instanceof Error ? e.message : String(e)}`
+      `Failed to enrich ${component.name}@${component.version}: ${e instanceof Error ? e.message : String(e)}`,
     )
     return component
   }
@@ -187,7 +187,7 @@ async function enrichComponent(
  * Parse PURL into ecosystem and package info.
  */
 function parsePurl(
-  purl: string | undefined
+  purl: string | undefined,
 ): { ecosystem: string; name: string; version: string } | null {
   if (!purl) {
     return null
@@ -200,9 +200,9 @@ function parsePurl(
   }
 
   return {
-    ecosystem: match[1],
-    name: match[2],
-    version: match[3],
+    ecosystem: match[1]!,
+    name: match[2]!,
+    version: match[3]!,
   }
 }
 
@@ -211,7 +211,7 @@ function parsePurl(
  */
 async function fetchSocketData(
   packageInfo: { ecosystem: string; name: string; version: string },
-  options: EnrichOptions
+  options: EnrichOptions,
 ): Promise<SocketSecurityData> {
   const baseUrl = options.apiBaseUrl || 'https://api.socket.dev'
   const timeout = options.timeout || 30_000
@@ -277,7 +277,7 @@ interface SocketApiResponse {
  */
 function transformSocketResponse(
   response: SocketApiResponse,
-  packageInfo: { ecosystem: string; name: string; version: string }
+  packageInfo: { ecosystem: string; name: string; version: string },
 ): SocketSecurityData {
   return {
     score: response.score || 0,
@@ -287,16 +287,13 @@ function transformSocketResponse(
         severity: issue.severity as 'low' | 'medium' | 'high' | 'critical',
         title: issue.title,
         description: issue.description,
-        cve: issue.cve,
-        cvss: issue.cvss,
-        fix: issue.fix,
+        ...(issue.cve && { cve: issue.cve }),
+        ...(issue.cvss !== undefined && { cvss: issue.cvss }),
+        ...(issue.fix && { fix: issue.fix }),
       })) || [],
     supplyChainRisk:
-      (response.supplyChainRisk as
-        | 'low'
-        | 'medium'
-        | 'high'
-        | 'critical') || 'low',
+      (response.supplyChainRisk as 'low' | 'medium' | 'high' | 'critical') ||
+      'low',
     quality: response.quality,
     licenseInfo: response.license,
     socketUrl: `https://socket.dev/${packageInfo.ecosystem}/package/${encodeURIComponent(packageInfo.name)}`,

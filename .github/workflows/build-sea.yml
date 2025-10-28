@@ -1,0 +1,261 @@
+name: 🌊 Build SEA Node Binaries
+
+on:
+  workflow_call:
+    inputs:
+      force:
+        description: 'Force rebuild (ignore cache)'
+        required: false
+        type: boolean
+        default: false
+  workflow_dispatch:
+    inputs:
+      force:
+        description: 'Force rebuild (ignore cache)'
+        required: false
+        type: boolean
+        default: false
+  # Removed push/pull_request triggers to prevent automatic builds.
+  # Run manually via workflow_dispatch or via workflow_call from build-socketbin.yml.
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-sea-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-sea:
+    name: 🌊 Build SEA binary - ${{ matrix.platform }}-${{ matrix.arch }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Linux builds (standard runners - SEA is just bundling).
+          - runner: ubuntu-latest
+            os: linux
+            platform: linux
+            arch: x64
+          - runner: ubuntu-latest
+            os: linux
+            platform: linux
+            arch: arm64
+
+          # macOS builds (standard runners - SEA is just bundling).
+          - runner: macos-latest-large
+            os: darwin
+            platform: darwin
+            arch: x64
+          - runner: macos-latest-large
+            os: darwin
+            platform: darwin
+            arch: arm64
+
+          # Windows builds (standard runners - SEA is just bundling).
+          - runner: windows-latest
+            os: windows
+            platform: win32
+            arch: x64
+          - runner: windows-latest
+            os: windows
+            platform: win32
+            arch: arm64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: 22
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@9fd676a19091d4595eefd76e4bd31c97133911f1 # v4.2.0
+        with:
+          version: ^10.16.0
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate WASM cache keys
+        id: wasm-cache-keys
+        shell: bash
+        run: |
+          YOGA_HASH=$(find packages/yoga-layout -type f \( -name "*.cpp" -o -name "*.h" -o -name "*.mjs" -o -name "CMakeLists.txt" \) | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
+          echo "yoga-hash=$YOGA_HASH" >> $GITHUB_OUTPUT
+
+          AI_HASH=$(find packages/socketbin-cli-ai -type f \( -name "*.mjs" -o -name "*.ts" \) | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
+          echo "ai-hash=$AI_HASH" >> $GITHUB_OUTPUT
+
+          ONNX_HASH=$(find packages/onnx-runtime-builder -type f \( -name "*.mjs" -o -name "*.patch" \) | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
+          echo "onnx-hash=$ONNX_HASH" >> $GITHUB_OUTPUT
+
+      - name: Restore Yoga Layout WASM cache
+        id: yoga-cache
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: packages/yoga-layout/build/wasm
+          key: yoga-wasm-${{ steps.wasm-cache-keys.outputs.yoga-hash }}
+          restore-keys: yoga-wasm-
+
+      - name: Restore AI models cache
+        id: ai-cache
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: packages/socketbin-cli-ai/dist
+          key: ai-models-${{ steps.wasm-cache-keys.outputs.ai-hash }}
+          restore-keys: ai-models-
+
+      - name: Restore ONNX Runtime cache
+        id: onnx-cache
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: packages/onnx-runtime-builder/dist
+          key: onnx-runtime-${{ steps.wasm-cache-keys.outputs.onnx-hash }}
+          restore-keys: onnx-runtime-
+
+      - name: Setup Python for WASM builds
+        if: steps.yoga-cache.outputs.cache-hit != 'true' || steps.ai-cache.outputs.cache-hit != 'true' || steps.onnx-cache.outputs.cache-hit != 'true'
+        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
+        with:
+          python-version: '3.11'
+
+      - name: Build WASM assets on cache miss
+        if: steps.yoga-cache.outputs.cache-hit != 'true' || steps.ai-cache.outputs.cache-hit != 'true' || steps.onnx-cache.outputs.cache-hit != 'true'
+        run: |
+          echo "⚠️  WASM cache miss detected - building from source"
+          echo "This will take 30-60 minutes. Consider running build-wasm.yml workflow to prime cache."
+          echo ""
+          echo "Cache status:"
+          echo "  Yoga Layout: ${{ steps.yoga-cache.outputs.cache-hit == 'true' && '✓ cached' || '✗ missing' }}"
+          echo "  AI Models: ${{ steps.ai-cache.outputs.cache-hit == 'true' && '✓ cached' || '✗ missing' }}"
+          echo "  ONNX Runtime: ${{ steps.onnx-cache.outputs.cache-hit == 'true' && '✓ cached' || '✗ missing' }}"
+          echo ""
+
+          # Install Emscripten if needed for Yoga/ONNX.
+          if [ "${{ steps.yoga-cache.outputs.cache-hit }}" != "true" ] || [ "${{ steps.onnx-cache.outputs.cache-hit }}" != "true" ]; then
+            echo "::group::Installing Emscripten"
+            git clone https://github.com/emscripten-core/emsdk.git
+            cd emsdk
+            ./emsdk install latest
+            ./emsdk activate latest
+            source ./emsdk_env.sh
+            cd ..
+            echo "::endgroup::"
+          fi
+
+          # Install Python deps if needed for AI models.
+          if [ "${{ steps.ai-cache.outputs.cache-hit }}" != "true" ]; then
+            echo "::group::Installing Python dependencies"
+            python3 -m pip install --upgrade pip
+            python3 -m pip install transformers torch optimum[onnx] "onnxruntime>=1.20.0"
+            echo "::endgroup::"
+          fi
+
+          # Build missing WASM assets.
+          if [ "${{ steps.yoga-cache.outputs.cache-hit }}" != "true" ]; then
+            echo "::group::Building Yoga Layout WASM"
+            pnpm --filter @socketsecurity/yoga-layout run build
+            echo "::endgroup::"
+          fi
+
+          if [ "${{ steps.ai-cache.outputs.cache-hit }}" != "true" ]; then
+            echo "::group::Building AI models (10-15 minutes)"
+            pnpm --filter @socketbin/cli-ai run build
+            echo "::endgroup::"
+          fi
+
+          if [ "${{ steps.onnx-cache.outputs.cache-hit }}" != "true" ]; then
+            echo "::group::Building ONNX Runtime (20-30 minutes)"
+            pnpm --filter @socketsecurity/onnx-runtime-builder run build
+            echo "::endgroup::"
+          fi
+
+          echo "✓ WASM assets built successfully"
+
+      - name: Generate SEA build cache key
+        id: sea-cache-key
+        shell: bash
+        run: |
+          HASH=$(find packages/node-sea-builder packages/cli/src -type f \( -name "*.mts" -o -name "*.ts" -o -name "*.mjs" -o -name "*.js" \) | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
+          echo "hash=$HASH" >> $GITHUB_OUTPUT
+
+      - name: Restore SEA binary cache
+        id: sea-cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: packages/node-sea-builder/dist/socket-sea-${{ matrix.platform }}-${{ matrix.arch }}
+          key: node-sea-${{ matrix.platform }}-${{ matrix.arch }}-${{ steps.sea-cache-key.outputs.hash }}
+          restore-keys: node-sea-${{ matrix.platform }}-${{ matrix.arch }}-
+
+      - name: Build CLI (required for SEA)
+        if: steps.sea-cache.outputs.cache-hit != 'true' || inputs.force
+        run: pnpm --filter @socketsecurity/cli run build
+
+      - name: Build SEA binary
+        if: steps.sea-cache.outputs.cache-hit != 'true' || inputs.force
+        run: pnpm --filter @socketbin/node-sea-builder run build
+
+      - name: Verify SEA binary
+        shell: bash
+        run: |
+          echo "=== SEA Binary Build Artifacts ==="
+          mkdir -p packages/node-sea-builder/dist
+          ls -lh packages/node-sea-builder/dist/
+          echo ""
+          BINARY_PATH="packages/node-sea-builder/dist/socket-sea-${{ matrix.platform }}-${{ matrix.arch }}"
+          if [ -f "$BINARY_PATH" ] || [ -f "${BINARY_PATH}.exe" ]; then
+            if [ "${{ matrix.os }}" = "windows" ]; then
+              echo "socket-sea-${{ matrix.platform }}-${{ matrix.arch }}.exe size: $(du -h ${BINARY_PATH}.exe | cut -f1)"
+            else
+              echo "socket-sea-${{ matrix.platform }}-${{ matrix.arch }} size: $(du -h $BINARY_PATH | cut -f1)"
+            fi
+          else
+            echo "⚠️  Binary not found at expected path"
+          fi
+
+      - name: Upload SEA binary
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: socket-sea-${{ matrix.platform }}-${{ matrix.arch }}
+          path: |
+            packages/node-sea-builder/dist/socket-sea-${{ matrix.platform }}-${{ matrix.arch }}
+            packages/node-sea-builder/dist/socket-sea-${{ matrix.platform }}-${{ matrix.arch }}.exe
+          retention-days: 7
+          if-no-files-found: warn
+
+  summary:
+    name: 📊 🌊 SEA Node Build Summary
+    needs: [build-sea]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate summary
+        run: |
+          echo "# 🌊 SEA Node Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## ✅ Build Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "SEA (Single Executable Application) binaries built successfully and cached." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📦 Build Method" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Method | Description | Size |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------------|------|" >> $GITHUB_STEP_SUMMARY
+          echo "| 🌊 SEA | Single Executable Application | ~70 MB |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🎯 Platforms Built" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- 🐧 Linux (x64, arm64)" >> $GITHUB_STEP_SUMMARY
+          echo "- 🍎 macOS (x64, arm64)" >> $GITHUB_STEP_SUMMARY
+          echo "- 🪟 Windows (x64, arm64)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🎯 Next Steps" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- These binaries are now cached for E2E tests" >> $GITHUB_STEP_SUMMARY
+          echo "- Use \`publish-socketbin.yml\` to publish to npm" >> $GITHUB_STEP_SUMMARY
+          echo "- Cache is invalidated when source files change" >> $GITHUB_STEP_SUMMARY

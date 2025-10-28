@@ -15,7 +15,7 @@ describe('formatSocketFactsForCodeT5', () => {
   it('should format Socket Facts with reachability context', async () => {
     const socketFactsPath = path.join(
       __dirname,
-      '../../test/fixtures/socket-facts-sample.json'
+      '../../test/fixtures/socket-facts-sample.json',
     )
     const socketFactsJson = await readFile(socketFactsPath, 'utf8')
     const socketFacts: SocketFacts = JSON.parse(socketFactsJson)
@@ -23,7 +23,9 @@ describe('formatSocketFactsForCodeT5', () => {
     const prompt = formatSocketFactsForCodeT5(socketFacts)
 
     // Verify structure.
-    expect(prompt).toContain('TASK: Perform reachability-aware security analysis')
+    expect(prompt).toContain(
+      'TASK: Perform reachability-aware security analysis',
+    )
     expect(prompt).toContain('REACHABILITY CONTEXT:')
     expect(prompt).toContain('PROJECT OVERVIEW:')
     expect(prompt).toContain('CRITICAL ISSUES (REACHABLE):')
@@ -34,7 +36,7 @@ describe('formatSocketFactsForCodeT5', () => {
   it('should prioritize reachable vulnerabilities', async () => {
     const socketFactsPath = path.join(
       __dirname,
-      '../../test/fixtures/socket-facts-sample.json'
+      '../../test/fixtures/socket-facts-sample.json',
     )
     const socketFactsJson = await readFile(socketFactsPath, 'utf8')
     const socketFacts: SocketFacts = JSON.parse(socketFactsJson)
@@ -59,7 +61,7 @@ describe('formatSocketFactsForCodeT5', () => {
   it('should include call stacks for reachable vulnerabilities', async () => {
     const socketFactsPath = path.join(
       __dirname,
-      '../../test/fixtures/socket-facts-sample.json'
+      '../../test/fixtures/socket-facts-sample.json',
     )
     const socketFactsJson = await readFile(socketFactsPath, 'utf8')
     const socketFacts: SocketFacts = JSON.parse(socketFactsJson)
@@ -77,7 +79,7 @@ describe('formatSocketFactsForCodeT5', () => {
   it('should filter out unreachable vulnerabilities by default', async () => {
     const socketFactsPath = path.join(
       __dirname,
-      '../../test/fixtures/socket-facts-sample.json'
+      '../../test/fixtures/socket-facts-sample.json',
     )
     const socketFactsJson = await readFile(socketFactsPath, 'utf8')
     const socketFacts: SocketFacts = JSON.parse(socketFactsJson)
@@ -95,7 +97,7 @@ describe('formatSocketFactsForCodeT5', () => {
   it('should include unreachable vulnerabilities when requested', async () => {
     const socketFactsPath = path.join(
       __dirname,
-      '../../test/fixtures/socket-facts-sample.json'
+      '../../test/fixtures/socket-facts-sample.json',
     )
     const socketFactsJson = await readFile(socketFactsPath, 'utf8')
     const socketFacts: SocketFacts = JSON.parse(socketFactsJson)
@@ -113,7 +115,7 @@ describe('formatSocketFactsForCodeT5', () => {
   it('should respect minConfidence option', async () => {
     const socketFactsPath = path.join(
       __dirname,
-      '../../test/fixtures/socket-facts-sample.json'
+      '../../test/fixtures/socket-facts-sample.json',
     )
     const socketFactsJson = await readFile(socketFactsPath, 'utf8')
     const socketFacts: SocketFacts = JSON.parse(socketFactsJson)
@@ -133,7 +135,7 @@ describe('formatSocketFactsForCodeT5', () => {
   it('should format for different task types', async () => {
     const socketFactsPath = path.join(
       __dirname,
-      '../../test/fixtures/socket-facts-sample.json'
+      '../../test/fixtures/socket-facts-sample.json',
     )
     const socketFactsJson = await readFile(socketFactsPath, 'utf8')
     const socketFacts: SocketFacts = JSON.parse(socketFactsJson)
@@ -152,7 +154,7 @@ describe('formatSocketFactsForCodeT5', () => {
   it('should generate token-efficient output', async () => {
     const socketFactsPath = path.join(
       __dirname,
-      '../../test/fixtures/socket-facts-sample.json'
+      '../../test/fixtures/socket-facts-sample.json',
     )
     const socketFactsJson = await readFile(socketFactsPath, 'utf8')
     const socketFacts: SocketFacts = JSON.parse(socketFactsJson)

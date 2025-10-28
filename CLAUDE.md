@@ -122,20 +122,14 @@ node --import=./scripts/load.mjs scripts/build-yao-pkg-node.mjs --clean
 ### CLI-Specific Notes
 - **Dynamic imports**: Only use dynamic imports for test mocking (e.g., `vi.importActual` in Vitest). Avoid runtime dynamic imports in production code
 
-### Custom Node.js Binary (yao-pkg Patched)
-- **Testing yao-pkg binaries**: The custom-built Node.js binary has yao-pkg patches that modify argument handling
-- **🚨 CRITICAL**: Always use `PKG_EXECPATH=PKG_INVOKE_NODEJS` when testing the binary directly
-  - ✅ CORRECT: `PKG_EXECPATH=PKG_INVOKE_NODEJS .node-source/out/Release/node --version`
-  - ❌ WRONG: `.node-source/out/Release/node --version` (treats `--version` as module path)
-- **Why this happens**: yao-pkg's PKG_DUMMY_ENTRYPOINT behavior interprets the first argument as a module to load unless `PKG_EXECPATH=PKG_INVOKE_NODEJS` is set
-- **Build script wrapper**: The build script automatically sets this environment variable when testing binaries
+### Smol Node.js Binary
 - **Binary locations**:
   - `.node-source/out/Release/node` - Main build output (stripped, signed)
   - `build/out/Release/node` - Copy for distribution
 
 ### Socket Node.js Patches
 
-Socket CLI applies custom patches to Node.js during the yao-pkg build process. These patches enable critical functionality like Brotli compression, SEA support, and size optimizations.
+Socket CLI applies custom patches to Node.js during the build process. These patches enable critical functionality like Brotli compression, SEA support, and size optimizations.
 
 **🚨 CRITICAL REQUIREMENTS**:
 - **Patches are the ONLY way to modify Node.js source** - Direct modifications to files are forbidden.
@@ -232,6 +226,30 @@ packages/<package>/
 - `packages/node-sea-builder` → `build/archive/*/` (SEA variants), `dist/` (blessed SEA binaries)
 - `packages/node-smol-builder` → `build/archive/*/` (Node.js variants), `dist/` (blessed node binary)
 - `packages/cli` → `dist/` (ephemeral Rollup output, gitignored via packages/cli/.gitignore)
+
+**@socketbin Package Conventions**:
+
+🚨 **MANDATORY**: Different directory conventions for executables vs. library assets:
+
+**Executable Binary Packages** (`bin/` directory):
+- `packages/socketbin-cli-<platform>-<arch>/bin/socket` (Linux, Darwin, Windows executables)
+- Contains platform-specific native executables
+- Uses npm `bin` field: `{ "socket": "./bin/socket" }`
+- Gitignore: `bin/` only
+- Published files: `["bin/socket"]`
+
+**Library/Asset Packages** (`dist/` directory):
+- `packages/socketbin-cli-ai/dist/` (WASM binaries + JS wrappers)
+- Contains library assets (WASM, models, JS loaders)
+- Build process: `build/` (intermediates) → `dist/` (final artifacts)
+- Gitignore: `dist/` and `build/`
+- Published files: `["dist"]`
+
+**Rationale**:
+- **Semantic clarity**: `bin/` = npm executables, `dist/` = library distribution assets
+- **npm convention**: Binary packages follow standard npm `bin` field pattern
+- **Build separation**: Asset packages use `build/` for intermediates, `dist/` for blessed output
+- **Monorepo consistency**: Aligns with other package patterns (yoga-layout, minilm-builder)
 
 **Promotion Workflow**:
 1. Build → `build/tmp/` (intermediates)
@@ -538,6 +556,15 @@ Socket CLI integrates with various third-party tools and services:
 - **Individual workflows**: Keep lint.yml, types.yml, test.yml for targeted runs; ci.yml runs all together
 - **Cross-project consistency**: All Socket projects should use identical CI orchestration pattern
 
+### Long-Running Build Guidelines
+- **🚨 CRITICAL**: For long-running builds (>30 minutes), DO NOT push commits until explicitly authorized
+- **Concurrency control**: Workflows with `cancel-in-progress: true` will terminate running builds when new commits are pushed
+- **When builds are running**:
+  - Wait for explicit "push" command from user before pushing
+  - User can manually re-run canceled builds from GitHub Actions UI if needed
+  - Consider temporarily disabling concurrency cancel for critical long builds
+- **Examples of long builds**: Node.js compilation (1-2 hours), WASM builds (30-60 minutes), native binary compilation
+
 ## 🔧 Code Style (MANDATORY)
 
 ### 📁 File Organization
@@ -590,7 +617,13 @@ Socket CLI integrates with various third-party tools and services:
 - **Array length checks**: Use `!array.length` instead of `array.length === 0`. For `array.length > 0`, use `!!array.length` when function must return boolean, or `array.length` when used in conditional contexts
 - **Catch parameter naming**: Use `catch (e)` instead of `catch (error)` for consistency across the codebase
 - **Node.js fs imports**: 🚨 MANDATORY pattern - `import { someSyncThing, promises as fs } from 'node:fs'`
-- **Process spawning**: 🚨 FORBIDDEN to use Node.js built-in `child_process.spawn` - MUST use `spawn` from `@socketsecurity/registry/lib/spawn`
+- **Process spawning**: 🚨 MANDATORY - ALWAYS use `{ spawn }` from `@socketsecurity/lib/spawn` (NEVER use Node.js built-in `child_process.spawn`)
+- **Shell execution**: 🚨 MANDATORY - ALWAYS use `shell: WIN32` from `@socketsecurity/lib/constants/platform` (NEVER use `shell: true`)
+  - ✅ CORRECT: `import { WIN32 } from '@socketsecurity/lib/constants/platform'` then `spawn('cmd', [], { shell: WIN32 })`
+  - ❌ FORBIDDEN: `{ shell: true }` (not cross-platform safe)
+- **Logging in scripts**: 🚨 MANDATORY - ALWAYS use `logger` from `@socketsecurity/lib/logger` in all build scripts and utilities
+  - ✅ CORRECT: `import { logger } from '@socketsecurity/lib/logger'` then `logger.log()`, `logger.substep()`, etc.
+  - ❌ FORBIDDEN: `console.log()` (use logger for consistency and enhanced output)
 - **Working directory**: 🚨 ABSOLUTELY FORBIDDEN - NEVER use `process.chdir()` - it's a global state mutation anti-pattern that breaks tests and causes race conditions
   - ✅ CORRECT: Use `{ cwd: '/absolute/path' }` option in spawn, exec, fs operations
   - ✅ CORRECT: Always use absolute paths with `path.resolve()` or `path.join(baseDir, relative)`

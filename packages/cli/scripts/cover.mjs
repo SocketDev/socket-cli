@@ -18,7 +18,8 @@ import { isQuiet, isVerbose } from '@socketsecurity/lib/argv/flags'
 import { parseArgs } from '@socketsecurity/lib/argv/parse'
 import { logger } from '@socketsecurity/lib/logger'
 
-import { runCommandQuiet } from './utils/run-command.mjs'
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
+import { spawn } from '@socketsecurity/lib/spawn'
 
 /**
  * Print a header message.
@@ -168,7 +169,7 @@ async function main() {
           logger.log(' ───────────────────────────────')
           logger.log(` Code Coverage: ${codeCoveragePercent.toFixed(2)}%`)
           logger.log()
-        } else if (exitCode !== 0) {
+        } else if (code !== 0) {
           logger.log('\n--- Output ---')
           logger.log(output)
         }
@@ -260,7 +261,7 @@ async function main() {
       }
     }
 
-    if (exitCode !== 0) {
+    if (code !== 0) {
       if (!quiet) {
         printError('Coverage failed')
         // Show relevant output on failure for debugging
@@ -278,7 +279,8 @@ async function main() {
         if (open) {
           const { runCommand } = await import('./utils/run-command.mjs')
           logger.info('Opening coverage report...')
-          await runCommand('open', ['coverage/index.html'], {
+          await spawn('open', ['coverage/index.html'], {
+      shell: WIN32,
             stdio: 'ignore',
           })
         }

@@ -16,9 +16,9 @@ import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { logger } from '@socketsecurity/lib/logger'
-
-import { exec, execCapture } from '@socketsecurity/build-infra/lib/build-exec'
+import { spawn } from '@socketsecurity/lib/spawn'
 import {
   checkDiskSpace,
   checkPythonVersion,

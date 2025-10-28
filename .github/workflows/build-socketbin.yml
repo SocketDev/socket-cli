@@ -1,0 +1,95 @@
+name: 🧱 Build @socketbin Packages
+
+on:
+  workflow_dispatch:
+    inputs:
+      method:
+        description: 'Build method to use'
+        required: false
+        type: choice
+        options:
+          - smol
+          - sea
+          - smol-sea
+          - wasm
+        default: smol-sea
+      force:
+        description: 'Force rebuild (ignore cache)'
+        required: false
+        type: boolean
+        default: false
+  # Removed push/pull_request triggers to prevent automatic builds.
+  # These workflows should only run via workflow_dispatch (manual trigger).
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-socketbin-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Build WASM assets first (fastest, needed by SEA).
+  build-wasm:
+    name: 🧱 Build WASM Assets
+    if: ${{ inputs.method == 'wasm' || inputs.method == 'sea' || inputs.method == 'smol-sea' || github.event_name != 'workflow_dispatch' }}
+    uses: ./.github/workflows/build-wasm.yml
+    with:
+      force: ${{ inputs.force || false }}
+
+  # Build SEA binaries (fast, depends on WASM).
+  build-sea:
+    name: 🌊 Build SEA Node Binaries
+    if: ${{ inputs.method == 'sea' || inputs.method == 'smol-sea' || github.event_name != 'workflow_dispatch' }}
+    needs: [build-wasm]
+    uses: ./.github/workflows/build-sea.yml
+    with:
+      force: ${{ inputs.force || false }}
+
+  # Build smol binaries last (slowest, 1-2 hours).
+  build-smol:
+    name: 🤏 Build Smol Node Binaries
+    if: ${{ inputs.method == 'smol' || inputs.method == 'smol-sea' || github.event_name != 'workflow_dispatch' }}
+    uses: ./.github/workflows/build-smol.yml
+    with:
+      force: ${{ inputs.force || false }}
+
+  summary:
+    name: 📊 Build Summary
+    needs: [build-wasm, build-sea, build-smol]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate summary
+        run: |
+          echo "# 🧱 @socketbin Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## ✅ Build Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "@socketbin packages built successfully and cached." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📦 Build Methods" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Method | Description | Size | Time |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------------|------|------|" >> $GITHUB_STEP_SUMMARY
+          echo "| 🧱 WASM | Yoga, AI models, ONNX Runtime | ~5 MB | 30-60 min |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🌊 SEA | Single Executable Application | ~70 MB | 10-15 min |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🤏 smol | Compressed Node.js + CLI | ~18 MB | 60-120 min |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🎯 Platforms Built" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- 🐧 Linux (x64, arm64)" >> $GITHUB_STEP_SUMMARY
+          echo "- 🍎 macOS (x64, arm64)" >> $GITHUB_STEP_SUMMARY
+          echo "- 🪟 Windows (x64, arm64)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### ⚡ Build Order" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "1. **WASM Assets** - Built first, cached for SEA builds" >> $GITHUB_STEP_SUMMARY
+          echo "2. **SEA Binaries** - Built second, fast bundling process" >> $GITHUB_STEP_SUMMARY
+          echo "3. **Smol Binaries** - Built last, long Node.js compilation" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🎯 Next Steps" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- These binaries are now cached for E2E tests" >> $GITHUB_STEP_SUMMARY
+          echo "- Use \`publish-socketbin.yml\` to publish to npm" >> $GITHUB_STEP_SUMMARY
+          echo "- Cache is invalidated when source files change" >> $GITHUB_STEP_SUMMARY

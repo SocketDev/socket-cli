@@ -7,7 +7,9 @@
 import { cpus } from 'node:os'
 import path from 'node:path'
 
-import { exec } from './build-exec.mjs'
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
+import { spawn } from '@socketsecurity/lib/spawn'
+
 import { printStep } from './build-output.mjs'
 
 /**
@@ -74,7 +76,14 @@ export class EmscriptenBuilder {
       emccCommand += ` ${WASM_OPT_FLAGS}`
     }
 
-    await exec(emccCommand, { cwd: this.sourceDir, stdio: 'inherit' })
+    const result = await spawn(emccCommand, [], {
+      cwd: this.sourceDir,
+      shell: true,
+      stdio: 'inherit',
+    })
+    if (result.code !== 0) {
+      throw new Error(`emcc build failed with exit code ${result.code}`)
+    }
   }
 
   /**
@@ -91,10 +100,32 @@ export class EmscriptenBuilder {
 
     const wasmPath = path.join(this.buildDir, wasmFile)
 
-    await exec(
-      `wasm-opt -O${optimizeLevel} -s ${shrinkLevel} ${wasmPath} -o ${wasmPath}`,
-      { stdio: 'inherit' }
+    // Find wasm-opt in Emscripten SDK or system PATH.
+    let wasmOptCmd = 'wasm-opt'
+    if (process.env.EMSDK) {
+      const emsdkWasmOpt = path.join(process.env.EMSDK, 'upstream', 'bin', 'wasm-opt')
+      const { existsSync } = await import('node:fs')
+      if (existsSync(emsdkWasmOpt)) {
+        wasmOptCmd = emsdkWasmOpt
+      }
+    }
+
+    const result = await spawn(
+      wasmOptCmd,
+      [
+        `-O${optimizeLevel}`,
+        '-s', shrinkLevel.toString(),
+        '--enable-bulk-memory',
+        '--enable-nontrapping-float-to-int',
+        '--enable-sign-ext',
+        wasmPath,
+        '-o', wasmPath
+      ],
+      { shell: WIN32, stdio: 'inherit' }
     )
+    if (result.code !== 0) {
+      throw new Error(`wasm-opt failed with exit code ${result.code}`)
+    }
   }
 
   /**
@@ -108,7 +139,23 @@ export class EmscriptenBuilder {
 
     const wasmPath = path.join(this.buildDir, wasmFile)
 
-    await exec(`wasm-strip ${wasmPath}`, { stdio: 'inherit' })
+    // Find wasm-strip in Emscripten SDK or system PATH.
+    let wasmStripCmd = 'wasm-strip'
+    if (process.env.EMSDK) {
+      const emsdkWasmStrip = path.join(process.env.EMSDK, 'upstream', 'bin', 'wasm-strip')
+      const { existsSync } = await import('node:fs')
+      if (existsSync(emsdkWasmStrip)) {
+        wasmStripCmd = emsdkWasmStrip
+      }
+    }
+
+    const result = await spawn(wasmStripCmd, [wasmPath], {
+      shell: WIN32,
+      stdio: 'inherit',
+    })
+    if (result.code !== 0) {
+      throw new Error(`wasm-strip failed with exit code ${result.code}`)
+    }
   }
 
   /**
@@ -139,10 +186,14 @@ export class EmscriptenBuilder {
       .map(([key, value]) => `-D${key}=${value}`)
       .join(' ')
 
-    await exec(
+    const result = await spawn(
       `emcmake cmake -S ${this.sourceDir} -B ${this.buildDir} ${cmakeArgs}`,
-      { stdio: 'inherit' }
+      [],
+      { shell: true, stdio: 'inherit' }
     )
+    if (result.code !== 0) {
+      throw new Error(`emcmake configure failed with exit code ${result.code}`)
+    }
   }
 
   /**
@@ -157,9 +208,13 @@ export class EmscriptenBuilder {
     printStep('Building with emmake')
 
     const jobs = parallel ? cpus().length : 1
-    await exec(
+    const result = await spawn(
       `emmake cmake --build ${this.buildDir} --target ${target} -j ${jobs}`,
-      { stdio: 'inherit' }
+      [],
+      { shell: true, stdio: 'inherit' }
     )
+    if (result.code !== 0) {
+      throw new Error(`emmake build failed with exit code ${result.code}`)
+    }
   }
 }

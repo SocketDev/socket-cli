@@ -1,5 +1,5 @@
 /** @fileoverview SOCKET_CLI_CONFIG environment variable. */
 
-import { env } from 'node:process'
+import { getSocketCliConfig } from '@socketsecurity/lib/env/socket-cli'
 
-export const SOCKET_CLI_CONFIG = env['SOCKET_CLI_CONFIG']
+export const SOCKET_CLI_CONFIG = getSocketCliConfig()

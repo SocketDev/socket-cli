@@ -40,7 +40,9 @@ describe('GoParser', () => {
       expect(result.components.length).toBeGreaterThan(0)
 
       // Should find cobra package.
-      const cobra = result.components.find(c => c.name === 'github.com/spf13/cobra')
+      const cobra = result.components.find(
+        c => c.name === 'github.com/spf13/cobra',
+      )
       expect(cobra).toBeDefined()
       expect(cobra?.version).toBe('v1.7.0')
       expect(cobra?.purl).toBe('pkg:golang/github.com/spf13/cobra@v1.7.0')
@@ -59,7 +61,9 @@ describe('GoParser', () => {
     it('should mark indirect dependencies correctly', async () => {
       const result = await parser.parse(fixturesPath)
 
-      const pkgErrors = result.components.find(c => c.name === 'github.com/pkg/errors')
+      const pkgErrors = result.components.find(
+        c => c.name === 'github.com/pkg/errors',
+      )
       expect(pkgErrors).toBeDefined()
       expect(pkgErrors?.scope).toBe('optional') // indirect = optional
     })
@@ -71,14 +75,18 @@ describe('GoParser', () => {
 
       // Root component should exist.
       const rootDep = result.dependencies.find(d =>
-        d.ref.includes('github.com/example/test-go-app')
+        d.ref.includes('github.com/example/test-go-app'),
       )
       expect(rootDep).toBeDefined()
       expect(rootDep?.dependsOn.length).toBeGreaterThan(0)
 
       // Should only include direct dependencies (not indirect).
-      expect(rootDep?.dependsOn).toContain('pkg:golang/github.com/spf13/cobra@v1.7.0')
-      expect(rootDep?.dependsOn).not.toContain('pkg:golang/github.com/pkg/errors@v0.9.1')
+      expect(rootDep?.dependsOn).toContain(
+        'pkg:golang/github.com/spf13/cobra@v1.7.0',
+      )
+      expect(rootDep?.dependsOn).not.toContain(
+        'pkg:golang/github.com/pkg/errors@v0.9.1',
+      )
     })
 
     it('should parse all dependencies from go.mod', async () => {
@@ -98,7 +106,9 @@ describe('GoParser', () => {
 
       // Replace directive: github.com/old/module => github.com/new/module v1.2.3
       // Should not appear in components (old module replaced).
-      const oldModule = result.components.find(c => c.name === 'github.com/old/module')
+      const oldModule = result.components.find(
+        c => c.name === 'github.com/old/module',
+      )
       expect(oldModule).toBeUndefined()
     })
   })
@@ -107,9 +117,13 @@ describe('GoParser', () => {
     it('should generate valid PURLs for Go modules', async () => {
       const result = await parser.parse(fixturesPath)
 
-      const cobra = result.components.find(c => c.name === 'github.com/spf13/cobra')
+      const cobra = result.components.find(
+        c => c.name === 'github.com/spf13/cobra',
+      )
       expect(cobra?.purl).toBe('pkg:golang/github.com/spf13/cobra@v1.7.0')
-      expect(cobra?.['bom-ref']).toBe('pkg:golang/github.com/spf13/cobra@v1.7.0')
+      expect(cobra?.['bom-ref']).toBe(
+        'pkg:golang/github.com/spf13/cobra@v1.7.0',
+      )
     })
   })
 
@@ -132,7 +146,10 @@ describe('GoParser', () => {
       const tempDir = path.join('/tmp', `go-test-${Date.now()}`)
       await mkdir(tempDir, { recursive: true })
 
-      await writeFile(path.join(tempDir, 'go.mod'), 'module example.com/empty\n\ngo 1.21')
+      await writeFile(
+        path.join(tempDir, 'go.mod'),
+        'module example.com/empty\n\ngo 1.21',
+      )
 
       const result = await parser.parse(tempDir)
 
@@ -149,7 +166,7 @@ describe('GoParser', () => {
 
       await writeFile(
         path.join(tempDir, 'go.mod'),
-        'module example.com/single\n\ngo 1.21\n\nrequire github.com/pkg/errors v0.9.1'
+        'module example.com/single\n\ngo 1.21\n\nrequire github.com/pkg/errors v0.9.1',
       )
 
       const result = await parser.parse(tempDir)

@@ -6,16 +6,19 @@
   "private": true,
   "exports": {
     "./lib/build-env": "./lib/build-env.mjs",
-    "./lib/build-exec": "./lib/build-exec.mjs",
     "./lib/build-helpers": "./lib/build-helpers.mjs",
     "./lib/build-output": "./lib/build-output.mjs",
     "./lib/checkpoint-manager": "./lib/checkpoint-manager.mjs",
     "./lib/cmake-builder": "./lib/cmake-builder.mjs",
     "./lib/emscripten-builder": "./lib/emscripten-builder.mjs",
+    "./lib/extraction-cache": "./lib/extraction-cache.mjs",
     "./lib/patch-validator": "./lib/patch-validator.mjs",
-    "./lib/rust-builder": "./lib/rust-builder.mjs"
+    "./lib/preflight-checks": "./lib/preflight-checks.mjs",
+    "./lib/rust-builder": "./lib/rust-builder.mjs",
+    "./lib/script-runner": "./lib/script-runner.mjs",
+    "./lib/tool-installer": "./lib/tool-installer.mjs"
   },
   "dependencies": {
-    "@socketsecurity/lib": "1.3.5"
+    "@socketsecurity/lib": "catalog:"
   }
 }
