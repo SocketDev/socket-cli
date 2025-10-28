@@ -11,6 +11,7 @@ import path from 'node:path'
 
 import colors from 'yoctocolors-cjs'
 
+import { detectPackageManager } from '@socketsecurity/lib/env/package-manager'
 import { getIpcStubPath } from '@socketsecurity/lib/ipc'
 import { logger } from '@socketsecurity/lib/logger'
 
@@ -18,7 +19,7 @@ import { outputSelfUpdate } from './output-self-update.mts'
 import ENV from '../../constants/env.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
-import { isSeaBinary } from '../../utils/executable/detect.mjs'
+import { canSelfUpdate, isSeaBinary } from '../../utils/executable/detect.mjs'
 import {
   clearQuarantine,
   ensureExecutable,
@@ -236,10 +237,41 @@ export async function handleSelfUpdate(
   importMeta: ImportMeta,
   { parentName }: { parentName: string; rawArgv?: readonly string[] },
 ): Promise<void> {
-  // This command is only available when running as SEA binary.
-  if (!isSeaBinary()) {
+  // This command is only available for standalone SEA binaries in ~/.socket/_dlx/.
+  // Not available for npm/pnpm/yarn-installed packages.
+  if (!canSelfUpdate()) {
+    // Detect which package manager was used
+    const packageManager = detectPackageManager()
+
+    let updateCommand: string
+    let installedVia: string
+
+    if (packageManager === 'npm') {
+      updateCommand = 'npm update -g socket'
+      installedVia = 'npm'
+    } else if (packageManager === 'pnpm') {
+      updateCommand = 'pnpm update -g socket'
+      installedVia = 'pnpm'
+    } else if (packageManager === 'yarn') {
+      updateCommand = 'yarn global upgrade socket'
+      installedVia = 'yarn'
+    } else if (packageManager === 'bun') {
+      updateCommand = 'bun update -g socket'
+      installedVia = 'bun'
+    } else if (isSeaBinary()) {
+      // SEA binary but not in DLX (e.g., manually installed to /usr/local/bin)
+      updateCommand = 'curl -sSL https://raw.githubusercontent.com/SocketDev/socket-cli/main/install.sh | sh'
+      installedVia = 'manual installation'
+    } else {
+      // Bootstrap wrapper - unknown package manager
+      updateCommand = 'npm update -g socket'
+      installedVia = 'a package manager'
+    }
+
     throw new Error(
-      'self-update is only available when running as a SEA binary',
+      'self-update is only available for Socket CLI binaries managed by Socket.\n\n' +
+        `You installed Socket CLI via ${installedVia}. To update, run:\n` +
+        `  ${colors.cyan(updateCommand)}`,
     )
   }
 
