@@ -48,7 +48,7 @@ async function main() {
     }
 
     // Run taze at root level (recursive flag will check all packages).
-    const exitCode = await spawn('pnpm', tazeArgs, {
+    const result = await spawn('pnpm', tazeArgs, {
       shell: WIN32,
       stdio: quiet ? 'pipe' : 'inherit',
     })
@@ -59,34 +59,32 @@ async function main() {
     }
 
     // If applying updates, also update Socket packages.
-    if (apply && exitCode === 0) {
+    if (apply && result.code === 0) {
       if (!quiet) {
         logger.progress('Updating Socket packages...')
       }
 
-      const commands = [
+      const socketResult = await spawn(
+        'pnpm',
+        [
+          'update',
+          '@socketsecurity/*',
+          '@socketregistry/*',
+          '--latest',
+          '-r',
+        ],
         {
-          args: [
-            'update',
-            '@socketsecurity/*',
-            '@socketregistry/*',
-            '--latest',
-            '-r',
-          ],
-          command: 'pnpm',
-          options: { stdio: quiet ? 'pipe' : 'inherit' },
+          shell: WIN32,
+          stdio: quiet ? 'pipe' : 'inherit',
         },
-      ]
-
-      const results = await runParallel(commands)
-      const socketExitCode = results[0]
+      )
 
       // Clear progress line.
       if (!quiet) {
         process.stdout.write('\r\x1b[K')
       }
 
-      if (socketExitCode !== 0) {
+      if (socketResult.code !== 0) {
         if (!quiet) {
           printError('Failed to update Socket packages')
         }
@@ -95,7 +93,7 @@ async function main() {
       }
     }
 
-    if (code !== 0) {
+    if (result.code !== 0) {
       if (!quiet) {
         if (apply) {
           printError('Failed to update dependencies')
