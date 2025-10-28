@@ -154,7 +154,6 @@ jobs:
       - name: Install Python dependencies
         run: |
           echo "::group::Installing Python dependencies"
-          pip install --upgrade pip
           pip install -r packages/socketbin-cli-ai/requirements.txt
           echo "::endgroup::"
 
