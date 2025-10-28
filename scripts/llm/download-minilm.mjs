@@ -70,8 +70,9 @@ async function downloadFile(url, outputPath, description) {
   await fs.writeFile(outputPath, Buffer.from(buffer))
 
   const sizeMB = (buffer.byteLength / 1024 / 1024).toFixed(2)
-  logger.log(`   ✓ Downloaded ${sizeMB} MB`)
-  logger.log(`   ✓ Saved to ${outputPath}\n`)
+  logger.substep(`Downloaded ${sizeMB} MB`)
+  logger.substep(`Saved to ${outputPath}`)
+  logger.log()
 
   return buffer.byteLength
 }
@@ -86,7 +87,8 @@ async function main() {
 
   // Create cache directory.
   await fs.mkdir(cacheDir, { recursive: true })
-  logger.log(`✓ Cache directory: ${cacheDir}\n`)
+  logger.success(`Cache directory: ${cacheDir}`)
+  logger.log()
 
   let totalBytes = 0
 
