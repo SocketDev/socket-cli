@@ -3,14 +3,13 @@
  * Used by both npm wrapper and smol binary.
  */
 
-import { spawnSync } from 'node:child_process'
-import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs'
-import { homedir, tmpdir } from 'node:os'
+import { existsSync, mkdirSync } from 'node:fs'
+import { homedir } from 'node:os'
 import path from 'node:path'
-import { brotliDecompressSync } from 'node:zlib'
 
 import { dlxPackage } from '@socketsecurity/lib/dlx-package'
 import { logger } from '@socketsecurity/lib/logger'
+import { spawn } from '@socketsecurity/lib/spawn'
 import { gte } from 'semver'
 
 export const SOCKET_DLX_DIR = path.join(homedir(), '.socket', '_dlx')
@@ -32,7 +31,6 @@ export function getCliPaths(cliPackageDir) {
   }
   return {
     cliEntry: path.join(cliPackageDir, 'node_modules', '@socketsecurity', 'cli', 'dist', 'index.js'),
-    cliEntryBz: path.join(cliPackageDir, 'node_modules', '@socketsecurity', 'cli', 'dist', 'cli.js.bz'),
   }
 }
 
@@ -57,42 +55,15 @@ export function hasModernNode() {
 /**
  * Execute the CLI with the given arguments.
  */
-export function executeCli(cliPath, args) {
-  const result = spawnSync(process.execPath, [cliPath, ...args], {
+export async function executeCli(cliPath, args) {
+  const result = await spawn(process.execPath, [cliPath, ...args], {
     env: {
       ...process.env,
       PKG_EXECPATH: process.env.PKG_EXECPATH || 'PKG_INVOKE_NODEJS',
     },
     stdio: 'inherit',
   })
-  process.exit(result.status ?? 0)
-}
-
-/**
- * Execute brotli-compressed CLI.
- */
-export function executeCompressedCli(bzPath, args) {
-  // Read compressed file.
-  const compressed = readFileSync(bzPath)
-
-  // Decompress with brotli.
-  const decompressed = brotliDecompressSync(compressed)
-
-  // Write to temporary file and execute.
-  // Using a temp file allows us to maintain spawn behavior for proper stdio handling.
-  const tempCliPath = path.join(tmpdir(), `socket-cli-${process.pid}.js`)
-  writeFileSync(tempCliPath, decompressed)
-
-  try {
-    executeCli(tempCliPath, args)
-  } finally {
-    // Clean up temp file.
-    try {
-      unlinkSync(tempCliPath)
-    } catch {
-      // Ignore cleanup errors.
-    }
-  }
+  process.exit(result.code ?? 0)
 }
 
 /**
@@ -147,20 +118,15 @@ export async function findAndExecuteCli(args) {
   const result = await downloadCli()
   const cliPackageDir = result.packageDir
 
-  // Get paths.
-  const { cliEntry, cliEntryBz } = getCliPaths(cliPackageDir)
+  // Get CLI entry path (dist/index.js handles brotli decompression internally).
+  const { cliEntry } = getCliPaths(cliPackageDir)
 
-  // Check for brotli-compressed CLI first.
-  if (existsSync(cliEntryBz)) {
-    executeCompressedCli(cliEntryBz, args)
-  }
-
-  // Fallback to uncompressed CLI.
+  // Execute the CLI loader.
   if (existsSync(cliEntry)) {
-    executeCli(cliEntry, args)
+    await executeCli(cliEntry, args)
   }
 
-  // If we still can't find the CLI, exit with error.
+  // If we can't find the CLI, exit with error.
   logger.error('Socket CLI installation failed')
   logger.error('   CLI entry point not found after installation')
   logger.error(`   Looked in: ${cliEntry}`)
