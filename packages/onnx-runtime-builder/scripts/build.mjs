@@ -120,15 +120,14 @@ async function cloneSource() {
     throw new Error(`git clone failed with exit code ${result.code}`)
   }
 
-  // Verify source directory and CMakeLists.txt exist.
+  // Verify source directory and build.sh exist.
   if (!existsSync(SOURCE_DIR)) {
     throw new Error(`Source directory not created: ${SOURCE_DIR}`)
   }
 
-  const cmakeLists = path.join(SOURCE_DIR, 'CMakeLists.txt')
-  if (!existsSync(cmakeLists)) {
-    // Debug: List what's actually in the directory.
-    printError(`CMakeLists.txt not found at: ${cmakeLists}`)
+  const buildScript = path.join(SOURCE_DIR, 'build.sh')
+  if (!existsSync(buildScript)) {
+    printError(`build.sh not found at: ${buildScript}`)
     printStep('Listing source directory contents:')
     try {
       const { readdir } = await import('node:fs/promises')
@@ -137,7 +136,7 @@ async function cloneSource() {
     } catch (e) {
       printError(`Could not read directory: ${e.message}`)
     }
-    throw new Error(`CMakeLists.txt not found after clone: ${cmakeLists}`)
+    throw new Error(`build.sh not found after clone: ${buildScript}`)
   }
 
   printSuccess('ONNX Runtime source cloned')
@@ -168,34 +167,7 @@ async function generateOpsConfig() {
 }
 
 /**
- * Configure ONNX Runtime build.
- */
-async function configure() {
-  if (!(await shouldRun('onnx-runtime', 'configured', FORCE_BUILD))) {
-    return
-  }
-
-  printHeader('Configuring ONNX Runtime Build')
-
-  const emscripten = new EmscriptenBuilder(SOURCE_DIR, BUILD_DIR)
-
-  await emscripten.configureCMake({
-    CMAKE_BUILD_TYPE: 'MinSizeRel',
-    onnxruntime_BUILD_WEBASSEMBLY: 'ON',
-    onnxruntime_ENABLE_WEBASSEMBLY_THREADS: 'OFF',
-    onnxruntime_MINIMAL_BUILD: 'ON',
-    onnxruntime_DISABLE_EXCEPTIONS: 'ON',
-    onnxruntime_DISABLE_RTTI: 'ON',
-    onnxruntime_REDUCE_OPS_BUILD: 'ON',
-    onnxruntime_BUILD_UNIT_TESTS: 'OFF',
-  })
-
-  printSuccess('Configuration complete')
-  await createCheckpoint('onnx-runtime', 'configured')
-}
-
-/**
- * Build ONNX Runtime WASM.
+ * Build ONNX Runtime WASM using build.sh script.
  */
 async function build() {
   if (!(await shouldRun('onnx-runtime', 'built', FORCE_BUILD))) {
@@ -206,8 +178,32 @@ async function build() {
 
   const startTime = Date.now()
 
-  const emscripten = new EmscriptenBuilder(SOURCE_DIR, BUILD_DIR)
-  await emscripten.buildWithCMake({ parallel: true, target: 'onnxruntime' })
+  // ONNX Runtime uses a custom build.sh script, not direct CMake.
+  // Build with minimal size optimizations for CodeT5 inference.
+  const buildScript = path.join(SOURCE_DIR, 'build.sh')
+
+  printStep('Running build.sh with minimal build configuration...')
+  printStep('This will take 20-30 minutes')
+
+  const result = await spawn(
+    buildScript,
+    [
+      '--config',
+      'MinSizeRel',
+      '--build_wasm',
+      '--skip_tests',
+      '--disable_wasm_exception_catching',
+      '--disable_rtti',
+      '--minimal_build',
+      '--build_dir',
+      BUILD_DIR,
+    ],
+    { cwd: SOURCE_DIR, shell: WIN32, stdio: 'inherit' }
+  )
+
+  if (result.code !== 0) {
+    throw new Error(`ONNX Runtime build.sh failed with exit code ${result.code}`)
+  }
 
   const duration = formatDuration(Date.now() - startTime)
   printSuccess(`Build completed in ${duration}`)
@@ -314,8 +310,8 @@ async function main() {
 
   // Clean checkpoints if requested or if output/source is missing.
   const outputWasm = path.join(OUTPUT_DIR, 'onnxruntime-web.wasm')
-  const cmakeLists = path.join(SOURCE_DIR, 'CMakeLists.txt')
-  const artifactsMissing = !existsSync(outputWasm) || !existsSync(cmakeLists)
+  const buildScript = path.join(SOURCE_DIR, 'build.sh')
+  const artifactsMissing = !existsSync(outputWasm) || !existsSync(buildScript)
 
   if (CLEAN_BUILD || artifactsMissing) {
     if (artifactsMissing) {
@@ -367,7 +363,6 @@ async function main() {
   // Build phases.
   await cloneSource()
   await generateOpsConfig()
-  await configure()
   await build()
   await optimize()
   await verify()
