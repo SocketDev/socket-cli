@@ -189,7 +189,7 @@ jobs:
         id: sea-cache
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
-          path: packages/node-sea-builder/dist/socket-sea-${{ matrix.platform }}-${{ matrix.arch }}
+          path: packages/node-sea-builder/dist/sea/
           key: node-sea-${{ matrix.platform }}-${{ matrix.arch }}-${{ steps.sea-cache-key.outputs.hash }}
           restore-keys: node-sea-${{ matrix.platform }}-${{ matrix.arch }}-
 
@@ -199,24 +199,32 @@ jobs:
 
       - name: Build SEA binary
         if: steps.sea-cache.outputs.cache-hit != 'true' || inputs.force
-        run: pnpm --filter @socketbin/node-sea-builder run build
+        run: pnpm --filter @socketbin/node-sea-builder run build -- --platform=${{ matrix.platform }} --arch=${{ matrix.arch }}
 
       - name: Verify SEA binary
         shell: bash
         run: |
           echo "=== SEA Binary Build Artifacts ==="
-          mkdir -p packages/node-sea-builder/dist
-          ls -lh packages/node-sea-builder/dist/
+          mkdir -p packages/node-sea-builder/dist/sea
+          ls -lh packages/node-sea-builder/dist/sea/ || true
           echo ""
-          BINARY_PATH="packages/node-sea-builder/dist/socket-sea-${{ matrix.platform }}-${{ matrix.arch }}"
-          if [ -f "$BINARY_PATH" ] || [ -f "${BINARY_PATH}.exe" ]; then
-            if [ "${{ matrix.os }}" = "windows" ]; then
-              echo "socket-sea-${{ matrix.platform }}-${{ matrix.arch }}.exe size: $(du -h ${BINARY_PATH}.exe | cut -f1)"
-            else
-              echo "socket-sea-${{ matrix.platform }}-${{ matrix.arch }} size: $(du -h $BINARY_PATH | cut -f1)"
-            fi
+
+          # Determine binary name based on platform
+          if [ "${{ matrix.platform }}" = "win32" ]; then
+            BINARY_NAME="socket-win-${{ matrix.arch }}.exe"
+          elif [ "${{ matrix.platform }}" = "darwin" ]; then
+            BINARY_NAME="socket-macos-${{ matrix.arch }}"
           else
-            echo "⚠️  Binary not found at expected path"
+            BINARY_NAME="socket-${{ matrix.platform }}-${{ matrix.arch }}"
+          fi
+
+          BINARY_PATH="packages/node-sea-builder/dist/sea/$BINARY_NAME"
+          if [ -f "$BINARY_PATH" ]; then
+            echo "$BINARY_NAME size: $(du -h $BINARY_PATH | cut -f1)"
+          else
+            echo "⚠️  Binary not found at expected path: $BINARY_PATH"
+            echo "Contents of dist/sea:"
+            ls -la packages/node-sea-builder/dist/sea/ || echo "Directory does not exist"
           fi
 
       - name: Upload SEA binary
@@ -224,8 +232,9 @@ jobs:
         with:
           name: socket-sea-${{ matrix.platform }}-${{ matrix.arch }}
           path: |
-            packages/node-sea-builder/dist/socket-sea-${{ matrix.platform }}-${{ matrix.arch }}
-            packages/node-sea-builder/dist/socket-sea-${{ matrix.platform }}-${{ matrix.arch }}.exe
+            packages/node-sea-builder/dist/sea/socket-win-${{ matrix.arch }}.exe
+            packages/node-sea-builder/dist/sea/socket-macos-${{ matrix.arch }}
+            packages/node-sea-builder/dist/sea/socket-${{ matrix.platform }}-${{ matrix.arch }}
           retention-days: 7
           if-no-files-found: warn
 
