@@ -5,6 +5,8 @@
  * It downloads @socketsecurity/cli from npm and executes it.
  */
 
+import { logger } from '@socketsecurity/lib/logger'
+
 import { findAndExecuteCli, getArgs } from './shared/bootstrap-shared.mjs'
 
 async function main() {
@@ -14,6 +16,6 @@ async function main() {
 
 // Run the bootstrap.
 main().catch((e) => {
-  process.stderr.write(`❌ Bootstrap error: ${e instanceof Error ? e.message : String(e)}\n`)
+  logger.error(`Bootstrap error: ${e instanceof Error ? e.message : String(e)}`)
   process.exit(1)
 })

@@ -7,6 +7,8 @@ import { build } from 'esbuild'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { NODE_VERSION_SEMVER } from './node-version.mjs'
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.resolve(__dirname, '..')
 
@@ -15,6 +17,9 @@ const config = {
     js: '#!/usr/bin/env node',
   },
   bundle: true,
+  define: {
+    __MIN_NODE_VERSION__: JSON.stringify(NODE_VERSION_SEMVER),
+  },
   entryPoints: [path.join(rootPath, 'src', 'bootstrap-npm.mts')],
   external: [],
   format: 'cjs',
