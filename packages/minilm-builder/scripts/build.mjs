@@ -312,8 +312,8 @@ async function runPythonScript(scriptName, args, options = {}) {
         throw new Error(result.error)
       }
 
-      if (result.status && result.status !== 'complete') {
-        printStep(`  ${result.status.replace(/_/g, ' ')}...`)
+      if (result.code && result.code !== 'complete') {
+        printStep(`  ${result.code.replace(/_/g, ' ')}...`)
       }
     } catch (e) {
       if (e.message.startsWith('{')) {

@@ -325,9 +325,9 @@ async function buildSeaBlob(nodeBinary, configPath) {
     result &&
     typeof result === 'object' &&
     'exitCode' in result &&
-    result.exitCode !== 0
+    result.code !== 0
   ) {
-    throw new Error(`Failed to generate SEA blob: exit code ${result.exitCode}`)
+    throw new Error(`Failed to generate SEA blob: exit code ${result.code}`)
   }
 
   return blobPath
