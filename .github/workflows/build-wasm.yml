@@ -99,7 +99,11 @@ jobs:
         run: |
           echo "::group::Building Yoga Layout WASM"
           source emsdk/emsdk_env.sh
-          pnpm --filter @socketsecurity/yoga-layout run build
+          if [ "${{ inputs.force }}" = "true" ]; then
+            pnpm --filter @socketsecurity/yoga-layout run build -- --force
+          else
+            pnpm --filter @socketsecurity/yoga-layout run build
+          fi
           echo "Build exit code: $?"
           echo "Checking for build artifacts..."
           ls -lh packages/yoga-layout/build/wasm/ || echo "wasm directory not found"
@@ -191,7 +195,11 @@ jobs:
         if: steps.ai-cache-valid.outputs.valid != 'true' || inputs.force
         run: |
           echo "::group::Building AI models (this will take 10-15 minutes)"
-          pnpm --filter @socketbin/cli-ai run build
+          if [ "${{ inputs.force }}" = "true" ]; then
+            pnpm --filter @socketbin/cli-ai run build -- --force
+          else
+            pnpm --filter @socketbin/cli-ai run build
+          fi
           echo "Build exit code: $?"
           echo "Checking for build artifacts..."
           ls -lh packages/socketbin-cli-ai/dist/ || echo "dist directory not found"
@@ -289,7 +297,11 @@ jobs:
         run: |
           echo "::group::Building ONNX Runtime WASM (this will take 20-30 minutes)"
           source emsdk/emsdk_env.sh
-          pnpm --filter @socketsecurity/onnx-runtime-builder run build
+          if [ "${{ inputs.force }}" = "true" ]; then
+            pnpm --filter @socketsecurity/onnx-runtime-builder run build -- --force
+          else
+            pnpm --filter @socketsecurity/onnx-runtime-builder run build
+          fi
           echo "Build exit code: $?"
           echo "Checking for build artifacts..."
           ls -lh packages/onnx-runtime-builder/dist/ || echo "dist directory not found"
