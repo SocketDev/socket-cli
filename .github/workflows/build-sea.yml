@@ -101,6 +101,7 @@ jobs:
           path: packages/yoga-layout/build/wasm
           key: yoga-wasm-${{ steps.wasm-cache-keys.outputs.yoga-hash }}
           restore-keys: yoga-wasm-
+          enableCrossOsArchive: true
 
       - name: Restore AI models cache
         id: ai-cache
@@ -109,6 +110,7 @@ jobs:
           path: packages/socketbin-cli-ai/dist
           key: ai-models-${{ steps.wasm-cache-keys.outputs.ai-hash }}
           restore-keys: ai-models-
+          enableCrossOsArchive: true
 
       - name: Restore ONNX Runtime cache
         id: onnx-cache
@@ -117,6 +119,7 @@ jobs:
           path: packages/onnx-runtime-builder/dist
           key: onnx-runtime-${{ steps.wasm-cache-keys.outputs.onnx-hash }}
           restore-keys: onnx-runtime-
+          enableCrossOsArchive: true
 
       - name: Verify Yoga Layout cache
         id: yoga-cache-valid
