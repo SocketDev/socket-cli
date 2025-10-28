@@ -213,19 +213,31 @@ jobs:
           # Build missing WASM assets.
           if [ "${{ steps.yoga-cache-valid.outputs.valid }}" != "true" ]; then
             echo "::group::Building Yoga Layout WASM"
-            pnpm --filter @socketsecurity/yoga-layout run build
+            if [ "${{ inputs.force }}" = "true" ]; then
+              pnpm --filter @socketsecurity/yoga-layout run build -- --force
+            else
+              pnpm --filter @socketsecurity/yoga-layout run build
+            fi
             echo "::endgroup::"
           fi
 
           if [ "${{ steps.ai-cache-valid.outputs.valid }}" != "true" ]; then
             echo "::group::Building AI models (10-15 minutes)"
-            pnpm --filter @socketbin/cli-ai run build
+            if [ "${{ inputs.force }}" = "true" ]; then
+              pnpm --filter @socketbin/cli-ai run build -- --force
+            else
+              pnpm --filter @socketbin/cli-ai run build
+            fi
             echo "::endgroup::"
           fi
 
           if [ "${{ steps.onnx-cache-valid.outputs.valid }}" != "true" ]; then
             echo "::group::Building ONNX Runtime (20-30 minutes)"
-            pnpm --filter @socketsecurity/onnx-runtime-builder run build
+            if [ "${{ inputs.force }}" = "true" ]; then
+              pnpm --filter @socketsecurity/onnx-runtime-builder run build -- --force
+            else
+              pnpm --filter @socketsecurity/onnx-runtime-builder run build
+            fi
             echo "::endgroup::"
           fi
 
