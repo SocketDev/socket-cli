@@ -11,7 +11,7 @@
  *   node scripts/build.mjs --force  # Force rebuild (ignore checkpoints)
  */
 
-import { promises as fs } from 'node:fs'
+import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -48,6 +48,7 @@ const __dirname = path.dirname(__filename)
 // Parse arguments.
 const args = process.argv.slice(2)
 const FORCE_BUILD = args.includes('--force')
+const CLEAN_BUILD = args.includes('--clean')
 
 // Configuration.
 const ONNX_VERSION = 'v1.20.1'
@@ -197,7 +198,7 @@ async function optimize() {
 
   const wasmFile = path.join(BUILD_DIR, 'onnxruntime-web.wasm')
 
-  if (!(await fs.access(wasmFile).then(() => true).catch(() => false))) {
+  if (!existsSync(wasmFile)) {
     throw new Error(`WASM file not found: ${wasmFile}`)
   }
 
@@ -262,7 +263,7 @@ async function exportWasm() {
 
   await fs.copyFile(wasmFile, outputWasm)
 
-  if (await fs.access(jsFile).then(() => true).catch(() => false)) {
+  if (existsSync(jsFile)) {
     await fs.copyFile(jsFile, outputJs)
   }
 
@@ -282,6 +283,18 @@ async function main() {
   printHeader('🔨 Building onnx-runtime')
   logger.info(`ONNX Runtime ${ONNX_VERSION} minimal build`)
   logger.info('')
+
+  // Clean checkpoints if requested or if output/source is missing.
+  const outputWasm = path.join(OUTPUT_DIR, 'onnxruntime-web.wasm')
+  const cmakeLists = path.join(SOURCE_DIR, 'CMakeLists.txt')
+  const artifactsMissing = !existsSync(outputWasm) || !existsSync(cmakeLists)
+
+  if (CLEAN_BUILD || artifactsMissing) {
+    if (artifactsMissing) {
+      printStep('Output artifacts or source missing - cleaning stale checkpoints')
+    }
+    await cleanCheckpoint('onnx-runtime')
+  }
 
   // Pre-flight checks.
   printHeader('Pre-flight Checks')
