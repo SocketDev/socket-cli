@@ -51,7 +51,7 @@ const FORCE_BUILD = args.includes('--force')
 const CLEAN_BUILD = args.includes('--clean')
 
 // Configuration.
-const ONNX_VERSION = 'v1.20.1'
+const ONNX_VERSION = 'v1.23.2'
 const ROOT_DIR = path.join(__dirname, '..')
 const SOURCE_DIR = path.join(ROOT_DIR, '.onnx-source')
 const BUILD_DIR = path.join(ROOT_DIR, 'build')
