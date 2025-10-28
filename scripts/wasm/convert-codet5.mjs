@@ -42,12 +42,12 @@ async function exec(command, args, options = {}) {
     ...options,
   })
 
-  if (result.status !== 0) {
-    throw new Error(`Command failed with code ${result.status}`)
+  if (result.code !== 0) {
+    throw new Error(`Command failed with code ${result.code}`)
   }
 
   return {
-    code: result.status ?? 0,
+    code: result.code ?? 0,
     stderr: result.stderr ?? '',
     stdout: result.stdout ?? '',
   }

@@ -65,8 +65,8 @@ async function benchmarkBuild(mode) {
       stdioString: true,
     })
 
-    if (result.status !== 0) {
-      throw new Error(`Build failed with exit code ${result.status}`)
+    if (result.code !== 0) {
+      throw new Error(`Build failed with exit code ${result.code}`)
     }
   } catch (e) {
     logger.error(`${mode} build failed:`, e.message)
