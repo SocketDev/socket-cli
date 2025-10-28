@@ -100,11 +100,20 @@ export class EmscriptenBuilder {
 
     const wasmPath = path.join(this.buildDir, wasmFile)
 
-    // Use shell:true to ensure PATH from emsdk_env.sh is available.
+    // Find wasm-opt in Emscripten SDK or system PATH.
+    let wasmOptCmd = 'wasm-opt'
+    if (process.env.EMSDK) {
+      const emsdkWasmOpt = path.join(process.env.EMSDK, 'upstream', 'bin', 'wasm-opt')
+      const { existsSync } = await import('node:fs')
+      if (existsSync(emsdkWasmOpt)) {
+        wasmOptCmd = emsdkWasmOpt
+      }
+    }
+
     const result = await spawn(
-      'wasm-opt',
+      wasmOptCmd,
       [`-O${optimizeLevel}`, '-s', shrinkLevel.toString(), wasmPath, '-o', wasmPath],
-      { shell: true, stdio: 'inherit' }
+      { shell: WIN32, stdio: 'inherit' }
     )
     if (result.code !== 0) {
       throw new Error(`wasm-opt failed with exit code ${result.code}`)
@@ -122,9 +131,18 @@ export class EmscriptenBuilder {
 
     const wasmPath = path.join(this.buildDir, wasmFile)
 
-    // Use shell:true to ensure PATH from emsdk_env.sh is available.
-    const result = await spawn('wasm-strip', [wasmPath], {
-      shell: true,
+    // Find wasm-strip in Emscripten SDK or system PATH.
+    let wasmStripCmd = 'wasm-strip'
+    if (process.env.EMSDK) {
+      const emsdkWasmStrip = path.join(process.env.EMSDK, 'upstream', 'bin', 'wasm-strip')
+      const { existsSync } = await import('node:fs')
+      if (existsSync(emsdkWasmStrip)) {
+        wasmStripCmd = emsdkWasmStrip
+      }
+    }
+
+    const result = await spawn(wasmStripCmd, [wasmPath], {
+      shell: WIN32,
       stdio: 'inherit',
     })
     if (result.code !== 0) {

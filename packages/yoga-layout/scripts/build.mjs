@@ -297,9 +297,19 @@ async function optimize() {
     '--strip-target-features',
   ]
 
-  // Use shell:true to ensure PATH from emsdk_env.sh is available.
-  const result = await spawn('wasm-opt', [...wasmOptFlags, wasmFile, '-o', wasmFile], {
-    shell: true,
+  // Find wasm-opt in Emscripten SDK or system PATH.
+  // Emscripten SDK has wasm-opt in: $EMSDK/upstream/bin/wasm-opt
+  let wasmOptCmd = 'wasm-opt'
+  if (process.env.EMSDK) {
+    const emsdkWasmOpt = path.join(process.env.EMSDK, 'upstream', 'bin', 'wasm-opt')
+    if (existsSync(emsdkWasmOpt)) {
+      wasmOptCmd = emsdkWasmOpt
+      printStep(`Using wasm-opt from EMSDK: ${wasmOptCmd}`)
+    }
+  }
+
+  const result = await spawn(wasmOptCmd, [...wasmOptFlags, wasmFile, '-o', wasmFile], {
+    shell: WIN32,
     stdio: 'inherit',
   })
   if (result.code !== 0) {
