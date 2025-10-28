@@ -81,6 +81,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Build socket package bootstrap
+        run: pnpm --filter socket run build
+
       - name: Generate smol build cache key
         id: smol-cache-key
         shell: bash
