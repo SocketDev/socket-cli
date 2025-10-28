@@ -32,6 +32,7 @@ jobs:
     timeout-minutes: 60
     strategy:
       fail-fast: false
+      max-parallel: 6
       matrix:
         include:
           # Linux builds - use x64 runner to build both x64 and arm64.
