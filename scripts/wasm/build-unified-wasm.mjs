@@ -57,7 +57,7 @@ async function exec(command, args, options = {}) {
   })
 
   return {
-    code: result.status ?? 0,
+    code: result.code ?? 0,
     stderr: result.stderr ?? '',
     stdout: result.stdout ?? '',
   }
