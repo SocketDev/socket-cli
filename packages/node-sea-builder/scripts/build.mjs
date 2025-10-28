@@ -336,41 +336,44 @@ async function buildSeaBlob(nodeBinary, configPath) {
 }
 
 /**
+ * Finds the postject executable path.
+ *
+ * @returns {string} Path to postject executable.
+ * @throws {Error} If postject cannot be found.
+ */
+function findPostject() {
+  const __dirname = path.dirname(url.fileURLToPath(import.meta.url))
+  const isWindows = process.platform === 'win32'
+  const extension = isWindows ? '.cmd' : ''
+
+  const potentialPaths = [
+    // Package-local node_modules.
+    path.resolve(__dirname, `../node_modules/.bin/postject${extension}`),
+    // Root node_modules.
+    path.resolve(__dirname, `../../../node_modules/.bin/postject${extension}`),
+  ]
+
+  for (const p of potentialPaths) {
+    if (existsSync(p)) {
+      return p
+    }
+  }
+
+  throw new Error(
+    'postject executable not found in node_modules/.bin/\n' +
+      'Please ensure postject is installed: pnpm install',
+  )
+}
+
+/**
  * Inject SEA blob into Node binary.
  */
 async function injectSeaBlob(nodeBinary, blobPath, outputPath, fuseSentinel) {
   logger.log('Creating self-executable...')
 
-  // Check if postject is available.
-  try {
-    await spawn('pnpm', ['exec', 'postject', '--help'], {
-      stdio: 'ignore',
-    })
-  } catch (e) {
-    logger.error('Failed to execute postject check')
-    logger.error(`Error: ${e.message}`)
-    logger.error(`Platform: ${process.platform}`)
-    logger.error(`CWD: ${process.cwd()}`)
-
-    // Log node_modules structure for debugging.
-    try {
-      const { existsSync } = await import('node:fs')
-      const postjectPaths = [
-        'node_modules/.bin/postject',
-        '../../node_modules/.bin/postject',
-        'node_modules/postject',
-        '../../node_modules/postject',
-      ]
-      for (const p of postjectPaths) {
-        logger.error(`  ${p}: ${existsSync(p) ? 'exists' : 'not found'}`)
-      }
-    } catch {}
-
-    throw new Error(
-      'postject is required to inject the SEA blob into the Node.js binary.\n' +
-        'Please install it: pnpm add -D postject',
-    )
-  }
+  // Find postject executable.
+  const postjectPath = findPostject()
+  logger.log(`Using postject at: ${postjectPath}`)
 
   // Copy the Node binary.
   await fs.copyFile(nodeBinary, outputPath)
@@ -407,10 +410,8 @@ async function injectSeaBlob(nodeBinary, blobPath, outputPath, fuseSentinel) {
     // - --macho-segment-name NODE_SEA: (macOS only) Name of the segment where blob contents are stored
     logger.log('Injecting SEA blob...')
     await spawn(
-      'pnpm',
+      postjectPath,
       [
-        'exec',
-        'postject',
         outputPath,
         'NODE_SEA_BLOB',
         blobPath,
@@ -438,10 +439,8 @@ async function injectSeaBlob(nodeBinary, blobPath, outputPath, fuseSentinel) {
     // - blobPath: The name of the blob created by --experimental-sea-config
     // - --sentinel-fuse: Fuse used by Node.js to detect if a file has been injected
     await spawn(
-      'pnpm',
+      postjectPath,
       [
-        'exec',
-        'postject',
         outputPath,
         'NODE_SEA_BLOB',
         blobPath,
@@ -460,10 +459,8 @@ async function injectSeaBlob(nodeBinary, blobPath, outputPath, fuseSentinel) {
     // - blobPath: The name of the blob created by --experimental-sea-config
     // - --sentinel-fuse: Fuse used by Node.js to detect if a file has been injected
     await spawn(
-      'pnpm',
+      postjectPath,
       [
-        'exec',
-        'postject',
         outputPath,
         'NODE_SEA_BLOB',
         blobPath,
