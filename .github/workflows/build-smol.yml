@@ -99,6 +99,7 @@ jobs:
           max-size: 2G
 
       - name: Restore smol build cache
+        if: inputs.force != true
         id: smol-build-cache
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
@@ -108,6 +109,7 @@ jobs:
             node-smol-build-${{ matrix.platform }}-${{ matrix.arch }}-
 
       - name: Restore smol stripped binary cache
+        if: inputs.force != true
         id: smol-stripped-cache
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
@@ -116,6 +118,7 @@ jobs:
           restore-keys: node-smol-stripped-${{ matrix.platform }}-${{ matrix.arch }}-
 
       - name: Restore smol binary cache
+        if: inputs.force != true
         id: smol-cache
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
