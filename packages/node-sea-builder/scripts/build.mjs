@@ -30,6 +30,7 @@ import os from 'node:os'
 import path from 'node:path'
 import url from 'node:url'
 
+import { parseArgs } from '@socketsecurity/lib/argv/parse'
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { safeDelete } from '@socketsecurity/lib/fs'
 import { logger } from '@socketsecurity/lib/logger'
@@ -629,44 +630,19 @@ if (typeof require !== 'undefined' && (!require.resolve || !require.resolve.path
 }
 
 /**
- * Parse command-line arguments.
- */
-function parseArgs() {
-  const args = process.argv.slice(2)
-  const options = {}
-
-  for (const arg of args) {
-    if (arg.startsWith('--platform=')) {
-      const platform = arg.split('=')[1]
-      if (platform) {
-        options.platform = platform
-      }
-    } else if (arg.startsWith('--arch=')) {
-      const arch = arg.split('=')[1]
-      if (arch) {
-        options.arch = arch
-      }
-    } else if (arg.startsWith('--node-version=')) {
-      const nodeVersion = arg.split('=')[1]
-      if (nodeVersion) {
-        options.nodeVersion = nodeVersion
-      }
-    } else if (arg.startsWith('--output-dir=')) {
-      const outputDir = arg.split('=')[1]
-      if (outputDir) {
-        options.outputDir = outputDir
-      }
-    }
-  }
-
-  return options
-}
-
-/**
  * Main build function.
  */
 async function main() {
-  const options = parseArgs()
+  // Parse command-line arguments.
+  const { values: options } = parseArgs({
+    options: {
+      arch: { type: 'string' },
+      'node-version': { type: 'string' },
+      'output-dir': { type: 'string' },
+      platform: { type: 'string' },
+    },
+    strict: false,
+  })
 
   logger.log('Socket CLI Self-Executable Builder')
   logger.log('====================================')
