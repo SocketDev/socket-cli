@@ -48,6 +48,7 @@ const __dirname = path.dirname(__filename)
 // Parse arguments.
 const args = process.argv.slice(2)
 const FORCE_BUILD = args.includes('--force')
+const CLEAN_BUILD = args.includes('--clean')
 
 // Configuration.
 const ROOT_DIR = path.join(__dirname, '..')
@@ -392,6 +393,19 @@ async function main() {
   printHeader('🔨 Building yoga-layout')
   logger.info(`Yoga Layout ${YOGA_VERSION} minimal build`)
   logger.info('')
+
+  // Clean checkpoints if requested or if output is missing.
+  const outputWasm = path.join(OUTPUT_DIR, 'yoga.wasm')
+  const outputJs = path.join(OUTPUT_DIR, 'yoga.js')
+  const outputMissing = !(await fs.access(outputWasm).then(() => true).catch(() => false)) ||
+                       !(await fs.access(outputJs).then(() => true).catch(() => false))
+
+  if (CLEAN_BUILD || outputMissing) {
+    if (outputMissing) {
+      printStep('Output artifacts missing - cleaning stale checkpoints')
+    }
+    await cleanCheckpoint('yoga-layout')
+  }
 
   // Pre-flight checks.
   printHeader('Pre-flight Checks')
