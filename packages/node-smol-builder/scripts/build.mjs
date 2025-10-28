@@ -61,6 +61,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { brotliCompressSync, constants as zlibConstants } from 'node:zlib'
 
+import { parseArgs } from '@socketsecurity/lib/argv/parse'
 import { whichBinSync } from '@socketsecurity/lib/bin'
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { logger } from '@socketsecurity/lib/logger'
@@ -147,12 +148,26 @@ async function execCapture(command, options = {}) {
 }
 
 // Parse arguments.
-const args = process.argv.slice(2)
-const CLEAN_BUILD = args.includes('--clean')
-const RUN_VERIFY = args.includes('--verify')
-const RUN_TESTS = args.includes('--test')
-const RUN_FULL_TESTS = args.includes('--test-full')
-const AUTO_YES = args.includes('--yes') || args.includes('-y')
+const { values } = parseArgs({
+  options: {
+    arch: { type: 'string' },
+    clean: { type: 'boolean' },
+    platform: { type: 'string' },
+    test: { type: 'boolean' },
+    'test-full': { type: 'boolean' },
+    verify: { type: 'boolean' },
+    yes: { type: 'boolean', short: 'y' },
+  },
+  strict: false,
+})
+
+const TARGET_PLATFORM = values.platform || platform()
+const TARGET_ARCH = values.arch || process.arch
+const CLEAN_BUILD = !!values.clean
+const RUN_VERIFY = !!values.verify
+const RUN_TESTS = !!values.test
+const RUN_FULL_TESTS = !!values['test-full'] || !!values.testFull
+const AUTO_YES = !!values.yes
 
 // Configuration
 const NODE_VERSION = 'v24.10.0'
@@ -304,8 +319,9 @@ async function copySocketSecurityBootstrap() {
 }
 
 const CPU_COUNT = cpus().length
-const IS_MACOS = platform() === 'darwin'
-const ARCH = process.arch
+const IS_MACOS = TARGET_PLATFORM === 'darwin'
+const IS_WINDOWS = TARGET_PLATFORM === 'win32'
+const ARCH = TARGET_ARCH
 
 /**
  * Check if Node.js source has uncommitted changes.
@@ -963,7 +979,7 @@ async function main() {
 
   // Check if we can use cached build (skip if --clean).
   if (!CLEAN_BUILD) {
-    const distributionOutputBinary = join(BUILD_DIR, 'out', 'Distribution', platform === 'win32' ? 'node.exe' : 'node')
+    const distributionOutputBinary = join(BUILD_DIR, 'out', 'Distribution', IS_WINDOWS ? 'node.exe' : 'node')
     const distBinary = join(ROOT_DIR, 'dist', 'socket-smol')
 
     // Collect all source files that affect the build.
@@ -1770,7 +1786,7 @@ async function main() {
     '.pkg-cache',
     'v3.5',
   )
-  const targetName = `built-${NODE_VERSION}-${platform()}-${ARCH}${IS_MACOS && ARCH === 'arm64' ? '-signed' : ''}`
+  const targetName = `built-${NODE_VERSION}-${TARGET_PLATFORM}-${ARCH}${IS_MACOS && ARCH === 'arm64' ? '-signed' : ''}`
   const targetPath = join(pkgCacheDir, targetName)
 
   printHeader('Installing to pkg Cache')

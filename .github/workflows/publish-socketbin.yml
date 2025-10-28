@@ -129,36 +129,29 @@ jobs:
           restore-keys: |
             node-binary-${{ matrix.platform }}-${{ matrix.arch }}-
 
-      - name: Build binary
-        id: build-binary
+      - name: Build smol Node.js binary
+        id: build-smol
         continue-on-error: true
-        env:
-          # Enable ccache for C++ compilation (Linux/macOS)
-          CC: ${{ matrix.os != 'windows' && 'ccache gcc' || '' }}
-          CXX: ${{ matrix.os != 'windows' && 'ccache g++' || '' }}
-          # Use mold linker for faster linking (Linux only)
-          LDFLAGS: ${{ matrix.os == 'linux' && '-fuse-ld=mold' || '' }}
-          # Use ninja build system if available
-          GYP_GENERATORS: ninja
         run: |
-          pnpm run build --sea -- \
+          echo "Building smol Node.js binary..."
+          pnpm --filter @socketsecurity/node-smol-builder run build -- \
             --platform=${{ matrix.platform }} \
             --arch=${{ matrix.arch }}
 
-      - name: Build binary (fallback with clean rebuild)
-        if: steps.build-binary.outcome == 'failure'
-        env:
-          # Enable ccache for C++ compilation (Linux/macOS)
-          CC: ${{ matrix.os != 'windows' && 'ccache gcc' || '' }}
-          CXX: ${{ matrix.os != 'windows' && 'ccache g++' || '' }}
-          # Use mold linker for faster linking (Linux only)
-          LDFLAGS: ${{ matrix.os == 'linux' && '-fuse-ld=mold' || '' }}
-          # Use ninja build system if available
-          GYP_GENERATORS: ninja
+      - name: Build smol binary (fallback with clean rebuild)
+        if: steps.build-smol.outcome == 'failure'
         run: |
-          echo "Initial build failed, attempting clean rebuild with Node.js..."
-          node packages/node-smol-builder/scripts/build.mjs --clean
-          pnpm run build --sea -- \
+          echo "Initial smol build failed, attempting clean rebuild..."
+          pnpm --filter @socketsecurity/node-smol-builder run build -- \
+            --platform=${{ matrix.platform }} \
+            --arch=${{ matrix.arch }} \
+            --clean
+
+      - name: Build SEA binary
+        id: build-sea
+        run: |
+          echo "Building SEA binary..."
+          pnpm --filter @socketsecurity/node-sea-builder run build -- \
             --platform=${{ matrix.platform }} \
             --arch=${{ matrix.arch }}
 
