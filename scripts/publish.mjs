@@ -73,9 +73,11 @@ async function main() {
   })
 
   if (result.code === 0) {
-    logger.log(`\n✓ Successfully published ${target}`)
+    logger.log()
+    logger.success(`Successfully published ${target}`)
   } else {
-    logger.error(`\n✗ Failed to publish ${target}`)
+    logger.log()
+    logger.error(`Failed to publish ${target}`)
   }
 
   process.exit(result.code ?? 1)
