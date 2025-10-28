@@ -449,9 +449,15 @@ async function main() {
   // Check for model updates (local builds only).
   await checkModelUpdates(modelKey)
 
-  // Clean checkpoints if requested.
-  if (CLEAN_BUILD) {
-    logger.step('Cleaning build checkpoints')
+  // Clean checkpoints if requested or if output is missing.
+  const outputBz = join(DIST, 'ai.bz')
+  const outputJs = join(DIST, 'ai.js')
+  const outputMissing = !existsSync(outputBz) || !existsSync(outputJs)
+
+  if (CLEAN_BUILD || outputMissing) {
+    if (outputMissing) {
+      logger.step('Output artifacts missing - cleaning stale checkpoints')
+    }
     await cleanCheckpoint(PACKAGE_NAME)
   }
 
