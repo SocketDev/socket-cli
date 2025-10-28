@@ -636,7 +636,12 @@ if (typeof require !== 'undefined' && (!require.resolve || !require.resolve.path
  */
 async function main() {
   // Parse command-line arguments.
+  // Filter out leading '--' that pnpm adds when passing args to npm scripts.
+  const rawArgs = process.argv.slice(2)
+  const args = rawArgs[0] === '--' ? rawArgs.slice(1) : rawArgs
+
   const { values: options } = parseArgs({
+    args,
     options: {
       arch: { type: 'string' },
       'node-version': { type: 'string' },
