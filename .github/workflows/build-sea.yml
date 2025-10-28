@@ -34,35 +34,23 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # Linux builds (standard runners - SEA is just bundling).
+          # Linux builds - only native arch (SEA requires running target Node binary).
           - runner: ubuntu-latest
             os: linux
             platform: linux
             arch: x64
-          - runner: ubuntu-latest
-            os: linux
-            platform: linux
-            arch: arm64
 
-          # macOS builds (standard runners - SEA is just bundling).
-          - runner: macos-latest-large
-            os: darwin
-            platform: darwin
-            arch: x64
+          # macOS builds - only native arch (SEA requires running target Node binary).
           - runner: macos-latest-large
             os: darwin
             platform: darwin
             arch: arm64
 
-          # Windows builds (standard runners - SEA is just bundling).
+          # Windows builds - only native arch (SEA requires running target Node binary).
           - runner: windows-latest
             os: windows
             platform: win32
             arch: x64
-          - runner: windows-latest
-            os: windows
-            platform: win32
-            arch: arm64
 
     steps:
       - name: Checkout
