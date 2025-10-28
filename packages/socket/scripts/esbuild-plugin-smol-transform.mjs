@@ -25,14 +25,70 @@ export function smolTransformPlugin() {
           let content = output.text
 
           // Map core module requires to their internal bootstrap equivalents.
-          // Format: [pattern, replacement]
+          // Based on Module.builtinModules from Node.js v24.10.0.
+          // Format: [moduleName, bootstrapPath]
           // Handles both 'node:x' and plain 'x' variants.
           const requireMappings = new Map([
+            // Core modules with internal equivalents.
             ['child_process', 'internal/child_process'],
-            ['fs', 'fs'], // fs is available at top level in bootstrap context.
-            ['os', 'os'], // os is available at top level in bootstrap context.
-            ['path', 'path'], // path is available at top level in bootstrap context.
-            ['zlib', 'zlib'], // zlib is available at top level in bootstrap context.
+            ['fs', 'fs'],
+            ['fs/promises', 'internal/fs/promises'],
+
+            // Stream internals.
+            ['stream', 'stream'],
+            ['stream/promises', 'internal/streams/promises'],
+            ['stream/web', 'internal/webstreams/readablestream'],
+
+            // Path variants.
+            ['path', 'path'],
+            ['path/posix', 'path'],
+            ['path/win32', 'path'],
+
+            // Core modules available at top level.
+            ['assert', 'assert'],
+            ['assert/strict', 'internal/assert/strict'],
+            ['async_hooks', 'async_hooks'],
+            ['buffer', 'buffer'],
+            ['cluster', 'cluster'],
+            ['console', 'console'],
+            ['constants', 'constants'],
+            ['crypto', 'crypto'],
+            ['dgram', 'dgram'],
+            ['diagnostics_channel', 'diagnostics_channel'],
+            ['dns', 'dns'],
+            ['dns/promises', 'dns/promises'],
+            ['domain', 'domain'],
+            ['events', 'events'],
+            ['http', 'http'],
+            ['http2', 'http2'],
+            ['https', 'https'],
+            ['inspector', 'inspector'],
+            ['inspector/promises', 'inspector/promises'],
+            ['module', 'module'],
+            ['net', 'net'],
+            ['os', 'os'],
+            ['perf_hooks', 'perf_hooks'],
+            ['process', 'process'],
+            ['punycode', 'punycode'],
+            ['querystring', 'querystring'],
+            ['readline', 'readline'],
+            ['readline/promises', 'readline/promises'],
+            ['repl', 'repl'],
+            ['string_decoder', 'string_decoder'],
+            ['sys', 'sys'],
+            ['timers', 'timers'],
+            ['timers/promises', 'timers/promises'],
+            ['tls', 'tls'],
+            ['trace_events', 'trace_events'],
+            ['tty', 'tty'],
+            ['url', 'url'],
+            ['util', 'util'],
+            ['util/types', 'internal/util/types'],
+            ['v8', 'v8'],
+            ['vm', 'vm'],
+            ['wasi', 'wasi'],
+            ['worker_threads', 'worker_threads'],
+            ['zlib', 'zlib'],
           ])
 
           // Replace require("node:X") and require("X") with correct bootstrap path.
