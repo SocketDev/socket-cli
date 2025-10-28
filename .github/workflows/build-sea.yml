@@ -154,6 +154,13 @@ jobs:
             echo "✗ ONNX Runtime cache invalid or missing"
           fi
 
+      - name: Check WASM cache requirements (Windows)
+        if: matrix.os == 'windows' && (steps.yoga-cache-valid.outputs.valid != 'true' || steps.ai-cache-valid.outputs.valid != 'true' || steps.onnx-cache-valid.outputs.valid != 'true')
+        run: |
+          echo "::error::WASM assets not cached for Windows build. Run build-wasm.yml workflow first to prime the cache."
+          echo "Windows builds require pre-cached WASM assets due to network reliability issues."
+          exit 1
+
       - name: Setup Python for WASM builds
         if: steps.yoga-cache-valid.outputs.valid != 'true' || steps.ai-cache-valid.outputs.valid != 'true' || steps.onnx-cache-valid.outputs.valid != 'true'
         uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
@@ -238,13 +245,6 @@ jobs:
           path: packages/node-sea-builder/dist/sea/
           key: node-sea-${{ matrix.platform }}-${{ matrix.arch }}-${{ steps.sea-cache-key.outputs.hash }}
           restore-keys: node-sea-${{ matrix.platform }}-${{ matrix.arch }}-
-
-      - name: Check WASM cache requirements (Windows)
-        if: matrix.os == 'windows' && (steps.yoga-cache-valid.outputs.valid != 'true' || steps.ai-cache-valid.outputs.valid != 'true' || steps.onnx-cache-valid.outputs.valid != 'true')
-        run: |
-          echo "::error::WASM assets not cached for Windows build. Run build-wasm.yml workflow first to prime the cache."
-          echo "Windows builds require pre-cached WASM assets due to network reliability issues."
-          exit 1
 
       - name: Build CLI (required for SEA)
         if: steps.sea-cache.outputs.cache-hit != 'true' || inputs.force
