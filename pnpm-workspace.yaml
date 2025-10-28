@@ -7,4 +7,7 @@ catalog:
   '@socketsecurity/lib': 2.2.0
   '@socketsecurity/registry': 2.0.0
   '@socketsecurity/sdk': 3.0.7
+  del-cli: 6.0.0
+  esbuild: 0.24.0
   postject: 1.0.0-alpha.6
+  semver: 7.6.3
