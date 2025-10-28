@@ -129,9 +129,6 @@ jobs:
           restore-keys: |
             node-binary-${{ matrix.platform }}-${{ matrix.arch }}-
 
-      - name: Build stub
-        run: pnpm run build:sea:stub
-
       - name: Build binary
         id: build-binary
         continue-on-error: true
