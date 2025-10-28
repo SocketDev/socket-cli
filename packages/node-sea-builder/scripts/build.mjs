@@ -420,7 +420,7 @@ async function injectSeaBlob(nodeBinary, blobPath, outputPath, fuseSentinel) {
         '--macho-segment-name',
         'NODE_SEA',
       ],
-      { stdio: 'inherit' },
+      { shell: WIN32, stdio: 'inherit' },
     )
 
     // Re-sign the binary if codesign is available.
@@ -447,7 +447,7 @@ async function injectSeaBlob(nodeBinary, blobPath, outputPath, fuseSentinel) {
         '--sentinel-fuse',
         fuseSentinel,
       ],
-      { stdio: 'inherit' },
+      { shell: WIN32, stdio: 'inherit' },
     )
     logger.log('Note: Windows binary may need signing for distribution')
   } else {
@@ -467,7 +467,7 @@ async function injectSeaBlob(nodeBinary, blobPath, outputPath, fuseSentinel) {
         '--sentinel-fuse',
         fuseSentinel,
       ],
-      { stdio: 'inherit' },
+      { shell: WIN32, stdio: 'inherit' },
     )
   }
 }
