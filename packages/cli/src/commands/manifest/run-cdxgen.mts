@@ -1,10 +1,11 @@
-import { existsSync, rmSync } from 'node:fs'
+import { existsSync } from 'node:fs'
 import path from 'node:path'
 
 import colors from 'yoctocolors-cjs'
 
 import { NPM, PNPM, YARN } from '@socketsecurity/lib/constants/agents'
 import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/lib/constants/socket'
+import { safeDeleteSync } from '@socketsecurity/lib/fs'
 import { logger } from '@socketsecurity/lib/logger'
 
 import { FLAG_HELP } from '../../constants/cli.mjs'
@@ -135,9 +136,8 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
     if (cleanupPackageLock) {
       try {
         // This removes the temporary package-lock.json we created for cdxgen.
-        // Note: rmSync is appropriate here for temporary file cleanup in source code.
-        // (trash package is reserved for scripts/build files per CLAUDE.md guidelines)
-        rmSync(`./${PACKAGE_LOCK_JSON}`)
+        // Using safeDeleteSync for safe temporary file cleanup with directory safety checks.
+        safeDeleteSync(`./${PACKAGE_LOCK_JSON}`, { force: true })
       } catch {}
     }
 
