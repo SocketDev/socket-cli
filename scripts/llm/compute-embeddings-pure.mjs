@@ -252,10 +252,11 @@ for (const [commandName, commandData] of Object.entries(commands.commands)) {
 const outputPath = path.join(skillDir, 'embeddings.json')
 writeFileSync(outputPath, JSON.stringify(embeddings, null, 2), 'utf-8')
 
-logger.log(`\n✓ Generated ${outputPath}`)
-logger.log(`✓ Embedded ${Object.keys(embeddings.commands).length} commands`)
-logger.log(
-  `✓ Embedded ${Object.keys(embeddings.examples).length} example queries`,
+logger.log()
+logger.success(`Generated ${outputPath}`)
+logger.success(`Embedded ${Object.keys(embeddings.commands).length} commands`)
+logger.success(
+  `Embedded ${Object.keys(embeddings.examples).length} example queries`,
 )
 logger.log(
   `✓ File size: ${(JSON.stringify(embeddings).length / 1024).toFixed(2)} KB`,

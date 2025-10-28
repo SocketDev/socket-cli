@@ -194,9 +194,10 @@ for (const [commandName, commandData] of Object.entries(commands.commands)) {
 const outputPath = path.join(skillDir, 'semantic-index.json')
 writeFileSync(outputPath, JSON.stringify(semanticIndex, null, 2), 'utf-8')
 
-logger.log(`\n✓ Generated ${outputPath}`)
-logger.log(`✓ Indexed ${Object.keys(semanticIndex.commands).length} commands`)
-logger.log(
-  `✓ File size: ${(JSON.stringify(semanticIndex).length / 1024).toFixed(2)} KB`,
+logger.log()
+logger.success(`Generated ${outputPath}`)
+logger.success(`Indexed ${Object.keys(semanticIndex.commands).length} commands`)
+logger.success(
+  `File size: ${(JSON.stringify(semanticIndex).length / 1024).toFixed(2)} KB`,
 )
-logger.log('✓ Zero runtime overhead - pure JavaScript!')
+logger.success('Zero runtime overhead - pure JavaScript!')
