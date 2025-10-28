@@ -281,12 +281,14 @@ async function copyBuildAdditions() {
  * (Optional - only runs if bootstrap file exists)
  */
 async function copySocketSecurityBootstrap() {
-  const bootstrapSource = join(ROOT_DIR, 'bin', 'bootstrap.js')
+  // Use bootstrap from socket package (thin wrapper that downloads @socketsecurity/cli).
+  const bootstrapSource = join(ROOT_DIR, '..', 'socket', 'dist', 'bootstrap.js')
 
-  // Skip if bootstrap file doesn't exist yet (future enhancement).
+  // Skip if bootstrap file doesn't exist yet.
   if (!existsSync(bootstrapSource)) {
     logger.log('')
-    logger.log(`${colors.blue('ℹ')} Skipping Socket security bootstrap (bin/bootstrap.js not found)`)
+    logger.log(`${colors.blue('ℹ')} Skipping Socket security bootstrap (packages/socket/dist/bootstrap.js not found)`)
+    logger.log(`${colors.blue('ℹ')} Run 'pnpm --filter socket run build' to create it`)
     logger.log('')
     return
   }
