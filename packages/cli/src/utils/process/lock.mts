@@ -74,7 +74,8 @@ class ProcessLockManager {
       for (const lockPath of this.activeLocks) {
         try {
           if (existsSync(lockPath)) {
-            safeDeleteSync(lockPath, { recursive: true, force: true })
+            // No force needed - lock paths are in SocketUserDir (~/.socket/).
+            safeDeleteSync(lockPath, { recursive: true })
           }
         } catch {
           // Best effort cleanup - don't throw on exit.
@@ -126,7 +127,8 @@ class ProcessLockManager {
           if (existsSync(lockPath) && this.isStale(lockPath, staleMs)) {
             logger.log(`Removing stale lock: ${lockPath}`)
             try {
-              safeDeleteSync(lockPath, { recursive: true, force: true })
+              // No force needed - lock paths are in SocketUserDir (~/.socket/).
+              safeDeleteSync(lockPath, { recursive: true })
             } catch {
               // If we can't remove it, someone else might be using it.
             }
@@ -168,7 +170,8 @@ class ProcessLockManager {
   release(lockPath: string): void {
     try {
       if (existsSync(lockPath)) {
-        safeDeleteSync(lockPath, { recursive: true, force: true })
+        // No force needed - lock paths are in SocketUserDir (~/.socket/).
+        safeDeleteSync(lockPath, { recursive: true })
       }
       this.activeLocks.delete(lockPath)
     } catch (error) {
