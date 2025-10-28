@@ -34,7 +34,7 @@
     "@socketsecurity/config": "3.0.1",
     "@socketsecurity/lib": "catalog:",
     "@socketsecurity/registry": "2.0.0",
-    "@socketsecurity/sdk": "3.0.8",
+    "@socketsecurity/sdk": "3.0.9",
     "@types/cmd-shim": "5.0.2",
     "@types/ink": "2.0.3",
     "@types/js-yaml": "4.0.9",
