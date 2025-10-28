@@ -39,7 +39,7 @@ User runs: /usr/local/bin/socket scan
            ↓
 ┌──────────────────────────────────────────────────────────────────────┐
 │ Stub Binary (yao-pkg executable)                                     │
-│ Checks: ~/.socket/_cli/package/package.json exists?                  │
+│ Checks: ~/.socket/_dlx/package/package.json exists?                  │
 └──────────────────────────────────────────────────────────────────────┘
            ↓ No                              ↓ Yes
 ┌──────────────────────────┐    ┌──────────────────────────────────────┐
@@ -66,7 +66,7 @@ User runs: /usr/local/bin/socket scan
 │ spawn('node', [                      │    │ spawn(process.argv[0], [             │
 │   '--no-addons',                     │    │   '--no-addons',                     │
 │   '--no-warnings',                   │    │   '--no-warnings',                   │
-│   '~/.socket/_cli/package/dist/cli.js',   │   '~/.socket/_cli/package/dist/cli.js',  │
+│   '~/.socket/_dlx/package/dist/cli.js',   │   '~/.socket/_dlx/package/dist/cli.js',  │
 │   ...args                            │    │   ...args                            │
 │ ], {                                 │    │ ], {                                 │
 │ })                                   │    │   stdio: ['inherit', 'inherit',      │
@@ -156,7 +156,7 @@ await scheduleUpdateCheck({
 - **`@socketsecurity/cli`**: The main CLI package with JavaScript code
   - Changes frequently (new features, bug fixes)
   - ~30MB when installed with node_modules
-  - Downloaded and extracted to `~/.socket/_cli/package/`
+  - Downloaded and extracted to `~/.socket/_dlx/package/`
 
 - **`socket`**: The stub binary package
   - Changes rarely (only for bootstrap updates)
@@ -170,7 +170,7 @@ Download & Extract CLI:
            ↓
 ┌──────────────────────────────────────────────────────────────────────┐
 │ 1. Download @socketsecurity/cli tarball                              │
-│    → ~/.socket/_cli/cli-1.1.24.tgz                                   │
+│    → ~/.socket/_dlx/cli-1.1.24.tgz                                   │
 └──────────────────────────────────────────────────────────────────────┘
            ↓
 ┌──────────────────────────────────────────────────────────────────────┐
@@ -196,8 +196,8 @@ Download & Extract CLI:
            ↓
 ┌──────────────────────────────────────────────────────────────────────┐
 │ 3. Cleanup:                                                          │
-│    - remove(~/.socket/_cli/cli-1.1.24.tgz)  # Delete tarball         │
-│    - remove(~/.socket/_cli/.install.lock)   # Release lock           │
+│    - remove(~/.socket/_dlx/cli-1.1.24.tgz)  # Delete tarball         │
+│    - remove(~/.socket/_dlx/.install.lock)   # Release lock           │
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -231,7 +231,7 @@ socket self-update (when isSeaBinary()):
 │                                                                       │
 │ 1. Download new stub:                                                │
 │    const stubName = `socket-${platform}-${arch}${ext}`               │
-│    → ~/.socket/_cli/stub/downloads/socket-darwin-arm64               │
+│    → ~/.socket/_dlx/stub/downloads/socket-darwin-arm64               │
 │                                                                       │
 │ 2. CRITICAL: Set executable permissions                              │
 │    await fs.chmod(downloadPath, 0o755)                               │
@@ -240,12 +240,12 @@ socket self-update (when isSeaBinary()):
 │    await exec('xattr', ['-cr', downloadPath])                        │
 │                                                                       │
 │ 4. Stage with permissions:                                           │
-│    const stagingPath = ~/.socket/_cli/stub/staging/socket            │
+│    const stagingPath = ~/.socket/_dlx/stub/staging/socket            │
 │    await fs.copyFile(downloadPath, stagingPath)                      │
 │    await fs.chmod(stagingPath, 0o755)                                │
 │                                                                       │
 │ 5. Backup current:                                                   │
-│    const backupPath = `~/.socket/_cli/stub/backups/socket-${ts}`     │
+│    const backupPath = `~/.socket/_dlx/stub/backups/socket-${ts}`     │
 │    await fs.copyFile(currentStubPath, backupPath)                    │
 │    await fs.chmod(backupPath, 0o755)  // Preserve exec               │
 │                                                                       │
@@ -355,7 +355,7 @@ If installation fails:
 To recover:
 ```bash
 # Clean partial installation
-rm -rf ~/.socket/_cli/package
+rm -rf ~/.socket/_dlx/package
 
 # Retry
 socket --version
@@ -371,8 +371,8 @@ If update fails:
 To recover:
 ```bash
 # Clean staging
-rm -rf ~/.socket/_cli/stub/staging/*
-rm -rf ~/.socket/_cli/stub/downloads/*
+rm -rf ~/.socket/_dlx/stub/staging/*
+rm -rf ~/.socket/_dlx/stub/downloads/*
 
 # Retry
 socket self-update
