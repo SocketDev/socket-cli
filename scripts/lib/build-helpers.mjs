@@ -480,7 +480,7 @@ export async function hasHomebrew() {
 export async function installHomebrew(exec) {
   logger.log('📥 Homebrew not found, installing Homebrew...')
   logger.log('This will take a few minutes and may prompt for password...')
-  logger.log()
+  logger.log('')
 
   try {
     // Install Homebrew using official installation script.
@@ -493,7 +493,7 @@ export async function installHomebrew(exec) {
       { stdio: 'inherit' },
     )
     logger.log(`${colors.green('✓')} Homebrew installed successfully`)
-    logger.log()
+    logger.log('')
     return true
   } catch (e) {
     logger.error(`${colors.red('✗')} Homebrew installation failed: ${e.message}`)
@@ -513,12 +513,12 @@ export async function installHomebrew(exec) {
 export async function installBrewPackage(packageName, exec) {
   logger.log(`📦 Installing ${packageName} via Homebrew...`)
   logger.log('This will take 1-2 minutes...')
-  logger.log()
+  logger.log('')
 
   try {
     await exec('brew', ['install', packageName], { stdio: 'inherit' })
     logger.log(`${colors.green('✓')} ${packageName} installed successfully`)
-    logger.log()
+    logger.log('')
     return true
   } catch (e) {
     logger.error(`${colors.red('✗')} ${packageName} installation failed: ${e.message}`)

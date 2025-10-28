@@ -112,11 +112,11 @@ async function getWasmSizes() {
 function displayComparison(devResult, prodResult) {
   logger.step('Build Performance Comparison')
 
-  logger.log()
+  logger.log('')
   logger.log('╔════════════════════════════════════════════════════╗')
   logger.log('║             Build Time Comparison                 ║')
   logger.log('╚════════════════════════════════════════════════════╝')
-  logger.log()
+  logger.log('')
 
   const devTime = devResult.durationMs / 1000
   const prodTime = prodResult.durationMs / 1000
@@ -124,9 +124,9 @@ function displayComparison(devResult, prodResult) {
 
   logger.log(`  Dev Build:   ${devResult.durationFormatted}`)
   logger.log(`  Prod Build:  ${prodResult.durationFormatted}`)
-  logger.log()
+  logger.log('')
   logger.log(`  Speedup:     ${speedup}x faster (dev vs prod)`)
-  logger.log()
+  logger.log('')
 
   // Visualization.
   const maxBar = 50
@@ -135,7 +135,7 @@ function displayComparison(devResult, prodResult) {
 
   logger.log('  Dev  │' + '█'.repeat(devBar))
   logger.log('  Prod │' + '█'.repeat(prodBar))
-  logger.log()
+  logger.log('')
 }
 
 /**
@@ -152,7 +152,7 @@ async function displaySizes() {
   logger.log('╔════════════════════════════════════════════════════╗')
   logger.log('║             Output Size Information                ║')
   logger.log('╚════════════════════════════════════════════════════╝')
-  logger.log()
+  logger.log('')
 
   const wasmMB = (sizes.wasmSize / 1024 / 1024).toFixed(2)
   const syncMB = (sizes.syncSize / 1024 / 1024).toFixed(2)
@@ -164,7 +164,7 @@ async function displaySizes() {
   logger.log(`  WASM (raw):        ${wasmMB} MB`)
   logger.log(`  JS (compressed):   ${syncMB} MB`)
   logger.log(`  Compression:       ${compressionRatio}% of original`)
-  logger.log()
+  logger.log('')
 }
 
 /**
@@ -193,7 +193,7 @@ async function main() {
   // Run prod build.
   if (!devOnly) {
     if (devResult) {
-      logger.log() // Spacing.
+      logger.log('') // Spacing.
     }
     prodResult = await benchmarkBuild('production')
     if (!prodResult) {
@@ -202,7 +202,7 @@ async function main() {
   }
 
   // Display comparison.
-  logger.log()
+  logger.log('')
   if (devResult && prodResult) {
     displayComparison(devResult, prodResult)
   } else if (devResult) {

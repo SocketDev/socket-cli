@@ -59,10 +59,10 @@ async function exec(command, args = [], options = {}) {
  * Main test function.
  */
 async function main() {
-  logger.log()
+  logger.log('')
   logger.log('🧪 Socket CLI - Smol Integration Test')
   logger.log(`   Testing Node.js ${NODE_VERSION} binary with pkg`)
-  logger.log()
+  logger.log('')
 
   let testsFailed = 0
   const testResults = []
@@ -72,7 +72,7 @@ async function main() {
     logger.log('━'.repeat(60))
     logger.log('TEST 1: Custom Node.js Binary in Cache')
     logger.log('━'.repeat(60))
-    logger.log()
+    logger.log('')
 
     const platform = process.platform
     const arch = process.arch
@@ -95,13 +95,13 @@ async function main() {
       testResults.push({ name: 'Binary in cache', passed: true })
     }
 
-    logger.log()
+    logger.log('')
 
     // Test 2: Build Socket CLI.
     logger.log('━'.repeat(60))
     logger.log('TEST 2: Build Socket CLI')
     logger.log('━'.repeat(60))
-    logger.log()
+    logger.log('')
 
     logger.log('Building Socket CLI distribution...')
     const buildResult = await exec('pnpm', ['run', 'build:dist:src'], {
@@ -118,13 +118,13 @@ async function main() {
 
     logger.log(`${colors.green('✓')} Socket CLI built successfully`)
     testResults.push({ name: 'Build Socket CLI', passed: true })
-    logger.log()
+    logger.log('')
 
     // Test 3: Create test directory.
     logger.log('━'.repeat(60))
     logger.log('TEST 3: Setup Test Environment')
     logger.log('━'.repeat(60))
-    logger.log()
+    logger.log('')
 
     await mkdir(TEST_DIR, { recursive: true })
     logger.log(`Created test directory: ${TEST_DIR}`)
@@ -178,17 +178,17 @@ if (isSea) {
     await writeFile(join(TEST_DIR, 'test-cli.js'), testCliScript)
     logger.log(`${colors.green('✓')} Test environment setup complete`)
     testResults.push({ name: 'Setup test environment', passed: true })
-    logger.log()
+    logger.log('')
 
     // Test 4: Create pkg executable.
     logger.log('━'.repeat(60))
     logger.log('TEST 4: Create pkg Executable')
     logger.log('━'.repeat(60))
-    logger.log()
+    logger.log('')
 
     logger.log('Running pkg to create executable...')
     logger.log(`Using custom Node.js binary: ${targetName}`)
-    logger.log()
+    logger.log('')
 
     const pkgResult = await exec(
       'pnpm',
@@ -227,16 +227,16 @@ if (isSea) {
 
     logger.log(`${colors.green('✓')} Executable created: ${executablePath}`)
     testResults.push({ name: 'Create pkg executable', passed: true })
-    logger.log()
+    logger.log('')
 
     // Test 5: Run the executable.
     logger.log('━'.repeat(60))
     logger.log('TEST 5: Run and Verify Executable')
     logger.log('━'.repeat(60))
-    logger.log()
+    logger.log('')
 
     logger.log('Executing test binary...')
-    logger.log()
+    logger.log('')
 
     const execResult = await exec(executablePath, [], {
       cwd: TEST_DIR,
@@ -244,7 +244,7 @@ if (isSea) {
 
     logger.log('Output:')
     logger.log(execResult.stdout)
-    logger.log()
+    logger.log('')
 
     if (execResult.code !== 0) {
       logger.error(`${colors.red('✗')} Executable failed with exit code:`, execResult.code)
@@ -267,25 +267,25 @@ if (isSea) {
       }
     }
 
-    logger.log()
+    logger.log('')
 
     // Summary.
     logger.log('━'.repeat(60))
     logger.log('TEST SUMMARY')
     logger.log('━'.repeat(60))
-    logger.log()
+    logger.log('')
 
     for (const { name, passed } of testResults) {
       logger.log(`${passed ? `${colors.green('✓')}` : `${colors.red('✗')}`} ${name}`)
     }
 
-    logger.log()
+    logger.log('')
 
     if (testsFailed === 0) {
       logger.log('🎉 ALL TESTS PASSED')
-      logger.log()
+      logger.log('')
       logger.log('Your custom Node.js binary is working correctly with pkg!')
-      logger.log()
+      logger.log('')
     } else {
       logger.error(`${colors.red('✗')} ${testsFailed} TEST(S) FAILED`)
       logger.error()
@@ -305,7 +305,7 @@ if (isSea) {
     logger.log('━'.repeat(60))
     logger.log('CLEANUP')
     logger.log('━'.repeat(60))
-    logger.log()
+    logger.log('')
 
     logger.log(`Removing test directory: ${TEST_DIR}`)
     try {
@@ -316,7 +316,7 @@ if (isSea) {
       logger.warn(`   Manually remove: rm -rf ${TEST_DIR}`)
     }
 
-    logger.log()
+    logger.log('')
   }
 }
 

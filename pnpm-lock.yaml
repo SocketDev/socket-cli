@@ -7,8 +7,8 @@ settings:
 catalogs:
   default:
     '@socketsecurity/lib':
-      specifier: 2.1.0
-      version: 2.1.0
+      specifier: 2.2.0
+      version: 2.2.0
 
 overrides:
   '@octokit/graphql': 9.0.1
@@ -181,7 +181,7 @@ importers:
         version: 3.0.1
       '@socketsecurity/lib':
         specifier: 'catalog:'
-        version: 2.1.0(typescript@5.9.3)
+        version: 2.2.0(typescript@5.9.3)
       '@socketsecurity/registry':
         specifier: 2.0.0
         version: 2.0.0(typescript@5.9.3)
@@ -394,7 +394,7 @@ importers:
     dependencies:
       '@socketsecurity/lib':
         specifier: 'catalog:'
-        version: 2.1.0(typescript@5.9.3)
+        version: 2.2.0(typescript@5.9.3)
 
   packages/cli:
     dependencies:
@@ -477,7 +477,7 @@ importers:
         version: link:../build-infra
       '@socketsecurity/lib':
         specifier: 'catalog:'
-        version: 2.1.0(typescript@5.9.3)
+        version: 2.2.0(typescript@5.9.3)
 
   packages/minilm-builder:
     dependencies:
@@ -486,7 +486,7 @@ importers:
         version: link:../build-infra
       '@socketsecurity/lib':
         specifier: 'catalog:'
-        version: 2.1.0(typescript@5.9.3)
+        version: 2.2.0(typescript@5.9.3)
 
   packages/node-sea-builder:
     devDependencies:
@@ -501,7 +501,7 @@ importers:
         version: link:../build-infra
       '@socketsecurity/lib':
         specifier: 'catalog:'
-        version: 2.1.0(typescript@5.9.3)
+        version: 2.2.0(typescript@5.9.3)
     devDependencies:
       vitest:
         specifier: 3.0.0
@@ -514,7 +514,7 @@ importers:
         version: link:../build-infra
       '@socketsecurity/lib':
         specifier: 'catalog:'
-        version: 2.1.0(typescript@5.9.3)
+        version: 2.2.0(typescript@5.9.3)
 
   packages/sbom-generator:
     dependencies:
@@ -523,7 +523,7 @@ importers:
         version: 2.2.5
       '@socketsecurity/lib':
         specifier: 'catalog:'
-        version: 2.1.0(typescript@5.9.3)
+        version: 2.2.0(typescript@5.9.3)
       '@yarnpkg/parsers':
         specifier: ^3.0.0
         version: 3.0.3
@@ -579,7 +579,7 @@ importers:
         version: link:../build-infra
       '@socketsecurity/lib':
         specifier: 'catalog:'
-        version: 2.1.0(typescript@5.9.3)
+        version: 2.2.0(typescript@5.9.3)
     devDependencies:
       esbuild:
         specifier: 0.25.10
@@ -608,7 +608,7 @@ importers:
         version: link:../build-infra
       '@socketsecurity/lib':
         specifier: 'catalog:'
-        version: 2.1.0(typescript@5.9.3)
+        version: 2.2.0(typescript@5.9.3)
 
 packages:
 
@@ -2368,6 +2368,15 @@ packages:
 
   '@socketsecurity/lib@2.1.0':
     resolution: {integrity: sha512-6t2gIaeFtf8l5UueaGrb4Y8xcrwRsWPzPHzWvT6dYZBYHzIKmlkA1a1KTw5L5nZIZ44dL3Eck0Oty/+Rv7woCA==}
+    engines: {node: '>=22'}
+    peerDependencies:
+      typescript: '>=5.0.0'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
+
+  '@socketsecurity/lib@2.2.0':
+    resolution: {integrity: sha512-xPXqmoXSYP8dCtgW46BdyQttJ1aBtBbmvyQsN5UQffRb6voJmbToURV9a3YWXujD1Q19kXB9phGhxo/5IVyq5Q==}
     engines: {node: '>=22'}
     peerDependencies:
       typescript: '>=5.0.0'
@@ -7900,6 +7909,10 @@ snapshots:
       typescript: 5.9.3
 
   '@socketsecurity/lib@2.1.0(typescript@5.9.3)':
+    optionalDependencies:
+      typescript: 5.9.3
+
+  '@socketsecurity/lib@2.2.0(typescript@5.9.3)':
     optionalDependencies:
       typescript: 5.9.3
 
