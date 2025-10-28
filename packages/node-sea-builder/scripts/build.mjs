@@ -346,7 +346,26 @@ async function injectSeaBlob(nodeBinary, blobPath, outputPath, fuseSentinel) {
     await spawn('pnpm', ['exec', 'postject', '--help'], {
       stdio: 'ignore',
     })
-  } catch {
+  } catch (e) {
+    logger.error('Failed to execute postject check')
+    logger.error(`Error: ${e.message}`)
+    logger.error(`Platform: ${process.platform}`)
+    logger.error(`CWD: ${process.cwd()}`)
+
+    // Log node_modules structure for debugging.
+    try {
+      const { existsSync } = await import('node:fs')
+      const postjectPaths = [
+        'node_modules/.bin/postject',
+        '../../node_modules/.bin/postject',
+        'node_modules/postject',
+        '../../node_modules/postject',
+      ]
+      for (const p of postjectPaths) {
+        logger.error(`  ${p}: ${existsSync(p) ? 'exists' : 'not found'}`)
+      }
+    } catch {}
+
     throw new Error(
       'postject is required to inject the SEA blob into the Node.js binary.\n' +
         'Please install it: pnpm add -D postject',
