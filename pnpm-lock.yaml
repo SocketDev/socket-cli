@@ -9,6 +9,9 @@ catalogs:
     '@socketsecurity/lib':
       specifier: 2.2.0
       version: 2.2.0
+    postject:
+      specifier: 1.0.0-alpha.6
+      version: 1.0.0-alpha.6
 
 overrides:
   '@octokit/graphql': 9.0.1
@@ -494,6 +497,9 @@ importers:
         specifier: workspace:*
         version: link:../build-infra
     devDependencies:
+      postject:
+        specifier: 'catalog:'
+        version: 1.0.0-alpha.6
       vitest:
         specifier: 3.0.0
         version: 3.0.0(@types/node@24.3.1)(jiti@2.6.1)(yaml@2.8.1)

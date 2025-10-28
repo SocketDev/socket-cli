@@ -4,6 +4,7 @@
   },
   "description": "Native Node.js SEA binary builder (fallback)",
   "devDependencies": {
+    "postject": "catalog:",
     "vitest": "3.0.0"
   },
   "license": "MIT",
