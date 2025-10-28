@@ -104,6 +104,14 @@ jobs:
           restore-keys: |
             node-smol-build-${{ matrix.platform }}-${{ matrix.arch }}-
 
+      - name: Restore smol stripped binary cache
+        id: smol-stripped-cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: packages/node-smol-builder/build/out/Stripped
+          key: node-smol-stripped-${{ matrix.platform }}-${{ matrix.arch }}-${{ steps.smol-cache-key.outputs.hash }}
+          restore-keys: node-smol-stripped-${{ matrix.platform }}-${{ matrix.arch }}-
+
       - name: Restore smol binary cache
         id: smol-cache
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
