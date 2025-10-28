@@ -323,7 +323,7 @@ async function main() {
   // Pre-flight checks.
   printHeader('Pre-flight Checks')
 
-  const diskOk = await checkDiskSpace(BUILD_DIR, 3 * 1024 * 1024 * 1024)
+  const diskOk = await checkDiskSpace(BUILD_DIR, 3)
   if (!diskOk) {
     throw new Error('Insufficient disk space (need 3GB)')
   }
