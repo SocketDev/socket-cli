@@ -3,7 +3,9 @@
  * Environment variables can override defaults.
  */
 
-import { NODE_VERSION } from '@socketsecurity/bootstrap/.config/node-version.mjs'
+import nodeVersionConfig from '@socketsecurity/bootstrap/node-version.json' with { type: 'json' }
+
+const { version: NODE_VERSION } = nodeVersionConfig
 
 // Environment variables (can override defaults).
 const ENV = {

@@ -1,0 +1,6 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "Node.js version configuration for Socket CLI. This version is used by bootstrap, smol builder, and SEA builder.",
+  "version": "v24.10.0",
+  "versionSemver": "24.10.0"
+}
