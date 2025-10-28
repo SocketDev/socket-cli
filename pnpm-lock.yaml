@@ -410,6 +410,9 @@ importers:
       esbuild:
         specifier: 'catalog:'
         version: 0.24.0
+      semver:
+        specifier: 7.7.2
+        version: 7.7.2
 
   packages/build-infra:
     dependencies:
@@ -511,6 +514,9 @@ importers:
 
   packages/node-sea-builder:
     dependencies:
+      '@socketsecurity/bootstrap':
+        specifier: workspace:*
+        version: link:../bootstrap
       '@socketsecurity/build-infra':
         specifier: workspace:*
         version: link:../build-infra
@@ -524,6 +530,9 @@ importers:
 
   packages/node-smol-builder:
     dependencies:
+      '@socketsecurity/bootstrap':
+        specifier: workspace:*
+        version: link:../bootstrap
       '@socketsecurity/build-infra':
         specifier: workspace:*
         version: link:../build-infra
