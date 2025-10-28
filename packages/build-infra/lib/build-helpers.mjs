@@ -26,30 +26,48 @@ export async function checkDiskSpace(dir, requiredGB = 5) {
   printStep('Checking disk space')
 
   try {
-    const result = await spawn('df', ['-k', dir], {
-      shell: WIN32,
-      stdio: 'pipe',
-      stdioString: true,
-    })
-    const lines = (result.stdout ?? '').trim().split('\n')
-    if (lines.length < 2) {
-      printWarning('Could not determine disk space')
-      return { availableGB: null, sufficient: true }
-    }
-
-    const stats = lines[1].split(/\s+/)
-    const availableKB = Number.parseInt(stats[3], 10)
-    const availableBytes = availableKB * 1024
+    // Use Node.js built-in fs.statfs for cross-platform disk space check.
+    const stats = await fs.statfs(dir)
+    const availableBytes = stats.bavail * stats.bsize
     const availableGBValue = Number((availableBytes / (1024 * 1024 * 1024)).toFixed(2))
     const sufficient = availableGBValue >= requiredGB
+
+    printSubstep(`Available: ${availableGBValue} GB, Required: ${requiredGB} GB`)
 
     return {
       availableGB: availableGBValue,
       sufficient,
     }
-  } catch {
-    printWarning('Could not check disk space')
-    return { availableGB: null, sufficient: true }
+  } catch (error) {
+    // Fallback to df command if fs.statfs fails (older Node versions).
+    try {
+      const result = await spawn('df', ['-k', dir], {
+        shell: WIN32,
+        stdio: 'pipe',
+        stdioString: true,
+      })
+      const lines = (result.stdout ?? '').trim().split('\n')
+      if (lines.length < 2) {
+        printWarning('Could not determine disk space')
+        return { availableGB: null, sufficient: true }
+      }
+
+      const stats = lines[1].split(/\s+/)
+      const availableKB = Number.parseInt(stats[3], 10)
+      const availableBytes = availableKB * 1024
+      const availableGBValue = Number((availableBytes / (1024 * 1024 * 1024)).toFixed(2))
+      const sufficient = availableGBValue >= requiredGB
+
+      printSubstep(`Available: ${availableGBValue} GB, Required: ${requiredGB} GB`)
+
+      return {
+        availableGB: availableGBValue,
+        sufficient,
+      }
+    } catch {
+      printWarning('Could not check disk space')
+      return { availableGB: null, sufficient: true }
+    }
   }
 }
 
