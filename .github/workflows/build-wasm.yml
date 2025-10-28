@@ -140,20 +140,13 @@ jobs:
         with:
           python-version: '3.11'
           cache: 'pip'
-
-      - name: Cache Python packages
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        with:
-          path: ~/.cache/pip
-          key: pip-${{ runner.os }}-py3.11-${{ hashFiles('**/requirements*.txt') }}-transformers-torch-optimum-onnx
-          restore-keys: |
-            pip-${{ runner.os }}-py3.11-
+          cache-dependency-path: 'packages/socketbin-cli-ai/requirements.txt'
 
       - name: Install Python dependencies
         run: |
           echo "::group::Installing Python dependencies"
           pip install --upgrade pip
-          pip install transformers torch optimum[onnx] "onnxruntime>=1.20.0"
+          pip install -r packages/socketbin-cli-ai/requirements.txt
           echo "::endgroup::"
 
       - name: Install dependencies
