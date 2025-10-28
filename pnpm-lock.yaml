@@ -333,7 +333,7 @@ importers:
         specifier: 2.1.11
         version: 2.1.11
       postject:
-        specifier: 1.0.0-alpha.6
+        specifier: 'catalog:'
         version: 1.0.0-alpha.6
       react:
         specifier: 19.2.0
