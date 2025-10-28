@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@socketsecurity/bootstrap": "workspace:*",
     "@socketsecurity/build-infra": "workspace:*",
     "@socketsecurity/lib": "catalog:"
   },
