@@ -123,8 +123,8 @@ jobs:
         id: binary-cache
         with:
           path: |
-            .node-source/out/Release/node
-            .node-source/out/Release/node.exe
+            packages/node-smol-builder/build/out/Release/node
+            packages/node-smol-builder/build/out/Release/node.exe
           key: node-binary-${{ matrix.platform }}-${{ matrix.arch }}-${{ steps.build-cache-key.outputs.hash }}
           restore-keys: |
             node-binary-${{ matrix.platform }}-${{ matrix.arch }}-
