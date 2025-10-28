@@ -27,7 +27,7 @@ export function smolTransformPlugin() {
           // Map core module requires to their internal bootstrap equivalents.
           // Based on Module.builtinModules from Node.js v24.10.0.
           // Format: [moduleName, bootstrapPath]
-          // Handles both 'node:x' and plain 'x' variants.
+          // Handles both 'node:x' and plain 'x' variants (except prefix-only modules).
           const requireMappings = new Map([
             // Core modules with internal equivalents.
             ['child_process', 'internal/child_process'],
@@ -91,6 +91,15 @@ export function smolTransformPlugin() {
             ['zlib', 'zlib'],
           ])
 
+          // Prefix-only modules that have no unprefixed form.
+          // These ONLY support node:* syntax.
+          const prefixOnlyModules = new Set([
+            'node:sea',
+            'node:sqlite',
+            'node:test',
+            'node:test/reporters',
+          ])
+
           // Replace require("node:X") and require("X") with correct bootstrap path.
           for (const [moduleName, bootstrapPath] of requireMappings) {
             // Handle node:x variant.
@@ -99,7 +108,8 @@ export function smolTransformPlugin() {
               `require("${bootstrapPath}")`,
             )
             // Handle plain x variant (if different from bootstrap path).
-            if (moduleName !== bootstrapPath) {
+            // Skip if this is a prefix-only module.
+            if (moduleName !== bootstrapPath && !prefixOnlyModules.has(`node:${moduleName}`)) {
               content = content.replace(
                 new RegExp(`require\\(["']${moduleName}["']\\)`, 'g'),
                 `require("${bootstrapPath}")`,
