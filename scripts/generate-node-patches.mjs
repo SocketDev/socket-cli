@@ -159,7 +159,7 @@ async function generateSeaPatch() {
  */
 async function main() {
   logger.log(`🔨 Generating Socket patches for Node.js ${NODE_VERSION}`)
-  logger.log()
+  logger.log('')
 
   // Check if Node.js directory exists
   if (!existsSync(NODE_DIR)) {
@@ -187,21 +187,21 @@ async function main() {
     logger.error(`${colors.red('✗')} Failed to generate SEA patch:`, e.message)
   }
 
-  logger.log()
+  logger.log('')
   logger.log('🎉 Patch generation complete!')
-  logger.log()
+  logger.log('')
   logger.log('Generated patches:')
   for (const patch of patches) {
     logger.log(`   - ${patch}`)
   }
-  logger.log()
+  logger.log('')
   logger.log('📝 Next steps:')
   logger.log('   1. Review the generated patches')
   logger.log(
     '   2. Update build-yao-pkg-node.mjs to reference new patch files',
   )
   logger.log('   3. Test the build with new patches')
-  logger.log()
+  logger.log('')
 }
 
 // Run main function

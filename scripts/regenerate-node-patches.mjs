@@ -157,7 +157,7 @@ const { getAsset: getAssetInternal, getAssetKeys: getAssetKeysInternal } = inter
   }
 
   logger.log(`${colors.green('✓')} Socket modifications applied`)
-  logger.log()
+  logger.log('')
 }
 
 /**
@@ -198,7 +198,7 @@ async function generatePatch(name, description) {
  */
 async function main() {
   logger.log(`🔨 Regenerating Socket patches for Node.js ${NODE_VERSION}`)
-  logger.log()
+  logger.log('')
 
   // Clean up old work directory
   if (existsSync(WORK_DIR)) {
@@ -224,14 +224,14 @@ async function main() {
     ],
     { cwd: WORK_DIR },
   )
-  logger.log()
+  logger.log('')
 
   // Step 2: Apply Socket modifications
   await applySocketModifications()
 
   // Step 5: Generate patches
   logger.log('📝 Generating patch files...')
-  logger.log()
+  logger.log('')
 
   const patches = []
 
@@ -249,16 +249,16 @@ async function main() {
     patches.push(combinedPatch)
   }
 
-  logger.log()
+  logger.log('')
   logger.log('🎉 Patch regeneration complete!')
-  logger.log()
+  logger.log('')
 
   if (patches.length > 0) {
     logger.log('Generated patches:')
     for (const patch of patches) {
       logger.log(`   - ${patch}`)
     }
-    logger.log()
+    logger.log('')
     logger.log('📝 Next steps:')
     logger.log('   1. Review the generated patches')
     logger.log(
@@ -270,7 +270,7 @@ async function main() {
     logger.log(`${colors.yellow('⚠')}  No patches were generated (no changes detected)`)
   }
 
-  logger.log()
+  logger.log('')
   logger.log('🧹 Cleanup:')
   logger.log(`   rm -rf ${WORK_DIR}`)
 }

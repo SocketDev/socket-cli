@@ -3820,7 +3820,7 @@ async function validateBeforePush(cwd) {
   // Check 1: No console.log statements
   if (diff.match(/^\+.*console\.log\(/m)) {
     warnings.push(
-      `${colors.yellow('⚠')} Added logger.log() statements detected`,
+      `${colors.yellow('⚠')} Added logger.log('') statements detected`,
     )
   }
 

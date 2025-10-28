@@ -73,10 +73,10 @@ async function main() {
   })
 
   if (result.code === 0) {
-    logger.log()
+    logger.log('')
     logger.success(`Successfully published ${target}`)
   } else {
-    logger.log()
+    logger.log('')
     logger.error(`Failed to publish ${target}`)
   }
 

@@ -195,7 +195,7 @@ async function main() {
   logger.log('Socket CLI SEA Publisher')
   logger.log('========================')
   logger.log(`Version: ${version}`)
-  logger.log()
+  logger.log('')
 
   // Build binaries.
   if (!options.skipBuild) {
