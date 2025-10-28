@@ -13,6 +13,7 @@
     "./lib/emscripten-builder": "./lib/emscripten-builder.mjs",
     "./lib/extraction-cache": "./lib/extraction-cache.mjs",
     "./lib/patch-validator": "./lib/patch-validator.mjs",
+    "./lib/preflight-checks": "./lib/preflight-checks.mjs",
     "./lib/rust-builder": "./lib/rust-builder.mjs",
     "./lib/script-runner": "./lib/script-runner.mjs",
     "./lib/tool-installer": "./lib/tool-installer.mjs"
