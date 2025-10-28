@@ -295,7 +295,7 @@ async function checkGitStatus() {
       cwd: projectRoot,
     })
 
-    if (result.status !== 0) {
+    if (result.code !== 0) {
       warnings.push('Unable to check git status')
       return { errors, warnings }
     }
@@ -336,7 +336,7 @@ async function validateGitTag() {
       cwd: projectRoot,
     })
 
-    if (result.status !== 0) {
+    if (result.code !== 0) {
       warnings.push('Unable to check git tags')
       return { errors, warnings }
     }
