@@ -118,27 +118,63 @@ jobs:
           key: onnx-runtime-${{ steps.wasm-cache-keys.outputs.onnx-hash }}
           restore-keys: onnx-runtime-
 
+      - name: Verify Yoga Layout cache
+        id: yoga-cache-valid
+        shell: bash
+        run: |
+          if [ -f "packages/yoga-layout/build/wasm/yoga.wasm" ] && [ -f "packages/yoga-layout/build/wasm/yoga.js" ]; then
+            echo "valid=true" >> $GITHUB_OUTPUT
+            echo "✓ Yoga Layout cache valid"
+          else
+            echo "valid=false" >> $GITHUB_OUTPUT
+            echo "✗ Yoga Layout cache invalid or missing"
+          fi
+
+      - name: Verify AI models cache
+        id: ai-cache-valid
+        shell: bash
+        run: |
+          if [ -f "packages/socketbin-cli-ai/dist/ai.bz" ] && [ -f "packages/socketbin-cli-ai/dist/ai.js" ]; then
+            echo "valid=true" >> $GITHUB_OUTPUT
+            echo "✓ AI models cache valid"
+          else
+            echo "valid=false" >> $GITHUB_OUTPUT
+            echo "✗ AI models cache invalid or missing"
+          fi
+
+      - name: Verify ONNX Runtime cache
+        id: onnx-cache-valid
+        shell: bash
+        run: |
+          if [ -f "packages/onnx-runtime-builder/dist/onnxruntime-web.wasm" ]; then
+            echo "valid=true" >> $GITHUB_OUTPUT
+            echo "✓ ONNX Runtime cache valid"
+          else
+            echo "valid=false" >> $GITHUB_OUTPUT
+            echo "✗ ONNX Runtime cache invalid or missing"
+          fi
+
       - name: Setup Python for WASM builds
-        if: steps.yoga-cache.outputs.cache-hit != 'true' || steps.ai-cache.outputs.cache-hit != 'true' || steps.onnx-cache.outputs.cache-hit != 'true'
+        if: steps.yoga-cache-valid.outputs.valid != 'true' || steps.ai-cache-valid.outputs.valid != 'true' || steps.onnx-cache-valid.outputs.valid != 'true'
         uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
         with:
           python-version: '3.11'
 
       - name: Build WASM assets on cache miss
-        if: steps.yoga-cache.outputs.cache-hit != 'true' || steps.ai-cache.outputs.cache-hit != 'true' || steps.onnx-cache.outputs.cache-hit != 'true'
+        if: steps.yoga-cache-valid.outputs.valid != 'true' || steps.ai-cache-valid.outputs.valid != 'true' || steps.onnx-cache-valid.outputs.valid != 'true'
         shell: bash
         run: |
           echo "⚠️  WASM cache miss detected - building from source"
           echo "This will take 30-60 minutes. Consider running build-wasm.yml workflow to prime cache."
           echo ""
           echo "Cache status:"
-          echo "  Yoga Layout: ${{ steps.yoga-cache.outputs.cache-hit == 'true' && '✓ cached' || '✗ missing' }}"
-          echo "  AI Models: ${{ steps.ai-cache.outputs.cache-hit == 'true' && '✓ cached' || '✗ missing' }}"
-          echo "  ONNX Runtime: ${{ steps.onnx-cache.outputs.cache-hit == 'true' && '✓ cached' || '✗ missing' }}"
+          echo "  Yoga Layout: ${{ steps.yoga-cache-valid.outputs.valid == 'true' && '✓ cached' || '✗ missing' }}"
+          echo "  AI Models: ${{ steps.ai-cache-valid.outputs.valid == 'true' && '✓ cached' || '✗ missing' }}"
+          echo "  ONNX Runtime: ${{ steps.onnx-cache-valid.outputs.valid == 'true' && '✓ cached' || '✗ missing' }}"
           echo ""
 
           # Install Emscripten if needed for Yoga/ONNX.
-          if [ "${{ steps.yoga-cache.outputs.cache-hit }}" != "true" ] || [ "${{ steps.onnx-cache.outputs.cache-hit }}" != "true" ]; then
+          if [ "${{ steps.yoga-cache-valid.outputs.valid }}" != "true" ] || [ "${{ steps.onnx-cache-valid.outputs.valid }}" != "true" ]; then
             echo "::group::Installing Emscripten"
             git clone https://github.com/emscripten-core/emsdk.git
             cd emsdk
@@ -160,7 +196,7 @@ jobs:
           fi
 
           # Install Python deps if needed for AI models.
-          if [ "${{ steps.ai-cache.outputs.cache-hit }}" != "true" ]; then
+          if [ "${{ steps.ai-cache-valid.outputs.valid }}" != "true" ]; then
             echo "::group::Installing Python dependencies"
             python3 -m pip install --upgrade pip
             python3 -m pip install transformers torch optimum[onnx] "onnxruntime>=1.20.0"
@@ -168,19 +204,19 @@ jobs:
           fi
 
           # Build missing WASM assets.
-          if [ "${{ steps.yoga-cache.outputs.cache-hit }}" != "true" ]; then
+          if [ "${{ steps.yoga-cache-valid.outputs.valid }}" != "true" ]; then
             echo "::group::Building Yoga Layout WASM"
             pnpm --filter @socketsecurity/yoga-layout run build
             echo "::endgroup::"
           fi
 
-          if [ "${{ steps.ai-cache.outputs.cache-hit }}" != "true" ]; then
+          if [ "${{ steps.ai-cache-valid.outputs.valid }}" != "true" ]; then
             echo "::group::Building AI models (10-15 minutes)"
             pnpm --filter @socketbin/cli-ai run build
             echo "::endgroup::"
           fi
 
-          if [ "${{ steps.onnx-cache.outputs.cache-hit }}" != "true" ]; then
+          if [ "${{ steps.onnx-cache-valid.outputs.valid }}" != "true" ]; then
             echo "::group::Building ONNX Runtime (20-30 minutes)"
             pnpm --filter @socketsecurity/onnx-runtime-builder run build
             echo "::endgroup::"
@@ -204,7 +240,7 @@ jobs:
           restore-keys: node-sea-${{ matrix.platform }}-${{ matrix.arch }}-
 
       - name: Check WASM cache requirements (Windows)
-        if: matrix.os == 'windows' && (steps.yoga-cache.outputs.cache-hit != 'true' || steps.ai-cache.outputs.cache-hit != 'true' || steps.onnx-cache.outputs.cache-hit != 'true')
+        if: matrix.os == 'windows' && (steps.yoga-cache-valid.outputs.valid != 'true' || steps.ai-cache-valid.outputs.valid != 'true' || steps.onnx-cache-valid.outputs.valid != 'true')
         run: |
           echo "::error::WASM assets not cached for Windows build. Run build-wasm.yml workflow first to prime the cache."
           echo "Windows builds require pre-cached WASM assets due to network reliability issues."
