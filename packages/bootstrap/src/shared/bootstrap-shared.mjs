@@ -10,8 +10,18 @@ import path from 'node:path'
 import { brotliDecompressSync } from 'node:zlib'
 
 import { dlxPackage } from '@socketsecurity/lib/dlx-package'
+import { logger } from '@socketsecurity/lib/logger'
+import { gte } from 'semver'
 
 export const SOCKET_DLX_DIR = path.join(homedir(), '.socket', '_dlx')
+
+/**
+ * Minimum Node.js version with SEA support.
+ * This constant is injected at build time by esbuild from .config/node-version.mjs.
+ * @type {string}
+ */
+// @ts-expect-error - Injected by esbuild define.
+const MIN_NODE_VERSION = __MIN_NODE_VERSION__
 
 /**
  * Get CLI package paths.
@@ -34,17 +44,14 @@ export function getArgs() {
 }
 
 /**
- * Check if system has modern Node.js (>=24.10.0).
+ * Check if system has modern Node.js (>=24.10.0) with SEA support.
  */
 export function hasModernNode() {
-  const version = process.version // e.g., 'v24.10.0'.
-  const match = version.match(/^v(\d+)\.(\d+)\.(\d+)/)
-  if (!match) {
+  try {
+    return gte(process.version, MIN_NODE_VERSION)
+  } catch {
     return false
   }
-
-  const [, major, minor] = match.map(Number)
-  return major > 24 || (major === 24 && minor >= 10)
 }
 
 /**
@@ -92,8 +99,8 @@ export function executeCompressedCli(bzPath, args) {
  * Download and install CLI using dlxPackage.
  */
 export async function downloadCli() {
-  process.stderr.write('📦 Socket CLI not found, downloading...\n')
-  process.stderr.write('\n')
+  logger.log('📦 Socket CLI not found, downloading...')
+  logger.log('')
 
   // Create directories.
   mkdirSync(SOCKET_DLX_DIR, { recursive: true })
@@ -111,7 +118,7 @@ export async function downloadCli() {
       },
     )
 
-    process.stderr.write(`   Installed to: ${result.packageDir}\n`)
+    logger.log(`   Installed to: ${result.packageDir}`)
 
     // Wait for installation to complete (but the spawn will fail since we don't have a command).
     // That's okay - we just need the package installed.
@@ -121,13 +128,13 @@ export async function downloadCli() {
       // Ignore execution errors - we only care that the package was installed.
     }
 
-    process.stderr.write('✅ Socket CLI installed successfully\n')
-    process.stderr.write('\n')
+    logger.log('✅ Socket CLI installed successfully')
+    logger.log('')
 
     return result
   } catch (e) {
-    process.stderr.write('❌ Failed to download Socket CLI\n')
-    process.stderr.write(`   Error: ${e instanceof Error ? e.message : String(e)}\n`)
+    logger.error('Failed to download Socket CLI')
+    logger.error(`   Error: ${e instanceof Error ? e.message : String(e)}`)
     process.exit(1)
   }
 }
@@ -154,8 +161,8 @@ export async function findAndExecuteCli(args) {
   }
 
   // If we still can't find the CLI, exit with error.
-  process.stderr.write('❌ Socket CLI installation failed\n')
-  process.stderr.write('   CLI entry point not found after installation\n')
-  process.stderr.write(`   Looked in: ${cliEntry}\n`)
+  logger.error('Socket CLI installation failed')
+  logger.error('   CLI entry point not found after installation')
+  logger.error(`   Looked in: ${cliEntry}`)
   process.exit(1)
 }

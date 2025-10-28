@@ -7,6 +7,7 @@ import { build } from 'esbuild'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { NODE_VERSION_SEMVER } from './node-version.mjs'
 import { smolTransformPlugin } from './esbuild-plugin-smol-transform.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -17,6 +18,9 @@ const config = {
     js: '#!/usr/bin/env node',
   },
   bundle: true,
+  define: {
+    __MIN_NODE_VERSION__: JSON.stringify(NODE_VERSION_SEMVER),
+  },
   entryPoints: [path.join(rootPath, 'src', 'bootstrap-smol.mts')],
   external: [],
   format: 'cjs',
