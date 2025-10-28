@@ -66,7 +66,9 @@ import { whichBinSync } from '@socketsecurity/lib/bin'
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { logger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
-import { NODE_VERSION } from '@socketsecurity/bootstrap/.config/node-version.mjs'
+import nodeVersionConfig from '@socketsecurity/bootstrap/node-version.json' with { type: 'json' }
+
+const { version: NODE_VERSION } = nodeVersionConfig
 import colors from 'yoctocolors-cjs'
 
 import {

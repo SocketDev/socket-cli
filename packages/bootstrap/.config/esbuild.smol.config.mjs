@@ -3,11 +3,13 @@
  * Transforms node:* requires to internal/* for Node.js internal bootstrap context.
  */
 
-import { build } from 'esbuild'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { NODE_VERSION_SEMVER } from './node-version.mjs'
+import { build } from 'esbuild'
+
+import nodeVersionConfig from '../node-version.json' with { type: 'json' }
+
 import { smolTransformPlugin } from './esbuild-plugin-smol-transform.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -19,7 +21,7 @@ const config = {
   },
   bundle: true,
   define: {
-    __MIN_NODE_VERSION__: JSON.stringify(NODE_VERSION_SEMVER),
+    __MIN_NODE_VERSION__: JSON.stringify(nodeVersionConfig.versionSemver),
   },
   entryPoints: [path.join(rootPath, 'src', 'bootstrap-smol.mts')],
   external: [],
