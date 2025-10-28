@@ -112,6 +112,12 @@ async function cloneSource() {
     throw new Error(`git clone failed with exit code ${result.code}`)
   }
 
+  // Verify CMakeLists.txt exists.
+  const cmakeLists = path.join(SOURCE_DIR, 'CMakeLists.txt')
+  if (!existsSync(cmakeLists)) {
+    throw new Error(`CMakeLists.txt not found after clone: ${cmakeLists}`)
+  }
+
   printSuccess('ONNX Runtime source cloned')
   await createCheckpoint('onnx-runtime', 'cloned', { version: ONNX_VERSION })
 }

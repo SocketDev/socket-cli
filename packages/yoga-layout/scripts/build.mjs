@@ -297,10 +297,14 @@ async function optimize() {
     '--strip-target-features',
   ]
 
-  await spawn('wasm-opt', [...wasmOptFlags, wasmFile, '-o', wasmFile], {
-    shell: WIN32,
+  // Use shell:true to ensure PATH from emsdk_env.sh is available.
+  const result = await spawn('wasm-opt', [...wasmOptFlags, wasmFile, '-o', wasmFile], {
+    shell: true,
     stdio: 'inherit',
   })
+  if (result.code !== 0) {
+    throw new Error(`wasm-opt failed with exit code ${result.code}`)
+  }
 
   const sizeAfter = await getFileSize(wasmFile)
   printStep(`Size after: ${sizeAfter}`)
