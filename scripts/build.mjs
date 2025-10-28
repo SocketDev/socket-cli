@@ -5,10 +5,11 @@
  * Routes build commands to appropriate packages based on --target flag.
  */
 
-import { spawnSync } from 'node:child_process'
 import process from 'node:process'
+
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { logger } from '@socketsecurity/lib/logger'
-import colors from 'yoctocolors-cjs'
+import { spawn } from '@socketsecurity/lib/spawn'
 
 const TARGET_PACKAGES = {
   __proto__: null,
@@ -41,25 +42,31 @@ for (let i = 0; i < args.length; i++) {
   }
 }
 
-const packageFilter = TARGET_PACKAGES[target]
-if (!packageFilter) {
-  logger.error(`Unknown build target: ${target}`)
-  logger.error(`Available targets: ${Object.keys(TARGET_PACKAGES).join(', ')}`)
-  process.exit(1)
+async function main() {
+  const packageFilter = TARGET_PACKAGES[target]
+  if (!packageFilter) {
+    logger.error(`Unknown build target: ${target}`)
+    logger.error(`Available targets: ${Object.keys(TARGET_PACKAGES).join(', ')}`)
+    process.exit(1)
+  }
+
+  const pnpmArgs = [
+    '--filter',
+    packageFilter,
+    'run',
+    'build',
+    ...buildArgs
+  ]
+
+  const result = await spawn('pnpm', pnpmArgs, {
+    shell: WIN32,
+    stdio: 'inherit',
+  })
+
+  process.exit(result.code ?? 1)
 }
 
-const pnpmArgs = [
-  '--filter',
-  packageFilter,
-  'run',
-  'build',
-  ...buildArgs
-]
-
-const result = spawnSync('pnpm', pnpmArgs, {
-  encoding: 'utf8',
-  shell: false,
-  stdio: 'inherit'
+main().catch(e => {
+  logger.error(e)
+  process.exit(1)
 })
-
-process.exit(result.status ?? 1)
