@@ -489,6 +489,10 @@ importers:
         version: 2.2.0(typescript@5.9.3)
 
   packages/node-sea-builder:
+    dependencies:
+      '@socketsecurity/build-infra':
+        specifier: workspace:*
+        version: link:../build-infra
     devDependencies:
       vitest:
         specifier: 3.0.0

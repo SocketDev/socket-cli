@@ -126,6 +126,7 @@ jobs:
 
       - name: Build WASM assets on cache miss
         if: steps.yoga-cache.outputs.cache-hit != 'true' || steps.ai-cache.outputs.cache-hit != 'true' || steps.onnx-cache.outputs.cache-hit != 'true'
+        shell: bash
         run: |
           echo "⚠️  WASM cache miss detected - building from source"
           echo "This will take 30-60 minutes. Consider running build-wasm.yml workflow to prime cache."
