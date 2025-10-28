@@ -254,7 +254,7 @@ $ socket scan
 │ Platform Binary (socket-linux-x64)        │
 │                                           │
 │ 1. Stub Code Executes                     │
-│ 2. Check ~/.socket/_cli/package/          │
+│ 2. Check ~/.socket/_dlx/package/          │
 │ 3. Download @socketsecurity/cli if needed │
 │ 4. Spawn Node.js with CLI                 │
 └──────────────────────────────────────────┘
@@ -276,7 +276,7 @@ When running `socket self-update` as a SEA binary:
 
 The actual CLI code updates independently:
 1. Check npm registry for `@socketsecurity/cli` version
-2. Download and extract new tarball to `~/.socket/_cli/package/`
+2. Download and extract new tarball to `~/.socket/_dlx/package/`
 3. Next execution uses new CLI code
 
 ## 7. Platform Support

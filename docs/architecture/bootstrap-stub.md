@@ -4,7 +4,7 @@ This document describes Socket CLI's bootstrap stub architecture for distributin
 
 ## Overview
 
-Socket CLI uses a **bootstrap stub pattern** where the distributed executable is a tiny wrapper (~1-5MB) that downloads the full CLI (~20MB) on first use. The stub remains "dumb" - its only job is to download and spawn the full CLI. The full CLI (in `~/.socket/_cli/`) handles all functionality including updating both itself and the stub.
+Socket CLI uses a **bootstrap stub pattern** where the distributed executable is a tiny wrapper (~1-5MB) that downloads the full CLI (~20MB) on first use. The stub remains "dumb" - its only job is to download and spawn the full CLI. The full CLI (in `~/.socket/_dlx/`) handles all functionality including updating both itself and the stub.
 
 This provides:
 
@@ -41,7 +41,7 @@ This provides:
                            │ Download & extract
                            ▼
 ┌─────────────────────────────────────────────────────────┐
-│ ~/.socket/_cli/ (User's home directory)                 │
+│ ~/.socket/_dlx/ (User's home directory)                 │
 │                                                          │
 │  ├── package.json                                       │
 │  ├── dist/                                              │
@@ -61,7 +61,7 @@ This provides:
 ┌─────────────────────────────────────────────────────────┐
 │ System Node.js (from PATH)                              │
 │                                                          │
-│  $ node ~/.socket/_cli/dist/cli.js [args]              │
+│  $ node ~/.socket/_dlx/dist/cli.js [args]              │
 │                                                          │
 │  IPC Channel receives from stub:                        │
 │    • SOCKET_CLI_STUB_PATH (e.g., /usr/local/bin/socket)│
@@ -93,10 +93,10 @@ flowchart TD
     B -->|Yes| H[Get installed version]
     C --> D[Extract tarball to ~/.socket/tmp/]
     D --> E[Run npm install --production]
-    E --> F[Move to ~/.socket/_cli/]
+    E --> F[Move to ~/.socket/_dlx/]
     F --> G[Read package.json for entry point]
     H --> G
-    G --> I[Spawn: node ~/.socket/_cli/dist/cli.js args]
+    G --> I[Spawn: node ~/.socket/_dlx/dist/cli.js args]
     I --> J[Forward all stdio]
     J --> K[Exit with CLI exit code]
 ```
@@ -108,7 +108,7 @@ Environment variables for customization:
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `SOCKET_HOME` | `~/.socket` | Root directory for Socket CLI data |
-| `SOCKET_CLI_DIR` | `~/.socket/_cli` | CLI installation directory |
+| `SOCKET_CLI_DIR` | `~/.socket/_dlx` | CLI installation directory |
 | `SOCKET_CLI_PACKAGE` | `@socketsecurity/cli` | npm package name |
 | `SOCKET_NPM_REGISTRY` | `https://registry.npmjs.org` | npm registry URL |
 | `NPM_REGISTRY` | (fallback) | Alternative registry env var |
@@ -133,7 +133,7 @@ $ ./socket scan create
 
 ### Default Paths
 
-- **Linux/macOS**: `~/.socket/_cli/`
+- **Linux/macOS**: `~/.socket/_dlx/`
 - **Windows**: `%USERPROFILE%\.socket\cli\`
 
 ### Directory Structure
@@ -169,7 +169,7 @@ $ ./socket scan create
 | Component | Size | Notes |
 |-----------|------|-------|
 | Bootstrap executable | ~1MB | Distributed to users |
-| Downloaded CLI | ~30MB | Cached in `~/.socket/_cli/` |
+| Downloaded CLI | ~30MB | Cached in `~/.socket/_dlx/` |
 | node_modules/ | ~15MB | Production dependencies only |
 | **Total** | **~45MB** | One-time download |
 
@@ -179,7 +179,7 @@ $ ./socket scan create
 
 Socket CLI implements a **two-tier update system**:
 
-1. **CLI Self-Update**: The full CLI (`~/.socket/_cli/`) can update itself
+1. **CLI Self-Update**: The full CLI (`~/.socket/_dlx/`) can update itself
 2. **Stub Update**: The CLI can also update the stub binary that launched it
 
 The stub remains "dumb" and never updates itself. All update logic lives in the full CLI.
@@ -201,7 +201,7 @@ The stub remains "dumb" and never updates itself. All update logic lives in the 
           │    { SOCKET_CLI_STUB_PATH: process.argv[0] }
           ▼
 ┌──────────────────────────────────────┐
-│  Full CLI (~/.socket/_cli/dist/cli.js) │
+│  Full CLI (~/.socket/_dlx/dist/cli.js) │
 │  - SMART: handles all logic          │
 ├──────────────────────────────────────┤
 │  Receives via IPC:                   │
@@ -400,7 +400,7 @@ Users can manually update:
 socket self-update
 
 # Force re-download CLI (stub will re-download on next run)
-rm -rf ~/.socket/_cli
+rm -rf ~/.socket/_dlx
 socket --version
 
 # Clean everything including temp files
@@ -558,7 +558,7 @@ ENOSPC: no space left on device
 
 **Permissions:**
 ```
-EACCES: permission denied, mkdir '~/.socket/_cli'
+EACCES: permission denied, mkdir '~/.socket/_dlx'
 ```
 
 ### Recovery
@@ -567,7 +567,7 @@ Users can manually recover from errors:
 
 ```bash
 # Clean up corrupted installation
-rm -rf ~/.socket/_cli
+rm -rf ~/.socket/_dlx
 rm -rf ~/.socket/tmp
 
 # Retry
@@ -585,7 +585,7 @@ Test the bootstrap locally before distribution:
 pnpm run build --sea
 
 # Test first run (delete cache first)
-rm -rf ~/.socket/_cli
+rm -rf ~/.socket/_dlx
 ./socket --version
 
 # Test subsequent run
@@ -606,12 +606,12 @@ Test bootstrap in CI:
     pnpm run build --sea
 
     # Test first run
-    rm -rf ~/.socket/_cli
+    rm -rf ~/.socket/_dlx
     ./socket --version
 
     # Verify installation
-    test -d ~/.socket/_cli
-    test -f ~/.socket/_cli/package.json
+    test -d ~/.socket/_dlx
+    test -f ~/.socket/_dlx/package.json
 
     # Test subsequent run
     ./socket --help
