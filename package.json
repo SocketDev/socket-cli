@@ -82,7 +82,7 @@
     "npm-run-all2": "8.0.4",
     "open": "10.2.0",
     "pony-cause": "2.1.11",
-    "postject": "1.0.0-alpha.6",
+    "postject": "catalog:",
     "react": "19.2.0",
     "react-reconciler": "0.33.0",
     "registry-auth-token": "5.1.0",
