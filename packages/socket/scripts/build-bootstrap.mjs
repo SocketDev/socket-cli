@@ -1,26 +1,64 @@
 /**
  * Build script for Socket npm wrapper bootstrap.
+ *
+ * Builds two versions:
+ * 1. bootstrap.js - Standard version for SEA builds (uses node:* requires)
+ * 2. bootstrap-smol.js - Transformed version for smol builds (uses internal/* requires)
  */
+
+import { mkdirSync, writeFileSync } from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 import { build } from 'esbuild'
 
-import config from './esbuild.bootstrap.config.mjs'
+import seaConfig from './esbuild.bootstrap.config.mjs'
+import smolConfig from './esbuild.bootstrap-smol.config.mjs'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const packageRoot = path.resolve(__dirname, '..')
 
 console.log('Building Socket npm wrapper bootstrap with esbuild...\n')
 
 try {
-  const result = await build(config)
+  // Create dist directory.
+  mkdirSync(path.join(packageRoot, 'dist'), { recursive: true })
 
-  console.log('✓ Build completed successfully')
-  console.log(`✓ Output: ${config.outfile}`)
+  // Build standard version for SEA.
+  console.log('→ Building standard bootstrap (SEA)...')
+  const seaResult = await build(seaConfig)
 
-  if (result.metafile) {
-    const outputSize = Object.values(result.metafile.outputs)[0]?.bytes
+  console.log(`✓ ${seaConfig.outfile}`)
+
+  if (seaResult.metafile) {
+    const outputSize = Object.values(seaResult.metafile.outputs)[0]?.bytes
     if (outputSize) {
-      console.log(`✓ Bundle size: ${(outputSize / 1024).toFixed(2)} KB`)
+      console.log(`  Size: ${(outputSize / 1024).toFixed(2)} KB`)
     }
   }
+
+  // Build transformed version for smol.
+  console.log('\n→ Building transformed bootstrap (smol)...')
+  const smolResult = await build(smolConfig)
+
+  // Write the transformed output (build had write: false).
+  if (smolResult.outputFiles && smolResult.outputFiles.length > 0) {
+    for (const output of smolResult.outputFiles) {
+      writeFileSync(output.path, output.contents)
+    }
+  }
+
+  console.log(`✓ ${smolConfig.outfile}`)
+
+  if (smolResult.metafile) {
+    const outputSize = Object.values(smolResult.metafile.outputs)[0]?.bytes
+    if (outputSize) {
+      console.log(`  Size: ${(outputSize / 1024).toFixed(2)} KB`)
+    }
+  }
+
+  console.log('\n✓ Build completed successfully')
 } catch (error) {
-  console.error('Build failed:', error)
+  console.error('\n✗ Build failed:', error)
   process.exit(1)
 }
