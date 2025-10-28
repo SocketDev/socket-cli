@@ -100,10 +100,11 @@ export class EmscriptenBuilder {
 
     const wasmPath = path.join(this.buildDir, wasmFile)
 
+    // Use shell:true to ensure PATH from emsdk_env.sh is available.
     const result = await spawn(
       'wasm-opt',
       [`-O${optimizeLevel}`, '-s', shrinkLevel.toString(), wasmPath, '-o', wasmPath],
-      { shell: WIN32, stdio: 'inherit' }
+      { shell: true, stdio: 'inherit' }
     )
     if (result.code !== 0) {
       throw new Error(`wasm-opt failed with exit code ${result.code}`)
@@ -121,8 +122,9 @@ export class EmscriptenBuilder {
 
     const wasmPath = path.join(this.buildDir, wasmFile)
 
+    // Use shell:true to ensure PATH from emsdk_env.sh is available.
     const result = await spawn('wasm-strip', [wasmPath], {
-      shell: WIN32,
+      shell: true,
       stdio: 'inherit',
     })
     if (result.code !== 0) {
