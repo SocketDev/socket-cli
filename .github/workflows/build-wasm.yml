@@ -208,7 +208,7 @@ jobs:
           retention-days: 7
 
   build-onnx-runtime:
-    name: ⚡ Build ONNX Runtime WASM
+    name: 🌐 Build ONNX Runtime WASM
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -319,7 +319,7 @@ jobs:
           echo "|-------|-------|" >> $GITHUB_STEP_SUMMARY
           echo "| 🧘 Yoga Layout | \`yoga.wasm\`, \`yoga.js\` |" >> $GITHUB_STEP_SUMMARY
           echo "| 🤖 AI Models | \`ai.bz\`, \`ai.js\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| ⚡ ONNX Runtime | \`ort-wasm.wasm\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🌐 ONNX Runtime | \`ort-wasm.wasm\` |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 🎯 Next Steps" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
