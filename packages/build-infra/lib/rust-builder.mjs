@@ -106,7 +106,7 @@ export class RustBuilder {
     const result = await spawn(
       `cargo build --target wasm32-unknown-unknown ${profileFlag} ${featuresFlag} -j ${jobs}`,
       [],
-      { cwd: this.projectDir, env, shell: true, stdio: 'inherit' }
+      { cwd: this.projectDir, env, shell: WIN32, stdio: 'inherit' }
     )
     if (result.code !== 0) {
       throw new Error(`cargo build failed with exit code ${result.code}`)
@@ -140,7 +140,7 @@ export class RustBuilder {
     const result = await spawn(
       `wasm-bindgen --target ${target} ${tsFlag} ${debugFlag} --out-dir ${outputPath} ${input}`,
       [],
-      { cwd: this.projectDir, shell: true, stdio: 'inherit' }
+      { cwd: this.projectDir, shell: WIN32, stdio: 'inherit' }
     )
     if (result.code !== 0) {
       throw new Error(`wasm-bindgen failed with exit code ${result.code}`)
@@ -165,7 +165,7 @@ export class RustBuilder {
     const result = await spawn(
       `wasm-opt ${flags} "${inputPath}" -o "${outputPath}"`,
       [],
-      { shell: true, stdio: 'inherit' }
+      { shell: WIN32, stdio: 'inherit' }
     )
     if (result.code !== 0) {
       throw new Error(`wasm-opt failed with exit code ${result.code}`)
