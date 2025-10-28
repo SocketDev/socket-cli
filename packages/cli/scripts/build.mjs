@@ -12,11 +12,9 @@
  *   --no-minify  Build without minification for debugging
  */
 
-import { spawn } from 'node:child_process'
-
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
-import { spawn } from '@socketsecurity/lib/spawn'
 import { logger } from '@socketsecurity/lib/logger'
+import { spawn } from '@socketsecurity/lib/spawn'
 
 // Simple CLI helpers without registry dependencies.
 const isQuiet = () => process.argv.includes('--quiet')
@@ -47,25 +45,20 @@ async function main() {
   // Delegate to build-sea.mjs if --sea flag is present.
   if (sea) {
     const seaArgs = process.argv.filter(arg => arg !== '--sea')
-    const child = spawn(
+    const result = await spawn(
       'node',
       ['scripts/build-sea.mjs', ...seaArgs.slice(2)],
       {
+        shell: WIN32,
         stdio: 'inherit',
-        env: process.env,
       },
     )
-    return new Promise((resolve, reject) => {
-      child.on('exit', code => {
-        if (code === 0) {
-          resolve()
-        } else {
-          process.exitCode = code ?? 1
-          reject(new Error(`SEA build failed with exit code ${code}`))
-        }
-      })
-      child.on('error', reject)
-    })
+
+    if (result.code !== 0) {
+      process.exitCode = result.code
+      throw new Error(`SEA build failed with exit code ${result.code}`)
+    }
+    return
   }
 
   try {
@@ -113,32 +106,21 @@ async function main() {
         log.info(`Running: ${command} ${args.join(' ')}`)
       }
 
-      // Always use runCommandQuiet to capture output for error reporting.
-      const result = await runCommandQuiet(command, args)
+      const result = await spawn(command, args, {
+        shell: WIN32,
+        stdio: 'inherit',
+      })
 
       if (result.code !== 0) {
         if (!quiet) {
           log.error(`${name} failed (exit code: ${result.code})`)
-        }
-        // Always show output on failure.
-        if (result.stdout) {
-          logger.log(result.stdout)
-        }
-        if (result.stderr) {
-          logger.error(result.stderr)
-        }
-        if (!quiet) {
           printError('Build failed')
         }
         process.exitCode = 1
         return
       }
 
-      // Show output in verbose mode.
       if (!quiet && verbose) {
-        if (result.stdout) {
-          logger.log(result.stdout)
-        }
         log.success(`${name} completed`)
       }
     }

@@ -56,12 +56,12 @@ async function main() {
     }
 
     // Run lint with --fix flag.
-    const exitCode = await spawn('pnpm', lintArgs, {
+    const result = await spawn('pnpm', lintArgs, {
       shell: WIN32,
       stdio: quiet ? 'pipe' : 'inherit',
     })
 
-    if (code !== 0) {
+    if (result.code !== 0) {
       if (!quiet) {
         logger.error('Some fixes could not be applied')
       }
