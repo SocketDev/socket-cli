@@ -19,8 +19,8 @@ export const SOCKET_DLX_DIR = path.join(homedir(), '.socket', '_dlx')
  * Environment variable to disable node forwarding and use stub instead.
  * Set to '1', 'true', or 'yes' to disable forwarding (useful for e2e testing).
  */
-const SOCKET_DISABLE_NODE_FORWARDING = ['1', 'true', 'yes'].includes(
-  process.env.SOCKET_DISABLE_NODE_FORWARDING?.toLowerCase()
+const SOCKET_CLI_DISABLE_NODE_FORWARDING = ['1', 'true', 'yes'].includes(
+  process.env.SOCKET_CLI_DISABLE_NODE_FORWARDING?.toLowerCase()
 )
 
 /**
@@ -75,10 +75,10 @@ export async function detectSystemNode() {
 
 /**
  * Check if we should forward to system Node.js.
- * Returns false if SOCKET_DISABLE_NODE_FORWARDING is set (for e2e testing).
+ * Returns false if SOCKET_CLI_DISABLE_NODE_FORWARDING is set (for e2e testing).
  */
 export async function shouldForwardToSystemNode() {
-  if (SOCKET_DISABLE_NODE_FORWARDING) {
+  if (SOCKET_CLI_DISABLE_NODE_FORWARDING) {
     return false
   }
   const nodePath = await detectSystemNode()
