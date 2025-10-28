@@ -11,4 +11,3 @@ catalog:
   esbuild: 0.24.0
   postject: 1.0.0-alpha.6
   semver: 7.6.3
-  which: 5.0.0
