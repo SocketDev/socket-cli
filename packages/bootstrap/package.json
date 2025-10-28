@@ -17,6 +17,7 @@
     "@socketsecurity/lib": "catalog:",
     "del-cli": "catalog:",
     "esbuild": "catalog:",
-    "semver": "catalog:"
+    "semver": "catalog:",
+    "which": "catalog:"
   }
 }

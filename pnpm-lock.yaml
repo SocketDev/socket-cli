@@ -18,6 +18,9 @@ catalogs:
     postject:
       specifier: 1.0.0-alpha.6
       version: 1.0.0-alpha.6
+    which:
+      specifier: 5.0.0
+      version: 5.0.0
 
 overrides:
   '@octokit/graphql': 9.0.1
@@ -413,6 +416,9 @@ importers:
       semver:
         specifier: 7.7.2
         version: 7.7.2
+      which:
+        specifier: 'catalog:'
+        version: 5.0.0
 
   packages/build-infra:
     dependencies:
