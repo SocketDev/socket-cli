@@ -7,11 +7,11 @@ import { existsSync, mkdirSync } from 'node:fs'
 import { homedir } from 'node:os'
 import path from 'node:path'
 
+import { whichBin } from '@socketsecurity/lib/bin'
 import { dlxPackage } from '@socketsecurity/lib/dlx-package'
 import { logger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 import { gte } from 'semver'
-import which from 'which'
 
 export const SOCKET_DLX_DIR = path.join(homedir(), '.socket', '_dlx')
 
@@ -66,7 +66,7 @@ export function hasModernNode() {
  */
 export async function detectSystemNode() {
   try {
-    const nodePath = await which('node', { nothrow: true })
+    const nodePath = await whichBin('node', { nothrow: true })
     return nodePath || null
   } catch {
     return null
