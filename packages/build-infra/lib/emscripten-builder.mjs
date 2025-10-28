@@ -112,7 +112,15 @@ export class EmscriptenBuilder {
 
     const result = await spawn(
       wasmOptCmd,
-      [`-O${optimizeLevel}`, '-s', shrinkLevel.toString(), wasmPath, '-o', wasmPath],
+      [
+        `-O${optimizeLevel}`,
+        '-s', shrinkLevel.toString(),
+        '--enable-bulk-memory',
+        '--enable-nontrapping-float-to-int',
+        '--enable-sign-ext',
+        wasmPath,
+        '-o', wasmPath
+      ],
       { shell: WIN32, stdio: 'inherit' }
     )
     if (result.code !== 0) {
