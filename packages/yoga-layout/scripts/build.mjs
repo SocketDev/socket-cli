@@ -266,10 +266,8 @@ async function optimize() {
   const wasmFile = path.join(cmakeBuildDir, 'yoga.wasm')
 
   if (!(await fs.access(wasmFile).then(() => true).catch(() => false))) {
-    printWarning(`WASM file not found: ${wasmFile}`)
-    printWarning('Skipping optimization')
-    await createCheckpoint('yoga-layout', 'optimized')
-    return
+    printError(`WASM file not found: ${wasmFile}`)
+    throw new Error('Cannot optimize - WASM file missing from build')
   }
 
   const sizeBefore = await getFileSize(wasmFile)
@@ -359,8 +357,8 @@ async function exportWasm() {
   const jsFile = path.join(cmakeBuildDir, 'yoga.js')
 
   if (!(await fs.access(wasmFile).then(() => true).catch(() => false))) {
-    printWarning('WASM file not found, nothing to export')
-    return
+    printError('WASM file not found - build failed')
+    throw new Error(`Required WASM file not found: ${wasmFile}`)
   }
 
   const outputWasm = path.join(OUTPUT_DIR, 'yoga.wasm')
