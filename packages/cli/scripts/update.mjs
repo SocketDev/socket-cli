@@ -20,7 +20,7 @@ import {
   printSuccess,
 } from '@socketsecurity/lib/stdio/header'
 
-import { runParallel } from './utils/run-command.mjs'
+import { runParallel } from '@socketsecurity/build-infra/lib/script-runner'
 
 async function main() {
   const quiet = isQuiet()
@@ -70,7 +70,8 @@ async function main() {
       })
     }
 
-    const exitCode = await runParallel(commands)
+    const results = await runParallel(commands)
+    const exitCode = results.some(r => r.code !== 0) ? 1 : 0
 
     // Clear progress line.
     if (!quiet) {

@@ -12,7 +12,8 @@ import { getChangedFiles, getStagedFiles } from '@socketsecurity/lib/git'
 import { logger } from '@socketsecurity/lib/logger'
 import { printHeader } from '@socketsecurity/lib/stdio/header'
 
-import { runCommandQuiet } from './utils/run-command.mjs'
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
+import { spawn } from '@socketsecurity/lib/spawn'
 
 // Files that trigger a full lint when changed
 const CORE_FILES = new Set([
@@ -194,7 +195,7 @@ async function runLintOnFiles(files, options = {}) {
 
     const result = await runCommandQuiet('pnpm', args)
 
-    if (result.exitCode !== 0) {
+    if (result.code !== 0) {
       // When fixing, non-zero exit codes are normal if fixes were applied.
       if (!fix || (result.stderr && result.stderr.trim().length > 0)) {
         if (!quiet) {
@@ -206,7 +207,7 @@ async function runLintOnFiles(files, options = {}) {
         if (result.stdout && !fix) {
           logger.log(result.stdout)
         }
-        return result.exitCode
+        return result.code
       }
     }
   }
@@ -267,7 +268,7 @@ async function runLintOnAll(options = {}) {
   for (const { args } of linters) {
     const result = await runCommandQuiet('pnpm', args)
 
-    if (result.exitCode !== 0) {
+    if (result.code !== 0) {
       // When fixing, non-zero exit codes are normal if fixes were applied.
       if (!fix || (result.stderr && result.stderr.trim().length > 0)) {
         if (!quiet) {
@@ -279,7 +280,7 @@ async function runLintOnAll(options = {}) {
         if (result.stdout && !fix) {
           logger.log(result.stdout)
         }
-        return result.exitCode
+        return result.code
       }
     }
   }
@@ -453,7 +454,7 @@ async function main() {
       }
     }
 
-    if (exitCode !== 0) {
+    if (code !== 0) {
       if (!quiet) {
         logger.error('')
         logger.log('Lint failed')

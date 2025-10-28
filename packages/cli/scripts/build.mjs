@@ -14,7 +14,8 @@
 
 import { spawn } from 'node:child_process'
 
-import { runCommandQuiet } from './utils/run-command.mjs'
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
+import { spawn } from '@socketsecurity/lib/spawn'
 import { logger } from '@socketsecurity/lib/logger'
 
 // Simple CLI helpers without registry dependencies.
@@ -115,9 +116,9 @@ async function main() {
       // Always use runCommandQuiet to capture output for error reporting.
       const result = await runCommandQuiet(command, args)
 
-      if (result.exitCode !== 0) {
+      if (result.code !== 0) {
         if (!quiet) {
-          log.error(`${name} failed (exit code: ${result.exitCode})`)
+          log.error(`${name} failed (exit code: ${result.code})`)
         }
         // Always show output on failure.
         if (result.stdout) {

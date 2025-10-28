@@ -18,7 +18,8 @@ import { parseArgs } from '@socketsecurity/lib/argv/parse'
 import { logger } from '@socketsecurity/lib/logger'
 import { printHeader } from '@socketsecurity/lib/stdio/header'
 
-import { runCommand } from './utils/run-command.mjs'
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
+import { spawn } from '@socketsecurity/lib/spawn'
 
 async function main() {
   const { values } = parseArgs({
@@ -55,11 +56,12 @@ async function main() {
     }
 
     // Run lint with --fix flag.
-    const exitCode = await runCommand('pnpm', lintArgs, {
+    const exitCode = await spawn('pnpm', lintArgs, {
+      shell: WIN32,
       stdio: quiet ? 'pipe' : 'inherit',
     })
 
-    if (exitCode !== 0) {
+    if (code !== 0) {
       if (!quiet) {
         logger.error('Some fixes could not be applied')
       }

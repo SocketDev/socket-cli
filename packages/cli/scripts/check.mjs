@@ -7,7 +7,8 @@ import { parseArgs } from '@socketsecurity/lib/argv/parse'
 import { logger } from '@socketsecurity/lib/logger'
 import { printFooter, printHeader } from '@socketsecurity/lib/stdio/header'
 
-import { runCommandQuiet } from './utils/run-command.mjs'
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
+import { spawn } from '@socketsecurity/lib/spawn'
 
 /**
  * Run ESLint check via lint script.
@@ -35,7 +36,7 @@ async function runEslintCheck(options = {}) {
 
   const result = await runCommandQuiet('pnpm', args)
 
-  if (result.exitCode !== 0) {
+  if (result.code !== 0) {
     if (!quiet) {
       logger.error('ESLint check failed')
     }
@@ -45,7 +46,7 @@ async function runEslintCheck(options = {}) {
     if (result.stderr) {
       logger.error(result.stderr)
     }
-    return result.exitCode
+    return result.code
   }
 
   if (!quiet) {
@@ -69,7 +70,7 @@ async function runTypeCheck(options = {}) {
 
   const result = await runCommandQuiet('pnpm', ['run', 'type'])
 
-  if (result.exitCode !== 0) {
+  if (result.code !== 0) {
     if (!quiet) {
       logger.error('TypeScript check failed')
     }
@@ -79,7 +80,7 @@ async function runTypeCheck(options = {}) {
     if (result.stderr) {
       logger.error(result.stderr)
     }
-    return result.exitCode
+    return result.code
   }
 
   if (!quiet) {
@@ -173,7 +174,7 @@ async function main() {
         quiet,
         staged: values.staged,
       })
-      if (exitCode !== 0) {
+      if (code !== 0) {
         if (!quiet) {
           logger.error('Checks failed')
         }
@@ -185,7 +186,7 @@ async function main() {
     // Run TypeScript check if requested or running all
     if (runAll || values.types) {
       exitCode = await runTypeCheck({ quiet })
-      if (exitCode !== 0) {
+      if (code !== 0) {
         if (!quiet) {
           logger.error('Checks failed')
         }

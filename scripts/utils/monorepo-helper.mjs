@@ -6,10 +6,10 @@
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { logger } from '@socketsecurity/lib/logger'
+import { spawn } from '@socketsecurity/lib/spawn'
 import colors from 'yoctocolors-cjs'
-
-import { runCommandQuiet } from './run-command.mjs'
 
 /**
  * Get all packages in the monorepo with specific scripts.
@@ -116,13 +116,18 @@ export async function runPackageScript(pkg, scriptName, args = [], quiet = false
     logger.progress(`${displayName}: running ${scriptName}`)
   }
 
-  const result = await runCommandQuiet(
+  const result = await spawn(
     'pnpm',
     ['--filter', pkg.name, 'run', scriptName, ...args],
-    { cwd: process.cwd() },
+    {
+      cwd: process.cwd(),
+      shell: WIN32,
+      stdio: 'pipe',
+      stdioString: true,
+    },
   )
 
-  if (result.exitCode !== 0) {
+  if (result.code !== 0) {
     if (!quiet) {
       logger.clearLine()
       logger.log(`${colors.red('✗')} ${displayName}`)
@@ -133,7 +138,7 @@ export async function runPackageScript(pkg, scriptName, args = [], quiet = false
     if (result.stderr) {
       logger.error(result.stderr)
     }
-    return result.exitCode
+    return result.code
   }
 
   if (!quiet) {
