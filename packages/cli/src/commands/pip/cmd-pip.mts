@@ -105,14 +105,14 @@ async function run(
   const resolution = resolveSfw()
 
   // Forward arguments to sfw (Socket Firewall).
-  // Use local sfw if available, otherwise use npx.
+  // Use local sfw if available, otherwise use pnpm dlx.
   const result =
     resolution.type === 'local'
       ? await spawn('node', [resolution.path, 'pip', ...argsToForward], {
           shell: WIN32,
           stdio: 'inherit',
         })
-      : await spawn('npx', ['sfw', 'pip', ...argsToForward], {
+      : await spawn('pnpm', ['dlx', 'sfw', 'pip', ...argsToForward], {
           shell: WIN32,
           stdio: 'inherit',
         })
