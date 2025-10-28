@@ -32,6 +32,7 @@ All shared standards (git, testing, code style, cross-platform, CI) defined in s
 - ✗ Error/failure - MUST be red (NOT ❌)
 - ⚠ Warning/caution - MUST be yellow (NOT ⚠️)
 - ℹ Info - MUST be blue (NOT ℹ️)
+- → Step/progress - MUST be cyan (NOT ➜ or ▶)
 
 **Color Requirements** (apply color to icon ONLY, not entire message):
 ```javascript
@@ -41,6 +42,7 @@ import colors from 'yoctocolors-cjs'
 `${colors.red('✗')} ${msg}`     // Error
 `${colors.yellow('⚠')} ${msg}`  // Warning
 `${colors.blue('ℹ')} ${msg}`    // Info
+`${colors.cyan('→')} ${msg}`    // Step/Progress
 ```
 
 **Color Package**:
@@ -55,8 +57,8 @@ import colors from 'yoctocolors-cjs'
 - 🎉 Major success/celebration
 
 **General Philosophy**:
-- Prefer colored text-based symbols (✓✗⚠ℹ) for maximum terminal compatibility
-- Always color-code symbols: green=success, red=error, yellow=warning, blue=info
+- Prefer colored text-based symbols (✓✗⚠ℹ→) for maximum terminal compatibility
+- Always color-code symbols: green=success, red=error, yellow=warning, blue=info, cyan=step
 - Use emojis sparingly for emphasis and delight
 - Avoid emoji overload - less is more
 - When in doubt, use plain text
