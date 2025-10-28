@@ -136,8 +136,8 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
     if (cleanupPackageLock) {
       try {
         // This removes the temporary package-lock.json we created for cdxgen.
-        // Using safeDeleteSync for safe temporary file cleanup with directory safety checks.
-        safeDeleteSync(`./${PACKAGE_LOCK_JSON}`, { force: true })
+        // Using safeDeleteSync - no force needed since file is in cwd.
+        safeDeleteSync(`./${PACKAGE_LOCK_JSON}`)
       } catch {}
     }
 
