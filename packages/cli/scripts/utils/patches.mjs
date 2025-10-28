@@ -3,13 +3,14 @@
  * Provides helpers for transforming node_modules files and generating patch files.
  */
 
-import { spawnSync } from 'node:child_process'
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 
 import { parse } from '@babel/core'
 import MagicString from 'magic-string'
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { logger } from '@socketsecurity/lib/logger'
+import { spawn } from '@socketsecurity/lib/spawn'
 
 /**
  * Parse JavaScript/TypeScript code into a Babel AST.
@@ -91,14 +92,15 @@ export async function startPatch(packageSpec) {
   logger.log(`Starting patch for ${packageSpec}...`)
 
   // First, try to run pnpm patch to see if directory already exists.
-  let result = spawnSync('pnpm', ['patch', packageSpec], {
-    encoding: 'utf-8',
+  let result = await spawn('pnpm', ['patch', packageSpec], {
+    shell: WIN32,
     stdio: ['inherit', 'pipe', 'pipe'], // Capture stdout and stderr.
+    stdioString: true,
   })
 
   // Check if the error is about existing patch directory.
   // pnpm outputs errors to stdout, not stderr.
-  if (result.status !== 0 && result.stdout.includes('is not empty')) {
+  if (result.code !== 0 && result.stdout.includes('is not empty')) {
     const match = result.stdout.match(/directory (.+?) is not empty/)
     const existingPatchDir = match ? match[1] : null
 
@@ -118,14 +120,15 @@ export async function startPatch(packageSpec) {
       rmSync(existingPatchDir, { force: true, recursive: true })
 
       // Try pnpm patch again.
-      result = spawnSync('pnpm', ['patch', packageSpec], {
-        encoding: 'utf-8',
+      result = await spawn('pnpm', ['patch', packageSpec], {
+        shell: WIN32,
         stdio: ['inherit', 'pipe', 'inherit'],
+        stdioString: true,
       })
     }
   }
 
-  if (result.status !== 0) {
+  if (result.code !== 0) {
     throw new Error(`Failed to start patch for ${packageSpec}`)
   }
 
@@ -153,14 +156,14 @@ export async function startPatch(packageSpec) {
  * @param {string} patchPath - Path to temporary patch directory.
  * @param {string} packageName - Package name for logging.
  */
-export function commitPatch(patchPath, packageName) {
+export async function commitPatch(patchPath, packageName) {
   logger.log(`Committing patch for ${packageName}...`)
-  const result = spawnSync('pnpm', ['patch-commit', patchPath], {
-    encoding: 'utf-8',
+  const result = await spawn('pnpm', ['patch-commit', patchPath], {
+    shell: WIN32,
     stdio: 'inherit',
   })
 
-  if (result.status !== 0) {
+  if (result.code !== 0) {
     throw new Error(`Failed to commit patch for ${packageName}`)
   }
 
@@ -221,7 +224,7 @@ export async function createPatch(patchDef) {
     }
 
     // Commit the patch.
-    commitPatch(patchPath, packageName)
+    await commitPatch(patchPath, packageName)
   } catch (error) {
     logger.error(`Error creating patch for ${packageName}:`, error.message)
     // Cleanup temp directory on error.

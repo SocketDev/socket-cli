@@ -5,10 +5,11 @@
  * Routes publish commands to appropriate packages based on --target flag.
  */
 
-import { spawnSync } from 'node:child_process'
 import process from 'node:process'
+
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { logger } from '@socketsecurity/lib/logger'
-import colors from 'yoctocolors-cjs'
+import { spawn } from '@socketsecurity/lib/spawn'
 
 const TARGET_PACKAGES = {
   __proto__: null,
@@ -41,40 +42,46 @@ for (let i = 0; i < args.length; i++) {
   }
 }
 
-const packageFilter = TARGET_PACKAGES[target]
-if (!packageFilter) {
-  logger.error(`Unknown publish target: ${target}`)
-  logger.error(`Available targets: ${Object.keys(TARGET_PACKAGES).join(', ')}`)
+async function main() {
+  const packageFilter = TARGET_PACKAGES[target]
+  if (!packageFilter) {
+    logger.error(`Unknown publish target: ${target}`)
+    logger.error(`Available targets: ${Object.keys(TARGET_PACKAGES).join(', ')}`)
+    process.exit(1)
+  }
+
+  // Special handling for 'all' target.
+  if (target === 'all') {
+    logger.log('Publishing all packages...')
+    logger.log('Note: Packages are published in dependency order by pnpm')
+  }
+
+  const pnpmArgs = [
+    '--filter',
+    packageFilter,
+    'publish',
+    ...publishArgs
+  ]
+
+  logger.log(`Publishing ${target}...`)
+  logger.log(`Command: pnpm ${pnpmArgs.join(' ')}`)
+  logger.log('')
+
+  const result = await spawn('pnpm', pnpmArgs, {
+    shell: WIN32,
+    stdio: 'inherit',
+  })
+
+  if (result.code === 0) {
+    logger.log(`\n✓ Successfully published ${target}`)
+  } else {
+    logger.error(`\n✗ Failed to publish ${target}`)
+  }
+
+  process.exit(result.code ?? 1)
+}
+
+main().catch(e => {
+  logger.error(e)
   process.exit(1)
-}
-
-// Special handling for 'all' target.
-if (target === 'all') {
-  logger.log('Publishing all packages...')
-  logger.log('Note: Packages are published in dependency order by pnpm')
-}
-
-const pnpmArgs = [
-  '--filter',
-  packageFilter,
-  'publish',
-  ...publishArgs
-]
-
-logger.log(`Publishing ${target}...`)
-logger.log(`Command: pnpm ${pnpmArgs.join(' ')}`)
-logger.log('')
-
-const result = spawnSync('pnpm', pnpmArgs, {
-  encoding: 'utf8',
-  shell: false,
-  stdio: 'inherit'
 })
-
-if (result.status === 0) {
-  logger.log(`\n✓ Successfully published ${target}`)
-} else {
-  logger.error(`\n✗ Failed to publish ${target}`)
-}
-
-process.exit(result.status ?? 1)
