@@ -12,7 +12,7 @@
  *   node scripts/build.mjs --force  # Force rebuild (ignore checkpoints)
  */
 
-import { promises as fs } from 'node:fs'
+import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -68,7 +68,7 @@ async function cloneYogaSource() {
 
   printHeader('Cloning Yoga Source')
 
-  if (await fs.access(YOGA_SOURCE_DIR).then(() => true).catch(() => false)) {
+  if (existsSync(YOGA_SOURCE_DIR)) {
     printStep('Yoga source already exists, skipping clone')
     await createCheckpoint('yoga-layout', 'cloned')
     return
@@ -266,7 +266,7 @@ async function optimize() {
   const cmakeBuildDir = path.join(BUILD_DIR, 'cmake')
   const wasmFile = path.join(cmakeBuildDir, 'yoga.wasm')
 
-  if (!(await fs.access(wasmFile).then(() => true).catch(() => false))) {
+  if (!existsSync(wasmFile)) {
     printError(`WASM file not found: ${wasmFile}`)
     throw new Error('Cannot optimize - WASM file missing from build')
   }
@@ -322,7 +322,7 @@ async function verify() {
   const cmakeBuildDir = path.join(BUILD_DIR, 'cmake')
   const wasmFile = path.join(cmakeBuildDir, 'yoga.wasm')
 
-  if (!(await fs.access(wasmFile).then(() => true).catch(() => false))) {
+  if (!existsSync(wasmFile)) {
     printWarning('WASM file not found, skipping verification')
     await createCheckpoint('yoga-layout', 'verified')
     return
@@ -357,7 +357,7 @@ async function exportWasm() {
   const wasmFile = path.join(cmakeBuildDir, 'yoga.wasm')
   const jsFile = path.join(cmakeBuildDir, 'yoga.js')
 
-  if (!(await fs.access(wasmFile).then(() => true).catch(() => false))) {
+  if (!existsSync(wasmFile)) {
     printError('WASM file not found - build failed')
     throw new Error(`Required WASM file not found: ${wasmFile}`)
   }
@@ -369,7 +369,7 @@ async function exportWasm() {
   await fs.copyFile(wasmFile, outputWasm)
 
   // Copy JS glue code and strip export statement.
-  if (await fs.access(jsFile).then(() => true).catch(() => false)) {
+  if (existsSync(jsFile)) {
     const jsContent = await fs.readFile(jsFile, 'utf-8')
     // Strip the export statement at the end of the file.
     const withoutExport = jsContent.replace(/;?\s*export\s+default\s+\w+\s*;\s*$/, '')
@@ -397,8 +397,7 @@ async function main() {
   // Clean checkpoints if requested or if output is missing.
   const outputWasm = path.join(OUTPUT_DIR, 'yoga.wasm')
   const outputJs = path.join(OUTPUT_DIR, 'yoga.js')
-  const outputMissing = !(await fs.access(outputWasm).then(() => true).catch(() => false)) ||
-                       !(await fs.access(outputJs).then(() => true).catch(() => false))
+  const outputMissing = !existsSync(outputWasm) || !existsSync(outputJs)
 
   if (CLEAN_BUILD || outputMissing) {
     if (outputMissing) {
