@@ -15,8 +15,10 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
+
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { logger } from '@socketsecurity/lib/logger'
+import { spawn } from '@socketsecurity/registry/lib/spawn'
 import colors from 'yoctocolors-cjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -98,7 +100,7 @@ async function ensureToolBuilt(config) {
 
   const result = await spawn(config.buildCommand, {
     cwd: TOOLS_DIR,
-    shell: true,
+    shell: WIN32,
     stdio: 'inherit'
   })
 

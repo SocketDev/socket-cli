@@ -115,7 +115,7 @@ export async function checkPythonVersion(minVersion = '3.6') {
       const result = await spawn(
         pythonCmd,
         ['-c', "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')"],
-        { shell: true, stdio: 'pipe', stdioString: true }
+        { shell: WIN32, stdio: 'pipe', stdioString: true }
       )
 
       // Check if spawn failed or returned undefined code.

@@ -78,7 +78,7 @@ export class EmscriptenBuilder {
 
     const result = await spawn(emccCommand, [], {
       cwd: this.sourceDir,
-      shell: true,
+      shell: WIN32,
       stdio: 'inherit',
     })
     if (result.code !== 0) {
@@ -189,7 +189,7 @@ export class EmscriptenBuilder {
     const result = await spawn(
       `emcmake cmake -S ${this.sourceDir} -B ${this.buildDir} ${cmakeArgs}`,
       [],
-      { shell: true, stdio: 'inherit' }
+      { shell: WIN32, stdio: 'inherit' }
     )
     if (result.code !== 0) {
       throw new Error(`emcmake configure failed with exit code ${result.code}`)
@@ -211,7 +211,7 @@ export class EmscriptenBuilder {
     const result = await spawn(
       `emmake cmake --build ${this.buildDir} --target ${target} -j ${jobs}`,
       [],
-      { shell: true, stdio: 'inherit' }
+      { shell: WIN32, stdio: 'inherit' }
     )
     if (result.code !== 0) {
       throw new Error(`emmake build failed with exit code ${result.code}`)
