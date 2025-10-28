@@ -144,7 +144,17 @@ jobs:
             cd emsdk
             ./emsdk install latest
             ./emsdk activate latest
-            source ./emsdk_env.sh
+
+            # Source emsdk environment
+            if [ "$RUNNER_OS" = "Windows" ]; then
+              # On Windows with Git Bash, we need to explicitly set PATH
+              source ./emsdk_env.sh
+              # Also add upstream/bin to PATH for wasm-opt
+              export PATH="$(pwd)/upstream/bin:$PATH"
+            else
+              source ./emsdk_env.sh
+            fi
+
             cd ..
             echo "::endgroup::"
           fi
