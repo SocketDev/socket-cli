@@ -94,6 +94,14 @@ async function cloneSource() {
   printStep(`Version: ${ONNX_VERSION}`)
   printStep('Repository: https://github.com/microsoft/onnxruntime.git')
 
+  // Check if source directory already exists (shouldn't happen after checkpoint cleanup).
+  if (existsSync(SOURCE_DIR)) {
+    printStep(`Source directory already exists: ${SOURCE_DIR}`)
+    const { rm } = await import('node:fs/promises')
+    await rm(SOURCE_DIR, { recursive: true, force: true })
+    printStep('Removed existing source directory')
+  }
+
   const result = await spawn(
     'git',
     [
@@ -112,9 +120,23 @@ async function cloneSource() {
     throw new Error(`git clone failed with exit code ${result.code}`)
   }
 
-  // Verify CMakeLists.txt exists.
+  // Verify source directory and CMakeLists.txt exist.
+  if (!existsSync(SOURCE_DIR)) {
+    throw new Error(`Source directory not created: ${SOURCE_DIR}`)
+  }
+
   const cmakeLists = path.join(SOURCE_DIR, 'CMakeLists.txt')
   if (!existsSync(cmakeLists)) {
+    // Debug: List what's actually in the directory.
+    printError(`CMakeLists.txt not found at: ${cmakeLists}`)
+    printStep('Listing source directory contents:')
+    try {
+      const { readdir } = await import('node:fs/promises')
+      const files = await readdir(SOURCE_DIR)
+      printStep(`Files in ${SOURCE_DIR}: ${files.join(', ')}`)
+    } catch (e) {
+      printError(`Could not read directory: ${e.message}`)
+    }
     throw new Error(`CMakeLists.txt not found after clone: ${cmakeLists}`)
   }
 
