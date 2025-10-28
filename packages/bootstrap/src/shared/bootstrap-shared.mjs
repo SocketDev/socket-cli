@@ -11,8 +11,17 @@ import { dlxPackage } from '@socketsecurity/lib/dlx-package'
 import { logger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 import { gte } from 'semver'
+import which from 'which'
 
 export const SOCKET_DLX_DIR = path.join(homedir(), '.socket', '_dlx')
+
+/**
+ * Environment variable to disable node forwarding and use stub instead.
+ * Set to '1', 'true', or 'yes' to disable forwarding (useful for e2e testing).
+ */
+const SOCKET_DISABLE_NODE_FORWARDING = ['1', 'true', 'yes'].includes(
+  process.env.SOCKET_DISABLE_NODE_FORWARDING?.toLowerCase()
+)
 
 /**
  * Minimum Node.js version with SEA support.
@@ -47,6 +56,42 @@ export function getArgs() {
 export function hasModernNode() {
   try {
     return gte(process.version, MIN_NODE_VERSION)
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Detect if Node.js is available on the system.
+ */
+export async function detectSystemNode() {
+  try {
+    const nodePath = await which('node', { nothrow: true })
+    return nodePath || null
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Check if we should forward to system Node.js.
+ * Returns false if SOCKET_DISABLE_NODE_FORWARDING is set (for e2e testing).
+ */
+export async function shouldForwardToSystemNode() {
+  if (SOCKET_DISABLE_NODE_FORWARDING) {
+    return false
+  }
+  const nodePath = await detectSystemNode()
+  if (!nodePath) {
+    return false
+  }
+  // Check if system node meets minimum version requirements.
+  try {
+    const result = await spawn(nodePath, ['--version'], {
+      stdio: 'pipe',
+    })
+    const version = result.stdout.trim()
+    return gte(version, MIN_NODE_VERSION)
   } catch {
     return false
   }
