@@ -5,12 +5,13 @@
 
 import { isQuiet } from '@socketsecurity/lib/argv/flags'
 import { parseArgs } from '@socketsecurity/lib/argv/parse'
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { logger } from '@socketsecurity/lib/logger'
+import { spawn } from '@socketsecurity/lib/spawn'
 import { printFooter, printHeader } from '@socketsecurity/lib/stdio/header'
 import colors from 'yoctocolors-cjs'
 
 import { getPackagesWithScript } from './utils/monorepo-helper.mjs'
-import { runCommandQuiet } from './utils/run-command.mjs'
 
 /**
  * Run type check on a specific package with pretty output.
@@ -22,13 +23,18 @@ async function runPackageTypeCheck(pkg, quiet = false) {
     logger.progress(`${displayName}: checking types`)
   }
 
-  const result = await runCommandQuiet(
+  const result = await spawn(
     'pnpm',
     ['--filter', pkg.name, 'run', 'type'],
-    { cwd: process.cwd() },
+    {
+      cwd: process.cwd(),
+      shell: WIN32,
+      stdio: 'pipe',
+      stdioString: true,
+    },
   )
 
-  if (result.exitCode !== 0) {
+  if (result.code !== 0) {
     if (!quiet) {
       logger.clearLine()
       logger.log(`${colors.red('✗')} ${displayName}`)
@@ -39,7 +45,7 @@ async function runPackageTypeCheck(pkg, quiet = false) {
     if (result.stderr) {
       logger.error(result.stderr)
     }
-    return result.exitCode
+    return result.code
   }
 
   if (!quiet) {
