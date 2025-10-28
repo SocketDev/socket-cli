@@ -9,6 +9,7 @@ import path from 'node:path'
 
 import { which } from '@socketsecurity/lib/bin'
 import { dlxPackage } from '@socketsecurity/lib/dlx-package'
+import { envAsBoolean } from '@socketsecurity/lib/env'
 import { logger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 import { gte } from 'semver'
@@ -19,8 +20,8 @@ export const SOCKET_DLX_DIR = path.join(homedir(), '.socket', '_dlx')
  * Environment variable to disable node forwarding and use stub instead.
  * Set to '1', 'true', or 'yes' to disable forwarding (useful for e2e testing).
  */
-const SOCKET_CLI_DISABLE_NODE_FORWARDING = ['1', 'true', 'yes'].includes(
-  process.env.SOCKET_CLI_DISABLE_NODE_FORWARDING?.toLowerCase()
+const SOCKET_CLI_DISABLE_NODE_FORWARDING = envAsBoolean(
+  process.env.SOCKET_CLI_DISABLE_NODE_FORWARDING
 )
 
 /**
