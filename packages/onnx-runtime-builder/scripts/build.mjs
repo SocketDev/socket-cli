@@ -281,8 +281,8 @@ async function verify() {
   printHeader('Verifying WASM')
 
   // Get WASM file location from optimize checkpoint.
-  const { readCheckpoint } = await import('@socketsecurity/build-infra/lib/checkpoint-manager')
-  const checkpoint = await readCheckpoint('onnx-runtime', 'optimized')
+  const { getCheckpointData } = await import('@socketsecurity/build-infra/lib/checkpoint-manager')
+  const checkpoint = await getCheckpointData('onnx-runtime', 'optimized')
   const wasmFile = checkpoint?.wasmFile || path.join(BUILD_DIR, 'MinSizeRel', 'onnxruntime-web.wasm')
 
   if (!existsSync(wasmFile)) {
