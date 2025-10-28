@@ -7,6 +7,8 @@
  * The smol binary loads this at startup via lib/internal/process/pre_execution.js.
  */
 
+import { logger } from '@socketsecurity/lib/logger'
+
 import { findAndExecuteCli, getArgs } from './shared/bootstrap-shared.mjs'
 
 async function main() {
@@ -16,6 +18,6 @@ async function main() {
 
 // Run the bootstrap.
 main().catch((e) => {
-  process.stderr.write(`❌ Bootstrap error: ${e instanceof Error ? e.message : String(e)}\n`)
+  logger.error(`Bootstrap error: ${e instanceof Error ? e.message : String(e)}`)
   process.exit(1)
 })
