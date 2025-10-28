@@ -1560,10 +1560,10 @@ async function main() {
   }
 
   // Copy final binary to build/out/Final.
-  // On macOS: copy from Signed.
-  // On Linux/Windows: copy from Stripped (no signing needed).
-  printHeader('Copying to Build Output (Final)')
-  logger.log('Creating final binary for distribution...')
+  // This creates an initial uncompressed version, which will be replaced with
+  // compressed version + decompressor if compression is enabled (default).
+  printHeader('Copying to Build Output (Final - Initial)')
+  logger.log('Creating initial distribution binary...')
   logger.logNewline()
 
   const outputFinalDir = join(BUILD_DIR, 'out', 'Final')
@@ -1580,10 +1580,10 @@ async function main() {
     logger.substep('Source: build/out/Stripped/node (stripped, no signing needed)')
   }
 
-  logger.substep(`Final directory: ${outputFinalDir}`)
-  logger.substep('Binary: node (final output)')
+  logger.substep(`Destination: ${outputFinalDir}`)
+  logger.substep('Note: Will be replaced with compressed version if compression enabled')
   logger.logNewline()
-  logger.success('Final binary copied to build/out/Final')
+  logger.success('Initial binary copied to build/out/Final')
   logger.logNewline()
 
   // Compress binary for smaller distribution size (DEFAULT for smol builds).
@@ -1700,6 +1700,50 @@ async function main() {
     logger.log(`${colors.blue('ℹ')} Binary compression skipped (optional)`)
     logger.log('   To enable: COMPRESS_BINARY=1 node scripts/build.mjs')
     logger.log('')
+  }
+
+  // Replace Final directory with compressed version if compression succeeded.
+  if (compressedBinary && existsSync(compressedBinary)) {
+    printHeader('Updating Final Distribution with Compressed Binary')
+    logger.log('Replacing Final directory with compressed distribution package...')
+    logger.logNewline()
+
+    const finalDir = join(BUILD_DIR, 'out', 'Final')
+    const compressedDir = join(BUILD_DIR, 'out', 'Compressed')
+
+    // Remove old uncompressed binary from Final.
+    const oldFinalBinary = join(finalDir, 'node')
+    if (existsSync(oldFinalBinary)) {
+      await fs.unlink(oldFinalBinary)
+    }
+
+    // Copy compressed binary to Final.
+    const finalCompressedBinary = join(finalDir, 'node')
+    await exec('cp', [compressedBinary, finalCompressedBinary])
+
+    // Copy decompressor tool to Final.
+    const decompressTool = IS_MACOS
+      ? 'socket_macho_decompress'
+      : WIN32 ? 'socket_pe_decompress.exe' : 'socket_elf_decompress'
+    const decompressToolSource = join(compressedDir, decompressTool)
+    const decompressToolDest = join(finalDir, decompressTool)
+
+    if (existsSync(decompressToolSource)) {
+      await exec('cp', [decompressToolSource, decompressToolDest])
+      await exec('chmod', ['+x', decompressToolDest])
+    }
+
+    const compressedSize = await getFileSize(finalCompressedBinary)
+    const decompressToolSize = existsSync(decompressToolDest)
+      ? await getFileSize(decompressToolDest)
+      : 'N/A'
+
+    logger.substep(`Binary: ${compressedSize} (compressed)`)
+    logger.substep(`Decompressor: ${decompressToolSize}`)
+    logger.substep(`Location: ${finalDir}`)
+    logger.logNewline()
+    logger.success('Final distribution updated with compressed package')
+    logger.logNewline()
   }
 
   // Copy signed binary to build/out/Sea (for SEA builds).
