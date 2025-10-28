@@ -102,8 +102,8 @@ async function buildPackage(pkg) {
       stdio: 'inherit',
     })
 
-    if (result.status !== 0) {
-      throw new Error(`Build failed with exit code ${result.status}`)
+    if (result.code !== 0) {
+      throw new Error(`Build failed with exit code ${result.code}`)
     }
 
     const duration = Math.round((Date.now() - startTime) / 1000)
