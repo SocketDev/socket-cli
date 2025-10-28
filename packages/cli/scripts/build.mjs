@@ -100,9 +100,19 @@ async function main() {
         args: ['scripts/extract-yoga-wasm.mjs'],
       },
       {
-        name: 'esbuild Bundle',
+        name: 'Build CLI Bundle',
         command: 'node',
         args: ['.config/esbuild.cli.build.mjs'],
+      },
+      {
+        name: 'Build Index Loader',
+        command: 'node',
+        args: ['.config/esbuild.index.config.mjs'],
+      },
+      {
+        name: 'Compress CLI',
+        command: 'node',
+        args: ['scripts/compress-cli.mjs'],
       },
     ]
 

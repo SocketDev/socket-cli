@@ -100,7 +100,7 @@ function resolvePackageSubpath(packagePath, subpath) {
 const config = {
   entryPoints: [path.join(rootPath, 'src/cli-dispatch.mts')],
   bundle: true,
-  outfile: path.join(rootPath, 'dist/cli.js'),
+  outfile: path.join(rootPath, 'build/cli.js'),
   // Target Node.js environment (not browser).
   platform: 'node',
   // Target Node.js 18+ features.

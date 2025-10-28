@@ -21,7 +21,7 @@
     "socket-yarn": "bin/yarn-cli.js"
   },
   "exports": {
-    "./bin/cli.js": "./dist/cli.js",
+    "./bin/cli.js": "./dist/index.js",
     "./bin/npm-cli.js": "./dist/npm-cli.js",
     "./bin/npx-cli.js": "./dist/npx-cli.js",
     "./bin/pnpm-cli.js": "./dist/pnpm-cli.js",
