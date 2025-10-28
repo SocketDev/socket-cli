@@ -220,17 +220,45 @@ async function optimize() {
 
   printHeader('Optimizing WASM')
 
-  const wasmFile = path.join(BUILD_DIR, 'onnxruntime-web.wasm')
+  // ONNX Runtime build.sh creates files in MinSizeRel subdirectory.
+  const buildOutputDir = path.join(BUILD_DIR, 'MinSizeRel')
 
+  // Find the WASM file - it could be onnxruntime-web.wasm or ort-wasm.wasm.
+  let wasmFile = path.join(buildOutputDir, 'onnxruntime-web.wasm')
   if (!existsSync(wasmFile)) {
-    throw new Error(`WASM file not found: ${wasmFile}`)
+    wasmFile = path.join(buildOutputDir, 'ort-wasm.wasm')
+  }
+  if (!existsSync(wasmFile)) {
+    // Try finding it recursively in the build directory.
+    printStep('Searching for WASM files in build directory...')
+    const result = await spawn('find', [buildOutputDir, '-name', '*.wasm', '-type', 'f'], {
+      shell: WIN32,
+      stdio: 'pipe',
+      stdioString: true,
+    })
+
+    if (result.stdout) {
+      const wasmFiles = result.stdout.trim().split('\n').filter(Boolean)
+      if (wasmFiles.length > 0) {
+        printStep(`Found WASM files: ${wasmFiles.join(', ')}`)
+        wasmFile = wasmFiles[0] // Use first found WASM file.
+      }
+    }
+
+    if (!existsSync(wasmFile)) {
+      throw new Error(`WASM file not found in build directory: ${buildOutputDir}`)
+    }
   }
 
+  printStep(`WASM file: ${wasmFile}`)
   const sizeBefore = await getFileSize(wasmFile)
   printStep(`Size before: ${sizeBefore}`)
 
-  const emscripten = new EmscriptenBuilder(SOURCE_DIR, BUILD_DIR)
-  await emscripten.optimize('onnxruntime-web.wasm', {
+  const wasmBasename = path.basename(wasmFile)
+  const wasmDir = path.dirname(wasmFile)
+
+  const emscripten = new EmscriptenBuilder(SOURCE_DIR, wasmDir)
+  await emscripten.optimize(wasmBasename, {
     optimizeLevel: 4,
     shrinkLevel: 2,
   })
@@ -239,7 +267,7 @@ async function optimize() {
   printStep(`Size after: ${sizeAfter}`)
 
   printSuccess('WASM optimized')
-  await createCheckpoint('onnx-runtime', 'optimized')
+  await createCheckpoint('onnx-runtime', 'optimized', { wasmFile })
 }
 
 /**
@@ -252,7 +280,14 @@ async function verify() {
 
   printHeader('Verifying WASM')
 
-  const wasmFile = path.join(BUILD_DIR, 'onnxruntime-web.wasm')
+  // Get WASM file location from optimize checkpoint.
+  const { readCheckpoint } = await import('@socketsecurity/build-infra/lib/checkpoint-manager')
+  const checkpoint = await readCheckpoint('onnx-runtime', 'optimized')
+  const wasmFile = checkpoint?.wasmFile || path.join(BUILD_DIR, 'MinSizeRel', 'onnxruntime-web.wasm')
+
+  if (!existsSync(wasmFile)) {
+    throw new Error(`WASM file not found: ${wasmFile}`)
+  }
 
   // Check WASM file exists and is valid.
   const stats = await fs.stat(wasmFile)
@@ -268,7 +303,7 @@ async function verify() {
   }
 
   printSuccess('WASM verified')
-  await createCheckpoint('onnx-runtime', 'verified')
+  await createCheckpoint('onnx-runtime', 'verified', { wasmFile })
 }
 
 /**
@@ -279,8 +314,19 @@ async function exportWasm() {
 
   await fs.mkdir(OUTPUT_DIR, { recursive: true })
 
-  const wasmFile = path.join(BUILD_DIR, 'onnxruntime-web.wasm')
-  const jsFile = path.join(BUILD_DIR, 'onnxruntime-web.js')
+  // Get WASM file location from verified checkpoint.
+  const { readCheckpoint } = await import('@socketsecurity/build-infra/lib/checkpoint-manager')
+  const checkpoint = await readCheckpoint('onnx-runtime', 'verified')
+  const wasmFile = checkpoint?.wasmFile || path.join(BUILD_DIR, 'MinSizeRel', 'onnxruntime-web.wasm')
+
+  if (!existsSync(wasmFile)) {
+    throw new Error(`WASM file not found: ${wasmFile}`)
+  }
+
+  // Look for accompanying JS file in the same directory.
+  const wasmDir = path.dirname(wasmFile)
+  const wasmBasename = path.basename(wasmFile, '.wasm')
+  const jsFile = path.join(wasmDir, `${wasmBasename}.js`)
 
   const outputWasm = path.join(OUTPUT_DIR, 'onnxruntime-web.wasm')
   const outputJs = path.join(OUTPUT_DIR, 'onnxruntime-web.js')
@@ -289,6 +335,7 @@ async function exportWasm() {
 
   if (existsSync(jsFile)) {
     await fs.copyFile(jsFile, outputJs)
+    printStep(`JS: ${outputJs}`)
   }
 
   const size = await getFileSize(outputWasm)
