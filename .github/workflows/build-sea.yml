@@ -203,6 +203,13 @@ jobs:
           key: node-sea-${{ matrix.platform }}-${{ matrix.arch }}-${{ steps.sea-cache-key.outputs.hash }}
           restore-keys: node-sea-${{ matrix.platform }}-${{ matrix.arch }}-
 
+      - name: Check WASM cache requirements (Windows)
+        if: matrix.os == 'windows' && (steps.yoga-cache.outputs.cache-hit != 'true' || steps.ai-cache.outputs.cache-hit != 'true' || steps.onnx-cache.outputs.cache-hit != 'true')
+        run: |
+          echo "::error::WASM assets not cached for Windows build. Run build-wasm.yml workflow first to prime the cache."
+          echo "Windows builds require pre-cached WASM assets due to network reliability issues."
+          exit 1
+
       - name: Build CLI (required for SEA)
         if: steps.sea-cache.outputs.cache-hit != 'true' || inputs.force
         run: pnpm --filter @socketsecurity/cli run build
