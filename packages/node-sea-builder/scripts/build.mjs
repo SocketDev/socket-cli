@@ -313,9 +313,11 @@ async function buildSeaBlob(nodeBinary, configPath) {
 
   logger.log('Generating SEA blob...')
 
-  // Generate the blob using the Node binary.
+  // Generate the blob using the CURRENT platform's Node binary.
+  // The blob is platform-independent, so we can generate it with any Node version.
+  // We'll inject it into the target platform's binary later.
   const spawnPromise = spawn(
-    nodeBinary,
+    process.execPath,
     ['--experimental-sea-config', configPath],
     { stdio: 'inherit' },
   )
@@ -458,7 +460,7 @@ async function injectSeaBlob(nodeBinary, blobPath, outputPath, fuseSentinel) {
  * Build a single target.
  */
 async function buildTarget(target, options) {
-  const { outputDir = normalizePath(path.join(__dirname, '../../dist/sea')) } =
+  const { outputDir = normalizePath(path.join(__dirname, '../dist/sea')) } =
     options
 
   // Use Node.js's standard SEA fuse sentinel.
@@ -691,7 +693,7 @@ async function main() {
   const binsDir = normalizePath(path.join(PROJECT_ROOT, 'build/bins'))
   await fs.mkdir(binsDir, { recursive: true })
 
-  const outputDir = options.outputDir || normalizePath(path.join(__dirname, '../../dist/sea'))
+  const outputDir = options.outputDir || normalizePath(path.join(__dirname, '../dist/sea'))
   const variant = 'sea' // This is the SEA builder, smol comes from node-smol-builder.
 
   // Generate timestamp for build (YYYYMMDD-HHMMSS format).
