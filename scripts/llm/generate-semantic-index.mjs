@@ -194,7 +194,7 @@ for (const [commandName, commandData] of Object.entries(commands.commands)) {
 const outputPath = path.join(skillDir, 'semantic-index.json')
 writeFileSync(outputPath, JSON.stringify(semanticIndex, null, 2), 'utf-8')
 
-logger.log()
+logger.log('')
 logger.success(`Generated ${outputPath}`)
 logger.success(`Indexed ${Object.keys(semanticIndex.commands).length} commands`)
 logger.success(

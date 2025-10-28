@@ -72,7 +72,7 @@ async function downloadFile(url, outputPath, description) {
   const sizeMB = (buffer.byteLength / 1024 / 1024).toFixed(2)
   logger.substep(`Downloaded ${sizeMB} MB`)
   logger.substep(`Saved to ${outputPath}`)
-  logger.log()
+  logger.log('')
 
   return buffer.byteLength
 }
@@ -88,7 +88,7 @@ async function main() {
   // Create cache directory.
   await fs.mkdir(cacheDir, { recursive: true })
   logger.success(`Cache directory: ${cacheDir}`)
-  logger.log()
+  logger.log('')
 
   let totalBytes = 0
 

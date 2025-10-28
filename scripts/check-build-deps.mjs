@@ -150,7 +150,7 @@ async function installUpx() {
  */
 async function main() {
   logger.log('🔍 Checking build dependencies...')
-  logger.log()
+  logger.log('')
 
   const checks = []
   let hasErrors = false
@@ -211,7 +211,7 @@ async function main() {
     hasErrors = true
   }
 
-  logger.log()
+  logger.log('')
 
   // Check optional tools
   logger.log('🔧 Optional Tools:')
@@ -235,14 +235,14 @@ async function main() {
     }
   }
 
-  logger.log()
+  logger.log('')
 
   // Check disk space
   logger.log('💾 Disk Space:')
   const diskSpace = await checkDiskSpace()
   logger.log(`   Available: ${diskSpace}`)
   logger.log('   Required: ~10GB for Node.js source and build')
-  logger.log()
+  logger.log('')
 
   // Check existing build
   const nodeBuilt = existsSync(
@@ -251,7 +251,7 @@ async function main() {
   if (nodeBuilt) {
     logger.log(`${colors.green('✓')} Custom Node.js binary already built`)
     logger.log('   Location: build/node-smol/out/Release/node')
-    logger.log()
+    logger.log('')
   }
 
   // Summary
@@ -270,38 +270,38 @@ async function main() {
     `   Optional: ${optionalOk}/${optional.length} ` +
       `${optionalOk === optional.length ? `${colors.green('✓')}` : `${colors.yellow('⚠')} `}`,
   )
-  logger.log()
+  logger.log('')
 
   // Platform-specific installation instructions
   if (hasErrors) {
     logger.log(`${colors.red('✗')} Missing required dependencies!`)
-    logger.log()
+    logger.log('')
     logger.log('📥 Installation instructions:')
-    logger.log()
+    logger.log('')
 
     if (IS_MACOS) {
       logger.log('   macOS (Homebrew):')
       logger.log('   $ xcode-select --install')
       logger.log('   $ brew install python@3')
-      logger.log()
+      logger.log('')
     } else if (IS_LINUX) {
       logger.log('   Ubuntu/Debian:')
       logger.log(
         '   $ sudo apt-get install build-essential python3 git upx-ucl',
       )
-      logger.log()
+      logger.log('')
       logger.log('   RHEL/Fedora/CentOS:')
       logger.log('   $ sudo dnf install gcc gcc-c++ make python3 git upx')
-      logger.log()
+      logger.log('')
     } else if (IS_WINDOWS) {
       logger.log('   Windows (Chocolatey):')
       logger.log(
         '   $ choco install visualstudio2022buildtools python git upx',
       )
-      logger.log()
+      logger.log('')
       logger.log('   Or use WSL2 (recommended):')
       logger.log('   $ wsl --install -d Ubuntu')
-      logger.log()
+      logger.log('')
     }
 
     process.exit(1)
@@ -310,12 +310,12 @@ async function main() {
   // Offer to install UPX
   if (hasWarnings && !upx && !IS_MACOS && !IS_CI) {
     logger.log(`${colors.yellow('⚠')}  UPX is not installed`)
-    logger.log()
+    logger.log('')
     logger.log('UPX compression benefits:')
     logger.log('   • 30-50% smaller binaries (~44MB → ~22-31MB)')
     logger.log('   • Fast decompression (~50ms startup overhead)')
     logger.log('   • Recommended for distribution builds')
-    logger.log()
+    logger.log('')
 
     // In interactive mode, offer to install
     if (process.stdin.isTTY) {
@@ -357,7 +357,7 @@ async function main() {
       }
     }
 
-    logger.log()
+    logger.log('')
   }
 
   // Success
@@ -367,10 +367,10 @@ async function main() {
       `${colors.yellow('⚠')}  Some optional optimizations are unavailable (build will succeed)`,
     )
   }
-  logger.log()
+  logger.log('')
   logger.log('Ready to build! Run:')
   logger.log('   pnpm run build:yao-pkg:node')
-  logger.log()
+  logger.log('')
 }
 
 // Run checks

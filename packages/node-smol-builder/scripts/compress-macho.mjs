@@ -47,7 +47,7 @@ async function buildTools() {
 
   logger.log('Building compression tools...')
   logger.log(`  Directory: ${TOOLS_DIR}`)
-  logger.log()
+  logger.log('')
 
   try {
     const { stdout, stderr } = await execFileAsync('make', ['all'], {
@@ -66,7 +66,7 @@ async function buildTools() {
     }
 
     logger.log(`${colors.green('✓')} Tools built successfully`)
-    logger.log()
+    logger.log('')
   } catch (error) {
     logger.error(`${colors.red('✗')} Failed to build tools:`)
     logger.error(error.message)
@@ -82,7 +82,7 @@ async function compressBinary(inputPath, outputPath, quality = 'lzfse') {
   logger.log(`  Input: ${inputPath}`)
   logger.log(`  Output: ${outputPath}`)
   logger.log(`  Quality: ${quality}`)
-  logger.log()
+  logger.log('')
 
   // Ensure input exists.
   if (!existsSync(inputPath)) {
@@ -106,7 +106,7 @@ async function compressBinary(inputPath, outputPath, quality = 'lzfse') {
       throw new Error('Compressed binary was not created')
     }
 
-    logger.log()
+    logger.log('')
     logger.log(`${colors.green('✓')} Compression complete`)
   } catch (error) {
     logger.error(`${colors.red('✗')} Compression failed:`)
@@ -153,18 +153,18 @@ async function main() {
     // Compress binary.
     await compressBinary(inputPath, outputPath, quality)
 
-    logger.log()
+    logger.log('')
     logger.log('📝 Next steps:')
-    logger.log()
+    logger.log('')
     logger.log('1. Test the compressed binary:')
     logger.log(`   ${DECOMPRESS_TOOL} ${outputPath} --version`)
-    logger.log()
+    logger.log('')
     logger.log('2. Sign the compressed binary (macOS):')
     logger.log(`   codesign --sign - --force ${outputPath}`)
-    logger.log()
+    logger.log('')
     logger.log('3. Distribute the compressed binary with the decompressor')
     logger.log(`   cp ${DECOMPRESS_TOOL} <distribution-directory>/`)
-    logger.log()
+    logger.log('')
   } catch (error) {
     logger.error()
     logger.error(`${colors.red('✗')} Compression failed`)

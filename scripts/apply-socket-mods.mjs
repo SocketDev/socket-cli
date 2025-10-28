@@ -98,7 +98,7 @@ async function fixV8IncludePaths() {
   }
 
   logger.log(`${colors.green('✓')} V8 include paths fixed`)
-  logger.log()
+  logger.log('')
 }
 
 /**
@@ -130,7 +130,7 @@ const { getAsset: getAssetInternal, getAssetKeys: getAssetKeysInternal } = inter
   }
 
   logger.log(`${colors.green('✓')} SEA detection enabled`)
-  logger.log()
+  logger.log('')
 }
 
 /**
@@ -138,17 +138,17 @@ const { getAsset: getAssetInternal, getAssetKeys: getAssetKeysInternal } = inter
  */
 async function main() {
   logger.log('🔨 Applying Socket modifications to Node.js source')
-  logger.log()
+  logger.log('')
 
   await fixV8IncludePaths()
   await enableSeaForPkg()
 
   logger.log('🎉 All modifications applied!')
-  logger.log()
+  logger.log('')
   logger.log('📝 To generate patches:')
   logger.log('   cd build/node-smol')
   logger.log('   git diff > ../../build/patches/socket/my-changes.patch')
-  logger.log()
+  logger.log('')
 }
 
 // Run main function

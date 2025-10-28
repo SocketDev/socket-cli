@@ -26,21 +26,21 @@ const log = {
   error: msg => logger.error(msg),
 }
 const printHeader = title => {
-  logger.log()
+  logger.log('')
   logger.log(title)
   logger.log('='.repeat(title.length))
-  logger.log()
+  logger.log('')
 }
-const printFooter = () => logger.log()
+const printFooter = () => logger.log('')
 const printSuccess = msg => {
-  logger.log()
+  logger.log('')
   logger.success(msg)
-  logger.log()
+  logger.log('')
 }
 const printError = msg => {
-  logger.log()
+  logger.log('')
   logger.error(msg)
-  logger.log()
+  logger.log('')
 }
 
 async function main() {

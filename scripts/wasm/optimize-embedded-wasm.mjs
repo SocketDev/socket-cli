@@ -188,7 +188,7 @@ async function main() {
     totalOriginal += originalSize
     totalOptimized += optimizedSize
 
-    logger.log() // Spacing.
+    logger.log('') // Spacing.
   }
 
   // Summary.

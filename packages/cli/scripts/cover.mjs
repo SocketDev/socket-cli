@@ -98,11 +98,11 @@ async function main() {
 
         if (typeCoverageMatch) {
           const typeCoveragePercent = Number.parseFloat(typeCoverageMatch[1])
-          logger.log()
+          logger.log('')
           logger.log(' Coverage Summary')
           logger.log(' ───────────────────────────────')
           logger.log(` Type Coverage: ${typeCoveragePercent.toFixed(2)}%`)
-          logger.log()
+          logger.log('')
         }
       }
 
@@ -140,9 +140,9 @@ async function main() {
           /Test Files\s+\d+[^\n]*\n[\s\S]*?Duration\s+[\d.]+m?s[^\n]*/,
         )
         if (!values.summary && testSummaryMatch) {
-          logger.log()
+          logger.log('')
           logger.log(testSummaryMatch[0])
-          logger.log()
+          logger.log('')
         }
 
         // Extract and display coverage summary
@@ -161,14 +161,14 @@ async function main() {
             logger.log(coverageHeaderMatch[1])
             logger.log(allFilesMatch[0])
             logger.log(coverageHeaderMatch[1])
-            logger.log()
+            logger.log('')
           }
 
           const codeCoveragePercent = Number.parseFloat(allFilesMatch[1])
           logger.log(' Coverage Summary')
           logger.log(' ───────────────────────────────')
           logger.log(` Code Coverage: ${codeCoveragePercent.toFixed(2)}%`)
-          logger.log()
+          logger.log('')
         } else if (code !== 0) {
           logger.log('\n--- Output ---')
           logger.log(output)
@@ -225,9 +225,9 @@ async function main() {
     // Display clean output
     if (!quiet) {
       if (!values.summary && testSummaryMatch) {
-        logger.log()
+        logger.log('')
         logger.log(testSummaryMatch[0])
-        logger.log()
+        logger.log('')
       }
 
       if (coverageHeaderMatch && allFilesMatch) {
@@ -238,7 +238,7 @@ async function main() {
           logger.log(coverageHeaderMatch[1]) // Middle border
           logger.log(allFilesMatch[0]) // All files row
           logger.log(coverageHeaderMatch[1]) // Bottom border
-          logger.log()
+          logger.log('')
         }
 
         // Display type coverage and cumulative summary
@@ -256,7 +256,7 @@ async function main() {
           logger.log(` Code Coverage: ${codeCoveragePercent.toFixed(2)}%`)
           logger.log(' ───────────────────────────────')
           logger.log(` Cumulative:    ${cumulativePercent}%`)
-          logger.log()
+          logger.log('')
         }
       }
     }

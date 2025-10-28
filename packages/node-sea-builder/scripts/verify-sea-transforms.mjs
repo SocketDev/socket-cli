@@ -109,7 +109,7 @@ async function main() {
   } else {
     logger.log(`${colors.red('✗')} Polyfill NOT found`)
   }
-  logger.log()
+  logger.log('')
 
   // Check 2: Unsafe patterns.
   logger.log('Check 2: Unsafe require.resolve.paths Patterns')
@@ -125,10 +125,10 @@ async function main() {
       logger.log(`   Line ${issue.line}: ${issue.type}`)
       logger.log(`   Code: ${issue.code}`)
       logger.log(`   Reason: ${issue.reason}`)
-      logger.log()
+      logger.log('')
     }
   }
-  logger.log()
+  logger.log('')
 
   // Check 3: Sentinel obscuration.
   logger.log('Check 3: Sentinel Obscuration')
@@ -146,7 +146,7 @@ async function main() {
   } else {
     logger.log(`${colors.blue('ℹ')} Sentinel status unclear`)
   }
-  logger.log()
+  logger.log('')
 
   // Summary.
   logger.log('Summary')
