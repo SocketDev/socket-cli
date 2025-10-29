@@ -16,6 +16,7 @@ const TARGET_PACKAGES = {
   all: './packages/**',
   'alpine-arm64': '@socketbin/cli-alpine-arm64',
   'alpine-x64': '@socketbin/cli-alpine-x64',
+  bootstrap: '@socketsecurity/bootstrap',
   cli: '@socketsecurity/cli',
   'cli-sentry': '@socketsecurity/cli-with-sentry',
   'darwin-arm64': '@socketbin/cli-darwin-arm64',
