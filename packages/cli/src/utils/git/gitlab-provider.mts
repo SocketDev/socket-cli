@@ -15,10 +15,7 @@ import type {
   PrResponse,
   UpdatePrOptions,
 } from './provider.mts'
-import type {
-  MergeRequestSchema,
-  ProjectSchema,
-} from '@gitbeaker/rest/dist/types/resources/index.js'
+import type { MergeRequestSchema } from '@gitbeaker/rest'
 
 /**
  * GitLab provider for Merge Request operations.
@@ -30,7 +27,7 @@ export class GitLabProvider implements PrProvider {
 
   constructor() {
     const token = getGitLabToken()
-    const host = process.env.GITLAB_HOST || 'https://gitlab.com'
+    const host = process.env['GITLAB_HOST'] || 'https://gitlab.com'
 
     this.gitlab = new Gitlab({
       host,
@@ -103,7 +100,7 @@ export class GitLabProvider implements PrProvider {
   }
 
   async updatePr(options: UpdatePrOptions): Promise<void> {
-    const { base, head, owner, prNumber, repo } = options
+    const { owner, prNumber, repo } = options
 
     const projectId = `${owner}/${repo}`
 
@@ -337,7 +334,7 @@ async function sleep(ms: number): Promise<void> {
  */
 function getGitLabToken(): string {
   // Check environment variable.
-  const envToken = process.env.GITLAB_TOKEN
+  const envToken = process.env['GITLAB_TOKEN']
   if (envToken) {
     return envToken
   }

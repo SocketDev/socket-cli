@@ -14,7 +14,7 @@ export function createPrProvider(): PrProvider {
   // Check for GitLab.
   if (
     remoteUrl.includes('gitlab.com') ||
-    process.env.GITLAB_HOST ||
+    process.env['GITLAB_HOST'] ||
     remoteUrl.includes('gitlab')
   ) {
     // Lazy load to avoid importing GitLab dependency if not needed.
