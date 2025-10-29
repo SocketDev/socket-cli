@@ -45,20 +45,17 @@ const BINARY_FLAGS = {
 }
 
 async function checkBinaryExists(binaryType) {
-  // JS binary always exists after build.
-  if (binaryType === 'js') {
-    return true
-  }
-
-  // For explicit binary requests (sea, smol), require binary to exist.
-  if (binaryType === 'sea' || binaryType === 'smol') {
+  // For explicit binary requests (js, sea, smol), require binary to exist.
+  if (binaryType === 'js' || binaryType === 'sea' || binaryType === 'smol') {
     const binaryPath = BINARY_PATHS[binaryType]
     if (!existsSync(binaryPath)) {
       logger.error(`${colors.red('✗')} Binary not found: ${binaryPath}`)
       logger.log('')
       logger.log('The binary must be built before running e2e tests.')
       logger.log('Build commands:')
-      if (binaryType === 'sea') {
+      if (binaryType === 'js') {
+        logger.log('  pnpm run build')
+      } else if (binaryType === 'sea') {
         logger.log('  pnpm --filter @socketbin/node-sea-builder run build')
       } else if (binaryType === 'smol') {
         logger.log('  pnpm --filter @socketbin/node-smol-builder run build')
