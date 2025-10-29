@@ -1456,9 +1456,20 @@ async function main() {
   await createCheckpoint(BUILD_DIR, 'built')
   logger.log('')
 
+  const nodeBinary = join(NODE_DIR, 'out', 'Release', 'node')
+
+  // Sign early for macOS ARM64 (required before execution in CI).
+  if (IS_MACOS && ARCH === 'arm64') {
+    printHeader('Code Signing (macOS ARM64 - Initial)')
+    logger.log('Signing binary before testing for macOS ARM64 compatibility...')
+    logger.logNewline()
+    await exec('codesign', ['--sign', '-', '--force', nodeBinary])
+    logger.success('Binary signed successfully')
+    logger.logNewline()
+  }
+
   // Test the binary.
   printHeader('Testing Binary')
-  const nodeBinary = join(NODE_DIR, 'out', 'Release', 'node')
 
   logger.log('Running basic functionality tests...')
   logger.log('')
@@ -1568,68 +1579,6 @@ async function main() {
   logger.success('Stripped binary copied to build/out/Stripped')
   logger.logNewline()
 
-  // Sign for macOS ARM64.
-  if (IS_MACOS && ARCH === 'arm64') {
-    printHeader('Code Signing (macOS ARM64)')
-    logger.log('Signing binary for macOS ARM64 compatibility...')
-    logger.logNewline()
-    await exec('codesign', ['--sign', '-', '--force', nodeBinary])
-
-    const sigInfo = await execCapture(`codesign -dv "${nodeBinary}"`, {
-      env: { ...process.env, STDERR: '>&1' },
-    })
-    logger.log(sigInfo.stdout || sigInfo.stderr)
-    logger.logNewline()
-    logger.success('Binary signed successfully')
-    logger.logNewline()
-  }
-
-  // Copy signed binary to build/out/Signed (macOS only).
-  let outputSignedBinary = null
-  if (IS_MACOS && ARCH === 'arm64') {
-    printHeader('Copying to Build Output (Signed)')
-    logger.log('Copying signed binary to build/out/Signed directory...')
-    logger.logNewline()
-
-    const outputSignedDir = join(BUILD_DIR, 'out', 'Signed')
-    await mkdir(outputSignedDir, { recursive: true })
-    outputSignedBinary = join(outputSignedDir, 'node')
-    await exec('cp', [nodeBinary, outputSignedBinary])
-
-    logger.substep(`Signed directory: ${outputSignedDir}`)
-    logger.substep('Binary: node (stripped + signed)')
-    logger.logNewline()
-    logger.success('Signed binary copied to build/out/Signed')
-    logger.logNewline()
-  }
-
-  // Copy final binary to build/out/Final.
-  // This creates an initial uncompressed version, which will be replaced with
-  // compressed version + decompressor if compression is enabled (default).
-  printHeader('Copying to Build Output (Final - Initial)')
-  logger.log('Creating initial distribution binary...')
-  logger.logNewline()
-
-  const outputFinalDir = join(BUILD_DIR, 'out', 'Final')
-  await mkdir(outputFinalDir, { recursive: true })
-  const outputFinalBinary = join(outputFinalDir, 'node')
-
-  // Select source based on platform.
-  const finalSource = outputSignedBinary || outputStrippedBinary
-  await exec('cp', [finalSource, outputFinalBinary])
-
-  if (outputSignedBinary) {
-    logger.substep('Source: build/out/Signed/node (signed)')
-  } else {
-    logger.substep('Source: build/out/Stripped/node (stripped, no signing needed)')
-  }
-
-  logger.substep(`Destination: ${outputFinalDir}`)
-  logger.substep('Note: Will be replaced with compressed version if compression enabled')
-  logger.logNewline()
-  logger.success('Initial binary copied to build/out/Final')
-  logger.logNewline()
-
   // Compress binary for smaller distribution size (DEFAULT for smol builds).
   // Uses native platform APIs (Apple Compression, liblzma, Windows Compression API) instead of UPX.
   // Benefits: 75-79% compression (vs UPX's 50-60%), works with code signing, zero AV false positives.
@@ -1639,7 +1588,7 @@ async function main() {
 
   if (shouldCompress) {
     printHeader('Compressing Binary for Distribution')
-    logger.log('Compressing binary using platform-specific compression...')
+    logger.log('Compressing stripped binary using platform-specific compression...')
     logger.logNewline()
 
     const compressedDir = join(BUILD_DIR, 'out', 'Compressed')
@@ -1652,12 +1601,12 @@ async function main() {
     // Windows: LZMS (best for PE).
     const compressionQuality = IS_MACOS ? 'lzfse' : 'lzma'
 
-    logger.substep(`Input: ${outputFinalBinary}`)
+    logger.substep(`Input: ${outputStrippedBinary}`)
     logger.substep(`Output: ${compressedBinary}`)
     logger.substep(`Algorithm: ${compressionQuality.toUpperCase()}`)
     logger.logNewline()
 
-    const sizeBeforeCompress = await getFileSize(outputFinalBinary)
+    const sizeBeforeCompress = await getFileSize(outputStrippedBinary)
     logger.log(`Size before compression: ${sizeBeforeCompress}`)
     logger.log('Running compression tool...')
     logger.logNewline()
@@ -1667,7 +1616,7 @@ async function main() {
       process.execPath,
       [
         join(ROOT_DIR, 'scripts', 'compress-binary.mjs'),
-        outputFinalBinary,
+        outputStrippedBinary,
         compressedBinary,
         `--quality=${compressionQuality}`,
       ],
@@ -1678,11 +1627,10 @@ async function main() {
     logger.log(`Size after compression: ${sizeAfterCompress}`)
     logger.logNewline()
 
-    // Re-sign compressed binary (macOS ARM64).
-    // The compressed binary can be signed to prevent tampering.
-    // The decompressor will extract the original signed Node.js binary.
+    // Sign compressed binary (macOS ARM64 only).
+    // The compressed binary wrapper is signed; decompressor extracts unsigned Node.js binary.
     if (IS_MACOS && ARCH === 'arm64') {
-      logger.log('Re-signing compressed binary...')
+      logger.log('Signing compressed binary...')
       await exec('codesign', ['--sign', '-', '--force', compressedBinary])
 
       const sigInfo = await execCapture(`codesign -dv "${compressedBinary}"`, {
@@ -1746,24 +1694,21 @@ async function main() {
     logger.log('')
   }
 
-  // Replace Final directory with compressed version if compression succeeded.
+  // Copy final distribution binary to build/out/Final.
+  // Use compressed binary if available, otherwise use stripped binary.
+  printHeader('Copying to Build Output (Final)')
+  const finalDir = join(BUILD_DIR, 'out', 'Final')
+  await mkdir(finalDir, { recursive: true })
+  const finalBinary = join(finalDir, 'node')
+
   if (compressedBinary && existsSync(compressedBinary)) {
-    printHeader('Updating Final Distribution with Compressed Binary')
-    logger.log('Replacing Final directory with compressed distribution package...')
+    logger.log('Copying compressed distribution package to Final directory...')
     logger.logNewline()
 
-    const finalDir = join(BUILD_DIR, 'out', 'Final')
     const compressedDir = join(BUILD_DIR, 'out', 'Compressed')
 
-    // Remove old uncompressed binary from Final.
-    const oldFinalBinary = join(finalDir, 'node')
-    if (existsSync(oldFinalBinary)) {
-      await fs.unlink(oldFinalBinary)
-    }
-
     // Copy compressed binary to Final.
-    const finalCompressedBinary = join(finalDir, 'node')
-    await exec('cp', [compressedBinary, finalCompressedBinary])
+    await exec('cp', [compressedBinary, finalBinary])
 
     // Copy decompressor tool to Final.
     const decompressTool = IS_MACOS
@@ -1777,16 +1722,30 @@ async function main() {
       await exec('chmod', ['+x', decompressToolDest])
     }
 
-    const compressedSize = await getFileSize(finalCompressedBinary)
+    const compressedSize = await getFileSize(finalBinary)
     const decompressToolSize = existsSync(decompressToolDest)
       ? await getFileSize(decompressToolDest)
       : 'N/A'
 
-    logger.substep(`Binary: ${compressedSize} (compressed)`)
+    logger.substep('Source: build/out/Compressed/node (compressed + signed)')
+    logger.substep(`Binary: ${compressedSize}`)
     logger.substep(`Decompressor: ${decompressToolSize}`)
     logger.substep(`Location: ${finalDir}`)
     logger.logNewline()
-    logger.success('Final distribution updated with compressed package')
+    logger.success('Final distribution created with compressed package')
+    logger.logNewline()
+  } else {
+    logger.log('Copying stripped binary to Final directory...')
+    logger.logNewline()
+
+    await exec('cp', [outputStrippedBinary, finalBinary])
+
+    const binarySize = await getFileSize(finalBinary)
+    logger.substep('Source: build/out/Stripped/node (stripped, uncompressed)')
+    logger.substep(`Binary: ${binarySize}`)
+    logger.substep(`Location: ${finalDir}`)
+    logger.logNewline()
+    logger.success('Final distribution created with uncompressed binary')
     logger.logNewline()
   }
 
@@ -1820,13 +1779,13 @@ async function main() {
   printHeader('Installing to pkg Cache')
   logger.log('Installing binary to pkg cache...')
   logger.logNewline()
-  logger.substep(`Source: ${outputFinalBinary}`)
+  logger.substep(`Source: ${finalBinary}`)
   logger.substep(`Cache directory: ${pkgCacheDir}`)
   logger.substep(`Binary name: ${targetName}`)
   logger.logNewline()
 
   await mkdir(pkgCacheDir, { recursive: true })
-  await exec('cp', [outputFinalBinary, targetPath])
+  await exec('cp', [finalBinary, targetPath])
 
   // Verify it was copied.
   if (!existsSync(targetPath)) {
@@ -1877,7 +1836,7 @@ async function main() {
   const distributionOutputDir = join(BUILD_DIR, 'out', 'Distribution')
   await mkdir(distributionOutputDir, { recursive: true })
   const distributionOutputBinary = join(distributionOutputDir, 'node')
-  await exec('cp', [outputFinalBinary, distributionOutputBinary])
+  await exec('cp', [finalBinary, distributionOutputBinary])
 
   logger.substep(`Distribution directory: ${distributionOutputDir}`)
   logger.substep('Binary: node (final distribution build)')
@@ -1893,7 +1852,7 @@ async function main() {
   const distDir = join(ROOT_DIR, 'dist')
   await mkdir(distDir, { recursive: true })
   const distBinary = join(distDir, 'socket-smol')
-  await exec('cp', [outputFinalBinary, distBinary])
+  await exec('cp', [finalBinary, distBinary])
   await exec('chmod', ['+x', distBinary])
 
   logger.substep(`E2E binary: ${distBinary}`)
@@ -1943,13 +1902,12 @@ async function main() {
   logger.log(`   Source:       ${nodeBinary}`)
   logger.log(`   Release:      ${outputReleaseBinary}`)
   logger.log(`   Stripped:     ${outputStrippedBinary}`)
-  logger.log(`   Signed:       ${outputSignedBinary}`)
-  logger.log(`   Final:        ${outputFinalBinary}`)
+  if (compressedBinary) {
+    logger.log(`   Compressed:   ${compressedBinary} (signed, with decompression tool)`)
+  }
+  logger.log(`   Final:        ${finalBinary}`)
   logger.log(`   Distribution: ${distributionOutputBinary}`)
   logger.log(`   pkg cache:    ${targetPath}`)
-  if (compressedBinary) {
-    logger.log(`   Compressed:   ${compressedBinary} (with decompression tool)`)
-  }
   logger.logNewline()
 
   logger.log('🚀 Next Steps:')
