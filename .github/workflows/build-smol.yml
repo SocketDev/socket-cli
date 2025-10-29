@@ -131,6 +131,21 @@ jobs:
           name: build-deps-smol-${{ github.sha }}
           path: packages/
 
+      - name: Verify bootstrap artifacts
+        shell: bash
+        run: |
+          echo "=== Verifying downloaded bootstrap artifacts ==="
+          ls -lh packages/bootstrap/dist/ || echo "⚠️  bootstrap/dist/ not found"
+          ls -lh packages/socket/dist/ || echo "⚠️  socket/dist/ not found"
+
+          if [ ! -f packages/bootstrap/dist/bootstrap-smol.js ]; then
+            echo "❌ ERROR: bootstrap-smol.js not found!"
+            echo "This file is required by the smol builder."
+            exit 1
+          fi
+
+          echo "✓ Bootstrap artifacts verified"
+
       - name: Setup Node.js
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
