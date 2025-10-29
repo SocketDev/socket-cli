@@ -9,7 +9,7 @@
  * Transformations:
  * 1. `.toLocaleString()` → Simple formatting with commas/basic date strings
  * 2. `Intl.*` APIs → Polyfills or basic implementations
- * 3. Unicode regex `\p{...}` → Character class alternatives
+ * 3. Unicode regex `\p{...}` → Character class alternatives (shared transform)
  * 4. Unicode regex `/v` flag → Downgrade to `/u` or remove
  * 5. `.localeCompare()` → Basic string comparison
  *
@@ -24,6 +24,8 @@
  * const date = new Date().toISOString().split('T')[0]
  * const regex = /[a-zA-Z0-9]+/
  */
+
+import { unicodePropertyMap } from '@socketsecurity/build-infra/lib/unicode-property-escape-transform'
 
 /**
  * Helper Functions (injected at runtime via Babel template.ast):
