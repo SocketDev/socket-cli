@@ -153,16 +153,22 @@ jobs:
         uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
         with:
           python-version: '3.11'
-          # Disabled pip cache - large ML packages (torch, transformers) cause
-          # cache service failures (400 errors) on every run. Build time impact
-          # is minimal (~2-3 minutes) since AI models are cached separately.
-          # cache: 'pip'
-          # cache-dependency-path: 'packages/socketbin-cli-ai/requirements.txt'
 
-      - name: Install Python dependencies
+      - name: Install Python dependencies (large packages without cache)
         run: |
-          echo "::group::Installing Python dependencies"
-          pip install -r packages/socketbin-cli-ai/requirements.txt
+          echo "::group::Installing large Python packages (torch, transformers)"
+          # Install large packages without caching to avoid cache service failures.
+          # torch (~700MB-2GB) and transformers (~500MB-1GB) are too large for
+          # GitHub's cache service and cause 400 errors.
+          pip install --no-cache-dir torch transformers
+          echo "::endgroup::"
+
+      - name: Install Python dependencies (smaller packages with cache)
+        run: |
+          echo "::group::Installing remaining Python dependencies"
+          # Install smaller packages normally (optimum, onnxruntime).
+          # These are cached by pip's default cache location.
+          pip install optimum[onnx] onnxruntime>=1.21.0
           echo "::endgroup::"
 
       - name: Install dependencies
