@@ -124,6 +124,93 @@ node --import=./scripts/load.mjs scripts/build-yao-pkg-node.mjs --clean
 ### CLI-Specific Notes
 - **Dynamic imports**: Only use dynamic imports for test mocking (e.g., `vi.importActual` in Vitest). Avoid runtime dynamic imports in production code
 
+### Dry-Run Flag Semantics
+
+The `--dry-run` flag is available in all Socket CLI commands via `commonFlags` but is used differently depending on command type.
+
+#### Flag Definition
+```typescript
+// src/flags.mts
+dryRun: {
+  type: 'boolean',
+  default: false,
+  description: 'Run without uploading',
+  hidden: true,  // Not shown in --help
+}
+```
+
+#### Constants
+```typescript
+// src/constants/cli.mts
+DRY_RUN_LABEL = '[DryRun]'
+DRY_RUN_BAILING_NOW = '[DryRun]: Bailing now'
+DRY_RUN_NOT_SAVING = '[DryRun]: Not saving'
+```
+
+#### Usage Patterns
+
+**Pattern 1: Early Exit (~52 commands)**
+Most commands exit immediately when `--dry-run` is enabled, preventing any operations:
+
+```typescript
+const dryRun = !!cli.flags['dryRun']
+if (dryRun) {
+  logger.log(DRY_RUN_BAILING_NOW)
+  return
+}
+```
+
+**Examples**: analytics, login, npm/npx/yarn wrappers, scan commands, audit-log, threat-feed, config commands, manifest commands
+
+**Pattern 2: Validation Pattern (3 commands)**
+These commands perform full validation but skip persistence:
+
+1. **`patch apply`** - Validates patches can be applied, skips file modifications
+   ```typescript
+   await handlePatchApply({ cwd, dryRun, outputKind, purlObjs, spinner })
+   // Handler shows "(dry run - no changes made)" and returns false
+   ```
+
+2. **`fix`** - Computes fixes but doesn't save to package.json
+   ```typescript
+   if (dryRun) {
+     logger.log(DRY_RUN_NOT_SAVING)
+     return
+   }
+   ```
+
+3. **`self-update`** - Shows what would be updated without applying
+   ```typescript
+   if (dryRun) {
+     await outputSelfUpdate({ currentVersion, latestVersion, isUpToDate: false, dryRun: true })
+     return
+   }
+   ```
+
+**Pattern 3: No Implementation (~24 commands)**
+Commands that don't use the flag despite it being available:
+- Interactive commands: `ask`, `console`, `whoami`
+- Auth commands: `logout` (actually uses it), `login`
+- Parent commands: `organization`, `scan`, `manifest`, `patch`, `config`, `repository`, `package`
+- Setup commands: `install`, `install-completion`, `uninstall-completion`
+
+#### Best Practices
+
+1. **Early validation**: Check dryRun early in execution (before handlers)
+2. **Semantic messaging**:
+   - Use `DRY_RUN_BAILING_NOW` for no-op mode
+   - Use `DRY_RUN_NOT_SAVING` when computation happens but results aren't persisted
+3. **Handler delegation**: Complex operations pass dryRun to handlers
+4. **Flag extraction**: Always use `const dryRun = !!cli.flags['dryRun']` pattern
+5. **No side effects**: Dry-run never persists data or makes permanent changes
+
+#### Implementation Guidelines
+
+- **Read-only operations** (analytics, list, view): Use early exit pattern
+- **Mutations** (create, update, delete): Use early exit or validation pattern
+- **Complex workflows** (patch, fix): Pass dryRun to handlers for conditional logic
+- **Interactive commands**: Consider if dry-run makes sense; may not need implementation
+
 ### Smol Node.js Binary
 - **Binary locations**:
   - `.node-source/out/Release/node` - Main build output (stripped, signed)
