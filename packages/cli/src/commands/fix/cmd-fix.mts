@@ -50,6 +50,13 @@ const generalFlags: MeowFlags = {
       'https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-auto-merge-for-pull-requests-in-your-repository',
     )} for managing auto-merge for pull requests in your repository.`,
   },
+  batch: {
+    type: 'boolean',
+    default: false,
+    description:
+      'Create a single PR for all fixes instead of one PR per GHSA (CI mode only)',
+    hidden: true,
+  },
   applyFixes: {
     aliases: ['onlyCompute'],
     type: 'boolean',
