@@ -1345,9 +1345,15 @@ async function main() {
     // Windows: LZMS (best for PE).
     const compressionQuality = IS_MACOS ? 'lzfse' : 'lzma'
 
+    // Construct socketbin package spec for socket-lib cache key generation.
+    // Format: @socketbin/node-smol-builder-{platform}-{arch}@0.0.0-{nodeVersion}
+    // This enables deterministic cache keys across builds of the same Node.js version.
+    const socketbinSpec = `@socketbin/node-smol-builder-${TARGET_PLATFORM}-${ARCH}@0.0.0-${NODE_VERSION}`
+
     logger.substep(`Input: ${outputStrippedBinary}`)
     logger.substep(`Output: ${compressedBinary}`)
     logger.substep(`Algorithm: ${compressionQuality.toUpperCase()}`)
+    logger.substep(`Spec: ${socketbinSpec}`)
     logger.logNewline()
 
     const sizeBeforeCompress = await getFileSize(outputStrippedBinary)
@@ -1363,6 +1369,7 @@ async function main() {
         outputStrippedBinary,
         compressedBinary,
         `--quality=${compressionQuality}`,
+        `--spec=${socketbinSpec}`,
       ],
       { cwd: ROOT_DIR },
     )
