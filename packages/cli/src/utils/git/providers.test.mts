@@ -9,6 +9,10 @@ vi.mock('node:child_process', () => ({
   spawnSync: vi.fn(),
 }))
 
+vi.mock('../../constants/paths.mjs', () => ({
+  SOCKET_CLI_CACHE_DIR: '/tmp/socket-cache',
+}))
+
 vi.mock('./github.mts', () => ({
   getOctokit: vi.fn(),
   getOctokitGraphql: vi.fn(),
