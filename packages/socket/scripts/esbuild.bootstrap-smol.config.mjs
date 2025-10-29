@@ -12,13 +12,15 @@ import { smolTransformPlugin } from './esbuild-plugin-smol-transform.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const packageRoot = path.resolve(__dirname, '..')
+const monorepoRoot = path.resolve(packageRoot, '../..')
+const bootstrapPackage = path.join(monorepoRoot, 'packages/bootstrap')
 
 export default {
   banner: {
     js: '#!/usr/bin/env node',
   },
   bundle: true,
-  entryPoints: [path.join(packageRoot, 'src', 'bootstrap.mts')],
+  entryPoints: [path.join(bootstrapPackage, 'src', 'bootstrap-smol.mts')],
   external: [],
   format: 'cjs',
   metafile: true,
