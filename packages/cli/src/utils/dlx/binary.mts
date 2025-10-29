@@ -10,9 +10,10 @@
  * - listDlxCache: Get information about cached binaries
  *
  * Cache Management:
- * - Stores binaries in ~/.socket/cache/dlx-bin (POSIX)
- * - Stores binaries in %USERPROFILE%\.socket\cache\dlx-bin (Windows)
- * - Uses content-addressed storage (SHA-256 for keys, SHA-512 for content)
+ * - Stores binaries in ~/.socket/_dlx (POSIX)
+ * - Stores binaries in %USERPROFILE%\.socket\_dlx (Windows)
+ * - Uses npm/npx approach: first 16 chars of SHA-512 (shorter Windows paths)
+ * - Cache key input: URL + binary name for uniqueness
  * - Supports TTL-based cache expiration
  * - Verifies checksums for security
  *
@@ -27,8 +28,10 @@ import { existsSync, promises as fs } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
+import { generateCacheKey } from '@socketsecurity/lib/dlx'
 import { readJson } from '@socketsecurity/lib/fs'
 import { normalizePath } from '@socketsecurity/lib/path'
+import { getSocketDlxDir } from '@socketsecurity/lib/paths'
 import { spawn } from '@socketsecurity/lib/spawn'
 
 import { DLX_BINARY_CACHE_TTL } from '../../constants/cache.mjs'
@@ -75,14 +78,6 @@ export interface DlxBinaryResult {
   spawnPromise: ReturnType<typeof spawn>
 }
 
-/**
- * Generate a cache directory name from URL, similar to npm/cacache.
- * Uses SHA-256 hash for cache keys (like npm's index keys).
- * Content verification uses SHA-512 (like npm's content hashes).
- */
-function generateCacheKey(url: string): string {
-  return createHash('sha256').update(url).digest('hex')
-}
 
 /**
  * Get metadata file path for a cached binary.
@@ -281,11 +276,13 @@ export async function dlxBinary(
 
   // Generate cache paths similar to pnpm/npx structure.
   const cacheDir = getDlxCachePath()
-  const cacheKey = generateCacheKey(url)
-  const cacheEntryDir = path.join(cacheDir, cacheKey)
   const platformKey = `${platform}-${arch}`
   const binaryName =
     name || `binary-${platformKey}${platform === 'win32' ? '.exe' : ''}`
+  // Use shared generateCacheKey from @socketsecurity/lib/dlx.
+  // Spec format for binaries: `${url}:${binaryName}`.
+  const cacheKey = generateCacheKey(`${url}:${binaryName}`)
+  const cacheEntryDir = path.join(cacheDir, cacheKey)
   const binaryPath = path.join(cacheEntryDir, binaryName)
 
   let downloaded = false
@@ -339,9 +336,10 @@ export async function dlxBinary(
 /**
  * Get the DLX binary cache directory path.
  * Returns normalized path for cross-platform compatibility.
+ * Uses getSocketDlxDir from socket-lib for correct path: ~/.socket/_dlx
  */
 export function getDlxCachePath(): string {
-  return normalizePath(path.join(getSocketHomePath(), 'cache', 'dlx'))
+  return getSocketDlxDir()
 }
 
 /**
