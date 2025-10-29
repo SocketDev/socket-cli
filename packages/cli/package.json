@@ -28,7 +28,8 @@
     "./bin/yarn-cli.js": "./dist/yarn-cli.js",
     "./package.json": "./package.json",
     "./data/alert-translations.json": "./data/alert-translations.json",
-    "./data/command-api-requirements.json": "./data/command-api-requirements.json"
+    "./data/command-api-requirements.json": "./data/command-api-requirements.json",
+    "./src/polyfills/intl-stub/*": "./src/polyfills/intl-stub/*"
   },
   "scripts": {
     "build": "node --import=./scripts/load.mjs scripts/build.mjs",

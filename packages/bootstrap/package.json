@@ -15,6 +15,7 @@
   },
   "devDependencies": {
     "@socketsecurity/build-infra": "workspace:*",
+    "@socketsecurity/cli": "workspace:*",
     "@socketsecurity/lib": "catalog:",
     "del-cli": "catalog:",
     "esbuild": "catalog:",
