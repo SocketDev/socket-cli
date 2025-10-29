@@ -1,6 +1,7 @@
 import { logger } from '@socketsecurity/lib/logger'
 
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
+import { mdHeader } from '../../utils/output/markdown.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
 import type { CResult, OutputKind } from '../../types.mts'
@@ -24,7 +25,7 @@ export async function outputQuota(
   }
 
   if (outputKind === 'markdown') {
-    logger.log('# Quota')
+    logger.log(mdHeader('Quota'))
     logger.log('')
     logger.log(`Quota left on the current API token: ${result.data.quota}`)
     logger.log('')
