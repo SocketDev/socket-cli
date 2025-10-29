@@ -25,6 +25,7 @@ vi.mock('../../utils/error/fail-msg-with-badge.mts', () => ({
 }))
 
 vi.mock('../../utils/output/markdown.mts', () => ({
+  mdHeader: vi.fn(title => `# ${title}`),
   mdTableOfPairs: vi.fn(pairs => `Table with ${pairs.length} rows`),
 }))
 
