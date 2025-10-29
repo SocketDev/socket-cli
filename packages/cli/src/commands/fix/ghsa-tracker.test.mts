@@ -105,10 +105,9 @@ describe('ghsa-tracker', () => {
 
       await saveGhsaTracker(mockCwd, tracker)
 
-      expect(fs.mkdir).toHaveBeenCalledWith(
-        path.dirname(trackerPath),
-        { recursive: true },
-      )
+      expect(fs.mkdir).toHaveBeenCalledWith(path.dirname(trackerPath), {
+        recursive: true,
+      })
       expect(writeJson).toHaveBeenCalledWith(trackerPath, tracker, {
         spaces: 2,
       })

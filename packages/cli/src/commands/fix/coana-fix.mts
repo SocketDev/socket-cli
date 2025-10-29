@@ -435,12 +435,14 @@ export async function coanaFix(
       )
 
       if (existingPrs.length) {
-        debug(
-          `pr: found ${existingPrs.length} existing open PRs for ${ghsaId}`,
-        )
+        debug(`pr: found ${existingPrs.length} existing open PRs for ${ghsaId}`)
 
         // Close outdated PRs with explanatory comment.
-        for (let j = 0, { length: prLength } = existingPrs; j < prLength; j += 1) {
+        for (
+          let j = 0, { length: prLength } = existingPrs;
+          j < prLength;
+          j += 1
+        ) {
           const pr = existingPrs[j]!
           try {
             const octokit = getOctokit()
@@ -610,7 +612,9 @@ export async function coanaFix(
           debug(`pr: deleted orphaned remote branch ${branch} after exception`)
         }
       } catch (cleanupError) {
-        debug(`pr: failed to delete remote branch ${branch} during exception cleanup`)
+        debug(
+          `pr: failed to delete remote branch ${branch} during exception cleanup`,
+        )
         debugDir(cleanupError)
       }
       // Clean up local state.
