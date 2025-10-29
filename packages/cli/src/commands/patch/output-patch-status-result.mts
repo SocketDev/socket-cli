@@ -1,6 +1,7 @@
 import { logger } from '@socketsecurity/lib/logger'
 
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
+import { mdHeader, mdKeyValue } from '../../utils/output/markdown.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
 import type { PatchStatus } from './handle-patch-status.mts'
@@ -48,37 +49,37 @@ export async function outputPatchStatusResult(
 
   if (outputKind === 'markdown') {
     if (statuses.length === 0) {
-      logger.log('## Patch Status\n\nNo patches found.')
+      logger.log(`${mdHeader('Patch Status', 2)}\n\nNo patches found.`)
       return
     }
 
-    logger.log('## Patch Status\n')
+    logger.log(`${mdHeader('Patch Status', 2)}\n`)
 
     for (const status of statuses) {
       const indicator = STATUS_INDICATORS[status.status]
       const statusName = STATUS_NAMES[status.status]
 
-      logger.log(`### ${indicator} ${status.purl}\n`)
-      logger.log(`**Status**: ${statusName}\n`)
+      logger.log(`${mdHeader(`${indicator} ${status.purl}`, 3)}\n`)
+      logger.log(`${mdKeyValue('Status', statusName)}\n`)
 
       if (status.uuid) {
-        logger.log(`**UUID**: ${status.uuid}\n`)
+        logger.log(`${mdKeyValue('UUID', status.uuid)}\n`)
       }
 
       if (status.description) {
-        logger.log(`**Description**: ${status.description}\n`)
+        logger.log(`${mdKeyValue('Description', status.description)}\n`)
       }
 
       if (status.downloadedAt) {
-        logger.log(`**Downloaded**: ${status.downloadedAt}`)
+        logger.log(mdKeyValue('Downloaded', status.downloadedAt))
       }
 
       if (status.appliedAt) {
-        logger.log(`**Applied**: ${status.appliedAt}`)
+        logger.log(mdKeyValue('Applied', status.appliedAt))
       }
 
-      logger.log(`**Files**: ${status.fileCount}`)
-      logger.log(`**Vulnerabilities**: ${status.vulnerabilityCount}`)
+      logger.log(mdKeyValue('Files', status.fileCount))
+      logger.log(mdKeyValue('Vulnerabilities', status.vulnerabilityCount))
 
       if (status.appliedLocations.length > 0) {
         logger.log('**Locations**:')
@@ -88,17 +89,13 @@ export async function outputPatchStatusResult(
       }
 
       logger.log(
-        `**Backup Available**: ${status.backupAvailable ? 'Yes' : 'No'}`,
+        mdKeyValue('Backup Available', status.backupAvailable ? 'Yes' : 'No'),
       )
       logger.log('')
     }
 
     // Legend.
-    logger.log('**Legend**:')
-    logger.log('- [✓] Applied')
-    logger.log('- [○] Downloaded')
-    logger.log('- [✗] Failed')
-    logger.log('- [?] Unknown')
+    logger.log(mdKeyValue('Legend', '[✓] Applied | [○] Downloaded | [✗] Failed | [?] Unknown'))
 
     return
   }

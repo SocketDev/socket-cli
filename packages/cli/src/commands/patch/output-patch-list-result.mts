@@ -1,6 +1,7 @@
 import { logger } from '@socketsecurity/lib/logger'
 
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
+import { mdHeader, mdKeyValue } from '../../utils/output/markdown.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
 import type { PatchListEntry } from './handle-patch-list.mts'
@@ -96,40 +97,40 @@ export async function outputPatchListResult(
 
   if (outputKind === 'markdown') {
     if (patches.length === 0) {
-      logger.log('## Patches\n\nNo patches found.')
+      logger.log(`${mdHeader('Patches', 2)}\n\nNo patches found.`)
       return
     }
 
-    logger.log('## Patches\n')
+    logger.log(`${mdHeader('Patches', 2)}\n`)
     for (const patch of patches) {
       const indicator = getStatusIndicator(patch.status)
-      logger.log(`### ${indicator} ${patch.purl}\n`)
+      logger.log(`${mdHeader(`${indicator} ${patch.purl}`, 3)}\n`)
       if (patch.status) {
         const statusName =
           patch.status.charAt(0).toUpperCase() + patch.status.slice(1)
-        logger.log(`**Status**: ${statusName}\n`)
+        logger.log(`${mdKeyValue('Status', statusName)}\n`)
       }
       if (patch.uuid) {
-        logger.log(`**UUID**: ${patch.uuid}\n`)
+        logger.log(`${mdKeyValue('UUID', patch.uuid)}\n`)
       }
       logger.log(
-        `**Description**: ${patch.description || 'No description provided'}\n`,
+        `${mdKeyValue('Description', patch.description || 'No description provided')}\n`,
       )
-      logger.log(`**Exported**: ${patch.exportedAt}`)
+      logger.log(mdKeyValue('Exported', patch.exportedAt))
       if (patch.appliedAt) {
-        logger.log(`**Applied**: ${patch.appliedAt}`)
+        logger.log(mdKeyValue('Applied', patch.appliedAt))
       }
-      logger.log(`**Files**: ${patch.fileCount}`)
-      logger.log(`**Vulnerabilities**: ${patch.vulnerabilityCount}`)
+      logger.log(mdKeyValue('Files', patch.fileCount))
+      logger.log(mdKeyValue('Vulnerabilities', patch.vulnerabilityCount))
       if (patch.tier) {
-        logger.log(`**Tier**: ${patch.tier}`)
+        logger.log(mdKeyValue('Tier', patch.tier))
       }
       if (patch.license) {
-        logger.log(`**License**: ${patch.license}`)
+        logger.log(mdKeyValue('License', patch.license))
       }
       logger.log('')
     }
-    logger.log('**Legend**: [✓] Applied | [○] Downloaded | [✗] Failed')
+    logger.log(`${mdKeyValue('Legend', '[✓] Applied | [○] Downloaded | [✗] Failed')}`)
     return
   }
 

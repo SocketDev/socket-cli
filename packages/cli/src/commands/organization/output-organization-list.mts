@@ -3,6 +3,7 @@ import colors from 'yoctocolors-cjs'
 import { logger } from '@socketsecurity/lib/logger'
 
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
+import { mdHeader } from '../../utils/output/markdown.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
 import { getVisibleTokenPrefix } from '../../utils/socket/sdk.mjs'
 
@@ -55,7 +56,7 @@ export async function outputOrganizationList(
     mw2 = Math.max(mw2, o.id.length)
     mw3 = Math.max(mw3, o.plan.length)
   }
-  logger.log('# Organizations\n')
+  logger.log(`${mdHeader('Organizations')}\n`)
   logger.log(
     `List of organizations associated with your API token, starting with: ${colors.italic(visibleTokenPrefix)}\n`,
   )
