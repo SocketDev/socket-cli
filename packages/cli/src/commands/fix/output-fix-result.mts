@@ -1,6 +1,7 @@
 import { logger } from '@socketsecurity/lib/logger'
 
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
+import { mdError, mdHeader } from '../../utils/output/markdown.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
 import type { CResult, OutputKind } from '../../types.mts'
@@ -20,12 +21,11 @@ export async function outputFixResult(
 
   if (outputKind === 'markdown') {
     if (!result.ok) {
-      logger.log(`# Fix Failed\n\n**Error**: ${result.message}`)
-      if (result.cause) {
-        logger.log(`\n**Cause**: ${result.cause}`)
-      }
+      logger.log(mdError(result.message, result.cause))
     } else {
-      logger.log('# Fix Completed\n\n✓ Finished!')
+      logger.log(mdHeader('Fix Completed'))
+      logger.log('')
+      logger.log('✓ Finished!')
     }
     return
   }
