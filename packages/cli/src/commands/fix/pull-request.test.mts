@@ -7,7 +7,9 @@ import { openSocketFixPr } from './pull-request.mts'
 // Mock dependencies.
 vi.mock('./git.mts', () => ({
   getSocketFixPullRequestTitle: vi.fn((ghsaIds: string[]) =>
-    ghsaIds.length === 1 ? `Fix for ${ghsaIds[0]}` : `Fixes for ${ghsaIds.length} GHSAs`,
+    ghsaIds.length === 1
+      ? `Fix for ${ghsaIds[0]}`
+      : `Fixes for ${ghsaIds.length} GHSAs`,
   ),
   getSocketFixPullRequestBody: vi.fn(() => 'Mock PR body'),
 }))

@@ -48,7 +48,11 @@ export async function openSocketFixPr(
   ghsaIds: string[],
   options?: OpenSocketFixPrOptions | undefined,
 ): Promise<OctokitResponse<Pr> | undefined> {
-  const { baseBranch = 'main', ghsaDetails, retries = 3 } = {
+  const {
+    baseBranch = 'main',
+    ghsaDetails,
+    retries = 3,
+  } = {
     __proto__: null,
     ...options,
   } as OpenSocketFixPrOptions
@@ -71,7 +75,9 @@ export async function openSocketFixPr(
     } catch (e) {
       let message = `Failed to open pull request (attempt ${attempt}/${retries})`
       const errors =
-        e instanceof RequestError ? (e.response?.data as any)?.errors : undefined
+        e instanceof RequestError
+          ? (e.response?.data as any)?.errors
+          : undefined
 
       if (Array.isArray(errors) && errors.length) {
         const details = errors
