@@ -2,6 +2,7 @@ import { logger } from '@socketsecurity/lib/logger'
 import { pluralize } from '@socketsecurity/lib/words'
 
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
+import { mdError, mdHeader, mdList } from '../../utils/output/markdown.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
 import type { CResult, OutputKind } from '../../types.mts'
@@ -27,23 +28,25 @@ export async function outputOptimizeResult(
 
   if (outputKind === 'markdown') {
     if (!result.ok) {
-      logger.log(`# Optimize Failed\n\n**Error**: ${result.message}`)
-      if (result.cause) {
-        logger.log(`\n**Cause**: ${result.cause}`)
-      }
+      logger.log(mdError(result.message, result.cause))
       return
     }
 
     const data = result.data
-    logger.log('# Optimize Complete\n')
+    logger.log(mdHeader('Optimize Complete'))
+    logger.log('')
 
     if (data.pkgJsonChanged) {
+      const changes = []
       if (data.updatedCount > 0) {
-        logger.log(`- **Updated**: ${data.updatedCount} ${pluralize('override', { count: data.updatedCount })}${data.updatedInWorkspaces ? ` in ${data.updatedInWorkspaces} ${pluralize('workspace', { count: data.updatedInWorkspaces })}` : ''}`)
+        const updatedText = `**Updated**: ${data.updatedCount} ${pluralize('override', { count: data.updatedCount })}${data.updatedInWorkspaces ? ` in ${data.updatedInWorkspaces} ${pluralize('workspace', { count: data.updatedInWorkspaces })}` : ''}`
+        changes.push(updatedText)
       }
       if (data.addedCount > 0) {
-        logger.log(`- **Added**: ${data.addedCount} ${pluralize('override', { count: data.addedCount })}${data.addedInWorkspaces ? ` in ${data.addedInWorkspaces} ${pluralize('workspace', { count: data.addedInWorkspaces })}` : ''}`)
+        const addedText = `**Added**: ${data.addedCount} ${pluralize('override', { count: data.addedCount })}${data.addedInWorkspaces ? ` in ${data.addedInWorkspaces} ${pluralize('workspace', { count: data.addedInWorkspaces })}` : ''}`
+        changes.push(addedText)
       }
+      logger.log(mdList(changes))
       logger.log('\n✓ Finished!')
     } else {
       logger.log('No Socket.dev optimized overrides applied.')
