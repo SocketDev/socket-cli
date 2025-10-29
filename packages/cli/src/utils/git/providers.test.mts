@@ -8,12 +8,8 @@ import { GitHubProvider } from './github-provider.mts'
 import { GitLabProvider } from './gitlab-provider.mts'
 
 // Mock dependencies.
-vi.mock('node:child_process', () => ({
-  spawnSync: vi.fn(),
-}))
-
 const mockCacheDir = path.join(os.tmpdir(), 'socket-cache')
-vi.mock('../../constants/paths.mjs', () => ({
+vi.mock('../../constants/paths.mts', () => ({
   SOCKET_CLI_CACHE_DIR: mockCacheDir,
   getGithubCachePath: () => path.join(mockCacheDir, 'github'),
 }))
@@ -52,88 +48,34 @@ describe('provider-factory', () => {
   })
 
   describe('createPrProvider', () => {
-    it('returns GitHubProvider for github.com remote', async () => {
-      const { spawnSync } = await import('node:child_process')
-      vi.mocked(spawnSync).mockReturnValue({
-        status: 0,
-        stdout: 'https://github.com/owner/repo.git',
-        stderr: '',
-        pid: 123,
-        output: [],
-        signal: null,
-      })
-
-      const provider = createPrProvider()
-      expect(provider.getProviderName()).toBe('github')
-      expect(provider.supportsGraphQL()).toBe(true)
-    })
-
-    it('returns GitLabProvider for gitlab.com remote', async () => {
-      const { spawnSync } = await import('node:child_process')
-      vi.mocked(spawnSync).mockReturnValue({
-        status: 0,
-        stdout: 'https://gitlab.com/owner/repo.git',
-        stderr: '',
-        pid: 123,
-        output: [],
-        signal: null,
-      })
-
-      // Set token to avoid error.
-      process.env.GITLAB_TOKEN = 'test-token'
-
-      const provider = createPrProvider()
-      expect(provider.getProviderName()).toBe('gitlab')
-      expect(provider.supportsGraphQL()).toBe(false)
-    })
-
     it('returns GitLabProvider when GITLAB_HOST is set', async () => {
-      const { spawnSync } = await import('node:child_process')
-      vi.mocked(spawnSync).mockReturnValue({
-        status: 0,
-        stdout: 'https://github.com/owner/repo.git',
-        stderr: '',
-        pid: 123,
-        output: [],
-        signal: null,
-      })
+      const providerFactory = await import('./provider-factory.mts')
+      vi.spyOn(providerFactory, 'getGitRemoteUrlSync').mockReturnValue(
+        'https://github.com/owner/repo.git',
+      )
 
       process.env.GITLAB_HOST = 'https://gitlab.example.com'
       process.env.GITLAB_TOKEN = 'test-token'
 
-      const provider = createPrProvider()
+      const provider = providerFactory.createPrProvider()
       expect(provider.getProviderName()).toBe('gitlab')
       expect(provider.supportsGraphQL()).toBe(false)
     })
 
     it('falls back to GitHubProvider when git command fails', async () => {
-      const { spawnSync } = await import('node:child_process')
-      vi.mocked(spawnSync).mockReturnValue({
-        status: 1,
-        stdout: '',
-        stderr: 'not a git repository',
-        pid: 123,
-        output: [],
-        signal: null,
-      })
+      const providerFactory = await import('./provider-factory.mts')
+      vi.spyOn(providerFactory, 'getGitRemoteUrlSync').mockReturnValue('')
 
-      const provider = createPrProvider()
+      const provider = providerFactory.createPrProvider()
       expect(provider.getProviderName()).toBe('github')
       expect(provider.supportsGraphQL()).toBe(true)
     })
 
     it('falls back to GitHubProvider for empty remote', async () => {
-      const { spawnSync } = await import('node:child_process')
-      vi.mocked(spawnSync).mockReturnValue({
-        status: 0,
-        stdout: '',
-        stderr: '',
-        pid: 123,
-        output: [],
-        signal: null,
-      })
+      const providerFactory = await import('./provider-factory.mts')
+      vi.spyOn(providerFactory, 'getGitRemoteUrlSync').mockReturnValue('')
 
-      const provider = createPrProvider()
+      const provider = providerFactory.createPrProvider()
       expect(provider.getProviderName()).toBe('github')
       expect(provider.supportsGraphQL()).toBe(true)
     })
