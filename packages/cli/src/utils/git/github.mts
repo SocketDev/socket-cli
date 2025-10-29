@@ -44,7 +44,7 @@ import { spawn } from '@socketsecurity/lib/spawn'
 import { parseUrl } from '@socketsecurity/lib/url'
 
 import ENV from '../../constants/env.mts'
-import { getGithubCachePath } from '../../constants/paths.mjs'
+import { getGithubCachePath } from '../../constants/paths.mts'
 import { formatErrorWithDetail } from '../error/errors.mts'
 
 import type { components } from '@octokit/openapi-types'
