@@ -153,8 +153,11 @@ jobs:
         uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
         with:
           python-version: '3.11'
-          cache: 'pip'
-          cache-dependency-path: 'packages/socketbin-cli-ai/requirements.txt'
+          # Disabled pip cache - large ML packages (torch, transformers) cause
+          # cache service failures (400 errors) on every run. Build time impact
+          # is minimal (~2-3 minutes) since AI models are cached separately.
+          # cache: 'pip'
+          # cache-dependency-path: 'packages/socketbin-cli-ai/requirements.txt'
 
       - name: Install Python dependencies
         run: |
