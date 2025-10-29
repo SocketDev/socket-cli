@@ -1,7 +1,7 @@
 import { logger } from '@socketsecurity/lib/logger'
 
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
-import { mdTableOfPairs } from '../../utils/output/markdown.mts'
+import { mdHeader, mdTableOfPairs } from '../../utils/output/markdown.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
 import type { CResult, OutputKind } from '../../types.mts'
@@ -24,7 +24,7 @@ export async function outputSecurityPolicy(
     return
   }
 
-  logger.log('# Security policy')
+  logger.log(mdHeader('Security policy'))
   logger.log('')
   logger.log(
     `The default security policy setting is: "${result.data.securityPolicyDefault}"`,

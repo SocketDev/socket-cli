@@ -1,7 +1,7 @@
 import { logger } from '@socketsecurity/lib/logger'
 
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
-import { mdTableOfPairs } from '../../utils/output/markdown.mts'
+import { mdHeader, mdTableOfPairs } from '../../utils/output/markdown.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
 import type { CResult, OutputKind } from '../../types.mts'
@@ -25,7 +25,7 @@ export async function outputLicensePolicy(
   }
 
   logger.info('Use --json to get the full result')
-  logger.log('# License policy')
+  logger.log(mdHeader('License policy'))
   logger.log('')
   logger.log('This is the license policy for your organization:')
   logger.log('')

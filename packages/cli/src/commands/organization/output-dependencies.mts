@@ -4,6 +4,7 @@ import colors from 'yoctocolors-cjs'
 import { logger } from '@socketsecurity/lib/logger'
 
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
+import { mdHeader } from '../../utils/output/markdown.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
 import type { CResult, OutputKind } from '../../types.mts'
@@ -47,7 +48,7 @@ function outputMarkdown(
     offset: number
   },
 ) {
-  logger.log('# Organization dependencies')
+  logger.log(mdHeader('Organization dependencies'))
   logger.log('')
   logger.log('Request details:')
   logger.log('- Offset:', offset)
