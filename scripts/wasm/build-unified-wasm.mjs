@@ -257,7 +257,7 @@ if (!buildEnv.RUSTFLAGS) {
     rustFlags.push(
       '-C link-arg=--strip-debug', // Strip debug info
       '-C link-arg=--strip-all', // Strip all symbols
-      '-C link-arg=-zstack-size=131072', // Smaller stack size (128KB)
+      '-C link-arg=-zstack-size=131_072', // Smaller stack size (128KB)
       '-C embed-bitcode=yes', // Embed bitcode for LTO
     )
   }
