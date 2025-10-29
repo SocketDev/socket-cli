@@ -33,7 +33,12 @@ describe('pr-lifecycle-logger', () => {
     it('logs created event with success logger', async () => {
       const { logger } = await import('@socketsecurity/lib/logger')
 
-      logPrEvent('created', 123, 'GHSA-1234-5678-90ab', 'https://github.com/org/repo/pull/123')
+      logPrEvent(
+        'created',
+        123,
+        'GHSA-1234-5678-90ab',
+        'https://github.com/org/repo/pull/123',
+      )
 
       expect(logger.success).toHaveBeenCalledWith(
         expect.stringContaining('PR #123'),

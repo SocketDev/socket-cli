@@ -30,7 +30,7 @@ export async function loadGhsaTracker(cwd: string): Promise<GhsaTracker> {
   try {
     const data = await readJson(trackerPath)
     return (data as GhsaTracker) ?? { version: 1, fixed: [] }
-  } catch (e) {
+  } catch (_e) {
     debug(`ghsa-tracker: creating new tracker at ${trackerPath}`)
     return { version: 1, fixed: [] }
   }
