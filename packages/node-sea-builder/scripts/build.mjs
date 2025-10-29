@@ -5,13 +5,13 @@
  * IMPORTANT: This builds a FULL SEA with the complete CLI embedded.
  * The binary contains:
  * - Node.js runtime (~50MB)
- * - Full Socket CLI from packages/cli/dist/cli.js (~11MB)
+ * - Full Socket CLI from packages/cli/dist/cli.js.bz (~1.7MB compressed, decompressed at build time)
  * - All dependencies and node_modules
  *
  * Expected binary size: ~110MB+ per platform.
  *
  * Prerequisites:
- * - Run `pnpm run build:cli` first to create packages/cli/dist/cli.js
+ * - Run `pnpm run build:cli` first to create packages/cli/dist/cli.js.bz
  *
  * Supported platforms:
  * - Windows (x64, arm64)
@@ -29,6 +29,7 @@ import { existsSync, promises as fs } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import url from 'node:url'
+import zlib from 'node:zlib'
 
 import { parseArgs } from '@socketsecurity/lib/argv/parse'
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
@@ -485,15 +486,15 @@ async function buildTarget(target, options) {
   logger.log(
     `\nBuilding full SEA for ${target.platform}-${target.arch}...`,
   )
-  logger.log('(Embedding full CLI from packages/cli/dist/cli.js)')
+  logger.log('(Embedding full CLI from packages/cli/dist/cli.js.bz)')
 
-  // Use the already-built CLI from packages/cli/dist/cli.js.
-  const cliPath = normalizePath(
-    path.join(__dirname, '../../..', 'packages', 'cli', 'dist', 'cli.js'),
+  // Use the compressed CLI from packages/cli/dist/cli.js.bz and decompress it.
+  const cliBzPath = normalizePath(
+    path.join(__dirname, '../../..', 'packages', 'cli', 'dist', 'cli.js.bz'),
   )
 
   // Auto-build CLI if missing.
-  if (!existsSync(cliPath)) {
+  if (!existsSync(cliBzPath)) {
     logger.log('')
     logger.log(`${colors.blue('ℹ')} CLI not found, building @socketsecurity/cli package...`)
     logger.log('')
@@ -515,16 +516,20 @@ async function buildTarget(target, options) {
     }
 
     // Verify CLI was built.
-    if (!existsSync(cliPath)) {
+    if (!existsSync(cliBzPath)) {
       throw new Error(
-        `CLI build succeeded but dist file not found at ${cliPath}`,
+        `CLI build succeeded but compressed file not found at ${cliBzPath}`,
       )
     }
 
     logger.log('')
   }
 
-  logger.log(`Using CLI from: ${cliPath}`)
+  logger.log(`Decompressing CLI from: ${cliBzPath}`)
+
+  // Read and decompress the brotli-compressed CLI.
+  const compressedCli = await fs.readFile(cliBzPath)
+  const cliCode = zlib.brotliDecompressSync(compressedCli).toString('utf8')
 
   // Ensure output directory exists.
   await fs.mkdir(outputDir, { recursive: true })
@@ -534,7 +539,7 @@ async function buildTarget(target, options) {
 
   // Check if we can use cached SEA build.
   // Hash the CLI bundle and build script since those are the inputs.
-  const sourcePaths = [cliPath, url.fileURLToPath(import.meta.url)]
+  const sourcePaths = [cliBzPath, url.fileURLToPath(import.meta.url)]
 
   // Store hash in centralized build/.cache/ directory.
   const cacheDir = normalizePath(path.join(__dirname, '../build/.cache'))
@@ -563,7 +568,7 @@ async function buildTarget(target, options) {
 
   // Create a modified copy of the CLI with SEA compatibility fixes.
   const modifiedCliPath = normalizePath(path.join(outputDir, 'cli-modified.js'))
-  let cliContent = await fs.readFile(cliPath, 'utf8')
+  let cliContent = cliCode
 
   // Fix 1: Replace the sentinel constant with a split string that won't match the sentinel search.
   cliContent = cliContent.replace(
