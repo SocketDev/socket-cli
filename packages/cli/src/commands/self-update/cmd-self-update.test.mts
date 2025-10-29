@@ -32,6 +32,7 @@ vi.mock('@socketsecurity/lib/ipc', () => ({
 }))
 
 vi.mock('../../utils/executable/detect.mjs', () => ({
+  canSelfUpdate: vi.fn(() => true),
   isSeaBinary: vi.fn(() => true),
 }))
 
@@ -70,7 +71,10 @@ import {
 
 import { getIpcStubPath } from '@socketsecurity/lib/ipc'
 
-import { isSeaBinary } from '../../utils/executable/detect.mjs'
+import {
+  canSelfUpdate,
+  isSeaBinary,
+} from '../../utils/executable/detect.mjs'
 import { clearQuarantine, ensureExecutable } from '../../utils/process/os.mjs'
 import { handleSelfUpdate } from './handle-self-update.mts'
 
