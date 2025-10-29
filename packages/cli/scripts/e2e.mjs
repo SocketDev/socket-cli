@@ -10,9 +10,24 @@
  *   node scripts/e2e.mjs --all    # Test all binaries
  */
 
+import { existsSync } from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
 import { spawn } from '@socketsecurity/lib/spawn'
 import { logger } from '@socketsecurity/lib/logger'
 import colors from 'yoctocolors-cjs'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const ROOT_DIR = path.resolve(__dirname, '..')
+const MONOREPO_ROOT = path.resolve(ROOT_DIR, '../..')
+
+const BINARY_PATHS = {
+  __proto__: null,
+  js: path.join(ROOT_DIR, 'bin/cli.js'),
+  sea: path.join(MONOREPO_ROOT, 'packages/node-sea-builder/dist/socket-sea'),
+  smol: path.join(MONOREPO_ROOT, 'packages/node-smol-builder/dist/socket-smol'),
+}
 
 const BINARY_FLAGS = {
   __proto__: null,
@@ -29,10 +44,46 @@ const BINARY_FLAGS = {
   },
 }
 
+async function checkBinaryExists(binaryType) {
+  // JS binary always exists after build.
+  if (binaryType === 'js') {
+    return true
+  }
+
+  // For explicit binary requests (sea, smol), require binary to exist.
+  if (binaryType === 'sea' || binaryType === 'smol') {
+    const binaryPath = BINARY_PATHS[binaryType]
+    if (!existsSync(binaryPath)) {
+      logger.error(`${colors.red('✗')} Binary not found: ${binaryPath}`)
+      logger.log('')
+      logger.log('The binary must be built before running e2e tests.')
+      logger.log('Build commands:')
+      if (binaryType === 'sea') {
+        logger.log('  pnpm --filter @socketbin/node-sea-builder run build')
+      } else if (binaryType === 'smol') {
+        logger.log('  pnpm --filter @socketbin/node-smol-builder run build')
+      }
+      logger.log('')
+      return false
+    }
+    logger.log(`${colors.green('✓')} Binary found: ${binaryPath}`)
+    logger.log('')
+  }
+
+  // For 'all', we'll skip missing binaries (handled by test suite).
+  return true
+}
+
 async function runVitest(binaryType) {
   const envVars = BINARY_FLAGS[binaryType]
   logger.log(`${colors.blue('ℹ')} Running e2e tests for ${binaryType} binary...`)
   logger.log('')
+
+  // Check if binary exists when explicitly requested.
+  const binaryExists = await checkBinaryExists(binaryType)
+  if (!binaryExists) {
+    process.exit(1)
+  }
 
   const result = await spawn(
     'dotenvx',
