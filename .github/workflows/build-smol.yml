@@ -285,9 +285,23 @@ jobs:
         if: (steps.smol-cache-valid.outputs.valid != 'true' || inputs.force) && matrix.platform == 'win32' && steps.ninja-cache-windows.outputs.cache-hit != 'true'
         run: choco install ninja
 
-      - name: Build smol binary
-        if: steps.smol-cache-valid.outputs.valid != 'true' || inputs.force
+      - name: Build smol binary (Standard platforms)
+        if: (steps.smol-cache-valid.outputs.valid != 'true' || inputs.force) && matrix.platform != 'alpine'
         run: pnpm --filter @socketbin/node-smol-builder run build
+
+      - name: Build smol binary (Alpine - Docker)
+        if: (steps.smol-cache-valid.outputs.valid != 'true' || inputs.force) && matrix.platform == 'alpine'
+        run: |
+          docker run --rm \
+            --platform linux/${{ matrix.arch == 'x64' && 'amd64' || 'arm64' }} \
+            -v $PWD:/workspace \
+            -w /workspace \
+            alpine:3.19 \
+            sh -c "
+              apk add --no-cache nodejs npm python3 make g++ linux-headers git ccache ninja && \
+              npm install -g pnpm@10.16.0 && \
+              pnpm --filter @socketbin/node-smol-builder run build
+            "
 
       - name: Verify smol binary
         shell: bash
