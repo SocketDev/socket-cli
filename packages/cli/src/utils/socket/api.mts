@@ -360,15 +360,28 @@ export async function queryApiSafeText(
     spinner?.start(`Requesting ${description} from API...`)
   }
 
+  const baseUrl = getDefaultApiBaseUrl()
+  const fullUrl = `${baseUrl}${baseUrl?.endsWith('/') ? '' : '/'}${path}`
+  const startTime = Date.now()
+
   let result: any
   try {
     result = await queryApi(path, apiToken)
+    const durationMs = Date.now() - startTime
     if (description) {
       spinner?.successAndStop(
         `Received Socket API response (after requesting ${description}).`,
       )
     }
+    // Log success for debugging.
+    debugApiResponse(description || 'Query API', result.status, undefined, {
+      method: 'GET',
+      url: fullUrl,
+      durationMs,
+      headers: { Authorization: '[REDACTED]' },
+    })
   } catch (e) {
+    const durationMs = Date.now() - startTime
     if (description) {
       spinner?.failAndStop(
         `An error was thrown while requesting ${description}.`,
@@ -376,7 +389,12 @@ export async function queryApiSafeText(
     }
 
     debug('Query API request failed')
-    debugDir(e)
+    debugApiResponse(description || 'Query API', undefined, e, {
+      method: 'GET',
+      url: fullUrl,
+      durationMs,
+      headers: { Authorization: '[REDACTED]' },
+    })
 
     const errStr = e ? String(e).trim() : ''
     const message = 'API request failed'
@@ -392,6 +410,14 @@ export async function queryApiSafeText(
 
   if (!result.ok) {
     const { status } = result
+    const durationMs = Date.now() - startTime
+    // Log detailed error information.
+    debugApiResponse(description || 'Query API', status, undefined, {
+      method: 'GET',
+      url: fullUrl,
+      durationMs,
+      headers: { Authorization: '[REDACTED]' },
+    })
     // Log required permissions for 403 errors when in a command context.
     if (commandPath && status === 403) {
       logPermissionsFor403(commandPath)
@@ -495,6 +521,9 @@ export async function sendApiRequest<T>(
     spinner?.start(`Requesting ${description} from API...`)
   }
 
+  const fullUrl = `${baseUrl}${baseUrl.endsWith('/') ? '' : '/'}${path}`
+  const startTime = Date.now()
+
   let result: any
   try {
     const fetchOptions = {
@@ -506,16 +535,22 @@ export async function sendApiRequest<T>(
       ...(body ? { body: JSON.stringify(body) } : {}),
     }
 
-    result = await fetch(
-      `${baseUrl}${baseUrl.endsWith('/') ? '' : '/'}${path}`,
-      fetchOptions,
-    )
+    result = await fetch(fullUrl, fetchOptions)
+    const durationMs = Date.now() - startTime
     if (description) {
       spinner?.successAndStop(
         `Received Socket API response (after requesting ${description}).`,
       )
     }
+    // Log success for debugging.
+    debugApiResponse(description || 'Send API Request', result.status, undefined, {
+      method,
+      url: fullUrl,
+      durationMs,
+      headers: { Authorization: '[REDACTED]', 'Content-Type': 'application/json' },
+    })
   } catch (e) {
+    const durationMs = Date.now() - startTime
     if (description) {
       spinner?.failAndStop(
         `An error was thrown while requesting ${description}.`,
@@ -523,7 +558,12 @@ export async function sendApiRequest<T>(
     }
 
     debug(`API ${method} request failed`)
-    debugDir(e)
+    debugApiResponse(description || 'Send API Request', undefined, e, {
+      method,
+      url: fullUrl,
+      durationMs,
+      headers: { Authorization: '[REDACTED]', 'Content-Type': 'application/json' },
+    })
 
     const errStr = e ? String(e).trim() : ''
     const message = 'API request failed'
@@ -539,6 +579,14 @@ export async function sendApiRequest<T>(
 
   if (!result.ok) {
     const { status } = result
+    const durationMs = Date.now() - startTime
+    // Log detailed error information.
+    debugApiResponse(description || 'Send API Request', status, undefined, {
+      method,
+      url: fullUrl,
+      durationMs,
+      headers: { Authorization: '[REDACTED]', 'Content-Type': 'application/json' },
+    })
     // Log required permissions for 403 errors when in a command context.
     if (commandPath && status === 403) {
       logPermissionsFor403(commandPath)

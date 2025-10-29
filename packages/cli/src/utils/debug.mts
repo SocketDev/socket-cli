@@ -28,22 +28,88 @@ import {
   isDebugNs,
 } from '@socketsecurity/lib/debug'
 
+export type ApiRequestDebugInfo = {
+  method?: string | undefined
+  url?: string | undefined
+  headers?: Record<string, string> | undefined
+  durationMs?: number | undefined
+}
+
 /**
- * Debug an API response.
+ * Sanitize headers to remove sensitive information.
+ * Redacts Authorization and API key headers.
+ */
+function sanitizeHeaders(
+  headers?: Record<string, string> | undefined,
+): Record<string, string> | undefined {
+  if (!headers) {
+    return undefined
+  }
+
+  const sanitized: Record<string, string> = Object.create(null)
+  for (const [key, value] of Object.entries(headers)) {
+    const lowerKey = key.toLowerCase()
+    if (lowerKey === 'authorization' || lowerKey.includes('api-key')) {
+      sanitized[key] = '[REDACTED]'
+    } else {
+      sanitized[key] = value
+    }
+  }
+  return sanitized
+}
+
+/**
+ * Debug an API response with detailed request information.
  * Logs essential info without exposing sensitive data.
+ *
+ * For failed requests (status >= 400 or error), logs:
+ * - HTTP method (GET, POST, etc.)
+ * - Full URL
+ * - Response status code
+ * - Sanitized headers (Authorization redacted)
+ * - Request duration in milliseconds
  */
 export function debugApiResponse(
   endpoint: string,
   status?: number | undefined,
   error?: unknown | undefined,
+  requestInfo?: ApiRequestDebugInfo | undefined,
 ): void {
   if (error) {
-    debugDir({
+    const errorDetails = {
+      __proto__: null,
       endpoint,
       error: error instanceof Error ? error.message : UNKNOWN_ERROR,
-    })
+      ...(requestInfo?.method ? { method: requestInfo.method } : {}),
+      ...(requestInfo?.url ? { url: requestInfo.url } : {}),
+      ...(requestInfo?.durationMs !== undefined
+        ? { durationMs: requestInfo.durationMs }
+        : {}),
+      ...(requestInfo?.headers
+        ? { headers: sanitizeHeaders(requestInfo.headers) }
+        : {}),
+    }
+    debugDir(errorDetails)
   } else if (status && status >= 400) {
-    debug(`API ${endpoint}: HTTP ${status}`)
+    // For failed requests, log detailed information.
+    if (requestInfo) {
+      const failureDetails = {
+        __proto__: null,
+        endpoint,
+        status,
+        ...(requestInfo.method ? { method: requestInfo.method } : {}),
+        ...(requestInfo.url ? { url: requestInfo.url } : {}),
+        ...(requestInfo.durationMs !== undefined
+          ? { durationMs: requestInfo.durationMs }
+          : {}),
+        ...(requestInfo.headers
+          ? { headers: sanitizeHeaders(requestInfo.headers) }
+          : {}),
+      }
+      debugDir(failureDetails)
+    } else {
+      debug(`API ${endpoint}: HTTP ${status}`)
+    }
     /* c8 ignore next 3 */
   } else if (isDebugNs('notice')) {
     debugNs('notice', `API ${endpoint}: ${status || 'pending'}`)
