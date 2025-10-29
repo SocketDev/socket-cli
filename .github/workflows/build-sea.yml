@@ -368,6 +368,28 @@ jobs:
           key: node-sea-${{ matrix.platform }}-${{ matrix.arch }}-${{ steps.sea-cache-key.outputs.hash }}
           restore-keys: node-sea-${{ matrix.platform }}-${{ matrix.arch }}-
 
+      - name: Verify WASM assets before CLI build
+        if: steps.sea-cache.outputs.cache-hit != 'true' || inputs.force
+        shell: bash
+        run: |
+          echo "=== Checking WASM asset availability ==="
+          echo "Yoga Layout:"
+          ls -lh packages/yoga-layout/build/wasm/ 2>/dev/null || echo "  ❌ Directory not found"
+          echo ""
+          echo "AI Models:"
+          ls -lh packages/socketbin-cli-ai/dist/ 2>/dev/null || echo "  ❌ Directory not found"
+          echo ""
+          echo "ONNX Runtime:"
+          ls -lh packages/onnx-runtime-builder/dist/ 2>/dev/null || echo "  ❌ Directory not found"
+          echo ""
+
+          # Fail fast if critical Yoga Layout WASM is missing
+          if [ ! -f "packages/yoga-layout/build/wasm/yoga.wasm" ]; then
+            echo "::error::Yoga Layout WASM not found! Run build-wasm.yml workflow to prime cache."
+            echo "Cache status was: yoga=${{ steps.yoga-cache-valid.outputs.valid }}"
+            exit 1
+          fi
+
       - name: Build CLI (required for SEA)
         if: steps.sea-cache.outputs.cache-hit != 'true' || inputs.force
         run: pnpm --filter @socketsecurity/cli run build
