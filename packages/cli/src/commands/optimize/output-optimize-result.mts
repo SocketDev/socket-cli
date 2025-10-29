@@ -24,6 +24,33 @@ export async function outputOptimizeResult(
     logger.log(serializeResultJson(result))
     return
   }
+
+  if (outputKind === 'markdown') {
+    if (!result.ok) {
+      logger.log(`# Optimize Failed\n\n**Error**: ${result.message}`)
+      if (result.cause) {
+        logger.log(`\n**Cause**: ${result.cause}`)
+      }
+      return
+    }
+
+    const data = result.data
+    logger.log('# Optimize Complete\n')
+
+    if (data.pkgJsonChanged) {
+      if (data.updatedCount > 0) {
+        logger.log(`- **Updated**: ${data.updatedCount} ${pluralize('override', { count: data.updatedCount })}${data.updatedInWorkspaces ? ` in ${data.updatedInWorkspaces} ${pluralize('workspace', { count: data.updatedInWorkspaces })}` : ''}`)
+      }
+      if (data.addedCount > 0) {
+        logger.log(`- **Added**: ${data.addedCount} ${pluralize('override', { count: data.addedCount })}${data.addedInWorkspaces ? ` in ${data.addedInWorkspaces} ${pluralize('workspace', { count: data.addedInWorkspaces })}` : ''}`)
+      }
+      logger.log('\n✓ Finished!')
+    } else {
+      logger.log('No Socket.dev optimized overrides applied.')
+    }
+    return
+  }
+
   if (!result.ok) {
     logger.fail(failMsgWithBadge(result.message, result.cause))
     return
