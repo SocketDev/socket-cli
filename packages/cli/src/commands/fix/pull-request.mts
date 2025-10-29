@@ -1,5 +1,3 @@
-import { RequestError } from '@octokit/request-error'
-
 import { UNKNOWN_VALUE } from '@socketsecurity/lib/constants/core'
 import { debug, debugDir } from '@socketsecurity/lib/debug'
 import { isNonEmptyString } from '@socketsecurity/lib/strings'
@@ -17,7 +15,6 @@ import {
   GQL_PR_STATE_OPEN,
 } from '../../constants/github.mts'
 import { formatErrorWithDetail } from '../../utils/error/errors.mjs'
-import { gitDeleteRemoteBranch } from '../../utils/git/operations.mjs'
 import {
   cacheFetch,
   type GhsaDetails,
@@ -36,10 +33,6 @@ export type OpenSocketFixPrOptions = {
   cwd?: string | undefined
   ghsaDetails?: Map<string, GhsaDetails> | undefined
   retries?: number | undefined
-}
-
-async function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms))
 }
 
 export async function openSocketFixPr(
