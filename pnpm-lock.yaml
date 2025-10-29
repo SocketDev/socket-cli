@@ -413,6 +413,9 @@ importers:
       '@socketsecurity/build-infra':
         specifier: workspace:*
         version: link:../build-infra
+      '@socketsecurity/cli':
+        specifier: workspace:*
+        version: link:../cli
       '@socketsecurity/lib':
         specifier: 'catalog:'
         version: 2.7.0(typescript@5.9.3)

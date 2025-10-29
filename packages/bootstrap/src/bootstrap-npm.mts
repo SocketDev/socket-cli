@@ -5,6 +5,9 @@
  * It downloads @socketsecurity/cli from npm and executes it.
  */
 
+// Load Intl polyfill FIRST for ICU-disabled builds.
+import '@socketsecurity/cli/src/polyfills/intl-stub/index.mts'
+
 import { logger } from '@socketsecurity/lib/logger'
 
 import { findAndExecuteCli, getArgs } from './shared/bootstrap-shared.mjs'

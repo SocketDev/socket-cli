@@ -7,6 +7,9 @@
  * The smol binary loads this at startup via lib/internal/process/pre_execution.js.
  */
 
+// Load Intl polyfill FIRST for ICU-disabled builds (smol Node.js).
+import '@socketsecurity/cli/src/polyfills/intl-stub/index.mts'
+
 import { logger } from '@socketsecurity/lib/logger'
 
 import { findAndExecuteCli, getArgs } from './shared/bootstrap-shared.mjs'
