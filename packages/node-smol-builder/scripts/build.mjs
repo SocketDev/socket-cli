@@ -303,17 +303,12 @@ async function copySocketSecurityBootstrap() {
     )
 
     if (result.code !== 0) {
-      logger.error(`${colors.red('✗')} Failed to build @socketsecurity/bootstrap`)
-      logger.log('')
-      return
+      throw new Error(`Failed to build @socketsecurity/bootstrap package (exit code ${result.code})`)
     }
 
     // Verify bootstrap was built.
     if (!existsSync(bootstrapSource)) {
-      logger.log('')
-      logger.log(`${colors.blue('ℹ')} Skipping Socket security bootstrap (build succeeded but dist file not found)`)
-      logger.log('')
-      return
+      throw new Error(`Bootstrap build succeeded but dist file not found at: ${bootstrapSource}`)
     }
 
     logger.log('')
