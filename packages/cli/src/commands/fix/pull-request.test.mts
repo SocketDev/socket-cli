@@ -1,5 +1,3 @@
-import { RequestError } from '@octokit/request-error'
-
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { openSocketFixPr } from './pull-request.mts'

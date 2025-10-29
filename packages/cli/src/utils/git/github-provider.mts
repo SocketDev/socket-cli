@@ -179,13 +179,7 @@ export class GitHubProvider implements PrProvider {
   }
 
   async listPrs(options: ListPrsOptions): Promise<PrMatch[]> {
-    const {
-      author,
-      ghsaId,
-      owner,
-      repo,
-      states: statesValue = 'all',
-    } = options
+    const { author, ghsaId, owner, repo, states: statesValue = 'all' } = options
     const checkAuthor = isNonEmptyString(author)
     const octokitGraphql = getOctokitGraphql()
     const matches: PrMatch[] = []

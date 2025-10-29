@@ -95,7 +95,12 @@ export async function outputPatchStatusResult(
     }
 
     // Legend.
-    logger.log(mdKeyValue('Legend', '[✓] Applied | [○] Downloaded | [✗] Failed | [?] Unknown'))
+    logger.log(
+      mdKeyValue(
+        'Legend',
+        '[✓] Applied | [○] Downloaded | [✗] Failed | [?] Unknown',
+      ),
+    )
 
     return
   }

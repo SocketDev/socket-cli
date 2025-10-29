@@ -1,11 +1,3 @@
-/*!
- * on-headers
- * Copyright(c) 2014 Douglas Christopher Wilson
- * MIT Licensed
- */
-
-'use strict'
-
 /**
  * Module exports.
  * @public
@@ -13,11 +5,14 @@
 
 module.exports = onHeaders
 
-var http = require('http')
+var http = require('node:http')
 
 // older node versions don't have appendHeader
-var isAppendHeaderSupported = typeof http.ServerResponse.prototype.appendHeader === 'function'
-var set1dArray = isAppendHeaderSupported ? set1dArrayWithAppend : set1dArrayWithSet
+var isAppendHeaderSupported =
+  typeof http.ServerResponse.prototype.appendHeader === 'function'
+var set1dArray = isAppendHeaderSupported
+  ? set1dArrayWithAppend
+  : set1dArrayWithSet
 
 /**
  * Create a replacement writeHead method.
@@ -27,11 +22,11 @@ var set1dArray = isAppendHeaderSupported ? set1dArrayWithAppend : set1dArrayWith
  * @private
  */
 
-function createWriteHead (prevWriteHead, listener) {
+function createWriteHead(prevWriteHead, listener) {
   var fired = false
 
   // return function with core name and argument list
-  return function writeHead (statusCode) {
+  return function writeHead(_statusCode) {
     // set headers from arguments
     var args = setWriteHeadHeaders.apply(this, arguments)
 
@@ -59,7 +54,7 @@ function createWriteHead (prevWriteHead, listener) {
  * @public
  */
 
-function onHeaders (res, listener) {
+function onHeaders(res, listener) {
   if (!res) {
     throw new TypeError('argument res is required')
   }
@@ -79,7 +74,7 @@ function onHeaders (res, listener) {
  * @private
  */
 
-function setHeadersFromArray (res, headers) {
+function setHeadersFromArray(res, headers) {
   if (headers.length && Array.isArray(headers[0])) {
     // 2D
     set2dArray(res, headers)
@@ -101,7 +96,7 @@ function setHeadersFromArray (res, headers) {
  * @private
  */
 
-function setHeadersFromObject (res, headers) {
+function setHeadersFromObject(res, headers) {
   var keys = Object.keys(headers)
   for (var i = 0; i < keys.length; i++) {
     var k = keys[i]
@@ -116,15 +111,11 @@ function setHeadersFromObject (res, headers) {
  * @private
  */
 
-function setWriteHeadHeaders (statusCode) {
+function setWriteHeadHeaders(statusCode) {
   var length = arguments.length
-  var headerIndex = length > 1 && typeof arguments[1] === 'string'
-    ? 2
-    : 1
+  var headerIndex = length > 1 && typeof arguments[1] === 'string' ? 2 : 1
 
-  var headers = length >= headerIndex + 1
-    ? arguments[headerIndex]
-    : undefined
+  var headers = length >= headerIndex + 1 ? arguments[headerIndex] : undefined
 
   this.statusCode = statusCode
 
@@ -145,7 +136,7 @@ function setWriteHeadHeaders (statusCode) {
   return args
 }
 
-function set2dArray (res, headers) {
+function set2dArray(res, headers) {
   var key
   for (var i = 0; i < headers.length; i++) {
     key = headers[i][0]
@@ -155,7 +146,7 @@ function set2dArray (res, headers) {
   }
 }
 
-function set1dArrayWithAppend (res, headers) {
+function set1dArrayWithAppend(res, headers) {
   for (var i = 0; i < headers.length; i += 2) {
     res.removeHeader(headers[i])
   }
@@ -169,7 +160,7 @@ function set1dArrayWithAppend (res, headers) {
   }
 }
 
-function set1dArrayWithSet (res, headers) {
+function set1dArrayWithSet(res, headers) {
   var key
   for (var i = 0; i < headers.length; i += 2) {
     key = headers[i]
