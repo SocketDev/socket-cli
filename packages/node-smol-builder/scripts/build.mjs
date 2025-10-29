@@ -286,13 +286,37 @@ async function copySocketSecurityBootstrap() {
   // Use transformed bootstrap from bootstrap package (compatible with Node.js internal bootstrap context).
   const bootstrapSource = join(ROOT_DIR, '..', 'bootstrap', 'dist', 'bootstrap-smol.js')
 
-  // Skip if bootstrap file doesn't exist yet.
+  // Auto-build bootstrap if missing.
   if (!existsSync(bootstrapSource)) {
     logger.log('')
-    logger.log(`${colors.blue('ℹ')} Skipping Socket security bootstrap (packages/bootstrap/dist/bootstrap-smol.js not found)`)
-    logger.log(`${colors.blue('ℹ')} Run 'pnpm --filter @socketsecurity/bootstrap run build' to create it`)
+    logger.log(`${colors.blue('ℹ')} Bootstrap not found, building @socketsecurity/bootstrap package...`)
     logger.log('')
-    return
+
+    const result = await spawn(
+      'pnpm',
+      ['--filter', '@socketsecurity/bootstrap', 'run', 'build'],
+      {
+        cwd: join(ROOT_DIR, '../..'),
+        shell: WIN32,
+        stdio: 'inherit',
+      }
+    )
+
+    if (result.code !== 0) {
+      logger.error(`${colors.red('✗')} Failed to build @socketsecurity/bootstrap`)
+      logger.log('')
+      return
+    }
+
+    // Verify bootstrap was built.
+    if (!existsSync(bootstrapSource)) {
+      logger.log('')
+      logger.log(`${colors.blue('ℹ')} Skipping Socket security bootstrap (build succeeded but dist file not found)`)
+      logger.log('')
+      return
+    }
+
+    logger.log('')
   }
 
   printHeader('Copying Socket Security Bootstrap')
