@@ -77,10 +77,15 @@ async function runPackageTest(pkg, testArgs = [], quiet = false) {
     logger.progress(`${displayName}: running tests`)
   }
 
-  const result = await runCommandQuiet(
+  const result = await spawn(
     'pnpm',
     ['--filter', pkg.name, 'run', 'test', ...testArgs],
-    { cwd: process.cwd() },
+    {
+      cwd: process.cwd(),
+      encoding: 'utf8',
+      shell: WIN32,
+      stdio: ['pipe', 'pipe', 'pipe'],
+    },
   )
 
   if (result.code !== 0) {
@@ -178,7 +183,7 @@ async function main() {
       }
     }
 
-    if (code !== 0) {
+    if (exitCode !== 0) {
       if (!quiet) {
         logger.error('')
         logger.log('Tests failed')

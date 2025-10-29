@@ -4,7 +4,9 @@
  */
 
 import { parseArgs } from '@socketsecurity/lib/argv/parse'
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { logger } from '@socketsecurity/lib/logger'
+import { spawn } from '@socketsecurity/lib/spawn'
 import { printFooter, printHeader } from '@socketsecurity/lib/stdio/header'
 
 /**
@@ -31,7 +33,12 @@ async function runEslintCheck(options = {}) {
     args.push('--changed')
   }
 
-  const result = await runCommandQuiet('pnpm', args)
+  const result = await spawn('pnpm', args, {
+    cwd: process.cwd(),
+    encoding: 'utf8',
+    shell: WIN32,
+    stdio: ['pipe', 'pipe', 'pipe'],
+  })
 
   if (result.code !== 0) {
     if (!quiet) {
@@ -65,7 +72,12 @@ async function runTypeCheck(options = {}) {
     logger.progress('Checking TypeScript')
   }
 
-  const result = await runCommandQuiet('pnpm', ['run', 'type'])
+  const result = await spawn('pnpm', ['run', 'type'], {
+    cwd: process.cwd(),
+    encoding: 'utf8',
+    shell: WIN32,
+    stdio: ['pipe', 'pipe', 'pipe'],
+  })
 
   if (result.code !== 0) {
     if (!quiet) {
@@ -171,7 +183,7 @@ async function main() {
         quiet,
         staged: values.staged,
       })
-      if (code !== 0) {
+      if (exitCode !== 0) {
         if (!quiet) {
           logger.error('Checks failed')
         }
@@ -183,7 +195,7 @@ async function main() {
     // Run TypeScript check if requested or running all
     if (runAll || values.types) {
       exitCode = await runTypeCheck({ quiet })
-      if (code !== 0) {
+      if (exitCode !== 0) {
         if (!quiet) {
           logger.error('Checks failed')
         }
