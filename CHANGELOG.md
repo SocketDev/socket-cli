@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.25](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.25) - 2025-10-10
+
+### Added
+- New `--no-major-updates` flag for controlling major version update behavior
+- New `--show-affected-direct-dependencies` flag for enhanced dependency visibility
+
+### Fixed
+- Improved provenance handling for better package verification
+
+## [1.1.24](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.24) - 2025-10-10
+
+### Added
+- New `--minimum-release-age` flag for `socket fix` to filter packages by release age
+- SOCKET_CLI_COANA_LOCAL_PATH environment variable for local Coana version testing
+
+### Fixed
+- Enhanced organization capabilities detection for different plan variants
+- Improved enterprise plan filtering logic
+
 ## [1.1.23](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.23) - 2025-09-22
 
 ### Changed
