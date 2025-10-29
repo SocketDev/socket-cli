@@ -4,6 +4,7 @@
  */
 
 import { build } from 'esbuild'
+import { mkdirSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -34,10 +35,20 @@ const config = {
 
 // Run build if invoked directly.
 if (import.meta.url === `file://${process.argv[1]}`) {
-  build(config).catch(error => {
-    console.error('Build failed:', error)
-    process.exitCode = 1
-  })
+  build(config)
+    .then(result => {
+      // Write the transformed output (build had write: false).
+      if (result.outputFiles && result.outputFiles.length > 0) {
+        mkdirSync(path.dirname(config.outfile), { recursive: true })
+        for (const output of result.outputFiles) {
+          writeFileSync(output.path, output.contents)
+        }
+      }
+    })
+    .catch(error => {
+      console.error('Build failed:', error)
+      process.exitCode = 1
+    })
 }
 
 export default config
