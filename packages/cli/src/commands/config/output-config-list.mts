@@ -6,6 +6,7 @@ import {
   isConfigFromFlag,
   isSensitiveConfigKey,
 } from '../../utils/config.mts'
+import { mdHeader } from '../../utils/output/markdown.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
 import type { OutputKind } from '../../types.mts'
@@ -66,7 +67,7 @@ export async function outputConfigList({
       0,
     )
 
-    logger.log('# Local CLI Config')
+    logger.log(mdHeader('Local CLI Config'))
     logger.log('')
     logger.log(`This is the local CLI config (full=${!!full}):`)
     logger.log('')
