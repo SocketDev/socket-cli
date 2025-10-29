@@ -2,6 +2,7 @@ import { logger } from '@socketsecurity/lib/logger'
 import { pluralize } from '@socketsecurity/lib/words'
 
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
+import { mdHeader, mdKeyValue } from '../../utils/output/markdown.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
 import type { PatchInfoData } from './handle-patch-info.mts'
@@ -28,24 +29,24 @@ export async function outputPatchInfoResult(
   const patch = result.data
 
   if (outputKind === 'markdown') {
-    logger.log('## Patch Information\n')
-    logger.log(`**PURL**: ${patch.purl}\n`)
+    logger.log(`${mdHeader('Patch Information', 2)}\n`)
+    logger.log(`${mdKeyValue('PURL', patch.purl)}\n`)
     if (patch.uuid) {
-      logger.log(`**UUID**: ${patch.uuid}\n`)
+      logger.log(`${mdKeyValue('UUID', patch.uuid)}\n`)
     }
     logger.log(
-      `**Description**: ${patch.description || 'No description provided'}\n`,
+      `${mdKeyValue('Description', patch.description || 'No description provided')}\n`,
     )
-    logger.log(`**Exported**: ${patch.exportedAt}\n`)
+    logger.log(`${mdKeyValue('Exported', patch.exportedAt)}\n`)
     if (patch.tier) {
-      logger.log(`**Tier**: ${patch.tier}\n`)
+      logger.log(`${mdKeyValue('Tier', patch.tier)}\n`)
     }
     if (patch.license) {
-      logger.log(`**License**: ${patch.license}\n`)
+      logger.log(`${mdKeyValue('License', patch.license)}\n`)
     }
 
     const fileCount = Object.keys(patch.files).length
-    logger.log(`### Files (${fileCount})\n`)
+    logger.log(`${mdHeader(`Files (${fileCount})`, 3)}\n`)
     for (const { 0: fileName, 1: fileInfo } of Object.entries(patch.files)) {
       logger.log(`**${fileName}**`)
       logger.log(`- Before: \`${fileInfo.beforeHash}\``)
@@ -55,7 +56,7 @@ export async function outputPatchInfoResult(
 
     if (patch.vulnerabilities) {
       const vulnCount = Object.keys(patch.vulnerabilities).length
-      logger.log(`### Vulnerabilities (${vulnCount})\n`)
+      logger.log(`${mdHeader(`Vulnerabilities (${vulnCount})`, 3)}\n`)
       for (const { 0: ghsaId, 1: vuln } of Object.entries(
         patch.vulnerabilities,
       )) {
@@ -73,7 +74,7 @@ export async function outputPatchInfoResult(
           logger.log(`\n${vuln.description}`)
         }
         if (vuln.patchExplanation) {
-          logger.log(`\n**Patch Explanation**: ${vuln.patchExplanation}`)
+          logger.log(`\n${mdKeyValue('Patch Explanation', vuln.patchExplanation)}`)
         }
         logger.log('')
       }
