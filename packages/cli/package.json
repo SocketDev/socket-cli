@@ -55,7 +55,7 @@
     "prepare": "dotenvx -q run -f .env.local -- husky",
     "bs": "dotenvx -q run -f .env.local -- pnpm run build; pnpm exec socket --",
     "s": "dotenvx -q run -f .env.local -- pnpm exec socket --",
-    "e2e-tests": "SOCKET_CLI_FORWARDING=0 dotenvx -q run -f .env.test -- vitest run --config vitest.e2e.config.mts",
+    "e2e-tests": "dotenvx -q run -f .env.test -- vitest run --config vitest.e2e.config.mts",
     "e2e:js": "node scripts/e2e.mjs --js",
     "e2e:smol": "node scripts/e2e.mjs --smol",
     "e2e:sea": "node scripts/e2e.mjs --sea",
