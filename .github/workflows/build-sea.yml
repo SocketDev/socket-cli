@@ -30,6 +30,8 @@ jobs:
     name: 📦 Build Dependencies
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    outputs:
+      deps-hash: ${{ steps.deps-cache-key.outputs.hash }}
     steps:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
@@ -352,8 +354,10 @@ jobs:
         id: sea-cache-key
         shell: bash
         run: |
-          HASH=$(find packages/node-sea-builder packages/cli/src -type f \( -name "*.mts" -o -name "*.ts" -o -name "*.mjs" -o -name "*.js" \) | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
-          echo "hash=$HASH" >> $GITHUB_OUTPUT
+          SEA_HASH=$(find packages/node-sea-builder packages/cli/src -type f \( -name "*.mts" -o -name "*.ts" -o -name "*.mjs" -o -name "*.js" \) | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
+          # Include bootstrap/socket/cli dependencies in cache key to invalidate when they change.
+          COMBINED_HASH=$(echo "$SEA_HASH-${{ needs.build-deps.outputs.deps-hash }}" | sha256sum | cut -d' ' -f1)
+          echo "hash=$COMBINED_HASH" >> $GITHUB_OUTPUT
 
       - name: Restore SEA binary cache
         if: inputs.force != true
