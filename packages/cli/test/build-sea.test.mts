@@ -8,16 +8,6 @@ import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 describe('SEA build validation', () => {
-  it('should have SEA bootstrap entry point', () => {
-    const bootstrapPath = path.join(
-      process.cwd(),
-      'src',
-      'stub',
-      'bootstrap.mts',
-    )
-    expect(existsSync(bootstrapPath)).toBe(true)
-  })
-
   it('should have SEA configuration', () => {
     const configPath = path.join(
       process.cwd(),

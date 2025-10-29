@@ -1,3 +1,6 @@
+import os from 'node:os'
+import path from 'node:path'
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createPrProvider } from './provider-factory.mts'
@@ -9,8 +12,10 @@ vi.mock('node:child_process', () => ({
   spawnSync: vi.fn(),
 }))
 
+const mockCacheDir = path.join(os.tmpdir(), 'socket-cache')
 vi.mock('../../constants/paths.mjs', () => ({
-  SOCKET_CLI_CACHE_DIR: '/tmp/socket-cache',
+  SOCKET_CLI_CACHE_DIR: mockCacheDir,
+  getGithubCachePath: () => path.join(mockCacheDir, 'github'),
 }))
 
 vi.mock('./github.mts', () => ({
@@ -59,8 +64,8 @@ describe('provider-factory', () => {
       })
 
       const provider = createPrProvider()
-      expect(provider).toBeInstanceOf(GitHubProvider)
       expect(provider.getProviderName()).toBe('github')
+      expect(provider.supportsGraphQL()).toBe(true)
     })
 
     it('returns GitLabProvider for gitlab.com remote', async () => {
@@ -78,8 +83,8 @@ describe('provider-factory', () => {
       process.env.GITLAB_TOKEN = 'test-token'
 
       const provider = createPrProvider()
-      expect(provider).toBeInstanceOf(GitLabProvider)
       expect(provider.getProviderName()).toBe('gitlab')
+      expect(provider.supportsGraphQL()).toBe(false)
     })
 
     it('returns GitLabProvider when GITLAB_HOST is set', async () => {
@@ -97,8 +102,8 @@ describe('provider-factory', () => {
       process.env.GITLAB_TOKEN = 'test-token'
 
       const provider = createPrProvider()
-      expect(provider).toBeInstanceOf(GitLabProvider)
       expect(provider.getProviderName()).toBe('gitlab')
+      expect(provider.supportsGraphQL()).toBe(false)
     })
 
     it('falls back to GitHubProvider when git command fails', async () => {
@@ -113,7 +118,8 @@ describe('provider-factory', () => {
       })
 
       const provider = createPrProvider()
-      expect(provider).toBeInstanceOf(GitHubProvider)
+      expect(provider.getProviderName()).toBe('github')
+      expect(provider.supportsGraphQL()).toBe(true)
     })
 
     it('falls back to GitHubProvider for empty remote', async () => {
@@ -128,7 +134,8 @@ describe('provider-factory', () => {
       })
 
       const provider = createPrProvider()
-      expect(provider).toBeInstanceOf(GitHubProvider)
+      expect(provider.getProviderName()).toBe('github')
+      expect(provider.supportsGraphQL()).toBe(true)
     })
   })
 })
