@@ -139,6 +139,30 @@ jobs:
           name: build-deps-${{ github.sha }}
           path: packages/
 
+      - name: Verify build artifacts
+        shell: bash
+        run: |
+          echo "=== Verifying downloaded build artifacts ==="
+          ls -lh packages/bootstrap/dist/ || echo "⚠️  bootstrap/dist/ not found"
+          ls -lh packages/socket/dist/ || echo "⚠️  socket/dist/ not found"
+          ls -lh packages/cli/dist/ || echo "⚠️  cli/dist/ not found"
+
+          # Check critical files
+          if [ ! -f packages/bootstrap/dist/bootstrap-npm.js ]; then
+            echo "❌ ERROR: bootstrap-npm.js not found!"
+            exit 1
+          fi
+          if [ ! -f packages/socket/dist/index.mjs ]; then
+            echo "❌ ERROR: socket package not built!"
+            exit 1
+          fi
+          if [ ! -f packages/cli/dist/cli.mjs ]; then
+            echo "❌ ERROR: CLI not built!"
+            exit 1
+          fi
+
+          echo "✓ Build artifacts verified"
+
       - name: Setup Node.js
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
