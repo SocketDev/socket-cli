@@ -64,3 +64,4 @@ packages/*/.yoga-tests
 packages/*/.onnx-source
 packages/*/.minilm-source
 /.node-source
+**/html
