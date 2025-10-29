@@ -11,7 +11,7 @@ export interface PrProvider {
   updatePr(options: UpdatePrOptions): Promise<void>
   listPrs(options: ListPrsOptions): Promise<PrMatch[]>
   deleteBranch(branch: string): Promise<boolean>
-  addComment(prNumber: number, body: string): Promise<void>
+  addComment(options: AddCommentOptions): Promise<void>
 
   // Metadata.
   getProviderName(): 'github' | 'gitlab'
@@ -34,6 +34,13 @@ export interface UpdatePrOptions {
   prNumber: number
   head: string
   base: string
+}
+
+export interface AddCommentOptions {
+  owner: string
+  repo: string
+  prNumber: number
+  body: string
 }
 
 export interface ListPrsOptions {
