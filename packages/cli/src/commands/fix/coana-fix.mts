@@ -14,7 +14,13 @@ import {
   getFixEnv,
 } from './env-helpers.mts'
 import { getSocketFixBranchName, getSocketFixCommitMessage } from './git.mts'
-import { getSocketFixPrs, openSocketFixPr } from './pull-request.mts'
+import { isGhsaFixed, markGhsaFixed } from './ghsa-tracker.mts'
+import { logPrEvent } from './pr-lifecycle-logger.mts'
+import {
+  cleanupSocketFixPrs,
+  getSocketFixPrs,
+  openSocketFixPr,
+} from './pull-request.mts'
 import { FLAG_DRY_RUN } from '../../constants/cli.mts'
 import { GQL_PR_STATE_OPEN } from '../../constants/github.mts'
 import { spawnCoanaDlx } from '../../utils/dlx/spawn.mjs'
@@ -33,6 +39,7 @@ import {
 import {
   enablePrAutoMerge,
   fetchGhsaDetails,
+  getOctokit,
   setGitRemoteGithubRepoUrl,
 } from '../../utils/git/github.mts'
 import { handleApiCall } from '../../utils/socket/api.mjs'
@@ -316,12 +323,54 @@ export async function coanaFix(
 
   debug(`found: ${ghsaDetails.size} GHSA details`)
 
+  // Filter out already-fixed GHSAs to avoid duplicate work.
+  const unprocessedIds: string[] = []
+  for (let i = 0, { length } = ids; i < length; i += 1) {
+    const ghsaId = ids[i]!
+    // eslint-disable-next-line no-await-in-loop
+    const alreadyFixed = await isGhsaFixed(cwd, ghsaId)
+    if (!alreadyFixed) {
+      unprocessedIds.push(ghsaId)
+    }
+  }
+
+  const skippedCount = ids.length - unprocessedIds.length
+  if (skippedCount > 0) {
+    logger.info(
+      `Skipping ${skippedCount} already-fixed ${pluralize('GHSA', { count: skippedCount })}`,
+    )
+  }
+
+  // Clean up stale and merged Socket Fix PRs before creating new ones.
+  if (shouldOpenPrs && fixEnv.repoInfo) {
+    logger.substep('Cleaning up stale and merged Socket Fix PRs...')
+
+    for (let i = 0, { length } = unprocessedIds; i < length; i += 1) {
+      const ghsaId = unprocessedIds[i]!
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        const cleaned = await cleanupSocketFixPrs(
+          fixEnv.repoInfo.owner,
+          fixEnv.repoInfo.repo,
+          ghsaId,
+        )
+        if (cleaned.length) {
+          debug(`pr: cleaned ${cleaned.length} PRs for ${ghsaId}`)
+        }
+      } catch (e) {
+        debug(`pr: cleanup failed for ${ghsaId}`)
+        debugDir(e)
+      }
+    }
+  }
+
   let count = 0
   let overallFixed = false
 
   // Process each GHSA ID individually.
-  for (let i = 0, { length } = ids; i < length; i += 1) {
-    const ghsaId = ids[i]!
+  // Use unprocessedIds instead of ids to skip already-fixed GHSAs.
+  for (let i = 0, { length } = unprocessedIds; i < length; i += 1) {
+    const ghsaId = unprocessedIds[i]!
     debug(`check: ${ghsaId}`)
 
     // Apply fix for single GHSA ID.
@@ -376,6 +425,49 @@ export async function coanaFix(
     const branch = getSocketFixBranchName(ghsaId)
 
     try {
+      // Check for existing open PRs for this GHSA before creating a new one.
+      // eslint-disable-next-line no-await-in-loop
+      const existingPrs = await getSocketFixPrs(
+        fixEnv.repoInfo.owner,
+        fixEnv.repoInfo.repo,
+        { ghsaId, states: GQL_PR_STATE_OPEN },
+      )
+
+      if (existingPrs.length) {
+        debug(
+          `pr: found ${existingPrs.length} existing open PRs for ${ghsaId}`,
+        )
+
+        // Close outdated PRs with explanatory comment.
+        for (let j = 0, { length: prLength } = existingPrs; j < prLength; j += 1) {
+          const pr = existingPrs[j]!
+          try {
+            const octokit = getOctokit()
+            // eslint-disable-next-line no-await-in-loop
+            await octokit.issues.createComment({
+              owner: fixEnv.repoInfo.owner,
+              repo: fixEnv.repoInfo.repo,
+              issue_number: pr.number,
+              body: 'Closing this PR as a newer fix is available.',
+            })
+
+            // eslint-disable-next-line no-await-in-loop
+            await octokit.pulls.update({
+              owner: fixEnv.repoInfo.owner,
+              repo: fixEnv.repoInfo.repo,
+              pull_number: pr.number,
+              state: 'closed',
+            })
+
+            debug(`pr: closed superseded PR #${pr.number} for ${ghsaId}`)
+            logPrEvent('superseded', pr.number, ghsaId)
+          } catch (e) {
+            debug(`pr: failed to close superseded PR #${pr.number}`)
+            debugDir(e)
+          }
+        }
+      }
+
       // Check if branch already exists.
       // eslint-disable-next-line no-await-in-loop
       if (await gitRemoteBranchExists(branch, cwd)) {
@@ -408,6 +500,20 @@ export async function coanaFix(
 
       if (!pushed) {
         logger.warn(`Push failed for ${ghsaId}, skipping PR creation.`)
+        // Clean up remote branch if it was pushed.
+        try {
+          // eslint-disable-next-line no-await-in-loop
+          const remoteBranchExists = await gitRemoteBranchExists(branch, cwd)
+          if (remoteBranchExists) {
+            // eslint-disable-next-line no-await-in-loop
+            await gitDeleteRemoteBranch(branch, cwd)
+            debug(`pr: deleted orphaned remote branch ${branch}`)
+          }
+        } catch (e) {
+          debug(`pr: failed to delete remote branch ${branch}`)
+          debugDir(e)
+        }
+        // Clean up local state.
         // eslint-disable-next-line no-await-in-loop
         await gitResetAndClean(fixEnv.baseBranch, cwd)
         // eslint-disable-next-line no-await-in-loop
@@ -459,6 +565,11 @@ export async function coanaFix(
 
         logger.success(`Opened ${prRef} for ${ghsaId}.`)
         logger.info(`PR URL: ${data.html_url}`)
+        logPrEvent('created', data.number, ghsaId, data.html_url)
+
+        // Mark GHSA as fixed in tracker.
+        // eslint-disable-next-line no-await-in-loop
+        await markGhsaFixed(cwd, ghsaId, data.number, branch)
 
         if (autopilot) {
           logger.indent()
@@ -488,6 +599,20 @@ export async function coanaFix(
         `Unexpected condition: Push failed for ${ghsaId}, skipping PR creation.`,
       )
       debugDir(e)
+      // Clean up remote branch if it exists.
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        const remoteBranchExists = await gitRemoteBranchExists(branch, cwd)
+        if (remoteBranchExists) {
+          // eslint-disable-next-line no-await-in-loop
+          await gitDeleteRemoteBranch(branch, cwd)
+          debug(`pr: deleted orphaned remote branch ${branch} after exception`)
+        }
+      } catch (cleanupError) {
+        debug(`pr: failed to delete remote branch ${branch} during exception cleanup`)
+        debugDir(cleanupError)
+      }
+      // Clean up local state.
       // eslint-disable-next-line no-await-in-loop
       await gitResetAndClean(fixEnv.baseBranch, cwd)
       // eslint-disable-next-line no-await-in-loop
@@ -495,7 +620,9 @@ export async function coanaFix(
     }
 
     count += 1
-    debug(`increment: count ${count}/${Math.min(adjustedLimit, ids.length)}`)
+    debug(
+      `increment: count ${count}/${Math.min(adjustedLimit, unprocessedIds.length)}`,
+    )
     if (count >= adjustedLimit) {
       break
     }
