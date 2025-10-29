@@ -88,7 +88,7 @@ jobs:
     timeout-minutes: 120
     strategy:
       fail-fast: false
-      max-parallel: 6
+      max-parallel: 8
       matrix:
         include:
           # Linux builds (8-core runners for faster compilation).
@@ -99,6 +99,16 @@ jobs:
           - runner: ubuntu-latest-8-cores
             os: linux
             platform: linux
+            arch: arm64
+
+          # Alpine Linux builds - use musl binaries from unofficial-builds.nodejs.org.
+          - runner: ubuntu-latest-8-cores
+            os: linux
+            platform: alpine
+            arch: x64
+          - runner: ubuntu-latest-8-cores
+            os: linux
+            platform: alpine
             arch: arm64
 
           # macOS builds (8-core runners for faster compilation).
