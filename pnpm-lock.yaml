@@ -6,6 +6,12 @@ settings:
 
 catalogs:
   default:
+    '@babel/parser':
+      specifier: 7.28.4
+      version: 7.28.4
+    '@babel/traverse':
+      specifier: 7.28.4
+      version: 7.28.4
     '@socketsecurity/lib':
       specifier: 2.7.0
       version: 2.7.0
@@ -15,6 +21,9 @@ catalogs:
     esbuild:
       specifier: 0.24.0
       version: 0.24.0
+    magic-string:
+      specifier: 0.30.19
+      version: 0.30.19
     postject:
       specifier: 1.0.0-alpha.6
       version: 1.0.0-alpha.6
@@ -419,9 +428,18 @@ importers:
 
   packages/build-infra:
     dependencies:
+      '@babel/parser':
+        specifier: 'catalog:'
+        version: 7.28.4
+      '@babel/traverse':
+        specifier: 'catalog:'
+        version: 7.28.4
       '@socketsecurity/lib':
         specifier: 'catalog:'
         version: 2.7.0(typescript@5.9.3)
+      magic-string:
+        specifier: 'catalog:'
+        version: 0.30.19
 
   packages/cli:
     dependencies:
@@ -6348,7 +6366,7 @@ snapshots:
   '@babel/generator@7.28.3':
     dependencies:
       '@babel/parser': 7.28.4
-      '@babel/types': 7.28.4
+      '@babel/types': 7.28.5
       '@jridgewell/gen-mapping': 0.3.13
       '@jridgewell/trace-mapping': 0.3.31
       jsesc: 3.1.0
@@ -6402,7 +6420,7 @@ snapshots:
   '@babel/helper-member-expression-to-functions@7.27.1':
     dependencies:
       '@babel/traverse': 7.28.4
-      '@babel/types': 7.28.4
+      '@babel/types': 7.28.5
     transitivePeerDependencies:
       - supports-color
 
@@ -6424,7 +6442,7 @@ snapshots:
 
   '@babel/helper-optimise-call-expression@7.27.1':
     dependencies:
-      '@babel/types': 7.28.4
+      '@babel/types': 7.28.5
 
   '@babel/helper-plugin-utils@7.27.1': {}
 
@@ -6455,7 +6473,7 @@ snapshots:
   '@babel/helpers@7.28.4':
     dependencies:
       '@babel/template': 7.27.2
-      '@babel/types': 7.28.4
+      '@babel/types': 7.28.5
 
   '@babel/parser@7.28.4':
     dependencies:
@@ -6574,7 +6592,7 @@ snapshots:
     dependencies:
       '@babel/code-frame': 7.27.1
       '@babel/parser': 7.28.4
-      '@babel/types': 7.28.4
+      '@babel/types': 7.28.5
 
   '@babel/traverse@7.28.4':
     dependencies:
