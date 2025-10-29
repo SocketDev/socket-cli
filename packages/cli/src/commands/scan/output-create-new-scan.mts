@@ -6,6 +6,7 @@ import { logger } from '@socketsecurity/lib/logger'
 import { confirm } from '@socketsecurity/lib/prompts'
 
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
+import { mdHeader } from '../../utils/output/markdown.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
 import type { CResult, OutputKind } from '../../types.mts'
@@ -58,7 +59,7 @@ export async function outputCreateNewScan(
   }
 
   if (outputKind === 'markdown') {
-    logger.log('# Create New Scan')
+    logger.log(mdHeader('Create New Scan'))
     logger.log('')
     if (result.data.id) {
       logger.log(
