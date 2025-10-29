@@ -8,6 +8,8 @@ import { fileURLToPath } from 'node:url'
 
 import { build } from 'esbuild'
 
+import { unicodeTransformPlugin } from '@socketsecurity/build-infra/lib/esbuild-plugin-unicode-transform'
+
 import nodeVersionConfig from '../node-version.json' with { type: 'json' }
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -28,8 +30,10 @@ const config = {
   minify: true,
   outfile: path.join(rootPath, 'dist', 'bootstrap-npm.js'),
   platform: 'node',
+  plugins: [unicodeTransformPlugin()],
   target: 'node18',
   treeShaking: true,
+  write: false, // Plugin needs to transform output.
 }
 
 // Run build if invoked directly.

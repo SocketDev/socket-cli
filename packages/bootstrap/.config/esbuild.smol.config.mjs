@@ -8,6 +8,8 @@ import { fileURLToPath } from 'node:url'
 
 import { build } from 'esbuild'
 
+import { unicodeTransformPlugin } from '@socketsecurity/build-infra/lib/esbuild-plugin-unicode-transform'
+
 import nodeVersionConfig from '../node-version.json' with { type: 'json' }
 
 import { smolTransformPlugin } from './esbuild-plugin-smol-transform.mjs'
@@ -30,7 +32,7 @@ const config = {
   minify: true,
   outfile: path.join(rootPath, 'dist', 'bootstrap-smol.js'),
   platform: 'node',
-  plugins: [smolTransformPlugin()],
+  plugins: [unicodeTransformPlugin(), smolTransformPlugin()],
   target: 'node24',
   treeShaking: true,
   write: false, // Plugin needs to transform output.
