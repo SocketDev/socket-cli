@@ -74,7 +74,9 @@ export async function outputPatchInfoResult(
           logger.log(`\n${vuln.description}`)
         }
         if (vuln.patchExplanation) {
-          logger.log(`\n${mdKeyValue('Patch Explanation', vuln.patchExplanation)}`)
+          logger.log(
+            `\n${mdKeyValue('Patch Explanation', vuln.patchExplanation)}`,
+          )
         }
         logger.log('')
       }

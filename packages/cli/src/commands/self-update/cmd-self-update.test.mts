@@ -71,10 +71,7 @@ import {
 
 import { getIpcStubPath } from '@socketsecurity/lib/ipc'
 
-import {
-  canSelfUpdate,
-  isSeaBinary,
-} from '../../utils/executable/detect.mjs'
+import { isSeaBinary } from '../../utils/executable/detect.mjs'
 import { clearQuarantine, ensureExecutable } from '../../utils/process/os.mjs'
 import { handleSelfUpdate } from './handle-self-update.mts'
 

@@ -288,7 +288,10 @@ async function run(
 
   // Validate severity value if provided.
   const validSeverities = ['info', 'low', 'moderate', 'high', 'critical']
-  if (reachMinSeverity && !validSeverities.includes(reachMinSeverity.toLowerCase())) {
+  if (
+    reachMinSeverity &&
+    !validSeverities.includes(reachMinSeverity.toLowerCase())
+  ) {
     throw new Error(
       `Invalid severity: "${reachMinSeverity}". Valid values are: ${joinAnd(validSeverities)}`,
     )

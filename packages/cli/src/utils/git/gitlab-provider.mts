@@ -138,13 +138,7 @@ export class GitLabProvider implements PrProvider {
   }
 
   async listPrs(options: ListPrsOptions): Promise<PrMatch[]> {
-    const {
-      author,
-      ghsaId,
-      owner,
-      repo,
-      states: statesValue = 'all',
-    } = options
+    const { author, ghsaId, owner, repo, states: statesValue = 'all' } = options
     const checkAuthor = isNonEmptyString(author)
     const matches: PrMatch[] = []
     const projectId = `${owner}/${repo}`
@@ -214,9 +208,7 @@ export class GitLabProvider implements PrProvider {
       // GitLab requires project ID to delete a branch.
       // Since we don't have it in this method, we can't delete.
       // This is a limitation of the current interface design.
-      debug(
-        `mr: cannot delete branch ${branch} - need project ID in interface`,
-      )
+      debug(`mr: cannot delete branch ${branch} - need project ID in interface`)
       return false
     } catch (e) {
       debug(formatErrorWithDetail(`mr: failed to delete branch ${branch}`, e))
@@ -251,9 +243,7 @@ export class GitLabProvider implements PrProvider {
 /**
  * Maps GitLab merge request state to common state.
  */
-function mapGitLabState(
-  state: string,
-): 'open' | 'closed' | 'merged' {
+function mapGitLabState(state: string): 'open' | 'closed' | 'merged' {
   if (state === 'opened') {
     return 'open'
   }
@@ -266,9 +256,7 @@ function mapGitLabState(
 /**
  * Maps GitLab merge request state to uppercase common state.
  */
-function mapGitLabStateToUpper(
-  state: string,
-): 'OPEN' | 'CLOSED' | 'MERGED' {
+function mapGitLabStateToUpper(state: string): 'OPEN' | 'CLOSED' | 'MERGED' {
   if (state === 'opened') {
     return 'OPEN'
   }
@@ -281,9 +269,7 @@ function mapGitLabStateToUpper(
 /**
  * Maps common state to GitLab state.
  */
-function mapStateToGitLab(
-  state: string,
-): 'opened' | 'closed' | 'merged' {
+function mapStateToGitLab(state: string): 'opened' | 'closed' | 'merged' {
   const lower = state.toLowerCase()
   if (lower === 'open') {
     return 'opened'
@@ -297,9 +283,7 @@ function mapStateToGitLab(
 /**
  * Maps GitLab merge_status to common merge state status.
  */
-function mapGitLabMergeStatus(
-  status: string,
-): MergeStateStatus {
+function mapGitLabMergeStatus(status: string): MergeStateStatus {
   // GitLab merge_status values:
   // - can_be_merged: clean, no conflicts
   // - cannot_be_merged: has conflicts

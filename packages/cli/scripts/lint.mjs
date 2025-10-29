@@ -136,7 +136,10 @@ function filterLintableFiles(files) {
     }
 
     // Filter out fixture files (third-party test fixtures should not be linted).
-    if (file.includes('/test/fixtures/') || file.includes('/test\\fixtures\\')) {
+    if (
+      file.includes('/test/fixtures/') ||
+      file.includes('/test\\fixtures\\')
+    ) {
       return false
     }
 
