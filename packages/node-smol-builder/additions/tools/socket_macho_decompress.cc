@@ -3,15 +3,16 @@
 // Socket Mach-O Decompressor - Runtime decompression with caching.
 // Decompresses binaries created by socket_macho_compress and executes them.
 //
-// Caching Strategy (follows npm/cacache pattern):
-//   Reference: https://github.com/npm/cacache
-//   Reference: https://www.npmjs.com/package/cacache
+// Caching Strategy (follows npm/npx/socket-lib pattern):
+//   Reference: https://github.com/npm/cli/blob/v11.6.2/workspaces/libnpmexec/lib/index.js#L233-L244
+//   Reference: @socketsecurity/lib/src/dlx.ts generateCacheKey()
 //
-//   - Cache key (directory name): SHA-256 of compressed file
-//     (npm uses SHA-256 for index keys via entry-index.js hashKey())
-//   - Content verification: SHA-512 of decompressed binary
-//     (npm uses SHA-512 for content hashes via put.js algorithms: ['sha512'])
-//   - First run: Decompress to ~/.socket/_dlx/<sha256>/node
+//   - Cache key (directory name): First 16 chars of SHA-512 hash of compressed file
+//     (matches npm/npx: SHA-512 truncated to 16 chars for shorter paths)
+//     (matches socket-lib: generateCacheKey() uses sha512().substring(0,16))
+//   - Content verification: Full SHA-512 of decompressed binary
+//     (npm uses SHA-512 for content hashes via cacache put.js algorithms: ['sha512'])
+//   - First run: Decompress to ~/.socket/_dlx/<sha512-16>/node
 //   - Subsequent runs: Execute cached binary directly (zero overhead)
 //
 // Usage:
@@ -66,14 +67,18 @@ std::string GetHomeDirectory() {
   return "";
 }
 
-// Calculate SHA-256 of data (for cache keys).
-std::string CalculateSHA256(const std::vector<uint8_t>& data) {
-  unsigned char hash[CC_SHA256_DIGEST_LENGTH];
-  CC_SHA256(data.data(), static_cast<CC_LONG>(data.size()), hash);
+// Calculate first 16 chars of SHA-512 hash (for cache keys, matching socket-lib).
+// This matches npm/npx behavior and socket-lib's generateCacheKey() function.
+// Reference: @socketsecurity/lib/src/dlx.ts line 36
+// Implementation: createHash('sha512').update(spec).digest('hex').substring(0, 16)
+std::string CalculateCacheKey(const std::vector<uint8_t>& data) {
+  unsigned char hash[CC_SHA512_DIGEST_LENGTH];
+  CC_SHA512(data.data(), static_cast<CC_LONG>(data.size()), hash);
 
   std::ostringstream ss;
   ss << std::hex << std::setfill('0');
-  for (int i = 0; i < CC_SHA256_DIGEST_LENGTH; ++i) {
+  // Only output first 8 bytes (16 hex chars) to match socket-lib.
+  for (int i = 0; i < 8; ++i) {
     ss << std::setw(2) << static_cast<unsigned>(hash[i]);
   }
 
@@ -94,30 +99,31 @@ std::string CalculateSHA512(const std::vector<uint8_t>& data) {
   return ss.str();
 }
 
-// Calculate SHA-256 of a file (for cache keys).
-std::string CalculateFileSHA256(const std::string& path) {
+// Calculate first 16 chars of SHA-512 hash of a file (for cache keys, matching socket-lib).
+std::string CalculateFileCacheKey(const std::string& path) {
   std::ifstream file(path, std::ios::binary);
   if (!file) {
     return "";
   }
 
-  CC_SHA256_CTX ctx;
-  CC_SHA256_Init(&ctx);
+  CC_SHA512_CTX ctx;
+  CC_SHA512_Init(&ctx);
 
   char buffer[8192];
   while (file.read(buffer, sizeof(buffer))) {
-    CC_SHA256_Update(&ctx, buffer, file.gcount());
+    CC_SHA512_Update(&ctx, buffer, file.gcount());
   }
   if (file.gcount() > 0) {
-    CC_SHA256_Update(&ctx, buffer, file.gcount());
+    CC_SHA512_Update(&ctx, buffer, file.gcount());
   }
 
-  unsigned char hash[CC_SHA256_DIGEST_LENGTH];
-  CC_SHA256_Final(hash, &ctx);
+  unsigned char hash[CC_SHA512_DIGEST_LENGTH];
+  CC_SHA512_Final(hash, &ctx);
 
   std::ostringstream ss;
   ss << std::hex << std::setfill('0');
-  for (int i = 0; i < CC_SHA256_DIGEST_LENGTH; ++i) {
+  // Only output first 8 bytes (16 hex chars) to match socket-lib.
+  for (int i = 0; i < 8; ++i) {
     ss << std::setw(2) << static_cast<unsigned>(hash[i]);
   }
 
@@ -232,10 +238,10 @@ int DecompressAndExecute(const std::string& compressed_path, int argc, char* arg
     return 1;
   }
 
-  // Calculate SHA-256 of compressed file.
-  printf("Calculating cache key (SHA-256)...\n");
-  std::string sha256 = CalculateSHA256(compressed_data);
-  printf("  Cache key: %s\n\n", sha256.c_str());
+  // Calculate cache key (first 16 chars of SHA-512, matching socket-lib).
+  printf("Calculating cache key (SHA-512 truncated to 16 chars)...\n");
+  std::string cacheKey = CalculateCacheKey(compressed_data);
+  printf("  Cache key: %s\n\n", cacheKey.c_str());
 
   // Build cache path.
   std::string home = GetHomeDirectory();
@@ -244,7 +250,7 @@ int DecompressAndExecute(const std::string& compressed_path, int argc, char* arg
     return 1;
   }
 
-  std::string cache_dir = home + "/.socket/_dlx/" + sha256;
+  std::string cache_dir = home + "/.socket/_dlx/" + cacheKey;
   std::string cached_binary = cache_dir + "/node";
   std::string metadata_file = cache_dir + "/.dlx-metadata.json";
 
@@ -413,7 +419,7 @@ int DecompressAndExecute(const std::string& compressed_path, int argc, char* arg
   metadata << "{\n";
   metadata << "  \"timestamp\": " << time(nullptr) << ",\n";
   metadata << "  \"compressed_path\": \"" << compressed_path << "\",\n";
-  metadata << "  \"compressed_sha256\": \"" << sha256 << "\",\n";
+  metadata << "  \"cache_key\": \"" << cacheKey << "\",\n";
   metadata << "  \"checksum\": \"" << decompressed_sha512 << "\",\n";
   metadata << "  \"checksum_algorithm\": \"sha512\",\n";
   metadata << "  \"original_size\": " << header->original_size << ",\n";
