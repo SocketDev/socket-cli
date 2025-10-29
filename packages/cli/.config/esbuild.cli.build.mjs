@@ -110,7 +110,14 @@ const config = {
   // With platform: 'node', esbuild automatically externalizes all Node.js
   // built-ins. The explicit external array with builtinModules is redundant
   // (but doesn't hurt as extra safety).
-  external: [],
+  external: [
+    'node-gyp', // Required for require.resolve('node-gyp/package.json')
+  ],
+
+  // Suppress warnings for intentional CommonJS compatibility code.
+  logOverride: {
+    'commonjs-variable-in-esm': 'silent',
+  },
 
   // Add shebang.
   banner: {
