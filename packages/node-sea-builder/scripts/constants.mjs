@@ -11,7 +11,7 @@ const { versionSemver: NODE_VERSION } = nodeVersionConfig
 // Environment variables (can override defaults).
 const ENV = {
   SOCKET_CLI_SEA_NODE_VERSION: process.env.SOCKET_CLI_SEA_NODE_VERSION || NODE_VERSION,
-  SOCKET_NODE_DOWNLOAD_URL: process.env.SOCKET_NODE_DOWNLOAD_URL,
+  SOCKET_NODE_DOWNLOAD_URL: process.env.SOCKET_NODE_DOWNLOAD_URL || 'https://nodejs.org/download/release',
 }
 
 export default {

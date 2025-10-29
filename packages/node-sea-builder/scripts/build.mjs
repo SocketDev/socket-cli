@@ -183,8 +183,7 @@ async function downloadNodeBinary(version, platform, arch) {
   // Alpine uses unofficial musl builds from unofficial-builds.nodejs.org.
   const baseUrl = isAlpine
     ? 'https://unofficial-builds.nodejs.org/download/release'
-    : constants.ENV.SOCKET_NODE_DOWNLOAD_URL ||
-      'https://nodejs.org/download/release'
+    : constants.ENV.SOCKET_NODE_DOWNLOAD_URL
 
   const archMap = {
     x64: 'x64',
