@@ -11,6 +11,8 @@ import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { unicodeTransformPlugin } from '@socketsecurity/build-infra/lib/esbuild-plugin-unicode-transform'
+
 import { getLocalPackageAliases } from '../scripts/utils/get-local-package-aliases.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -133,6 +135,9 @@ const config = {
   // Keep names for better stack traces.
   keepNames: true,
 
+  // Plugin needs to transform output.
+  write: false,
+
   // Define environment variables and import.meta.
   define: {
     'process.env.NODE_ENV': '"production"',
@@ -173,6 +178,7 @@ const config = {
 
   // Handle special cases with plugins.
   plugins: [
+    unicodeTransformPlugin(),
     {
       name: 'resolve-socket-packages',
       setup(build) {

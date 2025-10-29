@@ -5,8 +5,6 @@
  * for smol builds.
  */
 
-import { transformUnicodePropertyEscapes } from '@socketsecurity/build-infra/lib/unicode-property-escape-transform'
-
 /**
  * Create smol transformation plugin.
  * @returns {import('esbuild').Plugin}
@@ -118,10 +116,6 @@ export function smolTransformPlugin() {
               )
             }
           }
-
-          // Transform Unicode property escapes for --with-intl=none compatibility.
-          // This is CRITICAL for smol builds which disable ICU to save 6-8MB.
-          content = transformUnicodePropertyEscapes(content)
 
           // Update the output content.
           output.contents = Buffer.from(content, 'utf8')
