@@ -8,6 +8,7 @@
  * The compressed file is decompressed at runtime by dist/index.js.
  */
 
+import crypto from 'node:crypto'
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { brotliCompressSync } from 'node:zlib'
@@ -48,5 +49,13 @@ const compressionRatio = ((1 - compressedSize / originalSize) * 100).toFixed(1)
 logger.success(
   `Compressed: ${(originalSize / 1024 / 1024).toFixed(2)} MB → ${(compressedSize / 1024 / 1024).toFixed(2)} MB (${compressionRatio}% reduction)`,
 )
+
+// Generate SHA256 checksum for integrity validation.
+const sha256 = crypto.createHash('sha256').update(compressed).digest('hex')
+const checksumPath = path.join(distPath, 'cli.js.bz.sha256')
+writeFileSync(checksumPath, `${sha256}  cli.js.bz\n`)
+
+logger.success(`SHA256: ${sha256}`)
+logger.log(`Checksum written to: ${path.relative(rootPath, checksumPath)}`)
 
 logger.log('')
