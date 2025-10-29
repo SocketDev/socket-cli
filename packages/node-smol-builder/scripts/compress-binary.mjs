@@ -174,8 +174,11 @@ async function compressBinary(toolPath, inputPath, outputPath, quality, config) 
   logger.log(`  Quality: ${quality || config.defaultQuality}`)
   logger.log('')
 
+  // Create temporary compressed data file.
+  const compressedDataPath = `${outputPath}.data`
+
   // Build command arguments.
-  const args = [inputPath, outputPath]
+  const args = [inputPath, compressedDataPath]
   if (quality) {
     args.push(`--quality=${quality}`)
   }
@@ -189,21 +192,60 @@ async function compressBinary(toolPath, inputPath, outputPath, quality, config) 
     throw new Error(`Compression failed (exit code: ${result.code})`)
   }
 
-  // Verify output file was created.
-  if (!existsSync(outputPath)) {
-    throw new Error(`Output file was not created: ${outputPath}`)
+  // Verify compressed data file was created.
+  if (!existsSync(compressedDataPath)) {
+    throw new Error(`Compressed data file was not created: ${compressedDataPath}`)
   }
 
-  // Get output file size.
-  const outputSizeMB = await getFileSizeMB(outputPath)
-  const reduction = ((inputSizeMB - outputSizeMB) / inputSizeMB) * 100
+  // Get compressed data size.
+  const compressedSizeMB = await getFileSizeMB(compressedDataPath)
 
   logger.log('')
   logger.log(`✓ Compression complete!`)
   logger.log(`  Original: ${inputSizeMB.toFixed(2)} MB`)
-  logger.log(`  Compressed: ${outputSizeMB.toFixed(2)} MB`)
-  logger.log(`  Reduction: ${reduction.toFixed(1)}%`)
-  logger.log(`  Saved: ${(inputSizeMB - outputSizeMB).toFixed(2)} MB`)
+  logger.log(`  Compressed data: ${compressedSizeMB.toFixed(2)} MB`)
+  logger.log(`  Reduction: ${(((inputSizeMB - compressedSizeMB) / inputSizeMB) * 100).toFixed(1)}%`)
+  logger.log(`  Saved: ${(inputSizeMB - compressedSizeMB).toFixed(2)} MB`)
+  logger.log('')
+
+  // Combine decompressor stub with compressed data to create self-extracting binary.
+  logger.log('Creating self-extracting binary...')
+
+  const decompressorPath = path.join(TOOLS_DIR, config.toolName.replace('_compress', '_decompress'))
+
+  if (!existsSync(decompressorPath)) {
+    throw new Error(`Decompressor not found: ${decompressorPath}`)
+  }
+
+  // Get decompressor size.
+  const decompressorSizeMB = await getFileSizeMB(decompressorPath)
+  logger.log(`  Decompressor stub: ${decompressorSizeMB.toFixed(2)} MB`)
+  logger.log(`  Compressed data: ${compressedSizeMB.toFixed(2)} MB`)
+
+  // Combine: decompressor + compressed_data → self-extracting binary.
+  // Read both files.
+  const decompressor = await fs.readFile(decompressorPath)
+  const compressedData = await fs.readFile(compressedDataPath)
+
+  // Concatenate: stub + data.
+  const combined = Buffer.concat([decompressor, compressedData])
+
+  // Write self-extracting binary.
+  await fs.writeFile(outputPath, combined, { mode: 0o755 })
+
+  // Clean up temporary compressed data file.
+  await fs.unlink(compressedDataPath)
+
+  // Get final output size.
+  const outputSizeMB = await getFileSizeMB(outputPath)
+  const reduction = ((inputSizeMB - outputSizeMB) / inputSizeMB) * 100
+
+  logger.log(`  Final binary: ${outputSizeMB.toFixed(2)} MB`)
+  logger.log('')
+  logger.log(`✓ Self-extracting binary created!`)
+  logger.log(`  Total size: ${outputSizeMB.toFixed(2)} MB`)
+  logger.log(`  Total reduction: ${reduction.toFixed(1)}%`)
+  logger.log(`  Total saved: ${(inputSizeMB - outputSizeMB).toFixed(2)} MB`)
 }
 
 /**
