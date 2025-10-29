@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [2.0.0](https://github.com/SocketDev/socket-cli/releases/tag/v2.0.0) - 2025-10-29
 
+### Added
+- GitLab merge request support for `socket fix`
+- Persistent GHSA tracking to avoid duplicate fixes
+- Markdown output support for `socket fix` and `socket optimize`
+
 ### Changed
 - **BREAKING**: CLI now ships as single executable binary requiring no external Node.js installation
 
