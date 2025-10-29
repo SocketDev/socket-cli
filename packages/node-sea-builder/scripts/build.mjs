@@ -492,11 +492,36 @@ async function buildTarget(target, options) {
     path.join(__dirname, '../../..', 'packages', 'cli', 'dist', 'cli.js'),
   )
 
-  // Verify CLI exists.
+  // Auto-build CLI if missing.
   if (!existsSync(cliPath)) {
-    throw new Error(
-      `CLI not found at ${cliPath}. Run 'pnpm run build:cli' first.`,
+    logger.log('')
+    logger.log(`${colors.blue('ℹ')} CLI not found, building @socketsecurity/cli package...`)
+    logger.log('')
+
+    const result = await spawn(
+      'pnpm',
+      ['--filter', '@socketsecurity/cli', 'run', 'build'],
+      {
+        cwd: path.join(__dirname, '../../..'),
+        shell: WIN32,
+        stdio: 'inherit',
+      }
     )
+
+    if (result.code !== 0) {
+      throw new Error(
+        `Failed to build @socketsecurity/cli. Exit code: ${result.code}`,
+      )
+    }
+
+    // Verify CLI was built.
+    if (!existsSync(cliPath)) {
+      throw new Error(
+        `CLI build succeeded but dist file not found at ${cliPath}`,
+      )
+    }
+
+    logger.log('')
   }
 
   logger.log(`Using CLI from: ${cliPath}`)
