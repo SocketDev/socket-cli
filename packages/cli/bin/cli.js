@@ -8,6 +8,6 @@ void (async () => {
   const rootPath = path.join(__dirname, '..')
   Module.enableCompileCache?.(path.join(rootPath, '.cache'))
 
-  // Execute the CLI bundle.
-  require(path.join(rootPath, 'dist/cli.js'))
+  // Execute the CLI bundle (decompresses cli.js.bz).
+  require(path.join(rootPath, 'dist/index.js'))
 })()
