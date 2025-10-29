@@ -129,22 +129,35 @@ jobs:
         uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
         with:
           name: build-deps-smol-${{ github.sha }}
-          path: packages/
+          path: .
 
       - name: Verify bootstrap artifacts
         shell: bash
         run: |
           echo "=== Verifying downloaded bootstrap artifacts ==="
-          ls -lh packages/bootstrap/dist/ || echo "⚠️  bootstrap/dist/ not found"
-          ls -lh packages/socket/dist/ || echo "⚠️  socket/dist/ not found"
+          echo "Directory structure after download:"
+          find bootstrap socket -type f -name "*.js" 2>/dev/null || echo "No JS files found in bootstrap/socket at root"
+          find packages/bootstrap packages/socket -type f -name "*.js" 2>/dev/null || echo "No JS files found in packages/"
 
-          if [ ! -f packages/bootstrap/dist/bootstrap-smol.js ]; then
-            echo "❌ ERROR: bootstrap-smol.js not found!"
-            echo "This file is required by the smol builder."
+          echo ""
+          echo "Looking for bootstrap-smol.js:"
+          ls -lh bootstrap/dist/bootstrap-smol.js 2>/dev/null && echo "Found at: bootstrap/dist/bootstrap-smol.js" || echo "Not at: bootstrap/dist/"
+          ls -lh packages/bootstrap/dist/bootstrap-smol.js 2>/dev/null && echo "Found at: packages/bootstrap/dist/bootstrap-smol.js" || echo "Not at: packages/bootstrap/dist/"
+
+          # Check both possible locations
+          if [ -f bootstrap/dist/bootstrap-smol.js ]; then
+            echo "✓ Bootstrap found at root level, moving to packages/"
+            mkdir -p packages/bootstrap/dist packages/socket/dist
+            mv bootstrap/dist/* packages/bootstrap/dist/ 2>/dev/null || true
+            mv socket/dist/* packages/socket/dist/ 2>/dev/null || true
+          elif [ -f packages/bootstrap/dist/bootstrap-smol.js ]; then
+            echo "✓ Bootstrap already in correct location"
+          else
+            echo "❌ ERROR: bootstrap-smol.js not found in any expected location!"
             exit 1
           fi
 
-          echo "✓ Bootstrap artifacts verified"
+          echo "✓ Bootstrap artifacts verified and in correct location"
 
       - name: Setup Node.js
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
