@@ -193,28 +193,28 @@ async function runLintOnFiles(files, options = {}) {
       continue
     }
 
-    const result = await runCommandQuiet('pnpm', args)
-
-    if (result.code !== 0) {
+    try {
+      await spawn('pnpm', args, { shell: WIN32 })
+    } catch (e) {
       // When fixing, non-zero exit codes are normal if fixes were applied.
-      if (!fix || (result.stderr && result.stderr.trim().length > 0)) {
+      if (!fix || (e.stderr && e.stderr.toString().trim().length > 0)) {
         if (!quiet) {
           logger.error('Linting failed')
         }
-        if (result.stderr) {
-          logger.error(result.stderr)
+        if (e.stderr) {
+          logger.error(e.stderr.toString())
         }
-        if (result.stdout && !fix) {
-          logger.log(result.stdout)
+        if (e.stdout && !fix) {
+          logger.log(e.stdout.toString())
         }
-        return result.code
+        return e.code || 1
       }
     }
   }
 
   if (!quiet) {
     logger.clearLine().done('Linting passed')
-    // Add newline after message (use error to write to same stream)
+    // Add newline after message (use error to write to same stream).
     logger.error('')
   }
 
@@ -266,21 +266,21 @@ async function runLintOnAll(options = {}) {
   ]
 
   for (const { args } of linters) {
-    const result = await runCommandQuiet('pnpm', args)
-
-    if (result.code !== 0) {
+    try {
+      await spawn('pnpm', args, { shell: WIN32 })
+    } catch (e) {
       // When fixing, non-zero exit codes are normal if fixes were applied.
-      if (!fix || (result.stderr && result.stderr.trim().length > 0)) {
+      if (!fix || (e.stderr && e.stderr.toString().trim().length > 0)) {
         if (!quiet) {
           logger.error('Linting failed')
         }
-        if (result.stderr) {
-          logger.error(result.stderr)
+        if (e.stderr) {
+          logger.error(e.stderr.toString())
         }
-        if (result.stdout && !fix) {
-          logger.log(result.stdout)
+        if (e.stdout && !fix) {
+          logger.log(e.stdout.toString())
         }
-        return result.code
+        return e.code || 1
       }
     }
   }
@@ -454,7 +454,7 @@ async function main() {
       }
     }
 
-    if (code !== 0) {
+    if (exitCode !== 0) {
       if (!quiet) {
         logger.error('')
         logger.log('Lint failed')
