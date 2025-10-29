@@ -143,6 +143,18 @@ async function getBuildTargets() {
       nodeVersion: defaultNodeVersion,
       outputName: 'socket-linux-arm64',
     },
+    {
+      platform: 'alpine',
+      arch: 'x64',
+      nodeVersion: defaultNodeVersion,
+      outputName: 'socket-alpine-x64',
+    },
+    {
+      platform: 'alpine',
+      arch: 'arm64',
+      nodeVersion: defaultNodeVersion,
+      outputName: 'socket-alpine-arm64',
+    },
   ]
 }
 
@@ -151,6 +163,7 @@ async function getBuildTargets() {
  */
 async function downloadNodeBinary(version, platform, arch) {
   const isPlatWin = platform === 'win32'
+  const isAlpine = platform === 'alpine'
   const nodeDir = normalizePath(
     path.join(os.homedir(), '.socket', 'node-binaries'),
   )
@@ -167,9 +180,12 @@ async function downloadNodeBinary(version, platform, arch) {
   }
 
   // Construct download URL.
-  const baseUrl =
-    constants.ENV.SOCKET_NODE_DOWNLOAD_URL ||
-    'https://nodejs.org/download/release'
+  // Alpine uses unofficial musl builds from unofficial-builds.nodejs.org.
+  const baseUrl = isAlpine
+    ? 'https://unofficial-builds.nodejs.org/download/release'
+    : constants.ENV.SOCKET_NODE_DOWNLOAD_URL ||
+      'https://nodejs.org/download/release'
+
   const archMap = {
     x64: 'x64',
     arm64: 'arm64',
@@ -178,12 +194,15 @@ async function downloadNodeBinary(version, platform, arch) {
   const platformMap = {
     darwin: 'darwin',
     linux: 'linux',
+    alpine: 'linux',
     win32: 'win',
   }
 
   const nodePlatform = platformMap[platform]
   const nodeArch = archMap[arch]
-  const tarName = `node-v${version}-${nodePlatform}-${nodeArch}`
+  // Alpine uses musl suffix in the tarball name.
+  const muslSuffix = isAlpine ? '-musl' : ''
+  const tarName = `node-v${version}-${nodePlatform}-${nodeArch}${muslSuffix}`
   const extension = isPlatWin ? '.zip' : '.tar.gz'
   const downloadUrl = `${baseUrl}/v${version}/${tarName}${extension}`
 

@@ -88,7 +88,7 @@ jobs:
     timeout-minutes: 60
     strategy:
       fail-fast: false
-      max-parallel: 6
+      max-parallel: 8
       matrix:
         include:
           # Linux builds - use x64 runner to build both x64 and arm64.
@@ -99,6 +99,16 @@ jobs:
           - runner: ubuntu-latest
             os: linux
             platform: linux
+            arch: arm64
+
+          # Alpine Linux builds - use musl binaries from unofficial-builds.nodejs.org.
+          - runner: ubuntu-latest
+            os: linux
+            platform: alpine
+            arch: x64
+          - runner: ubuntu-latest
+            os: linux
+            platform: alpine
             arch: arm64
 
           # macOS builds - use arm64 runner to build both x64 and arm64.
