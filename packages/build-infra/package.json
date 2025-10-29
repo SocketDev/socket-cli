@@ -17,7 +17,8 @@
     "./lib/preflight-checks": "./lib/preflight-checks.mjs",
     "./lib/rust-builder": "./lib/rust-builder.mjs",
     "./lib/script-runner": "./lib/script-runner.mjs",
-    "./lib/tool-installer": "./lib/tool-installer.mjs"
+    "./lib/tool-installer": "./lib/tool-installer.mjs",
+    "./lib/unicode-property-escape-transform": "./lib/unicode-property-escape-transform.mjs"
   },
   "dependencies": {
     "@socketsecurity/lib": "catalog:"
