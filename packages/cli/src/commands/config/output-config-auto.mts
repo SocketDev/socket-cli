@@ -3,6 +3,7 @@ import { select } from '@socketsecurity/lib/prompts'
 
 import { isConfigFromFlag, updateConfigValue } from '../../utils/config.mts'
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
+import { mdHeader } from '../../utils/output/markdown.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
 import type { CResult, OutputKind } from '../../types.mts'
@@ -27,7 +28,7 @@ export async function outputConfigAuto(
   }
 
   if (outputKind === 'markdown') {
-    logger.log('# Auto discover config value')
+    logger.log(mdHeader('Auto discover config value'))
     logger.log('')
     logger.log(
       `Attempted to automatically discover the value for config key: "${key}"`,

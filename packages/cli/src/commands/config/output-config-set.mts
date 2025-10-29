@@ -1,6 +1,7 @@
 import { logger } from '@socketsecurity/lib/logger'
 
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
+import { mdHeader } from '../../utils/output/markdown.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
 import type { CResult, OutputKind } from '../../types.mts'
@@ -23,7 +24,7 @@ export async function outputConfigSet(
   }
 
   if (outputKind === 'markdown') {
-    logger.log('# Update config')
+    logger.log(mdHeader('Update config'))
     logger.log('')
     logger.log(result.message)
     if (result.data) {
