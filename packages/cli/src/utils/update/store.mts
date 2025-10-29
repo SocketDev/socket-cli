@@ -37,12 +37,12 @@ import path from 'node:path'
 
 import { readFileUtf8Sync } from '@socketsecurity/lib/fs'
 import { logger } from '@socketsecurity/lib/logger'
+import { processLock } from '@socketsecurity/lib/process-lock'
 
 import {
   UPDATE_STORE_DIR,
   UPDATE_STORE_FILE_NAME,
 } from '../../constants/paths.mts'
-import { processLock } from '../process/lock.mts'
 
 interface StoreRecord {
   timestampFetch: number
