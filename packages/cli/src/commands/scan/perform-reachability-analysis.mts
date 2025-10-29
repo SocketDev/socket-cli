@@ -23,6 +23,7 @@ export type ReachabilityOptions = {
   reachDisableAnalytics: boolean
   reachEcosystems: PURL_Type[]
   reachExcludePaths: string[]
+  reachMinSeverity: string
   reachSkipCache: boolean
 }
 
@@ -164,6 +165,9 @@ export async function performReachabilityAnalysis(
       : []),
     ...(reachabilityOptions.reachExcludePaths.length
       ? ['--exclude-dirs', ...reachabilityOptions.reachExcludePaths]
+      : []),
+    ...(reachabilityOptions.reachMinSeverity
+      ? ['--min-severity', reachabilityOptions.reachMinSeverity]
       : []),
     ...(reachabilityOptions.reachSkipCache ? ['--skip-cache-usage'] : []),
   ]

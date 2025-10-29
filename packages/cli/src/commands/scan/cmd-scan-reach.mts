@@ -123,6 +123,7 @@ async function run(
     reachAnalysisMemoryLimit,
     reachAnalysisTimeout,
     reachDisableAnalytics,
+    reachMinSeverity,
     reachSkipCache,
   } = cli.flags as unknown as {
     cwd: string
@@ -134,6 +135,7 @@ async function run(
     reachAnalysisTimeout: number
     reachAnalysisMemoryLimit: number
     reachDisableAnalytics: boolean
+    reachMinSeverity: string
     reachSkipCache: boolean
   }
 
@@ -153,6 +155,14 @@ async function run(
       )
     }
     reachEcosystems.push(ecosystem as PURL_Type)
+  }
+
+  // Validate severity value if provided.
+  const validSeverities = ['info', 'low', 'moderate', 'high', 'critical']
+  if (reachMinSeverity && !validSeverities.includes(reachMinSeverity.toLowerCase())) {
+    throw new Error(
+      `Invalid severity: "${reachMinSeverity}". Valid values are: ${joinAnd(validSeverities)}`,
+    )
   }
 
   const processCwd = process.cwd()
@@ -223,6 +233,7 @@ async function run(
       reachDisableAnalytics: Boolean(reachDisableAnalytics),
       reachEcosystems,
       reachExcludePaths,
+      reachMinSeverity,
       reachSkipCache: Boolean(reachSkipCache),
     },
     targets,
