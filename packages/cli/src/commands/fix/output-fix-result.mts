@@ -17,6 +17,19 @@ export async function outputFixResult(
     logger.log(serializeResultJson(result))
     return
   }
+
+  if (outputKind === 'markdown') {
+    if (!result.ok) {
+      logger.log(`# Fix Failed\n\n**Error**: ${result.message}`)
+      if (result.cause) {
+        logger.log(`\n**Cause**: ${result.cause}`)
+      }
+    } else {
+      logger.log('# Fix Completed\n\n✓ Finished!')
+    }
+    return
+  }
+
   if (!result.ok) {
     logger.fail(failMsgWithBadge(result.message, result.cause))
     return
