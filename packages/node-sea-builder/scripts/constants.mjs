@@ -5,7 +5,8 @@
 
 import nodeVersionConfig from '@socketsecurity/bootstrap/node-version.json' with { type: 'json' }
 
-const { version: NODE_VERSION } = nodeVersionConfig
+// Use versionSemver (without 'v' prefix) for URL construction.
+const { versionSemver: NODE_VERSION } = nodeVersionConfig
 
 // Environment variables (can override defaults).
 const ENV = {
