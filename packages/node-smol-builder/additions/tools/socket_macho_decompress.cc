@@ -11,7 +11,7 @@
 //     (npm uses SHA-256 for index keys via entry-index.js hashKey())
 //   - Content verification: SHA-512 of decompressed binary
 //     (npm uses SHA-512 for content hashes via put.js algorithms: ['sha512'])
-//   - First run: Decompress to ~/.socket/cache/dlx/<sha256>/node
+//   - First run: Decompress to ~/.socket/_dlx/<sha256>/node
 //   - Subsequent runs: Execute cached binary directly (zero overhead)
 //
 // Usage:
@@ -244,7 +244,7 @@ int DecompressAndExecute(const std::string& compressed_path, int argc, char* arg
     return 1;
   }
 
-  std::string cache_dir = home + "/.socket/cache/dlx/" + sha256;
+  std::string cache_dir = home + "/.socket/_dlx/" + sha256;
   std::string cached_binary = cache_dir + "/node";
   std::string metadata_file = cache_dir + "/.dlx-metadata.json";
 
@@ -461,7 +461,7 @@ int main(int argc, char* argv[]) {
     fprintf(stderr, "Usage: %s compressed_binary [args...]\n", argv[0]);
     fprintf(stderr, "\n");
     fprintf(stderr, "Decompresses and executes a binary created by socket_macho_compress.\n");
-    fprintf(stderr, "Uses ~/.socket/cache/dlx/ for caching (zero overhead on subsequent runs).\n");
+    fprintf(stderr, "Uses ~/.socket/_dlx/ for caching (zero overhead on subsequent runs).\n");
     fprintf(stderr, "\n");
     fprintf(stderr, "Example:\n");
     fprintf(stderr, "  %s ./node.compressed --version\n", argv[0]);
