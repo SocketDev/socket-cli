@@ -43,6 +43,7 @@ Thumbs.db
 # Build artifacts: build/ = gitignored (workspace + archive), dist/ = tracked (blessed releases).
 # Exceptions:
 #   - packages/cli/dist/ is Rollup output (ephemeral), gitignored by packages/cli/.gitignore
+#   - packages/cli-with-sentry/dist/ is esbuild output (ephemeral), gitignored by packages/cli-with-sentry/.gitignore
 #   - !/docs/build allows tracking docs/build/ (documentation directory, not build artifacts)
 #   - Note: New files in docs/build/ require `git add -f` due to **/build pattern
 
