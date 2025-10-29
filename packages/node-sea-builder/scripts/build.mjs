@@ -37,6 +37,7 @@ import { safeDelete } from '@socketsecurity/lib/fs'
 import { logger } from '@socketsecurity/lib/logger'
 import { normalizePath } from '@socketsecurity/lib/path'
 import { spawn } from '@socketsecurity/lib/spawn'
+import { fetchWithRetry } from '@socketsecurity/build-infra/lib/fetch-with-retry'
 import colors from 'yoctocolors-cjs'
 
 import {
@@ -60,12 +61,11 @@ const __dirname = path.dirname(url.fileURLToPath(import.meta.url))
  */
 async function getLatestNode24Version() {
   try {
-    const response = await fetch('https://nodejs.org/dist/index.json')
-    if (!response.ok) {
-      throw new Error(
-        `Failed to fetch Node.js releases: ${response.statusText}`,
-      )
-    }
+    const response = await fetchWithRetry('https://nodejs.org/dist/index.json', {}, {
+      retries: 3,
+      initialDelay: 1000,
+      maxDelay: 10_000,
+    })
 
     const releases = await response.json()
 
@@ -190,11 +190,12 @@ async function downloadNodeBinary(version, platform, arch) {
   logger.log(`Downloading Node.js ${version} for ${platformArch}...`)
   logger.log(`URL: ${downloadUrl}`)
 
-  // Download the archive.
-  const response = await fetch(downloadUrl)
-  if (!response.ok) {
-    throw new Error(`Failed to download Node.js: ${response.statusText}`)
-  }
+  // Download the archive with retry logic.
+  const response = await fetchWithRetry(downloadUrl, {}, {
+    retries: 3,
+    initialDelay: 2000,
+    maxDelay: 30_000,
+  })
 
   // Create temp directory.
   const tempDir = normalizePath(
@@ -493,10 +494,74 @@ async function buildTarget(target, options) {
     path.join(__dirname, '../../..', 'packages', 'cli', 'dist', 'cli.js.bz'),
   )
 
-  // Auto-build CLI if missing.
+  // Check if CLI needs to be built or validated.
+  const checksumPath = normalizePath(
+    path.join(__dirname, '../../..', 'packages', 'cli', 'dist', 'cli.js.bz.sha256'),
+  )
+
+  let needsBuild = false
+
   if (!existsSync(cliBzPath)) {
+    needsBuild = true
     logger.log('')
     logger.log(`${colors.blue('ℹ')} CLI not found, building @socketsecurity/cli package...`)
+  } else if (!existsSync(checksumPath)) {
+    needsBuild = true
+    logger.log('')
+    logger.log(`${colors.yellow('⚠')} CLI checksum not found, rebuilding @socketsecurity/cli package...`)
+  } else {
+    // Validate checksum.
+    try {
+      const checksumContent = (await fs.readFile(checksumPath, 'utf8')).trim()
+      const expectedHash = checksumContent.split(/\s+/)[0]
+      const cliData = await fs.readFile(cliBzPath)
+      const actualHash = crypto.createHash('sha256').update(cliData).digest('hex')
+
+      if (expectedHash !== actualHash) {
+        needsBuild = true
+        logger.log('')
+        logger.log(`${colors.yellow('⚠')} CLI checksum mismatch, rebuilding @socketsecurity/cli package...`)
+        logger.log(`  Expected: ${expectedHash}`)
+        logger.log(`  Actual:   ${actualHash}`)
+      } else {
+        // Check if source files are newer than the compressed artifact (freshness check).
+        const cliSrcDir = normalizePath(
+          path.join(__dirname, '../../..', 'packages', 'cli', 'src'),
+        )
+        const cliBzStat = await fs.stat(cliBzPath)
+
+        // Check if any source file is newer than the compressed artifact.
+        let hasNewerSources = false
+        try {
+          const srcFiles = await fs.readdir(cliSrcDir, { recursive: true })
+          for (const file of srcFiles) {
+            const filePath = path.join(cliSrcDir, file)
+            const stat = await fs.stat(filePath)
+
+            if (stat.isFile() && stat.mtime > cliBzStat.mtime) {
+              hasNewerSources = true
+              break
+            }
+          }
+        } catch {
+          // Ignore stat errors - validation succeeded so we're OK to continue.
+        }
+
+        if (hasNewerSources) {
+          needsBuild = true
+          logger.log('')
+          logger.log(`${colors.yellow('⚠')} CLI source files modified, rebuilding @socketsecurity/cli package...`)
+        }
+      }
+    } catch (e) {
+      needsBuild = true
+      logger.log('')
+      logger.log(`${colors.yellow('⚠')} CLI validation failed, rebuilding @socketsecurity/cli package...`)
+      logger.log(`  Error: ${e.message}`)
+    }
+  }
+
+  if (needsBuild) {
     logger.log('')
 
     const result = await spawn(
@@ -519,6 +584,13 @@ async function buildTarget(target, options) {
     if (!existsSync(cliBzPath)) {
       throw new Error(
         `CLI build succeeded but compressed file not found at ${cliBzPath}`,
+      )
+    }
+
+    // Verify checksum was created.
+    if (!existsSync(checksumPath)) {
+      throw new Error(
+        `CLI build succeeded but checksum file not found at ${checksumPath}`,
       )
     }
 
