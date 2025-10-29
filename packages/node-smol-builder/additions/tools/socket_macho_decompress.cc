@@ -226,22 +226,69 @@ bool WriteFile(const std::string& path, const void* data, size_t size) {
   return file.good();
 }
 
+// Extract spec string from self-extracting binary if embedded.
+// Format: "SOCKET_SPEC:package@version\n" appears after the decompressor stub.
+std::string ExtractEmbeddedSpec(const std::string& binary_path) {
+  std::ifstream file(binary_path, std::ios::binary);
+  if (!file) {
+    return "";
+  }
+
+  // Search for "SOCKET_SPEC:" marker in the binary.
+  std::string marker = "SOCKET_SPEC:";
+  std::string buffer;
+  buffer.resize(4096);
+
+  while (file.read(&buffer[0], buffer.size())) {
+    size_t pos = buffer.find(marker);
+    if (pos != std::string::npos) {
+      // Found marker, read until newline.
+      size_t start = pos + marker.length();
+      size_t end = buffer.find('\n', start);
+      if (end != std::string::npos) {
+        return buffer.substr(start, end - start);
+      }
+    }
+  }
+
+  return "";
+}
+
 // Decompress and execute binary.
 int DecompressAndExecute(const std::string& compressed_path, int argc, char* argv[]) {
   printf("Socket Mach-O Decompressor\n");
   printf("==========================\n\n");
 
-  // Read compressed binary.
+  // Try to extract embedded spec string (for socket-lib cache key).
+  std::string spec = ExtractEmbeddedSpec(compressed_path);
+  std::string cacheKey;
+
+  if (!spec.empty()) {
+    printf("Found embedded spec: %s\n", spec.c_str());
+    printf("Calculating cache key from spec (SHA-512 truncated to 16 chars)...\n");
+    std::vector<uint8_t> specBytes(spec.begin(), spec.end());
+    cacheKey = CalculateCacheKey(specBytes);
+    printf("  Cache key: %s\n\n", cacheKey.c_str());
+  } else {
+    // Fallback: use compressed file hash for cache key.
+    printf("No embedded spec found, using file hash for cache key\n");
+    printf("Reading compressed binary: %s\n", compressed_path.c_str());
+    std::vector<uint8_t> compressed_data = ReadFile(compressed_path);
+    if (compressed_data.empty()) {
+      return 1;
+    }
+
+    printf("Calculating cache key (SHA-512 truncated to 16 chars)...\n");
+    cacheKey = CalculateCacheKey(compressed_data);
+    printf("  Cache key: %s\n\n", cacheKey.c_str());
+  }
+
+  // Read compressed binary for decompression.
   printf("Reading compressed binary: %s\n", compressed_path.c_str());
   std::vector<uint8_t> compressed_data = ReadFile(compressed_path);
   if (compressed_data.empty()) {
     return 1;
   }
-
-  // Calculate cache key (first 16 chars of SHA-512, matching socket-lib).
-  printf("Calculating cache key (SHA-512 truncated to 16 chars)...\n");
-  std::string cacheKey = CalculateCacheKey(compressed_data);
-  printf("  Cache key: %s\n\n", cacheKey.c_str());
 
   // Build cache path.
   std::string home = GetHomeDirectory();

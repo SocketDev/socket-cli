@@ -79,25 +79,29 @@ function parseArgs() {
   const args = process.argv.slice(2)
 
   if (args.length < 2) {
-    logger.error('Usage: compress-binary.mjs <input> <output> [--quality=lzma|lzfse|xpress]')
+    logger.error('Usage: compress-binary.mjs <input> <output> [--quality=lzma|lzfse|xpress] [--spec=package@version]')
     logger.error('')
     logger.error('Examples:')
     logger.error('  node scripts/compress-binary.mjs ./node ./node.compressed')
     logger.error('  node scripts/compress-binary.mjs ./node ./node.compressed --quality=lzma')
+    logger.error('  node scripts/compress-binary.mjs ./node ./node.compressed --spec=@socketbin/node-smol-builder-darwin-arm64@0.0.0-24.10.0')
     process.exit(1)
   }
 
   const inputPath = path.resolve(args[0])
   const outputPath = path.resolve(args[1])
   let quality = null
+  let spec = null
 
   for (const arg of args.slice(2)) {
     if (arg.startsWith('--quality=')) {
       quality = arg.substring('--quality='.length)
+    } else if (arg.startsWith('--spec=')) {
+      spec = arg.substring('--spec='.length)
     }
   }
 
-  return { inputPath, outputPath, quality }
+  return { inputPath, outputPath, quality, spec }
 }
 
 /**
@@ -159,7 +163,7 @@ async function getFileSizeMB(filePath) {
 /**
  * Compress binary using platform-specific tool.
  */
-async function compressBinary(toolPath, inputPath, outputPath, quality, config) {
+async function compressBinary(toolPath, inputPath, outputPath, quality, spec, config) {
   // Validate input file exists.
   if (!existsSync(inputPath)) {
     throw new Error(`Input file not found: ${inputPath}`)
@@ -222,13 +226,22 @@ async function compressBinary(toolPath, inputPath, outputPath, quality, config) 
   logger.log(`  Decompressor stub: ${decompressorSizeMB.toFixed(2)} MB`)
   logger.log(`  Compressed data: ${compressedSizeMB.toFixed(2)} MB`)
 
-  // Combine: decompressor + compressed_data → self-extracting binary.
+  // Combine: decompressor + spec_header + compressed_data → self-extracting binary.
   // Read both files.
   const decompressor = await fs.readFile(decompressorPath)
   const compressedData = await fs.readFile(compressedDataPath)
 
-  // Concatenate: stub + data.
-  const combined = Buffer.concat([decompressor, compressedData])
+  // Create spec header if provided (for socket-lib cache key generation).
+  const specHeader = spec
+    ? Buffer.from(`SOCKET_SPEC:${spec}\n`, 'utf-8')
+    : Buffer.alloc(0)
+
+  if (spec) {
+    logger.log(`  Spec string: ${spec}`)
+  }
+
+  // Concatenate: stub + spec_header + data.
+  const combined = Buffer.concat([decompressor, specHeader, compressedData])
 
   // Write self-extracting binary.
   await fs.writeFile(outputPath, combined, { mode: 0o755 })
@@ -253,7 +266,7 @@ async function compressBinary(toolPath, inputPath, outputPath, quality, config) 
  */
 async function main() {
   try {
-    const { inputPath, outputPath, quality } = parseArgs()
+    const { inputPath, outputPath, quality, spec } = parseArgs()
     const config = getPlatformConfig()
 
     logger.log('Socket Binary Compression')
@@ -265,7 +278,7 @@ async function main() {
     const toolPath = await ensureToolBuilt(config)
 
     // Compress binary.
-    await compressBinary(toolPath, inputPath, outputPath, quality, config)
+    await compressBinary(toolPath, inputPath, outputPath, quality, spec, config)
 
   } catch (e) {
     logger.error(`Error: ${e.message}`)
