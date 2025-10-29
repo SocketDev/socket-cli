@@ -1,6 +1,7 @@
 import { Gitlab } from '@gitbeaker/rest'
 
 import type {
+  AddCommentOptions,
   CreatePrOptions,
   ListPrsOptions,
   MergeStateStatus,
@@ -48,7 +49,7 @@ export class GitLabProvider implements PrProvider {
     throw new Error('GitLab branch deletion not yet implemented')
   }
 
-  async addComment(prNumber: number, body: string): Promise<void> {
+  async addComment(options: AddCommentOptions): Promise<void> {
     // TODO: Implement in Phase 3.
     throw new Error('GitLab MR comments not yet implemented')
   }
