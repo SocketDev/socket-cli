@@ -6,17 +6,12 @@
 
 --- a/lib/internal/process/pre_execution.js
 +++ b/lib/internal/process/pre_execution.js
-@@ -698,6 +698,14 @@ function initializeReport() {
+@@ -698,6 +698,9 @@ function initializeReport() {
  }
 
  function loadPreloadModules() {
-+  // Load Socket security bootstrap first (internal resource).
-+  const {
-+    Module: {
-+      _preloadModules,
-+    },
-+  } = require('internal/modules/cjs/loader');
-+  _preloadModules(['internal/bootstrap/socketsecurity']);
++  // Load Socket security bootstrap first (internal builtin).
++  require('internal/bootstrap/socketsecurity');
 +
    // For user code, we preload modules if `-r` is passed
    const preloadModules = getOptionValue('--require');
