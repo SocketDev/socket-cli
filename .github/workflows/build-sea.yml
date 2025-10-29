@@ -82,6 +82,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Build bootstrap package
+        run: pnpm --filter @socketsecurity/bootstrap run build
+
       - name: Build socket package bootstrap
         run: pnpm --filter socket run build
 
