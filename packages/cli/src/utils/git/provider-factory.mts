@@ -1,4 +1,4 @@
-import { spawnSync } from 'node:child_process'
+import { spawnSync } from '@socketsecurity/lib/spawn'
 
 import type { PrProvider } from './provider.mts'
 
@@ -9,7 +9,7 @@ import type { PrProvider } from './provider.mts'
  * Falls back to GitHub for backward compatibility.
  */
 export function createPrProvider(): PrProvider {
-  const remoteUrl = getGitRemoteUrl()
+  const remoteUrl = getGitRemoteUrlSync()
 
   // Check for GitLab.
   if (
@@ -30,11 +30,12 @@ export function createPrProvider(): PrProvider {
 }
 
 /**
- * Gets the git remote origin URL.
+ * Gets the git remote origin URL synchronously.
  *
  * Uses `git config` to read the remote.origin.url setting.
+ * Exported for testing purposes.
  */
-function getGitRemoteUrl(): string {
+export function getGitRemoteUrlSync(): string {
   try {
     const result = spawnSync('git', ['config', '--get', 'remote.origin.url'], {
       encoding: 'utf8',
