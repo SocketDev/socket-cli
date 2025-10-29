@@ -4,6 +4,7 @@ import { logger } from '@socketsecurity/lib/logger'
 
 import { REQUIREMENTS_TXT } from '../../constants/paths.mjs'
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
+import { mdHeader } from '../../utils/output/markdown.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
 import type { CResult, OutputKind } from '../../types.mts'
@@ -40,7 +41,7 @@ export async function outputRequirements(
 
   if (outputKind === 'markdown') {
     const arr = []
-    arr.push('# Converted Conda file')
+    arr.push(mdHeader('Converted Conda file'))
     arr.push('')
     arr.push(
       `This is the Conda \`environment.yml\` file converted to python \`${REQUIREMENTS_TXT}\`:`,

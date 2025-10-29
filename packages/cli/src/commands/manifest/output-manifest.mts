@@ -3,6 +3,7 @@ import fs from 'node:fs'
 import { logger } from '@socketsecurity/lib/logger'
 
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
+import { mdHeader } from '../../utils/output/markdown.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
 import type { CResult, OutputKind } from '../../types.mts'
@@ -48,7 +49,7 @@ export async function outputManifest(
     const { type, files } = result.data
     const typeName = type === 'gradle' ? 'Gradle' : 'SBT'
 
-    arr.push(`# ${typeName} Manifest Generation`)
+    arr.push(mdHeader(`${typeName} Manifest Generation`))
     arr.push('')
     arr.push(
       `Successfully generated ${files.length} POM file${files.length === 1 ? '' : 's'} from ${typeName} project:`,
@@ -60,7 +61,7 @@ export async function outputManifest(
     }
 
     arr.push('')
-    arr.push('## Next Steps')
+    arr.push(mdHeader('Next Steps', 2))
     arr.push('')
     arr.push('Generate a security scan by running:')
     arr.push('')
