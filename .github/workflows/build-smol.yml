@@ -30,6 +30,8 @@ jobs:
     name: 📦 Build Dependencies
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    outputs:
+      deps-hash: ${{ steps.deps-cache-key.outputs.hash }}
     steps:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
@@ -176,8 +178,10 @@ jobs:
         id: smol-cache-key
         shell: bash
         run: |
-          HASH=$(find patches packages/node-smol-builder/patches packages/node-smol-builder/additions scripts -type f \( -name "*.patch" -o -name "*.mjs" -o -name "*.h" -o -name "*.c" -o -name "*.cc" \) | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
-          echo "hash=$HASH" >> $GITHUB_OUTPUT
+          PATCHES_HASH=$(find patches packages/node-smol-builder/patches packages/node-smol-builder/additions scripts -type f \( -name "*.patch" -o -name "*.mjs" -o -name "*.h" -o -name "*.c" -o -name "*.cc" \) | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
+          # Include bootstrap/socket dependencies in cache key to invalidate when they change.
+          COMBINED_HASH=$(echo "$PATCHES_HASH-${{ needs.build-deps.outputs.deps-hash }}" | sha256sum | cut -d' ' -f1)
+          echo "hash=$COMBINED_HASH" >> $GITHUB_OUTPUT
 
       - name: Setup ccache (Linux/macOS)
         if: matrix.os != 'windows'
