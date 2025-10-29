@@ -31,6 +31,7 @@ import {
   gitCommit,
   gitCreateBranch,
   gitDeleteBranch,
+  gitDeleteRemoteBranch,
   gitPushBranch,
   gitRemoteBranchExists,
   gitResetAndClean,
