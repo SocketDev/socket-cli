@@ -229,12 +229,20 @@ jobs:
         id: yoga-cache-valid
         shell: bash
         run: |
+          echo "=== Yoga Layout Cache Verification ==="
+          echo "Cache restore result: ${{ steps.yoga-cache.outputs.cache-hit }}"
+          echo "Cache key used: yoga-wasm-${{ steps.wasm-cache-keys.outputs.yoga-hash }}"
+          echo "Checking for files..."
+          ls -lah packages/yoga-layout/build/wasm/ 2>&1 || echo "Directory does not exist"
+          echo ""
+
           if [ -f "packages/yoga-layout/build/wasm/yoga.wasm" ] && [ -f "packages/yoga-layout/build/wasm/yoga.js" ]; then
             echo "valid=true" >> $GITHUB_OUTPUT
             echo "✓ Yoga Layout cache valid"
           else
             echo "valid=false" >> $GITHUB_OUTPUT
             echo "✗ Yoga Layout cache invalid or missing"
+            echo "Missing files - will trigger rebuild"
           fi
 
       - name: Verify AI models cache
