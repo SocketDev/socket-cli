@@ -63,7 +63,7 @@ describe('socket organization policy security', async () => {
     ['organization', 'policy', 'security', FLAG_DRY_RUN, FLAG_CONFIG, '{}'],
     'should reject dry run without proper args',
     async cmd => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`""`)
       // expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       //   "

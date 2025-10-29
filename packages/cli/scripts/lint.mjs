@@ -135,6 +135,11 @@ function filterLintableFiles(files) {
       return false
     }
 
+    // Filter out fixture files (third-party test fixtures should not be linted).
+    if (file.includes('/test/fixtures/') || file.includes('/test\\fixtures\\')) {
+      return false
+    }
+
     // Filter out files excluded by biome.json
     if (isExcludedByBiome(file, biomeExcludePatterns)) {
       return false

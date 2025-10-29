@@ -221,7 +221,6 @@ describe('outputDependencies', () => {
 
   it('handles empty dependencies list', async () => {
     const { outputDependencies } = await import('./output-dependencies.mts')
-    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
     const chalkTable = await vi.importMock('chalk-table')
     const mockChalkTable = vi.mocked(chalkTable.default)
 

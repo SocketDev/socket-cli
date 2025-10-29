@@ -147,7 +147,6 @@ describe('outputLicensePolicy', () => {
 
   it('handles empty license policy', async () => {
     const { outputLicensePolicy } = await import('./output-license-policy.mts')
-    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
     const { mdTableOfPairs } = await vi.importMock(
       '../../utils/output/markdown.mts',
     )
@@ -164,7 +163,6 @@ describe('outputLicensePolicy', () => {
 
   it('handles null license policy', async () => {
     const { outputLicensePolicy } = await import('./output-license-policy.mts')
-    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
     const { mdTableOfPairs } = await vi.importMock(
       '../../utils/output/markdown.mts',
     )

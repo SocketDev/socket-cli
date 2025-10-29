@@ -28,13 +28,14 @@ const yogaWasmFile = path.join(yogaPackageRoot, 'build/wasm/yoga.wasm')
 const yogaJsFile = path.join(yogaPackageRoot, 'build/wasm/yoga.js')
 
 // Check if extraction needed (hash both files).
-if (!await shouldExtract({
-  sourcePaths: [yogaWasmFile, yogaJsFile],
-  outputPath,
-  validateOutput: (content) =>
-    content.includes('yoga-layout') &&
-    content.includes('WebAssembly'),
-})) {
+if (
+  !(await shouldExtract({
+    sourcePaths: [yogaWasmFile, yogaJsFile],
+    outputPath,
+    validateOutput: content =>
+      content.includes('yoga-layout') && content.includes('WebAssembly'),
+  }))
+) {
   process.exit(0)
 }
 

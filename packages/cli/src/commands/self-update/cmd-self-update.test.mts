@@ -11,7 +11,6 @@
  * - Flag behavior (dry-run, force)
  */
 
-import { existsSync } from 'node:fs'
 import { promises as fs } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
@@ -72,10 +71,7 @@ import {
 import { getIpcStubPath } from '@socketsecurity/lib/ipc'
 
 import { isSeaBinary } from '../../utils/executable/detect.mjs'
-import {
-  clearQuarantine,
-  ensureExecutable,
-} from '../../utils/process/os.mjs'
+import { clearQuarantine, ensureExecutable } from '../../utils/process/os.mjs'
 import { handleSelfUpdate } from './handle-self-update.mts'
 
 // Helper to create mock package metadata.
@@ -100,7 +96,10 @@ describe('handleSelfUpdate', () => {
     testBinaryPath = path.join(tempDir, 'socket')
 
     // Create a fake binary file.
-    await fs.writeFile(testBinaryPath, '#!/usr/bin/env node\nconsole.log("test")')
+    await fs.writeFile(
+      testBinaryPath,
+      '#!/usr/bin/env node\nconsole.log("test")',
+    )
     await fs.chmod(testBinaryPath, 0o755)
 
     // Mock process.argv[0] to point to our test binary.
@@ -126,7 +125,10 @@ describe('handleSelfUpdate', () => {
     // Mock extractBinaryFromTarball to actually create the file.
     vi.mocked(extractBinaryFromTarball).mockImplementation(
       async (_tarballPath, _binaryRelativePath, destination) => {
-        await fs.writeFile(destination, '#!/usr/bin/env node\nconsole.log("new")')
+        await fs.writeFile(
+          destination,
+          '#!/usr/bin/env node\nconsole.log("new")',
+        )
         await fs.chmod(destination, 0o755)
         return destination
       },
@@ -145,7 +147,9 @@ describe('handleSelfUpdate', () => {
 
       await expect(
         handleSelfUpdate([], import.meta, { parentName: 'socket' }),
-      ).rejects.toThrow('self-update is only available when running as a SEA binary')
+      ).rejects.toThrow(
+        'self-update is only available when running as a SEA binary',
+      )
     })
 
     it('should throw error when current binary path not found', async () => {
@@ -162,7 +166,6 @@ describe('handleSelfUpdate', () => {
 
   describe('version comparison', () => {
     it('should skip update when already on latest version', async () => {
-
       vi.mocked(fetchPackageMetadata).mockResolvedValue(
         createMockMetadata('1.0.0'),
       )
@@ -177,7 +180,6 @@ describe('handleSelfUpdate', () => {
     })
 
     it('should update when newer version available', async () => {
-
       vi.mocked(fetchPackageMetadata).mockResolvedValue(
         createMockMetadata('1.1.0'),
       )
@@ -195,7 +197,6 @@ describe('handleSelfUpdate', () => {
     })
 
     it('should force update even when on latest version with --force flag', async () => {
-
       vi.mocked(fetchPackageMetadata).mockResolvedValue(
         createMockMetadata('1.0.0'),
       )
@@ -209,26 +210,28 @@ describe('handleSelfUpdate', () => {
 
   describe('dry-run mode', () => {
     it('should check for updates without downloading with --dry-run flag', async () => {
-
       vi.mocked(fetchPackageMetadata).mockResolvedValue(
         createMockMetadata('1.1.0'),
       )
 
-      await handleSelfUpdate(['--dry-run'], import.meta, { parentName: 'socket' })
+      await handleSelfUpdate(['--dry-run'], import.meta, {
+        parentName: 'socket',
+      })
 
       expect(fetchPackageMetadata).toHaveBeenCalled()
       expect(downloadTarball).not.toHaveBeenCalled()
     })
 
     it('should not modify any files in dry-run mode', async () => {
-
       vi.mocked(fetchPackageMetadata).mockResolvedValue(
         createMockMetadata('1.1.0'),
       )
 
       const originalContent = await fs.readFile(testBinaryPath, 'utf8')
 
-      await handleSelfUpdate(['--dry-run'], import.meta, { parentName: 'socket' })
+      await handleSelfUpdate(['--dry-run'], import.meta, {
+        parentName: 'socket',
+      })
 
       const afterContent = await fs.readFile(testBinaryPath, 'utf8')
       expect(afterContent).toBe(originalContent)
@@ -237,12 +240,10 @@ describe('handleSelfUpdate', () => {
 
   describe('successful update flow', () => {
     it('should fetch latest version from npm registry', async () => {
-
       vi.mocked(fetchPackageMetadata).mockResolvedValue(
         createMockMetadata('1.1.0'),
       )
       vi.mocked(downloadTarball).mockResolvedValue(undefined)
-
 
       await handleSelfUpdate([], import.meta, { parentName: 'socket' })
 
@@ -253,11 +254,9 @@ describe('handleSelfUpdate', () => {
     })
 
     it('should download package tarball from npm registry', async () => {
-
       const metadata = createMockMetadata('1.1.0')
       vi.mocked(fetchPackageMetadata).mockResolvedValue(metadata)
       vi.mocked(downloadTarball).mockResolvedValue(undefined)
-
 
       await handleSelfUpdate([], import.meta, { parentName: 'socket' })
 
@@ -268,11 +267,9 @@ describe('handleSelfUpdate', () => {
     })
 
     it('should verify package integrity using npm metadata', async () => {
-
       const metadata = createMockMetadata('1.1.0')
       vi.mocked(fetchPackageMetadata).mockResolvedValue(metadata)
       vi.mocked(downloadTarball).mockResolvedValue(undefined)
-
 
       await handleSelfUpdate([], import.meta, { parentName: 'socket' })
 
@@ -283,12 +280,10 @@ describe('handleSelfUpdate', () => {
     })
 
     it('should extract binary from tarball', async () => {
-
       vi.mocked(fetchPackageMetadata).mockResolvedValue(
         createMockMetadata('1.1.0'),
       )
       vi.mocked(downloadTarball).mockResolvedValue(undefined)
-
 
       await handleSelfUpdate([], import.meta, { parentName: 'socket' })
 
@@ -300,12 +295,10 @@ describe('handleSelfUpdate', () => {
     })
 
     it('should create backup of current binary', async () => {
-
       vi.mocked(fetchPackageMetadata).mockResolvedValue(
         createMockMetadata('1.1.0'),
       )
       vi.mocked(downloadTarball).mockResolvedValue(undefined)
-
 
       await handleSelfUpdate([], import.meta, { parentName: 'socket' })
 
@@ -317,12 +310,10 @@ describe('handleSelfUpdate', () => {
     })
 
     it('should set executable permissions on new binary', async () => {
-
       vi.mocked(fetchPackageMetadata).mockResolvedValue(
         createMockMetadata('1.1.0'),
       )
       vi.mocked(downloadTarball).mockResolvedValue(undefined)
-
 
       await handleSelfUpdate([], import.meta, { parentName: 'socket' })
 
@@ -330,14 +321,12 @@ describe('handleSelfUpdate', () => {
     })
 
     it('should clear quarantine on macOS', async () => {
-
       vi.spyOn(process, 'platform', 'get').mockReturnValue('darwin')
 
       vi.mocked(fetchPackageMetadata).mockResolvedValue(
         createMockMetadata('1.1.0'),
       )
       vi.mocked(downloadTarball).mockResolvedValue(undefined)
-
 
       await handleSelfUpdate([], import.meta, { parentName: 'socket' })
 
@@ -347,7 +336,6 @@ describe('handleSelfUpdate', () => {
 
   describe('error handling', () => {
     it('should throw error when package metadata is invalid', async () => {
-
       vi.mocked(fetchPackageMetadata).mockResolvedValue({
         name: '@socketbin/cli-darwin-arm64',
         version: '1.1.0',
@@ -360,7 +348,6 @@ describe('handleSelfUpdate', () => {
     })
 
     it('should throw error when integrity verification fails', async () => {
-
       vi.mocked(fetchPackageMetadata).mockResolvedValue(
         createMockMetadata('1.1.0'),
       )
@@ -373,12 +360,10 @@ describe('handleSelfUpdate', () => {
     })
 
     it('should restore from backup on binary replacement failure', async () => {
-
       vi.mocked(fetchPackageMetadata).mockResolvedValue(
         createMockMetadata('1.1.0'),
       )
       vi.mocked(downloadTarball).mockResolvedValue(undefined)
-
 
       // Mock ensureExecutable to fail.
       vi.mocked(ensureExecutable).mockRejectedValue(
@@ -399,7 +384,6 @@ describe('handleSelfUpdate', () => {
 
   describe('stub update', () => {
     it('should check for stub updates when launched via bootstrap', async () => {
-
       // Mock stub path.
       const stubPath = path.join(tempDir, 'socket-stub')
       await fs.writeFile(stubPath, '#!/usr/bin/env node\nconsole.log("stub")')
@@ -416,7 +400,6 @@ describe('handleSelfUpdate', () => {
     })
 
     it('should skip stub update when not launched via bootstrap', async () => {
-
       vi.mocked(getIpcStubPath).mockReturnValue(null)
       vi.mocked(fetchPackageMetadata).mockResolvedValue(
         createMockMetadata('1.0.0'),
@@ -431,12 +414,10 @@ describe('handleSelfUpdate', () => {
 
   describe('cleanup', () => {
     it('should clean up temporary files after successful update', async () => {
-
       vi.mocked(fetchPackageMetadata).mockResolvedValue(
         createMockMetadata('1.1.0'),
       )
       vi.mocked(downloadTarball).mockResolvedValue(undefined)
-
 
       await handleSelfUpdate([], import.meta, { parentName: 'socket' })
 
@@ -448,7 +429,6 @@ describe('handleSelfUpdate', () => {
     })
 
     it('should clean up temporary files after failed update', async () => {
-
       vi.mocked(fetchPackageMetadata).mockResolvedValue(
         createMockMetadata('1.1.0'),
       )

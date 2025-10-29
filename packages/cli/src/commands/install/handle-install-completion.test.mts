@@ -123,9 +123,6 @@ describe('handleInstallCompletion', () => {
 
   it('handles async errors', async () => {
     const { setupTabCompletion } = await import('./setup-tab-completion.mts')
-    const { outputInstallCompletion } = await import(
-      './output-install-completion.mts'
-    )
 
     vi.mocked(setupTabCompletion).mockRejectedValue(new Error('Async error'))
 

@@ -10,11 +10,6 @@ import path from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
-  downloadTarball,
-  extractBinaryFromTarball,
-  extractTarball,
-  fetchPackageMetadata,
-  httpsGet,
   retryWithBackoff,
   sanitizeTarballPath,
   verifyTarballIntegrity,
@@ -26,7 +21,9 @@ describe('sanitizeTarballPath', () => {
   })
 
   it('should block ../ traversal', () => {
-    expect(sanitizeTarballPath('package/../../../etc/passwd')).toBe('etc/passwd')
+    expect(sanitizeTarballPath('package/../../../etc/passwd')).toBe(
+      'etc/passwd',
+    )
   })
 
   it('should block . segments', () => {
@@ -58,12 +55,12 @@ describe('retryWithBackoff', () => {
     const error = new Error('EBUSY') as NodeJS.ErrnoException
     error.code = 'EBUSY'
 
-    const fn = vi
-      .fn()
-      .mockRejectedValueOnce(error)
-      .mockResolvedValue('success')
+    const fn = vi.fn().mockRejectedValueOnce(error).mockResolvedValue('success')
 
-    const result = await retryWithBackoff(fn, { maxRetries: 2, baseDelayMs: 10 })
+    const result = await retryWithBackoff(fn, {
+      maxRetries: 2,
+      baseDelayMs: 10,
+    })
     expect(result).toBe('success')
     expect(fn).toHaveBeenCalledTimes(2)
   })
@@ -79,8 +76,11 @@ describe('retryWithBackoff', () => {
       .mockResolvedValue('success')
 
     const delays: number[] = []
-    const originalSetTimeout = global.setTimeout
-    vi.spyOn(global, 'setTimeout').mockImplementation(((callback: () => void, delay: number) => {
+    const _originalSetTimeout = global.setTimeout
+    vi.spyOn(global, 'setTimeout').mockImplementation(((
+      callback: () => void,
+      delay: number,
+    ) => {
       delays.push(delay)
       callback()
       return {} as never
@@ -115,7 +115,9 @@ describe('retryWithBackoff', () => {
 
     const fn = vi.fn().mockRejectedValue(error)
 
-    await expect(retryWithBackoff(fn, { maxRetries: 2 })).rejects.toThrow('ENOENT')
+    await expect(retryWithBackoff(fn, { maxRetries: 2 })).rejects.toThrow(
+      'ENOENT',
+    )
     expect(fn).toHaveBeenCalledTimes(1)
   })
 
@@ -123,12 +125,12 @@ describe('retryWithBackoff', () => {
     const error = new Error('EMFILE') as NodeJS.ErrnoException
     error.code = 'EMFILE'
 
-    const fn = vi
-      .fn()
-      .mockRejectedValueOnce(error)
-      .mockResolvedValue('success')
+    const fn = vi.fn().mockRejectedValueOnce(error).mockResolvedValue('success')
 
-    const result = await retryWithBackoff(fn, { maxRetries: 2, baseDelayMs: 10 })
+    const result = await retryWithBackoff(fn, {
+      maxRetries: 2,
+      baseDelayMs: 10,
+    })
     expect(result).toBe('success')
     expect(fn).toHaveBeenCalledTimes(2)
   })
@@ -137,12 +139,12 @@ describe('retryWithBackoff', () => {
     const error = new Error('ENFILE') as NodeJS.ErrnoException
     error.code = 'ENFILE'
 
-    const fn = vi
-      .fn()
-      .mockRejectedValueOnce(error)
-      .mockResolvedValue('success')
+    const fn = vi.fn().mockRejectedValueOnce(error).mockResolvedValue('success')
 
-    const result = await retryWithBackoff(fn, { maxRetries: 2, baseDelayMs: 10 })
+    const result = await retryWithBackoff(fn, {
+      maxRetries: 2,
+      baseDelayMs: 10,
+    })
     expect(result).toBe('success')
     expect(fn).toHaveBeenCalledTimes(2)
   })

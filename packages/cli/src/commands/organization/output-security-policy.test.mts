@@ -183,7 +183,6 @@ describe('outputSecurityPolicy', () => {
     const { outputSecurityPolicy } = await import(
       './output-security-policy.mts'
     )
-    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
     const { mdTableOfPairs } = await vi.importMock(
       '../../utils/output/markdown.mts',
     )

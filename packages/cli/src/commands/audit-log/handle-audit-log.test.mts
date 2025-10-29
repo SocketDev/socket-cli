@@ -155,7 +155,6 @@ describe('handleAuditLog', () => {
 
   it('handles different log types', async () => {
     const { fetchAuditLog } = await import('./fetch-audit-log.mts')
-    const { outputAuditLog } = await import('./output-audit-log.mts')
 
     const logTypes = ['all', 'security', 'access', 'config', 'data']
 

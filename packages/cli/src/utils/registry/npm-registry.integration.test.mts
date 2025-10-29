@@ -56,7 +56,9 @@ describe('integration-lite: tarball extraction', () => {
   let tempDir: string
 
   beforeEach(async () => {
-    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'npm-registry-integration-'))
+    tempDir = await fs.mkdtemp(
+      path.join(os.tmpdir(), 'npm-registry-integration-'),
+    )
   })
 
   afterEach(async () => {
@@ -229,15 +231,15 @@ describe('integration-lite: tarball extraction', () => {
       ])
 
       // Verify files exist.
-      expect(await fs.readFile(path.join(extractDir, 'package.json'), 'utf8')).toBe(
-        '{"name":"test"}',
-      )
-      expect(await fs.readFile(path.join(extractDir, 'README.md'), 'utf8')).toBe(
-        '# Test',
-      )
-      expect(await fs.readFile(path.join(extractDir, 'bin/socket'), 'utf8')).toBe(
-        'binary',
-      )
+      expect(
+        await fs.readFile(path.join(extractDir, 'package.json'), 'utf8'),
+      ).toBe('{"name":"test"}')
+      expect(
+        await fs.readFile(path.join(extractDir, 'README.md'), 'utf8'),
+      ).toBe('# Test')
+      expect(
+        await fs.readFile(path.join(extractDir, 'bin/socket'), 'utf8'),
+      ).toBe('binary')
     })
 
     it('should sanitize paths to prevent traversal', async () => {

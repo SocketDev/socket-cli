@@ -25,19 +25,18 @@ const rootPath = path.join(__dirname, '..')
 const outputPath = path.join(rootPath, 'build/minilm-sync.mjs')
 
 // Read the source model path.
-const aiBzPath = path.join(
-  rootPath,
-  '../socketbin-cli-ai/dist/ai.bz',
-)
+const aiBzPath = path.join(rootPath, '../socketbin-cli-ai/dist/ai.bz')
 
 // Check if extraction needed (hash-based caching).
-if (!await shouldExtract({
-  sourcePaths: aiBzPath,
-  outputPath,
-  validateOutput: (content) =>
-    content.includes('loadModelSync') &&
-    content.includes('brotliDecompressSync'),
-})) {
+if (
+  !(await shouldExtract({
+    sourcePaths: aiBzPath,
+    outputPath,
+    validateOutput: content =>
+      content.includes('loadModelSync') &&
+      content.includes('brotliDecompressSync'),
+  }))
+) {
   process.exit(0)
 }
 

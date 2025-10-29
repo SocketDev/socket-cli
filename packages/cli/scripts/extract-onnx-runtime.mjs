@@ -6,7 +6,7 @@
  * Idempotent: Skips regeneration if source hasn't changed (supports CI caching).
  */
 
-import { readFileSync, writeFileSync } from 'node:fs'
+import { writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -28,13 +28,15 @@ const onnxPackageJsonPath = path.join(
 )
 
 // Check if extraction needed (hash-based caching).
-if (!await shouldExtract({
-  sourcePaths: onnxPackageJsonPath,
-  outputPath,
-  validateOutput: (content) =>
-    content.includes('onnxruntime-web') &&
-    content.includes('InferenceSession'),
-})) {
+if (
+  !(await shouldExtract({
+    sourcePaths: onnxPackageJsonPath,
+    outputPath,
+    validateOutput: content =>
+      content.includes('onnxruntime-web') &&
+      content.includes('InferenceSession'),
+  }))
+) {
   process.exit(0)
 }
 

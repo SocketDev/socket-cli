@@ -174,9 +174,10 @@ describe('shadowNpmBase', () => {
 
   it('should handle URL cwd option', async () => {
     // Use a valid file URL with proper absolute path for all platforms.
-    const testPath = process.platform === 'win32'
-      ? 'file:///C:/custom/path'
-      : 'file:///custom/path'
+    const testPath =
+      process.platform === 'win32'
+        ? 'file:///C:/custom/path'
+        : 'file:///custom/path'
     const options: ShadowBinOptions = {
       cwd: new URL(testPath),
     }
@@ -231,7 +232,9 @@ describe('shadowNpmBase', () => {
     expect(nodeOptionsArg).toContain('--allow-child-process')
     expect(nodeOptionsArg).toContain('--allow-fs-read=*')
     // Path separators may be normalized, so check for the directory structure.
-    expect(nodeOptionsArg).toMatch(/--allow-fs-write=[^'"]*packages[/\\]cli[/\\]\*/)
+    expect(nodeOptionsArg).toMatch(
+      /--allow-fs-write=[^'"]*packages[/\\]cli[/\\]\*/,
+    )
   })
 
   it('should not add permission flags for npx', async () => {

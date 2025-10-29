@@ -142,7 +142,9 @@ async function updateStubBinary(
   try {
     // Fetch stub package metadata from npm registry.
     const stubPackageName = getSocketbinPackageName()
-    logger.info(`Fetching stub package metadata: ${stubPackageName}@${latestVersion}`)
+    logger.info(
+      `Fetching stub package metadata: ${stubPackageName}@${latestVersion}`,
+    )
 
     const metadata = await fetchPackageMetadata(stubPackageName, latestVersion)
 
@@ -260,7 +262,8 @@ export async function handleSelfUpdate(
       installedVia = 'bun'
     } else if (isSeaBinary()) {
       // SEA binary but not in DLX (e.g., manually installed to /usr/local/bin)
-      updateCommand = 'curl -sSL https://raw.githubusercontent.com/SocketDev/socket-cli/main/install.sh | sh'
+      updateCommand =
+        'curl -sSL https://raw.githubusercontent.com/SocketDev/socket-cli/main/install.sh | sh'
       installedVia = 'manual installation'
     } else {
       // Bootstrap wrapper - unknown package manager

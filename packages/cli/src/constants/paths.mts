@@ -161,9 +161,7 @@ export function getBlessedContribPath(): string {
 }
 
 export function getBlessedOptions() {
-  const blessedColorDepth = (ENV.TERM ?? '').includes('256color')
-    ? 256
-    : 8
+  const blessedColorDepth = (ENV.TERM ?? '').includes('256color') ? 256 : 8
   return {
     __proto__: null,
     fullUnicode: true,
@@ -221,9 +219,7 @@ export function getSocketCachePath(): string {
       return path.join(home, 'Library', 'Caches', 'socket')
     case 'win32': {
       const tempDir =
-        ENV.TEMP ||
-        ENV.TMP ||
-        path.join(home, 'AppData', 'Local', 'Temp')
+        ENV.TEMP || ENV.TMP || path.join(home, 'AppData', 'Local', 'Temp')
       return path.join(tempDir, 'socket')
     }
     default:
