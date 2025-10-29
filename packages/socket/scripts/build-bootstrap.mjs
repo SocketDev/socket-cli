@@ -6,17 +6,65 @@
  * 2. bootstrap-smol.js - Transformed version for smol builds (uses internal/* requires)
  */
 
+import { existsSync } from 'node:fs'
 import { mkdirSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { build } from 'esbuild'
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
+import { spawn } from '@socketsecurity/lib/spawn'
 
 import seaConfig from './esbuild.bootstrap.config.mjs'
 import smolConfig from './esbuild.bootstrap-smol.config.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const packageRoot = path.resolve(__dirname, '..')
+const monorepoRoot = path.resolve(packageRoot, '../..')
+
+// Ensure bootstrap package is built before building socket wrapper.
+async function ensureBootstrapPackageBuilt() {
+  const bootstrapSource = path.join(
+    monorepoRoot,
+    'packages/bootstrap/src/bootstrap-npm.mts'
+  )
+  const bootstrapDist = path.join(
+    monorepoRoot,
+    'packages/bootstrap/dist/bootstrap-npm.js'
+  )
+
+  // Check if bootstrap source and dist exist.
+  if (!existsSync(bootstrapSource)) {
+    console.error('✗ Bootstrap source not found:', bootstrapSource)
+    process.exit(1)
+  }
+
+  // If dist exists, assume it's up to date.
+  if (existsSync(bootstrapDist)) {
+    return
+  }
+
+  console.log('→ Building @socketsecurity/bootstrap package (dependency)...\n')
+
+  const result = await spawn(
+    'pnpm',
+    ['--filter', '@socketsecurity/bootstrap', 'run', 'build'],
+    {
+      cwd: monorepoRoot,
+      shell: WIN32,
+      stdio: 'inherit',
+    }
+  )
+
+  if (result.code !== 0) {
+    console.error('\n✗ Failed to build @socketsecurity/bootstrap')
+    process.exit(1)
+  }
+
+  console.log('')
+}
+
+await ensureBootstrapPackageBuilt()
 
 console.log('Building Socket npm wrapper bootstrap with esbuild...\n')
 
