@@ -55,7 +55,6 @@ describe('handleOptimize', () => {
     const { outputOptimizeResult } = await import(
       './output-optimize-result.mts'
     )
-    const { logger } = await import('@socketsecurity/lib/logger')
 
     vi.mocked(detectAndValidatePackageEnvironment).mockResolvedValue({
       ok: true,

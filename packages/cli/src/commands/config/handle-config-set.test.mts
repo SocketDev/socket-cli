@@ -120,7 +120,6 @@ describe('handleConfigSet', () => {
 
   it('handles different config keys', async () => {
     const { updateConfigValue } = await import('../../utils/config.mts')
-    const { outputConfigSet } = await import('./output-config-set.mts')
 
     const keys = ['apiToken', 'org', 'repoName', 'apiBaseUrl', 'apiProxy']
 

@@ -130,9 +130,6 @@ describe('handlePurlDeepScore', () => {
 
   it('handles different purl formats', async () => {
     const { fetchPurlDeepScore } = await import('./fetch-purl-deep-score.mts')
-    const { outputPurlsDeepScore } = await import(
-      './output-purls-deep-score.mts'
-    )
 
     const purls = [
       'pkg:npm/package1@1.0.0',

@@ -9,7 +9,12 @@
  */
 
 // CommonJS globals are available since we're outputting to CJS format.
-const { mkdirSync, readFileSync, unlinkSync, writeFileSync } = require('node:fs')
+const {
+  mkdirSync,
+  readFileSync,
+  unlinkSync,
+  writeFileSync,
+} = require('node:fs')
 const Module = require('node:module')
 const path = require('node:path')
 const { brotliDecompressSync } = require('node:zlib')

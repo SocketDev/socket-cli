@@ -73,7 +73,9 @@ async function checkBinaryExists(binaryType) {
 
 async function runVitest(binaryType) {
   const envVars = BINARY_FLAGS[binaryType]
-  logger.log(`${colors.blue('ℹ')} Running e2e tests for ${binaryType} binary...`)
+  logger.log(
+    `${colors.blue('ℹ')} Running e2e tests for ${binaryType} binary...`,
+  )
   logger.log('')
 
   // Check if binary exists when explicitly requested.

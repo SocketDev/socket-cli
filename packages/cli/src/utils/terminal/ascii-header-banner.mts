@@ -70,7 +70,6 @@ function shouldAnimateHeader(flags?: Record<string, unknown>): boolean {
  * Strip ANSI codes for length calculation.
  */
 function stripAnsi(str: string): string {
-  // biome-ignore lint/suspicious/noControlCharactersInRegex: Need to match ANSI escape sequences.
   return str.replace(/\x1b\[[0-9;]*m/g, '')
 }
 

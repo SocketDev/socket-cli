@@ -143,7 +143,9 @@ describe('npm-paths utilities', () => {
       const result = getNpmDirPath()
 
       // Normalize path separators for cross-platform compatibility.
-      expect(result?.replace(/\\/g, '/')).toBe('/usr/local/lib/node_modules/npm')
+      expect(result?.replace(/\\/g, '/')).toBe(
+        '/usr/local/lib/node_modules/npm',
+      )
       expect(findNpmDirPathSync).toHaveBeenCalledWith('/usr/local/bin/npm')
     })
 
@@ -244,7 +246,9 @@ describe('npm-paths utilities', () => {
 
       expect(result).toBe(mockRequire)
       expect(Module.createRequire).toHaveBeenCalledWith(
-        expect.stringMatching(/[/\\]node_modules[/\\]npm[/\\]<dummy-basename>$/),
+        expect.stringMatching(
+          /[/\\]node_modules[/\\]npm[/\\]<dummy-basename>$/,
+        ),
       )
     })
   })

@@ -23,7 +23,12 @@ function isPackageCached(packageName: string): boolean {
   // Check if package exists in global node_modules.
   // This is a heuristic - actual cache location varies by package manager.
   const socketHome = getSocketHomePath()
-  const cacheMarker = path.join(socketHome, 'cache', 'preflight', packageName.replace(/[/@]/g, '-'))
+  const cacheMarker = path.join(
+    socketHome,
+    'cache',
+    'preflight',
+    packageName.replace(/[/@]/g, '-'),
+  )
   return existsSync(cacheMarker)
 }
 
