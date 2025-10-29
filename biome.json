@@ -19,8 +19,8 @@
       "!**/node_modules",
       "!**/package.json",
       "!**/pnpm-lock.yaml",
-      "!test/**/fixtures",
-      "!test/**/packages"
+      "!**/test/fixtures",
+      "!**/test/packages"
     ],
     "maxSize": 8388608
   },
