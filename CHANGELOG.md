@@ -4,330 +4,135 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.0.0](https://github.com/SocketDev/socket-cli/releases/tag/v2.0.0) - 2025-10-29
+
+### Changed
+- **BREAKING**: CLI now ships as single executable binary requiring no external Node.js installation
+
 ## [1.1.25](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.25) - 2025-10-10
 
 ### Added
-- New `--no-major-updates` flag for controlling major version update behavior
-- New `--show-affected-direct-dependencies` flag for enhanced dependency visibility
+- `--no-major-updates` flag
+- `--show-affected-direct-dependencies` flag
 
 ### Fixed
-- Improved provenance handling for better package verification
+- Provenance handling
 
 ## [1.1.24](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.24) - 2025-10-10
 
 ### Added
-- New `--minimum-release-age` flag for `socket fix` to filter packages by release age
-- SOCKET_CLI_COANA_LOCAL_PATH environment variable for local Coana version testing
+- `--minimum-release-age` flag for `socket fix`
+- SOCKET_CLI_COANA_LOCAL_PATH environment variable
 
 ### Fixed
-- Enhanced organization capabilities detection for different plan variants
-- Improved enterprise plan filtering logic
+- Organization capabilities detection
+- Enterprise plan filtering
 
 ## [1.1.23](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.23) - 2025-09-22
 
 ### Changed
-- Enhanced `--no-apply-fixes` flag naming for improved clarity (previously `--dont-apply-fixes`)
-- Streamlined documentation and help text for better user experience
-- Improved `pnpm dlx` operations by removing unnecessary `--ignore-scripts` flag
+- Renamed `--dont-apply-fixes` to `--no-apply-fixes` (old flag remains as alias)
+- pnpm dlx operations no longer use `--ignore-scripts`
 
 ### Fixed
-- Resolved JSON example formatting in usage documentation
-- Enhanced test reliability for cdxgen on Windows platforms
-- Improved error handling in optimize command for pnpm environments
+- Error handling in optimize command for pnpm
 
 ## [1.1.22](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.22) - 2025-09-20
 
 ### Changed
-- Rename `--only-compute` flag to `--dont-apply-fixes` for `socket fix`, but keep old flag as an alias.
+- Renamed `--only-compute` to `--dont-apply-fixes` for `socket fix` (old flag remains as alias)
 
 ### Fixed
-- Resolved interactive prompts in `socket optimize` when using pnpm
-- Sanitize extracted git repository names to be compatible with the Socket API.
+- Interactive prompts in `socket optimize` with pnpm
+- Git repository name sanitization
 
-## [1.1.21](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.22) - 2025-09-20
+## [1.1.21](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.21) - 2025-09-20
 
 ### Added
-- New `--compact-header` flag for streamlined CLI output display
-
-### Changed
-- Enhanced package manager interception for improved security scanning
-- Improved detection of temporary package execution environments
+- `--compact-header` flag
 
 ### Fixed
-- Enhanced error handling in `socket optimize` with proper exit codes
+- Error handling in `socket optimize`
 
 ## [1.1.20](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.20) - 2025-09-19
 
 ### Added
-- Terminal link support for enhanced command output formatting
+- Terminal link support
 
 ### Fixed
-- Resolved Windows compatibility issues with package manager execution
-
-## [1.1.19](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.19) - 2025-09-19
-
-### Added
-- Enhanced testing capabilities for malware detection features
-
-## [1.1.18](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.18) - 2025-09-18
-
-### Fixed
-- Enhanced compatibility with older Node.js versions
-
-## [1.1.17](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.17) - 2025-09-18
-
-### Fixed
-- Enhanced Windows compatibility for package manager operations
-
-## [1.1.16](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.16) - 2025-09-16
-
-### Fixed
-- Enhanced pnpm wrapper compatibility with dlx commands
-
-## [1.1.15](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.15) - 2025-09-16
-
-### Changed
-- Improved `socket fix` error messages for missing environment variables
-
-### Fixed
-- Resolved path handling issue in `socket optimize` command
-
-## [1.1.14](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.14) - 2025-09-17
-
-### Changed
-- Enhanced third-party tool integration
+- Windows package manager execution
 
 ## [1.1.13](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.13) - 2025-09-16
 
 ### Added
-- New `--output-file` flag for `socket fix` to save computed fixes to a JSON file
-- New `--only-compute` flag for `socket fix` to compute fixes without applying them
-
-## [1.1.12](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.12) - 2025-09-15
-
-### Fixed
-- Enhanced security alert processing for more reliable operations
-
-## [1.1.11](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.11) - 2025-09-12
-
-### Fixed
-- Improved multipart upload reliability with Socket SDK update
-
-## [1.1.10](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.10) - 2025-09-11
-
-### Changed
-- Enhanced command argument filtering for improved compatibility with npm and cdxgen integrations
+- `--output-file` flag for `socket fix`
+- `--only-compute` flag for `socket fix`
 
 ## [1.1.9](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.9) - 2025-09-11
 
 ### Added
-- Enhanced `socket fix --id` to accept CVE IDs and PURLs in addition to GHSA IDs
+- `socket fix --id` now accepts CVE IDs and PURLs
 
 ### Fixed
-- Correct SOCKET_CLI_API_TIMEOUT environment variable lookup
-
-## [1.1.8](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.8) - 2025-09-11
-
-### Changed
-- Clearer permission error messages to help resolve access issues
+- SOCKET_CLI_API_TIMEOUT environment variable lookup
 
 ## [1.1.7](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.7) - 2025-09-11
 
 ### Added
-- Control spinner display with new `--no-spinner` flag
+- `--no-spinner` flag
 
 ### Fixed
-- Enhanced proxy support for flexible network configurations
-
-## [1.1.6](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.6) - 2025-09-10
-
-### Fixed
-- Improved pull request operations with better cache management
-
-## [1.1.5](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.5) - 2025-09-10
-
-### Fixed
-- Enhanced reachability analysis spinner for consistent feedback
-- Better working directory control with `--cwd` flag improvements
+- Proxy support
 
 ## [1.1.4](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.4) - 2025-09-09
 
 ### Added
-- Track release changes with CHANGELOG.md
-- Enhanced development workflow with contributor guidance
-- Control scan output detail with `--report-level` flag
+- `--report-level` flag for scan output control
 
 ## [1.1.1](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.1) - 2025-09-04
 
-### Changed
-- Faster command completion with improved tab functionality
-- Smoother user experience with better loading indicators
-
 ### Removed
-- Removed legacy `--test` and `--test-script` flags from `socket fix`
-- Continued cleanup of legacy `socket fix` code
+- Legacy `--test` and `--test-script` flags from `socket fix`
 
 ## [1.1.0](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.0) - 2025-09-03
 
 ### Added
-- See package versions directly in `socket npm` security reports
-
-### Changed
-- Clearer feedback for repeat `socket npm` installations
-- More reliable handling of scan timeouts
-- Streamlined repeat installs by hiding redundant audit info
-
-### Fixed
-- More reliable file system operations
-- Better configuration value handling
-
-### Removed
-- Cleaned up legacy `socket fix` code
+- Package versions in `socket npm` security reports
 
 ## [1.0.111](https://github.com/SocketDev/socket-cli/releases/tag/v1.0.111) - 2025-09-03
 
 ### Added
-- Reimplemented `--range-style` flag for `socket fix`
-
-### Fixed
-- Enhanced CI/CD compatibility for reachability analysis and fixes
-
-## [1.0.110](https://github.com/SocketDev/socket-cli/releases/tag/v1.0.110) - 2025-09-03
-
-### Changed
-- Enhanced reachability analysis and `socket fix` for better output handling
-
-## [1.0.109](https://github.com/SocketDev/socket-cli/releases/tag/v1.0.109) - 2025-09-03
-
-### Changed
-- Improved build environment handling for better compatibility
-
-## [1.0.108](https://github.com/SocketDev/socket-cli/releases/tag/v1.0.108) - 2025-09-03
-
-### Changed
-- Cleaner output from wrapped commands for focused results
-
-## [1.0.107](https://github.com/SocketDev/socket-cli/releases/tag/v1.0.107) - 2025-09-02
-
-### Fixed
-- Restored build stability for reliable deployments
+- `--range-style` flag for `socket fix`
 
 ## [1.0.106](https://github.com/SocketDev/socket-cli/releases/tag/v1.0.106) - 2025-09-02
 
 ### Added
-- Control reachability analysis caching with new `--reach-skip-cache` flag
-
-## [1.0.104](https://github.com/SocketDev/socket-cli/releases/tag/v1.0.104) - 2025-08-29
-
-### Fixed
-- Enhanced security advisory resolution for accurate vulnerability tracking
-
-## [1.0.103](https://github.com/SocketDev/socket-cli/releases/tag/v1.0.103) - 2025-08-29
-
-### Fixed
-- Improved GitHub Security Advisory processing
-
-## [1.0.102](https://github.com/SocketDev/socket-cli/releases/tag/v1.0.102) - 2025-08-29
-
-### Fixed
-- Enhanced command flag processing for better reliability
-
-## [1.0.100](https://github.com/SocketDev/socket-cli/releases/tag/v1.0.100) - 2025-08-29
-
-### Added
-- Richer debugging output for security advisory analysis
-
-## [1.0.96](https://github.com/SocketDev/socket-cli/releases/tag/v1.0.96) - 2025-08-27
-
-### Changed
-- Streamlined organization selection for reachability analysis
+- `--reach-skip-cache` flag
 
 ## [1.0.89](https://github.com/SocketDev/socket-cli/releases/tag/v1.0.89) - 2025-08-15
 
 ### Added
-- Comprehensive manifest scanning with `socket scan create --reach`
+- `socket scan create --reach` for manifest scanning
 
 ## [1.0.85](https://github.com/SocketDev/socket-cli/releases/tag/v1.0.85) - 2025-08-01
 
 ### Added
-- Flexible npm path configuration via `SOCKET_CLI_NPM_PATH` environment variable
+- SOCKET_CLI_NPM_PATH environment variable
 
 ## [1.0.82](https://github.com/SocketDev/socket-cli/releases/tag/v1.0.82) - 2025-07-30
 
 ### Added
-- Memory optimization controls with `--max-old-space-size` and `--max-semi-space-size` flags
-
-## [1.0.80](https://github.com/SocketDev/socket-cli/releases/tag/v1.0.80) - 2025-07-29
-
-### Changed
-- Enhanced file discovery feedback in `socket scan create`
+- `--max-old-space-size` and `--max-semi-space-size` flags
 
 ## [1.0.73](https://github.com/SocketDev/socket-cli/releases/tag/v1.0.73) - 2025-07-14
 
 ### Added
-- Automatic detection of `.socket.facts.json` configuration files
+- Automatic `.socket.facts.json` detection
 
 ## [1.0.69](https://github.com/SocketDev/socket-cli/releases/tag/v1.0.69) - 2025-07-10
 
 ### Added
-- Skip pull request checks with new `--no-pr-check` flag for `socket fix`
-
-## [1.0.10](https://github.com/SocketDev/socket-cli/releases/tag/v1.0.10) - 2025-06-28
-
-### Changed
-- Enhanced performance and reliability across all commands
-
-## [1.0.9](https://github.com/SocketDev/socket-cli/releases/tag/v1.0.9) - 2025-06-28
-
-### Changed
-- Improved stability and command execution speed
-
-## [1.0.8](https://github.com/SocketDev/socket-cli/releases/tag/v1.0.8) - 2025-06-27
-
-### Changed
-- Faster command processing with optimized internals
-
-## [1.0.7](https://github.com/SocketDev/socket-cli/releases/tag/v1.0.7) - 2025-06-25
-
-### Changed
-- Enhanced reliability through improved code quality
-
-## [1.0.6](https://github.com/SocketDev/socket-cli/releases/tag/v1.0.6) - 2025-06-25
-
-### Changed
-- Smoother user experience with targeted improvements
-
-## [1.0.5](https://github.com/SocketDev/socket-cli/releases/tag/v1.0.5) - 2025-06-25
-
-### Changed
-- Faster command execution with performance enhancements
-
-## [1.0.4](https://github.com/SocketDev/socket-cli/releases/tag/v1.0.4) - 2025-06-25
-
-### Changed
-- More stable operations with targeted fixes
-
-## [1.0.3](https://github.com/SocketDev/socket-cli/releases/tag/v1.0.3) - 2025-06-25
-
-### Added
-- Load npm config as part of `socket fix`
-
-## [1.0.2](https://github.com/SocketDev/socket-cli/releases/tag/v1.0.2) - 2025-06-25
-
-### Added
-- Added spinner to reachability scan
-
-## [1.0.1](https://github.com/SocketDev/socket-cli/releases/tag/v1.0.1) - 2025-06-24
-
-### Added
-- Package manager version logging to info
-- Organization persistence when selecting orgs
-
-### Changed
-- Made `socket fix` command reuse implementations for better efficiency
-- Normalized options passed to `socket fix`
-- Improved banner spacing logic
-- Enhanced default org feedback and call-to-action
+- `--no-pr-check` flag for `socket fix`
 
 ## [1.0.0](https://github.com/SocketDev/socket-cli/releases/tag/v1.0.0) - 2025-06-13
 
