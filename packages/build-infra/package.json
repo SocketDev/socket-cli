@@ -12,6 +12,7 @@
     "./lib/cmake-builder": "./lib/cmake-builder.mjs",
     "./lib/emscripten-builder": "./lib/emscripten-builder.mjs",
     "./lib/extraction-cache": "./lib/extraction-cache.mjs",
+    "./lib/fetch-with-retry": "./lib/fetch-with-retry.mjs",
     "./lib/patch-validator": "./lib/patch-validator.mjs",
     "./lib/preflight-checks": "./lib/preflight-checks.mjs",
     "./lib/rust-builder": "./lib/rust-builder.mjs",
