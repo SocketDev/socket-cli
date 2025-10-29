@@ -1345,15 +1345,26 @@ async function main() {
     // Windows: LZMS (best for PE).
     const compressionQuality = IS_MACOS ? 'lzfse' : 'lzma'
 
-    // Construct socketbin package spec for socket-lib cache key generation.
-    // Format: @socketbin/node-smol-builder-{platform}-{arch}@0.0.0-{nodeVersion}
-    // This enables deterministic cache keys across builds of the same Node.js version.
-    const socketbinSpec = `@socketbin/node-smol-builder-${TARGET_PLATFORM}-${ARCH}@0.0.0-${NODE_VERSION}`
+    // Read socketbin package spec from actual package.json for socket-lib cache key generation.
+    // Format: @socketbin/cli-{platform}-{arch}@{version}
+    // This enables deterministic cache keys based on the published package.
+    const socketbinPkgPath = join(dirname(ROOT_DIR), `socketbin-cli-${TARGET_PLATFORM}-${ARCH}`, 'package.json')
+    let socketbinSpec = null
+    try {
+      const socketbinPkg = JSON.parse(await readFile(socketbinPkgPath, 'utf-8'))
+      socketbinSpec = `${socketbinPkg.name}@${socketbinPkg.version}`
+      logger.substep(`Found socketbin package: ${socketbinSpec}`)
+    } catch (e) {
+      logger.warn(`Could not read socketbin package.json at ${socketbinPkgPath}`)
+      logger.warn('Compression will use fallback cache key generation')
+    }
 
     logger.substep(`Input: ${outputStrippedBinary}`)
     logger.substep(`Output: ${compressedBinary}`)
     logger.substep(`Algorithm: ${compressionQuality.toUpperCase()}`)
-    logger.substep(`Spec: ${socketbinSpec}`)
+    if (socketbinSpec) {
+      logger.substep(`Spec: ${socketbinSpec}`)
+    }
     logger.logNewline()
 
     const sizeBeforeCompress = await getFileSize(outputStrippedBinary)
@@ -1362,17 +1373,16 @@ async function main() {
     logger.logNewline()
 
     // Run platform-specific compression.
-    await exec(
-      process.execPath,
-      [
-        join(ROOT_DIR, 'scripts', 'compress-binary.mjs'),
-        outputStrippedBinary,
-        compressedBinary,
-        `--quality=${compressionQuality}`,
-        `--spec=${socketbinSpec}`,
-      ],
-      { cwd: ROOT_DIR },
-    )
+    const compressArgs = [
+      join(ROOT_DIR, 'scripts', 'compress-binary.mjs'),
+      outputStrippedBinary,
+      compressedBinary,
+      `--quality=${compressionQuality}`,
+    ]
+    if (socketbinSpec) {
+      compressArgs.push(`--spec=${socketbinSpec}`)
+    }
+    await exec(process.execPath, compressArgs, { cwd: ROOT_DIR })
 
     const sizeAfterCompress = await getFileSize(compressedBinary)
     logger.log(`Size after compression: ${sizeAfterCompress}`)
