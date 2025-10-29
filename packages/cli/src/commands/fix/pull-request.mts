@@ -26,6 +26,7 @@ import {
   type Pr,
   writeCache,
 } from '../../utils/git/github.mts'
+import { createPrProvider } from '../../utils/git/provider-factory.mts'
 
 import type { OctokitResponse } from '@octokit/types'
 import type { JsonContent } from '@socketsecurity/lib/fs'
@@ -57,59 +58,33 @@ export async function openSocketFixPr(
     ...options,
   } as OpenSocketFixPrOptions
 
-  const octokit = getOctokit()
+  const provider = createPrProvider()
 
-  for (let attempt = 1; attempt <= retries; attempt++) {
-    try {
-      const octokitPullsCreateParams = {
-        owner,
-        repo,
-        title: getSocketFixPullRequestTitle(ghsaIds),
-        head: branch,
-        base: baseBranch,
-        body: getSocketFixPullRequestBody(ghsaIds, ghsaDetails),
-      }
-      debugDir({ octokitPullsCreateParams, attempt })
-      // eslint-disable-next-line no-await-in-loop
-      return await octokit.pulls.create(octokitPullsCreateParams)
-    } catch (e) {
-      let message = `Failed to open pull request (attempt ${attempt}/${retries})`
-      const errors =
-        e instanceof RequestError
-          ? (e.response?.data as any)?.errors
-          : undefined
+  try {
+    const result = await provider.createPr({
+      owner,
+      repo,
+      title: getSocketFixPullRequestTitle(ghsaIds),
+      head: branch,
+      base: baseBranch,
+      body: getSocketFixPullRequestBody(ghsaIds, ghsaDetails),
+      retries,
+    })
 
-      if (Array.isArray(errors) && errors.length) {
-        const details = errors
-          .map(
-            d =>
-              `- ${d.message?.trim() ?? `${d.resource}.${d.field} (${d.code})`}`,
-          )
-          .join('\n')
-        message += `:\n${details}`
-      } else if (e instanceof Error) {
-        message += `: ${e.message}`
-      }
+    // Convert provider response to Octokit format for backward compatibility.
+    const octokit = getOctokit()
+    const prDetails = await octokit.pulls.get({
+      owner,
+      repo,
+      pull_number: result.number,
+    })
 
-      debug(message)
-      debugDir(e)
-
-      // Don't retry on validation errors (422).
-      if (e instanceof RequestError && e.status === 422) {
-        break
-      }
-
-      // Retry on 5xx errors or network failures.
-      if (attempt < retries) {
-        const delay = Math.min(1000 * 2 ** (attempt - 1), 10_000)
-        debug(`pr: retrying in ${delay}ms...`)
-        // eslint-disable-next-line no-await-in-loop
-        await sleep(delay)
-      }
-    }
+    return prDetails
+  } catch (e) {
+    debug(formatErrorWithDetail('Failed to create pull request', e))
+    debugDir(e)
+    return undefined
   }
-
-  return undefined
 }
 
 export type GQL_MERGE_STATE_STATUS =
@@ -148,7 +123,7 @@ export async function cleanupSocketFixPrs(
   }
 
   const cachesToSave = new Map<string, JsonContent>()
-  const octokit = getOctokit()
+  const provider = createPrProvider()
 
   const settledMatches = await Promise.allSettled(
     contextualMatches.map(async ({ context, match }) => {
@@ -158,42 +133,17 @@ export async function cleanupSocketFixPrs(
         const { number: prNum } = match
         const prRef = `PR #${prNum}`
         try {
-          // Merge the base branch into the head branch to update the PR.
-          await octokit.repos.merge({
+          // Update the PR using the provider.
+          await provider.updatePr({
             owner,
             repo,
-            // The PR branch (destination).
-            base: match.headRefName,
-            // The target branch (source).
-            head: match.baseRefName,
-          })
-          debug(`pr: updating stale ${prRef}`)
-
-          // Check if update resulted in conflicts.
-          const prDetails = await octokit.pulls.get({
-            owner,
-            repo,
-            pull_number: prNum,
+            prNumber: prNum,
+            head: match.headRefName,
+            base: match.baseRefName,
           })
 
-          if (prDetails.data.mergeable_state === 'dirty') {
-            debug(`pr: ${prRef} has conflicts after update`)
-
-            // Add comment explaining conflict.
-            await octokit.issues.createComment({
-              owner,
-              repo,
-              issue_number: prNum,
-              body:
-                'This PR has merge conflicts after updating from the base branch. ' +
-                'Please resolve conflicts manually or close this PR and re-run `socket fix` ' +
-                'to generate a new fix.',
-            })
-
-            debug(`pr: added conflict comment to ${prRef}`)
-          } else {
-            logPrEvent('updated', prNum, ghsaId, 'Updated from base branch')
-          }
+          debug(`pr: updated stale ${prRef}`)
+          logPrEvent('updated', prNum, ghsaId, 'Updated from base branch')
 
           // Update cache entry - only GraphQL is used now.
           context.entry.mergeStateStatus = 'CLEAN'
@@ -210,7 +160,7 @@ export async function cleanupSocketFixPrs(
         const { number: prNum } = match
         const prRef = `PR #${prNum}`
         try {
-          const success = await gitDeleteRemoteBranch(match.headRefName)
+          const success = await provider.deleteBranch(match.headRefName)
           if (success) {
             debug(`pr: deleted merged branch ${match.headRefName} for ${prRef}`)
             logPrEvent('merged', prNum, ghsaId, 'Branch cleaned up')

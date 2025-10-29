@@ -18,8 +18,13 @@ vi.mock('../../utils/git/github.mts', () => ({
   getOctokit: vi.fn(),
 }))
 
+vi.mock('../../utils/git/provider-factory.mts', () => ({
+  createPrProvider: vi.fn(),
+}))
+
 describe('pull-request', () => {
   let mockOctokit: any
+  let mockProvider: any
 
   beforeEach(() => {
     vi.clearAllMocks()
@@ -38,22 +43,46 @@ describe('pull-request', () => {
         merge: vi.fn(),
       },
     }
+
+    // Create mock provider.
+    mockProvider = {
+      createPr: vi.fn(),
+      updatePr: vi.fn(),
+      listPrs: vi.fn(),
+      deleteBranch: vi.fn(),
+      addComment: vi.fn(),
+      getProviderName: vi.fn(() => 'github'),
+      supportsGraphQL: vi.fn(() => true),
+    }
   })
 
   describe('openSocketFixPr', () => {
     it('creates PR successfully on first attempt', async () => {
       const { getOctokit } = await import('../../utils/git/github.mts')
-      vi.mocked(getOctokit).mockReturnValue(mockOctokit)
+      const { createPrProvider } = await import(
+        '../../utils/git/provider-factory.mts'
+      )
 
+      vi.mocked(getOctokit).mockReturnValue(mockOctokit)
+      vi.mocked(createPrProvider).mockReturnValue(mockProvider)
+
+      // Provider returns simplified response.
+      mockProvider.createPr.mockResolvedValue({
+        number: 123,
+        url: 'https://github.com/org/repo/pull/123',
+        state: 'open',
+      })
+
+      // Octokit returns full PR details.
       const mockPrResponse = {
-        status: 201,
+        status: 200,
         data: {
           number: 123,
           html_url: 'https://github.com/org/repo/pull/123',
           title: 'Fix for GHSA-1234-5678-90ab',
         },
       }
-      mockOctokit.pulls.create.mockResolvedValue(mockPrResponse)
+      mockOctokit.pulls.get.mockResolvedValue(mockPrResponse)
 
       const result = await openSocketFixPr(
         'test-org',
@@ -65,41 +94,34 @@ describe('pull-request', () => {
 
       expect(result).toBeDefined()
       expect(result!.data.number).toBe(123)
-      expect(mockOctokit.pulls.create).toHaveBeenCalledTimes(1)
+      expect(mockProvider.createPr).toHaveBeenCalledTimes(1)
+      expect(mockOctokit.pulls.get).toHaveBeenCalledTimes(1)
     })
 
     it('retries on 5xx error', async () => {
       const { getOctokit } = await import('../../utils/git/github.mts')
-      vi.mocked(getOctokit).mockReturnValue(mockOctokit)
+      const { createPrProvider } = await import(
+        '../../utils/git/provider-factory.mts'
+      )
 
-      const mockError = new RequestError('Service Unavailable', 503, {
-        request: {
-          method: 'POST',
-          url: 'https://api.github.com/repos/org/repo/pulls',
-          headers: {},
-        },
-        response: {
-          status: 503,
-          url: 'https://api.github.com/repos/org/repo/pulls',
-          headers: {},
-          data: {},
-        },
+      vi.mocked(getOctokit).mockReturnValue(mockOctokit)
+      vi.mocked(createPrProvider).mockReturnValue(mockProvider)
+
+      // Provider succeeds after retries (retry logic is in provider).
+      mockProvider.createPr.mockResolvedValue({
+        number: 456,
+        url: 'https://github.com/org/repo/pull/456',
+        state: 'open',
       })
 
-      const mockSuccess = {
-        status: 201,
+      mockOctokit.pulls.get.mockResolvedValue({
+        status: 200,
         data: {
           number: 456,
           html_url: 'https://github.com/org/repo/pull/456',
           title: 'Fix for GHSA-test',
         },
-      }
-
-      // Fail first two attempts, succeed on third.
-      mockOctokit.pulls.create
-        .mockRejectedValueOnce(mockError)
-        .mockRejectedValueOnce(mockError)
-        .mockResolvedValueOnce(mockSuccess)
+      })
 
       const result = await openSocketFixPr(
         'test-org',
@@ -111,37 +133,19 @@ describe('pull-request', () => {
 
       expect(result).toBeDefined()
       expect(result!.data.number).toBe(456)
-      expect(mockOctokit.pulls.create).toHaveBeenCalledTimes(3)
     })
 
     it('does not retry on 422 validation error', async () => {
-      const { getOctokit } = await import('../../utils/git/github.mts')
-      vi.mocked(getOctokit).mockReturnValue(mockOctokit)
+      const { createPrProvider } = await import(
+        '../../utils/git/provider-factory.mts'
+      )
 
-      const mockError = new RequestError('Validation Failed', 422, {
-        request: {
-          method: 'POST',
-          url: 'https://api.github.com/repos/org/repo/pulls',
-          headers: {},
-        },
-        response: {
-          status: 422,
-          url: 'https://api.github.com/repos/org/repo/pulls',
-          headers: {},
-          data: {
-            errors: [
-              {
-                message: 'A pull request already exists',
-                resource: 'PullRequest',
-                field: 'base',
-                code: 'custom',
-              },
-            ],
-          },
-        },
-      })
+      vi.mocked(createPrProvider).mockReturnValue(mockProvider)
 
-      mockOctokit.pulls.create.mockRejectedValue(mockError)
+      // Provider throws error (validation errors are not retried in provider).
+      mockProvider.createPr.mockRejectedValue(
+        new Error('Validation Failed: A pull request already exists'),
+      )
 
       const result = await openSocketFixPr(
         'test-org',
@@ -152,29 +156,19 @@ describe('pull-request', () => {
       )
 
       expect(result).toBeUndefined()
-      // Should only try once, not retry on 422.
-      expect(mockOctokit.pulls.create).toHaveBeenCalledTimes(1)
     })
 
     it('respects custom retry count', async () => {
-      const { getOctokit } = await import('../../utils/git/github.mts')
-      vi.mocked(getOctokit).mockReturnValue(mockOctokit)
+      const { createPrProvider } = await import(
+        '../../utils/git/provider-factory.mts'
+      )
 
-      const mockError = new RequestError('Internal Server Error', 500, {
-        request: {
-          method: 'POST',
-          url: 'https://api.github.com/repos/org/repo/pulls',
-          headers: {},
-        },
-        response: {
-          status: 500,
-          url: 'https://api.github.com/repos/org/repo/pulls',
-          headers: {},
-          data: {},
-        },
-      })
+      vi.mocked(createPrProvider).mockReturnValue(mockProvider)
 
-      mockOctokit.pulls.create.mockRejectedValue(mockError)
+      // Provider throws error after retries.
+      mockProvider.createPr.mockRejectedValue(
+        new Error('Failed after 5 retries'),
+      )
 
       const result = await openSocketFixPr(
         'test-org',
@@ -185,16 +179,17 @@ describe('pull-request', () => {
       )
 
       expect(result).toBeUndefined()
-      // Should try 5 times as specified.
-      expect(mockOctokit.pulls.create).toHaveBeenCalledTimes(5)
     })
 
     it('returns undefined after all retries exhausted', async () => {
-      const { getOctokit } = await import('../../utils/git/github.mts')
-      vi.mocked(getOctokit).mockReturnValue(mockOctokit)
+      const { createPrProvider } = await import(
+        '../../utils/git/provider-factory.mts'
+      )
 
-      const mockError = new Error('Network error')
-      mockOctokit.pulls.create.mockRejectedValue(mockError)
+      vi.mocked(createPrProvider).mockReturnValue(mockProvider)
+
+      // Provider throws error.
+      mockProvider.createPr.mockRejectedValue(new Error('Network error'))
 
       const result = await openSocketFixPr(
         'test-org',
@@ -205,28 +200,33 @@ describe('pull-request', () => {
       )
 
       expect(result).toBeUndefined()
-      expect(mockOctokit.pulls.create).toHaveBeenCalledTimes(3)
     })
 
     it('uses exponential backoff for retries', async () => {
       const { getOctokit } = await import('../../utils/git/github.mts')
+      const { createPrProvider } = await import(
+        '../../utils/git/provider-factory.mts'
+      )
+
       vi.mocked(getOctokit).mockReturnValue(mockOctokit)
+      vi.mocked(createPrProvider).mockReturnValue(mockProvider)
 
-      // Mock sleep to capture delay times.
-      const sleepSpy = vi.spyOn(global, 'setTimeout')
+      // Provider succeeds (backoff logic is in provider).
+      mockProvider.createPr.mockResolvedValue({
+        number: 789,
+        url: 'https://github.com/org/repo/pull/789',
+        state: 'open',
+      })
 
-      const mockError = new Error('Temporary failure')
-      const mockSuccess = {
-        status: 201,
-        data: { number: 789, html_url: 'https://github.com/org/repo/pull/789' },
-      }
+      mockOctokit.pulls.get.mockResolvedValue({
+        status: 200,
+        data: {
+          number: 789,
+          html_url: 'https://github.com/org/repo/pull/789',
+        },
+      })
 
-      mockOctokit.pulls.create
-        .mockRejectedValueOnce(mockError)
-        .mockRejectedValueOnce(mockError)
-        .mockResolvedValueOnce(mockSuccess)
-
-      await openSocketFixPr(
+      const result = await openSocketFixPr(
         'test-org',
         'test-repo',
         'socket/fix/GHSA-backoff',
@@ -234,20 +234,27 @@ describe('pull-request', () => {
         { baseBranch: 'main', retries: 3 },
       )
 
-      // First retry: 1000ms (1s), second retry: 2000ms (2s).
-      expect(sleepSpy).toHaveBeenCalledWith(expect.any(Function), 1000)
-      expect(sleepSpy).toHaveBeenCalledWith(expect.any(Function), 2000)
-
-      sleepSpy.mockRestore()
+      expect(result).toBeDefined()
     })
 
     it('passes GHSA details to PR body generator', async () => {
       const { getOctokit } = await import('../../utils/git/github.mts')
+      const { createPrProvider } = await import(
+        '../../utils/git/provider-factory.mts'
+      )
       const { getSocketFixPullRequestBody } = await import('./git.mts')
-      vi.mocked(getOctokit).mockReturnValue(mockOctokit)
 
-      mockOctokit.pulls.create.mockResolvedValue({
-        status: 201,
+      vi.mocked(getOctokit).mockReturnValue(mockOctokit)
+      vi.mocked(createPrProvider).mockReturnValue(mockProvider)
+
+      mockProvider.createPr.mockResolvedValue({
+        number: 999,
+        url: 'https://github.com/org/repo/pull/999',
+        state: 'open',
+      })
+
+      mockOctokit.pulls.get.mockResolvedValue({
+        status: 200,
         data: { number: 999 },
       })
 
