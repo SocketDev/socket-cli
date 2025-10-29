@@ -209,7 +209,6 @@ describe('handleCreateNewScan', () => {
   })
 
   it('handles read-only mode', async () => {
-    const { logger } = await import('@socketsecurity/lib/logger')
     const { fetchSupportedScanFileNames } = await import(
       './fetch-supported-scan-file-names.mts'
     )

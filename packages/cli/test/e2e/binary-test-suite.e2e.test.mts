@@ -29,23 +29,40 @@ const BINARIES = {
     path: path.join(ROOT_DIR, 'bin/cli.js'),
   },
   sea: {
-    buildCommand: ['pnpm', '--filter', '@socketbin/node-sea-builder', 'run', 'build'],
+    buildCommand: [
+      'pnpm',
+      '--filter',
+      '@socketbin/node-sea-builder',
+      'run',
+      'build',
+    ],
     enabled: !!process.env.TEST_SEA_BINARY,
     name: 'SEA Binary (Single Executable Application)',
     path: path.join(MONOREPO_ROOT, 'packages/node-sea-builder/dist/socket-sea'),
   },
   smol: {
-    buildCommand: ['pnpm', '--filter', '@socketbin/node-smol-builder', 'run', 'build'],
+    buildCommand: [
+      'pnpm',
+      '--filter',
+      '@socketbin/node-smol-builder',
+      'run',
+      'build',
+    ],
     enabled: !!process.env.TEST_SMOL_BINARY,
     name: 'Smol Node.js Binary',
-    path: path.join(MONOREPO_ROOT, 'packages/node-smol-builder/dist/socket-smol'),
+    path: path.join(
+      MONOREPO_ROOT,
+      'packages/node-smol-builder/dist/socket-smol',
+    ),
   },
 }
 
 /**
  * Build a binary if needed.
  */
-async function buildBinary(binaryType: keyof typeof BINARIES): Promise<boolean> {
+async function buildBinary(
+  binaryType: keyof typeof BINARIES,
+): Promise<boolean> {
   const binary = BINARIES[binaryType]
 
   if (!binary.buildCommand) {
@@ -62,10 +79,14 @@ async function buildBinary(binaryType: keyof typeof BINARIES): Promise<boolean> 
   logger.log('')
 
   try {
-    const result = await spawn(binary.buildCommand[0], binary.buildCommand.slice(1), {
-      cwd: MONOREPO_ROOT,
-      stdio: 'inherit',
-    })
+    const result = await spawn(
+      binary.buildCommand[0],
+      binary.buildCommand.slice(1),
+      {
+        cwd: MONOREPO_ROOT,
+        stdio: 'inherit',
+      },
+    )
 
     if (result.code !== 0) {
       logger.error(`Failed to build ${binary.name}`)
@@ -105,7 +126,9 @@ function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
         // In CI: Skip building (rely on cache).
         if (process.env.CI) {
           logger.log('Running in CI - skipping build (binary not in cache)')
-          logger.log('To prime cache, run: gh workflow run publish-socketbin.yml --field dry-run=true')
+          logger.log(
+            'To prime cache, run: gh workflow run publish-socketbin.yml --field dry-run=true',
+          )
           logger.log('')
           return
         }
@@ -163,38 +186,32 @@ function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
     })
 
     describe('Basic commands (no auth required)', () => {
-      it.skipIf(!ENV.RUN_E2E_TESTS)(
-        'should display version',
-        async () => {
-          if (!binaryExists) return
+      it.skipIf(!ENV.RUN_E2E_TESTS)('should display version', async () => {
+        if (!binaryExists) return
 
-          const result = await executeCliCommand(['--version'], {
-            binPath: binary.path,
-            isolateConfig: false,
-          })
+        const result = await executeCliCommand(['--version'], {
+          binPath: binary.path,
+          isolateConfig: false,
+        })
 
-          // Note: --version currently shows help and exits with code 2 (known issue).
-          // This test validates the CLI executes without crashing.
-          expect(result.code).toBeGreaterThanOrEqual(0)
-          expect(result.stdout.length).toBeGreaterThan(0)
-        },
-      )
+        // Note: --version currently shows help and exits with code 2 (known issue).
+        // This test validates the CLI executes without crashing.
+        expect(result.code).toBeGreaterThanOrEqual(0)
+        expect(result.stdout.length).toBeGreaterThan(0)
+      })
 
-      it.skipIf(!ENV.RUN_E2E_TESTS)(
-        'should display help',
-        async () => {
-          if (!binaryExists) return
+      it.skipIf(!ENV.RUN_E2E_TESTS)('should display help', async () => {
+        if (!binaryExists) return
 
-          const result = await executeCliCommand(['--help'], {
-            binPath: binary.path,
-            isolateConfig: false,
-          })
+        const result = await executeCliCommand(['--help'], {
+          binPath: binary.path,
+          isolateConfig: false,
+        })
 
-          expect(result.code).toBe(0)
-          expect(result.stdout).toContain('socket')
-          expect(result.stdout).toContain('Main commands')
-        },
-      )
+        expect(result.code).toBe(0)
+        expect(result.stdout).toContain('socket')
+        expect(result.stdout).toContain('Main commands')
+      })
 
       it.skipIf(!ENV.RUN_E2E_TESTS)(
         'should display scan command help',
@@ -228,18 +245,15 @@ function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
     })
 
     describe('Auth-required commands', () => {
-      it.skipIf(!ENV.RUN_E2E_TESTS)(
-        'should list config settings',
-        async () => {
-          if (!binaryExists || !hasAuth) return
+      it.skipIf(!ENV.RUN_E2E_TESTS)('should list config settings', async () => {
+        if (!binaryExists || !hasAuth) return
 
-          const result = await executeCliCommand(['config', 'list'], {
-            binPath: binary.path,
-          })
+        const result = await executeCliCommand(['config', 'list'], {
+          binPath: binary.path,
+        })
 
-          expect(result.code).toBe(0)
-        },
-      )
+        expect(result.code).toBe(0)
+      })
 
       it.skipIf(!ENV.RUN_E2E_TESTS)(
         'should display whoami information',

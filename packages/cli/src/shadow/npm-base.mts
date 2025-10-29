@@ -143,8 +143,7 @@ export default async function shadowNpmBase(
   // two levels quieter.
   const logLevelArgs = isSilent ? [FLAG_LOGLEVEL, 'error'] : []
   const noAuditArgs =
-    useAudit ||
-    !(await findUp(NODE_MODULES, { cwd, onlyDirectories: true }))
+    useAudit || !(await findUp(NODE_MODULES, { cwd, onlyDirectories: true }))
       ? []
       : ['--no-audit']
 

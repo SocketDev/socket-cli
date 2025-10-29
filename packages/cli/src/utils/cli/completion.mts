@@ -24,7 +24,10 @@ export function getCompletionSourcingCommand(): CResult<string> {
   }
 
   // Bash scripts always use forward slashes, even on Windows.
-  return { ok: true, data: `source ${completionScriptPath.replace(/\\/g, '/')}` }
+  return {
+    ok: true,
+    data: `source ${completionScriptPath.replace(/\\/g, '/')}`,
+  }
 }
 
 export function getBashrcDetails(targetCommandName: string): CResult<{

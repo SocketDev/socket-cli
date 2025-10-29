@@ -145,7 +145,9 @@ export async function httpsGet(
       .on('error', reject)
       .on('timeout', () => {
         request.destroy()
-        reject(new Error(`Request timeout after ${timeout}ms while fetching ${url}`))
+        reject(
+          new Error(`Request timeout after ${timeout}ms while fetching ${url}`),
+        )
       })
 
     request.setTimeout(timeout)
@@ -438,7 +440,10 @@ export async function extractBinaryFromTarball(
     await fs.mkdir(destDir, { recursive: true })
 
     // Write binary to destination.
-    await fs.writeFile(destination, binaryFile.data as Uint8Array<ArrayBufferLike>)
+    await fs.writeFile(
+      destination,
+      binaryFile.data as Uint8Array<ArrayBufferLike>,
+    )
 
     // Set executable permissions if specified in tarball.
     if (binaryFile.attrs?.mode) {

@@ -35,7 +35,7 @@ const _GAP_HEIGHT = 0 // No gaps - boxes touch each other
 const _shouldDisableAnimations = true
 const _SHIMMER_INTERVAL = 100 // ms between frames (smooth animation)
 
-type FocusArea = 'console' | 'input'
+type _FocusArea = 'console' | 'input'
 
 export interface DiffLine {
   type: 'addition' | 'removal' | 'context'
@@ -163,9 +163,9 @@ export interface InteractiveConsoleAppProps {
  */
 const _StaticHeader = memo(
   function StaticHeader({
-    buildHash,
-    devMode,
-    version,
+    buildHash: _buildHash,
+    devMode: _devMode,
+    version: _version,
   }: {
     version?: string
     buildHash?: string
@@ -292,7 +292,7 @@ const _ConsoleOutput = memo(function ConsoleOutput({
 const InputArea = memo(
   function InputArea({
     commandHistory,
-    height,
+    height: _height,
     isFocused,
     onHeightChange,
     onSubmit,
@@ -455,10 +455,10 @@ const StatusBar = memo(
  * Main interactive console application.
  */
 const InteractiveConsoleAppComponent = function InteractiveConsoleApp({
-  buildHash,
-  devMode,
+  buildHash: _buildHash,
+  devMode: _devMode,
   onCommand,
-  version,
+  version: _version,
 }: InteractiveConsoleAppProps): React.ReactElement {
   const { exit } = useApp()
   const { stdout } = useStdout()

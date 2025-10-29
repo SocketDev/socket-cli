@@ -277,10 +277,9 @@ async function main() {
 
         // Open coverage report if requested
         if (open) {
-          const { runCommand } = await import('./utils/run-command.mjs')
           logger.info('Opening coverage report...')
           await spawn('open', ['coverage/index.html'], {
-      shell: WIN32,
+            shell: WIN32,
             stdio: 'ignore',
           })
         }
