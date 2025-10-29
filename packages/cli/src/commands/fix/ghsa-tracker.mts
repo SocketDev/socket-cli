@@ -70,12 +70,15 @@ export async function markGhsaFixed(
     tracker.fixed = tracker.fixed.filter(r => r.ghsaId !== ghsaId)
 
     // Add new record.
-    tracker.fixed.push({
+    const record: GhsaFixRecord = {
       branch: branch ?? getSocketFixBranchName(ghsaId),
       fixedAt: new Date().toISOString(),
       ghsaId,
-      prNumber,
-    })
+    }
+    if (prNumber !== undefined) {
+      record.prNumber = prNumber
+    }
+    tracker.fixed.push(record)
 
     // Sort by fixedAt descending (most recent first).
     tracker.fixed.sort((a, b) => b.fixedAt.localeCompare(a.fixedAt))
