@@ -52,6 +52,7 @@ import {
   copyFile,
   cp,
   mkdir,
+  readdir,
   readFile,
   stat,
   writeFile,
@@ -289,7 +290,8 @@ async function copySocketSecurityBootstrap() {
   // Auto-build bootstrap if missing.
   if (!existsSync(bootstrapSource)) {
     logger.log('')
-    logger.log(`${colors.blue('ℹ')} Bootstrap not found, building @socketsecurity/bootstrap package...`)
+    logger.info(`Bootstrap not found at: ${bootstrapSource}`)
+    logger.info(`Building @socketsecurity/bootstrap package...`)
     logger.log('')
 
     const result = await spawn(
@@ -308,6 +310,23 @@ async function copySocketSecurityBootstrap() {
 
     // Verify bootstrap was built.
     if (!existsSync(bootstrapSource)) {
+      // Try to show what files exist to help diagnose.
+      logger.error(`Bootstrap file not found at: ${bootstrapSource}`)
+      logger.info(`Checking for bootstrap files...`)
+
+      const bootstrapDir = dirname(bootstrapSource)
+      if (existsSync(bootstrapDir)) {
+        logger.info(`Directory exists: ${bootstrapDir}`)
+        try {
+          const files = await readdir(bootstrapDir)
+          logger.info(`Files in directory: ${files.join(', ')}`)
+        } catch (e) {
+          logger.warn(`Could not list directory contents`)
+        }
+      } else {
+        logger.error(`Directory does not exist: ${bootstrapDir}`)
+      }
+
       throw new Error(`Bootstrap build succeeded but dist file not found at: ${bootstrapSource}`)
     }
 
