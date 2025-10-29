@@ -31,6 +31,12 @@ export const reachabilityFlags: MeowFlags = {
     description:
       'List of paths to exclude from reachability analysis, as either a comma separated value or as multiple flags.',
   },
+  reachMinSeverity: {
+    type: 'string',
+    default: '',
+    description:
+      'Set the minimum severity of vulnerabilities to analyze. Supported severities are info, low, moderate, high and critical.',
+  },
   reachSkipCache: {
     type: 'boolean',
     default: false,
