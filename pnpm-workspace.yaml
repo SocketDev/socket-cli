@@ -4,9 +4,9 @@ packages:
 catalog:
   # Socket shared dependencies - define versions once, reference with catalog: protocol.
   '@socketsecurity/config': 3.0.1
-  '@socketsecurity/lib': 2.4.0
+  '@socketsecurity/lib': 2.5.0
   '@socketsecurity/registry': 2.0.0
-  '@socketsecurity/sdk': 3.0.11
+  '@socketsecurity/sdk': 3.0.12
   del-cli: 6.0.0
   esbuild: 0.24.0
   postject: 1.0.0-alpha.6
