@@ -7,6 +7,7 @@ import { logger } from '@socketsecurity/lib/logger'
 
 import { SOCKET_WEBSITE_URL } from '../../constants/socket.mts'
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
+import { mdHeader } from '../../utils/output/markdown.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
 import { fileLink } from '../../utils/terminal/link.mts'
 
@@ -108,7 +109,7 @@ async function handleMarkdown(
 ) {
   const SOCKET_SBOM_URL_PREFIX = `${SOCKET_WEBSITE_URL}/dashboard/org/SocketDev/sbom/`
 
-  logger.log('# Scan diff result')
+  logger.log(mdHeader('Scan diff result'))
   logger.log('')
   logger.log('This Socket.dev report shows the changes between two scans:')
   logger.log(
@@ -120,7 +121,7 @@ async function handleMarkdown(
     `You can [view this report in your dashboard](${data.diff_report_url})`,
   )
   logger.log('')
-  logger.log('## Changes')
+  logger.log(mdHeader('Changes', 2))
   logger.log('')
   logger.log(`- directDependenciesChanged: ${data.directDependenciesChanged}`)
   logger.log(`- Added packages: ${data.artifacts.added.length}`)
