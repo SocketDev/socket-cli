@@ -38,12 +38,15 @@ export function createPrProvider(): PrProvider {
 export function getGitRemoteUrlSync(): string {
   try {
     const result = spawnSync('git', ['config', '--get', 'remote.origin.url'], {
-      encoding: 'utf8',
       stdio: ['pipe', 'pipe', 'pipe'],
     })
 
     if (result.status === 0 && result.stdout) {
-      return result.stdout.trim().toLowerCase()
+      const remoteUrl =
+        typeof result.stdout === 'string'
+          ? result.stdout
+          : result.stdout.toString('utf8')
+      return remoteUrl.trim().toLowerCase()
     }
   } catch {
     // Ignore errors - will fall back to GitHub.

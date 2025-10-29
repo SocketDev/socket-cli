@@ -81,7 +81,7 @@ export async function handleScanReach({
     outputPath,
     packagePaths,
     reachabilityOptions,
-    spinner,
+    spinner: spinner ?? undefined,
     target: targets[0]!,
     uploadManifests: true,
   })

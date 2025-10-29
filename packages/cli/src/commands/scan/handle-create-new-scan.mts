@@ -166,7 +166,7 @@ export async function handleCreateNewScan({
       packagePaths,
       reachabilityOptions: reach,
       repoName,
-      spinner,
+      spinner: spinner ?? undefined,
       target: targets[0]!,
     })
 
