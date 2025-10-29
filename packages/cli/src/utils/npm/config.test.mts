@@ -11,7 +11,9 @@ const { MockNpmConfig, mockNpmConfigInstance } = vi.hoisted(() => {
     },
   }
 
-  const MockNpmConfig = vi.fn().mockImplementation(() => mockNpmConfigInstance)
+  const MockNpmConfig = vi.fn().mockImplementation(function () {
+    return mockNpmConfigInstance
+  })
 
   return { MockNpmConfig, mockNpmConfigInstance }
 })
@@ -135,10 +137,12 @@ describe('npm-config utilities', () => {
     it('calls config.load()', async () => {
       const mockLoad = vi.fn().mockResolvedValue(undefined)
       vi.mocked((await import('@npmcli/config')).default).mockImplementation(
-        (() => ({
-          load: mockLoad,
-          flat: { test: 'value' },
-        })) as any,
+        (function () {
+          return {
+            load: mockLoad,
+            flat: { test: 'value' },
+          }
+        }) as any,
       )
 
       await getNpmConfig()

@@ -84,8 +84,13 @@ async function main() {
 
     // Handle --type-only flag
     if (values['type-only']) {
-      typeCoverageResult = await runCommandQuiet('pnpm', typeCoverageArgs)
-      exitCode = typeCoverageResult.exitCode
+      typeCoverageResult = await spawn('pnpm', typeCoverageArgs, {
+        cwd: process.cwd(),
+        encoding: 'utf8',
+        shell: WIN32,
+        stdio: ['pipe', 'pipe', 'pipe'],
+      })
+      exitCode = typeCoverageResult.code
 
       if (!quiet) {
         // Display type coverage only
@@ -121,8 +126,13 @@ async function main() {
 
     // Handle --code-only flag
     if (values['code-only']) {
-      codeCoverageResult = await runCommandQuiet('pnpm', vitestArgs)
-      exitCode = codeCoverageResult.exitCode
+      codeCoverageResult = await spawn('pnpm', vitestArgs, {
+        cwd: process.cwd(),
+        encoding: 'utf8',
+        shell: WIN32,
+        stdio: ['pipe', 'pipe', 'pipe'],
+      })
+      exitCode = codeCoverageResult.code
 
       if (!quiet) {
         // Process code coverage output only
@@ -169,7 +179,7 @@ async function main() {
           logger.log(' ───────────────────────────────')
           logger.log(` Code Coverage: ${codeCoveragePercent.toFixed(2)}%`)
           logger.log('')
-        } else if (code !== 0) {
+        } else if (exitCode !== 0) {
           logger.log('\n--- Output ---')
           logger.log(output)
         }
@@ -189,11 +199,21 @@ async function main() {
     }
 
     // Default: run both code and type coverage
-    codeCoverageResult = await runCommandQuiet('pnpm', vitestArgs)
-    exitCode = codeCoverageResult.exitCode
+    codeCoverageResult = await spawn('pnpm', vitestArgs, {
+      cwd: process.cwd(),
+      encoding: 'utf8',
+      shell: WIN32,
+      stdio: ['pipe', 'pipe', 'pipe'],
+    })
+    exitCode = codeCoverageResult.code
 
     // Run type coverage
-    typeCoverageResult = await runCommandQuiet('pnpm', typeCoverageArgs)
+    typeCoverageResult = await spawn('pnpm', typeCoverageArgs, {
+      cwd: process.cwd(),
+      encoding: 'utf8',
+      shell: WIN32,
+      stdio: ['pipe', 'pipe', 'pipe'],
+    })
 
     // Combine and clean output - remove ANSI color codes and spinner artifacts
     const ansiRegex = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, 'g')
@@ -261,7 +281,7 @@ async function main() {
       }
     }
 
-    if (code !== 0) {
+    if (exitCode !== 0) {
       if (!quiet) {
         printError('Coverage failed')
         // Show relevant output on failure for debugging
