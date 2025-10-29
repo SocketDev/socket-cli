@@ -158,7 +158,7 @@ jobs:
           echo ""
           echo "Final verification:"
           ls -lh packages/bootstrap/dist/bootstrap-npm.js && echo "✓ bootstrap-npm.js present" || (echo "❌ bootstrap-npm.js missing" && exit 1)
-          ls -lh packages/socket/dist/index.mjs && echo "✓ socket package present" || (echo "❌ socket package missing" && exit 1)
+          ls -lh packages/socket/dist/bootstrap.js && echo "✓ socket bootstrap.js present" || (echo "❌ socket bootstrap.js missing" && exit 1)
 
           echo "✓ All build artifacts verified and in correct location"
 
