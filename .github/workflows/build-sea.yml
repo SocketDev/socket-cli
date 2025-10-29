@@ -53,7 +53,7 @@ jobs:
         id: deps-cache-key
         shell: bash
         run: |
-          HASH=$(find packages/bootstrap packages/socket packages/cli -type f \( -name "*.mts" -o -name "*.ts" -o -name "*.mjs" -o -name "*.js" -o -name "*.json" \) ! -path "*/node_modules/*" ! -path "*/dist/*" ! -path "*/build/*" | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
+          HASH=$(find packages/bootstrap packages/socket -type f \( -name "*.mts" -o -name "*.ts" -o -name "*.mjs" -o -name "*.js" -o -name "*.json" \) ! -path "*/node_modules/*" ! -path "*/dist/*" ! -path "*/build/*" | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
           echo "hash=$HASH" >> $GITHUB_OUTPUT
 
       - name: Restore build-deps cache
@@ -63,10 +63,8 @@ jobs:
           path: |
             packages/bootstrap/dist/
             packages/socket/dist/
-            packages/cli/dist/
-            packages/cli/build/
-          key: build-deps-${{ steps.deps-cache-key.outputs.hash }}
-          restore-keys: build-deps-
+          key: build-deps-sea-${{ steps.deps-cache-key.outputs.hash }}
+          restore-keys: build-deps-sea-
 
       - name: Build bootstrap package
         if: steps.deps-cache.outputs.cache-hit != 'true'
@@ -76,10 +74,6 @@ jobs:
         if: steps.deps-cache.outputs.cache-hit != 'true'
         run: pnpm --filter socket run build
 
-      - name: Build CLI package
-        if: steps.deps-cache.outputs.cache-hit != 'true'
-        run: pnpm --filter @socketsecurity/cli run build
-
       - name: Upload build artifacts
         uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
         with:
@@ -87,8 +81,6 @@ jobs:
           path: |
             packages/bootstrap/dist/
             packages/socket/dist/
-            packages/cli/dist/
-            packages/cli/build/
           retention-days: 1
 
   build-sea:
@@ -146,16 +138,15 @@ jobs:
         run: |
           echo "=== Verifying downloaded build artifacts ==="
           echo "Directory structure after download:"
-          find bootstrap socket cli -maxdepth 3 -type f -name "*.js" -o -name "*.mjs" 2>/dev/null | head -20 || echo "No files found at root"
-          find packages/bootstrap packages/socket packages/cli -maxdepth 3 -type f -name "*.js" -o -name "*.mjs" 2>/dev/null | head -20 || echo "No files found in packages/"
+          find bootstrap socket -maxdepth 3 -type f -name "*.js" -o -name "*.mjs" 2>/dev/null | head -20 || echo "No files found at root"
+          find packages/bootstrap packages/socket -maxdepth 3 -type f -name "*.js" -o -name "*.mjs" 2>/dev/null | head -20 || echo "No files found in packages/"
 
           # Check both possible locations and move if needed
           if [ -f bootstrap/dist/bootstrap-npm.js ]; then
             echo "✓ Artifacts found at root level, moving to packages/"
-            mkdir -p packages/bootstrap/dist packages/socket/dist packages/cli/dist
+            mkdir -p packages/bootstrap/dist packages/socket/dist
             mv bootstrap/dist/* packages/bootstrap/dist/ 2>/dev/null || true
             mv socket/dist/* packages/socket/dist/ 2>/dev/null || true
-            mv cli/dist/* packages/cli/dist/ 2>/dev/null || true
           elif [ -f packages/bootstrap/dist/bootstrap-npm.js ]; then
             echo "✓ Artifacts already in correct location"
           else
@@ -168,7 +159,6 @@ jobs:
           echo "Final verification:"
           ls -lh packages/bootstrap/dist/bootstrap-npm.js && echo "✓ bootstrap-npm.js present" || (echo "❌ bootstrap-npm.js missing" && exit 1)
           ls -lh packages/socket/dist/index.mjs && echo "✓ socket package present" || (echo "❌ socket package missing" && exit 1)
-          ls -lh packages/cli/dist/cli.mjs && echo "✓ CLI package present" || (echo "❌ CLI package missing" && exit 1)
 
           echo "✓ All build artifacts verified and in correct location"
 
