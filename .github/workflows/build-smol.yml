@@ -78,9 +78,7 @@ jobs:
         uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
         with:
           name: build-deps-smol-${{ github.sha }}
-          path: |
-            packages/bootstrap/dist/
-            packages/socket/dist/
+          path: packages/
           retention-days: 1
 
   build-smol:
@@ -131,35 +129,18 @@ jobs:
         uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
         with:
           name: build-deps-smol-${{ github.sha }}
-          path: .
+          path: packages/
 
       - name: Verify bootstrap artifacts
         shell: bash
         run: |
           echo "=== Verifying downloaded bootstrap artifacts ==="
-          echo "Directory structure after download:"
-          find bootstrap socket -type f -name "*.js" 2>/dev/null || echo "No JS files found in bootstrap/socket at root"
-          find packages/bootstrap packages/socket -type f -name "*.js" 2>/dev/null || echo "No JS files found in packages/"
-
           echo ""
-          echo "Looking for bootstrap-smol.js:"
-          ls -lh bootstrap/dist/bootstrap-smol.js 2>/dev/null && echo "Found at: bootstrap/dist/bootstrap-smol.js" || echo "Not at: bootstrap/dist/"
-          ls -lh packages/bootstrap/dist/bootstrap-smol.js 2>/dev/null && echo "Found at: packages/bootstrap/dist/bootstrap-smol.js" || echo "Not at: packages/bootstrap/dist/"
-
-          # Check both possible locations
-          if [ -f bootstrap/dist/bootstrap-smol.js ]; then
-            echo "✓ Bootstrap found at root level, moving to packages/"
-            mkdir -p packages/bootstrap/dist packages/socket/dist
-            mv bootstrap/dist/* packages/bootstrap/dist/ 2>/dev/null || true
-            mv socket/dist/* packages/socket/dist/ 2>/dev/null || true
-          elif [ -f packages/bootstrap/dist/bootstrap-smol.js ]; then
-            echo "✓ Bootstrap already in correct location"
-          else
-            echo "❌ ERROR: bootstrap-smol.js not found in any expected location!"
-            exit 1
-          fi
-
-          echo "✓ Bootstrap artifacts verified and in correct location"
+          echo "Checking for required files:"
+          ls -lh packages/bootstrap/dist/bootstrap-smol.js && echo "✓ bootstrap-smol.js present" || (echo "❌ bootstrap-smol.js missing" && exit 1)
+          ls -lh packages/socket/dist/bootstrap.js && echo "✓ socket bootstrap.js present" || (echo "❌ socket bootstrap.js missing" && exit 1)
+          echo ""
+          echo "✓ Bootstrap artifacts verified"
 
       - name: Setup Node.js
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0

@@ -1,7 +1,7 @@
 .DS_Store
 ._.DS_Store
 Thumbs.db
-/.claude
+.claude/
 /.node-source
 /.node-source-test
 /.scratch
