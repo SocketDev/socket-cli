@@ -29,6 +29,13 @@ try {
   console.log('→ Building npm bootstrap...')
   const npmResult = await build(npmConfig)
 
+  // Write the transformed output (build had write: false).
+  if (npmResult.outputFiles && npmResult.outputFiles.length > 0) {
+    for (const output of npmResult.outputFiles) {
+      writeFileSync(output.path, output.contents)
+    }
+  }
+
   console.log(`✓ ${npmConfig.outfile}`)
 
   if (npmResult.metafile) {
