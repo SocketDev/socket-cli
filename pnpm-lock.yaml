@@ -444,6 +444,9 @@ importers:
       '@babel/types':
         specifier: ^7.28.5
         version: 7.28.5
+      '@gitbeaker/rest':
+        specifier: 43.7.0
+        version: 43.7.0
       '@rollup/plugin-babel':
         specifier: 6.0.4
         version: 6.0.4(@babel/core@7.28.4)(rollup@4.50.1)
@@ -1528,6 +1531,18 @@ packages:
   '@eslint/plugin-kit@0.3.5':
     resolution: {integrity: sha512-Z5kJ+wU3oA7MMIqVR9tyZRtjYPr4OC004Q4Rw7pgOKUOKkJfZ3O24nz3WYfGRpMDNmcOi3TwQOmgm7B7Tpii0w==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+
+  '@gitbeaker/core@43.7.0':
+    resolution: {integrity: sha512-quls2OE8U9aovreuqm7Vtdo9X8WXJfQO6j0kBUi6oY/Htm5pc5euOBwbcG7wgzvPTfYbgE2c4aAHXK8jsR/yAg==}
+    engines: {node: '>=18.20.0'}
+
+  '@gitbeaker/requester-utils@43.7.0':
+    resolution: {integrity: sha512-Rw2j4WSe+uPYN5EEUgW8Xk7HJJNFk2/hyW8tJ0oNchkmcwouEvRCJd8lwNR2O3FkT06WitsKg3qycyxZQOGHyA==}
+    engines: {node: '>=18.20.0'}
+
+  '@gitbeaker/rest@43.7.0':
+    resolution: {integrity: sha512-CqTP1uRcz1K5KRm95mo3H0Q/KaJfm85LPXbH72sA2ZFoYpdH87hWudurgOa726a80ePKGupKtB4em7l+4NCcaQ==}
+    engines: {node: '>=18.20.0'}
 
   '@humanfs/core@0.19.1':
     resolution: {integrity: sha512-5DyQ4+1JEUzejeK1JGICcideyfUbGixgS9jNgex5nqkW+cY7WZhxBigmieN5Qnw9ZosSNVC9KQKyb+GUaGyKUA==}
@@ -5085,6 +5100,10 @@ packages:
   picocolors@1.1.1:
     resolution: {integrity: sha512-xceH2snhtb5M9liqDsmEw56le376mTZkEX/jEb/RxNFyegNul7eNslCXP9FDj/Lcu0X8KEyMceP2ntpaHrDEVA==}
 
+  picomatch-browser@2.2.6:
+    resolution: {integrity: sha512-0ypsOQt9D4e3hziV8O4elD9uN0z/jtUEfxVRtNaAAtXIyUx9m/SzlO020i8YNL2aL/E6blOvvHQcin6HZlFy/w==}
+    engines: {node: '>=8.6'}
+
   picomatch@2.3.1:
     resolution: {integrity: sha512-JU3teHTNjmE2VCGFzuY8EXzCDVwEqB2a8fsIvwaStHhAWJEeVd1o1QD80CU6+ZdEXXSLbSsuLwJjkCBWqRQUVA==}
     engines: {node: '>=8.6'}
@@ -5232,6 +5251,9 @@ packages:
   quick-lru@5.1.1:
     resolution: {integrity: sha512-WuyALRjWPDGtt/wzJiadO5AXY+8hZ80hVpe6MyivgraREW751X3SbhRvG3eLKOYN+8VEvqLcf3wdnt44Z4S4SA==}
     engines: {node: '>=10'}
+
+  rate-limiter-flexible@8.1.0:
+    resolution: {integrity: sha512-J+4xBdVboibP1h0Imn4nFoCLT+UM9Os9vJaWaRWkLsQxS7jrhLJeLlmzP5hyCEsLwtgFIIY5KcWiJGyyVTMaKg==}
 
   raw-body@3.0.1:
     resolution: {integrity: sha512-9G8cA+tuMS75+6G/TzW8OtLzmBDMo8p1JRxN5AZ+LAp8uxGA8V8GZm4GQ4/N5QNQEnLmg6SS7wyuSmbKepiKqA==}
@@ -6177,6 +6199,9 @@ packages:
     resolution: {integrity: sha512-h3Fbisa2nKGPxCpm89Hk33lBLsnaGBvctQopaBSOW/uIs6FTe1ATyAnKFJrzVs9vpGdsTe73WF3V4lIsk4Gacw==}
     engines: {node: '>=18'}
 
+  xcase@2.0.1:
+    resolution: {integrity: sha512-UmFXIPU+9Eg3E9m/728Bii0lAIuoc+6nbrNUKaRPJOFp91ih44qqGlWtxMB6kXFrRD6po+86ksHM5XHCfk6iPw==}
+
   xdg-basedir@4.0.0:
     resolution: {integrity: sha512-PSNhEJDejZYV7h50BohL09Er9VaIefr2LMAf3OEmpCkjOi34eYyQYAXUTjEQtZJTKcF0E2UKTh+osDLsgNim9Q==}
     engines: {node: '>=8'}
@@ -7047,6 +7072,24 @@ snapshots:
     dependencies:
       '@eslint/core': 0.15.2
       levn: 0.4.1
+
+  '@gitbeaker/core@43.7.0':
+    dependencies:
+      '@gitbeaker/requester-utils': 43.7.0
+      qs: 6.14.0
+      xcase: 2.0.1
+
+  '@gitbeaker/requester-utils@43.7.0':
+    dependencies:
+      picomatch-browser: 2.2.6
+      qs: 6.14.0
+      rate-limiter-flexible: 8.1.0
+      xcase: 2.0.1
+
+  '@gitbeaker/rest@43.7.0':
+    dependencies:
+      '@gitbeaker/core': 43.7.0
+      '@gitbeaker/requester-utils': 43.7.0
 
   '@humanfs/core@0.19.1': {}
 
@@ -8140,8 +8183,7 @@ snapshots:
 
   '@socketregistry/safer-buffer@1.0.10': {}
 
-  '@socketregistry/side-channel@1.0.10':
-    optional: true
+  '@socketregistry/side-channel@1.0.10': {}
 
   '@socketregistry/yocto-spinner@1.0.24':
     dependencies:
@@ -10990,6 +11032,8 @@ snapshots:
 
   picocolors@1.1.1: {}
 
+  picomatch-browser@2.2.6: {}
+
   picomatch@2.3.1: {}
 
   picomatch@4.0.3: {}
@@ -11116,13 +11160,14 @@ snapshots:
   qs@6.14.0:
     dependencies:
       side-channel: '@socketregistry/side-channel@1.0.10'
-    optional: true
 
   quansync@0.2.11: {}
 
   queue-microtask@1.2.3: {}
 
   quick-lru@5.1.1: {}
+
+  rate-limiter-flexible@8.1.0: {}
 
   raw-body@3.0.1:
     dependencies:
@@ -12189,6 +12234,8 @@ snapshots:
   wsl-utils@0.1.0:
     dependencies:
       is-wsl: 3.1.0
+
+  xcase@2.0.1: {}
 
   xdg-basedir@4.0.0: {}
 

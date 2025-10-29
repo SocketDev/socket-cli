@@ -79,6 +79,7 @@
     "@babel/parser": "7.28.4",
     "@babel/traverse": "7.28.4",
     "@babel/types": "^7.28.5",
+    "@gitbeaker/rest": "43.7.0",
     "@rollup/plugin-babel": "6.0.4",
     "@rollup/plugin-commonjs": "28.0.6",
     "@rollup/plugin-json": "6.1.0",
