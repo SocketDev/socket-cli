@@ -1,0 +1,14 @@
+# Build output
+dist/
+
+# Node modules
+node_modules/
+
+# Test coverage
+coverage/
+
+# Cache
+.cache/
+
+# macOS
+.DS_Store
