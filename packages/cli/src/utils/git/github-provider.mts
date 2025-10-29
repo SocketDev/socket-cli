@@ -11,7 +11,7 @@ import {
   GQL_PR_STATE_OPEN,
 } from '../../constants/github.mts'
 import { formatErrorWithDetail } from '../error/errors.mts'
-import { gitDeleteRemoteBranch } from './operations.mjs'
+import { gitDeleteRemoteBranch } from './operations.mts'
 import { cacheFetch, getOctokit, getOctokitGraphql } from './github.mts'
 
 import type {
@@ -82,12 +82,11 @@ export class GitHubProvider implements PrProvider {
         const response = await octokit.pulls.create(octokitPullsCreateParams)
         return {
           number: response.data.number,
-          state:
-            response.data.state === 'closed'
+          state: response.data.merged_at
+            ? 'merged'
+            : response.data.state === 'closed'
               ? 'closed'
-              : response.data.merged_at
-                ? 'merged'
-                : 'open',
+              : 'open',
           url: response.data.html_url,
         }
       } catch (e) {
