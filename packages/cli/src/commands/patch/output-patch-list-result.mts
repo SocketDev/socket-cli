@@ -130,7 +130,9 @@ export async function outputPatchListResult(
       }
       logger.log('')
     }
-    logger.log(`${mdKeyValue('Legend', '[✓] Applied | [○] Downloaded | [✗] Failed')}`)
+    logger.log(
+      `${mdKeyValue('Legend', '[✓] Applied | [○] Downloaded | [✗] Failed')}`,
+    )
     return
   }
 

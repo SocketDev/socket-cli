@@ -37,7 +37,7 @@
  * mdHeader('Title') // '# Title'
  * mdHeader('Subtitle', 2) // '## Subtitle'
  */
-export function mdHeader(title: string, level: number = 1): string {
+export function mdHeader(title: string, level = 1): string {
   const headerLevel = Math.max(1, Math.min(6, level))
   return `${'#'.repeat(headerLevel)} ${title}`
 }
@@ -58,7 +58,7 @@ export function mdHeader(title: string, level: number = 1): string {
 export function mdKeyValue(
   label: string,
   value: string | number | undefined,
-  escaped: boolean = false,
+  escaped = false,
 ): string {
   const displayValue = value === undefined ? 'N/A' : String(value)
   const finalValue = escaped
@@ -156,7 +156,7 @@ export function mdError(message: string, cause?: string): string {
 export function mdSection(
   title: string,
   content: string | string[],
-  level: number = 2,
+  level = 2,
 ): string {
   const header = mdHeader(title, level)
   const body = Array.isArray(content) ? content.join('\n') : content
