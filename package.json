@@ -202,7 +202,7 @@
     "// Publishing": "",
     "publish": "node scripts/publish.mjs",
     "// Setup": "",
-    "prepare": "dotenvx -q run -f .env.local -- husky",
+    "prepare": "husky",
     "pretest": "pnpm run build"
   },
   "typeCoverage": {
