@@ -23,6 +23,7 @@
  * - Build specific platform: node scripts/build.mjs --platform=darwin --arch=x64
  */
 
+import crypto from 'node:crypto'
 import { existsSync, promises as fs } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
