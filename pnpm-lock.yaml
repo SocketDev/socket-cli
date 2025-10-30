@@ -13,8 +13,8 @@ catalogs:
       specifier: 7.28.4
       version: 7.28.4
     '@socketsecurity/lib':
-      specifier: 2.8.1
-      version: 2.8.1
+      specifier: 2.8.2
+      version: 2.8.2
     '@socketsecurity/sdk':
       specifier: 3.0.16
       version: 3.0.16
@@ -202,7 +202,7 @@ importers:
         version: 3.0.1
       '@socketsecurity/lib':
         specifier: 'catalog:'
-        version: 2.8.1(typescript@5.9.3)
+        version: 2.8.2(typescript@5.9.3)
       '@socketsecurity/registry':
         specifier: 2.0.0
         version: 2.0.0(typescript@5.9.3)
@@ -436,7 +436,7 @@ importers:
         version: link:../cli
       '@socketsecurity/lib':
         specifier: 'catalog:'
-        version: 2.8.1(typescript@5.9.3)
+        version: 2.8.2(typescript@5.9.3)
       del-cli:
         specifier: 'catalog:'
         version: 6.0.0
@@ -460,7 +460,7 @@ importers:
         version: 7.28.4
       '@socketsecurity/lib':
         specifier: 'catalog:'
-        version: 2.8.1(typescript@5.9.3)
+        version: 2.8.2(typescript@5.9.3)
       magic-string:
         specifier: 'catalog:'
         version: 0.30.19
@@ -549,7 +549,7 @@ importers:
         version: link:../build-infra
       '@socketsecurity/lib':
         specifier: 'catalog:'
-        version: 2.8.1(typescript@5.9.3)
+        version: 2.8.2(typescript@5.9.3)
 
   packages/minilm-builder:
     dependencies:
@@ -558,7 +558,7 @@ importers:
         version: link:../build-infra
       '@socketsecurity/lib':
         specifier: 'catalog:'
-        version: 2.8.1(typescript@5.9.3)
+        version: 2.8.2(typescript@5.9.3)
 
   packages/node-sea-builder:
     dependencies:
@@ -586,7 +586,7 @@ importers:
         version: link:../build-infra
       '@socketsecurity/lib':
         specifier: 'catalog:'
-        version: 2.8.1(typescript@5.9.3)
+        version: 2.8.2(typescript@5.9.3)
     devDependencies:
       vitest:
         specifier: 3.0.0
@@ -599,7 +599,7 @@ importers:
         version: link:../build-infra
       '@socketsecurity/lib':
         specifier: 'catalog:'
-        version: 2.8.1(typescript@5.9.3)
+        version: 2.8.2(typescript@5.9.3)
 
   packages/sbom-generator:
     dependencies:
@@ -608,7 +608,7 @@ importers:
         version: 2.2.5
       '@socketsecurity/lib':
         specifier: 'catalog:'
-        version: 2.8.1(typescript@5.9.3)
+        version: 2.8.2(typescript@5.9.3)
       '@yarnpkg/parsers':
         specifier: ^3.0.0
         version: 3.0.3
@@ -627,7 +627,7 @@ importers:
     devDependencies:
       '@socketsecurity/lib':
         specifier: 'catalog:'
-        version: 2.8.1(typescript@5.9.3)
+        version: 2.8.2(typescript@5.9.3)
       esbuild:
         specifier: ^0.24.0
         version: 0.24.2
@@ -664,7 +664,7 @@ importers:
         version: link:../build-infra
       '@socketsecurity/lib':
         specifier: 'catalog:'
-        version: 2.8.1(typescript@5.9.3)
+        version: 2.8.2(typescript@5.9.3)
     devDependencies:
       esbuild:
         specifier: 0.25.10
@@ -693,7 +693,7 @@ importers:
         version: link:../build-infra
       '@socketsecurity/lib':
         specifier: 'catalog:'
-        version: 2.8.1(typescript@5.9.3)
+        version: 2.8.2(typescript@5.9.3)
 
 packages:
 
@@ -2592,6 +2592,15 @@ packages:
 
   '@socketsecurity/lib@2.8.1':
     resolution: {integrity: sha512-jlBsgcDvDBRYgOEt3ljfs4W1KEd80pIbIqASTkuVXEBKD/T/yktdzVGlKPad6EoQ82PIgH/rS42EC5uNM+ls7Q==}
+    engines: {node: '>=22'}
+    peerDependencies:
+      typescript: '>=5.0.0'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
+
+  '@socketsecurity/lib@2.8.2':
+    resolution: {integrity: sha512-t2HrcKS1M/GYrQ4P5fcf9aQdartvqxGOIWFAmlYITe07by/VGvGhfERxfFo90+3FxBE8dhbO2+JQmdjBaJEm3A==}
     engines: {node: '>=22'}
     peerDependencies:
       typescript: '>=5.0.0'
@@ -8211,6 +8220,10 @@ snapshots:
       yaml: 2.8.1
 
   '@socketsecurity/lib@2.8.1(typescript@5.9.3)':
+    optionalDependencies:
+      typescript: 5.9.3
+
+  '@socketsecurity/lib@2.8.2(typescript@5.9.3)':
     optionalDependencies:
       typescript: 5.9.3
 
