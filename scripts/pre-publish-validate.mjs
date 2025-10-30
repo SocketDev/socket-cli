@@ -12,14 +12,11 @@ const __dirname = path.dirname(__filename)
 const monorepoRoot = path.resolve(__dirname, '..')
 
 // Accept optional package path as first argument (e.g. 'packages/cli').
-// Used to read source package.json for version info.
+// Validates the package's dist/ directory.
 const packagePath = process.argv[2]
-const sourcePackageRoot = packagePath
+const projectRoot = packagePath
   ? path.resolve(monorepoRoot, packagePath)
   : monorepoRoot
-
-// Dist directory is always at monorepo root.
-const projectRoot = monorepoRoot
 
 /**
  * Format a success message.
@@ -326,10 +323,10 @@ async function validateGitTag() {
   const warnings = []
 
   try {
-    // Read version from source package.json.
-    const sourcePkgPath = path.join(sourcePackageRoot, 'package.json')
-    const sourcePkg = JSON.parse(await fs.readFile(sourcePkgPath, 'utf8'))
-    const version = sourcePkg.version
+    // Read version from package.json.
+    const pkgPath = path.join(projectRoot, 'package.json')
+    const pkg = JSON.parse(await fs.readFile(pkgPath, 'utf8'))
+    const version = pkg.version
 
     // Check if tag exists.
     const tagName = `v${version}`
