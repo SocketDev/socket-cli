@@ -2,8 +2,6 @@
 ._.DS_Store
 Thumbs.db
 .claude/
-/.node-source
-/.node-source-test
 !/docs/build
 /.env
 /.env.local
@@ -62,5 +60,4 @@ packages/*/.yoga-source
 packages/*/.yoga-tests
 packages/*/.onnx-source
 packages/*/.minilm-source
-/.node-source
 **/html

@@ -145,8 +145,9 @@ export async function performReachabilityAnalysis(
   spinner?.start()
   spinner?.infoAndStop('Running reachability analysis with Coana...')
 
-  const outputFilePath =
-    outputPath && outputPath.trim() ? outputPath : DOT_SOCKET_DOT_FACTS_JSON
+  const outputFilePath = outputPath?.trim()
+    ? outputPath
+    : DOT_SOCKET_DOT_FACTS_JSON
   // Build Coana arguments.
   const coanaArgs = [
     'run',

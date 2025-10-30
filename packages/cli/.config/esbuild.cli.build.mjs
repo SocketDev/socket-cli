@@ -71,7 +71,7 @@ function envVarReplacementPlugin(envVars) {
   return {
     name: 'env-var-replacement',
     setup(build) {
-      build.onEnd((result) => {
+      build.onEnd(result => {
         const outputs = result.outputFiles
         if (!outputs || outputs.length === 0) {
           return
@@ -84,13 +84,10 @@ function envVarReplacementPlugin(envVars) {
           // Pattern: <anything>.env["KEY"] where <anything> could be "import_node_process21.default" etc.
           for (const [key, value] of Object.entries(envVars)) {
             // Match: <identifier>.env["KEY"] or <identifier>.env['KEY']
-            const pattern = new RegExp(
-              `(\\w+\\.)+env\\["${key}"\\]`,
-              'g'
-            )
+            const pattern = new RegExp(`(\\w+\\.)+env\\["${key}"\\]`, 'g')
             const singleQuotePattern = new RegExp(
               `(\\w+\\.)+env\\['${key}'\\]`,
-              'g'
+              'g',
             )
 
             // Replace with the actual value (already JSON.stringified).
@@ -209,10 +206,13 @@ const config = {
       INLINED_SOCKET_CLI_AI_VERSION: JSON.stringify(packageJson.version),
       INLINED_SOCKET_CLI_CDXGEN_VERSION: JSON.stringify(cdxgenVersion),
       INLINED_SOCKET_CLI_COANA_VERSION: JSON.stringify(coanaVersion),
-      INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION: JSON.stringify(cdxgenVersion),
+      INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION:
+        JSON.stringify(cdxgenVersion),
       INLINED_SOCKET_CLI_PYCLI_VERSION: JSON.stringify(pyCliVersion),
       INLINED_SOCKET_CLI_SYNP_VERSION: JSON.stringify(synpVersion),
-      INLINED_SOCKET_CLI_PUBLISHED_BUILD: JSON.stringify(publishedBuild ? '1' : ''),
+      INLINED_SOCKET_CLI_PUBLISHED_BUILD: JSON.stringify(
+        publishedBuild ? '1' : '',
+      ),
       INLINED_SOCKET_CLI_LEGACY_BUILD: JSON.stringify(legacyBuild ? '1' : ''),
       INLINED_SOCKET_CLI_SENTRY_BUILD: JSON.stringify(sentryBuild ? '1' : ''),
       INLINED_SOCKET_CLI_PYTHON_VERSION: JSON.stringify(pythonVersion),
@@ -234,10 +234,13 @@ const config = {
       INLINED_SOCKET_CLI_AI_VERSION: JSON.stringify(packageJson.version),
       INLINED_SOCKET_CLI_CDXGEN_VERSION: JSON.stringify(cdxgenVersion),
       INLINED_SOCKET_CLI_COANA_VERSION: JSON.stringify(coanaVersion),
-      INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION: JSON.stringify(cdxgenVersion),
+      INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION:
+        JSON.stringify(cdxgenVersion),
       INLINED_SOCKET_CLI_PYCLI_VERSION: JSON.stringify(pyCliVersion),
       INLINED_SOCKET_CLI_SYNP_VERSION: JSON.stringify(synpVersion),
-      INLINED_SOCKET_CLI_PUBLISHED_BUILD: JSON.stringify(publishedBuild ? '1' : ''),
+      INLINED_SOCKET_CLI_PUBLISHED_BUILD: JSON.stringify(
+        publishedBuild ? '1' : '',
+      ),
       INLINED_SOCKET_CLI_LEGACY_BUILD: JSON.stringify(legacyBuild ? '1' : ''),
       INLINED_SOCKET_CLI_SENTRY_BUILD: JSON.stringify(sentryBuild ? '1' : ''),
       INLINED_SOCKET_CLI_PYTHON_VERSION: JSON.stringify(pythonVersion),
