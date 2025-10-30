@@ -98,10 +98,8 @@ describe('PromiseQueue', () => {
     const queue = new PromiseQueue(1)
 
     // Intentionally defined inline for test simplicity.
-    // eslint-disable-next-line unicorn/consistent-function-scoping
     const goodTask = () => Promise.resolve('success')
     // Intentionally defined inline for test simplicity.
-    // eslint-disable-next-line unicorn/consistent-function-scoping
     const badTask = () => Promise.reject(new Error('failure'))
 
     const result1 = await queue.add(goodTask)
