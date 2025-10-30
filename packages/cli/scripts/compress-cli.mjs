@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * @fileoverview Compress build/cli.js with brotli to dist/cli.js.bz.
  *
@@ -11,8 +10,8 @@
 import crypto from 'node:crypto'
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
-import { brotliCompressSync } from 'node:zlib'
 import { fileURLToPath } from 'node:url'
+import { brotliCompressSync } from 'node:zlib'
 
 import { logger } from '@socketsecurity/lib/logger'
 

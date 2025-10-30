@@ -7,8 +7,8 @@ import { logger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 // Import compromise for NLP text normalization.
 
-import ENV from '../../constants/env.mts'
 import { outputAskCommand } from './output-ask.mts'
+import ENV from '../../constants/env.mts'
 
 // Semantic index for fast word-overlap matching (lazy-loaded, ~3KB).
 let semanticIndex: any = null

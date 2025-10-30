@@ -7,8 +7,8 @@ import { spawn } from '@socketsecurity/lib/spawn'
 
 import { distPath } from '../../constants/paths.mjs'
 
-import type { CResult, OutputKind } from '../../types.mts'
 import type { ManifestResult } from './output-manifest.mts'
+import type { CResult, OutputKind } from '../../types.mts'
 
 export async function convertGradleToMaven({
   bin,

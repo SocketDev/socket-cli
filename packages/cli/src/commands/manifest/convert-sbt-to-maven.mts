@@ -3,8 +3,8 @@ import { safeReadFile } from '@socketsecurity/lib/fs'
 import { logger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 
-import type { CResult, OutputKind } from '../../types.mts'
 import type { ManifestResult } from './output-manifest.mts'
+import type { CResult, OutputKind } from '../../types.mts'
 
 export async function convertSbtToMaven({
   bin,

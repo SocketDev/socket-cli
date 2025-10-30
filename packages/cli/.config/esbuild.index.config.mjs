@@ -3,9 +3,10 @@
  * Builds the brotli decompression loader that executes the compressed CLI.
  */
 
-import { build } from 'esbuild'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+
+import { build } from 'esbuild'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.resolve(__dirname, '..')

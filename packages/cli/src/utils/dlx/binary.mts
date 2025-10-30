@@ -78,7 +78,6 @@ export interface DlxBinaryResult {
   spawnPromise: ReturnType<typeof spawn>
 }
 
-
 /**
  * Get metadata file path for a cached binary.
  */

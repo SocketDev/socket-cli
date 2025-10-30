@@ -1,6 +1,5 @@
 /** @fileoverview SDK test helpers for Socket CLI. Provides utilities for setting up SDK mocks with common success/error patterns. */
 
-import type { Mock } from 'vitest'
 import { vi } from 'vitest'
 
 import {
@@ -8,6 +7,8 @@ import {
   createMockSdk,
   createSuccessResult,
 } from './mocks.mts'
+
+import type { Mock } from 'vitest'
 
 /**
  * Get the mocked handleApiCall function.

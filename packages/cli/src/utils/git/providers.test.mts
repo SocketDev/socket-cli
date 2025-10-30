@@ -185,7 +185,7 @@ describe('GitHubProvider', () => {
 
   describe('listPrs', () => {
     it('lists PRs with pagination', async () => {
-      const { getOctokitGraphql, cacheFetch } = await import('./github.mts')
+      const { cacheFetch, getOctokitGraphql } = await import('./github.mts')
       vi.mocked(getOctokitGraphql).mockReturnValue(mockOctokitGraphql)
 
       const mockResponse = {

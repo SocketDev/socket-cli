@@ -13,8 +13,8 @@ import {
   getCiEnvInstructions,
   getFixEnv,
 } from './env-helpers.mts'
-import { getSocketFixBranchName, getSocketFixCommitMessage } from './git.mts'
 import { isGhsaFixed, markGhsaFixed } from './ghsa-tracker.mts'
+import { getSocketFixBranchName, getSocketFixCommitMessage } from './git.mts'
 import { logPrEvent } from './pr-lifecycle-logger.mts'
 import {
   cleanupSocketFixPrs,
@@ -27,6 +27,12 @@ import { spawnCoanaDlx } from '../../utils/dlx/spawn.mjs'
 import { getErrorCause } from '../../utils/error/errors.mjs'
 import { getPackageFilesForScan } from '../../utils/fs/path-resolve.mjs'
 import {
+  enablePrAutoMerge,
+  fetchGhsaDetails,
+  getOctokit,
+  setGitRemoteGithubRepoUrl,
+} from '../../utils/git/github.mts'
+import {
   gitCheckoutBranch,
   gitCommit,
   gitCreateBranch,
@@ -37,12 +43,6 @@ import {
   gitResetAndClean,
   gitUnstagedModifiedFiles,
 } from '../../utils/git/operations.mjs'
-import {
-  enablePrAutoMerge,
-  fetchGhsaDetails,
-  getOctokit,
-  setGitRemoteGithubRepoUrl,
-} from '../../utils/git/github.mts'
 import { handleApiCall } from '../../utils/socket/api.mjs'
 import { setupSdk } from '../../utils/socket/sdk.mjs'
 import { fetchSupportedScanFileNames } from '../scan/fetch-supported-scan-file-names.mts'

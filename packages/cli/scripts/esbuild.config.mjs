@@ -7,8 +7,9 @@ import { brotliCompressSync } from 'node:zlib'
 
 import { build } from 'esbuild'
 
-import config from './esbuild.cli.config.mjs'
 import { logger } from '@socketsecurity/lib/logger'
+
+import config from './esbuild.cli.config.mjs'
 
 logger.log('Building Socket CLI with esbuild...\n')
 
@@ -51,6 +52,6 @@ try {
   logger.log(`✓ Compression ratio: ${compressionRatio}%`)
 } catch (error) {
   logger.error('Build failed:', error)
-  // eslint-disable-next-line n/no-process-exit
+   
   process.exit(1)
 }

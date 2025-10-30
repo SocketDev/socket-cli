@@ -11,6 +11,7 @@
  *   --apply    Apply updates (default is check-only)
  */
 
+import { runParallel } from '@socketsecurity/build-infra/lib/script-runner'
 import { isQuiet, isVerbose } from '@socketsecurity/lib/argv/flags'
 import { logger } from '@socketsecurity/lib/logger'
 import {
@@ -20,7 +21,6 @@ import {
   printSuccess,
 } from '@socketsecurity/lib/stdio/header'
 
-import { runParallel } from '@socketsecurity/build-infra/lib/script-runner'
 
 async function main() {
   const quiet = isQuiet()

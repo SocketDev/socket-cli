@@ -17,10 +17,10 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { deleteAsync as del } from 'del'
+import colors from 'yoctocolors-cjs'
 
 import { parseArgs } from '@socketsecurity/lib/argv/parse'
 import { logger } from '@socketsecurity/lib/logger'
-import colors from 'yoctocolors-cjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '..')

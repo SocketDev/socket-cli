@@ -8,13 +8,13 @@ import {
   CONFIG_KEY_DEFAULT_ORG,
 } from '../../constants/config.mts'
 import ENV, { getCliVersion, getCliVersionHash } from '../../constants/env.mts'
+import { getConfigValueOrUndef, isConfigFromFlag } from '../config.mts'
 import { isDebug } from '../debug.mts'
+import { renderLogoWithFallback, supportsFullColor } from './ascii-header.mts'
 import { tildify } from '../fs/home-path.mts'
 import { getVisibleTokenPrefix } from '../socket/sdk.mjs'
-import { renderLogoWithFallback, supportsFullColor } from './ascii-header.mts'
 
 import type { HeaderTheme } from './ascii-header.mts'
-import { getConfigValueOrUndef, isConfigFromFlag } from '../config.mts'
 
 /**
  * Determine the origin of the API token.

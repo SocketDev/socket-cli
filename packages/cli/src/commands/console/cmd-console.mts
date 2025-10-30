@@ -1,7 +1,3 @@
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
 
 import { handleConsole } from './handle-console.mts'
 import { commonFlags } from '../../flags.mts'
@@ -10,6 +6,11 @@ import {
   getFlagApiRequirementsOutput,
   getFlagListOutput,
 } from '../../utils/output/formatting.mts'
+
+import type {
+  CliCommandConfig,
+  CliCommandContext,
+} from '../../utils/cli/with-subcommands.mjs'
 
 export const CMD_NAME = 'console'
 

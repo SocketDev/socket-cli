@@ -543,12 +543,20 @@ export async function sendApiRequest<T>(
       )
     }
     // Log success for debugging.
-    debugApiResponse(description || 'Send API Request', result.status, undefined, {
-      method,
-      url: fullUrl,
-      durationMs,
-      headers: { Authorization: '[REDACTED]', 'Content-Type': 'application/json' },
-    })
+    debugApiResponse(
+      description || 'Send API Request',
+      result.status,
+      undefined,
+      {
+        method,
+        url: fullUrl,
+        durationMs,
+        headers: {
+          Authorization: '[REDACTED]',
+          'Content-Type': 'application/json',
+        },
+      },
+    )
   } catch (e) {
     const durationMs = Date.now() - startTime
     if (description) {
@@ -562,7 +570,10 @@ export async function sendApiRequest<T>(
       method,
       url: fullUrl,
       durationMs,
-      headers: { Authorization: '[REDACTED]', 'Content-Type': 'application/json' },
+      headers: {
+        Authorization: '[REDACTED]',
+        'Content-Type': 'application/json',
+      },
     })
 
     const errStr = e ? String(e).trim() : ''
@@ -585,7 +596,10 @@ export async function sendApiRequest<T>(
       method,
       url: fullUrl,
       durationMs,
-      headers: { Authorization: '[REDACTED]', 'Content-Type': 'application/json' },
+      headers: {
+        Authorization: '[REDACTED]',
+        'Content-Type': 'application/json',
+      },
     })
     // Log required permissions for 403 errors when in a command context.
     if (commandPath && status === 403) {
