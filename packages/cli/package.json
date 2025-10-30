@@ -88,9 +88,10 @@
     "socketcli": "^2.2.15"
   },
   "files": [
+    "CHANGELOG.md",
+    "LICENSE",
     "data/**",
     "dist/**",
-    "CHANGELOG.md",
     "logo-dark.png",
     "logo-light.png"
   ],

@@ -68,13 +68,18 @@ async function main() {
     })
     logger.log(`${colors.green('✓')} Copied data/`)
 
-    // Copy images from repo root.
-    logger.log(`${colors.blue('ℹ')} Copying images from repo root...`)
-    const images = ['logo-dark.png', 'logo-light.png']
-    for (const image of images) {
-      await fs.cp(path.join(repoRoot, image), path.join(rootPath, image))
+    // Copy files from repo root.
+    logger.log(`${colors.blue('ℹ')} Copying files from repo root...`)
+    const filesToCopy = [
+      'CHANGELOG.md',
+      'LICENSE',
+      'logo-dark.png',
+      'logo-light.png',
+    ]
+    for (const file of filesToCopy) {
+      await fs.cp(path.join(repoRoot, file), path.join(rootPath, file))
     }
-    logger.log(`${colors.green('✓')} Copied images`)
+    logger.log(`${colors.green('✓')} Copied files from repo root`)
   } catch (error) {
     logger.error(`Build failed: ${error.message}`)
     process.exitCode = 1

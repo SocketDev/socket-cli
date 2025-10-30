@@ -55,13 +55,44 @@ async function validate() {
 
   const errors = []
 
-  // Check package.json exists.
+  // Check package.json exists and has correct files array.
   logger.log(info('Checking package.json...'))
   const pkgPath = path.join(packageRoot, 'package.json')
   if (!(await fileExists(pkgPath))) {
     errors.push('package.json does not exist')
   } else {
     logger.log(success('package.json exists'))
+
+    // Validate files array.
+    const pkg = JSON.parse(await fs.readFile(pkgPath, 'utf-8'))
+    const requiredInFiles = [
+      'CHANGELOG.md',
+      'LICENSE',
+      'data/**',
+      'dist/**',
+      'logo-dark.png',
+      'logo-light.png',
+    ]
+    for (const required of requiredInFiles) {
+      if (!pkg.files?.includes(required)) {
+        errors.push(`package.json files array missing: ${required}`)
+      }
+    }
+    if (errors.length === 0) {
+      logger.log(success('package.json files array is correct'))
+    }
+  }
+
+  // Check root files exist (LICENSE, CHANGELOG.md).
+  const rootFiles = ['LICENSE', 'CHANGELOG.md']
+  for (const file of rootFiles) {
+    logger.log(info(`Checking ${file}...`))
+    const filePath = path.join(packageRoot, file)
+    if (!(await fileExists(filePath))) {
+      errors.push(`${file} does not exist`)
+    } else {
+      logger.log(success(`${file} exists`))
+    }
   }
 
   // Check dist files exist.
