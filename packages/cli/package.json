@@ -39,7 +39,7 @@
     "fix": "node --import=./scripts/load.mjs scripts/fix.mjs",
     "lint-staged": "dotenvx -q run -f .env.local -- lint-staged",
     "precommit": "dotenvx -q run -f .env.local -- lint-staged",
-    "prepare": "dotenvx -q run -f .env.local -- husky",
+    "prepare": "husky",
     "bs": "dotenvx -q run -f .env.local -- pnpm run build; pnpm exec socket --",
     "s": "dotenvx -q run -f .env.local -- pnpm exec socket --",
     "e2e-tests": "dotenvx -q run -f .env.test -- vitest run --config vitest.e2e.config.mts",
