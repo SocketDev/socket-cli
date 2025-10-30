@@ -81,8 +81,31 @@ async function checkVersionConsistency() {
     // File doesn't exist or can't be read - this is OK.
   }
 
-  // Skip @socketbin/cli-ai package - it's not published by socketbin workflows.
-  // It has its own versioning separate from the platform-specific socketbin packages.
+  // Check @socketbin/cli-ai package.
+  // const cliAiPkgPath = path.join(
+  //   projectRoot,
+  //   'packages/socketbin-cli-ai/package.json',
+  // )
+  // try {
+  //   await fs.access(cliAiPkgPath)
+  //   const cliAiPkg = JSON.parse(await fs.readFile(cliAiPkgPath, 'utf8'))
+  //   checked.push({
+  //     file: 'packages/socketbin-cli-ai/package.json',
+  //     version: cliAiPkg.version,
+  //     matches: cliAiPkg.version === cleanVersion,
+  //   })
+  //
+  //   if (cliAiPkg.version !== cleanVersion) {
+  //     warnings.push(
+  //       `packages/socketbin-cli-ai/package.json version (${cliAiPkg.version}) does not match expected version (${cleanVersion})`,
+  //     )
+  //     warnings.push(
+  //       '  Note: Version will be updated during publish workflow',
+  //     )
+  //   }
+  // } catch {
+  //   // File doesn't exist or can't be read - this is OK.
+  // }
 
   // Print results.
   logger.log('Checked versions:')
