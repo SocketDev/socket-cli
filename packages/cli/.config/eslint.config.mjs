@@ -31,12 +31,13 @@ const { flatConfigs: origImportXFlatConfigs } = importXPlugin
 
 const rootPath = path.dirname(__dirname)
 const rootTsConfigPath = path.join(rootPath, TSCONFIG_JSON)
+const monorepoRoot = path.join(rootPath, '..', '..')
 
 const nodeGlobalsConfig = Object.fromEntries(
   Object.entries(globals.node).map(([k]) => [k, 'readonly']),
 )
 
-const biomeConfigPath = path.join(rootPath, 'biome.json')
+const biomeConfigPath = path.join(monorepoRoot, 'biome.json')
 const biomeConfig = require(biomeConfigPath)
 const biomeIgnores = {
   name: 'Imported biome.json ignore patterns',
@@ -45,7 +46,7 @@ const biomeIgnores = {
     .map(p => convertIgnorePatternToMinimatch(p.slice(1))),
 }
 
-const gitignorePath = path.join(rootPath, GITIGNORE)
+const gitignorePath = path.join(monorepoRoot, GITIGNORE)
 const gitIgnores = {
   ...includeIgnoreFile(gitignorePath),
   name: 'Imported .gitignore ignore patterns',
