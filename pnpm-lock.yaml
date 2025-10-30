@@ -12,9 +12,6 @@ catalogs:
     '@babel/traverse':
       specifier: 7.28.4
       version: 7.28.4
-    '@socketsecurity/sdk':
-      specifier: 3.0.19
-      version: 3.0.19
     del-cli:
       specifier: 6.0.0
       version: 6.0.0
@@ -201,8 +198,8 @@ importers:
         specifier: 2.0.0
         version: 2.0.0(typescript@5.9.3)
       '@socketsecurity/sdk':
-        specifier: 'catalog:'
-        version: 3.0.19(typescript@5.9.3)
+        specifier: 3.0.20
+        version: 3.0.20(typescript@5.9.3)
       '@types/cmd-shim':
         specifier: 5.0.2
         version: 5.0.2
@@ -2368,15 +2365,6 @@ packages:
     resolution: {integrity: sha512-kLKdSqi4W7SDSm5z+wYnfVRnZCVhxzbzuKcdOZSrcHoEGOT4Gl844uzoaML+f5eiQMxY+nISiETwRph/aXrIaQ==}
     engines: {node: 18.20.7 || ^20.18.3 || >=22.14.0}
 
-  '@socketsecurity/lib@2.8.4':
-    resolution: {integrity: sha512-GSo7PRuMWrPcgpjVAebDnrMrMmK1iR72au3vRBWwlBrc2vMYPLgW/pB5nwyDRG7ZQr80kP/W0HtTuC2ApLaFgA==}
-    engines: {node: '>=22'}
-    peerDependencies:
-      typescript: '>=5.0.0'
-    peerDependenciesMeta:
-      typescript:
-        optional: true
-
   '@socketsecurity/lib@2.9.0':
     resolution: {integrity: sha512-tbko03PxhSRMNSZCUw3VG41c7GfLsJel2Fdf+QCWETFjwG7peHkL64Xr5YsuT+uhZ5obethoMJcESHI6QeVAow==}
     engines: {node: '>=22'}
@@ -2395,8 +2383,8 @@ packages:
       typescript:
         optional: true
 
-  '@socketsecurity/sdk@3.0.19':
-    resolution: {integrity: sha512-ko7FeKbkz52oDLpTDyRGG6mtOtH3GI91MDSh5abynTaLVSFxGC8h1HjAh1tn47hp6FHBhawfxQ7R33X7sAnr3w==}
+  '@socketsecurity/sdk@3.0.20':
+    resolution: {integrity: sha512-C+qjrlYAGQaqVorMWtynE5/lN/TFtoCyYVfDDzy+pAFDC0h9ZkvZOuboz+uPXlL4DEjQKBuKchpaZyW9GqfWcg==}
     engines: {node: '>=18', pnpm: '>=10.16.0'}
 
   '@standard-schema/spec@1.0.0':
@@ -7832,10 +7820,6 @@ snapshots:
       pony-cause: 2.1.11
       yaml: 2.8.1
 
-  '@socketsecurity/lib@2.8.4(typescript@5.9.3)':
-    optionalDependencies:
-      typescript: 5.9.3
-
   '@socketsecurity/lib@2.9.0(typescript@5.9.3)':
     optionalDependencies:
       typescript: 5.9.3
@@ -7844,9 +7828,9 @@ snapshots:
     optionalDependencies:
       typescript: 5.9.3
 
-  '@socketsecurity/sdk@3.0.19(typescript@5.9.3)':
+  '@socketsecurity/sdk@3.0.20(typescript@5.9.3)':
     dependencies:
-      '@socketsecurity/lib': 2.8.4(typescript@5.9.3)
+      '@socketsecurity/lib': 2.9.0(typescript@5.9.3)
     transitivePeerDependencies:
       - typescript
 
