@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to publish (datetime format: 2025.01.22.143052, auto-generated if omitted)'
+        description: 'Version to publish (semver format: 1.2.0-20250122.143052, auto-generated if omitted)'
         required: false
         type: string
       method:
@@ -192,8 +192,10 @@ jobs:
         run: |
           VERSION="${{ inputs.version }}"
           if [ -z "$VERSION" ]; then
-            # Auto-generate version in datetime format: YYYY.MM.DD.HHmmss
-            VERSION=$(date -u +'%Y.%m.%d.%H%M%S')
+            # Read base version from socketbin package
+            BASE_VERSION=$(jq -r '.version' packages/socketbin-cli-linux-x64/package.json)
+            # Auto-generate version in semver format: X.Y.Z-YYYYMMDD.HHmmss
+            VERSION="${BASE_VERSION}-$(date -u +'%Y%m%d.%H%M%S')"
             echo "Generated version: $VERSION"
           else
             # Remove 'v' prefix if present
@@ -412,8 +414,10 @@ jobs:
         run: |
           VERSION="${{ inputs.version }}"
           if [ -z "$VERSION" ]; then
-            # Auto-generate version in datetime format: YYYY.MM.DD.HHmmss
-            VERSION=$(date -u +'%Y.%m.%d.%H%M%S')
+            # Read base version from socketbin package
+            BASE_VERSION=$(jq -r '.version' packages/socketbin-cli-linux-x64/package.json)
+            # Auto-generate version in semver format: X.Y.Z-YYYYMMDD.HHmmss
+            VERSION="${BASE_VERSION}-$(date -u +'%Y%m%d.%H%M%S')"
             echo "Generated version: $VERSION"
           else
             # Remove 'v' prefix if present
