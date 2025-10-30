@@ -93,6 +93,11 @@
     "node": ">=18",
     "pnpm": ">=10.16.0"
   },
+  "externalTools": {
+    "python": "3.10.18",
+    "pythonBuildTag": "20250918",
+    "socketcli": "^2.2.15"
+  },
   "files": [
     "bin/**",
     "data/**",
