@@ -19,9 +19,10 @@
     "socket-with-sentry": "dist/index.js"
   },
   "files": [
+    "CHANGELOG.md",
+    "LICENSE",
     "data/**",
     "dist/**",
-    "CHANGELOG.md",
     "logo-dark.png",
     "logo-light.png"
   ],

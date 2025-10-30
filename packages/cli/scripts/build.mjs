@@ -155,16 +155,21 @@ async function main() {
       }
     }
 
-    // Copy logo images from repo root.
+    // Copy files from repo root.
     if (!quiet && verbose) {
-      log.info('Copying logo images from repo root...')
+      log.info('Copying files from repo root...')
     }
-    const images = ['logo-dark.png', 'logo-light.png']
-    for (const image of images) {
-      await fs.cp(path.join(repoRoot, image), path.join(packageRoot, image))
+    const filesToCopy = [
+      'CHANGELOG.md',
+      'LICENSE',
+      'logo-dark.png',
+      'logo-light.png',
+    ]
+    for (const file of filesToCopy) {
+      await fs.cp(path.join(repoRoot, file), path.join(packageRoot, file))
     }
     if (!quiet && verbose) {
-      log.success('Logo images copied')
+      log.success('Files copied from repo root')
     }
 
     if (!quiet) {
