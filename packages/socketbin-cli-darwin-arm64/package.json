@@ -6,10 +6,10 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/SocketDev/socket-cli"
+    "url": "git+https://github.com/SocketDev/socket-cli.git"
   },
   "bin": {
-    "socket": "./bin/socket"
+    "socket": "bin/socket"
   },
   "os": [
     "darwin"
