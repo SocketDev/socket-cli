@@ -37,22 +37,6 @@ This package includes Sentry telemetry to help improve Socket CLI. The following
 
 **No sensitive data** (API tokens, file contents, package names) is collected.
 
-### Opt-Out
-
-To disable telemetry:
-
-```bash
-export SOCKET_TELEMETRY=0
-```
-
-Or add to your `.socketrc.json`:
-
-```json
-{
-  "telemetry": false
-}
-```
-
 ## Differences from @socketsecurity/cli
 
 The only difference is the inclusion of Sentry SDK and automatic error reporting. All CLI functionality remains identical.

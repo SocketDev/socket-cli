@@ -204,12 +204,12 @@ describe('@socketsecurity/cli-with-sentry package', () => {
       expect(readme).toContain('error')
     })
 
-    it('README should document opt-out', async () => {
+    it('README should document telemetry', async () => {
       const readmePath = path.join(packageDir, 'README.md')
       const readme = await fs.readFile(readmePath, 'utf-8')
 
-      expect(readme).toContain('Opt-Out')
-      expect(readme).toContain('SOCKET_TELEMETRY')
+      expect(readme).toContain('Telemetry')
+      expect(readme).toContain('No sensitive data')
     })
 
     it('README should document differences from main CLI', async () => {
