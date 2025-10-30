@@ -68,8 +68,10 @@ async function cloneOnnxSource() {
 
   printHeader('Cloning ONNX Runtime Source')
 
+  let needsPatch = false
   if (existsSync(ONNX_SOURCE_DIR)) {
     printStep('ONNX Runtime source already exists, skipping clone')
+    needsPatch = true
   } else {
     await fs.mkdir(BUILD_DIR, { recursive: true })
 
@@ -80,19 +82,36 @@ async function cloneOnnxSource() {
     })
 
     printSuccess(`ONNX Runtime ${ONNX_VERSION} cloned`)
+    needsPatch = true
   }
 
   // Patch eigen.cmake to accept the current Eigen hash from GitLab.
   // GitLab changed the archive format, causing hash mismatch.
-  printStep('Patching eigen.cmake to accept current Eigen hash...')
-  const eigenCmakePath = path.join(ONNX_SOURCE_DIR, 'cmake', 'external', 'eigen.cmake')
-  const eigenCmake = await fs.readFile(eigenCmakePath, 'utf-8')
-  const updatedEigenCmake = eigenCmake.replace(
-    /URL_HASH SHA1=be8be39fdbc6e60e94fa7870b280707069b5b81a/g,
-    'URL_HASH SHA1=32b145f525a8308d7ab1c09388b2e288312d8eba'
-  )
-  await fs.writeFile(eigenCmakePath, updatedEigenCmake, 'utf-8')
-  printSuccess('Eigen hash updated')
+  if (needsPatch) {
+    printStep('Patching eigen.cmake to accept current Eigen hash...')
+    const eigenCmakePath = path.join(ONNX_SOURCE_DIR, 'cmake', 'external', 'eigen.cmake')
+    const eigenCmake = await fs.readFile(eigenCmakePath, 'utf-8')
+
+    // Check if already patched.
+    if (eigenCmake.includes('32b145f525a8308d7ab1c09388b2e288312d8eba')) {
+      printStep('Eigen hash already patched')
+    } else {
+      const updatedEigenCmake = eigenCmake.replace(
+        /URL_HASH SHA1=be8be39fdbc6e60e94fa7870b280707069b5b81a/g,
+        'URL_HASH SHA1=32b145f525a8308d7ab1c09388b2e288312d8eba'
+      )
+      await fs.writeFile(eigenCmakePath, updatedEigenCmake, 'utf-8')
+      printSuccess('Eigen hash updated')
+
+      // Clean CMake cache to force reconfiguration with new hash.
+      const cmakeBuildDir = path.join(ONNX_SOURCE_DIR, 'build')
+      if (existsSync(cmakeBuildDir)) {
+        printStep('Cleaning CMake cache to apply patch...')
+        await fs.rm(cmakeBuildDir, { recursive: true, force: true })
+        printSuccess('CMake cache cleaned')
+      }
+    }
+  }
 
   await createCheckpoint('onnxruntime', 'cloned')
 }
