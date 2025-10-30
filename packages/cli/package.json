@@ -181,7 +181,6 @@
   },
   "dependencies": {
     "ajv-dist": "8.17.1",
-    "compromise": "14.14.4",
-    "onnxruntime-web": "1.23.0"
+    "compromise": "14.14.4"
   }
 }
