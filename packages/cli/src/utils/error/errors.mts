@@ -436,7 +436,9 @@ export function getNetworkErrorDiagnostics(
     errorCode === 'ECONNRESET' ||
     (durationMs && durationMs > 30_000)
   ) {
-    const timeInfo = durationMs ? ` after ${Math.round(durationMs / 1000)}s` : ''
+    const timeInfo = durationMs
+      ? ` after ${Math.round(durationMs / 1000)}s`
+      : ''
     return (
       `Request timeout${timeInfo}. The server took too long to respond.\n` +
       '💡 Try:\n' +

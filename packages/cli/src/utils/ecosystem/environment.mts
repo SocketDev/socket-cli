@@ -27,10 +27,10 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 
-import { parse as parseBunLockb } from '@socketregistry/hyrious__bun.lockb/index.cjs'
 import browserslist from 'browserslist'
 import semver from 'semver'
 
+import { parse as parseBunLockb } from '@socketregistry/hyrious__bun.lockb/index.cjs'
 import { whichBin } from '@socketsecurity/lib/bin'
 import {
   BUN,

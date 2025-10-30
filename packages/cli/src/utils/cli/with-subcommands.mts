@@ -9,6 +9,7 @@ import { normalizePath } from '@socketsecurity/lib/path'
 import { naturalCompare } from '@socketsecurity/lib/sorts'
 import { indentString, trimNewlines } from '@socketsecurity/lib/strings'
 
+import { showCategoryHelp, showInteractiveHelp } from './interactive-help.mts'
 import { NPM, NPX } from '../../constants/agents.mts'
 import {
   DRY_RUN_LABEL,
@@ -34,7 +35,6 @@ import {
 } from '../config.mts'
 import { isDebug } from '../debug.mts'
 import { tildify } from '../fs/home-path.mts'
-import { showCategoryHelp, showInteractiveHelp } from './interactive-help.mts'
 import { getFlagListOutput, getHelpListOutput } from '../output/formatting.mts'
 import { spawnSocketPython } from '../python/standalone.mts'
 import { getVisibleTokenPrefix } from '../socket/sdk.mjs'

@@ -292,17 +292,15 @@ export async function ensureSocketCli(pythonBin: string): Promise<void> {
   // Get version constraint from inlined environment variable.
   const pyCliVersion = ENV.INLINED_SOCKET_CLI_PYCLI_VERSION
   const versionSpec = convertCaretToPipRange(pyCliVersion || '')
-  const packageSpec = versionSpec ? `socketsecurity${versionSpec}` : 'socketsecurity'
+  const packageSpec = versionSpec
+    ? `socketsecurity${versionSpec}`
+    : 'socketsecurity'
 
   // Install socketsecurity with version constraint.
-  await spawn(
-    pythonBin,
-    ['-m', 'pip', 'install', '--quiet', packageSpec],
-    {
-      shell: WIN32,
-      stdio: 'inherit',
-    },
-  )
+  await spawn(pythonBin, ['-m', 'pip', 'install', '--quiet', packageSpec], {
+    shell: WIN32,
+    stdio: 'inherit',
+  })
 }
 
 /**

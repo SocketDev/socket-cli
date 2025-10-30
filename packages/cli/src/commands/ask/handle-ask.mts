@@ -14,7 +14,7 @@ import ENV from '../../constants/env.mts'
 let semanticIndex: any = null
 
 // ONNX embedding pipeline for deep semantic matching (lazy-loaded, ~17MB model).
-let embeddingPipeline: any = null
+const embeddingPipeline: any = null
 let embeddingPipelineFailure = false
 const commandEmbeddings: Record<string, Float32Array> = {}
 

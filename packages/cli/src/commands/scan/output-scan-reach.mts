@@ -27,8 +27,9 @@ export async function outputScanReach(
     return
   }
 
-  const actualOutputPath =
-    outputPath && outputPath.trim() ? outputPath : DOT_SOCKET_DOT_FACTS_JSON
+  const actualOutputPath = outputPath?.trim()
+    ? outputPath
+    : DOT_SOCKET_DOT_FACTS_JSON
 
   logger.log('')
   logger.success('Reachability analysis completed successfully!')
