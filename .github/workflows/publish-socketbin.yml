@@ -131,7 +131,9 @@ jobs:
 
       - name: Build smol Node.js binary
         id: build-smol
+        if: inputs.method == 'smol' || inputs.method == 'smol-sea'
         continue-on-error: true
+        shell: bash
         run: |
           echo "Building smol Node.js binary..."
           pnpm --filter @socketsecurity/node-smol-builder run build -- \
@@ -139,7 +141,8 @@ jobs:
             --arch=${{ matrix.arch }}
 
       - name: Build smol binary (fallback with clean rebuild)
-        if: steps.build-smol.outcome == 'failure'
+        if: (inputs.method == 'smol' || inputs.method == 'smol-sea') && steps.build-smol.outcome == 'failure'
+        shell: bash
         run: |
           echo "Initial smol build failed, attempting clean rebuild..."
           pnpm --filter @socketsecurity/node-smol-builder run build -- \
@@ -148,10 +151,14 @@ jobs:
             --clean
 
       - name: Build CLI (required for SEA)
+        if: inputs.method == 'sea' || inputs.method == 'smol-sea'
+        shell: bash
         run: pnpm --filter @socketsecurity/cli run build
 
       - name: Build SEA binary
         id: build-sea
+        if: inputs.method == 'sea' || inputs.method == 'smol-sea'
+        shell: bash
         run: |
           echo "Building SEA binary..."
           pnpm --filter @socketbin/node-sea-builder run build -- \
