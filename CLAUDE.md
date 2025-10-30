@@ -283,13 +283,16 @@ Follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/):
 - **Clear messages**: Actionable errors that help users fix issues
 
 ### Safe File Operations (SECURITY CRITICAL)
-- **Scripts only**: Use `trash` package ONLY in scripts/build files (NOT `/src/`)
-- **Source code**: Use `fs.rm()` with error handling
-- **NO rmSync**: 🚨 ABSOLUTELY FORBIDDEN - NEVER `fs.rmSync()` or `rm -rf`
+- **Use safeDelete**: Import from `@socketsecurity/lib/fs`
+- **Source code**: Use `safeDelete()` or `safeDeleteSync()` with error handling
+- **Scripts**: Use `safeDelete()` or `safeDeleteSync()` from `@socketsecurity/lib/fs`
+- **package.json scripts**: Use `del-cli` for inline script situations
+- **NO fs.rm/rmSync**: 🚨 ABSOLUTELY FORBIDDEN - NEVER `fs.rm()`, `fs.rmSync()`, or `rm -rf`
 - **Examples**:
-  - ✅ Scripts: `await trash([tmpDir])`
-  - ✅ Source: `await fs.rm(tmpDir, { recursive: true, force: true })`
-  - ❌ FORBIDDEN: `fs.rmSync()`, `rm -rf`
+  - ✅ Source/Scripts: `import { safeDelete } from '@socketsecurity/lib/fs'` then `await safeDelete(tmpDir)`
+  - ✅ Sync version: `import { safeDeleteSync } from '@socketsecurity/lib/fs'` then `safeDeleteSync(tmpDir)`
+  - ✅ package.json: `"clean": "del-cli dist/**"`
+  - ❌ FORBIDDEN: `fs.rm()`, `fs.rmSync()`, `rm -rf`, `trash` package
 
 ### Formatting
 - ESLint with TypeScript support
