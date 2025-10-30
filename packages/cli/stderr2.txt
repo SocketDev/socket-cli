@@ -1,4 +1,0 @@
-  [35m   _____         _       _       [39m   /---------------
-  [35m  |   __|___ ___| |_ ___| |_     [39m   | CLI: v1.2.0
-  [35m  |__   | . |  _| '_| -_|  _|    [39m   | token: [32miToke[39m*** (config), org: [36mtest-org[39m (config)
-  [35m  |_____|___|___|_,_|___|_|.dev  [39m   | Command: `socket`, cwd: ~/projects/socket-cli/packages/cli
