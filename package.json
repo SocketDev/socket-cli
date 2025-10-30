@@ -161,8 +161,7 @@
       "graceful-fs@4.2.11": "patches/graceful-fs@4.2.11.patch",
       "lodash@4.17.21": "patches/lodash@4.17.21.patch",
       "string_decoder@0.10.31": "patches/string_decoder@0.10.31.patch",
-      "ink@6.3.1": "patches/ink@6.3.1.patch",
-      "yoga-layout": "patches/yoga-layout.patch"
+      "ink@6.3.1": "patches/ink@6.3.1.patch"
     }
   },
   "private": true,
