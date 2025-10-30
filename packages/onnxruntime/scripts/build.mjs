@@ -140,11 +140,18 @@ async function build() {
   // ONNX Runtime's build system handles Emscripten settings through CMake.
   // We pass it through --emscripten_settings which goes to EMSCRIPTEN_SETTINGS.
 
+  // Enable WASM threading to avoid MLFloat16 build errors.
+  // Issue: https://github.com/microsoft/onnxruntime/issues/23769
+  // When threading is disabled, BUILD_MLAS_NO_ONNXRUNTIME is defined, which causes
+  // MLFloat16 to be missing Negate(), IsNegative(), and FromBits() methods.
+  // Workaround (if threading can't be used): Comment out BUILD_MLAS_NO_ONNXRUNTIME
+  // in cmake/onnxruntime_webassembly.cmake after cloning.
   await spawn(buildScript, [
     '--config', 'Release',
     '--build_wasm',
     '--skip_tests',
     '--parallel',
+    '--enable_wasm_threads',
     '--cmake_extra_defines', 'onnxruntime_EMSCRIPTEN_SETTINGS=WASM_ASYNC_COMPILATION=0',
   ], {
     cwd: ONNX_SOURCE_DIR,
