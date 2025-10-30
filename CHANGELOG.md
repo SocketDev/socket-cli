@@ -12,7 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Normalized lock behavior across codebase
 
 ### Fixed
-- Bootstrap path resolution in node-smol-builder to use socket package instead of local stub
+- Bootstrap path resolution in binary builders to use socket package instead of local stub
 
 ## [2.0.0](https://github.com/SocketDev/socket-cli/releases/tag/v2.0.0) - 2025-10-29
 
