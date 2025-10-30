@@ -1,5 +1,6 @@
 {
   "name": "vulnerable-deps-test-yarn",
+  "private": true,
   "version": "1.0.0",
   "description": "Test fixture with vulnerable dependencies (yarn)",
   "main": "index.js",
