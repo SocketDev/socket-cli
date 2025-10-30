@@ -98,7 +98,8 @@ const archNames = {
 }
 
 // Binary name (with .exe for Windows)
-const binaryName = platform === 'win32' ? `${tool}.exe` : tool
+// Always use 'socket' as the binary name regardless of tool value
+const binaryName = platform === 'win32' ? 'socket.exe' : 'socket'
 
 // Update package directory structure
 async function generatePackage() {
