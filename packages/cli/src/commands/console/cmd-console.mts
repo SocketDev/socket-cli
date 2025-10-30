@@ -1,4 +1,3 @@
-
 import { handleConsole } from './handle-console.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
