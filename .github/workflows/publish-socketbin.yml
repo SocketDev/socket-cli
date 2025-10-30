@@ -239,7 +239,7 @@ jobs:
       - name: Publish Linux x64
         if: ${{ !inputs.dry-run }}
         run: |
-          cd packages/binaries/cli-linux-x64
+          cd packages/socketbin-cli-linux-x64
           npm publish --provenance --access public
 
       - name: Generate and publish Linux ARM64
@@ -250,7 +250,7 @@ jobs:
             --version=${{ steps.version.outputs.version }} \
             --method=${{ inputs.method }}
 
-          cd packages/binaries/cli-linux-arm64
+          cd packages/socketbin-cli-linux-arm64
           npm publish --provenance --access public
 
       - name: Generate and publish Alpine x64
@@ -261,7 +261,7 @@ jobs:
             --version=${{ steps.version.outputs.version }} \
             --method=${{ inputs.method }}
 
-          cd packages/binaries/cli-alpine-x64
+          cd packages/socketbin-cli-alpine-x64
           npm publish --provenance --access public
 
       - name: Generate and publish Alpine ARM64
@@ -272,7 +272,7 @@ jobs:
             --version=${{ steps.version.outputs.version }} \
             --method=${{ inputs.method }}
 
-          cd packages/binaries/cli-alpine-arm64
+          cd packages/socketbin-cli-alpine-arm64
           npm publish --provenance --access public
 
       - name: Generate and publish macOS x64
@@ -283,7 +283,7 @@ jobs:
             --version=${{ steps.version.outputs.version }} \
             --method=${{ inputs.method }}
 
-          cd packages/binaries/cli-darwin-x64
+          cd packages/socketbin-cli-darwin-x64
           npm publish --provenance --access public
 
       - name: Generate and publish macOS ARM64
@@ -294,7 +294,7 @@ jobs:
             --version=${{ steps.version.outputs.version }} \
             --method=${{ inputs.method }}
 
-          cd packages/binaries/cli-darwin-arm64
+          cd packages/socketbin-cli-darwin-arm64
           npm publish --provenance --access public
 
       - name: Generate and publish Windows x64
@@ -305,7 +305,7 @@ jobs:
             --version=${{ steps.version.outputs.version }} \
             --method=${{ inputs.method }}
 
-          cd packages/binaries/cli-win32-x64
+          cd packages/socketbin-cli-win32-x64
           npm publish --provenance --access public
 
       - name: Generate and publish Windows ARM64
@@ -316,7 +316,7 @@ jobs:
             --version=${{ steps.version.outputs.version }} \
             --method=${{ inputs.method }}
 
-          cd packages/binaries/cli-win32-arm64
+          cd packages/socketbin-cli-win32-arm64
           npm publish --provenance --access public
 
       - name: Build binaries for @socketbin/cli-ai

@@ -79,10 +79,10 @@ const cleanVersion = providedVersion
   ? providedVersion.replace(/^v/, '')
   : generateDatetimeVersion(platform, arch, tool)
 
-// Determine output directory
+// Determine output directory - use tracked socketbin packages
 const packageDir =
   outdir ||
-  path.join(rootDir, 'packages', 'binaries', `${tool}-${platform}-${arch}`)
+  path.join(rootDir, 'packages', `socketbin-${tool}-${platform}-${arch}`)
 
 // Platform display names
 const platformNames = {
@@ -99,100 +99,29 @@ const archNames = {
 // Binary name (with .exe for Windows)
 const binaryName = platform === 'win32' ? `${tool}.exe` : tool
 
-// Package.json content
-const packageJson = {
-  name: `@socketbin/${tool}-${platform}-${arch}`,
-  version: cleanVersion,
-  description: `Socket ${tool.toUpperCase()} binary for ${platformNames[platform]} ${archNames[arch]}`,
-  buildMethod,
-  keywords: [
-    'socket',
-    tool,
-    'binary',
-    platform,
-    arch,
-    platformNames[platform].toLowerCase(),
-  ],
-  homepage: 'https://github.com/SocketDev/socket-cli',
-  repository: {
-    type: 'git',
-    url: 'git+https://github.com/SocketDev/socket-cli.git',
-    directory: `packages/binaries/${tool}-${platform}-${arch}`,
-  },
-  license: 'MIT',
-  author: {
-    name: 'Socket Inc',
-    email: 'eng@socket.dev',
-    url: 'https://socket.dev',
-  },
-  // Restrict installation to correct platform
-  os: [platform === 'darwin' ? 'darwin' : platform],
-  cpu: [arch],
-  // Binary field for npm to handle
-  bin: {
-    [`socket-${tool}-binary`]: `bin/${binaryName}`,
-  },
-  // Files to include in package
-  files: ['bin', 'README.md'],
-  // Publish configuration
-  publishConfig: {
-    access: 'public',
-    provenance: true,
-  },
-}
-
-// README content
-const readme = `# @socketbin/${tool}-${platform}-${arch}
-
-Platform-specific binary for Socket ${tool.toUpperCase()}.
-
-## Platform
-- **OS**: ${platformNames[platform]}
-- **Architecture**: ${archNames[arch]}
-- **Build Method**: ${buildMethod}
-
-## Installation
-
-This package is automatically installed as an optional dependency of the main \`socket\` package:
-
-\`\`\`bash
-npm install -g socket
-\`\`\`
-
-You shouldn't install this package directly unless you're debugging platform-specific issues.
-
-## Binary Location
-
-The binary is located at:
-\`\`\`
-node_modules/@socketbin/${tool}-${platform}-${arch}/bin/${binaryName}
-\`\`\`
-
-## Issues
-
-Report issues at: https://github.com/SocketDev/socket-cli/issues
-
-## License
-
-MIT - See [LICENSE](https://github.com/SocketDev/socket-cli/blob/main/LICENSE)
-`
-
-// Create package directory structure
+// Update package directory structure
 async function generatePackage() {
   try {
-    // Ensure directories exist
+    // Ensure bin directory exists
     await fs.mkdir(path.join(packageDir, 'bin'), { recursive: true })
 
-    // Write package.json
-    await fs.writeFile(
-      path.join(packageDir, 'package.json'),
-      `${JSON.stringify(packageJson, null, 2)}\n`,
-    )
-    logger.log(`Created: ${packageDir}/package.json`)
+    // Read existing package.json
+    const pkgPath = path.join(packageDir, 'package.json')
+    const existingPkg = JSON.parse(await fs.readFile(pkgPath, 'utf-8'))
 
-    // Write README
-    await fs.writeFile(path.join(packageDir, 'README.md'), readme)
-    logger.log(`Created: ${packageDir}/README.md`)
+    // Update package.json with new version, buildMethod, and remove private
+    const updatedPkg = {
+      ...existingPkg,
+      version: cleanVersion,
+      buildMethod,
+    }
+    delete updatedPkg.private
+
+    // Write updated package.json
+    await fs.writeFile(pkgPath, `${JSON.stringify(updatedPkg, null, 2)}\n`)
+    logger.log(`Updated: ${packageDir}/package.json`)
+    logger.log(`  Version: ${cleanVersion}`)
+    logger.log(`  Build method: ${buildMethod}`)
 
     // Check if binary exists and copy it
     const sourceBinary = path.join(
