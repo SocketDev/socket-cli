@@ -22,7 +22,12 @@
 import { messageWithCauses } from 'pony-cause'
 
 import { getSpinner } from '@socketsecurity/lib/constants/process'
-import { debug, debugDir } from '@socketsecurity/lib/debug'
+import {
+  debug,
+  debugDir,
+  debugNs,
+  isDebug,
+} from '@socketsecurity/lib/debug'
 import { logger } from '@socketsecurity/lib/logger'
 import { isNonEmptyString } from '@socketsecurity/lib/strings'
 
@@ -56,6 +61,51 @@ import type {
 } from '@socketsecurity/sdk'
 
 const NO_ERROR_MESSAGE = 'No error message returned'
+const DEBUG_NAMESPACE = 'notice'
+
+function shouldLogApiRequests(): boolean {
+  return isDebug()
+}
+
+function formatIsoTimestamp(date: Date): string {
+  return date.toISOString()
+}
+
+function logApiRequestStart(method: string, url: string): number | undefined {
+  if (!shouldLogApiRequests()) {
+    return undefined
+  }
+  const startedAt = Date.now()
+  debugNs(
+    DEBUG_NAMESPACE,
+    `[api] START ${formatIsoTimestamp(new Date(startedAt))} ${method} ${url}`,
+  )
+  return startedAt
+}
+
+function logApiRequestEnd(
+  method: string,
+  url: string,
+  startedAt: number | undefined,
+  details: { status?: number | undefined; error?: unknown | undefined },
+): void {
+  if (!shouldLogApiRequests()) {
+    return
+  }
+  const endedAt = Date.now()
+  const duration = startedAt !== undefined ? endedAt - startedAt : undefined
+  const statusPart =
+    details.status !== undefined ? ` status=${details.status}` : ''
+  const errorPart = details.error
+    ? ` error=${details.error instanceof Error ? details.error.message : String(details.error)}`
+    : ''
+  const durationPart =
+    duration !== undefined ? ` durationMs=${duration}` : ''
+  debugNs(
+    DEBUG_NAMESPACE,
+    `[api] END ${formatIsoTimestamp(new Date(endedAt))} ${method} ${url}${statusPart}${errorPart}${durationPart}`,
+  )
+}
 
 export type CommandRequirements = {
   permissions?: string[] | undefined
@@ -171,6 +221,10 @@ export type HandleApiCallOptions = {
   description?: string | undefined
   spinner?: Spinner | undefined
   commandPath?: string | undefined
+  requestInfo?: {
+    method: string
+    url: string
+  }
 }
 
 export type ApiCallResult<T extends SocketSdkOperations> = CResult<
@@ -184,10 +238,13 @@ export async function handleApiCall<T extends SocketSdkOperations>(
   value: Promise<SocketSdkResult<T>>,
   options?: HandleApiCallOptions | undefined,
 ): Promise<ApiCallResult<T>> {
-  const { commandPath, description, spinner } = {
+  const { commandPath, description, spinner, requestInfo } = {
     __proto__: null,
     ...options,
   } as HandleApiCallOptions
+
+  const requestStartTime =
+    requestInfo && logApiRequestStart(requestInfo.method, requestInfo.url)
 
   if (description) {
     spinner?.start(`Requesting ${description} from API...`)
@@ -199,6 +256,14 @@ export async function handleApiCall<T extends SocketSdkOperations>(
   try {
     sdkResult = await value
     spinner?.stop()
+    if (requestInfo) {
+      const status =
+        (sdkResult as SocketSdkSuccessResult<T> | SocketSdkErrorResult<T>)
+          ?.status ?? undefined
+      logApiRequestEnd(requestInfo.method, requestInfo.url, requestStartTime, {
+        status,
+      })
+    }
     // Only log success messages if a spinner was provided (opt-in to output).
     if (description && spinner) {
       const message = `Received Socket API response (after requesting ${description}).`
@@ -210,6 +275,11 @@ export async function handleApiCall<T extends SocketSdkOperations>(
     }
   } catch (e) {
     spinner?.stop()
+    if (requestInfo) {
+      logApiRequestEnd(requestInfo.method, requestInfo.url, requestStartTime, {
+        error: e,
+      })
+    }
     const socketSdkErrorResult: ApiCallResult<T> = {
       ok: false,
       message: 'Socket API error',
@@ -328,12 +398,21 @@ export async function queryApi(path: string, apiToken: string) {
     throw new Error('Socket API base URL is not configured.')
   }
 
-  return await fetch(`${baseUrl}${baseUrl.endsWith('/') ? '' : '/'}${path}`, {
-    method: 'GET',
-    headers: {
-      Authorization: `Basic ${btoa(`${apiToken}:`)}`,
-    },
-  })
+  const url = `${baseUrl}${baseUrl.endsWith('/') ? '' : '/'}${path}`
+  const startTime = logApiRequestStart('GET', url)
+  try {
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        Authorization: `Basic ${btoa(`${apiToken}:`)}`,
+      },
+    })
+    logApiRequestEnd('GET', url, startTime, { status: response.status })
+    return response
+  } catch (error) {
+    logApiRequestEnd('GET', url, startTime, { error })
+    throw error
+  }
 }
 
 /**
@@ -522,6 +601,7 @@ export async function sendApiRequest<T>(
   }
 
   const fullUrl = `${baseUrl}${baseUrl.endsWith('/') ? '' : '/'}${path}`
+  const requestStartTime = logApiRequestStart(method, fullUrl)
   const startTime = Date.now()
 
   let result: any
@@ -537,6 +617,9 @@ export async function sendApiRequest<T>(
 
     result = await fetch(fullUrl, fetchOptions)
     const durationMs = Date.now() - startTime
+    logApiRequestEnd(method, fullUrl, requestStartTime, {
+      status: result.status,
+    })
     if (description) {
       spinner?.successAndStop(
         `Received Socket API response (after requesting ${description}).`,
@@ -559,6 +642,7 @@ export async function sendApiRequest<T>(
     )
   } catch (e) {
     const durationMs = Date.now() - startTime
+    logApiRequestEnd(method, fullUrl, requestStartTime, { error: e })
     if (description) {
       spinner?.failAndStop(
         `An error was thrown while requesting ${description}.`,

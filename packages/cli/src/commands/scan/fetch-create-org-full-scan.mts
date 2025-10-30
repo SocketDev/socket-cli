@@ -1,4 +1,7 @@
-import { handleApiCall } from '../../utils/socket/api.mjs'
+import {
+  getDefaultApiBaseUrl,
+  handleApiCall,
+} from '../../utils/socket/api.mjs'
 import { setupSdk } from '../../utils/socket/sdk.mjs'
 
 import type { CResult } from '../../types.mts'
@@ -54,24 +57,39 @@ export async function fetchCreateOrgFullScan(
   }
   const sockSdk = sockSdkCResult.data
 
+  const queryParams = {
+    ...(branchName ? { branch: branchName } : {}),
+    ...(commitHash ? { commit_hash: commitHash } : {}),
+    ...(commitMessage ? { commit_message: commitMessage } : {}),
+    ...(committers ? { committers } : {}),
+    make_default_branch: String(defaultBranch),
+    ...(pullRequest ? { pull_request: String(pullRequest) } : {}),
+    repo: repoName,
+    set_as_pending_head: String(pendingHead),
+    tmp: String(tmp),
+  }
+
+  const baseUrl = getDefaultApiBaseUrl()
+  const endpointPath = `orgs/${encodeURIComponent(orgSlug)}/full-scans`
+  const queryString = new URLSearchParams(queryParams as Record<string, string>)
+  const requestUrl = `${
+    baseUrl ?? ''
+  }${baseUrl?.endsWith('/') ? '' : '/'}${endpointPath}${
+    queryString.toString() ? `?${queryString.toString()}` : ''
+  }`
+
   return await handleApiCall(
     sockSdk.createFullScan(orgSlug, packagePaths, {
       pathsRelativeTo: cwd,
-      queryParams: {
-        ...(branchName ? { branch: branchName } : {}),
-        ...(commitHash ? { commit_hash: commitHash } : {}),
-        ...(commitMessage ? { commit_message: commitMessage } : {}),
-        ...(committers ? { committers } : {}),
-        make_default_branch: String(defaultBranch),
-        ...(pullRequest ? { pull_request: String(pullRequest) } : {}),
-        repo: repoName,
-        set_as_pending_head: String(pendingHead),
-        tmp: String(tmp),
-      },
+      queryParams,
     }),
     {
       description: 'to create a scan',
       spinner,
+      requestInfo: {
+        method: 'POST',
+        url: requestUrl,
+      },
     },
   )
 }

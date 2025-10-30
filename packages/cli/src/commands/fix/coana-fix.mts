@@ -43,7 +43,10 @@ import {
   gitResetAndClean,
   gitUnstagedModifiedFiles,
 } from '../../utils/git/operations.mjs'
-import { handleApiCall } from '../../utils/socket/api.mjs'
+import {
+  getDefaultApiBaseUrl,
+  handleApiCall,
+} from '../../utils/socket/api.mjs'
 import { setupSdk } from '../../utils/socket/sdk.mjs'
 import { fetchSupportedScanFileNames } from '../scan/fetch-supported-scan-file-names.mts'
 
@@ -97,12 +100,22 @@ export async function coanaFix(
     cwd,
   })
 
+  const baseUrl = getDefaultApiBaseUrl()
+  const uploadPath = `orgs/${encodeURIComponent(orgSlug)}/upload-manifest-files`
+  const uploadUrl = `${
+    baseUrl ?? ''
+  }${baseUrl?.endsWith('/') ? '' : '/'}${uploadPath}`
+
   // SDK v3.0 automatically validates file readability via onFileValidation callback.
   const uploadCResult = await handleApiCall(
     sockSdk.uploadManifestFiles(orgSlug, scanFilepaths),
     {
       description: 'upload manifests',
       spinner,
+      requestInfo: {
+        method: 'POST',
+        url: uploadUrl,
+      },
     },
   )
 

@@ -8,7 +8,10 @@ import {
 import { extractTier1ReachabilityScanId } from '../../utils/coana/extract-scan-id.mjs'
 import { spawnCoanaDlx } from '../../utils/dlx/spawn.mjs'
 import { hasEnterpriseOrgPlan } from '../../utils/organization.mts'
-import { handleApiCall } from '../../utils/socket/api.mjs'
+import {
+  getDefaultApiBaseUrl,
+  handleApiCall,
+} from '../../utils/socket/api.mjs'
 import { setupSdk } from '../../utils/socket/sdk.mjs'
 import { socketDevLink } from '../../utils/terminal/link.mts'
 import { fetchOrganization } from '../organization/fetch-organization-list.mts'
@@ -109,11 +112,21 @@ export async function performReachabilityAnalysis(
 
     spinner?.start('Uploading manifests for reachability analysis...')
 
+    const baseUrl = getDefaultApiBaseUrl()
+    const uploadPath = `orgs/${encodeURIComponent(orgSlug)}/upload-manifest-files`
+    const uploadUrl = `${
+      baseUrl ?? ''
+    }${baseUrl?.endsWith('/') ? '' : '/'}${uploadPath}`
+
     const uploadCResult = await handleApiCall(
       sockSdk.uploadManifestFiles(orgSlug, filepathsToUpload),
       {
         description: 'upload manifests',
         spinner,
+        requestInfo: {
+          method: 'POST',
+          url: uploadUrl,
+        },
       },
     )
 
