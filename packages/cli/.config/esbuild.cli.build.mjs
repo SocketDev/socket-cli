@@ -49,6 +49,58 @@ const versionHash = `${packageJson.version}:${gitHash}:${randUuidSegment}${
   publishedBuild ? '' : ':dev'
 }`
 
+// Helper to create both dot and bracket notation define keys.
+function createDefineEntries(envVars) {
+  const entries = {}
+  for (const [key, value] of Object.entries(envVars)) {
+    // Dot notation: process.env.KEY
+    entries[`process.env.${key}`] = value
+    // Bracket notation: process.env["KEY"]
+    entries[`process.env["${key}"]`] = value
+  }
+  return entries
+}
+
+// esbuild plugin to replace env vars after bundling (handles mangled identifiers).
+function envVarReplacementPlugin(envVars) {
+  return {
+    name: 'env-var-replacement',
+    setup(build) {
+      build.onEnd((result) => {
+        const outputs = result.outputFiles
+        if (!outputs || outputs.length === 0) {
+          return
+        }
+
+        for (const output of outputs) {
+          let content = output.text
+
+          // Replace all forms of process.env["KEY"] access, even with mangled identifiers.
+          // Pattern: <anything>.env["KEY"] where <anything> could be "import_node_process21.default" etc.
+          for (const [key, value] of Object.entries(envVars)) {
+            // Match: <identifier>.env["KEY"] or <identifier>.env['KEY']
+            const pattern = new RegExp(
+              `(\\w+\\.)+env\\["${key}"\\]`,
+              'g'
+            )
+            const singleQuotePattern = new RegExp(
+              `(\\w+\\.)+env\\['${key}'\\]`,
+              'g'
+            )
+
+            // Replace with the actual value (already JSON.stringified).
+            content = content.replace(pattern, value)
+            content = content.replace(singleQuotePattern, value)
+          }
+
+          // Update the output content.
+          output.contents = Buffer.from(content, 'utf8')
+        }
+      })
+    },
+  }
+}
+
 // Get local Socket package paths using canonical helper.
 // rootPath is packages/cli, so go up to socket-cli root for getLocalPackageAliases.
 const socketCliRoot = path.join(rootPath, '..', '..')
@@ -143,35 +195,22 @@ const config = {
   define: {
     'process.env.NODE_ENV': '"production"',
     'import.meta.url': '__importMetaUrl',
-    // Inject build metadata (replaces Rollup replace plugin).
-    'process.env.INLINED_SOCKET_CLI_VERSION': JSON.stringify(
-      packageJson.version,
-    ),
-    'process.env.INLINED_SOCKET_CLI_VERSION_HASH': JSON.stringify(versionHash),
-    'process.env.INLINED_SOCKET_CLI_NAME': JSON.stringify(packageJson.name),
-    'process.env.INLINED_SOCKET_CLI_HOMEPAGE': JSON.stringify(
-      packageJson.homepage,
-    ),
-    'process.env.INLINED_SOCKET_CLI_AI_VERSION': JSON.stringify(
-      packageJson.version,
-    ),
-    'process.env.INLINED_SOCKET_CLI_COANA_VERSION':
-      JSON.stringify(coanaVersion),
-    'process.env.INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION':
-      JSON.stringify(cdxgenVersion),
-    'process.env.INLINED_SOCKET_CLI_SYNP_VERSION': JSON.stringify(synpVersion),
-    'process.env.INLINED_SOCKET_CLI_PUBLISHED_BUILD': JSON.stringify(
-      publishedBuild ? '1' : '',
-    ),
-    'process.env.INLINED_SOCKET_CLI_LEGACY_BUILD': JSON.stringify(
-      legacyBuild ? '1' : '',
-    ),
-    'process.env.INLINED_SOCKET_CLI_SENTRY_BUILD': JSON.stringify(
-      sentryBuild ? '1' : '',
-    ),
-    // Python version/tag are optional and typically empty for standard builds.
-    'process.env.INLINED_SOCKET_CLI_PYTHON_VERSION': JSON.stringify(''),
-    'process.env.INLINED_SOCKET_CLI_PYTHON_BUILD_TAG': JSON.stringify(''),
+    // Inject build metadata using DRY helper.
+    ...createDefineEntries({
+      INLINED_SOCKET_CLI_VERSION: JSON.stringify(packageJson.version),
+      INLINED_SOCKET_CLI_VERSION_HASH: JSON.stringify(versionHash),
+      INLINED_SOCKET_CLI_NAME: JSON.stringify(packageJson.name),
+      INLINED_SOCKET_CLI_HOMEPAGE: JSON.stringify(packageJson.homepage),
+      INLINED_SOCKET_CLI_AI_VERSION: JSON.stringify(packageJson.version),
+      INLINED_SOCKET_CLI_COANA_VERSION: JSON.stringify(coanaVersion),
+      INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION: JSON.stringify(cdxgenVersion),
+      INLINED_SOCKET_CLI_SYNP_VERSION: JSON.stringify(synpVersion),
+      INLINED_SOCKET_CLI_PUBLISHED_BUILD: JSON.stringify(publishedBuild ? '1' : ''),
+      INLINED_SOCKET_CLI_LEGACY_BUILD: JSON.stringify(legacyBuild ? '1' : ''),
+      INLINED_SOCKET_CLI_SENTRY_BUILD: JSON.stringify(sentryBuild ? '1' : ''),
+      INLINED_SOCKET_CLI_PYTHON_VERSION: JSON.stringify(''),
+      INLINED_SOCKET_CLI_PYTHON_BUILD_TAG: JSON.stringify(''),
+    }),
   },
 
   // Inject import.meta.url polyfill for CJS.
@@ -179,6 +218,22 @@ const config = {
 
   // Handle special cases with plugins.
   plugins: [
+    // Environment variable replacement must run AFTER unicode transform.
+    envVarReplacementPlugin({
+      INLINED_SOCKET_CLI_VERSION: JSON.stringify(packageJson.version),
+      INLINED_SOCKET_CLI_VERSION_HASH: JSON.stringify(versionHash),
+      INLINED_SOCKET_CLI_NAME: JSON.stringify(packageJson.name),
+      INLINED_SOCKET_CLI_HOMEPAGE: JSON.stringify(packageJson.homepage),
+      INLINED_SOCKET_CLI_AI_VERSION: JSON.stringify(packageJson.version),
+      INLINED_SOCKET_CLI_COANA_VERSION: JSON.stringify(coanaVersion),
+      INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION: JSON.stringify(cdxgenVersion),
+      INLINED_SOCKET_CLI_SYNP_VERSION: JSON.stringify(synpVersion),
+      INLINED_SOCKET_CLI_PUBLISHED_BUILD: JSON.stringify(publishedBuild ? '1' : ''),
+      INLINED_SOCKET_CLI_LEGACY_BUILD: JSON.stringify(legacyBuild ? '1' : ''),
+      INLINED_SOCKET_CLI_SENTRY_BUILD: JSON.stringify(sentryBuild ? '1' : ''),
+      INLINED_SOCKET_CLI_PYTHON_VERSION: JSON.stringify(''),
+      INLINED_SOCKET_CLI_PYTHON_BUILD_TAG: JSON.stringify(''),
+    }),
     unicodeTransformPlugin(),
     {
       name: 'resolve-socket-packages',
