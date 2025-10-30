@@ -17,6 +17,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
+import { safeDelete } from '@socketsecurity/lib/fs'
 import { logger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 import {
@@ -129,6 +130,15 @@ async function cloneOnnxSource() {
   await fs.writeFile(cmakePath, updatedCmake, 'utf-8')
   printSuccess('BUILD_MLAS_NO_ONNXRUNTIME commented out in cmake')
 
+  // Clear CMake cache to ensure patch is picked up.
+  printStep('Clearing CMake cache to force reconfiguration...')
+  const platform = process.platform === 'darwin' ? 'Darwin' : 'Linux'
+  const cmakeCachePath = path.join(ONNX_SOURCE_DIR, 'build', platform, 'Release', 'CMakeCache.txt')
+  if (existsSync(cmakeCachePath)) {
+    await safeDelete(cmakeCachePath)
+    printSuccess('CMake cache cleared')
+  }
+
   await createCheckpoint('onnxruntime', 'cloned')
 }
 
@@ -169,7 +179,7 @@ async function build() {
     '--skip_tests',
     '--parallel',
     // '--enable_wasm_threads', // Commented out as fallback to get build working.
-    '--cmake_extra_defines', 'onnxruntime_EMSCRIPTEN_SETTINGS=WASM_ASYNC_COMPILATION=0',
+    '--cmake_extra_defines', 'onnxruntime_EMSCRIPTEN_SETTINGS=WASM_ASYNC_COMPILATION=0;EXPORT_ES6=1',
   ], {
     cwd: ONNX_SOURCE_DIR,
     shell: WIN32,
