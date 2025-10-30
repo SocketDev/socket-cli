@@ -51,8 +51,13 @@ jobs:
       - name: Generate yoga build cache key
         id: yoga-cache-key
         run: |
-          HASH=$(find packages/yoga-layout -type f \( -name "*.cpp" -o -name "*.h" -o -name "*.mjs" -o -name "CMakeLists.txt" \) | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
-          echo "hash=$HASH" >> $GITHUB_OUTPUT
+          # Extract Yoga version from package.json (package version matches Yoga Layout release).
+          YOGA_VERSION=$(node -p "require('./packages/yoga-layout/package.json').version")
+          # Hash includes source files and package.json.
+          HASH=$(find packages/yoga-layout -type f \( -name "*.cpp" -o -name "*.h" -o -name "*.mjs" -o -name "CMakeLists.txt" -o -name "package.json" \) | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
+          FULL_HASH="${HASH}-${YOGA_VERSION}"
+          echo "hash=$FULL_HASH" >> $GITHUB_OUTPUT
+          echo "Yoga Layout version: v$YOGA_VERSION"
 
       - name: Restore yoga output cache
         id: yoga-cache
