@@ -9,6 +9,7 @@ import { fileURLToPath } from 'node:url'
 
 import { parseArgs } from '@socketsecurity/lib/argv/parse'
 import { logger } from '@socketsecurity/lib/logger'
+import semver from 'semver'
 import colors from 'yoctocolors-cjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -26,9 +27,12 @@ function generateDatetimeVersion(platform, arch, tool = 'cli') {
 
   try {
     const basePackage = JSON.parse(require('fs').readFileSync(basePackagePath, 'utf-8'))
-    let version = basePackage.version || '0.0.0'
-    // Remove placeholder suffix if present.
-    baseVersion = version.replace(/-generated-by-publish-socketbin$/, '')
+    const version = basePackage.version || '0.0.0'
+    // Parse version and extract just the core version (X.Y.Z).
+    const parsed = semver.parse(version)
+    if (parsed) {
+      baseVersion = `${parsed.major}.${parsed.minor}.${parsed.patch}`
+    }
   } catch {
     // Fallback to 0.0.0 if package doesn't exist yet.
   }
