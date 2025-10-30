@@ -1,6 +1,6 @@
 {
   "name": "@socketbin/cli-linux-x64",
-  "version": "1.2.0",
+  "version": "0.0.0",
   "description": "Socket CLI binary",
   "license": "MIT",
   "bin": {
