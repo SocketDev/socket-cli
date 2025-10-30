@@ -155,6 +155,26 @@ jobs:
             --platform=${{ matrix.platform }} \
             --arch=${{ matrix.arch }}
 
+      - name: Copy binary to dist/sea for prepublish script
+        shell: bash
+        run: |
+          mkdir -p dist/sea
+
+          # Determine source binary name (from build-sea.yml naming).
+          if [ "${{ matrix.platform }}" = "win32" ]; then
+            SOURCE_BINARY="packages/node-sea-builder/dist/sea/socket-win-${{ matrix.arch }}.exe"
+            TARGET_BINARY="dist/sea/socket-${{ matrix.platform }}-${{ matrix.arch }}.exe"
+          elif [ "${{ matrix.platform }}" = "darwin" ]; then
+            SOURCE_BINARY="packages/node-sea-builder/dist/sea/socket-macos-${{ matrix.arch }}"
+            TARGET_BINARY="dist/sea/socket-${{ matrix.platform }}-${{ matrix.arch }}"
+          else
+            SOURCE_BINARY="packages/node-sea-builder/dist/sea/socket-${{ matrix.platform }}-${{ matrix.arch }}"
+            TARGET_BINARY="dist/sea/socket-${{ matrix.platform }}-${{ matrix.arch }}"
+          fi
+
+          cp "$SOURCE_BINARY" "$TARGET_BINARY"
+          echo "Copied $SOURCE_BINARY -> $TARGET_BINARY"
+
       - name: Verify binary
         run: |
           ls -la dist/sea/socket-*
