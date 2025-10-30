@@ -175,8 +175,8 @@ jobs:
           AI_HASH=$(find packages/socketbin-cli-ai -type f \( -name "*.mjs" -o -name "*.ts" \) | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
           echo "ai-hash=$AI_HASH" >> $GITHUB_OUTPUT
 
-          ONNX_HASH=$(find packages/onnxruntime -type f \( -name "*.mjs" -o -name "*.patch" \) | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
-          echo "onnx-hash=$ONNX_HASH" >> $GITHUB_OUTPUT
+          # ONNX_HASH=$(find packages/onnxruntime -type f \( -name "*.mjs" -o -name "*.patch" \) | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
+          # echo "onnx-hash=$ONNX_HASH" >> $GITHUB_OUTPUT
 
       - name: Restore Yoga Layout WASM cache
         id: yoga-cache
@@ -196,14 +196,14 @@ jobs:
           restore-keys: ai-models-
           enableCrossOsArchive: true
 
-      - name: Restore ONNX Runtime cache
-        id: onnx-cache
-        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        with:
-          path: packages/onnxruntime/dist
-          key: onnx-runtime-${{ steps.wasm-cache-keys.outputs.onnx-hash }}
-          restore-keys: onnx-runtime-
-          enableCrossOsArchive: true
+      # - name: Restore ONNX Runtime cache
+      #   id: onnx-cache
+      #   uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+      #   with:
+      #     path: packages/onnxruntime/dist
+      #     key: onnx-runtime-${{ steps.wasm-cache-keys.outputs.onnx-hash }}
+      #     restore-keys: onnx-runtime-
+      #     enableCrossOsArchive: true
 
       - name: Verify Yoga Layout cache
         id: yoga-cache-valid
@@ -237,33 +237,33 @@ jobs:
             echo "✗ AI models cache invalid or missing"
           fi
 
-      - name: Verify ONNX Runtime cache
-        id: onnx-cache-valid
-        shell: bash
-        run: |
-          if [ -f "packages/onnxruntime/dist/onnxruntime-web.wasm" ]; then
-            echo "valid=true" >> $GITHUB_OUTPUT
-            echo "✓ ONNX Runtime cache valid"
-          else
-            echo "valid=false" >> $GITHUB_OUTPUT
-            echo "✗ ONNX Runtime cache invalid or missing"
-          fi
+      #       - name: Verify ONNX Runtime cache
+      #         id: onnx-cache-valid
+      #         shell: bash
+      #         run: |
+      #           if [ -f "packages/onnxruntime/dist/onnxruntime-web.wasm" ]; then
+      #             echo "valid=true" >> $GITHUB_OUTPUT
+      #             echo "✓ ONNX Runtime cache valid"
+      #           else
+      #             echo "valid=false" >> $GITHUB_OUTPUT
+      #             echo "✗ ONNX Runtime cache invalid or missing"
+      #           fi
 
       - name: Check WASM cache requirements (Windows)
-        if: matrix.os == 'windows' && (steps.yoga-cache-valid.outputs.valid != 'true' || steps.ai-cache-valid.outputs.valid != 'true' || steps.onnx-cache-valid.outputs.valid != 'true')
+        if: matrix.os == 'windows' && (steps.yoga-cache-valid.outputs.valid != 'true' || steps.ai-cache-valid.outputs.valid != 'true')
         run: |
           echo "::error::WASM assets not cached for Windows build. Run build-wasm.yml workflow first to prime the cache."
           echo "Windows builds require pre-cached WASM assets due to network reliability issues."
           exit 1
 
       - name: Setup Python for WASM builds
-        if: steps.yoga-cache-valid.outputs.valid != 'true' || steps.ai-cache-valid.outputs.valid != 'true' || steps.onnx-cache-valid.outputs.valid != 'true'
+        if: steps.yoga-cache-valid.outputs.valid != 'true' || steps.ai-cache-valid.outputs.valid != 'true'
         uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
         with:
           python-version: '3.11'
 
       - name: Build WASM assets on cache miss
-        if: steps.yoga-cache-valid.outputs.valid != 'true' || steps.ai-cache-valid.outputs.valid != 'true' || steps.onnx-cache-valid.outputs.valid != 'true'
+        if: steps.yoga-cache-valid.outputs.valid != 'true' || steps.ai-cache-valid.outputs.valid != 'true'
         shell: bash
         run: |
           echo "⚠️  WASM cache miss detected - building from source"
@@ -272,11 +272,11 @@ jobs:
           echo "Cache status:"
           echo "  Yoga Layout: ${{ steps.yoga-cache-valid.outputs.valid == 'true' && '✓ cached' || '✗ missing' }}"
           echo "  AI Models: ${{ steps.ai-cache-valid.outputs.valid == 'true' && '✓ cached' || '✗ missing' }}"
-          echo "  ONNX Runtime: ${{ steps.onnx-cache-valid.outputs.valid == 'true' && '✓ cached' || '✗ missing' }}"
+          #           echo "  ONNX Runtime: ${{ steps.onnx-cache-valid.outputs.valid == 'true' && '✓ cached' || '✗ missing' }}"
           echo ""
 
-          # Install Emscripten if needed for Yoga/ONNX.
-          if [ "${{ steps.yoga-cache-valid.outputs.valid }}" != "true" ] || [ "${{ steps.onnx-cache-valid.outputs.valid }}" != "true" ]; then
+          # Install Emscripten if needed for Yoga.
+          if [ "${{ steps.yoga-cache-valid.outputs.valid }}" != "true" ]; then
             echo "::group::Installing Emscripten"
             git clone https://github.com/emscripten-core/emsdk.git
             cd emsdk
@@ -326,15 +326,15 @@ jobs:
             echo "::endgroup::"
           fi
 
-          if [ "${{ steps.onnx-cache-valid.outputs.valid }}" != "true" ]; then
-            echo "::group::Building ONNX Runtime (20-30 minutes)"
-            if [ "${{ inputs.force }}" = "true" ]; then
-              pnpm --filter @socketsecurity/onnxruntime run build -- --force
-            else
-              pnpm --filter @socketsecurity/onnxruntime run build
-            fi
-            echo "::endgroup::"
-          fi
+          #           if [ "${{ steps.onnx-cache-valid.outputs.valid }}" != "true" ]; then
+          #             echo "::group::Building ONNX Runtime (20-30 minutes)"
+          #             if [ "${{ inputs.force }}" = "true" ]; then
+          #               pnpm --filter @socketsecurity/onnxruntime run build -- --force
+          #             else
+          #               pnpm --filter @socketsecurity/onnxruntime run build
+          #             fi
+          #             echo "::endgroup::"
+          #           fi
 
           echo "✓ WASM assets built successfully"
 
@@ -367,8 +367,8 @@ jobs:
           echo "AI Models:"
           ls -lh packages/socketbin-cli-ai/dist/ 2>/dev/null || echo "  ❌ Directory not found"
           echo ""
-          echo "ONNX Runtime:"
-          ls -lh packages/onnxruntime/dist/ 2>/dev/null || echo "  ❌ Directory not found"
+          #           echo "ONNX Runtime:"
+          #           ls -lh packages/onnxruntime/dist/ 2>/dev/null || echo "  ❌ Directory not found"
           echo ""
 
           # Fail fast if critical Yoga Layout WASM is missing
