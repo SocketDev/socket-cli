@@ -135,22 +135,21 @@ async function build() {
 
   const buildScript = path.join(ONNX_SOURCE_DIR, 'build.sh')
 
-  // Set Emscripten flags for synchronous WASM compilation.
-  const env = {
-    ...process.env,
-    EMCC_CFLAGS: '-sWASM_ASYNC_COMPILATION=0',
-  }
+  // Note: WASM_ASYNC_COMPILATION=0 is required for bundling but causes compilation
+  // errors when passed via EMCC_CFLAGS (it's a linker flag, not compiler flag).
+  // ONNX Runtime's build system handles Emscripten settings through CMake.
+  // We pass it through --emscripten_settings which goes to EMSCRIPTEN_SETTINGS.
 
   await spawn(buildScript, [
     '--config', 'Release',
     '--build_wasm',
     '--skip_tests',
     '--parallel',
+    '--cmake_extra_defines', 'onnxruntime_EMSCRIPTEN_SETTINGS=WASM_ASYNC_COMPILATION=0',
   ], {
     cwd: ONNX_SOURCE_DIR,
     shell: WIN32,
     stdio: 'inherit',
-    env,
   })
 
   const duration = formatDuration(Date.now() - startTime)
