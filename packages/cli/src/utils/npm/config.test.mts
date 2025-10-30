@@ -42,9 +42,7 @@ describe('npm-config utilities', () => {
   beforeEach(() => {
     // Clear mock calls and restore original implementation
     MockNpmConfig.mockClear()
-    MockNpmConfig.mockImplementation(function () {
-      return mockNpmConfigInstance
-    })
+    MockNpmConfig.mockImplementation(() => mockNpmConfigInstance)
     vi.mocked(mockNpmConfigInstance.load).mockClear()
   })
 
@@ -145,9 +143,7 @@ describe('npm-config utilities', () => {
         flat: { test: 'value' },
       }
       vi.mocked((await import('@npmcli/config')).default).mockImplementation(
-        function () {
-          return mockConfigInstance
-        },
+        () => mockConfigInstance,
       )
 
       await getNpmConfig()

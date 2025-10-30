@@ -1,9 +1,8 @@
 {
-  "extends": "./.config/tsconfig.base.json",
-  "include": ["src/**/*.mts", "src/**/*.d.ts"],
+  "extends": "../../.config/tsconfig.base.json",
+  "include": ["src/**/*.mts", "src/**/*.d.ts", "src/**/*.tsx"],
   "exclude": [
     "src/**/*.test.mts",
-    "src/**/*.tsx",
     "src/commands/analytics/output-analytics.mts",
     "src/commands/audit-log/output-audit-log.mts",
     "src/commands/threat-feed/output-threat-feed.mts",

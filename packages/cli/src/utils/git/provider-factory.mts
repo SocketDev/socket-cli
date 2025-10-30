@@ -2,6 +2,7 @@ import { spawnSync } from '@socketsecurity/lib/spawn'
 
 import { GitHubProvider } from './github-provider.mts'
 import { GitLabProvider } from './gitlab-provider.mts'
+
 import type { PrProvider } from './provider.mts'
 
 /**
