@@ -214,8 +214,9 @@ async function exportWasm() {
   const buildOutputDir = path.join(ONNX_SOURCE_DIR, 'build', platform, 'Release')
 
   // Look for non-threaded WASM files since we disabled threading.
+  // With EXPORT_ES6=0, Emscripten outputs .js (UMD) not .mjs (ES6).
   const wasmFile = path.join(buildOutputDir, 'ort-wasm.wasm')
-  const mjsFile = path.join(buildOutputDir, 'ort-wasm.mjs')
+  const jsFile = path.join(buildOutputDir, 'ort-wasm.js')
 
   if (!existsSync(wasmFile)) {
     printError('WASM file not found - build failed')
@@ -224,25 +225,15 @@ async function exportWasm() {
   }
 
   const outputWasm = path.join(OUTPUT_DIR, 'ort-wasm.wasm')
-  const outputMjs = path.join(OUTPUT_DIR, 'ort-wasm.mjs')
+  const outputJs = path.join(OUTPUT_DIR, 'ort-wasm.js')
 
   // Copy WASM file.
   await fs.copyFile(wasmFile, outputWasm)
 
-  // Copy and patch MJS glue code.
-  if (existsSync(mjsFile)) {
-    let mjsContent = await fs.readFile(mjsFile, 'utf-8')
-
-    // Add require shim at the top for Node.js CommonJS compatibility.
-    // The generated code uses require() which isn't available in ES modules.
-    const requireShim = `import { createRequire } from 'node:module';\nconst require = createRequire(import.meta.url);\n\n`
-    mjsContent = requireShim + mjsContent
-
-    // Strip the export statement at the end of the file if present.
-    mjsContent = mjsContent.replace(/;?\s*export\s+default\s+\w+\s*;\s*$/, '')
-
-    await fs.writeFile(outputMjs, mjsContent, 'utf-8')
-    printStep(`MJS: ${outputMjs}`)
+  // Copy JS glue code (UMD format from EXPORT_ES6=0).
+  if (existsSync(jsFile)) {
+    await fs.copyFile(jsFile, outputJs)
+    printStep(`JS: ${outputJs}`)
   }
 
   const wasmSize = await getFileSize(outputWasm)
@@ -263,8 +254,8 @@ async function main() {
   logger.info('')
 
   // Clean checkpoints if requested or if output is missing.
-  const outputWasm = path.join(OUTPUT_DIR, 'ort-wasm-simd-threaded.wasm')
-  const outputJs = path.join(OUTPUT_DIR, 'ort-wasm-simd-threaded.js')
+  const outputWasm = path.join(OUTPUT_DIR, 'ort-wasm.wasm')
+  const outputJs = path.join(OUTPUT_DIR, 'ort-wasm.js')
   const outputMissing = !existsSync(outputWasm) || !existsSync(outputJs)
 
   if (CLEAN_BUILD || outputMissing) {
