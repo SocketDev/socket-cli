@@ -463,13 +463,6 @@ importers:
         version: 0.30.19
 
   packages/cli:
-    dependencies:
-      ajv-dist:
-        specifier: 8.17.1
-        version: 8.17.1
-      compromise:
-        specifier: 14.14.4
-        version: 14.14.4
     devDependencies:
       '@babel/generator':
         specifier: ^7.28.5
@@ -483,12 +476,21 @@ importers:
       '@babel/types':
         specifier: ^7.28.5
         version: 7.28.5
+      '@coana-tech/cli':
+        specifier: 14.12.51
+        version: 14.12.51
       '@gitbeaker/rest':
         specifier: 43.7.0
         version: 43.7.0
       '@socketsecurity/build-infra':
         specifier: workspace:*
         version: link:../build-infra
+      ajv-dist:
+        specifier: 8.17.1
+        version: 8.17.1
+      compromise:
+        specifier: 14.14.4
+        version: 14.14.4
       del:
         specifier: 8.0.1
         version: 8.0.1
