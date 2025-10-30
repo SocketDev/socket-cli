@@ -1,4 +1,11 @@
 {
+  "name": "socket-cli-monorepo",
+  "version": "0.0.0",
+  "private": true,
+  "dependencies": {
+    "socket-lib": "link:socket-lib",
+    "socket-sdk-js": "link:socket-sdk-js"
+  },
   "devDependencies": {
     "@babel/core": "7.28.4",
     "@babel/parser": "7.28.4",
@@ -103,16 +110,6 @@
     "yoga-layout": "3.2.1",
     "zod": "4.1.8"
   },
-  "engines": {
-    "node": ">=18",
-    "pnpm": ">=10.16.0"
-  },
-  "lint-staged": {
-    "*.{cjs,cts,js,json,md,mjs,mts,ts}": [
-      "biome check --write --unsafe --no-errors-on-unmatched --files-ignore-unknown=true --colors=off"
-    ]
-  },
-  "name": "socket-cli-monorepo",
   "pnpm": {
     "overrides": {
       "@octokit/graphql": "9.0.1",
@@ -120,8 +117,8 @@
       "aggregate-error": "npm:@socketregistry/aggregate-error@^1.0.15",
       "ansi-regex": "6.1.0",
       "brace-expansion": "2.0.2",
-      "es-define-property": "npm:@socketregistry/es-define-property@^1.0.7",
       "emoji-regex": "10.6.0",
+      "es-define-property": "npm:@socketregistry/es-define-property@^1.0.7",
       "es-set-tostringtag": "npm:@socketregistry/es-set-tostringtag@^1.0.10",
       "function-bind": "npm:@socketregistry/function-bind@^1.0.7",
       "globalthis": "npm:@socketregistry/globalthis@^1.0.8",
@@ -159,12 +156,15 @@
     "patchedDependencies": {
       "brace-expansion@2.0.2": "patches/brace-expansion@2.0.2.patch",
       "graceful-fs@4.2.11": "patches/graceful-fs@4.2.11.patch",
+      "ink@6.3.1": "patches/ink@6.3.1.patch",
       "lodash@4.17.21": "patches/lodash@4.17.21.patch",
-      "string_decoder@0.10.31": "patches/string_decoder@0.10.31.patch",
-      "ink@6.3.1": "patches/ink@6.3.1.patch"
+      "string_decoder@0.10.31": "patches/string_decoder@0.10.31.patch"
     }
   },
-  "private": true,
+  "engines": {
+    "node": ">=18",
+    "pnpm": ">=10.16.0"
+  },
   "scripts": {
     "// Build": "",
     "build": "node scripts/build.mjs",
@@ -175,10 +175,10 @@
     "// Quality Checks": "",
     "check": "node scripts/check.mjs",
     "check:all": "node scripts/check.mjs --all",
-    "lint": "node scripts/lint.mjs",
-    "lint:all": "node scripts/lint.mjs --all",
     "fix": "node scripts/fix.mjs",
     "fix:all": "node scripts/fix.mjs --all",
+    "lint": "node scripts/lint.mjs",
+    "lint:all": "node scripts/lint.mjs --all",
     "// Claude": "",
     "claude": "pnpm --filter @socketsecurity/cli run claude --",
     "// Type Checking": "",
@@ -190,11 +190,11 @@
     "cover": "pnpm --filter @socketsecurity/cli run test:unit:coverage --",
     "cover:all": "pnpm --filter \"./packages/**\" run cover",
     "// WASM": "",
+    "wasm:benchmark": "node scripts/wasm/benchmark-build.mjs",
     "wasm:build": "node scripts/wasm/build-unified-wasm.mjs",
     "wasm:build:dev": "node scripts/wasm/build-unified-wasm.mjs --dev",
     "wasm:optimize": "node scripts/wasm/optimize-embedded-wasm.mjs",
     "wasm:optimize:aggressive": "node scripts/wasm/optimize-embedded-wasm.mjs --aggressive",
-    "wasm:benchmark": "node scripts/wasm/benchmark-build.mjs",
     "wasm:setup": "node scripts/wasm/setup-build-env.mjs",
     "// Maintenance": "",
     "clean": "pnpm --filter \"./packages/**\" run clean",
@@ -205,20 +205,20 @@
     "prepare": "husky",
     "pretest": "pnpm run build"
   },
+  "lint-staged": {
+    "*.{cjs,cts,js,json,md,mjs,mts,ts}": [
+      "biome check --write --unsafe --no-errors-on-unmatched --files-ignore-unknown=true --colors=off"
+    ]
+  },
   "typeCoverage": {
-    "cache": true,
     "atLeast": 95,
+    "cache": true,
+    "ignore-files": "test/*",
+    "ignore-non-null-assertion": true,
+    "ignore-type-assertion": true,
     "ignoreAsAssertion": true,
     "ignoreCatch": true,
     "ignoreEmptyType": true,
-    "ignore-non-null-assertion": true,
-    "ignore-type-assertion": true,
-    "ignore-files": "test/*",
     "strict": true
-  },
-  "version": "2.0.0",
-  "dependencies": {
-    "socket-lib": "link:socket-lib",
-    "socket-sdk-js": "link:socket-sdk-js"
   }
 }
