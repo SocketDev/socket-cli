@@ -114,6 +114,11 @@ async function main() {
         command: 'node',
         args: ['scripts/compress-cli.mjs'],
       },
+      {
+        name: 'Copy Logos',
+        command: 'node',
+        args: ['scripts/copy-logos.mjs'],
+      },
     ]
 
     // Run build steps sequentially.
