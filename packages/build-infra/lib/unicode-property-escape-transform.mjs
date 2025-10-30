@@ -156,6 +156,19 @@ function transformRegexPattern(pattern) {
 }
 
 /**
+ * Escape a string for insertion into JavaScript string literal context.
+ * When we get a pattern from Babel's StringLiteral.value, backslashes are interpreted.
+ * But when writing back into source code, we need to re-escape them.
+ */
+function escapeForStringLiteral(str) {
+  return str
+    .replace(/\\/g, '\\\\')  // Backslash must be doubled.
+    .replace(/"/g, '\\"')     // Escape quotes if needed (handled by keeping original quotes).
+    .replace(/'/g, "\\'")     // Escape single quotes if needed.
+}
+
+
+/**
  * Transform Unicode property escapes in regex patterns for ICU-free environments.
  *
  * Uses Babel AST parsing to properly identify regex literals and transform them.
@@ -193,7 +206,10 @@ export function transformUnicodePropertyEscapes(content) {
         return
       }
 
-      // Transform the pattern.
+      // Get the original regex literal from source.
+      const originalRegex = content.slice(start, end)
+
+      // Transform the pattern (using Babel's interpreted pattern for replacements).
       const transformedPattern = transformRegexPattern(pattern)
 
       // Check if transformed pattern still has unsupported Unicode features.
@@ -203,11 +219,27 @@ export function transformUnicodePropertyEscapes(content) {
         return
       }
 
-      // If pattern changed, update it and remove Unicode flags.
+      // If pattern changed, update it by doing string replacement on the original source.
       if (transformedPattern !== pattern) {
-        // Remove /u and /v flags.
-        const newFlags = flags.replace(/[uv]/g, '')
-        const newRegex = `/${transformedPattern}/${newFlags}`
+        // Work with the original regex source text, removing opening/closing slashes and flags.
+        // Extract just the pattern part from /pattern/flags.
+        const lastSlash = originalRegex.lastIndexOf('/')
+        const originalPattern = originalRegex.slice(1, lastSlash)
+        const originalFlags = originalRegex.slice(lastSlash + 1)
+
+        // Do the same transformations on the source text.
+        let newPattern = originalPattern
+        for (const [prop, replacement] of Object.entries(unicodePropertyMap)) {
+          const escapedProp = prop.replace(/[\\{}]/g, '\\$&')
+          newPattern = newPattern.replace(
+            new RegExp(`\\\\p\\{${escapedProp}\\}`, 'g'),
+            `[${replacement}]`,
+          )
+        }
+
+        // Remove /u and /v flags from the original flags.
+        const newFlags = originalFlags.replace(/[uv]/g, '')
+        const newRegex = `/${newPattern}/${newFlags}`
         s.overwrite(start, end, newRegex)
         return
       }
@@ -215,9 +247,12 @@ export function transformUnicodePropertyEscapes(content) {
       // Pattern unchanged but has Unicode flags - check if safe to remove flags.
       // Only remove flags if pattern has no \u{} escapes or other Unicode-specific syntax.
       if (!hasUnsupportedUnicodeFeatures(pattern)) {
-        // Safe to remove Unicode flags.
-        const newFlags = flags.replace(/[uv]/g, '')
-        const newRegex = `/${pattern}/${newFlags}`
+        // Safe to remove Unicode flags - just remove the flags from the original source.
+        const lastSlash = originalRegex.lastIndexOf('/')
+        const originalPattern = originalRegex.slice(1, lastSlash)
+        const originalFlags = originalRegex.slice(lastSlash + 1)
+        const newFlags = originalFlags.replace(/[uv]/g, '')
+        const newRegex = `/${originalPattern}/${newFlags}`
         s.overwrite(start, end, newRegex)
       } else {
         // Has unsupported features, replace with no-op.
@@ -277,8 +312,11 @@ export function transformUnicodePropertyEscapes(content) {
         const patternQuote = content[patternArg.start]
         const flagsQuote = content[flagsArg.start]
 
+        // Escape the transformed pattern for string literal context.
+        const escapedPattern = escapeForStringLiteral(transformedPattern)
+
         // Replace pattern.
-        s.overwrite(patternArg.start, patternArg.end, `${patternQuote}${transformedPattern}${patternQuote}`)
+        s.overwrite(patternArg.start, patternArg.end, `${patternQuote}${escapedPattern}${patternQuote}`)
 
         // Replace flags.
         s.overwrite(flagsArg.start, flagsArg.end, `${flagsQuote}${newFlags}${flagsQuote}`)
