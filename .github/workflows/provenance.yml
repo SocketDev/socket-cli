@@ -46,16 +46,8 @@ jobs:
         run: |
           SOCKET_VERSION=$(node -p "require('./packages/socket/package.json').version")
           echo "Socket version: $SOCKET_VERSION"
-
-          # Remove private field from socket package
-          node -e "
-            const fs = require('fs');
-            const pkgPath = './packages/socket/package.json';
-            const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
-            delete pkg.private;
-            fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
-          "
           echo "SOCKET_VERSION=$SOCKET_VERSION" >> $GITHUB_ENV
+          node scripts/prepare-package-for-publish.mjs packages/socket
       - name: Build socket package
         run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 pnpm run build:dist
       - name: Validate socket package
@@ -69,17 +61,7 @@ jobs:
 
       # Build and publish '@socketsecurity/cli' package (legacy).
       - name: Prepare @socketsecurity/cli package for publishing
-        run: |
-          # Remove private field and set version from socket package
-          node -e "
-            const fs = require('fs');
-            const pkgPath = './packages/cli/package.json';
-            const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
-            delete pkg.private;
-            pkg.version = '${{ env.SOCKET_VERSION }}';
-            fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
-          "
-          echo "Synced @socketsecurity/cli to version ${{ env.SOCKET_VERSION }}"
+        run: node scripts/prepare-package-for-publish.mjs packages/cli ${{ env.SOCKET_VERSION }}
       - name: Build @socketsecurity/cli package
         run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 INLINED_SOCKET_CLI_LEGACY_BUILD=1 pnpm run build:dist
         env:
@@ -95,17 +77,7 @@ jobs:
 
       # Build and publish '@socketsecurity/cli-with-sentry' package.
       - name: Prepare @socketsecurity/cli-with-sentry package for publishing
-        run: |
-          # Remove private field and set version from socket package
-          node -e "
-            const fs = require('fs');
-            const pkgPath = './packages/cli-with-sentry/package.json';
-            const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
-            delete pkg.private;
-            pkg.version = '${{ env.SOCKET_VERSION }}';
-            fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
-          "
-          echo "Synced @socketsecurity/cli-with-sentry to version ${{ env.SOCKET_VERSION }}"
+        run: node scripts/prepare-package-for-publish.mjs packages/cli-with-sentry ${{ env.SOCKET_VERSION }}
       - name: Build @socketsecurity/cli-with-sentry package
         run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 INLINED_SOCKET_CLI_SENTRY_BUILD=1 pnpm run build:dist
         env:
