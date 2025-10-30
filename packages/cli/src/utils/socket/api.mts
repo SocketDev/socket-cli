@@ -37,14 +37,23 @@ import {
   HTTP_STATUS_TOO_MANY_REQUESTS,
   HTTP_STATUS_UNAUTHORIZED,
 } from '../../constants/http.mts'
-import { API_V0_URL } from '../../constants/socket.mts'
+import {
+  API_V0_URL,
+  SOCKET_CLI_ISSUES_URL,
+  SOCKET_PRICING_URL,
+  SOCKET_SETTINGS_API_TOKENS_URL,
+  SOCKET_STATUS_URL,
+} from '../../constants/socket.mts'
 import { getConfigValueOrUndef } from '../config.mts'
 import { debugApiResponse } from '../debug.mts'
 import {
   getRequirements,
   getRequirementsKey,
 } from '../ecosystem/requirements.mts'
-import { buildErrorCause } from '../error/errors.mts'
+import {
+  buildErrorCause,
+  getNetworkErrorDiagnostics,
+} from '../error/errors.mts'
 
 import type { CResult } from '../../types.mts'
 import type { Spinner } from '@socketsecurity/lib/spinner'
@@ -93,7 +102,7 @@ function logPermissionsFor403(cmdPath?: string | undefined): void {
   }
   logger.error('')
   logger.error('💡 To fix this:')
-  logger.error('   1. Visit https://socket.dev/settings/api-tokens')
+  logger.error(`   1. Visit ${SOCKET_SETTINGS_API_TOKENS_URL}`)
   logger.error(
     '   2. Edit your API token to grant the permissions listed above',
   )
@@ -127,9 +136,9 @@ export async function getErrorMessageForHttpStatusCode(code: number) {
       '❌ Access denied: Your API token lacks required permissions or organization access.\n' +
       '💡 Try:\n' +
       '  • Run `socket whoami` to verify your account and organization\n' +
-      '  • Check your API token permissions at https://socket.dev/settings/api-tokens\n' +
+      `  • Check your API token permissions at ${SOCKET_SETTINGS_API_TOKENS_URL}\n` +
       "  • Ensure you're accessing the correct organization with `--org` flag\n" +
-      '  • Verify your plan includes this feature at https://socket.dev/pricing'
+      `  • Verify your plan includes this feature at ${SOCKET_PRICING_URL}`
     )
   }
   if (code === HTTP_STATUS_NOT_FOUND) {
@@ -139,14 +148,14 @@ export async function getErrorMessageForHttpStatusCode(code: number) {
       '  • Verify resource names (package, repository, organization)\n' +
       '  • Check if the resource was deleted or moved\n' +
       '  • Update to the latest CLI version: `socket self-update` (SEA) or `npm update -g socket`\n' +
-      '  • Report persistent issues at https://github.com/SocketDev/socket-cli/issues'
+      `  • Report persistent issues at ${SOCKET_CLI_ISSUES_URL}`
     )
   }
   if (code === HTTP_STATUS_TOO_MANY_REQUESTS) {
     return (
       '❌ Rate limit exceeded: Too many API requests.\n' +
       '💡 Try:\n' +
-      '  • Free plan: Wait a few minutes for quota reset or upgrade at https://socket.dev/pricing\n' +
+      `  • Free plan: Wait a few minutes for quota reset or upgrade at ${SOCKET_PRICING_URL}\n` +
       '  • Paid plan: Contact support if rate limits seem incorrect\n' +
       '  • Check current quota: `socket organization quota`\n' +
       '  • Reduce request frequency or batch operations'
@@ -157,13 +166,13 @@ export async function getErrorMessageForHttpStatusCode(code: number) {
       '❌ Server error: Socket API encountered an internal problem (HTTP 500).\n' +
       '💡 Try:\n' +
       '  • Wait a few minutes and retry your command\n' +
-      '  • Check Socket status: https://status.socket.dev\n' +
-      '  • Report persistent issues: https://github.com/SocketDev/socket-cli/issues'
+      `  • Check Socket status: ${SOCKET_STATUS_URL}\n` +
+      `  • Report persistent issues: ${SOCKET_CLI_ISSUES_URL}`
     )
   }
   return (
     `❌ HTTP ${code}: Server responded with unexpected status code.\n` +
-    '💡 Try: Check Socket status at https://status.socket.dev or report the issue.'
+    `💡 Try: Check Socket status at ${SOCKET_STATUS_URL} or report the issue.`
   )
 }
 
@@ -396,15 +405,14 @@ export async function queryApiSafeText(
       headers: { Authorization: '[REDACTED]' },
     })
 
-    const errStr = e ? String(e).trim() : ''
+    // Provide detailed network diagnostics for fetch errors.
+    const networkDiagnostics = getNetworkErrorDiagnostics(e, durationMs)
     const message = 'API request failed'
-    const rawCause = errStr || NO_ERROR_MESSAGE
-    const cause = message !== rawCause ? rawCause : ''
 
     return {
       ok: false,
       message,
-      ...(cause ? { cause } : {}),
+      cause: networkDiagnostics,
     }
   }
 
@@ -576,15 +584,14 @@ export async function sendApiRequest<T>(
       },
     })
 
-    const errStr = e ? String(e).trim() : ''
+    // Provide detailed network diagnostics for fetch errors.
+    const networkDiagnostics = getNetworkErrorDiagnostics(e, durationMs)
     const message = 'API request failed'
-    const rawCause = errStr || NO_ERROR_MESSAGE
-    const cause = message !== rawCause ? rawCause : ''
 
     return {
       ok: false,
       message,
-      ...(cause ? { cause } : {}),
+      cause: networkDiagnostics,
     }
   }
 

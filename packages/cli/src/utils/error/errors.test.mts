@@ -14,12 +14,17 @@ import {
   getErrorCause,
   getErrorMessage,
   getErrorMessageOr,
+  getNetworkErrorCode,
+  getNetworkErrorDiagnostics,
   getRecoverySuggestions,
   hasRecoverySuggestions,
   InputError,
   isErrnoException,
+  isNetworkError,
+  isTimeoutError,
   NetworkError,
   RateLimitError,
+  TimeoutError,
 } from './errors.mts'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -124,6 +129,35 @@ describe('Error Classes', () => {
       const error = new InputError('Invalid JSON', '{invalid}')
       expect(error.message).toBe('Invalid JSON')
       expect(error.body).toBe('{invalid}')
+    })
+  })
+
+  describe('TimeoutError', () => {
+    it('should create TimeoutError with timeout and elapsed times', () => {
+      const error = new TimeoutError('Request timed out', 30_000, 35_000)
+      expect(error).toBeInstanceOf(TimeoutError)
+      expect(error.name).toBe('TimeoutError')
+      expect(error.message).toBe('Request timed out')
+      expect(error.timeoutMs).toBe(30_000)
+      expect(error.elapsedMs).toBe(35_000)
+    })
+
+    it('should have default recovery suggestions', () => {
+      const error = new TimeoutError('Timeout')
+      expect(error.recovery).toHaveLength(3)
+      expect(error.recovery[0]).toContain('internet connection')
+    })
+
+    it('should accept custom recovery suggestions', () => {
+      const recovery = ['Retry with exponential backoff']
+      const error = new TimeoutError('Timeout', 10_000, 15_000, recovery)
+      expect(error.recovery).toEqual(recovery)
+    })
+
+    it('should handle missing timeout values', () => {
+      const error = new TimeoutError('Operation timed out')
+      expect(error.timeoutMs).toBeUndefined()
+      expect(error.elapsedMs).toBeUndefined()
     })
   })
 })
@@ -325,6 +359,138 @@ describe('Recovery Utilities', () => {
       expect(getRecoverySuggestions('string')).toEqual([])
       expect(getRecoverySuggestions(null)).toEqual([])
       expect(getRecoverySuggestions(undefined)).toEqual([])
+    })
+  })
+})
+
+describe('Type Guards', () => {
+  describe('isNetworkError', () => {
+    it('should return true for NetworkError instances', () => {
+      const error = new NetworkError('Connection failed')
+      expect(isNetworkError(error)).toBe(true)
+    })
+
+    it('should return false for other error types', () => {
+      expect(isNetworkError(new Error('Generic error'))).toBe(false)
+      expect(isNetworkError(new AuthError('Auth failed'))).toBe(false)
+      expect(isNetworkError(new TimeoutError('Timeout'))).toBe(false)
+    })
+
+    it('should return false for non-errors', () => {
+      expect(isNetworkError('string')).toBe(false)
+      expect(isNetworkError(null)).toBe(false)
+      expect(isNetworkError(undefined)).toBe(false)
+      expect(isNetworkError(123)).toBe(false)
+    })
+  })
+
+  describe('isTimeoutError', () => {
+    it('should return true for TimeoutError instances', () => {
+      const error = new TimeoutError('Request timed out')
+      expect(isTimeoutError(error)).toBe(true)
+    })
+
+    it('should return false for other error types', () => {
+      expect(isTimeoutError(new Error('Generic error'))).toBe(false)
+      expect(isTimeoutError(new NetworkError('Network failed'))).toBe(false)
+      expect(isTimeoutError(new AuthError('Auth failed'))).toBe(false)
+    })
+
+    it('should return false for non-errors', () => {
+      expect(isTimeoutError('string')).toBe(false)
+      expect(isTimeoutError(null)).toBe(false)
+      expect(isTimeoutError(undefined)).toBe(false)
+      expect(isTimeoutError({})).toBe(false)
+    })
+  })
+})
+
+describe('Network Error Diagnostics', () => {
+  describe('getNetworkErrorCode', () => {
+    it('should extract error code from ErrnoException', () => {
+      try {
+        readFileSync(path.join(__dirname, 'nonexistent'))
+      } catch (e) {
+        const code = getNetworkErrorCode(e)
+        expect(code).toBe('ENOENT')
+      }
+    })
+
+    it('should return undefined for errors without code', () => {
+      const error = new Error('Generic error')
+      expect(getNetworkErrorCode(error)).toBeUndefined()
+    })
+
+    it('should return undefined for non-errors', () => {
+      expect(getNetworkErrorCode('string')).toBeUndefined()
+      expect(getNetworkErrorCode(null)).toBeUndefined()
+      expect(getNetworkErrorCode(undefined)).toBeUndefined()
+    })
+  })
+
+  describe('getNetworkErrorDiagnostics', () => {
+    it('should provide timeout diagnostics for ETIMEDOUT', () => {
+      const error = Object.assign(new Error('Connection timed out'), {
+        code: 'ETIMEDOUT',
+      })
+      const diagnostics = getNetworkErrorDiagnostics(error, 5_000)
+      expect(diagnostics).toContain('timeout')
+      expect(diagnostics).toContain('5s')
+      expect(diagnostics).toContain('💡 Try:')
+      expect(diagnostics).toContain('internet connection')
+    })
+
+    it('should provide connection refused diagnostics for ECONNREFUSED', () => {
+      const error = Object.assign(new Error('Connection refused'), {
+        code: 'ECONNREFUSED',
+      })
+      const diagnostics = getNetworkErrorDiagnostics(error)
+      expect(diagnostics).toContain('Connection refused')
+      expect(diagnostics).toContain('proxy')
+      expect(diagnostics).toContain('firewall')
+    })
+
+    it('should provide DNS diagnostics for ENOTFOUND', () => {
+      const error = Object.assign(new Error('getaddrinfo ENOTFOUND'), {
+        code: 'ENOTFOUND',
+      })
+      const diagnostics = getNetworkErrorDiagnostics(error)
+      expect(diagnostics).toContain('DNS')
+      expect(diagnostics).toContain('8.8.8.8')
+      expect(diagnostics).toContain('1.1.1.1')
+    })
+
+    it('should provide certificate diagnostics for cert errors', () => {
+      const error = Object.assign(new Error('Certificate has expired'), {
+        code: 'CERT_HAS_EXPIRED',
+      })
+      const diagnostics = getNetworkErrorDiagnostics(error)
+      expect(diagnostics).toContain('certificate')
+      expect(diagnostics).toContain('date and time')
+    })
+
+    it('should provide network unreachable diagnostics', () => {
+      const error = Object.assign(new Error('Network is unreachable'), {
+        code: 'ENETUNREACH',
+      })
+      const diagnostics = getNetworkErrorDiagnostics(error)
+      expect(diagnostics).toContain('unreachable')
+      expect(diagnostics).toContain('internet connection')
+    })
+
+    it('should provide generic diagnostics for unknown errors', () => {
+      const error = new Error('Unknown network issue')
+      const diagnostics = getNetworkErrorDiagnostics(error)
+      expect(diagnostics).toContain('Network error')
+      expect(diagnostics).toContain('💡 Try:')
+      expect(diagnostics).toContain('internet connection')
+    })
+
+    it('should detect timeout based on duration', () => {
+      const error = new Error('Request failed')
+      const diagnostics = getNetworkErrorDiagnostics(error, 35_000)
+      expect(diagnostics).toContain('timeout')
+      expect(diagnostics).toContain('35s')
     })
   })
 })
