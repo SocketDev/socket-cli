@@ -70,19 +70,17 @@ async function cloneOnnxSource() {
 
   if (existsSync(ONNX_SOURCE_DIR)) {
     printStep('ONNX Runtime source already exists, skipping clone')
-    await createCheckpoint('onnxruntime', 'cloned')
-    return
+  } else {
+    await fs.mkdir(BUILD_DIR, { recursive: true })
+
+    printStep(`Cloning ONNX Runtime ${ONNX_VERSION}...`)
+    await spawn('git', ['clone', '--depth', '1', '--branch', ONNX_VERSION, ONNX_REPO, ONNX_SOURCE_DIR], {
+      shell: WIN32,
+      stdio: 'inherit',
+    })
+
+    printSuccess(`ONNX Runtime ${ONNX_VERSION} cloned`)
   }
-
-  await fs.mkdir(BUILD_DIR, { recursive: true })
-
-  printStep(`Cloning ONNX Runtime ${ONNX_VERSION}...`)
-  await spawn('git', ['clone', '--depth', '1', '--branch', ONNX_VERSION, ONNX_REPO, ONNX_SOURCE_DIR], {
-    shell: WIN32,
-    stdio: 'inherit',
-  })
-
-  printSuccess(`ONNX Runtime ${ONNX_VERSION} cloned`)
 
   // Patch eigen.cmake to accept the current Eigen hash from GitLab.
   // GitLab changed the archive format, causing hash mismatch.
