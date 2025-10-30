@@ -15,9 +15,22 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootDir = path.join(__dirname, '..')
 
 /**
- * Generates a datetime-based version string.
+ * Generates a datetime-based version string in semver format.
+ * Reads base version from socketbin-cli-linux-x64 package.json.
+ * Format: X.Y.Z-YYYYMMDD.HHmmss
  */
 function generateDatetimeVersion() {
+  // Read base version from one of the socketbin packages.
+  const basePackagePath = path.join(rootDir, 'packages', 'socketbin-cli-linux-x64', 'package.json')
+  let baseVersion = '0.0.0'
+
+  try {
+    const basePackage = JSON.parse(require('fs').readFileSync(basePackagePath, 'utf-8'))
+    baseVersion = basePackage.version || '0.0.0'
+  } catch {
+    // Fallback to 0.0.0 if package doesn't exist yet.
+  }
+
   const now = new Date()
   const year = now.getFullYear()
   const month = String(now.getMonth() + 1).padStart(2, '0')
@@ -25,7 +38,7 @@ function generateDatetimeVersion() {
   const hours = String(now.getHours()).padStart(2, '0')
   const minutes = String(now.getMinutes()).padStart(2, '0')
   const seconds = String(now.getSeconds()).padStart(2, '0')
-  return `${year}.${month}.${day}.${hours}${minutes}${seconds}`
+  return `${baseVersion}-${year}${month}${day}.${hours}${minutes}${seconds}`
 }
 
 const { values } = parseArgs({
@@ -50,7 +63,7 @@ const {
 
 if (!platform || !arch) {
   logger.error(
-    'Usage: generate-binary-package.mjs --platform=darwin --arch=arm64 [--version=2025.01.22.143052] [--method=smol]',
+    'Usage: generate-binary-package.mjs --platform=darwin --arch=arm64 [--version=1.2.0-20250122.143052] [--method=smol]',
   )
   process.exit(1)
 }
