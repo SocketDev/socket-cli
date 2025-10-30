@@ -64,13 +64,16 @@ async function validate() {
     logger.log(success('package.json exists'))
   }
 
-  // Check dist/cli.js exists.
-  logger.log(info('Checking dist/cli.js...'))
-  const cliPath = path.join(packageRoot, 'dist', 'cli.js')
-  if (!(await fileExists(cliPath))) {
-    errors.push('dist/cli.js does not exist')
-  } else {
-    logger.log(success('dist/cli.js exists'))
+  // Check dist files exist.
+  const distFiles = ['index.js', 'cli.js.bz']
+  for (const file of distFiles) {
+    logger.log(info(`Checking dist/${file}...`))
+    const filePath = path.join(packageRoot, 'dist', file)
+    if (!(await fileExists(filePath))) {
+      errors.push(`dist/${file} does not exist`)
+    } else {
+      logger.log(success(`dist/${file} exists`))
+    }
   }
 
   // Check data directory exists.
