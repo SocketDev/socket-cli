@@ -509,10 +509,6 @@ importers:
 
   packages/cli-with-sentry:
     dependencies:
-      '@socketsecurity/cli':
-        specifier: workspace:*
-        version: link:../cli
-    devDependencies:
       '@sentry/node':
         specifier: 8.0.0
         version: 8.0.0
