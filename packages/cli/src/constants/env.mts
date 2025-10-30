@@ -158,6 +158,10 @@ export function getPythonBuildTag(): string | undefined {
   return process.env['INLINED_SOCKET_CLI_PYTHON_BUILD_TAG']
 }
 
+export function getPyCliVersion(): string | undefined {
+  return process.env['INLINED_SOCKET_CLI_PYCLI_VERSION']
+}
+
 // Export processEnv for backward compatibility with shadow npm integration.
 // This provides access to process.env for spawned processes.
 export const processEnv = env

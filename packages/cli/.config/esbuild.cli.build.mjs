@@ -38,6 +38,11 @@ const coanaVersion = packageJson.devDependencies?.['@coana-tech/cli'] || ''
 const cdxgenVersion = packageJson.devDependencies?.['@cyclonedx/cdxgen'] || ''
 const synpVersion = packageJson.devDependencies?.['synp'] || ''
 
+// Get external tool versions from package.json externalTools (non-npm packages).
+const pythonVersion = packageJson.externalTools?.['python'] || ''
+const pythonBuildTag = packageJson.externalTools?.['pythonBuildTag'] || ''
+const pyCliVersion = packageJson.externalTools?.['socketcli'] || ''
+
 // Build-time constants that can be overridden by environment variables.
 const publishedBuild = process.env['INLINED_SOCKET_CLI_PUBLISHED_BUILD'] === '1'
 const legacyBuild = process.env['INLINED_SOCKET_CLI_LEGACY_BUILD'] === '1'
@@ -205,12 +210,13 @@ const config = {
       INLINED_SOCKET_CLI_CDXGEN_VERSION: JSON.stringify(cdxgenVersion),
       INLINED_SOCKET_CLI_COANA_VERSION: JSON.stringify(coanaVersion),
       INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION: JSON.stringify(cdxgenVersion),
+      INLINED_SOCKET_CLI_PYCLI_VERSION: JSON.stringify(pyCliVersion),
       INLINED_SOCKET_CLI_SYNP_VERSION: JSON.stringify(synpVersion),
       INLINED_SOCKET_CLI_PUBLISHED_BUILD: JSON.stringify(publishedBuild ? '1' : ''),
       INLINED_SOCKET_CLI_LEGACY_BUILD: JSON.stringify(legacyBuild ? '1' : ''),
       INLINED_SOCKET_CLI_SENTRY_BUILD: JSON.stringify(sentryBuild ? '1' : ''),
-      INLINED_SOCKET_CLI_PYTHON_VERSION: JSON.stringify(''),
-      INLINED_SOCKET_CLI_PYTHON_BUILD_TAG: JSON.stringify(''),
+      INLINED_SOCKET_CLI_PYTHON_VERSION: JSON.stringify(pythonVersion),
+      INLINED_SOCKET_CLI_PYTHON_BUILD_TAG: JSON.stringify(pythonBuildTag),
     }),
   },
 
@@ -229,12 +235,13 @@ const config = {
       INLINED_SOCKET_CLI_CDXGEN_VERSION: JSON.stringify(cdxgenVersion),
       INLINED_SOCKET_CLI_COANA_VERSION: JSON.stringify(coanaVersion),
       INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION: JSON.stringify(cdxgenVersion),
+      INLINED_SOCKET_CLI_PYCLI_VERSION: JSON.stringify(pyCliVersion),
       INLINED_SOCKET_CLI_SYNP_VERSION: JSON.stringify(synpVersion),
       INLINED_SOCKET_CLI_PUBLISHED_BUILD: JSON.stringify(publishedBuild ? '1' : ''),
       INLINED_SOCKET_CLI_LEGACY_BUILD: JSON.stringify(legacyBuild ? '1' : ''),
       INLINED_SOCKET_CLI_SENTRY_BUILD: JSON.stringify(sentryBuild ? '1' : ''),
-      INLINED_SOCKET_CLI_PYTHON_VERSION: JSON.stringify(''),
-      INLINED_SOCKET_CLI_PYTHON_BUILD_TAG: JSON.stringify(''),
+      INLINED_SOCKET_CLI_PYTHON_VERSION: JSON.stringify(pythonVersion),
+      INLINED_SOCKET_CLI_PYTHON_BUILD_TAG: JSON.stringify(pythonBuildTag),
     }),
     unicodeTransformPlugin(),
     {
