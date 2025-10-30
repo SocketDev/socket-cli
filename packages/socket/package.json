@@ -21,14 +21,14 @@
     "dist/"
   ],
   "optionalDependencies": {
-    "@socketbin/cli-alpine-arm64": "0.0.0",
-    "@socketbin/cli-alpine-x64": "0.0.0",
-    "@socketbin/cli-darwin-arm64": "0.0.0",
-    "@socketbin/cli-darwin-x64": "0.0.0",
-    "@socketbin/cli-linux-arm64": "0.0.0",
-    "@socketbin/cli-linux-x64": "0.0.0",
-    "@socketbin/cli-win32-arm64": "0.0.0",
-    "@socketbin/cli-win32-x64": "0.0.0"
+    "@socketbin/cli-alpine-arm64": "0.0.0-replaced-by-provenance",
+    "@socketbin/cli-alpine-x64": "0.0.0-replaced-by-provenance",
+    "@socketbin/cli-darwin-arm64": "0.0.0-replaced-by-provenance",
+    "@socketbin/cli-darwin-x64": "0.0.0-replaced-by-provenance",
+    "@socketbin/cli-linux-arm64": "0.0.0-replaced-by-provenance",
+    "@socketbin/cli-linux-x64": "0.0.0-replaced-by-provenance",
+    "@socketbin/cli-win32-arm64": "0.0.0-replaced-by-provenance",
+    "@socketbin/cli-win32-x64": "0.0.0-replaced-by-provenance"
   },
   "scripts": {
     "build": "node scripts/build-bootstrap.mjs",
