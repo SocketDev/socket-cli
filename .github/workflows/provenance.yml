@@ -52,6 +52,8 @@ jobs:
       - run: pnpm install
 
       # Build and publish 'socket' package (default).
+      - name: Update socketbin versions in socket package
+        run: node scripts/update-socketbin-versions.mjs
       - name: Prepare socket package for publishing
         run: |
           SOCKET_VERSION=$(node -p "require('./packages/socket/package.json').version")
