@@ -9,7 +9,17 @@ import colors from 'yoctocolors-cjs'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
-const projectRoot = path.resolve(__dirname, '..')
+const monorepoRoot = path.resolve(__dirname, '..')
+
+// Accept optional package path as first argument (e.g. 'packages/cli').
+// Used to read source package.json for version info.
+const packagePath = process.argv[2]
+const sourcePackageRoot = packagePath
+  ? path.resolve(monorepoRoot, packagePath)
+  : monorepoRoot
+
+// Dist directory is always at monorepo root.
+const projectRoot = monorepoRoot
 
 /**
  * Format a success message.
@@ -281,7 +291,7 @@ async function checkGitStatus() {
 
   try {
     const result = await spawn('git', ['status', '--porcelain'], {
-      cwd: projectRoot,
+      cwd: monorepoRoot,
     })
 
     if (result.code !== 0) {
@@ -314,15 +324,15 @@ async function validateGitTag() {
   const warnings = []
 
   try {
-    // Read version from root package.json.
-    const rootPkgPath = path.join(projectRoot, 'package.json')
-    const rootPkg = JSON.parse(await fs.readFile(rootPkgPath, 'utf8'))
-    const version = rootPkg.version
+    // Read version from source package.json.
+    const sourcePkgPath = path.join(sourcePackageRoot, 'package.json')
+    const sourcePkg = JSON.parse(await fs.readFile(sourcePkgPath, 'utf8'))
+    const version = sourcePkg.version
 
     // Check if tag exists.
     const tagName = `v${version}`
     const result = await spawn('git', ['tag', '-l', tagName], {
-      cwd: projectRoot,
+      cwd: monorepoRoot,
     })
 
     if (result.code !== 0) {
