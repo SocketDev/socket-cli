@@ -2,6 +2,7 @@
   "name": "@socketbin/cli-alpine-x64",
   "version": "0.0.0",
   "description": "Socket CLI binary",
+  "private": true,
   "license": "MIT",
   "bin": {
     "socket": "./bin/socket"
