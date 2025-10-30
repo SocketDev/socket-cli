@@ -260,8 +260,13 @@ jobs:
       - name: Generate ONNX Runtime cache key
         id: onnx-cache-key
         run: |
-          HASH=$(find packages/onnxruntime -type f \( -name "*.mjs" \) | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
-          echo "hash=$HASH" >> $GITHUB_OUTPUT
+          # Extract ONNX Runtime version from package.json (package version matches ONNX Runtime release).
+          ONNX_VERSION=$(node -p "require('./packages/onnxruntime/package.json').version")
+          # Hash includes script files and package.json.
+          HASH=$(find packages/onnxruntime -type f \( -name "*.mjs" -o -name "package.json" \) | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
+          FULL_HASH="${HASH}-${ONNX_VERSION}"
+          echo "hash=$FULL_HASH" >> $GITHUB_OUTPUT
+          echo "ONNX Runtime version: v$ONNX_VERSION"
 
       - name: Restore ONNX Runtime output cache
         id: onnx-cache
