@@ -12,10 +12,10 @@ on:
         required: false
         type: choice
         options:
-          - smol
           - sea
+          - smol
           - smol-sea
-        default: smol
+        default: sea
       dry-run:
         description: 'Dry run (build but do not publish) - primes cache for CI e2e tests'
         required: false
