@@ -43,9 +43,6 @@
     "node": ">=18"
   },
   "dependencies": {
-    "@socketsecurity/cli": "workspace:*"
-  },
-  "devDependencies": {
     "@sentry/node": "8.0.0"
   },
   "publishConfig": {
