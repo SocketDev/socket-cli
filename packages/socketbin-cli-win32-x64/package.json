@@ -2,6 +2,7 @@
   "name": "@socketbin/cli-win32-x64",
   "version": "0.0.0",
   "description": "Socket CLI binary",
+  "private": true,
   "license": "MIT",
   "bin": {
     "socket": "./bin/socket.exe"
