@@ -12,9 +12,17 @@
  *   --no-minify  Build without minification for debugging
  */
 
+import { promises as fs } from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { logger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const packageRoot = path.resolve(__dirname, '..')
+const repoRoot = path.resolve(__dirname, '../../..')
 
 // Simple CLI helpers without registry dependencies.
 const isQuiet = () => process.argv.includes('--quiet')
@@ -114,11 +122,6 @@ async function main() {
         command: 'node',
         args: ['scripts/compress-cli.mjs'],
       },
-      {
-        name: 'Copy Logos',
-        command: 'node',
-        args: ['scripts/copy-logos.mjs'],
-      },
     ]
 
     // Run build steps sequentially.
@@ -150,6 +153,18 @@ async function main() {
       if (!quiet && verbose) {
         log.success(`${name} completed`)
       }
+    }
+
+    // Copy logo images from repo root.
+    if (!quiet && verbose) {
+      log.info('Copying logo images from repo root...')
+    }
+    const images = ['logo-dark.png', 'logo-light.png']
+    for (const image of images) {
+      await fs.cp(path.join(repoRoot, image), path.join(packageRoot, image))
+    }
+    if (!quiet && verbose) {
+      log.success('Logo images copied')
     }
 
     if (!quiet) {
