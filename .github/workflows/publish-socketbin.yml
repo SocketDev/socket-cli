@@ -30,42 +30,42 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # Linux builds (8-core runners for faster compilation)
-          - runner: ubuntu-latest-8-cores
+          # Linux builds
+          - runner: ubuntu-latest
             os: linux
             platform: linux
             arch: x64
-          - runner: ubuntu-latest-8-cores
+          - runner: ubuntu-latest
             os: linux
             platform: linux
             arch: arm64
 
           # Alpine Linux builds
-          - runner: ubuntu-latest-8-cores
+          - runner: ubuntu-latest
             os: linux
             platform: alpine
             arch: x64
-          - runner: ubuntu-latest-8-cores
+          - runner: ubuntu-latest
             os: linux
             platform: alpine
             arch: arm64
 
-          # macOS builds (8-core runners for faster compilation)
-          - runner: macos-latest-xlarge
+          # macOS builds
+          - runner: macos-latest
             os: darwin
             platform: darwin
             arch: x64
-          - runner: macos-latest-xlarge
+          - runner: macos-latest
             os: darwin
             platform: darwin
             arch: arm64
 
-          # Windows builds (8-core runners for faster compilation)
-          - runner: windows-latest-8-cores
+          # Windows builds
+          - runner: windows-latest
             os: windows
             platform: win32
             arch: x64
-          - runner: windows-latest-8-cores
+          - runner: windows-latest
             os: windows
             platform: win32
             arch: arm64
