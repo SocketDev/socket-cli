@@ -25,14 +25,11 @@
  */
 
 import { existsSync } from 'node:fs'
-import { createRequire } from 'node:module'
 import path from 'node:path'
 
 import { parse as parseBunLockb } from '@socketregistry/hyrious__bun.lockb/index.cjs'
 import browserslist from 'browserslist'
 import semver from 'semver'
-
-const require = createRequire(import.meta.url)
 
 import { whichBin } from '@socketsecurity/lib/bin'
 import {
