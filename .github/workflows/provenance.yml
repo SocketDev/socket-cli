@@ -111,11 +111,8 @@ jobs:
         working-directory: packages/cli
         run: |
           # Verify build artifacts exist
-          test -f dist/cli.js || exit 1
-          test -f dist/npm-cli.js || exit 1
-          test -f dist/npx-cli.js || exit 1
-          test -f dist/pnpm-cli.js || exit 1
-          test -f dist/yarn-cli.js || exit 1
+          test -f dist/index.js || exit 1
+          test -f dist/cli.js.bz || exit 1
           echo "✓ JS-only fallback package built successfully"
       - name: Publish JS-only fallback package
         if: ${{ inputs.js-fallback }}
