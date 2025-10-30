@@ -1,5 +1,6 @@
 {
   "name": "optimize-test-pnpm8",
+  "private": true,
   "version": "1.0.0",
   "description": "Test fixture for optimize command with pnpm v8",
   "main": "index.js",

@@ -1,5 +1,6 @@
 {
   "name": "@monorepo-yarn/lib",
+  "private": true,
   "version": "1.0.0",
   "description": "Lib package in monorepo (yarn)",
   "main": "index.js",

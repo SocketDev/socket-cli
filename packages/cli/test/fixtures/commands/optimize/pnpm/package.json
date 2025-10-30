@@ -1,5 +1,6 @@
 {
   "name": "optimize-test-fixture",
+  "private": true,
   "version": "1.0.0",
   "description": "Test fixture for optimize command testing",
   "main": "index.js",

@@ -1,5 +1,6 @@
 {
   "name": "@monorepo/app",
+  "private": true,
   "version": "1.0.0",
   "description": "App package in monorepo",
   "main": "index.js",

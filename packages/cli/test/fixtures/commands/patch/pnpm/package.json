@@ -1,5 +1,6 @@
 {
   "name": "patch-test-fixture",
+  "private": true,
   "version": "1.0.0",
   "description": "Test fixture for patch command",
   "main": "index.js",

@@ -1,5 +1,6 @@
 {
   "name": "optimize-test-fixture-yarn",
+  "private": true,
   "version": "1.0.0",
   "description": "Test fixture for optimize command testing (yarn)",
   "main": "index.js",

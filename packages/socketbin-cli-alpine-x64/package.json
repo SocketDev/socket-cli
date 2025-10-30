@@ -1,21 +1,21 @@
 {
+  "name": "@socketbin/cli-alpine-x64",
+  "version": "1.2.0",
+  "description": "Socket CLI binary",
+  "license": "MIT",
   "bin": {
     "socket": "./bin/socket"
   },
-  "cpu": [
-    "x64"
-  ],
-  "description": "Socket CLI binary",
-  "files": [
-    "bin/socket"
-  ],
-  "license": "MIT",
-  "name": "@socketbin/cli-alpine-x64",
   "os": [
     "linux"
   ],
+  "cpu": [
+    "x64"
+  ],
+  "files": [
+    "bin/socket"
+  ],
   "publishConfig": {
     "access": "public"
-  },
-  "version": "1.2.0"
+  }
 }
