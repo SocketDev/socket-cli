@@ -226,9 +226,9 @@ export class NpmParser implements Parser {
           dependencies: pkgData.dependencies
             ? Object.keys(pkgData.dependencies)
             : [],
-          resolved: pkgData.resolved,
-          integrity: pkgData.integrity,
-          license: pkgData.license,
+          ...(pkgData.resolved && { resolved: pkgData.resolved }),
+          ...(pkgData.integrity && { integrity: pkgData.integrity }),
+          ...(pkgData.license && { license: pkgData.license }),
         })
       }
     }
@@ -254,7 +254,7 @@ export class NpmParser implements Parser {
     }
 
     // Regular packages.
-    return withoutPrefix.split('/')[0]
+    return withoutPrefix.split('/')[0] || withoutPrefix
   }
 
   /**
@@ -264,7 +264,7 @@ export class NpmParser implements Parser {
     deps: Record<string, PackageLockDependency>,
     result: Map<string, DependencyInfo>,
     options: ParseOptions,
-    parentKey?: string,
+    _parentKey?: string,
   ): void {
     for (const [name, data] of Object.entries(deps)) {
       // Skip dev dependencies if not included.
@@ -283,9 +283,8 @@ export class NpmParser implements Parser {
           isDev: !!data.dev,
           isOptional: !!data.optional,
           dependencies: data.requires ? Object.keys(data.requires) : [],
-          resolved: data.resolved,
-          integrity: data.integrity,
-          license: undefined,
+          ...(data.resolved && { resolved: data.resolved }),
+          ...(data.integrity && { integrity: data.integrity }),
         })
       }
 
@@ -331,9 +330,12 @@ export class NpmParser implements Parser {
           dependencies: pkgData.dependencies
             ? Object.keys(pkgData.dependencies)
             : [],
-          resolved: pkgData.resolution?.tarball,
-          integrity: pkgData.resolution?.integrity,
-          license: undefined,
+          ...(pkgData.resolution?.tarball && {
+            resolved: pkgData.resolution.tarball,
+          }),
+          ...(pkgData.resolution?.integrity && {
+            integrity: pkgData.resolution.integrity,
+          }),
         })
       }
     }
@@ -361,7 +363,7 @@ export class NpmParser implements Parser {
 
     // Regular packages (e.g., "axios/0.21.0").
     const parts = withoutSlash.split('/')
-    const name = parts[0]
+    const name = parts[0] || withoutSlash
     const version = parts[1] || '0.0.0'
     return { name, version }
   }
@@ -400,9 +402,8 @@ export class NpmParser implements Parser {
         dependencies: pkgData.dependencies
           ? Object.keys(pkgData.dependencies)
           : [],
-        resolved: pkgData.resolved,
-        integrity: pkgData.integrity,
-        license: undefined,
+        ...(pkgData.resolved && { resolved: pkgData.resolved }),
+        ...(pkgData.integrity && { integrity: pkgData.integrity }),
       })
     }
 
@@ -431,7 +432,7 @@ export class NpmParser implements Parser {
   ): Component[] {
     const components: Component[] = []
 
-    for (const [key, dep] of dependencies.entries()) {
+    for (const [_key, dep] of dependencies.entries()) {
       // Skip dev dependencies if not included.
       if (!options.includeDevDependencies && dep.isDev) {
         continue
@@ -532,7 +533,7 @@ export class NpmParser implements Parser {
     })
 
     // Add transitive dependencies.
-    for (const [key, dep] of dependencies.entries()) {
+    for (const [_key, dep] of dependencies.entries()) {
       const ref = `pkg:npm/${dep.name}@${dep.version}`
       const dependsOn: string[] = []
 
@@ -547,7 +548,7 @@ export class NpmParser implements Parser {
 
       graph.push({
         ref,
-        dependsOn: dependsOn.length > 0 ? dependsOn : undefined,
+        ...(dependsOn.length > 0 && { dependsOn }),
       })
     }
 
@@ -561,7 +562,7 @@ export class NpmParser implements Parser {
     name: string,
     dependencies: Map<string, DependencyInfo>,
   ): DependencyInfo | undefined {
-    for (const [key, dep] of dependencies.entries()) {
+    for (const [_key, dep] of dependencies.entries()) {
       if (dep.name === name) {
         return dep
       }
