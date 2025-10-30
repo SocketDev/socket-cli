@@ -70,22 +70,27 @@ async function cloneOnnxSource() {
 
   printHeader('Cloning ONNX Runtime Source')
 
-  // Check if source exists and if it has the patch.
+  // Check if source exists and if it has the patches.
   if (existsSync(ONNX_SOURCE_DIR)) {
     printStep('ONNX Runtime source already exists')
 
     const depsPath = path.join(ONNX_SOURCE_DIR, 'cmake', 'deps.txt')
+    const cmakePath = path.join(ONNX_SOURCE_DIR, 'cmake', 'onnxruntime_webassembly.cmake')
     const depsContent = await fs.readFile(depsPath, 'utf-8')
+    const cmakeContent = await fs.readFile(cmakePath, 'utf-8')
 
-    // Check if patch has been applied (looking for the corrected hash).
-    if (!depsContent.includes('51982be81bbe52572b54180454df11a3ece9a934')) {
-      // Source exists but patch not applied - need to re-clone.
-      printWarning('Source exists but Eigen patch not applied')
-      printStep('Removing old source to re-clone with patch...')
+    // Check if patches have been applied.
+    const eigenPatched = depsContent.includes('51982be81bbe52572b54180454df11a3ece9a934')
+    const cmakePatched = cmakeContent.includes('# add_compile_definitions(\n  #   BUILD_MLAS_NO_ONNXRUNTIME')
+
+    if (!eigenPatched || !cmakePatched) {
+      // Source exists but patches not applied - need to re-clone.
+      printWarning('Source exists but patches not applied')
+      printStep('Removing old source to re-clone with patches...')
       await fs.rm(ONNX_SOURCE_DIR, { recursive: true, force: true })
       printSuccess('Old source removed')
     } else {
-      printStep('Eigen hash already patched, skipping clone')
+      printStep('All patches already applied, skipping clone')
       await createCheckpoint('onnxruntime', 'cloned')
       return
     }
@@ -111,6 +116,18 @@ async function cloneOnnxSource() {
   )
   await fs.writeFile(depsPath, updatedDeps, 'utf-8')
   printSuccess('Eigen hash updated in deps.txt')
+
+  // Patch onnxruntime_webassembly.cmake to comment out BUILD_MLAS_NO_ONNXRUNTIME.
+  // When threading is disabled, BUILD_MLAS_NO_ONNXRUNTIME causes MLFloat16 errors.
+  printStep('Patching onnxruntime_webassembly.cmake to fix MLFloat16 build...')
+  const cmakePath = path.join(ONNX_SOURCE_DIR, 'cmake', 'onnxruntime_webassembly.cmake')
+  const cmakeContent = await fs.readFile(cmakePath, 'utf-8')
+  const updatedCmake = cmakeContent.replace(
+    /add_compile_definitions\(\s*BUILD_MLAS_NO_ONNXRUNTIME\s*\)/,
+    '# add_compile_definitions(\n  #   BUILD_MLAS_NO_ONNXRUNTIME\n  # )'
+  )
+  await fs.writeFile(cmakePath, updatedCmake, 'utf-8')
+  printSuccess('BUILD_MLAS_NO_ONNXRUNTIME commented out in cmake')
 
   await createCheckpoint('onnxruntime', 'cloned')
 }
@@ -151,7 +168,7 @@ async function build() {
     '--build_wasm',
     '--skip_tests',
     '--parallel',
-    '--enable_wasm_threads',
+    // '--enable_wasm_threads', // Commented out as fallback to get build working.
     '--cmake_extra_defines', 'onnxruntime_EMSCRIPTEN_SETTINGS=WASM_ASYNC_COMPILATION=0',
   ], {
     cwd: ONNX_SOURCE_DIR,
