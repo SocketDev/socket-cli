@@ -134,6 +134,7 @@ export async function downloadCli() {
     const result = await dlxPackage(
       [], // Empty args - we don't want to execute anything.
       {
+        binaryName: 'socket', // @socketsecurity/cli has bin: { socket: '...' }.
         force: false, // Use cached version if available.
         package: '@socketsecurity/cli',
         spawnOptions: {

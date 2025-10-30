@@ -294,8 +294,8 @@ function transformSocketResponse(
     supplyChainRisk:
       (response.supplyChainRisk as 'low' | 'medium' | 'high' | 'critical') ||
       'low',
-    quality: response.quality,
-    licenseInfo: response.license,
+    ...(response.quality && { quality: response.quality }),
+    ...(response.license && { licenseInfo: response.license }),
     socketUrl: `https://socket.dev/${packageInfo.ecosystem}/package/${encodeURIComponent(packageInfo.name)}`,
   }
 }

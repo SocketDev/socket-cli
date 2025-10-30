@@ -472,10 +472,12 @@ function buildComponentSummary(enriched: EnrichedArtifact[]): string {
     // Show top reachable vulnerability.
     if (reachableCount > 0) {
       const topVuln = reachableVulns[0]
-      const confidence = topVuln.vuln.confidence?.toFixed(2) || '?'
-      lines.push(
-        `   Confidence: ${confidence} - ${topVuln.metadata.reachabilityData?.publicComment || topVuln.metadata.ghsaId}`,
-      )
+      if (topVuln) {
+        const confidence = topVuln.vuln.confidence?.toFixed(2) || '?'
+        lines.push(
+          `   Confidence: ${confidence} - ${topVuln.metadata.reachabilityData?.publicComment || topVuln.metadata.ghsaId}`,
+        )
+      }
     }
   }
 
@@ -494,14 +496,6 @@ function buildDependencyGraph(
   const rootComponent = sbom.metadata?.component
   if (rootComponent) {
     lines.push(`\n${rootComponent.name}@${rootComponent.version}`)
-
-    // Map artifacts by PURL for quick lookup.
-    const artifactMap = new Map(
-      enriched.map(e => [
-        `pkg:${e.artifact.type}/${e.artifact.name}@${e.artifact.version}`,
-        e,
-      ]),
-    )
 
     // Show direct dependencies with reachability status.
     for (const e of enriched.filter(e => e.artifact.direct).slice(0, 10)) {
