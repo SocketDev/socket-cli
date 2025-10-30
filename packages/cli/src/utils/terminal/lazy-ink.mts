@@ -36,7 +36,9 @@ export async function loadInkTable() {
 export function isInkAvailable(): boolean {
   try {
     // Check if modules exist without loading them
+    // eslint-disable-next-line n/no-extraneous-require
     require.resolve('ink')
+    // eslint-disable-next-line n/no-extraneous-require
     require.resolve('react')
     return true
   } catch {

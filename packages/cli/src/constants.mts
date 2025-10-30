@@ -248,7 +248,6 @@ import {
   REPORT_LEVEL_WARN,
 } from './constants/reporting.mts'
 import {
-  getInternals,
   getShadowNpmBinPath as SHADOW_getShadowNpmBinPath,
   getShadowNpxBinPath as SHADOW_getShadowNpxBinPath,
   getShadowPnpmBinPath as SHADOW_getShadowPnpmBinPath,
@@ -369,7 +368,6 @@ export {
   getExecPath,
   getGithubCachePath,
   getInstrumentWithSentryPath,
-  getInternals,
   getMinimumVersionByAgent,
   getNmBunPath,
   getNmNodeGypPath,
@@ -621,7 +619,6 @@ export default {
   getExecPath,
   getGithubCachePath,
   getInstrumentWithSentryPath,
-  getInternals,
   getMinimumVersionByAgent,
   getNmBunPath,
   getNmNodeGypPath,
