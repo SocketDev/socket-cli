@@ -39,11 +39,17 @@ jobs:
           key: yoga-wasm-${{ hashFiles('packages/yoga-layout/package.json', 'packages/yoga-layout/yoga/**') }}
           restore-keys: |
             yoga-wasm-
+      - name: Verify yoga-layout WASM cache
+        run: |
+          if [ ! -f packages/yoga-layout/build/wasm/yoga.wasm ]; then
+            echo "❌ yoga-layout WASM not found in cache"
+            echo "Build yoga-layout locally and push to trigger cache update"
+            echo "Run: pnpm --filter @socketsecurity/yoga-layout run build"
+            exit 1
+          fi
+          echo "✓ yoga-layout WASM found in cache"
       - run: npm install -g npm@latest
       - run: pnpm install
-      - name: Build yoga-layout WASM (if cache miss)
-        if: steps.cache-yoga.outputs.cache-hit != 'true'
-        run: pnpm --filter @socketsecurity/yoga-layout run build
 
       # Build and publish 'socket' package (default).
       - name: Prepare socket package for publishing
