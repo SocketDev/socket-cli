@@ -68,6 +68,17 @@ jobs:
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
 
       # Build and publish '@socketsecurity/cli-with-sentry' package.
+      - name: Sync @socketsecurity/cli-with-sentry version with @socketsecurity/cli
+        run: |
+          CLI_VERSION=$(node -p "require('./packages/cli/package.json').version")
+          echo "Syncing cli-with-sentry version to $CLI_VERSION"
+          node -e "
+            const fs = require('fs');
+            const pkgPath = './packages/cli-with-sentry/package.json';
+            const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
+            pkg.version = '$CLI_VERSION';
+            fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
+          "
       - name: Build @socketsecurity/cli-with-sentry package
         run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 INLINED_SOCKET_CLI_SENTRY_BUILD=1 pnpm run build:dist
         env:
