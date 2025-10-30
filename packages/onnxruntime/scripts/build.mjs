@@ -122,13 +122,23 @@ async function cloneOnnxSource() {
   // When threading is disabled, BUILD_MLAS_NO_ONNXRUNTIME causes MLFloat16 errors.
   printStep('Patching onnxruntime_webassembly.cmake to fix MLFloat16 build...')
   const cmakePath = path.join(ONNX_SOURCE_DIR, 'cmake', 'onnxruntime_webassembly.cmake')
-  const cmakeContent = await fs.readFile(cmakePath, 'utf-8')
-  const updatedCmake = cmakeContent.replace(
+  let cmakeContent = await fs.readFile(cmakePath, 'utf-8')
+
+  // Patch 1: Comment out BUILD_MLAS_NO_ONNXRUNTIME.
+  cmakeContent = cmakeContent.replace(
     /add_compile_definitions\(\s*BUILD_MLAS_NO_ONNXRUNTIME\s*\)/,
     '# add_compile_definitions(\n  #   BUILD_MLAS_NO_ONNXRUNTIME\n  # )'
   )
-  await fs.writeFile(cmakePath, updatedCmake, 'utf-8')
-  printSuccess('BUILD_MLAS_NO_ONNXRUNTIME commented out in cmake')
+
+  // Patch 2: Add EXPORT_ES6=0 to prevent ES module format.
+  // This forces UMD/CommonJS output which we'll patch later.
+  cmakeContent = cmakeContent.replace(
+    /"SHELL:-s MODULARIZE=1"/,
+    '"SHELL:-s MODULARIZE=1"\n    "SHELL:-s EXPORT_ES6=0"'
+  )
+
+  await fs.writeFile(cmakePath, cmakeContent, 'utf-8')
+  printSuccess('BUILD_MLAS_NO_ONNXRUNTIME commented out and EXPORT_ES6=0 added')
 
   // Clear CMake cache to ensure patch is picked up.
   printStep('Clearing CMake cache to force reconfiguration...')
@@ -179,7 +189,6 @@ async function build() {
     '--skip_tests',
     '--parallel',
     // '--enable_wasm_threads', // Commented out as fallback to get build working.
-    '--cmake_extra_defines', 'onnxruntime_EMSCRIPTEN_SETTINGS=WASM_ASYNC_COMPILATION=0;EXPORT_ES6=1',
   ], {
     cwd: ONNX_SOURCE_DIR,
     shell: WIN32,
@@ -204,8 +213,9 @@ async function exportWasm() {
   const platform = process.platform === 'darwin' ? 'Darwin' : 'Linux'
   const buildOutputDir = path.join(ONNX_SOURCE_DIR, 'build', platform, 'Release')
 
-  const wasmFile = path.join(buildOutputDir, 'ort-wasm-simd-threaded.wasm')
-  const jsFile = path.join(buildOutputDir, 'ort-wasm-simd-threaded.js')
+  // Look for non-threaded WASM files since we disabled threading.
+  const wasmFile = path.join(buildOutputDir, 'ort-wasm.wasm')
+  const mjsFile = path.join(buildOutputDir, 'ort-wasm.mjs')
 
   if (!existsSync(wasmFile)) {
     printError('WASM file not found - build failed')
@@ -213,19 +223,26 @@ async function exportWasm() {
     throw new Error(`Required WASM file not found: ${wasmFile}`)
   }
 
-  const outputWasm = path.join(OUTPUT_DIR, 'ort-wasm-simd-threaded.wasm')
-  const outputJs = path.join(OUTPUT_DIR, 'ort-wasm-simd-threaded.js')
+  const outputWasm = path.join(OUTPUT_DIR, 'ort-wasm.wasm')
+  const outputMjs = path.join(OUTPUT_DIR, 'ort-wasm.mjs')
 
   // Copy WASM file.
   await fs.copyFile(wasmFile, outputWasm)
 
-  // Copy JS glue code and strip export statement if present.
-  if (existsSync(jsFile)) {
-    const jsContent = await fs.readFile(jsFile, 'utf-8')
-    // Strip the export statement at the end of the file.
-    const withoutExport = jsContent.replace(/;?\s*export\s+default\s+\w+\s*;\s*$/, '')
-    await fs.writeFile(outputJs, withoutExport, 'utf-8')
-    printStep(`JS: ${outputJs}`)
+  // Copy and patch MJS glue code.
+  if (existsSync(mjsFile)) {
+    let mjsContent = await fs.readFile(mjsFile, 'utf-8')
+
+    // Add require shim at the top for Node.js CommonJS compatibility.
+    // The generated code uses require() which isn't available in ES modules.
+    const requireShim = `import { createRequire } from 'node:module';\nconst require = createRequire(import.meta.url);\n\n`
+    mjsContent = requireShim + mjsContent
+
+    // Strip the export statement at the end of the file if present.
+    mjsContent = mjsContent.replace(/;?\s*export\s+default\s+\w+\s*;\s*$/, '')
+
+    await fs.writeFile(outputMjs, mjsContent, 'utf-8')
+    printStep(`MJS: ${outputMjs}`)
   }
 
   const wasmSize = await getFileSize(outputWasm)
