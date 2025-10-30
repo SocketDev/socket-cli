@@ -4,7 +4,6 @@ Thumbs.db
 .claude/
 /.node-source
 /.node-source-test
-/.scratch
 !/docs/build
 /.env
 /.env.local

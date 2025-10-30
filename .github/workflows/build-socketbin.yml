@@ -8,11 +8,11 @@ on:
         required: false
         type: choice
         options:
-          - smol
           - sea
+          - smol
           - smol-sea
           - wasm
-        default: smol-sea
+        default: sea
       force:
         description: 'Force rebuild (ignore cache)'
         required: false
