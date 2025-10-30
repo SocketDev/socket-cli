@@ -51,7 +51,7 @@
 import { WordPieceTokenizer } from './wordpiece-tokenizer.mts'
 
 import type { Vocabulary } from './wordpiece-tokenizer.mts'
-import type { InferenceSession } from '../../build/onnx-sync.mjs'
+import type { InferenceSession } from 'onnxruntime-web'
 
 /**
  * MiniLM inference result.

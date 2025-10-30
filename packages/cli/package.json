@@ -90,6 +90,7 @@
     "@socketsecurity/build-infra": "workspace:*",
     "del": "8.0.1",
     "ink-text-input": "6.0.0",
+    "onnxruntime-web": "1.23.0",
     "rollup": "4.50.1",
     "rollup-plugin-visualizer": "6.0.5",
     "tar-stream": "3.1.7",
@@ -164,8 +165,7 @@
       "graceful-fs@4.2.11": "patches/graceful-fs@4.2.11.patch",
       "lodash@4.17.21": "patches/lodash@4.17.21.patch",
       "string_decoder@0.10.31": "patches/string_decoder@0.10.31.patch",
-      "ink@6.3.1": "patches/ink@6.3.1.patch",
-      "yoga-layout": "patches/yoga-layout.patch"
+      "ink@6.3.1": "patches/ink@6.3.1.patch"
     }
   },
   "typeCoverage": {

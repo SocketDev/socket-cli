@@ -356,6 +356,18 @@ const config = {
     },
 
     {
+      name: 'onnx-wasm-alias',
+      setup(build) {
+        // Redirect onnxruntime-web to our custom synchronous implementation.
+        build.onResolve({ filter: /^onnxruntime-web$/ }, () => {
+          return {
+            path: path.join(rootPath, 'build/onnx-sync.mjs'),
+          }
+        })
+      },
+    },
+
+    {
       name: 'stub-problematic-packages',
       setup(build) {
         // Stub iconv-lite and encoding to avoid bundling issues.
