@@ -56,7 +56,6 @@ jobs:
         run: cd dist && npm publish --provenance --access public --no-git-checks
         continue-on-error: true
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
 
       # Build and publish '@socketsecurity/cli' package (legacy).
@@ -72,7 +71,6 @@ jobs:
         run: cd dist && npm publish --provenance --access public --no-git-checks
         continue-on-error: true
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
 
       # Build and publish '@socketsecurity/cli-with-sentry' package.
@@ -88,7 +86,6 @@ jobs:
         run: cd dist && npm publish --provenance --access public --no-git-checks
         continue-on-error: true
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
 
       # Build and publish JS-only fallback version (when native binaries fail).
@@ -112,5 +109,3 @@ jobs:
         working-directory: packages/cli
         run: npm publish --provenance --access public --no-git-checks
         continue-on-error: true
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
