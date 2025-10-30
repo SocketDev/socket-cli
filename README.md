@@ -9,6 +9,14 @@ CLI for [Socket.dev] security analysis
 
 ## Quick Start
 
+**Install via curl:**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/SocketDev/socket-cli/main/install.sh | bash
+```
+
+**Or install via package manager:**
+
 ```bash
 pnpm install -g socket
 socket --help
