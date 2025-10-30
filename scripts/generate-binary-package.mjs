@@ -16,12 +16,12 @@ const rootDir = path.join(__dirname, '..')
 
 /**
  * Generates a datetime-based version string in semver format.
- * Reads base version from socketbin-cli-linux-x64 package.json.
- * Format: 0.0.0-YYYYMMDD.HHmmss
+ * Reads base version from the current package's package.json.
+ * Format: X.Y.Z-YYYYMMDD.HHmmss
  */
-function generateDatetimeVersion() {
-  // Read base version from one of the socketbin packages.
-  const basePackagePath = path.join(rootDir, 'packages', 'socketbin-cli-linux-x64', 'package.json')
+function generateDatetimeVersion(platform, arch, tool = 'cli') {
+  // Read base version from the current package being generated.
+  const basePackagePath = path.join(rootDir, 'packages', `socketbin-${tool}-${platform}-${arch}`, 'package.json')
   let baseVersion = '0.0.0'
 
   try {
@@ -71,7 +71,7 @@ if (!platform || !arch) {
 // Clean version (remove 'v' prefix if present) or generate if not provided
 const cleanVersion = providedVersion
   ? providedVersion.replace(/^v/, '')
-  : generateDatetimeVersion()
+  : generateDatetimeVersion(platform, arch, tool)
 
 // Determine output directory
 const packageDir =
