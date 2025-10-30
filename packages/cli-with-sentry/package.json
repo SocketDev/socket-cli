@@ -16,7 +16,7 @@
     "url": "https://socket.dev"
   },
   "bin": {
-    "socket": "dist/cli.js"
+    "socket-with-sentry": "dist/cli.js"
   },
   "files": [
     "data/**",
