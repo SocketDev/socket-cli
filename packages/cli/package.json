@@ -15,22 +15,7 @@
     "url": "https://socket.dev"
   },
   "bin": {
-    "socket": "bin/cli.js",
-    "socket-npm": "bin/npm-cli.js",
-    "socket-npx": "bin/npx-cli.js",
-    "socket-pnpm": "bin/pnpm-cli.js",
-    "socket-yarn": "bin/yarn-cli.js"
-  },
-  "exports": {
-    "./bin/cli.js": "./dist/index.js",
-    "./bin/npm-cli.js": "./dist/npm-cli.js",
-    "./bin/npx-cli.js": "./dist/npx-cli.js",
-    "./bin/pnpm-cli.js": "./dist/pnpm-cli.js",
-    "./bin/yarn-cli.js": "./dist/yarn-cli.js",
-    "./package.json": "./package.json",
-    "./data/alert-translations.json": "./data/alert-translations.json",
-    "./data/command-api-requirements.json": "./data/command-api-requirements.json",
-    "./src/polyfills/intl-stub/*": "./src/polyfills/intl-stub/*"
+    "socket": "dist/index.js"
   },
   "scripts": {
     "build": "node --import=./scripts/load.mjs scripts/build.mjs",
@@ -72,6 +57,7 @@
     "test-ci": "run-s test:*",
     "test-pre-commit": "dotenvx -q run -f .env.precommit -- pnpm test",
     "update": "node --import=./scripts/load.mjs scripts/update.mjs",
+    "verify": "node scripts/verify-package.mjs",
     "wasm": "node scripts/wasm.mjs",
     "wasm:build": "node scripts/wasm.mjs --build",
     "wasm:download": "node scripts/wasm.mjs --download"
@@ -102,10 +88,8 @@
     "socketcli": "^2.2.15"
   },
   "files": [
-    "bin/**",
     "data/**",
     "dist/**",
-    "shadow-bin/**",
     "CHANGELOG.md",
     "logo-dark.png",
     "logo-light.png"
