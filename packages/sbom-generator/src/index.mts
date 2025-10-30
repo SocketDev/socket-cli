@@ -105,6 +105,9 @@ function combineSbom(
 ): Sbom {
   // Use first result as primary metadata (typically root project).
   const primary = results[0]
+  if (!primary) {
+    throw new Error('No results provided to buildSbom')
+  }
 
   // Collect all components and dependencies.
   const allComponents: Component[] = []
@@ -133,17 +136,24 @@ function combineSbom(
           version: '1.0.0',
         },
       ],
-      component: {
-        type: 'application',
-        'bom-ref': `pkg:${results[0].ecosystem}/${primary.metadata.name}@${primary.metadata.version}`,
-        name: primary.metadata.name,
-        version: primary.metadata.version,
-        description: primary.metadata.description,
-        licenses: primary.metadata.license
-          ? [{ license: { id: primary.metadata.license } }]
-          : undefined,
-        externalReferences: buildExternalReferences(primary.metadata),
-      },
+      component: (() => {
+        const extRefs = buildExternalReferences(primary.metadata)
+        return {
+          type: 'application',
+          'bom-ref': `pkg:${primary.ecosystem}/${primary.metadata.name}@${primary.metadata.version}`,
+          name: primary.metadata.name,
+          version: primary.metadata.version,
+          ...(primary.metadata.description && {
+            description: primary.metadata.description,
+          }),
+          ...(primary.metadata.license && {
+            licenses: [{ license: { id: primary.metadata.license } }],
+          }),
+          ...(extRefs && extRefs.length > 0 && {
+            externalReferences: extRefs,
+          }),
+        }
+      })(),
     },
     components: uniqueComponents,
     dependencies: allDependencies,
