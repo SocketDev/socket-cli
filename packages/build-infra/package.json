@@ -24,7 +24,7 @@
   "dependencies": {
     "@babel/parser": "catalog:",
     "@babel/traverse": "catalog:",
-    "@socketsecurity/lib": "catalog:",
+    "@socketsecurity/lib": "2.9.0",
     "magic-string": "catalog:"
   }
 }
