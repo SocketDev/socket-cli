@@ -462,9 +462,8 @@ jobs:
               pkg.optionalDependencies[pkgName] = version;
               console.log(\`Using published version for \${pkgName}: \${version}\`);
             } catch (e) {
-              // If package doesn't exist yet, use current workflow version
-              pkg.optionalDependencies[pkgName] = '${{ steps.version.outputs.version }}';
-              console.log(\`Package \${pkgName} not found in registry, using: ${{ steps.version.outputs.version }}\`);
+              // Package doesn't exist yet - skip it
+              console.log(\`Package \${pkgName} not found in registry, skipping\`);
             }
           }
 
