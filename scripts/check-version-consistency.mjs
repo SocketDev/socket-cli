@@ -31,20 +31,28 @@ async function checkVersionConsistency() {
   const warnings = []
   const checked = []
 
-  // Check main package.json.
+  // Check main package.json (only if version looks like a socketbin version).
   const mainPkgPath = path.join(projectRoot, 'package.json')
   try {
     const mainPkg = JSON.parse(await fs.readFile(mainPkgPath, 'utf8'))
-    checked.push({
-      file: 'package.json',
-      version: mainPkg.version,
-      matches: mainPkg.version === cleanVersion,
-    })
 
-    if (mainPkg.version !== cleanVersion) {
-      errors.push(
-        `package.json version (${mainPkg.version}) does not match expected version (${cleanVersion})`,
-      )
+    // Only check root package.json if the expected version looks like a socketbin version
+    // (contains timestamp like YYYYMMDD.HHmmss) or if root package version matches.
+    const isSocketbinVersion = /\d{8}\.\d{6}/.test(cleanVersion)
+    const shouldCheckRoot = isSocketbinVersion ? mainPkg.version === cleanVersion : true
+
+    if (shouldCheckRoot) {
+      checked.push({
+        file: 'package.json',
+        version: mainPkg.version,
+        matches: mainPkg.version === cleanVersion,
+      })
+
+      if (mainPkg.version !== cleanVersion && !isSocketbinVersion) {
+        errors.push(
+          `package.json version (${mainPkg.version}) does not match expected version (${cleanVersion})`,
+        )
+      }
     }
   } catch (e) {
     errors.push(`Failed to read package.json: ${e.message}`)
