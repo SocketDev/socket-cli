@@ -11,9 +11,12 @@ const { MockNpmConfig, mockNpmConfigInstance } = vi.hoisted(() => {
     },
   }
 
-  const MockNpmConfig = vi.fn().mockImplementation(() => mockNpmConfigInstance)
+  // Create a proper constructor function that vitest can mock
+  function MockNpmConfig() {
+    return mockNpmConfigInstance
+  }
 
-  return { MockNpmConfig, mockNpmConfigInstance }
+  return { MockNpmConfig: vi.fn(MockNpmConfig), mockNpmConfigInstance }
 })
 
 // Mock @npmcli/config.
@@ -37,8 +40,11 @@ vi.mock('./paths.mts', () => ({
 
 describe('npm-config utilities', () => {
   beforeEach(() => {
-    // Clear only the mock calls, not the implementation
+    // Clear mock calls and restore original implementation
     MockNpmConfig.mockClear()
+    MockNpmConfig.mockImplementation(function () {
+      return mockNpmConfigInstance
+    })
     vi.mocked(mockNpmConfigInstance.load).mockClear()
   })
 
@@ -134,11 +140,14 @@ describe('npm-config utilities', () => {
 
     it('calls config.load()', async () => {
       const mockLoad = vi.fn().mockResolvedValue(undefined)
+      const mockConfigInstance = {
+        load: mockLoad,
+        flat: { test: 'value' },
+      }
       vi.mocked((await import('@npmcli/config')).default).mockImplementation(
-        (() => ({
-          load: mockLoad,
-          flat: { test: 'value' },
-        })) as any,
+        function () {
+          return mockConfigInstance
+        },
       )
 
       await getNpmConfig()
