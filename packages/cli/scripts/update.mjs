@@ -21,7 +21,6 @@ import {
   printSuccess,
 } from '@socketsecurity/lib/stdio/header'
 
-
 async function main() {
   const quiet = isQuiet()
   const verbose = isVerbose()

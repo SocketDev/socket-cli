@@ -35,7 +35,6 @@ import { isUrl } from '@socketsecurity/lib/url'
 import { pluralize } from '@socketsecurity/lib/words'
 import { createUserAgentFromPkgJson, SocketSdk } from '@socketsecurity/sdk'
 
-
 import {
   CONFIG_KEY_API_BASE_URL,
   CONFIG_KEY_API_PROXY,

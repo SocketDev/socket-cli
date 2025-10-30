@@ -20,7 +20,6 @@ import { logger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 import { printHeader } from '@socketsecurity/lib/stdio/header'
 
-
 async function main() {
   const { values } = parseArgs({
     options: {

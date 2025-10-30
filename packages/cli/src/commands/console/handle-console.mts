@@ -12,7 +12,6 @@ import { parseIntent } from '../ask/handle-ask.mts'
 
 import type { ConsoleMessage } from './InteractiveConsoleApp.js'
 
-
 // Read package.json for version info.
 async function getVersionInfo(): Promise<{
   version: string

@@ -1,7 +1,5 @@
 /** @fileoverview Tests for SEA (Single Executable Application) detection utilities. */
 
- 
-
 import { describe, expect, it } from 'vitest'
 
 import { getSeaBinaryPath, isSeaBinary } from '../executable/detect.mts'

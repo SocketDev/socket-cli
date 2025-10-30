@@ -14,7 +14,6 @@ import { logger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 import { printHeader } from '@socketsecurity/lib/stdio/header'
 
-
 // Files that trigger a full lint when changed
 const CORE_FILES = new Set([
   'src/constants.ts',

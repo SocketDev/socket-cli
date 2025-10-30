@@ -18,13 +18,13 @@ export function createPrProvider(): PrProvider {
     remoteUrl.includes('gitlab')
   ) {
     // Lazy load to avoid importing GitLab dependency if not needed.
-     
+
     const { GitLabProvider } = require('./gitlab-provider.mts')
     return new GitLabProvider()
   }
 
   // Default to GitHub (backward compatibility).
-   
+
   const { GitHubProvider } = require('./github-provider.mts')
   return new GitHubProvider()
 }
