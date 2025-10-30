@@ -83,6 +83,19 @@ async function cloneOnnxSource() {
   })
 
   printSuccess(`ONNX Runtime ${ONNX_VERSION} cloned`)
+
+  // Patch eigen.cmake to accept the current Eigen hash from GitLab.
+  // GitLab changed the archive format, causing hash mismatch.
+  printStep('Patching eigen.cmake to accept current Eigen hash...')
+  const eigenCmakePath = path.join(ONNX_SOURCE_DIR, 'cmake', 'external', 'eigen.cmake')
+  const eigenCmake = await fs.readFile(eigenCmakePath, 'utf-8')
+  const updatedEigenCmake = eigenCmake.replace(
+    /URL_HASH SHA1=be8be39fdbc6e60e94fa7870b280707069b5b81a/g,
+    'URL_HASH SHA1=32b145f525a8308d7ab1c09388b2e288312d8eba'
+  )
+  await fs.writeFile(eigenCmakePath, updatedEigenCmake, 'utf-8')
+  printSuccess('Eigen hash updated')
+
   await createCheckpoint('onnxruntime', 'cloned')
 }
 
@@ -117,7 +130,6 @@ async function build() {
     '--build_wasm',
     '--skip_tests',
     '--parallel',
-    '--cmake_extra_defines', 'CMAKE_TLS_VERIFY=OFF',
   ], {
     cwd: ONNX_SOURCE_DIR,
     shell: WIN32,
