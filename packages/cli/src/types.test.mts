@@ -33,6 +33,7 @@ describe('types', () => {
 
     it('can be used as a union type', () => {
       // Intentionally defined inline to test type inference in specific context.
+      // eslint-disable-next-line unicorn/consistent-function-scoping
       const processResult = (value: number): CResult<string> => {
         if (value > 0) {
           return { ok: true, data: `Positive: ${value}` }
