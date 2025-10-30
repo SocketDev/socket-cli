@@ -186,6 +186,7 @@ jobs:
           echo "Copied $SOURCE_BINARY -> $TARGET_BINARY"
 
       - name: Verify binary
+        shell: bash
         run: |
           ls -la dist/sea/socket-*
           file dist/sea/socket-* || true
