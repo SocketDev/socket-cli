@@ -126,12 +126,18 @@ async function runTypeCheck(options = {}) {
       if (!quiet) {
         logger.clearLine()
         logger.log(`${colors.red('✗')} ${displayName}`)
+        logger.error('')
       }
+      // Always show type errors (even in quiet mode) since they're the actual errors.
       if (result.stdout) {
         logger.log(result.stdout)
       }
       if (result.stderr) {
         logger.error(result.stderr)
+      }
+      if (!quiet) {
+        logger.error('')
+        logger.error('Type check failed')
       }
       return result.code
     }
