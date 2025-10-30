@@ -27,10 +27,8 @@ const config = {
     'process.env.INLINED_SOCKET_CLI_SENTRY_BUILD': JSON.stringify('1'),
   },
 
-  // Include @sentry/node in the bundle (don't externalize it).
-  external: baseConfig.external?.filter(
-    ext => !ext.startsWith('@sentry') && ext !== '@sentry/node',
-  ),
+  // Make @sentry/node external (not bundled).
+  external: [...(baseConfig.external || []), '@sentry/node'],
 }
 
 // Run build if invoked directly.
