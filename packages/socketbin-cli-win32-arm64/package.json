@@ -1,6 +1,6 @@
 {
   "name": "@socketbin/cli-win32-arm64",
-  "version": "0.0.0-generated-by-publish-socketbin",
+  "version": "0.0.0-replaced-by-prepublish-socketbin",
   "description": "Socket CLI binary",
   "private": true,
   "license": "MIT",
