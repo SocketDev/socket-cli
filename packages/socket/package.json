@@ -34,7 +34,8 @@
     "build": "node scripts/build-bootstrap.mjs",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "verify": "node scripts/verify-package.mjs"
   },
   "bin": {
     "socket": "dist/bootstrap.js"
