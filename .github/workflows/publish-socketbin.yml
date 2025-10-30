@@ -231,8 +231,9 @@ jobs:
         run: |
           VERSION="${{ inputs.version }}"
           if [ -z "$VERSION" ]; then
-            # Read base version from socketbin package
-            BASE_VERSION=$(jq -r '.version' packages/socketbin-cli-linux-x64/package.json)
+            # Read base version from socketbin package and extract X.Y.Z using semver
+            PKG_VERSION=$(jq -r '.version' packages/socketbin-cli-linux-x64/package.json)
+            BASE_VERSION=$(node -e "const semver = require('semver'); const v = semver.parse('$PKG_VERSION'); console.log(v ? \`\${v.major}.\${v.minor}.\${v.patch}\` : '0.0.0');")
             # Auto-generate version in semver format: X.Y.Z-YYYYMMDD.HHmmss
             VERSION="${BASE_VERSION}-$(date -u +'%Y%m%d.%H%M%S')"
             echo "Generated version: $VERSION"
@@ -393,13 +394,22 @@ jobs:
           node-version: 22
           registry-url: 'https://registry.npmjs.org'
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@9fd676a19091d4595eefd76e4bd31c97133911f1 # v4.2.0
+        with:
+          version: ^10.16.0
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
       - name: Determine version
         id: version
         run: |
           VERSION="${{ inputs.version }}"
           if [ -z "$VERSION" ]; then
-            # Read base version from socketbin package
-            BASE_VERSION=$(jq -r '.version' packages/socketbin-cli-linux-x64/package.json)
+            # Read base version from socketbin package and extract X.Y.Z using semver
+            PKG_VERSION=$(jq -r '.version' packages/socketbin-cli-linux-x64/package.json)
+            BASE_VERSION=$(node -e "const semver = require('semver'); const v = semver.parse('$PKG_VERSION'); console.log(v ? \`\${v.major}.\${v.minor}.\${v.patch}\` : '0.0.0');")
             # Auto-generate version in semver format: X.Y.Z-YYYYMMDD.HHmmss
             VERSION="${BASE_VERSION}-$(date -u +'%Y%m%d.%H%M%S')"
             echo "Generated version: $VERSION"
