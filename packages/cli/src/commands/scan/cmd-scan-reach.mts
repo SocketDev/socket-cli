@@ -176,7 +176,7 @@ async function run(
       : processCwd
 
   // Accept zero or more paths. Default to cwd() if none given.
-  let targets: string[] = cli.input ? [...cli.input] : [cwd]
+  let targets: string[] = cli.input.length ? [...cli.input] : [cwd]
 
   // Use suggestTarget if no targets specified and in interactive mode
   if (!targets.length && !dryRun && interactive) {
@@ -270,7 +270,7 @@ async function run(
     interactive,
     orgSlug,
     outputKind,
-    outputPath: outputPath || '',
+    outputPath,
     reachabilityOptions: {
       reachAnalysisTimeout: Number(reachAnalysisTimeout),
       reachAnalysisMemoryLimit: Number(reachAnalysisMemoryLimit),
