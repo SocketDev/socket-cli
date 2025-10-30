@@ -260,14 +260,14 @@ jobs:
       - name: Generate ONNX Runtime cache key
         id: onnx-cache-key
         run: |
-          HASH=$(find packages/onnx-runtime-builder -type f \( -name "*.mjs" -o -name "*.patch" \) | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
+          HASH=$(find packages/onnxruntime -type f \( -name "*.mjs" \) | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
           echo "hash=$HASH" >> $GITHUB_OUTPUT
 
       - name: Restore ONNX Runtime output cache
         id: onnx-cache
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
-          path: packages/onnx-runtime-builder/dist
+          path: packages/onnxruntime/build/wasm
           key: onnx-runtime-${{ steps.onnx-cache-key.outputs.hash }}
           restore-keys: onnx-runtime-
           enableCrossOsArchive: true
@@ -276,7 +276,7 @@ jobs:
         id: onnx-build-cache
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
-          path: packages/onnx-runtime-builder/build
+          path: packages/onnxruntime/build
           key: onnx-runtime-build-${{ steps.onnx-cache-key.outputs.hash }}
           restore-keys: |
             onnx-runtime-build-
@@ -284,14 +284,14 @@ jobs:
       - name: Verify cached artifacts
         id: onnx-cache-valid
         run: |
-          if [ -f "packages/onnx-runtime-builder/dist/onnxruntime-web.wasm" ]; then
+          if [ -f "packages/onnxruntime/build/wasm/ort-wasm-simd-threaded.wasm" ] && [ -f "packages/onnxruntime/build/wasm/ort-wasm-simd-threaded.js" ]; then
             echo "valid=true" >> $GITHUB_OUTPUT
             echo "Cache hit: artifacts found"
-            ls -lh packages/onnx-runtime-builder/dist/
+            ls -lh packages/onnxruntime/build/wasm/
           else
             echo "valid=false" >> $GITHUB_OUTPUT
             echo "Cache miss or incomplete: forcing rebuild"
-            ls -lh packages/onnx-runtime-builder/dist/ 2>/dev/null || echo "Directory does not exist"
+            ls -lh packages/onnxruntime/build/wasm/ 2>/dev/null || echo "Directory does not exist"
           fi
 
       - name: Install Emscripten
@@ -307,42 +307,43 @@ jobs:
       - name: Build ONNX Runtime WASM
         if: steps.onnx-cache-valid.outputs.valid != 'true' || inputs.force
         run: |
-          echo "::group::Building ONNX Runtime WASM (this will take 20-30 minutes)"
+          echo "::group::Building ONNX Runtime WASM (this will take 30-60 minutes)"
           source emsdk/emsdk_env.sh
           if [ "${{ inputs.force }}" = "true" ]; then
-            pnpm --filter @socketsecurity/onnx-runtime-builder run build -- --force
+            pnpm --filter @socketsecurity/onnxruntime run build -- --force
           else
-            pnpm --filter @socketsecurity/onnx-runtime-builder run build
+            pnpm --filter @socketsecurity/onnxruntime run build
           fi
           echo "Build exit code: $?"
           echo "Checking for build artifacts..."
-          ls -lh packages/onnx-runtime-builder/dist/ || echo "dist directory not found"
+          ls -lh packages/onnxruntime/build/wasm/ || echo "wasm directory not found"
           echo "::endgroup::"
 
       - name: Save ONNX Runtime build cache
         if: always() && (steps.onnx-cache-valid.outputs.valid != 'true' || inputs.force)
         uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
-          path: packages/onnx-runtime-builder/build
+          path: packages/onnxruntime/build
           key: onnx-runtime-build-${{ steps.onnx-cache-key.outputs.hash }}-${{ github.run_id }}
 
       - name: Verify build artifacts
         run: |
           echo "=== ONNX Runtime Build Artifacts ==="
-          if [ ! -f "packages/onnx-runtime-builder/dist/onnxruntime-web.wasm" ]; then
-            echo "ERROR: Required ONNX Runtime WASM artifact not found!"
-            ls -lh packages/onnx-runtime-builder/dist/ || echo "Directory does not exist"
+          if [ ! -f "packages/onnxruntime/build/wasm/ort-wasm-simd-threaded.wasm" ] || [ ! -f "packages/onnxruntime/build/wasm/ort-wasm-simd-threaded.js" ]; then
+            echo "ERROR: Required ONNX Runtime WASM artifacts not found!"
+            ls -lh packages/onnxruntime/build/wasm/ || echo "Directory does not exist"
             exit 1
           fi
-          ls -lh packages/onnx-runtime-builder/dist/
+          ls -lh packages/onnxruntime/build/wasm/
           echo ""
-          echo "onnxruntime-web.wasm size: $(du -h packages/onnx-runtime-builder/dist/onnxruntime-web.wasm | cut -f1)"
+          echo "ort-wasm-simd-threaded.wasm size: $(du -h packages/onnxruntime/build/wasm/ort-wasm-simd-threaded.wasm | cut -f1)"
+          echo "ort-wasm-simd-threaded.js size: $(du -h packages/onnxruntime/build/wasm/ort-wasm-simd-threaded.js | cut -f1)"
 
       - name: Upload ONNX Runtime artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: onnx-runtime
-          path: packages/onnx-runtime-builder/dist/
+          path: packages/onnxruntime/build/wasm/
           retention-days: 7
 
   summary:
@@ -369,7 +370,7 @@ jobs:
           echo "|-------|-------|" >> $GITHUB_STEP_SUMMARY
           echo "| 🧘 Yoga Layout | \`yoga.wasm\`, \`yoga.js\` |" >> $GITHUB_STEP_SUMMARY
           echo "| 🤖 AI Models | \`ai.bz\`, \`ai.js\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| 🌐 ONNX Runtime | \`ort-wasm.wasm\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🌐 ONNX Runtime | \`ort-wasm-simd-threaded.wasm\`, \`ort-wasm-simd-threaded.js\` |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 🎯 Next Steps" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
