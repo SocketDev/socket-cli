@@ -10,8 +10,6 @@
 // Load Intl polyfill FIRST for ICU-disabled builds (smol Node.js).
 import '@socketsecurity/cli/src/polyfills/intl-stub/index.mts'
 
-import { logger } from '@socketsecurity/lib/logger'
-
 import { findAndExecuteCli, getArgs } from './shared/bootstrap-shared.mjs'
 
 async function main() {
@@ -20,7 +18,9 @@ async function main() {
 }
 
 // Run the bootstrap.
+// Note: Use console.error directly instead of logger to avoid Console
+// initialization before stdout is ready during early bootstrap.
 main().catch((e) => {
-  logger.error(`Bootstrap error: ${e instanceof Error ? e.message : String(e)}`)
+  console.error(`Bootstrap error: ${e instanceof Error ? e.message : String(e)}`)
   process.exit(1)
 })
