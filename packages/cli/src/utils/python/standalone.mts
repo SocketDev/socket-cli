@@ -48,12 +48,11 @@ import semver from 'semver'
 
 import { whichBin } from '@socketsecurity/lib/bin'
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
-import { httpDownload } from '@socketsecurity/lib/http-request'
+import { downloadBinary, getDlxCachePath } from '@socketsecurity/lib/dlx-binary'
 import { spawn } from '@socketsecurity/lib/spawn'
 
 import ENV from '../../constants/env.mts'
 import { PYTHON_MIN_VERSION } from '../../constants/packages.mts'
-import { getDlxCachePath } from '../dlx/binary.mts'
 import { resolvePyCli } from '../dlx/resolve-binary.mjs'
 import { getErrorCause, InputError } from '../error/errors.mts'
 
@@ -186,31 +185,32 @@ export async function checkSystemPython(): Promise<string | null> {
 }
 
 /**
- * Download and extract Python from python-build-standalone.
+ * Download and extract Python from python-build-standalone using downloadBinary.
+ * Uses downloadBinary for caching, checksum verification, and download management.
  */
 async function downloadPython(pythonDir: string): Promise<void> {
   const url = getPythonStandaloneUrl()
-  const tarballPath = path.join(pythonDir, 'python.tar.gz')
+  const tarballName = 'python-standalone.tar.gz'
 
-  // Ensure directory exists
+  // Ensure directory exists.
   await fs.mkdir(pythonDir, { recursive: true })
 
-  // Download with Node's native http module
   try {
-    await httpDownload(url, tarballPath)
+    // Use downloadBinary to download the tarball with caching (without execution).
+    const result = await downloadBinary({
+      url,
+      name: tarballName,
+    })
+
+    // Extract the tarball to pythonDir.
+    await spawn('tar', ['-xzf', result.binaryPath, '-C', pythonDir], {
+      shell: WIN32,
+    })
   } catch (error) {
     throw new InputError(
       `Failed to download Python: ${error instanceof Error ? error.message : String(error)}`,
     )
   }
-
-  // Extract using system tar command
-  await spawn('tar', ['-xzf', tarballPath, '-C', pythonDir], {
-    shell: WIN32,
-  })
-
-  // Clean up tarball.
-  await fs.rm(tarballPath, { force: true })
 }
 
 /**
@@ -261,6 +261,26 @@ async function isSocketCliInstalled(pythonBin: string): Promise<boolean> {
 }
 
 /**
+ * Convert npm caret range (^2.2.15) to pip version specifier (>=2.2.15,<3.0.0).
+ */
+function convertCaretToPipRange(caretRange: string): string {
+  if (!caretRange) {
+    return ''
+  }
+
+  if (!caretRange.startsWith('^')) {
+    return `==${caretRange}`
+  }
+
+  const version = caretRange.slice(1) // Remove '^'
+  const parts = version.split('.')
+  const major = Number.parseInt(parts[0] || '0', 10)
+  const nextMajor = major + 1
+
+  return `>=${version},<${nextMajor}.0.0`
+}
+
+/**
  * Install socketsecurity package into the Python environment.
  */
 export async function ensureSocketCli(pythonBin: string): Promise<void> {
@@ -269,10 +289,15 @@ export async function ensureSocketCli(pythonBin: string): Promise<void> {
     return
   }
 
-  // Install socketsecurity
+  // Get version constraint from inlined environment variable.
+  const pyCliVersion = ENV.INLINED_SOCKET_CLI_PYCLI_VERSION
+  const versionSpec = convertCaretToPipRange(pyCliVersion || '')
+  const packageSpec = versionSpec ? `socketsecurity${versionSpec}` : 'socketsecurity'
+
+  // Install socketsecurity with version constraint.
   await spawn(
     pythonBin,
-    ['-m', 'pip', 'install', '--quiet', 'socketsecurity'],
+    ['-m', 'pip', 'install', '--quiet', packageSpec],
     {
       shell: WIN32,
       stdio: 'inherit',
