@@ -7,7 +7,7 @@
  * This runs asynchronously and never blocks the main CLI execution.
  */
 
-import { existsSync } from 'node:fs'
+import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 
 import { spawn } from '@socketsecurity/lib/spawn'
@@ -41,7 +41,6 @@ async function markPackageCached(packageName: string): Promise<void> {
   const cacheMarker = path.join(cacheDir, packageName.replace(/[/@]/g, '-'))
 
   try {
-    const { promises: fs } = await import('node:fs')
     await fs.mkdir(cacheDir, { recursive: true })
     await fs.writeFile(cacheMarker, new Date().toISOString())
   } catch {
