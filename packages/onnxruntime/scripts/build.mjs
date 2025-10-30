@@ -72,10 +72,11 @@ async function cloneOnnxSource() {
   if (existsSync(ONNX_SOURCE_DIR)) {
     printStep('ONNX Runtime source already exists')
 
-    const eigenCmakePath = path.join(ONNX_SOURCE_DIR, 'cmake', 'external', 'eigen.cmake')
-    const eigenCmake = await fs.readFile(eigenCmakePath, 'utf-8')
+    const depsPath = path.join(ONNX_SOURCE_DIR, 'cmake', 'deps.txt')
+    const depsContent = await fs.readFile(depsPath, 'utf-8')
 
-    if (!eigenCmake.includes('32b145f525a8308d7ab1c09388b2e288312d8eba')) {
+    // Check if patch has been applied (looking for the corrected hash).
+    if (!depsContent.includes('51982be81bbe52572b54180454df11a3ece9a934')) {
       // Source exists but patch not applied - need to re-clone.
       printWarning('Source exists but Eigen patch not applied')
       printStep('Removing old source to re-clone with patch...')
@@ -97,16 +98,17 @@ async function cloneOnnxSource() {
   })
   printSuccess(`ONNX Runtime ${ONNX_VERSION} cloned`)
 
-  // Patch eigen.cmake immediately after cloning.
-  printStep('Patching eigen.cmake to accept current Eigen hash...')
-  const eigenCmakePath = path.join(ONNX_SOURCE_DIR, 'cmake', 'external', 'eigen.cmake')
-  const eigenCmake = await fs.readFile(eigenCmakePath, 'utf-8')
-  const updatedEigenCmake = eigenCmake.replace(
-    /URL_HASH SHA1=be8be39fdbc6e60e94fa7870b280707069b5b81a/g,
-    'URL_HASH SHA1=32b145f525a8308d7ab1c09388b2e288312d8eba'
+  // Patch deps.txt to accept current Eigen hash from GitLab.
+  // GitLab changed the archive format, causing hash mismatch.
+  printStep('Patching deps.txt to accept current Eigen hash...')
+  const depsPath = path.join(ONNX_SOURCE_DIR, 'cmake', 'deps.txt')
+  const depsContent = await fs.readFile(depsPath, 'utf-8')
+  const updatedDeps = depsContent.replace(
+    /eigen;([^;]+);5ea4d05e62d7f954a46b3213f9b2535bdd866803/g,
+    'eigen;$1;51982be81bbe52572b54180454df11a3ece9a934'
   )
-  await fs.writeFile(eigenCmakePath, updatedEigenCmake, 'utf-8')
-  printSuccess('Eigen hash updated')
+  await fs.writeFile(depsPath, updatedDeps, 'utf-8')
+  printSuccess('Eigen hash updated in deps.txt')
 
   await createCheckpoint('onnxruntime', 'cloned')
 }
