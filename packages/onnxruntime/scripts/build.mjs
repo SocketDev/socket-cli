@@ -54,7 +54,9 @@ const CLEAN_BUILD = args.includes('--clean')
 const ROOT_DIR = path.join(__dirname, '..')
 const BUILD_DIR = path.join(ROOT_DIR, 'build')
 const OUTPUT_DIR = path.join(BUILD_DIR, 'wasm')
-const ONNX_VERSION = 'v1.21.1'
+// Read ONNX Runtime version from package.json (matches ONNX Runtime release version).
+const packageJson = JSON.parse(await fs.readFile(path.join(ROOT_DIR, 'package.json'), 'utf-8'))
+const ONNX_VERSION = `v${packageJson.version}`
 const ONNX_REPO = 'https://github.com/microsoft/onnxruntime.git'
 const ONNX_SOURCE_DIR = path.join(BUILD_DIR, 'onnxruntime-source')
 
