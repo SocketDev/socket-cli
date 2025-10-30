@@ -41,7 +41,7 @@
     "socket": "dist/bootstrap.js"
   },
   "devDependencies": {
-    "@socketsecurity/lib": "catalog:",
+    "@socketsecurity/lib": "2.9.0",
     "esbuild": "^0.24.0"
   }
 }
