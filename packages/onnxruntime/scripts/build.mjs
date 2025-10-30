@@ -117,6 +117,7 @@ async function build() {
     '--build_wasm',
     '--skip_tests',
     '--parallel',
+    '--cmake_extra_defines', 'CMAKE_TLS_VERIFY=OFF',
   ], {
     cwd: ONNX_SOURCE_DIR,
     shell: WIN32,
