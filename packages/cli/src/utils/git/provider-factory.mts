@@ -1,5 +1,7 @@
 import { spawnSync } from '@socketsecurity/lib/spawn'
 
+import { GitHubProvider } from './github-provider.mts'
+import { GitLabProvider } from './gitlab-provider.mts'
 import type { PrProvider } from './provider.mts'
 
 /**
@@ -17,15 +19,10 @@ export function createPrProvider(): PrProvider {
     process.env['GITLAB_HOST'] ||
     remoteUrl.includes('gitlab')
   ) {
-    // Lazy load to avoid importing GitLab dependency if not needed.
-
-    const { GitLabProvider } = require('./gitlab-provider.mts')
     return new GitLabProvider()
   }
 
   // Default to GitHub (backward compatibility).
-
-  const { GitHubProvider } = require('./github-provider.mts')
   return new GitHubProvider()
 }
 
