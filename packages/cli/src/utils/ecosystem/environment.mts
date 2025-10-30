@@ -32,20 +32,11 @@ import browserslist from 'browserslist'
 import semver from 'semver'
 
 const require = createRequire(import.meta.url)
-
-// Lazy-load Bun lockfile parser only when needed.
-let parseBunLockb: ((buf: Uint8Array | ArrayBuffer) => string) | undefined
-
-function getParseBunLockb() {
-  if (!parseBunLockb) {
-    // Type definition is incorrect - exports object with parse method, not namespace.
-    const parser = require('@socketregistry/hyrious__bun.lockb/index.cjs') as {
-      parse: (buf: Uint8Array | ArrayBuffer) => string
-    }
-    parseBunLockb = parser.parse
+// Type definition is incorrect - exports object with parse method, not namespace.
+const { parse: parseBunLockb } =
+  require('@socketregistry/hyrious__bun.lockb/index.cjs') as {
+    parse: (buf: Uint8Array | ArrayBuffer) => string
   }
-  return parseBunLockb
-}
 
 import { whichBin } from '@socketsecurity/lib/bin'
 import {
@@ -220,7 +211,7 @@ const readLockFileByAgent: Map<Agent, ReadLockFile> = (() => {
             const lockBuffer = await binaryReader(lockPath)
             if (lockBuffer) {
               try {
-                return getParseBunLockb()(lockBuffer)
+                return parseBunLockb(lockBuffer)
               } catch {}
             }
             // To print a Yarn lockfile to your console without writing it to disk
