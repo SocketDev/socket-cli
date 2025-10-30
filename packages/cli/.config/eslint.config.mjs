@@ -365,15 +365,9 @@ export default [
     },
   },
   {
-    // Relax rules for script and config files
-    files: [
-      'scripts/**/*.{mjs,js}',
-      'bin/**/*.{mjs,js}',
-      '.config/**/*.{mjs,js}',
-    ],
+    // Relax rules for script files
+    files: ['scripts/**/*.{mjs,js}', 'bin/**/*.{mjs,js}'],
     rules: {
-      'n/no-extraneous-import': 'off',
-      'n/no-extraneous-require': 'off',
       'n/no-process-exit': 'off',
       'n/no-unsupported-features/node-builtins': 'off',
       'n/no-missing-import': 'off',
@@ -381,7 +375,6 @@ export default [
       'no-await-in-loop': 'off',
       'no-unused-vars': 'off',
       'no-undef': 'off',
-      'unicorn/consistent-function-scoping': 'off',
     },
   },
   {
@@ -406,10 +399,6 @@ export default [
       'no-undef': 'off',
       // Allow console in tests
       'no-console': 'off',
-      // Allow process.exit in tests
-      'n/no-process-exit': 'off',
-      // Allow scoped functions in tests
-      'unicorn/consistent-function-scoping': 'off',
     },
   },
 ]

@@ -31,6 +31,14 @@ export const SOCKET_CLI_ACCEPT_RISKS = 'SOCKET_CLI_ACCEPT_RISKS'
 export const SOCKET_CLI_VIEW_ALL_RISKS = 'SOCKET_CLI_VIEW_ALL_RISKS'
 
 /**
+ * Get registry internals for accessing IPC and Sentry instances.
+ */
+export function getInternals(): RegistryInternals {
+  const registry = require('@socketsecurity/registry')
+  return registry.internals ?? {}
+}
+
+/**
  * Get the path to the shadow npm binary.
  */
 export function getShadowNpmBinPath(): string {
