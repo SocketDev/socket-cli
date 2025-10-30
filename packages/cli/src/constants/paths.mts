@@ -95,7 +95,7 @@ export function getBinCliPath(): string {
   if (binPath) {
     return binPath
   }
-  return path.join(rootPath, 'bin/cli.js')
+  return path.join(rootPath, 'dist/index.js')
 }
 
 export function getDistPath(): string {
