@@ -54,7 +54,9 @@ const CLEAN_BUILD = args.includes('--clean')
 const ROOT_DIR = path.join(__dirname, '..')
 const BUILD_DIR = path.join(ROOT_DIR, 'build')
 const OUTPUT_DIR = path.join(BUILD_DIR, 'wasm')
-const YOGA_VERSION = 'v3.1.0'
+// Read Yoga version from package.json (matches Yoga Layout release version).
+const packageJson = JSON.parse(await fs.readFile(path.join(ROOT_DIR, 'package.json'), 'utf-8'))
+const YOGA_VERSION = `v${packageJson.version}`
 const YOGA_REPO = 'https://github.com/facebook/yoga.git'
 const YOGA_SOURCE_DIR = path.join(BUILD_DIR, 'yoga-source')
 
