@@ -32,6 +32,7 @@ jobs:
         with:
           scope: '@socketsecurity'
       - name: Cache yoga-layout WASM
+        id: cache-yoga
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: packages/yoga-layout/build/wasm
@@ -40,6 +41,9 @@ jobs:
             yoga-wasm-
       - run: npm install -g npm@latest
       - run: pnpm install
+      - name: Build yoga-layout WASM (if cache miss)
+        if: steps.cache-yoga.outputs.cache-hit != 'true'
+        run: pnpm --filter @socketsecurity/yoga-layout run build
 
       # Build and publish 'socket' package (default).
       - name: Prepare socket package for publishing
@@ -53,7 +57,8 @@ jobs:
       - name: Validate socket package
         run: node scripts/pre-publish-validate.mjs packages/socket
       - name: Publish socket package
-        run: cd dist && npm publish --provenance --access public --no-git-checks
+        working-directory: packages/socket
+        run: npm publish --provenance --access public --no-git-checks
         continue-on-error: true
         env:
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
@@ -68,7 +73,8 @@ jobs:
       - name: Validate @socketsecurity/cli package
         run: node scripts/pre-publish-validate.mjs packages/cli
       - name: Publish @socketsecurity/cli package
-        run: cd dist && npm publish --provenance --access public --no-git-checks
+        working-directory: packages/cli
+        run: npm publish --provenance --access public --no-git-checks
         continue-on-error: true
         env:
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
@@ -83,7 +89,8 @@ jobs:
       - name: Validate @socketsecurity/cli-with-sentry package
         run: node scripts/pre-publish-validate.mjs packages/cli-with-sentry
       - name: Publish @socketsecurity/cli-with-sentry package
-        run: cd dist && npm publish --provenance --access public --no-git-checks
+        working-directory: packages/cli-with-sentry
+        run: npm publish --provenance --access public --no-git-checks
         continue-on-error: true
         env:
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
