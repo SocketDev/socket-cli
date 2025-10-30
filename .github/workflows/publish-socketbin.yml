@@ -147,6 +147,9 @@ jobs:
             --arch=${{ matrix.arch }} \
             --clean
 
+      - name: Build CLI (required for SEA)
+        run: pnpm --filter @socketsecurity/cli run build
+
       - name: Build SEA binary
         id: build-sea
         run: |
