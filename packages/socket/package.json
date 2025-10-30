@@ -37,7 +37,7 @@
     "test:watch": "vitest"
   },
   "bin": {
-    "socket": "./dist/bootstrap.js"
+    "socket": "dist/bootstrap.js"
   },
   "devDependencies": {
     "@socketsecurity/lib": "catalog:",
