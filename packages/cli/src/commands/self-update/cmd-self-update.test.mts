@@ -64,7 +64,10 @@ vi.mock('../../constants/env.mts', () => ({
 import { getIpcStubPath } from '@socketsecurity/lib/ipc'
 
 import { handleSelfUpdate } from './handle-self-update.mts'
-import { isSeaBinary } from '../../utils/executable/detect.mjs'
+import {
+  canSelfUpdate,
+  isSeaBinary,
+} from '../../utils/executable/detect.mjs'
 import { clearQuarantine, ensureExecutable } from '../../utils/process/os.mjs'
 import {
   downloadTarball,
@@ -92,6 +95,14 @@ describe('handleSelfUpdate', () => {
   let testBinaryPath: string
 
   beforeEach(async () => {
+    // Clean up any leftover socket-update directories from previous test runs.
+    const tmpDir = os.tmpdir()
+    const entries = await fs.readdir(tmpDir)
+    const updateDirs = entries.filter(e => e.startsWith('socket-update-'))
+    await Promise.all(
+      updateDirs.map(d => fs.rm(path.join(tmpDir, d), { recursive: true, force: true })),
+    )
+
     // Create temp directory for test binary.
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'self-update-test-'))
     testBinaryPath = path.join(tempDir, 'socket')
@@ -144,12 +155,13 @@ describe('handleSelfUpdate', () => {
 
   describe('prerequisite checks', () => {
     it('should throw error when not running as SEA binary', async () => {
+      vi.mocked(canSelfUpdate).mockReturnValue(false)
       vi.mocked(isSeaBinary).mockReturnValue(false)
 
       await expect(
         handleSelfUpdate([], import.meta, { parentName: 'socket' }),
       ).rejects.toThrow(
-        'self-update is only available when running as a SEA binary',
+        'self-update is only available for Socket CLI binaries managed by Socket',
       )
     })
 
@@ -422,6 +434,9 @@ describe('handleSelfUpdate', () => {
 
       await handleSelfUpdate([], import.meta, { parentName: 'socket' })
 
+      // Give cleanup time to complete.
+      await new Promise(resolve => setTimeout(resolve, 50))
+
       // Check that temp update directory was cleaned up.
       const tempDirs = (await fs.readdir(os.tmpdir())).filter(f =>
         f.startsWith('socket-update-'),
@@ -438,6 +453,9 @@ describe('handleSelfUpdate', () => {
       await expect(
         handleSelfUpdate([], import.meta, { parentName: 'socket' }),
       ).rejects.toThrow()
+
+      // Give cleanup time to complete.
+      await new Promise(resolve => setTimeout(resolve, 50))
 
       // Check that temp update directory was cleaned up.
       const tempDirs = (await fs.readdir(os.tmpdir())).filter(f =>
