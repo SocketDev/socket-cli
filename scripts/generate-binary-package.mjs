@@ -17,7 +17,7 @@ const rootDir = path.join(__dirname, '..')
 /**
  * Generates a datetime-based version string in semver format.
  * Reads base version from socketbin-cli-linux-x64 package.json.
- * Format: X.Y.Z-YYYYMMDD.HHmmss
+ * Format: 0.0.0-YYYYMMDD.HHmmss
  */
 function generateDatetimeVersion() {
   // Read base version from one of the socketbin packages.
@@ -63,7 +63,7 @@ const {
 
 if (!platform || !arch) {
   logger.error(
-    'Usage: generate-binary-package.mjs --platform=darwin --arch=arm64 [--version=1.2.0-20250122.143052] [--method=smol]',
+    'Usage: generate-binary-package.mjs --platform=darwin --arch=arm64 [--version=0.0.0-20250122.143052] [--method=smol]',
   )
   process.exit(1)
 }

@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to publish (semver format: 1.2.0-20250122.143052, auto-generated if omitted)'
+        description: 'Version to publish (semver format: 0.0.0-20250122.143052, auto-generated if omitted)'
         required: false
         type: string
       method:
