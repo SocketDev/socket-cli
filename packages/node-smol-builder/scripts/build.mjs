@@ -10,19 +10,19 @@
  *   Starting size:                 ~49 MB (default Node.js v24 build)
  *
  *   Stage 1: Configure flags
- *     + --with-intl=none:          ~41 MB  (-8 MB:  Remove ICU/Intl)
- *     + --v8-lite-mode:            ~26 MB  (-23 MB: Disable TurboFan JIT)
- *     + --disable-SEA:             ~25 MB  (-24 MB: Remove SEA support)
- *     + --without-* flags:         ~24 MB  (-25 MB: Remove npm, inspector, etc.)
+ *     + --with-intl=small-icu:     ~44 MB  (-5 MB:  English-only ICU)
+ *     + --v8-lite-mode:            ~29 MB  (-20 MB: Disable TurboFan JIT)
+ *     + --disable-SEA:             ~28 MB  (-21 MB: Remove SEA support)
+ *     + --without-* flags:         ~27 MB  (-22 MB: Remove npm, inspector, etc.)
  *
  *   Stage 2: Binary stripping
- *     + strip --strip-all:         ~22 MB  (-27 MB: Remove debug symbols)
+ *     + strip --strip-all:         ~25 MB  (-24 MB: Remove debug symbols)
  *
  *   Stage 3: Compression (this script)
- *     + pkg Brotli (VFS):          ~20 MB  (-29 MB: Compress Socket CLI code)
- *     + Node.js lib/ minify+Brotli:~18 MB  (-31 MB: Compress built-in modules)
+ *     + pkg Brotli (VFS):          ~23 MB  (-26 MB: Compress Socket CLI code)
+ *     + Node.js lib/ minify+Brotli:~21 MB  (-28 MB: Compress built-in modules)
  *
- *   TARGET ACHIEVED: ~18 MB < 30 MB goal! 🎉
+ *   TARGET EXPECTED: ~21 MB (small-icu adds ~3MB vs intl=none)
  *
  * Size Breakdown:
  *   - Node.js lib/ (compressed):   ~2.5 MB  (minified + Brotli)
@@ -642,7 +642,7 @@ async function verifySocketModifications() {
     logger.warn(`Cannot verify V8 includes: ${e.message}`)
   }
 
-  // Check 3: localeCompare polyfill for --with-intl=none.
+  // Check 3: localeCompare polyfill (kept as safety layer with small-icu).
   logger.log('Checking localeCompare polyfill...')
   const primordialFile = join(
     NODE_DIR,
@@ -658,13 +658,13 @@ async function verifySocketModifications() {
         'primordials.js correctly modified (localeCompare polyfill)',
       )
     } else {
-      logger.warn('localeCompare polyfill not applied (may not be needed)')
+      logger.warn('localeCompare polyfill not applied (may not be needed with small-icu)')
     }
   } catch (e) {
     logger.warn(`Cannot verify primordials.js: ${e.message}`)
   }
 
-  // Check 4: String.prototype.normalize polyfill for --with-intl=none.
+  // Check 4: String.prototype.normalize polyfill (kept as safety layer with small-icu).
   logger.log('Checking normalize polyfill...')
   const bootstrapFile = join(
     NODE_DIR,
@@ -680,7 +680,7 @@ async function verifySocketModifications() {
         'bootstrap/node.js correctly modified (normalize polyfill)',
       )
     } else {
-      logger.warn('normalize polyfill not applied (may not be needed)')
+      logger.warn('normalize polyfill not applied (may not be needed with small-icu)')
     }
   } catch (e) {
     logger.warn(`Cannot verify bootstrap/node.js: ${e.message}`)
@@ -703,7 +703,7 @@ async function verifySocketModifications() {
   }
 
   logger.success(
-    'All Socket modifications verified for --with-intl=none compatibility',
+    'All Socket modifications verified for --with-intl=small-icu',
   )
   logger.logNewline()
 }
@@ -1108,9 +1108,8 @@ async function main() {
 
   const configureFlags = [
     '--ninja', // Use Ninja build system (faster parallel builds than make)
-    '--with-intl=none', // -6-8 MB: No ICU/Intl support (use polyfill instead)
-    // Note: --without-intl is deprecated, use --with-intl=none instead
-    '--with-icu-source=none', // Don't download ICU source (not needed with --with-intl=none)
+    '--with-intl=small-icu', // -5 MB: English-only ICU (supports Unicode property escapes)
+    // Note: small-icu provides essential Unicode support while keeping binary small
     '--without-npm',
     '--without-corepack',
     '--without-inspector',

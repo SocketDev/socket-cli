@@ -1,9 +1,321 @@
 /**
  * esbuild plugin to transform node:* requires to internal/* requires.
+ * Also transforms Unicode property escapes to explicit character ranges.
  *
  * This makes the bootstrap compatible with Node.js internal bootstrap context
- * for smol builds.
+ * for smol builds (built with --with-intl=none, no ICU support).
  */
+
+import { parse } from '@babel/parser'
+import MagicString from 'magic-string'
+
+// Prefix-only modules that have no unprefixed form.
+// These ONLY support node:* syntax.
+const prefixOnlyModules = new Set([
+  'node:sea',
+  'node:sqlite',
+  'node:test',
+  'node:test/reporters',
+])
+
+// Map core module requires to their internal bootstrap equivalents.
+// Based on Module.builtinModules from Node.js v24.10.0.
+// Format: [moduleName, bootstrapPath]
+// Handles both 'node:x' and plain 'x' variants (except prefix-only modules).
+const requireMappings = new Map([
+  // Core modules with internal equivalents.
+  ['child_process', 'internal/child_process'],
+  ['fs', 'fs'],
+  ['fs/promises', 'internal/fs/promises'],
+
+  // Stream internals.
+  ['stream', 'stream'],
+  ['stream/promises', 'internal/streams/promises'],
+  ['stream/web', 'internal/webstreams/readablestream'],
+
+  // Path variants.
+  ['path', 'path'],
+  ['path/posix', 'path'],
+  ['path/win32', 'path'],
+
+  // Core modules available at top level.
+  ['assert', 'assert'],
+  ['assert/strict', 'internal/assert/strict'],
+  ['async_hooks', 'async_hooks'],
+  ['buffer', 'buffer'],
+  ['cluster', 'cluster'],
+  ['console', 'console'],
+  ['constants', 'constants'],
+  ['crypto', 'crypto'],
+  ['dgram', 'dgram'],
+  ['diagnostics_channel', 'diagnostics_channel'],
+  ['dns', 'dns'],
+  ['dns/promises', 'dns/promises'],
+  ['domain', 'domain'],
+  ['events', 'events'],
+  ['http', 'http'],
+  ['http2', 'http2'],
+  ['https', 'https'],
+  ['inspector', 'inspector'],
+  ['inspector/promises', 'inspector/promises'],
+  ['module', 'module'],
+  ['net', 'net'],
+  ['os', 'os'],
+  ['perf_hooks', 'perf_hooks'],
+  ['process', 'process'],
+  ['punycode', 'punycode'],
+  ['querystring', 'querystring'],
+  ['readline', 'readline'],
+  ['readline/promises', 'readline/promises'],
+  ['repl', 'repl'],
+  ['string_decoder', 'string_decoder'],
+  ['sys', 'sys'],
+  ['timers', 'timers'],
+  ['timers/promises', 'timers/promises'],
+  ['tls', 'tls'],
+  ['trace_events', 'trace_events'],
+  ['tty', 'tty'],
+  ['url', 'url'],
+  ['util', 'util'],
+  ['util/types', 'internal/util/types'],
+  ['v8', 'v8'],
+  ['vm', 'vm'],
+  ['wasi', 'wasi'],
+  ['worker_threads', 'worker_threads'],
+  ['zlib', 'zlib'],
+])
+
+/**
+ * Map of Unicode property escapes to explicit character ranges.
+ * These are used when Node.js is built without ICU support (--with-intl=none).
+ * Based on ECMAScript Unicode property escapes specification:
+ * https://tc39.es/ecma262/#table-binary-unicode-properties
+ */
+const unicodePropertyReplacements = new Map([
+  // Special properties.
+  [
+    'Default_Ignorable_Code_Point',
+    '\\u00AD\\u034F\\u061C\\u115F-\\u1160\\u17B4-\\u17B5\\u180B-\\u180D\\u200B-\\u200F\\u202A-\\u202E\\u2060-\\u206F\\u3164\\uFE00-\\uFE0F\\uFEFF\\uFFA0\\uFFF0-\\uFFF8',
+  ],
+  ['ASCII', '\\x00-\\x7F'],
+  ['ASCII_Hex_Digit', '0-9A-Fa-f'],
+  ['Alphabetic', 'A-Za-z\\u00AA\\u00B5\\u00BA\\u00C0-\\u00D6\\u00D8-\\u00F6\\u00F8-\\u02C1\\u02C6-\\u02D1\\u02E0-\\u02E4\\u02EC\\u02EE'],
+
+  // General categories - Letter.
+  ['Letter', 'A-Za-z\\u00AA\\u00B5\\u00BA\\u00C0-\\u00D6\\u00D8-\\u00F6\\u00F8-\\u02C1\\u02C6-\\u02D1\\u02E0-\\u02E4\\u02EC\\u02EE'],
+  ['L', 'A-Za-z\\u00AA\\u00B5\\u00BA\\u00C0-\\u00D6\\u00D8-\\u00F6\\u00F8-\\u02C1\\u02C6-\\u02D1\\u02E0-\\u02E4\\u02EC\\u02EE'],
+  ['Lowercase_Letter', 'a-z\\u00B5\\u00DF-\\u00F6\\u00F8-\\u00FF'],
+  ['Ll', 'a-z\\u00B5\\u00DF-\\u00F6\\u00F8-\\u00FF'],
+  ['Uppercase_Letter', 'A-Z\\u00C0-\\u00D6\\u00D8-\\u00DE'],
+  ['Lu', 'A-Z\\u00C0-\\u00D6\\u00D8-\\u00DE'],
+  ['Titlecase_Letter', '\\u01C5\\u01C8\\u01CB\\u01F2'],
+  ['Lt', '\\u01C5\\u01C8\\u01CB\\u01F2'],
+  ['Modifier_Letter', '\\u02B0-\\u02C1\\u02C6-\\u02D1\\u02E0-\\u02E4\\u02EC\\u02EE'],
+  ['Lm', '\\u02B0-\\u02C1\\u02C6-\\u02D1\\u02E0-\\u02E4\\u02EC\\u02EE'],
+  ['Other_Letter', '\\u00AA\\u00BA'],
+  ['Lo', '\\u00AA\\u00BA'],
+
+  // General categories - Mark.
+  ['Mark', '\\u0300-\\u036F\\u0483-\\u0489\\u0591-\\u05BD\\u05BF\\u05C1-\\u05C2\\u05C4-\\u05C5\\u05C7\\u0610-\\u061A\\u064B-\\u065F\\u0670\\u06D6-\\u06DC\\u06DF-\\u06E4\\u06E7-\\u06E8\\u06EA-\\u06ED'],
+  ['M', '\\u0300-\\u036F\\u0483-\\u0489\\u0591-\\u05BD\\u05BF\\u05C1-\\u05C2\\u05C4-\\u05C5\\u05C7\\u0610-\\u061A\\u064B-\\u065F\\u0670\\u06D6-\\u06DC\\u06DF-\\u06E4\\u06E7-\\u06E8\\u06EA-\\u06ED'],
+  ['Nonspacing_Mark', '\\u0300-\\u036F\\u0483-\\u0489\\u0591-\\u05BD\\u05BF\\u05C1-\\u05C2\\u05C4-\\u05C5\\u05C7'],
+  ['Mn', '\\u0300-\\u036F\\u0483-\\u0489\\u0591-\\u05BD\\u05BF\\u05C1-\\u05C2\\u05C4-\\u05C5\\u05C7'],
+  ['Spacing_Mark', '\\u0903\\u093B\\u093E-\\u0940\\u0949-\\u094C\\u094E-\\u094F'],
+  ['Mc', '\\u0903\\u093B\\u093E-\\u0940\\u0949-\\u094C\\u094E-\\u094F'],
+  ['Enclosing_Mark', '\\u0488-\\u0489'],
+  ['Me', '\\u0488-\\u0489'],
+
+  // General categories - Number.
+  ['Number', '0-9\\u00B2-\\u00B3\\u00B9\\u00BC-\\u00BE'],
+  ['N', '0-9\\u00B2-\\u00B3\\u00B9\\u00BC-\\u00BE'],
+  ['Decimal_Number', '0-9'],
+  ['Nd', '0-9'],
+  ['Letter_Number', '\\u16EE-\\u16F0\\u2160-\\u2182\\u2185-\\u2188\\u3007\\u3021-\\u3029\\u3038-\\u303A'],
+  ['Nl', '\\u16EE-\\u16F0\\u2160-\\u2182\\u2185-\\u2188\\u3007\\u3021-\\u3029\\u3038-\\u303A'],
+  ['Other_Number', '\\u00B2-\\u00B3\\u00B9\\u00BC-\\u00BE'],
+  ['No', '\\u00B2-\\u00B3\\u00B9\\u00BC-\\u00BE'],
+
+  // General categories - Punctuation.
+  ['Punctuation', '!-#%-\\*,-\\/:;\\?@\\[-\\]_\\{\\}\\u00A1\\u00A7\\u00AB\\u00B6-\\u00B7\\u00BB\\u00BF'],
+  ['P', '!-#%-\\*,-\\/:;\\?@\\[-\\]_\\{\\}\\u00A1\\u00A7\\u00AB\\u00B6-\\u00B7\\u00BB\\u00BF'],
+  ['Connector_Punctuation', '_\\u203F-\\u2040'],
+  ['Pc', '_\\u203F-\\u2040'],
+  ['Dash_Punctuation', '\\-\\u2010-\\u2015'],
+  ['Pd', '\\-\\u2010-\\u2015'],
+  ['Open_Punctuation', '\\(\\[\\{'],
+  ['Ps', '\\(\\[\\{'],
+  ['Close_Punctuation', '\\)\\]\\}'],
+  ['Pe', '\\)\\]\\}'],
+  ['Initial_Punctuation', '\\u00AB'],
+  ['Pi', '\\u00AB'],
+  ['Final_Punctuation', '\\u00BB'],
+  ['Pf', '\\u00BB'],
+  ['Other_Punctuation', '!-#%-\\*,\\.\\/:;\\?@\\\\\\u00A1\\u00A7\\u00B6-\\u00B7\\u00BF'],
+  ['Po', '!-#%-\\*,\\.\\/:;\\?@\\\\\\u00A1\\u00A7\\u00B6-\\u00B7\\u00BF'],
+
+  // General categories - Symbol.
+  ['Symbol', '\\$\\+<->\\^`\\|~\\u00A2-\\u00A6\\u00A8-\\u00A9\\u00AC\\u00AE-\\u00B1\\u00B4\\u00B8\\u00D7\\u00F7'],
+  ['S', '\\$\\+<->\\^`\\|~\\u00A2-\\u00A6\\u00A8-\\u00A9\\u00AC\\u00AE-\\u00B1\\u00B4\\u00B8\\u00D7\\u00F7'],
+  ['Math_Symbol', '\\+<->\\|~\\u00AC\\u00B1\\u00D7\\u00F7'],
+  ['Sm', '\\+<->\\|~\\u00AC\\u00B1\\u00D7\\u00F7'],
+  ['Currency_Symbol', '\\$\\u00A2-\\u00A5'],
+  ['Sc', '\\$\\u00A2-\\u00A5'],
+  ['Modifier_Symbol', '\\^`\\u00A8\\u00AF\\u00B4\\u00B8'],
+  ['Sk', '\\^`\\u00A8\\u00AF\\u00B4\\u00B8'],
+  ['Other_Symbol', '\\u00A6\\u00A9\\u00AE\\u00B0'],
+  ['So', '\\u00A6\\u00A9\\u00AE\\u00B0'],
+
+  // General categories - Separator.
+  ['Separator', ' \\u00A0\\u1680\\u2000-\\u200A\\u2028-\\u2029\\u202F\\u205F\\u3000'],
+  ['Z', ' \\u00A0\\u1680\\u2000-\\u200A\\u2028-\\u2029\\u202F\\u205F\\u3000'],
+  ['Space_Separator', ' \\u00A0\\u1680\\u2000-\\u200A\\u202F\\u205F\\u3000'],
+  ['Zs', ' \\u00A0\\u1680\\u2000-\\u200A\\u202F\\u205F\\u3000'],
+  ['Line_Separator', '\\u2028'],
+  ['Zl', '\\u2028'],
+  ['Paragraph_Separator', '\\u2029'],
+  ['Zp', '\\u2029'],
+
+  // General categories - Other.
+  ['Other', '\\x00-\\x1F\\x7F-\\x9F\\u00AD'],
+  ['C', '\\x00-\\x1F\\x7F-\\x9F\\u00AD'],
+  ['Control', '\\x00-\\x1F\\x7F-\\x9F'],
+  ['Cc', '\\x00-\\x1F\\x7F-\\x9F'],
+  ['Format', '\\u00AD\\u0600-\\u0605\\u061C\\u06DD\\u070F\\u08E2\\u180E\\u200B-\\u200F\\u202A-\\u202E\\u2060-\\u2064\\u2066-\\u206F\\uFEFF\\uFFF9-\\uFFFB'],
+  ['Cf', '\\u00AD\\u0600-\\u0605\\u061C\\u06DD\\u070F\\u08E2\\u180E\\u200B-\\u200F\\u202A-\\u202E\\u2060-\\u2064\\u2066-\\u206F\\uFEFF\\uFFF9-\\uFFFB'],
+  ['Surrogate', '\\uD800-\\uDFFF'],
+  ['Cs', '\\uD800-\\uDFFF'],
+  ['Private_Use', '\\uE000-\\uF8FF'],
+  ['Co', '\\uE000-\\uF8FF'],
+  ['Unassigned', '\\u0378-\\u0379\\u0380-\\u0383\\u038B\\u038D\\u03A2'],
+  ['Cn', '\\u0378-\\u0379\\u0380-\\u0383\\u038B\\u038D\\u03A2'],
+
+  // Emoji properties.
+  [
+    'Extended_Pictographic',
+    '\\u00A9\\u00AE\\u203C\\u2049\\u2122\\u2139\\u2194-\\u2199\\u21A9-\\u21AA\\u231A-\\u231B\\u2328\\u23CF\\u23E9-\\u23F3\\u23F8-\\u23FA\\u24C2\\u25AA-\\u25AB\\u25B6\\u25C0\\u25FB-\\u25FE\\u2600-\\u2604\\u260E\\u2611\\u2614-\\u2615\\u2618\\u261D\\u2620\\u2622-\\u2623\\u2626\\u262A\\u262E-\\u262F\\u2638-\\u263A\\u2640\\u2642\\u2648-\\u2653\\u265F-\\u2660\\u2663\\u2665-\\u2666\\u2668\\u267B\\u267E-\\u267F\\u2692-\\u2697\\u2699\\u269B-\\u269C\\u26A0-\\u26A1\\u26A7\\u26AA-\\u26AB\\u26B0-\\u26B1\\u26BD-\\u26BE\\u26C4-\\u26C5\\u26C8\\u26CE-\\u26CF\\u26D1\\u26D3-\\u26D4\\u26E9-\\u26EA\\u26F0-\\u26F5\\u26F7-\\u26FA\\u26FD\\u2702\\u2705\\u2708-\\u270D\\u270F\\u2712\\u2714\\u2716\\u271D\\u2721\\u2728\\u2733-\\u2734\\u2744\\u2747\\u274C\\u274E\\u2753-\\u2755\\u2757\\u2763-\\u2764\\u2795-\\u2797\\u27A1\\u27B0\\u27BF\\u2934-\\u2935\\u2B05-\\u2B07\\u2B1B-\\u2B1C\\u2B50\\u2B55\\u3030\\u303D\\u3297\\u3299',
+  ],
+  [
+    'RGI_Emoji',
+    '\\u00A9\\u00AE\\u203C\\u2049\\u2122\\u2139\\u2194-\\u2199\\u21A9-\\u21AA\\u231A-\\u231B\\u2328\\u23CF\\u23E9-\\u23F3\\u23F8-\\u23FA\\u24C2\\u25AA-\\u25AB\\u25B6\\u25C0\\u25FB-\\u25FE\\u2600-\\u2604\\u260E\\u2611\\u2614-\\u2615\\u2618\\u261D\\u2620\\u2622-\\u2623\\u2626\\u262A\\u262E-\\u262F\\u2638-\\u263A\\u2640\\u2642\\u2648-\\u2653\\u265F-\\u2660\\u2663\\u2665-\\u2666\\u2668\\u267B\\u267E-\\u267F\\u2692-\\u2697\\u2699\\u269B-\\u269C\\u26A0-\\u26A1\\u26A7\\u26AA-\\u26AB\\u26B0-\\u26B1\\u26BD-\\u26BE\\u26C4-\\u26C5\\u26C8\\u26CE-\\u26CF\\u26D1\\u26D3-\\u26D4\\u26E9-\\u26EA\\u26F0-\\u26F5\\u26F7-\\u26FA\\u26FD\\u2702\\u2705\\u2708-\\u270D\\u270F\\u2712\\u2714\\u2716\\u271D\\u2721\\u2728\\u2733-\\u2734\\u2744\\u2747\\u274C\\u274E\\u2753-\\u2755\\u2757\\u2763-\\u2764\\u2795-\\u2797\\u27A1\\u27B0\\u27BF\\u2934-\\u2935\\u2B05-\\u2B07\\u2B1B-\\u2B1C\\u2B50\\u2B55\\u3030\\u303D\\u3297\\u3299',
+  ],
+])
+
+/**
+ * Replace Unicode property escapes in regex with explicit character ranges.
+ * Uses Babel AST parsing + magic-string for accurate transformations.
+ * @param {string} content - The code content to transform.
+ * @returns {string} Transformed content.
+ */
+function replaceUnicodeProperties(content) {
+  let ast
+  try {
+    ast = parse(content, {
+      sourceType: 'module',
+      plugins: ['jsx'],
+    })
+  } catch {
+    // If parsing fails, return original content unchanged.
+    return content
+  }
+
+  const s = new MagicString(content)
+
+  let hasChanges = false
+
+  /**
+   * Walk the AST to find and transform regex nodes.
+   * @param {object} node - AST node to process.
+   */
+  const walk = (node) => {
+    if (!node || typeof node !== 'object') {
+      return
+    }
+
+    // Handle RegExp constructor: new RegExp(pattern, flags).
+    if (
+      node.type === 'NewExpression' &&
+      node.callee?.name === 'RegExp' &&
+      node.arguments?.length >= 2
+    ) {
+      const patternArg = node.arguments[0]
+      const flagsArg = node.arguments[1]
+
+      // Only process string literal patterns with 'u' or 'v' flags.
+      if (
+        patternArg?.type === 'StringLiteral' &&
+        flagsArg?.type === 'StringLiteral' &&
+        (flagsArg.value.includes('u') || flagsArg.value.includes('v'))
+      ) {
+        const transformed = transformPattern(patternArg.value)
+        if (transformed !== patternArg.value) {
+          // Replace the pattern string with transformed version.
+          const { start: patternStart, end: patternEnd } = patternArg
+          const patternQuote = content[patternStart]
+          s.overwrite(patternStart, patternEnd, `${patternQuote}${transformed}${patternQuote}`)
+
+          // Remove 'u' and 'v' flags since we're replacing Unicode escapes with character ranges.
+          const newFlags = flagsArg.value.replace(/[uv]/g, '')
+          const { start: flagsStart, end: flagsEnd } = flagsArg
+          const flagsQuote = content[flagsStart]
+          s.overwrite(flagsStart, flagsEnd, `${flagsQuote}${newFlags}${flagsQuote}`)
+
+          hasChanges = true
+        }
+      }
+    }
+
+    // Handle regex literals: /pattern/flags.
+    if (node.type === 'RegExpLiteral') {
+      const { pattern, flags } = node
+      // Only process regexes with 'u' or 'v' flag.
+      if (flags && (flags.includes('u') || flags.includes('v'))) {
+        const transformed = transformPattern(pattern)
+        if (transformed !== pattern) {
+          // Remove 'u' and 'v' flags since we're replacing Unicode escapes with character ranges.
+          const newFlags = flags.replace(/[uv]/g, '')
+          // Replace the entire regex literal.
+          const { start, end } = node
+          s.overwrite(start, end, `/${transformed}/${newFlags}`)
+          hasChanges = true
+        }
+      }
+    }
+
+    // Recursively walk all properties.
+    for (const key of Object.keys(node)) {
+      const value = node[key]
+      if (Array.isArray(value)) {
+        for (const item of value) {
+          walk(item)
+        }
+      } else if (value && typeof value === 'object') {
+        walk(value)
+      }
+    }
+  }
+
+  walk(ast)
+
+  return hasChanges ? s.toString() : content
+}
+
+/**
+ * Transform Unicode property escapes in a regex pattern string.
+ * @param {string} pattern - The regex pattern to transform.
+ * @returns {string} Transformed pattern.
+ */
+function transformPattern(pattern) {
+  // Replace all \p{PropertyName} or \\p{PropertyName} patterns.
+  // This handles both single and double-escaped backslashes.
+  return pattern.replace(/\\{1,2}p\{([^}]+)\}/g, (match, propName) => {
+    const charRange = unicodePropertyReplacements.get(propName)
+    if (charRange) {
+      return `[${charRange}]`
+    }
+    // If property not in our map, return original (will fail at runtime with clear error).
+    return match
+  })
+}
 
 /**
  * Create smol transformation plugin.
@@ -24,81 +336,9 @@ export function smolTransformPlugin() {
         for (const output of outputs) {
           let content = output.text
 
-          // Map core module requires to their internal bootstrap equivalents.
-          // Based on Module.builtinModules from Node.js v24.10.0.
-          // Format: [moduleName, bootstrapPath]
-          // Handles both 'node:x' and plain 'x' variants (except prefix-only modules).
-          const requireMappings = new Map([
-            // Core modules with internal equivalents.
-            ['child_process', 'internal/child_process'],
-            ['fs', 'fs'],
-            ['fs/promises', 'internal/fs/promises'],
-
-            // Stream internals.
-            ['stream', 'stream'],
-            ['stream/promises', 'internal/streams/promises'],
-            ['stream/web', 'internal/webstreams/readablestream'],
-
-            // Path variants.
-            ['path', 'path'],
-            ['path/posix', 'path'],
-            ['path/win32', 'path'],
-
-            // Core modules available at top level.
-            ['assert', 'assert'],
-            ['assert/strict', 'internal/assert/strict'],
-            ['async_hooks', 'async_hooks'],
-            ['buffer', 'buffer'],
-            ['cluster', 'cluster'],
-            ['console', 'console'],
-            ['constants', 'constants'],
-            ['crypto', 'crypto'],
-            ['dgram', 'dgram'],
-            ['diagnostics_channel', 'diagnostics_channel'],
-            ['dns', 'dns'],
-            ['dns/promises', 'dns/promises'],
-            ['domain', 'domain'],
-            ['events', 'events'],
-            ['http', 'http'],
-            ['http2', 'http2'],
-            ['https', 'https'],
-            ['inspector', 'inspector'],
-            ['inspector/promises', 'inspector/promises'],
-            ['module', 'module'],
-            ['net', 'net'],
-            ['os', 'os'],
-            ['perf_hooks', 'perf_hooks'],
-            ['process', 'process'],
-            ['punycode', 'punycode'],
-            ['querystring', 'querystring'],
-            ['readline', 'readline'],
-            ['readline/promises', 'readline/promises'],
-            ['repl', 'repl'],
-            ['string_decoder', 'string_decoder'],
-            ['sys', 'sys'],
-            ['timers', 'timers'],
-            ['timers/promises', 'timers/promises'],
-            ['tls', 'tls'],
-            ['trace_events', 'trace_events'],
-            ['tty', 'tty'],
-            ['url', 'url'],
-            ['util', 'util'],
-            ['util/types', 'internal/util/types'],
-            ['v8', 'v8'],
-            ['vm', 'vm'],
-            ['wasi', 'wasi'],
-            ['worker_threads', 'worker_threads'],
-            ['zlib', 'zlib'],
-          ])
-
-          // Prefix-only modules that have no unprefixed form.
-          // These ONLY support node:* syntax.
-          const prefixOnlyModules = new Set([
-            'node:sea',
-            'node:sqlite',
-            'node:test',
-            'node:test/reporters',
-          ])
+          // Replace Unicode property escapes with explicit character ranges.
+          // This is necessary for Node.js built without ICU (--with-intl=none).
+          content = replaceUnicodeProperties(content)
 
           // Replace require("node:X") and require("X") with correct bootstrap path.
           for (const [moduleName, bootstrapPath] of requireMappings) {
