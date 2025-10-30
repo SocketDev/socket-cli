@@ -26,7 +26,9 @@ function generateDatetimeVersion(platform, arch, tool = 'cli') {
 
   try {
     const basePackage = JSON.parse(require('fs').readFileSync(basePackagePath, 'utf-8'))
-    baseVersion = basePackage.version || '0.0.0'
+    let version = basePackage.version || '0.0.0'
+    // Remove placeholder suffix if present.
+    baseVersion = version.replace(/-generated-by-publish-socketbin$/, '')
   } catch {
     // Fallback to 0.0.0 if package doesn't exist yet.
   }
