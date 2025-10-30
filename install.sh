@@ -67,23 +67,24 @@ detect_platform() {
   echo "${os}-${arch}"
 }
 
-# Get the latest release version from GitHub.
+# Get the latest version from npm registry.
 get_latest_version() {
+  local package_name="$1"
   local version
 
-  # Try using curl with GitHub API.
+  # Try using curl with npm registry API.
   if command -v curl &> /dev/null; then
-    version=$(curl -fsSL https://api.github.com/repos/SocketDev/socket-cli/releases/latest | grep -o '"tag_name": *"[^"]*"' | sed 's/"tag_name": *"\([^"]*\)"/\1/')
+    version=$(curl -fsSL "https://registry.npmjs.org/${package_name}/latest" | grep -o '"version": *"[^"]*"' | head -1 | sed 's/"version": *"\([^"]*\)"/\1/')
   # Fallback to wget.
   elif command -v wget &> /dev/null; then
-    version=$(wget -qO- https://api.github.com/repos/SocketDev/socket-cli/releases/latest | grep -o '"tag_name": *"[^"]*"' | sed 's/"tag_name": *"\([^"]*\)"/\1/')
+    version=$(wget -qO- "https://registry.npmjs.org/${package_name}/latest" | grep -o '"version": *"[^"]*"' | head -1 | sed 's/"version": *"\([^"]*\)"/\1/')
   else
     error "Neither curl nor wget found. Please install one of them."
     exit 1
   fi
 
   if [ -z "$version" ]; then
-    error "Failed to fetch latest version from GitHub"
+    error "Failed to fetch latest version from npm registry"
     exit 1
   fi
 
@@ -121,15 +122,17 @@ install_socket_cli() {
   platform=$(detect_platform)
   success "Platform detected: $platform"
 
+  # Construct package name.
+  package_name="@socketbin/cli-${platform}"
+
   info "Fetching latest version..."
-  version=$(get_latest_version)
+  version=$(get_latest_version "$package_name")
   success "Latest version: $version"
 
-  # Construct package name and download URL.
-  package_name="@socketbin/cli-${platform}"
-  download_url="https://github.com/SocketDev/socket-cli/releases/download/${version}/socketbin-cli-${platform}.tgz"
+  # Construct download URL from npm registry.
+  download_url="https://registry.npmjs.org/${package_name}/-/cli-${platform}-${version}.tgz"
 
-  info "Downloading Socket CLI from $download_url"
+  info "Downloading Socket CLI from npm registry"
 
   # Create DLX directory structure.
   dlx_dir="${HOME}/.socket/_dlx"
