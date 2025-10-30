@@ -3,6 +3,9 @@
 
 import { pathToFileURL } from 'node:url'
 
+import { render } from 'ink'
+import React from 'react'
+
 /**
  * Run the Ink ThreatFeedApp with data from stdin.
  */
@@ -15,9 +18,7 @@ async function main() {
   const input = Buffer.concat(chunks).toString('utf8')
   const data = JSON.parse(input)
 
-  // Dynamically import ESM modules.
-  const React = await import('react')
-  const { render } = await import('ink')
+  // Dynamic import is needed here because ThreatFeedApp.tsx gets compiled to .js at build time.
   const { ThreatFeedApp } = await import(
     pathToFileURL(new URL('./ThreatFeedApp.js', import.meta.url).pathname).href
   )

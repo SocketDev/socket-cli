@@ -34,6 +34,7 @@ import {
 } from '../config.mts'
 import { isDebug } from '../debug.mts'
 import { tildify } from '../fs/home-path.mts'
+import { showCategoryHelp, showInteractiveHelp } from './interactive-help.mts'
 import { getFlagListOutput, getHelpListOutput } from '../output/formatting.mts'
 import { spawnSocketPython } from '../python/standalone.mts'
 import { getVisibleTokenPrefix } from '../socket/sdk.mjs'
@@ -881,14 +882,12 @@ export async function meowWithSubcommands(
       process.env['CI'] !== 'true'
 
     if (shouldShowInteractive) {
-      // Show interactive help for root --help command
-      const { showInteractiveHelp } = await import('./interactive-help.mts')
+      // Show interactive help for root --help command.
       await showInteractiveHelp()
       // eslint-disable-next-line n/no-process-exit
       process.exit(0)
     } else if (helpCategory) {
-      // Show specific category help
-      const { showCategoryHelp } = await import('./interactive-help.mts')
+      // Show specific category help.
       const found = showCategoryHelp(helpCategory)
       if (!found) {
         logger.error(`Unknown help category: ${helpCategory}`)
