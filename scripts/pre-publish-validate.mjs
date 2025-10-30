@@ -153,7 +153,7 @@ async function validateDistStructure() {
   }
 
   // Required files in dist.
-  const requiredFiles = ['cli.js', 'package.json']
+  const requiredFiles = ['index.js', 'cli.js.bz', 'package.json']
   for (const file of requiredFiles) {
     const filePath = path.join(distPath, file)
     if (!(await fileExists(filePath))) {
@@ -161,15 +161,17 @@ async function validateDistStructure() {
     }
   }
 
-  // Check CLI file size (sanity check).
-  const cliPath = path.join(distPath, 'cli.js')
-  if (await fileExists(cliPath)) {
-    const stats = await fs.stat(cliPath)
+  // Check CLI bundle size (sanity check).
+  const cliBzPath = path.join(distPath, 'cli.js.bz')
+  if (await fileExists(cliBzPath)) {
+    const stats = await fs.stat(cliBzPath)
     const sizeMB = stats.size / 1_024 / 1_024
 
-    if (sizeMB < 5) {
-      warnings.push(`CLI bundle is suspiciously small: ${sizeMB.toFixed(2)} MB`)
-    } else if (sizeMB > 20) {
+    if (sizeMB < 1) {
+      warnings.push(
+        `CLI bundle is suspiciously small: ${sizeMB.toFixed(2)} MB`,
+      )
+    } else if (sizeMB > 3) {
       warnings.push(
         `CLI bundle is larger than expected: ${sizeMB.toFixed(2)} MB`,
       )
