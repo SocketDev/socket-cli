@@ -1,6 +1,7 @@
 /**
- * @fileoverview Generates package.json for @socketbin/* binary packages.
- * Used in CI to create the package structure for each platform binary.
+ * @fileoverview Prepares @socketbin/* binary packages for publishing.
+ * Updates package.json with version and buildMethod, removes private field,
+ * and copies the binary to the bin/ directory.
  */
 
 import { promises as fs } from 'node:fs'
@@ -69,7 +70,7 @@ const {
 
 if (!platform || !arch) {
   logger.error(
-    'Usage: generate-binary-package.mjs --platform=darwin --arch=arm64 [--version=0.0.0-20250122.143052] [--method=smol]',
+    'Usage: prepublish-socketbin.mjs --platform=darwin --arch=arm64 [--version=0.0.0-20250122.143052] [--method=smol]',
   )
   process.exit(1)
 }

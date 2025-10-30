@@ -229,9 +229,9 @@ jobs:
           echo "Downloaded binaries:"
           ls -la dist/sea/
 
-      - name: Generate and validate Linux x64
+      - name: Prepare and validate Linux x64
         run: |
-          node scripts/generate-binary-package.mjs \
+          node scripts/prepublish-socketbin.mjs \
             --platform=linux --arch=x64 \
             --version=${{ steps.version.outputs.version }} \
             --method=${{ inputs.method }}
@@ -242,10 +242,10 @@ jobs:
           cd packages/socketbin-cli-linux-x64
           npm publish --provenance --access public
 
-      - name: Generate and publish Linux ARM64
+      - name: Prepare and publish Linux ARM64
         if: ${{ !inputs.dry-run }}
         run: |
-          node scripts/generate-binary-package.mjs \
+          node scripts/prepublish-socketbin.mjs \
             --platform=linux --arch=arm64 \
             --version=${{ steps.version.outputs.version }} \
             --method=${{ inputs.method }}
@@ -253,10 +253,10 @@ jobs:
           cd packages/socketbin-cli-linux-arm64
           npm publish --provenance --access public
 
-      - name: Generate and publish Alpine x64
+      - name: Prepare and publish Alpine x64
         if: ${{ !inputs.dry-run }}
         run: |
-          node scripts/generate-binary-package.mjs \
+          node scripts/prepublish-socketbin.mjs \
             --platform=alpine --arch=x64 \
             --version=${{ steps.version.outputs.version }} \
             --method=${{ inputs.method }}
@@ -264,10 +264,10 @@ jobs:
           cd packages/socketbin-cli-alpine-x64
           npm publish --provenance --access public
 
-      - name: Generate and publish Alpine ARM64
+      - name: Prepare and publish Alpine ARM64
         if: ${{ !inputs.dry-run }}
         run: |
-          node scripts/generate-binary-package.mjs \
+          node scripts/prepublish-socketbin.mjs \
             --platform=alpine --arch=arm64 \
             --version=${{ steps.version.outputs.version }} \
             --method=${{ inputs.method }}
@@ -275,10 +275,10 @@ jobs:
           cd packages/socketbin-cli-alpine-arm64
           npm publish --provenance --access public
 
-      - name: Generate and publish macOS x64
+      - name: Prepare and publish macOS x64
         if: ${{ !inputs.dry-run }}
         run: |
-          node scripts/generate-binary-package.mjs \
+          node scripts/prepublish-socketbin.mjs \
             --platform=darwin --arch=x64 \
             --version=${{ steps.version.outputs.version }} \
             --method=${{ inputs.method }}
@@ -286,10 +286,10 @@ jobs:
           cd packages/socketbin-cli-darwin-x64
           npm publish --provenance --access public
 
-      - name: Generate and publish macOS ARM64
+      - name: Prepare and publish macOS ARM64
         if: ${{ !inputs.dry-run }}
         run: |
-          node scripts/generate-binary-package.mjs \
+          node scripts/prepublish-socketbin.mjs \
             --platform=darwin --arch=arm64 \
             --version=${{ steps.version.outputs.version }} \
             --method=${{ inputs.method }}
@@ -297,10 +297,10 @@ jobs:
           cd packages/socketbin-cli-darwin-arm64
           npm publish --provenance --access public
 
-      - name: Generate and publish Windows x64
+      - name: Prepare and publish Windows x64
         if: ${{ !inputs.dry-run }}
         run: |
-          node scripts/generate-binary-package.mjs \
+          node scripts/prepublish-socketbin.mjs \
             --platform=win32 --arch=x64 \
             --version=${{ steps.version.outputs.version }} \
             --method=${{ inputs.method }}
@@ -308,10 +308,10 @@ jobs:
           cd packages/socketbin-cli-win32-x64
           npm publish --provenance --access public
 
-      - name: Generate and publish Windows ARM64
+      - name: Prepare and publish Windows ARM64
         if: ${{ !inputs.dry-run }}
         run: |
-          node scripts/generate-binary-package.mjs \
+          node scripts/prepublish-socketbin.mjs \
             --platform=win32 --arch=arm64 \
             --version=${{ steps.version.outputs.version }} \
             --method=${{ inputs.method }}
