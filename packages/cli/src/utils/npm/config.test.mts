@@ -1,30 +1,24 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Create mock constructor and instance in hoisted scope
-const { MockNpmConfig, mockNpmConfigInstance } = vi.hoisted(() => {
-  const mockNpmConfigInstance = {
-    load: vi.fn().mockResolvedValue(undefined),
-    flat: {
-      registry: 'https://registry.npmjs.org/',
-      cache: '/home/user/.npm',
-      prefix: '/usr/local',
-    },
-  }
-
-  // Create a proper constructor function that vitest can mock
-  function MockNpmConfig() {
-    return mockNpmConfigInstance
-  }
-
-  return { MockNpmConfig: vi.fn(MockNpmConfig), mockNpmConfigInstance }
-})
+// Create mock instance that will be returned by constructor
+const mockNpmConfigInstance = {
+  load: vi.fn().mockResolvedValue(undefined),
+  flat: {
+    registry: 'https://registry.npmjs.org/',
+    cache: '/home/user/.npm',
+    prefix: '/usr/local',
+  },
+}
 
 // Mock @npmcli/config.
 vi.mock('@npmcli/config', () => ({
-  default: MockNpmConfig,
+  default: vi.fn(function () {
+    return mockNpmConfigInstance
+  }),
 }))
 
 import { getNpmConfig } from './config.mts'
+import NpmConfig from '@npmcli/config'
 
 // Mock @npmcli/config/lib/definitions.
 vi.mock('@npmcli/config/lib/definitions', () => ({
@@ -38,11 +32,15 @@ vi.mock('./paths.mts', () => ({
   getNpmDirPath: vi.fn(() => '/usr/local/lib/node_modules/npm'),
 }))
 
+const MockNpmConfig = vi.mocked(NpmConfig)
+
 describe('npm-config utilities', () => {
   beforeEach(() => {
     // Clear mock calls and restore original implementation
     MockNpmConfig.mockClear()
-    MockNpmConfig.mockImplementation(() => mockNpmConfigInstance)
+    MockNpmConfig.mockImplementation(function () {
+      return mockNpmConfigInstance
+    })
     vi.mocked(mockNpmConfigInstance.load).mockClear()
   })
 
@@ -143,7 +141,9 @@ describe('npm-config utilities', () => {
         flat: { test: 'value' },
       }
       vi.mocked((await import('@npmcli/config')).default).mockImplementation(
-        () => mockConfigInstance,
+        function () {
+          return mockConfigInstance
+        },
       )
 
       await getNpmConfig()
