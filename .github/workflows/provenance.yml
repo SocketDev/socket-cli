@@ -31,13 +31,13 @@ jobs:
       - uses: SocketDev/socket-registry/.github/actions/setup@d8ff3b0581d799466cfbf150f715c1a4bf9f84a5 # main
         with:
           scope: '@socketsecurity'
-      - name: Cache build artifacts (external files)
+      - name: Cache yoga-layout WASM
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
-          path: packages/cli/external
-          key: socket-cli-external-${{ hashFiles('packages/cli/package.json') }}
+          path: packages/yoga-layout/build/wasm
+          key: yoga-wasm-${{ hashFiles('packages/yoga-layout/package.json', 'packages/yoga-layout/yoga/**') }}
           restore-keys: |
-            socket-cli-external-
+            yoga-wasm-
       - run: npm install -g npm@latest
       - run: pnpm install
 
