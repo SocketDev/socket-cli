@@ -175,7 +175,7 @@ jobs:
           AI_HASH=$(find packages/socketbin-cli-ai -type f \( -name "*.mjs" -o -name "*.ts" \) | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
           echo "ai-hash=$AI_HASH" >> $GITHUB_OUTPUT
 
-          ONNX_HASH=$(find packages/onnx-runtime-builder -type f \( -name "*.mjs" -o -name "*.patch" \) | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
+          ONNX_HASH=$(find packages/onnxruntime -type f \( -name "*.mjs" -o -name "*.patch" \) | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
           echo "onnx-hash=$ONNX_HASH" >> $GITHUB_OUTPUT
 
       - name: Restore Yoga Layout WASM cache
@@ -200,7 +200,7 @@ jobs:
         id: onnx-cache
         uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
-          path: packages/onnx-runtime-builder/dist
+          path: packages/onnxruntime/dist
           key: onnx-runtime-${{ steps.wasm-cache-keys.outputs.onnx-hash }}
           restore-keys: onnx-runtime-
           enableCrossOsArchive: true
@@ -241,7 +241,7 @@ jobs:
         id: onnx-cache-valid
         shell: bash
         run: |
-          if [ -f "packages/onnx-runtime-builder/dist/onnxruntime-web.wasm" ]; then
+          if [ -f "packages/onnxruntime/dist/onnxruntime-web.wasm" ]; then
             echo "valid=true" >> $GITHUB_OUTPUT
             echo "✓ ONNX Runtime cache valid"
           else
@@ -329,9 +329,9 @@ jobs:
           if [ "${{ steps.onnx-cache-valid.outputs.valid }}" != "true" ]; then
             echo "::group::Building ONNX Runtime (20-30 minutes)"
             if [ "${{ inputs.force }}" = "true" ]; then
-              pnpm --filter @socketsecurity/onnx-runtime-builder run build -- --force
+              pnpm --filter @socketsecurity/onnxruntime run build -- --force
             else
-              pnpm --filter @socketsecurity/onnx-runtime-builder run build
+              pnpm --filter @socketsecurity/onnxruntime run build
             fi
             echo "::endgroup::"
           fi
@@ -368,7 +368,7 @@ jobs:
           ls -lh packages/socketbin-cli-ai/dist/ 2>/dev/null || echo "  ❌ Directory not found"
           echo ""
           echo "ONNX Runtime:"
-          ls -lh packages/onnx-runtime-builder/dist/ 2>/dev/null || echo "  ❌ Directory not found"
+          ls -lh packages/onnxruntime/dist/ 2>/dev/null || echo "  ❌ Directory not found"
           echo ""
 
           # Fail fast if critical Yoga Layout WASM is missing
