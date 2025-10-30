@@ -4,6 +4,10 @@
   "description": "Socket CLI binary",
   "private": true,
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SocketDev/socket-cli"
+  },
   "bin": {
     "socket": "./bin/socket"
   },
