@@ -198,8 +198,8 @@ importers:
         specifier: 2.0.0
         version: 2.0.0(typescript@5.9.3)
       '@socketsecurity/sdk':
-        specifier: 3.0.20
-        version: 3.0.20(typescript@5.9.3)
+        specifier: 3.0.21
+        version: 3.0.21(typescript@5.9.3)
       '@types/cmd-shim':
         specifier: 5.0.2
         version: 5.0.2
@@ -2383,8 +2383,8 @@ packages:
       typescript:
         optional: true
 
-  '@socketsecurity/sdk@3.0.20':
-    resolution: {integrity: sha512-C+qjrlYAGQaqVorMWtynE5/lN/TFtoCyYVfDDzy+pAFDC0h9ZkvZOuboz+uPXlL4DEjQKBuKchpaZyW9GqfWcg==}
+  '@socketsecurity/sdk@3.0.21':
+    resolution: {integrity: sha512-hZsMw5gRtPzjFy8CNTgln24qrlRGw1FQnzI6HG43OX9zpqhce1UPfSkBY4x0NJSgqa3x06XRKBN8MGuuq4G7gw==}
     engines: {node: '>=18', pnpm: '>=10.16.0'}
 
   '@standard-schema/spec@1.0.0':
@@ -7828,7 +7828,7 @@ snapshots:
     optionalDependencies:
       typescript: 5.9.3
 
-  '@socketsecurity/sdk@3.0.20(typescript@5.9.3)':
+  '@socketsecurity/sdk@3.0.21(typescript@5.9.3)':
     dependencies:
       '@socketsecurity/lib': 2.9.0(typescript@5.9.3)
     transitivePeerDependencies:
