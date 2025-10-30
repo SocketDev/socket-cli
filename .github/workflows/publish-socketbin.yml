@@ -234,18 +234,10 @@ jobs:
         with:
           path: dist/sea
           pattern: binary-*
+          merge-multiple: true
 
-      - name: Organize binaries
+      - name: Verify downloaded binaries
         run: |
-          # Flatten directory structure from artifacts
-          for dir in dist/sea/binary-*; do
-            if [ -d "$dir" ]; then
-              mv "$dir"/* dist/sea/
-              rmdir "$dir"
-            fi
-          done
-
-          # List all binaries
           echo "Downloaded binaries:"
           ls -la dist/sea/
 
