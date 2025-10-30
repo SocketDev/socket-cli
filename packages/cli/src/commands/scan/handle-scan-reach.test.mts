@@ -90,9 +90,11 @@ describe('handleScanReach', () => {
     expect(mockPerformAnalysis).toHaveBeenCalledWith({
       cwd: '/project',
       orgSlug: 'test-org',
+      outputPath: undefined,
       packagePaths: ['/project/package.json', '/project/package-lock.json'],
       reachabilityOptions: { depth: 5 },
       spinner: expect.any(Object),
+      target: 'src',
       uploadManifests: true,
     })
     expect(mockOutput).toHaveBeenCalled()
