@@ -81,6 +81,9 @@
     "@babel/parser": "7.28.4",
     "@babel/traverse": "7.28.4",
     "@babel/types": "^7.28.5",
+    "ajv-dist": "8.17.1",
+    "@coana-tech/cli": "14.12.51",
+    "compromise": "14.14.4",
     "@gitbeaker/rest": "43.7.0",
     "@socketsecurity/build-infra": "workspace:*",
     "del": "8.0.1",
@@ -173,9 +176,5 @@
     "ignore-type-assertion": true,
     "ignore-files": "test/*",
     "strict": true
-  },
-  "dependencies": {
-    "ajv-dist": "8.17.1",
-    "compromise": "14.14.4"
   }
 }
