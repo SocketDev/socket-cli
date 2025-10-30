@@ -97,41 +97,65 @@ jobs:
           key: build-${{ matrix.platform }}-${{ matrix.arch }}
           max-size: 2G
 
-      - name: Generate build cache key
-        id: build-cache-key
+      - name: Generate build-deps cache key for smol
+        if: inputs.method == 'smol' || inputs.method == 'smol-sea'
+        id: smol-deps-cache-key
         shell: bash
         run: |
-          # Generate hash from build-affecting files (matches build-binaries.yml).
+          # Generate hash from bootstrap/socket packages (matches build-smol.yml).
           if [ "${{ matrix.os }}" = "windows" ]; then
-            HASH=$(find patches packages/node-smol-builder/patches packages/node-smol-builder/additions scripts -type f -name "*.patch" -o -name "*.mjs" -o -name "*.h" -o -name "*.c" -o -name "*.cc" | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
+            HASH=$(find packages/bootstrap packages/socket -type f \( -name "*.mts" -o -name "*.ts" -o -name "*.mjs" -o -name "*.js" -o -name "*.json" \) ! -path "*/node_modules/*" ! -path "*/dist/*" ! -path "*/build/*" | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
           else
-            HASH=$(find patches packages/node-smol-builder/patches packages/node-smol-builder/additions scripts -type f \( -name "*.patch" -o -name "*.mjs" -o -name "*.h" -o -name "*.c" -o -name "*.cc" \) | sort | xargs shasum -a 256 | shasum -a 256 | cut -d' ' -f1)
+            HASH=$(find packages/bootstrap packages/socket -type f \( -name "*.mts" -o -name "*.ts" -o -name "*.mjs" -o -name "*.js" -o -name "*.json" \) ! -path "*/node_modules/*" ! -path "*/dist/*" ! -path "*/build/*" | sort | xargs shasum -a 256 | shasum -a 256 | cut -d' ' -f1)
           fi
-          echo "hash=$HASH" >> $GITHUB_OUTPUT
-          echo "Build hash: $HASH"
+          echo "deps-hash=$HASH" >> $GITHUB_OUTPUT
 
-      - name: Restore smol binary from build-socketbin.yml cache
+      - name: Restore build-deps cache for smol
+        if: inputs.method == 'smol' || inputs.method == 'smol-sea'
+        id: smol-deps-cache
         uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        id: smol-cache
-        with:
-          path: packages/node-smol-builder/dist/socket-smol-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.os == 'windows' && '.exe' || '' }}
-          key: node-smol-${{ matrix.platform }}-${{ matrix.arch }}-${{ steps.build-cache-key.outputs.hash }}
-          restore-keys: node-smol-${{ matrix.platform }}-${{ matrix.arch }}-
-
-      - name: Cache compiled Node.js binary
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        id: binary-cache
         with:
           path: |
-            packages/node-smol-builder/build/out/Release/node
-            packages/node-smol-builder/build/out/Release/node.exe
-          key: node-binary-${{ matrix.platform }}-${{ matrix.arch }}-${{ steps.build-cache-key.outputs.hash }}
-          restore-keys: |
-            node-binary-${{ matrix.platform }}-${{ matrix.arch }}-
+            packages/bootstrap/dist/
+            packages/socket/dist/
+          key: build-deps-smol-${{ steps.smol-deps-cache-key.outputs.deps-hash }}
+          restore-keys: build-deps-smol-
+
+      - name: Build bootstrap package for smol
+        if: (inputs.method == 'smol' || inputs.method == 'smol-sea') && steps.smol-deps-cache.outputs.cache-hit != 'true'
+        run: pnpm --filter @socketsecurity/bootstrap run build
+
+      - name: Build socket package bootstrap for smol
+        if: (inputs.method == 'smol' || inputs.method == 'smol-sea') && steps.smol-deps-cache.outputs.cache-hit != 'true'
+        run: pnpm --filter socket run build
+
+      - name: Generate smol build cache key
+        if: inputs.method == 'smol' || inputs.method == 'smol-sea'
+        id: smol-cache-key
+        shell: bash
+        run: |
+          # Generate hash from patches and build scripts (matches build-smol.yml).
+          if [ "${{ matrix.os }}" = "windows" ]; then
+            PATCHES_HASH=$(find patches packages/node-smol-builder/patches packages/node-smol-builder/additions scripts -type f \( -name "*.patch" -o -name "*.mjs" -o -name "*.h" -o -name "*.c" -o -name "*.cc" \) | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
+            COMBINED_HASH=$(echo "$PATCHES_HASH-${{ steps.smol-deps-cache-key.outputs.deps-hash }}" | sha256sum | cut -d' ' -f1)
+          else
+            PATCHES_HASH=$(find patches packages/node-smol-builder/patches packages/node-smol-builder/additions scripts -type f \( -name "*.patch" -o -name "*.mjs" -o -name "*.h" -o -name "*.c" -o -name "*.cc" \) | sort | xargs shasum -a 256 | shasum -a 256 | cut -d' ' -f1)
+            COMBINED_HASH=$(echo "$PATCHES_HASH-${{ steps.smol-deps-cache-key.outputs.deps-hash }}" | shasum -a 256 | cut -d' ' -f1)
+          fi
+          echo "hash=$COMBINED_HASH" >> $GITHUB_OUTPUT
+
+      - name: Restore smol binary cache
+        if: inputs.method == 'smol' || inputs.method == 'smol-sea'
+        id: smol-cache
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: packages/node-smol-builder/dist/socket-smol-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.os == 'windows' && '.exe' || '' }}
+          key: node-smol-${{ matrix.platform }}-${{ matrix.arch }}-${{ steps.smol-cache-key.outputs.hash }}
+          restore-keys: node-smol-${{ matrix.platform }}-${{ matrix.arch }}-
 
       - name: Build smol Node.js binary
         id: build-smol
-        if: inputs.method == 'smol' || inputs.method == 'smol-sea'
+        if: (inputs.method == 'smol' || inputs.method == 'smol-sea') && steps.smol-cache.outputs.cache-hit != 'true'
         continue-on-error: true
         shell: bash
         run: |
@@ -141,7 +165,7 @@ jobs:
             --arch=${{ matrix.arch }}
 
       - name: Build smol binary (fallback with clean rebuild)
-        if: (inputs.method == 'smol' || inputs.method == 'smol-sea') && steps.build-smol.outcome == 'failure'
+        if: (inputs.method == 'smol' || inputs.method == 'smol-sea') && steps.smol-cache.outputs.cache-hit != 'true' && steps.build-smol.outcome == 'failure'
         shell: bash
         run: |
           echo "Initial smol build failed, attempting clean rebuild..."
