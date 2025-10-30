@@ -2,16 +2,15 @@
  * Build script for creating self-executable Socket CLI applications.
  * Uses Node.js Single Executable Application (SEA) feature.
  *
- * IMPORTANT: This builds a FULL SEA with the complete CLI embedded.
+ * IMPORTANT: This builds a SEA with minimal bootstrap (like smol-node).
  * The binary contains:
  * - Node.js runtime (~50MB)
- * - Full Socket CLI from packages/cli/dist/cli.js.bz (~1.7MB compressed, decompressed at build time)
- * - All dependencies and node_modules
+ * - Minimal bootstrap (~50KB) that downloads @socketsecurity/cli from npm on first run
  *
- * Expected binary size: ~110MB+ per platform.
+ * Expected binary size: ~50MB per platform (Node.js + tiny bootstrap).
  *
  * Prerequisites:
- * - Run `pnpm run build:cli` first to create packages/cli/dist/cli.js.bz
+ * - Run `pnpm --filter @socketsecurity/bootstrap run build` to create bootstrap-sea.js
  *
  * Supported platforms:
  * - Windows (x64, arm64)
@@ -24,12 +23,10 @@
  * - Build specific platform: node scripts/build.mjs --platform=darwin --arch=x64
  */
 
-import crypto from 'node:crypto'
 import { existsSync, promises as fs } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import url from 'node:url'
-import zlib from 'node:zlib'
 
 import { parseArgs } from '@socketsecurity/lib/argv/parse'
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
@@ -503,88 +500,24 @@ async function buildTarget(target, options) {
   const fuseSentinel = 'NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2'
 
   logger.log(
-    `\nBuilding full SEA for ${target.platform}-${target.arch}...`,
+    `\nBuilding minimal SEA for ${target.platform}-${target.arch}...`,
   )
-  logger.log('(Embedding full CLI from packages/cli/dist/cli.js.bz)')
+  logger.log('(Node.js + minimal bootstrap that downloads CLI from npm)')
 
-  // Use the compressed CLI from packages/cli/dist/cli.js.bz and decompress it.
-  const cliBzPath = normalizePath(
-    path.join(__dirname, '../../..', 'packages', 'cli', 'dist', 'cli.js.bz'),
-  )
-
-  // Check if CLI needs to be built or validated.
-  const checksumPath = normalizePath(
-    path.join(__dirname, '../../..', 'packages', 'cli', 'dist', 'cli.js.bz.sha256'),
+  // Use the bootstrap from packages/bootstrap/dist/bootstrap-sea.js.
+  const bootstrapPath = normalizePath(
+    path.join(__dirname, '../../..', 'packages', 'bootstrap', 'dist', 'bootstrap-sea.js'),
   )
 
-  let needsBuild = false
-
-  if (!existsSync(cliBzPath)) {
-    needsBuild = true
+  // Check if bootstrap needs to be built.
+  if (!existsSync(bootstrapPath)) {
     logger.log('')
-    logger.log(`${colors.blue('ℹ')} CLI not found, building @socketsecurity/cli package...`)
-  } else if (!existsSync(checksumPath)) {
-    needsBuild = true
-    logger.log('')
-    logger.log(`${colors.yellow('⚠')} CLI checksum not found, rebuilding @socketsecurity/cli package...`)
-  } else {
-    // Validate checksum.
-    try {
-      const checksumContent = (await fs.readFile(checksumPath, 'utf8')).trim()
-      const expectedHash = checksumContent.split(/\s+/)[0]
-      const cliData = await fs.readFile(cliBzPath)
-      const actualHash = crypto.createHash('sha256').update(cliData).digest('hex')
-
-      if (expectedHash !== actualHash) {
-        needsBuild = true
-        logger.log('')
-        logger.log(`${colors.yellow('⚠')} CLI checksum mismatch, rebuilding @socketsecurity/cli package...`)
-        logger.log(`  Expected: ${expectedHash}`)
-        logger.log(`  Actual:   ${actualHash}`)
-      } else {
-        // Check if source files are newer than the compressed artifact (freshness check).
-        const cliSrcDir = normalizePath(
-          path.join(__dirname, '../../..', 'packages', 'cli', 'src'),
-        )
-        const cliBzStat = await fs.stat(cliBzPath)
-
-        // Check if any source file is newer than the compressed artifact.
-        let hasNewerSources = false
-        try {
-          const srcFiles = await fs.readdir(cliSrcDir, { recursive: true })
-          for (const file of srcFiles) {
-            const filePath = path.join(cliSrcDir, file)
-            const stat = await fs.stat(filePath)
-
-            if (stat.isFile() && stat.mtime > cliBzStat.mtime) {
-              hasNewerSources = true
-              break
-            }
-          }
-        } catch {
-          // Ignore stat errors - validation succeeded so we're OK to continue.
-        }
-
-        if (hasNewerSources) {
-          needsBuild = true
-          logger.log('')
-          logger.log(`${colors.yellow('⚠')} CLI source files modified, rebuilding @socketsecurity/cli package...`)
-        }
-      }
-    } catch (e) {
-      needsBuild = true
-      logger.log('')
-      logger.log(`${colors.yellow('⚠')} CLI validation failed, rebuilding @socketsecurity/cli package...`)
-      logger.log(`  Error: ${e.message}`)
-    }
-  }
-
-  if (needsBuild) {
+    logger.log(`${colors.blue('ℹ')} Bootstrap not found, building @socketsecurity/bootstrap package...`)
     logger.log('')
 
     const result = await spawn(
       'pnpm',
-      ['--filter', '@socketsecurity/cli', 'run', 'build'],
+      ['--filter', '@socketsecurity/bootstrap', 'run', 'build'],
       {
         cwd: path.join(__dirname, '../../..'),
         shell: WIN32,
@@ -594,32 +527,24 @@ async function buildTarget(target, options) {
 
     if (result.code !== 0) {
       throw new Error(
-        `Failed to build @socketsecurity/cli. Exit code: ${result.code}`,
+        `Failed to build @socketsecurity/bootstrap. Exit code: ${result.code}`,
       )
     }
 
-    // Verify CLI was built.
-    if (!existsSync(cliBzPath)) {
+    // Verify bootstrap was built.
+    if (!existsSync(bootstrapPath)) {
       throw new Error(
-        `CLI build succeeded but compressed file not found at ${cliBzPath}`,
-      )
-    }
-
-    // Verify checksum was created.
-    if (!existsSync(checksumPath)) {
-      throw new Error(
-        `CLI build succeeded but checksum file not found at ${checksumPath}`,
+        `Bootstrap build succeeded but file not found at ${bootstrapPath}`,
       )
     }
 
     logger.log('')
   }
 
-  logger.log(`Decompressing CLI from: ${cliBzPath}`)
+  logger.log(`Using bootstrap from: ${bootstrapPath}`)
 
-  // Read and decompress the brotli-compressed CLI.
-  const compressedCli = await fs.readFile(cliBzPath)
-  const cliCode = zlib.brotliDecompressSync(compressedCli).toString('utf8')
+  // Read the bootstrap code.
+  const bootstrapCode = await fs.readFile(bootstrapPath, 'utf8')
 
   // Ensure output directory exists.
   await fs.mkdir(outputDir, { recursive: true })
@@ -628,8 +553,8 @@ async function buildTarget(target, options) {
   const outputPath = normalizePath(path.join(outputDir, target.outputName))
 
   // Check if we can use cached SEA build.
-  // Hash the CLI bundle and build script since those are the inputs.
-  const sourcePaths = [cliBzPath, url.fileURLToPath(import.meta.url)]
+  // Hash the bootstrap and build script since those are the inputs.
+  const sourcePaths = [bootstrapPath, url.fileURLToPath(import.meta.url)]
 
   // Store hash in centralized build/.cache/ directory.
   const cacheDir = normalizePath(path.join(__dirname, '../build/.cache'))
@@ -649,77 +574,15 @@ async function buildTarget(target, options) {
     // Cache hit! SEA binary is up to date.
     logger.log('')
     logger.log(`${colors.green('✓')} Using cached SEA binary`)
-    logger.log('CLI bundle unchanged since last build.')
+    logger.log('Bootstrap unchanged since last build.')
     logger.log('')
     logger.log(`Binary: ${outputPath}`)
     logger.log('')
     return
   }
 
-  // Create a modified copy of the CLI with SEA compatibility fixes.
-  const modifiedCliPath = normalizePath(path.join(outputDir, 'cli-modified.js'))
-  let cliContent = cliCode
-
-  // Fix 1: Replace the sentinel constant with a split string that won't match the sentinel search.
-  cliContent = cliContent.replace(
-    /"NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2"/g,
-    '"NODE_SEA" + "_FUSE_fce680ab2cc467b6e072b8b5df1996b2"',
-  )
-
-  // Fix 2: Add defensive checks for require.resolve in SEA context.
-  // Replace: if (require.resolve.paths)
-  // With: if (require.resolve && require.resolve.paths)
-  cliContent = cliContent.replace(
-    /if\s*\(\s*require\.resolve\.paths\s*\)/g,
-    'if (require.resolve && require.resolve.paths)',
-  )
-
-  // Fix 3: Add SEA compatibility polyfill after shebang.
-  const seaPolyfill = `
-// SEA Compatibility Polyfill
-if (typeof require !== 'undefined' && (!require.resolve || !require.resolve.paths)) {
-  if (!require.resolve) {
-    require.resolve = function(id, options) {
-      // Basic resolve that returns the id for SEA context.
-      return id;
-    };
-  }
-  if (!require.resolve.paths) {
-    require.resolve.paths = function(request) {
-      // Return empty array for SEA context where path resolution isn't available.
-      return [];
-    };
-  }
-}
-`
-
-  // Insert polyfill after shebang (if present) or at the beginning.
-  let modifiedContent
-  if (cliContent.startsWith('#!')) {
-    const firstNewline = cliContent.indexOf('\n')
-    const shebang = cliContent.substring(0, firstNewline + 1)
-    const rest = cliContent.substring(firstNewline + 1)
-    modifiedContent = shebang + seaPolyfill + rest
-  } else {
-    modifiedContent = seaPolyfill + cliContent
-  }
-
-  await fs.writeFile(modifiedCliPath, modifiedContent)
-
-  // Verify transformations were applied correctly.
-  logger.log('Verifying SEA compatibility transformations...')
-  const verifyScript = normalizePath(path.join(__dirname, 'verify-sea-transforms.mjs'))
-  try {
-    await spawn('node', [verifyScript], { stdio: 'pipe' })
-    logger.log(`${colors.green('✓')} All transformations verified`)
-  } catch (error) {
-    logger.error(`${colors.yellow('⚠')} Transformation verification failed`)
-    logger.error('  The build will continue, but runtime issues may occur')
-    // Don't fail the build - polyfill provides runtime safety net.
-  }
-
-  // Use the modified CLI as the entry point.
-  const entryPoint = modifiedCliPath
+  // Use the bootstrap directly as the entry point (no modifications needed).
+  const entryPoint = bootstrapPath
 
   // Download Node.js binary for target platform.
   const nodeBinary = await downloadNodeBinary(
@@ -749,18 +612,8 @@ if (typeof require !== 'undefined' && (!require.resolve || !require.resolve.path
     const sourceHashComment = await generateHashComment(sourcePaths)
     await fs.writeFile(hashFilePath, sourceHashComment, 'utf-8')
 
-    // Clean up temporary files using trash.
-    const filesToClean = [
-      blobPath,
-      entryPoint.endsWith('.compiled.mjs') ? entryPoint : null,
-      entryPoint.endsWith('.mjs') && !entryPoint.endsWith('.compiled.mjs')
-        ? entryPoint
-        : null,
-    ].filter(Boolean)
-
-    if (filesToClean.length > 0) {
-      await safeDelete(filesToClean).catch(() => {})
-    }
+    // Clean up temporary files (just the blob, bootstrap is preserved).
+    await safeDelete(blobPath).catch(() => {})
   } finally {
     // Clean up config.
     await safeDelete(configPath).catch(() => {})
@@ -787,10 +640,10 @@ async function main() {
     strict: false,
   })
 
-  logger.log('Socket CLI Self-Executable Builder')
-  logger.log('====================================')
+  logger.log('Socket CLI SEA Builder')
+  logger.log('======================')
   logger.log(
-    'Building THIN WRAPPER that downloads @socketsecurity/cli on first use',
+    'Building SEA with minimal bootstrap (downloads @socketsecurity/cli on first use)',
   )
 
   // Generate and filter targets based on options.
@@ -890,8 +743,8 @@ async function main() {
   logger.log(`\n${colors.green('✓')} Build complete!`)
   logger.log(`Output directory: ${options.outputDir || 'dist/sea'}`)
   logger.log(`Variant directory: ${binsDir}`)
-  logger.log('\nNOTE: These binaries are thin wrappers that will download')
-  logger.log('@socketsecurity/cli from npm on first run.')
+  logger.log('\nNOTE: These are minimal SEA binaries (Node.js + bootstrap)')
+  logger.log('that download @socketsecurity/cli from npm on first run.')
 }
 
 // Run if executed directly.
