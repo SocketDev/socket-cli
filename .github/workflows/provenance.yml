@@ -89,7 +89,7 @@ jobs:
       - name: Prepare @socketsecurity/cli-with-sentry package for publishing
         run: node scripts/prepare-package-for-publish.mjs packages/cli-with-sentry ${{ env.SOCKET_VERSION }}
       - name: Build @socketsecurity/cli-with-sentry package
-        run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 INLINED_SOCKET_CLI_SENTRY_BUILD=1 pnpm run build
+        run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 INLINED_SOCKET_CLI_SENTRY_BUILD=1 pnpm run build --target cli-sentry
         env:
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
       - name: Validate @socketsecurity/cli-with-sentry package
