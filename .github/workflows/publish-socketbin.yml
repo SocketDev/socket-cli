@@ -319,54 +319,10 @@ jobs:
           cd packages/socketbin-cli-win32-arm64
           npm publish --provenance --access public
 
-      - name: Build binaries for @socketbin/cli-ai
-        id: build-binaries
-        continue-on-error: true
-        run: |
-          if [ -d "packages/cli-ai-builder" ]; then
-            echo "Building binaries..."
-            cd packages/cli-ai-builder
-            pnpm run build
-            cd ../..
-
-            echo "Copying binaries to @socketbin/cli-ai..."
-            mkdir -p packages/socketbin-cli-ai/dist
-            cp packages/cli-ai-builder/dist/*.bz packages/socketbin-cli-ai/dist/ || true
-            cp packages/cli-ai-builder/dist/*.js packages/socketbin-cli-ai/dist/ || true
-
-            echo "✓ Binaries built and copied"
-            echo "has-binaries=true" >> $GITHUB_OUTPUT
-          else
-            echo "⚠️  Binary builder not found, publishing placeholder package"
-            echo "has-binaries=false" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Update and publish @socketbin/cli-ai version
-        if: ${{ !inputs.dry-run }}
-        run: |
-          cd packages/socketbin-cli-ai
-          npm version ${{ steps.version.outputs.version }} --no-git-tag-version
-
-          if [ "${{ steps.build-binaries.outputs.has-binaries }}" = "true" ]; then
-            echo "Publishing @socketbin/cli-ai with binaries"
-          else
-            echo "Publishing @socketbin/cli-ai placeholder (no binaries)"
-          fi
-
-          npm publish --provenance --access public
-
       - name: Prime npm cache for CI (dry-run)
         if: ${{ inputs.dry-run }}
         run: |
           echo "🔄 Priming npm cache for CI e2e tests..."
-
-          # Prime cache for @socketbin/cli-ai (if binaries were built)
-          if [ "${{ steps.build-binaries.outputs.has-binaries }}" = "true" ]; then
-            echo "Priming @socketbin/cli-ai with binaries..."
-            npm pack packages/socketbin-cli-ai
-          else
-            echo "Skipping @socketbin/cli-ai cache prime (no binaries built)"
-          fi
 
           # Prime cache for @coana-tech/cli
           if [ -n "$INLINED_SOCKET_CLI_COANA_VERSION" ]; then
@@ -383,9 +339,6 @@ jobs:
           echo ""
           echo "Generated packages:"
           find packages/binaries -name package.json -exec echo {} \; -exec jq -r '.name + "@" + .version' {} \;
-          echo ""
-          echo "Would have published:"
-          echo "  @socketbin/cli-ai@${{ steps.version.outputs.version }}"
           echo ""
           echo "💾 Cache primed for CI e2e tests"
 
