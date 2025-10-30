@@ -5,7 +5,7 @@ catalog:
   '@babel/parser': 7.28.4
   '@babel/traverse': 7.28.4
   '@socketsecurity/config': 3.0.1
-  '@socketsecurity/lib': 2.8.3
+  '@socketsecurity/lib': 2.8.4
   '@socketsecurity/registry': 2.0.0
   '@socketsecurity/sdk': 3.0.18
   del-cli: 6.0.0
