@@ -84,16 +84,16 @@ async function main() {
         command: 'pnpm',
         args: ['run', 'clean:dist'],
       },
-      {
-        name: 'Extract MiniLM Model',
-        command: 'node',
-        args: ['scripts/extract-minilm-model.mjs'],
-      },
-      {
-        name: 'Extract ONNX Runtime',
-        command: 'node',
-        args: ['scripts/extract-onnx-runtime.mjs'],
-      },
+      // {
+      //   name: 'Extract MiniLM Model',
+      //   command: 'node',
+      //   args: ['scripts/extract-minilm-model.mjs'],
+      // },
+      // {
+      //   name: 'Extract ONNX Runtime',
+      //   command: 'node',
+      //   args: ['scripts/extract-onnx-runtime.mjs'],
+      // },
       {
         name: 'Extract Yoga WASM',
         command: 'node',
