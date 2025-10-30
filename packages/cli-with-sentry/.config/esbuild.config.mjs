@@ -19,7 +19,7 @@ const cliPath = path.join(__dirname, '..', '..', 'cli')
 const config = {
   ...baseConfig,
   entryPoints: [path.join(cliPath, 'src/cli-dispatch-with-sentry.mts')],
-  outfile: path.join(rootPath, 'dist/cli.js'),
+  outfile: path.join(rootPath, 'build/cli.js'),
 
   // Override define to enable Sentry build.
   define: {
