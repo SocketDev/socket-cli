@@ -23,8 +23,14 @@ const outputPath = path.join(rootPath, 'build/onnx-sync.mjs')
 
 // Source files from custom onnxruntime package.
 const onnxPackageRoot = path.join(rootPath, '../onnxruntime')
-const onnxWasmFile = path.join(onnxPackageRoot, 'build/wasm/ort-wasm-simd-threaded.wasm')
-const onnxJsFile = path.join(onnxPackageRoot, 'build/wasm/ort-wasm-simd-threaded.js')
+const onnxWasmFile = path.join(
+  onnxPackageRoot,
+  'build/wasm/ort-wasm-simd-threaded.wasm',
+)
+const onnxJsFile = path.join(
+  onnxPackageRoot,
+  'build/wasm/ort-wasm-simd-threaded.js',
+)
 
 // Check if extraction needed (hash both files).
 if (
