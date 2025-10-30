@@ -29,10 +29,10 @@ function generateDatetimeVersion(platform, arch, tool = 'cli') {
   try {
     const basePackage = JSON.parse(require('fs').readFileSync(basePackagePath, 'utf-8'))
     const version = basePackage.version || '0.0.0'
-    // Parse version and extract just the core version (X.Y.Z).
-    const parsed = semver.parse(version)
-    if (parsed) {
-      baseVersion = `${parsed.major}.${parsed.minor}.${parsed.patch}`
+    // Extract just the core version (X.Y.Z), ignoring any prerelease/placeholder text.
+    const versionMatch = version.match(/^(\d+\.\d+\.\d+)/)
+    if (versionMatch) {
+      baseVersion = versionMatch[1]
     }
   } catch {
     // Fallback to 0.0.0 if package doesn't exist yet.
