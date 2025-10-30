@@ -8,6 +8,7 @@ import path from 'node:path'
 
 import { parse } from '@babel/core'
 import MagicString from 'magic-string'
+
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { logger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'

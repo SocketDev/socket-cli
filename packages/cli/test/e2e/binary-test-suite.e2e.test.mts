@@ -4,10 +4,11 @@ import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { beforeAll, describe, expect, it } from 'vitest'
+
 import { logger } from '@socketsecurity/lib/logger'
 import { confirm } from '@socketsecurity/lib/prompts'
 import { spawn } from '@socketsecurity/lib/spawn'
-import { beforeAll, describe, expect, it } from 'vitest'
 
 import ENV from '../../src/constants/env.mts'
 import { getDefaultApiToken } from '../../src/utils/socket/sdk.mts'
@@ -187,7 +188,7 @@ function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
 
     describe('Basic commands (no auth required)', () => {
       it.skipIf(!ENV.RUN_E2E_TESTS)('should display version', async () => {
-        if (!binaryExists) return
+        if (!binaryExists) {return}
 
         const result = await executeCliCommand(['--version'], {
           binPath: binary.path,
@@ -201,7 +202,7 @@ function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
       })
 
       it.skipIf(!ENV.RUN_E2E_TESTS)('should display help', async () => {
-        if (!binaryExists) return
+        if (!binaryExists) {return}
 
         const result = await executeCliCommand(['--help'], {
           binPath: binary.path,
@@ -216,7 +217,7 @@ function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
       it.skipIf(!ENV.RUN_E2E_TESTS)(
         'should display scan command help',
         async () => {
-          if (!binaryExists) return
+          if (!binaryExists) {return}
 
           const result = await executeCliCommand(['scan', '--help'], {
             binPath: binary.path,
@@ -231,7 +232,7 @@ function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
       it.skipIf(!ENV.RUN_E2E_TESTS)(
         'should display package command help',
         async () => {
-          if (!binaryExists) return
+          if (!binaryExists) {return}
 
           const result = await executeCliCommand(['package', '--help'], {
             binPath: binary.path,
@@ -246,7 +247,7 @@ function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
 
     describe('Auth-required commands', () => {
       it.skipIf(!ENV.RUN_E2E_TESTS)('should list config settings', async () => {
-        if (!binaryExists || !hasAuth) return
+        if (!binaryExists || !hasAuth) {return}
 
         const result = await executeCliCommand(['config', 'list'], {
           binPath: binary.path,
@@ -258,7 +259,7 @@ function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
       it.skipIf(!ENV.RUN_E2E_TESTS)(
         'should display whoami information',
         async () => {
-          if (!binaryExists || !hasAuth) return
+          if (!binaryExists || !hasAuth) {return}
 
           const result = await executeCliCommand(['whoami'], {
             binPath: binary.path,
@@ -273,7 +274,7 @@ function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
       it.skipIf(!ENV.RUN_E2E_TESTS)(
         'should execute help command within reasonable time',
         async () => {
-          if (!binaryExists) return
+          if (!binaryExists) {return}
 
           const startTime = Date.now()
           const result = await executeCliCommand(['--help'], {

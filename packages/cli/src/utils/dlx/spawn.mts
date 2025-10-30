@@ -14,10 +14,11 @@
  * - Executes binaries directly without package manager commands
  */
 
-import { dlxPackage } from '@socketsecurity/lib/dlx-package'
 import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/lib/constants/socket'
+import { dlxPackage } from '@socketsecurity/lib/dlx-package'
 import { spawn } from '@socketsecurity/lib/spawn'
 
+import { resolveCdxgen, resolveCoana } from './resolve-binary.mjs'
 import { getDefaultOrgSlug } from '../../commands/ci/fetch-default-org-slug.mjs'
 import ENV from '../../constants/env.mts'
 import {
@@ -27,7 +28,6 @@ import {
 } from '../../constants/shadow.mts'
 import { getErrorCause } from '../error/errors.mts'
 import { getDefaultApiToken, getDefaultProxyUrl } from '../socket/sdk.mjs'
-import { resolveCdxgen, resolveCoana } from './resolve-binary.mjs'
 
 import type {
   ShadowBinOptions,

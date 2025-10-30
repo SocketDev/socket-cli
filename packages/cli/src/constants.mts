@@ -4,8 +4,8 @@
  */
 
 // Import everything we need to re-export.
-import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/lib/constants/socket'
 import { UTF8 } from '@socketsecurity/lib/constants/encoding'
+import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/lib/constants/socket'
 
 import {
   BUN,
@@ -20,14 +20,12 @@ import {
   YARN_BERRY,
   YARN_CLASSIC,
 } from './constants/agents.mts'
-
 import {
   ALERT_TYPE_CRITICAL_CVE,
   ALERT_TYPE_CVE,
   ALERT_TYPE_MEDIUM_CVE,
   ALERT_TYPE_MILD_CVE,
 } from './constants/alerts.mts'
-
 import {
   INLINED_SOCKET_CLI_AI_VERSION,
   INLINED_SOCKET_CLI_COANA_VERSION,
@@ -43,13 +41,11 @@ import {
   INLINED_SOCKET_CLI_VERSION,
   INLINED_SOCKET_CLI_VERSION_HASH,
 } from './constants/build.mts'
-
 import {
   DLX_BINARY_CACHE_TTL,
   UPDATE_CHECK_TTL,
   UPDATE_NOTIFIER_TIMEOUT,
 } from './constants/cache.mts'
-
 import {
   DRY_RUN_BAILING_NOW,
   DRY_RUN_LABEL,
@@ -80,7 +76,6 @@ import {
   REDACTED,
   SEA_UPDATE_COMMAND,
 } from './constants/cli.mts'
-
 import {
   CONFIG_KEY_API_BASE_URL,
   CONFIG_KEY_API_PROXY,
@@ -89,7 +84,6 @@ import {
   CONFIG_KEY_ENFORCED_ORGS,
   CONFIG_KEY_ORG,
 } from './constants/config.mts'
-
 import ENV, {
   DISABLE_GITHUB_CACHE,
   getCdxgenVersion,
@@ -135,7 +129,6 @@ import ENV, {
   SOCKET_CLI_VIEW_ALL_RISKS,
   VITEST,
 } from './constants/env.mts'
-
 import {
   ERROR_NO_MANIFEST_FILES,
   ERROR_NO_PACKAGE_JSON,
@@ -144,7 +137,6 @@ import {
   ERROR_UNABLE_RESOLVE_ORG,
   LOOP_SENTINEL,
 } from './constants/errors.mts'
-
 import {
   GQL_PAGE_SENTINEL,
   GQL_PR_STATE_CLOSED,
@@ -153,7 +145,6 @@ import {
   SOCKET_CLI_GITHUB_REPO,
   SOCKET_CLI_ISSUES_URL,
 } from './constants/github.mts'
-
 import {
   HTTP_STATUS_BAD_REQUEST,
   HTTP_STATUS_FORBIDDEN,
@@ -163,7 +154,6 @@ import {
   HTTP_STATUS_UNAUTHORIZED,
   NPM_REGISTRY_URL,
 } from './constants/http.mts'
-
 import {
   BLESSED,
   BLESSED_CONTRIB,
@@ -196,7 +186,6 @@ import {
   SOCKET_SECURITY_REGISTRY,
   YARN_LOCK,
 } from './constants/packages.mts'
-
 import {
   configPath,
   distPath,
@@ -250,7 +239,6 @@ import {
   UPDATE_STORE_DIR,
   UPDATE_STORE_FILE_NAME,
 } from './constants/paths.mts'
-
 import {
   FOLD_SETTING_VERSION as REPORTING_FOLD_SETTING_VERSION,
   REPORT_LEVEL_DEFER,
@@ -259,7 +247,6 @@ import {
   REPORT_LEVEL_MONITOR,
   REPORT_LEVEL_WARN,
 } from './constants/reporting.mts'
-
 import {
   getInternals,
   getShadowNpmBinPath as SHADOW_getShadowNpmBinPath,
@@ -281,7 +268,6 @@ import {
   SOCKET_CLI_VIEW_ALL_RISKS as SHADOW_SOCKET_CLI_VIEW_ALL_RISKS,
   SOCKET_IPC_HANDSHAKE,
 } from './constants/shadow.mts'
-
 import {
   API_V0_URL,
   NPM_REGISTRY_URL as SOCKET_NPM_REGISTRY_URL,
@@ -295,7 +281,6 @@ import {
   TOKEN_PREFIX_LENGTH,
   V1_MIGRATION_GUIDE_URL,
 } from './constants/socket.mts'
-
 import { WIN32 } from './constants/types.mts'
 
 // Export types.

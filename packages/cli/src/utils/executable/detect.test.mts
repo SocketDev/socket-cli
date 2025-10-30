@@ -1,6 +1,6 @@
 /** @fileoverview Tests for SEA (Single Executable Application) detection utilities. */
 
-/* eslint-disable n/no-unsupported-features/node-builtins -- SEA is experimental but required for tests */
+ 
 
 import { describe, expect, it } from 'vitest'
 

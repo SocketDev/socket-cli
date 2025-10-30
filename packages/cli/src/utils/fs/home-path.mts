@@ -11,8 +11,8 @@
  * - Common Unix convention for home directory
  */
 
-import { escapeRegExp } from '@socketsecurity/lib/regexps'
 import { normalizePath } from '@socketsecurity/lib/path'
+import { escapeRegExp } from '@socketsecurity/lib/regexps'
 
 import { homePath } from '../../constants/paths.mts'
 

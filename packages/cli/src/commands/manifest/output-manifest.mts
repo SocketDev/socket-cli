@@ -46,7 +46,7 @@ export async function outputManifest(
 
   if (outputKind === 'markdown') {
     const arr = []
-    const { type, files } = result.data
+    const { files, type } = result.data
     const typeName = type === 'gradle' ? 'Gradle' : 'SBT'
 
     arr.push(mdHeader(`${typeName} Manifest Generation`))
