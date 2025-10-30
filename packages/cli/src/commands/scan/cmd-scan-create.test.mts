@@ -117,7 +117,7 @@ describe('socket scan create', async () => {
       'create',
       FLAG_ORG,
       'fakeOrg',
-      'target',
+      '.',
       FLAG_DRY_RUN,
       '--repo',
       'xyz',
@@ -148,7 +148,7 @@ describe('socket scan create', async () => {
       'create',
       FLAG_ORG,
       'fakeOrg',
-      'target',
+      '.',
       FLAG_DRY_RUN,
       '--repo',
       'xyz',
@@ -179,7 +179,7 @@ describe('socket scan create', async () => {
       'create',
       FLAG_ORG,
       'fakeOrg',
-      'target',
+      '.',
       FLAG_DRY_RUN,
       '--repo',
       'xyz',
@@ -204,7 +204,7 @@ describe('socket scan create', async () => {
       'create',
       FLAG_ORG,
       'fakeOrg',
-      'target',
+      '.',
       FLAG_DRY_RUN,
       '--repo',
       'xyz',
@@ -236,7 +236,7 @@ describe('socket scan create', async () => {
       'create',
       FLAG_ORG,
       'fakeOrg',
-      'target',
+      '.',
       FLAG_DRY_RUN,
       '--repo',
       'xyz',
@@ -268,7 +268,7 @@ describe('socket scan create', async () => {
       'create',
       FLAG_ORG,
       'fakeOrg',
-      'target',
+      '.',
       FLAG_DRY_RUN,
       '--repo',
       'xyz',
@@ -302,7 +302,7 @@ describe('socket scan create', async () => {
       'create',
       FLAG_ORG,
       'fakeOrg',
-      'target',
+      '.',
       FLAG_DRY_RUN,
       '--repo',
       'xyz',
@@ -322,7 +322,7 @@ describe('socket scan create', async () => {
     'should succeed when reachability options are used with --reach',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0 when all flags are valid').toBe(0)
     },
   )
@@ -333,7 +333,7 @@ describe('socket scan create', async () => {
       'create',
       FLAG_ORG,
       'fakeOrg',
-      'target',
+      '.',
       FLAG_DRY_RUN,
       '--repo',
       'xyz',
@@ -367,7 +367,7 @@ describe('socket scan create', async () => {
       'create',
       FLAG_ORG,
       'fakeOrg',
-      'target',
+      '.',
       FLAG_DRY_RUN,
       '--repo',
       'xyz',
@@ -391,7 +391,7 @@ describe('socket scan create', async () => {
     'should succeed when all reachability options including reachExcludePaths are used with --reach',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0 when all flags are valid').toBe(0)
     },
   )
@@ -402,7 +402,7 @@ describe('socket scan create', async () => {
       'create',
       FLAG_ORG,
       'fakeOrg',
-      'target',
+      '.',
       FLAG_DRY_RUN,
       '--repo',
       'xyz',
@@ -417,7 +417,7 @@ describe('socket scan create', async () => {
     'should succeed when --reach-ecosystems is used with comma-separated values',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(
         code,
         'should exit with code 0 when comma-separated values are used',
@@ -431,7 +431,7 @@ describe('socket scan create', async () => {
       'create',
       FLAG_ORG,
       'fakeOrg',
-      'target',
+      '.',
       FLAG_DRY_RUN,
       '--repo',
       'xyz',
@@ -446,7 +446,7 @@ describe('socket scan create', async () => {
     'should succeed when --reach-exclude-paths is used with comma-separated values',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(
         code,
         'should exit with code 0 when comma-separated values are used',
@@ -460,7 +460,7 @@ describe('socket scan create', async () => {
       'create',
       FLAG_ORG,
       'fakeOrg',
-      'target',
+      '.',
       FLAG_DRY_RUN,
       '--repo',
       'xyz',
@@ -492,7 +492,7 @@ describe('socket scan create', async () => {
       'create',
       FLAG_ORG,
       'fakeOrg',
-      'target',
+      '.',
       FLAG_DRY_RUN,
       '--repo',
       'xyz',
@@ -524,7 +524,7 @@ describe('socket scan create', async () => {
       'create',
       FLAG_ORG,
       'fakeOrg',
-      'target',
+      '.',
       FLAG_DRY_RUN,
       '--repo',
       'xyz',
@@ -592,7 +592,7 @@ describe('socket scan create', async () => {
       'create',
       FLAG_ORG,
       'fakeOrg',
-      'target',
+      '.',
       FLAG_DRY_RUN,
       '--repo',
       'xyz',
@@ -607,7 +607,7 @@ describe('socket scan create', async () => {
     'should succeed with minimal positive reachability memory limit',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -618,7 +618,7 @@ describe('socket scan create', async () => {
       'create',
       FLAG_ORG,
       'fakeOrg',
-      'target',
+      '.',
       FLAG_DRY_RUN,
       '--repo',
       'xyz',
@@ -633,7 +633,7 @@ describe('socket scan create', async () => {
     'should succeed with zero timeout (unlimited)',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -644,7 +644,7 @@ describe('socket scan create', async () => {
       'create',
       FLAG_ORG,
       'fakeOrg',
-      'target',
+      '.',
       FLAG_DRY_RUN,
       '--repo',
       'xyz',
@@ -674,7 +674,7 @@ describe('socket scan create', async () => {
       'create',
       FLAG_ORG,
       'fakeOrg',
-      'target',
+      '.',
       FLAG_DRY_RUN,
       '--repo',
       'xyz',
@@ -696,7 +696,7 @@ describe('socket scan create', async () => {
     'should succeed with comprehensive reachability configuration',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0 when all flags are valid').toBe(0)
     },
   )
@@ -707,7 +707,7 @@ describe('socket scan create', async () => {
       'create',
       FLAG_ORG,
       'fakeOrg',
-      'target',
+      '.',
       FLAG_DRY_RUN,
       '--repo',
       'xyz',
@@ -721,13 +721,7 @@ describe('socket scan create', async () => {
     'should succeed with --reach and --json output format',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`
-        "{
-          "ok": false,
-          "message": "Input error",
-          "data": "Please review the input requirements and try again\\n\\n  \\u221a At least one TARGET (e.g. \`.\` or \`./package.json\`)\\n  \\xd7 Reachability analysis target must be a directory when --reach is enabled (provide a directory path, not a file)\\n  \\xd7 Target directory must exist when --reach is enabled (provide an existing directory path)"
-        }"
-      `)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -738,7 +732,7 @@ describe('socket scan create', async () => {
       'create',
       FLAG_ORG,
       'fakeOrg',
-      'target',
+      '.',
       FLAG_DRY_RUN,
       '--repo',
       'xyz',
@@ -752,7 +746,7 @@ describe('socket scan create', async () => {
     'should succeed with --reach and --markdown output format',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -763,7 +757,7 @@ describe('socket scan create', async () => {
       'create',
       FLAG_ORG,
       'fakeOrg',
-      'target',
+      '.',
       FLAG_DRY_RUN,
       '--repo',
       'xyz',
@@ -793,7 +787,7 @@ describe('socket scan create', async () => {
       'create',
       FLAG_ORG,
       'fakeOrg',
-      'target',
+      '.',
       FLAG_DRY_RUN,
       '--repo',
       'xyz',
@@ -807,7 +801,7 @@ describe('socket scan create', async () => {
     'should succeed when combining --reach with --read-only',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
