@@ -45,4 +45,4 @@ The CLI's `extract-onnx-runtime.mjs` script:
 
 ## Version
 
-Based on ONNX Runtime v1.20.0 (or latest stable).
+Based on ONNX Runtime v1.21.1.
