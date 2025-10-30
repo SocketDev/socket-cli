@@ -12,42 +12,31 @@ const __dirname = path.dirname(__filename)
 const projectRoot = path.resolve(__dirname, '..')
 
 /**
- * Colors for terminal output.
- */
-const colors = {
-  red: '\x1b[31m',
-  green: '\x1b[32m',
-  yellow: '\x1b[33m',
-  blue: '\x1b[34m',
-  reset: '\x1b[0m',
-}
-
-/**
  * Format a success message.
  */
 function success(msg) {
-  return `${colors.green}✓${colors.reset} ${msg}`
+  return `${colors.green('✓')} ${msg}`
 }
 
 /**
  * Format an error message.
  */
 function error(msg) {
-  return `${colors.red}✗${colors.reset} ${msg}`
+  return `${colors.red('✗')} ${msg}`
 }
 
 /**
  * Format a warning message.
  */
 function warning(msg) {
-  return `${colors.yellow}⚠${colors.reset} ${msg}`
+  return `${colors.yellow('⚠')} ${msg}`
 }
 
 /**
  * Format an info message.
  */
 function info(msg) {
-  return `${colors.blue}ℹ${colors.reset} ${msg}`
+  return `${colors.blue('ℹ')} ${msg}`
 }
 
 /**
