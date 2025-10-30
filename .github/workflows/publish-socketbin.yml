@@ -154,7 +154,7 @@ jobs:
         id: build-sea
         run: |
           echo "Building SEA binary..."
-          pnpm --filter @socketsecurity/node-sea-builder run build -- \
+          pnpm --filter @socketbin/node-sea-builder run build -- \
             --platform=${{ matrix.platform }} \
             --arch=${{ matrix.arch }}
 
