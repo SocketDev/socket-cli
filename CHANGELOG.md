@@ -6,13 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [2.0.0](https://github.com/SocketDev/socket-cli/releases/tag/v2.0.0) - 2025-10-29
 
+### Changed
+- **BREAKING**: CLI now ships as single executable binary requiring no external Node.js installation
+
 ### Added
 - GitLab merge request support for `socket fix`
 - Persistent GHSA tracking to avoid duplicate fixes
 - Markdown output support for `socket fix` and `socket optimize`
+- `--reach-min-severity` flag to filter reachability analysis by vulnerability severity threshold
 
-### Changed
-- **BREAKING**: CLI now ships as single executable binary requiring no external Node.js installation
+### Fixed
+- Target directory handling in reachability analysis for scan commands
 
 ## [1.1.25](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.25) - 2025-10-10
 
