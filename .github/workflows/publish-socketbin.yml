@@ -275,7 +275,7 @@ jobs:
         if: ${{ !inputs.dry-run }}
         run: |
           cd packages/socketbin-cli-linux-x64
-          npm publish --provenance --access public
+          npm publish --provenance --access public --tag latest --tag latest
 
       - name: Prepare and publish Linux ARM64
         if: ${{ !inputs.dry-run }}
@@ -286,7 +286,7 @@ jobs:
             --method=${{ inputs.method }}
 
           cd packages/socketbin-cli-linux-arm64
-          npm publish --provenance --access public
+          npm publish --provenance --access public --tag latest --tag latest
 
       - name: Prepare and publish Alpine x64
         if: ${{ !inputs.dry-run }}
@@ -297,7 +297,7 @@ jobs:
             --method=${{ inputs.method }}
 
           cd packages/socketbin-cli-alpine-x64
-          npm publish --provenance --access public
+          npm publish --provenance --access public --tag latest --tag latest
 
       - name: Prepare and publish Alpine ARM64
         if: ${{ !inputs.dry-run }}
@@ -308,7 +308,7 @@ jobs:
             --method=${{ inputs.method }}
 
           cd packages/socketbin-cli-alpine-arm64
-          npm publish --provenance --access public
+          npm publish --provenance --access public --tag latest
 
       - name: Prepare and publish macOS x64
         if: ${{ !inputs.dry-run }}
@@ -319,7 +319,7 @@ jobs:
             --method=${{ inputs.method }}
 
           cd packages/socketbin-cli-darwin-x64
-          npm publish --provenance --access public
+          npm publish --provenance --access public --tag latest
 
       - name: Prepare and publish macOS ARM64
         if: ${{ !inputs.dry-run }}
@@ -330,7 +330,7 @@ jobs:
             --method=${{ inputs.method }}
 
           cd packages/socketbin-cli-darwin-arm64
-          npm publish --provenance --access public
+          npm publish --provenance --access public --tag latest
 
       - name: Prepare and publish Windows x64
         if: ${{ !inputs.dry-run }}
@@ -341,7 +341,7 @@ jobs:
             --method=${{ inputs.method }}
 
           cd packages/socketbin-cli-win32-x64
-          npm publish --provenance --access public
+          npm publish --provenance --access public --tag latest
 
       - name: Prepare and publish Windows ARM64
         if: ${{ !inputs.dry-run }}
@@ -352,7 +352,7 @@ jobs:
             --method=${{ inputs.method }}
 
           cd packages/socketbin-cli-win32-arm64
-          npm publish --provenance --access public
+          npm publish --provenance --access public --tag latest
 
       - name: Prime npm cache for CI (dry-run)
         if: ${{ inputs.dry-run }}
@@ -488,7 +488,7 @@ jobs:
       - name: Publish main package
         if: ${{ !inputs.dry-run }}
         working-directory: src/sea/npm-package
-        run: npm publish --provenance --access public
+        run: npm publish --provenance --access public --tag latest
 
       - name: Dry run summary
         if: ${{ inputs.dry-run }}
