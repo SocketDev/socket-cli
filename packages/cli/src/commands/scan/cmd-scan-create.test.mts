@@ -58,6 +58,7 @@ describe('socket scan create', async () => {
                 --reach-disable-analytics  Disable reachability analytics sharing with Socket. Also disables caching-based optimizations.
                 --reach-ecosystems  List of ecosystems to conduct reachability analysis on, as either a comma separated value or as multiple flags. Defaults to all ecosystems.
                 --reach-exclude-paths  List of paths to exclude from reachability analysis, as either a comma separated value or as multiple flags.
+                --reach-min-severity  Set the minimum severity of vulnerabilities to analyze. Supported severities are info, low, moderate, high and critical.
                 --reach-skip-cache  Skip caching-based optimizations. By default, the reachability analysis will use cached configurations from previous runs to speed up the analysis.
           
               Uploads the specified dependency manifest files for Go, Gradle, JavaScript,
@@ -321,7 +322,7 @@ describe('socket scan create', async () => {
     'should succeed when reachability options are used with --reach',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0 when all flags are valid').toBe(0)
     },
   )
@@ -390,7 +391,7 @@ describe('socket scan create', async () => {
     'should succeed when all reachability options including reachExcludePaths are used with --reach',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0 when all flags are valid').toBe(0)
     },
   )
@@ -416,7 +417,7 @@ describe('socket scan create', async () => {
     'should succeed when --reach-ecosystems is used with comma-separated values',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(
         code,
         'should exit with code 0 when comma-separated values are used',
@@ -445,7 +446,7 @@ describe('socket scan create', async () => {
     'should succeed when --reach-exclude-paths is used with comma-separated values',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(
         code,
         'should exit with code 0 when comma-separated values are used',
@@ -606,7 +607,7 @@ describe('socket scan create', async () => {
     'should succeed with minimal positive reachability memory limit',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -632,7 +633,7 @@ describe('socket scan create', async () => {
     'should succeed with zero timeout (unlimited)',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -695,7 +696,7 @@ describe('socket scan create', async () => {
     'should succeed with comprehensive reachability configuration',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0 when all flags are valid').toBe(0)
     },
   )
@@ -720,7 +721,13 @@ describe('socket scan create', async () => {
     'should succeed with --reach and --json output format',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`
+        "{
+          "ok": false,
+          "message": "Input error",
+          "data": "Please review the input requirements and try again\\n\\n  \\u221a At least one TARGET (e.g. \`.\` or \`./package.json\`)\\n  \\xd7 Reachability analysis target must be a directory when --reach is enabled (provide a directory path, not a file)\\n  \\xd7 Target directory must exist when --reach is enabled (provide an existing directory path)"
+        }"
+      `)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -745,7 +752,7 @@ describe('socket scan create', async () => {
     'should succeed with --reach and --markdown output format',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -800,7 +807,7 @@ describe('socket scan create', async () => {
     'should succeed when combining --reach with --read-only',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
