@@ -119,8 +119,15 @@ export async function downloadCli() {
   logger.log('📦 Socket CLI not found, downloading...')
   logger.log('')
 
-  // Create directories.
-  mkdirSync(SOCKET_DLX_DIR, { recursive: true })
+  // Create DLX directory with recursive option to ensure all parents exist.
+  try {
+    mkdirSync(SOCKET_DLX_DIR, { recursive: true })
+  } catch (e) {
+    logger.error('Failed to create Socket directory')
+    logger.error(`   Error: ${e instanceof Error ? e.message : String(e)}`)
+    logger.error(`   Path: ${SOCKET_DLX_DIR}`)
+    process.exit(1)
+  }
 
   try {
     // Use dlxPackage to download and install @socketsecurity/cli.
@@ -152,6 +159,12 @@ export async function downloadCli() {
   } catch (e) {
     logger.error('Failed to download Socket CLI')
     logger.error(`   Error: ${e instanceof Error ? e.message : String(e)}`)
+    logger.error('')
+    logger.error('This may be a temporary issue. Please try:')
+    logger.error('  1. Check your internet connection')
+    logger.error('  2. Try running the command again')
+    logger.error(`  3. Manually create directory: mkdir -p "${SOCKET_DLX_DIR}"`)
+    logger.error('  4. Report issue at: https://github.com/SocketDev/socket-cli/issues')
     process.exit(1)
   }
 }
