@@ -68,50 +68,45 @@ async function cloneOnnxSource() {
 
   printHeader('Cloning ONNX Runtime Source')
 
-  let needsPatch = false
+  // Check if source exists and if it has the patch.
   if (existsSync(ONNX_SOURCE_DIR)) {
-    printStep('ONNX Runtime source already exists, skipping clone')
-    needsPatch = true
-  } else {
-    await fs.mkdir(BUILD_DIR, { recursive: true })
+    printStep('ONNX Runtime source already exists')
 
-    printStep(`Cloning ONNX Runtime ${ONNX_VERSION}...`)
-    await spawn('git', ['clone', '--depth', '1', '--branch', ONNX_VERSION, ONNX_REPO, ONNX_SOURCE_DIR], {
-      shell: WIN32,
-      stdio: 'inherit',
-    })
-
-    printSuccess(`ONNX Runtime ${ONNX_VERSION} cloned`)
-    needsPatch = true
-  }
-
-  // Patch eigen.cmake to accept the current Eigen hash from GitLab.
-  // GitLab changed the archive format, causing hash mismatch.
-  if (needsPatch) {
-    printStep('Patching eigen.cmake to accept current Eigen hash...')
     const eigenCmakePath = path.join(ONNX_SOURCE_DIR, 'cmake', 'external', 'eigen.cmake')
     const eigenCmake = await fs.readFile(eigenCmakePath, 'utf-8')
 
-    // Check if already patched.
-    if (eigenCmake.includes('32b145f525a8308d7ab1c09388b2e288312d8eba')) {
-      printStep('Eigen hash already patched')
+    if (!eigenCmake.includes('32b145f525a8308d7ab1c09388b2e288312d8eba')) {
+      // Source exists but patch not applied - need to re-clone.
+      printWarning('Source exists but Eigen patch not applied')
+      printStep('Removing old source to re-clone with patch...')
+      await fs.rm(ONNX_SOURCE_DIR, { recursive: true, force: true })
+      printSuccess('Old source removed')
     } else {
-      const updatedEigenCmake = eigenCmake.replace(
-        /URL_HASH SHA1=be8be39fdbc6e60e94fa7870b280707069b5b81a/g,
-        'URL_HASH SHA1=32b145f525a8308d7ab1c09388b2e288312d8eba'
-      )
-      await fs.writeFile(eigenCmakePath, updatedEigenCmake, 'utf-8')
-      printSuccess('Eigen hash updated')
-
-      // Clean CMake cache to force reconfiguration with new hash.
-      const cmakeBuildDir = path.join(ONNX_SOURCE_DIR, 'build')
-      if (existsSync(cmakeBuildDir)) {
-        printStep('Cleaning CMake cache to apply patch...')
-        await fs.rm(cmakeBuildDir, { recursive: true, force: true })
-        printSuccess('CMake cache cleaned')
-      }
+      printStep('Eigen hash already patched, skipping clone')
+      await createCheckpoint('onnxruntime', 'cloned')
+      return
     }
   }
+
+  await fs.mkdir(BUILD_DIR, { recursive: true })
+
+  printStep(`Cloning ONNX Runtime ${ONNX_VERSION}...`)
+  await spawn('git', ['clone', '--depth', '1', '--branch', ONNX_VERSION, ONNX_REPO, ONNX_SOURCE_DIR], {
+    shell: WIN32,
+    stdio: 'inherit',
+  })
+  printSuccess(`ONNX Runtime ${ONNX_VERSION} cloned`)
+
+  // Patch eigen.cmake immediately after cloning.
+  printStep('Patching eigen.cmake to accept current Eigen hash...')
+  const eigenCmakePath = path.join(ONNX_SOURCE_DIR, 'cmake', 'external', 'eigen.cmake')
+  const eigenCmake = await fs.readFile(eigenCmakePath, 'utf-8')
+  const updatedEigenCmake = eigenCmake.replace(
+    /URL_HASH SHA1=be8be39fdbc6e60e94fa7870b280707069b5b81a/g,
+    'URL_HASH SHA1=32b145f525a8308d7ab1c09388b2e288312d8eba'
+  )
+  await fs.writeFile(eigenCmakePath, updatedEigenCmake, 'utf-8')
+  printSuccess('Eigen hash updated')
 
   await createCheckpoint('onnxruntime', 'cloned')
 }
