@@ -4,7 +4,7 @@
  * Copies data/ and images from packages/cli.
  */
 
-import { cpSync } from 'node:fs'
+import { promises as fs } from 'node:fs'
 import { spawn } from 'node:child_process'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -57,7 +57,7 @@ async function main() {
 
     // Copy data directory from packages/cli.
     logger.log(`${colors.blue('ℹ')} Copying data/ from packages/cli...`)
-    cpSync(path.join(cliPath, 'data'), path.join(rootPath, 'data'), {
+    await fs.cp(path.join(cliPath, 'data'), path.join(rootPath, 'data'), {
       recursive: true,
     })
     logger.log(`${colors.green('✓')} Copied data/`)
@@ -66,7 +66,7 @@ async function main() {
     logger.log(`${colors.blue('ℹ')} Copying images from repo root...`)
     const images = ['logo-dark.png', 'logo-light.png']
     for (const image of images) {
-      cpSync(path.join(repoRoot, image), path.join(rootPath, image))
+      await fs.cp(path.join(repoRoot, image), path.join(rootPath, image))
     }
     logger.log(`${colors.green('✓')} Copied images`)
   } catch (error) {
