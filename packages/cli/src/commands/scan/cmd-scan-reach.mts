@@ -1,6 +1,6 @@
+import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 
-import { existsSync, promises as fs } from 'node:fs'
 
 import { joinAnd } from '@socketsecurity/lib/arrays'
 import { logger } from '@socketsecurity/lib/logger'

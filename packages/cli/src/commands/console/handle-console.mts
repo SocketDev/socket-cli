@@ -1,15 +1,17 @@
 import { render } from 'ink'
 import { createElement } from 'react'
+import colors from 'yoctocolors-cjs'
 
-import { parseIntent } from '../ask/handle-ask.mts'
-import type { ConsoleMessage } from './InteractiveConsoleApp.js'
+import { spawn } from '@socketsecurity/lib/spawn'
+
 import {
   createFileDiff,
   InteractiveConsoleApp,
 } from './InteractiveConsoleApp.js'
-import { spawn } from '@socketsecurity/lib/spawn'
+import { parseIntent } from '../ask/handle-ask.mts'
 
-import colors from 'yoctocolors-cjs'
+import type { ConsoleMessage } from './InteractiveConsoleApp.js'
+
 
 // Read package.json for version info.
 async function getVersionInfo(): Promise<{

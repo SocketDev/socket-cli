@@ -17,7 +17,6 @@ import path from 'node:path'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { NpmPackageMetadata } from '../../utils/registry/npm-registry.mts'
 
 // Mock external dependencies.
 vi.mock('../../utils/registry/npm-registry.mts', () => ({
@@ -62,6 +61,12 @@ vi.mock('../../constants/env.mts', () => ({
 }))
 
 // Import after mocks.
+
+import { getIpcStubPath } from '@socketsecurity/lib/ipc'
+
+import { handleSelfUpdate } from './handle-self-update.mts'
+import { isSeaBinary } from '../../utils/executable/detect.mjs'
+import { clearQuarantine, ensureExecutable } from '../../utils/process/os.mjs'
 import {
   downloadTarball,
   extractBinaryFromTarball,
@@ -69,11 +74,7 @@ import {
   verifyTarballIntegrity,
 } from '../../utils/registry/npm-registry.mts'
 
-import { getIpcStubPath } from '@socketsecurity/lib/ipc'
-
-import { isSeaBinary } from '../../utils/executable/detect.mjs'
-import { clearQuarantine, ensureExecutable } from '../../utils/process/os.mjs'
-import { handleSelfUpdate } from './handle-self-update.mts'
+import type { NpmPackageMetadata } from '../../utils/registry/npm-registry.mts'
 
 // Helper to create mock package metadata.
 function createMockMetadata(version: string): NpmPackageMetadata {

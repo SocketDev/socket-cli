@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
+import { getOutputKind } from './mode.mts'
 import {
   OUTPUT_JSON,
   OUTPUT_MARKDOWN,
   OUTPUT_TEXT,
 } from '../../constants/cli.mts'
-import { getOutputKind } from './mode.mts'
 
 describe('getOutputKind', () => {
   it('returns OUTPUT_JSON when json flag is truthy', () => {

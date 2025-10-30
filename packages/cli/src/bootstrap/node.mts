@@ -18,13 +18,13 @@ import { spawn } from 'node:child_process'
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 
+import { getNodeDisableSigusr1Flags } from './shared/node-flags.mjs'
 import {
   getCliEntryPoint,
   getCliPackageDir,
   getCliPackageName,
   getDlxDir,
 } from './shared/paths.mjs'
-import { getNodeDisableSigusr1Flags } from './shared/node-flags.mjs'
 
 /**
  * Check if CLI is installed.

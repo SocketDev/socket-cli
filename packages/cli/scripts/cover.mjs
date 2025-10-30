@@ -16,9 +16,8 @@
 
 import { isQuiet, isVerbose } from '@socketsecurity/lib/argv/flags'
 import { parseArgs } from '@socketsecurity/lib/argv/parse'
-import { logger } from '@socketsecurity/lib/logger'
-
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
+import { logger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 
 /**

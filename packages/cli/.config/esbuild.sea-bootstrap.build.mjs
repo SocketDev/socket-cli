@@ -3,9 +3,10 @@
  * Compiles TypeScript bootstrap to CommonJS for Node.js SEA compatibility.
  */
 
-import { build } from 'esbuild'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+
+import { build } from 'esbuild'
 
 import { getLocalPackageAliases } from '../scripts/utils/get-local-package-aliases.mjs'
 

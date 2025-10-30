@@ -35,7 +35,6 @@ import { isUrl } from '@socketsecurity/lib/url'
 import { pluralize } from '@socketsecurity/lib/words'
 import { createUserAgentFromPkgJson, SocketSdk } from '@socketsecurity/sdk'
 
-import type { FileValidationResult } from '@socketsecurity/sdk'
 
 import {
   CONFIG_KEY_API_BASE_URL,
@@ -47,6 +46,7 @@ import { TOKEN_PREFIX_LENGTH } from '../../constants/socket.mts'
 import { getConfigValueOrUndef } from '../config.mts'
 
 import type { CResult } from '../../types.mts'
+import type { FileValidationResult } from '@socketsecurity/sdk'
 
 const TOKEN_VISIBLE_LENGTH = 5
 

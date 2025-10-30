@@ -7,12 +7,12 @@ import { createEnvProxy } from '@socketsecurity/lib/env'
 import { type SpawnOptions, spawn } from '@socketsecurity/lib/spawn'
 import { stripAnsi } from '@socketsecurity/lib/strings'
 
-import { FLAG_HELP, FLAG_VERSION } from '../src/constants/cli.mts'
-import { execPath } from '../src/constants/paths.mts'
 import {
   type ScrubOptions,
   scrubSnapshotData,
 } from './utils/scrub-snapshot-data.mts'
+import { FLAG_HELP, FLAG_VERSION } from '../src/constants/cli.mts'
+import { execPath } from '../src/constants/paths.mts'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)

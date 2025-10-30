@@ -90,7 +90,7 @@ export function mdList(
     truncateAt?: number
   },
 ): string {
-  const { ordered = false, indent = 0, truncateAt } = { ...options }
+  const { indent = 0, ordered = false, truncateAt } = { ...options }
 
   if (!items.length) {
     return ''

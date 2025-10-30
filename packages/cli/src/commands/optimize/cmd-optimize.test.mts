@@ -10,11 +10,6 @@ import { spawn } from '@socketsecurity/lib/spawn'
 
 import { cmdit, spawnSocketCli, testPath } from '../../../test/utils.mts'
 import {
-  PACKAGE_JSON,
-  PACKAGE_LOCK_JSON,
-  PNPM_LOCK_YAML,
-} from '../../constants/packages.mts'
-import {
   FLAG_CONFIG,
   FLAG_DRY_RUN,
   FLAG_HELP,
@@ -24,6 +19,11 @@ import {
   FLAG_PROD,
   FLAG_VERSION,
 } from '../../constants/cli.mts'
+import {
+  PACKAGE_JSON,
+  PACKAGE_LOCK_JSON,
+  PNPM_LOCK_YAML,
+} from '../../constants/packages.mts'
 import { getBinCliPath } from '../../constants/paths.mts'
 
 const binCliPath = getBinCliPath()

@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * @fileoverview Unified e2e test runner
  * Runs pre-e2e build check, then executes vitest with appropriate binary flags.
@@ -14,9 +13,10 @@ import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { spawn } from '@socketsecurity/lib/spawn'
-import { logger } from '@socketsecurity/lib/logger'
 import colors from 'yoctocolors-cjs'
+
+import { logger } from '@socketsecurity/lib/logger'
+import { spawn } from '@socketsecurity/lib/spawn'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const ROOT_DIR = path.resolve(__dirname, '..')

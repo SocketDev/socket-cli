@@ -49,9 +49,7 @@ describe('binary', () => {
   describe('getDlxCachePath', () => {
     it('should return correct cache path', () => {
       const result = normalizePath(getDlxCachePath())
-      const expected = normalizePath(
-        path.join(os.homedir(), '.socket', '_dlx'),
-      )
+      const expected = normalizePath(path.join(os.homedir(), '.socket', '_dlx'))
       expect(result).toBe(expected)
     })
   })
@@ -122,9 +120,7 @@ describe('binary', () => {
       const socketHome = normalizePath(getSocketHomePath())
 
       expect(cachePath.startsWith(socketHome)).toBe(true)
-      expect(cachePath.endsWith(normalizePath('_dlx'))).toBe(
-        true,
-      )
+      expect(cachePath.endsWith(normalizePath('_dlx'))).toBe(true)
 
       // If cache exists, verify it's a directory
       if (existsSync(cachePath)) {

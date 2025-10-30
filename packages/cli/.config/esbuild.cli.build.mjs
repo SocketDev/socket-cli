@@ -4,12 +4,13 @@
  * esbuild is much faster than Rollup and doesn't have template literal corruption issues.
  */
 
-import { build } from 'esbuild'
 import { execSync } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+
+import { build } from 'esbuild'
 
 import { unicodeTransformPlugin } from '@socketsecurity/build-infra/lib/esbuild-plugin-unicode-transform'
 

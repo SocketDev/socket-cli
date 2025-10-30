@@ -4,6 +4,8 @@ import { UNKNOWN_VALUE } from '@socketsecurity/lib/constants/core'
 import { debug, debugDir } from '@socketsecurity/lib/debug'
 import { isNonEmptyString } from '@socketsecurity/lib/strings'
 
+import { cacheFetch, getOctokit, getOctokitGraphql } from './github.mts'
+import { gitDeleteRemoteBranch } from './operations.mts'
 import {
   GQL_PAGE_SENTINEL,
   GQL_PR_STATE_CLOSED,
@@ -11,8 +13,6 @@ import {
   GQL_PR_STATE_OPEN,
 } from '../../constants/github.mts'
 import { formatErrorWithDetail } from '../error/errors.mts'
-import { gitDeleteRemoteBranch } from './operations.mts'
-import { cacheFetch, getOctokit, getOctokitGraphql } from './github.mts'
 
 import type {
   AddCommentOptions,
