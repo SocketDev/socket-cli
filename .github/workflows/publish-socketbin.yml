@@ -436,6 +436,7 @@ jobs:
           # Update package.json to use optionalDependencies
           node -e "
           const fs = require('fs');
+          const { execSync } = require('child_process');
           const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
 
           // Remove old postinstall script
@@ -444,17 +445,28 @@ jobs:
           // Add dispatcher script to bin
           pkg.bin = { socket: 'bin/socket.js' };
 
-          // Add optionalDependencies
-          pkg.optionalDependencies = {
-            '@socketbin/cli-alpine-arm64': '${{ steps.version.outputs.version }}',
-            '@socketbin/cli-alpine-x64': '${{ steps.version.outputs.version }}',
-            '@socketbin/cli-darwin-arm64': '${{ steps.version.outputs.version }}',
-            '@socketbin/cli-darwin-x64': '${{ steps.version.outputs.version }}',
-            '@socketbin/cli-linux-arm64': '${{ steps.version.outputs.version }}',
-            '@socketbin/cli-linux-x64': '${{ steps.version.outputs.version }}',
-            '@socketbin/cli-win32-arm64': '${{ steps.version.outputs.version }}',
-            '@socketbin/cli-win32-x64': '${{ steps.version.outputs.version }}'
-          };
+          // Get latest version from registry for each platform package
+          const platforms = [
+            'alpine-arm64', 'alpine-x64',
+            'darwin-arm64', 'darwin-x64',
+            'linux-arm64', 'linux-x64',
+            'win32-arm64', 'win32-x64'
+          ];
+
+          pkg.optionalDependencies = {};
+          for (const platform of platforms) {
+            const pkgName = \`@socketbin/cli-\${platform}\`;
+            try {
+              // Get latest published version from registry
+              const version = execSync(\`npm view \${pkgName} version\`, { encoding: 'utf8' }).trim();
+              pkg.optionalDependencies[pkgName] = version;
+              console.log(\`Using published version for \${pkgName}: \${version}\`);
+            } catch (e) {
+              // If package doesn't exist yet, use current workflow version
+              pkg.optionalDependencies[pkgName] = '${{ steps.version.outputs.version }}';
+              console.log(\`Package \${pkgName} not found in registry, using: ${{ steps.version.outputs.version }}\`);
+            }
+          }
 
           // Update files list
           pkg.files = ['bin', 'README.md'];
