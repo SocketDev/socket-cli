@@ -3,7 +3,7 @@
  * @fileoverview Copy logo images from repo root to packages/cli.
  */
 
-import { cpSync } from 'node:fs'
+import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -14,7 +14,7 @@ const repoRoot = path.resolve(__dirname, '../../..')
 const images = ['logo-dark.png', 'logo-light.png']
 
 for (const image of images) {
-  cpSync(path.join(repoRoot, image), path.join(packageRoot, image))
+  await fs.cp(path.join(repoRoot, image), path.join(packageRoot, image))
 }
 
 console.log('✓ Copied logos from repo root')
