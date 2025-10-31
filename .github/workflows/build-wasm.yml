@@ -173,7 +173,7 @@ jobs:
           echo "::group::Installing Python ML dependencies"
           pip install torch transformers
           pip install "onnx>=1.15.0" "onnxruntime>=1.20.0"
-          pip install optimum
+          pip install "optimum[onnxruntime]"
           echo "Installed packages:"
           pip list | grep -E "(onnx|optimum|torch)"
           echo ""
