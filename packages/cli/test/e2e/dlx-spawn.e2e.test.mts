@@ -140,42 +140,51 @@ describe('dlx e2e tests', () => {
 
   describe('spawnCoanaDlx e2e tests', () => {
     it.skipIf(!ENV.RUN_E2E_TESTS || !hasAuth)(
-      'executes coana-tech/cli via dlx',
+      'executes coana-tech/cli via dlx with correct binary name',
       async () => {
-        const { spawnCoanaDlx } = await import('./spawn.mts')
+        const { spawnCoanaDlx } = await import('../../src/utils/dlx/spawn.mts')
         const result = await spawnCoanaDlx(['--help'])
 
-        // Coana might fail due to network issues or package availability
+        // Coana should succeed - if it fails, it indicates a real issue.
         expect(result).toBeDefined()
-        expect(typeof result.ok).toBe('boolean')
+        expect(result.ok).toBe(true)
 
         if (result.ok && result.data) {
+          // Verify we got output from coana binary.
           expect(result.data).toContain('coana')
-        } else if (!result.ok) {
-          // Log the error for debugging but don't fail the test
-          console.log(
-            'Coana failed (expected in some environments):',
-            result.message,
-          )
-          expect(result.message).toBeDefined()
+        } else {
+          // If coana fails, the test should fail to catch real issues.
+          throw new Error(`Coana execution failed: ${result.message}`)
         }
       },
       30000,
     )
 
     it.skipIf(!ENV.RUN_E2E_TESTS || !hasAuth)(
-      'handles error from spawn',
+      'verifies coana binary is correctly resolved from package name',
       async () => {
-        const { spawnCoanaDlx } = await import('./spawn.mts')
-        // Pass invalid args to trigger an error.
-        const result = await spawnCoanaDlx([
-          '--invalid-flag-that-does-not-exist',
-        ])
+        const { spawnCoanaDlx } = await import('../../src/utils/dlx/spawn.mts')
+        const { resolveCoana } = await import(
+          '../../src/utils/dlx/resolve-binary.mts'
+        )
 
-        // The command might still succeed if the tool ignores unknown flags.
-        // Just verify we get a result.
+        // Verify the resolution includes correct binary name.
+        const resolution = resolveCoana()
+        if (resolution.type === 'dlx') {
+          expect(resolution.details.name).toBe('@coana-tech/cli')
+          expect(resolution.details.binaryName).toBe('coana')
+        }
+
+        // Verify execution works with resolved binary name.
+        const result = await spawnCoanaDlx(['--version'])
+
         expect(result).toBeDefined()
-        expect(typeof result.ok).toBe('boolean')
+        expect(result.ok).toBe(true)
+
+        if (result.ok && result.data) {
+          // Version output should contain coana information.
+          expect(result.data).toBeTruthy()
+        }
       },
       30000,
     )
