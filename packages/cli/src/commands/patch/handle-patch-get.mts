@@ -98,12 +98,6 @@ export async function handlePatchGet({
 
     spinner?.stop()
 
-    if (outputKind === 'text') {
-      logger.log(
-        `Copied ${copiedFiles.length} patch ${pluralize('file', { count: copiedFiles.length })} to ${targetDir}`,
-      )
-    }
-
     await outputPatchGetResult(
       {
         ok: true,
