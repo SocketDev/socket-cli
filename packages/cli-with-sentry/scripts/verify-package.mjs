@@ -105,7 +105,7 @@ async function validate() {
   }
 
   // Check dist files exist and validate Sentry integration.
-  const distFiles = ['index.js', 'cli.js.bz']
+  const distFiles = ['index.js', 'cli.js.bz', 'shadow-npm-inject.js']
   for (const file of distFiles) {
     logger.log(info(`Checking dist/${file}...`))
     const filePath = path.join(packageRoot, 'dist', file)
