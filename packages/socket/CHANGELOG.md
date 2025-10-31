@@ -4,15 +4,26 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [2.0.10](https://github.com/SocketDev/socket-cli/releases/tag/v2.0.10) - 2025-10-31
+## [2.0.12](https://github.com/SocketDev/socket-cli/releases/tag/v2.0.12) - 2025-10-31
 
-### Changed
-- Updated @socketsecurity/lib to 2.10.4 with enhanced directory creation utilities and environment variable handling
+### Added
+- Automatic CDN cache invalidation for unpkg and jsdelivr when publishing Socket packages
+- Version bump hooks to ensure fresh CDN caches for `socket`, `@socketsecurity/cli`, and `@socketsecurity/cli-with-sentry`
 
 ### Fixed
-- Tab completion script resolution when running via npx/dlx - now correctly locates script in CLI package directory
-- Scan command SDK parameter structure - flattened options and made repo parameter conditional to prevent "Repo slug is required" errors
-- Null reference error in output handling when calling toString() on undefined values
+- Bootstrap process no longer shows spurious "command failed" error on successful CLI execution
+- Windows CI test failures in path resolution tests - now platform-aware and handle Unix path expectations correctly
+
+## [2.0.9](https://github.com/SocketDev/socket-cli/releases/tag/v2.0.9) - 2025-10-31
+
+### Fixed
+- Updated @socketsecurity/lib to v2.10.2 with critical DLX fixes for scoped package parsing
+
+## [2.0.8](https://github.com/SocketDev/socket-cli/releases/tag/v2.0.8) - 2025-10-31
+
+### Fixed
+- Binary name resolution for external tools (@coana-tech/cli, @cyclonedx/cdxgen, synp) in dlx execution
+- Preflight downloads now correctly specify binary names for background package caching
 
 ## [2.0.7](https://github.com/SocketDev/socket-cli/releases/tag/v2.0.7) - 2025-10-31
 
