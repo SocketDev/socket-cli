@@ -156,7 +156,9 @@ const { values } = parseArgs({
   options: {
     arch: { type: 'string' },
     clean: { type: 'boolean' },
+    dev: { type: 'boolean' },
     platform: { type: 'string' },
+    prod: { type: 'boolean' },
     test: { type: 'boolean' },
     'test-full': { type: 'boolean' },
     verify: { type: 'boolean' },
@@ -172,6 +174,11 @@ const RUN_VERIFY = !!values.verify
 const RUN_TESTS = !!values.test
 const RUN_FULL_TESTS = !!values['test-full'] || !!values.testFull
 const AUTO_YES = !!values.yes
+
+// Build mode: dev (fast builds) vs prod (optimized builds).
+// Default to dev unless CI or --prod specified.
+const IS_PROD_BUILD = values.prod || (!values.dev && 'CI' in process.env)
+const IS_DEV_BUILD = !IS_PROD_BUILD
 
 // Configuration
 const ROOT_DIR = join(__dirname, '..')
@@ -253,27 +260,40 @@ function collectBuildSourceFiles() {
 }
 
 /**
- * Find Socket patches for this Node version
+ * Find Socket patches for this Node version.
+ * Includes both static patches (patches/) and dynamic patches (build/patches/).
  */
 function findSocketPatches() {
-  if (!existsSync(PATCHES_DIR)) {
-    return []
+  const patches = []
+
+  // Get static patches from patches/ directory.
+  if (existsSync(PATCHES_DIR)) {
+    const staticPatches = readdirSync(PATCHES_DIR)
+      .filter(f => f.endsWith('.patch') && !f.endsWith('.template.patch'))
+      .map(f => ({ name: f, path: join(PATCHES_DIR, f), source: 'patches/' }))
+    patches.push(...staticPatches)
   }
 
-  // Get all .patch files from patches directory.
-  const allPatchFiles = readdirSync(PATCHES_DIR)
-    .filter(f => f.endsWith('.patch'))
-    .sort()
-
-  if (!allPatchFiles.length) {
-    return []
+  // Get dynamic patches from build/patches/ directory.
+  const buildPatchesDir = join(BUILD_DIR, 'patches')
+  if (existsSync(buildPatchesDir)) {
+    const dynamicPatches = readdirSync(buildPatchesDir)
+      .filter(f => f.endsWith('.patch'))
+      .map(f => ({ name: f, path: join(buildPatchesDir, f), source: 'build/patches/' }))
+    patches.push(...dynamicPatches)
   }
 
-  logger.log(
-    `   Found ${allPatchFiles.length} patch file(s) in ${PATCHES_DIR}`,
-  )
+  // Sort by name for consistent ordering.
+  patches.sort((a, b) => a.name.localeCompare(b.name))
 
-  return allPatchFiles
+  if (patches.length > 0) {
+    logger.log(`   Found ${patches.length} patch file(s):`)
+    for (const patch of patches) {
+      logger.log(`     - ${patch.name} (${patch.source})`)
+    }
+  }
+
+  return patches
 }
 
 /**
@@ -301,11 +321,12 @@ async function copyBuildAdditions() {
 }
 
 /**
- * Copy Socket security bootstrap to Node.js lib/ for brotli encoding.
- * The bootstrap will be compressed along with other Node.js lib/ files.
+ * Embed Socket security bootstrap in VM-based loader patch.
+ * This creates a dynamic patch that loads the bootstrap using Module.wrap() + VM,
+ * which supports async code (unlike direct require()).
  * (Optional - only runs if bootstrap file exists)
  */
-async function copySocketSecurityBootstrap() {
+async function embedSocketSecurityBootstrap() {
   // Use transformed bootstrap from bootstrap package (compatible with Node.js internal bootstrap context).
   const bootstrapSource = join(ROOT_DIR, '..', 'bootstrap', 'dist', 'bootstrap-smol.js')
 
@@ -355,30 +376,93 @@ async function copySocketSecurityBootstrap() {
     logger.log('')
   }
 
-  printHeader('Copying Socket Security Bootstrap')
+  printHeader('Embedding Socket Security Bootstrap in VM-Based Loader')
 
-  const bootstrapDest = join(
-    NODE_DIR,
-    'lib',
-    'internal',
-    'bootstrap',
-    'socketsecurity.js',
+  // Read the bootstrap code.
+  const bootstrapCode = await readFile(bootstrapSource, 'utf8')
+  const bootstrapSize = Buffer.byteLength(bootstrapCode, 'utf8')
+
+  // Base64 encode the bootstrap (will be decoded at runtime in Node.js).
+  const bootstrapB64 = Buffer.from(bootstrapCode, 'utf8').toString('base64')
+  const bootstrapB64Size = bootstrapB64.length
+
+  logger.log(`📦 Bootstrap size: ${(bootstrapSize / 1024).toFixed(1)}KB`)
+  logger.log(`📦 Base64 encoded: ${(bootstrapB64Size / 1024).toFixed(1)}KB`)
+
+  // Split base64 into chunks to avoid git patch line length limits.
+  // Git apply can fail with "corrupt patch" errors if lines are too long.
+  const chunkSize = 80
+  const base64Chunks = []
+  for (let i = 0; i < bootstrapB64.length; i += chunkSize) {
+    base64Chunks.push(bootstrapB64.slice(i, i + chunkSize))
+  }
+
+  // Format as multi-line JavaScript string concatenation.
+  // Each line must start with proper indentation for the patch format.
+  // IMPORTANT: Each line needs a '+' prefix for patch format!
+  const base64MultiLine = base64Chunks
+    .map((chunk, index) => {
+      if (index === 0) {
+        return `'${chunk}'`
+      }
+      // Continuation lines: patch '+' prefix + 6 spaces indentation + content
+      return `+      '${chunk}'`
+    })
+    .join(' +\n')
+
+  // Read the patch template.
+  const patchTemplatePath = join(PATCHES_DIR, 'load-socketsecurity-bootstrap-v24-preexec.template.patch')
+  const patchTemplate = await readFile(patchTemplatePath, 'utf8')
+
+  // Embed the bootstrap in the patch template.
+  let finalPatch = patchTemplate.replace(
+    'SOCKET_BOOTSTRAP_BASE64_PLACEHOLDER',
+    base64MultiLine
   )
 
-  // Create parent directory if needed.
-  await mkdir(dirname(bootstrapDest), { recursive: true })
+  // Fix the hunk header to reflect actual line counts after base64 expansion.
+  // The template has a placeholder hunk size, but the actual patch is much larger.
+  const hunkLines = finalPatch.split('\n')
+  let addedLines = 0
+  let contextLines = 0
+  let inHunk = false
 
-  // Copy bootstrap to Node.js source (will be brotli encoded with other lib/ files).
-  await copyFile(bootstrapSource, bootstrapDest)
+  for (const line of hunkLines) {
+    if (line.startsWith('@@')) {
+      inHunk = true
+      continue
+    }
+    if (!inHunk) continue
 
-  const stats = await stat(bootstrapSource)
-  logger.log(
-    `✅ ${bootstrapSource.replace(`${ROOT_DIR}/`, '')} → ` +
-      `${bootstrapDest.replace(`${NODE_DIR}/`, '')}`,
+    if (line.startsWith('+')) addedLines++
+    else if (line.startsWith(' ')) contextLines++
+    else if (line.startsWith('-')) {} // removed lines (none in our case)
+  }
+
+  // New file will have: context lines + added lines
+  const newFileLines = contextLines + addedLines
+
+  // Update the hunk header: @@ -oldStart,oldLines +newStart,newLines @@
+  finalPatch = finalPatch.replace(
+    /@@ -(\d+),(\d+) \+(\d+),(\d+) @@/,
+    `@@ -$1,$2 +$3,${newFileLines} @@`
   )
-  logger.log(
-    `   ${(stats.size / 1024).toFixed(1)}KB (will be brotli encoded with lib/ files)`,
-  )
+
+  logger.log(`📊 Patch statistics:`)
+  logger.log(`   Added lines: ${addedLines}`)
+  logger.log(`   Context lines: ${contextLines}`)
+  logger.log(`   Total new file lines: ${newFileLines}`)
+
+  // Write the final patch to build/patches/ (will be applied during patching phase).
+  const buildPatchesDir = join(BUILD_DIR, 'patches')
+  await mkdir(buildPatchesDir, { recursive: true })
+
+  const finalPatchPath = join(buildPatchesDir, 'load-socketsecurity-bootstrap-v24-preexec.patch')
+  await writeFile(finalPatchPath, finalPatch, 'utf8')
+
+  logger.log(`✅ Generated dynamic patch: ${finalPatchPath.replace(`${ROOT_DIR}/`, '')}`)
+  logger.log(`   ${(finalPatch.length / 1024).toFixed(1)}KB (includes embedded bootstrap)`)
+  logger.log(`   Uses Module.wrap() + VM approach (supports async code!)`)
   logger.log('')
 }
 
@@ -944,10 +1028,11 @@ async function main() {
   // Copy build additions before applying patches.
   await copyBuildAdditions()
 
-  // Copy Socket security bootstrap to Node.js lib/ (will be brotli encoded with other lib/ files).
-  await copySocketSecurityBootstrap()
+  // Embed Socket security bootstrap in VM-based loader patch.
+  // This creates a dynamic patch that supports async code execution.
+  await embedSocketSecurityBootstrap()
 
-  // Apply Socket patches.
+  // Apply Socket patches (including the dynamically generated bootstrap loader).
   const socketPatches = findSocketPatches()
 
   if (socketPatches.length > 0) {
@@ -960,23 +1045,22 @@ async function main() {
     const patchData = []
     let allValid = true
 
-    for (const patchFile of socketPatches) {
-      const patchPath = join(PATCHES_DIR, patchFile)
-      logger.log(`Validating ${patchFile}...`)
+    for (const patch of socketPatches) {
+      logger.log(`Validating ${patch.name}...`)
 
-      const isValid = await validatePatch(patchPath, NODE_DIR)
+      const isValid = await validatePatch(patch.path, NODE_DIR)
       if (!isValid) {
         logger.error(`  ${colors.red('✗')} INVALID: Patch validation failed`)
         allValid = false
         continue
       }
 
-      const content = await readFile(patchPath, 'utf8')
+      const content = await readFile(patch.path, 'utf8')
       const analysis = analyzePatchContent(content)
 
       patchData.push({
-        name: patchFile,
-        path: patchPath,
+        name: patch.name,
+        path: patch.path,
         analysis,
       })
       if (analysis.modifiesV8Includes) {
@@ -1102,30 +1186,56 @@ async function main() {
 
   // Configure Node.js with optimizations.
   printHeader('Configuring Node.js Build')
-  logger.log('Optimization flags:')
-  logger.log(
-    `  ${colors.green('✓')} KEEP: V8 Lite Mode (baseline compiler), WASM (Liftoff), SSL/crypto`,
-  )
-  logger.log(
-    `  ${colors.red('✗')} REMOVE: npm, corepack, inspector, amaro, sqlite, SEA, ICU, TurboFan JIT`,
-  )
-  logger.log(`  ${colors.blue('ℹ')} ICU: none (no internationalization, saves ~6-8 MB)`)
-  logger.log(
-    `  ${colors.blue('ℹ')} V8 Lite Mode: Disables TurboFan optimizer (saves ~15-20 MB)`,
-  )
-  logger.log(
-    `  ${colors.blue('ℹ')} OPTIMIZATIONS: no-snapshot, with-code-cache (for errors), no-SEA, V8 Lite`,
-  )
-  logger.log('')
-  logger.log(
-    `  ${colors.yellow('⚠')} V8 LITE MODE: JavaScript runs 5-10x slower (CPU-bound code)`,
-  )
-  logger.log(`  ${colors.green('✓')} WASM: Full speed (uses Liftoff compiler, unaffected)`)
-  logger.log(`  ${colors.green('✓')} I/O: No impact (network, file operations)`)
-  logger.log('')
-  logger.log(
-    'Expected binary size: ~60MB (before stripping), ~23-27MB (after)',
-  )
+
+  if (IS_DEV_BUILD) {
+    logger.log(`${colors.cyan('🚀 DEV BUILD MODE')} - Fast builds, larger binaries`)
+    logger.log('')
+    logger.log('Optimization flags:')
+    logger.log(
+      `  ${colors.green('✓')} KEEP: Full V8 (TurboFan JIT), WASM, SSL/crypto`,
+    )
+    logger.log(
+      `  ${colors.red('✗')} REMOVE: npm, corepack, inspector, amaro, sqlite, SEA`,
+    )
+    logger.log(
+      `  ${colors.yellow('⚠')} DISABLED: LTO (Link Time Optimization) for faster builds`,
+    )
+    logger.log(
+      `  ${colors.yellow('⚠')} DISABLED: V8 Lite Mode for faster JS execution`,
+    )
+    logger.log('')
+    logger.log(
+      'Expected binary size: ~80-90MB (before stripping), ~40-50MB (after)',
+    )
+    logger.log('Expected build time: ~50% faster than production builds')
+  } else {
+    logger.log(`${colors.magenta('⚡ PRODUCTION BUILD MODE')} - Optimized for size/distribution`)
+    logger.log('')
+    logger.log('Optimization flags:')
+    logger.log(
+      `  ${colors.green('✓')} KEEP: V8 Lite Mode (baseline compiler), WASM (Liftoff), SSL/crypto`,
+    )
+    logger.log(
+      `  ${colors.red('✗')} REMOVE: npm, corepack, inspector, amaro, sqlite, SEA, ICU, TurboFan JIT`,
+    )
+    logger.log(`  ${colors.blue('ℹ')} ICU: none (no internationalization, saves ~6-8 MB)`)
+    logger.log(
+      `  ${colors.blue('ℹ')} V8 Lite Mode: Disables TurboFan optimizer (saves ~15-20 MB)`,
+    )
+    logger.log(
+      `  ${colors.blue('ℹ')} OPTIMIZATIONS: no-snapshot, with-code-cache (for errors), no-SEA, V8 Lite, LTO`,
+    )
+    logger.log('')
+    logger.log(
+      `  ${colors.yellow('⚠')} V8 LITE MODE: JavaScript runs 5-10x slower (CPU-bound code)`,
+    )
+    logger.log(`  ${colors.green('✓')} WASM: Full speed (uses Liftoff compiler, unaffected)`)
+    logger.log(`  ${colors.green('✓')} I/O: No impact (network, file operations)`)
+    logger.log('')
+    logger.log(
+      'Expected binary size: ~60MB (before stripping), ~23-27MB (after)',
+    )
+  }
   logger.log('')
 
   const configureFlags = [
@@ -1143,9 +1253,13 @@ async function main() {
     // '--v8-disable-object-print',
     '--without-node-options',
     '--disable-single-executable-application', // -1-2 MB: SEA not needed for pkg
-    '--v8-lite-mode', // -15-20 MB: Disables TurboFan JIT (JS slower, WASM unaffected)
-    '--enable-lto',
   ]
+
+  // Production-only optimizations (slow builds, smaller binaries).
+  if (IS_PROD_BUILD) {
+    configureFlags.push('--v8-lite-mode') // -15-20 MB: Disables TurboFan JIT (JS slower, WASM unaffected)
+    configureFlags.push('--enable-lto') // Link Time Optimization (very slow, saves ~5-10MB)
+  }
 
   // Add architecture flag for cross-compilation or explicit targeting.
   if (ARCH === 'arm64') {
