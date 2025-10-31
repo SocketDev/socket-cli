@@ -35,7 +35,7 @@ import { cmdUninstall } from './commands/uninstall/cmd-uninstall.mts'
 import { cmdWhoami } from './commands/whoami/cmd-whoami.mts'
 import { cmdWrapper } from './commands/wrapper/cmd-wrapper.mts'
 import { cmdYarn } from './commands/yarn/cmd-yarn.mts'
-import { isSeaBinary } from './utils/executable/detect.mts'
+import { isSeaBinary } from './utils/sea/detect.mts'
 
 export const rootCommands = {
   analytics: cmdAnalytics,

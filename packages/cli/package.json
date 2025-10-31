@@ -15,7 +15,11 @@
     "url": "https://socket.dev"
   },
   "bin": {
-    "socket": "dist/index.js"
+    "socket": "dist/index.js",
+    "socket-npm": "dist/index.js",
+    "socket-npx": "dist/index.js",
+    "socket-pnpm": "dist/index.js",
+    "socket-yarn": "dist/index.js"
   },
   "scripts": {
     "build": "node --import=./scripts/load.mjs scripts/build.mjs",

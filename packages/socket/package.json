@@ -38,7 +38,11 @@
     "verify": "node scripts/verify-package.mjs"
   },
   "bin": {
-    "socket": "dist/bootstrap.js"
+    "socket": "dist/bootstrap.js",
+    "socket-npm": "dist/bootstrap.js",
+    "socket-npx": "dist/bootstrap.js",
+    "socket-pnpm": "dist/bootstrap.js",
+    "socket-yarn": "dist/bootstrap.js"
   },
   "devDependencies": {
     "@socketsecurity/lib": "2.10.0",
