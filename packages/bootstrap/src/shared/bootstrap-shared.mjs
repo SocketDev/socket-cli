@@ -8,6 +8,7 @@ import { homedir } from 'node:os'
 import path from 'node:path'
 
 import { which } from '@socketsecurity/lib/bin'
+import { SOCKET_IPC_HANDSHAKE } from '@socketsecurity/lib/constants/socket'
 import { dlxPackage } from '@socketsecurity/lib/dlx-package'
 import { envAsBoolean } from '@socketsecurity/lib/env'
 import { logger } from '@socketsecurity/lib/logger'
@@ -99,16 +100,54 @@ export async function shouldForwardToSystemNode() {
 }
 
 /**
+ * Find system Node.js binary (excluding the current SEA binary).
+ */
+async function findSystemNode() {
+  try {
+    const nodePath = await which('node', { all: true, nothrow: true })
+
+    if (!nodePath) {
+      return undefined
+    }
+
+    // which with all:true returns string[] if multiple matches, string if single match.
+    const nodePaths = Array.isArray(nodePath) ? nodePath : [nodePath]
+
+    // Find first Node.js that isn't our SEA binary.
+    const currentExecPath = process.execPath
+    const systemNode = nodePaths.find(p => p !== currentExecPath)
+
+    return systemNode
+  } catch {
+    return undefined
+  }
+}
+
+/**
  * Execute the CLI with the given arguments.
  */
 export async function executeCli(cliPath, args) {
-  const result = await spawn(process.execPath, [cliPath, ...args], {
-    env: {
-      ...process.env,
-      PKG_EXECPATH: process.env.PKG_EXECPATH || 'PKG_INVOKE_NODEJS',
-    },
-    stdio: 'inherit',
+  // Try to find system Node.js (excluding ourselves if we're a SEA binary).
+  const systemNode = await findSystemNode()
+  const nodePath = systemNode ?? process.execPath
+
+  // Always use IPC channel and send handshake.
+  // System Node.js will ignore the handshake message.
+  // SEA subprocess will use it to skip bootstrap.
+  const result = await spawn(nodePath, [cliPath, ...args], {
+    stdio: ['inherit', 'inherit', 'inherit', 'ipc'],
   })
+
+  // Send IPC handshake to subprocess.
+  if (result.process && typeof result.process.send === 'function') {
+    result.process.send({
+      [SOCKET_IPC_HANDSHAKE]: {
+        subprocess: true,
+        parent_pid: process.pid,
+      },
+    })
+  }
+
   process.exit(result.code ?? 0)
 }
 
