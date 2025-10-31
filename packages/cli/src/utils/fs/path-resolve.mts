@@ -50,6 +50,10 @@ export function findBinPathDetailsSync(binName: string): {
 }
 
 export function findNpmDirPathSync(npmBinPath: string): string | undefined {
+  // On Windows, Unix-style paths (starting with /) are not valid.
+  if (WIN32 && npmBinPath.startsWith('/')) {
+    return undefined
+  }
   const MAX_ITERATIONS = 100
   let thePath = npmBinPath
   let iterations = 0
@@ -79,8 +83,8 @@ export function findNpmDirPathSync(npmBinPath: string): string | undefined {
     if (
       // npm bin paths may look like:
       //   /usr/local/share/npm/bin/npm
-      //   /Users/SomeUsername/.nvm/versions/node/vX.X.X/bin/npm
-      //   C:\Users\SomeUsername\AppData\Roaming\npm\bin\npm.cmd
+      //   ~/.nvm/versions/node/vX.X.X/bin/npm
+      //   %USERPROFILE%\AppData\Roaming\npm\bin\npm.cmd
       // OR
       //   C:\Program Files\nodejs\npm.cmd
       //
