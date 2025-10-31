@@ -7,7 +7,7 @@ catalog:
   '@socketsecurity/config': 3.0.1
   '@socketsecurity/lib': 2.10.0
   '@socketsecurity/registry': 2.0.0
-  '@socketsecurity/sdk': 3.0.19
+  '@socketsecurity/sdk': 3.0.23
   del-cli: 6.0.0
   esbuild: 0.24.0
   magic-string: 0.30.19
