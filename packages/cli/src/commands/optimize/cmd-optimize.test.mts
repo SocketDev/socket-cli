@@ -68,7 +68,7 @@ async function _createTempFixture(sourceDir: string): Promise<string> {
   )
 
   // Copy the fixture files to the temp directory.
-  await safeMkdir(tempDir)
+  await safeMkdir(tempDir, { recursive: true })
 
   // Copy package.json.
   const sourcePackageJson = path.join(sourceDir, PACKAGE_JSON)

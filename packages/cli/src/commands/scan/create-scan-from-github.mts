@@ -467,7 +467,7 @@ async function streamDownloadWithFetch(
     // before starting the download.
     const dir = path.dirname(localPath)
     if (!existsSync(dir)) {
-      safeMkdirSync(dir)
+      safeMkdirSync(dir, { recursive: true })
     }
 
     const fileStream = createWriteStream(localPath)

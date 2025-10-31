@@ -42,7 +42,7 @@ export async function setupTabCompletion(targetName: string): Promise<
 
   if (!fs.existsSync(targetDir)) {
     debug('create: target dir')
-    safeMkdirSync(targetDir)
+    safeMkdirSync(targetDir, { recursive: true })
   }
 
   updateInstalledTabCompletionScript(targetPath)

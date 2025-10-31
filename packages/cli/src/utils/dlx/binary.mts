@@ -202,7 +202,7 @@ async function downloadBinary(
 
   try {
     // Ensure directory exists.
-    await safeMkdir(path.dirname(destPath))
+    await safeMkdir(path.dirname(destPath), { recursive: true })
 
     // Get the response as a buffer and compute hash.
     const arrayBuffer = await response.arrayBuffer()
@@ -391,7 +391,7 @@ export async function dlxBinary(
 
   if (downloaded) {
     // Ensure cache directory exists.
-    await safeMkdir(cacheEntryDir)
+    await safeMkdir(cacheEntryDir, { recursive: true })
 
     // Download the binary.
     computedChecksum = await downloadBinary(url, binaryPath, checksum)

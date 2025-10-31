@@ -46,7 +46,7 @@ async function downloadCli(): Promise<void> {
   const dlxDir = getDlxDir()
   const cliDir = getCliPackageDir()
 
-  await safeMkdir(dlxDir)
+  await safeMkdir(dlxDir, { recursive: true })
 
   console.error(`Downloading ${packageName}...`)
 
@@ -77,7 +77,7 @@ async function downloadCli(): Promise<void> {
       try {
         const tarballPath = path.join(dlxDir, tarballName.trim())
 
-        await safeMkdir(cliDir)
+        await safeMkdir(cliDir, { recursive: true })
 
         const tarExtractProcess = spawn(
           'tar',

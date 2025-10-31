@@ -46,7 +46,7 @@ export async function saveGhsaTracker(
   const trackerPath = path.join(cwd, TRACKER_FILE)
 
   // Ensure .socket directory exists.
-  await safeMkdir(path.dirname(trackerPath))
+  await safeMkdir(path.dirname(trackerPath), { recursive: true })
 
   await writeJson(trackerPath, tracker, { spaces: 2 })
   debug(`ghsa-tracker: saved ${tracker.fixed.length} records to ${trackerPath}`)

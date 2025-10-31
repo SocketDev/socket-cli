@@ -109,7 +109,7 @@ export async function createTestWorkspace(
   const tempDirName = `socket-cli-workspace-${Date.now()}-${Math.random().toString(36).slice(2)}`
   const workspacePath = path.join(tempBaseDir, tempDirName)
 
-  await safeMkdir(workspacePath)
+  await safeMkdir(workspacePath, { recursive: true })
 
   // Create package.json if specified
   if (packageJson) {
@@ -130,7 +130,7 @@ export async function createTestWorkspace(
     const filePath = path.join(workspacePath, file.path)
     const fileDir = path.dirname(filePath)
     // eslint-disable-next-line no-await-in-loop
-    await safeMkdir(fileDir)
+    await safeMkdir(fileDir, { recursive: true })
 
     const content =
       typeof file.content === 'string'
@@ -143,12 +143,14 @@ export async function createTestWorkspace(
 
   // Create node_modules directory if requested
   if (createNodeModules) {
-    await safeMkdir(path.join(workspacePath, 'node_modules'))
+    await safeMkdir(path.join(workspacePath, 'node_modules'), {
+      recursive: true,
+    })
   }
 
   // Initialize git repository if requested
   if (initGit) {
-    await safeMkdir(path.join(workspacePath, '.git'))
+    await safeMkdir(path.join(workspacePath, '.git'), { recursive: true })
   }
 
   // Create workspace instance
@@ -183,7 +185,7 @@ export async function createTestWorkspace(
     writeFile: async (relativePath: string, content: string) => {
       const filePath = path.join(workspacePath, relativePath)
       const fileDir = path.dirname(filePath)
-      await safeMkdir(fileDir)
+      await safeMkdir(fileDir, { recursive: true })
       await fs.writeFile(filePath, content, 'utf8')
     },
   }

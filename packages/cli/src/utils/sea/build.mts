@@ -72,7 +72,7 @@ export async function buildTarget(
   } as SeaBuildOptions
 
   // Ensure output directory exists.
-  await safeMkdir(outputDir)
+  await safeMkdir(outputDir, { recursive: true })
 
   // Download Node.js binary for target platform.
   const nodeBinary = await downloadNodeBinary(
@@ -83,7 +83,7 @@ export async function buildTarget(
 
   // Generate output path.
   const outputPath = normalizePath(path.join(outputDir, target.outputName))
-  await safeMkdir(outputDir)
+  await safeMkdir(outputDir, { recursive: true })
 
   // Generate SEA configuration.
   const configPath = await generateSeaConfig(entryPoint, outputPath)
@@ -169,7 +169,7 @@ export async function downloadNodeBinary(
       createHash('sha256').update(downloadUrl).digest('hex'),
     ),
   )
-  await safeMkdir(tempDir)
+  await safeMkdir(tempDir, { recursive: true })
 
   try {
     // Save archive.
@@ -227,7 +227,7 @@ export async function downloadNodeBinary(
 
     // Ensure target directory exists.
     const targetDir = path.dirname(nodePath)
-    await safeMkdir(targetDir)
+    await safeMkdir(targetDir, { recursive: true })
 
     // Move binary to final location.
     await fs.copyFile(extractedBinary, nodePath)

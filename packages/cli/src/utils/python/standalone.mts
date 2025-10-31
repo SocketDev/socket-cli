@@ -194,7 +194,7 @@ async function downloadPython(pythonDir: string): Promise<void> {
   const tarballName = 'python-standalone.tar.gz'
 
   // Ensure directory exists.
-  await safeMkdir(pythonDir)
+  await safeMkdir(pythonDir, { recursive: true })
 
   try {
     // Use downloadBinary to download the tarball with caching (without execution).
