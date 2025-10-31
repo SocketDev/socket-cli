@@ -51,7 +51,10 @@ import colors from 'yoctocolors-cjs'
 ## 🏗️ CLI-SPECIFIC
 
 ### Commands
-- **Build**: `npm run build` (alias for `npm run build:dist`)
+- **Build**: `pnpm build` (smart build with caching)
+- **Force rebuild**: `pnpm build --force` (rebuild everything)
+- **Build CLI only**: `pnpm build:cli` (just the CLI package)
+- **Watch mode**: `pnpm build:watch` or `pnpm dev`
 - **Test**: `npm run test` (check + all tests)
 - **Test unit**: `npm run test:unit` or `pnpm test:unit`
 - **Lint**: `npm run lint`, **Fix**: `npm run fix`
@@ -60,13 +63,13 @@ import colors from 'yoctocolors-cjs'
 
 ### Testing Best Practices
 - **🚨 NEVER USE `--` BEFORE TEST FILE PATHS** - Runs ALL tests!
-- **Always build first**: `pnpm build:dist:src`
+- **Always build first**: `pnpm build:cli` (or `pnpm build:cli`)
 - **Single file**: `pnpm test:unit src/commands/file.test.mts`
 - **With pattern**: `pnpm test:unit src/commands/file.test.mts -t "pattern"`
 - **Update snapshots**: `pnpm testu` or `pnpm testu <file>`
 
 ### Running CLI Locally
-- **Build + run**: `npm run build && npm exec socket`
+- **Build + run**: `pnpm build:cli && pnpm exec socket`
 - **Quick**: `npm run bs` (builds source only, then runs)
 - **No build**: `npm run s`
 - **Native TS**: `./sd` (Node 22+ with native TypeScript)

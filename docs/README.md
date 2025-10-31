@@ -36,17 +36,14 @@ Complete end-to-end onboarding for new contributors:
 - [Unified binary design](architecture/unified-binary.md)
 
 ### Build System
-- [Build/dist structure and archiving](build/build-dist-structure.md)
-- [Build process overview](build/build-process.md)
-- [Build quick start](build/build-quick-start.md)
-- [Build system summary](build/build-system-summary.md)
-- [Build toolchain setup](build/build-toolchain-setup.md)
-- [Builds created](build/builds-created.md)
-- [Node.js build order](build/node-build-order-explained.md)
-- [Node.js build quick reference](build/node-build-quick-reference.md)
-- [Node.js patch creation guide](build/node-patch-creation-guide.md)
-- [Node.js patch metadata](build/node-patch-metadata.md)
-- [WASM build guide](build/wasm-build-guide.md)
+- [Build System Guide](build/README.md) - **Start here** - Complete build system overview
+- [Build/dist structure](build/build-dist-structure.md) - Output directory structure
+- [Caching strategy](build/caching-strategy.md) - How build caching works
+- [WASM build guide](build/wasm-build-guide.md) - Building WASM packages
+- [Node.js build quick reference](build/node-build-quick-reference.md) - Troubleshooting custom Node.js builds
+- [Node.js patch creation guide](build/node-patch-creation-guide.md) - Creating Socket patches for Node.js
+- [Node.js patch metadata](build/node-patch-metadata.md) - Patch metadata format
+- [Node.js build order](build/node-build-order-explained.md) - Understanding patch application order
 
 ### Configuration
 - [Configuration migration guide](configuration/configuration-migration.md)
@@ -60,7 +57,6 @@ Complete end-to-end onboarding for new contributors:
 - [Platform support](development/platform-support.md)
 
 ### Guides
-- [Build yao-pkg binary](guides/yao-pkg-build.md)
 - [CI setup for yao-pkg](guides/yao-pkg-ci.md)
 - [Test yao-pkg binary](guides/testing-yao-pkg.md)
 
@@ -70,8 +66,6 @@ Complete end-to-end onboarding for new contributors:
 - [Testing performance](performance/performance-testing.md)
 
 ### Technical Details
-- [Build improvements (2025-10-15)](technical/build-improvements-2025-10-15.md)
-- [Build system improvements](technical/build-system-improvements.md)
 - [Cacache format](technical/cacache-format.md)
 - [Manifest extensions](technical/manifest-extensions.md)
 - [Manifest format](technical/manifest-format.md)
