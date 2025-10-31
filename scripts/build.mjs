@@ -4,7 +4,7 @@
  * Comprehensive build script with intelligent caching.
  *
  * Builds packages in the correct order:
- * 1. WASM packages (onnxruntime, yoga)
+ * 1. WASM packages (yoga) - onnxruntime temporarily disabled
  * 2. CLI package
  * 3. SEA binary
  *
@@ -66,11 +66,13 @@ const PLATFORM_TARGETS = [
  * Build configuration for each package in the default build order.
  */
 const BUILD_PACKAGES = [
-  {
-    name: 'ONNX Runtime WASM',
-    filter: '@socketsecurity/onnxruntime',
-    outputCheck: 'packages/onnxruntime/dist/ort-wasm-simd.wasm',
-  },
+  // TEMPORARILY DISABLED: ONNX Runtime build issues (see build-wasm.yml).
+  // Re-enable once build script is working correctly.
+  // {
+  //   name: 'ONNX Runtime WASM',
+  //   filter: '@socketsecurity/onnxruntime',
+  //   outputCheck: 'packages/onnxruntime/dist/ort-wasm-simd.wasm',
+  // },
   {
     name: 'Yoga WASM',
     filter: '@socketsecurity/yoga',
@@ -156,10 +158,11 @@ function showHelp() {
   logger.log('  pnpm run build --help                    # Show this help')
   logger.log('')
   logger.log('Default Build Order:')
-  logger.log('  1. ONNX Runtime WASM (AI features)')
-  logger.log('  2. Yoga WASM (terminal layouts)')
-  logger.log('  3. CLI Package (TypeScript compilation + bundling)')
-  logger.log('  4. SEA Binary (Node.js Single Executable)')
+  logger.log('  1. Yoga WASM (terminal layouts)')
+  logger.log('  2. CLI Package (TypeScript compilation + bundling)')
+  logger.log('  3. SEA Binary (Node.js Single Executable)')
+  logger.log('')
+  logger.log('Note: ONNX Runtime WASM temporarily disabled (build issues)')
   logger.log('')
   logger.log('Platform Targets:')
   for (const target of PLATFORM_TARGETS) {
