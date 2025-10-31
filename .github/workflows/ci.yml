@@ -38,7 +38,7 @@ permissions:
 jobs:
   ci:
     name: Run CI Pipeline
-    uses: SocketDev/socket-registry/.github/workflows/ci.yml@e7f70a7eb857a85b4f30677f9fc2c38bc9c4d56e # 2025-10-28
+    uses: SocketDev/socket-registry/.github/workflows/ci.yml@ed3c6104ebfbabb657432e79a7f77cf7d33df984 # 2025-10-31
     with:
       test-setup-script: 'pnpm --filter @socketsecurity/cli run build'
       lint-script: 'pnpm --filter @socketsecurity/cli run check'
