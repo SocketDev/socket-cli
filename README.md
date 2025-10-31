@@ -178,8 +178,11 @@ pnpm run build --target cli
 # Build SEA binary
 pnpm run build --target sea
 
-# Build specific platform binary
+# Build specific platform binary (combined syntax)
 pnpm run build --target darwin-arm64
+
+# Build specific platform binary (separate flags - matches node-sea-builder)
+pnpm run build --platform darwin --arch arm64
 ```
 
 #### Multiple target builds
