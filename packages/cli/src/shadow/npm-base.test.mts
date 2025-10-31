@@ -76,7 +76,6 @@ vi.mock('@socketsecurity/lib/constants/node', () => ({
   getExecPath: vi.fn(() => '/usr/bin/node'),
   getNodeDisableSigusr1Flags: vi.fn(() => ['--no-inspect']),
   getNodeNoWarningsFlags: vi.fn(() => ['--no-warnings']),
-  getNodeDebugFlags: vi.fn(() => ['--inspect=0']),
   getNodeHardenFlags: vi.fn(() => ['--frozen-intrinsics']),
   supportsNodePermissionFlag: vi.fn(() => true),
 }))
@@ -121,7 +120,6 @@ describe('shadowNpmBase', () => {
 
     const nodeArgs = spawnCall[1] as string[]
     expect(nodeArgs).toContain('--no-warnings')
-    expect(nodeArgs).toContain('--inspect=0')
     expect(nodeArgs).toContain('--frozen-intrinsics')
     expect(nodeArgs).toContain('--require')
     expect(nodeArgs).toContain('/mock/inject.js')
@@ -301,10 +299,14 @@ describe('shadowNpmBase', () => {
 
     expect(mockProcess.send).toHaveBeenCalledWith({
       SOCKET_IPC_HANDSHAKE: {
-        SOCKET_CLI_SHADOW_API_TOKEN: 'test-token',
-        SOCKET_CLI_SHADOW_BIN: 'npm',
-        SOCKET_CLI_SHADOW_PROGRESS: true,
-        customData: 'test',
+        extra: {
+          SOCKET_CLI_SHADOW_API_TOKEN: 'test-token',
+          SOCKET_CLI_SHADOW_BIN: 'npm',
+          SOCKET_CLI_SHADOW_PROGRESS: true,
+          customData: 'test',
+        },
+        parent_pid: expect.any(Number),
+        subprocess: true,
       },
     })
   })
@@ -314,9 +316,13 @@ describe('shadowNpmBase', () => {
 
     expect(mockProcess.send).toHaveBeenCalledWith({
       SOCKET_IPC_HANDSHAKE: {
-        SOCKET_CLI_SHADOW_API_TOKEN: 'test-token',
-        SOCKET_CLI_SHADOW_BIN: 'npm',
-        SOCKET_CLI_SHADOW_PROGRESS: false,
+        extra: {
+          SOCKET_CLI_SHADOW_API_TOKEN: 'test-token',
+          SOCKET_CLI_SHADOW_BIN: 'npm',
+          SOCKET_CLI_SHADOW_PROGRESS: false,
+        },
+        parent_pid: expect.any(Number),
+        subprocess: true,
       },
     })
   })

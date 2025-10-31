@@ -34,7 +34,6 @@ vi.mock('../../utils/npm/paths.mts', () => ({
 vi.mock('../../constants/paths.mts', () => ({
   execPath: '/usr/bin/node',
   instrumentWithSentryPath: '/mock/sentry.js',
-  nodeDebugFlags: ['--inspect=0'],
   nodeHardenFlags: ['--frozen-intrinsics'],
   nodeMemoryFlags: [],
   nodeNoWarningsFlags: ['--no-warnings'],
@@ -108,7 +107,6 @@ describe('shadowNpmInstall', () => {
       '/usr/bin/node',
       expect.arrayContaining([
         '--no-warnings',
-        '--inspect=0',
         '--frozen-intrinsics',
         '--require',
         '/mock/inject.js',
