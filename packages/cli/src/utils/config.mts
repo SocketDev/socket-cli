@@ -120,7 +120,14 @@ function getConfigValues(): LocalConfig {
           updateConfigValue(CONFIG_KEY_API_TOKEN, token)
         }
       } else {
-        mkdirSync(socketAppDataPath, { recursive: true })
+        try {
+          mkdirSync(socketAppDataPath, { recursive: true })
+        } catch (e: any) {
+          // Ignore EEXIST error - directory already exists.
+          if (e?.code !== 'EEXIST') {
+            throw e
+          }
+        }
       }
     }
   }
@@ -344,7 +351,14 @@ export function updateConfigValue<Key extends keyof LocalConfig>(
       _pendingSave = false
       const socketAppDataPath = getSocketAppDataPath()
       if (socketAppDataPath) {
-        mkdirSync(socketAppDataPath, { recursive: true })
+        try {
+          mkdirSync(socketAppDataPath, { recursive: true })
+        } catch (e: any) {
+          // Ignore EEXIST error - directory already exists.
+          if (e?.code !== 'EEXIST') {
+            throw e
+          }
+        }
         const configFilePath = path.join(socketAppDataPath, 'config.json')
         writeFileSync(
           configFilePath,

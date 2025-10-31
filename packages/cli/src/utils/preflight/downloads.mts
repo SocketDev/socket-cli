@@ -66,13 +66,13 @@ export function runPreflightDownloads(): void {
     try {
       // Download in background (fire and forget).
       await Promise.all(
-        downloads.map(p => 
+        downloads.map(p =>
           downloadPackage({
             package: p.packageSpec,
             binaryName: p.binaryName,
             force: false,
-          })
-        )
+          }),
+        ),
       )
     } catch {}
   })()

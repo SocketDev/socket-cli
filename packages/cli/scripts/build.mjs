@@ -87,7 +87,9 @@ async function main() {
 
     if (extractResult.code !== 0) {
       process.exitCode = extractResult.code
-      throw new Error(`WASM extraction failed with exit code ${extractResult.code}`)
+      throw new Error(
+        `WASM extraction failed with exit code ${extractResult.code}`,
+      )
     }
 
     // Then start esbuild in watch mode.
@@ -135,11 +137,15 @@ async function main() {
     const shouldClean = force
 
     const steps = [
-      ...(shouldClean ? [{
-        name: 'Clean Dist',
-        command: 'pnpm',
-        args: ['run', 'clean:dist'],
-      }] : []),
+      ...(shouldClean
+        ? [
+            {
+              name: 'Clean Dist',
+              command: 'pnpm',
+              args: ['run', 'clean:dist'],
+            },
+          ]
+        : []),
       // {
       //   name: 'Extract MiniLM Model',
       //   command: 'node',

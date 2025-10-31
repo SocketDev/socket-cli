@@ -43,9 +43,9 @@ import {
   InputError,
 } from './utils/error/errors.mts'
 import { failMsgWithBadge } from './utils/error/fail-msg-with-badge.mts'
-import { isSeaBinary } from './utils/sea/detect.mts'
 import { serializeResultJson } from './utils/output/result-json.mts'
 import { runPreflightDownloads } from './utils/preflight/downloads.mts'
+import { isSeaBinary } from './utils/sea/detect.mts'
 import { scheduleUpdateCheck } from './utils/update/manager.mts'
 
 const __filename = fileURLToPath(import.meta.url)

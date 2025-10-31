@@ -26,11 +26,7 @@ import { SOCKET_JSON } from './socket.mts'
 export { SOCKET_JSON }
 
 // Re-export node-related constants from registry for convenience.
-export {
-  getExecPath,
-  getNodeHardenFlags,
-  getNodeNoWarningsFlags,
-}
+export { getExecPath, getNodeHardenFlags, getNodeNoWarningsFlags }
 
 // Export as non-function constants for backward compatibility.
 export const execPath = getExecPath()

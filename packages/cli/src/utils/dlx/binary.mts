@@ -398,7 +398,13 @@ export async function dlxBinary(
 
     // Get file size for metadata.
     const stats = await fs.stat(binaryPath)
-    await writeMetadata(cacheEntryDir, cacheKey, url, computedChecksum || '', stats.size)
+    await writeMetadata(
+      cacheEntryDir,
+      cacheKey,
+      url,
+      computedChecksum || '',
+      stats.size,
+    )
   }
 
   // Execute the binary.

@@ -42,7 +42,6 @@ vi.mock('../utils/fs/find-up.mts', () => ({
   findUp: mockFindUp,
 }))
 
-
 vi.mock('../constants/paths.mts', async importOriginal => {
   const actual = (await importOriginal()) as Record<string, any>
   return {

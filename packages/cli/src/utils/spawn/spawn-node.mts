@@ -19,15 +19,19 @@
  * ```
  */
 
-import { spawn } from '@socketsecurity/lib/spawn'
-import { getExecPath } from '@socketsecurity/lib/constants/node'
 import { which } from '@socketsecurity/lib/bin'
+import { getExecPath } from '@socketsecurity/lib/constants/node'
+import { spawn } from '@socketsecurity/lib/spawn'
 
-import { isSeaBinary } from '../sea/detect.mjs'
-import { sendBootstrapHandshake } from '../sea/boot.mjs'
 import { ensureIpcInStdio } from '../../shadow/stdio-ipc.mjs'
+import { sendBootstrapHandshake } from '../sea/boot.mjs'
+import { isSeaBinary } from '../sea/detect.mjs'
 
-import type { SpawnOptions, SpawnResult, SpawnExtra } from '@socketsecurity/lib/spawn'
+import type {
+  SpawnOptions,
+  SpawnResult,
+  SpawnExtra,
+} from '@socketsecurity/lib/spawn'
 
 /**
  * Options for spawnNode, extending SpawnOptions with IPC handshake data.
