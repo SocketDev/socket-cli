@@ -1,5 +1,9 @@
 # @socketsecurity/cli-with-sentry
 
+[![Socket Badge](https://socket.dev/api/badge/npm/package/@socketsecurity/cli-with-sentry)](https://socket.dev/npm/package/@socketsecurity/cli-with-sentry)
+[![npm version](https://img.shields.io/npm/v/@socketsecurity/cli-with-sentry.svg)](https://www.npmjs.com/package/@socketsecurity/cli-with-sentry)
+[![CI](https://github.com/SocketDev/socket-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/SocketDev/socket-cli/actions/workflows/ci.yml)
+
 Socket CLI with integrated Sentry telemetry for enhanced error reporting and monitoring.
 
 ## Overview
