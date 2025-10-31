@@ -49,6 +49,7 @@ The Socket CLI build system builds packages in this order:
 | `pnpm build` | Smart build with caching (skips unchanged packages) |
 | `pnpm build --force` | Force rebuild everything |
 | `pnpm build --target <name>` | Build specific target (see targets below) |
+| `pnpm build --platform <p> --arch <a>` | Build specific platform/arch (matches node-sea-builder syntax) |
 | `pnpm build --targets <t1,t2,...>` | Build multiple targets |
 | `pnpm build --platforms` | Build all platform binaries (8 platforms) |
 | `pnpm build --platforms --parallel` | Build platforms in parallel (faster) |
@@ -96,6 +97,12 @@ Available targets for `pnpm build --target <name>`:
 ```bash
 # Build just the CLI
 pnpm build --target cli
+
+# Build for specific platform (combined syntax)
+pnpm build --target darwin-arm64
+
+# Build for specific platform (separate flags - matches node-sea-builder)
+pnpm build --platform darwin --arch arm64
 
 # Build multiple targets
 pnpm build --targets cli,sea
