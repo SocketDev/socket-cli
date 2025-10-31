@@ -14,14 +14,12 @@ import {
   getNodeNoWarningsFlags,
   supportsNodePermissionFlag,
 } from '@socketsecurity/lib/constants/node'
-
 import { NODE_MODULES } from '@socketsecurity/lib/constants/paths'
 import { isDebug } from '@socketsecurity/lib/debug'
 import { getOwn } from '@socketsecurity/lib/objects'
 import { normalizePath } from '@socketsecurity/lib/path'
 import { spawnSync } from '@socketsecurity/lib/spawn'
 
-import { findSystemNodejs, spawnNode } from '../utils/spawn/spawn-node.mjs'
 import { NPM, type NPX } from '../constants/agents.mts'
 import { FLAG_LOGLEVEL } from '../constants/cli.mts'
 import ENV from '../constants/env.mts'
@@ -39,6 +37,7 @@ import { findUp } from '../utils/fs/find-up.mjs'
 import { cmdFlagsToString } from '../utils/process/cmd.mts'
 import { installNpmLinks, installNpxLinks } from '../utils/shadow/links.mts'
 import { getPublicApiToken } from '../utils/socket/sdk.mjs'
+import { findSystemNodejs, spawnNode } from '../utils/spawn/spawn-node.mjs'
 
 import type { IpcObject } from '../constants/shadow.mts'
 import type {
