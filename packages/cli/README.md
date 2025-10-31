@@ -1,5 +1,9 @@
 # @socketsecurity/cli
 
+[![Socket Badge](https://socket.dev/api/badge/npm/package/@socketsecurity/cli)](https://socket.dev/npm/package/@socketsecurity/cli)
+[![npm version](https://img.shields.io/npm/v/@socketsecurity/cli.svg)](https://www.npmjs.com/package/@socketsecurity/cli)
+[![CI](https://github.com/SocketDev/socket-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/SocketDev/socket-cli/actions/workflows/ci.yml)
+
 Full Socket CLI implementation for supply chain security analysis.
 
 ## Installation
