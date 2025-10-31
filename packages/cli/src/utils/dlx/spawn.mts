@@ -34,7 +34,7 @@ import type {
   ShadowBinResult,
 } from '../../shadow/npm-base.mjs'
 import type { CResult } from '../../types.mjs'
-import type { SpawnExtra } from '@socketsecurity/lib/spawn'
+import type { SpawnExtra, SpawnResult } from '@socketsecurity/lib/spawn'
 
 export type DlxOptions = ShadowBinOptions & {
   agent?: 'npm' | 'pnpm' | 'yarn' | undefined
@@ -73,7 +73,7 @@ export async function spawnDlx(
   )
 
   return {
-    spawnPromise: result.spawnPromise,
+    spawnPromise: result.spawnPromise as unknown as Promise<SpawnResult>,
   }
 }
 
@@ -216,7 +216,7 @@ export async function spawnCdxgenDlx(
     })
 
     return {
-      spawnPromise: spawnResult,
+      spawnPromise: spawnResult as unknown as Promise<SpawnResult>,
     }
   }
 
