@@ -181,9 +181,9 @@ async function convertToOnnx(modelKey) {
 /**
  * Apply INT4 quantization for maximum compression.
  *
- * Uses MatMul4BitsQuantizer for block-wise weight-only quantization:
+ * Uses MatMulNBitsQuantizer with RTN (Round To Nearest) weight-only quantization:
  * - Converts MatMul operators to MatMulNBits (INT4).
- * - Results in 99.8% size reduction (86MB → 174KB for MiniLM).
+ * - Results in significant size reduction (e.g., 86MB → ~20MB for MiniLM).
  * - Model remains fully functional with minimal accuracy loss.
  */
 async function quantizeModel(modelKey) {
@@ -232,11 +232,7 @@ async function quantizeModel(modelKey) {
         `from onnxruntime.quantization.matmul_nbits_quantizer import MatMulNBitsQuantizer, RTNWeightOnlyQuantConfig; ` +
         `from onnxruntime.quantization import quant_utils; ` +
         `from pathlib import Path; ` +
-        `quant_config = RTNWeightOnlyQuantConfig(` +
-        `  block_size=128, ` +
-        `  is_symmetric=True, ` +
-        `  accuracy_level=4` +
-        `); ` +
+        `quant_config = RTNWeightOnlyQuantConfig(); ` +
         `model = quant_utils.load_model_with_shape_infer(Path('${onnxPath}')); ` +
         `quant = MatMulNBitsQuantizer(model, algo_config=quant_config); ` +
         `quant.process(); ` +
