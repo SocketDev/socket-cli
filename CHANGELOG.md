@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.0.7](https://github.com/SocketDev/socket-cli/releases/tag/v2.0.7) - 2025-10-31
+
+### Added
+- Shimmer effect to bootstrap spinner for enhanced visual feedback during CLI download
+
+### Changed
+- Consolidated SOCKET_CLI_ISSUES_URL constant to socket constants module for better organization
+
 ## [2.0.6](https://github.com/SocketDev/socket-cli/releases/tag/v2.0.6) - 2025-10-31
 
 ### Fixed
