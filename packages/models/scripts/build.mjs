@@ -212,6 +212,7 @@ async function quantizeModel(modelKey) {
     : [{ input: 'model.onnx', output: 'model.int4.onnx' }]
 
   const quantizedPaths = []
+  let method = 'INT4'
 
   for (const { input, output } of models) {
     const onnxPath = join(modelDir, input)
@@ -224,7 +225,6 @@ async function quantizeModel(modelKey) {
 
     let originalSize
     let quantSize
-    let method = 'INT4'
 
     try {
       await execAsync(
