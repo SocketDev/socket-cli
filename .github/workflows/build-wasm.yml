@@ -258,13 +258,20 @@ jobs:
         id: models-cache-valid
         run: |
           SUFFIX="${{ steps.models-cache-key.outputs.suffix }}"
-          if [ -f "packages/models/dist/minilm-l6-${SUFFIX}.onnx" ] && [ -f "packages/models/dist/codet5-encoder-${SUFFIX}.onnx" ]; then
+          # Check for both MiniLM and CodeT5 models.
+          if [ -f "packages/models/dist/minilm-l6-${SUFFIX}.onnx" ] && \
+             [ -f "packages/models/dist/codet5-encoder-${SUFFIX}.onnx" ] && \
+             [ -f "packages/models/dist/codet5-decoder-${SUFFIX}.onnx" ]; then
             echo "valid=true" >> $GITHUB_OUTPUT
-            echo "Cache hit: artifacts found"
+            echo "Cache hit: all artifacts found"
             ls -lh packages/models/dist/
           else
             echo "valid=false" >> $GITHUB_OUTPUT
             echo "Cache miss or incomplete: forcing rebuild"
+            echo "Expected files:"
+            echo "  - minilm-l6-${SUFFIX}.onnx"
+            echo "  - codet5-encoder-${SUFFIX}.onnx"
+            echo "  - codet5-decoder-${SUFFIX}.onnx"
             ls -lh packages/models/dist/ 2>/dev/null || echo "Directory does not exist"
           fi
 
@@ -274,8 +281,8 @@ jobs:
           QUANT_LEVEL="${{ steps.models-cache-key.outputs.quant-level }}"
           echo "::group::Building ${QUANT_LEVEL}-quantized AI models"
 
-          # Build command with quantization flag.
-          BUILD_CMD="pnpm --filter @socketsecurity/models run build --"
+          # Build command with quantization flag and --all for both models.
+          BUILD_CMD="pnpm --filter @socketsecurity/models run build -- --all"
 
           if [ "$QUANT_LEVEL" = "INT8" ]; then
             BUILD_CMD="$BUILD_CMD --int8"
@@ -304,6 +311,12 @@ jobs:
           fi
           if [ ! -f "packages/models/dist/codet5-encoder-${SUFFIX}.onnx" ]; then
             echo "ERROR: codet5-encoder-${SUFFIX}.onnx not found!"
+            ls -lh packages/models/dist/ || echo "Directory does not exist"
+            exit 1
+          fi
+          if [ ! -f "packages/models/dist/codet5-decoder-${SUFFIX}.onnx" ]; then
+            echo "ERROR: codet5-decoder-${SUFFIX}.onnx not found!"
+            ls -lh packages/models/dist/ || echo "Directory does not exist"
             exit 1
           fi
           ls -lh packages/models/dist/
