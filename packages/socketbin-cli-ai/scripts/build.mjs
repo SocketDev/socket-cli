@@ -426,7 +426,9 @@ async function buildTypeScript() {
     platform: 'node',
     target: 'node20',
     outfile: join(DIST, 'ai.js'),
-    minify: true,
+    minifyWhitespace: true,
+    minifyIdentifiers: true,
+    minifySyntax: false,
     sourcemap: false,
   })
 
