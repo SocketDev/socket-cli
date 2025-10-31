@@ -204,15 +204,15 @@ async function runLintOnFiles(files, options = {}) {
       await spawn('pnpm', args, { shell: WIN32 })
     } catch (e) {
       // When fixing, non-zero exit codes are normal if fixes were applied.
-      if (!fix || (e.stderr && e.stderr.toString().trim().length > 0)) {
+      if (!fix || (e.stderr && e.stderr?.toString().trim().length > 0)) {
         if (!quiet) {
           logger.error('Linting failed')
         }
         if (e.stderr) {
-          logger.error(e.stderr.toString())
+          logger.error(e.stderr?.toString() ?? '')
         }
         if (e.stdout && !fix) {
-          logger.log(e.stdout.toString())
+          logger.log(e.stdout?.toString() ?? '')
         }
         return e.code || 1
       }
@@ -275,15 +275,15 @@ async function runLintOnAll(options = {}) {
       await spawn('pnpm', args, { shell: WIN32 })
     } catch (e) {
       // When fixing, non-zero exit codes are normal if fixes were applied.
-      if (!fix || (e.stderr && e.stderr.toString().trim().length > 0)) {
+      if (!fix || (e.stderr && e.stderr?.toString().trim().length > 0)) {
         if (!quiet) {
           logger.error('Linting failed')
         }
         if (e.stderr) {
-          logger.error(e.stderr.toString())
+          logger.error(e.stderr?.toString() ?? '')
         }
         if (e.stdout && !fix) {
-          logger.log(e.stdout.toString())
+          logger.log(e.stdout?.toString() ?? '')
         }
         return e.code || 1
       }

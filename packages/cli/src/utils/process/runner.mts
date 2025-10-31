@@ -98,8 +98,8 @@ export async function runExternalCommand(
       spinner = undefined
     }
 
-    const stdout = spawnResult.stdout ? spawnResult.stdout.toString() : ''
-    const stderr = spawnResult.stderr ? spawnResult.stderr.toString() : ''
+    const stdout = spawnResult.stdout?.toString() ?? ''
+    const stderr = spawnResult.stderr?.toString() ?? ''
     const exitCode = spawnResult.code ?? 0
 
     debugNs('stdio', `Command completed with exit code: ${exitCode}`)

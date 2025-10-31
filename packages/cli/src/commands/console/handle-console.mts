@@ -237,13 +237,7 @@ export async function handleConsole(): Promise<void> {
 
         // Add stdout output.
         if (result.stdout) {
-          const lines = (
-            typeof result.stdout === 'string'
-              ? result.stdout
-              : result.stdout.toString()
-          )
-            .trim()
-            .split('\n')
+          const lines = result.stdout?.toString().trim().split('\n') ?? []
           for (const line of lines) {
             addMessage(line)
           }
@@ -281,13 +275,7 @@ export async function handleConsole(): Promise<void> {
 
         // Add stdout output.
         if (result.stdout) {
-          const lines = (
-            typeof result.stdout === 'string'
-              ? result.stdout
-              : result.stdout.toString()
-          )
-            .trim()
-            .split('\n')
+          const lines = result.stdout?.toString().trim().split('\n') ?? []
           for (const line of lines) {
             addMessage(line)
           }

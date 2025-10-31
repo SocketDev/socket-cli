@@ -306,8 +306,7 @@ async function getAgentVersion(
             // when shell is true.
             shell: WIN32,
           })
-          const stdout = spawnResult.stdout
-          return typeof stdout === 'string' ? stdout : stdout.toString()
+          return spawnResult.stdout?.toString() ?? ''
         })(),
       ) ?? undefined
   } catch (e) {

@@ -78,7 +78,7 @@ export async function spawnCoana(
 
       return {
         ok: true,
-        data: spawnResult.stdout ? spawnResult.stdout.toString() : '',
+        data: spawnResult.stdout?.toString() ?? '',
       }
     }
 

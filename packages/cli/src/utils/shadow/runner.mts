@@ -147,7 +147,7 @@ export async function runShadowCommand(
     }
 
     const output = await result.spawnPromise
-    return { ok: true, data: output.stdout.toString() }
+    return { ok: true, data: output.stdout?.toString() ?? '' }
   } catch (e) {
     if (spinner) {
       spinner.stop()
@@ -209,7 +209,7 @@ export async function runShadowNpm(
     }
 
     const output = await result.spawnPromise
-    return { ok: true, data: output.stdout.toString() }
+    return { ok: true, data: output.stdout?.toString() ?? '' }
   } catch (e) {
     if (spinner) {
       spinner.stop()
