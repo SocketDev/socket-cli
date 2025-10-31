@@ -119,12 +119,12 @@ Socket CLI uses an **intelligent build system with automatic caching** that only
 3. **CLI Package** - TypeScript compilation and bundling
 4. **SEA Binary** - Node.js Single Executable Application
 
-#### Smart build (recommended)
+#### Quick start (easiest)
 
 The default build command automatically skips packages that are already up-to-date:
 
 ```bash
-# Build only what changed (simulates CI caching locally)
+# Build only what changed (recommended for development)
 pnpm run build
 ```
 
@@ -160,19 +160,19 @@ Total:    57.4s
 
 #### Force rebuild
 
-To force rebuild all packages (ignoring cache):
+To rebuild everything from scratch (ignoring cache):
 
 ```bash
-# Rebuild everything from scratch
+# Force rebuild all packages
 pnpm run build --force
 ```
 
-#### Build specific packages
+#### Single target builds
 
-For targeted builds during development:
+For fast iteration during development:
 
 ```bash
-# Build only CLI package (fast iteration)
+# Build only CLI package
 pnpm run build --target cli
 
 # Build SEA binary
@@ -180,14 +180,37 @@ pnpm run build --target sea
 
 # Build specific platform binary
 pnpm run build --target darwin-arm64
-
-# See all available targets
-pnpm run build --help
 ```
 
-#### Manual builds
+#### Multiple target builds
 
-You can also build individual packages directly:
+Build multiple packages at once:
+
+```bash
+# Build multiple specific targets sequentially
+pnpm run build --targets cli,sea,darwin-arm64
+
+# Build multiple targets in parallel (faster)
+pnpm run build --targets cli,sea,darwin-arm64 --parallel
+```
+
+#### Platform binaries
+
+Build all platform binaries (8 platforms):
+
+```bash
+# Build all platforms sequentially (safer for limited resources)
+pnpm run build --platforms
+
+# Build all platforms in parallel (much faster, requires more CPU/RAM)
+pnpm run build --platforms --parallel
+```
+
+**Platform targets:** alpine-arm64, alpine-x64, darwin-arm64, darwin-x64, linux-arm64, linux-x64, win32-arm64, win32-x64
+
+#### Advanced: Direct package builds
+
+Build individual packages directly with pnpm filters:
 
 ```bash
 # Build ONNX Runtime WASM (for AI features)
@@ -201,6 +224,12 @@ pnpm --filter @socketsecurity/cli run build
 
 # Build SEA binary (Node.js Single Executable)
 pnpm --filter @socketbin/node-sea-builder-builder run build
+```
+
+#### All build options
+
+```bash
+pnpm run build --help
 ```
 
 See [docs/development/](docs/development/) for detailed development guides.

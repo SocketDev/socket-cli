@@ -169,7 +169,6 @@
     "// Build": "",
     "build": "node scripts/build.mjs",
     "build:cli": "pnpm --filter @socketsecurity/cli run build",
-    "build:platforms": "node scripts/build-platforms.mjs",
     "build:watch": "pnpm --filter @socketsecurity/cli run build:watch",
     "dev": "pnpm run build:watch",
     "// Quality Checks": "",
