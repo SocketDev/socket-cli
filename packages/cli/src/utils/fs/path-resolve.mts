@@ -50,8 +50,11 @@ export function findBinPathDetailsSync(binName: string): {
 }
 
 export function findNpmDirPathSync(npmBinPath: string): string | undefined {
-  // On Windows, Unix-style paths (starting with /) are not valid.
-  if (WIN32 && npmBinPath.startsWith('/')) {
+  // On Windows, reject Unix absolute paths (starting with / but not //).
+  // This allows UNC paths: //server/share, \\server\share.
+  // And long paths: \\?\C:\..., //?/C:/...
+  // Backslash paths (\\...) don't match startsWith('/') so they pass through.
+  if (WIN32 && npmBinPath.startsWith('/') && !npmBinPath.startsWith('//')) {
     return undefined
   }
   const MAX_ITERATIONS = 100
