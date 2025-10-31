@@ -163,7 +163,10 @@ jobs:
         run: |
           echo "::group::Installing Python ML dependencies"
           pip install --no-cache-dir torch transformers
-          pip install optimum[onnx] onnxruntime>=1.21.0
+          pip install --no-cache-dir --upgrade onnx onnxruntime onnxruntime-tools
+          pip install --no-cache-dir optimum[onnxruntime]
+          python3 -c "import onnxruntime; print(f'ONNX Runtime version: {onnxruntime.__version__}')"
+          python3 -c "from onnxruntime.quantization import matmul_4bits_quantizer; print('INT4 quantization available')" || echo "INT4 quantization not available - will use FP32 fallback"
           echo "::endgroup::"
 
       - name: Install dependencies
