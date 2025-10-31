@@ -24,21 +24,19 @@ pnpm dev
 
 The Socket CLI build system builds packages in this order:
 
-1. **ONNX Runtime WASM** (`@socketsecurity/onnxruntime`)
-   - AI model execution runtime
-   - Output: `packages/onnxruntime/dist/ort-wasm-simd.wasm`
-
-2. **Yoga WASM** (`@socketsecurity/yoga`)
+1. **Yoga WASM** (`@socketsecurity/yoga`)
    - Terminal layout engine
    - Output: `packages/yoga/dist/yoga.wasm`
 
-3. **CLI Package** (`@socketsecurity/cli`)
+2. **CLI Package** (`@socketsecurity/cli`)
    - Main CLI application
    - Output: `packages/cli/dist/index.js`
 
-4. **SEA Binary** (`@socketbin/node-sea-builder-builder`)
+3. **SEA Binary** (`@socketbin/node-sea-builder-builder`)
    - Single Executable Application (Node.js + CLI bundled)
    - Output: `packages/socketbin-node-sea-builder-builder/bin/socket`
+
+> **Note**: ONNX Runtime WASM (`@socketsecurity/onnxruntime`) is temporarily disabled due to build issues. AI features use pre-built assets.
 
 ## Build Commands
 
