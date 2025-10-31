@@ -14,8 +14,10 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { build } from 'esbuild'
+import { getSpinner } from '@socketsecurity/lib/constants/process'
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { logger } from '@socketsecurity/lib/logger'
+import { Spinner, withSpinner } from '@socketsecurity/lib/spinner'
 import { spawn } from '@socketsecurity/lib/spawn'
 
 import seaConfig from './esbuild.bootstrap.config.mjs'
@@ -36,40 +38,54 @@ async function ensureBootstrapPackageBuilt() {
     'packages/bootstrap/dist/bootstrap-npm.js'
   )
 
+  logger.group('Checking bootstrap package')
+
   // Check if bootstrap source and dist exist.
   if (!existsSync(bootstrapSource)) {
-    logger.error('✗ Bootstrap source not found:', bootstrapSource)
+    logger.groupEnd()
+    logger.error('Bootstrap source not found:', bootstrapSource)
     process.exit(1)
   }
 
   // If dist exists, assume it's up to date.
   if (existsSync(bootstrapDist)) {
+    logger.substep('Bootstrap package already built')
+    logger.groupEnd()
     return
   }
 
-  logger.log('→ Building @socketsecurity/bootstrap package (dependency)...\n')
+  logger.substep('Bootstrap package needs building')
+  logger.groupEnd()
 
-  const result = await spawn(
-    'pnpm',
-    ['--filter', '@socketsecurity/bootstrap', 'run', 'build'],
-    {
-      cwd: monorepoRoot,
-      shell: WIN32,
-      stdio: 'inherit',
-    }
-  )
+  const result = await withSpinner({
+    message: 'Building @socketsecurity/bootstrap package',
+    spinner: Spinner({ shimmer: { dir: 'ltr' } }),
+    operation: async () => {
+      const spawnResult = await spawn(
+        'pnpm',
+        ['--filter', '@socketsecurity/bootstrap', 'run', 'build'],
+        {
+          cwd: monorepoRoot,
+          shell: WIN32,
+          stdio: 'pipe',
+        }
+      )
+
+      if (spawnResult.code !== 0) {
+        throw new Error('Failed to build @socketsecurity/bootstrap')
+      }
+
+      return spawnResult
+    },
+  })
 
   if (result.code !== 0) {
-    logger.error('\n✗ Failed to build @socketsecurity/bootstrap')
+    logger.error('Failed to build @socketsecurity/bootstrap')
     process.exit(1)
   }
-
-  logger.log('')
 }
 
 async function copyFilesFromRepoRoot() {
-  logger.log('→ Copying files from repo root...')
-
   const filesToCopy = [
     'CHANGELOG.md',
     'LICENSE',
@@ -77,77 +93,101 @@ async function copyFilesFromRepoRoot() {
     'logo-light.png',
   ]
 
-  for (const file of filesToCopy) {
-    const srcPath = path.join(monorepoRoot, file)
-    const destPath = path.join(packageRoot, file)
+  await withSpinner({
+    message: 'Copying files from repo root',
+    spinner: Spinner({ shimmer: { dir: 'ltr' } }),
+    operation: async () => {
+      logger.group('Copying assets')
 
-    try {
-      await fs.cp(srcPath, destPath)
-      logger.log(`  ✓ ${file}`)
-    } catch (error) {
-      logger.error(`  ✗ Failed to copy ${file}:`, error.message)
-      throw error
-    }
-  }
+      for (const file of filesToCopy) {
+        const srcPath = path.join(monorepoRoot, file)
+        const destPath = path.join(packageRoot, file)
 
-  logger.log('✓ Files copied from repo root\n')
+        try {
+          await fs.cp(srcPath, destPath)
+          logger.substep(`Copied ${file}`)
+        } catch (error) {
+          logger.groupEnd()
+          throw new Error(`Failed to copy ${file}: ${error.message}`)
+        }
+      }
+
+      logger.groupEnd()
+    },
+  })
 }
 
 async function buildBootstrap() {
-  logger.log('Building Socket npm wrapper bootstrap with esbuild...\n')
+  logger.group('Building bootstrap bundles')
 
   try {
     // Create dist directory.
+    logger.substep('Creating dist directory')
     mkdirSync(path.join(packageRoot, 'dist'), { recursive: true })
 
     // Build standard version for SEA.
-    logger.log('→ Building standard bootstrap (SEA)...')
-    const seaResult = await build(seaConfig)
-
-    logger.log(`✓ ${seaConfig.outfile}`)
+    const seaResult = await withSpinner({
+      message: 'Building standard bootstrap (SEA)',
+      spinner: Spinner({ shimmer: { dir: 'ltr' } }),
+      operation: async () => {
+        const result = await build(seaConfig)
+        return result
+      },
+    })
 
     if (seaResult.metafile) {
       const outputSize = Object.values(seaResult.metafile.outputs)[0]?.bytes
       if (outputSize) {
-        logger.log(`  Size: ${(outputSize / 1024).toFixed(2)} KB`)
+        logger.substep(`SEA bundle: ${(outputSize / 1024).toFixed(2)} KB`)
       }
     }
 
     // Build transformed version for smol.
-    logger.log('\n→ Building transformed bootstrap (smol)...')
-    const smolResult = await build(smolConfig)
+    const smolResult = await withSpinner({
+      message: 'Building transformed bootstrap (smol)',
+      spinner: Spinner({ shimmer: { dir: 'ltr' } }),
+      operation: async () => {
+        const result = await build(smolConfig)
 
-    // Write the transformed output (build had write: false).
-    if (smolResult.outputFiles && smolResult.outputFiles.length > 0) {
-      for (const output of smolResult.outputFiles) {
-        writeFileSync(output.path, output.contents)
-      }
-    }
+        // Write the transformed output (build had write: false).
+        if (result.outputFiles && result.outputFiles.length > 0) {
+          for (const output of result.outputFiles) {
+            writeFileSync(output.path, output.contents)
+          }
+        }
 
-    logger.log(`✓ ${smolConfig.outfile}`)
+        return result
+      },
+    })
 
     if (smolResult.metafile) {
       const outputSize = Object.values(smolResult.metafile.outputs)[0]?.bytes
       if (outputSize) {
-        logger.log(`  Size: ${(outputSize / 1024).toFixed(2)} KB`)
+        logger.substep(`Smol bundle: ${(outputSize / 1024).toFixed(2)} KB`)
       }
     }
 
-    logger.log('\n✓ Bootstrap build completed')
+    logger.groupEnd()
   } catch (error) {
-    logger.error('\n✗ Bootstrap build failed:', error)
+    logger.groupEnd()
+    logger.error('Bootstrap build failed:', error)
     throw error
   }
 }
 
 async function main() {
+  logger.group('Socket Package Build')
+
   try {
     await ensureBootstrapPackageBuilt()
     await buildBootstrap()
     await copyFilesFromRepoRoot()
-    logger.log('✓ Build completed successfully')
+
+    logger.groupEnd()
+    logger.success('Build completed successfully')
   } catch (error) {
-    logger.error('✗ Build failed:', error)
+    logger.groupEnd()
+    logger.error('Build failed:', error)
     process.exit(1)
   }
 }
