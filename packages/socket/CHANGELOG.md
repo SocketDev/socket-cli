@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.0.10](https://github.com/SocketDev/socket-cli/releases/tag/v2.0.10) - 2025-10-31
+
+### Changed
+- Updated @socketsecurity/lib to 2.10.4 with enhanced directory creation utilities and environment variable handling
+
+### Fixed
+- Tab completion script resolution when running via npx/dlx - now correctly locates script in CLI package directory
+- Scan command SDK parameter structure - flattened options and made repo parameter conditional to prevent "Repo slug is required" errors
+- Null reference error in output handling when calling toString() on undefined values
+
 ## [2.0.7](https://github.com/SocketDev/socket-cli/releases/tag/v2.0.7) - 2025-10-31
 
 ### Added
