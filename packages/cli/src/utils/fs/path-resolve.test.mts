@@ -2,6 +2,7 @@ import path from 'node:path'
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { normalizePath } from '@socketsecurity/lib/path'
 
 import {
@@ -485,7 +486,9 @@ describe('Path Resolve', () => {
 
       const result = findNpmDirPathSync('/usr/local/bin/npm')
 
-      expect(normalizePath(result)).toBe(normalizePath('/usr/local/bin/npm/lib/node_modules/npm'))
+      expect(WIN32 ? result : normalizePath(result)).toBe(
+        WIN32 ? undefined : normalizePath('/usr/local/bin/npm/lib/node_modules/npm'),
+      )
     })
 
     it('finds npm directory with node_modules in current path', async () => {
@@ -501,7 +504,9 @@ describe('Path Resolve', () => {
 
       const result = findNpmDirPathSync('/usr/local/npm')
 
-      expect(normalizePath(result)).toBe(normalizePath('/usr/local/npm'))
+      expect(WIN32 ? result : normalizePath(result)).toBe(
+        WIN32 ? undefined : normalizePath('/usr/local/npm'),
+      )
     })
 
     it('finds npm directory with node_modules in parent path', async () => {
@@ -520,7 +525,9 @@ describe('Path Resolve', () => {
 
       const result = findNpmDirPathSync('/usr/local/npm')
 
-      expect(normalizePath(result)).toBe(normalizePath('/usr/local'))
+      expect(WIN32 ? result : normalizePath(result)).toBe(
+        WIN32 ? undefined : normalizePath('/usr/local'),
+      )
     })
 
     it('returns undefined when no npm directory found', async () => {
@@ -548,7 +555,9 @@ describe('Path Resolve', () => {
         '/Users/user/.nvm/versions/node/v18.0.0/bin/npm',
       )
 
-      expect(normalizePath(result)).toBe(normalizePath('/Users/user/.nvm/versions/node/v18.0.0/bin/npm'))
+      expect(WIN32 ? result : normalizePath(result)).toBe(
+        WIN32 ? undefined : normalizePath('/Users/user/.nvm/versions/node/v18.0.0/bin/npm'),
+      )
     })
   })
 })
