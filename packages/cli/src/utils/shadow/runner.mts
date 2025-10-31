@@ -25,7 +25,7 @@ import { getErrorCause } from '../error/errors.mts'
 import { findUp } from '../fs/find-up.mts'
 import { isYarnBerry } from '../yarn/version.mts'
 
-import type { IpcObject } from '../../constants/types.mts'
+import type { IpcObject } from '../../constants/shadow.mts'
 import type {
   ShadowBinOptions,
   ShadowBinResult,

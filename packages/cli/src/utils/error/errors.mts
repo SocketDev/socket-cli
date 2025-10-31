@@ -33,10 +33,8 @@ import {
   SOCKET_STATUS_URL,
 } from '../../constants/socket.mts'
 
-import type { RegistryInternals } from '../../constants/types.mts'
-
 // Access internals via kInternalsSymbol.
-const constants = { ENV, [kInternalsSymbol]: {} as RegistryInternals }
+const constants = { ENV, [kInternalsSymbol]: {} as { getSentry?: () => any } }
 const internals = constants[kInternalsSymbol]
 const getSentry = internals.getSentry
 
