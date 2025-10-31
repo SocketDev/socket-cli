@@ -36,14 +36,22 @@ export interface SpawnNodeOptions extends SpawnOptions {
   /**
    * Additional IPC handshake data to send to subprocess.
    *
-   * This is merged with bootstrap indicators (subprocess: true, parent_pid)
-   * to create the full IPC handshake message.
+   * This is placed in the `extra` field of the handshake message to avoid
+   * collision with standard fields (subprocess, parent_pid).
+   *
+   * Final handshake structure:
+   * {
+   *   subprocess: true,
+   *   parent_pid: <pid>,
+   *   extra: { ...ipc }  // Custom data goes here
+   * }
    *
    * Use this to pass custom configuration to the subprocess:
    * - Shadow npm/pnpm/yarn settings (API token, bin name, etc.)
    * - Custom application data
    *
-   * Only used when spawning SEA binary as subprocess.
+   * System Node.js will ignore the handshake message.
+   * SEA subprocess will use it to skip bootstrap.
    */
   ipc?: Record<string, unknown>
 }
@@ -71,32 +79,25 @@ export async function spawnNode(
   // Get the Node.js executable path to use.
   const nodePath = await getNodeExecutablePath()
 
-  // Determine if we need to set up IPC handshake.
-  const needsIpcHandshake = isSeaBinary() && nodePath === process.execPath
-
-  // If we need IPC handshake, ensure stdio includes 'ipc'.
-  const finalOptions = needsIpcHandshake
-    ? {
-        ...spawnOpts,
-        stdio: ensureIpcInStdio(spawnOpts.stdio),
-      }
-    : spawnOpts
+  // Always ensure stdio includes 'ipc' for handshake.
+  // System Node.js will ignore the handshake message.
+  // SEA subprocess will use it to skip bootstrap.
+  const finalOptions = {
+    ...spawnOpts,
+    stdio: ensureIpcInStdio(spawnOpts.stdio),
+  }
 
   // Spawn the Node.js process.
   const spawnResult = spawn(nodePath, args, finalOptions, extra)
 
-  // If we're spawning ourselves as a SEA subprocess, send IPC handshake.
-  if (needsIpcHandshake) {
-    // Build IPC handshake with bootstrap indicators + custom data.
-    const handshakeData = {
-      // Bootstrap indicators - always included for subprocess detection.
-      subprocess: true,
-      parent_pid: process.pid,
-      // Custom IPC data (shadow config, application data, etc.).
-      ...(ipc ?? {}),
-    }
-    sendBootstrapHandshake(spawnResult.process, handshakeData)
+  // Always send IPC handshake with bootstrap indicators + custom data.
+  const handshakeData = {
+    subprocess: true,
+    parent_pid: process.pid,
+    // Custom IPC data in extra field to avoid collision with standard fields.
+    ...(ipc ? { extra: { ...ipc } } : {}),
   }
+  sendBootstrapHandshake(spawnResult.process, handshakeData)
 
   return spawnResult
 }
@@ -133,7 +134,7 @@ async function getNodeExecutablePath(): Promise<string> {
  *
  * @returns Path to system Node.js, or undefined
  */
-async function findSystemNodejs(): Promise<string | undefined> {
+export async function findSystemNodejs(): Promise<string | undefined> {
   // Use which to find 'node' in PATH (returns all matches).
   const nodePath = await which('node', { all: true, nothrow: true })
 
