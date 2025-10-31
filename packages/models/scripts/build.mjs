@@ -156,9 +156,12 @@ async function convertToOnnx(modelKey) {
 
   const config = MODEL_SOURCES[modelKey]
   const modelDir = join(MODELS, modelKey)
-  const onnxPath = join(modelDir, 'model.onnx')
 
-  if (existsSync(onnxPath)) {
+  // Check for expected ONNX files based on model type.
+  const expectedFiles = config.files.filter(f => f.endsWith('.onnx'))
+  const allExist = expectedFiles.every(f => existsSync(join(modelDir, f)))
+
+  if (allExist) {
     logger.success('Already in ONNX format')
     await createCheckpoint(PACKAGE_NAME, `converted-${modelKey}`, { modelKey })
     return
