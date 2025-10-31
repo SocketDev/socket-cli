@@ -136,110 +136,9 @@ jobs:
           path: packages/yoga-layout/build/wasm/
           retention-days: 7
 
-  build-ai-models:
-    name: 🤖 Build AI Models WASM
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-    steps:
-      - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-
-      - name: Setup Node.js
-        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
-        with:
-          node-version: 22
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@9fd676a19091d4595eefd76e4bd31c97133911f1 # v4.2.0
-        with:
-          version: ^10.16.0
-
-      - name: Setup Python
-        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
-        with:
-          python-version: '3.11'
-
-      - name: Install Python dependencies (large packages without cache)
-        run: |
-          echo "::group::Installing large Python packages (torch, transformers)"
-          # Install large packages without caching to avoid cache service failures.
-          # torch (~700MB-2GB) and transformers (~500MB-1GB) are too large for
-          # GitHub's cache service and cause 400 errors.
-          pip install --no-cache-dir torch transformers
-          echo "::endgroup::"
-
-      - name: Install Python dependencies (smaller packages with cache)
-        run: |
-          echo "::group::Installing remaining Python dependencies"
-          # Install smaller packages normally (optimum, onnxruntime).
-          # These are cached by pip's default cache location.
-          pip install optimum[onnx] onnxruntime>=1.21.0
-          echo "::endgroup::"
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Generate AI models cache key
-        id: ai-cache-key
-        run: |
-          HASH=$(find packages/socketbin-cli-ai -type f \( -name "*.mjs" -o -name "*.ts" \) | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
-          echo "hash=$HASH" >> $GITHUB_OUTPUT
-
-      - name: Restore AI models cache
-        id: ai-cache
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        with:
-          path: packages/socketbin-cli-ai/dist
-          key: ai-models-${{ steps.ai-cache-key.outputs.hash }}
-          restore-keys: ai-models-
-          enableCrossOsArchive: true
-
-      - name: Verify cached artifacts
-        id: ai-cache-valid
-        run: |
-          if [ -f "packages/socketbin-cli-ai/dist/ai.bz" ] && [ -f "packages/socketbin-cli-ai/dist/ai.js" ]; then
-            echo "valid=true" >> $GITHUB_OUTPUT
-            echo "Cache hit: artifacts found"
-            ls -lh packages/socketbin-cli-ai/dist/
-          else
-            echo "valid=false" >> $GITHUB_OUTPUT
-            echo "Cache miss or incomplete: forcing rebuild"
-            ls -lh packages/socketbin-cli-ai/dist/ 2>/dev/null || echo "Directory does not exist"
-          fi
-
-      - name: Build AI models
-        if: steps.ai-cache-valid.outputs.valid != 'true' || inputs.force
-        run: |
-          echo "::group::Building AI models (this will take 10-15 minutes)"
-          if [ "${{ inputs.force }}" = "true" ]; then
-            pnpm --filter @socketbin/cli-ai run build -- --force
-          else
-            pnpm --filter @socketbin/cli-ai run build
-          fi
-          echo "Build exit code: $?"
-          echo "Checking for build artifacts..."
-          ls -lh packages/socketbin-cli-ai/dist/ || echo "dist directory not found"
-          echo "::endgroup::"
-
-      - name: Verify build artifacts
-        run: |
-          echo "=== AI Models Build Artifacts ==="
-          if [ ! -f "packages/socketbin-cli-ai/dist/ai.bz" ] || [ ! -f "packages/socketbin-cli-ai/dist/ai.js" ]; then
-            echo "ERROR: Required AI model artifacts not found!"
-            ls -lh packages/socketbin-cli-ai/dist/ || echo "Directory does not exist"
-            exit 1
-          fi
-          ls -lh packages/socketbin-cli-ai/dist/
-          echo ""
-          echo "ai.bz size: $(du -h packages/socketbin-cli-ai/dist/ai.bz | cut -f1)"
-          echo "ai.js size: $(du -h packages/socketbin-cli-ai/dist/ai.js | cut -f1)"
-
-      - name: Upload AI artifacts
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: ai-models
-          path: packages/socketbin-cli-ai/dist/
-          retention-days: 7
+  # REMOVED: build-ai-models job
+  # AI models are now bundled directly in CLI, no longer using separate cli-ai package.
+  # When larger payloads require lazy-loading, we'll revisit @socketbin/cli-ai.
 
   # TEMPORARILY DISABLED: ONNX Runtime build issues.
   # Re-enable once build script is working correctly.
@@ -360,7 +259,7 @@ jobs:
 
   summary:
     name: 📊 🧱 WASM Build Summary
-    needs: [build-yoga-layout, build-ai-models] # build-onnx-runtime temporarily disabled
+    needs: [build-yoga-layout] # build-onnx-runtime and build-ai-models disabled
     runs-on: ubuntu-latest
     steps:
       - name: Download all artifacts
@@ -381,7 +280,6 @@ jobs:
           echo "| Asset | Files |" >> $GITHUB_STEP_SUMMARY
           echo "|-------|-------|" >> $GITHUB_STEP_SUMMARY
           echo "| 🧘 Yoga Layout | \`yoga.wasm\`, \`yoga.js\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| 🤖 AI Models | \`ai.bz\`, \`ai.js\` |" >> $GITHUB_STEP_SUMMARY
           echo "| 🌐 ONNX Runtime | \`ort-wasm-simd-threaded.wasm\`, \`ort-wasm-simd-threaded.js\` |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 🎯 Next Steps" >> $GITHUB_STEP_SUMMARY
