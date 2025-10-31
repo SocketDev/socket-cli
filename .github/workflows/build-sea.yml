@@ -8,6 +8,36 @@ on:
         required: false
         type: boolean
         default: false
+      build-linux:
+        description: 'Build Linux SEA binaries'
+        required: false
+        type: boolean
+        default: true
+      build-macos:
+        description: 'Build macOS SEA binaries'
+        required: false
+        type: boolean
+        default: true
+      build-windows:
+        description: 'Build Windows SEA binaries'
+        required: false
+        type: boolean
+        default: true
+      build-yoga:
+        description: 'Build Yoga Layout WASM'
+        required: false
+        type: boolean
+        default: true
+      build-models:
+        description: 'Build AI Models'
+        required: false
+        type: boolean
+        default: true
+      build-onnx:
+        description: 'Build ONNX Runtime WASM'
+        required: false
+        type: boolean
+        default: true
   workflow_dispatch:
     inputs:
       force:
@@ -15,6 +45,36 @@ on:
         required: false
         type: boolean
         default: false
+      build-linux:
+        description: 'Build Linux SEA binaries'
+        required: false
+        type: boolean
+        default: true
+      build-macos:
+        description: 'Build macOS SEA binaries'
+        required: false
+        type: boolean
+        default: true
+      build-windows:
+        description: 'Build Windows SEA binaries'
+        required: false
+        type: boolean
+        default: true
+      build-yoga:
+        description: 'Build Yoga Layout WASM'
+        required: false
+        type: boolean
+        default: true
+      build-models:
+        description: 'Build AI Models'
+        required: false
+        type: boolean
+        default: true
+      build-onnx:
+        description: 'Build ONNX Runtime WASM'
+        required: false
+        type: boolean
+        default: true
   # Removed push/pull_request triggers to prevent automatic builds.
   # Run manually via workflow_dispatch or via workflow_call from build-socketbin.yml.
 
@@ -86,6 +146,10 @@ jobs:
 
   build-sea:
     name: 🌊 Build SEA binary - ${{ matrix.platform }}-${{ matrix.arch }}
+    if: |
+      (matrix.platform == 'linux' || matrix.platform == 'alpine') && inputs.build-linux != false ||
+      matrix.platform == 'darwin' && inputs.build-macos != false ||
+      matrix.platform == 'win32' && inputs.build-windows != false
     needs: build-deps
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 60

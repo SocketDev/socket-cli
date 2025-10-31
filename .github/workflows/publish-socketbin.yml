@@ -16,6 +16,21 @@ on:
           - smol
           - smol-sea
         default: sea
+      build-linux:
+        description: 'Build Linux binaries'
+        required: false
+        type: boolean
+        default: true
+      build-macos:
+        description: 'Build macOS binaries'
+        required: false
+        type: boolean
+        default: true
+      build-windows:
+        description: 'Build Windows binaries'
+        required: false
+        type: boolean
+        default: true
       dry-run:
         description: 'Dry run (build but do not publish) - primes cache for CI e2e tests'
         required: false
@@ -25,6 +40,10 @@ on:
 jobs:
   build-binaries:
     name: Build ${{ matrix.platform }}-${{ matrix.arch }}
+    if: |
+      (matrix.platform == 'linux' || matrix.platform == 'alpine') && inputs.build-linux != false ||
+      matrix.platform == 'darwin' && inputs.build-macos != false ||
+      matrix.platform == 'win32' && inputs.build-windows != false
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
