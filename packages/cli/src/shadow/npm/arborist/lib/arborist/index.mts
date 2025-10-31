@@ -10,7 +10,6 @@ import { NPX } from '../../../../../constants/agents.mts'
 import ENV from '../../../../../constants/env.mts'
 import { NODE_MODULES } from '../../../../../constants/packages.mts'
 import {
-  getInternals,
   SOCKET_CLI_ACCEPT_RISKS,
   SOCKET_CLI_SHADOW_ACCEPT_RISKS,
   SOCKET_CLI_SHADOW_API_TOKEN,
@@ -20,6 +19,7 @@ import {
   SOCKET_CLI_VIEW_ALL_RISKS,
 } from '../../../../../constants/shadow.mts'
 import { findUp } from '../../../../../utils/fs/find-up.mjs'
+import { getIpcExtra } from '../../../../../utils/ipc.mjs'
 import { logAlertsMap } from '../../../../../utils/socket/package-alert.mts'
 import {
   getAlertsMapFromArborist,
@@ -31,9 +31,6 @@ import type {
   ArboristReifyOptions,
   NodeClass,
 } from '../../types.mts'
-
-const internals = getInternals()
-const getIpc = internals.getIpc
 
 export const SAFE_NO_SAVE_ARBORIST_REIFY_OPTIONS_OVERRIDES = {
   __proto__: null,
@@ -106,7 +103,7 @@ export class SafeArborist extends Arborist {
       ...(args.length ? args[0] : undefined),
     } as ArboristReifyOptions
 
-    const ipc = getIpc ? await getIpc() : undefined
+    const ipc = getIpcExtra()
 
     const binName = ipc?.[SOCKET_CLI_SHADOW_BIN]
     if (!binName) {
