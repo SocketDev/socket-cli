@@ -39,7 +39,7 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
-    "verify": "node scripts/verify-package.mjs"
+    "verify": "pnpm run build && node scripts/verify-package.mjs"
   },
   "bin": {
     "socket": "dist/bootstrap.js",
