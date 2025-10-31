@@ -18,7 +18,11 @@
     "node": ">=18"
   },
   "files": [
-    "dist/"
+    "CHANGELOG.md",
+    "LICENSE",
+    "dist/",
+    "logo-dark.png",
+    "logo-light.png"
   ],
   "optionalDependencies": {
     "@socketbin/cli-alpine-arm64": "0.0.0-replaced-by-provenance",
@@ -31,7 +35,7 @@
     "@socketbin/cli-win32-x64": "0.0.0-replaced-by-provenance"
   },
   "scripts": {
-    "build": "node scripts/build-bootstrap.mjs",
+    "build": "node scripts/build.mjs",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
