@@ -55,11 +55,56 @@ async function main() {
   const quiet = isQuiet()
   const verbose = isVerbose()
   const sea = process.argv.includes('--sea')
+  const watch = process.argv.includes('--watch')
+  const force = process.argv.includes('--force')
   const noMinify = process.argv.includes('--no-minify')
 
   // Pass --no-minify flag via environment variable to esbuild config.
   if (noMinify) {
     process.env.SOCKET_CLI_NO_MINIFY = '1'
+  }
+
+  // Pass --force flag via environment variable.
+  if (force) {
+    process.env.SOCKET_CLI_FORCE_BUILD = '1'
+  }
+
+  // Delegate to watch mode.
+  if (watch) {
+    if (!quiet) {
+      log.info('Starting watch mode...')
+    }
+
+    // First extract yoga WASM.
+    const extractResult = await spawn(
+      'node',
+      ['scripts/extract-yoga-wasm.mjs'],
+      {
+        shell: WIN32,
+        stdio: 'inherit',
+      },
+    )
+
+    if (extractResult.code !== 0) {
+      process.exitCode = extractResult.code
+      throw new Error(`WASM extraction failed with exit code ${extractResult.code}`)
+    }
+
+    // Then start esbuild in watch mode.
+    const watchResult = await spawn(
+      'node',
+      ['.config/esbuild.cli.build.mjs', '--watch'],
+      {
+        shell: WIN32,
+        stdio: 'inherit',
+      },
+    )
+
+    if (watchResult.code !== 0) {
+      process.exitCode = watchResult.code
+      throw new Error(`Watch mode failed with exit code ${watchResult.code}`)
+    }
+    return
   }
 
   // Delegate to build-sea.mjs if --sea flag is present.
@@ -86,12 +131,15 @@ async function main() {
       printHeader('Build Runner')
     }
 
+    // If force build, always clean first.
+    const shouldClean = force
+
     const steps = [
-      {
+      ...(shouldClean ? [{
         name: 'Clean Dist',
         command: 'pnpm',
         args: ['run', 'clean:dist'],
-      },
+      }] : []),
       // {
       //   name: 'Extract MiniLM Model',
       //   command: 'node',

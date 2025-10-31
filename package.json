@@ -168,6 +168,7 @@
   "scripts": {
     "// Build": "",
     "build": "node scripts/build.mjs",
+    "build:force": "node scripts/build.mjs --force",
     "build:cli": "pnpm --filter @socketsecurity/cli run build",
     "build:watch": "pnpm --filter @socketsecurity/cli run build:watch",
     "dev": "pnpm run build:watch",
