@@ -197,8 +197,6 @@ export async function downloadCli() {
       },
     })
 
-    logger.log(`   Installed to: ${result.packageDir}`)
-    logger.log('✅ Socket CLI installed successfully')
     logger.log('')
 
     return result
