@@ -9,20 +9,19 @@ import {
   isNpmProgressFlag,
 } from '@socketsecurity/lib/agent'
 import {
-  getExecPath,
-  getNodeDebugFlags,
   getNodeDisableSigusr1Flags,
   getNodeHardenFlags,
   getNodeNoWarningsFlags,
   supportsNodePermissionFlag,
 } from '@socketsecurity/lib/constants/node'
+
 import { NODE_MODULES } from '@socketsecurity/lib/constants/paths'
 import { isDebug } from '@socketsecurity/lib/debug'
 import { getOwn } from '@socketsecurity/lib/objects'
 import { normalizePath } from '@socketsecurity/lib/path'
-import { spawn, spawnSync } from '@socketsecurity/lib/spawn'
+import { spawnSync } from '@socketsecurity/lib/spawn'
 
-import { ensureIpcInStdio } from './stdio-ipc.mts'
+import { spawnNode } from '../utils/spawn/spawn-node.mjs'
 import { NPM, type NPX } from '../constants/agents.mts'
 import { FLAG_LOGLEVEL } from '../constants/cli.mts'
 import ENV from '../constants/env.mts'
@@ -35,7 +34,6 @@ import {
   SOCKET_CLI_SHADOW_API_TOKEN,
   SOCKET_CLI_SHADOW_BIN,
   SOCKET_CLI_SHADOW_PROGRESS,
-  SOCKET_IPC_HANDSHAKE,
 } from '../constants/shadow.mts'
 import { findUp } from '../utils/fs/find-up.mjs'
 import { cmdFlagsToString } from '../utils/process/cmd.mts'
@@ -147,19 +145,18 @@ export default async function shadowNpmBase(
       ? []
       : ['--no-audit']
 
-  const stdio = ensureIpcInStdio(
-    getOwn(spawnOpts, 'stdio') as StdioOptions | undefined,
-  )
-
   const realBinPath = isShadowNpm
     ? await installNpmLinks(shadowBinPath)
     : await installNpxLinks(shadowBinPath)
 
-  const spawnPromise = spawn(
-    getExecPath(),
+  // Use spawnNode() to handle SEA bootstrap automatically.
+  // This will:
+  // - Use system Node.js if available (preferred)
+  // - Fall back to self-spawning with IPC handshake (for SEA binaries)
+  // - Handle IPC channel setup and handshake message automatically
+  const spawnPromise = spawnNode(
     [
       ...getNodeNoWarningsFlags(),
-      ...getNodeDebugFlags(),
       ...getNodeHardenFlags(),
       ...getNodeDisableSigusr1Flags(),
       // Memory flags commented out.
@@ -192,19 +189,17 @@ export default async function shadowNpmBase(
         ...process.env,
         ...spawnEnv,
       },
-      stdio,
+      stdio: getOwn(spawnOpts, 'stdio') as StdioOptions | undefined,
+      // IPC handshake data - automatically sent by spawnNode().
+      ipc: {
+        [SOCKET_CLI_SHADOW_API_TOKEN]: getPublicApiToken(),
+        [SOCKET_CLI_SHADOW_BIN]: binName,
+        [SOCKET_CLI_SHADOW_PROGRESS]: progressArg,
+        ...ipc,
+      },
     },
     extra,
   )
-
-  spawnPromise.process.send({
-    [SOCKET_IPC_HANDSHAKE]: {
-      [SOCKET_CLI_SHADOW_API_TOKEN]: getPublicApiToken(),
-      [SOCKET_CLI_SHADOW_BIN]: binName,
-      [SOCKET_CLI_SHADOW_PROGRESS]: progressArg,
-      ...ipc,
-    },
-  })
 
   return { spawnPromise }
 }

@@ -16,7 +16,11 @@
     "url": "https://socket.dev"
   },
   "bin": {
-    "socket-with-sentry": "dist/index.js"
+    "socket-with-sentry": "dist/index.js",
+    "socket-with-sentry-npm": "dist/index.js",
+    "socket-with-sentry-npx": "dist/index.js",
+    "socket-with-sentry-pnpm": "dist/index.js",
+    "socket-with-sentry-yarn": "dist/index.js"
   },
   "files": [
     "CHANGELOG.md",
