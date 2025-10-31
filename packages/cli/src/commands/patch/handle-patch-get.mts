@@ -6,6 +6,7 @@ import {
   DOT_SOCKET_DIR,
   MANIFEST_JSON,
 } from '@socketsecurity/lib/constants/paths'
+import { safeMkdir } from '@socketsecurity/lib/fs'
 import { logger } from '@socketsecurity/lib/logger'
 import { normalizePath } from '@socketsecurity/lib/path'
 import { pluralize } from '@socketsecurity/lib/words'
@@ -64,7 +65,7 @@ export async function handlePatchGet({
 
     // Create output directory if it doesn't exist.
     if (!existsSync(targetDir)) {
-      await fs.mkdir(targetDir, { recursive: true })
+      await safeMkdir(targetDir)
     }
 
     spinner?.text('Copying patch files')
@@ -87,7 +88,7 @@ export async function handlePatchGet({
       // Create subdirectories if needed.
       if (!existsSync(targetFileDir)) {
         // eslint-disable-next-line no-await-in-loop
-        await fs.mkdir(targetFileDir, { recursive: true })
+        await safeMkdir(targetFileDir)
       }
 
       // eslint-disable-next-line no-await-in-loop

@@ -39,7 +39,12 @@ import {
   debugNs,
   isDebugNs,
 } from '@socketsecurity/lib/debug'
-import { readJson, safeStatsSync, writeJson } from '@socketsecurity/lib/fs'
+import {
+  readJson,
+  safeMkdir,
+  safeStatsSync,
+  writeJson,
+} from '@socketsecurity/lib/fs'
 import { spawn } from '@socketsecurity/lib/spawn'
 import { parseUrl } from '@socketsecurity/lib/url'
 
@@ -77,7 +82,7 @@ export async function writeCache(
   const githubCachePath = getGithubCachePath()
   const cacheJsonPath = path.join(githubCachePath, `${key}.json`)
   if (!existsSync(githubCachePath)) {
-    await fs.mkdir(githubCachePath, { recursive: true })
+    await safeMkdir(githubCachePath)
   }
   await writeJson(cacheJsonPath, data as JsonContent)
 }

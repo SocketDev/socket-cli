@@ -10,11 +10,11 @@
 
 // CommonJS globals are available since we're outputting to CJS format.
 const {
-  mkdirSync,
   readFileSync,
   unlinkSync,
   writeFileSync,
 } = require('node:fs')
+const { safeMkdirSync } = require('@socketsecurity/lib/fs')
 const Module = require('node:module')
 const path = require('node:path')
 const { brotliDecompressSync } = require('node:zlib')
@@ -27,7 +27,7 @@ const compressed = readFileSync(cliBzPath)
 const decompressed = brotliDecompressSync(compressed)
 
 // Ensure build/ directory exists.
-mkdirSync(buildPath, { recursive: true })
+safeMkdirSync(buildPath)
 
 // Write to build/ directory (gitignored, local to package).
 const tempCliPath = path.join(buildPath, `cli-runtime-${process.pid}.js`)
