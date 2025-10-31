@@ -144,7 +144,9 @@ export async function spawnCoanaDlx(
         data:
           typeof spawnResult.stdout === 'string'
             ? spawnResult.stdout
-            : spawnResult.stdout.toString(),
+            : spawnResult.stdout
+              ? spawnResult.stdout.toString()
+              : '',
       }
     }
 
@@ -175,7 +177,9 @@ export async function spawnCoanaDlx(
       data:
         typeof output.stdout === 'string'
           ? output.stdout
-          : output.stdout.toString(),
+          : output.stdout
+            ? output.stdout.toString()
+            : '',
     }
   } catch (e) {
     const stderr = (e as any)?.stderr
