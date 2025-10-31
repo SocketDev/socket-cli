@@ -1,4 +1,5 @@
+/coverage
+/data
 CHANGELOG.md
 LICENSE
-data/
 *.png
