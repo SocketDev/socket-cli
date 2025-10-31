@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.0.6](https://github.com/SocketDev/socket-cli/releases/tag/v2.0.6) - 2025-10-31
+
+### Fixed
+- Shadow npm spawn mechanism now properly uses spawnNode abstraction for SEA binary compatibility
+- IPC handshake structure for shadow npm processes with correct parent_pid and subprocess fields
+
 ## [2.0.2](https://github.com/SocketDev/socket-cli/releases/tag/v2.0.2) - 2025-10-30
 
 ### Fixed
