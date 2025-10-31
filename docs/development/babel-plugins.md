@@ -387,7 +387,7 @@ make -j$(sysctl -n hw.ncpu)
 
 ```bash
 cd $(pwd)
-pnpm run build:dist
+pnpm run build:cli
 ```
 
 #### Step 4: Test Thoroughly
@@ -449,7 +449,7 @@ To see the transformed output:
 
 ```bash
 # Build with transformations
-pnpm run build:dist:src
+pnpm run build:cli
 
 # Check transformed code
 cat dist/cli.js | head -200
@@ -465,7 +465,7 @@ grep -n "ICU-free:" dist/*.js
 2. Add `@fileoverview` header
 3. Export default function returning Babel plugin
 4. Add to `.config/babel.config.js`
-5. Test with `pnpm run build:dist:src`
+5. Test with `pnpm run build:cli`
 
 See `scripts/babel/README.md` for detailed instructions.
 
@@ -487,8 +487,8 @@ See `scripts/babel/README.md` for detailed instructions.
 If transformations aren't being applied:
 
 1. Check plugin is uncommented in `.config/babel.config.js`
-2. Rebuild: `pnpm run build:dist:src`
-3. Check for Babel errors: `pnpm run build:dist 2>&1 | grep -i error`
+2. Rebuild: `pnpm run build:cli`
+3. Check for Babel errors: `pnpm run build:cli 2>&1 | grep -i error`
 
 ### ICU Plugin Enabled But Code Still Works
 
