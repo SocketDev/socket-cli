@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.0.12](https://github.com/SocketDev/socket-cli/releases/tag/v2.0.12) - 2025-10-31
+
+### Added
+- Automatic CDN cache invalidation for unpkg and jsdelivr when publishing Socket packages
+- Version bump hooks to ensure fresh CDN caches for `socket`, `@socketsecurity/cli`, and `@socketsecurity/cli-with-sentry`
+
+### Fixed
+- Bootstrap process no longer shows spurious "command failed" error on successful CLI execution
+- Windows CI test failures in path resolution tests - now platform-aware and handle Unix path expectations correctly
+
 ## [2.0.9](https://github.com/SocketDev/socket-cli/releases/tag/v2.0.9) - 2025-10-31
 
 ### Fixed
