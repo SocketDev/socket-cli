@@ -1,12 +1,18 @@
 import fs from 'node:fs'
+import { createRequire } from 'node:module'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 import { debug } from '@socketsecurity/lib/debug'
 import { safeMkdirSync } from '@socketsecurity/lib/fs'
 
 import ENV from '../../constants/env.mts'
-import { homePath, rootPath } from '../../constants/paths.mts'
+import { homePath } from '../../constants/paths.mts'
 import { getBashrcDetails } from '../../utils/cli/completion.mjs'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+const require = createRequire(import.meta.url)
 
 import type { CResult } from '../../types.mts'
 
@@ -79,7 +85,17 @@ export async function setupTabCompletion(targetName: string): Promise<
 }
 
 function getTabCompletionScriptRaw(): CResult<string> {
-  const sourcePath = path.join(rootPath, 'data', 'socket-completion.bash')
+  // Resolve the @socketsecurity/cli package root to find the data directory.
+  // This works whether running from source, installed globally, or via npx/dlx.
+  let sourcePath: string
+  try {
+    const cliPackageJson = require.resolve('@socketsecurity/cli/package.json')
+    const cliPackageRoot = path.dirname(cliPackageJson)
+    sourcePath = path.join(cliPackageRoot, 'data', 'socket-completion.bash')
+  } catch {
+    // Fallback for development: look relative to this file.
+    sourcePath = path.resolve(__dirname, '../../../data/socket-completion.bash')
+  }
 
   if (!fs.existsSync(sourcePath)) {
     return {
