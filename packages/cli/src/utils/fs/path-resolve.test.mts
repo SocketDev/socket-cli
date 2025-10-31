@@ -473,7 +473,7 @@ describe('Path Resolve', () => {
       const { isDirSync } = vi.mocked(await import('@socketsecurity/lib/fs'))
 
       isDirSync.mockImplementation(p => {
-        const pathStr = String(p)
+        const pathStr = normalizePath(String(p))
         if (pathStr.includes('lib/node_modules/npm')) {
           return true
         }
@@ -485,15 +485,15 @@ describe('Path Resolve', () => {
 
       const result = findNpmDirPathSync('/usr/local/bin/npm')
 
-      expect(result).toBe('/usr/local/bin/npm/lib/node_modules/npm')
+      expect(normalizePath(result)).toBe(normalizePath('/usr/local/bin/npm/lib/node_modules/npm'))
     })
 
     it('finds npm directory with node_modules in current path', async () => {
       const { isDirSync } = vi.mocked(await import('@socketsecurity/lib/fs'))
 
       isDirSync.mockImplementation(p => {
-        const pathStr = String(p)
-        if (pathStr === '/usr/local/npm/node_modules') {
+        const pathStr = normalizePath(String(p))
+        if (pathStr === normalizePath('/usr/local/npm/node_modules')) {
           return true
         }
         return false
@@ -501,18 +501,18 @@ describe('Path Resolve', () => {
 
       const result = findNpmDirPathSync('/usr/local/npm')
 
-      expect(result).toBe('/usr/local/npm')
+      expect(normalizePath(result)).toBe(normalizePath('/usr/local/npm'))
     })
 
     it('finds npm directory with node_modules in parent path', async () => {
       const { isDirSync } = vi.mocked(await import('@socketsecurity/lib/fs'))
 
       isDirSync.mockImplementation(p => {
-        const pathStr = String(p)
-        if (pathStr === '/usr/local/npm/node_modules') {
+        const pathStr = normalizePath(String(p))
+        if (pathStr === normalizePath('/usr/local/npm/node_modules')) {
           return false
         }
-        if (pathStr === '/usr/local/node_modules') {
+        if (pathStr === normalizePath('/usr/local/node_modules')) {
           return true
         }
         return false
@@ -520,7 +520,7 @@ describe('Path Resolve', () => {
 
       const result = findNpmDirPathSync('/usr/local/npm')
 
-      expect(result).toBe('/usr/local')
+      expect(normalizePath(result)).toBe(normalizePath('/usr/local'))
     })
 
     it('returns undefined when no npm directory found', async () => {
@@ -537,7 +537,7 @@ describe('Path Resolve', () => {
       const { isDirSync } = vi.mocked(await import('@socketsecurity/lib/fs'))
 
       isDirSync.mockImplementation(p => {
-        const pathStr = String(p)
+        const pathStr = normalizePath(String(p))
         if (pathStr.includes('.nvm') && pathStr.endsWith('/node_modules')) {
           return true
         }
@@ -548,7 +548,7 @@ describe('Path Resolve', () => {
         '/Users/user/.nvm/versions/node/v18.0.0/bin/npm',
       )
 
-      expect(result).toBe('/Users/user/.nvm/versions/node/v18.0.0/bin/npm')
+      expect(normalizePath(result)).toBe(normalizePath('/Users/user/.nvm/versions/node/v18.0.0/bin/npm'))
     })
   })
 })
