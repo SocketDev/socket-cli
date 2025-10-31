@@ -60,7 +60,7 @@ describe('utils/config', () => {
 
       try {
         // Create nested directories.
-        safeMkdirSync(nestedDir)
+        safeMkdirSync(nestedDir, { recursive: true })
 
         // Create socket.yml in the tmpdir root.
         writeFileSync(
