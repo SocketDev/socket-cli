@@ -6,8 +6,8 @@ import { NPM } from '@socketsecurity/lib/constants/agents'
 import { logger } from '@socketsecurity/lib/logger'
 
 import ENV from '../../constants/env.mts'
-import { SOCKET_CLI_ISSUES_URL } from '../../constants/github.mts'
 import { NODE_MODULES } from '../../constants/packages.mts'
+import { SOCKET_CLI_ISSUES_URL } from '../../constants/socket.mts'
 import {
   findBinPathDetailsSync,
   findNpmDirPathSync,

@@ -12,5 +12,3 @@ export const GQL_PR_STATE_OPEN = 'OPEN'
 
 // Socket CLI GitHub Repository
 export const SOCKET_CLI_GITHUB_REPO = 'socket-cli'
-export const SOCKET_CLI_ISSUES_URL =
-  'https://github.com/SocketDev/socket-cli/issues'
