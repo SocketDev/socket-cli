@@ -40,14 +40,82 @@ import { InputError } from '../error/errors.mts'
 import type { SpawnExtra, SpawnOptions } from '@socketsecurity/lib/spawn'
 
 /**
- * Metadata structure for cached binaries.
+ * Metadata structure for cached binaries (.dlx-metadata.json).
+ * Unified schema shared across TypeScript (dlxBinary) and C++ (socket_macho_decompress).
+ * Canonical documentation: @socketsecurity/lib/src/dlx-binary.ts (DlxMetadata interface)
+ *
+ * Core Fields (present in all implementations):
+ * - version: Schema version (currently "1.0.0")
+ * - cache_key: First 16 chars of SHA-512 hash (matches directory name)
+ * - timestamp: Unix timestamp in milliseconds
+ * - checksum: Full hash of cached binary (SHA-512 for C++, SHA-256 for TypeScript)
+ * - checksum_algorithm: "sha512" or "sha256"
+ * - platform: "darwin" | "linux" | "win32"
+ * - arch: "x64" | "arm64"
+ * - size: Size of cached binary in bytes
+ * - source: Origin information
+ *   - type: "download" (from URL) or "decompression" (from embedded binary)
+ *   - url: Download URL (if type is "download")
+ *   - path: Source binary path (if type is "decompression")
+ *
+ * Extra Fields (implementation-specific):
+ * - For C++ decompression:
+ *   - compressed_size: Size of compressed data in bytes
+ *   - compression_algorithm: Brotli level (numeric)
+ *   - compression_ratio: original_size / compressed_size
+ *
+ * Example (TypeScript download):
+ * {
+ *   "version": "1.0.0",
+ *   "cache_key": "a1b2c3d4e5f67890",
+ *   "timestamp": 1730332800000,
+ *   "checksum": "sha256-abc123...",
+ *   "checksum_algorithm": "sha256",
+ *   "platform": "darwin",
+ *   "arch": "arm64",
+ *   "size": 15000000,
+ *   "source": {
+ *     "type": "download",
+ *     "url": "https://example.com/binary"
+ *   }
+ * }
+ *
+ * Example (C++ decompression):
+ * {
+ *   "version": "1.0.0",
+ *   "cache_key": "0123456789abcdef",
+ *   "timestamp": 1730332800000,
+ *   "checksum": "sha512-def456...",
+ *   "checksum_algorithm": "sha512",
+ *   "platform": "darwin",
+ *   "arch": "arm64",
+ *   "size": 13000000,
+ *   "source": {
+ *     "type": "decompression",
+ *     "path": "/usr/local/bin/socket"
+ *   },
+ *   "extra": {
+ *     "compressed_size": 1700000,
+ *     "compression_algorithm": 3,
+ *     "compression_ratio": 7.647
+ *   }
+ * }
  */
 interface DlxMetadata {
+  version: string
+  cache_key: string
   timestamp: number
-  url: string
-  checksum?: string
-  platform?: string
-  arch?: string
+  checksum: string
+  checksum_algorithm: string
+  platform: string
+  arch: string
+  size: number
+  source?: {
+    type: 'download' | 'decompression'
+    url?: string
+    path?: string
+  }
+  extra?: Record<string, unknown>
 }
 
 export interface DlxBinaryOptions {
@@ -101,7 +169,7 @@ async function isCacheValid(
     const metadata = (await readJson(metaPath, {
       throws: false,
     })) as DlxMetadata | null
-    if (!metadata) {
+    if (!metadata || !metadata.timestamp) {
       return false
     }
     const now = Date.now()
@@ -179,17 +247,25 @@ async function downloadBinary(
  */
 async function writeMetadata(
   cacheEntryPath: string,
+  cacheKey: string,
   url: string,
   checksum: string,
+  size: number,
 ): Promise<void> {
   const metaPath = getMetadataPath(cacheEntryPath)
-  const metadata = {
-    url,
-    checksum,
+  const metadata: DlxMetadata = {
+    version: '1.0.0',
+    cache_key: cacheKey,
     timestamp: Date.now(),
+    checksum,
+    checksum_algorithm: 'sha512',
     platform: os.platform(),
     arch: os.arch(),
-    version: '1.0.0',
+    size,
+    source: {
+      type: 'download',
+      url,
+    },
   }
   await fs.writeFile(metaPath, JSON.stringify(metadata, null, 2))
 }
@@ -319,7 +395,10 @@ export async function dlxBinary(
 
     // Download the binary.
     computedChecksum = await downloadBinary(url, binaryPath, checksum)
-    await writeMetadata(cacheEntryDir, url, computedChecksum || '')
+
+    // Get file size for metadata.
+    const stats = await fs.stat(binaryPath)
+    await writeMetadata(cacheEntryDir, cacheKey, url, computedChecksum || '', stats.size)
   }
 
   // Execute the binary.
@@ -392,7 +471,13 @@ export async function listDlxCache(): Promise<
       const metadata = (await readJson(metaPath, {
         throws: false,
       })) as DlxMetadata | null
-      if (!metadata || !metadata.url || !metadata.timestamp) {
+      if (!metadata || !metadata.timestamp) {
+        continue
+      }
+
+      // Get URL from source field for unified schema.
+      const url = metadata.source?.url || ''
+      if (!url) {
         continue
       }
 
@@ -408,7 +493,7 @@ export async function listDlxCache(): Promise<
 
         results.push({
           name: binaryFile,
-          url: metadata.url,
+          url,
           size: binaryStats.size,
           age: now - metadata.timestamp,
           platform: metadata.platform || 'unknown',

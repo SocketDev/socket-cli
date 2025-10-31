@@ -461,17 +461,44 @@ int DecompressAndExecute(const std::string& compressed_path, int argc, char* arg
 
   printf("  ✓ Cached binary: %s\n\n", cached_binary.c_str());
 
-  // Write metadata (follows npm/cacache pattern).
+  // Write metadata (unified schema with TypeScript dlxBinary).
+  // Canonical documentation: @socketsecurity/lib/src/dlx-binary.ts (DlxMetadata interface)
+  // Also documented in: packages/cli/src/utils/dlx/binary.mts
+  // Core fields: version, cache_key, timestamp, checksum, checksum_algorithm, platform, arch, size, source
+  // Extra fields: compressed_size, compression_algorithm, compression_ratio (C++ decompression specific)
   std::ostringstream metadata;
   metadata << "{\n";
-  metadata << "  \"timestamp\": " << time(nullptr) << ",\n";
-  metadata << "  \"compressed_path\": \"" << compressed_path << "\",\n";
+  metadata << "  \"version\": \"1.0.0\",\n";
   metadata << "  \"cache_key\": \"" << cacheKey << "\",\n";
+  metadata << "  \"timestamp\": " << (time(nullptr) * 1000LL) << ",\n";  // Milliseconds for JS compat.
   metadata << "  \"checksum\": \"" << decompressed_sha512 << "\",\n";
   metadata << "  \"checksum_algorithm\": \"sha512\",\n";
-  metadata << "  \"original_size\": " << header->original_size << ",\n";
-  metadata << "  \"compressed_size\": " << header->compressed_size << ",\n";
-  metadata << "  \"algorithm\": " << header->algorithm << "\n";
+#if defined(__APPLE__)
+  metadata << "  \"platform\": \"darwin\",\n";
+#elif defined(__linux__)
+  metadata << "  \"platform\": \"linux\",\n";
+#elif defined(_WIN32)
+  metadata << "  \"platform\": \"win32\",\n";
+#else
+  metadata << "  \"platform\": \"unknown\",\n";
+#endif
+#if defined(__x86_64__) || defined(_M_X64)
+  metadata << "  \"arch\": \"x64\",\n";
+#elif defined(__aarch64__) || defined(_M_ARM64)
+  metadata << "  \"arch\": \"arm64\",\n";
+#else
+  metadata << "  \"arch\": \"unknown\",\n";
+#endif
+  metadata << "  \"size\": " << header->original_size << ",\n";
+  metadata << "  \"source\": {\n";
+  metadata << "    \"type\": \"decompression\",\n";
+  metadata << "    \"path\": \"" << compressed_path << "\"\n";
+  metadata << "  },\n";
+  metadata << "  \"extra\": {\n";
+  metadata << "    \"compressed_size\": " << header->compressed_size << ",\n";
+  metadata << "    \"compression_algorithm\": " << header->algorithm << ",\n";
+  metadata << "    \"compression_ratio\": " << (double)header->original_size / header->compressed_size << "\n";
+  metadata << "  }\n";
   metadata << "}\n";
 
   WriteFile(metadata_file, metadata.str().c_str(), metadata.str().size());
