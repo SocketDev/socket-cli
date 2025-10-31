@@ -12,6 +12,7 @@
     "./lib/cmake-builder": "./lib/cmake-builder.mjs",
     "./lib/emscripten-builder": "./lib/emscripten-builder.mjs",
     "./lib/esbuild-plugin-unicode-transform": "./lib/esbuild-plugin-unicode-transform.mjs",
+    "./lib/cache-key": "./lib/cache-key.mjs",
     "./lib/extraction-cache": "./lib/extraction-cache.mjs",
     "./lib/fetch-with-retry": "./lib/fetch-with-retry.mjs",
     "./lib/patch-validator": "./lib/patch-validator.mjs",
