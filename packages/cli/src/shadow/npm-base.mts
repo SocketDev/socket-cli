@@ -21,7 +21,7 @@ import { getOwn } from '@socketsecurity/lib/objects'
 import { normalizePath } from '@socketsecurity/lib/path'
 import { spawnSync } from '@socketsecurity/lib/spawn'
 
-import { spawnNode } from '../utils/spawn/spawn-node.mjs'
+import { findSystemNodejs, spawnNode } from '../utils/spawn/spawn-node.mjs'
 import { NPM, type NPX } from '../constants/agents.mts'
 import { FLAG_LOGLEVEL } from '../constants/cli.mts'
 import ENV from '../constants/env.mts'
@@ -53,7 +53,7 @@ export type ShadowBinOptions = SpawnOptions & {
 }
 
 export type ShadowBinResult = {
-  spawnPromise: SpawnResult
+  spawnPromise: Promise<SpawnResult>
 }
 
 export default async function shadowNpmBase(
@@ -149,11 +149,17 @@ export default async function shadowNpmBase(
     ? await installNpmLinks(shadowBinPath)
     : await installNpxLinks(shadowBinPath)
 
-  // Use spawnNode() to handle SEA bootstrap automatically.
-  // This will:
-  // - Use system Node.js if available (preferred)
-  // - Fall back to self-spawning with IPC handshake (for SEA binaries)
-  // - Handle IPC channel setup and handshake message automatically
+  // If we're forwarding to npm, then npm exists on the system,
+  // which means Node.js must also exist. Use system Node.js with --require.
+  const systemNode = await findSystemNodejs()
+  if (!systemNode) {
+    throw new Error(
+      'System Node.js not found. npm/npx require Node.js to be installed.',
+    )
+  }
+
+  // Use spawnNode() to handle spawning with IPC handshake.
+  // Since we know system Node.js exists, we can always use --require.
   const spawnPromise = spawnNode(
     [
       ...getNodeNoWarningsFlags(),
