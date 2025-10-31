@@ -43,6 +43,7 @@ export type DlxOptions = ShadowBinOptions & {
 }
 
 export type DlxPackageSpec = {
+  binaryName?: string | undefined
   name: string
   version: string
 }
@@ -65,8 +66,9 @@ export async function spawnDlx(
   const result = await dlxPackage(
     args,
     {
-      force,
       package: packageString,
+      binaryName: packageSpec.binaryName,
+      force,
       spawnOptions: shadowOptions,
     },
     spawnExtra,
@@ -78,7 +80,7 @@ export async function spawnDlx(
 }
 
 /**
- * Helper to spawn coana with dlx.
+ * Helper to spawn Coana with dlx.
  * Returns a CResult with stdout extraction for backward compatibility.
  *
  * If SOCKET_CLI_COANA_LOCAL_PATH environment variable is set, uses the local
@@ -148,7 +150,7 @@ export async function spawnCoanaDlx(
 
     // Use dlx version.
     const result = await spawnDlx(
-      resolution.packageSpec,
+      resolution.details,
       args,
       {
         force: true,
@@ -222,7 +224,7 @@ export async function spawnCdxgenDlx(
 
   // Use dlx version.
   return await spawnDlx(
-    resolution.packageSpec,
+    resolution.details,
     args,
     { force: false, ...options },
     spawnExtra,

@@ -7,14 +7,13 @@
  * This runs asynchronously and never blocks the main CLI execution.
  */
 
-import { existsSync, promises as fs } from 'node:fs'
+import { existsSync } from 'node:fs'
 import path from 'node:path'
 
-import { spawn } from '@socketsecurity/lib/spawn'
+import { downloadPackage } from '@socketsecurity/lib/dlx-package'
 
 import ENV from '../../constants/env.mts'
 import { getSocketHomePath } from '../dlx/binary.mts'
-import { detectPackageManager } from '../shadow/runner.mts'
 
 /**
  * Check if a package is already cached by the package manager.
@@ -33,60 +32,6 @@ function isPackageCached(packageName: string): boolean {
 }
 
 /**
- * Mark a package as cached to avoid redundant downloads.
- */
-async function markPackageCached(packageName: string): Promise<void> {
-  const socketHome = getSocketHomePath()
-  const cacheDir = path.join(socketHome, 'cache', 'preflight')
-  const cacheMarker = path.join(cacheDir, packageName.replace(/[/@]/g, '-'))
-
-  try {
-    await fs.mkdir(cacheDir, { recursive: true })
-    await fs.writeFile(cacheMarker, new Date().toISOString())
-  } catch {
-    // Silently fail - not critical.
-  }
-}
-
-/**
- * Download a package via package manager dlx in the background.
- */
-async function downloadPackage(packageSpec: string): Promise<void> {
-  try {
-    const agent = await detectPackageManager()
-
-    let dlxCommand: string
-    let dlxArgs: string[]
-
-    switch (agent) {
-      case 'pnpm':
-        dlxCommand = 'pnpm'
-        dlxArgs = ['dlx', packageSpec, '--help']
-        break
-      case 'yarn':
-        dlxCommand = 'yarn'
-        dlxArgs = ['dlx', packageSpec, '--help']
-        break
-      default:
-        dlxCommand = 'npx'
-        dlxArgs = [packageSpec, '--help']
-        break
-    }
-
-    // Run in background with output discarded.
-    await spawn(dlxCommand, dlxArgs, {
-      stdio: 'ignore',
-      timeout: 30_000, // 30 second timeout.
-    })
-
-    // Mark as cached.
-    await markPackageCached(packageSpec)
-  } catch {
-    // Silently fail - downloads will happen on-demand if needed.
-  }
-}
-
-/**
  * Run preflight downloads in the background.
  * This never blocks or throws errors.
  */
@@ -98,14 +43,14 @@ export function runPreflightDownloads(): void {
 
   // Run asynchronously in the background.
   void (async () => {
-    const downloads: Array<{ name: string; spec: string }> = []
+    const downloads: Array<{ packageSpec: string; binaryName?: string }> = []
 
     // @coana-tech/cli preflight.
     const coanaVersion = ENV.INLINED_SOCKET_CLI_COANA_VERSION
     if (coanaVersion) {
       const coanaSpec = `@coana-tech/cli@~${coanaVersion}`
       if (!isPackageCached(coanaSpec)) {
-        downloads.push({ name: '@coana-tech/cli', spec: coanaSpec })
+        downloads.push({ packageSpec: coanaSpec, binaryName: 'coana' })
       }
     }
 
@@ -114,13 +59,21 @@ export function runPreflightDownloads(): void {
     if (cliAiVersion) {
       const cliAiSpec = `@socketbin/cli-ai@^${cliAiVersion}`
       if (!isPackageCached(cliAiSpec)) {
-        downloads.push({ name: '@socketbin/cli-ai', spec: cliAiSpec })
+        downloads.push({ packageSpec: cliAiSpec, binaryName: 'cli-ai' })
       }
     }
 
-    // Download in background (fire and forget).
-    for (const pkg of downloads) {
-      void downloadPackage(pkg.spec)
-    }
+    try {
+      // Download in background (fire and forget).
+      await Promise.all(
+        downloads.map(p => 
+          downloadPackage({
+            package: p.packageSpec,
+            binaryName: p.binaryName,
+            force: false,
+          })
+        )
+      )
+    } catch {}
   })()
 }

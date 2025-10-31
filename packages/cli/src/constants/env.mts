@@ -106,20 +106,20 @@ export {
 // IMPORTANT: esbuild's define plugin can only replace direct process.env['KEY'] references.
 // If we imported these from env modules, esbuild couldn't inline the values at build time.
 // This is critical for embedding version info, build tags, and feature flags into the binary.
-export function getCliVersion(): string | undefined {
-  return process.env['INLINED_SOCKET_CLI_VERSION']
+export function getCliVersion(): string {
+  return process.env['INLINED_SOCKET_CLI_VERSION']!
 }
 
-export function getCliVersionHash(): string | undefined {
-  return process.env['INLINED_SOCKET_CLI_VERSION_HASH']
+export function getCliVersionHash(): string {
+  return process.env['INLINED_SOCKET_CLI_VERSION_HASH']!
 }
 
-export function getCliHomepage(): string | undefined {
-  return process.env['INLINED_SOCKET_CLI_HOMEPAGE']
+export function getCliHomepage(): string {
+  return process.env['INLINED_SOCKET_CLI_HOMEPAGE']!
 }
 
-export function getCliName(): string | undefined {
-  return process.env['INLINED_SOCKET_CLI_NAME']
+export function getCliName(): string {
+  return process.env['INLINED_SOCKET_CLI_NAME']!
 }
 
 export function isPublishedBuild(): boolean {
@@ -134,32 +134,32 @@ export function isSentryBuild(): boolean {
   return envAsBoolean(process.env['INLINED_SOCKET_CLI_SENTRY_BUILD'])
 }
 
-export function getCliAiVersion(): string | undefined {
-  return process.env['INLINED_SOCKET_CLI_AI_VERSION']
+export function getCliAiVersion(): string {
+  return process.env['INLINED_SOCKET_CLI_AI_VERSION']!
 }
 
-export function getCoanaVersion(): string | undefined {
-  return process.env['INLINED_SOCKET_CLI_COANA_VERSION']
+export function getCoanaVersion(): string {
+  return process.env['INLINED_SOCKET_CLI_COANA_VERSION']!
 }
 
-export function getCdxgenVersion(): string | undefined {
-  return process.env['INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION']
+export function getCdxgenVersion(): string {
+  return process.env['INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION']!
 }
 
-export function getSynpVersion(): string | undefined {
-  return process.env['INLINED_SOCKET_CLI_SYNP_VERSION']
+export function getSynpVersion(): string {
+  return process.env['INLINED_SOCKET_CLI_SYNP_VERSION']!
 }
 
-export function getPythonVersion(): string | undefined {
-  return process.env['INLINED_SOCKET_CLI_PYTHON_VERSION']
+export function getPythonVersion(): string {
+  return process.env['INLINED_SOCKET_CLI_PYTHON_VERSION']!
 }
 
-export function getPythonBuildTag(): string | undefined {
-  return process.env['INLINED_SOCKET_CLI_PYTHON_BUILD_TAG']
+export function getPythonBuildTag(): string {
+  return process.env['INLINED_SOCKET_CLI_PYTHON_BUILD_TAG']!
 }
 
-export function getPyCliVersion(): string | undefined {
-  return process.env['INLINED_SOCKET_CLI_PYCLI_VERSION']
+export function getPyCliVersion(): string {
+  return process.env['INLINED_SOCKET_CLI_PYCLI_VERSION']!
 }
 
 // Export processEnv for backward compatibility with shadow npm integration.
@@ -222,32 +222,32 @@ const envSnapshot = {
   GITHUB_REPOSITORY: env['GITHUB_REPOSITORY'],
   SOCKET_CLI_ORG_SLUG: env['SOCKET_CLI_ORG_SLUG'],
   // Build metadata (inlined by esbuild define).
-  INLINED_SOCKET_CLI_AI_VERSION: process.env['INLINED_SOCKET_CLI_AI_VERSION'],
+  INLINED_SOCKET_CLI_AI_VERSION: process.env['INLINED_SOCKET_CLI_AI_VERSION']!,
   INLINED_SOCKET_CLI_CDXGEN_VERSION:
-    process.env['INLINED_SOCKET_CLI_CDXGEN_VERSION'],
+    process.env['INLINED_SOCKET_CLI_CDXGEN_VERSION']!,
   INLINED_SOCKET_CLI_COANA_VERSION:
-    process.env['INLINED_SOCKET_CLI_COANA_VERSION'],
+    process.env['INLINED_SOCKET_CLI_COANA_VERSION']!,
   INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION:
-    process.env['INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION'],
-  INLINED_SOCKET_CLI_HOMEPAGE: process.env['INLINED_SOCKET_CLI_HOMEPAGE'],
+    process.env['INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION']!,
+  INLINED_SOCKET_CLI_HOMEPAGE: process.env['INLINED_SOCKET_CLI_HOMEPAGE']!,
   INLINED_SOCKET_CLI_LEGACY_BUILD:
-    process.env['INLINED_SOCKET_CLI_LEGACY_BUILD'],
-  INLINED_SOCKET_CLI_NAME: process.env['INLINED_SOCKET_CLI_NAME'],
+    process.env['INLINED_SOCKET_CLI_LEGACY_BUILD']!,
+  INLINED_SOCKET_CLI_NAME: process.env['INLINED_SOCKET_CLI_NAME']!,
   INLINED_SOCKET_CLI_PUBLISHED_BUILD:
-    process.env['INLINED_SOCKET_CLI_PUBLISHED_BUILD'],
+    process.env['INLINED_SOCKET_CLI_PUBLISHED_BUILD']!,
   INLINED_SOCKET_CLI_PYTHON_BUILD_TAG:
-    process.env['INLINED_SOCKET_CLI_PYTHON_BUILD_TAG'],
+    process.env['INLINED_SOCKET_CLI_PYTHON_BUILD_TAG']!,
   INLINED_SOCKET_CLI_PYTHON_VERSION:
-    process.env['INLINED_SOCKET_CLI_PYTHON_VERSION'],
+    process.env['INLINED_SOCKET_CLI_PYTHON_VERSION']!,
   INLINED_SOCKET_CLI_PYCLI_VERSION:
-    process.env['INLINED_SOCKET_CLI_PYCLI_VERSION'],
+    process.env['INLINED_SOCKET_CLI_PYCLI_VERSION']!,
   INLINED_SOCKET_CLI_SENTRY_BUILD:
-    process.env['INLINED_SOCKET_CLI_SENTRY_BUILD'],
+    process.env['INLINED_SOCKET_CLI_SENTRY_BUILD']!,
   INLINED_SOCKET_CLI_SYNP_VERSION:
-    process.env['INLINED_SOCKET_CLI_SYNP_VERSION'],
-  INLINED_SOCKET_CLI_VERSION: process.env['INLINED_SOCKET_CLI_VERSION'],
+    process.env['INLINED_SOCKET_CLI_SYNP_VERSION']!,
+  INLINED_SOCKET_CLI_VERSION: process.env['INLINED_SOCKET_CLI_VERSION']!,
   INLINED_SOCKET_CLI_VERSION_HASH:
-    process.env['INLINED_SOCKET_CLI_VERSION_HASH'],
+    process.env['INLINED_SOCKET_CLI_VERSION_HASH']!,
 }
 
 // Create a Proxy that uses live process.env in VITEST mode and snapshot in production.
