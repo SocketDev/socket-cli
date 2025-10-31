@@ -3,12 +3,14 @@
  *
  * This script:
  * 1. Ensures @socketsecurity/bootstrap package is built
- * 2. Builds bootstrap.js for SEA builds
- * 3. Builds bootstrap-smol.js for smol builds
- * 4. Copies LICENSE, CHANGELOG.md, and logo images from repo root
+ * 2. Builds bootstrap.js for npm package
+ * 3. Copies LICENSE, CHANGELOG.md, and logo images from repo root
+ *
+ * Note: bootstrap-smol.js is built by @socketsecurity/bootstrap package
+ * and used directly by the smol+node builder. It is NOT part of this package.
  */
 
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync } from 'node:fs'
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -21,7 +23,6 @@ import { Spinner, withSpinner } from '@socketsecurity/lib/spinner'
 import { spawn } from '@socketsecurity/lib/spawn'
 
 import seaConfig from './esbuild.bootstrap.config.mjs'
-import smolConfig from './esbuild.bootstrap-smol.config.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const packageRoot = path.resolve(__dirname, '..')
@@ -118,16 +119,16 @@ async function copyFilesFromRepoRoot() {
 }
 
 async function buildBootstrap() {
-  logger.group('Building bootstrap bundles')
+  logger.group('Building bootstrap bundle')
 
   try {
     // Create dist directory.
     logger.substep('Creating dist directory')
     mkdirSync(path.join(packageRoot, 'dist'), { recursive: true })
 
-    // Build standard version for SEA.
+    // Build bootstrap.js for npm package.
     const seaResult = await withSpinner({
-      message: 'Building standard bootstrap (SEA)',
+      message: 'Building bootstrap.js',
       spinner: Spinner({ shimmer: { dir: 'ltr' } }),
       operation: async () => {
         const result = await build(seaConfig)
@@ -138,32 +139,7 @@ async function buildBootstrap() {
     if (seaResult.metafile) {
       const outputSize = Object.values(seaResult.metafile.outputs)[0]?.bytes
       if (outputSize) {
-        logger.substep(`SEA bundle: ${(outputSize / 1024).toFixed(2)} KB`)
-      }
-    }
-
-    // Build transformed version for smol.
-    const smolResult = await withSpinner({
-      message: 'Building transformed bootstrap (smol)',
-      spinner: Spinner({ shimmer: { dir: 'ltr' } }),
-      operation: async () => {
-        const result = await build(smolConfig)
-
-        // Write the transformed output (build had write: false).
-        if (result.outputFiles && result.outputFiles.length > 0) {
-          for (const output of result.outputFiles) {
-            writeFileSync(output.path, output.contents)
-          }
-        }
-
-        return result
-      },
-    })
-
-    if (smolResult.metafile) {
-      const outputSize = Object.values(smolResult.metafile.outputs)[0]?.bytes
-      if (outputSize) {
-        logger.substep(`Smol bundle: ${(outputSize / 1024).toFixed(2)} KB`)
+        logger.substep(`Bundle size: ${(outputSize / 1024).toFixed(2)} KB`)
       }
     }
 
