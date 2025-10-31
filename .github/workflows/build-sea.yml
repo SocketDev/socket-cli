@@ -146,10 +146,6 @@ jobs:
 
   build-sea:
     name: 🌊 Build SEA binary - ${{ matrix.platform }}-${{ matrix.arch }}
-    if: |
-      (matrix.platform == 'linux' || matrix.platform == 'alpine') && inputs.build-linux != false ||
-      matrix.platform == 'darwin' && inputs.build-macos != false ||
-      matrix.platform == 'win32' && inputs.build-windows != false
     needs: build-deps
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
@@ -199,16 +195,44 @@ jobs:
             arch: arm64
 
     steps:
+      - name: Check if platform is enabled
+        id: check-platform
+        shell: bash
+        run: |
+          SHOULD_RUN="false"
+          if [ "${{ matrix.platform }}" = "linux" ] || [ "${{ matrix.platform }}" = "alpine" ]; then
+            if [ "${{ inputs.build-linux }}" != "false" ]; then
+              SHOULD_RUN="true"
+            fi
+          elif [ "${{ matrix.platform }}" = "darwin" ]; then
+            if [ "${{ inputs.build-macos }}" != "false" ]; then
+              SHOULD_RUN="true"
+            fi
+          elif [ "${{ matrix.platform }}" = "win32" ]; then
+            if [ "${{ inputs.build-windows }}" != "false" ]; then
+              SHOULD_RUN="true"
+            fi
+          fi
+          echo "should-run=$SHOULD_RUN" >> $GITHUB_OUTPUT
+          if [ "$SHOULD_RUN" = "true" ]; then
+            echo "✓ Building ${{ matrix.platform }}-${{ matrix.arch }}"
+          else
+            echo "⊘ Skipping ${{ matrix.platform }}-${{ matrix.arch }} (disabled by inputs)"
+          fi
+
       - name: Checkout
+        if: steps.check-platform.outputs.should-run == 'true'
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
       - name: Download build artifacts
+        if: steps.check-platform.outputs.should-run == 'true'
         uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
         with:
           name: build-deps-${{ github.sha }}
           path: packages/
 
       - name: Verify build artifacts
+        if: steps.check-platform.outputs.should-run == 'true'
         shell: bash
         run: |
           echo "=== Verifying downloaded build artifacts ==="
@@ -220,19 +244,23 @@ jobs:
           echo "✓ Bootstrap artifacts verified"
 
       - name: Setup Node.js
+        if: steps.check-platform.outputs.should-run == 'true'
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version: 22
 
       - name: Setup pnpm
+        if: steps.check-platform.outputs.should-run == 'true'
         uses: pnpm/action-setup@9fd676a19091d4595eefd76e4bd31c97133911f1 # v4.2.0
         with:
           version: ^10.16.0
 
       - name: Install dependencies
+        if: steps.check-platform.outputs.should-run == 'true'
         run: pnpm install --frozen-lockfile
 
       - name: Generate WASM cache keys
+        if: steps.check-platform.outputs.should-run == 'true'
         id: wasm-cache-keys
         shell: bash
         run: |
@@ -246,6 +274,7 @@ jobs:
           # echo "onnx-hash=$ONNX_HASH" >> $GITHUB_OUTPUT
 
       - name: Restore Yoga Layout WASM cache
+        if: steps.check-platform.outputs.should-run == 'true'
         id: yoga-cache
         uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
@@ -255,6 +284,7 @@ jobs:
           enableCrossOsArchive: true
 
       - name: Restore AI models cache
+        if: steps.check-platform.outputs.should-run == 'true'
         id: ai-cache
         uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
@@ -273,6 +303,7 @@ jobs:
       #     enableCrossOsArchive: true
 
       - name: Verify Yoga Layout cache
+        if: steps.check-platform.outputs.should-run == 'true'
         id: yoga-cache-valid
         shell: bash
         run: |
@@ -293,6 +324,7 @@ jobs:
           fi
 
       - name: Verify AI models cache
+        if: steps.check-platform.outputs.should-run == 'true'
         id: ai-cache-valid
         shell: bash
         run: |
@@ -317,20 +349,20 @@ jobs:
       #           fi
 
       - name: Check WASM cache requirements (Windows)
-        if: matrix.os == 'windows' && (steps.yoga-cache-valid.outputs.valid != 'true' || steps.ai-cache-valid.outputs.valid != 'true')
+        if: steps.check-platform.outputs.should-run == 'true' && matrix.os == 'windows' && (steps.yoga-cache-valid.outputs.valid != 'true' || steps.ai-cache-valid.outputs.valid != 'true')
         run: |
           echo "::error::WASM assets not cached for Windows build. Run build-wasm.yml workflow first to prime the cache."
           echo "Windows builds require pre-cached WASM assets due to network reliability issues."
           exit 1
 
       - name: Setup Python for WASM builds
-        if: steps.yoga-cache-valid.outputs.valid != 'true' || steps.ai-cache-valid.outputs.valid != 'true'
+        if: steps.check-platform.outputs.should-run == 'true' && (steps.yoga-cache-valid.outputs.valid != 'true' || steps.ai-cache-valid.outputs.valid != 'true')
         uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
         with:
           python-version: '3.11'
 
       - name: Cache Emscripten SDK
-        if: steps.yoga-cache-valid.outputs.valid != 'true'
+        if: steps.check-platform.outputs.should-run == 'true' && steps.yoga-cache-valid.outputs.valid != 'true'
         id: emsdk-cache
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
@@ -339,7 +371,7 @@ jobs:
           restore-keys: emsdk-${{ runner.os }}-
 
       - name: Cache pip packages
-        if: steps.ai-cache-valid.outputs.valid != 'true'
+        if: steps.check-platform.outputs.should-run == 'true' && steps.ai-cache-valid.outputs.valid != 'true'
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: ~/.cache/pip
@@ -349,7 +381,7 @@ jobs:
             pip-${{ runner.os }}-
 
       - name: Build WASM assets on cache miss
-        if: steps.yoga-cache-valid.outputs.valid != 'true' || steps.ai-cache-valid.outputs.valid != 'true'
+        if: steps.check-platform.outputs.should-run == 'true' && (steps.yoga-cache-valid.outputs.valid != 'true' || steps.ai-cache-valid.outputs.valid != 'true')
         shell: bash
         run: |
           echo "⚠️  WASM cache miss detected - building from source"
@@ -434,6 +466,7 @@ jobs:
           echo "✓ WASM assets built successfully"
 
       - name: Generate SEA build cache key
+        if: steps.check-platform.outputs.should-run == 'true'
         id: sea-cache-key
         shell: bash
         run: |
@@ -443,7 +476,7 @@ jobs:
           echo "hash=$COMBINED_HASH" >> $GITHUB_OUTPUT
 
       - name: Restore SEA binary cache
-        if: inputs.force != true
+        if: steps.check-platform.outputs.should-run == 'true' && inputs.force != true
         id: sea-cache
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
@@ -452,7 +485,7 @@ jobs:
           restore-keys: node-sea-${{ matrix.platform }}-${{ matrix.arch }}-
 
       - name: Verify WASM assets before CLI build
-        if: steps.sea-cache.outputs.cache-hit != 'true' || inputs.force
+        if: steps.check-platform.outputs.should-run == 'true' && (steps.sea-cache.outputs.cache-hit != 'true' || inputs.force)
         shell: bash
         run: |
           echo "=== Checking WASM asset availability ==="
@@ -474,14 +507,15 @@ jobs:
           fi
 
       - name: Build CLI (required for SEA)
-        if: steps.sea-cache.outputs.cache-hit != 'true' || inputs.force
+        if: steps.check-platform.outputs.should-run == 'true' && (steps.sea-cache.outputs.cache-hit != 'true' || inputs.force)
         run: pnpm --filter @socketsecurity/cli run build
 
       - name: Build SEA binary
-        if: steps.sea-cache.outputs.cache-hit != 'true' || inputs.force
+        if: steps.check-platform.outputs.should-run == 'true' && (steps.sea-cache.outputs.cache-hit != 'true' || inputs.force)
         run: pnpm --filter @socketbin/node-sea-builder run build -- --platform=${{ matrix.platform }} --arch=${{ matrix.arch }}
 
       - name: Verify SEA binary
+        if: steps.check-platform.outputs.should-run == 'true'
         shell: bash
         run: |
           echo "=== SEA Binary Build Artifacts ==="
@@ -508,6 +542,7 @@ jobs:
           fi
 
       - name: Upload SEA binary
+        if: steps.check-platform.outputs.should-run == 'true'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: socket-sea-${{ matrix.platform }}-${{ matrix.arch }}
