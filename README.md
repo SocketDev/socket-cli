@@ -114,10 +114,11 @@ pnpm exec socket --version
 
 Socket CLI uses an **intelligent build system with automatic caching** that only rebuilds packages when their source files change. The build system ensures packages are built in the correct dependency order:
 
-1. **ONNX Runtime WASM** - AI features (text classification, issue detection)
-2. **Yoga WASM** - Terminal layout engine (tables, progress bars)
-3. **CLI Package** - TypeScript compilation and bundling
-4. **SEA Binary** - Node.js Single Executable Application
+1. **Yoga WASM** - Terminal layout engine (tables, progress bars)
+2. **CLI Package** - TypeScript compilation and bundling
+3. **SEA Binary** - Node.js Single Executable Application
+
+> **Note**: ONNX Runtime WASM is temporarily disabled due to build issues. AI features use pre-built assets.
 
 #### Quick start (easiest)
 
@@ -129,7 +130,7 @@ pnpm run build
 ```
 
 **How it works:**
-- Checks if output files exist (e.g., `packages/onnxruntime/dist/ort-wasm-simd.wasm`)
+- Checks if output files exist (e.g., `packages/yoga/dist/yoga.wasm`)
 - Skips building if output is present and up-to-date
 - Shows which packages were built vs. skipped
 - Displays build time summary
@@ -140,7 +141,6 @@ pnpm run build
 Socket CLI Build System
 ============================================================
 
-→ ONNX Runtime WASM: skipped (up to date)
 → Yoga WASM: skipped (up to date)
 → CLI Package: building...
 ✓ CLI Package: built (12.3s)
@@ -152,7 +152,7 @@ Build Summary
 ============================================================
 
 Built:    2
-Skipped:  2
+Skipped:  1
 Total:    57.4s
 
 ✓ Build completed successfully
