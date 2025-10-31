@@ -5,6 +5,7 @@ import path from 'node:path'
 import { afterAll, afterEach, beforeAll, describe, expect } from 'vitest'
 
 import { NPM, PNPM } from '@socketsecurity/lib/constants/agents'
+import { safeMkdir } from '@socketsecurity/lib/fs'
 import { readPackageJson } from '@socketsecurity/lib/packages'
 import { spawn } from '@socketsecurity/lib/spawn'
 
@@ -67,7 +68,7 @@ async function _createTempFixture(sourceDir: string): Promise<string> {
   )
 
   // Copy the fixture files to the temp directory.
-  await promises.mkdir(tempDir, { recursive: true })
+  await safeMkdir(tempDir)
 
   // Copy package.json.
   const sourcePackageJson = path.join(sourceDir, PACKAGE_JSON)
