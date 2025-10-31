@@ -9,6 +9,9 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+PURPLE='\033[0;35m'
+BOLD='\033[1m'
 NC='\033[0m' # No Color
 
 # Print colored messages.
@@ -26,6 +29,14 @@ error() {
 
 warning() {
   echo -e "${YELLOW}⚠${NC} $1"
+}
+
+step() {
+  echo -e "${CYAN}→${NC} $1"
+}
+
+socket_brand() {
+  echo -e "${PURPLE}⚡${NC} $1"
 }
 
 # Detect platform and architecture.
@@ -46,6 +57,10 @@ detect_platform() {
       ;;
     *)
       error "Unsupported operating system: $(uname -s)"
+      echo ""
+      info "💡 Socket CLI supports Linux, macOS, and Windows."
+      info "   If you think this is an error, please open an issue at:"
+      info "   https://github.com/SocketDev/socket-cli/issues"
       exit 1
       ;;
   esac
@@ -60,6 +75,10 @@ detect_platform() {
       ;;
     *)
       error "Unsupported architecture: $(uname -m)"
+      echo ""
+      info "💡 Socket CLI supports x64 and arm64 architectures."
+      info "   If you think this is an error, please open an issue at:"
+      info "   https://github.com/SocketDev/socket-cli/issues"
       exit 1
       ;;
   esac
@@ -79,12 +98,20 @@ get_latest_version() {
   elif command -v wget &> /dev/null; then
     version=$(wget -qO- "https://registry.npmjs.org/${package_name}/latest" | grep -o '"version": *"[^"]*"' | head -1 | sed 's/"version": *"\([^"]*\)"/\1/')
   else
-    error "Neither curl nor wget found. Please install one of them."
+    error "Neither curl nor wget found on your system"
+    echo ""
+    info "💡 Please install curl or wget to continue:"
+    info "   macOS:   brew install curl"
+    info "   Ubuntu:  sudo apt-get install curl"
+    info "   Fedora:  sudo dnf install curl"
     exit 1
   fi
 
   if [ -z "$version" ]; then
     error "Failed to fetch latest version from npm registry"
+    echo ""
+    info "💡 This might be a temporary network issue. Please try again."
+    info "   If the problem persists, check your internet connection."
     exit 1
   fi
 
@@ -118,21 +145,21 @@ install_socket_cli() {
   local bin_dir
   local symlink_path
 
-  info "Detecting platform..."
+  step "Detecting your platform..."
   platform=$(detect_platform)
-  success "Platform detected: $platform"
+  success "Platform detected: ${BOLD}$platform${NC}"
 
   # Construct package name.
   package_name="@socketbin/cli-${platform}"
 
-  info "Fetching latest version..."
+  step "Fetching latest version from npm..."
   version=$(get_latest_version "$package_name")
-  success "Latest version: $version"
+  success "Found version ${BOLD}$version${NC}"
 
   # Construct download URL from npm registry.
   download_url="https://registry.npmjs.org/${package_name}/-/cli-${platform}-${version}.tgz"
 
-  info "Downloading Socket CLI from npm registry"
+  step "Downloading Socket CLI 📦"
 
   # Create DLX directory structure.
   dlx_dir="${HOME}/.socket/_dlx"
@@ -154,10 +181,10 @@ install_socket_cli() {
     wget -qO "$temp_tarball" "$download_url"
   fi
 
-  success "Downloaded tarball"
+  success "Package downloaded successfully"
 
   # Extract tarball.
-  info "Extracting binary..."
+  step "Capturing lightning in a bottle ⚡"
   tar -xzf "$temp_tarball" -C "$install_dir"
 
   # Find the binary (it's in package/bin/socket or package/bin/socket.exe).
@@ -169,6 +196,8 @@ install_socket_cli() {
 
   if [ ! -f "$binary_path" ]; then
     error "Binary not found at expected path: $binary_path"
+    echo ""
+    info "💡 This might be a temporary issue with the package. Try again in a moment."
     exit 1
   fi
 
@@ -179,13 +208,14 @@ install_socket_cli() {
     # Clear macOS quarantine attribute.
     if [ "$platform" = "darwin-x64" ] || [ "$platform" = "darwin-arm64" ]; then
       xattr -d com.apple.quarantine "$binary_path" 2>/dev/null || true
+      success "Cleared macOS security restrictions"
     fi
   fi
 
   # Clean up tarball.
   rm "$temp_tarball"
 
-  success "Installed to $binary_path"
+  success "Binary ready at ${BOLD}$binary_path${NC}"
 
   # Create symlink in user's local bin directory.
   bin_dir="${HOME}/.local/bin"
@@ -194,37 +224,49 @@ install_socket_cli() {
 
   # Remove existing symlink if present.
   if [ -L "$symlink_path" ] || [ -f "$symlink_path" ]; then
+    step "Replacing existing installation..."
     rm "$symlink_path"
   fi
 
   # Create symlink.
+  step "Creating command shortcut..."
   ln -s "$binary_path" "$symlink_path"
-  success "Created symlink: $symlink_path -> $binary_path"
+  success "Command ready: ${BOLD}socket${NC}"
+
+  echo ""
 
   # Check if ~/.local/bin is in PATH.
   if [[ ":$PATH:" != *":${bin_dir}:"* ]]; then
-    warning "~/.local/bin is not in your PATH"
+    warning "Almost there! One more step needed..."
     echo ""
-    echo "Add it to your PATH by adding this to your shell profile (~/.bashrc, ~/.zshrc, etc.):"
+    echo "  Add ${BOLD}~/.local/bin${NC} to your PATH by adding this line to your shell profile:"
+    echo "  ${BOLD}(~/.bashrc, ~/.zshrc, ~/.bash_profile, or ~/.profile)${NC}"
     echo ""
-    echo "  export PATH=\"\$HOME/.local/bin:\$PATH\""
+    echo "    ${CYAN}export PATH=\"\$HOME/.local/bin:\$PATH\"${NC}"
+    echo ""
+    echo "  Then restart your shell or run: ${CYAN}source ~/.zshrc${NC} (or your shell config)"
     echo ""
   else
-    success "~/.local/bin is already in your PATH"
+    success "Your PATH is already configured perfectly!"
   fi
 
   echo ""
-  success "Socket CLI installed successfully!"
+  socket_brand "${BOLD}Socket CLI installed successfully!${NC} 🎉"
   echo ""
-  info "Run 'socket --help' to get started"
-  info "Run 'socket self-update' to update to the latest version"
+  info "💡 Quick start:"
+  echo "     ${CYAN}socket --help${NC}           Get started with Socket"
+  echo "     ${CYAN}socket self-update${NC}      Update to the latest version"
+  echo ""
+  socket_brand "Happy securing! 🚀"
 }
 
 # Main execution.
 main() {
   echo ""
-  echo "Socket CLI Installer"
-  echo "===================="
+  echo -e "${PURPLE}${BOLD}⚡ Socket CLI Installer ⚡${NC}"
+  echo -e "${BOLD}═══════════════════════════${NC}"
+  echo ""
+  echo "  Secure your dependencies with Socket Security"
   echo ""
 
   install_socket_cli
