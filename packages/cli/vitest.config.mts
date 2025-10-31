@@ -22,10 +22,7 @@ export default defineConfig({
   test: {
     globals: false,
     environment: 'node',
-    include: [
-      'test/**/*.test.{mts,ts}',
-      'src/**/*.test.{mts,ts}',
-    ],
+    include: ['test/**/*.test.{mts,ts}', 'src/**/*.test.{mts,ts}'],
     exclude: [
       '**/node_modules/**',
       '**/dist/**',
@@ -66,6 +63,9 @@ export default defineConfig({
     },
     testTimeout: 30_000,
     hookTimeout: 30_000,
+    // Enable file-level parallelization for better performance.
+    // Large test files (like cmd-scan-reach.test.mts) will run in separate threads.
+    fileParallelism: true,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html', 'lcov', 'clover'],
