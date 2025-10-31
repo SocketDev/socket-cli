@@ -140,7 +140,7 @@ describe('dlx e2e tests', () => {
 
   describe('spawnCoanaDlx e2e tests', () => {
     it.skipIf(!ENV.RUN_E2E_TESTS || !hasAuth)(
-      'executes coana-tech/cli via dlx with correct binary name',
+      'executes @coana-tech/cli via dlx with correct binary name',
       async () => {
         const { spawnCoanaDlx } = await import('../../src/utils/dlx/spawn.mts')
         const result = await spawnCoanaDlx(['--help'])

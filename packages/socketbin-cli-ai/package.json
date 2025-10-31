@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "@socketsecurity/build-infra": "workspace:*",
-    "@socketsecurity/lib": "2.10.0"
+    "@socketsecurity/lib": "2.10.2"
   },
   "devDependencies": {
     "esbuild": "0.25.10"

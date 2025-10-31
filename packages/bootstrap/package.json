@@ -22,7 +22,7 @@
     "@babel/types": "^7.28.5",
     "@socketsecurity/build-infra": "workspace:*",
     "@socketsecurity/cli": "workspace:*",
-    "@socketsecurity/lib": "2.10.0",
+    "@socketsecurity/lib": "2.10.2",
     "del-cli": "catalog:",
     "esbuild": "catalog:",
     "magic-string": "catalog:",
