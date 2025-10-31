@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.0.9](https://github.com/SocketDev/socket-cli/releases/tag/v2.0.9) - 2025-10-31
+
+### Fixed
+- Updated @socketsecurity/lib to v2.10.2 with critical DLX fixes for scoped package parsing
+
 ## [2.0.8](https://github.com/SocketDev/socket-cli/releases/tag/v2.0.8) - 2025-10-31
 
 ### Fixed
