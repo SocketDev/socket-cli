@@ -18,6 +18,11 @@ on:
         required: false
         type: boolean
         default: true
+      models-quant-level:
+        description: 'AI Models quantization level'
+        required: false
+        type: string
+        default: 'INT4'
       build-onnx:
         description: 'Build ONNX Runtime WASM'
         required: false
@@ -40,6 +45,14 @@ on:
         required: false
         type: boolean
         default: true
+      models-quant-level:
+        description: 'AI Models quantization level'
+        required: false
+        type: choice
+        options:
+          - INT4
+          - INT8
+        default: INT4
       build-onnx:
         description: 'Build ONNX Runtime WASM'
         required: false
@@ -168,7 +181,7 @@ jobs:
           retention-days: 7
 
   build-models:
-    name: 🤖 Build AI Models (INT4 Quantized)
+    name: 🤖 Build AI Models (${{ inputs.models-quant-level || 'INT4' }} Quantized)
     if: ${{ inputs.build-models != false }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
@@ -223,9 +236,14 @@ jobs:
           MODELS_VERSION=$(node -p "require('./packages/models/package.json').version")
           # Hash includes script files and package.json.
           HASH=$(find packages/models -type f \( -name "*.mjs" -o -name "package.json" \) | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
-          FULL_HASH="${HASH}-${MODELS_VERSION}"
+          # Include quantization level in cache key.
+          QUANT_LEVEL="${{ inputs.models-quant-level || 'INT4' }}"
+          FULL_HASH="${HASH}-${MODELS_VERSION}-${QUANT_LEVEL}"
           echo "hash=$FULL_HASH" >> $GITHUB_OUTPUT
+          echo "quant-level=${QUANT_LEVEL}" >> $GITHUB_OUTPUT
+          echo "suffix=$(echo ${QUANT_LEVEL} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
           echo "Models version: v$MODELS_VERSION"
+          echo "Quantization level: $QUANT_LEVEL"
 
       - name: Restore models cache
         id: models-cache
@@ -239,7 +257,8 @@ jobs:
       - name: Verify cached artifacts
         id: models-cache-valid
         run: |
-          if [ -f "packages/models/dist/minilm-l6.onnx" ] && [ -f "packages/models/dist/codet5-encoder.onnx" ]; then
+          SUFFIX="${{ steps.models-cache-key.outputs.suffix }}"
+          if [ -f "packages/models/dist/minilm-l6-${SUFFIX}.onnx" ] && [ -f "packages/models/dist/codet5-encoder-${SUFFIX}.onnx" ]; then
             echo "valid=true" >> $GITHUB_OUTPUT
             echo "Cache hit: artifacts found"
             ls -lh packages/models/dist/
@@ -252,12 +271,23 @@ jobs:
       - name: Build AI models
         if: steps.models-cache-valid.outputs.valid != 'true' || inputs.force
         run: |
-          echo "::group::Building INT4-quantized AI models"
-          if [ "${{ inputs.force }}" = "true" ]; then
-            pnpm --filter @socketsecurity/models run build -- --force
-          else
-            pnpm --filter @socketsecurity/models run build
+          QUANT_LEVEL="${{ steps.models-cache-key.outputs.quant-level }}"
+          echo "::group::Building ${QUANT_LEVEL}-quantized AI models"
+
+          # Build command with quantization flag.
+          BUILD_CMD="pnpm --filter @socketsecurity/models run build --"
+
+          if [ "$QUANT_LEVEL" = "INT8" ]; then
+            BUILD_CMD="$BUILD_CMD --int8"
           fi
+
+          if [ "${{ inputs.force }}" = "true" ]; then
+            BUILD_CMD="$BUILD_CMD --force"
+          fi
+
+          echo "Running: $BUILD_CMD"
+          eval $BUILD_CMD
+
           echo "Build exit code: $?"
           echo "Checking for build artifacts..."
           ls -lh packages/models/dist/ || echo "dist directory not found"
@@ -265,21 +295,22 @@ jobs:
 
       - name: Verify build artifacts
         run: |
+          SUFFIX="${{ steps.models-cache-key.outputs.suffix }}"
           echo "=== AI Models Build Artifacts ==="
-          if [ ! -f "packages/models/dist/minilm-l6.onnx" ]; then
-            echo "ERROR: minilm-l6.onnx not found!"
+          if [ ! -f "packages/models/dist/minilm-l6-${SUFFIX}.onnx" ]; then
+            echo "ERROR: minilm-l6-${SUFFIX}.onnx not found!"
             ls -lh packages/models/dist/ || echo "Directory does not exist"
             exit 1
           fi
-          if [ ! -f "packages/models/dist/codet5-encoder.onnx" ]; then
-            echo "ERROR: codet5-encoder.onnx not found!"
+          if [ ! -f "packages/models/dist/codet5-encoder-${SUFFIX}.onnx" ]; then
+            echo "ERROR: codet5-encoder-${SUFFIX}.onnx not found!"
             exit 1
           fi
           ls -lh packages/models/dist/
           echo ""
-          echo "minilm-l6.onnx size: $(du -h packages/models/dist/minilm-l6.onnx | cut -f1)"
-          echo "codet5-encoder.onnx size: $(du -h packages/models/dist/codet5-encoder.onnx | cut -f1)"
-          echo "codet5-decoder.onnx size: $(du -h packages/models/dist/codet5-decoder.onnx | cut -f1)"
+          echo "minilm-l6-${SUFFIX}.onnx size: $(du -h packages/models/dist/minilm-l6-${SUFFIX}.onnx | cut -f1)"
+          echo "codet5-encoder-${SUFFIX}.onnx size: $(du -h packages/models/dist/codet5-encoder-${SUFFIX}.onnx | cut -f1)"
+          echo "codet5-decoder-${SUFFIX}.onnx size: $(du -h packages/models/dist/codet5-decoder-${SUFFIX}.onnx | cut -f1)"
 
       - name: Upload models artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -446,7 +477,14 @@ jobs:
             echo "| 🧘 Yoga Layout | \`yoga.wasm\`, \`yoga.js\` |" >> $GITHUB_STEP_SUMMARY
           fi
           if [ -d "artifacts/ai-models" ]; then
-            echo "| 🤖 AI Models | \`minilm-l6.onnx\` (INT4), \`codet5-encoder.onnx\` (INT4), \`codet5-decoder.onnx\` (INT4) |" >> $GITHUB_STEP_SUMMARY
+            # Detect quantization level from file names.
+            if [ -f "artifacts/ai-models/minilm-l6-int8.onnx" ]; then
+              echo "| 🤖 AI Models | \`minilm-l6-int8.onnx\` (INT8), \`codet5-encoder-int8.onnx\` (INT8), \`codet5-decoder-int8.onnx\` (INT8) |" >> $GITHUB_STEP_SUMMARY
+            elif [ -f "artifacts/ai-models/minilm-l6-int4.onnx" ]; then
+              echo "| 🤖 AI Models | \`minilm-l6-int4.onnx\` (INT4), \`codet5-encoder-int4.onnx\` (INT4), \`codet5-decoder-int4.onnx\` (INT4) |" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "| 🤖 AI Models | $(ls artifacts/ai-models/*.onnx 2>/dev/null | xargs -n1 basename | sed 's/^/`/;s/$/`/' | tr '\n' ',' | sed 's/,$//' || echo "No ONNX files found") |" >> $GITHUB_STEP_SUMMARY
+            fi
           fi
           if [ -d "artifacts/onnx-runtime" ]; then
             echo "| 🌐 ONNX Runtime | \`ort-wasm-simd-threaded.wasm\`, \`ort-wasm-simd-threaded.mjs\` |" >> $GITHUB_STEP_SUMMARY
