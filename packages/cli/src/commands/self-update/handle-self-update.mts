@@ -19,7 +19,6 @@ import { outputSelfUpdate } from './output-self-update.mts'
 import ENV from '../../constants/env.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
-import { canSelfUpdate, isSeaBinary } from '../../utils/sea/detect.mjs'
 import {
   clearQuarantine,
   ensureExecutable,
@@ -32,6 +31,7 @@ import {
   fetchPackageMetadata,
   verifyTarballIntegrity,
 } from '../../utils/registry/npm-registry.mts'
+import { canSelfUpdate, isSeaBinary } from '../../utils/sea/detect.mjs'
 
 import type { CliCommandConfig } from '../../utils/cli/with-subcommands.mjs'
 

@@ -196,6 +196,28 @@ const ADDITIONS_DIR = join(ROOT_DIR, 'additions')
  * Collect all source files that contribute to the smol build.
  * Used for hash-based caching to detect when rebuild is needed.
  *
+ * Cache Key Strategy (Local Script):
+ * ===================================
+ * This function generates a content-based hash using @socketsecurity/build-infra/lib/extraction-cache.
+ * The cache key is determined by hashing the CONTENT of these files:
+ *
+ * 1. All patch files (patches/*.patch)
+ *    - Any change to Node.js patches invalidates cache
+ *    - Example: patches/enable-brotli-loading-v24.patch
+ *
+ * 2. All addition files (additions/**)
+ *    - Includes headers, source files, tools added to Node.js source tree
+ *    - Example: additions/tools/socket_macho_decompress
+ *
+ * 3. This build script itself (scripts/build.mjs)
+ *    - Changes to build configuration flags invalidate cache
+ *    - Example: modifying --without-node-code-cache flag
+ *
+ * NOTE: This differs from GitHub Actions cache key (see .github/workflows/build-smol.yml):
+ * - GitHub: Hashes file PATHS and includes bootstrap dependencies
+ * - Local: Hashes file CONTENT only (more precise, no bootstrap dependency)
+ * - Both: Stored in build/.cache/node.hash (local) or Actions cache (CI)
+ *
  * @returns {string[]} Array of absolute paths to all source files
  */
 function collectBuildSourceFiles() {
@@ -1092,7 +1114,7 @@ async function main() {
     `  ${colors.blue('ℹ')} V8 Lite Mode: Disables TurboFan optimizer (saves ~15-20 MB)`,
   )
   logger.log(
-    `  ${colors.blue('ℹ')} OPTIMIZATIONS: no-snapshot, no-code-cache, no-object-print, no-SEA, V8 Lite`,
+    `  ${colors.blue('ℹ')} OPTIMIZATIONS: no-snapshot, with-code-cache (for errors), no-SEA, V8 Lite`,
   )
   logger.log('')
   logger.log(
@@ -1116,10 +1138,9 @@ async function main() {
     '--without-amaro',
     '--without-sqlite',
     '--without-node-snapshot',
-    // Note: --without-node-code-cache removed because we need code cache to decompress
-    // brotli-encoded lib/ files (including our bootstrap). Zlib/brotli support is
-    // required for CLI index.js decompression.
-    '--v8-disable-object-print',
+    '--without-node-code-cache', // Enable code cache (prevents error info dump).
+    // Note: --v8-disable-object-print disabled to enable proper error output.
+    // '--v8-disable-object-print',
     '--without-node-options',
     '--disable-single-executable-application', // -1-2 MB: SEA not needed for pkg
     '--v8-lite-mode', // -15-20 MB: Disables TurboFan JIT (JS slower, WASM unaffected)

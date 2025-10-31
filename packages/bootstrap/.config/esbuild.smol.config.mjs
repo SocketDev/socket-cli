@@ -18,9 +18,6 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.resolve(__dirname, '..')
 
 const config = {
-  banner: {
-    js: '#!/usr/bin/env node',
-  },
   bundle: true,
   define: {
     __MIN_NODE_VERSION__: JSON.stringify(nodeVersionConfig.versionSemver),

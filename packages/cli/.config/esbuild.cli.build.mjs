@@ -174,6 +174,7 @@ const config = {
   // (but doesn't hurt as extra safety).
   external: [
     'node-gyp', // Required for require.resolve('node-gyp/package.json')
+    '@socketsecurity/registry', // Optional registry package (dev dependency only)
   ],
 
   // Suppress warnings for intentional CommonJS compatibility code.
