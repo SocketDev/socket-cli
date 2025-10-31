@@ -9,10 +9,13 @@
  * 3. SEA binary
  *
  * Usage:
- *   pnpm run build                    # Smart build (skips unchanged)
- *   pnpm run build --force            # Force rebuild all
- *   pnpm run build --target <name>    # Build specific target
- *   pnpm run build --help             # Show this help
+ *   pnpm run build                           # Smart build (skips unchanged)
+ *   pnpm run build --force                   # Force rebuild all
+ *   pnpm run build --target <name>           # Build specific target
+ *   pnpm run build --targets <t1,t2,...>     # Build multiple targets
+ *   pnpm run build --platforms               # Build all platform binaries
+ *   pnpm run build --platforms --parallel    # Build platforms in parallel
+ *   pnpm run build --help                    # Show this help
  */
 
 import { existsSync } from 'node:fs'
@@ -48,6 +51,17 @@ const TARGET_PACKAGES = {
   'win32-x64': '@socketbin/cli-win32-x64'
 }
 
+const PLATFORM_TARGETS = [
+  'alpine-arm64',
+  'alpine-x64',
+  'darwin-arm64',
+  'darwin-x64',
+  'linux-arm64',
+  'linux-x64',
+  'win32-arm64',
+  'win32-x64'
+]
+
 /**
  * Build configuration for each package in the default build order.
  */
@@ -80,6 +94,9 @@ const BUILD_PACKAGES = [
 function parseArgs() {
   const args = process.argv.slice(2)
   let target = null
+  let targets = []
+  let platforms = false
+  let parallel = false
   let force = false
   let help = false
   const buildArgs = []
@@ -88,6 +105,12 @@ function parseArgs() {
     const arg = args[i]
     if (arg === '--target' && i + 1 < args.length) {
       target = args[++i]
+    } else if (arg === '--targets' && i + 1 < args.length) {
+      targets = args[++i].split(',').map(t => t.trim())
+    } else if (arg === '--platforms') {
+      platforms = true
+    } else if (arg === '--parallel') {
+      parallel = true
     } else if (arg === '--force') {
       force = true
     } else if (arg === '--help' || arg === '-h') {
@@ -97,7 +120,7 @@ function parseArgs() {
     }
   }
 
-  return { buildArgs, force, help, target }
+  return { buildArgs, force, help, parallel, platforms, target, targets }
 }
 
 /**
@@ -108,10 +131,13 @@ function showHelp() {
   logger.log(`${colors.blue('Socket CLI Build System')}`)
   logger.log('')
   logger.log('Usage:')
-  logger.log('  pnpm run build                    # Smart build (skips unchanged)')
-  logger.log('  pnpm run build --force            # Force rebuild all')
-  logger.log('  pnpm run build --target <name>    # Build specific target')
-  logger.log('  pnpm run build --help             # Show this help')
+  logger.log('  pnpm run build                           # Smart build (skips unchanged)')
+  logger.log('  pnpm run build --force                   # Force rebuild all')
+  logger.log('  pnpm run build --target <name>           # Build specific target')
+  logger.log('  pnpm run build --targets <t1,t2,...>     # Build multiple targets')
+  logger.log('  pnpm run build --platforms               # Build all platform binaries')
+  logger.log('  pnpm run build --platforms --parallel    # Build platforms in parallel')
+  logger.log('  pnpm run build --help                    # Show this help')
   logger.log('')
   logger.log('Default Build Order:')
   logger.log('  1. ONNX Runtime WASM (AI features)')
@@ -119,9 +145,16 @@ function showHelp() {
   logger.log('  3. CLI Package (TypeScript compilation + bundling)')
   logger.log('  4. SEA Binary (Node.js Single Executable)')
   logger.log('')
-  logger.log('Available Targets:')
-  for (const target of Object.keys(TARGET_PACKAGES).sort()) {
+  logger.log('Platform Targets:')
+  for (const target of PLATFORM_TARGETS) {
     logger.log(`  ${target}`)
+  }
+  logger.log('')
+  logger.log('Other Available Targets:')
+  for (const target of Object.keys(TARGET_PACKAGES).sort()) {
+    if (!PLATFORM_TARGETS.includes(target)) {
+      logger.log(`  ${target}`)
+    }
   }
   logger.log('')
 }
@@ -268,6 +301,141 @@ async function runTargetedBuild(target, buildArgs) {
 }
 
 /**
+ * Build a single target (for parallel/sequential builds).
+ */
+async function buildTarget(target, buildArgs) {
+  const packageFilter = TARGET_PACKAGES[target]
+  if (!packageFilter) {
+    throw new Error(`Unknown build target: ${target}`)
+  }
+
+  const startTime = Date.now()
+  logger.log(`${colors.cyan('→')} [${target}] Starting build...`)
+
+  const pnpmArgs = [
+    '--filter',
+    packageFilter,
+    'run',
+    'build',
+    ...buildArgs
+  ]
+
+  const result = await spawn('pnpm', pnpmArgs, {
+    shell: WIN32,
+    stdio: 'pipe',
+  })
+
+  const duration = ((Date.now() - startTime) / 1000).toFixed(1)
+
+  if (result.code === 0) {
+    logger.log(`${colors.green('✓')} [${target}] Build succeeded (${duration}s)`)
+    return { success: true, target, duration }
+  }
+
+  logger.error(`${colors.red('✗')} [${target}] Build failed (${duration}s)`)
+  if (result.stderr) {
+    logger.error(`${colors.red('✗')} [${target}] Error output:`)
+    logger.error(result.stderr)
+  }
+  return { success: false, target, duration }
+}
+
+/**
+ * Run multiple targeted builds in parallel.
+ */
+async function runParallelBuilds(targetsToBuild, buildArgs) {
+  logger.log('')
+  logger.log('='.repeat(60))
+  logger.log(`${colors.blue('Building ' + targetsToBuild.length + ' targets in parallel')}`)
+  logger.log('='.repeat(60))
+  logger.log('')
+  logger.log(`Targets: ${targetsToBuild.join(', ')}`)
+  logger.log('')
+
+  const startTime = Date.now()
+  const results = await Promise.allSettled(
+    targetsToBuild.map(target => buildTarget(target, buildArgs))
+  )
+
+  const totalDuration = ((Date.now() - startTime) / 1000).toFixed(1)
+
+  logger.log('')
+  logger.log('='.repeat(60))
+  logger.log(`${colors.blue('Build Summary')}`)
+  logger.log('='.repeat(60))
+  logger.log('')
+
+  const successful = results.filter(r => r.status === 'fulfilled' && r.value.success).length
+  const failed = results.filter(r => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.success)).length
+
+  logger.log(`${colors.green('Succeeded:')} ${successful}`)
+  logger.log(`${colors.red('Failed:')}    ${failed}`)
+  logger.log(`${colors.blue('Total:')}     ${totalDuration}s`)
+  logger.log('')
+
+  if (failed > 0) {
+    logger.log(`${colors.red('✗')} One or more builds failed`)
+    logger.log('')
+    process.exit(1)
+  }
+
+  logger.log(`${colors.green('✓')} All builds completed successfully`)
+  logger.log('')
+  process.exit(0)
+}
+
+/**
+ * Run multiple targeted builds sequentially.
+ */
+async function runSequentialBuilds(targetsToBuild, buildArgs) {
+  logger.log('')
+  logger.log('='.repeat(60))
+  logger.log(`${colors.blue('Building ' + targetsToBuild.length + ' targets sequentially')}`)
+  logger.log('='.repeat(60))
+  logger.log('')
+  logger.log(`Targets: ${targetsToBuild.join(', ')}`)
+  logger.log('')
+
+  const startTime = Date.now()
+  const results = []
+
+  for (const target of targetsToBuild) {
+    const result = await buildTarget(target, buildArgs)
+    results.push(result)
+
+    if (!result.success) {
+      break
+    }
+  }
+
+  const totalDuration = ((Date.now() - startTime) / 1000).toFixed(1)
+
+  logger.log('')
+  logger.log('='.repeat(60))
+  logger.log(`${colors.blue('Build Summary')}`)
+  logger.log('='.repeat(60))
+  logger.log('')
+
+  const successful = results.filter(r => r.success).length
+  const failed = results.filter(r => !r.success).length
+
+  logger.log(`${colors.green('Succeeded:')} ${successful}`)
+  logger.log(`${colors.red('Failed:')}    ${failed}`)
+  logger.log(`${colors.blue('Total:')}     ${totalDuration}s`)
+  logger.log('')
+
+  if (failed > 0) {
+    logger.log(`${colors.red('✗')} Build failed at target: ${results.find(r => !r.success)?.target}`)
+    logger.log('')
+    process.exit(1)
+  }
+
+  logger.log(`${colors.green('✓')} All builds completed successfully`)
+  logger.log('')
+  process.exit(0)
+}
+
+/**
  * Main build function.
  */
 async function main() {
@@ -278,7 +446,21 @@ async function main() {
     process.exit(0)
   }
 
-  // If a specific target is specified, use the old behavior.
+  // Handle platforms build.
+  if (opts.platforms) {
+    const buildFn = opts.parallel ? runParallelBuilds : runSequentialBuilds
+    await buildFn(PLATFORM_TARGETS, opts.buildArgs)
+    return
+  }
+
+  // Handle multiple targets.
+  if (opts.targets.length > 0) {
+    const buildFn = opts.parallel ? runParallelBuilds : runSequentialBuilds
+    await buildFn(opts.targets, opts.buildArgs)
+    return
+  }
+
+  // Handle single target.
   if (opts.target) {
     await runTargetedBuild(opts.target, opts.buildArgs)
     return
