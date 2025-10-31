@@ -21,12 +21,12 @@
  * - updateConfigValue: Persist configuration changes
  */
 
-import { mkdirSync, writeFileSync } from 'node:fs'
+import { writeFileSync } from 'node:fs'
 import path from 'node:path'
 
 import config from '@socketsecurity/config'
 import { debugDirNs, debugNs } from '@socketsecurity/lib/debug'
-import { safeReadFileSync } from '@socketsecurity/lib/fs'
+import { safeMkdirSync, safeReadFileSync } from '@socketsecurity/lib/fs'
 import { logger } from '@socketsecurity/lib/logger'
 import { naturalCompare } from '@socketsecurity/lib/sorts'
 
@@ -120,14 +120,7 @@ function getConfigValues(): LocalConfig {
           updateConfigValue(CONFIG_KEY_API_TOKEN, token)
         }
       } else {
-        try {
-          mkdirSync(socketAppDataPath, { recursive: true })
-        } catch (e: any) {
-          // Ignore EEXIST error - directory already exists.
-          if (e?.code !== 'EEXIST') {
-            throw e
-          }
-        }
+        safeMkdirSync(socketAppDataPath, { recursive: true })
       }
     }
   }
@@ -351,14 +344,7 @@ export function updateConfigValue<Key extends keyof LocalConfig>(
       _pendingSave = false
       const socketAppDataPath = getSocketAppDataPath()
       if (socketAppDataPath) {
-        try {
-          mkdirSync(socketAppDataPath, { recursive: true })
-        } catch (e: any) {
-          // Ignore EEXIST error - directory already exists.
-          if (e?.code !== 'EEXIST') {
-            throw e
-          }
-        }
+        safeMkdirSync(socketAppDataPath, { recursive: true })
         const configFilePath = path.join(socketAppDataPath, 'config.json')
         writeFileSync(
           configFilePath,

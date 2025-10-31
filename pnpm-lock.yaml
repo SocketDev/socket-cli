@@ -31,8 +31,8 @@ overrides:
   aggregate-error: npm:@socketregistry/aggregate-error@^1.0.15
   ansi-regex: 6.1.0
   brace-expansion: 2.0.2
-  es-define-property: npm:@socketregistry/es-define-property@^1.0.7
   emoji-regex: 10.6.0
+  es-define-property: npm:@socketregistry/es-define-property@^1.0.7
   es-set-tostringtag: npm:@socketregistry/es-set-tostringtag@^1.0.10
   function-bind: npm:@socketregistry/function-bind@^1.0.7
   globalthis: npm:@socketregistry/globalthis@^1.0.8
