@@ -11,6 +11,21 @@ on:
         options:
           - '0'
           - '1'
+      publish-socket:
+        description: 'Publish socket package'
+        required: false
+        type: boolean
+        default: true
+      publish-cli:
+        description: 'Publish @socketsecurity/cli package'
+        required: false
+        type: boolean
+        default: true
+      publish-cli-sentry:
+        description: 'Publish @socketsecurity/cli-with-sentry package'
+        required: false
+        type: boolean
+        default: true
       js-fallback:
         description: 'Publish JS-only fallback version (no native binaries)'
         required: false
@@ -53,18 +68,23 @@ jobs:
 
       # Build and publish 'socket' package (default).
       - name: Update socketbin versions in socket package
+        if: ${{ inputs.publish-socket != false }}
         run: node scripts/update-socketbin-versions.mjs
       - name: Prepare socket package for publishing
+        if: ${{ inputs.publish-socket != false }}
         run: |
           SOCKET_VERSION=$(node -p "require('./packages/socket/package.json').version")
           echo "Socket version: $SOCKET_VERSION"
           echo "SOCKET_VERSION=$SOCKET_VERSION" >> $GITHUB_ENV
           node scripts/prepare-package-for-publish.mjs packages/socket
       - name: Build socket package
+        if: ${{ inputs.publish-socket != false }}
         run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 pnpm run build
       - name: Validate socket package
+        if: ${{ inputs.publish-socket != false }}
         run: pnpm --filter socket run verify
       - name: Publish socket package
+        if: ${{ inputs.publish-socket != false }}
         working-directory: packages/socket
         run: npm publish --provenance --access public --no-git-checks
         continue-on-error: true
@@ -73,14 +93,18 @@ jobs:
 
       # Build and publish '@socketsecurity/cli' package (legacy).
       - name: Prepare @socketsecurity/cli package for publishing
+        if: ${{ inputs.publish-cli != false }}
         run: node scripts/prepare-package-for-publish.mjs packages/cli ${{ env.SOCKET_VERSION }}
       - name: Build @socketsecurity/cli package
+        if: ${{ inputs.publish-cli != false }}
         run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 INLINED_SOCKET_CLI_LEGACY_BUILD=1 pnpm run build
         env:
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
       - name: Validate @socketsecurity/cli package
+        if: ${{ inputs.publish-cli != false }}
         run: pnpm --filter @socketsecurity/cli run verify
       - name: Publish @socketsecurity/cli package
+        if: ${{ inputs.publish-cli != false }}
         working-directory: packages/cli
         run: npm publish --provenance --access public --no-git-checks
         continue-on-error: true
@@ -89,14 +113,18 @@ jobs:
 
       # Build and publish '@socketsecurity/cli-with-sentry' package.
       - name: Prepare @socketsecurity/cli-with-sentry package for publishing
+        if: ${{ inputs.publish-cli-sentry != false }}
         run: node scripts/prepare-package-for-publish.mjs packages/cli-with-sentry ${{ env.SOCKET_VERSION }}
       - name: Build @socketsecurity/cli-with-sentry package
+        if: ${{ inputs.publish-cli-sentry != false }}
         run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 INLINED_SOCKET_CLI_SENTRY_BUILD=1 pnpm run build --target cli-sentry
         env:
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
       - name: Validate @socketsecurity/cli-with-sentry package
+        if: ${{ inputs.publish-cli-sentry != false }}
         run: pnpm --filter @socketsecurity/cli-with-sentry run verify
       - name: Publish @socketsecurity/cli-with-sentry package
+        if: ${{ inputs.publish-cli-sentry != false }}
         working-directory: packages/cli-with-sentry
         run: npm publish --provenance --access public --no-git-checks
         continue-on-error: true
