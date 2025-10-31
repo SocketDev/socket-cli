@@ -171,6 +171,11 @@
     "build:force": "node scripts/build.mjs --force",
     "build:cli": "pnpm --filter @socketsecurity/cli run build",
     "build:watch": "pnpm --filter @socketsecurity/cli run build:watch",
+    "build:binaries": "node scripts/build-binaries.mjs",
+    "build:binaries:dev": "node scripts/build-binaries.mjs --dev",
+    "build:sea": "node scripts/build-binaries.mjs --sea",
+    "build:smol": "node scripts/build-binaries.mjs --smol",
+    "build:wasm": "node scripts/build-binaries.mjs --wasm",
     "dev": "pnpm run build:watch",
     "// Quality Checks": "",
     "check": "node scripts/check.mjs",
@@ -198,12 +203,14 @@
     "wasm:setup": "node scripts/wasm/setup-build-env.mjs",
     "// Maintenance": "",
     "clean": "pnpm --filter \"./packages/**\" run clean",
+    "clean:cache": "node scripts/clean-cache.mjs",
+    "clean:cache:all": "node scripts/clean-cache.mjs --all",
     "update": "node scripts/update.mjs",
     "// Publishing": "",
     "publish": "node scripts/publish.mjs",
     "// Setup": "",
     "prepare": "husky",
-    "pretest": "pnpm run build"
+    "pretest": "pnpm run build:cli"
   },
   "lint-staged": {
     "*.{cjs,cts,js,json,md,mjs,mts,ts}": [
