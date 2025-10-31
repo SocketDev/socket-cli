@@ -1,7 +1,6 @@
 import terminalLink from 'terminal-link'
 import colors from 'yoctocolors-cjs'
 
-import isInteractive from '@socketregistry/is-interactive/index.cjs'
 import { joinAnd } from '@socketsecurity/lib/arrays'
 import { logger } from '@socketsecurity/lib/logger'
 import { getOwn, hasOwn, toSortedObject } from '@socketsecurity/lib/objects'
@@ -9,7 +8,6 @@ import { normalizePath } from '@socketsecurity/lib/path'
 import { naturalCompare } from '@socketsecurity/lib/sorts'
 import { indentString, trimNewlines } from '@socketsecurity/lib/strings'
 
-import { showCategoryHelp, showInteractiveHelp } from './interactive-help.mts'
 import { NPM, NPX } from '../../constants/agents.mts'
 import {
   DRY_RUN_LABEL,
@@ -852,56 +850,20 @@ export async function meowWithSubcommands(
     help: boolean
   }
 
-  // Check for --help=category syntax in argv
-  let helpCategory: string | null = null
-  for (const arg of argv) {
-    if (arg.startsWith('--help=')) {
-      helpCategory = arg.slice('--help='.length)
-      break
-    }
-  }
-
   // ...else we provide basic instructions and help.
   if (!shouldSuppressBanner(cli2.flags)) {
     emitBanner(name, orgFlag, compactMode, cli2.flags)
     // Meow will add newline so don't add stderr spacing here.
   }
-  if (!helpFlag && !helpCategory && dryRun) {
+  if (!helpFlag && dryRun) {
     logger.log(`${DRY_RUN_LABEL}: No-op, call a sub-command; ok`)
     // Exit immediately to prevent tests from hanging waiting for stdin.
     // eslint-disable-next-line n/no-process-exit -- Required for dry-run mode.
     process.exit(0)
   } else {
-    // Check if we should show interactive help
-    const shouldShowInteractive =
-      (helpFlag || helpCategory !== null) &&
-      !cli2.flags['helpFull'] &&
-      !helpCategory &&
-      isInteractive() &&
-      process.env['VITEST'] !== '1' &&
-      process.env['CI'] !== 'true'
-
-    if (shouldShowInteractive) {
-      // Show interactive help for root --help command.
-      await showInteractiveHelp()
-      // eslint-disable-next-line n/no-process-exit
-      process.exit(0)
-    } else if (helpCategory) {
-      // Show specific category help.
-      const found = showCategoryHelp(helpCategory)
-      if (!found) {
-        logger.error(`Unknown help category: ${helpCategory}`)
-        logger.log(
-          'Valid categories: scan, fix, pm, pkg, org, config, ask, all, quick',
-        )
-      }
-      // eslint-disable-next-line n/no-process-exit
-      process.exit(found ? 0 : 2)
-    } else {
-      // When you explicitly request --help, the command should be successful
-      // so we exit(0). If we do it because we need more input, we exit(2).
-      cli2.showHelp(helpFlag ? 0 : 2)
-    }
+    // When you explicitly request --help, the command should be successful
+    // so we exit(0). If we do it because we need more input, we exit(2).
+    cli2.showHelp(helpFlag ? 0 : 2)
   }
 }
 
