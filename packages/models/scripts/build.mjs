@@ -229,15 +229,16 @@ async function quantizeModel(modelKey) {
     try {
       await execAsync(
         `python3 -c "` +
-        `from onnxruntime.quantization import matmul_4bits_quantizer, quant_utils; ` +
+        `from onnxruntime.quantization.matmul_nbits_quantizer import MatMulNBitsQuantizer, RTNWeightOnlyQuantConfig; ` +
+        `from onnxruntime.quantization import quant_utils; ` +
         `from pathlib import Path; ` +
-        `quant_config = matmul_4bits_quantizer.DefaultWeightOnlyQuantConfig(` +
+        `quant_config = RTNWeightOnlyQuantConfig(` +
         `  block_size=128, ` +
         `  is_symmetric=True, ` +
         `  accuracy_level=4` +
         `); ` +
         `model = quant_utils.load_model_with_shape_infer(Path('${onnxPath}')); ` +
-        `quant = matmul_4bits_quantizer.MatMul4BitsQuantizer(model, algo_config=quant_config); ` +
+        `quant = MatMulNBitsQuantizer(model, algo_config=quant_config); ` +
         `quant.process(); ` +
         `quant.model.save_model_to_file('${quantPath}', True)` +
         `"`,
