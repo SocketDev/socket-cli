@@ -60,9 +60,7 @@ export function shouldBypassBootstrap(): boolean {
  *
  * @param preferSystemNode - If true, try to find system Node.js first
  */
-export function getBootstrapExecPath(
-  preferSystemNode = true,
-): string {
+export function getBootstrapExecPath(preferSystemNode = true): string {
   // If not a SEA binary, just return execPath.
   if (!isSeaBinary()) {
     return process.execPath
