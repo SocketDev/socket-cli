@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.0.8](https://github.com/SocketDev/socket-cli/releases/tag/v2.0.8) - 2025-10-31
+
+### Fixed
+- Binary name resolution for external tools (@coana-tech/cli, @cyclonedx/cdxgen, synp) in dlx execution
+- Preflight downloads now correctly specify binary names for background package caching
+
 ## [2.0.7](https://github.com/SocketDev/socket-cli/releases/tag/v2.0.7) - 2025-10-31
 
 ### Added
