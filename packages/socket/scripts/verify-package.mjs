@@ -61,8 +61,9 @@ async function validate() {
 
   if (errors.length > 0) {
     logger.log(`${colors.red('Errors:')}`)
+    logger.log('')
     for (const err of errors) {
-      logger.log(`  ${error(err)}`)
+      logger.fail(err)
     }
     logger.log('')
     logger.fail('Package validation FAILED')
