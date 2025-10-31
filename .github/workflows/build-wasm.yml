@@ -290,13 +290,13 @@ jobs:
         id: onnx-cache-valid
         run: |
           if [ -f "packages/onnxruntime/build/wasm/ort-wasm-simd-threaded.wasm" ] && [ -f "packages/onnxruntime/build/wasm/ort-wasm-simd-threaded.js" ]; then
-            # echo "valid=true" >> $GITHUB_OUTPUT
-            # echo "Cache hit: artifacts found"
-            # ls -lh packages/onnxruntime/build/wasm/
+            echo "valid=true" >> $GITHUB_OUTPUT
+            echo "Cache hit: artifacts found"
+            ls -lh packages/onnxruntime/build/wasm/
           else
-            # echo "valid=false" >> $GITHUB_OUTPUT
-            # echo "Cache miss or incomplete: forcing rebuild"
-            # ls -lh packages/onnxruntime/build/wasm/ 2>/dev/null || echo "Directory does not exist"
+            echo "valid=false" >> $GITHUB_OUTPUT
+            echo "Cache miss or incomplete: forcing rebuild"
+            ls -lh packages/onnxruntime/build/wasm/ 2>/dev/null || echo "Directory does not exist"
           fi
 
       - name: Install Emscripten
@@ -315,9 +315,9 @@ jobs:
           echo "::group::Building ONNX Runtime WASM (this will take 30-60 minutes)"
           source emsdk/emsdk_env.sh
           if [ "${{ inputs.force }}" = "true" ]; then
-            # pnpm --filter @socketsecurity/onnxruntime run build -- --force
+            pnpm --filter @socketsecurity/onnxruntime run build -- --force
           else
-            # pnpm --filter @socketsecurity/onnxruntime run build
+            pnpm --filter @socketsecurity/onnxruntime run build
           fi
           echo "Build exit code: $?"
           echo "Checking for build artifacts..."
@@ -335,9 +335,9 @@ jobs:
         run: |
           echo "=== ONNX Runtime Build Artifacts ==="
           if [ ! -f "packages/onnxruntime/build/wasm/ort-wasm-simd-threaded.wasm" ] || [ ! -f "packages/onnxruntime/build/wasm/ort-wasm-simd-threaded.js" ]; then
-            # echo "ERROR: Required ONNX Runtime WASM artifacts not found!"
-            # ls -lh packages/onnxruntime/build/wasm/ || echo "Directory does not exist"
-            # exit 1
+            echo "ERROR: Required ONNX Runtime WASM artifacts not found!"
+            ls -lh packages/onnxruntime/build/wasm/ || echo "Directory does not exist"
+            exit 1
           fi
           ls -lh packages/onnxruntime/build/wasm/
           echo ""
