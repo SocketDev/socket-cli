@@ -528,6 +528,15 @@ importers:
         specifier: 2.10.4
         version: 2.10.4(typescript@5.9.3)
 
+  packages/models:
+    dependencies:
+      '@socketsecurity/build-infra':
+        specifier: workspace:*
+        version: link:../build-infra
+      '@socketsecurity/lib':
+        specifier: 2.10.4
+        version: 2.10.4(typescript@5.9.3)
+
   packages/node-sea-builder:
     dependencies:
       '@socketsecurity/bootstrap':
