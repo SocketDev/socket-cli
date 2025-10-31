@@ -301,7 +301,9 @@ node scripts/extract-yoga-wasm.mjs
 
 ### Building Custom Node.js Binaries
 
-See the comprehensive [yao-pkg Build Guide](../guides/yao-pkg-build.md) for building custom Node.js binaries with Socket patches.
+For building custom Node.js binaries with Socket patches, see:
+- [Node.js Build Quick Reference](node-build-quick-reference.md)
+- [Node.js Patch Creation Guide](node-patch-creation-guide.md)
 
 ### Platform-Specific Builds
 
