@@ -19,9 +19,14 @@ import { getLocalPackageAliases } from '../scripts/utils/get-local-package-alias
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '..')
 
-// Read package.json for version and metadata.
+// Read package.json for metadata.
 const packageJson = JSON.parse(
   readFileSync(path.join(rootPath, 'package.json'), 'utf-8'),
+)
+
+// Read version from socket package (the published package).
+const socketPackageJson = JSON.parse(
+  readFileSync(path.join(rootPath, '../socket/package.json'), 'utf-8'),
 )
 
 // Get current git commit hash.
@@ -199,11 +204,11 @@ const config = {
     'import.meta.url': '__importMetaUrl',
     // Inject build metadata using DRY helper.
     ...createDefineEntries({
-      INLINED_SOCKET_CLI_VERSION: JSON.stringify(packageJson.version),
+      INLINED_SOCKET_CLI_VERSION: JSON.stringify(socketPackageJson.version),
       INLINED_SOCKET_CLI_VERSION_HASH: JSON.stringify(versionHash),
       INLINED_SOCKET_CLI_NAME: JSON.stringify(packageJson.name),
       INLINED_SOCKET_CLI_HOMEPAGE: JSON.stringify(packageJson.homepage),
-      INLINED_SOCKET_CLI_AI_VERSION: JSON.stringify(packageJson.version),
+      INLINED_SOCKET_CLI_AI_VERSION: JSON.stringify(socketPackageJson.version),
       INLINED_SOCKET_CLI_CDXGEN_VERSION: JSON.stringify(cdxgenVersion),
       INLINED_SOCKET_CLI_COANA_VERSION: JSON.stringify(coanaVersion),
       INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION:
@@ -227,11 +232,11 @@ const config = {
   plugins: [
     // Environment variable replacement must run AFTER unicode transform.
     envVarReplacementPlugin({
-      INLINED_SOCKET_CLI_VERSION: JSON.stringify(packageJson.version),
+      INLINED_SOCKET_CLI_VERSION: JSON.stringify(socketPackageJson.version),
       INLINED_SOCKET_CLI_VERSION_HASH: JSON.stringify(versionHash),
       INLINED_SOCKET_CLI_NAME: JSON.stringify(packageJson.name),
       INLINED_SOCKET_CLI_HOMEPAGE: JSON.stringify(packageJson.homepage),
-      INLINED_SOCKET_CLI_AI_VERSION: JSON.stringify(packageJson.version),
+      INLINED_SOCKET_CLI_AI_VERSION: JSON.stringify(socketPackageJson.version),
       INLINED_SOCKET_CLI_CDXGEN_VERSION: JSON.stringify(cdxgenVersion),
       INLINED_SOCKET_CLI_COANA_VERSION: JSON.stringify(coanaVersion),
       INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION:
