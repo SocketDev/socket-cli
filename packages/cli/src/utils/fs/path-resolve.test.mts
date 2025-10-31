@@ -1,13 +1,13 @@
-import { existsSync } from 'node:fs'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 
-import mockFs from 'mock-fs'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { NODE_MODULES } from '@socketsecurity/lib/constants/paths'
 import { normalizePath } from '@socketsecurity/lib/path'
 
+import {
+  createTestWorkspace,
+  type Workspace,
+} from '../../../test/helpers/workspace-helper.mts'
 import {
   findBinPathDetailsSync,
   findNpmDirPathSync,
@@ -20,8 +20,6 @@ import {
 } from '../../constants/packages.mts'
 
 const PACKAGE_JSON = 'package.json'
-
-import type FileSystem from 'mock-fs/lib/filesystem'
 
 // Mock dependencies for new tests.
 vi.mock('@socketsecurity/lib/bin', async () => {
@@ -44,48 +42,6 @@ vi.mock('@socketsecurity/lib/fs', async () => {
     isDirSync: vi.fn(),
   }
 })
-
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
-
-const rootNmPath = path.join(__dirname, '../..', NODE_MODULES)
-const mockFixturePath = normalizePath(path.join(__dirname, 'mock'))
-const mockNmPath = normalizePath(rootNmPath)
-// Load the registry from its actual location (socket-registry/registry).
-// Note: socket-registry/lib is now the standalone @socketsecurity/lib package.
-const actualRegistryPath = path.resolve(
-  __dirname,
-  '../../../socket-registry/registry',
-)
-const registryDistPath = path.join(actualRegistryPath, 'dist')
-const registryPackageJsonPath = path.join(actualRegistryPath, 'package.json')
-
-// Only load if paths exist to avoid ENOENT errors in CI or monorepo contexts.
-let mockRegistryDist = {}
-let mockRegistryPackageJson = '{}'
-try {
-  if (existsSync(registryDistPath)) {
-    mockRegistryDist = mockFs.load(registryDistPath)
-  }
-  if (existsSync(registryPackageJsonPath)) {
-    mockRegistryPackageJson = mockFs.load(registryPackageJsonPath)
-  }
-} catch {
-  // Ignore errors loading registry fixtures.
-}
-
-function mockTestFs(config: FileSystem.DirectoryItems) {
-  // Don't load entire node_modules to avoid ENAMETOOLONG from circular symlinks.
-  // Instead, load only the registry from its actual location.
-  return mockFs({
-    ...config,
-    [mockNmPath]: {},
-    [actualRegistryPath]: {
-      dist: mockRegistryDist,
-      'package.json': mockRegistryPackageJson,
-    },
-  })
-}
 
 const globPatterns = {
   general: {
@@ -146,233 +102,262 @@ const sortedPromise =
   }
 const sortedGetPackageFilesFullScans = sortedPromise(getPackageFilesForScan)
 
-// Skipped: mock-fs completely replaces the filesystem, preventing the tested code
-// from accessing real dependencies in @socketsecurity/lib and node_modules.
-// Would need to switch to memfs or real temp directories to fix.
-describe.skip('Path Resolve', () => {
-  afterEach(() => {
-    mockFs.restore()
-  })
-
+describe('Path Resolve', () => {
   describe('getPackageFilesForScan()', () => {
     it('should handle a "." inputPath', async () => {
-      mockTestFs({
-        [`${mockFixturePath}/package.json`]: '{}',
+      const workspace = await createTestWorkspace({
+        packageJson: { name: 'test' },
       })
 
-      const actual = await sortedGetPackageFilesFullScans(['.'], globPatterns, {
-        cwd: mockFixturePath,
-      })
-      expect(actual.map(normalizePath)).toEqual([
-        `${mockFixturePath}/package.json`,
-      ])
+      try {
+        const actual = await sortedGetPackageFilesFullScans(
+          ['.'],
+          globPatterns,
+          {
+            cwd: workspace.path,
+          },
+        )
+        expect(actual.map(normalizePath)).toEqual([
+          normalizePath(workspace.resolve('package.json')),
+        ])
+      } finally {
+        await workspace.cleanup()
+      }
     })
 
     it('should respect ignores from socket config', async () => {
-      mockTestFs({
-        [`${mockFixturePath}/bar/package-lock.json`]: '{}',
-        [`${mockFixturePath}/bar/package.json`]: '{}',
-        [`${mockFixturePath}/foo/package-lock.json`]: '{}',
-        [`${mockFixturePath}/foo/package.json`]: '{}',
+      const workspace = await createTestWorkspace({
+        files: [
+          { path: 'bar/package-lock.json', content: '{}' },
+          { path: 'bar/package.json', content: '{}' },
+          { path: 'foo/package-lock.json', content: '{}' },
+          { path: 'foo/package.json', content: '{}' },
+        ],
       })
 
-      const actual = await sortedGetPackageFilesFullScans(
-        ['**/*'],
-        globPatterns,
-        {
-          cwd: mockFixturePath,
-          config: {
-            version: 2,
-            projectIgnorePaths: ['bar/*', '!bar/package.json'],
-            issueRules: {},
-            githubApp: {},
+      try {
+        const actual = await sortedGetPackageFilesFullScans(
+          ['**/*'],
+          globPatterns,
+          {
+            cwd: workspace.path,
+            config: {
+              version: 2,
+              projectIgnorePaths: ['bar/*', '!bar/package.json'],
+              issueRules: {},
+              githubApp: {},
+            },
           },
-        },
-      )
-      expect(actual.map(normalizePath)).toEqual([
-        `${mockFixturePath}/bar/package.json`,
-        `${mockFixturePath}/foo/package-lock.json`,
-        `${mockFixturePath}/foo/package.json`,
-      ])
-    })
-
-    it('should handle a directory path input', async () => {
-      const subDirPath = normalizePath(path.join(mockFixturePath, 'subdir'))
-      mockTestFs({
-        [`${mockFixturePath}/package.json`]: '{}',
-        [`${subDirPath}/package.json`]: '{}',
-        [`${subDirPath}/nested/package.json`]: '{}',
-      })
-
-      const actual = await sortedGetPackageFilesFullScans(
-        [subDirPath],
-        globPatterns,
-        {
-          cwd: mockFixturePath,
-        },
-      )
-      expect(actual.map(normalizePath)).toEqual([
-        `${subDirPath}/nested/package.json`,
-        `${subDirPath}/package.json`,
-      ])
+        )
+        expect(actual.map(normalizePath)).toEqual([
+          normalizePath(workspace.resolve('bar/package.json')),
+          normalizePath(workspace.resolve('foo/package-lock.json')),
+          normalizePath(workspace.resolve('foo/package.json')),
+        ])
+      } finally {
+        await workspace.cleanup()
+      }
     })
 
     it('should respect .gitignore', async () => {
-      mockTestFs({
-        [`${mockFixturePath}/.gitignore`]: 'bar/*\n!bar/package.json',
-        [`${mockFixturePath}/bar/package-lock.json`]: '{}',
-        [`${mockFixturePath}/bar/package.json`]: '{}',
-        [`${mockFixturePath}/foo/package-lock.json`]: '{}',
-        [`${mockFixturePath}/foo/package.json`]: '{}',
+      const workspace = await createTestWorkspace({
+        files: [
+          { path: '.gitignore', content: 'bar/*\n!bar/package.json' },
+          { path: 'bar/package-lock.json', content: '{}' },
+          { path: 'bar/package.json', content: '{}' },
+          { path: 'foo/package-lock.json', content: '{}' },
+          { path: 'foo/package.json', content: '{}' },
+        ],
       })
 
-      const actual = await sortedGetPackageFilesFullScans(
-        ['**/*'],
-        globPatterns,
-        { cwd: mockFixturePath },
-      )
-      expect(actual.map(normalizePath)).toEqual([
-        `${mockFixturePath}/bar/package.json`,
-        `${mockFixturePath}/foo/package-lock.json`,
-        `${mockFixturePath}/foo/package.json`,
-      ])
+      try {
+        const actual = await sortedGetPackageFilesFullScans(
+          ['**/*'],
+          globPatterns,
+          { cwd: workspace.path },
+        )
+        expect(actual.map(normalizePath)).toEqual([
+          normalizePath(workspace.resolve('bar/package.json')),
+          normalizePath(workspace.resolve('foo/package-lock.json')),
+          normalizePath(workspace.resolve('foo/package.json')),
+        ])
+      } finally {
+        await workspace.cleanup()
+      }
     })
 
     it('should always ignore some paths', async () => {
-      mockTestFs({
-        // Mirrors the list from
-        // https://github.com/novemberborn/ignore-by-default/blob/v2.1.0/index.js
-        [`${mockFixturePath}/.git/some/dir/package.json`]: '{}',
-        [`${mockFixturePath}/.log/some/dir/package.json`]: '{}',
-        [`${mockFixturePath}/.nyc_output/some/dir/package.json`]: '{}',
-        [`${mockFixturePath}/.sass-cache/some/dir/package.json`]: '{}',
-        [`${mockFixturePath}/.yarn/some/dir/package.json`]: '{}',
-        [`${mockFixturePath}/bower_components/some/dir/package.json`]: '{}',
-        [`${mockFixturePath}/coverage/some/dir/package.json`]: '{}',
-        [`${mockFixturePath}/node_modules/socket/package.json`]: '{}',
-        [`${mockFixturePath}/foo/package-lock.json`]: '{}',
-        [`${mockFixturePath}/foo/package.json`]: '{}',
+      const workspace = await createTestWorkspace({
+        files: [
+          // Mirrors the list from
+          // https://github.com/novemberborn/ignore-by-default/blob/v2.1.0/index.js
+          { path: '.git/some/dir/package.json', content: '{}' },
+          { path: '.log/some/dir/package.json', content: '{}' },
+          { path: '.nyc_output/some/dir/package.json', content: '{}' },
+          { path: '.sass-cache/some/dir/package.json', content: '{}' },
+          { path: '.yarn/some/dir/package.json', content: '{}' },
+          { path: 'bower_components/some/dir/package.json', content: '{}' },
+          { path: 'coverage/some/dir/package.json', content: '{}' },
+          { path: 'node_modules/socket/package.json', content: '{}' },
+          { path: 'foo/package-lock.json', content: '{}' },
+          { path: 'foo/package.json', content: '{}' },
+        ],
       })
 
-      const actual = await sortedGetPackageFilesFullScans(
-        ['**/*'],
-        globPatterns,
-        { cwd: mockFixturePath },
-      )
-      expect(actual.map(normalizePath)).toEqual([
-        `${mockFixturePath}/foo/package-lock.json`,
-        `${mockFixturePath}/foo/package.json`,
-      ])
+      try {
+        const actual = await sortedGetPackageFilesFullScans(
+          ['**/*'],
+          globPatterns,
+          { cwd: workspace.path },
+        )
+        expect(actual.map(normalizePath)).toEqual([
+          normalizePath(workspace.resolve('foo/package-lock.json')),
+          normalizePath(workspace.resolve('foo/package.json')),
+        ])
+      } finally {
+        await workspace.cleanup()
+      }
     })
 
     it('should ignore irrelevant matches', async () => {
-      mockTestFs({
-        [`${mockFixturePath}/foo/package-foo.json`]: '{}',
-        [`${mockFixturePath}/foo/package-lock.json`]: '{}',
-        [`${mockFixturePath}/foo/package.json`]: '{}',
-        [`${mockFixturePath}/foo/random.json`]: '{}',
+      const workspace = await createTestWorkspace({
+        files: [
+          { path: 'foo/package-foo.json', content: '{}' },
+          { path: 'foo/package-lock.json', content: '{}' },
+          { path: 'foo/package.json', content: '{}' },
+          { path: 'foo/random.json', content: '{}' },
+        ],
       })
 
-      const actual = await sortedGetPackageFilesFullScans(
-        ['**/*'],
-        globPatterns,
-        { cwd: mockFixturePath },
-      )
-      expect(actual.map(normalizePath)).toEqual([
-        `${mockFixturePath}/foo/package-lock.json`,
-        `${mockFixturePath}/foo/package.json`,
-      ])
+      try {
+        const actual = await sortedGetPackageFilesFullScans(
+          ['**/*'],
+          globPatterns,
+          { cwd: workspace.path },
+        )
+        expect(actual.map(normalizePath)).toEqual([
+          normalizePath(workspace.resolve('foo/package-lock.json')),
+          normalizePath(workspace.resolve('foo/package.json')),
+        ])
+      } finally {
+        await workspace.cleanup()
+      }
     })
 
     it('should be lenient on oddities', async () => {
-      mockTestFs({
-        [`${mockFixturePath}/package.json`]: {
-          /* Empty directory */
-        },
-      })
+      const workspace = await createTestWorkspace({})
 
-      const actual = await sortedGetPackageFilesFullScans(
-        ['**/*'],
-        globPatterns,
-        { cwd: mockFixturePath },
-      )
-      expect(actual.map(normalizePath)).toEqual([])
+      try {
+        // Create empty package.json directory (not a file)
+        await workspace.writeFile('package.json/.gitkeep', '')
+
+        const actual = await sortedGetPackageFilesFullScans(
+          ['**/*'],
+          globPatterns,
+          { cwd: workspace.path },
+        )
+        expect(actual.map(normalizePath)).toEqual([])
+      } finally {
+        await workspace.cleanup()
+      }
     })
 
     it('should resolve package and lockfile', async () => {
-      mockTestFs({
-        [`${mockFixturePath}/package-lock.json`]: '{}',
-        [`${mockFixturePath}/package.json`]: '{}',
+      const workspace = await createTestWorkspace({
+        files: [
+          { path: 'package-lock.json', content: '{}' },
+          { path: 'package.json', content: '{}' },
+        ],
       })
 
-      const actual = await sortedGetPackageFilesFullScans(
-        ['**/*'],
-        globPatterns,
-        { cwd: mockFixturePath },
-      )
-      expect(actual.map(normalizePath)).toEqual([
-        `${mockFixturePath}/package-lock.json`,
-        `${mockFixturePath}/package.json`,
-      ])
+      try {
+        const actual = await sortedGetPackageFilesFullScans(
+          ['**/*'],
+          globPatterns,
+          { cwd: workspace.path },
+        )
+        expect(actual.map(normalizePath)).toEqual([
+          normalizePath(workspace.resolve('package-lock.json')),
+          normalizePath(workspace.resolve('package.json')),
+        ])
+      } finally {
+        await workspace.cleanup()
+      }
     })
 
     it('should resolve package without lockfile', async () => {
-      mockTestFs({
-        [`${mockFixturePath}/package.json`]: '{}',
+      const workspace = await createTestWorkspace({
+        files: [{ path: 'package.json', content: '{}' }],
       })
 
-      const actual = await sortedGetPackageFilesFullScans(
-        ['**/*'],
-        globPatterns,
-        { cwd: mockFixturePath },
-      )
-      expect(actual.map(normalizePath)).toEqual([
-        `${mockFixturePath}/package.json`,
-      ])
+      try {
+        const actual = await sortedGetPackageFilesFullScans(
+          ['**/*'],
+          globPatterns,
+          { cwd: workspace.path },
+        )
+        expect(actual.map(normalizePath)).toEqual([
+          normalizePath(workspace.resolve('package.json')),
+        ])
+      } finally {
+        await workspace.cleanup()
+      }
     })
 
     it('should support alternative lockfiles', async () => {
-      mockTestFs({
-        [`${mockFixturePath}/yarn.lock`]: '{}',
-        [`${mockFixturePath}/package.json`]: '{}',
+      const workspace = await createTestWorkspace({
+        files: [
+          { path: 'yarn.lock', content: '{}' },
+          { path: 'package.json', content: '{}' },
+        ],
       })
 
-      const actual = await sortedGetPackageFilesFullScans(
-        ['**/*'],
-        globPatterns,
-        { cwd: mockFixturePath },
-      )
-      expect(actual.map(normalizePath)).toEqual([
-        `${mockFixturePath}/package.json`,
-        `${mockFixturePath}/yarn.lock`,
-      ])
+      try {
+        const actual = await sortedGetPackageFilesFullScans(
+          ['**/*'],
+          globPatterns,
+          { cwd: workspace.path },
+        )
+        expect(actual.map(normalizePath)).toEqual([
+          normalizePath(workspace.resolve('package.json')),
+          normalizePath(workspace.resolve('yarn.lock')),
+        ])
+      } finally {
+        await workspace.cleanup()
+      }
     })
 
     it('should handle all variations', async () => {
-      mockTestFs({
-        [`${mockFixturePath}/package-lock.json`]: '{}',
-        [`${mockFixturePath}/package.json`]: '{}',
-        [`${mockFixturePath}/foo/package-lock.json`]: '{}',
-        [`${mockFixturePath}/foo/package.json`]: '{}',
-        [`${mockFixturePath}/bar/yarn.lock`]: '{}',
-        [`${mockFixturePath}/bar/package.json`]: '{}',
-        [`${mockFixturePath}/abc/package.json`]: '{}',
+      const workspace = await createTestWorkspace({
+        files: [
+          { path: 'package-lock.json', content: '{}' },
+          { path: 'package.json', content: '{}' },
+          { path: 'foo/package-lock.json', content: '{}' },
+          { path: 'foo/package.json', content: '{}' },
+          { path: 'bar/yarn.lock', content: '{}' },
+          { path: 'bar/package.json', content: '{}' },
+          { path: 'abc/package.json', content: '{}' },
+        ],
       })
 
-      const actual = await sortedGetPackageFilesFullScans(
-        ['**/*'],
-        globPatterns,
-        { cwd: mockFixturePath },
-      )
-      expect(actual.map(normalizePath)).toEqual([
-        `${mockFixturePath}/abc/package.json`,
-        `${mockFixturePath}/bar/package.json`,
-        `${mockFixturePath}/bar/yarn.lock`,
-        `${mockFixturePath}/foo/package-lock.json`,
-        `${mockFixturePath}/foo/package.json`,
-        `${mockFixturePath}/package-lock.json`,
-        `${mockFixturePath}/package.json`,
-      ])
+      try {
+        const actual = await sortedGetPackageFilesFullScans(
+          ['**/*'],
+          globPatterns,
+          { cwd: workspace.path },
+        )
+        expect(actual.map(normalizePath)).toEqual([
+          normalizePath(workspace.resolve('abc/package.json')),
+          normalizePath(workspace.resolve('bar/package.json')),
+          normalizePath(workspace.resolve('bar/yarn.lock')),
+          normalizePath(workspace.resolve('foo/package-lock.json')),
+          normalizePath(workspace.resolve('foo/package.json')),
+          normalizePath(workspace.resolve('package-lock.json')),
+          normalizePath(workspace.resolve('package.json')),
+        ])
+      } finally {
+        await workspace.cleanup()
+      }
     })
   })
 
