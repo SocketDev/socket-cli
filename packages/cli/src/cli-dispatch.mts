@@ -18,10 +18,7 @@
 
 import path from 'node:path'
 
-import {
-  shouldBypassBootstrap,
-  waitForBootstrapHandshake,
-} from './utils/sea/boot.mjs'
+import { waitForBootstrapHandshake } from './utils/sea/boot.mjs'
 
 // Detect how this binary was invoked.
 function getInvocationMode(): string {
@@ -81,27 +78,13 @@ function getInvocationMode(): string {
 
 // Route to the appropriate CLI based on invocation mode.
 async function main() {
-  // Check if we need bootstrap logic (SEA binary without IPC handshake).
-  if (!shouldBypassBootstrap()) {
-    // We're a SEA binary in initial entry mode.
-    // Bootstrap logic will delegate to system Node.js or spawn ourselves with IPC.
-    // This is handled by the bootstrap module - for now, we'll proceed normally.
-    // TODO: Implement actual bootstrap delegation here.
-    // For now, we just log a warning and continue.
-    console.warn(
-      'Warning: SEA bootstrap not yet implemented - continuing without delegation',
-    )
-  }
-
   // If we're a subprocess with IPC, wait for handshake.
   // This validates we're running in the correct context.
+  // Note: The handshake is used by shadow npm/pnpm/yarn operations to pass
+  // configuration (API token, bin name, etc.) to the subprocess.
   try {
-    const ipcData = await waitForBootstrapHandshake(1000) // 1 second timeout.
-    if (ipcData) {
-      // We received IPC handshake - we're a validated subprocess.
-      // The IPC data contains configuration from the parent process.
-      // For now, we just acknowledge it. The shadow binaries will use this data.
-    }
+    await waitForBootstrapHandshake(1000) // 1 second timeout.
+    // Handshake received - we're a validated subprocess.
   } catch {
     // No handshake received, or we're not a subprocess.
     // This is normal for initial entry.
