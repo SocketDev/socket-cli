@@ -8,14 +8,14 @@ import { homedir } from 'node:os'
 import path from 'node:path'
 
 import { which } from '@socketsecurity/lib/bin'
-import { getSpinner } from '@socketsecurity/lib/constants/process'
 import { SOCKET_IPC_HANDSHAKE } from '@socketsecurity/lib/constants/socket'
 import { downloadPackage } from '@socketsecurity/lib/dlx-package'
 import { envAsBoolean } from '@socketsecurity/lib/env'
 import { logger } from '@socketsecurity/lib/logger'
-import { withSpinner } from '@socketsecurity/lib/spinner'
+import { Spinner, withSpinner } from '@socketsecurity/lib/spinner'
 import { spawn } from '@socketsecurity/lib/spawn'
 import { gte } from 'semver'
+import { SOCKET_CLI_ISSUES_URL } from '../../../cli/src/constants/socket.mts'
 
 export const SOCKET_DLX_DIR = path.join(homedir(), '.socket', '_dlx')
 
@@ -170,15 +170,15 @@ export async function downloadCli() {
   try {
     const result = await withSpinner({
       message: 'Socket powering up…',
-      spinner: getSpinner(),
-      operation: async () => {
+      spinner: Spinner({ shimmer: { dir: 'random' } }),
+      operation: async () =>
         // Download and cache @socketsecurity/cli package.
-        return await downloadPackage({
+        await downloadPackage({
           package: '@socketsecurity/cli',
           binaryName: 'socket',
-          force: false, // Use cached version if available.
-        })
-      },
+          // Use cached version if available.
+          force: false,
+        }),
     })
 
     logger.log('')
@@ -192,7 +192,7 @@ export async function downloadCli() {
     logger.error('  1. Check your internet connection')
     logger.error('  2. Try running the command again')
     logger.error(`  3. Manually create directory: mkdir -p "${SOCKET_DLX_DIR}"`)
-    logger.error('  4. Report issue at: https://github.com/SocketDev/socket-cli/issues')
+    logger.error(`  4. Report issue at: ${SOCKET_CLI_ISSUES_URL}`)
     process.exit(1)
   }
 }
