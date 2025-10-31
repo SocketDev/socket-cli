@@ -4,7 +4,7 @@
   "description": "Custom ONNX Runtime WASM build optimized for Socket CLI",
   "private": true,
   "exports": {
-    "./build/wasm/ort-wasm-simd-threaded.js": "./build/wasm/ort-wasm-simd-threaded.js",
+    "./build/wasm/ort-wasm-simd-threaded.mjs": "./build/wasm/ort-wasm-simd-threaded.mjs",
     "./build/wasm/ort-wasm-simd-threaded.wasm": "./build/wasm/ort-wasm-simd-threaded.wasm"
   },
   "scripts": {
