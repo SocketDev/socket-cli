@@ -27,7 +27,7 @@ const compressed = readFileSync(cliBzPath)
 const decompressed = brotliDecompressSync(compressed)
 
 // Ensure build/ directory exists.
-safeMkdirSync(buildPath)
+safeMkdirSync(buildPath, { recursive: true })
 
 // Write to build/ directory (gitignored, local to package).
 const tempCliPath = path.join(buildPath, `cli-runtime-${process.pid}.js`)

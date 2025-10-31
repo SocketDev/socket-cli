@@ -132,7 +132,7 @@ async function updateMetadata(
 
     // Write back
     const metadataPath = getMetadataPath(uuid)
-    await safeMkdir(dirname(metadataPath))
+    await safeMkdir(dirname(metadataPath), { recursive: true })
     await fs.writeFile(
       metadataPath,
       JSON.stringify(updatedMetadata, null, 2),
@@ -241,7 +241,7 @@ export async function restoreBackup(
     })
 
     // Ensure parent directory exists
-    await safeMkdir(dirname(filePath))
+    await safeMkdir(dirname(filePath), { recursive: true })
 
     // Write back to original location
     await fs.writeFile(filePath, entry.data)
