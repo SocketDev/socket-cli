@@ -7,9 +7,7 @@ import {
   MANIFEST_JSON,
 } from '@socketsecurity/lib/constants/paths'
 import { safeMkdir } from '@socketsecurity/lib/fs'
-import { logger } from '@socketsecurity/lib/logger'
 import { normalizePath } from '@socketsecurity/lib/path'
-import { pluralize } from '@socketsecurity/lib/words'
 
 import { PatchManifestSchema } from './manifest-schema.mts'
 import { outputPatchGetResult } from './output-patch-get-result.mts'
