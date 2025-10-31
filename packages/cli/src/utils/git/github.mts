@@ -82,7 +82,7 @@ export async function writeCache(
   const githubCachePath = getGithubCachePath()
   const cacheJsonPath = path.join(githubCachePath, `${key}.json`)
   if (!existsSync(githubCachePath)) {
-    await safeMkdir(githubCachePath)
+    await safeMkdir(githubCachePath, { recursive: true })
   }
   await writeJson(cacheJsonPath, data as JsonContent)
 }

@@ -276,7 +276,9 @@ export async function extractTarball(
       const targetPath = path.join(targetDir, sanitizedPath)
 
       if (file.type === 'directory') {
-        await retryWithBackoff(() => safeMkdir(targetPath)).catch(error => {
+        await retryWithBackoff(() =>
+          safeMkdir(targetPath, { recursive: true }),
+        ).catch(error => {
           throw new Error(
             `Failed to create directory ${targetPath}: ${error instanceof Error ? error.message : String(error)}`,
           )
@@ -284,7 +286,9 @@ export async function extractTarball(
       } else if (file.type === 'file' && file.data) {
         // Ensure parent directory exists.
         const parentDir = path.dirname(targetPath)
-        await retryWithBackoff(() => safeMkdir(parentDir)).catch(error => {
+        await retryWithBackoff(() =>
+          safeMkdir(parentDir, { recursive: true }),
+        ).catch(error => {
           const code = (error as NodeJS.ErrnoException)?.code
           if (code === 'ENOSPC') {
             throw new Error(
@@ -434,7 +438,7 @@ export async function extractBinaryFromTarball(
 
     // Ensure destination directory exists.
     const destDir = path.dirname(destination)
-    await safeMkdir(destDir)
+    await safeMkdir(destDir, { recursive: true })
 
     // Write binary to destination.
     await fs.writeFile(

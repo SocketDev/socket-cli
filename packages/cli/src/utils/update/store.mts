@@ -127,7 +127,7 @@ class UpdateStore {
       // Ensure directory exists.
       const storeDir = path.dirname(this.storePath)
       try {
-        safeMkdirSync(storeDir)
+        safeMkdirSync(storeDir, { recursive: true })
       } catch (error) {
         logger.warn(
           `Failed to create store directory: ${error instanceof Error ? error.message : String(error)}`,

@@ -167,7 +167,7 @@ export async function writeManifest(
   const manifestPath = getManifestPath(cwd)
 
   // Ensure parent directory exists
-  await safeMkdir(dirname(manifestPath))
+  await safeMkdir(dirname(manifestPath), { recursive: true })
 
   // Write atomically (write to temp file, then rename)
   const tempPath = `${manifestPath}.tmp`

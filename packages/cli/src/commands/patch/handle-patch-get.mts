@@ -65,7 +65,7 @@ export async function handlePatchGet({
 
     // Create output directory if it doesn't exist.
     if (!existsSync(targetDir)) {
-      await safeMkdir(targetDir)
+      await safeMkdir(targetDir, { recursive: true })
     }
 
     spinner?.text('Copying patch files')
@@ -88,7 +88,7 @@ export async function handlePatchGet({
       // Create subdirectories if needed.
       if (!existsSync(targetFileDir)) {
         // eslint-disable-next-line no-await-in-loop
-        await safeMkdir(targetFileDir)
+        await safeMkdir(targetFileDir, { recursive: true })
       }
 
       // eslint-disable-next-line no-await-in-loop

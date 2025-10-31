@@ -158,8 +158,8 @@ async function updateStubBinary(
     const downloadsDir = getSocketCliUpdaterDownloadsDir()
     const stagingDir = getSocketCliUpdaterStagingDir()
 
-    await safeMkdir(downloadsDir)
-    await safeMkdir(stagingDir)
+    await safeMkdir(downloadsDir, { recursive: true })
+    await safeMkdir(stagingDir, { recursive: true })
 
     const timestamp = Date.now()
     const tarballPath = path.join(downloadsDir, `stub-${timestamp}.tgz`)
@@ -377,7 +377,7 @@ Examples
 
   // Create temporary directory for download.
   const tempDir = path.join(os.tmpdir(), `socket-update-${Date.now()}`)
-  await safeMkdir(tempDir)
+  await safeMkdir(tempDir, { recursive: true })
 
   try {
     const tarballPath = path.join(tempDir, 'package.tgz')
