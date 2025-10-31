@@ -39,31 +39,24 @@ const SKIP_WASM = args.includes('--skip-wasm')
 
 // Platform definitions.
 const PLATFORMS = [
-  'alpine-arm64',
-  'alpine-x64',
-  'darwin-arm64',
-  'darwin-x64',
-  'linux-arm64',
-  'linux-x64',
-  'win32-arm64',
-  'win32-x64',
+  { platform: 'alpine', arch: 'arm64' },
+  { platform: 'alpine', arch: 'x64' },
+  { platform: 'darwin', arch: 'arm64' },
+  { platform: 'darwin', arch: 'x64' },
+  { platform: 'linux', arch: 'arm64' },
+  { platform: 'linux', arch: 'x64' },
+  { platform: 'win32', arch: 'arm64' },
+  { platform: 'win32', arch: 'x64' },
 ]
 
 /**
  * Get current platform identifier.
  */
 function getCurrentPlatform() {
-  const platform = osPlatform()
-  const arch = osArch()
-
-  // Map Node.js platform/arch to our naming convention.
-  const platformMap = {
-    darwin: { arm64: 'darwin-arm64', x64: 'darwin-x64' },
-    linux: { arm64: 'linux-arm64', x64: 'linux-x64' },
-    win32: { arm64: 'win32-arm64', x64: 'win32-x64' },
+  return {
+    platform: osPlatform(),
+    arch: osArch(),
   }
-
-  return platformMap[platform]?.[arch] || `${platform}-${arch}`
 }
 
 /**
@@ -153,15 +146,16 @@ async function buildModelPackages() {
 /**
  * Build custom Node.js (smol variant).
  */
-async function buildNodeSmol(targetPlatform) {
-  logger.step(`Building node-smol-builder (${targetPlatform})`)
+async function buildNodeSmol(target) {
+  const targetName = `${target.platform}-${target.arch}`
+  logger.step(`Building node-smol-builder (${targetName})`)
   logger.info('')
 
   const pkgDir = path.join(rootDir, 'packages', 'node-smol-builder')
   const buildScript = path.join(pkgDir, 'scripts', 'build.mjs')
 
   // Create build directory structure.
-  const buildDir = path.join(pkgDir, 'build', `cli-${targetPlatform}`)
+  const buildDir = path.join(pkgDir, 'build', `cli-${targetName}`)
   await mkdir(buildDir, { recursive: true })
 
   logger.info(`  Target: ${buildDir}`)
@@ -175,22 +169,23 @@ async function buildNodeSmol(targetPlatform) {
   // Build custom Node.js.
   await exec('node', [buildScript], { cwd: pkgDir })
 
-  logger.success(`✓ node-smol-builder built for ${targetPlatform}`)
+  logger.success(`✓ node-smol-builder built for ${targetName}`)
   logger.info('')
 }
 
 /**
  * Build SEA binaries.
  */
-async function buildNodeSEA(targetPlatform) {
-  logger.step(`Building node-sea-builder (${targetPlatform})`)
+async function buildNodeSEA(target) {
+  const targetName = `${target.platform}-${target.arch}`
+  logger.step(`Building node-sea-builder (${targetName})`)
   logger.info('')
 
   const pkgDir = path.join(rootDir, 'packages', 'node-sea-builder')
   const buildScript = path.join(pkgDir, 'scripts', 'build.mjs')
 
   // Create build directory structure.
-  const buildDir = path.join(pkgDir, 'build', `cli-${targetPlatform}`)
+  const buildDir = path.join(pkgDir, 'build', `cli-${targetName}`)
   await mkdir(buildDir, { recursive: true })
 
   logger.info(`  Target: ${buildDir}`)
@@ -202,11 +197,15 @@ async function buildNodeSEA(targetPlatform) {
   }
 
   // Build SEA binary.
-  await exec('node', [buildScript, '--platform', targetPlatform], {
-    cwd: pkgDir,
-  })
+  await exec(
+    'node',
+    [buildScript, '--platform', target.platform, '--arch', target.arch],
+    {
+      cwd: pkgDir,
+    },
+  )
 
-  logger.success(`✓ node-sea-builder built for ${targetPlatform}`)
+  logger.success(`✓ node-sea-builder built for ${targetName}`)
   logger.info('')
 }
 
@@ -226,8 +225,11 @@ async function main() {
     ? PLATFORMS
     : [currentPlatform]
 
-  logger.info(`Current platform: ${currentPlatform}`)
-  logger.info(`Building for: ${platformsToBuild.join(', ')}`)
+  const formatPlatform = p => `${p.platform}-${p.arch}`
+  logger.info(`Current platform: ${formatPlatform(currentPlatform)}`)
+  logger.info(
+    `Building for: ${platformsToBuild.map(formatPlatform).join(', ')}`,
+  )
   logger.info('')
 
   // Phase 1: WASM Components.
@@ -243,20 +245,21 @@ async function main() {
   }
 
   // Phase 2: Build for each platform.
-  for (const platform of platformsToBuild) {
+  for (const target of platformsToBuild) {
+    const targetName = formatPlatform(target)
     logger.info(`\n${'='.repeat(60)}`)
-    logger.info(`Building platform: ${platform}`)
+    logger.info(`Building platform: ${targetName}`)
     logger.info('='.repeat(60))
     logger.info('')
 
     // Build smol variant.
     if (!BUILD_SEA_ONLY) {
-      await buildNodeSmol(platform)
+      await buildNodeSmol(target)
     }
 
     // Build SEA variant.
     if (!BUILD_SMOL_ONLY) {
-      await buildNodeSEA(platform)
+      await buildNodeSEA(target)
     }
   }
 
