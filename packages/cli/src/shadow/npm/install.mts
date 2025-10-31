@@ -14,7 +14,6 @@ import ENV, { processEnv } from '../../constants/env.mts'
 import {
   execPath,
   instrumentWithSentryPath,
-  nodeDebugFlags,
   nodeHardenFlags,
   nodeNoWarningsFlags,
   shadowNpmInjectPath,
@@ -78,7 +77,6 @@ export function shadowNpmInstall(
     execPath,
     [
       ...nodeNoWarningsFlags,
-      ...nodeDebugFlags,
       ...nodeHardenFlags,
       // Memory flags commented out.
       // ...constants.nodeMemoryFlags,
