@@ -2,7 +2,6 @@ import {
   createWriteStream,
   existsSync,
   promises as fs,
-  mkdirSync,
   mkdtempSync,
 } from 'node:fs'
 import os from 'node:os'
@@ -10,6 +9,7 @@ import path from 'node:path'
 import { pipeline } from 'node:stream/promises'
 
 import { debug, debugDir } from '@socketsecurity/lib/debug'
+import { safeMkdirSync } from '@socketsecurity/lib/fs'
 import { logger } from '@socketsecurity/lib/logger'
 import { confirm, select } from '@socketsecurity/lib/prompts'
 
@@ -467,7 +467,7 @@ async function streamDownloadWithFetch(
     // before starting the download.
     const dir = path.dirname(localPath)
     if (!existsSync(dir)) {
-      mkdirSync(dir, { recursive: true })
+      safeMkdirSync(dir)
     }
 
     const fileStream = createWriteStream(localPath)

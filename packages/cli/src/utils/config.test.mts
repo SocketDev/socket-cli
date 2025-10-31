@@ -1,7 +1,8 @@
-import { mkdirSync, mkdtempSync, promises as fs, writeFileSync } from 'node:fs'
+import { mkdtempSync, promises as fs, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
+import { safeMkdirSync } from '@socketsecurity/lib/fs'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import {
@@ -59,7 +60,7 @@ describe('utils/config', () => {
 
       try {
         // Create nested directories.
-        mkdirSync(nestedDir, { recursive: true })
+        safeMkdirSync(nestedDir)
 
         // Create socket.yml in the tmpdir root.
         writeFileSync(

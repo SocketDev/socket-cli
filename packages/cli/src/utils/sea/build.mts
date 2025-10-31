@@ -8,7 +8,7 @@ import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
-import { safeDelete } from '@socketsecurity/lib/fs'
+import { safeDelete, safeMkdir } from '@socketsecurity/lib/fs'
 import { httpRequest } from '@socketsecurity/lib/http-request'
 import { normalizePath } from '@socketsecurity/lib/path'
 import { getSocketHomePath } from '@socketsecurity/lib/paths'
@@ -72,7 +72,7 @@ export async function buildTarget(
   } as SeaBuildOptions
 
   // Ensure output directory exists.
-  await fs.mkdir(outputDir, { recursive: true })
+  await safeMkdir(outputDir)
 
   // Download Node.js binary for target platform.
   const nodeBinary = await downloadNodeBinary(
@@ -83,7 +83,7 @@ export async function buildTarget(
 
   // Generate output path.
   const outputPath = normalizePath(path.join(outputDir, target.outputName))
-  await fs.mkdir(outputDir, { recursive: true })
+  await safeMkdir(outputDir)
 
   // Generate SEA configuration.
   const configPath = await generateSeaConfig(entryPoint, outputPath)
@@ -169,7 +169,7 @@ export async function downloadNodeBinary(
       createHash('sha256').update(downloadUrl).digest('hex'),
     ),
   )
-  await fs.mkdir(tempDir, { recursive: true })
+  await safeMkdir(tempDir)
 
   try {
     // Save archive.
@@ -227,7 +227,7 @@ export async function downloadNodeBinary(
 
     // Ensure target directory exists.
     const targetDir = path.dirname(nodePath)
-    await fs.mkdir(targetDir, { recursive: true })
+    await safeMkdir(targetDir)
 
     // Move binary to final location.
     await fs.copyFile(extractedBinary, nodePath)

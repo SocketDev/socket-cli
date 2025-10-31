@@ -1,8 +1,7 @@
-import { promises as fs } from 'node:fs'
 import path from 'node:path'
 
 import { debug, debugDir } from '@socketsecurity/lib/debug'
-import { readJson, writeJson } from '@socketsecurity/lib/fs'
+import { readJson, safeMkdir, writeJson } from '@socketsecurity/lib/fs'
 
 import { getSocketFixBranchName } from './git.mts'
 
@@ -47,7 +46,7 @@ export async function saveGhsaTracker(
   const trackerPath = path.join(cwd, TRACKER_FILE)
 
   // Ensure .socket directory exists.
-  await fs.mkdir(path.dirname(trackerPath), { recursive: true })
+  await safeMkdir(path.dirname(trackerPath))
 
   await writeJson(trackerPath, tracker, { spaces: 2 })
   debug(`ghsa-tracker: saved ${tracker.fixed.length} records to ${trackerPath}`)

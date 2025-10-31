@@ -2,6 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 
 import { debug } from '@socketsecurity/lib/debug'
+import { safeMkdirSync } from '@socketsecurity/lib/fs'
 
 import ENV from '../../constants/env.mts'
 import { homePath, rootPath } from '../../constants/paths.mts'
@@ -35,7 +36,7 @@ export async function setupTabCompletion(targetName: string): Promise<
 
   if (!fs.existsSync(targetDir)) {
     debug('create: target dir')
-    fs.mkdirSync(targetDir, { recursive: true })
+    safeMkdirSync(targetDir)
   }
 
   updateInstalledTabCompletionScript(targetPath)

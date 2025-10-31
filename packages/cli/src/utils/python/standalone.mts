@@ -49,6 +49,7 @@ import semver from 'semver'
 import { whichBin } from '@socketsecurity/lib/bin'
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { downloadBinary, getDlxCachePath } from '@socketsecurity/lib/dlx-binary'
+import { safeMkdir } from '@socketsecurity/lib/fs'
 import { spawn } from '@socketsecurity/lib/spawn'
 
 import ENV from '../../constants/env.mts'
@@ -193,7 +194,7 @@ async function downloadPython(pythonDir: string): Promise<void> {
   const tarballName = 'python-standalone.tar.gz'
 
   // Ensure directory exists.
-  await fs.mkdir(pythonDir, { recursive: true })
+  await safeMkdir(pythonDir)
 
   try {
     // Use downloadBinary to download the tarball with caching (without execution).

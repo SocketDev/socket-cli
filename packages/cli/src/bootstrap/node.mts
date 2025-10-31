@@ -18,6 +18,8 @@ import { spawn } from 'node:child_process'
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 
+import { safeMkdir } from '@socketsecurity/lib/fs'
+
 import { getNodeDisableSigusr1Flags } from './shared/node-flags.mjs'
 import {
   getCliEntryPoint,
@@ -44,7 +46,7 @@ async function downloadCli(): Promise<void> {
   const dlxDir = getDlxDir()
   const cliDir = getCliPackageDir()
 
-  await fs.mkdir(dlxDir, { recursive: true })
+  await safeMkdir(dlxDir)
 
   console.error(`Downloading ${packageName}...`)
 
@@ -75,7 +77,7 @@ async function downloadCli(): Promise<void> {
       try {
         const tarballPath = path.join(dlxDir, tarballName.trim())
 
-        await fs.mkdir(cliDir, { recursive: true })
+        await safeMkdir(cliDir)
 
         const tarExtractProcess = spawn(
           'tar',

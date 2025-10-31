@@ -29,7 +29,7 @@ import os from 'node:os'
 import path from 'node:path'
 
 import { generateCacheKey } from '@socketsecurity/lib/dlx'
-import { readJson } from '@socketsecurity/lib/fs'
+import { readJson, safeMkdir } from '@socketsecurity/lib/fs'
 import { normalizePath } from '@socketsecurity/lib/path'
 import { getSocketDlxDir } from '@socketsecurity/lib/paths'
 import { spawn } from '@socketsecurity/lib/spawn'
@@ -202,7 +202,7 @@ async function downloadBinary(
 
   try {
     // Ensure directory exists.
-    await fs.mkdir(path.dirname(destPath), { recursive: true })
+    await safeMkdir(path.dirname(destPath))
 
     // Get the response as a buffer and compute hash.
     const arrayBuffer = await response.arrayBuffer()
@@ -391,7 +391,7 @@ export async function dlxBinary(
 
   if (downloaded) {
     // Ensure cache directory exists.
-    await fs.mkdir(cacheEntryDir, { recursive: true })
+    await safeMkdir(cacheEntryDir)
 
     // Download the binary.
     computedChecksum = await downloadBinary(url, binaryPath, checksum)
