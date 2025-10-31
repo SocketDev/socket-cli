@@ -13,7 +13,7 @@ import type { DlxPackageSpec } from './spawn.mjs'
  */
 export type BinaryResolution =
   | { type: 'local'; path: string }
-  | { type: 'dlx'; packageSpec: DlxPackageSpec }
+  | { type: 'dlx'; details: DlxPackageSpec }
 
 /**
  * Resolve path for Coana CLI binary.
@@ -27,9 +27,10 @@ export function resolveCoana(): BinaryResolution {
 
   return {
     type: 'dlx',
-    packageSpec: {
+    details: {
       name: '@coana-tech/cli',
       version: `~${ENV.INLINED_SOCKET_CLI_COANA_VERSION}`,
+      binaryName: 'coana',
     },
   }
 }
@@ -46,9 +47,10 @@ export function resolveCdxgen(): BinaryResolution {
 
   return {
     type: 'dlx',
-    packageSpec: {
+    details: {
       name: '@cyclonedx/cdxgen',
-      version: `${ENV.INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION}`,
+      version: ENV.INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION,
+      binaryName: 'cdxgen',
     },
   }
 }
@@ -88,9 +90,10 @@ export function resolveSfw(): BinaryResolution | { type: 'npx' } {
 export function resolveSynp(): BinaryResolution {
   return {
     type: 'dlx',
-    packageSpec: {
+    details: {
       name: 'synp',
-      version: `${ENV.INLINED_SOCKET_CLI_SYNP_VERSION}`,
+      version: ENV.INLINED_SOCKET_CLI_SYNP_VERSION,
+      binaryName: 'synp',
     },
   }
 }
