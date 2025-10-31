@@ -127,31 +127,15 @@ CLI tool for Socket.dev security analysis, built with TypeScript (.mts extension
 - TypeScript with tsgo or tsc
 - Individual file compilation
 - Multiple environment configs
-- Dual linting (oxlint + eslint), Biome formatting
+- ESLint linting, Biome formatting
 
 ### Build/Dist Structure
 
-**MANDATORY**: All packages follow build/dist pattern.
+**MANDATORY**: All packages follow build/dist pattern. See [docs/build/build-dist-structure.md](docs/build/build-dist-structure.md) for complete details.
 
-**Philosophy**:
+**Quick summary**:
 - **`build/`** (gitignored) = Workspace + historical builds archive
 - **`dist/`** (tracked) = Blessed canonical releases
-
-**Structure**:
-```
-packages/<package>/
-├── build/                    # Gitignored
-│   ├── tmp/                  # Current build intermediates
-│   ├── cache/                # Downloads, source clones
-│   └── archive/              # Historical builds
-│       ├── YYYY-MM-DD-NNN-description/
-│       └── latest/           # Symlink to most recent
-└── dist/                     # Tracked releases
-```
-
-**@socketbin Conventions**:
-- **Executables**: `packages/socketbin-cli-<platform>-<arch>/bin/socket` (tracked)
-- **Libraries**: `packages/socketbin-cli-ai/dist/` (WASM + JS, gitignored)
 
 ### Documentation Hierarchy
 
@@ -164,6 +148,49 @@ packages/<package>/
 ### Testing
 
 Uses Vitest with comprehensive test helpers.
+
+#### Performance Optimization
+
+**Test Execution Times** (measured):
+- Unit tests: ~48s (2,819 tests)
+- Bottleneck: `cmd-scan-reach.test.mts` (47s, 51 subprocess spawns)
+
+**Optimization Strategies**:
+1. **File-level parallelization**: Enabled in vitest.config.mts
+2. **CPU-based thread pool**: `maxThreads: os.cpus().length`
+3. **Test sharding**: Use `--shard` flag for CI distribution
+   ```bash
+   pnpm test:unit --shard=1/3  # Run 1st third
+   pnpm test:unit --shard=2/3  # Run 2nd third
+   pnpm test:unit --shard=3/3  # Run 3rd third
+   ```
+
+**Future Improvements**:
+- Split cmd-scan-reach.test.mts into logical groups (dry-run, validation, execution)
+- Implement process pool for CLI subprocess tests
+- Reduce per-test subprocess overhead
+
+#### CI/CD Optimization
+
+**GitHub Actions** (socket-cli-specific):
+- **max-parallel: 8** - Higher than default (4) for longer test suites
+- **test-timeout-minutes: 20** - Accommodates subprocess-heavy tests
+- **Matrix**: 3 Node versions × 3 OS platforms = 9 parallel jobs
+
+**Caching Best Practices**:
+1. **pnpm store**: Cached via `pnpm/action-setup` (automatic)
+2. **node_modules**: Implicitly cached via pnpm store
+3. **Build artifacts**: Consider caching `dist/` between test runs
+4. **Vitest cache**: `.vitest` directory (already gitignored)
+
+**Test Sharding** (future):
+```yaml
+strategy:
+  matrix:
+    shard: [1, 2, 3]
+steps:
+  - run: pnpm test:unit --shard=${{ matrix.shard }}/3
+```
 
 #### Test Helpers
 1. **CLI Execution** (`test/helpers/cli-execution.mts`)
