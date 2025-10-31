@@ -2,7 +2,7 @@
   "dependencies": {
     "@socketsecurity/bootstrap": "workspace:*",
     "@socketsecurity/build-infra": "workspace:*",
-    "@socketsecurity/lib": "2.9.1"
+    "@socketsecurity/lib": "2.10.0"
   },
   "description": "Custom Node.js binary builder with Socket security patches",
   "devDependencies": {

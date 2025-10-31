@@ -39,7 +39,7 @@
     "@socketregistry/packageurl-js": "1.3.0",
     "@socketregistry/yocto-spinner": "1.0.24",
     "@socketsecurity/config": "3.0.1",
-    "@socketsecurity/lib": "2.9.1",
+    "@socketsecurity/lib": "2.10.0",
     "@socketsecurity/registry": "2.0.0",
     "@socketsecurity/sdk": "3.0.22",
     "@types/cmd-shim": "5.0.2",
