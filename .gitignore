@@ -2,7 +2,6 @@
 ._.DS_Store
 Thumbs.db
 .claude/
-!/docs/build
 /.env
 /.env.local
 /.pnpmfile.cjs
@@ -20,6 +19,7 @@ Thumbs.db
 **/coverage
 **/.type-coverage
 **/build
+!docs/build
 **/dist
 **/node_modules
 .build-checkpoints
@@ -39,9 +39,6 @@ Thumbs.db
 .*.sw?
 
 # Build artifacts: All build/, dist/, coverage/, and html/ directories are gitignored.
-# Exceptions:
-#   - !/docs/build allows tracking docs/build/ (documentation directory, not build artifacts)
-#   - Note: New files in docs/build/ require `git add -f` due to **/build pattern
 
 # Yarn PnP files (tests may create these)
 /.yarn
