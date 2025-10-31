@@ -159,12 +159,21 @@ jobs:
         with:
           python-version: '3.11'
 
+      - name: Cache pip packages
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ runner.os }}-py3.11-${{ hashFiles('**/requirements*.txt') }}-onnx-torch
+          restore-keys: |
+            pip-${{ runner.os }}-py3.11-
+            pip-${{ runner.os }}-
+
       - name: Install Python dependencies
         run: |
           echo "::group::Installing Python ML dependencies"
-          pip install --no-cache-dir torch transformers
-          pip install --no-cache-dir "onnx>=1.15.0" "onnxruntime>=1.20.0"
-          pip install --no-cache-dir optimum
+          pip install torch transformers
+          pip install "onnx>=1.15.0" "onnxruntime>=1.20.0"
+          pip install optimum
           echo "Installed packages:"
           pip list | grep -E "(onnx|optimum|torch)"
           echo ""
@@ -305,8 +314,16 @@ jobs:
             ls -lh packages/onnxruntime/build/wasm/ 2>/dev/null || echo "Directory does not exist"
           fi
 
+      - name: Cache Emscripten SDK
+        id: emsdk-cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: emsdk
+          key: emsdk-${{ runner.os }}-latest
+          restore-keys: emsdk-${{ runner.os }}-
+
       - name: Install Emscripten
-        if: steps.onnx-cache-valid.outputs.valid != 'true' || inputs.force
+        if: (steps.onnx-cache-valid.outputs.valid != 'true' || inputs.force) && steps.emsdk-cache.outputs.cache-hit != 'true'
         run: |
           echo "::group::Installing Emscripten"
           git clone https://github.com/emscripten-core/emsdk.git
@@ -314,6 +331,12 @@ jobs:
           ./emsdk install latest
           ./emsdk activate latest
           echo "::endgroup::"
+
+      - name: Activate Emscripten (from cache)
+        if: (steps.onnx-cache-valid.outputs.valid != 'true' || inputs.force) && steps.emsdk-cache.outputs.cache-hit == 'true'
+        run: |
+          cd emsdk
+          ./emsdk activate latest
 
       - name: Build ONNX Runtime WASM
         if: steps.onnx-cache-valid.outputs.valid != 'true' || inputs.force
