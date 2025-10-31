@@ -3,13 +3,22 @@
 /**
  * Build script for @socketsecurity/models.
  *
- * Downloads AI models from Hugging Face, converts to ONNX, and applies INT4 quantization.
+ * Downloads AI models from Hugging Face, converts to ONNX, and applies quantization.
  *
  * Workflow:
  * 1. Download models from Hugging Face (with fallbacks)
  * 2. Convert to ONNX if needed
- * 3. Apply INT4 quantization for maximum compression (99.8% size reduction)
+ * 3. Apply quantization (INT4 or INT8) for compression
  * 4. Output quantized ONNX models
+ *
+ * Options:
+ * --int8   Use INT8 quantization (better compatibility, ~50% size reduction)
+ * --int4   Use INT4 quantization (maximum compression, ~75% size reduction, default)
+ * --minilm Build MiniLM-L6 model only
+ * --codet5 Build CodeT5 model only
+ * --all    Build all models
+ * --force  Force rebuild even if checkpoints exist
+ * --clean  Clean all checkpoints before building
  */
 
 import { existsSync } from 'node:fs'
@@ -47,6 +56,9 @@ const NO_SELF_UPDATE = args.includes('--no-self-update')
 // Model selection flags.
 const BUILD_MINILM = args.includes('--minilm') || (!args.includes('--codet5') && !args.includes('--all'))
 const BUILD_CODET5 = args.includes('--codet5') || args.includes('--all')
+
+// Quantization level (default: INT4 for maximum compression).
+const QUANT_LEVEL = args.includes('--int8') ? 'INT8' : 'INT4'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -182,40 +194,44 @@ async function convertToOnnx(modelKey) {
 }
 
 /**
- * Apply INT4 quantization for maximum compression.
+ * Apply quantization for compression.
  *
- * Uses MatMulNBitsQuantizer with RTN (Round To Nearest) weight-only quantization:
- * - Converts MatMul operators to MatMulNBits (INT4).
- * - Results in significant size reduction (e.g., 86MB → ~20MB for MiniLM).
- * - Model remains fully functional with minimal accuracy loss.
+ * Supports two quantization levels:
+ * - INT4: MatMulNBitsQuantizer with RTN weight-only quantization (maximum compression).
+ * - INT8: Dynamic quantization (better compatibility, moderate compression).
+ *
+ * Results in significant size reduction with minimal accuracy loss.
  */
-async function quantizeModel(modelKey) {
-  if (!(await shouldRun(PACKAGE_NAME, `quantized-${modelKey}`, FORCE_BUILD))) {
+async function quantizeModel(modelKey, quantLevel) {
+  const suffix = quantLevel.toLowerCase()
+  const checkpointKey = `quantized-${modelKey}-${suffix}`
+
+  if (!(await shouldRun(PACKAGE_NAME, checkpointKey, FORCE_BUILD))) {
     // Return existing quantized paths.
     const modelDir = join(MODELS, modelKey)
     if (modelKey === 'codet5') {
       return [
-        join(modelDir, 'encoder_model.int4.onnx'),
-        join(modelDir, 'decoder_model.int4.onnx')
+        join(modelDir, `encoder_model.${suffix}.onnx`),
+        join(modelDir, `decoder_model.${suffix}.onnx`)
       ]
     }
-    return [join(modelDir, 'model.int4.onnx')]
+    return [join(modelDir, `model.${suffix}.onnx`)]
   }
 
-  logger.step(`Applying INT4 quantization to ${modelKey}`)
+  logger.step(`Applying ${quantLevel} quantization to ${modelKey}`)
 
   const modelDir = join(MODELS, modelKey)
 
   // Different files for codet5 (encoder/decoder) vs minilm (single model).
   const models = modelKey === 'codet5'
     ? [
-        { input: 'encoder_model.onnx', output: 'encoder_model.int4.onnx' },
-        { input: 'decoder_model.onnx', output: 'decoder_model.int4.onnx' }
+        { input: 'encoder_model.onnx', output: `encoder_model.${suffix}.onnx` },
+        { input: 'decoder_model.onnx', output: `decoder_model.${suffix}.onnx` }
       ]
-    : [{ input: 'model.onnx', output: 'model.int4.onnx' }]
+    : [{ input: 'model.onnx', output: `model.${suffix}.onnx` }]
 
   const quantizedPaths = []
-  let method = 'INT4'
+  let method = quantLevel
 
   for (const { input, output } of models) {
     const onnxPath = join(modelDir, input)
@@ -230,19 +246,31 @@ async function quantizeModel(modelKey) {
     let quantSize
 
     try {
-      await execAsync(
-        `python3 -c "` +
-        `from onnxruntime.quantization.matmul_nbits_quantizer import MatMulNBitsQuantizer, RTNWeightOnlyQuantConfig; ` +
-        `from onnxruntime.quantization import quant_utils; ` +
-        `from pathlib import Path; ` +
-        `quant_config = RTNWeightOnlyQuantConfig(); ` +
-        `model = quant_utils.load_model_with_shape_infer(Path('${onnxPath}')); ` +
-        `quant = MatMulNBitsQuantizer(model, algo_config=quant_config); ` +
-        `quant.process(); ` +
-        `quant.model.save_model_to_file('${quantPath}', True)` +
-        `"`,
-        { stdio: 'inherit' }
-      )
+      if (quantLevel === 'INT8') {
+        // INT8: Use dynamic quantization (simpler, more compatible).
+        await execAsync(
+          `python3 -c "` +
+          `from onnxruntime.quantization import quantize_dynamic, QuantType; ` +
+          `quantize_dynamic('${onnxPath}', '${quantPath}', weight_type=QuantType.QUInt8)` +
+          `"`,
+          { stdio: 'inherit' }
+        )
+      } else {
+        // INT4: Use MatMulNBitsQuantizer (maximum compression).
+        await execAsync(
+          `python3 -c "` +
+          `from onnxruntime.quantization.matmul_nbits_quantizer import MatMulNBitsQuantizer, RTNWeightOnlyQuantConfig; ` +
+          `from onnxruntime.quantization import quant_utils; ` +
+          `from pathlib import Path; ` +
+          `quant_config = RTNWeightOnlyQuantConfig(); ` +
+          `model = quant_utils.load_model_with_shape_infer(Path('${onnxPath}')); ` +
+          `quant = MatMulNBitsQuantizer(model, algo_config=quant_config); ` +
+          `quant.process(); ` +
+          `quant.model.save_model_to_file('${quantPath}', True)` +
+          `"`,
+          { stdio: 'inherit' }
+        )
+      }
 
       // Get sizes.
       originalSize = (await readFile(onnxPath)).length
@@ -251,7 +279,7 @@ async function quantizeModel(modelKey) {
 
       logger.substep(`${input}: ${(originalSize / 1024 / 1024).toFixed(2)} MB → ${(quantSize / 1024 / 1024).toFixed(2)} MB (${savings}% savings)`)
     } catch (e) {
-      logger.warn(`INT4 quantization failed for ${input}, using FP32 model: ${e.message}`)
+      logger.warn(`${quantLevel} quantization failed for ${input}, using FP32 model: ${e.message}`)
       // Copy the original ONNX model as the "quantized" version.
       await copyFile(onnxPath, quantPath)
       method = 'FP32'
@@ -263,9 +291,10 @@ async function quantizeModel(modelKey) {
   }
 
   logger.success(`Quantized to ${method}`)
-  await createCheckpoint(PACKAGE_NAME, `quantized-${modelKey}`, {
+  await createCheckpoint(PACKAGE_NAME, checkpointKey, {
     modelKey,
     method,
+    quantLevel,
   })
 
   return quantizedPaths
@@ -274,26 +303,27 @@ async function quantizeModel(modelKey) {
 /**
  * Copy quantized models and tokenizers to dist.
  */
-async function copyToDist(modelKey, quantizedPaths) {
+async function copyToDist(modelKey, quantizedPaths, quantLevel) {
   logger.step('Copying models to dist')
 
   await mkdir(DIST, { recursive: true })
 
   const modelDir = join(MODELS, modelKey)
+  const suffix = quantLevel.toLowerCase()
 
   if (modelKey === 'codet5') {
     // CodeT5: encoder, decoder, tokenizer.
-    await copyFile(quantizedPaths[0], join(DIST, 'codet5-encoder.onnx'))
-    await copyFile(quantizedPaths[1], join(DIST, 'codet5-decoder.onnx'))
+    await copyFile(quantizedPaths[0], join(DIST, `codet5-encoder-${suffix}.onnx`))
+    await copyFile(quantizedPaths[1], join(DIST, `codet5-decoder-${suffix}.onnx`))
     await copyFile(join(modelDir, 'tokenizer.json'), join(DIST, 'codet5-tokenizer.json'))
 
-    logger.success('Copied codet5 models to dist/')
+    logger.success(`Copied codet5 models (${quantLevel}) to dist/`)
   } else {
     // MiniLM: single model + tokenizer.
-    await copyFile(quantizedPaths[0], join(DIST, 'minilm-l6.onnx'))
+    await copyFile(quantizedPaths[0], join(DIST, `minilm-l6-${suffix}.onnx`))
     await copyFile(join(modelDir, 'tokenizer.json'), join(DIST, 'minilm-l6-tokenizer.json'))
 
-    logger.success('Copied minilm-l6 models to dist/')
+    logger.success(`Copied minilm-l6 model (${quantLevel}) to dist/`)
   }
 }
 
@@ -303,12 +333,15 @@ async function copyToDist(modelKey, quantizedPaths) {
 async function main() {
   logger.info('Building @socketsecurity/models')
   logger.info('='.repeat(60))
+  logger.info(`Quantization: ${QUANT_LEVEL}`)
   logger.info('')
 
   const startTime = Date.now()
 
+  const suffix = QUANT_LEVEL.toLowerCase()
+
   // Clean checkpoints if requested or if output is missing.
-  const outputMissing = !existsSync(join(DIST, 'minilm-l6.onnx')) && !existsSync(join(DIST, 'codet5-encoder.onnx'))
+  const outputMissing = !existsSync(join(DIST, `minilm-l6-${suffix}.onnx`)) && !existsSync(join(DIST, `codet5-encoder-${suffix}.onnx`))
 
   if (CLEAN_BUILD || outputMissing) {
     if (outputMissing) {
@@ -330,8 +363,8 @@ async function main() {
 
       await downloadModel('minilm-l6')
       await convertToOnnx('minilm-l6')
-      const quantizedPaths = await quantizeModel('minilm-l6')
-      await copyToDist('minilm-l6', quantizedPaths)
+      const quantizedPaths = await quantizeModel('minilm-l6', QUANT_LEVEL)
+      await copyToDist('minilm-l6', quantizedPaths, QUANT_LEVEL)
     }
 
     // Build CodeT5 if requested.
@@ -342,8 +375,8 @@ async function main() {
 
       await downloadModel('codet5')
       await convertToOnnx('codet5')
-      const quantizedPaths = await quantizeModel('codet5')
-      await copyToDist('codet5', quantizedPaths)
+      const quantizedPaths = await quantizeModel('codet5', QUANT_LEVEL)
+      await copyToDist('codet5', quantizedPaths, QUANT_LEVEL)
     }
 
     const duration = ((Date.now() - startTime) / 1000).toFixed(1)
@@ -357,12 +390,12 @@ async function main() {
     logger.substep(`Output: ${DIST}`)
 
     if (BUILD_MINILM) {
-      logger.substep('  - minilm-l6.onnx (INT4 quantized)')
+      logger.substep(`  - minilm-l6-${suffix}.onnx (${QUANT_LEVEL} quantized)`)
       logger.substep('  - minilm-l6-tokenizer.json')
     }
     if (BUILD_CODET5) {
-      logger.substep('  - codet5-encoder.onnx (INT4 quantized)')
-      logger.substep('  - codet5-decoder.onnx (INT4 quantized)')
+      logger.substep(`  - codet5-encoder-${suffix}.onnx (${QUANT_LEVEL} quantized)`)
+      logger.substep(`  - codet5-decoder-${suffix}.onnx (${QUANT_LEVEL} quantized)`)
       logger.substep('  - codet5-tokenizer.json')
     }
   } catch (error) {
