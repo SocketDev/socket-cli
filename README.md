@@ -112,41 +112,95 @@ pnpm exec socket --version
 
 ### Building locally
 
-Socket CLI consists of multiple packages that need to be built in a specific order:
+Socket CLI uses an **intelligent build system with automatic caching** that only rebuilds packages when their source files change. The build system ensures packages are built in the correct dependency order:
 
-1. **Build WASM packages** (ONNX Runtime, Yoga):
-   ```bash
-   # Build ONNX Runtime WASM (for AI features)
-   pnpm --filter @socketsecurity/onnxruntime run build
+1. **ONNX Runtime WASM** - AI features (text classification, issue detection)
+2. **Yoga WASM** - Terminal layout engine (tables, progress bars)
+3. **CLI Package** - TypeScript compilation and bundling
+4. **SEA Binary** - Node.js Single Executable Application
 
-   # Build Yoga WASM (for terminal layouts)
-   pnpm --filter @socketsecurity/yoga run build
-   ```
+#### Smart build (recommended)
 
-2. **Build the main CLI package**:
-   ```bash
-   # Build packages/cli (includes TypeScript compilation and bundling)
-   pnpm --filter @socketsecurity/cli run build
-   ```
+The default build command automatically skips packages that are already up-to-date:
 
-3. **Build the SEA (Single Executable Application) binary** (optional):
-   ```bash
-   # Build packages/socket as a Node.js SEA binary
-   pnpm --filter @socketsecurity/socket run build
-   ```
-
-**Full build command** (all packages):
 ```bash
+# Build only what changed (simulates CI caching locally)
 pnpm run build
 ```
 
-**Quick builds** (skip WASM):
+**How it works:**
+- Checks if output files exist (e.g., `packages/onnxruntime/dist/ort-wasm-simd.wasm`)
+- Skips building if output is present and up-to-date
+- Shows which packages were built vs. skipped
+- Displays build time summary
+
+**Example output:**
+```
+============================================================
+Socket CLI Build System
+============================================================
+
+→ ONNX Runtime WASM: skipped (up to date)
+→ Yoga WASM: skipped (up to date)
+→ CLI Package: building...
+✓ CLI Package: built (12.3s)
+→ SEA Binary: building...
+✓ SEA Binary: built (45.1s)
+
+============================================================
+Build Summary
+============================================================
+
+Built:    2
+Skipped:  2
+Total:    57.4s
+
+✓ Build completed successfully
+```
+
+#### Force rebuild
+
+To force rebuild all packages (ignoring cache):
+
 ```bash
-# Build only the CLI package
+# Rebuild everything from scratch
+pnpm run build --force
+```
+
+#### Build specific packages
+
+For targeted builds during development:
+
+```bash
+# Build only CLI package (fast iteration)
+pnpm run build --target cli
+
+# Build SEA binary
+pnpm run build --target sea
+
+# Build specific platform binary
+pnpm run build --target darwin-arm64
+
+# See all available targets
+pnpm run build --help
+```
+
+#### Manual builds
+
+You can also build individual packages directly:
+
+```bash
+# Build ONNX Runtime WASM (for AI features)
+pnpm --filter @socketsecurity/onnxruntime run build
+
+# Build Yoga WASM (for terminal layouts)
+pnpm --filter @socketsecurity/yoga run build
+
+# Build CLI package (TypeScript + bundling)
 pnpm --filter @socketsecurity/cli run build
 
-# Build and run
-pnpm --filter @socketsecurity/cli run build && pnpm exec socket --version
+# Build SEA binary (Node.js Single Executable)
+pnpm --filter @socketbin/node-sea-builder-builder run build
 ```
 
 See [docs/development/](docs/development/) for detailed development guides.
