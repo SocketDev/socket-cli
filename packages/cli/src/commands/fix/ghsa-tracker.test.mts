@@ -29,6 +29,7 @@ vi.mock('node:fs', async () => {
 
 vi.mock('@socketsecurity/lib/fs', () => ({
   readJson: vi.fn(),
+  safeMkdir: vi.fn(),
   writeJson: vi.fn(),
 }))
 
@@ -90,7 +91,7 @@ describe('ghsa-tracker', () => {
 
   describe('saveGhsaTracker', () => {
     it('saves tracker to file', async () => {
-      const { writeJson } = await import('@socketsecurity/lib/fs')
+      const { safeMkdir, writeJson } = await import('@socketsecurity/lib/fs')
       const tracker: GhsaTracker = {
         version: 1,
         fixed: [
@@ -105,7 +106,7 @@ describe('ghsa-tracker', () => {
 
       await saveGhsaTracker(mockCwd, tracker)
 
-      expect(fs.mkdir).toHaveBeenCalledWith(path.dirname(trackerPath), {
+      expect(safeMkdir).toHaveBeenCalledWith(path.dirname(trackerPath), {
         recursive: true,
       })
       expect(writeJson).toHaveBeenCalledWith(trackerPath, tracker, {

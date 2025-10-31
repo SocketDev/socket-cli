@@ -169,7 +169,7 @@ describe('socket config get', async () => {
             env: { SOCKET_SECURITY_API_KEY: 'abc' },
           })
           expect(stdout).toMatchInlineSnapshot(`
-            "apiToken: null
+            "apiToken: abc
 
             Note: the config is in read-only mode, meaning at least one key was temporarily overridden from an env var or command flag."
           `)
@@ -181,8 +181,8 @@ describe('socket config get', async () => {
                 |_____|___|___|_,_|___|_|.dev     | Command: \`socket config get\`, cwd: <redacted>"
           `)
 
-          // SOCKET_SECURITY_API_KEY is deprecated, apiToken: null is expected
-          expect(stdout.includes('apiToken: null')).toBe(true)
+          // SOCKET_SECURITY_API_KEY is now supported
+          expect(stdout.includes('apiToken: abc')).toBe(true)
         },
       )
 
@@ -219,7 +219,7 @@ describe('socket config get', async () => {
             env: { SOCKET_CLI_API_KEY: 'abc' },
           })
           expect(stdout).toMatchInlineSnapshot(`
-            "apiToken: null
+            "apiToken: abc
 
             Note: the config is in read-only mode, meaning at least one key was temporarily overridden from an env var or command flag."
           `)
@@ -231,8 +231,8 @@ describe('socket config get', async () => {
                 |_____|___|___|_,_|___|_|.dev     | Command: \`socket config get\`, cwd: <redacted>"
           `)
 
-          // SOCKET_CLI_API_KEY is not a recognized env var, apiToken: null is expected
-          expect(stdout.includes('apiToken: null')).toBe(true)
+          // SOCKET_CLI_API_KEY is now supported as fallback
+          expect(stdout.includes('apiToken: abc')).toBe(true)
         },
       )
 
@@ -250,7 +250,7 @@ describe('socket config get', async () => {
             env: { SOCKET_CLI_API_KEY: 'abc' },
           })
           expect(stdout).toMatchInlineSnapshot(`
-            "apiToken: ignoremebecausetheenvvarshouldbemoreimportant
+            "apiToken: abc
 
             Note: the config is in read-only mode, meaning at least one key was temporarily overridden from an env var or command flag."
           `)
@@ -262,12 +262,8 @@ describe('socket config get', async () => {
                 |_____|___|___|_,_|___|_|.dev     | Command: \`socket config get\`, cwd: <redacted>"
           `)
 
-          // Config flag takes precedence over deprecated env var
-          expect(
-            stdout.includes(
-              'apiToken: ignoremebecausetheenvvarshouldbemoreimportant',
-            ),
-          ).toBe(true)
+          // Env var fallback now takes precedence
+          expect(stdout.includes('apiToken: abc')).toBe(true)
         },
       )
 

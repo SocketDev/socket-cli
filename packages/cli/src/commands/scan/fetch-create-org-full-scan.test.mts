@@ -49,17 +49,15 @@ describe('fetchCreateOrgFullScan', () => {
       ['/path/to/package.json'],
       {
         pathsRelativeTo: process.cwd(),
-        queryParams: {
-          branch: 'main',
-          commit_hash: 'abc123',
-          commit_message: 'Initial commit',
-          committers: 'john@example.com',
-          make_default_branch: 'undefined',
-          pull_request: '42',
-          repo: 'test-repo',
-          set_as_pending_head: 'undefined',
-          tmp: 'undefined',
-        },
+        branch: 'main',
+        commit_hash: 'abc123',
+        commit_message: 'Initial commit',
+        committers: 'john@example.com',
+        make_default_branch: 'undefined',
+        pull_request: '42',
+        repo: 'test-repo',
+        set_as_pending_head: 'undefined',
+        tmp: 'undefined',
       },
     )
     expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
@@ -169,17 +167,15 @@ describe('fetchCreateOrgFullScan', () => {
       ['/path/to/package.json'],
       {
         pathsRelativeTo: '/custom/path',
-        queryParams: {
-          branch: 'develop',
-          commit_hash: 'xyz789',
-          commit_message: 'Feature commit',
-          committers: 'jane@example.com',
-          make_default_branch: 'true',
-          pull_request: '123',
-          repo: 'feature-repo',
-          set_as_pending_head: 'false',
-          tmp: 'true',
-        },
+        branch: 'develop',
+        commit_hash: 'xyz789',
+        commit_message: 'Feature commit',
+        committers: 'jane@example.com',
+        make_default_branch: 'true',
+        pull_request: '123',
+        repo: 'feature-repo',
+        set_as_pending_head: 'false',
+        tmp: 'true',
       },
     )
   })
@@ -207,12 +203,10 @@ describe('fetchCreateOrgFullScan', () => {
       ['/path/to/package.json'],
       {
         pathsRelativeTo: process.cwd(),
-        queryParams: {
-          make_default_branch: 'undefined',
-          repo: 'test-repo',
-          set_as_pending_head: 'undefined',
-          tmp: 'undefined',
-        },
+        make_default_branch: 'undefined',
+        repo: 'test-repo',
+        set_as_pending_head: 'undefined',
+        tmp: 'undefined',
       },
     )
   })
@@ -246,7 +240,6 @@ describe('fetchCreateOrgFullScan', () => {
       packagePaths,
       expect.objectContaining({
         pathsRelativeTo: process.cwd(),
-        queryParams: expect.any(Object),
       }),
     )
   })
@@ -305,9 +298,7 @@ describe('fetchCreateOrgFullScan', () => {
         ['/path/to/package.json'],
         expect.objectContaining({
           pathsRelativeTo: process.cwd(),
-          queryParams: expect.objectContaining({
-            repo,
-          }),
+          repo,
         }),
       )
     }
