@@ -146,9 +146,9 @@ async function main(): Promise<void> {
     process.exit(1)
   })
 
-  child.on('exit', code => {
+  child.on('exit', (code, signal) => {
     // eslint-disable-next-line n/no-process-exit
-    process.exit(code ?? 0)
+    process.exit(code ?? (signal ? 1 : 0))
   })
 }
 
