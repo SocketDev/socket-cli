@@ -93,12 +93,12 @@ export default async function shadowNpmBase(
       const prefixResult = spawnSync(npmBin, ['prefix', '-g'], {
         cwd: process.cwd(),
       })
-      npmGlobalPrefix = prefixResult.stdout.toString().trim()
+      npmGlobalPrefix = prefixResult.stdout?.toString().trim() ?? ''
       // Get npm cache path.
       const cacheResult = spawnSync(npmBin, ['config', 'get', 'cache'], {
         cwd: process.cwd(),
       })
-      npmCachePath = cacheResult.stdout.toString().trim()
+      npmCachePath = cacheResult.stdout?.toString().trim() ?? ''
     } catch {
       // Fallback to defaults if npm commands fail.
       const home = homedir()

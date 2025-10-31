@@ -138,7 +138,7 @@ describe('socket package', () => {
       expect(result.status).toBe(0)
 
       // Should output version.
-      const stdout = result.stdout.toString()
+      const stdout = result.stdout?.toString() ?? ''
       expect(stdout).toMatch(/\d+\.\d+\.\d+/)
 
       // Should have cached CLI.
@@ -164,7 +164,7 @@ describe('socket package', () => {
       })
 
       expect(result.status).toBe(0)
-      expect(result.stdout.toString()).toContain('1.0.0-mock')
+      expect(result.stdout?.toString()).toContain('1.0.0-mock')
     })
 
     it('should use compressed CLI when available', async () => {
@@ -186,7 +186,7 @@ describe('socket package', () => {
       })
 
       expect(result.status).toBe(0)
-      expect(result.stdout.toString()).toContain('1.0.0-compressed')
+      expect(result.stdout?.toString()).toContain('1.0.0-compressed')
     })
 
     it('should pass arguments to delegated CLI', async () => {
@@ -210,7 +210,7 @@ describe('socket package', () => {
       )
 
       expect(result.status).toBe(0)
-      const args = JSON.parse(result.stdout.toString())
+      const args = JSON.parse(result.stdout?.toString())
       expect(args).toEqual(['report', '--json', 'lodash'])
     })
 
@@ -231,7 +231,7 @@ describe('socket package', () => {
       })
 
       expect(result.status).toBe(0)
-      expect(result.stdout.toString()).toContain('PKG_INVOKE_NODEJS')
+      expect(result.stdout?.toString()).toContain('PKG_INVOKE_NODEJS')
     })
 
     it('should exit with CLI exit code', async () => {
