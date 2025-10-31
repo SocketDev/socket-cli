@@ -66,12 +66,10 @@ Complete end-to-end onboarding for new contributors:
 - [Testing performance](performance/performance-testing.md)
 
 ### Technical Details
-- [Cacache format](technical/cacache-format.md)
-- [Manifest extensions](technical/manifest-extensions.md)
-- [Manifest format](technical/manifest-format.md)
-- [Manifest management](technical/manifest-management.md)
-- [Metadata files](technical/metadata-files.md)
-- [Patch cacache](technical/patch-cacache.md)
+- [Manifest management](technical/manifest-management.md) - Complete manifest API reference
+- [Manifest extensions](technical/manifest-extensions.md) - Proposed future features
+- [Metadata files](technical/metadata-files.md) - Metadata file formats
+- [Patch cacache](technical/patch-cacache.md) - Patch backup and caching system
 
 ### Testing
 - [Local testing](testing/local-testing.md)
