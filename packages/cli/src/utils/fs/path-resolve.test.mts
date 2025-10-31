@@ -51,8 +51,8 @@ const __dirname = path.dirname(__filename)
 const rootNmPath = path.join(__dirname, '../..', NODE_MODULES)
 const mockFixturePath = normalizePath(path.join(__dirname, 'mock'))
 const mockNmPath = normalizePath(rootNmPath)
-// Load the registry from its actual location (socket-registry/registry)
-// because node_modules/@socketsecurity/registry is a symlink and require follows it
+// Load the registry from its actual location (socket-registry/registry).
+// Note: socket-registry/lib is now the standalone @socketsecurity/lib package.
 const actualRegistryPath = path.resolve(
   __dirname,
   '../../../socket-registry/registry',
@@ -75,9 +75,8 @@ try {
 }
 
 function mockTestFs(config: FileSystem.DirectoryItems) {
-  // Don't load entire node_modules to avoid ENAMETOOLONG from circular symlinks
-  // between @socketregistry/packageurl-js and @socketsecurity/registry.
-  // Instead, load only the registry from its actual location since require follows symlinks.
+  // Don't load entire node_modules to avoid ENAMETOOLONG from circular symlinks.
+  // Instead, load only the registry from its actual location.
   return mockFs({
     ...config,
     [mockNmPath]: {},
@@ -147,7 +146,8 @@ const sortedPromise =
   }
 const sortedGetPackageFilesFullScans = sortedPromise(getPackageFilesForScan)
 
-// Skipped: Test requires socket-registry as sibling directory which is not available in this environment.
+// Skipped: Tests use mock-fs which conflicts with loading socket-registry files,
+// and have import path issues that need fixing.
 describe.skip('Path Resolve', () => {
   afterEach(() => {
     mockFs.restore()
