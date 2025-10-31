@@ -124,21 +124,15 @@ async function cloneOnnxSource() {
   const cmakePath = path.join(ONNX_SOURCE_DIR, 'cmake', 'onnxruntime_webassembly.cmake')
   let cmakeContent = await fs.readFile(cmakePath, 'utf-8')
 
-  // Patch 1: Comment out BUILD_MLAS_NO_ONNXRUNTIME.
+  // Patch: Comment out BUILD_MLAS_NO_ONNXRUNTIME.
+  // With threading enabled, this is not needed, but we keep the patch for safety.
   cmakeContent = cmakeContent.replace(
     /add_compile_definitions\(\s*BUILD_MLAS_NO_ONNXRUNTIME\s*\)/,
     '# add_compile_definitions(\n  #   BUILD_MLAS_NO_ONNXRUNTIME\n  # )'
   )
 
-  // Patch 2: Add EXPORT_ES6=0 to prevent ES module format.
-  // This forces UMD/CommonJS output which we'll patch later.
-  cmakeContent = cmakeContent.replace(
-    /"SHELL:-s MODULARIZE=1"/,
-    '"SHELL:-s MODULARIZE=1"\n    "SHELL:-s EXPORT_ES6=0"'
-  )
-
   await fs.writeFile(cmakePath, cmakeContent, 'utf-8')
-  printSuccess('BUILD_MLAS_NO_ONNXRUNTIME commented out and EXPORT_ES6=0 added')
+  printSuccess('BUILD_MLAS_NO_ONNXRUNTIME commented out')
 
   // Clear CMake cache to ensure patch is picked up.
   printStep('Clearing CMake cache to force reconfiguration...')
