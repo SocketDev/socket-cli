@@ -118,6 +118,11 @@ async function main() {
         args: ['.config/esbuild.index.config.mjs'],
       },
       {
+        name: 'Build Shadow NPM Inject',
+        command: 'node',
+        args: ['.config/esbuild.inject.config.mjs'],
+      },
+      {
         name: 'Compress CLI',
         command: 'node',
         args: ['scripts/compress-cli.mjs'],
