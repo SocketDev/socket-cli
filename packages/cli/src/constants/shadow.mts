@@ -6,8 +6,6 @@ import path from 'node:path'
 
 import { distPath } from './paths.mts'
 
-import type { RegistryInternals } from './types.mts'
-
 // Re-export SOCKET_IPC_HANDSHAKE from registry
 export { SOCKET_IPC_HANDSHAKE } from '@socketsecurity/lib/constants/socket'
 
@@ -29,14 +27,6 @@ export const SOCKET_CLI_SHADOW_SILENT = 'SOCKET_CLI_SHADOW_SILENT'
 // Other CLI Environment Variables
 export const SOCKET_CLI_ACCEPT_RISKS = 'SOCKET_CLI_ACCEPT_RISKS'
 export const SOCKET_CLI_VIEW_ALL_RISKS = 'SOCKET_CLI_VIEW_ALL_RISKS'
-
-/**
- * Get registry internals for accessing IPC and Sentry instances.
- */
-export function getInternals(): RegistryInternals {
-  const registry = require('@socketsecurity/registry')
-  return registry.internals ?? {}
-}
 
 /**
  * Get the path to the shadow npm binary.
