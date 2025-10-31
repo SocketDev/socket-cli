@@ -15,12 +15,17 @@ import { findAndExecuteCli, getArgs } from './shared/bootstrap-shared.mjs'
 
 async function main() {
   const args = getArgs()
-  await findAndExecuteCli(args)
+  return await findAndExecuteCli(args)
 }
 
 // Run the bootstrap.
-main().catch((e) => {
-  // Use process.stderr.write() directly to avoid console access during early bootstrap.
-  process.stderr.write(`Bootstrap error: ${e instanceof Error ? e.message : String(e)}\n`)
-  process.exit(1)
-})
+main()
+  .then((exitCode) => {
+    // Exit with the code returned by the CLI.
+    process.exit(exitCode)
+  })
+  .catch((e) => {
+    // Use process.stderr.write() directly to avoid console access during early bootstrap.
+    process.stderr.write(`Bootstrap error: ${e instanceof Error ? e.message : String(e)}\n`)
+    process.exit(1)
+  })

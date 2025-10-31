@@ -150,7 +150,7 @@ export async function executeCli(cliPath, args) {
     })
   }
 
-  process.exit(result.code ?? 0)
+  return result.code ?? 0
 }
 
 /**
@@ -199,6 +199,7 @@ export async function downloadCli() {
 
 /**
  * Find and execute the CLI from the downloaded package.
+ * Returns exit code from CLI execution.
  */
 export async function findAndExecuteCli(args) {
   // Download CLI if needed.
@@ -210,12 +211,12 @@ export async function findAndExecuteCli(args) {
 
   // Execute the CLI loader.
   if (existsSync(cliEntry)) {
-    await executeCli(cliEntry, args)
+    return await executeCli(cliEntry, args)
   }
 
   // If we can't find the CLI, exit with error.
   logger.error('Socket CLI installation failed')
   logger.error('   CLI entry point not found after installation')
   logger.error(`   Looked in: ${cliEntry}`)
-  process.exit(1)
+  return 1
 }
