@@ -31,6 +31,7 @@ Thumbs.db
 # Backup and temporary files.
 *.backup
 *.bak
+**/*.tmp.bak*
 *.old
 *~
 *.swp
