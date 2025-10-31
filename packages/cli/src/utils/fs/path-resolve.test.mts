@@ -146,8 +146,9 @@ const sortedPromise =
   }
 const sortedGetPackageFilesFullScans = sortedPromise(getPackageFilesForScan)
 
-// Skipped: Tests use mock-fs which conflicts with loading socket-registry files,
-// and have import path issues that need fixing.
+// Skipped: mock-fs completely replaces the filesystem, preventing the tested code
+// from accessing real dependencies in @socketsecurity/lib and node_modules.
+// Would need to switch to memfs or real temp directories to fix.
 describe.skip('Path Resolve', () => {
   afterEach(() => {
     mockFs.restore()
@@ -396,7 +397,7 @@ describe.skip('Path Resolve', () => {
     })
 
     it('handles shadowed bin paths', async () => {
-      const constants = await import('../constants.mts')
+      const constants = await import('../../constants.mts')
       const shadowBinPath = constants.default.shadowBinPath
       const { whichBinSync } = vi.mocked(
         await import('@socketsecurity/lib/bin'),
@@ -461,7 +462,7 @@ describe.skip('Path Resolve', () => {
     })
 
     it('handles only shadow bin in path', async () => {
-      const constants = await import('../constants.mts')
+      const constants = await import('../../constants.mts')
       const shadowBinPath = constants.default.shadowBinPath
       const { whichBinSync } = vi.mocked(
         await import('@socketsecurity/lib/bin'),
