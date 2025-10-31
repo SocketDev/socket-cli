@@ -47,6 +47,36 @@ jobs:
       node-versions: ${{ inputs.node-versions || '[20, 22, 24]' }}
       os-versions: '["ubuntu-latest", "macos-latest", "windows-latest"]'
       fail-fast: false
+      # Increase parallelization for socket-cli's longer test suite (~48s).
+      # Default is 4, we increase to 8 for better performance.
+      max-parallel: 8
+      # Increase timeout for slower subprocess-heavy tests.
+      test-timeout-minutes: 20
+
+  # Sharded unit tests (optional, enable for faster CI).
+  # To enable: uncomment this job and set `run-test: false` in the ci job above.
+  # test-sharded:
+  #   name: Unit Tests (Sharded ${{ matrix.shard }}/3)
+  #   runs-on: ${{ matrix.os }}
+  #   timeout-minutes: 15
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       node-version: ${{ fromJSON(inputs.node-versions || '[20, 22, 24]') }}
+  #       os: [ubuntu-latest, macos-latest, windows-latest]
+  #       shard: [1, 2, 3]
+  #   steps:
+  #     - uses: SocketDev/socket-registry/.github/actions/setup-and-install@51be85d39d3b4a42dd9d4712948b9d30a2e04794
+  #       with:
+  #         node-version: ${{ matrix.node-version }}
+  #
+  #     - name: Build CLI
+  #       working-directory: packages/cli
+  #       run: pnpm run build
+  #
+  #     - name: Run unit tests (shard ${{ matrix.shard }})
+  #       working-directory: packages/cli
+  #       run: pnpm test:unit --shard=${{ matrix.shard }}/3
 
   e2e:
     name: E2E Tests
