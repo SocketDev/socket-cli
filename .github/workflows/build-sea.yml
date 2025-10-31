@@ -332,7 +332,7 @@ jobs:
           if [ "${{ steps.ai-cache-valid.outputs.valid }}" != "true" ]; then
             echo "::group::Installing Python dependencies"
             python3 -m pip install --upgrade pip
-            python3 -m pip install transformers torch optimum[onnx] "onnxruntime>=1.21.0"
+            python3 -m pip install transformers torch "optimum[onnxruntime]" "onnxruntime>=1.21.0"
             echo "::endgroup::"
           fi
 
