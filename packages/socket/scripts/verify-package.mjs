@@ -11,27 +11,6 @@ const __dirname = path.dirname(__filename)
 const packageRoot = path.resolve(__dirname, '..')
 
 /**
- * Format a success message.
- */
-function success(msg) {
-  return `${colors.green('✓')} ${msg}`
-}
-
-/**
- * Format an error message.
- */
-function error(msg) {
-  return `${colors.red('✗')} ${msg}`
-}
-
-/**
- * Format an info message.
- */
-function info(msg) {
-  return `${colors.blue('ℹ')} ${msg}`
-}
-
-/**
  * Check if a file exists and is readable.
  */
 async function fileExists(filePath) {
@@ -56,21 +35,21 @@ async function validate() {
   const errors = []
 
   // Check package.json exists.
-  logger.log(info('Checking package.json...'))
+  logger.info('Checking package.json...')
   const pkgPath = path.join(packageRoot, 'package.json')
   if (!(await fileExists(pkgPath))) {
     errors.push('package.json does not exist')
   } else {
-    logger.log(success('package.json exists'))
+    logger.success('package.json exists')
   }
 
   // Check dist/bootstrap.js exists.
-  logger.log(info('Checking dist/bootstrap.js...'))
+  logger.info('Checking dist/bootstrap.js...')
   const bootstrapPath = path.join(packageRoot, 'dist', 'bootstrap.js')
   if (!(await fileExists(bootstrapPath))) {
     errors.push('dist/bootstrap.js does not exist')
   } else {
-    logger.log(success('dist/bootstrap.js exists'))
+    logger.success('dist/bootstrap.js exists')
   }
 
   // Print summary.
@@ -86,12 +65,12 @@ async function validate() {
       logger.log(`  ${error(err)}`)
     }
     logger.log('')
-    logger.log(error('Package validation FAILED'))
+    logger.fail('Package validation FAILED')
     logger.log('')
     process.exit(1)
   }
 
-  logger.log(success('Package validation PASSED'))
+  logger.success('Package validation PASSED')
   logger.log('')
   process.exit(0)
 }
@@ -99,7 +78,7 @@ async function validate() {
 // Run validation.
 validate().catch(e => {
   logger.error('')
-  logger.error(error(`Unexpected error: ${e.message}`))
+  logger.fail(`Unexpected error: ${e.message}`)
   logger.error('')
   process.exit(1)
 })
