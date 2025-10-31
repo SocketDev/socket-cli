@@ -23,6 +23,7 @@
 import { promises as fs } from 'node:fs'
 import { dirname, join } from 'node:path'
 
+import { safeMkdir } from '@socketsecurity/lib/fs'
 import { z } from 'zod'
 
 const MANIFEST_VERSION = '1.0.0'
@@ -166,7 +167,7 @@ export async function writeManifest(
   const manifestPath = getManifestPath(cwd)
 
   // Ensure parent directory exists
-  await fs.mkdir(dirname(manifestPath), { recursive: true })
+  await safeMkdir(dirname(manifestPath))
 
   // Write atomically (write to temp file, then rename)
   const tempPath = `${manifestPath}.tmp`

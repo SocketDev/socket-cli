@@ -21,6 +21,7 @@ import { promises as fs } from 'node:fs'
 import https from 'node:https'
 import path from 'node:path'
 
+import { safeMkdir } from '@socketsecurity/lib/fs'
 import { parseTarGzip } from 'nanotar'
 
 // Type helpers.
@@ -275,9 +276,7 @@ export async function extractTarball(
       const targetPath = path.join(targetDir, sanitizedPath)
 
       if (file.type === 'directory') {
-        await retryWithBackoff(() =>
-          fs.mkdir(targetPath, { recursive: true }),
-        ).catch(error => {
+        await retryWithBackoff(() => safeMkdir(targetPath)).catch(error => {
           throw new Error(
             `Failed to create directory ${targetPath}: ${error instanceof Error ? error.message : String(error)}`,
           )
@@ -285,9 +284,7 @@ export async function extractTarball(
       } else if (file.type === 'file' && file.data) {
         // Ensure parent directory exists.
         const parentDir = path.dirname(targetPath)
-        await retryWithBackoff(() =>
-          fs.mkdir(parentDir, { recursive: true }),
-        ).catch(error => {
+        await retryWithBackoff(() => safeMkdir(parentDir)).catch(error => {
           const code = (error as NodeJS.ErrnoException)?.code
           if (code === 'ENOSPC') {
             throw new Error(
@@ -437,7 +434,7 @@ export async function extractBinaryFromTarball(
 
     // Ensure destination directory exists.
     const destDir = path.dirname(destination)
-    await fs.mkdir(destDir, { recursive: true })
+    await safeMkdir(destDir)
 
     // Write binary to destination.
     await fs.writeFile(

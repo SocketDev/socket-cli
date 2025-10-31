@@ -12,6 +12,7 @@ import path from 'node:path'
 import colors from 'yoctocolors-cjs'
 
 import { detectPackageManager } from '@socketsecurity/lib/env/package-manager'
+import { safeMkdir } from '@socketsecurity/lib/fs'
 import { getIpcStubPath } from '@socketsecurity/lib/ipc'
 import { logger } from '@socketsecurity/lib/logger'
 
@@ -157,8 +158,8 @@ async function updateStubBinary(
     const downloadsDir = getSocketCliUpdaterDownloadsDir()
     const stagingDir = getSocketCliUpdaterStagingDir()
 
-    await fs.mkdir(downloadsDir, { recursive: true })
-    await fs.mkdir(stagingDir, { recursive: true })
+    await safeMkdir(downloadsDir)
+    await safeMkdir(stagingDir)
 
     const timestamp = Date.now()
     const tarballPath = path.join(downloadsDir, `stub-${timestamp}.tgz`)
@@ -376,7 +377,7 @@ Examples
 
   // Create temporary directory for download.
   const tempDir = path.join(os.tmpdir(), `socket-update-${Date.now()}`)
-  await fs.mkdir(tempDir, { recursive: true })
+  await safeMkdir(tempDir)
 
   try {
     const tarballPath = path.join(tempDir, 'package.tgz')

@@ -26,6 +26,7 @@ import { dirname, join } from 'node:path'
 import ssri from 'ssri'
 
 import { get, put, remove } from '@socketsecurity/lib/cacache'
+import { safeMkdir } from '@socketsecurity/lib/fs'
 
 export interface BackupFileInfo {
   integrity: string // ssri format: sha256-base64
@@ -131,7 +132,7 @@ async function updateMetadata(
 
     // Write back
     const metadataPath = getMetadataPath(uuid)
-    await fs.mkdir(dirname(metadataPath), { recursive: true })
+    await safeMkdir(dirname(metadataPath))
     await fs.writeFile(
       metadataPath,
       JSON.stringify(updatedMetadata, null, 2),
@@ -240,7 +241,7 @@ export async function restoreBackup(
     })
 
     // Ensure parent directory exists
-    await fs.mkdir(dirname(filePath), { recursive: true })
+    await safeMkdir(dirname(filePath))
 
     // Write back to original location
     await fs.writeFile(filePath, entry.data)

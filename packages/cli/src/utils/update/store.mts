@@ -27,7 +27,6 @@
 
 import {
   existsSync,
-  mkdirSync,
   readFileSync,
   unlinkSync,
   writeFileSync,
@@ -35,7 +34,7 @@ import {
 import os from 'node:os'
 import path from 'node:path'
 
-import { readFileUtf8Sync } from '@socketsecurity/lib/fs'
+import { readFileUtf8Sync, safeMkdirSync } from '@socketsecurity/lib/fs'
 import { logger } from '@socketsecurity/lib/logger'
 import { processLock } from '@socketsecurity/lib/process-lock'
 
@@ -128,7 +127,7 @@ class UpdateStore {
       // Ensure directory exists.
       const storeDir = path.dirname(this.storePath)
       try {
-        mkdirSync(storeDir, { recursive: true })
+        safeMkdirSync(storeDir)
       } catch (error) {
         logger.warn(
           `Failed to create store directory: ${error instanceof Error ? error.message : String(error)}`,
