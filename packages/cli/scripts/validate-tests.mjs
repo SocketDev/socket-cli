@@ -184,7 +184,7 @@ async function validateBuildArtifacts() {
     issues.push({
       type: VALIDATION_CHECKS.BUILD_ARTIFACTS,
       severity: 'error',
-      message: 'dist/ directory not found. Run pnpm run build:dist:src first',
+      message: 'dist/ directory not found. Run pnpm run build:cli first',
     })
     return issues
   }

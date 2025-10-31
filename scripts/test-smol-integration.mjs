@@ -104,7 +104,7 @@ async function main() {
     logger.log('')
 
     logger.log('Building Socket CLI distribution...')
-    const buildResult = await exec('pnpm', ['run', 'build:dist:src'], {
+    const buildResult = await exec('pnpm', ['run', 'build:cli'], {
       cwd: ROOT_DIR,
     })
 

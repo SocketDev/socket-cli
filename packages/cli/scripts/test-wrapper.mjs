@@ -25,7 +25,7 @@ function checkBuildArtifacts() {
   const distPath = path.join(constants.rootPath, 'dist')
   if (!existsSync(distPath)) {
     logger.error('dist/ directory not found')
-    logger.error('Run `pnpm run build:dist:src` before running tests')
+    logger.error('Run `pnpm run build:cli` before running tests')
     return false
   }
 
@@ -34,7 +34,7 @@ function checkBuildArtifacts() {
     const fullPath = path.join(constants.rootPath, artifact)
     if (!existsSync(fullPath)) {
       logger.error(`Required build artifact missing: ${artifact}`)
-      logger.error('Run `pnpm run build:dist:src` before running tests')
+      logger.error('Run `pnpm run build:cli` before running tests')
       return false
     }
   }

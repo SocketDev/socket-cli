@@ -169,7 +169,7 @@ rm -rf .custom-node-build/node-patched
 
 **Created by:**
 ```bash
-pnpm run build:dist:src
+pnpm run build:cli
 # Runs: rollup with .config/rollup.dist.config.mjs
 ```
 
@@ -418,7 +418,7 @@ fi
 3. **Clean before release:**
    ```bash
    pnpm run clean:dist
-   pnpm run build:dist:src
+   pnpm run build:cli
    pnpm run build:yao-pkg
    ```
 
@@ -455,7 +455,7 @@ fi
 | `.custom-node-build/node-yao-pkg/` | 19-20 GB | No (current) | 30-60 minutes |
 | `.custom-node-build/node/` | 20 GB | Yes (old) | N/A |
 | `.custom-node-build/node-patched/` | 20 GB | Yes (old) | N/A |
-| `dist/` | 10-15 MB | Yes | `pnpm run build:dist:src` (~10 sec) |
+| `dist/` | 10-15 MB | Yes | `pnpm run build:cli` (~10 sec) |
 | `pkg-binaries/` | 500 MB | Yes | `pnpm run build:yao-pkg` (~30 sec) |
 
 **Total reclaimable:** ~40 GB (by removing old Node builds)
@@ -532,6 +532,6 @@ rm -rf .custom-node-build/node .custom-node-build/node-patched
 # Clean start
 pnpm install                    # Install dependencies (2-3 min)
 pnpm run build:yao-pkg:node    # Build Node.js (30-60 min, one-time)
-pnpm run build:dist:src        # Build CLI (10 sec)
+pnpm run build:cli        # Build CLI (10 sec)
 pnpm run build:yao-pkg         # Build pkg binaries (30 sec)
 ```

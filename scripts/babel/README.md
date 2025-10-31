@@ -198,7 +198,7 @@ node scripts/build-yao-pkg-node.mjs --clean
 
 2. Rebuild Socket CLI:
 ```bash
-pnpm run build:dist
+pnpm run build:cli
 ```
 
 **Testing:**
@@ -270,7 +270,7 @@ plugins: [
 Build and test the transformed output:
 ```bash
 # Build with transformations
-pnpm run build:dist:src
+pnpm run build:cli
 
 # Check transformed code
 cat dist/cli.js | head -100

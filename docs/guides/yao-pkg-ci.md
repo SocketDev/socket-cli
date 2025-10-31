@@ -140,7 +140,7 @@ jobs:
           path: .custom-node-build/node-yao-pkg/out/Release/
 
       - name: Build CLI distribution
-        run: pnpm run build:dist:src
+        run: pnpm run build:cli
 
       - name: Build pkg binary
         run: pnpm run build:yao-pkg
