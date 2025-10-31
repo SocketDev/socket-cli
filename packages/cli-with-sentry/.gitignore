@@ -1,5 +1,6 @@
 /coverage
 /data
+**/dist
 CHANGELOG.md
 LICENSE
 *.png
