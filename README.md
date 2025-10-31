@@ -110,6 +110,45 @@ pnpm run build
 pnpm exec socket --version
 ```
 
+### Building locally
+
+Socket CLI consists of multiple packages that need to be built in a specific order:
+
+1. **Build WASM packages** (ONNX Runtime, Yoga):
+   ```bash
+   # Build ONNX Runtime WASM (for AI features)
+   pnpm --filter @socketsecurity/onnxruntime run build
+
+   # Build Yoga WASM (for terminal layouts)
+   pnpm --filter @socketsecurity/yoga run build
+   ```
+
+2. **Build the main CLI package**:
+   ```bash
+   # Build packages/cli (includes TypeScript compilation and bundling)
+   pnpm --filter @socketsecurity/cli run build
+   ```
+
+3. **Build the SEA (Single Executable Application) binary** (optional):
+   ```bash
+   # Build packages/socket as a Node.js SEA binary
+   pnpm --filter @socketsecurity/socket run build
+   ```
+
+**Full build command** (all packages):
+```bash
+pnpm run build
+```
+
+**Quick builds** (skip WASM):
+```bash
+# Build only the CLI package
+pnpm --filter @socketsecurity/cli run build
+
+# Build and run
+pnpm --filter @socketsecurity/cli run build && pnpm exec socket --version
+```
+
 See [docs/development/](docs/development/) for detailed development guides.
 
 ### Development environment variables
