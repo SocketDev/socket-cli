@@ -21,6 +21,7 @@
 
 import { spawn } from '@socketsecurity/lib/spawn'
 import { getExecPath } from '@socketsecurity/lib/constants/node'
+import { which } from '@socketsecurity/lib/bin'
 
 import { isSeaBinary } from '../sea/detect.mjs'
 import { sendBootstrapHandshake } from '../sea/boot.mjs'
@@ -60,15 +61,15 @@ export interface SpawnNodeOptions extends SpawnOptions {
  * @param extra - Extra spawn options (from @socketsecurity/lib/spawn)
  * @returns Spawn result with process handle
  */
-export function spawnNode(
+export async function spawnNode(
   args: string[] | readonly string[],
   options?: SpawnNodeOptions,
   extra?: SpawnExtra,
-): SpawnResult {
+): Promise<SpawnResult> {
   const { ipc, ...spawnOpts } = options ?? {}
 
   // Get the Node.js executable path to use.
-  const nodePath = getNodeExecutablePath()
+  const nodePath = await getNodeExecutablePath()
 
   // Determine if we need to set up IPC handshake.
   const needsIpcHandshake = isSeaBinary() && nodePath === process.execPath
@@ -109,14 +110,14 @@ export function spawnNode(
  *
  * @returns Path to Node.js executable
  */
-function getNodeExecutablePath(): string {
+async function getNodeExecutablePath(): Promise<string> {
   // If not a SEA, use standard getExecPath().
   if (!isSeaBinary()) {
     return getExecPath()
   }
 
   // For SEA binaries, try to find system Node.js.
-  const systemNode = findSystemNodejs()
+  const systemNode = await findSystemNodejs()
   if (systemNode) {
     return systemNode
   }
@@ -132,20 +133,22 @@ function getNodeExecutablePath(): string {
  *
  * @returns Path to system Node.js, or undefined
  */
-function findSystemNodejs(): string | undefined {
-  // TODO: Implement proper system Node.js detection.
-  // This should:
-  // 1. Parse PATH environment variable
-  // 2. Look for 'node' or 'node.exe' executables
-  // 3. Exclude the current SEA binary path (process.execPath)
-  // 4. Verify it's actually Node.js (check version or --version flag)
-  // 5. Ensure it's compatible (meets minimum version requirements)
-  // 6. Return the first valid system Node.js found
-  //
-  // For now, return undefined to use SEA binary with IPC handshake.
-  // This will be implemented in a follow-up PR.
+async function findSystemNodejs(): Promise<string | undefined> {
+  // Use which to find 'node' in PATH (returns all matches).
+  const nodePath = await which('node', { all: true, nothrow: true })
 
-  return undefined
+  if (!nodePath) {
+    return undefined
+  }
+
+  // which with all:true returns string[] if multiple matches, string if single match.
+  const nodePaths = Array.isArray(nodePath) ? nodePath : [nodePath]
+
+  // Find first Node.js that isn't our SEA binary.
+  const currentExecPath = process.execPath
+  const systemNode = nodePaths.find(p => p !== currentExecPath)
+
+  return systemNode
 }
 
 /**
