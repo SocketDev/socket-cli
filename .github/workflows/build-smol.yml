@@ -8,6 +8,21 @@ on:
         required: false
         type: boolean
         default: false
+      build-linux:
+        description: 'Build Linux smol binaries'
+        required: false
+        type: boolean
+        default: true
+      build-macos:
+        description: 'Build macOS smol binaries'
+        required: false
+        type: boolean
+        default: true
+      build-windows:
+        description: 'Build Windows smol binaries'
+        required: false
+        type: boolean
+        default: true
   workflow_dispatch:
     inputs:
       force:
@@ -15,6 +30,21 @@ on:
         required: false
         type: boolean
         default: false
+      build-linux:
+        description: 'Build Linux smol binaries'
+        required: false
+        type: boolean
+        default: true
+      build-macos:
+        description: 'Build macOS smol binaries'
+        required: false
+        type: boolean
+        default: true
+      build-windows:
+        description: 'Build Windows smol binaries'
+        required: false
+        type: boolean
+        default: true
   # Removed push/pull_request triggers to prevent automatic builds.
   # Run manually via workflow_dispatch or via workflow_call from build-socketbin.yml.
 
@@ -84,6 +114,10 @@ jobs:
   build-smol:
     needs: build-deps
     name: 🤏 Build smol binary - ${{ matrix.platform }}-${{ matrix.arch }}
+    if: |
+      (matrix.platform == 'linux' || matrix.platform == 'alpine') && inputs.build-linux != false ||
+      matrix.platform == 'darwin' && inputs.build-macos != false ||
+      matrix.platform == 'win32' && inputs.build-windows != false
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 120
     strategy:
