@@ -1116,7 +1116,9 @@ async function main() {
     '--without-amaro',
     '--without-sqlite',
     '--without-node-snapshot',
-    '--without-node-code-cache',
+    // Note: --without-node-code-cache removed because we need code cache to decompress
+    // brotli-encoded lib/ files (including our bootstrap). Zlib/brotli support is
+    // required for CLI index.js decompression.
     '--v8-disable-object-print',
     '--without-node-options',
     '--disable-single-executable-application', // -1-2 MB: SEA not needed for pkg
