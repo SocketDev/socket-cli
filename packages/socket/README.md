@@ -1,5 +1,13 @@
 # socket
 
+[![Socket Badge](https://socket.dev/api/badge/npm/package/socket)](https://socket.dev/npm/package/socket)
+[![npm version](https://img.shields.io/npm/v/socket.svg)](https://www.npmjs.com/package/socket)
+[![npm downloads](https://img.shields.io/npm/dm/socket.svg)](https://www.npmjs.com/package/socket)
+[![CI](https://github.com/SocketDev/socket-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/SocketDev/socket-cli/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+[![Follow @SocketSecurity](https://img.shields.io/twitter/follow/SocketSecurity?style=social)](https://twitter.com/SocketSecurity)
+
 Thin Socket CLI wrapper that downloads and delegates to @socketsecurity/cli.
 
 ## Installation
