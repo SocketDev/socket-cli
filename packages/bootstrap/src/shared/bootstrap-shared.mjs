@@ -155,7 +155,7 @@ export async function executeCli(cliPath, args) {
  * Download and install CLI using dlxPackage.
  */
 export async function downloadCli() {
-  logger.log('🔌 Socket powering up…')
+  logger.log('⚡ Socket powering up…')
   logger.log('')
 
   // Create DLX directory with recursive option to ensure all parents exist.
