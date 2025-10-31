@@ -27,7 +27,7 @@ import { onExit } from '@socketsecurity/lib/signal-exit'
 import { isNonEmptyString } from '@socketsecurity/lib/strings'
 
 import { SEA_UPDATE_COMMAND } from '../../constants/cli.mts'
-import { getSeaBinaryPath } from '../executable/detect.mts'
+import { getSeaBinaryPath } from '../sea/detect.mts'
 import { githubRepoLink, socketPackageLink } from '../terminal/link.mts'
 
 const CHANGELOG_MD = 'CHANGELOG.md'

@@ -9,9 +9,19 @@
  * - socket-yarn (yarn wrapper)
  *
  * Perfect for SEA packaging and single-file distribution.
+ *
+ * Bootstrap Logic:
+ * When running as a SEA binary, we use IPC handshake to detect subprocess mode:
+ * - Initial entry (no IPC): Bootstrap to system Node.js or self with IPC
+ * - Subprocess entry (has IPC): Bypass bootstrap, act as regular Node.js
  */
 
 import path from 'node:path'
+
+import {
+  shouldBypassBootstrap,
+  waitForBootstrapHandshake,
+} from './utils/sea/boot.mjs'
 
 // Detect how this binary was invoked.
 function getInvocationMode(): string {
@@ -71,6 +81,32 @@ function getInvocationMode(): string {
 
 // Route to the appropriate CLI based on invocation mode.
 async function main() {
+  // Check if we need bootstrap logic (SEA binary without IPC handshake).
+  if (!shouldBypassBootstrap()) {
+    // We're a SEA binary in initial entry mode.
+    // Bootstrap logic will delegate to system Node.js or spawn ourselves with IPC.
+    // This is handled by the bootstrap module - for now, we'll proceed normally.
+    // TODO: Implement actual bootstrap delegation here.
+    // For now, we just log a warning and continue.
+    console.warn(
+      'Warning: SEA bootstrap not yet implemented - continuing without delegation',
+    )
+  }
+
+  // If we're a subprocess with IPC, wait for handshake.
+  // This validates we're running in the correct context.
+  try {
+    const ipcData = await waitForBootstrapHandshake(1000) // 1 second timeout.
+    if (ipcData) {
+      // We received IPC handshake - we're a validated subprocess.
+      // The IPC data contains configuration from the parent process.
+      // For now, we just acknowledge it. The shadow binaries will use this data.
+    }
+  } catch {
+    // No handshake received, or we're not a subprocess.
+    // This is normal for initial entry.
+  }
+
   const mode = getInvocationMode()
 
   // Set environment variable for child processes.

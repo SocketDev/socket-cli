@@ -11,7 +11,6 @@ import { fileURLToPath } from 'node:url'
 
 import {
   getExecPath,
-  getNodeDebugFlags,
   getNodeHardenFlags,
   getNodeNoWarningsFlags,
 } from '@socketsecurity/lib/constants/node'
@@ -29,14 +28,12 @@ export { SOCKET_JSON }
 // Re-export node-related constants from registry for convenience.
 export {
   getExecPath,
-  getNodeDebugFlags,
   getNodeHardenFlags,
   getNodeNoWarningsFlags,
 }
 
 // Export as non-function constants for backward compatibility.
 export const execPath = getExecPath()
-export const nodeDebugFlags = getNodeDebugFlags()
 export const nodeHardenFlags = getNodeHardenFlags()
 export const nodeNoWarningsFlags = getNodeNoWarningsFlags()
 
