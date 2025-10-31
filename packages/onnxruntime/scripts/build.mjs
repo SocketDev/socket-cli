@@ -188,7 +188,8 @@ async function build() {
     '--build_wasm',
     '--skip_tests',
     '--parallel',
-    // '--enable_wasm_threads', // Commented out as fallback to get build working.
+    '--enable_wasm_threads', // Required for ONNX Runtime v1.19.0+ (non-threaded builds deprecated).
+    '--enable_wasm_simd', // Enable SIMD for better performance.
   ], {
     cwd: ONNX_SOURCE_DIR,
     shell: WIN32,
@@ -213,10 +214,10 @@ async function exportWasm() {
   const platform = process.platform === 'darwin' ? 'Darwin' : 'Linux'
   const buildOutputDir = path.join(ONNX_SOURCE_DIR, 'build', platform, 'Release')
 
-  // Look for non-threaded WASM files since we disabled threading.
-  // With EXPORT_ES6=0, Emscripten outputs .js (UMD) not .mjs (ES6).
-  const wasmFile = path.join(buildOutputDir, 'ort-wasm.wasm')
-  const jsFile = path.join(buildOutputDir, 'ort-wasm.js')
+  // Look for threaded WASM files (threading + SIMD enabled).
+  // With threading enabled, outputs are: ort-wasm-simd-threaded.{wasm,mjs}.
+  const wasmFile = path.join(buildOutputDir, 'ort-wasm-simd-threaded.wasm')
+  const jsFile = path.join(buildOutputDir, 'ort-wasm-simd-threaded.mjs')
 
   if (!existsSync(wasmFile)) {
     printError('WASM file not found - build failed')
@@ -224,13 +225,13 @@ async function exportWasm() {
     throw new Error(`Required WASM file not found: ${wasmFile}`)
   }
 
-  const outputWasm = path.join(OUTPUT_DIR, 'ort-wasm.wasm')
-  const outputJs = path.join(OUTPUT_DIR, 'ort-wasm.js')
+  const outputWasm = path.join(OUTPUT_DIR, 'ort-wasm-simd-threaded.wasm')
+  const outputJs = path.join(OUTPUT_DIR, 'ort-wasm-simd-threaded.mjs')
 
   // Copy WASM file.
   await fs.copyFile(wasmFile, outputWasm)
 
-  // Copy JS glue code (UMD format from EXPORT_ES6=0).
+  // Copy JS glue code (ES6 module format with threading).
   if (existsSync(jsFile)) {
     await fs.copyFile(jsFile, outputJs)
     printStep(`JS: ${outputJs}`)
@@ -254,8 +255,8 @@ async function main() {
   logger.info('')
 
   // Clean checkpoints if requested or if output is missing.
-  const outputWasm = path.join(OUTPUT_DIR, 'ort-wasm.wasm')
-  const outputJs = path.join(OUTPUT_DIR, 'ort-wasm.js')
+  const outputWasm = path.join(OUTPUT_DIR, 'ort-wasm-simd-threaded.wasm')
+  const outputJs = path.join(OUTPUT_DIR, 'ort-wasm-simd-threaded.mjs')
   const outputMissing = !existsSync(outputWasm) || !existsSync(outputJs)
 
   if (CLEAN_BUILD || outputMissing) {
