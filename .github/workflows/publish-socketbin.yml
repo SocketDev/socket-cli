@@ -86,6 +86,31 @@ jobs:
             arch: arm64
 
     steps:
+      - name: Check if platform is enabled
+        id: check-platform
+        shell: bash
+        run: |
+          SHOULD_RUN="false"
+          if [ "${{ matrix.platform }}" = "linux" ] || [ "${{ matrix.platform }}" = "alpine" ]; then
+            if [ "${{ inputs.build-linux }}" != "false" ]; then
+              SHOULD_RUN="true"
+            fi
+          elif [ "${{ matrix.platform }}" = "darwin" ]; then
+            if [ "${{ inputs.build-macos }}" != "false" ]; then
+              SHOULD_RUN="true"
+            fi
+          elif [ "${{ matrix.platform }}" = "win32" ]; then
+            if [ "${{ inputs.build-windows }}" != "false" ]; then
+              SHOULD_RUN="true"
+            fi
+          fi
+          echo "should-run=$SHOULD_RUN" >> $GITHUB_OUTPUT
+          if [ "$SHOULD_RUN" = "true" ]; then
+            echo "✓ Building ${{ matrix.platform }}-${{ matrix.arch }}"
+          else
+            echo "⊘ Skipping ${{ matrix.platform }}-${{ matrix.arch }} (disabled by inputs)"
+          fi
+
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
