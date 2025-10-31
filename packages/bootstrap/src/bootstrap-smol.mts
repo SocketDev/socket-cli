@@ -19,7 +19,12 @@ async function main() {
 
 // Run the bootstrap.
 main().catch((e) => {
+  // Suppress spurious "command failed" error from process.exit() during CLI execution.
+  const errorMsg = e instanceof Error ? e.message : String(e)
+  if (errorMsg.includes('command failed')) {
+    return
+  }
   // Use process.stderr.write() directly to avoid console access during early bootstrap.
-  process.stderr.write(`Bootstrap error: ${e instanceof Error ? e.message : String(e)}\n`)
+  process.stderr.write(`Bootstrap error: ${errorMsg}\n`)
   process.exit(1)
 })
