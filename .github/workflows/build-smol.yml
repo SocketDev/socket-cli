@@ -114,10 +114,6 @@ jobs:
   build-smol:
     needs: build-deps
     name: 🤏 Build smol binary - ${{ matrix.platform }}-${{ matrix.arch }}
-    if: |
-      (matrix.platform == 'linux' || matrix.platform == 'alpine') && inputs.build-linux != false ||
-      matrix.platform == 'darwin' && inputs.build-macos != false ||
-      matrix.platform == 'win32' && inputs.build-windows != false
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 120
     strategy:
