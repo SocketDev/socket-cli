@@ -8,10 +8,12 @@ import { homedir } from 'node:os'
 import path from 'node:path'
 
 import { which } from '@socketsecurity/lib/bin'
+import { getSpinner } from '@socketsecurity/lib/constants/process'
 import { SOCKET_IPC_HANDSHAKE } from '@socketsecurity/lib/constants/socket'
 import { dlxPackage } from '@socketsecurity/lib/dlx-package'
 import { envAsBoolean } from '@socketsecurity/lib/env'
 import { logger } from '@socketsecurity/lib/logger'
+import { withSpinner } from '@socketsecurity/lib/spinner'
 import { spawn } from '@socketsecurity/lib/spawn'
 import { gte } from 'semver'
 
@@ -155,9 +157,6 @@ export async function executeCli(cliPath, args) {
  * Download and install CLI using dlxPackage.
  */
 export async function downloadCli() {
-  logger.log('⚡ Socket powering up…')
-  logger.log('')
-
   // Create DLX directory with recursive option to ensure all parents exist.
   try {
     mkdirSync(SOCKET_DLX_DIR, { recursive: true })
@@ -169,29 +168,36 @@ export async function downloadCli() {
   }
 
   try {
-    // Use dlxPackage to download and install @socketsecurity/cli.
-    const result = await dlxPackage(
-      [], // Empty args - we don't want to execute anything.
-      {
-        binaryName: 'socket', // @socketsecurity/cli has bin: { socket: '...' }.
-        force: false, // Use cached version if available.
-        package: '@socketsecurity/cli',
-        spawnOptions: {
-          stdio: 'pipe', // Suppress output from the package execution.
-        },
+    const result = await withSpinner({
+      message: 'Socket powering up…',
+      spinner: getSpinner(),
+      operation: async () => {
+        // Use dlxPackage to download and install @socketsecurity/cli.
+        const result = await dlxPackage(
+          [], // Empty args - we don't want to execute anything.
+          {
+            binaryName: 'socket', // @socketsecurity/cli has bin: { socket: '...' }.
+            force: false, // Use cached version if available.
+            package: '@socketsecurity/cli',
+            spawnOptions: {
+              stdio: 'pipe', // Suppress output from the package execution.
+            },
+          },
+        )
+
+        // Wait for installation to complete (but the spawn will fail since we don't have a command).
+        // That's okay - we just need the package installed.
+        try {
+          await result.spawnPromise
+        } catch {
+          // Ignore execution errors - we only care that the package was installed.
+        }
+
+        return result
       },
-    )
+    })
 
     logger.log(`   Installed to: ${result.packageDir}`)
-
-    // Wait for installation to complete (but the spawn will fail since we don't have a command).
-    // That's okay - we just need the package installed.
-    try {
-      await result.spawnPromise
-    } catch {
-      // Ignore execution errors - we only care that the package was installed.
-    }
-
     logger.log('✅ Socket CLI installed successfully')
     logger.log('')
 
