@@ -5,6 +5,7 @@
  * with Node.js internal bootstrap context.
  */
 
+import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -15,11 +16,19 @@ const packageRoot = path.resolve(__dirname, '..')
 const monorepoRoot = path.resolve(packageRoot, '../..')
 const bootstrapPackage = path.join(monorepoRoot, 'packages/bootstrap')
 
+// Read Node.js version from config.
+const nodeVersionPath = path.join(bootstrapPackage, 'node-version.json')
+const nodeVersionConfig = JSON.parse(readFileSync(nodeVersionPath, 'utf8'))
+const minNodeVersion = nodeVersionConfig.versionSemver
+
 export default {
   banner: {
     js: '#!/usr/bin/env node',
   },
   bundle: true,
+  define: {
+    __MIN_NODE_VERSION__: JSON.stringify(minNodeVersion),
+  },
   entryPoints: [path.join(bootstrapPackage, 'src', 'bootstrap-smol.mts')],
   external: [],
   format: 'cjs',
