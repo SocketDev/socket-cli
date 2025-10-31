@@ -99,6 +99,8 @@ function parseArgs() {
   let parallel = false
   let force = false
   let help = false
+  let platform = null
+  let arch = null
   const buildArgs = []
 
   for (let i = 0; i < args.length; i++) {
@@ -107,6 +109,14 @@ function parseArgs() {
       target = args[++i]
     } else if (arg === '--targets' && i + 1 < args.length) {
       targets = args[++i].split(',').map(t => t.trim())
+    } else if (arg === '--platform' && i + 1 < args.length) {
+      platform = args[++i]
+    } else if (arg.startsWith('--platform=')) {
+      platform = arg.split('=')[1]
+    } else if (arg === '--arch' && i + 1 < args.length) {
+      arch = args[++i]
+    } else if (arg.startsWith('--arch=')) {
+      arch = arg.split('=')[1]
     } else if (arg === '--platforms') {
       platforms = true
     } else if (arg === '--parallel') {
@@ -120,7 +130,12 @@ function parseArgs() {
     }
   }
 
-  return { buildArgs, force, help, parallel, platforms, target, targets }
+  // If --platform and --arch are provided, combine them into target.
+  if (platform && arch) {
+    target = `${platform}-${arch}`
+  }
+
+  return { arch, buildArgs, force, help, parallel, platform, platforms, target, targets }
 }
 
 /**
@@ -134,6 +149,7 @@ function showHelp() {
   logger.log('  pnpm run build                           # Smart build (skips unchanged)')
   logger.log('  pnpm run build --force                   # Force rebuild all')
   logger.log('  pnpm run build --target <name>           # Build specific target')
+  logger.log('  pnpm run build --platform <p> --arch <a> # Build specific platform/arch')
   logger.log('  pnpm run build --targets <t1,t2,...>     # Build multiple targets')
   logger.log('  pnpm run build --platforms               # Build all platform binaries')
   logger.log('  pnpm run build --platforms --parallel    # Build platforms in parallel')
