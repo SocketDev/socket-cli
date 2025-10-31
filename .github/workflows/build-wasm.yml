@@ -136,130 +136,224 @@ jobs:
           path: packages/yoga-layout/build/wasm/
           retention-days: 7
 
-  # REMOVED: build-ai-models job
-  # AI models are now bundled directly in CLI, no longer using separate cli-ai package.
-  # When larger payloads require lazy-loading, we'll revisit @socketbin/cli-ai.
+  build-models:
+    name: 🤖 Build AI Models (INT4 Quantized)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
-  # TEMPORARILY DISABLED: ONNX Runtime build issues.
-  # Re-enable once build script is working correctly.
-  # build-onnx-runtime:
-    # name: 🌐 Build ONNX Runtime WASM
-    # runs-on: ubuntu-latest
-    # timeout-minutes: 90
-    # steps:
-      # - name: Checkout
-        # uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: 22
 
-      # - name: Setup Node.js
-        # uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
-        # with:
-          # node-version: 22
+      - name: Setup pnpm
+        uses: pnpm/action-setup@9fd676a19091d4595eefd76e4bd31c97133911f1 # v4.2.0
+        with:
+          version: ^10.16.0
 
-      # - name: Setup pnpm
-        # uses: pnpm/action-setup@9fd676a19091d4595eefd76e4bd31c97133911f1 # v4.2.0
-        # with:
-          # version: ^10.16.0
+      - name: Setup Python
+        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
+        with:
+          python-version: '3.11'
 
-      # - name: Install dependencies
-        # run: pnpm install --frozen-lockfile
+      - name: Install Python dependencies
+        run: |
+          echo "::group::Installing Python ML dependencies"
+          pip install --no-cache-dir torch transformers
+          pip install optimum[onnx] onnxruntime>=1.21.0
+          echo "::endgroup::"
 
-      # - name: Generate ONNX Runtime cache key
-        # id: onnx-cache-key
-        # run: |
-          # # Extract ONNX Runtime version from package.json (package version matches ONNX Runtime release).
-          # ONNX_VERSION=$(node -p "require('./packages/onnxruntime/package.json').version")
-          # # Hash includes script files and package.json.
-          # HASH=$(find packages/onnxruntime -type f \( -name "*.mjs" -o -name "package.json" \) | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
-          # FULL_HASH="${HASH}-${ONNX_VERSION}"
-          # echo "hash=$FULL_HASH" >> $GITHUB_OUTPUT
-          # echo "ONNX Runtime version: v$ONNX_VERSION"
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
-      # - name: Restore ONNX Runtime output cache
-        # id: onnx-cache
-        # uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        # with:
-          # path: packages/onnxruntime/build/wasm
-          # key: onnx-runtime-${{ steps.onnx-cache-key.outputs.hash }}
-          # restore-keys: onnx-runtime-
-          # enableCrossOsArchive: true
+      - name: Generate models cache key
+        id: models-cache-key
+        run: |
+          HASH=$(find packages/models -type f \( -name "*.mjs" -o -name "package.json" \) | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
+          echo "hash=$HASH" >> $GITHUB_OUTPUT
 
-      # - name: Restore ONNX Runtime build cache
-        # id: onnx-build-cache
-        # uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        # with:
-          # path: packages/onnxruntime/build
-          # key: onnx-runtime-build-${{ steps.onnx-cache-key.outputs.hash }}
-          # restore-keys: |
-            # onnx-runtime-build-
+      - name: Restore models cache
+        id: models-cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: packages/models/dist
+          key: models-${{ steps.models-cache-key.outputs.hash }}
+          restore-keys: models-
+          enableCrossOsArchive: true
 
-      # - name: Verify cached artifacts
-        # id: onnx-cache-valid
-        # run: |
-          # if [ -f "packages/onnxruntime/build/wasm/ort-wasm-simd-threaded.wasm" ] && [ -f "packages/onnxruntime/build/wasm/ort-wasm-simd-threaded.js" ]; then
+      - name: Verify cached artifacts
+        id: models-cache-valid
+        run: |
+          if [ -f "packages/models/dist/minilm-l6.onnx" ] && [ -f "packages/models/dist/codet5-encoder.onnx" ]; then
+            echo "valid=true" >> $GITHUB_OUTPUT
+            echo "Cache hit: artifacts found"
+            ls -lh packages/models/dist/
+          else
+            echo "valid=false" >> $GITHUB_OUTPUT
+            echo "Cache miss or incomplete: forcing rebuild"
+            ls -lh packages/models/dist/ 2>/dev/null || echo "Directory does not exist"
+          fi
+
+      - name: Build AI models
+        if: steps.models-cache-valid.outputs.valid != 'true' || inputs.force
+        run: |
+          echo "::group::Building INT4-quantized AI models"
+          if [ "${{ inputs.force }}" = "true" ]; then
+            pnpm --filter @socketsecurity/models run build -- --force
+          else
+            pnpm --filter @socketsecurity/models run build
+          fi
+          echo "Build exit code: $?"
+          echo "Checking for build artifacts..."
+          ls -lh packages/models/dist/ || echo "dist directory not found"
+          echo "::endgroup::"
+
+      - name: Verify build artifacts
+        run: |
+          echo "=== AI Models Build Artifacts ==="
+          if [ ! -f "packages/models/dist/minilm-l6.onnx" ]; then
+            echo "ERROR: minilm-l6.onnx not found!"
+            ls -lh packages/models/dist/ || echo "Directory does not exist"
+            exit 1
+          fi
+          if [ ! -f "packages/models/dist/codet5-encoder.onnx" ]; then
+            echo "ERROR: codet5-encoder.onnx not found!"
+            exit 1
+          fi
+          ls -lh packages/models/dist/
+          echo ""
+          echo "minilm-l6.onnx size: $(du -h packages/models/dist/minilm-l6.onnx | cut -f1)"
+          echo "codet5-encoder.onnx size: $(du -h packages/models/dist/codet5-encoder.onnx | cut -f1)"
+          echo "codet5-decoder.onnx size: $(du -h packages/models/dist/codet5-decoder.onnx | cut -f1)"
+
+      - name: Upload models artifacts
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ai-models
+          path: packages/models/dist/
+          retention-days: 7
+
+  build-onnx-runtime:
+    name: 🌐 Build ONNX Runtime WASM
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: 22
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@9fd676a19091d4595eefd76e4bd31c97133911f1 # v4.2.0
+        with:
+          version: ^10.16.0
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate ONNX Runtime cache key
+        id: onnx-cache-key
+        run: |
+          # Extract ONNX Runtime version from package.json (package version matches ONNX Runtime release).
+          ONNX_VERSION=$(node -p "require('./packages/onnxruntime/package.json').version")
+          # Hash includes script files and package.json.
+          HASH=$(find packages/onnxruntime -type f \( -name "*.mjs" -o -name "package.json" \) | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
+          FULL_HASH="${HASH}-${ONNX_VERSION}"
+          echo "hash=$FULL_HASH" >> $GITHUB_OUTPUT
+          echo "ONNX Runtime version: v$ONNX_VERSION"
+
+      - name: Restore ONNX Runtime output cache
+        id: onnx-cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: packages/onnxruntime/build/wasm
+          key: onnx-runtime-${{ steps.onnx-cache-key.outputs.hash }}
+          restore-keys: onnx-runtime-
+          enableCrossOsArchive: true
+
+      - name: Restore ONNX Runtime build cache
+        id: onnx-build-cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: packages/onnxruntime/build
+          key: onnx-runtime-build-${{ steps.onnx-cache-key.outputs.hash }}
+          restore-keys: |
+            onnx-runtime-build-
+
+      - name: Verify cached artifacts
+        id: onnx-cache-valid
+        run: |
+          if [ -f "packages/onnxruntime/build/wasm/ort-wasm-simd-threaded.wasm" ] && [ -f "packages/onnxruntime/build/wasm/ort-wasm-simd-threaded.js" ]; then
             # echo "valid=true" >> $GITHUB_OUTPUT
             # echo "Cache hit: artifacts found"
             # ls -lh packages/onnxruntime/build/wasm/
-          # else
+          else
             # echo "valid=false" >> $GITHUB_OUTPUT
             # echo "Cache miss or incomplete: forcing rebuild"
             # ls -lh packages/onnxruntime/build/wasm/ 2>/dev/null || echo "Directory does not exist"
-          # fi
+          fi
 
-      # - name: Install Emscripten
-        # if: steps.onnx-cache-valid.outputs.valid != 'true' || inputs.force
-        # run: |
-          # echo "::group::Installing Emscripten"
-          # git clone https://github.com/emscripten-core/emsdk.git
-          # cd emsdk
-          # ./emsdk install latest
-          # ./emsdk activate latest
-          # echo "::endgroup::"
+      - name: Install Emscripten
+        if: steps.onnx-cache-valid.outputs.valid != 'true' || inputs.force
+        run: |
+          echo "::group::Installing Emscripten"
+          git clone https://github.com/emscripten-core/emsdk.git
+          cd emsdk
+          ./emsdk install latest
+          ./emsdk activate latest
+          echo "::endgroup::"
 
-      # - name: Build ONNX Runtime WASM
-        # if: steps.onnx-cache-valid.outputs.valid != 'true' || inputs.force
-        # run: |
-          # echo "::group::Building ONNX Runtime WASM (this will take 30-60 minutes)"
-          # source emsdk/emsdk_env.sh
-          # if [ "${{ inputs.force }}" = "true" ]; then
+      - name: Build ONNX Runtime WASM
+        if: steps.onnx-cache-valid.outputs.valid != 'true' || inputs.force
+        run: |
+          echo "::group::Building ONNX Runtime WASM (this will take 30-60 minutes)"
+          source emsdk/emsdk_env.sh
+          if [ "${{ inputs.force }}" = "true" ]; then
             # pnpm --filter @socketsecurity/onnxruntime run build -- --force
-          # else
+          else
             # pnpm --filter @socketsecurity/onnxruntime run build
-          # fi
-          # echo "Build exit code: $?"
-          # echo "Checking for build artifacts..."
-          # ls -lh packages/onnxruntime/build/wasm/ || echo "wasm directory not found"
-          # echo "::endgroup::"
+          fi
+          echo "Build exit code: $?"
+          echo "Checking for build artifacts..."
+          ls -lh packages/onnxruntime/build/wasm/ || echo "wasm directory not found"
+          echo "::endgroup::"
 
-      # - name: Save ONNX Runtime build cache
-        # if: always() && (steps.onnx-cache-valid.outputs.valid != 'true' || inputs.force)
-        # uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        # with:
-          # path: packages/onnxruntime/build
-          # key: onnx-runtime-build-${{ steps.onnx-cache-key.outputs.hash }}-${{ github.run_id }}
+      - name: Save ONNX Runtime build cache
+        if: always() && (steps.onnx-cache-valid.outputs.valid != 'true' || inputs.force)
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: packages/onnxruntime/build
+          key: onnx-runtime-build-${{ steps.onnx-cache-key.outputs.hash }}-${{ github.run_id }}
 
-      # - name: Verify build artifacts
-        # run: |
-          # echo "=== ONNX Runtime Build Artifacts ==="
-          # if [ ! -f "packages/onnxruntime/build/wasm/ort-wasm-simd-threaded.wasm" ] || [ ! -f "packages/onnxruntime/build/wasm/ort-wasm-simd-threaded.js" ]; then
+      - name: Verify build artifacts
+        run: |
+          echo "=== ONNX Runtime Build Artifacts ==="
+          if [ ! -f "packages/onnxruntime/build/wasm/ort-wasm-simd-threaded.wasm" ] || [ ! -f "packages/onnxruntime/build/wasm/ort-wasm-simd-threaded.js" ]; then
             # echo "ERROR: Required ONNX Runtime WASM artifacts not found!"
             # ls -lh packages/onnxruntime/build/wasm/ || echo "Directory does not exist"
             # exit 1
-          # fi
-          # ls -lh packages/onnxruntime/build/wasm/
-          # echo ""
-          # echo "ort-wasm-simd-threaded.wasm size: $(du -h packages/onnxruntime/build/wasm/ort-wasm-simd-threaded.wasm | cut -f1)"
-          # echo "ort-wasm-simd-threaded.js size: $(du -h packages/onnxruntime/build/wasm/ort-wasm-simd-threaded.js | cut -f1)"
+          fi
+          ls -lh packages/onnxruntime/build/wasm/
+          echo ""
+          echo "ort-wasm-simd-threaded.wasm size: $(du -h packages/onnxruntime/build/wasm/ort-wasm-simd-threaded.wasm | cut -f1)"
+          echo "ort-wasm-simd-threaded.js size: $(du -h packages/onnxruntime/build/wasm/ort-wasm-simd-threaded.js | cut -f1)"
 
-      # - name: Upload ONNX Runtime artifacts
-        # uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        # with:
-          # name: onnx-runtime
-          # path: packages/onnxruntime/build/wasm/
-          # retention-days: 7
+      - name: Upload ONNX Runtime artifacts
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: onnx-runtime
+          path: packages/onnxruntime/build/wasm/
+          retention-days: 7
 
   summary:
     name: 📊 🧱 WASM Build Summary
-    needs: [build-yoga-layout] # build-onnx-runtime and build-ai-models disabled
+    needs: [build-yoga-layout, build-models, build-onnx-runtime]
     runs-on: ubuntu-latest
     steps:
       - name: Download all artifacts
@@ -280,6 +374,7 @@ jobs:
           echo "| Asset | Files |" >> $GITHUB_STEP_SUMMARY
           echo "|-------|-------|" >> $GITHUB_STEP_SUMMARY
           echo "| 🧘 Yoga Layout | \`yoga.wasm\`, \`yoga.js\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🤖 AI Models | \`minilm-l6.onnx\` (INT4), \`codet5-encoder.onnx\` (INT4), \`codet5-decoder.onnx\` (INT4) |" >> $GITHUB_STEP_SUMMARY
           echo "| 🌐 ONNX Runtime | \`ort-wasm-simd-threaded.wasm\`, \`ort-wasm-simd-threaded.js\` |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 🎯 Next Steps" >> $GITHUB_STEP_SUMMARY
