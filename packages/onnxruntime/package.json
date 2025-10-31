@@ -2,7 +2,6 @@
   "name": "@socketsecurity/onnxruntime",
   "version": "1.21.1",
   "description": "Custom ONNX Runtime WASM build optimized for Socket CLI",
-  "type": "module",
   "private": true,
   "exports": {
     "./build/wasm/ort-wasm-simd-threaded.js": "./build/wasm/ort-wasm-simd-threaded.js",
