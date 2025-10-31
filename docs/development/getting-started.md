@@ -136,7 +136,7 @@ pnpm run build
 **Expected output:**
 ```
 > socket-cli@1.0.80 build
-> pnpm run build:dist
+> pnpm run build:cli
 
 ✓ TypeScript compilation complete
 ✓ Type definitions generated
