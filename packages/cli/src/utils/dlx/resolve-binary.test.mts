@@ -44,8 +44,9 @@ describe('resolve-binary', () => {
       >
 
       expect(result.type).toBe('dlx')
-      expect(result.packageSpec.name).toBe('@coana-tech/cli')
-      expect(result.packageSpec.version).toContain('~')
+      expect(result.details.name).toBe('@coana-tech/cli')
+      expect(result.details.version).toContain('~')
+      expect(result.details.binaryName).toBe('coana')
     })
 
     it('should prefer local path over dlx when both available', () => {
@@ -82,7 +83,8 @@ describe('resolve-binary', () => {
       >
 
       expect(result.type).toBe('dlx')
-      expect(result.packageSpec.name).toBe('@cyclonedx/cdxgen')
+      expect(result.details.name).toBe('@cyclonedx/cdxgen')
+      expect(result.details.binaryName).toBe('cdxgen')
     })
   })
 
@@ -133,7 +135,8 @@ describe('resolve-binary', () => {
       const result = resolveSynp() as Extract<BinaryResolution, { type: 'dlx' }>
 
       expect(result.type).toBe('dlx')
-      expect(result.packageSpec.name).toBe('synp')
+      expect(result.details.name).toBe('synp')
+      expect(result.details.binaryName).toBe('synp')
     })
 
     it('should return dlx even if environment variables are set', () => {
@@ -142,7 +145,8 @@ describe('resolve-binary', () => {
       const result = resolveSynp() as Extract<BinaryResolution, { type: 'dlx' }>
 
       expect(result.type).toBe('dlx')
-      expect(result.packageSpec.name).toBe('synp')
+      expect(result.details.name).toBe('synp')
+      expect(result.details.binaryName).toBe('synp')
     })
   })
 
