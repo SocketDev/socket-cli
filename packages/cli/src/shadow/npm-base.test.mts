@@ -7,12 +7,12 @@ import shadowNpmBase from './npm-base.mts'
 import type { ShadowBinOptions } from './npm-base.mts'
 
 // Mock all dependencies.
-const mockSpawn = vi.hoisted(() => vi.fn())
+const mockSpawnNode = vi.hoisted(() => vi.fn())
+const mockFindSystemNodejs = vi.hoisted(() => vi.fn())
 const mockInstallNpmLinks = vi.hoisted(() => vi.fn())
 const mockInstallNpxLinks = vi.hoisted(() => vi.fn())
 const mockGetPublicApiToken = vi.hoisted(() => vi.fn())
 const mockFindUp = vi.hoisted(() => vi.fn())
-const mockEnsureIpcInStdio = vi.hoisted(() => vi.fn())
 
 vi.mock('node:fs', async importOriginal => {
   const actual = (await importOriginal()) as Record<string, any>
@@ -24,8 +24,9 @@ vi.mock('node:fs', async importOriginal => {
   }
 })
 
-vi.mock('@socketsecurity/lib/spawn', () => ({
-  spawn: mockSpawn,
+vi.mock('../utils/spawn/spawn-node.mjs', () => ({
+  spawnNode: mockSpawnNode,
+  findSystemNodejs: mockFindSystemNodejs,
 }))
 
 vi.mock('../utils/shadow/links.mts', () => ({
@@ -41,9 +42,6 @@ vi.mock('../utils/fs/find-up.mts', () => ({
   findUp: mockFindUp,
 }))
 
-vi.mock('./stdio-ipc.mts', () => ({
-  ensureIpcInStdio: mockEnsureIpcInStdio,
-}))
 
 vi.mock('../constants/paths.mts', async importOriginal => {
   const actual = (await importOriginal()) as Record<string, any>
@@ -81,33 +79,27 @@ vi.mock('@socketsecurity/lib/constants/node', () => ({
 }))
 
 describe('shadowNpmBase', () => {
-  const mockProcess = {
-    send: vi.fn(),
-    on: vi.fn(),
-  }
-
-  const mockSpawnResult = {
-    process: mockProcess,
-    then: vi.fn().mockImplementation(cb =>
-      cb({
-        success: true,
-        code: 0,
-        stdout: '',
-        stderr: '',
-      }),
-    ),
-  }
+  const mockSpawnResult = Promise.resolve({
+    success: true,
+    code: 0,
+    stdout: '',
+    stderr: '',
+    process: {
+      send: vi.fn(),
+      on: vi.fn(),
+    },
+  })
 
   beforeEach(() => {
     vi.clearAllMocks()
 
     // Default mock implementations.
-    mockSpawn.mockReturnValue(mockSpawnResult)
+    mockSpawnNode.mockReturnValue(mockSpawnResult)
+    mockFindSystemNodejs.mockResolvedValue('/usr/bin/node')
     mockInstallNpmLinks.mockResolvedValue('/usr/bin/npm')
     mockInstallNpxLinks.mockResolvedValue('/usr/bin/npx')
     mockGetPublicApiToken.mockReturnValue('test-token')
     mockFindUp.mockResolvedValue('/mock/node_modules')
-    mockEnsureIpcInStdio.mockReturnValue(['pipe', 'pipe', 'pipe', 'ipc'])
   })
 
   it('should spawn npm with default arguments', async () => {
@@ -115,10 +107,8 @@ describe('shadowNpmBase', () => {
 
     expect(mockInstallNpmLinks).toHaveBeenCalledWith('/mock/shadow-bin')
 
-    const spawnCall = mockSpawn.mock.calls[0]
-    expect(spawnCall[0]).toBe('/usr/bin/node')
-
-    const nodeArgs = spawnCall[1] as string[]
+    const spawnCall = mockSpawnNode.mock.calls[0]
+    const nodeArgs = spawnCall[0] as string[]
     expect(nodeArgs).toContain('--no-warnings')
     expect(nodeArgs).toContain('--frozen-intrinsics')
     expect(nodeArgs).toContain('--require')
@@ -131,9 +121,9 @@ describe('shadowNpmBase', () => {
     expect(nodeArgs).toContain('error')
     expect(nodeArgs).toContain('install')
 
-    const spawnOptions = spawnCall[2]
-    expect(spawnOptions.stdio).toEqual(['pipe', 'pipe', 'pipe', 'ipc'])
+    const spawnOptions = spawnCall[1]
     expect(spawnOptions.env).toBeDefined()
+    expect(spawnOptions.ipc).toBeDefined()
 
     expect(result.spawnPromise).toBe(mockSpawnResult)
   })
@@ -143,14 +133,12 @@ describe('shadowNpmBase', () => {
 
     expect(mockInstallNpxLinks).toHaveBeenCalledWith('/mock/shadow-bin')
 
-    const spawnCall = mockSpawn.mock.calls[0]
-    expect(spawnCall[0]).toBe('/usr/bin/node')
-
-    const nodeArgs = spawnCall[1] as string[]
+    const spawnCall = mockSpawnNode.mock.calls[0]
+    const nodeArgs = spawnCall[0] as string[]
     expect(nodeArgs).toContain('/usr/bin/npx')
     expect(nodeArgs).toContain('create-react-app')
 
-    expect(spawnCall[3]).toBeUndefined()
+    expect(spawnCall[2]).toBeUndefined()
   })
 
   it('should handle custom cwd option', async () => {
@@ -160,8 +148,7 @@ describe('shadowNpmBase', () => {
 
     await shadowNpmBase(NPM, ['install'], options)
 
-    expect(mockSpawn).toHaveBeenCalledWith(
-      expect.any(String),
+    expect(mockSpawnNode).toHaveBeenCalledWith(
       expect.any(Array),
       expect.objectContaining({
         cwd: '/custom/path',
@@ -182,10 +169,10 @@ describe('shadowNpmBase', () => {
 
     await shadowNpmBase(NPM, ['install'], options)
 
-    expect(mockSpawn).toHaveBeenCalled()
-    const spawnCall = mockSpawn.mock.calls[0]
+    expect(mockSpawnNode).toHaveBeenCalled()
+    const spawnCall = mockSpawnNode.mock.calls[0]
     // The cwd should be converted from URL to path string.
-    const cwdArg = spawnCall?.[2]?.cwd
+    const cwdArg = spawnCall?.[1]?.cwd
     // Normalized paths should use forward slashes.
     expect(cwdArg).toContain('custom')
     expect(cwdArg).toContain('path')
@@ -195,21 +182,13 @@ describe('shadowNpmBase', () => {
     const options: ShadowBinOptions = {
       stdio: 'inherit',
     }
-    mockEnsureIpcInStdio.mockReturnValue([
-      'inherit',
-      'inherit',
-      'inherit',
-      'ipc',
-    ])
 
     await shadowNpmBase(NPM, ['install'], options)
 
-    expect(mockEnsureIpcInStdio).toHaveBeenCalledWith('inherit')
-    expect(mockSpawn).toHaveBeenCalledWith(
-      expect.any(String),
+    expect(mockSpawnNode).toHaveBeenCalledWith(
       expect.any(Array),
       expect.objectContaining({
-        stdio: ['inherit', 'inherit', 'inherit', 'ipc'],
+        stdio: 'inherit',
       }),
       undefined,
     )
@@ -218,8 +197,8 @@ describe('shadowNpmBase', () => {
   it('should add permission flags for npm on supported Node.js versions', async () => {
     await shadowNpmBase(NPM, ['install'])
 
-    const spawnCall = mockSpawn.mock.calls[0]
-    const nodeArgs = spawnCall[1] as string[]
+    const spawnCall = mockSpawnNode.mock.calls[0]
+    const nodeArgs = spawnCall[0] as string[]
     const nodeOptionsArg = nodeArgs.find(arg =>
       arg.startsWith('--node-options='),
     )
@@ -238,8 +217,8 @@ describe('shadowNpmBase', () => {
   it('should not add permission flags for npx', async () => {
     await shadowNpmBase(NPX, ['create-react-app'])
 
-    const spawnCall = mockSpawn.mock.calls[0]
-    const nodeArgs = spawnCall[1] as string[]
+    const spawnCall = mockSpawnNode.mock.calls[0]
+    const nodeArgs = spawnCall[0] as string[]
     const hasPermissionFlags = nodeArgs.some(arg =>
       arg.includes('--permission'),
     )
@@ -250,8 +229,8 @@ describe('shadowNpmBase', () => {
   it('should preserve existing node-options', async () => {
     await shadowNpmBase(NPM, ['install', '--node-options=--test-option'])
 
-    const spawnCall = mockSpawn.mock.calls[0]
-    const nodeArgs = spawnCall[1] as string[]
+    const spawnCall = mockSpawnNode.mock.calls[0]
+    const nodeArgs = spawnCall[0] as string[]
     const nodeOptionsArg = nodeArgs.find(arg =>
       arg.startsWith('--node-options='),
     )
@@ -267,8 +246,8 @@ describe('shadowNpmBase', () => {
       '--no-progress',
     ])
 
-    const spawnCall = mockSpawn.mock.calls[0]
-    const nodeArgs = spawnCall[1] as string[]
+    const spawnCall = mockSpawnNode.mock.calls[0]
+    const nodeArgs = spawnCall[0] as string[]
     const hasAuditFlag = nodeArgs.includes('--audit')
     const hasProgressFlag = nodeArgs.includes('--progress')
     const hasNoProgressFlag = nodeArgs.includes('--no-progress')
@@ -282,8 +261,7 @@ describe('shadowNpmBase', () => {
   it('should handle terminator args correctly', async () => {
     await shadowNpmBase(NPM, ['install', 'lodash', '--', '--extra', 'args'])
 
-    expect(mockSpawn).toHaveBeenCalledWith(
-      expect.any(String),
+    expect(mockSpawnNode).toHaveBeenCalledWith(
       expect.arrayContaining(['install', 'lodash', '--extra', 'args']),
       expect.any(Object),
       undefined,
@@ -297,33 +275,27 @@ describe('shadowNpmBase', () => {
 
     await shadowNpmBase(NPM, ['install'], options)
 
-    expect(mockProcess.send).toHaveBeenCalledWith({
-      SOCKET_IPC_HANDSHAKE: {
-        extra: {
-          SOCKET_CLI_SHADOW_API_TOKEN: 'test-token',
-          SOCKET_CLI_SHADOW_BIN: 'npm',
-          SOCKET_CLI_SHADOW_PROGRESS: true,
-          customData: 'test',
-        },
-        parent_pid: expect.any(Number),
-        subprocess: true,
-      },
+    // Verify that spawnNode was called with IPC data.
+    const spawnCall = mockSpawnNode.mock.calls[0]
+    const spawnOptions = spawnCall[1]
+    expect(spawnOptions.ipc).toEqual({
+      SOCKET_CLI_SHADOW_API_TOKEN: 'test-token',
+      SOCKET_CLI_SHADOW_BIN: 'npm',
+      SOCKET_CLI_SHADOW_PROGRESS: true,
+      customData: 'test',
     })
   })
 
   it('should handle progress flag in IPC message', async () => {
     await shadowNpmBase(NPM, ['install', '--no-progress'])
 
-    expect(mockProcess.send).toHaveBeenCalledWith({
-      SOCKET_IPC_HANDSHAKE: {
-        extra: {
-          SOCKET_CLI_SHADOW_API_TOKEN: 'test-token',
-          SOCKET_CLI_SHADOW_BIN: 'npm',
-          SOCKET_CLI_SHADOW_PROGRESS: false,
-        },
-        parent_pid: expect.any(Number),
-        subprocess: true,
-      },
+    // Verify that spawnNode was called with IPC data including progress flag.
+    const spawnCall = mockSpawnNode.mock.calls[0]
+    const spawnOptions = spawnCall[1]
+    expect(spawnOptions.ipc).toEqual({
+      SOCKET_CLI_SHADOW_API_TOKEN: 'test-token',
+      SOCKET_CLI_SHADOW_BIN: 'npm',
+      SOCKET_CLI_SHADOW_PROGRESS: false,
     })
   })
 })
