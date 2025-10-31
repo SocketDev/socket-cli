@@ -30,21 +30,11 @@ import { logger } from '@socketsecurity/lib/logger'
  * This serves as the "manifest" for available optional models.
  *
  * NOTE: MiniLM model + tokenizer are already bundled in dist/cli.js.
- * Only advanced code analysis models require separate installation.
+ * Additional models will be added here when larger payloads require lazy-loading.
  */
 const MODEL_REGISTRY = {
   __proto__: null,
-  '@socketbin/cli-ai': {
-    version: '1.0.0',
-    description: 'Advanced code analysis and vulnerability detection',
-    totalSize: 90_500_000,
-    packageName: '@socketbin/cli-ai',
-    files: [
-      'codet5-encoder.onnx',
-      'codet5-decoder.onnx',
-      'codet5-tokenizer.json',
-    ],
-  },
+  // Reserved for future optional models (codet5, etc.) when payloads grow.
 } as const
 
 interface ModelInfo {

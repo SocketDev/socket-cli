@@ -1,4 +1,0 @@
-transformers
-torch
-optimum[onnx]
-onnxruntime>=1.21.0
