@@ -23,9 +23,10 @@
   },
   "scripts": {
     "build": "node --import=./scripts/load.mjs scripts/build.mjs",
+    "build:force": "node --import=./scripts/load.mjs scripts/build.mjs --force",
+    "build:watch": "node --import=./scripts/load.mjs scripts/build.mjs --watch",
     "build:sea:internal:bootstrap": "node .config/esbuild.sea-bootstrap.build.mjs",
     "build:js": "node scripts/extract-yoga-wasm.mjs && node .config/esbuild.cli.build.mjs",
-    "build:watch": "node scripts/extract-yoga-wasm.mjs && node .config/esbuild.cli.build.mjs --watch",
     "dev": "pnpm run build:watch",
     "publish:sea": "node --import=./scripts/load.mjs scripts/publish-sea.mjs",
     "check": "node --import=./scripts/load.mjs scripts/check.mjs",
