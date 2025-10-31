@@ -54,8 +54,8 @@ const CLEAN_BUILD = args.includes('--clean')
 const NO_SELF_UPDATE = args.includes('--no-self-update')
 
 // Model selection flags.
-const BUILD_MINILM = args.includes('--minilm') || (!args.includes('--codet5') && !args.includes('--all'))
-const BUILD_CODET5 = args.includes('--codet5') || args.includes('--all')
+const BUILD_MINILM = args.includes('--all') || args.includes('--minilm') || !args.includes('--codet5')
+const BUILD_CODET5 = args.includes('--all') || args.includes('--codet5')
 
 // Quantization level (default: INT4 for maximum compression).
 const QUANT_LEVEL = args.includes('--int8') ? 'INT8' : 'INT4'
