@@ -26,6 +26,7 @@
 +
 +    try {
 +      const Module = require('internal/modules/cjs/loader').Module;
++      const { makeRequireFunction } = require('internal/modules/helpers');
 +      const vm = require('vm');
 +      const { Buffer } = require('buffer');
 +
@@ -39,9 +40,8 @@
 +      const exports = {};
 +      bootstrapModule.exports = exports;
 +
-+      // Create require bound to this module using internal makeRequireFunction.
-+      // Module.createRequire() doesn't work with virtual filenames.
-+      const moduleRequire = Module.prototype.require.bind(bootstrapModule);
++      // Create require using Node.js internal helper (adds resolve, cache, etc).
++      const moduleRequire = makeRequireFunction(bootstrapModule);
 +
 +      // Compile using C++ API with module parameters.
 +      const compiledFn = vm.compileFunction(bootstrapCode, ['exports', 'require', 'module', '__filename', '__dirname'], {
