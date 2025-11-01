@@ -289,7 +289,7 @@ function findSocketPatches() {
   if (patches.length > 0) {
     logger.log(`   Found ${patches.length} patch file(s):`)
     for (const patch of patches) {
-      logger.log(`     - ${patch.name} (${patch.source})`)
+      logger.log(`     → ${patch.name} (${patch.source})`)
     }
   }
 
@@ -928,7 +928,7 @@ async function main() {
     logger.log(`Version: ${NODE_VERSION}`)
     logger.log('Repository: https://github.com/nodejs/node.git')
     logger.log('')
-    logger.log(`${colors.blue('ℹ')} This will download ~200-300 MB (shallow clone)...`)
+    logger.info('This will download ~200-300 MB (shallow clone with --depth=1 --single-branch)...')
     logger.log('Retry: Up to 3 attempts if clone fails')
     logger.log('')
 
@@ -1046,11 +1046,12 @@ async function main() {
     let allValid = true
 
     for (const patch of socketPatches) {
-      logger.log(`Validating ${patch.name}...`)
+      logger.group(` ${colors.blue('ℹ')}   Validating ${patch.name}`)
 
       const isValid = await validatePatch(patch.path, NODE_DIR)
       if (!isValid) {
-        logger.error(`  ${colors.red('✗')} INVALID: Patch validation failed`)
+        logger.error(`${colors.red('✗')} INVALID: Patch validation failed`)
+        logger.groupEnd()
         allValid = false
         continue
       }
@@ -1064,13 +1065,13 @@ async function main() {
         analysis,
       })
       if (analysis.modifiesV8Includes) {
-        logger.log(`  ${colors.green('✓')} Modifies V8 includes`)
+        logger.log(`${colors.green('✓')} Modifies V8 includes`)
       }
       if (analysis.modifiesSEA) {
-        logger.log(`  ${colors.green('✓')} Modifies SEA detection`)
+        logger.log(`${colors.green('✓')} Modifies SEA detection`)
       }
-      logger.log(`  ${colors.green('✓')} Valid`)
-      logger.log('')
+      logger.log(`${colors.green('✓')} Valid`)
+      logger.groupEnd()
     }
 
     if (!allValid) {
@@ -1195,13 +1196,13 @@ async function main() {
       `  ${colors.green('✓')} KEEP: Full V8 (TurboFan JIT), WASM, SSL/crypto`,
     )
     logger.log(
-      `  ${colors.red('✗')} REMOVE: npm, corepack, inspector, amaro, sqlite, SEA`,
+      `  ${colors.green('✓')} REMOVE: npm, corepack, inspector, amaro, sqlite, SEA`,
     )
     logger.log(
-      `  ${colors.yellow('⚠')} DISABLED: LTO (Link Time Optimization) for faster builds`,
+      `  ${colors.green('✓')} DISABLED: LTO (Link Time Optimization) for faster builds`,
     )
     logger.log(
-      `  ${colors.yellow('⚠')} DISABLED: V8 Lite Mode for faster JS execution`,
+      `  ${colors.green('✓')} DISABLED: V8 Lite Mode for faster JS execution`,
     )
     logger.log('')
     logger.log(
@@ -1216,18 +1217,18 @@ async function main() {
       `  ${colors.green('✓')} KEEP: V8 Lite Mode (baseline compiler), WASM (Liftoff), SSL/crypto`,
     )
     logger.log(
-      `  ${colors.red('✗')} REMOVE: npm, corepack, inspector, amaro, sqlite, SEA, ICU, TurboFan JIT`,
+      `  ${colors.green('✓')} REMOVE: npm, corepack, inspector, amaro, sqlite, SEA, ICU, TurboFan JIT`,
     )
-    logger.log(`  ${colors.blue('ℹ')} ICU: none (no internationalization, saves ~6-8 MB)`)
+    logger.log(`  ${colors.green('✓')} ICU: none (no internationalization, saves ~6-8 MB)`)
     logger.log(
-      `  ${colors.blue('ℹ')} V8 Lite Mode: Disables TurboFan optimizer (saves ~15-20 MB)`,
+      `  ${colors.green('✓')} V8 Lite Mode: Disables TurboFan optimizer (saves ~15-20 MB)`,
     )
     logger.log(
-      `  ${colors.blue('ℹ')} OPTIMIZATIONS: no-snapshot, with-code-cache (for errors), no-SEA, V8 Lite, LTO`,
+      `  ${colors.green('✓')} OPTIMIZATIONS: no-snapshot, with-code-cache (for errors), no-SEA, V8 Lite, LTO`,
     )
     logger.log('')
     logger.log(
-      `  ${colors.yellow('⚠')} V8 LITE MODE: JavaScript runs 5-10x slower (CPU-bound code)`,
+      `  ${colors.green('✓')} V8 LITE MODE: JavaScript runs 5-10x slower (CPU-bound code)`,
     )
     logger.log(`  ${colors.green('✓')} WASM: Full speed (uses Liftoff compiler, unaffected)`)
     logger.log(`  ${colors.green('✓')} I/O: No impact (network, file operations)`)
@@ -1286,7 +1287,7 @@ async function main() {
   logger.log('You can:')
   logger.log('  • Grab coffee ☕')
   logger.log('  • Work on other tasks')
-  logger.log('  • Watch progress in this terminal')
+  logger.log('  • Watch progress in this terminal (but seriously, go touch grass)')
   logger.log('')
   logger.log(`Build log: ${getBuildLogPath(BUILD_DIR)}`)
   logger.log('')
