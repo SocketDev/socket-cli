@@ -39,8 +39,9 @@
 +      const exports = {};
 +      bootstrapModule.exports = exports;
 +
-+      // Create require bound to this module (supports dynamic import, etc).
-+      const moduleRequire = Module.createRequire(bootstrapModule.filename);
++      // Create require bound to this module using internal makeRequireFunction.
++      // Module.createRequire() doesn't work with virtual filenames.
++      const moduleRequire = Module.prototype.require.bind(bootstrapModule);
 +
 +      // Compile using C++ API with module parameters.
 +      const compiledFn = vm.compileFunction(bootstrapCode, ['exports', 'require', 'module', '__filename', '__dirname'], {
