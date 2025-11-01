@@ -59,3 +59,15 @@ packages/*/.yoga-tests
 packages/*/.onnx-source
 packages/*/.minilm-source
 **/html
+
+# Workspace ignores
+packages/cli/CHANGELOG.md
+packages/cli/LICENSE
+packages/cli/*.png
+packages/cli-with-sentry/data/
+packages/cli-with-sentry/CHANGELOG.md
+packages/cli-with-sentry/LICENSE
+packages/cli-with-sentry/*.png
+packages/socket/CHANGELOG.md
+packages/socket/LICENSE
+packages/socket/*.png
