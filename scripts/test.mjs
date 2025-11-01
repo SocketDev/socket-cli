@@ -37,6 +37,27 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.resolve(__dirname, '..')
 const nodeModulesBinPath = path.join(rootPath, 'node_modules', '.bin')
 
+/**
+ * Detect if external repos exist for local development.
+ * Matches the pattern used in get-local-package-aliases.mjs.
+ */
+function hasExternalRepos() {
+  const libPath = path.join(rootPath, '..', 'socket-lib', 'package.json')
+  const registryPath = path.join(rootPath, '..', 'socket-registry', 'registry', 'package.json')
+  return existsSync(libPath) || existsSync(registryPath)
+}
+
+/**
+ * Get the appropriate TypeScript config based on external repo availability.
+ * Uses external-aliases config when external repos are detected for development.
+ */
+function getTsConfigPath() {
+  if (hasExternalRepos()) {
+    return '.config/tsconfig.external-aliases.json'
+  }
+  return '.config/tsconfig.check.json'
+}
+
 // Track running processes for cleanup
 const runningProcesses = new Set()
 
@@ -167,10 +188,11 @@ async function runCheck() {
   logger.success('ESLint passed')
 
   // Run TypeScript check
+  const tsConfigPath = getTsConfigPath()
   spinner.start('Checking TypeScript...')
   exitCode = await runCommand(
     'tsgo',
-    ['--noEmit', '-p', '.config/tsconfig.check.json'],
+    ['--noEmit', '-p', tsConfigPath],
     {
       stdio: 'pipe',
     },
@@ -179,7 +201,7 @@ async function runCheck() {
     spinner.stop()
     logger.error('TypeScript check failed')
     // Re-run with output to show errors
-    await runCommand('tsgo', ['--noEmit', '-p', '.config/tsconfig.check.json'])
+    await runCommand('tsgo', ['--noEmit', '-p', tsConfigPath])
     return exitCode
   }
   spinner.stop()
