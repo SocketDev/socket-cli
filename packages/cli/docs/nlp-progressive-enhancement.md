@@ -238,7 +238,7 @@ Symptoms: `enhanced: false` even with ONNX Runtime
 
 Solutions:
 - Download models to `.cache/models/`
-- Set `SOCKET_MODELS_PATH` environment variable
+- Set `SOCKET_CLI_MODELS_PATH` environment variable
 - Check file permissions
 - Verify model file integrity (INT4 ONNX format)
 

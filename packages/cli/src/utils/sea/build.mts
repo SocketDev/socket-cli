@@ -14,6 +14,8 @@ import { normalizePath } from '@socketsecurity/lib/path'
 import { getSocketHomePath } from '@socketsecurity/lib/paths'
 import { spawn } from '@socketsecurity/lib/spawn'
 
+import ENV from '../../constants/env.mts'
+
 export interface BuildTargetOptions {
   arch: string
   nodeVersion: string
@@ -134,7 +136,7 @@ export async function downloadNodeBinary(
 
   // Construct download URL.
   const baseUrl =
-    process.env['SOCKET_CLI_NODE_DOWNLOAD_URL'] ||
+    ENV.SOCKET_CLI_NODE_DOWNLOAD_URL ||
     'https://nodejs.org/download/release'
   const archMap = {
     __proto__: null,
@@ -328,7 +330,7 @@ export async function getBuildTargets(): Promise<BuildTargetOptions[]> {
  */
 export async function getDefaultNodeVersion(): Promise<string> {
   return (
-    process.env['SOCKET_CLI_SEA_NODE_VERSION'] || (await getLatestCurrentRelease())
+    ENV.SOCKET_CLI_SEA_NODE_VERSION || (await getLatestCurrentRelease())
   )
 }
 
