@@ -1,0 +1,22 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "typeRoots": ["../node_modules/@types"]
+  },
+  "include": [
+    "../packages/cli/src/**/*.mts",
+    "../packages/cli/*.config.mts",
+    "../packages/cli/.config/*.mts"
+  ],
+  "exclude": [
+    "../packages/cli/**/*.tsx",
+    "../packages/cli/**/*.d.mts",
+    "../packages/cli/src/commands/analytics/output-analytics.mts",
+    "../packages/cli/src/commands/audit-log/output-audit-log.mts",
+    "../packages/cli/src/commands/threat-feed/output-threat-feed.mts",
+    "../packages/cli/**/*.test.mts",
+    "../packages/cli/src/test/**/*.mts",
+    "../packages/cli/src/utils/test-mocks.mts",
+    "../packages/cli/test/**/*.mts"
+  ]
+}
