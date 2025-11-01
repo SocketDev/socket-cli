@@ -26,6 +26,9 @@ import { dirname, join } from 'node:path'
 import { z } from 'zod'
 
 import { safeMkdir } from '@socketsecurity/lib/fs'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
+
+const logger = getDefaultLogger()
 
 const MANIFEST_VERSION = '1.0.0'
 const MANIFEST_PATH = '.socket/manifest.json'
@@ -339,7 +342,7 @@ export async function migrateHashes(cwd?: string): Promise<number> {
       // recompute the hash. The migration would need to read all backed-up files
       // from the cache, which is beyond the scope of this metadata operation.
       if (fileInfo.beforeHash.startsWith('git-sha256-')) {
-        console.warn(
+        logger.warn(
           `Legacy git-sha256 hash detected for ${purl}:${filePath}. ` +
             'Manual migration required - see convertToSsri() in patch-hash.mts',
         )
@@ -348,7 +351,7 @@ export async function migrateHashes(cwd?: string): Promise<number> {
 
       // Check if afterHash is legacy format.
       if (fileInfo.afterHash.startsWith('git-sha256-')) {
-        console.warn(
+        logger.warn(
           `Legacy git-sha256 hash detected for ${purl}:${filePath}. ` +
             'Manual migration required - see convertToSsri() in patch-hash.mts',
         )

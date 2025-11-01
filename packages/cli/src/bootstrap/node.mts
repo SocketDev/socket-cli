@@ -19,6 +19,7 @@ import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 
 import { safeMkdir } from '@socketsecurity/lib/fs'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { getNodeDisableSigusr1Flags } from './shared/node-flags.mjs'
 import {
@@ -27,6 +28,8 @@ import {
   getCliPackageName,
   getDlxDir,
 } from './shared/paths.mjs'
+
+const logger = getDefaultLogger()
 
 /**
  * Check if CLI is installed.
@@ -48,7 +51,7 @@ async function downloadCli(): Promise<void> {
 
   await safeMkdir(dlxDir, { recursive: true })
 
-  console.error(`Downloading ${packageName}...`)
+  logger.error(`Downloading ${packageName}...`)
 
   return new Promise((resolve, reject) => {
     const npmPackProcess = spawn(
@@ -101,7 +104,7 @@ async function downloadCli(): Promise<void> {
             // Ignore cleanup errors.
           })
 
-          console.error('Socket CLI installed successfully')
+          logger.error('Socket CLI installed successfully')
           resolve()
         })
       } catch (e) {
@@ -117,11 +120,11 @@ async function downloadCli(): Promise<void> {
 async function main(): Promise<void> {
   // Check if CLI is already installed.
   if (!isCliInstalled()) {
-    console.error('Socket CLI not installed yet.')
+    logger.error('Socket CLI not installed yet.')
     try {
       await downloadCli()
     } catch (error) {
-      console.error('Failed to download Socket CLI:', error)
+      logger.error('Failed to download Socket CLI:', error)
       // eslint-disable-next-line n/no-process-exit
       process.exit(1)
     }
@@ -141,7 +144,7 @@ async function main(): Promise<void> {
   )
 
   child.on('error', error => {
-    console.error('Failed to spawn CLI:', error)
+    logger.error('Failed to spawn CLI:', error)
     // eslint-disable-next-line n/no-process-exit
     process.exit(1)
   })
@@ -155,7 +158,7 @@ async function main(): Promise<void> {
 // Only run if executed directly (not when loaded as module).
 if (import.meta.url === `file://${process.argv[1]}`) {
   main().catch(error => {
-    console.error('Bootstrap error:', error)
+    logger.error('Bootstrap error:', error)
     // eslint-disable-next-line n/no-process-exit
     process.exit(1)
   })

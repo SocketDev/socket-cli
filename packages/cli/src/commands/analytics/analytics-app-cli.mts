@@ -4,7 +4,10 @@
 import { pathToFileURL } from 'node:url'
 
 import { render } from 'ink'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import React from 'react'
+
+const logger = getDefaultLogger()
 
 /**
  * Run the Ink AnalyticsApp with data from stdin.
@@ -28,7 +31,7 @@ async function main() {
 }
 
 main().catch(e => {
-  console.error('Error running AnalyticsApp:', e)
+  logger.error('Error running AnalyticsApp:', e)
   // eslint-disable-next-line n/no-process-exit
   process.exit(1)
 })

@@ -10,11 +10,14 @@ import path from 'node:path'
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { safeDelete, safeMkdir } from '@socketsecurity/lib/fs'
 import { httpRequest } from '@socketsecurity/lib/http-request'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { normalizePath } from '@socketsecurity/lib/path'
 import { getSocketHomePath } from '@socketsecurity/lib/paths'
 import { spawn } from '@socketsecurity/lib/spawn'
 
 import ENV from '../../constants/env.mts'
+
+const logger = getDefaultLogger()
 
 export interface BuildTargetOptions {
   arch: string
@@ -417,7 +420,7 @@ export async function injectSeaBlob(
       // codesign not available.
     }
     if (!codesignAvailable) {
-      console.warn(
+      logger.warn(
         'Warning: codesign not found. The binary may not work correctly on macOS.\n' +
           'Install Xcode Command Line Tools: xcode-select --install',
       )
