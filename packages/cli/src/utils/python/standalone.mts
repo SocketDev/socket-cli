@@ -60,6 +60,24 @@ import { getErrorCause, InputError } from '../error/errors.mts'
 import type { CResult } from '../../types.mjs'
 
 /**
+ * SHA-256 checksums for Python 3.10.18+20250918 install_only builds.
+ * Retrieved from: https://github.com/astral-sh/python-build-standalone/releases/tag/20250918
+ */
+const PYTHON_CHECKSUMS: Record<string, string> = {
+  __proto__: null,
+  'aarch64-apple-darwin':
+    '5f2a620c5278967c7fe666c9d41dc5d653c1829b3c26f62ece0d818e1a5ff9f8',
+  'aarch64-unknown-linux-gnu':
+    '16cb27d4d4d03cfb68d55d64e83a96aa3cd93c002c1de8ab7ddf3aa867c9e5f0',
+  'x86_64-apple-darwin':
+    '4ee44bf41d06626ad2745375d690679587c12d375e41a78f857a9660ce88e255',
+  'x86_64-pc-windows-msvc':
+    '7f8b19397a39188d07c68d83fd88b8da35ef1e007bdb066ed86169d60539f644',
+  'x86_64-unknown-linux-gnu':
+    'a6b9950cee5467d3a0a35473b3e848377912616668968627ba2254e5da4a1d1e',
+}
+
+/**
  * Get the download URL for python-build-standalone based on platform and architecture.
  *
  * Constructs a GitHub release URL for downloading a portable Python distribution
@@ -186,21 +204,57 @@ export async function checkSystemPython(): Promise<string | null> {
 }
 
 /**
+ * Get the checksum for the current platform's Python build.
+ * Returns the SHA-256 checksum from PYTHON_CHECKSUMS map.
+ */
+function getPythonChecksum(): string {
+  const platform = os.platform()
+  const arch = os.arch()
+
+  let platformTriple: string
+
+  if (platform === 'darwin') {
+    platformTriple =
+      arch === 'arm64' ? 'aarch64-apple-darwin' : 'x86_64-apple-darwin'
+  } else if (platform === 'linux') {
+    platformTriple =
+      arch === 'arm64'
+        ? 'aarch64-unknown-linux-gnu'
+        : 'x86_64-unknown-linux-gnu'
+  } else if (platform === 'win32') {
+    platformTriple = 'x86_64-pc-windows-msvc'
+  } else {
+    throw new InputError(`Unsupported platform: ${platform}`)
+  }
+
+  const checksum = PYTHON_CHECKSUMS[platformTriple]
+  if (!checksum) {
+    throw new InputError(
+      `No checksum available for platform: ${platformTriple}`,
+    )
+  }
+
+  return checksum
+}
+
+/**
  * Download and extract Python from python-build-standalone using downloadBinary.
  * Uses downloadBinary for caching, checksum verification, and download management.
  */
 async function downloadPython(pythonDir: string): Promise<void> {
   const url = getPythonStandaloneUrl()
   const tarballName = 'python-standalone.tar.gz'
+  const checksum = getPythonChecksum()
 
   // Ensure directory exists.
   await safeMkdir(pythonDir, { recursive: true })
 
   try {
-    // Use downloadBinary to download the tarball with caching (without execution).
+    // Use downloadBinary to download the tarball with caching and checksum verification.
     const result = await downloadBinary({
       url,
       name: tarballName,
+      checksum,
     })
 
     // Extract the tarball to pythonDir.
