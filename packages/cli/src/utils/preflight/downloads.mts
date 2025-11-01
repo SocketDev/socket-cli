@@ -10,13 +10,9 @@
  * This runs asynchronously and never blocks the main CLI execution.
  */
 
-import { existsSync } from 'node:fs'
-import path from 'node:path'
-
 import { downloadPackage } from '@socketsecurity/lib/dlx-package'
 
 import ENV from '../../constants/env.mts'
-import { getSocketHomePath } from '../dlx/binary.mts'
 import { ensurePython, ensureSocketPythonCli } from '../python/standalone.mts'
 
 /**
@@ -24,22 +20,6 @@ import { ensurePython, ensureSocketPythonCli } from '../python/standalone.mts'
  */
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
-}
-
-/**
- * Check if a package is already cached by the package manager.
- */
-function isPackageCached(packageName: string): boolean {
-  // Check if package exists in global node_modules.
-  // This is a heuristic - actual cache location varies by package manager.
-  const socketHome = getSocketHomePath()
-  const cacheMarker = path.join(
-    socketHome,
-    'cache',
-    'preflight',
-    packageName.replace(/[/@]/g, '-'),
-  )
-  return existsSync(cacheMarker)
 }
 
 /**
@@ -73,13 +53,11 @@ export function runPreflightDownloads(): void {
       // 1. @coana-tech/cli preflight.
       const coanaVersion = ENV.INLINED_SOCKET_CLI_COANA_VERSION
       const coanaSpec = `@coana-tech/cli@~${coanaVersion}`
-      if (!isPackageCached(coanaSpec)) {
-        await downloadPackage({
-          package: coanaSpec,
-          binaryName: 'coana',
-          force: false,
-        })
-      }
+      await downloadPackage({
+        package: coanaSpec,
+        binaryName: 'coana',
+        force: false,
+      })
 
       // Delay before next download (1-3 seconds).
       await delay(1000 + Math.random() * 2000)
@@ -87,13 +65,11 @@ export function runPreflightDownloads(): void {
       // 2. @cyclonedx/cdxgen preflight.
       const cdxgenVersion = ENV.INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION
       const cdxgenSpec = `@cyclonedx/cdxgen@~${cdxgenVersion}`
-      if (!isPackageCached(cdxgenSpec)) {
-        await downloadPackage({
-          package: cdxgenSpec,
-          binaryName: 'cdxgen',
-          force: false,
-        })
-      }
+      await downloadPackage({
+        package: cdxgenSpec,
+        binaryName: 'cdxgen',
+        force: false,
+      })
 
       // Delay before next download (1-3 seconds).
       await delay(1000 + Math.random() * 2000)
