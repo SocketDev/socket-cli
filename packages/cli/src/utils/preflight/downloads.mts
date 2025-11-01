@@ -17,7 +17,14 @@ import { downloadPackage } from '@socketsecurity/lib/dlx-package'
 
 import ENV from '../../constants/env.mts'
 import { getSocketHomePath } from '../dlx/binary.mts'
-import { ensurePython, ensureSocketCli } from '../python/standalone.mts'
+import { ensurePython, ensureSocketPythonCli } from '../python/standalone.mts'
+
+/**
+ * Delay execution for a specified number of milliseconds.
+ */
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
 
 /**
  * Check if a package is already cached by the package manager.
@@ -48,8 +55,8 @@ export function runPreflightDownloads(): void {
   // Run asynchronously in the background.
   void (async () => {
     try {
-      // Stagger downloads sequentially to avoid resource contention.
-      // Order: coana → cdxgen → Python → socketsecurity.
+      // Stagger downloads sequentially with delays to avoid resource contention.
+      // Order: coana → delay → cdxgen → delay → Python → socketsecurity.
 
       // 1. @coana-tech/cli preflight.
       const coanaVersion = ENV.INLINED_SOCKET_CLI_COANA_VERSION
@@ -62,6 +69,9 @@ export function runPreflightDownloads(): void {
         })
       }
 
+      // Delay before next download.
+      await delay(3000)
+
       // 2. @cyclonedx/cdxgen preflight.
       const cdxgenVersion = ENV.INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION
       const cdxgenSpec = `@cyclonedx/cdxgen@~${cdxgenVersion}`
@@ -73,9 +83,12 @@ export function runPreflightDownloads(): void {
         })
       }
 
+      // Delay before next download.
+      await delay(3000)
+
       // 3. Python + socketsecurity (socket-python-cli) preflight.
       const pythonBin = await ensurePython()
-      await ensureSocketCli(pythonBin)
+      await ensureSocketPythonCli(pythonBin)
     } catch {}
   })()
 }
