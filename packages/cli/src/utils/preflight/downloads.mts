@@ -1,8 +1,8 @@
 /**
  * Background preflight downloads for optional dependencies.
  *
- * Silently downloads @coana-tech/cli and @socketbin/cli-ai in the background
- * on first CLI run to ensure they're cached for future use.
+ * Silently downloads @coana-tech/cli, @cyclonedx/cdxgen, and @socketbin/cli-ai
+ * in the background on first CLI run to ensure they're cached for future use.
  *
  * This runs asynchronously and never blocks the main CLI execution.
  */
@@ -47,20 +47,23 @@ export function runPreflightDownloads(): void {
 
     // @coana-tech/cli preflight.
     const coanaVersion = ENV.INLINED_SOCKET_CLI_COANA_VERSION
-    if (coanaVersion) {
-      const coanaSpec = `@coana-tech/cli@~${coanaVersion}`
-      if (!isPackageCached(coanaSpec)) {
-        downloads.push({ packageSpec: coanaSpec, binaryName: 'coana' })
-      }
+    const coanaSpec = `@coana-tech/cli@~${coanaVersion}`
+    if (!isPackageCached(coanaSpec)) {
+      downloads.push({ packageSpec: coanaSpec, binaryName: 'coana' })
+    }
+
+    // @cyclonedx/cdxgen preflight.
+    const cdxgenVersion = ENV.INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION
+    const cdxgenSpec = `@cyclonedx/cdxgen@~${cdxgenVersion}`
+    if (!isPackageCached(cdxgenSpec)) {
+      downloads.push({ packageSpec: cdxgenSpec, binaryName: 'cdxgen' })
     }
 
     // @socketbin/cli-ai preflight.
     const cliAiVersion = ENV.INLINED_SOCKET_CLI_AI_VERSION
-    if (cliAiVersion) {
-      const cliAiSpec = `@socketbin/cli-ai@^${cliAiVersion}`
-      if (!isPackageCached(cliAiSpec)) {
-        downloads.push({ packageSpec: cliAiSpec, binaryName: 'cli-ai' })
-      }
+    const cliAiSpec = `@socketbin/cli-ai@^${cliAiVersion}`
+    if (!isPackageCached(cliAiSpec)) {
+      downloads.push({ packageSpec: cliAiSpec, binaryName: 'cli-ai' })
     }
 
     try {
