@@ -11,7 +11,8 @@ import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import loggerPkg from '@socketsecurity/lib/logger'
+const { getDefaultLogger } = loggerPkg
 
 /**
  * Check if extraction is needed based on source content hash.

@@ -7,8 +7,11 @@
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 
-import { WIN32 } from '@socketsecurity/lib/constants/platform'
-import { spawn } from '@socketsecurity/lib/spawn'
+import platformPkg from '@socketsecurity/lib/constants/platform'
+import spawnPkg from '@socketsecurity/lib/spawn'
+
+const { WIN32 } = platformPkg
+const { spawn } = spawnPkg
 
 import { printError, printStep, printSubstep } from './build-output.mjs'
 

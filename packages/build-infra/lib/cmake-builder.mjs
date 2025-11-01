@@ -6,8 +6,11 @@
 
 import { cpus } from 'node:os'
 
-import { WIN32 } from '@socketsecurity/lib/constants/platform'
-import { spawn } from '@socketsecurity/lib/spawn'
+import platformPkg from '@socketsecurity/lib/constants/platform'
+import spawnPkg from '@socketsecurity/lib/spawn'
+
+const { WIN32 } = platformPkg
+const { spawn } = spawnPkg
 
 import { printStep } from './build-output.mjs'
 

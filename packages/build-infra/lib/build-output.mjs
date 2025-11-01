@@ -4,7 +4,8 @@
  * Provides consistent, pretty logging for build processes.
  */
 
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import loggerPkg from '@socketsecurity/lib/logger'
+const { getDefaultLogger } = loggerPkg
 
 /**
  * Print header.

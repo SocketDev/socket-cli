@@ -15,7 +15,7 @@ import {
 } from './env-helpers.mts'
 import { isGhsaFixed, markGhsaFixed } from './ghsa-tracker.mts'
 import { getSocketFixBranchName, getSocketFixCommitMessage } from './git.mts'
-import { logPrEvent } from './pr-lifecycle-getDefaultLogger().mts'
+import { logPrEvent } from './pr-lifecycle-logger.mts'
 import {
   cleanupSocketFixPrs,
   getSocketFixPrs,

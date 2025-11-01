@@ -3,7 +3,8 @@
  * Automatically retries on network errors and 5xx server errors.
  */
 
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import loggerPkg from '@socketsecurity/lib/logger'
+const { getDefaultLogger } = loggerPkg
 
 /**
  * Fetch with automatic retry on transient failures.
