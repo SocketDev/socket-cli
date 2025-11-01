@@ -181,7 +181,7 @@ jobs:
           retention-days: 7
 
   build-models:
-    name: 🤖 Build AI Models (${{ inputs.models-quant-level || 'INT4' }} Quantized)
+    name: 🤖 Build AI Models
     if: ${{ inputs.build-models != false }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
