@@ -977,8 +977,8 @@ export function meowOrExit(
 
   // Meow doesn't detect 'version' as an unknown flag, so we do the leg work here.
   if (versionFlag && !hasOwn(cliConfig.flags, 'version')) {
-    // Use `console.error` here instead of `getDefaultLogger().error` to match Meow behavior.
-    console.error('Unknown flag\n--version')
+    const logger = getDefaultLogger()
+    logger.error('Unknown flag\n--version')
     // eslint-disable-next-line n/no-process-exit
     process.exit(2)
     // This line is never reached in production, but helps tests.

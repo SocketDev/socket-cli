@@ -1,8 +1,12 @@
 #!/usr/bin/env node
 
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
+
 import shadowYarnBin from './shadow/yarn/bin.mts'
 
 import type { ChildProcess } from 'node:child_process'
+
+const logger = getDefaultLogger()
 
 export default async function runYarnCli() {
   process.exitCode = 1
@@ -32,7 +36,7 @@ export default async function runYarnCli() {
 // Run if invoked directly (not as a module).
 if (import.meta.url === `file://${process.argv[1]}`) {
   runYarnCli().catch(error => {
-    console.error('Socket yarn wrapper error:', error)
+    logger.error('Socket yarn wrapper error:', error)
     // eslint-disable-next-line n/no-process-exit
     process.exit(1)
   })

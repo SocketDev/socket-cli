@@ -4,9 +4,12 @@
  */
 
 import { parseArgs } from '@socketsecurity/lib/argv/parse'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { readPackageJsonSync } from '@socketsecurity/lib/packages'
 
 import type { ParseArgsConfig } from '@socketsecurity/lib/argv/parse'
+
+const logger = getDefaultLogger()
 
 export interface MeowFlag {
   readonly type?: 'string' | 'boolean' | 'number'
@@ -173,13 +176,13 @@ export default function meow<
   }
 
   const showHelp = (exitCode = 2) => {
-    console.log(fullHelp)
+    logger.log(fullHelp)
     // eslint-disable-next-line n/no-process-exit -- Required for CLI exit behavior.
     process.exit(exitCode)
   }
 
   const showVersion = () => {
-    console.log(pkg['version'] || '0.0.0')
+    logger.log(pkg['version'] || '0.0.0')
     // eslint-disable-next-line n/no-process-exit -- Required for CLI exit behavior.
     process.exit(0)
   }
