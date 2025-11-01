@@ -4,9 +4,13 @@
  * Provides a bordered container for the animated Socket CLI header using ANSI escape codes.
  */
 
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
+
 import { renderShimmerFrame } from './ascii-header.mts'
 
 import type { HeaderTheme } from './ascii-header.mts'
+
+const logger = getDefaultLogger()
 
 export type FramedHeaderProps = {
   animate?: boolean | undefined
@@ -50,8 +54,8 @@ export async function renderFramedHeader(
 
     // Move cursor to home and clear from cursor down.
     process.stdout.write('\x1B[H\x1B[J')
-    console.log(`\nTheme: ${theme} | Frame: ${frame}\n`)
-    console.log(framedLogo)
+    logger.log(`\nTheme: ${theme} | Frame: ${frame}\n`)
+    logger.log(framedLogo)
 
     frame++
   }

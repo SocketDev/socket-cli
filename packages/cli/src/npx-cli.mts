@@ -1,6 +1,10 @@
 #!/usr/bin/env node
 
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
+
 import shadowNpxBin from './shadow/npx/bin.mts'
+
+const logger = getDefaultLogger()
 
 export default async function runNpxCli() {
   process.exitCode = 1
@@ -22,7 +26,7 @@ export default async function runNpxCli() {
 // Run if invoked directly (not as a module).
 if (import.meta.url === `file://${process.argv[1]}`) {
   runNpxCli().catch(error => {
-    console.error('Socket npx wrapper error:', error)
+    logger.error('Socket npx wrapper error:', error)
     // eslint-disable-next-line n/no-process-exit
     process.exit(1)
   })

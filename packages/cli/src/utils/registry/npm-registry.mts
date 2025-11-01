@@ -24,6 +24,9 @@ import path from 'node:path'
 import { parseTarGzip } from 'nanotar'
 
 import { safeMkdir } from '@socketsecurity/lib/fs'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
+
+const logger = getDefaultLogger()
 
 // Type helpers.
 type TarFile = Awaited<ReturnType<typeof parseTarGzip>>[number]
@@ -324,7 +327,7 @@ export async function extractTarball(
             await retryWithBackoff(() => fs.chmod(targetPath, mode)).catch(
               error => {
                 // Chmod failures are non-fatal - log but continue.
-                console.warn(
+                logger.warn(
                   `Warning: Failed to set permissions for ${targetPath}: ${error instanceof Error ? error.message : String(error)}`,
                 )
               },
@@ -355,7 +358,7 @@ export async function verifyTarballIntegrity(
   integrity?: string,
 ): Promise<boolean> {
   if (!integrity) {
-    console.warn(
+    logger.warn(
       `Warning: No integrity value provided for ${filePath}, skipping verification`,
     )
     return true
@@ -365,7 +368,7 @@ export async function verifyTarballIntegrity(
     // Parse SRI format: "sha512-base64hash=="
     const match = /^(sha\d+)-(.+)$/.exec(integrity)
     if (!match) {
-      console.warn(`Warning: Invalid integrity format: ${integrity}`)
+      logger.warn(`Warning: Invalid integrity format: ${integrity}`)
       return false
     }
 
@@ -385,14 +388,14 @@ export async function verifyTarballIntegrity(
     const isValid = actualHash === expectedHash
 
     if (!isValid) {
-      console.error(
+      logger.error(
         `Integrity mismatch for ${filePath}: expected ${expectedHash.slice(0, 12)}..., got ${actualHash.slice(0, 12)}...`,
       )
     }
 
     return isValid
   } catch (error) {
-    console.error(
+    logger.error(
       `Failed to verify integrity for ${filePath}: ${error instanceof Error ? error.message : String(error)}`,
     )
     return false

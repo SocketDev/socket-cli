@@ -89,20 +89,22 @@ function showUpdateNotification(options: UpdateNotificationOptions): void {
 
   try {
     const formatted = formatUpdateMessage(options)
+    const logger = getDefaultLogger()
 
-    getDefaultLogger().log(`\n\n${formatted.message}`)
+    logger.log(`\n\n${formatted.message}`)
     if (formatted.command) {
-      getDefaultLogger().log(formatted.command)
+      logger.log(formatted.command)
     }
-    getDefaultLogger().log(`📝 ${formatted.changelog}`)
-  } catch (_error) {
-    // Fallback to console.log if logger fails.
+    logger.log(`📝 ${formatted.changelog}`)
+  } catch (error) {
+    // If formatting or logging fails, show a simpler message.
+    const logger = getDefaultLogger()
     const { current, latest, name } = options
     const seaBinPath = getSeaBinaryPath()
 
-    console.log(`\n\n📦 Update available for ${name}: ${current} → ${latest}`)
+    logger.log(`\n\n📦 Update available for ${name}: ${current} → ${latest}`)
     if (isNonEmptyString(seaBinPath)) {
-      console.log(
+      logger.log(
         `Run '${seaBinPath} ${SEA_UPDATE_COMMAND}' to update automatically`,
       )
     }

@@ -1,6 +1,10 @@
 #!/usr/bin/env node
 
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
+
 import shadowNpmBin from './shadow/npm/bin.mts'
+
+const logger = getDefaultLogger()
 
 export default async function runNpmCli() {
   process.exitCode = 1
@@ -24,7 +28,7 @@ export default async function runNpmCli() {
 // Run if invoked directly (not as a module).
 if (import.meta.url === `file://${process.argv[1]}`) {
   runNpmCli().catch(error => {
-    console.error('Socket npm wrapper error:', error)
+    logger.error('Socket npm wrapper error:', error)
     // eslint-disable-next-line n/no-process-exit
     process.exit(1)
   })

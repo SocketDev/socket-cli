@@ -18,7 +18,11 @@
 
 import path from 'node:path'
 
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
+
 import { waitForBootstrapHandshake } from './utils/sea/boot.mjs'
+
+const logger = getDefaultLogger()
 
 // Detect how this binary was invoked.
 function getInvocationMode(): string {
@@ -128,7 +132,7 @@ async function main() {
 
 // Run the appropriate CLI.
 main().catch(error => {
-  console.error('Socket CLI Error:', error)
+  logger.error('Socket CLI Error:', error)
   // eslint-disable-next-line n/no-process-exit -- Required for CLI error handling.
   process.exit(1)
 })
