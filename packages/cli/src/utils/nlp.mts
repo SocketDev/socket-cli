@@ -9,6 +9,8 @@
 
 import type { InferenceSession, Tensor } from 'onnxruntime-node'
 
+import ENV from '../constants/env.mts'
+
 import { loadOnnxRuntime, stubOnnxRuntime } from './onnx-runtime-stub.mts'
 
 // Lazy imports to avoid loading models unless needed.
@@ -31,7 +33,7 @@ let codet5Available: boolean | null = null
  */
 const getModelPaths = () => {
   // Check for embedded models first (bundled in CLI).
-  const embeddedBase = process.env.SOCKET_CLI_MODELS_PATH || '.cache/models'
+  const embeddedBase = ENV.SOCKET_CLI_MODELS_PATH || '.cache/models'
 
   return {
     minilmModel: `${embeddedBase}/minilm-l6-int4.onnx`,
