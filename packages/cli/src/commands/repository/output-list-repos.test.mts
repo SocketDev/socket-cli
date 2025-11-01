@@ -47,7 +47,7 @@ describe('outputListRepos', () => {
     const { serializeResultJson } = await vi.importMock(
       '../../utils/output/result-json.mjs',
     )
-    const mockLog = vi.mocked(logger.log)
+    const mockLog = vi.mocked(getDefaultLogger().log)
     const mockSerialize = vi.mocked(serializeResultJson)
 
     const result: CResult<SocketSdkSuccessResult<'listRepositories'>['data']> =
@@ -83,7 +83,7 @@ describe('outputListRepos', () => {
   it('outputs error in JSON format', async () => {
     const { outputListRepos } = await import('./output-list-repos.mts')
     const { logger } = await vi.importMock('@socketsecurity/lib/logger')
-    const mockLog = vi.mocked(logger.log)
+    const mockLog = vi.mocked(getDefaultLogger().log)
 
     const result: CResult<SocketSdkSuccessResult<'listRepositories'>['data']> =
       createErrorResult('Unauthorized', {
@@ -101,8 +101,8 @@ describe('outputListRepos', () => {
     const { outputListRepos } = await import('./output-list-repos.mts')
     const { logger } = await vi.importMock('@socketsecurity/lib/logger')
     const chalkTable = await vi.importMock('chalk-table')
-    const mockLog = vi.mocked(logger.log)
-    const mockInfo = vi.mocked(logger.info)
+    const mockLog = vi.mocked(getDefaultLogger().log)
+    const mockInfo = vi.mocked(getDefaultLogger().info)
     const mockChalkTable = vi.mocked(chalkTable.default)
 
     const repos = [
@@ -158,7 +158,7 @@ describe('outputListRepos', () => {
     const { failMsgWithBadge } = await vi.importMock(
       '../../utils/error/fail-msg-with-badge.mts',
     )
-    const mockFail = vi.mocked(logger.fail)
+    const mockFail = vi.mocked(getDefaultLogger().fail)
     const mockFailMsg = vi.mocked(failMsgWithBadge)
 
     const result: CResult<SocketSdkSuccessResult<'listRepositories'>['data']> =
@@ -180,7 +180,7 @@ describe('outputListRepos', () => {
   it('shows proper message when on last page', async () => {
     const { outputListRepos } = await import('./output-list-repos.mts')
     const { logger } = await vi.importMock('@socketsecurity/lib/logger')
-    const mockInfo = vi.mocked(logger.info)
+    const mockInfo = vi.mocked(getDefaultLogger().info)
 
     const result: CResult<SocketSdkSuccessResult<'listRepositories'>['data']> =
       createSuccessResult({
@@ -205,7 +205,7 @@ describe('outputListRepos', () => {
   it('shows proper message when displaying entire list', async () => {
     const { outputListRepos } = await import('./output-list-repos.mts')
     const { logger } = await vi.importMock('@socketsecurity/lib/logger')
-    const mockInfo = vi.mocked(logger.info)
+    const mockInfo = vi.mocked(getDefaultLogger().info)
 
     const result: CResult<SocketSdkSuccessResult<'listRepositories'>['data']> =
       createSuccessResult({

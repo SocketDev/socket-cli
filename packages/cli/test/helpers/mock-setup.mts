@@ -38,7 +38,7 @@
  *     const { logger } = await vi.importMock('@socketsecurity/lib/logger')
  *     const { queryApiSafeJson } = await vi.importMock('../../utils/socket/api.mjs')
  *
- *     const mockLog = vi.mocked(logger.log)
+ *     const mockLog = vi.mocked(getDefaultLogger().log)
  *     const mockQueryApi = vi.mocked(queryApiSafeJson)
  *
  *     // ... test code

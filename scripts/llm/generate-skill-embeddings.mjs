@@ -9,7 +9,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { pipeline } from '@xenova/transformers'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import colors from 'yoctocolors-cjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -18,14 +18,14 @@ const skillDir = path.join(
   '../.claude/skills/socket-cli',
 )
 
-logger.log('🧠 Computing semantic embeddings for Socket CLI commands...')
+getDefaultLogger().log('🧠 Computing semantic embeddings for Socket CLI commands...')
 
 // Load commands.
 const commandsPath = path.join(skillDir, 'commands.json')
 const commands = JSON.parse(readFileSync(commandsPath, 'utf-8'))
 
 // Initialize embedding pipeline.
-logger.log('📦 Loading paraphrase-MiniLM-L3-v2 model...')
+getDefaultLogger().log('📦 Loading paraphrase-MiniLM-L3-v2 model...')
 const embedder = await pipeline(
   'feature-extraction',
   'Xenova/paraphrase-MiniLM-L3-v2',
@@ -50,7 +50,7 @@ const embeddings = {
 }
 
 for (const [commandName, commandData] of Object.entries(commands.commands)) {
-  logger.log(`  → Computing embedding for: ${commandName}`)
+  getDefaultLogger().log(`  → Computing embedding for: ${commandName}`)
 
   // Embed the description (most semantic meaning).
   const embedding = await getEmbedding(commandData.description)
@@ -64,7 +64,7 @@ for (const [commandName, commandData] of Object.entries(commands.commands)) {
 }
 
 // Also compute embeddings for all example queries.
-logger.log('📝 Computing embeddings for example queries...')
+getDefaultLogger().log('📝 Computing embeddings for example queries...')
 embeddings.examples = {}
 
 for (const [commandName, commandData] of Object.entries(commands.commands)) {
@@ -81,11 +81,11 @@ for (const [commandName, commandData] of Object.entries(commands.commands)) {
 const outputPath = path.join(skillDir, 'embeddings.json')
 writeFileSync(outputPath, JSON.stringify(embeddings, null, 2), 'utf-8')
 
-logger.log(`✓ Generated ${outputPath}`)
-logger.log(`✓ Embedded ${Object.keys(embeddings.commands).length} commands`)
-logger.log(
+getDefaultLogger().log(`✓ Generated ${outputPath}`)
+getDefaultLogger().log(`✓ Embedded ${Object.keys(embeddings.commands).length} commands`)
+getDefaultLogger().log(
   `✓ Embedded ${Object.keys(embeddings.examples).length} example queries`,
 )
-logger.log(
+getDefaultLogger().log(
   `✓ File size: ${(JSON.stringify(embeddings).length / 1024).toFixed(2)} KB`,
 )

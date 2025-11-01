@@ -11,7 +11,7 @@
  * - JSON output for automation
  */
 
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { pluralize } from '@socketsecurity/lib/words'
 
 import { OUTPUT_JSON } from '../../constants/cli.mts'
@@ -37,49 +37,49 @@ export async function outputPatchDownloadResult(
   }
 
   if (outputKind === OUTPUT_JSON) {
-    logger.log(serializeResultJson(result))
+    getDefaultLogger().log(serializeResultJson(result))
     return
   }
 
   if (!result.ok) {
-    logger.fail(failMsgWithBadge(result.message, result.cause))
+    getDefaultLogger().fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
   const { downloaded, failed } = result.data
 
-  logger.log('')
+  getDefaultLogger().log('')
 
   // Show downloaded patches.
   if (downloaded.length) {
-    logger.group(
+    getDefaultLogger().group(
       `Successfully downloaded ${downloaded.length} ${pluralize('patch', { count: downloaded.length })}:`,
     )
     for (const patch of downloaded) {
-      logger.success(`${patch.purl} (${patch.uuid})`)
+      getDefaultLogger().success(`${patch.purl} (${patch.uuid})`)
     }
-    logger.groupEnd()
+    getDefaultLogger().groupEnd()
   }
 
   // Show failed patches.
   if (failed.length) {
-    logger.log('')
-    logger.group(
+    getDefaultLogger().log('')
+    getDefaultLogger().group(
       `Failed to download ${failed.length} ${pluralize('patch', { count: failed.length })}:`,
     )
     for (const failure of failed) {
-      logger.error(`${failure.uuid}: ${failure.error}`)
+      getDefaultLogger().error(`${failure.uuid}: ${failure.error}`)
     }
-    logger.groupEnd()
+    getDefaultLogger().groupEnd()
   }
 
   // Summary.
-  logger.log('')
+  getDefaultLogger().log('')
   if (failed.length) {
-    logger.warn(
+    getDefaultLogger().warn(
       `Patch download completed with ${failed.length} ${pluralize('failure', { count: failed.length })}`,
     )
   } else {
-    logger.success('All patches downloaded successfully!')
+    getDefaultLogger().success('All patches downloaded successfully!')
   }
 }

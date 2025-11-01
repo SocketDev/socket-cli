@@ -2,7 +2,7 @@
 
 import colors from 'yoctocolors-cjs'
 
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'
 import { buildCommand } from '../../utils/command/builder.mts'
@@ -99,14 +99,14 @@ export const cmdRepositoryListSimplified = buildCommand({
 
     // Dry run check
     if (dryRun) {
-      logger.log(DRY_RUN_BAILING_NOW)
+      getDefaultLogger().log(DRY_RUN_BAILING_NOW)
       return
     }
 
     // Auth check
     if (!hasDefaultApiToken()) {
-      logger.error('This command requires a Socket API token')
-      logger.log('Run `socket login` first')
+      getDefaultLogger().error('This command requires a Socket API token')
+      getDefaultLogger().log('Run `socket login` first')
       process.exitCode = 1
       return
     }

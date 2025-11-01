@@ -34,13 +34,15 @@ describe('addSocketWrapper', () => {
       'alias npm="socket npm"\nalias npx="socket npx"\n',
       expect.any(Function),
     )
-    expect(logger.success).toHaveBeenCalledWith(
+    expect(getDefaultLogger().success).toHaveBeenCalledWith(
       expect.stringContaining('The alias was added to /home/user/.bashrc'),
     )
-    expect(logger.info).toHaveBeenCalledWith(
+    expect(getDefaultLogger().info).toHaveBeenCalledWith(
       'This will only be active in new terminal sessions going forward.',
     )
-    expect(logger.log).toHaveBeenCalledWith('    source /home/user/.bashrc')
+    expect(getDefaultLogger().log).toHaveBeenCalledWith(
+      '    source /home/user/.bashrc',
+    )
   })
 
   it('handles file write error', async () => {
@@ -86,7 +88,7 @@ describe('addSocketWrapper', () => {
 
     addSocketWrapper('/home/user/.bashrc')
 
-    expect(logger.log).toHaveBeenCalledWith(
+    expect(getDefaultLogger().log).toHaveBeenCalledWith(
       '  If you want to disable it at any time, run `socket wrapper --disable`',
     )
   })

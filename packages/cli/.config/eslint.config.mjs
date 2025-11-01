@@ -365,9 +365,14 @@ export default [
     },
   },
   {
-    // Relax rules for script files
-    files: ['scripts/**/*.{mjs,js}', 'bin/**/*.{mjs,js}'],
+    // Relax rules for config and script files
+    files: [
+      '.config/**/*.{mjs,js}',
+      'scripts/**/*.{mjs,js}',
+      'bin/**/*.{mjs,js}',
+    ],
     rules: {
+      'n/no-extraneous-import': 'off',
       'n/no-process-exit': 'off',
       'n/no-unsupported-features/node-builtins': 'off',
       'n/no-missing-import': 'off',

@@ -1,4 +1,5 @@
 import { debug, debugDir } from '@socketsecurity/lib/debug'
+import { getDefaultSpinner } from '@socketsecurity/lib/spinner'
 
 import { runAgentInstall } from './agent-installer.mts'
 import { NPM_BUGGY_OVERRIDES_PATCHED_VERSION } from '../../constants/packages.mts'
@@ -48,7 +49,7 @@ export async function updateDependencies(
     debugDir(e)
 
     if (wasSpinning) {
-      spinner.start()
+      getDefaultSpinner().start()
     }
 
     return {
@@ -66,7 +67,7 @@ export async function updateDependencies(
   spinner?.stop()
 
   if (wasSpinning) {
-    spinner.start()
+    getDefaultSpinner().start()
   }
 
   return { ok: true, data: undefined }

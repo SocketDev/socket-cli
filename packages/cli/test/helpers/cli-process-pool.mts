@@ -18,10 +18,10 @@
  * ```
  */
 
-import type { ChildProcess } from 'node:child_process'
-
 import { createEnvProxy } from '@socketsecurity/lib/env'
 import { type SpawnOptions, spawn } from '@socketsecurity/lib/spawn'
+
+import type { ChildProcess } from 'node:child_process'
 
 interface PooledProcess {
   process: ChildProcess
@@ -42,8 +42,6 @@ interface ExecuteResult {
 
 class CliProcessPool {
   private pool: Map<string, PooledProcess[]> = new Map()
-  private maxPoolSize: number
-  private processTimeout: number
 
   constructor(maxPoolSize = 4, processTimeout = 30_000) {
     this.maxPoolSize = maxPoolSize
@@ -122,23 +120,6 @@ class CliProcessPool {
         stderr: this._cleanOutput(e?.stderr || ''),
       }
     }
-  }
-
-  /**
-   * Pooled execution (future optimization).
-   * Reuses processes for better performance.
-   */
-  private async _executePooled(
-    _entryPath: string,
-    _args: string[],
-    _options?: SpawnOptions,
-  ): Promise<ExecuteResult> {
-    // TODO: Implement process pooling
-    // 1. Get or create process from pool
-    // 2. Send command via IPC or stdin
-    // 3. Wait for response
-    // 4. Return process to pool
-    throw new Error('Process pooling not yet implemented')
   }
 
   /**

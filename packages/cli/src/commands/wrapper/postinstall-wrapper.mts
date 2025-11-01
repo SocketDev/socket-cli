@@ -1,7 +1,7 @@
 import fs, { existsSync } from 'node:fs'
 
 import { debug, debugDir } from '@socketsecurity/lib/debug'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { confirm } from '@socketsecurity/lib/prompts'
 
 import { addSocketWrapper } from './add-socket-wrapper.mts'
@@ -43,7 +43,9 @@ Do you want to install the Socket npm wrapper (this will create an alias to the 
         if (result.ok) {
           // This will work no matter what alias(es) were registered since that
           // is controlled by bashrc and they all share the same tab script.
-          logger.success('Updated the installed Socket tab completion script')
+          getDefaultLogger().success(
+            'Updated the installed Socket tab completion script',
+          )
           updatedTabCompletion = true
         }
       }
@@ -56,12 +58,14 @@ Do you want to install the Socket npm wrapper (this will create an alias to the 
   if (!updatedTabCompletion) {
     // Setting up tab completion requires bashrc modification. I'm not sure if
     // it's cool to just do that from an npm install...
-    logger.log('Run `socket install completion` to setup bash tab completion')
+    getDefaultLogger().log(
+      'Run `socket install completion` to setup bash tab completion',
+    )
   }
 }
 
 async function setupShadowNpm(query: string): Promise<void> {
-  logger.log(`
+  getDefaultLogger().log(`
  _____         _       _
 |   __|___ ___| |_ ___| |_
 |__   | . |  _| '_| -_|  _|

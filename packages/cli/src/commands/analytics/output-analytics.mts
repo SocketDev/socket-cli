@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises'
 
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { debugFileOp } from '../../utils/debug.mts'
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
@@ -63,10 +63,10 @@ export async function outputAnalytics(
 
   if (!result.ok) {
     if (outputKind === 'json') {
-      logger.log(serializeResultJson(result))
+      getDefaultLogger().log(serializeResultJson(result))
       return
     }
-    logger.fail(failMsgWithBadge(result.message, result.cause))
+    getDefaultLogger().fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
@@ -77,11 +77,13 @@ export async function outputAnalytics(
       try {
         await fs.writeFile(filepath, serialized, 'utf8')
         debugFileOp('write', filepath)
-        logger.success(`Data successfully written to ${fileLink(filepath)}`)
+        getDefaultLogger().success(
+          `Data successfully written to ${fileLink(filepath)}`,
+        )
       } catch (e) {
         debugFileOp('write', filepath, e)
         process.exitCode = 1
-        logger.log(
+        getDefaultLogger().log(
           serializeResultJson({
             ok: false,
             message: 'File Write Failure',
@@ -90,7 +92,7 @@ export async function outputAnalytics(
         )
       }
     } else {
-      logger.log(serialized)
+      getDefaultLogger().log(serialized)
     }
 
     return
@@ -107,13 +109,15 @@ export async function outputAnalytics(
       try {
         await fs.writeFile(filepath, serialized, 'utf8')
         debugFileOp('write', filepath)
-        logger.success(`Data successfully written to ${fileLink(filepath)}`)
+        getDefaultLogger().success(
+          `Data successfully written to ${fileLink(filepath)}`,
+        )
       } catch (e) {
         debugFileOp('write', filepath, e)
-        logger.error(e)
+        getDefaultLogger().error(e)
       }
     } else {
-      logger.log(serialized)
+      getDefaultLogger().log(serialized)
     }
   } else {
     await displayAnalyticsWithInk(fdata)

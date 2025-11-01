@@ -22,7 +22,7 @@
 import semver from 'semver'
 
 import { NPM_REGISTRY_URL } from '@socketsecurity/lib/constants/agents'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { onExit } from '@socketsecurity/lib/signal-exit'
 import { isNonEmptyString } from '@socketsecurity/lib/strings'
 
@@ -141,7 +141,7 @@ const NetworkUtils = {
 
       const contentType = request.headers.get('content-type')
       if (!contentType || !contentType.includes('application/json')) {
-        logger.warn(`Unexpected content type: ${contentType}`)
+        getDefaultLogger().warn(`Unexpected content type: ${contentType}`)
       }
 
       const json = await request.json()
@@ -217,7 +217,7 @@ const NetworkUtils = {
         const isLastAttempt = attempts === maxAttempts
 
         if (isLastAttempt) {
-          logger.warn(
+          getDefaultLogger().warn(
             `Failed to fetch version after ${maxAttempts} attempts: ${error instanceof Error ? error.message : String(error)}`,
           )
           throw error
@@ -225,7 +225,7 @@ const NetworkUtils = {
 
         // Exponential backoff.
         const delay = baseDelay * 2 ** (attempts - 1)
-        logger.log(
+        getDefaultLogger().log(
           `Attempt ${attempts} failed, retrying in ${delay}ms: ${error instanceof Error ? error.message : String(error)}`,
         )
 
@@ -276,7 +276,7 @@ async function checkForUpdates(
       updateAvailable,
     }
   } catch (error) {
-    logger.log(
+    getDefaultLogger().log(
       `Failed to check for updates: ${error instanceof Error ? error.message : String(error)}`,
     )
     throw error

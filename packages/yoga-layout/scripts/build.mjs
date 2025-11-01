@@ -17,7 +17,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 import {
   printSetupResults,
@@ -407,8 +407,8 @@ async function main() {
   const totalStart = Date.now()
 
   printHeader('🔨 Building yoga-layout')
-  logger.info(`Yoga Layout ${YOGA_VERSION} minimal build`)
-  logger.info('')
+  getDefaultLogger().info(`Yoga Layout ${YOGA_VERSION} minimal build`)
+  getDefaultLogger().info('')
 
   // Clean checkpoints if requested or if output is missing.
   const outputWasm = path.join(OUTPUT_DIR, 'yoga.wasm')
@@ -469,18 +469,18 @@ async function main() {
   const totalDuration = formatDuration(Date.now() - totalStart)
 
   printHeader('🎉 Build Complete!')
-  logger.success(`Total time: ${totalDuration}`)
-  logger.success(`Output: ${OUTPUT_DIR}`)
-  logger.info('')
-  logger.info('Next steps:')
-  logger.info('  1. Test WASM with Socket CLI')
-  logger.info('  2. Integrate with unified WASM build')
-  logger.info('')
+  getDefaultLogger().success(`Total time: ${totalDuration}`)
+  getDefaultLogger().success(`Output: ${OUTPUT_DIR}`)
+  getDefaultLogger().info('')
+  getDefaultLogger().info('Next steps:')
+  getDefaultLogger().info('  1. Test WASM with Socket CLI')
+  getDefaultLogger().info('  2. Integrate with unified WASM build')
+  getDefaultLogger().info('')
 }
 
 // Run build.
 main().catch((e) => {
   printError('Build Failed')
-  logger.error(e.message)
+  getDefaultLogger().error(e.message)
   throw e
 })

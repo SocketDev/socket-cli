@@ -1,4 +1,4 @@
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { handleApiCall } from '../../utils/socket/api.mjs'
 import { setupSdk } from '../../utils/socket/sdk.mjs'
@@ -25,7 +25,7 @@ export async function streamScan(
   }
   const sockSdk = sockSdkCResult.data
 
-  logger.info('Requesting data from API...')
+  getDefaultLogger().info('Requesting data from API...')
 
   // Note: This will write to stdout or target file. It is not a noop.
   return await handleApiCall(

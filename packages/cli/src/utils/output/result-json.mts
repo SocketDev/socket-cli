@@ -1,5 +1,5 @@
 import { debugDirNs, debugNs } from '@socketsecurity/lib/debug'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { isObject } from '@socketsecurity/lib/objects'
 
 import type { CResult } from '../../types.mjs'
@@ -30,7 +30,7 @@ export function serializeResultJson(data: CResult<unknown>): string {
     const message =
       'There was a problem converting the data set to JSON. Please try again without --json'
 
-    logger.fail(message)
+    getDefaultLogger().fail(message)
     debugNs('error', 'JSON serialization failed')
     debugDirNs('error', e)
 

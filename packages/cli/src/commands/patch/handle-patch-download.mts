@@ -35,7 +35,7 @@ import crypto from 'node:crypto'
 import ssri from 'ssri'
 
 import * as cacache from '@socketsecurity/lib/cacache'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { pluralize } from '@socketsecurity/lib/words'
 
 import { outputPatchDownloadResult } from './output-patch-download-result.mts'
@@ -221,7 +221,7 @@ export async function handlePatchDownload({
         error: e.message,
         uuid,
       })
-      logger.error(`Failed to download patch ${uuid}: ${e.message}`)
+      getDefaultLogger().error(`Failed to download patch ${uuid}: ${e.message}`)
     }
   }
 
@@ -290,7 +290,7 @@ async function collectPatchesFromScan(
       }
     }
   } catch (e: any) {
-    logger.error(`Failed to stream patches from scan: ${e.message}`)
+    getDefaultLogger().error(`Failed to stream patches from scan: ${e.message}`)
   }
 
   return uuids

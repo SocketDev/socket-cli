@@ -13,7 +13,7 @@
 
 import { runParallel } from '@socketsecurity/build-infra/lib/script-runner'
 import { isQuiet, isVerbose } from '@socketsecurity/lib/argv/flags'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import {
   printError,
   printFooter,
@@ -37,11 +37,11 @@ async function main() {
     if (apply) {
       tazeArgs.push('-w')
       if (!quiet) {
-        logger.progress('Updating dependencies...')
+        getDefaultLogger().progress('Updating dependencies...')
       }
     } else {
       if (!quiet) {
-        logger.progress('Checking for updates...')
+        getDefaultLogger().progress('Checking for updates...')
       }
     }
 
@@ -82,7 +82,9 @@ async function main() {
         if (apply) {
           printError('Failed to update dependencies')
         } else {
-          logger.info('Updates available. Run with --apply to update')
+          getDefaultLogger().info(
+            'Updates available. Run with --apply to update',
+          )
         }
       }
       process.exitCode = apply ? 1 : 0
@@ -101,13 +103,13 @@ async function main() {
       printError(`Update failed: ${error.message}`)
     }
     if (verbose) {
-      logger.error(error)
+      getDefaultLogger().error(error)
     }
     process.exitCode = 1
   }
 }
 
 main().catch(e => {
-  logger.error(e)
+  getDefaultLogger().error(e)
   process.exitCode = 1
 })

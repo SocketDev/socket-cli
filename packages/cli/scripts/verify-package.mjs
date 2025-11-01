@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url'
 
 import colors from 'yoctocolors-cjs'
 
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -27,21 +27,21 @@ async function fileExists(filePath) {
  * Main validation function.
  */
 async function validate() {
-  logger.log('')
-  logger.log('='.repeat(60))
-  logger.log(`${colors.blue('CLI Package Validation')}`)
-  logger.log('='.repeat(60))
-  logger.log('')
+  getDefaultLogger().log('')
+  getDefaultLogger().log('='.repeat(60))
+  getDefaultLogger().log(`${colors.blue('CLI Package Validation')}`)
+  getDefaultLogger().log('='.repeat(60))
+  getDefaultLogger().log('')
 
   const errors = []
 
   // Check package.json exists and has correct files array.
-  logger.info('Checking package.json...')
+  getDefaultLogger().info('Checking package.json...')
   const pkgPath = path.join(packageRoot, 'package.json')
   if (!(await fileExists(pkgPath))) {
     errors.push('package.json does not exist')
   } else {
-    logger.success('package.json exists')
+    getDefaultLogger().success('package.json exists')
 
     // Validate files array.
     const pkg = JSON.parse(await fs.readFile(pkgPath, 'utf-8'))
@@ -59,41 +59,41 @@ async function validate() {
       }
     }
     if (errors.length === 0) {
-      logger.success('package.json files array is correct')
+      getDefaultLogger().success('package.json files array is correct')
     }
   }
 
   // Check root files exist (LICENSE, CHANGELOG.md).
   const rootFiles = ['LICENSE', 'CHANGELOG.md']
   for (const file of rootFiles) {
-    logger.info(`Checking ${file}...`)
+    getDefaultLogger().info(`Checking ${file}...`)
     const filePath = path.join(packageRoot, file)
     if (!(await fileExists(filePath))) {
       errors.push(`${file} does not exist`)
     } else {
-      logger.success(`${file} exists`)
+      getDefaultLogger().success(`${file} exists`)
     }
   }
 
   // Check dist files exist.
   const distFiles = ['index.js', 'cli.js.bz', 'shadow-npm-inject.js']
   for (const file of distFiles) {
-    logger.info(`Checking dist/${file}...`)
+    getDefaultLogger().info(`Checking dist/${file}...`)
     const filePath = path.join(packageRoot, 'dist', file)
     if (!(await fileExists(filePath))) {
       errors.push(`dist/${file} does not exist`)
     } else {
-      logger.success(`dist/${file} exists`)
+      getDefaultLogger().success(`dist/${file} exists`)
     }
   }
 
   // Check data directory exists.
-  logger.info('Checking data directory...')
+  getDefaultLogger().info('Checking data directory...')
   const dataPath = path.join(packageRoot, 'data')
   if (!(await fileExists(dataPath))) {
     errors.push('data directory does not exist')
   } else {
-    logger.success('data directory exists')
+    getDefaultLogger().success('data directory exists')
 
     // Check data files.
     const dataFiles = [
@@ -101,43 +101,43 @@ async function validate() {
       'command-api-requirements.json',
     ]
     for (const file of dataFiles) {
-      logger.info(`Checking data/${file}...`)
+      getDefaultLogger().info(`Checking data/${file}...`)
       const filePath = path.join(dataPath, file)
       if (!(await fileExists(filePath))) {
         errors.push(`data/${file} does not exist`)
       } else {
-        logger.success(`data/${file} exists`)
+        getDefaultLogger().success(`data/${file} exists`)
       }
     }
   }
 
   // Print summary.
-  logger.log('')
-  logger.log('='.repeat(60))
-  logger.log(`${colors.blue('Validation Summary')}`)
-  logger.log('='.repeat(60))
-  logger.log('')
+  getDefaultLogger().log('')
+  getDefaultLogger().log('='.repeat(60))
+  getDefaultLogger().log(`${colors.blue('Validation Summary')}`)
+  getDefaultLogger().log('='.repeat(60))
+  getDefaultLogger().log('')
 
   if (errors.length > 0) {
-    logger.log(`${colors.red('Errors:')}`)
+    getDefaultLogger().log(`${colors.red('Errors:')}`)
     for (const err of errors) {
-      logger.log(`  ${error(err)}`)
+      getDefaultLogger().log(`  ${error(err)}`)
     }
-    logger.log('')
-    logger.fail('Package validation FAILED')
-    logger.log('')
+    getDefaultLogger().log('')
+    getDefaultLogger().fail('Package validation FAILED')
+    getDefaultLogger().log('')
     process.exit(1)
   }
 
-  logger.success('Package validation PASSED')
-  logger.log('')
+  getDefaultLogger().success('Package validation PASSED')
+  getDefaultLogger().log('')
   process.exit(0)
 }
 
 // Run validation.
 validate().catch(e => {
-  logger.error('')
-  logger.fail(`Unexpected error: ${e.message}`)
-  logger.error('')
+  getDefaultLogger().error('')
+  getDefaultLogger().fail(`Unexpected error: ${e.message}`)
+  getDefaultLogger().error('')
   process.exit(1)
 })

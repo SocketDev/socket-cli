@@ -20,7 +20,7 @@
 
 import { arrayUnique } from '@socketsecurity/lib/arrays'
 import { debugDir } from '@socketsecurity/lib/debug'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { getOwn } from '@socketsecurity/lib/objects'
 import { isNonEmptyString } from '@socketsecurity/lib/strings'
 
@@ -147,7 +147,7 @@ export async function getAlertsMapFromPurls(
         )
       } else {
         spinner?.stop()
-        logger.fail(
+        getDefaultLogger().fail(
           `Received a ${batchResult.status} response from Socket API which we consider a permanent failure:`,
           batchResult.error,
           batchResult.cause ? `( ${batchResult.cause} )` : '',

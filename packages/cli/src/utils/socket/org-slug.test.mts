@@ -69,7 +69,7 @@ describe('determineOrgSlug', () => {
       const result = await determineOrgSlug('', false, false)
 
       expect(result).toEqual(['', undefined])
-      expect(logger.warn).toHaveBeenCalledWith(
+      expect(getDefaultLogger().warn).toHaveBeenCalledWith(
         'Note: This command requires an org slug because the Socket API endpoint does.',
       )
     })
@@ -108,23 +108,23 @@ describe('determineOrgSlug', () => {
       const result = await determineOrgSlug('', false, false)
 
       expect(result).toEqual(['', undefined])
-      expect(logger.warn).toHaveBeenCalledWith(
+      expect(getDefaultLogger().warn).toHaveBeenCalledWith(
         'Note: This command requires an org slug because the Socket API endpoint does.',
       )
-      expect(logger.warn).toHaveBeenCalledWith(
+      expect(getDefaultLogger().warn).toHaveBeenCalledWith(
         'It seems no default org was setup and the `--org` flag was not used.',
       )
-      expect(logger.warn).toHaveBeenCalledWith(
+      expect(getDefaultLogger().warn).toHaveBeenCalledWith(
         "Additionally, `--no-interactive` was set so we can't ask for it.",
       )
-      expect(logger.warn).toHaveBeenCalledWith(
+      expect(getDefaultLogger().warn).toHaveBeenCalledWith(
         'Note: When running in CI, you probably want to set the `--org` flag.',
       )
       expect(webLink).toHaveBeenCalledWith(
         'https://socket.dev/migration-guide',
         'v1 migration guide',
       )
-      expect(logger.warn).toHaveBeenCalledWith(
+      expect(getDefaultLogger().warn).toHaveBeenCalledWith(
         'This command will exit now because the org slug is required to proceed.',
       )
     })
@@ -136,10 +136,10 @@ describe('determineOrgSlug', () => {
 
       await determineOrgSlug('', false, false)
 
-      expect(logger.warn).toHaveBeenCalledWith(
+      expect(getDefaultLogger().warn).toHaveBeenCalledWith(
         'Since v1.0.0 the org _argument_ for all commands was dropped in favor of an',
       )
-      expect(logger.warn).toHaveBeenCalledWith(
+      expect(getDefaultLogger().warn).toHaveBeenCalledWith(
         'implicit default org setting, which will be setup when you run `socket login`.',
       )
     })
@@ -162,13 +162,13 @@ describe('determineOrgSlug', () => {
       const result = await determineOrgSlug('', true, false)
 
       expect(result).toEqual(['suggested-org', undefined])
-      expect(logger.warn).toHaveBeenCalledWith(
+      expect(getDefaultLogger().warn).toHaveBeenCalledWith(
         'Unable to determine the target org. Trying to auto-discover it now...',
       )
-      expect(logger.info).toHaveBeenCalledWith(
+      expect(getDefaultLogger().info).toHaveBeenCalledWith(
         'Note: Run `socket login` to set a default org.',
       )
-      expect(logger.error).toHaveBeenCalledWith(
+      expect(getDefaultLogger().error).toHaveBeenCalledWith(
         '      Use the --org flag to override the default org.',
       )
       expect(suggestOrgSlug).toHaveBeenCalled()
@@ -225,7 +225,7 @@ describe('determineOrgSlug', () => {
       const result = await determineOrgSlug('', true, true)
 
       expect(result).toEqual(['', undefined])
-      expect(logger.fail).toHaveBeenCalledWith(
+      expect(getDefaultLogger().fail).toHaveBeenCalledWith(
         'Skipping auto-discovery of org in dry-run mode',
       )
       expect(suggestOrgSlug).not.toHaveBeenCalled()

@@ -1,4 +1,4 @@
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 import { mdHeader, mdTableOfPairs } from '../../utils/output/markdown.mts'
@@ -16,19 +16,19 @@ export async function outputLicensePolicy(
   }
 
   if (outputKind === 'json') {
-    logger.log(serializeResultJson(result))
+    getDefaultLogger().log(serializeResultJson(result))
     return
   }
   if (!result.ok) {
-    logger.fail(failMsgWithBadge(result.message, result.cause))
+    getDefaultLogger().fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
-  logger.info('Use --json to get the full result')
-  logger.log(mdHeader('License policy'))
-  logger.log('')
-  logger.log('This is the license policy for your organization:')
-  logger.log('')
+  getDefaultLogger().info('Use --json to get the full result')
+  getDefaultLogger().log(mdHeader('License policy'))
+  getDefaultLogger().log('')
+  getDefaultLogger().log('This is the license policy for your organization:')
+  getDefaultLogger().log('')
   const rules = result.data['license_policy']!
   const entries = rules ? Object.entries(rules) : []
   const mapped: Array<[string, string]> = entries.map(
@@ -36,6 +36,6 @@ export async function outputLicensePolicy(
       [key, (value as any)?.allowed ? ' yes' : ' no'] as const,
   )
   mapped.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
-  logger.log(mdTableOfPairs(mapped, ['License Name', 'Allowed']))
-  logger.log('')
+  getDefaultLogger().log(mdTableOfPairs(mapped, ['License Name', 'Allowed']))
+  getDefaultLogger().log('')
 }

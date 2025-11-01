@@ -16,7 +16,7 @@
 import { isQuiet } from '@socketsecurity/lib/argv/flags'
 import { parseArgs } from '@socketsecurity/lib/argv/parse'
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 import { printHeader } from '@socketsecurity/lib/stdio/header'
 
@@ -39,7 +39,7 @@ async function main() {
   try {
     if (!quiet) {
       printHeader('Running Auto-fix')
-      logger.log('')
+      getDefaultLogger().log('')
     }
 
     // Build lint command arguments.
@@ -65,27 +65,27 @@ async function main() {
 
     if (result.code !== 0) {
       if (!quiet) {
-        logger.error('Some fixes could not be applied')
+        getDefaultLogger().error('Some fixes could not be applied')
       }
       process.exitCode = 1
     } else {
       if (!quiet) {
-        logger.log('')
-        logger.success('Auto-fix completed!')
+        getDefaultLogger().log('')
+        getDefaultLogger().success('Auto-fix completed!')
       }
     }
   } catch (error) {
     if (!quiet) {
-      logger.error(`Fix failed: ${error.message}`)
+      getDefaultLogger().error(`Fix failed: ${error.message}`)
     }
     if (verbose) {
-      logger.error(error)
+      getDefaultLogger().error(error)
     }
     process.exitCode = 1
   }
 }
 
 main().catch(e => {
-  logger.error(e)
+  getDefaultLogger().error(e)
   process.exitCode = 1
 })

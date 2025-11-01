@@ -13,8 +13,8 @@ catalogs:
       specifier: 7.28.4
       version: 7.28.4
     '@socketsecurity/lib':
-      specifier: 2.10.4
-      version: 2.10.4
+      specifier: 3.0.3
+      version: 3.0.3
     del-cli:
       specifier: 6.0.0
       version: 6.0.0
@@ -196,7 +196,7 @@ importers:
         version: 3.0.1
       '@socketsecurity/lib':
         specifier: 'catalog:'
-        version: 2.10.4(typescript@5.9.3)
+        version: 3.0.3(typescript@5.9.3)
       '@socketsecurity/registry':
         specifier: 2.0.0
         version: 2.0.0(typescript@5.9.3)
@@ -2222,6 +2222,15 @@ packages:
 
   '@socketsecurity/lib@2.10.4':
     resolution: {integrity: sha512-LoiRsLE+JFoX/FJOOQjOGu42OQAXG9nES3hx+Bw2mtsopzhXp4Kn9ANUIuVEYlC1w5tSjDoY6/vBb/MnPmYizw==}
+    engines: {node: '>=22'}
+    peerDependencies:
+      typescript: '>=5.0.0'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
+
+  '@socketsecurity/lib@3.0.3':
+    resolution: {integrity: sha512-TPwQQO9slv2qWEfoY8E+/o2SHEfVNwz5VDMHOC9XSA/jJq3lwfay8dXhllkA+QhzL/13DBOg+Wnw31IeZZ+1eA==}
     engines: {node: '>=22'}
     peerDependencies:
       typescript: '>=5.0.0'
@@ -7599,6 +7608,10 @@ snapshots:
       yaml: 2.8.1
 
   '@socketsecurity/lib@2.10.4(typescript@5.9.3)':
+    optionalDependencies:
+      typescript: 5.9.3
+
+  '@socketsecurity/lib@3.0.3(typescript@5.9.3)':
     optionalDependencies:
       typescript: 5.9.3
 

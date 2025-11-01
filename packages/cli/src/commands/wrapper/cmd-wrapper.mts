@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs'
 
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { addSocketWrapper } from './add-socket-wrapper.mts'
 import { checkSocketWrapperSetup } from './check-socket-wrapper-setup.mts'
@@ -104,7 +104,7 @@ async function run(
   }
 
   if (dryRun) {
-    logger.log(DRY_RUN_BAILING_NOW)
+    getDefaultLogger().log(DRY_RUN_BAILING_NOW)
     return
   }
 
@@ -142,7 +142,9 @@ async function run(
   }
 
   if (!existsSync(bashRcPath) && !existsSync(zshRcPath)) {
-    logger.fail('There was an issue setting up the alias in your bash profile')
+    getDefaultLogger().fail(
+      'There was an issue setting up the alias in your bash profile',
+    )
     return
   }
 
@@ -154,7 +156,7 @@ async function run(
       skippedFiles,
       success: modifiedFiles.length > 0 || skippedFiles.length > 0,
     }
-    logger.log(JSON.stringify(result, null, 2))
+    getDefaultLogger().log(JSON.stringify(result, null, 2))
   } else if (outputKind === 'markdown') {
     const arr = []
     arr.push(`# Socket Wrapper ${enable ? 'Enabled' : 'Disabled'}`)
@@ -185,7 +187,7 @@ async function run(
     )
     arr.push('')
 
-    logger.log(arr.join('\n'))
+    getDefaultLogger().log(arr.join('\n'))
   }
   // Text mode output is already handled by add/remove functions.
 }

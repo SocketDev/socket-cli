@@ -1,12 +1,12 @@
 import { YARN_CLASSIC } from '@socketsecurity/lib/constants/agents'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 const YARN = YARN_CLASSIC
 
 import { findBinPathDetailsSync } from '../fs/path-resolve.mts'
 
 function exitWithBinPathError(binName: string): never {
-  logger.fail(
+  getDefaultLogger().fail(
     `Socket unable to locate ${binName}; ensure it is available in the PATH environment variable`,
   )
   // The exit code 127 indicates that the command or binary being executed

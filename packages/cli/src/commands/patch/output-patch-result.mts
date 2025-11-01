@@ -1,4 +1,4 @@
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { pluralize } from '@socketsecurity/lib/words'
 
 import { OUTPUT_JSON } from '../../constants/cli.mts'
@@ -16,31 +16,31 @@ export async function outputPatchResult(
   }
 
   if (outputKind === OUTPUT_JSON) {
-    logger.log(serializeResultJson(result))
+    getDefaultLogger().log(serializeResultJson(result))
     return
   }
 
   if (!result.ok) {
-    logger.fail(failMsgWithBadge(result.message, result.cause))
+    getDefaultLogger().fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
   const { patched } = result.data
 
-  logger.log('')
+  getDefaultLogger().log('')
 
   if (patched.length) {
-    logger.group(
+    getDefaultLogger().group(
       `Successfully processed patches for ${patched.length} ${pluralize('package', { count: patched.length })}:`,
     )
     for (const pkg of patched) {
-      logger.success(pkg)
+      getDefaultLogger().success(pkg)
     }
-    logger.groupEnd()
+    getDefaultLogger().groupEnd()
   } else {
-    logger.warn('No packages found requiring patches.')
+    getDefaultLogger().warn('No packages found requiring patches.')
   }
 
-  logger.log('')
-  logger.success('Patch command completed!')
+  getDefaultLogger().log('')
+  getDefaultLogger().success('Patch command completed!')
 }

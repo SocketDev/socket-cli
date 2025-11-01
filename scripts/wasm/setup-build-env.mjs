@@ -22,7 +22,7 @@ import { homedir } from 'node:os'
 import path from 'node:path'
 import { execSync } from 'node:child_process'
 
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 const isExportMode = process.argv.includes('--export')
 
@@ -55,13 +55,13 @@ function getCpuCount() {
  */
 function checkSccache() {
   if (commandExists('sccache')) {
-    logger.success('sccache found')
+    getDefaultLogger().success('sccache found')
     return true
   }
 
-  logger.warn('sccache not installed')
-  logger.substep('Install for 40-60% faster clean builds:')
-  logger.substep('  cargo install sccache')
+  getDefaultLogger().warn('sccache not installed')
+  getDefaultLogger().substep('Install for 40-60% faster clean builds:')
+  getDefaultLogger().substep('  cargo install sccache')
   return false
 }
 
@@ -80,7 +80,7 @@ async function setupShellConfig() {
       : null
 
   if (!configFile) {
-    logger.warn('Could not detect shell (zsh or bash)')
+    getDefaultLogger().warn('Could not detect shell (zsh or bash)')
     return null
   }
 
@@ -123,8 +123,8 @@ async function generateEnvVars() {
  */
 async function main() {
   if (!isExportMode) {
-    logger.step('WASM Build Environment Setup')
-    logger.substep('Checking build tools and configuration\n')
+    getDefaultLogger().step('WASM Build Environment Setup')
+    getDefaultLogger().substep('Checking build tools and configuration\n')
   }
 
   const envVars = await generateEnvVars()
@@ -132,25 +132,25 @@ async function main() {
   if (isExportMode) {
     // Export mode: output shell commands.
     for (const [key, value] of Object.entries(envVars)) {
-      logger.log(`export ${key}="${value}"`)
+      getDefaultLogger().log(`export ${key}="${value}"`)
     }
     return
   }
 
   // Interactive mode: show configuration.
-  logger.info('Recommended environment variables:\n')
+  getDefaultLogger().info('Recommended environment variables:\n')
   for (const [key, value] of Object.entries(envVars)) {
-    logger.substep(`${key}=${value}`)
+    getDefaultLogger().substep(`${key}=${value}`)
   }
 
   // Check shell config.
   const configFile = await setupShellConfig()
   if (!configFile) {
-    logger.info('\nAdd these to your shell configuration manually.')
+    getDefaultLogger().info('\nAdd these to your shell configuration manually.')
     return
   }
 
-  logger.info(`\nTo apply these settings automatically, add to ${configFile}:\n`)
+  getDefaultLogger().info(`\nTo apply these settings automatically, add to ${configFile}:\n`)
 
   // Generate shell script snippet.
   const shellScript = [
@@ -165,27 +165,27 @@ async function main() {
 
   shellScript.push('')
 
-  logger.substep(shellScript.join('\n'))
+  getDefaultLogger().substep(shellScript.join('\n'))
 
   // Check if already configured.
   if (existsSync(configFile)) {
     const content = await fs.readFile(configFile, 'utf-8')
     if (content.includes('Socket CLI WASM Build Optimizations')) {
-      logger.success('\nAlready configured in shell config')
+      getDefaultLogger().success('\nAlready configured in shell config')
       return
     }
   }
 
-  logger.info('\nTo append automatically, run:')
-  logger.substep(
+  getDefaultLogger().info('\nTo append automatically, run:')
+  getDefaultLogger().substep(
     `node scripts/wasm/setup-build-env.mjs --export >> ${configFile}`,
   )
-  logger.substep(`source ${configFile}`)
+  getDefaultLogger().substep(`source ${configFile}`)
 }
 
 main().catch(e => {
   if (!isExportMode) {
-    logger.error('Setup failed:', e)
+    getDefaultLogger().error('Setup failed:', e)
   }
   process.exit(1)
 })

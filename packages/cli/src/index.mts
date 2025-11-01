@@ -9,15 +9,12 @@
  */
 
 // CommonJS globals are available since we're outputting to CJS format.
-const {
-  readFileSync,
-  unlinkSync,
-  writeFileSync,
-} = require('node:fs')
-const { safeMkdirSync } = require('@socketsecurity/lib/fs')
+const { readFileSync, unlinkSync, writeFileSync } = require('node:fs')
 const Module = require('node:module')
 const path = require('node:path')
 const { brotliDecompressSync } = require('node:zlib')
+
+const { safeMkdirSync } = require('@socketsecurity/lib/fs')
 
 const cliBzPath = path.join(__dirname, 'cli.js.bz')
 const buildPath = path.join(__dirname, '..', 'build')

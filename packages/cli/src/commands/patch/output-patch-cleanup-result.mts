@@ -1,4 +1,4 @@
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
@@ -15,24 +15,24 @@ export async function outputPatchCleanupResult(
   }
 
   if (outputKind === 'json') {
-    logger.log(serializeResultJson(result))
+    getDefaultLogger().log(serializeResultJson(result))
     return
   }
 
   if (!result.ok) {
-    logger.fail(failMsgWithBadge(result.message, result.cause))
+    getDefaultLogger().fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
   const { cleaned } = result.data
 
   if (outputKind === 'markdown') {
-    logger.log('## Patch Backups Cleaned\n')
-    logger.log(`**Count**: ${cleaned.length}\n`)
+    getDefaultLogger().log('## Patch Backups Cleaned\n')
+    getDefaultLogger().log(`**Count**: ${cleaned.length}\n`)
     if (cleaned.length > 0) {
-      logger.log('**UUIDs**:\n')
+      getDefaultLogger().log('**UUIDs**:\n')
       for (const uuid of cleaned) {
-        logger.log(`- ${uuid}`)
+        getDefaultLogger().log(`- ${uuid}`)
       }
     }
     return
@@ -43,14 +43,14 @@ export async function outputPatchCleanupResult(
     return
   }
 
-  logger.group('')
-  logger.log(`Cleaned backups: ${cleaned.length}`)
+  getDefaultLogger().group('')
+  getDefaultLogger().log(`Cleaned backups: ${cleaned.length}`)
   if (cleaned.length > 0) {
-    logger.group()
+    getDefaultLogger().group()
     for (const uuid of cleaned) {
-      logger.log(`- ${uuid}`)
+      getDefaultLogger().log(`- ${uuid}`)
     }
-    logger.groupEnd()
+    getDefaultLogger().groupEnd()
   }
-  logger.groupEnd()
+  getDefaultLogger().groupEnd()
 }

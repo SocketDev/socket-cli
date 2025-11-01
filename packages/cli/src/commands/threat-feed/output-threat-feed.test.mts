@@ -92,7 +92,7 @@ describe('outputThreatFeed', () => {
     const { serializeResultJson } = await import(
       '../../utils/output/result-json.mts'
     )
-    const mockLog = vi.mocked(logger.log)
+    const mockLog = vi.mocked(getDefaultLogger().log)
     const mockSerialize = vi.mocked(serializeResultJson)
 
     const threatResults: ThreatResult[] = [
@@ -125,7 +125,7 @@ describe('outputThreatFeed', () => {
 
   it('outputs error in JSON format', async () => {
     const { logger } = await import('@socketsecurity/lib/logger')
-    const mockLog = vi.mocked(logger.log)
+    const mockLog = vi.mocked(getDefaultLogger().log)
 
     const result: CResult<ThreadFeedResponse> = {
       ok: false,
@@ -145,7 +145,7 @@ describe('outputThreatFeed', () => {
     const { failMsgWithBadge } = await import(
       '../../utils/error/fail-msg-with-badge.mts'
     )
-    const mockFail = vi.mocked(logger.fail)
+    const mockFail = vi.mocked(getDefaultLogger().fail)
     const mockFailMsg = vi.mocked(failMsgWithBadge)
 
     const result: CResult<ThreadFeedResponse> = {
@@ -167,7 +167,7 @@ describe('outputThreatFeed', () => {
 
   it('warns when no data is available', async () => {
     const { logger } = await import('@socketsecurity/lib/logger')
-    const mockWarn = vi.mocked(logger.warn)
+    const mockWarn = vi.mocked(getDefaultLogger().warn)
 
     const result: CResult<ThreadFeedResponse> = {
       ok: true,
@@ -232,7 +232,7 @@ describe('outputThreatFeed', () => {
 
   it('handles null data properly', async () => {
     const { logger } = await import('@socketsecurity/lib/logger')
-    const mockWarn = vi.mocked(logger.warn)
+    const mockWarn = vi.mocked(getDefaultLogger().warn)
 
     const result: CResult<ThreadFeedResponse> = {
       ok: true,

@@ -1,6 +1,6 @@
 import fs from 'node:fs'
 
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { REQUIREMENTS_TXT } from '../../constants/paths.mjs'
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
@@ -20,10 +20,10 @@ export async function outputRequirements(
 
   if (!result.ok) {
     if (outputKind === 'json') {
-      logger.log(serializeResultJson(result))
+      getDefaultLogger().log(serializeResultJson(result))
       return
     }
-    logger.fail(failMsgWithBadge(result.message, result.cause))
+    getDefaultLogger().fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
@@ -31,7 +31,7 @@ export async function outputRequirements(
     const json = serializeResultJson(result)
 
     if (out === '-') {
-      logger.log(json)
+      getDefaultLogger().log(json)
     } else {
       fs.writeFileSync(out, json, 'utf8')
     }
@@ -54,7 +54,7 @@ export async function outputRequirements(
     const md = arr.join('\n')
 
     if (out === '-') {
-      logger.log(md)
+      getDefaultLogger().log(md)
     } else {
       fs.writeFileSync(out, md, 'utf8')
     }
@@ -62,8 +62,8 @@ export async function outputRequirements(
   }
 
   if (out === '-') {
-    logger.log(result.data.pip)
-    logger.log('')
+    getDefaultLogger().log(result.data.pip)
+    getDefaultLogger().log('')
   } else {
     fs.writeFileSync(out, result.data.pip, 'utf8')
   }

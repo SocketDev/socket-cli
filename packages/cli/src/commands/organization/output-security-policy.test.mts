@@ -43,7 +43,7 @@ describe('outputSecurityPolicy', () => {
     const { serializeResultJson } = await vi.importMock(
       '../../utils/output/result-json.mjs',
     )
-    const mockLog = vi.mocked(logger.log)
+    const mockLog = vi.mocked(getDefaultLogger().log)
     const mockSerialize = vi.mocked(serializeResultJson)
 
     const result: CResult<
@@ -69,7 +69,7 @@ describe('outputSecurityPolicy', () => {
       './output-security-policy.mts'
     )
     const { logger } = await vi.importMock('@socketsecurity/lib/logger')
-    const mockLog = vi.mocked(logger.log)
+    const mockLog = vi.mocked(getDefaultLogger().log)
 
     const result: CResult<
       SocketSdkSuccessResult<'getOrgSecurityPolicy'>['data']
@@ -92,7 +92,7 @@ describe('outputSecurityPolicy', () => {
     const { mdTableOfPairs } = await vi.importMock(
       '../../utils/output/markdown.mts',
     )
-    const mockLog = vi.mocked(logger.log)
+    const mockLog = vi.mocked(getDefaultLogger().log)
     const mockTable = vi.mocked(mdTableOfPairs)
 
     const result: CResult<
@@ -134,7 +134,7 @@ describe('outputSecurityPolicy', () => {
     const { failMsgWithBadge } = await vi.importMock(
       '../../utils/error/fail-msg-with-badge.mts',
     )
-    const mockFail = vi.mocked(logger.fail)
+    const mockFail = vi.mocked(getDefaultLogger().fail)
     const mockFailMsg = vi.mocked(failMsgWithBadge)
 
     const result: CResult<
@@ -162,7 +162,7 @@ describe('outputSecurityPolicy', () => {
     const { mdTableOfPairs } = await vi.importMock(
       '../../utils/output/markdown.mts',
     )
-    const mockLog = vi.mocked(logger.log)
+    const mockLog = vi.mocked(getDefaultLogger().log)
     const mockTable = vi.mocked(mdTableOfPairs)
 
     const result: CResult<

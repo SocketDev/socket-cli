@@ -69,7 +69,7 @@ describe('pnpm-paths utilities', () => {
       const { logger } = vi.mocked(await import('@socketsecurity/lib/logger'))
 
       expect(() => getPnpmBinPath()).toThrow('process.exit(127)')
-      expect(logger.fail).toHaveBeenCalledWith(
+      expect(getDefaultLogger().fail).toHaveBeenCalledWith(
         expect.stringContaining('Socket unable to locate pnpm'),
       )
     })

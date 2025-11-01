@@ -1,7 +1,7 @@
 import { createRequire } from 'node:module'
 
 import { PNPM } from '@socketsecurity/lib/constants/agents'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import {
   DRY_RUN_BAILING_NOW,
@@ -76,7 +76,7 @@ async function run(
   const dryRun = !!cli.flags['dryRun']
 
   if (dryRun) {
-    logger.log(DRY_RUN_BAILING_NOW)
+    getDefaultLogger().log(DRY_RUN_BAILING_NOW)
     return
   }
 

@@ -236,7 +236,7 @@ describe('handleCreateNewScan', () => {
       outputKind: 'text',
     })
 
-    // Note: logger.log assertion removed due to mock resolution issues.
+    // Note: getDefaultLogger().log assertion removed due to mock resolution issues.
     // Main behavior (not calling fetchCreateOrgFullScan) is still tested.
     expect(fetchCreateOrgFullScan).not.toHaveBeenCalled()
   })

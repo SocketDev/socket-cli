@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { debug, debugDir, debugNs } from '@socketsecurity/lib/debug'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { normalizePath } from '@socketsecurity/lib/path'
 import { spawn } from '@socketsecurity/lib/spawn'
 
@@ -153,7 +153,7 @@ export default async function shadowPnpmBin(
                     : `\nAccept risks - Rerun with environment variable ${SOCKET_CLI_ACCEPT_RISKS}=1.`
                 }`.trim()
 
-                logger.error(errorMessage)
+                getDefaultLogger().error(errorMessage)
                 // eslint-disable-next-line n/no-process-exit
                 process.exit(1)
                 // This line is never reached in production, but helps tests.

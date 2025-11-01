@@ -1,4 +1,4 @@
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 import { mdHeader } from '../../utils/output/markdown.mts'
@@ -15,28 +15,30 @@ export async function outputConfigUnset(
   }
 
   if (outputKind === 'json') {
-    logger.log(serializeResultJson(updateResult))
+    getDefaultLogger().log(serializeResultJson(updateResult))
     return
   }
   if (!updateResult.ok) {
-    logger.fail(failMsgWithBadge(updateResult.message, updateResult.cause))
+    getDefaultLogger().fail(
+      failMsgWithBadge(updateResult.message, updateResult.cause),
+    )
     return
   }
 
   if (outputKind === 'markdown') {
-    logger.log(mdHeader('Update config'))
-    logger.log('')
-    logger.log(updateResult.message)
+    getDefaultLogger().log(mdHeader('Update config'))
+    getDefaultLogger().log('')
+    getDefaultLogger().log(updateResult.message)
     if (updateResult.data) {
-      logger.log('')
-      logger.log(updateResult.data)
+      getDefaultLogger().log('')
+      getDefaultLogger().log(updateResult.data)
     }
   } else {
-    logger.log('OK')
-    logger.log(updateResult.message)
+    getDefaultLogger().log('OK')
+    getDefaultLogger().log(updateResult.message)
     if (updateResult.data) {
-      logger.log('')
-      logger.log(updateResult.data)
+      getDefaultLogger().log('')
+      getDefaultLogger().log(updateResult.data)
     }
   }
 }

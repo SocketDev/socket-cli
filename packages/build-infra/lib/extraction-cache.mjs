@@ -11,7 +11,7 @@ import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 /**
  * Check if extraction is needed based on source content hash.
@@ -72,7 +72,7 @@ export async function shouldExtract({
     }
 
     // Cache hit!
-    logger.log(`✓ Using cached ${outputPath}`)
+    getDefaultLogger().log(`✓ Using cached ${outputPath}`)
     return false
   } catch {
     // Any error, regenerate.

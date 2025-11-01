@@ -1,4 +1,4 @@
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { handleScanView } from './handle-scan-view.mts'
 import { streamScan } from './stream-scan.mts'
@@ -146,7 +146,7 @@ async function run(
   }
 
   if (dryRun) {
-    logger.log(DRY_RUN_BAILING_NOW)
+    getDefaultLogger().log(DRY_RUN_BAILING_NOW)
     return
   }
 

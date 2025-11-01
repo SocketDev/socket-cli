@@ -10,7 +10,7 @@ import { isQuiet } from '@socketsecurity/lib/argv/flags'
 import { parseArgs } from '@socketsecurity/lib/argv/parse'
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { getChangedFiles, getStagedFiles } from '@socketsecurity/lib/git'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 import { printHeader } from '@socketsecurity/lib/stdio/header'
 
@@ -158,12 +158,12 @@ async function runLintOnFiles(files, options = {}) {
   const { fix = false, quiet = false } = options
 
   if (!files.length) {
-    logger.substep('No files to lint')
+    getDefaultLogger().substep('No files to lint')
     return 0
   }
 
   if (!quiet) {
-    logger.progress(`Linting ${files.length} file(s)`)
+    getDefaultLogger().progress(`Linting ${files.length} file(s)`)
   }
 
   // Build the linter configurations.
@@ -206,13 +206,13 @@ async function runLintOnFiles(files, options = {}) {
       // When fixing, non-zero exit codes are normal if fixes were applied.
       if (!fix || (e.stderr && e.stderr?.toString().trim().length > 0)) {
         if (!quiet) {
-          logger.error('Linting failed')
+          getDefaultLogger().error('Linting failed')
         }
         if (e.stderr) {
-          logger.error(e.stderr?.toString() ?? '')
+          getDefaultLogger().error(e.stderr?.toString() ?? '')
         }
         if (e.stdout && !fix) {
-          logger.log(e.stdout?.toString() ?? '')
+          getDefaultLogger().log(e.stdout?.toString() ?? '')
         }
         return e.code || 1
       }
@@ -220,9 +220,9 @@ async function runLintOnFiles(files, options = {}) {
   }
 
   if (!quiet) {
-    logger.clearLine().done('Linting passed')
+    getDefaultLogger().clearLine().done('Linting passed')
     // Add newline after message (use error to write to same stream).
-    logger.error('')
+    getDefaultLogger().error('')
   }
 
   return 0
@@ -235,7 +235,7 @@ async function runLintOnAll(options = {}) {
   const { fix = false, quiet = false } = options
 
   if (!quiet) {
-    logger.progress('Linting all files')
+    getDefaultLogger().progress('Linting all files')
   }
 
   const linters = [
@@ -277,13 +277,13 @@ async function runLintOnAll(options = {}) {
       // When fixing, non-zero exit codes are normal if fixes were applied.
       if (!fix || (e.stderr && e.stderr?.toString().trim().length > 0)) {
         if (!quiet) {
-          logger.error('Linting failed')
+          getDefaultLogger().error('Linting failed')
         }
         if (e.stderr) {
-          logger.error(e.stderr?.toString() ?? '')
+          getDefaultLogger().error(e.stderr?.toString() ?? '')
         }
         if (e.stdout && !fix) {
-          logger.log(e.stdout?.toString() ?? '')
+          getDefaultLogger().log(e.stdout?.toString() ?? '')
         }
         return e.code || 1
       }
@@ -291,9 +291,9 @@ async function runLintOnAll(options = {}) {
   }
 
   if (!quiet) {
-    logger.clearLine().done('Linting passed')
+    getDefaultLogger().clearLine().done('Linting passed')
     // Add newline after message (use error to write to same stream)
-    logger.error('')
+    getDefaultLogger().error('')
   }
 
   return 0
@@ -391,21 +391,31 @@ async function main() {
 
     // Show help if requested
     if (values.help) {
-      logger.log('Lint Runner')
-      logger.log('\nUsage: pnpm lint [options] [files...]')
-      logger.log('\nOptions:')
-      logger.log('  --help         Show this help message')
-      logger.log('  --fix          Automatically fix problems')
-      logger.log('  --all          Lint all files')
-      logger.log('  --changed      Lint changed files (default behavior)')
-      logger.log('  --staged       Lint staged files')
-      logger.log('  --quiet, --silent  Suppress progress messages')
-      logger.log('\nExamples:')
-      logger.log('  pnpm lint                   # Lint changed files (default)')
-      logger.log('  pnpm lint --fix             # Fix issues in changed files')
-      logger.log('  pnpm lint --all             # Lint all files')
-      logger.log('  pnpm lint --staged --fix    # Fix issues in staged files')
-      logger.log('  pnpm lint src/index.ts      # Lint specific file(s)')
+      getDefaultLogger().log('Lint Runner')
+      getDefaultLogger().log('\nUsage: pnpm lint [options] [files...]')
+      getDefaultLogger().log('\nOptions:')
+      getDefaultLogger().log('  --help         Show this help message')
+      getDefaultLogger().log('  --fix          Automatically fix problems')
+      getDefaultLogger().log('  --all          Lint all files')
+      getDefaultLogger().log(
+        '  --changed      Lint changed files (default behavior)',
+      )
+      getDefaultLogger().log('  --staged       Lint staged files')
+      getDefaultLogger().log('  --quiet, --silent  Suppress progress messages')
+      getDefaultLogger().log('\nExamples:')
+      getDefaultLogger().log(
+        '  pnpm lint                   # Lint changed files (default)',
+      )
+      getDefaultLogger().log(
+        '  pnpm lint --fix             # Fix issues in changed files',
+      )
+      getDefaultLogger().log('  pnpm lint --all             # Lint all files')
+      getDefaultLogger().log(
+        '  pnpm lint --staged --fix    # Fix issues in staged files',
+      )
+      getDefaultLogger().log(
+        '  pnpm lint src/index.ts      # Lint specific file(s)',
+      )
       process.exitCode = 0
       return
     }
@@ -414,7 +424,7 @@ async function main() {
 
     if (!quiet) {
       printHeader('Lint Runner')
-      logger.log('')
+      getDefaultLogger().log('')
     }
 
     let exitCode = 0
@@ -423,7 +433,7 @@ async function main() {
     if (positionals.length > 0) {
       const files = filterLintableFiles(positionals)
       if (!quiet) {
-        logger.step('Linting specified files')
+        getDefaultLogger().step('Linting specified files')
       }
       exitCode = await runLintOnFiles(files, {
         fix: values.fix,
@@ -435,13 +445,13 @@ async function main() {
 
       if (files === null) {
         if (!quiet) {
-          logger.step('Skipping lint')
-          logger.substep(reason)
+          getDefaultLogger().step('Skipping lint')
+          getDefaultLogger().substep(reason)
         }
         exitCode = 0
       } else if (files === 'all') {
         if (!quiet) {
-          logger.step(`Linting all files (${reason})`)
+          getDefaultLogger().step(`Linting all files (${reason})`)
         }
         exitCode = await runLintOnAll({
           fix: values.fix,
@@ -450,7 +460,7 @@ async function main() {
       } else {
         if (!quiet) {
           const modeText = mode === 'staged' ? 'staged' : 'changed'
-          logger.step(`Linting ${modeText} files`)
+          getDefaultLogger().step(`Linting ${modeText} files`)
         }
         exitCode = await runLintOnFiles(files, {
           fix: values.fix,
@@ -461,23 +471,23 @@ async function main() {
 
     if (exitCode !== 0) {
       if (!quiet) {
-        logger.error('')
-        logger.log('Lint failed')
+        getDefaultLogger().error('')
+        getDefaultLogger().log('Lint failed')
       }
       process.exitCode = exitCode
     } else {
       if (!quiet) {
-        logger.log('')
-        logger.success('All lint checks passed!')
+        getDefaultLogger().log('')
+        getDefaultLogger().success('All lint checks passed!')
       }
     }
   } catch (error) {
-    logger.error(`Lint runner failed: ${error.message}`)
+    getDefaultLogger().error(`Lint runner failed: ${error.message}`)
     process.exitCode = 1
   }
 }
 
 main().catch(e => {
-  logger.error(e)
+  getDefaultLogger().error(e)
   process.exitCode = 1
 })

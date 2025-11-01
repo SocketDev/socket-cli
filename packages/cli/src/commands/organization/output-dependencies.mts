@@ -1,7 +1,7 @@
 import chalkTable from 'chalk-table'
 import colors from 'yoctocolors-cjs'
 
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 import { mdHeader } from '../../utils/output/markdown.mts'
@@ -27,11 +27,11 @@ export async function outputDependencies(
   }
 
   if (outputKind === 'json') {
-    logger.log(serializeResultJson(result))
+    getDefaultLogger().log(serializeResultJson(result))
     return
   }
   if (!result.ok) {
-    logger.fail(failMsgWithBadge(result.message, result.cause))
+    getDefaultLogger().fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
@@ -48,13 +48,16 @@ function outputMarkdown(
     offset: number
   },
 ) {
-  logger.log(mdHeader('Organization dependencies'))
-  logger.log('')
-  logger.log('Request details:')
-  logger.log('- Offset:', offset)
-  logger.log('- Limit:', limit)
-  logger.log('- Is there more data after this?', result.end ? 'no' : 'yes')
-  logger.log('')
+  getDefaultLogger().log(mdHeader('Organization dependencies'))
+  getDefaultLogger().log('')
+  getDefaultLogger().log('Request details:')
+  getDefaultLogger().log('- Offset:', offset)
+  getDefaultLogger().log('- Limit:', limit)
+  getDefaultLogger().log(
+    '- Is there more data after this?',
+    result.end ? 'no' : 'yes',
+  )
+  getDefaultLogger().log('')
 
   const options = {
     columns: [
@@ -68,5 +71,5 @@ function outputMarkdown(
     ],
   }
 
-  logger.log(chalkTable(options, result.rows))
+  getDefaultLogger().log(chalkTable(options, result.rows))
 }

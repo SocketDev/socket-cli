@@ -14,7 +14,7 @@
  *
  * Usage in code:
  *   if (DEBUG) {
- *     logger.log('debug info')
+ *     getDefaultLogger().log('debug info')
  *   }
  *   // In production build: entire block removed
  *

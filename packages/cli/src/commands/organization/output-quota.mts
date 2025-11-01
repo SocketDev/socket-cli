@@ -1,4 +1,4 @@
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 import { mdHeader } from '../../utils/output/markdown.mts'
@@ -16,22 +16,26 @@ export async function outputQuota(
   }
 
   if (outputKind === 'json') {
-    logger.log(serializeResultJson(result))
+    getDefaultLogger().log(serializeResultJson(result))
     return
   }
   if (!result.ok) {
-    logger.fail(failMsgWithBadge(result.message, result.cause))
+    getDefaultLogger().fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
   if (outputKind === 'markdown') {
-    logger.log(mdHeader('Quota'))
-    logger.log('')
-    logger.log(`Quota left on the current API token: ${result.data.quota}`)
-    logger.log('')
+    getDefaultLogger().log(mdHeader('Quota'))
+    getDefaultLogger().log('')
+    getDefaultLogger().log(
+      `Quota left on the current API token: ${result.data.quota}`,
+    )
+    getDefaultLogger().log('')
     return
   }
 
-  logger.log(`Quota left on the current API token: ${result.data.quota}`)
-  logger.log('')
+  getDefaultLogger().log(
+    `Quota left on the current API token: ${result.data.quota}`,
+  )
+  getDefaultLogger().log('')
 }

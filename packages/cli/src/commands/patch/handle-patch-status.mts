@@ -8,7 +8,7 @@ import {
   MANIFEST_JSON,
   NODE_MODULES,
 } from '@socketsecurity/lib/constants/paths'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { normalizePath } from '@socketsecurity/lib/path'
 import { pluralize } from '@socketsecurity/lib/words'
 
@@ -239,11 +239,11 @@ export async function handlePatchStatus({
 
     if (outputKind === 'text') {
       if (statuses.length === 0) {
-        logger.log('No patches found in manifest')
+        getDefaultLogger().log('No patches found in manifest')
       } else if (filteredStatuses.length === 0) {
-        logger.log('No patches match the filter criteria')
+        getDefaultLogger().log('No patches match the filter criteria')
       } else {
-        logger.log(
+        getDefaultLogger().log(
           `Found ${filteredStatuses.length} ${pluralize('patch', { count: filteredStatuses.length })}`,
         )
       }

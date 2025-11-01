@@ -3,7 +3,7 @@ import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import colors from 'yoctocolors-cjs'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -26,60 +26,60 @@ async function fileExists(filePath) {
  * Main validation function.
  */
 async function validate() {
-  logger.log('')
-  logger.log('='.repeat(60))
-  logger.log(`${colors.blue('Socket Package Validation')}`)
-  logger.log('='.repeat(60))
-  logger.log('')
+  getDefaultLogger().log('')
+  getDefaultLogger().log('='.repeat(60))
+  getDefaultLogger().log(`${colors.blue('Socket Package Validation')}`)
+  getDefaultLogger().log('='.repeat(60))
+  getDefaultLogger().log('')
 
   const errors = []
 
   // Check package.json exists.
-  logger.info('Checking package.json...')
+  getDefaultLogger().info('Checking package.json...')
   const pkgPath = path.join(packageRoot, 'package.json')
   if (!(await fileExists(pkgPath))) {
     errors.push('package.json does not exist')
   } else {
-    logger.success('package.json exists')
+    getDefaultLogger().success('package.json exists')
   }
 
   // Check dist/bootstrap.js exists.
-  logger.info('Checking dist/bootstrap.js...')
+  getDefaultLogger().info('Checking dist/bootstrap.js...')
   const bootstrapPath = path.join(packageRoot, 'dist', 'bootstrap.js')
   if (!(await fileExists(bootstrapPath))) {
     errors.push('dist/bootstrap.js does not exist')
   } else {
-    logger.success('dist/bootstrap.js exists')
+    getDefaultLogger().success('dist/bootstrap.js exists')
   }
 
   // Print summary.
-  logger.log('')
-  logger.log('='.repeat(60))
-  logger.log(`${colors.blue('Validation Summary')}`)
-  logger.log('='.repeat(60))
-  logger.log('')
+  getDefaultLogger().log('')
+  getDefaultLogger().log('='.repeat(60))
+  getDefaultLogger().log(`${colors.blue('Validation Summary')}`)
+  getDefaultLogger().log('='.repeat(60))
+  getDefaultLogger().log('')
 
   if (errors.length > 0) {
-    logger.log(`${colors.red('Errors:')}`)
-    logger.log('')
+    getDefaultLogger().log(`${colors.red('Errors:')}`)
+    getDefaultLogger().log('')
     for (const err of errors) {
-      logger.fail(err)
+      getDefaultLogger().fail(err)
     }
-    logger.log('')
-    logger.fail('Package validation FAILED')
-    logger.log('')
+    getDefaultLogger().log('')
+    getDefaultLogger().fail('Package validation FAILED')
+    getDefaultLogger().log('')
     process.exit(1)
   }
 
-  logger.success('Package validation PASSED')
-  logger.log('')
+  getDefaultLogger().success('Package validation PASSED')
+  getDefaultLogger().log('')
   process.exit(0)
 }
 
 // Run validation.
 validate().catch(e => {
-  logger.error('')
-  logger.fail(`Unexpected error: ${e.message}`)
-  logger.error('')
+  getDefaultLogger().error('')
+  getDefaultLogger().fail(`Unexpected error: ${e.message}`)
+  getDefaultLogger().error('')
   process.exit(1)
 })

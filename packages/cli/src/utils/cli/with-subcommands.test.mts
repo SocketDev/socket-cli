@@ -194,7 +194,7 @@ describe('meow-with-subcommands', () => {
 
       emitBanner('socket', 'test-org', false)
 
-      expect(logger.error).toHaveBeenCalled()
+      expect(getDefaultLogger().error).toHaveBeenCalled()
     })
 
     it('emits compact banner when compact mode is true', async () => {
@@ -202,7 +202,7 @@ describe('meow-with-subcommands', () => {
 
       emitBanner('socket', 'test-org', true)
 
-      expect(logger.error).toHaveBeenCalled()
+      expect(getDefaultLogger().error).toHaveBeenCalled()
     })
 
     it('handles undefined org', async () => {
@@ -210,7 +210,7 @@ describe('meow-with-subcommands', () => {
 
       emitBanner('socket', undefined, false)
 
-      expect(logger.error).toHaveBeenCalled()
+      expect(getDefaultLogger().error).toHaveBeenCalled()
     })
   })
 

@@ -4,7 +4,7 @@
  * Centralized command execution for build script.
  */
 
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 
 import { saveBuildLog } from './build-helpers.mjs'
@@ -16,7 +16,7 @@ export async function exec(command, args = [], options = {}) {
   const { buildDir, cwd = process.cwd(), env = process.env } = options
 
   const cmdStr = `$ ${command} ${args.join(' ')}`
-  logger.log(cmdStr)
+  getDefaultLogger().log(cmdStr)
 
   if (buildDir) {
     await saveBuildLog(buildDir, cmdStr)
@@ -90,7 +90,7 @@ export async function downloadWithRetry(url, outputPath, options = {}) {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       if (attempt > 1) {
-        logger.log(`  Retry attempt ${attempt}/${maxRetries}...`)
+        getDefaultLogger().log(`  Retry attempt ${attempt}/${maxRetries}...`)
       }
 
       await exec('curl', ['-sL', url, '-o', outputPath], { buildDir })
@@ -110,7 +110,7 @@ export async function downloadWithRetry(url, outputPath, options = {}) {
         )
       }
 
-      logger.warn(`  ⚠️  Download attempt ${attempt} failed: ${e.message}`)
+      getDefaultLogger().warn(`  ⚠️  Download attempt ${attempt} failed: ${e.message}`)
 
       // Delete corrupted file if it exists.
       try {
@@ -122,7 +122,7 @@ export async function downloadWithRetry(url, outputPath, options = {}) {
 
       // Wait before retry (exponential backoff).
       const waitTime = Math.min(1000 * 2 ** (attempt - 1), 5000)
-      logger.log(`  ⏱️  Waiting ${waitTime}ms before retry...`)
+      getDefaultLogger().log(`  ⏱️  Waiting ${waitTime}ms before retry...`)
       await new Promise(resolve => setTimeout(resolve, waitTime))
     }
   }

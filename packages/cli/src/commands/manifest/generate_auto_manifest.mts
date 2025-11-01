@@ -1,6 +1,6 @@
 import path from 'node:path'
 
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { convertGradleToMaven } from './convert-gradle-to-maven.mts'
 import { convertSbtToMaven } from './convert-sbt-to-maven.mts'
@@ -26,13 +26,15 @@ export async function generateAutoManifest({
   const sockJson = readOrDefaultSocketJson(cwd)
 
   if (verbose) {
-    logger.info(`Using this ${SOCKET_JSON} for defaults:`, sockJson)
+    getDefaultLogger().info(`Using this ${SOCKET_JSON} for defaults:`, sockJson)
   }
 
   if (!sockJson?.defaults?.manifest?.sbt?.disabled && detected.sbt) {
     const isTextMode = outputKind === 'text'
     if (isTextMode) {
-      logger.log('Detected a Scala sbt build, generating pom files with sbt...')
+      getDefaultLogger().log(
+        'Detected a Scala sbt build, generating pom files with sbt...',
+      )
     }
     await convertSbtToMaven({
       // Note: `sbt` is more likely to be resolved against PATH env
@@ -52,7 +54,7 @@ export async function generateAutoManifest({
   if (!sockJson?.defaults?.manifest?.gradle?.disabled && detected.gradle) {
     const isTextMode = outputKind === 'text'
     if (isTextMode) {
-      logger.log(
+      getDefaultLogger().log(
         'Detected a gradle build (Gradle, Kotlin, Scala), running default gradle generator...',
       )
     }
@@ -74,7 +76,7 @@ export async function generateAutoManifest({
   }
 
   if (!sockJson?.defaults?.manifest?.conda?.disabled && detected.conda) {
-    logger.log(
+    getDefaultLogger().log(
       'Detected an environment.yml file, running default Conda generator...',
     )
     await handleManifestConda({
