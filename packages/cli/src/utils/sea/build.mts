@@ -134,7 +134,7 @@ export async function downloadNodeBinary(
 
   // Construct download URL.
   const baseUrl =
-    process.env['SOCKET_NODE_DOWNLOAD_URL'] ||
+    process.env['SOCKET_CLI_NODE_DOWNLOAD_URL'] ||
     'https://nodejs.org/download/release'
   const archMap = {
     __proto__: null,
@@ -324,11 +324,11 @@ export async function getBuildTargets(): Promise<BuildTargetOptions[]> {
 
 /**
  * Get the default Node.js version for SEA builds.
- * Prefers SOCKET_SEA_NODE_VERSION env var, falls back to latest Current release.
+ * Prefers SOCKET_CLI_SEA_NODE_VERSION env var, falls back to latest Current release.
  */
 export async function getDefaultNodeVersion(): Promise<string> {
   return (
-    process.env['SOCKET_SEA_NODE_VERSION'] || (await getLatestCurrentRelease())
+    process.env['SOCKET_CLI_SEA_NODE_VERSION'] || (await getLatestCurrentRelease())
   )
 }
 

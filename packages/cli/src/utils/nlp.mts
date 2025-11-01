@@ -31,7 +31,7 @@ let codet5Available: boolean | null = null
  */
 const getModelPaths = () => {
   // Check for embedded models first (bundled in CLI).
-  const embeddedBase = process.env.SOCKET_MODELS_PATH || '.cache/models'
+  const embeddedBase = process.env.SOCKET_CLI_MODELS_PATH || '.cache/models'
 
   return {
     minilmModel: `${embeddedBase}/minilm-l6-int4.onnx`,
