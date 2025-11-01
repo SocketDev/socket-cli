@@ -155,16 +155,5 @@
       "string_decoder@0.10.31": "patches/string_decoder@0.10.31.patch",
       "ink@6.3.1": "patches/ink@6.3.1.patch"
     }
-  },
-  "typeCoverage": {
-    "cache": true,
-    "atLeast": 95,
-    "ignoreAsAssertion": true,
-    "ignoreCatch": true,
-    "ignoreEmptyType": true,
-    "ignore-non-null-assertion": true,
-    "ignore-type-assertion": true,
-    "ignore-files": "test/*",
-    "strict": true
   }
 }
