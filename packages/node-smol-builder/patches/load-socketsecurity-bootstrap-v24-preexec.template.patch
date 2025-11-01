@@ -35,9 +35,12 @@
 +      // Create module context.
 +      const bootstrapModule = new Module('socket:bootstrap', null);
 +      bootstrapModule.filename = 'socket:bootstrap';
-+      bootstrapModule.paths = [];
++      bootstrapModule.paths = Module._nodeModulePaths(process.cwd());
 +      const exports = {};
 +      bootstrapModule.exports = exports;
++
++      // Create require bound to this module (supports dynamic import, etc).
++      const moduleRequire = Module.createRequire(bootstrapModule.filename);
 +
 +      // Compile using C++ API with module parameters.
 +      const compiledFn = vm.compileFunction(bootstrapCode, ['exports', 'require', 'module', '__filename', '__dirname'], {
@@ -49,7 +52,7 @@
 +      // Execute with module context.
 +      // If bootstrap contains async code (main().catch(...)), it starts executing
 +      // but returns immediately - async operations run in background.
-+      compiledFn.call(exports, exports, require, bootstrapModule, 'socket:bootstrap', '');
++      compiledFn.call(exports, exports, moduleRequire, bootstrapModule, 'socket:bootstrap', '');
 +    } catch (err) {
 +      // Use stderr.write to avoid console dependencies during early bootstrap.
 +      process.stderr.write(`Socket bootstrap error: ${err.message}\n${err.stack}\n`);
