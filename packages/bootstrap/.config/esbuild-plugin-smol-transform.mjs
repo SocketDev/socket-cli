@@ -30,7 +30,7 @@ const requireMappings = new Map([
 
   // Stream internals.
   ['stream', 'stream'],
-  ['stream/promises', 'internal/streams/promises'],
+  ['stream/promises', 'stream/promises'],
   ['stream/web', 'internal/webstreams/readablestream'],
 
   // Path variants.
@@ -40,7 +40,7 @@ const requireMappings = new Map([
 
   // Core modules available at top level.
   ['assert', 'assert'],
-  ['assert/strict', 'internal/assert/strict'],
+  ['assert/strict', 'assert/strict'],
   ['async_hooks', 'async_hooks'],
   ['buffer', 'buffer'],
   ['cluster', 'cluster'],
