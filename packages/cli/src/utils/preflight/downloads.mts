@@ -10,17 +10,12 @@
  * This runs asynchronously and never blocks the main CLI execution.
  */
 
+import { setTimeout as sleep } from 'node:timers/promises'
+
 import { downloadPackage } from '@socketsecurity/lib/dlx-package'
 
 import ENV from '../../constants/env.mts'
 import { ensurePython, ensureSocketPythonCli } from '../python/standalone.mts'
-
-/**
- * Delay execution for a specified number of milliseconds.
- */
-function delay(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms))
-}
 
 /**
  * Track if preflight downloads have already been initiated.
@@ -60,7 +55,7 @@ export function runPreflightDownloads(): void {
       })
 
       // Delay before next download (1-3 seconds).
-      await delay(1000 + Math.random() * 2000)
+      await sleep(1000 + Math.random() * 2000)
 
       // 2. @cyclonedx/cdxgen preflight.
       const cdxgenVersion = ENV.INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION
@@ -72,7 +67,7 @@ export function runPreflightDownloads(): void {
       })
 
       // Delay before next download (1-3 seconds).
-      await delay(1000 + Math.random() * 2000)
+      await sleep(1000 + Math.random() * 2000)
 
       // 3. Python + socketsecurity (socket-python-cli) preflight.
       const pythonBin = await ensurePython()
