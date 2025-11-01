@@ -102,7 +102,7 @@ Adds code-specific ML capabilities:
 Configure model locations via environment variable:
 
 ```bash
-export SOCKET_MODELS_PATH=/path/to/models
+export SOCKET_CLI_MODELS_PATH=/path/to/models
 ```
 
 Default: `.cache/models/`
