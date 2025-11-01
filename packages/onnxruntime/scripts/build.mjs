@@ -134,6 +134,29 @@ async function cloneOnnxSource() {
   await fs.writeFile(cmakePath, cmakeContent, 'utf-8')
   printSuccess('BUILD_MLAS_NO_ONNXRUNTIME commented out')
 
+  // Patch wasm_post_build.js to skip Worker URL transformation when pattern not found.
+  // Modern Emscripten may not generate the expected Worker pattern.
+  printStep('Patching wasm_post_build.js to handle modern Emscripten...')
+  const postBuildPath = path.join(ONNX_SOURCE_DIR, 'js', 'web', 'script', 'wasm_post_build.js')
+  if (existsSync(postBuildPath)) {
+    let postBuildContent = await fs.readFile(postBuildPath, 'utf-8')
+
+    // Add check for 0 matches before the error
+    postBuildContent = postBuildContent.replace(
+      /if \(matches\.length !== 1\) \{/,
+      `if (matches.length === 0) {\n      console.log('No Worker URL pattern found - skipping post-build transformation (modern Emscripten)');\n      return;\n    }\n    if (matches.length !== 1) {`
+    )
+
+    // Fix error message
+    postBuildContent = postBuildContent.replace(
+      /Unexpected number of matches for "" in "": \./,
+      `Unexpected number of Worker URL matches: found \${matches.length}, expected 1. Pattern: \${regex}`
+    )
+
+    await fs.writeFile(postBuildPath, postBuildContent, 'utf-8')
+    printSuccess('wasm_post_build.js patched')
+  }
+
   // Clear CMake cache to ensure patch is picked up.
   printStep('Clearing CMake cache to force reconfiguration...')
   const platform = process.platform === 'darwin' ? 'Darwin' : 'Linux'
