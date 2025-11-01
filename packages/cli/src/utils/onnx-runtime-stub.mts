@@ -55,6 +55,7 @@ export const stubOnnxRuntime = {
 export async function loadOnnxRuntime(): Promise<typeof stubOnnxRuntime | null> {
   try {
     // Try to import real ONNX Runtime.
+    // @ts-expect-error - onnxruntime-node is an optional dependency for progressive enhancement.
     const onnx = await import('onnxruntime-node')
     return onnx as any
   } catch {
@@ -69,6 +70,7 @@ export async function loadOnnxRuntime(): Promise<typeof stubOnnxRuntime | null> 
  */
 export async function isOnnxRuntimeAvailable(): Promise<boolean> {
   try {
+    // @ts-expect-error - onnxruntime-node is an optional dependency for progressive enhancement.
     await import('onnxruntime-node')
     return true
   } catch {
