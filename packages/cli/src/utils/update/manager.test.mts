@@ -22,6 +22,17 @@ import { UpdateStore } from './store.mts'
 
 import type { StoreRecord } from './store.mts'
 
+// Mock logger to avoid undefined errors.
+vi.mock('@socketsecurity/lib/logger', () => ({
+  logger: {
+    debug: vi.fn(),
+    error: vi.fn(),
+    info: vi.fn(),
+    log: vi.fn(),
+    warn: vi.fn(),
+  },
+}))
+
 describe('update-manager', () => {
   let testStore: UpdateStore
   let testStorePath: string

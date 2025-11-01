@@ -7,7 +7,8 @@
  * Gracefully falls back to compromise if models unavailable.
  */
 
-import type { InferenceSession, Tensor } from 'onnxruntime-node'
+// @ts-expect-error - onnxruntime-node is an optional dependency for progressive enhancement.
+import type { InferenceSession } from 'onnxruntime-node'
 
 import ENV from '../constants/env.mts'
 
@@ -201,9 +202,11 @@ export function cosineSimilarity(a: Float32Array, b: Float32Array): number {
   let normB = 0
 
   for (let i = 0; i < a.length; i++) {
-    dotProduct += a[i] * b[i]
-    normA += a[i] * a[i]
-    normB += b[i] * b[i]
+    const aVal = a[i] ?? 0
+    const bVal = b[i] ?? 0
+    dotProduct += aVal * bVal
+    normA += aVal * aVal
+    normB += bVal * bVal
   }
 
   return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB))
@@ -365,18 +368,26 @@ export async function analyzeCode(code: string, language?: string): Promise<{
     // Enhanced: Use CodeT5 encoder for analysis.
     const features = await analyzeCodeWithEncoder(code)
 
-    return {
+    const result: {
+      summary: string
+      complexity: 'low' | 'medium' | 'high'
+      features?: Float32Array
+      suggestions: string[]
+    } = {
       summary: `Analyzed with CodeT5 encoder (${language || 'code'})`,
       complexity: estimateComplexity(code),
-      features, // Code embedding for similarity/classification
-      suggestions: [], // TODO: Extract patterns from features
+      suggestions: [],
     }
+
+    // Only add features if they exist.
+    if (features) {
+      result.features = features
+    }
+
+    return result
   }
 
-  // Fallback: Basic compromise-based analysis.
-  const nlp = await getCompromise()
-  const doc = nlp(code)
-
+  // Fallback: Basic heuristic analysis.
   const lines = code.split('\n').length
   const complexity = lines < 20 ? 'low' : lines < 100 ? 'medium' : 'high'
 
@@ -476,7 +487,7 @@ async function synthesizeFromCode(code: string, prompt: string): Promise<string 
       input_ids: inputTensor,
       encoder_hidden_states: encoderResults.last_hidden_state,
     }
-    const decoderResults = await codet5DecoderSession.run(decoderFeeds)
+    await codet5DecoderSession.run(decoderFeeds)
 
     // Decode output tokens to text.
     // TODO: Implement proper token-to-text decoding with vocabulary.
@@ -484,13 +495,6 @@ async function synthesizeFromCode(code: string, prompt: string): Promise<string 
   } catch {
     return null
   }
-}
-
-/**
- * Generate code summary using CodeT5 encoder-decoder.
- */
-async function generateCodeSummary(code: string): Promise<string | null> {
-  return await synthesizeFromCode(code, 'Summarize this code:')
 }
 
 /**
