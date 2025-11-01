@@ -15,6 +15,9 @@ catalogs:
     '@socketsecurity/lib':
       specifier: 3.0.3
       version: 3.0.3
+    '@socketsecurity/registry':
+      specifier: 2.0.0
+      version: 2.0.0
     del-cli:
       specifier: 6.0.0
       version: 6.0.0
@@ -198,7 +201,7 @@ importers:
         specifier: 'catalog:'
         version: 3.0.3(typescript@5.9.3)
       '@socketsecurity/registry':
-        specifier: 2.0.0
+        specifier: 'catalog:'
         version: 2.0.0(typescript@5.9.3)
       '@socketsecurity/sdk':
         specifier: 3.0.29
