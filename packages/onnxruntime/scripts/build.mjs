@@ -106,8 +106,7 @@ async function cloneOnnxSource() {
   })
   printSuccess(`ONNX Runtime ${ONNX_VERSION} cloned`)
 
-  // Patch deps.txt to accept current Eigen hash from GitLab.
-  // GitLab changed the archive format, causing hash mismatch.
+  // Patch 1: Update Eigen hash (see docs/patches.md).
   printStep('Patching deps.txt to accept current Eigen hash...')
   const depsPath = path.join(ONNX_SOURCE_DIR, 'cmake', 'deps.txt')
   const depsContent = await fs.readFile(depsPath, 'utf-8')
@@ -118,41 +117,30 @@ async function cloneOnnxSource() {
   await fs.writeFile(depsPath, updatedDeps, 'utf-8')
   printSuccess('Eigen hash updated in deps.txt')
 
-  // Patch onnxruntime_webassembly.cmake to comment out BUILD_MLAS_NO_ONNXRUNTIME.
-  // When threading is disabled, BUILD_MLAS_NO_ONNXRUNTIME causes MLFloat16 errors.
+  // Patch 2: Fix MLFloat16 build (see docs/patches.md).
   printStep('Patching onnxruntime_webassembly.cmake to fix MLFloat16 build...')
   const cmakePath = path.join(ONNX_SOURCE_DIR, 'cmake', 'onnxruntime_webassembly.cmake')
   let cmakeContent = await fs.readFile(cmakePath, 'utf-8')
-
-  // Patch: Comment out BUILD_MLAS_NO_ONNXRUNTIME.
-  // With threading enabled, this is not needed, but we keep the patch for safety.
   cmakeContent = cmakeContent.replace(
     /add_compile_definitions\(\s*BUILD_MLAS_NO_ONNXRUNTIME\s*\)/,
     '# add_compile_definitions(\n  #   BUILD_MLAS_NO_ONNXRUNTIME\n  # )'
   )
-
   await fs.writeFile(cmakePath, cmakeContent, 'utf-8')
   printSuccess('BUILD_MLAS_NO_ONNXRUNTIME commented out')
 
-  // Patch wasm_post_build.js to skip Worker URL transformation when pattern not found.
-  // Modern Emscripten may not generate the expected Worker pattern.
+  // Patch 3: Modern Emscripten compatibility (see docs/patches.md).
   printStep('Patching wasm_post_build.js to handle modern Emscripten...')
   const postBuildPath = path.join(ONNX_SOURCE_DIR, 'js', 'web', 'script', 'wasm_post_build.js')
   if (existsSync(postBuildPath)) {
     let postBuildContent = await fs.readFile(postBuildPath, 'utf-8')
-
-    // Add check for 0 matches before the error
     postBuildContent = postBuildContent.replace(
       /if \(matches\.length !== 1\) \{/,
       `if (matches.length === 0) {\n      console.log('No Worker URL pattern found - skipping post-build transformation (modern Emscripten)');\n      return;\n    }\n    if (matches.length !== 1) {`
     )
-
-    // Fix error message
     postBuildContent = postBuildContent.replace(
       /Unexpected number of matches for "" in "": \./,
       `Unexpected number of Worker URL matches: found \${matches.length}, expected 1. Pattern: \${regex}`
     )
-
     await fs.writeFile(postBuildPath, postBuildContent, 'utf-8')
     printSuccess('wasm_post_build.js patched')
   }
