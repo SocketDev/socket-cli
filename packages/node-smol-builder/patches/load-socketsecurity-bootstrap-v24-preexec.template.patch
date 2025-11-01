@@ -1,21 +1,21 @@
 # @node-versions: v24.10.0+
-# @description: Load Socket security bootstrap using Module.wrap() + VM (supports async!)
+# @description: Load Socket security bootstrap using vm.compileFunction() C++ API
 #
-# This approach uses the same mechanism as `--require` modules, which properly handles async code:
-# 1. Module.wrap() creates proper module context (exports, require, module, __filename, __dirname)
-# 2. vm.runInThisContext() compiles and executes the wrapped code
+# This approach uses the modern C++ API for optimal performance:
+# 1. vm.compileFunction() directly compiles code with module context parameters
+# 2. Single C++ call (no wrapping + compilation steps)
 # 3. Async code can run in the background while Node.js continues initialization
 #
 # The bootstrap code is embedded as base64 and decoded at runtime (no filesystem dependency).
 
 --- a/lib/internal/process/pre_execution.js
 +++ b/lib/internal/process/pre_execution.js
-@@ -673,6 +673,53 @@ function runEmbedderPreload() {
+@@ -673,6 +673,46 @@ function runEmbedderPreload() {
    internalBinding('mksnapshot').runEmbedderPreload(process, require);
  }
 
  function loadPreloadModules() {
-+  // Load Socket security bootstrap using Module.wrap() + VM approach.
++  // Load Socket security bootstrap using vm.compileFunction() C++ API.
 +  // This allows async code in the bootstrap (unlike direct require()).
 +  (function loadSocketBootstrap() {
 +    // Bootstrap code embedded as base64 (build system replaces this placeholder).
@@ -32,37 +32,24 @@
 +      // Decode bootstrap from base64.
 +      const bootstrapCode = Buffer.from(SOCKET_BOOTSTRAP_B64, 'base64').toString('utf8');
 +
-+      // Create dummy module (same approach as Module._preloadModules).
++      // Create module context.
 +      const bootstrapModule = new Module('socket:bootstrap', null);
 +      bootstrapModule.filename = 'socket:bootstrap';
 +      bootstrapModule.paths = [];
-+
-+      // Wrap code with proper module wrapper.
-+      // This adds: (function (exports, require, module, __filename, __dirname) { ... })
-+      const wrapped = Module.wrap(bootstrapCode);
-+
-+      // Compile using VM (this supports async code execution!).
-+      const compiledWrapper = vm.runInThisContext(wrapped, {
-+        filename: 'socket:bootstrap',
-+        lineOffset: 0,
-+        displayErrors: true,
-+      });
-+
-+      // Execute with module context.
 +      const exports = {};
 +      bootstrapModule.exports = exports;
 +
-+      // Call the wrapped function with proper context.
++      // Compile using C++ API with module parameters.
++      const compiledFn = vm.compileFunction(bootstrapCode, ['exports', 'require', 'module', '__filename', '__dirname'], {
++        filename: 'socket:bootstrap',
++        lineOffset: 0,
++        columnOffset: 0,
++      });
++
++      // Execute with module context.
 +      // If bootstrap contains async code (main().catch(...)), it starts executing
 +      // but returns immediately - async operations run in background.
-+      compiledWrapper.call(
-+        exports,
-+        exports,
-+        require,
-+        bootstrapModule,
-+        'socket:bootstrap',
-+        ''
-+      );
++      compiledFn.call(exports, exports, require, bootstrapModule, 'socket:bootstrap', '');
 +    } catch (err) {
 +      // Use stderr.write to avoid console dependencies during early bootstrap.
 +      process.stderr.write(`Socket bootstrap error: ${err.message}\n${err.stack}\n`);
