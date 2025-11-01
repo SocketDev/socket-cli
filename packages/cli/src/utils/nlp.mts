@@ -9,9 +9,11 @@
 
 import type { InferenceSession, Tensor } from 'onnxruntime-node'
 
+import { loadOnnxRuntime, stubOnnxRuntime } from './onnx-runtime-stub.mts'
+
 // Lazy imports to avoid loading models unless needed.
 let compromise: any = null
-let onnxRuntime: typeof import('onnxruntime-node') | null = null
+let onnxRuntime: typeof stubOnnxRuntime | null = null
 let minilmSession: InferenceSession | null = null
 let minilmTokenizer: any = null
 let codet5EncoderSession: InferenceSession | null = null
@@ -24,28 +26,52 @@ let codet5Tokenizer: any = null
 let enhancedAvailable: boolean | null = null
 let codet5Available: boolean | null = null
 
+/**
+ * Model paths - can be configured via environment or embedded in binary.
+ */
+const getModelPaths = () => {
+  // Check for embedded models first (bundled in CLI).
+  const embeddedBase = process.env.SOCKET_MODELS_PATH || '.cache/models'
+
+  return {
+    minilmModel: `${embeddedBase}/minilm-l6-int4.onnx`,
+    minilmTokenizer: `${embeddedBase}/minilm-l6-tokenizer.json`,
+    codet5Encoder: `${embeddedBase}/codet5-encoder-int4.onnx`,
+    codet5Decoder: `${embeddedBase}/codet5-decoder-int4.onnx`,
+    codet5Tokenizer: `${embeddedBase}/codet5-tokenizer.json`,
+  }
+}
+
 async function checkEnhancedNLP(): Promise<boolean> {
   if (enhancedAvailable !== null) {
     return enhancedAvailable
   }
 
   try {
-    // Check if ONNX Runtime is available.
-    onnxRuntime = await import('onnxruntime-node')
+    // Load ONNX Runtime (real or stub).
+    onnxRuntime = await loadOnnxRuntime()
+
+    if (!onnxRuntime) {
+      enhancedAvailable = false
+      return false
+    }
 
     // Check if MiniLM model is available.
-    // Models are embedded in WASM bundle or loaded from .cache/models/
-    const modelPath = '.cache/models/minilm-l6-int4.onnx'
-    const tokenizerPath = '.cache/models/minilm-l6-tokenizer.json'
+    const { minilmModel, minilmTokenizer: tokenizerPath } = getModelPaths()
 
     const { existsSync } = await import('node:fs')
-    if (!existsSync(modelPath) || !existsSync(tokenizerPath)) {
+    if (!existsSync(minilmModel) || !existsSync(tokenizerPath)) {
       enhancedAvailable = false
       return false
     }
 
     // Try to load the model.
-    minilmSession = await onnxRuntime.InferenceSession.create(modelPath)
+    minilmSession = await onnxRuntime.InferenceSession.create(minilmModel) as InferenceSession | null
+
+    if (!minilmSession) {
+      enhancedAvailable = false
+      return false
+    }
 
     // Load tokenizer.
     const { readFile } = await import('node:fs/promises')
@@ -278,15 +304,18 @@ async function checkCodeT5(): Promise<boolean> {
   }
 
   try {
-    // Check if ONNX Runtime is available.
+    // Load ONNX Runtime (real or stub) if not already loaded.
     if (!onnxRuntime) {
-      onnxRuntime = await import('onnxruntime-node')
+      onnxRuntime = await loadOnnxRuntime()
+    }
+
+    if (!onnxRuntime) {
+      codet5Available = false
+      return false
     }
 
     // Check if CodeT5 models are available.
-    const encoderPath = '.cache/models/codet5-encoder-int4.onnx'
-    const decoderPath = '.cache/models/codet5-decoder-int4.onnx'
-    const tokenizerPath = '.cache/models/codet5-tokenizer.json'
+    const { codet5Encoder: encoderPath, codet5Decoder: decoderPath, codet5Tokenizer: tokenizerPath } = getModelPaths()
 
     const { existsSync } = await import('node:fs')
     if (!existsSync(encoderPath) || !existsSync(decoderPath) || !existsSync(tokenizerPath)) {
@@ -295,8 +324,13 @@ async function checkCodeT5(): Promise<boolean> {
     }
 
     // Try to load the models.
-    codet5EncoderSession = await onnxRuntime.InferenceSession.create(encoderPath)
-    codet5DecoderSession = await onnxRuntime.InferenceSession.create(decoderPath)
+    codet5EncoderSession = await onnxRuntime.InferenceSession.create(encoderPath) as InferenceSession | null
+    codet5DecoderSession = await onnxRuntime.InferenceSession.create(decoderPath) as InferenceSession | null
+
+    if (!codet5EncoderSession || !codet5DecoderSession) {
+      codet5Available = false
+      return false
+    }
 
     // Load tokenizer.
     const { readFile } = await import('node:fs/promises')
