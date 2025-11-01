@@ -302,7 +302,7 @@ export async function ensurePython(): Promise<string> {
 /**
  * Check if socketcli is installed in the Python environment.
  */
-async function isSocketCliInstalled(pythonBin: string): Promise<boolean> {
+async function isSocketPythonCliInstalled(pythonBin: string): Promise<boolean> {
   try {
     const result = await spawn(
       pythonBin,
@@ -338,9 +338,9 @@ function convertCaretToPipRange(caretRange: string): string {
 /**
  * Install socketsecurity package into the Python environment.
  */
-export async function ensureSocketCli(pythonBin: string): Promise<void> {
+export async function ensureSocketPythonCli(pythonBin: string): Promise<void> {
   // Check if already installed
-  if (await isSocketCliInstalled(pythonBin)) {
+  if (await isSocketPythonCliInstalled(pythonBin)) {
     return
   }
 
@@ -404,7 +404,7 @@ export async function spawnSocketPython(
     const pythonBin = await ensurePython()
 
     // Ensure socketcli is installed
-    await ensureSocketCli(pythonBin)
+    await ensureSocketPythonCli(pythonBin)
 
     // Run socketcli via python -m
     const spawnResult = await spawn(
