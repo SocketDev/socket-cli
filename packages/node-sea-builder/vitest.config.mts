@@ -1,8 +1,6 @@
-import { defineConfig } from 'vitest/config'
+/**
+ * Extends shared simple vitest config.
+ */
+import baseConfig from '../../vitest.config.simple.mts'
 
-export default defineConfig({
-  test: {
-    testTimeout: 10000,
-    hookTimeout: 10000,
-  },
-})
+export default baseConfig
