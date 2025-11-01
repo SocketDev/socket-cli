@@ -43,10 +43,22 @@ function isPackageCached(packageName: string): boolean {
 }
 
 /**
+ * Track if preflight downloads have already been initiated.
+ */
+let preflightRunning = false
+
+/**
  * Run preflight downloads in the background.
  * This never blocks or throws errors.
+ * Only runs once per process lifetime.
  */
 export function runPreflightDownloads(): void {
+  // Only run once.
+  if (preflightRunning) {
+    return
+  }
+  preflightRunning = true
+
   // Don't run in test/CI environments.
   if (ENV.CI || ENV.VITEST) {
     return
@@ -69,8 +81,8 @@ export function runPreflightDownloads(): void {
         })
       }
 
-      // Delay before next download.
-      await delay(3000)
+      // Delay before next download (1-3 seconds).
+      await delay(1000 + Math.random() * 2000)
 
       // 2. @cyclonedx/cdxgen preflight.
       const cdxgenVersion = ENV.INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION
@@ -83,8 +95,8 @@ export function runPreflightDownloads(): void {
         })
       }
 
-      // Delay before next download.
-      await delay(3000)
+      // Delay before next download (1-3 seconds).
+      await delay(1000 + Math.random() * 2000)
 
       // 3. Python + socketsecurity (socket-python-cli) preflight.
       const pythonBin = await ensurePython()
