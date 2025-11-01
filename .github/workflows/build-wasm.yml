@@ -275,6 +275,18 @@ jobs:
             ls -lh packages/models/dist/ 2>/dev/null || echo "Directory does not exist"
           fi
 
+      - name: Check workflow status before build
+        if: steps.models-cache-valid.outputs.valid != 'true' || inputs.force
+        run: |
+          # Fail fast: check if workflow already failed before starting long build.
+          STATUS=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id }} --jq '.status' 2>/dev/null || echo "in_progress")
+          if [ "$STATUS" = "cancelled" ]; then
+            echo "Workflow was cancelled - exiting early"
+            exit 1
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
+
       - name: Build AI models
         if: steps.models-cache-valid.outputs.valid != 'true' || inputs.force
         run: |
@@ -419,6 +431,18 @@ jobs:
         run: |
           cd emsdk
           ./emsdk activate latest
+
+      - name: Check workflow status before build
+        if: steps.onnx-cache-valid.outputs.valid != 'true' || inputs.force
+        run: |
+          # Fail fast: check if workflow already failed before starting long build.
+          STATUS=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id }} --jq '.status' 2>/dev/null || echo "in_progress")
+          if [ "$STATUS" = "cancelled" ]; then
+            echo "Workflow was cancelled - exiting early"
+            exit 1
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
 
       - name: Build ONNX Runtime WASM
         if: steps.onnx-cache-valid.outputs.valid != 'true' || inputs.force
