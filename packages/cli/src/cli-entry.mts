@@ -51,10 +51,9 @@ import { scheduleUpdateCheck } from './utils/update/manager.mts'
 const __filename = fileURLToPath(import.meta.url)
 
 void (async () => {
-  const registryUrl = lookupRegistryUrl()
-
   // Skip update checks in test environments.
   if (!ENV.VITEST && !ENV.CI) {
+    const registryUrl = lookupRegistryUrl()
     // Unified update notifier handles both SEA and npm automatically.
     await scheduleUpdateCheck({
       authInfo: lookupRegistryAuthToken(registryUrl, { recursive: true }),
