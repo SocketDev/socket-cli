@@ -4,15 +4,32 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [2.0.12](https://github.com/SocketDev/socket-cli/releases/tag/v2.0.12) - 2025-10-31
+## [2.0.11](https://github.com/SocketDev/socket-cli/releases/tag/v2.0.11) - 2025-11-01
 
 ### Added
-- Automatic CDN cache invalidation for unpkg and jsdelivr when publishing Socket packages
-- Version bump hooks to ensure fresh CDN caches for `socket`, `@socketsecurity/cli`, and `@socketsecurity/cli-with-sentry`
+- Progressive enhancement with ONNX Runtime stub for optional NLP features
+- SHA-256 checksum verification for Python build standalone downloads
+- Optional external alias detection for TypeScript configurations
+- Comprehensive documentation for NLP progressive enhancement
+- Package badges to README files
+
+### Changed
+- Standardized environment variable naming with SOCKET_CLI_ prefix
 
 ### Fixed
-- Bootstrap process no longer shows spurious "command failed" error on successful CLI execution
-- Windows CI test failures in path resolution tests - now platform-aware and handle Unix path expectations correctly
+- Bootstrap stream/promises module path corrected for smol builds
+- Bootstrap error handling improved for clearer failure messages
+- Windows path handling now correctly processes UNC paths
+- Windows validation added for Unix-style paths in npm directory resolution
+
+## [2.0.10](https://github.com/SocketDev/socket-cli/releases/tag/v2.0.10) - 2025-10-31
+
+### Fixed
+- Tab completion script now resolves CLI package root correctly
+- SDK scan options flattened and repo parameter made conditional
+- Output handling now safely checks for null before calling toString()
+- Environment variable fallbacks from v1.x restored for backward compatibility
+- Directory creation EEXIST errors now handled gracefully
 
 ## [2.0.9](https://github.com/SocketDev/socket-cli/releases/tag/v2.0.9) - 2025-10-31
 
