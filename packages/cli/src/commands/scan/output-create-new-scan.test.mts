@@ -53,7 +53,7 @@ describe('outputCreateNewScan', () => {
     const { serializeResultJson } = await vi.importMock(
       '../../utils/output/result-json.mjs',
     )
-    const mockLog = vi.mocked(logger.log)
+    const mockLog = vi.mocked(getDefaultLogger().log)
     const mockSerialize = vi.mocked(serializeResultJson)
 
     const result: CResult<SocketSdkSuccessResult<'CreateOrgFullScan'>['data']> =
@@ -75,7 +75,7 @@ describe('outputCreateNewScan', () => {
   it('outputs error in JSON format', async () => {
     const { outputCreateNewScan } = await import('./output-create-new-scan.mts')
     const { logger } = await vi.importMock('@socketsecurity/lib/logger')
-    const mockLog = vi.mocked(logger.log)
+    const mockLog = vi.mocked(getDefaultLogger().log)
 
     const result: CResult<SocketSdkSuccessResult<'CreateOrgFullScan'>['data']> =
       {
@@ -95,8 +95,8 @@ describe('outputCreateNewScan', () => {
     const { outputCreateNewScan } = await import('./output-create-new-scan.mts')
     const { logger } = await vi.importMock('@socketsecurity/lib/logger')
     const terminalLink = await vi.importMock('terminal-link')
-    const mockLog = vi.mocked(logger.log)
-    const mockSuccess = vi.mocked(logger.success)
+    const mockLog = vi.mocked(getDefaultLogger().log)
+    const mockSuccess = vi.mocked(getDefaultLogger().success)
     const mockTerminalLink = vi.mocked(terminalLink.default)
 
     const result: CResult<SocketSdkSuccessResult<'CreateOrgFullScan'>['data']> =
@@ -123,7 +123,7 @@ describe('outputCreateNewScan', () => {
   it('outputs markdown format with scan ID', async () => {
     const { outputCreateNewScan } = await import('./output-create-new-scan.mts')
     const { logger } = await vi.importMock('@socketsecurity/lib/logger')
-    const mockLog = vi.mocked(logger.log)
+    const mockLog = vi.mocked(getDefaultLogger().log)
 
     const result: CResult<SocketSdkSuccessResult<'CreateOrgFullScan'>['data']> =
       {
@@ -147,7 +147,7 @@ describe('outputCreateNewScan', () => {
   it('handles missing scan ID properly', async () => {
     const { outputCreateNewScan } = await import('./output-create-new-scan.mts')
     const { logger } = await vi.importMock('@socketsecurity/lib/logger')
-    const mockFail = vi.mocked(logger.fail)
+    const mockFail = vi.mocked(getDefaultLogger().fail)
 
     const result: CResult<SocketSdkSuccessResult<'CreateOrgFullScan'>['data']> =
       {
@@ -172,7 +172,7 @@ describe('outputCreateNewScan', () => {
     const { failMsgWithBadge } = await vi.importMock(
       '../../utils/error/fail-msg-with-badge.mts',
     )
-    const mockFail = vi.mocked(logger.fail)
+    const mockFail = vi.mocked(getDefaultLogger().fail)
     const mockFailMsg = vi.mocked(failMsgWithBadge)
 
     const result: CResult<SocketSdkSuccessResult<'CreateOrgFullScan'>['data']> =
@@ -277,7 +277,7 @@ describe('outputCreateNewScan', () => {
   it('handles missing report URL', async () => {
     const { outputCreateNewScan } = await import('./output-create-new-scan.mts')
     const { logger } = await vi.importMock('@socketsecurity/lib/logger')
-    const mockLog = vi.mocked(logger.log)
+    const mockLog = vi.mocked(getDefaultLogger().log)
 
     const result: CResult<SocketSdkSuccessResult<'CreateOrgFullScan'>['data']> =
       {

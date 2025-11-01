@@ -1,7 +1,7 @@
 import chalkTable from 'chalk-table'
 import colors from 'yoctocolors-cjs'
 
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
@@ -25,7 +25,7 @@ export async function outputListRepos(
 
   if (outputKind === 'json') {
     if (result.ok) {
-      logger.log(
+      getDefaultLogger().log(
         serializeResultJson({
           ok: true,
           data: {
@@ -39,16 +39,16 @@ export async function outputListRepos(
         }),
       )
     } else {
-      logger.log(serializeResultJson(result))
+      getDefaultLogger().log(serializeResultJson(result))
     }
     return
   }
   if (!result.ok) {
-    logger.fail(failMsgWithBadge(result.message, result.cause))
+    getDefaultLogger().fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
-  logger.log(
+  getDefaultLogger().log(
     `Result page: ${page}, results per page: ${perPage === Number.POSITIVE_INFINITY ? 'all' : perPage}, sorted by: ${sort}, direction: ${direction}`,
   )
 
@@ -62,18 +62,20 @@ export async function outputListRepos(
     ],
   }
 
-  logger.log(chalkTable(options, result.data.results))
+  getDefaultLogger().log(chalkTable(options, result.data.results))
   if (nextPage) {
-    logger.info(
+    getDefaultLogger().info(
       `This is page ${page}. Server indicated there are more results available on page ${nextPage}...`,
     )
-    logger.info(
+    getDefaultLogger().info(
       `(Hint: you can use \`socket repository list --page ${nextPage}\`)`,
     )
   } else if (perPage === Number.POSITIVE_INFINITY) {
-    logger.info('This should be the entire list available on the server.')
+    getDefaultLogger().info(
+      'This should be the entire list available on the server.',
+    )
   } else {
-    logger.info(
+    getDefaultLogger().info(
       `This is page ${page}. Server indicated this is the last page with results.`,
     )
   }

@@ -1,6 +1,6 @@
 /** @fileoverview Command builder to DRY out repetitive cmd-*.mts command definitions */
 
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { meowOrExit } from '../cli/with-subcommands.mjs'
@@ -160,10 +160,10 @@ export function buildParentCommand(
     ) {
       // This is typically handled by meowWithSubcommands
       // but we can provide a fallback
-      logger.log(`Available subcommands for ${name}:`)
+      getDefaultLogger().log(`Available subcommands for ${name}:`)
       for (const [key, cmd] of Object.entries(subcommands)) {
         if (!cmd.hidden) {
-          logger.log(`  ${key} - ${cmd.description}`)
+          getDefaultLogger().log(`  ${key} - ${cmd.description}`)
         }
       }
     },
@@ -236,9 +236,9 @@ export const errorHandlers = {
    * Handle missing required argument
    */
   missingArg: (argName: string, example?: string) => {
-    logger.error(`Missing required argument: ${argName}`)
+    getDefaultLogger().error(`Missing required argument: ${argName}`)
     if (example) {
-      logger.log(`Example: ${example}`)
+      getDefaultLogger().log(`Example: ${example}`)
     }
     process.exitCode = 1
   },
@@ -247,9 +247,9 @@ export const errorHandlers = {
    * Handle API error
    */
   apiError: (error: any, operation: string) => {
-    logger.error(`Failed to ${operation}`)
+    getDefaultLogger().error(`Failed to ${operation}`)
     if (error.message) {
-      logger.error(error.message)
+      getDefaultLogger().error(error.message)
     }
     process.exitCode = 1
   },
@@ -258,7 +258,7 @@ export const errorHandlers = {
    * Handle validation error
    */
   validationError: (message: string) => {
-    logger.error(`Validation error: ${message}`)
+    getDefaultLogger().error(`Validation error: ${message}`)
     process.exitCode = 1
   },
 }

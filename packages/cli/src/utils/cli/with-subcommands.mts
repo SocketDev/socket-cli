@@ -2,7 +2,7 @@ import terminalLink from 'terminal-link'
 import colors from 'yoctocolors-cjs'
 
 import { joinAnd } from '@socketsecurity/lib/arrays'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { getOwn, hasOwn, toSortedObject } from '@socketsecurity/lib/objects'
 import { normalizePath } from '@socketsecurity/lib/path'
 import { naturalCompare } from '@socketsecurity/lib/sorts'
@@ -341,7 +341,7 @@ export function emitBanner(
   //       and pipe the result to other tools. By emitting the banner over stderr
   //       you can do something like `socket scan view xyz | jq | process`.
   //       The spinner also emits over stderr for example.
-  logger.error(getAsciiHeader(name, orgFlag, compactMode, flags))
+  getDefaultLogger().error(getAsciiHeader(name, orgFlag, compactMode, flags))
 }
 
 // For debugging. Whenever you call meowOrExit it will store the command here
@@ -403,7 +403,7 @@ export async function meowWithSubcommands(
   // Try to support `socket <purl>` as a shorthand for `socket package score <purl>`.
   if (!isRootCommand) {
     if (commandOrAliasName?.startsWith('pkg:')) {
-      logger.info('Invoking `socket package score`.')
+      getDefaultLogger().info('Invoking `socket package score`.')
       return await meowWithSubcommands(
         { name, argv: ['package', 'deep', ...argv], importMeta, subcommands },
         options,
@@ -412,7 +412,7 @@ export async function meowWithSubcommands(
     // Support `socket npm/lodash` or whatever as a shorthand, too.
     // Accept any ecosystem and let the remote sort it out.
     if (/^[a-z]+\//.test(commandOrAliasName || '')) {
-      logger.info('Invoking `socket package score`.')
+      getDefaultLogger().info('Invoking `socket package score`.')
       return await meowWithSubcommands(
         {
           name,
@@ -546,9 +546,9 @@ export async function meowWithSubcommands(
     if (!shouldSuppressBanner(cli1.flags)) {
       emitBanner(name, orgFlag, compactMode, cli1.flags)
       // Add newline in stderr.
-      logger.error('')
+      getDefaultLogger().error('')
     }
-    logger.fail(configOverrideResult.message)
+    getDefaultLogger().fail(configOverrideResult.message)
     process.exitCode = 2
     return
   }
@@ -589,7 +589,7 @@ export async function meowWithSubcommands(
       const suggestion = findBestCommandMatch(commandName, subcommands, aliases)
       if (suggestion) {
         process.exitCode = 2
-        logger.fail(
+        getDefaultLogger().fail(
           `Unknown command "${commandName}". Did you mean "${suggestion}"?`,
         )
         return
@@ -673,11 +673,11 @@ export async function meowWithSubcommands(
         if (commands.has(name)) {
           commands.delete(name)
         } else {
-          logger.fail('Received an unknown command:', name)
+          getDefaultLogger().fail('Received an unknown command:', name)
         }
       })
     if (commands.size) {
-      logger.fail(
+      getDefaultLogger().fail(
         'Found commands in the list that were not marked as public or not defined at all:',
         // Node < 22 will print 'Object (n)' before the array. So to have consistent
         // test snapshots we use joinAnd.
@@ -856,7 +856,7 @@ export async function meowWithSubcommands(
     // Meow will add newline so don't add stderr spacing here.
   }
   if (!helpFlag && dryRun) {
-    logger.log(`${DRY_RUN_LABEL}: No-op, call a sub-command; ok`)
+    getDefaultLogger().log(`${DRY_RUN_LABEL}: No-op, call a sub-command; ok`)
     // Exit immediately to prevent tests from hanging waiting for stdin.
     // eslint-disable-next-line n/no-process-exit -- Required for dry-run mode.
     process.exit(0)
@@ -950,7 +950,7 @@ export function meowOrExit(
     emitBanner(command, orgFlag, compactMode, cli.flags)
     // Add newline in stderr.
     // Meow help adds a newline too so we do it here.
-    logger.error('')
+    getDefaultLogger().error('')
   }
 
   // As per https://github.com/sindresorhus/meow/issues/178
@@ -977,7 +977,7 @@ export function meowOrExit(
 
   // Meow doesn't detect 'version' as an unknown flag, so we do the leg work here.
   if (versionFlag && !hasOwn(cliConfig.flags, 'version')) {
-    // Use `console.error` here instead of `logger.error` to match Meow behavior.
+    // Use `console.error` here instead of `getDefaultLogger().error` to match Meow behavior.
     console.error('Unknown flag\n--version')
     // eslint-disable-next-line n/no-process-exit
     process.exit(2)

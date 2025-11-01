@@ -2,7 +2,7 @@ import fs from 'node:fs/promises'
 
 import { joinAnd } from '@socketsecurity/lib/arrays'
 import { getSpinner } from '@socketsecurity/lib/constants/process'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { generateReport } from './generate-report.mts'
 import {
@@ -56,10 +56,10 @@ export async function outputScanReport(
 
   if (!result.ok) {
     if (outputKind === OUTPUT_JSON) {
-      logger.log(serializeResultJson(result))
+      getDefaultLogger().log(serializeResultJson(result))
       return
     }
-    logger.fail(failMsgWithBadge(result.message, result.cause))
+    getDefaultLogger().fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
@@ -83,16 +83,18 @@ export async function outputScanReport(
 
     // If report generation somehow failed then .data should not be set.
     if (outputKind === OUTPUT_JSON) {
-      logger.log(serializeResultJson(scanReport))
+      getDefaultLogger().log(serializeResultJson(scanReport))
       return
     }
-    logger.fail(failMsgWithBadge(scanReport.message, scanReport.cause))
+    getDefaultLogger().fail(
+      failMsgWithBadge(scanReport.message, scanReport.cause),
+    )
     return
   }
 
   // I don't think we emit the default error message with banner for an unhealthy report, do we?
   // if (!scanReport.data.healthy) {
-  //   logger.fail(failMsgWithBadge(scanReport.message, scanReport.cause))
+  //   getDefaultLogger().fail(failMsgWithBadge(scanReport.message, scanReport.cause))
   //   return
   // }
 
@@ -105,11 +107,11 @@ export async function outputScanReport(
       : toJsonReport(scanReport.data as ScanReport, includeLicensePolicy)
 
     if (filepath && filepath !== '-') {
-      logger.log('Writing json report to', filepath)
+      getDefaultLogger().log('Writing json report to', filepath)
       return await fs.writeFile(filepath, json)
     }
 
-    logger.log(json)
+    getDefaultLogger().log(json)
     return
   }
 
@@ -123,19 +125,19 @@ export async function outputScanReport(
         )
 
     if (filepath && filepath !== '-') {
-      logger.log('Writing markdown report to', filepath)
+      getDefaultLogger().log('Writing markdown report to', filepath)
       return await fs.writeFile(filepath, md)
     }
 
-    logger.log(md)
-    logger.log('')
+    getDefaultLogger().log(md)
+    getDefaultLogger().log('')
     return
   }
 
   if (short) {
-    logger.log(scanReport.data.healthy ? 'OK' : 'ERR')
+    getDefaultLogger().log(scanReport.data.healthy ? 'OK' : 'ERR')
   } else {
-    logger.dir(scanReport.data, { depth: null })
+    getDefaultLogger().dir(scanReport.data, { depth: null })
   }
 }
 

@@ -15,7 +15,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { performance } from 'node:perf_hooks'
 
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -50,7 +50,7 @@ async function getFileSize(filePath) {
  * Run build and measure time.
  */
 async function benchmarkBuild(mode) {
-  logger.step(`Benchmarking ${mode} build`)
+  getDefaultLogger().step(`Benchmarking ${mode} build`)
 
   const args = ['node', buildScript]
   if (mode === 'dev') {
@@ -69,14 +69,14 @@ async function benchmarkBuild(mode) {
       throw new Error(`Build failed with exit code ${result.code}`)
     }
   } catch (e) {
-    logger.error(`${mode} build failed:`, e.message)
+    getDefaultLogger().error(`${mode} build failed:`, e.message)
     return null
   }
 
   const endTime = performance.now()
   const duration = endTime - startTime
 
-  logger.success(`${mode} build completed in ${formatTime(duration)}`)
+  getDefaultLogger().success(`${mode} build completed in ${formatTime(duration)}`)
 
   return {
     duration,
@@ -110,32 +110,32 @@ async function getWasmSizes() {
  * Display comparison.
  */
 function displayComparison(devResult, prodResult) {
-  logger.step('Build Performance Comparison')
+  getDefaultLogger().step('Build Performance Comparison')
 
-  logger.log('')
-  logger.log('╔════════════════════════════════════════════════════╗')
-  logger.log('║             Build Time Comparison                 ║')
-  logger.log('╚════════════════════════════════════════════════════╝')
-  logger.log('')
+  getDefaultLogger().log('')
+  getDefaultLogger().log('╔════════════════════════════════════════════════════╗')
+  getDefaultLogger().log('║             Build Time Comparison                 ║')
+  getDefaultLogger().log('╚════════════════════════════════════════════════════╝')
+  getDefaultLogger().log('')
 
   const devTime = devResult.durationMs / 1000
   const prodTime = prodResult.durationMs / 1000
   const speedup = (prodTime / devTime).toFixed(1)
 
-  logger.log(`  Dev Build:   ${devResult.durationFormatted}`)
-  logger.log(`  Prod Build:  ${prodResult.durationFormatted}`)
-  logger.log('')
-  logger.log(`  Speedup:     ${speedup}x faster (dev vs prod)`)
-  logger.log('')
+  getDefaultLogger().log(`  Dev Build:   ${devResult.durationFormatted}`)
+  getDefaultLogger().log(`  Prod Build:  ${prodResult.durationFormatted}`)
+  getDefaultLogger().log('')
+  getDefaultLogger().log(`  Speedup:     ${speedup}x faster (dev vs prod)`)
+  getDefaultLogger().log('')
 
   // Visualization.
   const maxBar = 50
   const devBar = Math.floor((devTime / prodTime) * maxBar)
   const prodBar = maxBar
 
-  logger.log('  Dev  │' + '█'.repeat(devBar))
-  logger.log('  Prod │' + '█'.repeat(prodBar))
-  logger.log('')
+  getDefaultLogger().log('  Dev  │' + '█'.repeat(devBar))
+  getDefaultLogger().log('  Prod │' + '█'.repeat(prodBar))
+  getDefaultLogger().log('')
 }
 
 /**
@@ -145,14 +145,14 @@ async function displaySizes() {
   const sizes = await getWasmSizes()
 
   if (sizes.wasmSize === 0 || sizes.syncSize === 0) {
-    logger.warn('Could not read WASM file sizes')
+    getDefaultLogger().warn('Could not read WASM file sizes')
     return
   }
 
-  logger.log('╔════════════════════════════════════════════════════╗')
-  logger.log('║             Output Size Information                ║')
-  logger.log('╚════════════════════════════════════════════════════╝')
-  logger.log('')
+  getDefaultLogger().log('╔════════════════════════════════════════════════════╗')
+  getDefaultLogger().log('║             Output Size Information                ║')
+  getDefaultLogger().log('╚════════════════════════════════════════════════════╝')
+  getDefaultLogger().log('')
 
   const wasmMB = (sizes.wasmSize / 1024 / 1024).toFixed(2)
   const syncMB = (sizes.syncSize / 1024 / 1024).toFixed(2)
@@ -161,10 +161,10 @@ async function displaySizes() {
     100
   ).toFixed(1)
 
-  logger.log(`  WASM (raw):        ${wasmMB} MB`)
-  logger.log(`  JS (compressed):   ${syncMB} MB`)
-  logger.log(`  Compression:       ${compressionRatio}% of original`)
-  logger.log('')
+  getDefaultLogger().log(`  WASM (raw):        ${wasmMB} MB`)
+  getDefaultLogger().log(`  JS (compressed):   ${syncMB} MB`)
+  getDefaultLogger().log(`  Compression:       ${compressionRatio}% of original`)
+  getDefaultLogger().log('')
 }
 
 /**
@@ -175,9 +175,9 @@ async function main() {
   const devOnly = args.includes('--dev-only')
   const prodOnly = args.includes('--prod-only')
 
-  logger.info('╔════════════════════════════════════════════════════╗')
-  logger.info('║      WASM Build Performance Benchmark              ║')
-  logger.info('╚════════════════════════════════════════════════════╝\n')
+  getDefaultLogger().info('╔════════════════════════════════════════════════════╗')
+  getDefaultLogger().info('║      WASM Build Performance Benchmark              ║')
+  getDefaultLogger().info('╚════════════════════════════════════════════════════╝\n')
 
   let devResult = null
   let prodResult = null
@@ -193,7 +193,7 @@ async function main() {
   // Run prod build.
   if (!devOnly) {
     if (devResult) {
-      logger.log('') // Spacing.
+      getDefaultLogger().log('') // Spacing.
     }
     prodResult = await benchmarkBuild('production')
     if (!prodResult) {
@@ -202,22 +202,22 @@ async function main() {
   }
 
   // Display comparison.
-  logger.log('')
+  getDefaultLogger().log('')
   if (devResult && prodResult) {
     displayComparison(devResult, prodResult)
   } else if (devResult) {
-    logger.success(`Dev build: ${devResult.durationFormatted}`)
+    getDefaultLogger().success(`Dev build: ${devResult.durationFormatted}`)
   } else if (prodResult) {
-    logger.success(`Production build: ${prodResult.durationFormatted}`)
+    getDefaultLogger().success(`Production build: ${prodResult.durationFormatted}`)
   }
 
   // Display sizes.
   await displaySizes()
 
-  logger.info('Benchmark complete')
+  getDefaultLogger().info('Benchmark complete')
 }
 
 main().catch(e => {
-  logger.error('Benchmark failed:', e)
+  getDefaultLogger().error('Benchmark failed:', e)
   process.exit(1)
 })

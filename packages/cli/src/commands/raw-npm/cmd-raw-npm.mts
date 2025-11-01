@@ -1,4 +1,4 @@
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { runRawNpm } from './run-raw-npm.mts'
 import {
@@ -58,7 +58,7 @@ async function run(
   const dryRun = !!cli.flags['dryRun']
 
   if (dryRun) {
-    logger.log(DRY_RUN_BAILING_NOW)
+    getDefaultLogger().log(DRY_RUN_BAILING_NOW)
     return
   }
 

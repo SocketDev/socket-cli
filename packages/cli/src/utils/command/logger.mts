@@ -1,6 +1,6 @@
 /** @fileoverview Command-scoped logger for Socket CLI. Provides logging with automatic command context for better debugging and filtering. */
 
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 /**
  * Logger with command context
@@ -80,12 +80,13 @@ export function createCommandLogger(
   }
 
   return {
-    log: (...args: any[]) => logger.log(...prefixArgs(...args)),
-    info: (...args: any[]) => logger.info(...prefixArgs(...args)),
-    warn: (...args: any[]) => logger.warn(...prefixArgs(...args)),
-    error: (...args: any[]) => logger.error(...prefixArgs(...args)),
-    fail: (...args: any[]) => logger.fail(...prefixArgs(...args)),
-    success: (...args: any[]) => logger.success(...prefixArgs(...args)),
+    log: (...args: any[]) => getDefaultLogger().log(...prefixArgs(...args)),
+    info: (...args: any[]) => getDefaultLogger().info(...prefixArgs(...args)),
+    warn: (...args: any[]) => getDefaultLogger().warn(...prefixArgs(...args)),
+    error: (...args: any[]) => getDefaultLogger().error(...prefixArgs(...args)),
+    fail: (...args: any[]) => getDefaultLogger().fail(...prefixArgs(...args)),
+    success: (...args: any[]) =>
+      getDefaultLogger().success(...prefixArgs(...args)),
     commandName,
   }
 }
@@ -114,7 +115,7 @@ export function createOperationLogger(
 /**
  * Global logger instance (re-exported for convenience)
  */
-export { logger }
+export { getDefaultLogger }
 
 /**
  * Create a logger for debugging purposes
@@ -141,7 +142,7 @@ export function createDebugLogger(namespace: string): (...args: any[]) => void {
   }
 
   return (...args: any[]) => {
-    logger.log(`[${namespace}]`, ...args)
+    getDefaultLogger().log(`[${namespace}]`, ...args)
   }
 }
 

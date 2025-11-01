@@ -8,7 +8,7 @@
 // Load Intl polyfill FIRST for ICU-disabled builds.
 import '@socketsecurity/cli/src/polyfills/intl-stub/index.mts'
 
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { findAndExecuteCli, getArgs } from './shared/bootstrap-shared.mjs'
 
@@ -24,6 +24,6 @@ main()
     process.exit(exitCode)
   })
   .catch((e) => {
-    logger.error(`Bootstrap error: ${e instanceof Error ? e.message : String(e)}`)
+    getDefaultLogger().error(`Bootstrap error: ${e instanceof Error ? e.message : String(e)}`)
     process.exit(1)
   })

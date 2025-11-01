@@ -1,7 +1,7 @@
 import path from 'node:path'
 
 import { debugDir } from '@socketsecurity/lib/debug'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { detectManifestActions } from './detect-manifest-actions.mts'
 import { generateAutoManifest } from './generate_auto_manifest.mts'
@@ -83,12 +83,12 @@ async function run(
   const outputKind = getOutputKind(json, markdown)
 
   if (verbose) {
-    logger.group('- ', parentName, config.commandName, ':')
-    logger.group('- flags:', cli.flags)
-    logger.groupEnd()
-    logger.log('- input:', cli.input)
-    logger.log('- cwd:', cwd)
-    logger.groupEnd()
+    getDefaultLogger().group('- ', parentName, config.commandName, ':')
+    getDefaultLogger().group('- flags:', cli.flags)
+    getDefaultLogger().groupEnd()
+    getDefaultLogger().log('- input:', cli.input)
+    getDefaultLogger().log('- cwd:', cwd)
+    getDefaultLogger().groupEnd()
   }
 
   const sockJson = readOrDefaultSocketJson(cwd)
@@ -97,22 +97,24 @@ async function run(
   debugDir('inspect', { detected })
 
   if (dryRun) {
-    logger.log(DRY_RUN_BAILING_NOW)
+    getDefaultLogger().log(DRY_RUN_BAILING_NOW)
     return
   }
 
   if (!detected.count) {
-    logger.fail(
+    getDefaultLogger().fail(
       'Was unable to discover any targets for which we can generate manifest files...',
     )
-    logger.log('')
-    logger.log(
+    getDefaultLogger().log('')
+    getDefaultLogger().log(
       '- Make sure this script would work with your target build (see `socket manifest --help` for your target).',
     )
-    logger.log(
+    getDefaultLogger().log(
       '- Make sure to run it from the correct dir (use --cwd to target another dir)',
     )
-    logger.log('- Make sure the necessary build tools are available (`PATH`)')
+    getDefaultLogger().log(
+      '- Make sure the necessary build tools are available (`PATH`)',
+    )
     process.exitCode = 1
     return
   }
@@ -124,7 +126,7 @@ async function run(
     verbose,
   })
 
-  logger.success(
+  getDefaultLogger().success(
     `Finished. Should have attempted to generate manifest files for ${detected.count} targets.`,
   )
 }

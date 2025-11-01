@@ -1,4 +1,4 @@
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { handleCreateRepo } from './handle-create-repo.mts'
 import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mjs'
@@ -152,7 +152,7 @@ async function run(
   }
 
   if (dryRun) {
-    logger.log(DRY_RUN_BAILING_NOW)
+    getDefaultLogger().log(DRY_RUN_BAILING_NOW)
     return
   }
 

@@ -6,7 +6,7 @@ import {
   DOT_SOCKET_DIR,
   MANIFEST_JSON,
 } from '@socketsecurity/lib/constants/paths'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { normalizePath } from '@socketsecurity/lib/path'
 import { pluralize } from '@socketsecurity/lib/words'
 
@@ -76,10 +76,10 @@ export async function handlePatchRm({
     if (!metadata) {
       spinner?.stop()
       if (outputKind === 'text') {
-        logger.warn(
+        getDefaultLogger().warn(
           'No backups found for this patch. Original files cannot be restored.',
         )
-        logger.log('Removing patch from manifest only.')
+        getDefaultLogger().log('Removing patch from manifest only.')
       }
     }
 
@@ -96,11 +96,11 @@ export async function handlePatchRm({
       if (restoreResults.failed.length > 0) {
         spinner?.stop()
         if (outputKind === 'text') {
-          logger.warn(
+          getDefaultLogger().warn(
             `Failed to restore ${restoreResults.failed.length} ${pluralize('file', { count: restoreResults.failed.length })}:`,
           )
           for (const filePath of restoreResults.failed) {
-            logger.log(`  - ${filePath}`)
+            getDefaultLogger().log(`  - ${filePath}`)
           }
         }
       }
@@ -119,9 +119,9 @@ export async function handlePatchRm({
     spinner?.stop()
 
     if (outputKind === 'text') {
-      logger.log(`Removed patch for ${normalizedPurl}`)
+      getDefaultLogger().log(`Removed patch for ${normalizedPurl}`)
       if (filesRestored > 0) {
-        logger.log(
+        getDefaultLogger().log(
           `Restored ${filesRestored} ${pluralize('file', { count: filesRestored })} from backups`,
         )
       }

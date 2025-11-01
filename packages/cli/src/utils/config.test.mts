@@ -2,8 +2,9 @@ import { mkdtempSync, promises as fs, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-import { safeMkdirSync } from '@socketsecurity/lib/fs'
 import { beforeEach, describe, expect, it } from 'vitest'
+
+import { safeMkdirSync } from '@socketsecurity/lib/fs'
 
 import {
   findSocketYmlSync,

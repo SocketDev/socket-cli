@@ -3,7 +3,7 @@
  * Provides a DRY way to run common pre-build validation checks.
  */
 
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { printError, printSuccess } from './build-output.mjs'
 import {
@@ -41,8 +41,8 @@ export async function runPreflightChecks(options = {}) {
   const failures = []
 
   if (!quiet) {
-    logger.step('Running preflight checks')
-    logger.log('')
+    getDefaultLogger().step('Running preflight checks')
+    getDefaultLogger().log('')
   }
 
   // Check disk space.
@@ -95,10 +95,10 @@ export async function runPreflightChecks(options = {}) {
   if (!quiet) {
     if (!failures.length) {
       printSuccess('All preflight checks passed')
-      logger.log('')
+      getDefaultLogger().log('')
     } else {
       printError(`${failures.length} preflight check(s) failed`)
-      logger.log('')
+      getDefaultLogger().log('')
     }
   }
 
@@ -119,9 +119,9 @@ export async function runPreflightChecksOrExit(options = {}) {
 
   if (!result.passed) {
     if (!options.quiet) {
-      logger.error('Preflight checks failed')
+      getDefaultLogger().error('Preflight checks failed')
       for (const failure of result.failures) {
-        logger.error(`  - ${failure}`)
+        getDefaultLogger().error(`  - ${failure}`)
       }
     }
     process.exit(1)

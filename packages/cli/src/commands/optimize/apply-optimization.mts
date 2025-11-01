@@ -1,5 +1,5 @@
 import { getSpinner } from '@socketsecurity/lib/constants/process'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { addOverrides } from './add-overrides.mts'
 import { CMD_NAME } from './shared.mts'
@@ -25,6 +25,7 @@ export async function applyOptimization(
     addedInWorkspaces: number
   }>
 > {
+  const logger = getDefaultLogger()
   const spinner = getSpinner()
 
   spinner?.start()

@@ -1,6 +1,6 @@
 import path from 'node:path'
 
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { handleManifestConda } from './handle-manifest-conda.mts'
 import {
@@ -130,14 +130,17 @@ async function run(
     sockJson.defaults?.manifest?.conda?.stdin !== undefined
   ) {
     stdin = sockJson.defaults?.manifest?.conda?.stdin
-    logger.info(`Using default --stdin from ${SOCKET_JSON}:`, stdin)
+    getDefaultLogger().info(`Using default --stdin from ${SOCKET_JSON}:`, stdin)
   }
   if (stdin) {
     filename = '-'
   } else if (!filename) {
     if (sockJson.defaults?.manifest?.conda?.infile) {
       filename = sockJson.defaults?.manifest?.conda?.infile
-      logger.info(`Using default --file from ${SOCKET_JSON}:`, filename)
+      getDefaultLogger().info(
+        `Using default --file from ${SOCKET_JSON}:`,
+        filename,
+      )
     } else {
       filename = ENVIRONMENT_YML
     }
@@ -147,14 +150,17 @@ async function run(
     sockJson.defaults?.manifest?.conda?.stdout !== undefined
   ) {
     stdout = sockJson.defaults?.manifest?.conda?.stdout
-    logger.info(`Using default --stdout from ${SOCKET_JSON}:`, stdout)
+    getDefaultLogger().info(
+      `Using default --stdout from ${SOCKET_JSON}:`,
+      stdout,
+    )
   }
   if (stdout) {
     out = '-'
   } else if (!out) {
     if (sockJson.defaults?.manifest?.conda?.outfile) {
       out = sockJson.defaults?.manifest?.conda?.outfile
-      logger.info(`Using default --out from ${SOCKET_JSON}:`, out)
+      getDefaultLogger().info(`Using default --out from ${SOCKET_JSON}:`, out)
     } else {
       out = REQUIREMENTS_TXT
     }
@@ -164,18 +170,21 @@ async function run(
     sockJson.defaults?.manifest?.conda?.verbose !== undefined
   ) {
     verbose = sockJson.defaults?.manifest?.conda?.verbose
-    logger.info(`Using default --verbose from ${SOCKET_JSON}:`, verbose)
+    getDefaultLogger().info(
+      `Using default --verbose from ${SOCKET_JSON}:`,
+      verbose,
+    )
   } else if (verbose === undefined) {
     verbose = false
   }
 
   if (verbose) {
-    logger.group('- ', parentName, config.commandName, ':')
-    logger.group('- flags:', cli.flags)
-    logger.groupEnd()
-    logger.log('- target:', cwd)
-    logger.log('- output:', out)
-    logger.groupEnd()
+    getDefaultLogger().group('- ', parentName, config.commandName, ':')
+    getDefaultLogger().group('- flags:', cli.flags)
+    getDefaultLogger().groupEnd()
+    getDefaultLogger().log('- target:', cwd)
+    getDefaultLogger().log('- output:', out)
+    getDefaultLogger().groupEnd()
   }
 
   const outputKind = getOutputKind(json, markdown)
@@ -199,12 +208,12 @@ async function run(
     return
   }
 
-  logger.warn(
+  getDefaultLogger().warn(
     'Warning: This will approximate your Conda dependencies using PyPI. We do not yet officially support Conda. Use at your own risk.',
   )
 
   if (dryRun) {
-    logger.log(DRY_RUN_BAILING_NOW)
+    getDefaultLogger().log(DRY_RUN_BAILING_NOW)
     return
   }
 

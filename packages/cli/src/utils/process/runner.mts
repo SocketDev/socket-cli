@@ -1,6 +1,6 @@
 /** @fileoverview Unified process runner for external CLIs with output buffering. */
 
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 import { Spinner as createSpinner } from '@socketsecurity/lib/spinner'
 
@@ -106,7 +106,7 @@ export async function runExternalCommand(
 
     // If buffered and has output, log it.
     if (bufferOutput && stdout) {
-      logger.log(stdout)
+      getDefaultLogger().log(stdout)
     }
 
     return {

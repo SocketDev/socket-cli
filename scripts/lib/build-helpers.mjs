@@ -8,7 +8,7 @@ import { promises as fs, statfsSync } from 'node:fs'
 import { join } from 'node:path'
 
 import { spawn } from '@socketsecurity/lib/spawn'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import colors from 'yoctocolors-cjs'
 
 /**
@@ -430,7 +430,7 @@ export async function smokeTestBinary(binaryPath, env = {}) {
     // Test 2: Execute simple JS.
     const jsResult = await execCapture(
       binaryPath,
-      ['-e', 'logger.log("OK")'],
+      ['-e', 'getDefaultLogger().log("OK")'],
       { env },
     )
     if (jsResult.code !== 0 || jsResult.stdout !== 'OK') {
@@ -478,9 +478,9 @@ export async function hasHomebrew() {
  * @returns {Promise<boolean>} True if installation succeeded.
  */
 export async function installHomebrew(exec) {
-  logger.log('📥 Homebrew not found, installing Homebrew...')
-  logger.log('This will take a few minutes and may prompt for password...')
-  logger.log('')
+  getDefaultLogger().log('📥 Homebrew not found, installing Homebrew...')
+  getDefaultLogger().log('This will take a few minutes and may prompt for password...')
+  getDefaultLogger().log('')
 
   try {
     // Install Homebrew using official installation script.
@@ -492,13 +492,13 @@ export async function installHomebrew(exec) {
       ],
       { stdio: 'inherit' },
     )
-    logger.log(`${colors.green('✓')} Homebrew installed successfully`)
-    logger.log('')
+    getDefaultLogger().log(`${colors.green('✓')} Homebrew installed successfully`)
+    getDefaultLogger().log('')
     return true
   } catch (e) {
-    logger.error(`${colors.red('✗')} Homebrew installation failed: ${e.message}`)
-    logger.error('Install manually: https://brew.sh')
-    logger.error()
+    getDefaultLogger().error(`${colors.red('✗')} Homebrew installation failed: ${e.message}`)
+    getDefaultLogger().error('Install manually: https://brew.sh')
+    getDefaultLogger().error()
     return false
   }
 }
@@ -511,19 +511,19 @@ export async function installHomebrew(exec) {
  * @returns {Promise<boolean>} True if installation succeeded.
  */
 export async function installBrewPackage(packageName, exec) {
-  logger.log(`📦 Installing ${packageName} via Homebrew...`)
-  logger.log('This will take 1-2 minutes...')
-  logger.log('')
+  getDefaultLogger().log(`📦 Installing ${packageName} via Homebrew...`)
+  getDefaultLogger().log('This will take 1-2 minutes...')
+  getDefaultLogger().log('')
 
   try {
     await exec('brew', ['install', packageName], { stdio: 'inherit' })
-    logger.log(`${colors.green('✓')} ${packageName} installed successfully`)
-    logger.log('')
+    getDefaultLogger().log(`${colors.green('✓')} ${packageName} installed successfully`)
+    getDefaultLogger().log('')
     return true
   } catch (e) {
-    logger.error(`${colors.red('✗')} ${packageName} installation failed: ${e.message}`)
-    logger.error(`Try manually: brew install ${packageName}`)
-    logger.error()
+    getDefaultLogger().error(`${colors.red('✗')} ${packageName} installation failed: ${e.message}`)
+    getDefaultLogger().error(`Try manually: brew install ${packageName}`)
+    getDefaultLogger().error()
     return false
   }
 }

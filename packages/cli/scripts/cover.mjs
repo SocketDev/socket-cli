@@ -17,30 +17,34 @@
 import { isQuiet, isVerbose } from '@socketsecurity/lib/argv/flags'
 import { parseArgs } from '@socketsecurity/lib/argv/parse'
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 
 /**
  * Print a header message.
  */
 function printHeader(message) {
-  logger.error('\n═══════════════════════════════════════════════════════')
-  logger.error(`  ${message}`)
-  logger.error('═══════════════════════════════════════════════════════\n')
+  getDefaultLogger().error(
+    '\n═══════════════════════════════════════════════════════',
+  )
+  getDefaultLogger().error(`  ${message}`)
+  getDefaultLogger().error(
+    '═══════════════════════════════════════════════════════\n',
+  )
 }
 
 /**
  * Print a success message.
  */
 function printSuccess(message) {
-  logger.log(`✔ ${message}`)
+  getDefaultLogger().log(`✔ ${message}`)
 }
 
 /**
  * Print an error message.
  */
 function printError(message) {
-  logger.error(`✖ ${message}`)
+  getDefaultLogger().error(`✖ ${message}`)
 }
 
 async function main() {
@@ -61,7 +65,7 @@ async function main() {
   try {
     if (!quiet) {
       printHeader('Test Coverage')
-      logger.log('')
+      getDefaultLogger().log('')
     }
 
     // Run vitest with coverage enabled, capturing output
@@ -102,11 +106,13 @@ async function main() {
 
         if (typeCoverageMatch) {
           const typeCoveragePercent = Number.parseFloat(typeCoverageMatch[1])
-          logger.log('')
-          logger.log(' Coverage Summary')
-          logger.log(' ───────────────────────────────')
-          logger.log(` Type Coverage: ${typeCoveragePercent.toFixed(2)}%`)
-          logger.log('')
+          getDefaultLogger().log('')
+          getDefaultLogger().log(' Coverage Summary')
+          getDefaultLogger().log(' ───────────────────────────────')
+          getDefaultLogger().log(
+            ` Type Coverage: ${typeCoveragePercent.toFixed(2)}%`,
+          )
+          getDefaultLogger().log('')
         }
       }
 
@@ -149,9 +155,9 @@ async function main() {
           /Test Files\s+\d+[^\n]*\n[\s\S]*?Duration\s+[\d.]+m?s[^\n]*/,
         )
         if (!values.summary && testSummaryMatch) {
-          logger.log('')
-          logger.log(testSummaryMatch[0])
-          logger.log('')
+          getDefaultLogger().log('')
+          getDefaultLogger().log(testSummaryMatch[0])
+          getDefaultLogger().log('')
         }
 
         // Extract and display coverage summary
@@ -164,23 +170,25 @@ async function main() {
 
         if (coverageHeaderMatch && allFilesMatch) {
           if (!values.summary) {
-            logger.log(' % Coverage report from v8')
-            logger.log(coverageHeaderMatch[1])
-            logger.log(coverageHeaderMatch[2])
-            logger.log(coverageHeaderMatch[1])
-            logger.log(allFilesMatch[0])
-            logger.log(coverageHeaderMatch[1])
-            logger.log('')
+            getDefaultLogger().log(' % Coverage report from v8')
+            getDefaultLogger().log(coverageHeaderMatch[1])
+            getDefaultLogger().log(coverageHeaderMatch[2])
+            getDefaultLogger().log(coverageHeaderMatch[1])
+            getDefaultLogger().log(allFilesMatch[0])
+            getDefaultLogger().log(coverageHeaderMatch[1])
+            getDefaultLogger().log('')
           }
 
           const codeCoveragePercent = Number.parseFloat(allFilesMatch[1])
-          logger.log(' Coverage Summary')
-          logger.log(' ───────────────────────────────')
-          logger.log(` Code Coverage: ${codeCoveragePercent.toFixed(2)}%`)
-          logger.log('')
+          getDefaultLogger().log(' Coverage Summary')
+          getDefaultLogger().log(' ───────────────────────────────')
+          getDefaultLogger().log(
+            ` Code Coverage: ${codeCoveragePercent.toFixed(2)}%`,
+          )
+          getDefaultLogger().log('')
         } else if (exitCode !== 0) {
-          logger.log('\n--- Output ---')
-          logger.log(output)
+          getDefaultLogger().log('\n--- Output ---')
+          getDefaultLogger().log(output)
         }
       }
 
@@ -244,20 +252,20 @@ async function main() {
     // Display clean output
     if (!quiet) {
       if (!values.summary && testSummaryMatch) {
-        logger.log('')
-        logger.log(testSummaryMatch[0])
-        logger.log('')
+        getDefaultLogger().log('')
+        getDefaultLogger().log(testSummaryMatch[0])
+        getDefaultLogger().log('')
       }
 
       if (coverageHeaderMatch && allFilesMatch) {
         if (!values.summary) {
-          logger.log(' % Coverage report from v8')
-          logger.log(coverageHeaderMatch[1]) // Top border
-          logger.log(coverageHeaderMatch[2]) // Header row
-          logger.log(coverageHeaderMatch[1]) // Middle border
-          logger.log(allFilesMatch[0]) // All files row
-          logger.log(coverageHeaderMatch[1]) // Bottom border
-          logger.log('')
+          getDefaultLogger().log(' % Coverage report from v8')
+          getDefaultLogger().log(coverageHeaderMatch[1]) // Top border
+          getDefaultLogger().log(coverageHeaderMatch[2]) // Header row
+          getDefaultLogger().log(coverageHeaderMatch[1]) // Middle border
+          getDefaultLogger().log(allFilesMatch[0]) // All files row
+          getDefaultLogger().log(coverageHeaderMatch[1]) // Bottom border
+          getDefaultLogger().log('')
         }
 
         // Display type coverage and cumulative summary
@@ -269,13 +277,17 @@ async function main() {
             2
           ).toFixed(2)
 
-          logger.log(' Coverage Summary')
-          logger.log(' ───────────────────────────────')
-          logger.log(` Type Coverage: ${typeCoveragePercent.toFixed(2)}%`)
-          logger.log(` Code Coverage: ${codeCoveragePercent.toFixed(2)}%`)
-          logger.log(' ───────────────────────────────')
-          logger.log(` Cumulative:    ${cumulativePercent}%`)
-          logger.log('')
+          getDefaultLogger().log(' Coverage Summary')
+          getDefaultLogger().log(' ───────────────────────────────')
+          getDefaultLogger().log(
+            ` Type Coverage: ${typeCoveragePercent.toFixed(2)}%`,
+          )
+          getDefaultLogger().log(
+            ` Code Coverage: ${codeCoveragePercent.toFixed(2)}%`,
+          )
+          getDefaultLogger().log(' ───────────────────────────────')
+          getDefaultLogger().log(` Cumulative:    ${cumulativePercent}%`)
+          getDefaultLogger().log('')
         }
       }
     }
@@ -285,8 +297,8 @@ async function main() {
         printError('Coverage failed')
         // Show relevant output on failure for debugging
         if (!testSummaryMatch && !coverageHeaderMatch) {
-          logger.log('\n--- Output ---')
-          logger.log(output)
+          getDefaultLogger().log('\n--- Output ---')
+          getDefaultLogger().log(output)
         }
       }
       process.exitCode = 1
@@ -296,7 +308,7 @@ async function main() {
 
         // Open coverage report if requested
         if (open) {
-          logger.info('Opening coverage report...')
+          getDefaultLogger().info('Opening coverage report...')
           await spawn('open', ['coverage/index.html'], {
             shell: WIN32,
             stdio: 'ignore',
@@ -309,13 +321,13 @@ async function main() {
       printError(`Coverage failed: ${error.message}`)
     }
     if (verbose) {
-      logger.error(error)
+      getDefaultLogger().error(error)
     }
     process.exitCode = 1
   }
 }
 
 main().catch(e => {
-  logger.error(e)
+  getDefaultLogger().error(e)
   process.exitCode = 1
 })

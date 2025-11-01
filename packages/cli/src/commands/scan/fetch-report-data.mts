@@ -1,6 +1,7 @@
 import { getSpinner } from '@socketsecurity/lib/constants/process'
 import { debug, debugDir } from '@socketsecurity/lib/debug'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getDefaultSpinner } from '@socketsecurity/lib/spinner'
 
 import { formatErrorWithDetail } from '../../utils/error/errors.mjs'
 import {
@@ -43,11 +44,12 @@ export async function fetchScanData(
   }
   const sockSdk = sockSdkCResult.data
 
+  const spinner = getDefaultSpinner()
   let policyStatus = 'requested...'
   let scanStatus = 'requested...'
   let finishedFetching = false
 
-  const spinner = getSpinner()!
+  const _spinner = getSpinner()!
 
   function updateScan(status: string) {
     scanStatus = status
@@ -62,7 +64,7 @@ export async function fetchScanData(
   function updateProgress() {
     if (finishedFetching) {
       spinner.stop()
-      logger.info(
+      getDefaultLogger().info(
         `Scan result: ${scanStatus}. Security policy: ${policyStatus}.`,
       )
     } else {

@@ -15,7 +15,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { spawn } from '@socketsecurity/lib/spawn'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import colors from 'yoctocolors-cjs'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -37,7 +37,7 @@ const PATCHES_OUTPUT_DIR = join(ROOT_DIR, 'build', 'patches', 'socket')
 async function exec(command, args = [], options = {}) {
   const { cwd = process.cwd() } = options
 
-  logger.log(`$ ${command} ${args.join(' ')}`)
+  getDefaultLogger().log(`$ ${command} ${args.join(' ')}`)
 
   const result = await spawn(command, args, {
     cwd,
@@ -58,7 +58,7 @@ async function exec(command, args = [], options = {}) {
  * Generate fix-v8-include-paths patch
  */
 async function generateV8IncludePathsPatch() {
-  logger.log('📝 Generating fix-v8-include-paths patch...')
+  getDefaultLogger().log('📝 Generating fix-v8-include-paths patch...')
 
   const files = [
     'deps/v8/src/ast/ast-value-factory.h',
@@ -85,7 +85,7 @@ async function generateV8IncludePathsPatch() {
   for (const file of files) {
     const filePath = join(NODE_DIR, file)
     if (!existsSync(filePath)) {
-      logger.warn(`${colors.yellow('⚠')}  File not found: ${file}`)
+      getDefaultLogger().warn(`${colors.yellow('⚠')}  File not found: ${file}`)
       continue
     }
 
@@ -101,7 +101,7 @@ async function generateV8IncludePathsPatch() {
       patchContent += `\n${diff}`
     } catch (_e) {
       // git diff returns non-zero for differences, which is expected.
-      logger.warn(`   Skipping ${file} (no changes or error)`)
+      getDefaultLogger().warn(`   Skipping ${file} (no changes or error)`)
     }
   }
 
@@ -110,7 +110,7 @@ async function generateV8IncludePathsPatch() {
     `fix-v8-include-paths-${NODE_VERSION.replace('v', 'v')}.patch`,
   )
   await writeFile(patchFile, patchContent)
-  logger.log(`${colors.green('✓')} Generated: ${patchFile}`)
+  getDefaultLogger().log(`${colors.green('✓')} Generated: ${patchFile}`)
 
   return patchFile
 }
@@ -119,7 +119,7 @@ async function generateV8IncludePathsPatch() {
  * Generate enable-sea-for-pkg-binaries patch
  */
 async function generateSeaPatch() {
-  logger.log('📝 Generating enable-sea-for-pkg-binaries patch...')
+  getDefaultLogger().log('📝 Generating enable-sea-for-pkg-binaries patch...')
 
   const patchContent = `# Patch: Make isSea() return true for pkg binaries
 #
@@ -149,7 +149,7 @@ async function generateSeaPatch() {
     `enable-sea-for-pkg-binaries-${NODE_VERSION.replace('v', 'v')}.patch`,
   )
   await writeFile(patchFile, patchContent)
-  logger.log(`${colors.green('✓')} Generated: ${patchFile}`)
+  getDefaultLogger().log(`${colors.green('✓')} Generated: ${patchFile}`)
 
   return patchFile
 }
@@ -158,8 +158,8 @@ async function generateSeaPatch() {
  * Main function
  */
 async function main() {
-  logger.log(`🔨 Generating Socket patches for Node.js ${NODE_VERSION}`)
-  logger.log('')
+  getDefaultLogger().log(`🔨 Generating Socket patches for Node.js ${NODE_VERSION}`)
+  getDefaultLogger().log('')
 
   // Check if Node.js directory exists
   if (!existsSync(NODE_DIR)) {
@@ -178,34 +178,34 @@ async function main() {
   try {
     patches.push(await generateV8IncludePathsPatch())
   } catch (e) {
-    logger.error(`${colors.red('✗')} Failed to generate V8 include paths patch:`, e.message)
+    getDefaultLogger().error(`${colors.red('✗')} Failed to generate V8 include paths patch:`, e.message)
   }
 
   try {
     patches.push(await generateSeaPatch())
   } catch (e) {
-    logger.error(`${colors.red('✗')} Failed to generate SEA patch:`, e.message)
+    getDefaultLogger().error(`${colors.red('✗')} Failed to generate SEA patch:`, e.message)
   }
 
-  logger.log('')
-  logger.log('🎉 Patch generation complete!')
-  logger.log('')
-  logger.log('Generated patches:')
+  getDefaultLogger().log('')
+  getDefaultLogger().log('🎉 Patch generation complete!')
+  getDefaultLogger().log('')
+  getDefaultLogger().log('Generated patches:')
   for (const patch of patches) {
-    logger.log(`   - ${patch}`)
+    getDefaultLogger().log(`   - ${patch}`)
   }
-  logger.log('')
-  logger.log('📝 Next steps:')
-  logger.log('   1. Review the generated patches')
-  logger.log(
+  getDefaultLogger().log('')
+  getDefaultLogger().log('📝 Next steps:')
+  getDefaultLogger().log('   1. Review the generated patches')
+  getDefaultLogger().log(
     '   2. Update build-yao-pkg-node.mjs to reference new patch files',
   )
-  logger.log('   3. Test the build with new patches')
-  logger.log('')
+  getDefaultLogger().log('   3. Test the build with new patches')
+  getDefaultLogger().log('')
 }
 
 // Run main function
 main().catch(error => {
-  logger.error(`${colors.red('✗')} Patch generation failed:`, error.message)
+  getDefaultLogger().error(`${colors.red('✗')} Patch generation failed:`, error.message)
   process.exitCode = 1
 })

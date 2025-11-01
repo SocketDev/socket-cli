@@ -21,8 +21,9 @@ import { promises as fs } from 'node:fs'
 import https from 'node:https'
 import path from 'node:path'
 
-import { safeMkdir } from '@socketsecurity/lib/fs'
 import { parseTarGzip } from 'nanotar'
+
+import { safeMkdir } from '@socketsecurity/lib/fs'
 
 // Type helpers.
 type TarFile = Awaited<ReturnType<typeof parseTarGzip>>[number]

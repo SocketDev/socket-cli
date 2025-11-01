@@ -23,8 +23,9 @@
 import { promises as fs } from 'node:fs'
 import { dirname, join } from 'node:path'
 
-import { safeMkdir } from '@socketsecurity/lib/fs'
 import { z } from 'zod'
+
+import { safeMkdir } from '@socketsecurity/lib/fs'
 
 const MANIFEST_VERSION = '1.0.0'
 const MANIFEST_PATH = '.socket/manifest.json'

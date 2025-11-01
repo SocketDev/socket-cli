@@ -1,4 +1,4 @@
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 import { mdHeader, mdKeyValue } from '../../utils/output/markdown.mts'
@@ -36,12 +36,12 @@ export async function outputPatchStatusResult(
   }
 
   if (outputKind === 'json') {
-    logger.log(serializeResultJson(result))
+    getDefaultLogger().log(serializeResultJson(result))
     return
   }
 
   if (!result.ok) {
-    logger.fail(failMsgWithBadge(result.message, result.cause))
+    getDefaultLogger().fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
@@ -49,53 +49,59 @@ export async function outputPatchStatusResult(
 
   if (outputKind === 'markdown') {
     if (statuses.length === 0) {
-      logger.log(`${mdHeader('Patch Status', 2)}\n\nNo patches found.`)
+      getDefaultLogger().log(
+        `${mdHeader('Patch Status', 2)}\n\nNo patches found.`,
+      )
       return
     }
 
-    logger.log(`${mdHeader('Patch Status', 2)}\n`)
+    getDefaultLogger().log(`${mdHeader('Patch Status', 2)}\n`)
 
     for (const status of statuses) {
       const indicator = STATUS_INDICATORS[status.status]
       const statusName = STATUS_NAMES[status.status]
 
-      logger.log(`${mdHeader(`${indicator} ${status.purl}`, 3)}\n`)
-      logger.log(`${mdKeyValue('Status', statusName)}\n`)
+      getDefaultLogger().log(`${mdHeader(`${indicator} ${status.purl}`, 3)}\n`)
+      getDefaultLogger().log(`${mdKeyValue('Status', statusName)}\n`)
 
       if (status.uuid) {
-        logger.log(`${mdKeyValue('UUID', status.uuid)}\n`)
+        getDefaultLogger().log(`${mdKeyValue('UUID', status.uuid)}\n`)
       }
 
       if (status.description) {
-        logger.log(`${mdKeyValue('Description', status.description)}\n`)
+        getDefaultLogger().log(
+          `${mdKeyValue('Description', status.description)}\n`,
+        )
       }
 
       if (status.downloadedAt) {
-        logger.log(mdKeyValue('Downloaded', status.downloadedAt))
+        getDefaultLogger().log(mdKeyValue('Downloaded', status.downloadedAt))
       }
 
       if (status.appliedAt) {
-        logger.log(mdKeyValue('Applied', status.appliedAt))
+        getDefaultLogger().log(mdKeyValue('Applied', status.appliedAt))
       }
 
-      logger.log(mdKeyValue('Files', status.fileCount))
-      logger.log(mdKeyValue('Vulnerabilities', status.vulnerabilityCount))
+      getDefaultLogger().log(mdKeyValue('Files', status.fileCount))
+      getDefaultLogger().log(
+        mdKeyValue('Vulnerabilities', status.vulnerabilityCount),
+      )
 
       if (status.appliedLocations.length > 0) {
-        logger.log('**Locations**:')
+        getDefaultLogger().log('**Locations**:')
         for (const location of status.appliedLocations) {
-          logger.log(`- ${location}`)
+          getDefaultLogger().log(`- ${location}`)
         }
       }
 
-      logger.log(
+      getDefaultLogger().log(
         mdKeyValue('Backup Available', status.backupAvailable ? 'Yes' : 'No'),
       )
-      logger.log('')
+      getDefaultLogger().log('')
     }
 
     // Legend.
-    logger.log(
+    getDefaultLogger().log(
       mdKeyValue(
         'Legend',
         '[✓] Applied | [○] Downloaded | [✗] Failed | [?] Unknown',
@@ -110,56 +116,58 @@ export async function outputPatchStatusResult(
     return
   }
 
-  logger.group('')
+  getDefaultLogger().group('')
 
   for (const status of statuses) {
     const indicator = STATUS_INDICATORS[status.status]
     const statusName = STATUS_NAMES[status.status]
 
-    logger.log(`${indicator} ${status.purl}`)
-    logger.group()
+    getDefaultLogger().log(`${indicator} ${status.purl}`)
+    getDefaultLogger().group()
 
-    logger.log(`Status: ${statusName}`)
+    getDefaultLogger().log(`Status: ${statusName}`)
 
     if (status.uuid) {
-      logger.log(`UUID: ${status.uuid}`)
+      getDefaultLogger().log(`UUID: ${status.uuid}`)
     }
 
     if (status.description) {
-      logger.log(`Description: ${status.description}`)
+      getDefaultLogger().log(`Description: ${status.description}`)
     }
 
     if (status.downloadedAt) {
-      logger.log(`Downloaded: ${status.downloadedAt}`)
+      getDefaultLogger().log(`Downloaded: ${status.downloadedAt}`)
     }
 
     if (status.appliedAt) {
-      logger.log(`Applied: ${status.appliedAt}`)
+      getDefaultLogger().log(`Applied: ${status.appliedAt}`)
     }
 
-    logger.log(`Files: ${status.fileCount}`)
-    logger.log(`Vulnerabilities: ${status.vulnerabilityCount}`)
+    getDefaultLogger().log(`Files: ${status.fileCount}`)
+    getDefaultLogger().log(`Vulnerabilities: ${status.vulnerabilityCount}`)
 
     if (status.appliedLocations.length > 0) {
-      logger.log('Locations:')
-      logger.group()
+      getDefaultLogger().log('Locations:')
+      getDefaultLogger().group()
       for (const location of status.appliedLocations) {
-        logger.log(`- ${location}`)
+        getDefaultLogger().log(`- ${location}`)
       }
-      logger.groupEnd()
+      getDefaultLogger().groupEnd()
     }
 
-    logger.log(
+    getDefaultLogger().log(
       `Backup: ${status.backupAvailable ? 'Available' : 'Not available'}`,
     )
 
-    logger.groupEnd()
+    getDefaultLogger().groupEnd()
   }
 
-  logger.groupEnd()
+  getDefaultLogger().groupEnd()
 
   // Legend.
-  logger.log('')
-  logger.log('Legend:')
-  logger.log('  [✓] Applied    [○] Downloaded    [✗] Failed    [?] Unknown')
+  getDefaultLogger().log('')
+  getDefaultLogger().log('Legend:')
+  getDefaultLogger().log(
+    '  [✓] Applied    [○] Downloaded    [✗] Failed    [?] Unknown',
+  )
 }

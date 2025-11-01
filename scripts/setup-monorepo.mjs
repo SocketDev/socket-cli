@@ -11,7 +11,7 @@
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import colors from 'yoctocolors-cjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -138,7 +138,7 @@ async function createPlatformPackage(platform) {
   const packageDir = path.join(packagesDir, `socketbin-cli-${packageName}`)
   const binDir = path.join(packageDir, 'bin')
 
-  logger.log(`Creating ${platform.name}...`)
+  getDefaultLogger().log(`Creating ${platform.name}...`)
 
   // Create directories.
   await fs.mkdir(binDir, { recursive: true })
@@ -156,46 +156,46 @@ async function createPlatformPackage(platform) {
   await fs.writeFile(binaryPath, '#!/usr/bin/env node\n// Placeholder\n')
   await fs.chmod(binaryPath, 0o755)
 
-  logger.log(`  ✓ ${packageDir}`)
+  getDefaultLogger().log(`  ✓ ${packageDir}`)
 }
 
 /**
  * Main entry point.
  */
 async function main() {
-  logger.log('Setting up Socket CLI monorepo...\n')
+  getDefaultLogger().log('Setting up Socket CLI monorepo...\n')
 
   // Create packages directory.
   if (!existsSync(packagesDir)) {
-    logger.log('Creating packages/ directory...')
+    getDefaultLogger().log('Creating packages/ directory...')
     await fs.mkdir(packagesDir, { recursive: true })
-    logger.log('  ✓ packages/\n')
+    getDefaultLogger().log('  ✓ packages/\n')
   }
 
   // Create pnpm-workspace.yaml.
   const workspaceConfigPath = path.join(rootDir, 'pnpm-workspace.yaml')
   if (!existsSync(workspaceConfigPath)) {
-    logger.log('Creating pnpm-workspace.yaml...')
+    getDefaultLogger().log('Creating pnpm-workspace.yaml...')
     await fs.writeFile(workspaceConfigPath, generateWorkspaceConfig())
-    logger.log('  ✓ pnpm-workspace.yaml\n')
+    getDefaultLogger().log('  ✓ pnpm-workspace.yaml\n')
   }
 
   // Create all platform packages.
-  logger.log('Creating platform packages...\n')
+  getDefaultLogger().log('Creating platform packages...\n')
   for (const platform of platforms) {
     await createPlatformPackage(platform)
   }
 
-  logger.log('\n✓ Monorepo setup complete!\n')
-  logger.log('Next steps:')
-  logger.log('  1. Move current code to packages/cli/')
-  logger.log('  2. Create packages/socket/ for thin wrapper')
-  logger.log('  3. Create packages/socketbin-custom-node-from-source/')
-  logger.log('  4. Create packages/socketbin-native-node-sea/')
-  logger.log('  5. Run: pnpm install\n')
+  getDefaultLogger().log('\n✓ Monorepo setup complete!\n')
+  getDefaultLogger().log('Next steps:')
+  getDefaultLogger().log('  1. Move current code to packages/cli/')
+  getDefaultLogger().log('  2. Create packages/socket/ for thin wrapper')
+  getDefaultLogger().log('  3. Create packages/socketbin-custom-node-from-source/')
+  getDefaultLogger().log('  4. Create packages/socketbin-native-node-sea/')
+  getDefaultLogger().log('  5. Run: pnpm install\n')
 }
 
 main().catch(error => {
-  logger.error('Error setting up monorepo:', error)
+  getDefaultLogger().error('Error setting up monorepo:', error)
   process.exit(1)
 })

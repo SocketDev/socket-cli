@@ -6,7 +6,7 @@
 import { parseArgs } from '@socketsecurity/lib/argv/parse'
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { getChangedFiles, getStagedFiles } from '@socketsecurity/lib/git'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 import { printFooter, printHeader } from '@socketsecurity/lib/stdio/header'
 import colors from 'yoctocolors-cjs'
@@ -29,7 +29,7 @@ async function runEslintCheck(options = {}) {
   } = options
 
   if (!quiet) {
-    logger.step('Running ESLint checks')
+    getDefaultLogger().step('Running ESLint checks')
   }
 
   // Determine which packages to check.
@@ -51,8 +51,8 @@ async function runEslintCheck(options = {}) {
 
     if (!changedFiles.length) {
       if (!quiet) {
-        logger.substep('No changed files, skipping ESLint')
-        logger.error('')
+        getDefaultLogger().substep('No changed files, skipping ESLint')
+        getDefaultLogger().error('')
       }
       return 0
     }
@@ -61,8 +61,8 @@ async function runEslintCheck(options = {}) {
 
     if (!packages.length) {
       if (!quiet) {
-        logger.substep('No affected packages, skipping ESLint')
-        logger.error('')
+        getDefaultLogger().substep('No affected packages, skipping ESLint')
+        getDefaultLogger().error('')
       }
       return 0
     }
@@ -77,7 +77,7 @@ async function runEslintCheck(options = {}) {
   }
 
   if (!quiet) {
-    logger.error('')
+    getDefaultLogger().error('')
   }
 
   return 0
@@ -90,15 +90,15 @@ async function runTypeCheck(options = {}) {
   const { quiet = false } = options
 
   if (!quiet) {
-    logger.step('Running TypeScript checks')
+    getDefaultLogger().step('Running TypeScript checks')
   }
 
   const packages = getPackagesWithScript('type')
 
   if (!packages.length) {
     if (!quiet) {
-      logger.substep('No packages with type checking')
-      logger.error('')
+      getDefaultLogger().substep('No packages with type checking')
+      getDefaultLogger().error('')
     }
     return 0
   }
@@ -108,7 +108,7 @@ async function runTypeCheck(options = {}) {
     const displayName = pkg.displayName || pkg.name
 
     if (!quiet) {
-      logger.progress(`${displayName}: checking types`)
+      getDefaultLogger().progress(`${displayName}: checking types`)
     }
 
     const result = await spawn(
@@ -124,32 +124,32 @@ async function runTypeCheck(options = {}) {
 
     if (result.code !== 0) {
       if (!quiet) {
-        logger.clearLine()
-        logger.log(`${colors.red('✗')} ${displayName}`)
-        logger.error('')
+        getDefaultLogger().clearLine()
+        getDefaultLogger().log(`${colors.red('✗')} ${displayName}`)
+        getDefaultLogger().error('')
       }
       // Always show type errors (even in quiet mode) since they're the actual errors.
       if (result.stdout) {
-        logger.log(result.stdout)
+        getDefaultLogger().log(result.stdout)
       }
       if (result.stderr) {
-        logger.error(result.stderr)
+        getDefaultLogger().error(result.stderr)
       }
       if (!quiet) {
-        logger.error('')
-        logger.error('Type check failed')
+        getDefaultLogger().error('')
+        getDefaultLogger().error('Type check failed')
       }
       return result.code
     }
 
     if (!quiet) {
-      logger.clearLine()
-      logger.log(`${colors.green('✓')} ${displayName}`)
+      getDefaultLogger().clearLine()
+      getDefaultLogger().log(`${colors.green('✓')} ${displayName}`)
     }
   }
 
   if (!quiet) {
-    logger.error('')
+    getDefaultLogger().error('')
   }
 
   return 0
@@ -175,22 +175,22 @@ async function main() {
 
     // Show help if requested.
     if (values.help) {
-      logger.log('Monorepo Check Runner')
-      logger.log('\nUsage: pnpm check [options]')
-      logger.log('\nOptions:')
-      logger.log('  --help         Show this help message')
-      logger.log('  --lint         Run ESLint check only')
-      logger.log('  --types        Run TypeScript check only')
-      logger.log('  --all          Check all packages')
-      logger.log('  --staged       Check packages with staged files')
-      logger.log('  --changed      Check packages with changed files')
-      logger.log('  --quiet, --silent  Suppress progress messages')
-      logger.log('\nExamples:')
-      logger.log('  pnpm check             # Run all checks on changed packages')
-      logger.log('  pnpm check --all       # Run all checks on all packages')
-      logger.log('  pnpm check --lint      # Run ESLint only')
-      logger.log('  pnpm check --types     # Run TypeScript only')
-      logger.log('  pnpm check --lint --staged  # Run ESLint on staged packages')
+      getDefaultLogger().log('Monorepo Check Runner')
+      getDefaultLogger().log('\nUsage: pnpm check [options]')
+      getDefaultLogger().log('\nOptions:')
+      getDefaultLogger().log('  --help         Show this help message')
+      getDefaultLogger().log('  --lint         Run ESLint check only')
+      getDefaultLogger().log('  --types        Run TypeScript check only')
+      getDefaultLogger().log('  --all          Check all packages')
+      getDefaultLogger().log('  --staged       Check packages with staged files')
+      getDefaultLogger().log('  --changed      Check packages with changed files')
+      getDefaultLogger().log('  --quiet, --silent  Suppress progress messages')
+      getDefaultLogger().log('\nExamples:')
+      getDefaultLogger().log('  pnpm check             # Run all checks on changed packages')
+      getDefaultLogger().log('  pnpm check --all       # Run all checks on all packages')
+      getDefaultLogger().log('  pnpm check --lint      # Run ESLint only')
+      getDefaultLogger().log('  pnpm check --types     # Run TypeScript only')
+      getDefaultLogger().log('  pnpm check --lint --staged  # Run ESLint on staged packages')
       process.exitCode = 0
       return
     }
@@ -200,7 +200,7 @@ async function main() {
 
     if (!quiet) {
       printHeader('Monorepo Check Runner')
-      logger.log('')
+      getDefaultLogger().log('')
     }
 
     let exitCode = 0
@@ -215,7 +215,7 @@ async function main() {
       })
       if (exitCode !== 0) {
         if (!quiet) {
-          logger.error('Checks failed')
+          getDefaultLogger().error('Checks failed')
         }
         process.exitCode = exitCode
         return
@@ -227,7 +227,7 @@ async function main() {
       exitCode = await runTypeCheck({ quiet })
       if (exitCode !== 0) {
         if (!quiet) {
-          logger.error('Checks failed')
+          getDefaultLogger().error('Checks failed')
         }
         process.exitCode = exitCode
         return
@@ -235,16 +235,16 @@ async function main() {
     }
 
     if (!quiet) {
-      logger.success('All checks passed')
+      getDefaultLogger().success('All checks passed')
       printFooter()
     }
   } catch (error) {
-    logger.error(`Check runner failed: ${error.message}`)
+    getDefaultLogger().error(`Check runner failed: ${error.message}`)
     process.exitCode = 1
   }
 }
 
 main().catch(e => {
-  logger.error(e)
+  getDefaultLogger().error(e)
   process.exitCode = 1
 })

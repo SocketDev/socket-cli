@@ -6,7 +6,7 @@ import {
   DOT_SOCKET_DIR,
   MANIFEST_JSON,
 } from '@socketsecurity/lib/constants/paths'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { normalizePath } from '@socketsecurity/lib/path'
 
 import { PatchManifestSchema } from './manifest-schema.mts'
@@ -64,7 +64,7 @@ export async function handlePatchInfo({
     spinner?.stop()
 
     if (outputKind === 'text') {
-      logger.log(`Patch information for: ${normalizedPurl}`)
+      getDefaultLogger().log(`Patch information for: ${normalizedPurl}`)
     }
 
     const patchInfo: PatchInfoData = {

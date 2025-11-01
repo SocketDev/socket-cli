@@ -4,7 +4,7 @@
  */
 
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 
 /**
@@ -54,7 +54,7 @@ export async function runPnpmScriptAll(scriptName, args = [], options = {}) {
 export async function runSequence(commands, globalOptions = {}) {
   for (const { args = [], command, description, options = {} } of commands) {
     if (description) {
-      logger.step(description)
+      getDefaultLogger().step(description)
     }
 
     const result = await spawn(command, args, {
@@ -117,7 +117,7 @@ export const pnpm = {
    * Run pnpm install with frozen lockfile.
    */
   install: async (options = {}) => {
-    logger.step('Installing dependencies')
+    getDefaultLogger().step('Installing dependencies')
     return spawn('pnpm', ['install', '--frozen-lockfile'], {
       shell: WIN32,
       stdio: 'inherit',
@@ -129,7 +129,7 @@ export const pnpm = {
    * Build all packages or specific package.
    */
   build: async (packageName = null, options = {}) => {
-    logger.step(packageName ? `Building ${packageName}` : 'Building packages')
+    getDefaultLogger().step(packageName ? `Building ${packageName}` : 'Building packages')
     const args = packageName
       ? ['--filter', packageName, 'run', 'build']
       : ['run', '-r', 'build']
@@ -145,7 +145,7 @@ export const pnpm = {
    * Run tests in specific package or all packages.
    */
   test: async (packageName = null, options = {}) => {
-    logger.step(packageName ? `Testing ${packageName}` : 'Running tests')
+    getDefaultLogger().step(packageName ? `Testing ${packageName}` : 'Running tests')
     const args = packageName
       ? ['--filter', packageName, 'run', 'test']
       : ['run', '-r', 'test']

@@ -1,4 +1,4 @@
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import {
   getConfigValue,
@@ -39,7 +39,7 @@ export async function outputConfigList({
     if (failed) {
       process.exitCode = 1
     }
-    logger.log(
+    getDefaultLogger().log(
       serializeResultJson(
         failed
           ? {
@@ -67,29 +67,29 @@ export async function outputConfigList({
       0,
     )
 
-    logger.log(mdHeader('Local CLI Config'))
-    logger.log('')
-    logger.log(`This is the local CLI config (full=${!!full}):`)
-    logger.log('')
+    getDefaultLogger().log(mdHeader('Local CLI Config'))
+    getDefaultLogger().log('')
+    getDefaultLogger().log(`This is the local CLI config (full=${!!full}):`)
+    getDefaultLogger().log('')
     for (const key of supportedConfigKeys) {
       const result = getConfigValue(key)
       if (!result.ok) {
-        logger.log(`- ${key}: failed to read: ${result.message}`)
+        getDefaultLogger().log(`- ${key}: failed to read: ${result.message}`)
       } else {
         let value = result.data
         if (!full && isSensitiveConfigKey(key)) {
           value = '********'
         }
         if (full || value !== undefined) {
-          logger.log(
+          getDefaultLogger().log(
             `- ${key}:${' '.repeat(Math.max(0, maxWidth - key.length + 3))} ${Array.isArray(value) ? value.join(', ') || '<none>' : (value ?? '<none>')}`,
           )
         }
       }
     }
     if (readOnly) {
-      logger.log('')
-      logger.log(
+      getDefaultLogger().log('')
+      getDefaultLogger().log(
         'Note: the config is in read-only mode, meaning at least one key was temporarily\n      overridden from an env var or command flag.',
       )
     }

@@ -52,7 +52,9 @@ export const stubOnnxRuntime = {
 /**
  * Try to load real ONNX Runtime, fall back to stub if unavailable.
  */
-export async function loadOnnxRuntime(): Promise<typeof stubOnnxRuntime | null> {
+export async function loadOnnxRuntime(): Promise<
+  typeof stubOnnxRuntime | null
+> {
   try {
     // Try to import real ONNX Runtime.
     // @ts-expect-error - onnxruntime-node is an optional dependency for progressive enhancement.

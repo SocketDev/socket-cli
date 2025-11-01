@@ -17,7 +17,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 import colors from 'yoctocolors-cjs'
 
@@ -53,12 +53,12 @@ function parseArgs() {
   const args = process.argv.slice(2)
 
   if (!args.length) {
-    logger.error('Usage: decompress-binary.mjs <compressed> [args...]')
-    logger.error('')
-    logger.error('Examples:')
-    logger.error('  node scripts/decompress-binary.mjs ./node.compressed')
-    logger.error('  node scripts/decompress-binary.mjs ./node.compressed --version')
-    logger.error('  node scripts/decompress-binary.mjs ./node.compressed script.js')
+    getDefaultLogger().error('Usage: decompress-binary.mjs <compressed> [args...]')
+    getDefaultLogger().error('')
+    getDefaultLogger().error('Examples:')
+    getDefaultLogger().error('  node scripts/decompress-binary.mjs ./node.compressed')
+    getDefaultLogger().error('  node scripts/decompress-binary.mjs ./node.compressed --version')
+    getDefaultLogger().error('  node scripts/decompress-binary.mjs ./node.compressed script.js')
     process.exit(1)
   }
 
@@ -94,9 +94,9 @@ async function ensureToolBuilt(config) {
     return existsSync(toolPathExe) ? toolPathExe : toolPath
   }
 
-  logger.log(`Building ${config.binaryFormat} decompression tool...`)
-  logger.log(`  Command: ${config.buildCommand}`)
-  logger.log('')
+  getDefaultLogger().log(`Building ${config.binaryFormat} decompression tool...`)
+  getDefaultLogger().log(`  Command: ${config.buildCommand}`)
+  getDefaultLogger().log('')
 
   const result = await spawn(config.buildCommand, {
     cwd: TOOLS_DIR,
@@ -125,12 +125,12 @@ async function decompressAndExecute(toolPath, compressedPath, binaryArgs, config
     throw new Error(`Compressed file not found: ${compressedPath}`)
   }
 
-  logger.log(`Decompressing ${config.binaryFormat} binary...`)
-  logger.log(`  Compressed: ${compressedPath}`)
+  getDefaultLogger().log(`Decompressing ${config.binaryFormat} binary...`)
+  getDefaultLogger().log(`  Compressed: ${compressedPath}`)
   if (binaryArgs.length) {
-    logger.log(`  Arguments: ${binaryArgs.join(' ')}`)
+    getDefaultLogger().log(`  Arguments: ${binaryArgs.join(' ')}`)
   }
-  logger.log('')
+  getDefaultLogger().log('')
 
   // Build command arguments.
   const args = [compressedPath, ...binaryArgs]
@@ -152,10 +152,10 @@ async function main() {
     const { compressedPath, binaryArgs } = parseArgs()
     const config = getPlatformConfig()
 
-    logger.log('Socket Binary Decompression')
-    logger.log('===========================')
-    logger.log(`Platform: ${config.binaryFormat} (${process.platform})`)
-    logger.log('')
+    getDefaultLogger().log('Socket Binary Decompression')
+    getDefaultLogger().log('===========================')
+    getDefaultLogger().log(`Platform: ${config.binaryFormat} (${process.platform})`)
+    getDefaultLogger().log('')
 
     // Ensure tool is built.
     const toolPath = await ensureToolBuilt(config)
@@ -164,7 +164,7 @@ async function main() {
     await decompressAndExecute(toolPath, compressedPath, binaryArgs, config)
 
   } catch (e) {
-    logger.error(`Error: ${e.message}`)
+    getDefaultLogger().error(`Error: ${e.message}`)
     process.exit(1)
   }
 }

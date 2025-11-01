@@ -1,6 +1,6 @@
 import colors from 'yoctocolors-cjs'
 
-import { LOG_SYMBOLS, logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger, LOG_SYMBOLS } from '@socketsecurity/lib/logger'
 import { stripAnsi } from '@socketsecurity/lib/strings'
 
 import { failMsgWithBadge } from '../error/fail-msg-with-badge.mts'
@@ -58,7 +58,7 @@ export function checkCommandInput(
   process.exitCode = 2
 
   if (outputKind === 'json') {
-    logger.log(
+    getDefaultLogger().log(
       serializeResultJson({
         ok: false,
         message: 'Input error',
@@ -66,7 +66,9 @@ export function checkCommandInput(
       }),
     )
   } else {
-    logger.fail(failMsgWithBadge('Input error', msg.join('\n').trim()))
+    getDefaultLogger().fail(
+      failMsgWithBadge('Input error', msg.join('\n').trim()),
+    )
   }
 
   return false

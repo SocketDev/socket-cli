@@ -19,7 +19,7 @@ import { execSync } from 'node:child_process'
 import { existsSync, mkdirSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import colors from 'yoctocolors-cjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -34,7 +34,7 @@ const noOptimize = args.includes('--no-optimize')
 const help = args.includes('--help')
 
 if (help) {
-  logger.log(`
+  getDefaultLogger().log(`
 Build WASM Model Packages
 
 Usage: node scripts/wasm/build-model-packages.mjs [options]
@@ -52,7 +52,7 @@ Examples:
 }
 
 function exec(command, options = {}) {
-  logger.log(`$ ${command}`)
+  getDefaultLogger().log(`$ ${command}`)
   return execSync(command, {
     cwd: options.cwd || wasmBundlePath,
     stdio: 'inherit',
@@ -66,7 +66,7 @@ async function getFileSizeMB(filePath) {
 }
 
 async function cleanBuild() {
-  logger.log('\n🧹 Cleaning build directories...')
+  getDefaultLogger().log('\n🧹 Cleaning build directories...')
   const dirsToClean = [
     path.join(wasmBundlePath, 'build'),
     path.join(wasmBundlePath, 'target'),
@@ -74,15 +74,15 @@ async function cleanBuild() {
 
   for (const dir of dirsToClean) {
     if (existsSync(dir)) {
-      logger.log(`  Removing ${path.basename(dir)}/`)
+      getDefaultLogger().log(`  Removing ${path.basename(dir)}/`)
       await fs.rm(dir, { recursive: true, force: true })
     }
   }
 }
 
 async function buildWasm(modelName, feature) {
-  logger.log(`\n📦 Building ${modelName}...`)
-  logger.log(`  Feature: ${feature}`)
+  getDefaultLogger().log(`\n📦 Building ${modelName}...`)
+  getDefaultLogger().log(`  Feature: ${feature}`)
 
   const buildDir = path.join(wasmBundlePath, 'build')
   mkdirSync(buildDir, { recursive: true })
@@ -100,25 +100,25 @@ async function buildWasm(modelName, feature) {
 
   await fs.copyFile(wasmSource, wasmBuild)
   const sizeMB = await getFileSizeMB(wasmBuild)
-  logger.log(`  Built: ${sizeMB} MB → build/${modelName}.wasm`)
+  getDefaultLogger().log(`  Built: ${sizeMB} MB → build/${modelName}.wasm`)
 
   return wasmBuild
 }
 
 async function optimizeWasm(inputPath, modelName) {
   if (noOptimize) {
-    logger.log('  Skipping optimization (--no-optimize)')
+    getDefaultLogger().log('  Skipping optimization (--no-optimize)')
     return inputPath
   }
 
-  logger.log('  Optimizing with wasm-opt...')
+  getDefaultLogger().log('  Optimizing with wasm-opt...')
 
   // Check if wasm-opt is available.
   try {
     execSync('wasm-opt --version', { stdio: 'ignore' })
   } catch {
-    logger.log('  Warning: wasm-opt not found, skipping optimization')
-    logger.log('  Install: brew install binaryen')
+    getDefaultLogger().log('  Warning: wasm-opt not found, skipping optimization')
+    getDefaultLogger().log('  Install: brew install binaryen')
     return inputPath
   }
 
@@ -133,13 +133,13 @@ async function optimizeWasm(inputPath, modelName) {
   const optimizedSize = (await fs.stat(optimizedPath)).size
   const reduction = (((originalSize - optimizedSize) / originalSize) * 100).toFixed(1)
 
-  logger.log(`  Optimized: ${(optimizedSize / (1024 * 1024)).toFixed(1)} MB (${reduction}% reduction)`)
+  getDefaultLogger().log(`  Optimized: ${(optimizedSize / (1024 * 1024)).toFixed(1)} MB (${reduction}% reduction)`)
 
   return optimizedPath
 }
 
 async function copyToPackage(wasmPath, packageName, binaryName) {
-  logger.log(`\n📦 Copying to ${packageName}...`)
+  getDefaultLogger().log(`\n📦 Copying to ${packageName}...`)
 
   const packageDir = path.join(packagesPath, packageName)
   const binDir = path.join(packageDir, 'bin')
@@ -152,13 +152,13 @@ async function copyToPackage(wasmPath, packageName, binaryName) {
   await fs.copyFile(wasmPath, destPath)
 
   const sizeMB = await getFileSizeMB(destPath)
-  logger.log(`  ✓ ${sizeMB} MB → packages/${packageName}/bin/${binaryName}`)
+  getDefaultLogger().log(`  ✓ ${sizeMB} MB → packages/${packageName}/bin/${binaryName}`)
 }
 
 async function main() {
   try {
-    logger.log('🚀 Building WASM Model Packages')
-    logger.log('='.repeat(50))
+    getDefaultLogger().log('🚀 Building WASM Model Packages')
+    getDefaultLogger().log('='.repeat(50))
 
     if (clean) {
       await cleanBuild()
@@ -174,15 +174,15 @@ async function main() {
     const codet5Optimized = await optimizeWasm(codet5Wasm, 'codet5')
     await copyToPackage(codet5Optimized, 'socketbin-codet5-wasm', 'codet5.wasm')
 
-    logger.log(`\n${colors.green('✓')} Build complete!`)
-    logger.log('\nPackages ready:')
-    logger.log('  - packages/socketbin-minilm-wasm/')
-    logger.log('  - packages/socketbin-codet5-wasm/')
-    logger.log('\nNext steps:')
-    logger.log('  1. Test locally: cd packages/socketbin-minilm-wasm && npm pack')
-    logger.log('  2. Publish: npm publish')
+    getDefaultLogger().log(`\n${colors.green('✓')} Build complete!`)
+    getDefaultLogger().log('\nPackages ready:')
+    getDefaultLogger().log('  - packages/socketbin-minilm-wasm/')
+    getDefaultLogger().log('  - packages/socketbin-codet5-wasm/')
+    getDefaultLogger().log('\nNext steps:')
+    getDefaultLogger().log('  1. Test locally: cd packages/socketbin-minilm-wasm && npm pack')
+    getDefaultLogger().log('  2. Publish: npm publish')
   } catch (error) {
-    logger.error(`\n${colors.red('✗')} Build failed:`, error.message)
+    getDefaultLogger().error(`\n${colors.red('✗')} Build failed:`, error.message)
     process.exit(1)
   }
 }

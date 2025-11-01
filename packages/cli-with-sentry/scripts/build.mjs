@@ -9,7 +9,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -21,7 +21,7 @@ async function main() {
     const cliPath = path.join(rootPath, '..', 'cli')
 
     // Build CLI bundle.
-    logger.info('Building CLI bundle...')
+    getDefaultLogger().info('Building CLI bundle...')
     let result = await spawn('node', ['.config/esbuild.config.mjs'], {
       shell: WIN32,
       stdio: 'inherit',
@@ -34,10 +34,10 @@ async function main() {
     if (result.code !== 0) {
       throw new Error(`CLI bundle build failed with exit code ${result.code}`)
     }
-    logger.success('Built CLI bundle')
+    getDefaultLogger().success('Built CLI bundle')
 
     // Build index loader.
-    logger.info('Building index loader...')
+    getDefaultLogger().info('Building index loader...')
     result = await spawn('node', ['.config/esbuild.index.config.mjs'], {
       shell: WIN32,
       stdio: 'inherit',
@@ -46,10 +46,10 @@ async function main() {
     if (result.code !== 0) {
       throw new Error(`Index loader build failed with exit code ${result.code}`)
     }
-    logger.success('Built index loader')
+    getDefaultLogger().success('Built index loader')
 
     // Build shadow npm inject.
-    logger.info('Building shadow npm inject...')
+    getDefaultLogger().info('Building shadow npm inject...')
     result = await spawn('node', ['.config/esbuild.inject.config.mjs'], {
       shell: WIN32,
       stdio: 'inherit',
@@ -58,10 +58,10 @@ async function main() {
     if (result.code !== 0) {
       throw new Error(`Shadow npm inject build failed with exit code ${result.code}`)
     }
-    logger.success('Built shadow npm inject')
+    getDefaultLogger().success('Built shadow npm inject')
 
     // Compress CLI.
-    logger.info('Compressing CLI...')
+    getDefaultLogger().info('Compressing CLI...')
     result = await spawn('node', ['scripts/compress-cli.mjs'], {
       shell: WIN32,
       stdio: 'inherit',
@@ -70,17 +70,17 @@ async function main() {
     if (result.code !== 0) {
       throw new Error(`CLI compression failed with exit code ${result.code}`)
     }
-    logger.success('Compressed CLI')
+    getDefaultLogger().success('Compressed CLI')
 
     // Copy data directory from packages/cli.
-    logger.info('Copying data/ from packages/cli...')
+    getDefaultLogger().info('Copying data/ from packages/cli...')
     await fs.cp(path.join(cliPath, 'data'), path.join(rootPath, 'data'), {
       recursive: true,
     })
-    logger.success('Copied data/')
+    getDefaultLogger().success('Copied data/')
 
     // Copy files from repo root.
-    logger.info('Copying files from repo root...')
+    getDefaultLogger().info('Copying files from repo root...')
     const filesToCopy = [
       'CHANGELOG.md',
       'LICENSE',
@@ -90,9 +90,9 @@ async function main() {
     for (const file of filesToCopy) {
       await fs.cp(path.join(repoRoot, file), path.join(rootPath, file))
     }
-    logger.success('Copied files from repo root')
+    getDefaultLogger().success('Copied files from repo root')
   } catch (error) {
-    logger.error(`Build failed: ${error.message}`)
+    getDefaultLogger().error(`Build failed: ${error.message}`)
     process.exitCode = 1
   }
 }

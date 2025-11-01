@@ -15,7 +15,7 @@ import {
   generateHashComment,
   shouldExtract,
 } from '@socketsecurity/build-infra/lib/extraction-cache'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '..')
@@ -49,7 +49,9 @@ if (
 // Check if ONNX Runtime WASM files exist.
 if (!existsSync(onnxWasmFile) || !existsSync(onnxJsFile)) {
   // Graceful fallback: Generate placeholder for CI builds without WASM.
-  logger.warn('ONNX Runtime WASM not built yet, generating placeholder')
+  getDefaultLogger().warn(
+    'ONNX Runtime WASM not built yet, generating placeholder',
+  )
 
   const placeholderContent = `/**
  * Synchronous ONNX Runtime with embedded WASM binary (Placeholder).
@@ -78,7 +80,7 @@ export default ort
 
   ensureOutputDir(outputPath)
   writeFileSync(outputPath, placeholderContent, 'utf-8')
-  logger.log(`✓ Generated placeholder ${outputPath}`)
+  getDefaultLogger().log(`✓ Generated placeholder ${outputPath}`)
   process.exit(0)
 }
 
@@ -92,7 +94,7 @@ const onnxJsContent = readFileSync(onnxJsFile, 'utf-8')
 // Compute source hash for cache validation.
 const sourceHashComment = await generateHashComment([onnxWasmFile, onnxJsFile])
 
-logger.log(
+getDefaultLogger().log(
   `✓ Extracted ${wasmBinary.length} bytes of WASM data from custom onnxruntime`,
 )
 
@@ -139,5 +141,5 @@ export default ort
 ensureOutputDir(outputPath)
 writeFileSync(outputPath, onnxSyncContent, 'utf-8')
 
-logger.log(`✓ Generated ${outputPath}`)
-logger.log(`✓ onnx-sync.mjs size: ${onnxSyncContent.length} bytes`)
+getDefaultLogger().log(`✓ Generated ${outputPath}`)
+getDefaultLogger().log(`✓ onnx-sync.mjs size: ${onnxSyncContent.length} bytes`)

@@ -28,7 +28,7 @@ import { fileURLToPath } from 'node:url'
 import { exec } from 'node:child_process'
 import { promisify } from 'node:util'
 
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import {
   cleanCheckpoint,
@@ -102,7 +102,7 @@ async function downloadModel(modelKey) {
     return
   }
 
-  logger.step(`Downloading ${modelKey} model`)
+  getDefaultLogger().step(`Downloading ${modelKey} model`)
 
   const config = MODEL_SOURCES[modelKey]
   const sources = [config.primary, ...config.fallbacks]
@@ -110,7 +110,7 @@ async function downloadModel(modelKey) {
 
   for (const source of sources) {
     try {
-      logger.substep(`Trying: ${source}@${revision}`)
+      getDefaultLogger().substep(`Trying: ${source}@${revision}`)
 
       await mkdir(MODELS, { recursive: true })
 
@@ -122,7 +122,7 @@ async function downloadModel(modelKey) {
           `huggingface-cli download ${source} ${revisionFlag} --local-dir ${MODELS}/${modelKey}`,
           { stdio: 'inherit' }
         )
-        logger.success(`Downloaded from ${source}`)
+        getDefaultLogger().success(`Downloaded from ${source}`)
         await createCheckpoint(PACKAGE_NAME, `downloaded-${modelKey}`, {
           source,
           revision,
@@ -139,7 +139,7 @@ async function downloadModel(modelKey) {
           `tokenizer.save_pretrained('${MODELS}/${modelKey}'); ` +
           `model.save_pretrained('${MODELS}/${modelKey}')"`
         )
-        logger.success(`Downloaded from ${source}`)
+        getDefaultLogger().success(`Downloaded from ${source}`)
         await createCheckpoint(PACKAGE_NAME, `downloaded-${modelKey}`, {
           source,
           revision,
@@ -148,7 +148,7 @@ async function downloadModel(modelKey) {
         return
       }
     } catch (e) {
-      logger.error(`Failed: ${source}`)
+      getDefaultLogger().error(`Failed: ${source}`)
       // Continue to next fallback.
     }
   }
@@ -164,7 +164,7 @@ async function convertToOnnx(modelKey) {
     return
   }
 
-  logger.step(`Converting ${modelKey} to ONNX`)
+  getDefaultLogger().step(`Converting ${modelKey} to ONNX`)
 
   const config = MODEL_SOURCES[modelKey]
   const modelDir = join(MODELS, modelKey)
@@ -174,7 +174,7 @@ async function convertToOnnx(modelKey) {
   const allExist = expectedFiles.every(f => existsSync(join(modelDir, f)))
 
   if (allExist) {
-    logger.success('Already in ONNX format')
+    getDefaultLogger().success('Already in ONNX format')
     await createCheckpoint(PACKAGE_NAME, `converted-${modelKey}`, { modelKey })
     return
   }
@@ -185,10 +185,10 @@ async function convertToOnnx(modelKey) {
       `python3 -m optimum.exporters.onnx --model ${modelDir} --task ${config.task} ${modelDir}`,
       { stdio: 'inherit' }
     )
-    logger.success('Converted to ONNX')
+    getDefaultLogger().success('Converted to ONNX')
     await createCheckpoint(PACKAGE_NAME, `converted-${modelKey}`, { modelKey })
   } catch (e) {
-    logger.error(`Conversion failed: ${e.message}`)
+    getDefaultLogger().error(`Conversion failed: ${e.message}`)
     throw e
   }
 }
@@ -218,7 +218,7 @@ async function quantizeModel(modelKey, quantLevel) {
     return [join(modelDir, `model.${suffix}.onnx`)]
   }
 
-  logger.step(`Applying ${quantLevel} quantization to ${modelKey}`)
+  getDefaultLogger().step(`Applying ${quantLevel} quantization to ${modelKey}`)
 
   const modelDir = join(MODELS, modelKey)
 
@@ -238,7 +238,7 @@ async function quantizeModel(modelKey, quantLevel) {
     const quantPath = join(modelDir, output)
 
     if (!existsSync(onnxPath)) {
-      logger.warn(`No ONNX model found at ${onnxPath}, skipping`)
+      getDefaultLogger().warn(`No ONNX model found at ${onnxPath}, skipping`)
       continue
     }
 
@@ -277,9 +277,9 @@ async function quantizeModel(modelKey, quantLevel) {
       quantSize = (await readFile(quantPath)).length
       const savings = ((1 - quantSize / originalSize) * 100).toFixed(1)
 
-      logger.substep(`${input}: ${(originalSize / 1024 / 1024).toFixed(2)} MB → ${(quantSize / 1024 / 1024).toFixed(2)} MB (${savings}% savings)`)
+      getDefaultLogger().substep(`${input}: ${(originalSize / 1024 / 1024).toFixed(2)} MB → ${(quantSize / 1024 / 1024).toFixed(2)} MB (${savings}% savings)`)
     } catch (e) {
-      logger.warn(`${quantLevel} quantization failed for ${input}, using FP32 model: ${e.message}`)
+      getDefaultLogger().warn(`${quantLevel} quantization failed for ${input}, using FP32 model: ${e.message}`)
       // Copy the original ONNX model as the "quantized" version.
       await copyFile(onnxPath, quantPath)
       method = 'FP32'
@@ -290,7 +290,7 @@ async function quantizeModel(modelKey, quantLevel) {
     quantizedPaths.push(quantPath)
   }
 
-  logger.success(`Quantized to ${method}`)
+  getDefaultLogger().success(`Quantized to ${method}`)
   await createCheckpoint(PACKAGE_NAME, checkpointKey, {
     modelKey,
     method,
@@ -304,7 +304,7 @@ async function quantizeModel(modelKey, quantLevel) {
  * Copy quantized models and tokenizers to dist.
  */
 async function copyToDist(modelKey, quantizedPaths, quantLevel) {
-  logger.step('Copying models to dist')
+  getDefaultLogger().step('Copying models to dist')
 
   await mkdir(DIST, { recursive: true })
 
@@ -317,13 +317,13 @@ async function copyToDist(modelKey, quantizedPaths, quantLevel) {
     await copyFile(quantizedPaths[1], join(DIST, `codet5-decoder-${suffix}.onnx`))
     await copyFile(join(modelDir, 'tokenizer.json'), join(DIST, 'codet5-tokenizer.json'))
 
-    logger.success(`Copied codet5 models (${quantLevel}) to dist/`)
+    getDefaultLogger().success(`Copied codet5 models (${quantLevel}) to dist/`)
   } else {
     // MiniLM: single model + tokenizer.
     await copyFile(quantizedPaths[0], join(DIST, `minilm-l6-${suffix}.onnx`))
     await copyFile(join(modelDir, 'tokenizer.json'), join(DIST, 'minilm-l6-tokenizer.json'))
 
-    logger.success(`Copied minilm-l6 model (${quantLevel}) to dist/`)
+    getDefaultLogger().success(`Copied minilm-l6 model (${quantLevel}) to dist/`)
   }
 }
 
@@ -331,10 +331,10 @@ async function copyToDist(modelKey, quantizedPaths, quantLevel) {
  * Main build.
  */
 async function main() {
-  logger.info('Building @socketsecurity/models')
-  logger.info('='.repeat(60))
-  logger.info(`Quantization: ${QUANT_LEVEL}`)
-  logger.info('')
+  getDefaultLogger().info('Building @socketsecurity/models')
+  getDefaultLogger().info('='.repeat(60))
+  getDefaultLogger().info(`Quantization: ${QUANT_LEVEL}`)
+  getDefaultLogger().info('')
 
   const startTime = Date.now()
 
@@ -345,7 +345,7 @@ async function main() {
 
   if (CLEAN_BUILD || outputMissing) {
     if (outputMissing) {
-      logger.step('Output artifacts missing - cleaning stale checkpoints')
+      getDefaultLogger().step('Output artifacts missing - cleaning stale checkpoints')
     }
     await cleanCheckpoint(PACKAGE_NAME)
   }
@@ -357,9 +357,9 @@ async function main() {
   try {
     // Build MiniLM-L6 if requested.
     if (BUILD_MINILM) {
-      logger.info('')
-      logger.info('Building MiniLM-L6...')
-      logger.info('-'.repeat(60))
+      getDefaultLogger().info('')
+      getDefaultLogger().info('Building MiniLM-L6...')
+      getDefaultLogger().info('-'.repeat(60))
 
       await downloadModel('minilm-l6')
       await convertToOnnx('minilm-l6')
@@ -369,9 +369,9 @@ async function main() {
 
     // Build CodeT5 if requested.
     if (BUILD_CODET5) {
-      logger.info('')
-      logger.info('Building CodeT5...')
-      logger.info('-'.repeat(60))
+      getDefaultLogger().info('')
+      getDefaultLogger().info('Building CodeT5...')
+      getDefaultLogger().info('-'.repeat(60))
 
       await downloadModel('codet5')
       await convertToOnnx('codet5')
@@ -381,26 +381,26 @@ async function main() {
 
     const duration = ((Date.now() - startTime) / 1000).toFixed(1)
 
-    logger.info('')
-    logger.info('='.repeat(60))
-    logger.success('Build complete!')
-    logger.info('')
-    logger.substep(`Duration: ${duration}s`)
-    logger.info('')
-    logger.substep(`Output: ${DIST}`)
+    getDefaultLogger().info('')
+    getDefaultLogger().info('='.repeat(60))
+    getDefaultLogger().success('Build complete!')
+    getDefaultLogger().info('')
+    getDefaultLogger().substep(`Duration: ${duration}s`)
+    getDefaultLogger().info('')
+    getDefaultLogger().substep(`Output: ${DIST}`)
 
     if (BUILD_MINILM) {
-      logger.substep(`  - minilm-l6-${suffix}.onnx (${QUANT_LEVEL} quantized)`)
-      logger.substep('  - minilm-l6-tokenizer.json')
+      getDefaultLogger().substep(`  - minilm-l6-${suffix}.onnx (${QUANT_LEVEL} quantized)`)
+      getDefaultLogger().substep('  - minilm-l6-tokenizer.json')
     }
     if (BUILD_CODET5) {
-      logger.substep(`  - codet5-encoder-${suffix}.onnx (${QUANT_LEVEL} quantized)`)
-      logger.substep(`  - codet5-decoder-${suffix}.onnx (${QUANT_LEVEL} quantized)`)
-      logger.substep('  - codet5-tokenizer.json')
+      getDefaultLogger().substep(`  - codet5-encoder-${suffix}.onnx (${QUANT_LEVEL} quantized)`)
+      getDefaultLogger().substep(`  - codet5-decoder-${suffix}.onnx (${QUANT_LEVEL} quantized)`)
+      getDefaultLogger().substep('  - codet5-tokenizer.json')
     }
   } catch (error) {
-    logger.info('')
-    logger.error(`Build failed: ${error.message}`)
+    getDefaultLogger().info('')
+    getDefaultLogger().error(`Build failed: ${error.message}`)
     process.exit(1)
   }
 }

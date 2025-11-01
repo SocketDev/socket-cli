@@ -22,7 +22,7 @@ import { existsSync, promises as fs, readFileSync } from 'node:fs'
 import path from 'node:path'
 
 import { debugDir, debugNs } from '@socketsecurity/lib/debug'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { SOCKET_JSON, SOCKET_WEBSITE_URL } from '../../constants/socket.mts'
 import { formatErrorWithDetail } from '../error/errors.mts'
@@ -135,7 +135,7 @@ export async function readSocketJson(
     json = await fs.readFile(sockJsonPath, 'utf8')
   } catch (e) {
     if (defaultOnError) {
-      logger.warn(`Failed to read ${SOCKET_JSON}, using default`)
+      getDefaultLogger().warn(`Failed to read ${SOCKET_JSON}, using default`)
       debugNs('warn', `Failed to read ${SOCKET_JSON}`)
       debugDir('warn', e as any)
       return { ok: true, data: getDefaultSocketJson() }
@@ -161,7 +161,7 @@ export async function readSocketJson(
     debugDir('inspect', { json } as any)
     debugDir('error', e as any)
     if (defaultOnError) {
-      logger.warn(`Failed to parse ${SOCKET_JSON}, using default`)
+      getDefaultLogger().warn(`Failed to parse ${SOCKET_JSON}, using default`)
       return { ok: true, data: getDefaultSocketJson() }
     }
     return {
@@ -172,7 +172,7 @@ export async function readSocketJson(
   }
 
   if (!obj) {
-    logger.warn('Warning: file contents was empty, using default')
+    getDefaultLogger().warn('Warning: file contents was empty, using default')
     return { ok: true, data: getDefaultSocketJson() }
   }
 
@@ -195,7 +195,7 @@ export function readSocketJsonSync(
     jsonContent = readFileSync(sockJsonPath, 'utf8')
   } catch (e) {
     if (defaultOnError) {
-      logger.warn(`Failed to read ${SOCKET_JSON}, using default`)
+      getDefaultLogger().warn(`Failed to read ${SOCKET_JSON}, using default`)
       debugNs('warn', `Failed to read ${SOCKET_JSON} sync`)
       debugDir('warn', e as any)
       return { ok: true, data: getDefaultSocketJson() }
@@ -221,7 +221,7 @@ export function readSocketJsonSync(
     debugDir('inspect', { jsonContent } as any)
     debugDir('error', e as any)
     if (defaultOnError) {
-      logger.warn(`Failed to parse ${SOCKET_JSON}, using default`)
+      getDefaultLogger().warn(`Failed to parse ${SOCKET_JSON}, using default`)
       return { ok: true, data: getDefaultSocketJson() }
     }
     return {
@@ -232,7 +232,7 @@ export function readSocketJsonSync(
   }
 
   if (!jsonObj) {
-    logger.warn('Warning: file contents was empty, using default')
+    getDefaultLogger().warn('Warning: file contents was empty, using default')
     return { ok: true, data: getDefaultSocketJson() }
   }
 

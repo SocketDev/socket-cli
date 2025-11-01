@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { stripAnsi } from '@socketsecurity/lib/strings'
 
 import type { CResult } from '../../types.mts'
@@ -18,7 +18,7 @@ export async function convertCondaToRequirements(
   let content: string
   if (filename === '-') {
     if (verbose) {
-      logger.info('[VERBOSE] reading input from stdin')
+      getDefaultLogger().info('[VERBOSE] reading input from stdin')
     }
 
     const strings: string[] = []
@@ -32,21 +32,26 @@ export async function convertCondaToRequirements(
       })
       process.stdin.on('error', e => {
         if (verbose) {
-          logger.error('Unexpected error while reading from stdin:', e)
+          getDefaultLogger().error(
+            'Unexpected error while reading from stdin:',
+            e,
+          )
         }
         reject(e)
       })
       process.stdin.on('close', () => {
         if (strings.length) {
           if (verbose) {
-            logger.error(
+            getDefaultLogger().error(
               'warning: stdin closed explicitly with some data received',
             )
           }
           resolve(prepareContent(strings.join('')))
         } else {
           if (verbose) {
-            logger.error('stdin closed explicitly without data received')
+            getDefaultLogger().error(
+              'stdin closed explicitly without data received',
+            )
           }
           reject(new Error('No data received from stdin'))
         }
@@ -64,7 +69,7 @@ export async function convertCondaToRequirements(
     const filepath = path.join(cwd, filename)
 
     if (verbose) {
-      logger.info(`[VERBOSE] target: ${filepath}`)
+      getDefaultLogger().info(`[VERBOSE] target: ${filepath}`)
     }
 
     if (!existsSync(filepath)) {

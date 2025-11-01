@@ -1,4 +1,4 @@
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
@@ -56,13 +56,13 @@ async function run(
   const dryRun = !!cli.flags['dryRun']
 
   if (dryRun) {
-    logger.log(DRY_RUN_BAILING_NOW)
+    getDefaultLogger().log(DRY_RUN_BAILING_NOW)
     return
   }
 
   if (json && !justThrow) {
     process.exitCode = 1
-    logger.log(
+    getDefaultLogger().log(
       serializeResultJson({
         ok: false,
         message: 'Oops',
@@ -73,7 +73,7 @@ async function run(
 
   if (markdown && !justThrow) {
     process.exitCode = 1
-    logger.fail(
+    getDefaultLogger().fail(
       failMsgWithBadge('Oops', 'This error was intentionally left blank'),
     )
     return

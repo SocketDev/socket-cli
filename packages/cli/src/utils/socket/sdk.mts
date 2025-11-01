@@ -28,7 +28,7 @@ import { HttpProxyAgent, HttpsProxyAgent } from 'hpagent'
 
 import isInteractive from '@socketregistry/is-interactive/index.cjs'
 import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/lib/constants/socket'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { password } from '@socketsecurity/lib/prompts'
 import { isNonEmptyString } from '@socketsecurity/lib/strings'
 import { isUrl } from '@socketsecurity/lib/url'
@@ -166,10 +166,10 @@ export async function setupSdk(
         },
       ): FileValidationResult => {
         if (invalidPaths.length > 0) {
-          logger.warn(
+          getDefaultLogger().warn(
             `Skipped ${invalidPaths.length} ${pluralize('file', { count: invalidPaths.length })} that could not be read`,
           )
-          logger.substep(
+          getDefaultLogger().substep(
             'This may occur with Yarn Berry PnP virtual filesystem or pnpm symlinks',
           )
         }

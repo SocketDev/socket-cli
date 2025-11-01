@@ -1,4 +1,4 @@
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { handlePurlDeepScore } from './handle-purl-deep-score.mts'
 import { parsePackageSpecifiers } from './parse-package-specifiers.mts'
@@ -130,7 +130,7 @@ async function run(
   }
 
   if (dryRun) {
-    logger.log(DRY_RUN_BAILING_NOW)
+    getDefaultLogger().log(DRY_RUN_BAILING_NOW)
     return
   }
 

@@ -1,6 +1,6 @@
 import { joinAnd } from '@socketsecurity/lib/arrays'
 import { debug, isDebug } from '@socketsecurity/lib/debug'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { getSocketFixPrs } from './pull-request.mts'
 import ENV from '../../constants/env.mts'
@@ -110,7 +110,7 @@ export async function getFixEnv(): Promise<FixEnv> {
     // CI is set but other required vars are missing.
     const missingExceptCi = envCheck.missing.filter(v => v !== 'CI')
     if (missingExceptCi.length) {
-      logger.warn(
+      getDefaultLogger().warn(
         'CI mode detected, but pull request creation is disabled due to missing environment variables:\n' +
           `  Missing: ${joinAnd(missingExceptCi)}\n` +
           '  Set these variables to enable automatic pull request creation.',

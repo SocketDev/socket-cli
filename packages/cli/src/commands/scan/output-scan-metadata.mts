@@ -1,4 +1,4 @@
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 import { mdHeader, mdKeyValue } from '../../utils/output/markdown.mts'
@@ -17,17 +17,17 @@ export async function outputScanMetadata(
   }
 
   if (outputKind === 'json') {
-    logger.log(serializeResultJson(result))
+    getDefaultLogger().log(serializeResultJson(result))
     return
   }
   if (!result.ok) {
-    logger.fail(failMsgWithBadge(result.message, result.cause))
+    getDefaultLogger().fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
   if (outputKind === 'markdown') {
-    logger.log(`${mdHeader('Scan meta data')}\n`)
-    logger.log(`${mdKeyValue('Scan ID', scanId)}\n`)
+    getDefaultLogger().log(`${mdHeader('Scan meta data')}\n`)
+    getDefaultLogger().log(`${mdKeyValue('Scan ID', scanId)}\n`)
     for (const { 0: key, 1: value } of Object.entries(result.data)) {
       if (
         [
@@ -41,13 +41,13 @@ export async function outputScanMetadata(
       ) {
         continue
       }
-      logger.log(`- ${key}: ${value}`)
+      getDefaultLogger().log(`- ${key}: ${value}`)
     }
-    logger.log(
+    getDefaultLogger().log(
       `\nYou can view this report at: [${result.data.html_report_url}](${result.data.html_report_url})\n`,
     )
   } else {
-    logger.log(`Scan ID: ${scanId}\n`)
+    getDefaultLogger().log(`Scan ID: ${scanId}\n`)
     for (const { 0: key, 1: value } of Object.entries(result.data)) {
       if (
         [
@@ -61,9 +61,9 @@ export async function outputScanMetadata(
       ) {
         continue
       }
-      logger.log(`- ${key}:`, value)
+      getDefaultLogger().log(`- ${key}:`, value)
     }
-    logger.log(
+    getDefaultLogger().log(
       `\nYou can view this report at: ${result.data.html_report_url}]\n`,
     )
   }

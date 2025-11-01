@@ -30,7 +30,7 @@ import lookupRegistryAuthToken from 'registry-auth-token'
 import lookupRegistryUrl from 'registry-url'
 
 import { debug, debugDir } from '@socketsecurity/lib/debug'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { rootAliases, rootCommands } from './commands.mts'
 import ENV from './constants/env.mts'
@@ -118,7 +118,7 @@ void (async () => {
     })()
 
     if (isJson) {
-      logger.log(
+      getDefaultLogger().log(
         serializeResultJson({
           ok: false,
           message: errorTitle,
@@ -127,8 +127,8 @@ void (async () => {
       )
     } else {
       // Add 2 newlines in stderr to bump below any spinner.
-      logger.error('\n')
-      logger.fail(failMsgWithBadge(errorTitle, errorMessage))
+      getDefaultLogger().error('\n')
+      getDefaultLogger().fail(failMsgWithBadge(errorTitle, errorMessage))
       if (errorBody) {
         debugDir('inspect', { errorBody })
       }

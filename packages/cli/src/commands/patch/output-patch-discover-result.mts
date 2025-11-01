@@ -1,4 +1,4 @@
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { OUTPUT_JSON } from '../../constants/cli.mjs'
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
@@ -20,12 +20,12 @@ export async function outputPatchDiscoverResult(
   }
 
   if (outputKind === OUTPUT_JSON) {
-    logger.log(serializeResultJson(result))
+    getDefaultLogger().log(serializeResultJson(result))
     return
   }
 
   if (!result.ok) {
-    logger.fail(failMsgWithBadge(result.message, result.cause))
+    getDefaultLogger().fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
@@ -33,65 +33,65 @@ export async function outputPatchDiscoverResult(
 
   if (outputKind === 'markdown') {
     if (patches.length === 0) {
-      logger.log('## Discovered Patches\n\nNo patches discovered.')
+      getDefaultLogger().log('## Discovered Patches\n\nNo patches discovered.')
       return
     }
 
-    logger.log('## Discovered Patches\n')
+    getDefaultLogger().log('## Discovered Patches\n')
     for (const patch of patches) {
-      logger.log(`### ${patch.purl}\n`)
+      getDefaultLogger().log(`### ${patch.purl}\n`)
       if (patch.uuid) {
-        logger.log(`**UUID**: ${patch.uuid}\n`)
+        getDefaultLogger().log(`**UUID**: ${patch.uuid}\n`)
       }
       if (patch.description) {
-        logger.log(`**Description**: ${patch.description}\n`)
+        getDefaultLogger().log(`**Description**: ${patch.description}\n`)
       }
       if (patch.tier) {
-        logger.log(`**Tier**: ${patch.tier}`)
+        getDefaultLogger().log(`**Tier**: ${patch.tier}`)
       }
       if (patch.license) {
-        logger.log(`**License**: ${patch.license}`)
+        getDefaultLogger().log(`**License**: ${patch.license}`)
       }
 
       // Free CVEs.
       const freeCveCount = patch.freeCves.length
       if (freeCveCount > 0) {
-        logger.log(`\n**Free CVEs**: ${freeCveCount}`)
+        getDefaultLogger().log(`\n**Free CVEs**: ${freeCveCount}`)
         for (const vuln of patch.freeCves) {
           const cveStr = vuln.cve || 'Unknown'
           const severityStr = vuln.severity ? ` (${vuln.severity})` : ''
-          logger.log(`  - ${cveStr}${severityStr}`)
+          getDefaultLogger().log(`  - ${cveStr}${severityStr}`)
         }
       }
 
       // Enterprise CVEs.
       const paidCveCount = patch.paidCves.length
       if (paidCveCount > 0) {
-        logger.log(`\n**Enterprise CVEs**: ${paidCveCount}`)
+        getDefaultLogger().log(`\n**Enterprise CVEs**: ${paidCveCount}`)
         for (const vuln of patch.paidCves) {
           const cveStr = vuln.cve || 'Unknown'
           const severityStr = vuln.severity ? ` (${vuln.severity})` : ''
-          logger.log(`  - ${cveStr}${severityStr}`)
+          getDefaultLogger().log(`  - ${cveStr}${severityStr}`)
         }
       }
 
       // Free Features.
       if (patch.freeFeatures?.length) {
-        logger.log('\n**Free Features**:')
+        getDefaultLogger().log('\n**Free Features**:')
         for (const feature of patch.freeFeatures) {
-          logger.log(`  - ${feature}`)
+          getDefaultLogger().log(`  - ${feature}`)
         }
       }
 
       // Enterprise Features.
       if (patch.paidFeatures?.length) {
-        logger.log('\n**Enterprise Features**:')
+        getDefaultLogger().log('\n**Enterprise Features**:')
         for (const feature of patch.paidFeatures) {
-          logger.log(`  - ${feature}`)
+          getDefaultLogger().log(`  - ${feature}`)
         }
       }
 
-      logger.log('')
+      getDefaultLogger().log('')
     }
     return
   }
@@ -101,62 +101,62 @@ export async function outputPatchDiscoverResult(
     return
   }
 
-  logger.group('')
+  getDefaultLogger().group('')
   for (const patch of patches) {
-    logger.log(`- ${patch.purl}`)
-    logger.group()
+    getDefaultLogger().log(`- ${patch.purl}`)
+    getDefaultLogger().group()
     if (patch.uuid) {
-      logger.log(`UUID: ${patch.uuid}`)
+      getDefaultLogger().log(`UUID: ${patch.uuid}`)
     }
     if (patch.description) {
-      logger.log(`Description: ${patch.description}`)
+      getDefaultLogger().log(`Description: ${patch.description}`)
     }
     if (patch.tier) {
-      logger.log(`Tier: ${patch.tier}`)
+      getDefaultLogger().log(`Tier: ${patch.tier}`)
     }
     if (patch.license) {
-      logger.log(`License: ${patch.license}`)
+      getDefaultLogger().log(`License: ${patch.license}`)
     }
 
     // Free CVEs.
     const freeCveCount = patch.freeCves.length
     if (freeCveCount > 0) {
-      logger.log(`Free CVEs: ${freeCveCount}`)
+      getDefaultLogger().log(`Free CVEs: ${freeCveCount}`)
       for (const vuln of patch.freeCves) {
         const cveStr = vuln.cve || 'Unknown'
         const severityStr = vuln.severity ? ` (${vuln.severity})` : ''
-        logger.log(`  - ${cveStr}${severityStr}`)
+        getDefaultLogger().log(`  - ${cveStr}${severityStr}`)
       }
     }
 
     // Enterprise CVEs.
     const paidCveCount = patch.paidCves.length
     if (paidCveCount > 0) {
-      logger.log(`Enterprise CVEs: ${paidCveCount}`)
+      getDefaultLogger().log(`Enterprise CVEs: ${paidCveCount}`)
       for (const vuln of patch.paidCves) {
         const cveStr = vuln.cve || 'Unknown'
         const severityStr = vuln.severity ? ` (${vuln.severity})` : ''
-        logger.log(`  - ${cveStr}${severityStr}`)
+        getDefaultLogger().log(`  - ${cveStr}${severityStr}`)
       }
     }
 
     // Free Features.
     if (patch.freeFeatures?.length) {
-      logger.log('Free Features:')
+      getDefaultLogger().log('Free Features:')
       for (const feature of patch.freeFeatures) {
-        logger.log(`  - ${feature}`)
+        getDefaultLogger().log(`  - ${feature}`)
       }
     }
 
     // Enterprise Features.
     if (patch.paidFeatures?.length) {
-      logger.log('Enterprise Features:')
+      getDefaultLogger().log('Enterprise Features:')
       for (const feature of patch.paidFeatures) {
-        logger.log(`  - ${feature}`)
+        getDefaultLogger().log(`  - ${feature}`)
       }
     }
 
-    logger.groupEnd()
+    getDefaultLogger().groupEnd()
   }
-  logger.groupEnd()
+  getDefaultLogger().groupEnd()
 }

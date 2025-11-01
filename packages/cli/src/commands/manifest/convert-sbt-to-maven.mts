@@ -1,6 +1,6 @@
 import { getSpinner } from '@socketsecurity/lib/constants/process'
 import { safeReadFile } from '@socketsecurity/lib/fs'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 
 import type { ManifestResult } from './output-manifest.mts'
@@ -24,10 +24,10 @@ export async function convertSbtToMaven({
   const isTextMode = outputKind === 'text'
 
   if (isTextMode) {
-    logger.group('sbt2maven:')
-    logger.info(`- executing: \`${bin}\``)
-    logger.info(`- src dir: \`${cwd}\``)
-    logger.groupEnd()
+    getDefaultLogger().group('sbt2maven:')
+    getDefaultLogger().info(`- executing: \`${bin}\``)
+    getDefaultLogger().info(`- src dir: \`${cwd}\``)
+    getDefaultLogger().groupEnd()
   }
 
   const spinner = isTextMode ? getSpinner() : undefined
@@ -44,19 +44,19 @@ export async function convertSbtToMaven({
     spinner?.stop()
 
     if (verbose && isTextMode) {
-      logger.group('[VERBOSE] sbt stdout:')
-      logger.log(output)
-      logger.groupEnd()
+      getDefaultLogger().group('[VERBOSE] sbt stdout:')
+      getDefaultLogger().log(output)
+      getDefaultLogger().groupEnd()
     }
     if (output.stderr) {
       if (isTextMode) {
         process.exitCode = 1
-        logger.fail('There were errors while running sbt')
+        getDefaultLogger().fail('There were errors while running sbt')
         // (In verbose mode, stderr was printed above, no need to repeat it)
         if (!verbose) {
-          logger.group('[VERBOSE] stderr:')
-          logger.error(output.stderr)
-          logger.groupEnd()
+          getDefaultLogger().group('[VERBOSE] stderr:')
+          getDefaultLogger().error(output.stderr)
+          getDefaultLogger().groupEnd()
         }
       }
       return {
@@ -82,7 +82,7 @@ export async function convertSbtToMaven({
         'There were no errors from sbt but it seems to not have generated any poms either'
       if (isTextMode) {
         process.exitCode = 1
-        logger.fail(message)
+        getDefaultLogger().fail(message)
       }
       return {
         ok: false,
@@ -93,25 +93,25 @@ export async function convertSbtToMaven({
     // Note: Multiple file stdout output could be supported in the future with separators
     // or a flag to select specific files, but currently errors out for clarity.
     if (out === '-' && poms.length === 1 && isTextMode) {
-      logger.log('Result:\n```')
-      logger.log(await safeReadFile(poms[0]!))
-      logger.log('```')
-      logger.success('OK')
+      getDefaultLogger().log('Result:\n```')
+      getDefaultLogger().log(await safeReadFile(poms[0]!))
+      getDefaultLogger().log('```')
+      getDefaultLogger().success('OK')
     } else if (out === '-') {
       const message =
         'Requested output target was stdout but there are multiple generated files'
       if (isTextMode) {
         process.exitCode = 1
-        logger.error('')
-        logger.fail(message)
-        logger.error('')
-        poms.forEach(fn => logger.info('-', fn))
+        getDefaultLogger().error('')
+        getDefaultLogger().fail(message)
+        getDefaultLogger().error('')
+        poms.forEach(fn => getDefaultLogger().info('-', fn))
         if (poms.length > 10) {
-          logger.error('')
-          logger.fail(message)
+          getDefaultLogger().error('')
+          getDefaultLogger().fail(message)
         }
-        logger.error('')
-        logger.info('Exiting now...')
+        getDefaultLogger().error('')
+        getDefaultLogger().info('Exiting now...')
       }
       return {
         ok: false,
@@ -119,9 +119,9 @@ export async function convertSbtToMaven({
         data: { files: poms },
       }
     } else if (isTextMode) {
-      logger.success(`Generated ${poms.length} pom files`)
-      poms.forEach(fn => logger.log('-', fn))
-      logger.success('OK')
+      getDefaultLogger().success(`Generated ${poms.length} pom files`)
+      poms.forEach(fn => getDefaultLogger().log('-', fn))
+      getDefaultLogger().success('OK')
     }
 
     return {
@@ -140,11 +140,11 @@ export async function convertSbtToMaven({
     if (isTextMode) {
       process.exitCode = 1
       spinner?.stop()
-      logger.fail(errorMessage)
+      getDefaultLogger().fail(errorMessage)
       if (verbose) {
-        logger.group('[VERBOSE] error:')
-        logger.log(e)
-        logger.groupEnd()
+        getDefaultLogger().group('[VERBOSE] error:')
+        getDefaultLogger().log(e)
+        getDefaultLogger().groupEnd()
       }
     }
 

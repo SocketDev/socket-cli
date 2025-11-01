@@ -3,7 +3,7 @@ import util from 'node:util'
 
 import colors from 'yoctocolors-cjs'
 
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { SOCKET_WEBSITE_URL } from '../../constants/socket.mts'
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
@@ -35,10 +35,10 @@ export async function outputDiffScan(
 
   if (!result.ok) {
     if (outputKind === 'json') {
-      logger.log(serializeResultJson(result))
+      getDefaultLogger().log(serializeResultJson(result))
       return
     }
-    logger.fail(failMsgWithBadge(result.message, result.cause))
+    getDefaultLogger().fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
@@ -63,8 +63,8 @@ export async function outputDiffScan(
   // In this case neither the --json nor the --file flag was passed
   // Dump the JSON to CLI and let NodeJS deal with truncation
 
-  logger.log('Diff scan result:')
-  logger.log(
+  getDefaultLogger().log('Diff scan result:')
+  getDefaultLogger().log(
     util.inspect(result.data, {
       showHidden: false,
       depth: depth > 0 ? depth : null,
@@ -72,10 +72,10 @@ export async function outputDiffScan(
       maxArrayLength: null,
     }),
   )
-  logger.info(
+  getDefaultLogger().info(
     '\n 📝 To display the detailed report in the terminal, use the --json flag. For a friendlier report, use the --markdown flag.\n',
   )
-  logger.info(dashboardMessage)
+  getDefaultLogger().info(dashboardMessage)
 }
 
 async function handleJson(
@@ -86,21 +86,23 @@ async function handleJson(
   const json = serializeResultJson(data)
 
   if (file && file !== '-') {
-    logger.log(`Writing json to \`${file}\``)
+    getDefaultLogger().log(`Writing json to \`${file}\``)
     fs.writeFile(file, json, err => {
       if (err) {
-        logger.fail(`Writing to \`${file}\` failed...`)
-        logger.error(err)
+        getDefaultLogger().fail(`Writing to \`${file}\` failed...`)
+        getDefaultLogger().error(err)
       } else {
-        logger.success(`Data successfully written to \`${fileLink(file)}\``)
+        getDefaultLogger().success(
+          `Data successfully written to \`${fileLink(file)}\``,
+        )
       }
-      logger.error(dashboardMessage)
+      getDefaultLogger().error(dashboardMessage)
     })
   } else {
     // only .log goes to stdout
-    logger.info('\n Diff scan result: \n')
-    logger.log(json)
-    logger.info(dashboardMessage)
+    getDefaultLogger().info('\n Diff scan result: \n')
+    getDefaultLogger().log(json)
+    getDefaultLogger().info(dashboardMessage)
   }
 }
 
@@ -109,115 +111,141 @@ async function handleMarkdown(
 ) {
   const SOCKET_SBOM_URL_PREFIX = `${SOCKET_WEBSITE_URL}/dashboard/org/SocketDev/sbom/`
 
-  logger.log(mdHeader('Scan diff result'))
-  logger.log('')
-  logger.log('This Socket.dev report shows the changes between two scans:')
-  logger.log(
+  getDefaultLogger().log(mdHeader('Scan diff result'))
+  getDefaultLogger().log('')
+  getDefaultLogger().log(
+    'This Socket.dev report shows the changes between two scans:',
+  )
+  getDefaultLogger().log(
     `- [${data.before.id}](${SOCKET_SBOM_URL_PREFIX}${data.before.id})`,
   )
-  logger.log(`- [${data.after.id}](${SOCKET_SBOM_URL_PREFIX}${data.after.id})`)
-  logger.log('')
-  logger.log(
+  getDefaultLogger().log(
+    `- [${data.after.id}](${SOCKET_SBOM_URL_PREFIX}${data.after.id})`,
+  )
+  getDefaultLogger().log('')
+  getDefaultLogger().log(
     `You can [view this report in your dashboard](${data.diff_report_url})`,
   )
-  logger.log('')
-  logger.log(mdHeader('Changes', 2))
-  logger.log('')
-  logger.log(`- directDependenciesChanged: ${data.directDependenciesChanged}`)
-  logger.log(`- Added packages: ${data.artifacts.added.length}`)
+  getDefaultLogger().log('')
+  getDefaultLogger().log(mdHeader('Changes', 2))
+  getDefaultLogger().log('')
+  getDefaultLogger().log(
+    `- directDependenciesChanged: ${data.directDependenciesChanged}`,
+  )
+  getDefaultLogger().log(`- Added packages: ${data.artifacts.added.length}`)
 
   if (data.artifacts.added.length > 0) {
     data.artifacts.added.slice(0, 10).forEach((artifact: DiffScanArtifact) => {
-      logger.log(`  - ${artifact.type} ${artifact.name}@${artifact.version}`)
+      getDefaultLogger().log(
+        `  - ${artifact.type} ${artifact.name}@${artifact.version}`,
+      )
     })
     if (data.artifacts.added.length > 10) {
-      logger.log(`  … and ${data.artifacts.added.length - 10} more`)
+      getDefaultLogger().log(`  … and ${data.artifacts.added.length - 10} more`)
     }
   }
 
-  logger.log(`- Removed packages: ${data.artifacts.removed.length}`)
+  getDefaultLogger().log(`- Removed packages: ${data.artifacts.removed.length}`)
   if (data.artifacts.removed.length > 0) {
     data.artifacts.removed
       .slice(0, 10)
       .forEach((artifact: DiffScanArtifact) => {
-        logger.log(`  - ${artifact.type} ${artifact.name}@${artifact.version}`)
+        getDefaultLogger().log(
+          `  - ${artifact.type} ${artifact.name}@${artifact.version}`,
+        )
       })
     if (data.artifacts.removed.length > 10) {
-      logger.log(`  … and ${data.artifacts.removed.length - 10} more`)
+      getDefaultLogger().log(
+        `  … and ${data.artifacts.removed.length - 10} more`,
+      )
     }
   }
 
-  logger.log(`- Replaced packages: ${data.artifacts.replaced.length}`)
+  getDefaultLogger().log(
+    `- Replaced packages: ${data.artifacts.replaced.length}`,
+  )
   if (data.artifacts.replaced.length > 0) {
     data.artifacts.replaced
       .slice(0, 10)
       .forEach((artifact: DiffScanArtifact) => {
-        logger.log(`  - ${artifact.type} ${artifact.name}@${artifact.version}`)
+        getDefaultLogger().log(
+          `  - ${artifact.type} ${artifact.name}@${artifact.version}`,
+        )
       })
     if (data.artifacts.replaced.length > 10) {
-      logger.log(`  … and ${data.artifacts.replaced.length - 10} more`)
+      getDefaultLogger().log(
+        `  … and ${data.artifacts.replaced.length - 10} more`,
+      )
     }
   }
 
-  logger.log(`- Updated packages: ${data.artifacts.updated.length}`)
+  getDefaultLogger().log(`- Updated packages: ${data.artifacts.updated.length}`)
   if (data.artifacts.updated.length > 0) {
     data.artifacts.updated
       .slice(0, 10)
       .forEach((artifact: DiffScanArtifact) => {
-        logger.log(`  - ${artifact.type} ${artifact.name}@${artifact.version}`)
+        getDefaultLogger().log(
+          `  - ${artifact.type} ${artifact.name}@${artifact.version}`,
+        )
       })
     if (data.artifacts.updated.length > 10) {
-      logger.log(`  … and ${data.artifacts.updated.length - 10} more`)
+      getDefaultLogger().log(
+        `  … and ${data.artifacts.updated.length - 10} more`,
+      )
     }
   }
 
   const unchanged = data.artifacts.unchanged ?? []
-  logger.log(`- Unchanged packages: ${unchanged.length}`)
+  getDefaultLogger().log(`- Unchanged packages: ${unchanged.length}`)
   if (unchanged.length > 0) {
     const firstUpToTen = unchanged.slice(0, 10)
     for (const artifact of firstUpToTen) {
-      logger.log(`  - ${artifact.type} ${artifact.name}@${artifact.version}`)
+      getDefaultLogger().log(
+        `  - ${artifact.type} ${artifact.name}@${artifact.version}`,
+      )
     }
     if (unchanged.length > 10) {
-      logger.log(`  … and ${unchanged.length - 10} more`)
+      getDefaultLogger().log(`  … and ${unchanged.length - 10} more`)
     }
   }
 
-  logger.log('')
-  logger.log(`## Scan ${data.before.id}`)
-  logger.log('')
-  logger.log(
+  getDefaultLogger().log('')
+  getDefaultLogger().log(`## Scan ${data.before.id}`)
+  getDefaultLogger().log('')
+  getDefaultLogger().log(
     'This Scan was considered to be the "base" / "from" / "before" Scan.',
   )
-  logger.log('')
+  getDefaultLogger().log('')
   for (const { 0: key, 1: value } of Object.entries(data.before)) {
     if (key === 'pull_request' && !value) {
       continue
     }
     if (!['id', 'organization_id', 'repository_id'].includes(key)) {
-      logger.group(
+      getDefaultLogger().group(
         `- ${key === 'repository_slug' ? 'repo' : key === 'organization_slug' ? 'org' : key}: ${value}`,
       )
-      logger.groupEnd()
+      getDefaultLogger().groupEnd()
     }
   }
 
-  logger.log('')
-  logger.log(`## Scan ${data.after.id}`)
-  logger.log('')
-  logger.log('This Scan was considered to be the "head" / "to" / "after" Scan.')
-  logger.log('')
+  getDefaultLogger().log('')
+  getDefaultLogger().log(`## Scan ${data.after.id}`)
+  getDefaultLogger().log('')
+  getDefaultLogger().log(
+    'This Scan was considered to be the "head" / "to" / "after" Scan.',
+  )
+  getDefaultLogger().log('')
   for (const { 0: key, 1: value } of Object.entries(data.after)) {
     if (key === 'pull_request' && !value) {
       continue
     }
     if (!['id', 'organization_id', 'repository_id'].includes(key)) {
-      logger.group(
+      getDefaultLogger().group(
         `- ${key === 'repository_slug' ? 'repo' : key === 'organization_slug' ? 'org' : key}: ${value}`,
       )
-      logger.groupEnd()
+      getDefaultLogger().groupEnd()
     }
   }
 
-  logger.log('')
+  getDefaultLogger().log('')
 }

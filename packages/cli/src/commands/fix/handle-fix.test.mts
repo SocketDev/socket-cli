@@ -56,10 +56,10 @@ describe('convertIdsToGhsas', () => {
 
     expect(convertCveToGhsa).toHaveBeenCalledWith('CVE-2021-12345')
     expect(convertCveToGhsa).toHaveBeenCalledWith('CVE-2022-98765')
-    expect(logger.info).toHaveBeenCalledWith(
+    expect(getDefaultLogger().info).toHaveBeenCalledWith(
       'Converted CVE-2021-12345 to GHSA-1234-5678-9abc',
     )
-    expect(logger.info).toHaveBeenCalledWith(
+    expect(getDefaultLogger().info).toHaveBeenCalledWith(
       'Converted CVE-2022-98765 to GHSA-abcd-efgh-ijkl',
     )
     expect(result).toEqual(['GHSA-1234-5678-9abc', 'GHSA-abcd-efgh-ijkl'])
@@ -88,7 +88,7 @@ describe('convertIdsToGhsas', () => {
     ])
 
     expect(result).toEqual(['GHSA-1234-5678-9abc'])
-    expect(logger.warn).toHaveBeenCalledWith(
+    expect(getDefaultLogger().warn).toHaveBeenCalledWith(
       expect.stringMatching(
         /Skipped 1 invalid IDs.*Invalid GHSA format: GHSA-invalid/s,
       ),
@@ -107,7 +107,7 @@ describe('convertIdsToGhsas', () => {
     const result = await convertIdsToGhsas(['CVE-invalid', 'CVE-2021-12345'])
 
     expect(result).toEqual(['GHSA-1234-5678-9abc'])
-    expect(logger.warn).toHaveBeenCalledWith(
+    expect(getDefaultLogger().warn).toHaveBeenCalledWith(
       expect.stringMatching(
         /Skipped 1 invalid IDs.*Invalid CVE format: CVE-invalid/s,
       ),
@@ -127,10 +127,10 @@ describe('convertIdsToGhsas', () => {
     const result = await convertIdsToGhsas(['CVE-2021-99999'])
 
     expect(result).toEqual([])
-    expect(logger.warn).toHaveBeenCalledWith(
+    expect(getDefaultLogger().warn).toHaveBeenCalledWith(
       expect.stringContaining('Skipped 1 invalid IDs:'),
     )
-    expect(logger.warn).toHaveBeenCalledWith(
+    expect(getDefaultLogger().warn).toHaveBeenCalledWith(
       expect.stringContaining(
         'CVE-2021-99999: No GHSA found for CVE CVE-2021-99999',
       ),
@@ -150,7 +150,7 @@ describe('convertIdsToGhsas', () => {
     const result = await convertIdsToGhsas(['pkg:npm/nonexistent@1.0.0'])
 
     expect(result).toEqual([])
-    expect(logger.warn).toHaveBeenCalledWith(
+    expect(getDefaultLogger().warn).toHaveBeenCalledWith(
       expect.stringMatching(
         /Skipped 1 invalid IDs.*pkg:npm\/nonexistent@1\.0\.0.*Package not found/s,
       ),
@@ -169,7 +169,7 @@ describe('convertIdsToGhsas', () => {
     const result = await convertIdsToGhsas(['pkg:npm/safe-package@1.0.0'])
 
     expect(result).toEqual([])
-    expect(logger.warn).toHaveBeenCalledWith(
+    expect(getDefaultLogger().warn).toHaveBeenCalledWith(
       expect.stringMatching(
         /Skipped 1 invalid IDs.*pkg:npm\/safe-package@1\.0\.0.*No GHSAs found/s,
       ),
@@ -201,10 +201,10 @@ describe('convertIdsToGhsas', () => {
       'GHSA-from-cve-test',
       'GHSA-from-purl-test',
     ])
-    expect(logger.info).toHaveBeenCalledWith(
+    expect(getDefaultLogger().info).toHaveBeenCalledWith(
       'Converted CVE-2021-12345 to GHSA-from-cve-test',
     )
-    expect(logger.info).toHaveBeenCalledWith(
+    expect(getDefaultLogger().info).toHaveBeenCalledWith(
       expect.stringContaining('Converted pkg:npm/package@1.0.0 to 1 GHSA(s)'),
     )
   })

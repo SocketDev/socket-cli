@@ -1,4 +1,4 @@
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
@@ -15,5 +15,5 @@ export function outputWhoami(status: WhoamiStatus): void {
     ok: true,
     data: status,
   }
-  logger.log(serializeResultJson(result))
+  getDefaultLogger().log(serializeResultJson(result))
 }

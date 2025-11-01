@@ -6,7 +6,7 @@ import {
   DOT_SOCKET_DIR,
   MANIFEST_JSON,
 } from '@socketsecurity/lib/constants/paths'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { normalizePath } from '@socketsecurity/lib/path'
 import { pluralize } from '@socketsecurity/lib/words'
 
@@ -50,7 +50,7 @@ export async function handlePatchCleanup({
       cleaned.push(uuid)
       spinner?.stop()
       if (outputKind === 'text') {
-        logger.log(`Cleaned up backups for ${uuid}`)
+        getDefaultLogger().log(`Cleaned up backups for ${uuid}`)
       }
     } else if (all) {
       // Clean up all backups.
@@ -60,7 +60,7 @@ export async function handlePatchCleanup({
       if (allPatchUuids.length === 0) {
         spinner?.stop()
         if (outputKind === 'text') {
-          logger.log('No patch backups found')
+          getDefaultLogger().log('No patch backups found')
         }
       } else {
         spinner?.text(
@@ -75,7 +75,7 @@ export async function handlePatchCleanup({
 
         spinner?.stop()
         if (outputKind === 'text') {
-          logger.log(
+          getDefaultLogger().log(
             `Cleaned up backups for ${cleaned.length} ${pluralize('patch', { count: cleaned.length })}`,
           )
         }
@@ -111,7 +111,7 @@ export async function handlePatchCleanup({
       if (orphanedUuids.length === 0) {
         spinner?.stop()
         if (outputKind === 'text') {
-          logger.log('No orphaned patch backups found')
+          getDefaultLogger().log('No orphaned patch backups found')
         }
       } else {
         spinner?.text(
@@ -126,7 +126,7 @@ export async function handlePatchCleanup({
 
         spinner?.stop()
         if (outputKind === 'text') {
-          logger.log(
+          getDefaultLogger().log(
             `Cleaned up ${cleaned.length} orphaned ${pluralize('backup', { count: cleaned.length })}`,
           )
         }

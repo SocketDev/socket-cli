@@ -1,4 +1,4 @@
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 
@@ -11,33 +11,33 @@ export async function outputUninstallCompletion(
   if (!result.ok) {
     process.exitCode = result.code ?? 1
 
-    logger.fail(failMsgWithBadge(result.message, result.cause))
+    getDefaultLogger().fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
-  logger.log(result.message)
-  logger.log('')
-  logger.log(
+  getDefaultLogger().log(result.message)
+  getDefaultLogger().log('')
+  getDefaultLogger().log(
     'To remove the tab completion from the current shell (instance of bash) you',
   )
-  logger.log(
+  getDefaultLogger().log(
     'can run this command (due to a bash limitation NodeJS cannot do this):',
   )
-  logger.log('')
-  logger.log(`    complete -r ${targetName}`)
-  logger.log('')
-  logger.log(
+  getDefaultLogger().log('')
+  getDefaultLogger().log(`    complete -r ${targetName}`)
+  getDefaultLogger().log('')
+  getDefaultLogger().log(
     'Next time you open a terminal it should no longer be there, regardless.',
   )
-  logger.log('')
+  getDefaultLogger().log('')
   if (result.data.left.length) {
-    logger.log(
+    getDefaultLogger().log(
       'Detected more Socket Alias completions left in bashrc. Run `socket uninstall <cmd>` to remove them too.',
     )
-    logger.log('')
+    getDefaultLogger().log('')
     result.data.left.forEach(str => {
-      logger.log(`  - \`${str}\``)
+      getDefaultLogger().log(`  - \`${str}\``)
     })
-    logger.log('')
+    getDefaultLogger().log('')
   }
 }

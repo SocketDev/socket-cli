@@ -1,6 +1,6 @@
 import path from 'node:path'
 
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { handleManifestSetup } from './handle-manifest-setup.mts'
 import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mjs'
@@ -86,7 +86,7 @@ async function run(
   cwd = path.resolve(process.cwd(), cwd)
 
   if (dryRun) {
-    logger.log(DRY_RUN_BAILING_NOW)
+    getDefaultLogger().log(DRY_RUN_BAILING_NOW)
     return
   }
 

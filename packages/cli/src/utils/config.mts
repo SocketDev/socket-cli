@@ -27,7 +27,7 @@ import path from 'node:path'
 import config from '@socketsecurity/config'
 import { debugDirNs, debugNs } from '@socketsecurity/lib/debug'
 import { safeMkdirSync, safeReadFileSync } from '@socketsecurity/lib/fs'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { naturalCompare } from '@socketsecurity/lib/sorts'
 
 import { debugConfig } from './debug.mts'
@@ -109,7 +109,7 @@ function getConfigValues(): LocalConfig {
           Object.assign(_cachedConfig, JSON.parse(decoded))
           debugConfig(configFilePath, true)
         } catch (e) {
-          logger.warn(`Failed to parse config at ${configFilePath}`)
+          getDefaultLogger().warn(`Failed to parse config at ${configFilePath}`)
           debugConfig(configFilePath, false, e)
         }
         // Normalize apiKey to apiToken and persist it.
@@ -281,7 +281,7 @@ export function overrideCachedConfig(jsonConfig: unknown): CResult<undefined> {
   // Normalize apiKey to apiToken.
   if (_cachedConfig.apiKey) {
     if (_cachedConfig.apiToken) {
-      logger.warn(
+      getDefaultLogger().warn(
         'Note: The config override had both apiToken and apiKey. Using the apiToken value. Remove the apiKey to get rid of this message.',
       )
     }
@@ -324,7 +324,7 @@ export function updateConfigValue<Key extends keyof LocalConfig>(
     }
   } else {
     if (value === 'undefined' || value === 'true' || value === 'false') {
-      logger.warn(
+      getDefaultLogger().warn(
         `Note: The value is set to "${value}", as a string (!). Use \`socket config unset\` to reset a key.`,
       )
     }

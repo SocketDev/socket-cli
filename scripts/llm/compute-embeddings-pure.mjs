@@ -8,7 +8,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import * as ort from 'onnxruntime-node'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import colors from 'yoctocolors-cjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -18,7 +18,7 @@ const skillDir = path.join(
 )
 const cacheDir = path.join(path.dirname(__dirname), '.cache/models')
 
-logger.log(
+getDefaultLogger().log(
   '🧠 Computing semantic embeddings (pure ONNX, no transformers.js)...',
 )
 
@@ -31,10 +31,10 @@ const modelPath = path.join(cacheDir, 'paraphrase-MiniLM-L3-v2.onnx')
 async function downloadModel() {
   try {
     await fs.access(modelPath)
-    logger.log('✓ Model already cached')
+    getDefaultLogger().log('✓ Model already cached')
     return
   } catch {
-    logger.log('📦 Downloading paraphrase-MiniLM-L3-v2 model...')
+    getDefaultLogger().log('📦 Downloading paraphrase-MiniLM-L3-v2 model...')
 
     // Hugging Face model URL (quantized ONNX).
     const modelUrl =
@@ -48,7 +48,7 @@ async function downloadModel() {
     const buffer = await response.arrayBuffer()
     await fs.writeFile(modelPath, Buffer.from(buffer))
 
-    logger.log(`✓ Downloaded ${buffer.byteLength} bytes`)
+    getDefaultLogger().log(`✓ Downloaded ${buffer.byteLength} bytes`)
   }
 }
 
@@ -58,10 +58,10 @@ const tokenizerPath = path.join(cacheDir, 'tokenizer.json')
 async function downloadTokenizer() {
   try {
     await fs.access(tokenizerPath)
-    logger.log('✓ Tokenizer already cached')
+    getDefaultLogger().log('✓ Tokenizer already cached')
     return
   } catch {
-    logger.log('📦 Downloading tokenizer...')
+    getDefaultLogger().log('📦 Downloading tokenizer...')
 
     const tokenizerUrl =
       'https://huggingface.co/Xenova/paraphrase-MiniLM-L3-v2/resolve/main/tokenizer.json'
@@ -74,7 +74,7 @@ async function downloadTokenizer() {
     const json = await response.json()
     await fs.writeFile(tokenizerPath, JSON.stringify(json, null, 2))
 
-    logger.log('✓ Downloaded tokenizer')
+    getDefaultLogger().log('✓ Downloaded tokenizer')
   }
 }
 
@@ -196,14 +196,14 @@ async function getEmbedding(session, tokenizer, text) {
 await downloadModel()
 await downloadTokenizer()
 
-logger.log('📝 Loading model...')
+getDefaultLogger().log('📝 Loading model...')
 const session = await ort.InferenceSession.create(modelPath)
 
-logger.log('📝 Loading tokenizer...')
+getDefaultLogger().log('📝 Loading tokenizer...')
 const tokenizerData = JSON.parse(readFileSync(tokenizerPath, 'utf-8'))
 const tokenizer = new SimpleTokenizer(tokenizerData.model.vocab)
 
-logger.log('📝 Loading commands...')
+getDefaultLogger().log('📝 Loading commands...')
 const commandsPath = path.join(skillDir, 'commands.json')
 const commands = JSON.parse(readFileSync(commandsPath, 'utf-8'))
 
@@ -219,9 +219,9 @@ const embeddings = {
   },
 }
 
-logger.log('🔢 Computing command embeddings...')
+getDefaultLogger().log('🔢 Computing command embeddings...')
 for (const [commandName, commandData] of Object.entries(commands.commands)) {
-  logger.log(`  → ${commandName}`)
+  getDefaultLogger().log(`  → ${commandName}`)
 
   const embedding = await getEmbedding(
     session,
@@ -237,7 +237,7 @@ for (const [commandName, commandData] of Object.entries(commands.commands)) {
   }
 }
 
-logger.log('🔢 Computing example embeddings...')
+getDefaultLogger().log('🔢 Computing example embeddings...')
 for (const [commandName, commandData] of Object.entries(commands.commands)) {
   for (const example of commandData.examples) {
     const embedding = await getEmbedding(session, tokenizer, example)
@@ -252,12 +252,12 @@ for (const [commandName, commandData] of Object.entries(commands.commands)) {
 const outputPath = path.join(skillDir, 'embeddings.json')
 writeFileSync(outputPath, JSON.stringify(embeddings, null, 2), 'utf-8')
 
-logger.log('')
-logger.success(`Generated ${outputPath}`)
-logger.success(`Embedded ${Object.keys(embeddings.commands).length} commands`)
-logger.success(
+getDefaultLogger().log('')
+getDefaultLogger().success(`Generated ${outputPath}`)
+getDefaultLogger().success(`Embedded ${Object.keys(embeddings.commands).length} commands`)
+getDefaultLogger().success(
   `Embedded ${Object.keys(embeddings.examples).length} example queries`,
 )
-logger.log(
+getDefaultLogger().log(
   `✓ File size: ${(JSON.stringify(embeddings).length / 1024).toFixed(2)} KB`,
 )

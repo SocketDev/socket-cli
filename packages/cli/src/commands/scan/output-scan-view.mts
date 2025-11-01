@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises'
 
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { SOCKET_WEBSITE_URL } from '../../constants/socket.mts'
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
@@ -24,10 +24,10 @@ export async function outputScanView(
 
   if (!result.ok) {
     if (outputKind === 'json') {
-      logger.log(serializeResultJson(result))
+      getDefaultLogger().log(serializeResultJson(result))
       return
     }
-    logger.fail(failMsgWithBadge(result.message, result.cause))
+    getDefaultLogger().fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
@@ -38,15 +38,19 @@ export async function outputScanView(
     const json = serializeResultJson(result)
 
     if (filePath && filePath !== '-') {
-      logger.info('Writing json results to', filePath)
+      getDefaultLogger().info('Writing json results to', filePath)
       try {
         await fs.writeFile(filePath, json, 'utf8')
-        logger.info(`Data successfully written to ${fileLink(filePath)}`)
+        getDefaultLogger().info(
+          `Data successfully written to ${fileLink(filePath)}`,
+        )
       } catch (e) {
         process.exitCode = 1
-        logger.fail('There was an error trying to write the markdown to disk')
-        logger.error(e)
-        logger.log(
+        getDefaultLogger().fail(
+          'There was an error trying to write the markdown to disk',
+        )
+        getDefaultLogger().error(e)
+        getDefaultLogger().log(
           serializeResultJson({
             ok: false,
             message: 'File Write Failure',
@@ -57,7 +61,7 @@ export async function outputScanView(
       return
     }
 
-    logger.log(json)
+    getDefaultLogger().log(json)
     return
   }
 
@@ -97,13 +101,17 @@ View this report at: ${SOCKET_WEBSITE_URL}/dashboard/org/${orgSlug}/sbom/${scanI
   if (filePath && filePath !== '-') {
     try {
       await fs.writeFile(filePath, report, 'utf8')
-      logger.log(`Data successfully written to ${fileLink(filePath)}`)
+      getDefaultLogger().log(
+        `Data successfully written to ${fileLink(filePath)}`,
+      )
     } catch (e) {
       process.exitCode = 1
-      logger.fail('There was an error trying to write the markdown to disk')
-      logger.error(e)
+      getDefaultLogger().fail(
+        'There was an error trying to write the markdown to disk',
+      )
+      getDefaultLogger().error(e)
     }
   } else {
-    logger.log(report)
+    getDefaultLogger().log(report)
   }
 }

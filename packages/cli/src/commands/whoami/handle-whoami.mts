@@ -1,4 +1,4 @@
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { outputWhoami } from './output-whoami.mts'
 import { CONFIG_KEY_API_TOKEN } from '../../constants/config.mjs'
@@ -68,9 +68,9 @@ export async function handleWhoami(
         location: tokenLocation,
       })
     } else {
-      logger.success('Authenticated with Socket')
-      logger.log(`  Token: ${tokenDisplay}`)
-      logger.log(`  Source: ${tokenLocation}`)
+      getDefaultLogger().success('Authenticated with Socket')
+      getDefaultLogger().log(`  Token: ${tokenDisplay}`)
+      getDefaultLogger().log(`  Source: ${tokenLocation}`)
     }
   } else {
     if (flags['json']) {
@@ -80,11 +80,11 @@ export async function handleWhoami(
         location: null,
       })
     } else {
-      logger.fail('Not authenticated with Socket')
-      logger.log('')
-      logger.log('To authenticate, run one of:')
-      logger.log('  socket login')
-      logger.log('  export SOCKET_SECURITY_API_KEY=<your-token>')
+      getDefaultLogger().fail('Not authenticated with Socket')
+      getDefaultLogger().log('')
+      getDefaultLogger().log('To authenticate, run one of:')
+      getDefaultLogger().log('  socket login')
+      getDefaultLogger().log('  export SOCKET_SECURITY_API_KEY=<your-token>')
     }
   }
 }

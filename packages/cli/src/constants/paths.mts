@@ -15,7 +15,7 @@ import {
   getNodeNoWarningsFlags,
 } from '@socketsecurity/lib/constants/node'
 import { DOT_SOCKET_DIR } from '@socketsecurity/lib/constants/paths'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import ENV from './env.mts'
 
@@ -188,7 +188,7 @@ export function getSocketAppDataPath(): string | undefined {
     if (isWin32) {
       // Fallback: Use USERPROFILE or HOME when LOCALAPPDATA is missing.
       dataHome = path.join(home, 'AppData', 'Local')
-      logger.warn('LOCALAPPDATA not set, using fallback path.')
+      getDefaultLogger().warn('LOCALAPPDATA not set, using fallback path.')
     } else {
       const isDarwin = process.platform === 'darwin'
       dataHome = path.join(

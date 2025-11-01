@@ -25,17 +25,12 @@
  * - Offline update information
  */
 
-import {
-  existsSync,
-  readFileSync,
-  unlinkSync,
-  writeFileSync,
-} from 'node:fs'
+import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
 import { readFileUtf8Sync, safeMkdirSync } from '@socketsecurity/lib/fs'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { processLock } from '@socketsecurity/lib/process-lock'
 
 import {
@@ -92,7 +87,7 @@ class UpdateStore {
       const data = JSON.parse(content) as Record<string, StoreRecord>
       return data[name]
     } catch (error) {
-      logger.warn(
+      getDefaultLogger().warn(
         `Failed to read update cache: ${error instanceof Error ? error.message : String(error)}`,
       )
       return undefined
@@ -116,7 +111,7 @@ class UpdateStore {
           }
         }
       } catch (error) {
-        logger.warn(
+        getDefaultLogger().warn(
           `Failed to read existing store: ${error instanceof Error ? error.message : String(error)}`,
         )
       }
@@ -129,7 +124,7 @@ class UpdateStore {
       try {
         safeMkdirSync(storeDir, { recursive: true })
       } catch (error) {
-        logger.warn(
+        getDefaultLogger().warn(
           `Failed to create store directory: ${error instanceof Error ? error.message : String(error)}`,
         )
       }
@@ -185,7 +180,7 @@ class UpdateStore {
         const updatedContent = JSON.stringify(data, null, 2)
         writeFileSync(this.storePath, updatedContent, 'utf8')
       } catch (error) {
-        logger.warn(
+        getDefaultLogger().warn(
           `Failed to clear cache for ${name}: ${error instanceof Error ? error.message : String(error)}`,
         )
       }
@@ -202,7 +197,7 @@ class UpdateStore {
           unlinkSync(this.storePath)
         }
       } catch (error) {
-        logger.warn(
+        getDefaultLogger().warn(
           `Failed to clear all cache: ${error instanceof Error ? error.message : String(error)}`,
         )
       }
@@ -243,7 +238,7 @@ class UpdateStore {
       const data = JSON.parse(content) as Record<string, StoreRecord>
       return Object.keys(data)
     } catch (error) {
-      logger.warn(
+      getDefaultLogger().warn(
         `Failed to get package list: ${error instanceof Error ? error.message : String(error)}`,
       )
       return []

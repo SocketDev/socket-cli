@@ -1,5 +1,5 @@
 import { debug, debugDir } from '@socketsecurity/lib/debug'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import {
   FLAG_JSON,
@@ -39,7 +39,7 @@ export async function outputAuditLog(
   }
 
   if (outputKind === OUTPUT_JSON) {
-    logger.log(
+    getDefaultLogger().log(
       await outputAsJson(result, {
         logType,
         orgSlug,
@@ -50,12 +50,12 @@ export async function outputAuditLog(
   }
 
   if (!result.ok) {
-    logger.fail(failMsgWithBadge(result.message, result.cause))
+    getDefaultLogger().fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
   if (outputKind === OUTPUT_MARKDOWN) {
-    logger.log(
+    getDefaultLogger().log(
       await outputAsMarkdown(result.data, {
         logType,
         orgSlug,
@@ -159,7 +159,7 @@ ${table}
 `
   } catch (e) {
     process.exitCode = 1
-    logger.fail(
+    getDefaultLogger().fail(
       `There was a problem converting the logs to Markdown, please try the \`${FLAG_JSON}\` flag`,
     )
     debug('Markdown conversion failed')

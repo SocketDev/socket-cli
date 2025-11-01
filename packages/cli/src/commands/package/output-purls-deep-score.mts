@@ -1,4 +1,4 @@
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 import { mdTable } from '../../utils/output/markdown.mts'
@@ -17,26 +17,28 @@ export async function outputPurlsDeepScore(
   }
 
   if (outputKind === 'json') {
-    logger.log(serializeResultJson(result))
+    getDefaultLogger().log(serializeResultJson(result))
     return
   }
   if (!result.ok) {
-    logger.fail(failMsgWithBadge(result.message, result.cause))
+    getDefaultLogger().fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
   if (outputKind === 'markdown') {
     const md = createMarkdownReport(result.data)
-    logger.success(`Score report for "${result.data.purl}" ("${purl}"):\n`)
-    logger.log(md)
+    getDefaultLogger().success(
+      `Score report for "${result.data.purl}" ("${purl}"):\n`,
+    )
+    getDefaultLogger().log(md)
     return
   }
 
-  logger.log(
+  getDefaultLogger().log(
     `Score report for "${purl}" (use --json for raw and --markdown for formatted reports):`,
   )
-  logger.log(result.data)
-  logger.log('')
+  getDefaultLogger().log(result.data)
+  getDefaultLogger().log('')
 }
 
 export function createMarkdownReport(data: PurlDataResponse): string {

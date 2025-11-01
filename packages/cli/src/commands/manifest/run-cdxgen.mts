@@ -6,7 +6,7 @@ import colors from 'yoctocolors-cjs'
 import { NPM, PNPM, YARN } from '@socketsecurity/lib/constants/agents'
 import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/lib/constants/socket'
 import { safeDeleteSync } from '@socketsecurity/lib/fs'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { FLAG_HELP } from '../../constants/cli.mjs'
 import {
@@ -145,7 +145,7 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
     if (outputPath) {
       const fullOutputPath = path.join(process.cwd(), outputPath)
       if (existsSync(fullOutputPath)) {
-        logger.log(colors.cyanBright(`${outputPath} created!`))
+        getDefaultLogger().log(colors.cyanBright(`${outputPath} created!`))
       }
     }
   })

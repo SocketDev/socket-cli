@@ -1,4 +1,4 @@
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { pluralize } from '@socketsecurity/lib/words'
 
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
@@ -17,131 +17,135 @@ export async function outputPatchInfoResult(
   }
 
   if (outputKind === 'json') {
-    logger.log(serializeResultJson(result))
+    getDefaultLogger().log(serializeResultJson(result))
     return
   }
 
   if (!result.ok) {
-    logger.fail(failMsgWithBadge(result.message, result.cause))
+    getDefaultLogger().fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
   const patch = result.data
 
   if (outputKind === 'markdown') {
-    logger.log(`${mdHeader('Patch Information', 2)}\n`)
-    logger.log(`${mdKeyValue('PURL', patch.purl)}\n`)
+    getDefaultLogger().log(`${mdHeader('Patch Information', 2)}\n`)
+    getDefaultLogger().log(`${mdKeyValue('PURL', patch.purl)}\n`)
     if (patch.uuid) {
-      logger.log(`${mdKeyValue('UUID', patch.uuid)}\n`)
+      getDefaultLogger().log(`${mdKeyValue('UUID', patch.uuid)}\n`)
     }
-    logger.log(
+    getDefaultLogger().log(
       `${mdKeyValue('Description', patch.description || 'No description provided')}\n`,
     )
-    logger.log(`${mdKeyValue('Exported', patch.exportedAt)}\n`)
+    getDefaultLogger().log(`${mdKeyValue('Exported', patch.exportedAt)}\n`)
     if (patch.tier) {
-      logger.log(`${mdKeyValue('Tier', patch.tier)}\n`)
+      getDefaultLogger().log(`${mdKeyValue('Tier', patch.tier)}\n`)
     }
     if (patch.license) {
-      logger.log(`${mdKeyValue('License', patch.license)}\n`)
+      getDefaultLogger().log(`${mdKeyValue('License', patch.license)}\n`)
     }
 
     const fileCount = Object.keys(patch.files).length
-    logger.log(`${mdHeader(`Files (${fileCount})`, 3)}\n`)
+    getDefaultLogger().log(`${mdHeader(`Files (${fileCount})`, 3)}\n`)
     for (const { 0: fileName, 1: fileInfo } of Object.entries(patch.files)) {
-      logger.log(`**${fileName}**`)
-      logger.log(`- Before: \`${fileInfo.beforeHash}\``)
-      logger.log(`- After: \`${fileInfo.afterHash}\``)
-      logger.log('')
+      getDefaultLogger().log(`**${fileName}**`)
+      getDefaultLogger().log(`- Before: \`${fileInfo.beforeHash}\``)
+      getDefaultLogger().log(`- After: \`${fileInfo.afterHash}\``)
+      getDefaultLogger().log('')
     }
 
     if (patch.vulnerabilities) {
       const vulnCount = Object.keys(patch.vulnerabilities).length
-      logger.log(`${mdHeader(`Vulnerabilities (${vulnCount})`, 3)}\n`)
+      getDefaultLogger().log(
+        `${mdHeader(`Vulnerabilities (${vulnCount})`, 3)}\n`,
+      )
       for (const { 0: ghsaId, 1: vuln } of Object.entries(
         patch.vulnerabilities,
       )) {
-        logger.log(`**${ghsaId}**`)
+        getDefaultLogger().log(`**${ghsaId}**`)
         if (vuln.cves && vuln.cves.length > 0) {
-          logger.log(`- CVEs: ${vuln.cves.join(', ')}`)
+          getDefaultLogger().log(`- CVEs: ${vuln.cves.join(', ')}`)
         }
         if (vuln.severity) {
-          logger.log(`- Severity: ${vuln.severity}`)
+          getDefaultLogger().log(`- Severity: ${vuln.severity}`)
         }
         if (vuln.summary) {
-          logger.log(`- Summary: ${vuln.summary}`)
+          getDefaultLogger().log(`- Summary: ${vuln.summary}`)
         }
         if (vuln.description) {
-          logger.log(`\n${vuln.description}`)
+          getDefaultLogger().log(`\n${vuln.description}`)
         }
         if (vuln.patchExplanation) {
-          logger.log(
+          getDefaultLogger().log(
             `\n${mdKeyValue('Patch Explanation', vuln.patchExplanation)}`,
           )
         }
-        logger.log('')
+        getDefaultLogger().log('')
       }
     }
     return
   }
 
   // Default output.
-  logger.group('')
+  getDefaultLogger().group('')
   if (patch.uuid) {
-    logger.log(`UUID: ${patch.uuid}`)
+    getDefaultLogger().log(`UUID: ${patch.uuid}`)
   }
-  logger.log(`Description: ${patch.description || 'No description provided'}`)
-  logger.log(`Exported: ${patch.exportedAt}`)
+  getDefaultLogger().log(
+    `Description: ${patch.description || 'No description provided'}`,
+  )
+  getDefaultLogger().log(`Exported: ${patch.exportedAt}`)
   if (patch.tier) {
-    logger.log(`Tier: ${patch.tier}`)
+    getDefaultLogger().log(`Tier: ${patch.tier}`)
   }
   if (patch.license) {
-    logger.log(`License: ${patch.license}`)
+    getDefaultLogger().log(`License: ${patch.license}`)
   }
 
   const fileCount = Object.keys(patch.files).length
-  logger.log(
+  getDefaultLogger().log(
     `\nFiles (${fileCount} ${pluralize('file', { count: fileCount })}):`,
   )
-  logger.group()
+  getDefaultLogger().group()
   for (const { 0: fileName, 1: fileInfo } of Object.entries(patch.files)) {
-    logger.log(`- ${fileName}`)
-    logger.group()
-    logger.log(`Before: ${fileInfo.beforeHash}`)
-    logger.log(`After:  ${fileInfo.afterHash}`)
-    logger.groupEnd()
+    getDefaultLogger().log(`- ${fileName}`)
+    getDefaultLogger().group()
+    getDefaultLogger().log(`Before: ${fileInfo.beforeHash}`)
+    getDefaultLogger().log(`After:  ${fileInfo.afterHash}`)
+    getDefaultLogger().groupEnd()
   }
-  logger.groupEnd()
+  getDefaultLogger().groupEnd()
 
   if (patch.vulnerabilities) {
     const vulnCount = Object.keys(patch.vulnerabilities).length
     const vulnWord = vulnCount === 1 ? 'vulnerability' : 'vulnerabilities'
-    logger.log(`\nVulnerabilities (${vulnCount} ${vulnWord}):`)
-    logger.group()
+    getDefaultLogger().log(`\nVulnerabilities (${vulnCount} ${vulnWord}):`)
+    getDefaultLogger().group()
     for (const { 0: ghsaId, 1: vuln } of Object.entries(
       patch.vulnerabilities,
     )) {
-      logger.log(`- ${ghsaId}`)
-      logger.group()
+      getDefaultLogger().log(`- ${ghsaId}`)
+      getDefaultLogger().group()
       if (vuln.cves && vuln.cves.length > 0) {
-        logger.log(`CVEs: ${vuln.cves.join(', ')}`)
+        getDefaultLogger().log(`CVEs: ${vuln.cves.join(', ')}`)
       }
       if (vuln.severity) {
-        logger.log(`Severity: ${vuln.severity}`)
+        getDefaultLogger().log(`Severity: ${vuln.severity}`)
       }
       if (vuln.summary) {
-        logger.log(`Summary: ${vuln.summary}`)
+        getDefaultLogger().log(`Summary: ${vuln.summary}`)
       }
       if (vuln.description) {
-        logger.log('\nDescription:')
-        logger.log(vuln.description)
+        getDefaultLogger().log('\nDescription:')
+        getDefaultLogger().log(vuln.description)
       }
       if (vuln.patchExplanation) {
-        logger.log('\nPatch Explanation:')
-        logger.log(vuln.patchExplanation)
+        getDefaultLogger().log('\nPatch Explanation:')
+        getDefaultLogger().log(vuln.patchExplanation)
       }
-      logger.groupEnd()
+      getDefaultLogger().groupEnd()
     }
-    logger.groupEnd()
+    getDefaultLogger().groupEnd()
   }
-  logger.groupEnd()
+  getDefaultLogger().groupEnd()
 }

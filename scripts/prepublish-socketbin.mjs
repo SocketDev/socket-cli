@@ -9,7 +9,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { parseArgs } from '@socketsecurity/lib/argv/parse'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import semver from 'semver'
 import colors from 'yoctocolors-cjs'
 
@@ -69,7 +69,7 @@ const {
 } = values
 
 if (!platform || !arch) {
-  logger.error(
+  getDefaultLogger().error(
     'Usage: prepublish-socketbin.mjs --platform=darwin --arch=arm64 [--version=0.0.0-20250122.143052] [--method=smol]',
   )
   process.exit(1)
@@ -121,9 +121,9 @@ async function generatePackage() {
 
     // Write updated package.json
     await fs.writeFile(pkgPath, `${JSON.stringify(updatedPkg, null, 2)}\n`)
-    logger.log(`Updated: ${packageDir}/package.json`)
-    logger.log(`  Version: ${cleanVersion}`)
-    logger.log(`  Build method: ${buildMethod}`)
+    getDefaultLogger().log(`Updated: ${packageDir}/package.json`)
+    getDefaultLogger().log(`  Version: ${cleanVersion}`)
+    getDefaultLogger().log(`  Build method: ${buildMethod}`)
 
     // Check if binary exists and copy it
     const sourceBinary = path.join(
@@ -140,18 +140,18 @@ async function generatePackage() {
       if (platform !== 'win32') {
         await fs.chmod(targetBinary, 0o755)
       }
-      logger.log(`Copied binary: ${sourceBinary} -> ${targetBinary}`)
+      getDefaultLogger().log(`Copied binary: ${sourceBinary} -> ${targetBinary}`)
     } catch {
-      logger.warn(`Warning: Binary not found at ${sourceBinary}`)
-      logger.warn('Binary should be copied manually or in CI')
+      getDefaultLogger().warn(`Warning: Binary not found at ${sourceBinary}`)
+      getDefaultLogger().warn('Binary should be copied manually or in CI')
     }
 
-    logger.log(`\nPackage generated successfully at: ${packageDir}`)
-    logger.log(
+    getDefaultLogger().log(`\nPackage generated successfully at: ${packageDir}`)
+    getDefaultLogger().log(
       `\nTo publish:\n  cd ${packageDir}\n  npm publish --provenance --access public`,
     )
   } catch (error) {
-    logger.error('Error generating package:', error)
+    getDefaultLogger().error('Error generating package:', error)
     process.exit(1)
   }
 }

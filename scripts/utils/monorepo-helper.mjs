@@ -7,7 +7,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 import colors from 'yoctocolors-cjs'
 
@@ -113,7 +113,7 @@ export async function runPackageScript(pkg, scriptName, args = [], quiet = false
   const displayName = pkg.displayName || pkg.name
 
   if (!quiet) {
-    logger.progress(`${displayName}: running ${scriptName}`)
+    getDefaultLogger().progress(`${displayName}: running ${scriptName}`)
   }
 
   const result = await spawn(
@@ -129,21 +129,21 @@ export async function runPackageScript(pkg, scriptName, args = [], quiet = false
 
   if (result.code !== 0) {
     if (!quiet) {
-      logger.clearLine()
-      logger.log(`${colors.red('✗')} ${displayName}`)
+      getDefaultLogger().clearLine()
+      getDefaultLogger().log(`${colors.red('✗')} ${displayName}`)
     }
     if (result.stdout) {
-      logger.log(result.stdout)
+      getDefaultLogger().log(result.stdout)
     }
     if (result.stderr) {
-      logger.error(result.stderr)
+      getDefaultLogger().error(result.stderr)
     }
     return result.code
   }
 
   if (!quiet) {
-    logger.clearLine()
-    logger.log(`${colors.green('✓')} ${displayName}`)
+    getDefaultLogger().clearLine()
+    getDefaultLogger().log(`${colors.green('✓')} ${displayName}`)
   }
 
   return 0
@@ -160,7 +160,7 @@ export async function runPackageScript(pkg, scriptName, args = [], quiet = false
 export async function runAcrossPackages(packages, scriptName, args = [], quiet = false) {
   if (!packages.length) {
     if (!quiet) {
-      logger.substep('No packages to process')
+      getDefaultLogger().substep('No packages to process')
     }
     return 0
   }

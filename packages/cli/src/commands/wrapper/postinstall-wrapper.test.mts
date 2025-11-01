@@ -102,7 +102,7 @@ describe('postinstallWrapper', () => {
       ),
       default: true,
     })
-    expect(logger.log).toHaveBeenCalledWith(
+    expect(getDefaultLogger().log).toHaveBeenCalledWith(
       expect.stringContaining(
         'Run `socket install completion` to setup bash tab completion',
       ),
@@ -203,7 +203,7 @@ describe('postinstallWrapper', () => {
     expect(updateInstalledTabCompletionScript).toHaveBeenCalledWith(
       '/home/user/.config/socket/tab-completion.bash',
     )
-    expect(logger.success).toHaveBeenCalledWith(
+    expect(getDefaultLogger().success).toHaveBeenCalledWith(
       'Updated the installed Socket tab completion script',
     )
   })
@@ -233,7 +233,7 @@ describe('postinstallWrapper', () => {
     await postinstallWrapper()
 
     expect(updateInstalledTabCompletionScript).not.toHaveBeenCalled()
-    expect(logger.log).toHaveBeenCalledWith(
+    expect(getDefaultLogger().log).toHaveBeenCalledWith(
       'Run `socket install completion` to setup bash tab completion',
     )
   })
@@ -256,7 +256,7 @@ describe('postinstallWrapper', () => {
 
     await postinstallWrapper()
 
-    expect(logger.log).toHaveBeenCalledWith(
+    expect(getDefaultLogger().log).toHaveBeenCalledWith(
       'Run `socket install completion` to setup bash tab completion',
     )
   })
@@ -277,7 +277,7 @@ describe('postinstallWrapper', () => {
 
     await postinstallWrapper()
 
-    expect(logger.log).toHaveBeenCalledWith(
+    expect(getDefaultLogger().log).toHaveBeenCalledWith(
       'Run `socket install completion` to setup bash tab completion',
     )
   })

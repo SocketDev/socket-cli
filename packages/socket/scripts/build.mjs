@@ -18,7 +18,7 @@ import { fileURLToPath } from 'node:url'
 import { build } from 'esbuild'
 import { getSpinner } from '@socketsecurity/lib/constants/process'
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { Spinner, withSpinner } from '@socketsecurity/lib/spinner'
 import { spawn } from '@socketsecurity/lib/spawn'
 
@@ -39,24 +39,24 @@ async function ensureBootstrapPackageBuilt() {
     'packages/bootstrap/dist/bootstrap-npm.js'
   )
 
-  logger.group('Checking bootstrap package')
+  getDefaultLogger().group('Checking bootstrap package')
 
   // Check if bootstrap source and dist exist.
   if (!existsSync(bootstrapSource)) {
-    logger.groupEnd()
-    logger.error('Bootstrap source not found:', bootstrapSource)
+    getDefaultLogger().groupEnd()
+    getDefaultLogger().error('Bootstrap source not found:', bootstrapSource)
     process.exit(1)
   }
 
   // If dist exists, assume it's up to date.
   if (existsSync(bootstrapDist)) {
-    logger.substep('Bootstrap package already built')
-    logger.groupEnd()
+    getDefaultLogger().substep('Bootstrap package already built')
+    getDefaultLogger().groupEnd()
     return
   }
 
-  logger.substep('Bootstrap package needs building')
-  logger.groupEnd()
+  getDefaultLogger().substep('Bootstrap package needs building')
+  getDefaultLogger().groupEnd()
 
   const result = await withSpinner({
     message: 'Building @socketsecurity/bootstrap package',
@@ -81,7 +81,7 @@ async function ensureBootstrapPackageBuilt() {
   })
 
   if (result.code !== 0) {
-    logger.error('Failed to build @socketsecurity/bootstrap')
+    getDefaultLogger().error('Failed to build @socketsecurity/bootstrap')
     process.exit(1)
   }
 }
@@ -98,7 +98,7 @@ async function copyFilesFromRepoRoot() {
     message: 'Copying files from repo root',
     spinner: Spinner({ shimmer: { dir: 'ltr' } }),
     operation: async () => {
-      logger.group('Copying assets')
+      getDefaultLogger().group('Copying assets')
 
       for (const file of filesToCopy) {
         const srcPath = path.join(monorepoRoot, file)
@@ -106,24 +106,24 @@ async function copyFilesFromRepoRoot() {
 
         try {
           await fs.cp(srcPath, destPath)
-          logger.substep(`Copied ${file}`)
+          getDefaultLogger().substep(`Copied ${file}`)
         } catch (error) {
-          logger.groupEnd()
+          getDefaultLogger().groupEnd()
           throw new Error(`Failed to copy ${file}: ${error.message}`)
         }
       }
 
-      logger.groupEnd()
+      getDefaultLogger().groupEnd()
     },
   })
 }
 
 async function buildBootstrap() {
-  logger.group('Building bootstrap bundle')
+  getDefaultLogger().group('Building bootstrap bundle')
 
   try {
     // Create dist directory.
-    logger.substep('Creating dist directory')
+    getDefaultLogger().substep('Creating dist directory')
     mkdirSync(path.join(packageRoot, 'dist'), { recursive: true })
 
     // Build bootstrap.js for npm package.
@@ -139,31 +139,31 @@ async function buildBootstrap() {
     if (seaResult.metafile) {
       const outputSize = Object.values(seaResult.metafile.outputs)[0]?.bytes
       if (outputSize) {
-        logger.substep(`Bundle size: ${(outputSize / 1024).toFixed(2)} KB`)
+        getDefaultLogger().substep(`Bundle size: ${(outputSize / 1024).toFixed(2)} KB`)
       }
     }
 
-    logger.groupEnd()
+    getDefaultLogger().groupEnd()
   } catch (error) {
-    logger.groupEnd()
-    logger.error('Bootstrap build failed:', error)
+    getDefaultLogger().groupEnd()
+    getDefaultLogger().error('Bootstrap build failed:', error)
     throw error
   }
 }
 
 async function main() {
-  logger.group('Socket Package Build')
+  getDefaultLogger().group('Socket Package Build')
 
   try {
     await ensureBootstrapPackageBuilt()
     await buildBootstrap()
     await copyFilesFromRepoRoot()
 
-    logger.groupEnd()
-    logger.success('Build completed successfully')
+    getDefaultLogger().groupEnd()
+    getDefaultLogger().success('Build completed successfully')
   } catch (error) {
-    logger.groupEnd()
-    logger.error('Build failed:', error)
+    getDefaultLogger().groupEnd()
+    getDefaultLogger().error('Build failed:', error)
     process.exit(1)
   }
 }

@@ -1,6 +1,6 @@
 import { joinAnd } from '@socketsecurity/lib/arrays'
 import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/lib/constants/socket'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { confirm, password, select } from '@socketsecurity/lib/prompts'
 
 import { applyLogin } from './apply-login.mts'
@@ -38,7 +38,7 @@ export async function attemptLogin(
   })
 
   if (apiTokenInput === undefined) {
-    logger.fail('Canceled by user')
+    getDefaultLogger().fail('Canceled by user')
     return { ok: false, message: 'Canceled', cause: 'Canceled by user' }
   }
 
@@ -47,7 +47,9 @@ export async function attemptLogin(
   const sockSdkCResult = await setupSdk({ apiBaseUrl, apiProxy, apiToken })
   if (!sockSdkCResult.ok) {
     process.exitCode = 1
-    logger.fail(failMsgWithBadge(sockSdkCResult.message, sockSdkCResult.cause))
+    getDefaultLogger().fail(
+      failMsgWithBadge(sockSdkCResult.message, sockSdkCResult.cause),
+    )
     return
   }
 
@@ -59,7 +61,9 @@ export async function attemptLogin(
   })
   if (!orgsCResult.ok) {
     process.exitCode = 1
-    logger.fail(failMsgWithBadge(orgsCResult.message, orgsCResult.cause))
+    getDefaultLogger().fail(
+      failMsgWithBadge(orgsCResult.message, orgsCResult.cause),
+    )
     return
   }
 
@@ -67,7 +71,7 @@ export async function attemptLogin(
 
   const orgSlugs = getOrgSlugs(organizations)
 
-  logger.success(`API token verified: ${joinAnd(orgSlugs)}`)
+  getDefaultLogger().success(`API token verified: ${joinAnd(orgSlugs)}`)
 
   const enterpriseOrgs = getEnterpriseOrgs(organizations)
 
@@ -91,7 +95,7 @@ export async function attemptLogin(
       ],
     })
     if (id === undefined) {
-      logger.fail('Canceled by user')
+      getDefaultLogger().fail('Canceled by user')
       return { ok: false, message: 'Canceled', cause: 'Canceled by user' }
     }
     if (id) {
@@ -103,7 +107,7 @@ export async function attemptLogin(
       default: true,
     })
     if (shouldEnforce === undefined) {
-      logger.fail('Canceled by user')
+      getDefaultLogger().fail('Canceled by user')
       return { ok: false, message: 'Canceled', cause: 'Canceled by user' }
     }
     if (shouldEnforce) {
@@ -132,19 +136,19 @@ export async function attemptLogin(
     ],
   })
   if (wantToComplete === undefined) {
-    logger.fail('Canceled by user')
+    getDefaultLogger().fail('Canceled by user')
     return { ok: false, message: 'Canceled', cause: 'Canceled by user' }
   }
   if (wantToComplete) {
-    logger.log('')
-    logger.log('Setting up tab completion...')
+    getDefaultLogger().log('')
+    getDefaultLogger().log('Setting up tab completion...')
     const setupCResult = await setupTabCompletion('socket')
     if (setupCResult.ok) {
-      logger.success(
+      getDefaultLogger().success(
         'Tab completion will be enabled after restarting your terminal',
       )
     } else {
-      logger.fail(
+      getDefaultLogger().fail(
         'Failed to install tab completion script. Try `socket install completion` later.',
       )
     }
@@ -155,17 +159,17 @@ export async function attemptLogin(
   const previousPersistedToken = getConfigValueOrUndef(CONFIG_KEY_API_TOKEN)
   try {
     applyLogin(apiToken, enforcedOrgs, apiBaseUrl, apiProxy)
-    logger.success(
+    getDefaultLogger().success(
       `API credentials ${previousPersistedToken === apiToken ? 'refreshed' : previousPersistedToken ? 'updated' : 'set'}`,
     )
     if (isConfigFromFlag()) {
-      logger.log('')
-      logger.warn(
+      getDefaultLogger().log('')
+      getDefaultLogger().warn(
         'Note: config is in read-only mode, at least one key was overridden through flag/env, so the login was not persisted!',
       )
     }
   } catch {
     process.exitCode = 1
-    logger.fail('API login failed')
+    getDefaultLogger().fail('API login failed')
   }
 }

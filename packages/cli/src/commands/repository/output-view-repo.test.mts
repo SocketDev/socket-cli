@@ -47,7 +47,7 @@ describe('outputViewRepo', () => {
     const { serializeResultJson } = await vi.importMock(
       '../../utils/output/result-json.mjs',
     )
-    const mockLog = vi.mocked(logger.log)
+    const mockLog = vi.mocked(getDefaultLogger().log)
     const mockSerialize = vi.mocked(serializeResultJson)
 
     const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> =
@@ -71,7 +71,7 @@ describe('outputViewRepo', () => {
   it('outputs error in JSON format', async () => {
     const { outputViewRepo } = await import('./output-view-repo.mts')
     const { logger } = await vi.importMock('@socketsecurity/lib/logger')
-    const mockLog = vi.mocked(logger.log)
+    const mockLog = vi.mocked(getDefaultLogger().log)
 
     const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> =
       createErrorResult('Unauthorized', {
@@ -89,7 +89,7 @@ describe('outputViewRepo', () => {
     const { outputViewRepo } = await import('./output-view-repo.mts')
     const { logger } = await vi.importMock('@socketsecurity/lib/logger')
     const chalkTable = await vi.importMock('chalk-table')
-    const mockLog = vi.mocked(logger.log)
+    const mockLog = vi.mocked(getDefaultLogger().log)
     const mockChalkTable = vi.mocked(chalkTable.default)
 
     const repoData = {
@@ -130,7 +130,7 @@ describe('outputViewRepo', () => {
     const { failMsgWithBadge } = await vi.importMock(
       '../../utils/error/fail-msg-with-badge.mts',
     )
-    const mockFail = vi.mocked(logger.fail)
+    const mockFail = vi.mocked(getDefaultLogger().fail)
     const mockFailMsg = vi.mocked(failMsgWithBadge)
 
     const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> =

@@ -1,4 +1,4 @@
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { DOT_SOCKET_DOT_FACTS_JSON } from '../../constants/paths.mts'
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
@@ -19,11 +19,11 @@ export async function outputScanReach(
   }
 
   if (outputKind === 'json') {
-    logger.log(serializeResultJson(result))
+    getDefaultLogger().log(serializeResultJson(result))
     return
   }
   if (!result.ok) {
-    logger.fail(failMsgWithBadge(result.message, result.cause))
+    getDefaultLogger().fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
@@ -31,7 +31,9 @@ export async function outputScanReach(
     ? outputPath
     : DOT_SOCKET_DOT_FACTS_JSON
 
-  logger.log('')
-  logger.success('Reachability analysis completed successfully!')
-  logger.info(`Reachability report has been written to: ${actualOutputPath}`)
+  getDefaultLogger().log('')
+  getDefaultLogger().success('Reachability analysis completed successfully!')
+  getDefaultLogger().info(
+    `Reachability report has been written to: ${actualOutputPath}`,
+  )
 }

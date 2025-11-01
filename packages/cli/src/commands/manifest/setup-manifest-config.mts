@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 
 import { debugDir } from '@socketsecurity/lib/debug'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { input, select } from '@socketsecurity/lib/prompts'
 
 import { detectManifestActions } from './detect-manifest-actions.mts'
@@ -31,27 +31,35 @@ export async function setupManifestConfig(
 
   const jsonPath = path.join(cwd, SOCKET_JSON)
   if (fs.existsSync(jsonPath)) {
-    logger.info(`Found ${SOCKET_JSON} at ${jsonPath}`)
+    getDefaultLogger().info(`Found ${SOCKET_JSON} at ${jsonPath}`)
   } else {
-    logger.info(`No ${SOCKET_JSON} found at ${cwd}, will generate a new one`)
+    getDefaultLogger().info(
+      `No ${SOCKET_JSON} found at ${cwd}, will generate a new one`,
+    )
   }
 
-  logger.log('')
-  logger.log(
+  getDefaultLogger().log('')
+  getDefaultLogger().log(
     'Note: This tool will set up flag and argument defaults for certain',
   )
-  logger.log('      CLI commands. You can still override them by explicitly')
-  logger.log('      setting the flag. It is meant to be a convenience tool.')
-  logger.log('')
-  logger.log(
+  getDefaultLogger().log(
+    '      CLI commands. You can still override them by explicitly',
+  )
+  getDefaultLogger().log(
+    '      setting the flag. It is meant to be a convenience tool.',
+  )
+  getDefaultLogger().log('')
+  getDefaultLogger().log(
     `This command will generate a ${SOCKET_JSON} file in the target cwd.`,
   )
-  logger.log(
+  getDefaultLogger().log(
     'You can choose to add this file to your repo (handy for collaboration)',
   )
-  logger.log('or to add it to the ignored files, or neither. This file is only')
-  logger.log('used in CLI workflows.')
-  logger.log('')
+  getDefaultLogger().log(
+    'or to add it to the ignored files, or neither. This file is only',
+  )
+  getDefaultLogger().log('used in CLI workflows.')
+  getDefaultLogger().log('')
 
   const choices = [
     {
@@ -161,9 +169,9 @@ export async function setupManifestConfig(
     return result
   }
 
-  logger.log('')
-  logger.log(`Setup complete. Writing ${SOCKET_JSON}`)
-  logger.log('')
+  getDefaultLogger().log('')
+  getDefaultLogger().log(`Setup complete. Writing ${SOCKET_JSON}`)
+  getDefaultLogger().log('')
 
   if (
     await select({
@@ -494,9 +502,9 @@ async function askForVerboseFlag(
 }
 
 function canceledByUser(): CResult<{ canceled: boolean }> {
-  logger.log('')
-  logger.info('User canceled')
-  logger.log('')
+  getDefaultLogger().log('')
+  getDefaultLogger().info('User canceled')
+  getDefaultLogger().log('')
   return { ok: true, data: { canceled: true } }
 }
 

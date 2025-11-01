@@ -1,5 +1,5 @@
 import { debug, debugDir } from '@socketsecurity/lib/debug'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { getDefaultOrgSlug } from './fetch-default-org-slug.mts'
 import { REPORT_LEVEL_ERROR } from '../../constants/reporting.mts'
@@ -21,7 +21,7 @@ export async function handleCi(autoManifest: boolean): Promise<void> {
     debugDir({ orgSlugCResult })
     process.exitCode = orgSlugCResult.code ?? 1
     // Always assume json mode.
-    logger.log(serializeResultJson(orgSlugCResult))
+    getDefaultLogger().log(serializeResultJson(orgSlugCResult))
     return
   }
 

@@ -1,4 +1,4 @@
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 import { mdHeader, mdTableOfPairs } from '../../utils/output/markdown.mts'
@@ -16,24 +16,24 @@ export async function outputSecurityPolicy(
   }
 
   if (outputKind === 'json') {
-    logger.log(serializeResultJson(result))
+    getDefaultLogger().log(serializeResultJson(result))
     return
   }
   if (!result.ok) {
-    logger.fail(failMsgWithBadge(result.message, result.cause))
+    getDefaultLogger().fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
-  logger.log(mdHeader('Security policy'))
-  logger.log('')
-  logger.log(
+  getDefaultLogger().log(mdHeader('Security policy'))
+  getDefaultLogger().log('')
+  getDefaultLogger().log(
     `The default security policy setting is: "${result.data.securityPolicyDefault}"`,
   )
-  logger.log('')
-  logger.log(
+  getDefaultLogger().log('')
+  getDefaultLogger().log(
     'These are the security policies per setting for your organization:',
   )
-  logger.log('')
+  getDefaultLogger().log('')
   const rules = result.data.securityPolicyRules
   const entries: Array<
     [string, { action: 'defer' | 'error' | 'warn' | 'monitor' | 'ignore' }]
@@ -42,6 +42,6 @@ export async function outputSecurityPolicy(
     ({ 0: key, 1: value }) => [key, value.action],
   )
   mapped.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
-  logger.log(mdTableOfPairs(mapped, ['name', 'action']))
-  logger.log('')
+  getDefaultLogger().log(mdTableOfPairs(mapped, ['name', 'action']))
+  getDefaultLogger().log('')
 }

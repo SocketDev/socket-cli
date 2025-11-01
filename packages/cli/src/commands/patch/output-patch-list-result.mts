@@ -1,4 +1,4 @@
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 import { mdHeader, mdKeyValue } from '../../utils/output/markdown.mts'
@@ -76,20 +76,20 @@ export async function outputPatchListResult(
         }
         return cleaned
       })
-      logger.log(
+      getDefaultLogger().log(
         serializeResultJson({
           ok: true,
           data: { patches: cleanedPatches },
         }),
       )
     } else {
-      logger.log(serializeResultJson(result))
+      getDefaultLogger().log(serializeResultJson(result))
     }
     return
   }
 
   if (!result.ok) {
-    logger.fail(failMsgWithBadge(result.message, result.cause))
+    getDefaultLogger().fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
@@ -97,40 +97,42 @@ export async function outputPatchListResult(
 
   if (outputKind === 'markdown') {
     if (patches.length === 0) {
-      logger.log(`${mdHeader('Patches', 2)}\n\nNo patches found.`)
+      getDefaultLogger().log(`${mdHeader('Patches', 2)}\n\nNo patches found.`)
       return
     }
 
-    logger.log(`${mdHeader('Patches', 2)}\n`)
+    getDefaultLogger().log(`${mdHeader('Patches', 2)}\n`)
     for (const patch of patches) {
       const indicator = getStatusIndicator(patch.status)
-      logger.log(`${mdHeader(`${indicator} ${patch.purl}`, 3)}\n`)
+      getDefaultLogger().log(`${mdHeader(`${indicator} ${patch.purl}`, 3)}\n`)
       if (patch.status) {
         const statusName =
           patch.status.charAt(0).toUpperCase() + patch.status.slice(1)
-        logger.log(`${mdKeyValue('Status', statusName)}\n`)
+        getDefaultLogger().log(`${mdKeyValue('Status', statusName)}\n`)
       }
       if (patch.uuid) {
-        logger.log(`${mdKeyValue('UUID', patch.uuid)}\n`)
+        getDefaultLogger().log(`${mdKeyValue('UUID', patch.uuid)}\n`)
       }
-      logger.log(
+      getDefaultLogger().log(
         `${mdKeyValue('Description', patch.description || 'No description provided')}\n`,
       )
-      logger.log(mdKeyValue('Exported', patch.exportedAt))
+      getDefaultLogger().log(mdKeyValue('Exported', patch.exportedAt))
       if (patch.appliedAt) {
-        logger.log(mdKeyValue('Applied', patch.appliedAt))
+        getDefaultLogger().log(mdKeyValue('Applied', patch.appliedAt))
       }
-      logger.log(mdKeyValue('Files', patch.fileCount))
-      logger.log(mdKeyValue('Vulnerabilities', patch.vulnerabilityCount))
+      getDefaultLogger().log(mdKeyValue('Files', patch.fileCount))
+      getDefaultLogger().log(
+        mdKeyValue('Vulnerabilities', patch.vulnerabilityCount),
+      )
       if (patch.tier) {
-        logger.log(mdKeyValue('Tier', patch.tier))
+        getDefaultLogger().log(mdKeyValue('Tier', patch.tier))
       }
       if (patch.license) {
-        logger.log(mdKeyValue('License', patch.license))
+        getDefaultLogger().log(mdKeyValue('License', patch.license))
       }
-      logger.log('')
+      getDefaultLogger().log('')
     }
-    logger.log(
+    getDefaultLogger().log(
       `${mdKeyValue('Legend', '[✓] Applied | [○] Downloaded | [✗] Failed')}`,
     )
     return
@@ -141,37 +143,39 @@ export async function outputPatchListResult(
     return
   }
 
-  logger.group('')
+  getDefaultLogger().group('')
   for (const patch of patches) {
     const indicator = getStatusIndicator(patch.status)
-    logger.log(`${indicator} ${patch.purl}`)
-    logger.group()
+    getDefaultLogger().log(`${indicator} ${patch.purl}`)
+    getDefaultLogger().group()
     if (patch.status) {
       const statusName =
         patch.status.charAt(0).toUpperCase() + patch.status.slice(1)
-      logger.log(`Status: ${statusName}`)
+      getDefaultLogger().log(`Status: ${statusName}`)
     }
     if (patch.uuid) {
-      logger.log(`UUID: ${patch.uuid}`)
+      getDefaultLogger().log(`UUID: ${patch.uuid}`)
     }
-    logger.log(`Description: ${patch.description || 'No description provided'}`)
-    logger.log(`Exported: ${patch.exportedAt}`)
+    getDefaultLogger().log(
+      `Description: ${patch.description || 'No description provided'}`,
+    )
+    getDefaultLogger().log(`Exported: ${patch.exportedAt}`)
     if (patch.appliedAt) {
-      logger.log(`Applied: ${patch.appliedAt}`)
+      getDefaultLogger().log(`Applied: ${patch.appliedAt}`)
     }
-    logger.log(`Files: ${patch.fileCount}`)
-    logger.log(`Vulnerabilities: ${patch.vulnerabilityCount}`)
+    getDefaultLogger().log(`Files: ${patch.fileCount}`)
+    getDefaultLogger().log(`Vulnerabilities: ${patch.vulnerabilityCount}`)
     if (patch.tier) {
-      logger.log(`Tier: ${patch.tier}`)
+      getDefaultLogger().log(`Tier: ${patch.tier}`)
     }
     if (patch.license) {
-      logger.log(`License: ${patch.license}`)
+      getDefaultLogger().log(`License: ${patch.license}`)
     }
-    logger.groupEnd()
+    getDefaultLogger().groupEnd()
   }
-  logger.groupEnd()
+  getDefaultLogger().groupEnd()
 
   // Legend.
-  logger.log('')
-  logger.log('Legend: [✓] Applied | [○] Downloaded | [✗] Failed')
+  getDefaultLogger().log('')
+  getDefaultLogger().log('Legend: [✓] Applied | [○] Downloaded | [✗] Failed')
 }

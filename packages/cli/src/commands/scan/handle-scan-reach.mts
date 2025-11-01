@@ -1,5 +1,5 @@
 import { getSpinner } from '@socketsecurity/lib/constants/process'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { pluralize } from '@socketsecurity/lib/words'
 
 import { fetchSupportedScanFileNames } from './fetch-supported-scan-file-names.mts'
@@ -69,7 +69,7 @@ export async function handleScanReach({
     return
   }
 
-  logger.success(
+  getDefaultLogger().success(
     `Found ${packagePaths.length} local ${pluralize('file', { count: packagePaths.length })}`,
   )
 

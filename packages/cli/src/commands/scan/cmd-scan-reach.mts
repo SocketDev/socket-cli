@@ -2,7 +2,7 @@ import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 
 import { joinAnd } from '@socketsecurity/lib/arrays'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { handleScanReach } from './handle-scan-reach.mts'
 import { reachabilityFlags } from './reachability-flags.mts'
@@ -261,7 +261,7 @@ async function run(
   }
 
   if (dryRun) {
-    logger.log(DRY_RUN_BAILING_NOW)
+    getDefaultLogger().log(DRY_RUN_BAILING_NOW)
     return
   }
 

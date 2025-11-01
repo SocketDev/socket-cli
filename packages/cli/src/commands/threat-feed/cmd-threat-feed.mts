@@ -1,6 +1,6 @@
 import { joinAnd } from '@socketsecurity/lib/arrays'
 import { NPM } from '@socketsecurity/lib/constants/agents'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { handleThreatFeed } from './handle-threat-feed.mts'
 import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'
@@ -229,7 +229,7 @@ async function run(
   })
 
   if (argSet.size) {
-    logger.info(
+    getDefaultLogger().info(
       `Warning: ignoring these excessive args: ${joinAnd(Array.from(argSet))}`,
     )
   }
@@ -270,7 +270,7 @@ async function run(
   }
 
   if (dryRun) {
-    logger.log(DRY_RUN_BAILING_NOW)
+    getDefaultLogger().log(DRY_RUN_BAILING_NOW)
     return
   }
 

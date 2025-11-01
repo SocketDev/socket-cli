@@ -171,7 +171,7 @@ describe('handleCi', () => {
 
     expect(process.exitCode).toBe(401)
     expect(serializeResultJson).toHaveBeenCalledWith(error)
-    expect(logger.log).toHaveBeenCalledWith(JSON.stringify(error))
+    expect(getDefaultLogger().log).toHaveBeenCalledWith(JSON.stringify(error))
     expect(handleCreateNewScan).not.toHaveBeenCalled()
   })
 
@@ -192,7 +192,7 @@ describe('handleCi', () => {
     await handleCi(false)
 
     expect(process.exitCode).toBe(1)
-    expect(logger.log).toHaveBeenCalled()
+    expect(getDefaultLogger().log).toHaveBeenCalled()
   })
 
   it('logs debug information', async () => {

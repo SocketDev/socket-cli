@@ -1,7 +1,7 @@
 import path from 'node:path'
 
 import { debug } from '@socketsecurity/lib/debug'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { convertGradleToMaven } from './convert-gradle-to-maven.mts'
 import { outputManifest } from './output-manifest.mts'
@@ -126,7 +126,7 @@ async function run(
   if (!bin) {
     if (sockJson.defaults?.manifest?.gradle?.bin) {
       bin = sockJson.defaults?.manifest?.gradle?.bin
-      logger.info(`Using default --bin from ${SOCKET_JSON}:`, bin)
+      getDefaultLogger().info(`Using default --bin from ${SOCKET_JSON}:`, bin)
     } else {
       bin = path.join(cwd, 'gradlew')
     }
@@ -134,7 +134,7 @@ async function run(
   if (!gradleOpts) {
     if (sockJson.defaults?.manifest?.gradle?.gradleOpts) {
       gradleOpts = sockJson.defaults?.manifest?.gradle?.gradleOpts
-      logger.info(
+      getDefaultLogger().info(
         `Using default --gradle-opts from ${SOCKET_JSON}:`,
         gradleOpts,
       )
@@ -145,18 +145,21 @@ async function run(
   if (verbose === undefined) {
     if (sockJson.defaults?.manifest?.gradle?.verbose !== undefined) {
       verbose = sockJson.defaults?.manifest?.gradle?.verbose
-      logger.info(`Using default --verbose from ${SOCKET_JSON}:`, verbose)
+      getDefaultLogger().info(
+        `Using default --verbose from ${SOCKET_JSON}:`,
+        verbose,
+      )
     } else {
       verbose = false
     }
   }
 
   if (verbose) {
-    logger.group('- ', parentName, config.commandName, ':')
-    logger.group('- flags:', cli.flags)
-    logger.groupEnd()
-    logger.log('- input:', cli.input)
-    logger.groupEnd()
+    getDefaultLogger().group('- ', parentName, config.commandName, ':')
+    getDefaultLogger().group('- flags:', cli.flags)
+    getDefaultLogger().groupEnd()
+    getDefaultLogger().log('- input:', cli.input)
+    getDefaultLogger().groupEnd()
   }
 
   // Note: stdin input not supported. Gradle manifest generation requires a directory
@@ -174,14 +177,14 @@ async function run(
   }
 
   if (verbose) {
-    logger.group()
-    logger.info('- cwd:', cwd)
-    logger.info('- gradle bin:', bin)
-    logger.groupEnd()
+    getDefaultLogger().group()
+    getDefaultLogger().info('- cwd:', cwd)
+    getDefaultLogger().info('- gradle bin:', bin)
+    getDefaultLogger().groupEnd()
   }
 
   if (dryRun) {
-    logger.log(DRY_RUN_BAILING_NOW)
+    getDefaultLogger().log(DRY_RUN_BAILING_NOW)
     return
   }
 

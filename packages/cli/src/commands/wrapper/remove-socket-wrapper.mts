@@ -1,15 +1,17 @@
 import { readFileSync, writeFileSync } from 'node:fs'
 
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 export function removeSocketWrapper(filepath: string): void {
   let content: string | undefined
   try {
     content = readFileSync(filepath, 'utf8')
   } catch (e) {
-    logger.fail(`There was an error removing the alias${e ? ':' : '.'}`)
+    getDefaultLogger().fail(
+      `There was an error removing the alias${e ? ':' : '.'}`,
+    )
     if (e) {
-      logger.error(e)
+      getDefaultLogger().error(e)
     }
     return
   }
@@ -24,16 +26,16 @@ export function removeSocketWrapper(filepath: string): void {
     writeFileSync(filepath, updatedContent, 'utf8')
   } catch (e) {
     if (e) {
-      logger.error(e)
+      getDefaultLogger().error(e)
     }
     return
   }
 
-  logger.success(
+  getDefaultLogger().success(
     `The alias was removed from ${filepath}. Running 'npm install' will now run the standard npm command in new terminals going forward.`,
   )
-  logger.log('')
-  logger.info(
+  getDefaultLogger().log('')
+  getDefaultLogger().info(
     'Note: We cannot deactivate the alias from current terminal sessions. You have to restart existing terminal sessions to finalize this step.',
   )
 }

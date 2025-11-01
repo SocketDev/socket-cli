@@ -1,4 +1,4 @@
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 import { mdHeader } from '../../utils/output/markdown.mts'
@@ -15,28 +15,28 @@ export async function outputConfigSet(
   }
 
   if (outputKind === 'json') {
-    logger.log(serializeResultJson(result))
+    getDefaultLogger().log(serializeResultJson(result))
     return
   }
   if (!result.ok) {
-    logger.fail(failMsgWithBadge(result.message, result.cause))
+    getDefaultLogger().fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
   if (outputKind === 'markdown') {
-    logger.log(mdHeader('Update config'))
-    logger.log('')
-    logger.log(result.message)
+    getDefaultLogger().log(mdHeader('Update config'))
+    getDefaultLogger().log('')
+    getDefaultLogger().log(result.message)
     if (result.data) {
-      logger.log('')
-      logger.log(result.data)
+      getDefaultLogger().log('')
+      getDefaultLogger().log(result.data)
     }
   } else {
-    logger.log('OK')
-    logger.log(result.message)
+    getDefaultLogger().log('OK')
+    getDefaultLogger().log(result.message)
     if (result.data) {
-      logger.log('')
-      logger.log(result.data)
+      getDefaultLogger().log('')
+      getDefaultLogger().log(result.data)
     }
   }
 }

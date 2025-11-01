@@ -1,5 +1,5 @@
 import { joinAnd } from '@socketsecurity/lib/arrays'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { handleApiCall } from '../../utils/socket/api.mjs'
 import { setupSdk } from '../../utils/socket/sdk.mjs'
@@ -31,7 +31,7 @@ export async function fetchPurlsShallowScore(
     purls.length > 3
       ? `${purls.slice(0, 3).join(', ')} … and ${purls.length - 3} more`
       : joinAnd(purls)
-  logger.info(
+  getDefaultLogger().info(
     `Requesting shallow score data for ${purls.length} package urls (purl): ${displayPurls}`,
   )
 

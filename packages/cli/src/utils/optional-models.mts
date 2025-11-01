@@ -23,7 +23,7 @@
  *   - Auto-cleanup: Standard npm prune/clean
  */
 
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 /**
  * Model registry mapping package names to npm packages.
@@ -67,8 +67,8 @@ export async function loadOptionalModel(
     throw new Error(`Unknown optional model: ${packageName}`)
   }
 
-  logger.info(`${modelInfo.description}`)
-  logger.info(
+  getDefaultLogger().info(`${modelInfo.description}`)
+  getDefaultLogger().info(
     `Total size: ${(modelInfo.totalSize / 1024 / 1024).toFixed(1)} MB`,
   )
 

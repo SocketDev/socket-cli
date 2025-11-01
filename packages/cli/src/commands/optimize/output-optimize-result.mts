@@ -1,4 +1,4 @@
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { pluralize } from '@socketsecurity/lib/words'
 
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
@@ -17,24 +17,26 @@ export async function outputOptimizeResult(
   }>,
   outputKind: OutputKind,
 ) {
+  const logger = getDefaultLogger()
+
   if (!result.ok) {
     process.exitCode = result.code ?? 1
   }
 
   if (outputKind === 'json') {
-    logger.log(serializeResultJson(result))
+    getDefaultLogger().log(serializeResultJson(result))
     return
   }
 
   if (outputKind === 'markdown') {
     if (!result.ok) {
-      logger.log(mdError(result.message, result.cause))
+      getDefaultLogger().log(mdError(result.message, result.cause))
       return
     }
 
     const data = result.data
-    logger.log(mdHeader('Optimize Complete'))
-    logger.log('')
+    getDefaultLogger().log(mdHeader('Optimize Complete'))
+    getDefaultLogger().log('')
 
     if (data.pkgJsonChanged) {
       const changes = []
@@ -46,16 +48,16 @@ export async function outputOptimizeResult(
         const addedText = `**Added**: ${data.addedCount} ${pluralize('override', { count: data.addedCount })}${data.addedInWorkspaces ? ` in ${data.addedInWorkspaces} ${pluralize('workspace', { count: data.addedInWorkspaces })}` : ''}`
         changes.push(addedText)
       }
-      logger.log(mdList(changes))
-      logger.log('\n✓ Finished!')
+      getDefaultLogger().log(mdList(changes))
+      getDefaultLogger().log('\n✓ Finished!')
     } else {
-      logger.log('No Socket.dev optimized overrides applied.')
+      getDefaultLogger().log('No Socket.dev optimized overrides applied.')
     }
     return
   }
 
   if (!result.ok) {
-    logger.fail(failMsgWithBadge(result.message, result.cause))
+    getDefaultLogger().fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
@@ -75,9 +77,9 @@ export async function outputOptimizeResult(
     logger?.log('Scan complete. No Socket.dev optimized overrides applied.')
   }
 
-  logger.log('')
-  logger.success('Finished!')
-  logger.log('')
+  getDefaultLogger().log('')
+  getDefaultLogger().success('Finished!')
+  getDefaultLogger().log('')
 }
 
 function createActionMessage(
