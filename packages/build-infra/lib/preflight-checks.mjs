@@ -3,7 +3,8 @@
  * Provides a DRY way to run common pre-build validation checks.
  */
 
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import loggerPkg from '@socketsecurity/lib/logger'
+const { getDefaultLogger } = loggerPkg
 
 import { printError, printSuccess } from './build-output.mjs'
 import {

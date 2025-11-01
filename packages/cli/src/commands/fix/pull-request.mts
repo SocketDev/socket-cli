@@ -7,7 +7,7 @@ import {
   getSocketFixPullRequestBody,
   getSocketFixPullRequestTitle,
 } from './git.mts'
-import { logPrEvent } from './pr-lifecycle-getDefaultLogger().mts'
+import { logPrEvent } from './pr-lifecycle-logger.mts'
 import {
   GQL_PAGE_SENTINEL,
   GQL_PR_STATE_CLOSED,

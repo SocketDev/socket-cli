@@ -5,9 +5,13 @@
  * using platform-specific package managers (brew, apt, choco, etc.).
  */
 
-import { whichBinSync } from '@socketsecurity/lib/bin'
-import { WIN32 } from '@socketsecurity/lib/constants/platform'
-import { spawn } from '@socketsecurity/lib/spawn'
+import binPkg from '@socketsecurity/lib/bin'
+import platformPkg from '@socketsecurity/lib/constants/platform'
+import spawnPkg from '@socketsecurity/lib/spawn'
+
+const { whichBinSync } = binPkg
+const { WIN32 } = platformPkg
+const { spawn } = spawnPkg
 
 import { printError, printStep, printSubstep, printWarning } from './build-output.mjs'
 
