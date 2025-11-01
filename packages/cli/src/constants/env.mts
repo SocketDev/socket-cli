@@ -39,10 +39,13 @@ import { SOCKET_CLI_GITHUB_TOKEN } from '../env/socket-cli-github-token.mts'
 import { SOCKET_CLI_JS_PATH } from '../env/socket-cli-js-path.mts'
 import { SOCKET_CLI_LOCAL_PATH } from '../env/socket-cli-local-path.mts'
 import { SOCKET_CLI_MODE } from '../env/socket-cli-mode.mts'
+import { SOCKET_CLI_MODELS_PATH } from '../env/socket-cli-models-path.mts'
+import { SOCKET_CLI_NODE_DOWNLOAD_URL } from '../env/socket-cli-node-download-url.mts'
 import { SOCKET_CLI_NO_API_TOKEN } from '../env/socket-cli-no-api-token.mts'
 import { SOCKET_CLI_NPM_PATH } from '../env/socket-cli-npm-path.mts'
 import { SOCKET_CLI_OPTIMIZE } from '../env/socket-cli-optimize.mts'
 import { SOCKET_CLI_PYCLI_LOCAL_PATH } from '../env/socket-cli-pycli-local-path.mts'
+import { SOCKET_CLI_SEA_NODE_VERSION } from '../env/socket-cli-sea-node-version.mts'
 import { SOCKET_CLI_SFW_LOCAL_PATH } from '../env/socket-cli-sfw-local-path.mts'
 import { SOCKET_CLI_VIEW_ALL_RISKS } from '../env/socket-cli-view-all-risks.mts'
 import { TEMP } from '../env/temp.mts'
@@ -85,10 +88,13 @@ export {
   SOCKET_CLI_JS_PATH,
   SOCKET_CLI_LOCAL_PATH,
   SOCKET_CLI_MODE,
+  SOCKET_CLI_MODELS_PATH,
+  SOCKET_CLI_NODE_DOWNLOAD_URL,
   SOCKET_CLI_NO_API_TOKEN,
   SOCKET_CLI_NPM_PATH,
   SOCKET_CLI_OPTIMIZE,
   SOCKET_CLI_PYCLI_LOCAL_PATH,
+  SOCKET_CLI_SEA_NODE_VERSION,
   SOCKET_CLI_SFW_LOCAL_PATH,
   SOCKET_CLI_VIEW_ALL_RISKS,
   RUN_E2E_TESTS,
@@ -204,10 +210,13 @@ const envSnapshot = {
   SOCKET_CLI_JS_PATH,
   SOCKET_CLI_LOCAL_PATH,
   SOCKET_CLI_MODE,
+  SOCKET_CLI_MODELS_PATH,
+  SOCKET_CLI_NODE_DOWNLOAD_URL,
   SOCKET_CLI_NO_API_TOKEN,
   SOCKET_CLI_NPM_PATH,
   SOCKET_CLI_OPTIMIZE,
   SOCKET_CLI_PYCLI_LOCAL_PATH,
+  SOCKET_CLI_SEA_NODE_VERSION,
   SOCKET_CLI_SFW_LOCAL_PATH,
   SOCKET_CLI_VIEW_ALL_RISKS,
   RUN_E2E_TESTS,
