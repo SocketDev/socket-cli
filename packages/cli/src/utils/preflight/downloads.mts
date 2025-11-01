@@ -1,9 +1,13 @@
 /**
  * Background preflight downloads for optional dependencies.
  *
- * Silently downloads @coana-tech/cli, @cyclonedx/cdxgen, and @socketbin/cli-ai
- * in the background on first CLI run to ensure they're cached for future use.
+ * Silently downloads dependencies in the background on first CLI run:
+ * 1. @coana-tech/cli
+ * 2. @cyclonedx/cdxgen
+ * 3. @socketbin/cli-ai
+ * 4. Python + socketsecurity (socket-python-cli)
  *
+ * Downloads are staggered sequentially to avoid resource contention.
  * This runs asynchronously and never blocks the main CLI execution.
  */
 
@@ -14,6 +18,7 @@ import { downloadPackage } from '@socketsecurity/lib/dlx-package'
 
 import ENV from '../../constants/env.mts'
 import { getSocketHomePath } from '../dlx/binary.mts'
+import { ensurePython, ensureSocketCli } from '../python/standalone.mts'
 
 /**
  * Check if a package is already cached by the package manager.
@@ -43,40 +48,46 @@ export function runPreflightDownloads(): void {
 
   // Run asynchronously in the background.
   void (async () => {
-    const downloads: Array<{ packageSpec: string; binaryName?: string }> = []
-
-    // @coana-tech/cli preflight.
-    const coanaVersion = ENV.INLINED_SOCKET_CLI_COANA_VERSION
-    const coanaSpec = `@coana-tech/cli@~${coanaVersion}`
-    if (!isPackageCached(coanaSpec)) {
-      downloads.push({ packageSpec: coanaSpec, binaryName: 'coana' })
-    }
-
-    // @cyclonedx/cdxgen preflight.
-    const cdxgenVersion = ENV.INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION
-    const cdxgenSpec = `@cyclonedx/cdxgen@~${cdxgenVersion}`
-    if (!isPackageCached(cdxgenSpec)) {
-      downloads.push({ packageSpec: cdxgenSpec, binaryName: 'cdxgen' })
-    }
-
-    // @socketbin/cli-ai preflight.
-    const cliAiVersion = ENV.INLINED_SOCKET_CLI_AI_VERSION
-    const cliAiSpec = `@socketbin/cli-ai@^${cliAiVersion}`
-    if (!isPackageCached(cliAiSpec)) {
-      downloads.push({ packageSpec: cliAiSpec, binaryName: 'cli-ai' })
-    }
-
     try {
-      // Download in background (fire and forget).
-      await Promise.all(
-        downloads.map(p =>
-          downloadPackage({
-            package: p.packageSpec,
-            binaryName: p.binaryName,
-            force: false,
-          }),
-        ),
-      )
+      // Stagger downloads sequentially to avoid resource contention.
+      // Order: coana → cdxgen → cli-ai → Python → socketsecurity.
+
+      // 1. @coana-tech/cli preflight.
+      const coanaVersion = ENV.INLINED_SOCKET_CLI_COANA_VERSION
+      const coanaSpec = `@coana-tech/cli@~${coanaVersion}`
+      if (!isPackageCached(coanaSpec)) {
+        await downloadPackage({
+          package: coanaSpec,
+          binaryName: 'coana',
+          force: false,
+        })
+      }
+
+      // 2. @cyclonedx/cdxgen preflight.
+      const cdxgenVersion = ENV.INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION
+      const cdxgenSpec = `@cyclonedx/cdxgen@~${cdxgenVersion}`
+      if (!isPackageCached(cdxgenSpec)) {
+        await downloadPackage({
+          package: cdxgenSpec,
+          binaryName: 'cdxgen',
+          force: false,
+        })
+      }
+
+      // 3. @socketbin/cli-ai preflight.
+      const cliAiVersion = ENV.INLINED_SOCKET_CLI_AI_VERSION
+      const cliAiSpec = `@socketbin/cli-ai@^${cliAiVersion}`
+      if (!isPackageCached(cliAiSpec)) {
+        await downloadPackage({
+          package: cliAiSpec,
+          binaryName: 'cli-ai',
+          force: false,
+        })
+      }
+
+      // 4. Python + socketsecurity (socket-python-cli) preflight.
+      const pythonBin = await ensurePython()
+      await ensureSocketCli(pythonBin)
     } catch {}
   })()
 }
