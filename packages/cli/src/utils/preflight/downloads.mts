@@ -4,8 +4,7 @@
  * Silently downloads dependencies in the background on first CLI run:
  * 1. @coana-tech/cli
  * 2. @cyclonedx/cdxgen
- * 3. @socketbin/cli-ai
- * 4. Python + socketsecurity (socket-python-cli)
+ * 3. Python + socketsecurity (socket-python-cli)
  *
  * Downloads are staggered sequentially to avoid resource contention.
  * This runs asynchronously and never blocks the main CLI execution.
@@ -50,7 +49,7 @@ export function runPreflightDownloads(): void {
   void (async () => {
     try {
       // Stagger downloads sequentially to avoid resource contention.
-      // Order: coana → cdxgen → cli-ai → Python → socketsecurity.
+      // Order: coana → cdxgen → Python → socketsecurity.
 
       // 1. @coana-tech/cli preflight.
       const coanaVersion = ENV.INLINED_SOCKET_CLI_COANA_VERSION
@@ -74,18 +73,7 @@ export function runPreflightDownloads(): void {
         })
       }
 
-      // 3. @socketbin/cli-ai preflight.
-      const cliAiVersion = ENV.INLINED_SOCKET_CLI_AI_VERSION
-      const cliAiSpec = `@socketbin/cli-ai@^${cliAiVersion}`
-      if (!isPackageCached(cliAiSpec)) {
-        await downloadPackage({
-          package: cliAiSpec,
-          binaryName: 'cli-ai',
-          force: false,
-        })
-      }
-
-      // 4. Python + socketsecurity (socket-python-cli) preflight.
+      // 3. Python + socketsecurity (socket-python-cli) preflight.
       const pythonBin = await ensurePython()
       await ensureSocketCli(pythonBin)
     } catch {}
