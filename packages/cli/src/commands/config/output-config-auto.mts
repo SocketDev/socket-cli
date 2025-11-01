@@ -1,4 +1,4 @@
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { select } from '@socketsecurity/lib/prompts'
 
 import { isConfigFromFlag, updateConfigValue } from '../../utils/config.mts'
@@ -19,39 +19,39 @@ export async function outputConfigAuto(
   }
 
   if (outputKind === 'json') {
-    logger.log(serializeResultJson(result))
+    getDefaultLogger().log(serializeResultJson(result))
     return
   }
   if (!result.ok) {
-    logger.fail(failMsgWithBadge(result.message, result.cause))
+    getDefaultLogger().fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
   if (outputKind === 'markdown') {
-    logger.log(mdHeader('Auto discover config value'))
-    logger.log('')
-    logger.log(
+    getDefaultLogger().log(mdHeader('Auto discover config value'))
+    getDefaultLogger().log('')
+    getDefaultLogger().log(
       `Attempted to automatically discover the value for config key: "${key}"`,
     )
-    logger.log('')
+    getDefaultLogger().log('')
     if (result.ok) {
-      logger.log(`The discovered value is: "${result.data}"`)
+      getDefaultLogger().log(`The discovered value is: "${result.data}"`)
       if (result.message) {
-        logger.log('')
-        logger.log(result.message)
+        getDefaultLogger().log('')
+        getDefaultLogger().log(result.message)
       }
     }
-    logger.log('')
+    getDefaultLogger().log('')
   } else {
     if (result.message) {
-      logger.log(result.message)
-      logger.log('')
+      getDefaultLogger().log(result.message)
+      getDefaultLogger().log('')
     }
-    logger.log(`- ${key}: ${result.data}`)
-    logger.log('')
+    getDefaultLogger().log(`- ${key}: ${result.data}`)
+    getDefaultLogger().log('')
 
     if (isConfigFromFlag()) {
-      logger.log(
+      getDefaultLogger().log(
         '(Unable to persist this value because the config is in read-only mode, meaning it was overridden through env or flag.)',
       )
     } else if (key === 'defaultOrg') {
@@ -71,17 +71,19 @@ export async function outputConfigAuto(
           }),
       })
       if (proceed) {
-        logger.log(`Setting defaultOrg to "${proceed}"...`)
+        getDefaultLogger().log(`Setting defaultOrg to "${proceed}"...`)
         const updateResult = updateConfigValue('defaultOrg', proceed)
         if (updateResult.ok) {
-          logger.log(
+          getDefaultLogger().log(
             `OK. Updated defaultOrg to "${proceed}".\nYou should no longer need to add the org to commands that normally require it.`,
           )
         } else {
-          logger.log(failMsgWithBadge(updateResult.message, updateResult.cause))
+          getDefaultLogger().log(
+            failMsgWithBadge(updateResult.message, updateResult.cause),
+          )
         }
       } else {
-        logger.log('OK. No changes made.')
+        getDefaultLogger().log('OK. No changes made.')
       }
     } else if (key === 'enforcedOrgs') {
       const proceed = await select<string>({
@@ -100,15 +102,17 @@ export async function outputConfigAuto(
           }),
       })
       if (proceed) {
-        logger.log(`Setting enforcedOrgs key to "${proceed}"...`)
+        getDefaultLogger().log(`Setting enforcedOrgs key to "${proceed}"...`)
         const updateResult = updateConfigValue('defaultOrg', proceed)
         if (updateResult.ok) {
-          logger.log(`OK. Updated enforcedOrgs to "${proceed}".`)
+          getDefaultLogger().log(`OK. Updated enforcedOrgs to "${proceed}".`)
         } else {
-          logger.log(failMsgWithBadge(updateResult.message, updateResult.cause))
+          getDefaultLogger().log(
+            failMsgWithBadge(updateResult.message, updateResult.cause),
+          )
         }
       } else {
-        logger.log('OK. No changes made.')
+        getDefaultLogger().log('OK. No changes made.')
       }
     }
   }

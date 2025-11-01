@@ -1,4 +1,4 @@
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { isConfigFromFlag } from '../../utils/config.mts'
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
@@ -18,31 +18,31 @@ export async function outputConfigGet(
   }
 
   if (outputKind === 'json') {
-    logger.log(serializeResultJson(result))
+    getDefaultLogger().log(serializeResultJson(result))
     return
   }
   if (!result.ok) {
-    logger.fail(failMsgWithBadge(result.message, result.cause))
+    getDefaultLogger().fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
   const readOnly = isConfigFromFlag()
 
   if (outputKind === 'markdown') {
-    logger.log(mdHeader('Config Value'))
-    logger.log('')
-    logger.log(`Config key '${key}' has value '${result.data}`)
+    getDefaultLogger().log(mdHeader('Config Value'))
+    getDefaultLogger().log('')
+    getDefaultLogger().log(`Config key '${key}' has value '${result.data}`)
     if (readOnly) {
-      logger.log('')
-      logger.log(
+      getDefaultLogger().log('')
+      getDefaultLogger().log(
         'Note: the config is in read-only mode, meaning at least one key was temporarily\n      overridden from an env var or command flag.',
       )
     }
   } else {
-    logger.log(`${key}: ${result.data}`)
+    getDefaultLogger().log(`${key}: ${result.data}`)
     if (readOnly) {
-      logger.log('')
-      logger.log(
+      getDefaultLogger().log('')
+      getDefaultLogger().log(
         'Note: the config is in read-only mode, meaning at least one key was temporarily overridden from an env var or command flag.',
       )
     }

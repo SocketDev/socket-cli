@@ -22,7 +22,7 @@
 
 import colors from 'yoctocolors-cjs'
 
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { onExit } from '@socketsecurity/lib/signal-exit'
 import { isNonEmptyString } from '@socketsecurity/lib/strings'
 
@@ -90,11 +90,11 @@ function showUpdateNotification(options: UpdateNotificationOptions): void {
   try {
     const formatted = formatUpdateMessage(options)
 
-    logger.log(`\n\n${formatted.message}`)
+    getDefaultLogger().log(`\n\n${formatted.message}`)
     if (formatted.command) {
-      logger.log(formatted.command)
+      getDefaultLogger().log(formatted.command)
     }
-    logger.log(`📝 ${formatted.changelog}`)
+    getDefaultLogger().log(`📝 ${formatted.changelog}`)
   } catch (_error) {
     // Fallback to console.log if logger fails.
     const { current, latest, name } = options
@@ -122,7 +122,7 @@ function scheduleExitNotification(options: UpdateNotificationOptions): void {
     const notificationLogger = () => showUpdateNotification(options)
     onExit(notificationLogger)
   } catch (error) {
-    logger.warn(
+    getDefaultLogger().warn(
       `Failed to schedule exit notification: ${error instanceof Error ? error.message : String(error)}`,
     )
   }

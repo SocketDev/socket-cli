@@ -1,6 +1,6 @@
 import fs from 'node:fs'
 
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 export function checkSocketWrapperSetup(file: string): boolean {
   const fileContent = fs.readFileSync(file, 'utf8')
@@ -11,16 +11,16 @@ export function checkSocketWrapperSetup(file: string): boolean {
     )
 
   if (linesWithSocketAlias.length) {
-    logger.log(
+    getDefaultLogger().log(
       `The Socket npm/npx wrapper is set up in your bash profile (${file}).`,
     )
-    logger.log('')
-    logger.log(
+    getDefaultLogger().log('')
+    getDefaultLogger().log(
       `If you haven't already since enabling; Restart your terminal or run this command to activate it in the current session:`,
     )
-    logger.log('')
-    logger.log(`    source ${file}`)
-    logger.log('')
+    getDefaultLogger().log('')
+    getDefaultLogger().log(`    source ${file}`)
+    getDefaultLogger().log('')
 
     return true
   }

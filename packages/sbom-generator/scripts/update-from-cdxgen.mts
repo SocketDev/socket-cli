@@ -23,7 +23,7 @@ import path from 'node:path'
 import { pipeline } from 'node:stream/promises'
 import { fileURLToPath } from 'node:url'
 import { extract } from 'tar'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import colors from 'yoctocolors-cjs'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -67,7 +67,7 @@ interface MigrationTask {
  * Fetch the latest cdxgen release from GitHub.
  */
 async function fetchLatestCdxgenRelease(): Promise<CdxgenRelease> {
-  logger.log('Fetching latest cdxgen release from GitHub...')
+  getDefaultLogger().log('Fetching latest cdxgen release from GitHub...')
 
   const apiUrl = `https://api.github.com/repos/${CDXGEN_REPO}/releases/latest`
 
@@ -119,15 +119,15 @@ function compareVersions(v1: string, v2: string): number {
  * Download and extract cdxgen release tarball.
  */
 async function downloadCdxgenRelease(release: CdxgenRelease): Promise<string> {
-  logger.log(`Downloading cdxgen v${release.version}...`)
+  getDefaultLogger().log(`Downloading cdxgen v${release.version}...`)
 
   // Create temp directory.
   const tempDir = await mkdtemp(path.join(tmpdir(), 'cdxgen-'))
-  logger.log(`Created temp directory: ${tempDir}`)
+  getDefaultLogger().log(`Created temp directory: ${tempDir}`)
 
   try {
     // Download tarball.
-    logger.log('Downloading tarball...')
+    getDefaultLogger().log('Downloading tarball...')
     const response = await fetch(release.tarballUrl)
 
     if (!response.ok) {
@@ -139,7 +139,7 @@ async function downloadCdxgenRelease(release: CdxgenRelease): Promise<string> {
     }
 
     // Extract tarball directly from stream.
-    logger.log('Extracting tarball...')
+    getDefaultLogger().log('Extracting tarball...')
 
     // GitHub tarballs have a top-level directory (e.g., CycloneDX-cdxgen-abc1234).
     // We need to extract and find that directory.
@@ -162,7 +162,7 @@ async function downloadCdxgenRelease(release: CdxgenRelease): Promise<string> {
     }
 
     const cdxgenPath = path.join(tempDir, extractedDir)
-    logger.log(`Extracted to: ${cdxgenPath}`)
+    getDefaultLogger().log(`Extracted to: ${cdxgenPath}`)
 
     return cdxgenPath
   } catch (e) {
@@ -176,7 +176,7 @@ async function downloadCdxgenRelease(release: CdxgenRelease): Promise<string> {
  * Analyze cdxgen parser modules.
  */
 async function analyzeCdxgenParsers(cdxgenPath: string): Promise<ParserModule[]> {
-  logger.log('Analyzing cdxgen parsers...')
+  getDefaultLogger().log('Analyzing cdxgen parsers...')
 
   const parsersDir = path.join(cdxgenPath, 'lib/parsers')
   const modules: ParserModule[] = []
@@ -216,12 +216,12 @@ async function analyzeCdxgenParsers(cdxgenPath: string): Promise<ParserModule[]>
       })
     }
   } catch (e) {
-    logger.warn(`Warning: Could not read parsers directory: ${e}`)
+    getDefaultLogger().warn(`Warning: Could not read parsers directory: ${e}`)
     // Return empty array if directory doesn't exist.
     return []
   }
 
-  logger.log(`Found ${modules.length} parser modules`)
+  getDefaultLogger().log(`Found ${modules.length} parser modules`)
   return modules
 }
 
@@ -231,7 +231,7 @@ async function analyzeCdxgenParsers(cdxgenPath: string): Promise<ParserModule[]>
 async function compareImplementations(
   cdxgenParsers: ParserModule[]
 ): Promise<MigrationTask[]> {
-  logger.log('Comparing implementations...')
+  getDefaultLogger().log('Comparing implementations...')
 
   const tasks: MigrationTask[] = []
 
@@ -393,7 +393,7 @@ function generateMigrationReport(
  * Update LOCK-STEP-COMPLIANCE.md with new baseline version.
  */
 async function updateLockStepCompliance(newVersion: string): Promise<void> {
-  logger.log(`Updating LOCK-STEP-COMPLIANCE.md with baseline v${newVersion}...`)
+  getDefaultLogger().log(`Updating LOCK-STEP-COMPLIANCE.md with baseline v${newVersion}...`)
 
   const content = await fs.readFile(LOCK_STEP_COMPLIANCE_PATH, 'utf8')
 
@@ -411,14 +411,14 @@ async function updateLockStepCompliance(newVersion: string): Promise<void> {
   )
 
   await fs.writeFile(LOCK_STEP_COMPLIANCE_PATH, finalContent, 'utf8')
-  logger.log('✓ Updated LOCK-STEP-COMPLIANCE.md')
+  getDefaultLogger().log('✓ Updated LOCK-STEP-COMPLIANCE.md')
 }
 
 /**
  * Main execution.
  */
 async function main() {
-  logger.log('🔍 Checking for cdxgen updates...\n')
+  getDefaultLogger().log('🔍 Checking for cdxgen updates...\n')
 
   try {
     // Parse command-line arguments.
@@ -433,7 +433,7 @@ async function main() {
     let latestRelease: CdxgenRelease
 
     if (targetVersion) {
-      logger.log(`Using target version: v${targetVersion}\n`)
+      getDefaultLogger().log(`Using target version: v${targetVersion}\n`)
       // TODO: Fetch specific version from GitHub.
       throw new Error('Target version not yet implemented')
     } else {
@@ -444,18 +444,18 @@ async function main() {
     const comparison = compareVersions(latestRelease.version, CURRENT_BASELINE)
 
     if (comparison <= 0) {
-      logger.log(
+      getDefaultLogger().log(
         `${colors.green('✓')} Up to date! Current baseline v${CURRENT_BASELINE} is the latest.\n`
       )
       return
     }
 
-    logger.log(
+    getDefaultLogger().log(
       `${colors.yellow('⚠')}  Update available: v${CURRENT_BASELINE} → v${latestRelease.version}\n`
     )
 
     if (checkOnly) {
-      logger.log('--check-only flag detected. Exiting without analysis.\n')
+      getDefaultLogger().log('--check-only flag detected. Exiting without analysis.\n')
       return
     }
 
@@ -477,7 +477,7 @@ async function main() {
       'cdxgen-migration-report.md'
     )
     await fs.writeFile(reportPath, report, 'utf8')
-    logger.log(`\n✓ Migration report written to: ${reportPath}`)
+    getDefaultLogger().log(`\n✓ Migration report written to: ${reportPath}`)
 
     // Generate migration tasks.
     const tasksMarkdown = tasks
@@ -493,17 +493,17 @@ async function main() {
       `# cdxgen Migration Tasks\n\n${tasksMarkdown}\n`,
       'utf8'
     )
-    logger.log(`✓ Migration tasks written to: ${tasksPath}`)
+    getDefaultLogger().log(`✓ Migration tasks written to: ${tasksPath}`)
 
     // Ask user if they want to update baseline.
-    logger.log(
+    getDefaultLogger().log(
       `\n📝 Review migration tasks and update LOCK-STEP-COMPLIANCE.md manually.`
     )
-    logger.log(
+    getDefaultLogger().log(
       `   Or run: pnpm run update-from-cdxgen --update-baseline v${latestRelease.version}`
     )
   } catch (e) {
-    logger.error(`\n${colors.red('✗')} Error:`, e instanceof Error ? e.message : String(e))
+    getDefaultLogger().error(`\n${colors.red('✗')} Error:`, e instanceof Error ? e.message : String(e))
     process.exit(1)
   }
 }

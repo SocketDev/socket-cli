@@ -19,7 +19,7 @@
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import colors from 'yoctocolors-cjs'
 
 const COMMANDS = ['socket-npm', 'socket-npx', 'socket-pnpm', 'socket-yarn']
@@ -31,7 +31,7 @@ async function createSymlinks(binaryPath, outputDir) {
   // Ensure output directory exists
   await fs.mkdir(outputDir, { recursive: true })
 
-  logger.log(`Creating symlinks for ${binaryName}...`)
+  getDefaultLogger().log(`Creating symlinks for ${binaryName}...`)
 
   for (const command of COMMANDS) {
     const symlinkName = isWindows ? `${command}.exe` : command
@@ -44,24 +44,24 @@ async function createSymlinks(binaryPath, outputDir) {
       if (isWindows) {
         // On Windows, copy the executable instead of symlinking
         // (symlinks require admin privileges)
-        logger.log(`  Copying ${binaryName} -> ${symlinkName}`)
+        getDefaultLogger().log(`  Copying ${binaryName} -> ${symlinkName}`)
         await fs.copyFile(binaryPath, symlinkPath)
       } else {
         // On Unix, create a symlink
-        logger.log(`  Linking ${symlinkName} -> ${binaryName}`)
+        getDefaultLogger().log(`  Linking ${symlinkName} -> ${binaryName}`)
         await fs.symlink(binaryName, symlinkPath)
       }
     } catch (error) {
-      logger.error(`  Failed to create ${symlinkName}: ${error.message}`)
+      getDefaultLogger().error(`  Failed to create ${symlinkName}: ${error.message}`)
     }
   }
 
-  logger.log('Symlinks created successfully!')
+  getDefaultLogger().log('Symlinks created successfully!')
 
   if (!isWindows) {
-    logger.log('\nTo test the symlinks:')
+    getDefaultLogger().log('\nTo test the symlinks:')
     for (const command of COMMANDS) {
-      logger.log(`  ./${path.join(outputDir, command)} --help`)
+      getDefaultLogger().log(`  ./${path.join(outputDir, command)} --help`)
     }
   }
 }
@@ -71,10 +71,10 @@ async function main() {
   const [, , binaryPath, outputDir] = process.argv
 
   if (!binaryPath) {
-    logger.error(
+    getDefaultLogger().error(
       'Usage: node create-sea-symlinks.mjs <binary-path> [output-dir]',
     )
-    logger.error('Example: node create-sea-symlinks.mjs ./socket ./dist')
+    getDefaultLogger().error('Example: node create-sea-symlinks.mjs ./socket ./dist')
     process.exit(1)
   }
 
@@ -87,7 +87,7 @@ async function main() {
   try {
     await fs.access(resolvedBinaryPath)
   } catch {
-    logger.error(`Error: Binary not found at ${resolvedBinaryPath}`)
+    getDefaultLogger().error(`Error: Binary not found at ${resolvedBinaryPath}`)
     process.exit(1)
   }
 
@@ -96,7 +96,7 @@ async function main() {
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   main().catch(error => {
-    logger.error('Error:', error)
+    getDefaultLogger().error('Error:', error)
     process.exit(1)
   })
 }

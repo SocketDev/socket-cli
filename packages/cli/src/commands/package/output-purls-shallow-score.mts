@@ -2,7 +2,7 @@ import colors from 'yoctocolors-cjs'
 
 import { joinAnd } from '@socketsecurity/lib/arrays'
 import { debug } from '@socketsecurity/lib/debug'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
@@ -42,11 +42,11 @@ export function outputPurlsShallowScore(
   }
 
   if (outputKind === 'json') {
-    logger.log(serializeResultJson(result))
+    getDefaultLogger().log(serializeResultJson(result))
     return
   }
   if (!result.ok) {
-    logger.fail(failMsgWithBadge(result.message, result.cause))
+    getDefaultLogger().fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
@@ -54,12 +54,12 @@ export function outputPurlsShallowScore(
 
   if (outputKind === 'markdown') {
     const md = generateMarkdownReport(rows, missing)
-    logger.log(md)
+    getDefaultLogger().log(md)
     return
   }
 
   const txt = generateTextReport(rows, missing)
-  logger.log(txt)
+  getDefaultLogger().log(txt)
 }
 
 function formatReportCard(

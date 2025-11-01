@@ -11,7 +11,7 @@ import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 import url from 'node:url'
 
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { normalizePath } from '@socketsecurity/lib/path'
 import { spawn } from '@socketsecurity/lib/spawn'
 import colors from 'yoctocolors-cjs'
@@ -22,7 +22,7 @@ const __dirname = path.dirname(url.fileURLToPath(import.meta.url))
  * Build SEA binaries for all platforms.
  */
 async function buildBinaries(platforms) {
-  logger.log('Building SEA binaries...')
+  getDefaultLogger().log('Building SEA binaries...')
 
   const args = ['run', 'build', '--sea']
 
@@ -60,7 +60,7 @@ async function uploadToGitHub(version) {
     )
   }
 
-  logger.log(`Uploading binaries to GitHub release v${version}...`)
+  getDefaultLogger().log(`Uploading binaries to GitHub release v${version}...`)
 
   // List binaries.
   const files = await fs.readdir(seaDir)
@@ -81,7 +81,7 @@ async function uploadToGitHub(version) {
 
   if (!releaseExists) {
     // Create the release if it doesn't exist.
-    logger.log(`Creating release v${version}...`)
+    getDefaultLogger().log(`Creating release v${version}...`)
     await spawn(
       'gh',
       [
@@ -101,7 +101,7 @@ async function uploadToGitHub(version) {
   // Upload each binary.
   for (const binary of binaries) {
     const binaryPath = normalizePath(path.join(seaDir, binary))
-    logger.log(`Uploading ${binary}...`)
+    getDefaultLogger().log(`Uploading ${binary}...`)
 
     await spawn(
       'gh',
@@ -110,7 +110,7 @@ async function uploadToGitHub(version) {
     )
   }
 
-  logger.log('Binaries uploaded to GitHub release.')
+  getDefaultLogger().log('Binaries uploaded to GitHub release.')
 }
 
 /**
@@ -140,7 +140,7 @@ async function publishNpmPackage(version) {
     `${JSON.stringify(packageJson, null, 2)}\n`,
   )
 
-  logger.log(`Publishing socket@${version} to npm...`)
+  getDefaultLogger().log(`Publishing socket@${version} to npm...`)
 
   // Publish to npm.
   await spawn('npm', ['publish', '--access=public'], {
@@ -148,7 +148,7 @@ async function publishNpmPackage(version) {
     stdio: 'inherit',
   })
 
-  logger.log('Published to npm.')
+  getDefaultLogger().log('Published to npm.')
 }
 
 /**
@@ -192,10 +192,10 @@ async function main() {
   const packageJson = JSON.parse(await fs.readFile(packageJsonPath, 'utf8'))
   const version = options.version || packageJson.version
 
-  logger.log('Socket CLI SEA Publisher')
-  logger.log('========================')
-  logger.log(`Version: ${version}`)
-  logger.log('')
+  getDefaultLogger().log('Socket CLI SEA Publisher')
+  getDefaultLogger().log('========================')
+  getDefaultLogger().log(`Version: ${version}`)
+  getDefaultLogger().log('')
 
   // Build binaries.
   if (!options.skipBuild) {
@@ -214,13 +214,13 @@ async function main() {
     await publishNpmPackage(version)
   }
 
-  logger.log(`\n${colors.green('✓')} Publishing complete!`)
+  getDefaultLogger().log(`\n${colors.green('✓')} Publishing complete!`)
 }
 
 // Run if executed directly.
 if (import.meta.url === url.pathToFileURL(process.argv[1]).href) {
   main().catch(error => {
-    logger.error('Publishing failed:', error)
+    getDefaultLogger().error('Publishing failed:', error)
 
     process.exit(1)
   })

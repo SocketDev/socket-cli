@@ -1,4 +1,4 @@
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { select } from '@socketsecurity/lib/prompts'
 
 import { getConfigValue, updateConfigValue } from '../../utils/config.mts'
@@ -34,9 +34,9 @@ export async function suggestToPersistOrgSlug(orgSlug: string): Promise<void> {
   if (result === 'yes') {
     const updateResult = updateConfigValue('defaultOrg', orgSlug)
     if (updateResult.ok) {
-      logger.success('Updated default org config to:', orgSlug)
+      getDefaultLogger().success('Updated default org config to:', orgSlug)
     } else {
-      logger.fail(
+      getDefaultLogger().fail(
         '(Non blocking) Failed to update default org in config:',
         updateResult.cause,
       )
@@ -44,9 +44,11 @@ export async function suggestToPersistOrgSlug(orgSlug: string): Promise<void> {
   } else if (result === 'sush') {
     const updateResult = updateConfigValue('skipAskToPersistDefaultOrg', true)
     if (updateResult.ok) {
-      logger.info('Default org not changed. Will not ask to persist again.')
+      getDefaultLogger().info(
+        'Default org not changed. Will not ask to persist again.',
+      )
     } else {
-      logger.fail(
+      getDefaultLogger().fail(
         `(Non blocking) Failed to store preference; will ask to persist again next time. Reason: ${updateResult.cause}`,
       )
     }

@@ -3,7 +3,7 @@
 import chalkTable from 'chalk-table'
 import colors from 'yoctocolors-cjs'
 
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { serializeResultJson } from '../output/result-json.mjs'
 
@@ -19,11 +19,11 @@ function outputResult<T>(
   },
 ): void {
   if (outputKind === 'json') {
-    logger.log(handlers.json(result))
+    getDefaultLogger().log(handlers.json(result))
   } else if (result.ok) {
     handlers.success(result.data)
   } else {
-    logger.error(result.message || 'Operation failed')
+    getDefaultLogger().error(result.message || 'Operation failed')
   }
 }
 
@@ -73,14 +73,14 @@ export function simpleOutput<T>(
     success: (data: T) => {
       // Show title if provided
       if (title) {
-        logger.log(colors.cyan(title))
+        getDefaultLogger().log(colors.cyan(title))
       }
 
       // Handle table output
       if (table && outputKind !== 'json') {
         const rows = table.rows(data)
         if (rows.length === 0) {
-          logger.log(emptyMessage)
+          getDefaultLogger().log(emptyMessage)
           return
         }
 
@@ -93,7 +93,9 @@ export function simpleOutput<T>(
           return formatted
         })
 
-        logger.log(chalkTable({ columns: table.columns }, formattedRows))
+        getDefaultLogger().log(
+          chalkTable({ columns: table.columns }, formattedRows),
+        )
         return
       }
 
@@ -104,7 +106,7 @@ export function simpleOutput<T>(
       }
 
       // Default: log the data
-      logger.log(data)
+      getDefaultLogger().log(data)
     },
   })
 }
@@ -166,7 +168,7 @@ export function outputPaginatedList<T>(
     text: data => {
       // Show pagination info
       const { direction, nextPage, page, perPage, sort } = pagination
-      logger.log(
+      getDefaultLogger().log(
         `Page: ${page}, Per page: ${perPage === Number.POSITIVE_INFINITY ? 'all' : perPage}` +
           (sort ? `, Sort: ${sort}` : '') +
           (direction ? `, Direction: ${direction}` : ''),
@@ -175,7 +177,7 @@ export function outputPaginatedList<T>(
       // Show table
       const rows = tableOptions.getRows(data)
       if (rows.length === 0) {
-        logger.log(tableOptions.emptyMessage || 'No results found')
+        getDefaultLogger().log(tableOptions.emptyMessage || 'No results found')
         return
       }
 
@@ -188,11 +190,13 @@ export function outputPaginatedList<T>(
         return formatted
       })
 
-      logger.log(chalkTable({ columns: tableOptions.columns }, formattedRows))
+      getDefaultLogger().log(
+        chalkTable({ columns: tableOptions.columns }, formattedRows),
+      )
 
       // Show next page hint
       if (nextPage !== null) {
-        logger.log(`\nNext page: ${nextPage}`)
+        getDefaultLogger().log(`\nNext page: ${nextPage}`)
       }
     },
   })

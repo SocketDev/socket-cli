@@ -1,4 +1,4 @@
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 
@@ -10,11 +10,11 @@ export async function outputScanConfigResult(result: CResult<unknown>) {
   }
 
   if (!result.ok) {
-    logger.fail(failMsgWithBadge(result.message, result.cause))
+    getDefaultLogger().fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
-  logger.log('')
-  logger.log('Finished')
-  logger.log('')
+  getDefaultLogger().log('')
+  getDefaultLogger().log('Finished')
+  getDefaultLogger().log('')
 }

@@ -23,7 +23,7 @@ import { messageWithCauses } from 'pony-cause'
 
 import { getSpinner } from '@socketsecurity/lib/constants/process'
 import { debug, debugDir } from '@socketsecurity/lib/debug'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { isNonEmptyString } from '@socketsecurity/lib/strings'
 
 import { getDefaultApiToken } from './sdk.mts'
@@ -95,19 +95,19 @@ function logPermissionsFor403(cmdPath?: string | undefined): void {
     return
   }
 
-  logger.error('')
-  logger.error('🔐 Required API Permissions:')
+  getDefaultLogger().error('')
+  getDefaultLogger().error('🔐 Required API Permissions:')
   for (const permission of requirements.permissions) {
-    logger.error(`   • ${permission}`)
+    getDefaultLogger().error(`   • ${permission}`)
   }
-  logger.error('')
-  logger.error('💡 To fix this:')
-  logger.error(`   1. Visit ${SOCKET_SETTINGS_API_TOKENS_URL}`)
-  logger.error(
+  getDefaultLogger().error('')
+  getDefaultLogger().error('💡 To fix this:')
+  getDefaultLogger().error(`   1. Visit ${SOCKET_SETTINGS_API_TOKENS_URL}`)
+  getDefaultLogger().error(
     '   2. Edit your API token to grant the permissions listed above',
   )
-  logger.error('   3. Re-run your command')
-  logger.error('')
+  getDefaultLogger().error('   3. Re-run your command')
+  getDefaultLogger().error('')
 }
 
 // The Socket API server that should be used for operations.
@@ -212,9 +212,9 @@ export async function handleApiCall<T extends SocketSdkOperations>(
     if (description && spinner) {
       const message = `Received Socket API response (after requesting ${description}).`
       if (sdkResult.success) {
-        logger.success(message)
+        getDefaultLogger().success(message)
       } else {
-        logger.info(message)
+        getDefaultLogger().info(message)
       }
     }
   } catch (e) {
@@ -225,7 +225,9 @@ export async function handleApiCall<T extends SocketSdkOperations>(
       cause: messageWithCauses(e as Error),
     }
     if (description) {
-      logger.fail(`An error was thrown while requesting ${description}`)
+      getDefaultLogger().fail(
+        `An error was thrown while requesting ${description}`,
+      )
       debugApiResponse(description, undefined, e)
     } else {
       debugApiResponse('Socket API', undefined, e)

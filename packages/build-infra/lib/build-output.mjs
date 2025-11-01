@@ -4,45 +4,45 @@
  * Provides consistent, pretty logging for build processes.
  */
 
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 /**
  * Print header.
  */
 export function printHeader(message) {
-  logger.step(message)
+  getDefaultLogger().step(message)
 }
 
 /**
  * Print step.
  */
 export function printStep(message) {
-  logger.substep(message)
+  getDefaultLogger().substep(message)
 }
 
 /**
  * Print substep.
  */
 export function printSubstep(message) {
-  logger.info(`  ${message}`)
+  getDefaultLogger().info(`  ${message}`)
 }
 
 /**
  * Print success message.
  */
 export function printSuccess(message) {
-  logger.success(message)
+  getDefaultLogger().success(message)
 }
 
 /**
  * Print error message.
  */
 export function printError(message, error = null) {
-  logger.error(message)
+  getDefaultLogger().error(message)
   if (error) {
-    logger.error(error.message)
+    getDefaultLogger().error(error.message)
     if (error.stack) {
-      logger.error(error.stack)
+      getDefaultLogger().error(error.stack)
     }
   }
 }
@@ -51,5 +51,5 @@ export function printError(message, error = null) {
  * Print warning message.
  */
 export function printWarning(message) {
-  logger.warn(message)
+  getDefaultLogger().warn(message)
 }

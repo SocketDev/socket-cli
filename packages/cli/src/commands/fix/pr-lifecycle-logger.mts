@@ -1,6 +1,6 @@
 import colors from 'yoctocolors-cjs'
 
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 export type PrLifecycleEvent =
   | 'created'
@@ -29,32 +29,32 @@ export function logPrEvent(
 
   switch (event) {
     case 'created':
-      logger.success(
+      getDefaultLogger().success(
         `${colors.green('✓')} Created ${prRef} for ${ghsaId}${detailsSuffix}`,
       )
       break
     case 'merged':
-      logger.success(
+      getDefaultLogger().success(
         `${colors.green('✓')} Merged ${prRef} for ${ghsaId}${detailsSuffix}`,
       )
       break
     case 'closed':
-      logger.info(
+      getDefaultLogger().info(
         `${colors.blue('ℹ')} Closed ${prRef} for ${ghsaId}${detailsSuffix}`,
       )
       break
     case 'updated':
-      logger.info(
+      getDefaultLogger().info(
         `${colors.cyan('→')} Updated ${prRef} for ${ghsaId}${detailsSuffix}`,
       )
       break
     case 'superseded':
-      logger.warn(
+      getDefaultLogger().warn(
         `${colors.yellow('⚠')} Superseded ${prRef} for ${ghsaId}${detailsSuffix}`,
       )
       break
     case 'failed':
-      logger.error(
+      getDefaultLogger().error(
         `${colors.red('✗')} Failed to create ${prRef} for ${ghsaId}${detailsSuffix}`,
       )
       break

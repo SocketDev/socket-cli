@@ -24,7 +24,7 @@ import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 import colors from 'yoctocolors-cjs'
 
@@ -144,38 +144,38 @@ function parseArgs() {
  * Display help message.
  */
 function showHelp() {
-  logger.log('')
-  logger.log(`${colors.blue('Socket CLI Build System')}`)
-  logger.log('')
-  logger.log('Usage:')
-  logger.log('  pnpm run build                           # Smart build (skips unchanged)')
-  logger.log('  pnpm run build --force                   # Force rebuild all')
-  logger.log('  pnpm run build --target <name>           # Build specific target')
-  logger.log('  pnpm run build --platform <p> --arch <a> # Build specific platform/arch')
-  logger.log('  pnpm run build --targets <t1,t2,...>     # Build multiple targets')
-  logger.log('  pnpm run build --platforms               # Build all platform binaries')
-  logger.log('  pnpm run build --platforms --parallel    # Build platforms in parallel')
-  logger.log('  pnpm run build --help                    # Show this help')
-  logger.log('')
-  logger.log('Default Build Order:')
-  logger.log('  1. Yoga WASM (terminal layouts)')
-  logger.log('  2. CLI Package (TypeScript compilation + bundling)')
-  logger.log('  3. SEA Binary (Node.js Single Executable)')
-  logger.log('')
-  logger.log('Note: ONNX Runtime WASM temporarily disabled (build issues)')
-  logger.log('')
-  logger.log('Platform Targets:')
+  getDefaultLogger().log('')
+  getDefaultLogger().log(`${colors.blue('Socket CLI Build System')}`)
+  getDefaultLogger().log('')
+  getDefaultLogger().log('Usage:')
+  getDefaultLogger().log('  pnpm run build                           # Smart build (skips unchanged)')
+  getDefaultLogger().log('  pnpm run build --force                   # Force rebuild all')
+  getDefaultLogger().log('  pnpm run build --target <name>           # Build specific target')
+  getDefaultLogger().log('  pnpm run build --platform <p> --arch <a> # Build specific platform/arch')
+  getDefaultLogger().log('  pnpm run build --targets <t1,t2,...>     # Build multiple targets')
+  getDefaultLogger().log('  pnpm run build --platforms               # Build all platform binaries')
+  getDefaultLogger().log('  pnpm run build --platforms --parallel    # Build platforms in parallel')
+  getDefaultLogger().log('  pnpm run build --help                    # Show this help')
+  getDefaultLogger().log('')
+  getDefaultLogger().log('Default Build Order:')
+  getDefaultLogger().log('  1. Yoga WASM (terminal layouts)')
+  getDefaultLogger().log('  2. CLI Package (TypeScript compilation + bundling)')
+  getDefaultLogger().log('  3. SEA Binary (Node.js Single Executable)')
+  getDefaultLogger().log('')
+  getDefaultLogger().log('Note: ONNX Runtime WASM temporarily disabled (build issues)')
+  getDefaultLogger().log('')
+  getDefaultLogger().log('Platform Targets:')
   for (const target of PLATFORM_TARGETS) {
-    logger.log(`  ${target}`)
+    getDefaultLogger().log(`  ${target}`)
   }
-  logger.log('')
-  logger.log('Other Available Targets:')
+  getDefaultLogger().log('')
+  getDefaultLogger().log('Other Available Targets:')
   for (const target of Object.keys(TARGET_PACKAGES).sort()) {
     if (!PLATFORM_TARGETS.includes(target)) {
-      logger.log(`  ${target}`)
+      getDefaultLogger().log(`  ${target}`)
     }
   }
-  logger.log('')
+  getDefaultLogger().log('')
 }
 
 /**
@@ -203,11 +203,11 @@ async function buildPackage(pkg, force) {
   const skip = !needsBuild(pkg, force)
 
   if (skip) {
-    logger.log(`${colors.cyan('→')} ${pkg.name}: ${colors.gray('skipped (up to date)')}`)
+    getDefaultLogger().log(`${colors.cyan('→')} ${pkg.name}: ${colors.gray('skipped (up to date)')}`)
     return { success: true, skipped: true }
   }
 
-  logger.log(`${colors.cyan('→')} ${pkg.name}: ${colors.blue('building...')}`)
+  getDefaultLogger().log(`${colors.cyan('→')} ${pkg.name}: ${colors.blue('building...')}`)
 
   const buildScript = force ? 'build:force' : 'build'
   const args = ['--filter', pkg.filter, 'run', buildScript]
@@ -220,11 +220,11 @@ async function buildPackage(pkg, force) {
   const duration = ((Date.now() - startTime) / 1000).toFixed(1)
 
   if (result.code !== 0) {
-    logger.log(`${colors.red('✗')} ${pkg.name}: ${colors.red('failed')} (${duration}s)`)
+    getDefaultLogger().log(`${colors.red('✗')} ${pkg.name}: ${colors.red('failed')} (${duration}s)`)
     return { success: false, skipped: false }
   }
 
-  logger.log(`${colors.green('✓')} ${pkg.name}: ${colors.green('built')} (${duration}s)`)
+  getDefaultLogger().log(`${colors.green('✓')} ${pkg.name}: ${colors.green('built')} (${duration}s)`)
   return { success: true, skipped: false }
 }
 
@@ -232,15 +232,15 @@ async function buildPackage(pkg, force) {
  * Run the default smart build with caching.
  */
 async function runSmartBuild(force) {
-  logger.log('')
-  logger.log('='.repeat(60))
-  logger.log(`${colors.blue('Socket CLI Build System')}`)
-  logger.log('='.repeat(60))
-  logger.log('')
+  getDefaultLogger().log('')
+  getDefaultLogger().log('='.repeat(60))
+  getDefaultLogger().log(`${colors.blue('Socket CLI Build System')}`)
+  getDefaultLogger().log('='.repeat(60))
+  getDefaultLogger().log('')
 
   if (force) {
-    logger.log(`${colors.yellow('⚠')} Force rebuild enabled (ignoring cache)`)
-    logger.log('')
+    getDefaultLogger().log(`${colors.yellow('⚠')} Force rebuild enabled (ignoring cache)`)
+    getDefaultLogger().log('')
   }
 
   const results = []
@@ -263,32 +263,32 @@ async function runSmartBuild(force) {
   }
 
   // Print summary.
-  logger.log('')
-  logger.log('='.repeat(60))
-  logger.log(`${colors.blue('Build Summary')}`)
-  logger.log('='.repeat(60))
-  logger.log('')
+  getDefaultLogger().log('')
+  getDefaultLogger().log('='.repeat(60))
+  getDefaultLogger().log(`${colors.blue('Build Summary')}`)
+  getDefaultLogger().log('='.repeat(60))
+  getDefaultLogger().log('')
 
   const built = results.filter(r => r.success && !r.skipped).length
   const skipped = results.filter(r => r.skipped).length
   const failed = results.filter(r => !r.success).length
 
-  logger.log(`${colors.green('Built:')}    ${built}`)
-  logger.log(`${colors.gray('Skipped:')}  ${skipped}`)
+  getDefaultLogger().log(`${colors.green('Built:')}    ${built}`)
+  getDefaultLogger().log(`${colors.gray('Skipped:')}  ${skipped}`)
   if (failed > 0) {
-    logger.log(`${colors.red('Failed:')}   ${failed}`)
+    getDefaultLogger().log(`${colors.red('Failed:')}   ${failed}`)
   }
-  logger.log(`${colors.blue('Total:')}    ${(totalTime / 1000).toFixed(1)}s`)
-  logger.log('')
+  getDefaultLogger().log(`${colors.blue('Total:')}    ${(totalTime / 1000).toFixed(1)}s`)
+  getDefaultLogger().log('')
 
   if (failed > 0) {
-    logger.log(`${colors.red('✗')} Build FAILED`)
-    logger.log('')
+    getDefaultLogger().log(`${colors.red('✗')} Build FAILED`)
+    getDefaultLogger().log('')
     process.exit(1)
   }
 
-  logger.log(`${colors.green('✓')} Build completed successfully`)
-  logger.log('')
+  getDefaultLogger().log(`${colors.green('✓')} Build completed successfully`)
+  getDefaultLogger().log('')
   process.exit(0)
 }
 
@@ -298,8 +298,8 @@ async function runSmartBuild(force) {
 async function runTargetedBuild(target, buildArgs) {
   const packageFilter = TARGET_PACKAGES[target]
   if (!packageFilter) {
-    logger.error(`Unknown build target: ${target}`)
-    logger.error(`Available targets: ${Object.keys(TARGET_PACKAGES).join(', ')}`)
+    getDefaultLogger().error(`Unknown build target: ${target}`)
+    getDefaultLogger().error(`Available targets: ${Object.keys(TARGET_PACKAGES).join(', ')}`)
     process.exit(1)
   }
 
@@ -329,7 +329,7 @@ async function buildTarget(target, buildArgs) {
   }
 
   const startTime = Date.now()
-  logger.log(`${colors.cyan('→')} [${target}] Starting build...`)
+  getDefaultLogger().log(`${colors.cyan('→')} [${target}] Starting build...`)
 
   const pnpmArgs = [
     '--filter',
@@ -347,14 +347,14 @@ async function buildTarget(target, buildArgs) {
   const duration = ((Date.now() - startTime) / 1000).toFixed(1)
 
   if (result.code === 0) {
-    logger.log(`${colors.green('✓')} [${target}] Build succeeded (${duration}s)`)
+    getDefaultLogger().log(`${colors.green('✓')} [${target}] Build succeeded (${duration}s)`)
     return { success: true, target, duration }
   }
 
-  logger.error(`${colors.red('✗')} [${target}] Build failed (${duration}s)`)
+  getDefaultLogger().error(`${colors.red('✗')} [${target}] Build failed (${duration}s)`)
   if (result.stderr) {
-    logger.error(`${colors.red('✗')} [${target}] Error output:`)
-    logger.error(result.stderr)
+    getDefaultLogger().error(`${colors.red('✗')} [${target}] Error output:`)
+    getDefaultLogger().error(result.stderr)
   }
   return { success: false, target, duration }
 }
@@ -363,13 +363,13 @@ async function buildTarget(target, buildArgs) {
  * Run multiple targeted builds in parallel.
  */
 async function runParallelBuilds(targetsToBuild, buildArgs) {
-  logger.log('')
-  logger.log('='.repeat(60))
-  logger.log(`${colors.blue('Building ' + targetsToBuild.length + ' targets in parallel')}`)
-  logger.log('='.repeat(60))
-  logger.log('')
-  logger.log(`Targets: ${targetsToBuild.join(', ')}`)
-  logger.log('')
+  getDefaultLogger().log('')
+  getDefaultLogger().log('='.repeat(60))
+  getDefaultLogger().log(`${colors.blue('Building ' + targetsToBuild.length + ' targets in parallel')}`)
+  getDefaultLogger().log('='.repeat(60))
+  getDefaultLogger().log('')
+  getDefaultLogger().log(`Targets: ${targetsToBuild.join(', ')}`)
+  getDefaultLogger().log('')
 
   const startTime = Date.now()
   const results = await Promise.allSettled(
@@ -378,28 +378,28 @@ async function runParallelBuilds(targetsToBuild, buildArgs) {
 
   const totalDuration = ((Date.now() - startTime) / 1000).toFixed(1)
 
-  logger.log('')
-  logger.log('='.repeat(60))
-  logger.log(`${colors.blue('Build Summary')}`)
-  logger.log('='.repeat(60))
-  logger.log('')
+  getDefaultLogger().log('')
+  getDefaultLogger().log('='.repeat(60))
+  getDefaultLogger().log(`${colors.blue('Build Summary')}`)
+  getDefaultLogger().log('='.repeat(60))
+  getDefaultLogger().log('')
 
   const successful = results.filter(r => r.status === 'fulfilled' && r.value.success).length
   const failed = results.filter(r => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.success)).length
 
-  logger.log(`${colors.green('Succeeded:')} ${successful}`)
-  logger.log(`${colors.red('Failed:')}    ${failed}`)
-  logger.log(`${colors.blue('Total:')}     ${totalDuration}s`)
-  logger.log('')
+  getDefaultLogger().log(`${colors.green('Succeeded:')} ${successful}`)
+  getDefaultLogger().log(`${colors.red('Failed:')}    ${failed}`)
+  getDefaultLogger().log(`${colors.blue('Total:')}     ${totalDuration}s`)
+  getDefaultLogger().log('')
 
   if (failed > 0) {
-    logger.log(`${colors.red('✗')} One or more builds failed`)
-    logger.log('')
+    getDefaultLogger().log(`${colors.red('✗')} One or more builds failed`)
+    getDefaultLogger().log('')
     process.exit(1)
   }
 
-  logger.log(`${colors.green('✓')} All builds completed successfully`)
-  logger.log('')
+  getDefaultLogger().log(`${colors.green('✓')} All builds completed successfully`)
+  getDefaultLogger().log('')
   process.exit(0)
 }
 
@@ -407,13 +407,13 @@ async function runParallelBuilds(targetsToBuild, buildArgs) {
  * Run multiple targeted builds sequentially.
  */
 async function runSequentialBuilds(targetsToBuild, buildArgs) {
-  logger.log('')
-  logger.log('='.repeat(60))
-  logger.log(`${colors.blue('Building ' + targetsToBuild.length + ' targets sequentially')}`)
-  logger.log('='.repeat(60))
-  logger.log('')
-  logger.log(`Targets: ${targetsToBuild.join(', ')}`)
-  logger.log('')
+  getDefaultLogger().log('')
+  getDefaultLogger().log('='.repeat(60))
+  getDefaultLogger().log(`${colors.blue('Building ' + targetsToBuild.length + ' targets sequentially')}`)
+  getDefaultLogger().log('='.repeat(60))
+  getDefaultLogger().log('')
+  getDefaultLogger().log(`Targets: ${targetsToBuild.join(', ')}`)
+  getDefaultLogger().log('')
 
   const startTime = Date.now()
   const results = []
@@ -429,28 +429,28 @@ async function runSequentialBuilds(targetsToBuild, buildArgs) {
 
   const totalDuration = ((Date.now() - startTime) / 1000).toFixed(1)
 
-  logger.log('')
-  logger.log('='.repeat(60))
-  logger.log(`${colors.blue('Build Summary')}`)
-  logger.log('='.repeat(60))
-  logger.log('')
+  getDefaultLogger().log('')
+  getDefaultLogger().log('='.repeat(60))
+  getDefaultLogger().log(`${colors.blue('Build Summary')}`)
+  getDefaultLogger().log('='.repeat(60))
+  getDefaultLogger().log('')
 
   const successful = results.filter(r => r.success).length
   const failed = results.filter(r => !r.success).length
 
-  logger.log(`${colors.green('Succeeded:')} ${successful}`)
-  logger.log(`${colors.red('Failed:')}    ${failed}`)
-  logger.log(`${colors.blue('Total:')}     ${totalDuration}s`)
-  logger.log('')
+  getDefaultLogger().log(`${colors.green('Succeeded:')} ${successful}`)
+  getDefaultLogger().log(`${colors.red('Failed:')}    ${failed}`)
+  getDefaultLogger().log(`${colors.blue('Total:')}     ${totalDuration}s`)
+  getDefaultLogger().log('')
 
   if (failed > 0) {
-    logger.log(`${colors.red('✗')} Build failed at target: ${results.find(r => !r.success)?.target}`)
-    logger.log('')
+    getDefaultLogger().log(`${colors.red('✗')} Build failed at target: ${results.find(r => !r.success)?.target}`)
+    getDefaultLogger().log('')
     process.exit(1)
   }
 
-  logger.log(`${colors.green('✓')} All builds completed successfully`)
-  logger.log('')
+  getDefaultLogger().log(`${colors.green('✓')} All builds completed successfully`)
+  getDefaultLogger().log('')
   process.exit(0)
 }
 
@@ -490,8 +490,8 @@ async function main() {
 }
 
 main().catch(e => {
-  logger.error('')
-  logger.error(`${colors.red('✗')} Unexpected error: ${e.message}`)
-  logger.error('')
+  getDefaultLogger().error('')
+  getDefaultLogger().error(`${colors.red('✗')} Unexpected error: ${e.message}`)
+  getDefaultLogger().error('')
   process.exit(1)
 })

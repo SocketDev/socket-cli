@@ -2,7 +2,7 @@ import path from 'node:path'
 
 import { getSpinner } from '@socketsecurity/lib/constants/process'
 import { debug, debugDir } from '@socketsecurity/lib/debug'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { pluralize } from '@socketsecurity/lib/words'
 
 import { fetchCreateOrgFullScan } from './fetch-create-org-full-scan.mts'
@@ -89,7 +89,7 @@ export async function handleCreateNewScan({
   })
 
   if (autoManifest) {
-    logger.info('Auto-generating manifest files ...')
+    getDefaultLogger().info('Auto-generating manifest files ...')
     debug('Auto-manifest mode enabled')
     const sockJson = readOrDefaultSocketJson(cwd)
     const detected = await detectManifestActions(sockJson, cwd)
@@ -100,7 +100,9 @@ export async function handleCreateNewScan({
       outputKind,
       verbose: false,
     })
-    logger.info('Auto-generation finished. Proceeding with Scan creation.')
+    getDefaultLogger().info(
+      'Auto-generation finished. Proceeding with Scan creation.',
+    )
   }
 
   const spinner = getSpinner()
@@ -142,7 +144,7 @@ export async function handleCreateNewScan({
   debugDir({ packagePaths })
 
   if (readOnly) {
-    logger.log('[ReadOnly] Bailing now')
+    getDefaultLogger().log('[ReadOnly] Bailing now')
     debug('Read-only mode, exiting early')
     return
   }
@@ -152,8 +154,8 @@ export async function handleCreateNewScan({
 
   // If reachability is enabled, perform reachability analysis.
   if (reach.runReachabilityAnalysis) {
-    logger.error('')
-    logger.info('Starting reachability analysis...')
+    getDefaultLogger().error('')
+    getDefaultLogger().info('Starting reachability analysis...')
     debug('Reachability analysis enabled')
     debugDir({ reachabilityOptions: reach })
 
@@ -177,7 +179,7 @@ export async function handleCreateNewScan({
       return
     }
 
-    logger.success('Reachability analysis completed successfully')
+    getDefaultLogger().success('Reachability analysis completed successfully')
 
     const reachabilityReport = reachResult.data?.reachabilityReport
 
@@ -194,7 +196,7 @@ export async function handleCreateNewScan({
   }
 
   // Display final file count after all modifications.
-  logger.success(
+  getDefaultLogger().success(
     `Found ${scanPaths.length} ${pluralize('file', { count: scanPaths.length })} to include in scan`,
   )
 

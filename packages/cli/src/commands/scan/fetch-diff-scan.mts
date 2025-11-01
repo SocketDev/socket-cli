@@ -1,4 +1,4 @@
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { queryApiSafeJson } from '../../utils/socket/api.mjs'
 
@@ -14,9 +14,11 @@ export async function fetchDiffScan({
   id2: string
   orgSlug: string
 }): Promise<CResult<SocketSdkSuccessResult<'GetOrgDiffScan'>['data']>> {
-  logger.info('Scan ID 1:', id1)
-  logger.info('Scan ID 2:', id2)
-  logger.info('Note: this request may take some time if the scans are big')
+  getDefaultLogger().info('Scan ID 1:', id1)
+  getDefaultLogger().info('Scan ID 2:', id2)
+  getDefaultLogger().info(
+    'Note: this request may take some time if the scans are big',
+  )
 
   return await queryApiSafeJson<
     SocketSdkSuccessResult<'GetOrgDiffScan'>['data']

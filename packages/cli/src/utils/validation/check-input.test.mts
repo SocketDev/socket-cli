@@ -130,7 +130,7 @@ describe('checkCommandInput', () => {
         'Input error',
         expect.stringContaining('✓ Check 2 (green(Passed))'),
       )
-      expect(logger.fail).toHaveBeenCalled()
+      expect(getDefaultLogger().fail).toHaveBeenCalled()
     })
 
     it('handles json output kind', async () => {
@@ -152,7 +152,7 @@ describe('checkCommandInput', () => {
         message: 'Input error',
         data: expect.stringContaining('✗ Input validation failed'),
       })
-      expect(logger.log).toHaveBeenCalled()
+      expect(getDefaultLogger().log).toHaveBeenCalled()
     })
   })
 

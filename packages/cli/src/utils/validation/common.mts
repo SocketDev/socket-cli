@@ -1,6 +1,6 @@
 /** @fileoverview Common validation patterns to DRY out repetitive checks */
 
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { checkCommandInput } from './check-input.mts'
 import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'
@@ -138,7 +138,7 @@ export function runStandardValidations(options: ValidationOptions): boolean {
 
   // Handle dry run
   if (dryRun) {
-    logger.log(DRY_RUN_BAILING_NOW)
+    getDefaultLogger().log(DRY_RUN_BAILING_NOW)
     return false
   }
 

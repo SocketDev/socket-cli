@@ -1,19 +1,14 @@
-import path from 'node:path'
-
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { normalizePath } from '@socketsecurity/lib/path'
 
 import {
-  createTestWorkspace,
-  type Workspace,
-} from '../../../test/helpers/workspace-helper.mts'
-import {
   findBinPathDetailsSync,
   findNpmDirPathSync,
   getPackageFilesForScan,
 } from './path-resolve.mts'
+import { createTestWorkspace } from '../../../test/helpers/workspace-helper.mts'
 import {
   PACKAGE_LOCK_JSON,
   PNPM_LOCK_YAML,
@@ -487,7 +482,9 @@ describe('Path Resolve', () => {
       const result = findNpmDirPathSync('/usr/local/bin/npm')
 
       expect(WIN32 ? result : normalizePath(result)).toBe(
-        WIN32 ? undefined : normalizePath('/usr/local/bin/npm/lib/node_modules/npm'),
+        WIN32
+          ? undefined
+          : normalizePath('/usr/local/bin/npm/lib/node_modules/npm'),
       )
     })
 
@@ -556,7 +553,9 @@ describe('Path Resolve', () => {
       )
 
       expect(WIN32 ? result : normalizePath(result)).toBe(
-        WIN32 ? undefined : normalizePath('/Users/user/.nvm/versions/node/v18.0.0/bin/npm'),
+        WIN32
+          ? undefined
+          : normalizePath('/Users/user/.nvm/versions/node/v18.0.0/bin/npm'),
       )
     })
   })

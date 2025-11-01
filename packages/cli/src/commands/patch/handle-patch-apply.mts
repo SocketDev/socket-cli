@@ -14,7 +14,7 @@ import {
 } from '@socketsecurity/lib/constants/paths'
 import { debugDirNs } from '@socketsecurity/lib/debug'
 import { readDirNames } from '@socketsecurity/lib/fs'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { readPackageJson } from '@socketsecurity/lib/packages'
 import { normalizePath } from '@socketsecurity/lib/path'
 import { isNonEmptyString } from '@socketsecurity/lib/strings'
@@ -83,11 +83,11 @@ async function applyNpmPatches(
 
   spinner?.stop()
 
-  logger.log(
+  getDefaultLogger().log(
     `Found ${nmPaths.length} ${NODE_MODULES} ${pluralize('folder', { count: nmPaths.length })}`,
   )
 
-  logger.group('')
+  getDefaultLogger().group('')
 
   spinner?.start()
 
@@ -146,11 +146,11 @@ async function applyNpmPatches(
 
         spinner?.stop()
 
-        logger.log(
+        getDefaultLogger().log(
           `Found match: ${pkgJson.name}@${pkgJson.version} at ${pkgPath}`,
         )
-        logger.log(`Patch key: ${patchInfo.key}`)
-        logger.group('Processing files:')
+        getDefaultLogger().log(`Patch key: ${patchInfo.key}`)
+        getDefaultLogger().group('Processing files:')
 
         spinner?.start()
 
@@ -176,7 +176,7 @@ async function applyNpmPatches(
           }
         }
 
-        logger.groupEnd()
+        getDefaultLogger().groupEnd()
 
         if (passed) {
           result.passed.push(purl)
@@ -193,7 +193,7 @@ async function applyNpmPatches(
 
   spinner?.stop()
 
-  logger.groupEnd()
+  getDefaultLogger().groupEnd()
 
   if (wasSpinning) {
     spinner?.start()
@@ -260,7 +260,7 @@ async function processFilePatch(
 
   const filepath = normalizePath(path.join(pkgPath, fileName))
   if (!existsSync(filepath)) {
-    logger.log(`File not found: ${fileName}`)
+    getDefaultLogger().log(`File not found: ${fileName}`)
     if (wasSpinning) {
       spinner?.start()
     }
@@ -269,7 +269,7 @@ async function processFilePatch(
 
   const currentHashResult = await computeSHA256(filepath)
   if (!currentHashResult.ok) {
-    logger.log(
+    getDefaultLogger().log(
       `Failed to compute hash for: ${fileName}: ${currentHashResult.cause || currentHashResult.message}`,
     )
     if (wasSpinning) {
@@ -279,10 +279,10 @@ async function processFilePatch(
   }
 
   if (currentHashResult.data === fileInfo.afterHash) {
-    logger.success(`File already patched: ${fileName}`)
-    logger.group()
-    logger.log(`Current hash: ${currentHashResult.data}`)
-    logger.groupEnd()
+    getDefaultLogger().success(`File already patched: ${fileName}`)
+    getDefaultLogger().group()
+    getDefaultLogger().log(`Current hash: ${currentHashResult.data}`)
+    getDefaultLogger().groupEnd()
     if (wasSpinning) {
       spinner?.start()
     }
@@ -290,28 +290,28 @@ async function processFilePatch(
   }
 
   if (currentHashResult.data !== fileInfo.beforeHash) {
-    logger.fail(`File hash mismatch: ${fileName}`)
-    logger.group()
-    logger.log(`Expected: ${fileInfo.beforeHash}`)
-    logger.log(`Current:  ${currentHashResult.data}`)
-    logger.log(`Target:   ${fileInfo.afterHash}`)
-    logger.groupEnd()
+    getDefaultLogger().fail(`File hash mismatch: ${fileName}`)
+    getDefaultLogger().group()
+    getDefaultLogger().log(`Expected: ${fileInfo.beforeHash}`)
+    getDefaultLogger().log(`Current:  ${currentHashResult.data}`)
+    getDefaultLogger().log(`Target:   ${fileInfo.afterHash}`)
+    getDefaultLogger().groupEnd()
     if (wasSpinning) {
       spinner?.start()
     }
     return false
   }
 
-  logger.success(`File matches expected hash: ${fileName}`)
-  logger.group()
-  logger.log(`Current hash: ${currentHashResult.data}`)
-  logger.log(`Ready to patch to: ${fileInfo.afterHash}`)
-  logger.group()
+  getDefaultLogger().success(`File matches expected hash: ${fileName}`)
+  getDefaultLogger().group()
+  getDefaultLogger().log(`Current hash: ${currentHashResult.data}`)
+  getDefaultLogger().log(`Ready to patch to: ${fileInfo.afterHash}`)
+  getDefaultLogger().group()
 
   if (dryRun) {
-    logger.log('(dry run - no changes made)')
-    logger.groupEnd()
-    logger.groupEnd()
+    getDefaultLogger().log('(dry run - no changes made)')
+    getDefaultLogger().groupEnd()
+    getDefaultLogger().groupEnd()
     if (wasSpinning) {
       spinner?.start()
     }
@@ -322,9 +322,9 @@ async function processFilePatch(
     path.join(socketDir, 'blobs', fileInfo.afterHash),
   )
   if (!existsSync(blobPath)) {
-    logger.fail(`Error: Patch file not found at ${blobPath}`)
-    logger.groupEnd()
-    logger.groupEnd()
+    getDefaultLogger().fail(`Error: Patch file not found at ${blobPath}`)
+    getDefaultLogger().groupEnd()
+    getDefaultLogger().groupEnd()
     if (wasSpinning) {
       spinner?.start()
     }
@@ -339,9 +339,9 @@ async function processFilePatch(
     if (patchUuid) {
       try {
         await createBackup(patchUuid, filepath)
-        logger.log(`Created backup for ${fileName}`)
+        getDefaultLogger().log(`Created backup for ${fileName}`)
       } catch (e) {
-        logger.warn(
+        getDefaultLogger().warn(
           `Failed to create backup for ${fileName}: ${getErrorCause(e)}`,
         )
         // Continue with patching even if backup fails.
@@ -353,27 +353,27 @@ async function processFilePatch(
     // Verify the hash after copying to ensure file integrity.
     const verifyHashResult = await computeSHA256(filepath)
     if (!verifyHashResult.ok) {
-      logger.error(
+      getDefaultLogger().error(
         `Failed to verify hash after patch: ${verifyHashResult.cause || verifyHashResult.message}`,
       )
       result = false
     } else if (verifyHashResult.data !== fileInfo.afterHash) {
-      logger.error('Hash verification failed after patch')
-      logger.group()
-      logger.log(`Expected: ${fileInfo.afterHash}`)
-      logger.log(`Got:      ${verifyHashResult.data}`)
-      logger.groupEnd()
+      getDefaultLogger().error('Hash verification failed after patch')
+      getDefaultLogger().group()
+      getDefaultLogger().log(`Expected: ${fileInfo.afterHash}`)
+      getDefaultLogger().log(`Got:      ${verifyHashResult.data}`)
+      getDefaultLogger().groupEnd()
       result = false
     } else {
-      logger.success('Patch applied successfully')
+      getDefaultLogger().success('Patch applied successfully')
     }
   } catch (e) {
-    logger.error('Error applying patch')
+    getDefaultLogger().error('Error applying patch')
     debugDirNs('error', e)
     result = false
   }
-  logger.groupEnd()
-  logger.groupEnd()
+  getDefaultLogger().groupEnd()
+  getDefaultLogger().groupEnd()
 
   spinner?.stop()
 
@@ -470,7 +470,7 @@ export async function handlePatchApply({
             })
           } catch (e) {
             // Log error but don't fail the whole operation.
-            logger.warn(
+            getDefaultLogger().warn(
               `Failed to update status for ${purl}: ${getErrorCause(e)}`,
             )
           }
@@ -483,7 +483,7 @@ export async function handlePatchApply({
             await updatePatchStatus(purl, 'failed', {})
           } catch (e) {
             // Log error but don't fail the whole operation.
-            logger.warn(
+            getDefaultLogger().warn(
               `Failed to update status for ${purl}: ${getErrorCause(e)}`,
             )
           }

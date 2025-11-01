@@ -2,7 +2,7 @@ import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 
 import { joinAnd } from '@socketsecurity/lib/arrays'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { handleCreateNewScan } from './handle-create-new-scan.mts'
 import { outputCreateNewScan } from './output-create-new-scan.mts'
@@ -328,7 +328,7 @@ async function run(
   if (typeof autoManifest !== 'boolean') {
     if (sockJson.defaults?.scan?.create?.autoManifest !== undefined) {
       autoManifest = sockJson.defaults.scan.create.autoManifest
-      logger.info(
+      getDefaultLogger().info(
         `Using default --auto-manifest from ${SOCKET_JSON}:`,
         autoManifest,
       )
@@ -339,7 +339,10 @@ async function run(
   if (!branchName) {
     if (sockJson.defaults?.scan?.create?.branch) {
       branchName = sockJson.defaults.scan.create.branch
-      logger.info(`Using default --branch from ${SOCKET_JSON}:`, branchName)
+      getDefaultLogger().info(
+        `Using default --branch from ${SOCKET_JSON}:`,
+        branchName,
+      )
     } else {
       branchName = (await gitBranch(cwd)) || (await detectDefaultBranch(cwd))
     }
@@ -347,7 +350,10 @@ async function run(
   if (!repoName) {
     if (sockJson.defaults?.scan?.create?.repo) {
       repoName = sockJson.defaults.scan.create.repo
-      logger.info(`Using default --repo from ${SOCKET_JSON}:`, repoName)
+      getDefaultLogger().info(
+        `Using default --repo from ${SOCKET_JSON}:`,
+        repoName,
+      )
     } else {
       repoName = await getRepoName(cwd)
     }
@@ -355,7 +361,10 @@ async function run(
   if (typeof report !== 'boolean') {
     if (sockJson.defaults?.scan?.create?.report !== undefined) {
       report = sockJson.defaults.scan.create.report
-      logger.info(`Using default --report from ${SOCKET_JSON}:`, report)
+      getDefaultLogger().info(
+        `Using default --report from ${SOCKET_JSON}:`,
+        report,
+      )
     } else {
       report = false
     }
@@ -411,25 +420,25 @@ async function run(
 
   const detected = await detectManifestActions(sockJson, cwd)
   if (detected.count > 0 && !autoManifest) {
-    logger.info(
+    getDefaultLogger().info(
       `Detected ${detected.count} manifest targets we could try to generate. Please set the --auto-manifest flag if you want to include languages covered by \`socket manifest auto\` in the Scan.`,
     )
   }
 
   if (updatedInput && orgSlug && targets.length) {
-    logger.info(
+    getDefaultLogger().info(
       'Note: You can invoke this command next time to skip the interactive questions:',
     )
-    logger.error('```')
-    logger.error(
+    getDefaultLogger().error('```')
+    getDefaultLogger().error(
       `    socket scan create [other flags…] ${orgSlug} ${targets.join(' ')}`,
     )
-    logger.error('```')
-    logger.error('')
-    logger.info(
+    getDefaultLogger().error('```')
+    getDefaultLogger().error('')
+    getDefaultLogger().info(
       `You can also run \`socket scan setup\` to persist these flag defaults to a ${SOCKET_JSON} file.`,
     )
-    logger.error('')
+    getDefaultLogger().error('')
   }
 
   const reachExcludePaths = cmdFlagValueToArray(cli.flags['reachExcludePaths'])
@@ -560,7 +569,7 @@ async function run(
   }
 
   if (dryRun) {
-    logger.log(DRY_RUN_BAILING_NOW)
+    getDefaultLogger().log(DRY_RUN_BAILING_NOW)
     return
   }
 

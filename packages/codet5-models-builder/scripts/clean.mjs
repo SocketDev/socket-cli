@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url'
 
 import { cleanCheckpoint } from '@socketsecurity/build-infra/lib/checkpoint-manager'
 import { printHeader, printSuccess } from '@socketsecurity/build-infra/lib/build-output'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -33,6 +33,6 @@ async function main() {
 }
 
 main().catch((e) => {
-  logger.error('Clean failed:', e.message)
+  getDefaultLogger().error('Clean failed:', e.message)
   process.exit(1)
 })

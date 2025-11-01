@@ -3,7 +3,7 @@
  * Automatically retries on network errors and 5xx server errors.
  */
 
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 /**
  * Fetch with automatic retry on transient failures.
@@ -35,7 +35,7 @@ export async function fetchWithRetry(url, options = {}, retryOptions = {}) {
       // Success!
       if (response.ok) {
         if (attempt > 1 && !silent) {
-          logger.log(`✓ Request succeeded on attempt ${attempt}`)
+          getDefaultLogger().log(`✓ Request succeeded on attempt ${attempt}`)
         }
         return response
       }
@@ -62,10 +62,10 @@ export async function fetchWithRetry(url, options = {}, retryOptions = {}) {
       if (attempt < retries) {
         const delay = Math.min(initialDelay * 2 ** (attempt - 1), maxDelay)
         if (!silent) {
-          logger.warn(
+          getDefaultLogger().warn(
             `✗ Attempt ${attempt}/${retries} failed: ${response.status} ${response.statusText}`,
           )
-          logger.log(`  Retrying in ${delay}ms...`)
+          getDefaultLogger().log(`  Retrying in ${delay}ms...`)
         }
         await sleep(delay)
       }
@@ -78,8 +78,8 @@ export async function fetchWithRetry(url, options = {}, retryOptions = {}) {
         if (attempt < retries) {
           const delay = Math.min(initialDelay * 2 ** (attempt - 1), maxDelay)
           if (!silent) {
-            logger.warn(`✗ Attempt ${attempt}/${retries} failed: ${error.message}`)
-            logger.log(`  Retrying in ${delay}ms...`)
+            getDefaultLogger().warn(`✗ Attempt ${attempt}/${retries} failed: ${error.message}`)
+            getDefaultLogger().log(`  Retrying in ${delay}ms...`)
           }
           await sleep(delay)
           continue

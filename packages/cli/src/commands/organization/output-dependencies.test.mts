@@ -49,7 +49,7 @@ describe('outputDependencies', () => {
     const { serializeResultJson } = await vi.importMock(
       '../../utils/output/result-json.mjs',
     )
-    const mockLog = vi.mocked(logger.log)
+    const mockLog = vi.mocked(getDefaultLogger().log)
     const mockSerialize = vi.mocked(serializeResultJson)
 
     const result: CResult<
@@ -83,7 +83,7 @@ describe('outputDependencies', () => {
   it('outputs error in JSON format', async () => {
     const { outputDependencies } = await import('./output-dependencies.mts')
     const { logger } = await vi.importMock('@socketsecurity/lib/logger')
-    const mockLog = vi.mocked(logger.log)
+    const mockLog = vi.mocked(getDefaultLogger().log)
 
     const result: CResult<
       SocketSdkSuccessResult<'searchDependencies'>['data']
@@ -106,7 +106,7 @@ describe('outputDependencies', () => {
     const { outputDependencies } = await import('./output-dependencies.mts')
     const { logger } = await vi.importMock('@socketsecurity/lib/logger')
     const chalkTable = await vi.importMock('chalk-table')
-    const mockLog = vi.mocked(logger.log)
+    const mockLog = vi.mocked(getDefaultLogger().log)
     const mockChalkTable = vi.mocked(chalkTable.default)
 
     const result: CResult<
@@ -161,7 +161,7 @@ describe('outputDependencies', () => {
     const { failMsgWithBadge } = await vi.importMock(
       '../../utils/error/fail-msg-with-badge.mts',
     )
-    const mockFail = vi.mocked(logger.fail)
+    const mockFail = vi.mocked(getDefaultLogger().fail)
     const mockFailMsg = vi.mocked(failMsgWithBadge)
 
     const result: CResult<
@@ -188,7 +188,7 @@ describe('outputDependencies', () => {
   it('shows proper pagination info when more data is available', async () => {
     const { outputDependencies } = await import('./output-dependencies.mts')
     const { logger } = await vi.importMock('@socketsecurity/lib/logger')
-    const mockLog = vi.mocked(logger.log)
+    const mockLog = vi.mocked(getDefaultLogger().log)
 
     const result: CResult<
       SocketSdkSuccessResult<'searchDependencies'>['data']

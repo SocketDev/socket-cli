@@ -6,7 +6,7 @@
 import { isQuiet } from '@socketsecurity/lib/argv/flags'
 import { parseArgs } from '@socketsecurity/lib/argv/parse'
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 import { printFooter, printHeader } from '@socketsecurity/lib/stdio/header'
 import colors from 'yoctocolors-cjs'
@@ -20,7 +20,7 @@ async function runPackageTypeCheck(pkg, quiet = false) {
   const displayName = pkg.displayName || pkg.name
 
   if (!quiet) {
-    logger.progress(`${displayName}: checking types`)
+    getDefaultLogger().progress(`${displayName}: checking types`)
   }
 
   const result = await spawn(
@@ -36,21 +36,21 @@ async function runPackageTypeCheck(pkg, quiet = false) {
 
   if (result.code !== 0) {
     if (!quiet) {
-      logger.clearLine()
-      logger.log(`${colors.red('✗')} ${displayName}`)
+      getDefaultLogger().clearLine()
+      getDefaultLogger().log(`${colors.red('✗')} ${displayName}`)
     }
     if (result.stdout) {
-      logger.log(result.stdout)
+      getDefaultLogger().log(result.stdout)
     }
     if (result.stderr) {
-      logger.error(result.stderr)
+      getDefaultLogger().error(result.stderr)
     }
     return result.code
   }
 
   if (!quiet) {
-    logger.clearLine()
-    logger.log(`${colors.green('✓')} ${displayName}`)
+    getDefaultLogger().clearLine()
+    getDefaultLogger().log(`${colors.green('✓')} ${displayName}`)
   }
 
   return 0
@@ -71,15 +71,15 @@ async function main() {
 
     // Show help if requested.
     if (values.help) {
-      logger.log('Monorepo Type Checker')
-      logger.log('\nUsage: pnpm type [options]')
-      logger.log('\nOptions:')
-      logger.log('  --help         Show this help message')
-      logger.log('  --quiet, --silent  Suppress progress messages')
-      logger.log('\nExamples:')
-      logger.log('  pnpm type      # Type check all packages')
-      logger.log('\nNote: Type checking always runs on all packages due to')
-      logger.log('      cross-package TypeScript dependencies.')
+      getDefaultLogger().log('Monorepo Type Checker')
+      getDefaultLogger().log('\nUsage: pnpm type [options]')
+      getDefaultLogger().log('\nOptions:')
+      getDefaultLogger().log('  --help         Show this help message')
+      getDefaultLogger().log('  --quiet, --silent  Suppress progress messages')
+      getDefaultLogger().log('\nExamples:')
+      getDefaultLogger().log('  pnpm type      # Type check all packages')
+      getDefaultLogger().log('\nNote: Type checking always runs on all packages due to')
+      getDefaultLogger().log('      cross-package TypeScript dependencies.')
       process.exitCode = 0
       return
     }
@@ -88,7 +88,7 @@ async function main() {
 
     if (!quiet) {
       printHeader('Monorepo Type Checker')
-      logger.log('')
+      getDefaultLogger().log('')
     }
 
     // Get all packages with type script.
@@ -96,7 +96,7 @@ async function main() {
 
     if (!packages.length) {
       if (!quiet) {
-        logger.step('No packages with type checking found')
+        getDefaultLogger().step('No packages with type checking found')
       }
       process.exitCode = 0
       return
@@ -104,10 +104,10 @@ async function main() {
 
     // Display what we're checking.
     if (!quiet) {
-      logger.step(
+      getDefaultLogger().step(
         `Type checking ${packages.length} package${packages.length > 1 ? 's' : ''}`,
       )
-      logger.error('') // Blank line.
+      getDefaultLogger().error('') // Blank line.
     }
 
     // Run type check across all packages.
@@ -122,24 +122,24 @@ async function main() {
 
     if (exitCode !== 0) {
       if (!quiet) {
-        logger.error('')
-        logger.log('Type checking failed')
+        getDefaultLogger().error('')
+        getDefaultLogger().log('Type checking failed')
       }
       process.exitCode = exitCode
     } else {
       if (!quiet) {
-        logger.error('')
-        logger.success('All type checks passed!')
+        getDefaultLogger().error('')
+        getDefaultLogger().success('All type checks passed!')
         printFooter()
       }
     }
   } catch (error) {
-    logger.error(`Type checker failed: ${error.message}`)
+    getDefaultLogger().error(`Type checker failed: ${error.message}`)
     process.exitCode = 1
   }
 }
 
 main().catch(e => {
-  logger.error(e)
+  getDefaultLogger().error(e)
   process.exitCode = 1
 })

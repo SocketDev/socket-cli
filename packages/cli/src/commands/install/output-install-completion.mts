@@ -1,4 +1,4 @@
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 
@@ -19,36 +19,42 @@ export async function outputInstallCompletion(
   if (!result.ok) {
     process.exitCode = result.code ?? 1
 
-    logger.fail(failMsgWithBadge(result.message, result.cause))
+    getDefaultLogger().fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
-  logger.log('')
-  logger.log(
+  getDefaultLogger().log('')
+  getDefaultLogger().log(
     `Installation of tab completion for "${result.data.targetName}" finished!`,
   )
-  logger.log('')
+  getDefaultLogger().log('')
 
   result.data.actions.forEach(action => {
-    logger.log(`  - ${action}`)
+    getDefaultLogger().log(`  - ${action}`)
   })
-  logger.log('')
-  logger.log('Socket tab completion works automatically in new terminals.')
-  logger.log('')
-  logger.log(
+  getDefaultLogger().log('')
+  getDefaultLogger().log(
+    'Socket tab completion works automatically in new terminals.',
+  )
+  getDefaultLogger().log('')
+  getDefaultLogger().log(
     'Due to a bash limitation, tab completion cannot be enabled in the',
   )
-  logger.log('current shell (bash instance) through NodeJS. You must either:')
-  logger.log('')
-  logger.log('1. Reload your .bashrc script (best):')
-  logger.log('')
-  logger.log('   source ~/.bashrc')
-  logger.log('')
-  logger.log('2. Run these commands to load the completion script:')
-  logger.log('')
-  logger.log(`   source ${result.data.targetPath}`)
-  logger.log(`   ${result.data.completionCommand}`)
-  logger.log('')
-  logger.log('3. Or restart bash somehow (restart terminal or run `bash`)')
-  logger.log('')
+  getDefaultLogger().log(
+    'current shell (bash instance) through NodeJS. You must either:',
+  )
+  getDefaultLogger().log('')
+  getDefaultLogger().log('1. Reload your .bashrc script (best):')
+  getDefaultLogger().log('')
+  getDefaultLogger().log('   source ~/.bashrc')
+  getDefaultLogger().log('')
+  getDefaultLogger().log('2. Run these commands to load the completion script:')
+  getDefaultLogger().log('')
+  getDefaultLogger().log(`   source ${result.data.targetPath}`)
+  getDefaultLogger().log(`   ${result.data.completionCommand}`)
+  getDefaultLogger().log('')
+  getDefaultLogger().log(
+    '3. Or restart bash somehow (restart terminal or run `bash`)',
+  )
+  getDefaultLogger().log('')
 }

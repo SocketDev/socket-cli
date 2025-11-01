@@ -1,4 +1,4 @@
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'
@@ -15,27 +15,27 @@ export async function outputPatchRmResult(
   }
 
   if (outputKind === 'json') {
-    logger.log(serializeResultJson(result))
+    getDefaultLogger().log(serializeResultJson(result))
     return
   }
 
   if (!result.ok) {
-    logger.fail(failMsgWithBadge(result.message, result.cause))
+    getDefaultLogger().fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
   const { filesRestored, purl } = result.data
 
   if (outputKind === 'markdown') {
-    logger.log('## Patch Removed\n')
-    logger.log(`**PURL**: ${purl}`)
-    logger.log(`**Files Restored**: ${filesRestored}`)
+    getDefaultLogger().log('## Patch Removed\n')
+    getDefaultLogger().log(`**PURL**: ${purl}`)
+    getDefaultLogger().log(`**Files Restored**: ${filesRestored}`)
     return
   }
 
   // Default output.
-  logger.group('')
-  logger.log(`PURL: ${purl}`)
-  logger.log(`Files restored: ${filesRestored}`)
-  logger.groupEnd()
+  getDefaultLogger().group('')
+  getDefaultLogger().log(`PURL: ${purl}`)
+  getDefaultLogger().log(`Files restored: ${filesRestored}`)
+  getDefaultLogger().groupEnd()
 }

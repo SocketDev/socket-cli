@@ -1,4 +1,4 @@
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { queryApiSafeJson } from '../../utils/socket/api.mjs'
 
@@ -56,7 +56,7 @@ export interface PurlDataResponse {
 export async function fetchPurlDeepScore(
   purl: string,
 ): Promise<CResult<PurlDataResponse>> {
-  logger.info(`Requesting deep score data for this purl: ${purl}`)
+  getDefaultLogger().info(`Requesting deep score data for this purl: ${purl}`)
 
   return await queryApiSafeJson<PurlDataResponse>(
     `purl/score/${encodeURIComponent(purl)}`,

@@ -271,7 +271,7 @@ describe('handleOptimize', () => {
       prod: false,
     })
 
-    expect(logger.info).toHaveBeenCalledWith(
+    expect(getDefaultLogger().info).toHaveBeenCalledWith(
       'Optimizing packages for pnpm v8.0.0.\n',
     )
     expect(applyOptimization).toHaveBeenCalledWith(

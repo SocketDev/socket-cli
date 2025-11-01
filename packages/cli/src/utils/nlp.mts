@@ -8,11 +8,10 @@
  */
 
 // @ts-expect-error - onnxruntime-node is an optional dependency for progressive enhancement.
-import type { InferenceSession } from 'onnxruntime-node'
-
+import { loadOnnxRuntime, type stubOnnxRuntime } from './onnx-runtime-stub.mts'
 import ENV from '../constants/env.mts'
 
-import { loadOnnxRuntime, stubOnnxRuntime } from './onnx-runtime-stub.mts'
+import type { InferenceSession } from 'onnxruntime-node'
 
 // Lazy imports to avoid loading models unless needed.
 let compromise: any = null
@@ -69,7 +68,9 @@ async function checkEnhancedNLP(): Promise<boolean> {
     }
 
     // Try to load the model.
-    minilmSession = await onnxRuntime.InferenceSession.create(minilmModel) as InferenceSession | null
+    minilmSession = (await onnxRuntime.InferenceSession.create(
+      minilmModel,
+    )) as InferenceSession | null
 
     if (!minilmSession) {
       enhancedAvailable = false
@@ -168,7 +169,11 @@ export async function getEmbedding(text: string): Promise<Float32Array | null> {
     }
 
     // Create ONNX tensor.
-    const inputTensor = new onnxRuntime.Tensor('int64', BigInt64Array.from(inputIds.map(BigInt)), [1, maxLength])
+    const inputTensor = new onnxRuntime.Tensor(
+      'int64',
+      BigInt64Array.from(inputIds.map(BigInt)),
+      [1, maxLength],
+    )
 
     // Run inference.
     const feeds = { input_ids: inputTensor }
@@ -218,7 +223,10 @@ export function cosineSimilarity(a: Float32Array, b: Float32Array): number {
  * Enhanced: Uses MiniLM embeddings + cosine similarity.
  * Baseline: Uses compromise term overlap.
  */
-export async function semanticSimilarity(text1: string, text2: string): Promise<number> {
+export async function semanticSimilarity(
+  text1: string,
+  text2: string,
+): Promise<number> {
   const hasEnhanced = await checkEnhancedNLP()
 
   if (hasEnhanced) {
@@ -320,17 +328,29 @@ async function checkCodeT5(): Promise<boolean> {
     }
 
     // Check if CodeT5 models are available.
-    const { codet5Encoder: encoderPath, codet5Decoder: decoderPath, codet5Tokenizer: tokenizerPath } = getModelPaths()
+    const {
+      codet5Decoder: decoderPath,
+      codet5Encoder: encoderPath,
+      codet5Tokenizer: tokenizerPath,
+    } = getModelPaths()
 
     const { existsSync } = await import('node:fs')
-    if (!existsSync(encoderPath) || !existsSync(decoderPath) || !existsSync(tokenizerPath)) {
+    if (
+      !existsSync(encoderPath) ||
+      !existsSync(decoderPath) ||
+      !existsSync(tokenizerPath)
+    ) {
       codet5Available = false
       return false
     }
 
     // Try to load the models.
-    codet5EncoderSession = await onnxRuntime.InferenceSession.create(encoderPath) as InferenceSession | null
-    codet5DecoderSession = await onnxRuntime.InferenceSession.create(decoderPath) as InferenceSession | null
+    codet5EncoderSession = (await onnxRuntime.InferenceSession.create(
+      encoderPath,
+    )) as InferenceSession | null
+    codet5DecoderSession = (await onnxRuntime.InferenceSession.create(
+      decoderPath,
+    )) as InferenceSession | null
 
     if (!codet5EncoderSession || !codet5DecoderSession) {
       codet5Available = false
@@ -356,7 +376,10 @@ async function checkCodeT5(): Promise<boolean> {
  * Enhanced: Uses CodeT5 encoder for deep code understanding.
  * Baseline: Uses basic heuristics.
  */
-export async function analyzeCode(code: string, language?: string): Promise<{
+export async function analyzeCode(
+  code: string,
+  language?: string,
+): Promise<{
   summary: string
   complexity: 'low' | 'medium' | 'high'
   features?: Float32Array // CodeT5 code embedding
@@ -401,7 +424,9 @@ export async function analyzeCode(code: string, language?: string): Promise<{
 /**
  * Analyze code with CodeT5 encoder (produces code embedding).
  */
-async function analyzeCodeWithEncoder(code: string): Promise<Float32Array | undefined> {
+async function analyzeCodeWithEncoder(
+  code: string,
+): Promise<Float32Array | undefined> {
   if (!codet5EncoderSession || !codet5Tokenizer || !onnxRuntime) {
     return undefined
   }
@@ -422,7 +447,11 @@ async function analyzeCodeWithEncoder(code: string): Promise<Float32Array | unde
     }
 
     // Create ONNX tensor.
-    const inputTensor = new onnxRuntime.Tensor('int64', BigInt64Array.from(inputIds.map(BigInt)), [1, maxLength])
+    const inputTensor = new onnxRuntime.Tensor(
+      'int64',
+      BigInt64Array.from(inputIds.map(BigInt)),
+      [1, maxLength],
+    )
 
     // Run encoder.
     const encoderFeeds = { input_ids: inputTensor }
@@ -449,8 +478,16 @@ async function analyzeCodeWithEncoder(code: string): Promise<Float32Array | unde
  * Takes code + prompt, generates natural language output.
  * Uses encoder-decoder architecture.
  */
-async function synthesizeFromCode(code: string, prompt: string): Promise<string | null> {
-  if (!codet5EncoderSession || !codet5DecoderSession || !codet5Tokenizer || !onnxRuntime) {
+async function synthesizeFromCode(
+  code: string,
+  prompt: string,
+): Promise<string | null> {
+  if (
+    !codet5EncoderSession ||
+    !codet5DecoderSession ||
+    !codet5Tokenizer ||
+    !onnxRuntime
+  ) {
     return null
   }
 
@@ -471,7 +508,11 @@ async function synthesizeFromCode(code: string, prompt: string): Promise<string 
     }
 
     // Create ONNX tensor.
-    const inputTensor = new onnxRuntime.Tensor('int64', BigInt64Array.from(inputIds.map(BigInt)), [1, maxLength])
+    const inputTensor = new onnxRuntime.Tensor(
+      'int64',
+      BigInt64Array.from(inputIds.map(BigInt)),
+      [1, maxLength],
+    )
 
     // Run encoder (analyze).
     const encoderFeeds = { input_ids: inputTensor }
@@ -505,7 +546,7 @@ async function synthesizeFromCode(code: string, prompt: string): Promise<string 
  */
 export async function explainVulnerability(
   vulnerabilityType: string,
-  code?: string
+  code?: string,
 ): Promise<string> {
   const hasCodeT5 = await checkCodeT5()
 
@@ -531,7 +572,7 @@ export async function explainVulnerability(
  */
 export async function suggestFix(
   vulnerableCode: string,
-  vulnerabilityType: string
+  vulnerabilityType: string,
 ): Promise<string | null> {
   const hasCodeT5 = await checkCodeT5()
 
@@ -550,7 +591,7 @@ export async function suggestFix(
  */
 export async function synthesizeCode(
   description: string,
-  language: string = 'javascript'
+  language = 'javascript',
 ): Promise<string | null> {
   const hasCodeT5 = await checkCodeT5()
 
@@ -568,7 +609,7 @@ export async function synthesizeCode(
  */
 export async function calculateCodeSimilarity(
   code1: string,
-  code2: string
+  code2: string,
 ): Promise<number> {
   const hasCodeT5 = await checkCodeT5()
 
@@ -591,10 +632,16 @@ export async function calculateCodeSimilarity(
  */
 function estimateComplexity(code: string): 'low' | 'medium' | 'high' {
   const lines = code.split('\n').length
-  const cyclomaticIndicators = (code.match(/\b(if|else|for|while|switch|case|\?\?|\|\|)\b/g) || []).length
+  const cyclomaticIndicators = (
+    code.match(/\b(if|else|for|while|switch|case|\?\?|\|\|)\b/g) || []
+  ).length
 
-  if (lines < 20 && cyclomaticIndicators < 5) return 'low'
-  if (lines < 100 && cyclomaticIndicators < 15) return 'medium'
+  if (lines < 20 && cyclomaticIndicators < 5) {
+    return 'low'
+  }
+  if (lines < 100 && cyclomaticIndicators < 15) {
+    return 'medium'
+  }
   return 'high'
 }
 
@@ -627,11 +674,11 @@ export async function getNLPCapabilities(): Promise<{
     namedEntities: boolean
     sentiment: boolean
     // Code NLP (CodeT5)
-    codeAnalysis: boolean           // Encoder: understand code structure
-    codeSynthesis: boolean          // Decoder: generate code/explanations
-    codeSimilarity: boolean         // Encoder: compare code semantically
+    codeAnalysis: boolean // Encoder: understand code structure
+    codeSynthesis: boolean // Decoder: generate code/explanations
+    codeSimilarity: boolean // Encoder: compare code semantically
     vulnerabilityExplanation: boolean // Encoder + Decoder
-    vulnerabilityFixes: boolean     // Encoder + Decoder
+    vulnerabilityFixes: boolean // Encoder + Decoder
   }
 }> {
   const hasEnhanced = await checkEnhancedNLP()

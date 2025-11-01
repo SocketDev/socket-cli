@@ -6,7 +6,7 @@ import {
   DOT_SOCKET_DIR,
   MANIFEST_JSON,
 } from '@socketsecurity/lib/constants/paths'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { normalizePath } from '@socketsecurity/lib/path'
 import { select } from '@socketsecurity/lib/prompts'
 import { pluralize } from '@socketsecurity/lib/words'
@@ -81,13 +81,13 @@ export async function handlePatchList({
 
     if (patches.length === 0) {
       if (outputKind === 'text') {
-        logger.log('No patches found in manifest')
+        getDefaultLogger().log('No patches found in manifest')
       }
       return
     }
 
     if (outputKind === 'text') {
-      logger.log(
+      getDefaultLogger().log(
         `Found ${patches.length} ${pluralize('patch', { count: patches.length })} in manifest`,
       )
     }
@@ -95,7 +95,7 @@ export async function handlePatchList({
     // Interactive mode: Let user select patches to apply.
     if (interactive) {
       if (patches.length === 0) {
-        logger.log('No patches available to select')
+        getDefaultLogger().log('No patches available to select')
         return
       }
 
@@ -108,9 +108,11 @@ export async function handlePatchList({
         outputKind,
       )
 
-      logger.log('')
-      logger.log('Select patches to apply (use arrow keys and Enter):')
-      logger.log('')
+      getDefaultLogger().log('')
+      getDefaultLogger().log(
+        'Select patches to apply (use arrow keys and Enter):',
+      )
+      getDefaultLogger().log('')
 
       // Create choices for selection.
       const choices = [
@@ -148,7 +150,7 @@ export async function handlePatchList({
       })
 
       if (selectedValue === '__CANCEL__') {
-        logger.log('Cancelled')
+        getDefaultLogger().log('Cancelled')
         return
       }
 
@@ -161,11 +163,11 @@ export async function handlePatchList({
         purlsToApply.push(selectedValue)
       }
 
-      logger.log('')
-      logger.log(
+      getDefaultLogger().log('')
+      getDefaultLogger().log(
         `Applying ${purlsToApply.length} ${pluralize('patch', { count: purlsToApply.length })}...`,
       )
-      logger.log('')
+      getDefaultLogger().log('')
 
       // Convert PURLs to PackageURL objects.
       const purlObjs = purlsToApply

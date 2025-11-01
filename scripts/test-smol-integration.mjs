@@ -19,7 +19,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { spawn } from '@socketsecurity/lib/spawn'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import colors from 'yoctocolors-cjs'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -39,7 +39,7 @@ const TEST_DIR = join(tmpdir(), `socket-cli-integration-test-${Date.now()}`)
 async function exec(command, args = [], options = {}) {
   const { cwd = process.cwd(), env = process.env } = options
 
-  logger.log(`$ ${command} ${args.join(' ')}`)
+  getDefaultLogger().log(`$ ${command} ${args.join(' ')}`)
 
   const result = await spawn(command, args, {
     cwd,
@@ -59,20 +59,20 @@ async function exec(command, args = [], options = {}) {
  * Main test function.
  */
 async function main() {
-  logger.log('')
-  logger.log('🧪 Socket CLI - Smol Integration Test')
-  logger.log(`   Testing Node.js ${NODE_VERSION} binary with pkg`)
-  logger.log('')
+  getDefaultLogger().log('')
+  getDefaultLogger().log('🧪 Socket CLI - Smol Integration Test')
+  getDefaultLogger().log(`   Testing Node.js ${NODE_VERSION} binary with pkg`)
+  getDefaultLogger().log('')
 
   let testsFailed = 0
   const testResults = []
 
   try {
     // Test 1: Verify custom Node.js binary exists in cache.
-    logger.log('━'.repeat(60))
-    logger.log('TEST 1: Custom Node.js Binary in Cache')
-    logger.log('━'.repeat(60))
-    logger.log('')
+    getDefaultLogger().log('━'.repeat(60))
+    getDefaultLogger().log('TEST 1: Custom Node.js Binary in Cache')
+    getDefaultLogger().log('━'.repeat(60))
+    getDefaultLogger().log('')
 
     const platform = process.platform
     const arch = process.arch
@@ -86,48 +86,48 @@ async function main() {
     )
 
     if (!existsSync(binaryPath)) {
-      logger.error(`${colors.red('✗')} Custom Node.js binary not found: ${binaryPath}`)
-      logger.error('   Run: node packages/node-smol-builder/scripts/build.mjs')
+      getDefaultLogger().error(`${colors.red('✗')} Custom Node.js binary not found: ${binaryPath}`)
+      getDefaultLogger().error('   Run: node packages/node-smol-builder/scripts/build.mjs')
       testsFailed++
       testResults.push({ name: 'Binary in cache', passed: false })
     } else {
-      logger.log(`${colors.green('✓')} Custom Node.js binary found: ${binaryPath}`)
+      getDefaultLogger().log(`${colors.green('✓')} Custom Node.js binary found: ${binaryPath}`)
       testResults.push({ name: 'Binary in cache', passed: true })
     }
 
-    logger.log('')
+    getDefaultLogger().log('')
 
     // Test 2: Build Socket CLI.
-    logger.log('━'.repeat(60))
-    logger.log('TEST 2: Build Socket CLI')
-    logger.log('━'.repeat(60))
-    logger.log('')
+    getDefaultLogger().log('━'.repeat(60))
+    getDefaultLogger().log('TEST 2: Build Socket CLI')
+    getDefaultLogger().log('━'.repeat(60))
+    getDefaultLogger().log('')
 
-    logger.log('Building Socket CLI distribution...')
+    getDefaultLogger().log('Building Socket CLI distribution...')
     const buildResult = await exec('pnpm', ['run', 'build:cli'], {
       cwd: ROOT_DIR,
     })
 
     if (buildResult.code !== 0) {
-      logger.error(`${colors.red('✗')} Socket CLI build failed`)
-      logger.error(buildResult.stderr)
+      getDefaultLogger().error(`${colors.red('✗')} Socket CLI build failed`)
+      getDefaultLogger().error(buildResult.stderr)
       testsFailed++
       testResults.push({ name: 'Build Socket CLI', passed: false })
       throw new Error('Socket CLI build failed')
     }
 
-    logger.log(`${colors.green('✓')} Socket CLI built successfully`)
+    getDefaultLogger().log(`${colors.green('✓')} Socket CLI built successfully`)
     testResults.push({ name: 'Build Socket CLI', passed: true })
-    logger.log('')
+    getDefaultLogger().log('')
 
     // Test 3: Create test directory.
-    logger.log('━'.repeat(60))
-    logger.log('TEST 3: Setup Test Environment')
-    logger.log('━'.repeat(60))
-    logger.log('')
+    getDefaultLogger().log('━'.repeat(60))
+    getDefaultLogger().log('TEST 3: Setup Test Environment')
+    getDefaultLogger().log('━'.repeat(60))
+    getDefaultLogger().log('')
 
     await mkdir(TEST_DIR, { recursive: true })
-    logger.log(`Created test directory: ${TEST_DIR}`)
+    getDefaultLogger().log(`Created test directory: ${TEST_DIR}`)
 
     // Create minimal test package.json.
     const testPackageJson = {
@@ -151,44 +151,44 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 // Test 1: Basic execution.
-logger.log('Test executable running!');
+getDefaultLogger().log('Test executable running!');
 
 // Test 2: SEA detection.
 const isSea = sea.isSea();
-logger.log('SEA detection:', isSea ? 'YES' : 'NO');
+getDefaultLogger().log('SEA detection:', isSea ? 'YES' : 'NO');
 
 // Test 3: File system access.
 const cwd = process.cwd();
-logger.log('CWD:', cwd);
+getDefaultLogger().log('CWD:', cwd);
 
 // Test 4: Module loading.
 const pathModule = require('node:path');
-logger.log('Path module:', pathModule ? 'OK' : 'FAIL');
+getDefaultLogger().log('Path module:', pathModule ? 'OK' : 'FAIL');
 
 // Exit with appropriate code.
 if (isSea) {
-  logger.log(`${colors.green('✓')} All tests passed`);
+  getDefaultLogger().log(`${colors.green('✓')} All tests passed`);
   process.exit(0);
 } else {
-  logger.error(`${colors.red('✗')} SEA detection failed`);
+  getDefaultLogger().error(`${colors.red('✗')} SEA detection failed`);
   process.exit(1);
 }
 `
 
     await writeFile(join(TEST_DIR, 'test-cli.js'), testCliScript)
-    logger.log(`${colors.green('✓')} Test environment setup complete`)
+    getDefaultLogger().log(`${colors.green('✓')} Test environment setup complete`)
     testResults.push({ name: 'Setup test environment', passed: true })
-    logger.log('')
+    getDefaultLogger().log('')
 
     // Test 4: Create pkg executable.
-    logger.log('━'.repeat(60))
-    logger.log('TEST 4: Create pkg Executable')
-    logger.log('━'.repeat(60))
-    logger.log('')
+    getDefaultLogger().log('━'.repeat(60))
+    getDefaultLogger().log('TEST 4: Create pkg Executable')
+    getDefaultLogger().log('━'.repeat(60))
+    getDefaultLogger().log('')
 
-    logger.log('Running pkg to create executable...')
-    logger.log(`Using custom Node.js binary: ${targetName}`)
-    logger.log('')
+    getDefaultLogger().log('Running pkg to create executable...')
+    getDefaultLogger().log(`Using custom Node.js binary: ${targetName}`)
+    getDefaultLogger().log('')
 
     const pkgResult = await exec(
       'pnpm',
@@ -207,8 +207,8 @@ if (isSea) {
     )
 
     if (pkgResult.code !== 0) {
-      logger.error(`${colors.red('✗')} pkg failed to create executable`)
-      logger.error(pkgResult.stderr)
+      getDefaultLogger().error(`${colors.red('✗')} pkg failed to create executable`)
+      getDefaultLogger().error(pkgResult.stderr)
       testsFailed++
       testResults.push({ name: 'Create pkg executable', passed: false })
       throw new Error('pkg failed')
@@ -219,109 +219,109 @@ if (isSea) {
       `socket-test${platform === 'win32' ? '.exe' : ''}`,
     )
     if (!existsSync(executablePath)) {
-      logger.error(`${colors.red('✗')} Executable not created: ${executablePath}`)
+      getDefaultLogger().error(`${colors.red('✗')} Executable not created: ${executablePath}`)
       testsFailed++
       testResults.push({ name: 'Create pkg executable', passed: false })
       throw new Error('Executable not created')
     }
 
-    logger.log(`${colors.green('✓')} Executable created: ${executablePath}`)
+    getDefaultLogger().log(`${colors.green('✓')} Executable created: ${executablePath}`)
     testResults.push({ name: 'Create pkg executable', passed: true })
-    logger.log('')
+    getDefaultLogger().log('')
 
     // Test 5: Run the executable.
-    logger.log('━'.repeat(60))
-    logger.log('TEST 5: Run and Verify Executable')
-    logger.log('━'.repeat(60))
-    logger.log('')
+    getDefaultLogger().log('━'.repeat(60))
+    getDefaultLogger().log('TEST 5: Run and Verify Executable')
+    getDefaultLogger().log('━'.repeat(60))
+    getDefaultLogger().log('')
 
-    logger.log('Executing test binary...')
-    logger.log('')
+    getDefaultLogger().log('Executing test binary...')
+    getDefaultLogger().log('')
 
     const execResult = await exec(executablePath, [], {
       cwd: TEST_DIR,
     })
 
-    logger.log('Output:')
-    logger.log(execResult.stdout)
-    logger.log('')
+    getDefaultLogger().log('Output:')
+    getDefaultLogger().log(execResult.stdout)
+    getDefaultLogger().log('')
 
     if (execResult.code !== 0) {
-      logger.error(`${colors.red('✗')} Executable failed with exit code:`, execResult.code)
-      logger.error('STDERR:', execResult.stderr)
+      getDefaultLogger().error(`${colors.red('✗')} Executable failed with exit code:`, execResult.code)
+      getDefaultLogger().error('STDERR:', execResult.stderr)
       testsFailed++
       testResults.push({ name: 'Run executable', passed: false })
       testResults.push({ name: 'SEA detection', passed: false })
     } else {
-      logger.log(`${colors.green('✓')} Executable ran successfully`)
+      getDefaultLogger().log(`${colors.green('✓')} Executable ran successfully`)
       testResults.push({ name: 'Run executable', passed: true })
 
       // Verify SEA detection.
       if (execResult.stdout.includes('SEA detection: YES')) {
-        logger.log(`${colors.green('✓')} SEA detection working correctly`)
+        getDefaultLogger().log(`${colors.green('✓')} SEA detection working correctly`)
         testResults.push({ name: 'SEA detection', passed: true })
       } else {
-        logger.error(`${colors.red('✗')} SEA detection failed (reported as NO)`)
+        getDefaultLogger().error(`${colors.red('✗')} SEA detection failed (reported as NO)`)
         testsFailed++
         testResults.push({ name: 'SEA detection', passed: false })
       }
     }
 
-    logger.log('')
+    getDefaultLogger().log('')
 
     // Summary.
-    logger.log('━'.repeat(60))
-    logger.log('TEST SUMMARY')
-    logger.log('━'.repeat(60))
-    logger.log('')
+    getDefaultLogger().log('━'.repeat(60))
+    getDefaultLogger().log('TEST SUMMARY')
+    getDefaultLogger().log('━'.repeat(60))
+    getDefaultLogger().log('')
 
     for (const { name, passed } of testResults) {
-      logger.log(`${passed ? `${colors.green('✓')}` : `${colors.red('✗')}`} ${name}`)
+      getDefaultLogger().log(`${passed ? `${colors.green('✓')}` : `${colors.red('✗')}`} ${name}`)
     }
 
-    logger.log('')
+    getDefaultLogger().log('')
 
     if (testsFailed === 0) {
-      logger.log('🎉 ALL TESTS PASSED')
-      logger.log('')
-      logger.log('Your custom Node.js binary is working correctly with pkg!')
-      logger.log('')
+      getDefaultLogger().log('🎉 ALL TESTS PASSED')
+      getDefaultLogger().log('')
+      getDefaultLogger().log('Your custom Node.js binary is working correctly with pkg!')
+      getDefaultLogger().log('')
     } else {
-      logger.error(`${colors.red('✗')} ${testsFailed} TEST(S) FAILED`)
-      logger.error()
-      logger.error('The custom Node.js binary has issues.')
-      logger.error('Review the errors above and rebuild:')
-      logger.error('  node packages/node-smol-builder/scripts/build.mjs --clean')
-      logger.error()
+      getDefaultLogger().error(`${colors.red('✗')} ${testsFailed} TEST(S) FAILED`)
+      getDefaultLogger().error()
+      getDefaultLogger().error('The custom Node.js binary has issues.')
+      getDefaultLogger().error('Review the errors above and rebuild:')
+      getDefaultLogger().error('  node packages/node-smol-builder/scripts/build.mjs --clean')
+      getDefaultLogger().error()
       process.exitCode = 1
     }
-    logger.error()
+    getDefaultLogger().error()
   } catch (e) {
-    logger.error(`${colors.red('✗')} Integration test failed:`, e.message)
-    logger.error()
+    getDefaultLogger().error(`${colors.red('✗')} Integration test failed:`, e.message)
+    getDefaultLogger().error()
     process.exitCode = 1
   } finally {
     // Cleanup.
-    logger.log('━'.repeat(60))
-    logger.log('CLEANUP')
-    logger.log('━'.repeat(60))
-    logger.log('')
+    getDefaultLogger().log('━'.repeat(60))
+    getDefaultLogger().log('CLEANUP')
+    getDefaultLogger().log('━'.repeat(60))
+    getDefaultLogger().log('')
 
-    logger.log(`Removing test directory: ${TEST_DIR}`)
+    getDefaultLogger().log(`Removing test directory: ${TEST_DIR}`)
     try {
       await rm(TEST_DIR, { recursive: true, force: true })
-      logger.log(`${colors.green('✓')} Test directory cleaned up`)
+      getDefaultLogger().log(`${colors.green('✓')} Test directory cleaned up`)
     } catch (e) {
-      logger.warn(`${colors.yellow('⚠')}  Could not clean up test directory: ${e.message}`)
-      logger.warn(`   Manually remove: rm -rf ${TEST_DIR}`)
+      getDefaultLogger().warn(`${colors.yellow('⚠')}  Could not clean up test directory: ${e.message}`)
+      getDefaultLogger().warn(`   Manually remove: rm -rf ${TEST_DIR}`)
     }
 
-    logger.log('')
+    getDefaultLogger().log('')
   }
 }
 
 // Run main function.
 main().catch(error => {
-  logger.error(`${colors.red('✗')} Integration test crashed:`, error.message)
+  getDefaultLogger().error(`${colors.red('✗')} Integration test crashed:`, error.message)
   process.exitCode = 1
 })

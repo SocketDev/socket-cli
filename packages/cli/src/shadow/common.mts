@@ -1,7 +1,7 @@
 import { fileURLToPath } from 'node:url'
 
 import { debug, debugDir } from '@socketsecurity/lib/debug'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { readPackageJson } from '@socketsecurity/lib/packages'
 
 import { FLAG_DRY_RUN } from '../constants/cli.mts'
@@ -180,7 +180,7 @@ export async function scanPackagesAndLogAlerts(
           : `\nAccept risks - Rerun with environment variable ${SOCKET_CLI_ACCEPT_RISKS}=1.`
       }`.trim()
 
-      logger.error(errorMessage)
+      getDefaultLogger().error(errorMessage)
       return { alertsMap, shouldExit: true }
     }
   } catch (e) {

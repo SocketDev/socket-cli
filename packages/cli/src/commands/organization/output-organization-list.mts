@@ -1,6 +1,6 @@
 import colors from 'yoctocolors-cjs'
 
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 import { mdHeader } from '../../utils/output/markdown.mts'
@@ -19,12 +19,14 @@ export async function outputOrganizationList(
   }
 
   if (outputKind === 'json') {
-    logger.log(serializeResultJson(orgsCResult))
+    getDefaultLogger().log(serializeResultJson(orgsCResult))
     return
   }
 
   if (!orgsCResult.ok) {
-    logger.fail(failMsgWithBadge(orgsCResult.message, orgsCResult.cause))
+    getDefaultLogger().fail(
+      failMsgWithBadge(orgsCResult.message, orgsCResult.cause),
+    )
     return
   }
 
@@ -32,12 +34,12 @@ export async function outputOrganizationList(
   const visibleTokenPrefix = getVisibleTokenPrefix()
 
   if (outputKind !== 'markdown') {
-    logger.log(
+    getDefaultLogger().log(
       `List of organizations associated with your API token, starting with: ${colors.italic(visibleTokenPrefix)}\n`,
     )
     // Just dump.
     for (const o of organizations) {
-      logger.log(
+      getDefaultLogger().log(
         `- Name: ${colors.bold(o.name ?? 'undefined')}, ID: ${colors.bold(o.id)}, Plan: ${colors.bold(o.plan)}`,
       )
     }
@@ -56,18 +58,22 @@ export async function outputOrganizationList(
     mw2 = Math.max(mw2, o.id.length)
     mw3 = Math.max(mw3, o.plan.length)
   }
-  logger.log(`${mdHeader('Organizations')}\n`)
-  logger.log(
+  getDefaultLogger().log(`${mdHeader('Organizations')}\n`)
+  getDefaultLogger().log(
     `List of organizations associated with your API token, starting with: ${colors.italic(visibleTokenPrefix)}\n`,
   )
-  logger.log(
+  getDefaultLogger().log(
     `| Name${' '.repeat(mw1 - 4)} | ID${' '.repeat(mw2 - 2)} | Plan${' '.repeat(mw3 - 4)} |`,
   )
-  logger.log(`| ${'-'.repeat(mw1)} | ${'-'.repeat(mw2)} | ${'-'.repeat(mw3)} |`)
+  getDefaultLogger().log(
+    `| ${'-'.repeat(mw1)} | ${'-'.repeat(mw2)} | ${'-'.repeat(mw3)} |`,
+  )
   for (const o of organizations) {
-    logger.log(
+    getDefaultLogger().log(
       `| ${(o.name || '').padEnd(mw1, ' ')} | ${(o.id || '').padEnd(mw2, ' ')} | ${(o.plan || '').padEnd(mw3, ' ')} |`,
     )
   }
-  logger.log(`| ${'-'.repeat(mw1)} | ${'-'.repeat(mw2)} | ${'-'.repeat(mw3)} |`)
+  getDefaultLogger().log(
+    `| ${'-'.repeat(mw1)} | ${'-'.repeat(mw2)} | ${'-'.repeat(mw3)} |`,
+  )
 }

@@ -17,7 +17,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -28,27 +28,27 @@ const repoRoot = path.resolve(__dirname, '../../..')
 const isQuiet = () => process.argv.includes('--quiet')
 const isVerbose = () => process.argv.includes('--verbose')
 const log = {
-  info: msg => logger.info(msg),
-  step: msg => logger.step(msg),
-  success: msg => logger.success(msg),
-  error: msg => logger.error(msg),
+  info: msg => getDefaultLogger().info(msg),
+  step: msg => getDefaultLogger().step(msg),
+  success: msg => getDefaultLogger().success(msg),
+  error: msg => getDefaultLogger().error(msg),
 }
 const printHeader = title => {
-  logger.log('')
-  logger.log(title)
-  logger.log('='.repeat(title.length))
-  logger.log('')
+  getDefaultLogger().log('')
+  getDefaultLogger().log(title)
+  getDefaultLogger().log('='.repeat(title.length))
+  getDefaultLogger().log('')
 }
-const printFooter = () => logger.log('')
+const printFooter = () => getDefaultLogger().log('')
 const printSuccess = msg => {
-  logger.log('')
-  logger.success(msg)
-  logger.log('')
+  getDefaultLogger().log('')
+  getDefaultLogger().success(msg)
+  getDefaultLogger().log('')
 }
 const printError = msg => {
-  logger.log('')
-  logger.error(msg)
-  logger.log('')
+  getDefaultLogger().log('')
+  getDefaultLogger().error(msg)
+  getDefaultLogger().log('')
 }
 
 async function main() {
@@ -240,13 +240,13 @@ async function main() {
       printError(`Build failed: ${error.message}`)
     }
     if (verbose) {
-      logger.error(error)
+      getDefaultLogger().error(error)
     }
     process.exitCode = 1
   }
 }
 
 main().catch(e => {
-  logger.error(e)
+  getDefaultLogger().error(e)
   process.exitCode = 1
 })

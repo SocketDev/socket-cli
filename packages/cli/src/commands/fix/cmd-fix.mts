@@ -3,7 +3,7 @@ import path from 'node:path'
 import terminalLink from 'terminal-link'
 
 import { arrayUnique, joinOr } from '@socketsecurity/lib/arrays'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { handleFix } from './handle-fix.mts'
 import { DRY_RUN_NOT_SAVING, FLAG_ID } from '../../constants/cli.mts'
@@ -323,14 +323,14 @@ async function run(
   }
 
   if (dryRun) {
-    logger.log(DRY_RUN_NOT_SAVING)
+    getDefaultLogger().log(DRY_RUN_NOT_SAVING)
     return
   }
 
   const orgSlugCResult = await getDefaultOrgSlug()
   if (!orgSlugCResult.ok) {
     process.exitCode = orgSlugCResult.code ?? 1
-    logger.fail(
+    getDefaultLogger().fail(
       `${ERROR_UNABLE_RESOLVE_ORG}.\nEnsure a Socket API token is specified for the organization using the SOCKET_CLI_API_TOKEN environment variable.`,
     )
     return

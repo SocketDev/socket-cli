@@ -1,6 +1,6 @@
 import { joinAnd } from '@socketsecurity/lib/arrays'
 import { debug, debugDir } from '@socketsecurity/lib/debug'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { coanaFix } from './coana-fix.mts'
 import { outputFixResult } from './output-fix-result.mts'
@@ -58,7 +58,9 @@ export async function convertIdsToGhsas(ids: string[]): Promise<string[]> {
       const conversionResult = await convertCveToGhsa(trimmedId)
       if (conversionResult.ok) {
         validGhsas.push(conversionResult.data)
-        logger.info(`Converted ${trimmedId} to ${conversionResult.data}`)
+        getDefaultLogger().info(
+          `Converted ${trimmedId} to ${conversionResult.data}`,
+        )
       } else {
         errors.push(`${trimmedId}: ${conversionResult.message}`)
       }
@@ -72,7 +74,7 @@ export async function convertIdsToGhsas(ids: string[]): Promise<string[]> {
           conversionResult.data.length > 3
             ? `${conversionResult.data.slice(0, 3).join(', ')} … and ${conversionResult.data.length - 3} more`
             : joinAnd(conversionResult.data)
-        logger.info(
+        getDefaultLogger().info(
           `Converted ${trimmedId} to ${conversionResult.data.length} GHSA(s): ${displayGhsas}`,
         )
       } else {
@@ -89,7 +91,7 @@ export async function convertIdsToGhsas(ids: string[]): Promise<string[]> {
   }
 
   if (errors.length) {
-    logger.warn(
+    getDefaultLogger().warn(
       `Skipped ${errors.length} invalid IDs:\n${errors.map(e => `  - ${e}`).join('\n')}`,
     )
     debugDir({ errors })

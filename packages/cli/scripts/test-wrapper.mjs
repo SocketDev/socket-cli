@@ -14,7 +14,7 @@ import path from 'node:path'
 import fastGlob from 'fast-glob'
 
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import constants from './constants.mjs'
 
@@ -24,8 +24,8 @@ import constants from './constants.mjs'
 function checkBuildArtifacts() {
   const distPath = path.join(constants.rootPath, 'dist')
   if (!existsSync(distPath)) {
-    logger.error('dist/ directory not found')
-    logger.error('Run `pnpm run build:cli` before running tests')
+    getDefaultLogger().error('dist/ directory not found')
+    getDefaultLogger().error('Run `pnpm run build:cli` before running tests')
     return false
   }
 
@@ -33,8 +33,8 @@ function checkBuildArtifacts() {
   for (const artifact of requiredArtifacts) {
     const fullPath = path.join(constants.rootPath, artifact)
     if (!existsSync(fullPath)) {
-      logger.error(`Required build artifact missing: ${artifact}`)
-      logger.error('Run `pnpm run build:cli` before running tests')
+      getDefaultLogger().error(`Required build artifact missing: ${artifact}`)
+      getDefaultLogger().error('Run `pnpm run build:cli` before running tests')
       return false
     }
   }
@@ -71,13 +71,13 @@ async function main() {
     ]
     const foundEnvVars = problematicEnvVars.filter(v => process.env[v])
     if (foundEnvVars.length > 0) {
-      logger.warn(
+      getDefaultLogger().warn(
         `Detected environment variable(s) that may cause snapshot test failures: ${foundEnvVars.join(', ')}`,
       )
-      logger.warn(
+      getDefaultLogger().warn(
         'These will be cleared for the test run to ensure consistent snapshots.',
       )
-      logger.warn(
+      getDefaultLogger().warn(
         'Tests use .env.test configuration which should not include real API tokens.',
       )
     }
@@ -108,7 +108,7 @@ async function main() {
       if (arg.includes('*') && !arg.startsWith('-')) {
         const files = fastGlob.sync(arg, { cwd: constants.rootPath })
         if (files.length === 0) {
-          logger.warn(`No files matched pattern: ${arg}`)
+          getDefaultLogger().warn(`No files matched pattern: ${arg}`)
         }
         expandedArgs.push(...files)
       } else {
@@ -134,13 +134,13 @@ async function main() {
     })
 
     child.on('error', e => {
-      logger.error('Failed to spawn test process:', e)
+      getDefaultLogger().error('Failed to spawn test process:', e)
       process.exitCode = 1
     })
   } catch {}
 }
 
 main().catch(e => {
-  logger.error('Unexpected error:', e)
+  getDefaultLogger().error('Unexpected error:', e)
   process.exitCode = 1
 })

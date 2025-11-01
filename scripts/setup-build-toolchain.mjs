@@ -29,7 +29,7 @@ import { mkdir, writeFile } from 'node:fs/promises'
 import { homedir, platform as osPlatform, tmpdir } from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import colors from 'yoctocolors-cjs'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -72,7 +72,7 @@ function log(message, color = '') {
 
   const prefix = color ? colors[color] || '' : ''
   const suffix = color ? colors.reset : ''
-  logger.log(`${prefix}${message}${suffix}`)
+  getDefaultLogger().log(`${prefix}${message}${suffix}`)
 }
 
 function logSuccess(message) {
@@ -1058,7 +1058,7 @@ async function main() {
 main().catch(error => {
   logError(`\nSetup failed: ${error.message}`)
   if (error.stack) {
-    logger.error(error.stack)
+    getDefaultLogger().error(error.stack)
   }
   process.exit(1)
 })

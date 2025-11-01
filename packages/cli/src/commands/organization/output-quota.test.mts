@@ -33,7 +33,7 @@ describe('outputQuota', () => {
     const { serializeResultJson } = await vi.importMock(
       '../../utils/output/result-json.mjs',
     )
-    const mockLog = vi.mocked(logger.log)
+    const mockLog = vi.mocked(getDefaultLogger().log)
     const mockSerialize = vi.mocked(serializeResultJson)
 
     const result = createSuccessResult<
@@ -52,7 +52,7 @@ describe('outputQuota', () => {
   it('outputs error in JSON format', async () => {
     const { outputQuota } = await import('./output-quota.mts')
     const { logger } = await vi.importMock('@socketsecurity/lib/logger')
-    const mockLog = vi.mocked(logger.log)
+    const mockLog = vi.mocked(getDefaultLogger().log)
 
     const result = createErrorResult('Unauthorized', {
       code: 2,
@@ -68,7 +68,7 @@ describe('outputQuota', () => {
   it('outputs text format with quota information', async () => {
     const { outputQuota } = await import('./output-quota.mts')
     const { logger } = await vi.importMock('@socketsecurity/lib/logger')
-    const mockLog = vi.mocked(logger.log)
+    const mockLog = vi.mocked(getDefaultLogger().log)
 
     const result = createSuccessResult<
       SocketSdkSuccessResult<'getQuota'>['data']
@@ -88,7 +88,7 @@ describe('outputQuota', () => {
   it('outputs markdown format with quota information', async () => {
     const { outputQuota } = await import('./output-quota.mts')
     const { logger } = await vi.importMock('@socketsecurity/lib/logger')
-    const mockLog = vi.mocked(logger.log)
+    const mockLog = vi.mocked(getDefaultLogger().log)
 
     const result = createSuccessResult<
       SocketSdkSuccessResult<'getQuota'>['data']
@@ -113,7 +113,7 @@ describe('outputQuota', () => {
     const { failMsgWithBadge } = await vi.importMock(
       '../../utils/error/fail-msg-with-badge.mts',
     )
-    const mockFail = vi.mocked(logger.fail)
+    const mockFail = vi.mocked(getDefaultLogger().fail)
     const mockFailMsg = vi.mocked(failMsgWithBadge)
 
     const result = createErrorResult('Failed to fetch quota', {
@@ -133,7 +133,7 @@ describe('outputQuota', () => {
   it('handles zero quota correctly', async () => {
     const { outputQuota } = await import('./output-quota.mts')
     const { logger } = await vi.importMock('@socketsecurity/lib/logger')
-    const mockLog = vi.mocked(logger.log)
+    const mockLog = vi.mocked(getDefaultLogger().log)
 
     const result = createSuccessResult<
       SocketSdkSuccessResult<'getQuota'>['data']
@@ -151,7 +151,7 @@ describe('outputQuota', () => {
   it('uses default text output when no format specified', async () => {
     const { outputQuota } = await import('./output-quota.mts')
     const { logger } = await vi.importMock('@socketsecurity/lib/logger')
-    const mockLog = vi.mocked(logger.log)
+    const mockLog = vi.mocked(getDefaultLogger().log)
 
     const result = createSuccessResult<
       SocketSdkSuccessResult<'getQuota'>['data']

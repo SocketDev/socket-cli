@@ -1,4 +1,4 @@
-import { logger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { pluralize } from '@socketsecurity/lib/words'
 
 import { handlePatchDownload } from './handle-patch-download.mts'
@@ -143,7 +143,7 @@ export async function handlePatchDiscover({
 
       if (packagePaths.length === 0) {
         spinner?.successAndStop('No package files found to scan')
-        logger.log('No package files found to scan')
+        getDefaultLogger().log('No package files found to scan')
         await outputPatchDiscoverResult(
           {
             ok: true,
@@ -158,7 +158,9 @@ export async function handlePatchDiscover({
         `Creating scan with ${packagePaths.length} package ${pluralize('file', { count: packagePaths.length })}...`,
       )
 
-      logger.log(`[DEBUG] Package files to scan: ${packagePaths.join(', ')}`)
+      getDefaultLogger().log(
+        `[DEBUG] Package files to scan: ${packagePaths.join(', ')}`,
+      )
 
       // Create scan (silent by default, background operation).
       const scanResult = await fetchCreateOrgFullScan(
@@ -186,7 +188,7 @@ export async function handlePatchDiscover({
 
       activeScanId = scanResult.data?.id
 
-      logger.log(`[DEBUG] Scan created with ID: ${activeScanId}`)
+      getDefaultLogger().log(`[DEBUG] Scan created with ID: ${activeScanId}`)
 
       if (!activeScanId) {
         spinner?.failAndStop('Scan creation did not return scan ID')
@@ -250,7 +252,7 @@ export async function handlePatchDiscover({
     // If interactive mode, show patch selector UI.
     if (interactive) {
       if (enrichedPatches.length === 0) {
-        logger.log('No patches available to select')
+        getDefaultLogger().log('No patches available to select')
         await outputPatchDiscoverResult(
           {
             ok: true,
@@ -265,12 +267,12 @@ export async function handlePatchDiscover({
       const selectedPatches = await showPatchSelector(enrichedPatches)
 
       if (selectedPatches.length === 0) {
-        logger.log('No patches selected')
+        getDefaultLogger().log('No patches selected')
         return
       }
 
-      logger.log('')
-      logger.log(
+      getDefaultLogger().log('')
+      getDefaultLogger().log(
         `Downloading ${selectedPatches.length} ${pluralize('patch', { count: selectedPatches.length })}...`,
       )
 
@@ -288,7 +290,7 @@ export async function handlePatchDiscover({
           uuids: scanIds,
         })
       } else {
-        logger.error('Spinner is required for patch download')
+        getDefaultLogger().error('Spinner is required for patch download')
       }
     } else {
       await outputPatchDiscoverResult(
@@ -613,8 +615,8 @@ async function showPatchSelector(
         }),
       )
     } catch (err) {
-      logger.error('[DEBUG] Error rendering PatchSelectorApp:', err)
-      logger.error('[DEBUG] Error stack:', (err as Error).stack)
+      getDefaultLogger().error('[DEBUG] Error rendering PatchSelectorApp:', err)
+      getDefaultLogger().error('[DEBUG] Error stack:', (err as Error).stack)
       throw err
     }
   })
@@ -634,7 +636,9 @@ async function enrichPatchesWithPackageNames(
     const scanResult = await sdk.getFullScan(orgSlug, scanId)
 
     if (!scanResult.success || !scanResult.data) {
-      logger.error('[DEBUG] Failed to fetch scan data for enrichment')
+      getDefaultLogger().error(
+        '[DEBUG] Failed to fetch scan data for enrichment',
+      )
       return patches
     }
 
@@ -655,13 +659,15 @@ async function enrichPatchesWithPackageNames(
       }
     }
 
-    logger.log(`[DEBUG] Built artifact map with ${artifactMap.size} entries`)
+    getDefaultLogger().log(
+      `[DEBUG] Built artifact map with ${artifactMap.size} entries`,
+    )
 
     // Enrich patches with package names.
     return patches.map(patch => {
       const artifactInfo = artifactMap.get(patch.purl)
       if (artifactInfo) {
-        logger.log(
+        getDefaultLogger().log(
           `[DEBUG] Enriching patch: ${patch.purl} -> ${artifactInfo.purl}`,
         )
         return {
@@ -672,7 +678,7 @@ async function enrichPatchesWithPackageNames(
       return patch
     })
   } catch (e: any) {
-    logger.error(`[DEBUG] Failed to enrich patches: ${e.message}`)
+    getDefaultLogger().error(`[DEBUG] Failed to enrich patches: ${e.message}`)
     return patches
   }
 }
@@ -703,7 +709,7 @@ async function streamPatchesFromScan(
       chunkCount++
       const record = value as unknown as ArtifactPatchRecord
 
-      logger.log(
+      getDefaultLogger().log(
         `[DEBUG] Received chunk ${chunkCount}: artifactId=${record.artifactId}, purl=${record.purlString}, patch=${record.patch ? 'available' : 'null'}`,
       )
 
@@ -751,11 +757,11 @@ async function streamPatchesFromScan(
       })
     }
 
-    logger.log(
+    getDefaultLogger().log(
       `[DEBUG] Stream complete: received ${chunkCount} chunks, collected ${discoveredPatches.length} patches`,
     )
   } catch (e: any) {
-    logger.error(`Failed to stream patches from scan: ${e.message}`)
+    getDefaultLogger().error(`Failed to stream patches from scan: ${e.message}`)
   }
 
   return discoveredPatches
