@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [2.0.11](https://github.com/SocketDev/socket-cli/releases/tag/v2.0.11) - 2025-11-01
+## [2.0.11](https://github.com/SocketDev/socket-cli/releases/tag/v2.0.11) - 2025-01-01
 
 ### Added
 - Progressive enhancement with ONNX Runtime stub for optional NLP features
@@ -15,12 +15,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 - Standardized environment variable naming with SOCKET_CLI_ prefix
+- Renamed ensureSocketCli to ensureSocketPythonCli for clarity
+- Preflight downloads now stagger with variable delays (1-3 seconds) to avoid resource contention
 
 ### Fixed
 - Bootstrap stream/promises module path corrected for smol builds
 - Bootstrap error handling improved for clearer failure messages
 - Windows path handling now correctly processes UNC paths
 - Windows validation added for Unix-style paths in npm directory resolution
+- Preflight downloads now run once per process with guard to prevent duplicate execution
+- Registry URL lookup deferred until needed (not in test/CI environments)
 
 ## [2.0.10](https://github.com/SocketDev/socket-cli/releases/tag/v2.0.10) - 2025-10-31
 
