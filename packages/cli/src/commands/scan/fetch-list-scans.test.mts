@@ -44,8 +44,8 @@ describe('fetchOrgFullScanList', () => {
       sort: 'created_at',
       direction: 'desc',
       from: '2023-01-01',
-      page: '1',
-      per_page: '10',
+      page: 1,
+      per_page: 10,
     })
     expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
       description: 'list of scans',
@@ -141,8 +141,8 @@ describe('fetchOrgFullScanList', () => {
       sort: 'updated_at',
       direction: 'asc',
       from: '2023-06-01',
-      page: '2',
-      per_page: '25',
+      page: 2,
+      per_page: 25,
     })
   })
 
@@ -168,8 +168,8 @@ describe('fetchOrgFullScanList', () => {
       sort: 'created_at',
       direction: 'desc',
       from: '2023-01-01',
-      page: '1',
-      per_page: '10',
+      page: 1,
+      per_page: 10,
     })
   })
 
@@ -206,8 +206,8 @@ describe('fetchOrgFullScanList', () => {
         sort: 'created_at',
         direction: 'desc',
         from: '2023-01-01',
-        page: String(page),
-        per_page: String(perPage),
+        page,
+        per_page: perPage,
       })
     }
   })
@@ -245,8 +245,8 @@ describe('fetchOrgFullScanList', () => {
         sort,
         direction,
         from: '2023-01-01',
-        page: '1',
-        per_page: '10',
+        page: 1,
+        per_page: 10,
       })
     }
   })
