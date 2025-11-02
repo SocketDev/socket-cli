@@ -55,6 +55,7 @@ export async function handleCi(autoManifest: boolean): Promise<void> {
       reachExcludePaths: [],
       reachMinSeverity: '',
       reachSkipCache: false,
+      reachUseUnreachableFromPrecomputation: false,
       runReachabilityAnalysis: false,
     },
     repoName,
