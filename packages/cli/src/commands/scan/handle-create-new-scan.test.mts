@@ -7,13 +7,18 @@ import {
 } from '../../../test/helpers/mocks.mts'
 
 // Mock all the dependencies.
+const mockLogger = vi.hoisted(() => ({
+  fail: vi.fn(),
+  log: vi.fn(),
+  info: vi.fn(),
+  success: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+}))
+
 vi.mock('@socketsecurity/lib/logger', () => ({
-  logger: {
-    info: vi.fn(),
-    log: vi.fn(),
-    success: vi.fn(),
-    error: vi.fn(),
-  },
+  getDefaultLogger: () => mockLogger,
+  logger: mockLogger,
 }))
 vi.mock('@socketsecurity/lib/words', () => ({
   pluralize: vi.fn((word, count) => (count === 1 ? word : `${word}s`)),

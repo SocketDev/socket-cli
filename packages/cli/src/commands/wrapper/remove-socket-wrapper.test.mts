@@ -6,14 +6,19 @@ import { removeSocketWrapper } from './remove-socket-wrapper.mts'
 
 // Mock the dependencies.
 vi.mock('node:fs')
+
+const mockLogger = vi.hoisted(() => ({
+  fail: vi.fn(),
+  log: vi.fn(),
+  info: vi.fn(),
+  success: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+}))
+
 vi.mock('@socketsecurity/lib/logger', () => ({
-  logger: {
-    error: vi.fn(),
-    fail: vi.fn(),
-    info: vi.fn(),
-    log: vi.fn(),
-    success: vi.fn(),
-  },
+  getDefaultLogger: () => mockLogger,
+  logger: mockLogger,
 }))
 
 describe('removeSocketWrapper', () => {
@@ -41,10 +46,10 @@ describe('removeSocketWrapper', () => {
       'other content',
       'utf8',
     )
-    expect(getDefaultLogger().success).toHaveBeenCalledWith(
+    expect(mockLogger.success).toHaveBeenCalledWith(
       expect.stringContaining('The alias was removed from /home/user/.bashrc'),
     )
-    expect(getDefaultLogger().info).toHaveBeenCalledWith(
+    expect(mockLogger.info).toHaveBeenCalledWith(
       expect.stringContaining('restart existing terminal sessions'),
     )
   })
@@ -77,10 +82,10 @@ describe('removeSocketWrapper', () => {
 
     removeSocketWrapper('/etc/protected-file')
 
-    expect(getDefaultLogger().fail).toHaveBeenCalledWith(
+    expect(mockLogger.fail).toHaveBeenCalledWith(
       expect.stringContaining('There was an error removing the alias'),
     )
-    expect(getDefaultLogger().error).toHaveBeenCalledWith(readError)
+    expect(mockLogger.error).toHaveBeenCalledWith(readError)
     expect(writeFileSync).not.toHaveBeenCalled()
   })
 
@@ -97,8 +102,8 @@ describe('removeSocketWrapper', () => {
 
     removeSocketWrapper('/home/user/.bashrc')
 
-    expect(getDefaultLogger().error).toHaveBeenCalledWith(writeError)
-    expect(getDefaultLogger().success).not.toHaveBeenCalled()
+    expect(mockLogger.error).toHaveBeenCalledWith(writeError)
+    expect(mockLogger.success).not.toHaveBeenCalled()
   })
 
   it('handles file with no socket aliases', async () => {
@@ -119,7 +124,7 @@ describe('removeSocketWrapper', () => {
       'utf8',
     )
     // File is written successfully, so success is logged.
-    expect(getDefaultLogger().success).toHaveBeenCalledWith(
+    expect(mockLogger.success).toHaveBeenCalledWith(
       expect.stringContaining('The alias was removed from /home/user/.bashrc'),
     )
   })
@@ -152,7 +157,7 @@ describe('removeSocketWrapper', () => {
 
     expect(writeFileSync).toHaveBeenCalledWith('/home/user/.bashrc', '', 'utf8')
     // File is written successfully, so success is logged.
-    expect(getDefaultLogger().success).toHaveBeenCalledWith(
+    expect(mockLogger.success).toHaveBeenCalledWith(
       expect.stringContaining('The alias was removed from /home/user/.bashrc'),
     )
   })
@@ -184,10 +189,10 @@ describe('removeSocketWrapper', () => {
 
     removeSocketWrapper('/home/user/.bashrc')
 
-    expect(getDefaultLogger().fail).toHaveBeenCalledWith(
+    expect(mockLogger.fail).toHaveBeenCalledWith(
       'There was an error removing the alias.',
     )
-    expect(getDefaultLogger().error).not.toHaveBeenCalled()
+    expect(mockLogger.error).not.toHaveBeenCalled()
   })
 
   it('handles undefined error in write catch', async () => {
@@ -202,7 +207,7 @@ describe('removeSocketWrapper', () => {
 
     removeSocketWrapper('/home/user/.bashrc')
 
-    expect(getDefaultLogger().error).not.toHaveBeenCalled()
-    expect(getDefaultLogger().success).not.toHaveBeenCalled()
+    expect(mockLogger.error).not.toHaveBeenCalled()
+    expect(mockLogger.success).not.toHaveBeenCalled()
   })
 })

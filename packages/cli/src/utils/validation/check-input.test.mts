@@ -17,15 +17,22 @@ vi.mock('yoctocolors-cjs', () => ({
   },
 }))
 
+const mockLogger = vi.hoisted(() => ({
+  fail: vi.fn(),
+  log: vi.fn(),
+  info: vi.fn(),
+  success: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+}))
+
 vi.mock('@socketsecurity/lib/logger', () => ({
   LOG_SYMBOLS: {
     success: '✓',
     fail: '✗',
   },
-  logger: {
-    fail: vi.fn(),
-    log: vi.fn(),
-  },
+  getDefaultLogger: () => mockLogger,
+  logger: mockLogger,
 }))
 
 vi.mock('@socketsecurity/lib/strings', () => ({
@@ -130,7 +137,7 @@ describe('checkCommandInput', () => {
         'Input error',
         expect.stringContaining('✓ Check 2 (green(Passed))'),
       )
-      expect(getDefaultLogger().fail).toHaveBeenCalled()
+      expect(mockLogger.fail).toHaveBeenCalled()
     })
 
     it('handles json output kind', async () => {
@@ -152,7 +159,7 @@ describe('checkCommandInput', () => {
         message: 'Input error',
         data: expect.stringContaining('✗ Input validation failed'),
       })
-      expect(getDefaultLogger().log).toHaveBeenCalled()
+      expect(mockLogger.log).toHaveBeenCalled()
     })
   })
 

@@ -3,11 +3,18 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { handleOptimize } from './handle-optimize.mts'
 
 // Mock the dependencies.
+const mockLogger = vi.hoisted(() => ({
+  fail: vi.fn(),
+  log: vi.fn(),
+  info: vi.fn(),
+  success: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+}))
+
 vi.mock('@socketsecurity/lib/logger', () => ({
-  logger: {
-    info: vi.fn(),
-    warn: vi.fn(),
-  },
+  getDefaultLogger: () => mockLogger,
+  logger: mockLogger,
 }))
 
 vi.mock('@socketsecurity/lib/debug', () => ({
@@ -270,7 +277,7 @@ describe('handleOptimize', () => {
       prod: false,
     })
 
-    expect(getDefaultLogger().info).toHaveBeenCalledWith(
+    expect(mockLogger.info).toHaveBeenCalledWith(
       'Optimizing packages for pnpm v8.0.0.\n',
     )
     expect(applyOptimization).toHaveBeenCalledWith(

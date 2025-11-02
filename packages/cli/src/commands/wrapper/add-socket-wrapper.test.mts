@@ -6,12 +6,19 @@ import { addSocketWrapper } from './add-socket-wrapper.mts'
 
 // Mock the dependencies.
 vi.mock('node:fs')
+
+const mockLogger = vi.hoisted(() => ({
+  fail: vi.fn(),
+  log: vi.fn(),
+  info: vi.fn(),
+  success: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+}))
+
 vi.mock('@socketsecurity/lib/logger', () => ({
-  logger: {
-    info: vi.fn(),
-    log: vi.fn(),
-    success: vi.fn(),
-  },
+  getDefaultLogger: () => mockLogger,
+  logger: mockLogger,
 }))
 
 describe('addSocketWrapper', () => {
@@ -34,13 +41,13 @@ describe('addSocketWrapper', () => {
       'alias npm="socket npm"\nalias npx="socket npx"\n',
       expect.any(Function),
     )
-    expect(getDefaultLogger().success).toHaveBeenCalledWith(
+    expect(mockLogger.success).toHaveBeenCalledWith(
       expect.stringContaining('The alias was added to /home/user/.bashrc'),
     )
-    expect(getDefaultLogger().info).toHaveBeenCalledWith(
+    expect(mockLogger.info).toHaveBeenCalledWith(
       'This will only be active in new terminal sessions going forward.',
     )
-    expect(getDefaultLogger().log).toHaveBeenCalledWith(
+    expect(mockLogger.log).toHaveBeenCalledWith(
       '    source /home/user/.bashrc',
     )
   })
@@ -88,7 +95,7 @@ describe('addSocketWrapper', () => {
 
     addSocketWrapper('/home/user/.bashrc')
 
-    expect(getDefaultLogger().log).toHaveBeenCalledWith(
+    expect(mockLogger.log).toHaveBeenCalledWith(
       '  If you want to disable it at any time, run `socket wrapper --disable`',
     )
   })

@@ -10,18 +10,19 @@ import type { CResult } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 // Mock the dependencies.
-vi.mock('@socketsecurity/lib/logger', async importOriginal => {
-  const original = await importOriginal()
-  const mockLogger = {
-    fail: vi.fn(),
-    log: vi.fn(),
-  }
-  return {
-    ...original,
-    getDefaultLogger: () => mockLogger,
-    logger: mockLogger,
-  }
-})
+const mockLogger = vi.hoisted(() => ({
+  fail: vi.fn(),
+  log: vi.fn(),
+  info: vi.fn(),
+  success: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+}))
+
+vi.mock('@socketsecurity/lib/logger', () => ({
+  getDefaultLogger: () => mockLogger,
+  logger: mockLogger,
+}))
 
 vi.mock('../../utils/output/result-json.mjs', () => ({
   serializeResultJson: vi.fn(result => JSON.stringify(result)),
