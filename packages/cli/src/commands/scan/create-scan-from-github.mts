@@ -260,6 +260,7 @@ async function scanOneRepo(
       reachExcludePaths: [],
       reachMinSeverity: '',
       reachSkipCache: false,
+      reachUseUnreachableFromPrecomputation: false,
     },
     readOnly: false,
     repoName: repoSlug,

@@ -244,6 +244,7 @@ async function run(
     reachDisableAnalytics,
     reachMinSeverity,
     reachSkipCache,
+    reachUseUnreachableFromPrecomputation,
     readOnly,
     reportLevel,
     setAsAlertsPage: pendingHeadFlag,
@@ -270,6 +271,7 @@ async function run(
     reachDisableAnalytics: boolean
     reachMinSeverity: string
     reachSkipCache: boolean
+    reachUseUnreachableFromPrecomputation: boolean
   }
 
   // Validate ecosystem values.
@@ -595,6 +597,9 @@ async function run(
       reachExcludePaths,
       reachMinSeverity,
       reachSkipCache: Boolean(reachSkipCache),
+      reachUseUnreachableFromPrecomputation: Boolean(
+        reachUseUnreachableFromPrecomputation,
+      ),
     },
     readOnly: Boolean(readOnly),
     repoName,

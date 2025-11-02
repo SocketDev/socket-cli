@@ -126,6 +126,7 @@ async function run(
     reachDisableAnalytics,
     reachMinSeverity,
     reachSkipCache,
+    reachUseUnreachableFromPrecomputation,
   } = cli.flags as unknown as {
     cwd: string
     interactive: boolean
@@ -138,6 +139,7 @@ async function run(
     reachDisableAnalytics: boolean
     reachMinSeverity: string
     reachSkipCache: boolean
+    reachUseUnreachableFromPrecomputation: boolean
   }
 
   const dryRun = !!cli.flags['dryRun']
@@ -279,6 +281,9 @@ async function run(
       reachExcludePaths,
       reachMinSeverity,
       reachSkipCache: Boolean(reachSkipCache),
+      reachUseUnreachableFromPrecomputation: Boolean(
+        reachUseUnreachableFromPrecomputation,
+      ),
     },
     targets,
   })

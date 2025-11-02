@@ -43,4 +43,10 @@ export const reachabilityFlags: MeowFlags = {
     description:
       'Skip caching-based optimizations. By default, the reachability analysis will use cached configurations from previous runs to speed up the analysis.',
   },
+  reachUseUnreachableFromPrecomputation: {
+    type: 'boolean',
+    default: false,
+    description:
+      'Use unreachable information from precomputation to improve analysis accuracy.',
+  },
 }

@@ -25,6 +25,7 @@ export type ReachabilityOptions = {
   reachExcludePaths: string[]
   reachMinSeverity: string
   reachSkipCache: boolean
+  reachUseUnreachableFromPrecomputation: boolean
 }
 
 export type ReachabilityAnalysisOptions = {
@@ -180,6 +181,9 @@ export async function performReachabilityAnalysis(
       ? ['--min-severity', reachabilityOptions.reachMinSeverity]
       : []),
     ...(reachabilityOptions.reachSkipCache ? ['--skip-cache-usage'] : []),
+    ...(reachabilityOptions.reachUseUnreachableFromPrecomputation
+      ? ['--use-unreachable-from-precomputation']
+      : []),
   ]
 
   // Build environment variables.
