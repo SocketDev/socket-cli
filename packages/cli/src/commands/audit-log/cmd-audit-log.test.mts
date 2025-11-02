@@ -7,6 +7,7 @@ import {
   FLAG_ORG,
 } from '../../../src/constants/cli.mts'
 import { getBinCliPath } from '../../../src/constants/paths.mts'
+import { expectDryRunOutput } from '../../../test/helpers/output-assertions.mts'
 import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
 
 const binCliPath = getBinCliPath()
@@ -136,6 +137,9 @@ describe('socket audit-log', async () => {
     'should accept default org',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+
+      // Validate dry-run output to prevent flipped snapshots.
+      expectDryRunOutput(stdout)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -161,6 +165,9 @@ describe('socket audit-log', async () => {
     'should accept --org flag in v1',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+
+      // Validate dry-run output to prevent flipped snapshots.
+      expectDryRunOutput(stdout)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "

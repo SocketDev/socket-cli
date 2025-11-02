@@ -2,6 +2,7 @@ import { describe, expect } from 'vitest'
 
 import { NPX } from '@socketsecurity/lib/constants/agents'
 
+import { expectDryRunOutput } from '../../../test/helpers/output-assertions.mts'
 import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
 import {
   FLAG_CONFIG,
@@ -56,6 +57,9 @@ describe('socket npx', async () => {
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+
+      // Validate dry-run output to prevent flipped snapshots.
+      expectDryRunOutput(stdout)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -102,6 +106,9 @@ describe('socket npx', async () => {
     'should handle npx with -c flag and issueRules for malware',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+
+      // Validate dry-run output to prevent flipped snapshots.
+      expectDryRunOutput(stdout)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'dry-run npx with -c should exit with code 0').toBe(0)
     },
@@ -119,6 +126,9 @@ describe('socket npx', async () => {
     'should handle npx with --config flag and issueRules for malware',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+
+      // Validate dry-run output to prevent flipped snapshots.
+      expectDryRunOutput(stdout)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'dry-run npx with --config should exit with code 0').toBe(0)
     },
@@ -136,6 +146,9 @@ describe('socket npx', async () => {
     'should handle npx with -c flag and multiple issueRules (malware and gptMalware)',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+
+      // Validate dry-run output to prevent flipped snapshots.
+      expectDryRunOutput(stdout)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(
         code,
@@ -156,6 +169,9 @@ describe('socket npx', async () => {
     'should handle npx with --config flag and multiple issueRules (malware and gptMalware)',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+
+      // Validate dry-run output to prevent flipped snapshots.
+      expectDryRunOutput(stdout)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(
         code,

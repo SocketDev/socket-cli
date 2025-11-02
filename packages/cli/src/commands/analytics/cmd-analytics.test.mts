@@ -10,6 +10,7 @@ import {
   FLAG_HELP,
 } from '../../../src/constants/cli.mts'
 import { getBinCliPath } from '../../../src/constants/paths.mts'
+import { expectDryRunOutput } from '../../../test/helpers/output-assertions.mts'
 import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
 
 const binCliPath = getBinCliPath()
@@ -127,6 +128,10 @@ describe('socket analytics', async () => {
     'should run to dryrun without args',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+
+      // Validate dry-run output to prevent flipped snapshots.
+      expectDryRunOutput(stdout)
+
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -145,6 +150,10 @@ describe('socket analytics', async () => {
     'should accept org arg',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+
+      // Validate dry-run output to prevent flipped snapshots.
+      expectDryRunOutput(stdout)
+
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -199,6 +208,10 @@ describe('socket analytics', async () => {
     'should accept repo with arg',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+
+      // Validate dry-run output to prevent flipped snapshots.
+      expectDryRunOutput(stdout)
+
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -217,6 +230,10 @@ describe('socket analytics', async () => {
     'should accept time 7 arg',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+
+      // Validate dry-run output to prevent flipped snapshots.
+      expectDryRunOutput(stdout)
+
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -235,6 +252,10 @@ describe('socket analytics', async () => {
     'should accept time 30 arg',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+
+      // Validate dry-run output to prevent flipped snapshots.
+      expectDryRunOutput(stdout)
+
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -253,6 +274,10 @@ describe('socket analytics', async () => {
     'should accept time 90 arg',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+
+      // Validate dry-run output to prevent flipped snapshots.
+      expectDryRunOutput(stdout)
+
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -309,6 +334,10 @@ describe('socket analytics', async () => {
     'should accept org and time arg',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+
+      // Validate dry-run output to prevent flipped snapshots.
+      expectDryRunOutput(stdout)
+
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -335,6 +364,10 @@ describe('socket analytics', async () => {
     'should accept repo and time arg',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+
+      // Validate dry-run output to prevent flipped snapshots.
+      expectDryRunOutput(stdout)
+
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "

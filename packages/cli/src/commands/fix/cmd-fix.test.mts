@@ -4,6 +4,7 @@ import { afterEach, describe, expect } from 'vitest'
 
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
 
+import { expectDryRunOutput } from '../../../test/helpers/output-assertions.mts'
 import { withTempFixture } from '../../../test/helpers/test-fixtures.mts'
 import { cmdit, spawnSocketCli, testPath } from '../../../test/utils.mts'
 import {
@@ -198,6 +199,10 @@ describe('socket fix', async () => {
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
             |_____|___|___|_,_|___|_|.dev     | Command: \`socket fix\`, cwd: <redacted>"
       `)
+
+      // Validate dry-run output to prevent flipped snapshots.
+      expectDryRunOutput(stdout)
+
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
     },
@@ -214,6 +219,10 @@ describe('socket fix', async () => {
     'should accept --autopilot flag',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+
+      // Validate dry-run output to prevent flipped snapshots.
+      expectDryRunOutput(stdout)
+
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -229,6 +238,10 @@ describe('socket fix', async () => {
     'should accept --auto-merge alias',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+
+      // Validate dry-run output to prevent flipped snapshots.
+      expectDryRunOutput(stdout)
+
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -239,6 +252,10 @@ describe('socket fix', async () => {
     'should ignore --test flag',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+
+      // Validate dry-run output to prevent flipped snapshots.
+      expectDryRunOutput(stdout)
+
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -256,6 +273,10 @@ describe('socket fix', async () => {
     'should ignore --test-script flag',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+
+      // Validate dry-run output to prevent flipped snapshots.
+      expectDryRunOutput(stdout)
+
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -273,6 +294,10 @@ describe('socket fix', async () => {
     'should accept --limit flag with custom value',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+
+      // Validate dry-run output to prevent flipped snapshots.
+      expectDryRunOutput(stdout)
+
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -289,6 +314,10 @@ describe('socket fix', async () => {
     'should accept --min-satisfying flag',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+
+      // Validate dry-run output to prevent flipped snapshots.
+      expectDryRunOutput(stdout)
+
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -323,6 +352,10 @@ describe('socket fix', async () => {
     'should accept range style pin',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+
+      // Validate dry-run output to prevent flipped snapshots.
+      expectDryRunOutput(stdout)
+
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -345,6 +378,10 @@ describe('socket fix', async () => {
     'should accept comprehensive flag combination',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+
+      // Validate dry-run output to prevent flipped snapshots.
+      expectDryRunOutput(stdout)
+
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -361,6 +398,10 @@ describe('socket fix', async () => {
     'should accept --no-major-updates flag',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+
+      // Validate dry-run output to prevent flipped snapshots.
+      expectDryRunOutput(stdout)
+
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -377,6 +418,10 @@ describe('socket fix', async () => {
     'should accept --show-affected-direct-dependencies flag',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+
+      // Validate dry-run output to prevent flipped snapshots.
+      expectDryRunOutput(stdout)
+
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -396,6 +441,10 @@ describe('socket fix', async () => {
     'should accept new flags in combination',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+
+      // Validate dry-run output to prevent flipped snapshots.
+      expectDryRunOutput(stdout)
+
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -470,6 +519,10 @@ describe('socket fix', async () => {
     'should handle autopilot mode with custom limit',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+
+      // Validate dry-run output to prevent flipped snapshots.
+      expectDryRunOutput(stdout)
+
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
       expect(code, 'should exit with code 0').toBe(0)
     },

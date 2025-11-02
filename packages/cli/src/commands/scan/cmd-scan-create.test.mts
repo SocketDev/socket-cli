@@ -2,6 +2,7 @@ import path from 'node:path'
 
 import { describe, expect } from 'vitest'
 
+import { expectDryRunOutput } from '../../../test/helpers/output-assertions.mts'
 import { cmdit, spawnSocketCli, testPath } from '../../../test/utils.mts'
 import {
   FLAG_CONFIG,
@@ -130,6 +131,9 @@ describe('socket scan create', async () => {
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+
+      // Validate dry-run output to prevent flipped snapshots.
+      expectDryRunOutput(stdout)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -194,6 +198,9 @@ describe('socket scan create', async () => {
     'should succeed when --reach-analysis-memory-limit is used with default value without --reach',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+
+      // Validate dry-run output to prevent flipped snapshots.
+      expectDryRunOutput(stdout)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0 when using default value').toBe(0)
     },
@@ -323,6 +330,9 @@ describe('socket scan create', async () => {
     'should succeed when reachability options are used with --reach',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+
+      // Validate dry-run output to prevent flipped snapshots.
+      expectDryRunOutput(stdout)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0 when all flags are valid').toBe(0)
     },
@@ -392,6 +402,9 @@ describe('socket scan create', async () => {
     'should succeed when all reachability options including reachExcludePaths are used with --reach',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+
+      // Validate dry-run output to prevent flipped snapshots.
+      expectDryRunOutput(stdout)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0 when all flags are valid').toBe(0)
     },
@@ -418,6 +431,9 @@ describe('socket scan create', async () => {
     'should succeed when --reach-ecosystems is used with comma-separated values',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+
+      // Validate dry-run output to prevent flipped snapshots.
+      expectDryRunOutput(stdout)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(
         code,
@@ -447,6 +463,9 @@ describe('socket scan create', async () => {
     'should succeed when --reach-exclude-paths is used with comma-separated values',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+
+      // Validate dry-run output to prevent flipped snapshots.
+      expectDryRunOutput(stdout)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(
         code,
@@ -608,6 +627,9 @@ describe('socket scan create', async () => {
     'should succeed with minimal positive reachability memory limit',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+
+      // Validate dry-run output to prevent flipped snapshots.
+      expectDryRunOutput(stdout)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -634,6 +656,9 @@ describe('socket scan create', async () => {
     'should succeed with zero timeout (unlimited)',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+
+      // Validate dry-run output to prevent flipped snapshots.
+      expectDryRunOutput(stdout)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -697,6 +722,9 @@ describe('socket scan create', async () => {
     'should succeed with comprehensive reachability configuration',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+
+      // Validate dry-run output to prevent flipped snapshots.
+      expectDryRunOutput(stdout)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0 when all flags are valid').toBe(0)
     },
@@ -722,6 +750,9 @@ describe('socket scan create', async () => {
     'should succeed with --reach and --json output format',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+
+      // Validate dry-run output to prevent flipped snapshots.
+      expectDryRunOutput(stdout)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -747,6 +778,9 @@ describe('socket scan create', async () => {
     'should succeed with --reach and --markdown output format',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+
+      // Validate dry-run output to prevent flipped snapshots.
+      expectDryRunOutput(stdout)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -802,6 +836,9 @@ describe('socket scan create', async () => {
     'should succeed when combining --reach with --read-only',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+
+      // Validate dry-run output to prevent flipped snapshots.
+      expectDryRunOutput(stdout)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
