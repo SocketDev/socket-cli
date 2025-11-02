@@ -14,6 +14,23 @@ const isCoverageEnabled =
   process.env.npm_lifecycle_event === 'cover' ||
   process.argv.includes('--coverage')
 
+// Detect if running in CI on macOS.
+const isMacCI = 'CI' in process.env && process.platform === 'darwin'
+
+// Calculate optimal thread count based on environment.
+// macOS CI runners have limited memory, so use fewer threads to prevent SIGABRT.
+function getMaxThreads(): number {
+  if (isCoverageEnabled) {
+    return 1
+  }
+  if (isMacCI) {
+    // Use 50% of CPUs on macOS CI to prevent memory exhaustion.
+    return Math.max(2, Math.floor(os.cpus().length / 2))
+  }
+  // Use all CPUs on other platforms.
+  return os.cpus().length
+}
+
 export default defineConfig({
   resolve: {
     alias: getLocalPackageAliases(repoRoot),
@@ -40,8 +57,9 @@ export default defineConfig({
         singleThread: false,
         // Maximize parallel execution to offset isolate: true performance cost.
         // Use CPU count for better hardware utilization.
-        maxThreads: isCoverageEnabled ? 1 : os.cpus().length,
-        minThreads: isCoverageEnabled ? 1 : Math.min(4, os.cpus().length),
+        // Reduce threads on macOS CI to prevent memory exhaustion (SIGABRT).
+        maxThreads: getMaxThreads(),
+        minThreads: isCoverageEnabled ? 1 : Math.min(2, Math.floor(getMaxThreads() / 2)),
         // IMPORTANT: Changed to isolate: true to fix worker thread termination issues.
         //
         // Previous configuration (isolate: false) caused "Terminating worker thread"
