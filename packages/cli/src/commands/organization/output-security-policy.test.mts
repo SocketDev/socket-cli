@@ -4,6 +4,10 @@ import {
   createErrorResult,
   createSuccessResult,
 } from '../../../test/helpers/index.mts'
+import { outputSecurityPolicy } from './output-security-policy.mts'
+import { serializeResultJson } from '../../utils/output/result-json.mjs'
+import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
+import { mdTableOfPairs } from '../../utils/output/markdown.mts'
 
 import type { CResult } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
@@ -43,14 +47,6 @@ describe('outputSecurityPolicy', () => {
   })
 
   it('outputs JSON format for successful result', async () => {
-    const { outputSecurityPolicy } = await import(
-      './output-security-policy.mts'
-    )
-    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
-    const { serializeResultJson } = await vi.importMock(
-      '../../utils/output/result-json.mjs',
-    )
-    const mockLog = vi.mocked(logger.log)
     const mockSerialize = vi.mocked(serializeResultJson)
 
     const result: CResult<
@@ -67,17 +63,11 @@ describe('outputSecurityPolicy', () => {
     await outputSecurityPolicy(result, 'json')
 
     expect(mockSerialize).toHaveBeenCalledWith(result)
-    expect(mockLog).toHaveBeenCalledWith(JSON.stringify(result))
+    expect(mockLogger.log).toHaveBeenCalledWith(JSON.stringify(result))
     expect(process.exitCode).toBeUndefined()
   })
 
   it('outputs error in JSON format', async () => {
-    const { outputSecurityPolicy } = await import(
-      './output-security-policy.mts'
-    )
-    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
-    const mockLog = vi.mocked(logger.log)
-
     const result: CResult<
       SocketSdkSuccessResult<'getOrgSecurityPolicy'>['data']
     > = createErrorResult('Unauthorized', {
@@ -87,19 +77,11 @@ describe('outputSecurityPolicy', () => {
 
     await outputSecurityPolicy(result, 'json')
 
-    expect(mockLog).toHaveBeenCalled()
+    expect(mockLogger.log).toHaveBeenCalled()
     expect(process.exitCode).toBe(2)
   })
 
   it('outputs text format with security policy table', async () => {
-    const { outputSecurityPolicy } = await import(
-      './output-security-policy.mts'
-    )
-    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
-    const { mdTableOfPairs } = await vi.importMock(
-      '../../utils/output/markdown.mts',
-    )
-    const mockLog = vi.mocked(logger.log)
     const mockTable = vi.mocked(mdTableOfPairs)
 
     const result: CResult<
@@ -115,12 +97,12 @@ describe('outputSecurityPolicy', () => {
 
     await outputSecurityPolicy(result, 'text')
 
-    expect(mockLog).toHaveBeenCalledWith('# Security policy')
-    expect(mockLog).toHaveBeenCalledWith('')
-    expect(mockLog).toHaveBeenCalledWith(
+    expect(mockLogger.log).toHaveBeenCalledWith('# Security policy')
+    expect(mockLogger.log).toHaveBeenCalledWith('')
+    expect(mockLogger.log).toHaveBeenCalledWith(
       'The default security policy setting is: "error"',
     )
-    expect(mockLog).toHaveBeenCalledWith(
+    expect(mockLogger.log).toHaveBeenCalledWith(
       'These are the security policies per setting for your organization:',
     )
     expect(mockTable).toHaveBeenCalledWith(
@@ -134,14 +116,6 @@ describe('outputSecurityPolicy', () => {
   })
 
   it('outputs error in text format', async () => {
-    const { outputSecurityPolicy } = await import(
-      './output-security-policy.mts'
-    )
-    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
-    const { failMsgWithBadge } = await vi.importMock(
-      '../../utils/error/fail-msg-with-badge.mts',
-    )
-    const mockFail = vi.mocked(logger.fail)
     const mockFailMsg = vi.mocked(failMsgWithBadge)
 
     const result: CResult<
@@ -157,19 +131,11 @@ describe('outputSecurityPolicy', () => {
       'Failed to fetch security policy',
       'Network error',
     )
-    expect(mockFail).toHaveBeenCalled()
+    expect(mockLogger.fail).toHaveBeenCalled()
     expect(process.exitCode).toBe(1)
   })
 
   it('handles empty security policy rules', async () => {
-    const { outputSecurityPolicy } = await import(
-      './output-security-policy.mts'
-    )
-    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
-    const { mdTableOfPairs } = await vi.importMock(
-      '../../utils/output/markdown.mts',
-    )
-    const mockLog = vi.mocked(logger.log)
     const mockTable = vi.mocked(mdTableOfPairs)
 
     const result: CResult<
@@ -181,19 +147,13 @@ describe('outputSecurityPolicy', () => {
 
     await outputSecurityPolicy(result, 'text')
 
-    expect(mockLog).toHaveBeenCalledWith(
+    expect(mockLogger.log).toHaveBeenCalledWith(
       'The default security policy setting is: "monitor"',
     )
     expect(mockTable).toHaveBeenCalledWith([], ['name', 'action'])
   })
 
   it('handles null security policy rules', async () => {
-    const { outputSecurityPolicy } = await import(
-      './output-security-policy.mts'
-    )
-    const { mdTableOfPairs } = await vi.importMock(
-      '../../utils/output/markdown.mts',
-    )
     const mockTable = vi.mocked(mdTableOfPairs)
 
     const result: CResult<
@@ -209,12 +169,6 @@ describe('outputSecurityPolicy', () => {
   })
 
   it('sorts policy rules alphabetically', async () => {
-    const { outputSecurityPolicy } = await import(
-      './output-security-policy.mts'
-    )
-    const { mdTableOfPairs } = await vi.importMock(
-      '../../utils/output/markdown.mts',
-    )
     const mockTable = vi.mocked(mdTableOfPairs)
 
     const result: CResult<
@@ -242,9 +196,6 @@ describe('outputSecurityPolicy', () => {
   })
 
   it('sets default exit code when code is undefined', async () => {
-    const { outputSecurityPolicy } = await import(
-      './output-security-policy.mts'
-    )
     const result: CResult<
       SocketSdkSuccessResult<'getOrgSecurityPolicy'>['data']
     > = createErrorResult('Error without code')
