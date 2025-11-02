@@ -7,6 +7,7 @@ import './polyfills/intl-stub.mts'
 import { setTheme } from '@socketsecurity/lib/themes'
 setTheme('socket')
 
+import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
@@ -33,8 +34,11 @@ import { messageWithCauses, stackWithCauses } from 'pony-cause'
 import lookupRegistryAuthToken from 'registry-auth-token'
 import lookupRegistryUrl from 'registry-url'
 
-import { debug, debugDir } from '@socketsecurity/lib/debug'
+import { debug as debugNs, debugDir } from '@socketsecurity/lib/debug'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
+
+// Debug logger for manifest operations
+const debug = debugNs
 
 import { rootAliases, rootCommands } from './commands.mts'
 import ENV from './constants/env.mts'
@@ -51,8 +55,54 @@ import { serializeResultJson } from './utils/output/result-json.mts'
 import { runPreflightDownloads } from './utils/preflight/downloads.mts'
 import { isSeaBinary } from './utils/sea/detect.mts'
 import { scheduleUpdateCheck } from './utils/update/manager.mts'
+import { dlxManifest } from '@socketsecurity/lib/dlx-manifest'
 
 const __filename = fileURLToPath(import.meta.url)
+
+/**
+ * Write manifest entry for CLI installed via bootstrap.
+ * Bootstrap passes spec and cache dir via environment variables.
+ */
+async function writeBootstrapManifestEntry(): Promise<void> {
+  const spec = ENV.SOCKET_CLI_BOOTSTRAP_SPEC
+  const cacheDir = ENV.SOCKET_CLI_BOOTSTRAP_CACHE_DIR
+
+  if (!spec || !cacheDir) {
+    // Not launched via bootstrap, skip.
+    return
+  }
+
+  try {
+    // Extract cache key from path (last segment)
+    const cacheKey = path.basename(cacheDir)
+
+    // Read package.json to get installed version
+    const pkgJsonPath = path.join(
+      cacheDir,
+      'node_modules',
+      '@socketsecurity',
+      'cli',
+      'package.json',
+    )
+
+    let installedVersion = '0.0.0'
+    try {
+      const fs = await import('node:fs/promises')
+      const pkgJson = JSON.parse(await fs.readFile(pkgJsonPath, 'utf8'))
+      installedVersion = pkgJson.version || '0.0.0'
+    } catch {
+      // Failed to read version, use default
+    }
+
+    // Write manifest entry.
+    await dlxManifest.setPackageEntry(spec, cacheKey, {
+      installed_version: installedVersion,
+    })
+  } catch (error) {
+    // Silently ignore manifest write errors - not critical
+    debug(`Failed to write bootstrap manifest entry: ${error}`)
+  }
+}
 
 void (async () => {
   // Skip update checks in test environments.
@@ -67,6 +117,10 @@ void (async () => {
       registryUrl,
       version: ENV.INLINED_SOCKET_CLI_VERSION || '0.0.0',
     })
+
+    // Write manifest entry if launched via bootstrap (SEA/smol).
+    // Bootstrap passes spec and cache dir via env vars.
+    await writeBootstrapManifestEntry()
 
     // Background preflight downloads for optional dependencies.
     // This silently downloads @coana-tech/cli and @socketbin/cli-ai in the

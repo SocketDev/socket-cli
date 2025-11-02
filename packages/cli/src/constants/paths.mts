@@ -60,13 +60,13 @@ export const PNPM_LOCK_YAML = 'pnpm-lock.yaml'
 export const YARN_LOCK = 'yarn.lock'
 
 // Directory Names (CLI-specific)
-export const UPDATE_STORE_DIR = '.socket/_socket'
+export const UPDATE_STORE_DIR = '.socket/_dlx'
 
 // Derived Paths (CLI-specific)
 export const DOT_SOCKET_DOT_FACTS_JSON = `${DOT_SOCKET_DIR}.facts.json`
 
 // Update Store
-export const UPDATE_STORE_FILE_NAME = 'update-store.json'
+export const UPDATE_STORE_FILE_NAME = '.dlx-manifest.json'
 
 // Lazy Path Getters (computed on first access)
 

@@ -36,6 +36,14 @@ const SOCKET_CLI_DISABLE_NODE_FORWARDING = envAsBoolean(
 const MIN_NODE_VERSION = __MIN_NODE_VERSION__
 
 /**
+ * Socket CLI version.
+ * This constant is injected at build time by esbuild.
+ * @type {string}
+ */
+// @ts-expect-error - Injected by esbuild define.
+const SOCKET_CLI_VERSION = __SOCKET_CLI_VERSION__
+
+/**
  * Get CLI package paths.
  */
 export function getCliPaths(cliPackageDir) {
@@ -173,8 +181,10 @@ export async function downloadCli() {
       spinner: Spinner({ shimmer: { dir: 'random' } }),
       operation: async () =>
         // Download and cache @socketsecurity/cli package.
+        // Uses caret range (^) to auto-update within same major version.
+        // Update notifications will only trigger for major version changes.
         await downloadPackage({
-          package: '@socketsecurity/cli',
+          package: `@socketsecurity/cli@^${SOCKET_CLI_VERSION}`,
           binaryName: 'socket',
           // Use cached version if available.
           force: false,
@@ -205,6 +215,12 @@ export async function findAndExecuteCli(args) {
   // Download CLI if needed.
   const result = await downloadCli()
   const cliPackageDir = result.packageDir
+
+  // Pass metadata to CLI for manifest writing.
+  // CLI will use this to write entries to ~/.socket/_dlx/.dlx-manifest.json
+  const spec = `@socketsecurity/cli@^${SOCKET_CLI_VERSION}`
+  process.env.SOCKET_CLI_BOOTSTRAP_SPEC = spec
+  process.env.SOCKET_CLI_BOOTSTRAP_CACHE_DIR = cliPackageDir
 
   // Get CLI entry path (dist/index.js handles brotli decompression internally).
   const { cliEntry } = getCliPaths(cliPackageDir)

@@ -28,6 +28,8 @@ import { SOCKET_CLI_API_PROXY } from '../env/socket-cli-api-proxy.mts'
 import { SOCKET_CLI_API_TIMEOUT } from '../env/socket-cli-api-timeout.mts'
 import { SOCKET_CLI_API_TOKEN } from '../env/socket-cli-api-token.mts'
 import { SOCKET_CLI_BIN_PATH } from '../env/socket-cli-bin-path.mts'
+import { SOCKET_CLI_BOOTSTRAP_CACHE_DIR } from '../env/socket-cli-bootstrap-cache-dir.mts'
+import { SOCKET_CLI_BOOTSTRAP_SPEC } from '../env/socket-cli-bootstrap-spec.mts'
 import { SOCKET_CLI_CDXGEN_LOCAL_PATH } from '../env/socket-cli-cdxgen-local-path.mts'
 import { SOCKET_CLI_COANA_LOCAL_PATH } from '../env/socket-cli-coana-local-path.mts'
 import { SOCKET_CLI_CONFIG } from '../env/socket-cli-config.mts'
@@ -77,6 +79,8 @@ export {
   SOCKET_CLI_API_TIMEOUT,
   SOCKET_CLI_API_TOKEN,
   SOCKET_CLI_BIN_PATH,
+  SOCKET_CLI_BOOTSTRAP_CACHE_DIR,
+  SOCKET_CLI_BOOTSTRAP_SPEC,
   SOCKET_CLI_CDXGEN_LOCAL_PATH,
   SOCKET_CLI_COANA_LOCAL_PATH,
   SOCKET_CLI_CONFIG,
@@ -199,6 +203,8 @@ const envSnapshot = {
   SOCKET_CLI_API_TIMEOUT,
   SOCKET_CLI_API_TOKEN,
   SOCKET_CLI_BIN_PATH,
+  SOCKET_CLI_BOOTSTRAP_CACHE_DIR,
+  SOCKET_CLI_BOOTSTRAP_SPEC,
   SOCKET_CLI_CDXGEN_LOCAL_PATH,
   SOCKET_CLI_COANA_LOCAL_PATH,
   SOCKET_CLI_CONFIG,
