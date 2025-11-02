@@ -95,12 +95,15 @@ async function cloneOnnxSource() {
     ]
 
     // Check if all patches have been applied.
-    const allPatchesApplied = (await Promise.all(
+    const results = await Promise.allSettled(
       patches.map(async ({ path: filePath, marker }) => {
         const content = await safeReadFile(filePath, 'utf-8')
         return content?.includes(marker) ?? false
       })
-    )).every(Boolean)
+    )
+    const allPatchesApplied = results.every(
+      r => r.status === 'fulfilled' && r.value === true
+    )
 
     if (!allPatchesApplied) {
       // Source exists but patches not applied - need to re-clone.
