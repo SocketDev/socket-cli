@@ -128,10 +128,7 @@ export async function fetchScanData(
 
   updateProgress()
 
-  const [scan, securityPolicy]: [
-    CResult<SocketArtifact[]>,
-    CResult<SocketSdkSuccessResult<'getOrgSecurityPolicy'>['data']>,
-  ] = await Promise.all([
+  const results = await Promise.allSettled([
     fetchScanResult().catch(e => {
       updateScan('failure; unknown blocking error occurred')
       return {
@@ -156,6 +153,22 @@ export async function fetchScanData(
     finishedFetching = true
     updateProgress()
   })
+
+  const scan: CResult<SocketArtifact[]> = results[0].status === 'fulfilled'
+    ? results[0].value
+    : {
+        ok: false as const,
+        message: 'Unexpected error',
+        cause: 'Promise rejected unexpectedly',
+      }
+
+  const securityPolicy: CResult<SocketSdkSuccessResult<'getOrgSecurityPolicy'>['data']> = results[1].status === 'fulfilled'
+    ? results[1].value
+    : {
+        ok: false as const,
+        message: 'Unexpected error',
+        cause: 'Promise rejected unexpectedly',
+      }
 
   if (!scan.ok) {
     return scan
