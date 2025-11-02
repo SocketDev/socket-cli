@@ -13,14 +13,21 @@ import '@socketsecurity/cli/src/polyfills/intl-stub/index.mts'
 import { findAndExecuteCli, getArgs } from './shared/bootstrap-shared.mjs'
 
 /**
- * Check if we're in a build/test environment where CLI isn't available yet.
- * Returns true if we should skip CLI bootstrap (e.g., during build smoke tests).
+ * Check if we should skip CLI bootstrap.
+ * Returns true for build tests or when showing version (no download needed).
  */
 function shouldSkipCliBootstrap() {
-  // Skip if this is a build smoke test (binary verification during compilation)
+  // Skip if this is a build smoke test (binary verification during compilation).
   // The CLI version doesn't exist on npm yet during build, so we can't download it.
   if (process.env.SOCKET_CLI_BUILD_TEST === '1' ||
       process.env.SOCKET_CLI_BUILD_TEST === 'true') {
+    return true
+  }
+
+  // Skip if user just wants to see version (--version or -v).
+  // No need to download CLI just to show Node.js version.
+  const args = getArgs()
+  if (args.includes('--version') || args.includes('-v')) {
     return true
   }
 
