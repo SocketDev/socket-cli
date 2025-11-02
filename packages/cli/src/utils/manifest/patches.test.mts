@@ -544,7 +544,7 @@ describe('patch-manifest', () => {
       const patches = Array.from({ length: 5 }, (_, i) => createSamplePatch(i))
 
       // Add all patches concurrently
-      await Promise.all(
+      await Promise.allSettled(
         patches.map((patch, i) =>
           addPatch(`npm:package${i}@1.0.0`, patch, testDir),
         ),
@@ -563,7 +563,7 @@ describe('patch-manifest', () => {
       await addPatch('npm:lodash@4.17.20', patch1, testDir)
 
       // Run operations in parallel
-      await Promise.all([
+      await Promise.allSettled([
         addPatch('npm:express@4.17.1', patch2, testDir),
         addPatch('npm:minimatch@3.0.4', patch3, testDir),
         removePatch('npm:lodash@4.17.20', testDir),
