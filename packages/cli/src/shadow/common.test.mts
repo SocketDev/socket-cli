@@ -14,6 +14,11 @@ const mockSafeNpmSpecToPurl = vi.hoisted(() => vi.fn())
 const mockIsAddCommand = vi.hoisted(() => vi.fn())
 const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
+  fail: vi.fn(),
+  info: vi.fn(),
+  log: vi.fn(),
+  success: vi.fn(),
+  warn: vi.fn(),
 }))
 
 vi.mock('node:fs', async importOriginal => {
@@ -31,6 +36,7 @@ vi.mock('@socketsecurity/lib/packages', () => ({
 }))
 
 vi.mock('@socketsecurity/lib/logger', () => ({
+  getDefaultLogger: () => mockLogger,
   logger: mockLogger,
 }))
 
