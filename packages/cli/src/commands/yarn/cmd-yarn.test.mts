@@ -61,7 +61,6 @@ describe('socket yarn', async () => {
         timeout: 30_000,
       })
 
-
       // Validate dry-run output to prevent flipped snapshots.
       expectDryRunOutput(stdout)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
@@ -157,7 +156,6 @@ describe('socket yarn', async () => {
         timeout: 30_000,
       })
 
-
       // Validate dry-run output to prevent flipped snapshots.
       expectDryRunOutput(stdout)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
@@ -181,7 +179,6 @@ describe('socket yarn', async () => {
         timeout: 30_000,
       })
 
-
       // Validate dry-run output to prevent flipped snapshots.
       expectDryRunOutput(stdout)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
@@ -204,7 +201,6 @@ describe('socket yarn', async () => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd, {
         timeout: 30_000,
       })
-
 
       // Validate dry-run output to prevent flipped snapshots.
       expectDryRunOutput(stdout)
@@ -231,7 +227,6 @@ describe('socket yarn', async () => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd, {
         timeout: 30_000,
       })
-
 
       // Validate dry-run output to prevent flipped snapshots.
       expectDryRunOutput(stdout)

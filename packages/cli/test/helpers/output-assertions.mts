@@ -454,13 +454,13 @@ export function expectDryRunOutput(
     // Snapshot should not be empty if output has [DryRun]:
     if (snapshotValue === '' || snapshotValue === '""') {
       throw new Error(
-        `FLIPPED SNAPSHOT DETECTED!\n\n` +
+        'FLIPPED SNAPSHOT DETECTED!\n\n' +
           `The snapshot is empty but the actual output starts with "[DryRun]:".\n` +
-          `This means the expected/received values are flipped.\n\n` +
+          'This means the expected/received values are flipped.\n\n' +
           `Actual output: ${output}\n` +
           `Snapshot value: ${snapshotValue}\n\n` +
-          `FIX: Update the snapshot to expect the [DryRun]: output, not an empty string.\n` +
-          `Run: pnpm testu <test-file> to update the snapshot correctly.`,
+          'FIX: Update the snapshot to expect the [DryRun]: output, not an empty string.\n' +
+          'Run: pnpm testu <test-file> to update the snapshot correctly.',
       )
     }
 
@@ -471,13 +471,13 @@ export function expectDryRunOutput(
 
     if (!snapshotStartsWithDryRun) {
       throw new Error(
-        `FLIPPED SNAPSHOT DETECTED!\n\n` +
+        'FLIPPED SNAPSHOT DETECTED!\n\n' +
           `The snapshot does not start with "[DryRun]:" but the actual output does.\n` +
-          `This means the expected/received values are flipped.\n\n` +
+          'This means the expected/received values are flipped.\n\n' +
           `Actual output: ${output}\n` +
           `Snapshot value: ${snapshotValue}\n\n` +
-          `FIX: Update the snapshot to match the actual [DryRun]: output.\n` +
-          `Run: pnpm testu <test-file> to update the snapshot correctly.`,
+          'FIX: Update the snapshot to match the actual [DryRun]: output.\n' +
+          'Run: pnpm testu <test-file> to update the snapshot correctly.',
       )
     }
   }

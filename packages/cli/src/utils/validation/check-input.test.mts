@@ -107,7 +107,7 @@ describe('checkCommandInput', () => {
 
   describe('when some checks fail', () => {
     it('returns false and sets exit code to 2', async () => {
-      const { logger } = vi.mocked(await import('@socketsecurity/lib/logger'))
+      vi.mocked(await import('@socketsecurity/lib/logger'))
       const { failMsgWithBadge } = vi.mocked(
         await import('../error/fail-msg-with-badge.mts'),
       )
@@ -141,7 +141,7 @@ describe('checkCommandInput', () => {
     })
 
     it('handles json output kind', async () => {
-      const { logger } = vi.mocked(await import('@socketsecurity/lib/logger'))
+      vi.mocked(await import('@socketsecurity/lib/logger'))
       const { serializeResultJson } = vi.mocked(
         await import('../output/result-json.mts'),
       )

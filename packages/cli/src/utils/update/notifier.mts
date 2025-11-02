@@ -82,7 +82,9 @@ export function formatUpdateMessage(options: UpdateNotificationOptions): {
 /**
  * Show update notification immediately.
  */
-export function showUpdateNotification(options: UpdateNotificationOptions): void {
+export function showUpdateNotification(
+  options: UpdateNotificationOptions,
+): void {
   if (!globalThis.process?.stdout?.isTTY) {
     return // Probably piping stdout.
   }
@@ -115,7 +117,9 @@ export function showUpdateNotification(options: UpdateNotificationOptions): void
  * Schedule update notification to show on process exit.
  * This ensures the notification doesn't interfere with command output.
  */
-export function scheduleExitNotification(options: UpdateNotificationOptions): void {
+export function scheduleExitNotification(
+  options: UpdateNotificationOptions,
+): void {
   if (!globalThis.process?.stdout?.isTTY) {
     return // Probably piping stdout.
   }

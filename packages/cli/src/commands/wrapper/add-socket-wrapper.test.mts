@@ -27,7 +27,7 @@ describe('addSocketWrapper', () => {
   })
 
   it('successfully adds wrapper aliases to file', async () => {
-    const { logger } = await import('@socketsecurity/lib/logger')
+    await import('@socketsecurity/lib/logger')
     const mockAppendFile = vi.mocked(fs.appendFile) as any
 
     mockAppendFile.mockImplementation((_file, _content, callback) => {
@@ -84,7 +84,7 @@ describe('addSocketWrapper', () => {
   })
 
   it('logs disable instructions', async () => {
-    const { logger } = await import('@socketsecurity/lib/logger')
+    await import('@socketsecurity/lib/logger')
     const mockAppendFile = vi.mocked(fs.appendFile) as any
 
     mockAppendFile.mockImplementation((_file, _content, callback) => {
