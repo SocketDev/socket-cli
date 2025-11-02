@@ -191,8 +191,6 @@ export async function downloadCli() {
         }),
     })
 
-    getDefaultLogger().log('')
-
     return result
   } catch (e) {
     getDefaultLogger().error('Failed to download Socket CLI')
