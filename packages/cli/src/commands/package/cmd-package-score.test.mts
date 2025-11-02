@@ -89,7 +89,8 @@ describe('socket package score', async () => {
         \\xd7  Input error:  Please review the input requirements and try again
 
           \\xd7 First parameter must be an ecosystem or the whole purl (bad)
-          \\xd7 Expecting at least one package (missing)"
+          \\xd7 Expecting at least one package (missing)
+        "
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
@@ -109,13 +110,19 @@ describe('socket package score', async () => {
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket package score\`, cwd: <redacted>"
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket package score\`, cwd: <redacted>
+
+        \\xd7  Input error:  Please review the input requirements and try again
+
+          \\u221a First parameter must be an ecosystem or the whole purl
+          \\u221a Expecting at least one package
+        "
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
