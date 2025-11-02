@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { outputThreatFeed } from './output-threat-feed.mts'
-import { serializeResultJson } from '../../utils/output/result-json.mts'
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 import { msAtHome } from '../../utils/home-cache-time.mts'
+import { serializeResultJson } from '../../utils/output/result-json.mts'
 
 import type { ThreadFeedResponse, ThreatResult } from './types.mts'
 import type { CResult } from '../../types.mts'

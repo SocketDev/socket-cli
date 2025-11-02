@@ -84,9 +84,7 @@ describe('checkSocketWrapperSetup', () => {
     expect(mockLogger.log).toHaveBeenCalledWith(
       'The Socket npm/npx wrapper is set up in your bash profile (/home/user/.bashrc).',
     )
-    expect(mockLogger.log).toHaveBeenCalledWith(
-      '    source /home/user/.bashrc',
-    )
+    expect(mockLogger.log).toHaveBeenCalledWith('    source /home/user/.bashrc')
   })
 
   it('ignores partial alias matches', () => {

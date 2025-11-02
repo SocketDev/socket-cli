@@ -1,8 +1,9 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 
-import { safeDelete } from '@socketsecurity/lib/fs'
 import { afterEach, describe, expect } from 'vitest'
+
+import { safeDelete } from '@socketsecurity/lib/fs'
 
 import { cmdit, spawnSocketCli, testPath } from '../../../test/utils.mts'
 import { FLAG_CONFIG, FLAG_HELP } from '../../constants/cli.mts'

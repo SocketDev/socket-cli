@@ -1,13 +1,13 @@
+import chalkTable from 'chalk-table'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { outputListRepos } from './output-list-repos.mts'
-import { serializeResultJson } from '../../utils/output/result-json.mjs'
-import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 import {
   createErrorResult,
   createSuccessResult,
 } from '../../../test/helpers/index.mts'
-import chalkTable from 'chalk-table'
+import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
+import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
 import type { CResult } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'

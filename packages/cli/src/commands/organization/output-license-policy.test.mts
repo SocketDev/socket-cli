@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+
 import {
   createErrorResult,
   createSuccessResult,
@@ -121,7 +122,9 @@ describe('outputLicensePolicy', () => {
     process.exitCode = undefined
     await outputLicensePolicy(result as any, 'text')
 
-    expect(mockLogger.info).toHaveBeenCalledWith('Use --json to get the full result')
+    expect(mockLogger.info).toHaveBeenCalledWith(
+      'Use --json to get the full result',
+    )
     expect(mockLogger.log).toHaveBeenCalledWith('# License policy')
     expect(mockMdTableOfPairs).toHaveBeenCalledWith(
       expect.arrayContaining([
@@ -208,7 +211,9 @@ describe('outputLicensePolicy', () => {
     await outputLicensePolicy(result as any, 'markdown')
 
     expect(mockLogger.log).toHaveBeenCalledWith('# License policy')
-    expect(mockLogger.log).toHaveBeenCalledWith(expect.stringContaining('Table'))
+    expect(mockLogger.log).toHaveBeenCalledWith(
+      expect.stringContaining('Table'),
+    )
   })
 
   it('handles empty license policy', async () => {
@@ -243,7 +248,10 @@ describe('outputLicensePolicy', () => {
     process.exitCode = undefined
     await outputLicensePolicy(result as any, 'text')
 
-    expect(mockMdTableOfPairs).toHaveBeenCalledWith([], ['License Name', 'Allowed'])
+    expect(mockMdTableOfPairs).toHaveBeenCalledWith(
+      [],
+      ['License Name', 'Allowed'],
+    )
   })
 
   it('handles null license policy', async () => {
@@ -278,7 +286,10 @@ describe('outputLicensePolicy', () => {
     process.exitCode = undefined
     await outputLicensePolicy(result as any, 'text')
 
-    expect(mockMdTableOfPairs).toHaveBeenCalledWith([], ['License Name', 'Allowed'])
+    expect(mockMdTableOfPairs).toHaveBeenCalledWith(
+      [],
+      ['License Name', 'Allowed'],
+    )
   })
 
   it('sets default exit code when code is undefined', async () => {

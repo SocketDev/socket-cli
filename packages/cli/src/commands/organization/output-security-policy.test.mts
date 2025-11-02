@@ -32,7 +32,9 @@ describe('outputSecurityPolicy', () => {
       serializeResultJson: mockSerializeResultJson,
     }))
 
-    const { outputSecurityPolicy } = await import('./output-security-policy.mts')
+    const { outputSecurityPolicy } = await import(
+      './output-security-policy.mts'
+    )
 
     const result: CResult<
       SocketSdkSuccessResult<'getOrgSecurityPolicy'>['data']
@@ -71,7 +73,9 @@ describe('outputSecurityPolicy', () => {
       serializeResultJson: mockSerializeResultJson,
     }))
 
-    const { outputSecurityPolicy } = await import('./output-security-policy.mts')
+    const { outputSecurityPolicy } = await import(
+      './output-security-policy.mts'
+    )
 
     const result: CResult<
       SocketSdkSuccessResult<'getOrgSecurityPolicy'>['data']
@@ -107,7 +111,9 @@ describe('outputSecurityPolicy', () => {
       mdTableOfPairs: mockMdTableOfPairs,
     }))
 
-    const { outputSecurityPolicy } = await import('./output-security-policy.mts')
+    const { outputSecurityPolicy } = await import(
+      './output-security-policy.mts'
+    )
 
     const result: CResult<
       SocketSdkSuccessResult<'getOrgSecurityPolicy'>['data']
@@ -159,7 +165,9 @@ describe('outputSecurityPolicy', () => {
       failMsgWithBadge: mockFailMsgWithBadge,
     }))
 
-    const { outputSecurityPolicy } = await import('./output-security-policy.mts')
+    const { outputSecurityPolicy } = await import(
+      './output-security-policy.mts'
+    )
 
     const result: CResult<
       SocketSdkSuccessResult<'getOrgSecurityPolicy'>['data']
@@ -199,7 +207,9 @@ describe('outputSecurityPolicy', () => {
       mdTableOfPairs: mockMdTableOfPairs,
     }))
 
-    const { outputSecurityPolicy } = await import('./output-security-policy.mts')
+    const { outputSecurityPolicy } = await import(
+      './output-security-policy.mts'
+    )
 
     const result: CResult<
       SocketSdkSuccessResult<'getOrgSecurityPolicy'>['data']
@@ -237,7 +247,9 @@ describe('outputSecurityPolicy', () => {
       mdTableOfPairs: mockMdTableOfPairs,
     }))
 
-    const { outputSecurityPolicy } = await import('./output-security-policy.mts')
+    const { outputSecurityPolicy } = await import(
+      './output-security-policy.mts'
+    )
 
     const result: CResult<
       SocketSdkSuccessResult<'getOrgSecurityPolicy'>['data']
@@ -272,7 +284,9 @@ describe('outputSecurityPolicy', () => {
       mdTableOfPairs: mockMdTableOfPairs,
     }))
 
-    const { outputSecurityPolicy } = await import('./output-security-policy.mts')
+    const { outputSecurityPolicy } = await import(
+      './output-security-policy.mts'
+    )
 
     const result: CResult<
       SocketSdkSuccessResult<'getOrgSecurityPolicy'>['data']
@@ -317,7 +331,9 @@ describe('outputSecurityPolicy', () => {
       serializeResultJson: mockSerializeResultJson,
     }))
 
-    const { outputSecurityPolicy } = await import('./output-security-policy.mts')
+    const { outputSecurityPolicy } = await import(
+      './output-security-policy.mts'
+    )
 
     const result: CResult<
       SocketSdkSuccessResult<'getOrgSecurityPolicy'>['data']

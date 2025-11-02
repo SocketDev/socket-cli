@@ -1,11 +1,12 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-import { outputCreateNewScan } from './output-create-new-scan.mts'
-import { serializeResultJson } from '../../utils/output/result-json.mjs'
-import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
-import { confirm } from '@socketsecurity/lib/stdio/prompts'
 import open from 'open'
 import terminalLink from 'terminal-link'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { confirm } from '@socketsecurity/lib/stdio/prompts'
+
+import { outputCreateNewScan } from './output-create-new-scan.mts'
+import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
+import { serializeResultJson } from '../../utils/output/result-json.mjs'
 
 import type { CResult } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
