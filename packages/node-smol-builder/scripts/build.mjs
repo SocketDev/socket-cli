@@ -131,26 +131,6 @@ async function exec(command, args = [], options = {}) {
   }
 }
 
-/**
- * Execute command and capture output (replacement for execCapture).
- *
- * @param {string} command - Command to execute
- * @param {object} options - Spawn options
- * @returns {Promise<string>} Command output
- */
-async function execCapture(command, options = {}) {
-  const result = await spawn(command, [], {
-    stdio: 'pipe',
-    stdioString: true,
-    shell: true,
-    ...options,
-  })
-  if (result.code !== 0) {
-    throw new Error(`Command failed with exit code ${result.code}: ${command}`)
-  }
-  return (result.stdout ?? '').trim()
-}
-
 // Parse arguments.
 const { values } = parseArgs({
   options: {
@@ -476,10 +456,12 @@ const ARCH = TARGET_ARCH
  */
 async function isNodeSourceDirty() {
   try {
-    const status = await execCapture('git status --porcelain', {
+    const result = await spawn('git', ['status', '--porcelain'], {
       cwd: NODE_DIR,
+      stdio: 'pipe',
+      stdioString: true,
     })
-    return status.stdout.trim().length > 0
+    return result.code === 0 && (result.stdout ?? '').trim().length > 0
   } catch {
     return false
   }
@@ -514,8 +496,17 @@ async function resetNodeSource() {
  * Get file size in human-readable format.
  */
 async function getFileSize(filePath) {
-  const result = await execCapture(`du -h "${filePath}"`)
-  return result.stdout.split('\t')[0]
+  const stats = await stat(filePath)
+  const bytes = stats.size
+
+  if (bytes === 0) return '0B'
+
+  const k = 1024
+  const sizes = ['B', 'K', 'M', 'G', 'T']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  const size = (bytes / k ** i).toFixed(1)
+
+  return `${size}${sizes[i]}`
 }
 
 /**
@@ -1539,8 +1530,9 @@ async function main() {
       getDefaultLogger().log('Signing compressed binary...')
       await exec('codesign', ['--sign', '-', '--force', compressedBinary])
 
-      const sigInfo = await execCapture(`codesign -dv "${compressedBinary}"`, {
-        env: { ...process.env, STDERR: '>&1' },
+      const sigInfo = await spawn('codesign', ['-dv', compressedBinary], {
+        stdio: 'pipe',
+        stdioString: true,
       })
       getDefaultLogger().log(sigInfo.stdout || sigInfo.stderr)
       getDefaultLogger().logNewline()
