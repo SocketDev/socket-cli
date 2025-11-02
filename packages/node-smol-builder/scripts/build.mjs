@@ -142,7 +142,7 @@ async function execCapture(command, options = {}) {
   const result = await spawn(command, [], {
     stdio: 'pipe',
     stdioString: true,
-    shell: WIN32,
+    shell: true,
     ...options,
   })
   if (result.code !== 0) {
