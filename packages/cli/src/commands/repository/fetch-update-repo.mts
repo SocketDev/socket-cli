@@ -42,7 +42,7 @@ export async function fetchUpdateRepo(
   }
   const sockSdk = sockSdkCResult.data
 
-  return await handleApiCall(
+  return await handleApiCall<'updateRepository'>(
     sockSdk.updateRepository(orgSlug, repoName, {
       default_branch: defaultBranch,
       description,
