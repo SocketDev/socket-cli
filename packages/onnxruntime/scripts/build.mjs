@@ -17,7 +17,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
-import { safeDelete } from '@socketsecurity/lib/fs'
+import { safeDelete, safeReadFile } from '@socketsecurity/lib/fs'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 import {
@@ -96,10 +96,10 @@ async function cloneOnnxSource() {
 
     // Check if all patches have been applied.
     const allPatchesApplied = (await Promise.all(
-      patches.map(async ({ path: filePath, marker }) =>
-        existsSync(filePath) &&
-        (await fs.readFile(filePath, 'utf-8')).includes(marker)
-      )
+      patches.map(async ({ path: filePath, marker }) => {
+        const content = await safeReadFile(filePath, 'utf-8')
+        return content?.includes(marker) ?? false
+      })
     )).every(Boolean)
 
     if (!allPatchesApplied) {
