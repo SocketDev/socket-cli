@@ -5,6 +5,7 @@ import {
   createSuccessResult,
   setupTestEnvironment,
 } from '../../../test/helpers/index.mts'
+import { outputQuota } from './output-quota.mts'
 
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
@@ -31,14 +32,14 @@ vi.mock('../../utils/error/fail-msg-with-badge.mts', () => ({
   failMsgWithBadge: vi.fn((msg, cause) => `${msg}: ${cause}`),
 }))
 
-import { outputQuota } from './output-quota.mts'
-import { serializeResultJson } from '../../utils/output/result-json.mjs'
-import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
-
 describe('outputQuota', () => {
   setupTestEnvironment()
 
   it('outputs JSON format for successful result', async () => {
+    const { serializeResultJson } = await vi.importMock(
+      '../../utils/output/result-json.mjs',
+    )
+
     const result = createSuccessResult<
       SocketSdkSuccessResult<'getQuota'>['data']
     >({
@@ -99,6 +100,10 @@ describe('outputQuota', () => {
   })
 
   it('outputs error in text format', async () => {
+    const { failMsgWithBadge } = await vi.importMock(
+      '../../utils/error/fail-msg-with-badge.mts',
+    )
+
     const result = createErrorResult('Failed to fetch quota', {
       cause: 'Network error',
     })
