@@ -284,6 +284,106 @@ async function main() {
       }
     }
 
+    // Run CDN references validation check
+    if (runAll) {
+      if (!quiet) {
+        getDefaultLogger().step('Validating no CDN references')
+      }
+      const cdnResult = await spawn(
+        'node',
+        ['scripts/validate-no-cdn-refs.mjs'],
+        {
+          shell: WIN32,
+          stdio: quiet ? 'pipe' : 'inherit',
+        },
+      )
+      if (cdnResult.code !== 0) {
+        if (!quiet) {
+          getDefaultLogger().error('CDN references validation failed')
+        }
+        process.exitCode = cdnResult.code
+        return
+      }
+      if (!quiet) {
+        getDefaultLogger().error('')
+      }
+    }
+
+    // Run markdown filenames validation check
+    if (runAll) {
+      if (!quiet) {
+        getDefaultLogger().step('Validating markdown filenames')
+      }
+      const markdownResult = await spawn(
+        'node',
+        ['scripts/validate-markdown-filenames.mjs'],
+        {
+          shell: WIN32,
+          stdio: quiet ? 'pipe' : 'inherit',
+        },
+      )
+      if (markdownResult.code !== 0) {
+        if (!quiet) {
+          getDefaultLogger().error('Markdown filenames validation failed')
+        }
+        process.exitCode = markdownResult.code
+        return
+      }
+      if (!quiet) {
+        getDefaultLogger().error('')
+      }
+    }
+
+    // Run file size validation check
+    if (runAll) {
+      if (!quiet) {
+        getDefaultLogger().step('Validating file sizes')
+      }
+      const sizeResult = await spawn(
+        'node',
+        ['scripts/validate-file-size.mjs'],
+        {
+          shell: WIN32,
+          stdio: quiet ? 'pipe' : 'inherit',
+        },
+      )
+      if (sizeResult.code !== 0) {
+        if (!quiet) {
+          getDefaultLogger().error('File size validation failed')
+        }
+        process.exitCode = sizeResult.code
+        return
+      }
+      if (!quiet) {
+        getDefaultLogger().error('')
+      }
+    }
+
+    // Run file count validation check
+    if (runAll) {
+      if (!quiet) {
+        getDefaultLogger().step('Validating file count')
+      }
+      const countResult = await spawn(
+        'node',
+        ['scripts/validate-file-count.mjs'],
+        {
+          shell: WIN32,
+          stdio: quiet ? 'pipe' : 'inherit',
+        },
+      )
+      if (countResult.code !== 0) {
+        if (!quiet) {
+          getDefaultLogger().error('File count validation failed')
+        }
+        process.exitCode = countResult.code
+        return
+      }
+      if (!quiet) {
+        getDefaultLogger().error('')
+      }
+    }
+
     if (!quiet) {
       getDefaultLogger().success('All checks passed')
       printFooter()

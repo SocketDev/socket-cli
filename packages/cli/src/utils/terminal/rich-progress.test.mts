@@ -226,16 +226,16 @@ describe('rich-progress', () => {
     })
 
     it('should start spinner', () => {
-      getDefaultSpinner().start()
+      spinner.start()
       vi.advanceTimersByTime(100)
-      getDefaultSpinner().succeed()
+      spinner.succeed()
 
       const output = mockStream.getOutput()
       expect(output).toContain('Loading...')
     })
 
     it('should cycle through frames', () => {
-      getDefaultSpinner().start()
+      spinner.start()
 
       mockStream.clear()
       vi.advanceTimersByTime(80)
@@ -245,36 +245,36 @@ describe('rich-progress', () => {
       vi.advanceTimersByTime(80)
       const frame2 = mockStream.getOutput()
 
-      getDefaultSpinner().succeed()
+      spinner.succeed()
 
       // Frames should be different (different spinner characters)
       expect(frame1).not.toBe(frame2)
     })
 
     it('should update message', () => {
-      getDefaultSpinner().start()
+      spinner.start()
       vi.advanceTimersByTime(100)
-      getDefaultSpinner().update('Processing...')
+      spinner.update('Processing...')
       vi.advanceTimersByTime(100)
-      getDefaultSpinner().succeed()
+      spinner.succeed()
 
       const output = mockStream.getOutput()
       expect(output).toContain('Processing...')
     })
 
     it('should succeed with checkmark', () => {
-      getDefaultSpinner().start()
+      spinner.start()
       vi.advanceTimersByTime(100)
-      getDefaultSpinner().succeed()
+      spinner.succeed()
 
       const output = mockStream.getOutput()
       expect(output).toContain('✓')
     })
 
     it('should succeed with custom message', () => {
-      getDefaultSpinner().start()
+      spinner.start()
       vi.advanceTimersByTime(100)
-      getDefaultSpinner().succeed('Done!')
+      spinner.succeed('Done!')
 
       const output = mockStream.getOutput()
       expect(output).toContain('✓')
@@ -282,18 +282,18 @@ describe('rich-progress', () => {
     })
 
     it('should fail with cross mark', () => {
-      getDefaultSpinner().start()
+      spinner.start()
       vi.advanceTimersByTime(100)
-      getDefaultSpinner().fail()
+      spinner.fail()
 
       const output = mockStream.getOutput()
       expect(output).toContain('✗')
     })
 
     it('should fail with custom message', () => {
-      getDefaultSpinner().start()
+      spinner.start()
       vi.advanceTimersByTime(100)
-      getDefaultSpinner().fail('Error occurred')
+      spinner.fail('Error occurred')
 
       const output = mockStream.getOutput()
       expect(output).toContain('✗')
@@ -301,16 +301,16 @@ describe('rich-progress', () => {
     })
 
     it('should clear line when stopped', () => {
-      getDefaultSpinner().start()
+      spinner.start()
       vi.advanceTimersByTime(100)
-      getDefaultSpinner().succeed()
+      spinner.succeed()
 
       const output = mockStream.getOutput()
       expect(output).toContain('\r\x1B[2K') // Clear line sequence
     })
 
     it('should not crash if stopped without starting', () => {
-      expect(() => getDefaultSpinner().succeed()).not.toThrow()
+      expect(() => spinner.succeed()).not.toThrow()
     })
   })
 
@@ -475,10 +475,10 @@ describe('rich-progress', () => {
 
     it('should handle spinners in test environment', () => {
       const mockStream = new MockWritable()
-      const _spinner = new Spinner('Test', mockStream)
-      getDefaultSpinner().start()
+      const testSpinner = new Spinner('Test', mockStream)
+      testSpinner.start()
       vi.advanceTimersByTime(100)
-      getDefaultSpinner().succeed()
+      testSpinner.succeed()
 
       // Should not throw
       expect(mockStream.getOutput()).toBeTruthy()

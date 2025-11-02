@@ -60,6 +60,10 @@ packages/*/.onnx-source
 packages/*/.minilm-source
 **/html
 
+# Ignore WASM and Rust build artifacts
+**/wasm-bundle
+**/target
+
 # Workspace ignores
 packages/cli/CHANGELOG.md
 packages/cli/LICENSE

@@ -47,9 +47,7 @@ describe('addSocketWrapper', () => {
     expect(mockLogger.info).toHaveBeenCalledWith(
       'This will only be active in new terminal sessions going forward.',
     )
-    expect(mockLogger.log).toHaveBeenCalledWith(
-      '    source /home/user/.bashrc',
-    )
+    expect(mockLogger.log).toHaveBeenCalledWith('    source /home/user/.bashrc')
   })
 
   it('handles file write error', async () => {

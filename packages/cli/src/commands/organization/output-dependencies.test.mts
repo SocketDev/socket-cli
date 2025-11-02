@@ -1,63 +1,38 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
   createErrorResult,
   createSuccessResult,
-  setupTestEnvironment,
 } from '../../../test/helpers/index.mts'
 
 import type { CResult } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
-// Mock the dependencies.
-const mockLogger = vi.hoisted(() => ({
-  fail: vi.fn(),
-  log: vi.fn(),
-  info: vi.fn(),
-  success: vi.fn(),
-  warn: vi.fn(),
-  error: vi.fn(),
-}))
-
-vi.mock('@socketsecurity/lib/logger', () => ({
-  getDefaultLogger: () => mockLogger,
-  logger: mockLogger,
-}))
-
-vi.mock('../../utils/output/result-json.mjs', () => ({
-  serializeResultJson: vi.fn(result => JSON.stringify(result)),
-}))
-
-vi.mock('../../utils/error/fail-msg-with-badge.mts', () => ({
-  failMsgWithBadge: vi.fn((msg, cause) => `${msg}: ${cause}`),
-}))
-
-vi.mock('chalk-table', () => ({
-  default: vi.fn((_options, data) => `Table with ${data.length} rows`),
-}))
-
-vi.mock('yoctocolors-cjs', () => ({
-  default: {
-    bgRedBright: vi.fn(text => text),
-    bold: vi.fn(text => text),
-    cyan: vi.fn(text => text),
-    green: vi.fn(text => text),
-    red: vi.fn(text => text),
-    yellow: vi.fn(text => text),
-  },
-}))
-
 describe('outputDependencies', () => {
-  setupTestEnvironment()
+  beforeEach(async () => {
+    vi.resetModules()
+  })
 
   it('outputs JSON format for successful result', async () => {
+    const mockLogger = {
+      fail: vi.fn(),
+      log: vi.fn(),
+      info: vi.fn(),
+      success: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    }
+    const mockSerializeResultJson = vi.fn(result => JSON.stringify(result))
+
+    vi.doMock('@socketsecurity/lib/logger', () => ({
+      getDefaultLogger: () => mockLogger,
+    }))
+
+    vi.doMock('../../utils/output/result-json.mjs', () => ({
+      serializeResultJson: mockSerializeResultJson,
+    }))
+
     const { outputDependencies } = await import('./output-dependencies.mts')
-    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
-    const { serializeResultJson } = await vi.importMock(
-      '../../utils/output/result-json.mjs',
-    )
-    const mockLog = vi.mocked(logger.log)
-    const mockSerialize = vi.mocked(serializeResultJson)
 
     const result: CResult<
       SocketSdkSuccessResult<'searchDependencies'>['data']
@@ -82,15 +57,31 @@ describe('outputDependencies', () => {
       outputKind: 'json',
     })
 
-    expect(mockSerialize).toHaveBeenCalledWith(result)
-    expect(mockLog).toHaveBeenCalledWith(JSON.stringify(result))
+    expect(mockSerializeResultJson).toHaveBeenCalledWith(result)
+    expect(mockLogger.log).toHaveBeenCalledWith(JSON.stringify(result))
     expect(process.exitCode).toBeUndefined()
   })
 
   it('outputs error in JSON format', async () => {
+    const mockLogger = {
+      fail: vi.fn(),
+      log: vi.fn(),
+      info: vi.fn(),
+      success: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    }
+    const mockSerializeResultJson = vi.fn(result => JSON.stringify(result))
+
+    vi.doMock('@socketsecurity/lib/logger', () => ({
+      getDefaultLogger: () => mockLogger,
+    }))
+
+    vi.doMock('../../utils/output/result-json.mjs', () => ({
+      serializeResultJson: mockSerializeResultJson,
+    }))
+
     const { outputDependencies } = await import('./output-dependencies.mts')
-    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
-    const mockLog = vi.mocked(logger.log)
 
     const result: CResult<
       SocketSdkSuccessResult<'searchDependencies'>['data']
@@ -105,16 +96,43 @@ describe('outputDependencies', () => {
       outputKind: 'json',
     })
 
-    expect(mockLog).toHaveBeenCalled()
+    expect(mockLogger.log).toHaveBeenCalled()
     expect(process.exitCode).toBe(2)
   })
 
   it('outputs markdown format with table', async () => {
+    const mockLogger = {
+      fail: vi.fn(),
+      log: vi.fn(),
+      info: vi.fn(),
+      success: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    }
+    const mockChalkTable = vi.fn(
+      (_options, data) => `Table with ${data.length} rows`,
+    )
+
+    vi.doMock('@socketsecurity/lib/logger', () => ({
+      getDefaultLogger: () => mockLogger,
+    }))
+
+    vi.doMock('chalk-table', () => ({
+      default: mockChalkTable,
+    }))
+
+    vi.doMock('yoctocolors-cjs', () => ({
+      default: {
+        bgRedBright: vi.fn(text => text),
+        bold: vi.fn(text => text),
+        cyan: vi.fn(text => text),
+        green: vi.fn(text => text),
+        red: vi.fn(text => text),
+        yellow: vi.fn(text => text),
+      },
+    }))
+
     const { outputDependencies } = await import('./output-dependencies.mts')
-    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
-    const chalkTable = await vi.importMock('chalk-table')
-    const mockLog = vi.mocked(logger.log)
-    const mockChalkTable = vi.mocked(chalkTable.default)
 
     const result: CResult<
       SocketSdkSuccessResult<'searchDependencies'>['data']
@@ -139,10 +157,10 @@ describe('outputDependencies', () => {
       outputKind: 'text',
     })
 
-    expect(mockLog).toHaveBeenCalledWith('# Organization dependencies')
-    expect(mockLog).toHaveBeenCalledWith('- Offset:', 20)
-    expect(mockLog).toHaveBeenCalledWith('- Limit:', 50)
-    expect(mockLog).toHaveBeenCalledWith(
+    expect(mockLogger.log).toHaveBeenCalledWith('# Organization dependencies')
+    expect(mockLogger.log).toHaveBeenCalledWith('- Offset:', 20)
+    expect(mockLogger.log).toHaveBeenCalledWith('- Limit:', 50)
+    expect(mockLogger.log).toHaveBeenCalledWith(
       '- Is there more data after this?',
       'no',
     )
@@ -163,13 +181,25 @@ describe('outputDependencies', () => {
   })
 
   it('outputs error in markdown format', async () => {
+    const mockLogger = {
+      fail: vi.fn(),
+      log: vi.fn(),
+      info: vi.fn(),
+      success: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    }
+    const mockFailMsgWithBadge = vi.fn((msg, cause) => `${msg}: ${cause}`)
+
+    vi.doMock('@socketsecurity/lib/logger', () => ({
+      getDefaultLogger: () => mockLogger,
+    }))
+
+    vi.doMock('../../utils/error/fail-msg-with-badge.mts', () => ({
+      failMsgWithBadge: mockFailMsgWithBadge,
+    }))
+
     const { outputDependencies } = await import('./output-dependencies.mts')
-    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
-    const { failMsgWithBadge } = await vi.importMock(
-      '../../utils/error/fail-msg-with-badge.mts',
-    )
-    const mockFail = vi.mocked(logger.fail)
-    const mockFailMsg = vi.mocked(failMsgWithBadge)
 
     const result: CResult<
       SocketSdkSuccessResult<'searchDependencies'>['data']
@@ -184,18 +214,47 @@ describe('outputDependencies', () => {
       outputKind: 'text',
     })
 
-    expect(mockFailMsg).toHaveBeenCalledWith(
+    expect(mockFailMsgWithBadge).toHaveBeenCalledWith(
       'Failed to fetch dependencies',
       'Network error',
     )
-    expect(mockFail).toHaveBeenCalled()
+    expect(mockLogger.fail).toHaveBeenCalled()
     expect(process.exitCode).toBe(1)
   })
 
   it('shows proper pagination info when more data is available', async () => {
+    const mockLogger = {
+      fail: vi.fn(),
+      log: vi.fn(),
+      info: vi.fn(),
+      success: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    }
+    const mockChalkTable = vi.fn(
+      (_options, data) => `Table with ${data.length} rows`,
+    )
+
+    vi.doMock('@socketsecurity/lib/logger', () => ({
+      getDefaultLogger: () => mockLogger,
+    }))
+
+    vi.doMock('chalk-table', () => ({
+      default: mockChalkTable,
+    }))
+
+    vi.doMock('yoctocolors-cjs', () => ({
+      default: {
+        bgRedBright: vi.fn(text => text),
+        bold: vi.fn(text => text),
+        cyan: vi.fn(text => text),
+        green: vi.fn(text => text),
+        red: vi.fn(text => text),
+        yellow: vi.fn(text => text),
+      },
+    }))
+
     const { outputDependencies } = await import('./output-dependencies.mts')
-    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
-    const mockLog = vi.mocked(logger.log)
 
     const result: CResult<
       SocketSdkSuccessResult<'searchDependencies'>['data']
@@ -220,16 +279,45 @@ describe('outputDependencies', () => {
       outputKind: 'text',
     })
 
-    expect(mockLog).toHaveBeenCalledWith(
+    expect(mockLogger.log).toHaveBeenCalledWith(
       '- Is there more data after this?',
       'yes',
     )
   })
 
   it('handles empty dependencies list', async () => {
+    const mockLogger = {
+      fail: vi.fn(),
+      log: vi.fn(),
+      info: vi.fn(),
+      success: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    }
+    const mockChalkTable = vi.fn(
+      (_options, data) => `Table with ${data.length} rows`,
+    )
+
+    vi.doMock('@socketsecurity/lib/logger', () => ({
+      getDefaultLogger: () => mockLogger,
+    }))
+
+    vi.doMock('chalk-table', () => ({
+      default: mockChalkTable,
+    }))
+
+    vi.doMock('yoctocolors-cjs', () => ({
+      default: {
+        bgRedBright: vi.fn(text => text),
+        bold: vi.fn(text => text),
+        cyan: vi.fn(text => text),
+        green: vi.fn(text => text),
+        red: vi.fn(text => text),
+        yellow: vi.fn(text => text),
+      },
+    }))
+
     const { outputDependencies } = await import('./output-dependencies.mts')
-    const chalkTable = await vi.importMock('chalk-table')
-    const mockChalkTable = vi.mocked(chalkTable.default)
 
     const result: CResult<
       SocketSdkSuccessResult<'searchDependencies'>['data']
@@ -248,7 +336,26 @@ describe('outputDependencies', () => {
   })
 
   it('sets default exit code when code is undefined', async () => {
+    const mockLogger = {
+      fail: vi.fn(),
+      log: vi.fn(),
+      info: vi.fn(),
+      success: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    }
+    const mockSerializeResultJson = vi.fn(result => JSON.stringify(result))
+
+    vi.doMock('@socketsecurity/lib/logger', () => ({
+      getDefaultLogger: () => mockLogger,
+    }))
+
+    vi.doMock('../../utils/output/result-json.mjs', () => ({
+      serializeResultJson: mockSerializeResultJson,
+    }))
+
     const { outputDependencies } = await import('./output-dependencies.mts')
+
     const result: CResult<
       SocketSdkSuccessResult<'searchDependencies'>['data']
     > = createErrorResult('Error without code')
