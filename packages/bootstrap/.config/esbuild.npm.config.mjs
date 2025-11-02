@@ -7,6 +7,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { build } from 'esbuild'
+import semver from 'semver'
 
 import { unicodeTransformPlugin } from '@socketsecurity/build-infra/lib/esbuild-plugin-unicode-transform'
 
@@ -24,6 +25,7 @@ const config = {
   define: {
     __MIN_NODE_VERSION__: JSON.stringify(nodeVersionConfig.versionSemver),
     __SOCKET_CLI_VERSION__: JSON.stringify(socketPackageJson.version),
+    __SOCKET_CLI_VERSION_MAJOR__: JSON.stringify(semver.major(socketPackageJson.version)),
   },
   entryPoints: [path.join(rootPath, 'src', 'bootstrap-npm.mts')],
   external: [],

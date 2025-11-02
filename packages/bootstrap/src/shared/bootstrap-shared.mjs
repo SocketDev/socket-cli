@@ -184,7 +184,7 @@ export async function downloadCli() {
         // Uses caret range (^) to auto-update within same major version.
         // Update notifications will only trigger for major version changes.
         await downloadPackage({
-          package: `@socketsecurity/cli@^${SOCKET_CLI_VERSION}`,
+          package: `@socketsecurity/cli@^${SOCKET_CLI_VERSION_MAJOR}`,
           binaryName: 'socket',
           // Use cached version if available.
           force: false,
@@ -216,7 +216,7 @@ export async function findAndExecuteCli(args) {
 
   // Pass metadata to CLI for manifest writing.
   // CLI will use this to write entries to ~/.socket/_dlx/.dlx-manifest.json
-  const spec = `@socketsecurity/cli@^${SOCKET_CLI_VERSION}`
+  const spec = `@socketsecurity/cli@^${SOCKET_CLI_VERSION_MAJOR}`
   process.env.SOCKET_CLI_BOOTSTRAP_SPEC = spec
   process.env.SOCKET_CLI_BOOTSTRAP_CACHE_DIR = cliPackageDir
 
