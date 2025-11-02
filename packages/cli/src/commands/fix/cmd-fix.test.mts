@@ -29,7 +29,7 @@ describe('socket fix', async () => {
 
   afterEach(async () => {
     // Clean up all temporary directories after each test.
-    await Promise.all(cleanupFunctions.map(cleanup => cleanup()))
+    await Promise.allSettled(cleanupFunctions.map(cleanup => cleanup()))
     cleanupFunctions = []
   })
 
