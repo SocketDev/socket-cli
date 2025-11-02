@@ -31,7 +31,7 @@ export async function apiCall<T extends keyof SocketSdk>(
 export const repoApi = {
   list: (orgSlug: string, params: any, options?: BaseFetchOptions) =>
     apiCall(
-      'getOrgRepoList',
+      'listRepositories',
       [orgSlug, params],
       'list of repositories',
       options,
@@ -39,7 +39,7 @@ export const repoApi = {
 
   create: (orgSlug: string, params: any, options?: BaseFetchOptions) =>
     apiCall(
-      'createOrgRepo',
+      'createRepository',
       [orgSlug, params],
       'to create a repository',
       options,
@@ -47,7 +47,7 @@ export const repoApi = {
 
   delete: (orgSlug: string, repoName: string, options?: BaseFetchOptions) =>
     apiCall(
-      'deleteOrgRepo',
+      'deleteRepository',
       [orgSlug, repoName],
       'to delete a repository',
       options,
@@ -60,14 +60,14 @@ export const repoApi = {
     options?: BaseFetchOptions,
   ) =>
     apiCall(
-      'updateOrgRepo',
+      'updateRepository',
       [orgSlug, repoName, params],
       'to update a repository',
       options,
     ),
 
   view: (orgSlug: string, repoName: string, options?: BaseFetchOptions) =>
-    apiCall('getOrgRepo', [orgSlug, repoName], 'repository', options),
+    apiCall('getRepository', [orgSlug, repoName], 'repository', options),
 }
 
 /**
@@ -135,7 +135,7 @@ export const scanApi = {
 
   list: (orgSlug: string, params: any, options?: BaseFetchOptions) =>
     apiCall(
-      'getOrgFullScanList' as keyof SocketSdk,
+      'listFullScans' as keyof SocketSdk,
       [orgSlug, params],
       'list of scans',
       options,
@@ -143,7 +143,7 @@ export const scanApi = {
 
   delete: (orgSlug: string, scanId: string, options?: BaseFetchOptions) =>
     apiCall(
-      'deleteOrgFullScan' as keyof SocketSdk,
+      'deleteFullScan' as keyof SocketSdk,
       [orgSlug, scanId],
       'to delete a scan',
       options,
@@ -151,7 +151,7 @@ export const scanApi = {
 
   view: (orgSlug: string, scanId: string, options?: BaseFetchOptions) =>
     apiCall(
-      'getOrgFullScan' as keyof SocketSdk,
+      'getFullScan' as keyof SocketSdk,
       [orgSlug, scanId],
       'scan details',
       options,
