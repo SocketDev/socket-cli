@@ -398,7 +398,7 @@ jobs:
       - name: Verify cached artifacts
         id: onnx-cache-valid
         run: |
-          if [ -f "packages/onnxruntime/build/wasm/ort-wasm-simd-threaded.wasm" ] && [ -f "packages/onnxruntime/build/wasm/ort-wasm-simd-threaded.js" ]; then
+          if [ -f "packages/onnxruntime/build/wasm/ort-wasm-simd-threaded.wasm" ] && [ -f "packages/onnxruntime/build/wasm/ort-wasm-simd-threaded.mjs" ]; then
             echo "valid=true" >> $GITHUB_OUTPUT
             echo "Cache hit: artifacts found"
             ls -lh packages/onnxruntime/build/wasm/
@@ -469,7 +469,7 @@ jobs:
       - name: Verify build artifacts
         run: |
           echo "=== ONNX Runtime Build Artifacts ==="
-          if [ ! -f "packages/onnxruntime/build/wasm/ort-wasm-simd-threaded.wasm" ] || [ ! -f "packages/onnxruntime/build/wasm/ort-wasm-simd-threaded.js" ]; then
+          if [ ! -f "packages/onnxruntime/build/wasm/ort-wasm-simd-threaded.wasm" ] || [ ! -f "packages/onnxruntime/build/wasm/ort-wasm-simd-threaded.mjs" ]; then
             echo "ERROR: Required ONNX Runtime WASM artifacts not found!"
             ls -lh packages/onnxruntime/build/wasm/ || echo "Directory does not exist"
             exit 1
@@ -477,7 +477,7 @@ jobs:
           ls -lh packages/onnxruntime/build/wasm/
           echo ""
           echo "ort-wasm-simd-threaded.wasm size: $(du -h packages/onnxruntime/build/wasm/ort-wasm-simd-threaded.wasm | cut -f1)"
-          echo "ort-wasm-simd-threaded.js size: $(du -h packages/onnxruntime/build/wasm/ort-wasm-simd-threaded.js | cut -f1)"
+          echo "ort-wasm-simd-threaded.mjs size: $(du -h packages/onnxruntime/build/wasm/ort-wasm-simd-threaded.mjs | cut -f1)"
 
       - name: Upload ONNX Runtime artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
