@@ -11,6 +11,6 @@
   },
   "dependencies": {
     "@socketsecurity/build-infra": "workspace:*",
-    "@socketsecurity/lib": "2.10.4"
+    "@socketsecurity/lib": "catalog:"
   }
 }
