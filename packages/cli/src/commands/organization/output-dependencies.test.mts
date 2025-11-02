@@ -5,6 +5,7 @@ import {
   createSuccessResult,
   setupTestEnvironment,
 } from '../../../test/helpers/index.mts'
+import { outputDependencies } from './output-dependencies.mts'
 
 import type { CResult } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
@@ -51,13 +52,9 @@ describe('outputDependencies', () => {
   setupTestEnvironment()
 
   it('outputs JSON format for successful result', async () => {
-    const { outputDependencies } = await import('./output-dependencies.mts')
-    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
     const { serializeResultJson } = await vi.importMock(
       '../../utils/output/result-json.mjs',
     )
-    const mockLog = vi.mocked(logger.log)
-    const mockSerialize = vi.mocked(serializeResultJson)
 
     const result: CResult<
       SocketSdkSuccessResult<'searchDependencies'>['data']
@@ -82,16 +79,12 @@ describe('outputDependencies', () => {
       outputKind: 'json',
     })
 
-    expect(mockSerialize).toHaveBeenCalledWith(result)
-    expect(mockLog).toHaveBeenCalledWith(JSON.stringify(result))
+    expect(serializeResultJson).toHaveBeenCalledWith(result)
+    expect(mockLogger.log).toHaveBeenCalledWith(JSON.stringify(result))
     expect(process.exitCode).toBeUndefined()
   })
 
   it('outputs error in JSON format', async () => {
-    const { outputDependencies } = await import('./output-dependencies.mts')
-    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
-    const mockLog = vi.mocked(logger.log)
-
     const result: CResult<
       SocketSdkSuccessResult<'searchDependencies'>['data']
     > = createErrorResult('Unauthorized', {
@@ -105,16 +98,12 @@ describe('outputDependencies', () => {
       outputKind: 'json',
     })
 
-    expect(mockLog).toHaveBeenCalled()
+    expect(mockLogger.log).toHaveBeenCalled()
     expect(process.exitCode).toBe(2)
   })
 
   it('outputs markdown format with table', async () => {
-    const { outputDependencies } = await import('./output-dependencies.mts')
-    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
     const chalkTable = await vi.importMock('chalk-table')
-    const mockLog = vi.mocked(logger.log)
-    const mockChalkTable = vi.mocked(chalkTable.default)
 
     const result: CResult<
       SocketSdkSuccessResult<'searchDependencies'>['data']
@@ -139,14 +128,14 @@ describe('outputDependencies', () => {
       outputKind: 'text',
     })
 
-    expect(mockLog).toHaveBeenCalledWith('# Organization dependencies')
-    expect(mockLog).toHaveBeenCalledWith('- Offset:', 20)
-    expect(mockLog).toHaveBeenCalledWith('- Limit:', 50)
-    expect(mockLog).toHaveBeenCalledWith(
+    expect(mockLogger.log).toHaveBeenCalledWith('# Organization dependencies')
+    expect(mockLogger.log).toHaveBeenCalledWith('- Offset:', 20)
+    expect(mockLogger.log).toHaveBeenCalledWith('- Limit:', 50)
+    expect(mockLogger.log).toHaveBeenCalledWith(
       '- Is there more data after this?',
       'no',
     )
-    expect(mockChalkTable).toHaveBeenCalledWith(
+    expect(chalkTable.default).toHaveBeenCalledWith(
       expect.objectContaining({
         columns: expect.arrayContaining([
           expect.objectContaining({ field: 'type' }),
@@ -163,13 +152,9 @@ describe('outputDependencies', () => {
   })
 
   it('outputs error in markdown format', async () => {
-    const { outputDependencies } = await import('./output-dependencies.mts')
-    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
     const { failMsgWithBadge } = await vi.importMock(
       '../../utils/error/fail-msg-with-badge.mts',
     )
-    const mockFail = vi.mocked(logger.fail)
-    const mockFailMsg = vi.mocked(failMsgWithBadge)
 
     const result: CResult<
       SocketSdkSuccessResult<'searchDependencies'>['data']
@@ -184,19 +169,15 @@ describe('outputDependencies', () => {
       outputKind: 'text',
     })
 
-    expect(mockFailMsg).toHaveBeenCalledWith(
+    expect(failMsgWithBadge).toHaveBeenCalledWith(
       'Failed to fetch dependencies',
       'Network error',
     )
-    expect(mockFail).toHaveBeenCalled()
+    expect(mockLogger.fail).toHaveBeenCalled()
     expect(process.exitCode).toBe(1)
   })
 
   it('shows proper pagination info when more data is available', async () => {
-    const { outputDependencies } = await import('./output-dependencies.mts')
-    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
-    const mockLog = vi.mocked(logger.log)
-
     const result: CResult<
       SocketSdkSuccessResult<'searchDependencies'>['data']
     > = createSuccessResult({
@@ -220,14 +201,13 @@ describe('outputDependencies', () => {
       outputKind: 'text',
     })
 
-    expect(mockLog).toHaveBeenCalledWith(
+    expect(mockLogger.log).toHaveBeenCalledWith(
       '- Is there more data after this?',
       'yes',
     )
   })
 
   it('handles empty dependencies list', async () => {
-    const { outputDependencies } = await import('./output-dependencies.mts')
     const chalkTable = await vi.importMock('chalk-table')
     const mockChalkTable = vi.mocked(chalkTable.default)
 
@@ -248,7 +228,6 @@ describe('outputDependencies', () => {
   })
 
   it('sets default exit code when code is undefined', async () => {
-    const { outputDependencies } = await import('./output-dependencies.mts')
     const result: CResult<
       SocketSdkSuccessResult<'searchDependencies'>['data']
     > = createErrorResult('Error without code')
