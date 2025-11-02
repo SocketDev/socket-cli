@@ -25,7 +25,10 @@ export async function fetchDeleteRepo(
   }
   const sockSdk = sockSdkCResult.data
 
-  return await handleApiCall(sockSdk.deleteRepository(orgSlug, repoName), {
-    description: 'to delete a repository',
-  })
+  return await handleApiCall<'deleteRepository'>(
+    sockSdk.deleteRepository(orgSlug, repoName),
+    {
+      description: 'to delete a repository',
+    },
+  )
 }

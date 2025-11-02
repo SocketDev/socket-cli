@@ -28,7 +28,7 @@ export async function streamScan(
   getDefaultLogger().info('Requesting data from API...')
 
   // Note: This will write to stdout or target file. It is not a noop.
-  return await handleApiCall(
+  return await handleApiCall<'getOrgFullScan'>(
     sockSdk.streamFullScan(orgSlug, scanId, {
       output: file === '-' ? undefined : file,
     }),

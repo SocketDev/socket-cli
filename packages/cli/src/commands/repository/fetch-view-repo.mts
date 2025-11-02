@@ -22,7 +22,10 @@ export async function fetchViewRepo(
   }
   const sockSdk = sockSdkCResult.data
 
-  return await handleApiCall(sockSdk.getRepository(orgSlug, repoName), {
-    description: 'repository data',
-  })
+  return await handleApiCall<'getRepository'>(
+    sockSdk.getRepository(orgSlug, repoName),
+    {
+      description: 'repository data',
+    },
+  )
 }

@@ -47,9 +47,12 @@ export async function fetchOrganization(
     sockSdk = sockSdkCResult.data
   }
 
-  const orgsCResult = await handleApiCall(sockSdk.listOrganizations(), {
-    description,
-  })
+  const orgsCResult = await handleApiCall<'listOrganizations'>(
+    sockSdk.listOrganizations(),
+    {
+      description,
+    },
+  )
   if (!orgsCResult.ok) {
     return orgsCResult
   }

@@ -25,8 +25,11 @@ export async function fetchSupportedScanFileNames(
   }
   const sockSdk = sockSdkCResult.data
 
-  return await handleApiCall(sockSdk.getSupportedScanFiles(), {
-    description: 'supported scan file types',
-    spinner,
-  })
+  return await handleApiCall<'getReportSupportedFiles'>(
+    sockSdk.getSupportedScanFiles(),
+    {
+      description: 'supported scan file types',
+      spinner,
+    },
+  )
 }

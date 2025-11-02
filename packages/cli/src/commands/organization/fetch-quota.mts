@@ -20,5 +20,7 @@ export async function fetchQuota(
   }
   const sockSdk = sockSdkCResult.data
 
-  return await handleApiCall(sockSdk.getQuota(), { description: 'token quota' })
+  return await handleApiCall<'getQuota'>(sockSdk.getQuota(), {
+    description: 'token quota',
+  })
 }

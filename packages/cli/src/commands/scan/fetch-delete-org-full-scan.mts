@@ -25,7 +25,10 @@ export async function fetchDeleteOrgFullScan(
   }
   const sockSdk = sockSdkCResult.data
 
-  return await handleApiCall(sockSdk.deleteFullScan(orgSlug, scanId), {
-    description: 'to delete a scan',
-  })
+  return await handleApiCall<'deleteFullScan'>(
+    sockSdk.deleteFullScan(orgSlug, scanId),
+    {
+      description: 'to delete a scan',
+    },
+  )
 }

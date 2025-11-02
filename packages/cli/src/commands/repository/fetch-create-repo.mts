@@ -42,7 +42,7 @@ export async function fetchCreateRepo(
   }
   const sockSdk = sockSdkCResult.data
 
-  return await handleApiCall(
+  return await handleApiCall<'createRepository'>(
     sockSdk.createRepository(orgSlug, {
       default_branch: defaultBranch,
       description,
