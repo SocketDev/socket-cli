@@ -1,5 +1,6 @@
 import { describe, expect } from 'vitest'
 
+import { expectDryRunOutput } from '../../../test/helpers/output-assertions.mts'
 import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
 import { FLAG_CONFIG, FLAG_DRY_RUN, FLAG_HELP } from '../../constants/cli.mts'
 import { getBinCliPath } from '../../constants/paths.mts'
@@ -47,6 +48,9 @@ describe('socket package', async () => {
     'should be ok with org name and id',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+
+      // Validate dry-run output to prevent flipped snapshots.
+      expectDryRunOutput(stdout)
       expect(stdout).toMatchInlineSnapshot(
         `"[DryRun]: No-op, call a sub-command; ok"`,
       )
