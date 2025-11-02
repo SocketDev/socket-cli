@@ -27,7 +27,6 @@ describe('fetchDiffScan', () => {
     )
     const { logger } = await vi.importMock('@socketsecurity/lib/logger')
     const mockQueryApi = vi.mocked(queryApiSafeJson)
-    
 
     const mockDiffData = {
       added: ['package-a@1.0.0'],
@@ -187,7 +186,6 @@ describe('fetchDiffScan', () => {
     )
     const { logger } = await vi.importMock('@socketsecurity/lib/logger')
     const mockQueryApi = vi.mocked(queryApiSafeJson)
-    
 
     mockQueryApi.mockResolvedValue({
       ok: true,

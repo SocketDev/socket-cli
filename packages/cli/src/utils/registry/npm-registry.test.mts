@@ -7,8 +7,9 @@ import { promises as fs } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import {
   retryWithBackoff,
