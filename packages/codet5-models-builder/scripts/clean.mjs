@@ -2,13 +2,15 @@
  * Clean codet5-models build artifacts.
  */
 
-import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { cleanCheckpoint } from '@socketsecurity/build-infra/lib/checkpoint-manager'
 import { printHeader, printSuccess } from '@socketsecurity/build-infra/lib/build-output'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { safeDelete } from '@socketsecurity/lib/fs'
+import loggerPkg from '@socketsecurity/lib/logger'
+
+const logger = loggerPkg.getDefaultLogger()
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -21,10 +23,10 @@ async function main() {
   printHeader('Cleaning codet5-models')
 
   // Remove models directory.
-  await fs.rm(MODELS_DIR, { recursive: true, force: true }).catch(() => {})
+  await safeDelete(MODELS_DIR).catch(() => {})
 
   // Remove build directory.
-  await fs.rm(BUILD_DIR, { recursive: true, force: true }).catch(() => {})
+  await safeDelete(BUILD_DIR).catch(() => {})
 
   // Clean checkpoints.
   await cleanCheckpoint('codet5-models')
@@ -33,6 +35,6 @@ async function main() {
 }
 
 main().catch((e) => {
-  getDefaultLogger().error('Clean failed:', e.message)
+  logger.error('Clean failed:', e.message)
   process.exit(1)
 })

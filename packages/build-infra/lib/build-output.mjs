@@ -5,45 +5,46 @@
  */
 
 import loggerPkg from '@socketsecurity/lib/logger'
-const { getDefaultLogger } = loggerPkg
+
+const logger = loggerPkg.getDefaultLogger()
 
 /**
  * Print header.
  */
 export function printHeader(message) {
-  getDefaultLogger().step(message)
+  logger.step(message)
 }
 
 /**
  * Print step.
  */
 export function printStep(message) {
-  getDefaultLogger().substep(message)
+  logger.substep(message)
 }
 
 /**
  * Print substep.
  */
 export function printSubstep(message) {
-  getDefaultLogger().info(`  ${message}`)
+  logger.info(`  ${message}`)
 }
 
 /**
  * Print success message.
  */
 export function printSuccess(message) {
-  getDefaultLogger().success(message)
+  logger.success(message)
 }
 
 /**
  * Print error message.
  */
 export function printError(message, error = null) {
-  getDefaultLogger().error(message)
+  logger.error(message)
   if (error) {
-    getDefaultLogger().error(error.message)
+    logger.error(error.message)
     if (error.stack) {
-      getDefaultLogger().error(error.stack)
+      logger.error(error.stack)
     }
   }
 }
@@ -52,5 +53,5 @@ export function printError(message, error = null) {
  * Print warning message.
  */
 export function printWarning(message) {
-  getDefaultLogger().warn(message)
+  logger.warn(message)
 }

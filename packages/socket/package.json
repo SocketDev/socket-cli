@@ -49,7 +49,7 @@
     "socket-yarn": "dist/bootstrap.js"
   },
   "devDependencies": {
-    "@socketsecurity/lib": "2.10.4",
+    "@socketsecurity/lib": "catalog:",
     "esbuild": "^0.24.0"
   }
 }
