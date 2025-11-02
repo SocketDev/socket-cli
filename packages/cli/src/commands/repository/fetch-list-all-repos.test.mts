@@ -51,8 +51,8 @@ describe('fetchListAllRepos', () => {
     expect(mockSdk.listRepositories).toHaveBeenCalledWith('test-org', {
       sort: undefined,
       direction: undefined,
-      per_page: '100',
-      page: '0',
+      per_page: 100,
+      page: 0,
     })
     expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
       description: 'list of repositories',
@@ -164,8 +164,8 @@ describe('fetchListAllRepos', () => {
     expect(mockSdk.listRepositories).toHaveBeenCalledWith('sorted-org', {
       sort: 'name',
       direction: 'asc',
-      per_page: '100',
-      page: '0',
+      per_page: 100,
+      page: 0,
     })
   })
 
