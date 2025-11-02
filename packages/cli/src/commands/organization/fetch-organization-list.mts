@@ -18,7 +18,7 @@ export type EnterpriseOrganization = Omit<Organization, 'plan'> & {
 export type EnterpriseOrganizations = EnterpriseOrganization[]
 
 export type Organization =
-  SocketSdkSuccessResult<'listOrganizations'>['data']['organizations'][string]
+  SocketSdkSuccessResult<'getOrganizations'>['data']['organizations'][string]
 
 export type Organizations = Organization[]
 

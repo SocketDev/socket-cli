@@ -34,7 +34,7 @@ describe('outputViewRepo', () => {
 
     const { outputViewRepo } = await import('./output-view-repo.mts')
 
-    const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> =
+    const result: CResult<SocketSdkSuccessResult<'createOrgRepo'>['data']> =
       createSuccessResult({
         archived: false,
         created_at: '2024-01-01T00:00:00Z',
@@ -73,7 +73,7 @@ describe('outputViewRepo', () => {
 
     const { outputViewRepo } = await import('./output-view-repo.mts')
 
-    const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> =
+    const result: CResult<SocketSdkSuccessResult<'createOrgRepo'>['data']> =
       createErrorResult('Unauthorized', {
         cause: 'Invalid API token',
         code: 2,
@@ -124,7 +124,7 @@ describe('outputViewRepo', () => {
       visibility: 'private',
     }
 
-    const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> =
+    const result: CResult<SocketSdkSuccessResult<'createOrgRepo'>['data']> =
       createSuccessResult(repoData)
 
     await outputViewRepo(result, 'text')
@@ -167,7 +167,7 @@ describe('outputViewRepo', () => {
 
     const { outputViewRepo } = await import('./output-view-repo.mts')
 
-    const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> =
+    const result: CResult<SocketSdkSuccessResult<'createOrgRepo'>['data']> =
       createErrorResult('Repository not found', {
         cause: 'Not found error',
         code: 1,
@@ -222,7 +222,7 @@ describe('outputViewRepo', () => {
       visibility: 'public',
     }
 
-    const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> =
+    const result: CResult<SocketSdkSuccessResult<'createOrgRepo'>['data']> =
       createSuccessResult(repoData)
 
     await outputViewRepo(result, 'text')
@@ -269,7 +269,7 @@ describe('outputViewRepo', () => {
       visibility: 'public',
     }
 
-    const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> =
+    const result: CResult<SocketSdkSuccessResult<'createOrgRepo'>['data']> =
       createSuccessResult(repoData)
 
     await outputViewRepo(result, 'markdown')
@@ -318,7 +318,7 @@ describe('outputViewRepo', () => {
       visibility: 'internal',
     }
 
-    const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> =
+    const result: CResult<SocketSdkSuccessResult<'createOrgRepo'>['data']> =
       createSuccessResult(repoData)
 
     await outputViewRepo(result, 'text')
@@ -347,7 +347,7 @@ describe('outputViewRepo', () => {
 
     const { outputViewRepo } = await import('./output-view-repo.mts')
 
-    const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> =
+    const result: CResult<SocketSdkSuccessResult<'createOrgRepo'>['data']> =
       createErrorResult('Error without code')
 
     await outputViewRepo(result, 'json')
