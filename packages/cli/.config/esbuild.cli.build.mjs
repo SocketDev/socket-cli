@@ -71,6 +71,23 @@ function createDefineEntries(envVars) {
   return entries
 }
 
+// Helper to find socket-lib directory (either local sibling or node_modules).
+function findSocketLibPath(importerPath) {
+  // Try to extract socket-lib base path from the importer.
+  const match = importerPath.match(/^(.*\/@socketsecurity\/lib)\b/)
+  if (match) {
+    return match[1]
+  }
+
+  // Fallback to local sibling directory.
+  const localPath = path.join(rootPath, '..', '..', '..', 'socket-lib')
+  if (existsSync(localPath)) {
+    return localPath
+  }
+
+  return null
+}
+
 // esbuild plugin to replace env vars after bundling (handles mangled identifiers).
 function envVarReplacementPlugin(envVars) {
   return {
@@ -300,23 +317,6 @@ const config = {
     {
       name: 'resolve-socket-lib-internals',
       setup(build) {
-        // Helper to find socket-lib directory (either local sibling or node_modules).
-        function findSocketLibPath(importerPath) {
-          // Try to extract socket-lib base path from the importer.
-          const match = importerPath.match(/^(.*\/@socketsecurity\/lib)\b/)
-          if (match) {
-            return match[1]
-          }
-
-          // Fallback to local sibling directory.
-          const localPath = path.join(rootPath, '..', '..', '..', 'socket-lib')
-          if (existsSync(localPath)) {
-            return localPath
-          }
-
-          return null
-        }
-
         build.onResolve({ filter: /^\.\.\/constants\// }, args => {
           // Only handle imports from socket-lib's dist directory.
           if (!args.importer.includes('/socket-lib/dist/')) {

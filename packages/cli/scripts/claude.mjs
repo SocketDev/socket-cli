@@ -16,10 +16,10 @@ import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { deleteAsync as del } from 'del'
 import colors from 'yoctocolors-cjs'
 
 import { parseArgs } from '@socketsecurity/lib/argv/parse'
+import { safeDelete } from '@socketsecurity/lib/fs'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -153,8 +153,10 @@ async function cleanupOldData() {
       }
     }
     if (toDelete.length > 0) {
-      // Force delete temp directories outside CWD.
-      await del(toDelete, { force: true })
+      // Delete temp directories using safeDelete.
+      for (const pathToDelete of toDelete) {
+        await safeDelete(pathToDelete)
+      }
     }
   } catch {
     // Ignore errors if directory doesn't exist.
@@ -172,8 +174,10 @@ async function cleanupOldData() {
       }
     }
     if (toDelete.length > 0) {
-      // Force delete temp directories outside CWD.
-      await del(toDelete, { force: true })
+      // Delete cache files using safeDelete.
+      for (const pathToDelete of toDelete) {
+        await safeDelete(pathToDelete)
+      }
     }
   } catch {
     // Ignore errors if directory doesn't exist.

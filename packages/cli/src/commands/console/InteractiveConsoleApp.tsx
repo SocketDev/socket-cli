@@ -311,7 +311,7 @@ const InputArea = memo(
     useEffect(() => {
       onHeightChange(1)
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [])
+    }, [onHeightChange])
 
     // Handle up/down arrow navigation for command history.
     useInput((_input, key) => {

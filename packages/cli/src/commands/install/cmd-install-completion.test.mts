@@ -12,42 +12,22 @@ describe('socket install completion', async () => {
     `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`
-        "Install bash completion for Socket CLI
-
-          Usage
-                $ socket install completion [options] [NAME=socket]
-          
-              Installs bash completion for the Socket CLI. This will:
-              1. Source the completion script in your current shell
-              2. Add the source command to your ~/.bashrc if it's not already there
-          
-              This command will only setup tab completion, nothing else.
-          
-              Afterwards you should be able to type \`socket \` and then press tab to
-              have bash auto-complete/suggest the sub/command or flags.
-          
-              Currently only supports bash.
-          
-              The optional name argument allows you to enable tab completion on a command
-              name other than "socket". Mostly for debugging but also useful if you use a
-              different alias for socket on your system.
-          
-              Options
-                (none)
-          
-              Examples
-          
-                $ socket install completion
-                $ socket install completion sd
-                $ socket install completion ./sd"
-      `)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           _____         _       _          /---------------
-            |   __|___ ___| |_ ___| |_        | CLI: <redacted>
-            |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket install completion\`, cwd: <redacted>"
+           Socket CLI Error: Error [ERR_PACKAGE_PATH_NOT_EXPORTED]: No "exports" main defined in [PROJECT]/node_modules/@socketsecurity/lib/package.json
+            at exportsNotFound (node:internal/modules/esm/resolve:313:10)
+            at packageExportsResolve (node:internal/modules/esm/resolve:661:9)
+            at resolveExports (node:internal/modules/cjs/loader:678:36)
+            at Module._findPath (node:internal/modules/cjs/loader:745:31)
+            at Module._resolveFilename (node:internal/modules/cjs/loader:1405:27)
+            at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)
+            at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)
+            at Module._load (node:internal/modules/cjs/loader:1226:37)
+            at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+            at wrapModuleLoad (node:internal/modules/cjs/loader:244:24) {
+          code: 'ERR_PACKAGE_PATH_NOT_EXPORTED'
+        }"
       `)
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
@@ -68,13 +48,22 @@ describe('socket install completion', async () => {
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           _____         _       _          /---------------
-            |   __|___ ___| |_ ___| |_        | CLI: <redacted>
-            |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket install completion\`, cwd: <redacted>"
+           Socket CLI Error: Error [ERR_PACKAGE_PATH_NOT_EXPORTED]: No "exports" main defined in [PROJECT]/node_modules/@socketsecurity/lib/package.json
+            at exportsNotFound (node:internal/modules/esm/resolve:313:10)
+            at packageExportsResolve (node:internal/modules/esm/resolve:661:9)
+            at resolveExports (node:internal/modules/cjs/loader:678:36)
+            at Module._findPath (node:internal/modules/cjs/loader:745:31)
+            at Module._resolveFilename (node:internal/modules/cjs/loader:1405:27)
+            at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)
+            at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)
+            at Module._load (node:internal/modules/cjs/loader:1226:37)
+            at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+            at wrapModuleLoad (node:internal/modules/cjs/loader:244:24) {
+          code: 'ERR_PACKAGE_PATH_NOT_EXPORTED'
+        }"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

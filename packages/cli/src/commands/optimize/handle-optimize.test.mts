@@ -248,7 +248,6 @@ describe('handleOptimize', () => {
       '../../utils/ecosystem/environment.mts'
     )
     const { applyOptimization } = await import('./apply-optimization.mts')
-    const { logger } = await import('@socketsecurity/lib/logger')
 
     vi.mocked(detectAndValidatePackageEnvironment).mockResolvedValue({
       ok: true,

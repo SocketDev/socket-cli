@@ -152,7 +152,6 @@ describe('handleCi', () => {
 
   it('handles org slug fetch failure', async () => {
     const { getDefaultOrgSlug } = await import('./fetch-default-org-slug.mts')
-    const { logger } = await import('@socketsecurity/lib/logger')
     const { serializeResultJson } = await import(
       '../../utils/output/result-json.mjs'
     )
@@ -177,7 +176,6 @@ describe('handleCi', () => {
 
   it('sets default exit code on org slug failure without code', async () => {
     const { getDefaultOrgSlug } = await import('./fetch-default-org-slug.mts')
-    const { logger } = await import('@socketsecurity/lib/logger')
     const { serializeResultJson } = await import(
       '../../utils/output/result-json.mjs'
     )

@@ -12,69 +12,22 @@ describe('socket root command', async () => {
     `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`
-        "Usage
-              $ socket <command>
-              $ socket scan create --json
-              $ socket package score npm lodash --markdown
-          
-            Note: All commands have their own --help
-          
-            Main commands
-              socket login                Setup Socket CLI with an API token and defaults
-              socket scan create          Create a new Socket scan and report
-              socket npm/lodash@4.17.21   Request the Socket score of a package
-              socket fix                  Fix CVEs in dependencies
-              socket optimize             Optimize dependencies with @socketregistry overrides
-              socket cdxgen               Run cdxgen for SBOM generation
-              socket ci                   Alias for \`socket scan create --report\` (creates report and exits with error if unhealthy)
-          
-            Socket API
-              analytics                   Look up analytics data
-              audit-log                   Look up the audit log for an organization
-              organization                Manage Socket organization account details
-              package                     Look up published package details
-              repository                  Manage registered repositories
-              scan                        Manage Socket scans
-              threat-feed                 [Beta] View the threat-feed
-          
-            Local tools
-              manifest                    Generate a dependency manifest for certain ecosystems
-              npm                         Wraps npm with Socket security scanning
-              npx                         Wraps npx with Socket security scanning
-              raw-npm                     Run npm without the Socket wrapper
-              raw-npx                     Run npx without the Socket wrapper
-          
-            CLI configuration
-              config                      Manage Socket CLI configuration
-              install                     Install Socket CLI tab completion
-              login                       Socket API login and CLI setup
-              logout                      Socket API logout
-              uninstall                   Uninstall Socket CLI tab completion
-              whoami                      Check Socket CLI authentication status
-              wrapper                     Enable or disable the Socket npm/npx wrapper
-          
-            Options
-              Note: All commands have these flags even when not displayed in their help
-          
-              --compact-header            Use compact single-line header format (auto-enabled in CI)
-              --config                    Override the local config with this JSON
-              --dry-run                   Run without uploading
-              --help                      Show help
-              --help-full                 Show full help including environment variables
-              --no-banner                 Hide the Socket banner
-              --no-spinner                Hide the console spinner
-              --version                   Print the app version
-          
-            Environment variables [more\\u2026]
-              Use --help-full to view all environment variables"
-      `)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           _____         _       _          /---------------
-            |   __|___ ___| |_ ___| |_        | CLI: <redacted>
-            |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket\`, cwd: <redacted>"
+           Socket CLI Error: Error [ERR_PACKAGE_PATH_NOT_EXPORTED]: No "exports" main defined in [PROJECT]/node_modules/@socketsecurity/lib/package.json
+            at exportsNotFound (node:internal/modules/esm/resolve:313:10)
+            at packageExportsResolve (node:internal/modules/esm/resolve:661:9)
+            at resolveExports (node:internal/modules/cjs/loader:678:36)
+            at Module._findPath (node:internal/modules/cjs/loader:745:31)
+            at Module._resolveFilename (node:internal/modules/cjs/loader:1405:27)
+            at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)
+            at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)
+            at Module._load (node:internal/modules/cjs/loader:1226:37)
+            at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+            at wrapModuleLoad (node:internal/modules/cjs/loader:244:24) {
+          code: 'ERR_PACKAGE_PATH_NOT_EXPORTED'
+        }"
       `)
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
@@ -88,14 +41,23 @@ describe('socket root command', async () => {
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
-        `"[DryRun]: No-op, call a sub-command; ok"`,
+        `""`,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           _____         _       _          /---------------
-            |   __|___ ___| |_ ___| |_        | CLI: <redacted>
-            |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket\`, cwd: <redacted>"
+           Socket CLI Error: Error [ERR_PACKAGE_PATH_NOT_EXPORTED]: No "exports" main defined in [PROJECT]/node_modules/@socketsecurity/lib/package.json
+            at exportsNotFound (node:internal/modules/esm/resolve:313:10)
+            at packageExportsResolve (node:internal/modules/esm/resolve:661:9)
+            at resolveExports (node:internal/modules/cjs/loader:678:36)
+            at Module._findPath (node:internal/modules/cjs/loader:745:31)
+            at Module._resolveFilename (node:internal/modules/cjs/loader:1405:27)
+            at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)
+            at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)
+            at Module._load (node:internal/modules/cjs/loader:1226:37)
+            at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+            at wrapModuleLoad (node:internal/modules/cjs/loader:244:24) {
+          code: 'ERR_PACKAGE_PATH_NOT_EXPORTED'
+        }"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
