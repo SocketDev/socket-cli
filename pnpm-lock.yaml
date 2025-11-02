@@ -13,8 +13,8 @@ catalogs:
       specifier: 7.28.4
       version: 7.28.4
     '@socketregistry/packageurl-js':
-      specifier: 1.3.3
-      version: 1.3.3
+      specifier: 1.3.5
+      version: 1.3.5
     '@socketsecurity/lib':
       specifier: 3.0.6
       version: 3.0.6
@@ -183,7 +183,7 @@ importers:
         version: 1.0.6
       '@socketregistry/packageurl-js':
         specifier: 'catalog:'
-        version: 1.3.3
+        version: 1.3.5
       '@socketregistry/yocto-spinner':
         specifier: 1.0.24
         version: 1.0.24
@@ -2197,8 +2197,8 @@ packages:
     resolution: {integrity: sha512-DM81ydAjO2GJKkNf2Vn17InJ37sEYLK1YyhxpDX16OdbOpYlsDIw8QyeFEUZtc7GqsQXbcPKJmz3j/2qS+BhKQ==}
     engines: {node: '>=18'}
 
-  '@socketregistry/packageurl-js@1.3.3':
-    resolution: {integrity: sha512-avcf2cZ0a3Lp0Cg5DF9Na+Zj5cQ9t5RVq1cJhIjJEIN8YI328YxB1x4u2pLqkjKWLDo8iDku4u4OoMTAB48Z6Q==}
+  '@socketregistry/packageurl-js@1.3.5':
+    resolution: {integrity: sha512-Fl4GNUJ/z3IBJBGj4IsJfuRGUBCRMgX0df0mb5x5buaCPDKC+NhMhAFuxpc3viLSHV12CO2rGaNCf4fBYWI0FA==}
     engines: {node: '>=18', pnpm: '>=10.16.0'}
 
   '@socketregistry/path-parse@1.0.8':
@@ -6342,7 +6342,7 @@ snapshots:
       npm-install-checks: 7.1.2
       npm-package-arg: 13.0.0
       npm-pick-manifest: 11.0.1
-      packageurl-js: '@socketregistry/packageurl-js@1.3.3'
+      packageurl-js: '@socketregistry/packageurl-js@1.3.5'
       parse-conflict-json: 4.0.0
       prettify-xml: 1.2.0
       proc-log: 5.0.0
@@ -7601,7 +7601,7 @@ snapshots:
 
   '@socketregistry/isarray@1.0.8': {}
 
-  '@socketregistry/packageurl-js@1.3.3': {}
+  '@socketregistry/packageurl-js@1.3.5': {}
 
   '@socketregistry/path-parse@1.0.8': {}
 
