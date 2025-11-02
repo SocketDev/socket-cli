@@ -19,7 +19,7 @@
  #include "node_threadsafe_cow-inl.h"
  #include "simdutf.h"
  #include "util-inl.h"
-+#include "socket_brotli_builtin_loader.h"  // Socket: External Brotli loader
++#include "socketsecurity_brotli_builtin_loader.h"  // Socket: External Brotli loader
 
  namespace node {
  namespace builtins {
