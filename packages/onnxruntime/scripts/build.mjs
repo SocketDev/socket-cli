@@ -78,14 +78,14 @@ async function cloneOnnxSource() {
     const depsPath = path.join(ONNX_SOURCE_DIR, 'cmake', 'deps.txt')
     const cmakePath = path.join(ONNX_SOURCE_DIR, 'cmake', 'onnxruntime_webassembly.cmake')
     const postBuildPath = path.join(ONNX_SOURCE_DIR, 'js', 'web', 'script', 'wasm_post_build.js')
-    const depsContent = await fs.readFile(depsPath, 'utf-8')
-    const cmakeContent = await fs.readFile(cmakePath, 'utf-8')
-    const postBuildContent = await fs.readFile(postBuildPath, 'utf-8')
 
     // Check if patches have been applied.
-    const eigenPatched = depsContent.includes('51982be81bbe52572b54180454df11a3ece9a934')
-    const cmakePatched = cmakeContent.includes('# add_compile_definitions(\n  #   BUILD_MLAS_NO_ONNXRUNTIME')
-    const postBuildPatched = postBuildContent.includes('if (matches.length === 0) {')
+    const eigenPatched = existsSync(depsPath) &&
+      (await fs.readFile(depsPath, 'utf-8')).includes('51982be81bbe52572b54180454df11a3ece9a934')
+    const cmakePatched = existsSync(cmakePath) &&
+      (await fs.readFile(cmakePath, 'utf-8')).includes('# add_compile_definitions(\n  #   BUILD_MLAS_NO_ONNXRUNTIME')
+    const postBuildPatched = existsSync(postBuildPath) &&
+      (await fs.readFile(postBuildPath, 'utf-8')).includes('if (matches.length === 0) {')
 
     if (!eigenPatched || !cmakePatched || !postBuildPatched) {
       // Source exists but patches not applied - need to re-clone.
