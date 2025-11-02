@@ -13,35 +13,14 @@ import '@socketsecurity/cli/src/polyfills/intl-stub/index.mts'
 import { findAndExecuteCli, getArgs } from './shared/bootstrap-shared.mjs'
 
 /**
- * Check if Node.js is being used for non-CLI purposes.
- * Returns true if we should skip CLI bootstrap and let Node.js run normally.
+ * Check if we're in a build/test environment where CLI isn't available yet.
+ * Returns true if we should skip CLI bootstrap (e.g., during build smoke tests).
  */
 function shouldSkipCliBootstrap() {
-  const args = process.execArgv.concat(getArgs())
-
-  // Skip if running in eval mode (node -e '...')
-  if (args.includes('-e') || args.includes('--eval')) {
-    return true
-  }
-
-  // Skip if checking version
-  if (args.includes('--version') || args.includes('-v')) {
-    return true
-  }
-
-  // Skip if printing help
-  if (args.includes('--help') || args.includes('-h')) {
-    return true
-  }
-
-  // Skip if running REPL (no arguments)
-  if (args.length === 0) {
-    return true
-  }
-
-  // Skip if SOCKET_CLI_SKIP_BOOTSTRAP is set (for testing/debugging)
-  if (process.env.SOCKET_CLI_SKIP_BOOTSTRAP === '1' ||
-      process.env.SOCKET_CLI_SKIP_BOOTSTRAP === 'true') {
+  // Skip if this is a build smoke test (binary verification during compilation)
+  // The CLI version doesn't exist on npm yet during build, so we can't download it.
+  if (process.env.SOCKET_CLI_BUILD_TEST === '1' ||
+      process.env.SOCKET_CLI_BUILD_TEST === 'true') {
     return true
   }
 
@@ -49,7 +28,9 @@ function shouldSkipCliBootstrap() {
 }
 
 async function main() {
-  // Skip bootstrap if Node.js is being used for non-CLI purposes.
+  // Skip bootstrap if we're in a build/test environment.
+  // During smol binary compilation, smoke tests verify Node.js works,
+  // but the CLI version doesn't exist on npm yet, so we can't download it.
   if (shouldSkipCliBootstrap()) {
     // Let Node.js continue with its normal execution.
     return 0
