@@ -108,7 +108,6 @@
   },
   "pnpm": {
     "overrides": {
-      "@socketsecurity/lib": "link:../socket-others/socket-lib",
       "@octokit/graphql": "9.0.1",
       "@octokit/request-error": "7.0.0",
       "aggregate-error": "npm:@socketregistry/aggregate-error@^1.0.15",
