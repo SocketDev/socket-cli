@@ -1,5 +1,5 @@
-# Run security checks first.
-.husky/security-checks.sh
+# Optional checks - can be bypassed with --no-verify for fast local commits.
+# Mandatory security checks run in pre-push hook.
 
 if [ -z "${DISABLE_PRECOMMIT_LINT}" ]; then
   pnpm lint --staged
