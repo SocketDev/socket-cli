@@ -112,7 +112,7 @@ describe('npm-paths utilities', () => {
         shadowed: false,
       })
 
-      const { logger } = vi.mocked(await import('@socketsecurity/lib/logger'))
+      vi.mocked(await import('@socketsecurity/lib/logger'))
 
       expect(() => getNpmBinPath()).toThrow('process.exit(127)')
       expect(mockLogger.fail).toHaveBeenCalledWith(
@@ -196,7 +196,7 @@ describe('npm-paths utilities', () => {
       const ENV = vi.mocked(await import('../../constants/env.mts')).default
       ENV.SOCKET_CLI_NPM_PATH = undefined
 
-      const { logger } = vi.mocked(await import('@socketsecurity/lib/logger'))
+      vi.mocked(await import('@socketsecurity/lib/logger'))
 
       expect(() => getNpmDirPath()).toThrow('process.exit(127)')
       expect(mockLogger.fail).toHaveBeenCalledWith(
@@ -287,7 +287,7 @@ describe('npm-paths utilities', () => {
         shadowed: false,
       })
 
-      const { logger } = vi.mocked(await import('@socketsecurity/lib/logger'))
+      vi.mocked(await import('@socketsecurity/lib/logger'))
 
       expect(() => getNpxBinPath()).toThrow('process.exit(127)')
       expect(mockLogger.fail).toHaveBeenCalledWith(

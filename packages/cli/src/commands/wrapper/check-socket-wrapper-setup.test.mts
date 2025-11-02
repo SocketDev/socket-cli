@@ -75,7 +75,7 @@ describe('checkSocketWrapperSetup', () => {
   })
 
   it('logs instructions when wrapper is set up', async () => {
-    const { logger } = await import('@socketsecurity/lib/logger')
+    await import('@socketsecurity/lib/logger')
     const mockReadFileSync = vi.mocked(fs.readFileSync) as any
     mockReadFileSync.mockReturnValue('alias npm="socket npm"')
 

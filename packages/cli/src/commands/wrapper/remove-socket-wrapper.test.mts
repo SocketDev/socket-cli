@@ -30,7 +30,7 @@ describe('removeSocketWrapper', () => {
   })
 
   it('successfully removes both aliases from file', async () => {
-    const { logger } = await import('@socketsecurity/lib/logger')
+    await import('@socketsecurity/lib/logger')
     const mockReadFileSync = vi.mocked(readFileSync) as any
     const _mockWriteFileSync = vi.mocked(writeFileSync) as any
 
@@ -72,7 +72,7 @@ describe('removeSocketWrapper', () => {
   })
 
   it('handles read error gracefully', async () => {
-    const { logger } = await import('@socketsecurity/lib/logger')
+    await import('@socketsecurity/lib/logger')
     const mockReadFileSync = vi.mocked(readFileSync) as any
     const readError = new Error('Permission denied')
 
@@ -90,7 +90,7 @@ describe('removeSocketWrapper', () => {
   })
 
   it('handles write error gracefully', async () => {
-    const { logger } = await import('@socketsecurity/lib/logger')
+    await import('@socketsecurity/lib/logger')
     const mockReadFileSync = vi.mocked(readFileSync) as any
     const mockWriteFileSync = vi.mocked(writeFileSync) as any
     const writeError = new Error('Disk full')
@@ -107,7 +107,7 @@ describe('removeSocketWrapper', () => {
   })
 
   it('handles file with no socket aliases', async () => {
-    const { logger } = await import('@socketsecurity/lib/logger')
+    await import('@socketsecurity/lib/logger')
     const mockReadFileSync = vi.mocked(readFileSync) as any
     const _mockWriteFileSync = vi.mocked(writeFileSync) as any
 
@@ -147,7 +147,7 @@ describe('removeSocketWrapper', () => {
   })
 
   it('handles empty file', async () => {
-    const { logger } = await import('@socketsecurity/lib/logger')
+    await import('@socketsecurity/lib/logger')
     const mockReadFileSync = vi.mocked(readFileSync) as any
     const _mockWriteFileSync = vi.mocked(writeFileSync) as any
 
@@ -180,7 +180,7 @@ describe('removeSocketWrapper', () => {
   })
 
   it('handles undefined error in read catch', async () => {
-    const { logger } = await import('@socketsecurity/lib/logger')
+    await import('@socketsecurity/lib/logger')
     const mockReadFileSync = vi.mocked(readFileSync) as any
 
     mockReadFileSync.mockImplementation(() => {
@@ -196,7 +196,7 @@ describe('removeSocketWrapper', () => {
   })
 
   it('handles undefined error in write catch', async () => {
-    const { logger } = await import('@socketsecurity/lib/logger')
+    await import('@socketsecurity/lib/logger')
     const mockReadFileSync = vi.mocked(readFileSync) as any
     const mockWriteFileSync = vi.mocked(writeFileSync) as any
 
