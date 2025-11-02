@@ -440,13 +440,17 @@ describe('patch-backup', () => {
       )
 
       // Create files
-      await Promise.allSettled(files.map((file, i) => writeFile(file, `content ${i}`)))
+      await Promise.allSettled(
+        files.map((file, i) => writeFile(file, `content ${i}`)),
+      )
 
       // Create backups concurrently
       const settled = await Promise.allSettled(
         files.map(file => createBackup(uuid, file)),
       )
-      const results = settled.filter(r => r.status === 'fulfilled').map(r => r.value)
+      const results = settled
+        .filter(r => r.status === 'fulfilled')
+        .map(r => r.value)
 
       // Verify all backups were created
       expect(results).toHaveLength(5)
@@ -472,7 +476,9 @@ describe('patch-backup', () => {
       )
 
       // Create files
-      await Promise.allSettled(files.map((file, i) => writeFile(file, `content ${i}`)))
+      await Promise.allSettled(
+        files.map((file, i) => writeFile(file, `content ${i}`)),
+      )
 
       // Create backups sequentially
       for (const file of files) {

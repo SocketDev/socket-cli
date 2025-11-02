@@ -74,7 +74,7 @@ describe('pnpm-paths utilities', () => {
         shadowed: false,
       })
 
-      const { logger } = vi.mocked(await import('@socketsecurity/lib/logger'))
+      vi.mocked(await import('@socketsecurity/lib/logger'))
 
       expect(() => getPnpmBinPath()).toThrow('process.exit(127)')
       expect(mockLogger.fail).toHaveBeenCalledWith(

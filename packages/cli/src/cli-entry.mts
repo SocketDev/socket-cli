@@ -55,6 +55,7 @@ import { serializeResultJson } from './utils/output/result-json.mts'
 import { runPreflightDownloads } from './utils/preflight/downloads.mts'
 import { isSeaBinary } from './utils/sea/detect.mts'
 import { scheduleUpdateCheck } from './utils/update/manager.mts'
+
 import { dlxManifest } from '@socketsecurity/lib/dlx-manifest'
 
 const __filename = fileURLToPath(import.meta.url)
