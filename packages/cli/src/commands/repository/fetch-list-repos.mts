@@ -37,12 +37,12 @@ export async function fetchListRepos(
   }
   const sockSdk = sockSdkCResult.data
 
-  return await handleApiCall(
+  return await handleApiCall<'listRepositories'>(
     sockSdk.listRepositories(orgSlug, {
-      sort,
-      direction,
-      per_page: String(perPage),
-      page: String(page),
+      ...(sort ? { sort: sort as 'name' | 'created_at' } : {}),
+      ...(direction ? { direction: direction as 'asc' | 'desc' } : {}),
+      per_page: perPage,
+      page,
     }),
     { description: 'list of repositories' },
   )

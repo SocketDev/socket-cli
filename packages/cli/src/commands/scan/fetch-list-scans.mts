@@ -40,15 +40,15 @@ export async function fetchOrgFullScanList(
     ...config,
   } as FetchOrgFullScanListConfig
 
-  return await handleApiCall(
+  return await handleApiCall<'listFullScans'>(
     sockSdk.listFullScans(orgSlug, {
       ...(branch ? { branch } : {}),
       ...(repo ? { repo } : {}),
-      sort,
-      direction,
+      ...(sort ? { sort: sort as 'name' | 'created_at' } : {}),
+      ...(direction ? { direction: direction as 'asc' | 'desc' } : {}),
       from: from_time,
-      page: String(page),
-      per_page: String(perPage),
+      page,
+      per_page: perPage,
     }),
     { description: 'list of scans' },
   )

@@ -34,16 +34,16 @@ export async function fetchAuditLog(
     ...config,
   } as FetchAuditLogsConfig
 
-  return await handleApiCall(
+  return await handleApiCall<'getAuditLogEvents'>(
     sockSdk.getAuditLogEvents(orgSlug, {
       // I'm not sure this is used at all.
-      outputJson: String(outputKind === 'json'),
+      outputJson: outputKind === 'json',
       // I'm not sure this is used at all.
-      outputMarkdown: String(outputKind === 'markdown'),
+      outputMarkdown: outputKind === 'markdown',
       orgSlug,
       type: logType,
-      page: String(page),
-      per_page: String(perPage),
+      page,
+      per_page: perPage,
     }),
     { description: `audit log for ${orgSlug}` },
   )
