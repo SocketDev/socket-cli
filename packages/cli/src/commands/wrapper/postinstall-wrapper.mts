@@ -2,7 +2,7 @@ import fs, { existsSync } from 'node:fs'
 
 import { debug, debugDir } from '@socketsecurity/lib/debug'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { confirm } from '@socketsecurity/lib/prompts'
+import { confirm } from '@socketsecurity/lib/stdio/prompts'
 
 import { addSocketWrapper } from './add-socket-wrapper.mts'
 import { checkSocketWrapperSetup } from './check-socket-wrapper-setup.mts'
