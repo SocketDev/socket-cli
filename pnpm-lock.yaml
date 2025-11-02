@@ -12,6 +12,9 @@ catalogs:
     '@babel/traverse':
       specifier: 7.28.4
       version: 7.28.4
+    '@socketregistry/packageurl-js':
+      specifier: 1.3.3
+      version: 1.3.3
     del-cli:
       specifier: 6.0.0
       version: 6.0.0
@@ -49,7 +52,7 @@ overrides:
   isarray: npm:@socketregistry/isarray@^1.0.8
   lodash: 4.17.21
   npm-package-arg: 13.0.0
-  packageurl-js: npm:@socketregistry/packageurl-js@^1.3.2
+  packageurl-js: npm:@socketregistry/packageurl-js@^1.3.3
   path-parse: npm:@socketregistry/path-parse@^1.0.8
   safe-buffer: npm:@socketregistry/safe-buffer@^1.0.9
   safer-buffer: npm:@socketregistry/safer-buffer@^1.0.10
@@ -176,7 +179,7 @@ importers:
         specifier: 1.0.6
         version: 1.0.6
       '@socketregistry/packageurl-js':
-        specifier: 1.3.3
+        specifier: 'catalog:'
         version: 1.3.3
       '@socketregistry/yocto-spinner':
         specifier: 1.0.24

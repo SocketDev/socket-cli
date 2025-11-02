@@ -4,8 +4,9 @@
 import { pathToFileURL } from 'node:url'
 
 import { render } from 'ink'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import React from 'react'
+
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 const logger = getDefaultLogger()
 

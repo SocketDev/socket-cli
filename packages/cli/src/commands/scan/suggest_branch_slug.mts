@@ -1,5 +1,5 @@
-import { select } from '@socketsecurity/lib/stdio/prompts'
 import { spawn } from '@socketsecurity/lib/spawn'
+import { select } from '@socketsecurity/lib/stdio/prompts'
 import { stripAnsi } from '@socketsecurity/lib/strings'
 
 export async function suggestBranchSlug(
