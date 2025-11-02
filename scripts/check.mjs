@@ -234,6 +234,31 @@ async function main() {
       }
     }
 
+    // Run link: validation check
+    if (runAll) {
+      if (!quiet) {
+        getDefaultLogger().step('Validating no link: dependencies')
+      }
+      const validateResult = await spawn(
+        'node',
+        ['scripts/validate-no-link-deps.mjs'],
+        {
+          shell: WIN32,
+          stdio: quiet ? 'pipe' : 'inherit',
+        },
+      )
+      if (validateResult.code !== 0) {
+        if (!quiet) {
+          getDefaultLogger().error('Validation failed')
+        }
+        process.exitCode = validateResult.code
+        return
+      }
+      if (!quiet) {
+        getDefaultLogger().error('')
+      }
+    }
+
     if (!quiet) {
       getDefaultLogger().success('All checks passed')
       printFooter()
