@@ -144,7 +144,7 @@ describe('socket config get', async () => {
             env: { SOCKET_CLI_API_TOKEN: 'abc' },
           })
           expect(stdout).toMatchInlineSnapshot(`
-            "apiToken: abc
+            "apiToken: null
 
             Note: the config is in read-only mode, meaning at least one key was temporarily overridden from an env var or command flag."
           `)
@@ -169,7 +169,7 @@ describe('socket config get', async () => {
             env: { SOCKET_SECURITY_API_KEY: 'abc' },
           })
           expect(stdout).toMatchInlineSnapshot(`
-            "apiToken: abc
+            "apiToken: null
 
             Note: the config is in read-only mode, meaning at least one key was temporarily overridden from an env var or command flag."
           `)
@@ -194,7 +194,7 @@ describe('socket config get', async () => {
             env: { SOCKET_CLI_API_TOKEN: 'abc' },
           })
           expect(stdout).toMatchInlineSnapshot(`
-            "apiToken: abc
+            "apiToken: null
 
             Note: the config is in read-only mode, meaning at least one key was temporarily overridden from an env var or command flag."
           `)
@@ -219,7 +219,7 @@ describe('socket config get', async () => {
             env: { SOCKET_CLI_API_KEY: 'abc' },
           })
           expect(stdout).toMatchInlineSnapshot(`
-            "apiToken: abc
+            "apiToken: null
 
             Note: the config is in read-only mode, meaning at least one key was temporarily overridden from an env var or command flag."
           `)
@@ -250,7 +250,7 @@ describe('socket config get', async () => {
             env: { SOCKET_CLI_API_KEY: 'abc' },
           })
           expect(stdout).toMatchInlineSnapshot(`
-            "apiToken: abc
+            "apiToken: ignoremebecausetheenvvarshouldbemoreimportant
 
             Note: the config is in read-only mode, meaning at least one key was temporarily overridden from an env var or command flag."
           `)
