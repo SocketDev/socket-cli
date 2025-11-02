@@ -5,10 +5,18 @@ vi.mock('../config.mts', () => ({
   getConfigValueOrUndef: vi.fn(),
 }))
 
+const mockLogger = vi.hoisted(() => ({
+  error: vi.fn(),
+  fail: vi.fn(),
+  info: vi.fn(),
+  log: vi.fn(),
+  success: vi.fn(),
+  warn: vi.fn(),
+}))
+
 vi.mock('@socketsecurity/lib/logger', () => ({
-  logger: {
-    error: vi.fn(),
-  },
+  getDefaultLogger: () => mockLogger,
+  logger: mockLogger,
 }))
 
 vi.mock('@socketsecurity/lib/spinner', () => ({
