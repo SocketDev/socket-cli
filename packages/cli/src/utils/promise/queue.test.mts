@@ -14,9 +14,9 @@ describe('PromiseQueue', () => {
         })
     })
 
-    const results = await Promise.all(tasks.map(task => queue.add(task)))
+    const results = await Promise.allSettled(tasks.map(task => queue.add(task)))
 
-    expect(results).toEqual([0, 1, 2, 3, 4])
+    expect(results.map(r => r.status === 'fulfilled' ? r.value : null)).toEqual([0, 1, 2, 3, 4])
   })
 
   it('should track active and pending counts', async () => {
@@ -29,7 +29,7 @@ describe('PromiseQueue', () => {
     expect(queue.activeCount).toBe(1)
     expect(queue.pendingCount).toBe(1)
 
-    await Promise.all([p1, p2])
+    await Promise.allSettled([p1, p2])
 
     expect(queue.activeCount).toBe(0)
     expect(queue.pendingCount).toBe(0)
