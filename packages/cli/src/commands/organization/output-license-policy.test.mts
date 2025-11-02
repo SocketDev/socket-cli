@@ -33,6 +33,11 @@ vi.mock('../../utils/output/markdown.mts', () => ({
   mdTableOfPairs: vi.fn(pairs => `Table with ${pairs.length} rows`),
 }))
 
+import { outputLicensePolicy } from './output-license-policy.mts'
+import { serializeResultJson } from '../../utils/output/result-json.mjs'
+import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
+import { mdHeader, mdTableOfPairs } from '../../utils/output/markdown.mts'
+
 describe('outputLicensePolicy', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -40,14 +45,6 @@ describe('outputLicensePolicy', () => {
   })
 
   it('outputs JSON format for successful result', async () => {
-    const { outputLicensePolicy } = await import('./output-license-policy.mts')
-    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
-    const { serializeResultJson } = await vi.importMock(
-      '../../utils/output/result-json.mjs',
-    )
-    const mockLog = vi.mocked(logger.log)
-    const mockSerialize = vi.mocked(serializeResultJson)
-
     const result = createSuccessResult({
       license_policy: {
         MIT: { allowed: true },
@@ -58,16 +55,12 @@ describe('outputLicensePolicy', () => {
 
     await outputLicensePolicy(result as any, 'json')
 
-    expect(mockSerialize).toHaveBeenCalledWith(result)
-    expect(mockLog).toHaveBeenCalledWith(JSON.stringify(result))
+    expect(serializeResultJson).toHaveBeenCalledWith(result)
+    expect(mockLogger.log).toHaveBeenCalledWith(JSON.stringify(result))
     expect(process.exitCode).toBeUndefined()
   })
 
   it('outputs error in JSON format', async () => {
-    const { outputLicensePolicy } = await import('./output-license-policy.mts')
-    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
-    const mockLog = vi.mocked(logger.log)
-
     const result = createErrorResult('Unauthorized', {
       code: 2,
       cause: 'Invalid API token',
@@ -75,20 +68,11 @@ describe('outputLicensePolicy', () => {
 
     await outputLicensePolicy(result, 'json')
 
-    expect(mockLog).toHaveBeenCalled()
+    expect(mockLogger.log).toHaveBeenCalled()
     expect(process.exitCode).toBe(2)
   })
 
   it('outputs text format with license table', async () => {
-    const { outputLicensePolicy } = await import('./output-license-policy.mts')
-    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
-    const { mdTableOfPairs } = await vi.importMock(
-      '../../utils/output/markdown.mts',
-    )
-    const mockLog = vi.mocked(logger.log)
-    const mockInfo = vi.mocked(logger.info)
-    const mockTable = vi.mocked(mdTableOfPairs)
-
     const result = createSuccessResult({
       license_policy: {
         MIT: { allowed: true },
@@ -99,9 +83,9 @@ describe('outputLicensePolicy', () => {
 
     await outputLicensePolicy(result as any, 'text')
 
-    expect(mockInfo).toHaveBeenCalledWith('Use --json to get the full result')
-    expect(mockLog).toHaveBeenCalledWith('# License policy')
-    expect(mockTable).toHaveBeenCalledWith(
+    expect(mockLogger.info).toHaveBeenCalledWith('Use --json to get the full result')
+    expect(mockLogger.log).toHaveBeenCalledWith('# License policy')
+    expect(mdTableOfPairs).toHaveBeenCalledWith(
       expect.arrayContaining([
         ['BSD-3-Clause', ' yes'],
         ['GPL-3.0', ' no'],
@@ -112,14 +96,6 @@ describe('outputLicensePolicy', () => {
   })
 
   it('outputs error in text format', async () => {
-    const { outputLicensePolicy } = await import('./output-license-policy.mts')
-    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
-    const { failMsgWithBadge } = await vi.importMock(
-      '../../utils/error/fail-msg-with-badge.mts',
-    )
-    const mockFail = vi.mocked(logger.fail)
-    const mockFailMsg = vi.mocked(failMsgWithBadge)
-
     const result = createErrorResult('Failed to fetch policy', {
       code: 1,
       cause: 'Network error',
@@ -127,19 +103,15 @@ describe('outputLicensePolicy', () => {
 
     await outputLicensePolicy(result, 'text')
 
-    expect(mockFailMsg).toHaveBeenCalledWith(
+    expect(failMsgWithBadge).toHaveBeenCalledWith(
       'Failed to fetch policy',
       'Network error',
     )
-    expect(mockFail).toHaveBeenCalled()
+    expect(mockLogger.fail).toHaveBeenCalled()
     expect(process.exitCode).toBe(1)
   })
 
   it('handles markdown output format', async () => {
-    const { outputLicensePolicy } = await import('./output-license-policy.mts')
-    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
-    const mockLog = vi.mocked(logger.log)
-
     const result = createSuccessResult({
       license_policy: {
         MIT: { allowed: true },
@@ -148,44 +120,31 @@ describe('outputLicensePolicy', () => {
 
     await outputLicensePolicy(result as any, 'markdown')
 
-    expect(mockLog).toHaveBeenCalledWith('# License policy')
-    expect(mockLog).toHaveBeenCalledWith(expect.stringContaining('Table'))
+    expect(mockLogger.log).toHaveBeenCalledWith('# License policy')
+    expect(mockLogger.log).toHaveBeenCalledWith(expect.stringContaining('Table'))
   })
 
   it('handles empty license policy', async () => {
-    const { outputLicensePolicy } = await import('./output-license-policy.mts')
-    const { mdTableOfPairs } = await vi.importMock(
-      '../../utils/output/markdown.mts',
-    )
-    const mockTable = vi.mocked(mdTableOfPairs)
-
     const result = createSuccessResult({
       license_policy: {},
     })
 
     await outputLicensePolicy(result as any, 'text')
 
-    expect(mockTable).toHaveBeenCalledWith([], ['License Name', 'Allowed'])
+    expect(mdTableOfPairs).toHaveBeenCalledWith([], ['License Name', 'Allowed'])
   })
 
   it('handles null license policy', async () => {
-    const { outputLicensePolicy } = await import('./output-license-policy.mts')
-    const { mdTableOfPairs } = await vi.importMock(
-      '../../utils/output/markdown.mts',
-    )
-    const mockTable = vi.mocked(mdTableOfPairs)
-
     const result = createSuccessResult({
       license_policy: null,
     })
 
     await outputLicensePolicy(result as any, 'text')
 
-    expect(mockTable).toHaveBeenCalledWith([], ['License Name', 'Allowed'])
+    expect(mdTableOfPairs).toHaveBeenCalledWith([], ['License Name', 'Allowed'])
   })
 
   it('sets default exit code when code is undefined', async () => {
-    const { outputLicensePolicy } = await import('./output-license-policy.mts')
     const result = createErrorResult('Error')
 
     await outputLicensePolicy(result as any, 'json')

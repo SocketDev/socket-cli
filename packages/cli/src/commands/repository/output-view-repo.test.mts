@@ -4,6 +4,7 @@ import {
   createErrorResult,
   createSuccessResult,
 } from '../../../test/helpers/index.mts'
+import { outputViewRepo } from './output-view-repo.mts'
 
 import type { CResult } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
@@ -48,12 +49,10 @@ describe('outputViewRepo', () => {
   })
 
   it('outputs JSON format for successful result', async () => {
-    const { outputViewRepo } = await import('./output-view-repo.mts')
-    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
     const { serializeResultJson } = await vi.importMock(
       '../../utils/output/result-json.mjs',
     )
-    
+
     const mockSerialize = vi.mocked(serializeResultJson)
 
     const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> =
@@ -70,15 +69,11 @@ describe('outputViewRepo', () => {
     await outputViewRepo(result, 'json')
 
     expect(mockSerialize).toHaveBeenCalledWith(result)
-    expect(mockLog).toHaveBeenCalledWith(JSON.stringify(result))
+    expect(mockLogger.log).toHaveBeenCalledWith(JSON.stringify(result))
     expect(process.exitCode).toBeUndefined()
   })
 
   it('outputs error in JSON format', async () => {
-    const { outputViewRepo } = await import('./output-view-repo.mts')
-    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
-    
-
     const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> =
       createErrorResult('Unauthorized', {
         cause: 'Invalid API token',
@@ -87,15 +82,13 @@ describe('outputViewRepo', () => {
 
     await outputViewRepo(result, 'json')
 
-    expect(mockLog).toHaveBeenCalled()
+    expect(mockLogger.log).toHaveBeenCalled()
     expect(process.exitCode).toBe(2)
   })
 
   it('outputs repository table in text format', async () => {
-    const { outputViewRepo } = await import('./output-view-repo.mts')
-    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
     const chalkTable = await vi.importMock('chalk-table')
-    
+
     const mockChalkTable = vi.mocked(chalkTable.default)
 
     const repoData = {
@@ -127,16 +120,14 @@ describe('outputViewRepo', () => {
       }),
       [repoData],
     )
-    expect(mockLog).toHaveBeenCalledWith('Table with 1 row(s)')
+    expect(mockLogger.log).toHaveBeenCalledWith('Table with 1 row(s)')
   })
 
   it('outputs error in text format', async () => {
-    const { outputViewRepo } = await import('./output-view-repo.mts')
-    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
     const { failMsgWithBadge } = await vi.importMock(
       '../../utils/error/fail-msg-with-badge.mts',
     )
-    
+
     const mockFailMsg = vi.mocked(failMsgWithBadge)
 
     const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> =
@@ -151,15 +142,11 @@ describe('outputViewRepo', () => {
       'Repository not found',
       'Not found error',
     )
-    expect(mockFail).toHaveBeenCalled()
+    expect(mockLogger.fail).toHaveBeenCalled()
     expect(process.exitCode).toBe(1)
   })
 
   it('handles repository with null homepage', async () => {
-    const { outputViewRepo } = await import('./output-view-repo.mts')
-    const { logger: _logger } = await vi.importMock(
-      '@socketsecurity/lib/logger',
-    )
     const chalkTable = await vi.importMock('chalk-table')
     const mockChalkTable = vi.mocked(chalkTable.default)
 
@@ -182,7 +169,6 @@ describe('outputViewRepo', () => {
   })
 
   it('handles repository with empty name', async () => {
-    const { outputViewRepo } = await import('./output-view-repo.mts')
     const chalkTable = await vi.importMock('chalk-table')
     const mockChalkTable = vi.mocked(chalkTable.default)
 
@@ -205,7 +191,6 @@ describe('outputViewRepo', () => {
   })
 
   it('handles very long repository data', async () => {
-    const { outputViewRepo } = await import('./output-view-repo.mts')
     const chalkTable = await vi.importMock('chalk-table')
     const mockChalkTable = vi.mocked(chalkTable.default)
 
@@ -230,7 +215,6 @@ describe('outputViewRepo', () => {
   })
 
   it('sets default exit code when code is undefined', async () => {
-    const { outputViewRepo } = await import('./output-view-repo.mts')
     const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> =
       createErrorResult('Error without code')
 
