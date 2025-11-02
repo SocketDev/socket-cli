@@ -25,7 +25,10 @@ export async function fetchRepoAnalyticsData(
   }
   const sockSdk = sockSdkCResult.data
 
-  return await handleApiCall(sockSdk.getRepoAnalytics(repo, time.toString()), {
-    description: 'analytics data',
-  })
+  return await handleApiCall<'getRepoAnalytics'>(
+    sockSdk.getRepoAnalytics(repo, time.toString()),
+    {
+      description: 'analytics data',
+    },
+  )
 }

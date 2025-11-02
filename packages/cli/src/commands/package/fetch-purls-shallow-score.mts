@@ -35,7 +35,7 @@ export async function fetchPurlsShallowScore(
     `Requesting shallow score data for ${purls.length} package urls (purl): ${displayPurls}`,
   )
 
-  const batchPackageCResult = await handleApiCall(
+  const batchPackageCResult = await handleApiCall<'batchPackageFetch'>(
     sockSdk.batchPackageFetch(
       { components: purls.map(purl => ({ purl })) },
       {
