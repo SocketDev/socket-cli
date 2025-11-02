@@ -10,10 +10,19 @@ vi.mock('@socketsecurity/lib/debug', () => ({
   debugLog: vi.fn(),
   isDebug: vi.fn(() => false),
 }))
+
+const mockLogger = vi.hoisted(() => ({
+  fail: vi.fn(),
+  log: vi.fn(),
+  info: vi.fn(),
+  success: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+}))
+
 vi.mock('@socketsecurity/lib/logger', () => ({
-  logger: {
-    log: vi.fn(),
-  },
+  getDefaultLogger: () => mockLogger,
+  logger: mockLogger,
 }))
 vi.mock('./fetch-default-org-slug.mts', () => ({
   getDefaultOrgSlug: vi.fn(),
@@ -170,7 +179,7 @@ describe('handleCi', () => {
 
     expect(process.exitCode).toBe(401)
     expect(serializeResultJson).toHaveBeenCalledWith(error)
-    expect(getDefaultLogger().log).toHaveBeenCalledWith(JSON.stringify(error))
+    expect(mockLogger.log).toHaveBeenCalledWith(JSON.stringify(error))
     expect(handleCreateNewScan).not.toHaveBeenCalled()
   })
 
@@ -190,7 +199,7 @@ describe('handleCi', () => {
     await handleCi(false)
 
     expect(process.exitCode).toBe(1)
-    expect(getDefaultLogger().log).toHaveBeenCalled()
+    expect(mockLogger.log).toHaveBeenCalled()
   })
 
   it('logs debug information', async () => {

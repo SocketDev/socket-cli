@@ -3,13 +3,18 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { determineOrgSlug } from '../socket/org-slug.mts'
 
 // Mock dependencies.
+const mockLogger = vi.hoisted(() => ({
+  fail: vi.fn(),
+  log: vi.fn(),
+  info: vi.fn(),
+  success: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+}))
+
 vi.mock('@socketsecurity/lib/logger', () => ({
-  logger: {
-    error: vi.fn(),
-    fail: vi.fn(),
-    info: vi.fn(),
-    warn: vi.fn(),
-  },
+  getDefaultLogger: () => mockLogger,
+  logger: mockLogger,
 }))
 
 vi.mock('../../constants/config.mts', () => ({
@@ -69,7 +74,7 @@ describe('determineOrgSlug', () => {
       const result = await determineOrgSlug('', false, false)
 
       expect(result).toEqual(['', undefined])
-      expect(getDefaultLogger().warn).toHaveBeenCalledWith(
+      expect(mockLogger.warn).toHaveBeenCalledWith(
         'Note: This command requires an org slug because the Socket API endpoint does.',
       )
     })
@@ -108,23 +113,23 @@ describe('determineOrgSlug', () => {
       const result = await determineOrgSlug('', false, false)
 
       expect(result).toEqual(['', undefined])
-      expect(getDefaultLogger().warn).toHaveBeenCalledWith(
+      expect(mockLogger.warn).toHaveBeenCalledWith(
         'Note: This command requires an org slug because the Socket API endpoint does.',
       )
-      expect(getDefaultLogger().warn).toHaveBeenCalledWith(
+      expect(mockLogger.warn).toHaveBeenCalledWith(
         'It seems no default org was setup and the `--org` flag was not used.',
       )
-      expect(getDefaultLogger().warn).toHaveBeenCalledWith(
+      expect(mockLogger.warn).toHaveBeenCalledWith(
         "Additionally, `--no-interactive` was set so we can't ask for it.",
       )
-      expect(getDefaultLogger().warn).toHaveBeenCalledWith(
+      expect(mockLogger.warn).toHaveBeenCalledWith(
         'Note: When running in CI, you probably want to set the `--org` flag.',
       )
       expect(webLink).toHaveBeenCalledWith(
         'https://socket.dev/migration-guide',
         'v1 migration guide',
       )
-      expect(getDefaultLogger().warn).toHaveBeenCalledWith(
+      expect(mockLogger.warn).toHaveBeenCalledWith(
         'This command will exit now because the org slug is required to proceed.',
       )
     })
@@ -136,10 +141,10 @@ describe('determineOrgSlug', () => {
 
       await determineOrgSlug('', false, false)
 
-      expect(getDefaultLogger().warn).toHaveBeenCalledWith(
+      expect(mockLogger.warn).toHaveBeenCalledWith(
         'Since v1.0.0 the org _argument_ for all commands was dropped in favor of an',
       )
-      expect(getDefaultLogger().warn).toHaveBeenCalledWith(
+      expect(mockLogger.warn).toHaveBeenCalledWith(
         'implicit default org setting, which will be setup when you run `socket login`.',
       )
     })
@@ -162,13 +167,13 @@ describe('determineOrgSlug', () => {
       const result = await determineOrgSlug('', true, false)
 
       expect(result).toEqual(['suggested-org', undefined])
-      expect(getDefaultLogger().warn).toHaveBeenCalledWith(
+      expect(mockLogger.warn).toHaveBeenCalledWith(
         'Unable to determine the target org. Trying to auto-discover it now...',
       )
-      expect(getDefaultLogger().info).toHaveBeenCalledWith(
+      expect(mockLogger.info).toHaveBeenCalledWith(
         'Note: Run `socket login` to set a default org.',
       )
-      expect(getDefaultLogger().error).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         '      Use the --org flag to override the default org.',
       )
       expect(suggestOrgSlug).toHaveBeenCalled()
@@ -225,7 +230,7 @@ describe('determineOrgSlug', () => {
       const result = await determineOrgSlug('', true, true)
 
       expect(result).toEqual(['', undefined])
-      expect(getDefaultLogger().fail).toHaveBeenCalledWith(
+      expect(mockLogger.fail).toHaveBeenCalledWith(
         'Skipping auto-discovery of org in dry-run mode',
       )
       expect(suggestOrgSlug).not.toHaveBeenCalled()

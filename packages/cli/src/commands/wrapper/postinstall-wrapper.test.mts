@@ -6,11 +6,19 @@ import { postinstallWrapper } from './postinstall-wrapper.mts'
 
 // Mock the dependencies.
 vi.mock('node:fs')
+
+const mockLogger = vi.hoisted(() => ({
+  fail: vi.fn(),
+  log: vi.fn(),
+  info: vi.fn(),
+  success: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+}))
+
 vi.mock('@socketsecurity/lib/logger', () => ({
-  logger: {
-    log: vi.fn(),
-    success: vi.fn(),
-  },
+  getDefaultLogger: () => mockLogger,
+  logger: mockLogger,
 }))
 vi.mock('@socketsecurity/lib/stdio/prompts', () => ({
   confirm: vi.fn(),
@@ -102,7 +110,7 @@ describe('postinstallWrapper', () => {
       ),
       default: true,
     })
-    expect(getDefaultLogger().log).toHaveBeenCalledWith(
+    expect(mockLogger.log).toHaveBeenCalledWith(
       expect.stringContaining(
         'Run `socket install completion` to setup bash tab completion',
       ),
@@ -203,7 +211,7 @@ describe('postinstallWrapper', () => {
     expect(updateInstalledTabCompletionScript).toHaveBeenCalledWith(
       '/home/user/.config/socket/tab-completion.bash',
     )
-    expect(getDefaultLogger().success).toHaveBeenCalledWith(
+    expect(mockLogger.success).toHaveBeenCalledWith(
       'Updated the installed Socket tab completion script',
     )
   })
@@ -233,7 +241,7 @@ describe('postinstallWrapper', () => {
     await postinstallWrapper()
 
     expect(updateInstalledTabCompletionScript).not.toHaveBeenCalled()
-    expect(getDefaultLogger().log).toHaveBeenCalledWith(
+    expect(mockLogger.log).toHaveBeenCalledWith(
       'Run `socket install completion` to setup bash tab completion',
     )
   })
@@ -256,7 +264,7 @@ describe('postinstallWrapper', () => {
 
     await postinstallWrapper()
 
-    expect(getDefaultLogger().log).toHaveBeenCalledWith(
+    expect(mockLogger.log).toHaveBeenCalledWith(
       'Run `socket install completion` to setup bash tab completion',
     )
   })
@@ -277,7 +285,7 @@ describe('postinstallWrapper', () => {
 
     await postinstallWrapper()
 
-    expect(getDefaultLogger().log).toHaveBeenCalledWith(
+    expect(mockLogger.log).toHaveBeenCalledWith(
       'Run `socket install completion` to setup bash tab completion',
     )
   })

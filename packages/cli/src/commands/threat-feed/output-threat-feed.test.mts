@@ -6,12 +6,18 @@ import type { ThreadFeedResponse, ThreatResult } from './types.mts'
 import type { CResult } from '../../types.mts'
 
 // Mock the dependencies.
+const mockLogger = vi.hoisted(() => ({
+  fail: vi.fn(),
+  log: vi.fn(),
+  info: vi.fn(),
+  success: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+}))
+
 vi.mock('@socketsecurity/lib/logger', () => ({
-  logger: {
-    fail: vi.fn(),
-    log: vi.fn(),
-    warn: vi.fn(),
-  },
+  getDefaultLogger: () => mockLogger,
+  logger: mockLogger,
 }))
 
 vi.mock('../../utils/error/fail-msg-with-badge.mts', () => ({
@@ -92,7 +98,7 @@ describe('outputThreatFeed', () => {
     const { serializeResultJson } = await import(
       '../../utils/output/result-json.mts'
     )
-    const mockLog = vi.mocked(getDefaultLogger().log)
+    
     const mockSerialize = vi.mocked(serializeResultJson)
 
     const threatResults: ThreatResult[] = [
@@ -125,7 +131,7 @@ describe('outputThreatFeed', () => {
 
   it('outputs error in JSON format', async () => {
     const { logger } = await import('@socketsecurity/lib/logger')
-    const mockLog = vi.mocked(getDefaultLogger().log)
+    
 
     const result: CResult<ThreadFeedResponse> = {
       ok: false,
@@ -145,7 +151,7 @@ describe('outputThreatFeed', () => {
     const { failMsgWithBadge } = await import(
       '../../utils/error/fail-msg-with-badge.mts'
     )
-    const mockFail = vi.mocked(getDefaultLogger().fail)
+    
     const mockFailMsg = vi.mocked(failMsgWithBadge)
 
     const result: CResult<ThreadFeedResponse> = {
@@ -167,7 +173,7 @@ describe('outputThreatFeed', () => {
 
   it('warns when no data is available', async () => {
     const { logger } = await import('@socketsecurity/lib/logger')
-    const mockWarn = vi.mocked(getDefaultLogger().warn)
+    
 
     const result: CResult<ThreadFeedResponse> = {
       ok: true,
@@ -232,7 +238,7 @@ describe('outputThreatFeed', () => {
 
   it('handles null data properly', async () => {
     const { logger } = await import('@socketsecurity/lib/logger')
-    const mockWarn = vi.mocked(getDefaultLogger().warn)
+    
 
     const result: CResult<ThreadFeedResponse> = {
       ok: true,
