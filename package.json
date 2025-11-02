@@ -2,10 +2,6 @@
   "name": "socket-cli-monorepo",
   "version": "0.0.0",
   "private": true,
-  "dependencies": {
-    "socket-lib": "link:socket-lib",
-    "socket-sdk-js": "link:socket-sdk-js"
-  },
   "devDependencies": {
     "@babel/core": "7.28.4",
     "@babel/parser": "7.28.4",
