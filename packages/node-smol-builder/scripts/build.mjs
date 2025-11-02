@@ -510,6 +510,133 @@ async function getFileSize(filePath) {
 }
 
 /**
+ * Get cache directory for compiled binaries.
+ *
+ * @param {string} buildDir - Build directory path
+ * @returns {string} Cache directory path
+ */
+function getCacheDir(buildDir) {
+  return join(buildDir, 'cache')
+}
+
+/**
+ * Get cache file path for compiled binary.
+ *
+ * @param {string} buildDir - Build directory path
+ * @param {string} platform - Target platform
+ * @param {string} arch - Target architecture
+ * @returns {string} Cache file path
+ */
+function getCachePath(buildDir, platform, arch) {
+  return join(getCacheDir(buildDir), `node-compiled-${platform}-${arch}`)
+}
+
+/**
+ * Get cache metadata file path.
+ *
+ * @param {string} buildDir - Build directory path
+ * @param {string} platform - Target platform
+ * @param {string} arch - Target architecture
+ * @returns {string} Cache metadata file path
+ */
+function getCacheMetadataPath(buildDir, platform, arch) {
+  return join(getCacheDir(buildDir), `node-compiled-${platform}-${arch}.json`)
+}
+
+/**
+ * Cache compiled binary after successful build.
+ * This allows resuming from this point if post-processing fails.
+ *
+ * @param {string} buildDir - Build directory path
+ * @param {string} nodeBinary - Path to compiled Node.js binary
+ * @param {string} platform - Target platform
+ * @param {string} arch - Target architecture
+ * @param {string} version - Node.js version
+ * @returns {Promise<void>}
+ */
+async function cacheCompiledBinary(buildDir, nodeBinary, platform, arch, version) {
+  const cacheDir = getCacheDir(buildDir)
+  const cacheFile = getCachePath(buildDir, platform, arch)
+  const cacheMetaFile = getCacheMetadataPath(buildDir, platform, arch)
+
+  // Create cache directory.
+  await mkdir(cacheDir, { recursive: true })
+
+  // Copy binary to cache.
+  await copyFile(nodeBinary, cacheFile)
+
+  // Get binary stats for metadata.
+  const stats = await stat(nodeBinary)
+  const size = await getFileSize(nodeBinary)
+
+  // Save metadata.
+  const metadata = {
+    platform,
+    arch,
+    version,
+    timestamp: Date.now(),
+    size: stats.size,
+    humanSize: size,
+  }
+  await writeFile(cacheMetaFile, JSON.stringify(metadata, null, 2))
+
+  getDefaultLogger().log(`${colors.green('✓')} Cached compiled binary (${size})`)
+  getDefaultLogger().log(`   Cache location: ${cacheFile}`)
+}
+
+/**
+ * Restore cached binary if available and valid.
+ * Returns true if restore successful, false if no valid cache exists.
+ *
+ * @param {string} buildDir - Build directory path
+ * @param {string} nodeBinary - Path where to restore Node.js binary
+ * @param {string} platform - Target platform
+ * @param {string} arch - Target architecture
+ * @param {string} version - Expected Node.js version
+ * @returns {Promise<boolean>} True if restored, false if no valid cache
+ */
+async function restoreCachedBinary(buildDir, nodeBinary, platform, arch, version) {
+  const cacheFile = getCachePath(buildDir, platform, arch)
+  const cacheMetaFile = getCacheMetadataPath(buildDir, platform, arch)
+
+  // Check if cache files exist.
+  if (!existsSync(cacheFile) || !existsSync(cacheMetaFile)) {
+    return false
+  }
+
+  try {
+    // Validate metadata matches current build.
+    const metaContent = await readFile(cacheMetaFile, 'utf8')
+    const meta = JSON.parse(metaContent)
+
+    if (meta.platform !== platform || meta.arch !== arch) {
+      getDefaultLogger().warn('Cached binary is for different platform/arch, ignoring cache')
+      return false
+    }
+
+    if (meta.version !== version) {
+      getDefaultLogger().warn(`Cached binary is for Node.js ${meta.version}, expected ${version}, ignoring cache`)
+      return false
+    }
+
+    // Ensure output directory exists.
+    await mkdir(dirname(nodeBinary), { recursive: true })
+
+    // Restore binary.
+    await copyFile(cacheFile, nodeBinary)
+
+    const size = await getFileSize(nodeBinary)
+    getDefaultLogger().log(`${colors.green('✓')} Restored cached binary (${size})`)
+    getDefaultLogger().log(`   From: ${cacheFile}`)
+
+    return true
+  } catch (e) {
+    getDefaultLogger().warn(`Failed to restore cache: ${e.message}`)
+    return false
+  }
+}
+
+/**
  * Check if required tools are available, auto-installing if possible.
  */
 async function checkRequiredTools() {
@@ -1269,66 +1396,91 @@ async function main() {
   // Build Node.js.
   printHeader('Building Node.js')
 
-  const timeEstimate = estimateBuildTime(CPU_COUNT)
-  getDefaultLogger().log(
-    `⏱️  Estimated time: ${timeEstimate.estimatedMinutes} minutes (${timeEstimate.minMinutes}-${timeEstimate.maxMinutes} min range)`,
-  )
-  getDefaultLogger().log(`🚀 Using ${CPU_COUNT} CPU cores for parallel compilation`)
-  getDefaultLogger().log('')
-  getDefaultLogger().log('You can:')
-  getDefaultLogger().log('  • Grab coffee ☕')
-  getDefaultLogger().log('  • Work on other tasks')
-  getDefaultLogger().log('  • Watch progress in this terminal (but seriously, go touch grass)')
-  getDefaultLogger().log('')
-  getDefaultLogger().log(`Build log: ${getBuildLogPath(BUILD_DIR)}`)
-  getDefaultLogger().log('')
-  getDefaultLogger().log('Starting build...')
-  getDefaultLogger().log('')
+  // Define binary path early (used for both cache and build).
+  const nodeBinary = join(NODE_DIR, 'out', 'Release', 'node')
 
-  const buildStart = Date.now()
-
-  // Use GitHub Actions grouping to collapse compiler output.
-  getDefaultLogger().log('::group::Compiling Node.js with Ninja (this will take a while...)')
-
-  try {
-    await exec('ninja', ['-C', 'out/Release', `-j${CPU_COUNT}`], { cwd: NODE_DIR })
-    getDefaultLogger().log('::endgroup::')
-  } catch (e) {
-    getDefaultLogger().log('::endgroup::')
-    // Build failed - show last 50 lines of build log.
-    const lastLines = await getLastLogLines(BUILD_DIR, 50)
-    if (lastLines) {
-      getDefaultLogger().error()
-      getDefaultLogger().error('Last 50 lines of build log:')
-      getDefaultLogger().error('━'.repeat(60))
-      getDefaultLogger().error(lastLines)
-      getDefaultLogger().error('━'.repeat(60))
-    }
-
-    printError(
-      'Build Failed',
-      'Node.js compilation failed. See build log for details.',
-      [
-        `Full log: ${getBuildLogPath(BUILD_DIR)}`,
-        'Common issues:',
-        '  - Out of memory: Close other applications',
-        '  - Disk full: Free up disk space',
-        '  - Compiler error: Check C++ compiler version',
-        'Try again with: node scripts/build-custom-node.mjs --clean',
-      ],
+  // Try to restore from cache (skip compilation if successful).
+  let restoredFromCache = false
+  if (!CLEAN_BUILD) {
+    getDefaultLogger().log('Checking for cached binary from previous build...')
+    restoredFromCache = await restoreCachedBinary(
+      BUILD_DIR,
+      nodeBinary,
+      TARGET_PLATFORM,
+      ARCH,
+      NODE_VERSION,
     )
-    throw e
+    getDefaultLogger().log('')
   }
 
-  const buildDuration = Date.now() - buildStart
-  const buildTime = formatDuration(buildDuration)
+  // Skip compilation if restored from cache.
+  if (!restoredFromCache) {
+    const timeEstimate = estimateBuildTime(CPU_COUNT)
+    getDefaultLogger().log(
+      `⏱️  Estimated time: ${timeEstimate.estimatedMinutes} minutes (${timeEstimate.minMinutes}-${timeEstimate.maxMinutes} min range)`,
+    )
+    getDefaultLogger().log(`🚀 Using ${CPU_COUNT} CPU cores for parallel compilation`)
+    getDefaultLogger().log('')
+    getDefaultLogger().log('You can:')
+    getDefaultLogger().log('  • Grab coffee ☕')
+    getDefaultLogger().log('  • Work on other tasks')
+    getDefaultLogger().log('  • Watch progress in this terminal (but seriously, go touch grass)')
+    getDefaultLogger().log('')
+    getDefaultLogger().log(`Build log: ${getBuildLogPath(BUILD_DIR)}`)
+    getDefaultLogger().log('')
+    getDefaultLogger().log('Starting build...')
+    getDefaultLogger().log('')
 
-  getDefaultLogger().log('')
-  getDefaultLogger().log(`${colors.green('✓')} Build completed in ${buildTime}`)
-  await createCheckpoint(BUILD_DIR, 'built')
-  getDefaultLogger().log('')
+    const buildStart = Date.now()
 
-  const nodeBinary = join(NODE_DIR, 'out', 'Release', 'node')
+    // Use GitHub Actions grouping to collapse compiler output.
+    getDefaultLogger().log('::group::Compiling Node.js with Ninja (this will take a while...)')
+
+    try {
+      await exec('ninja', ['-C', 'out/Release', `-j${CPU_COUNT}`], { cwd: NODE_DIR })
+      getDefaultLogger().log('::endgroup::')
+    } catch (e) {
+      getDefaultLogger().log('::endgroup::')
+      // Build failed - show last 50 lines of build log.
+      const lastLines = await getLastLogLines(BUILD_DIR, 50)
+      if (lastLines) {
+        getDefaultLogger().error()
+        getDefaultLogger().error('Last 50 lines of build log:')
+        getDefaultLogger().error('━'.repeat(60))
+        getDefaultLogger().error(lastLines)
+        getDefaultLogger().error('━'.repeat(60))
+      }
+
+      printError(
+        'Build Failed',
+        'Node.js compilation failed. See build log for details.',
+        [
+          `Full log: ${getBuildLogPath(BUILD_DIR)}`,
+          'Common issues:',
+          '  - Out of memory: Close other applications',
+          '  - Disk full: Free up disk space',
+          '  - Compiler error: Check C++ compiler version',
+          'Try again with: node scripts/build-custom-node.mjs --clean',
+        ],
+      )
+      throw e
+    }
+
+    const buildDuration = Date.now() - buildStart
+    const buildTime = formatDuration(buildDuration)
+
+    getDefaultLogger().log('')
+    getDefaultLogger().log(`${colors.green('✓')} Build completed in ${buildTime}`)
+    await createCheckpoint(BUILD_DIR, 'built')
+    getDefaultLogger().log('')
+
+    // Cache the compiled binary for future runs.
+    await cacheCompiledBinary(BUILD_DIR, nodeBinary, TARGET_PLATFORM, ARCH, NODE_VERSION)
+    getDefaultLogger().log('')
+  } else {
+    getDefaultLogger().log(`${colors.cyan('ℹ')} Skipped compilation (using cached binary)`)
+    getDefaultLogger().log('')
+  }
 
   // Sign early for macOS ARM64 (required before execution in CI).
   if (IS_MACOS && ARCH === 'arm64') {
