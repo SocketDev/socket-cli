@@ -4,6 +4,7 @@ import {
   createErrorResult,
   createSuccessResult,
 } from '../../../test/helpers/index.mts'
+import { outputUpdateRepo } from './output-update-repo.mts'
 
 import type { CResult } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
@@ -38,11 +39,10 @@ describe('outputUpdateRepo', () => {
   })
 
   it('outputs JSON format for successful result', async () => {
-    const { outputUpdateRepo } = await import('./output-update-repo.mts')
     const { serializeResultJson } = await vi.importMock(
       '../../utils/output/result-json.mjs',
     )
-    
+
     const mockSerialize = vi.mocked(serializeResultJson)
 
     const result: CResult<SocketSdkSuccessResult<'updateRepository'>['data']> =
@@ -53,14 +53,11 @@ describe('outputUpdateRepo', () => {
     await outputUpdateRepo(result, 'test-repo', 'json')
 
     expect(mockSerialize).toHaveBeenCalledWith(result)
-    expect(mockLog).toHaveBeenCalledWith(JSON.stringify(result))
+    expect(mockLogger.log).toHaveBeenCalledWith(JSON.stringify(result))
     expect(process.exitCode).toBeUndefined()
   })
 
   it('outputs error in JSON format', async () => {
-    const { outputUpdateRepo } = await import('./output-update-repo.mts')
-    
-
     const result: CResult<SocketSdkSuccessResult<'updateRepository'>['data']> =
       createErrorResult('Unauthorized', {
         cause: 'Invalid API token',
@@ -69,15 +66,11 @@ describe('outputUpdateRepo', () => {
 
     await outputUpdateRepo(result, 'test-repo', 'json')
 
-    expect(mockLog).toHaveBeenCalled()
+    expect(mockLogger.log).toHaveBeenCalled()
     expect(process.exitCode).toBe(2)
   })
 
   it('outputs success message for successful update', async () => {
-    const { outputUpdateRepo } = await import('./output-update-repo.mts')
-    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
-    
-
     const result: CResult<SocketSdkSuccessResult<'updateRepository'>['data']> =
       createSuccessResult({
         success: true,
@@ -85,19 +78,17 @@ describe('outputUpdateRepo', () => {
 
     await outputUpdateRepo(result, 'my-repository', 'text')
 
-    expect(mockSuccess).toHaveBeenCalledWith(
+    expect(mockLogger.success).toHaveBeenCalledWith(
       'Repository `my-repository` updated successfully',
     )
     expect(process.exitCode).toBeUndefined()
   })
 
   it('outputs error in text format', async () => {
-    const { outputUpdateRepo } = await import('./output-update-repo.mts')
-    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
     const { failMsgWithBadge } = await vi.importMock(
       '../../utils/error/fail-msg-with-badge.mts',
     )
-    
+
     const mockFailMsg = vi.mocked(failMsgWithBadge)
 
     const result: CResult<SocketSdkSuccessResult<'updateRepository'>['data']> =
@@ -112,15 +103,11 @@ describe('outputUpdateRepo', () => {
       'Repository not found',
       'Not found error',
     )
-    expect(mockFail).toHaveBeenCalled()
+    expect(mockLogger.fail).toHaveBeenCalled()
     expect(process.exitCode).toBe(1)
   })
 
   it('handles markdown output format', async () => {
-    const { outputUpdateRepo } = await import('./output-update-repo.mts')
-    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
-    
-
     const result: CResult<SocketSdkSuccessResult<'updateRepository'>['data']> =
       createSuccessResult({
         success: true,
@@ -128,16 +115,12 @@ describe('outputUpdateRepo', () => {
 
     await outputUpdateRepo(result, 'markdown-repo', 'markdown')
 
-    expect(mockSuccess).toHaveBeenCalledWith(
+    expect(mockLogger.success).toHaveBeenCalledWith(
       'Repository `markdown-repo` updated successfully',
     )
   })
 
   it('handles repository name with special characters', async () => {
-    const { outputUpdateRepo } = await import('./output-update-repo.mts')
-    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
-    
-
     const result: CResult<SocketSdkSuccessResult<'updateRepository'>['data']> =
       createSuccessResult({
         success: true,
@@ -145,16 +128,12 @@ describe('outputUpdateRepo', () => {
 
     await outputUpdateRepo(result, 'repo-with-dashes_and_underscores', 'text')
 
-    expect(mockSuccess).toHaveBeenCalledWith(
+    expect(mockLogger.success).toHaveBeenCalledWith(
       'Repository `repo-with-dashes_and_underscores` updated successfully',
     )
   })
 
   it('handles empty repository name', async () => {
-    const { outputUpdateRepo } = await import('./output-update-repo.mts')
-    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
-    
-
     const result: CResult<SocketSdkSuccessResult<'updateRepository'>['data']> =
       createSuccessResult({
         success: true,
@@ -162,13 +141,12 @@ describe('outputUpdateRepo', () => {
 
     await outputUpdateRepo(result, '', 'text')
 
-    expect(mockSuccess).toHaveBeenCalledWith(
+    expect(mockLogger.success).toHaveBeenCalledWith(
       'Repository `` updated successfully',
     )
   })
 
   it('sets default exit code when code is undefined', async () => {
-    const { outputUpdateRepo } = await import('./output-update-repo.mts')
     const result: CResult<SocketSdkSuccessResult<'updateRepository'>['data']> =
       createErrorResult('Error without code')
 

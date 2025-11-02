@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { outputThreatFeed } from './output-threat-feed.mts'
+import { serializeResultJson } from '../../utils/output/result-json.mts'
+import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
+import { msAtHome } from '../../utils/home-cache-time.mts'
 
 import type { ThreadFeedResponse, ThreatResult } from './types.mts'
 import type { CResult } from '../../types.mts'
@@ -15,6 +18,11 @@ const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
 }))
 
+// Helper references to mockLogger methods.
+const mockLog = mockLogger.log
+const mockFail = mockLogger.fail
+const mockWarn = mockLogger.warn
+
 vi.mock('@socketsecurity/lib/logger', () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
@@ -28,7 +36,7 @@ vi.mock('../../utils/output/result-json.mts', () => ({
   serializeResultJson: vi.fn(result => JSON.stringify(result)),
 }))
 
-vi.mock('../../utils/ms/at-home.mts', () => ({
+vi.mock('../../utils/home-cache-time.mts', () => ({
   msAtHome: vi.fn(() => '2 days ago'),
 }))
 
@@ -94,11 +102,6 @@ describe('outputThreatFeed', () => {
   })
 
   it('outputs JSON format for successful result', async () => {
-    const { logger } = await import('@socketsecurity/lib/logger')
-    const { serializeResultJson } = await import(
-      '../../utils/output/result-json.mts'
-    )
-    
     const mockSerialize = vi.mocked(serializeResultJson)
 
     const threatResults: ThreatResult[] = [
@@ -130,9 +133,6 @@ describe('outputThreatFeed', () => {
   })
 
   it('outputs error in JSON format', async () => {
-    const { logger } = await import('@socketsecurity/lib/logger')
-    
-
     const result: CResult<ThreadFeedResponse> = {
       ok: false,
       code: 2,
@@ -147,11 +147,6 @@ describe('outputThreatFeed', () => {
   })
 
   it('outputs error in text format', async () => {
-    const { logger } = await import('@socketsecurity/lib/logger')
-    const { failMsgWithBadge } = await import(
-      '../../utils/error/fail-msg-with-badge.mts'
-    )
-    
     const mockFailMsg = vi.mocked(failMsgWithBadge)
 
     const result: CResult<ThreadFeedResponse> = {
@@ -172,9 +167,6 @@ describe('outputThreatFeed', () => {
   })
 
   it('warns when no data is available', async () => {
-    const { logger } = await import('@socketsecurity/lib/logger')
-    
-
     const result: CResult<ThreadFeedResponse> = {
       ok: true,
       data: {
@@ -192,11 +184,7 @@ describe('outputThreatFeed', () => {
   })
 
   it('handles threat results data formatting', async () => {
-    const { msAtHome } = await import('../../utils/home-cache-time.mts')
     const _mockMsAtHome = vi.mocked(msAtHome)
-
-    // Mock the entire outputThreatFeed module to avoid blessed issues.
-    const { outputThreatFeed } = await import('./output-threat-feed.mts')
 
     const threatResults: ThreatResult[] = [
       {
@@ -237,9 +225,6 @@ describe('outputThreatFeed', () => {
   })
 
   it('handles null data properly', async () => {
-    const { logger } = await import('@socketsecurity/lib/logger')
-    
-
     const result: CResult<ThreadFeedResponse> = {
       ok: true,
       data: null as any,

@@ -1,6 +1,7 @@
-import { existsSync, promises as fs } from 'node:fs'
+import { existsSync } from 'node:fs'
 import path from 'node:path'
 
+import { safeDelete } from '@socketsecurity/lib/fs'
 import { afterEach, describe, expect } from 'vitest'
 
 import { cmdit, spawnSocketCli, testPath } from '../../../test/utils.mts'
@@ -14,33 +15,18 @@ const pnpmFixtureDir = path.join(fixtureBaseDir, 'pnpm')
 
 async function cleanupNodeModules() {
   // Clean up node_modules from all package manager directories.
-  Promise.all([
-    fs.rm(path.join(pnpmFixtureDir, 'node_modules'), {
-      force: true,
-      recursive: true,
-    }),
-    fs.rm(path.join(fixtureBaseDir, 'npm/node_modules'), {
-      force: true,
-      recursive: true,
-    }),
-    fs.rm(path.join(fixtureBaseDir, 'yarn/node_modules'), {
-      force: true,
-      recursive: true,
-    }),
+  await Promise.all([
+    safeDelete(path.join(pnpmFixtureDir, 'node_modules')),
+    safeDelete(path.join(fixtureBaseDir, 'npm/node_modules')),
+    safeDelete(path.join(fixtureBaseDir, 'yarn/node_modules')),
   ])
 }
 
 async function cleanupPatchesDir() {
   // Clean up generated patches directories.
-  Promise.all([
-    fs.rm(path.join(pnpmFixtureDir, 'patches'), {
-      force: true,
-      recursive: true,
-    }),
-    fs.rm(path.join(process.cwd(), 'patches'), {
-      force: true,
-      recursive: true,
-    }),
+  await Promise.all([
+    safeDelete(path.join(pnpmFixtureDir, 'patches')),
+    safeDelete(path.join(process.cwd(), 'patches')),
   ])
 }
 
