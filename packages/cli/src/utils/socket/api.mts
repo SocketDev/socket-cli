@@ -60,7 +60,6 @@ import type { Spinner } from '@socketsecurity/lib/spinner'
 import type {
   SocketSdkErrorResult,
   SocketSdkOperations,
-  SocketSdkResult,
   SocketSdkSuccessResult,
 } from '@socketsecurity/sdk'
 
@@ -190,7 +189,7 @@ export type ApiCallResult<T extends SocketSdkOperations> = CResult<
  * Handle Socket SDK API calls with error handling and permission logging.
  */
 export async function handleApiCall<T extends SocketSdkOperations>(
-  value: Promise<SocketSdkResult<T>>,
+  value: Promise<any>,
   options?: HandleApiCallOptions | undefined,
 ): Promise<ApiCallResult<T>> {
   const { commandPath, description, spinner } = {
@@ -204,7 +203,7 @@ export async function handleApiCall<T extends SocketSdkOperations>(
     spinner?.start()
   }
 
-  let sdkResult: SocketSdkResult<T>
+  let sdkResult: any
   try {
     sdkResult = await value
     spinner?.stop()
@@ -277,10 +276,10 @@ export async function handleApiCall<T extends SocketSdkOperations>(
 }
 
 export async function handleApiCallNoSpinner<T extends SocketSdkOperations>(
-  value: Promise<SocketSdkResult<T>>,
+  value: Promise<any>,
   description: string,
 ): Promise<CResult<SocketSdkSuccessResult<T>['data']>> {
-  let sdkResult: SocketSdkResult<T>
+  let sdkResult: any
   try {
     sdkResult = await value
   } catch (e) {
