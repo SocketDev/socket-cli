@@ -1,0 +1,2 @@
+# Run commit message validation and auto-strip AI attribution.
+.git-hooks/commit-msg "$1"
