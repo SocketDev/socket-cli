@@ -45,14 +45,18 @@ vi.mock('../../meow.mts', () => ({
 }))
 
 // Mock logger.
+const mockLogger = vi.hoisted(() => ({
+  fail: vi.fn(),
+  log: vi.fn(),
+  info: vi.fn(),
+  success: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+}))
+
 vi.mock('@socketsecurity/lib/logger', () => ({
-  logger: {
-    error: vi.fn(),
-    fail: vi.fn(),
-    info: vi.fn(),
-    log: vi.fn(),
-    warn: vi.fn(),
-  },
+  getDefaultLogger: () => mockLogger,
+  logger: mockLogger,
 }))
 
 // Mock config utilities.
@@ -198,7 +202,7 @@ describe('meow-with-subcommands', () => {
 
       emitBanner('socket', 'test-org', false)
 
-      expect(getDefaultLogger().error).toHaveBeenCalled()
+      expect(mockLogger.error).toHaveBeenCalled()
     })
 
     it('emits compact banner when compact mode is true', async () => {
@@ -206,7 +210,7 @@ describe('meow-with-subcommands', () => {
 
       emitBanner('socket', 'test-org', true)
 
-      expect(getDefaultLogger().error).toHaveBeenCalled()
+      expect(mockLogger.error).toHaveBeenCalled()
     })
 
     it('handles undefined org', async () => {
@@ -214,7 +218,7 @@ describe('meow-with-subcommands', () => {
 
       emitBanner('socket', undefined, false)
 
-      expect(getDefaultLogger().error).toHaveBeenCalled()
+      expect(mockLogger.error).toHaveBeenCalled()
     })
   })
 

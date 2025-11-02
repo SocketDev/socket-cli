@@ -6,10 +6,19 @@ import { checkSocketWrapperSetup } from './check-socket-wrapper-setup.mts'
 
 // Mock the dependencies.
 vi.mock('node:fs')
+
+const mockLogger = vi.hoisted(() => ({
+  fail: vi.fn(),
+  log: vi.fn(),
+  info: vi.fn(),
+  success: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+}))
+
 vi.mock('@socketsecurity/lib/logger', () => ({
-  logger: {
-    log: vi.fn(),
-  },
+  getDefaultLogger: () => mockLogger,
+  logger: mockLogger,
 }))
 
 describe('checkSocketWrapperSetup', () => {
@@ -72,10 +81,10 @@ describe('checkSocketWrapperSetup', () => {
 
     checkSocketWrapperSetup('/home/user/.bashrc')
 
-    expect(getDefaultLogger().log).toHaveBeenCalledWith(
+    expect(mockLogger.log).toHaveBeenCalledWith(
       'The Socket npm/npx wrapper is set up in your bash profile (/home/user/.bashrc).',
     )
-    expect(getDefaultLogger().log).toHaveBeenCalledWith(
+    expect(mockLogger.log).toHaveBeenCalledWith(
       '    source /home/user/.bashrc',
     )
   })

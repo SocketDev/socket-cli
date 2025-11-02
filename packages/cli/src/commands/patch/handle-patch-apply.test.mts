@@ -23,15 +23,20 @@ vi.mock('@socketsecurity/lib/fs', () => ({
   readDirNames: vi.fn(),
 }))
 
+const mockLogger = vi.hoisted(() => ({
+  fail: vi.fn(),
+  log: vi.fn(),
+  info: vi.fn(),
+  success: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+  group: vi.fn(),
+  groupEnd: vi.fn(),
+}))
+
 vi.mock('@socketsecurity/lib/logger', () => ({
-  logger: {
-    error: vi.fn(),
-    fail: vi.fn(),
-    group: vi.fn(),
-    groupEnd: vi.fn(),
-    log: vi.fn(),
-    success: vi.fn(),
-  },
+  getDefaultLogger: () => mockLogger,
+  logger: mockLogger,
 }))
 
 vi.mock('@socketsecurity/lib/packages', () => ({

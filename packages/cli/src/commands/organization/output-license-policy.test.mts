@@ -6,19 +6,19 @@ import {
 } from '../../../test/helpers/index.mts'
 
 // Mock the dependencies.
-vi.mock('@socketsecurity/lib/logger', async importOriginal => {
-  const original = await importOriginal()
-  const mockLogger = {
-    fail: vi.fn(),
-    info: vi.fn(),
-    log: vi.fn(),
-  }
-  return {
-    ...original,
-    getDefaultLogger: () => mockLogger,
-    logger: mockLogger,
-  }
-})
+const mockLogger = vi.hoisted(() => ({
+  fail: vi.fn(),
+  info: vi.fn(),
+  log: vi.fn(),
+  success: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+}))
+
+vi.mock('@socketsecurity/lib/logger', () => ({
+  getDefaultLogger: () => mockLogger,
+  logger: mockLogger,
+}))
 
 vi.mock('../../utils/output/result-json.mjs', () => ({
   serializeResultJson: vi.fn(result => JSON.stringify(result)),
