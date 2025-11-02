@@ -117,10 +117,9 @@ describe('Bundle validation', () => {
       }
     }
 
-    expect(
-      result.hasIssue,
-      'Bundle should not contain absolute paths',
-    ).toBe(false)
+    expect(result.hasIssue, 'Bundle should not contain absolute paths').toBe(
+      false,
+    )
   })
 
   it('should not bundle dependencies inline (validate against package.json dependencies)', async () => {

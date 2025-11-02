@@ -96,7 +96,7 @@ function showUpdateNotification(options: UpdateNotificationOptions): void {
       logger.log(formatted.command)
     }
     logger.log(`📝 ${formatted.changelog}`)
-  } catch (error) {
+  } catch (_error) {
     // If formatting or logging fails, show a simpler message.
     const logger = getDefaultLogger()
     const { current, latest, name } = options
