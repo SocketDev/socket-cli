@@ -1355,12 +1355,20 @@ async function main() {
   getDefaultLogger().log('Running basic functionality tests...')
   getDefaultLogger().log('')
 
-  await exec(nodeBinary, ['--version'])
+  // Set SOCKET_CLI_BUILD_TEST=1 to skip CLI bootstrap during smoke tests.
+  // The CLI version doesn't exist on npm yet during build.
+  const smokeTestEnv = {
+    ...process.env,
+    SOCKET_CLI_BUILD_TEST: '1',
+  }
 
-  await exec(nodeBinary, [
-    '-e',
-    `console.log("${colors.green('✓')} Binary can execute JavaScript")`,
-  ])
+  await exec(nodeBinary, ['--version'], { env: smokeTestEnv })
+
+  await exec(
+    nodeBinary,
+    ['-e', `console.log("${colors.green('✓')} Binary can execute JavaScript")`],
+    { env: smokeTestEnv },
+  )
 
   getDefaultLogger().log('')
   getDefaultLogger().log(`${colors.green('✓')} Binary is functional`)
