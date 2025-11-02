@@ -30,23 +30,33 @@ describe('socket pnpm', async () => {
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
-        `""`,
+        `
+        "Wraps pnpm with Socket security scanning
+
+          Usage
+                $ socket pnpm ...
+          
+              API Token Requirements
+                (none)
+          
+              Note: Everything after "pnpm" is passed to the pnpm command.
+                    Only the \`--dry-run\` and \`--help\` flags are caught here.
+          
+              Use \`socket wrapper on\` to alias this command as \`pnpm\`.
+          
+              Examples
+                $ socket pnpm
+                $ socket pnpm install
+                $ socket pnpm add package-name
+                $ socket pnpm dlx package-name"
+      `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           Socket CLI Error: Error [ERR_PACKAGE_PATH_NOT_EXPORTED]: No "exports" main defined in [PROJECT]/node_modules/@socketsecurity/lib/package.json
-            at exportsNotFound (node:internal/modules/esm/resolve:313:10)
-            at packageExportsResolve (node:internal/modules/esm/resolve:661:9)
-            at resolveExports (node:internal/modules/cjs/loader:678:36)
-            at Module._findPath (node:internal/modules/cjs/loader:745:31)
-            at Module._resolveFilename (node:internal/modules/cjs/loader:1405:27)
-            at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)
-            at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)
-            at Module._load (node:internal/modules/cjs/loader:1226:37)
-            at TracingChannel.traceSync (node:diagnostics_channel:328:14)
-            at wrapModuleLoad (node:internal/modules/cjs/loader:244:24) {
-          code: 'ERR_PACKAGE_PATH_NOT_EXPORTED'
-        }"
+           _____         _       _          /---------------
+            |   __|___ ___| |_ ___| |_        | CLI: <redacted>
+            |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket pnpm\`, cwd: <redacted>"
       `)
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
@@ -62,7 +72,7 @@ describe('socket pnpm', async () => {
         timeout: 30_000,
       })
 
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(stderr).toContain('CLI')
       expect(code, 'dry-run without args should exit with code 0').toBe(0)
     },
@@ -83,7 +93,7 @@ describe('socket pnpm', async () => {
         timeout: 30_000,
       })
 
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'dry-run add should exit with code 0').toBe(0)
     },
   )
@@ -115,7 +125,7 @@ describe('socket pnpm', async () => {
         timeout: 30_000,
       })
 
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'dry-run add scoped package should exit with code 0').toBe(0)
     },
   )
@@ -157,7 +167,7 @@ describe('socket pnpm', async () => {
         timeout: 30_000,
       })
 
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'dry-run exec should exit with code 0').toBe(0)
     },
   )
@@ -178,7 +188,7 @@ describe('socket pnpm', async () => {
         timeout: 30_000,
       })
 
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'dry-run exec with --config should exit with code 0').toBe(0)
     },
   )
@@ -199,7 +209,7 @@ describe('socket pnpm', async () => {
         timeout: 30_000,
       })
 
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(
         code,
         'dry-run exec with multiple issueRules should exit with code 0',
@@ -223,7 +233,7 @@ describe('socket pnpm', async () => {
         timeout: 30_000,
       })
 
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(
         code,
         'dry-run exec with --config and multiple issueRules should exit with code 0',
@@ -245,7 +255,7 @@ describe('socket pnpm', async () => {
         timeout: 30_000,
       })
 
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'dry-run install should exit with code 0').toBe(0)
     },
   )
@@ -264,7 +274,7 @@ describe('socket pnpm', async () => {
         timeout: 30_000,
       })
 
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(
         code,
         'dry-run install with --config should exit with code 0',
@@ -286,7 +296,7 @@ describe('socket pnpm', async () => {
         timeout: 30_000,
       })
 
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(
         code,
         'dry-run install with multiple issueRules should exit with code 0',
@@ -308,7 +318,7 @@ describe('socket pnpm', async () => {
         timeout: 30_000,
       })
 
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(
         code,
         'dry-run install with --config and multiple issueRules should exit with code 0',

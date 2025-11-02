@@ -12,22 +12,51 @@ describe('socket package score', async () => {
     `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`
+        "Look up score for one package which reflects all of its transitive dependencies as well
+
+          Usage
+                $ socket package score [options] <<ECOSYSTEM> <NAME> | <PURL>>
+          
+              API Token Requirements
+                - Quota: 100 units
+                - Permissions: packages:list
+          
+              Options
+                --json              Output as JSON
+                --markdown          Output as Markdown
+          
+              Show deep scoring details for one package. The score will reflect the package
+              itself, any of its dependencies, and any of its transitive dependencies.
+          
+              When you want to know whether to trust a package, this is the command to run.
+          
+              See also the \`socket package shallow\` command, which returns the shallow
+              score for any number of packages. That will not reflect the dependency scores.
+          
+              Only a few ecosystems are supported like npm, pypi, nuget, gem, golang, and maven.
+          
+              A "purl" is a standard package name formatting: \`pkg:eco/name@version\`
+              This command will automatically prepend "pkg:" when not present.
+          
+              The version is optional but when given should be a direct match. The \`pkg:\`
+              prefix is optional.
+          
+              Note: if a package cannot be found it may be too old or perhaps was removed
+                    before we had the opportunity to process it.
+          
+              Examples
+                $ socket package score npm babel-cli
+                $ socket package score npm eslint@1.0.0 --json
+                $ socket package score pkg:golang/github.com/steelpoor/tlsproxy@v0.0.0-20250304082521-29051ed19c60
+                $ socket package score nuget/needpluscommonlibrary@1.0.0 --markdown"
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           Socket CLI Error: Error [ERR_PACKAGE_PATH_NOT_EXPORTED]: No "exports" main defined in [PROJECT]/node_modules/@socketsecurity/lib/package.json
-            at exportsNotFound (node:internal/modules/esm/resolve:313:10)
-            at packageExportsResolve (node:internal/modules/esm/resolve:661:9)
-            at resolveExports (node:internal/modules/cjs/loader:678:36)
-            at Module._findPath (node:internal/modules/cjs/loader:745:31)
-            at Module._resolveFilename (node:internal/modules/cjs/loader:1405:27)
-            at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)
-            at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)
-            at Module._load (node:internal/modules/cjs/loader:1226:37)
-            at TracingChannel.traceSync (node:diagnostics_channel:328:14)
-            at wrapModuleLoad (node:internal/modules/cjs/loader:244:24) {
-          code: 'ERR_PACKAGE_PATH_NOT_EXPORTED'
-        }"
+           _____         _       _          /---------------
+            |   __|___ ___| |_ ___| |_        | CLI: <redacted>
+            |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket package score\`, cwd: <redacted>"
       `)
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
@@ -52,19 +81,15 @@ describe('socket package score', async () => {
       expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           Socket CLI Error: Error [ERR_PACKAGE_PATH_NOT_EXPORTED]: No "exports" main defined in [PROJECT]/node_modules/@socketsecurity/lib/package.json
-            at exportsNotFound (node:internal/modules/esm/resolve:313:10)
-            at packageExportsResolve (node:internal/modules/esm/resolve:661:9)
-            at resolveExports (node:internal/modules/cjs/loader:678:36)
-            at Module._findPath (node:internal/modules/cjs/loader:745:31)
-            at Module._resolveFilename (node:internal/modules/cjs/loader:1405:27)
-            at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)
-            at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)
-            at Module._load (node:internal/modules/cjs/loader:1226:37)
-            at TracingChannel.traceSync (node:diagnostics_channel:328:14)
-            at wrapModuleLoad (node:internal/modules/cjs/loader:244:24) {
-          code: 'ERR_PACKAGE_PATH_NOT_EXPORTED'
-        }"
+           _____         _       _          /---------------
+            |   __|___ ___| |_ ___| |_        | CLI: <redacted>
+            |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket package score\`, cwd: <redacted>
+
+        \\xd7  Input error:  Please review the input requirements and try again
+
+          \\xd7 First parameter must be an ecosystem or the whole purl (bad)
+          \\xd7 Expecting at least one package (missing)"
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
@@ -84,22 +109,13 @@ describe('socket package score', async () => {
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           Socket CLI Error: Error [ERR_PACKAGE_PATH_NOT_EXPORTED]: No "exports" main defined in [PROJECT]/node_modules/@socketsecurity/lib/package.json
-            at exportsNotFound (node:internal/modules/esm/resolve:313:10)
-            at packageExportsResolve (node:internal/modules/esm/resolve:661:9)
-            at resolveExports (node:internal/modules/cjs/loader:678:36)
-            at Module._findPath (node:internal/modules/cjs/loader:745:31)
-            at Module._resolveFilename (node:internal/modules/cjs/loader:1405:27)
-            at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)
-            at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)
-            at Module._load (node:internal/modules/cjs/loader:1226:37)
-            at TracingChannel.traceSync (node:diagnostics_channel:328:14)
-            at wrapModuleLoad (node:internal/modules/cjs/loader:244:24) {
-          code: 'ERR_PACKAGE_PATH_NOT_EXPORTED'
-        }"
+           _____         _       _          /---------------
+            |   __|___ ___| |_ ___| |_        | CLI: <redacted>
+            |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket package score\`, cwd: <redacted>"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

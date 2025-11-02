@@ -17,22 +17,35 @@ describe('socket organization policy license', async () => {
     `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`
+        "Retrieve the license policy of an organization
+
+          Usage
+                $ socket organization policy license [options]
+          
+              API Token Requirements
+                - Quota: 1 unit
+                - Permissions: license-policy:read
+          
+              Options
+                --interactive       Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.
+                --json              Output as JSON
+                --markdown          Output as Markdown
+                --org               Force override the organization slug, overrides the default org from config
+          
+              Your API token will need the \`license-policy:read\` permission otherwise
+              the request will fail with an authentication error.
+          
+              Examples
+                $ socket organization policy license
+                $ socket organization policy license --json"
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           Socket CLI Error: Error [ERR_PACKAGE_PATH_NOT_EXPORTED]: No "exports" main defined in [PROJECT]/node_modules/@socketsecurity/lib/package.json
-            at exportsNotFound (node:internal/modules/esm/resolve:313:10)
-            at packageExportsResolve (node:internal/modules/esm/resolve:661:9)
-            at resolveExports (node:internal/modules/cjs/loader:678:36)
-            at Module._findPath (node:internal/modules/cjs/loader:745:31)
-            at Module._resolveFilename (node:internal/modules/cjs/loader:1405:27)
-            at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)
-            at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)
-            at Module._load (node:internal/modules/cjs/loader:1226:37)
-            at TracingChannel.traceSync (node:diagnostics_channel:328:14)
-            at wrapModuleLoad (node:internal/modules/cjs/loader:244:24) {
-          code: 'ERR_PACKAGE_PATH_NOT_EXPORTED'
-        }"
+           _____         _       _          /---------------
+            |   __|___ ___| |_ ___| |_        | CLI: <redacted>
+            |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket organization policy license\`, cwd: <redacted>"
       `)
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
@@ -50,19 +63,18 @@ describe('socket organization policy license', async () => {
       expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           Socket CLI Error: Error [ERR_PACKAGE_PATH_NOT_EXPORTED]: No "exports" main defined in [PROJECT]/node_modules/@socketsecurity/lib/package.json
-            at exportsNotFound (node:internal/modules/esm/resolve:313:10)
-            at packageExportsResolve (node:internal/modules/esm/resolve:661:9)
-            at resolveExports (node:internal/modules/cjs/loader:678:36)
-            at Module._findPath (node:internal/modules/cjs/loader:745:31)
-            at Module._resolveFilename (node:internal/modules/cjs/loader:1405:27)
-            at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)
-            at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)
-            at Module._load (node:internal/modules/cjs/loader:1226:37)
-            at TracingChannel.traceSync (node:diagnostics_channel:328:14)
-            at wrapModuleLoad (node:internal/modules/cjs/loader:244:24) {
-          code: 'ERR_PACKAGE_PATH_NOT_EXPORTED'
-        }"
+           _____         _       _          /---------------
+            |   __|___ ___| |_ ___| |_        | CLI: <redacted>
+            |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket organization policy license\`, cwd: <redacted>
+
+        \\u203c Unable to determine the target org. Trying to auto-discover it now...
+        i Note: Run \`socket login\` to set a default org.
+              Use the --org flag to override the default org.
+
+        \\xd7 Skipping auto-discovery of org in dry-run mode
+        \\xd7  Input error:  Please review the input requirements and try again
+        "
       `)
 
       expect(code, 'dry-run should exit with code 2 if input bad').toBe(2)
@@ -82,22 +94,19 @@ describe('socket organization policy license', async () => {
     'should be ok with org name and id',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           Socket CLI Error: Error [ERR_PACKAGE_PATH_NOT_EXPORTED]: No "exports" main defined in [PROJECT]/node_modules/@socketsecurity/lib/package.json
-            at exportsNotFound (node:internal/modules/esm/resolve:313:10)
-            at packageExportsResolve (node:internal/modules/esm/resolve:661:9)
-            at resolveExports (node:internal/modules/cjs/loader:678:36)
-            at Module._findPath (node:internal/modules/cjs/loader:745:31)
-            at Module._resolveFilename (node:internal/modules/cjs/loader:1405:27)
-            at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)
-            at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)
-            at Module._load (node:internal/modules/cjs/loader:1226:37)
-            at TracingChannel.traceSync (node:diagnostics_channel:328:14)
-            at wrapModuleLoad (node:internal/modules/cjs/loader:244:24) {
-          code: 'ERR_PACKAGE_PATH_NOT_EXPORTED'
-        }"
+           _____         _       _          /---------------
+            |   __|___ ___| |_ ___| |_        | CLI: <redacted>
+            |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket organization policy license\`, cwd: <redacted>
+
+        \\u203c Unable to determine the target org. Trying to auto-discover it now...
+        i Note: Run \`socket login\` to set a default org.
+              Use the --org flag to override the default org.
+
+        \\xd7 Skipping auto-discovery of org in dry-run mode"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
@@ -116,22 +125,13 @@ describe('socket organization policy license', async () => {
     'should accept default org',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           Socket CLI Error: Error [ERR_PACKAGE_PATH_NOT_EXPORTED]: No "exports" main defined in [PROJECT]/node_modules/@socketsecurity/lib/package.json
-            at exportsNotFound (node:internal/modules/esm/resolve:313:10)
-            at packageExportsResolve (node:internal/modules/esm/resolve:661:9)
-            at resolveExports (node:internal/modules/cjs/loader:678:36)
-            at Module._findPath (node:internal/modules/cjs/loader:745:31)
-            at Module._resolveFilename (node:internal/modules/cjs/loader:1405:27)
-            at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)
-            at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)
-            at Module._load (node:internal/modules/cjs/loader:1226:37)
-            at TracingChannel.traceSync (node:diagnostics_channel:328:14)
-            at wrapModuleLoad (node:internal/modules/cjs/loader:244:24) {
-          code: 'ERR_PACKAGE_PATH_NOT_EXPORTED'
-        }"
+           _____         _       _          /---------------
+            |   __|___ ___| |_ ___| |_        | CLI: <redacted>
+            |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket organization policy license\`, cwd: <redacted>"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
@@ -152,22 +152,13 @@ describe('socket organization policy license', async () => {
     `should accept ${FLAG_ORG} flag`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           Socket CLI Error: Error [ERR_PACKAGE_PATH_NOT_EXPORTED]: No "exports" main defined in [PROJECT]/node_modules/@socketsecurity/lib/package.json
-            at exportsNotFound (node:internal/modules/esm/resolve:313:10)
-            at packageExportsResolve (node:internal/modules/esm/resolve:661:9)
-            at resolveExports (node:internal/modules/cjs/loader:678:36)
-            at Module._findPath (node:internal/modules/cjs/loader:745:31)
-            at Module._resolveFilename (node:internal/modules/cjs/loader:1405:27)
-            at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)
-            at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)
-            at Module._load (node:internal/modules/cjs/loader:1226:37)
-            at TracingChannel.traceSync (node:diagnostics_channel:328:14)
-            at wrapModuleLoad (node:internal/modules/cjs/loader:244:24) {
-          code: 'ERR_PACKAGE_PATH_NOT_EXPORTED'
-        }"
+           _____         _       _          /---------------
+            |   __|___ ___| |_ ___| |_        | CLI: <redacted>
+            |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket organization policy license\`, cwd: <redacted>"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
