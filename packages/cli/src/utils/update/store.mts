@@ -35,8 +35,10 @@ export interface UpdateStoreOptions {
 export class UpdateStore extends DlxManifest {
   constructor(options: UpdateStoreOptions = {}) {
     // Map storePath to manifestPath for backward compatibility.
-    super({
-      manifestPath: options.storePath,
-    })
+    super(
+      options.storePath !== undefined
+        ? { manifestPath: options.storePath }
+        : {},
+    )
   }
 }
