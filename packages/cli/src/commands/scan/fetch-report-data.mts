@@ -116,10 +116,10 @@ export async function fetchScanData(
   async function fetchSecurityPolicy(): Promise<
     CResult<SocketSdkSuccessResult<'getOrgSecurityPolicy'>['data']>
   > {
-    const result = await handleApiCallNoSpinner(
+    const result = (await handleApiCallNoSpinner(
       sockSdk.getOrgSecurityPolicy(orgSlug),
       'GetOrgSecurityPolicy',
-    )
+    )) as CResult<SocketSdkSuccessResult<'getOrgSecurityPolicy'>['data']>
 
     updatePolicy('received policy')
 
