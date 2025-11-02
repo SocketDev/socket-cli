@@ -16,7 +16,7 @@
  *     + --without-* flags:         ~27 MB  (-22 MB: Remove npm, inspector, etc.)
  *
  *   Stage 2: Binary stripping
- *     + strip --strip-all:         ~25 MB  (-24 MB: Remove debug symbols)
+ *     + strip (platform-specific): ~25 MB  (-24 MB: Remove debug symbols)
  *
  *   Stage 3: Compression (this script)
  *     + pkg Brotli (VFS):          ~23 MB  (-26 MB: Compress Socket CLI code)
@@ -1387,7 +1387,9 @@ async function main() {
   getDefaultLogger().log(`Size before stripping: ${sizeBeforeStrip}`)
   getDefaultLogger().log('Removing debug symbols and unnecessary sections...')
   getDefaultLogger().log('')
-  await exec('strip', ['--strip-all', nodeBinary])
+  // macOS strip uses -x, GNU strip uses --strip-all.
+  const stripArgs = IS_MACOS ? ['-x', nodeBinary] : ['--strip-all', nodeBinary]
+  await exec('strip', stripArgs)
   const sizeAfterStrip = await getFileSize(nodeBinary)
   getDefaultLogger().log(`Size after stripping: ${sizeAfterStrip}`)
 
