@@ -11,31 +11,17 @@
 // Load Intl polyfill FIRST for ICU-disabled builds (if SEA uses minimal Node.js).
 import '@socketsecurity/cli/src/polyfills/intl-stub/index.mts'
 
-import { findAndExecuteCli, getArgs } from './shared/bootstrap-shared.mjs'
-
-/**
- * Check if we should skip CLI bootstrap.
- * Returns true when showing version (no download needed).
- */
-function shouldSkipCliBootstrap() {
-  // Skip if user just wants to see version (--version or -v).
-  // No need to download CLI just to show Node.js version.
-  const args = getArgs()
-  if (args.includes('--version') || args.includes('-v')) {
-    return true
-  }
-
-  return false
-}
+import { findAndExecuteCli, getArgs, SOCKET_CLI_VERSION } from './shared/bootstrap-shared.mjs'
 
 async function main() {
-  // Skip preflight CLI download if just showing version.
-  if (shouldSkipCliBootstrap()) {
-    // Let Node.js handle --version flag.
+  const args = getArgs()
+
+  // Check if user wants to see version.
+  if (args.includes('--version') || args.includes('-v')) {
+    console.log(SOCKET_CLI_VERSION)
     return 0
   }
 
-  const args = getArgs()
   return await findAndExecuteCli(args)
 }
 
