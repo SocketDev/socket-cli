@@ -1,12 +1,18 @@
 import { describe, expect, it, vi } from 'vitest'
 
 // Mock the dependencies.
+const mockLogger = vi.hoisted(() => ({
+  fail: vi.fn(),
+  log: vi.fn(),
+  info: vi.fn(),
+  success: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+}))
+
 vi.mock('@socketsecurity/lib/logger', () => ({
-  logger: {
-    fail: vi.fn(),
-    info: vi.fn(),
-    log: vi.fn(),
-  },
+  getDefaultLogger: () => mockLogger,
+  logger: mockLogger,
 }))
 
 vi.mock('../../utils/socket/api.mts', () => ({
@@ -21,7 +27,7 @@ describe('fetchDiffScan', () => {
     )
     const { logger } = await vi.importMock('@socketsecurity/lib/logger')
     const mockQueryApi = vi.mocked(queryApiSafeJson)
-    const mockLogger = vi.mocked(getDefaultLogger().info)
+    
 
     const mockDiffData = {
       added: ['package-a@1.0.0'],
@@ -44,9 +50,9 @@ describe('fetchDiffScan', () => {
       orgSlug: 'test-org',
     })
 
-    expect(mockLogger).toHaveBeenCalledWith('Scan ID 1:', 'scan-123')
-    expect(mockLogger).toHaveBeenCalledWith('Scan ID 2:', 'scan-456')
-    expect(mockLogger).toHaveBeenCalledWith(
+    expect(mockLogger.info).toHaveBeenCalledWith('Scan ID 1:', 'scan-123')
+    expect(mockLogger.info).toHaveBeenCalledWith('Scan ID 2:', 'scan-456')
+    expect(mockLogger.info).toHaveBeenCalledWith(
       'Note: this request may take some time if the scans are big',
     )
     expect(mockQueryApi).toHaveBeenCalledWith(
@@ -181,7 +187,7 @@ describe('fetchDiffScan', () => {
     )
     const { logger } = await vi.importMock('@socketsecurity/lib/logger')
     const mockQueryApi = vi.mocked(queryApiSafeJson)
-    const mockLogger = vi.mocked(getDefaultLogger().info)
+    
 
     mockQueryApi.mockResolvedValue({
       ok: true,
@@ -199,8 +205,8 @@ describe('fetchDiffScan', () => {
       orgSlug: 'test-org',
     })
 
-    expect(mockLogger).toHaveBeenCalledWith('Scan ID 1:', 'same-scan-id')
-    expect(mockLogger).toHaveBeenCalledWith('Scan ID 2:', 'same-scan-id')
+    expect(mockLogger.info).toHaveBeenCalledWith('Scan ID 1:', 'same-scan-id')
+    expect(mockLogger.info).toHaveBeenCalledWith('Scan ID 2:', 'same-scan-id')
     expect(mockQueryApi).toHaveBeenCalledWith(
       'orgs/test-org/full-scans/diff?before=same-scan-id&after=same-scan-id',
       'a scan diff',

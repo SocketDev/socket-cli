@@ -4,12 +4,18 @@ import type { CResult } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 // Mock the dependencies.
+const mockLogger = vi.hoisted(() => ({
+  fail: vi.fn(),
+  log: vi.fn(),
+  info: vi.fn(),
+  success: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+}))
+
 vi.mock('@socketsecurity/lib/logger', () => ({
-  logger: {
-    fail: vi.fn(),
-    log: vi.fn(),
-    success: vi.fn(),
-  },
+  getDefaultLogger: () => mockLogger,
+  logger: mockLogger,
 }))
 
 vi.mock('../../utils/output/result-json.mjs', () => ({
@@ -31,7 +37,6 @@ describe('outputCreateRepo', () => {
     const { serializeResultJson } = await vi.importMock(
       '../../utils/output/result-json.mjs',
     )
-    const mockLog = vi.mocked(getDefaultLogger().log)
     const mockSerialize = vi.mocked(serializeResultJson)
 
     const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> =
@@ -45,13 +50,12 @@ describe('outputCreateRepo', () => {
     outputCreateRepo(result, 'my-repo', 'json')
 
     expect(mockSerialize).toHaveBeenCalledWith(result)
-    expect(mockLog).toHaveBeenCalledWith(JSON.stringify(result))
+    expect(mockLogger.log).toHaveBeenCalledWith(JSON.stringify(result))
     expect(process.exitCode).toBeUndefined()
   })
 
   it('outputs error in JSON format', async () => {
     const { outputCreateRepo } = await import('./output-create-repo.mts')
-    const mockLog = vi.mocked(getDefaultLogger().log)
 
     const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> =
       {
@@ -63,13 +67,12 @@ describe('outputCreateRepo', () => {
 
     outputCreateRepo(result, 'my-repo', 'json')
 
-    expect(mockLog).toHaveBeenCalled()
+    expect(mockLogger.log).toHaveBeenCalled()
     expect(process.exitCode).toBe(2)
   })
 
   it('outputs success message when slug matches requested name', async () => {
     const { outputCreateRepo } = await import('./output-create-repo.mts')
-    const mockSuccess = vi.mocked(getDefaultLogger().success)
 
     const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> =
       {
@@ -81,7 +84,7 @@ describe('outputCreateRepo', () => {
 
     outputCreateRepo(result, 'my-awesome-repo', 'text')
 
-    expect(mockSuccess).toHaveBeenCalledWith(
+    expect(mockLogger.success).toHaveBeenCalledWith(
       'OK. Repository created successfully, slug: `my-awesome-repo`',
     )
     expect(process.exitCode).toBeUndefined()
@@ -89,7 +92,6 @@ describe('outputCreateRepo', () => {
 
   it('outputs success message with warning when slug differs from requested name', async () => {
     const { outputCreateRepo } = await import('./output-create-repo.mts')
-    const mockSuccess = vi.mocked(getDefaultLogger().success)
 
     const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> =
       {
@@ -101,7 +103,7 @@ describe('outputCreateRepo', () => {
 
     outputCreateRepo(result, 'My Repo With Spaces!', 'text')
 
-    expect(mockSuccess).toHaveBeenCalledWith(
+    expect(mockLogger.success).toHaveBeenCalledWith(
       'OK. Repository created successfully, slug: `my-repo-sanitized` (Warning: slug is not the same as name that was requested!)',
     )
     expect(process.exitCode).toBeUndefined()
@@ -112,7 +114,6 @@ describe('outputCreateRepo', () => {
     const { failMsgWithBadge } = await vi.importMock(
       '../../utils/error/fail-msg-with-badge.mts',
     )
-    const mockFail = vi.mocked(getDefaultLogger().fail)
     const mockFailMsg = vi.mocked(failMsgWithBadge)
 
     const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> =
@@ -129,13 +130,12 @@ describe('outputCreateRepo', () => {
       'Repository already exists',
       'Conflict error',
     )
-    expect(mockFail).toHaveBeenCalled()
+    expect(mockLogger.fail).toHaveBeenCalled()
     expect(process.exitCode).toBe(1)
   })
 
   it('handles markdown output format', async () => {
     const { outputCreateRepo } = await import('./output-create-repo.mts')
-    const mockSuccess = vi.mocked(getDefaultLogger().success)
 
     const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> =
       {
@@ -147,14 +147,13 @@ describe('outputCreateRepo', () => {
 
     outputCreateRepo(result, 'markdown-repo', 'markdown')
 
-    expect(mockSuccess).toHaveBeenCalledWith(
+    expect(mockLogger.success).toHaveBeenCalledWith(
       'OK. Repository created successfully, slug: `markdown-repo`',
     )
   })
 
   it('handles empty slug properly', async () => {
     const { outputCreateRepo } = await import('./output-create-repo.mts')
-    const mockSuccess = vi.mocked(getDefaultLogger().success)
 
     const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> =
       {
@@ -166,7 +165,7 @@ describe('outputCreateRepo', () => {
 
     outputCreateRepo(result, 'original-name', 'text')
 
-    expect(mockSuccess).toHaveBeenCalledWith(
+    expect(mockLogger.success).toHaveBeenCalledWith(
       'OK. Repository created successfully, slug: `` (Warning: slug is not the same as name that was requested!)',
     )
   })

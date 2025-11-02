@@ -9,12 +9,18 @@ import type { CResult } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 // Mock the dependencies.
+const mockLogger = vi.hoisted(() => ({
+  fail: vi.fn(),
+  log: vi.fn(),
+  info: vi.fn(),
+  success: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+}))
+
 vi.mock('@socketsecurity/lib/logger', () => ({
-  logger: {
-    fail: vi.fn(),
-    log: vi.fn(),
-    success: vi.fn(),
-  },
+  getDefaultLogger: () => mockLogger,
+  logger: mockLogger,
 }))
 
 vi.mock('../../utils/output/result-json.mjs', () => ({
@@ -47,7 +53,7 @@ describe('outputViewRepo', () => {
     const { serializeResultJson } = await vi.importMock(
       '../../utils/output/result-json.mjs',
     )
-    const mockLog = vi.mocked(getDefaultLogger().log)
+    
     const mockSerialize = vi.mocked(serializeResultJson)
 
     const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> =
@@ -71,7 +77,7 @@ describe('outputViewRepo', () => {
   it('outputs error in JSON format', async () => {
     const { outputViewRepo } = await import('./output-view-repo.mts')
     const { logger } = await vi.importMock('@socketsecurity/lib/logger')
-    const mockLog = vi.mocked(getDefaultLogger().log)
+    
 
     const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> =
       createErrorResult('Unauthorized', {
@@ -89,7 +95,7 @@ describe('outputViewRepo', () => {
     const { outputViewRepo } = await import('./output-view-repo.mts')
     const { logger } = await vi.importMock('@socketsecurity/lib/logger')
     const chalkTable = await vi.importMock('chalk-table')
-    const mockLog = vi.mocked(getDefaultLogger().log)
+    
     const mockChalkTable = vi.mocked(chalkTable.default)
 
     const repoData = {
@@ -130,7 +136,7 @@ describe('outputViewRepo', () => {
     const { failMsgWithBadge } = await vi.importMock(
       '../../utils/error/fail-msg-with-badge.mts',
     )
-    const mockFail = vi.mocked(getDefaultLogger().fail)
+    
     const mockFailMsg = vi.mocked(failMsgWithBadge)
 
     const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> =

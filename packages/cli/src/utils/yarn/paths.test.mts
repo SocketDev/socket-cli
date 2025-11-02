@@ -1,10 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock dependencies.
+const mockLogger = vi.hoisted(() => ({
+  fail: vi.fn(),
+  log: vi.fn(),
+  info: vi.fn(),
+  success: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+}))
+
 vi.mock('@socketsecurity/lib/logger', () => ({
-  logger: {
-    fail: vi.fn(),
-  },
+  getDefaultLogger: () => mockLogger,
+  logger: mockLogger,
 }))
 
 vi.mock('../fs/path-resolve.mts', () => ({
@@ -70,10 +78,8 @@ describe('yarn-paths utilities', () => {
         shadowed: false,
       })
 
-      const { logger } = vi.mocked(await import('@socketsecurity/lib/logger'))
-
       expect(() => getYarnBinPath()).toThrow('process.exit(127)')
-      expect(getDefaultLogger().fail).toHaveBeenCalledWith(
+      expect(mockLogger.fail).toHaveBeenCalledWith(
         expect.stringContaining('Socket unable to locate yarn'),
       )
     })
