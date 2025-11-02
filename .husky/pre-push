@@ -1,0 +1,2 @@
+# Run pre-push security validation.
+.git-hooks/pre-push "$@"
