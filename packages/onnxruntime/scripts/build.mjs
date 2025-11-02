@@ -130,9 +130,12 @@ async function cloneOnnxSource() {
 
   // Patch 3: Modern Emscripten compatibility (see docs/patches.md).
   printStep('Patching wasm_post_build.js to handle modern Emscripten...')
-  const postBuildPath = path.join(ONNX_SOURCE_DIR, 'js', 'web', 'script', 'wasm_post_build.js')
-  if (existsSync(postBuildPath)) {
-    let postBuildContent = await fs.readFile(postBuildPath, 'utf-8')
+  const postBuildSourcePath = path.join(ONNX_SOURCE_DIR, 'js', 'web', 'script', 'wasm_post_build.js')
+  const patchPostBuild = async (filePath) => {
+    if (!existsSync(filePath)) {
+      return false
+    }
+    let postBuildContent = await fs.readFile(filePath, 'utf-8')
     postBuildContent = postBuildContent.replace(
       /if \(matches\.length !== 1\) \{/,
       `if (matches.length === 0) {\n      console.log('No Worker URL pattern found - skipping post-build transformation (modern Emscripten)');\n      return;\n    }\n    if (matches.length !== 1) {`
@@ -141,13 +144,24 @@ async function cloneOnnxSource() {
       /Unexpected number of matches for "" in "": \./,
       `Unexpected number of Worker URL matches: found \${matches.length}, expected 1. Pattern: \${regex}`
     )
-    await fs.writeFile(postBuildPath, postBuildContent, 'utf-8')
-    printSuccess('wasm_post_build.js patched')
+    await fs.writeFile(filePath, postBuildContent, 'utf-8')
+    return true
+  }
+
+  // Patch source file.
+  if (await patchPostBuild(postBuildSourcePath)) {
+    printSuccess('wasm_post_build.js (source) patched')
+  }
+
+  // Also patch build directory copies if they exist (from cached builds).
+  const platform = process.platform === 'darwin' ? 'Darwin' : 'Linux'
+  const postBuildBuildPath = path.join(ONNX_SOURCE_DIR, 'build', platform, 'Release', 'wasm_post_build.js')
+  if (await patchPostBuild(postBuildBuildPath)) {
+    printSuccess('wasm_post_build.js (build) patched')
   }
 
   // Clear CMake cache to ensure patch is picked up.
   printStep('Clearing CMake cache to force reconfiguration...')
-  const platform = process.platform === 'darwin' ? 'Darwin' : 'Linux'
   const cmakeCachePath = path.join(ONNX_SOURCE_DIR, 'build', platform, 'Release', 'CMakeCache.txt')
   if (existsSync(cmakeCachePath)) {
     await safeDelete(cmakeCachePath)
