@@ -194,7 +194,7 @@ const ADDITIONS_DIR = join(ROOT_DIR, 'additions')
  *
  * 2. All addition files (additions/**)
  *    - Includes headers, source files, tools added to Node.js source tree
- *    - Example: additions/tools/socket_macho_decompress
+ *    - Example: additions/tools/socketsecurity_macho_decompress
  *
  * 3. This build script itself (scripts/build.mjs)
  *    - Changes to build configuration flags invalidate cache
@@ -301,9 +301,9 @@ async function copyBuildAdditions() {
 }
 
 /**
- * Embed Socket security bootstrap in VM-based loader patch.
- * This creates a dynamic patch that loads the bootstrap using Module.wrap() + VM,
- * which supports async code (unlike direct require()).
+ * Embed Socket security bootstrap in minimal injection approach.
+ * This processes the loader template with embedded bootstrap,
+ * then copies the minimal patch (no placeholder replacement needed).
  * (Optional - only runs if bootstrap file exists)
  */
 async function embedSocketSecurityBootstrap() {
@@ -356,7 +356,7 @@ async function embedSocketSecurityBootstrap() {
     getDefaultLogger().log('')
   }
 
-  printHeader('Embedding Socket Security Bootstrap in VM-Based Loader')
+  printHeader('Embedding Socket Security Bootstrap (Minimal Injection)')
 
   // Read the bootstrap code.
   const bootstrapCode = await readFile(bootstrapSource, 'utf8')
@@ -369,80 +369,53 @@ async function embedSocketSecurityBootstrap() {
   getDefaultLogger().log(`📦 Bootstrap size: ${(bootstrapSize / 1024).toFixed(1)}KB`)
   getDefaultLogger().log(`📦 Base64 encoded: ${(bootstrapB64Size / 1024).toFixed(1)}KB`)
 
-  // Split base64 into chunks to avoid git patch line length limits.
-  // Git apply can fail with "corrupt patch" errors if lines are too long.
+  // Split base64 into chunks to avoid line length issues.
+  // 80 characters per line is safe for all environments.
   const chunkSize = 80
   const base64Chunks = []
   for (let i = 0; i < bootstrapB64.length; i += chunkSize) {
     base64Chunks.push(bootstrapB64.slice(i, i + chunkSize))
   }
 
-  // Format as multi-line JavaScript string concatenation.
-  // Each line must start with proper indentation for the patch format.
-  // IMPORTANT: Each line needs a '+' prefix for patch format!
+  // Format as multi-line JavaScript string concatenation for loader template.
   const base64MultiLine = base64Chunks
     .map((chunk, index) => {
       if (index === 0) {
         return `'${chunk}'`
       }
-      // Continuation lines: patch '+' prefix + 6 spaces indentation + content
-      return `+      '${chunk}'`
+      // Continuation lines with proper indentation.
+      return `    '${chunk}'`
     })
     .join(' +\n')
 
-  // Read the patch template.
-  const patchTemplatePath = join(PATCHES_DIR, 'load-socketsecurity-bootstrap-v24-preexec.template.patch')
-  const patchTemplate = await readFile(patchTemplatePath, 'utf8')
+  // Read the loader template.
+  const loaderTemplatePath = join(ADDITIONS_DIR, 'lib', 'internal', 'socketsecurity_bootstrap_loader.js.template')
+  const loaderTemplate = await readFile(loaderTemplatePath, 'utf8')
 
-  // Embed the bootstrap in the patch template.
-  let finalPatch = patchTemplate.replace(
+  // Embed the bootstrap in the loader template.
+  const finalLoader = loaderTemplate.replace(
     'SOCKET_BOOTSTRAP_BASE64_PLACEHOLDER',
     base64MultiLine
   )
 
-  // Fix the hunk header to reflect actual line counts after base64 expansion.
-  // The template has a placeholder hunk size, but the actual patch is much larger.
-  const hunkLines = finalPatch.split('\n')
-  let addedLines = 0
-  let contextLines = 0
-  let inHunk = false
+  // Write the processed loader to additions/ (will be copied during copyBuildAdditions phase).
+  const finalLoaderPath = join(ADDITIONS_DIR, 'lib', 'internal', 'socketsecurity_bootstrap_loader.js')
+  await mkdir(dirname(finalLoaderPath), { recursive: true })
+  await writeFile(finalLoaderPath, finalLoader, 'utf8')
 
-  for (const line of hunkLines) {
-    if (line.startsWith('@@')) {
-      inHunk = true
-      continue
-    }
-    if (!inHunk) continue
+  getDefaultLogger().log(`✅ Generated loader: ${finalLoaderPath.replace(`${ROOT_DIR}/`, '')}`)
+  getDefaultLogger().log(`   ${(finalLoader.length / 1024).toFixed(1)}KB (includes embedded bootstrap)`)
 
-    if (line.startsWith('+')) addedLines++
-    else if (line.startsWith(' ')) contextLines++
-    else if (line.startsWith('-')) {} // removed lines (none in our case)
-  }
-
-  // New file will have: context lines + added lines
-  const newFileLines = contextLines + addedLines
-
-  // Update the hunk header: @@ -oldStart,oldLines +newStart,newLines @@
-  finalPatch = finalPatch.replace(
-    /@@ -(\d+),(\d+) \+(\d+),(\d+) @@/,
-    `@@ -$1,$2 +$3,${newFileLines} @@`
-  )
-
-  getDefaultLogger().log(`📊 Patch statistics:`)
-  getDefaultLogger().log(`   Added lines: ${addedLines}`)
-  getDefaultLogger().log(`   Context lines: ${contextLines}`)
-  getDefaultLogger().log(`   Total new file lines: ${newFileLines}`)
-
-  // Write the final patch to build/patches/ (will be applied during patching phase).
+  // Copy the minimal patch template to build/patches/ (no placeholder replacement needed).
+  const minimalPatchTemplatePath = join(PATCHES_DIR, 'socketsecurity_bootstrap_preexec_v24.10.0.template.patch')
   const buildPatchesDir = join(BUILD_DIR, 'patches')
   await mkdir(buildPatchesDir, { recursive: true })
 
-  const finalPatchPath = join(buildPatchesDir, 'load-socketsecurity-bootstrap-v24-preexec.patch')
-  await writeFile(finalPatchPath, finalPatch, 'utf8')
+  const finalPatchPath = join(buildPatchesDir, 'socketsecurity_bootstrap_preexec_v24.10.0.patch')
+  await copyFile(minimalPatchTemplatePath, finalPatchPath)
 
-  getDefaultLogger().log(`✅ Generated dynamic patch: ${finalPatchPath.replace(`${ROOT_DIR}/`, '')}`)
-  getDefaultLogger().log(`   ${(finalPatch.length / 1024).toFixed(1)}KB (includes embedded bootstrap)`)
-  getDefaultLogger().log(`   Uses Module.wrap() + VM approach (supports async code!)`)
+  getDefaultLogger().log(`✅ Copied minimal patch: ${finalPatchPath.replace(`${ROOT_DIR}/`, '')}`)
+  getDefaultLogger().log(`   1-line injection calling internal/socketsecurity_bootstrap_loader`)
   getDefaultLogger().log('')
 }
 
@@ -1143,12 +1116,12 @@ async function main() {
     await resetNodeSource()
   }
 
-  // Copy build additions before applying patches.
-  await copyBuildAdditions()
-
-  // Embed Socket security bootstrap in VM-based loader patch.
-  // This creates a dynamic patch that supports async code execution.
+  // Embed Socket security bootstrap in minimal injection approach.
+  // This must run BEFORE copyBuildAdditions() so the processed loader is copied.
   await embedSocketSecurityBootstrap()
+
+  // Copy build additions (includes processed bootstrap loader).
+  await copyBuildAdditions()
 
   // Apply Socket patches (including the dynamically generated bootstrap loader).
   const socketPatches = findSocketPatches()
@@ -1741,10 +1714,10 @@ async function main() {
 
     const toolsDir = join(ROOT_DIR, 'additions', 'tools')
     const decompressTool = IS_MACOS
-      ? 'socket_macho_decompress'
+      ? 'socketsecurity_macho_decompress'
       : WIN32
-        ? 'socket_pe_decompress.exe'
-        : 'socket_elf_decompress'
+        ? 'socketsecurity_pe_decompress.exe'
+        : 'socketsecurity_elf_decompress'
 
     const decompressToolSource = join(toolsDir, decompressTool)
     const decompressToolDest = join(compressedDir, decompressTool)
@@ -1798,8 +1771,8 @@ async function main() {
 
     // Copy decompressor tool to Final.
     const decompressTool = IS_MACOS
-      ? 'socket_macho_decompress'
-      : WIN32 ? 'socket_pe_decompress.exe' : 'socket_elf_decompress'
+      ? 'socketsecurity_macho_decompress'
+      : WIN32 ? 'socketsecurity_pe_decompress.exe' : 'socketsecurity_elf_decompress'
     const decompressToolSource = join(compressedDir, decompressTool)
     const decompressToolDest = join(finalDir, decompressTool)
 
@@ -2001,10 +1974,10 @@ async function main() {
     getDefaultLogger().log('   1. Test compressed binary:')
     getDefaultLogger().log(`      cd ${join(BUILD_DIR, 'out', 'Compressed')}`)
     const decompressTool = IS_MACOS
-      ? './socket_macho_decompress'
+      ? './socketsecurity_macho_decompress'
       : WIN32
-        ? './socket_pe_decompress.exe'
-        : './socket_elf_decompress'
+        ? './socketsecurity_pe_decompress.exe'
+        : './socketsecurity_elf_decompress'
     getDefaultLogger().log(`      ${decompressTool} ./node --version`)
     getDefaultLogger().logNewline()
     getDefaultLogger().log('   2. Build Socket CLI with compressed Node:')

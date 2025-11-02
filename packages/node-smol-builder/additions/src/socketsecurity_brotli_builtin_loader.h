@@ -1,7 +1,7 @@
 /**
  * Socket Security - Minimal-Touch Brotli Builtin Loader
  *
- * @file socket_brotli_builtin_loader.h
+ * @file socketsecurity_brotli_builtin_loader.h
  * @brief External header for Node.js builtin Brotli decompression
  * @version 1.0.0
  * @date 2025-01-17
@@ -49,8 +49,8 @@
  * SPDX-License-Identifier: MIT
  */
 
-#ifndef SOCKET_BROTLI_BUILTIN_LOADER_H_
-#define SOCKET_BROTLI_BUILTIN_LOADER_H_
+#ifndef SOCKETSECURITY_BROTLI_BUILTIN_LOADER_H_
+#define SOCKETSECURITY_BROTLI_BUILTIN_LOADER_H_
 
 #include "node_union_bytes.h"
 #include "v8.h"
