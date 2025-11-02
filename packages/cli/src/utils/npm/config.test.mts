@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Create mock instance that will be returned by constructor
+// Create mock instance that will be returned by constructor.
 const mockNpmConfigInstance = {
   load: vi.fn().mockResolvedValue(undefined),
   flat: {
@@ -10,9 +10,12 @@ const mockNpmConfigInstance = {
   },
 }
 
-// Mock @npmcli/config with a proper constructor function.
+// Mock @npmcli/config with a proper constructor class.
+// Using function syntax to make it a proper constructor.
 vi.mock('@npmcli/config', () => ({
-  default: vi.fn(() => mockNpmConfigInstance),
+  default: vi.fn(function MockNpmConfig() {
+    return mockNpmConfigInstance
+  }),
 }))
 
 import { getNpmConfig } from './config.mts'
@@ -35,9 +38,8 @@ const MockNpmConfig = vi.mocked(NpmConfig)
 
 describe('npm-config utilities', () => {
   beforeEach(() => {
-    // Clear mock calls and restore original implementation.
+    // Clear mock calls.
     MockNpmConfig.mockClear()
-    MockNpmConfig.mockImplementation(() => mockNpmConfigInstance)
     vi.mocked(mockNpmConfigInstance.load).mockClear()
   })
 
@@ -132,18 +134,9 @@ describe('npm-config utilities', () => {
     })
 
     it('calls config.load()', async () => {
-      const mockLoad = vi.fn().mockResolvedValue(undefined)
-      const mockConfigInstance = {
-        load: mockLoad,
-        flat: { test: 'value' },
-      }
-      vi.mocked((await import('@npmcli/config')).default).mockImplementation(
-        () => mockConfigInstance,
-      )
-
       await getNpmConfig()
 
-      expect(mockLoad).toHaveBeenCalled()
+      expect(mockNpmConfigInstance.load).toHaveBeenCalled()
     })
 
     it('returns flattened config with null prototype', async () => {

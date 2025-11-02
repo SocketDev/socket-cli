@@ -50,12 +50,12 @@ describe('fetchAuditLog', () => {
     const result = await fetchAuditLog(config)
 
     expect(mockSdk.getAuditLogEvents).toHaveBeenCalledWith('test-org', {
-      outputJson: 'true',
-      outputMarkdown: 'false',
+      outputJson: true,
+      outputMarkdown: false,
       orgSlug: 'test-org',
       type: 'all',
-      page: '1',
-      per_page: '100',
+      page: 1,
+      per_page: 100,
     })
     expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
       description: 'audit log for test-org',
@@ -137,8 +137,8 @@ describe('fetchAuditLog', () => {
     expect(mockSdk.getAuditLogEvents).toHaveBeenCalledWith(
       'test-org',
       expect.objectContaining({
-        page: '5',
-        per_page: '25',
+        page: 5,
+        per_page: 25,
       }),
     )
   })
