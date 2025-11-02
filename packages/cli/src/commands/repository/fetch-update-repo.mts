@@ -21,7 +21,7 @@ export type FetchUpdateRepoOptions = {
 export async function fetchUpdateRepo(
   config: FetchUpdateRepoConfig,
   options?: FetchUpdateRepoOptions | undefined,
-): Promise<CResult<SocketSdkSuccessResult<'updateOrgRepo'>['data']>> {
+): Promise<CResult<SocketSdkSuccessResult<'updateRepository'>['data']>> {
   const {
     defaultBranch,
     description,
