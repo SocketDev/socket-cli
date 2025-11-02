@@ -38,12 +38,12 @@ export async function fetchListAllRepos(
       }
     }
     // eslint-disable-next-line no-await-in-loop
-    const orgRepoListCResult = await handleApiCall(
+    const orgRepoListCResult = await handleApiCall<'listRepositories'>(
       sockSdk.listRepositories(orgSlug, {
-        sort,
-        direction,
-        per_page: String(100), // max
-        page: String(nextPage),
+        ...(sort ? { sort: sort as 'name' | 'created_at' } : {}),
+        ...(direction ? { direction: direction as 'asc' | 'desc' } : {}),
+        per_page: 100, // max
+        page: nextPage,
       }),
       { description: 'list of repositories' },
     )

@@ -98,13 +98,13 @@ export async function coanaFix(
   })
 
   // SDK v3.0 automatically validates file readability via onFileValidation callback.
-  const uploadCResult = await handleApiCall(
+  const uploadCResult = (await handleApiCall(
     sockSdk.uploadManifestFiles(orgSlug, scanFilepaths),
     {
       description: 'upload manifests',
       spinner,
     },
-  )
+  )) as any
 
   if (!uploadCResult.ok) {
     return uploadCResult

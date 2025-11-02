@@ -25,7 +25,10 @@ export async function fetchScanMetadata(
   }
   const sockSdk = sockSdkCResult.data
 
-  return await handleApiCall(sockSdk.getFullScanMetadata(orgSlug, scanId), {
-    description: 'meta data for a full scan',
-  })
+  return await handleApiCall<'getFullScanMetadata'>(
+    sockSdk.getFullScanMetadata(orgSlug, scanId),
+    {
+      description: 'meta data for a full scan',
+    },
+  )
 }

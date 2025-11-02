@@ -110,13 +110,13 @@ export async function performReachabilityAnalysis(
 
     spinner?.start('Uploading manifests for reachability analysis...')
 
-    const uploadCResult = await handleApiCall(
+    const uploadCResult = (await handleApiCall(
       sockSdk.uploadManifestFiles(orgSlug, filepathsToUpload),
       {
         description: 'upload manifests',
         spinner,
       },
-    )
+    )) as any
 
     spinner?.stop()
 

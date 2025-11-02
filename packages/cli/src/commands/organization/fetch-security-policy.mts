@@ -24,7 +24,10 @@ export async function fetchSecurityPolicy(
   }
   const sockSdk = sockSdkCResult.data
 
-  return await handleApiCall(sockSdk.getOrgSecurityPolicy(orgSlug), {
-    description: 'organization security policy',
-  })
+  return await handleApiCall<'getOrgSecurityPolicy'>(
+    sockSdk.getOrgSecurityPolicy(orgSlug),
+    {
+      description: 'organization security policy',
+    },
+  )
 }
