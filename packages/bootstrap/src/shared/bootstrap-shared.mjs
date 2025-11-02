@@ -41,7 +41,7 @@ const MIN_NODE_VERSION = __MIN_NODE_VERSION__
  * @type {string}
  */
 // @ts-expect-error - Injected by esbuild define.
-const SOCKET_CLI_VERSION = __SOCKET_CLI_VERSION__
+export const SOCKET_CLI_VERSION = __SOCKET_CLI_VERSION__
 
 /**
  * Get CLI package paths.

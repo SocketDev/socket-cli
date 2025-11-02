@@ -10,7 +10,7 @@
 // Load Intl polyfill FIRST for ICU-disabled builds (smol Node.js).
 import '@socketsecurity/cli/src/polyfills/intl-stub/index.mts'
 
-import { findAndExecuteCli, getArgs } from './shared/bootstrap-shared.mjs'
+import { findAndExecuteCli, getArgs, SOCKET_CLI_VERSION } from './shared/bootstrap-shared.mjs'
 
 /**
  * Check if we should skip CLI bootstrap.
@@ -35,6 +35,14 @@ function shouldSkipCliBootstrap() {
 }
 
 async function main() {
+  const args = getArgs()
+
+  // Check if user wants to see version.
+  if (args.includes('--version') || args.includes('-v')) {
+    console.log(SOCKET_CLI_VERSION)
+    return 0
+  }
+
   // Skip bootstrap if we're in a build/test environment.
   // During smol binary compilation, smoke tests verify Node.js works,
   // but the CLI version doesn't exist on npm yet, so we can't download it.
@@ -43,7 +51,6 @@ async function main() {
     return 0
   }
 
-  const args = getArgs()
   return await findAndExecuteCli(args)
 }
 
