@@ -11,7 +11,7 @@ import { pipeline } from 'node:stream/promises'
 import { debug, debugDir } from '@socketsecurity/lib/debug'
 import { safeMkdirSync } from '@socketsecurity/lib/fs'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { confirm, select } from '@socketsecurity/lib/prompts'
+import { confirm, select } from '@socketsecurity/lib/stdio/prompts'
 
 import { fetchSupportedScanFileNames } from './fetch-supported-scan-file-names.mts'
 import { handleCreateNewScan } from './handle-create-new-scan.mts'
@@ -588,7 +588,7 @@ async function getLastCommitDetails({
 }
 
 async function selectFocus(repos: string[]): Promise<CResult<string[]>> {
-  const proceed = await select<string>({
+  const proceed = await select({
     message: 'Please select the repo to process:',
     choices: repos
       .map(slug => ({

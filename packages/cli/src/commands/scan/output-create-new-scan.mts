@@ -3,7 +3,7 @@ import terminalLink from 'terminal-link'
 
 import { getSpinner } from '@socketsecurity/lib/constants/process'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { confirm } from '@socketsecurity/lib/prompts'
+import { confirm } from '@socketsecurity/lib/stdio/prompts'
 
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 import { mdHeader } from '../../utils/output/markdown.mts'

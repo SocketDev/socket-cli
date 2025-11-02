@@ -64,6 +64,7 @@ import type { CResult } from '../../types.mjs'
  * Retrieved from: https://github.com/astral-sh/python-build-standalone/releases/tag/20250918
  */
 const PYTHON_CHECKSUMS: Record<string, string> = {
+  // @ts-expect-error - __proto__: null creates object without prototype.
   __proto__: null,
   'aarch64-apple-darwin':
     '5f2a620c5278967c7fe666c9d41dc5d653c1829b3c26f62ece0d818e1a5ff9f8',
