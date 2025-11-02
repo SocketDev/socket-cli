@@ -5,7 +5,6 @@ import {
   createSuccessResult,
   setupTestEnvironment,
 } from '../../../test/helpers/index.mts'
-import { outputDependencies } from './output-dependencies.mts'
 
 import type { CResult } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
@@ -24,11 +23,10 @@ const mockSerializeResultJson = vi.hoisted(() => vi.fn(result => JSON.stringify(
 const mockFailMsgWithBadge = vi.hoisted(() => vi.fn((msg, cause) => `${msg}: ${cause}`))
 const mockChalkTable = vi.hoisted(() => vi.fn((_options, data) => `Table with ${data.length} rows`))
 
-vi.mock('@socketsecurity/lib/logger', () => {
-  return {
-    getDefaultLogger: () => mockLogger,
-  }
-})
+vi.mock('@socketsecurity/lib/logger', () => ({
+  getDefaultLogger: () => mockLogger,
+  logger: mockLogger,
+}))
 
 vi.mock('../../utils/output/result-json.mjs', () => ({
   serializeResultJson: mockSerializeResultJson,
@@ -52,6 +50,8 @@ vi.mock('yoctocolors-cjs', () => ({
     yellow: vi.fn(text => text),
   },
 }))
+
+import { outputDependencies } from './output-dependencies.mts'
 
 describe('outputDependencies', () => {
   setupTestEnvironment()
