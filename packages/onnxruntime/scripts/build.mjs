@@ -167,26 +167,6 @@ async function cloneOnnxSource() {
     printSuccess('wasm_post_build.js (source) patched')
   }
 
-  // Delete stale cached copies in build directory.
-  // This ensures CMake will recopy the patched version from source during configure.
-  // Without this, GitHub Actions cached builds would use old unpatched version.
-  printStep('Removing stale wasm_post_build.js from build cache...')
-  const platform = process.platform === 'darwin' ? 'Darwin' : 'Linux'
-  const postBuildBuildPath = path.join(ONNX_SOURCE_DIR, 'build', platform, 'Release', 'wasm_post_build.js')
-  if (existsSync(postBuildBuildPath)) {
-    await safeDelete(postBuildBuildPath)
-    printSuccess('Stale wasm_post_build.js removed (CMake will recopy from patched source)')
-  }
-
-  // Clear CMake cache to force full reconfiguration.
-  // This ensures CMake recopies all files from source, picking up our patch.
-  printStep('Clearing CMake cache to force reconfiguration...')
-  const cmakeCachePath = path.join(ONNX_SOURCE_DIR, 'build', platform, 'Release', 'CMakeCache.txt')
-  if (existsSync(cmakeCachePath)) {
-    await safeDelete(cmakeCachePath)
-    printSuccess('CMake cache cleared')
-  }
-
   await createCheckpoint('onnxruntime', 'cloned')
 }
 
@@ -201,6 +181,27 @@ async function build() {
   printHeader('Building ONNX Runtime with Emscripten')
 
   const startTime = Date.now()
+
+  // Clean stale cached files before build.
+  // GitHub Actions may have restored old unpatched files from cache after clone step.
+  // Delete them now to force CMake to recopy patched versions from source.
+  printStep('Checking for stale cached build files...')
+  const platform = process.platform === 'darwin' ? 'Darwin' : 'Linux'
+  const buildCacheDir = path.join(ONNX_SOURCE_DIR, 'build', platform, 'Release')
+
+  // Delete cached wasm_post_build.js (CMake will recopy from patched source).
+  const postBuildBuildPath = path.join(buildCacheDir, 'wasm_post_build.js')
+  if (existsSync(postBuildBuildPath)) {
+    await safeDelete(postBuildBuildPath)
+    printSuccess('Removed stale wasm_post_build.js from cache')
+  }
+
+  // Clear CMake cache to force full reconfiguration.
+  const cmakeCachePath = path.join(buildCacheDir, 'CMakeCache.txt')
+  if (existsSync(cmakeCachePath)) {
+    await safeDelete(cmakeCachePath)
+    printSuccess('Cleared CMake cache')
+  }
 
   // ONNX Runtime has its own build script: ./build.sh --config Release --build_wasm
   // We need to pass WASM_ASYNC_COMPILATION=0 via EMCC_CFLAGS environment variable.
