@@ -23,21 +23,6 @@ on:
         required: false
         type: boolean
         default: true
-      build-yoga:
-        description: 'Build Yoga Layout WASM'
-        required: false
-        type: boolean
-        default: true
-      build-models:
-        description: 'Build AI Models'
-        required: false
-        type: boolean
-        default: true
-      build-onnx:
-        description: 'Build ONNX Runtime WASM'
-        required: false
-        type: boolean
-        default: true
   workflow_dispatch:
     inputs:
       force:
@@ -57,21 +42,6 @@ on:
         default: true
       build-windows:
         description: 'Build Windows SEA binaries'
-        required: false
-        type: boolean
-        default: true
-      build-yoga:
-        description: 'Build Yoga Layout WASM'
-        required: false
-        type: boolean
-        default: true
-      build-models:
-        description: 'Build AI Models'
-        required: false
-        type: boolean
-        default: true
-      build-onnx:
-        description: 'Build ONNX Runtime WASM'
         required: false
         type: boolean
         default: true
