@@ -188,7 +188,7 @@ export async function warmCaches(
     }
   })
 
-  await Promise.all(warmPromises)
+  await Promise.allSettled(warmPromises)
 }
 
 /**
