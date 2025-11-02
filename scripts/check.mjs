@@ -259,6 +259,31 @@ async function main() {
       }
     }
 
+    // Run bundle dependencies validation check
+    if (runAll) {
+      if (!quiet) {
+        getDefaultLogger().step('Validating bundle dependencies')
+      }
+      const bundleResult = await spawn(
+        'node',
+        ['scripts/validate-bundle-deps.mjs'],
+        {
+          shell: WIN32,
+          stdio: quiet ? 'pipe' : 'inherit',
+        },
+      )
+      if (bundleResult.code !== 0) {
+        if (!quiet) {
+          getDefaultLogger().error('Bundle validation failed')
+        }
+        process.exitCode = bundleResult.code
+        return
+      }
+      if (!quiet) {
+        getDefaultLogger().error('')
+      }
+    }
+
     if (!quiet) {
       getDefaultLogger().success('All checks passed')
       printFooter()
