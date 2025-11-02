@@ -4,6 +4,7 @@ import {
   createErrorResult,
   createSuccessResult,
 } from '../../../test/helpers/index.mts'
+import { outputLicensePolicy } from './output-license-policy.mts'
 
 // Mock the dependencies.
 const mockLogger = vi.hoisted(() => ({
@@ -33,11 +34,6 @@ vi.mock('../../utils/output/markdown.mts', () => ({
   mdTableOfPairs: vi.fn(pairs => `Table with ${pairs.length} rows`),
 }))
 
-import { outputLicensePolicy } from './output-license-policy.mts'
-import { serializeResultJson } from '../../utils/output/result-json.mjs'
-import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
-import { mdHeader, mdTableOfPairs } from '../../utils/output/markdown.mts'
-
 describe('outputLicensePolicy', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -45,6 +41,10 @@ describe('outputLicensePolicy', () => {
   })
 
   it('outputs JSON format for successful result', async () => {
+    const { serializeResultJson } = await vi.importMock(
+      '../../utils/output/result-json.mjs',
+    )
+
     const result = createSuccessResult({
       license_policy: {
         MIT: { allowed: true },
@@ -73,6 +73,10 @@ describe('outputLicensePolicy', () => {
   })
 
   it('outputs text format with license table', async () => {
+    const { mdTableOfPairs } = await vi.importMock(
+      '../../utils/output/markdown.mts',
+    )
+
     const result = createSuccessResult({
       license_policy: {
         MIT: { allowed: true },
@@ -96,6 +100,10 @@ describe('outputLicensePolicy', () => {
   })
 
   it('outputs error in text format', async () => {
+    const { failMsgWithBadge } = await vi.importMock(
+      '../../utils/error/fail-msg-with-badge.mts',
+    )
+
     const result = createErrorResult('Failed to fetch policy', {
       code: 1,
       cause: 'Network error',
@@ -125,6 +133,10 @@ describe('outputLicensePolicy', () => {
   })
 
   it('handles empty license policy', async () => {
+    const { mdTableOfPairs } = await vi.importMock(
+      '../../utils/output/markdown.mts',
+    )
+
     const result = createSuccessResult({
       license_policy: {},
     })
@@ -135,6 +147,10 @@ describe('outputLicensePolicy', () => {
   })
 
   it('handles null license policy', async () => {
+    const { mdTableOfPairs } = await vi.importMock(
+      '../../utils/output/markdown.mts',
+    )
+
     const result = createSuccessResult({
       license_policy: null,
     })

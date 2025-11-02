@@ -4,6 +4,7 @@ import {
   createErrorResult,
   createSuccessResult,
 } from '../../../test/helpers/index.mts'
+import { outputDeleteRepo } from './output-delete-repo.mts'
 
 import type { CResult } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
