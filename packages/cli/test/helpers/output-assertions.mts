@@ -418,3 +418,70 @@ export function expectTableStructure(output: string): void {
     expect(Math.abs(length - avgLength)).toBeLessThan(maxDeviation)
   }
 }
+
+/**
+ * Validate dry-run test output to prevent flipped snapshots.
+ * Dry-run tests should ALWAYS have output starting with "[DryRun]:"
+ * If the snapshot gets flipped (expected="" received="[DryRun]:..."), this will catch it.
+ *
+ * @param output - CLI output string
+ * @param snapshotValue - The value from toMatchInlineSnapshot
+ *
+ * @throws Error if snapshot appears to be flipped
+ *
+ * @example
+ * ```typescript
+ * const { stdout } = await spawnSocketCli(binCliPath, ['scan', '--dry-run'])
+ * expectDryRunOutput(stdout)
+ * expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+ * ```
+ */
+export function expectDryRunOutput(
+  output: string,
+  snapshotValue?: string,
+): void {
+  // Output should always start with [DryRun]: for dry-run tests.
+  const startsWithDryRun = output.startsWith('[DryRun]:')
+
+  if (!startsWithDryRun) {
+    throw new Error(
+      `Expected dry-run output to start with "[DryRun]:" but got: ${output.slice(0, 100)}`,
+    )
+  }
+
+  // If snapshot value is provided, validate it's not flipped.
+  if (snapshotValue !== undefined) {
+    // Snapshot should not be empty if output has [DryRun]:
+    if (snapshotValue === '' || snapshotValue === '""') {
+      throw new Error(
+        `FLIPPED SNAPSHOT DETECTED!\n\n` +
+          `The snapshot is empty but the actual output starts with "[DryRun]:".\n` +
+          `This means the expected/received values are flipped.\n\n` +
+          `Actual output: ${output}\n` +
+          `Snapshot value: ${snapshotValue}\n\n` +
+          `FIX: Update the snapshot to expect the [DryRun]: output, not an empty string.\n` +
+          `Run: pnpm testu <test-file> to update the snapshot correctly.`,
+      )
+    }
+
+    // Snapshot should start with [DryRun]: if output does.
+    const snapshotStartsWithDryRun =
+      snapshotValue.startsWith('[DryRun]:') ||
+      snapshotValue.startsWith('"[DryRun]:')
+
+    if (!snapshotStartsWithDryRun) {
+      throw new Error(
+        `FLIPPED SNAPSHOT DETECTED!\n\n` +
+          `The snapshot does not start with "[DryRun]:" but the actual output does.\n` +
+          `This means the expected/received values are flipped.\n\n` +
+          `Actual output: ${output}\n` +
+          `Snapshot value: ${snapshotValue}\n\n` +
+          `FIX: Update the snapshot to match the actual [DryRun]: output.\n` +
+          `Run: pnpm testu <test-file> to update the snapshot correctly.`,
+      )
+    }
+  }
+
+  // If we get here, the snapshot looks correct.
+  expect(output).toMatch(/^\[DryRun\]:/)
+}
