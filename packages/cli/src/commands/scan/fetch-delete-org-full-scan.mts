@@ -13,7 +13,7 @@ export async function fetchDeleteOrgFullScan(
   orgSlug: string,
   scanId: string,
   options?: FetchDeleteOrgFullScanOptions | undefined,
-): Promise<CResult<SocketSdkSuccessResult<'deleteFullScan'>['data']>> {
+): Promise<CResult<SocketSdkSuccessResult<'deleteOrgFullScan'>['data']>> {
   const { sdkOpts } = {
     __proto__: null,
     ...options,

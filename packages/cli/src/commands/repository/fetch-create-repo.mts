@@ -21,7 +21,7 @@ export type FetchCreateRepoOptions = {
 export async function fetchCreateRepo(
   config: FetchCreateRepoConfig,
   options?: FetchCreateRepoOptions | undefined,
-): Promise<CResult<SocketSdkSuccessResult<'createRepository'>['data']>> {
+): Promise<CResult<SocketSdkSuccessResult<'createOrgRepo'>['data']>> {
   const {
     defaultBranch,
     description,

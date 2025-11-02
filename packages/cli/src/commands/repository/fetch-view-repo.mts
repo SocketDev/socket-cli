@@ -13,7 +13,7 @@ export async function fetchViewRepo(
   orgSlug: string,
   repoName: string,
   options?: FetchViewRepoOptions | undefined,
-): Promise<CResult<SocketSdkSuccessResult<'getRepository'>['data']>> {
+): Promise<CResult<SocketSdkSuccessResult<'getOrgRepo'>['data']>> {
   const { sdkOpts } = { __proto__: null, ...options } as FetchViewRepoOptions
 
   const sockSdkCResult = await setupSdk(sdkOpts)

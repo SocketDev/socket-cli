@@ -7,7 +7,7 @@ import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export function outputCreateRepo(
-  result: CResult<SocketSdkSuccessResult<'createRepository'>['data']>,
+  result: CResult<SocketSdkSuccessResult<'createOrgRepo'>['data']>,
   requestedName: string,
   outputKind: OutputKind,
 ): void {

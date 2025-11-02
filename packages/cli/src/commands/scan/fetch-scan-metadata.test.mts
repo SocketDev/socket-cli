@@ -16,7 +16,7 @@ describe('fetchScanMetadata', () => {
     const { fetchScanMetadata } = await import('./fetch-scan-metadata.mts')
 
     const { mockHandleApi, mockSdk } = await setupSdkMockSuccess(
-      'getFullScanMetadata',
+      'getOrgFullScanMetadata',
       {
         id: 'scan-123',
         status: 'completed',
@@ -60,7 +60,7 @@ describe('fetchScanMetadata', () => {
       '../../../test/helpers/sdk-test-helpers.mts'
     )
 
-    await setupSdkMockError('getFullScanMetadata', 'Not found', 404)
+    await setupSdkMockError('getOrgFullScanMetadata', 'Not found', 404)
 
     const result = await fetchScanMetadata('test-org', 'nonexistent-scan')
 
@@ -72,7 +72,7 @@ describe('fetchScanMetadata', () => {
     const { fetchScanMetadata } = await import('./fetch-scan-metadata.mts')
 
     const { mockSdk, mockSetupSdk } = await setupSdkMockSuccess(
-      'getFullScanMetadata',
+      'getOrgFullScanMetadata',
       {},
     )
 
@@ -95,7 +95,7 @@ describe('fetchScanMetadata', () => {
   it('handles different org slugs and scan IDs', async () => {
     const { fetchScanMetadata } = await import('./fetch-scan-metadata.mts')
 
-    const { mockSdk } = await setupSdkMockSuccess('getFullScanMetadata', {})
+    const { mockSdk } = await setupSdkMockSuccess('getOrgFullScanMetadata', {})
 
     const testCases = [
       ['org-with-dashes', 'scan-123'],
@@ -114,7 +114,7 @@ describe('fetchScanMetadata', () => {
   it('handles empty metadata response', async () => {
     const { fetchScanMetadata } = await import('./fetch-scan-metadata.mts')
 
-    await setupSdkMockSuccess('getFullScanMetadata', null)
+    await setupSdkMockSuccess('getOrgFullScanMetadata', null)
 
     const result = await fetchScanMetadata('test-org', 'empty-scan')
 
@@ -125,7 +125,7 @@ describe('fetchScanMetadata', () => {
   it('handles pending scan metadata', async () => {
     const { fetchScanMetadata } = await import('./fetch-scan-metadata.mts')
 
-    await setupSdkMockSuccess('getFullScanMetadata', {
+    await setupSdkMockSuccess('getOrgFullScanMetadata', {
       id: 'scan-pending',
       status: 'pending',
       progress: 45,
@@ -141,7 +141,7 @@ describe('fetchScanMetadata', () => {
   it('handles special characters in scan IDs', async () => {
     const { fetchScanMetadata } = await import('./fetch-scan-metadata.mts')
 
-    const { mockSdk } = await setupSdkMockSuccess('getFullScanMetadata', {
+    const { mockSdk } = await setupSdkMockSuccess('getOrgFullScanMetadata', {
       id: 'scan-with-special-chars',
     })
 
@@ -158,7 +158,7 @@ describe('fetchScanMetadata', () => {
   it('uses null prototype for options', async () => {
     const { fetchScanMetadata } = await import('./fetch-scan-metadata.mts')
 
-    const { mockSdk } = await setupSdkMockSuccess('getFullScanMetadata', {})
+    const { mockSdk } = await setupSdkMockSuccess('getOrgFullScanMetadata', {})
 
     // This tests that the function properly uses __proto__: null.
     await fetchScanMetadata('test-org', 'scan-123')

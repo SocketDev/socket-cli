@@ -10,7 +10,7 @@ import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export async function outputViewRepo(
-  result: CResult<SocketSdkSuccessResult<'createRepository'>['data']>,
+  result: CResult<SocketSdkSuccessResult<'createOrgRepo'>['data']>,
   outputKind: OutputKind,
 ): Promise<void> {
   if (!result.ok) {

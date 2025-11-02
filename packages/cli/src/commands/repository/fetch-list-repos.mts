@@ -20,7 +20,7 @@ export type FetchListReposOptions = {
 export async function fetchListRepos(
   config: FetchListReposConfig,
   options?: FetchListReposOptions | undefined,
-): Promise<CResult<SocketSdkSuccessResult<'listRepositories'>['data']>> {
+): Promise<CResult<SocketSdkSuccessResult<'getOrgRepoList'>['data']>> {
   const { direction, orgSlug, page, perPage, sort } = {
     __proto__: null,
     ...config,

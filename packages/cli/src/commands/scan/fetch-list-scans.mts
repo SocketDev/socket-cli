@@ -23,7 +23,7 @@ export type FetchOrgFullScanListOptions = {
 export async function fetchOrgFullScanList(
   config: FetchOrgFullScanListConfig,
   options?: FetchOrgFullScanListOptions | undefined,
-): Promise<CResult<SocketSdkSuccessResult<'listFullScans'>['data']>> {
+): Promise<CResult<SocketSdkSuccessResult<'getOrgFullScanList'>['data']>> {
   const { sdkOpts } = {
     __proto__: null,
     ...options,

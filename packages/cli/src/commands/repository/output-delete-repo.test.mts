@@ -35,7 +35,7 @@ describe('outputDeleteRepo', () => {
 
     const { outputDeleteRepo } = await import('./output-delete-repo.mts')
 
-    const result: CResult<SocketSdkSuccessResult<'deleteRepository'>['data']> =
+    const result: CResult<SocketSdkSuccessResult<'deleteOrgRepo'>['data']> =
       createSuccessResult({
         success: true,
       })
@@ -68,7 +68,7 @@ describe('outputDeleteRepo', () => {
 
     const { outputDeleteRepo } = await import('./output-delete-repo.mts')
 
-    const result: CResult<SocketSdkSuccessResult<'deleteRepository'>['data']> =
+    const result: CResult<SocketSdkSuccessResult<'deleteOrgRepo'>['data']> =
       createErrorResult('Unauthorized', {
         cause: 'Invalid API token',
         code: 2,
@@ -96,7 +96,7 @@ describe('outputDeleteRepo', () => {
 
     const { outputDeleteRepo } = await import('./output-delete-repo.mts')
 
-    const result: CResult<SocketSdkSuccessResult<'deleteRepository'>['data']> =
+    const result: CResult<SocketSdkSuccessResult<'deleteOrgRepo'>['data']> =
       createSuccessResult({
         success: true,
       })
@@ -130,7 +130,7 @@ describe('outputDeleteRepo', () => {
 
     const { outputDeleteRepo } = await import('./output-delete-repo.mts')
 
-    const result: CResult<SocketSdkSuccessResult<'deleteRepository'>['data']> =
+    const result: CResult<SocketSdkSuccessResult<'deleteOrgRepo'>['data']> =
       createErrorResult('Repository not found', {
         cause: 'Not found error',
         code: 1,
@@ -162,7 +162,7 @@ describe('outputDeleteRepo', () => {
 
     const { outputDeleteRepo } = await import('./output-delete-repo.mts')
 
-    const result: CResult<SocketSdkSuccessResult<'deleteRepository'>['data']> =
+    const result: CResult<SocketSdkSuccessResult<'deleteOrgRepo'>['data']> =
       createSuccessResult({
         success: true,
       })
@@ -190,7 +190,7 @@ describe('outputDeleteRepo', () => {
 
     const { outputDeleteRepo } = await import('./output-delete-repo.mts')
 
-    const result: CResult<SocketSdkSuccessResult<'deleteRepository'>['data']> =
+    const result: CResult<SocketSdkSuccessResult<'deleteOrgRepo'>['data']> =
       createSuccessResult({
         success: true,
       })
@@ -218,7 +218,7 @@ describe('outputDeleteRepo', () => {
 
     const { outputDeleteRepo } = await import('./output-delete-repo.mts')
 
-    const result: CResult<SocketSdkSuccessResult<'deleteRepository'>['data']> =
+    const result: CResult<SocketSdkSuccessResult<'deleteOrgRepo'>['data']> =
       createSuccessResult({
         success: true,
       })
@@ -251,7 +251,7 @@ describe('outputDeleteRepo', () => {
 
     const { outputDeleteRepo } = await import('./output-delete-repo.mts')
 
-    const result: CResult<SocketSdkSuccessResult<'deleteRepository'>['data']> =
+    const result: CResult<SocketSdkSuccessResult<'deleteOrgRepo'>['data']> =
       createErrorResult('Error without code')
 
     await outputDeleteRepo(result, 'test-repo', 'json')

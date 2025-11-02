@@ -7,7 +7,7 @@ import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export async function outputDeleteScan(
-  result: CResult<SocketSdkSuccessResult<'deleteFullScan'>['data']>,
+  result: CResult<SocketSdkSuccessResult<'deleteOrgFullScan'>['data']>,
   outputKind: OutputKind,
 ): Promise<void> {
   if (!result.ok) {

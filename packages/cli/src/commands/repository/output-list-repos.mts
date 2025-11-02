@@ -11,7 +11,7 @@ import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export async function outputListRepos(
-  result: CResult<SocketSdkSuccessResult<'listRepositories'>['data']>,
+  result: CResult<SocketSdkSuccessResult<'getOrgRepoList'>['data']>,
   outputKind: OutputKind,
   page: number,
   nextPage: number | null,
