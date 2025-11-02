@@ -24,6 +24,9 @@ catalogs:
     '@socketsecurity/sdk':
       specifier: 3.0.31
       version: 3.0.31
+    '@types/node':
+      specifier: 24.9.2
+      version: 24.9.2
     del-cli:
       specifier: 6.0.0
       version: 6.0.0
@@ -221,7 +224,7 @@ importers:
         specifier: 4.13.4
         version: 4.13.4
       '@types/node':
-        specifier: 24.9.2
+        specifier: 'catalog:'
         version: 24.9.2
       '@types/npm-package-arg':
         specifier: 6.1.4
@@ -272,7 +275,7 @@ importers:
         specifier: 2.0.0
         version: 2.0.0
       esbuild:
-        specifier: 0.25.11
+        specifier: 'catalog:'
         version: 0.25.11
       eslint:
         specifier: 9.35.0
