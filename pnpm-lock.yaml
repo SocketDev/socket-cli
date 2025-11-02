@@ -93,13 +93,6 @@ patchedDependencies:
 importers:
 
   .:
-    dependencies:
-      socket-lib:
-        specifier: link:socket-lib
-        version: link:socket-lib
-      socket-sdk-js:
-        specifier: link:socket-sdk-js
-        version: link:socket-sdk-js
     devDependencies:
       '@babel/core':
         specifier: 7.28.4
@@ -189,8 +182,8 @@ importers:
         specifier: 1.0.6
         version: 1.0.6
       '@socketregistry/packageurl-js':
-        specifier: 1.3.2
-        version: 1.3.2
+        specifier: 1.3.3
+        version: 1.3.3
       '@socketregistry/yocto-spinner':
         specifier: 1.0.24
         version: 1.0.24
@@ -2195,8 +2188,8 @@ packages:
     resolution: {integrity: sha512-DM81ydAjO2GJKkNf2Vn17InJ37sEYLK1YyhxpDX16OdbOpYlsDIw8QyeFEUZtc7GqsQXbcPKJmz3j/2qS+BhKQ==}
     engines: {node: '>=18'}
 
-  '@socketregistry/packageurl-js@1.3.2':
-    resolution: {integrity: sha512-CWXk2YXS0BItymgrbavnilsX6NMeyn0LGUpyKJQn1RtIgGRJ07dVt5bUEr4203+TcNELRhRQqIa4O5ZA+zD+zw==}
+  '@socketregistry/packageurl-js@1.3.3':
+    resolution: {integrity: sha512-avcf2cZ0a3Lp0Cg5DF9Na+Zj5cQ9t5RVq1cJhIjJEIN8YI328YxB1x4u2pLqkjKWLDo8iDku4u4OoMTAB48Z6Q==}
     engines: {node: '>=18', pnpm: '>=10.16.0'}
 
   '@socketregistry/path-parse@1.0.8':
@@ -6331,7 +6324,7 @@ snapshots:
       npm-install-checks: 7.1.2
       npm-package-arg: 13.0.0
       npm-pick-manifest: 11.0.1
-      packageurl-js: '@socketregistry/packageurl-js@1.3.2'
+      packageurl-js: '@socketregistry/packageurl-js@1.3.3'
       parse-conflict-json: 4.0.0
       prettify-xml: 1.2.0
       proc-log: 5.0.0
@@ -7590,7 +7583,7 @@ snapshots:
 
   '@socketregistry/isarray@1.0.8': {}
 
-  '@socketregistry/packageurl-js@1.3.2': {}
+  '@socketregistry/packageurl-js@1.3.3': {}
 
   '@socketregistry/path-parse@1.0.8': {}
 
