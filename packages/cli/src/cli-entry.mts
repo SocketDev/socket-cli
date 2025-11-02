@@ -3,6 +3,10 @@
 // Load Intl polyfill for --with-intl=none builds.
 import './polyfills/intl-stub.mts'
 
+// Set global Socket theme for consistent CLI branding.
+import { setTheme } from '@socketsecurity/lib/themes'
+setTheme('socket')
+
 import process from 'node:process'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
