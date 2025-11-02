@@ -22,8 +22,8 @@ catalogs:
       specifier: 2.0.2
       version: 2.0.2
     '@socketsecurity/sdk':
-      specifier: 3.0.31
-      version: 3.0.31
+      specifier: 3.1.0
+      version: 3.1.0
     '@types/node':
       specifier: 24.9.2
       version: 24.9.2
@@ -207,7 +207,7 @@ importers:
         version: 2.0.2(typescript@5.9.3)
       '@socketsecurity/sdk':
         specifier: 'catalog:'
-        version: 3.0.31
+        version: 3.1.0
       '@types/cmd-shim':
         specifier: 5.0.2
         version: 5.0.2
@@ -2252,8 +2252,8 @@ packages:
       typescript:
         optional: true
 
-  '@socketsecurity/sdk@3.0.31':
-    resolution: {integrity: sha512-jG9DtxyayvWG4OKAWqMadkpVhQD4Z9kruBqOag8jbUN7KOh/NGpMlx/9tzmp4bUHV3h6Tk6oS5+DOVb7JzG+bw==}
+  '@socketsecurity/sdk@3.1.0':
+    resolution: {integrity: sha512-6luZ885qyVI9R3fI2vKosL7B5Lmez/2KvJZEgMmWkC92BX1Ga5GN3u2altnwqol9IzPe2YP/9d1OEZAYTh675g==}
     engines: {node: '>=18', pnpm: '>=10.16.0'}
 
   '@standard-schema/spec@1.0.0':
@@ -7620,7 +7620,7 @@ snapshots:
     optionalDependencies:
       typescript: 5.9.3
 
-  '@socketsecurity/sdk@3.0.31': {}
+  '@socketsecurity/sdk@3.1.0': {}
 
   '@standard-schema/spec@1.0.0': {}
 
