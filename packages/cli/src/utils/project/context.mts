@@ -190,11 +190,15 @@ export async function getProjectContext(
     return null
   }
 
-  const [packageManager, monorepo, framework] = await Promise.all([
+  const results = await Promise.allSettled([
     detectPackageManager(root),
     isMonorepo(root),
     detectFramework(root),
   ])
+
+  const packageManager = results[0].status === 'fulfilled' ? results[0].value : 'unknown'
+  const monorepo = results[1].status === 'fulfilled' ? results[1].value : false
+  const framework = results[2].status === 'fulfilled' ? results[2].value : undefined
 
   const hasLockFile = ['npm', 'yarn', 'pnpm'].includes(packageManager)
 
