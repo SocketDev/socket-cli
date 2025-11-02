@@ -12,7 +12,9 @@ const mockNpmConfigInstance = {
 
 // Mock @npmcli/config.
 vi.mock('@npmcli/config', () => ({
-  default: vi.fn(() => mockNpmConfigInstance),
+  default: vi.fn().mockImplementation(function () {
+    return mockNpmConfigInstance
+  }),
 }))
 
 import { getNpmConfig } from './config.mts'
@@ -37,7 +39,9 @@ describe('npm-config utilities', () => {
   beforeEach(() => {
     // Clear mock calls and restore original implementation
     MockNpmConfig.mockClear()
-    MockNpmConfig.mockImplementation(() => mockNpmConfigInstance)
+    MockNpmConfig.mockImplementation(function () {
+      return mockNpmConfigInstance
+    })
     vi.mocked(mockNpmConfigInstance.load).mockClear()
   })
 
@@ -138,7 +142,9 @@ describe('npm-config utilities', () => {
         flat: { test: 'value' },
       }
       vi.mocked((await import('@npmcli/config')).default).mockImplementation(
-        () => mockConfigInstance,
+        function () {
+          return mockConfigInstance
+        },
       )
 
       await getNpmConfig()

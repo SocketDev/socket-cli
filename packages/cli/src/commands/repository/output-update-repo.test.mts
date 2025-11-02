@@ -5,6 +5,8 @@ import {
   createSuccessResult,
 } from '../../../test/helpers/index.mts'
 import { outputUpdateRepo } from './output-update-repo.mts'
+import { serializeResultJson } from '../../utils/output/result-json.mjs'
+import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 
 import type { CResult } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
@@ -18,6 +20,11 @@ const mockLogger = vi.hoisted(() => ({
   warn: vi.fn(),
   error: vi.fn(),
 }))
+
+// Helper references to mockLogger methods.
+const mockLog = mockLogger.log
+const mockFail = mockLogger.fail
+const mockSuccess = mockLogger.success
 
 vi.mock('@socketsecurity/lib/logger', () => ({
   getDefaultLogger: () => mockLogger,
@@ -39,10 +46,6 @@ describe('outputUpdateRepo', () => {
   })
 
   it('outputs JSON format for successful result', async () => {
-    const { serializeResultJson } = await vi.importMock(
-      '../../utils/output/result-json.mjs',
-    )
-
     const mockSerialize = vi.mocked(serializeResultJson)
 
     const result: CResult<SocketSdkSuccessResult<'updateRepository'>['data']> =
@@ -85,10 +88,6 @@ describe('outputUpdateRepo', () => {
   })
 
   it('outputs error in text format', async () => {
-    const { failMsgWithBadge } = await vi.importMock(
-      '../../utils/error/fail-msg-with-badge.mts',
-    )
-
     const mockFailMsg = vi.mocked(failMsgWithBadge)
 
     const result: CResult<SocketSdkSuccessResult<'updateRepository'>['data']> =

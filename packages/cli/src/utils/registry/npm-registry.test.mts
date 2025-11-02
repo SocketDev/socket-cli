@@ -7,6 +7,7 @@ import { promises as fs } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
@@ -178,27 +179,30 @@ describe('verifyTarballIntegrity', () => {
   it('should return false on mismatch', async () => {
     const integrity = 'sha512-wronghash=='
 
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const logger = getDefaultLogger()
+    const loggerSpy = vi.spyOn(logger, 'error').mockImplementation(() => {})
     const result = await verifyTarballIntegrity(testFile, integrity)
     expect(result).toBe(false)
-    consoleSpy.mockRestore()
+    loggerSpy.mockRestore()
   })
 
   it('should handle missing integrity value', async () => {
-    const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const logger = getDefaultLogger()
+    const loggerSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {})
     const result = await verifyTarballIntegrity(testFile, undefined)
     expect(result).toBe(true)
-    expect(consoleSpy).toHaveBeenCalledWith(
+    expect(loggerSpy).toHaveBeenCalledWith(
       expect.stringMatching(/no integrity value/i),
     )
-    consoleSpy.mockRestore()
+    loggerSpy.mockRestore()
   })
 
   it('should handle invalid SRI format', async () => {
-    const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const logger = getDefaultLogger()
+    const loggerSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {})
     const result = await verifyTarballIntegrity(testFile, 'invalid-format')
     expect(result).toBe(false)
-    consoleSpy.mockRestore()
+    loggerSpy.mockRestore()
   })
 
   it('should support sha256', async () => {

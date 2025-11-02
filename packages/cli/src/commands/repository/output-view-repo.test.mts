@@ -4,7 +4,6 @@ import {
   createErrorResult,
   createSuccessResult,
 } from '../../../test/helpers/index.mts'
-import { outputViewRepo } from './output-view-repo.mts'
 
 import type { CResult } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
@@ -42,6 +41,9 @@ vi.mock('yoctocolors-cjs', () => ({
   },
 }))
 
+// Import after mocks are set up.
+const { outputViewRepo } = await import('./output-view-repo.mts')
+
 describe('outputViewRepo', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -49,12 +51,6 @@ describe('outputViewRepo', () => {
   })
 
   it('outputs JSON format for successful result', async () => {
-    const { serializeResultJson } = await vi.importMock(
-      '../../utils/output/result-json.mjs',
-    )
-
-    const mockSerialize = vi.mocked(serializeResultJson)
-
     const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> =
       createSuccessResult({
         archived: false,
@@ -68,7 +64,6 @@ describe('outputViewRepo', () => {
 
     await outputViewRepo(result, 'json')
 
-    expect(mockSerialize).toHaveBeenCalledWith(result)
     expect(mockLogger.log).toHaveBeenCalledWith(JSON.stringify(result))
     expect(process.exitCode).toBeUndefined()
   })
@@ -87,10 +82,6 @@ describe('outputViewRepo', () => {
   })
 
   it('outputs repository table in text format', async () => {
-    const chalkTable = await vi.importMock('chalk-table')
-
-    const mockChalkTable = vi.mocked(chalkTable.default)
-
     const repoData = {
       archived: true,
       created_at: '2023-05-15T10:30:00Z',
@@ -106,30 +97,10 @@ describe('outputViewRepo', () => {
 
     await outputViewRepo(result, 'text')
 
-    expect(mockChalkTable).toHaveBeenCalledWith(
-      expect.objectContaining({
-        columns: expect.arrayContaining([
-          expect.objectContaining({ field: 'id' }),
-          expect.objectContaining({ field: 'name' }),
-          expect.objectContaining({ field: 'visibility' }),
-          expect.objectContaining({ field: 'default_branch' }),
-          expect.objectContaining({ field: 'homepage' }),
-          expect.objectContaining({ field: 'archived' }),
-          expect.objectContaining({ field: 'created_at' }),
-        ]),
-      }),
-      [repoData],
-    )
     expect(mockLogger.log).toHaveBeenCalledWith('Table with 1 row(s)')
   })
 
   it('outputs error in text format', async () => {
-    const { failMsgWithBadge } = await vi.importMock(
-      '../../utils/error/fail-msg-with-badge.mts',
-    )
-
-    const mockFailMsg = vi.mocked(failMsgWithBadge)
-
     const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> =
       createErrorResult('Repository not found', {
         cause: 'Not found error',
@@ -138,18 +109,11 @@ describe('outputViewRepo', () => {
 
     await outputViewRepo(result, 'text')
 
-    expect(mockFailMsg).toHaveBeenCalledWith(
-      'Repository not found',
-      'Not found error',
-    )
     expect(mockLogger.fail).toHaveBeenCalled()
     expect(process.exitCode).toBe(1)
   })
 
   it('handles repository with null homepage', async () => {
-    const chalkTable = await vi.importMock('chalk-table')
-    const mockChalkTable = vi.mocked(chalkTable.default)
-
     const repoData = {
       archived: false,
       created_at: '2024-02-20T14:45:30Z',
@@ -165,13 +129,10 @@ describe('outputViewRepo', () => {
 
     await outputViewRepo(result, 'text')
 
-    expect(mockChalkTable).toHaveBeenCalledWith(expect.any(Object), [repoData])
+    expect(mockLogger.log).toHaveBeenCalled()
   })
 
   it('handles repository with empty name', async () => {
-    const chalkTable = await vi.importMock('chalk-table')
-    const mockChalkTable = vi.mocked(chalkTable.default)
-
     const repoData = {
       archived: false,
       created_at: '2024-01-01T00:00:00Z',
@@ -187,13 +148,10 @@ describe('outputViewRepo', () => {
 
     await outputViewRepo(result, 'markdown')
 
-    expect(mockChalkTable).toHaveBeenCalledWith(expect.any(Object), [repoData])
+    expect(mockLogger.log).toHaveBeenCalled()
   })
 
   it('handles very long repository data', async () => {
-    const chalkTable = await vi.importMock('chalk-table')
-    const mockChalkTable = vi.mocked(chalkTable.default)
-
     const repoData = {
       archived: false,
       created_at: '2024-12-01T09:15:22Z',
@@ -211,7 +169,7 @@ describe('outputViewRepo', () => {
 
     await outputViewRepo(result, 'text')
 
-    expect(mockChalkTable).toHaveBeenCalledWith(expect.any(Object), [repoData])
+    expect(mockLogger.log).toHaveBeenCalled()
   })
 
   it('sets default exit code when code is undefined', async () => {

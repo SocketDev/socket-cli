@@ -20,21 +20,26 @@ const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
 }))
 
-vi.mock('@socketsecurity/lib/logger', () => ({
-  getDefaultLogger: () => mockLogger,
-  logger: mockLogger,
-}))
+const mockSerializeResultJson = vi.hoisted(() => vi.fn(result => JSON.stringify(result)))
+const mockFailMsgWithBadge = vi.hoisted(() => vi.fn((msg, cause) => `${msg}: ${cause}`))
+const mockChalkTable = vi.hoisted(() => vi.fn((_options, data) => `Table with ${data.length} rows`))
+
+vi.mock('@socketsecurity/lib/logger', () => {
+  return {
+    getDefaultLogger: () => mockLogger,
+  }
+})
 
 vi.mock('../../utils/output/result-json.mjs', () => ({
-  serializeResultJson: vi.fn(result => JSON.stringify(result)),
+  serializeResultJson: mockSerializeResultJson,
 }))
 
 vi.mock('../../utils/error/fail-msg-with-badge.mts', () => ({
-  failMsgWithBadge: vi.fn((msg, cause) => `${msg}: ${cause}`),
+  failMsgWithBadge: mockFailMsgWithBadge,
 }))
 
 vi.mock('chalk-table', () => ({
-  default: vi.fn((_options, data) => `Table with ${data.length} rows`),
+  default: mockChalkTable,
 }))
 
 vi.mock('yoctocolors-cjs', () => ({
@@ -52,10 +57,6 @@ describe('outputDependencies', () => {
   setupTestEnvironment()
 
   it('outputs JSON format for successful result', async () => {
-    const { serializeResultJson } = await vi.importMock(
-      '../../utils/output/result-json.mjs',
-    )
-
     const result: CResult<
       SocketSdkSuccessResult<'searchDependencies'>['data']
     > = createSuccessResult({
@@ -79,7 +80,7 @@ describe('outputDependencies', () => {
       outputKind: 'json',
     })
 
-    expect(serializeResultJson).toHaveBeenCalledWith(result)
+    expect(mockSerializeResultJson).toHaveBeenCalledWith(result)
     expect(mockLogger.log).toHaveBeenCalledWith(JSON.stringify(result))
     expect(process.exitCode).toBeUndefined()
   })
@@ -103,8 +104,6 @@ describe('outputDependencies', () => {
   })
 
   it('outputs markdown format with table', async () => {
-    const chalkTable = await vi.importMock('chalk-table')
-
     const result: CResult<
       SocketSdkSuccessResult<'searchDependencies'>['data']
     > = createSuccessResult({
@@ -135,7 +134,7 @@ describe('outputDependencies', () => {
       '- Is there more data after this?',
       'no',
     )
-    expect(chalkTable.default).toHaveBeenCalledWith(
+    expect(mockChalkTable).toHaveBeenCalledWith(
       expect.objectContaining({
         columns: expect.arrayContaining([
           expect.objectContaining({ field: 'type' }),
@@ -152,10 +151,6 @@ describe('outputDependencies', () => {
   })
 
   it('outputs error in markdown format', async () => {
-    const { failMsgWithBadge } = await vi.importMock(
-      '../../utils/error/fail-msg-with-badge.mts',
-    )
-
     const result: CResult<
       SocketSdkSuccessResult<'searchDependencies'>['data']
     > = createErrorResult('Failed to fetch dependencies', {
@@ -169,7 +164,7 @@ describe('outputDependencies', () => {
       outputKind: 'text',
     })
 
-    expect(failMsgWithBadge).toHaveBeenCalledWith(
+    expect(mockFailMsgWithBadge).toHaveBeenCalledWith(
       'Failed to fetch dependencies',
       'Network error',
     )
@@ -208,9 +203,6 @@ describe('outputDependencies', () => {
   })
 
   it('handles empty dependencies list', async () => {
-    const chalkTable = await vi.importMock('chalk-table')
-    const mockChalkTable = vi.mocked(chalkTable.default)
-
     const result: CResult<
       SocketSdkSuccessResult<'searchDependencies'>['data']
     > = createSuccessResult({

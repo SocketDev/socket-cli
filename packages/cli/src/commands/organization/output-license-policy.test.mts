@@ -16,22 +16,27 @@ const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
 }))
 
+const mockSerializeResultJson = vi.hoisted(() => vi.fn(result => JSON.stringify(result)))
+const mockFailMsgWithBadge = vi.hoisted(() => vi.fn((msg, cause) => `${msg}: ${cause}`))
+const mockMdHeader = vi.hoisted(() => vi.fn(title => `# ${title}`))
+const mockMdTableOfPairs = vi.hoisted(() => vi.fn(pairs => `Table with ${pairs.length} rows`))
+
 vi.mock('@socketsecurity/lib/logger', () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
 }))
 
 vi.mock('../../utils/output/result-json.mjs', () => ({
-  serializeResultJson: vi.fn(result => JSON.stringify(result)),
+  serializeResultJson: mockSerializeResultJson,
 }))
 
 vi.mock('../../utils/error/fail-msg-with-badge.mts', () => ({
-  failMsgWithBadge: vi.fn((msg, cause) => `${msg}: ${cause}`),
+  failMsgWithBadge: mockFailMsgWithBadge,
 }))
 
 vi.mock('../../utils/output/markdown.mts', () => ({
-  mdHeader: vi.fn(title => `# ${title}`),
-  mdTableOfPairs: vi.fn(pairs => `Table with ${pairs.length} rows`),
+  mdHeader: mockMdHeader,
+  mdTableOfPairs: mockMdTableOfPairs,
 }))
 
 describe('outputLicensePolicy', () => {
@@ -41,10 +46,6 @@ describe('outputLicensePolicy', () => {
   })
 
   it('outputs JSON format for successful result', async () => {
-    const { serializeResultJson } = await vi.importMock(
-      '../../utils/output/result-json.mjs',
-    )
-
     const result = createSuccessResult({
       license_policy: {
         MIT: { allowed: true },
@@ -55,7 +56,7 @@ describe('outputLicensePolicy', () => {
 
     await outputLicensePolicy(result as any, 'json')
 
-    expect(serializeResultJson).toHaveBeenCalledWith(result)
+    expect(mockSerializeResultJson).toHaveBeenCalledWith(result)
     expect(mockLogger.log).toHaveBeenCalledWith(JSON.stringify(result))
     expect(process.exitCode).toBeUndefined()
   })
@@ -73,10 +74,6 @@ describe('outputLicensePolicy', () => {
   })
 
   it('outputs text format with license table', async () => {
-    const { mdTableOfPairs } = await vi.importMock(
-      '../../utils/output/markdown.mts',
-    )
-
     const result = createSuccessResult({
       license_policy: {
         MIT: { allowed: true },
@@ -89,7 +86,7 @@ describe('outputLicensePolicy', () => {
 
     expect(mockLogger.info).toHaveBeenCalledWith('Use --json to get the full result')
     expect(mockLogger.log).toHaveBeenCalledWith('# License policy')
-    expect(mdTableOfPairs).toHaveBeenCalledWith(
+    expect(mockMdTableOfPairs).toHaveBeenCalledWith(
       expect.arrayContaining([
         ['BSD-3-Clause', ' yes'],
         ['GPL-3.0', ' no'],
@@ -100,10 +97,6 @@ describe('outputLicensePolicy', () => {
   })
 
   it('outputs error in text format', async () => {
-    const { failMsgWithBadge } = await vi.importMock(
-      '../../utils/error/fail-msg-with-badge.mts',
-    )
-
     const result = createErrorResult('Failed to fetch policy', {
       code: 1,
       cause: 'Network error',
@@ -111,7 +104,7 @@ describe('outputLicensePolicy', () => {
 
     await outputLicensePolicy(result, 'text')
 
-    expect(failMsgWithBadge).toHaveBeenCalledWith(
+    expect(mockFailMsgWithBadge).toHaveBeenCalledWith(
       'Failed to fetch policy',
       'Network error',
     )
@@ -133,31 +126,23 @@ describe('outputLicensePolicy', () => {
   })
 
   it('handles empty license policy', async () => {
-    const { mdTableOfPairs } = await vi.importMock(
-      '../../utils/output/markdown.mts',
-    )
-
     const result = createSuccessResult({
       license_policy: {},
     })
 
     await outputLicensePolicy(result as any, 'text')
 
-    expect(mdTableOfPairs).toHaveBeenCalledWith([], ['License Name', 'Allowed'])
+    expect(mockMdTableOfPairs).toHaveBeenCalledWith([], ['License Name', 'Allowed'])
   })
 
   it('handles null license policy', async () => {
-    const { mdTableOfPairs } = await vi.importMock(
-      '../../utils/output/markdown.mts',
-    )
-
     const result = createSuccessResult({
       license_policy: null,
     })
 
     await outputLicensePolicy(result as any, 'text')
 
-    expect(mdTableOfPairs).toHaveBeenCalledWith([], ['License Name', 'Allowed'])
+    expect(mockMdTableOfPairs).toHaveBeenCalledWith([], ['License Name', 'Allowed'])
   })
 
   it('sets default exit code when code is undefined', async () => {
