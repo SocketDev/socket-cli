@@ -3,7 +3,7 @@ import path from 'node:path'
 
 import { debugDir } from '@socketsecurity/lib/debug'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { input, select } from '@socketsecurity/lib/prompts'
+import { input, select } from '@socketsecurity/lib/stdio/prompts'
 
 import { detectManifestActions } from './detect-manifest-actions.mts'
 import { REQUIREMENTS_TXT } from '../../constants/paths.mjs'

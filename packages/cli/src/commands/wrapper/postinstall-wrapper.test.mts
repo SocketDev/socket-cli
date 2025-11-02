@@ -12,7 +12,7 @@ vi.mock('@socketsecurity/lib/logger', () => ({
     success: vi.fn(),
   },
 }))
-vi.mock('@socketsecurity/lib/prompts', () => ({
+vi.mock('@socketsecurity/lib/stdio/prompts', () => ({
   confirm: vi.fn(),
 }))
 vi.mock('./add-socket-wrapper.mts', () => ({
@@ -44,7 +44,7 @@ describe('postinstallWrapper', () => {
     const { checkSocketWrapperSetup } = await import(
       './check-socket-wrapper-setup.mts'
     )
-    const { confirm } = await import('@socketsecurity/lib/prompts')
+    const { confirm } = await import('@socketsecurity/lib/stdio/prompts')
     const mockExistsSync = vi.mocked(existsSync) as any
     const mockCheckSetup = vi.mocked(checkSocketWrapperSetup)
 
@@ -63,7 +63,7 @@ describe('postinstallWrapper', () => {
     const { checkSocketWrapperSetup } = await import(
       './check-socket-wrapper-setup.mts'
     )
-    const { confirm } = await import('@socketsecurity/lib/prompts')
+    const { confirm } = await import('@socketsecurity/lib/stdio/prompts')
     const mockExistsSync = vi.mocked(existsSync) as any
     const mockCheckSetup = vi.mocked(checkSocketWrapperSetup)
 
@@ -84,7 +84,7 @@ describe('postinstallWrapper', () => {
     const { checkSocketWrapperSetup } = await import(
       './check-socket-wrapper-setup.mts'
     )
-    const { confirm } = await import('@socketsecurity/lib/prompts')
+    const { confirm } = await import('@socketsecurity/lib/stdio/prompts')
     const { logger } = await import('@socketsecurity/lib/logger')
     const mockExistsSync = vi.mocked(existsSync) as any
     const mockCheckSetup = vi.mocked(checkSocketWrapperSetup)
@@ -114,7 +114,7 @@ describe('postinstallWrapper', () => {
     const { checkSocketWrapperSetup } = await import(
       './check-socket-wrapper-setup.mts'
     )
-    const { confirm } = await import('@socketsecurity/lib/prompts')
+    const { confirm } = await import('@socketsecurity/lib/stdio/prompts')
     const mockExistsSync = vi.mocked(existsSync) as any
     const mockCheckSetup = vi.mocked(checkSocketWrapperSetup)
     const mockConfirm = vi.mocked(confirm)
@@ -136,7 +136,7 @@ describe('postinstallWrapper', () => {
     const { checkSocketWrapperSetup } = await import(
       './check-socket-wrapper-setup.mts'
     )
-    const { confirm } = await import('@socketsecurity/lib/prompts')
+    const { confirm } = await import('@socketsecurity/lib/stdio/prompts')
     const mockExistsSync = vi.mocked(existsSync) as any
     const mockCheckSetup = vi.mocked(checkSocketWrapperSetup)
     const mockConfirm = vi.mocked(confirm)
@@ -156,7 +156,7 @@ describe('postinstallWrapper', () => {
     const { checkSocketWrapperSetup } = await import(
       './check-socket-wrapper-setup.mts'
     )
-    const { confirm } = await import('@socketsecurity/lib/prompts')
+    const { confirm } = await import('@socketsecurity/lib/stdio/prompts')
     const mockExistsSync = vi.mocked(existsSync) as any
     const mockCheckSetup = vi.mocked(checkSocketWrapperSetup)
     const mockConfirm = vi.mocked(confirm)

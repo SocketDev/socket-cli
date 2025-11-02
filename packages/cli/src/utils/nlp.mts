@@ -7,10 +7,10 @@
  * Gracefully falls back to compromise if models unavailable.
  */
 
-// @ts-expect-error - onnxruntime-node is an optional dependency for progressive enhancement.
 import { loadOnnxRuntime, type stubOnnxRuntime } from './onnx-runtime-stub.mts'
 import ENV from '../constants/env.mts'
 
+// @ts-expect-error - onnxruntime-node is an optional dependency for progressive enhancement.
 import type { InferenceSession } from 'onnxruntime-node'
 
 // Lazy imports to avoid loading models unless needed.

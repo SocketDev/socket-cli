@@ -8,7 +8,7 @@ import {
 } from '@socketsecurity/lib/constants/paths'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { normalizePath } from '@socketsecurity/lib/path'
-import { select } from '@socketsecurity/lib/prompts'
+import { select } from '@socketsecurity/lib/stdio/prompts'
 import { pluralize } from '@socketsecurity/lib/words'
 
 import { handlePatchApply } from './handle-patch-apply.mts'

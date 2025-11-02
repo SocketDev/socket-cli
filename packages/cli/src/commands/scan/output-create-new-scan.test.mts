@@ -28,7 +28,7 @@ vi.mock('terminal-link', () => ({
   default: vi.fn((url, text) => `[${text}](${url})`),
 }))
 
-vi.mock('@socketsecurity/lib/prompts', () => ({
+vi.mock('@socketsecurity/lib/stdio/prompts', () => ({
   confirm: vi.fn(),
 }))
 
@@ -195,7 +195,7 @@ describe('outputCreateNewScan', () => {
 
   it('opens browser when interactive and user confirms', async () => {
     const { outputCreateNewScan } = await import('./output-create-new-scan.mts')
-    const { confirm } = await vi.importMock('@socketsecurity/lib/prompts')
+    const { confirm } = await vi.importMock('@socketsecurity/lib/stdio/prompts')
     const open = await vi.importMock('open')
     const mockConfirm = vi.mocked(confirm)
     const mockOpen = vi.mocked(open.default)
@@ -227,7 +227,7 @@ describe('outputCreateNewScan', () => {
 
   it('does not open browser when user declines', async () => {
     const { outputCreateNewScan } = await import('./output-create-new-scan.mts')
-    const { confirm } = await vi.importMock('@socketsecurity/lib/prompts')
+    const { confirm } = await vi.importMock('@socketsecurity/lib/stdio/prompts')
     const open = await vi.importMock('open')
     const mockConfirm = vi.mocked(confirm)
     const mockOpen = vi.mocked(open.default)

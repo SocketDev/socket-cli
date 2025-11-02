@@ -1,5 +1,5 @@
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { select } from '@socketsecurity/lib/prompts'
+import { select } from '@socketsecurity/lib/stdio/prompts'
 
 import { getConfigValue, updateConfigValue } from '../../utils/config.mts'
 
@@ -10,7 +10,7 @@ export async function suggestToPersistOrgSlug(orgSlug: string): Promise<void> {
     return
   }
 
-  const result = await select<string>({
+  const result = await select({
     message: `Would you like to use this org (${orgSlug}) as the default org for future calls?`,
     choices: [
       {

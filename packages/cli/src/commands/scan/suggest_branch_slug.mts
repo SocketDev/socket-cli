@@ -1,4 +1,4 @@
-import { select } from '@socketsecurity/lib/prompts'
+import { select } from '@socketsecurity/lib/stdio/prompts'
 import { spawn } from '@socketsecurity/lib/spawn'
 import { stripAnsi } from '@socketsecurity/lib/strings'
 
@@ -12,7 +12,7 @@ export async function suggestBranchSlug(
       : spawnResult.stdout.toString('utf8')
   const currentBranch = stripAnsi(stdoutStr.trim())
   if (currentBranch && spawnResult.code === 0) {
-    const proceed = await select<string>({
+    const proceed = await select({
       message: 'Use the current git branch as target branch name?',
       choices: [
         {

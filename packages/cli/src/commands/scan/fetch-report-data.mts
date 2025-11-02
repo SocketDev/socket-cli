@@ -1,4 +1,3 @@
-import { getSpinner } from '@socketsecurity/lib/constants/process'
 import { debug, debugDir } from '@socketsecurity/lib/debug'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { getDefaultSpinner } from '@socketsecurity/lib/spinner'
@@ -48,8 +47,6 @@ export async function fetchScanData(
   let policyStatus = 'requested...'
   let scanStatus = 'requested...'
   let finishedFetching = false
-
-  const _spinner = getSpinner()!
 
   function updateScan(status: string) {
     scanStatus = status

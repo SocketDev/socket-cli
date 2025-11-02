@@ -1,5 +1,5 @@
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { select } from '@socketsecurity/lib/prompts'
+import { select } from '@socketsecurity/lib/stdio/prompts'
 
 import { fetchOrganization } from '../organization/fetch-organization-list.mts'
 
@@ -15,7 +15,7 @@ export async function suggestOrgSlug(): Promise<string | undefined> {
   // Ignore a failed request here. It was not the primary goal of
   // running this command and reporting it only leads to end-user confusion.
   const { organizations } = orgsCResult.data
-  const proceed = await select<string>({
+  const proceed = await select({
     message:
       'Missing org name; do you want to use any of these orgs for this scan?',
     choices: [
