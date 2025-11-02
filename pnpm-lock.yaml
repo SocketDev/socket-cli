@@ -12,9 +12,6 @@ catalogs:
     '@babel/traverse':
       specifier: 7.28.4
       version: 7.28.4
-    '@socketsecurity/registry':
-      specifier: 2.0.0
-      version: 2.0.0
     del-cli:
       specifier: 6.0.0
       version: 6.0.0
@@ -191,11 +188,11 @@ importers:
         specifier: 3.0.6
         version: 3.0.6(typescript@5.9.3)
       '@socketsecurity/registry':
-        specifier: 'catalog:'
-        version: 2.0.0(typescript@5.9.3)
+        specifier: 2.0.1
+        version: 2.0.1(typescript@5.9.3)
       '@socketsecurity/sdk':
-        specifier: 3.0.29
-        version: 3.0.29
+        specifier: 3.0.30
+        version: 3.0.30
       '@types/cmd-shim':
         specifier: 5.0.2
         version: 5.0.2
@@ -2231,8 +2228,8 @@ packages:
       typescript:
         optional: true
 
-  '@socketsecurity/registry@2.0.0':
-    resolution: {integrity: sha512-R83d1uhaWZa0t+x+q340QrWBWCoX7Q5blJf5XaKmfVVlRfp4/2aRvPjrPMTULnPUbeKx5GLd9OEBFb0nlMSrMg==}
+  '@socketsecurity/registry@2.0.1':
+    resolution: {integrity: sha512-DS7R3ojHZx0xWMRgyyzzUlMMfovMsGxRwp48ioKgD5umMfhtKOds2SbGT6TBRaZf1K58/V1Rw0R1vfWhqgcvCg==}
     engines: {node: '>=18'}
     peerDependencies:
       typescript: '>=5.0.0'
@@ -2240,8 +2237,8 @@ packages:
       typescript:
         optional: true
 
-  '@socketsecurity/sdk@3.0.29':
-    resolution: {integrity: sha512-EnCjDTQltg+ABL1Eg/y6M93VrXP8vQSTnr/IG1qYx1iOR7eUuia9LKDAyvlPp+frsAgQpbDXYzjc5MFiDfkQKg==}
+  '@socketsecurity/sdk@3.0.30':
+    resolution: {integrity: sha512-zheHSoRbWgDvapWkFZDMgRGdxfKxcQNrwgOCa8w8y1wRQz0PmKXNcknbsLroF8qsiZkDVTXgGuD9gKUBMcr8yg==}
     engines: {node: '>=18', pnpm: '>=10.16.0'}
 
   '@standard-schema/spec@1.0.0':
@@ -7608,11 +7605,11 @@ snapshots:
     optionalDependencies:
       typescript: 5.9.3
 
-  '@socketsecurity/registry@2.0.0(typescript@5.9.3)':
+  '@socketsecurity/registry@2.0.1(typescript@5.9.3)':
     optionalDependencies:
       typescript: 5.9.3
 
-  '@socketsecurity/sdk@3.0.29': {}
+  '@socketsecurity/sdk@3.0.30': {}
 
   '@standard-schema/spec@1.0.0': {}
 
