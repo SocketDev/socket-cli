@@ -159,7 +159,7 @@ export async function setupSdk(
         _context: {
           operation:
             | 'createDependenciesSnapshot'
-            | 'createFullScan'
+            | 'createOrgFullScan'
             | 'uploadManifestFiles'
           orgSlug?: string | undefined
           [key: string]: unknown

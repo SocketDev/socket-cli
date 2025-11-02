@@ -8,7 +8,7 @@ import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export async function outputScanMetadata(
-  result: CResult<SocketSdkSuccessResult<'getFullScanMetadata'>['data']>,
+  result: CResult<SocketSdkSuccessResult<'getOrgFullScanMetadata'>['data']>,
   scanId: string,
   outputKind: OutputKind,
 ): Promise<void> {
