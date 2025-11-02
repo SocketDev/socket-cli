@@ -1,6 +1,14 @@
 /** @fileoverview Tests for repository list command */
 
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+beforeEach(() => {
+  // Mock SDK to avoid dynamic require errors in isolated mode.
+  vi.doMock('@socketsecurity/sdk', () => ({
+    SocketSdk: class MockSocketSdk {},
+    createUserAgentFromPkgJson: vi.fn(),
+  }))
+})
 
 describe('cmd-repository-list', () => {
   it('should have a default export', async () => {
