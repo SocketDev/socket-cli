@@ -12,9 +12,6 @@ catalogs:
     '@babel/traverse':
       specifier: 7.28.4
       version: 7.28.4
-    '@socketsecurity/lib':
-      specifier: 3.0.5
-      version: 3.0.5
     '@socketsecurity/registry':
       specifier: 2.0.0
       version: 2.0.0
@@ -191,8 +188,8 @@ importers:
         specifier: 3.0.1
         version: 3.0.1
       '@socketsecurity/lib':
-        specifier: 'catalog:'
-        version: 3.0.5(typescript@5.9.3)
+        specifier: 3.0.6
+        version: 3.0.6(typescript@5.9.3)
       '@socketsecurity/registry':
         specifier: 'catalog:'
         version: 2.0.0(typescript@5.9.3)
@@ -2225,8 +2222,8 @@ packages:
       typescript:
         optional: true
 
-  '@socketsecurity/lib@3.0.5':
-    resolution: {integrity: sha512-r4IxPhTB7nJAZK2JLAeLiw5WTYZBFu3OSMbeB5/F7Rh2SZVh7uzAo9dh+EJ0KGDzxt+x3jCJJR3C2dorG38rcw==}
+  '@socketsecurity/lib@3.0.6':
+    resolution: {integrity: sha512-mMJiZoBS+clS+HbkVGf4wAmaFd0Ynudy6GTHm/9vG6MKdQvdPTvvtvvA4LMq/V4cJ8fN/ocyLyXD5EsT1KUy1w==}
     engines: {node: '>=22'}
     peerDependencies:
       typescript: '>=5.0.0'
@@ -7607,7 +7604,7 @@ snapshots:
     optionalDependencies:
       typescript: 5.9.3
 
-  '@socketsecurity/lib@3.0.5(typescript@5.9.3)':
+  '@socketsecurity/lib@3.0.6(typescript@5.9.3)':
     optionalDependencies:
       typescript: 5.9.3
 
