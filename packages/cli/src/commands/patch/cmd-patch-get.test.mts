@@ -16,7 +16,7 @@ const pnpmFixtureDir = path.join(fixtureBaseDir, 'pnpm')
 
 async function cleanupNodeModules() {
   // Clean up node_modules from all package manager directories.
-  await Promise.all([
+  await Promise.allSettled([
     safeDelete(path.join(pnpmFixtureDir, 'node_modules')),
     safeDelete(path.join(fixtureBaseDir, 'npm/node_modules')),
     safeDelete(path.join(fixtureBaseDir, 'yarn/node_modules')),
@@ -25,7 +25,7 @@ async function cleanupNodeModules() {
 
 async function cleanupPatchesDir() {
   // Clean up generated patches directories.
-  await Promise.all([
+  await Promise.allSettled([
     safeDelete(path.join(pnpmFixtureDir, 'patches')),
     safeDelete(path.join(process.cwd(), 'patches')),
   ])
