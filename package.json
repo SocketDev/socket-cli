@@ -35,7 +35,7 @@
     "@socketregistry/packageurl-js": "catalog:",
     "@socketregistry/yocto-spinner": "1.0.24",
     "@socketsecurity/config": "3.0.1",
-    "@socketsecurity/lib": "3.0.6",
+    "@socketsecurity/lib": "3.1.0",
     "@socketsecurity/registry": "2.0.1",
     "@socketsecurity/sdk": "3.0.30",
     "@types/cmd-shim": "5.0.2",
