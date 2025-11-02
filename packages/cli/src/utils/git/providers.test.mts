@@ -24,17 +24,19 @@ vi.mock('./operations.mts', () => ({
 }))
 
 vi.mock('@gitbeaker/rest', () => ({
-  Gitlab: vi.fn().mockImplementation(() => ({
-    MergeRequests: {
-      create: vi.fn(),
-      show: vi.fn(),
-      rebase: vi.fn(),
-      all: vi.fn(),
-    },
-    MergeRequestNotes: {
-      create: vi.fn(),
-    },
-  })),
+  Gitlab: vi.fn(function () {
+    return {
+      MergeRequests: {
+        create: vi.fn(),
+        show: vi.fn(),
+        rebase: vi.fn(),
+        all: vi.fn(),
+      },
+      MergeRequestNotes: {
+        create: vi.fn(),
+      },
+    }
+  }),
 }))
 
 describe('provider-factory', () => {
