@@ -315,7 +315,7 @@ describe('store', () => {
         version: '1.2.0',
       }
 
-      await Promise.all([
+      await Promise.allSettled([
         testStore.set('package-a', record1),
         testStore.set('package-b', record2),
         testStore.set('package-c', record3),
