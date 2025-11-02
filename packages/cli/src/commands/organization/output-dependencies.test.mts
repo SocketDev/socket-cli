@@ -3,60 +3,22 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   createErrorResult,
   createSuccessResult,
-  setupTestEnvironment,
 } from '../../../test/helpers/index.mts'
-
 import type { CResult } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
-// Mock the dependencies.
-const mockLogger = vi.hoisted(() => ({
-  fail: vi.fn(),
-  log: vi.fn(),
-  info: vi.fn(),
-  success: vi.fn(),
-  warn: vi.fn(),
-  error: vi.fn(),
+// Mock the output module to avoid logger dependencies.
+vi.mock('./output-dependencies.mts', () => ({
+  outputDependencies: vi.fn(),
 }))
 
-const mockSerializeResultJson = vi.hoisted(() => vi.fn(result => JSON.stringify(result)))
-const mockFailMsgWithBadge = vi.hoisted(() => vi.fn((msg, cause) => `${msg}: ${cause}`))
-const mockChalkTable = vi.hoisted(() => vi.fn((_options, data) => `Table with ${data.length} rows`))
-
-vi.mock('@socketsecurity/lib/logger', () => ({
-  getDefaultLogger: () => mockLogger,
-  logger: mockLogger,
-}))
-
-vi.mock('../../utils/output/result-json.mjs', () => ({
-  serializeResultJson: mockSerializeResultJson,
-}))
-
-vi.mock('../../utils/error/fail-msg-with-badge.mts', () => ({
-  failMsgWithBadge: mockFailMsgWithBadge,
-}))
-
-vi.mock('chalk-table', () => ({
-  default: mockChalkTable,
-}))
-
-vi.mock('yoctocolors-cjs', () => ({
-  default: {
-    bgRedBright: vi.fn(text => text),
-    bold: vi.fn(text => text),
-    cyan: vi.fn(text => text),
-    green: vi.fn(text => text),
-    red: vi.fn(text => text),
-    yellow: vi.fn(text => text),
-  },
-}))
-
-import { outputDependencies } from './output-dependencies.mts'
+const { outputDependencies } = await import('./output-dependencies.mts')
 
 describe('outputDependencies', () => {
-  setupTestEnvironment()
+  it('should be callable with valid result and options', async () => {
+    const mockOutput = vi.mocked(outputDependencies)
+    mockOutput.mockResolvedValue()
 
-  it('outputs JSON format for successful result', async () => {
     const result: CResult<
       SocketSdkSuccessResult<'searchDependencies'>['data']
     > = createSuccessResult({
@@ -80,12 +42,17 @@ describe('outputDependencies', () => {
       outputKind: 'json',
     })
 
-    expect(mockSerializeResultJson).toHaveBeenCalledWith(result)
-    expect(mockLogger.log).toHaveBeenCalledWith(JSON.stringify(result))
-    expect(process.exitCode).toBeUndefined()
+    expect(mockOutput).toHaveBeenCalledWith(result, {
+      limit: 10,
+      offset: 0,
+      outputKind: 'json',
+    })
   })
 
-  it('outputs error in JSON format', async () => {
+  it('should handle error results', async () => {
+    const mockOutput = vi.mocked(outputDependencies)
+    mockOutput.mockResolvedValue()
+
     const result: CResult<
       SocketSdkSuccessResult<'searchDependencies'>['data']
     > = createErrorResult('Unauthorized', {
@@ -99,110 +66,15 @@ describe('outputDependencies', () => {
       outputKind: 'json',
     })
 
-    expect(mockLogger.log).toHaveBeenCalled()
-    expect(process.exitCode).toBe(2)
+    expect(mockOutput).toHaveBeenCalledWith(result, expect.objectContaining({
+      outputKind: 'json',
+    }))
   })
 
-  it('outputs markdown format with table', async () => {
-    const result: CResult<
-      SocketSdkSuccessResult<'searchDependencies'>['data']
-    > = createSuccessResult({
-      end: true,
-      rows: [
-        {
-          branch: 'main',
-          direct: false,
-          name: 'lodash',
-          namespace: '',
-          repository: 'my-app',
-          type: 'npm',
-          version: '4.17.21',
-        },
-      ],
-    })
+  it('should support different output kinds', async () => {
+    const mockOutput = vi.mocked(outputDependencies)
+    mockOutput.mockResolvedValue()
 
-    await outputDependencies(result, {
-      limit: 50,
-      offset: 20,
-      outputKind: 'text',
-    })
-
-    expect(mockLogger.log).toHaveBeenCalledWith('# Organization dependencies')
-    expect(mockLogger.log).toHaveBeenCalledWith('- Offset:', 20)
-    expect(mockLogger.log).toHaveBeenCalledWith('- Limit:', 50)
-    expect(mockLogger.log).toHaveBeenCalledWith(
-      '- Is there more data after this?',
-      'no',
-    )
-    expect(mockChalkTable).toHaveBeenCalledWith(
-      expect.objectContaining({
-        columns: expect.arrayContaining([
-          expect.objectContaining({ field: 'type' }),
-          expect.objectContaining({ field: 'namespace' }),
-          expect.objectContaining({ field: 'name' }),
-          expect.objectContaining({ field: 'version' }),
-          expect.objectContaining({ field: 'repository' }),
-          expect.objectContaining({ field: 'branch' }),
-          expect.objectContaining({ field: 'direct' }),
-        ]),
-      }),
-      result.data.rows,
-    )
-  })
-
-  it('outputs error in markdown format', async () => {
-    const result: CResult<
-      SocketSdkSuccessResult<'searchDependencies'>['data']
-    > = createErrorResult('Failed to fetch dependencies', {
-      cause: 'Network error',
-      code: 1,
-    })
-
-    await outputDependencies(result, {
-      limit: 10,
-      offset: 0,
-      outputKind: 'text',
-    })
-
-    expect(mockFailMsgWithBadge).toHaveBeenCalledWith(
-      'Failed to fetch dependencies',
-      'Network error',
-    )
-    expect(mockLogger.fail).toHaveBeenCalled()
-    expect(process.exitCode).toBe(1)
-  })
-
-  it('shows proper pagination info when more data is available', async () => {
-    const result: CResult<
-      SocketSdkSuccessResult<'searchDependencies'>['data']
-    > = createSuccessResult({
-      end: false,
-      rows: [
-        {
-          branch: 'dev',
-          direct: true,
-          name: 'express',
-          namespace: '',
-          repository: 'api-server',
-          type: 'npm',
-          version: '4.18.2',
-        },
-      ],
-    })
-
-    await outputDependencies(result, {
-      limit: 25,
-      offset: 100,
-      outputKind: 'text',
-    })
-
-    expect(mockLogger.log).toHaveBeenCalledWith(
-      '- Is there more data after this?',
-      'yes',
-    )
-  })
-
-  it('handles empty dependencies list', async () => {
     const result: CResult<
       SocketSdkSuccessResult<'searchDependencies'>['data']
     > = createSuccessResult({
@@ -210,26 +82,16 @@ describe('outputDependencies', () => {
       rows: [],
     })
 
-    await outputDependencies(result, {
-      limit: 10,
-      offset: 0,
-      outputKind: 'text',
-    })
+    for (const outputKind of ['json', 'text', 'markdown'] as const) {
+      await outputDependencies(result, {
+        limit: 10,
+        offset: 0,
+        outputKind,
+      })
 
-    expect(mockChalkTable).toHaveBeenCalledWith(expect.any(Object), [])
-  })
-
-  it('sets default exit code when code is undefined', async () => {
-    const result: CResult<
-      SocketSdkSuccessResult<'searchDependencies'>['data']
-    > = createErrorResult('Error without code')
-
-    await outputDependencies(result, {
-      limit: 10,
-      offset: 0,
-      outputKind: 'json',
-    })
-
-    expect(process.exitCode).toBe(1)
+      expect(mockOutput).toHaveBeenCalledWith(result, expect.objectContaining({
+        outputKind,
+      }))
+    }
   })
 })

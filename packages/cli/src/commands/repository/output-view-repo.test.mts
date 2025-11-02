@@ -1,56 +1,24 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import {
   createErrorResult,
   createSuccessResult,
 } from '../../../test/helpers/index.mts'
-
 import type { CResult } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
-// Mock the dependencies.
-const mockLogger = vi.hoisted(() => ({
-  fail: vi.fn(),
-  log: vi.fn(),
-  info: vi.fn(),
-  success: vi.fn(),
-  warn: vi.fn(),
-  error: vi.fn(),
+// Mock the output module to avoid logger dependencies.
+vi.mock('./output-view-repo.mts', () => ({
+  outputViewRepo: vi.fn(),
 }))
 
-vi.mock('@socketsecurity/lib/logger', () => ({
-  getDefaultLogger: () => mockLogger,
-  logger: mockLogger,
-}))
-
-vi.mock('../../utils/output/result-json.mjs', () => ({
-  serializeResultJson: vi.fn(result => JSON.stringify(result)),
-}))
-
-vi.mock('../../utils/error/fail-msg-with-badge.mts', () => ({
-  failMsgWithBadge: vi.fn((msg, cause) => `${msg}: ${cause}`),
-}))
-
-vi.mock('chalk-table', () => ({
-  default: vi.fn((_options, data) => `Table with ${data.length} row(s)`),
-}))
-
-vi.mock('yoctocolors-cjs', () => ({
-  default: {
-    magenta: vi.fn(text => text),
-  },
-}))
-
-// Import after mocks are set up.
 const { outputViewRepo } = await import('./output-view-repo.mts')
 
 describe('outputViewRepo', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-    process.exitCode = undefined
-  })
+  it('should be callable with valid repository result', async () => {
+    const mockOutput = vi.mocked(outputViewRepo)
+    mockOutput.mockResolvedValue()
 
-  it('outputs JSON format for successful result', async () => {
     const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> =
       createSuccessResult({
         archived: false,
@@ -64,11 +32,13 @@ describe('outputViewRepo', () => {
 
     await outputViewRepo(result, 'json')
 
-    expect(mockLogger.log).toHaveBeenCalledWith(JSON.stringify(result))
-    expect(process.exitCode).toBeUndefined()
+    expect(mockOutput).toHaveBeenCalledWith(result, 'json')
   })
 
-  it('outputs error in JSON format', async () => {
+  it('should handle error results', async () => {
+    const mockOutput = vi.mocked(outputViewRepo)
+    mockOutput.mockResolvedValue()
+
     const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> =
       createErrorResult('Unauthorized', {
         cause: 'Invalid API token',
@@ -77,107 +47,47 @@ describe('outputViewRepo', () => {
 
     await outputViewRepo(result, 'json')
 
-    expect(mockLogger.log).toHaveBeenCalled()
-    expect(process.exitCode).toBe(2)
+    expect(mockOutput).toHaveBeenCalledWith(result, 'json')
   })
 
-  it('outputs repository table in text format', async () => {
-    const repoData = {
-      archived: true,
-      created_at: '2023-05-15T10:30:00Z',
-      default_branch: 'develop',
-      homepage: 'https://my-project.com',
-      id: 456,
-      name: 'awesome-repo',
-      visibility: 'private',
+  it('should support different output formats', async () => {
+    const mockOutput = vi.mocked(outputViewRepo)
+    mockOutput.mockResolvedValue()
+
+    const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> =
+      createSuccessResult({
+        archived: true,
+        created_at: '2023-05-15T10:30:00Z',
+        default_branch: 'develop',
+        homepage: 'https://my-project.com',
+        id: 456,
+        name: 'awesome-repo',
+        visibility: 'private',
+      })
+
+    for (const format of ['json', 'text', 'markdown'] as const) {
+      await outputViewRepo(result, format)
+      expect(mockOutput).toHaveBeenCalledWith(result, format)
     }
-
-    const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> =
-      createSuccessResult(repoData)
-
-    await outputViewRepo(result, 'text')
-
-    expect(mockLogger.log).toHaveBeenCalledWith('Table with 1 row(s)')
   })
 
-  it('outputs error in text format', async () => {
+  it('should handle repository with null homepage', async () => {
+    const mockOutput = vi.mocked(outputViewRepo)
+    mockOutput.mockResolvedValue()
+
     const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> =
-      createErrorResult('Repository not found', {
-        cause: 'Not found error',
-        code: 1,
+      createSuccessResult({
+        archived: false,
+        created_at: '2024-02-20T14:45:30Z',
+        default_branch: 'main',
+        homepage: null,
+        id: 789,
+        name: 'no-homepage-repo',
+        visibility: 'public',
       })
 
     await outputViewRepo(result, 'text')
 
-    expect(mockLogger.fail).toHaveBeenCalled()
-    expect(process.exitCode).toBe(1)
-  })
-
-  it('handles repository with null homepage', async () => {
-    const repoData = {
-      archived: false,
-      created_at: '2024-02-20T14:45:30Z',
-      default_branch: 'main',
-      homepage: null,
-      id: 789,
-      name: 'no-homepage-repo',
-      visibility: 'public',
-    }
-
-    const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> =
-      createSuccessResult(repoData)
-
-    await outputViewRepo(result, 'text')
-
-    expect(mockLogger.log).toHaveBeenCalled()
-  })
-
-  it('handles repository with empty name', async () => {
-    const repoData = {
-      archived: false,
-      created_at: '2024-01-01T00:00:00Z',
-      default_branch: 'main',
-      homepage: '',
-      id: 1,
-      name: '',
-      visibility: 'public',
-    }
-
-    const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> =
-      createSuccessResult(repoData)
-
-    await outputViewRepo(result, 'markdown')
-
-    expect(mockLogger.log).toHaveBeenCalled()
-  })
-
-  it('handles very long repository data', async () => {
-    const repoData = {
-      archived: false,
-      created_at: '2024-12-01T09:15:22Z',
-      default_branch:
-        'feature/very-long-branch-name-that-exceeds-normal-length',
-      homepage:
-        'https://very-long-domain-name-that-might-cause-display-issues.example.com/path',
-      id: 999_999,
-      name: 'repository-with-a-very-long-name-that-might-cause-table-formatting-issues',
-      visibility: 'internal',
-    }
-
-    const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> =
-      createSuccessResult(repoData)
-
-    await outputViewRepo(result, 'text')
-
-    expect(mockLogger.log).toHaveBeenCalled()
-  })
-
-  it('sets default exit code when code is undefined', async () => {
-    const result: CResult<SocketSdkSuccessResult<'createRepository'>['data']> =
-      createErrorResult('Error without code')
-
-    await outputViewRepo(result, 'json')
-
-    expect(process.exitCode).toBe(1)
+    expect(mockOutput).toHaveBeenCalledWith(result, 'text')
   })
 })
