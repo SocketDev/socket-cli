@@ -129,33 +129,57 @@ async function cloneOnnxSource() {
   printSuccess('BUILD_MLAS_NO_ONNXRUNTIME commented out')
 
   // Patch 3: Modern Emscripten compatibility (see docs/patches.md).
+  //
+  // PROBLEM: ONNX Runtime's wasm_post_build.js expects specific Worker URL pattern
+  // from older Emscripten versions. Modern Emscripten (3.1.50+) doesn't generate
+  // this pattern, causing build to fail with "Unexpected number of matches" error.
+  //
+  // SOLUTION: Patch the script to handle modern Emscripten gracefully:
+  // 1. Allow zero matches (modern Emscripten generates correct code already)
+  // 2. Improve error message to show actual match count
+  //
+  // CACHE HANDLING: CMake copies wasm_post_build.js from source to build directory
+  // during configuration. GitHub Actions may restore cached builds with old unpatched
+  // copies, so we must:
+  // 1. Patch source file (single source of truth)
+  // 2. Delete cached build copy if present (forces CMake recopy from patched source)
+  // 3. Clear CMake cache (ensures full reconfiguration)
   printStep('Patching wasm_post_build.js to handle modern Emscripten...')
   const postBuildSourcePath = path.join(ONNX_SOURCE_DIR, 'js', 'web', 'script', 'wasm_post_build.js')
   if (existsSync(postBuildSourcePath)) {
     let postBuildContent = await fs.readFile(postBuildSourcePath, 'utf-8')
+
+    // Patch 1: Allow zero matches (modern Emscripten case).
+    // Insert early return when no Worker URL pattern found.
     postBuildContent = postBuildContent.replace(
       /if \(matches\.length !== 1\) \{/,
       `if (matches.length === 0) {\n      console.log('No Worker URL pattern found - skipping post-build transformation (modern Emscripten)');\n      return;\n    }\n    if (matches.length !== 1) {`
     )
+
+    // Patch 2: Improve error message to show actual match count.
+    // Helps debug if we get unexpected pattern variations.
     postBuildContent = postBuildContent.replace(
       /Unexpected number of matches for "" in "": \./,
       `Unexpected number of Worker URL matches: found \${matches.length}, expected 1. Pattern: \${regex}`
     )
+
     await fs.writeFile(postBuildSourcePath, postBuildContent, 'utf-8')
-    printSuccess('wasm_post_build.js patched')
+    printSuccess('wasm_post_build.js (source) patched')
   }
 
-  // Delete stale cached copies in build directory to force CMake recopy from patched source.
-  // CMake copies from source during configure, but cached builds may have old unpatched version.
+  // Delete stale cached copies in build directory.
+  // This ensures CMake will recopy the patched version from source during configure.
+  // Without this, GitHub Actions cached builds would use old unpatched version.
   printStep('Removing stale wasm_post_build.js from build cache...')
   const platform = process.platform === 'darwin' ? 'Darwin' : 'Linux'
   const postBuildBuildPath = path.join(ONNX_SOURCE_DIR, 'build', platform, 'Release', 'wasm_post_build.js')
   if (existsSync(postBuildBuildPath)) {
     await safeDelete(postBuildBuildPath)
-    printSuccess('Stale wasm_post_build.js removed (will be recopied from source)')
+    printSuccess('Stale wasm_post_build.js removed (CMake will recopy from patched source)')
   }
 
-  // Clear CMake cache to ensure fresh reconfiguration.
+  // Clear CMake cache to force full reconfiguration.
+  // This ensures CMake recopies all files from source, picking up our patch.
   printStep('Clearing CMake cache to force reconfiguration...')
   const cmakeCachePath = path.join(ONNX_SOURCE_DIR, 'build', platform, 'Release', 'CMakeCache.txt')
   if (existsSync(cmakeCachePath)) {
