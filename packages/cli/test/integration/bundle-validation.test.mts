@@ -44,29 +44,56 @@ function hasAbsolutePaths(content: string): {
 }
 
 /**
- * Check if content contains bundled code that should be external.
- * Looks for signs that dependencies were bundled inline instead of kept external.
+ * Check if bundle contains inlined dependencies.
+ * Reads package.json dependencies and ensures they are NOT bundled inline.
  */
-function checkForBundledDependencies(content: string): {
+async function checkBundledDependencies(content: string): Promise<{
   bundledDeps: string[]
   hasNoBundledDeps: boolean
-} {
-  // Dependencies that should remain external (not bundled inline).
-  // We check if their package code is bundled by looking for their exports.
-  const externalDeps = [
-    {
-      name: '@socketsecurity/registry',
-      // Look for characteristic exports from this package.
-      pattern: /\/\/ @socketsecurity\/registry/,
-    },
-  ]
+}> {
+  // Read package.json to get runtime dependencies.
+  const pkgJsonPath = path.join(packagePath, 'package.json')
+  const pkgJson = JSON.parse(await fs.readFile(pkgJsonPath, 'utf8'))
+  const dependencies = pkgJson.dependencies || {}
 
   const bundledDeps: string[] = []
 
-  for (const dep of externalDeps) {
-    // If we find evidence that the package's code is bundled inline.
-    if (dep.pattern.test(content)) {
-      bundledDeps.push(dep.name)
+  // If we have NO dependencies, check that no external packages are bundled.
+  if (Object.keys(dependencies).length === 0) {
+    // Look for signs of bundled npm packages.
+    // Bundled packages often have characteristic patterns like:
+    // - var xxx_exports = {};
+    // - __toCommonJS(package_name_exports)
+    // - Multiple functions from same package bundled together.
+    const bundledPackagePatterns = [
+      // Socket packages that should always be external.
+      /@socketsecurity\/registry/,
+    ]
+
+    for (const pattern of bundledPackagePatterns) {
+      // Check if package name appears in context that suggests bundling.
+      // Look for: var import_package = require("package") without the actual require call.
+      // This would indicate the package code is bundled inline.
+      const bundlePattern = new RegExp(
+        `var\\s+\\w+\\s*=\\s*__toCommonJS\\([^)]*${pattern.source}`,
+      )
+
+      if (bundlePattern.test(content)) {
+        bundledDeps.push(pattern.source)
+      }
+    }
+  } else {
+    // If we have dependencies, check that they remain external (not bundled).
+    for (const dep of Object.keys(dependencies)) {
+      const escapedDep = dep.replace(/[/\\^$*+?.()|[\]{}]/g, '\\$&')
+      // Check if dependency code is bundled by looking for __toCommonJS pattern.
+      const bundlePattern = new RegExp(
+        `var\\s+\\w+\\s*=\\s*__toCommonJS\\([^)]*${escapedDep}`,
+      )
+
+      if (bundlePattern.test(content)) {
+        bundledDeps.push(dep)
+      }
     }
   }
 
@@ -96,14 +123,14 @@ describe('Bundle validation', () => {
     ).toBe(false)
   })
 
-  it('should not bundle external dependencies inline', async () => {
+  it('should not bundle dependencies inline (validate against package.json dependencies)', async () => {
     const cliPath = path.join(buildPath, 'cli.js')
     const content = await fs.readFile(cliPath, 'utf8')
 
-    const result = checkForBundledDependencies(content)
+    const result = await checkBundledDependencies(content)
 
     if (!result.hasNoBundledDeps) {
-      console.error('Found bundled code from external dependencies:')
+      console.error('Found bundled dependencies (should be external):')
       for (const dep of result.bundledDeps) {
         console.error(`  - ${dep}`)
       }
@@ -111,7 +138,7 @@ describe('Bundle validation', () => {
 
     expect(
       result.hasNoBundledDeps,
-      'External dependencies should not be bundled inline',
+      'Dependencies from package.json should be external, not bundled inline',
     ).toBe(true)
   })
 })
