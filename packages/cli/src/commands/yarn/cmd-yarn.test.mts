@@ -2,6 +2,7 @@ import { describe, expect } from 'vitest'
 
 import { YARN } from '@socketsecurity/lib/constants/agents'
 
+import { expectDryRunOutput } from '../../../test/helpers/output-assertions.mts'
 import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
 import {
   FLAG_CONFIG,
@@ -60,6 +61,9 @@ describe('socket yarn', async () => {
         timeout: 30_000,
       })
 
+
+      // Validate dry-run output to prevent flipped snapshots.
+      expectDryRunOutput(stdout)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(stderr).toContain('CLI')
       expect(code, 'dry-run without args should exit with code 0').toBe(0)
@@ -153,6 +157,9 @@ describe('socket yarn', async () => {
         timeout: 30_000,
       })
 
+
+      // Validate dry-run output to prevent flipped snapshots.
+      expectDryRunOutput(stdout)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'dry-run exec with -c should exit with code 0').toBe(0)
     },
@@ -174,6 +181,9 @@ describe('socket yarn', async () => {
         timeout: 30_000,
       })
 
+
+      // Validate dry-run output to prevent flipped snapshots.
+      expectDryRunOutput(stdout)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'dry-run exec with --config should exit with code 0').toBe(0)
     },
@@ -195,6 +205,9 @@ describe('socket yarn', async () => {
         timeout: 30_000,
       })
 
+
+      // Validate dry-run output to prevent flipped snapshots.
+      expectDryRunOutput(stdout)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(
         code,
@@ -219,6 +232,9 @@ describe('socket yarn', async () => {
         timeout: 30_000,
       })
 
+
+      // Validate dry-run output to prevent flipped snapshots.
+      expectDryRunOutput(stdout)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(
         code,
