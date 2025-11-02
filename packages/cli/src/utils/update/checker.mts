@@ -22,6 +22,7 @@
 import semver from 'semver'
 
 import { NPM_REGISTRY_URL } from '@socketsecurity/lib/constants/agents'
+import { debug } from '@socketsecurity/lib/debug'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { onExit } from '@socketsecurity/lib/signal-exit'
 import { isNonEmptyString } from '@socketsecurity/lib/strings'
@@ -140,11 +141,19 @@ const NetworkUtils = {
       }
 
       const contentType = request.headers.get('content-type')
-      if (!contentType || !contentType.includes('application/json')) {
-        getDefaultLogger().warn(`Unexpected content type: ${contentType}`)
-      }
+      let json: unknown
 
-      const json = await request.json()
+      try {
+        json = await request.json()
+      } catch (parseError) {
+        // Only warn about content type if JSON parsing actually fails.
+        if (!contentType || !contentType.includes('application/json')) {
+          debug(`Unexpected content type: ${contentType}`)
+        }
+        throw new Error(
+          `Failed to parse JSON response: ${parseError instanceof Error ? parseError.message : String(parseError)}`,
+        )
+      }
 
       if (!json || typeof json !== 'object') {
         throw new Error('Invalid JSON response from registry')

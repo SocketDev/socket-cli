@@ -63,8 +63,8 @@ describe('fetchListRepos', () => {
     expect(mockSdk.listRepositories).toHaveBeenCalledWith('test-org', {
       sort: 'created_at',
       direction: 'desc',
-      per_page: '10',
-      page: '1',
+      per_page: 10,
+      page: 1,
     })
     expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
       description: 'list of repositories',
@@ -190,8 +190,8 @@ describe('fetchListRepos', () => {
     expect(mockSdk.listRepositories).toHaveBeenCalledWith('large-org', {
       sort: 'stars',
       direction: 'desc',
-      per_page: '100',
-      page: '0',
+      per_page: 100,
+      page: 0,
     })
   })
 
@@ -223,8 +223,8 @@ describe('fetchListRepos', () => {
     expect(mockSdk.listRepositories).toHaveBeenCalledWith('sort-org', {
       sort: 'alphabetical',
       direction: 'asc',
-      per_page: '25',
-      page: '0',
+      per_page: 25,
+      page: 0,
     })
   })
 
