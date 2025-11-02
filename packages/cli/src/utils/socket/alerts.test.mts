@@ -6,11 +6,18 @@ import {
 } from './alerts.mts'
 
 // Mock dependencies.
+const mockLogger = vi.hoisted(() => ({
+  error: vi.fn(),
+  fail: vi.fn(),
+  info: vi.fn(),
+  log: vi.fn(),
+  success: vi.fn(),
+  warn: vi.fn(),
+}))
+
 vi.mock('@socketsecurity/lib/logger', () => ({
-  logger: {
-    error: vi.fn(),
-    warn: vi.fn(),
-  },
+  getDefaultLogger: () => mockLogger,
+  logger: mockLogger,
 }))
 
 vi.mock('./sdk.mts', () => ({
