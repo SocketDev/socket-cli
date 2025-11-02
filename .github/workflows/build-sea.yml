@@ -267,8 +267,8 @@ jobs:
           YOGA_HASH=$(find packages/yoga-layout -type f \( -name "*.cpp" -o -name "*.h" -o -name "*.mjs" -o -name "CMakeLists.txt" \) | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
           echo "yoga-hash=$YOGA_HASH" >> $GITHUB_OUTPUT
 
-          AI_HASH=$(find packages/socketbin-cli-ai -type f \( -name "*.mjs" -o -name "*.ts" \) | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
-          echo "ai-hash=$AI_HASH" >> $GITHUB_OUTPUT
+          # AI_HASH=$(find packages/socketbin-cli-ai -type f \( -name "*.mjs" -o -name "*.ts" \) | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
+          # echo "ai-hash=$AI_HASH" >> $GITHUB_OUTPUT
 
           # ONNX_HASH=$(find packages/onnxruntime -type f \( -name "*.mjs" -o -name "*.patch" \) | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
           # echo "onnx-hash=$ONNX_HASH" >> $GITHUB_OUTPUT
@@ -283,15 +283,15 @@ jobs:
           restore-keys: yoga-wasm-
           enableCrossOsArchive: true
 
-      - name: Restore AI models cache
-        if: steps.check-platform.outputs.should-run == 'true'
-        id: ai-cache
-        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        with:
-          path: packages/socketbin-cli-ai/dist
-          key: ai-models-${{ steps.wasm-cache-keys.outputs.ai-hash }}
-          restore-keys: ai-models-
-          enableCrossOsArchive: true
+      # - name: Restore AI models cache
+      #   if: steps.check-platform.outputs.should-run == 'true'
+      #   id: ai-cache
+      #   uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+      #   with:
+      #     path: packages/socketbin-cli-ai/dist
+      #     key: ai-models-${{ steps.wasm-cache-keys.outputs.ai-hash }}
+      #     restore-keys: ai-models-
+      #     enableCrossOsArchive: true
 
       # - name: Restore ONNX Runtime cache
       #   id: onnx-cache
@@ -323,18 +323,18 @@ jobs:
             echo "Missing files - will trigger rebuild"
           fi
 
-      - name: Verify AI models cache
-        if: steps.check-platform.outputs.should-run == 'true'
-        id: ai-cache-valid
-        shell: bash
-        run: |
-          if [ -f "packages/socketbin-cli-ai/dist/ai.bz" ] && [ -f "packages/socketbin-cli-ai/dist/ai.js" ]; then
-            echo "valid=true" >> $GITHUB_OUTPUT
-            echo "✓ AI models cache valid"
-          else
-            echo "valid=false" >> $GITHUB_OUTPUT
-            echo "✗ AI models cache invalid or missing"
-          fi
+      # - name: Verify AI models cache
+      #   if: steps.check-platform.outputs.should-run == 'true'
+      #   id: ai-cache-valid
+      #   shell: bash
+      #   run: |
+      #     if [ -f "packages/socketbin-cli-ai/dist/ai.bz" ] && [ -f "packages/socketbin-cli-ai/dist/ai.js" ]; then
+      #       echo "valid=true" >> $GITHUB_OUTPUT
+      #       echo "✓ AI models cache valid"
+      #     else
+      #       echo "valid=false" >> $GITHUB_OUTPUT
+      #       echo "✗ AI models cache invalid or missing"
+      #     fi
 
       #       - name: Verify ONNX Runtime cache
       #         id: onnx-cache-valid
@@ -492,9 +492,9 @@ jobs:
           echo "Yoga Layout:"
           ls -lh packages/yoga-layout/build/wasm/ 2>/dev/null || echo "  ❌ Directory not found"
           echo ""
-          echo "AI Models:"
-          ls -lh packages/socketbin-cli-ai/dist/ 2>/dev/null || echo "  ❌ Directory not found"
-          echo ""
+          #           echo "AI Models:"
+          #           ls -lh packages/socketbin-cli-ai/dist/ 2>/dev/null || echo "  ❌ Directory not found"
+          #           echo ""
           #           echo "ONNX Runtime:"
           #           ls -lh packages/onnxruntime/dist/ 2>/dev/null || echo "  ❌ Directory not found"
           echo ""
