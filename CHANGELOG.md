@@ -4,27 +4,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [2.0.11](https://github.com/SocketDev/socket-cli/releases/tag/v2.0.11) - 2025-01-01
+## [2.1.0](https://github.com/SocketDev/socket-cli/releases/tag/v2.1.0) - 2025-11-02
 
 ### Added
+- Unified DLX manifest storage for packages and binary downloads with persistent caching and TTL support
 - Progressive enhancement with ONNX Runtime stub for optional NLP features
 - SHA-256 checksum verification for Python build standalone downloads
 - Optional external alias detection for TypeScript configurations
-- Comprehensive documentation for NLP progressive enhancement
-- Package badges to README files
+- `--reach-use-unreachable-from-precomputation` flag for `scan reach` and `scan create` commands
+  to use precomputed unreachable information for improved reachability analysis accuracy
 
 ### Changed
+- DLX manifest now uses unified format supporting both npm packages and binary downloads
 - Standardized environment variable naming with SOCKET_CLI_ prefix
-- Renamed ensureSocketCli to ensureSocketPythonCli for clarity
 - Preflight downloads now stagger with variable delays (1-3 seconds) to avoid resource contention
 
 ### Fixed
 - Bootstrap stream/promises module path corrected for smol builds
 - Bootstrap error handling improved for clearer failure messages
 - Windows path handling now correctly processes UNC paths
-- Windows validation added for Unix-style paths in npm directory resolution
-- Preflight downloads now run once per process with guard to prevent duplicate execution
-- Registry URL lookup deferred until needed (not in test/CI environments)
 
 ## [2.0.10](https://github.com/SocketDev/socket-cli/releases/tag/v2.0.10) - 2025-10-31
 
