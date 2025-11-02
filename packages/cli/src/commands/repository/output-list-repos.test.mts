@@ -1,10 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { outputListRepos } from './output-list-repos.mts'
+import { serializeResultJson } from '../../utils/output/result-json.mjs'
+import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 import {
   createErrorResult,
   createSuccessResult,
 } from '../../../test/helpers/index.mts'
-import { outputListRepos } from './output-list-repos.mts'
+import chalkTable from 'chalk-table'
 
 import type { CResult } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
@@ -18,6 +21,11 @@ const mockLogger = vi.hoisted(() => ({
   warn: vi.fn(),
   error: vi.fn(),
 }))
+
+// Helper references to mockLogger methods.
+const mockLog = mockLogger.log
+const mockFail = mockLogger.fail
+const mockInfo = mockLogger.info
 
 vi.mock('@socketsecurity/lib/logger', () => ({
   getDefaultLogger: () => mockLogger,
@@ -49,10 +57,6 @@ describe('outputListRepos', () => {
   })
 
   it('outputs JSON format for successful result with pagination', async () => {
-    const { serializeResultJson } = await vi.importMock(
-      '../../utils/output/result-json.mjs',
-    )
-
     const mockSerialize = vi.mocked(serializeResultJson)
 
     const result: CResult<SocketSdkSuccessResult<'listRepositories'>['data']> =
@@ -81,7 +85,7 @@ describe('outputListRepos', () => {
         sort: 'name',
       },
     })
-    expect(mockLogger.log).toHaveBeenCalledWith(expect.stringContaining('ok'))
+    expect(mockLog).toHaveBeenCalledWith(expect.stringContaining('ok'))
     expect(process.exitCode).toBeUndefined()
   })
 
@@ -94,14 +98,12 @@ describe('outputListRepos', () => {
 
     await outputListRepos(result, 'json', 1, null, 'created_at', 25, 'desc')
 
-    expect(mockLogger.log).toHaveBeenCalled()
+    expect(mockLog).toHaveBeenCalled()
     expect(process.exitCode).toBe(2)
   })
 
   it('outputs text format with repository table', async () => {
-    const chalkTable = await vi.importMock('chalk-table')
-
-    const mockChalkTable = vi.mocked(chalkTable.default)
+    const mockChalkTableFn = vi.mocked(chalkTable)
 
     const repos = [
       {
@@ -127,10 +129,10 @@ describe('outputListRepos', () => {
 
     await outputListRepos(result, 'text', 2, 3, 'updated_at', 50, 'desc')
 
-    expect(mockLogger.log).toHaveBeenCalledWith(
+    expect(mockLog).toHaveBeenCalledWith(
       'Result page: 2, results per page: 50, sorted by: updated_at, direction: desc',
     )
-    expect(mockChalkTable).toHaveBeenCalledWith(
+    expect(mockChalkTableFn).toHaveBeenCalledWith(
       expect.objectContaining({
         columns: expect.arrayContaining([
           expect.objectContaining({ field: 'id' }),
@@ -142,19 +144,15 @@ describe('outputListRepos', () => {
       }),
       repos,
     )
-    expect(mockLogger.info).toHaveBeenCalledWith(
+    expect(mockInfo).toHaveBeenCalledWith(
       'This is page 2. Server indicated there are more results available on page 3...',
     )
-    expect(mockLogger.info).toHaveBeenCalledWith(
+    expect(mockInfo).toHaveBeenCalledWith(
       '(Hint: you can use `socket repository list --page 3`)',
     )
   })
 
   it('outputs error in text format', async () => {
-    const { failMsgWithBadge } = await vi.importMock(
-      '../../utils/error/fail-msg-with-badge.mts',
-    )
-
     const mockFailMsg = vi.mocked(failMsgWithBadge)
 
     const result: CResult<SocketSdkSuccessResult<'listRepositories'>['data']> =
@@ -169,7 +167,7 @@ describe('outputListRepos', () => {
       'Failed to fetch repositories',
       'Network error',
     )
-    expect(mockLogger.fail).toHaveBeenCalled()
+    expect(mockFail).toHaveBeenCalled()
     expect(process.exitCode).toBe(1)
   })
 
@@ -189,7 +187,7 @@ describe('outputListRepos', () => {
 
     await outputListRepos(result, 'text', 5, null, 'name', 20, 'asc')
 
-    expect(mockLogger.info).toHaveBeenCalledWith(
+    expect(mockInfo).toHaveBeenCalledWith(
       'This is page 5. Server indicated this is the last page with results.',
     )
   })
@@ -210,14 +208,13 @@ describe('outputListRepos', () => {
       'asc',
     )
 
-    expect(mockLogger.info).toHaveBeenCalledWith(
+    expect(mockInfo).toHaveBeenCalledWith(
       'This should be the entire list available on the server.',
     )
   })
 
   it('handles empty repository list', async () => {
-    const chalkTable = await vi.importMock('chalk-table')
-    const mockChalkTable = vi.mocked(chalkTable.default)
+    const mockChalkTableFn = vi.mocked(chalkTable)
 
     const result: CResult<SocketSdkSuccessResult<'listRepositories'>['data']> =
       createSuccessResult({
@@ -226,7 +223,7 @@ describe('outputListRepos', () => {
 
     await outputListRepos(result, 'text', 1, null, 'name', 10, 'desc')
 
-    expect(mockChalkTable).toHaveBeenCalledWith(expect.any(Object), [])
+    expect(mockChalkTableFn).toHaveBeenCalledWith(expect.any(Object), [])
   })
 
   it('sets default exit code when code is undefined', async () => {

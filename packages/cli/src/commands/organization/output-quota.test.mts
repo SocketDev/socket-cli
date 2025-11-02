@@ -19,27 +19,38 @@ const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
 }))
 
+const mockSerializeResultJson = vi.hoisted(() => vi.fn(result => JSON.stringify(result)))
+const mockFailMsgWithBadge = vi.hoisted(() => vi.fn((msg, cause) => `${msg}: ${cause}`))
+const mockMdHeader = vi.hoisted(() => vi.fn(title => `# ${title}`))
+
 vi.mock('@socketsecurity/lib/logger', () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
 }))
 
 vi.mock('../../utils/output/result-json.mjs', () => ({
-  serializeResultJson: vi.fn(result => JSON.stringify(result)),
+  serializeResultJson: mockSerializeResultJson,
 }))
 
 vi.mock('../../utils/error/fail-msg-with-badge.mts', () => ({
-  failMsgWithBadge: vi.fn((msg, cause) => `${msg}: ${cause}`),
+  failMsgWithBadge: mockFailMsgWithBadge,
 }))
+
+vi.mock('../../utils/output/markdown.mts', () => ({
+  mdHeader: mockMdHeader,
+}))
+
+vi.mock('../../constants/paths.mts', async importOriginal => {
+  const actual = await importOriginal()
+  return {
+    ...actual,
+  }
+})
 
 describe('outputQuota', () => {
   setupTestEnvironment()
 
   it('outputs JSON format for successful result', async () => {
-    const { serializeResultJson } = await vi.importMock(
-      '../../utils/output/result-json.mjs',
-    )
-
     const result = createSuccessResult<
       SocketSdkSuccessResult<'getQuota'>['data']
     >({
@@ -48,7 +59,7 @@ describe('outputQuota', () => {
 
     await outputQuota(result, 'json')
 
-    expect(serializeResultJson).toHaveBeenCalledWith(result)
+    expect(mockSerializeResultJson).toHaveBeenCalledWith(result)
     expect(mockLogger.log).toHaveBeenCalledWith(JSON.stringify(result))
     expect(process.exitCode).toBeUndefined()
   })
@@ -100,17 +111,13 @@ describe('outputQuota', () => {
   })
 
   it('outputs error in text format', async () => {
-    const { failMsgWithBadge } = await vi.importMock(
-      '../../utils/error/fail-msg-with-badge.mts',
-    )
-
     const result = createErrorResult('Failed to fetch quota', {
       cause: 'Network error',
     })
 
     await outputQuota(result, 'text')
 
-    expect(failMsgWithBadge).toHaveBeenCalledWith(
+    expect(mockFailMsgWithBadge).toHaveBeenCalledWith(
       'Failed to fetch quota',
       'Network error',
     )
