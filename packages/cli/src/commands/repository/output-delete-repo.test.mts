@@ -1,23 +1,39 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
   createErrorResult,
   createSuccessResult,
 } from '../../../test/helpers/index.mts'
+
 import type { CResult } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
-// Mock the output module to avoid logger dependencies.
-vi.mock('./output-delete-repo.mts', () => ({
-  outputDeleteRepo: vi.fn(),
-}))
-
-const { outputDeleteRepo } = await import('./output-delete-repo.mts')
-
 describe('outputDeleteRepo', () => {
-  it('should be callable with successful deletion result', async () => {
-    const mockOutput = vi.mocked(outputDeleteRepo)
-    mockOutput.mockResolvedValue()
+  beforeEach(async () => {
+    vi.resetModules()
+    process.exitCode = undefined
+  })
+
+  it('outputs JSON format for successful result', async () => {
+    const mockLogger = {
+      fail: vi.fn(),
+      log: vi.fn(),
+      info: vi.fn(),
+      success: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    }
+    const mockSerializeResultJson = vi.fn(result => JSON.stringify(result))
+
+    vi.doMock('@socketsecurity/lib/logger', () => ({
+      getDefaultLogger: () => mockLogger,
+    }))
+
+    vi.doMock('../../utils/output/result-json.mjs', () => ({
+      serializeResultJson: mockSerializeResultJson,
+    }))
+
+    const { outputDeleteRepo } = await import('./output-delete-repo.mts')
 
     const result: CResult<SocketSdkSuccessResult<'deleteRepository'>['data']> =
       createSuccessResult({
@@ -26,12 +42,93 @@ describe('outputDeleteRepo', () => {
 
     await outputDeleteRepo(result, 'test-repo', 'json')
 
-    expect(mockOutput).toHaveBeenCalledWith(result, 'test-repo', 'json')
+    expect(mockSerializeResultJson).toHaveBeenCalledWith(result)
+    expect(mockLogger.log).toHaveBeenCalledWith(JSON.stringify(result))
+    expect(process.exitCode).toBeUndefined()
   })
 
-  it('should handle error results', async () => {
-    const mockOutput = vi.mocked(outputDeleteRepo)
-    mockOutput.mockResolvedValue()
+  it('outputs error in JSON format', async () => {
+    const mockLogger = {
+      fail: vi.fn(),
+      log: vi.fn(),
+      info: vi.fn(),
+      success: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    }
+    const mockSerializeResultJson = vi.fn(result => JSON.stringify(result))
+
+    vi.doMock('@socketsecurity/lib/logger', () => ({
+      getDefaultLogger: () => mockLogger,
+    }))
+
+    vi.doMock('../../utils/output/result-json.mjs', () => ({
+      serializeResultJson: mockSerializeResultJson,
+    }))
+
+    const { outputDeleteRepo } = await import('./output-delete-repo.mts')
+
+    const result: CResult<SocketSdkSuccessResult<'deleteRepository'>['data']> =
+      createErrorResult('Unauthorized', {
+        cause: 'Invalid API token',
+        code: 2,
+      })
+
+    await outputDeleteRepo(result, 'test-repo', 'json')
+
+    expect(mockLogger.log).toHaveBeenCalled()
+    expect(process.exitCode).toBe(2)
+  })
+
+  it('outputs success message for successful deletion', async () => {
+    const mockLogger = {
+      fail: vi.fn(),
+      log: vi.fn(),
+      info: vi.fn(),
+      success: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    }
+
+    vi.doMock('@socketsecurity/lib/logger', () => ({
+      getDefaultLogger: () => mockLogger,
+    }))
+
+    const { outputDeleteRepo } = await import('./output-delete-repo.mts')
+
+    const result: CResult<SocketSdkSuccessResult<'deleteRepository'>['data']> =
+      createSuccessResult({
+        success: true,
+      })
+
+    await outputDeleteRepo(result, 'my-repository', 'text')
+
+    expect(mockLogger.success).toHaveBeenCalledWith(
+      'OK. Repository `my-repository` deleted successfully',
+    )
+    expect(process.exitCode).toBeUndefined()
+  })
+
+  it('outputs error in text format', async () => {
+    const mockLogger = {
+      fail: vi.fn(),
+      log: vi.fn(),
+      info: vi.fn(),
+      success: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    }
+    const mockFailMsgWithBadge = vi.fn((msg, cause) => `${msg}: ${cause}`)
+
+    vi.doMock('@socketsecurity/lib/logger', () => ({
+      getDefaultLogger: () => mockLogger,
+    }))
+
+    vi.doMock('../../utils/error/fail-msg-with-badge.mts', () => ({
+      failMsgWithBadge: mockFailMsgWithBadge,
+    }))
+
+    const { outputDeleteRepo } = await import('./output-delete-repo.mts')
 
     const result: CResult<SocketSdkSuccessResult<'deleteRepository'>['data']> =
       createErrorResult('Repository not found', {
@@ -41,21 +138,124 @@ describe('outputDeleteRepo', () => {
 
     await outputDeleteRepo(result, 'nonexistent-repo', 'text')
 
-    expect(mockOutput).toHaveBeenCalledWith(result, 'nonexistent-repo', 'text')
+    expect(mockFailMsgWithBadge).toHaveBeenCalledWith(
+      'Repository not found',
+      'Not found error',
+    )
+    expect(mockLogger.fail).toHaveBeenCalled()
+    expect(process.exitCode).toBe(1)
   })
 
-  it('should support different output formats', async () => {
-    const mockOutput = vi.mocked(outputDeleteRepo)
-    mockOutput.mockResolvedValue()
+  it('handles markdown output format', async () => {
+    const mockLogger = {
+      fail: vi.fn(),
+      log: vi.fn(),
+      info: vi.fn(),
+      success: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    }
+
+    vi.doMock('@socketsecurity/lib/logger', () => ({
+      getDefaultLogger: () => mockLogger,
+    }))
+
+    const { outputDeleteRepo } = await import('./output-delete-repo.mts')
 
     const result: CResult<SocketSdkSuccessResult<'deleteRepository'>['data']> =
       createSuccessResult({
         success: true,
       })
 
-    for (const format of ['json', 'text', 'markdown'] as const) {
-      await outputDeleteRepo(result, 'my-repo', format)
-      expect(mockOutput).toHaveBeenCalledWith(result, 'my-repo', format)
+    await outputDeleteRepo(result, 'markdown-repo', 'markdown')
+
+    expect(mockLogger.success).toHaveBeenCalledWith(
+      'OK. Repository `markdown-repo` deleted successfully',
+    )
+  })
+
+  it('handles repository name with special characters', async () => {
+    const mockLogger = {
+      fail: vi.fn(),
+      log: vi.fn(),
+      info: vi.fn(),
+      success: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
     }
+
+    vi.doMock('@socketsecurity/lib/logger', () => ({
+      getDefaultLogger: () => mockLogger,
+    }))
+
+    const { outputDeleteRepo } = await import('./output-delete-repo.mts')
+
+    const result: CResult<SocketSdkSuccessResult<'deleteRepository'>['data']> =
+      createSuccessResult({
+        success: true,
+      })
+
+    await outputDeleteRepo(result, 'repo-with-dashes_and_underscores', 'text')
+
+    expect(mockLogger.success).toHaveBeenCalledWith(
+      'OK. Repository `repo-with-dashes_and_underscores` deleted successfully',
+    )
+  })
+
+  it('handles empty repository name', async () => {
+    const mockLogger = {
+      fail: vi.fn(),
+      log: vi.fn(),
+      info: vi.fn(),
+      success: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    }
+
+    vi.doMock('@socketsecurity/lib/logger', () => ({
+      getDefaultLogger: () => mockLogger,
+    }))
+
+    const { outputDeleteRepo } = await import('./output-delete-repo.mts')
+
+    const result: CResult<SocketSdkSuccessResult<'deleteRepository'>['data']> =
+      createSuccessResult({
+        success: true,
+      })
+
+    await outputDeleteRepo(result, '', 'text')
+
+    expect(mockLogger.success).toHaveBeenCalledWith(
+      'OK. Repository `` deleted successfully',
+    )
+  })
+
+  it('sets default exit code when code is undefined', async () => {
+    const mockLogger = {
+      fail: vi.fn(),
+      log: vi.fn(),
+      info: vi.fn(),
+      success: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    }
+    const mockSerializeResultJson = vi.fn(result => JSON.stringify(result))
+
+    vi.doMock('@socketsecurity/lib/logger', () => ({
+      getDefaultLogger: () => mockLogger,
+    }))
+
+    vi.doMock('../../utils/output/result-json.mjs', () => ({
+      serializeResultJson: mockSerializeResultJson,
+    }))
+
+    const { outputDeleteRepo } = await import('./output-delete-repo.mts')
+
+    const result: CResult<SocketSdkSuccessResult<'deleteRepository'>['data']> =
+      createErrorResult('Error without code')
+
+    await outputDeleteRepo(result, 'test-repo', 'json')
+
+    expect(process.exitCode).toBe(1)
   })
 })
