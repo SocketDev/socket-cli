@@ -373,7 +373,7 @@ export async function gitEnsureIdentity(
     ['user.email', email],
     ['user.name', name],
   ]
-  await Promise.all(
+  await Promise.allSettled(
     identEntries.map(async ({ 0: prop, 1: value }) => {
       let configValue: any
       try {
