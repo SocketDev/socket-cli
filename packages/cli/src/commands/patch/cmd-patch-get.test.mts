@@ -108,7 +108,7 @@ describe('socket patch get', async () => {
     'should download patch files to default directory',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toContain('Copied 1 patch file')
+      expect(stdout).toContain('Files copied: 1')
       expect(code, 'should exit with code 0').toBe(0)
 
       // Verify the file was created.
@@ -136,7 +136,7 @@ describe('socket patch get', async () => {
     'should download patch files to custom output directory',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toContain('Copied 1 patch file')
+      expect(stdout).toContain('Files copied: 1')
       expect(stdout).toContain('custom-patches')
       expect(code, 'should exit with code 0').toBe(0)
 
