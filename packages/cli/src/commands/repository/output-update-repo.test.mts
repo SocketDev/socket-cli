@@ -33,7 +33,6 @@ describe('outputUpdateRepo', () => {
 
   it('outputs JSON format for successful result', async () => {
     const { outputUpdateRepo } = await import('./output-update-repo.mts')
-    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
     const { serializeResultJson } = await vi.importMock(
       '../../utils/output/result-json.mjs',
     )
@@ -54,7 +53,6 @@ describe('outputUpdateRepo', () => {
 
   it('outputs error in JSON format', async () => {
     const { outputUpdateRepo } = await import('./output-update-repo.mts')
-    const { logger } = await vi.importMock('@socketsecurity/lib/logger')
     const mockLog = vi.mocked(getDefaultLogger().log)
 
     const result: CResult<SocketSdkSuccessResult<'updateRepository'>['data']> =

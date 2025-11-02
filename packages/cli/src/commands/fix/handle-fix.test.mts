@@ -41,7 +41,6 @@ describe('convertIdsToGhsas', () => {
 
   it('converts CVE IDs to GHSA IDs', async () => {
     const { convertCveToGhsa } = await import('../../utils/cve-to-ghsa.mts')
-    const { logger } = await import('@socketsecurity/lib/logger')
 
     vi.mocked(convertCveToGhsa).mockResolvedValueOnce({
       ok: true,
@@ -80,8 +79,6 @@ describe('convertIdsToGhsas', () => {
   })
 
   it('handles invalid GHSA format', async () => {
-    const { logger } = await import('@socketsecurity/lib/logger')
-
     const result = await convertIdsToGhsas([
       'GHSA-invalid',
       'GHSA-1234-5678-9abc',
@@ -96,7 +93,6 @@ describe('convertIdsToGhsas', () => {
   })
 
   it('handles invalid CVE format', async () => {
-    const { logger } = await import('@socketsecurity/lib/logger')
     const { convertCveToGhsa } = await import('../../utils/cve-to-ghsa.mts')
 
     vi.mocked(convertCveToGhsa).mockResolvedValue({
@@ -116,7 +112,6 @@ describe('convertIdsToGhsas', () => {
 
   it('handles CVE conversion failure', async () => {
     const { convertCveToGhsa } = await import('../../utils/cve-to-ghsa.mts')
-    const { logger } = await import('@socketsecurity/lib/logger')
 
     vi.mocked(convertCveToGhsa).mockResolvedValue({
       ok: false,
@@ -139,7 +134,6 @@ describe('convertIdsToGhsas', () => {
 
   it('handles PURL conversion failure', async () => {
     const { convertPurlToGhsas } = await import('../../utils/purl/to-ghsa.mts')
-    const { logger } = await import('@socketsecurity/lib/logger')
 
     vi.mocked(convertPurlToGhsas).mockResolvedValue({
       ok: false,
@@ -159,7 +153,6 @@ describe('convertIdsToGhsas', () => {
 
   it('handles empty PURL conversion result', async () => {
     const { convertPurlToGhsas } = await import('../../utils/purl/to-ghsa.mts')
-    const { logger } = await import('@socketsecurity/lib/logger')
 
     vi.mocked(convertPurlToGhsas).mockResolvedValue({
       ok: true,
@@ -179,7 +172,6 @@ describe('convertIdsToGhsas', () => {
   it('handles mixed ID types', async () => {
     const { convertCveToGhsa } = await import('../../utils/cve-to-ghsa.mts')
     const { convertPurlToGhsas } = await import('../../utils/purl/to-ghsa.mts')
-    const { logger } = await import('@socketsecurity/lib/logger')
 
     vi.mocked(convertCveToGhsa).mockResolvedValue({
       ok: true,

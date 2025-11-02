@@ -14,14 +14,14 @@ import {
   type HeaderTheme,
 } from './ascii-header.mts'
 
-describe('ascii-header', () => {
-  /**
-   * Strip ANSI color codes from string for shimmer testing.
-   */
-  function stripAnsi(str: string): string {
-    return str.replace(/\x1b\[[0-9;]*m/g, '')
-  }
+/**
+ * Strip ANSI color codes from string for shimmer testing.
+ */
+function stripAnsi(str: string): string {
+  return str.replace(/\x1b\[[0-9;]*m/g, '')
+}
 
+describe('ascii-header', () => {
   describe('supportsFullColor', () => {
     it('should detect COLORTERM=truecolor', () => {
       const originalColorterm = process.env['COLORTERM']
