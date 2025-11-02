@@ -12,22 +12,36 @@ describe('socket config auto', async () => {
     `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`
+        "Automatically discover and set the correct value config item
+
+          Usage
+                $ socket config auto [options] KEY
+          
+              Options
+                --json              Output as JSON
+                --markdown          Output as Markdown
+          
+              Attempt to automatically discover the correct value for a given config KEY.
+          
+              Examples
+                $ socket config auto defaultOrg
+          
+              Keys:
+               - apiBaseUrl -- Base URL of the Socket API endpoint
+               - apiProxy -- A proxy through which to access the Socket API
+               - apiToken -- The Socket API token required to access most Socket API endpoints
+               - defaultOrg -- The default org slug to use; usually the org your Socket API token has access to. When set, all orgSlug arguments are implied to be this value.
+               - enforcedOrgs -- Orgs in this list have their security policies enforced on this machine
+               - org -- Alias for defaultOrg
+               - skipAskToPersistDefaultOrg -- This flag prevents the Socket CLI from asking you to persist the org slug when you selected one interactively"
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           Socket CLI Error: Error [ERR_PACKAGE_PATH_NOT_EXPORTED]: No "exports" main defined in [PROJECT]/node_modules/@socketsecurity/lib/package.json
-            at exportsNotFound (node:internal/modules/esm/resolve:313:10)
-            at packageExportsResolve (node:internal/modules/esm/resolve:661:9)
-            at resolveExports (node:internal/modules/cjs/loader:678:36)
-            at Module._findPath (node:internal/modules/cjs/loader:745:31)
-            at Module._resolveFilename (node:internal/modules/cjs/loader:1405:27)
-            at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)
-            at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)
-            at Module._load (node:internal/modules/cjs/loader:1226:37)
-            at TracingChannel.traceSync (node:diagnostics_channel:328:14)
-            at wrapModuleLoad (node:internal/modules/cjs/loader:244:24) {
-          code: 'ERR_PACKAGE_PATH_NOT_EXPORTED'
-        }"
+           _____         _       _          /---------------
+            |   __|___ ___| |_ ___| |_        | CLI: <redacted>
+            |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket config auto\`, cwd: <redacted>"
       `)
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
@@ -49,22 +63,13 @@ describe('socket config auto', async () => {
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           Socket CLI Error: Error [ERR_PACKAGE_PATH_NOT_EXPORTED]: No "exports" main defined in [PROJECT]/node_modules/@socketsecurity/lib/package.json
-            at exportsNotFound (node:internal/modules/esm/resolve:313:10)
-            at packageExportsResolve (node:internal/modules/esm/resolve:661:9)
-            at resolveExports (node:internal/modules/cjs/loader:678:36)
-            at Module._findPath (node:internal/modules/cjs/loader:745:31)
-            at Module._resolveFilename (node:internal/modules/cjs/loader:1405:27)
-            at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)
-            at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)
-            at Module._load (node:internal/modules/cjs/loader:1226:37)
-            at TracingChannel.traceSync (node:diagnostics_channel:328:14)
-            at wrapModuleLoad (node:internal/modules/cjs/loader:244:24) {
-          code: 'ERR_PACKAGE_PATH_NOT_EXPORTED'
-        }"
+           _____         _       _          /---------------
+            |   __|___ ___| |_ ___| |_        | CLI: <redacted>
+            |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket config auto\`, cwd: <redacted>"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
