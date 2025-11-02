@@ -75,19 +75,34 @@ async function cloneOnnxSource() {
   if (existsSync(ONNX_SOURCE_DIR)) {
     printStep('ONNX Runtime source already exists')
 
-    const depsPath = path.join(ONNX_SOURCE_DIR, 'cmake', 'deps.txt')
-    const cmakePath = path.join(ONNX_SOURCE_DIR, 'cmake', 'onnxruntime_webassembly.cmake')
-    const postBuildPath = path.join(ONNX_SOURCE_DIR, 'js', 'web', 'script', 'wasm_post_build.js')
+    // Define patches to verify.
+    const patches = [
+      {
+        name: 'Eigen hash',
+        path: path.join(ONNX_SOURCE_DIR, 'cmake', 'deps.txt'),
+        marker: '51982be81bbe52572b54180454df11a3ece9a934',
+      },
+      {
+        name: 'MLFloat16 build',
+        path: path.join(ONNX_SOURCE_DIR, 'cmake', 'onnxruntime_webassembly.cmake'),
+        marker: '# add_compile_definitions(\n  #   BUILD_MLAS_NO_ONNXRUNTIME',
+      },
+      {
+        name: 'wasm_post_build.js',
+        path: path.join(ONNX_SOURCE_DIR, 'js', 'web', 'script', 'wasm_post_build.js'),
+        marker: 'if (matches.length === 0) {',
+      },
+    ]
 
-    // Check if patches have been applied.
-    const eigenPatched = existsSync(depsPath) &&
-      (await fs.readFile(depsPath, 'utf-8')).includes('51982be81bbe52572b54180454df11a3ece9a934')
-    const cmakePatched = existsSync(cmakePath) &&
-      (await fs.readFile(cmakePath, 'utf-8')).includes('# add_compile_definitions(\n  #   BUILD_MLAS_NO_ONNXRUNTIME')
-    const postBuildPatched = existsSync(postBuildPath) &&
-      (await fs.readFile(postBuildPath, 'utf-8')).includes('if (matches.length === 0) {')
+    // Check if all patches have been applied.
+    const allPatchesApplied = (await Promise.all(
+      patches.map(async ({ path: filePath, marker }) =>
+        existsSync(filePath) &&
+        (await fs.readFile(filePath, 'utf-8')).includes(marker)
+      )
+    )).every(Boolean)
 
-    if (!eigenPatched || !cmakePatched || !postBuildPatched) {
+    if (!allPatchesApplied) {
       // Source exists but patches not applied - need to re-clone.
       printWarning('Source exists but patches not applied')
       printStep('Removing old source to re-clone with patches...')
