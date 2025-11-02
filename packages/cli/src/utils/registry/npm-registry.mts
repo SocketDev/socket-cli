@@ -176,6 +176,7 @@ export async function retryWithBackoff<T>(
 
   for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
     try {
+      // eslint-disable-next-line no-await-in-loop -- Sequential retry logic with exponential backoff requires await in loop.
       return await fn()
     } catch (error) {
       lastError = error
@@ -185,6 +186,7 @@ export async function retryWithBackoff<T>(
         attempt < maxRetries &&
         (code === 'EBUSY' || code === 'EMFILE' || code === 'ENFILE')
       ) {
+        // eslint-disable-next-line no-await-in-loop -- Exponential backoff requires sequential await in loop.
         await new Promise(resolve => setTimeout(resolve, delay))
         delay *= backoffFactor
         continue
@@ -280,6 +282,7 @@ export async function extractTarball(
       const targetPath = path.join(targetDir, sanitizedPath)
 
       if (file.type === 'directory') {
+        // eslint-disable-next-line no-await-in-loop -- Sequential tarball extraction requires await in loop for directory/file dependencies.
         await retryWithBackoff(() =>
           safeMkdir(targetPath, { recursive: true }),
         ).catch(error => {
@@ -290,6 +293,7 @@ export async function extractTarball(
       } else if (file.type === 'file' && file.data) {
         // Ensure parent directory exists.
         const parentDir = path.dirname(targetPath)
+        // eslint-disable-next-line no-await-in-loop -- Sequential tarball extraction requires await in loop for directory/file dependencies.
         await retryWithBackoff(() =>
           safeMkdir(parentDir, { recursive: true }),
         ).catch(error => {
@@ -305,6 +309,7 @@ export async function extractTarball(
         })
 
         // Write file.
+        // eslint-disable-next-line no-await-in-loop -- Sequential tarball extraction requires await in loop for directory/file dependencies.
         await retryWithBackoff(() =>
           fs.writeFile(targetPath, file.data as Uint8Array<ArrayBufferLike>),
         ).catch(error => {
@@ -324,6 +329,7 @@ export async function extractTarball(
           const mode = Number.parseInt(file.attrs.mode, 8)
           // Validate mode is a valid number before attempting chmod.
           if (!Number.isNaN(mode) && mode > 0) {
+            // eslint-disable-next-line no-await-in-loop -- Sequential tarball extraction requires await in loop for directory/file dependencies.
             await retryWithBackoff(() => fs.chmod(targetPath, mode)).catch(
               error => {
                 // Chmod failures are non-fatal - log but continue.

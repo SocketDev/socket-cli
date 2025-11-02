@@ -31,8 +31,6 @@ describe('pr-lifecycle-logger', () => {
 
   describe('logPrEvent', () => {
     it('logs created event with success logger', async () => {
-      const { logger } = await import('@socketsecurity/lib/logger')
-
       logPrEvent(
         'created',
         123,
@@ -52,8 +50,6 @@ describe('pr-lifecycle-logger', () => {
     })
 
     it('logs merged event with success logger', async () => {
-      const { logger } = await import('@socketsecurity/lib/logger')
-
       logPrEvent('merged', 456, 'GHSA-abcd-efgh-ijkl', 'Branch cleaned up')
 
       expect(getDefaultLogger().success).toHaveBeenCalledWith(
@@ -68,8 +64,6 @@ describe('pr-lifecycle-logger', () => {
     })
 
     it('logs closed event with info logger', async () => {
-      const { logger } = await import('@socketsecurity/lib/logger')
-
       logPrEvent('closed', 789, 'GHSA-test-test-test')
 
       expect(getDefaultLogger().info).toHaveBeenCalledWith(
@@ -81,8 +75,6 @@ describe('pr-lifecycle-logger', () => {
     })
 
     it('logs updated event with info logger', async () => {
-      const { logger } = await import('@socketsecurity/lib/logger')
-
       logPrEvent('updated', 111, 'GHSA-update-test', 'Updated from base branch')
 
       expect(getDefaultLogger().info).toHaveBeenCalledWith(
@@ -97,8 +89,6 @@ describe('pr-lifecycle-logger', () => {
     })
 
     it('logs superseded event with warn logger', async () => {
-      const { logger } = await import('@socketsecurity/lib/logger')
-
       logPrEvent('superseded', 222, 'GHSA-supersede')
 
       expect(getDefaultLogger().warn).toHaveBeenCalledWith(
@@ -110,8 +100,6 @@ describe('pr-lifecycle-logger', () => {
     })
 
     it('logs failed event with error logger', async () => {
-      const { logger } = await import('@socketsecurity/lib/logger')
-
       logPrEvent('failed', 333, 'GHSA-fail-test', 'API error')
 
       expect(getDefaultLogger().error).toHaveBeenCalledWith(
@@ -126,8 +114,6 @@ describe('pr-lifecycle-logger', () => {
     })
 
     it('handles missing details parameter', async () => {
-      const { logger } = await import('@socketsecurity/lib/logger')
-
       logPrEvent('created', 444, 'GHSA-no-details')
 
       expect(getDefaultLogger().success).toHaveBeenCalledWith(
@@ -143,8 +129,6 @@ describe('pr-lifecycle-logger', () => {
     })
 
     it('applies color coding to symbols', async () => {
-      const { logger } = await import('@socketsecurity/lib/logger')
-
       logPrEvent('created', 100, 'GHSA-colors')
 
       // Should include colored checkmark for success.

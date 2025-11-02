@@ -34,8 +34,12 @@ vi.mock('../../meow.mts', () => ({
       flags: processedFlags,
       input: options?.argv || [],
       help: helpText || '',
-      showHelp: vi.fn(() => process.exit(0)),
-      showVersion: vi.fn(() => process.exit(0)),
+      showHelp: vi.fn(() => {
+        throw new Error('SHOW_HELP')
+      }),
+      showVersion: vi.fn(() => {
+        throw new Error('SHOW_VERSION')
+      }),
     }
   }),
 }))

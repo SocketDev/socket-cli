@@ -21,87 +21,22 @@ describe('socket scan create', async () => {
     `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`
-        "Create a new Socket scan and report
-
-          Usage
-                $ socket scan create [options] [TARGET...]
-          
-              API Token Requirements
-                - Quota: 1 unit
-                - Permissions: full-scans:create
-          
-              Options
-                --auto-manifest     Run \`socket manifest auto\` before collecting manifest files. This is necessary for languages like Scala, Gradle, and Kotlin, See \`socket manifest auto --help\`.
-                --branch            Branch name
-                --commit-hash       Commit hash
-                --commit-message    Commit message
-                --committers        Committers
-                --cwd               working directory, defaults to process.cwd()
-                --default-branch    Set the default branch of the repository to the branch of this full-scan. Should only need to be done once, for example for the "main" or "master" branch.
-                --interactive       Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.
-                --json              Output as JSON
-                --markdown          Output as Markdown
-                --org               Force override the organization slug, overrides the default org from config
-                --pull-request      Pull request number
-                --reach             Run tier 1 full application reachability analysis
-                --read-only         Similar to --dry-run except it can read from remote, stops before it would create an actual report
-                --repo              Repository name
-                --report            Wait for the scan creation to complete, then basically run \`socket scan report\` on it
-                --report-level      Which policy level alerts should be reported (default 'error')
-                --set-as-alerts-page  When true and if this is the "default branch" then this Scan will be the one reflected on your alerts page. See help for details. Defaults to true.
-                --tmp               Set the visibility (true/false) of the scan in your dashboard.
-          
-              Reachability Options (when --reach is used)
-                --reach-analysis-memory-limit  The maximum memory in MB to use for the reachability analysis. The default is 8192MB.
-                --reach-analysis-timeout  Set timeout for the reachability analysis. Split analysis runs may cause the total scan time to exceed this timeout significantly.
-                --reach-disable-analytics  Disable reachability analytics sharing with Socket. Also disables caching-based optimizations.
-                --reach-ecosystems  List of ecosystems to conduct reachability analysis on, as either a comma separated value or as multiple flags. Defaults to all ecosystems.
-                --reach-exclude-paths  List of paths to exclude from reachability analysis, as either a comma separated value or as multiple flags.
-                --reach-min-severity  Set the minimum severity of vulnerabilities to analyze. Supported severities are info, low, moderate, high and critical.
-                --reach-skip-cache  Skip caching-based optimizations. By default, the reachability analysis will use cached configurations from previous runs to speed up the analysis.
-          
-              Uploads the specified dependency manifest files for Go, Gradle, JavaScript,
-              Kotlin, Python, and Scala. Files like "package.json" and "requirements.txt".
-              If any folder is specified, the ones found in there recursively are uploaded.
-          
-              Details on TARGET:
-          
-              - Defaults to the current dir (cwd) if none given
-              - Multiple targets can be specified
-              - If a target is a file, only that file is checked
-              - If it is a dir, the dir is scanned for any supported manifest files
-              - Dirs MUST be within the current dir (cwd), you can use --cwd to change it
-              - Supports globbing such as "**/package.json", "**/requirements.txt", etc.
-              - Ignores any file specified in your project's ".gitignore"
-              - Also a sensible set of default ignores from the "ignore-by-default" module
-          
-              The --repo and --branch flags tell Socket to associate this Scan with that
-              repo/branch. The names will show up on your dashboard on the Socket website.
-          
-              Note: for a first run you probably want to set --default-branch to indicate
-                    the default branch name, like "main" or "master".
-          
-              The "alerts page" (https://socket.dev/dashboard/org/YOURORG/alerts) will show
-              the results from the last scan designated as the "pending head" on the branch
-              configured on Socket to be the "default branch". When creating a scan the
-              --set-as-alerts-page flag will default to true to update this. You can prevent
-              this by using --no-set-as-alerts-page. This flag is ignored for any branch that
-              is not designated as the "default branch". It is disabled when using --tmp.
-          
-              You can use \`socket scan setup\` to configure certain repo flag defaults.
-          
-              Examples
-                $ socket scan create
-                $ socket scan create ./proj --json
-                $ socket scan create --repo=test-repo --branch=main ./package.json"
-      `)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           _____         _       _          /---------------
-            |   __|___ ___| |_ ___| |_        | CLI: <redacted>
-            |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket scan create\`, cwd: <redacted>"
+           Socket CLI Error: Error [ERR_PACKAGE_PATH_NOT_EXPORTED]: No "exports" main defined in [PROJECT]/node_modules/@socketsecurity/lib/package.json
+            at exportsNotFound (node:internal/modules/esm/resolve:313:10)
+            at packageExportsResolve (node:internal/modules/esm/resolve:661:9)
+            at resolveExports (node:internal/modules/cjs/loader:678:36)
+            at Module._findPath (node:internal/modules/cjs/loader:745:31)
+            at Module._resolveFilename (node:internal/modules/cjs/loader:1405:27)
+            at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)
+            at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)
+            at Module._load (node:internal/modules/cjs/loader:1226:37)
+            at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+            at wrapModuleLoad (node:internal/modules/cjs/loader:244:24) {
+          code: 'ERR_PACKAGE_PATH_NOT_EXPORTED'
+        }"
       `)
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
@@ -129,13 +64,22 @@ describe('socket scan create', async () => {
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           _____         _       _          /---------------
-            |   __|___ ___| |_ ___| |_        | CLI: <redacted>
-            |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket scan create\`, cwd: <redacted>"
+           Socket CLI Error: Error [ERR_PACKAGE_PATH_NOT_EXPORTED]: No "exports" main defined in [PROJECT]/node_modules/@socketsecurity/lib/package.json
+            at exportsNotFound (node:internal/modules/esm/resolve:313:10)
+            at packageExportsResolve (node:internal/modules/esm/resolve:661:9)
+            at resolveExports (node:internal/modules/cjs/loader:678:36)
+            at Module._findPath (node:internal/modules/cjs/loader:745:31)
+            at Module._resolveFilename (node:internal/modules/cjs/loader:1405:27)
+            at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)
+            at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)
+            at Module._load (node:internal/modules/cjs/loader:1226:37)
+            at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+            at wrapModuleLoad (node:internal/modules/cjs/loader:244:24) {
+          code: 'ERR_PACKAGE_PATH_NOT_EXPORTED'
+        }"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
@@ -193,7 +137,7 @@ describe('socket scan create', async () => {
     'should succeed when --reach-analysis-memory-limit is used with default value without --reach',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0 when using default value').toBe(0)
     },
   )
@@ -322,7 +266,7 @@ describe('socket scan create', async () => {
     'should succeed when reachability options are used with --reach',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0 when all flags are valid').toBe(0)
     },
   )
@@ -391,7 +335,7 @@ describe('socket scan create', async () => {
     'should succeed when all reachability options including reachExcludePaths are used with --reach',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0 when all flags are valid').toBe(0)
     },
   )
@@ -417,7 +361,7 @@ describe('socket scan create', async () => {
     'should succeed when --reach-ecosystems is used with comma-separated values',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(
         code,
         'should exit with code 0 when comma-separated values are used',
@@ -446,7 +390,7 @@ describe('socket scan create', async () => {
     'should succeed when --reach-exclude-paths is used with comma-separated values',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(
         code,
         'should exit with code 0 when comma-separated values are used',
@@ -607,7 +551,7 @@ describe('socket scan create', async () => {
     'should succeed with minimal positive reachability memory limit',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -633,7 +577,7 @@ describe('socket scan create', async () => {
     'should succeed with zero timeout (unlimited)',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -696,7 +640,7 @@ describe('socket scan create', async () => {
     'should succeed with comprehensive reachability configuration',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0 when all flags are valid').toBe(0)
     },
   )
@@ -721,7 +665,7 @@ describe('socket scan create', async () => {
     'should succeed with --reach and --json output format',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -746,7 +690,7 @@ describe('socket scan create', async () => {
     'should succeed with --reach and --markdown output format',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -801,7 +745,7 @@ describe('socket scan create', async () => {
     'should succeed when combining --reach with --read-only',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )

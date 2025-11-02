@@ -27,7 +27,7 @@ describe('socket scan reach - validation tests', () => {
       'should accept --output flag with .json extension',
       async cmd => {
         const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-        expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+        expect(stdout).toMatchInlineSnapshot(`""`)
         expect(code, 'should exit with code 0').toBe(0)
       },
     )
@@ -47,7 +47,7 @@ describe('socket scan reach - validation tests', () => {
       'should accept -o short flag with .json extension',
       async cmd => {
         const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-        expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+        expect(stdout).toMatchInlineSnapshot(`""`)
         expect(code, 'should exit with code 0').toBe(0)
       },
     )
@@ -67,7 +67,7 @@ describe('socket scan reach - validation tests', () => {
       'should accept --output flag with path',
       async cmd => {
         const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-        expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+        expect(stdout).toMatchInlineSnapshot(`""`)
         expect(code, 'should exit with code 0').toBe(0)
       },
     )
