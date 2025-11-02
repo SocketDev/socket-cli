@@ -29,7 +29,7 @@ describe('fetchViewRepo', () => {
     }
 
     const { mockHandleApi, mockSdk } = await setupSdkMockSuccess(
-      'getOrgRepo',
+      'getRepository',
       mockData,
     )
 
@@ -55,7 +55,7 @@ describe('fetchViewRepo', () => {
   })
 
   it('handles API call failure', async () => {
-    await setupSdkMockError('getOrgRepo', 'Repository not found', 404)
+    await setupSdkMockError('getRepository', 'Repository not found', 404)
 
     const result = await fetchViewRepo('org', 'nonexistent-repo')
 
@@ -64,7 +64,7 @@ describe('fetchViewRepo', () => {
   })
 
   it('passes custom SDK options', async () => {
-    const { mockSetupSdk } = await setupSdkMockSuccess('getOrgRepo', {})
+    const { mockSetupSdk } = await setupSdkMockSuccess('getRepository', {})
 
     const sdkOpts = {
       apiToken: 'view-token',
@@ -85,7 +85,7 @@ describe('fetchViewRepo', () => {
       members_count: 5,
     }
 
-    const { mockSdk } = await setupSdkMockSuccess('getOrgRepo', mockData)
+    const { mockSdk } = await setupSdkMockSuccess('getRepository', mockData)
 
     const result = await fetchViewRepo('private-org', 'secret-project')
 
@@ -97,7 +97,7 @@ describe('fetchViewRepo', () => {
   })
 
   it('handles special repository names', async () => {
-    const { mockSdk } = await setupSdkMockSuccess('getOrgRepo', {})
+    const { mockSdk } = await setupSdkMockSuccess('getRepository', {})
 
     await fetchViewRepo('special-org', 'repo-with-hyphens_and_underscores.dots')
 
@@ -108,7 +108,7 @@ describe('fetchViewRepo', () => {
   })
 
   it('handles insufficient permissions error', async () => {
-    await setupSdkMockError('getOrgRepo', 'Access denied', 403)
+    await setupSdkMockError('getRepository', 'Access denied', 403)
 
     const result = await fetchViewRepo('restricted-org', 'restricted-repo')
 
@@ -117,7 +117,7 @@ describe('fetchViewRepo', () => {
   })
 
   it('uses null prototype for options', async () => {
-    const { mockSdk } = await setupSdkMockSuccess('getOrgRepo', {})
+    const { mockSdk } = await setupSdkMockSuccess('getRepository', {})
 
     // This tests that the function properly uses __proto__: null.
     await fetchViewRepo('test-org', 'test-repo')

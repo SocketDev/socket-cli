@@ -35,7 +35,7 @@ describe('outputListRepos', () => {
 
     const { outputListRepos } = await import('./output-list-repos.mts')
 
-    const result: CResult<SocketSdkSuccessResult<'getOrgRepoList'>['data']> =
+    const result: CResult<SocketSdkSuccessResult<'listRepositories'>['data']> =
       createSuccessResult({
         results: [
           {
@@ -86,7 +86,7 @@ describe('outputListRepos', () => {
 
     const { outputListRepos } = await import('./output-list-repos.mts')
 
-    const result: CResult<SocketSdkSuccessResult<'getOrgRepoList'>['data']> =
+    const result: CResult<SocketSdkSuccessResult<'listRepositories'>['data']> =
       createErrorResult('Unauthorized', {
         cause: 'Invalid API token',
         code: 2,
@@ -144,7 +144,7 @@ describe('outputListRepos', () => {
       },
     ]
 
-    const result: CResult<SocketSdkSuccessResult<'getOrgRepoList'>['data']> =
+    const result: CResult<SocketSdkSuccessResult<'listRepositories'>['data']> =
       createSuccessResult({
         results: repos,
       })
@@ -195,7 +195,7 @@ describe('outputListRepos', () => {
 
     const { outputListRepos } = await import('./output-list-repos.mts')
 
-    const result: CResult<SocketSdkSuccessResult<'getOrgRepoList'>['data']> =
+    const result: CResult<SocketSdkSuccessResult<'listRepositories'>['data']> =
       createErrorResult('Failed to fetch repositories', {
         cause: 'Network error',
         code: 1,
@@ -240,7 +240,7 @@ describe('outputListRepos', () => {
 
     const { outputListRepos } = await import('./output-list-repos.mts')
 
-    const result: CResult<SocketSdkSuccessResult<'getOrgRepoList'>['data']> =
+    const result: CResult<SocketSdkSuccessResult<'listRepositories'>['data']> =
       createSuccessResult({
         results: [
           {
@@ -289,7 +289,7 @@ describe('outputListRepos', () => {
 
     const { outputListRepos } = await import('./output-list-repos.mts')
 
-    const result: CResult<SocketSdkSuccessResult<'getOrgRepoList'>['data']> =
+    const result: CResult<SocketSdkSuccessResult<'listRepositories'>['data']> =
       createSuccessResult({
         results: [],
       })
@@ -338,7 +338,7 @@ describe('outputListRepos', () => {
 
     const { outputListRepos } = await import('./output-list-repos.mts')
 
-    const result: CResult<SocketSdkSuccessResult<'getOrgRepoList'>['data']> =
+    const result: CResult<SocketSdkSuccessResult<'listRepositories'>['data']> =
       createSuccessResult({
         results: [],
       })
@@ -369,7 +369,7 @@ describe('outputListRepos', () => {
 
     const { outputListRepos } = await import('./output-list-repos.mts')
 
-    const result: CResult<SocketSdkSuccessResult<'getOrgRepoList'>['data']> =
+    const result: CResult<SocketSdkSuccessResult<'listRepositories'>['data']> =
       createErrorResult('Error without code')
 
     await outputListRepos(result, 'json', 1, null, 'name', 10, 'asc')

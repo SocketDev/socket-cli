@@ -7,7 +7,7 @@ import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export async function outputDeleteRepo(
-  result: CResult<SocketSdkSuccessResult<'deleteOrgRepo'>['data']>,
+  result: CResult<SocketSdkSuccessResult<'deleteRepository'>['data']>,
   repoName: string,
   outputKind: OutputKind,
 ): Promise<void> {

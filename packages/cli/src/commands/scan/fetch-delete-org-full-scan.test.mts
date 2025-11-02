@@ -19,7 +19,7 @@ vi.mock('../../utils/socket/sdk.mts', () => ({
 describe('fetchDeleteOrgFullScan', () => {
   it('deletes scan successfully', async () => {
     const { mockHandleApi, mockSdk } = await setupSdkMockSuccess(
-      'deleteOrgFullScan',
+      'deleteFullScan',
       {
         deleted: true,
         scanId: 'scan-123',
@@ -51,7 +51,7 @@ describe('fetchDeleteOrgFullScan', () => {
   })
 
   it('handles API call failure', async () => {
-    await setupSdkMockError('deleteOrgFullScan', 'Scan not found', 404)
+    await setupSdkMockError('deleteFullScan', 'Scan not found', 404)
 
     const result = await fetchDeleteOrgFullScan('org', 'nonexistent-scan')
 
@@ -60,7 +60,7 @@ describe('fetchDeleteOrgFullScan', () => {
   })
 
   it('passes custom SDK options', async () => {
-    const { mockSetupSdk } = await setupSdkMockSuccess('deleteOrgFullScan', {})
+    const { mockSetupSdk } = await setupSdkMockSuccess('deleteFullScan', {})
 
     const sdkOpts = {
       apiToken: 'custom-token',
@@ -73,7 +73,7 @@ describe('fetchDeleteOrgFullScan', () => {
   })
 
   it('handles different org slugs and scan IDs', async () => {
-    const { mockSdk } = await setupSdkMockSuccess('deleteOrgFullScan', {})
+    const { mockSdk } = await setupSdkMockSuccess('deleteFullScan', {})
 
     const testCases = [
       ['org-with-dashes', 'scan-123'],
@@ -89,7 +89,7 @@ describe('fetchDeleteOrgFullScan', () => {
   })
 
   it('uses null prototype for options', async () => {
-    const { mockSdk } = await setupSdkMockSuccess('deleteOrgFullScan', {})
+    const { mockSdk } = await setupSdkMockSuccess('deleteFullScan', {})
 
     // This tests that the function properly uses __proto__: null.
     await fetchDeleteOrgFullScan('org', 'scan')

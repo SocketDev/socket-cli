@@ -13,7 +13,7 @@ export async function fetchDeleteRepo(
   orgSlug: string,
   repoName: string,
   options?: FetchDeleteRepoOptions | undefined,
-): Promise<CResult<SocketSdkSuccessResult<'deleteOrgRepo'>['data']>> {
+): Promise<CResult<SocketSdkSuccessResult<'deleteRepository'>['data']>> {
   const { sdkOpts } = {
     __proto__: null,
     ...options,

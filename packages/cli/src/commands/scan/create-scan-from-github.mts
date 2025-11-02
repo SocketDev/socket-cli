@@ -24,7 +24,7 @@ import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 type RepoListItem =
-  SocketSdkSuccessResult<'getOrgRepoList'>['data']['results'][number]
+  SocketSdkSuccessResult<'listRepositories'>['data']['results'][number]
 
 export async function createScanFromGithub({
   all,

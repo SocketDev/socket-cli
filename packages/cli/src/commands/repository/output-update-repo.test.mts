@@ -35,7 +35,7 @@ describe('outputUpdateRepo', () => {
 
     const { outputUpdateRepo } = await import('./output-update-repo.mts')
 
-    const result: CResult<SocketSdkSuccessResult<'updateOrgRepo'>['data']> =
+    const result: CResult<SocketSdkSuccessResult<'updateRepository'>['data']> =
       createSuccessResult({
         success: true,
       })
@@ -68,7 +68,7 @@ describe('outputUpdateRepo', () => {
 
     const { outputUpdateRepo } = await import('./output-update-repo.mts')
 
-    const result: CResult<SocketSdkSuccessResult<'updateOrgRepo'>['data']> =
+    const result: CResult<SocketSdkSuccessResult<'updateRepository'>['data']> =
       createErrorResult('Unauthorized', {
         cause: 'Invalid API token',
         code: 2,
@@ -96,7 +96,7 @@ describe('outputUpdateRepo', () => {
 
     const { outputUpdateRepo } = await import('./output-update-repo.mts')
 
-    const result: CResult<SocketSdkSuccessResult<'updateOrgRepo'>['data']> =
+    const result: CResult<SocketSdkSuccessResult<'updateRepository'>['data']> =
       createSuccessResult({
         success: true,
       })
@@ -130,7 +130,7 @@ describe('outputUpdateRepo', () => {
 
     const { outputUpdateRepo } = await import('./output-update-repo.mts')
 
-    const result: CResult<SocketSdkSuccessResult<'updateOrgRepo'>['data']> =
+    const result: CResult<SocketSdkSuccessResult<'updateRepository'>['data']> =
       createErrorResult('Repository not found', {
         cause: 'Not found error',
         code: 1,
@@ -162,7 +162,7 @@ describe('outputUpdateRepo', () => {
 
     const { outputUpdateRepo } = await import('./output-update-repo.mts')
 
-    const result: CResult<SocketSdkSuccessResult<'updateOrgRepo'>['data']> =
+    const result: CResult<SocketSdkSuccessResult<'updateRepository'>['data']> =
       createSuccessResult({
         success: true,
       })
@@ -190,7 +190,7 @@ describe('outputUpdateRepo', () => {
 
     const { outputUpdateRepo } = await import('./output-update-repo.mts')
 
-    const result: CResult<SocketSdkSuccessResult<'updateOrgRepo'>['data']> =
+    const result: CResult<SocketSdkSuccessResult<'updateRepository'>['data']> =
       createSuccessResult({
         success: true,
       })
@@ -218,7 +218,7 @@ describe('outputUpdateRepo', () => {
 
     const { outputUpdateRepo } = await import('./output-update-repo.mts')
 
-    const result: CResult<SocketSdkSuccessResult<'updateOrgRepo'>['data']> =
+    const result: CResult<SocketSdkSuccessResult<'updateRepository'>['data']> =
       createSuccessResult({
         success: true,
       })
@@ -251,7 +251,7 @@ describe('outputUpdateRepo', () => {
 
     const { outputUpdateRepo } = await import('./output-update-repo.mts')
 
-    const result: CResult<SocketSdkSuccessResult<'updateOrgRepo'>['data']> =
+    const result: CResult<SocketSdkSuccessResult<'updateRepository'>['data']> =
       createErrorResult('Error without code')
 
     await outputUpdateRepo(result, 'test-repo', 'json')
