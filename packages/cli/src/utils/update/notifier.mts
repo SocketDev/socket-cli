@@ -44,7 +44,7 @@ export interface UpdateNotificationOptions {
 /**
  * Format an update message with appropriate commands and links.
  */
-function formatUpdateMessage(options: UpdateNotificationOptions): {
+export function formatUpdateMessage(options: UpdateNotificationOptions): {
   message: string
   command?: string
   changelog: string
@@ -82,7 +82,7 @@ function formatUpdateMessage(options: UpdateNotificationOptions): {
 /**
  * Show update notification immediately.
  */
-function showUpdateNotification(options: UpdateNotificationOptions): void {
+export function showUpdateNotification(options: UpdateNotificationOptions): void {
   if (!globalThis.process?.stdout?.isTTY) {
     return // Probably piping stdout.
   }
@@ -96,7 +96,7 @@ function showUpdateNotification(options: UpdateNotificationOptions): void {
       logger.log(formatted.command)
     }
     logger.log(`📝 ${formatted.changelog}`)
-  } catch (_error) {
+  } catch {
     // If formatting or logging fails, show a simpler message.
     const logger = getDefaultLogger()
     const { current, latest, name } = options
@@ -115,7 +115,7 @@ function showUpdateNotification(options: UpdateNotificationOptions): void {
  * Schedule update notification to show on process exit.
  * This ensures the notification doesn't interfere with command output.
  */
-function scheduleExitNotification(options: UpdateNotificationOptions): void {
+export function scheduleExitNotification(options: UpdateNotificationOptions): void {
   if (!globalThis.process?.stdout?.isTTY) {
     return // Probably piping stdout.
   }
@@ -129,5 +129,3 @@ function scheduleExitNotification(options: UpdateNotificationOptions): void {
     )
   }
 }
-
-export { formatUpdateMessage, scheduleExitNotification, showUpdateNotification }

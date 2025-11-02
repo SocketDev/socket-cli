@@ -11,6 +11,7 @@ import { build } from 'esbuild'
 import { unicodeTransformPlugin } from '@socketsecurity/build-infra/lib/esbuild-plugin-unicode-transform'
 
 import nodeVersionConfig from '../node-version.json' with { type: 'json' }
+import socketPackageJson from '../../socket/package.json' with { type: 'json' }
 
 import { smolTransformPlugin } from './esbuild-plugin-smol-transform.mjs'
 
@@ -21,6 +22,7 @@ const config = {
   bundle: true,
   define: {
     __MIN_NODE_VERSION__: JSON.stringify(nodeVersionConfig.versionSemver),
+    __SOCKET_CLI_VERSION__: JSON.stringify(socketPackageJson.version),
   },
   entryPoints: [path.join(rootPath, 'src', 'bootstrap-smol.mts')],
   external: [],
