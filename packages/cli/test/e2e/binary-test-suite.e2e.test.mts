@@ -7,8 +7,8 @@ import { fileURLToPath } from 'node:url'
 import { beforeAll, describe, expect, it } from 'vitest'
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { confirm } from '@socketsecurity/lib/prompts'
 import { spawn } from '@socketsecurity/lib/spawn'
+import { confirm } from '@socketsecurity/lib/stdio/prompts'
 
 import ENV from '../../src/constants/env.mts'
 import { getDefaultApiToken } from '../../src/utils/socket/sdk.mts'
