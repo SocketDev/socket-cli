@@ -16,8 +16,8 @@ catalogs:
       specifier: 1.3.5
       version: 1.3.5
     '@socketsecurity/lib':
-      specifier: 3.0.6
-      version: 3.0.6
+      specifier: 3.1.3
+      version: 3.1.3
     del-cli:
       specifier: 6.0.0
       version: 6.0.0
@@ -55,7 +55,7 @@ overrides:
   isarray: npm:@socketregistry/isarray@^1.0.8
   lodash: 4.17.21
   npm-package-arg: 13.0.0
-  packageurl-js: npm:@socketregistry/packageurl-js@^1.3.2
+  packageurl-js: npm:@socketregistry/packageurl-js@^1.3.5
   path-parse: npm:@socketregistry/path-parse@^1.0.8
   safe-buffer: npm:@socketregistry/safe-buffer@^1.0.9
   safer-buffer: npm:@socketregistry/safer-buffer@^1.0.10
@@ -194,11 +194,11 @@ importers:
         specifier: 3.1.3
         version: 3.1.3(typescript@5.9.3)
       '@socketsecurity/registry':
-        specifier: 2.0.1
-        version: 2.0.1(typescript@5.9.3)
+        specifier: 2.0.2
+        version: 2.0.2(typescript@5.9.3)
       '@socketsecurity/sdk':
-        specifier: 3.0.30
-        version: 3.0.30
+        specifier: 3.0.31
+        version: 3.0.31
       '@types/cmd-shim':
         specifier: 5.0.2
         version: 5.0.2
@@ -480,7 +480,7 @@ importers:
         version: link:../build-infra
       '@socketsecurity/lib':
         specifier: 'catalog:'
-        version: 3.0.6(typescript@5.9.3)
+        version: 3.1.3(typescript@5.9.3)
       ajv-dist:
         specifier: 8.17.1
         version: 8.17.1
@@ -2234,15 +2234,6 @@ packages:
       typescript:
         optional: true
 
-  '@socketsecurity/lib@3.0.6':
-    resolution: {integrity: sha512-mMJiZoBS+clS+HbkVGf4wAmaFd0Ynudy6GTHm/9vG6MKdQvdPTvvtvvA4LMq/V4cJ8fN/ocyLyXD5EsT1KUy1w==}
-    engines: {node: '>=22'}
-    peerDependencies:
-      typescript: '>=5.0.0'
-    peerDependenciesMeta:
-      typescript:
-        optional: true
-
   '@socketsecurity/lib@3.1.3':
     resolution: {integrity: sha512-k7vnV9opOQScbLHJytnKCSW2Hdgo5KeJTzN0GfAqRq+Zaqd4RZXI/YSyEaA89MYxP+w2jAVkGenCac2HC102Kg==}
     engines: {node: '>=22'}
@@ -2252,8 +2243,8 @@ packages:
       typescript:
         optional: true
 
-  '@socketsecurity/registry@2.0.1':
-    resolution: {integrity: sha512-DS7R3ojHZx0xWMRgyyzzUlMMfovMsGxRwp48ioKgD5umMfhtKOds2SbGT6TBRaZf1K58/V1Rw0R1vfWhqgcvCg==}
+  '@socketsecurity/registry@2.0.2':
+    resolution: {integrity: sha512-hGfteZxSnPN2gmOc9A5cJmyTZBumgMWmg2MVOMRmQjFwxVssk/Bs5dgETGGSOfWBmo/g1K5rBfPs1vE0n/SXMQ==}
     engines: {node: '>=18'}
     peerDependencies:
       typescript: '>=5.0.0'
@@ -2261,8 +2252,8 @@ packages:
       typescript:
         optional: true
 
-  '@socketsecurity/sdk@3.0.30':
-    resolution: {integrity: sha512-zheHSoRbWgDvapWkFZDMgRGdxfKxcQNrwgOCa8w8y1wRQz0PmKXNcknbsLroF8qsiZkDVTXgGuD9gKUBMcr8yg==}
+  '@socketsecurity/sdk@3.0.31':
+    resolution: {integrity: sha512-jG9DtxyayvWG4OKAWqMadkpVhQD4Z9kruBqOag8jbUN7KOh/NGpMlx/9tzmp4bUHV3h6Tk6oS5+DOVb7JzG+bw==}
     engines: {node: '>=18', pnpm: '>=10.16.0'}
 
   '@standard-schema/spec@1.0.0':
@@ -7625,19 +7616,15 @@ snapshots:
     optionalDependencies:
       typescript: 5.9.3
 
-  '@socketsecurity/lib@3.0.6(typescript@5.9.3)':
-    optionalDependencies:
-      typescript: 5.9.3
-
   '@socketsecurity/lib@3.1.3(typescript@5.9.3)':
     optionalDependencies:
       typescript: 5.9.3
 
-  '@socketsecurity/registry@2.0.1(typescript@5.9.3)':
+  '@socketsecurity/registry@2.0.2(typescript@5.9.3)':
     optionalDependencies:
       typescript: 5.9.3
 
-  '@socketsecurity/sdk@3.0.30': {}
+  '@socketsecurity/sdk@3.0.31': {}
 
   '@standard-schema/spec@1.0.0': {}
 
