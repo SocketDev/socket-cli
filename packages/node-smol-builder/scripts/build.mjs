@@ -1387,9 +1387,43 @@ async function main() {
   getDefaultLogger().log(`Size before stripping: ${sizeBeforeStrip}`)
   getDefaultLogger().log('Removing debug symbols and unnecessary sections...')
   getDefaultLogger().log('')
-  // macOS strip uses -x, GNU strip uses --strip-all.
-  const stripArgs = IS_MACOS ? ['-x', nodeBinary] : ['--strip-all', nodeBinary]
-  await exec('strip', stripArgs)
+
+  // Platform-specific strip flags:
+  // - macOS (LLVM strip): Use -x (remove local symbols)
+  //   macOS strip does NOT support --strip-all (GNU-only flag)
+  // - Linux (GNU strip): Try --strip-all first, fall back to -x
+  //   --strip-all removes all symbols + section headers (most aggressive)
+  // - Windows: Skip stripping (no strip command)
+  let stripArgs
+  if (IS_WINDOWS) {
+    getDefaultLogger().log('Windows detected - skipping strip (not supported)')
+    getDefaultLogger().log('')
+  } else if (IS_MACOS) {
+    // macOS always uses -x (LLVM strip doesn't support --strip-all).
+    stripArgs = ['-x', nodeBinary]
+    getDefaultLogger().log('Using macOS strip flags: -x (remove local symbols)')
+  } else {
+    // Linux/Alpine: Test if --strip-all is supported.
+    getDefaultLogger().log('Testing strip capabilities...')
+    const testResult = await spawn('strip', ['--help'], {
+      stdio: 'pipe',
+      stdioString: true,
+    })
+    const supportsStripAll = (testResult.stdout ?? '').includes('--strip-all')
+
+    if (supportsStripAll) {
+      stripArgs = ['--strip-all', nodeBinary]
+      getDefaultLogger().log('Using GNU strip flags: --strip-all (remove all symbols + sections)')
+    } else {
+      stripArgs = ['-x', nodeBinary]
+      getDefaultLogger().log('Using fallback strip flags: -x (GNU --strip-all not supported)')
+    }
+  }
+
+  if (stripArgs) {
+    await exec('strip', stripArgs)
+  }
+
   const sizeAfterStrip = await getFileSize(nodeBinary)
   getDefaultLogger().log(`Size after stripping: ${sizeAfterStrip}`)
 
