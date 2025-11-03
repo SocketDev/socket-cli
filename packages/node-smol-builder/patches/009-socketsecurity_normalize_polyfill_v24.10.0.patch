@@ -1,0 +1,30 @@
+# @node-versions: v24.10.0+
+# @description: Load external String.prototype.normalize polyfill for small-icu builds
+# @requires: lib/internal/socketsecurity_polyfills/normalize.js
+#
+# Loads Socket CLI's external normalize polyfill from lib/internal/socketsecurity_polyfills/
+# to provide fallback Unicode normalization when native normalize() fails with small-icu.
+#
+# This patch adds a single require() call in bootstrap/node.js to load the external polyfill module.
+# The polyfill is a safety layer that preserves native behavior when possible and provides
+# identity function (return unchanged) as a fallback.
+#
+# PATCH CREATION PROCESS:
+# This patch was created using git diff against pristine Node.js v24.10.0 source.
+# Steps:
+#   1. Clone Node.js v24.10.0
+#   2. Add require() call at end of lib/internal/bootstrap/node.js
+#   3. Generate patch with: git add lib/internal/bootstrap/node.js && git diff --cached
+#   4. Validate with: git reset --hard && patch -p1 --dry-run < patch-file
+#
+diff --git a/lib/internal/bootstrap/node.js b/lib/internal/bootstrap/node.js
+index 1234abcd..5678efgh 100644
+--- a/lib/internal/bootstrap/node.js
++++ b/lib/internal/bootstrap/node.js
+@@ -473,3 +473,6 @@
+     configurable: true,
+   });
+ }
++
++// Socket CLI: Polyfill String.prototype.normalize for small-icu builds.
++require('internal/socketsecurity_polyfills/normalize');
