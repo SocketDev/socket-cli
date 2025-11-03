@@ -239,7 +239,7 @@ describe('shadow-links', () => {
   describe('installYarnLinks', () => {
     it('should return bin path when shouldSkipShadow is true', async () => {
       const { shouldSkipShadow } = await import('../../../../src/utils/dlx/detection.mts')
-      const { getYarnBinPath } = await import('../yarn/paths.mts')
+      const { getYarnBinPath } = await import('../../../../../src/utils/yarn/paths.mts')
       const mockShouldSkip = vi.mocked(shouldSkipShadow)
       const mockGetBin = vi.mocked(getYarnBinPath)
 

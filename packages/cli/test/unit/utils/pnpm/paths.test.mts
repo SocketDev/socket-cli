@@ -52,7 +52,7 @@ describe('pnpm-paths utilities', () => {
   describe('getPnpmBinPath', () => {
     it('returns pnpm bin path when found', async () => {
       const { findBinPathDetailsSync } = vi.mocked(
-        await import('../fs/path-resolve.mts'),
+        await import('../../../../../src/utils/fs/path-resolve.mts'),
       )
       findBinPathDetailsSync.mockReturnValue({
         path: '/usr/local/bin/pnpm',
@@ -67,7 +67,7 @@ describe('pnpm-paths utilities', () => {
 
     it('exits with error when pnpm not found', async () => {
       const { findBinPathDetailsSync } = vi.mocked(
-        await import('../fs/path-resolve.mts'),
+        await import('../../../../../src/utils/fs/path-resolve.mts'),
       )
       findBinPathDetailsSync.mockReturnValue({
         path: undefined,
@@ -84,7 +84,7 @@ describe('pnpm-paths utilities', () => {
 
     it('caches the result', async () => {
       const { findBinPathDetailsSync } = vi.mocked(
-        await import('../fs/path-resolve.mts'),
+        await import('../../../../../src/utils/fs/path-resolve.mts'),
       )
       findBinPathDetailsSync.mockReturnValue({
         path: '/usr/local/bin/pnpm',
@@ -100,7 +100,7 @@ describe('pnpm-paths utilities', () => {
 
     it('handles Windows pnpm.cmd path', async () => {
       const { findBinPathDetailsSync } = vi.mocked(
-        await import('../fs/path-resolve.mts'),
+        await import('../../../../../src/utils/fs/path-resolve.mts'),
       )
       findBinPathDetailsSync.mockReturnValue({
         path: 'C:\\Program Files\\pnpm\\bin\\pnpm.cmd',
@@ -114,7 +114,7 @@ describe('pnpm-paths utilities', () => {
 
     it('handles pnpm installed via npm', async () => {
       const { findBinPathDetailsSync } = vi.mocked(
-        await import('../fs/path-resolve.mts'),
+        await import('../../../../../src/utils/fs/path-resolve.mts'),
       )
       findBinPathDetailsSync.mockReturnValue({
         path: '/usr/local/lib/node_modules/.bin/pnpm',
@@ -128,7 +128,7 @@ describe('pnpm-paths utilities', () => {
 
     it('handles pnpm installed via corepack', async () => {
       const { findBinPathDetailsSync } = vi.mocked(
-        await import('../fs/path-resolve.mts'),
+        await import('../../../../../src/utils/fs/path-resolve.mts'),
       )
       findBinPathDetailsSync.mockReturnValue({
         path: '/home/user/.cache/corepack/pnpm/9.0.0/bin/pnpm',
@@ -144,7 +144,7 @@ describe('pnpm-paths utilities', () => {
   describe('getPnpmBinPathDetails', () => {
     it('returns full details including path and shadowed status', async () => {
       const { findBinPathDetailsSync } = vi.mocked(
-        await import('../fs/path-resolve.mts'),
+        await import('../../../../../src/utils/fs/path-resolve.mts'),
       )
       const mockDetails = {
         path: '/usr/local/bin/pnpm',
@@ -160,7 +160,7 @@ describe('pnpm-paths utilities', () => {
 
     it('caches the result', async () => {
       const { findBinPathDetailsSync } = vi.mocked(
-        await import('../fs/path-resolve.mts'),
+        await import('../../../../../src/utils/fs/path-resolve.mts'),
       )
       const mockDetails = {
         path: '/usr/local/bin/pnpm',
@@ -177,7 +177,7 @@ describe('pnpm-paths utilities', () => {
 
     it('returns details even when path is undefined', async () => {
       const { findBinPathDetailsSync } = vi.mocked(
-        await import('../fs/path-resolve.mts'),
+        await import('../../../../../src/utils/fs/path-resolve.mts'),
       )
       const mockDetails = {
         path: undefined,
@@ -192,7 +192,7 @@ describe('pnpm-paths utilities', () => {
 
     it('handles shadowed pnpm installation', async () => {
       const { findBinPathDetailsSync } = vi.mocked(
-        await import('../fs/path-resolve.mts'),
+        await import('../../../../../src/utils/fs/path-resolve.mts'),
       )
       const mockDetails = {
         path: '/usr/local/bin/pnpm',
@@ -208,7 +208,7 @@ describe('pnpm-paths utilities', () => {
 
     it('returns same object reference when cached', async () => {
       const { findBinPathDetailsSync } = vi.mocked(
-        await import('../fs/path-resolve.mts'),
+        await import('../../../../../src/utils/fs/path-resolve.mts'),
       )
       const mockDetails = {
         path: '/usr/local/bin/pnpm',
@@ -227,7 +227,7 @@ describe('pnpm-paths utilities', () => {
   describe('isPnpmBinPathShadowed', () => {
     it('returns true when pnpm is shadowed', async () => {
       const { findBinPathDetailsSync } = vi.mocked(
-        await import('../fs/path-resolve.mts'),
+        await import('../../../../../src/utils/fs/path-resolve.mts'),
       )
       findBinPathDetailsSync.mockReturnValue({
         path: '/usr/local/bin/pnpm',
@@ -241,7 +241,7 @@ describe('pnpm-paths utilities', () => {
 
     it('returns false when pnpm is not shadowed', async () => {
       const { findBinPathDetailsSync } = vi.mocked(
-        await import('../fs/path-resolve.mts'),
+        await import('../../../../../src/utils/fs/path-resolve.mts'),
       )
       findBinPathDetailsSync.mockReturnValue({
         path: '/usr/local/bin/pnpm',
@@ -255,7 +255,7 @@ describe('pnpm-paths utilities', () => {
 
     it('returns false when pnpm path is not found but not shadowed', async () => {
       const { findBinPathDetailsSync } = vi.mocked(
-        await import('../fs/path-resolve.mts'),
+        await import('../../../../../src/utils/fs/path-resolve.mts'),
       )
       findBinPathDetailsSync.mockReturnValue({
         path: undefined,
@@ -269,7 +269,7 @@ describe('pnpm-paths utilities', () => {
 
     it('uses cached details', async () => {
       const { findBinPathDetailsSync } = vi.mocked(
-        await import('../fs/path-resolve.mts'),
+        await import('../../../../../src/utils/fs/path-resolve.mts'),
       )
       findBinPathDetailsSync.mockReturnValue({
         path: '/usr/local/bin/pnpm',
@@ -289,7 +289,7 @@ describe('pnpm-paths utilities', () => {
 
     it('handles multiple calls efficiently', async () => {
       const { findBinPathDetailsSync } = vi.mocked(
-        await import('../fs/path-resolve.mts'),
+        await import('../../../../../src/utils/fs/path-resolve.mts'),
       )
       findBinPathDetailsSync.mockReturnValue({
         path: '/usr/local/bin/pnpm',

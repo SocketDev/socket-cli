@@ -107,7 +107,7 @@ describe('determineOrgSlug', () => {
     it('returns empty org and logs warnings when no org available', async () => {
       const { getConfigValueOrUndef } = vi.mocked(await import('../config.mts'))
       vi.mocked(await import('@socketsecurity/lib/logger'))
-      const { webLink } = vi.mocked(await import('../terminal/link.mts'))
+      const { webLink } = vi.mocked(await import('../../../../../src/utils/terminal/link.mts'))
       getConfigValueOrUndef.mockReturnValue(undefined)
 
       const result = await determineOrgSlug('', false, false)

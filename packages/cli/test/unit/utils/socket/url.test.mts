@@ -61,7 +61,7 @@ describe('socket-url utilities', () => {
         name: 'core',
         version: '7.0.0',
       }
-      const { getPurlObject } = vi.mocked(await import('../purl/parse.mts'))
+      const { getPurlObject } = vi.mocked(await import('../../../../../src/utils/purl/parse.mts'))
       getPurlObject.mockReturnValue(purlObj as any)
 
       const result = getPkgFullNameFromPurl('pkg:npm/@babel/core@7.0.0')
@@ -75,7 +75,7 @@ describe('socket-url utilities', () => {
         name: 'commons',
         version: '3.0',
       }
-      const { getPurlObject } = vi.mocked(await import('../purl/parse.mts'))
+      const { getPurlObject } = vi.mocked(await import('../../../../../src/utils/purl/parse.mts'))
       getPurlObject.mockReturnValue(purlObj as any)
 
       const result = getPkgFullNameFromPurl(purlObj as any)
@@ -89,7 +89,7 @@ describe('socket-url utilities', () => {
         name: 'rest-framework',
         version: '3.0',
       }
-      const { getPurlObject } = vi.mocked(await import('../purl/parse.mts'))
+      const { getPurlObject } = vi.mocked(await import('../../../../../src/utils/purl/parse.mts'))
       getPurlObject.mockReturnValue(purlObj as any)
 
       const result = getPkgFullNameFromPurl(purlObj as any)
@@ -162,7 +162,7 @@ describe('socket-url utilities', () => {
 
   describe('getSocketDevPackageOverviewUrlFromPurl', () => {
     it('generates URL from PURL string', async () => {
-      const { getPurlObject } = vi.mocked(await import('../purl/parse.mts'))
+      const { getPurlObject } = vi.mocked(await import('../../../../../src/utils/purl/parse.mts'))
       getPurlObject.mockReturnValue({
         type: 'npm',
         namespace: undefined,

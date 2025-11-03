@@ -8,7 +8,7 @@ import {
   PNPM_LOCK_YAML,
   YARN_LOCK,
 } from '../../../../src/constants/packages.mts'
-import { createTestWorkspace } from '../../../test/helpers/workspace-helper.mts'
+import { createTestWorkspace } from '../../../../test/helpers/workspace-helper.mts'
 import {
   findBinPathDetailsSync,
   findNpmDirPathSync,
