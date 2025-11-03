@@ -4,7 +4,7 @@ import path from 'node:path'
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { findUp } from '../../../../src/src/find-up.mts'
+import { findUp } from '../../../../src/find-up.mts'
 
 describe('fs utilities', () => {
   describe('findUp', () => {

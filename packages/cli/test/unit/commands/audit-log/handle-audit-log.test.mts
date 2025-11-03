@@ -4,7 +4,7 @@ import {
   createErrorResult,
   createSuccessResult,
 } from '../../../../src/helpers/mocks.mts'
-import { handleAuditLog } from '../../../../src/src/handle-audit-log.mts'
+import { handleAuditLog } from '../../../../src/handle-audit-log.mts'
 
 // Mock the dependencies.
 vi.mock('./fetch-audit-log.mts', () => ({

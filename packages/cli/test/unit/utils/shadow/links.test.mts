@@ -7,7 +7,7 @@ import {
   installNpxLinks,
   installPnpmLinks,
   installYarnLinks,
-} from '../../../../src/src/links.mts'
+} from '../../../../src/links.mts'
 
 // Mock the dependencies.
 vi.mock('cmd-shim', () => ({
@@ -53,8 +53,8 @@ describe('shadow-links', () => {
 
   describe('installNpmLinks', () => {
     it('should return bin path when shouldSkipShadow is true', async () => {
-      const { shouldSkipShadow } = await import('../dlx/detection.mts')
-      const { getNpmBinPath } = await import('../npm/paths.mts')
+      const { shouldSkipShadow } = await import('../../../../src/utils/dlx/detection.mts')
+      const { getNpmBinPath } = await import('../../../../src/utils/npm/paths.mts')
       const mockShouldSkip = vi.mocked(shouldSkipShadow)
       const mockGetBin = vi.mocked(getNpmBinPath)
 
@@ -68,7 +68,7 @@ describe('shadow-links', () => {
     })
 
     it('should install shadow when not already shadowed', async () => {
-      const { shouldSkipShadow } = await import('../dlx/detection.mts')
+      const { shouldSkipShadow } = await import('../../../../src/utils/dlx/detection.mts')
       const { getNpmBinPath, isNpmBinPathShadowed } = await import(
         '../npm/paths.mts'
       )
@@ -87,7 +87,7 @@ describe('shadow-links', () => {
     })
 
     it('should skip PATH modification when already shadowed', async () => {
-      const { shouldSkipShadow } = await import('../dlx/detection.mts')
+      const { shouldSkipShadow } = await import('../../../../src/utils/dlx/detection.mts')
       const { getNpmBinPath, isNpmBinPathShadowed } = await import(
         '../npm/paths.mts'
       )
@@ -107,7 +107,7 @@ describe('shadow-links', () => {
 
     it('should create cmd shim on Windows', async () => {
       const cmdShim = (await import('cmd-shim')).default
-      const { shouldSkipShadow } = await import('../dlx/detection.mts')
+      const { shouldSkipShadow } = await import('../../../../src/utils/dlx/detection.mts')
       const { getNpmBinPath, isNpmBinPathShadowed } = await import(
         '../npm/paths.mts'
       )
@@ -137,8 +137,8 @@ describe('shadow-links', () => {
 
   describe('installNpxLinks', () => {
     it('should return bin path when shouldSkipShadow is true', async () => {
-      const { shouldSkipShadow } = await import('../dlx/detection.mts')
-      const { getNpxBinPath } = await import('../npm/paths.mts')
+      const { shouldSkipShadow } = await import('../../../../src/utils/dlx/detection.mts')
+      const { getNpxBinPath } = await import('../../../../src/utils/npm/paths.mts')
       const mockShouldSkip = vi.mocked(shouldSkipShadow)
       const mockGetBin = vi.mocked(getNpxBinPath)
 
@@ -152,7 +152,7 @@ describe('shadow-links', () => {
     })
 
     it('should install shadow when not already shadowed', async () => {
-      const { shouldSkipShadow } = await import('../dlx/detection.mts')
+      const { shouldSkipShadow } = await import('../../../../src/utils/dlx/detection.mts')
       const { getNpxBinPath, isNpxBinPathShadowed } = await import(
         '../npm/paths.mts'
       )
@@ -173,8 +173,8 @@ describe('shadow-links', () => {
 
   describe('installPnpmLinks', () => {
     it('should return bin path when shouldSkipShadow is true', async () => {
-      const { shouldSkipShadow } = await import('../dlx/detection.mts')
-      const { getPnpmBinPath } = await import('../pnpm/paths.mts')
+      const { shouldSkipShadow } = await import('../../../../src/utils/dlx/detection.mts')
+      const { getPnpmBinPath } = await import('../../../../src/utils/pnpm/paths.mts')
       const mockShouldSkip = vi.mocked(shouldSkipShadow)
       const mockGetBin = vi.mocked(getPnpmBinPath)
 
@@ -188,7 +188,7 @@ describe('shadow-links', () => {
     })
 
     it('should install shadow when not already shadowed', async () => {
-      const { shouldSkipShadow } = await import('../dlx/detection.mts')
+      const { shouldSkipShadow } = await import('../../../../src/utils/dlx/detection.mts')
       const { getPnpmBinPath, isPnpmBinPathShadowed } = await import(
         '../pnpm/paths.mts'
       )
@@ -208,7 +208,7 @@ describe('shadow-links', () => {
 
     it('should create cmd shim on Windows', async () => {
       const cmdShim = (await import('cmd-shim')).default
-      const { shouldSkipShadow } = await import('../dlx/detection.mts')
+      const { shouldSkipShadow } = await import('../../../../src/utils/dlx/detection.mts')
       const { getPnpmBinPath, isPnpmBinPathShadowed } = await import(
         '../pnpm/paths.mts'
       )
@@ -238,7 +238,7 @@ describe('shadow-links', () => {
 
   describe('installYarnLinks', () => {
     it('should return bin path when shouldSkipShadow is true', async () => {
-      const { shouldSkipShadow } = await import('../dlx/detection.mts')
+      const { shouldSkipShadow } = await import('../../../../src/utils/dlx/detection.mts')
       const { getYarnBinPath } = await import('../yarn/paths.mts')
       const mockShouldSkip = vi.mocked(shouldSkipShadow)
       const mockGetBin = vi.mocked(getYarnBinPath)
@@ -253,7 +253,7 @@ describe('shadow-links', () => {
     })
 
     it('should install shadow when not already shadowed', async () => {
-      const { shouldSkipShadow } = await import('../dlx/detection.mts')
+      const { shouldSkipShadow } = await import('../../../../src/utils/dlx/detection.mts')
       const { getYarnBinPath, isYarnBinPathShadowed } = await import(
         '../yarn/paths.mts'
       )
@@ -272,7 +272,7 @@ describe('shadow-links', () => {
     })
 
     it('should skip PATH modification when already shadowed', async () => {
-      const { shouldSkipShadow } = await import('../dlx/detection.mts')
+      const { shouldSkipShadow } = await import('../../../../src/utils/dlx/detection.mts')
       const { getYarnBinPath, isYarnBinPathShadowed } = await import(
         '../yarn/paths.mts'
       )
@@ -292,7 +292,7 @@ describe('shadow-links', () => {
 
     it('should create cmd shim on Windows', async () => {
       const cmdShim = (await import('cmd-shim')).default
-      const { shouldSkipShadow } = await import('../dlx/detection.mts')
+      const { shouldSkipShadow } = await import('../../../../src/utils/dlx/detection.mts')
       const { getYarnBinPath, isYarnBinPathShadowed } = await import(
         '../yarn/paths.mts'
       )

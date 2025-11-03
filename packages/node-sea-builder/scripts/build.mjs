@@ -49,6 +49,7 @@ import constants from './constants.mjs'
 const NODE_SEA_FUSE = 'NODE_SEA_FUSE'
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url))
+const logger = getDefaultLogger()
 
 // Supported Node.js versions for SEA.
 // Node v24+ has better SEA support and smaller binary sizes.
@@ -81,7 +82,7 @@ async function getLatestNode24Version() {
     // Fallback to hardcoded version if no v24 found.
     return '24.8.0'
   } catch (error) {
-    getDefaultLogger().log(
+    logger.log(
       `Warning: Failed to fetch latest Node.js version, using fallback: ${error instanceof Error ? error.message : String(error)}`,
     )
     return '24.8.0'
@@ -173,7 +174,7 @@ async function downloadNodeBinary(version, platform, arch) {
 
   // Check if already downloaded.
   if (existsSync(nodePath)) {
-    getDefaultLogger().log(`Using cached Node.js ${version} for ${platformArch}`)
+    logger.log(`Using cached Node.js ${version} for ${platformArch}`)
     return nodePath
   }
 
@@ -203,8 +204,8 @@ async function downloadNodeBinary(version, platform, arch) {
   const extension = isPlatWin ? '.zip' : '.tar.gz'
   const downloadUrl = `${baseUrl}/v${version}/${tarName}${extension}`
 
-  getDefaultLogger().log(`Downloading Node.js ${version} for ${platformArch}...`)
-  getDefaultLogger().log(`URL: ${downloadUrl}`)
+  logger.log(`Downloading Node.js ${version} for ${platformArch}...`)
+  logger.log(`URL: ${downloadUrl}`)
 
   // Download the archive with retry logic.
   const response = await fetchWithRetry(downloadUrl, {}, {
@@ -290,7 +291,7 @@ async function downloadNodeBinary(version, platform, arch) {
       await fs.chmod(nodePath, 0o755)
     }
 
-    getDefaultLogger().log(`Downloaded Node.js ${version} for ${platformArch}`)
+    logger.log(`Downloaded Node.js ${version} for ${platformArch}`)
     return nodePath
   } finally {
     // Clean up the temp directory safely.
@@ -329,7 +330,7 @@ async function buildSeaBlob(nodeBinary, configPath) {
   const config = JSON.parse(await fs.readFile(configPath, 'utf8'))
   const blobPath = config.output
 
-  getDefaultLogger().log('Generating SEA blob...')
+  logger.log('Generating SEA blob...')
 
   // Generate the blob using the CURRENT platform's Node binary.
   // The blob is platform-independent, so we can generate it with any Node version.
@@ -387,11 +388,11 @@ function findPostject() {
  * Inject SEA blob into Node binary.
  */
 async function injectSeaBlob(nodeBinary, blobPath, outputPath, fuseSentinel) {
-  getDefaultLogger().log('Creating self-executable...')
+  logger.log('Creating self-executable...')
 
   // Find postject executable.
   const postjectPath = findPostject()
-  getDefaultLogger().log(`Using postject at: ${postjectPath}`)
+  logger.log(`Using postject at: ${postjectPath}`)
 
   // Copy the Node binary.
   await fs.copyFile(nodeBinary, outputPath)
@@ -406,13 +407,13 @@ async function injectSeaBlob(nodeBinary, blobPath, outputPath, fuseSentinel) {
       // codesign not available.
     }
     if (!codesignAvailable) {
-      getDefaultLogger().warn(
+      logger.warn(
         'Warning: codesign not found. The binary may not work correctly on macOS.\n' +
           'Install Xcode Command Line Tools: xcode-select --install',
       )
     } else {
       // On macOS, remove signature before injection.
-      getDefaultLogger().log('Removing signature...')
+      logger.log('Removing signature...')
       await spawn('codesign', ['--remove-signature', outputPath], {
         stdio: 'inherit',
       })
@@ -426,7 +427,7 @@ async function injectSeaBlob(nodeBinary, blobPath, outputPath, fuseSentinel) {
     // - blobPath: The name of the blob created by --experimental-sea-config
     // - --sentinel-fuse: Fuse used by Node.js to detect if a file has been injected
     // - --macho-segment-name NODE_SEA: (macOS only) Name of the segment where blob contents are stored
-    getDefaultLogger().log('Injecting SEA blob...')
+    logger.log('Injecting SEA blob...')
     await spawn(
       postjectPath,
       [
@@ -443,7 +444,7 @@ async function injectSeaBlob(nodeBinary, blobPath, outputPath, fuseSentinel) {
 
     // Re-sign the binary if codesign is available.
     if (codesignAvailable) {
-      getDefaultLogger().log('Re-signing binary...')
+      logger.log('Re-signing binary...')
       await spawn('codesign', ['--sign', '-', outputPath], {
         stdio: 'inherit',
       })
@@ -467,7 +468,7 @@ async function injectSeaBlob(nodeBinary, blobPath, outputPath, fuseSentinel) {
       ],
       { shell: WIN32, stdio: 'inherit' },
     )
-    getDefaultLogger().log('Note: Windows binary may need signing for distribution')
+    logger.log('Note: Windows binary may need signing for distribution')
   } else {
     // Linux injection.
     // Following Node.js SEA documentation: https://nodejs.org/api/single-executable-applications.html
@@ -500,10 +501,10 @@ async function buildTarget(target, options) {
   // Use Node.js's standard SEA fuse sentinel.
   const fuseSentinel = 'NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2'
 
-  getDefaultLogger().log(
+  logger.log(
     `\nBuilding minimal SEA for ${target.platform}-${target.arch}...`,
   )
-  getDefaultLogger().log('(Node.js + minimal bootstrap that downloads CLI from npm)')
+  logger.log('(Node.js + minimal bootstrap that downloads CLI from npm)')
 
   // Use the bootstrap from packages/bootstrap/dist/bootstrap-sea.js.
   const bootstrapPath = normalizePath(
@@ -512,9 +513,9 @@ async function buildTarget(target, options) {
 
   // Always rebuild bootstrap to ensure latest version.
   // Bootstrap build is fast (~5 seconds) and ensures version placeholders are current.
-  getDefaultLogger().log('')
-  getDefaultLogger().log(`${colors.blue('ℹ')} Rebuilding @socketsecurity/bootstrap package...`)
-  getDefaultLogger().log('')
+  logger.log('')
+  logger.log(`${colors.blue('ℹ')} Rebuilding @socketsecurity/bootstrap package...`)
+  logger.log('')
 
   const result = await spawn(
     'pnpm',
@@ -539,9 +540,9 @@ async function buildTarget(target, options) {
     )
   }
 
-  getDefaultLogger().log('')
+  logger.log('')
 
-  getDefaultLogger().log(`Using bootstrap from: ${bootstrapPath}`)
+  logger.log(`Using bootstrap from: ${bootstrapPath}`)
 
   // Read the bootstrap code.
   const bootstrapCode = await fs.readFile(bootstrapPath, 'utf8')
@@ -572,12 +573,12 @@ async function buildTarget(target, options) {
 
   if (!needsExtraction) {
     // Cache hit! SEA binary is up to date.
-    getDefaultLogger().log('')
-    getDefaultLogger().log(`${colors.green('✓')} Using cached SEA binary`)
-    getDefaultLogger().log('Bootstrap unchanged since last build.')
-    getDefaultLogger().log('')
-    getDefaultLogger().log(`Binary: ${outputPath}`)
-    getDefaultLogger().log('')
+    logger.log('')
+    logger.log(`${colors.green('✓')} Using cached SEA binary`)
+    logger.log('Bootstrap unchanged since last build.')
+    logger.log('')
+    logger.log(`Binary: ${outputPath}`)
+    logger.log('')
     return
   }
 
@@ -606,7 +607,7 @@ async function buildTarget(target, options) {
       await fs.chmod(outputPath, 0o755)
     }
 
-    getDefaultLogger().log(`${colors.green('✓')} Built ${target.outputName}`)
+    logger.log(`${colors.green('✓')} Built ${target.outputName}`)
 
     // Write source hash to cache file for future builds.
     const sourceHashComment = await generateHashComment(sourcePaths)
@@ -640,9 +641,9 @@ async function main() {
     strict: false,
   })
 
-  getDefaultLogger().log('Socket CLI SEA Builder')
-  getDefaultLogger().log('======================')
-  getDefaultLogger().log(
+  logger.log('Socket CLI SEA Builder')
+  logger.log('======================')
+  logger.log(
     'Building SEA with minimal bootstrap (downloads @socketsecurity/cli on first use)',
   )
 
@@ -680,8 +681,8 @@ async function main() {
   }
 
   // Copy to project root build/bins/ with variant-specific names.
-  getDefaultLogger().log('\nCopying to Project Root build/bins/')
-  getDefaultLogger().log('Creating variant-specific binaries in project root...')
+  logger.log('\nCopying to Project Root build/bins/')
+  logger.log('Creating variant-specific binaries in project root...')
 
   const PROJECT_ROOT = normalizePath(path.join(__dirname, '../../..'))
   const binsDir = normalizePath(path.join(PROJECT_ROOT, 'build/bins'))
@@ -714,11 +715,11 @@ async function main() {
       await fs.chmod(variantBinaryPath, 0o755)
     }
 
-    getDefaultLogger().log(`  ${colors.green('✓')} Copied to build/bins/${binaryName}`)
+    logger.log(`  ${colors.green('✓')} Copied to build/bins/${binaryName}`)
   }
 
-  getDefaultLogger().log(`\nBins directory: ${binsDir}`)
-  getDefaultLogger().log('All SEA binaries copied to project root.')
+  logger.log(`\nBins directory: ${binsDir}`)
+  logger.log('All SEA binaries copied to project root.')
 
   // Also copy current platform binary to dist/socket-sea for e2e testing.
   const currentPlatform = os.platform()
@@ -737,20 +738,20 @@ async function main() {
     await fs.copyFile(sourceFile, e2eTestBinary)
     await fs.chmod(e2eTestBinary, 0o755)
 
-    getDefaultLogger().log(`\n${colors.green('✓')} Copied ${currentTarget.outputName} to dist/socket-sea for e2e testing`)
+    logger.log(`\n${colors.green('✓')} Copied ${currentTarget.outputName} to dist/socket-sea for e2e testing`)
   }
 
-  getDefaultLogger().log(`\n${colors.green('✓')} Build complete!`)
-  getDefaultLogger().log(`Output directory: ${options.outputDir || 'dist/sea'}`)
-  getDefaultLogger().log(`Variant directory: ${binsDir}`)
-  getDefaultLogger().log('\nNOTE: These are minimal SEA binaries (Node.js + bootstrap)')
-  getDefaultLogger().log('that download @socketsecurity/cli from npm on first run.')
+  logger.log(`\n${colors.green('✓')} Build complete!`)
+  logger.log(`Output directory: ${options.outputDir || 'dist/sea'}`)
+  logger.log(`Variant directory: ${binsDir}`)
+  logger.log('\nNOTE: These are minimal SEA binaries (Node.js + bootstrap)')
+  logger.log('that download @socketsecurity/cli from npm on first run.')
 }
 
 // Run if executed directly.
 if (import.meta.url === url.pathToFileURL(process.argv[1]).href) {
   main().catch(error => {
-    getDefaultLogger().error('Build failed:', error)
+    logger.error('Build failed:', error)
 
     process.exit(1)
   })

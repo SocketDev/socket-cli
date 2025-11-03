@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { UNKNOWN_ERROR } from '../../../../src/constants/errors.mts'
-import { handleCi } from '../../../../src/src/handle-ci.mts'
+import { handleCi } from '../../../../src/handle-ci.mts'
 
 // Mock the dependencies.
 vi.mock('@socketsecurity/lib/debug', () => ({

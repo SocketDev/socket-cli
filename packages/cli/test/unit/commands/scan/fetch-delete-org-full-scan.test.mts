@@ -5,7 +5,7 @@ import {
   setupSdkMockSuccess,
   setupSdkSetupFailure,
 } from '../../../../src/helpers/sdk-test-helpers.mts'
-import { fetchDeleteOrgFullScan } from '../../../../src/src/fetch-delete-org-full-scan.mts'
+import { fetchDeleteOrgFullScan } from '../../../../src/fetch-delete-org-full-scan.mts'
 
 // Mock the dependencies.
 vi.mock('../../utils/socket/api.mts', () => ({

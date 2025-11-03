@@ -5,7 +5,7 @@ import {
   setupSdkMockSuccess,
   setupSdkSetupFailure,
 } from '../../../../src/helpers/sdk-test-helpers.mts'
-import { fetchRepoAnalyticsData } from '../../../../src/src/fetch-repo-analytics.mts'
+import { fetchRepoAnalyticsData } from '../../../../src/fetch-repo-analytics.mts'
 
 // Mock the dependencies.
 vi.mock('../../utils/socket/api.mts', () => ({

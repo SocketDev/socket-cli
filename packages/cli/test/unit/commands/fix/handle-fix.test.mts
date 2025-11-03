@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { convertIdsToGhsas } from '../../../../src/src/handle-fix.mts'
+import { convertIdsToGhsas } from '../../../../src/handle-fix.mts'
 
 // Mock the dependencies.
 vi.mock('@socketsecurity/lib/arrays', () => ({

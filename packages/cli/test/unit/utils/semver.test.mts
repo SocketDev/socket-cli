@@ -5,7 +5,7 @@ import {
   getMajor,
   getMinVersion,
   RangeStyles,
-} from '../../../src/src/semver.mts'
+} from '../../../../src/utils/semver.mts'
 
 // Mock semver.
 vi.mock('semver', () => ({

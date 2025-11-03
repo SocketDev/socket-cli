@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   checkSystemPython,
   ensurePython,
-} from '../../../../src/src/standalone.mts'
+} from '../../../../src/standalone.mts'
 
 describe('python-standalone', () => {
   describe('checkSystemPython', () => {

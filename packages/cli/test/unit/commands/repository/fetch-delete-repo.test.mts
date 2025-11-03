@@ -4,7 +4,7 @@ import {
   createErrorResult,
   createSuccessResult,
 } from '../../../../src/helpers/mocks.mts'
-import { fetchDeleteRepo } from '../../../../src/src/fetch-delete-repo.mts'
+import { fetchDeleteRepo } from '../../../../src/fetch-delete-repo.mts'
 
 // Mock the dependencies.
 vi.mock('../../utils/socket/api.mts', () => ({

@@ -1,17 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { DiffAction } from '../../../../src/src/arborist/types.mts'
+import { DiffAction } from '../../../../src/arborist/types.mts'
 import {
   getAlertsMapFromArborist,
   getDetailsFromDiff,
-} from '../../../../src/src/arborist-helpers.mts'
+} from '../../../../src/arborist-helpers.mts'
 
 import type {
   ArboristInstance,
   Diff,
   NodeClass,
-} from '../../../../src/src/arborist/types.mts'
-import type { PackageDetail } from '../../../../src/src/arborist-helpers.mts'
+} from '../../../../src/arborist/types.mts'
+import type { PackageDetail } from '../../../../src/arborist-helpers.mts'
 import type { Spinner } from '@socketsecurity/lib/spinner'
 
 // Mock all dependencies.

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { toFilterConfig } from '../../../../src/src/filter-config.mts'
+import { toFilterConfig } from '../../../../src/filter-config.mts'
 
 // Mock @socketsecurity/lib/objects.
 vi.mock('@socketsecurity/lib/objects', () => ({

@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { NPM } from '@socketsecurity/lib/constants/agents'
 
-import shadowNpmBin from '../../../../src/src/bin.mts'
+import shadowNpmBin from '../../../../src/bin.mts'
 
 import type { ShadowBinOptions } from '../../../../src/npm-base.mts'
 

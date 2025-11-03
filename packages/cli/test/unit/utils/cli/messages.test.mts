@@ -18,7 +18,7 @@ import {
   SCAN_MESSAGES,
   SDK_MESSAGES,
   VALIDATION_MESSAGES,
-} from '../../../../src/src/messages.mts'
+} from '../../../../src/messages.mts'
 
 describe('messages', () => {
   describe('AUTH_MESSAGES', () => {

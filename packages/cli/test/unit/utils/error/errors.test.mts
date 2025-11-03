@@ -25,7 +25,7 @@ import {
   NetworkError,
   RateLimitError,
   TimeoutError,
-} from '../../../../src/src/errors.mts'
+} from '../../../../src/errors.mts'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)

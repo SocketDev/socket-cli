@@ -4,9 +4,9 @@ import { SOCKET_WEBSITE_URL } from '../../../../src/constants/socket.mts'
 import {
   toJsonReport,
   toMarkdownReport,
-} from '../../../../src/src/output-scan-report.mts'
+} from '../../../../src/output-scan-report.mts'
 
-import type { ScanReport } from '../../../../src/src/generate-report.mts'
+import type { ScanReport } from '../../../../src/generate-report.mts'
 
 describe('output-scan-report', () => {
   describe('toJsonReport', () => {

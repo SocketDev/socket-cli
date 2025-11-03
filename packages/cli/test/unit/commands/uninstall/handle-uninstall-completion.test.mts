@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { handleUninstallCompletion } from '../../../../src/src/handle-uninstall-completion.mts'
+import { handleUninstallCompletion } from '../../../../src/handle-uninstall-completion.mts'
 
 // Mock the dependencies.
 vi.mock('./output-uninstall-completion.mts', () => ({

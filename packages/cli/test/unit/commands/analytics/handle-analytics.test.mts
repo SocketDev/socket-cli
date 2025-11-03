@@ -4,7 +4,7 @@ import {
   createErrorResult,
   createSuccessResult,
 } from '../../../../src/helpers/mocks.mts'
-import { handleAnalytics } from '../../../../src/src/handle-analytics.mts'
+import { handleAnalytics } from '../../../../src/handle-analytics.mts'
 
 // Mock the dependencies.
 vi.mock('./fetch-org-analytics.mts', () => ({

@@ -4,7 +4,7 @@ import {
   createErrorResult,
   createSuccessResult,
 } from '../../../../src/helpers/mocks.mts'
-import { handleConfigAuto } from '../../../../src/src/handle-config-auto.mts'
+import { handleConfigAuto } from '../../../../src/handle-config-auto.mts'
 
 // Mock the dependencies.
 vi.mock('./discover-config-value.mts', () => ({

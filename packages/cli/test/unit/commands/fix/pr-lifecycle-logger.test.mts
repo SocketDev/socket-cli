@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { logPrEvent } from '../../../../src/src/pr-lifecycle-logger.mts'
+import { logPrEvent } from '../../../../src/pr-lifecycle-logger.mts'
 
 // Mock logger.
 const mockLogger = vi.hoisted(() => ({

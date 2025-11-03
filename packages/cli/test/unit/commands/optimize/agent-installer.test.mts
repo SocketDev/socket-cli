@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { runAgentInstall } from '../../../../src/src/agent-installer.mts'
+import { runAgentInstall } from '../../../../src/agent-installer.mts'
 
 // Mock dependencies.
 vi.mock('@socketsecurity/lib/spawn', () => ({

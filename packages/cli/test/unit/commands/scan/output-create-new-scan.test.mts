@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { confirm } from '@socketsecurity/lib/stdio/prompts'
 
-import { outputCreateNewScan } from '../../../../src/src/output-create-new-scan.mts'
+import { outputCreateNewScan } from '../../../../src/output-create-new-scan.mts'
 import { failMsgWithBadge } from '../../../../src/utils/error/fail-msg-with-badge.mts'
 import { serializeResultJson } from '../../../../src/utils/output/result-json.mjs'
 

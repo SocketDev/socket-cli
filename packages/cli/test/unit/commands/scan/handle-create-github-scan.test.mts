@@ -4,7 +4,7 @@ import {
   createErrorResult,
   createSuccessResult,
 } from '../../../../src/helpers/mocks.mts'
-import { handleCreateGithubScan } from '../../../../src/src/handle-create-github-scan.mts'
+import { handleCreateGithubScan } from '../../../../src/handle-create-github-scan.mts'
 
 // Mock the dependencies.
 vi.mock('./create-scan-from-github.mts', () => ({

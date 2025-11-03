@@ -8,9 +8,9 @@ import {
   loadGhsaTracker,
   markGhsaFixed,
   saveGhsaTracker,
-} from '../../../../src/src/ghsa-tracker.mts'
+} from '../../../../src/ghsa-tracker.mts'
 
-import type { GhsaTracker } from '../../../../src/src/ghsa-tracker.mts'
+import type { GhsaTracker } from '../../../../src/ghsa-tracker.mts'
 
 // Mock file system operations.
 vi.mock('node:fs', async () => {

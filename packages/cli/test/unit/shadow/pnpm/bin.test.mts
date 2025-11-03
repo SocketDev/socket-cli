@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { FLAG_DRY_RUN } from '../../../../src/constants/cli.mts'
-import shadowPnpm from '../../../../src/src/bin.mts'
+import shadowPnpm from '../../../../src/bin.mts'
 
 // Mock fs module
 vi.mock('node:fs', async importOriginal => {

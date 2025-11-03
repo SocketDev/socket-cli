@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { getDefaultOrgSlug } from '../../../../src/src/fetch-default-org-slug.mts'
+import { getDefaultOrgSlug } from '../../../../src/fetch-default-org-slug.mts'
 
 // Mock the dependencies.
 vi.mock('../../utils/config.mts', () => ({

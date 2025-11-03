@@ -4,7 +4,7 @@ import {
   idToNpmPurl,
   idToPurl,
   resolvePackageVersion,
-} from '../../../../src/src/spec.mts'
+} from '../../../../src/spec.mts'
 
 // Mock semver module.
 vi.mock('semver', () => ({
@@ -86,7 +86,7 @@ describe('spec utilities', () => {
       expect(result).toBe('4.18.0')
 
       const { stripPnpmPeerSuffix } = vi.mocked(
-        await import('../pnpm/lockfile.mts'),
+        await import('../../../../src/utils/pnpm/lockfile.mts'),
       )
       expect(stripPnpmPeerSuffix).toHaveBeenCalledWith('4.18.0_peer@1.0.0')
       expect(semver.coerce).toHaveBeenCalledWith('4.18.0')
@@ -106,7 +106,7 @@ describe('spec utilities', () => {
       expect(result).toBe('2.0.0')
 
       const { stripPnpmPeerSuffix } = vi.mocked(
-        await import('../pnpm/lockfile.mts'),
+        await import('../../../../src/utils/pnpm/lockfile.mts'),
       )
       expect(stripPnpmPeerSuffix).not.toHaveBeenCalled()
       expect(semver.coerce).toHaveBeenCalledWith('2.0.0')
@@ -140,7 +140,7 @@ describe('spec utilities', () => {
       expect(result).toBe('18.2.0')
 
       const { stripPnpmPeerSuffix } = vi.mocked(
-        await import('../pnpm/lockfile.mts'),
+        await import('../../../../src/utils/pnpm/lockfile.mts'),
       )
       expect(stripPnpmPeerSuffix).toHaveBeenCalledWith(
         '18.2.0_react-dom@18.2.0',

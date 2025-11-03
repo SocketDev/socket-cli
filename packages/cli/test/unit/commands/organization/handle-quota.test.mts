@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { setupTestEnvironment } from '../../../../src/helpers/index.mts'
-import { handleQuota } from '../../../../src/src/handle-quota.mts'
+import { handleQuota } from '../../../../src/handle-quota.mts'
 
 vi.mock('./fetch-quota.mts', () => ({
   fetchQuota: vi.fn(),

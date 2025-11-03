@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock the JSON import.
-vi.mock('../../../data/alert-translations.json', () => ({
+vi.mock('../../../../src/data/alert-translations.json', () => ({
   default: {
     alerts: {
       badEncoding: {

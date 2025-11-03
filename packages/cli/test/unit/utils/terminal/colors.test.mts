@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { colorOrMarkdown } from '../../../../src/src/colors.mts'
+import { colorOrMarkdown } from '../../../../src/colors.mts'
 
 describe('colorOrMarkdown', () => {
   it('returns plain text for text format', () => {

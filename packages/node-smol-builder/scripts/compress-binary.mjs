@@ -42,6 +42,7 @@ import { spawn } from '@socketsecurity/lib/spawn'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const logger = getDefaultLogger()
 const TOOLS_DIR = path.resolve(__dirname, '../additions/003-compression-tools')
 
 /**
@@ -79,12 +80,12 @@ function parseArgs() {
   const args = process.argv.slice(2)
 
   if (args.length < 2) {
-    getDefaultLogger().error('Usage: compress-binary.mjs <input> <output> [--quality=lzma|lzfse|xpress] [--spec=package@version]')
-    getDefaultLogger().error('')
-    getDefaultLogger().error('Examples:')
-    getDefaultLogger().error('  node scripts/compress-binary.mjs ./node ./node.compressed')
-    getDefaultLogger().error('  node scripts/compress-binary.mjs ./node ./node.compressed --quality=lzma')
-    getDefaultLogger().error('  node scripts/compress-binary.mjs ./node ./node.compressed --spec=@socketbin/node-smol-builder-darwin-arm64@0.0.0-24.10.0')
+    logger.error('Usage: compress-binary.mjs <input> <output> [--quality=lzma|lzfse|xpress] [--spec=package@version]')
+    logger.error('')
+    logger.error('Examples:')
+    logger.error('  node scripts/compress-binary.mjs ./node ./node.compressed')
+    logger.error('  node scripts/compress-binary.mjs ./node ./node.compressed --quality=lzma')
+    logger.error('  node scripts/compress-binary.mjs ./node ./node.compressed --spec=@socketbin/node-smol-builder-darwin-arm64@0.0.0-24.10.0')
     process.exit(1)
   }
 
@@ -130,9 +131,9 @@ async function ensureToolBuilt(config) {
     return existsSync(toolPathExe) ? toolPathExe : toolPath
   }
 
-  getDefaultLogger().log(`Building ${config.binaryFormat} compression tool...`)
-  getDefaultLogger().log(`  Command: ${config.buildCommand}`)
-  getDefaultLogger().log('')
+  logger.log(`Building ${config.binaryFormat} compression tool...`)
+  logger.log(`  Command: ${config.buildCommand}`)
+  logger.log('')
 
   // Use the same spawn pattern as build.mjs exec function.
   // Pass full command string with empty args array, using shell: WIN32.
@@ -174,11 +175,11 @@ async function compressBinary(toolPath, inputPath, outputPath, quality, spec, co
   // Get input file size.
   const inputSizeMB = await getFileSizeMB(inputPath)
 
-  getDefaultLogger().log(`Compressing ${config.binaryFormat} binary...`)
-  getDefaultLogger().log(`  Input: ${inputPath} (${inputSizeMB.toFixed(2)} MB)`)
-  getDefaultLogger().log(`  Output: ${outputPath}`)
-  getDefaultLogger().log(`  Quality: ${quality || config.defaultQuality}`)
-  getDefaultLogger().log('')
+  logger.log(`Compressing ${config.binaryFormat} binary...`)
+  logger.log(`  Input: ${inputPath} (${inputSizeMB.toFixed(2)} MB)`)
+  logger.log(`  Output: ${outputPath}`)
+  logger.log(`  Quality: ${quality || config.defaultQuality}`)
+  logger.log('')
 
   // Create temporary compressed data file.
   const compressedDataPath = `${outputPath}.data`
@@ -206,16 +207,16 @@ async function compressBinary(toolPath, inputPath, outputPath, quality, spec, co
   // Get compressed data size.
   const compressedSizeMB = await getFileSizeMB(compressedDataPath)
 
-  getDefaultLogger().log('')
-  getDefaultLogger().log(`✓ Compression complete!`)
-  getDefaultLogger().log(`  Original: ${inputSizeMB.toFixed(2)} MB`)
-  getDefaultLogger().log(`  Compressed data: ${compressedSizeMB.toFixed(2)} MB`)
-  getDefaultLogger().log(`  Reduction: ${(((inputSizeMB - compressedSizeMB) / inputSizeMB) * 100).toFixed(1)}%`)
-  getDefaultLogger().log(`  Saved: ${(inputSizeMB - compressedSizeMB).toFixed(2)} MB`)
-  getDefaultLogger().log('')
+  logger.log('')
+  logger.log(`✓ Compression complete!`)
+  logger.log(`  Original: ${inputSizeMB.toFixed(2)} MB`)
+  logger.log(`  Compressed data: ${compressedSizeMB.toFixed(2)} MB`)
+  logger.log(`  Reduction: ${(((inputSizeMB - compressedSizeMB) / inputSizeMB) * 100).toFixed(1)}%`)
+  logger.log(`  Saved: ${(inputSizeMB - compressedSizeMB).toFixed(2)} MB`)
+  logger.log('')
 
   // Combine decompressor stub with compressed data to create self-extracting binary.
-  getDefaultLogger().log('Creating self-extracting binary...')
+  logger.log('Creating self-extracting binary...')
 
   const decompressorPath = path.join(TOOLS_DIR, config.toolName.replace('_compress', '_decompress'))
 
@@ -225,8 +226,8 @@ async function compressBinary(toolPath, inputPath, outputPath, quality, spec, co
 
   // Get decompressor size.
   const decompressorSizeMB = await getFileSizeMB(decompressorPath)
-  getDefaultLogger().log(`  Decompressor stub: ${decompressorSizeMB.toFixed(2)} MB`)
-  getDefaultLogger().log(`  Compressed data: ${compressedSizeMB.toFixed(2)} MB`)
+  logger.log(`  Decompressor stub: ${decompressorSizeMB.toFixed(2)} MB`)
+  logger.log(`  Compressed data: ${compressedSizeMB.toFixed(2)} MB`)
 
   // Combine: decompressor + spec_header + compressed_data → self-extracting binary.
   // Read both files.
@@ -239,7 +240,7 @@ async function compressBinary(toolPath, inputPath, outputPath, quality, spec, co
     : Buffer.alloc(0)
 
   if (spec) {
-    getDefaultLogger().log(`  Spec string: ${spec}`)
+    logger.log(`  Spec string: ${spec}`)
   }
 
   // Concatenate: stub + spec_header + data.
@@ -255,12 +256,12 @@ async function compressBinary(toolPath, inputPath, outputPath, quality, spec, co
   const outputSizeMB = await getFileSizeMB(outputPath)
   const reduction = ((inputSizeMB - outputSizeMB) / inputSizeMB) * 100
 
-  getDefaultLogger().log(`  Final binary: ${outputSizeMB.toFixed(2)} MB`)
-  getDefaultLogger().log('')
-  getDefaultLogger().log(`✓ Self-extracting binary created!`)
-  getDefaultLogger().log(`  Total size: ${outputSizeMB.toFixed(2)} MB`)
-  getDefaultLogger().log(`  Total reduction: ${reduction.toFixed(1)}%`)
-  getDefaultLogger().log(`  Total saved: ${(inputSizeMB - outputSizeMB).toFixed(2)} MB`)
+  logger.log(`  Final binary: ${outputSizeMB.toFixed(2)} MB`)
+  logger.log('')
+  logger.log(`✓ Self-extracting binary created!`)
+  logger.log(`  Total size: ${outputSizeMB.toFixed(2)} MB`)
+  logger.log(`  Total reduction: ${reduction.toFixed(1)}%`)
+  logger.log(`  Total saved: ${(inputSizeMB - outputSizeMB).toFixed(2)} MB`)
 }
 
 /**
@@ -271,10 +272,10 @@ async function main() {
     const { inputPath, outputPath, quality, spec } = parseArgs()
     const config = getPlatformConfig()
 
-    getDefaultLogger().log('Socket Binary Compression')
-    getDefaultLogger().log('=========================')
-    getDefaultLogger().log(`Platform: ${config.binaryFormat} (${process.platform})`)
-    getDefaultLogger().log('')
+    logger.log('Socket Binary Compression')
+    logger.log('=========================')
+    logger.log(`Platform: ${config.binaryFormat} (${process.platform})`)
+    logger.log('')
 
     // Ensure tool is built.
     const toolPath = await ensureToolBuilt(config)
@@ -283,7 +284,7 @@ async function main() {
     await compressBinary(toolPath, inputPath, outputPath, quality, spec, config)
 
   } catch (e) {
-    getDefaultLogger().error(`Error: ${e.message}`)
+    logger.error(`Error: ${e.message}`)
     process.exit(1)
   }
 }

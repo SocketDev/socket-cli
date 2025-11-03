@@ -12,7 +12,7 @@ import {
   renderStaticLogo,
   supportsFullColor,
   type HeaderTheme,
-} from '../../../../src/src/ascii-header.mts'
+} from '../../../../src/ascii-header.mts'
 
 /**
  * Strip ANSI color codes from string for shimmer testing.

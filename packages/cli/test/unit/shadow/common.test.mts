@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { FLAG_DRY_RUN } from '../../../src/constants/cli.mts'
-import { scanPackagesAndLogAlerts } from '../../../src/src/common.mts'
+import { scanPackagesAndLogAlerts } from '../../../src/shadow/common.mts'
 
-import type { PackageScanOptions } from '../../../src/src/common.mts'
+import type { PackageScanOptions } from '../../../src/shadow/common.mts'
 import type { Spinner } from '@socketsecurity/lib/spinner'
 
 // Mock all dependencies.

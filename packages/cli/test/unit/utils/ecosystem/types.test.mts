@@ -6,7 +6,7 @@ import {
   getEcosystemChoicesForMeow,
   isValidEcosystem,
   parseEcosystems,
-} from '../../../../src/src/types.mts'
+} from '../../../../src/types.mts'
 
 describe('ecosystem utilities', () => {
   describe('ALL_ECOSYSTEMS', () => {

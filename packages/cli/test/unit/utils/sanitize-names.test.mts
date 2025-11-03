@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { extractName, extractOwner } from '../../../src/src/sanitize-names.mts'
+import { extractName, extractOwner } from '../../../../src/utils/sanitize-names.mts'
 
 describe('extract-names utilities', () => {
   describe('extractName', () => {

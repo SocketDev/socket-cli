@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   isRunningInTemporaryExecutor,
   shouldSkipShadow,
-} from '../../../../src/src/detection.mts'
+} from '../../../../src/detection.mts'
 
 import type { default as ENV } from '../../../../src/constants/env.mts'
 

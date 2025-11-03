@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { spawnCdxgenDlx } from '../../../../src/src/spawn.mts'
+import { spawnCdxgenDlx } from '../../../../src/spawn.mts'
 
 // Mock spawnDlx function.
-vi.mock('./spawn.mts', () => {
+vi.mock('../../../../src/utils/dlx/spawn.mts', () => {
   const mockSpawnDlx = vi.fn()
   // Return the actual implementation for spawnCdxgenDlx.
   return {

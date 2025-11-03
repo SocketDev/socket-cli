@@ -9,12 +9,12 @@ import path from 'node:path'
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { UpdateStore } from '../../../../src/src/store.mts'
+import { UpdateStore } from '../../../../src/store.mts'
 
 import type {
   BinaryDetails,
   PackageDetails,
-} from '../../../../src/src/store.mts'
+} from '../../../../src/store.mts'
 
 describe('unified manifest integration', () => {
   let testStore: UpdateStore

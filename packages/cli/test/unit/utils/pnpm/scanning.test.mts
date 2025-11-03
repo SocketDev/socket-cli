@@ -4,7 +4,7 @@ import { getAlertsMapFromPnpmLockfile } from '../../../../src/socket/alerts.mts'
 import {
   extractPurlsFromPnpmLockfile,
   parsePnpmLockfile,
-} from '../../../../src/src/lockfile.mts'
+} from '../../../../src/lockfile.mts'
 
 // Mock all dependencies with vi.hoisted for better type safety
 const mockGetPublicApiToken = vi.hoisted(() => vi.fn())

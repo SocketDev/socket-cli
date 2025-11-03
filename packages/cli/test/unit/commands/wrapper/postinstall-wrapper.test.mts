@@ -2,7 +2,7 @@ import fs, { existsSync } from 'node:fs'
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { postinstallWrapper } from '../../../../src/src/postinstall-wrapper.mts'
+import { postinstallWrapper } from '../../../../src/postinstall-wrapper.mts'
 
 // Mock the dependencies.
 vi.mock('node:fs')

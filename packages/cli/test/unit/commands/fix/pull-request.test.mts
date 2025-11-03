@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { openSocketFixPr } from '../../../../src/src/pull-request.mts'
+import { openSocketFixPr } from '../../../../src/pull-request.mts'
 
 // Mock dependencies.
 vi.mock('./git.mts', () => ({

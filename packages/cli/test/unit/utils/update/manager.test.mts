@@ -17,10 +17,10 @@ import path from 'node:path'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { checkForUpdates } from '../../../../src/src/manager.mts'
-import { UpdateStore } from '../../../../src/src/store.mts'
+import { checkForUpdates } from '../../../../src/manager.mts'
+import { UpdateStore } from '../../../../src/store.mts'
 
-import type { StoreRecord } from '../../../../src/src/store.mts'
+import type { StoreRecord } from '../../../../src/store.mts'
 
 // Mock logger to avoid undefined errors.
 const mockLogger = vi.hoisted(() => ({

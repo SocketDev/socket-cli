@@ -12,7 +12,7 @@
 
 import { describe, expect, it } from 'vitest'
 
-import { isUpdateAvailable } from '../../../../src/src/checker.mts'
+import { isUpdateAvailable } from '../../../../src/checker.mts'
 
 describe('checker', () => {
   describe('isUpdateAvailable', () => {

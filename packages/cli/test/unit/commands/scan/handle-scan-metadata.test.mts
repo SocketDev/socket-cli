@@ -4,7 +4,7 @@ import {
   createErrorResult,
   createSuccessResult,
 } from '../../../../src/helpers/mocks.mts'
-import { handleOrgScanMetadata } from '../../../../src/src/handle-scan-metadata.mts'
+import { handleOrgScanMetadata } from '../../../../src/handle-scan-metadata.mts'
 
 // Mock the dependencies.
 vi.mock('./fetch-scan-metadata.mts', () => ({

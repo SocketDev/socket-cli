@@ -4,7 +4,7 @@ import {
   mdTable,
   mdTableOfPairs,
   mdTableStringNumber,
-} from '../../../../src/src/markdown.mts'
+} from '../../../../src/markdown.mts'
 
 describe('markdown utilities', () => {
   describe('mdTableStringNumber', () => {

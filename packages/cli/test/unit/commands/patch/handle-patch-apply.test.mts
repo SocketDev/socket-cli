@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { handlePatchApply } from '../../../../src/src/handle-patch-apply.mts'
+import { handlePatchApply } from '../../../../src/handle-patch-apply.mts'
 
 import type { PackageURL } from '@socketregistry/packageurl-js'
 

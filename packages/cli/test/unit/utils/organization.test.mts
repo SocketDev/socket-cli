@@ -4,9 +4,9 @@ import {
   getEnterpriseOrgs,
   getOrgSlugs,
   hasEnterpriseOrgPlan,
-} from '../../../src/src/organization.mts'
+} from '../../../../src/utils/organization.mts'
 
-import type { Organizations } from '../../../src/commands/organization/fetch-organization-list.mts'
+import type { Organizations } from '../../../../src/commands/organization/fetch-organization-list.mts'
 
 describe('organization utilities', () => {
   const mockOrgs: Organizations = [

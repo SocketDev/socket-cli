@@ -9,7 +9,7 @@ vi.mock('yoctocolors-cjs', () => ({
   },
 }))
 
-import { failMsgWithBadge } from '../../../../src/src/fail-msg-with-badge.mts'
+import { failMsgWithBadge } from '../../../../src/fail-msg-with-badge.mts'
 
 describe('failMsgWithBadge', () => {
   beforeEach(() => {

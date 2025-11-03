@@ -7,7 +7,7 @@ import {
   safeNpa,
   safeNpmSpecToPurl,
   safeParseNpmSpec,
-} from '../../../../src/src/spec.mts'
+} from '../../../../src/spec.mts'
 
 // Mock dependencies.
 vi.mock('npm-package-arg', () => ({

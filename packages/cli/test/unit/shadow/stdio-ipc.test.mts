@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { ensureIpcInStdio } from '../../../src/src/stdio-ipc.mts'
+import { ensureIpcInStdio } from '../../../src/shadow/stdio-ipc.mts'
 
 import type { StdioOptions } from 'node:child_process'
 

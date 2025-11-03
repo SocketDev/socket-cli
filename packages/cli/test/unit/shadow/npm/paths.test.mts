@@ -6,13 +6,13 @@ import {
   getArboristNodeClassPath,
   getArboristOverrideSetClassPath,
   getArboristPackagePath,
-} from '../../../../src/src/paths.mts'
+} from '../../../../src/paths.mts'
 
 // Mock dependencies.
 const mockGetNpmRequire = vi.hoisted(() => vi.fn())
 const mockNormalizePath = vi.hoisted(() => vi.fn())
 
-vi.mock('../../utils/npm/paths.mts', () => ({
+vi.mock('../../../../../src/utils/npm/paths.mts', () => ({
   getNpmRequire: mockGetNpmRequire,
 }))
 
@@ -20,7 +20,7 @@ vi.mock('@socketsecurity/lib/path', () => ({
   normalizePath: mockNormalizePath,
 }))
 
-vi.mock('../../constants.mts', async importOriginal => {
+vi.mock('../../../../../src/constants.mts', async importOriginal => {
   const actual = (await importOriginal()) as Record<string, any>
   return {
     ...actual,
@@ -89,7 +89,7 @@ describe('npm/paths', () => {
 
     it('should handle Windows paths when WIN32 is true', () => {
       // Re-import with WIN32: true.
-      vi.doMock('../../constants.mts', async importOriginal => {
+      vi.doMock('../../../../../src/constants.mts', async importOriginal => {
         const actual = (await importOriginal()) as Record<string, any>
         return {
           ...actual,

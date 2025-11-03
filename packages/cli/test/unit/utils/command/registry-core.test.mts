@@ -2,9 +2,9 @@
 
 import { beforeEach, describe, expect, it } from 'vitest'
 
-import { CommandRegistry } from '../../../../src/src/registry.mts'
+import { CommandRegistry } from '../../../../src/registry.mts'
 
-import type { CommandDefinition } from '../../../../src/src/types.mts'
+import type { CommandDefinition } from '../../../../src/types.mts'
 
 describe('CommandRegistry', () => {
   let registry: CommandRegistry

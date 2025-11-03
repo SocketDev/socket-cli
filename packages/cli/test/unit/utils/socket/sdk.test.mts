@@ -4,7 +4,7 @@ import {
   getPublicApiToken,
   getVisibleTokenPrefix,
   hasDefaultApiToken,
-} from '../../../../src/src/sdk.mts'
+} from '../../../../src/sdk.mts'
 
 describe('SDK Utilities', () => {
   describe('getPublicApiToken', () => {

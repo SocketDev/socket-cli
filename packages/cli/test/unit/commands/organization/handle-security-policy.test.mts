@@ -4,7 +4,7 @@ import {
   createErrorResult,
   createSuccessResult,
 } from '../../../../src/helpers/mocks.mts'
-import { handleSecurityPolicy } from '../../../../src/src/handle-security-policy.mts'
+import { handleSecurityPolicy } from '../../../../src/handle-security-policy.mts'
 
 // Mock the dependencies.
 vi.mock('./fetch-security-policy.mts', () => ({

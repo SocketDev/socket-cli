@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { handleOptimize } from '../../../../src/src/handle-optimize.mts'
+import { handleOptimize } from '../../../../src/handle-optimize.mts'
 
 // Mock the dependencies.
 const mockLogger = vi.hoisted(() => ({

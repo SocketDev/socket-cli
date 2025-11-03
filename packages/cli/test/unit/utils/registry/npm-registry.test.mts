@@ -15,7 +15,7 @@ import {
   retryWithBackoff,
   sanitizeTarballPath,
   verifyTarballIntegrity,
-} from '../../../../src/src/npm-registry.mts'
+} from '../../../../src/npm-registry.mts'
 
 describe('sanitizeTarballPath', () => {
   it('should remove package/ prefix', () => {

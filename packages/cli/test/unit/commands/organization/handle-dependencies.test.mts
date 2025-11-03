@@ -4,9 +4,9 @@ import {
   createSuccessResult,
   setupTestEnvironment,
 } from '../../../../src/helpers/index.mts'
-import { fetchDependencies } from '../../../../src/src/fetch-dependencies.mts'
-import { handleDependencies } from '../../../../src/src/handle-dependencies.mts'
-import { outputDependencies } from '../../../../src/src/output-dependencies.mts'
+import { fetchDependencies } from '../../../../src/fetch-dependencies.mts'
+import { handleDependencies } from '../../../../src/handle-dependencies.mts'
+import { outputDependencies } from '../../../../src/output-dependencies.mts'
 
 vi.mock('./fetch-dependencies.mts', () => ({
   fetchDependencies: vi.fn(),

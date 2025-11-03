@@ -5,7 +5,7 @@ import {
   emitBanner,
   getLastSeenCommand,
   meowOrExit,
-} from '../../../../src/src/with-subcommands.mts'
+} from '../../../../src/with-subcommands.mts'
 
 // Mock meow.
 vi.mock('../../meow.mts', () => ({

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { handleScanView } from '../../../../src/src/handle-scan-view.mts'
+import { handleScanView } from '../../../../src/handle-scan-view.mts'
 
 // Mock the dependencies.
 vi.mock('./fetch-scan.mts', () => ({

@@ -18,7 +18,7 @@ import {
   listBackups,
   restoreAllBackups,
   restoreBackup,
-} from '../../../../src/src/patch-backup.mts'
+} from '../../../../src/patch-backup.mts'
 
 describe('patch-backup', () => {
   let testDir: string

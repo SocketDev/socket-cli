@@ -4,7 +4,7 @@ import {
   createErrorResult,
   createSuccessResult,
 } from '../../../../src/helpers/mocks.mts'
-import { handleConfigGet } from '../../../../src/src/handle-config-get.mts'
+import { handleConfigGet } from '../../../../src/handle-config-get.mts'
 
 // Mock the dependencies.
 vi.mock('./output-config-get.mts', () => ({
