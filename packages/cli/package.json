@@ -75,7 +75,7 @@
     "@coana-tech/cli": "14.12.51",
     "@gitbeaker/rest": "43.7.0",
     "@socketsecurity/build-infra": "workspace:*",
-    "@socketsecurity/lib": "catalog:",
+    "@socketsecurity/lib": "3.2.2",
     "ajv-dist": "8.17.1",
     "compromise": "14.14.4",
     "del-cli": "catalog:",
