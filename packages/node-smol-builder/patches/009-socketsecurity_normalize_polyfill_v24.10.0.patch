@@ -10,15 +10,13 @@
 # identity function (return unchanged) as a fallback.
 #
 # PATCH CREATION PROCESS:
-# This patch was created using git diff against pristine Node.js v24.10.0 source.
+# This patch was created using standard unified diff format (not git format).
 # Steps:
 #   1. Clone Node.js v24.10.0
 #   2. Add require() call at end of lib/internal/bootstrap/node.js
-#   3. Generate patch with: git add lib/internal/bootstrap/node.js && git diff --cached
-#   4. Validate with: git reset --hard && patch -p1 --dry-run < patch-file
+#   3. Generate patch with: diff -u original.js modified.js
+#   4. Validate with: patch -p1 --dry-run < patch-file
 #
-diff --git a/lib/internal/bootstrap/node.js b/lib/internal/bootstrap/node.js
-index 963fe2ab..0af59d77 100644
 --- a/lib/internal/bootstrap/node.js
 +++ b/lib/internal/bootstrap/node.js
 @@ -473,3 +473,6 @@ function setupBuffer() {
