@@ -1054,7 +1054,7 @@ async function main() {
       printHeader('Clean Build Requested')
       logger.log('Removing existing Node.js source directory...')
       const { rm } = await import('node:fs/promises')
-      await rm(NODE_DIR, { recursive: true, force: true })
+      await fs.rm(NODE_DIR, { recursive: true, force: true })
       await cleanCheckpoint(BUILD_DIR)
       logger.log(`${colors.green('✓')} Cleaned build directory`)
       logger.log('')
@@ -1114,7 +1114,7 @@ async function main() {
         // Clean up partial clone.
         try {
           const { rm } = await import('node:fs/promises')
-          await rm(NODE_DIR, { recursive: true, force: true })
+          await fs.rm(NODE_DIR, { recursive: true, force: true })
         } catch {
           // Ignore cleanup errors.
         }
