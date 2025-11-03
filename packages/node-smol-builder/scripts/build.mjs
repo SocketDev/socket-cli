@@ -317,6 +317,15 @@ async function copyBuildAdditions() {
     getDefaultLogger().log(`✅ Copied socketsecurity_brotli_builtin_loader.h to src/`)
   }
 
+  // Fix: The bootstrap loader needs to be in lib/internal/ for Node.js to embed it as an internal module.
+  const bootstrapLoaderSource = join(NODE_DIR, '002-bootstrap-loader', 'internal', 'socketsecurity_bootstrap_loader.js')
+  const bootstrapLoaderDest = join(NODE_DIR, 'lib', 'internal', 'socketsecurity_bootstrap_loader.js')
+
+  if (existsSync(bootstrapLoaderSource)) {
+    await copyFile(bootstrapLoaderSource, bootstrapLoaderDest)
+    getDefaultLogger().log(`✅ Copied socketsecurity_bootstrap_loader.js to lib/internal/`)
+  }
+
   getDefaultLogger().log('')
 }
 
