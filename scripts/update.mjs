@@ -12,25 +12,23 @@
  */
 
 import { isQuiet, isVerbose } from '@socketsecurity/lib/argv/flags'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import {
-  printError,
-  printFooter,
-  printHeader,
-  printSuccess,
-} from '@socketsecurity/lib/stdio/header'
+import loggerPkg from '@socketsecurity/lib/logger'
+import platformPkg from '@socketsecurity/lib/constants/platform'
+import spawnPkg from '@socketsecurity/lib/spawn'
 
-import { WIN32 } from '@socketsecurity/lib/constants/platform'
-import { spawn } from '@socketsecurity/lib/spawn'
+const { getDefaultLogger } = loggerPkg
+const { WIN32 } = platformPkg
+const { spawn } = spawnPkg
 
 async function main() {
   const quiet = isQuiet()
   const verbose = isVerbose()
   const apply = process.argv.includes('--apply')
+  const logger = getDefaultLogger()
 
   try {
     if (!quiet) {
-      printHeader('Monorepo Dependency Update')
+      logger.log('\n🔨 Monorepo Dependency Update\n')
     }
 
     // Build taze command with appropriate flags for monorepo.
@@ -39,11 +37,11 @@ async function main() {
     if (apply) {
       tazeArgs.push('-w')
       if (!quiet) {
-        getDefaultLogger().progress('Updating dependencies across monorepo...')
+        logger.progress('Updating dependencies across monorepo...')
       }
     } else {
       if (!quiet) {
-        getDefaultLogger().progress('Checking for updates across monorepo...')
+        logger.progress('Checking for updates across monorepo...')
       }
     }
 
@@ -61,7 +59,7 @@ async function main() {
     // If applying updates, also update Socket packages.
     if (apply && result.code === 0) {
       if (!quiet) {
-        getDefaultLogger().progress('Updating Socket packages...')
+        logger.progress('Updating Socket packages...')
       }
 
       const socketResult = await spawn(
@@ -86,7 +84,7 @@ async function main() {
 
       if (socketResult.code !== 0) {
         if (!quiet) {
-          printError('Failed to update Socket packages')
+          logger.fail('Failed to update Socket packages')
         }
         process.exitCode = 1
         return
@@ -96,34 +94,35 @@ async function main() {
     if (result.code !== 0) {
       if (!quiet) {
         if (apply) {
-          printError('Failed to update dependencies')
+          logger.fail('Failed to update dependencies')
         } else {
-          getDefaultLogger().info('Updates available. Run with --apply to update')
+          logger.info('Updates available. Run with --apply to update')
         }
       }
       process.exitCode = apply ? 1 : 0
     } else {
       if (!quiet) {
         if (apply) {
-          printSuccess('Dependencies updated across all packages')
+          logger.success('Dependencies updated across all packages')
         } else {
-          printSuccess('All packages up to date')
+          logger.success('All packages up to date')
         }
-        printFooter()
+        logger.log('')
       }
     }
   } catch (error) {
     if (!quiet) {
-      printError(`Update failed: ${error.message}`)
+      logger.fail(`Update failed: ${error.message}`)
     }
     if (verbose) {
-      getDefaultLogger().error(error)
+      logger.error(error)
     }
     process.exitCode = 1
   }
 }
 
 main().catch(e => {
-  getDefaultLogger().error(e)
+  const logger = getDefaultLogger()
+  logger.error(e)
   process.exitCode = 1
 })
