@@ -1625,12 +1625,12 @@ async function main() {
 
     // Smoke test after signing to ensure signature is valid.
     logger.log('Testing binary after signing...')
-    const signTest = await smokeTestBinary(nodeBinary)
+    const signTestPassed = await smokeTestBinary(nodeBinary)
 
-    if (!signTest.passed) {
+    if (!signTestPassed) {
       printError(
         'Binary Corrupted After Signing',
-        `Binary failed smoke test: ${signTest.reason}`,
+        'Binary failed smoke test after code signing',
         [
           'Code signing may have corrupted the binary',
           'Try rebuilding: node scripts/build-custom-node.mjs --clean',
@@ -1646,12 +1646,12 @@ async function main() {
 
   // Smoke test binary after stripping (ensure strip didn't corrupt it).
   logger.log('Testing binary after stripping...')
-  const smokeTest = await smokeTestBinary(nodeBinary)
+  const smokeTestPassed = await smokeTestBinary(nodeBinary)
 
-  if (!smokeTest.passed) {
+  if (!smokeTestPassed) {
     printError(
       'Binary Corrupted After Stripping',
-      `Binary failed smoke test: ${smokeTest.reason}`,
+      'Binary failed smoke test after stripping',
       [
         'Strip command may have corrupted the binary',
         'Try rebuilding: node scripts/build-custom-node.mjs --clean',
@@ -1762,12 +1762,12 @@ async function main() {
 
       // Smoke test compressed+signed binary to ensure it's functional.
       logger.log('Testing compressed binary after signing...')
-      const compressedTest = await smokeTestBinary(compressedBinary)
+      const compressedTestPassed = await smokeTestBinary(compressedBinary)
 
-      if (!compressedTest.passed) {
+      if (!compressedTestPassed) {
         printError(
           'Compressed Binary Corrupted After Signing',
-          `Compressed binary failed smoke test: ${compressedTest.reason}`,
+          'Compressed binary failed smoke test after signing',
           [
             'Compression or signing may have corrupted the binary',
             'Try rebuilding: node scripts/build-custom-node.mjs --clean',
