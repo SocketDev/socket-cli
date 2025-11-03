@@ -15,8 +15,6 @@
 # IMPORTANT: Forward declaration MUST be in global namespace (before node namespace)
 # to avoid name collisions and ensure correct friend declaration matching.
 
-diff --git a/src/node_union_bytes.h b/src/node_union_bytes.h
-index 4a3f6798..3a144bdb 100644
 --- a/src/node_union_bytes.h
 +++ b/src/node_union_bytes.h
 @@ -6,6 +6,13 @@

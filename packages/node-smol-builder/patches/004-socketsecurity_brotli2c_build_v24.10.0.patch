@@ -17,18 +17,16 @@
 # Brotli-compressed binary data must be output as byte arrays, not string literals.
 #
 # PATCH CREATION PROCESS:
-# This patch was created using git diff against pristine Node.js v24.10.0 source.
+# This patch was created using standard unified diff format (not git format).
 # Steps:
 #   1. Clone Node.js v24.10.0
 #   2. Modify node.gyp to:
 #      - Add socket_brotli2c target
 #      - Add socket_brotli2c_exec variable
 #      - Modify node_js2c action to use socket_brotli2c_exec
-#   3. Generate patch with: git add node.gyp && git diff --cached
-#   4. Validate with: git reset --hard && patch -p1 --dry-run < patch-file
+#   3. Generate patch with: diff -u original.gyp modified.gyp
+#   4. Validate with: patch -p1 --dry-run < patch-file
 #
-diff --git a/node.gyp b/node.gyp
-index 420d5713..a9e77596 100644
 --- a/node.gyp
 +++ b/node.gyp
 @@ -434,6 +434,7 @@
