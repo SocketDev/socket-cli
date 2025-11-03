@@ -135,7 +135,12 @@ async function ensureToolBuilt(config) {
   getDefaultLogger().log(`  Command: ${config.buildCommand}`)
   getDefaultLogger().log('')
 
-  const result = await spawn(config.buildCommand, [], {
+  // Split command string into command + args for proper spawn handling.
+  const cmdParts = config.buildCommand.split(' ')
+  const cmd = cmdParts[0]
+  const cmdArgs = cmdParts.slice(1)
+
+  const result = await spawn(cmd, cmdArgs, {
     cwd: TOOLS_DIR,
     shell: WIN32,
     stdio: 'inherit'
