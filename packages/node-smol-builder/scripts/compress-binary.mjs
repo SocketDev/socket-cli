@@ -42,7 +42,7 @@ import { spawn } from '@socketsecurity/lib/spawn'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const TOOLS_DIR = path.resolve(__dirname, '../additions/tools')
+const TOOLS_DIR = path.resolve(__dirname, '../additions/003-compression-tools')
 
 /**
  * Platform configuration.
