@@ -48,7 +48,7 @@
     "node": ">=18"
   },
   "dependencies": {
-    "@sentry/node": "8.0.0"
+    "@sentry/node": "10.22.0"
   },
   "publishConfig": {
     "access": "public",
