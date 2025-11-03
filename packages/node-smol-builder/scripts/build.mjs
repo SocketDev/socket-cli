@@ -283,7 +283,7 @@ async function copyBuildAdditions() {
   printHeader('Copying Build Additions')
 
   // Recursively copy entire additions directory structure to Node.js source.
-  await cp(ADDITIONS_DIR, NODE_DIR, {
+  await fs.cp(ADDITIONS_DIR, NODE_DIR, {
     recursive: true,
     force: true,
     errorOnExist: false,
