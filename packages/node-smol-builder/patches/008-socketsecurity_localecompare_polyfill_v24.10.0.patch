@@ -18,10 +18,10 @@
 #   4. Validate with: git reset --hard && patch -p1 --dry-run < patch-file
 #
 diff --git a/lib/internal/per_context/primordials.js b/lib/internal/per_context/primordials.js
-index 1234abcd..5678efgh 100644
+index aee7de99..56f76ac1 100644
 --- a/lib/internal/per_context/primordials.js
 +++ b/lib/internal/per_context/primordials.js
-@@ -719,6 +719,9 @@ primordials.SafeStringPrototypeSearch = (str, regexp) => {
+@@ -720,5 +720,8 @@ primordials.SafeStringPrototypeSearch = (str, regexp) => {
    return match ? match.index : -1;
  };
 

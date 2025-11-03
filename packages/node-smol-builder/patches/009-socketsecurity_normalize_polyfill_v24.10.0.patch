@@ -18,10 +18,10 @@
 #   4. Validate with: git reset --hard && patch -p1 --dry-run < patch-file
 #
 diff --git a/lib/internal/bootstrap/node.js b/lib/internal/bootstrap/node.js
-index 1234abcd..5678efgh 100644
+index 963fe2ab..0af59d77 100644
 --- a/lib/internal/bootstrap/node.js
 +++ b/lib/internal/bootstrap/node.js
-@@ -473,3 +473,6 @@
+@@ -473,3 +473,6 @@ function setupBuffer() {
      configurable: true,
    });
  }
