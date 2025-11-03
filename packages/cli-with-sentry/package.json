@@ -27,6 +27,7 @@
     "LICENSE",
     "data/**",
     "dist/**",
+    "!dist/cli.js",
     "logo-dark.png",
     "logo-light.png"
   ],

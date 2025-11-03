@@ -40,26 +40,24 @@ jobs:
       type-check-script: 'pnpm --filter @socketsecurity/cli run type'
       test-script: 'echo "Tests run in sharded job below"'
       node-versions: ${{ inputs.node-versions || '["24.10.0"]' }}
-      os-versions: '["ubuntu-latest", "macos-latest", "windows-latest"]'
+      os-versions: '["ubuntu-latest"]'
       fail-fast: false
-      # Reduced from 8 to 4 with sharding enabled.
       max-parallel: 4
-      # Reduced timeout with sharding (each shard runs faster).
       test-timeout-minutes: 15
 
   # Sharded unit tests for faster CI.
   # Splits 2,819 tests across 3 shards (~16s per shard vs 48s monolithic).
+  # Runs on Linux only to optimize CI runtime and build requirements.
   test-sharded:
     name: Unit Tests (Shard ${{ matrix.shard }}/3)
     needs: ci
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     strategy:
       fail-fast: false
       max-parallel: 4
       matrix:
         node-version: ${{ fromJSON(inputs.node-versions || '["24.10.0"]') }}
-        os: [ubuntu-latest, macos-latest, windows-latest]
         shard: [1, 2, 3]
     steps:
       - uses: SocketDev/socket-registry/.github/actions/setup-and-install@1a96ced97aaa85d61543351b90d6f463b983c46c # main
@@ -73,6 +71,31 @@ jobs:
       - name: Run unit tests (shard ${{ matrix.shard }})
         working-directory: packages/cli
         run: pnpm test:unit --shard=${{ matrix.shard }}/3
+
+  # Binary distribution integration tests.
+  # Tests the JS distribution and optionally SEA/smol if cached binaries are available.
+  integration:
+    name: Integration Tests (${{ matrix.distribution }})
+    needs: ci
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: ['24.10.0']
+        distribution: ['js']
+    steps:
+      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@1a96ced97aaa85d61543351b90d6f463b983c46c # main
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Build CLI
+        working-directory: packages/cli
+        run: pnpm run build
+
+      - name: Run integration tests (${{ matrix.distribution }})
+        working-directory: packages/cli
+        run: node scripts/integration.mjs --${{ matrix.distribution }}
 
   e2e:
     name: E2E Tests

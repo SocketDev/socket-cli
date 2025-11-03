@@ -623,8 +623,8 @@ importers:
         specifier: 'catalog:'
         version: 3.2.1(typescript@5.9.3)
       esbuild:
-        specifier: ^0.25.12
-        version: 0.25.12
+        specifier: 'catalog:'
+        version: 0.25.11
     optionalDependencies:
       '@socketbin/cli-alpine-arm64':
         specifier: 0.0.0-replaced-by-provenance
@@ -5927,7 +5927,7 @@ snapshots:
   '@appthreat/atom-parsetools@1.0.11':
     dependencies:
       '@appthreat/atom-common': 1.0.11
-      '@babel/parser': 7.28.4
+      '@babel/parser': 7.28.5
       typescript: 5.9.3
       yargs: 17.7.2
     optional: true

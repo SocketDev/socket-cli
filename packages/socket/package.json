@@ -20,7 +20,8 @@
   "files": [
     "CHANGELOG.md",
     "LICENSE",
-    "dist/",
+    "dist/**",
+    "!dist/bootstrap.js",
     "logo-dark.png",
     "logo-light.png"
   ],
@@ -50,6 +51,6 @@
   },
   "devDependencies": {
     "@socketsecurity/lib": "catalog:",
-    "esbuild": "^0.25.12"
+    "esbuild": "catalog:"
   }
 }
