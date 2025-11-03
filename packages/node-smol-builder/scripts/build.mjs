@@ -47,7 +47,7 @@
  *   node scripts/load.mjs build-custom-node --test-full  # Build + run full tests
  */
 
-import { existsSync, readdirSync, promises as fs } from 'node:fs'
+import { existsSync, promises as fs } from 'node:fs'
 import { cpus, platform } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -299,7 +299,7 @@ async function copyBuildAdditions() {
   const socketBrotli2cDest = join(NODE_DIR, 'tools', 'socket_brotli2c.cc')
 
   if (existsSync(socketBrotli2cSource)) {
-    await copyFile(socketBrotli2cSource, socketBrotli2cDest)
+    await fs.copyFile(socketBrotli2cSource, socketBrotli2cDest)
     logger.log(`✅ Copied socket_brotli2c.cc to tools/ (patch expects this name)`)
   }
 
@@ -308,7 +308,7 @@ async function copyBuildAdditions() {
   const brotliHeaderDest = join(NODE_DIR, 'src', 'socketsecurity_brotli_builtin_loader.h')
 
   if (existsSync(brotliHeaderSource)) {
-    await copyFile(brotliHeaderSource, brotliHeaderDest)
+    await fs.copyFile(brotliHeaderSource, brotliHeaderDest)
     logger.log(`✅ Copied socketsecurity_brotli_builtin_loader.h to src/`)
   }
 
@@ -317,7 +317,7 @@ async function copyBuildAdditions() {
   const bootstrapLoaderDest = join(NODE_DIR, 'lib', 'internal', 'socketsecurity_bootstrap_loader.js')
 
   if (existsSync(bootstrapLoaderSource)) {
-    await copyFile(bootstrapLoaderSource, bootstrapLoaderDest)
+    await fs.copyFile(bootstrapLoaderSource, bootstrapLoaderDest)
     logger.log(`✅ Copied socketsecurity_bootstrap_loader.js to lib/internal/`)
   }
 
@@ -331,14 +331,14 @@ async function copyBuildAdditions() {
     const localeCompareSource = join(polyfillsSourceDir, 'localeCompare.js')
     const localeCompareDest = join(polyfillsDestDir, 'localeCompare.js')
     if (existsSync(localeCompareSource)) {
-      await copyFile(localeCompareSource, localeCompareDest)
+      await fs.copyFile(localeCompareSource, localeCompareDest)
       logger.log(`✅ Copied localeCompare.js to lib/internal/socketsecurity_polyfills/`)
     }
 
     const normalizeSource = join(polyfillsSourceDir, 'normalize.js')
     const normalizeDest = join(polyfillsDestDir, 'normalize.js')
     if (existsSync(normalizeSource)) {
-      await copyFile(normalizeSource, normalizeDest)
+      await fs.copyFile(normalizeSource, normalizeDest)
       logger.log(`✅ Copied normalize.js to lib/internal/socketsecurity_polyfills/`)
     }
   }
@@ -386,7 +386,7 @@ async function embedSocketSecurityBootstrap() {
       if (existsSync(bootstrapDir)) {
         logger.info(`Directory exists: ${bootstrapDir}`)
         try {
-          const files = await readdir(bootstrapDir)
+          const files = await fs.readdir(bootstrapDir)
           logger.info(`Files in directory: ${files.join(', ')}`)
         } catch (e) {
           logger.warn(`Could not list directory contents`)
@@ -403,7 +403,7 @@ async function embedSocketSecurityBootstrap() {
   printHeader('Embedding Socket Security Bootstrap (Minimal Injection)')
 
   // Read the bootstrap code.
-  const bootstrapCode = await readFile(bootstrapSource, 'utf8')
+  const bootstrapCode = await fs.readFile(bootstrapSource, 'utf8')
   const bootstrapSize = Buffer.byteLength(bootstrapCode, 'utf8')
 
   // Base64 encode the bootstrap (will be decoded at runtime in Node.js).
@@ -434,7 +434,7 @@ async function embedSocketSecurityBootstrap() {
 
   // Read the loader template.
   const loaderTemplatePath = join(ADDITIONS_DIR, '002-bootstrap-loader', 'internal', 'socketsecurity_bootstrap_loader.js.template')
-  const loaderTemplate = await readFile(loaderTemplatePath, 'utf8')
+  const loaderTemplate = await fs.readFile(loaderTemplatePath, 'utf8')
 
   // Embed the bootstrap in the loader template.
   const finalLoader = loaderTemplate.replace(
@@ -444,8 +444,8 @@ async function embedSocketSecurityBootstrap() {
 
   // Write the processed loader to additions/ (will be copied during copyBuildAdditions phase).
   const finalLoaderPath = join(ADDITIONS_DIR, '002-bootstrap-loader', 'internal', 'socketsecurity_bootstrap_loader.js')
-  await safeMkdir(dirname(finalLoaderPath), { recursive: true })
-  await writeFile(finalLoaderPath, finalLoader, 'utf8')
+  await mkdir(dirname(finalLoaderPath), { recursive: true })
+  await fs.writeFile(finalLoaderPath, finalLoader, 'utf8')
 
   logger.log(`✅ Generated loader: ${finalLoaderPath.replace(`${ROOT_DIR}/`, '')}`)
   logger.log(`   ${(finalLoader.length / 1024).toFixed(1)}KB (includes embedded bootstrap)`)
@@ -453,10 +453,10 @@ async function embedSocketSecurityBootstrap() {
   // Copy the minimal patch template to build/patches/ (no placeholder replacement needed).
   const minimalPatchTemplatePath = join(PATCHES_DIR, '001-socketsecurity_bootstrap_preexec_v24.10.0.template.patch')
   const buildPatchesDir = join(BUILD_DIR, 'patches')
-  await safeMkdir(buildPatchesDir, { recursive: true })
+  await mkdir(buildPatchesDir, { recursive: true })
 
   const finalPatchPath = join(buildPatchesDir, 'socketsecurity_bootstrap_preexec_v24.10.0.patch')
-  await copyFile(minimalPatchTemplatePath, finalPatchPath)
+  await fs.copyFile(minimalPatchTemplatePath, finalPatchPath)
 
   logger.log(`✅ Copied minimal patch: ${finalPatchPath.replace(`${ROOT_DIR}/`, '')}`)
   logger.log(`   1-line injection calling internal/socketsecurity_bootstrap_loader`)
@@ -513,7 +513,7 @@ async function resetNodeSource() {
  * Get file size in human-readable format.
  */
 async function getFileSize(filePath) {
-  const stats = await stat(filePath)
+  const stats = await fs.stat(filePath)
   const bytes = stats.size
 
   if (bytes === 0) return '0B'
@@ -577,13 +577,13 @@ async function cacheCompiledBinary(buildDir, nodeBinary, platform, arch, version
   const cacheMetaFile = getCacheMetadataPath(buildDir, platform, arch)
 
   // Create cache directory.
-  await safeMkdir(cacheDir, { recursive: true })
+  await mkdir(cacheDir, { recursive: true })
 
   // Copy binary to cache.
-  await copyFile(nodeBinary, cacheFile)
+  await fs.copyFile(nodeBinary, cacheFile)
 
   // Get binary stats for metadata.
-  const stats = await stat(nodeBinary)
+  const stats = await fs.stat(nodeBinary)
   const size = await getFileSize(nodeBinary)
 
   // Save metadata.
@@ -595,7 +595,7 @@ async function cacheCompiledBinary(buildDir, nodeBinary, platform, arch, version
     size: stats.size,
     humanSize: size,
   }
-  await writeFile(cacheMetaFile, JSON.stringify(metadata, null, 2))
+  await fs.writeFile(cacheMetaFile, JSON.stringify(metadata, null, 2))
 
   logger.log(`${colors.green('✓')} Cached compiled binary (${size})`)
   logger.log(`   Cache location: ${cacheFile}`)
@@ -623,7 +623,7 @@ async function restoreCachedBinary(buildDir, nodeBinary, platform, arch, version
 
   try {
     // Validate metadata matches current build.
-    const metaContent = await readFile(cacheMetaFile, 'utf8')
+    const metaContent = await fs.readFile(cacheMetaFile, 'utf8')
     const meta = JSON.parse(metaContent)
 
     if (meta.platform !== platform || meta.arch !== arch) {
@@ -637,10 +637,10 @@ async function restoreCachedBinary(buildDir, nodeBinary, platform, arch, version
     }
 
     // Ensure output directory exists.
-    await safeMkdir(dirname(nodeBinary), { recursive: true })
+    await mkdir(dirname(nodeBinary), { recursive: true })
 
     // Restore binary.
-    await copyFile(cacheFile, nodeBinary)
+    await fs.copyFile(cacheFile, nodeBinary)
 
     const size = await getFileSize(nodeBinary)
     logger.log(`${colors.green('✓')} Restored cached binary (${size})`)
@@ -848,7 +848,7 @@ async function verifySocketModifications() {
   logger.log('Checking lib/sea.js modification...')
   const seaFile = join(NODE_DIR, 'lib', 'sea.js')
   try {
-    const content = await readFile(seaFile, 'utf8')
+    const content = await fs.readFile(seaFile, 'utf8')
     if (content.includes('const isSea = () => true;')) {
       logger.success('lib/sea.js correctly modified (SEA override applied)')
     } else {
@@ -865,7 +865,7 @@ async function verifySocketModifications() {
   logger.log('Checking V8 include paths...')
   const testFile = join(NODE_DIR, 'deps/v8/src/heap/cppgc/heap-page.h')
   try {
-    const content = await readFile(testFile, 'utf8')
+    const content = await fs.readFile(testFile, 'utf8')
     // For v24.10.0+, the CORRECT include has "src/" prefix.
     if (content.includes('#include "src/base/iterator.h"')) {
       logger.success(
@@ -893,7 +893,7 @@ async function verifySocketModifications() {
     'primordials.js',
   )
   try {
-    const content = await readFile(primordialFile, 'utf8')
+    const content = await fs.readFile(primordialFile, 'utf8')
     if (content.includes('Socket CLI: Polyfill localeCompare')) {
       logger.success(
         'primordials.js correctly modified (localeCompare polyfill)',
@@ -915,7 +915,7 @@ async function verifySocketModifications() {
     'node.js',
   )
   try {
-    const content = await readFile(bootstrapFile, 'utf8')
+    const content = await fs.readFile(bootstrapFile, 'utf8')
     if (content.includes('Socket CLI: Polyfill String.prototype.normalize')) {
       logger.success(
         'bootstrap/node.js correctly modified (normalize polyfill)',
@@ -988,7 +988,7 @@ async function main() {
   await saveBuildLog(BUILD_DIR, '')
 
   // Ensure build directory exists.
-  await safeMkdir(BUILD_DIR, { recursive: true })
+  await mkdir(BUILD_DIR, { recursive: true })
 
   // Check if we can use cached build (skip if --clean).
   if (!CLEAN_BUILD) {
@@ -1192,7 +1192,7 @@ async function main() {
         continue
       }
 
-      const content = await readFile(patch.path, 'utf8')
+      const content = await fs.readFile(patch.path, 'utf8')
       const analysis = analyzePatchContent(content)
 
       patchData.push({
@@ -1489,7 +1489,7 @@ async function main() {
 
     logger.log('')
     logger.log(`${colors.green('✓')} Build completed in ${buildTime}`)
-    await createCheckpoint(BUILD_DIR, 'smol-release')
+    await createCheckpoint(BUILD_DIR, 'built')
     logger.log('')
 
     // Cache the compiled binary for future runs.
@@ -1508,7 +1508,6 @@ async function main() {
     await exec('codesign', ['--sign', '-', '--force', nodeBinary])
     logger.success('Binary signed successfully')
     logger.logNewline()
-    await createCheckpoint(BUILD_DIR, 'smol-release-signed')
   }
 
   // Test the binary.
@@ -1653,7 +1652,6 @@ async function main() {
 
     logger.log(`${colors.green('✓')} Binary functional after signing`)
     logger.log('')
-    await createCheckpoint(BUILD_DIR, 'smol-stripped-signed')
   }
 
   // Smoke test binary after stripping (ensure strip didn't corrupt it).
@@ -1691,7 +1689,6 @@ async function main() {
   logger.logNewline()
   logger.success('Stripped binary copied to build/out/Stripped')
   logger.logNewline()
-  await createCheckpoint(BUILD_DIR, 'smol-stripped')
 
   // Compress binary for smaller distribution size (DEFAULT for smol builds).
   // Uses native platform APIs (Apple Compression, liblzma, Windows Compression API) instead of UPX.
@@ -1721,7 +1718,7 @@ async function main() {
     const socketbinPkgPath = join(dirname(ROOT_DIR), `socketbin-cli-${TARGET_PLATFORM}-${ARCH}`, 'package.json')
     let socketbinSpec = null
     try {
-      const socketbinPkg = JSON.parse(await readFile(socketbinPkgPath, 'utf-8'))
+      const socketbinPkg = JSON.parse(await fs.readFile(socketbinPkgPath, 'utf-8'))
       socketbinSpec = `${socketbinPkg.name}@${socketbinPkg.version}`
       logger.substep(`Found socketbin package: ${socketbinSpec}`)
     } catch (e) {
@@ -1792,7 +1789,6 @@ async function main() {
 
       logger.log(`${colors.green('✓')} Compressed binary functional after signing`)
       logger.log('')
-      await createCheckpoint(BUILD_DIR, 'smol-compressed-signed')
     }
 
     logger.substep(`Compressed directory: ${compressedDir}`)
@@ -1800,7 +1796,6 @@ async function main() {
     logger.logNewline()
     logger.success('Binary compressed successfully')
     logger.logNewline()
-    await createCheckpoint(BUILD_DIR, 'smol-compressed')
 
     // Copy decompression tool to Compressed directory for distribution.
     printHeader('Bundling Decompression Tool')
@@ -1888,7 +1883,6 @@ async function main() {
     logger.logNewline()
     logger.success('Final distribution created with compressed package')
     logger.logNewline()
-    await createCheckpoint(BUILD_DIR, 'smol-final')
   } else {
     logger.log('Copying stripped binary to Final directory...')
     logger.logNewline()
@@ -1902,7 +1896,6 @@ async function main() {
     logger.logNewline()
     logger.success('Final distribution created with uncompressed binary')
     logger.logNewline()
-    await createCheckpoint(BUILD_DIR, 'smol-final')
   }
 
   // Copy signed binary to build/out/Sea (for SEA builds).
@@ -1922,7 +1915,6 @@ async function main() {
   logger.logNewline()
   logger.success('Binary copied to build/out/Sea')
   logger.logNewline()
-  await createCheckpoint(BUILD_DIR, 'sea-final')
 
   // Copy to dist/ for E2E testing.
   printHeader('Copying to dist/ for E2E Testing')
@@ -1955,14 +1947,15 @@ async function main() {
   const sourcePaths = collectBuildSourceFiles()
   const sourceHashComment = await generateHashComment(sourcePaths)
   const cacheDir = join(BUILD_DIR, '.cache')
-  await safeMkdir(cacheDir, { recursive: true })
+  await mkdir(cacheDir, { recursive: true })
   const hashFilePath = join(cacheDir, 'node.hash')
-  await writeFile(hashFilePath, sourceHashComment, 'utf-8')
+  await fs.writeFile(hashFilePath, sourceHashComment, 'utf-8')
   logger.substep(`Cache hash: ${hashFilePath}`)
   logger.logNewline()
 
   // Report build complete.
   const binarySize = await getFileSize(distributionOutputBinary)
+  await createCheckpoint(BUILD_DIR, 'complete')
   await cleanCheckpoint(BUILD_DIR)
 
   // Calculate total build time.
