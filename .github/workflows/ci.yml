@@ -33,7 +33,7 @@ permissions:
 jobs:
   ci:
     name: Run CI Pipeline
-    uses: SocketDev/socket-registry/.github/workflows/ci.yml@ed3c6104ebfbabb657432e79a7f77cf7d33df984 # 2025-10-31
+    uses: SocketDev/socket-registry/.github/workflows/ci.yml@1a96ced97aaa85d61543351b90d6f463b983c46c # 2025-10-31
     with:
       test-setup-script: 'pnpm --filter @socketsecurity/cli run build'
       lint-script: 'pnpm --filter @socketsecurity/cli run check'
@@ -62,7 +62,7 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
         shard: [1, 2, 3]
     steps:
-      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@51be85d39d3b4a42dd9d4712948b9d30a2e04794
+      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@1a96ced97aaa85d61543351b90d6f463b983c46c
         with:
           node-version: ${{ matrix.node-version }}
 
@@ -85,7 +85,7 @@ jobs:
         node-version: ['24.10.0']
         os: [ubuntu-latest]
     steps:
-      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@51be85d39d3b4a42dd9d4712948b9d30a2e04794
+      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@1a96ced97aaa85d61543351b90d6f463b983c46c
         with:
           node-version: ${{ matrix.node-version }}
 
