@@ -10,15 +10,13 @@
 # basic alphabetical comparison as a fallback.
 #
 # PATCH CREATION PROCESS:
-# This patch was created using git diff against pristine Node.js v24.10.0 source.
+# This patch was created using standard unified diff format (not git format).
 # Steps:
 #   1. Clone Node.js v24.10.0
 #   2. Add require() call in lib/internal/per_context/primordials.js before ObjectFreeze
-#   3. Generate patch with: git add lib/internal/per_context/primordials.js && git diff --cached
-#   4. Validate with: git reset --hard && patch -p1 --dry-run < patch-file
+#   3. Generate patch with: diff -u original.js modified.js
+#   4. Validate with: patch -p1 --dry-run < patch-file
 #
-diff --git a/lib/internal/per_context/primordials.js b/lib/internal/per_context/primordials.js
-index aee7de99..56f76ac1 100644
 --- a/lib/internal/per_context/primordials.js
 +++ b/lib/internal/per_context/primordials.js
 @@ -720,5 +720,8 @@ primordials.SafeStringPrototypeSearch = (str, regexp) => {
