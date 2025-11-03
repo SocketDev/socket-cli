@@ -1,4 +1,4 @@
-name: 🤏 Build Smol Node Binaries
+name: ⚡ Socket Smol Node Binaries
 
 on:
   workflow_call:
@@ -57,7 +57,7 @@ concurrency:
 
 jobs:
   build-deps:
-    name: 📦 Build Dependencies
+    name: ⚡ Socket Dependencies
     runs-on: ubuntu-latest
     timeout-minutes: 15
     outputs:
@@ -113,7 +113,7 @@ jobs:
 
   build-smol:
     needs: build-deps
-    name: 🤏 Build smol binary - ${{ matrix.platform }}-${{ matrix.arch }}
+    name: ⚡ Socket Smol - ${{ matrix.platform }}-${{ matrix.arch }}
     runs-on: ${{ matrix.runner }}
     timeout-minutes: ${{ inputs.force && 150 || 120 }}
     strategy:
@@ -182,7 +182,7 @@ jobs:
           fi
           echo "should-run=$SHOULD_RUN" >> $GITHUB_OUTPUT
           if [ "$SHOULD_RUN" = "true" ]; then
-            echo -e "\033[32m✓\033[0m Building ${{ matrix.platform }}-${{ matrix.arch }}"
+            echo -e "\033[35m⚡\033[0m Socket building ${{ matrix.platform }}-${{ matrix.arch }}"
           else
             echo "⊘ Skipping ${{ matrix.platform }}-${{ matrix.arch }} (disabled by inputs)"
           fi
@@ -202,13 +202,12 @@ jobs:
         if: steps.check-platform.outputs.should-run == 'true'
         shell: bash
         run: |
-          echo "=== Verifying downloaded bootstrap artifacts ==="
+          echo -e "\033[35m⚡\033[0m Verifying Socket bootstrap artifacts"
           echo ""
-          echo "Checking for required files:"
           ls -lh packages/bootstrap/dist/bootstrap-smol.js && echo -e "\033[32m✓\033[0m bootstrap-smol.js present" || (echo -e "\033[31m✗\033[0m bootstrap-smol.js missing" && exit 1)
           ls -lh packages/socket/dist/bootstrap.js && echo -e "\033[32m✓\033[0m socket bootstrap.js present" || (echo -e "\033[31m✗\033[0m socket bootstrap.js missing" && exit 1)
           echo ""
-          echo -e "\033[32m✓\033[0m Bootstrap artifacts verified"
+          echo -e "\033[35m⚡\033[0m Bootstrap artifacts verified"
 
       - name: Setup Node.js
         if: steps.check-platform.outputs.should-run == 'true'
@@ -324,19 +323,19 @@ jobs:
 
           if [ -f "$BINARY_PATH" ]; then
             echo "valid=true" >> $GITHUB_OUTPUT
-            echo -e "\033[32m✓\033[0m Smol binary cache valid: $BINARY_PATH"
+            echo -e "\033[35m⚡\033[0m Socket smol binary cached: $BINARY_PATH"
 
             # Smoke test: verify binary can execute --version.
             if "$BINARY_PATH" --version >/dev/null 2>&1; then
-              echo -e "\033[32m✓\033[0m Binary smoke test passed (--version)"
+              echo -e "\033[32m✓\033[0m Smoke test passed (--version)"
             else
-              echo "::warning::Binary exists but failed smoke test, will rebuild"
+              echo "::warning::Binary exists but failed smoke test, rebuilding"
               echo "valid=false" >> $GITHUB_OUTPUT
               rm -f "$BINARY_PATH"
             fi
           else
             echo "valid=false" >> $GITHUB_OUTPUT
-            echo -e "\033[31m✗\033[0m Smol binary cache invalid or missing: $BINARY_PATH"
+            echo -e "\033[31m✗\033[0m Socket smol binary cache miss: $BINARY_PATH"
           fi
 
       - name: Setup Python
@@ -440,19 +439,19 @@ jobs:
         if: steps.check-platform.outputs.should-run == 'true'
         shell: bash
         run: |
-          echo "=== smol Binary Build Artifacts ==="
+          echo -e "\033[35m⚡\033[0m Socket smol binary verification"
           mkdir -p packages/node-smol-builder/dist
           ls -lh packages/node-smol-builder/dist/
           echo ""
           BINARY_PATH="packages/node-smol-builder/dist/socket-smol-${{ matrix.platform }}-${{ matrix.arch }}"
           if [ -f "$BINARY_PATH" ] || [ -f "${BINARY_PATH}.exe" ]; then
             if [ "${{ matrix.os }}" = "windows" ]; then
-              echo "socket-smol-${{ matrix.platform }}-${{ matrix.arch }}.exe size: $(du -h ${BINARY_PATH}.exe | cut -f1)"
+              echo -e "\033[32m✓\033[0m socket-smol-${{ matrix.platform }}-${{ matrix.arch }}.exe: $(du -h ${BINARY_PATH}.exe | cut -f1)"
             else
-              echo "socket-smol-${{ matrix.platform }}-${{ matrix.arch }} size: $(du -h $BINARY_PATH | cut -f1)"
+              echo -e "\033[32m✓\033[0m socket-smol-${{ matrix.platform }}-${{ matrix.arch }}: $(du -h $BINARY_PATH | cut -f1)"
             fi
           else
-            echo -e "\033[33m⚠\033[0m  Binary not found at expected path"
+            echo -e "\033[33m⚠\033[0m Binary not found at expected path"
           fi
 
       - name: Upload smol binary
@@ -511,33 +510,33 @@ jobs:
           if-no-files-found: ignore
 
   summary:
-    name: 📊 Smol Node Build Summary
+    name: ⚡ Socket Build Summary
     needs: [build-smol]
     if: always()
     runs-on: ubuntu-latest
     steps:
       - name: Generate summary
         run: |
-          echo "# 🤏 Smol Node Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "# ⚡ Socket Smol Node Build" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## ✅ Build Complete" >> $GITHUB_STEP_SUMMARY
+          echo "## ✓ Build Complete" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Smol (compressed Node.js + CLI) binaries built successfully and cached." >> $GITHUB_STEP_SUMMARY
+          echo "Socket smol binaries (compressed Node.js + CLI) built successfully." >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 📦 Build Method" >> $GITHUB_STEP_SUMMARY
+          echo "### ⚡ Socket Smol Method" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Method | Description | Size |" >> $GITHUB_STEP_SUMMARY
           echo "|--------|-------------|------|" >> $GITHUB_STEP_SUMMARY
-          echo "| 🤏 smol | Compressed Node.js + CLI | ~18 MB |" >> $GITHUB_STEP_SUMMARY
+          echo "| ⚡ Socket Smol | Compressed Node.js + Socket CLI | ~18 MB |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 🎯 Platforms Built" >> $GITHUB_STEP_SUMMARY
+          echo "### 🎯 Platforms" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- 🐧 Linux (x64, arm64)" >> $GITHUB_STEP_SUMMARY
-          echo "- 🍎 macOS (x64, arm64)" >> $GITHUB_STEP_SUMMARY
-          echo "- 🪟 Windows (x64, arm64)" >> $GITHUB_STEP_SUMMARY
+          echo "- Linux (x64, arm64)" >> $GITHUB_STEP_SUMMARY
+          echo "- macOS (x64, arm64)" >> $GITHUB_STEP_SUMMARY
+          echo "- Windows (x64, arm64)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 🎯 Next Steps" >> $GITHUB_STEP_SUMMARY
+          echo "### → Next Steps" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- These binaries are now cached for E2E tests" >> $GITHUB_STEP_SUMMARY
-          echo "- Use \`publish-socketbin.yml\` to publish to npm" >> $GITHUB_STEP_SUMMARY
-          echo "- Cache is invalidated when patches or build scripts change" >> $GITHUB_STEP_SUMMARY
+          echo "- Binaries cached for E2E tests" >> $GITHUB_STEP_SUMMARY
+          echo "- Use \`publish-socketbin.yml\` to publish" >> $GITHUB_STEP_SUMMARY
+          echo "- Cache invalidated on patch/script changes" >> $GITHUB_STEP_SUMMARY
