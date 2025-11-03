@@ -1,19 +1,19 @@
 # @node-versions: v24.10.0+
-# @description: Enable socket_brotli2c build tool for Brotli compression
-# @requires: tools/socket_brotli2c.cc
+# @description: Enable socketsecurity_brotli2c build tool for Brotli compression
+# @requires: tools/socketsecurity_brotli2c.cc
 #
-# Adds the socket_brotli2c build target to node.gyp, which compiles the
-# Socket Brotli compression tool used to convert Brotli-compressed data
+# Adds the socketsecurity_brotli2c build target to node.gyp, which compiles the
+# Socket Security Brotli compression tool used to convert Brotli-compressed data
 # into C++ byte arrays for embedding in the Node.js binary.
 #
-# This patch also modifies the node_js2c action to use socket_brotli2c
+# This patch also modifies the node_js2c action to use socketsecurity_brotli2c
 # instead of the standard js2c tool, ensuring Brotli-compressed binary
 # data is output as byte arrays rather than string literals.
 #
 # This enables Brotli compression of JavaScript built-in modules for
 # approximately 3.36 MB binary size reduction.
 #
-# CRITICAL: socket_brotli2c does NOT define NODE_JS2C_USE_STRING_LITERALS because
+# CRITICAL: socketsecurity_brotli2c does NOT define NODE_JS2C_USE_STRING_LITERALS because
 # Brotli-compressed binary data must be output as byte arrays, not string literals.
 #
 # PATCH CREATION PROCESS:
@@ -21,9 +21,9 @@
 # Steps:
 #   1. Clone Node.js v24.10.0
 #   2. Modify node.gyp to:
-#      - Add socket_brotli2c target
-#      - Add socket_brotli2c_exec variable
-#      - Modify node_js2c action to use socket_brotli2c_exec
+#      - Add socketsecurity_brotli2c target
+#      - Add socketsecurity_brotli2c_exec variable
+#      - Modify node_js2c action to use socketsecurity_brotli2c_exec
 #   3. Generate patch with: diff -u original.gyp modified.gyp
 #   4. Validate with: patch -p1 --dry-run < patch-file
 #
@@ -33,7 +33,7 @@
      ],
      'node_mksnapshot_exec': '<(PRODUCT_DIR)/<(EXECUTABLE_PREFIX)node_mksnapshot<(EXECUTABLE_SUFFIX)',
      'node_js2c_exec': '<(PRODUCT_DIR)/<(EXECUTABLE_PREFIX)node_js2c<(EXECUTABLE_SUFFIX)',
-+    'socket_brotli2c_exec': '<(PRODUCT_DIR)/<(EXECUTABLE_PREFIX)socket_brotli2c<(EXECUTABLE_SUFFIX)',
++    'socketsecurity_brotli2c_exec': '<(PRODUCT_DIR)/<(EXECUTABLE_PREFIX)socketsecurity_brotli2c<(EXECUTABLE_SUFFIX)',
      'conditions': [
        ['GENERATOR == "ninja"', {
          'node_text_start_object_path': 'src/large_pages/node_text_start.node_text_start.o'
@@ -42,7 +42,7 @@
            'process_outputs_as_sources': 1,
            'inputs': [
 -            '<(node_js2c_exec)',
-+            '<(socket_brotli2c_exec)',
++            '<(socketsecurity_brotli2c_exec)',
              '<@(library_files)',
              '<@(deps_files)',
              'config.gypi'
@@ -51,7 +51,7 @@
            ],
            'action': [
 -            '<(node_js2c_exec)',
-+            '<(socket_brotli2c_exec)',
++            '<(socketsecurity_brotli2c_exec)',
              '<@(_outputs)',
              'lib',
              'config.gypi',
@@ -60,7 +60,7 @@
        ]
      },
 +    {
-+      'target_name': 'socket_brotli2c',
++      'target_name': 'socketsecurity_brotli2c',
 +      'type': 'executable',
 +      'toolsets': ['host'],
 +      'defines!': ['NODE_JS2C_USE_STRING_LITERALS'],
@@ -69,7 +69,7 @@
 +        'src',
 +      ],
 +      'sources': [
-+        'tools/socket_brotli2c.cc',
++        'tools/socketsecurity_brotli2c.cc',
 +        'tools/executable_wrapper.h',
 +        'src/embedded_data.h',
 +        'src/embedded_data.cc',

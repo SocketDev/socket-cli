@@ -293,16 +293,6 @@ async function copyBuildAdditions() {
     `✅ Copied ${ADDITIONS_DIR.replace(`${ROOT_DIR}/`, '')}/ → ${NODE_DIR}/`,
   )
 
-  // Fix: The patch file references tools/socket_brotli2c.cc but the additions
-  // directory has tools/socketsecurity_brotli2c.cc. Copy the file to the expected name.
-  const socketBrotli2cSource = join(NODE_DIR, '003-compression-tools', 'socketsecurity_brotli2c.cc')
-  const socketBrotli2cDest = join(NODE_DIR, 'tools', 'socket_brotli2c.cc')
-
-  if (existsSync(socketBrotli2cSource)) {
-    await fs.copyFile(socketBrotli2cSource, socketBrotli2cDest)
-    logger.log(`✅ Copied socket_brotli2c.cc to tools/ (patch expects this name)`)
-  }
-
   // Fix: The brotli header needs to be in src/ for node_builtins.cc to find it.
   const brotliHeaderSource = join(NODE_DIR, '001-brotli-integration', 'socketsecurity_brotli_builtin_loader.h')
   const brotliHeaderDest = join(NODE_DIR, 'src', 'socketsecurity_brotli_builtin_loader.h')
