@@ -17,24 +17,21 @@
 # Brotli-compressed binary data must be output as byte arrays, not string literals.
 #
 # PATCH CREATION PROCESS:
-# This patch was created using git diff against POST-yao-pkg Node.js v24.10.0 source.
+# This patch was created using git diff against pristine Node.js v24.10.0 source.
 # Steps:
 #   1. Clone Node.js v24.10.0
-#   2. Apply yao-pkg patches: patch -p1 < node.v24.10.0.cpp.patch
-#   3. Modify node.gyp to:
+#   2. Modify node.gyp to:
 #      - Add socket_brotli2c target
 #      - Add socket_brotli2c_exec variable
 #      - Modify node_js2c action to use socket_brotli2c_exec
-#   4. Generate patch with: git add node.gyp && git diff --cached
-#   5. Validate with: git reset --hard && patch -p1 --dry-run < patch-file
-#
-# CRITICAL: This patch MUST be applied AFTER yao-pkg patches, not to pristine source!
+#   3. Generate patch with: git add node.gyp && git diff --cached
+#   4. Validate with: git reset --hard && patch -p1 --dry-run < patch-file
 #
 diff --git a/node.gyp b/node.gyp
-index 420d5713..8e9a2c1f 100644
+index 420d5713..a9e77596 100644
 --- a/node.gyp
 +++ b/node.gyp
-@@ -433,6 +433,7 @@
+@@ -434,6 +434,7 @@
      ],
      'node_mksnapshot_exec': '<(PRODUCT_DIR)/<(EXECUTABLE_PREFIX)node_mksnapshot<(EXECUTABLE_SUFFIX)',
      'node_js2c_exec': '<(PRODUCT_DIR)/<(EXECUTABLE_PREFIX)node_js2c<(EXECUTABLE_SUFFIX)',
@@ -42,10 +39,7 @@ index 420d5713..8e9a2c1f 100644
      'conditions': [
        ['GENERATOR == "ninja"', {
          'node_text_start_object_path': 'src/large_pages/node_text_start.node_text_start.o'
-@@ -1023,10 +1024,10 @@
-       ],
-       'actions': [
-         {
+@@ -1026,7 +1027,7 @@
            'action_name': 'node_js2c',
            'process_outputs_as_sources': 1,
            'inputs': [
