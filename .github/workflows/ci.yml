@@ -21,11 +21,6 @@ on:
       - '.github/workflows/ci.yml'
   workflow_dispatch:
     inputs:
-      skip-tests:
-        description: 'Skip test execution'
-        required: false
-        type: boolean
-        default: false
       node-versions:
         description: 'Node.js versions to test (JSON array)'
         required: false
