@@ -417,7 +417,6 @@ jobs:
           tags: smol-alpine-builder:${{ matrix.arch }}
           cache-from: type=gha,scope=alpine-builder-${{ matrix.arch }}
           cache-to: type=gha,mode=max,scope=alpine-builder-${{ matrix.arch }}
-          file: -
           build-args: |
             ALPINE_VERSION=3.19
             PNPM_VERSION=10.20.0
