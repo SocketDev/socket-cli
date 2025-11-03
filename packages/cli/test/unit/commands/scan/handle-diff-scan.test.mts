@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   createErrorResult,
   createSuccessResult,
-} from '../../../../src/helpers/mocks.mts'
+} from '../../../test/helpers/mocks.mts'
 import { handleDiffScan } from '../../../../../src/commands/scan/handle-diff-scan.mts'
 
 // Mock the dependencies.

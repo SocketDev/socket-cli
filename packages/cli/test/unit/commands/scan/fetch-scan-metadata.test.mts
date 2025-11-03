@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { setupSdkMockSuccess } from '../../../../src/helpers/sdk-test-helpers.mts'
+import { setupSdkMockSuccess } from '../../../test/helpers/sdk-test-helpers.mts'
 
 // Mock the dependencies.
 vi.mock('../../utils/socket/api.mts', () => ({

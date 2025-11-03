@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   createErrorResult,
   createSuccessResult,
-} from '../../../../src/helpers/mocks.mts'
+} from '../../../test/helpers/mocks.mts'
 import { handleDeleteScan } from '../../../../../src/commands/scan/handle-delete-scan.mts'
 
 // Mock the dependencies.

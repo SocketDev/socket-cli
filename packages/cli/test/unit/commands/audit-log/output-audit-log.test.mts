@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { createSuccessResult } from '../../../../src/helpers/mocks.mts'
+import { createSuccessResult } from '../../../test/helpers/mocks.mts'
 import FIXTURE from '../../../../src/audit-fixture.json' with {
   type: 'json',
 }

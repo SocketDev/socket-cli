@@ -4,7 +4,7 @@ import {
   setupSdkMockError,
   setupSdkMockSuccess,
   setupSdkSetupFailure,
-} from '../../../../src/helpers/sdk-test-helpers.mts'
+} from '../../../test/helpers/sdk-test-helpers.mts'
 import { fetchRepoAnalyticsData } from '../../../../../src/commands/analytics/fetch-repo-analytics.mts'
 
 // Mock the dependencies.

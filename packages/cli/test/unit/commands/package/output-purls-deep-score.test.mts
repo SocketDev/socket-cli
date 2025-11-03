@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
-import goDeep from '../../../../src/fixtures/go_deep.json'
-import mavenDeep from '../../../../src/fixtures/maven_deep.json'
-import npmDeep from '../../../../src/fixtures/npm_deep.json'
-import nugetDeep from '../../../../src/fixtures/nuget_deep.json'
-import pythonDeep from '../../../../src/fixtures/python_deep.json'
-import rubyDeep from '../../../../src/fixtures/ruby_deep.json'
+import goDeep from '../../../../../src/commands/package/fixtures/go_deep.json'
+import mavenDeep from '../../../../../src/commands/package/fixtures/maven_deep.json'
+import npmDeep from '../../../../../src/commands/package/fixtures/npm_deep.json'
+import nugetDeep from '../../../../../src/commands/package/fixtures/nuget_deep.json'
+import pythonDeep from '../../../../../src/commands/package/fixtures/python_deep.json'
+import rubyDeep from '../../../../../src/commands/package/fixtures/ruby_deep.json'
 import { createMarkdownReport } from '../../../../../src/commands/package/output-purls-deep-score.mts'
 
 describe('package score output', async () => {

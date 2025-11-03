@@ -4,7 +4,7 @@ import {
   setupSdkMockError,
   setupSdkMockSuccess,
   setupSdkSetupFailure,
-} from '../../../../src/helpers/sdk-test-helpers.mts'
+} from '../../../test/helpers/sdk-test-helpers.mts'
 import { fetchDeleteOrgFullScan } from '../../../../../src/commands/scan/fetch-delete-org-full-scan.mts'
 
 // Mock the dependencies.

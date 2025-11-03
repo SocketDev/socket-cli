@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   createErrorResult,
   createSuccessResult,
-} from '../../../../src/helpers/mocks.mts'
+} from '../../../test/helpers/mocks.mts'
 import { fetchListRepos } from '../../../../../src/commands/repository/fetch-list-repos.mts'
 
 // Mock the dependencies.

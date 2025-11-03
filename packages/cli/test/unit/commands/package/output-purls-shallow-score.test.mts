@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
-import goShallow from '../../../../src/fixtures/go_shallow.json'
-import mavenShallow from '../../../../src/fixtures/maven_shallow.json'
-import npmShallow from '../../../../src/fixtures/npm_shallow.json'
-import nugetShallow from '../../../../src/fixtures/nuget_shallow.json'
-import pythonDupes from '../../../../src/fixtures/python_dupes.json'
-import pythonShallow from '../../../../src/fixtures/python_shallow.json'
-import rubyShallow from '../../../../src/fixtures/ruby_shallow.json'
+import goShallow from '../../../../../src/commands/package/fixtures/go_shallow.json'
+import mavenShallow from '../../../../../src/commands/package/fixtures/maven_shallow.json'
+import npmShallow from '../../../../../src/commands/package/fixtures/npm_shallow.json'
+import nugetShallow from '../../../../../src/commands/package/fixtures/nuget_shallow.json'
+import pythonDupes from '../../../../../src/commands/package/fixtures/python_dupes.json'
+import pythonShallow from '../../../../../src/commands/package/fixtures/python_shallow.json'
+import rubyShallow from '../../../../../src/commands/package/fixtures/ruby_shallow.json'
 import {
   generateMarkdownReport,
   generateTextReport,

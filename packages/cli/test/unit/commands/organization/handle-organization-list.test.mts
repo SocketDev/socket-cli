@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { setupTestEnvironment } from '../../../../src/helpers/index.mts'
+import { setupTestEnvironment } from '../../../test/helpers/index.mts'
 import { handleOrganizationList } from '../../../../../src/commands/organization/handle-organization-list.mts'
 
 // Mock the dependencies.

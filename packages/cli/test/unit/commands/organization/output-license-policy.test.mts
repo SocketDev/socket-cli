@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   createErrorResult,
   createSuccessResult,
-} from '../../../../src/helpers/index.mts'
+} from '../../../test/helpers/index.mts'
 
 describe('outputLicensePolicy', () => {
   beforeEach(async () => {
