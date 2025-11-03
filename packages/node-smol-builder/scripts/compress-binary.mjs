@@ -134,18 +134,11 @@ async function ensureToolBuilt(config) {
   getDefaultLogger().log(`  Command: ${config.buildCommand}`)
   getDefaultLogger().log('')
 
-  // Split command string into command + args for proper spawn handling.
-  const cmdParts = config.buildCommand.split(' ')
-  const cmd = cmdParts[0]
-  const cmdArgs = cmdParts.slice(1)
-
-  // Exception: Using shell: true here instead of WIN32 because:
-  // 1. These are trusted build commands (make, mingw32-make) in a controlled build environment
-  // 2. No user input in command strings - all commands are hardcoded in PLATFORM_CONFIG
-  // 3. Cross-platform make commands need shell for proper PATH resolution
-  const result = await spawn(cmd, cmdArgs, {
+  // Use the same spawn pattern as build.mjs exec function.
+  // Pass full command string with empty args array, using shell: WIN32.
+  const result = await spawn(config.buildCommand, [], {
     cwd: TOOLS_DIR,
-    shell: true,
+    shell: WIN32,
     stdio: 'inherit'
   })
 
