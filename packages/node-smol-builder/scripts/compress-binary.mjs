@@ -134,7 +134,7 @@ async function ensureToolBuilt(config) {
   getDefaultLogger().log(`  Command: ${config.buildCommand}`)
   getDefaultLogger().log('')
 
-  const result = await spawn(config.buildCommand, {
+  const result = await spawn(config.buildCommand, [], {
     cwd: TOOLS_DIR,
     shell: true,
     stdio: 'inherit'
