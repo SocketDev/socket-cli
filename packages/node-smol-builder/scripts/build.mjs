@@ -308,6 +308,15 @@ async function copyBuildAdditions() {
     getDefaultLogger().log(`✅ Copied socket_brotli2c.cc to tools/ (patch expects this name)`)
   }
 
+  // Fix: The brotli header needs to be in src/ for node_builtins.cc to find it.
+  const brotliHeaderSource = join(NODE_DIR, '001-brotli-integration', 'socketsecurity_brotli_builtin_loader.h')
+  const brotliHeaderDest = join(NODE_DIR, 'src', 'socketsecurity_brotli_builtin_loader.h')
+
+  if (existsSync(brotliHeaderSource)) {
+    await copyFile(brotliHeaderSource, brotliHeaderDest)
+    getDefaultLogger().log(`✅ Copied socketsecurity_brotli_builtin_loader.h to src/`)
+  }
+
   getDefaultLogger().log('')
 }
 
