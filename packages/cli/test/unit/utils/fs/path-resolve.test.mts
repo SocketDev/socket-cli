@@ -13,7 +13,7 @@ import {
   findBinPathDetailsSync,
   findNpmDirPathSync,
   getPackageFilesForScan,
-} from '../../../../src/path-resolve.mts'
+} from '../../../../../src/utils/fs/path-resolve.mts'
 
 const PACKAGE_JSON = 'package.json'
 

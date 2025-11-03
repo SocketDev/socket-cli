@@ -33,7 +33,7 @@ import {
   getErrorMessageForHttpStatusCode,
   handleApiCall,
   handleApiCallNoSpinner,
-} from '../../../../src/api.mts'
+} from '../../../../../src/utils/socket/api.mts'
 
 describe('api utilities', () => {
   beforeEach(() => {

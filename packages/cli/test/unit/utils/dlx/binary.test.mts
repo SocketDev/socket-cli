@@ -24,7 +24,7 @@ import {
   getDlxCachePath,
   getSocketHomePath,
   listDlxCache,
-} from '../../../../src/binary.mts'
+} from '../../../../../src/utils/dlx/binary.mts'
 
 describe('binary', () => {
   describe('getSocketHomePath', () => {

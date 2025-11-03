@@ -15,7 +15,7 @@ import {
   readSocketJson,
   readSocketJsonSync,
   writeSocketJson,
-} from '../../../../src/json.mts'
+} from '../../../../../src/utils/socket/json.mts'
 
 // Mock dependencies.
 vi.mock('node:fs', () => ({

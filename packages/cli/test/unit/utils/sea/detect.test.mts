@@ -2,7 +2,7 @@
 
 import { describe, expect, it } from 'vitest'
 
-import { getSeaBinaryPath, isSeaBinary } from '../../../../src/detect.mts'
+import { getSeaBinaryPath, isSeaBinary } from '../../../../../src/utils/sea/detect.mts'
 
 describe('SEA detection utilities', () => {
   describe('isSeaBinary', () => {

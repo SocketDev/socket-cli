@@ -5,7 +5,7 @@ import {
   OUTPUT_MARKDOWN,
   OUTPUT_TEXT,
 } from '../../../../src/constants/cli.mts'
-import { checkCommandInput } from '../../../../src/check-input.mts'
+import { checkCommandInput } from '../../../../../src/utils/validation/check-input.mts'
 
 // Mock dependencies.
 vi.mock('yoctocolors-cjs', () => ({

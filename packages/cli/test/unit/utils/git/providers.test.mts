@@ -3,8 +3,8 @@ import path from 'node:path'
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { GitHubProvider } from '../../../../src/github-provider.mts'
-import { GitLabProvider } from '../../../../src/gitlab-provider.mts'
+import { GitHubProvider } from '../../../../../src/utils/git/github-provider.mts'
+import { GitLabProvider } from '../../../../../src/utils/git/gitlab-provider.mts'
 
 // Mock dependencies.
 const mockCacheDir = path.join(os.tmpdir(), 'socket-cache')

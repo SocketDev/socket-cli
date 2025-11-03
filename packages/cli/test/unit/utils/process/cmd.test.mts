@@ -12,7 +12,7 @@ import {
   isNpmLockfileScanCommand,
   isPnpmLockfileScanCommand,
   isYarnLockfileScanCommand,
-} from '../../../../src/cmd.mts'
+} from '../../../../../src/utils/process/cmd.mts'
 
 describe('cmd utilities', () => {
   describe('cmdFlagValueToArray', () => {

@@ -5,7 +5,7 @@ import {
   getSocketDevAlertUrl,
   getSocketDevPackageOverviewUrl,
   getSocketDevPackageOverviewUrlFromPurl,
-} from '../../../../src/url.mts'
+} from '../../../../../src/utils/socket/url.mts'
 
 // Mock constants.
 vi.mock('../constants.mts', () => ({

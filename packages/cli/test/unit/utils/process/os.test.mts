@@ -10,7 +10,7 @@ import {
   getNpmArch,
   getNpmPlatform,
   getSocketbinPackageName,
-} from '../../../../src/os.mts'
+} from '../../../../../src/utils/process/os.mts'
 
 describe('getNpmPlatform', () => {
   beforeEach(() => {

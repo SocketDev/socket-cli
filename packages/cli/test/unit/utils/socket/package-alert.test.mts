@@ -8,9 +8,9 @@ import {
   getAlertSeverityOrder,
   getAlertsSeverityOrder,
   getSeverityLabel,
-} from '../../../../src/package-alert.mts'
+} from '../../../../../src/utils/socket/package-alert.mts'
 
-import type { SocketPackageAlert } from '../../../../src/package-alert.mts'
+import type { SocketPackageAlert } from '../../../../../src/utils/socket/package-alert.mts'
 
 // Mock dependencies.
 vi.mock('./alert/artifact.mts', () => ({

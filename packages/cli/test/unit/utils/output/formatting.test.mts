@@ -5,7 +5,7 @@ import {
   getFlagListOutput,
   getFlagsHelpOutput,
   getHelpListOutput,
-} from '../../../../src/formatting.mts'
+} from '../../../../../src/utils/output/formatting.mts'
 
 // Mock requirements module.
 vi.mock('../ecosystem/requirements.mts', () => ({

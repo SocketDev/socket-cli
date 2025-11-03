@@ -11,7 +11,7 @@ import {
   FileProgress,
   MultiProgress,
   Spinner,
-} from '../../../../src/rich-progress.mts'
+} from '../../../../../src/utils/terminal/rich-progress.mts'
 
 // Mock writable stream for capturing output.
 class MockWritable extends Writable {

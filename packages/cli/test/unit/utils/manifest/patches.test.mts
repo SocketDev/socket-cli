@@ -17,7 +17,7 @@ import {
   removePatch,
   validateManifest,
   writeManifest,
-} from '../../../../src/patches.mts'
+} from '../../../../../src/utils/manifest/patches.mts'
 
 describe('patch-manifest', () => {
   let testDir: string
