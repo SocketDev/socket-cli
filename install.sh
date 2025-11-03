@@ -58,9 +58,9 @@ detect_platform() {
     *)
       error "Unsupported operating system: $(uname -s)"
       echo ""
-      info "💡 Socket CLI supports Linux, macOS, and Windows."
-      info "   If you think this is an error, please open an issue at:"
-      info "   https://github.com/SocketDev/socket-cli/issues"
+      info "Socket CLI supports Linux, macOS, and Windows."
+      info "If you think this is an error, please open an issue at:"
+      info "https://github.com/SocketDev/socket-cli/issues"
       exit 1
       ;;
   esac
@@ -76,9 +76,9 @@ detect_platform() {
     *)
       error "Unsupported architecture: $(uname -m)"
       echo ""
-      info "💡 Socket CLI supports x64 and arm64 architectures."
-      info "   If you think this is an error, please open an issue at:"
-      info "   https://github.com/SocketDev/socket-cli/issues"
+      info "Socket CLI supports x64 and arm64 architectures."
+      info "If you think this is an error, please open an issue at:"
+      info "https://github.com/SocketDev/socket-cli/issues"
       exit 1
       ;;
   esac
@@ -100,18 +100,18 @@ get_latest_version() {
   else
     error "Neither curl nor wget found on your system"
     echo ""
-    info "💡 Please install curl or wget to continue:"
-    info "   macOS:   brew install curl"
-    info "   Ubuntu:  sudo apt-get install curl"
-    info "   Fedora:  sudo dnf install curl"
+    info "Please install curl or wget to continue:"
+    info "  macOS:   brew install curl"
+    info "  Ubuntu:  sudo apt-get install curl"
+    info "  Fedora:  sudo dnf install curl"
     exit 1
   fi
 
   if [ -z "$version" ]; then
     error "Failed to fetch latest version from npm registry"
     echo ""
-    info "💡 This might be a temporary network issue. Please try again."
-    info "   If the problem persists, check your internet connection."
+    info "This might be a temporary network issue. Please try again."
+    info "If the problem persists, check your internet connection."
     exit 1
   fi
 
@@ -159,7 +159,7 @@ install_socket_cli() {
   # Construct download URL from npm registry.
   download_url="https://registry.npmjs.org/${package_name}/-/cli-${platform}-${version}.tgz"
 
-  step "Downloading Socket CLI 📦"
+  socket_brand "Downloading Socket CLI..."
 
   # Create DLX directory structure.
   dlx_dir="${HOME}/.socket/_dlx"
@@ -197,7 +197,7 @@ install_socket_cli() {
   if [ ! -f "$binary_path" ]; then
     error "Binary not found at expected path: $binary_path"
     echo ""
-    info "💡 This might be a temporary issue with the package. Try again in a moment."
+    info "This might be a temporary issue with the package. Try again in a moment."
     exit 1
   fi
 
@@ -251,13 +251,13 @@ install_socket_cli() {
   fi
 
   echo ""
-  socket_brand "${BOLD}Socket CLI installed successfully!${NC} 🎉"
+  socket_brand "${BOLD}Socket CLI installed successfully!${NC}"
   echo ""
-  info "💡 Quick start:"
-  echo "     ${CYAN}socket --help${NC}           Get started with Socket"
-  echo "     ${CYAN}socket self-update${NC}      Update to the latest version"
+  info "Quick start:"
+  echo "  ${CYAN}socket --help${NC}           Get started with Socket"
+  echo "  ${CYAN}socket self-update${NC}      Update to the latest version"
   echo ""
-  socket_brand "Happy securing! 🚀"
+  socket_brand "Happy securing!"
 }
 
 # Main execution.
