@@ -40,7 +40,6 @@ import { fileURLToPath } from 'node:url'
 import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { spawn } from '@socketsecurity/lib/spawn'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import colors from 'yoctocolors-cjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const TOOLS_DIR = path.resolve(__dirname, '../additions/tools')
@@ -55,14 +54,14 @@ const PLATFORM_CONFIG = {
     binaryFormat: 'Mach-O',
     defaultQuality: 'lzfse',
     qualityOptions: ['lz4', 'zlib', 'lzfse', 'lzma'],
-    buildCommand: 'make -f Makefile'
+    buildCommand: '/usr/bin/make -f Makefile'
   },
   linux: {
     toolName: 'socket_elf_compress',
     binaryFormat: 'ELF',
     defaultQuality: 'lzma',
     qualityOptions: ['lzma'],
-    buildCommand: 'make -f Makefile.linux'
+    buildCommand: '/usr/bin/make -f Makefile.linux'
   },
   win32: {
     toolName: 'socket_pe_compress',
